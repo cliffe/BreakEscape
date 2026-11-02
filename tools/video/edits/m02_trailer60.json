@@ -4,7 +4,7 @@
  "title": "SAFETYNET: Licence to Hack, m02 60 s trailer",
  "fps": 30,
  "length": 60,
- "status": "v3 (2026-11-02): cards Hack them back / to Hold back the ENTROPY / Before the Ward Goes Dark; m_keypad, npc_pryce, card_choices removed; Kali placeholder back (--final refuses); lengthened Ghost terminal leads the ENTROPY section; staff-room walk; talk-view Bernie/Kim/Gary crescendo flashes, Reeves talk-view portrait flash (t27); Ghost closer unchanged. Ghost beats silent pending VO. Rough cut.",
+ "status": "v4 (2026-11-02): story reorder. Premise ransom -> lights -> Doyle; Hack them back: lockpick, walk_vm, Kali placeholder (--final refuses), CyberChef; to Hold back the ENTROPY: Ghost terminal -> Val; walk montage; Ward Goes Dark crescendo; Ghost call close (silent, VO later). Reeves talk-view flash. Rough cut.",
  "music": {
   "track": "Noir/Steel Shadows in E Minor (Remastered).mp3",
   "analysis": "steel_shadows_in_e_minor_remastered_60.json",
@@ -148,103 +148,17 @@
    }
   },
   {
-   "id": "m_lights",
+   "id": "m_ransom",
    "type": "gameplay",
-   "duration": 1.8333,
+   "duration": 1.1,
    "snap": false,
    "join": {
     "type": "glitch"
    },
    "source": {
-    "file": "t02_lights.trimmed.mkv",
-    "in": 3.3,
-    "out": 5.1343
-   },
-   "note": "lights strike at take 4.51; about 1.2 s dark lead-in then the vestibule lights; shot starts on the drop (card ends on it)",
-   "framing": {
-    "16:9": {
-     "cx": 0.62,
-     "cy": 0.58,
-     "zoom": 1.5
-    },
-    "9:16": {
-     "cx": 0.6,
-     "cy": 0.5,
-     "zoom": 1
-    },
-    "1:1": {
-     "cx": 0.6,
-     "cy": 0.55,
-     "zoom": 1.25
-    }
-   },
-   "audio": {
-    "gain_db": -6
-   },
-   "spoiler": {
-    "reviewed": true,
-    "shows_code": false,
-    "shows_identity": false,
-    "shows_ending": false,
-    "keypad_partial": null,
-    "note": "lit reception and vestibule, no text, no code"
-   }
-  },
-  {
-   "id": "m_lockpick",
-   "type": "gameplay",
-   "duration": 2.1667,
-   "snap": false,
-   "join": {
-    "type": "cut"
-   },
-   "source": {
-    "file": "t03_lockpick.trimmed.mkv",
-    "in": 9.2,
-    "out": 11.3677
-   },
-   "note": "real picking mid-pick; out far before the cabinet-contents flash at ~14.6",
-   "framing": {
-    "16:9": {
-     "cx": 0.5,
-     "cy": 0.36,
-     "zoom": 1.4
-    },
-    "9:16": {
-     "cx": 0.48,
-     "cy": 0.5,
-     "zoom": 1
-    },
-    "1:1": {
-     "cx": 0.48,
-     "cy": 0.5,
-     "zoom": 1
-    }
-   },
-   "audio": {
-    "gain_db": -6
-   },
-   "spoiler": {
-    "reviewed": true,
-    "shows_code": false,
-    "shows_identity": false,
-    "shows_ending": false,
-    "keypad_partial": null,
-    "note": "lockpick minigame mid-pick; ends 4 s before the cabinet contents flash"
-   }
-  },
-  {
-   "id": "m_ransom",
-   "type": "gameplay",
-   "duration": 2.1667,
-   "snap": false,
-   "join": {
-    "type": "cut"
-   },
-   "source": {
     "file": "t04_ransom.trimmed.mkv",
     "in": 2.6,
-    "out": 4.7677
+    "out": 3.701
    },
    "note": "reception ransom screen: skull, title, timer",
    "framing": {
@@ -277,6 +191,107 @@
    }
   },
   {
+   "id": "m_lights",
+   "type": "gameplay",
+   "duration": 1.4,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t02_lights.trimmed.mkv",
+    "in": 3.3,
+    "out": 4.701
+   },
+   "note": "lights strike at take 4.51; about 1.2 s dark lead-in then the vestibule lights; shot starts on the drop (card ends on it)",
+   "framing": {
+    "16:9": {
+     "cx": 0.62,
+     "cy": 0.58,
+     "zoom": 1.5
+    },
+    "9:16": {
+     "cx": 0.6,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.6,
+     "cy": 0.55,
+     "zoom": 1.25
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "lit reception and vestibule, no text, no code"
+   }
+  },
+  {
+   "id": "npc_doyle",
+   "type": "gameplay",
+   "duration": 3.6667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t10_doyle.trimmed.mkv",
+    "in": 10.08,
+    "out": 13.7477
+   },
+   "note": "doyle_1 10.08-13.75; the next line starts 14.82",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.72,
+     "cy": 0.444,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.47,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Doyle line: ward under attack, no code, culprit or ending"
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Sister Doyle",
+     "text": "The machines still run. Nobody's watching them.",
+     "start": 0.0,
+     "end": 3.67
+    }
+   ],
+   "caption": {
+    "9:16": true,
+    "1:1": true
+   }
+  },
+  {
    "id": "card_real",
    "type": "card",
    "duration": 1.5333,
@@ -298,17 +313,60 @@
    }
   },
   {
-   "id": "walk_vm",
+   "id": "m_lockpick",
    "type": "gameplay",
-   "duration": 1.9667,
+   "duration": 1.1333,
    "snap": false,
    "join": {
     "type": "glitch"
    },
    "source": {
+    "file": "t03_lockpick.trimmed.mkv",
+    "in": 9.2,
+    "out": 10.3343
+   },
+   "note": "real picking mid-pick; out far before the cabinet-contents flash at ~14.6",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.36,
+     "zoom": 1.4
+    },
+    "9:16": {
+     "cx": 0.48,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.48,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "lockpick minigame mid-pick; ends 4 s before the cabinet contents flash"
+   }
+  },
+  {
+   "id": "walk_vm",
+   "type": "gameplay",
+   "duration": 0.8333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
     "file": "t07_walk_vm.trimmed.mkv",
     "in": 1.4,
-    "out": 3.3677
+    "out": 2.2343
    },
    "note": "walk up to the SAFETYNET Field Console; the console never opens",
    "framing": {
@@ -352,7 +410,7 @@
     "type": "clip",
     "file": "hack_them_back_kali_slate.mp4",
     "in": 0,
-    "out": 1.9
+    "out": 1.901
    },
    "placeholder": true,
    "placeholder_note": "stand-in for the player's VM/Kali hacking until real in-game capture exists; swap for real footage",
@@ -397,7 +455,7 @@
    "source": {
     "file": "t08_cyberchef.trimmed.mkv",
     "in": 7.7,
-    "out": 8.47
+    "out": 8.4677
    },
    "note": "CROP TO THE INPUT PANE ONLY (x 962-1864, y 117-577): the output pane (decoded note, y>=581) is off in all three aspects",
    "framing": {
@@ -453,17 +511,17 @@
   {
    "id": "m_ghost_terminal",
    "type": "gameplay",
-   "duration": 3.0333,
+   "duration": 4.3333,
    "snap": false,
    "join": {
     "type": "glitch"
    },
    "source": {
     "file": "t16_ghost_terminal.trimmed.mkv",
-    "in": 17.8,
+    "in": 16.5,
     "out": 20.8343
    },
-   "note": "t16 (re-recorded) Ghost terminal, SILENT on-screen text. Window 17.8-20.83 (91 frames): the reveal line 'You call yourself an incident responder, but I know SAFETYNET, and I've been watching since you arrived.' is seen TYPING and completing; the next line starts typing ('> T') at about 20.9, after the last frame. Crop REQUIRED y 60-540 (16:9 window y 0-540 at 2x excludes reply choices at y 560-690).",
+   "note": "t16 (re-recorded) Ghost terminal, SILENT on-screen text. Window 16.5-20.83 (130 frames): the reveal line 'You call yourself an incident responder, but I know SAFETYNET, and I've been watching since you arrived.' is seen typing from its start and completing; the next line starts typing ('> T') at about 20.9, after the last frame. Crop REQUIRED y 60-540.",
    "framing": {
     "16:9": {
      "cx": 0.5,
@@ -496,7 +554,7 @@
   {
    "id": "npc_val",
    "type": "gameplay",
-   "duration": 4.1,
+   "duration": 4.6,
    "snap": false,
    "join": {
     "type": "cut"
@@ -504,9 +562,9 @@
    "source": {
     "file": "t09_val.trimmed.mkv",
     "in": 7.8,
-    "out": 11.901
+    "out": 12.401
    },
-   "note": "val_1 7.80-11.93; out before 12.7 (choice menu). Val's LOS cone is not in the portrait view",
+   "note": "val_1 7.80-11.93; out before 12.7 (choice menu). Val's LOS cone is not in the portrait view v4: held 138 frames (out 12.4); choice menu appears at about 12.65.",
    "framing": {
     "16:9": {
      "cx": 0.5,
@@ -544,64 +602,6 @@
      "text": "So. Who are you and who says you're allowed?",
      "start": 0.0,
      "end": 4.1
-    }
-   ],
-   "caption": {
-    "9:16": true,
-    "1:1": true
-   }
-  },
-  {
-   "id": "npc_doyle",
-   "type": "gameplay",
-   "duration": 3.6667,
-   "snap": false,
-   "join": {
-    "type": "cut"
-   },
-   "source": {
-    "file": "t10_doyle.trimmed.mkv",
-    "in": 10.08,
-    "out": 13.78
-   },
-   "note": "doyle_1 10.08-13.75; the next line starts 14.82",
-   "framing": {
-    "16:9": {
-     "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1
-    },
-    "9:16": {
-     "cx": 0.72,
-     "cy": 0.444,
-     "zoom": 1.125
-    },
-    "1:1": {
-     "cx": 0.47,
-     "cy": 0.5,
-     "zoom": 1
-    }
-   },
-   "audio": {
-    "gain_db": 0,
-    "dialogue": true,
-    "duck_music": true
-   },
-   "spoiler": {
-    "reviewed": true,
-    "shows_code": false,
-    "shows_identity": false,
-    "shows_ending": false,
-    "keypad_partial": null,
-    "note": "Doyle line: ward under attack, no code, culprit or ending"
-   },
-   "dialogue": true,
-   "lines": [
-    {
-     "speaker": "Sister Doyle",
-     "text": "The machines still run. Nobody's watching them.",
-     "start": 0.0,
-     "end": 3.67
     }
    ],
    "caption": {
@@ -655,7 +655,7 @@
   {
    "id": "mb_chair",
    "type": "gameplay",
-   "duration": 2.0333,
+   "duration": 2.9333,
    "snap": false,
    "join": {
     "type": "cut"
@@ -663,7 +663,7 @@
    "source": {
     "file": "t12_walk_chair.trimmed.mkv",
     "in": 0.9,
-    "out": 2.9343
+    "out": 3.8343
    },
    "note": "heads for the east door and knocks the swivel chair (contact 2.12); ward lit",
    "framing": {
@@ -698,7 +698,7 @@
   {
    "id": "t26_walk_room",
    "type": "gameplay",
-   "duration": 2.0333,
+   "duration": 3.0,
    "snap": false,
    "join": {
     "type": "cut"
@@ -706,7 +706,7 @@
    "source": {
     "file": "t26_walk_room.trimmed.mkv",
     "in": 1.35,
-    "out": 3.3843
+    "out": 4.351
    },
    "note": "staff-room walk (replaces mb_doyle); crop x 380-1540 y 0-1080 (the room fills this, the rest is black)",
    "framing": {
