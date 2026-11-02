@@ -44,6 +44,8 @@ EXTERNAL player_name()
 
 You found it.
 
+You call yourself an incident responder, but I know SAFETYNET, and I've been watching since you arrived.
+
 Took you rather longer than I'd allowed for. I'd pencilled in ninety minutes and you've had rather more than that.
 
 It went on this network six weeks ago, during a fire drill. It's been listening ever since.
@@ -544,6 +546,8 @@ But I won't make this particular offer from behind text. You can look at me whil
 Don't waste the effort on the hood. No name tonight, no face. You get a person.
 
 That's the part they always leave out, and the only part that ever mattered.
+
+Money is simply a means to your inevitable end.
 
 Now. You're standing at the recovery console.
 
