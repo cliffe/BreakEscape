@@ -380,7 +380,7 @@ What's left to build on the Hacktivity route:
 |---|---|---|
 | H1 | `exec_qemu_guest` variant with exit code, stderr and timeout | Hacktivity |
 | H2 | `script/dev/vm_exec.rb` (route A), with a background-and-poll mode | Hacktivity |
-| H3 | `script/dev/mission_vm_session.rb`: for a mission and a test user, find or create the dev event and batch, wait for the build and the flags, assign a VM set, create the game, revert to `original`, print one JSON line (game URL, VM set id, VM titles, flag counts) | Hacktivity (decided 2026-11-02) |
+| H3 | `script/dev/mission_vm_session.rb`: for a mission and a test user, find the dev batch. If the scenario is unchanged, check a built, unassigned set on the current release has its flags. If it changed, increment the batch's release name and add one place, which makes Hacktivity build a new set with SecGen (20 minutes or more), then wait in a background `--wait` mode (no tokens) until that set is built and its flags are read. Then start the game (Hacktivity assigns the set) and print one JSON line (game URL, VM set, VM titles, flag counts, release) | Hacktivity (decided 2026-11-02) |
 | H4 | Per-mission solve scripts, calling H2 | BreakEscape `scenarios/<mission>/secgen/` |
 | H5 | Harness `vm` step command, calling the solve step | BreakEscape `.claude/skills/playtest-scenario/` |
 | H6 | Camera prep (resolution, terminal profile) through H2; a `camera` snapshot | BreakEscape `tools/video/` |
@@ -540,6 +540,9 @@ text) is possible but costly; worth doing once per mission at most.
 | 7 | Optional: a capture mode on Hacktivity's `vnc_console` (no overlay, lossless settings, fixed size) | Hacktivity | S | Only if reusing the relay is easier than a direct session |
 
 ## Decisions for you
+
+The Hacktivity-route decisions are on the proposal form: https://claude.ai/artifact/N1yXBWHjKz3sNvzHmHjYut (private to the owner).
+
 
 1. **Where does the rig run?** A pipeline host with Proxmox API access (the
    same one that runs `secgen-dev-run`) is the obvious place. Does it also
