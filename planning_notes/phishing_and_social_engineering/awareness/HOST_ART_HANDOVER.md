@@ -32,7 +32,14 @@ Date: 2026-11-02. My 5 hosts only. A second agent owns ama_owusu, lorna_easton, 
 ### gwen_pritchard — DONE & COMMITTED (talk + visemes, NO blink — see above)
 Viseme pick: teeth=teeth_t02_f3, round=round_t03_f3, small_open=small_open_t02_f2, medium_open=medium_open_t02_f2, wide_open=wide_open_t03_f1 (--chin wide_open=3). Blink omitted (winked 3x).
 
-### nilesh_solanki / delphine_arvanitis / tomasz_wisniewski / zainab_hussain — viseme pick + blink-fold + commit REMAINING
+### nilesh_solanki / delphine_arvanitis / tomasz_wisniewski / zainab_hussain — DONE & COMMITTED (talk + visemes + blink i01)
+All four picked, blinks eyeballed close-up (all i01 good, no re-roll — 0 generations spent), sheets built with blink, JSON lists blink, committed (talk + visemes.png + visemes.json per host, explicit paths). Picks:
+- nilesh: teeth=teeth_t01_f1, round=round_t01_f1, small_open=small_open_t01_f1, medium_open=medium_open_t01_f1, wide_open=wide_open_t03_f2 (--chin wide_open=3). Blink i01: eyes closed behind blue glasses, frames kept — good.
+- delphine: teeth=teeth_t01_f1, round=round_t03_f2, small_open=small_open_t01_f1, medium_open=medium_open_t03_f2, wide_open=wide_open_t03_f1 (--chin wide_open=3). Blink i01: both eyes closed — good.
+- tomasz: teeth=teeth_t03_f1, round=round_t02_f3, small_open=small_open_t03_f2, medium_open=medium_open_t03_f1, wide_open=wide_open_t01_f2 (--chin wide_open=3; avoided all "nose redrawn" frames — "upper lip moved" unavoidable with his moustache). Blink i01: both eyes closed, gold glasses frames kept — good.
+- zainab: teeth=teeth_t03_f1, round=round_t02_f1, small_open=small_open_t03_f1, medium_open=medium_open_t01_f1, wide_open=wide_open_t01_f3 (--chin wide_open=3; all "ok" frames, eyes clear). Blink i01: both eyes closed, hijab/brows kept — good (no gwen-style wink).
+
+<!-- superseded; original per-host instructions below kept for reference -->
 Frames are generated; blink i01 generated. Next, per host:
 1. Read the 5 contact sheets `tmp/pixellab/<key>/visemes/talk_frames/contact_<shape>.png`. Pick one frame per shape by eye (teeth=thin upper teeth on lip jaw closed; round=small forward rounded opening no teeth; small_open=lips just parted thin gap; medium_open=small dark opening, teeth edge; wide_open=chin drops ~2x, upper teeth). Favour frames with still/clear eyes.
 2. Build + fold blink in one pick:
