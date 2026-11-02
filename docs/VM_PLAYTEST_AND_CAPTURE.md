@@ -5,6 +5,12 @@ sections of SAFETYNET missions from our Proxmox environment, and how to capture
 desktop footage of real hacking for trailers. Nothing here has been built yet;
 it records what exists, what is missing, and a recommended plan.
 
+**Superseded for implementation (2026-11-02):** the decisions on the proposal
+form led to a reviewed implementation plan in Hacktivity:
+`docs/vm_playtest/IMPLEMENTATION_PLAN.md` (with `docs/vm_playtest/RUNBOOK.md`
+to follow). Where this analysis and that plan differ, the plan wins; this file
+stays as the background and the options considered.
+
 ## Summary
 
 - **Completing VM sections is mostly solved already, in three grades.** The
@@ -542,6 +548,9 @@ text) is possible but costly; worth doing once per mission at most.
 ## Decisions for you
 
 The Hacktivity-route decisions are on the proposal form: https://claude.ai/artifact/N1yXBWHjKz3sNvzHmHjYut (private to the owner).
+They were answered on 2026-11-02 and are recorded in Hacktivity
+`docs/vm_playtest/IMPLEMENTATION_PLAN.md` section 2; the questions below are
+from the earlier analysis and are kept for reference.
 
 
 1. **Where does the rig run?** A pipeline host with Proxmox API access (the
