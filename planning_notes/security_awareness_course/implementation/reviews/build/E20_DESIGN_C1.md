@@ -34,7 +34,7 @@ known engine issue flagged in the task and is not raised here.
   lines under 30 words, no printed variables.
 - `social-awareness-fragment-erb-parity` + `rule-of-thumb`: E20's own parity subtest passes (`ok 19`), and
   E20's two shells sit inside the registered set carrying `ruleOfThumb`. The three red subtests are **not
-  E20**: they name `awareness_e18_credential_attacks_at_scale` (and its defend shell), an unregistered
+  E20**: they name `ca18_credential_attacks_at_scale` (and its defend shell), an unregistered
   episode already in the git working tree. Flagged so the orchestrator does not read the red as E20's.
 
 ## What works
@@ -88,7 +88,7 @@ render the open/secured labels in a neutral colour (e.g. reuse the 13px meta gre
 should be opt-in per card, not the default palette.
 
 ### MI1 — minor — needs-user — the spec's two-aim shape was built as one aim
-`scenarios/awareness_e20_remote_and_mobile_working/scenario.json.erb:24-50`.
+`scenarios/ca20_remote_and_mobile_working/scenario.json.erb:24-50`.
 
 The spec (§8b) tabulates two aims (`two_days_aim` "Walk the two days", then `tell_them_apart_aim`). The build
 has a single aim, `tell_them_apart_aim` (order 0, `missionConclusion: true`), with the two days folded into

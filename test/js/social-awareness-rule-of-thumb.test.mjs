@@ -19,31 +19,31 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const scenarios = join(root, 'scenarios');
 
 const shells = readdirSync(scenarios, { withFileTypes: true })
-  .filter((d) => d.isDirectory() && d.name.startsWith('awareness_'))
+  .filter((d) => d.isDirectory() && /^ca(\d{2}|_pre|_post|_annual)_/.test(d.name))
   .map((d) => d.name)
   .sort();
 
 // The registry. One line per full episode; the defend-only twin is derived.
 const FULL_EPISODES = [
-  'awareness_e1_invoice_fraud',
-  'awareness_e2_cv_lures',
-  'awareness_e3_helpdesk_reset',
-  'awareness_e4_exec_whaling',
-  'awareness_e5_signin_pages',
-  'awareness_e6_texts_and_qr',
-  'awareness_e7_voice_ceo',
-  'awareness_e8_after_the_click',
-  'awareness_e9_passwords',
-  'awareness_e10_downloads_and_fake_checks',
-  'awareness_e11_misdirected_data',
-  'awareness_e13_ai_assistant',
-  'awareness_e12_visitor_tailgater',
-  'awareness_e14_social_media',
-  'awareness_e15_shadow_it',
-  'awareness_e16_insider_risk',
-  'awareness_e19_malware_and_updates',
-  'awareness_e20_remote_and_mobile_working',
-  'awareness_e18_credential_attacks_at_scale',
+  'ca01_invoice_fraud',
+  'ca02_cv_lures',
+  'ca03_helpdesk_reset',
+  'ca04_exec_whaling',
+  'ca05_signin_pages',
+  'ca06_texts_and_qr',
+  'ca07_voice_ceo',
+  'ca08_after_the_click',
+  'ca09_passwords',
+  'ca10_downloads_and_fake_checks',
+  'ca11_misdirected_data',
+  'ca13_ai_assistant',
+  'ca12_visitor_tailgater',
+  'ca14_social_media',
+  'ca15_shadow_it',
+  'ca16_insider_risk',
+  'ca19_malware_and_updates',
+  'ca20_remote_and_mobile_working',
+  'ca18_credential_attacks_at_scale',
 ];
 // One line per check role; each is four shells (pre and post, each in ab and ba order).
 const CHECK_ROLES = [
@@ -58,15 +58,15 @@ const CHECK_ROLES = [
 // Single shells that are neither a full episode nor a check role (no defend twin, no pre/post pair),
 // such as the core_17 annual edition. One line per shell, the folder name as it is.
 const STANDALONE_SHELLS = [
-  'awareness_core_00_first_play',
-  'awareness_core_17_annual_2027_defend',
+  'ca00_first_play',
+  'ca_annual_2027_defend',
   // E17 is defend-only: one shell, no full twin, listed in both courses.
-  'awareness_e17_acceptable_use_defend',
+  'ca17_acceptable_use_defend',
 ];
 const registered = [
   ...FULL_EPISODES,
   ...FULL_EPISODES.map((d) => `${d}_defend`),
-  ...CHECK_ROLES.flatMap((r) => ['pre', 'post'].flatMap((st) => ['ab', 'ba'].map((o) => `awareness_${st}_${r}_${o}`))),
+  ...CHECK_ROLES.flatMap((r) => ['pre', 'post'].flatMap((st) => ['ab', 'ba'].map((o) => `ca_${st}_${r}_${o}`))),
   ...STANDALONE_SHELLS,
 ].sort();
 

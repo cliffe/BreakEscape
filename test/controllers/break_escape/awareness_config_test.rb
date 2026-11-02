@@ -102,6 +102,40 @@ module BreakEscape
       assert_equal 600, data['ruleOfThumb'].length
     end
 
+    test 'report_route_name rides along on reportRoute as routeName, cleaned and capped' do
+      hook(report_text: 'Use the Report button to report it.', report_route_name: 'use the Report button in Outlook')
+      get game_url(@game)
+      assert_equal(
+        { 'text' => 'Use the Report button to report it.', 'routeName' => 'use the Report button in Outlook' },
+        awareness_json['reportRoute']
+      )
+
+      # capped at 120 characters
+      hook(report_text: 'route', report_route_name: 'x' * 200)
+      get game_url(@game)
+      assert_equal 120, awareness_json['reportRoute']['routeName'].length
+
+      # a blank route name leaves the key out (and reportRoute stays a bare string)
+      hook(report_text: 'route', report_route_name: '   ')
+      get game_url(@game)
+      assert_equal 'route', awareness_json['reportRoute']
+
+      # a route name with no report text is dropped with the rest
+      hook(report_route_name: 'use the Report button')
+      get game_url(@game)
+      assert_no_match(/awareness:/, response.body)
+    end
+
+    test 'a script-closing or braced route name cannot break out and stays plain text' do
+      evil = '</script><img src=x onerror=alert(1)> {button}'
+      hook(report_text: 'Report it.', report_heading: 'Reporting at Acme', report_route_name: evil)
+      get game_url(@game)
+      assert_response :success
+      assert_no_match(%r{</script><img}, response.body)
+      assert_no_match(/<img src=x onerror/, response.body)
+      assert_equal evil, awareness_json['reportRoute']['routeName']
+    end
+
     test 'show_result true and false reach the config; unset leaves the key out' do
       hook(report_text: 'route', show_result: true)
       get game_url(@game)

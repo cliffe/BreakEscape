@@ -1,0 +1,13 @@
+{
+  "key": "af02fdb60f263999431ac7d2d1873ecf",
+  "npc": "eleanor_vance",
+  "text": "I think you're right. But it's also commercially exposed. Our syndicate partners will argue we should have been firmer on W-07.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:29:11Z"
+}

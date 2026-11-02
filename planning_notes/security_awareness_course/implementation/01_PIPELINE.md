@@ -47,7 +47,7 @@ Every generator and room script writes files. Never point one at the repo.
 - `triageSets`: the episode set first (`e1_payments_inbox` in E1), then any new check forms (`10_CHECK_FORMS.md` says which). New forms go in the new episode's own fragment, never in E1 to E7's.
 - `awarenessEpisode`, with `role`, `company`, `brand` (`{ "name", "logoText", "accent" }`), `scopeNote`, `defend` (`{ "setId", "stage", "reportAlwaysVisible" }`), `debrief` (`{ "mondayCard": "slot:customer_report_route", "noBlameLine": true }` in every built episode), `strings` and `_defendOnly` (`{ "_use", "brief", "scopeNote" }`, read by the generator for the defend-only shell).
 
-`strings` holds `brief`, `noBlameLine`, `mondayCard`, `defendOnly` and the flip lines (`flipHeading`, `flipIntro`, `flipDefenderLine`, `flipNoSend`, `flipMissed`, `flipMissedHeading`, `flipLandedNoTells`). See `AW/e1/defend.json` `awarenessEpisode.strings`. A triage message's shape is the episode set's own: copy `scenarios/awareness_e5_signin_pages/scenario.json.erb` `social.triageSets[0].messages[1]` for a `page` card, and the E1 set for email.
+`strings` holds `brief`, `noBlameLine`, `mondayCard`, `defendOnly` and the flip lines (`flipHeading`, `flipIntro`, `flipDefenderLine`, `flipNoSend`, `flipMissed`, `flipMissedHeading`, `flipLandedNoTells`). See `AW/e1/defend.json` `awarenessEpisode.strings`. A triage message's shape is the episode set's own: copy `scenarios/ca05_signin_pages/scenario.json.erb` `social.triageSets[0].messages[1]` for a `page` card, and the E1 set for email.
 
 **Shape of `attack.json`.** Copy `AW/e1/attack.json` for a mail attack: `people`, `intelFacts`, `templates`, `mailClient`, `osint`, `phishTargets`. Copy `AW/e3/attack.json` for a call attack: `characters`, `pretextNpcs` and `_episodeAttack`. Copy `AW/e5/attack.json` for a page attack: `landingPages` and `conceptCards`. An attack shape added by an engine packet (`guess`, `mistake`, `world`, `assistant`) takes the fragment shape that packet gives.
 
@@ -65,10 +65,10 @@ The full shells are hand-authored plain JSON with no ERB tags (the parity test p
 
 | New episode's attack | Copy | Why |
 |---|---|---|
-| a mail write (E8, E14) | `scenarios/awareness_e1_invoice_fraud/` | stages `brief, osint, write, flip, defend, debrief` |
-| a page build (E10) | `scenarios/awareness_e5_signin_pages/` | adds `build`, `landingPages`, `conceptCards` |
-| a call (E12, if its brief adds one) | `scenarios/awareness_e3_helpdesk_reset/` | `attack.callId`, `pretextNpcs`, `characters`, a phone NPC ink |
-| a new stage (E9, E11, E13, E15, E16) | `scenarios/awareness_e1_invoice_fraud/` for the frame, plus the block the packet defines | |
+| a mail write (E8, E14) | `scenarios/ca01_invoice_fraud/` | stages `brief, osint, write, flip, defend, debrief` |
+| a page build (E10) | `scenarios/ca05_signin_pages/` | adds `build`, `landingPages`, `conceptCards` |
+| a call (E12, if its brief adds one) | `scenarios/ca03_helpdesk_reset/` | `attack.callId`, `pretextNpcs`, `characters`, a phone NPC ink |
+| a new stage (E9, E11, E13, E15, E16) | `scenarios/ca01_invoice_fraud/` for the frame, plus the block the packet defines | |
 
 **Keys to set, in the order E1 has them:**
 
@@ -84,7 +84,7 @@ The full shells are hand-authored plain JSON with no ERB tags (the parity test p
 - `rooms.training_room.npcs[0]` (the host): `id`, `displayName`, `"npcType": "person"`, `"position": { "x": 5.5, "y": 3.8 }`, `spriteSheet`, `spriteTalk`, `spriteVisemes`, `storyPath: "scenarios/<folder>/ink/<host_id>.json"`, `"currentKnot": "start"` and two `eventMappings` (E1: one on `phish_<target>_attempts` with `"condition": "value > 0"` completing the first task, one on `episode_<id>_defend_done` with `"condition": "value === true"` completing the second).
 - `rooms.training_room.objects[0]`: the kiosk, as E1 (`"type": "kiosk"`, `"id": "training_kiosk"`, no `position`, because the map's kiosk slot places it), `observations`, `observationVariants` on `globalVars.episode_<id>_defend_done`, and `"minigameData": { "episodeId": "<id>" }`.
 
-**`mission.json`:** copy `scenarios/awareness_e1_invoice_fraud/mission.json`. Keep `"scoring": "completion"`, `"secgen_scenario": null`, `"collection": "training"`, `"ui_theme": "general"` and `"difficulty_level": 1`. Set `display_name` as `"Awareness EN: <Topic> (full episode)"`, `description`, `estimated_duration_minutes` and `cybok` (`ka` `"HF"`, `topic` `"Human Factors"`, keywords).
+**`mission.json`:** copy `scenarios/ca01_invoice_fraud/mission.json`. Keep `"scoring": "completion"`, `"secgen_scenario": null`, `"collection": "training"`, `"ui_theme": "general"` and `"difficulty_level": 1`. Set `display_name` as `"Awareness EN: <Topic> (full episode)"`, `description`, `estimated_duration_minutes` and `cybok` (`ka` `"HF"`, `topic` `"Human Factors"`, keywords).
 
 **Check:**
 
@@ -99,8 +99,8 @@ Expected: the JSON parses; the validator exits 0 with no `SOCIAL:` error; the do
 ## P3. Ink
 
 - **Where it lives:** `scenarios/<folder>/ink/<host_id>.ink`, compiled to `<host_id>.json` beside it. Each shell has its own copy (the defend-only shell's is generated).
-- **The full episode's host ink is hand-authored.** Copy `scenarios/awareness_e1_invoice_fraud/ink/adaeze_okafor.ink`. It has a header comment, `VAR` declarations for exactly the globals it reads (the attack's attempts global and `episode_<id>_defend_done`), a `start` knot that diverts to `hub`, and the m03 `hub_quiet` pattern (one welcome line chosen by progress, one choice, `#exit_conversation`, back to `hub`).
-- **Any other NPC** (a phone NPC for a call, or a world NPC for E12) gets its own ink file. Copy `scenarios/awareness_e3_helpdesk_reset/ink/leila_servicedesk.ink` for a call target. For an NPC who opens a door on influence, copy the turnstile pattern in `scenarios/m02_ransomed_trust/ink/m02_npc_security_guard.ink` (around line 309: `#unlock_door:<roomId>`, honoured for an NPC whose record lists the room in `unlockable`).
+- **The full episode's host ink is hand-authored.** Copy `scenarios/ca01_invoice_fraud/ink/adaeze_okafor.ink`. It has a header comment, `VAR` declarations for exactly the globals it reads (the attack's attempts global and `episode_<id>_defend_done`), a `start` knot that diverts to `hub`, and the m03 `hub_quiet` pattern (one welcome line chosen by progress, one choice, `#exit_conversation`, back to `hub`).
+- **Any other NPC** (a phone NPC for a call, or a world NPC for E12) gets its own ink file. Copy `scenarios/ca03_helpdesk_reset/ink/leila_servicedesk.ink` for a call target. For an NPC who opens a door on influence, copy the turnstile pattern in `scenarios/m02_ransomed_trust/ink/m02_npc_security_guard.ink` (around line 309: `#unlock_door:<roomId>`, honoured for an NPC whose record lists the room in `unlockable`).
 - **Line length:** `dialoguelint` raises an ERROR for any ink line over 30 words, and the generated host's `LINES` text is linted too. Keep each `before`, `after` and `reply` line to 30 words or fewer (E8's drafted defend line was 50 words and was shortened).
 - **Rules:** no printed variables in voiced lines. Lines are attributed `Name: text`. Follow `README_ink_best_practices.md`.
 
@@ -111,7 +111,7 @@ Expected: the JSON parses; the validator exits 0 with no `SOCIAL:` error; the do
 node scripts/ink_runtime_check/dialoguelint.mjs scenarios/awareness_eN_<slug>/
 ```
 
-Then add the shell's block to `scripts/ink_runtime_check/missions.json` (copy the `awareness_e1_invoice_fraud` block: its `globals` and its `npcs` with `id`, `npcType`, `storyPath`, `currentKnot` and `room`), and run `node scripts/ink_runtime_check/reopencheck.mjs scripts/ink_runtime_check/missions.json`. Expected: it compiles with no errors, gives no unexplained lint finding, and reopencheck passes.
+Then add the shell's block to `scripts/ink_runtime_check/missions.json` (copy the `ca01_invoice_fraud` block: its `globals` and its `npcs` with `id`, `npcType`, `storyPath`, `currentKnot` and `room`), and run `node scripts/ink_runtime_check/reopencheck.mjs scripts/ink_runtime_check/missions.json`. Expected: it compiles with no errors, gives no unexplained lint finding, and reopencheck passes.
 
 ## P4. The generator for the defend-only shell (and the new check shells)
 
@@ -175,7 +175,7 @@ The output gives `scenario.lighting`, `startPosition`, `host.position` and `room
    - **Step 7 (lighting):** add a lobby entry only if the lighting stage wants it; `--refresh` does not touch it.
    - Do not hand-draw a map. The locked badge-door keys (`locked`, `lockType`, `requires`, `keyPins`) on `training_room` and the lobby NPC's `unlockable` are in ENG-05c.
 
-**Check:** `python3 scripts/room_gen/build_aw_rooms.py --check` prints `same` for every map; `python3 scripts/check_door_alignment.py scenarios/awareness_e12_visitor_tailgater/scenario.json.erb` exits `OK`; `python3 AW/apply_training_room.py --refresh SCRATCH/out` writes both E12 shells with no `KeyError` (because the kiosk room is `training_room`).
+**Check:** `python3 scripts/room_gen/build_aw_rooms.py --check` prints `same` for every map; `python3 scripts/check_door_alignment.py scenarios/ca12_visitor_tailgater/scenario.json.erb` exits `OK`; `python3 AW/apply_training_room.py --refresh SCRATCH/out` writes both E12 shells with no `KeyError` (because the kiosk room is `training_room`).
 
 ## P6. The shared rule of thumb (`AW/awareness_deploy.py`) and its test
 
@@ -227,7 +227,7 @@ Change every id (episode, globals, set, messages, selectors) to the new episode'
 **Register and run it:**
 
 - **Seed the new shells into the dev database first**: `BREAK_ESCAPE_STANDALONE=true bin/rails db:seed`. Until you do, `new-game.rb` answers "No mission 'awareness_eN_<slug>'. Available: ..." and the run table shows `FAIL 0/?` with a dash for the game id.
-- Add `eN-full:awareness_eN_<slug>` to the `JOBS` array in `tools/playtest/se/run-suite.sh`, beside `e7-full:awareness_e7_voice_ceo`.
+- Add `eN-full:awareness_eN_<slug>` to the `JOBS` array in `tools/playtest/se/run-suite.sh`, beside `e7-full:ca07_voice_ceo`.
 - Run it alone: `ONLY="eN-full" tools/playtest/se/run-suite.sh tmp/se-eN` (it starts the keyless server on :3001 if needed, makes a fresh game with `tools/playtest/new-game.rb` and scores the log). Use Node 24: `NODE=$HOME/.cache/ms-playwright-go/1.57.0/node` on the user's machine.
 
 **Check:** `tmp/se-eN/table.md` shows `| bridge-eN-full | awareness_eN_<slug> | <id> | n/n | PASS |`. Then run the seven built bridges one at a time (`00_README.md` §8 step 5), to show nothing else moved.

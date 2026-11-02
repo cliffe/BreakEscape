@@ -204,6 +204,12 @@ export default class NPCManager {
     
     // OPTIMIZATION: Debug mode (set via window.NPC_DEBUG = true)
     this.debug = false;
+
+    // Teach the ending warning how to rebuild a held endingCheck mapping after a reload
+    // (systems/ending-check.js). ending-check.js is imported before this is constructed.
+    if (typeof window !== 'undefined') {
+      window.endingCheck?.registerRebuilder?.('mapping', (record) => this._rebuildHeldMapping(record));
+    }
   }
 
   /**
@@ -574,15 +580,9 @@ export default class NPCManager {
     if (!this.eventDispatcher) return;
     
     console.log(`📋 Setting up event mappings for ${npcId}:`, eventMappings);
-    
-    // Handle both array format (from JSON) and object format
-    const mappingsArray = Array.isArray(eventMappings) 
-      ? eventMappings 
-      : Object.entries(eventMappings).map(([pattern, config]) => ({
-          eventPattern: pattern,
-          ...(typeof config === 'string' ? { targetKnot: config } : config)
-        }));
-    
+
+    const mappingsArray = this._normalizeEventMappings(eventMappings);
+
     for (const [mappingIndex, mapping] of mappingsArray.entries()) {
       const eventPattern = mapping.eventPattern;
       const config = this._buildMappingConfig(mapping, mappingIndex);
@@ -767,6 +767,52 @@ export default class NPCManager {
   }
 
   /**
+   * One NPC's eventMappings as an array, whether the scenario wrote them as an array (the
+   * common form) or as a { pattern: config } object. The array index is the handlerIndex used
+   * for dedup and for restoring a held ending.
+   */
+  _normalizeEventMappings(eventMappings) {
+    if (!eventMappings) return [];
+    return Array.isArray(eventMappings)
+      ? eventMappings
+      : Object.entries(eventMappings).map(([pattern, config]) => ({
+          eventPattern: pattern,
+          ...(typeof config === 'string' ? { targetKnot: config } : config)
+        }));
+  }
+
+  /** An NPC's definition from the loaded scenario, for a mapping whose NPC is not registered yet. */
+  _scenarioNpcDef(npcId) {
+    const rooms = (typeof window !== 'undefined' && window.gameScenario?.rooms) || null;
+    if (!rooms) return null;
+    for (const room of Object.values(rooms)) {
+      const found = (room?.npcs || []).find(n => (n?.id ?? n) === npcId);
+      if (found) return found;
+    }
+    return null;
+  }
+
+  /**
+   * Rebuild the action that runs a held endingCheck mapping, for a hold restored after a reload
+   * (systems/ending-check.js). The descriptor names the NPC, the event pattern and the mapping's
+   * index; this rebuilds its config and returns the same confirmed re-run the live "End the
+   * mission" path uses. Returns null if the mapping can't be found.
+   */
+  _rebuildHeldMapping(record) {
+    if (!record || record.npcId == null) return null;
+    const { npcId, eventPattern, handlerIndex } = record;
+    const entry = this.npcs.get(npcId) || this._scenarioNpcDef(npcId);
+    const mappings = this._normalizeEventMappings(entry?.eventMappings);
+    const idx = Number.isInteger(handlerIndex)
+      ? handlerIndex
+      : mappings.findIndex(m => m.eventPattern === eventPattern);
+    const mapping = mappings[idx];
+    if (!mapping) return null;
+    const config = this._buildMappingConfig(mapping, idx);
+    return () => this._handleEventMapping(npcId, eventPattern, config, { _endingConfirmed: true });
+  }
+
+  /**
    * The handler config for one eventMappings entry. Shared by the listeners and
    * by the lockpick interrupt gate, so both judge a mapping the same way.
    */
@@ -933,11 +979,13 @@ export default class NPCManager {
       triggered.lastTime = now;
       this.triggeredEvents.set(eventKey, triggered);
       const proceed = () => this._handleEventMapping(npcId, eventPattern, config, { ...(eventData || {}), _endingConfirmed: true });
-      window.endingCheck.confirm({ reason: 'mapping' }).then((endNow) => {
+      // Identifies this mapping so the hold can be restored after a reload (systems/ending-check.js).
+      const persist = { reason: 'mapping', npcId, eventPattern, handlerIndex: config.handlerIndex };
+      window.endingCheck.confirm({ reason: 'mapping', persist }).then((endNow) => {
         if (endNow) {
           proceed();
         } else if (window.endingCheck?.hold) {
-          window.endingCheck.hold(proceed, { reason: 'mapping' });
+          window.endingCheck.hold(proceed, { reason: 'mapping', persist });
           console.log(`[ending-check] mapping ${eventPattern} for ${npcId}: keeping going (ending held)`);
         } else {
           proceed();   // no hold available: fail safe to running the ending rather than stranding it

@@ -155,6 +155,21 @@ function initializeGame() {
     window.objectivesManager = getObjectivesManager(window.eventDispatcher);
     console.log('✅ Objectives manager initialized');
 
+    // Reload handler: a held ending (the player chose "Keep going" at the point of no return)
+    // must survive a reload, or the mission soft-locks. Restore it on game_loaded, before the
+    // scenario's own reload backstops run (those register when the start room's NPCs load, during
+    // game.js create, after this). Restored first, a sibling or backstop re-emit stands down
+    // (hasHeld) instead of asking again. The rebuilders are registered by each subsystem's
+    // constructor/init above, so they are ready by the time game_loaded fires.
+    if (window.eventDispatcher) {
+        window.eventDispatcher.once('game_loaded', () => {
+            window.endingCheck?.restoreHeld?.({
+                manager: window.objectivesManager,
+                config: window.breakEscapeConfig
+            });
+        });
+    }
+
     // Reload handler: if this game was already concluded, replay the conclusion screen
     // once the scene is fully loaded and objectives are available.
     if (window.breakEscapeConfig?.missionConcludedAt) {

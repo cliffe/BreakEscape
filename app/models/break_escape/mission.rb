@@ -148,7 +148,7 @@ module BreakEscape
     end
 
     # Painted title art, from mission.json "title_art": a path under
-    # public/break_escape/assets/ (e.g. "title_art/awareness_e12_visitor_tailgater.jpg").
+    # public/break_escape/assets/ (e.g. "title_art/ca12_visitor_tailgater.jpg").
     # Returns nil when unset or not a plain relative image path. The in-game title
     # screen shows it as a backdrop; a host (Hacktivity) can show it on course tiles
     # at /break_escape/assets/<path>. Read at runtime, so no migration is needed.

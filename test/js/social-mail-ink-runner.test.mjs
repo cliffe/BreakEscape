@@ -322,6 +322,21 @@ test('without reply_after the contact delay is used; label-only choices with spe
     assert.equal(inbox(w).at(-1).body, 'Server room first.');
 });
 
+test('planPlainChoice previews a Re: default when the choice sets no # subject, matching the send (item 3)', async () => {
+    const w = makeWorld();
+    await startThread(w);
+    // "Ask where to look" carries no # subject tag: the composer used to preview an empty
+    // subject, while the send wrote "Re: Jump server". The preview now matches the send.
+    const idx = w.scheduler.state.threads[KEY].expects.options.indexOf('Ask where to look');
+    const plan = await hush(() => w.runner.planPlainChoice({ threadKey: KEY, index: idx, mailboxId: 'agent' }));
+    assert.equal(plan.ok, true);
+    assert.equal(plan.subject, 'Re: Jump server', 'the Re: default off the latest thread subject');
+    assert.equal(plan.tagSubject, null, 'no # subject tag was set on this choice');
+    const res = await hush(() => w.runner.sendPlainChoice({ threadKey: KEY, index: idx, accountId: 'agent' }));
+    assert.equal(res.ok, true);
+    assert.equal(sentBox(w)[0].subject, 'Re: Jump server', 'the sent subject is what the preview showed');
+});
+
 test('# forward quotes a received message, keeps forwardOf and the original attachments', async () => {
     const w = makeWorld();
     await startThread(w);

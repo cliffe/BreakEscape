@@ -11,6 +11,8 @@ The engine reads it from social.awareness.ruleOfThumb ({ text } here, so the deb
 heading "The habit to keep" is used). See episode-model.js awarenessSettings and debrief-view.js.
 """
 
+import re
+
 AWARENESS_RULE_OF_THUMB_TEXT = (
     "When a message pressures you to move money, grant access, sign in or read back a code, "
     "stop and check it yourself through a route you already trust, not the link, number or "
@@ -19,6 +21,21 @@ AWARENESS_RULE_OF_THUMB_TEXT = (
 
 
 AWARENESS_RULE_OF_THUMB_HEADING = 'The habit to keep'
+
+
+# Scenario folder names (renamed 2026-11-01 from awareness_*): episodes are
+# ca<NN>_<topic>[_defend], the checks ca_<pre|post>_<role>_<ab|ba>, the opening
+# brief ca00_first_play and the annual round ca_annual_2027_defend.
+def mission_name(ep_id):
+    """Folder name for an episode id such as 'e8_after_the_click_defend' or 'core_17_annual_2027_defend'."""
+    m = re.fullmatch(r'e(\d+)_(.+)', ep_id)
+    if m:
+        return f'ca{int(m.group(1)):02d}_{m.group(2)}'
+    if ep_id == 'core_00_first_play':
+        return 'ca00_first_play'
+    if ep_id.startswith('core_17_'):
+        return 'ca_' + ep_id[len('core_17_'):]
+    raise ValueError(f'no folder name rule for episode id {ep_id!r}')
 
 
 def awareness_block():

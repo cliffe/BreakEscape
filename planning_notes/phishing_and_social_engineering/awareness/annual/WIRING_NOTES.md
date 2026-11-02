@@ -10,12 +10,12 @@ from the E6 defend shell with this set swapped in; see "Proof it validates" at t
 
 ## The one shell
 
-- **Folder:** `scenarios/awareness_core_17_annual_2027_defend/` with `scenario.json.erb`,
+- **Folder:** `scenarios/ca_annual_2027_defend/` with `scenario.json.erb`,
   `mission.json`, `ink/`. One shell only (a `defendOnly` variant). No pre/post check shell is built
   for core_17: the role post-check that follows the edition is one of the already-built role check
   shells, placed after it by the organiser.
-- **scenario_id:** `awareness_core_17_annual_2027_defend`.
-- **Skeleton:** copy the shape of `scenarios/awareness_e6_texts_and_qr_defend/scenario.json.erb`
+- **scenario_id:** `ca_annual_2027_defend`.
+- **Skeleton:** copy the shape of `scenarios/ca06_texts_and_qr_defend/scenario.json.erb`
   (top-level keys: `scenario_id`, `scenario_name`, `scenario_brief`, `endGoal`, `version`,
   `disableAttacks: true`, `startRoom: "training_room"`, `startPosition`, `player`, `objectives`,
   `globalVariables`, `social`, `lighting`, `rooms`).
@@ -52,7 +52,7 @@ from the E6 defend shell with this set swapped in; see "Proof it validates" at t
 "episode_core_17_annual_2027_defend_defend_percent": 0,
 "episode_core_17_annual_2027_defend_defend_reportRate": 0,
 "episode_core_17_annual_2027_defend_defend_done": false,
-"episode_core_17_annual_2027_defend_defend_pass": false
+"episode_core_17_annual_2027_defend_complete": false
 ```
 
 No `phish_*` global and no `triage_pre_*` globals (core_17 is not a check mission). No `defend.calls`
@@ -63,7 +63,7 @@ key (the two E3 calls are reshaped into `messages` in the fragment).
 - One objective with `missionConclusion: true`, `concludeRequires.globals:
   ["episode_core_17_annual_2027_defend_defend_done"]`, and a task `check_annual_edition`
   (this matches `awarenessEpisode.conclusionTaskId`). Model it on
-  `awareness_e6_texts_and_qr_defend`'s `work_phone_aim` objective.
+  `ca06_texts_and_qr_defend`'s `work_phone_aim` objective.
 - The set's `outcome.setGlobalPrefix` writes `episode_core_17_annual_2027_defend_defend_done` when
   the run ends; the host NPC's `eventMappings` entry completes the task on it:
   `{ eventPattern: "global_variable_changed:episode_core_17_annual_2027_defend_defend_done",
@@ -74,9 +74,9 @@ key (the two E3 calls are reshaped into `messages` in the fragment).
 ## Host and room
 
 - **Host: Graham Whitfield**, a neutral proctor (a built Brightwell finance check host, `BRAND_SET.md`).
-- Graham exists today only with check-form welcome ink (`awareness_pre_finance_ab/ink/graham_pre.ink`),
+- Graham exists today only with check-form welcome ink (`ca_pre_finance_ab/ink/graham_pre.ink`),
   which is the wrong shape for a defend host. So **copy the defend-host ink
-  `ink/chidi_okeke.ink` from `scenarios/awareness_e6_texts_and_qr_defend/`**, rename it to
+  `ink/chidi_okeke.ink` from `scenarios/ca06_texts_and_qr_defend/`**, rename it to
   `ink/graham_whitfield.ink` (knot `start`; the NPC's `storyPath` points at the compiled
   `ink/graham_whitfield.json`), and replace Chidi's Tarrowby lines with Graham's generic
   year-review proctor lines (no company-specific detail, since the run spans three companies).
@@ -91,7 +91,7 @@ key (the two E3 calls are reshaped into `messages` in the fragment).
 
 ## mission.json
 
-Copy the block from `scenarios/awareness_e7_voice_ceo_defend/mission.json` (a built `defendOnly`
+Copy the block from `scenarios/ca07_voice_ceo_defend/mission.json` (a built `defendOnly`
 shell) and change only `display_name`, `description` and the `cybok` keywords; keep the rest:
 
 - `display_name: "Year End: the annual mixed edition"`
@@ -105,7 +105,7 @@ shell) and change only `display_name`, `description` and the `cybok` keywords; k
   `cybok` ka `HF` (keywords e.g. Security awareness, Phishing, Vishing, Annual assessment).
 
 A validated scratch `mission.json` is at
-`<scratch>/awareness_core_17_annual_2027_defend/mission.json` (see below).
+`<scratch>/ca_annual_2027_defend/mission.json` (see below).
 
 ## Generator
 
@@ -122,7 +122,7 @@ the new `core_17` files. Restore any `dungeon_graph.*` churn to HEAD.
   `scenarios/awareness_*` folders and that every one carries an identical `social.awareness.ruleOfThumb`.
   Adding this shell makes one more folder, so bump the asserted count by 1 **against the real
   committed count at build time**. CAUTION (2026-10-29): the working tree already carries an
-  untracked `scenarios/awareness_e8_after_the_click/` (another agent's in-progress E8, only an empty
+  untracked `scenarios/ca08_after_the_click/` (another agent's in-progress E8, only an empty
   `ink/`), so on disk the test already sees 39 and fails the `== 38` assertion before core_17 exists.
   Do not treat that as your failure; reconcile the number with whatever `awareness_*` shells are
   actually committed when you build (count `git ls-files` not the dirty tree), and make sure the new
@@ -141,12 +141,12 @@ change (standing rule).
 ## Proof it validates (scratch)
 
 The content agent built a scratch copy of the E6 defend shell with this set and episode block swapped
-in, at `<scratch>/awareness_core_17_annual_2027_defend/` (scratch dir
+in, at `<scratch>/ca_annual_2027_defend/` (scratch dir
 `.../scratchpad/aw2/content-wp/`), retargeting ids/globals/host/kiosk to the core_17 names above, and
 ran:
 
 ```
-bundle exec ruby scripts/validate_scenario.rb <scratch>/awareness_core_17_annual_2027_defend/scenario.json.erb --strict-social --no-graph --skip-ink
+bundle exec ruby scripts/validate_scenario.rb <scratch>/ca_annual_2027_defend/scenario.json.erb --strict-social --no-graph --skip-ink
 ```
 
 Result: `✓ Validation complete!` with no errors (only the standard "no timedConversation" recommended
@@ -155,4 +155,4 @@ the 8-item set is within `EPISODE_MESSAGES = (4..8)`; `attack_checks` does not r
 `_defend` and the prefix is `episode_core_17_annual_2027_defend_defend_`; the done global is declared
 and gates the conclusion aim; the two reshaped E3 `call` messages validate (verifyVerdict is on); the
 cloned voicemail keeps `truth.critical: true`; message ids stay unique. The scratch copy is
-throwaway: build the real shell fresh at `scenarios/awareness_core_17_annual_2027_defend/`.
+throwaway: build the real shell fresh at `scenarios/ca_annual_2027_defend/`.

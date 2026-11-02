@@ -1,6 +1,6 @@
 // Consequence-flip episodes (ENG-04): the `mistake` stage, the consequence sandbox scene and the
 // montage flip. The real runner, sandbox, flip view, episode model and minigame framework in a
-// jsdom document, on inline fixtures (never a live scenarios/awareness_e* file).
+// jsdom document, on inline fixtures (never a live scenarios/ca* file).
 // Run with: bundle exec node --test test/js/social-episode-sandbox.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';

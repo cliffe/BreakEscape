@@ -2,7 +2,7 @@
 
 ## Built shape and episode mapping
 
-This module is a **touch** in the build (`research/built_episodes_vs_plan.md` §2): the built **E6** `awareness_e6_texts_and_qr` (Tarrowby Logistics, mobile) covers phone-borne lures. The rest is delivered either as a **defend-set extension of E6 with new items** (an overlooked-screen item, an overheard-call item, a fake Wi-Fi page, a lost-device report, a home video-call item) or as a **later standalone episode** at Tarrowby. **Do not redesign the built E6 parts.**
+This module is a **touch** in the build (`research/built_episodes_vs_plan.md` §2): the built **E6** `ca06_texts_and_qr` (Tarrowby Logistics, mobile) covers phone-borne lures. The rest is delivered either as a **defend-set extension of E6 with new items** (an overlooked-screen item, an overheard-call item, a fake Wi-Fi page, a lost-device report, a home video-call item) or as a **later standalone episode** at Tarrowby. **Do not redesign the built E6 parts.**
 
 Whichever route, it follows the built shape: a consequence half for the topics with no attacker (the overlooked screen, the overheard call) and an attack-first half for the look-alike Wi-Fi page, a flip ("through their eyes"), a scored defend half, then the built debrief view with the shared "habit to keep". It uses the built inbox-triage defender (with SMS, QR and page cards), the awareness-measure records and concept cards, has a defend-only variant, and feeds new mobile check items with mirror pairs (`assessment.md`).
 

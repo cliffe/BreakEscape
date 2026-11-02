@@ -15,7 +15,7 @@ Session logs (kept out of the repo):
 - Defend-only: `.../blind-e13/session-5092.jsonl`
 - Screenshots 01-17 in `.../blind-e13/`
 
-Games: full persona 1 = 5082, persona 2 = 5089, defend-only = 5092 (`awareness_e13_ai_assistant_defend`).
+Games: full persona 1 = 5082, persona 2 = 5089, defend-only = 5092 (`ca13_ai_assistant_defend`).
 
 ## Verifier output
 

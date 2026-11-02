@@ -5,10 +5,10 @@ Server: keyless :3001, headless, Node 24. Played as an office worker through the
 
 | Scenario | Game id | Session log | verify-run result |
 | --- | --- | --- | --- |
-| awareness_e6_texts_and_qr | 3594 | tools/playtest/p1-e6-session.jsonl | progress recorded, 2 tasks completed, score 100 |
-| awareness_e7_voice_ceo | 3605 | tools/playtest/p1-e7-session.jsonl | progress recorded, 2 tasks completed, score 100 |
-| awareness_pre_mobile_ab | 3616 | tools/playtest/p1-pre-session.jsonl | progress recorded, 1 task completed (finish_check), score 100 |
-| awareness_post_mobile_ab | 3617 | tools/playtest/p1-post-session.jsonl | progress recorded, 1 task completed (finish_check), score 100 |
+| ca06_texts_and_qr | 3594 | tools/playtest/p1-e6-session.jsonl | progress recorded, 2 tasks completed, score 100 |
+| ca07_voice_ceo | 3605 | tools/playtest/p1-e7-session.jsonl | progress recorded, 2 tasks completed, score 100 |
+| ca_pre_mobile_ab | 3616 | tools/playtest/p1-pre-session.jsonl | progress recorded, 1 task completed (finish_check), score 100 |
+| ca_post_mobile_ab | 3617 | tools/playtest/p1-post-session.jsonl | progress recorded, 1 task completed (finish_check), score 100 |
 
 verify-run.rb prints "0 rooms beyond the first, 0 objects unlocked, 0 flags submitted" for all four. That is expected: these are kiosk episodes in one room, and the verifier accepts completed tasks as progress.
 
@@ -32,7 +32,7 @@ verify-run.rb prints "0 rooms beyond the first, 0 objects unlocked, 0 flags subm
 | F12 | trivial | E6/E7 mail client | Clicking Compose while a compose pane is open closes it. |
 | F13 | trivial | E6 kiosk | Brief says "email", objective says message "on their phone". |
 
-## 1. awareness_e6_texts_and_qr, calm route
+## 1. ca06_texts_and_qr, calm route
 
 Steps (all through the kiosk): talk to Chidi, kiosk Start, browser research (Kaylee Dunford, Dev Acharya, Depot notices, the two Friendface posts, each added to notes), mail client, Compose to Kaylee.
 
@@ -68,7 +68,7 @@ On opening Compose, Ask is already set to "Can you scan it today so I can tick y
 ### F12 and F13 (trivial)
 Clicking Compose with a draft open closes it (looks like a toggle, nothing says so). Kiosk brief: "write one email to depot staff"; objective text: "send one message in Facilities' name to a member of depot staff on their phone".
 
-## 2. awareness_e7_voice_ceo, framing
+## 2. ca07_voice_ceo, framing
 
 **Framing is honest throughout.** Quotes, in the order met:
 
@@ -103,7 +103,7 @@ Voice panel says "Nobody is marked down for a miss here." The same screen set sh
 ### F10 and F11 (trivial)
 Debrief: "It reached Tom at ten to five on a Friday" while the sent email is stamped 18:31 and Tom's reply 18:31. Objectives panel after completion shows "Cover the finance line" twice (aim and task share a title).
 
-## 3. awareness_pre_mobile_ab then awareness_post_mobile_ab
+## 3. ca_pre_mobile_ab then ca_post_mobile_ab
 
 Both run through the kiosk in the training room after a short chat with Lerato Dlamini.
 

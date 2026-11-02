@@ -164,7 +164,7 @@ Gordon before real Gordon), run through the built defender at `feedbackMode: "im
 `verifyVerdict: true`, `headerPanel: "off"` (`annual/defend.json:28-30`). It validates with no new
 engine packet, within the `EPISODE_MESSAGES` 4-to-8 cap, and the shell carries the same eight ids as
 the fragment, the `episode_core_17_annual_2027_defend_defend_done` prefix and the host `eventMappings`
-that conclude `check_annual_edition` (`scenarios/awareness_core_17_annual_2027_defend/
+that conclude `check_annual_edition` (`scenarios/ca_annual_2027_defend/
 scenario.json.erb:442-445`). The generator takes a required output folder with no default into
 `scenarios/`, so it is safe by construction.
 

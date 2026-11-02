@@ -2,7 +2,7 @@
 
 Date: 2026-10-22. Reviewer: Opus 5.5, read-only. Kind of game: the awareness product (design 11), a staff-training line for non-technical employees, judged on short attack-then-defend episodes, no blame, a neutral corporate skin, and matched pre and post checks. Not SAFETYNET and not the student lab.
 
-Scope read: design 11, `AGENTS.md`, `README_scenario_design.md` "Awareness episodes" (lines 2775 to 3176); the six full shells `scenarios/awareness_e{1..6}_*`; the seven defend-only shells including `awareness_e7_voice_ceo_defend`; the 24 check shells; the fragments `planning_notes/phishing_and_social_engineering/awareness/e1` to `e7` (`attack.json`, `defend.json`). Engine files were read only where a finding depends on them (`phish-rules.js`, `triage-flags.js`, the episode runner, Hacktivity's `game_scoring_job.rb`).
+Scope read: design 11, `AGENTS.md`, `README_scenario_design.md` "Awareness episodes" (lines 2775 to 3176); the six full shells `scenarios/awareness_e{1..6}_*`; the seven defend-only shells including `ca07_voice_ceo_defend`; the 24 check shells; the fragments `planning_notes/phishing_and_social_engineering/awareness/e1` to `e7` (`attack.json`, `defend.json`). Engine files were read only where a finding depends on them (`phish-rules.js`, `triage-flags.js`, the episode runner, Hacktivity's `game_scoring_job.rb`).
 
 Static reading only. No browser run, no validator run, no timing.
 

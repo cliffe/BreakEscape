@@ -8,6 +8,15 @@
     },
     "imported": "2026-10-22"
   },
+  "adaeze_okafor": {
+    "character_id": "26b563cf-1945-4ac2-a59f-3d7f27bc40db",
+    "name": "Make portrait for Adaeze Okafor\nA Nigerian-British...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-01"
+  },
   "adrian_tesseract": {
     "character_id": "f23e1d84-4d61-498e-a4eb-e3a29155f5b1",
     "name": "Make portrait for Dr Adrian Tesseract\nA lean, upri...",
@@ -44,6 +53,15 @@
     },
     "imported": "2026-10-17"
   },
+  "agnieszka_duda": {
+    "character_id": "03ffaab8-7a0d-4ef0-8161-d5033f56b9f2",
+    "name": "Make portrait for Agnieszka Duda\nA Polish woman in...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-01"
+  },
   "amy_clarke": {
     "character_id": "32c736ae-0ffa-48eb-b493-3fd0d71c19d0",
     "name": "Make portrait for Amy Clarke\nA white British woman...",
@@ -52,6 +70,15 @@
       "height": 60
     },
     "imported": "2026-10-03"
+  },
+  "anjali_rao": {
+    "character_id": "95175ffd-f491-4452-af90-1c11ec5de614",
+    "name": "Make portrait for Anjali Rao\nAn Indian woman of ab...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-01"
   },
   "athena": {
     "character_id": "ddf2599c-c2e8-41f3-a023-18aa2e74561b",
@@ -70,6 +97,15 @@
       "height": 60
     },
     "imported": "2026-09-26"
+  },
+  "chidi_okeke": {
+    "character_id": "fc63077f-7737-4610-ae6a-3e9250ad8e24",
+    "name": "Make portrait for Chidi Okeke\nA Nigerian-British m...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-01"
   },
   "cliffe_schreuders": {
     "character_id": "6006155e-74f3-487c-847e-aec2dfa41512",
@@ -106,6 +142,15 @@
       "height": 60
     },
     "imported": "2026-10-12"
+  },
+  "darren_price": {
+    "character_id": "65616a55-1dc3-4f5f-bf0e-4a4405c5e81f",
+    "name": "Make portrait for Darren Price\nA white British man...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-01"
   },
   "david_osei": {
     "character_id": "ca153084-c850-42c8-85fc-8ec685ec6bdb",
@@ -151,6 +196,15 @@
       "height": 60
     },
     "imported": "2026-10-22"
+  },
+  "fatima_begum": {
+    "character_id": "35f2172d-7b82-4971-a00c-416241791ffe",
+    "name": "Make portrait for Fatima Begum\nA British Banglades...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-01"
   },
   "female_blowse_v2": {
     "character_id": "df960bf2-20c6-4600-b725-44846cb0337f",
@@ -279,6 +333,15 @@
     },
     "imported": "2026-09-26"
   },
+  "graham_whitfield": {
+    "character_id": "1514a72f-c6a0-4054-9ce9-0fd7d6136341",
+    "name": "Make portrait for Graham Whitfield\nA white British...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-01"
+  },
   "halina_kowalczyk": {
     "character_id": "a444c74f-b8ea-4d0a-b26e-c9e0eb98c29d",
     "name": "Make portrait for Agent Halina Kowalczyk\nA sturdy,...",
@@ -314,6 +377,15 @@
       "height": 60
     },
     "imported": "2026-10-03"
+  },
+  "ibrahim_diallo": {
+    "character_id": "2970778d-a8b5-424d-8966-3baabcfd5e76",
+    "name": "Make portrait for Ibrahim Diallo\nA French-Senegale...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-01"
   },
   "imran_siddiqui": {
     "character_id": "0f14b104-c083-4b06-adf4-d28592be8965",
@@ -351,6 +423,33 @@
     },
     "imported": "2026-10-22"
   },
+  "joanne_pell": {
+    "character_id": "c2f1526f-636e-4e98-81da-bbdb6bb220d6",
+    "name": "Make portrait for Joanne Pell\nA white British woma...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-01"
+  },
+  "julian_sallow": {
+    "character_id": "8474d33e-e390-48aa-ba03-52f5ec5277e5",
+    "name": "Make portrait for Julian Sallow\nA Black British ma...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-01"
+  },
+  "jun_watanabe": {
+    "character_id": "d9c29050-2563-4f12-bd44-9ad050d06fd3",
+    "name": "Make portrait for Jun Watanabe\nA Japanese-British ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-01"
+  },
   "junior_analyst": {
     "character_id": "83c3edaa-ea1c-4130-a310-64adf6dd3713",
     "name": "Make portrait for Junior Analyst\nA British-Indian ...",
@@ -377,6 +476,15 @@
       "height": 60
     },
     "imported": "2026-10-22"
+  },
+  "lerato_dlamini": {
+    "character_id": "cfc36f50-e24a-4f9f-b361-1b40de1c4e1b",
+    "name": "Make portrait for Lerato Dlamini\nA Black South Afr...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-01"
   },
   "lisa_park": {
     "character_id": "d652c8a0-906c-4762-9679-b0ac0af08855",
@@ -486,6 +594,15 @@
       "height": 60
     },
     "imported": "2026-10-13"
+  },
+  "niamh_doherty": {
+    "character_id": "82795d92-3115-4309-9692-993ae4b6f77e",
+    "name": "Make portrait for Niamh Doherty\nA Northern Irish w...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-01"
   },
   "nightshade": {
     "character_id": "d363cc74-5990-4eb9-b65f-95483c28c1e9",
@@ -694,6 +811,15 @@
     },
     "imported": "2026-10-22"
   },
+  "sofia_marchetti": {
+    "character_id": "ec8cba6e-c9ed-4139-b205-bcaaeff49339",
+    "name": "Make portrait for Sofia Marchetti\nAn Italian-Briti...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-01"
+  },
   "terry_mott": {
     "character_id": "f00ed76b-8cfd-4591-9fc7-367dd354af70",
     "name": "Make portrait for Terry Mott\nA Black British night...",
@@ -702,6 +828,15 @@
       "height": 60
     },
     "imported": "2026-10-12"
+  },
+  "thandiwe_moyo": {
+    "character_id": "dc685385-ce61-4852-9d8c-a4d2e93f223b",
+    "name": "Make portrait for Thandiwe Moyo\nA Zimbabwean-Briti...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-01"
   },
   "the_architect": {
     "character_id": "53bd1c77-eaad-4877-82fc-cd649cb0f0ef",
@@ -774,5 +909,14 @@
       "height": 60
     },
     "imported": "2026-10-22"
+  },
+  "yasmin_chaudhry": {
+    "character_id": "e6f5446c-97c2-4f28-b33b-af3a6aa8ed2b",
+    "name": "Make portrait for Yasmin Chaudhry\nA British Pakist...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-01"
   }
 }

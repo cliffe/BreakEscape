@@ -1,6 +1,6 @@
 # E18 "Credential attacks at scale" — Blind playtest B2
 
-Second blind run. Episode: `awareness_e18_credential_attacks_at_scale` (full) and `_defend` (defend-only). Tester read only the playtest skill, AGENTS.md Housekeeping, and what a player sees on screen. Nothing in `scenarios/`, no reviews, no earlier reports.
+Second blind run. Episode: `ca18_credential_attacks_at_scale` (full) and `_defend` (defend-only). Tester read only the playtest skill, AGENTS.md Housekeeping, and what a player sees on screen. Nothing in `scenarios/`, no reviews, no earlier reports.
 
 - Run type: blind. Questions answered: plumbing + unexpected-behaviour + "does it teach / read fairly".
 - Server: keyless :3001, headless (machine load ~18, so timings are estimated at a human reading pace, not measured wall-clock).

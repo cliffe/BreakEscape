@@ -1,7 +1,7 @@
 # E8 "After the click": blind playtest B2 (second blind run)
 
 Type: blind run, fresh tester, no prior reports read. Keyless server :3001, headless (load average about 3, so timings are fair, but see the note on times).
-Episode: `awareness_e8_after_the_click` (full, twice) and `awareness_e8_after_the_click_defend` (once).
+Episode: `ca08_after_the_click` (full, twice) and `ca08_after_the_click_defend` (once).
 
 Session logs (kept outside the repo, scratchpad `aw2/blind-e8-b2/`):
 - Persona 1, full, game 5122: `p1-session.jsonl`

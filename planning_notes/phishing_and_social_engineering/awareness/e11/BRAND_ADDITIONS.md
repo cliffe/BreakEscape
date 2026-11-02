@@ -26,7 +26,7 @@ Ages are bands, for the concept prompts. All fictional; every address ends `.exa
 | Martin Fletcher | Sales Director | 50s, white, Manchester | `martin.fletcher@carrholme.example` | The marketing-export sandbox beat (`marketing_export`). Named on screen, not a defend-set sender. |
 | Sam Whitaker | Payroll Officer | 30s, British Caribbean | `sam.whitaker@carrholme.example` | The correct recipient of the overtime sheet (sandbox `overtime_sheet`). Named on screen, not a sender. |
 | Sam Whitlow | Manager, Hollinsbrook House (client care home, `hollinsbrookhouse.example`) | 50s, white, Yorkshire | `sam.whitlow@hollinsbrookhouse.example` | The wrong "Sam" the breach goes to; **genuine sender** in defend items 1 (`e11_wrong_sam_breach`) and 6 (`e11_cardigan_update`). |
-| Gareth Hale | Son of a resident (Hollinsbrook House) | 40s, white | `gareth.hale@lintbox.example` (freemail) | **Genuine sender** of the subject access request inside a complaint, defend item 4 (`e11_sar_everything`). |
+| Gareth Hale | Son of a resident (Hollinsbrook House) | 40s, white | `gareth.hale@mailgrove.example` (freemail) | **Genuine sender** of the subject access request inside a complaint, defend item 4 (`e11_sar_everything`). |
 | Wychbourne Court | Client care home (`wychbournecourt.example`) | n/a | `laundry@wychbournecourt.example` | **Genuine sender** of the misdirected care summary (inbound breach), defend item 5 (`e11_wychbourne_inbound`). |
 
 **People named on screen only (no art, no sender address):** Edna Hale (87, Hollinsbrook House, Room 12),
@@ -47,7 +47,7 @@ concept prompts can follow it.
 - `hollinsbrookhouse.example` (Hollinsbrook House, a client care home) and `wychbournecourt.example` (Wychbourne
   Court, a client care home): both fictional clients of Carrholme's Care Laundry line, controllers for their
   own residents' data.
-- `lintbox.example`: existing shared invented freemail from `BRAND_SET.md` (Gareth Hale's address). No new
+- `mailgrove.example`: existing shared invented freemail from `BRAND_SET.md` (Gareth Hale's address). No new
   freemail added.
 
 ## Name-clash search (grep across `scenarios/`, `planning_notes/`, `docs/`, `public/break_escape/js/`, 2026-10-29)
@@ -64,7 +64,7 @@ concept prompts can follow it.
     check-mission host **Graham Whitfield** (`BRAND_SET.md` P7-J). Resolved by the brief; confirmed still true.
 - **RESOLVED CLASH, DC Hendry -> DC Rowley.** The brief named the police-impersonation caller "DC Hendry".
   **"Hendry" is already a built character:** **Pauline Hendry, Payroll**, a genuine colleague in the built
-  check forms (`awareness_pre_general_ba`, `awareness_post_general_ba`, `awareness_pre_helpdesk_ba`). Reusing
+  check forms (`awareness_pre_general_ba`, `awareness_post_general_ba`, `ca_pre_helpdesk_ba`). Reusing
   the surname for a fraudster in the same product line is a confusion, and combined with E11's own on-screen
   resident "Pauline Grant" it doubles up oddly. I renamed the caller to **DC Rowley** ("Rowley" had no hits
   anywhere in the tree on 2026-10-29). North Pennine Police is kept (the word "Pennine" is shared with the E1
@@ -72,7 +72,7 @@ concept prompts can follow it.
   kind of entity, not a name clash).
 - **RECORDED NEAR-MISS, Hale.** E11 introduces **Gareth Hale** (genuine, a resident's son) and **Edna Hale**
   (on-screen resident) at Carrholme. **"Hale" is already in the built E3 set as Marcus Hale**, the Vanteq
-  Systems remote-access fraudster at Quayholt (`awareness_e3_helpdesk_reset`; `BRAND_SET.md`'s WP-15 note says
+  Systems remote-access fraudster at Quayholt (`ca03_helpdesk_reset`; `BRAND_SET.md`'s WP-15 note says
   "No one else is named Hale"). Different first names, different people, different companies and episodes
   (E3 fraudster at Quayholt vs E11 genuine family member at Carrholme). Treated as a near-miss, recorded and
   not renamed, the same way the project handled Marcus Webb / Marcus Hale. **For the orchestrator:** if a

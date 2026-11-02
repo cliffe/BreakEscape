@@ -1,0 +1,13 @@
+{
+  "key": "a0bbe86cc60006da63072e3fcee7be50",
+  "npc": "darren_price",
+  "text": "Back again. Ten new items on the kiosk, same idea as before. If you did the first check, the end screen shows how they compare.",
+  "voice": "Orus",
+  "style": "Quayholt's security awareness lead, in his 50s, measured and dry. Speak with a consistent Bristol and West Country accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca_post_general_v2_ba",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:18:53Z"
+}

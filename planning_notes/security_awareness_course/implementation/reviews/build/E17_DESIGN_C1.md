@@ -8,7 +8,7 @@ awareness kind, and the E8 pilot reviews in `reviews/build/` for format and bar.
 user decision**: one shell, no attack half, no `mistake` stage, no flip; the one shell carries the whole
 episode (the "can I?" sort drill plus the scored six-item triage set).
 
-Scope read end to end: the one shell `scenarios/awareness_e17_acceptable_use_defend/{scenario.json.erb,
+Scope read end to end: the one shell `scenarios/ca17_acceptable_use_defend/{scenario.json.erb,
 mission.json, ink/nilesh_solanki.ink}`; the fragments `planning_notes/phishing_and_social_engineering/
 awareness/e17/{defend.json, full_only.json}`; the spec `.../episodes/E17_acceptable_use.md`; the module
 `modules/core_16_acceptable_use_and_your_responsibilities/concepts.md`; and the ENG-11 sort-drill engine
@@ -138,7 +138,7 @@ the shipped wording as drift. No shipped file affected.
   own Tarrowby default answer and reason inline; the profile string is stored in the result for
   measurement (`full_only.json` `_notes`). Correct and matches the engine.
 - **Parity test.** `social-awareness-fragment-erb-parity.test.mjs` fails one subtest, but on
-  `awareness_e14_social_media` (a different, in-flight episode not registered), not E17. E17 has no full
+  `ca14_social_media` (a different, in-flight episode not registered), not E17. E17 has no full
   erb, so it is correctly outside the full-episode parity set; I diffed its fragment/`full_only` against
   the shell by hand instead and they match field for field.
 - **Pre-ship web search still owed** (spec §20): the invented lure sender domains
@@ -165,7 +165,7 @@ target and, if the budget allows, one timed run to replace the 12-minute estimat
 Rulings applied (BUILD_LOG 2026-10-29):
 
 - **MI1 (duration).** No change: the 12-minute target governs, and the shell/mission/description already agree. Nothing to fix.
-- **MI2 (monitoring panel).** Fixed. The "What's monitored, and the limits" concept panel now states the strongest limit explicitly: ".. the law sets limits that protect you: the content of your messages is looked at only in rare, serious cases, and you'd be told first. If monitoring worries you, ask the DPO." Changed in `e17/defend.json` (the panel) and regenerated into the one shell `awareness_e17_acceptable_use_defend/scenario.json.erb`. The genuine triage item `e17_monitoring_notice` was left as it was (the finding was panel-only).
+- **MI2 (monitoring panel).** Fixed. The "What's monitored, and the limits" concept panel now states the strongest limit explicitly: ".. the law sets limits that protect you: the content of your messages is looked at only in rare, serious cases, and you'd be told first. If monitoring worries you, ask the DPO." Changed in `e17/defend.json` (the panel) and regenerated into the one shell `ca17_acceptable_use_defend/scenario.json.erb`. The genuine triage item `e17_monitoring_notice` was left as it was (the finding was panel-only).
 - **MI3 (stale spec table).** Fixed. The §11a card bank in `episodes/E17_acceptable_use.md` was synced to the shipped reasons: S03/S14/S20 name "ask the service desk", S11 adds "first", S12 names "ask your manager, then the service desk", S16 says "proper access". Bin assignments and the seven locked answers are unchanged, and a dated note records the sync below the table. No shipped file changed for MI3.
 
 Checks after the fix: `validate_scenario.rb --strict-social --no-graph --skip-ink` on the shell passes, exit 0, no social errors/warnings (only the 22 generic m01 suggestions). `dialoguelint.mjs` clean (person lines=3, max=27, no rule hits; no ink was touched). Rule-of-thumb guard passes for this shell. Parity: E17 is defend-only, correctly outside the parity set. Bridge `e17-defend` on the keyless :3001 server (Node 24): **14/14 PASS** (game 4799). Changed spoken/learner-facing line: the monitoring concept panel text only.

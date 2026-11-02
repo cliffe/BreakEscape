@@ -211,7 +211,7 @@ Wave is the build wave in section 5 (0 foundations, 1 the MVP course, 2 the core
     },
     "addressBook": [
       { "name": "Field Teams", "address": "fieldteams@brightwellfoods.example", "group": true },
-      { "name": "Martin Fletcher (personal)", "address": "martin.fletcher@lintbox.example", "personal": true }
+      { "name": "Martin Fletcher (personal)", "address": "martin.fletcher@mailgrove.example", "personal": true }
     ],
     "compose": [{ "id": "send_schedule", "to": ["fieldteams@brightwellfoods.example"], "mustAttach": "schedule", "completesTask": "send_schedule" }],
     "sendChecks": [{ "id": "personal_address", "when": { "recipientTag": "personal" }, "note": "This address is outside {org.name}." }]

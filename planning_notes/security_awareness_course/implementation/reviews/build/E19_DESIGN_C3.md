@@ -13,7 +13,7 @@ awareness kind, and the prior E19 reviews (`E19_DESIGN_C1.md`, `E19_DESIGN_C2_DI
 (`E19_BLIND_B1.md`, `E19_BLIND_B2.md`) and the shared playtest (`E19_E20_PLAYTEST_P1.md`), plus the
 `BUILD_LOG.md` E19 lines and the engine batch 9-11 history.
 
-Scope read end to end: both shells `scenarios/awareness_e19_malware_and_updates{,_defend}/
+Scope read end to end: both shells `scenarios/ca19_malware_and_updates{,_defend}/
 {scenario.json.erb, ink/anjali_rao.ink}`; the spec `.../episodes/E19_malware_and_updates.md`; and the engine
 the findings depend on (`inbox-triage/inbox-triage-minigame.js`, `inbox-triage/triage-scoring.js`,
 `episode-runner/{episode-runner-minigame.js,episode-model.js,consequence-sandbox.js,debrief-view.js}`).

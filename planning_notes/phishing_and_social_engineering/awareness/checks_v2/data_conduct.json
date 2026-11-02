@@ -9,13 +9,13 @@
       "Trevor Oakes: an outside 'IT vendor' an impostor uses in data_conduct_form_b item 2 (itrollout-support.example). Genuine in neither form",
       "Kenny Dolan: a former member of staff whose voice an impostor uses on a mobile in data_conduct_form_a item 4 (the call). Genuine in neither form",
       "Deborah Vale: a colleague an impostor claims to be on a mobile in data_conduct_form_b item 4 (the call). Genuine in neither form",
-      "Carla Mendes: a 'recruiter' on freemail an impostor uses in data_conduct_form_a item 6 (lintbox.example). Genuine in neither form",
+      "Carla Mendes: a 'recruiter' on freemail an impostor uses in data_conduct_form_a item 6 (mailgrove.example). Genuine in neither form",
       "Neil Garrity: a 'journalist' on freemail an impostor uses in data_conduct_form_b item 6 (hastypost.example). Genuine in neither form",
       "Gavin Shaw: an internal-sounding name an impostor uses on an outside inbox in data_conduct_form_a item 8 (larchmail.example). Genuine in neither form",
       "Rhona Baxter: an internal-sounding name an impostor uses on an outside inbox in data_conduct_form_b item 8 (cobweb-mail.example). Genuine in neither form"
     ],
     "genuineSenders": "Carrholme genuine senders use carrholme.example: Shauna Campbell, Sam Whitaker, Martin Fletcher, Elaine Prentice, Tomasz Wisniewski, and the team addresses comms@, people@, dpo@ and records@carrholme.example.",
-    "lookalikes": "This pair introduces no carrholme look-alike domain on screen (E11 owns carrholme-payroll.example etc.). The four phish instead sit on outside firms/inboxes the impostor owns, so their automatic checks pass: northgate-audit.example (new), itrollout-support.example (roster), lintbox.example (roster), hastypost.example (roster), larchmail.example (roster) and cobweb-mail.example (new). The item 8 reply-to points to a further outside inbox again.",
+    "lookalikes": "This pair introduces no carrholme look-alike domain on screen (E11 owns carrholme-payroll.example etc.). The four phish instead sit on outside firms/inboxes the impostor owns, so their automatic checks pass: northgate-audit.example (new), itrollout-support.example (roster), mailgrove.example (roster), hastypost.example (roster), larchmail.example (roster) and cobweb-mail.example (new). The item 8 reply-to points to a further outside inbox again.",
     "nameCheck": "Elaine Prentice, Yusuf Demir, Grant Faulkner, Trevor Oakes, Kenny Dolan, Deborah Vale, Carla Mendes, Neil Garrity, Gavin Shaw, Rhona Baxter, northgate-audit.example and cobweb-mail.example: 0 hits in scenarios, planning_notes and docs on 2026-10-29. Faulkner and Garrity surnames chosen after Mercer and Brandt turned out to be built character surnames."
   },
   "_formPairing": {
@@ -141,17 +141,17 @@
         },
         {
           "id": "dca_recruiter_probe",
-          "from": { "name": "Carla Mendes", "address": "carla.mendes.hire@lintbox.example" },
+          "from": { "name": "Carla Mendes", "address": "carla.mendes.hire@mailgrove.example" },
           "to": "you@carrholme.example",
           "subject": "Quick one about the team structure",
           "time": "11:40",
           "body": "Hi,\nI'm a recruiter placing candidates in your sector and I'd love to understand Carrholme better. Could you tell me who heads each team, who reports to whom, and when your managers are usually out of the office? It really helps me pitch the right roles.\nThanks so much,\nCarla",
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "lintbox.example", "replyTo": "carla.mendes.hire@lintbox.example" },
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "mailgrove.example", "replyTo": "carla.mendes.hire@mailgrove.example" },
           "truth": {
             "isPhish": true,
             "flags": ["senderTrust", "pretextRelevant"],
             "perFlagNote": {
-              "senderTrust": "A stranger writing from a personal inbox at lintbox.example, not a contact Carrholme deals with. A friendly tone isn't a reason to trust a name you don't know.",
+              "senderTrust": "A stranger writing from a personal inbox at mailgrove.example, not a contact Carrholme deals with. A friendly tone isn't a reason to trust a name you don't know.",
               "pretextRelevant": "Who reports to whom and when managers are away is not something you'd tell an outsider. It's exactly what someone building an impersonation wants to know."
             },
             "ifTrusted": "An org chart and a diary of when managers are out is the map an attacker uses to impersonate the right person at the right moment. 'Recruiter' is just the cover story.",

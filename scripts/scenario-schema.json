@@ -2704,6 +2704,7 @@
             "noBlameLine": {"type": "string", "description": "The debrief's no-blame line. It shows only after a wrong verdict (a phish not caught, a real one deleted or complied with), never after missed ticks alone (P5-5/P5-15); after a critical miss noBlameLineCritical stands in for it"},
             "noBlameLineCritical": {"type": "string", "description": "The no-blame line after a critical miss (the result has just said what it cost), so it must not claim nobody is marked down. Default: the engine's own line"},
             "mondayCard": {"type": "string"},
+            "habitLine": {"type": "string", "description": "Launch pick (2026-11-01): a short per-episode habit line drawn under the shared rule-of-thumb box (debrief-view.js .aw-habit-line). One action in plain English. Set only on episodes whose lesson is not an incoming message (E15, E17, E20, E11), where the shared money-and-codes rule reads off-topic; absent elsewhere, so the shared line stands alone"},
             "defendOnly": {"type": "string"},
             "allRight": {"type": "string", "description": "The debrief line on a round with nothing to review (default 'You read every one of these the right way. Nothing to pick over here.'). Honoured by debrief-view.js; add here so an episode can set it (E19 B1)"},
             "allPhishRight": {"type": "string", "description": "The debrief line on a clean round where a real one was reported (default 'Every phish was caught, with every tell named.'). For a non-phishing set where 'phish' is wrong (batch-6 C2)"},

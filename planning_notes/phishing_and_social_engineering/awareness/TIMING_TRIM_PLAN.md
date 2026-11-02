@@ -89,7 +89,7 @@ E3's scored set is 1 push + 4 calls (2 impostor, 2 genuine; `11` section 3.2). D
 caller, `e3_call_new_starter` (Chen Jiayi)**.
 
 - **Where:** `e3/defend.json:576-594` (the object in `awarenessEpisode.defend.calls`) and shell
-  `scenarios/awareness_e3_helpdesk_reset/scenario.json.erb:376-411`.
+  `scenarios/ca03_helpdesk_reset/scenario.json.erb:376-411`.
 - **Words saved:** 94 (62 read + 32 feedback) and one decision. ~0.55 min.
 - **Why this one:** it is the lightest item, and every scored tell survives the drop. The set's four
   tells are `unrequested_mfa_push` (push), `vish_callback_pressure` and `borrowed_authority`

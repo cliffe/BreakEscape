@@ -8,9 +8,9 @@ Run date 2026-10-29. Keyless server :3001, headless, load average about 10 (harn
 
 | Run | Game id | Started (UTC) | Session log |
 | --- | --- | --- | --- |
-| E15 full (awareness_e15_shadow_it) | 4879 | 19:41:45 | /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/2133f16a-52c8-44a8-bdee-8461b326389a/scratchpad/aw2/pt-e15-e16/e15-full-session.jsonl |
+| E15 full (ca15_shadow_it) | 4879 | 19:41:45 | /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/2133f16a-52c8-44a8-bdee-8461b326389a/scratchpad/aw2/pt-e15-e16/e15-full-session.jsonl |
 | E15 defend-only (_defend) | 4880 | 19:51:41 | /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/2133f16a-52c8-44a8-bdee-8461b326389a/scratchpad/aw2/pt-e15-e16/e15-defend-session.jsonl |
-| E16 full (awareness_e16_insider_risk) | 4881 | 19:53:12 | /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/2133f16a-52c8-44a8-bdee-8461b326389a/scratchpad/aw2/pt-e15-e16/e16-full-session.jsonl |
+| E16 full (ca16_insider_risk) | 4881 | 19:53:12 | /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/2133f16a-52c8-44a8-bdee-8461b326389a/scratchpad/aw2/pt-e15-e16/e16-full-session.jsonl |
 | E16 defend-only (_defend) | 4882 | 20:03:26 | /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/2133f16a-52c8-44a8-bdee-8461b326389a/scratchpad/aw2/pt-e15-e16/e16-defend-session.jsonl |
 | E16 defend (font sweep only, no play-through) | 4920 | 20:05 | /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/2133f16a-52c8-44a8-bdee-8461b326389a/scratchpad/aw2/pt-e15-e16/e16-fonts-session.jsonl |
 

@@ -1,0 +1,13 @@
+{
+  "key": "f717edb39b371d4c5d22e3ad71fdac13",
+  "npc": "julian_sallow",
+  "text": "Back with us. Ten more on the kiosk, the same sort as before. If you did the first, the end screen sets them side by side.",
+  "voice": "Rasalgethi",
+  "style": "Merrin & Sallow's co-founding partner, in his mid 60s, calm, measured and a little wry; sits on planning panels. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca_post_executive_ba",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:18:01Z"
+}

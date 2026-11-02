@@ -243,17 +243,17 @@
         },
         {
           "id": "ma_colin_personal_number",
-          "from": { "name": "Colin Mather", "address": "colin.mather.tby@lintbox.example" },
+          "from": { "name": "Colin Mather", "address": "colin.mather.tby@mailgrove.example" },
           "to": "you@tarrowby.example",
           "subject": "Quick favour, text me",
           "time": "08:12",
           "body": "Are you on shift? I'm stuck with a customer and need a favour sorted before 12. Text me on my personal number, 07700 900871, not my work one, and keep it between us for now.\nColin",
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "lintbox.example", "replyTo": "colin.mather.tby@lintbox.example" },
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "mailgrove.example", "replyTo": "colin.mather.tby@mailgrove.example" },
           "truth": {
             "isPhish": true,
             "flags": ["senderTrust"],
             "perFlagNote": {
-              "senderTrust": "The warehouse manager's name on a personal inbox at lintbox.example, not tarrowby.example"
+              "senderTrust": "The warehouse manager's name on a personal inbox at mailgrove.example, not tarrowby.example"
             },
             "ifTrusted": "Once you text that number, the 'favour' follows: usually gift cards or a payment, from someone who isn't Colin.",
             "reportReply": "Thanks. Colin didn't send it. His only address is on tarrowby.example."

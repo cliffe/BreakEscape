@@ -119,7 +119,7 @@ it everywhere, not keep it in the fragments.)
 replay" (flipLandedNoTells). Round 6 (P4-7) deduped only the E2 and E4 **full erbs**; the E1, E5, E6, E7
 full erbs and **all** the fragments still echo the heading.
 
-Current (E1 full erb `awareness_e1_invoice_fraud/scenario.json.erb:312`, fragment `e1/defend.json:901`):
+Current (E1 full erb `ca01_invoice_fraud/scenario.json.erb:312`, fragment `e1/defend.json:901`):
 > "Your email didn't land this time, so there's nothing of yours to replay from the other side. The
 > defence is the same either way: next, the same kind of message turns up in a payments inbox, and
 > you're the one reading it."
@@ -149,7 +149,7 @@ On-screen, **not voiced.**
 - E7 (voice): "Nothing in it tripped a check this time, so there's nothing to pick over."
 
 ### C3-4 — E7 full brief is hard to parse in one read (learner-facing)
-`scenarios/awareness_e7_voice_ceo/scenario.json.erb:308` (and the matching fragment once synced):
+`scenarios/ca07_voice_ceo/scenario.json.erb:308` (and the matching fragment once synced):
 > "First you're on the red team: write the email in the name of Brightwell's chief executive, Ravinder
 > Sandhu, the message that would go with a cloned-voice call to accounts payable, asking for something he
 > would never ask for."

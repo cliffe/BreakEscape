@@ -73,14 +73,150 @@ def clean_set(set_id, stage=None, comparison=None):
     return s
 
 
+# Hosts that now have their own committed sprite art (v2 pipeline, 2026-11-01);
+# these emit their own key, others keep the shared generic placeholder sprite.
+OWN_ART_HOSTS = {
+    'anjali_rao', 'niamh_doherty', 'darren_price', 'julian_sallow', 'jun_watanabe',
+    'graham_whitfield', 'adaeze_okafor', 'fatima_begum', 'thandiwe_moyo', 'chidi_okeke',
+    'agnieszka_duda', 'yasmin_chaudhry', 'joanne_pell', 'sofia_marchetti',
+    'ibrahim_diallo', 'lerato_dlamini',
+}
+
+
+VOICES = {
+    "adaeze_okafor": {
+        "name": "Gacrux",
+        "style": "Brightwell's finance manager, in her 40s, who came up through accounts payable, warm and direct. Speak with a consistent British accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+        "language": "en-GB"
+    },
+    "gwen_pritchard": {
+        "name": "Sulafat",
+        "style": "Brightwell's IT service desk lead, in her late 30s, friendly and practical. Speak with a consistent South Wales accent throughout — do not shift to any other accent.",
+        "language": "en-GB"
+    },
+    "agnieszka_duda": {
+        "name": "Callirrhoe",
+        "style": "Brightwell's part-time payroll officer, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout — do not shift to any other accent.",
+        "language": "en-GB"
+    },
+    "graham_whitfield": {
+        "name": "Umbriel",
+        "style": "Brightwell's finance training lead, in his early 60s, unhurried and kind; a neutral proctor for the year-end edition. Speak with a consistent West Yorkshire accent from Halifax throughout — do not shift to any other accent.",
+        "language": "en-GB"
+    },
+    "joanne_pell": {
+        "name": "Zephyr",
+        "style": "Brightwell's learning and development coordinator, in her late 40s, brisk and friendly. Speak with a consistent East Midlands accent from Leicester throughout — do not shift to any other accent.",
+        "language": "en-GB"
+    },
+    "nilesh_solanki": {
+        "name": "Iapetus",
+        "style": "Tarrowby's IT service desk analyst, in his 30s, patient and helpful with an \"ask first\" manner. Speak with a consistent East Midlands accent from Leicester throughout — do not shift to any other accent.",
+        "language": "en-GB"
+    },
+    "fatima_begum": {
+        "name": "Vindemiatrix",
+        "style": "Tarrowby's recruitment lead and owner of the recruitment inbox, in her 30s, friendly and organised. Speak with a consistent Yorkshire accent throughout — do not shift to any other accent.",
+        "language": "en-GB"
+    },
+    "chidi_okeke": {
+        "name": "Zubenelgenubi",
+        "style": "Tarrowby's fleet coordinator at the Shipley depot, in his 40s, easy-going and knows every driver. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+        "language": "en-GB"
+    },
+    "zainab_hussain": {
+        "name": "Achernar",
+        "style": "Tarrowby's field service engineer, in her 30s, steady and down-to-earth; eight years working from vans and trains. Speak with a consistent northern English accent throughout — do not shift to any other accent.",
+        "language": "en-GB"
+    },
+    "jun_watanabe": {
+        "name": "Puck",
+        "style": "Tarrowby's HR assistant, in his early 20s, in his first job, eager and polite. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+        "language": "en-GB"
+    },
+    "lerato_dlamini": {
+        "name": "Gacrux",
+        "style": "Tarrowby's health and safety adviser, in her 30s, confident and direct; runs the depot toolbox talks. Speak with a consistent South African accent from Durban throughout — do not shift to any other accent.",
+        "language": "en-GB"
+    },
+    "ibrahim_diallo": {
+        "name": "Sadaltager",
+        "style": "Tarrowby's IT support lead, in his 40s, patient and unhurried; fifteen years in Leeds. Speak with a consistent English accent with a light French-West African inflection, now settled in Leeds, throughout — do not shift to any other accent.",
+        "language": "en-GB"
+    },
+    "anjali_rao": {
+        "name": "Kore",
+        "style": "Quayholt's information security analyst, about 35, who moved to the UK from Bengaluru; calm and attentive. Speak with a consistent educated Indian English accent, softened by years in the UK, throughout — do not shift to any other accent.",
+        "language": "en-GB"
+    },
+    "niamh_doherty": {
+        "name": "Leda",
+        "style": "Quayholt's internal communications officer and IT trainer, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout — do not shift to any other accent.",
+        "language": "en-GB"
+    },
+    "darren_price": {
+        "name": "Orus",
+        "style": "Quayholt's security awareness lead, in his 50s, measured and dry. Speak with a consistent Bristol and West Country accent throughout — do not shift to any other accent.",
+        "language": "en-GB"
+    },
+    "sofia_marchetti": {
+        "name": "Despina",
+        "style": "Quayholt's HR adviser, in her 30s, warm and approachable; second-generation Italian-British. Speak with a consistent southern English accent with a light Italian-British lilt throughout — do not shift to any other accent.",
+        "language": "en-GB"
+    },
+    "julian_sallow": {
+        "name": "Rasalgethi",
+        "style": "Merrin & Sallow's co-founding partner, in his mid 60s, calm, measured and a little wry; sits on planning panels. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+        "language": "en-GB"
+    },
+    "yasmin_chaudhry": {
+        "name": "Laomedeia",
+        "style": "Merrin & Sallow's finance controller, in her 40s, measured and precise; the person a PA should ring about money. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+        "language": "en-GB"
+    },
+    "thandiwe_moyo": {
+        "name": "Pulcherrima",
+        "style": "Merrin & Sallow's studio manager, in her 30s, calm and capable. Speak with a consistent southern English accent with a light Zimbabwean inflection throughout — do not shift to any other accent.",
+        "language": "en-GB"
+    },
+    "delphine_reception": {
+        "name": "Despina",
+        "style": "Merrin & Sallow's front-of-house coordinator, in her 30s, poised and polite under a little pressure at the desk. Speak with a consistent southern English accent with a light Mediterranean lilt throughout — do not shift to any other accent.",
+        "language": "en-GB"
+    },
+    "lorna_easton": {
+        "name": "Erinome",
+        "style": "Merrin & Sallow's reception and facilities lead, in her 40s, warm and reassuring. Speak with a consistent north-west England accent from Lancashire throughout — do not shift to any other accent.",
+        "language": "en-GB"
+    },
+    "ama_owusu": {
+        "name": "Autonoe",
+        "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+        "language": "en-GB"
+    },
+    "tomasz_wisniewski": {
+        "name": "Algieba",
+        "style": "Carrholme's Data Protection Officer, in his 50s, careful and reassuring; in the UK 25 years. Speak with a consistent, lightly Polish-accented English, softened by long years in the UK, throughout — do not shift to any other accent.",
+        "language": "en-GB"
+    },
+    "yusuf_demir": {
+        "name": "Alnilam",
+        "style": "Carrholme's information security lead, in his 40s, steady and practical. Speak with a consistent British accent throughout — do not shift to any other accent.",
+        "language": "en-GB"
+    }
+}
+
+
 def host_npc(host, done_global, task_id, ink_path):
-    key = host['sprite']
+    key = host['id'] if host['id'] in OWN_ART_HOSTS else host['sprite']
+    sheet = host['id'] if host['id'] in OWN_ART_HOSTS else f"{host['sprite']}_v2"
     return {
         'id': host['id'],
+        'voice': VOICES[host['id']],
         'displayName': host['displayName'],
         'npcType': 'person',
         'position': copy.deepcopy(training_room.HOST_POSITION),
-        'spriteSheet': f'{key}_v2',
+        'spriteSheet': sheet,
         'spriteTalk': f'assets/characters/{key}_talk.png',
         'spriteVisemes': f'assets/characters/{key}_visemes.png',
         'storyPath': ink_path,
@@ -173,7 +309,7 @@ def brand_block():
 
 
 def defend_only():
-    mission = 'awareness_e1_invoice_fraud_defend'
+    mission = 'ca01_invoice_fraud_defend'
     ep_id = 'e1_invoice_fraud_defend'
     prefix = f'episode_{ep_id}_defend_'
     done = f'{prefix}complete'
@@ -232,7 +368,7 @@ def defend_only():
 
 
 def check(pair, stage):
-    mission = f'awareness_{stage}_finance_{pair}'
+    mission = f'ca_{stage}_finance_{pair}'
     ep_id = f'{stage}_finance_{pair}'
     form = {('ab', 'pre'): 'finance_form_a', ('ab', 'post'): 'finance_form_b',
             ('ba', 'pre'): 'finance_form_b', ('ba', 'post'): 'finance_form_a'}[(pair, stage)]
@@ -257,16 +393,16 @@ def check(pair, stage):
         done: False,
     }
     extra = {}
-    pre_mission = f'awareness_pre_finance_{pair}'
+    pre_mission = f'ca_pre_finance_{pair}'
     if stage == 'pre':
         extra['exportGlobals'] = ['triage_pre_percent', 'triage_pre_reportRate', 'triage_pre_complete']
     else:
         # Imported names are not redeclared (the validator rejects the collision).
         extra['importGlobals'] = [
-            {'from': pre_mission, 'var': 'triage_pre_percent', 'as': 'triage_pre_percent', 'default': 0},
-            {'from': pre_mission, 'var': 'triage_pre_reportRate', 'as': 'triage_pre_reportRate', 'default': 0},
-            {'from': pre_mission, 'var': 'triage_pre_complete', 'as': 'triage_pre_complete', 'default': False},
-            {'from': pre_mission, 'completed': 'pre_check_completed'},
+            {'from': pre_mission, 'prefer': 'earliest', 'var': 'triage_pre_percent', 'as': 'triage_pre_percent', 'default': 0},
+            {'from': pre_mission, 'prefer': 'earliest', 'var': 'triage_pre_reportRate', 'as': 'triage_pre_reportRate', 'default': 0},
+            {'from': pre_mission, 'prefer': 'earliest', 'var': 'triage_pre_complete', 'as': 'triage_pre_complete', 'default': False},
+            {'from': pre_mission, 'prefer': 'earliest', 'completed': 'pre_check_completed'},
         ]
     host = HOSTS['graham' if pair == 'ab' else 'joanne']
     letters = pair.upper()
@@ -278,9 +414,9 @@ def check(pair, stage):
         aim = ('first_check_aim', 'Do the first check', 'Sort ten messages at the training kiosk.')
         task = ('finish_check', 'Finish the first check')
         display = awareness_deploy.check_title('pre', 'finance')
-        desc = (f"A check of about 8 to 10 minutes for finance staff, taken before the awareness episodes (pair {letters}). "
+        desc = ("A check of about 8 to 10 minutes for finance staff, taken before the awareness episodes. "
                 "Ten messages from the payments inbox of Brightwell Foods, a fictional company. The result is kept so the "
-                f"matching after-check (awareness_post_finance_{pair}) can show how the two compare.")
+                "matching final check can show how the two compare.")
         obs = 'A touch-screen kiosk with ten messages from a payments inbox, ready for the first check.'
         ending = success_screen('First check done', 'Your result is saved, ready for the second check to compare with.')
     else:
@@ -290,9 +426,9 @@ def check(pair, stage):
         aim = ('second_check_aim', 'Do the second check', 'Sort ten messages at the training kiosk.')
         task = ('finish_check', 'Finish the second check')
         display = awareness_deploy.check_title('post', 'finance')
-        desc = (f"A check of about 8 to 10 minutes for finance staff, taken after the awareness episodes (pair {letters}). "
-                "Ten new messages from the payments inbox of Brightwell Foods, a fictional company, matched to the "
-                f"first check (awareness_pre_finance_{pair}). The end screen compares the two results when the first check was finished.")
+        desc = ("A check of about 8 to 10 minutes for finance staff, taken after the awareness episodes. "
+                "Ten new messages from the payments inbox of Brightwell Foods, a fictional company, matched to your "
+                "starting check, and the end screen compares the two results once you have done it.")
         obs = 'A touch-screen kiosk with ten messages from a payments inbox, ready for the second check.'
         ending = success_screen('Second check done', 'Thanks for taking the time with it. If you also sat the earlier check, the results are shown side by side.')
     ink_name = f"{host['id'].split('_')[0]}_{stage}"
@@ -315,7 +451,7 @@ def check(pair, stage):
 
 # Top-level titleScreenName (engine batch 14), placed right after scenario_name. Values match the committed
 # shells (owner decision 2026-10-30): checks say Starting check / Final check, defend shells use the episode name.
-TITLE_NAMES = {'awareness_e1_invoice_fraud_defend': 'Invoice fraud'}
+TITLE_NAMES = {'ca01_invoice_fraud_defend': 'Invoice fraud'}
 
 
 def with_title_screen_name(sc, mission):

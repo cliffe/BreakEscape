@@ -42,7 +42,7 @@ Period").
   Anjali Rao, Hana Novak) and the E3 additions (Reuben Ofori).
 - Nearest built episode: E3 (Quayholt, helpdesk/MFA) `awareness/e3/{attack,defend}.json` (the role-swap
   `call` kind and the `mfa`/`push` surfaces) and E4 `awareness/e4/defend.json` (the `triageSets` item
-  shape, the `awarenessEpisode` block, the defend-only split). Shells `scenarios/awareness_e3_helpdesk_reset*/`.
+  shape, the `awarenessEpisode` block, the defend-only split). Shells `scenarios/ca03_helpdesk_reset*/`.
 - Engine: `episode-runner/`, `systems/episode-starter.js`, `awareness-measure.js`, the authenticator
   (`mfa` stage / `push` kind), the inbox-triage defender with `Verify`.
 - Validators as E11 section 2.
@@ -165,7 +165,7 @@ shell carries a single aim (the one-aim design, as E11 section 15a).
   shape): `"spriteSheet": "female_scientist_v2"`, `"spriteTalk": "assets/characters/female_scientist_talk.png"`,
   `"spriteVisemes": "assets/characters/female_scientist_visemes.png"`, `"npcType": "person"`,
   `"id": "anjali_rao"`, `"displayName": "Anjali Rao"`,
-  `"storyPath": "scenarios/awareness_e16_insider_risk/ink/anjali_rao.json"`, `"currentKnot": "start"`,
+  `"storyPath": "scenarios/ca16_insider_risk/ink/anjali_rao.json"`, `"currentKnot": "start"`,
   plus the N16 done-event `eventMappings`. Host art is a placeholder until the PixelLab reset.
 - **Learner avatar** (full erb `player`, as E3): `"spriteSheet": "female_office_worker_v2"`,
   `"spriteTalk": "assets/characters/female_office_worker_talk.png"`.
@@ -203,7 +203,7 @@ section 15a's shape exactly):
 - `globalVariables` for the **full** shell (as E11 section 15a, no `phish_*` or attack-landed global):
   `episode_e16_insider_risk_state: {}`, `se_awareness_records: []`, `episode_e16_insider_risk_defend_percent: 0`,
   `episode_e16_insider_risk_defend_reportRate: 0`, `episode_e16_insider_risk_defend_done: false`,
-  `episode_e16_insider_risk_defend_pass: false`. (`episode_<id>_state` also holds `mistakeChoices` at
+  `episode_e16_insider_risk_complete: false`. (`episode_<id>_state` also holds `mistakeChoices` at
   runtime, cleared on `flip`.)
 - The **defend-only** shell uses the double-suffix prefix (section 13): done global
   `episode_e16_insider_risk_defend_defend_done`, result globals `episode_e16_insider_risk_defend_defend_{percent,reportRate,pass}`,
@@ -230,7 +230,7 @@ section 15a's shape exactly):
   `ui_theme`: "general"; `estimated_duration_minutes`: 15.
 - `cybok`: `[ { "ka": "HF", "topic": "Human Factors", "keywords": ["Insider risk", "Incident reporting", "Access control", "Security awareness"] } ]`.
 
-Top-level erb strings (copy E3's): `scenario_id` `awareness_e16_insider_risk`; `scenario_name` "Insider
+Top-level erb strings (copy E3's): `scenario_id` `ca16_insider_risk`; `scenario_name` "Insider
 risk: a leaver's week"; `scenario_brief` = `strings.brief` (section 8); `endGoal` "Play out the week, then
 sort the messages and raise a concern fairly at the training kiosk."; `version` "1.0"; `disableAttacks`
 true; `startRoom` `training_room`; `startPosition` as E3.
@@ -437,7 +437,7 @@ Writer: this spec only.
 Implementer: `awareness/e16/mistake.json` (the sandbox beats and the `awarenessEpisode` block, no `04`
 target) and `awareness/e16/defend.json` (the `triageSets` entry `e16_leaver_week_inbox`, the
 `_brandAdditions` for the three new Quayholt cast, the `awarenessEpisode` defend/debrief/strings/_defendOnly
-keys, by analogy with `e3/`/`e4/`); shells `scenarios/awareness_e16_insider_risk/` and `.../_defend/`
+keys, by analogy with `e3/`/`e4/`); shells `scenarios/ca16_insider_risk/` and `.../_defend/`
 (one-room `room_aw_quayholt` kiosk, host Anjali, kiosk `{ episodeId }`); the "raise a concern" step as
 ENG-12's `concernForm` config (section 11); `BRAND_SET.md` (Ross Garside, Samira Nawaz, Craig
 Pickering); the `insider_offer` scenario-local tell; ENG-04 schema/validator/parity updates (shared with

@@ -16,15 +16,15 @@ scratch run is `✓ Validation complete!`, no `❌ INVALID`). The ink compiles w
   `briefDone`, `alreadySeen`, `doneGlobal`, `oncePerLearner`). Paste into the shell's
   `social.awarenessEpisode`.
 - `ink/anjali_rao.ink`: the host's one welcome line (hub pattern). Move to
-  `scenarios/awareness_core_00_first_play/ink/anjali_rao.ink`, compile to `anjali_rao.json`, and
+  `scenarios/ca00_first_play/ink/anjali_rao.ink`, compile to `anjali_rao.json`, and
   point the host NPC `storyPath` at the compiled JSON with `currentKnot: "start"`.
 
-## The shell: `scenarios/awareness_core_00_first_play/scenario.json.erb`
+## The shell: `scenarios/ca00_first_play/scenario.json.erb`
 
 Copy the skeleton from a built `awareness_*_defend` shell (or the ENG-10 fixture) and
 `gen_e3_e5_shells.py` `scenario()`. Set:
 
-- `scenario_id: "awareness_core_00_first_play"`, `disableAttacks: true`, `startRoom: "training_room"`.
+- `scenario_id: "ca00_first_play"`, `disableAttacks: true`, `startRoom: "training_room"`.
 - The standard `player` block (reuse the `female_office_worker_v2` learner block the built checks use).
 - One training room `training_room` of type **`room_aw_quayholt`** (the shipped default company), with:
   - the host NPC **Anjali Rao** (`id: "anjali_rao"`, `npcType: "person"`), placeholder sprite until

@@ -1,7 +1,7 @@
 // The password guessing stage `guess` (ENG-02, E9): the episode model's guess branches, the pure guesser
 // model, the password-guesser scene and the runner flow brief -> osint -> guess -> flip. The real runner,
 // scene, flip view, episode model and minigame framework in a jsdom document, on inline fixtures (never a
-// live scenarios/awareness_e* file). Every guess in the fixtures is made up.
+// live scenarios/ca* file). Every guess in the fixtures is made up.
 // Run with: node --test test/js/social-password-guesser.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';

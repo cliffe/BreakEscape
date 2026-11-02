@@ -1,0 +1,13 @@
+{
+  "key": "b625c75faab588d5b5fb325e2b55ba47",
+  "npc": "ibrahim_diallo",
+  "text": "Any time.",
+  "voice": "Sadaltager",
+  "style": "Tarrowby's IT support lead, in his 40s, patient and unhurried; fifteen years in Leeds. Speak with a consistent English accent with a light French-West African inflection, now settled in Leeds, throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca_post_hr_ba",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:19:42Z"
+}

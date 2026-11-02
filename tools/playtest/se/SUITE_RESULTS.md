@@ -23,10 +23,10 @@ Result: 21 of 22 bridges pass (459 of 461 evals). The one failure is a timing ra
 | bridge-5-600 | test_social_slice | 3475 | 9/9 | PASS |
 | bridge-6 | lab_social_engineering | 3477 | 36/36 | PASS |
 | bridge-board-indicators | test_social_board_indicators | 3479 | 13/13 | PASS |
-| bridge-e1-full | awareness_e1_invoice_fraud | 3485 | 12/12 | PASS |
-| bridge-e2-full | awareness_e2_cv_lures | 3486 (rerun alone: 3489) | 10/12 | FAIL |
-| bridge-e4-full | awareness_e4_exec_whaling | 3487 | 12/12 | PASS |
-| bridge-e6-full | awareness_e6_texts_and_qr | 3488 | 14/14 | PASS |
+| bridge-e1-full | ca01_invoice_fraud | 3485 | 12/12 | PASS |
+| bridge-e2-full | ca02_cv_lures | 3486 (rerun alone: 3489) | 10/12 | FAIL |
+| bridge-e4-full | ca04_exec_whaling | 3487 | 12/12 | PASS |
+| bridge-e6-full | ca06_texts_and_qr | 3488 | 14/14 | PASS |
 | bridge-freetext | test_social_freetext | 3480 | 8/8 | PASS |
 | bridge-m5-channels | test_social_m5_channels | 3481 | 20/20 | PASS |
 | bridge-m5-slice | test_social_slice | 3476 | 12/12 | PASS |

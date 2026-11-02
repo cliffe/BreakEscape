@@ -209,8 +209,8 @@ Five dressing cycles (AGENTS.md), all four rooms in each:
 2. `python3 scripts/generate_rooms.py --check room_aw_brightwell room_aw_tarrowby room_aw_quayholt room_aw_merrin_sallow`
 3. `python3 scripts/room_gen/check_room_walls.py 'room_aw_*'` (64 on all four)
 4. `python3 scripts/room_gen/slot_audit.py --notes` on one shell per company: 0 problems, and `NO SLOT kiosk` gone
-5. A tour per company, on the defend shells: `awareness_e1_invoice_fraud_defend`, `awareness_e2_cv_lures_defend`,
-   `awareness_e3_helpdesk_reset_defend`, `awareness_e4_exec_whaling_defend`
+5. A tour per company, on the defend shells: `ca01_invoice_fraud_defend`, `ca02_cv_lures_defend`,
+   `ca03_helpdesk_reset_defend`, `ca04_exec_whaling_defend`
    (`tools/playtest/lighting-tour.sh <shell> <scratch>/<co> --close-intro --check`)
 6. Critique against the dressing skill's list; stop early only when a cycle finds nothing above minor.
 
@@ -307,11 +307,11 @@ readability floor. Two to four visual review rounds (AGENTS.md), then add the fo
 
 | Source | Shells |
 |---|---|
-| `gen_e1_shells.py` | `awareness_e1_invoice_fraud_defend`, `awareness_{pre,post}_finance_{ab,ba}` (5) |
-| `gen_e2_e4_shells.py` | `awareness_e2_cv_lures_defend`, `awareness_e4_exec_whaling_defend`, HR and executive checks (10) |
-| `gen_e3_e5_shells.py` | `awareness_e3_helpdesk_reset_defend`, `awareness_e5_signin_pages_defend`, general and helpdesk checks (10) |
-| `gen_e6_e7_shells.py` | `awareness_e6_texts_and_qr_defend`, `awareness_e7_voice_ceo_defend`, mobile checks (6) |
-| Hand-written, no generator | `awareness_e1_invoice_fraud`, `_e2_cv_lures`, `_e3_helpdesk_reset`, `_e4_exec_whaling`, `_e5_signin_pages`, `_e6_texts_and_qr`, `_e7_voice_ceo` (7) |
+| `gen_e1_shells.py` | `ca01_invoice_fraud_defend`, `awareness_{pre,post}_finance_{ab,ba}` (5) |
+| `gen_e2_e4_shells.py` | `ca02_cv_lures_defend`, `ca04_exec_whaling_defend`, HR and executive checks (10) |
+| `gen_e3_e5_shells.py` | `ca03_helpdesk_reset_defend`, `ca05_signin_pages_defend`, general and helpdesk checks (10) |
+| `gen_e6_e7_shells.py` | `ca06_texts_and_qr_defend`, `ca07_voice_ceo_defend`, mobile checks (6) |
+| Hand-written, no generator | `ca01_invoice_fraud`, `_e2_cv_lures`, `_e3_helpdesk_reset`, `_e4_exec_whaling`, `_e5_signin_pages`, `_e6_texts_and_qr`, `_e7_voice_ceo` (7) |
 
 Every shell already carries its company as `social.awarenessEpisode.company` (`brightwell_foods`, `tarrowby_logistics`,
 `quayholt_insurance`, `merrin_sallow`), so the room can be keyed on it with no new input.

@@ -1,0 +1,13 @@
+{
+  "key": "d8ccc2f8fb8efb2d54dd548eecb57b34",
+  "npc": "eleanor_vance",
+  "text": "Not quite yet. Before we log a coverage position, you need to review the underwriting file in the Evidence Archive.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:27:46Z"
+}

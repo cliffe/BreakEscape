@@ -30,26 +30,26 @@ JOBS=(
   board-indicators:test_social_board_indicators freetext:test_social_freetext
   m5-channels:test_social_m5_channels p7-channels:test_social_p7_channels p9:test_social_p9
   p7-episode:test_social_episode
-  e1-full:awareness_e1_invoice_fraud e2-full:awareness_e2_cv_lures
-  e3-full:awareness_e3_helpdesk_reset e4-full:awareness_e4_exec_whaling
-  e5-full:awareness_e5_signin_pages e6-full:awareness_e6_texts_and_qr
-  e7-full:awareness_e7_voice_ceo
-  e8-full:awareness_e8_after_the_click
-  e9-full:awareness_e9_passwords
-  e10-full:awareness_e10_downloads_and_fake_checks
-  e11-full:awareness_e11_misdirected_data
-  e12-full:awareness_e12_visitor_tailgater
-  e13-full:awareness_e13_ai_assistant e13-plain:awareness_e13_ai_assistant
-  e14-full:awareness_e14_social_media
-  e15-full:awareness_e15_shadow_it
-  e16-full:awareness_e16_insider_risk
-  e18-full:awareness_e18_credential_attacks_at_scale
-  e18-close:awareness_e18_credential_attacks_at_scale
-  e19-full:awareness_e19_malware_and_updates
-  e20-full:awareness_e20_remote_and_mobile_working
-  e17-defend:awareness_e17_acceptable_use_defend
-  core00:awareness_core_00_first_play
-  core17:awareness_core_17_annual_2027_defend
+  e1-full:ca01_invoice_fraud e2-full:ca02_cv_lures
+  e3-full:ca03_helpdesk_reset e4-full:ca04_exec_whaling
+  e5-full:ca05_signin_pages e6-full:ca06_texts_and_qr
+  e7-full:ca07_voice_ceo
+  e8-full:ca08_after_the_click
+  e9-full:ca09_passwords
+  e10-full:ca10_downloads_and_fake_checks
+  e11-full:ca11_misdirected_data
+  e12-full:ca12_visitor_tailgater
+  e13-full:ca13_ai_assistant e13-plain:ca13_ai_assistant
+  e14-full:ca14_social_media
+  e15-full:ca15_shadow_it
+  e16-full:ca16_insider_risk
+  e18-full:ca18_credential_attacks_at_scale
+  e18-close:ca18_credential_attacks_at_scale
+  e19-full:ca19_malware_and_updates
+  e20-full:ca20_remote_and_mobile_working
+  e17-defend:ca17_acceptable_use_defend
+  core00:ca00_first_play
+  core17:ca_annual_2027_defend
 )
 
 new_game() { # scenario -> game id

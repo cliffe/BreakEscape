@@ -14,15 +14,15 @@ Earned-secrets table: empty. These scenarios have no codes, PINs or flags; every
 
 | Game | Scenario | Run | Driver time |
 | ---- | -------- | --- | ----------- |
-| 4207 | awareness_e5_signin_pages | careful: all research, SSO page with padlock, calm pretext, send landed, 5 items with real ticks (one false alarm on the real intranet page), host chat | 220 s |
-| 4210 | awareness_e5_signin_pages | hurried: no research, Fileharbour + fileharbour, no padlock, newsletter pretext (did not land), trusted the attacker page, deleted the real page, no ticks | 137 s |
-| 4250 | awareness_e5_signin_pages | pretext "session has expired" + end-of-day ask, no padlock, landed (flip only) | 27 s |
-| 4214 | awareness_e6_texts_and_qr | careful: research, urgent pretext, landed, 6 items, two wrong tick picks of mine | 110 s |
-| 4216 | awareness_e6_texts_and_qr | hurried: depot-bulletin pretext (did not land), trusted two phish, deleted and reported real ones | 75 s |
-| 4223 | awareness_e6_texts_and_qr | calm pretext and calm ask, landed (flip only) | 49 s |
-| 4224 | awareness_e6_texts_and_qr_defend | defend-only shell, reported a real text, 98% | 63 s |
-| 4219 | awareness_e7_voice_ceo | careful: landed, 5 items, one false alarm on the real Marsh End email, a Verify on a real voicemail | 107 s |
-| 4221 | awareness_e7_voice_ceo | hurried: month-end pretext (did not land), Close mid-round, trusted attacker voicemail and email, deleted a real voicemail | 57 s |
+| 4207 | ca05_signin_pages | careful: all research, SSO page with padlock, calm pretext, send landed, 5 items with real ticks (one false alarm on the real intranet page), host chat | 220 s |
+| 4210 | ca05_signin_pages | hurried: no research, Fileharbour + fileharbour, no padlock, newsletter pretext (did not land), trusted the attacker page, deleted the real page, no ticks | 137 s |
+| 4250 | ca05_signin_pages | pretext "session has expired" + end-of-day ask, no padlock, landed (flip only) | 27 s |
+| 4214 | ca06_texts_and_qr | careful: research, urgent pretext, landed, 6 items, two wrong tick picks of mine | 110 s |
+| 4216 | ca06_texts_and_qr | hurried: depot-bulletin pretext (did not land), trusted two phish, deleted and reported real ones | 75 s |
+| 4223 | ca06_texts_and_qr | calm pretext and calm ask, landed (flip only) | 49 s |
+| 4224 | ca06_texts_and_qr_defend | defend-only shell, reported a real text, 98% | 63 s |
+| 4219 | ca07_voice_ceo | careful: landed, 5 items, one false alarm on the real Marsh End email, a Verify on a real voicemail | 107 s |
+| 4221 | ca07_voice_ceo | hurried: month-end pretext (did not land), Close mid-round, trusted attacker voicemail and email, deleted a real voicemail | 57 s |
 | 4226 / 4228 | pre_mobile_ab / post_mobile_ab | careful | 50 s / 60 s |
 | 4231 / 4233 | pre_mobile_ba / post_mobile_ba | hurried (no ticks) / careful | 50 s / 49 s |
 | 4227 / 4230 | pre_executive_ab / post_executive_ab | careful / hurried | 52 s / 59 s |

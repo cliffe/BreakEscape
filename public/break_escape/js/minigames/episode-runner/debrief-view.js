@@ -22,15 +22,18 @@
 // { heading, text } of plain text; a blank line in the text starts a new paragraph.
 // Three optional deployment lines (the runner resolves them from social.awareness and the
 // host page's breakEscapeConfig.awareness, episode-model.js awarenessSettings):
-//   reportRoute  { heading, text, configured }: the "How to report here" box under the Monday
+//   reportRoute  { heading, text, configured, routeName? }: the "How to report here" box under the Monday
 //                card (aw1, debrief.mondayCard "slot:customer_report_route");
 //   ruleOfThumb  { heading?, text }: one line shared by every debrief, above the Monday card (aw4);
 //   teamSize     the number of people on the learner's team, for the team line (aw6).
+// strings.habitLine (optional, launch pick 2026-11-01): a short per-episode habit line drawn as
+// a plain paragraph (.aw-habit-line) right under the shared rule-of-thumb box, for episodes whose
+// lesson is not an incoming message (E15, E17, E20, E11). Absent, nothing is drawn.
 // The team line (aw6) says how many phish the learner reported or checked by another route
 // ("kept the team safe"); it shows only when that is at least one, and never counts misses.
 // getState() -> { items: number, mondayCard: boolean, noBlame: boolean,
 //                 conceptPanel: boolean, voicePanel: boolean, reportRoute: 'configured' |
-//                 'generic' | null, ruleOfThumb: boolean, teamProtected: number | null,
+//                 'generic' | null, ruleOfThumb: boolean, habitLine?: true, teamProtected: number | null,
 //                 genuine: { trusted, checked, flagged } | null }.
 // The real items (disc_visible) follow the cards: the real ones trusted, what made each one
 // treated as a phish safe, the cost of a false alarm and why both halves matter (buildGenuine).
@@ -475,14 +478,20 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
     // A card per missed item, then one weakest-skill line; if nothing was missed, one short line
     // says so. The score summary, panels, Monday card and no-blame line stay. (`answers` and
     // `reviewed` were computed above, before the defendOnly lead.)
-    // aw1 (WP-02): a configured route's own name, to name after a Report verdict (buildCard). The
-    // organiser's route heading when they set one; never the generic 'How to report here' fallback
-    // (that heading means no name was typed), and nothing without a configured route. Hacktivity
-    // sends no short route name apart from the composed paragraph, so the heading is the best name.
-    const routeName = isObj(reportRoute) && reportRoute.configured === true
-        && isStr(reportRoute.heading) && reportRoute.heading.trim()
-        && reportRoute.heading.trim() !== GENERIC_ROUTE_HEADING
-        ? reportRoute.heading.trim() : null;
+    // aw1 (WP-02): a configured route's own name, to name after a Report verdict (buildCard).
+    // Hacktivity sends a short route name (reportRoute.routeName) built from the organiser's first
+    // reporting option, which completes "At work, that means: ..." naturally; prefer it. Otherwise
+    // fall back to the organiser's route heading, but never the generic 'How to report here'
+    // fallback (that heading means no name was typed), and nothing without a configured route.
+    let routeName = null;
+    if (isObj(reportRoute) && reportRoute.configured === true) {
+        if (isStr(reportRoute.routeName) && reportRoute.routeName.trim()) {
+            routeName = reportRoute.routeName.trim();
+        } else if (isStr(reportRoute.heading) && reportRoute.heading.trim()
+            && reportRoute.heading.trim() !== GENERIC_ROUTE_HEADING) {
+            routeName = reportRoute.heading.trim();
+        }
+    }
     const cards = el('div', 'aw-cards');
     for (const a of reviewed) cards.appendChild(buildCard(a, messageFor(set, a.id), set, routeName, showScore));
     root.appendChild(cards);
@@ -597,6 +606,12 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
     // aw4: one rule of thumb, the same in every debrief of a deployment.
     const rule = isObj(ruleOfThumb) && isStr(ruleOfThumb.text) ? ruleOfThumb : null;
     if (rule) root.appendChild(textBox('aside', 'aw-rule', rule.heading || 'The habit to keep', rule));
+    // Launch pick (2026-11-01): an optional per-episode habit line beside the shared rule of
+    // thumb, for episodes whose lesson is not an incoming message (E15, E17, E20, E11), where
+    // the shared money-and-codes line reads off-topic. Opt-in: set strings.habitLine on just
+    // those episodes; absent, nothing is drawn and the shared line stands alone as before.
+    const habit = isObj(strings) && isStr(strings.habitLine) ? strings.habitLine : null;
+    if (habit) root.appendChild(el('p', 'aw-habit-line', habit));
 
     const monday = el('aside', 'aw-monday', str(strings, 'mondayCard'));
     monday.setAttribute('aria-label', 'One thing to do on Monday');
@@ -636,7 +651,7 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
                 ...(concernShown ? { concernRecap: concernShown.state } : {}),
                 ...(Array.isArray(conceptRaw) ? { conceptPanels: conceptList.length } : {}),
                 reportRoute: route ? (route.configured === true ? 'configured' : 'generic') : null,
-                ruleOfThumb: !!rule, teamProtected: teamText ? team : null,
+                ruleOfThumb: !!rule, ...(habit ? { habitLine: true } : {}), teamProtected: teamText ? team : null,
                 genuine: genuine ? { trusted: genuine.trusted, checked: genuine.checked, flagged: genuine.flagged } : null };
         }
     };

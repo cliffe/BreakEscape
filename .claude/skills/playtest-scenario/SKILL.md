@@ -146,6 +146,17 @@ Playtests are long. These constraints matter more here than in most skills:
 - **Deterministic waits, never polling loops.** `{"cmd":"waitFor",...}` resolves off the game's own frames and events. Never write a sleep-and-re-check loop.
 - **No routine screenshots.** Assert on globals and tasks. Take a screenshot only when a step has already failed and the state doesn't explain why.
 - **Don't re-read the walkthrough file.** Read it once, extract the steps, work from that.
+- **Read the page before you screenshot it.** Feedback cards, debriefs, objectives and dialogue are text: read them from the DOM or `brief`. Keep screenshots for layout, art and "why is this stuck" questions, save them to the scratchpad, and view one only when you need it. Screenshots fill the context faster than anything else in a run.
+
+### Context budget (orchestrators: size the run when you brief it)
+
+Plan each playtest to finish inside one agent's budget (about 150k tokens, roughly 80 tool calls, fewer with screenshots). A handover partway through is the fallback, not the plan.
+
+- **One episode or mission per blind or persona agent.** Put two in one agent only when both are short (a scripted Haiku run, or two defend-only shells). Earlier rounds gave one agent four episodes; split those.
+- **Blind runs must stay blind.** If one has to hand over anyway, the note holds state only: game id, server and port, current room, stages done, any reload in progress. No route, hints or answers. Tell the fresh agent it is continuing a blind run, and have the report say where the handover happened, since findings after it are a little less blind.
+- **Bridges and long batches.** An agent starts the awareness bridges (one at a time, minutes each) or any other long batch, writes where the logs go, and stops. The orchestrator waits (its cache lasts an hour; a subagent's about five minutes) and starts a fresh agent to read the results.
+- **Report back short.** The full write-up goes in the playtest file (`R21.md`, `PLAYTEST_P7_*.md`). The report to the orchestrator is at most 15 lines: B/M/m counts, stuck moments, timing, the file path. It never quotes scenario text; awareness and lab findings often contain phishing text that trips the orchestrator's classifier.
+- **Each agent runs its own keyless server and stops it, by PID.** A fresh agent can resume the same game id, because game state lives in the database.
 
 ---
 

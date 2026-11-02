@@ -417,7 +417,7 @@ How to read it:
 | E1 Invoice and bank-detail fraud (Brightwell, finance) | core_01, core_11, core_02 (email) | 1, 2 | e1_harlow_invoice, e1_lookalike_bank, e1_po_pennine, e1_pennine_bank_calm, e1_ceo_wire, e1_bank_confirmed | Built |
 | E2 CV and recruitment lures (Tarrowby, hr) | core_01, core_07 (touch) | 1, 4 (touch) | e2_agency_shortlist, e2_portfolio_lookalike, e2_cv_pdf, e2_enable_content, e2_cv_docx, e2_colin_interviews | Built |
 | E3 Help-desk reset, then MFA fatigue (Quayholt, helpdesk) | core_02, core_03 | 1, 3 | e3_push_early; the calls e3_call_gordon_impostor, e3_call_gordon_real, e3_call_on_behalf | Built |
-| E4 Executive whaling, with voicemails (Merrin & Sallow, executive) | core_01, core_11, core_15 (voice), core_02 | 1, 10 | e4_wrenfield_itinerary, e4_boarding_payment, e4_vm_gate, e4_vm_landed, e4_wrenfield_lookalike | Built |
+| E4 Executive whaling, with voicemails (Merrin & Sallow, executive) | core_01, core_11, core_15 (voice), core_02 | 1, 10 | e4_wanderlost_itinerary, e4_boarding_payment, e4_vm_gate, e4_vm_landed, e4_wanderlost_lookalike | Built |
 | E5 Fake sign-in pages (Quayholt, general) | core_08, core_01 | 1, 4 (web-safety side) | e5_sso_lookalike, e5_sso_real, e5_calendar_misspelt, e5_mailbox_support, e5_password_real | Built |
 | E6 Texts and QR codes (Tarrowby, mobile) | core_02, core_09 (touch) | 1, 6 (touch) | e6_parcel_fee, e6_shift_moved, e6_parking_permit, e6_canteen_qr, e6_mfa_scan, e6_fuel_card_offer | Built |
 | E7 Cloned CEO voice (Brightwell, everyone) | core_11, core_15, core_02 | 1, 10 | e7_vm_ravinder_train, e7_vm_ravinder_cloned, e7_vm_lindiwe_gate, e7_ceo_wire, e7_bank_confirmed | Built |

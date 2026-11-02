@@ -1,5 +1,5 @@
 {
-  "awareness_e12_visitor_tailgater": {
+  "ca12_visitor_tailgater": {
     "globals": {
       "episode_e12_visitor_tailgater_defend_complete": false,
       "pretext_merrin_front_desk_outcome": "",
@@ -12,20 +12,20 @@
       {
         "id": "lorna_easton",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_e12_visitor_tailgater/ink/lorna_easton.json",
+        "storyPath": "scenarios/ca12_visitor_tailgater/ink/lorna_easton.json",
         "currentKnot": "start",
         "room": "training_room"
       },
       {
         "id": "delphine_reception",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_e12_visitor_tailgater/ink/delphine_reception.json",
+        "storyPath": "scenarios/ca12_visitor_tailgater/ink/delphine_reception.json",
         "currentKnot": "start",
         "room": "lobby"
       }
     ]
   },
-  "awareness_e12_visitor_tailgater_defend": {
+  "ca12_visitor_tailgater_defend": {
     "globals": {
       "episode_e12_visitor_tailgater_defend_defend_complete": false
     },
@@ -33,7 +33,7 @@
       {
         "id": "lorna_easton",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_e12_visitor_tailgater_defend/ink/lorna_easton.json",
+        "storyPath": "scenarios/ca12_visitor_tailgater_defend/ink/lorna_easton.json",
         "currentKnot": "start",
         "room": "training_room"
       }
@@ -2598,7 +2598,7 @@
       }
     ]
   },
-  "awareness_e1_invoice_fraud": {
+  "ca01_invoice_fraud": {
     "globals": {
       "episode_e1_invoice_fraud_defend_percent": 0,
       "episode_e1_invoice_fraud_defend_reportRate": 0,
@@ -2609,13 +2609,13 @@
       {
         "id": "adaeze_okafor",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_e1_invoice_fraud/ink/adaeze_okafor.json",
+        "storyPath": "scenarios/ca01_invoice_fraud/ink/adaeze_okafor.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_e1_invoice_fraud_defend": {
+  "ca01_invoice_fraud_defend": {
     "globals": {
       "episode_e1_invoice_fraud_defend_defend_percent": 0,
       "episode_e1_invoice_fraud_defend_defend_reportRate": 0,
@@ -2625,13 +2625,13 @@
       {
         "id": "adaeze_okafor",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_e1_invoice_fraud_defend/ink/adaeze_okafor.json",
+        "storyPath": "scenarios/ca01_invoice_fraud_defend/ink/adaeze_okafor.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_e10_downloads_and_fake_checks": {
+  "ca10_downloads_and_fake_checks": {
     "globals": {
       "episode_e10_downloads_and_fake_checks_defend_percent": 0,
       "episode_e10_downloads_and_fake_checks_defend_reportRate": 0,
@@ -2642,13 +2642,13 @@
       {
         "id": "niamh_doherty",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_e10_downloads_and_fake_checks/ink/niamh_doherty.json",
+        "storyPath": "scenarios/ca10_downloads_and_fake_checks/ink/niamh_doherty.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_e10_downloads_and_fake_checks_defend": {
+  "ca10_downloads_and_fake_checks_defend": {
     "globals": {
       "episode_e10_downloads_and_fake_checks_defend_defend_percent": 0,
       "episode_e10_downloads_and_fake_checks_defend_defend_reportRate": 0,
@@ -2658,13 +2658,13 @@
       {
         "id": "niamh_doherty",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_e10_downloads_and_fake_checks_defend/ink/niamh_doherty.json",
+        "storyPath": "scenarios/ca10_downloads_and_fake_checks_defend/ink/niamh_doherty.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_e8_after_the_click": {
+  "ca08_after_the_click": {
     "globals": {
       "episode_e8_after_the_click_defend_percent": 0,
       "episode_e8_after_the_click_defend_reportRate": 0,
@@ -2675,13 +2675,13 @@
       {
         "id": "anjali_rao",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_e8_after_the_click/ink/anjali_rao.json",
+        "storyPath": "scenarios/ca08_after_the_click/ink/anjali_rao.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_e8_after_the_click_defend": {
+  "ca08_after_the_click_defend": {
     "globals": {
       "episode_e8_after_the_click_defend_defend_percent": 0,
       "episode_e8_after_the_click_defend_defend_reportRate": 0,
@@ -2691,13 +2691,13 @@
       {
         "id": "anjali_rao",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_e8_after_the_click_defend/ink/anjali_rao.json",
+        "storyPath": "scenarios/ca08_after_the_click_defend/ink/anjali_rao.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_e14_social_media": {
+  "ca14_social_media": {
     "globals": {
       "episode_e14_social_media_defend_percent": 0,
       "episode_e14_social_media_defend_reportRate": 0,
@@ -2708,13 +2708,13 @@
       {
         "id": "julian_sallow",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_e14_social_media/ink/julian_sallow.json",
+        "storyPath": "scenarios/ca14_social_media/ink/julian_sallow.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_e14_social_media_defend": {
+  "ca14_social_media_defend": {
     "globals": {
       "episode_e14_social_media_defend_defend_percent": 0,
       "episode_e14_social_media_defend_defend_reportRate": 0,
@@ -2724,13 +2724,13 @@
       {
         "id": "julian_sallow",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_e14_social_media_defend/ink/julian_sallow.json",
+        "storyPath": "scenarios/ca14_social_media_defend/ink/julian_sallow.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_e13_ai_assistant": {
+  "ca13_ai_assistant": {
     "globals": {
       "episode_e13_ai_assistant_defend_percent": 0,
       "episode_e13_ai_assistant_defend_reportRate": 0,
@@ -2741,13 +2741,13 @@
       {
         "id": "gwen_pritchard",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_e13_ai_assistant/ink/gwen_pritchard.json",
+        "storyPath": "scenarios/ca13_ai_assistant/ink/gwen_pritchard.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_e13_ai_assistant_defend": {
+  "ca13_ai_assistant_defend": {
     "globals": {
       "episode_e13_ai_assistant_defend_defend_percent": 0,
       "episode_e13_ai_assistant_defend_defend_reportRate": 0,
@@ -2757,13 +2757,13 @@
       {
         "id": "gwen_pritchard",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_e13_ai_assistant_defend/ink/gwen_pritchard.json",
+        "storyPath": "scenarios/ca13_ai_assistant_defend/ink/gwen_pritchard.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_e9_passwords": {
+  "ca09_passwords": {
     "globals": {
       "episode_e9_passwords_defend_percent": 0,
       "episode_e9_passwords_defend_reportRate": 0,
@@ -2774,13 +2774,13 @@
       {
         "id": "nilesh_solanki",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_e9_passwords/ink/nilesh_solanki.json",
+        "storyPath": "scenarios/ca09_passwords/ink/nilesh_solanki.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_e9_passwords_defend": {
+  "ca09_passwords_defend": {
     "globals": {
       "episode_e9_passwords_defend_defend_percent": 0,
       "episode_e9_passwords_defend_defend_reportRate": 0,
@@ -2790,13 +2790,13 @@
       {
         "id": "nilesh_solanki",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_e9_passwords_defend/ink/nilesh_solanki.json",
+        "storyPath": "scenarios/ca09_passwords_defend/ink/nilesh_solanki.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_e18_credential_attacks_at_scale": {
+  "ca18_credential_attacks_at_scale": {
     "globals": {
       "episode_e18_credential_attacks_at_scale_defend_percent": 0,
       "episode_e18_credential_attacks_at_scale_defend_reportRate": 0,
@@ -2807,13 +2807,13 @@
       {
         "id": "ama_owusu",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_e18_credential_attacks_at_scale/ink/ama_owusu.json",
+        "storyPath": "scenarios/ca18_credential_attacks_at_scale/ink/ama_owusu.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_e18_credential_attacks_at_scale_defend": {
+  "ca18_credential_attacks_at_scale_defend": {
     "globals": {
       "episode_e18_credential_attacks_at_scale_defend_defend_percent": 0,
       "episode_e18_credential_attacks_at_scale_defend_defend_reportRate": 0,
@@ -2823,13 +2823,13 @@
       {
         "id": "ama_owusu",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_e18_credential_attacks_at_scale_defend/ink/ama_owusu.json",
+        "storyPath": "scenarios/ca18_credential_attacks_at_scale_defend/ink/ama_owusu.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_e16_insider_risk": {
+  "ca16_insider_risk": {
     "globals": {
       "episode_e16_insider_risk_defend_percent": 0,
       "episode_e16_insider_risk_defend_reportRate": 0,
@@ -2839,13 +2839,13 @@
       {
         "id": "anjali_rao",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_e16_insider_risk/ink/anjali_rao.json",
+        "storyPath": "scenarios/ca16_insider_risk/ink/anjali_rao.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_e16_insider_risk_defend": {
+  "ca16_insider_risk_defend": {
     "globals": {
       "episode_e16_insider_risk_defend_defend_percent": 0,
       "episode_e16_insider_risk_defend_defend_reportRate": 0,
@@ -2855,13 +2855,13 @@
       {
         "id": "anjali_rao",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_e16_insider_risk_defend/ink/anjali_rao.json",
+        "storyPath": "scenarios/ca16_insider_risk_defend/ink/anjali_rao.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_e17_acceptable_use_defend": {
+  "ca17_acceptable_use_defend": {
     "globals": {
       "episode_e17_acceptable_use_defend_defend_percent": 0,
       "episode_e17_acceptable_use_defend_defend_reportRate": 0,
@@ -2871,13 +2871,13 @@
       {
         "id": "nilesh_solanki",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_e17_acceptable_use_defend/ink/nilesh_solanki.json",
+        "storyPath": "scenarios/ca17_acceptable_use_defend/ink/nilesh_solanki.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_e19_malware_and_updates": {
+  "ca19_malware_and_updates": {
     "globals": {
       "episode_e19_malware_and_updates_defend_percent": 0,
       "episode_e19_malware_and_updates_defend_reportRate": 0,
@@ -2887,13 +2887,13 @@
       {
         "id": "anjali_rao",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_e19_malware_and_updates/ink/anjali_rao.json",
+        "storyPath": "scenarios/ca19_malware_and_updates/ink/anjali_rao.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_e11_misdirected_data": {
+  "ca11_misdirected_data": {
     "globals": {
       "episode_e11_misdirected_data_defend_percent": 0,
       "episode_e11_misdirected_data_defend_reportRate": 0,
@@ -2903,13 +2903,13 @@
       {
         "id": "tomasz_wisniewski",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_e11_misdirected_data/ink/tomasz_wisniewski.json",
+        "storyPath": "scenarios/ca11_misdirected_data/ink/tomasz_wisniewski.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_e11_misdirected_data_defend": {
+  "ca11_misdirected_data_defend": {
     "globals": {
       "episode_e11_misdirected_data_defend_defend_percent": 0,
       "episode_e11_misdirected_data_defend_defend_reportRate": 0,
@@ -2919,13 +2919,13 @@
       {
         "id": "tomasz_wisniewski",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_e11_misdirected_data_defend/ink/tomasz_wisniewski.json",
+        "storyPath": "scenarios/ca11_misdirected_data_defend/ink/tomasz_wisniewski.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_e15_shadow_it": {
+  "ca15_shadow_it": {
     "globals": {
       "episode_e15_shadow_it_defend_percent": 0,
       "episode_e15_shadow_it_defend_reportRate": 0,
@@ -2935,13 +2935,13 @@
       {
         "id": "nilesh_solanki",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_e15_shadow_it/ink/nilesh_solanki.json",
+        "storyPath": "scenarios/ca15_shadow_it/ink/nilesh_solanki.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_e15_shadow_it_defend": {
+  "ca15_shadow_it_defend": {
     "globals": {
       "episode_e15_shadow_it_defend_defend_percent": 0,
       "episode_e15_shadow_it_defend_defend_reportRate": 0,
@@ -2951,13 +2951,13 @@
       {
         "id": "nilesh_solanki",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_e15_shadow_it_defend/ink/nilesh_solanki.json",
+        "storyPath": "scenarios/ca15_shadow_it_defend/ink/nilesh_solanki.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_e19_malware_and_updates_defend": {
+  "ca19_malware_and_updates_defend": {
     "globals": {
       "episode_e19_malware_and_updates_defend_defend_percent": 0,
       "episode_e19_malware_and_updates_defend_defend_reportRate": 0,
@@ -2967,13 +2967,13 @@
       {
         "id": "anjali_rao",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_e19_malware_and_updates_defend/ink/anjali_rao.json",
+        "storyPath": "scenarios/ca19_malware_and_updates_defend/ink/anjali_rao.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_e20_remote_and_mobile_working": {
+  "ca20_remote_and_mobile_working": {
     "globals": {
       "episode_e20_remote_and_mobile_working_defend_percent": 0,
       "episode_e20_remote_and_mobile_working_defend_reportRate": 0,
@@ -2983,13 +2983,13 @@
       {
         "id": "zainab_hussain",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_e20_remote_and_mobile_working/ink/zainab_hussain.json",
+        "storyPath": "scenarios/ca20_remote_and_mobile_working/ink/zainab_hussain.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_e20_remote_and_mobile_working_defend": {
+  "ca20_remote_and_mobile_working_defend": {
     "globals": {
       "episode_e20_remote_and_mobile_working_defend_defend_percent": 0,
       "episode_e20_remote_and_mobile_working_defend_defend_reportRate": 0,
@@ -2999,13 +2999,13 @@
       {
         "id": "zainab_hussain",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_e20_remote_and_mobile_working_defend/ink/zainab_hussain.json",
+        "storyPath": "scenarios/ca20_remote_and_mobile_working_defend/ink/zainab_hussain.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_pre_finance_ab": {
+  "ca_pre_finance_ab": {
     "globals": {
       "triage_pre_percent": 0,
       "triage_pre_reportRate": 0,
@@ -3015,13 +3015,13 @@
       {
         "id": "graham_whitfield",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_pre_finance_ab/ink/graham_pre.json",
+        "storyPath": "scenarios/ca_pre_finance_ab/ink/graham_pre.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_post_finance_ab": {
+  "ca_post_finance_ab": {
     "globals": {
       "triage_post_percent": 0,
       "triage_post_reportRate": 0,
@@ -3031,13 +3031,13 @@
       {
         "id": "graham_whitfield",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_post_finance_ab/ink/graham_post.json",
+        "storyPath": "scenarios/ca_post_finance_ab/ink/graham_post.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_pre_finance_ba": {
+  "ca_pre_finance_ba": {
     "globals": {
       "triage_pre_percent": 0,
       "triage_pre_reportRate": 0,
@@ -3047,13 +3047,13 @@
       {
         "id": "joanne_pell",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_pre_finance_ba/ink/joanne_pre.json",
+        "storyPath": "scenarios/ca_pre_finance_ba/ink/joanne_pre.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_post_finance_ba": {
+  "ca_post_finance_ba": {
     "globals": {
       "triage_post_percent": 0,
       "triage_post_reportRate": 0,
@@ -3063,13 +3063,13 @@
       {
         "id": "joanne_pell",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_post_finance_ba/ink/joanne_post.json",
+        "storyPath": "scenarios/ca_post_finance_ba/ink/joanne_post.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_e3_helpdesk_reset_defend": {
+  "ca03_helpdesk_reset_defend": {
     "globals": {
       "episode_e3_helpdesk_reset_defend_defend_percent": 0,
       "episode_e3_helpdesk_reset_defend_defend_reportRate": 0,
@@ -3079,13 +3079,13 @@
       {
         "id": "darren_price",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_e3_helpdesk_reset_defend/ink/darren_price.json",
+        "storyPath": "scenarios/ca03_helpdesk_reset_defend/ink/darren_price.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_e5_signin_pages_defend": {
+  "ca05_signin_pages_defend": {
     "globals": {
       "episode_e5_signin_pages_defend_defend_percent": 0,
       "episode_e5_signin_pages_defend_defend_reportRate": 0,
@@ -3095,13 +3095,13 @@
       {
         "id": "niamh_doherty",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_e5_signin_pages_defend/ink/niamh_doherty.json",
+        "storyPath": "scenarios/ca05_signin_pages_defend/ink/niamh_doherty.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_pre_helpdesk_ab": {
+  "ca_pre_helpdesk_ab": {
     "globals": {
       "triage_pre_percent": 0,
       "triage_pre_reportRate": 0,
@@ -3111,13 +3111,13 @@
       {
         "id": "anjali_rao",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_pre_helpdesk_ab/ink/anjali_pre.json",
+        "storyPath": "scenarios/ca_pre_helpdesk_ab/ink/anjali_pre.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_post_helpdesk_ab": {
+  "ca_post_helpdesk_ab": {
     "globals": {
       "triage_post_percent": 0,
       "triage_post_reportRate": 0,
@@ -3127,13 +3127,13 @@
       {
         "id": "anjali_rao",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_post_helpdesk_ab/ink/anjali_post.json",
+        "storyPath": "scenarios/ca_post_helpdesk_ab/ink/anjali_post.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_pre_helpdesk_ba": {
+  "ca_pre_helpdesk_ba": {
     "globals": {
       "triage_pre_percent": 0,
       "triage_pre_reportRate": 0,
@@ -3143,13 +3143,13 @@
       {
         "id": "sofia_marchetti",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_pre_helpdesk_ba/ink/sofia_pre.json",
+        "storyPath": "scenarios/ca_pre_helpdesk_ba/ink/sofia_pre.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_post_helpdesk_ba": {
+  "ca_post_helpdesk_ba": {
     "globals": {
       "triage_post_percent": 0,
       "triage_post_reportRate": 0,
@@ -3159,13 +3159,13 @@
       {
         "id": "sofia_marchetti",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_post_helpdesk_ba/ink/sofia_post.json",
+        "storyPath": "scenarios/ca_post_helpdesk_ba/ink/sofia_post.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_e2_cv_lures_defend": {
+  "ca02_cv_lures_defend": {
     "globals": {
       "episode_e2_cv_lures_defend_defend_percent": 0,
       "episode_e2_cv_lures_defend_defend_reportRate": 0,
@@ -3175,13 +3175,13 @@
       {
         "id": "fatima_begum",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_e2_cv_lures_defend/ink/fatima_begum.json",
+        "storyPath": "scenarios/ca02_cv_lures_defend/ink/fatima_begum.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_pre_hr_ab": {
+  "ca_pre_hr_ab": {
     "globals": {
       "triage_pre_percent": 0,
       "triage_pre_reportRate": 0,
@@ -3191,13 +3191,13 @@
       {
         "id": "jun_watanabe",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_pre_hr_ab/ink/jun_pre.json",
+        "storyPath": "scenarios/ca_pre_hr_ab/ink/jun_pre.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_post_hr_ab": {
+  "ca_post_hr_ab": {
     "globals": {
       "triage_post_percent": 0,
       "triage_post_reportRate": 0,
@@ -3207,13 +3207,13 @@
       {
         "id": "jun_watanabe",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_post_hr_ab/ink/jun_post.json",
+        "storyPath": "scenarios/ca_post_hr_ab/ink/jun_post.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_pre_hr_ba": {
+  "ca_pre_hr_ba": {
     "globals": {
       "triage_pre_percent": 0,
       "triage_pre_reportRate": 0,
@@ -3223,13 +3223,13 @@
       {
         "id": "ibrahim_diallo",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_pre_hr_ba/ink/ibrahim_pre.json",
+        "storyPath": "scenarios/ca_pre_hr_ba/ink/ibrahim_pre.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_post_hr_ba": {
+  "ca_post_hr_ba": {
     "globals": {
       "triage_post_percent": 0,
       "triage_post_reportRate": 0,
@@ -3239,13 +3239,13 @@
       {
         "id": "ibrahim_diallo",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_post_hr_ba/ink/ibrahim_post.json",
+        "storyPath": "scenarios/ca_post_hr_ba/ink/ibrahim_post.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_e4_exec_whaling_defend": {
+  "ca04_exec_whaling_defend": {
     "globals": {
       "episode_e4_exec_whaling_defend_defend_percent": 0,
       "episode_e4_exec_whaling_defend_defend_reportRate": 0,
@@ -3255,13 +3255,13 @@
       {
         "id": "thandiwe_moyo",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_e4_exec_whaling_defend/ink/thandiwe_moyo.json",
+        "storyPath": "scenarios/ca04_exec_whaling_defend/ink/thandiwe_moyo.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_pre_executive_ab": {
+  "ca_pre_executive_ab": {
     "globals": {
       "triage_pre_percent": 0,
       "triage_pre_reportRate": 0,
@@ -3271,13 +3271,13 @@
       {
         "id": "yasmin_chaudhry",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_pre_executive_ab/ink/yasmin_pre.json",
+        "storyPath": "scenarios/ca_pre_executive_ab/ink/yasmin_pre.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_post_executive_ab": {
+  "ca_post_executive_ab": {
     "globals": {
       "triage_post_percent": 0,
       "triage_post_reportRate": 0,
@@ -3287,13 +3287,13 @@
       {
         "id": "yasmin_chaudhry",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_post_executive_ab/ink/yasmin_post.json",
+        "storyPath": "scenarios/ca_post_executive_ab/ink/yasmin_post.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_pre_executive_ba": {
+  "ca_pre_executive_ba": {
     "globals": {
       "triage_pre_percent": 0,
       "triage_pre_reportRate": 0,
@@ -3303,13 +3303,13 @@
       {
         "id": "julian_sallow",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_pre_executive_ba/ink/julian_pre.json",
+        "storyPath": "scenarios/ca_pre_executive_ba/ink/julian_pre.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_post_executive_ba": {
+  "ca_post_executive_ba": {
     "globals": {
       "triage_post_percent": 0,
       "triage_post_reportRate": 0,
@@ -3319,13 +3319,13 @@
       {
         "id": "julian_sallow",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_post_executive_ba/ink/julian_post.json",
+        "storyPath": "scenarios/ca_post_executive_ba/ink/julian_post.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_e6_texts_and_qr_defend": {
+  "ca06_texts_and_qr_defend": {
     "globals": {
       "episode_e6_texts_and_qr_defend_defend_percent": 0,
       "episode_e6_texts_and_qr_defend_defend_reportRate": 0,
@@ -3335,13 +3335,13 @@
       {
         "id": "chidi_okeke",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_e6_texts_and_qr_defend/ink/chidi_okeke.json",
+        "storyPath": "scenarios/ca06_texts_and_qr_defend/ink/chidi_okeke.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_pre_mobile_ab": {
+  "ca_pre_mobile_ab": {
     "globals": {
       "triage_pre_percent": 0,
       "triage_pre_reportRate": 0,
@@ -3351,13 +3351,13 @@
       {
         "id": "lerato_dlamini",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_pre_mobile_ab/ink/lerato_pre.json",
+        "storyPath": "scenarios/ca_pre_mobile_ab/ink/lerato_pre.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_post_mobile_ab": {
+  "ca_post_mobile_ab": {
     "globals": {
       "triage_post_percent": 0,
       "triage_post_reportRate": 0,
@@ -3367,13 +3367,13 @@
       {
         "id": "lerato_dlamini",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_post_mobile_ab/ink/lerato_post.json",
+        "storyPath": "scenarios/ca_post_mobile_ab/ink/lerato_post.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_pre_mobile_ba": {
+  "ca_pre_mobile_ba": {
     "globals": {
       "triage_pre_percent": 0,
       "triage_pre_reportRate": 0,
@@ -3383,13 +3383,13 @@
       {
         "id": "jun_watanabe",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_pre_mobile_ba/ink/jun_pre.json",
+        "storyPath": "scenarios/ca_pre_mobile_ba/ink/jun_pre.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_post_mobile_ba": {
+  "ca_post_mobile_ba": {
     "globals": {
       "triage_post_percent": 0,
       "triage_post_reportRate": 0,
@@ -3399,13 +3399,13 @@
       {
         "id": "jun_watanabe",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_post_mobile_ba/ink/jun_post.json",
+        "storyPath": "scenarios/ca_post_mobile_ba/ink/jun_post.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_e7_voice_ceo_defend": {
+  "ca07_voice_ceo_defend": {
     "globals": {
       "episode_e7_voice_ceo_defend_defend_percent": 0,
       "episode_e7_voice_ceo_defend_defend_reportRate": 0,
@@ -3415,13 +3415,13 @@
       {
         "id": "agnieszka_duda",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_e7_voice_ceo_defend/ink/agnieszka_duda.json",
+        "storyPath": "scenarios/ca07_voice_ceo_defend/ink/agnieszka_duda.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_e4_exec_whaling": {
+  "ca04_exec_whaling": {
     "globals": {
       "episode_e4_exec_whaling_defend_percent": 0,
       "episode_e4_exec_whaling_defend_reportRate": 0,
@@ -3432,13 +3432,13 @@
       {
         "id": "thandiwe_moyo",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_e4_exec_whaling/ink/thandiwe_moyo.json",
+        "storyPath": "scenarios/ca04_exec_whaling/ink/thandiwe_moyo.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_e2_cv_lures": {
+  "ca02_cv_lures": {
     "globals": {
       "episode_e2_cv_lures_defend_percent": 0,
       "episode_e2_cv_lures_defend_reportRate": 0,
@@ -3449,13 +3449,13 @@
       {
         "id": "fatima_begum",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_e2_cv_lures/ink/fatima_begum.json",
+        "storyPath": "scenarios/ca02_cv_lures/ink/fatima_begum.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_e6_texts_and_qr": {
+  "ca06_texts_and_qr": {
     "globals": {
       "episode_e6_texts_and_qr_defend_percent": 0,
       "episode_e6_texts_and_qr_defend_reportRate": 0,
@@ -3466,13 +3466,13 @@
       {
         "id": "chidi_okeke",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_e6_texts_and_qr/ink/chidi_okeke.json",
+        "storyPath": "scenarios/ca06_texts_and_qr/ink/chidi_okeke.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_e3_helpdesk_reset": {
+  "ca03_helpdesk_reset": {
     "globals": {
       "episode_e3_helpdesk_reset_defend_percent": 0,
       "episode_e3_helpdesk_reset_defend_reportRate": 0,
@@ -3484,20 +3484,20 @@
       {
         "id": "darren_price",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_e3_helpdesk_reset/ink/darren_price.json",
+        "storyPath": "scenarios/ca03_helpdesk_reset/ink/darren_price.json",
         "currentKnot": "start",
         "room": "training_room"
       },
       {
         "id": "leila_servicedesk",
         "npcType": "phone",
-        "storyPath": "scenarios/awareness_e3_helpdesk_reset/ink/leila_servicedesk.json",
+        "storyPath": "scenarios/ca03_helpdesk_reset/ink/leila_servicedesk.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_e5_signin_pages": {
+  "ca05_signin_pages": {
     "globals": {
       "episode_e5_signin_pages_defend_percent": 0,
       "episode_e5_signin_pages_defend_reportRate": 0,
@@ -3508,13 +3508,13 @@
       {
         "id": "niamh_doherty",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_e5_signin_pages/ink/niamh_doherty.json",
+        "storyPath": "scenarios/ca05_signin_pages/ink/niamh_doherty.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_e7_voice_ceo": {
+  "ca07_voice_ceo": {
     "globals": {
       "episode_e7_voice_ceo_defend_percent": 0,
       "episode_e7_voice_ceo_defend_reportRate": 0,
@@ -3525,13 +3525,13 @@
       {
         "id": "agnieszka_duda",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_e7_voice_ceo/ink/agnieszka_duda.json",
+        "storyPath": "scenarios/ca07_voice_ceo/ink/agnieszka_duda.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_pre_general_v2_ab": {
+  "ca_pre_general_v2_ab": {
     "globals": {
       "triage_pre_percent": 0,
       "triage_pre_reportRate": 0,
@@ -3541,13 +3541,13 @@
       {
         "id": "anjali_rao",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_pre_general_v2_ab/ink/anjali_pre.json",
+        "storyPath": "scenarios/ca_pre_general_v2_ab/ink/anjali_pre.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_pre_general_v2_ba": {
+  "ca_pre_general_v2_ba": {
     "globals": {
       "triage_pre_percent": 0,
       "triage_pre_reportRate": 0,
@@ -3557,13 +3557,13 @@
       {
         "id": "darren_price",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_pre_general_v2_ba/ink/darren_pre.json",
+        "storyPath": "scenarios/ca_pre_general_v2_ba/ink/darren_pre.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_post_general_v2_ab": {
+  "ca_post_general_v2_ab": {
     "globals": {
       "triage_post_percent": 0,
       "triage_post_reportRate": 0,
@@ -3573,13 +3573,13 @@
       {
         "id": "anjali_rao",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_post_general_v2_ab/ink/anjali_post.json",
+        "storyPath": "scenarios/ca_post_general_v2_ab/ink/anjali_post.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_post_general_v2_ba": {
+  "ca_post_general_v2_ba": {
     "globals": {
       "triage_post_percent": 0,
       "triage_post_reportRate": 0,
@@ -3589,13 +3589,13 @@
       {
         "id": "darren_price",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_post_general_v2_ba/ink/darren_post.json",
+        "storyPath": "scenarios/ca_post_general_v2_ba/ink/darren_post.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_core_17_annual_2027_defend": {
+  "ca_annual_2027_defend": {
     "globals": {
       "episode_core_17_annual_2027_defend_defend_percent": 0,
       "episode_core_17_annual_2027_defend_defend_reportRate": 0,
@@ -3605,13 +3605,13 @@
       {
         "id": "graham_whitfield",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_core_17_annual_2027_defend/ink/graham_whitfield.json",
+        "storyPath": "scenarios/ca_annual_2027_defend/ink/graham_whitfield.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_core_00_first_play": {
+  "ca00_first_play": {
     "globals": {
       "episode_core_00_first_play_done": false
     },
@@ -3619,13 +3619,13 @@
       {
         "id": "anjali_rao",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_core_00_first_play/ink/anjali_rao.json",
+        "storyPath": "scenarios/ca00_first_play/ink/anjali_rao.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_pre_data_conduct_ab": {
+  "ca_pre_data_conduct_ab": {
     "globals": {
       "triage_pre_percent": 0,
       "triage_pre_reportRate": 0,
@@ -3635,13 +3635,13 @@
       {
         "id": "tomasz_wisniewski",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_pre_data_conduct_ab/ink/tomasz_pre.json",
+        "storyPath": "scenarios/ca_pre_data_conduct_ab/ink/tomasz_pre.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_pre_data_conduct_ba": {
+  "ca_pre_data_conduct_ba": {
     "globals": {
       "triage_pre_percent": 0,
       "triage_pre_reportRate": 0,
@@ -3651,13 +3651,13 @@
       {
         "id": "yusuf_demir",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_pre_data_conduct_ba/ink/yusuf_pre.json",
+        "storyPath": "scenarios/ca_pre_data_conduct_ba/ink/yusuf_pre.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_post_data_conduct_ab": {
+  "ca_post_data_conduct_ab": {
     "globals": {
       "triage_post_percent": 0,
       "triage_post_reportRate": 0,
@@ -3667,13 +3667,13 @@
       {
         "id": "tomasz_wisniewski",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_post_data_conduct_ab/ink/tomasz_post.json",
+        "storyPath": "scenarios/ca_post_data_conduct_ab/ink/tomasz_post.json",
         "currentKnot": "start",
         "room": "training_room"
       }
     ]
   },
-  "awareness_post_data_conduct_ba": {
+  "ca_post_data_conduct_ba": {
     "globals": {
       "triage_post_percent": 0,
       "triage_post_reportRate": 0,
@@ -3683,7 +3683,7 @@
       {
         "id": "yusuf_demir",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_post_data_conduct_ba/ink/yusuf_post.json",
+        "storyPath": "scenarios/ca_post_data_conduct_ba/ink/yusuf_post.json",
         "currentKnot": "start",
         "room": "training_room"
       }

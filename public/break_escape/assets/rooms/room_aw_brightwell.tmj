@@ -535,7 +535,7 @@
     },
     {
      "gid": 1434,
-     "height": 60,
+     "height": 42,
      "id": 26,
      "name": "",
      "rotation": 0,
@@ -6872,7 +6872,7 @@
     {
      "id": 633,
      "image": "../objects/kiosk.png",
-     "imageheight": 60,
+     "imageheight": 42,
      "imagewidth": 27
     },
     {

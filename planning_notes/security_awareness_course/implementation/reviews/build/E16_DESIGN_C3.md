@@ -12,7 +12,7 @@ at commit `e14b542c2` (git clean when read; the Sonnet "E16 minors retry" fixer 
 and bar: `REVIEWER_BRIEF.md`, the `scenario-design-review` / `npc-dialog-review` skills adapted to this
 kind, and the pilot reviews in this folder.
 
-Scope read this pass: both shells `scenarios/awareness_e16_insider_risk{,_defend}/{scenario.json.erb,
+Scope read this pass: both shells `scenarios/ca16_insider_risk{,_defend}/{scenario.json.erb,
 ink/anjali_rao.ink}`; the spec `episodes/E16_insider_risk.md`; the prior reviews
 (`E16_DESIGN_C1.md`, `E16_DESIGN_C2_DIALOG_C1.md`, `E16_BLIND_B1`..`B4`, `E15_E16_PLAYTEST_P1.md`) and the
 E16 lines of `BUILD_LOG.md`; and the engine the findings depend on

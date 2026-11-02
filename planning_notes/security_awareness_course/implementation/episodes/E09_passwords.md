@@ -16,7 +16,7 @@ Learning outcomes (from `modules/core_03_passwords_and_mfa/`): LO1 (a different 
 
 - `planning_notes/security_awareness_course/implementation/WRITER_BRIEF.md`.
 - Teaching source of truth: `modules/core_03_passwords_and_mfa/concepts.md` (the whole file; the guessing/reuse/manager/MFA/passkey content) and `modules/core_03_.../game_design.md` (the E9 design, the decisions table, the password surface). Also `modules/core_03_.../assessment.md` for the scored behaviours and mirror pairs.
-- The nearest built episode: **E3** `scenarios/awareness_e3_helpdesk_reset/` end to end (the MFA stage, the authenticator demo, the push defend card), plus the fragments `planning_notes/phishing_and_social_engineering/awareness/e3/{attack,defend}.json`. E3 is the model for the flood flip and the push cards. Also read **E6** `scenarios/awareness_e6_texts_and_qr/` for the Tarrowby room wiring and the Tarrowby cast.
+- The nearest built episode: **E3** `scenarios/ca03_helpdesk_reset/` end to end (the MFA stage, the authenticator demo, the push defend card), plus the fragments `planning_notes/phishing_and_social_engineering/awareness/e3/{attack,defend}.json`. E3 is the model for the flood flip and the push cards. Also read **E6** `scenarios/ca06_texts_and_qr/` for the Tarrowby room wiring and the Tarrowby cast.
 - Shapes and ids: `planning_notes/phishing_and_social_engineering/designs/00_data_contract.md` (the shared channel-tell library, the triageSet `truth` shape, the `push` card from E3) and `designs/11_awareness_product_episodes.md`.
 - Companies and cast: `planning_notes/phishing_and_social_engineering/awareness/BRAND_SET.md` (Tarrowby Logistics roster, the E2 and E6 `_brandAdditions`); `modules/.../03_WORLD_AND_CAST.md` (hosts; the E9 row names Nilesh Solanki).
 - Runner: `public/break_escape/js/minigames/episode-runner/episode-model.js` (`STAGE_IDS`, `childLaunch`, the `mfa` attack-stage pattern); `public/break_escape/js/minigames/authenticator/` (the mock authenticator the flood and the push cards use).
@@ -39,7 +39,7 @@ Learning outcomes (from `modules/core_03_passwords_and_mfa/`): LO1 (a different 
 ## 5. Company, room and host
 
 - **Company:** Tarrowby Logistics (`tarrowby_logistics`). Brand block, copied exactly from a built Tarrowby shell: `{ "name": "Tarrowby Logistics", "logoText": "TARROWBY", "accent": "#3b5b8c" }`.
-- **Room:** reuse the built `room_aw_tarrowby`, exactly as `scenarios/awareness_e6_texts_and_qr/scenario.json.erb` wires it (`"type": "room_aw_tarrowby"`, `chatBackground": "assets/backgrounds/rooms/aw_tarrowby_blended.png"`, the same lighting and kiosk object). No new room.
+- **Room:** reuse the built `room_aw_tarrowby`, exactly as `scenarios/ca06_texts_and_qr/scenario.json.erb` wires it (`"type": "room_aw_tarrowby"`, `chatBackground": "assets/backgrounds/rooms/aw_tarrowby_blended.png"`, the same lighting and kiosk object). No new room.
 - **Host:** **Nilesh Solanki**, IT service desk analyst, `nilesh.solanki@tarrowby.example` (built Tarrowby cast, renamed from Dev Mistry in the E6 shells; 30s, Gujarati-British, grew up in Leicester). Placeholder host sprite `male_telecom_v2` / `male_telecom_talk.png` / `male_telecom_visemes.png` (as Chidi Okeke uses in E6); host art follows the PixelLab reset. No new cast member for the host.
 - **Role:** `general_staff` with a depot flavour (shared PCs, warehouse logins). E9 feeds the general or mobile check forms (the push item is already in the helpdesk form from E3).
 - **Attack target (the colleague the guesser runs against):** **Colin Mather**, warehouse manager, `colin.mather@tarrowby.example` (built Tarrowby cast: the hiring manager whose vacancy is public in E2; late 50s, white, West Yorkshire). He fits the game design's "supervisor who uses one password for everything". No new cast member.
@@ -89,7 +89,7 @@ Every metadata value the shell wiring (01 P2/P3) and the generator (01 P4, `gen_
 ### Host and learner sprites
 
 - **Nilesh Solanki's `HOSTS['nilesh']` entry** (authored new in `gen_e8_e17_shells.py`, Tarrowby cast; `sprite` is the base key, the in-scenario `spriteSheet` adds `_v2`): `{ 'id': 'nilesh_solanki', 'displayName': 'Nilesh Solanki', 'sprite': 'male_telecom', 'about': "Tarrowby's IT service desk analyst, 30s, Gujarati-British, grew up in Leicester (BRAND_SET.md, E6/E9 additions). Placeholder sprite until the PixelLab reset." }`.
-- **Nilesh's in-scenario host NPC sprite keys** (full erb `rooms.training_room.npcs[]`, following the E6 host NPC shape): `"spriteSheet": "male_telecom_v2"`, `"spriteTalk": "assets/characters/male_telecom_talk.png"`, `"spriteVisemes": "assets/characters/male_telecom_visemes.png"`, `"npcType": "person"`, `"id": "nilesh_solanki"`, `"displayName": "Nilesh Solanki"`, `"storyPath": "scenarios/awareness_e9_passwords/ink/nilesh_solanki.json"`, `"currentKnot": "start"`. Host art is a placeholder until the PixelLab reset.
+- **Nilesh's in-scenario host NPC sprite keys** (full erb `rooms.training_room.npcs[]`, following the E6 host NPC shape): `"spriteSheet": "male_telecom_v2"`, `"spriteTalk": "assets/characters/male_telecom_talk.png"`, `"spriteVisemes": "assets/characters/male_telecom_visemes.png"`, `"npcType": "person"`, `"id": "nilesh_solanki"`, `"displayName": "Nilesh Solanki"`, `"storyPath": "scenarios/ca09_passwords/ink/nilesh_solanki.json"`, `"currentKnot": "start"`. Host art is a placeholder until the PixelLab reset.
 - **Learner avatar** (full erb `player`), as E5/E6: `"spriteSheet": "female_office_worker_v2"`, `"spriteTalk": "assets/characters/female_office_worker_talk.png"`.
 
 ### Full-episode objectives (full erb `objectives[]`, copy the E6/E1 two-aim shape)
@@ -117,7 +117,7 @@ Aim 2 `concludeRequires.globals`: `["episode_e9_passwords_defend_done"]`. Aim 2 
 - `difficulty_level`: 1; `scoring`: "completion"; `secgen_scenario`: null; `collection`: "training"; `ui_theme`: "general"; `estimated_duration_minutes`: 15.
 - `cybok`: `[ { "ka": "HF", "topic": "Human Factors", "keywords": ["Passwords", "Passphrases", "Multi-factor authentication", "Security awareness", "Usable security"] } ]`.
 
-Top-level erb strings (copy E6's): `scenario_id` `awareness_e9_passwords`; `scenario_name` "Passwords and password managers: both sides"; `scenario_brief` = `strings.brief` (§8); `endGoal` "Run the guesser, then lock your own account down at the training kiosk."; `version` "1.0"; `disableAttacks` true; `startRoom` `training_room`; `startPosition` as E6.
+Top-level erb strings (copy E6's): `scenario_id` `ca09_passwords`; `scenario_name` "Passwords and password managers: both sides"; `scenario_brief` = `strings.brief` (§8); `endGoal` "Run the guesser, then lock your own account down at the training kiosk."; `version` "1.0"; `disableAttacks` true; `startRoom` `training_room`; `startPosition` as E6.
 
 ### Defend-only shell: generator `EPISODES['e9']` entry (`gen_e8_e17_shells.py`, following the `gen_e6_e7_shells.py` `EPISODES['e6']` shape)
 
@@ -306,8 +306,8 @@ E9's topic (core_03 passwords and MFA) feeds the new **`general_v2`** check-form
 
 - `planning_notes/phishing_and_social_engineering/awareness/e9/attack.json` (new): people, intelFacts, osint sites, and the `guess` config (the guesser templates, the reuse step, the passphrase demo).
 - `planning_notes/phishing_and_social_engineering/awareness/e9/defend.json` (new): the triageSet `e9_lock_it_down` (push and fake-IT cards as ordinary messages, plus the ENG-09a `choice` cards rows 4 to 8), the `awarenessEpisode` block (`strings`, `_defendOnly`, `debrief`), and a `_brandAdditions` note for RiverReach Angling and Pennington Rangers.
-- `scenarios/awareness_e9_passwords/scenario.json.erb`, `mission.json`, `ink/nilesh_solanki.ink` (new): the full-episode shell. Frame it from E1 (the `01_PIPELINE.md` P2 rule: a mail/OSINT episode copies the E1 shell frame and host-ink structure), add the Tarrowby room from P5a, and take the `guess` attack block from ENG-02; E6 is the reference only for the built Tarrowby room wiring and cast, not the stage shape (E6 has no `guess` stage). Globals to declare: `episode_e9_passwords_state: {}`, `se_awareness_records: []`, `episode_e9_passwords_defend_{percent,reportRate,done,pass}`, `se_osint_state: {}`, `se_intel_tarrowby_mather_role/_team/_pet/_forum`, `se_intel_tarrowby_founded`, plus the `guess_e9_landed` global (ENG-02's `landedGlobal`) and any other `guess_*` state globals ENG-02 defines. The host ink completes the attack task on `guess_e9_landed` and the conclusion task on `episode_e9_passwords_defend_done === true`.
-- `scenarios/awareness_e9_passwords_defend/` (new): the defend-only shell.
+- `scenarios/ca09_passwords/scenario.json.erb`, `mission.json`, `ink/nilesh_solanki.ink` (new): the full-episode shell. Frame it from E1 (the `01_PIPELINE.md` P2 rule: a mail/OSINT episode copies the E1 shell frame and host-ink structure), add the Tarrowby room from P5a, and take the `guess` attack block from ENG-02; E6 is the reference only for the built Tarrowby room wiring and cast, not the stage shape (E6 has no `guess` stage). Globals to declare: `episode_e9_passwords_state: {}`, `se_awareness_records: []`, `episode_e9_passwords_defend_{percent,reportRate,done,pass}`, `se_osint_state: {}`, `se_intel_tarrowby_mather_role/_team/_pet/_forum`, `se_intel_tarrowby_founded`, plus the `guess_e9_landed` global (ENG-02's `landedGlobal`) and any other `guess_*` state globals ENG-02 defines. The host ink completes the attack task on `guess_e9_landed` and the conclusion task on `episode_e9_passwords_defend_done === true`.
+- `scenarios/ca09_passwords_defend/` (new): the defend-only shell.
 - The two seeded Hacktivity courses: follow `01_PIPELINE.md` P12 (feature level only); do not use `awareness_deploy.py` for seeding.
 - ENG-02 (attack-half `guess`) and ENG-09a (`choice` cards) engine work: owned by those packets.
 
@@ -317,7 +317,7 @@ E9's topic (core_03 passwords and MFA) feeds the new **`general_v2`** check-form
 
 ## 17. Acceptance checks
 
-- `ruby scripts/validate_scenario.rb --strict-social scenarios/awareness_e9_passwords/scenario.json.erb` passes (and the defend-only shell).
+- `ruby scripts/validate_scenario.rb --strict-social scenarios/ca09_passwords/scenario.json.erb` passes (and the defend-only shell).
 - The social validators pass, including any ENG-02 additions and the scenario-local `mfa_number_relay` tell (declared in `channelTells` with a `flagChips` label) being accepted.
 - `node --test test/js/social-awareness-fragment-erb-parity.test.mjs` passes.
 - The shared rule-of-thumb test passes (habit string byte-identical).

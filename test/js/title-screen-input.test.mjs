@@ -116,8 +116,8 @@ test('titleScreenName prefers the scenario title name and falls back to display_
 // Opt-in painted backdrop (mission.json "title_art" -> breakEscapeConfig.missionTitleArt).
 test('titleScreenArt accepts a same-site image path and nothing else', async () => {
     const { titleScreenArt } = await import(pathToFileURL(join(dir, 'input.mjs')).href);
-    assert.equal(titleScreenArt({ missionTitleArt: '/break_escape/assets/title_art/awareness_e12_visitor_tailgater.jpg' }),
-        '/break_escape/assets/title_art/awareness_e12_visitor_tailgater.jpg');
+    assert.equal(titleScreenArt({ missionTitleArt: '/break_escape/assets/title_art/ca12_visitor_tailgater.jpg' }),
+        '/break_escape/assets/title_art/ca12_visitor_tailgater.jpg');
     assert.equal(titleScreenArt({ missionTitleArt: '  /break_escape/assets/title_art/a.png ' }), '/break_escape/assets/title_art/a.png');
     for (const bad of [undefined, null, 5, '', 'title_art/a.jpg', 'https://evil.example/a.jpg', '//evil.example/a.jpg',
         "/a.jpg');background:url(x", '/break_escape/../a.jpg', '/break_escape/assets/a.svg']) {

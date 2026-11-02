@@ -10,17 +10,17 @@ Logs are in `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-Break
 
 | Game | Scenario | Purpose | Session log |
 | ---- | -------- | ------- | ----------- |
-| 3737 | awareness_e5_signin_pages | Full episode, weak send (newsletter pretext), timed | `$P2/e5.jsonl` |
-| 3742 | awareness_e6_texts_and_qr | Full episode, calm route | `$P2/e6.jsonl` |
-| 3747 | awareness_e7_voice_ceo | Full episode, first pretext | `$P2/e7.jsonl` |
-| 3751 | awareness_e7_voice_ceo | Re-run only to capture the voice panel in full (the harness truncates long `getState` text in the log; an `eval` read does not) | `$P2/e7b.jsonl` |
-| 3753 | awareness_pre_helpdesk_ab | Pre check, persisted score read at each step | `$P2/pre.jsonl` |
-| 3754 | awareness_post_helpdesk_ab | Post check, persisted score read at each step | `$P2/post.jsonl` |
+| 3737 | ca05_signin_pages | Full episode, weak send (newsletter pretext), timed | `$P2/e5.jsonl` |
+| 3742 | ca06_texts_and_qr | Full episode, calm route | `$P2/e6.jsonl` |
+| 3747 | ca07_voice_ceo | Full episode, first pretext | `$P2/e7.jsonl` |
+| 3751 | ca07_voice_ceo | Re-run only to capture the voice panel in full (the harness truncates long `getState` text in the log; an `eval` read does not) | `$P2/e7b.jsonl` |
+| 3753 | ca_pre_helpdesk_ab | Pre check, persisted score read at each step | `$P2/pre.jsonl` |
+| 3754 | ca_post_helpdesk_ab | Post check, persisted score read at each step | `$P2/post.jsonl` |
 
 `verify-run.rb` output, tails as printed:
 
 ```
-game 3737  awareness_e5_signin_pages
+game 3737  ca05_signin_pages
 globals set     9: engine_tutorial_declined, episode_e5_signin_pages_defend_done, episode_e5_signin_pages_defend_pass, landing_sso_login_built, landing_sso_login_domain, se_intel_quayholt_it_desk, se_intel_quayholt_sso_migration, se_intel_quayholt_sso_portal, se_intel_quayholt_staff_claims
 tasks           2 in objectivesState, 2 completed
   send_signin_phish                  "completed"  at 2026-10-22T22:37:15Z
@@ -28,7 +28,7 @@ tasks           2 in objectivesState, 2 completed
 score           100
 VERDICT: progress recorded — 0 rooms beyond the first, 0 objects unlocked, 0 flags submitted, 2 tasks completed.
 
-game 3742  awareness_e6_texts_and_qr
+game 3742  ca06_texts_and_qr
 globals set     7: engine_tutorial_declined, episode_e6_texts_and_qr_defend_done, episode_e6_texts_and_qr_defend_pass, phish_mobile_staff_landed, se_intel_tarrowby_facilities_contact, se_intel_tarrowby_parking_scheme, se_intel_tarrowby_target_staff
 tasks           2 in objectivesState, 2 completed
   check_work_phone                   "completed"  at 2026-10-22T22:43:57Z
@@ -36,7 +36,7 @@ tasks           2 in objectivesState, 2 completed
 score           100
 VERDICT: progress recorded — 0 rooms beyond the first, 0 objects unlocked, 0 flags submitted, 2 tasks completed.
 
-game 3747  awareness_e7_voice_ceo
+game 3747  ca07_voice_ceo
 globals set     7: engine_tutorial_declined, episode_e7_voice_ceo_defend_done, episode_e7_voice_ceo_defend_pass, phish_ceo_voice_target_landed, se_intel_brightwell_ceo, se_intel_brightwell_open_payment, se_intel_brightwell_payments_clerk
 tasks           2 in objectivesState, 2 completed
   check_finance_line                 "completed"  at 2026-10-22T22:46:10Z
@@ -44,14 +44,14 @@ tasks           2 in objectivesState, 2 completed
 score           100
 VERDICT: progress recorded — 0 rooms beyond the first, 0 objects unlocked, 0 flags submitted, 2 tasks completed.
 
-game 3753  awareness_pre_helpdesk_ab
+game 3753  ca_pre_helpdesk_ab
 globals set     3: engine_tutorial_declined, triage_pre_done, triage_pre_pass
 tasks           1 in objectivesState, 1 completed
   finish_check                       "completed"  at 2026-10-22T22:50:22Z
 score           100
 VERDICT: progress recorded — 0 rooms beyond the first, 0 objects unlocked, 0 flags submitted, 1 tasks completed.
 
-game 3754  awareness_post_helpdesk_ab
+game 3754  ca_post_helpdesk_ab
 globals set     3: engine_tutorial_declined, triage_post_done, triage_post_pass
 tasks           1 in objectivesState, 1 completed
   finish_check                       "completed"  at 2026-10-22T22:52:01Z
@@ -146,7 +146,7 @@ E5 is down from P1's 16 minutes (the debrief is now about 130 words instead of 5
 | E7 voice panel | check | **honest** | In full: "How a voice gets copied. Recordings of someone speaking in public, such as a talk, an interview or a company video, can be used to make new sentences in a voice that sounds like theirs. If you can't reach the person to check, ask someone who would know, such as the finance manager. On Monday: a voice you recognise is not proof of who is calling, and neither is an email that backs it up. If a call or voicemail asks for money, secrecy or a skipped step, ring the person back on a number you already hold, then report it the way your organisation asks you to. Nobody is marked down for a miss here. A familiar voice is hard to doubt, and these calls were built to lean on exactly that trust. Anyone can be caught by one." Only the "marked down" sentence is open to F5. |
 | E7 framing | check | **honest** | Kiosk brief: "write the email in the name of Brightwell's chief executive, Ravinder Sandhu, the message that would go with a cloned-voice call to accounts payable, asking for something he would never ask for. Then you swap seats: you're covering the finance office's phone and inbox, with three voicemails and two emails waiting. Only the second part is scored." Scope: "No real person's voice is used, and nothing you write leaves the game." Red team lead mail: "you are not scored on how convincing it is." Compose labels "whose voice the call uses" and "the line it comes from". Defend brief: "Nobody will ask whether a voice sounded real: what counts is what each message asks you to do." After Send: "Advisory: The pressure is the point of this call; the debrief shows why it works." |
 
-### Check pair: awareness_pre_helpdesk_ab and awareness_post_helpdesk_ab
+### Check pair: ca_pre_helpdesk_ab and ca_post_helpdesk_ab
 
 | Check | Result |
 | ----- | ------ |

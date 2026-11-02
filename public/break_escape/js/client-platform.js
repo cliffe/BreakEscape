@@ -244,12 +244,12 @@
         try { return /Android/i.test(win.navigator.userAgent || ''); } catch (e) { return false; }
     }
 
-    // The web app's game event: the page's meta, else /hacktivities/<id>/... in its own path (the mission
-    // page has no metas), else the value stored for this tab.
+    // The web app's game event: the page's meta, else /hacktivities/<id>[-slug]/... in its own path (the
+    // mission page has no metas), else the value stored for this tab.
     function pwaEventId() {
         var ev = meta('hacktivity-app-event');
         if (!ev) {
-            var m = /^\/hacktivities\/(\d{1,12})(?:\/|$)/.exec(win.location.pathname || '');
+            var m = /^\/hacktivities\/(\d{1,12})(?:-[a-z0-9-]*)?(?:\/|$)/.exec(win.location.pathname || '');
             if (m) ev = m[1];
         }
         return /^\d{1,12}$/.test(ev || '') ? ev : (/^\d{1,12}$/.test(String(readPwaStored().eventId || '')) ? String(readPwaStored().eventId) : '');

@@ -1,0 +1,13 @@
+{
+  "key": "1b7a2404c75133b19af5cbc94652c2bf",
+  "npc": "eleanor_vance",
+  "text": "Albion may still refer to arbitration. But we have a solid factual foundation.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:29:39Z"
+}

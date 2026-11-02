@@ -4,6 +4,7 @@ module BreakEscape
   module ApplicationHelper
     AWARENESS_TEXT_MAX    = 600
     AWARENESS_HEADING_MAX = 80
+    AWARENESS_ROUTE_NAME_MAX = 120
     AWARENESS_TEAM_MIN    = 2
     AWARENESS_TEAM_MAX    = 100_000
     # Zero-width characters and bidi controls (U+200B-200F, 202A-202E, 2060-2064, 2066-2069, FEFF).
@@ -24,7 +25,15 @@ module BreakEscape
       out = {}
       text    = be_plain(raw[:report_text], AWARENESS_TEXT_MAX)
       heading = be_plain(raw[:report_heading], AWARENESS_HEADING_MAX)
-      out[:reportRoute] = heading.present? ? { heading: heading, text: text } : text if text.present?
+      # routeName is the short phrase the debrief drops into "At work, that means: ...". It only
+      # rides along beside a configured route, so reportRoute becomes an object when it is present.
+      route_name = be_plain(raw[:report_route_name], AWARENESS_ROUTE_NAME_MAX)
+      if text.present?
+        route = { text: text }
+        route[:heading] = heading if heading.present?
+        route[:routeName] = route_name if route_name.present?
+        out[:reportRoute] = route.keys == [:text] ? text : route
+      end
       rule = be_plain(raw[:rule_of_thumb], AWARENESS_TEXT_MAX)
       out[:ruleOfThumb] = rule if rule.present?
       size = be_team_size(raw[:team_size])

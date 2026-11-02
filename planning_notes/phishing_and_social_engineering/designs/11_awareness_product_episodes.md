@@ -312,7 +312,7 @@ core loop and not a later add-on (the default is to measure from the start and s
 - **How pre and post cross missions.** Every episode is its own mission, so its own game with its own
   `globalVariables`, and `05`'s first-attempt guard (`<prefix>done`, `05` N6) lives inside one game.
   The two checks are therefore shell missions of their own, per role and pairing
-  (`awareness_pre_finance_ab`, `awareness_post_finance_ab` and so on), each one kiosk that opens one
+  (`ca_pre_finance_ab`, `ca_post_finance_ab` and so on), each one kiosk that opens one
   triage set. The pre-check mission lists `exportGlobals` for `triage_pre_percent`,
   `triage_pre_reportRate` and `triage_pre_done`. The post-check mission lists `importGlobals` for the
   same three, each with `as` equal to its own name (`triage_pre_percent` and so on, so `05`'s

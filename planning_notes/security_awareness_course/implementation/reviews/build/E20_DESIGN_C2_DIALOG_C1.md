@@ -113,7 +113,7 @@ Not a blocker; the text works without it and the phrase is widely known.
 ## Dialogue findings (old → new)
 
 ### MI3 — minor — episode-local — full host "done" line is clipped/ungrammatical to voice
-`scenarios/awareness_e20_remote_and_mobile_working/ink/zainab_hussain.ink:40`.
+`scenarios/ca20_remote_and_mobile_working/ink/zainab_hussain.ink:40`.
 
 The line drops its verb and reads oddly aloud; the defend variant already says it the smooth way
 (`..._defend/ink:22`, "if unsure, use your hotspot"). Align the full line to it (stays 20 words):

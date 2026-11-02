@@ -4,7 +4,7 @@
 
 ## Built shape and episode mapping
 
-This module is **part built** (`research/built_episodes_vs_plan.md` §2). Reading a web address, look-alike domains and the padlock myth (C08-LO2) are the built **E5** `awareness_e5_signin_pages` (Quayholt Insurance, general) and its page-triage defend set and general checks. **Do not redesign the built E5 parts.** The rest, the signature of this module, is delivered by **E10** (new, with core_07): fake downloads, the "verify you are human" clipboard trick, browser warnings and extensions. E10 **extends E5**: it reuses the E5 mock browser and page-build model.
+This module is **part built** (`research/built_episodes_vs_plan.md` §2). Reading a web address, look-alike domains and the padlock myth (C08-LO2) are the built **E5** `ca05_signin_pages` (Quayholt Insurance, general) and its page-triage defend set and general checks. **Do not redesign the built E5 parts.** The rest, the signature of this module, is delivered by **E10** (new, with core_07): fake downloads, the "verify you are human" clipboard trick, browser warnings and extensions. E10 **extends E5**: it reuses the E5 mock browser and page-build model.
 
 E10 follows the built shape: an attack half that builds and reveals a fake page (never a working one), a flip, then a scored defend half of browser-screen triage, then the built debrief view with the shared "habit to keep". It uses the built landing-page model, inbox triage, awareness-measure records and concept cards, has a defend-only variant, and feeds new check items with mirror pairs (`assessment.md`).
 
@@ -24,7 +24,7 @@ None of these arrive by email, so there's no sender to check and no suspicious m
 - **Leo Brennan** (desk neighbour) recommends an extension he's used for ages, and later pastes something he shouldn't have and asks what to do.
 - **Kai Murray** (security analyst) shows what the reports achieved.
 - **Lena Fischer** (the player's manager) sets the task by chat only.
-- Fictional suppliers and vendor: Fernside Catering, Ashby Cleaning Supplies, and Pagewright, a PDF software vendor. All domains are placeholders to be checked as unregistered before build.
+- Fictional suppliers and vendor: Fernside Catering, Paperclip & Sons, and Pagewright, a PDF software vendor. All domains are placeholders to be checked as unregistered before build.
 
 ## Structure
 
@@ -64,7 +64,7 @@ The critical path is marked **(CP)**.
   5. A video page: "Click Allow to keep watching." (Close: choose Block.)
   6. The browser's own menu: "Relaunch to update." (Carry on: that one is genuine.)
   7. A banner on a news page: "Your browser is out of date. Download the update." (Close and report.)
-  8. Address: `https://www.ashby-supplies.co.uk/trade` against the bookmark `ashbysupplies.co.uk` (MG-03 inline: a lookalike).
+  8. Address: `https://www.paperclip-and-sons.co.uk/trade` against the bookmark `paperclipandsons.co.uk` (MG-03 inline: a lookalike).
   9. A red "Deceptive site ahead" page. (Go back.)
   10. A download bar: "Fernside_pricelist.pdf.exe". (Close and report: a program pretending to be a document.)
 - The bank (BE-13) holds more: an extension asking for all-site access, a "Your connection is not private" warning, a fake error with a "Fix it" button, a full-screen alarm, a third MG-03 address.
@@ -72,14 +72,14 @@ The critical path is marked **(CP)**.
 
 ### 4. Apply: "The 12:00 report" (5 minutes)
 
-- **(CP)** Back at the desk with Pagewrangle installed from Quayholt Apps, the player converts the price list: one satisfying click. The work task bar (BE-18) shows four steps: **Convert Fernside's price list** (done), **Check Ashby's and Fernside's delivery charges**, **Download Fernside's new catalogue**, **Send the report**. Four threats arrive inside the work, one from each slot (BE-13 draws the variant):
+- **(CP)** Back at the desk with Pagewrangle installed from Quayholt Apps, the player converts the price list: one satisfying click. The work task bar (BE-18) shows four steps: **Convert Fernside's price list** (done), **Check Paperclip & Sons' and Fernside's delivery charges**, **Download Fernside's new catalogue**, **Send the report**. Four threats arrive inside the work, one from each slot (BE-13 draws the variant):
 
 | Slot | What happens | What it tests | Best response |
 |---|---|---|---|
-| **Fake source** | The player needs Ashby's delivery charges. the staff intranet's bookmarks have Ashby's trade site; a search shows a sponsored "Ashby Supplies: trade login" at `ashby-trade-login.com`, with a sign-in page (pre-filled with the in-game account; never a real password) | Starting from a trusted place; reading the address | Use the bookmark, or skip the advert and check the address of the genuine result |
+| **Fake source** | The player needs Paperclip & Sons' delivery charges. the staff intranet's bookmarks have Paperclip & Sons' trade site; a search shows a sponsored "Paperclip & Sons: trade login" at `paperclip-trade-login.com`, with a sign-in page (pre-filled with the in-game account; never a real password) | Starting from a trusted place; reading the address | Use the bookmark, or skip the advert and check the address of the genuine result |
 | **Fake check** | Fernside's real site, reached from the bookmark, has been hacked. Clicking "Download catalogue" brings up "Verify you are human: 1. Press Windows + R. 2. Press Ctrl + V. 3. Press Enter.", shown as text with MG-02's Follow the instructions, Close the page and Report buttons | Never doing what a page says to your computer, even on a site you trust | Close the page and report it (the browser's Report button) |
 | **Permission grab** | Leo, leaning over: *"Use Free PDF Tools. It's an extension, does it all in the browser. I've had it for ages."* The store page shows 4.8 stars and "2 million users"; Add brings up "It can: Read and change all your data on all websites. Read your browsing history." (The notification variant: a page that says "Click Allow to continue reading") | Judging a permission request | Cancel and use the portal tool, or ask IT about the extension; for notifications, Block |
-| **Fake alarm** | Lena: *"Saw this about Ashby being bought out. Worth a mention?"* The news page loads, then an advert takes over: full screen, with an alarm that is silent by default (the caption reads "This page is trying to play a loud alarm"); with sound on, a calm robotic voice says *"Warning. Your computer has been locked. Do not turn it off. Call support now."* The page shows the organisation's own logo and name, copied from its website (on screen only, from BE-05), and an 0800 number. The close button reopens it | Not calling; finding the safe way out | Press Esc, close the tab or the browser; if it won't close, call the service desk on the number from the staff intranet; report it |
+| **Fake alarm** | Lena: *"Saw this about Paperclip & Sons being bought out. Worth a mention?"* The news page loads, then an advert takes over: full screen, with an alarm that is silent by default (the caption reads "This page is trying to play a loud alarm"); with sound on, a calm robotic voice says *"Warning. Your computer has been locked. Do not turn it off. Call support now."* The page shows the organisation's own logo and name, copied from its website (on screen only, from BE-05), and an 0800 number. The close button reopens it | Not calling; finding the safe way out | Press Esc, close the tab or the browser; if it won't close, call the service desk on the number from the staff intranet; report it |
 
 - **The clipboard reveal.** On the fake check, the browser's own interface (not the scam page) offers **"What did this page copy?"** It opens MG-02's clipboard view: a single line, **"A hidden command that would run a program on your computer."** The command itself is never shown. The player can still choose Follow the instructions: the game then says in words what would have happened (*"The command would have downloaded a program and run it. Nothing would have appeared on screen."*), which is the point. If the player hasn't reported it within two game-minutes, Kai rings: *"Did you just run something from a website? You're not in trouble. Leave the laptop on, unplug the cable, and I'll be over."* (core_07's isolation instruction, voiced in the version the organisation profile picks.)
 - **Escaping the alarm.** The full-screen page is a tiny escape room with no clock: the in-page close button reopens the window; Esc leaves full screen; then the tab's close button works. If the player is stuck for 30 seconds, an on-screen hint appears (*"Try Esc"*), and after another 30, Owain's chat: *"Stuck on a pop-up? Ring me, not them."* If the player calls the 0800 number, a friendly "support agent" asks them to install a remote access tool "so I can fix it for you". They can hang up and report (the call itself is core_02's subject).
@@ -94,7 +94,7 @@ The critical path is marked **(CP)**.
 
 - **(CP)** The debrief screen (BE-02), then Owain and Ama at the service desk.
 - For each trap: a thumbnail of the page, the giveaway (the instruction, the address, the phone number, the permission), what the player did, and the trusted route.
-- The before and after: where the player got the converter in the hook, against where they got Ashby's site in Apply.
+- The before and after: where the player got the converter in the hook, against where they got Paperclip & Sons' site in Apply.
 - Kai's board: what each report blocked, and how fast.
 - Per-outcome results: Secure, Developing or Not yet (`assessment.md`).
 - **The line to remember:** *"Start from a place you trust. Never let a web page drive your computer. If in doubt, close it and report it."*
@@ -150,7 +150,7 @@ No option shames the player or Leo. The worst branches still end with a report a
 Shown on the built debrief view, then spoken by the host:
 
 1. The hook and the four Apply threats, each with the giveaway, what the player did and the trusted route.
-2. The before and after: the hook's converter against Ashby's site.
+2. The before and after: the hook's converter against Paperclip & Sons' site.
 3. Leo's outcome, and why the first minute mattered more than the paste.
 4. Kai's board.
 5. Per-outcome results.

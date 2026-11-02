@@ -8,19 +8,21 @@ Questions for the user. Each has a recommendation; the plan follows the recommen
 
 ### The customer's reporting route
 
-- **Status (2026-10-30):** the owner said go ahead: draft the pre-canned option table for their approval, then build. The table is not drafted yet; nothing is built until they approve it. Platform detail now lives in the Hacktivity repo (`docs/awareness_course/reporting_route_wp02.md`, D10).
+- **Decided 2026-11-01 (see "Launch owner calls" under Decided).** Free text, cleaned and validated server-side; built on Hacktivity main (commits 22a19804, b9cf4327; route name in the Report verdict). Nothing further to build.
+- **History (2026-10-30):** the owner said go ahead: draft the pre-canned option table for their approval, then build. Platform detail lives in the Hacktivity repo (`docs/awareness_course/reporting_route_wp02.md`, D10).
 
 ### Open from the E8 to E20 build questions
 
-- **Debrief "habit to keep" outside phishing (2026-10-30, no pick):** the owner's note: "Should the line be specific to groups of episodes?" Open. Background: every episode shows the set-wide rule of thumb (`AWARENESS_RULE_OF_THUMB_TEXT`, about money and codes), which reads off-topic on E17, E15 and E20. Options were one constant everywhere, or a per-episode habit line beside it. A per-group line (for example one for the access and physical episodes, one for data handling) is a third option for the owner to rule on.
-- **`defend_pass` name (2026-10-30, discuss first):** the owner picked "rename to `_complete` everywhere" but noted: "First discuss: why would this require code from Hacktivity?" Open until discussed. Answer to give: the flag is written into the learner's game state by the awareness-measure records, and anything that reads it (the post-check's carry-over, any report built on completion) would need the new name; Hacktivity needs code only if it reads the flag by name. Check that before any rename.
+- **Debrief "habit to keep" outside phishing — decided 2026-11-01 (see "Launch owner calls" under Decided):** keep the set-wide rule of thumb and add a per-episode habit line beside it on E15, E17 and E20; E11 also gets one, E16 does not. Not per group. Built as `strings.habitLine`.
+- **`defend_pass` name — decided 2026-11-01 (see "Launch owner calls" under Decided):** rename to `_complete` in the plans; documented-only field, so no code impact in Break Escape. (The 2026-10-30 note asked why Hacktivity would need code: only if a report reads the field by name; the progress dashboard is the one to check in the coordinated rollout.)
 
 ## Open
 
-### D9. Accessibility commitment (2026-10-30: pick recorded, owner wants it explained)
+### D9. Accessibility commitment (decided 2026-11-01: deferred, see "Launch owner calls" under Decided)
 
-- **Pick:** WCAG 2.2 AA for the episode runner's HTML views, the check forms and the Hacktivity pages; the game accessibility guidelines for the 2D room; an accessibility statement once a text route (BE-03) exists.
-- **Owner note:** "Discuss: explain exactly what this entails." Open until explained. Background: the build has a first-slice baseline (keyboard play, accessible names on report and verdict controls, reduced motion, plain-text alternatives in item data). The full audit and screen-reader work on the canvas surfaces is deferred. See `features/accessibility_and_inclusion.md`.
+- **Decided 2026-11-01:** deferred. Keep the built HTML-surface baseline; do not commit to a full WCAG 2.2 AA audit or a canvas text route until there is demand; publish no accessibility statement until a text route exists. `LAUNCH_OWNER_CALLS.md` §3 explains what was deferred, by surface.
+- **Pick (2026-10-30):** WCAG 2.2 AA for the episode runner's HTML views, the check forms and the Hacktivity pages; the game accessibility guidelines for the 2D room; an accessibility statement once a text route (BE-03) exists.
+- **Owner note:** "Discuss: explain exactly what this entails." Explained and deferred. Background: the build has a first-slice baseline (keyboard play, accessible names on report and verdict controls, reduced motion, plain-text alternatives in item data). The full audit and screen-reader work on the canvas surfaces is deferred. See `features/accessibility_and_inclusion.md`.
 
 ### D11. Compliance gaps the mapping found (2026-10-30: deferred)
 
@@ -44,6 +46,19 @@ Questions for the user. Each has a recommendation; the plan follows the recommen
 - **Recommendation:** keep that order. E8 fills the largest gap (what to do next, which every built episode leads into) and reuses the inbox and report systems as they are. E9 and E10 build on E3's MFA stage and E5's landing-page builder. E11 needs the consequence flip (D13), E12 needs person-chat in the training room, and E13 needs an authored assistant, so they come once those runner changes exist. Companies: `03_WORLD_AND_CAST.md` (E11 and E13 at proposed new companies).
 
 ## Decided
+
+### Launch owner calls (2026-11-01, owner)
+
+The owner cleared the launch-finishing decision board. This closes the "Waiting on the user" items, D9 under "Open", and sections 1 to 4 of `LAUNCH_OWNER_CALLS.md`.
+
+- **Debrief "habit to keep" line.** Keep the single set-wide rule of thumb on every episode, and add a short per-episode habit line beside it where the money-and-codes rule reads off-topic: E15 (shadow IT), E17 (acceptable use) and E20 (remote and mobile working). E11 (misdirected data) and E16 (insider risk) were reviewed: E11 gets a line (its lesson is handling personal data and telling the DPO, not an incoming message); E16 keeps the shared line alone (its lesson, keep your login to yourself and deny sign-ins you did not start, is already what the shared line names). Built: an opt-in `strings.habitLine` slot in `debrief-view.js` with a JS test and schema entry, and the four lines in each fragment and shell. Not per group (matches the course-level line decision).
+- **`defend_pass` rename.** Rename to `_complete` in the forward-looking plans and docs so the scoring rollout is built under the new name. `defend_pass` is a documented-only field (no Break Escape or Hacktivity code, no shipped scenario), so the plan rename has no code impact. Done in the README globals example and the forward-looking implementation briefs and wiring notes; dated playtest, blind, design-review and build-log entries keep the old name as the record.
+- **D9 accessibility.** Deferred. Keep the built HTML-surface baseline (keyboard play, accessible names, reduced motion, plain-text item data); do not commit to a full WCAG 2.2 AA audit or a canvas text route until there is demand; publish no accessibility statement until a text route exists.
+- **Stand-in host sprites.** Launch now with stand-in sprites for the eight hosts with no art yet: Gwen Pritchard, Nilesh Solanki, Delphine Arvanitis, Lorna Easton, Ama Owusu, Tomasz Wiśniewski, Zainab Hussain and Yusuf Demir. Swap in the real art after 3 November; one concept each is approved (review page).
+- **Parody brand renames.** Wrenfield Travel becomes Wanderlost Travel (`wanderlosttravel.example`); Ashby Supplies becomes Paperclip & Sons (`paperclipandsons.example`). Both web-searched clear. PCN Services stays (plan-only). Done across the live shells, fragments, brand set, names register, bridge and current design notes.
+- **Catalogue.** The public catalogue lists the both-sides (attack-and-defend) episodes only; the defend-only versions are available to organisations on request. This needs a later Hacktivity change (noted, not made here).
+- **Reporting route (WP-02).** Decided and built. Free text is the chosen form, as the most flexible, cleaned and validated server-side (control, zero-width and bidi characters stripped; length caps; heading folded to one line), escaped in views and the config script, drawn with `textContent` in the engine. Built on Hacktivity main (commits 22a19804, b9cf4327; the route name is shown in the Report verdict). Hostile-input tests pass (Hacktivity 89 runs, 0 failures; BE `awareness_config_test` 18/18; `social-fun-engine` 18/18). Nothing further to build.
+- **Ten agent rulings confirmed.** All ten decisions the orchestrator made and listed on the launch-calls page are confirmed fine: Niamh Doherty is Northern Irish; Joanne Pell gets her own concept; no art for Owen Treharne or Pauline Hendry; the E3 pretext caller stays unvoiced; Sofia and Delphine share the Despina voice; the E13 defend demo is hand-built; the generator sync stands; `lab_phishing` is `lab_social_engineering`; and CloudBoxy is not in the shipped lab.
 
 ### CyberAware catalogue form answers (2026-10-31, owner; https://claude.ai/artifact/3UytMpoGSSoek9ib4mRNwf)
 
@@ -153,7 +168,7 @@ Recorded from the owner's decisions board on 2026-10-30. "Differs" means the own
 | E20 host art | New host art after 3 Nov | |
 | Episodes over 15 minutes | Trim anything over 17 minutes after timed runs | |
 | Orchestrator rulings that could be overruled | Keep all four | |
-| Habit to keep line; `defend_pass` rename | Not decided; see "Waiting on the user" | |
+| Habit to keep line; `defend_pass` rename | Decided 2026-11-01: set-wide line plus per-episode habit line (E15/E17/E20, and E11; E16 reviewed, no line); `defend_pass` renamed `_complete` in the plans. See "Launch owner calls" under Decided | |
 
 #### Hacktivity and platform
 

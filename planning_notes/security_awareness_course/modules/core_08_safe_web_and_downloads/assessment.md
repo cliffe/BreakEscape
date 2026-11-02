@@ -35,7 +35,7 @@ A learner who misses a critical behaviour goes through the remediation loop (`fe
 
 ## Check and defend items (mirror pairs)
 
-core_08 is **part built**. Reading a web address, look-alike domains and the padlock myth (C08-LO2) are covered by **E5** `awareness_e5_signin_pages` (its page-triage defend set) and the **general** check forms. The downloads, fake "verify you are human" pages, browser warnings and extensions (C08-LO1, LO3, LO4, LO5) are delivered by **E10** (new, with core_07), which **extends E5**. Only the defend half and the pre and post checks are scored (`passPercent` 0). The assessed behaviours and the question pool below map onto defend items and check items, each critical behaviour a **mirror pair** (aw5) tested by matched items across forms A and B.
+core_08 is **part built**. Reading a web address, look-alike domains and the padlock myth (C08-LO2) are covered by **E5** `ca05_signin_pages` (its page-triage defend set) and the **general** check forms. The downloads, fake "verify you are human" pages, browser warnings and extensions (C08-LO1, LO3, LO4, LO5) are delivered by **E10** (new, with core_07), which **extends E5**. Only the defend half and the pre and post checks are scored (`passPercent` 0). The assessed behaviours and the question pool below map onto defend items and check items, each critical behaviour a **mirror pair** (aw5) tested by matched items across forms A and B.
 
 | Behaviour or item | Built (E5) or new (E10) | Check mirror pair (matched A ↔ B) |
 |---|---|---|
@@ -63,7 +63,7 @@ You need a free tool to shrink a large file before sending it. What's the right 
 
 ### C08-Q2 (LO1, LO2, single choice)
 
-You search for a supplier's website. The first result says "Sponsored" and its address is `ashby-trade-login.com`. The intranet's bookmark for the supplier is `ashbysupplies.co.uk`. What do you do?
+You search for a supplier's website. The first result says "Sponsored" and its address is `paperclip-trade-login.com`. The intranet's bookmark for the supplier is `paperclipandsons.co.uk`. What do you do?
 
 - A. Click the sponsored result: it's first. *Feedback: It's first because someone paid. That someone may not be the supplier.*
 - **B. Use the bookmark.** *Feedback: Right. Starting from a trusted place beats judging a search page.*

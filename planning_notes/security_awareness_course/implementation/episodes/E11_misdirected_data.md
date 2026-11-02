@@ -39,7 +39,7 @@ richer than the built awareness shape, the built shape wins and this spec distil
 - `planning_notes/phishing_and_social_engineering/awareness/BRAND_SET.md` (roster, cast, look-alike and
   cast-diversity rules; the pre-ship web-search rule).
 - Nearest built episode and its fragments: `planning_notes/phishing_and_social_engineering/awareness/e4/`
-  (`attack.json`, `defend.json`) and the shells `scenarios/awareness_e4_exec_whaling*/`. E4 is the
+  (`attack.json`, `defend.json`) and the shells `scenarios/ca04_exec_whaling*/`. E4 is the
   nearest built model for the `awarenessEpisode` block, the `triageSets` item shape, the `voicemail`
   kind and the defend-only/`_defendOnly` string split.
 - Engine: `public/break_escape/js/minigames/episode-runner/` (`episode-model.js` `STAGE_IDS`,
@@ -124,7 +124,7 @@ Cast (all fictional; ages are bands for the concept prompts; all need the pre-sh
 | Martin Fletcher | Sales Director | 50s, white, Manchester | `martin.fletcher@carrholme.example` | The marketing-export sandbox beat |
 | Sam Whitaker | Payroll Officer | 30s, British Caribbean | `sam.whitaker@carrholme.example` | The correct recipient of the overtime sheet |
 | Sam Whitlow | Manager, Hollinsbrook House (client care home, `hollinsbrookhouse.example`) | 50s, white, Yorkshire | `sam.whitlow@hollinsbrookhouse.example` | The wrong "Sam" the breach goes to; replies in the defend set |
-| Gareth Hale | Son of a resident (Hollinsbrook House) | 40s, white | `gareth.hale@lintbox.example` (freemail) | The subject access request in the defend set |
+| Gareth Hale | Son of a resident (Hollinsbrook House) | 40s, white | `gareth.hale@mailgrove.example` (freemail) | The subject access request in the defend set |
 | Wychbourne Court | Client care home (`wychbournecourt.example`) | n/a | `laundry@wychbournecourt.example` | Sends the misdirected care summary (inbound breach) |
 
 People named on screen only (no art, no sender): Edna Hale (87, Hollinsbrook House, Room 12), Albert
@@ -211,7 +211,7 @@ the mission metadata and the generator entry.
   `"spriteTalk": "assets/characters/male_office_worker_talk.png"`,
   `"spriteVisemes": "assets/characters/male_office_worker_visemes.png"`, `"npcType": "person"`,
   `"id": "tomasz_wisniewski"`, `"displayName": "Tomasz Wiśniewski"`,
-  `"storyPath": "scenarios/awareness_e11_misdirected_data/ink/tomasz_wisniewski.json"`,
+  `"storyPath": "scenarios/ca11_misdirected_data/ink/tomasz_wisniewski.json"`,
   `"currentKnot": "start"`, plus the N16 done-event `eventMappings` (section 15a). Host art is a
   placeholder until the PixelLab reset.
 - **Learner avatar** (full erb `player`, as E4): `"spriteSheet": "female_office_worker_v2"`,
@@ -245,7 +245,7 @@ Given in full in **section 15a** (the one-aim design for a `mistake` episode wit
   `ui_theme`: "general"; `estimated_duration_minutes`: 15.
 - `cybok`: `[ { "ka": "HF", "topic": "Human Factors", "keywords": ["Data protection", "Information handling", "Incident reporting", "Security awareness"] } ]`.
 
-Top-level erb strings (copy E4's shape): `scenario_id` `awareness_e11_misdirected_data`; `scenario_name`
+Top-level erb strings (copy E4's shape): `scenario_id` `ca11_misdirected_data`; `scenario_name`
 "Misdirected data: the Care Laundry desk"; `scenario_brief` = `strings.brief` (section 8); `endGoal`
 "Play out the morning, then sort the Care Laundry desk inbox at the training kiosk."; `version` "1.0";
 `disableAttacks` true; `startRoom` `training_room`; `startPosition` as E4.
@@ -435,7 +435,7 @@ chosen so the high-scoring verdict is unambiguous.
 | 1 | `e11_wrong_sam_breach` | email, Sam Whitlow (`sam.whitlow@hollinsbrookhouse.example`), genuine | "I think this wasn't meant for me?" | none (a genuine heads-up; isPhish false) | **Report** (report the breach to the DPO) | on | "Sam has flagged that your staff's overtime, with health notes, reached her by mistake. That is a personal data breach: report it the same way you would report anything, and say it involves personal data, so it reaches the DPO. Asking her to delete it is a good next step, not instead of reporting." |
 | 2 | `e11_police_disclosure` | call, "DC Rowley, North Pennine Police" (number withheld), isPhish true | "I need Lee Corrigan's mobile and his route this afternoon. Road traffic matter. Urgent." | `vish_callback_pressure`, `borrowed_authority`, `secrecy_or_bypass` | **Verify** (take his name, force and switchboard number; the DPO handles police requests) or **Report** | on | "A caller cannot prove who they are by phone, and people pretend to be police to get an address. Give nothing out. Take his details, tell him the DPO handles police requests and is quick, and pass it on. Real police expect that and usually put it in writing." |
 | 3 | `e11_payroll_lookalike` | email, "Carrholme Payroll" (`payroll@carrholme-payroll.example`), isPhish true | "Confirm your bank and National Insurance details to be paid this month" | `lookalike_domain`, `senderTrust` | **Report** | on | "The name says Carrholme Payroll, but the address is on carrholme-payroll.example, with an added word; Carrholme is carrholme.example. Payroll does not collect bank or NI details by email like this. Report it." (The normal-looking phish half of the mirror pair.) |
-| 4 | `e11_sar_everything` | email, Gareth Hale (`gareth.hale@lintbox.example`), genuine | "Mum's cardigan is missing again. I want EVERYTHING you hold on Mum and me. Every note, every call." | none (a genuine request inside a complaint; isPhish false) | **Report** (pass to the DPO the same day) or **Verify** | on | "It is angry and broad, but it is a valid request to see personal data, and it does not have to use the words 'subject access'. Pass it to the DPO the same day and send the holding reply; do not gather or send anything yourself. Carry on with the cardigan complaint as normal work. Handling it yourself and quietly, or deleting it, is the wrong move." (The suspicious-looking genuine half of the mirror pair.) |
+| 4 | `e11_sar_everything` | email, Gareth Hale (`gareth.hale@mailgrove.example`), genuine | "Mum's cardigan is missing again. I want EVERYTHING you hold on Mum and me. Every note, every call." | none (a genuine request inside a complaint; isPhish false) | **Report** (pass to the DPO the same day) or **Verify** | on | "It is angry and broad, but it is a valid request to see personal data, and it does not have to use the words 'subject access'. Pass it to the DPO the same day and send the holding reply; do not gather or send anything yourself. Carry on with the cardigan complaint as normal work. Handling it yourself and quietly, or deleting it, is the wrong move." (The suspicious-looking genuine half of the mirror pair.) |
 | 5 | `e11_wychbourne_inbound` | email, Wychbourne Court (`laundry@wychbournecourt.example`), genuine sender, misdirected | "This week's laundry list" with a wrong attachment: the home's full residents' care summary | none (isPhish false; a received-in-error breach) | **Report** | on | "The sender is real, but the attachment is theirs to hold, not ours: names, conditions and medicines. Do not open it further, do not forward it. Tell the sender, report it, and delete it when the DPO says so. We now hold data we should not." |
 | 6 | `e11_cardigan_update` | email, Hollinsbrook House (`sam.whitlow@hollinsbrookhouse.example`), genuine | "Mrs Hale's son has a new mobile; please update it on the claim, and the cardigan has turned up" | none (isPhish false) | **Trust** (handle it: update the contact detail as normal work) | on | "Correcting a contact detail on a claim is ordinary work and a person's right. Data protection is not a reason to stop helping. Handle it." |
 
@@ -530,8 +530,8 @@ Implementer (named here so the writer's keys line up; not the writer's job to bu
   sandbox beats and the `awarenessEpisode` block, by analogy with `e4/attack.json`) and `defend.json`
   (the `triageSets` entry `e11_carrholme_desk`, the `_brandAdditions` for Carrholme, the `awarenessEpisode`
   defend/debrief/strings/_defendOnly keys, by analogy with `e4/defend.json`).
-- Shells under `scenarios/`: `awareness_e11_misdirected_data/` (full) and
-  `awareness_e11_misdirected_data_defend/` (defend-only), each a one-room `room_aw_carrholme` kiosk map,
+- Shells under `scenarios/`: `ca11_misdirected_data/` (full) and
+  `ca11_misdirected_data_defend/` (defend-only), each a one-room `room_aw_carrholme` kiosk map,
   `ui_theme: "general"`, a host NPC (Tomasz) with the conclusion `eventMappings`, and a `kiosk` object
   `{ episodeId: "e11_misdirected_data" }` / `{ episodeId: "e11_misdirected_data_defend" }`.
 - The `data_conduct` check shells (`awareness_{pre,post}_data_conduct_{ab,ba}`) are built by `10`'s
@@ -550,7 +550,7 @@ Implementer (named here so the writer's keys line up; not the writer's job to bu
 
 A built full episode carries **two** aims: a first `red_team_aim` (the attack half, a `type: "manual"`
 task the host NPC completes on the attack-landed event) and a defend aim (`missionConclusion: true`,
-concluded on the done global). See `scenarios/awareness_e4_exec_whaling/scenario.json.erb`. **E11 has no
+concluded on the done global). See `scenarios/ca04_exec_whaling/scenario.json.erb`. **E11 has no
 attack half and no `phish_*` global**, so P2's "first aim `manual`, completed by the host's event
 mapping" and its `phish_<targetId>_attempts` global do **not** apply to E11; the `mistake` and `flip`
 stages run from the stage list inside the runner, not gated by any objective.
@@ -558,7 +558,7 @@ stages run from the stage list inside the runner, not gated by any objective.
 **Recommended: one aim.** The validator needs exactly one aim with `missionConclusion: true`
 (`awareness.rb` `conclusion_checks`); a first aim is optional and nothing in a consequence-flip episode
 requires one. So E11's full shell carries a single objective, the defend aim, concluded on the defend
-set's done global. Shape (adapt `awareness_e6_texts_and_qr_defend`'s single-aim `objectives`):
+set's done global. Shape (adapt `ca06_texts_and_qr_defend`'s single-aim `objectives`):
 
 ```jsonc
 "objectives": [
@@ -591,7 +591,7 @@ set's done global. Shape (adapt `awareness_e6_texts_and_qr_defend`'s single-aim 
 - `globalVariables` for the **full** shell (declare all; defaults as shown):
   `episode_e11_misdirected_data_state: {}`, `se_awareness_records: []`,
   `episode_e11_misdirected_data_defend_percent: 0`, `episode_e11_misdirected_data_defend_reportRate: 0`,
-  `episode_e11_misdirected_data_defend_done: false`, `episode_e11_misdirected_data_defend_pass: false`.
+  `episode_e11_misdirected_data_defend_done: false`, `episode_e11_misdirected_data_complete: false`.
   No `phish_*` global and no attack-landed global exist. (`episode_<id>_state` also holds the
   `mistakeChoices` field at runtime, section 10a; it is declared `{}` and starts empty.)
 - The **defend-only** shell uses the double-suffix prefix (section 13): done global
@@ -618,9 +618,9 @@ mission concluded. A second bridge for the defend-only shell: brief, defend, deb
 
 ## 17. Acceptance checks
 
-- `ruby scripts/validate_scenario.rb scenarios/awareness_e11_misdirected_data/scenario.json.erb
+- `ruby scripts/validate_scenario.rb scenarios/ca11_misdirected_data/scenario.json.erb
   --strict-social --no-graph --skip-ink` exits 0 with no new warnings; same for the defend-only shell
-  (`scenarios/awareness_e11_misdirected_data_defend/scenario.json.erb`). The validator takes the
+  (`scenarios/ca11_misdirected_data_defend/scenario.json.erb`). The validator takes the
   `scenario.json.erb` **file path** per shell, not the folder (README section 8.3). The `data_conduct`
   check shells are not E11's to validate: `10`'s generator builds **eight** shells across both shared
   pairs (`awareness_{pre,post}_{general_v2,data_conduct}_{ab,ba}`), and validating them is `10`'s

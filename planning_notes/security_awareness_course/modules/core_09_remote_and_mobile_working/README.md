@@ -59,7 +59,7 @@ Contributes to (short references from `02_COMPLIANCE_MAPPING.md`, section 2):
 
 **Touch only** (`research/built_episodes_vs_plan.md` §2: E6 covers phone-borne lures). This module **builds on E6**.
 
-- **Built (touch):** **E6** `awareness_e6_texts_and_qr` (Tarrowby, mobile) covers lures that reach a work phone, and the **mobile** check role.
+- **Built (touch):** **E6** `ca06_texts_and_qr` (Tarrowby, mobile) covers lures that reach a work phone, and the **mobile** check role.
 - **New (builds on E6):** screens overlooked in public, overheard calls, public Wi-Fi pages, lost devices and home video calls (C09-LO1 to LO6), delivered either as a **defend-set extension of E6 with new items** or as a later standalone episode. A full standalone would need four new places; see Open questions.
 - **Builds on built systems:** the inbox-triage defender (with its SMS, QR and page card kinds), the awareness-measure records, the concept cards and the debrief view, plus the new Wi-Fi picker.
 - **Checks:** the **mobile** role, gaining matched items, with mirror pairs (`assessment.md`).

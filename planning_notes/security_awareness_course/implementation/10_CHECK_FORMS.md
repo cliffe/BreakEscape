@@ -20,8 +20,8 @@ reuse the built shell machinery.
 - `planning_notes/phishing_and_social_engineering/awareness/e3/defend.json` and
   `awareness/e5/defend.json` (a built form fragment pair: `helpdesk_form_a`/`_b`,
   `general_form_a`/`_b`, with `_formPairing`, `perFlagNote`, `whyFine`, `flagAlternatives`).
-- A built shell, read in full: `scenarios/awareness_pre_general_v2_ab/scenario.json.erb` and
-  `scenarios/awareness_post_general_v2_ab/scenario.json.erb` (the pre export block, the post
+- A built shell, read in full: `scenarios/ca_pre_general_v2_ab/scenario.json.erb` and
+  `scenarios/ca_post_general_v2_ab/scenario.json.erb` (the pre export block, the post
   `importGlobals` block with `pre_check_completed`, `awarenessEpisode`, the `training_room`).
 - `planning_notes/phishing_and_social_engineering/designs/00_data_contract.md` section 2 (the
   factor library and the channel-tell library: the exact scored flag ids you may use).
@@ -221,7 +221,7 @@ in the item tables below).
 ### Pre/post export and import globals
 
 Identical to the built checks (`gen_checks_v2_shells.py` `check()`, and
-`scenarios/awareness_post_general_v2_ab/scenario.json.erb`). The global names are reused across every
+`scenarios/ca_post_general_v2_ab/scenario.json.erb`). The global names are reused across every
 role, which is safe because each post shell imports from a named pre mission; a learner does one
 pair's pre+post in a session.
 

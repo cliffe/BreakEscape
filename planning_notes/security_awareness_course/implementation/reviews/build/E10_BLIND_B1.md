@@ -1,6 +1,6 @@
 # E10 "Downloads and fake checks" — Blind playtest B1
 
-Episode: `awareness_e10_downloads_and_fake_checks` (full) and `awareness_e10_downloads_and_fake_checks_defend` (defend-only).
+Episode: `ca10_downloads_and_fake_checks` (full) and `ca10_downloads_and_fake_checks_defend` (defend-only).
 Tester: blind run, two personas on the full episode plus one defend-only run. Headless (machine load ~28 at start, so `--headless true` per the skill; timings below are reading-pace estimates, not the harness wall clock). Keyless server :3001. No audio (expected on :3001).
 
 ## What this run answers

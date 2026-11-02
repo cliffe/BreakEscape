@@ -1,0 +1,13 @@
+{
+  "key": "84524f4bf12f3b0aab1eb5e2c55b57a6",
+  "npc": "eleanor_vance",
+  "text": "But it complicates things. Meridian knew. Meridian made a deliberate choice. Meridian accepted a known risk. And now, when that risk becomes a claim, we're trying to reduce coverage?",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:32:19Z"
+}

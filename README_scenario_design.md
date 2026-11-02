@@ -1585,7 +1585,7 @@ The validator warns if `missionConclusion: true` is present but `conclusionScree
 
 #### The ending convention
 
-The ending is chosen per scenario. **Story missions end in the credits** (`bond_visualiser`, rolled from a music event): the Licence to Hack missions, the SIS games and the lab games with a story. **Short training episodes**, such as the awareness shells (`scenarios/awareness_*`), may end on the simple success screen (`success`) instead. Either way the player is warned before the ending.
+The ending is chosen per scenario. **Story missions end in the credits** (`bond_visualiser`, rolled from a music event): the Licence to Hack missions, the SIS games and the lab games with a story. **Short training episodes**, such as the awareness shells (`scenarios/ca*`), may end on the simple success screen (`success`) instead. Either way the player is warned before the ending.
 
 For a training episode on the success screen:
 
@@ -1630,7 +1630,7 @@ A mission can pick another rule with `"scoring"` in its `mission.json` (read by 
 |---|---|---|---|
 | absent, or `"tasks"` | the formula above | the formula above | everything else |
 | `"partial_then_complete"` | the formula, capped at 99 | 100 | `lab_tesseract_trials`, `lab_social_engineering` |
-| `"completion"` | 0 | 100 | every `awareness_*` mission |
+| `"completion"` | 0 | 100 | every Cyber Aware (`ca*`) mission |
 
 "Concludes" means the game's `mission_concluded_at` is set (the `missionConclusion` aim completed and its `concludeRequires` passed, or `POST /conclude`). Hacktivity's Finish button sets `status = 'completed'` without a conclusion, and that does not count. In the two non-default modes a Restart keeps a concluded game's 100, because `mission_concluded_at` survives the reset; the default mode drops to 0 as before. Optional tasks no longer cost marks once the mission concludes, but `concludeRequires` still decides whether it concludes at all. Hacktivity's `GameScoringJob` calls the same method, unless the listing's `scoring_method` is `flags`, which still wins. The validator errors on any other `scoring` value, and warns when a non-default mode has no `missionConclusion` aim (the score could never reach 100).
 
@@ -3052,11 +3052,11 @@ Everything here is checked by `ruby scripts/validate_scenario.rb scenarios/<id>/
 
 | Shell | Kind | What it shows |
 |---|---|---|
-| `scenarios/awareness_e1_invoice_fraud` | full | The attack (OSINT, one mail, the flip), the defend round and the debrief; two aims |
-| `scenarios/awareness_e1_invoice_fraud_defend` | defend-only | The same defend set with no attack; the `_defend` id and its doubled prefix |
-| `scenarios/awareness_pre_finance_ab`, `awareness_post_finance_ab` | check pair | Ten-message forms, `exportGlobals` and `importGlobals`, the comparison panel |
-| `scenarios/awareness_e3_helpdesk_reset` | full, call attack | `attack.callId`, the `mfa` stage, the role swap (`defend.calls`) |
-| `scenarios/awareness_e5_signin_pages` | full, page attack | The `build` stage and `attack.landingPageId` |
+| `scenarios/ca01_invoice_fraud` | full | The attack (OSINT, one mail, the flip), the defend round and the debrief; two aims |
+| `scenarios/ca01_invoice_fraud_defend` | defend-only | The same defend set with no attack; the `_defend` id and its doubled prefix |
+| `scenarios/ca_pre_finance_ab`, `ca_post_finance_ab` | check pair | Ten-message forms, `exportGlobals` and `importGlobals`, the comparison panel |
+| `scenarios/ca03_helpdesk_reset` | full, call attack | `attack.callId`, the `mfa` stage, the role swap (`defend.calls`) |
+| `scenarios/ca05_signin_pages` | full, page attack | The `build` stage and `attack.landingPageId` |
 | `scenarios/test_social_episode` | fixture | The smallest full shell that validates. Stub content, `collection: "testing"` |
 
 ### Three kinds of shell
@@ -3086,7 +3086,7 @@ A shell is one scenario folder (`scenarios/<id>/` with `scenario.json.erb`, `mis
   "episode_e1_stub_defend_percent": 0,
   "episode_e1_stub_defend_reportRate": 0,
   "episode_e1_stub_defend_done": false,
-  "episode_e1_stub_defend_pass": false,
+  "episode_e1_stub_complete": false,
   "se_osint_state": {},
   "se_intel_supplier_contact": false,
   "phish_supplier_contact_landed": false,
@@ -3124,7 +3124,7 @@ The validator errors when no aim (or more than one) has `missionConclusion`, whe
     "minigameData": { "episodeId": "e1_stub" } } ] } }
 ```
 
-The host is not decoration. A global cannot complete a task by itself, and `eventMappings` live on NPC records, so the host's mapping on the done global is what completes `conclusionTaskId`. The validator errors if no NPC carries it. A real shell gives the host a character, a sprite and one ink file (a welcome line that changes once the done global is true, resting in a hub as in m03; see `scenarios/awareness_e1_invoice_fraud/ink/adaeze_okafor.ink`), and adds a block for the shell in `scripts/ink_runtime_check/missions.json` so `reopencheck.mjs` covers it. `scenarios/ink/generic-npc.json` will do for a throwaway fixture.
+The host is not decoration. A global cannot complete a task by itself, and `eventMappings` live on NPC records, so the host's mapping on the done global is what completes `conclusionTaskId`. The validator errors if no NPC carries it. A real shell gives the host a character, a sprite and one ink file (a welcome line that changes once the done global is true, resting in a hub as in m03; see `scenarios/ca01_invoice_fraud/ink/adaeze_okafor.ink`), and adds a block for the shell in `scripts/ink_runtime_check/missions.json` so `reopencheck.mjs` covers it. `scenarios/ink/generic-npc.json` will do for a throwaway fixture.
 
 **6. The defend set** (`social.triageSets[]`), described under [Attack and defend](#attack-and-defend).
 
@@ -3266,7 +3266,7 @@ A full episode needs, under `social`, the pieces below. They are the same blocks
   "outcome": { "setGlobal": { "phish_supplier_contact_landed": true } } } ]
 ```
 
-The contact's `revealedBy` is the fact's `se_intel_` global, so the learner finds Pat in OSINT before Pat can be written to. The `source` of the fact is the OSINT block that grants it. E1 (`awareness_e1_invoice_fraud`) is the full-size example: two OSINT sites, four facts, a spoofed sender, a named reply, and an `analyst` account that can spoof From.
+The contact's `revealedBy` is the fact's `se_intel_` global, so the learner finds Pat in OSINT before Pat can be written to. The `source` of the fact is the OSINT block that grants it. E1 (`ca01_invoice_fraud`) is the full-size example: two OSINT sites, four facts, a spoofed sender, a named reply, and an `analyst` account that can spoof From.
 
 #### The defend set, minimally
 
@@ -3344,9 +3344,11 @@ Three debrief lines belong to the organisation running the training, not to the 
 
 Each text is plain, trimmed and capped at 600 characters; a blank line starts a new paragraph. The lint warns on a blank `reportRoute` or `ruleOfThumb` and on one over 600 characters, and errors on a `teamSize` that is not a whole number of at least 2.
 
-A host can set the same three keys per game through `BreakEscape.configuration.awareness_settings`, a callable `->(game) { { report_heading:, report_text:, rule_of_thumb:, team_size: } or nil }` resolved on each play-page load. The engine whitelists the keys, strips control characters, caps text (heading 80, others 600), bounds `teamSize` to 2 to 100000, and writes only the keys that have a value to `window.breakEscapeConfig.awareness`, which wins over `social.awareness` key by key. A hook that raises is logged and ignored.
+A host can set the same keys per game through `BreakEscape.configuration.awareness_settings`, a callable `->(game) { { report_heading:, report_text:, report_route_name:, rule_of_thumb:, team_size: } or nil }` resolved on each play-page load. The engine whitelists the keys, strips control characters, caps text (heading 80, route name 120, others 600), bounds `teamSize` to 2 to 100000, and writes only the keys that have a value to `window.breakEscapeConfig.awareness`, which wins over `social.awareness` key by key. A hook that raises is logged and ignored.
 
-A blank line in `report_text` starts a new paragraph in the debrief's "How to report here" box, so a host can hand back a route of several steps. The host may compose that text however it likes, for example from its own list of pre-canned options with blanks the organiser fills in, but the engine sees only the two strings `report_heading` and `report_text` and never the parts they were built from.
+A blank line in `report_text` starts a new paragraph in the debrief's "How to report here" box, so a host can hand back a route of several steps. The host may compose that text however it likes, for example from its own list of pre-canned options with blanks the organiser fills in, but the engine sees only the strings it is sent and never the parts they were built from.
+
+`report_route_name` is an optional short phrase (a configured route only; carried on `reportRoute` as `routeName`) that completes the Report verdict's "At work, that means: ..." line, for example "use the Report button in Outlook". The debrief prefers it over the route heading, falls back to the heading when it is absent, and shows the line only when a route is configured.
 
 **The team line** ("Your reports and checks this round kept 2 phish away from the rest of your team.") counts the phish the learner Reported or checked by another route (Verify, Ring back, Escalate, Deny and report). Deleting a phish protects only the learner, so it does not count. The line shows only when the count is at least one and never gives a denominator, so it cannot read as a list of misses. The count is kept in `episode_<id>_state.defend.teamProtected`, so a reopened debrief shows it too. During the round the triage overlay shows the same count live ("Phish stopped for the team: 2"), with immediate feedback only, since under end-of-round feedback a count that rises only on a phish would give the answers away.
 
@@ -3358,7 +3360,7 @@ A blank line in `report_text` starts a new paragraph in the debrief's "How to re
 
 ### Check missions and how their results carry over
 
-A check mission is the measurement half of the product: ten messages from the role's inbox, taken before the training (`pre`) and again after it (`post`), with a before-and-after panel at the end of the second. Each role has a matched pair of forms, A and B, and two orderings, so half of a group sees A first (the `ab` missions) and half B first (`ba`). The shipped set is `awareness_pre_<role>_ab`, `_ba` and `awareness_post_<role>_ab`, `_ba`.
+A check mission is the measurement half of the product: ten messages from the role's inbox, taken before the training (`pre`) and again after it (`post`), with a before-and-after panel at the end of the second. Each role has a matched pair of forms, A and B, and two orderings, so half of a group sees A first (the `ab` missions) and half B first (`ba`). The shipped set is `ca_pre_<role>_ab`, `_ba` and `ca_post_<role>_ab`, `_ba`.
 
 A check mission has `stages: ["check"]`, `variant` optional, `defend.stage` `pre` or `post`, no `attack`, and its set:
 
@@ -3377,10 +3379,10 @@ Its conclusion aim completes on `triage_pre_done`, because the carry-over reads 
 
 ```json
 "importGlobals": [
-  { "from": "awareness_pre_finance_ab", "var": "triage_pre_percent",    "as": "triage_pre_percent",    "default": 0 },
-  { "from": "awareness_pre_finance_ab", "var": "triage_pre_reportRate", "as": "triage_pre_reportRate", "default": 0 },
-  { "from": "awareness_pre_finance_ab", "var": "triage_pre_done",       "as": "triage_pre_done",       "default": false },
-  { "from": "awareness_pre_finance_ab", "completed": "pre_check_completed" }
+  { "from": "ca_pre_finance_ab", "var": "triage_pre_percent",    "as": "triage_pre_percent",    "default": 0 },
+  { "from": "ca_pre_finance_ab", "var": "triage_pre_reportRate", "as": "triage_pre_reportRate", "default": 0 },
+  { "from": "ca_pre_finance_ab", "var": "triage_pre_done",       "as": "triage_pre_done",       "default": false },
+  { "from": "ca_pre_finance_ab", "completed": "pre_check_completed" }
 ]
 ```
 

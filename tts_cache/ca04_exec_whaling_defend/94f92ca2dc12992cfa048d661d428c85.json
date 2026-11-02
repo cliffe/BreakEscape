@@ -1,0 +1,13 @@
+{
+  "key": "94f92ca2dc12992cfa048d661d428c85",
+  "npc": "thandiwe_moyo",
+  "text": "Morning, Tomás. Catherine flies out today, and her inbox and voicemail have filled up already. Five things are waiting on the kiosk. Take them one at a time.",
+  "voice": "Pulcherrima",
+  "style": "Merrin & Sallow's studio manager, in her 30s, calm and capable. Speak with a consistent southern English accent with a light Zimbabwean inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca04_exec_whaling_defend",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:20:49Z"
+}

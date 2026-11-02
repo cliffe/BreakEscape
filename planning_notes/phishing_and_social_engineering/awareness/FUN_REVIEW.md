@@ -12,7 +12,7 @@ What I read: design doc 11, the runner (`episode-runner-minigame.js`, `flip-view
 ## Verdict in one paragraph
 
 The defend beat is good: clear, kind, well-written, and the "genuine change-of-bank, confirmed by
-phone" item (E1 `e1_bank_confirmed`, `scenarios/awareness_e1_invoice_fraud/scenario.json.erb:225`) is
+phone" item (E1 `e1_bank_confirmed`, `scenarios/ca01_invoice_fraud/scenario.json.erb:225`) is
 the kind of thing people actually remember. Variety across the seven is real on the *defence* side:
 email triage, attachment handling, a helpdesk role swap with an MFA-push stream, sign-in page
 inspection, a phone shell with QR and SMS, voicemails. The per-role pre/post sets test the channel each
@@ -29,7 +29,7 @@ problem for a product whose selling point is measurement.
 
 The flip replays the learner's artefact with its tells highlighted and a line saying the defender was
 fooled by it (`flip-view.js:68`; E1's `flipDefenderLine`,
-`scenarios/awareness_e1_invoice_fraud/scenario.json.erb:298`). Mechanically it works and the writing is
+`scenarios/ca01_invoice_fraud/scenario.json.erb:298`). Mechanically it works and the writing is
 strong. The feeling only lands if the learner felt authorship. In E1/E2/E4/E6/E7 the write stage is
 "pick a pretext, fill a blank" (E1 `templateSets`, scenario `:619`; `primedFor` `:636`), so the message
 is mostly pre-written and the flip is closer to "look at this message" than "look at *your* message."
@@ -82,7 +82,7 @@ be a shift to reporting everything rather than better discrimination.
 ### 1. Render the "how we report here" slot in the debrief
 The actionable, memorable line is the organisation's real reporting route, and it is currently dead
 code. `debrief.mondayCard` holds `slot:customer_report_route`
-(`scenarios/awareness_e1_invoice_fraud/scenario.json.erb:306`) but the debrief reads `strings.mondayCard`
+(`scenarios/ca01_invoice_fraud/scenario.json.erb:306`) but the debrief reads `strings.mondayCard`
 and ignores the slot (`public/break_escape/js/minigames/episode-runner/debrief-view.js:161`). Resolve the
 slot from a customer-filled string table and render it as its own line under the Monday card, falling
 back to the generic text when unset.

@@ -87,7 +87,7 @@ debrief lines above still say "phish". E18 is now the lone holdout on exactly th
 left behind, and E19/E20 show the finished pattern.
 
 Fix (episode-local, no engine change; port E19/E20's keys adapted to E18's "fakes" register, to both
-`scenarios/awareness_e18_credential_attacks_at_scale/scenario.json.erb` and `..._defend/scenario.json.erb`,
+`scenarios/ca18_credential_attacks_at_scale/scenario.json.erb` and `..._defend/scenario.json.erb`,
 and the source fragment under `planning_notes/phishing_and_social_engineering/awareness/e18/`):
 - add `labels.verdictFeedback` with `phish`/`real` sub-maps in E18's words, or a per-item `kindLine` on each
   of the three fakes (e.g. "This one was a fake, after your password; a real notice never asks for it.") so

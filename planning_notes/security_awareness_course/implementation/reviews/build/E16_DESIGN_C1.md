@@ -1,7 +1,7 @@
 # E16 Insider risk — design review, cycle 1
 
 Episode: **E16 "Insider risk"** (Quayholt Insurance; consequence flip plus the "raise a concern" form).
-Scope reviewed: `scenarios/awareness_e16_insider_risk/` and `_defend/`,
+Scope reviewed: `scenarios/ca16_insider_risk/` and `_defend/`,
 `planning_notes/phishing_and_social_engineering/awareness/e16/`, the brief
 `.../episodes/E16_insider_risk.md`, the module `modules/core_14_insider_risk/concepts.md`, and the
 engine surfaces the shells drive (`public/break_escape/js/minigames/concern-form/`,

@@ -14,24 +14,24 @@ Earned-secrets table: empty. These scenarios have no codes, PINs or flags; every
 
 | Game | Scenario | Run | Driver time |
 | ---- | -------- | --- | ----------- |
-| 4025 | awareness_e5_signin_pages | careful: all research, SSO page, send landed, 5/5 defend, host chat | 155 s |
-| 4029 | awareness_e5_signin_pages | hurried: no research first (no contacts, blanks locked), Fileharbour/fileharbour page without padlock, newsletter pretext (did not land), 3 wrong verdicts and 4 missed ticks | 94 s |
-| 4062 | awareness_e5_signin_pages | builder only: stale verdict, giveaway counts | short |
-| 4031 | awareness_e6_texts_and_qr | careful: research, blanks locked until evidence, landed, 6 items | 66 s |
-| 4032 | awareness_e6_texts_and_qr | hurried: no contacts at first, depot-bulletin pretext (did not land), 4 wrong verdicts | 36 s |
-| 4034 | awareness_e7_voice_ceo | careful: landed, 5 items, 100% | 48 s |
-| 4035 | awareness_e7_voice_ceo | hurried: month-end pretext (did not land), mid-round Close and reopen, trusted the attacker voicemail and email | 55 s |
-| 4063 | awareness_e7_voice_ceo | landed send, waited for the reply; second Compose click | short |
-| 4037 | awareness_e7_voice_ceo_defend | defend-only shell, mixed verdicts, 90% | 28 s |
-| 4040 / 4042 | awareness_pre_finance_ab / post_finance_ab | finance A then B, all read first, Merrow and Fernhill played on screen evidence only | 46 s / 44 s |
-| 4044 / 4048 | awareness_pre_finance_ba / post_finance_ba | finance B then A | 31 s / 37 s |
-| 4045 / 4046 | awareness_pre_executive_ab / post_executive_ab | executive A then B | 37 s / 37 s |
-| 4059 / 4060 | awareness_pre_executive_ba / post_executive_ba | executive B then A (pre hurried: phish trusted and deleted) | 33 s / 36 s |
-| 4047 / 4051 | awareness_pre_mobile_ab / post_mobile_ab | mobile | 34 s / 34 s |
+| 4025 | ca05_signin_pages | careful: all research, SSO page, send landed, 5/5 defend, host chat | 155 s |
+| 4029 | ca05_signin_pages | hurried: no research first (no contacts, blanks locked), Fileharbour/fileharbour page without padlock, newsletter pretext (did not land), 3 wrong verdicts and 4 missed ticks | 94 s |
+| 4062 | ca05_signin_pages | builder only: stale verdict, giveaway counts | short |
+| 4031 | ca06_texts_and_qr | careful: research, blanks locked until evidence, landed, 6 items | 66 s |
+| 4032 | ca06_texts_and_qr | hurried: no contacts at first, depot-bulletin pretext (did not land), 4 wrong verdicts | 36 s |
+| 4034 | ca07_voice_ceo | careful: landed, 5 items, 100% | 48 s |
+| 4035 | ca07_voice_ceo | hurried: month-end pretext (did not land), mid-round Close and reopen, trusted the attacker voicemail and email | 55 s |
+| 4063 | ca07_voice_ceo | landed send, waited for the reply; second Compose click | short |
+| 4037 | ca07_voice_ceo_defend | defend-only shell, mixed verdicts, 90% | 28 s |
+| 4040 / 4042 | ca_pre_finance_ab / post_finance_ab | finance A then B, all read first, Merrow and Fernhill played on screen evidence only | 46 s / 44 s |
+| 4044 / 4048 | ca_pre_finance_ba / post_finance_ba | finance B then A | 31 s / 37 s |
+| 4045 / 4046 | ca_pre_executive_ab / post_executive_ab | executive A then B | 37 s / 37 s |
+| 4059 / 4060 | ca_pre_executive_ba / post_executive_ba | executive B then A (pre hurried: phish trusted and deleted) | 33 s / 36 s |
+| 4047 / 4051 | ca_pre_mobile_ab / post_mobile_ab | mobile | 34 s / 34 s |
 | 4053 / 4050 | awareness_pre_general_ab / post_general_ba | general | 33 s / 34 s |
-| 4052 / 4057 | awareness_pre_hr_ba (hurried) / post_hr_ab | HR | 32 s / 35 s |
-| 4038 | awareness_pre_helpdesk_ab | helpdesk, read all ten, approved the 02:14 prompt, complied with the impostor call | 70 s |
-| 4058 | awareness_post_helpdesk_ba | helpdesk post, approved the prompt | 33 s |
+| 4052 / 4057 | ca_pre_hr_ba (hurried) / post_hr_ab | HR | 32 s / 35 s |
+| 4038 | ca_pre_helpdesk_ab | helpdesk, read all ten, approved the 02:14 prompt, complied with the impostor call | 70 s |
+| 4058 | ca_post_helpdesk_ba | helpdesk post, approved the prompt | 33 s |
 
 Not played: mobile BA, general AB/BA other half, HR AB/BA other half (data checked: phish slots in every pair are disjoint, see N-7 below). Played in both orders for finance and executive.
 

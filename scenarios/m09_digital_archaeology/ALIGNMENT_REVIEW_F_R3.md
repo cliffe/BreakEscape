@@ -83,7 +83,7 @@ Severity notes: none of these touches the critical path, a flag or `concludeRequ
 
 ## Noticed outside m09
 
-- Commit fc98e370 (the m09 R2 fixes) also added an `awareness_e1_invoice_fraud` entry to `scripts/ink_runtime_check/missions.json`, but `scenarios/awareness_e1_invoice_fraud/` is untracked (`git ls-files` returns nothing). A fresh checkout's reopencheck would look for files that aren't there. Not m09's to fix; the orchestrator should commit that scenario with its entry or move the entry to the commit that adds it.
+- Commit fc98e370 (the m09 R2 fixes) also added an `ca01_invoice_fraud` entry to `scripts/ink_runtime_check/missions.json`, but `scenarios/ca01_invoice_fraud/` is untracked (`git ls-files` returns nothing). A fresh checkout's reopencheck would look for files that aren't there. Not m09's to fix; the orchestrator should commit that scenario with its entry or move the entry to the commit that adds it.
 
 ## Verdict
 

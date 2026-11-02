@@ -1,0 +1,13 @@
+{
+  "key": "cb6c695567fc66fbb40931e254c68391",
+  "npc": "lorna_easton",
+  "text": "Welcome to the Merrin & Sallow exercise. Jo's set the red-team scope; I'll see you right.",
+  "voice": "Erinome",
+  "style": "Merrin & Sallow's reception and facilities lead, in her 40s, warm and reassuring. Speak with a consistent north-west England accent from Lancashire throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca12_visitor_tailgater",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:20:04Z"
+}

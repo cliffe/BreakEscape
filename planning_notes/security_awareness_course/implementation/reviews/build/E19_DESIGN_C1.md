@@ -8,8 +8,8 @@ awareness kind, and the E8 pilot reviews in `reviews/build/` for format and bar.
 **consequence-flip** episode (ENG-04): no attack half, no phish target; the sandbox afternoon is the one
 "attack artefact", and the flip shows where each choice led.
 
-Scope read end to end: the full shell `scenarios/awareness_e19_malware_and_updates/{scenario.json.erb,
-mission.json, ink/anjali_rao.ink}`; the defend-only shell `scenarios/awareness_e19_malware_and_updates_defend/`
+Scope read end to end: the full shell `scenarios/ca19_malware_and_updates/{scenario.json.erb,
+mission.json, ink/anjali_rao.ink}`; the defend-only shell `scenarios/ca19_malware_and_updates_defend/`
 (same files); the fragments `planning_notes/phishing_and_social_engineering/awareness/e19/{defend.json,
 full_only.json, BRAND_ADDITIONS.md}`; the spec `.../episodes/E19_malware_and_updates.md`; the module
 `modules/core_07_malware_ransomware_and_updates/concepts.md` (source of truth); the topic boundaries in
@@ -47,8 +47,8 @@ disable-protection fake IT) and 2 genuine (Quayholt Files consent, device update
 
 `social-awareness-rule-of-thumb.test.mjs` and `...-fragment-erb-parity.test.mjs` report 3 failures between
 them, but **all three name only E12/E13/E14** shells that are on disk and not yet registered in the guards'
-`FULL_EPISODES` lists (`awareness_e12_visitor_tailgater`, `awareness_e13_ai_assistant`,
-`awareness_e14_social_media[_defend]`; "expected 63 shells, found 67"). E19 is registered in both guards
+`FULL_EPISODES` lists (`ca12_visitor_tailgater`, `ca13_ai_assistant`,
+`ca14_social_media[_defend]`; "expected 63 shells, found 67"). E19 is registered in both guards
 (rule-of-thumb line 41; parity line 57), its parity subtest passes ("E19: fragment and full erb share the
 same learner-facing copy"), and its rule-of-thumb text is byte-identical to E8's in both shells. The guard
 failures belong to those sibling episodes, not E19, and are outside this review's scope.
@@ -183,7 +183,7 @@ fold MI3/MI4 into the next fragment touch, and run one timed full-episode playte
 
 Rulings applied (BUILD_LOG 2026-10-29):
 
-- **MI1 (content note).** Fixed by folding one calm clause into the full `strings.brief` (no new engine slot): ".. Only the inbox is scored. This one shows a ransomware message on a colleague's screen; there are no alarms or flashing screens." Changed in `e19/defend.json` strings.brief and the full shell `awareness_e19_malware_and_updates/scenario.json.erb`. The defend-only brief already names "a colleague whose screen has just locked", so it was left as it was.
+- **MI1 (content note).** Fixed by folding one calm clause into the full `strings.brief` (no new engine slot): ".. Only the inbox is scored. This one shows a ransomware message on a colleague's screen; there are no alarms or flashing screens." Changed in `e19/defend.json` strings.brief and the full shell `ca19_malware_and_updates/scenario.json.erb`. The defend-only brief already names "a colleague whose screen has just locked", so it was left as it was.
 - **MI2 (Fernside look-alike).** Accepted `fernside-invoices.example` as a deliberate, distinct invoice-email look-alike (a portal shape would not fit an invoice sender, and E19 never reuses the genuine `fernside.example` as a phish). Updated the stale "align with E10 when it lands" notes in `e19/defend.json` (the `e19_enable_content` `_note`) and `e19/BRAND_ADDITIONS.md` to record it as intended. `BRAND_SET.md:284` carries the same stale note but is out of the content fixer's scope (orchestrator-owned); flagged for the orchestrator to update.
 - **MI3 (stale `_` notes).** Fixed. The `_moduleLine` and `_orgSlotLine` planning notes in `e19/defend.json` now read "FOLDED into the Monday card (BUILD_LOG 2026-10-29)" with the exact carrying clauses named. `_`-prefixed, so no shipped/runtime impact.
 - **MI4 (unglossed "infostealer").** Fixed. The two `security_alert` montage lines now say "a hidden program .. one built to copy your saved passwords" / "a hidden program would have run unseen and copied your saved passwords". Changed in `e19/full_only.json` and the full shell (montage is full-episode-only).

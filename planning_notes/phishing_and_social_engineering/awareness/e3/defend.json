@@ -137,21 +137,21 @@
         },
         {
           "id": "ha_ceo_mfa_bypass",
-          "from": { "name": "Helen Achterberg", "address": "helen.achterberg.ceo@lintbox.example" },
+          "from": { "name": "Helen Achterberg", "address": "helen.achterberg.ceo@mailgrove.example" },
           "to": "servicedesk@quayholt.example",
           "subject": "Urgent: remove my sign-in prompts today",
           "time": "09:05",
           "body": "I'm flying to Rotterdam this morning and the sign-in prompts keep failing on my new phone. Please turn off the extra sign-in step on my account before 10. No need to raise a ticket or tell Darren, I'll explain when I'm back.\nHelen\nSent from my phone",
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "lintbox.example", "replyTo": "helen.achterberg.ceo@lintbox.example" },
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "mailgrove.example", "replyTo": "helen.achterberg.ceo@mailgrove.example" },
           "truth": {
             "isPhish": true,
             "flags": ["senderTrust", "secrecy_or_bypass", "urgencyCalibrated"],
             "perFlagNote": {
-              "senderTrust": "The chief executive's name on a personal inbox at lintbox.example, not quayholt.example",
+              "senderTrust": "The chief executive's name on a personal inbox at mailgrove.example, not quayholt.example",
               "secrecy_or_bypass": "'No need to raise a ticket or tell Darren' skips the record and the person who would check",
               "urgencyCalibrated": "'Before 10' while she's 'flying' leaves no time to ring her"
             },
-            "headerNote": "The automatic checks pass because the message really was sent from lintbox.example. A pass tells you which mail system sent it, not that it's Helen.",
+            "headerNote": "The automatic checks pass because the message really was sent from mailgrove.example. A pass tells you which mail system sent it, not that it's Helen.",
             "ifTrusted": "Her account would lose its second sign-in step, so anyone with her password could get straight in.",
             "reportReply": "Thanks. Helen didn't send it, and her account is unchanged. Her real address is on quayholt.example."
           }

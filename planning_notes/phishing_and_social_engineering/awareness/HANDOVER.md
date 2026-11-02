@@ -1,5 +1,7 @@
 # Awareness course: handover (on hold from 2026-10-23)
 
+> **2026-11-01: scenario folders renamed `awareness_*` → `ca*`** (ca01_invoice_fraud, ca_pre_finance_ab, ca00_first_play, ca_annual_2027_defend). Older notes below use the old names; see `RENAME_2026-11-01.md` for the map.
+
 ## Status 2026-10-27: resumed
 
 The user resumed the course on 2026-10-27, so this note is a status file now rather than a hold note. Sections 2, 3 and 6 below describe the state on 23 October and are kept for history.
@@ -23,6 +25,10 @@ Facilitator guide   ░░░░░░░░░░  -           one guide in Hac
 New since the hold, all on main: the E3 MFA-fatigue beat is a learner decision (timing and count); the Brightwell finance host is Joanne Pell; Hana's E5 miss reply names its cause; E6 can tick pressure on the QR notice; E7's cloned voicemail is a critical miss; under the awareness profile, two zero skills cap the grade at "Getting there". The user's decisions are in `../FUN_DECISIONS.md` (two batches on 2026-10-27).
 
 Next, in order: host characters after the PixelLab reset (3 Nov), then a short playtest of the new sprites; human timing runs when the user asks; the facilitator guide last.
+
+## Status 2026-11-01: launch finishing pass
+
+A launch finishing pass actioned the owner's decision-board picks and the outstanding doc/clash items (full record in `../../security_awareness_course/implementation/BUILD_LOG.md`, "2026-11-01: launch finishing pass"). In brief: the "Well done:" top band and the "nothing ticked" prompt are already engine defaults that reach E1-E7; the E2 CV-applicant Moyo clash is resolved (Tendai Moyo → Tendai Shava, text only, no audio); the E13 success screen no longer says "The debrief goes through each one"; the names register (`../../security_awareness_course/NAMES_REGISTER.md`) and the owner-calls note (`../../security_awareness_course/LAUNCH_OWNER_CALLS.md`) are written. E7 is correctly listed at Brightwell in §1 above (TODO §6 needed no fix). Still owner-gated and untouched: TTS (whole course unvoiced), human timing runs, and the facilitator guide. The E13 video-call "you"-tile sprite is left for engine/sprite work. **Update 2026-11-01 (launch picks pass):** the four "owner calls" are all decided (see `../../security_awareness_course/LAUNCH_OWNER_CALLS.md` and `DECISIONS_PENDING.md` "Launch owner calls"). Actioned: a per-episode `strings.habitLine` beside the shared rule of thumb on E15/E17/E20 and E11 (E16 reviewed, no line; engine slot plus a JS test); `defend_pass` renamed `_complete` in the plans (documented-only field, no code impact); the parody brands Wrenfield Travel and Ashby Supplies renamed to Wanderlost Travel and Paperclip & Sons across live files. D9 accessibility deferred, reporting route (free text, sanitised) built on Hacktivity. The host sprites are the eight stand-ins to swap after 3 Nov.
 
 
 The user put development of the 38-scenario security-awareness course on hold on 2026-10-23. This note is for whoever picks it up later, human or agent. Read it with `AGENTS.md` (mission loop, model choice, standing rules) and the files it points to; trust the scenario files over any design document.

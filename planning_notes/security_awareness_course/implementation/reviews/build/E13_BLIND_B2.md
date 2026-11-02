@@ -1,6 +1,6 @@
 # E13 AI assistant: blind playtest, round B2
 
-Blind run, second round (B2). Episode E13, `awareness_e13_ai_assistant` (full) and `awareness_e13_ai_assistant_defend`. Harness headless on :3001 (machine load about 5, no display needed). Tester read only the playtest skill, AGENTS.md "Housekeeping" and what a player sees. New since B1: Finish on the debrief shows an "Episode finished" panel and the bar's Close closes it (seen, works).
+Blind run, second round (B2). Episode E13, `ca13_ai_assistant` (full) and `ca13_ai_assistant_defend`. Harness headless on :3001 (machine load about 5, no display needed). Tester read only the playtest skill, AGENTS.md "Housekeeping" and what a player sees. New since B1: Finish on the debrief shows an "Episode finished" panel and the bar's Close closes it (seen, works).
 
 Question answered: unexpected behaviour and clarity from a player's seat (not solvability; no VM flags in this episode).
 

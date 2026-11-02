@@ -6,9 +6,9 @@ No audio on :3001, so the E7 voicemails were judged from their transcripts only.
 
 | Scenario | Game id | Session log | verify-run result |
 | --- | --- | --- | --- |
-| awareness_e1_invoice_fraud_defend | 3620 | tools/playtest/p1-e1d-session.jsonl | progress recorded, 1 task completed (sort_payments_inbox), score 100 |
-| awareness_e3_helpdesk_reset_defend | 3623 | tools/playtest/p1-e3d-session.jsonl | progress recorded, 1 task completed (work_service_desk_queue), score 100 |
-| awareness_e7_voice_ceo_defend | 3630 | tools/playtest/p1-e7d-session.jsonl | progress recorded, 1 task completed (check_finance_line), score 100 |
+| ca01_invoice_fraud_defend | 3620 | tools/playtest/p1-e1d-session.jsonl | progress recorded, 1 task completed (sort_payments_inbox), score 100 |
+| ca03_helpdesk_reset_defend | 3623 | tools/playtest/p1-e3d-session.jsonl | progress recorded, 1 task completed (work_service_desk_queue), score 100 |
+| ca07_voice_ceo_defend | 3630 | tools/playtest/p1-e7d-session.jsonl | progress recorded, 1 task completed (check_finance_line), score 100 |
 
 verify-run.rb prints "0 rooms beyond the first, 0 objects unlocked, 0 flags submitted, 1 tasks completed" for all three, with the `..._defend_done` and `..._defend_pass` globals set. That is expected for a one-room kiosk episode. The stored score is 100 for each, while the on-screen round scores were 95, 93 and 95 percent (the manifest says `"scoring": "completion"`, so this is consistent, but the learner sees two different numbers; see F6 in the earlier P1 note).
 
@@ -73,7 +73,7 @@ Cause, from reading the code (not changed): `app/views/break_escape/games/show.h
 
 A defence-only episode that casts you as an office worker or service-desk staffer shows a hooded hacker figure as you, and the scenario's `spriteSheet` and `spriteTalk` fields cannot change that. Not a blocker, since play is unaffected. If the intent is that the scenario sprite wins for awareness episodes, the engine or the player-preference check needs to know (the `sprite_valid_for_scenario?` path exists in `games_controller.rb`); I did not look further.
 
-## 1. awareness_e1_invoice_fraud_defend (inbox)
+## 1. ca01_invoice_fraud_defend (inbox)
 
 Steps: title screen, two-page Mission Brief (brief text: "Awareness episode E1, inbox only. You're covering the payments inbox at Brightwell Foods, a fictional food manufacturer, before the afternoon payment run. Five messages are waiting: sort them, and report or check anything that doesn't sit right."), tutorial prompt declined, talk to Adaeze, kiosk. Kiosk stages: Brief, Defend, Debrief. Inbox-triage minigame: Brief screen, Sort, Review, Result. Verdicts played: Harlow invoice Trust (100); look-alike bank change Report (87); PO Trust (100); CEO wire Verify (87); confirmed bank change Trust (100). Result "Score 95 percent. Sharp: you caught the phish and knew why". Finish gave the kiosk Debrief, Finish again gave the mission-end screen "Payments inbox done / You've sorted all five messages and finished this episode."
 
@@ -112,7 +112,7 @@ For the look-alike bank message I ticked "Link or sender domain is a look-alike 
 
 Those are the same observation. It cost 13 points (87 of 100) and the result grid read "Sender address: caught 0 of 2 ... Weakest skill: Sender address (caught 0 of 2)". The tick label the learner saw was "The sender's address doesn't match who it says it is", which differs again from the feedback's wording. A learner who picked the look-alike tick is told they have a weakness in sender checking.
 
-## 2. awareness_e3_helpdesk_reset_defend (phone)
+## 2. ca03_helpdesk_reset_defend (phone)
 
 Brief: "Awareness episode E3, service desk only. You're in Leila Nassar's seat on the IT service desk at Quayholt Insurance, a fictional insurer. Four calls are waiting and a sign-in prompt from overnight is still on your phone: help the real callers, and ring back or escalate anything that doesn't sit right." Darren Price (NPC) repeats it. Kiosk panel names: Brief, Defend, Debrief; Defend button "Open the queue".
 
@@ -171,7 +171,7 @@ First screen of the minigame after "Open the queue":
 
 The heading and the email legend are wrong for a call queue, and the learner then sees a second, correct legend. The real buttons on screen are the call ones. Also "Right call is most of the score; naming the flags is the rest." (the F6 issue from the previous note).
 
-## 3. awareness_e7_voice_ceo_defend (voice)
+## 3. ca07_voice_ceo_defend (voice)
 
 Brief: "Awareness episode E7, phone and inbox only. You're covering the finance office's phone and inbox at Brightwell Foods, a fictional food manufacturer, on a Friday afternoon. Three voicemails and two emails are waiting, and you can't always tell by the voice who left them: decide what to do with each, and ring back or report anything that doesn't sit right." Kiosk intro adds "No real person's voice is used." and the Defend step says "Read each voicemail's transcript: what it asks you to do matters more than whose voice it is. Work through them at your own pace; it all comes back to ringing the person yourself." Defend button "Open the voicemail".
 

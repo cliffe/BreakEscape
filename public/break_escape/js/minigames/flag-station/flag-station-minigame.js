@@ -46,6 +46,10 @@ export class FlagStationMinigame extends MinigameScene {
         this.abortConfirmText = params.abortConfirmText  || 'Abort the operation?';
         this.launchConfirmText= params.launchConfirmText || 'Execute the operation?';
         this.choiceMade       = false;
+        // The device's own flagRewards (the server leaves them on the client copy). Its
+        // set_global reward with value true is the "launch code accepted" marker, so the
+        // choice can be restored on reopen without naming a mission's global here.
+        this.flagRewards      = Array.isArray(params.flagRewards) ? params.flagRewards : [];
     }
     /**
      * Test bridge state (see MinigameScene.getTestState).
@@ -432,8 +436,44 @@ export class FlagStationMinigame extends MinigameScene {
         this.gameContainer.appendChild(station);
         this.attachEventHandlers();
 
-        // If the server confirms all flags for this station are already submitted, skip to choice UI
-        if (this.params.flagsAllSubmitted) {
+        this.restoreLaunchState();
+    }
+
+    /** Globals the player's current state holds (empty when the game state is not up). */
+    launchGlobals() {
+        return window.gameState?.globalVariables || {};
+    }
+
+    /** True when every key in a setGlobal block already holds its value. */
+    outcomeApplied(config) {
+        const set = config && config.setGlobal;
+        const keys = set ? Object.keys(set) : [];
+        if (keys.length === 0) return false;
+        const g = this.launchGlobals();
+        return keys.every(k => g[k] === set[k]);
+    }
+
+    /** Has the launch code been accepted? Server flag, this session's list, or the
+     *  device's own set_global reward (read from its config, so no mission key is
+     *  named here). The reward global is what survives a reload, because an item
+     *  carried in the inventory keeps a stale flagsAllSubmitted from when it was picked up. */
+    launchCodeAccepted() {
+        if (this.params.flagsAllSubmitted) return true;
+        if (this.expectedFlagCount > 0 && this.submittedFlags.length >= this.expectedFlagCount) return true;
+        const g = this.launchGlobals();
+        return this.flagRewards.some(r => r && r.type === 'set_global' && r.value === true && g[r.key] === true);
+    }
+
+    /** On open: show the result if ABORT or LAUNCH was already chosen, else the choice if
+     *  the code is already accepted, else leave the code prompt. */
+    restoreLaunchState() {
+        if (this.outcomeApplied(this.onAbortConfig)) {
+            this.choiceMade = true;
+            this.showFinalState('OPERATION ABORTED', 'Abort signal transmitted. All attack vectors terminated.', '#00ff00');
+        } else if (this.outcomeApplied(this.onLaunchConfig)) {
+            this.choiceMade = true;
+            this.showFinalState('OPERATION LAUNCHED', 'Attack vector deployed. 2,347,832 targets receiving payload.', '#ff4444');
+        } else if (this.launchCodeAccepted()) {
             this.showLaunchAbortChoice();
         }
     }

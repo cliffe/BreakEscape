@@ -15,7 +15,7 @@ awareness kind, and the prior E18 reviews (`E18_DESIGN_C1.md`, `E18_DESIGN_C2_DI
 (`E18_BLIND_B1.md`, `E18_BLIND_B2.md`) and the playtest (`E18_PLAYTEST_P1.md`) for format and the standing
 findings, plus the `BUILD_LOG.md` E18 lines and the engine batch 9-11 history.
 
-Scope read end to end: both shells `scenarios/awareness_e18_credential_attacks_at_scale{,_defend}/
+Scope read end to end: both shells `scenarios/ca18_credential_attacks_at_scale{,_defend}/
 {scenario.json.erb, ink/ama_owusu.ink}`; the spec `.../episodes/E18_credential_attacks_at_scale.md`; and the
 engine the findings depend on (`password-guesser/password-guesser-model.js`,
 `inbox-triage/inbox-triage-minigame.js`, `inbox-triage/triage-scoring.js`,
@@ -111,7 +111,7 @@ it is player-facing copy on the scored screen and the running header, it is off 
 register, B1 already flagged it, and it is the single de-jargoning step the course applied everywhere else.
 
 Fix (episode-local, no engine change - all keys are already honoured for an awareness email/page set, as E19
-proves). Add to the `e18_atscale_inbox` triageSet in both `scenarios/awareness_e18_credential_attacks_at_scale/
+proves). Add to the `e18_atscale_inbox` triageSet in both `scenarios/ca18_credential_attacks_at_scale/
 scenario.json.erb` (near `:103-111`) and `..._defend/scenario.json.erb` (near `:81-89`), and the source
 fragment `planning_notes/phishing_and_social_engineering/awareness/e18/defend.json`, the E19 block adapted to
 E18's "fakes" register, e.g.:

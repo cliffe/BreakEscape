@@ -1,0 +1,13 @@
+{
+  "key": "c0de6d9dfe88c81464f35a3ff1dfa197",
+  "npc": "eleanor_vance",
+  "text": "If that message spreads — if every critical infrastructure operator knows they're uninsured against nation-state attacks — the financial incentive for security investment evaporates. Why spend on security if the worst-case scenario is uninsured anyway?",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:31:34Z"
+}

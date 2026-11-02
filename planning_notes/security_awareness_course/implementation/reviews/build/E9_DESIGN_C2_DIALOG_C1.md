@@ -2,7 +2,7 @@
 
 Date: 2026-10-29. Reviewer: Opus 4.8, read-only (this file excepted). Kind of game: the awareness product ("Incident Simulations: Critical Cases"), short education-first episodes for non-technical staff on the neutral corporate skin (`ui_theme: "general"`). No VMs, no combat, no spy framing, no runtime language model. Method and standard: `REVIEWER_BRIEF.md`, the `scenario-design-review` and `npc-dialog-review` skills adapted to the awareness kind, and the E8 pilot reviews for format and bar. Source of truth for facts: `modules/core_03_passwords_and_mfa/concepts.md`; topic boundaries: `00_COURSE_OVERVIEW.md`.
 
-Scope read end to end: both shells (`scenarios/awareness_e9_passwords/` and `_defend/`, scenario + ink); the fragments (`e9/{attack,defend,full_only}.json`, `BRAND_ADDITIONS.md`); E9's block in `gen_e8_e17_shells.py`; the module `concepts.md`; and the engine the findings depend on (`flip-view.js`, `inbox-triage/triage-kinds.js`, `inbox-triage/triage-scoring.js`).
+Scope read end to end: both shells (`scenarios/ca09_passwords/` and `_defend/`, scenario + ink); the fragments (`e9/{attack,defend,full_only}.json`, `BRAND_ADDITIONS.md`); E9's block in `gen_e8_e17_shells.py`; the module `concepts.md`; and the engine the findings depend on (`flip-view.js`, `inbox-triage/triage-kinds.js`, `inbox-triage/triage-scoring.js`).
 
 How the screens were judged: this pass **ran the flip**. A keyless `:3001` bridge run (`ONLY="e9-full"`, game 4804) passed 14/14, and a second run (game 4808) captured the flip screen and dumped its rendered nodes. The flip findings below are from that render; the defend-set and debrief copy is judged from the authored data and the scoring code.
 

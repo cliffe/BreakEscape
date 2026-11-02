@@ -35,12 +35,12 @@ go into the two beyond-email episode defend sets, not into the six role check fo
 ## Where the items go
 
 - **E3 fragment and its shells:** the episode set `e3_service_desk_queue` (in `awareness/e3/defend.json`),
-  the full episode erb `scenarios/awareness_e3_helpdesk_reset/scenario.json.erb`, and the generated
-  defend-only shell `scenarios/awareness_e3_helpdesk_reset_defend/`. Gets the **remote-access scam**
+  the full episode erb `scenarios/ca03_helpdesk_reset/scenario.json.erb`, and the generated
+  defend-only shell `scenarios/ca03_helpdesk_reset_defend/`. Gets the **remote-access scam**
   (a service-desk call) and the Report Fraud / home-routes teaching in its debrief.
 - **E6 fragment and its shells:** the episode set `e6_phone_messages` (in `awareness/e6/defend.json`),
-  the full episode erb `scenarios/awareness_e6_texts_and_qr/scenario.json.erb`, and the defend-only
-  shell `scenarios/awareness_e6_texts_and_qr_defend/`. Gets the **chat-app approach** (an SMS card)
+  the full episode erb `scenarios/ca06_texts_and_qr/scenario.json.erb`, and the defend-only
+  shell `scenarios/ca06_texts_and_qr_defend/`. Gets the **chat-app approach** (an SMS card)
   and the 7726 / 159 teaching in its debrief.
 - **Not the six role check forms.** `finance`, `hr`, `helpdesk`, `executive`, `general` and `mobile`
   stay exactly as they are (the measured baseline). If any of these channels belongs in a form, it
@@ -219,8 +219,8 @@ count does not change per-item scoring under the `awareness` profile.
 
 - **Fragment-erb parity** (`test/js/social-awareness-fragment-erb-parity.test.mjs`): the hand-authored
   full episode erbs carry the episode defend set too, so any change to the set in the fragment must be
-  made identically in the full erb (`scenarios/awareness_e3_helpdesk_reset/scenario.json.erb` and
-  `scenarios/awareness_e6_texts_and_qr/scenario.json.erb`), or the intended difference must be added
+  made identically in the full erb (`scenarios/ca03_helpdesk_reset/scenario.json.erb` and
+  `scenarios/ca06_texts_and_qr/scenario.json.erb`), or the intended difference must be added
   to the test's allow-list with a reason (HANDOVER.md section 4). Edit both; do not rely on the
   allow-list for a shared key.
 - **Check-form A/B balance** (`scripts/validate_social/triage.rb balance`, `CHECK_PARITY_AUDIT.md`):
@@ -239,12 +239,12 @@ count does not change per-item scoring under the `awareness` profile.
    (today `["unexpected_qr", "smish_shortlink_urgency", "reply_stop_trick", "lookalike_domain"]`);
    extend `e6_parcel_fee`'s `reportReply`/debrief with the 7726/159 line; add the home-route line to
    the Monday card string; update the `_order` and `_brandAdditions` notes.
-3. `scenarios/awareness_e3_helpdesk_reset/scenario.json.erb` and
-   `scenarios/awareness_e6_texts_and_qr/scenario.json.erb`: make the identical change to the episode
+3. `scenarios/ca03_helpdesk_reset/scenario.json.erb` and
+   `scenarios/ca06_texts_and_qr/scenario.json.erb`: make the identical change to the episode
    set (including the `e6_phone_messages.channelTells` addition) so the fragment-erb parity test
    passes.
-4. Regenerate the two defend-only shells (`awareness_e3_helpdesk_reset_defend`,
-   `awareness_e6_texts_and_qr_defend`) with `gen_e3_e5_shells.py` and `gen_e6_e7_shells.py` **into a
+4. Regenerate the two defend-only shells (`ca03_helpdesk_reset_defend`,
+   `ca06_texts_and_qr_defend`) with `gen_e3_e5_shells.py` and `gen_e6_e7_shells.py` **into a
    scratch folder**, confirm a no-change regen of everything else is byte-identical to HEAD, then copy
    in only the two changed defend-only shells (HANDOVER.md section 4). The check shells these
    generators also build must come out byte-identical (the forms are untouched).

@@ -78,7 +78,7 @@ Reviewer stance: a fresh Sonnet implementer holding only these briefs. Read-only
 ### M8. ENG-10 / WP-12 Part A: the validator still errors for a brief-only episode with no `defend` block
 
 - **Files:** `02` ENG-10 Change 4; `11_WP12` Part A ("No `defend` block"); `awareness.rb` `defend_set` (line 359), `conclusion_checks`.
-- **Evidence:** `defend_set` returns `err('defend.setId is missing')` for any episode without `defend.setId`. ENG-10 adds only `STAGES_BY_VARIANT['brief']`, the schema variant enum, and lints for `doneGlobal` and `briefCards`. It does not say to skip `defend_set`, `set_checks`, `result_global_checks` and `player_sent_auth_checks` for `brief`, or to run a conclusion check against `doneGlobal` (today `conclusion_checks` runs only `if done`, and `done` comes from the set). So `scenarios/awareness_core_00_first_play` fails `--strict-social`, which WP-12's acceptance requires to pass, and the "objective concludes on `doneGlobal`" is never linted.
+- **Evidence:** `defend_set` returns `err('defend.setId is missing')` for any episode without `defend.setId`. ENG-10 adds only `STAGES_BY_VARIANT['brief']`, the schema variant enum, and lints for `doneGlobal` and `briefCards`. It does not say to skip `defend_set`, `set_checks`, `result_global_checks` and `player_sent_auth_checks` for `brief`, or to run a conclusion check against `doneGlobal` (today `conclusion_checks` runs only `if done`, and `done` comes from the set). So `scenarios/ca00_first_play` fails `--strict-social`, which WP-12's acceptance requires to pass, and the "objective concludes on `doneGlobal`" is never linted.
 - **Fix:** ENG-10: "for `variant: 'brief'`, skip the defend-set group of checks, and add a conclusion check that the `missionConclusion` aim's `concludeRequires.globals` names `doneGlobal`." Check also that the runner's `defendSet` getter is never touched on a brief-only run (I could not confirm it from the packet).
 
 ### M9. E11 has no objectives, globals or first-aim trigger, and P2 assumes a phish target
@@ -98,7 +98,7 @@ Reviewer stance: a fresh Sonnet implementer holding only these briefs. Read-only
 
 ### m3. E8 host and room "wired like E5" versus the P2 table "copy E1" (R1 M8, downgraded)
 
-- E08 §8 ("E5 `niamh_doherty.ink` pattern") and §15 ("wired like `awareness_e5_signin_pages`", "copy the E5 `eventMappings`") still conflict with P2 row 1 and P3 (copy E1, `adaeze_okafor.ink`). §15 now lists the exact globals to declare, which defuses most of the risk (E5 has `se_landing_pages` and `landing_sso_login_*`). **Fix:** one sentence in E08 §15: "frame from E1; take only Quayholt names, sites and templates from E5; host ink is E1's structure with Anjali's lines".
+- E08 §8 ("E5 `niamh_doherty.ink` pattern") and §15 ("wired like `ca05_signin_pages`", "copy the E5 `eventMappings`") still conflict with P2 row 1 and P3 (copy E1, `adaeze_okafor.ink`). §15 now lists the exact globals to declare, which defuses most of the risk (E5 has `se_landing_pages` and `landing_sso_login_*`). **Fix:** one sentence in E08 §15: "frame from E1; take only Quayholt names, sites and templates from E5; host ink is E1's structure with Anjali's lines".
 
 ### m4. README §5 and `10_CHECK_FORMS` disagree on engine dependencies
 
@@ -110,7 +110,7 @@ Reviewer stance: a fresh Sonnet implementer holding only these briefs. Read-only
 
 ### m6. E11 §17 and §15 have stale or wrong commands and file names
 
-- §17 runs `validate_scenario.rb ... scenarios/awareness_e11_misdirected_data` (a folder; the validator takes the `scenario.json.erb` file, as README §8.3 does) and says "the four check shells" (there are eight, built by `10`'s generator, not E11's).
+- §17 runs `validate_scenario.rb ... scenarios/ca11_misdirected_data` (a folder; the validator takes the `scenario.json.erb` file, as README §8.3 does) and says "the four check shells" (there are eight, built by `10`'s generator, not E11's).
 - §15 creates `e11/mistake.json`, a fragment name P1 does not know (P1: `attack.json` and `defend.json`; a packet-added shape "takes the fragment shape that packet gives", and ENG-04 gives none). **Fix:** say "hand-author the `mistake` block into the full erb, and record it under `defend.json` `awarenessEpisode.mistake`", as P1 says for the other full-only keys.
 
 ### m7. E11 §9 table gives option ids only for `overtime_sheet`
@@ -188,13 +188,13 @@ Reviewer stance: a fresh Sonnet implementer holding only these briefs. Read-only
 
 1. **P0.** Clear. The new generator reads `BREAKESCAPE_REPO`; the no-change run is only possible for a built generator, which P0 step 3 says to use. Expected: no `DIFF` line.
 2. **P1 fragments** `AW/e8/defend.json`, `attack.json`. Copy `AW/e1/defend.json` and `AW/e5/attack.json`. The defend half is workable (E08 §11 gives all seven items). The attack half needs M2. The `awarenessEpisode` keys match the real E1/E5 fragments.
-3. **P2 full erb.** Copy `scenarios/awareness_e1_invoice_fraud/` and `mission.json`. Blocked on M1 for aims, tasks, kiosk text, conclusion screen. Host sprite is `female_scientist_v2` / `_talk` / `_visemes` (not stated).
-4. **P3 ink.** Copy `adaeze_okafor.ink` to `ink/anjali_rao.ink`. Needs Anjali's lines (M1). `./scripts/compile-ink.sh awareness_e8_after_the_click` and `missions.json` copy of the E1 block are clear and real.
+3. **P2 full erb.** Copy `scenarios/ca01_invoice_fraud/` and `mission.json`. Blocked on M1 for aims, tasks, kiosk text, conclusion screen. Host sprite is `female_scientist_v2` / `_talk` / `_visemes` (not stated).
+4. **P3 ink.** Copy `adaeze_okafor.ink` to `ink/anjali_rao.ink`. Needs Anjali's lines (M1). `./scripts/compile-ink.sh ca08_after_the_click` and `missions.json` copy of the E1 block are clear and real.
 5. **P4 generator.** Copy helpers from `gen_e6_e7_shells.py`; `EPISODES['e8']` needs M1 data; `HOSTS['anjali']` from `gen_e3_e5_shells.py`. The defend-only shell drops exactly the seven flip keys; `conceptPanel` array flows through from the fragment.
 6. **P5a.** Works as written.
-7. **P6, P7.** Count 38 to 40; parity row `{ n: 8, dir: 'awareness_e8_after_the_click' }`. Clear. ENG-09d is a tests-only packet.
+7. **P6, P7.** Count 38 to 40; parity row `{ n: 8, dir: 'ca08_after_the_click' }`. Clear. ENG-09d is a tests-only packet.
 8. **P8 validator.** Needs ENG-01, ENG-08 (tells, `SKILL_NAMES`, M7), ENG-09b. Stage order is the E1 order, so it is valid today.
-9. **P9 bridge.** Copy `bridge-e1-full.jsonl`. Selectors for `flipAftermath` (`.aw-flip-aftermath`, `.aw-aftermath-item[data-id]`) come from ENG-01. Add `e8-full:awareness_e8_after_the_click` to `JOBS`. The defend-only bridge is unspecified (m1).
+9. **P9 bridge.** Copy `bridge-e1-full.jsonl`. Selectors for `flipAftermath` (`.aw-flip-aftermath`, `.aw-aftermath-item[data-id]`) come from ENG-01. Add `e8-full:ca08_after_the_click` to `JOBS`. The defend-only bridge is unspecified (m1).
 10. **P11, P12, P13.** Clear. Brand additions need no new cast.
 
 **ENG-01 and ENG-08 read against the code:** `flip-view.js` `renderFlipView`, `_flipProps`, `_stripLabels`, `STAGE_LABELS` merge (`step-strip.js` already accepts `opts.labels`), and the raw `awarenessEpisode` pass-through (`episode-runner-minigame.js` `get episode`) all match the packet. ENG-01 is implementable as written. ENG-08 needs M7.

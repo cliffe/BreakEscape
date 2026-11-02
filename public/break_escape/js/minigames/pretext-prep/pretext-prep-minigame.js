@@ -360,7 +360,7 @@ export class PretextPrepMinigame extends SocialOverlayScene {
     begin() {
         if (!this.gate().ok) return;
         const npc = this.npc();
-        const launch = callLaunch(this.spec, npc, this.params?.npcId, this.payload());
+        const launch = callLaunch(this.spec, npc, this.params?.npcId, this.payload(), this.params?.app);
         const fw = typeof window !== 'undefined' ? window.MinigameFramework : null;
         if (!launch || typeof fw?.startMinigame !== 'function') return;
         const started = fw.startMinigame(launch.scene, null, launch.params);
@@ -374,7 +374,7 @@ export class PretextPrepMinigame extends SocialOverlayScene {
         const facts = this.facts();
         const options = this.optionsByFact();
         const npc = this.npc();
-        const launch = callLaunch(this.spec, npc, this.params?.npcId, this.payload());
+        const launch = callLaunch(this.spec, npc, this.params?.npcId, this.payload(), this.params?.app);
         return {
             ...super.getTestState(),
             pretext: {

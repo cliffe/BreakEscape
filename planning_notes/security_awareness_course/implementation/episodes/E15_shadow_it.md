@@ -32,7 +32,7 @@ Source of truth: `modules/core_13_removable_media_cloud_and_shadow_it/concepts.m
   Mather, Shauna Lofthouse, Chidi Okeke and the Tarrowby look-alikes and third parties).
 - Nearest built episodes: E6 (Tarrowby, mobile) `awareness/e6/{attack,defend}.json` and E4
   `awareness/e4/defend.json` (the `triageSets` item shape, the `awarenessEpisode` block, the
-  defend-only split). Shells `scenarios/awareness_e6_texts_and_qr*/`.
+  defend-only split). Shells `scenarios/ca06_texts_and_qr*/`.
 - Engine: `episode-runner/` (`flip-view.js`, `debrief-view.js`), `systems/episode-starter.js`,
   `awareness-measure.js`; the inbox-triage defender, the `Verify` verdict.
 - Validators as E11 section 2.
@@ -136,7 +136,7 @@ no attack-landed global).
   shape): `"spriteSheet": "male_telecom_v2"`, `"spriteTalk": "assets/characters/male_telecom_talk.png"`,
   `"spriteVisemes": "assets/characters/male_telecom_visemes.png"`, `"npcType": "person"`,
   `"id": "nilesh_solanki"`, `"displayName": "Nilesh Solanki"`,
-  `"storyPath": "scenarios/awareness_e15_shadow_it/ink/nilesh_solanki.json"`, `"currentKnot": "start"`,
+  `"storyPath": "scenarios/ca15_shadow_it/ink/nilesh_solanki.json"`, `"currentKnot": "start"`,
   plus the N16 done-event `eventMappings`. Host art is a placeholder until the PixelLab reset.
 - **Learner avatar** (full erb `player`, as E6): `"spriteSheet": "female_office_worker_v2"`,
   `"spriteTalk": "assets/characters/female_office_worker_talk.png"`.
@@ -174,7 +174,7 @@ section 15a's shape exactly):
 - `globalVariables` for the **full** shell (as E11 section 15a, no `phish_*` or attack-landed global):
   `episode_e15_shadow_it_state: {}`, `se_awareness_records: []`, `episode_e15_shadow_it_defend_percent: 0`,
   `episode_e15_shadow_it_defend_reportRate: 0`, `episode_e15_shadow_it_defend_done: false`,
-  `episode_e15_shadow_it_defend_pass: false`. (`episode_<id>_state` also holds `mistakeChoices` at runtime,
+  `episode_e15_shadow_it_complete: false`. (`episode_<id>_state` also holds `mistakeChoices` at runtime,
   cleared on `flip`.)
 - The **defend-only** shell uses the double-suffix prefix (section 13): done global
   `episode_e15_shadow_it_defend_defend_done`, result globals `episode_e15_shadow_it_defend_defend_{percent,reportRate,pass}`,
@@ -201,7 +201,7 @@ section 15a's shape exactly):
   `ui_theme`: "general"; `estimated_duration_minutes`: 15.
 - `cybok`: `[ { "ka": "HF", "topic": "Human Factors", "keywords": ["Removable media", "Cloud storage", "Shadow IT", "Security awareness"] } ]`.
 
-Top-level erb strings (copy E6's): `scenario_id` `awareness_e15_shadow_it`; `scenario_name` "Shadow IT:
+Top-level erb strings (copy E6's): `scenario_id` `ca15_shadow_it`; `scenario_name` "Shadow IT:
 the shortcuts"; `scenario_brief` = `strings.brief` (section 8); `endGoal` "Play out the Friday, then sort
 the inbox and match the swaps at the training kiosk."; `version` "1.0"; `disableAttacks` true; `startRoom`
 `training_room`; `startPosition` as E6.
@@ -398,7 +398,7 @@ Writer: this spec only.
 Implementer: `awareness/e15/mistake.json` (the sandbox beats and the `awarenessEpisode` block, by
 analogy with `e4/attack.json` but with no `04` target) and `awareness/e15/defend.json` (the
 `triageSets` entry `e15_shortcuts_inbox`, the `awarenessEpisode` defend/debrief/strings/_defendOnly keys,
-by analogy with `e4/defend.json`); shells `scenarios/awareness_e15_shadow_it/` and `.../_defend/`
+by analogy with `e4/defend.json`); shells `scenarios/ca15_shadow_it/` and `.../_defend/`
 (one-room `room_aw_tarrowby` kiosk, host Nilesh, kiosk `{ episodeId }`); the Swap Shop drill as ENG-11's
 `sortDrill` config (section 11); the `found_media`/`unapproved_tool` scenario-local tells; the ENG-04
 schema/validator/parity updates (shared with E11). The `general_v2` check shells are built by `10`'s

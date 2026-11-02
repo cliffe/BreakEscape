@@ -77,7 +77,7 @@ these six. Each fix was checked against the built files and the code.
   §3 of E11/E12/E14/E15/E16/E17 and from each §14 and §4; replaced with a "check forms (no engine
   packet), built per `10`" pointer.
 - **R1_content M7 / known issue 8 (ruling 2, E17 shell count).** E17 now ships **one** defend-only shell
-  (`awareness_e17_acceptable_use_defend`, id `e17_acceptable_use_defend`, variant `defendOnly`, prefix
+  (`ca17_acceptable_use_defend`, id `e17_acceptable_use_defend`, variant `defendOnly`, prefix
   `episode_e17_acceptable_use_defend_defend_` per the built E6 double-suffix pattern), listed in both
   seeded courses. Removed the second "full" shell; rewrote §1, §11b prefix, §13, §15, §16 (one bridge,
   `..._defend_defend_done`), §17, §19 and §20.
@@ -397,8 +397,8 @@ these. Every fix checked against the built files, the fragments and `scripts/val
   `globalVariables` list (no `phish_*` and no attack-landed global), and the defend-only double-suffix
   globals. Stated that P2's "first aim `manual` / `phish_<targetId>_attempts`" does **not** apply to
   E11, and documented the optional two-aim variant as needing ENG-04 to write a global when `mistake`
-  completes (flagged, not assumed). Shape copied from `awareness_e6_texts_and_qr_defend` (one aim) and
-  `awareness_e4_exec_whaling` (two aims).
+  completes (flagged, not assumed). Shape copied from `ca06_texts_and_qr_defend` (one aim) and
+  `ca04_exec_whaling` (two aims).
 - **E11 §17 (R2_sonnet m6).** Fixed: the validator takes the `scenario.json.erb` **file path** per
   shell, not the folder (README 8.3); and E11 does not own "four check shells": `10`'s generator builds
   **eight** shells across both shared pairs (`awareness_{pre,post}_{general_v2,data_conduct}_{ab,ba}`),
@@ -895,11 +895,11 @@ checked against the built fragments (`e1/e3/e5/e6/e7` defend.json), `gen_e3_e5_s
 - **m11.** Fragment folder moved from `awareness/e17/` (E17 owns that) to `awareness/core17/`.
 - **m12.** Named the strings to rewrite (copied from the E6 defend shell: `defendOnly`,
   `defendIntro`, `noBlameLine`, `mondayCard`; the two `flip*` strings never show in a `defendOnly`
-  shell); the host ink to copy (`ink/chidi_okeke.ink` from `awareness_e6_texts_and_qr_defend`,
+  shell); the host ink to copy (`ink/chidi_okeke.ink` from `ca06_texts_and_qr_defend`,
   renamed to `graham_whitfield.ink`, since Graham has only check-form welcome ink today); added the
   set-level `title`/`brief`/`realLabel` and the "moves you between seats" brief line the
   general_staff learner needs; the message order (impostor before genuine twin); the `mission.json`
-  source (`awareness_e7_voice_ceo_defend`); and the shell-count bump (+1, P6).
+  source (`ca07_voice_ceo_defend`); and the shell-count bump (+1, P6).
 - **m13.** Pointed the "what changed this year" brief at
   `modules/core_17_capstone_annual_assessment/concepts.md` lines 66 to 70 and quoted the three
   headline changes verbatim.
@@ -919,12 +919,12 @@ Validator run in the scratchpad: `json-schema` installed into a scratch `GEM_PAT
   `channelTells: 'senderTrust' is not one of 00 section 2's channel tells and flagChips gives it no
   label` (two such errors) - this is the fault B3 flagged. (3) 10's corrected `general_v2`
   `channelTells` list: **exit 0**.
-- **E8 defend set.** Built `awareness_e8_after_the_click_defend` carrying the `e8_used_account` set:
+- **E8 defend set.** Built `ca08_after_the_click_defend` carrying the `e8_used_account` set:
   the three local tells declared in `channelTells` with a `flagChips` map and per-message
   `factorStrings`, the five email items with final `body`/`to`/`auth`, the reused push card and the
   page card. **ruby exit 0, no SOCIAL line, "Validation complete".** (No ENG packet: the defend-only
   set uses only built shapes; `flipAftermath`/`stepLabels` are full-shell-only episode keys.)
-- **core_17.** Built `awareness_core_17_annual_2027_defend` from `awareness_e6_texts_and_qr_defend`
+- **core_17.** Built `ca_annual_2027_defend` from `ca06_texts_and_qr_defend`
   with the 8-message combined set (the two E3 calls reshaped into `call` messages, `tells` ->
   `truth.flags`, `notes` -> `truth`, `claims` dropped, an authored `from`/`time`), `channelTells` the
   union of the copied items' channel tells with the two factors (`senderTrust`, `urgencyCalibrated`)
@@ -1036,7 +1036,7 @@ Validator made runnable in the scratchpad: `json-schema` gem installed into
 `LANG=C.UTF-8 GEM_HOME=<gems> GEM_PATH=<gems> ruby scripts/validate_scenario.rb <file> --strict-social
 --no-graph --skip-ink`.
 
-- **E12 defend set.** Copied `awareness_e6_texts_and_qr_defend` to the scratchpad, swapped in the six
+- **E12 defend set.** Copied `ca06_texts_and_qr_defend` to the scratchpad, swapped in the six
   `call` items (the exact §11 JSON), set `channelTells`
   `["tailgating","no_escort","uniform_pretext","not_expected","borrowed_authority","secrecy_or_bypass"]`
   and the four local-tell `flagChips` labels. Result: **exit 0, no SOCIAL lint error.**
@@ -1074,7 +1074,7 @@ Fixer scope: `01_PIPELINE.md`, `02_ENGINE_WORK.md`, `10_CHECK_FORMS.md`, `12_WP1
 only. No git run; no file edited outside these four. Every change was proved in scratch
 (`.../scratchpad/final/`) with the validator (json-schema 6.2.1 / addressable 2.9.0 /
 public_suffix 7.0.5 in a scratch `GEM_HOME`, `--strict-social --no-graph --skip-ink`, absolute
-path per folder). Baseline: built `awareness_e1_invoice_fraud` exits 0 with the one known
+path per folder). Baseline: built `ca01_invoice_fraud` exits 0 with the one known
 `phish_supplier_contact_landed` warning.
 
 ### 02 (R5_review M1)
@@ -1144,10 +1144,10 @@ path per folder). Baseline: built `awareness_e1_invoice_fraud` exits 0 with the 
   as `e3_call_on_behalf`), not the check-form message shape (`kind`/`from`/`time`/`truth`);
   `ha_call_facilities` is now cited as a wording model only. Fixed the "Read first" bullet to name the
   structural model.
-- **Proof.** WP-15 E6 copy (built `awareness_e6_texts_and_qr_defend` with `e6_fuel_card_offer`
+- **Proof.** WP-15 E6 copy (built `ca06_texts_and_qr_defend` with `e6_fuel_card_offer`
   replaced by `e6_chat_new_number` flagged `secrecy_or_bypass` + `urgencyCalibrated`, and
   `secrecy_or_bypass` added to `e6_phone_messages.channelTells`): **EXIT=0**. WP-15 E3 copy (built
-  `awareness_e3_helpdesk_reset_defend` with `e3_call_on_behalf` replaced by `e3_call_remote_access` in
+  `ca03_helpdesk_reset_defend` with `e3_call_on_behalf` replaced by `e3_call_remote_access` in
   `awarenessEpisode.defend.calls`, the `defend.calls` shape): **EXIT=0**. Negatives confirm the fixes
   were needed: senderTrust on the SMS with `secrecy_or_bypass` absent from `channelTells` gives the
   two R5 B2 errors (EXIT=1); the old message-shape call in `defend.calls` gives the three R5 B3
@@ -1158,7 +1158,7 @@ path per folder). Baseline: built `awareness_e1_invoice_fraud` exits 0 with the 
 
 | Fixture | Exit |
 |---|---|
-| Baseline `awareness_e1_invoice_fraud` | 0 (one known warning) |
+| Baseline `ca01_invoice_fraud` | 0 (one known warning) |
 | P0 regen of `gen_e3_e5` + `gen_e6_e7` (16 folders) | byte-identical, no DIFF |
 | Check generator run (8 shells) | no KeyError |
 | `awareness_{pre,post}_general_v2_{ab,ba}` (4) | 0 each |
@@ -1243,8 +1243,8 @@ Built a scratch `gen_e8_e17_shells.py` from the built `gen_e6_e7_shells.py` with
 Run by the P0 method (env-set repo, scratch fragments, explicit out folder):
 
 - `gen_e8_e17_shells.py <out> e8,e9,e10` finishes **exit 0, no `KeyError`**, and writes all three
-  defend-only shells (`awareness_e8_after_the_click_defend`, `awareness_e9_passwords_defend`,
-  `awareness_e10_downloads_and_fake_checks_defend`), each with `scenario.json.erb`, `mission.json`
+  defend-only shells (`ca08_after_the_click_defend`, `ca09_passwords_defend`,
+  `ca10_downloads_and_fake_checks_defend`), each with `scenario.json.erb`, `mission.json`
   and the host ink. Each shell carries the `conclusionScreen` from the `conclusion` tuple,
   `strings.defendIntro`, and the doubled `episode_<id>_defend_defend_` prefix. A second run is
   byte-identical (no `DIFF`), as P0 requires.

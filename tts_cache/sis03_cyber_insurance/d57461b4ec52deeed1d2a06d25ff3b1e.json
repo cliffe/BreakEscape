@@ -1,0 +1,13 @@
+{
+  "key": "d57461b4ec52deeed1d2a06d25ff3b1e",
+  "npc": "eleanor_vance",
+  "text": "But let me give you the full picture first.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:18:04Z"
+}

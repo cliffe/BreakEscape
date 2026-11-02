@@ -1413,7 +1413,8 @@ module BreakEscape
       return if event_id.blank?
 
       slot = @game.try(:game_slot)
-      return if slot && slot.event_id.to_s == event_id.to_s
+      # the host's event param may carry a slug after the id (1-break-escape)
+      return if slot && slot.event_id.to_s == event_id.to_s[/\A\d+/]
 
       raise ActiveRecord::RecordNotFound, "Game #{@game.id} is not in event #{event_id}"
     end
