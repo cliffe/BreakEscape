@@ -1069,13 +1069,13 @@
     },
     "9:16": {
      "cx": 0.5,
-     "cy": 0.28,
-     "zoom": 1.6875
+     "cy": 0.27,
+     "zoom": 3
     },
     "1:1": {
      "cx": 0.5,
-     "cy": 0.28,
-     "zoom": 1.6875
+     "cy": 0.27,
+     "zoom": 3
     }
    },
    "audio": {
@@ -1087,7 +1087,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "3x crop on the monitor keeps the 'Anniversary' post-it out of frame; wrong letters only, never submitted"
+    "note": "3x crop on the monitor keeps the 'Anniversary' post-it out of frame; wrong letters only, never submitted; the same 3x crop in 9:16 and 1:1 (the first renders of those showed the post-it)"
    }
   },
   {
