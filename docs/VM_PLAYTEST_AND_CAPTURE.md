@@ -246,6 +246,112 @@ Two points change the picture:
   together, cut or picture-in-picture the game take (cloud dev) into the
   desktop take (Proxmox dev VM).
 
+## Terminal recording with `script --timing`
+
+`script` records everything the terminal receives as raw bytes, with a timing
+file, and `scriptreplay` plays it back at the recorded pace. Programs run under
+`script` see a real terminal, so they behave exactly as they do for a player:
+
+- **Colour and animation survive.** msfconsole's banner and coloured prompt,
+  nmap's progress lines, Hydra's output and any `\r` progress updates are
+  escape sequences in the byte stream, and replay reproduces them.
+- **The waits survive.** The pause while msf boots, and nmap running before its
+  results appear, are in the timing file. `scriptreplay -m <seconds>` caps any
+  pause (a 4-minute Hydra run can become 3 s) and `-d <n>` speeds up the whole
+  replay, so the edit can keep the reality and still fit the beat.
+- **Typing is captured too.** The terminal echoes keystrokes back, so typed
+  commands replay at the pace they were typed. util-linux's `--log-in` /
+  `--log-io` can also keep input as a separate stream.
+
+What must match at replay, or it looks wrong:
+
+1. **Terminal size.** Fix columns and rows at recording (`stty cols 120 rows 32`,
+   or a fixed window) and replay at the same size. Programs that draw whole
+   screens (msf's `less`-style pages, `top`, `vim`) depend on it.
+2. **`TERM`, palette and font.** The stream says "colour 1", not "this red":
+   the terminal's theme decides the actual colours. Replay in the same
+   terminal emulator, with the same profile (font, size, colours), as the Kali
+   desktop uses. The simplest way to make sure: **replay inside the Kali VM's
+   own terminal, on its own desktop**, filmed through VNC. The font then
+   matches by construction, and the walk-up shot and the full-screen terminal
+   shot show the same desktop.
+
+So the plan for VM takes is: run the real solve once under `script`, filmed live
+(the msf boot and nmap waits are real); if a retake is needed, replay the
+recording on the same desktop at a chosen pace instead of rerunning the attack.
+asciinema works the same way and renders to video with a chosen font. It is
+not needed, and would be a new dependency.
+
+## The shots
+
+1. **Walk up to the Kali station in game** (cloud dev, with lighting): the
+   player walks up, the VM launcher opens.
+2. **The launcher shows the Kali desktop.** Outside Hacktivity the launcher only
+   shows VirtualBox instructions (`buildNoVmMessage` and the standalone branch
+   of `vm-launcher-minigame.js`), so this needs either the dev console mode
+   below, or a composite of the launcher frame and a desktop take in the edit.
+   The Hacktivity live prototype already shows a real console here.
+3. **Cut to the full-screen desktop and terminal** (Proxmox dev, through VNC):
+   msf boots, nmap runs, results appear, flags found.
+4. **Back in game**, the flag goes into the drop-site terminal.
+
+## Building VM playtesting on the Proxmox dev environment
+
+What exists: SecGen builds the mission on Proxmox; each project gets
+`test_context.json` (no password) and `lib/proxmox_connection.rb`, which already
+has `exec_qemu_guest`, `snapshot_qemu_vm` and `rollback_qemu_snapshot`. The
+game already takes real flags and VM IPs at creation (`flag_hints_xml`,
+`vm_ips_json`). What to build, in order:
+
+| # | Piece | What it does | Where |
+|---|---|---|---|
+| 1 | **`vm-up`** | Builds the mission's scenario (`scripts/secgen-dev-run`), or finds the existing project; waits for the guest agents; takes a `clean` snapshot of each VM; writes a small `vm_session.json` (project path, system name to VM id and node, IPs, flag-hint XML path) | BreakEscape `tools/playtest/vm/` |
+| 2 | **`vmctl`** | One CLI over the project's Proxmox client: `exec <system> [--user u] [--timeout s] -- <cmd>` returns one JSON line (exit code, stdout tail, path to the full log); `reset` rolls every VM back to `clean`; `ping`; `screendump` for failures only. Password from `SECGEN_PROXMOX_PASS`, never the command line | `tools/playtest/vm/` |
+| 3 | **Game with real flags** | `new-game.rb` gains `--vm-session vm_session.json`, passing the project's flag-hint XML and IPs, so flags are real and the alias is not used | `tools/playtest/new-game.rb` |
+| 4 | **Oracle check** | Reads each flag from where its module put it on the target (over `vmctl`) and compares it with the hint XML and the game's station list (count, order, station). Cheap; catches wiring bugs before any solve | `tools/playtest/vm/` |
+| 5 | **Solve script per mission** | The lab sheet's VM steps as code. Each step names its station and flag index, takes any value the game gave the player (a username from a note, a hint from an NPC) as an argument, runs on Kali through `vmctl`, extracts the flag by regex and prints one JSON line. Runs under `script` in a fixed-size terminal so the same run doubles as footage | `scenarios/<mission>/secgen/solve.rb` |
+| 6 | **Harness hook** | `playtest-session.js` gains `{"cmd":"vm","step":"<id>","args":{...}}`: calls the solve step, returns its JSON line (flag value, pass/fail, seconds), and the tester then submits the flag at the station with the usual `mg type` | `.claude/skills/playtest-scenario/` |
+| 7 | **Dev console in the launcher** (for shot 2 and for human testers) | In non-production, when the game has a VM session, the launcher embeds a noVNC console for that VM through a small dev-only websocket proxy to Proxmox `vncproxy`, or opens Proxmox's own noVNC console in a window. Never in production | BreakEscape engine, dev only |
+| 8 | **Camera prep** | Guest-agent script: 1920x1080, terminal profile, no notifications or blanking, fixed terminal size; then a `camera` snapshot | `tools/video/` |
+
+Items 1 to 6 are what playtesting needs; 7 and 8 are for video and human
+testers. Item 5 is the only per-mission work; the rest is written once.
+
+## A full game playtest with VMs
+
+Alias mode (`test:flag:N`) stays the default for routine runs: it is fast and
+needs no VMs. Real-VM mode runs when a mission's VM, its lab sheet or the
+wiring changes, and before release.
+
+1. **Preflight** (no model needed): `vm-up` (reuse the project; rebuild only if
+   the scenario XML changed), `vmctl reset` to `clean`, guest agents answer,
+   the oracle check passes. Any failure stops the run with one line saying
+   which check failed.
+2. **Game** created with the VM session, so flags are real.
+3. **Play** as now through the browser harness. When the tester reaches a VM
+   launcher, the report notes "VM reached" (the realistic point to start VM
+   work; some steps need clues found in game first).
+4. **VM steps** run through the harness hook, passing any in-game clues in as
+   arguments. That tests the clue chain both ways: game to VM (a username from
+   a note works on the server) and VM to game (the flag found opens the
+   archive). The tester reads one JSON line per step, never a screen.
+5. **Submit** each flag at its station with its real value; the response must
+   not carry `testFlagAlias`, and rewards, tasks and any flag-locked container
+   must fire.
+6. **On failure** the step's JSON gives the log path; read its last 20 lines,
+   take a `screendump` only if the log does not explain it. Classify: VM or
+   scenario bug (fix the SecGen scenario or module, rebuild, about 20 min),
+   game wiring bug (fix the mission), or a solve script bug.
+7. **Report** adds a VM section: per step pass or fail, seconds, real flag
+   used, the project id and SecGen commit it ran against.
+8. **After:** `vmctl reset`, keep the project for the next run, and destroy only
+   the VMs this run built when the work is done.
+
+A blind playtest keeps the solve script hidden from the tester and treats each
+VM step as a black box that returns flags. A blind test of the VM part itself
+(an agent working the Kali box from the lab sheet, through `vmctl exec` in
+text) is possible but costly; worth doing once per mission at most.
+
 ## Gaps and proposed work
 
 | # | Work | Repo | Size | Notes |
