@@ -98,10 +98,13 @@ Layout (lower-case, hyphens, no spaces, so Hacktivity can link the files directl
       <mission>-<kind>-<version>-9x16.mp4     social cut, captions burned in
       <mission>-<kind>-<version>-1x1.mp4
       <mission>-<kind>-<version>.srt
+      <mission>-<kind>-16x9.mp4 (and -9x16, -1x1, .srt)   stable names: symlinks to the current version
       MANIFEST.md
     stills/                                   PNG pack + captions.json + contact.png
 README.md                                     index of every export (newest first)
 ```
+
+Stable names: every video folder has versionless symlinks (`ln -sfn <mission>-<kind>-<version>-16x9.mp4 <mission>-<kind>-16x9.mp4`, likewise `-9x16`, `-1x1` and `.srt`). Hacktivity's server keeps a sparse clone of this repo (everything except `wip/`) and links to these names, so a `git pull` there brings in a new cut. When a new version replaces an old one, delete the old files and repoint the links in the same commit; never rename or remove a stable name. If the spoken lines changed, tell the user that Hacktivity's `app/assets/videos/<title image>_trailer.vtt` needs regenerating from the new `.srt`.
 
 `MANIFEST.md`: the Break Escape commit at render, the edit id, the music track and window, the takes used (id, entry state), placeholders still in the cut, the date, the review page link and the verdict. Add a line to the root README index, and the mission-to-music row in `docs/video/recipes/README.md` if it is not there.
 
