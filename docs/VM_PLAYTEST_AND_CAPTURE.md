@@ -380,11 +380,110 @@ What's left to build on the Hacktivity route:
 |---|---|---|
 | H1 | `exec_qemu_guest` variant with exit code, stderr and timeout | Hacktivity |
 | H2 | `script/dev/vm_exec.rb` (route A), with a background-and-poll mode | Hacktivity |
-| H3 | `script/dev/mission_vm_session.rb`: for a mission and a test user, find or create the dev event and batch, wait for the build and the flags, assign a VM set, create the game, revert to `original`, print one JSON line (game URL, VM set id, VM titles, flag counts) | Hacktivity (it touches Hacktivity models), or BreakEscape `tools/playtest/` run through Hacktivity's `rails runner` |
+| H3 | `script/dev/mission_vm_session.rb`: for a mission and a test user, find or create the dev event and batch, wait for the build and the flags, assign a VM set, create the game, revert to `original`, print one JSON line (game URL, VM set id, VM titles, flag counts) | Hacktivity (decided 2026-11-02) |
 | H4 | Per-mission solve scripts, calling H2 | BreakEscape `scenarios/<mission>/secgen/` |
 | H5 | Harness `vm` step command, calling the solve step | BreakEscape `.claude/skills/playtest-scenario/` |
 | H6 | Camera prep (resolution, terminal profile) through H2; a `camera` snapshot | BreakEscape `tools/video/` |
 | H7 | Check software WebGL on the dev VM's Chromium (`--enable-unsafe-swiftshader`), so the walk-up shot has lighting | none, a five-minute test |
+
+### Diagram: the changes
+
+Green is new, amber is changed, grey exists and is untouched. Everything runs
+on the dev Hacktivity box, which talks to the dev Proxmox cluster directly.
+Rendered copy: `docs/images/vm_playtest_changes.png`.
+
+```mermaid
+flowchart LR
+  classDef new fill:#d4f4dd,stroke:#2e7d32,color:#000
+  classDef changed fill:#ffe9c2,stroke:#b26a00,color:#000
+  classDef existing fill:#eeeeee,stroke:#888,color:#000
+
+  subgraph BOX["Dev Hacktivity box"]
+    direction TB
+    AGENT["Agent: orchestrator plus Haiku runner"]:::existing
+
+    subgraph BE["BreakEscape repo"]
+      HARNESS["playtest-session.js<br/>+ vm step command (H5)"]:::changed
+      SOLVE["scenarios/&lt;mission&gt;/secgen/solve.rb<br/>one per mission (H4)"]:::new
+      CAMPREP["tools/video camera prep (H6)"]:::new
+      REC["tools/video/capture<br/>Xvfb + ffmpeg recorder"]:::existing
+    end
+
+    CHROME["Chromium on Xvfb<br/>software WebGL check (H7)"]:::changed
+
+    subgraph HK["Hacktivity repo"]
+      SESSION["script/dev/mission_vm_session.rb (H3)"]:::new
+      VMEXEC["script/dev/vm_exec.rb<br/>dev only, refuses production (H2)"]:::new
+      EXECFULL["Proxmox::Connection<br/>exec_qemu_guest_full: exit code,<br/>stderr, timeout (H1)"]:::new
+      EXECOLD["exec_qemu_guest and vm_exec endpoint<br/>whitelist, 10 s: unchanged"]:::existing
+      JOBS["SecGen batch build, ReadSecgenFlagsJob,<br/>CtrlProxmoxVmJob revert_snapshot and vnc"]:::existing
+      subgraph ENGINE["BreakEscape engine, mounted"]
+        GAME["Game, vm_panel gate,<br/>flag stations, scoring"]:::existing
+      end
+      CONSOLE["VM page: noVNC console<br/>type-text panel"]:::existing
+    end
+
+    RELAY["hacktivity_vnc_relay"]:::existing
+  end
+
+  subgraph PVE["Dev Proxmox cluster"]
+    API["Proxmox API<br/>agent exec, snapshots, vncproxy"]:::existing
+    KALI["Kali VM desktop"]:::existing
+    TARGET["Target VMs"]:::existing
+  end
+
+  AGENT -->|"1: set up"| SESSION
+  SESSION --> JOBS
+  JOBS --> API
+  AGENT -->|"2: play"| HARNESS
+  HARNESS --> CHROME
+  CHROME --> GAME
+  GAME -->|"vm_panel"| CONSOLE
+  CONSOLE --> RELAY
+  RELAY --> API
+  HARNESS -->|"3: vm step"| SOLVE
+  SOLVE --> VMEXEC
+  CAMPREP --> VMEXEC
+  VMEXEC --> EXECFULL
+  EXECFULL --> API
+  EXECOLD --> API
+  API --> KALI
+  KALI -->|"attacks over the scenario network"| TARGET
+  REC -.->|"films"| CHROME
+```
+
+### Diagram: one full run
+
+Rendered copy: `docs/images/vm_playtest_run.png`.
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant A as Agent
+  participant S as mission_vm_session.rb
+  participant H as Hacktivity and game
+  participant P as playtest-session.js
+  participant V as solve.rb via vm_exec.rb
+  participant X as Proxmox and VMs
+
+  A->>S: mission, test student
+  S->>H: find or create event and batch
+  H->>X: build with SecGen (about 20 min, only if needed)
+  H->>H: read flag_hints.xml into Vm.flags
+  S->>X: revert to original snapshot
+  S-->>A: one JSON line: game URL, VM set, flag counts
+  A->>P: play the game as the student
+  P->>H: walk to the Kali station, open the launcher
+  H-->>P: vm_panel passes the room gate, console opens
+  P->>V: vm step, with clues found in game
+  V->>X: commands on Kali through the guest agent
+  X-->>V: exit code and output, as text
+  V-->>P: one JSON line per step with the flag
+  P->>H: submit the real flag at the station
+  H-->>P: accepted, no testFlagAlias, rewards fire
+  A->>H: check the flags reached Hacktivity scoring
+  A->>X: revert to original, keep the VMs for the next run
+```
 
 ## A full game playtest with VMs
 
