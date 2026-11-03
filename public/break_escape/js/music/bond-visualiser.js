@@ -1413,7 +1413,7 @@ function drawCCTV(data, W, H, audio) {
         text(`CAM ${String(cell.cam).padStart(2, '0')}`, x + pad, y + pad + fontPx, '#E0FFE8');
         _visCtx.textAlign = 'right';
         const camW = _visCtx.measureText('CAM 00').width;
-        const fits = camW + _visCtx.measureText(stamp).width + pad * 3 <= w;
+        const fits = camW + _visCtx.measureText(stamp).width + pad * 3 + fontPx * 2 <= w;
         text(fits ? stamp : stamp.slice(11), x + w - pad, y + pad + fontPx, '#E0FFE8'); // time only on a narrow feed
         _visCtx.textAlign = 'left';
         if (feed) text(feed.label, x + pad, y + h - pad, '#E0FFE8');
