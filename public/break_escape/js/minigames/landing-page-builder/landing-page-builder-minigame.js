@@ -38,6 +38,7 @@ import {
     scorePage, guardDomain, applyScore, setBuilt, buildRecord, linkInfoFor, pageString, fieldLabel, FIELD_LABELS, CHOICE_KEYS, TELL_IDS
 } from './landing-page-model.js';
 import { buildSuspectPage } from './landing-page-inspect.js';
+import { captureList, displaySecret, capturesReveal, maskSecret } from '../../systems/captures.js';
 
 export const PAGES_KEY = 'se_landing_pages';
 export const DRAFTS_KEY = 'se_landing_drafts';
@@ -149,6 +150,7 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
         this._openCards = new Set();
         this._attached = false;        // this session attached the page
         this._inspectionComplete = false;
+        this._capturesView = false;    // view:'captures' — the read-only captures list
         this._invalid = null;          // a reason string when the page/target is wrong
         this._live = '';
         // ── step 6 (Inspect) state ──
@@ -346,6 +348,13 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
         this.container.classList.add('lpb-container');
         this.gameContainer.classList.add('lpb-game-container');
 
+        // Read-only captures view: no page, target, choices or scoring; it only reads se_captures.
+        if (this.params.view === 'captures') {
+            this._capturesView = true;
+            this._buildCaptures();
+            return;
+        }
+
         const pages = Array.isArray(this.social.landingPages) ? this.social.landingPages : [];
         this.pageDef = pages.find((p) => p && p.id === this.params.landingPageId) || null;
         this.targetId = this.params.targetId || null;
@@ -417,6 +426,47 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
         });
         this.root = wrap;
         this.gameContainer.appendChild(wrap);
+    }
+
+    /** The captures view (view:'captures'): role-only rows from se_captures. Reads only; writes nothing. */
+    _buildCaptures() {
+        const reveal = capturesReveal(this.social);
+        const entries = captureList(this.globals);
+        const close = h('button', { type: 'button', class: 'se-overlay-close minigame-button lpb-close',
+            text: 'Close', 'aria-label': 'Close' });
+        this.addEventListener(close, 'click', (e) => {
+            e.preventDefault?.(); e.stopPropagation?.(); this.requestClose();
+        });
+        this.closeButton = close;
+        const head = h('header', { class: 'lpb-head' },
+            h('h2', { class: 'lpb-title', text: 'Captures' }),
+            h('div', { class: 'lpb-head-buttons' }, close));
+        const banner = h('p', { class: 'lpb-captures-banner', role: 'note',
+            text: reveal
+                ? 'Simulated capture — authored for training. No real password is recorded or kept.'
+                : 'A sign-in was captured here. In a real attack this is the victim\u2019s password; this exercise does not record it.' });
+        const list = h('ul', { class: 'lpb-captures-list', 'aria-label': 'Captures' });
+        if (!entries.length) {
+            list.appendChild(h('li', { class: 'lpb-captures-empty', text: 'No captures yet.' }));
+        }
+        for (const entry of entries) list.appendChild(this._captureRow(entry));
+        this.root = h('div', { class: 'lpb-root lpb-captures', tabindex: '-1' }, head, banner, list);
+        this.gameContainer.appendChild(this.root);
+    }
+
+    _captureRow(entry) {
+        const row = h('li', { class: 'lpb-captures-row', 'data-kind': entry.kind || 'credential' });
+        row.appendChild(h('div', { class: 'lpb-captures-role', text: entry.roleLabel || 'Unknown role' }));
+        if (entry.address) row.appendChild(h('div', { class: 'lpb-captures-address', text: entry.address }));
+        if (entry.kind === 'foothold') {
+            const where = entry.host || 'unknown host';
+            row.appendChild(h('div', { class: 'lpb-captures-foothold',
+                text: entry.note ? `Foothold on ${where} \u2014 ${entry.note}` : `Foothold on ${where}` }));
+        } else {
+            const secret = displaySecret(entry, this.social);
+            row.appendChild(h('div', { class: 'lpb-captures-secret', text: secret == null ? maskSecret() : secret }));
+        }
+        return row;
     }
 
     _buildShell() {
@@ -1194,7 +1244,7 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
     }
 
     saveDraft() {
-        if (this._invalid) return;
+        if (this._invalid || this._capturesView) return;
         this._writeDraft();
     }
 
@@ -1212,6 +1262,7 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
     }
 
     closeResult() {
+        if (this._capturesView) return { view: 'captures' };
         const rec = this._record();
         const info = linkInfoFor(rec, this.pageDef, this.params.kitId || null);
         return { ...info, saved: this._attached, inspectionComplete: this._inspectionComplete };
@@ -1235,6 +1286,10 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
 
     // ── test bridge ───────────────────────────────────────────────────────────
     getTestState() {
+        if (this._capturesView) {
+            return { ...super.getTestState(), builder: { view: 'captures', invalid: null,
+                rows: this.container.querySelectorAll('.lpb-captures-row').length } };
+        }
         const rec = this._record();
         const g = this.globals;
         const builtName = `landing_${this.pageId}_built`;
