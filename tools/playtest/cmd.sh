@@ -7,7 +7,7 @@
 # reply may span several lines; everything the harness wrote for this command
 # is printed. TIMEOUT means the harness did not answer within the timeout (default
 # 60 s; give a third argument in seconds for a long wait such as
-# '{"cmd":"vmwait","job":"vm-1"}' 1800, run with run_in_background) — check
+# '{"cmd":"vmwait","job":"vm-1"}' 1800, run with run_in_background), then check
 # tools/playtest/pipes-<session>/err before retrying the same command.
 set -uo pipefail
 cd "$(dirname "$0")/../.."

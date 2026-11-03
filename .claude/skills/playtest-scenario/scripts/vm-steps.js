@@ -1,5 +1,5 @@
 /**
- * vm-steps.js — the playtest session's VM commands.
+ * vm-steps.js: the playtest session's VM commands.
  *
  * The playtester never runs a command on a VM. It names a step of the mission's
  * solve and Hacktivity's `vm_step.rb` runs it (see Hacktivity

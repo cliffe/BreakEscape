@@ -116,7 +116,7 @@ played = signals.values.sum
 
 puts
 if log_path && vm_step_refs.length > flags.length
-  puts "VERDICT: LOG CLAIMS MORE THAN THE GAME HOLDS — #{vm_step_refs.length} flags earned via VM steps in the log, #{flags.length} submitted in the game."
+  puts "VERDICT: LOG CLAIMS MORE THAN THE GAME HOLDS: #{vm_step_refs.length} flags earned via VM steps in the log, #{flags.length} submitted in the game."
   puts 'The log and the server disagree, so the earned-in-game claim is unsupported.'
   exit 1
 end
