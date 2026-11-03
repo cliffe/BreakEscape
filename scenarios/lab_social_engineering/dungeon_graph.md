@@ -8,14 +8,14 @@ Tarnside Assurance has been hired to test Ledgerwell Ltd. Research the company f
 
 | Metric | Value |
 |---|---|
-| Story aims | 8 |
-| Total tasks | 23 (0 optional) |
+| Story aims | 9 |
+| Total tasks | 25 (2 optional) |
 | VM flag challenges | 0 |
-| Physical locks | 5 |
+| Physical locks | 6 |
 | AND-gate convergences | 1 |
 | Rooms | 4 |
-| Puzzle graph nodes / edges | 19 / 25 |
-| Story graph nodes / edges | 9 / 7 |
+| Puzzle graph nodes / edges | 20 / 26 |
+| Story graph nodes / edges | 10 / 8 |
 
 ## Critical Path
 
@@ -86,6 +86,7 @@ flowchart TD
   osint_workstation{"OSINT Workstation"}
   lock_mail_workstation["Mail Workstation"]
   page_builder{"Page Builder"}
+  lock_sofia_archive["payroll_backup.zip<br/>Password lock"]
   desk_phone{"Desk Phone"}
   andgate1((" + "))
 
@@ -106,6 +107,7 @@ flowchart TD
   operations_room --> lock_mail_workstation
   lock_mail_workstation --> lock_report_workstation
   operations_room --> page_builder
+  operations_room --> lock_sofia_archive
   operations_room --> desk_phone
   desk_phone -.-> andgate1
   andgate1 --> lock_mail_workstation
@@ -115,7 +117,7 @@ flowchart TD
   lock_report_workstation --> blue_team_room_key
   osint_workstation --> operations_room_key
 
-  class door_recon_room,door_operations_room,door_blue_team_room,lock_report_workstation,lock_mail_workstation lock
+  class door_recon_room,door_operations_room,door_blue_team_room,lock_report_workstation,lock_mail_workstation,lock_sofia_archive lock
   class recon_room,operations_room,blue_team_room,engagement_office room
   class rules_of_engagement,planning_whiteboard,osint_workstation,page_builder,desk_phone item
   class npc_ruth_adeyemi,recon_room_key,operations_room_key,blue_team_room_key key
@@ -151,6 +153,7 @@ flowchart TD
   aim_phish_easy{{"First two sends"}}
   aim_prepare_hard{{"Prepare for Sofia"}}
   aim_phish_hard{{"The hard send"}}
+  aim_escalate{{"Escalate (optional)"}}
   aim_report{{"Write the report"}}
   aim_defend{{"Defend"}}
   story_talk_to_ruth_adeyemi>"Talk to Ruth Adeyemi"]
@@ -160,11 +163,12 @@ flowchart TD
   aim_recon -.-> aim_phish_easy
   aim_phish_easy -.-> aim_prepare_hard
   aim_prepare_hard -.-> aim_phish_hard
+  aim_recon -.-> aim_escalate
   aim_report -.-> aim_defend
   story_talk_to_ruth_adeyemi -.->|sends_done| aim_report
 
   class aim_authorise,aim_plan,aim_recon,aim_phish_easy,aim_prepare_hard,aim_phish_hard critical
-  class aim_report,aim_defend aim
+  class aim_escalate,aim_report,aim_defend aim
   class story_talk_to_ruth_adeyemi action
 ```
 
@@ -210,6 +214,7 @@ flowchart TD
   osint_workstation{"OSINT Workstation"}
   lock_mail_workstation["Mail Workstation"]
   page_builder{"Page Builder"}
+  lock_sofia_archive["payroll_backup.zip<br/>Password lock"]
   desk_phone{"Desk Phone"}
   andgate1((" + "))
   aim_authorise{{"Get it in writing"}}
@@ -218,6 +223,7 @@ flowchart TD
   aim_phish_easy{{"First two sends"}}
   aim_prepare_hard{{"Prepare for Sofia"}}
   aim_phish_hard{{"The hard send"}}
+  aim_escalate{{"Escalate (optional)"}}
   aim_report{{"Write the report"}}
   aim_defend{{"Defend"}}
   story_talk_to_ruth_adeyemi>"Talk to Ruth Adeyemi"]
@@ -239,6 +245,7 @@ flowchart TD
   operations_room --> lock_mail_workstation
   lock_mail_workstation --> lock_report_workstation
   operations_room --> page_builder
+  operations_room --> lock_sofia_archive
   operations_room --> desk_phone
   desk_phone -.-> andgate1
   andgate1 --> lock_mail_workstation
@@ -252,19 +259,20 @@ flowchart TD
   aim_recon -.-> aim_phish_easy
   aim_phish_easy -.-> aim_prepare_hard
   aim_prepare_hard -.-> aim_phish_hard
+  aim_recon -.-> aim_escalate
   aim_report -.-> aim_defend
   story_talk_to_ruth_adeyemi -.->|sends_done| aim_report
   door_recon_room -.-> aim_recon
   door_operations_room -.-> aim_phish_easy
   door_blue_team_room -.-> aim_defend
 
-  class door_recon_room,door_operations_room,door_blue_team_room,lock_report_workstation,lock_mail_workstation lock
+  class door_recon_room,door_operations_room,door_blue_team_room,lock_report_workstation,lock_mail_workstation,lock_sofia_archive lock
   class recon_room,operations_room,blue_team_room,engagement_office room
   class rules_of_engagement,planning_whiteboard,osint_workstation,page_builder,desk_phone item
   class npc_ruth_adeyemi,recon_room_key,operations_room_key,blue_team_room_key key
   class andgate1 gate
   class aim_authorise,aim_plan,aim_recon,aim_phish_easy,aim_prepare_hard,aim_phish_hard critical
-  class aim_report,aim_defend aim
+  class aim_escalate,aim_report,aim_defend aim
   class story_talk_to_ruth_adeyemi action
   class node_start start
 ```
@@ -356,11 +364,13 @@ flowchart TD
   rc_obj17_17{"Payroll_Q3_draft.xlsx"}
   rc_obj18_18{"logins.txt"}
   rc_obj19_19{"README_this_is_simulated.txt"}
-  rc_desk_phone_20{"Desk Phone"}
-  rc_npc_dev_21("Dev")
-  rc_triage_workstation_22{"Triage Workstation"}
-  rc_soc_board_23{"SOC Board"}
-  rc_npc_tomasz_24("Tomasz")
+  rc_sofia_archive_20[["payroll_backup.zip"]]
+  rc_obj21_21{"personal_banking.txt"}
+  rc_desk_phone_22{"Desk Phone"}
+  rc_npc_dev_23("Dev")
+  rc_triage_workstation_24{"Triage Workstation"}
+  rc_soc_board_25{"SOC Board"}
+  rc_npc_tomasz_26("Tomasz")
 
   engagement_office --> recon_room
   engagement_office --> operations_room
@@ -384,16 +394,18 @@ flowchart TD
   rc_sofia_remote_16 --> rc_obj17_17
   rc_sofia_remote_16 --> rc_obj18_18
   rc_sofia_remote_16 --> rc_obj19_19
-  operations_room --> rc_desk_phone_20
-  operations_room --> rc_npc_dev_21
-  blue_team_room --> rc_triage_workstation_22
-  blue_team_room --> rc_soc_board_23
-  blue_team_room --> rc_npc_tomasz_24
+  rc_sofia_remote_16 --> rc_sofia_archive_20
+  rc_sofia_archive_20 --> rc_obj21_21
+  operations_room --> rc_desk_phone_22
+  operations_room --> rc_npc_dev_23
+  blue_team_room --> rc_triage_workstation_24
+  blue_team_room --> rc_soc_board_25
+  blue_team_room --> rc_npc_tomasz_26
 
   class engagement_office room
   class recon_room,operations_room,blue_team_room lock
-  class rc_roe_sheet_1,rc_planning_whiteboard_2,rc_recon_board_3,rc_report_workstation_4,rc_recon_key_6,rc_operations_key_7,rc_blue_team_key_8,rc_osint_workstation_11,rc_recon_info_screen_12,rc_mail_workstation_13,rc_page_builder_14,rc_captures_terminal_15,rc_obj17_17,rc_obj18_18,rc_obj19_19,rc_desk_phone_20,rc_triage_workstation_22,rc_soc_board_23 item
-  class rc_npc_ruth_adeyemi_5,rc_npc_gareth_fairbairn_9,rc_npc_ruth_adeyemi_10,rc_npc_dev_21,rc_npc_tomasz_24 npc
-  class rc_sofia_remote_16 container
+  class rc_roe_sheet_1,rc_planning_whiteboard_2,rc_recon_board_3,rc_report_workstation_4,rc_recon_key_6,rc_operations_key_7,rc_blue_team_key_8,rc_osint_workstation_11,rc_recon_info_screen_12,rc_mail_workstation_13,rc_page_builder_14,rc_captures_terminal_15,rc_obj17_17,rc_obj18_18,rc_obj19_19,rc_obj21_21,rc_desk_phone_22,rc_triage_workstation_24,rc_soc_board_25 item
+  class rc_npc_ruth_adeyemi_5,rc_npc_gareth_fairbairn_9,rc_npc_ruth_adeyemi_10,rc_npc_dev_23,rc_npc_tomasz_26 npc
+  class rc_sofia_remote_16,rc_sofia_archive_20 container
   class node_start start
 ```

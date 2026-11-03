@@ -102,6 +102,21 @@
       ]
     },
     {
+      <%# Optional escalation (all tasks optional, so it never gates the ending). The exe route and
+          its payoff: get a payload run on the intern's machine, then open her archive with the
+          password you already captured — the password-reuse finding. %>
+      "aimId": "escalate",
+      "title": "Escalate (optional)",
+      "description": "Optional: get a payload run on a staff machine, then see how far one reused password reaches.",
+      "status": "locked",
+      "order": 6,
+      "unlockCondition": { "aimCompleted": "recon" },
+      "tasks": [
+        { "taskId": "foothold_got", "title": "Optional: get an attached payload run on a staff machine", "type": "manual", "status": "active", "optional": true },
+        { "taskId": "archive_opened", "title": "Optional: open the archive on her desktop with a password you already have", "type": "manual", "status": "active", "optional": true }
+      ]
+    },
+    {
       "aimId": "report",
       "title": "Write the report",
       "description": "Answer two questions on the campaign results, then pair each finding with a cause and a control. No names.",
@@ -248,6 +263,9 @@
     <%# Set from lord_mail.ink when Sofia runs the attached executable; unlocks the remote-desktop
         PC container (sofia_remote) that presents the foothold. %>
     "phish_lord_foothold": false,
+    <%# Set when the player opens the password-protected archive on Sofia's desktop (reused
+        password); completes the final optional task. %>
+    "sofia_archive_opened": false,
 
     "pierce_influence": 0,
     "pierce_latched": "",
@@ -1206,8 +1224,11 @@
       "_client": "Ledgerwell Ltd (fictional)",
       "scopeNote": "Authorised exercise for Ledgerwell Ltd (fictional). In scope: work email to named staff, the published service-desk line, public OSINT.",
       "roe": {
-        "inScope": ["work email to named staff", "published service-desk phone line", "public OSINT"],
-        "outScope": ["personal accounts", "physical entry", "real customers", "denial of service"],
+        <%# lab: the sheet authorises the payload work this version teaches — attachments and a test
+            executable to named staff, taking the foothold that gives, and reading what that access
+            reaches (simulated). Captures are simulated, reported and dropped; nothing real is kept. %>
+        "inScope": ["work email to named staff", "file and executable payloads to named staff", "taking and using a foothold on a staff workstation (simulated, read-only)", "published service-desk phone line", "public OSINT"],
+        "outScope": ["personal accounts", "physical entry", "real customers", "denial of service", "keeping or exfiltrating real staff data"],
         "stopContact": "Ruth Adeyemi, Tarnside duty line"
       },
       "scope": {
@@ -1224,6 +1245,10 @@
             "inScope": false, "why": "The sheet limits the test to work accounts; personal addresses are out of scope." },
           { "id": "service_desk", "kind": "sort", "step": "scope", "text": "Call the published service-desk line",
             "inScope": true, "why": "The published service-desk line is named in scope." },
+          <%# lab: the sheet authorises payload delivery and the foothold it gives, so the capture /
+              foothold / archive chain this version teaches is explicitly in scope. %>
+          { "id": "payload_foothold", "kind": "sort", "step": "scope", "text": "Send staff a file or test program, and use any foothold it gives",
+            "inScope": true, "why": "The sheet authorises payloads to named staff and taking the foothold, as a simulated, reported, nothing-kept test." },
           <%# lab7: the scope sort was five cards before any tool; thinned to three (work email in,
               personal out, the service-desk line in) to shorten the low-agency opening while
               keeping the in/out teaching. Physical entry and real customers stay documented as
@@ -1493,6 +1518,9 @@
             { "eventPattern": "global_variable_changed:se_intel_lord_portal_name", "condition": "value === true && globalVars.se_intel_lord_payslip_date === true", "onceOnly": true, "completeTask": "call_dev" },
             { "eventPattern": "global_variable_changed:se_intel_lord_payslip_date", "condition": "value === true && globalVars.se_intel_lord_portal_name === true", "onceOnly": true, "completeTask": "call_dev" },
             { "eventPattern": "global_variable_changed:phish_lord_landed", "condition": "value === true", "onceOnly": true, "completeTask": "lord_landed" },
+            <%# Optional escalation tasks: the exe foothold, then opening her reused-password archive. %>
+            { "eventPattern": "global_variable_changed:phish_lord_foothold", "condition": "value === true", "onceOnly": true, "completeTask": "foothold_got" },
+            { "eventPattern": "global_variable_changed:sofia_archive_opened", "condition": "value === true", "onceOnly": true, "completeTask": "archive_opened" },
             <%# P2: the report workstation is gated on sends_done, set only when all three
                 targets have acted, so landing Sofia first cannot skip the two easy sends.
                 One mapping per landing catches whichever lands last. %>
@@ -1780,6 +1808,31 @@
               "readable": true,
               "text": "Simulated for training. No real machine was accessed and nothing here is real. In the engagement you would screenshot the access as proof, report it, and stop — you do not read staff files.",
               "observations": "A reminder that this session is simulated"
+            },
+            {
+              <%# The password-reuse payoff: a zip on her desktop locked with the SAME password your
+                  fake portal captured (Sofia2026!). Opening it completes the final optional task.
+                  The zip_archive sprite is the archive icon copied into assets/objects. %>
+              "type": "zip_archive",
+              "id": "sofia_archive",
+              "name": "payroll_backup.zip",
+              "takeable": false,
+              "locked": true,
+              "lockType": "password",
+              "requires": "Sofia2026!",
+              "showKeyboard": true,
+              "maxAttempts": 5,
+              "observations": "A password-protected archive on her desktop. Worth trying a password you already have.",
+              "contents": [
+                {
+                  "type": "text_file",
+                  "name": "personal_banking.txt",
+                  "takeable": false,
+                  "readable": true,
+                  "onRead": { "setVariable": { "sofia_archive_opened": true } },
+                  "text": "Simulated. The archive opened with the very password she'd typed into your fake portal minutes earlier. One reused password turned a captured sign-in into everything this file would hold. That reuse is the finding — not the zip."
+                }
+              ]
             }
           ]
         },
