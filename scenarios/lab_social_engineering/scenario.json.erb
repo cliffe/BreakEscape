@@ -274,6 +274,11 @@
   },
 
   "social": {
+    <%# This is a technical lab (it replaces the hands-on VM lab), so it reveals what a capture
+        actually takes: the victim's sign-in and the foothold an opened file gives. The password
+        shown is authored fiction on the page, never anything a real person typed. Awareness labs
+        reusing this minigame leave revealSecret off and only acknowledge that a sign-in happened. %>
+    "captures": { "revealSecret": true },
     "people": [
       { "id": "pierce", "kind": "cast", "address": "m.pierce@ledgerwell.example",
         "avatar": "pierce_headshot",
@@ -748,6 +753,10 @@
         },
         "replies": { "landed": "Cheers, straight onto the Friday pile with the rest." },
         "hints": ["An open inbox trusts anyone who looks like an applicant.", "What does the careers page ask applicants to send?"],
+        <%# The foothold the opened file would give. Recorded on a landed attachment send and shown
+            in the Captures view and the report (role-labelled). The "why" — opening a file runs
+            code through a reader/parser flaw — is taught on the concept card and in Tomasz's debrief. %>
+        "foothold": { "host": "LW-CAREERS-01", "note": "opened the CV attachment" },
         "outcome": { "setGlobal": { "phish_hampshire_landed": true } }
       },
       {
@@ -779,6 +788,7 @@
           "trusts": ["baker"],
           "story": "a Q3 balance sheet from Jed, on a Friday"
         },
+        "foothold": { "host": "LW-FIN-03", "note": "opened the balance-sheet attachment" },
         "requiredFactors": ["senderTrust", "addressedTo", "pretextRelevant", "attachmentPlausible"],
         "advisoryFactors": ["senderAuth", "urgencyCalibrated"],
         "factorStrings": {
@@ -1165,6 +1175,10 @@
         "conceptCards": ["typo-squat", "homograph", "padlock", "hover-link", "right-to-left", "five-habits"],
         "capture": {
           "address": "s.lord@ledgerwell.example",
+          <%# Authored fiction: the password the fake page "captured". It is never read from the
+              page (the builder has no form) and nothing real is taken; it is shown so a technical
+              student sees what a credential phish steals. %>
+          "secret": "Sofia2026!",
           "note": "Sofia Lord's portal sign-in was captured by your page. In a real engagement you would report it, not keep it."
         }
       }
@@ -1691,6 +1705,21 @@
           "puzzle_graph_unlocks": "mail_workstation",
           "puzzle_graph_and_with": "desk_phone",
           "minigameData": { "landingPageId": "payroll_login" }
+        },
+        {
+          <%# The revisitable Captures page: opens the page sim straight into its read-only captures
+              list (view: captures). Shows what the campaign took — sign-ins and footholds. Reveals
+              the captured password here because this is a technical lab (social.captures.revealSecret). %>
+          "type": "page-builder",
+          "id": "captures_terminal",
+          "name": "Harvested Credentials",
+          "position": "as-type:pc",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A terminal collecting what the campaign has captured so far.",
+          "minigameData": { "landingPageId": "payroll_login", "view": "captures" }
         },
         {
           "type": "phone",

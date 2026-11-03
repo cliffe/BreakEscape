@@ -203,6 +203,13 @@
       "type": "object",
       "description": "Social-engineering systems data (planning_notes/phishing_and_social_engineering/designs/00_data_contract.md §11). Closed: every block names the keys the engine or scripts/validate_social reads, so a mistyped key fails. Keys starting with _ are notes. Cross-references and values are linted by scripts/validate_social.rb.",
       "properties": {
+        "captures": {
+          "type": "object",
+          "description": "The capture store's display policy (systems/captures.js). revealSecret (default false) shows the captured password/address in the Captures view and report; awareness labs leave it off and only acknowledge a sign-in.",
+          "properties": {"revealSecret": {"type": "boolean"}},
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
         "characters": {
           "type": "object",
           "patternProperties": {"^_": {}},
@@ -392,6 +399,7 @@
                 "type": "object",
                 "properties": {
                   "address": {"type": "string", "description": "A fictional .example address (00 S11 lint field list)"},
+                  "secret": {"type": "string", "description": "Authored fiction: the simulated password the fake page 'captured'. Never read from the page (the builder has no form); shown in the Captures view only when social.captures.revealSecret is true (technical labs)."},
                   "note": {"type": "string", "description": "Authored capture note; holds no password value"}
                 },
                 "patternProperties": {"^_": {}},
@@ -1305,6 +1313,27 @@
         "expectedLink": {
           "type": "object",
           "properties": {"brandId": {"type": "string"}, "realDomain": {"type": "string"}},
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "foothold": {
+          "type": "object",
+          "description": "The foothold an opened attachment (or run executable) gives, recorded as a capture on a landed attachment send (systems/captures.js, mail-bridge.js). host/note are role-labelled display only; no real machine.",
+          "properties": {
+            "host": {"type": "string", "description": "A fictional host name for the compromised machine"},
+            "note": {"type": "string", "description": "Short phrase for the Captures view / report, e.g. 'opened the CV attachment'"},
+            "containerId": {"type": "string", "description": "Optional: a pc-container object id to open as the remote desktop payoff"}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "runsExecutable": {
+          "type": "object",
+          "description": "Only a target with this block runs an executable attachment, and only under pressure (phish-rules.js judgeExecutable): message urgency >= minUrgency (default high) and, when requiresTell is set, that template tell is present. Teaches that a pressured junior runs an obviously-dangerous file.",
+          "properties": {
+            "minUrgency": {"type": "string", "enum": ["low", "medium", "high"]},
+            "requiresTell": {"type": "string", "description": "A template flag that must be present, e.g. borrowed_authority"}
+          },
           "patternProperties": {"^_": {}},
           "additionalProperties": false
         },
