@@ -49,9 +49,9 @@ Frames are generated; blink i01 generated. Next, per host:
    `git commit -m "Cyber Aware host <Name>: lip-sync viseme sheet (talk frames + inpaint blink)" -- public/break_escape/assets/characters/<key>_talk.png public/break_escape/assets/characters/<key>_visemes.png public/break_escape/assets/characters/<key>_visemes.json`
    (nonpixelart/prompt/talk_init already committed in 1a80bdf28.)
 
-## Still to do after the 2026-11-03 reset
-- Walk sprites (stage 3 `character` + stage 4 `animate` + stage 6 `import`) for all 5 hosts. NOT started (do not run `character` now — it's 20-40 gen/host).
-- Do NOT edit tools/pixellab_characters.json (coordinator reconciles it).
+## Status 2026-11-03 — DONE
+- Walk sprites (stage 3 `character` + stage 4 `animate` + stage 6 `import`) DONE and committed for all 8 hosts (gwen, nilesh, delphine_arvanitis, tomasz, zainab, ama, lorna, yusuf) — see the Agent A / Agent B sections above.
+- Sprite art now WIRED into the NPC blocks of every ca* scenario that uses these hosts (full episodes, _defend shells, pre/post/check shells), modelled on commit 90ffe3fcc. Each block's spriteSheet = host key, spriteTalk/spriteVisemes = the host's own files; delphine_reception uses the delphine_arvanitis art key. The 7 training-room host ids were added to `OWN_ART_HOSTS` in all eight gen_*_shells.py so regeneration keeps the new art; game.js needs no per-key registration (engine loads atlases by scenario spriteSheet key). ca13_ai_assistant_defend is hand-built and was edited by hand, not regenerated.
 </content>
 
 ---
