@@ -1694,7 +1694,7 @@ function _open_overlay(opts = {}) {
 function _applyCloseLabel() {
     const btn = document.getElementById('bv-close-btn');
     if (!btn) return;
-    btn.textContent = _missionOver ? '⏏ EXIT MISSION' : '✕ CLOSE';
+    btn.textContent = _missionOver ? 'EXIT MISSION' : '✕ CLOSE';
     btn.classList.toggle('bv-exit-btn', _missionOver);
     btn.title = _missionOver ? 'The mission is over: leave the game' : '';
 }

@@ -41,7 +41,7 @@ test('the visualiser: missionOver blocks every close and turns the control into 
     assert.match(src, /function _close_overlay\(\) \{\s+if \(_disableClose \|\| _missionOver\) return;/);
     assert.match(src, /if \(opts\.missionOver\) _missionOver = true;/);
     assert.equal(src.match(/_missionOver\s*=\s*false/g).length, 1, 'only the declaration: never reset once set');
-    assert.match(src, /_missionOver \? '⏏ EXIT MISSION' : '✕ CLOSE'/);
+    assert.match(src, /_missionOver \? 'EXIT MISSION' : '✕ CLOSE'/);
     const click = src.slice(src.indexOf("getElementById('bv-close-btn').addEventListener"), src.indexOf('// Skip / Pause'));
     assert.match(click, /if \(_missionOver\) returnToMissions\(\);/);
 });
