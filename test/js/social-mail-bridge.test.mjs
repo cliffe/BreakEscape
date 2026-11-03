@@ -21,7 +21,7 @@ writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
 for (const rel of [
     'minigames/framework/base-minigame.js', 'minigames/framework/social-overlay.js',
     'utils/display-dashes.js', 'ui/modal-stack.js',
-    'systems/phish-rules.js', 'systems/global-writer.js', 'systems/social-influence.js', 'ui/influence-bar.js', 'systems/mail-scheduler.js',
+    'systems/phish-rules.js', 'systems/global-writer.js', 'systems/captures.js', 'systems/social-influence.js', 'ui/influence-bar.js', 'systems/mail-scheduler.js',
     'systems/mail-ink.js', 'minigames/mail-client/mail-client-minigame.js', 'minigames/mail-client/mail-reader.js',
     'minigames/mail-client/mail-data.js', 'minigames/mail-client/mail-notification.js',
     'minigames/mail-client/mail-composer.js', 'minigames/mail-client/mail-bridge.js', 'minigames/landing-page-builder/landing-page-model.js'
@@ -422,4 +422,67 @@ test('withReply + reload: the checklist is rebuilt from the persisted record whe
     assert.ok(host.querySelector('.mail-checklist-banner.landed'), 'the rebuilt verdict is the landing');
     assert.equal(rec.pendingMessage, undefined, 'pendingMessage cleared after the rebuild');
     reopened.cleanup();
+});
+
+// ── captures: the foothold and credential hooks (plans/linear-petting-forest.md, Stage 3) ──
+
+test('a landed attachment send to a target with a foothold block records a foothold capture', () => {
+    const sc = social();
+    sc.phishTargets[0].role = 'Careers';
+    sc.phishTargets[0].foothold = { host: 'FIN-LT-07', note: 'Careers opened the CV attachment.' };
+    const { scene } = bareScene(sc);
+    const info = bridge.performSend(scene, message());                 // attachment: kit_cv, document
+    assert.equal(info.result.landed, true, 'the document send landed');
+    const cap = window.gameState.globalVariables.se_captures.hampshire;
+    assert.equal(cap.kind, 'foothold');
+    assert.equal(cap.host, 'FIN-LT-07');
+    assert.equal(cap.roleLabel, 'Careers');
+    assert.ok(!('secret' in cap), 'a foothold carries no secret');
+});
+
+test('a foothold is first-capture-wins: a resend does not overwrite or duplicate it', () => {
+    const sc = social();
+    sc.phishTargets[0].foothold = { host: 'FIN-LT-07', note: 'opened it' };
+    const { scene } = bareScene(sc);
+    bridge.performSend(scene, message());
+    const first = window.gameState.globalVariables.se_captures.hampshire;
+    bridge.performSend(scene, message());
+    assert.equal(window.gameState.globalVariables.se_captures.hampshire, first, 'same entry kept');
+    assert.equal(Object.keys(window.gameState.globalVariables.se_captures).length, 1);
+});
+
+test('a target with no foothold block records nothing on a landed attachment send', () => {
+    const { scene } = bareScene(social());
+    bridge.performSend(scene, message());
+    assert.ok(!window.gameState.globalVariables.se_captures, 'no capture store invented');
+});
+
+test('a credential capture reads the page capture address and secret on a landing', () => {
+    // A data-only link target that lands on senderTrust alone (no linkCredible needed), with a
+    // pre-built page record whose meetsThreshold drives the victim to submitted.
+    const sc = social();
+    sc.landingPages = [{ id: 'payroll_login', capture: { address: 's.lord@ledgerwell.example', secret: 'Sofia2026!', note: 'Sign-in captured.' } }];
+    sc.phishTargets.push({
+        id: 'lord', address: 's.lord@ledgerwell.example', character: null, role: 'Finance intern',
+        subjects: [{ id: 's_pay', text: 'Payslip', topic: 'payroll' }],
+        interests: { topics: ['payroll'] },
+        templateSets: { from: ['from_own'], greeting: ['greet_generic'], pretext: ['pretext_apply'], ask: ['ask_review_cv'] },
+        primedFor: { trusts: ['*'] }, requiredFactors: ['senderTrust'], advisoryFactors: [],
+        replies: { landed: 'ok' }, outcome: { setGlobal: { phish_lord_landed: true } }
+    });
+    const { scene } = bareScene(sc);
+    scene.config.payloadKit = [{ id: 'kit_payroll_page', kind: 'link', landingPageId: 'payroll_login' }];
+    scene.globals = { se_landing_pages: { payroll_login: { pageId: 'payroll_login', targetId: 'lord', built: true, meetsThreshold: true, victim: null } } };
+    window.gameState.globalVariables = { ...scene.globals };
+    const info = bridge.performSend(scene, {
+        fromAccount: 'guest', to: 's.lord@ledgerwell.example', targetId: 'lord', subject: 's_pay',
+        headerFrom: { account: true }, templates: { from: 'from_own', greeting: 'greet_generic', pretext: 'pretext_apply', ask: 'ask_review_cv' },
+        slots: {}, attachment: null, attachmentKind: null, link: 'kit_payroll_page', linkInfo: null
+    });
+    assert.equal(info.result.landed, true, 'the link send landed on senderTrust');
+    const cap = window.gameState.globalVariables.se_captures.lord;
+    assert.equal(cap.kind, 'credential');
+    assert.equal(cap.address, 's.lord@ledgerwell.example');
+    assert.equal(cap.secret, 'Sofia2026!');
+    assert.equal(cap.roleLabel, 'Finance intern');
 });

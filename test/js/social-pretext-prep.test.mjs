@@ -199,7 +199,7 @@ test('a team blank drops untagged finance and keeps the intern-tagged stale team
     const onlyUntagged = optionsForFact('team', devCall, social, held('pierce_role'));
     assert.deepEqual(onlyUntagged.map((o) => o.value), [], 'untagged payroll and finance are not offered');
     const options = optionsForFact('team', devCall, social, held('pierce_role', 'lord_intern', 'old_org_chart'));
-    assert.deepEqual(options.map((o) => o.value), ['finance', 'accounts']);
+    assert.deepEqual(options.map((o) => o.value), ['accounts', 'finance'], 'label order, so the decoy is not always last');
     assert.equal(options.find((o) => o.value === 'accounts').kind, 'stale');
 });
 
@@ -221,7 +221,7 @@ test('an intern blank does not offer a recipient-only name', () => {
     const social = socialWith([devCall]);
     assert.deepEqual(blankSlot('intern', devCall, catalogue), { type: 'name', about: 'intern' });
     const options = optionsForFact('intern', devCall, social, held('lord_intern', 'pierce_role'));
-    assert.deepEqual(options.map((o) => o.value), ['lord_full', 'lord_first']);
+    assert.deepEqual(options.map((o) => o.value), ['lord_first', 'lord_full']);
 });
 
 test('the brief lists held board sentences and the authored scope, and hides what is not held', () => {
@@ -342,8 +342,8 @@ test('an in-person record opens person-chat at the authored start knot', () => {
     assert.match(scene.beginButton.textContent, /Approach/);
     blank(scene, 'person').click();
     const labels = [...scene.container.querySelectorAll('.pretext-picker-label')].map((el) => el.textContent);
-    assert.deepEqual(labels, ['Morgan Teague', 'Morgan']);
-    scene.container.querySelector('.pretext-picker-option').click();
+    assert.deepEqual(labels, ['Morgan', 'Morgan Teague']);
+    scene.container.querySelector('.pretext-picker-option[data-value="teague_full"]').click();
     scene.beginButton.click();
     assert.equal(launches[0].scene, 'person-chat');
     assert.equal(launches[0].params.startKnot, 'floor');
@@ -382,7 +382,7 @@ test('both blanks must be filled when each has options, and a stale pick is allo
     assert.equal(scene.beginButton.disabled, true);
     blank(scene, 'team').click();
     const list = scene.container.querySelector('.pretext-picker-list');
-    list.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    // Label order puts the stale Accounts first, so Enter on the first option picks it.
     list.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
     assert.equal(scene.payload().team.value, 'accounts');
     assert.equal(scene.payload().team.label, 'Accounts');

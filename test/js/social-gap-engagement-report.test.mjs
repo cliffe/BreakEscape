@@ -28,7 +28,7 @@ writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
 for (const rel of ['minigames/engagement-report/engagement-report-minigame.js',
     'minigames/engagement-report/report-model.js',
     'minigames/framework/base-minigame.js', 'minigames/framework/social-overlay.js',
-    'utils/display-dashes.js', 'ui/modal-stack.js', 'systems/global-writer.js']) {
+    'utils/display-dashes.js', 'ui/modal-stack.js', 'systems/global-writer.js', 'systems/captures.js']) {
     mkdirSync(dirname(join(dir, rel)), { recursive: true });
     writeFileSync(join(dir, rel), readFileSync(join(js, rel), 'utf8'));
 }

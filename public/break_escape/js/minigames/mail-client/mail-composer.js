@@ -24,7 +24,7 @@ export { PRE_SEND_GATE_LINE };
 const PARTS = ['from', 'greeting', 'pretext', 'ask'];
 // The payload-kit kinds that attach as a file. `link` is a separate control (_renderLink,
 // P5-G): it opens the landing-page builder (00 §1, 01 §2 Attach), not the file menu.
-const ATTACHMENT_KINDS = new Set(['spreadsheet', 'document', 'pdf', 'archive', 'image']);
+const ATTACHMENT_KINDS = new Set(['spreadsheet', 'document', 'pdf', 'archive', 'image', 'executable']);
 const NAME_SUFFIXES = ['_first', '_short', '_formal', '_full'];
 const SE_INTEL_PREFIX = 'se_intel_';
 

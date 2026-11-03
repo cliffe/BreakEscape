@@ -944,9 +944,12 @@ export function removeFromInventory(item) {
         // Remove from array
         window.inventory.items.splice(itemIndex, 1);
         
-        // Remove the entire slot from DOM
+        // Remove the entire slot from DOM. A slot removed under the cursor (a
+        // consumable used from the inventory) never gets mouseleave, so clear
+        // its hover label here or it stays on screen.
         const slot = item.parentElement;
         if (slot && slot.classList.contains('inventory-slot')) {
+            if (slot.matches(':hover')) clearHudLabel();
             slot.remove();
         }
         

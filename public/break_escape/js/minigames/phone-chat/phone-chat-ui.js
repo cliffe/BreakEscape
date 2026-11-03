@@ -19,6 +19,7 @@ import { portraitFor } from '../../utils/portrait-variants.js';
 import { ChatInfluence } from '../../ui/pretext-chrome.js';
 import PhoneChatConversation from './phone-chat-conversation.js';
 import { npcDmFields, onAccentColour } from './phone-app.js';
+import { isPhoneCallMode, callLabelFor, formatCallDuration, callSubtitle, CALL_STATUS_HTML, CALL_SPEAKING_HTML, CALL_CONTROLS_HTML } from './phone-call-ui.js';
 
 const escHtml = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 import InkEngine from '../../systems/ink/ink-engine.js';
@@ -44,6 +45,9 @@ export default class PhoneChatUI {
         this.app = this.params.app || null;
         this.isSocialTheme = this.params.theme === 'social';
         this.appChrome = this.app?.chrome === 'app';
+        // A voiced call draws a call screen with subtitles, not a message thread
+        this.isCallMode = isPhoneCallMode(this.params);
+        this._callTimer = null;
         this._typewriterCancel = null;
         this.npcManager = npcManager;
         this.allowedNpcIds = allowedNpcIds;  // Filter contacts to only these NPCs if provided
@@ -132,6 +136,7 @@ export default class PhoneChatUI {
             this.container.querySelector('.phone-messages-container')
                 .classList.add('phone-terminal-theme');
         }
+        if (this.isCallMode) this._renderCallChrome();
         if (this.isSocialTheme) {
             const shell = this.container.querySelector('.phone-messages-container');
             shell.classList.add('phone-social-theme');
@@ -153,7 +158,9 @@ export default class PhoneChatUI {
             messagesContainer: document.getElementById('messages-container'),
             typingIndicator: document.getElementById('typing-indicator'),
             choicesContainer: document.getElementById('choices-container'),
-            choicesMoreCue: document.getElementById('choices-more-cue')
+            choicesMoreCue: document.getElementById('choices-more-cue'),
+            callTimer: document.getElementById('call-timer'),
+            callEndButton: document.getElementById('call-end-button')
         };
 
         // The cue sits below the list, not over it (m08 R4: it covered the fourth choice)
@@ -176,6 +183,71 @@ export default class PhoneChatUI {
         console.log('✅ Phone UI rendered');
     }
     
+    /**
+     * Turn the conversation view into a call screen: the ON CALL bar, the speaking
+     * indicator under the portrait, and the end-call button below the choices.
+     */
+    _renderCallChrome() {
+        const shell = this.container.querySelector('.phone-messages-container');
+        shell?.classList.add('phone-call-mode');
+        const view = this.container.querySelector('#conversation-view');
+        const header = this.container.querySelector('#conversation-header');
+        if (!view || !header) return;
+        view.insertAdjacentHTML('afterbegin', CALL_STATUS_HTML);
+        header.insertAdjacentHTML('beforeend', CALL_SPEAKING_HTML);
+        view.insertAdjacentHTML('beforeend', CALL_CONTROLS_HTML);
+        const messages = view.querySelector('#messages-container');
+        messages?.setAttribute('aria-live', 'polite');
+        messages?.setAttribute('title', 'Click to skip the line');
+    }
+
+    /** Start the call's running time from zero. */
+    startCallTimer() {
+        this.stopCallTimer();
+        const el = this.elements?.callTimer;
+        if (!el) return;
+        const started = Date.now();
+        el.textContent = formatCallDuration(0);
+        this._callTimer = setInterval(() => {
+            if (!this.elements?.callTimer) return this.stopCallTimer();
+            this.elements.callTimer.textContent = formatCallDuration(Date.now() - started);
+        }, 1000);
+    }
+
+    stopCallTimer() {
+        if (this._callTimer) clearInterval(this._callTimer);
+        this._callTimer = null;
+    }
+
+    /** The speaking indicator under the portrait: on while a call line plays. */
+    setCallSpeaking(on) {
+        if (!this.isCallMode) return;
+        this.elements?.conversationView?.classList.toggle('call-speaking-now', !!on);
+    }
+
+    /** One subtitle line of a call (replaces a bubble in call mode). */
+    _addCallSubtitle(type, text, contact, scrollToBottom) {
+        const other = type === 'npc' ? otherSpeaker(text, contact, this._knownSpeakerNames()) : null;
+        const sub = callSubtitle(type, text, contact, other);
+        if (!sub.text) return Promise.resolve();
+        const line = document.createElement('div');
+        line.className = `call-subtitle ${type}`;
+        if (sub.speaker) {
+            const who = document.createElement('span');
+            who.className = 'call-subtitle-speaker';
+            who.textContent = `${displayDashes(sub.speaker)}:`;
+            line.appendChild(who);
+            line.appendChild(document.createTextNode(' '));
+        }
+        const body = document.createElement('span');
+        body.className = 'call-subtitle-text';
+        body.textContent = displayDashes(sub.text);
+        line.appendChild(body);
+        this.elements.messagesContainer.appendChild(line);
+        if (scrollToBottom) this.scrollToBottom(false);
+        return Promise.resolve();
+    }
+
     /** The contact-list heading: "Messages", or the app's title (and logo). */
     appTitleHtml() {
         const title = this.app?.title;
@@ -401,6 +473,7 @@ export default class PhoneChatUI {
         }
         this.currentView = 'contact-list';
         this.currentNPCId = null;
+        this.stopCallTimer();
         
         // Hide conversation, show contact list
         this.elements.conversationView.style.display = 'none';
@@ -609,6 +682,12 @@ export default class PhoneChatUI {
         this.elements.messagesContainer.innerHTML = '';
         this.elements.choicesContainer.innerHTML = '';
         this._bottomPin?.pin(false);
+        if (this.isCallMode) {
+            this.elements.conversationView.classList.remove('call-has-choices', 'call-speaking-now');
+            const caption = this.elements.conversationView.querySelector('#call-caption');
+            if (caption) caption.textContent = callLabelFor(this.params, npc);
+            this.startCallTimer();
+        }
         
         console.log(`💬 Showing conversation with ${npc.displayName || npcId}`);
     }
@@ -740,6 +819,8 @@ export default class PhoneChatUI {
         const trimmedText = text.trim();
         // Only the NPC's lines are voice messages: a player line is never voiced in their voice
         const isVoiceMessage = type === 'npc' && trimmedText.toLowerCase().startsWith('voice:');
+
+        if (this.isCallMode) return this._addCallSubtitle(type, trimmedText, contact, scrollToBottom);
 
         if (this.isTerminalTheme && type === 'npc' && !isVoiceMessage) {
             return this._typewriterMessage(displayDashes(trimmedText), scrollToBottom);
@@ -958,6 +1039,7 @@ export default class PhoneChatUI {
             this.clearChoices();
             return;
         }
+        if (this.isCallMode) this.elements.conversationView?.classList.add('call-has-choices');
         
         this.elements.choicesContainer.innerHTML = '';
         
@@ -998,6 +1080,7 @@ export default class PhoneChatUI {
     clearChoices() {
         this.elements.choicesContainer.innerHTML = '';
         this.elements.choicesMoreCue?.classList.remove('visible');
+        if (this.isCallMode) this.elements.conversationView?.classList.remove('call-has-choices');
     }
     
     /**
@@ -1125,6 +1208,7 @@ export default class PhoneChatUI {
      * Cleanup and remove UI
      */
     cleanup() {
+        this.stopCallTimer();
         this._chatInfluence?.destroy();
         this._chatInfluence = null;
         // Stop and destroy TTS manager

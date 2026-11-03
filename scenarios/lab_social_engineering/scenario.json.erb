@@ -102,6 +102,21 @@
       ]
     },
     {
+      <%# Optional escalation (all tasks optional, so it never gates the ending). The exe route and
+          its payoff: get a payload run on the intern's machine, then open her archive with the
+          password you already captured — the password-reuse finding. %>
+      "aimId": "escalate",
+      "title": "Escalate (optional)",
+      "description": "Optional: get a payload run on a staff machine, then see how far one reused password reaches.",
+      "status": "locked",
+      "order": 6,
+      "unlockCondition": { "aimCompleted": "recon" },
+      "tasks": [
+        { "taskId": "foothold_got", "title": "Optional: get an attached payload run on a staff machine", "type": "manual", "status": "active", "optional": true },
+        { "taskId": "archive_opened", "title": "Optional: open the archive on her desktop with a password you already have", "type": "manual", "status": "active", "optional": true }
+      ]
+    },
+    {
       "aimId": "report",
       "title": "Write the report",
       "description": "Answer two questions on the campaign results, then pair each finding with a cause and a control. No names.",
@@ -244,6 +259,13 @@
     "landing_payroll_login_domain": "",
     "se_landing_pages": {},
     "se_landing_drafts": {},
+    "se_captures": {},
+    <%# Set from lord_mail.ink when Sofia runs the attached executable; unlocks the remote-desktop
+        PC container (sofia_remote) that presents the foothold. %>
+    "phish_lord_foothold": false,
+    <%# Set when the player opens the password-protected archive on Sofia's desktop (reused
+        password); completes the final optional task. %>
+    "sofia_archive_opened": false,
 
     "pierce_influence": 0,
     "pierce_latched": "",
@@ -274,6 +296,11 @@
   },
 
   "social": {
+    <%# This is a technical lab (it replaces the hands-on VM lab), so it reveals what a capture
+        actually takes: the victim's sign-in and the foothold an opened file gives. The password
+        shown is authored fiction on the page, never anything a real person typed. Awareness labs
+        reusing this minigame leave revealSecret off and only acknowledge that a sign-in happened. %>
+    "captures": { "revealSecret": true },
     "people": [
       { "id": "pierce", "kind": "cast", "address": "m.pierce@ledgerwell.example",
         "avatar": "pierce_headshot",
@@ -510,7 +537,11 @@
       "ask_open_attached": { "part": "ask", "text": "Can you open the attached file and check it, please?", "slots": [],
         "urgency": "low" },
       "ask_view_portal": { "part": "ask", "text": "Please sign in to the portal to view it.", "slots": [],
-        "urgency": "low" }
+        "urgency": "low" },
+      <%# The pressure ask for the executable route: borrowed authority (Jed) + urgency. A pressured
+          junior runs the attached installer; Finance/Careers never do (phish-rules runsExecutable). %>
+      "ask_run_setup": { "part": "ask", "text": "Jed asked me to get the attached setup run on your machine before payroll closes today — can you open it now?", "slots": [],
+        "flags": ["borrowed_authority"], "urgency": "high" }
     },
 
     "mailClient": {
@@ -560,7 +591,11 @@
         { "id": "kit_cv", "label": "CV.docx", "kind": "document" },
         { "id": "kit_balance_sheet", "label": "Q3-balance-sheet.xlsx", "kind": "spreadsheet" },
         { "id": "kit_memo", "label": "Memo.pdf", "kind": "pdf" },
-        { "id": "kit_payroll_page", "label": "Payroll portal link", "kind": "link", "landingPageId": "payroll_login" }
+        { "id": "kit_payroll_page", "label": "Payroll portal link", "kind": "link", "landingPageId": "payroll_login" },
+        <%# The crude executable payload. Nobody runs it unless they are a pressured junior who
+            authors runsExecutable (Sofia). An .exe would be stripped by a real mail gateway — the
+            point is the human, not the file; Tomasz names the modern disguise in the debrief. %>
+        { "id": "kit_installer", "label": "Setup.exe", "kind": "executable" }
       ],
       "checklistTiming": "onSend",
       "bodyMode": "templates",
@@ -748,6 +783,10 @@
         },
         "replies": { "landed": "Cheers, straight onto the Friday pile with the rest." },
         "hints": ["An open inbox trusts anyone who looks like an applicant.", "What does the careers page ask applicants to send?"],
+        <%# The foothold the opened file would give. Recorded on a landed attachment send and shown
+            in the Captures view and the report (role-labelled). The "why" — opening a file runs
+            code through a reader/parser flaw — is taught on the concept card and in Tomasz's debrief. %>
+        "foothold": { "host": "LW-CAREERS-01", "note": "opened the CV attachment" },
         "outcome": { "setGlobal": { "phish_hampshire_landed": true } }
       },
       {
@@ -779,6 +818,7 @@
           "trusts": ["baker"],
           "story": "a Q3 balance sheet from Jed, on a Friday"
         },
+        "foothold": { "host": "LW-FIN-03", "note": "opened the balance-sheet attachment" },
         "requiredFactors": ["senderTrust", "addressedTo", "pretextRelevant", "attachmentPlausible"],
         "advisoryFactors": ["senderAuth", "urgencyCalibrated"],
         "factorStrings": {
@@ -830,7 +870,7 @@
           "from": ["from_named"],
           "greeting": ["greet_named"],
           "pretext": ["pretext_payslip", "pretext_password"],
-          "ask": ["ask_view_portal"]
+          "ask": ["ask_view_portal", "ask_run_setup"]
         },
         "primedFor": {
           "distinctiveValues": ["staff_portal_name", "mon_6th"],
@@ -838,6 +878,12 @@
           "trusts": ["portal"],
           "story": "a payslip notice from the staff portal she uses"
         },
+        <%# The executable route (the "human is the exploit" beat). Sofia runs an attached .exe only
+            under pressure: high urgency and a borrowed-authority ask. The foothold presents as a
+            remote desktop — the sofia_remote PC container, unlocked by phish_lord_foothold (set from
+            lord_mail.ink when she runs it). Finance/Careers have no runsExecutable, so they refuse. %>
+        "runsExecutable": { "minUrgency": "high", "requiresTell": "borrowed_authority" },
+        "foothold": { "host": "LW-FIN-07", "note": "ran Setup.exe", "containerId": "sofia_remote" },
         "requiredFactors": ["senderTrust", "addressedTo", "pretextRelevant", "linkCredible"],
         "advisoryFactors": ["senderAuth", "urgencyCalibrated"],
         "factorStrings": {
@@ -1165,6 +1211,10 @@
         "conceptCards": ["typo-squat", "homograph", "padlock", "hover-link", "right-to-left", "five-habits"],
         "capture": {
           "address": "s.lord@ledgerwell.example",
+          <%# Authored fiction: the password the fake page "captured". It is never read from the
+              page (the builder has no form) and nothing real is taken; it is shown so a technical
+              student sees what a credential phish steals. %>
+          "secret": "Sofia2026!",
           "note": "Sofia Lord's portal sign-in was captured by your page. In a real engagement you would report it, not keep it."
         }
       }
@@ -1174,8 +1224,11 @@
       "_client": "Ledgerwell Ltd (fictional)",
       "scopeNote": "Authorised exercise for Ledgerwell Ltd (fictional). In scope: work email to named staff, the published service-desk line, public OSINT.",
       "roe": {
-        "inScope": ["work email to named staff", "published service-desk phone line", "public OSINT"],
-        "outScope": ["personal accounts", "physical entry", "real customers", "denial of service"],
+        <%# lab: the sheet authorises the payload work this version teaches — attachments and a test
+            executable to named staff, taking the foothold that gives, and reading what that access
+            reaches (simulated). Captures are simulated, reported and dropped; nothing real is kept. %>
+        "inScope": ["work email to named staff", "file and executable payloads to named staff", "taking and using a foothold on a staff workstation (simulated, read-only)", "published service-desk phone line", "public OSINT"],
+        "outScope": ["personal accounts", "physical entry", "real customers", "denial of service", "keeping or exfiltrating real staff data"],
         "stopContact": "Ruth Adeyemi, Tarnside duty line"
       },
       "scope": {
@@ -1192,6 +1245,10 @@
             "inScope": false, "why": "The sheet limits the test to work accounts; personal addresses are out of scope." },
           { "id": "service_desk", "kind": "sort", "step": "scope", "text": "Call the published service-desk line",
             "inScope": true, "why": "The published service-desk line is named in scope." },
+          <%# lab: the sheet authorises payload delivery and the foothold it gives, so the capture /
+              foothold / archive chain this version teaches is explicitly in scope. %>
+          { "id": "payload_foothold", "kind": "sort", "step": "scope", "text": "Send staff a file or test program, and use any foothold it gives",
+            "inScope": true, "why": "The sheet authorises payloads to named staff and taking the foothold, as a simulated, reported, nothing-kept test." },
           <%# lab7: the scope sort was five cards before any tool; thinned to three (work email in,
               personal out, the service-desk line in) to shorten the low-agency opening while
               keeping the in/out teaching. Physical entry and real customers stay documented as
@@ -1461,6 +1518,9 @@
             { "eventPattern": "global_variable_changed:se_intel_lord_portal_name", "condition": "value === true && globalVars.se_intel_lord_payslip_date === true", "onceOnly": true, "completeTask": "call_dev" },
             { "eventPattern": "global_variable_changed:se_intel_lord_payslip_date", "condition": "value === true && globalVars.se_intel_lord_portal_name === true", "onceOnly": true, "completeTask": "call_dev" },
             { "eventPattern": "global_variable_changed:phish_lord_landed", "condition": "value === true", "onceOnly": true, "completeTask": "lord_landed" },
+            <%# Optional escalation tasks: the exe foothold, then opening her reused-password archive. %>
+            { "eventPattern": "global_variable_changed:phish_lord_foothold", "condition": "value === true", "onceOnly": true, "completeTask": "foothold_got" },
+            { "eventPattern": "global_variable_changed:sofia_archive_opened", "condition": "value === true", "onceOnly": true, "completeTask": "archive_opened" },
             <%# P2: the report workstation is gated on sends_done, set only when all three
                 targets have acted, so landing Sofia first cannot skip the two easy sends.
                 One mapping per landing catches whichever lands last. %>
@@ -1653,6 +1713,7 @@
           "displayName": "Dev",
           "npcType": "phone",
           "voiced": true,
+          "callLabel": "Ledgerwell service desk",
           "avatar": "assets/characters/dev_service_desk_headshot.png",
           "spriteTalk": "assets/characters/dev_service_desk_talk.png",
           "spriteVisemes": "assets/characters/dev_service_desk_visemes.png",
@@ -1691,6 +1752,90 @@
           "puzzle_graph_unlocks": "mail_workstation",
           "puzzle_graph_and_with": "desk_phone",
           "minigameData": { "landingPageId": "payroll_login" }
+        },
+        {
+          <%# The revisitable Captures page: opens the page sim straight into its read-only captures
+              list (view: captures). Shows what the campaign took — sign-ins and footholds. Reveals
+              the captured password here because this is a technical lab (social.captures.revealSecret). %>
+          "type": "page-builder",
+          "id": "captures_terminal",
+          "name": "Harvested Credentials",
+          "position": "as-type:pc",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A terminal collecting what the campaign has captured so far.",
+          "minigameData": { "landingPageId": "payroll_login", "view": "captures" }
+        },
+        {
+          <%# The exe foothold's payoff: a remote desktop on Sofia's machine. Locked until she runs
+              Setup.exe (phish_lord_foothold). Shows that a foothold is access to the person's files
+              and, from there, more credentials — the compromise the hands-on VM lab used to teach. %>
+          "type": "pc",
+          "id": "sofia_remote",
+          "name": "Remote Session — LW-FIN-07",
+          "position": "as-type:pc",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A remote desktop session opened on Sofia Lord's workstation.",
+          "minigameData": {
+            "requiresGlobal": "phish_lord_foothold",
+            "lockedMessage": "No session yet. Get the executable run on her machine first."
+          },
+          "contents": [
+            {
+              "type": "text_file",
+              "name": "Payroll_Q3_draft.xlsx",
+              "takeable": false,
+              "readable": true,
+              "text": "DRAFT — Q3 payroll run\n\nStaff net pay, sort codes and account numbers for the whole Finance team.\n\n(On a real engagement this is the point: the installer gave you her session, and her session reaches everything she can.)",
+              "observations": "A payroll working file open on her desktop"
+            },
+            {
+              "type": "text_file",
+              "name": "logins.txt",
+              "takeable": false,
+              "readable": true,
+              "text": "Notes to self:\n- Portal: Sofia2026! (same as laptop)\n- Shared drive maps on sign-in\n\nReusing one password means this foothold is now every account that password opens.",
+              "observations": "A plain-text password note on her desktop"
+            },
+            {
+              "type": "text_file",
+              "name": "README_this_is_simulated.txt",
+              "takeable": false,
+              "readable": true,
+              "text": "Simulated for training. No real machine was accessed and nothing here is real. In the engagement you would screenshot the access as proof, report it, and stop — you do not read staff files.",
+              "observations": "A reminder that this session is simulated"
+            },
+            {
+              <%# The password-reuse payoff: a zip on her desktop locked with the SAME password your
+                  fake portal captured (Sofia2026!). Opening it completes the final optional task.
+                  The zip_archive sprite is the archive icon copied into assets/objects. %>
+              "type": "zip_archive",
+              "id": "sofia_archive",
+              "name": "payroll_backup.zip",
+              "takeable": false,
+              "locked": true,
+              "lockType": "password",
+              "requires": "Sofia2026!",
+              "showKeyboard": true,
+              "maxAttempts": 5,
+              "observations": "A password-protected archive on her desktop. Worth trying a password you already have.",
+              "contents": [
+                {
+                  "type": "text_file",
+                  "name": "personal_banking.txt",
+                  "takeable": false,
+                  "readable": true,
+                  "onRead": { "setVariable": { "sofia_archive_opened": true } },
+                  "text": "Simulated. The archive opened with the very password she'd typed into your fake portal minutes earlier. One reused password turned a captured sign-in into everything this file would hold. That reuse is the finding — not the zip."
+                }
+              ]
+            }
+          ]
         },
         {
           "type": "phone",

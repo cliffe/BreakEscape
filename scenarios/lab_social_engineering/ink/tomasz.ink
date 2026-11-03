@@ -26,6 +26,10 @@ VAR pretext_service_desk_call_lowest = 0
 VAR met = false
 VAR explained_own = false
 VAR explained_dev = false
+VAR explained_foothold = false
+VAR phish_hampshire_landed = false
+VAR phish_pierce_landed = false
+VAR phish_lord_foothold = false
 VAR quiet = false
 
 === start ===
@@ -65,6 +69,8 @@ Tomasz: Tomasz. I run security here, me and half a person's budget.
     -> own_mail
 + {not explained_dev} [Dev on the service desk — what's the gap?]
     -> dev_finding
++ {(phish_hampshire_landed or phish_pierce_landed or phish_lord_foothold) and not explained_foothold} [What does getting someone to open a file actually get me?]
+    -> foothold_finding
 + [Remind me what SPF, DKIM and DMARC check.]
     Tomasz: SPF: was this server allowed to send for that domain. DKIM: did that domain sign it, unchanged.
     Tomasz: DMARC: does the From line match a domain that passed, and what to do if not. Ours says deliver anyway.
@@ -86,6 +92,20 @@ Tomasz: Bit different reading them from this side, isn't it? The headers had you
 ~ explained_dev = true
 Tomasz: Dev's good at his job. The policy let him hand that out, so the policy's the problem.
 Tomasz: We're writing Dev a script, not a warning. Call back on a number we hold.
+~ quiet = true
+-> hub
+
+// The foothold lesson. This lab stands in for the old hands-on machine, so Tomasz teaches it
+// straight: opening a file is where code runs, and that is access to the person's world.
+=== foothold_finding ===
+~ explained_foothold = true
+Tomasz: When a file opens, something runs it. A booby-trapped PDF, or a setup someone's been talked into clicking. That's where an attacker's code starts.
+Tomasz: From there they've got whatever that person's got. Their files, their logins, their open sessions. That's a foothold.
+{ phish_lord_foothold:
+    Tomasz: You saw it on Sofia's machine. One file run, and you were sitting at her desktop.
+}
+Tomasz: A bare .exe like yours gets stripped these days. The real ones come disguised. A zipped installer, a shortcut, a signed-looking setup.
+Tomasz: We used to teach this on a throwaway box that half the time wouldn't boot. Same lesson, no broken VM.
 ~ quiet = true
 -> hub
 
@@ -119,6 +139,9 @@ Tomasz: Once we start, that's the engagement closed. Report goes to Gareth and n
 Tomasz: Here's what it showed. An open inbox trusts anyone, a From line is just a label, and a padlock only tells you nobody's listening in.
 { phish_pierce_attempts == 1:
     Tomasz: Melanie first try. A borrowed name gets past a lot of careful people.
+}
+{ phish_lord_foothold:
+    Tomasz: And Sofia ran that setup. The junior's the soft target: lean hard enough and she'll click what the rest wouldn't.
 }
 {
 - dev_reported and pretext_service_desk_call_outcome == "got_it":

@@ -142,6 +142,29 @@ module BreakEscape
     end
 
     # Tests for key-based door unlock
+    test "validate_unlock resolves a password container nested in another container's contents" do
+      # The SE lab's remote-desktop archive: a locked password container inside a pc container's
+      # contents. validate_unlock must find it by id (top-level search alone missed it → 422).
+      @game.scenario_data = {
+        "rooms" => {
+          "ops" => {
+            "locked" => false,
+            "objects" => [
+              { "id" => "sofia_remote", "type" => "pc", "locked" => false, "contents" => [
+                { "type" => "text_file", "name" => "note.txt" },
+                { "id" => "sofia_archive", "type" => "zip_archive", "locked" => true,
+                  "lockType" => "password", "requires" => "Sofia2026!",
+                  "contents" => [{ "type" => "text_file", "name" => "secret.txt" }] }
+              ] }
+            ]
+          }
+        }
+      }
+      assert_equal true, @game.validate_unlock('item', 'sofia_archive', 'Sofia2026!', 'password')
+      assert_equal false, @game.validate_unlock('item', 'sofia_archive', 'wrong', 'password')
+      assert_equal false, @game.validate_unlock('item', 'no_such_object', 'Sofia2026!', 'password')
+    end
+
     test "should validate unlock with correct key" do
       @game.scenario_data = {
         "rooms" => {

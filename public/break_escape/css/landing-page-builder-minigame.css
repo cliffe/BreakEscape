@@ -501,6 +501,8 @@
     margin-top: 6px;
     padding: 8px 10px;
     background: var(--ui-surface, rgba(24, 30, 48, 0.94));
+    /* The OSINT browser's .cc-panel sets dark text for its cream card; set ours for the dark one. */
+    color: var(--ui-text, #eef1f8);
     border: 1px solid var(--ui-line, #4c5b80);
     border-radius: 2px;
 }
@@ -511,6 +513,21 @@
 
 /* ── invalid ── */
 .lpb-invalid { padding: 24px; display: flex; flex-direction: column; gap: 16px; align-items: flex-start; }
+
+/* ── captures view (read-only) ── */
+.lpb-captures { display: flex; flex-direction: column; gap: 12px; padding: 12px 16px; height: 100%; box-sizing: border-box; overflow: hidden; }
+.lpb-captures-banner { margin: 0; padding: 10px 12px; font-size: 14px; font-weight: bold; line-height: 1.4;
+    color: var(--ui-text, #eef1f8); background: var(--ui-surface, #1c2438); border: 2px solid var(--ui-line, #4c5b80); }
+.lpb-captures-list { list-style: none; margin: 0; padding: 0; flex: 1 1 auto; min-height: 0; overflow-y: auto;
+    display: flex; flex-direction: column; gap: 8px; }
+.lpb-captures-row { padding: 10px 12px; background: var(--ui-surface, #1c2438); border: 1px solid var(--ui-line, #4c5b80);
+    color: var(--ui-text, #eef1f8); display: flex; flex-direction: column; gap: 4px; overflow-wrap: anywhere; }
+.lpb-captures-role { font-weight: bold; font-size: 14px; }
+.lpb-captures-address { font-size: 13px; font-family: monospace; }
+.lpb-captures-secret { font-size: 13px; font-family: monospace; letter-spacing: 1px; }
+.lpb-captures-foothold { font-size: 13px; }
+.lpb-captures-empty { padding: 16px 12px; color: var(--ui-text, #eef1f8); border: 1px dashed var(--ui-line, #4c5b80); }
+@media (max-width: 700px) { .lpb-captures { padding: 8px; } }
 
 /* ── narrow layout: stack the panes below ~700px (07 §8a) ── */
 @media (max-width: 700px) {

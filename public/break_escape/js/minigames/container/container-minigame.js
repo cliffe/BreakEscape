@@ -345,7 +345,9 @@ export class ContainerMinigame extends MinigameScene {
             
             const itemImg = document.createElement('img');
             itemImg.className = 'container-content-item';
-            itemImg.src = `/break_escape/assets/objects/${item.type}.png`;
+            // An item may override its icon with an explicit path (e.g. a .zip archive on a
+            // desktop that has no object sprite of its own).
+            itemImg.src = item.iconImage || `/break_escape/assets/objects/${item.type}.png`;
             itemImg.alt = item.name;
             itemImg.title = displayDashes(item.name);
             
@@ -391,7 +393,7 @@ export class ContainerMinigame extends MinigameScene {
             
             const iconImg = document.createElement('img');
             iconImg.className = 'desktop-icon-image';
-            iconImg.src = `/break_escape/assets/objects/${item.type}.png`;
+            iconImg.src = item.iconImage || `/break_escape/assets/objects/${item.type}.png`;
             iconImg.alt = item.name;
             
             const iconLabel = document.createElement('div');
@@ -450,6 +452,12 @@ export class ContainerMinigame extends MinigameScene {
 
         // Text files — always interactive (never taken, even without text)
         if (item.type === 'text_file') {
+            return true;
+        }
+
+        // A locked nested container (e.g. a password-protected archive on a desktop) delegates to
+        // the main object handler, which runs its unlock/password flow and then opens it.
+        if (item.locked === true) {
             return true;
         }
         

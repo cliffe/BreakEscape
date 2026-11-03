@@ -12,6 +12,11 @@
  *   BondVisualiser.open()    — show fullscreen overlay & start render
  *   BondVisualiser.close()   — hide overlay & stop render
  *   BondVisualiser.toggle()  — toggle open/close
+ *
+ * Once opened with missionOver (the mission has concluded and the credits roll),
+ * it cannot be closed back into the game: the close control becomes EXIT MISSION,
+ * which leaves the game (success-screen.js returnToMissions), and Esc, toggle()
+ * and the end-of-track auto-close do nothing.
  *   BondVisualiser.isOpen()  — returns boolean
  *
  * Auto-opens when MusicController switches to the 'victory' playlist.
@@ -26,6 +31,9 @@ import { silenceBackgroundForEnding, AUDIO_HOLD_TEXT } from './ending-audio.js';
 import { displayDashes } from '../utils/display-dashes.js';
 import { resolveCreditsTheme, getCreditsTheme, trackInfoLabel, DEFAULT_CREDITS_THEME, scenarioCreditsOverlay, nextCreditsHeader, creditsHeader, nextCreditsText, creditsStatus } from './credits-theme.js';
 import { cardHoldMs } from './closing-sequence.js';
+import { returnToMissions } from '../ui/success-screen.js';
+import { cctvFeeds } from './cctv-feeds.js';
+import { ASSETS_PATH } from '../config.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────
 const PIX = 4; // pixel block size for all drawing
@@ -47,6 +55,7 @@ let _creditsHideTimer = null;  // setTimeout handle for deferred display:none af
 let _creditsActive    = false;
 let _autoCloseOnEnd   = false; // close visualiser when musiccontroller:trackended fires
 let _disableClose     = false; // hide × and block Esc — for forced/cutscene contexts
+let _missionOver      = false; // past the point of no return: × becomes EXIT MISSION, never unset
 
 // ── MusicController state ─────────────────────────────────────────────────
 let _mcState   = {};
@@ -92,6 +101,7 @@ let siemSparkline = new Float32Array(120);
 let siemSparkIdx = 0;
 let siemRuleHits  = {};
 let siemLastSpawn = 0;
+let cctvFeedList = [], cctvCells = [], cctvKicks = 0, cctvLastWallCut = 0, cctvMotionCell = 0, cctvLastMotionLog = -9999;
 const SIEM_SEVERITIES = ['CRITICAL','HIGH','MEDIUM','LOW','INFO'];
 const SIEM_SEV_COLS   = { CRITICAL:'#FF003C', HIGH:'#FF6600', MEDIUM:'#FFD700', LOW:'#00FFFF', INFO:'#00FF41' };
 const SIEM_SOURCES    = ['FW-PERIMETER','IDS-NORTH','WAF-01','ENDPOINT-XDR','CLOUD-SIEM','VPN-GW','DNS-FILTER','PROXY-01','SIEM-CORE','AD-MONITOR','SOAR-ENGINE'];
@@ -207,6 +217,7 @@ function _buildOverlay() {
         <button class="bv-btn active" data-mode="cybermap">MAP</button>
         <button class="bv-btn" data-mode="wave">WAVE</button>
         <button class="bv-btn" data-mode="siem">SIEM</button>
+        <button class="bv-btn" data-mode="cctv">CCTV</button>
         <button class="bv-btn" data-mode="bars">BARS</button>
         <button class="bv-btn" data-mode="circle">RING</button>
         <button class="bv-btn" data-mode="matrix">MTRX</button>
@@ -224,6 +235,7 @@ function _buildOverlay() {
       <button class="bv-btn active" data-mode="cybermap">MAP</button>
       <button class="bv-btn" data-mode="wave">WAVE</button>
       <button class="bv-btn" data-mode="siem">SIEM</button>
+      <button class="bv-btn" data-mode="cctv">CCTV</button>
       <button class="bv-btn" data-mode="bars">BARS</button>
       <button class="bv-btn" data-mode="circle">RING</button>
       <button class="bv-btn" data-mode="matrix">MTRX</button>
@@ -506,6 +518,7 @@ function _draw() {
     else if (_currentMode === 'lissajous') drawLissajous(waveArr, dataArr, W, H, audio);
     else if (_currentMode === 'cybermap')  drawCyberMap(dataArr, waveArr, W, H, audio);
     else if (_currentMode === 'siem')      drawSIEM(dataArr, W, H, audio);
+    else if (_currentMode === 'cctv')      drawCCTV(dataArr, W, H, audio);
 
     // Kick: gold border punch
     if (kickFlash > 0.05) {
@@ -1218,6 +1231,201 @@ function drawSIEM(data, W, H, audio) {
     if (kickHit) { _visCtx.fillStyle=`rgba(255,0,60,${kickFlash*0.08})`; _visCtx.fillRect(0,0,W,H); }
 }
 
+// ── CCTV: surveillance wall of the mission's rooms (cctv-feeds.js) ────────
+// Every second kick cuts one feed to another room; a strong kick (or every
+// 16th) cuts the whole wall at once. Snares tear a feed, hi-hats add grain,
+// mids trip a motion box on one camera.
+
+const _cctvImgCache = new Map(); // src → Image, kept across opens
+function _cctvLoad() {
+    const resolve = p => p.startsWith('assets/') ? `/break_escape/${p}` : `${ASSETS_PATH}/${p}`;
+    cctvFeedList = cctvFeeds(window.gameScenario, _themeDef.cctvFallback).map(f => {
+        const src = resolve(f.image);
+        let img = _cctvImgCache.get(src);
+        if (!img) { img = new Image(); img.src = src; _cctvImgCache.set(src, img); }
+        return { label: f.label, img };
+    });
+}
+
+/** The room in CCTV green, made once per image: a per-frame blend on nine feeds costs too much. */
+function _cctvTinted(img) {
+    if (img._cctvTinted) return img._cctvTinted;
+    const c = document.createElement('canvas');
+    c.width = img.naturalWidth; c.height = img.naturalHeight;
+    const ctx = c.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+    const d = ctx.getImageData(0, 0, c.width, c.height), px = d.data;
+    for (let i = 0; i < px.length; i += 4) {
+        const l = Math.min(255, (0.3 * px[i] + 0.59 * px[i + 1] + 0.11 * px[i + 2]) * 1.1);
+        px[i] = l * 0.66; px[i + 1] = l * 0.91; px[i + 2] = l * 0.72;
+    }
+    ctx.putImageData(d, 0, 0);
+    return (img._cctvTinted = c);
+}
+
+function _cctvLayout(W, H) {
+    const cols = W >= H ? 3 : 2, rows = 3, gap = PIX * 2, margin = PIX * 3;
+    const cw = Math.floor((W - margin * 2 - gap * (cols - 1)) / cols / PIX) * PIX;
+    const ch = Math.floor((H - margin * 2 - gap * (rows - 1)) / rows / PIX) * PIX;
+    const cells = [];
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+        cells.push({ x: margin + c * (cw + gap), y: margin + r * (ch + gap), w: cw, h: ch });
+    }
+    return cells;
+}
+
+/** A feed index not already on the wall, if there is one. */
+function _cctvFreshFeed(exclude) {
+    const n = cctvFeedList.length;
+    if (!n) return -1;
+    const onWall = new Set(cctvCells.map(c => c.feed));
+    const free = [...Array(n).keys()].filter(i => i !== exclude && !onWall.has(i));
+    const pool = free.length ? free : [...Array(n).keys()].filter(i => i !== exclude);
+    return pool.length ? pool[Math.floor(Math.random() * pool.length)] : exclude;
+}
+
+function _cctvStatic(x, y, w, h, amount) {
+    const blocks = Math.min(900, Math.floor((w * h) / (PIX * PIX) * amount));
+    for (let i = 0; i < blocks; i++) {
+        const v = 120 + Math.floor(Math.random() * 135);
+        _visCtx.fillStyle = `rgba(${v},${v},${v},${0.25 + Math.random() * 0.6})`;
+        _visCtx.fillRect(x + Math.floor(Math.random() * w / PIX) * PIX, y + Math.floor(Math.random() * h / PIX) * PIX, PIX, PIX);
+    }
+}
+
+function _cctvTimestamp() {
+    const d = new Date(), p = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+
+function drawCCTV(data, W, H, audio) {
+    const { kick, mid, high } = audio;
+    _visCtx.imageSmoothingEnabled = false;
+    _visCtx.fillStyle = '#030605'; _visCtx.fillRect(0, 0, W, H);
+
+    const layout = _cctvLayout(W, H);
+    if (cctvCells.length !== layout.length) {
+        _cctvLoad(); // the scenario and theme may have changed since the last build
+        const n = cctvFeedList.length, start = n ? Math.floor(Math.random() * n) : 0;
+        cctvCells = layout.map((_, i) => ({
+            feed: n ? (start + i) % n : -1, cut: 1, tearLife: 0, tearY: 0, tearH: 0,
+            phase: Math.random() * Math.PI * 2, cam: i + 1,
+        }));
+        cctvMotionCell = Math.floor(Math.random() * layout.length);
+    }
+
+    // Cuts on the beat
+    if (kickHit && cctvFeedList.length > 1) {
+        cctvKicks++;
+        const now = performance.now();
+        if ((kick > 0.75 && now - cctvLastWallCut > 6000) || cctvKicks % 16 === 0) {
+            cctvLastWallCut = now;
+            const n = cctvFeedList.length, step = Math.min(cctvCells.length, n - 1) || 1;
+            cctvCells.forEach(c => { c.feed = (c.feed + step) % n; c.cut = 1; c.phase = Math.random() * Math.PI * 2; });
+            cctvMotionCell = Math.floor(Math.random() * cctvCells.length);
+            addLog('> CCTV: ALL FEEDS SWITCHED', 'warn');
+        } else if (cctvKicks % 2 === 0) {
+            const c = cctvCells[Math.floor(Math.random() * cctvCells.length)];
+            c.feed = _cctvFreshFeed(c.feed); c.cut = 1; c.phase = Math.random() * Math.PI * 2;
+        }
+    }
+    if (snareHit) {
+        const c = cctvCells[Math.floor(Math.random() * cctvCells.length)];
+        c.tearLife = 1; c.tearY = Math.random() * 0.8; c.tearH = 0.05 + Math.random() * 0.15;
+    }
+
+    const t = performance.now() / 1000; // the clock, not frames: slow machines draw fewer
+    const fontPx = Math.max(6, Math.min(10, Math.floor(layout[0].w / 40)));
+    const stamp = _cctvTimestamp();
+    const recOn = Math.floor(t * 2) % 2 === 0;
+
+    cctvCells.forEach((cell, i) => {
+        const { x, y, w, h } = layout[i];
+        const feed = cctvFeedList[cell.feed];
+        const img = feed?.img;
+        _visCtx.fillStyle = '#121a16'; _visCtx.fillRect(x - PIX, y - PIX, w + PIX * 2, h + PIX * 2); // bezel
+        _visCtx.save();
+        _visCtx.beginPath(); _visCtx.rect(x, y, w, h); _visCtx.clip();
+        _visCtx.fillStyle = '#000'; _visCtx.fillRect(x, y, w, h);
+
+        if (img && img.complete && img.naturalWidth) {
+            // Cover the cell, zoomed in a little so the camera can pan
+            const iw = img.naturalWidth, ih = img.naturalHeight, a = w / h, z = 1.25;
+            let sw, sh;
+            if (iw / ih > a) { sh = ih; sw = ih * a; } else { sw = iw; sh = iw / a; }
+            sw /= z; sh /= z;
+            const sx = (iw - sw) * (0.5 + 0.5 * Math.sin(t * 0.12 + cell.phase));
+            const sy = (ih - sh) * (0.5 + 0.25 * Math.sin(t * 0.07 + cell.phase * 1.7));
+            _visCtx.drawImage(_cctvTinted(img), sx, sy, sw, sh, x, y, w, h);
+            _visCtx.fillStyle = `rgba(200,255,210,${kickNSmooth * 0.08})`; _visCtx.fillRect(x, y, w, h);
+        } else {
+            _cctvStatic(x, y, w, h, 0.5);
+            _visCtx.font = `${fontPx + 2}px "Press Start 2P"`; _visCtx.textAlign = 'center';
+            _visCtx.fillStyle = '#E0FFE8'; _visCtx.fillText('NO SIGNAL', x + w / 2, y + h / 2);
+            _visCtx.textAlign = 'left';
+        }
+
+        // Tear: shift a horizontal strip of the feed sideways
+        if (cell.tearLife > 0) {
+            const ty = Math.floor((y + cell.tearY * h) / PIX) * PIX, th = Math.max(PIX, Math.floor(cell.tearH * h / PIX) * PIX);
+            const off = Math.round((Math.random() - 0.5) * w * 0.2 * cell.tearLife / PIX) * PIX;
+            _visCtx.drawImage(_visCv, x, ty, w, th, x + off, ty, w, th);
+            _cctvStatic(x, ty, w, th, 0.15 * cell.tearLife);
+            cell.tearLife -= 0.08;
+        }
+        // Grain from the hi-hats; full static on a cut
+        _cctvStatic(x, y, w, h, high * 0.02);
+        if (cell.cut > 0) {
+            _cctvStatic(x, y, w, h, cell.cut * 0.9);
+            _visCtx.fillStyle = `rgba(0,0,0,${cell.cut * 0.5})`; _visCtx.fillRect(x, y, w, h);
+            cell.cut -= 0.15;
+        }
+
+        // Scanlines and a slow rolling bar
+        _visCtx.fillStyle = 'rgba(0,0,0,0.28)';
+        for (let yy = y; yy < y + h; yy += PIX) _visCtx.fillRect(x, yy, w, 1);
+        const rollY = y + ((t * 90 + i * 37) % (h + PIX * 8)) - PIX * 8;
+        _visCtx.fillStyle = 'rgba(220,255,230,0.05)'; _visCtx.fillRect(x, rollY, w, PIX * 8);
+
+        // Motion box on one camera when the mids push
+        if (i === cctvMotionCell && feed && mid > 0.5) {
+            const bw = w * (0.18 + mid * 0.15), bh = h * (0.25 + mid * 0.2);
+            const bx = x + w * 0.5 + Math.sin(t * 1.3 + cell.phase) * w * 0.2 - bw / 2;
+            const by = y + h * 0.55 + Math.cos(t * 0.9) * h * 0.08 - bh / 2;
+            const k = PIX * 3;
+            _visCtx.fillStyle = '#FF003C';
+            [[bx, by, 1, 1], [bx + bw, by, -1, 1], [bx, by + bh, 1, -1], [bx + bw, by + bh, -1, -1]].forEach(([cx, cy, dx, dy]) => {
+                _visCtx.fillRect(dx > 0 ? cx : cx - k, dy > 0 ? cy : cy - PIX, k, PIX);
+                _visCtx.fillRect(dx > 0 ? cx : cx - PIX, dy > 0 ? cy : cy - k, PIX, k);
+            });
+            _visCtx.font = `${fontPx}px "Press Start 2P"`;
+            _visCtx.fillText('MOTION', bx, by - PIX * 2);
+            if (t - cctvLastMotionLog > 10) { cctvLastMotionLog = t; addLog(`> MOTION: ${feed.label}`, 'alert'); }
+        }
+
+        // Camera overlay text, with a drop shadow so it reads on bright rooms
+        const text = (s, tx, ty, col) => {
+            _visCtx.fillStyle = 'rgba(0,0,0,0.8)'; _visCtx.fillText(s, tx + 1, ty + 1);
+            _visCtx.fillStyle = col; _visCtx.fillText(s, tx, ty);
+        };
+        _visCtx.font = `${fontPx}px "Press Start 2P"`;
+        const pad = PIX * 2;
+        text(`CAM ${String(cell.cam).padStart(2, '0')}`, x + pad, y + pad + fontPx, '#E0FFE8');
+        _visCtx.textAlign = 'right';
+        const camW = _visCtx.measureText('CAM 00').width;
+        const fits = camW + _visCtx.measureText(stamp).width + pad * 3 + fontPx * 2 <= w;
+        text(fits ? stamp : stamp.slice(11), x + w - pad, y + pad + fontPx, '#E0FFE8'); // time only on a narrow feed
+        _visCtx.textAlign = 'left';
+        if (feed) text(feed.label, x + pad, y + h - pad, '#E0FFE8');
+        if (recOn) {
+            _visCtx.fillStyle = '#FF003C';
+            _visCtx.fillRect(x + w - pad - fontPx * 4 - PIX * 2, y + h - pad - fontPx + 1, fontPx - 1, fontPx - 1);
+            _visCtx.textAlign = 'right'; text('REC', x + w - pad, y + h - pad, '#FF003C'); _visCtx.textAlign = 'left';
+        }
+        _visCtx.restore();
+    });
+}
+
 // ── SAFETYNET watermark stamp ─────────────────────────────────────────────
 
 function draw007Stamp(x, y, energy) {
@@ -1431,7 +1639,7 @@ function _startLogTick() {
 // MODE SWITCHING
 // ═════════════════════════════════════════════════════════════════════════════
 
-const ALL_MODES = ['cybermap','wave','siem','bars','circle','matrix','tunnel','plasma','particles','lissajous'];
+const ALL_MODES = ['cybermap','wave','siem','cctv','bars','circle','matrix','tunnel','plasma','particles','lissajous'];
 const _modes = () => _themeDef.modes || ALL_MODES;
 const _nextMode = () => { const m = _modes(); return m[(m.indexOf(_currentMode) + 1) % m.length]; };
 
@@ -1447,6 +1655,7 @@ function _setMode(mode) {
     siemEvents=[]; siemAlerts=[]; siemFrame=0; siemThreatScore=0;
     siemSparkline=new Float32Array(120); siemSparkIdx=0;
     SIEM_SEVERITIES.forEach(s => siemRuleHits[s]=0);
+    cctvCells=[]; cctvKicks=0; cctvLastMotionLog=-9999;
 
     // Reset spawn timers relative to the reset frame counters so spawn
     // conditions fire immediately on the very first frame (not after a
@@ -1525,6 +1734,7 @@ function _applyTheme(opts) {
     if (opts.credits?.length) _lastCredits = opts.credits;
     _theme    = resolveCreditsTheme(window.gameScenario);
     _themeDef = getCreditsTheme(_theme);
+    cctvCells = []; // CCTV rebuilds its wall from this scenario's rooms
     if (!_overlay) return;
     if (_themeApplied !== _theme) _drawLogoSprite();
     if (!_themeDef.modes.includes(_currentMode)) _setMode(_themeDef.modes[0]);
@@ -1668,6 +1878,10 @@ function _open_overlay(opts = {}) {
     // Record whether we should auto-close when the track ends
     if (opts.autoClose !== undefined) _autoCloseOnEnd = !!opts.autoClose;
 
+    // missionOver — the mission has concluded: no way back into the game
+    if (opts.missionOver) _missionOver = true;
+    _applyCloseLabel();
+
     // disableClose — hide × button and block Esc
     _disableClose = !!opts.disableClose;
     const closeBtn = document.getElementById('bv-close-btn');
@@ -1679,8 +1893,17 @@ function _open_overlay(opts = {}) {
     if (opts.autoStop) MusicController.stopAfterCurrentTrack();
 }
 
+/** The header control: ✕ CLOSE, or EXIT MISSION once the mission is over. */
+function _applyCloseLabel() {
+    const btn = document.getElementById('bv-close-btn');
+    if (!btn) return;
+    btn.textContent = _missionOver ? 'EXIT MISSION' : '✕ CLOSE';
+    btn.classList.toggle('bv-exit-btn', _missionOver);
+    btn.title = _missionOver ? 'The mission is over: leave the game' : '';
+}
+
 function _close_overlay() {
-    if (_disableClose) return;
+    if (_disableClose || _missionOver) return;
     _open = false;
     _autoCloseOnEnd = false;
     _disableClose   = false;
@@ -1749,9 +1972,11 @@ function _init() {
         }
     });
 
-    // Close button
+    // Close button (EXIT MISSION once the mission is over)
     document.getElementById('bv-close-btn').addEventListener('click', () => {
-        if (!_disableClose) BondVisualiser.close();
+        if (_disableClose) return;
+        if (_missionOver) returnToMissions();
+        else BondVisualiser.close();
     });
 
     // Skip / Pause
@@ -1810,6 +2035,7 @@ export const BondVisualiser = {
      * @param {boolean}  [opts.autoClose]    - close the visualiser when musiccontroller:trackended fires
      * @param {boolean}  [opts.autoStop]     - stop music after current track ends; visualiser stays open
      * @param {boolean}  [opts.disableClose] - hide × button and block Esc (forced/cutscene mode)
+     * @param {boolean}  [opts.missionOver]  - the mission has concluded: × becomes EXIT MISSION and nothing closes it
      * @param {string}   [opts.headerText]   - header in place of MISSION COMPLETE // AUDIO INTEL; kept by later opens without credits
      * @param {string}   [opts.statusText]   - STATUS row value in place of MONITORING; same rules as headerText
      */
@@ -1820,6 +2046,8 @@ export const BondVisualiser = {
     toggle() { _open ? _close_overlay() : _open_overlay({}); },
     /** Returns true if the overlay is currently visible. */
     isOpen() { return _open; },
+    /** True once it has been opened with missionOver: it can no longer be closed. */
+    isMissionOver() { return _missionOver; },
     /**
      * Suppress (or re-enable) the auto-open that fires when the music playlist
      * switches to 'victory'. Set while a conclusion decision is pending, so the

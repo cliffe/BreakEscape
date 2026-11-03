@@ -177,7 +177,8 @@ button.primary { background: var(--ink); color: var(--card); }
   <p>This page walks through the design as a player would meet it, then lists each new element with a choice for you: approve it, adjust it, or rethink it. Your answers save as you go, so I can read them back and fold them into the plan.</p>
   <div class="facts">
     <span><b>Plan:</b> deduction/DEDUCTION_IMPLEMENTATION_PLAN.md</span>
-    <span><b>Reviewed:</b> 9 rounds, ready to build</span>
+    <span><b>Reviewed:</b> 9 rounds; resynced with main, Nov 2026</span>
+    <span><b>Minigames mapped:</b> all 54</span>
     <span><b>For:</b> Eldritch Hacker and Incident Simulations</span>
     <span><b>Inspired by:</b> Horror on the Orient Express (board game)</span>
   </div>
@@ -336,6 +337,69 @@ button.primary { background: var(--ink); color: var(--card); }
   <div class="fixtures" id="fixtureList"></div>
 </section>
 
+<section class="stack-lg" aria-labelledby="mg-h">
+  <div class="stack">
+    <span class="tag">New · Minigames in the case</span>
+    <h2 id="mg-h">How every minigame feeds the deduction game</h2>
+    <p>All 54 playable minigames were read against the code and given roles in a case. Most need no engine change: the planned triggers block turns any puzzle's success into a clue. Sector minigames (hospital, SCADA, insurance) stay out of Eldritch Hacker, as you decided.</p>
+  </div>
+  <div class="decision">
+    <header><h3>The roles a minigame can play</h3></header>
+    <div class="two">
+      <div>
+        <span class="tag">Finding evidence</span>
+        <p><b>Clue source</b> for a slot (where they were, what they want, what they carry, or a marked clue). <b>Evidence gate</b>: a lock between you and the clue. <b>Unique-item sighting</b>: the one key seen in someone's hand. <b>Approach gate</b>: preparing a pretext before questioning.</p>
+      </div>
+      <div>
+        <span class="tag">Pressure and calls</span>
+        <p><b>Tamper target</b> and <b>recovery route</b> for destroyed evidence. <b>Verdict channel</b>: report, act or vouch. <b>Favour errand</b>. <b>Stakes carrier</b>: the thing a wrong call costs. <b>Case display</b> and <b>debrief</b>.</p>
+      </div>
+    </div>
+    <div class="two">
+      <div>
+        <span class="tag">Strongest for Eldritch Hacker</span>
+        <p>OSINT browser (members' posts), mail reader and phone DMs, person and phone chat, dusting, lockpicking, containers and notes, RFID, shredded documents, backup recovery, the blockchain explorer's matching board, the command board, the seal-lever button.</p>
+      </div>
+      <div>
+        <span class="tag">No role</span>
+        <p>assistant-chat, privacy-panel and sort-drill (teaching only), the two VM minigames (out of scope for a browser-only game), and inbox triage except as a warm-up gate.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="stack-lg" aria-labelledby="pat-h">
+  <div class="stack">
+    <h2 id="pat-h">Twelve case patterns</h2>
+    <p>Reusable shapes for building cases, each with the Cyber Security point it makes. Approve the ones you want writers to reach for first.</p>
+  </div>
+  <div class="group" id="patternList"></div>
+</section>
+
+<section class="stack-lg" aria-labelledby="eng-h">
+  <div class="stack">
+    <h2 id="eng-h">Minigame engine work</h2>
+    <p>Phase 10 stays about the deduction layer and adds only two small items. Nine small minigame fixes form an optional follow-on, Phase 10b. Seven more went to the shared backlog.</p>
+  </div>
+  <div class="group" id="engineList"></div>
+</section>
+
+<section class="stack-lg" aria-labelledby="fix2-h">
+  <div class="stack">
+    <h2 id="fix2-h">Changes to the test cases</h2>
+    <p>Each change adds a route or swaps a source for one that grants the same clues in the same room, so no case loses a route. The simulator re-checks A.</p>
+  </div>
+  <div class="fixtures" id="fixtureChangeList"></div>
+</section>
+
+<section class="stack-lg" aria-labelledby="first-h">
+  <div class="stack">
+    <h2 id="first-h">First real missions</h2>
+    <p>A sketch of which minigames the first shipped case in each game would use.</p>
+  </div>
+  <div class="group" id="missionList"></div>
+</section>
+
 <section class="stack-lg" aria-labelledby="ideas-h">
   <div class="stack">
     <span class="tag">Part 3 · Take it further</span>
@@ -365,6 +429,10 @@ button.primary { background: var(--ink); color: var(--card); }
     <li><b>Q7</b><span>The nudge says how a suspect became decidable ("Check the counts." / "Check what's on their card."), never which way.</span></li>
     <li><b>Q8</b><span>Real Incident Simulations missions use "Refer to HR" / "No further action".</span></li>
     <li><b>Q9</b><span>Engine text comes in a plain voice (default) and a pulp voice.</span></li>
+    <li><b>Q10</b><span>Sector minigames (hospital, SCADA, insurance) stay out of Eldritch Hacker.</span></li>
+    <li><b>Q11</b><span>No shipped Eldritch mission uses a relabelled VPN log as a door log; configurable log columns come first.</span></li>
+    <li><b>Q12</b><span>A device, such as a seal lever, can record an "act" verdict with no conversation, after a warned confirm.</span></li>
+    <li><b>Q13</b><span>The debrief doesn't repeat a concern form's "jumped to a conclusion" feedback.</span></li>
   </ul>
 </section>
 
@@ -531,6 +599,95 @@ const QUESTIONS = [
     opts: ["On everywhere", "On for Incident Simulations, off for Eldritch Hacker", "Off by default", "Let each mission choose"] },
   { id: "q_start", title: "When should building start?",
     opts: ["Now (wave 0 alongside the SE work)", "After the SE lab playtests finish", "After the first mission design is agreed", "Hold for now"] },
+  { id: "q_10b", title: "When should the Phase 10b minigame fixes be built?",
+    opts: ["Straight after the Phase 10 core passes", "With the first real mission, only the fixes it needs", "All of them before the first real mission", "Later"] },
+  { id: "q_money", title: "Follow the money: until each payment can grant its own clue (E10), what should a trace do?",
+    opts: ["Use it now, with an innocent depositor in every trace", "Use it only for the want slot, never to convict alone", "Wait for E10 before using it in a case"] },
+  { id: "q_handle", title: "Who posted it: should a forum handle ever be shared by an innocent?",
+    opts: ["Yes, sometimes, so one match is never proof", "No, keep handles one-to-one but make each only one marked clue", "Mission by mission"] },
+  { id: "q_timeline", title: "Should every deduction case have a case timeline (command board)?",
+    opts: ["Yes, in every case", "Only in longer or timed cases", "Only where the story has one (a guard's log, a SOC lead)"] },
+  { id: "q_seal", title: "Pull the plug: may a device verdict ever be the only way to close a case?",
+    opts: ["Yes, if it's warned and named", "No, there's always a conversation route too", "Only in strict cases"] },
+];
+
+const PATTERNS = [
+  { id: "p_posted", title: "Who posted it", uses: "OSINT browser; phone DMs; a second site", slot: "What they want (marked)",
+    play: "A lodge forum post signed @lanternbearer says the Codex comes to them tonight. On a reading-group page the same handle is listed under a guest's name, and a hidden cell flips on the board.",
+    lesson: "Handles get reused across sites, which is how investigators link accounts. A shared or stolen handle is why one match isn't proof.",
+    risk: "Make the handle one marked clue among several, or let an innocent share it, so it doesn't decide the case alone." },
+  { id: "p_dms", title: "The cult's DMs", uses: "Mail reader highlights; phone-chat DMs; inbox triage as a warm-up only", slot: "What they carry or want",
+    play: "A seized phone shows the gatekeeper's message: \"Bring the brass key. Wear no ward.\" Highlighting the line drops a clue on the board.",
+    lesson: "Reading a message for its tells: sender authentication on email, and recruitment pressure in DMs.",
+    risk: "Inbox triage can't grant a clue per message, so it stays a gate and the reader is the source." },
+  { id: "p_badge", title: "Badge trail", uses: "RFID clone and emulate; log filter; a printed door log", slot: "Where they were",
+    play: "Filter the archive's door log by time and watch two names drop out. Clone a contact's badge in conversation and use it at the garage reader to see when it was last used.",
+    lesson: "Access logs record a card, not a person. A cloned or lent badge puts the card in the room.",
+    risk: "The log's flagged anomaly must belong to a non-suspect, or it points at one person." },
+  { id: "p_prints", title: "Prints on the chalice", uses: "Dusting; a fallback witness; optionally a fingerprint reader", slot: "What they carry, or where they were",
+    play: "The torch finds a latent print on Marsh's glass and the reference card matches her sigil ring. Later a lifted thumbprint opens the vestry door.",
+    lesson: "Biometrics aren't secrets. Prints are left everywhere and can be lifted and replayed.",
+    risk: "A lost lift ends that surface, so every dusting clue has a fallback route." },
+  { id: "p_shred", title: "Shredded minutes", uses: "A tamper beat; shredded-document recovery", slot: "Any",
+    play: "After the second stop the cult burns the lodge minutes. The bin holds the strips, and the last one dropping into place turns \"Evidence destroyed\" back into a clue.",
+    lesson: "Data remanence: shredding and deletion rarely destroy information, and recovery is part of incident response.",
+    risk: "Low. Keep tamper beats at least two minutes apart and the strip count around 8 to 10." },
+  { id: "p_backup", title: "Restore the backup", uses: "Backup recovery with a clean and a compromised source", slot: "The destroyed clue's slot",
+    play: "Choose between the archivist's offsite copy and the lodge's own synced ledger, with the cost of the wrong one visible.",
+    lesson: "A backup the attacker can reach isn't a backup. Keep an offline copy, check the source, isolate first.",
+    risk: "A compromised pick should cost a second tamper or a closed route, never the whole case." },
+  { id: "p_money", title: "Follow the money", uses: "Blockchain explorer, matching mode", slot: "What they want (marked)",
+    play: "Link each tithe deposit to its payout by amount, fee and timing. A wrong link explains itself; the last one clicks.",
+    lesson: "Pseudonymous isn't anonymous. Mixers leak through fees, timing and change, and following the money often attributes a case.",
+    risk: "One completed trace grants every depositor at once, so include an innocent depositor until each match can grant its own clue (10b)." },
+  { id: "p_report", title: "Report it properly", uses: "Handler or manager call; concern form; a per-suspect coverage form", slot: "None: it's the verdict",
+    play: "\"Call HaX and name them.\" Or, in a corporate case, file a concern by picking what, when, where and who, and get feedback on facts over conclusions.",
+    lesson: "Report through the right channel, with facts, proportionately, naming a next step rather than labelling a colleague.",
+    risk: "A single \"Who did it?\" choice implies exactly one guilty. Use one section per suspect, or the form's multi-pick." },
+  { id: "p_plug", title: "Pull the plug", uses: "Emergency button (seal lever); network segmentation map", slot: "None: it's the verdict",
+    play: "The sanctum's seal lever arms once HaX agrees. Lifting the guard cover asks: \"Seal the sanctum with Dr Okafor inside?\"",
+    lesson: "Containment is a decision with costs. It needs authority, and acting on a hunch hits the wrong target.",
+    risk: "Irreversible, so it names one suspect and carries the stakes like any verdict. It must never be armed by the nudge." },
+  { id: "p_prep", title: "Prep before you ask", uses: "Pretext prep, then a person or phone chat", slot: "Whatever the witness holds",
+    play: "To get the steward talking about the archive key, you fill a pretext card with a fact you already hold. Without it, the steward is wary from the first line.",
+    lesson: "Pretexting runs on facts the attacker already holds, so the defence is to verify before sharing.",
+    risk: "Use one pressure meter per topic: the pretext call's suspicion or the witness's goodwill, never both." },
+  { id: "p_timeline", title: "Case timeline", uses: "Command board; alarm-panel lamps for small cases", slot: "None: it reorganises clues by time",
+    play: "The guard's log on the night train lists what happened at each stop, and you spot two entries at 23:40 that sit on different suspects' cards.",
+    lesson: "Building an incident timeline, and the gap between when something happened and when you learned it.",
+    risk: "Its entries may read only held clues and public events, never verdicts or the truth." },
+  { id: "p_tries", title: "Three tries", uses: "A password-locked laptop; a witness as the second route", slot: "Any",
+    play: "The secretary's laptop wipes after three bad guesses. The bar staff remember she always uses the founding year.",
+    lesson: "Lockout exists to stop guessing; the right route to a locked device is the people who hold the credential.",
+    risk: "Needs the second route, and the evidence must sit inside the laptop, not on its click action, or the lock is skipped." },
+];
+
+const ENGINE = [
+  { id: "e_p10", title: "Phase 10 additions: board launch routes and authoring checks",
+    player: "A handler can say \"Let me see your board\" and open it mid-conversation for looking and marking; the chat resumes when it closes. The final call stays on the case-file object in the room.",
+    build: "E1: the board opens through the new launch registry, #trigger_minigame and openMinigame, with a lint error if those routes carry the final call. E2: authoring notes (evidence ids, repeat reads, later fingerprints) and two lints: a clue on a locked object's click action skips the lock, and the missing shredder schema entry." },
+  { id: "e_p10b", title: "Phase 10b: nine small minigame fixes",
+    player: "Richer cases: a concern form that records a report, badge clones that know whose card it was, locks that know whether they were picked, per-record log lookups, door-log columns, one clue per matched payment, a coverage form that remembers it was submitted.",
+    build: "E3 concern-form verdict hook, E4 card id and reader on RFID events, E5 how a lock was opened, E6 the emergency button records itself, E7 per-record log and forensic writes, E8 configurable log columns (needed before an Eldritch door log), E10 per-deposit money trail, E11 coverage form reopen, E12 network map writes ink can see. Each under about 15 lines with its own test." },
+  { id: "e_backlog", title: "Backlog: seven hooks not needed now",
+    player: "Nothing changes for players yet.",
+    build: "Mail-client report hook, SIEM and SCADA ink visibility, minigame action lists delegating to applyActions, registering dual-auth (currently wired to nothing), Bluetooth events and BLE persistence, a PIN lockout that sticks, per-message inbox triage grants. Logged in docs/IDEAS_BACKLOG.md." },
+];
+
+const FIXTURE_CHANGES = [
+  { id: "fc_A", title: "A · add an OSINT forum post", change: "A lodge laptop in the hall shows a forum post signed by Delacroix's handle, as a second route to his \"wants the Codex\" clue.", why: "Puts the main Eldritch clue source into a test case. The simulator re-checks that the hall still decides nobody alone." },
+  { id: "fc_B", title: "B · swap the printout for a forensic tab", change: "The DHCP printout becomes a forensic data platform tab (\"Network device list\") granting the same four clues. Later, with E3, a concern form becomes a second way to report.", why: "Exercises a real investigation minigame in the corporate template with no change to the logic." },
+  { id: "fc_C", title: "C · key the badge clue on card id", change: "With E4 (10b), the garage badge clue matches the cloned card's id and the reader, not the card's display name.", why: "Sturdier wiring; logic unchanged." },
+  { id: "fc_D", title: "D · add the guard's log", change: "A command board shows each stop and what was destroyed, with event times in the text.", why: "Proves the case timeline pattern. Display only, so no simulator re-run." },
+];
+
+const MISSIONS = [
+  { id: "m_eh", title: "First Eldritch Hacker deduction mission",
+    player: "Open evening at the Tesseract Institute, on both the cult and Institute layers: witnesses with pretext prep before the gatekeeper, members' forum posts, DMs and Institute mail, dusting with a fingerprint-locked vestry, lockpicked coats and notes, a midnight tamper with shredded minutes, the tithe money trail, and the seal lever as the act verdict.",
+    build: "Patterns 1, 2, 4, 5, 7, 9 and 10. Leaves out the log filter until E8 gives it proper door-log columns, and every sector minigame." },
+  { id: "m_is", title: "First Incident Simulations deduction case",
+    player: "An insider data leak with \"Refer to HR\" / \"No further action\", no combat: an advisory brief as \"what to look for\", VPN sign-in logs, a forwarded spreadsheet in the mail reader, HR files per person, a data-loss export, the purged mailbox restored from backup, an incident timeline, witnesses, and a concern form as the report.",
+    build: "Patterns 2, 3, 6, 8 and 11; needs E7 for per-person log lookups and E3 or E11 for the form-based report. Network isolation only if the case escalates." },
 ];
 
 const VERDICT_OPTS = [["approve", "Approve", "ok"], ["adjust", "Adjust", "adj"], ["rethink", "Rethink", "no"]];
@@ -589,13 +746,37 @@ function render() {
     q.append(el("article", { class: "decision" }, el("header", {}, el("h3", { text: x.title })), fs,
       el("textarea", { id: x.id + "_note", "aria-label": x.title + " notes", placeholder: "Notes" })));
   });
+  const pl = document.getElementById("patternList");
+  PATTERNS.forEach(x => {
+    const fs = el("fieldset", { class: "choice" }, el("legend", { text: x.title }));
+    radios(fs, x.id, VERDICT_OPTS);
+    pl.append(el("article", { class: "decision" },
+      el("header", {}, el("h3", { text: x.title }), el("p", { class: "muted", text: x.uses + " · " + x.slot })),
+      el("div", { class: "two" },
+        el("div", {}, el("span", { class: "tag", text: "In play" }), el("p", { text: x.play })),
+        el("div", {}, el("span", { class: "tag", text: "What it teaches" }), el("p", { text: x.lesson }),
+          el("span", { class: "tag", text: "Watch out for" }), el("p", { text: x.risk }))),
+      fs,
+      el("textarea", { id: x.id + "_note", "aria-label": x.title + " notes", placeholder: "Notes" })));
+  });
+  const en = document.getElementById("engineList"); ENGINE.forEach(i => en.append(decisionCard(i)));
+  const fc = document.getElementById("fixtureChangeList");
+  FIXTURE_CHANGES.forEach(x => {
+    const fs = el("fieldset", { class: "choice" }, el("legend", { text: x.title }));
+    radios(fs, x.id, VERDICT_OPTS);
+    const dl = el("dl", {});
+    [["Change", x.change], ["Why", x.why]].forEach(([k, v]) => { dl.append(el("dt", { text: k }), el("dd", { text: v })); });
+    fc.append(el("article", { class: "fixture" }, el("h3", { text: x.title }), dl, fs,
+      el("textarea", { id: x.id + "_note", "aria-label": x.title + " notes", placeholder: "Notes" })));
+  });
+  const ml = document.getElementById("missionList"); MISSIONS.forEach(i => ml.append(decisionCard(i)));
   radios(document.getElementById("ov_arch"), "ov_arch", OVERALL_OPTS);
   radios(document.getElementById("ov_game"), "ov_game", OVERALL_OPTS);
 }
 render();
 
-const RADIO_IDS = [...GAMEPLAY, ...ARCH, ...FIXTURES, ...QUESTIONS].map(x => x.id).concat(["ov_arch", "ov_game"]);
-const NOTE_IDS = [...GAMEPLAY, ...ARCH, ...FIXTURES, ...IDEAS, ...QUESTIONS].map(x => x.id + "_note").concat(["ov_notes"]);
+const RADIO_IDS = [...GAMEPLAY, ...ARCH, ...FIXTURES, ...PATTERNS, ...ENGINE, ...FIXTURE_CHANGES, ...MISSIONS, ...QUESTIONS].map(x => x.id).concat(["ov_arch", "ov_game"]);
+const NOTE_IDS = [...GAMEPLAY, ...ARCH, ...FIXTURES, ...PATTERNS, ...ENGINE, ...FIXTURE_CHANGES, ...MISSIONS, ...IDEAS, ...QUESTIONS].map(x => x.id + "_note").concat(["ov_notes"]);
 
 function collect() {
   const choices = {}, notes = {}, ideas = {};
@@ -652,6 +833,7 @@ function asText() {
     lines.push("");
   };
   sec("Gameplay", GAMEPLAY); sec("Architecture", ARCH); sec("Test cases", FIXTURES);
+  sec("Case patterns", PATTERNS); sec("Minigame engine work", ENGINE); sec("Test case changes", FIXTURE_CHANGES); sec("First real missions", MISSIONS);
   lines.push("## Ideas");
   IDEAS.forEach(x => { if (a.ideas[x.id] || a.notes[x.id + "_note"]) lines.push("- " + (a.ideas[x.id] ? "[x] " : "[ ] ") + x.title + (a.notes[x.id + "_note"] ? " — " + a.notes[x.id + "_note"] : "")); });
   lines.push("", "## Questions");

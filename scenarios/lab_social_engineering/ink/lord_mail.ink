@@ -21,6 +21,9 @@ VAR email_landed = false
 VAR email_opened = true
 VAR email_first_fail = ""
 VAR email_link = "none"
+// Set by the engine (mail-runner) when the send carried an executable payload, so the exe
+// (foothold / remote-desktop) route is told apart from the credential one.
+VAR email_is_executable = false
 
 === function se_influence(delta, reason) ===
 // Fallback only: the real binding does the work.
@@ -28,6 +31,20 @@ VAR email_link = "none"
 
 === on_email ===
 { not email_opened:
+    -> DONE
+}
+// The executable route (foothold / remote desktop). Under pressure she runs it; otherwise she
+// stops. This sets phish_lord_foothold, NOT phish_lord_landed: it is an extra beat, not a way
+// past the credential puzzle.
+{ email_is_executable:
+    { email_landed:
+        Sofia Lord: Jed did say to expect something from IT... it's installing now. That's meant to happen, isn't it?
+        ~ se_influence(10, "attachmentPlausible")
+        #set_global:phish_lord_foothold:true
+    - else:
+        Sofia Lord: Run a program that came in an email? No. I'll check with IT before I touch that.
+        ~ se_influence(-10, "attachmentPlausible")
+    }
     -> DONE
 }
 { email_landed:

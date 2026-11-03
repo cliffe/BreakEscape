@@ -1228,6 +1228,7 @@ export function startLandingPageBuilder(sprite, options = {}) {
         landingPageId: options.landingPageId || data.landingPageId,
         targetId: options.targetId || data.targetId,
         kitId: options.kitId,
+        view: options.view || data.view,
         returnTo: options.returnTo,
         onComplete: (success, result) => {
             if (typeof options.onComplete === 'function') options.onComplete(success, result);

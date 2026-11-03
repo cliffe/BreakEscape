@@ -1666,12 +1666,24 @@ module BreakEscape
     end
 
     def find_object_in_scenario(object_id)
-      # Search all rooms for the object
+      # Search all rooms for the object, recursing into nested container contents so a locked
+      # archive inside a pc/desktop container resolves and its contents are returned on unlock.
       @game.scenario_data['rooms'].each do |_room_id, room_data|
-        object = room_data['objects']&.find { |obj|
-          obj['id'] == object_id || obj['name'] == object_id
-        }
-        return object if object
+        (room_data['objects'] || []).each do |obj|
+          found = find_object_in_object(obj, object_id)
+          return found if found
+        end
+      end
+      nil
+    end
+
+    def find_object_in_object(obj, object_id)
+      return obj if obj['id'] == object_id || obj['name'] == object_id
+      if obj['contents'].is_a?(Array)
+        obj['contents'].each do |child|
+          found = find_object_in_object(child, object_id)
+          return found if found
+        end
       end
       nil
     end

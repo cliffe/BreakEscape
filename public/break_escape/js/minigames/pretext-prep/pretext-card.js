@@ -114,14 +114,19 @@ export function blankSlot(factId, spec, intelFacts) {
     return { type: preferred.type, about: isStr(preferred.about) ? preferred.about : null };
 }
 
-/** Held options for one fact: [{ value, label, kind }]. Nothing invented. */
+/**
+ * Held options for one fact: [{ value, label, kind }], in label order. Nothing invented.
+ * Sorted because the held order follows the intelFacts keys, which jsonb reorders (shorter keys
+ * first), so the live Finance always sat above the stale Accounts and position gave it away.
+ */
 export function optionsForFact(factId, spec, social, globals) {
     const intelFacts = isObject(social?.intelFacts) ? social.intelFacts : {};
     const slot = blankSlot(factId, spec, intelFacts);
     if (!slot) return [];
     const entries = heldProvides(heldFactIds(intelFacts, globals), intelFacts);
     const people = Array.isArray(social?.people) ? social.people : [];
-    return optionsForSlot({ type: slot.type, about: slot.about }, { entries, people });
+    return optionsForSlot({ type: slot.type, about: slot.about }, { entries, people })
+        .sort((a, b) => String(a.label).localeCompare(String(b.label)));
 }
 
 /**

@@ -26,6 +26,7 @@ import { writeGlobal } from '../../systems/global-writer.js';
 import { heldFactIds, heldProvides } from './mail-composer.js';
 import { linkInfoFor, describeVictimOutcome, betterVictim, captureGranted, buildRecord as buildLandingRecord }
     from '../landing-page-builder/landing-page-model.js';
+import { CAPTURES_KEY, makeCaptureEntry, mergeCapture, readCaptures } from '../../systems/captures.js';
 
 // The mail runner (P1-J) is loaded lazily: only a send to a character target needs
 // it, and keeping it off the module's static import graph lets the data-only bridge
@@ -69,6 +70,23 @@ export function resolveTarget(social, targetId) {
     const list = social && social.phishTargets;
     const targets = Array.isArray(list) ? list : Object.values(list || {});
     return targets.find((t) => t && t.id === targetId) || null;
+}
+
+/**
+ * Record a capture into se_captures, first-capture-wins (captures.js mergeCapture). The merge
+ * base is read from the live globals so a second landing in the same session sees the first;
+ * nothing is written when the target already has an entry, so a resend never overwrites it and
+ * no redundant sync fires. `input` names the target and the authored fiction (credential
+ * address/secret, or a foothold host/note) — never anything the player typed (captures.js).
+ */
+function recordCapture(globals, input) {
+    const entry = makeCaptureEntry({ ...input, at: Date.now() });
+    if (!entry) return;
+    const base = readCaptures((typeof window !== 'undefined' && window.gameState && window.gameState.globalVariables) || globals);
+    const next = mergeCapture(base, entry);
+    if (next === base) return;
+    writeGlobal(CAPTURES_KEY, next, { openChat: false });
+    if (typeof window !== 'undefined') window.stateSync?.sync?.();
 }
 
 /** The payload-kit `link` item named by message.link (a kitId string), or null (01 N4). */
@@ -406,12 +424,36 @@ export function performSend(scene, message) {
             }
             if (captureGranted(before, next)) {
                 const pageDef = findLandingPage(social, linkKit.landingPageId);
-                const note = pageDef && pageDef.capture && isStr(pageDef.capture.note) ? pageDef.capture.note : null;
+                const cap = pageDef && isObject(pageDef.capture) ? pageDef.capture : null;
+                const note = cap && isStr(cap.note) ? cap.note : null;
                 if (note && typeof window !== 'undefined' && typeof window.addNote === 'function') {
                     try { window.addNote(note); } catch (err) { console.error('capture note failed:', err); }
                 }
+                // The credential capture itself (plans/linear-petting-forest.md, Stage 3). The
+                // address and secret are authored fiction on the page, never player input; the
+                // view masks the secret unless the scenario opts into revealSecret.
+                recordCapture(globals, {
+                    targetId: target.id, kind: 'credential',
+                    roleLabel: isStr(target.role) ? target.role : null,
+                    address: cap && isStr(cap.address) ? cap.address : (isStr(target.address) ? target.address : null),
+                    secret: cap && isStr(cap.secret) ? cap.secret : null,
+                    note
+                });
             }
         }
+    }
+
+    // Document / executable foothold (Stage 3). An attachment-based send that lands on a target
+    // carrying an authored `foothold` block records the foothold the opened file would give —
+    // the payoff the lab was missing. Idempotent through recordCapture's first-capture-wins, so
+    // it is safe to re-evaluate on every landed send.
+    if (!linkKit && result.landed === true && isObject(target.foothold)) {
+        recordCapture(globals, {
+            targetId: target.id, kind: 'foothold',
+            roleLabel: isStr(target.role) ? target.role : null,
+            host: isStr(target.foothold.host) ? target.foothold.host : null,
+            note: isStr(target.foothold.note) ? target.foothold.note : null
+        });
     }
 
     // Schedule the reply. An unopened send gets no reply at all in onSend mode

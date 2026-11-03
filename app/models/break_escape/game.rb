@@ -1132,20 +1132,9 @@ module BreakEscape
           return true
         end
 
-        # Find object in all rooms - check id, name, or generated client ID
-        object = nil
-        scenario_data['rooms'].each do |room_id, room_data|
-          next unless room_data['objects']
-          room_data['objects'].each_with_index do |obj, index|
-            # Client generates IDs as: roomId_type_index
-            client_generated_id = "#{room_id}_#{obj['type']}_#{index}"
-            if obj['id'] == target_id || obj['name'] == target_id || client_generated_id == target_id
-              object = obj
-              break
-            end
-          end
-          break if object
-        end
+        # Find object in all rooms - check id, name, or generated client ID, and recurse into
+        # nested container contents (a locked archive sitting inside a pc/desktop container).
+        object = find_scenario_object(target_id)
 
         if object
           Rails.logger.info "[BreakEscape] Found object: id=#{object['id']}, name=#{object['name']}, locked=#{object['locked']}, requires=#{object['requires']}"
@@ -1290,12 +1279,27 @@ module BreakEscape
     end
 
     # The scenario object an unlock targets: matched on id, name or the client's
-    # generated id (roomId_type_index), as validate_unlock does.
+    # generated id (roomId_type_index), as validate_unlock does. Recurses into nested
+    # container `contents` so a locked archive inside a pc/desktop container resolves.
     def find_scenario_object(target_id)
       scenario_data['rooms']&.each do |room_id, room|
         room['objects']&.each_with_index do |obj, index|
-          return obj if obj['id'] == target_id || obj['name'] == target_id ||
-                        "#{room_id}_#{obj['type']}_#{index}" == target_id
+          found = find_object_in_contents(obj, target_id, "#{room_id}_#{obj['type']}_#{index}")
+          return found if found
+        end
+      end
+      nil
+    end
+
+    # Match this object (by id/name, or the given client id at the top level) or any object nested
+    # in its `contents`. Nested objects carry explicit ids, so no client id is tried for them.
+    def find_object_in_contents(obj, target_id, client_generated_id = nil)
+      return obj if obj['id'] == target_id || obj['name'] == target_id ||
+                    (client_generated_id && client_generated_id == target_id)
+      if obj['contents'].is_a?(Array)
+        obj['contents'].each do |child|
+          found = find_object_in_contents(child, target_id)
+          return found if found
         end
       end
       nil

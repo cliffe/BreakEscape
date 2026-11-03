@@ -1,0 +1,12 @@
+Make portrait for Daniel Seo
+A Korean-British man in his early thirties, a sharp, slick film-noir detective. Light-tan skin, black hair neatly slicked back, clean-shaven, narrow alert eyes. He wears a tan double-breasted trench coat open over a dark waistcoat, a pale blue shirt and a slim black tie, with a brown leather belt and shoulder holster strap just visible. No hat, no cigarette, no text, no logos.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a solid plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+solid plain mid-grey background, no gradient, no pattern
+
+# agy 2026-11-03. Reframed with reframe_portrait.py --flip.
+# Approved by the user 2026-11-03 as noir_m2.

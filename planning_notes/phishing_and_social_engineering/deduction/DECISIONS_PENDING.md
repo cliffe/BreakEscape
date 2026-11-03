@@ -101,3 +101,18 @@ answer away. A safer variant says only *how* the suspect became decidable ("Chec
 **Background.** A handful of engine-owned strings (board labels, warnings) read differently in a plain
 corporate voice and a pulp voice. Option: a `deduction.voice: "plain" | "pulp"` key, or the plain set for both.
 **Recommendation.** Add the `voice` key with plain as the default.
+
+---
+
+# Round 3 of questions (2026-11-03, from the minigame catalogue)
+
+Source: `minigames/CATALOGUE.md` §6. **Answered by the user, 2026-11-03:**
+
+- **Q10. Sector minigames in Eldritch Hacker:** no. Hospital, SCADA, insurance and similar sector
+  minigames stay in Incident Simulations and sector missions.
+- **Q11. Door logs:** no shipped Eldritch Hacker mission uses a relabelled VPN log as its door log;
+  configurable log-filter columns (E8) come first. Test fixtures may use the relabelled log meanwhile.
+- **Q12. Devices as verdicts:** yes. A device (a seal lever, a network isolation map) may record an
+  `act` verdict with no conversation, after a warned confirm.
+- **Q13. Debrief comments on concern forms:** no (not ticked). The form's own feedback is the only
+  place the "jumped to a conclusion" lesson lands; the deduction debrief does not repeat it.

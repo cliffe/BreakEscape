@@ -27,7 +27,8 @@ for (const rel of [
     'minigames/framework/social-overlay.js',
     'utils/display-dashes.js',
     'ui/modal-stack.js',
-    'systems/global-writer.js'
+    'systems/global-writer.js',
+    'systems/captures.js'
 ]) {
     mkdirSync(dirname(join(dir, rel)), { recursive: true });
     writeFileSync(join(dir, rel), readFileSync(join(js, rel), 'utf8'));

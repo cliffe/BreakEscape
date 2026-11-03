@@ -105,6 +105,12 @@
       "optional": false
     },
     {
+      "id": "lock_sofia_archive",
+      "label": "payroll_backup.zip<br/>Password lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
       "id": "desk_phone",
       "label": "Desk Phone",
       "kind": "item",
@@ -201,6 +207,11 @@
     {
       "from": "operations_room",
       "to": "page_builder",
+      "soft": false
+    },
+    {
+      "from": "operations_room",
+      "to": "lock_sofia_archive",
       "soft": false
     },
     {

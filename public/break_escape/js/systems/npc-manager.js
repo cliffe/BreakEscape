@@ -350,6 +350,7 @@ export default class NPCManager {
         setGlobalOnStart: entry.timedConversation.setGlobalOnStart || null,
         disableClose: entry.timedConversation.disableClose === true,
         voiced: entry.timedConversation.voiced === true,
+        callLabel: entry.timedConversation.callLabel || null,
         // A video call, as an event mapping's conversationMode "video-call" opens one
         videoCall: entry.timedConversation.videoCall === true || entry.timedConversation.conversationMode === 'video-call',
         videoLabel: entry.timedConversation.videoLabel || null,
@@ -843,6 +844,7 @@ export default class NPCManager {
         disableClose:  mapping.disableClose  || false,  // hide × and block Esc for this conversation
         resume:        mapping.resume === true,         // phone-chat: reopen the saved thread, no knot jump
         voiced:        mapping.voiced === true,         // phone-chat: speak the NPC's lines through TTS (F17)
+        callLabel:     mapping.callLabel     || null,   // phone-chat voiced call: caption under the caller's name
         videoLabel:    mapping.videoLabel    || null,   // ENG-07 (video-call): meeting-tool label (default SECURE VIDEO LINK)
         participantTag: mapping.participantTag || null, // ENG-07 (video-call): participant tag (e.g. External)
         background:    mapping.background    || null,    // optional background image path
@@ -1429,7 +1431,8 @@ export default class NPCManager {
             title: npc.displayName || 'Phone',
             theme: npc.phoneTheme,
             disableClose: config.disableClose || false,
-            voiced: config.voiced === true
+            voiced: config.voiced === true,
+            callLabel: config.callLabel || null
           }),
           onStart: () => {
             persistOnClose();
@@ -1774,7 +1777,7 @@ export default class NPCManager {
   //     }
   //   }
   scheduleTimedConversation(opts) {
-    const { npcId, targetKnot, triggerTime, delay, background, waitForEvent, skipIfGlobal, setGlobalOnStart, disableClose, voiced, videoCall, videoLabel, participantTag } = opts;
+    const { npcId, targetKnot, triggerTime, delay, background, waitForEvent, skipIfGlobal, setGlobalOnStart, disableClose, voiced, callLabel, videoCall, videoLabel, participantTag } = opts;
 
     if (!npcId || !targetKnot) {
       console.error('[NPCManager] scheduleTimedConversation requires npcId and targetKnot');
@@ -1796,6 +1799,7 @@ export default class NPCManager {
       setGlobalOnStart: setGlobalOnStart || null, // Set this global to true when conversation fires
       disableClose: disableClose === true, // no ×, no Esc (documented; was dropped before 2026-10-21)
       voiced: voiced === true, // phone-chat: speak the NPC's lines through TTS (F17)
+      callLabel: callLabel || null, // phone-chat voiced call: caption under the caller's name
       videoCall: videoCall === true,           // open as a person-chat video call (any npcType)
       videoLabel: videoLabel || null,          // label on the video-call bar
       participantTag: participantTag || null   // participant tag on the video-call bar
@@ -2035,7 +2039,8 @@ export default class NPCManager {
           title: 'Phone',
           theme: npc.phoneTheme,
           disableClose: conversation.disableClose === true,
-          voiced: conversation.voiced === true
+          voiced: conversation.voiced === true,
+          callLabel: conversation.callLabel || null
         }
         : {
           npcId: conversation.npcId,

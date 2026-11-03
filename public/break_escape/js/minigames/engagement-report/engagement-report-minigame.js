@@ -56,7 +56,15 @@ export function pageOutcomeLine(page) {
     if (!page.sent) return 'No page sent.';
     const visited = page.visited ? 'yes' : 'no';
     const submitted = page.submitted ? 'yes (simulated)' : (page.noticed ? 'no (noticed)' : 'no');
-    return `Visited: ${visited} · Submitted: ${submitted}`;
+    const base = `Visited: ${visited} · Submitted: ${submitted}`;
+    return page.captured ? `${base} · captured ${page.captured}` : base;
+}
+
+/** One foothold row: role only, then the host and what the target did. No names. */
+export function footholdLine(f) {
+    const where = f.host ? ` on ${f.host}` : '';
+    const how = f.note ? ` (${f.note})` : '';
+    return `${f.roleLabel} — foothold${where}${how}`;
 }
 
 export class EngagementReportMinigame extends SocialOverlayScene {
@@ -189,6 +197,16 @@ export class EngagementReportMinigame extends SocialOverlayScene {
             }
         }
         if (showPanel('pages')) sec.appendChild(pagePanel);
+
+        // Footholds: omitted entirely when there are none
+        if (showPanel('footholds') && r.footholds.length) {
+            const fp = h('div', { class: 'er-footholds', 'aria-label': 'Foothold results' },
+                h('h4', { class: 'er-subh', text: 'Footholds (simulated)' }));
+            for (const f of r.footholds) {
+                fp.appendChild(h('p', { class: 'er-foothold-line', 'data-target': f.targetId, text: footholdLine(f) }));
+            }
+            sec.appendChild(fp);
+        }
 
         // Calls
         if (showPanel('calls') && r.calls.length) {
@@ -441,6 +459,8 @@ export class EngagementReportMinigame extends SocialOverlayScene {
                         failed: r.failed, landed: r.landed, firstTryLanded: r.firstTryLanded })),
                     pages: m.results.pages.map((p) => ({ pageId: p.pageId, sent: p.sent, visited: p.visited,
                         submitted: p.submitted, noticed: p.noticed, line: pageOutcomeLine(p) })),
+                    footholds: m.results.footholds.map((f) => ({ targetId: f.targetId, roleLabel: f.roleLabel,
+                        host: f.host, note: f.note, line: footholdLine(f) })),
                     calls: m.results.calls.map((c) => ({ callId: c.callId, done: c.done, reported: c.reported,
                         outcome: c.outcome, lowest: c.lowest, failedAttempts: c.failedAttempts }))
                 },

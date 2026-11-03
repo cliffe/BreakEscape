@@ -295,6 +295,7 @@ function playEntry(entry, data) {
             autoClose:    !!entry.stopAfterTrack,  // legacy: close when track ends
             autoStop:     !!entry.autoStop,         // new: stop music, keep vis open
             disableClose: !!entry.disableClose,
+            missionOver:  true,                         // concluded: EXIT MISSION, no way back in
             headerText:   entry.headerText,             // optional, e.g. "MISSION FAILED // AUDIO INTEL"
             statusText:   entry.statusText,             // optional, e.g. "COMPROMISED"
             creditsAfter: MusicController.context?.state === 'suspended' ? audible?.ready : undefined,

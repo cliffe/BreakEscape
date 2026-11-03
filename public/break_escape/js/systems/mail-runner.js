@@ -71,6 +71,10 @@ const isStr = (v) => typeof v === 'string' && v.length > 0;
 const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const arr = (v) => (Array.isArray(v) ? v : []);
 const domainOf = (address) => (isStr(address) && address.includes('@') ? address.slice(address.indexOf('@') + 1) : '');
+// The attached payload's kind, from either the composed message (attachmentKind) or the stored
+// record the bridge passes to the ink runner (attachment.{kitId,kind}).
+const attachmentKindOf = (msg) => (isStr(msg && msg.attachmentKind) ? msg.attachmentKind
+    : (isObject(msg && msg.attachment) && isStr(msg.attachment.kind) ? msg.attachment.kind : null));
 
 // T2-1 reload idempotency for the influence (and game-tag) side of a delivery.
 // Influence, the game tags' set_global effects and this marker all live in
@@ -121,6 +125,11 @@ export function emailVarsFromResult(target, message, result, { account = null, i
         email_ok_addressedTo: factorPass('addressedTo'),
         email_ok_pretextRelevant: factorPass('pretextRelevant'),
         email_attachment: isStr(res.attachment) ? res.attachment : 'none',
+        // Whether the send carried an executable payload, so a character's ink can tell an exe
+        // attack from a credential one (the foothold/remote-desktop route). The composed message
+        // carries attachmentKind; the stored record (what the bridge passes here) carries
+        // attachment.{kitId,kind} — read either shape.
+        email_is_executable: attachmentKindOf(msg) === 'executable',
         email_link: isStr(res.link) ? res.link : 'none',
         email_claimed_sender: isStr(res.claimedSender) ? res.claimedSender : '',
         email_urgency: isStr(advisory.urgency) ? advisory.urgency : 'low',

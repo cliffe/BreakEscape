@@ -398,11 +398,31 @@ h1 {
   max-width: 1000px;
   width: 100%;
   max-height: 90vh;
-  overflow-y: auto;
+  overflow: hidden;
   padding: 20px;
   position: relative;
   box-shadow: 0 0 40px rgba(0, 255, 0, 0.3);
   box-sizing: border-box;
+  /* header and footer stay put; only the body between them scrolls */
+  display: flex;
+  flex-direction: column;
+}
+
+.player-preferences-modal-content .modal-header {
+  flex-shrink: 0;
+}
+
+#preference-form-modal {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.player-preferences-modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .player-preferences-modal-content .modal-header {
@@ -446,11 +466,18 @@ h1 {
 /* Modal-specific form actions */
 .player-preferences-modal-content .modal-footer {
   display: flex;
+  flex-shrink: 0;
+  flex-wrap: wrap;
   justify-content: flex-end;
   gap: 12px;
-  margin-top: 20px;
-  padding-top: 20px;
+  margin-top: 16px;
+  padding-top: 16px;
   border-top: 2px solid #333;
+}
+
+/* Relaunch Tutorial sits apart from Save and Cancel, on the left */
+.player-preferences-modal-content .modal-tutorial-button {
+  margin-right: auto;
 }
 
 .player-preferences-modal-content .btn {
@@ -490,13 +517,6 @@ h1 {
 
 .player-preferences-modal-content .btn-secondary:hover {
   background: #888;
-}
-
-.modal-tutorial-section {
-  padding-top: 15px;
-  margin-top: 15px;
-  border-top: 1px solid #333;
-  text-align: right;
 }
 
 /* Form control in modal: fill available width rather than capping at 400px */

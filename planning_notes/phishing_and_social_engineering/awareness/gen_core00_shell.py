@@ -77,6 +77,10 @@ OWN_ART_HOSTS = {
     'graham_whitfield', 'adaeze_okafor', 'fatima_begum', 'thandiwe_moyo', 'chidi_okeke',
     'agnieszka_duda', 'yasmin_chaudhry', 'joanne_pell', 'sofia_marchetti',
     'ibrahim_diallo', 'lerato_dlamini',
+
+    # 2026-11-03: second host-art batch (v2 pipeline walk sprites + talk/visemes)
+    'gwen_pritchard', 'nilesh_solanki', 'tomasz_wisniewski', 'zainab_hussain', 'ama_owusu',
+    'lorna_easton', 'yusuf_demir',
 }
 
 

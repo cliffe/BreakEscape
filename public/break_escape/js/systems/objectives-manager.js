@@ -1159,7 +1159,8 @@ export class ObjectivesManager {
     } else if (screen.type === 'bond_visualiser') {
       // Open the fullscreen bond visualiser (used for mission credits / victory sequence)
       if (window.BondVisualiser) {
-        const opts = { ...(screen.bondVisualiserOpts || {}) };
+        // The mission has concluded: the visualiser offers EXIT MISSION, never a way back in.
+        const opts = { ...(screen.bondVisualiserOpts || {}), missionOver: true };
         // On reload nothing re-fires the music event that carried the credits, so
         // rebuild them from the saved globals (F22) unless the aim brings its own.
         if (replay && !opts.credits?.length) {
