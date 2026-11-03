@@ -513,3 +513,14 @@ test('back-compat 7 (dry run): a story declaring se_influence loads and runs wit
     const externalWarn = warnings.find((w2) => /external|fallback|se_influence/i.test(w2));
     assert.equal(externalWarn, undefined, `no external-function warning; got: ${externalWarn}`);
 });
+
+test('email_is_executable reads either the composed message or the stored record attachment shape', () => {
+    // Composed message (attachmentKind) and the stored record the bridge passes to the ink
+    // (attachment.{kitId,kind}) must both set the flag; anything else leaves it false.
+    const base = { character: 'quill' };
+    assert.equal(emailVarsFromResult(base, { attachmentKind: 'executable' }, {}).email_is_executable, true, 'composed message');
+    assert.equal(emailVarsFromResult(base, { attachment: { kitId: 'kit_installer', kind: 'executable' } }, {}).email_is_executable, true, 'stored record');
+    assert.equal(emailVarsFromResult(base, { attachmentKind: 'document' }, {}).email_is_executable, false);
+    assert.equal(emailVarsFromResult(base, { attachment: { kitId: 'kit_cv', kind: 'document' } }, {}).email_is_executable, false);
+    assert.equal(emailVarsFromResult(base, {}, {}).email_is_executable, false);
+});
