@@ -7,9 +7,15 @@
  *   node record-take.mjs --display 97 --url http://127.0.0.1:3001/break_escape/games/<id> \
  *        --take ../takes/m01/foo.mjs --out <dir>/foo [--fps 30] [--size 1920x1080] [--music 0] \
  *        [--sfx 1 --voice 1 --master 1] [--zoom-step 1] [--hide-hud] [--title-take] [--no-sandbox true|false] [--no-bridge]
+ *        [--no-game --storage-state FILE [--ignore-https-errors]]   (no --url needed with --no-game)
  *   Writes <out>.mkv, <out>.markers.json, <out>.ffmpeg.log
  *
  * Library: import { recordTake } from './record-take.mjs'.
+ *
+ * --no-game: a take of a page that is not the game (the full-screen VNC console, takes/vm_console.mjs). There is no bridge, no
+ *   title screen, no music or AudioContext check and no sound: the take module's setup(page, null) opens the page before
+ *   recording starts, both slates are picture-only, and the file is checked with check-take.mjs --video-only.
+ *   --storage-state FILE signs the browser in (login.mjs output); --ignore-https-errors accepts the dev box's certificate.
  *
  * A take module: export default async (page, bridge, mark) => { ... }
  *   optional: export async function setup(page, bridge) { ... }  runs after the title is passed and BEFORE recording starts
@@ -121,6 +127,7 @@ export async function recordTake(o) {
   const {
     display, url, outBase, fps = 30, size = '1920x1080', takeFile,
     volumes = {}, zoomStep, noSandbox, bridge: useBridge = true, mode = 'kiosk', hideHud = false, titleTake = false,
+    noGame = false, storageState, ignoreHttpsErrors = false,
     pixFmt = 'yuv420p', crf = 14, preset = 'veryfast', audioDelayMs = 0, titleTimeoutMs = 90000,
   } = o;
   const [w, h] = size.split('x').map(Number);
@@ -133,7 +140,9 @@ export async function recordTake(o) {
   let takeFn = null, takeSetup = null;
   if (takeFile) { const m = await import(pathToFileURL(path.resolve(takeFile)).href); takeFn = m.default || m.take; takeSetup = m.setup || null; }
 
-  const g = await launchGame({ display, url, width: w, height: h, volumes, zoomStep, noSandbox, mode, hideHud, noGoto: titleTake });
+  if (noGame && titleTake) throw new Error('--no-game and --title-take cannot be combined');
+  if (noGame && !takeFile) throw new Error('--no-game needs a take module (--take), which opens the page');
+  const g = await launchGame({ display, url: noGame ? undefined : url, width: w, height: h, volumes, zoomStep, noSandbox, mode, hideHud, noGoto: titleTake, storageState, ignoreHttpsErrors });
   const { page } = g;
   let ff = null, poll = null, t0 = null;
   const errors = [];
@@ -174,6 +183,31 @@ export async function recordTake(o) {
       await sleep(1200);
       const s2 = await slate(page, { ms: slateMs, toneMs: slateMs });
       report.endSlate = { epochMs: s2.epochMs, ctxState: s2.ctxState };
+      await sleep(700);
+      const cpu1 = cpuSample();
+      await ff.stop();
+      report.cpuBusyPct = +(100 * (1 - (cpu1.idle - cpu0.idle) / (cpu1.total - cpu0.total))).toFixed(1);
+      report.loadavg = fs.readFileSync('/proc/loadavg', 'utf8').trim().split(' ').slice(0, 3).map(Number);
+    } else if (noGame) {
+      // Picture-only take of a non-game page. setup(page, null) opens it (and may sign in, type, wait) before recording.
+      report.noGame = true; report.videoOnlyStartSlate = true; report.videoOnlyEndSlate = true;
+      if (takeSetup) await takeSetup(page, null);
+      await sleep(500);
+      report.window = await page.evaluate(() => ({ iw: innerWidth, ih: innerHeight, ow: outerWidth, oh: outerHeight, dpr: devicePixelRatio }));
+      const cpu0 = cpuSample();
+      ff = await startFfmpeg({ display, sink, fps, size, outFile, logFile, pixFmt, crf, preset, audioDelayMs });
+      report.ffmpegSpawnedAt = ff.startedAt; report.ffmpegFirstFrameAt = ff.firstFrameAt;
+      await sleep(700);
+      const s1 = await slate(page, { ms: slateMs, videoOnly: true });
+      t0 = s1.epochMs; report.startSlate = { epochMs: s1.epochMs, ctxState: null };
+      await sleep(500);
+      const mark = (label, data, atEpochMs) => { const t = (atEpochMs ?? Date.now()) - t0; markers.push({ tMs: Math.round(t), label, data: data ?? null }); return t; };
+      mark('take-begin');
+      await takeFn(page, null, mark);
+      mark('take-end');
+      await sleep(500);
+      const s2 = await slate(page, { ms: slateMs, videoOnly: true });
+      report.endSlate = { epochMs: s2.epochMs, ctxState: null };
       await sleep(700);
       const cpu1 = cpuSample();
       await ff.stop();
@@ -270,20 +304,36 @@ export async function recordTake(o) {
 }
 
 // ---- CLI ----
-if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
+const VALUE_FLAGS_BOOL = new Set(['hide-hud', 'title-take', 'no-bridge', 'no-game', 'ignore-https-errors']);
+/** argv -> { flag: value | true }. A flag followed by another flag, or by nothing, is true. */
+export function parseCliArgs(av) {
   const a = {};
-  const av = process.argv.slice(2);
-  for (let i = 0; i < av.length; i++) if (av[i].startsWith('--')) a[av[i].slice(2)] = (av[i + 1] && !av[i + 1].startsWith('--')) ? av[++i] : true;
-  if (!a.display || !a.url || !a.out) { console.error('usage: record-take.mjs --display N --url URL --out BASE [--take FILE] [--fps 30] [--size 1920x1080] [--music 0] [--zoom-step N] [--hide-hud] [--title-take] [--no-sandbox true|false] [--no-bridge] [--preset veryfast|ultrafast] [--audio-delay-ms 65]'); process.exit(2); }
+  for (let i = 0; i < av.length; i++) if (av[i].startsWith('--')) a[av[i].slice(2)] = (!VALUE_FLAGS_BOOL.has(av[i].slice(2)) && av[i + 1] && !av[i + 1].startsWith('--')) ? av[++i] : true;
+  return a;
+}
+
+/** Parsed flags -> recordTake options. Returns { error } when the combination is not usable. */
+export function recordOptionsFromArgs(a) {
+  const noGame = !!a['no-game'];
+  if (!a.display || !a.out || (!noGame && !a.url)) return { error: 'usage' };
+  if (noGame && !a.take) return { error: '--no-game needs --take' };
+  if (noGame && a['title-take']) return { error: '--no-game and --title-take cannot be combined' };
   const volumes = {};
   for (const k of ['music', 'sfx', 'voice', 'master']) if (a[k] !== undefined) volumes[k] = Number(a[k]);
-  const r = await recordTake({
+  return { opts: {
     display: a.display, url: a.url, outBase: a.out, takeFile: a.take, fps: Number(a.fps) || 30, size: a.size || '1920x1080',
     volumes, zoomStep: (a['zoom-step'] ?? a.zoom) !== undefined ? Number(a['zoom-step'] ?? a.zoom) : undefined,
     hideHud: !!a['hide-hud'], titleTake: !!a['title-take'],
     noSandbox: a['no-sandbox'] === undefined ? undefined : a['no-sandbox'] === 'true',
-    bridge: !a['no-bridge'], mode: a.mode || 'kiosk', pixFmt: a['pix-fmt'] || 'yuv420p', preset: a.preset || 'veryfast', audioDelayMs: Number(a['audio-delay-ms']) || 0,
-  });
+    bridge: !a['no-bridge'] && !noGame, mode: a.mode || 'kiosk', pixFmt: a['pix-fmt'] || 'yuv420p', preset: a.preset || 'veryfast', audioDelayMs: Number(a['audio-delay-ms']) || 0,
+    noGame, storageState: typeof a['storage-state'] === 'string' ? a['storage-state'] : undefined, ignoreHttpsErrors: !!a['ignore-https-errors'],
+  } };
+}
+
+if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
+  const { opts, error } = recordOptionsFromArgs(parseCliArgs(process.argv.slice(2)));
+  if (error) { console.error(error === 'usage' ? 'usage: record-take.mjs --display N --url URL --out BASE [--take FILE] [--fps 30] [--size 1920x1080] [--music 0] [--zoom-step N] [--hide-hud] [--title-take] [--no-sandbox true|false] [--no-bridge] [--preset veryfast|ultrafast] [--audio-delay-ms 65]\n       record-take.mjs --no-game --display N --out BASE --take FILE --storage-state FILE [--ignore-https-errors]' : error); process.exit(2); }
+  const r = await recordTake(opts);
   console.log(JSON.stringify(r, null, 2));
   process.exit(r.ok ? 0 : 1);
 }

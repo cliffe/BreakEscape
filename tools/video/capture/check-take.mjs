@@ -4,7 +4,8 @@
  * Finds the start and end slates (white frames in picture, 1 kHz tone in sound), reports the A/V
  * offset at each end (positive = audio late), duplicated/dropped frames, and writes a copy trimmed
  * between the slates (audio shifted by the start-slate offset unless --no-correct).
- * --video-only: title-screen takes, whose start slate has no tone: trims on the two picture slates, no offset check.
+ * --video-only: title-screen takes, whose start slate has no tone, and console takes (record-take --no-game), which have no sound
+ *   at all: trims on the two picture slates, no offset check. A file with no audio stream is accepted only with this option.
  * Also writes <base>.contact.jpg: a contact sheet of the trimmed take (1 frame per second, tiled 6 across, 320 px wide tiles, time-labelled).
  * Exit 0 = pass (offset < threshold ms at both ends and drops+dups < 1%).
  */
@@ -24,8 +25,8 @@ const run = (cmd, args, o = {}) => spawnSync(cmd, args, { maxBuffer: 1 << 30, ..
 // ---- stream info ----
 const probe = JSON.parse(run('ffprobe', ['-v', 'error', '-show_streams', '-show_format', '-of', 'json', file]).stdout.toString());
 const vs = probe.streams.find(s => s.codec_type === 'video'), as = probe.streams.find(s => s.codec_type === 'audio');
-if (!vs || !as) { console.error('missing video or audio stream'); process.exit(1); }
-const vStart = Number(vs.start_time || 0), aStart = Number(as.start_time || 0);
+if (!vs || (!as && !opt['video-only'])) { console.error('missing video or audio stream'); process.exit(1); }
+const vStart = Number(vs.start_time || 0), aStart = as ? Number(as.start_time || 0) : 0;
 const [fn, fd] = vs.avg_frame_rate.split('/').map(Number); const fps = fn / fd;
 
 // ---- picture: per-frame mean luma ----
@@ -38,7 +39,7 @@ const vSlates = vRuns.filter(r => r.n >= 1);
 
 // ---- sound: 1 kHz Goertzel on 16 kHz mono ----
 const SR = 16000;
-const pcm = run('ffmpeg', ['-v', 'error', '-i', file, '-vn', '-ac', '1', '-ar', String(SR), '-f', 's16le', '-']).stdout;
+const pcm = !as ? Buffer.alloc(0) : run('ffmpeg', ['-v', 'error', '-i', file, '-vn', '-ac', '1', '-ar', String(SR), '-f', 's16le', '-']).stdout;
 const samples = new Int16Array(pcm.buffer, pcm.byteOffset, Math.floor(pcm.length / 2));
 const WIN = 80; // 5 ms
 const coef = 2 * Math.cos(2 * Math.PI * 1000 / SR);
@@ -74,7 +75,7 @@ if (opt['video-only'] && vSlates.length >= 2) {
   if (!opt['no-trim']) {
     const out = opt.out || base + '.trimmed.mkv';
     const t0 = vs0.end + 0.05, t1 = vs1.start - 0.05;
-    const r = run('ffmpeg', ['-y', '-v', 'error', '-ss', String(t0), '-i', file, '-t', String(t1 - t0), '-map', '0:v', '-map', '0:a', '-c:v', 'libx264', '-crf', '14', '-preset', 'veryfast', '-pix_fmt', vs.pix_fmt, '-c:a', 'pcm_s16le', out]);
+    const r = run('ffmpeg', ['-y', '-v', 'error', '-ss', String(t0), '-i', file, '-t', String(t1 - t0), '-map', '0:v', '-map', '0:a?', '-c:v', 'libx264', '-crf', '14', '-preset', 'veryfast', '-pix_fmt', vs.pix_fmt, '-c:a', 'pcm_s16le', out]);
     res.trimmed = r.status === 0 ? { out, fromS: +t0.toFixed(3), toS: +t1.toFixed(3), audioShiftMs: 0 } : { error: r.stderr.toString().slice(-300) };
   }
 } else if (vSlates.length >= 2 && aRuns.length >= 2) {

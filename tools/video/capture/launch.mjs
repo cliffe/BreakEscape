@@ -16,6 +16,7 @@
  *   hideHud   true -> inject CSS hiding HUD overlays (see HUD_CSS); minigame and dialogue overlays stay visible
  *   storageState  Playwright storageState file (login.mjs output). launchPersistentContext has no storageState option,
  *             so its cookies are added to the context and its localStorage is replayed by an init script.
+ *   ignoreHttpsErrors  true -> accept a self-signed certificate (default false)
  *   env BE_SWIFTSHADER=1  adds --enable-unsafe-swiftshader (software GL on a box with no GPU); off by default
  *   profileDir  fresh dir per run (default: mkdtemp under $VIDEO_STATE_DIR or os tmpdir)
  */
@@ -89,6 +90,7 @@ export async function launchGame(opts) {
 
   const context = await chromium.launchPersistentContext(profile, {
     headless: false,
+    ignoreHTTPSErrors: !!opts.ignoreHttpsErrors,   // off by default (Playwright's default); the console take sets it for the dev box's self-signed certificate
     chromiumSandbox: !noSandbox,   // Playwright adds --no-sandbox itself unless this is true
     executablePath: findChromium(),
     viewport: null,
