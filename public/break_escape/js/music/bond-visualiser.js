@@ -101,7 +101,7 @@ let siemSparkline = new Float32Array(120);
 let siemSparkIdx = 0;
 let siemRuleHits  = {};
 let siemLastSpawn = 0;
-let cctvFeedList = [], cctvCells = [], cctvFrame = 0, cctvKicks = 0, cctvLastWallCut = 0, cctvMotionCell = 0, cctvLastMotionLog = -9999;
+let cctvFeedList = [], cctvCells = [], cctvKicks = 0, cctvLastWallCut = 0, cctvMotionCell = 0, cctvLastMotionLog = -9999;
 const SIEM_SEVERITIES = ['CRITICAL','HIGH','MEDIUM','LOW','INFO'];
 const SIEM_SEV_COLS   = { CRITICAL:'#FF003C', HIGH:'#FF6600', MEDIUM:'#FFD700', LOW:'#00FFFF', INFO:'#00FF41' };
 const SIEM_SOURCES    = ['FW-PERIMETER','IDS-NORTH','WAF-01','ENDPOINT-XDR','CLOUD-SIEM','VPN-GW','DNS-FILTER','PROXY-01','SIEM-CORE','AD-MONITOR','SOAR-ENGINE'];
@@ -1247,6 +1247,22 @@ function _cctvLoad() {
     });
 }
 
+/** The room in CCTV green, made once per image: a per-frame blend on nine feeds costs too much. */
+function _cctvTinted(img) {
+    if (img._cctvTinted) return img._cctvTinted;
+    const c = document.createElement('canvas');
+    c.width = img.naturalWidth; c.height = img.naturalHeight;
+    const ctx = c.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+    const d = ctx.getImageData(0, 0, c.width, c.height), px = d.data;
+    for (let i = 0; i < px.length; i += 4) {
+        const l = Math.min(255, (0.3 * px[i] + 0.59 * px[i + 1] + 0.11 * px[i + 2]) * 1.1);
+        px[i] = l * 0.66; px[i + 1] = l * 0.91; px[i + 2] = l * 0.72;
+    }
+    ctx.putImageData(d, 0, 0);
+    return (img._cctvTinted = c);
+}
+
 function _cctvLayout(W, H) {
     const cols = W >= H ? 3 : 2, rows = 3, gap = PIX * 2, margin = PIX * 3;
     const cw = Math.floor((W - margin * 2 - gap * (cols - 1)) / cols / PIX) * PIX;
@@ -1284,7 +1300,6 @@ function _cctvTimestamp() {
 
 function drawCCTV(data, W, H, audio) {
     const { kick, mid, high } = audio;
-    cctvFrame++;
     _visCtx.imageSmoothingEnabled = false;
     _visCtx.fillStyle = '#030605'; _visCtx.fillRect(0, 0, W, H);
 
@@ -1319,7 +1334,7 @@ function drawCCTV(data, W, H, audio) {
         c.tearLife = 1; c.tearY = Math.random() * 0.8; c.tearH = 0.05 + Math.random() * 0.15;
     }
 
-    const t = cctvFrame / 60;
+    const t = performance.now() / 1000; // the clock, not frames: slow machines draw fewer
     const fontPx = Math.max(6, Math.min(10, Math.floor(layout[0].w / 40)));
     const stamp = _cctvTimestamp();
     const recOn = Math.floor(t * 2) % 2 === 0;
@@ -1341,13 +1356,7 @@ function drawCCTV(data, W, H, audio) {
             sw /= z; sh /= z;
             const sx = (iw - sw) * (0.5 + 0.5 * Math.sin(t * 0.12 + cell.phase));
             const sy = (ih - sh) * (0.5 + 0.25 * Math.sin(t * 0.07 + cell.phase * 1.7));
-            _visCtx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
-            // Grey, then a green cast, then a kick-driven brightness lift
-            _visCtx.globalCompositeOperation = 'saturation';
-            _visCtx.globalAlpha = 0.85; _visCtx.fillStyle = '#808080'; _visCtx.fillRect(x, y, w, h);
-            _visCtx.globalCompositeOperation = 'multiply';
-            _visCtx.globalAlpha = 1; _visCtx.fillStyle = '#a8e8b8'; _visCtx.fillRect(x, y, w, h);
-            _visCtx.globalCompositeOperation = 'source-over';
+            _visCtx.drawImage(_cctvTinted(img), sx, sy, sw, sh, x, y, w, h);
             _visCtx.fillStyle = `rgba(200,255,210,${kickNSmooth * 0.08})`; _visCtx.fillRect(x, y, w, h);
         } else {
             _cctvStatic(x, y, w, h, 0.5);
@@ -1375,7 +1384,7 @@ function drawCCTV(data, W, H, audio) {
         // Scanlines and a slow rolling bar
         _visCtx.fillStyle = 'rgba(0,0,0,0.28)';
         for (let yy = y; yy < y + h; yy += PIX) _visCtx.fillRect(x, yy, w, 1);
-        const rollY = y + ((cctvFrame * 1.5 + i * 37) % (h + PIX * 8)) - PIX * 8;
+        const rollY = y + ((t * 90 + i * 37) % (h + PIX * 8)) - PIX * 8;
         _visCtx.fillStyle = 'rgba(220,255,230,0.05)'; _visCtx.fillRect(x, rollY, w, PIX * 8);
 
         // Motion box on one camera when the mids push
@@ -1391,7 +1400,7 @@ function drawCCTV(data, W, H, audio) {
             });
             _visCtx.font = `${fontPx}px "Press Start 2P"`;
             _visCtx.fillText('MOTION', bx, by - PIX * 2);
-            if (cctvFrame - cctvLastMotionLog > 600) { cctvLastMotionLog = cctvFrame; addLog(`> MOTION: ${feed.label}`, 'alert'); }
+            if (t - cctvLastMotionLog > 10) { cctvLastMotionLog = t; addLog(`> MOTION: ${feed.label}`, 'alert'); }
         }
 
         // Camera overlay text, with a drop shadow so it reads on bright rooms
@@ -1403,7 +1412,9 @@ function drawCCTV(data, W, H, audio) {
         const pad = PIX * 2;
         text(`CAM ${String(cell.cam).padStart(2, '0')}`, x + pad, y + pad + fontPx, '#E0FFE8');
         _visCtx.textAlign = 'right';
-        text(stamp, x + w - pad, y + pad + fontPx, '#E0FFE8');
+        const camW = _visCtx.measureText('CAM 00').width;
+        const fits = camW + _visCtx.measureText(stamp).width + pad * 3 <= w;
+        text(fits ? stamp : stamp.slice(11), x + w - pad, y + pad + fontPx, '#E0FFE8'); // time only on a narrow feed
         _visCtx.textAlign = 'left';
         if (feed) text(feed.label, x + pad, y + h - pad, '#E0FFE8');
         if (recOn) {
@@ -1644,7 +1655,7 @@ function _setMode(mode) {
     siemEvents=[]; siemAlerts=[]; siemFrame=0; siemThreatScore=0;
     siemSparkline=new Float32Array(120); siemSparkIdx=0;
     SIEM_SEVERITIES.forEach(s => siemRuleHits[s]=0);
-    cctvCells=[]; cctvFrame=0; cctvKicks=0; cctvLastMotionLog=-9999;
+    cctvCells=[]; cctvKicks=0; cctvLastMotionLog=-9999;
 
     // Reset spawn timers relative to the reset frame counters so spawn
     // conditions fire immediately on the very first frame (not after a

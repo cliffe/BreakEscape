@@ -18,7 +18,7 @@ test('room labels: underscores become spaces, upper case', () => {
     assert.equal(C.cctvRoomLabel(undefined), '');
 });
 
-test('feeds: one per distinct room background, every view of a room is its own camera', () => {
+test('feeds: one per distinct room background; every room\'s first view, then the other views', () => {
     const feeds = C.cctvFeeds({ rooms: {
         reception: { chatBackground: 'assets/backgrounds/rooms/a.png' },
         office:    { chatBackground: [
@@ -28,10 +28,12 @@ test('feeds: one per distinct room background, every view of a room is its own c
         ] },
         closet:    {},
         copy:      { chatBackground: 'assets/backgrounds/rooms/a.png' }, // same image, not repeated
+        lobby:     { chatBackground: [{ image: 'assets/backgrounds/rooms/d.png' }] },
     } });
     assert.deepEqual(feeds, [
         { label: 'RECEPTION', image: 'assets/backgrounds/rooms/a.png' },
         { label: 'OFFICE',    image: 'assets/backgrounds/rooms/b.png' },
+        { label: 'LOBBY',     image: 'assets/backgrounds/rooms/d.png' },
         { label: 'OFFICE',    image: 'assets/backgrounds/rooms/c.png' },
     ]);
 });
