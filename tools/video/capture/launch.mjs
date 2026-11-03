@@ -14,6 +14,9 @@
  *   volumes   { music, sfx, voice, master } 0..1 -> localStorage be_*_vol
  *   zoomStep  number -> be_display_settings.zoomStep (+1 = 3x scale for overworld shots)
  *   hideHud   true -> inject CSS hiding HUD overlays (see HUD_CSS); minigame and dialogue overlays stay visible
+ *   storageState  Playwright storageState file (login.mjs output). launchPersistentContext has no storageState option,
+ *             so its cookies are added to the context and its localStorage is replayed by an init script.
+ *   env BE_SWIFTSHADER=1  adds --enable-unsafe-swiftshader (software GL on a box with no GPU); off by default
  *   profileDir  fresh dir per run (default: mkdtemp under $VIDEO_STATE_DIR or os tmpdir)
  */
 import { createRequire } from 'node:module';
@@ -82,6 +85,7 @@ export async function launchGame(opts) {
   ];
   if (mode === 'app' && gameUrl) args.push(`--app=${gameUrl}`); else args.push('--kiosk');
   if (noSandbox) args.push('--no-sandbox');
+  if (process.env.BE_SWIFTSHADER === '1') args.push('--enable-unsafe-swiftshader');
 
   const context = await chromium.launchPersistentContext(profile, {
     headless: false,
@@ -93,6 +97,20 @@ export async function launchGame(opts) {
     ignoreDefaultArgs: ['--enable-automation', '--mute-audio'],
     acceptDownloads: false,
   });
+
+  if (opts.storageState) {
+    const st = JSON.parse(fs.readFileSync(opts.storageState, 'utf8'));
+    if (Array.isArray(st.cookies) && st.cookies.length) await context.addCookies(st.cookies);
+    const origins = Array.isArray(st.origins) ? st.origins : [];
+    if (origins.length) {
+      await context.addInitScript((origins) => {
+        try {
+          const o = origins.find(x => x.origin === location.origin);
+          if (o) for (const { name, value } of (o.localStorage || [])) localStorage.setItem(name, value);
+        } catch (_) {}
+      }, origins);
+    }
+  }
 
   // Settings must exist before any game script runs.
   const vols = {};
@@ -135,11 +153,12 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.a
   const a = {};
   const av = process.argv.slice(2);
   for (let i = 0; i < av.length; i++) if (av[i].startsWith('--')) a[av[i].slice(2)] = (av[i + 1] && !av[i + 1].startsWith('--')) ? av[++i] : true;
-  if (!a.display || !a.url) { console.error('usage: launch.mjs --display N --url URL [--mode kiosk|app] [--no-sandbox true|false] [--hold seconds]'); process.exit(2); }
+  if (!a.display || !a.url) { console.error('usage: launch.mjs --display N --url URL [--mode kiosk|app] [--no-sandbox true|false] [--storage-state FILE] [--hold seconds]'); process.exit(2); }
   const g = await launchGame({
     display: a.display, url: a.url, mode: a.mode || 'kiosk', width: Number(a.width) || 1920, height: Number(a.height) || 1080,
     noSandbox: a['no-sandbox'] === undefined ? undefined : a['no-sandbox'] === 'true',
     volumes: a.music !== undefined ? { music: a.music } : {},
+    storageState: typeof a['storage-state'] === 'string' ? a['storage-state'] : undefined,
   });
   const info = await g.page.evaluate(() => ({ iw: innerWidth, ih: innerHeight, ow: outerWidth, oh: outerHeight, sw: screen.width, sh: screen.height }));
   console.log(JSON.stringify(info));
