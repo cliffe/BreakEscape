@@ -53,3 +53,22 @@ Frames are generated; blink i01 generated. Next, per host:
 - Walk sprites (stage 3 `character` + stage 4 `animate` + stage 6 `import`) for all 5 hosts. NOT started (do not run `character` now — it's 20-40 gen/host).
 - Do NOT edit tools/pixellab_characters.json (coordinator reconciles it).
 </content>
+
+---
+
+# Agent B — walk sprites for ama_owusu, lorna_easton, yusuf_demir, zainab_hussain (2026-11-03)
+
+My 4 hosts only (ama, lorna, yusuf, zainab). All DONE, imported and committed. Nothing left to do.
+
+Per host (stage 3 character --variants 2 -> pick -> stage 4 animate -> qa -> stage 6 import):
+
+- lorna_easton: picked c02 (character ccf1e354-4b1a-4252-a41b-7341bf74e054; brighter on-model blonde, clean maroon jacket/grey top/lanyard). qa clean (walk + idle), combat FACING flags were false positives / stock-template back-recoils. No overrides. Committed 211d81f00.
+- zainab_hussain: picked c01 (f38987a8-6de9-4e8b-b1f1-84a96ff5f5fd; consistent teal hijab, white ID lanyard, tool-belt pouch). animate needed one backfill (4 breathing-idle dirs). qa clean. No overrides. Committed 031524462.
+- yusuf_demir: picked c01 (97cf73a0-aa09-479b-ab4d-57d3111381ae; clear blue lanyard+white ID, beard, olive sweater). REPAIRED breathing-idle south frame_002 (flipped to back view) via `fix yusuf_demir breathing-idle south 2 --use frame:1`; override committed. Committed 1233bdaf7.
+- ama_owusu: picked c01 (c1eb7a48-8af5-4eac-8a00-bec01a6a06e0; fuller afro, glasses, gold lanyard). animate needed one backfill. REPAIRED walk north-east (gold lanyard smeared into a yellow back/arm panel) via `fix ama_owusu walk north-east all --use mirror` (6 override frames from clean NW); committed. Committed 5f8016744.
+
+Shared files: each commit staged only my hunk of tools/pixellab_characters.json (via `git apply --cached` of my hunk) plus my asset/override files. game.js preload was NOT modified by import for these keys. Imports run under flock on the shared lock; no conflicts with Agent A's concurrent commits (delphine/nilesh landed between mine).
+
+Generations: ~270-280 of my share (shared-account balance went 10000 -> 9470 across both agents).
+Contact sheet (8 idle dirs + walk-south strip per host): /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/2133f16a-52c8-44a8-bdee-8461b326389a/scratchpad/hosts_contact.png
+Sprites NOT wired into any scenario (as instructed).
