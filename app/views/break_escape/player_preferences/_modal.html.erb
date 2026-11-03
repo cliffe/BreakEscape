@@ -13,6 +13,8 @@
                   id: 'preference-form-modal',
                   data: { turbo: false } do |f| %>
 
+      <%# Only this part scrolls: the footer below stays in view %>
+      <div class="player-preferences-modal-body">
       <!-- In-Game Name -->
       <div class="form-group">
         <%= f.label :in_game_name, "Your Code Name" %>
@@ -55,16 +57,15 @@
         <%= hidden_field_tag :game_id, @game.id, id: 'preference-modal-game-id' %>
       <% end %>
 
+      </div>
+
       <!-- Submit Buttons -->
       <div class="form-actions modal-footer">
+        <button type="button" id="relaunch-tutorial-btn" class="btn btn-secondary modal-tutorial-button">Relaunch Tutorial</button>
         <%= f.submit 'Save Configuration', class: 'btn btn-primary', id: 'save-preferences-btn' %>
         <button type="button" id="player-preferences-cancel-btn" class="btn btn-secondary">Cancel</button>
       </div>
     <% end %>
-
-    <div class="modal-tutorial-section">
-      <button type="button" id="relaunch-tutorial-btn" class="btn btn-secondary">Relaunch Tutorial</button>
-    </div>
   </div>
 </div>
 
