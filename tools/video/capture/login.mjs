@@ -10,7 +10,8 @@
  * Prints one JSON line {ok, email, state, signed_in_again}; exit 0 on success, 1 otherwise.
  *
  * Form (app/views/devise/sessions/new.html.erb): #user_email (user[email]), #user_password (user[password]),
- * submit input[name="sign_in"] ("Sign in with token"). Accounts used here have no MFA, so the token box stays empty.
+ * "Email me a token" (input[name=email_token]) then user[otp_code_token] and "Sign in with token" (sign_in).
+ * The token is read from the dev mail folder (--mail-dir, default Hacktivity tmp/letter_opener) and never printed or saved.
  */
 import { createRequire } from 'node:module';
 import fs from 'node:fs';
@@ -21,13 +22,13 @@ const require = createRequire(import.meta.url);
 const loadPlaywright = () => require(process.env.NODE_PATH ? path.join(process.env.NODE_PATH.split(':')[0], 'playwright') : 'playwright');
 
 export function parseArgs(argv) {
-  const a = { baseUrl: 'https://localhost:3000' };
+  const a = { baseUrl: 'https://localhost:3000', mailDir: '/home/deploy/Hacktivity/tmp/letter_opener' };
   for (let i = 0; i < argv.length; i++) {
     const k = argv[i];
-    if (k === '--email' || k === '--out' || k === '--base-url') {
+    if (k === '--email' || k === '--out' || k === '--base-url' || k === '--mail-dir') {
       const v = argv[++i];
       if (v === undefined || v.startsWith('--')) throw new Error(`${k} needs a value`);
-      if (k === '--email') a.email = v; else if (k === '--out') a.out = v; else a.baseUrl = v;
+      if (k === '--email') a.email = v; else if (k === '--out') a.out = v; else if (k === '--mail-dir') a.mailDir = v; else a.baseUrl = v;
     } else if (k === '--password' || k.startsWith('--password=')) {
       throw new Error('the password is read from PLAYTEST_PASSWORD, not from arguments');
     } else throw new Error(`unknown argument ${k}`);
@@ -48,18 +49,44 @@ async function isSignedIn(page, baseUrl) {
   return !onSignInPage(page) && (await page.locator('form#new_user').count()) === 0;
 }
 
-export async function signIn(page, baseUrl, email, password) {
+const submitWith = (page, name) => Promise.all([
+  page.waitForLoadState('domcontentloaded'),
+  page.locator('form#new_user').evaluate((f, n) => {
+    const b = f.querySelector(`input[name="${n}"]`);
+    if (f.requestSubmit) f.requestSubmit(b || undefined); else f.submit();
+  }, name),
+]);
+
+// Newest letter_opener message not in `seen`, addressed to `email`, holding "Your one time token is: TOKEN".
+// The token is returned to the caller only; it is never logged, printed or saved.
+export function findToken(mailDir, seen, email) {
+  let names = [];
+  try { names = fs.readdirSync(mailDir); } catch (_) { return null; }
+  for (const n of names.filter(x => !seen.has(x)).sort().reverse()) {
+    let t;
+    try { t = fs.readFileSync(path.join(mailDir, n, 'plain.html'), 'utf8'); } catch (_) { continue; }
+    if (!t.includes(`<dd>${email}</dd>`)) continue;
+    const m = /Your one time token is:\s*([A-Za-z0-9]+)/.exec(t);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+export async function signIn(page, baseUrl, email, password, { mailDir, timeoutMs = 60000 } = {}) {
+  const seen = new Set(); try { for (const n of fs.readdirSync(mailDir)) seen.add(n); } catch (_) {}
   await page.goto(baseUrl + '/users/sign_in', { waitUntil: 'domcontentloaded' });
   await page.fill('#user_email', email);
   await page.fill('#user_password', password);
   // The submit buttons carry a "disabled" class until the page script has run; submit the form directly.
-  await Promise.all([
-    page.waitForLoadState('domcontentloaded'),
-    page.locator('form#new_user').evaluate((f) => {
-      const b = f.querySelector('input[name="sign_in"]');
-      if (f.requestSubmit) f.requestSubmit(b || undefined); else f.submit();
-    }),
-  ]);
+  await submitWith(page, 'email_token');
+  let token = null;
+  for (const end = Date.now() + timeoutMs; Date.now() < end && !(token = findToken(mailDir, seen, email));) await new Promise(r => setTimeout(r, 1000));
+  if (!token) throw new Error('no token email arrived');
+  await page.goto(baseUrl + '/users/sign_in', { waitUntil: 'domcontentloaded' });
+  await page.fill('#user_email', email);
+  await page.fill('#user_password', password);
+  await page.fill('#user_otp_code_token', token);
+  await submitWith(page, 'sign_in');
   await page.waitForLoadState('networkidle').catch(() => {});
   return !onSignInPage(page) && (await page.locator('form#new_user').count()) === 0;
 }
@@ -76,7 +103,7 @@ export async function ensureLogin(opts, password, { executablePath } = {}) {
       again = have;
       if (have) await context.clearCookies();
       if (!password) throw new Error('PLAYTEST_PASSWORD is not set');
-      if (!await signIn(page, opts.baseUrl, opts.email, password)) throw new Error('sign-in failed');
+      if (!await signIn(page, opts.baseUrl, opts.email, password, { mailDir: opts.mailDir, timeoutMs: opts.mailTimeoutMs })) throw new Error('sign-in failed');
     }
     fs.mkdirSync(path.dirname(opts.out), { recursive: true });
     await context.storageState({ path: opts.out });
