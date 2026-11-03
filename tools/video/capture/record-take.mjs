@@ -59,18 +59,25 @@ function cpuSample() {
   return { idle, total: l.reduce((a, b) => a + b, 0) };
 }
 
-async function startFfmpeg({ display, sink, fps, size, outFile, logFile, pixFmt, crf, preset, audioDelayMs = 0 }) {
-  const args = [
+// ffmpeg capture argument list. Uses `-vsync cfr` (not `-fps_mode`): `-vsync` is understood by ffmpeg 4.2
+// through 7 (deprecated but functional on the newer ones), while `-fps_mode` only exists from ffmpeg 5.0,
+// so the dev Hacktivity box (ffmpeg 4.2.7) could not record. Both force a constant frame rate.
+export function recordFfmpegArgs({ display, sink, fps, size, outFile, pixFmt, crf, preset, audioDelayMs = 0 }) {
+  return [
     '-y', '-hide_banner',
     '-thread_queue_size', '1024', '-use_wallclock_as_timestamps', '1',
     '-f', 'x11grab', '-draw_mouse', '0', '-framerate', String(fps), '-video_size', size, '-i', `:${display}`,
     '-thread_queue_size', '1024', '-use_wallclock_as_timestamps', '1',
     ...(audioDelayMs ? ['-itsoffset', String(audioDelayMs / 1000)] : []),   // audio leads picture: delay it
     '-f', 'pulse', '-ar', '48000', '-ac', '2', '-i', `${sink}.monitor`,
-    '-fps_mode', 'cfr', '-r', String(fps),
+    '-vsync', 'cfr', '-r', String(fps),
     '-c:v', 'libx264', '-crf', String(crf), '-preset', preset, '-pix_fmt', pixFmt,
     '-c:a', 'pcm_s16le', outFile,
   ];
+}
+
+async function startFfmpeg({ display, sink, fps, size, outFile, logFile, pixFmt, crf, preset, audioDelayMs = 0 }) {
+  const args = recordFfmpegArgs({ display, sink, fps, size, outFile, pixFmt, crf, preset, audioDelayMs });
   const log = fs.createWriteStream(logFile);
   const proc = spawn('ffmpeg', args, { stdio: ['pipe', 'ignore', 'pipe'] });
   const st = { proc, startedAt: Date.now(), firstFrameAt: null, last: '', speeds: [], exited: null };

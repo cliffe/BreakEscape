@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 
 const cap = join(dirname(fileURLToPath(import.meta.url)), '../../tools/video/capture');
-const { parseCliArgs, recordOptionsFromArgs } = await import(join(cap, 'record-take.mjs'));
+const { parseCliArgs, recordOptionsFromArgs, recordFfmpegArgs } = await import(join(cap, 'record-take.mjs'));
 const vc = await import(join(cap, 'takes/vm_console.mjs'));
 
 test('record-take: existing game options are unchanged without --no-game', () => {
@@ -33,6 +33,17 @@ test('record-take: --no-game needs no url, switches the bridge off and takes the
   assert.equal(r.opts.ignoreHttpsErrors, true);
   assert.match(recordOptionsFromArgs(parseCliArgs(['--no-game', '--display', '97', '--out', '/o/c'])).error, /--take/);
   assert.match(recordOptionsFromArgs(parseCliArgs(['--no-game', '--title-take', '--display', '97', '--out', '/o/c', '--take', 't'])).error, /title-take/);
+});
+
+test('record-take: ffmpeg args force CFR with -vsync, never -fps_mode (ffmpeg 4.2 compatibility)', () => {
+  const args = recordFfmpegArgs({ display: 97, sink: 'be_rec_97', fps: 30, size: '1920x1080', outFile: '/o/t.mkv', pixFmt: 'yuv420p', crf: 14, preset: 'ultrafast' });
+  assert.ok(!args.includes('-fps_mode'), '-fps_mode is unknown to ffmpeg 4.2.7 and must not be used');
+  const i = args.indexOf('-vsync');
+  assert.ok(i >= 0 && args[i + 1] === 'cfr', '-vsync cfr forces a constant frame rate on every ffmpeg version');
+  const r = args.indexOf('-r');
+  assert.ok(r >= 0 && args[r + 1] === '30', 'output frame rate is set');
+  assert.ok(args.includes(':97') && args.includes('be_rec_97.monitor'), 'grabs display :97 and the pulse monitor');
+  assert.equal(args[args.length - 1], '/o/t.mkv', 'the output file is last');
 });
 
 test('vm_console: desktop credentials parse from user:password and JSON', () => {
