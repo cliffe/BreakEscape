@@ -244,6 +244,10 @@
     "landing_payroll_login_domain": "",
     "se_landing_pages": {},
     "se_landing_drafts": {},
+    "se_captures": {},
+    <%# Set from lord_mail.ink when Sofia runs the attached executable; unlocks the remote-desktop
+        PC container (sofia_remote) that presents the foothold. %>
+    "phish_lord_foothold": false,
 
     "pierce_influence": 0,
     "pierce_latched": "",
@@ -515,7 +519,11 @@
       "ask_open_attached": { "part": "ask", "text": "Can you open the attached file and check it, please?", "slots": [],
         "urgency": "low" },
       "ask_view_portal": { "part": "ask", "text": "Please sign in to the portal to view it.", "slots": [],
-        "urgency": "low" }
+        "urgency": "low" },
+      <%# The pressure ask for the executable route: borrowed authority (Jed) + urgency. A pressured
+          junior runs the attached installer; Finance/Careers never do (phish-rules runsExecutable). %>
+      "ask_run_setup": { "part": "ask", "text": "Jed asked me to get the attached setup run on your machine before payroll closes today — can you open it now?", "slots": [],
+        "flags": ["borrowed_authority"], "urgency": "high" }
     },
 
     "mailClient": {
@@ -565,7 +573,11 @@
         { "id": "kit_cv", "label": "CV.docx", "kind": "document" },
         { "id": "kit_balance_sheet", "label": "Q3-balance-sheet.xlsx", "kind": "spreadsheet" },
         { "id": "kit_memo", "label": "Memo.pdf", "kind": "pdf" },
-        { "id": "kit_payroll_page", "label": "Payroll portal link", "kind": "link", "landingPageId": "payroll_login" }
+        { "id": "kit_payroll_page", "label": "Payroll portal link", "kind": "link", "landingPageId": "payroll_login" },
+        <%# The crude executable payload. Nobody runs it unless they are a pressured junior who
+            authors runsExecutable (Sofia). An .exe would be stripped by a real mail gateway — the
+            point is the human, not the file; Tomasz names the modern disguise in the debrief. %>
+        { "id": "kit_installer", "label": "Setup.exe", "kind": "executable" }
       ],
       "checklistTiming": "onSend",
       "bodyMode": "templates",
@@ -840,7 +852,7 @@
           "from": ["from_named"],
           "greeting": ["greet_named"],
           "pretext": ["pretext_payslip", "pretext_password"],
-          "ask": ["ask_view_portal"]
+          "ask": ["ask_view_portal", "ask_run_setup"]
         },
         "primedFor": {
           "distinctiveValues": ["staff_portal_name", "mon_6th"],
@@ -848,6 +860,12 @@
           "trusts": ["portal"],
           "story": "a payslip notice from the staff portal she uses"
         },
+        <%# The executable route (the "human is the exploit" beat). Sofia runs an attached .exe only
+            under pressure: high urgency and a borrowed-authority ask. The foothold presents as a
+            remote desktop — the sofia_remote PC container, unlocked by phish_lord_foothold (set from
+            lord_mail.ink when she runs it). Finance/Careers have no runsExecutable, so they refuse. %>
+        "runsExecutable": { "minUrgency": "high", "requiresTell": "borrowed_authority" },
+        "foothold": { "host": "LW-FIN-07", "note": "ran Setup.exe", "containerId": "sofia_remote" },
         "requiredFactors": ["senderTrust", "addressedTo", "pretextRelevant", "linkCredible"],
         "advisoryFactors": ["senderAuth", "urgencyCalibrated"],
         "factorStrings": {
@@ -1720,6 +1738,50 @@
           "locked": false,
           "observations": "A terminal collecting what the campaign has captured so far.",
           "minigameData": { "landingPageId": "payroll_login", "view": "captures" }
+        },
+        {
+          <%# The exe foothold's payoff: a remote desktop on Sofia's machine. Locked until she runs
+              Setup.exe (phish_lord_foothold). Shows that a foothold is access to the person's files
+              and, from there, more credentials — the compromise the hands-on VM lab used to teach. %>
+          "type": "pc",
+          "id": "sofia_remote",
+          "name": "Remote Session — LW-FIN-07",
+          "position": "as-type:pc",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A remote desktop session opened on Sofia Lord's workstation.",
+          "minigameData": {
+            "requiresGlobal": "phish_lord_foothold",
+            "lockedMessage": "No session yet. Get the executable run on her machine first."
+          },
+          "contents": [
+            {
+              "type": "text_file",
+              "name": "Payroll_Q3_draft.xlsx",
+              "takeable": false,
+              "readable": true,
+              "text": "DRAFT — Q3 payroll run\n\nStaff net pay, sort codes and account numbers for the whole Finance team.\n\n(On a real engagement this is the point: the installer gave you her session, and her session reaches everything she can.)",
+              "observations": "A payroll working file open on her desktop"
+            },
+            {
+              "type": "text_file",
+              "name": "logins.txt",
+              "takeable": false,
+              "readable": true,
+              "text": "Notes to self:\n- Portal: Sofia2026! (same as laptop)\n- Shared drive maps on sign-in\n\nReusing one password means this foothold is now every account that password opens.",
+              "observations": "A plain-text password note on her desktop"
+            },
+            {
+              "type": "text_file",
+              "name": "README_this_is_simulated.txt",
+              "takeable": false,
+              "readable": true,
+              "text": "Simulated for training. No real machine was accessed and nothing here is real. In the engagement you would screenshot the access as proof, report it, and stop — you do not read staff files.",
+              "observations": "A reminder that this session is simulated"
+            }
+          ]
         },
         {
           "type": "phone",

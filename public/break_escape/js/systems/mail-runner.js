@@ -121,6 +121,10 @@ export function emailVarsFromResult(target, message, result, { account = null, i
         email_ok_addressedTo: factorPass('addressedTo'),
         email_ok_pretextRelevant: factorPass('pretextRelevant'),
         email_attachment: isStr(res.attachment) ? res.attachment : 'none',
+        // Whether the send carried an executable payload, so a character's ink can tell an exe
+        // attack from a credential one (the foothold/remote-desktop route). The composer sets
+        // attachmentKind from the kit item's kind.
+        email_is_executable: msg.attachmentKind === 'executable',
         email_link: isStr(res.link) ? res.link : 'none',
         email_claimed_sender: isStr(res.claimedSender) ? res.claimedSender : '',
         email_urgency: isStr(advisory.urgency) ? advisory.urgency : 'low',

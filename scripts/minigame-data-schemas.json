@@ -414,5 +414,11 @@
       "filesLabel",
       "completionText"
     ]
+  },
+  "pc": {
+    "optional": [
+      "requiresGlobal",
+      "lockedMessage"
+    ]
   }
 }

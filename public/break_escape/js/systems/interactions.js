@@ -1091,20 +1091,18 @@ export function handleObjectInteraction(sprite) {
     // authenticator-device, kiosk, page-builder, report-workstation, exercise-station.
     const objectType = sprite.scenarioData.type;
     if (objectType !== 'mail_terminal' && hasMinigameStarter(objectType)) {
-        // Engagement report workstation (P6-W): optional stage gate (R-b5). The lab keys this
-        // on the phishing stage (sends_done, set once all three targets have landed) so the
-        // report cannot be written, and its tasks cannot complete out of order, before the aim
-        // it belongs to has unlocked. Read from the object's own minigameData, so it is inert
-        // for any mission that does not set it.
-        if (objectType === 'report-workstation') {
-            const gate = sprite.scenarioData.minigameData && sprite.scenarioData.minigameData.requiresGlobal;
-            if (typeof gate === 'string' && gate &&
-                !(window.gameState && window.gameState.globalVariables && window.gameState.globalVariables[gate] === true)) {
-                const msg = (sprite.scenarioData.minigameData && sprite.scenarioData.minigameData.lockedMessage) ||
-                    'There is nothing to write up yet.';
-                window.gameAlert(msg, 'info', sprite.scenarioData.name || 'Report Workstation', 3500);
-                return;
-            }
+        // Optional stage gate: an object whose minigameData sets `requiresGlobal` stays locked
+        // until that global is true, showing `lockedMessage` (R-b5). The report workstation keys
+        // it on the phishing stage (sends_done) so the report can't be written out of order; the
+        // SE lab's remote desktop keys it on the exe foothold (phish_lord_foothold). Read from the
+        // object's own minigameData, so it is inert for any object that does not set it.
+        const gate = sprite.scenarioData.minigameData && sprite.scenarioData.minigameData.requiresGlobal;
+        if (typeof gate === 'string' && gate &&
+            !(window.gameState && window.gameState.globalVariables && window.gameState.globalVariables[gate] === true)) {
+            const msg = (sprite.scenarioData.minigameData && sprite.scenarioData.minigameData.lockedMessage) ||
+                'This is not available yet.';
+            window.gameAlert(msg, 'info', sprite.scenarioData.name || 'Locked', 3500);
+            return;
         }
         startRegisteredMinigame(objectType, sprite);
         return;
@@ -1421,7 +1419,21 @@ export function handleObjectInteraction(sprite) {
     }
     
     const data = sprite.scenarioData;
-    
+
+    // Optional stage gate: any object whose minigameData sets `requiresGlobal` stays locked until
+    // that global is true (mirrors the minigame-starter gate above, for containers and other
+    // objects that dispatch here). Inert for any object that does not set it. The SE lab's remote
+    // desktop (sofia_remote, a pc container) keys this on the exe foothold (phish_lord_foothold).
+    {
+        const gate = data.minigameData && data.minigameData.requiresGlobal;
+        if (typeof gate === 'string' && gate &&
+            !(window.gameState && window.gameState.globalVariables && window.gameState.globalVariables[gate] === true)) {
+            const msg = (data.minigameData && data.minigameData.lockedMessage) || 'This is not available yet.';
+            window.gameAlert(msg, 'info', data.name || 'Locked', 3500);
+            return;
+        }
+    }
+
     // Flag lock opened by a flag-station reward elsewhere: say where, rather than
     // opening a prompt that would reject every flag typed into it
     if (isRemoteFlagLock(data)) {
