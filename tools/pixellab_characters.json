@@ -495,6 +495,15 @@
     },
     "imported": "2026-10-17"
   },
+  "lorna_easton": {
+    "character_id": "ccf1e354-4b1a-4252-a41b-7341bf74e054",
+    "name": "Make portrait for Lorna Easton\nA white woman from ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-03"
+  },
   "lyle_dillard": {
     "character_id": "274429e7-ac0b-476f-a1e9-973922a5cae9",
     "name": "Make portrait for Lyle Dillard\nA big, heavy-set wh...",
