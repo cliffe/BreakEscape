@@ -10,6 +10,8 @@
  *
  *   node playtest-session.js --url <game-url> [--speed fast|human] [--headless]
  *                            [--vw 1400] [--vh 1000]     (or env VW / VH)
+ *                            [--storage-state FILE]      (signed-in browser state from tools/video/capture/login.mjs)
+ *                            [--hacktivity-dir PATH] [--game-id ID]   (VM steps; or env HACKTIVITY_DIR)
  *
  * Commands (one JSON object per line):
  *   {"cmd":"bootstrap","tutorial":"decline","resume":"new"}   (stops at an open briefing: briefingPending:true,
@@ -48,6 +50,10 @@
  *   {"cmd":"toasts"}                         → text of every toast shown since the last call
  *   {"cmd":"screenshot","path":"/tmp/x.png"} → ONLY for diagnosing a failure
  *   {"cmd":"eval","fn":"() => window.__test.scan(400)"}
+ *   {"cmd":"vm","step":"recon","args":{}}   → {job} at once (needs --hacktivity-dir and --game-id)
+ *   {"cmd":"vm","list":true}              → the solve's steps
+ *   {"cmd":"vmwait","job":"vm-1"}          → blocks until the step ends; its JSON line (run it in the background)
+ *                                            flag refs come back as refs; submit "<vmflag:REF>" at a station
  *   {"cmd":"quit"}
  *
  * Speed presets control only pacing, never correctness — waits stay
@@ -62,6 +68,7 @@ const readline = require('readline');
 const fs = require('fs');
 const path = require('path');
 const { briefTasks } = require('./brief-tasks');
+const { createVmSteps } = require('./vm-steps');
 
 const args = process.argv.slice(2);
 const argv = {};
@@ -144,6 +151,13 @@ function substituteFlags(node, at) {
   return node;
 }
 
+const vmSteps = createVmSteps({
+  hacktivityDir: typeof argv['hacktivity-dir'] === 'string' ? argv['hacktivity-dir'] : process.env.HACKTIVITY_DIR,
+  gameId: typeof argv['game-id'] === 'string' ? argv['game-id'] : (process.env.PLAYTEST_GAME_ID || undefined),
+  command: process.env.PLAYTEST_VM_STEP_CMD ? process.env.PLAYTEST_VM_STEP_CMD.split(' ') : undefined,
+  log: logLine
+});
+
 (async () => {
   if (!argv.url) { emit({ ok: false, error: 'missing --url' }); process.exit(1); }
 
@@ -157,7 +171,10 @@ function substituteFlags(node, at) {
     headless: argv.headless === true || argv.headless === 'true',
     args: [`--window-size=${VW},${VH}`]
   });
-  const page = await browser.newPage({ viewport: { width: VW, height: VH } });
+  const storageState = typeof argv['storage-state'] === 'string' ? argv['storage-state'] : undefined;
+  if (storageState && !fs.existsSync(storageState)) { emit({ ok: false, error: `missing --storage-state file: ${storageState}` }); await browser.close(); process.exit(1); }
+  const context = await browser.newContext({ viewport: { width: VW, height: VH }, ...(storageState ? { storageState } : {}) });
+  const page = await context.newPage();
 
   // Toast capture. Installed before any page script runs, so it sees toasts
   // raised during load. Watches the whole document for added .notification
@@ -995,6 +1012,9 @@ function substituteFlags(node, at) {
     speed: (c) => { Object.assign(speed, SPEEDS[c.value] || speed); return { ok: true, speed: c.value }; },
 
     /** What --flags supplied, and every <flag:N> used so far. Never earned in-game. */
+    vm: (c) => vmSteps.vm(c),
+    vmwait: (c) => vmSteps.vmwait(c),
+
     flags: () => ({ ok: true, configured: FLAGS.length, used: flagUses, logPath }),
 
     /**
@@ -1020,9 +1040,11 @@ function substituteFlags(node, at) {
     try { cmd = JSON.parse(text); }
     catch (e) { emit({ ok: false, error: 'bad-json', line: text.slice(0, 200) }); continue; }
 
-    logLine('in', { cmd });
+    logLine('in', { cmd: vmSteps.redact(cmd) });
     if (cmd.cmd === 'quit') { logLine('out', { event: 'quit', commands: seq, flagsUsed: flagUses.length }); break; }
     cmd = substituteFlags(cmd, cmd.cmd);
+    try { cmd = await vmSteps.substituteVmFlags(cmd, cmd.cmd); }
+    catch (err) { emit({ ok: false, cmd: cmd.cmd, error: String(err && err.message || err), ...(err && err.hint ? { hint: err.hint } : {}) }); continue; }
     const handler = handlers[cmd.cmd];
     if (!handler) { emit({ ok: false, error: `unknown-cmd:${cmd.cmd}` }); continue; }
 
@@ -1034,6 +1056,7 @@ function substituteFlags(node, at) {
     }
   }
 
+  vmSteps.shutdown();
   await browser.close();
   emit({ ok: true, event: 'session-closed', commands: seq, flagsUsed: flagUses.length, logPath });
   process.exit(0);

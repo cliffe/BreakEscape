@@ -507,6 +507,7 @@ Missions like m02 include steps performed on a real VM (SSH in, exploit ProFTPD,
 
 | Policy              | Behaviour                                                                                                                                                                        |
 | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `vm-step`           | Real VMs under a Hacktivity playtest game: run the mission's named solve steps and submit `<vmflag:REF>`. The only automated policy that earns a flag. See "VM steps" below |
 | `session` (default) | Submit `<flag:N>`, substituted from the `--flags` XML given at session start. The normal choice for any non-VM playthrough                                                       |
 | `pause`             | Stop and wait for the user to do the VM work themselves, then continue. Only meaningful where VMs actually exist — and the only policy that can produce a solvability pass       |
 | `test-flags`        | Submit the positional stand-in `test:flag:1`, `test:flag:2`, … Use only when no real flags were seeded; it proves the station wiring and nothing else                            |
@@ -534,11 +535,39 @@ The game is developed in two places, and a playtest must work in both:
 
 Note the token is **not** `flag{1}` — SecGen XML often uses `flag{1}`…`flag{4}` as the actual values, so that form is always treated literally and never positionally.
 
-Where VMs genuinely exist and the point of the run is to verify the VM work itself, use `pause` and let a human do it; `test:flag:N` proves the station, rewards and task wiring, and nothing about whether the box is exploitable.
+### VM steps (a Hacktivity playtest game with real VMs)
+
+Setup and recovery are in Hacktivity's `docs/vm_playtest/RUNBOOK.md` (read it first; commands, environment, `--status`, `--bump`, `--start`, `--finish`). The game runs on Hacktivity as a playtest account, not standalone, so there is no `--flags` XML: flags are earned from the VM.
+
+You run **named steps only**. You never run a command on a VM and never see or write exploit text; the solve (`lib/playtest/solves/<mission>.rb` in Hacktivity) holds that and `vm_step.rb` runs it. Start the session with the extra options:
+
+```bash
+PLAYTEST_PASSWORD=... node tools/video/capture/login.mjs --email <playtest account>   # prints the storage state file
+tools/playtest/session-start.sh --url <game url> --storage-state <that file> \
+  --game-id <id> --hacktivity-dir <path to Hacktivity> --log tools/playtest/<mission>-session.jsonl
+```
+
+`login.mjs` signs in through the Devise form (password from `PLAYTEST_PASSWORD`, token from the dev letter_opener folder), saves a Playwright storage state per account and signs in again when the session has timed out. `HACKTIVITY_DIR` replaces `--hacktivity-dir`. One browser per game: quit this session before any filming.
+
+Order of a run:
+
+1. Play the game to the VM launcher (the Kali post-it gives the desktop login) as for any scenario.
+2. Run the steps in the order `{"cmd":"vm","list":true}` shows (`requires` says what must come first). `desktop_login` first, with the credentials you read in game:
+   `{"cmd":"vm","step":"desktop_login","args":{"desktop_user":"...","desktop_pass":"..."}}`.
+   Inputs the game hands the player (a sticky-note password) go in `args`; they are kept out of the session log.
+3. `vm` returns `{"job":"vm-1"}` at once. Collect it with `{"cmd":"vmwait","job":"vm-1"}`, sent through `cmd.sh` **with a timeout and `run_in_background`**, so a long step costs no tokens and the 60 s default does not cut it off: `tools/playtest/cmd.sh <game id> '{"cmd":"vmwait","job":"vm-1"}' 1800`. The session handles commands one at a time, so browser commands queue behind a pending `vmwait`; send them after it returns. The reply is the step's JSON (`ok`, `exit`, `seconds`, `flags` as refs, `facts_used`, `summary`). Exit 1 is a step that ran and did not meet its check; exit 2 is a refusal. Report both as findings with the JSON; do not retry blindly (steps are safe to repeat, but a repeat that fails the same way is the finding).
+4. A flag comes back as a ref such as `shatter_server:flag_1`. At the flag station type the token `<vmflag:shatter_server:flag_1>`; the session fetches the value (`vm_step.rb --flag-value`), substitutes it and logs `source: "vm-step"`. Never ask for or write a flag value yourself.
+5. At the end run `BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/verify-run.rb --log <session log> <game id>` (in the Break Escape checkout, as for any run): flags with `source: "vm-step"` count as **earned in game** in the earned-secrets table; `--flags` and `test:flag` stay "handed over". A log claiming more VM-earned flags than the game recorded fails.
+
+**Finishing.** On a pass, the orchestrator runs `mission_vm_session.rb --game <id> --finish`; on a failure, `--finish --keep` (the set is kept for 24 hours; relinquish later). You do not run either, and you never delete, rebuild or revert anything.
+
+**Escalation if you are stopped by the safety classifier.** Do not retry or reword. Report to the orchestrator `{"blocked":"classifier","step":"<step name>","session":"<TAG>"}` and stop. The orchestrator starts one opus48 subagent with a clean context (the same task brief and the session tag, without the earlier transcript), which resumes at that step in the same live session. If that agent is stopped too, the orchestrator asks the user. Because you only name steps, this should be rare.
+
+Where VMs genuinely exist outside a Hacktivity playtest game and the point of the run is to verify the VM work itself, use `pause` and let a human do it; `test:flag:N` proves the station, rewards and task wiring, and nothing about whether the box is exploitable.
 
 Real flag values still work everywhere, so `flags` and `test-flags` can be mixed in one run. Never set the flag global directly.
 
-Pick the policy from the purpose of the run (see "What a playtest is for"). `test-flags` is right for plumbing and for unexpected-behaviour runs, and is the only option in standalone. It is never a solvability pass: a flag that could not be earned in this run is a row marked "no" in the earned-secrets table, and everything downstream of it is exercised but unproven. Only `pause`, with a human doing the VM work, turns that row into a "yes".
+Pick the policy from the purpose of the run (see "What a playtest is for"). `test-flags` is right for plumbing and for unexpected-behaviour runs, and is the only option in standalone. It is never a solvability pass: a flag that could not be earned in this run is a row marked "no" in the earned-secrets table, and everything downstream of it is exercised but unproven. Only `vm-step` (named steps on a Hacktivity playtest game) or `pause` (a human doing the VM work) turns that row into a "yes".
 
 ---
 
