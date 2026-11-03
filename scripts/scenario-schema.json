@@ -4327,6 +4327,10 @@
               "enum": ["video-call"],
               "description": "Alias for videoCall: true."
             },
+            "callLabel": {
+              "type": "string",
+              "description": "(voiced phone call) The caption under the caller's name on the call screen (e.g. 'SAFETYNET secure line'). Absent, the contact's callLabel, else 'Voice call'."
+            },
             "videoLabel": {
               "type": "string",
               "description": "(videoCall) The meeting-tool name on the video-call bar. Absent, the bar keeps the default 'SECURE VIDEO LINK'."
@@ -4383,6 +4387,10 @@
           "type": "string",
           "enum": ["person-chat", "phone-chat", "video-call"],
           "description": "Trigger a cutscene. 'person-chat' opens a full-screen overlay. 'phone-chat' opens the phone-chat minigame. 'video-call' opens the person-chat overlay framed as a secure video call with a player self-view PiP (works for phone NPCs too). All require targetKnot."
+        },
+        "callLabel": {
+          "type": "string",
+          "description": "(phone-chat with voiced: true) The caption under the caller's name on the call screen (e.g. 'SAFETYNET secure line'). Absent, the contact's callLabel, else 'Voice call'."
         },
         "videoLabel": {
           "type": "string",

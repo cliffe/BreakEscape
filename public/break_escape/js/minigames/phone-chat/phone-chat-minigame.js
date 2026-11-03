@@ -218,6 +218,15 @@ export class PhoneChatMinigame extends MinigameScene {
             if (phoneCloseLocked(this.params)) return;
             this.closeConversation();
         });
+        // A call screen's end-call button does what the back arrow does, and a forced
+        // call has none either
+        if (this.ui.elements.callEndButton) {
+            if (phoneCloseLocked(this.params)) this.ui.elements.callEndButton.style.display = 'none';
+            this.addEventListener(this.ui.elements.callEndButton, 'click', () => {
+                if (phoneCloseLocked(this.params)) return;
+                this.closeConversation();
+            });
+        }
         
         // Notepad button (context-aware: saves contact list or conversation)
         const notebookBtn = document.getElementById('minigame-notebook');
@@ -957,7 +966,12 @@ export class PhoneChatMinigame extends MinigameScene {
         const mine = pending && pending[0] === raw.trim() ? pending.shift() : null;
         const run = this._typeoutRun;
         await whenSessionOverlayClosed();
-        await this._callVoice?.speak(voice.speakerId, voice.text, this.npcManager.getNPC(voice.speakerId)?.voice?.fx || null);
+        this.ui?.setCallSpeaking?.(true);
+        try {
+            await this._callVoice?.speak(voice.speakerId, voice.text, this.npcManager.getNPC(voice.speakerId)?.voice?.fx || null);
+        } finally {
+            this.ui?.setCallSpeaking?.(false);
+        }
         if (mine !== null && run === this._typeoutRun && this._pendingNpcMessages === pending) pending.unshift(mine);
     }
 
@@ -991,8 +1005,10 @@ export class PhoneChatMinigame extends MinigameScene {
                 this._callVoice = new PhoneCallVoice(new TTSManager());
                 this.addEventListener(this.ui.elements.messagesContainer, 'click', () => this._callVoice?.skip());
             }
+            this.ui?.setCallSpeaking?.(true);
             await this._callVoice.speak(voice.speakerId, voice.text, this.npcManager.getNPC(voice.speakerId)?.voice?.fx || null);
-        } catch (e) { console.warn('⚠️ outcome line voice failed:', e?.message); }
+            this.ui?.setCallSpeaking?.(false);
+        } catch (e) { this.ui?.setCallSpeaking?.(false); console.warn('⚠️ outcome line voice failed:', e?.message); }
     }
 
     /**

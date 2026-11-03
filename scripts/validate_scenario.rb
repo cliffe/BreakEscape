@@ -410,7 +410,7 @@ def check_unknown_fields(json_data)
   known_npc_fields = %w[
     id displayName npcType position spriteSheet spriteTalk spriteVisemes spriteConfig
     voice behavior globalVarOnKO restartOnRetalk reopenRefreshesHub livePreview taskOnKO koImmune storyPath callId currentKnot avatar
-    phoneId phoneTheme handle profile voiced unlockable externalVariables persistentVariables
+    phoneId phoneTheme handle profile voiced callLabel unlockable externalVariables persistentVariables
     timedMessages timedConversation eventMappings itemsHeld puzzle_graph_actions
     observations disableClose los rfidCard chatBackground spriteStyle gender portraitVariants _comment
   ]
@@ -433,7 +433,7 @@ def check_unknown_fields(json_data)
   known_event_mapping_fields = %w[
     eventPattern condition onceOnly maxTriggers cooldown fireOnlyWhenLoaded delayMs
     bark message barkDelay
-    targetKnot conversationMode background disableClose resume voiced videoLabel participantTag
+    targetKnot conversationMode background disableClose resume voiced callLabel videoLabel participantTag
     patrolOverride setPatrolSpeed setDwellMultiplier setVisible
     sendTimedMessage sendEmail setGlobal completeTask skipTask unlockTask unlockAim unlockDoor
     openMinigame endingCheck
