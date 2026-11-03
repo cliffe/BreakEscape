@@ -73,7 +73,9 @@ B.atoms = [
   { id: 'lindqvist_gift', room: 'b_kitchen', facts: ['b_lindqvist_grievance'], req: () => true, place: "Lindqvist's copy of his complaint" },
   { id: 'lindqvist_code', room: 'b_kitchen', facts: [], progress: true, req: S => S.has('tomas_odd') },
   { id: 'badge_log', room: 'b_server', facts: ACCESS, req: S => S.has('lindqvist_code'), place: 'the badge log in the server room' },
-  { id: 'dhcp', room: 'b_server', facts: DEVICE, req: S => S.has('lindqvist_code'), place: 'the DHCP printout in the server room' },
+  // M2: the printout is now the device list terminal (forensic_data_platform, t_b_device_list on its reviewedVar):
+  // same room, same four facts in one batch, so the atom id 'dhcp' is kept for the older scripts.
+  { id: 'dhcp', room: 'b_server', facts: DEVICE, req: S => S.has('lindqvist_code'), place: 'the network device list in the server room' },
 ];
 B.openingS8 = ['hr_summary', 'tomas_unhappy', 'tomas_gadgets', 'tomas_pay', 'lindqvist_gift'];
 B.openingRooms = ['b_office', 'b_kitchen'];
@@ -132,6 +134,10 @@ A.atoms = [
   { id: 'bar_kind', room: 'a_hall', facts: [], witness: 'barstaff', kindWord: true, progress: true, req: () => true },
   // R7: the intern's once-only kind word (§9.2: each witness has one; it unlocks a flavour hint, +20 influence)
   { id: 'intern_kind', room: 'a_hall', facts: [], witness: 'intern', kindWord: true, progress: true, req: () => true },
+  // M2 (CATALOGUE §5, P1): the lodge laptop in the hall (osint-workstation, one forum site); the post signed by
+  // Delacroix's bookseller handle is a second route to his want (the intern stays the first). Not a witness, so
+  // no charge; once held, the intern's Delacroix topic disappears (a clue topic goes once its fact is held).
+  { id: 'osint_delacroix_want', room: 'a_hall', facts: ['a_delacroix_wants_codex'], req: () => true, place: 'the lodge forum on the hall laptop' },
   // cloakroom: lockpick (start inventory)
   { id: 'coat_venn', room: 'a_cloakroom', facts: ['a_venn_ward_charm'], req: (S, m) => coatsOpen(m), v: { costGated: true } },
   { id: 'coat_ishikawa', room: 'a_cloakroom', facts: ['a_ishikawa_ward_charm', 'a_ishikawa_notebook'], req: (S, m) => coatsOpen(m), v: { costGated: true } },
