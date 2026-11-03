@@ -39,6 +39,13 @@ const LANDING_CHOICE_KEYS = ['brand', 'purpose', 'domainId', 'logo', 'wording', 
 const LANDING_VICTIM_KEYS = ['visited', 'submitted', 'noticed'];
 const LANDING_TELL_IDS = ['brand', 'purpose', 'domain', 'logo', 'wording', 'form', 'padlock', 'formOrigin', 'hoverMismatch'];
 
+// se_captures: one entry per phish target the campaign got something from (a credential sign-in
+// or a document/exe foothold). The closed key set mirrors systems/captures.js CAPTURE_ENTRY_KEYS;
+// the social-captures test asserts they stay in step. Sanitised here so a hand-edited or older
+// save can never push an unknown key to the server (defence in depth, as for the landing state).
+const CAPTURES_KEY = 'se_captures';
+const CAPTURE_ENTRY_KEYS = ['targetId', 'roleLabel', 'address', 'kind', 'secret', 'host', 'note', 'at'];
+
 const json = v => JSON.stringify(v);
 
 const isPlainObject = v => v != null && typeof v === 'object' && !Array.isArray(v);
@@ -85,7 +92,14 @@ function guardLandingState(globals) {
   if (Object.prototype.hasOwnProperty.call(globals, LANDING_DRAFTS_KEY)) {
     globals[LANDING_DRAFTS_KEY] = sanitizeLandingMap(globals[LANDING_DRAFTS_KEY], sanitizeLandingChoices);
   }
+  if (Object.prototype.hasOwnProperty.call(globals, CAPTURES_KEY)) {
+    globals[CAPTURES_KEY] = sanitizeLandingMap(globals[CAPTURES_KEY], sanitizeCaptureEntry);
+  }
 }
+
+// One capture entry: the eight closed keys only; a non-object becomes {} so nothing unexpected
+// is sent. The map is keyed by target id (sanitizeLandingMap keeps the keys as-is).
+const sanitizeCaptureEntry = entry => (isPlainObject(entry) ? pickKeys(entry, CAPTURE_ENTRY_KEYS) : {});
 
 /**
  * Periodic state synchronisation with the server.
