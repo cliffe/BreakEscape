@@ -12,6 +12,11 @@
  *   BondVisualiser.open()    — show fullscreen overlay & start render
  *   BondVisualiser.close()   — hide overlay & stop render
  *   BondVisualiser.toggle()  — toggle open/close
+ *
+ * Once opened with missionOver (the mission has concluded and the credits roll),
+ * it cannot be closed back into the game: the close control becomes EXIT MISSION,
+ * which leaves the game (success-screen.js returnToMissions), and Esc, toggle()
+ * and the end-of-track auto-close do nothing.
  *   BondVisualiser.isOpen()  — returns boolean
  *
  * Auto-opens when MusicController switches to the 'victory' playlist.
@@ -26,6 +31,7 @@ import { silenceBackgroundForEnding, AUDIO_HOLD_TEXT } from './ending-audio.js';
 import { displayDashes } from '../utils/display-dashes.js';
 import { resolveCreditsTheme, getCreditsTheme, trackInfoLabel, DEFAULT_CREDITS_THEME, scenarioCreditsOverlay, nextCreditsHeader, creditsHeader, nextCreditsText, creditsStatus } from './credits-theme.js';
 import { cardHoldMs } from './closing-sequence.js';
+import { returnToMissions } from '../ui/success-screen.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────
 const PIX = 4; // pixel block size for all drawing
@@ -47,6 +53,7 @@ let _creditsHideTimer = null;  // setTimeout handle for deferred display:none af
 let _creditsActive    = false;
 let _autoCloseOnEnd   = false; // close visualiser when musiccontroller:trackended fires
 let _disableClose     = false; // hide × and block Esc — for forced/cutscene contexts
+let _missionOver      = false; // past the point of no return: × becomes EXIT MISSION, never unset
 
 // ── MusicController state ─────────────────────────────────────────────────
 let _mcState   = {};
@@ -1668,6 +1675,10 @@ function _open_overlay(opts = {}) {
     // Record whether we should auto-close when the track ends
     if (opts.autoClose !== undefined) _autoCloseOnEnd = !!opts.autoClose;
 
+    // missionOver — the mission has concluded: no way back into the game
+    if (opts.missionOver) _missionOver = true;
+    _applyCloseLabel();
+
     // disableClose — hide × button and block Esc
     _disableClose = !!opts.disableClose;
     const closeBtn = document.getElementById('bv-close-btn');
@@ -1679,8 +1690,17 @@ function _open_overlay(opts = {}) {
     if (opts.autoStop) MusicController.stopAfterCurrentTrack();
 }
 
+/** The header control: ✕ CLOSE, or EXIT MISSION once the mission is over. */
+function _applyCloseLabel() {
+    const btn = document.getElementById('bv-close-btn');
+    if (!btn) return;
+    btn.textContent = _missionOver ? '⏏ EXIT MISSION' : '✕ CLOSE';
+    btn.classList.toggle('bv-exit-btn', _missionOver);
+    btn.title = _missionOver ? 'The mission is over: leave the game' : '';
+}
+
 function _close_overlay() {
-    if (_disableClose) return;
+    if (_disableClose || _missionOver) return;
     _open = false;
     _autoCloseOnEnd = false;
     _disableClose   = false;
@@ -1749,9 +1769,11 @@ function _init() {
         }
     });
 
-    // Close button
+    // Close button (EXIT MISSION once the mission is over)
     document.getElementById('bv-close-btn').addEventListener('click', () => {
-        if (!_disableClose) BondVisualiser.close();
+        if (_disableClose) return;
+        if (_missionOver) returnToMissions();
+        else BondVisualiser.close();
     });
 
     // Skip / Pause
@@ -1810,6 +1832,7 @@ export const BondVisualiser = {
      * @param {boolean}  [opts.autoClose]    - close the visualiser when musiccontroller:trackended fires
      * @param {boolean}  [opts.autoStop]     - stop music after current track ends; visualiser stays open
      * @param {boolean}  [opts.disableClose] - hide × button and block Esc (forced/cutscene mode)
+     * @param {boolean}  [opts.missionOver]  - the mission has concluded: × becomes EXIT MISSION and nothing closes it
      * @param {string}   [opts.headerText]   - header in place of MISSION COMPLETE // AUDIO INTEL; kept by later opens without credits
      * @param {string}   [opts.statusText]   - STATUS row value in place of MONITORING; same rules as headerText
      */
@@ -1820,6 +1843,8 @@ export const BondVisualiser = {
     toggle() { _open ? _close_overlay() : _open_overlay({}); },
     /** Returns true if the overlay is currently visible. */
     isOpen() { return _open; },
+    /** True once it has been opened with missionOver: it can no longer be closed. */
+    isMissionOver() { return _missionOver; },
     /**
      * Suppress (or re-enable) the auto-open that fires when the music playlist
      * switches to 'victory'. Set while a conclusion decision is pending, so the

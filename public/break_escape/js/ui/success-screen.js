@@ -107,7 +107,13 @@ export function _resetSuccessScreen() {
     pending = false;
 }
 
-function returnToMissions(deps) {
+/**
+ * Leave the game for wherever the host sends a finished player: the shell's
+ * debrief, the app's home, or the missions list (closing a Hacktivity tab).
+ * Also the visualiser's EXIT MISSION once the credits have rolled.
+ * @param {Object} [deps]  test seams: { navigate, closeTab, schedule }
+ */
+export function returnToMissions(deps = {}) {
     const w = win();
     const navigate = deps.navigate || ((url) => { w.location.href = url; });
     const closeTab = deps.closeTab || (() => { w.close(); });

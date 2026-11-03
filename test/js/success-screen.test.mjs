@@ -68,7 +68,7 @@ test('handleMissionConcluded: success calls showSuccessScreen; the other types a
         om.handleMissionConcluded({ aimId: 'd' });
         assert.deepEqual(calls.map((c) => c[0]), ['success', 'bond_visualiser', 'end_screen']);
         assert.equal(calls[0][1], success);
-        assert.deepEqual(calls[1][1], {});
+        assert.deepEqual(calls[1][1], { missionOver: true });
     } finally {
         window.showSuccessScreen = saved.s; window.showEndScreen = saved.e; window.BondVisualiser = saved.b;
     }
