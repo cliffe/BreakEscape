@@ -77,11 +77,29 @@ export async function signIn(page, baseUrl, email, password, { mailDir, timeoutM
   await page.goto(baseUrl + '/users/sign_in', { waitUntil: 'domcontentloaded' });
   await page.fill('#user_email', email);
   await page.fill('#user_password', password);
-  // The submit buttons carry a "disabled" class until the page script has run; submit the form directly.
+  const waitForToken = async () => {
+    let token = null;
+    for (const end = Date.now() + timeoutMs; Date.now() < end && !(token = findToken(mailDir, seen, email));) await new Promise(r => setTimeout(r, 1000));
+    if (!token) throw new Error('no token email arrived');
+    return token;
+  };
+  // Hacktivity's page script hides the token field and asks for the token by fetch, then shows the
+  // field in place (email and password stay in the form). Do what a person does there.
+  if (!(await page.locator('#user_otp_code_token').isVisible())) {
+    await page.click('input[name="email_token"]');
+    await page.locator('#user_otp_code_token').waitFor({ state: 'visible', timeout: 30000 });
+    const token = await waitForToken();
+    await page.fill('#user_otp_code_token', token);
+    await Promise.all([
+      page.waitForURL(u => !/\/users\/sign_in/.test(u.pathname), { timeout: 30000 }).catch(() => {}),
+      page.click('input[name="sign_in"]'),
+    ]);
+    await page.waitForLoadState('networkidle').catch(() => {});
+    return !onSignInPage(page) && (await page.locator('form#new_user').count()) === 0;
+  }
+  // A plain form (no page script): submit the form directly for the token, then sign in.
   await submitWith(page, 'email_token');
-  let token = null;
-  for (const end = Date.now() + timeoutMs; Date.now() < end && !(token = findToken(mailDir, seen, email));) await new Promise(r => setTimeout(r, 1000));
-  if (!token) throw new Error('no token email arrived');
+  const token = await waitForToken();
   await page.goto(baseUrl + '/users/sign_in', { waitUntil: 'domcontentloaded' });
   await page.fill('#user_email', email);
   await page.fill('#user_password', password);
