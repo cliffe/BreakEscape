@@ -62,6 +62,15 @@
     },
     "imported": "2026-11-01"
   },
+  "ama_owusu": {
+    "character_id": "c1eb7a48-8af5-4eac-8a00-bec01a6a06e0",
+    "name": "Make portrait for Ama Owusu\nA Black British woman ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-03"
+  },
   "amy_clarke": {
     "character_id": "32c736ae-0ffa-48eb-b493-3fd0d71c19d0",
     "name": "Make portrait for Amy Clarke\nA white British woman...",
