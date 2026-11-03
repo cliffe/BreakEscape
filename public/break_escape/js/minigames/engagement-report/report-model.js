@@ -21,6 +21,8 @@
 // correct control chosen. A step's `onCompleteGlobal` is set when its items are done, and
 // the block's `onCompleteGlobal` (report_filed) when every step is done.
 
+import { captureList, capturesReveal } from '../../systems/captures.js';
+
 export const STATE_KEY = 'se_report_state';
 
 /** The report's fixed copy; `engagement.report.strings` overrides any key. */
@@ -32,7 +34,7 @@ export const DEFAULT_REPORT_STRINGS = {
     findingsHint: 'Pair each finding with its root cause and a control. Findings are about processes, not people.',
     noLandingPage: 'No landing page in this engagement.'
 };
-const RESULT_PANELS = ['mail', 'pages', 'calls'];
+const RESULT_PANELS = ['mail', 'pages', 'calls', 'footholds'];
 
 const isTrue = (v) => v === true;
 const int = (v) => (Number.isFinite(v) ? v : 0);
@@ -174,6 +176,13 @@ export function buildReportModel(social, globals, mailState) {
 
     // ── results: pages ──────────────────────────────────────────────────────
     const pageRecords = g.se_landing_pages && typeof g.se_landing_pages === 'object' ? g.se_landing_pages : {};
+    // Captured sign-in addresses (credential captures), only when the scenario reveals them.
+    // Captures carry no page id, so every submitted page's line lists the same addresses.
+    const captures = captureList(g);
+    const revealed = capturesReveal(social)
+        ? [...new Set(captures.filter((c) => c.kind === 'credential' && typeof c.address === 'string' && c.address)
+            .map((c) => c.address))].join(', ')
+        : '';
     const pages = (Array.isArray(social?.landingPages) ? social.landingPages : [])
         .filter((p) => p && typeof p.id === 'string')
         .map((p) => {
@@ -190,9 +199,18 @@ export function buildReportModel(social, globals, mailState) {
                 sent: !!victim, // a victim record is written on every send that carries the page (00 §11a)
                 visited: !!victim && victim.visited === true,
                 submitted: !!victim && victim.submitted === true,
-                noticed: !!victim && victim.noticed === true
+                noticed: !!victim && victim.noticed === true,
+                ...(victim && victim.submitted === true && revealed ? { captured: revealed } : {})
             };
         });
+
+    // ── results: footholds (role label only, never a name) ──────────────────
+    const footholds = captures.filter((c) => c.kind === 'foothold').map((c) => ({
+        targetId: c.targetId,
+        roleLabel: c.roleLabel || 'A member of staff',
+        host: c.host || '',
+        note: c.note || ''
+    }));
 
     // ── results: calls ──────────────────────────────────────────────────────
     const calls = (Array.isArray(social?.pretextNpcs) ? social.pretextNpcs : [])
@@ -288,9 +306,11 @@ export function buildReportModel(social, globals, mailState) {
     for (const s of steps) if (s.done && s.onCompleteGlobal && !isTrue(g[s.onCompleteGlobal])) toSet.push(s.onCompleteGlobal);
     if (complete && block.onCompleteGlobal && !isTrue(g[block.onCompleteGlobal])) toSet.push(block.onCompleteGlobal);
 
-    // Which result panels show: `results` lists any of mail/pages/calls (default all three).
+    // Which result panels show: `results` lists any of mail/pages/calls/footholds (default mail/pages/calls, plus footholds when one was captured).
     const panels = Array.isArray(block.results)
-        ? RESULT_PANELS.filter((k) => block.results.includes(k)) : RESULT_PANELS.slice();
+        ? RESULT_PANELS.filter((k) => block.results.includes(k))
+        // Default: the original three, plus footholds only when a foothold was captured.
+        : RESULT_PANELS.filter((k) => k !== 'footholds' || footholds.length > 0);
     const strings = { ...DEFAULT_REPORT_STRINGS };
     if (block.strings && typeof block.strings === 'object') {
         for (const k of Object.keys(DEFAULT_REPORT_STRINGS)) {
@@ -310,6 +330,7 @@ export function buildReportModel(social, globals, mailState) {
             mail,
             pages,
             calls,
+            footholds,
             // This test cannot see whether staff reported the attempts; a live engagement would add it (stage 6).
             unseenNote: block.unseenNote ||
                 'This test cannot see whether staff reported the attempts. A live engagement would measure that too.'

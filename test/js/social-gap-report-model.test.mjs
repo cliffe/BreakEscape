@@ -1,7 +1,7 @@
 // Gap tests for minigames/engagement-report/report-model.js: empty and malformed inputs,
 // restore of saved report state, completion boundaries, label resolution and the toSet list.
 // Run with: bin/test-js test/js/social-gap-report-model.test.mjs
-import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdtempSync, mkdirSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -11,8 +11,12 @@ import assert from 'node:assert/strict';
 const here = dirname(fileURLToPath(import.meta.url));
 const js = join(here, '../../public/break_escape/js');
 const dir = mkdtempSync(join(tmpdir(), 'social-gap-report-model-'));
-writeFileSync(join(dir, 'report-model.mjs'), readFileSync(join(js, 'minigames/engagement-report/report-model.js'), 'utf8'));
-const { buildReportModel, readReportState, confirmId, STATE_KEY } = await import(pathToFileURL(join(dir, 'report-model.mjs')).href);
+writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
+for (const rel of ['minigames/engagement-report/report-model.js', 'systems/captures.js']) {
+    mkdirSync(dirname(join(dir, rel)), { recursive: true });
+    writeFileSync(join(dir, rel), readFileSync(join(js, rel), 'utf8'));
+}
+const { buildReportModel, readReportState, confirmId, STATE_KEY } = await import(pathToFileURL(join(dir, 'minigames/engagement-report/report-model.js')).href);
 
 const opt = (id, correct = false) => ({ id, text: id, correct });
 

@@ -13,7 +13,7 @@ const js = join(here, '../../public/break_escape/js');
 const dir = mkdtempSync(join(tmpdir(), 'social-reuse-'));
 writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
 for (const rel of ['minigames/engagement-report/report-model.js', 'minigames/landing-page-builder/landing-page-model.js',
-    'minigames/landing-page-builder/landing-page-render.js']) {
+    'minigames/landing-page-builder/landing-page-render.js', 'systems/captures.js']) {
     mkdirSync(dirname(join(dir, rel)), { recursive: true });
     writeFileSync(join(dir, rel), readFileSync(join(js, rel), 'utf8'));
 }
