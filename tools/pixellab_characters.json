@@ -360,6 +360,15 @@
     },
     "imported": "2026-11-01"
   },
+  "gwen_pritchard": {
+    "character_id": "cb0a2a4e-91cd-4b95-b259-ad2566b6dd10",
+    "name": "Make portrait for Gwen Pritchard\nA white Welsh wom...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-03"
+  },
   "halina_kowalczyk": {
     "character_id": "a444c74f-b8ea-4d0a-b26e-c9e0eb98c29d",
     "name": "Make portrait for Agent Halina Kowalczyk\nA sturdy,...",
