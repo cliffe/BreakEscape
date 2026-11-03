@@ -173,7 +173,7 @@ const vmSteps = createVmSteps({
   });
   const storageState = typeof argv['storage-state'] === 'string' ? argv['storage-state'] : undefined;
   if (storageState && !fs.existsSync(storageState)) { emit({ ok: false, error: `missing --storage-state file: ${storageState}` }); await browser.close(); process.exit(1); }
-  const context = await browser.newContext({ viewport: { width: VW, height: VH }, ...(storageState ? { storageState } : {}) });
+  const context = await browser.newContext({ viewport: { width: VW, height: VH }, ignoreHTTPSErrors: true, ...(storageState ? { storageState } : {}) });
   const page = await context.newPage();
 
   // Toast capture. Installed before any page script runs, so it sees toasts
