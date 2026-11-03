@@ -196,10 +196,17 @@ function listedMode(target, id) {
 }
 
 /** required / advisory / null (not evaluated) for one factor of one send. */
-function modeFor(target, id, message) {
+function modeFor(target, id, message, ctx) {
   const listed = listedMode(target, id);
+  const exeAttack = attachmentKindOf(message, ctx) === 'executable' && !isStr(message.link);
   if (id === 'urgencyCalibrated') return listed ? 'advisory' : null; // never gates
+  if (id === 'attachmentPlausible') {
+    // An attached executable is always judged, so a trusted-looking email alone never lands one.
+    return exeAttack ? 'required' : listed;
+  }
   if (id === 'linkCredible') {
+    // An executable attack carries no link, so the link factor must not gate it for a link target.
+    if (exeAttack) return null;
     if (target.expectedLink) return listed || 'required';
     if (listed) return isStr(message.link) ? listed : null;
     return isStr(message.link) ? 'advisory' : null;
@@ -342,12 +349,39 @@ function judgePretext(target, message, ctx) {
   return n >= need;
 }
 
+/** The kind of the attached payload-kit item (kit kind wins over the message's own tag), or null. */
+function attachmentKindOf(message, ctx) {
+  if (!isStr(message.attachment)) return null;
+  const item = kitItem(ctx, message.attachment);
+  return (item && item.kind) || message.attachmentKind || null;
+}
+
+/**
+ * Whether a target runs an executable attachment (the "human is the exploit" beat). Nobody runs
+ * one unless the target authors a `runsExecutable` block, and then only under pressure: the
+ * message's urgency must reach `minUrgency` (default high) and, when `requiresTell` is set, carry
+ * that template tell (e.g. borrowed_authority). So an obviously-dangerous file still gets run —
+ * by a pressured junior, not because the file was clever. Returns 'pass' (she runs it) or
+ * 'wrong-type' (she won't). Finance/Careers, with no block, always refuse.
+ */
+function judgeExecutable(target, message, ctx) {
+  const cfg = target && target.runsExecutable;
+  if (cfg == null || typeof cfg !== 'object') return 'wrong-type';
+  const urgencyRead = urgencyOf(ctx, message);
+  const minU = cfg.minUrgency in URGENCY_RANK ? cfg.minUrgency : 'high';
+  const urgentEnough = urgencyRead != null && URGENCY_RANK[urgencyRead] >= URGENCY_RANK[minU];
+  const needTell = isStr(cfg.requiresTell) ? cfg.requiresTell : null;
+  const hasTell = !needTell || templateFlagsOf(ctx, message).includes(needTell);
+  return urgentEnough && hasTell ? 'pass' : 'wrong-type';
+}
+
 function judgeAttachment(target, message, ctx) {
+  const kind = attachmentKindOf(message, ctx);
   const expected = target.primedFor && target.primedFor.expectedAttachment;
   if (!isStr(message.attachment)) return expected ? 'missing' : 'pass';
+  // An executable is judged on its own terms (pressure), never against expectedAttachment.
+  if (kind === 'executable') return judgeExecutable(target, message, ctx);
   if (!expected) return 'pass';
-  const item = kitItem(ctx, message.attachment);
-  const kind = (item && item.kind) || message.attachmentKind || null;
   return kind === expected ? 'pass' : 'wrong-type';
 }
 
@@ -477,7 +511,7 @@ export function evaluateMessage(target, message, ctx) {
   let attachmentState = 'none';
   let linkState = 'none';
   for (const id of FACTOR_ORDER) {
-    const mode = modeFor(target, id, message);
+    const mode = modeFor(target, id, message, ctx);
     if (!mode) continue;
     if (id === 'senderTrust') {
       factors.push(entry(target, id, { pass: sender.pass, state: sender.state, mode, detail: sender.detail }));

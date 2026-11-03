@@ -684,3 +684,50 @@ test('senderTrust: an authored mismatch line is used for a name/address mismatch
   const plainFail = evaluateMessage(t, { ...m, headerFrom: { name: 'leeds_baker_full', address: 'leeds_baker_address' } }, ctx());
   assert.equal(factor(plainFail, 'senderTrust').line, 'Unknown sender.');
 });
+
+// ── executable payload under pressure (plans/linear-petting-forest.md, Stage 4) ──
+// An attached .exe is always judged, never against expectedAttachment. Nobody runs it unless the
+// target authors runsExecutable, and then only under pressure (urgency + the borrowed-authority
+// tell). A link target's exe send is not gated by linkCredible (it carries no link).
+
+const exeCtx = () => ctx({
+  templates: { ...FX.templates,
+    ask_run_now: { part: 'ask', text: 'Run the installer now — the partner is waiting on it.', slots: [], urgency: 'high', flags: ['borrowed_authority'] } },
+  payloadKit: [...FX.payloadKit, { id: 'kit_installer', label: 'Setup.exe', kind: 'executable' }]
+});
+const junior = () => ({ ...T.hampshire, runsExecutable: { minUrgency: 'high', requiresTell: 'borrowed_authority' } });
+const exeMsg = (over = {}) => hampApply({ attachment: 'kit_installer',
+  templates: { from: 'from_own', greeting: 'greet_generic', pretext: 'pretext_apply', ask: 'ask_review_cv' }, ...over });
+
+test('a pressured junior runs the executable: urgency + borrowed authority lands it', () => {
+  const msg = exeMsg({ templates: { from: 'from_own', greeting: 'greet_generic', pretext: 'pretext_apply', ask: 'ask_run_now' } });
+  const r = evaluateMessage(junior(), msg, exeCtx());
+  assert.equal(factor(r, 'attachmentPlausible').pass, true, 'the exe passes under pressure');
+  assert.equal(r.landed, true);
+});
+
+test('the same junior refuses the executable without the pressure (calm ask)', () => {
+  const r = evaluateMessage(junior(), exeMsg(), exeCtx());   // ask_review_cv: low urgency, no tell
+  assert.equal(factor(r, 'attachmentPlausible').pass, false, 'no pressure, no run');
+  assert.equal(factor(r, 'attachmentPlausible').state, 'wrong-type');
+  assert.equal(r.landed, false);
+});
+
+test('a target with no runsExecutable block never runs the exe, even under full pressure', () => {
+  const msg = exeMsg({ templates: { from: 'from_own', greeting: 'greet_generic', pretext: 'pretext_apply', ask: 'ask_run_now' } });
+  const r = evaluateMessage(T.hampshire, msg, exeCtx());     // the frozen fixture target: no block
+  assert.equal(factor(r, 'attachmentPlausible').pass, false);
+  assert.equal(r.landed, false);
+});
+
+test('attachmentPlausible is forced required for an exe even if the target did not list it', () => {
+  const noList = { ...T.hampshire, requiredFactors: ['senderTrust', 'pretextRelevant'], runsExecutable: { minUrgency: 'high' } };
+  const r = evaluateMessage(noList, exeMsg({ templates: { from: 'from_own', greeting: 'greet_generic', pretext: 'pretext_apply', ask: 'ask_run_now' } }), exeCtx());
+  assert.equal(factor(r, 'attachmentPlausible').mode, 'required', 'the exe is always judged');
+});
+
+test('a link target\'s exe send is not gated by linkCredible (no link in an exe attack)', () => {
+  const internLink = { ...T.lord, runsExecutable: { minUrgency: 'high', requiresTell: 'borrowed_authority' } };
+  const r = evaluateMessage(internLink, exeMsg({ templates: { from: 'from_own', greeting: 'greet_generic', pretext: 'pretext_apply', ask: 'ask_run_now' } }), exeCtx());
+  assert.equal(factor(r, 'linkCredible'), undefined, 'linkCredible is not evaluated for an exe attack');
+});
