@@ -252,7 +252,9 @@ test('wiring: lines redrawn on a reopen are not voiced; close stops and teardown
     assert.match(mgSrc, /this\.history\.addMessage\(line\.type, line\.text, \{ read: true \}\);\n[\s\S]{0,200}if \(line\.type === 'npc' && isVoicedCall\(this\.params\)\) await this\._speakCallLine\(line, raw\);\n\s+return true;/);
     assert.match(mgSrc, /closeConversation\(\) \{[\s\S]{0,120}this\._flushPendingMessages\(\);\n\s+this\._callVoice\?\.stop\(\);/);
     assert.match(mgSrc, /cleanup\(\) \{[\s\S]{0,400}this\._callVoice\?\.destroy\(\);\n\s+this\._callVoice = null;/);
-    assert.equal((mgSrc.match(/_speakCallLine\(/g) || []).length, 2, 'one definition, one call');
+    assert.equal((mgSrc.match(/_speakCallLine\(/g) || []).length, 3, 'one definition, the typeout call and the preloaded opening');
+    // The one redraw that is voiced: a voiced contact's first call, whose opening the phone preloaded
+    assert.match(mgSrc, /if \(onlyPreloaded && npc\.voiced === true && isVoicedCall\(this\.params\) && !this\._pretext\?\.resuming\) \{\n\s+this\._speakPreloadedOpening\(conversationHistory\);/);
     // Same request as person-chat: TTSManager.play → ApiClient.getTTS(npc_id, text) → POST /tts
     assert.match(read('systems/tts-manager.js'), /blob = await ApiClient\.getTTS\(npcId, text\);/);
 });

@@ -615,6 +615,13 @@ export class PhoneChatMinigame extends MinigameScene {
                 this.showCurrentChoices();
             }
 
+            // A first call to a voiced contact (a desk-phone pretext call) opens on the lines the
+            // phone preloaded into its empty thread. Drawn from the history, they were never
+            // spoken (lab: Dev's "Service desk, Dev speaking"), so voice them now.
+            if (onlyPreloaded && npc.voiced === true && isVoicedCall(this.params) && !this._pretext?.resuming) {
+                this._speakPreloadedOpening(conversationHistory);
+            }
+
             // Process any game action tags that were collected during preload but deferred
             // until the player actually opens the conversation (e.g. complete_task, set_global)
             if (npc.deferredTags && npc.deferredTags.length > 0) {
@@ -933,9 +940,10 @@ export class PhoneChatMinigame extends MinigameScene {
      * @param {{type: string, text: string}} line - from classifyPhoneLine
      * @param {string} raw - the line as printed (its entry in _pendingNpcMessages)
      */
-    async _speakCallLine(line, raw) {
-        // Only the call's own lines: a hub reply or text after the call stays silent (F20)
-        if (this.conversation?.callKnots && !this.conversation.isCallLine(raw)) return;
+    async _speakCallLine(line, raw, { preloaded = false } = {}) {
+        // Only the call's own lines: a hub reply or text after the call stays silent (F20).
+        // A preloaded opening came from a throwaway story, so it was never noted as one.
+        if (!preloaded && this.conversation?.callKnots && !this.conversation.isCallLine(raw)) return;
         const contact = this.npcManager.getNPC(this.currentNPCId);
         const voice = phoneLineVoice(displayPhoneLine(line.type, line.text, contact), contact, this.npcManager.npcs);
         if (!voice) return;
@@ -951,6 +959,21 @@ export class PhoneChatMinigame extends MinigameScene {
         await whenSessionOverlayClosed();
         await this._callVoice?.speak(voice.speakerId, voice.text, this.npcManager.getNPC(voice.speakerId)?.voice?.fx || null);
         if (mine !== null && run === this._typeoutRun && this._pendingNpcMessages === pending) pending.unshift(mine);
+    }
+
+    /**
+     * Voice the preloaded opening of a voiced contact's first call, one line after another,
+     * stopping if the thread is closed or swapped meanwhile.
+     * @param {Array<{type: string, text: string}>} messages - the thread's preloaded history
+     */
+    async _speakPreloadedOpening(messages) {
+        const run = this._typeoutRun;
+        for (const msg of messages) {
+            if (!this.isConversationActive || run !== this._typeoutRun) return;
+            if (msg.type !== 'npc') continue;
+            try { await this._speakCallLine(msg, msg.text, { preloaded: true }); }
+            catch (e) { console.warn('⚠️ opening line voice failed:', e?.message); return; }
+        }
     }
 
     /**
