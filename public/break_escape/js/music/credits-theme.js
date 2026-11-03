@@ -18,7 +18,7 @@
  * Pure (no DOM, no imports) so it can be unit tested.
  */
 
-export const ALL_VIS_MODES = ['cybermap', 'wave', 'siem', 'bars', 'circle', 'matrix', 'tunnel', 'plasma', 'particles', 'lissajous'];
+export const ALL_VIS_MODES = ['cybermap', 'wave', 'siem', 'cctv', 'bars', 'circle', 'matrix', 'tunnel', 'plasma', 'particles', 'lissajous'];
 
 export const DEFAULT_CREDITS_THEME = 'safetynet';
 
@@ -34,6 +34,8 @@ export const CREDITS_THEMES = {
         matrixChars:   'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*<>{}[]|/\\ENTROPYSAFETYNET',
         logo:          'shield',
         centreLabel:   'S/N',
+        // CCTV feeds for a scenario with no room backgrounds (cctv-feeds.js)
+        cctvFallback:  ['hq1', 'hq2', 'hq3', 'hq5'].map(n => ({ label: 'SAFETYNET HQ', image: `assets/backgrounds/${n}.png` })),
         stamp:         true,
         rotateOps:     true,
         logCredits:    false,
@@ -58,10 +60,11 @@ export const CREDITS_THEMES = {
 
     cyber: {
         // No threat map: its random city-to-city "ATTACK" arcs and log lines are spy-campaign fiction.
-        modes:         ['wave', 'siem', 'bars', 'circle', 'matrix', 'tunnel', 'plasma', 'particles', 'lissajous'],
+        modes:         ['wave', 'siem', 'cctv', 'bars', 'circle', 'matrix', 'tunnel', 'plasma', 'particles', 'lissajous'],
         matrixChars:   '0123456789ABCDEF{}[]<>/\\|#$%&*=+:;',
         logo:          'padlock',
         centreLabel:   '',
+        cctvFallback:  [], // no agency HQ: a scenario without backgrounds shows NO SIGNAL
         stamp:         false,
         rotateOps:     false,
         logCredits:    true, // the review log echoes each credit line as it is shown
