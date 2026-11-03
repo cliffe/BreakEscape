@@ -501,6 +501,8 @@
     margin-top: 6px;
     padding: 8px 10px;
     background: var(--ui-surface, rgba(24, 30, 48, 0.94));
+    /* The OSINT browser's .cc-panel sets dark text for its cream card; set ours for the dark one. */
+    color: var(--ui-text, #eef1f8);
     border: 1px solid var(--ui-line, #4c5b80);
     border-radius: 2px;
 }
