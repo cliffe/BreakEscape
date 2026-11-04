@@ -27,7 +27,7 @@ for (const rel of [
     'systems/ink/ink-engine.js',
     'minigames/mail-client/mail-client-minigame.js', 'minigames/mail-client/mail-reader.js',
     'minigames/mail-client/mail-data.js', 'minigames/mail-client/mail-notification.js',
-    'minigames/mail-client/mail-composer.js', 'minigames/mail-client/mail-bridge.js',
+    'minigames/mail-client/mail-composer.js', 'minigames/mail-client/mail-bridge.js', 'systems/captures.js',
     'minigames/landing-page-builder/landing-page-model.js'
 ]) {
     try {
