@@ -12,6 +12,7 @@ import { spawnSync } from 'node:child_process';
 const cap = join(dirname(fileURLToPath(import.meta.url)), '../../tools/video/capture');
 const { parseCliArgs, recordOptionsFromArgs, recordFfmpegArgs } = await import(join(cap, 'record-take.mjs'));
 const vc = await import(join(cap, 'takes/vm_console.mjs'));
+const vcb = await import(join(cap, 'takes/vm_console_beats.mjs'));
 
 test('record-take: existing game options are unchanged without --no-game', () => {
   const r = recordOptionsFromArgs(parseCliArgs(['--display', '97', '--url', 'http://x/g/1', '--out', '/o/t', '--take', 't.mjs', '--hide-hud', '--zoom-step', '1', '--music', '0']));
@@ -107,6 +108,28 @@ test('vm_console: SetDesktopSize (type 251) is dropped, other messages pass', ()
   ws.send('text');
   assert.equal(sent.length, 2);
   assert.equal(sent[0][0], 5);
+});
+
+test('vm_console_beats: parseBeats requires a non-empty JSON array and fills defaults', () => {
+  assert.throws(() => vcb.parseBeats({}), /CONSOLE_BEATS/);
+  assert.throws(() => vcb.parseBeats({ CONSOLE_BEATS: 'not json' }), /valid JSON/);
+  assert.throws(() => vcb.parseBeats({ CONSOLE_BEATS: '[]' }), /non-empty/);
+  assert.throws(() => vcb.parseBeats({ CONSOLE_BEATS: '[{"label":"x"}]' }), /no text/);
+  assert.throws(() => vcb.parseBeats({ CONSOLE_BEATS: '[{"label":"bad label","text":"x"}]' }), /simple token/);
+  const p = vcb.parseBeats({ CONSOLE_BEATS: '[{"label":"nmap","text":"cmd one","settleMs":6000},{"text":"cmd two","enter":false}]' });
+  assert.equal(p.beats.length, 2);
+  assert.deepEqual([p.beats[0].label, p.beats[0].text, p.beats[0].enter, p.beats[0].settleMs], ['nmap', 'cmd one', true, 6000]);
+  assert.equal(p.beats[0].delayMs, 110);                 // default per-char delay
+  assert.deepEqual([p.beats[1].label, p.beats[1].enter], ['beat2', false]);  // auto label, no Enter
+  assert.equal(p.beats[1].settleMs, 4000);               // default settle
+});
+
+test('vm_console_beats: GO file and timing settings parse from the environment', () => {
+  const p = vcb.parseBeats({ CONSOLE_BEATS: '[{"text":"x"}]', CONSOLE_GO_FILE: '/t/go', CONSOLE_GO_TIMEOUT_S: '30', CONSOLE_TYPE_DELAY_MS: '90', CONSOLE_BEAT_SETTLE_MS: '2500' });
+  assert.equal(p.goFile, '/t/go');
+  assert.equal(p.goTimeoutS, 30);
+  assert.equal(p.beats[0].delayMs, 90);
+  assert.equal(p.beats[0].settleMs, 2500);
 });
 
 // ---- check-take --video-only on synthetic videos ----
