@@ -1807,7 +1807,12 @@
           "id": "sofia_remote",
           "name": "Remote Session — LW-FIN-07",
           "position": "as-type:pc",
-          "takeable": false,
+          <%# takeable:true is required even though this never renders: the timer's give_item is
+              validated server-side against THIS canonical object (validate_item_collectible →
+              find_accessible_item, which matches it despite active:false), and a takeable:false
+              object is refused ("Item is not takeable"). active:false keeps it out of the room, so
+              takeable:true is inert there — it only lets the inventory grant through. %>
+          "takeable": true,
           "interactable": false,
           "active": false,
           "locked": false,
