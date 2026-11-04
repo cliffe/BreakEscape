@@ -835,6 +835,13 @@ export function handleObjectInteraction(sprite) {
         return;
     }
 
+    // Droppable inventory items (item-drop.js) go down at the player's feet as a
+    // world object an interested NPC can collect (npc-needs.js).
+    if (window.isDroppableInventoryItem?.(sprite, window.inventory?.items)) {
+        window.dropInventoryItem(sprite);
+        return;
+    }
+
     // Consumables (coffee, snacks, a first aid kit) heal the player and are used
     // up (7.1c). A takeable one is picked up first and used from the inventory.
     if (shouldConsumeOnInteract(sprite, window.inventory?.items)) {

@@ -851,6 +851,7 @@ export default class NPCManager {
         // NEW ACTION FIELDS [Phase 2-4]
         setVisible:         mapping.setVisible          ?? undefined,
         patrolOverride:     mapping.patrolOverride      || null,
+        needs:              mapping.needs               || null,
         setPatrolSpeed:     mapping.setPatrolSpeed      ?? undefined,
         setDwellMultiplier: mapping.setDwellMultiplier  ?? undefined,
         navigateToPlayer:   mapping.navigateToPlayer    || false
@@ -1142,6 +1143,12 @@ export default class NPCManager {
       } else {
         console.warn(`⚠️ patrolOverride: Invalid targetTile for ${npcId}`, targetTile);
       }
+    }
+
+    // Needs control (npc-needs.js): "resume" | "suspend" | { set: { need: level } }.
+    // After patrolOverride, so a mapping can move the NPC and then hand it back.
+    if (config.needs && window.npcNeedsSystem) {
+      window.npcNeedsSystem.control(npcId, config.needs);
     }
 
     // [Phase 3] Handle NPC visibility toggle (delayed NPC appearance)

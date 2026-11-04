@@ -102,6 +102,8 @@ export default class NPCLazyLoader {
       // We use the second form - passing the full object
       this.npcManager.registerNPC(npcDef);
       console.log(`✅ Registered NPC: ${npcDef.id} (${npcDef.npcType}) in room ${roomId}`);
+      // NPC needs (npc-needs.js): no-op for NPCs without a needs/interests block
+      window.npcNeedsSystem?.register?.(npcDef.id);
       
       // Check if NPC was defeated in a previous session (isKO state persisted)
       if (npcDef.isKO && window.npcHostileSystem) {

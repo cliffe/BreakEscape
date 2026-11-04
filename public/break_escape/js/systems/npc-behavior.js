@@ -171,13 +171,18 @@ export class NPCBehaviorManager {
      * @param {number} worldY - Target world Y coordinate
      * @param {number} [speed] - Override patrol speed for this move (optional)
      */
-    goToAndStay(npcId, worldX, worldY, speed) {
+    goToAndStay(npcId, worldX, worldY, speed, opts) {
         const behavior = this.behaviors.get(npcId);
         if (behavior) {
-            behavior.goToAndStay(worldX, worldY, speed);
+            behavior.goToAndStay(worldX, worldY, speed, opts);
         } else {
             console.warn(`⚠️ goToAndStay: no behavior for ${npcId}`);
         }
+    }
+
+    /** Stop an in-flight goToAndStay without an arrival (npc-needs.js aborts). */
+    cancelMove(npcId) {
+        this.behaviors.get(npcId)?.cancelMove();
     }
 
     /**
@@ -670,6 +675,19 @@ class NPCBehavior {
                 return;
             }
 
+            // Needs NPCs (npc-needs.js) hold still while the player talks to them,
+            // even mid-walk: a goToAndStay move never pauses on its own. Scoped to
+            // needs NPCs so every other NPC behaves as before.
+            if (window.npcNeedsSystem?.has?.(this.npcId) && window.npcNeedsSystem.world?.inChatWith?.(this.npcId)) {
+                this.sprite.body.setVelocity(0, 0);
+                if (this.isMoving) {
+                    this.isMoving = false;
+                    this.playAnimation('idle', this.direction);
+                }
+                this.updateDepth();
+                return;
+            }
+
             // Update NPC's current room if they've moved to a different room
             // This allows hostile NPCs to chase across rooms with correct pathfinding
             this.updateCurrentRoom();
@@ -793,7 +811,7 @@ class NPCBehavior {
             // Check if player is in interaction range - if so, face player instead (configurable).
             // A scripted goToAndStay move (patrolOverride) never pauses: a nurse answering
             // an alarm must reach the bed even when the player is standing beside it.
-            if (this.config.patrol.pauseForPlayer && !this._stopOnArrival && distanceSq < this.config.facePlayerDistanceSq && this.config.facePlayer && this.canSeePlayerToFace(playerPos)) {
+            if (this.config.patrol.pauseForPlayer && (!this._stopOnArrival || this._moveYieldsToPlayer) && distanceSq < this.config.facePlayerDistanceSq && this.config.facePlayer && this.canSeePlayerToFace(playerPos)) {
                 return 'face_player';
             }
             return 'patrol';
@@ -2126,7 +2144,13 @@ class NPCBehavior {
      * @param {number} worldY - Target world Y coordinate
      * @param {number} [speed] - Override patrol speed for this move (optional)
      */
-    goToAndStay(worldX, worldY, speed) {
+    goToAndStay(worldX, worldY, speed, opts = {}) {
+        // Who asked for the move (npc-needs.js passes owner 'needs'); a move by
+        // anyone else suspends the NPC's needs, so scripts always win.
+        this._moveOwner = opts?.owner;
+        // Walk-home moves pause for a nearby player like a patrol does.
+        this._moveYieldsToPlayer = !!opts?.yieldToPlayer;
+        if (opts?.owner !== 'needs') window.npcNeedsSystem?.onExternalMove?.(this.npcId, opts?.owner);
         // Stop current movement
         this.currentPath = [];
         this.patrolTarget = null;
@@ -2168,7 +2192,36 @@ class NPCBehavior {
      * when the arrival-tolerance proximity check fires early (e.g. the final
      * tile is blocked by another NPC).
      */
+    /** Stop an in-flight goToAndStay with no arrival event. */
+    cancelMove() {
+        this._stopOnArrival = false;
+        this._goToStayDest = null;
+        this._moveOwner = undefined;
+        this._moveYieldsToPlayer = false;
+        this.config.patrol.enabled = false;
+        this.pathFollowingActive = false;
+        this.currentPath = [];
+        this.pathIndex = 0;
+        if (this._tempSpeed !== undefined) {
+            this.config.patrol.speed = this._tempSpeed;
+            this._tempSpeed = undefined;
+        }
+        if (this.sprite?.body) this.sprite.body.setVelocity(0, 0);
+        this.isMoving = false;
+        this.playAnimation('idle', this.direction);
+    }
+
+    /** Turn to face a world point (idle animation), e.g. the object being used. */
+    faceWorldPoint(x, y) {
+        const p = this.npcBodyPos();
+        this.direction = this.calculateDirection(x - p.x, y - p.y);
+        this.playAnimation('idle', this.direction);
+    }
+
     _triggerGoToStayArrival() {
+        const owner = this._moveOwner;
+        this._moveOwner = undefined;
+        this._moveYieldsToPlayer = false;
         this._stopOnArrival = false;
         this._goToStayDest = null;
         this.config.patrol.enabled = false;
@@ -2200,7 +2253,8 @@ class NPCBehavior {
             window.eventDispatcher.emit(`npc_arrived:${this.npcId}`, {
                 npcId: this.npcId,
                 x: arrivedPos.x,
-                y: arrivedPos.y
+                y: arrivedPos.y,
+                owner
             });
         }
     }
