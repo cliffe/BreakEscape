@@ -1232,24 +1232,44 @@
 }
 
 .phone-call-mode .call-speaking span {
+    position: relative;
     width: 6px;
-    height: 4px;
+    height: 24px;
+    background: rgba(0, 0, 0, 0.12);
+}
+
+/* Each bar is a fixed 24px column; only the lit part inside it moves, so the meter keeps
+   one height. Phases are spread evenly over the cycle in a shuffled order, so the overall
+   level holds steady while single bars rise and fall. */
+.phone-call-mode .call-speaking span::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 100%;
     background: currentColor;
     opacity: 0.35;
+    transform: scaleY(0.17);
+    transform-origin: bottom;
 }
 
-.phone-call-mode .call-speaking-now .call-speaking span {
+.phone-call-mode .call-speaking-now .call-speaking span::after {
     opacity: 1;
-    animation: phone-call-voice 0.6s steps(3, jump-none) infinite alternate;
+    animation: phone-call-voice 1.2s steps(6, jump-none) infinite;
 }
 
-.phone-call-mode .call-speaking-now .call-speaking span:nth-child(2n) { animation-delay: -0.2s; }
-.phone-call-mode .call-speaking-now .call-speaking span:nth-child(3n) { animation-delay: -0.4s; }
-.phone-call-mode .call-speaking-now .call-speaking span:nth-child(4) { animation-duration: 0.45s; }
+.phone-call-mode .call-speaking-now .call-speaking span:nth-child(1)::after { animation-delay: 0s; }
+.phone-call-mode .call-speaking-now .call-speaking span:nth-child(2)::after { animation-delay: -0.69s; }
+.phone-call-mode .call-speaking-now .call-speaking span:nth-child(3)::after { animation-delay: -0.17s; }
+.phone-call-mode .call-speaking-now .call-speaking span:nth-child(4)::after { animation-delay: -0.86s; }
+.phone-call-mode .call-speaking-now .call-speaking span:nth-child(5)::after { animation-delay: -0.34s; }
+.phone-call-mode .call-speaking-now .call-speaking span:nth-child(6)::after { animation-delay: -1.03s; }
+.phone-call-mode .call-speaking-now .call-speaking span:nth-child(7)::after { animation-delay: -0.51s; }
 
 @keyframes phone-call-voice {
-    from { height: 4px; }
-    to { height: 24px; }
+    0%, 100% { transform: scaleY(0.17); }
+    50% { transform: scaleY(1); }
 }
 
 /* Choices up: the stage shrinks to a row so the replies have the room */
@@ -1387,11 +1407,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .phone-call-mode .call-status-dot,
-    .phone-call-mode .call-speaking-now .call-speaking span {
+    .phone-call-mode .call-status-dot {
         animation: none;
     }
-    .phone-call-mode .call-speaking-now .call-speaking span {
-        height: 16px;
+    .phone-call-mode .call-speaking-now .call-speaking span::after {
+        animation: none;
+        transform: scaleY(0.67);
     }
 }
