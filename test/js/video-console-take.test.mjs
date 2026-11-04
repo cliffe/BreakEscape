@@ -46,6 +46,26 @@ test('record-take: ffmpeg args force CFR with -vsync, never -fps_mode (ffmpeg 4.
   assert.equal(args[args.length - 1], '/o/t.mkv', 'the output file is last');
 });
 
+test('record-take: the silent console variant drops audio and the wall clock to stop CFR frame churn', () => {
+  // The console (--no-game) take passes wallclock:false, noAudio:true: x11grab's own even device
+  // timestamps already sit on the CFR grid, so the -vsync cfr step no longer pads/drops frames (the
+  // ~26% dup+drop that broke the VNC console take and ate its short white slates), and there is no
+  // audio to sync so the pulse input is omitted.
+  const args = recordFfmpegArgs({ display: 98, sink: 'be_rec_98', fps: 30, size: '1024x768', outFile: '/o/c.mkv', pixFmt: 'yuv420p', crf: 14, preset: 'ultrafast', wallclock: false, noAudio: true });
+  assert.ok(!args.includes('-use_wallclock_as_timestamps'), 'no wall-clock timestamps on the silent take');
+  assert.ok(!args.includes('-f') || !args.includes('pulse'), 'no pulse input');
+  assert.ok(!args.includes('pulse'), 'no pulse audio input on a silent take');
+  assert.ok(!args.includes('-c:a'), 'no audio codec on a silent take');
+  const i = args.indexOf('-vsync');
+  assert.ok(i >= 0 && args[i + 1] === 'cfr', 'still constant frame rate');
+  assert.ok(args.includes('-f') && args.includes('x11grab') && args.includes(':98'), 'still grabs the X display');
+  assert.equal(args[args.length - 1], '/o/c.mkv', 'the output file is last');
+  // and the default (game) form is unchanged: wall clock on both inputs, pulse audio present
+  const g = recordFfmpegArgs({ display: 97, sink: 'be_rec_97', fps: 30, size: '1920x1080', outFile: '/o/g.mkv', pixFmt: 'yuv420p', crf: 14, preset: 'veryfast' });
+  assert.equal(g.filter(x => x === '-use_wallclock_as_timestamps').length, 2, 'game take keeps wall clock on video and audio');
+  assert.ok(g.includes('be_rec_97.monitor') && g.includes('-c:a'), 'game take keeps the pulse audio');
+});
+
 test('vm_console: desktop credentials parse from user:password and JSON', () => {
   assert.deepEqual(vc.parseDesktopCreds('kali:pa:ss'), { user: 'kali', password: 'pa:ss' });
   assert.deepEqual(vc.parseDesktopCreds('{"user":"a","password":"b"}'), { user: 'a', password: 'b' });

@@ -62,22 +62,38 @@ function cpuSample() {
 // ffmpeg capture argument list. Uses `-vsync cfr` (not `-fps_mode`): `-vsync` is understood by ffmpeg 4.2
 // through 7 (deprecated but functional on the newer ones), while `-fps_mode` only exists from ffmpeg 5.0,
 // so the dev Hacktivity box (ffmpeg 4.2.7) could not record. Both force a constant frame rate.
-export function recordFfmpegArgs({ display, sink, fps, size, outFile, pixFmt, crf, preset, audioDelayMs = 0 }) {
-  return [
+//
+// wallclock (default true): stamp the x11grab (and pulse) frames with the wall clock, so a game take's
+// picture and live audio share one real-time clock and check-take can correct a constant A/V offset. The
+// cost is that x11grab's wall-clock stamps jitter around the target period, so the `-vsync cfr` step pads
+// and drops to snap them onto the 30 fps grid (dup+drop ran ~26% on the VNC console, which has no even
+// repaint of its own). A silent, video-only take (the VNC console, --no-game) has no audio to sync to, so
+// it passes wallclock:false: x11grab then uses its own evenly spaced device timestamps, which already sit
+// on the CFR grid, so the dup/drop churn (and the dropped short white slates it caused) goes away.
+// noAudio (default false): omit the pulse input entirely for a silent take.
+export function recordFfmpegArgs({ display, sink, fps, size, outFile, pixFmt, crf, preset, audioDelayMs = 0, wallclock = true, noAudio = false }) {
+  const videoTs = wallclock ? ['-use_wallclock_as_timestamps', '1'] : [];
+  const args = [
     '-y', '-hide_banner',
-    '-thread_queue_size', '1024', '-use_wallclock_as_timestamps', '1',
+    '-thread_queue_size', '1024', ...videoTs,
     '-f', 'x11grab', '-draw_mouse', '0', '-framerate', String(fps), '-video_size', size, '-i', `:${display}`,
-    '-thread_queue_size', '1024', '-use_wallclock_as_timestamps', '1',
-    ...(audioDelayMs ? ['-itsoffset', String(audioDelayMs / 1000)] : []),   // audio leads picture: delay it
-    '-f', 'pulse', '-ar', '48000', '-ac', '2', '-i', `${sink}.monitor`,
-    '-vsync', 'cfr', '-r', String(fps),
-    '-c:v', 'libx264', '-crf', String(crf), '-preset', preset, '-pix_fmt', pixFmt,
-    '-c:a', 'pcm_s16le', outFile,
   ];
+  if (!noAudio) {
+    args.push(
+      '-thread_queue_size', '1024', '-use_wallclock_as_timestamps', '1',
+      ...(audioDelayMs ? ['-itsoffset', String(audioDelayMs / 1000)] : []),   // audio leads picture: delay it
+      '-f', 'pulse', '-ar', '48000', '-ac', '2', '-i', `${sink}.monitor`,
+    );
+  }
+  args.push('-vsync', 'cfr', '-r', String(fps),
+    '-c:v', 'libx264', '-crf', String(crf), '-preset', preset, '-pix_fmt', pixFmt);
+  if (!noAudio) args.push('-c:a', 'pcm_s16le');
+  args.push(outFile);
+  return args;
 }
 
-async function startFfmpeg({ display, sink, fps, size, outFile, logFile, pixFmt, crf, preset, audioDelayMs = 0 }) {
-  const args = recordFfmpegArgs({ display, sink, fps, size, outFile, pixFmt, crf, preset, audioDelayMs });
+async function startFfmpeg({ display, sink, fps, size, outFile, logFile, pixFmt, crf, preset, audioDelayMs = 0, wallclock = true, noAudio = false }) {
+  const args = recordFfmpegArgs({ display, sink, fps, size, outFile, pixFmt, crf, preset, audioDelayMs, wallclock, noAudio });
   const log = fs.createWriteStream(logFile);
   const proc = spawn('ffmpeg', args, { stdio: ['pipe', 'ignore', 'pipe'] });
   const st = { proc, startedAt: Date.now(), firstFrameAt: null, last: '', speeds: [], exited: null };
@@ -202,7 +218,9 @@ export async function recordTake(o) {
       await sleep(500);
       report.window = await page.evaluate(() => ({ iw: innerWidth, ih: innerHeight, ow: outerWidth, oh: outerHeight, dpr: devicePixelRatio }));
       const cpu0 = cpuSample();
-      ff = await startFfmpeg({ display, sink, fps, size, outFile, logFile, pixFmt, crf, preset, audioDelayMs });
+      // Silent, video-only take: no audio, and native x11grab timestamps (no wall clock) so the CFR step
+      // does not churn dup/drop frames on a VNC console that repaints irregularly. See recordFfmpegArgs.
+      ff = await startFfmpeg({ display, sink, fps, size, outFile, logFile, pixFmt, crf, preset, audioDelayMs, wallclock: false, noAudio: true });
       report.ffmpegSpawnedAt = ff.startedAt; report.ffmpegFirstFrameAt = ff.firstFrameAt;
       await sleep(700);
       const s1 = await slate(page, { ms: slateMs, videoOnly: true });
