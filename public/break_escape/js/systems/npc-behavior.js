@@ -2188,6 +2188,21 @@ class NPCBehavior {
         const arrivedPos = this.npcBodyPos();
         this.homePosition = { x: arrivedPos.x, y: arrivedPos.y };
         console.log(`🏥 [${this.npcId}] Arrived at emergency target (within tolerance), stopping patrol`);
+
+        // Arrival hook: fire a per-NPC event the moment a scripted goToAndStay move
+        // completes, so a scenario can react when the NPC actually reaches the target
+        // (e.g. a staff member sitting down at a PC), not when it was told to walk.
+        // The guard above (_stopOnArrival cleared at the top of this method) means this
+        // fires exactly once per move. Scenario NPCs subscribe with an exact-match
+        // eventMapping `"eventPattern": "npc_arrived:<npcId>"` (npc-manager.js registers
+        // one dispatcher listener per mapping pattern), so no manager change is needed.
+        if (window.eventDispatcher) {
+            window.eventDispatcher.emit(`npc_arrived:${this.npcId}`, {
+                npcId: this.npcId,
+                x: arrivedPos.x,
+                y: arrivedPos.y
+            });
+        }
     }
 
     /**
