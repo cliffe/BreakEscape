@@ -21,6 +21,13 @@
  * that address on its own in this window. It drops noVNC's SetDesktopSize messages, which is "resizeSession off" without changing the page
  * (the module-local `rfb` cannot be reached), hides #vnc-toolbar, types the desktop credentials if the greeter is showing, and checks
  * the canvas is exactly the expected size so scaleViewport shows it 1:1.
+ *
+ * The console mirrors whichever guest X server is on the active VT. For the full-screen terminal that vm_display --film draws to be on
+ * camera, that terminal must run on the SAME session the console shows: the desktop must be logged in AND in the foreground (not a
+ * greeter, and not a user session the seat has switched away from). vm_display's Desktop.pick only films the Active (foreground) session,
+ * so set CONSOLE_DESKTOP_LOGIN=yes to log in at the greeter (which brings the session to the foreground) when the console shows the
+ * greeter, or =no when the desktop is already logged in and in the foreground. If --film draws on a backgrounded session the console is
+ * not showing, the take records a static desktop while the terminal and its output stay off-screen (fixed 2026-11-04).
  */
 import fs from 'node:fs';
 
