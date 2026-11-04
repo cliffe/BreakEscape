@@ -157,6 +157,31 @@
     }
   ],
 
+  <%# When the exe foothold lands (phish_lord_foothold, set from lord_mail.ink), hand the player a
+      "Remote Session" opener in their inventory instead of leaving a remote-desktop PC sitting in
+      the Operations Room. Clicking the opener opens the sofia_remote container by id; its contents
+      and the nested archive's unlock resolve server-side from the hidden (active:false) room
+      object. delayMs 300 so the start time is set before it fires; the dispatcher fires it once and
+      remembers it across reloads (firedTimers). The item's type "pc" gives it the pc.png icon and
+      the desktop UI; its id "sofia_remote" is what the container-contents fetch keys on. %>
+  "timers": [
+    {
+      "id": "grant_remote_session",
+      "startOnGlobal": "phish_lord_foothold",
+      "delayMs": 300,
+      "actions": [
+        { "type": "give_item", "item": {
+            "id": "sofia_remote",
+            "type": "pc",
+            "name": "Remote Session — LW-FIN-07",
+            "hasContents": true,
+            "locked": false,
+            "observations": "A remote desktop session on Sofia Lord's workstation — the foothold the installer gave you. Open it to see what it reaches."
+        } }
+      ]
+    }
+  ],
+
   <%# The ending. Tomasz's chat closes many times, so the credits wait for
       engagement_closed, set on the debrief's last line. The closing card keeps
       the sentiment of the old ENGAGEMENT CLOSED end card. %>
@@ -1769,22 +1794,29 @@
           "minigameData": { "landingPageId": "payroll_login", "view": "captures" }
         },
         {
-          <%# The exe foothold's payoff: a remote desktop on Sofia's machine. Locked until she runs
-              Setup.exe (phish_lord_foothold). Shows that a foothold is access to the person's files
-              and, from there, more credentials — the compromise the hands-on VM lab used to teach. %>
+          <%# The exe foothold's payoff: a remote desktop on Sofia's machine. Kept here as data
+              only — active:false, so it is never revealed or clickable in the Operations Room
+              (rooms.js reveals only active objects) — while the server still resolves its contents
+              and the nested archive's password unlock from this definition. The player never sees a
+              remote desktop sitting in the room. Instead, when the exe foothold lands
+              (phish_lord_foothold, from lord_mail.ink), the "grant_remote_session" timer hands a
+              "Remote Session" opener to the inventory; clicking it opens THIS container by id.
+              Shows that a foothold is access to the person's files and, from there, more
+              credentials — the compromise the hands-on VM lab used to teach. %>
           "type": "pc",
           "id": "sofia_remote",
           "name": "Remote Session — LW-FIN-07",
           "position": "as-type:pc",
-          "takeable": false,
-          "interactable": true,
-          "active": true,
+          <%# takeable:true is required even though this never renders: the timer's give_item is
+              validated server-side against THIS canonical object (validate_item_collectible →
+              find_accessible_item, which matches it despite active:false), and a takeable:false
+              object is refused ("Item is not takeable"). active:false keeps it out of the room, so
+              takeable:true is inert there — it only lets the inventory grant through. %>
+          "takeable": true,
+          "interactable": false,
+          "active": false,
           "locked": false,
           "observations": "A remote desktop session opened on Sofia Lord's workstation.",
-          "minigameData": {
-            "requiresGlobal": "phish_lord_foothold",
-            "lockedMessage": "No session yet. Get the executable run on her machine first."
-          },
           "contents": [
             {
               "type": "text_file",

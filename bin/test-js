@@ -1,16 +1,26 @@
 #!/usr/bin/env bash
-# Run every test/js/*.test.mjs in its own `node --test` process.
+# Run every test/js/*.test.mjs in its own `node` process (tests auto-run from the
+# imported node:test module; see "Why plain node" below).
 #
-# Why: `node --test test/js/*.test.mjs` in one invocation intermittently dies with
-# "Unable to deserialize cloned data" (runner IPC between the parent and its
-# per-file child). One process per file cuts the failure rate but does not remove
-# it on Node 18: the cause is test children that log a lot to stdout (the engine
-# code under test console.logs emoji-heavy multi-line text), which the Node 18
-# runner occasionally mis-frames. Silencing console.log made
-# event-mapping-unlock-door fail 0/12 runs against 2/12 unsilenced.
-# So a file whose log contains that exact runner error is re-run, up to
-# TEST_JS_RETRIES times (default 3 attempts). Any other failure is final and the
-# retry is reported as "PASS (runner IPC retry n)", never hidden.
+# Why plain node, not `node --test`: the `--test` runner spawns a child process per
+# file and pipes the child's TAP back over an IPC channel. When the engine under
+# test console.logs emoji-heavy multi-line text, that output occasionally corrupts
+# the IPC framing and the parent dies with "Unable to deserialize cloned data" —
+# a false failure even though every subtest passed (seen on Node 18, 20 and 22,
+# load-dependent, so `-j` and a busy CI runner make it worse). Running the file
+# directly with `node "$f"` runs its tests in the same process with no child and
+# no IPC, which removes that error class entirely while keeping file isolation
+# (each file is still its own process) and the correct exit code (non-zero if any
+# subtest fails or the file throws).
+#
+# What's left is a rarer, genuine filesystem race: the many tests that mkdtemp a
+# dir, copy a slice of public/break_escape/js into it and import from there can hit
+# a transient ERR_MODULE_NOT_FOUND when the ESM loader stats a just-written fixture
+# file under full-suite load. A file whose log shows a module missing when imported
+# from the OS temp dir is re-run, up to TEST_JS_RETRIES times (default 3 attempts).
+# This cannot hide a real missing import: a genuinely absent repo source fails every
+# attempt (and is imported from the repo path, not the temp dir) and stays FAIL. The
+# retry is reported as "PASS (fixture-resolution retry, n attempts)", never hidden.
 #
 # Usage: bin/test-js [-j N] [-v] [file ...]
 #   -j N   files to run at once (default: $TEST_JS_JOBS, else 4)
@@ -37,22 +47,28 @@ out=$(mktemp -d)
 trap 'rm -rf "$out"' EXIT
 export out
 
+# The OS temp dir the fixtures mkdtemp under; a module reported missing when
+# "imported from <tmp>/..." is a transient fixture-resolution race, not a real bug.
+tmp=$(node -p 'require("os").tmpdir()' 2>/dev/null || echo /tmp)
+export tmp
+
 run_one() {
   f=$1
   b=$(basename "$f")
   start=$(date +%s)
   attempt=1
   while :; do
-    node --test "$f" >"$out/$b.log" 2>&1
+    node "$f" >"$out/$b.log" 2>&1
     code=$?
     if [ "$code" -ne 0 ] && [ "$attempt" -lt "${TEST_JS_RETRIES:-3}" ] \
-       && grep -q "Unable to deserialize cloned data" "$out/$b.log"; then
+       && grep -q "ERR_MODULE_NOT_FOUND" "$out/$b.log" \
+       && grep -q "imported from ${tmp}" "$out/$b.log"; then
       attempt=$((attempt + 1)); continue
     fi
     break
   done
   echo "$code $(( $(date +%s) - start ))" >"$out/$b.status"
-  note=""; [ "$attempt" -gt 1 ] && note=" (runner IPC retry, $attempt attempts)"
+  note=""; [ "$attempt" -gt 1 ] && note=" (fixture-resolution retry, $attempt attempts)"
   if [ "$code" -eq 0 ]; then echo "PASS  $b$note"; else echo "FAIL  $b (exit $code)$note"; fi
 }
 export -f run_one

@@ -20,7 +20,7 @@ for (const rel of ['minigames/framework/base-minigame.js', 'minigames/framework/
     'utils/display-dashes.js', 'ui/modal-stack.js', 'systems/phish-rules.js', 'systems/mail-ink.js',
     'minigames/mail-client/mail-client-minigame.js', 'minigames/mail-client/mail-reader.js',
     'minigames/mail-client/mail-data.js', 'minigames/mail-client/mail-notification.js',
-    'minigames/mail-client/mail-composer.js', 'minigames/mail-client/mail-bridge.js',
+    'minigames/mail-client/mail-composer.js', 'minigames/mail-client/mail-bridge.js', 'systems/captures.js',
     'minigames/landing-page-builder/landing-page-model.js', 'systems/global-writer.js',
     'systems/social-influence.js', 'ui/influence-bar.js']) {
     mkdirSync(dirname(join(dir, rel)), { recursive: true });

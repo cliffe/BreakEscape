@@ -17,7 +17,7 @@ const dir = mkdtempSync(join(tmpdir(), 'social-gap-mail-bridge-'));
 writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
 for (const rel of [
     'systems/phish-rules.js', 'systems/global-writer.js', 'systems/mail-scheduler.js',
-    'minigames/mail-client/mail-composer.js', 'minigames/mail-client/mail-bridge.js',
+    'minigames/mail-client/mail-composer.js', 'minigames/mail-client/mail-bridge.js', 'systems/captures.js',
     'minigames/landing-page-builder/landing-page-model.js',
 ]) {
     mkdirSync(dirname(join(dir, rel)), { recursive: true });

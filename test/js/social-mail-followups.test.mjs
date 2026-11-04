@@ -34,7 +34,7 @@ for (const rel of [
     'systems/mail-scheduler.js', 'systems/mail-runner.js', 'systems/mail-ink.js', 'systems/ink/ink-engine.js',
     'ui/influence-bar.js', 'utils/display-dashes.js', 'ui/modal-stack.js',
     'minigames/mail-client/mail-reader.js', 'minigames/mail-client/mail-data.js',
-    'minigames/mail-client/mail-composer.js', 'minigames/mail-client/mail-bridge.js',
+    'minigames/mail-client/mail-composer.js', 'minigames/mail-client/mail-bridge.js', 'systems/captures.js',
     'minigames/landing-page-builder/landing-page-model.js'
 ]) {
     mkdirSync(dirname(join(dir, rel)), { recursive: true });
