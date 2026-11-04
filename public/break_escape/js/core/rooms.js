@@ -2911,6 +2911,39 @@ export function createRoom(roomId, roomData, position) {
     }
 }
 
+// True when a global variable is currently set to boolean true. Used by the
+// revealOnGlobal object property so a planted/revealed object shows after a
+// reload (the global is restored before the room reveals).
+function isGlobalTrue(name) {
+    return window.gameState?.globalVariables?.[name] === true;
+}
+
+// Keep a revealOnGlobal object hidden and non-interactive, and register (once)
+// a listener that reveals it when its global turns true. Called from revealRoom
+// for objects whose global is not yet true.
+function hideUntilReveal(obj) {
+    obj.setVisible(false);
+    obj.interactable = false;
+    try { obj.disableInteractive?.(); } catch (e) { /* sprite may lack an input zone */ }
+    if (!obj._revealListenerRegistered && window.eventDispatcher) {
+        obj._revealListenerRegistered = true;
+        window.eventDispatcher.on(`global_variable_changed:${obj.revealOnGlobal}`, (data) => {
+            if (data && data.value === true) showRevealedObject(obj);
+        });
+    }
+}
+
+// Reveal an object previously held back by revealOnGlobal: make it visible and
+// interactive again.
+function showRevealedObject(obj) {
+    if (!obj || !obj.setVisible) return;
+    obj.setVisible(true);
+    obj.alpha = obj.originalAlpha || 1;
+    obj.interactable = true;
+    try { obj.setInteractive?.({ useHandCursor: true }); } catch (e) { /* already interactive */ }
+    console.log(`Revealed object on global ${obj.revealOnGlobal}: ${obj.objectId}`);
+}
+
 export function revealRoom(roomId) {
     // IMPORTANT: revealRoom() makes graphics VISIBLE but does NOT mark as DISCOVERED
     // 
@@ -2950,6 +2983,16 @@ export function revealRoom(roomId) {
             console.log(`Revealing ${Object.keys(room.objects).length} objects in room ${roomId}`);
             Object.values(room.objects).forEach(obj => {
                 if (obj && obj.setVisible && obj.active) { // Only show active objects
+                    // revealOnGlobal: an object that stays hidden and non-interactive until a
+                    // named global turns true, then appears — e.g. a keylogger that only shows
+                    // on the PC once the player has planted it. Because globals are restored
+                    // before the room reveals, a reload after the reveal shows it straight away.
+                    // A one-time listener reveals it the moment the global flips while the
+                    // player is already in the room.
+                    if (obj.revealOnGlobal && !isGlobalTrue(obj.revealOnGlobal)) {
+                        hideUntilReveal(obj);
+                        return;
+                    }
                     obj.setVisible(true);
                     obj.alpha = obj.active ? (obj.originalAlpha || 1) : 0.3;
                     console.log(`Made object visible: ${obj.objectId} at (${obj.x}, ${obj.y})`);
