@@ -4780,7 +4780,14 @@
               "ms": { "type": "number", "minimum": 800, "maximum": 4000, "description": "lighting_dip: length of the dip" }
             }
           }
-        }
+        },
+        "requiresItem": {
+          "description": "triggerOnInteract only fires if the player carries a matching inventory item (matched by its type, id or name). A string, or an array of any of those. Models deploying carried kit on a target (e.g. clip a keylogger onto a PC).",
+          "oneOf": [ { "type": "string" }, { "type": "array", "items": { "type": "string" } } ]
+        },
+        "requiresItemHint": { "type": "string", "description": "Message shown when requiresItem is set but the player is not carrying the item." },
+        "consumesItem": { "type": "boolean", "description": "With requiresItem: remove the matched item from the inventory (and its server copy) after the triggerOnInteract actions fire, so the kit is 'left' on the target." },
+        "revealOnGlobal": { "type": "string", "description": "This object stays hidden and non-interactive until the named global turns true, then appears (and persists across reload, since globals are restored before the room reveals). Models a planted device appearing in place — e.g. a keylogger that shows on the PC once planted." }
       }
     },
     "flagReward": {
