@@ -5,12 +5,26 @@
   "startPosition": { "x": 4, "y": 6 },
   "npcNeedsSeed": "test_npc_needs",
 
+  "disguises": {
+    "alpha": { "sprite": "female_office_worker_v2", "talk": "assets/characters/female_office_worker_talk.png" },
+    "beta": { "sprite": "male_office_worker_v2", "talk": "assets/characters/male_office_worker_talk.png" }
+  },
+
   "globalVariables": {
     "clerk_had_coffee": false,
     "finder_used_item": false,
     "finder_used_near_player": false,
     "clerk_left_desk": false,
-    "item_was_dropped": false
+    "item_was_dropped": false,
+    "finder_used_far_from_player": false,
+    "pp_disguise": "",
+    "clerk_pc_screen_locked": false,
+    "clerk_pc_owner_away": false,
+    "clerk_pc_accessed": false,
+    "finder_pc_screen_locked": false,
+    "finder_pc_owner_away": false,
+    "finder_pc_accessed": false,
+    "clerk_pc_hint_seen": false
   },
 
   "startItemsInInventory": [
@@ -51,7 +65,38 @@
           "position": { "x": 2, "y": 2 },
           "takeable": false,
           "locked": false,
-          "observations": "A desk PC."
+          "workstation": true,
+          "observations": "A desk PC. The screen is open.",
+          "observationVariants": [
+            { "condition": "globalVars.clerk_pc_screen_locked", "value": "The screen is locked. Whoever sits here needs the password." }
+          ]
+        },
+        {
+          "type": "aes_toolbox1",
+          "id": "costume_a",
+          "name": "Costume Rack A",
+          "position": { "x": 1, "y": 6 },
+          "takeable": false,
+          "observations": "A costume rack.",
+          "triggerOnInteract": [ { "type": "set_costume", "costume": "alpha" } ]
+        },
+        {
+          "type": "aes_toolbox1",
+          "id": "costume_b",
+          "name": "Costume Rack B",
+          "position": { "x": 2, "y": 6 },
+          "takeable": false,
+          "observations": "Another costume rack.",
+          "triggerOnInteract": [ { "type": "set_costume", "costume": "beta" } ]
+        },
+        {
+          "type": "aes_toolbox1",
+          "id": "costume_off",
+          "name": "Costume Bin",
+          "position": { "x": 3, "y": 6 },
+          "takeable": false,
+          "observations": "A bin for taking the costume off.",
+          "triggerOnInteract": [ { "type": "clear_costume" } ]
         },
         {
           "type": "coffee_station1",
@@ -69,6 +114,7 @@
           "position": { "x": 8, "y": 2 },
           "takeable": false,
           "locked": false,
+          "locksScreenOnLeave": false,
           "observations": "A desk PC.",
           "affordance": { "accepts": ["found_item"], "useSeconds": 4 }
         }
@@ -114,6 +160,7 @@
           "onUse": { "finder_pc": { "setGlobal": "finder_used_item" } },
           "eventMappings": [
             { "eventPattern": "npc_used:finder_pc", "condition": "data.playerNearby === true", "setGlobal": { "finder_used_near_player": true }, "onceOnly": true },
+            { "eventPattern": "npc_used:finder_pc", "condition": "data.playerNearby === false", "setGlobal": { "finder_used_far_from_player": true }, "onceOnly": true },
             { "eventPattern": "item_dropped:sample_binder", "setGlobal": { "item_was_dropped": true }, "onceOnly": true }
           ]
         },

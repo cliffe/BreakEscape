@@ -783,6 +783,14 @@ export function handleObjectInteraction(sprite) {
         return;
     }
 
+    // Workstation screen state (workstation-state.js): note whether an unattended workstation
+    // was reached open or locked. Emits workstation_accessed / workstation_locked_attempt; the
+    // normal interaction below still runs, so the scenario decides what the access yields.
+    if (window.workstationState && sprite.scenarioData.id) {
+        try { window.workstationState.onInteract(sprite.scenarioData.id); }
+        catch (e) { console.warn('[Interaction] workstationState.onInteract failed:', e); }
+    }
+
     // triggerOnInteract: fire scenario-defined actions immediately on interaction,
     // with no minigame or flag entry required. Defined at the object's top level in the scenario.
     if (Array.isArray(sprite.scenarioData.triggerOnInteract)) {

@@ -44,6 +44,11 @@ export function createSeededRng(seed) {
     };
 }
 
+/** One deterministic draw in [0, 1) for (seed, npcId, salt), independent of any running stream. */
+export function seededRoll(seed, npcId, salt = '') {
+    return createSeededRng(hash32(`${seed}:${npcId}:${salt}`))();
+}
+
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const round2 = v => Math.round(v * 100) / 100;
 const asList = v => (Array.isArray(v) ? v : (v == null ? [] : [v]));
@@ -119,6 +124,16 @@ export class NPCNeedsSystem {
 
     seedFor(npcId) {
         return hash32(`${this.seed}:${npcId}`);
+    }
+
+    /**
+     * A deterministic number in [0, 1) for (seed, npcId, salt). It uses its own stream, so asking
+     * for one never moves the per-NPC RNG that jitters need timings. Same seed, NPC and salt give
+     * the same value on every play; vary the salt (a counter, a label) for successive rolls.
+     * Used by generic scenario mechanics that want seeded variety, e.g. a workstation's lockChance.
+     */
+    roll(npcId, salt = '') {
+        return seededRoll(this.seed, npcId, salt);
     }
 
     /** Register (or re-register) an NPC with a needs block. Ignores NPCs without one. */

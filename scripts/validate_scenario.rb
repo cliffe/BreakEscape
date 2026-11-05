@@ -390,7 +390,7 @@ def check_unknown_fields(json_data)
     scenario_id scenario_name scenario_brief endGoal version startRoom startPosition resumeSpawn titleScreenName
     show_scenario_brief disableAttacks creditsTheme creditsOverlay gameClock flags music startItemsInInventory globalVariables
     player objectives rooms npcs phoneNPCs narrator timers _comment mutuallyExclusiveGlobals lighting
-    importGlobals exportGlobals social npcNeedsSeed
+    importGlobals exportGlobals social npcNeedsSeed disguises
   ]
 
   # Check top-level unknown fields
@@ -504,6 +504,7 @@ def check_unknown_fields(json_data)
     completesTask completesTaskOnOpen
     puzzle_graph_links hintOnlyFlags acceptsVmLabels
     affordance needsTag droppable
+    workstation locksScreenOnLeave lockChance screenOwner screenLocked
     _comment
   ]
 

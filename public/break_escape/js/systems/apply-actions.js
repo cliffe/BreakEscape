@@ -58,6 +58,8 @@ if (typeof window !== 'undefined') window.recordSECapture = recordSECapture;
  *   unlock_door    { room_id }       — adds room_id to gameState.unlockedRooms
  *   give_item      { item }          — adds an item sprite to the player inventory
  *   add_capture    { capture }       — records a credential/foothold into se_captures
+ *   set_costume    { costume }       — swaps the player sprite to scenario.disguises[costume]
+ *   clear_costume  {}                — restores the chosen avatar
  *   hint           { message, title? } — shows an informational alert to the player
  *   lighting_dip   { level?, ms? }   — one slow brownout dip of the room lights
  *
@@ -189,6 +191,24 @@ export function applyActions(actions, { source = 'scenario', gameId = null } = {
                 if (action.capture && typeof action.capture === 'object') {
                     recordSECapture(action.capture);
                 }
+                break;
+
+            // Costume swap (costume-actions.js, lazy so test harnesses need no extra file).
+            // action: { type: 'set_costume', costume: '<id>' }  or  { type: 'clear_costume' }
+            // The id is looked up in the scenario-level `disguises` map; the choice persists
+            // in the global pp_disguise and is re-applied on load.
+            case 'set_costume': {
+                const id = action.costume ?? action.id ?? action.value;
+                if (typeof id === 'string' && id) {
+                    import('./costume-actions.js').then(m => m.setCostume(id)).catch(e =>
+                        console.warn('[applyActions] set_costume failed:', e));
+                }
+                break;
+            }
+
+            case 'clear_costume':
+                import('./costume-actions.js').then(m => m.clearCostume()).catch(e =>
+                    console.warn('[applyActions] clear_costume failed:', e));
                 break;
 
             // Tint all sprites of a given texture key in a room — used for environmental hazard cues

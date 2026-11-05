@@ -1770,7 +1770,15 @@ export async function create() {
 
     // Store player globally for access from other modules
     window.player = player;
-    
+
+    // A costume put on in an earlier session (global pp_disguise, restored above) is lost
+    // with the page: re-dress the avatar now the sprite exists. No-op without a costume.
+    if (window.gameState?.globalVariables?.pp_disguise) {
+        import('../systems/costume-actions.js')
+            .then(m => m.reapplyPersistedCostume())
+            .catch(e => console.warn('⚠️ Could not re-apply persisted costume:', e));
+    }
+
     // Register player in global character registry for speaker resolution
     if (window.characterRegistry && window.player) {
         const playerData = {
@@ -1883,6 +1891,8 @@ export async function create() {
                 return import('../systems/npc-needs.js').then(needs => {
                     needs.installNpcNeeds();
                     console.log('✅ NPC needs system initialised');
+                    // Workstation screen lock/unlock follows npc_left_post / npc_returned_post
+                    return import('../systems/workstation-state.js').then(ws => ws.installWorkstationState());
                 });
             })
             .catch(error => {

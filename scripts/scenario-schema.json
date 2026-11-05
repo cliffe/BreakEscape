@@ -126,6 +126,18 @@
         }
       }
     },
+    "disguises": {
+      "type": "object",
+      "description": "Open map of player costumes for the set_costume / clear_costume actions (systems/costume-actions.js). Key = costume id; value = { sprite, talk? }. set_costume writes the persisted global pp_disguise = id; it is re-applied on reload.",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "sprite": { "type": "string", "description": "Character atlas key the avatar swaps to" },
+          "talk": { "type": "string", "description": "Optional dialogue portrait path" }
+        },
+        "required": ["sprite"]
+      }
+    },
     "npcNeedsSeed": {
       "type": ["number", "string"],
       "description": "Seed for the NPC needs system's per-NPC jitter RNG (systems/npc-needs.js). Default: the scenario name. Same seed and inputs give the same decision log."
@@ -4828,7 +4840,7 @@
             "properties": {
               "type": {
                 "type": "string",
-                "enum": ["set_global", "emit_event", "complete_task", "unlock_task", "unlock_aim", "confirm_action", "unlock_object", "unlock_door", "give_item", "tint_objects", "show_end_screen", "lighting_dip", "grant_fact"]
+                "enum": ["set_global", "emit_event", "complete_task", "unlock_task", "unlock_aim", "confirm_action", "unlock_object", "unlock_door", "give_item", "tint_objects", "show_end_screen", "lighting_dip", "grant_fact", "add_capture", "set_costume", "clear_costume"]
               },
               "key": { "type": "string" },
               "fact": { "type": "string", "description": "grant_fact: the social intel fact id (00 S15)" },
@@ -4881,6 +4893,10 @@
           },
           "additionalProperties": false
         },
+        "workstation": { "type": "boolean", "description": "Marks this object as a workstation whose screen locks/unlocks when its owner leaves (systems/workstation-state.js). Implied by locksScreenOnLeave or lockChance. Owner = screenOwner, else the NPC whose needsHome is this object's id." },
+        "locksScreenOnLeave": { "type": "boolean", "description": "Workstation: screen locks when the owner leaves (default true)." },
+        "lockChance": { "type": "number", "minimum": 0, "maximum": 1, "description": "Workstation: overrides locksScreenOnLeave; chance 0..1 that the screen locks on each leave, rolled from the needs system's seeded per-NPC RNG so a fixed seed is deterministic." },
+        "screenOwner": { "type": "string", "description": "Workstation: NPC id of the owner when it is not the NPC whose needsHome is this object." },
         "needsTag": { "type": "string", "description": "NPC needs system: one tag. NPCs with a matching interests entry are drawn to this item." },
         "droppable": { "type": "boolean", "description": "true: clicking this item in the inventory drops it at the player's feet (systems/item-drop.js). Needs a unique id; usually paired with needsTag." },
         "revealOnGlobal": { "type": "string", "description": "This object stays hidden and non-interactive until the named global turns true, then appears (and persists across reload, since globals are restored before the room reveals). Models a planted device appearing in place — e.g. a keylogger that shows on the PC once planted." }
