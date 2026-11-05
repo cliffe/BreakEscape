@@ -1878,6 +1878,12 @@ export async function create() {
                         mgr.registerBehavior(id, sprite, npc?.behavior || {});
                     }
                 }
+                // NPC needs (npc-needs.js): only NPCs with a needs/interests block are touched
+                import('../systems/item-drop.js').catch(e => console.error('❌ item-drop failed to load', e));
+                return import('../systems/npc-needs.js').then(needs => {
+                    needs.installNpcNeeds();
+                    console.log('✅ NPC needs system initialised');
+                });
             })
             .catch(error => {
                 console.error('❌ Failed to initialize NPC Behavior Manager:', error);
@@ -2377,6 +2383,8 @@ export function update() {
     if (window.npcBehaviorManager) {
         window.npcBehaviorManager.update(this.time.now, this.time.delta);
     }
+    // NPC needs: fixed-step ticks off game elapsed time (paused on the VM)
+    window.npcNeedsSystem?.update();
 
     // NPCs with los.challengeOnSight react when the player walks into their sight
     // (not while the player is on the VM: R13, vm-context-pause.js)

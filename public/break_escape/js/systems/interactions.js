@@ -786,8 +786,59 @@ export function handleObjectInteraction(sprite) {
     // triggerOnInteract: fire scenario-defined actions immediately on interaction,
     // with no minigame or flag entry required. Defined at the object's top level in the scenario.
     if (Array.isArray(sprite.scenarioData.triggerOnInteract)) {
+        // requiresItem: gate the trigger on the player carrying a named piece of kit
+        // (a type, id or name, or an array of any of those). Lets a scenario make an
+        // interaction a real "deploy the item you carried here" action — e.g. clip a
+        // keylogger onto a PC, drop a rogue USB — instead of firing on a bare click.
+        // Without the item the actions don't fire; requiresItemHint names what's needed.
+        // consumesItem then removes that item from the inventory (and the server copy),
+        // so the kit is "left" on the target. Generic engine primitive; no import needed.
+        const req = sprite.scenarioData.requiresItem;
+        if (req) {
+            const wanted = Array.isArray(req) ? req : [req];
+            const held = (window.inventory?.items || []).find(it => {
+                const d = it?.scenarioData || {};
+                return wanted.includes(d.type) || wanted.includes(d.id) || wanted.includes(d.name);
+            });
+            if (!held) {
+                const hint = sprite.scenarioData.requiresItemHint || 'You need the right kit in hand for this.';
+                window.gameAlert?.(hint, 'info', '', 3000);
+                return;
+            }
+            console.log('[Interaction] triggerOnInteract (requiresItem ok) firing for:', sprite.scenarioData.name || sprite.objectId);
+            applyActions(sprite.scenarioData.triggerOnInteract, { source: 'object_interact' });
+            if (sprite.scenarioData.consumesItem) {
+                try {
+                    window.removeFromInventory?.(held);
+                    const id = held?.scenarioData?.id;
+                    const gameId = window.breakEscapeConfig?.gameId;
+                    if (id && gameId) {
+                        fetch(`/break_escape/games/${gameId}/inventory`, {
+                            method: 'POST',
+                            credentials: 'same-origin',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                            },
+                            body: JSON.stringify({ action_type: 'remove', item: { id } })
+                        }).catch(err => console.error('[Interaction] Failed to sync consumed kit item:', err));
+                    }
+                } catch (err) {
+                    console.warn('[Interaction] Could not consume kit item:', err);
+                }
+            }
+            return;
+        }
         console.log('[Interaction] triggerOnInteract firing for:', sprite.scenarioData.name || sprite.objectId);
         applyActions(sprite.scenarioData.triggerOnInteract, { source: 'object_interact' });
+        return;
+    }
+
+    // Droppable inventory items (item-drop.js) go down at the player's feet as a
+    // world object an interested NPC can collect (npc-needs.js).
+    if (window.isDroppableInventoryItem?.(sprite, window.inventory?.items)) {
+        window.dropInventoryItem(sprite);
         return;
     }
 
