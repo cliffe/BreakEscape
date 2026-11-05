@@ -101,14 +101,16 @@ const FAMILIES = {
 };
 
 // Swivel chairs: rotation texture base -> shape and frame order. The rotation sheets
-// don't share one order: frame 1 is south for most, north for chair-white-1, and some
-// turn clockwise, some anticlockwise (checked by eye on every frame).
+// don't share one order (checked by eye on every frame): order 'cw' lists the frames in
+// COMPASS order (S, SE, E, NE, ...), 'ccw' the other way (S, SW, W, NW, ...), each from
+// its start facing. Frame 1 is south for most, north for chair-white-1.
+// test/js/seating.test.mjs pins every table.
 const SWIVEL_SEATS = {
     'chair-exec-rotate':       { family: 'exec',     order: 'cw',  start: 'south' },
     'chair-darkgray-1-rotate': { family: 'office40', order: 'ccw', start: 'south' },
     'chair-grey-1-rotate':     { family: 'office40', order: 'ccw', start: 'south' },
     'chair-grey-4-rotate':     { family: 'office40', order: 'ccw', start: 'south' },
-    'chair-white-1-rotate':    { family: 'white32',  order: 'cw',  start: 'north' },
+    'chair-white-1-rotate':    { family: 'white32',  order: 'ccw', start: 'north' },
     'chair-white-2-rotate':    { family: 'white32',  order: 'ccw', start: 'south' }
     // valid: [...] (a subset of COMPASS) limits a chair's facings; default all 8
 };
