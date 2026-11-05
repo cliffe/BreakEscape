@@ -505,3 +505,51 @@ test('engine reachable(): an NPC already standing at the approach cell can reach
         delete globalThis.window;
     }
 });
+
+// ── own-desk work does not leave the post ───────────────────────────────────────
+
+/** A clerk with a `work` need satisfied by her own PC and by a spare PC; plus a coffee need. */
+function ownDeskCfg({ spare = false } = {}) {
+    const cfg = office({ objects: [
+        { id: 'own_pc', x: 100, y: 68, affordance: { satisfies: 'work', restores: 60, useSeconds: 10 } },
+        ...(spare ? [{ id: 'spare_pc', x: 500, y: 300, affordance: { satisfies: 'work', restores: 60, useSeconds: 10 } }] : [])
+    ] });
+    cfg.npcs.clerk.rec.needsHome = 'own_pc';
+    cfg.npcs.clerk.rec.needs = { work: { decayPerMin: 20, urgentAt: 40, initial: 30, jitterPct: 0 } };
+    cfg.objects = cfg.objects.filter(o => o.id !== 'clerk_pc' && o.id !== 'coffee_machine');
+    return cfg;
+}
+
+test('own-desk work: no left/returned events and the owner stays at the post', () => {
+    for (const windup of [0, 1000]) {
+        const w = makeWorld(ownDeskCfg());
+        w.world.windupMs = () => windup;
+        const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+        w.attach(sys);
+        sys.registerAll();
+        sys.step(10 * 60000);
+        const names = w.calls.emits.map(e => e.name);
+        assert.ok(sys.getLog().some(e => e.npc === 'clerk' && e.ev === 'used' && e.target === 'own_pc'), 'worked at own desk');
+        assert.ok(!names.includes('npc_left_post:clerk'), `left emitted (windup ${windup})`);
+        assert.ok(!names.includes('npc_returned_post:clerk'), `returned emitted (windup ${windup})`);
+        assert.ok(!names.includes('npc_action_windup:clerk'), 'no leaving tell for a desk session');
+        assert.equal(sys.getState('clerk').atPost, true);
+    }
+});
+
+test('work at another object still emits left then returned', () => {
+    const cfg = ownDeskCfg({ spare: true });
+    cfg.npcs.clerk.rec.needsHome = 'spare_pc';           // own_pc is now "elsewhere"
+    cfg.objects.find(o => o.id === 'spare_pc').x = 600;
+    const w = makeWorld(cfg);
+    const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+    w.attach(sys);
+    sys.registerAll();
+    sys.states.get('clerk').cooldowns.spare_pc = Infinity;  // forces the job to own_pc
+    sys.step(4 * 60000);
+    const names = w.calls.emits.map(e => e.name);
+    assert.ok(sys.getLog().some(e => e.npc === 'clerk' && e.ev === 'used' && e.target === 'own_pc'));
+    assert.ok(names.includes('npc_left_post:clerk'));
+    assert.ok(names.includes('npc_returned_post:clerk'));
+    assert.ok(names.indexOf('npc_left_post:clerk') < names.indexOf('npc_returned_post:clerk'));
+});

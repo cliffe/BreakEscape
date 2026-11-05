@@ -109,3 +109,49 @@ test('the real dispatcher handlers are wired to left/returned events', () => {
     r.handlers['npc_returned_post:*']({ npcId: 'ann' });
     assert.equal(a.screenLocked, false);
 });
+
+test('an own-desk work session keeps the owner present and the screen unchanged; a real trip away flips both', () => {
+    const mk = (needsHome, extraObjs) => {
+        const pc = { id: 'pc_a', x: 100, y: 68, workstation: true, locksScreenOnLeave: false,
+            affordance: { satisfies: 'work', restores: 60, useSeconds: 10 } };
+        const other = { id: 'pc_other', x: 500, y: 300, affordance: { satisfies: 'work', restores: 60, useSeconds: 10 } };
+        const objs = [pc, ...extraObjs(other)].map(o => ({ roomId: 'office', pickable: false, ...o }));
+        const pos = { ann: { x: 100, y: 100, roomId: 'office' } };
+        const rec = { id: 'ann', needsHome, needs: { work: { decayPerMin: 20, urgentAt: 40, initial: 30, jitterPct: 0 } } };
+        const r = { globals: {}, handlers: {} };
+        let sys;
+        const world = {
+            elapsedMs: () => 0, isVmActive: () => false, npcIds: () => ['ann'], getNpc: () => rec,
+            npcPos: () => ({ ...pos.ann }), npcStatus: () => ({}), inChatWith: () => false,
+            listObjects: () => objs, getObject: id => objs.find(o => o.id === id) || null,
+            approachCell: o => ({ x: o.x, y: o.y + 32 }), tileToWorld: (rm, x, y) => ({ x: x * 32, y: y * 32 }),
+            speedFor: () => 80, cancelMove() {}, faceTo() {}, pickUp: () => false, consumeHeld() {}, dropHeld() {},
+            moveTo(id, x, y) { pos.ann.x = x; pos.ann.y = y; sys.onArrived(id, 'needs'); },
+            emit: (n, d) => { for (const [pat, cb] of Object.entries(r.handlers)) if (pat.slice(0, -1) === n.slice(0, pat.length - 1)) cb(d); },
+            setGlobal: (k, v) => { r.globals[k] = v; }
+        };
+        sys = new NPCNeedsSystem(world, { seed: 1, manualClock: true });
+        const env = {
+            objects: () => objs, npcs: () => [rec],
+            on: (p, cb) => { r.handlers[p] = cb; }, emit: () => {}, setGlobal: world.setGlobal,
+            roll: (id, salt) => sys.roll(id, salt)
+        };
+        new WorkstationState(env).install();
+        sys.registerAll();
+        r.sys = sys; r.pc = pc; r.world = world;
+        return r;
+    };
+    // Own desk: owner never marked away, screen stays unlocked
+    const own = mk('pc_a', () => []);
+    own.sys.step(5 * 60000);
+    assert.ok(own.sys.getLog().some(e => e.ev === 'used' && e.target === 'pc_a'));
+    assert.notEqual(own.globals.pc_a_owner_away, true);
+    assert.notEqual(own.pc.screenLocked, true);
+    // Real trip to another PC: away is set and cleared again on return
+    const trip = mk('pc_a', o => [o]);
+    trip.sys.states.get('ann').cooldowns.pc_a = Infinity;
+    trip.sys.step(4 * 60000);
+    assert.ok(trip.sys.getLog().some(e => e.ev === 'used' && e.target === 'pc_other'));
+    assert.equal(trip.globals.pc_a_owner_away, false);
+    assert.ok('pc_a_owner_away' in trip.globals, 'away flag was written by the trip');
+});

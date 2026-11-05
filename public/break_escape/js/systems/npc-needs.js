@@ -350,9 +350,12 @@ export class NPCNeedsSystem {
 
         if (s.mode === 'returning' && arrived) {
             s.mode = 'idle';
-            s.atPost = true;
-            this._log(id, 'returned_post');
-            this.world.emit(`npc_returned_post:${id}`, { npcId: id });
+            // Only a real trip emits; a session at one's own post object never left it
+            if (!s.atPost) {
+                s.atPost = true;
+                this._log(id, 'returned_post');
+                this.world.emit(`npc_returned_post:${id}`, { npcId: id });
+            }
         }
 
         if (s.mode === 'job' && s.job?.windupUntil) {
@@ -506,7 +509,7 @@ export class NPCNeedsSystem {
         this._log(id, 'job_start', { need: pick.need || undefined, tag: pick.tag || undefined, target: pick.targetId, item: pick.itemId || undefined });
         // Pre-action tell: a short wind-up while the NPC is still at its post, so the
         // leaving-desk window is catchable. world.windupMs() is 0 in stub worlds (no wind-up).
-        const windup = s.atPost ? Math.max(0, Number(this.world.windupMs?.() || 0)) : 0;
+        const windup = s.atPost && !this._atOwnPost(s) ? Math.max(0, Number(this.world.windupMs?.() || 0)) : 0;
         if (windup > 0) {
             s.job.windupUntil = this.clockMs + windup;
             this._log(id, 'windup', { target: pick.targetId });
@@ -516,9 +519,15 @@ export class NPCNeedsSystem {
         this._leavePost(s);
     }
 
+    /** True while the current job is a `use` of the NPC's own needsHome object: they stay at their post. */
+    _atOwnPost(s) {
+        const j = s.job;
+        return !!(j && j.kind === 'use' && s.home?.objectId && j.targetId === s.home.objectId);
+    }
+
     _leavePost(s) {
         const id = s.npcId;
-        if (s.atPost) {
+        if (s.atPost && !this._atOwnPost(s)) {
             s.atPost = false;
             this.world.emit(`npc_left_post:${id}`, { npcId: id, need: s.job.need, targetId: s.job.targetId });
         }
