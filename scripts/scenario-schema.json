@@ -4044,6 +4044,22 @@
           },
           "additionalProperties": false
         },
+        "seated": {
+          "description": "Sit this NPC on the nearest free chair within maxDistance px (default 40) of its spawn (systems/seating.js). Its atlas needs seated frames (pixellab_pipeline.py import --sit-from); without them it stays standing. It holds the chair, with no patrol, until a scripted move, hostility or a KO gets it up. On a swivel chair it turns to face a nearby player unless facePlayer is false; facing sets the swivel chair's starting direction.",
+          "oneOf": [
+            { "type": "boolean" },
+            {
+              "type": "object",
+              "properties": {
+                "maxDistance": { "type": "number", "minimum": 1 },
+                "facing": { "type": "string", "enum": ["south", "south-east", "east", "north-east", "north", "north-west", "west", "south-west"] },
+                "facePlayer": { "type": "boolean" },
+                "_comment": { "type": "string" }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
         "spriteVisemes": { "type": "string", "description": "Optional lip-sync sheet (assets/characters/<key>_visemes.png, one row of mouth shapes) with a matching .json beside it naming each column. Falls back to spriteTalk when absent or unloadable." },
         "portraitVariants": {
           "type": "array",

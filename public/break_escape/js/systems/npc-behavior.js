@@ -688,6 +688,12 @@ class NPCBehavior {
                 return;
             }
 
+            // A seated NPC (scenario "seated", seating.js) holds its chair until a move,
+            // hostility or a KO gets it up
+            if (window.seating?.updateSeatedNPC?.(this, playerPos)) {
+                return;
+            }
+
             // Needs NPCs (npc-needs.js) hold still while the player talks to them,
             // even mid-walk: a goToAndStay move never pauses on its own. Scoped to
             // needs NPCs so every other NPC behaves as before.
@@ -2276,6 +2282,7 @@ class NPCBehavior {
      * @param {number} [speed] - Override patrol speed for this move (optional)
      */
     goToAndStay(worldX, worldY, speed, opts = {}) {
+        window.seating?.unseatNPC?.(this); // a seated NPC gets up first
         // Who asked for the move (npc-needs.js passes owner 'needs'); a move by
         // anyone else suspends the NPC's needs, so scripts always win.
         this._moveOwner = opts?.owner;
@@ -2439,6 +2446,7 @@ class NPCBehavior {
 
     setHostile(hostile) {
         if (this.hostile === hostile) return; // No change
+        if (hostile) window.seating?.unseatNPC?.(this);
 
         this.hostile = hostile;
 

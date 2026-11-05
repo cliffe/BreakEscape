@@ -47,8 +47,9 @@ const SIT_HIP = {
 // (armrests) drawn over the sitter.
 const FAMILIES = {
     exec: {
-        seat: { 'south': [19, 37], 'south-east': [21, 34], 'east': [16, 31], 'north-east': [20, 30],
-                'north': [19, 30], 'north-west': [18, 30], 'west': [22, 31], 'south-west': [17, 34] },
+        // facing away, 4px higher than the seat itself so the hood clears the tall backrest
+        seat: { 'south': [19, 37], 'south-east': [21, 34], 'east': [16, 31], 'north-east': [20, 26],
+                'north': [19, 26], 'north-west': [18, 26], 'west': [22, 31], 'south-west': [17, 34] },
         front: { 'south': [[0, 24, 8, 14], [30, 24, 8, 14]] }
     },
     office40: {
@@ -82,7 +83,7 @@ const STATIC_SEATS = {
     hospital_chair_south: HOSPITAL_S, aw_chair_south_charcoal1: HOSPITAL_S, aw_chair_south_slate1: HOSPITAL_S,
     hospital_chair_north: HOSPITAL_N, hospital_chair_north2: HOSPITAL_N,
     aw_chair_north_charcoal1: HOSPITAL_N, aw_chair_north_slate1: HOSPITAL_N,
-    exec_chair_back1: { facing: 'north', seat: [19, 30] },
+    exec_chair_back1: { facing: 'north', seat: [19, 26] },
     exec_chair_black1: { facing: 'south', seat: [16, 33] },
     aw_studio_chair_n1: { facing: 'north', seat: [16, 10] },
     aw_studio_chair_s1: { facing: 'south', seat: [16, 11] }
@@ -479,6 +480,162 @@ export function place() {
     });
 }
 
+// ---------------------------------------------------------------- NPCs
+//
+// An NPC with "seated": true (or { "maxDistance": 48, "facing": "west",
+// "facePlayer": true }) in its scenario entry sits on the nearest free chair within
+// maxDistance px of its spawn. Its own sprite shows the seated frame and stays the
+// interaction and sight target. It holds the chair (no patrol) until a scripted move
+// (goToAndStay, the needs system), hostility or a KO gets it up. On a swivel chair it
+// turns to face a player within its facePlayerDistance unless facePlayer is false.
+// Atlases without seated frames can't sit: the NPC stays standing (warned once).
+
+const NPC_DEFAULT_REACH = 40;
+
+function npcSeatConfig(behavior) {
+    const npc = window.npcManager?.getNPC?.(behavior.npcId);
+    const raw = npc?.seated;
+    if (!raw) return null;
+    return raw === true ? {} : raw;
+}
+
+function chairsNear(roomId, x, y, maxDistance) {
+    const room = window.rooms?.[roomId];
+    if (!room?.objects) return [];
+    const out = [];
+    for (const obj of Object.values(room.objects)) {
+        if (!obj.active || obj.seatedBy) continue;
+        const seat = seatSpec(obj);
+        if (!seat) continue;
+        const fx = obj.x + obj.width / 2, fy = obj.y + obj.height;
+        const d = Math.hypot(fx - x, fy - y);
+        if (d <= maxDistance) out.push({ obj, seat, d });
+    }
+    return out.sort((a, b) => a.d - b.d);
+}
+
+/** Place a seated sprite (origin-aware) so its hips land on the chair's seat. */
+function poseSprite(sprite, chair, seat, facing) {
+    const sp = seatPoint(chair, seat, facing);
+    const hip = SIT_HIP[facing];
+    const x = Math.round(sp.x - hip[0] + sprite.displayOriginX);
+    const y = Math.round(sp.y - hip[1] + sprite.displayOriginY);
+    if (sprite.x !== x || sprite.y !== y) {
+        if (sprite.body) sprite.body.reset(x, y); else sprite.setPosition(x, y);
+    }
+    if (sprite.anims?.isPlaying) sprite.anims.stop();
+    const frame = `sit_${facing}_frame_000`;
+    if (sprite.frame.name !== frame) sprite.setFrame(frame);
+    sprite.setDepth(chair.depth + (REAR.has(facing) ? -SEAT_DEPTH_STEP : SEAT_DEPTH_STEP));
+}
+
+function compassToward(dx, dy) {
+    const a = (Math.atan2(dy, dx) * 180 / Math.PI + 360) % 360; // 0 = east, 90 = south
+    return COMPASS[Math.round(((a - 90 + 360) % 360) / 45) % 8];
+}
+
+/** Sit an NPC (its behaviour object) on a chair. Returns true when seated. */
+export function seatNPC(behavior, chair, opts = {}) {
+    const sprite = behavior?.sprite;
+    const seat = seatSpec(chair);
+    if (!sprite?.body || !seat || chair.seatedBy) return false;
+    if (!hasSitFrames(sprite.texture.key)) {
+        if (!behavior._seatWarned) console.warn(`🪑 ${behavior.npcId}: atlas ${sprite.texture.key} has no seated frames; stays standing`);
+        behavior._seatWarned = true;
+        return false;
+    }
+    let facing = seat.kind === 'static' ? seat.facing
+        : snapFacing(opts.facing && COMPASS.includes(opts.facing) ? opts.facing : chairFacing(chair, seat), seat.valid);
+    if (seat.kind === 'swivel') setChairFacing(chair, facing, seat);
+    const saved = { none: sprite.body.checkCollision.none, immovable: sprite.body.immovable,
+                    chairImmovable: chair.body ? chair.body.immovable : null };
+    sprite.body.setVelocity(0, 0);
+    sprite.body.checkCollision.none = true;
+    sprite.body.immovable = true;
+    if (chair.body) { chair.body.setVelocity(0, 0); chair.body.immovable = true; }
+    chair.seatedBy = behavior.npcId;
+    behavior._seat = { chair, seat, facing, saved, homeFacing: facing, facePlayer: opts.facePlayer !== false };
+    behavior.isMoving = false;
+    behavior.direction = COMPASS_TO_PLAYER[facing];
+    poseSprite(sprite, chair, seat, facing);
+    window.eventDispatcher?.emit?.('npc_sat', { npcId: behavior.npcId, objectId: chair.objectId, facing });
+    return true;
+}
+
+/** Stand a seated NPC up beside its chair. */
+export function unseatNPC(behavior) {
+    const st = behavior?._seat;
+    if (!st) return false;
+    const sprite = behavior.sprite;
+    const { chair, seat, facing, saved } = st;
+    behavior._seat = null;
+    behavior._seatTried = true; // don't sit straight back down
+    delete chair.seatedBy;
+    if (chair.body && saved.chairImmovable !== null) chair.body.immovable = saved.chairImmovable;
+    if (sprite?.body) {
+        sprite.body.checkCollision.none = saved.none;
+        sprite.body.immovable = saved.immovable;
+        // Stand on the floor in front of the chair (or beside it)
+        const spot = seat.kind === 'swivel' ? standSpot(chair, facing) : frontSpot(chair, facing);
+        if (spot) {
+            const f = sprite.body.center;
+            sprite.body.reset(sprite.x + (spot.x - f.x), sprite.y + (spot.y - f.y));
+        }
+    }
+    behavior.direction = COMPASS_TO_PLAYER[facing];
+    behavior.playAnimation?.('idle', behavior.direction);
+    window.eventDispatcher?.emit?.('npc_stood', { npcId: behavior.npcId, objectId: chair.objectId });
+    return true;
+}
+
+function frontSpot(chair, facing) {
+    const a = (angleOf(facing) + 90) * Math.PI / 180;
+    const x = chair.x + chair.width / 2 + Math.cos(a) * 18;
+    const y = chair.y + chair.height - 4 + Math.sin(a) * 18;
+    return window.pathfindingManager?.findNearestWalkableWorldCell?.(x, y, 2) || { x, y };
+}
+
+/**
+ * Called from NPCBehavior.update(). Returns true when the NPC is seated and the
+ * rest of its behaviour should be skipped this tick.
+ */
+export function updateSeatedNPC(behavior, playerPos) {
+    if (!behavior?._seat) {
+        if (behavior._seatTried || !window.rooms) return false;
+        const cfg = npcSeatConfig(behavior);
+        if (!cfg) { behavior._seatTried = true; return false; }
+        const room = window.rooms[behavior.roomId];
+        if (!room?.objects || !Object.keys(room.objects).length) return false; // room not built yet
+        behavior._seatTried = true;
+        const f = behavior.sprite.body.center;
+        const found = chairsNear(behavior.roomId, f.x, f.y, cfg.maxDistance ?? NPC_DEFAULT_REACH)[0];
+        if (!found) {
+            console.warn(`🪑 ${behavior.npcId}: "seated" but no free chair within ${cfg.maxDistance ?? NPC_DEFAULT_REACH}px of its spawn`);
+            return false;
+        }
+        if (!seatNPC(behavior, found.obj, cfg)) return false;
+    }
+    const st = behavior._seat;
+    const sprite = behavior.sprite;
+    const ko = window.npcHostileSystem?.isNPCKO?.(behavior.npcId);
+    if (behavior.hostile || ko || !st.chair.active) { unseatNPC(behavior); return false; }
+    sprite.body.setVelocity(0, 0);
+    if (st.seat.kind === 'swivel' && st.facePlayer && playerPos) {
+        const p = sprite.body.center;
+        const dx = playerPos.x - p.x, dy = playerPos.y - p.y;
+        const near = dx * dx + dy * dy <= (behavior.config?.facePlayerDistanceSq ?? 96 * 96);
+        const want = snapFacing(near ? compassToward(dx, dy) : st.homeFacing, st.seat.valid);
+        if (want !== st.facing) {
+            st.facing = want;
+            setChairFacing(st.chair, want, st.seat);
+            behavior.direction = COMPASS_TO_PLAYER[want];
+        }
+    }
+    window.updateSpriteDepth?.(st.chair, st.chair.elevation || 0);
+    poseSprite(sprite, st.chair, st.seat, st.facing);
+    return true;
+}
+
 export function installSeating(scene) {
     scene.events.on('postupdate', place);
     scene.events.once('shutdown', () => { state = null; });
@@ -487,7 +644,7 @@ export function installSeating(scene) {
 const seating = {
     seatSpec, isSeat, isStaticSeatTexture, hasSitFrames, canPlayerSit, trySit, standUp, onJumpKey, queueSit,
     isSeated, currentSeat, currentPose, canRoll, afterPlayerMovement, onMoveIntent, place, installSeating,
-    chairFacing, setChairFacing, snapFacing
+    chairFacing, setChairFacing, snapFacing, seatNPC, unseatNPC, updateSeatedNPC
 };
 window.seating = seating;
 export default seating;

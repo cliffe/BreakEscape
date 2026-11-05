@@ -414,7 +414,7 @@ def check_unknown_fields(json_data)
     phoneId phoneTheme handle profile voiced callLabel unlockable externalVariables persistentVariables
     timedMessages timedConversation eventMappings itemsHeld puzzle_graph_actions
     needs interests needsHome needsSpeed usePayload onUse
-    observations disableClose los rfidCard chatBackground spriteStyle gender portraitVariants _comment
+    observations disableClose los rfidCard chatBackground spriteStyle gender portraitVariants seated _comment
   ]
 
   # Known NPC los fields, and those of the opt-in los.challengeOnSight
