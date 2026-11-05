@@ -255,10 +255,28 @@ function bodyFeet(sprite) {
 }
 const playerFeet = bodyFeet;
 
+/**
+ * Move a sprite and its body together. Phaser 3.60's body.reset() puts the body at
+ * the sprite's top-left, ignoring the body offset, until the next physics step, so
+ * body.center reads wrong in between (the needs system reads it). Re-sync from the
+ * sprite and set prev/prevFrame to match, so the post-update write-back adds nothing.
+ */
+function placeBody(sprite, x, y) {
+    const b = sprite.body;
+    if (!b) { sprite.setPosition(x, y); return; }
+    b.reset(x, y);
+    if (b.updateFromGameObject) {
+        b.updateFromGameObject();
+        b.prev.copy(b.position);
+        b.prevFrame.copy(b.position);
+        b.updateCenter?.();
+    }
+}
+
 /** Move a sprite so its feet land on (x, y). */
 function moveFeetTo(sprite, x, y) {
     const f = bodyFeet(sprite);
-    sprite.body.reset(sprite.x + (x - f.x), sprite.y + (y - f.y));
+    placeBody(sprite, sprite.x + (x - f.x), sprite.y + (y - f.y));
 }
 const moveDriverFeetTo = moveFeetTo;
 
@@ -357,7 +375,7 @@ export function standUp(spot = null) {
 
     if (seat.kind === 'swivel' && chair.body) {
         chair.body.enable = chairBodyWasEnabled;
-        chair.body.reset(chair.x, chair.y);
+        placeBody(chair, chair.x, chair.y);
         chair.body.setVelocity(0, 0);
     }
     spot = spot || landingSpot(chair, seat, facing, approach);
@@ -581,10 +599,7 @@ function poseSprite(sprite, chair, seat, facing) {
     const hip = sitHip(sprite.texture.key, facing);
     const x = Math.round(sp.x - hip[0] + sprite.displayOriginX);
     const y = Math.round(sp.y - hip[1] + sprite.displayOriginY);
-    if (sprite.x !== x || sprite.y !== y) {
-        // body.reset also resets prevFrame, so the physics write-back adds no delta
-        if (sprite.body) sprite.body.reset(x, y); else sprite.setPosition(x, y);
-    }
+    if (Math.round(sprite.x) !== x || Math.round(sprite.y) !== y) placeBody(sprite, x, y);
     if (sprite.anims?.isPlaying) sprite.anims.stop();
     const frame = `sit_${facing}_frame_000`;
     if (sprite.frame.name !== frame) sprite.setFrame(frame);
@@ -794,7 +809,7 @@ function slideChairFootTo(chair, x, y) {
     const f = bodyFeet(chair);
     chair.x = Math.round(chair.x + (x - f.x));
     chair.y = Math.round(chair.y + (y - f.y));
-    chair.body.reset(chair.x, chair.y);
+    placeBody(chair, chair.x, chair.y);
     window.updateSpriteDepth?.(chair, chair.elevation || 0);
 }
 
@@ -893,7 +908,7 @@ function endFetch(behavior, seatIt) {
     behavior._fetch = null;
     if (!f) return false;
     const chair = f.chair;
-    if (chair.body) { chair.body.enable = true; chair.body.reset(chair.x, chair.y); chair.body.setVelocity(0, 0); }
+    if (chair.body) { chair.body.enable = true; placeBody(chair, chair.x, chair.y); chair.body.setVelocity(0, 0); }
     if (chair.seatedBy === behavior.npcId) delete chair.seatedBy;
     if (!seatIt) return false;
     return seatNPC(behavior, chair, { toward: f.toward, facePlayer: false, needsStop: f.stopKey });
