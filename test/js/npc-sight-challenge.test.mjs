@@ -208,3 +208,76 @@ test('a player_spotted mapping on the guard fires through NPCManager', () => {
     assert.equal(window.gameState.globalVariables.guard_challenged, true);
     assert.equal(window.gameState.globalVariables.quiet_fired, undefined);
 });
+
+// ---- near: only while the player is close to a door / object / tile ----
+function nearSetup(near, extraCfg = {}) {
+    const s = setup({ event: 'player_in_view_near:guard', cooldown: 0, near, ...extraCfg });
+    // A door between lobby and vault at (60,0); a desk object at (60,40)
+    window.rooms = {
+        lobby: {
+            position: { x: -32, y: -32 },
+            doorSprites: [{ x: 60, y: 0, active: true, doorProperties: { roomId: 'lobby', connectedRoom: 'vault' } }],
+            objects: { desk1: { x: 60, y: 40, active: true, scenarioData: { id: 'desk_main' } } }
+        },
+        vault: { position: { x: 0, y: -200 }, doorSprites: [] }
+    };
+    return s;
+}
+
+test('near door: no event while in sight but far from the door, one event once near', () => {
+    const { emitted, watcher } = nearSetup({ door: 'vault', radius: 20 });
+    window.player = { x: 20, y: 0 };            // in the cone, 40px from the door
+    assert.deepEqual(watcher.update(1000, { force: true }), []);
+    window.player = { x: 50, y: 0 };            // 10px from the door
+    assert.deepEqual(watcher.update(2000, { force: true }), ['guard']);
+    assert.equal(emitted.length, 1);
+    assert.equal(emitted[0].name, 'player_in_view_near:guard');
+    assert.equal(emitted[0].data.targetId, 'vault');
+    assert.equal(emitted[0].data.targetType, 'door');
+    // Moving away and back counts as a new sighting (cooldown 0)
+    window.player = { x: 20, y: 0 };
+    watcher.update(3000, { force: true });
+    window.player = { x: 50, y: 0 };
+    assert.deepEqual(watcher.update(4000, { force: true }), ['guard']);
+});
+
+test('near: skipIfGlobal and out-of-cone still stop it', () => {
+    const { emitted, watcher } = nearSetup({ door: 'vault', radius: 64 }, { skipIfGlobal: 'disguised' });
+    window.gameState.globalVariables.disguised = true;
+    window.player = { x: 50, y: 0 };
+    assert.deepEqual(watcher.update(1000, { force: true }), []);
+    window.gameState.globalVariables.disguised = false;
+    behind();                                   // near-ish the guard, but behind him
+    assert.deepEqual(watcher.update(2000, { force: true }), []);
+    assert.equal(emitted.length, 0);
+});
+
+test('near object and near tile resolve their points', () => {
+    let s = nearSetup({ object: 'desk_main', radius: 15 });
+    window.player = { x: 55, y: 35 };
+    assert.deepEqual(s.watcher.update(1000, { force: true }), ['guard']);
+    assert.equal(s.emitted[0].data.targetType, 'object');
+    // tile (2,1) of lobby = (-32 + 80, -32 + 48) = (48, 16)
+    s = nearSetup({ x: 2, y: 1, room: 'lobby', radius: 10 });
+    window.player = { x: 50, y: 15 };
+    assert.deepEqual(s.watcher.update(1000, { force: true }), ['guard']);
+    assert.equal(s.emitted[0].data.targetId, 'lobby:2,1');
+});
+
+test('near with rooms: the player may be across the boundary from the guard', () => {
+    const { watcher } = nearSetup({ door: 'vault', radius: 64 }, { rooms: ['lobby', 'vault'] });
+    window.currentPlayerRoom = 'vault';
+    window.player = { x: 50, y: 0 };
+    assert.deepEqual(watcher.update(1000, { force: true }), ['guard']);
+    // Without near, a player in another room is never challenged
+    const plain = setup({ cooldown: 0, rooms: ['lobby', 'vault'] });
+    window.currentPlayerRoom = 'vault';
+    inView();
+    assert.deepEqual(plain.watcher.update(1000, { force: true }), []);
+});
+
+test('near target missing (room not loaded): no event', () => {
+    const { watcher } = nearSetup({ door: 'nowhere', radius: 64 });
+    window.player = { x: 50, y: 0 };
+    assert.deepEqual(watcher.update(1000, { force: true }), []);
+});

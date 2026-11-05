@@ -29,11 +29,83 @@
  * appear); a sighting that still holds when it closes fires then. The scenario decides what the event does through
  * eventMappings (a person-chat knot, setGlobal, a bark, a cutscene event).
  * Cooldown and sighting state are per session: a reload starts them fresh.
+ *
+ * "Near X" (optional): only challenge while the player is close to something.
+ *
+ *   "challengeOnSight": {
+ *     "event": "player_in_view_near:guard",
+ *     "near": { "door": "vault", "radius": 64 },   // a door into/out of room "vault"
+ *          // or { "object": "<objectId>", "radius": 48 }
+ *          // or { "x": 5, "y": 3, "room": "lobby", "radius": 48 }   (room tiles)
+ *     "rooms": ["lobby", "vault"]
+ *   }
+ *
+ * With `near` set, the player may be in any room listed in `rooms` (a door sits on
+ * the boundary, so player and guard can be either side of it); without `rooms`,
+ * the guard's own room only. Being in sight but further than `radius` (default 64px)
+ * from the target counts as out of sight. The payload gains targetId / targetType.
  */
 import { isInLineOfSight } from './npc-los.js';
 
 export const SIGHT_CHECK_INTERVAL_MS = 150;
 export const DEFAULT_CHALLENGE_COOLDOWN_MS = 10000;
+export const DEFAULT_NEAR_RADIUS = 64;
+// utils/constants.js TILE_SIZE; not imported, so this module keeps a single import
+// (the node test swaps npc-los.js for a data URL)
+const TILE = 32;
+
+/** Normalise a `near` entry, or null when there is none / it names nothing. */
+function normaliseNear(near) {
+    if (!near || typeof near !== 'object') return null;
+    const r = Number(near.radius);
+    const radius = Number.isFinite(r) && r > 0 ? r : DEFAULT_NEAR_RADIUS;
+    if (typeof near.door === 'string' && near.door) return { type: 'door', id: near.door, radius };
+    if (typeof near.object === 'string' && near.object) return { type: 'object', id: near.object, radius };
+    if (Number.isFinite(near.x) && Number.isFinite(near.y) && typeof near.room === 'string') {
+        return { type: 'tile', id: `${near.room}:${near.x},${near.y}`, room: near.room, x: near.x, y: near.y, radius };
+    }
+    return null;
+}
+
+/**
+ * World point of a `near` target, or null when it isn't on the map (room not loaded,
+ * object gone). A door is the centre of a door sprite into or out of the named room
+ * (the one nearest `from` when there are several).
+ */
+export function resolveNearTarget(near, from = null) {
+    const rooms = (typeof window !== 'undefined' && window.rooms) || {};
+    if (near.type === 'door') {
+        const sprites = [];
+        for (const room of Object.values(rooms)) {
+            for (const d of room?.doorSprites || []) {
+                if (!d || d.destroyed || d.active === false || !d.doorProperties) continue;
+                sprites.push(d);
+            }
+        }
+        let pool = sprites.filter(d => d.doorProperties.connectedRoom === near.id);
+        if (!pool.length) pool = sprites.filter(d => d.doorProperties.roomId === near.id);
+        if (!pool.length) return null;
+        const dist = (d) => from ? Math.hypot(d.x - from.x, d.y - from.y) : 0;
+        const best = pool.reduce((a, b) => (dist(b) < dist(a) ? b : a));
+        return { x: best.x, y: best.y };
+    }
+    if (near.type === 'object') {
+        for (const room of Object.values(rooms)) {
+            const objs = room?.objects;
+            if (!objs) continue;
+            let sp = objs[near.id];
+            if (!sp) sp = Object.values(objs).find(o => o?.scenarioData?.id === near.id);
+            if (sp && sp.active !== false && !sp.destroyed) return { x: sp.x, y: sp.y };
+        }
+        return null;
+    }
+    if (near.type === 'tile') {
+        const pos = rooms[near.room]?.position || window.roomPositions?.[near.room];
+        if (!pos) return null;
+        return { x: pos.x + near.x * TILE + TILE / 2, y: pos.y + near.y * TILE + TILE / 2 };
+    }
+    return null;
+}
 
 /**
  * The normalised challengeOnSight config of an NPC, or null when it has none
@@ -50,7 +122,8 @@ export function getSightChallengeConfig(npc) {
         event: typeof cfg.event === 'string' && cfg.event ? cfg.event : `player_spotted:${npc.id}`,
         rooms: Array.isArray(cfg.rooms) ? cfg.rooms.filter(r => typeof r === 'string') : null,
         requireGlobal: cfg.requireGlobal ?? null,
-        skipIfGlobal: cfg.skipIfGlobal ?? null
+        skipIfGlobal: cfg.skipIfGlobal ?? null,
+        near: normaliseNear(cfg.near)
     };
 }
 
@@ -118,10 +191,21 @@ export class SightChallengeWatcher {
             const state = this._state.get(npc.id) || { inSight: false, firedThisSighting: false, lastFired: 0 };
             this._state.set(npc.id, state);
 
-            const canSee = npc.npcType === 'person' &&
-                npc.roomId === playerRoom &&
+            // With `near`, the player may be across a room boundary (a door) from him
+            const roomOk = cfg.near && cfg.rooms
+                ? cfg.rooms.includes(playerRoom) && cfg.rooms.includes(npc.roomId)
+                : npc.roomId === playerRoom;
+            let canSee = npc.npcType === 'person' &&
+                roomOk &&
                 npc.isVisible !== false &&
                 isInLineOfSight(npc, playerPos, npc.los);
+            let target = null;
+            if (canSee && cfg.near) {
+                // In sight but not near the target counts as out of sight
+                target = resolveNearTarget(cfg.near, playerPos);
+                canSee = !!target &&
+                    Math.hypot(playerPos.x - target.x, playerPos.y - target.y) <= cfg.near.radius;
+            }
             if (!canSee) {
                 // Out of sight: the next sighting is a new one
                 state.inSight = false;
@@ -140,12 +224,17 @@ export class SightChallengeWatcher {
             fired.push(npc.id);
             console.log(`👁️ SIGHT CHALLENGE: "${npc.id}" spotted the player in "${playerRoom}" → ${cfg.event}`);
             const dispatcher = manager.eventDispatcher || window.eventDispatcher;
-            dispatcher?.emit?.(cfg.event, {
+            const payload = {
                 npcId: npc.id,
                 roomId: npc.roomId,
                 playerPosition: { x: playerPos.x, y: playerPos.y },
                 timestamp: now
-            });
+            };
+            if (cfg.near) {
+                payload.targetId = cfg.near.id;
+                payload.targetType = cfg.near.type;
+            }
+            dispatcher?.emit?.(cfg.event, payload);
         }
         return fired;
     }
