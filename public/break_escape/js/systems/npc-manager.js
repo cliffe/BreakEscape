@@ -852,6 +852,7 @@ export default class NPCManager {
         setVisible:         mapping.setVisible          ?? undefined,
         patrolOverride:     mapping.patrolOverride      || null,
         needs:              mapping.needs               || null,
+        addCapture:         mapping.addCapture          || null,   // record a credential/foothold into se_captures (merges the npc_used payload)
         setPatrolSpeed:     mapping.setPatrolSpeed      ?? undefined,
         setDwellMultiplier: mapping.setDwellMultiplier  ?? undefined,
         navigateToPlayer:   mapping.navigateToPlayer    || false
@@ -1149,6 +1150,18 @@ export default class NPCManager {
     // After patrolOverride, so a mapping can move the NPC and then hand it back.
     if (config.needs && window.npcNeedsSystem) {
       window.npcNeedsSystem.control(npcId, config.needs);
+    }
+
+    // Record a capture into se_captures (NPC_NEEDS_SYSTEM.md §13). The static template
+    // (targetId, roleLabel, kind, note, ...) is overlaid with the NPC's own usePayload,
+    // which rides on an npc_used event as eventData.payload — so the credential comes from
+    // the NPC, never from the object that was used. window.recordSECapture is set by
+    // apply-actions.js at startup, so no extra static import is pulled into npc-manager.
+    if (config.addCapture && typeof window.recordSECapture === 'function') {
+      const cap = { ...config.addCapture };
+      const payload = eventData && eventData.payload;
+      if (payload && typeof payload === 'object') Object.assign(cap, payload);
+      window.recordSECapture(cap);
     }
 
     // [Phase 3] Handle NPC visibility toggle (delayed NPC appearance)

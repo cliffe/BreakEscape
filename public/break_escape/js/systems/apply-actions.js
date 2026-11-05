@@ -3,6 +3,44 @@ import { writeGlobal } from './global-writer.js';
 import { grantFact, readyToastText, readyToastTitle } from './social-intel.js';
 
 /**
+ * Record a Social-Engineering/physical capture into se_captures (captures.js),
+ * first-capture-wins. Kept off the static import graph on purpose: apply-actions.js
+ * is copied by several node test harnesses that stub only its known imports, so the
+ * captures module is pulled in lazily the first time a capture is actually written.
+ *
+ * `input` names the target and the AUTHORED fiction (credential address/secret, or a
+ * foothold host/note) — never anything the player typed. The physical pentest lab
+ * builds this input by merging an NPC's own `usePayload` (the per-NPC credential that
+ * rides on `npc_used`) over a static template, so the object that was "used" never
+ * holds the secret; see NPC_NEEDS_SYSTEM.md §13.
+ */
+let _capturesPromise = null;
+function capturesModule() {
+    if (!_capturesPromise) _capturesPromise = import('./captures.js').catch(() => null);
+    return _capturesPromise;
+}
+
+export async function recordSECapture(input) {
+    const globals = (typeof window !== 'undefined') ? window.gameState?.globalVariables : null;
+    if (!globals) return false;
+    const mod = await capturesModule();
+    if (!mod) return false;
+    const { CAPTURES_KEY, makeCaptureEntry, mergeCapture, readCaptures } = mod;
+    const at = (input && Number.isFinite(input.at)) ? input.at : Date.now();
+    const entry = makeCaptureEntry({ ...input, at });
+    if (!entry) return false;
+    const base = readCaptures(globals);
+    const next = mergeCapture(base, entry);
+    if (next === base) return false; // already captured: first-capture-wins, no redundant write
+    writeGlobal(CAPTURES_KEY, next, { openChat: false });
+    if (typeof window !== 'undefined') window.stateSync?.sync?.();
+    console.log('[applyActions] add_capture:', entry.targetId, entry.kind);
+    return true;
+}
+
+if (typeof window !== 'undefined') window.recordSECapture = recordSECapture;
+
+/**
  * Shared action executor for scenario-defined action descriptors.
  *
  * The same descriptor format is used by flag-station `flagRewards`,
@@ -19,6 +57,7 @@ import { grantFact, readyToastText, readyToastTitle } from './social-intel.js';
  *   unlock_object  { objectId }      — unlocks a world object (+ optional server persist)
  *   unlock_door    { room_id }       — adds room_id to gameState.unlockedRooms
  *   give_item      { item }          — adds an item sprite to the player inventory
+ *   add_capture    { capture }       — records a credential/foothold into se_captures
  *   hint           { message, title? } — shows an informational alert to the player
  *   lighting_dip   { level?, ms? }   — one slow brownout dip of the room lights
  *
@@ -141,6 +180,14 @@ export function applyActions(actions, { source = 'scenario', gameId = null } = {
                     };
                     console.log('[applyActions] give_item:', action.item.name);
                     window.addToInventory(itemSprite);
+                }
+                break;
+
+            case 'add_capture':
+                // Static-descriptor capture (timers, triggerOnInteract). An NPC-used capture that
+                // reads the per-NPC usePayload goes through window.recordSECapture from npc-manager.
+                if (action.capture && typeof action.capture === 'object') {
+                    recordSECapture(action.capture);
                 }
                 break;
 

@@ -417,20 +417,154 @@ item `affordance needsTag droppable`; eventMapping `needs`; top level `npcNeedsS
 
 ---
 
-## 12. Demo scenario: `lab_physical_pentest` mechanical wiring — TO BE WRITTEN BY opus48
+## 12. Demo scenario: `lab_physical_pentest` mechanical wiring (as built)
 
-## 13. Cyber Security hook contract — TO BE WRITTEN BY opus48
+The lab (`scenarios/lab_physical_pentest/scenario.json.erb`) drives all three
+physical-pentest beats through the generic system. No beat uses a scripted
+`patrolOverride` any more — each NPC moves because a need or interest wins the
+selector (§5.2), and the scenario only listens to the events the system emits
+(§7). Three rooms, east–west: `briefing_room` (Ruth + kit table), `open_plan`
+(the beats), `secure_area` (debrief, behind the badge door). `npcNeedsSeed` is the
+scenario name. `social.captures.revealSecret: true` and `se_captures: {}` make the
+real capture store live (§13).
 
-> Sections 12 and 13 are owned by the opus48 (Opus 4.8) cyber agent. An earlier
-> draft of §12 was removed because it was cut off mid-sentence; do not reconstruct
-> it from memory — rebuild it against the committed engine (`npc-needs.js`,
-> `item-drop.js`) and the generic contract in sections 1–11 above, which is stable:
-> the needs/interests schema (§3), runtime behaviour (§5), the general drop action
-> (§6), the `npc_used` / `npc_job_failed` events and the `usePayload` shape (§7),
-> and script composition (§8). The three beats map to: Dale's caffeine need
-> vacating `staff_pc`; Priya's interest in a player-dropped tagged device she
-> carries to a PC and uses; Len's walk to a badge reader whose `npc_used`
-> (gated on `playerNearby` + the lanyard global) calls the existing `unlockDoor`.
-> Note: engine doors never re-close (`openDoor` destroys the sprite), so the
-> tailgating beat uses an NPC-triggered `unlockDoor`, not a held-open door.
-`staff_pc` gains `"affordance": { "sat
+### 12.1 Beat 1 — hardware keylogger (per-NPC credential)
+
+Dale idles at his desk and periodically steps away for coffee, both through needs:
+
+```jsonc
+"dale": {
+  "needsHome": "staff_pc", "needsSpeed": 100,
+  "needs": {
+    "work":     { "decayPerMin": 15, "urgentAt": 50, "initial": 65 },
+    "caffeine": { "decayPerMin": 25, "urgentAt": 50, "initial": 100, "maxUnmetMin": 6 }
+  },
+  "usePayload": { "address": "d.ferreira", "secret": "Calderbank#Spring26", "host": "CM-RECEP-01" }
+}
+```
+
+- `staff_pc` has `affordance { satisfies: "work", restores: 60, useSeconds: 8, useFrom:{dx:0,dy:1} }`.
+  Dale's `work` need makes him sit and "log in" (a use of `staff_pc`) roughly once a
+  minute; each use emits `npc_used:staff_pc`.
+- `coffee_station` (far corner, ~8 tiles away) has `affordance { satisfies:"caffeine", restores:70, useSeconds:45 }`.
+  When `caffeine` goes urgent Dale walks over, dwells 45 s and walks back — the catchable
+  window in which the player plants the keylogger on the empty desk.
+- Planting is the committed `requiresItem`/`consumesItem` primitive on `staff_pc`
+  (the player interaction path; the NPC's need-use never runs `triggerOnInteract`),
+  which sets `kp_keylogger_planted` and reveals the `planted_keylogger` read object.
+- The capture fires from Dale's own mapping, gated on the plant:
+
+```jsonc
+{ "eventPattern": "npc_used:staff_pc",
+  "condition": "globalVars.kp_keylogger_planted === true", "onceOnly": true, "cooldown": 0,
+  "addCapture": { "targetId":"dale", "roleLabel":"Calderbank Mutual — reception staff",
+                  "kind":"credential", "note":"Recovered from an inline hardware keylogger (simulated)." },
+  "setGlobal": { "kp_creds_captured": true } }
+```
+
+`addCapture` (§13) merges Dale's `usePayload` (which rides on the event as
+`data.payload`) over the static template, so the captured credential —
+`d.ferreira` / `Calderbank#Spring26` on `CM-RECEP-01` — comes from the NPC, not
+from `staff_pc`. A use **before** the plant fails the condition and does **not**
+consume the `onceOnly` (count only increments on a fire, npc-manager.js), so the
+first post-plant login is the one that captures.
+
+### 12.2 Beat 2 — three dropped devices (one primitive, three payoffs)
+
+Three droppable kit items, each a real inventory item with a distinct `needsTag`:
+
+| Item | `needsTag` | Priya carries it to | `npc_used:usb_target_pc` payoff |
+|---|---|---|---|
+| `kit_badusb` (BadUSB) | `dev_badusb` | `usb_target_pc` | `kp_usb_foothold` → `grant_remote_session` timer gives the Remote Session opener (SE-lab pattern) |
+| `kit_usb` (storage USB) | `dev_usb` | `usb_target_pc` | `kp_usb2_foothold` → reveals `usb_malware_note` (a simulated lure-file read) |
+| `kit_qr` (QR card) | `dev_qr` | `usb_target_pc` | `addCapture` (Priya's `usePayload`, a phished credential) + `kp_qr_phished` |
+
+Priya has only `interests` (no needs), so she holds still until a matching item is
+present: `interests: { dev_badusb:{weight:3,noticeRooms:["open_plan"]}, dev_usb:{…}, dev_qr:{…} }`.
+The player carries a device onto the floor and **drops** it (clicks it in the
+inventory — the §6 drop action; the dropped world item keeps its `needsTag`).
+Priya notices it, walks over, picks it up (carry job, §5.3), carries it to her PC
+(`usb_target_pc` has `affordance { accepts:["dev_badusb","dev_usb","dev_qr"], useSeconds:6 }`,
+which is also her `needsHome`) and uses it. The use emits `npc_used:usb_target_pc`
+with the carried item's `tag`; three `onceOnly` mappings on Priya, each conditioned
+on `data.tag === "dev_…"`, select the one payoff. `kp_usb_dropped` (the `drop_usb`
+task) is set by `item_dropped:kit_*` mappings on Priya (loaded in `open_plan`).
+
+### 12.3 Beat 3 — tailgating (hi-vis + parcel)
+
+`secure_area` stays a real access barrier: `lockType:"key"`, `requires:"cm_records_badge"`,
+and **no item opens it** (the validator warns; that is the taught point). The
+disguise is two carried/worn kit items whose `onPickup.setVariable` sets globals:
+`kit_hivis` → `has_hivis`, `kit_parcel` → `has_parcel` (the old `kit_lanyard` →
+`has_lanyard` is kept as optional cover). Len runs a `rounds` need
+(`decayPerMin:30, urgentAt:60, initial:70, maxUnmetMin:3`) satisfied by
+`badge_reader` beside the door (`affordance { satisfies:"rounds", restores:40, useSeconds:6 }`),
+so he walks over and taps through every ~20–40 s, each tap emitting
+`npc_used:badge_reader`. One gated mapping turns a tap into the tailgate:
+
+```jsonc
+{ "eventPattern": "npc_used:badge_reader",
+  "condition": "data.playerNearby === true && globalVars.has_hivis === true && globalVars.has_parcel === true",
+  "onceOnly": true, "cooldown": 0,
+  "unlockDoor": "secure_area", "setGlobal": { "kp_badge_tailgated": true } }
+```
+
+`data.playerNearby` is the §7 flag (player in Len's room within 3 tiles with a clear
+line). Len badging while the player is absent or out of disguise fails the condition
+and does not consume the `onceOnly`, so he keeps badging until the player is right
+behind him in the hi-vis and parcel. The mapping calls the existing `unlockDoor`
+(the door sprite is destroyed and stays passable, §2); the player follows through
+and `secure_area` streams in. Ruth's debrief there concludes the mission.
+
+### 12.4 Capture view
+
+An `open_plan` `page-builder` object (`captures_terminal`, `minigameData:{ view:"captures" }`)
+opens the read-only captures list, which reads `se_captures` and reveals the secret
+because `social.captures.revealSecret` is true. The keylogger (Dale) and QR (Priya)
+credentials show there as role-labelled rows.
+
+## 13. Cyber Security hook contract (as built)
+
+The generic system stays cyber-neutral; all device/credential meaning is scenario
+data plus one small, reusable capture hook. Nothing below reads an object's content:
+an object only advertises an `affordance` and (for items) a `needsTag`.
+
+### 13.1 Per-NPC secrets ride on `usePayload`
+
+An NPC's `usePayload` is opaque to the engine (§1 rule 7, §7). A structured clone of
+it rides on every `npc_used:<objectId>` that NPC emits, as `data.payload`. So the
+same object (`staff_pc`, `usb_target_pc`) yields a different credential depending on
+which NPC used it — the secret lives on the NPC, never on the object. Mapping
+conditions read event data as `data.<key> === <literal>` (a bare key is not resolved
+by `safeEvaluateCondition`); the lab uses `data.tag === "dev_badusb"` and
+`data.playerNearby === true`.
+
+### 13.2 The `add_capture` hook
+
+A new reusable action writes the SE/physical capture store (`se_captures`), reusing
+`captures.js` (`makeCaptureEntry` + `mergeCapture`, first-capture-wins, the closed
+key set that `state-sync.js` enforces):
+
+- **`apply-actions.js`** — action `{ type:"add_capture", capture:{…} }` for the
+  static-descriptor sources (timers, `triggerOnInteract`). It calls a module helper,
+  `recordSECapture(input)`, also exposed as `window.recordSECapture`. `captures.js`
+  is pulled in by a **lazy dynamic import** (not a static import), so the node
+  harnesses that copy `apply-actions.js` need no new copy-list entry.
+- **`npc-manager.js`** — a new eventMapping key `addCapture: { targetId, roleLabel,
+  kind, host?, note?, … }`. When the mapping fires, the engine overlays the event's
+  `data.payload` (the NPC's `usePayload`) onto this template and calls
+  `window.recordSECapture`. This is how a credential is read from the NPC at
+  `npc_used` time. No new static import is added to `npc-manager.js`.
+
+`kind` is `"credential"` (address/secret) or `"foothold"` (host/note). The authored
+secret is only ever shown when `social.captures.revealSecret` is true (§12.4,
+`captures.js` `displaySecret`); an awareness build leaves it off and the view only
+acknowledges that a sign-in was captured.
+
+### 13.3 Footholds reuse existing primitives
+
+Device payoffs are ordinary scenario wiring driven off `npc_used`/`setGlobal`:
+a BadUSB foothold reuses the SE-lab `startOnGlobal` timer that gives a `type:"pc"`
+Remote Session opener for a hidden `active:false` container; a storage-USB foothold
+reveals a read object with `revealOnGlobal`. The generic drop+collect+use primitive
+is identical for all three devices; only the mapped payoff differs.

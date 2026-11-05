@@ -438,7 +438,7 @@ def check_unknown_fields(json_data)
     targetKnot conversationMode background disableClose resume voiced callLabel videoLabel participantTag
     patrolOverride setPatrolSpeed setDwellMultiplier setVisible
     sendTimedMessage sendEmail setGlobal completeTask skipTask unlockTask unlockAim unlockDoor
-    openMinigame endingCheck needs
+    openMinigame endingCheck needs addCapture emitEvent emitEventData
     _comment
   ]
 
