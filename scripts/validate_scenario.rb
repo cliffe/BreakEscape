@@ -409,12 +409,12 @@ def check_unknown_fields(json_data)
 
   # Known NPC fields
   known_npc_fields = %w[
-    id displayName npcType position spriteSheet spriteTalk spriteVisemes spriteConfig
+    id displayName npcType position spriteSheet spriteTalk spriteVisemes spriteConfig seated
     voice behavior globalVarOnKO restartOnRetalk reopenRefreshesHub livePreview taskOnKO koImmune storyPath callId currentKnot avatar
     phoneId phoneTheme handle profile voiced callLabel unlockable externalVariables persistentVariables
     timedMessages timedConversation eventMappings itemsHeld puzzle_graph_actions
     needs interests needsHome needsSpeed usePayload onUse
-    observations disableClose los rfidCard chatBackground spriteStyle gender portraitVariants seated _comment
+    observations disableClose los rfidCard chatBackground spriteStyle gender portraitVariants _comment
   ]
 
   # Known NPC los fields, and those of the opt-in los.challengeOnSight
