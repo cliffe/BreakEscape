@@ -69,6 +69,7 @@ const fs = require('fs');
 const path = require('path');
 const { briefTasks } = require('./brief-tasks');
 const { createVmSteps } = require('./vm-steps');
+const { completeConfiguration } = require('./config-gate');
 
 const args = process.argv.slice(2);
 const argv = {};
@@ -236,6 +237,18 @@ const vmSteps = createVmSteps({
   // until the state makes no sense.
   const gotoUrl = argv.url + (argv.url.includes('?') ? '&' : '?') + 'skip_resume=1';
   await page.goto(gotoUrl, { waitUntil: 'domcontentloaded' });
+
+  // A freshly started game redirects the play URL to the one-time character
+  // configuration form (code name + sprite + "Save Configuration") before the
+  // game and its test bridge load. Complete it once, then return to the play
+  // URL. An already-configured game never lands here, so this is a no-op.
+  try {
+    await completeConfiguration({ page, gotoUrl, emit });
+  } catch (err) {
+    emit({ ok: false, error: 'character configuration could not be completed: ' + String(err && err.message || err) });
+    await browser.close(); process.exit(1);
+  }
+
   try {
     await page.waitForFunction(() => !!window.__test, null, { timeout: 120000 });
   } catch {
