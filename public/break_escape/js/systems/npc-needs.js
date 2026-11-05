@@ -808,6 +808,10 @@ export function createEngineWorld() {
             if (!pm?.findWorldPath || !pos) return true;
             const cell = this.approachCell(obj);
             if (!cell) return false;
+            // Already standing at it (an NPC at its own desk): EasyStar gives no path
+            // when start and end share a tile, which read as unreachable and sent the
+            // NPC to the next desk instead of its own.
+            if (Math.hypot(pos.x - cell.x, pos.y - cell.y) < TILE) return true;
             // EasyStar 0.4 hands its result to the callback through setTimeout unless
             // sync is on, so the answer would arrive after we return. Turn sync on for
             // this one call (single-threaded: nothing else can be queued meanwhile).

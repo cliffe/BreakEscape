@@ -14,7 +14,7 @@
  */
 
 export const REDRAW_MS = 200;
-export const BAR = { w: 30, h: 3, gap: 2, letterW: 6, pad: 2 };
+export const BAR = { w: 32, h: 4, gap: 3, letterW: 7, pad: 2 };
 export const DEPTH = 5001;   // just above the action icon (5000)
 export const COLOURS = { ok: 0x4caf50, urgent: 0xffb300, starved: 0xe53935, track: 0x263238, panel: 0x000000 };
 
@@ -58,7 +58,7 @@ export function jobLabel(st, job) {
 }
 
 const win = () => (typeof window !== 'undefined' ? window : {});
-const FONT = { fontFamily: 'monospace', fontSize: '7px', color: '#ffffff' };
+const FONT = { fontFamily: 'monospace', fontSize: '8px', color: '#ffffff', stroke: '#000000', strokeThickness: 2 };
 
 export class NpcNeedsDebug {
     constructor() {
@@ -114,7 +114,7 @@ export class NpcNeedsDebug {
             if (r.fillW > 0) p.gfx.fillStyle(COLOURS[r.colour], 1).fillRect(r.x, r.y, r.fillW, r.h);
             let t = p.letters.get(r.need);
             if (!t) {
-                t = p.gfx.scene.add.text(0, 0, r.letter, { ...FONT, fontSize: '5px', resolution: p.res }).setOrigin(0, 0.5).setDepth(DEPTH);
+                t = p.gfx.scene.add.text(0, 0, r.letter, { ...FONT, fontSize: '7px', strokeThickness: 0, resolution: p.res }).setOrigin(0, 0.5).setDepth(DEPTH);
                 p.letters.set(r.need, t);
             }
             t.setData('dy', r.y + r.h / 2);
@@ -125,7 +125,7 @@ export class NpcNeedsDebug {
     _place(p) {
         const s = p.sprite;
         const top = s.getTopCenter ? s.getTopCenter() : { x: s.x, y: s.y - 40 };
-        const x = Math.round(top.x - p.w / 2), y = Math.round(top.y - 20 - p.h);   // leave room for the action icon
+        const x = Math.round(top.x - p.w / 2), y = Math.round(top.y - 14 - p.h);   // leave room for the action icon (frames have empty headroom)
         p.gfx.setPosition(x, y);
         for (const t of p.letters.values()) t.setPosition(x + BAR.pad, y + t.getData('dy'));
         p.label.setPosition(x, y - 1);

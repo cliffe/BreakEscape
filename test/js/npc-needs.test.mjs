@@ -4,7 +4,7 @@
 // scenarios/test_npc_needs.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { NPCNeedsSystem, needTiming, NEEDS_TICK_MS } from '../../public/break_escape/js/systems/npc-needs.js';
+import { NPCNeedsSystem, needTiming, NEEDS_TICK_MS, createEngineWorld } from '../../public/break_escape/js/systems/npc-needs.js';
 
 const TILE = 32;
 
@@ -488,4 +488,20 @@ test('needsHome: a home found on the first tick is never looked up again; coordi
     const { sys: sys2 } = run(1, 1, cfg2);
     const h = sys2.getState('clerk').home;
     assert.deepEqual([h.x, h.y, h.provisional], [64, 96, false]);
+});
+
+test('engine reachable(): an NPC already standing at the approach cell can reach it (EasyStar gives no path for start == end)', () => {
+    globalThis.window = { pathfindingManager: { findWorldPath: (ax, ay, bx, by, cb) => cb(ax === bx && ay === by ? null : [[0, 0], [1, 1]]) } };
+    try {
+        const w = createEngineWorld();
+        w.approachCell = () => ({ x: 92, y: 124 });
+        w.npcPos = () => ({ x: 100, y: 130 });
+        assert.equal(w.reachable('sanjay', {}), true);
+        window.pathfindingManager.findWorldPath = (ax, ay, bx, by, cb) => cb(null);
+        assert.equal(w.reachable('sanjay', {}), true);          // within a tile: no path query needed
+        w.npcPos = () => ({ x: 300, y: 300 });
+        assert.equal(w.reachable('sanjay', {}), false);         // far away and no path: unreachable
+    } finally {
+        delete globalThis.window;
+    }
 });
