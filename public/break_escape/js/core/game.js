@@ -221,6 +221,12 @@ export function preload() {
     this.load.tilemapTiledJSON('room_se_recon', 'rooms/room_se_recon.json'); // lab_social_engineering recon room: two research desks, org chart, notice board (2x2 GU; from room_zds_office)
     this.load.tilemapTiledJSON('room_se_ops', 'rooms/room_se_ops.json'); // lab_social_engineering operations: desk banks with PCs and a phone (2x2 GU; from room_qdc_open)
     this.load.tilemapTiledJSON('room_se_blueteam', 'rooms/room_se_blueteam.json'); // lab_social_engineering blue team: camera wall, SIEM board, monitoring desk (2x2 GU; from room_aes_security)
+    // lab_physical_pentest: Ledgerwell Ltd site clones (bottle-green carpet; base maps stay untouched)
+    this.load.tilemapTiledJSON('room_lw_reception', 'rooms/room_lw_reception.json'); // from room_reception
+    this.load.tilemapTiledJSON('room_lw_hall', 'rooms/room_lw_hall.json'); // from hall_1x2gu
+    this.load.tilemapTiledJSON('room_lw_office', 'rooms/room_lw_office.json'); // from room_se_ops (same geometry and slots)
+    this.load.tilemapTiledJSON('room_lw_ceo', 'rooms/room_lw_ceo.json'); // from room_zds_ceo (m03 portrait, magazine cover and static filing cabinet removed)
+    this.load.tilemapTiledJSON('room_lw_store', 'rooms/room_lw_store.json'); // from small_room_storage_1x1gu
 
     // Load room images (now using smaller 32px scale images)
     this.load.image('room_reception', 'tiles/rooms/room1.png');
@@ -324,6 +330,8 @@ export function preload() {
     this.load.image('room_se_boardroom', 'tiles/rooms/room_se_boardroom.png'); // lab_social_engineering: Tarnside teal wall line, carpet with the meeting-table rug
     this.load.image('room_se_carpet', 'tiles/rooms/room_se_carpet.png'); // lab_social_engineering: Tarnside teal wall line, slate-blue carpet (recon, operations)
     this.load.image('room_se_charcoal', 'tiles/rooms/room_se_charcoal.png'); // lab_social_engineering: Tarnside teal wall line, charcoal carpet (blue team)
+    this.load.image('room_lw_carpet', 'tiles/rooms/room_lw_carpet.png'); // lab_physical_pentest: Ledgerwell brass wall line, bottle-green carpet
+    this.load.image('room_lw_exec', 'tiles/rooms/room_lw_exec.png'); // lab_physical_pentest: Ledgerwell bottle-green carpet with the executive rug
     this.load.image('room14', 'tiles/rooms/room14.png');
     this.load.image('room19', 'tiles/rooms/room19.png');
     this.load.image('door_32', 'tiles/door_32.png');
