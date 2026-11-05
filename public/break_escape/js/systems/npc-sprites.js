@@ -1406,16 +1406,10 @@ function handleNPCCollision(npcSprite, otherNPC) {
                 const roomWorldX = roomData.position?.x ?? roomData.worldX ?? 0;
                 const roomWorldY = roomData.position?.y ?? roomData.worldY ?? 0;
                 
-                // Check if avoidance waypoint is on walkable tile
-                let isWalkable = true;
-                if (window.npcPathfindingManager) {
-                    const grid = window.npcPathfindingManager.getGrid(roomId);
-                    if (grid && (avoidTileY < 0 || avoidTileY >= grid.length || 
-                                 avoidTileX < 0 || avoidTileX >= grid[0].length ||
-                                 grid[avoidTileY][avoidTileX] !== 0)) {
-                        isWalkable = false;
-                    }
-                }
+                // No walkability test here: chooseWaypointTarget snaps the waypoint to
+                // the nearest walkable world-grid cell. (The old per-room grid test read
+                // window.npcPathfindingManager, which was never set, so it never ran.)
+                const isWalkable = true;
                 
                 if (isWalkable) {
                     const avoidanceWaypoint = {
@@ -1600,16 +1594,10 @@ function handleNPCPlayerCollision(npcSprite, player) {
                 const roomWorldX = roomData.position?.x ?? roomData.worldX ?? 0;
                 const roomWorldY = roomData.position?.y ?? roomData.worldY ?? 0;
                 
-                // Check if avoidance waypoint is on walkable tile
-                let isWalkable = true;
-                if (window.npcPathfindingManager) {
-                    const grid = window.npcPathfindingManager.getGrid(roomId);
-                    if (grid && (avoidTileY < 0 || avoidTileY >= grid.length || 
-                                 avoidTileX < 0 || avoidTileX >= grid[0].length ||
-                                 grid[avoidTileY][avoidTileX] !== 0)) {
-                        isWalkable = false;
-                    }
-                }
+                // No walkability test here: chooseWaypointTarget snaps the waypoint to
+                // the nearest walkable world-grid cell. (The old per-room grid test read
+                // window.npcPathfindingManager, which was never set, so it never ran.)
+                const isWalkable = true;
                 
                 if (isWalkable) {
                     const avoidanceWaypoint = {

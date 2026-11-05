@@ -2,7 +2,6 @@
 // create separate module instances with separate rooms objects, causing state to diverge.
 import { initializeRooms, calculateWorldBounds, calculateRoomPositions, createRoom, revealRoom, updatePlayerRoom, rooms } from './rooms.js';
 import { createPlayer, updatePlayerMovement, movePlayerToPoint, facePlayerToward, startHoldWalk, stopHoldWalk, player } from './player.js';
-import { initializePathfinder } from './pathfinding.js';
 import { resumeSpawnFor } from './resume-spawn.js';
 import { initializeInventory, processInitialInventoryItems } from '../systems/inventory.js';
 import { checkObjectInteractions, setGameInstance, isObjectInInteractionRange } from '../systems/interactions.js';
@@ -2054,9 +2053,6 @@ export async function create() {
     this.cameras.main.startFollow(player);
     
     // Door interactions are now handled by the door sprites themselves
-    
-    // Initialize pathfinder
-    initializePathfinder(this);
     
     // Set up input handling. Right-click is the punch, so no browser menu
     // over the game. A second touch pointer lets a finger on the canvas keep

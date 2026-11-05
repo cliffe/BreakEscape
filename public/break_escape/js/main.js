@@ -61,7 +61,6 @@ window.inventory = {
 window.objectsGroup = null;
 window.wallsLayer = null;
 window.discoveredRooms = new Set();
-window.pathfinder = null;
 window.currentPath = [];
 window.isMoving = false;
 window.targetPoint = null;
