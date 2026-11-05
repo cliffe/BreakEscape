@@ -3868,6 +3868,34 @@
           }
         },
         "locked": { "type": "boolean" },
+        "doors": {
+          "type": "array",
+          "description": "Per-door overrides for this room's doorways. Optional.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "connectedRoom": { "type": "string" },
+              "direction": { "type": "string", "enum": ["north", "south", "east", "west"] },
+              "gate": {
+                "type": "object",
+                "description": "Gate door (systems/door-gates.js): opens for the listed NPCs as they near, holds open for holdMs, then shuts and relocks. The player cannot open it by clicking; a credential satisfying the door's requires opens it for one holdMs window. N/S doorways only. See README_scenario_design.md, 'Gate doors'.",
+                "properties": {
+                  "enabled": { "type": "boolean", "description": "false turns a configured gate off" },
+                  "openFor": {
+                    "oneOf": [
+                      { "type": "string" },
+                      { "type": "array", "items": { "type": "string" } }
+                    ],
+                    "description": "NPC id or ids whose approach opens the gate"
+                  },
+                  "openRadius": { "type": "number", "minimum": 0, "description": "Pixels from the door centre at which an openFor NPC opens it (default 56)" },
+                  "holdMs": { "type": "number", "minimum": 0, "description": "ms it stays open after the last NPC leaves (default 2500)" },
+                  "playerMayPassIf": { "type": "string", "description": "A global. While false, a player who comes within openRadius of the open gate shuts it" }
+                }
+              }
+            }
+          }
+        },
         "lockType": {
           "type": "string",
           "enum": ["key", "pin", "rfid", "password", "bluetooth", "biometric", "flag", "ransomware_display", "network_architecture", "alarm_panel"]
@@ -4207,7 +4235,15 @@
                           "properties": {
                             "x": { "type": "number" },
                             "y": { "type": "number" },
-                            "dwellTime": { "type": "number", "minimum": 0 }
+                            "dwellTime": { "type": "number", "minimum": 0 },
+                            "action": {
+                              "type": "object",
+                              "description": "Run on arrival at this waypoint, before the dwell or the next leg. See README_scenario_design.md, 'Patrol Behaviour'.",
+                              "properties": {
+                                "unlockRoom": { "type": "string", "description": "Room id: the NPC unlocks it on the server as itself (needs an eventMapping with unlockDoor naming it), loads it, then carries on" },
+                                "useObject": { "type": "string", "description": "Scenario object id the NPC turns to face" }
+                              }
+                            }
                           }
                         }
                       }
@@ -4483,6 +4519,13 @@
       "properties": {
         "eventPattern": { "type": "string" },
         "condition": { "type": "string" },
+        "closeDoor": {
+          "oneOf": [
+            { "type": "string" },
+            { "type": "array", "items": { "type": "string" } }
+          ],
+          "description": "Room id or ids: shut the gate door(s) into that room now (systems/door-gates.js closeNow, forced). Warns if the door is not a gate."
+        },
         "onceOnly": { "type": "boolean" },
         "maxTriggers": { "type": "integer" },
         "cooldown": { "type": "integer" },

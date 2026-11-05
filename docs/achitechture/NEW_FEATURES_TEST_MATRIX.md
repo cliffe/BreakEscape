@@ -213,6 +213,26 @@ Gaps:
 - Medium: README room table rows (slots, door positions) for the `room_lw_*` family.
 - Low: one screenshot per room kept under the lab folder.
 
+## Update 2026-11-05 (unit-test, docs and schema pass)
+
+Closed by `1cea1c34f` and the docs commit that follows it:
+
+| Gap | Closed by |
+|---|---|
+| 1 needsHome preference (use and carry, unreachable and busy fallback) | `npc-needs.test.mjs`, 7 new tests |
+| 6 RFID clone-as-entry (`evaluateRfidCredential`, `playerHoldsRfidCredentialFor`) | `rfid-clone-entry.test.mjs`, 9 tests |
+| 2, 6 gate `playerOpen`, hold window vs the undisguised-shut rule, `playerMayPassIf` normalisation | `door-gates-player-open.test.mjs`, 8 tests |
+| 9 mapping array order and cross-visibility of a global | `event-mapping-order.test.mjs`, 5 tests; rule documented in the README |
+| 4 route action `useObject` | `npc-route-multiroom.test.mjs`, 3 new tests (the action only faces the object; it does not call `onUse`) |
+| 5 `loadRoom` idempotency | `load-room-idempotent.test.mjs`, 5 tests plus 1 skipped (below) |
+| 3 `skipIfGlobal` list | already supported (`npc-sight-challenge.js` `skippedByGlobal`, used in a test); README now says so |
+| Docs | README: gate doors, route actions and `dwellTime`, mapping order, `closeDoor`, `near`, `room_lw_*` rows. NPC_NEEDS_SYSTEM.md header no longer cites a section 15 |
+| Schema | `rooms[].doors[].gate`, route waypoint `action`, eventMapping `closeDoor` added (optional) |
+
+Found, not fixed: `loadRoom` checks `window.rooms[roomId]` before its first `await`, so two simultaneous callers (a route NPC's `unlockRoom` and the player's door click) each fetch the room and load its NPCs; `createRoom`'s own guard stops a duplicate room. Skipped test: `load-room-idempotent.test.mjs` "two simultaneous calls fetch once"; engine site `core/rooms.js` line 781.
+
+Still open from this audit: carry deadline and freeze extension, drop-on-abort, `addCapture` mapping merge, route `dwellTime`, `room_lw_*` preload consistency test, validator rules, all browser runs.
+
 ## Prioritised gap list
 
 High

@@ -125,6 +125,24 @@ The code in `validateDoorsByRoomOverlap()` (lines 3236-3323) shows that:
 2. If a door connects to a locked room, the door inherits the lock properties (lines 3296-3303)
 3. Doors that don't connect exactly two rooms are removed (lines 3281-3291)
 
+#### Gate doors (`doors[].gate`)
+
+A door entry in a room's `doors` array can carry a `gate`: it opens for listed NPCs as they near, holds open for a while, then shuts and relocks. The player can't open it by clicking; they follow the NPC in (tailgating), or present a credential that satisfies the door's `requires` (a saved clone on an `rfid_cloner` counts), which opens it for one `holdMs` window.
+
+```json
+"doors": [{ "connectedRoom": "secure_area", "direction": "north", "requires": "cm_records_badge",
+            "gate": { "openFor": ["len"], "openRadius": 56, "holdMs": 2500, "playerMayPassIf": "courier_ready" } }]
+```
+
+| Field | Default | Description |
+|-------|---------|-------------|
+| `openFor` | — | NPC ids (string or list) whose approach opens it |
+| `openRadius` | `56` | Pixels from the door centre at which an `openFor` NPC opens it |
+| `holdMs` | `2500` | How long it stays open after the last NPC leaves (the tailgate window) |
+| `playerMayPassIf` | none | A global. While it is false, a player who comes within `openRadius` of the open gate shuts it |
+
+N/S doorways only; E/W gates are untested. Events: `door_gate_opened`, `door_gate_closed`, `door_gate_denied` (a bare click), `door_gate_player_opened` (credential accepted). An NPC mapping's `closeDoor` shuts one early. See `docs/achitechture/TAILGATE_REDESIGN.md`.
+
 #### Designing Solvable Scenarios with the Grid System
 
 The grid-based room layout system provides significant flexibility for scenario design:
@@ -353,6 +371,13 @@ The `type` field of each room must be one of the room keys registered in `public
 | `room_se_recon` | Recon room, lab_social_engineering (2×2 GU; copied from `room_zds_office`) — binder shelves, org-chart whiteboard, notice board, info screen under a RECON plate; two research desks with PCs (W), side table, small rack. Door E. Slots: `pc` (as-type, the top desk's `pc8`); conditional `notes` on the side table |
 | `room_se_ops` | Operations room, lab_social_engineering (2×2 GU; copied from `room_qdc_open`) — OPERATIONS plate, whiteboard, IT bench, comms cabinet, year planner, coffee station; two desk banks with PCs and a desk phone, photocopier. Door W. Slots: `pc` ×2 (as-type, `pc8` then `pc6`), `phone3` |
 | `room_se_blueteam` | Blue team room, lab_social_engineering (2×2 GU; copied from `room_aes_security`) — threat map, camera wall, SIEM board under a BLUE TEAM plate, rota; monitoring desk, side desk, tea station, DVR rack. Door S (SW); nothing below feet y 256. Slots (as-type): `security_monitor`, `siem_dashboard` |
+| `room_lw_reception` | Ledgerwell reception, lab_physical_pentest (copied from `room_reception`) |
+| `room_lw_hall` | Ledgerwell corridor, lab_physical_pentest (copied from `hall_1x2gu`) |
+| `room_lw_office` | Ledgerwell office, lab_physical_pentest (2×2 GU; same geometry and slots as `room_se_ops`) |
+| `room_lw_records` | Ledgerwell records / admin office, lab_physical_pentest (2×2 GU; copied from `room_lw_office`) — open plan with filing, binders and records signage in place of the ops decor |
+| `room_lw_briefing` | Ledgerwell kit and briefing room, lab_physical_pentest (2×2 GU; copied from `room_se_engagement`) — Ledgerwell carpet and signage, a kit bench |
+| `room_lw_ceo` | Ledgerwell executive office, lab_physical_pentest (copied from `room_zds_ceo`) |
+| `room_lw_store` | Ledgerwell store room, lab_physical_pentest (1×1 GU; copied from `small_room_storage_1x1gu`) |
 | `room_aw_brightwell` | Brightwell Foods training room, awareness shells (2×2 GU; copied from `room_uni_seminar`) — green skirting and logo plate, window, year planner, quarter's bar chart; flip chart, long table with chairs, coffee station and water cooler. No doors drawn (the shells have no connections). Slots: `kiosk` (x 238, feet 140); host spot `{x: 5.5, y: 3.5}`, start `{x: 6, y: 6.2}` (`awareness/training_room.py`) |
 | `room_aw_tarrowby` | Tarrowby Logistics depot training room, awareness shells (2×2 GU; copied from `room_uni_seminar`) — steel-blue skirting and logo plate, yard window, shift rota board, route map, hi-vis on hooks; sheet vinyl, flip chart, long table, drinks vending, stacked chairs. Slots: `kiosk`; host spot and start as `room_aw_brightwell` |
 | `room_aw_quayholt` | Quayholt Insurance service-desk training room, awareness shells (2×2 GU; copied from `room_uni_seminar`) — purple skirting and logo plate, window, desk-queue screen, sign-in screen, LOCK poster; flip chart, long table, a spare service-desk position with PC and phone. Slots: `kiosk`; host spot and start as `room_aw_brightwell` |
@@ -1128,7 +1153,20 @@ The `behavior.patrol` object controls how the NPC moves around its room:
 | `pauseForPlayer` | `true` | Stop and face the player when they come close |
 | `changeDirectionInterval` | `5000` | ms between random patrol target changes (random-patrol fallback only) |
 
-For multi-room routes use `"multiRoom": true` with a `"route"` array instead of `"waypoints"`.
+For multi-room routes use `"multiRoom": true` with a `"route"` array instead of `"waypoints"`. Each route entry is `{ "room": "id", "waypoints": [...] }`; the NPC walks them in order and loops, and never walks into a room that isn't loaded yet. A route waypoint takes the same `dwellTime` and may also carry an `action`, run when the NPC arrives and before it dwells or moves on:
+
+```json
+"route": [
+  { "room": "hall", "waypoints": [{ "x": 2, "y": 3 }, { "x": 1, "y": 2, "dwellTime": 1500,
+      "action": { "unlockRoom": "secure_area", "useObject": "badge_reader" } }] },
+  { "room": "secure_area", "waypoints": [{ "x": 4, "y": 6 }] }
+]
+```
+
+| Action | Description |
+|--------|-------------|
+| `unlockRoom: "room_id"` | The NPC unlocks that room on the server as itself (it needs an `eventMapping` with `unlockDoor` naming the room), loads it, waits for the path grid to include it, then carries on. A refusal retries after 5 s; the route never moves into the unloaded room. Once the room is loaded the action is only a pause |
+| `useObject: "object_id"` | The NPC turns to face that object (a scenario object id, in any loaded room). It does not trigger the object's own behaviour. Combine with `unlockRoom` for a visible reader or keypad |
 
 #### Bark Notifications
 
@@ -1213,6 +1251,8 @@ Common event patterns:
 
 A mapping `condition` is one or more terms joined with `&&` (no `||`, no parentheses): `value`, `name`, `data.<field>` or `globalVars.<name>`, compared with `===`, `!==`, `>`, `<`, `>=`, `<=`, negated with `!`, tested bare for truth, or `.includes('…')`. `data.` and `globalVars.` operands can be dotted paths into nested objects, such as `data.result.maxAttemptsReached === true` on a `minigame_completed` event; a missing link along the path reads as `undefined`, so the term is simply false.
 
+**Mappings run in array order.** When several mappings on one NPC listen for the same event, they run top to bottom, and a global set by an earlier one (`setGlobal`) is already visible to the `condition` of a later one in the same dispatch. Put the mapping that records something first and the one that reacts to it second: `[{ "eventPattern": "npc_used:pc", "setGlobal": {"surfed": true} }, { "eventPattern": "npc_used:pc", "condition": "globalVars.surfed", "closeDoor": "vault" }]` closes the door; reverse the two and it doesn't.
+
 Event mapping actions (can be combined):
 
 | Action | Description |
@@ -1234,6 +1274,7 @@ Event mapping actions (can be combined):
 | `unlockTask: "task_id"` | Unlock a locked task |
 | `unlockAim: "aim_id"` | Unlock a locked objective aim |
 | `unlockDoor: "room_id"` or `["id1","id2"]` | Unlock the door to that room on the server, as this NPC, so it survives a reload (like ink `#unlock_door`, but the NPC needn't have been met or list the room in `unlockable`: the mapping is the permission). Fires `door_unlocked_by_npc`. The validator errors on a room that doesn't exist |
+| `closeDoor: "room_id"` or `["id1","id2"]` | Shut the gate door(s) into that room now (see [Gate doors](#gate-doors-doorsgate)), and keep them shut for at least the gate's `holdMs`. Never shuts on a player standing in the doorway. Warns in the console if the door isn't a gate |
 | `openMinigame: "mail_terminal"` or `{ "type": "exercise-station", "minigameData": { ... }, "name": "..." }` | Open a minigame from the starter registry (see [Opening a minigame from a scenario](#opening-a-minigame-from-a-scenario)). `type` is an object type from that table, `minigameData` is what an object of that type would carry. `onceOnly`, `maxTriggers`, `cooldown`, `condition` and `delayMs` apply as for any action. It opens a moment after the event, and waits behind any minigame that is open (a conversation closing, a scripted call). A `onceOnly` mapping is saved for a reload only once the minigame closes normally, so a reload mid-exercise lets it open again. Use it instead of `conversationMode`, not with it. An unknown type warns and opens nothing; the validator errors. |
 | `onceOnly: true` | Ensure mapping only fires once |
 | `delayMs: ms` | Run the whole mapping this long after the event instead of at once (e.g. `8000` on `room_entered:` so the player can look round before a scene opens). The checks run at the event (nothing is scheduled if the condition fails then) and again when the delay is up, so a `globalVars` term that has stopped holding cancels it. One delay per mapping is pending at a time; if a minigame or conversation is open when it is up, it waits for that to close. A pending delay is not saved, so a reload before it fires leaves the mapping to fire on the next event. Not for `lockpick_used_in_view` (the pick is stopped at once regardless). |
@@ -1270,7 +1311,8 @@ Walls, closed doors and tall props block his view and clip the drawn cone (`npc-
 | `event` | `"player_spotted:<npcId>"` | Name of the event to emit. |
 | `rooms` | any | Only while the player is in one of these rooms. He must be in the player's room in any case, because the cone ignores walls. |
 | `requireGlobal` | none | Only while this global is truthy (`"alarm_raised"`), or while every global listed matches its value (`{ "alarm_level": 2 }`). |
-| `skipIfGlobal` | none | Never while this global (or any in a list) is truthy, e.g. once the player has shown a badge. |
+| `skipIfGlobal` | none | Never while this global is truthy, or while any global in a list is, e.g. once the player has shown a badge. |
+| `near` | none | Only when the player is also within `radius` px (default `64`) of a target: `{ "door": "vault" }` (a door into or out of that room), `{ "object": "<objectId>" }` or `{ "x": 5, "y": 3, "room": "lobby" }` (room tiles). He must still see the player. With `near`, `rooms` may list the room on the far side of a door. Set `event` to something distinct such as `player_in_view_near:<npcId>`; the event data adds `targetId` and `targetType` (`door`, `object` or `tile`). Nothing fires while the target's room isn't loaded. |
 
 How it fires: while the player is in his room and inside his cone, and the conditions hold, the event is emitted once, with `{ npcId, roomId, playerPosition, timestamp }`. It doesn't fire again until the player has left his sight and come back, and the cooldown has passed. Nothing is checked while a conversation or minigame is open, so the challenge conversation itself doesn't retrigger it. KO'd and hidden NPCs see nothing. With `"enabled": false` on the `los` block itself he sees his whole room. The cooldown and sighting state are per session; a reload starts them fresh, so use `onceOnly` on the mapping (saved across reloads) for a challenge that must happen only once.
 

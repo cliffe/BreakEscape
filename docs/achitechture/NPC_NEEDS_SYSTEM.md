@@ -1,9 +1,9 @@
 # NPC Needs System (Sims-lite) — Design Contract
 
-Status: **design locked 2026-11-04; partly implemented** (section 15 lists what
-exists and what is left). This document is the contract for three roles:
+Status: **design locked 2026-11-04; partly implemented** (sections 11–13 are
+marked as built; the rest is the design, and the file has no section 14 or 15). This document is the contract for three roles:
 
-- **Engine implementer** builds the generic system (sections 1–11, 14–15).
+- **Engine implementer** builds the generic system (sections 1–11).
 - **Cyber Security agent** builds device behaviour and captures against the hooks
   in section 13 only, without touching the generic engine.
 - **Scenario author** wires the demo lab from section 12.
