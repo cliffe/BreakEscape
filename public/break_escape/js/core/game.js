@@ -432,11 +432,11 @@ export function preload() {
     this.load.image('keycard-maintenance', 'objects/keycard-maintenance.png');
     this.load.image('rfid_cloner', 'objects/rfid_cloner.png');
     // lab_physical_pentest kit devices
-    this.load.image('hw_keylogger', 'objects/hw_keylogger.png');
+    this.load.image('icon_deviceA', 'objects/icon_deviceA.png');
     this.load.image('lockpick_set', 'objects/lockpick_set.png');
     this.load.image('charging_cable', 'objects/charging_cable.png');
     this.load.image('qr_card', 'objects/qr_card.png');
-    this.load.image('badusb_stick', 'objects/badusb_stick.png');
+    this.load.image('icon_deviceB', 'objects/icon_deviceB.png');
     this.load.image('nfc-waves', 'icons/nfc-waves.png');
 
     // Load hospital object sprites (referenced by the objects tileset, tile ids 191-202)
