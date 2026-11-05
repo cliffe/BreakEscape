@@ -169,7 +169,7 @@ test('interest: a dropped tagged item is collected and used at an accepting PC',
     assert.ok(log.some(e => e.ev === 'picked_up' && e.item === 'dropped_thing'));
     const used = w.calls.emits.find(e => e.name === 'npc_used:finder_pc');
     assert.ok(used, 'npc_used fired');
-    assert.deepEqual(used.data, { npcId: 'finder', objectId: 'finder_pc', need: null, itemId: 'dropped_thing', tag: 'found_item', payload: { note: 'finder-owned' } });
+    assert.deepEqual(used.data, { npcId: 'finder', objectId: 'finder_pc', need: null, itemId: 'dropped_thing', tag: 'found_item', payload: { note: 'finder-owned' }, playerNearby: false, playerDistance: null });
     assert.equal(w.calls.globals.finder_used_item, true);
     assert.deepEqual(w.calls.consumed, [{ npcId: 'finder', itemId: 'dropped_thing' }]);
     // the clerk has no interests and never touched it
@@ -274,4 +274,50 @@ test('needs clock pauses on the VM and clamps long frames', () => {
     assert.equal(sys.clockMs, 1000);
     vm = false; now += 500; sys.update();
     assert.equal(sys.clockMs, 1500);
+});
+
+test('an unreachable nearer target is skipped, a reachable farther one is chosen', () => {
+    const cfg = office({ objects: [
+        { id: 'far_machine', x: 500, y: 300, affordance: { satisfies: 'caffeine', restores: 70, useSeconds: 5 } },
+        { id: 'locked_machine', x: 120, y: 120, affordance: { satisfies: 'caffeine', restores: 70, useSeconds: 5 } }
+    ] });
+    cfg.npcs.clerk.rec.needs.caffeine.jitterPct = 0;
+    const w = makeWorld(cfg);
+    w.world.reachable = (id, o) => o.id !== 'locked_machine' && o.id !== 'coffee_machine';
+    const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+    w.attach(sys);
+    sys.registerAll();
+    sys.step(4 * 60000);
+    const starts = sys.getLog().filter(e => e.ev === 'job_start');
+    assert.ok(starts.length >= 1);
+    assert.ok(starts.every(e => e.target === 'far_machine'), JSON.stringify(starts));
+    assert.equal(w.calls.emits.filter(e => e.name === 'npc_job_failed:clerk').length, 0);
+});
+
+test('with nothing reachable the NPC holds still instead of failing', () => {
+    const w = makeWorld(office());
+    w.world.reachable = () => false;
+    const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+    w.attach(sys);
+    sys.registerAll();
+    sys.step(10 * 60000);
+    assert.equal(w.calls.moves.length, 0);
+    assert.equal(w.calls.emits.filter(e => e.name.startsWith('npc_job_failed')).length, 0);
+});
+
+test('npc_used carries playerNearby and playerDistance from the world', () => {
+    for (const nearby of [true, false]) {
+        const cfg = office();
+        cfg.npcs.clerk.rec.needs.caffeine.jitterPct = 0;
+        const w = makeWorld(cfg);
+        w.world.playerProximity = () => ({ nearby, distance: 64.4 });
+        const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+        w.attach(sys);
+        sys.registerAll();
+        sys.step(5 * 60000);
+        const used = w.calls.emits.find(e => e.name === 'npc_used:coffee_machine');
+        assert.ok(used);
+        assert.equal(used.data.playerNearby, nearby);
+        assert.equal(used.data.playerDistance, 64);
+    }
 });

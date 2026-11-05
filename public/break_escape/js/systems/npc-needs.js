@@ -403,6 +403,22 @@ export class NPCNeedsSystem {
         return best;
     }
 
+    /**
+     * Nearest candidate (straight-line, ties by id) that the NPC can actually walk
+     * to. Candidates are tried nearest first so findWorldPath runs only until the
+     * first hit. A world without `reachable` (the node stub) treats all as reachable.
+     */
+    _nearestReachable(s, list, pos) {
+        const sorted = [...list].sort((a, b) => {
+            const da = Math.hypot(a.x - pos.x, a.y - pos.y), db = Math.hypot(b.x - pos.x, b.y - pos.y);
+            return da - db || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+        });
+        for (const o of sorted) {
+            if (typeof this.world.reachable !== 'function' || this.world.reachable(s.npcId, o)) return o;
+        }
+        return null;
+    }
+
     _select(s, pos) {
         const objects = this.world.listObjects();
         let best = null;
@@ -429,7 +445,7 @@ export class NPCNeedsSystem {
 
     _useCandidate(s, name, objects, pos) {
         const opts = objects.filter(o => o.affordance && asList(o.affordance.satisfies).includes(name) && this._free(s, o));
-        const target = this._nearest(opts, pos);
+        const target = this._nearestReachable(s, opts, pos);
         return target ? { kind: 'use', targetId: target.id } : null;
     }
 
@@ -437,12 +453,14 @@ export class NPCNeedsSystem {
         const rooms = it.noticeRooms || (s.home?.roomId ? [s.home.roomId] : (pos.roomId ? [pos.roomId] : []));
         const items = objects.filter(o => o.needsTag === tag && o.pickable && rooms.includes(o.roomId)
             && !this._itemClaimed(o.id, s.npcId) && !(s.cooldowns[o.id] > this.clockMs));
-        const item = this._nearest(items, pos);
+        const item = this._nearestReachable(s, items, pos);
         if (!item) return null;
         const targets = objects.filter(o => o.affordance && asList(o.affordance.accepts).includes(tag) && this._free(s, o));
         if (!targets.length) return null;
         const homeObj = s.home?.objectId ? targets.find(t => t.id === s.home.objectId) : null;
-        const target = homeObj || this._nearest(targets, item);
+        const target = (homeObj && (typeof this.world.reachable !== 'function' || this.world.reachable(s.npcId, homeObj)))
+            ? homeObj : this._nearestReachable(s, targets, item);
+        if (!target) return null;
         return { kind: 'carry', targetId: target.id, itemId: item.id, tag };
     }
 
@@ -529,7 +547,8 @@ export class NPCNeedsSystem {
         this.world.emit(`npc_used:${job.targetId}`, {
             npcId: id, objectId: job.targetId, need: job.need,
             itemId: job.carrying ? job.itemId : null, tag: job.carrying ? job.tag : null,
-            payload: cloneData(rec.usePayload)
+            payload: cloneData(rec.usePayload),
+            ...this._playerProximity(id)
         });
         const hook = rec.onUse && rec.onUse[job.targetId];
         if (hook && typeof hook === 'object') {
@@ -538,6 +557,12 @@ export class NPCNeedsSystem {
         }
         s.job = null;
         this._goHome(s);
+    }
+
+    /** Player proximity at use time: { playerNearby, playerDistance }. */
+    _playerProximity(npcId) {
+        const p = typeof this.world.playerProximity === 'function' ? this.world.playerProximity(npcId) : null;
+        return { playerNearby: !!(p && p.nearby), playerDistance: p && Number.isFinite(p.distance) ? Math.round(p.distance) : null };
     }
 
     _failJob(s, reason) {
@@ -676,8 +701,10 @@ export function createEngineWorld() {
         inChatWith(id) {
             const mg = W().MinigameFramework?.currentMinigame;
             if (!mg) return false;
+            // Base on the open minigame's own npcId: person-chat swaps
+            // currentConversationNPCId briefly around nested calls.
             const isPerson = W().currentConversationMinigameType === 'person-chat' || /person/i.test(mg.constructor?.name || '');
-            return isPerson && (mg.npcId === id || W().currentConversationNPCId === id);
+            return isPerson && mg.npcId === id;
         },
         listObjects() {
             const out = [];
@@ -710,6 +737,28 @@ export function createEngineWorld() {
                 return pm.findNearestWalkableWorldCell(obj.x, obj.y, 3);
             }
             return { x: obj.x, y: obj.y + TILE };
+        },
+        reachable(id, obj) {
+            const pm = W().pathfindingManager;
+            const pos = this.npcPos(id);
+            if (!pm?.findWorldPath || !pos) return true;
+            const cell = this.approachCell(obj);
+            if (!cell) return false;
+            let ok = false;
+            try { pm.findWorldPath(pos.x, pos.y, cell.x, cell.y, p => { ok = !!(p && p.length); }); } catch (e) { return false; }
+            return ok;
+        },
+        playerProximity(id) {
+            const pl = W().player;
+            const pos = this.npcPos(id);
+            if (!pl || !pos) return { nearby: false, distance: null };
+            const pr = pl.body?.center || { x: pl.x, y: pl.y };
+            const distance = Math.hypot(pr.x - pos.x, pr.y - pos.y);
+            const sameRoom = !W().currentPlayerRoom || !pos.roomId || W().currentPlayerRoom === pos.roomId;
+            let clear = true;
+            const pm = W().pathfindingManager;
+            if (pm?.hasWorldPhysicsLineOfSight) { try { clear = !!pm.hasWorldPhysicsLineOfSight(pos.x, pos.y, pr.x, pr.y); } catch (e) { clear = true; } }
+            return { nearby: sameRoom && distance <= 96 && clear, distance };
         },
         tileToWorld(roomId, x, y) {
             const room = W().rooms?.[roomId];
