@@ -646,6 +646,9 @@ async function handleDoorInteraction(doorSprite) {
     // A gate door (door-gates.js) only opens for its NPCs: the player never reaches
     // handleUnlock -> openDoor, which would destroy the sprite for good.
     if (props.gate) {
+        // Both rooms' sprites of the doorway take the same click: answer once
+        const group = window.doorGates?.groups?.get?.(props.gateKey);
+        if (group && isRepeatInteraction(group)) return;
         window.gameAlert?.('Access denied: this door only opens for authorised staff.', 'error', 'Door', 3000);
         window.eventDispatcher?.emit?.('door_gate_denied', {
             roomId: props.roomId, connectedRoom: props.connectedRoom, direction: props.direction
