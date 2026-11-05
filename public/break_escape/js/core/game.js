@@ -228,6 +228,7 @@ export function preload() {
     this.load.tilemapTiledJSON('room_lw_office', 'rooms/room_lw_office.json'); // from room_se_ops (same geometry and slots)
     this.load.tilemapTiledJSON('room_lw_records', 'rooms/room_lw_records.json'); // lab_physical_pentest open-plan records/admin office (from room_lw_office; ops decor replaced with filing/binders/records signage)
     this.load.tilemapTiledJSON('room_lw_briefing', 'rooms/room_lw_briefing.json'); // lab_physical_pentest kit & briefing room (from room_se_engagement; Ledgerwell carpet/signage, kit bench, Tarnside decor removed)
+    this.load.tilemapTiledJSON('room_lw_kitroom', 'rooms/room_lw_kitroom.json'); // lab_physical_pentest kit room, Ledgerwell identity (old partners' room: oxblood carpet, walnut sideboards, baize RoE board)
     this.load.tilemapTiledJSON('room_lw_ceo', 'rooms/room_lw_ceo.json'); // from room_zds_ceo (m03 portrait, magazine cover and static filing cabinet removed)
     this.load.tilemapTiledJSON('room_lw_store', 'rooms/room_lw_store.json'); // from small_room_storage_1x1gu
 
@@ -335,6 +336,11 @@ export function preload() {
     this.load.image('room_se_charcoal', 'tiles/rooms/room_se_charcoal.png'); // lab_social_engineering: Tarnside teal wall line, charcoal carpet (blue team)
     this.load.image('room_lw_carpet', 'tiles/rooms/room_lw_carpet.png'); // lab_physical_pentest: Ledgerwell brass wall line, bottle-green carpet
     this.load.image('room_lw_exec', 'tiles/rooms/room_lw_exec.png'); // lab_physical_pentest: Ledgerwell bottle-green carpet with the executive rug
+    this.load.image('room_lw_boards', 'tiles/rooms/room_lw_boards.png'); // lab_physical_pentest identity shell: oak boards, green runner (front of house)
+    this.load.image('room_lw_tiles', 'tiles/rooms/room_lw_tiles.png'); // identity shell: oatmeal carpet tiles (offices)
+    this.load.image('room_lw_vinyl', 'tiles/rooms/room_lw_vinyl.png'); // identity shell: grey-green vinyl (records)
+    this.load.image('room_lw_concrete', 'tiles/rooms/room_lw_concrete.png'); // identity shell: painted concrete (back of house)
+    this.load.image('room_lw_oxblood', 'tiles/rooms/room_lw_oxblood.png'); // identity shell: oxblood carpet with the table mark (kit room)
     this.load.image('room14', 'tiles/rooms/room14.png');
     this.load.image('room19', 'tiles/rooms/room19.png');
     this.load.image('door_32', 'tiles/door_32.png');

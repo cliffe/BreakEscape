@@ -376,6 +376,7 @@ The `type` field of each room must be one of the room keys registered in `public
 | `room_lw_office` | Ledgerwell office, lab_physical_pentest (2×2 GU; same geometry and slots as `room_se_ops`) |
 | `room_lw_records` | Ledgerwell records / admin office, lab_physical_pentest (2×2 GU; copied from `room_lw_office`) — open plan with filing, binders and records signage in place of the ops decor |
 | `room_lw_briefing` | Ledgerwell kit and briefing room, lab_physical_pentest (2×2 GU; copied from `room_se_engagement`) — Ledgerwell carpet and signage, a kit bench |
+| `room_lw_kitroom` | Ledgerwell kit and briefing room on the new identity shell, lab_physical_pentest (2×2 GU; map rebuilt from `room_lw_briefing`) — oxblood carpet with a table mark, two walnut sideboards for the kit, a green baize board for the rules of engagement, hi-vis and lanyard on wall hooks, a locker bank; replaces `room_lw_briefing` in the lab |
 | `room_lw_ceo` | Ledgerwell executive office, lab_physical_pentest (copied from `room_zds_ceo`) |
 | `room_lw_store` | Ledgerwell store room, lab_physical_pentest (1×1 GU; copied from `small_room_storage_1x1gu`) |
 | `room_aw_brightwell` | Brightwell Foods training room, awareness shells (2×2 GU; copied from `room_uni_seminar`) — green skirting and logo plate, window, year planner, quarter's bar chart; flip chart, long table with chairs, coffee station and water cooler. No doors drawn (the shells have no connections). Slots: `kiosk` (x 238, feet 140); host spot `{x: 5.5, y: 3.5}`, start `{x: 6, y: 6.2}` (`awareness/training_room.py`) |
