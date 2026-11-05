@@ -560,7 +560,6 @@ export function createDoorSpritesForRoom(roomId, position, fullRoomData = null) 
             d.connectedRoom === connectedRoom && d.direction === direction
         );
         const gateRaw = lockProps.gate || fullDoorDefinition?.gate || null;
-        const isGate = !!window.doorGates?.register?.(doorSprite, gateRaw);
 
         // Set up door info for transition detection
         doorSprite.doorInfo = {
@@ -592,6 +591,10 @@ export function createDoorSpritesForRoom(roomId, position, fullRoomData = null) 
 
         doorSprite.interactionZone = zone;
         doorSprites.push(doorSprite);
+
+        // Register after the body exists: a sprite made while its doorway's gate is
+        // open (the far room loading mid-hold) must start with its body disabled
+        const isGate = !!window.doorGates?.register?.(doorSprite, gateRaw);
 
         // If door starts unlocked, mark it as walkable in pathfinding (a gate starts shut;
         // door-gates.js marks it when it opens)

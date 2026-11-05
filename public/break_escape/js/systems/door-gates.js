@@ -69,6 +69,8 @@ function npcSprite(npcId) {
 }
 
 function centreOf(s) {
+    const bc = s.body?.center;
+    if (bc && Number.isFinite(bc.x) && Number.isFinite(bc.y)) return { x: bc.x, y: bc.y };
     if (typeof s.getCenter === 'function') { const c = s.getCenter(); return { x: c.x, y: c.y }; }
     return { x: s.x, y: s.y };
 }
