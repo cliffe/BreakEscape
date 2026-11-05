@@ -16,6 +16,7 @@ import {
     DOOR_INTERACTION_RANGE
 } from '../utils/constants.js';
 import { handleUnlock, notifyServerUnlock, playerHoldsRfidCredentialFor } from './unlock-system.js';
+import { appendLockedHint, lockedHintDuration } from '../utils/locked-hint.js';
 import { isRepeatInteraction } from './interaction-repeat.js';
 import { waitForRoomReady } from './room-ready.js';
 
@@ -665,7 +666,7 @@ async function handleDoorInteraction(doorSprite) {
             window.gameAlert?.('Access granted: cloned staff badge accepted.', 'success', 'Door', 3000);
             return;
         }
-        window.gameAlert?.('Access denied: this door only opens for authorised staff.', 'error', 'Door', 3000);
+        window.gameAlert?.(appendLockedHint('Access denied: this door only opens for authorised staff.', doorSprite), 'error', 'Door', lockedHintDuration(doorSprite, 3000));
         window.eventDispatcher?.emit?.('door_gate_denied', {
             roomId: props.roomId, connectedRoom: props.connectedRoom, direction: props.direction
         });

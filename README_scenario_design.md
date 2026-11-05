@@ -2583,7 +2583,16 @@ Gotchas:
 
 ### Locked-door hints (`lockedHint`)
 
-An opt-in line that tells the player where a key comes from. It works in any scenario, not only social ones. Put it on a locked room (it applies to every door into that room, and is what the lab does), on a door entry in a room's `doors[]` (read by `doors.js`, though no scenario uses door entries yet), or on a locked object with `"lockType": "key"`. The engine appends it to the alert a player gets when they try the lock with no key and no lockpick ("Requires key. <hint>"), and to the wrong-key alerts ("The selected key doesn't work with this lock. <hint>"). From the lab's Recon room:
+An opt-in line that tells the player how to get past a locked door, whatever its lock type. It works in any scenario, not only social ones. Put it on a locked room (it applies to every door into that room, and is what the lab does), on a door entry in a room's `doors[]` (read by `doors.js`, though no scenario uses door entries yet), or on a locked object. The engine appends it to the refusal the player gets, as a following sentence:
+
+- key lock: "Requires key. <hint>" (no key, no lockpick) and the wrong-key alerts ("The selected key doesn't work with this lock. <hint>");
+- RFID/badge lock: "Requires RFID keycard. <hint>", and the empty-cloner refusal; after a wrong card or clone at the reader, the hint appears as its own "Locked" toast;
+- PIN and password pads: after the pad closes on a failed attempt ("Failed to enter correct PIN. <hint>"); closing the pad without trying shows nothing;
+- biometric lock: the hint appears as its own "Locked" toast after each refused lift;
+- gate door (`door-gates.js`): "Access denied: this door only opens for authorised staff. <hint>", at the same moment `door_gate_denied` fires;
+- any other lock type that falls through to the generic "requires ... to unlock" line.
+
+Combination padlocks, cryptex and the Bluetooth/BLE locks keep their own wording and do not show the hint. From the lab's Recon room:
 
 ```json
 "recon_room": {
@@ -2596,7 +2605,8 @@ Gotchas:
 
 - **It took three layers to reach the toast.** The server's bootstrap filter keeps only listed room fields (`lockedHint` is now on that list in `app/models/break_escape/game.rb`), and `doors.js` copies it onto the door sprite. Node tests of the helper passed while the live door still said "Requires key" (lab rounds 5 and 6), so check a new door field in the browser, not only in a unit test.
 - **A player with a lockpick never sees it.** They are offered the pick instead.
-- **Key locks only.** The validator errors on an empty or non-string hint and warns when the hint sits on something unlocked or on another lock type, where it is never shown.
+- **Write it for the player who has just been refused.** It shows on every refusal, so name where to look or whom to ask, not the answer (no PIN, no card holder's name unless the player already knows it).
+- **The validator** (`scripts/validate_social/options.rb`) errors on an empty or non-string hint and warns when the hint sits on something unlocked, where it is never shown.
 
 ### Opening a minigame from a scenario
 

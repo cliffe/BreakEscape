@@ -14,3 +14,24 @@ export function withLockedHint(base, lockable) {
     const hint = getLockedHint(lockable);
     return hint ? `${base} ${hint}` : base;
 }
+
+/**
+ * A refusal line for a non-key lock: `base` with the lockedHint as a following sentence
+ * (a trailing full stop on `base` is not doubled). Same wording style as the key lock's
+ * "Requires key. <hint>". Returns `base` unchanged when there is no hint.
+ */
+export function appendLockedHint(base, lockable) {
+    const hint = getLockedHint(lockable);
+    return hint ? `${String(base).replace(/[.\s]+$/, '')}. ${hint}` : base;
+}
+
+/** Toast duration for a refusal line: longer when it carries a hint to read. */
+export function lockedHintDuration(lockable, plainMs) {
+    return getLockedHint(lockable) ? 5500 : plainMs;
+}
+
+/** Shows the hint alone, as a refusal toast (for locks whose own overlay already said no). */
+export function showLockedHintToast(lockable) {
+    const hint = getLockedHint(lockable);
+    if (hint) window.gameAlert?.(hint, 'error', 'Locked', 5500);
+}

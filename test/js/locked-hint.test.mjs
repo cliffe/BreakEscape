@@ -42,5 +42,5 @@ test('both Wrong Key alerts in the key starter go through the hint helper', () =
     const src = readFileSync(join(js, 'systems/minigame-starters.js'), 'utf8');
     assert.match(src, /withLockedHint\('The selected key doesn\\'t work with this lock\.', lockable\)[^;]*'Wrong Key', 4000/);
     assert.match(src, /withLockedHint\('None of your keys work with this lock\.', lockable\)[^;]*'Wrong Keys', 4000/);
-    assert.match(src, /import \{ withLockedHint \} from '\.\.\/utils\/locked-hint\.js'/);
+    assert.match(src, /import \{ withLockedHint[^}]*\} from '\.\.\/utils\/locked-hint\.js'/);
 });

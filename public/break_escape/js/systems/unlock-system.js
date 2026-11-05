@@ -14,6 +14,7 @@ import { rooms } from '../core/rooms.js';
 import { unlockDoor } from './doors.js';
 import { startLockpickingMinigame, startKeySelectionMinigame, startPinMinigame, startPasswordMinigame, startRansomwareDisplayMinigame, startBackupRecoveryMinigame, startInfusionPumpMinigame } from './minigame-starters.js';
 import { playUISound } from './ui-sounds.js';
+import { appendLockedHint, lockedHintDuration, showLockedHintToast } from '../utils/locked-hint.js';
 import { startFingerprintReader } from '../minigames/biometrics/fingerprint-reader-minigame.js';
 import { catchLockpickInView } from './lockpick-catch.js';
 
@@ -174,6 +175,13 @@ export function handleUnlock(lockable, type) {
         }
     };
     
+    // A refusal that came from inside a lock's own overlay (fingerprint reader, RFID cloner):
+    // report it, then show the door's lockedHint (if it has one) as the refusal toast.
+    const refusedWithHint = (reason) => {
+        emitDoorUnlockFailed(reason);
+        showLockedHintToast(lockable);
+    };
+
     switch(lockRequirements.lockType) {
         case 'key':
             // Note: requiredKey no longer available from server (security filtered)
@@ -405,7 +413,7 @@ export function handleUnlock(lockable, type) {
                 notifyServerUnlock(lockable, type, 'biometric').then(serverResponse => {
                     unlockTarget(lockable, type, lockable.layer, serverResponse);
                 });
-            }, emitDoorUnlockFailed);
+            }, refusedWithHint);
             break;
             
         case 'bluetooth':
@@ -543,7 +551,7 @@ export function handleUnlock(lockable, type) {
             // reader just refuses, rather than opening an empty cloner screen (m07 U9)
             else if (hasCloner && keycards.length === 0 && savedCards.length === 0) {
                 console.log('RFID CLONER EMPTY: no keycards, no saved cards');
-                window.gameAlert('Access denied. No keycard, and nothing saved on the cloner.', 'error', 'Access Denied', 4000);
+                window.gameAlert(appendLockedHint('Access denied. No keycard, and nothing saved on the cloner.', lockable), 'error', 'Access Denied', lockedHintDuration(lockable, 4000));
                 emitDoorUnlockFailed('no_card');
             }
             // PRIORITY 2: If player has RFID cloner, open minigame to emulate or read cards
@@ -557,7 +565,7 @@ export function handleUnlock(lockable, type) {
                     hasCloner: hasCloner,
                     // A refused card or clone at the reader: door_unlock_failed (reason
                     // wrong_card or uid_only), same as a refused key or fingerprint
-                    onRefused: emitDoorUnlockFailed,
+                    onRefused: refusedWithHint,
                     onComplete: async (success) => {
                         if (success) {
                             // Notify server and get room/container data
@@ -580,13 +588,13 @@ export function handleUnlock(lockable, type) {
             // PRIORITY 3: No valid keycard and no cloner
             else {
                 console.log('NO RFID CARDS OR CLONER AVAILABLE');
-                window.gameAlert('Requires RFID keycard', 'error', 'Access Denied', 4000);
+                window.gameAlert(appendLockedHint('Requires RFID keycard', lockable), 'error', 'Access Denied', lockedHintDuration(lockable, 4000));
                 emitDoorUnlockFailed('no_card');
             }
             break;
 
         default:
-            window.gameAlert(`This ${type} requires ${lockRequirements.lockType} to unlock.`, 'info', 'Locked', 4000);
+            window.gameAlert(appendLockedHint(`This ${type} requires ${lockRequirements.lockType} to unlock.`, lockable), 'info', 'Locked', lockedHintDuration(lockable, 4000));
             break;
     }
 }

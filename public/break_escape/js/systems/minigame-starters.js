@@ -13,7 +13,7 @@ import { keypadTitle } from '../utils/lock-titles.js';
 import { resolveObjectField } from '../utils/conditional-text.js';
 import { socialOverlayParams } from '../minigames/framework/social-overlay.js';
 import { startInboxTriageMinigame } from './triage-starter.js';
-import { withLockedHint } from '../utils/locked-hint.js';
+import { withLockedHint, appendLockedHint, lockedHintDuration } from '../utils/locked-hint.js';
 import { rejectionAlert } from '../utils/flag-wording.js';
 import { startEpisodeRunner } from './episode-starter.js';
 import { writeGlobal } from './global-writer.js';
@@ -563,7 +563,7 @@ export function startPinMinigame(lockable, type, correctPin, callback) {
                 console.log('PIN MINIGAME FAILED');
                 // result.cancelled: the player just closed the pad -- say nothing
                 if (!result?.cancelled && !window.minigameClosedByDamage?.()) {
-                    window.gameAlert("Failed to enter correct PIN.", 'error', 'PIN Rejected', 3000);
+                    window.gameAlert(appendLockedHint("Failed to enter correct PIN.", lockable), 'error', 'PIN Rejected', lockedHintDuration(lockable, 3000));
                 }
                 callback(false, result);
             }
@@ -622,7 +622,8 @@ export function startPasswordMinigame(lockable, type, correctPassword, callback,
                 if (!window.minigameClosedByDamage?.()) {
                     // A flag lock says so: a mistyped flag is not "a password"
                     const rej = rejectionAlert(lockable, type, { message: "Failed to enter correct password.", title: 'Password Rejected' });
-                    window.gameAlert(rej.message, 'error', rej.title, 3000);
+                    const hinted = result?.cancelled ? rej.message : appendLockedHint(rej.message, lockable);
+                    window.gameAlert(hinted, 'error', rej.title, result?.cancelled ? 3000 : lockedHintDuration(lockable, 3000));
                 }
                 callback(false, result);
             }

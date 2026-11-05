@@ -114,7 +114,7 @@ test('mirrorToBehavior: needs a boolean and a person NPC that exists', { skip },
   assert.equal(issues.length, 3, issues.join('\n'));
 });
 
-test('lockedHint: runs without a social key; wrong type, blank, unlocked and non-key locks are reported', { skip }, () => {
+test('lockedHint: runs without a social key; wrong type, blank and unlocked are reported; any lock type is fine', { skip }, () => {
   const json = load('locked_hint');
   assert.equal(json.social, undefined);
   const issues = lint(json).filter((s) => s.includes('lockedHint'));
@@ -123,8 +123,8 @@ test('lockedHint: runs without a social key; wrong type, blank, unlocked and non
   has(issues, /❌.*\/rooms\/store lockedHint must be a non-empty string \(got a number\)/);
   has(issues, /❌.*\/rooms\/yard\/doors\[0\] lockedHint must be a non-empty string \(got an empty string\)/);
   has(issues, /⚠️.*\/rooms\/lab has a lockedHint but is not locked/);
-  has(issues, /⚠️.*\/rooms\/office\/objects\[1\] has a lockedHint but its lockType is "pin"/);
-  assert.equal(issues.length, 4, issues.join('\n'));
+  has(issues, /\/rooms\/office\/objects\[1\]/, 0);
+  assert.equal(issues.length, 3, issues.join('\n'));
 });
 
 test('a scenario without the options raises none of these lints', { skip }, () => {

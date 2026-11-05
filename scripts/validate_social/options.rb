@@ -8,7 +8,7 @@
 #   labelBy           social.engagement.report.labelBy      engagement-report/report-model.js targetNameResolver
 #   checklistTiming   social.mailClient.checklistTiming     mail-client-minigame.js _checklistTiming
 #   mirrorToBehavior  social.characters.<id>.mirrorToBehavior  systems/social-influence.js _mirror
-#   lockedHint        rooms, rooms[].doors[], rooms[].objects[]  utils/locked-hint.js, unlock-system.js
+#   lockedHint        rooms, rooms[].doors[], rooms[].objects[]  utils/locked-hint.js, unlock-system.js, doors.js
 #
 # lockedHint is engine-wide (doors.js, unlock-system.js), so Options.locked_hints runs for every
 # scenario; the rest run only when the scenario has a `social` key. No shipped mission authors
@@ -264,8 +264,10 @@ module ValidateSocial
 
     # ---- lockedHint (every scenario) ---------------------------------------------
 
-    # The hint is appended to the "Requires key" and wrong-key alerts only (unlock-system.js case
-    # 'key', minigame-starters.js key selection). getLockedHint returns '' for a non-string.
+    # The hint is appended to the refusal alert of any lock type: "Requires key", the wrong-key
+    # alerts, a missing RFID card, a wrong PIN or password, a gate door's "Access denied", and a
+    # toast after a biometric or cloner refusal (unlock-system.js, minigame-starters.js,
+    # doors.js). It is never shown on an unlocked lockable. getLockedHint returns '' for a non-string.
     def self.locked_hints(json)
       issues = []
       ValidateSocial.rooms(json).each do |room_id, room|
@@ -298,14 +300,9 @@ module ValidateSocial
                 'the engine drops anything else and shows the plain "Requires key" line']
       end
       locked = lockable.key?('locked') ? lockable['locked'] : fallback&.dig('locked')
-      lock_type = lockable['lockType'] || fallback&.dig('lockType')
-      if locked != true
-        ["⚠️ SOCIAL: #{path} has a lockedHint but is not locked; the hint is shown only on a locked key lock"]
-      elsif lock_type != 'key'
-        ["⚠️ SOCIAL: #{path} has a lockedHint but its lockType is #{lock_type.inspect}; the hint is shown only for a key lock"]
-      else
-        []
-      end
+      return [] if locked == true
+
+      ["⚠️ SOCIAL: #{path} has a lockedHint but is not locked; the hint is shown only when a locked lock refuses the player"]
     end
 
     def self.type_name(v)
