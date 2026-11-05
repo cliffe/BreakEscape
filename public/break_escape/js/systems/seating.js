@@ -401,7 +401,7 @@ function standSpot(chair, facing) {
     const b = chair.body;
     const foot = b ? bodyFeet(chair) : { x: chair.x + chair.width / 2, y: chair.y + chair.height };
     const cx = foot.x, cy = foot.y;
-    const reach = (b ? Math.max(b.width, b.height) / 2 : 10) + 10;
+    const reach = (b ? Math.max(b.width, b.height) / 2 : 10) + 14; // clear of the chair body
     const start = COMPASS.indexOf(facing);
     for (const step of [0, 1, -1, 2, -2, 3, -3, 4]) {
         const a = (angleOf(COMPASS[(start + step + 8) % 8]) + 90) * Math.PI / 180; // compass 0 = south = +y
