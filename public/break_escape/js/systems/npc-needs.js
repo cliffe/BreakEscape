@@ -744,9 +744,23 @@ export function createEngineWorld() {
             if (!pm?.findWorldPath || !pos) return true;
             const cell = this.approachCell(obj);
             if (!cell) return false;
-            let ok = false;
-            try { pm.findWorldPath(pos.x, pos.y, cell.x, cell.y, p => { ok = !!(p && p.length); }); } catch (e) { return false; }
-            return ok;
+            // EasyStar 0.4 hands its result to the callback through setTimeout unless
+            // sync is on, so the answer would arrive after we return. Turn sync on for
+            // this one call (single-threaded: nothing else can be queued meanwhile).
+            const pf = pm.worldPathfinder;
+            const canSync = !!(pf && pf.enableSync && pf.disableSync);
+            let ok = false, called = false;
+            if (canSync) pf.enableSync();
+            try {
+                pm.findWorldPath(pos.x, pos.y, cell.x, cell.y, p => { called = true; ok = !!(p && p.length); });
+            } catch (e) {
+                return false;
+            } finally {
+                if (canSync) pf.disableSync();
+            }
+            // No answer (world grid not ready, or sync unsupported): unknown, so do
+            // not block the NPC. The job timeout still catches a truly unreachable target.
+            return called ? ok : true;
         },
         playerProximity(id) {
             const pl = W().player;
