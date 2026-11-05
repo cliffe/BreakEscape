@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="640" columns="0">
+<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="644" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0">
   <image source="../objects/iv_stand1.png" width="25" height="60"/>
@@ -1920,5 +1920,17 @@
  </tile>
  <tile id="649">
   <image source="../objects/aw_poster_report_carrholme1.png" width="16" height="21"/>
+ </tile>
+ <tile id="650">
+  <image source="../objects/lw_logo_sign1.png" width="72" height="19"/>
+ </tile>
+ <tile id="651">
+  <image source="../objects/lw_sign_briefing1.png" width="39" height="11"/>
+ </tile>
+ <tile id="652">
+  <image source="../objects/lw_sign_records1.png" width="35" height="11"/>
+ </tile>
+ <tile id="653">
+  <image source="../objects/lw_sign_admin1.png" width="27" height="11"/>
  </tile>
 </tileset>

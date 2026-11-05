@@ -1105,6 +1105,10 @@ WALL_MOUNTED_EXTRAS = {
     "aw_quayholt_queue",
     "aw_logo_carrholme",
     "aw_poster_report_carrholme",
+    "lw_logo_sign",
+    "lw_sign_briefing",
+    "lw_sign_records",
+    "lw_sign_admin",
 }
 
 

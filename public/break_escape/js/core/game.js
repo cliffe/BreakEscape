@@ -226,6 +226,7 @@ export function preload() {
     this.load.tilemapTiledJSON('room_lw_reception', 'rooms/room_lw_reception.json'); // from room_reception
     this.load.tilemapTiledJSON('room_lw_hall', 'rooms/room_lw_hall.json'); // from hall_1x2gu
     this.load.tilemapTiledJSON('room_lw_office', 'rooms/room_lw_office.json'); // from room_se_ops (same geometry and slots)
+    this.load.tilemapTiledJSON('room_lw_records', 'rooms/room_lw_records.json'); // lab_physical_pentest open-plan records/admin office (from room_lw_office; ops decor replaced with filing/binders/records signage)
     this.load.tilemapTiledJSON('room_lw_ceo', 'rooms/room_lw_ceo.json'); // from room_zds_ceo (m03 portrait, magazine cover and static filing cabinet removed)
     this.load.tilemapTiledJSON('room_lw_store', 'rooms/room_lw_store.json'); // from small_room_storage_1x1gu
 
@@ -400,6 +401,10 @@ export function preload() {
     this.load.image('aw_chair_w_charcoal1', 'objects/aw_chair_w_charcoal1.png');
     this.load.image('aw_logo_carrholme1', 'objects/aw_logo_carrholme1.png');
     this.load.image('aw_poster_report_carrholme1', 'objects/aw_poster_report_carrholme1.png');
+    this.load.image('lw_logo_sign1', 'objects/lw_logo_sign1.png');
+    this.load.image('lw_sign_briefing1', 'objects/lw_sign_briefing1.png');
+    this.load.image('lw_sign_records1', 'objects/lw_sign_records1.png');
+    this.load.image('lw_sign_admin1', 'objects/lw_sign_admin1.png');
     this.load.image('page-builder', 'objects/page-builder.png');
     this.load.image('report-workstation', 'objects/report-workstation.png');
     this.load.image('suitcase', 'objects/suitcase-1.png');
