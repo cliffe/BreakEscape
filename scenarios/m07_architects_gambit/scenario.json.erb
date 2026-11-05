@@ -1460,6 +1460,11 @@ scada_password = "CascadeWindow19"
             "hostile": { "chaseSpeed": 100, "attackDamage": 4, "pauseToAttack": true },
             "patrol": {
               "enabled": true,
+              <%# 2026-11-05: the player spawn is 55px from Ray, inside the default 96px
+                  face-player radius, so with pauseForPlayer on he never left his first
+                  tile while the player stood near the start. His challengeOnSight cone
+                  still notices the player. %>
+              "pauseForPlayer": false,
               "waypoints": [
                 <%# PASS 2 review: the old circuit started on desk1 (x2.0-4.4, y3.5-4.7)
                     and ran through the waiting chairs and the potted plants. This one
