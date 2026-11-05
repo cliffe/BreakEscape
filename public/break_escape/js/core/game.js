@@ -227,6 +227,7 @@ export function preload() {
     this.load.tilemapTiledJSON('room_lw_hall', 'rooms/room_lw_hall.json'); // from hall_1x2gu
     this.load.tilemapTiledJSON('room_lw_office', 'rooms/room_lw_office.json'); // from room_se_ops (same geometry and slots)
     this.load.tilemapTiledJSON('room_lw_records', 'rooms/room_lw_records.json'); // lab_physical_pentest open-plan records/admin office (from room_lw_office; ops decor replaced with filing/binders/records signage)
+    this.load.tilemapTiledJSON('room_lw_briefing', 'rooms/room_lw_briefing.json'); // lab_physical_pentest kit & briefing room (from room_se_engagement; Ledgerwell carpet/signage, kit bench, Tarnside decor removed)
     this.load.tilemapTiledJSON('room_lw_ceo', 'rooms/room_lw_ceo.json'); // from room_zds_ceo (m03 portrait, magazine cover and static filing cabinet removed)
     this.load.tilemapTiledJSON('room_lw_store', 'rooms/room_lw_store.json'); // from small_room_storage_1x1gu
 
