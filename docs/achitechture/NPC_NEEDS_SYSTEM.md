@@ -254,6 +254,22 @@ start best, or hold still
   this NPC's failure cooldown.
 - **Claimed item:** an item already in another NPC's carry job is skipped.
 
+**Tick cost (built 2026-11-05, `OFFICE_LIFE_PLAN.md` 2.0).** An NPC with no urgent or
+starved need and no interests skips the selector without looking at any object. The
+object list is built at most once per tick (rebuilt after a pickup, consume, drop,
+emit or `setGlobal`, since a listener can reveal or move things), and each
+(NPC, object) reachability answer is reused within the tick. None of this changes a
+decision. One thing authors can see: an NPC whose selection ran a path search and still
+found nothing (a free target it cannot reach, or an item with nowhere to take it, such
+as the showcase's abandoned mugs before the kitchen loads) **re-selects after 1 s**
+instead of every tick. Any job completing or aborting, a room loading, or one of its
+needs newly going urgent clears that wait, so contention timing is unchanged (an NPC
+waiting on a claimed target runs no search and still checks every tick). The worst case
+is a blocked NPC starting up to four ticks (1 s) later than before, when what unblocks it
+is something else (a failure cooldown ending, an item appearing that nobody dropped
+through the needs system, a path opening). `window.npcNeedsSystem.stats` counts
+`ticks`, `selects`, `objectScans`, `pathSearches` and `backoffs` for live measurement.
+
 ### 5.3 Jobs and moves
 
 ```

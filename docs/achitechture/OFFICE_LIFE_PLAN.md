@@ -128,6 +128,16 @@ tests, risks. "Live check" means the keyless server on :3001, headless, driven t
 
 ### 2.0 Tick-cost hygiene (prerequisite)
 
+**Built: 2026-11-05 (slice 1, commit 5b1749a05).** Steps 1-4 and the icon cache as written; the
+room-load hook (R3 m1) is the adapter's `roomIds()`, checked at the start of each tick
+(`_onRoomsLoaded` is the place slice 7 hangs "stow on sight"); a need newly going urgent also
+clears that NPC's back-off. Fixture: `test/js/fixtures/needs-sims-world.mjs` (extends
+`makeWorld`, now in `fixtures/needs-stub-world.mjs`); tests in `npc-needs-tick-cost.test.mjs`.
+Live, `test_needs_sims` (games 541 before, 544 after, same script): object scans 3.5 to 0.9 per
+tick, path searches 0.36 to 0.11 per tick, mean tick 0.34 to 0.19 ms; every README beat still
+happens and the contention start lands on the same tick as the freeing use. Not done: the
+15-NPC generated copy and its `.gitignore` line, and the README live-proof table re-run.
+
 **Engine.** In `npc-needs.js`, in this order:
 1. Short-circuit `_select` before `listObjects` when no need is urgent or starved and the NPC has
    no interests (446). The cheapest win: most NPCs most ticks are not choosing anything.
