@@ -137,6 +137,9 @@ export class DoorGates {
         // The locked room's credential (clone-as-entry). Any sprite of the doorway may
         // carry it (the far room's door derives `requires` from the connected room too).
         if (g.requires == null && props.requires != null) g.requires = props.requires;
+        // Likewise the locked room's lockedHint: only the sprite on the approach side of the
+        // locked room carries it, but a click may land on either sprite of the doorway.
+        if (!g.lockedHint && typeof props.lockedHint === 'string' && props.lockedHint) g.lockedHint = props.lockedHint;
         g.sprites.add(sprite);
         props.gate = g.cfg;
         props.gateKey = key;

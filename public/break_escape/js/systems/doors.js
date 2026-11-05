@@ -666,7 +666,9 @@ async function handleDoorInteraction(doorSprite) {
             window.gameAlert?.('Access granted: cloned staff badge accepted.', 'success', 'Door', 3000);
             return;
         }
-        window.gameAlert?.(appendLockedHint('Access denied: this door only opens for authorised staff.', doorSprite), 'error', 'Door', lockedHintDuration(doorSprite, 3000));
+        // The hint lives on the locked room's side of the doorway; the group shares it
+        const hintSource = { doorProperties: { lockedHint: props.lockedHint || gateGroup?.lockedHint || null } };
+        window.gameAlert?.(appendLockedHint('Access denied: this door only opens for authorised staff.', hintSource), 'error', 'Door', lockedHintDuration(hintSource, 3000));
         window.eventDispatcher?.emit?.('door_gate_denied', {
             roomId: props.roomId, connectedRoom: props.connectedRoom, direction: props.direction
         });

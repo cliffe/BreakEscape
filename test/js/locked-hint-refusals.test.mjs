@@ -80,7 +80,10 @@ test('key locks: wrong-key text keeps going through withLockedHint', () => {
 
 test('gate door refusal appends the hint, then emits door_gate_denied', () => {
     const d = src('systems/doors.js');
-    assert.match(d, /appendLockedHint\('Access denied: this door only opens for authorised staff\.', doorSprite\), 'error', 'Door', lockedHintDuration\(doorSprite, 3000\)\);\s*window\.eventDispatcher\?\.emit\?\.\('door_gate_denied'/);
+    assert.match(d, /appendLockedHint\('Access denied: this door only opens for authorised staff\.', hintSource\), 'error', 'Door', lockedHintDuration\(hintSource, 3000\)\);\s*window\.eventDispatcher\?\.emit\?\.\('door_gate_denied'/);
+    // either sprite of the doorway may take the click: the hint falls back to the gate group's
+    assert.match(d, /props\.lockedHint \|\| gateGroup\?\.lockedHint/);
+    assert.match(readFileSync(join(js, 'systems/door-gates.js'), 'utf8'), /g\.lockedHint = props\.lockedHint/);
     // the gate sprite carries the room's hint in doorProperties, which getLockedHint reads
     assert.match(d, /lockedHint: lockProps\.lockedHint \?\? connectedRoomData\?\.lockedHint \?\? null/);
     assert.match(appendLockedHint('Access denied: this door only opens for authorised staff.', { doorProperties: { lockedHint: HINT } }), new RegExp(HINT));
