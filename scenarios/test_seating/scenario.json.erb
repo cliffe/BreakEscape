@@ -1,7 +1,7 @@
 {
   "scenario_id": "test_seating",
   "scenario_name": "Test: Seating",
-  "scenario_brief": "Engine test for chairs (systems/seating.js). Not a mission. Briefing room: NPCs placed with \"seated\" (exec chairs facing south and north, a swivel chair that turns to face you, and one atlas with no seated frames that stays standing). Reception: two people on waiting chairs. Office: needs NPCs that sit at their PCs, one who fetches a chair, and a coffee station they get up for. Sit on any chair with E or a click; on a swivel chair move to roll it; Space to stand on it, Space again to jump off.",
+  "scenario_brief": "Engine test for chairs (systems/seating.js). Not a mission. Briefing room: NPCs placed with \"seated\" (exec chairs facing south and north, a swivel chair that turns to face you, and one atlas with no seated frames that stays standing). Reception: two people on waiting chairs. Office: needs NPCs that sit at their PCs, one who fetches a chair, and a coffee station they get up for. Lounge: a two-place sofa (one place taken) and armchairs facing east and west. Sit on any chair with E or a click; on a swivel chair move to roll it; Space to stand on it, Space again to jump off.",
   "endGoal": "Engine test only.",
   "startRoom": "seat_briefing",
   "npcWindupMs": 700,
@@ -122,7 +122,8 @@
       "type": "room_lw_office",
       "door_sign": "Office",
       "connections": {
-        "west": "seat_reception"
+        "west": "seat_reception",
+        "east": "seat_lounge"
       },
       "npcs": [
         {
@@ -303,6 +304,48 @@
           }
         }
       ]
+    },
+    "seat_lounge": {
+      "type": "room_zds_reception",
+      "door_sign": "Lounge",
+      "connections": {
+        "west": "seat_office"
+      },
+      "npcs": [
+        {
+          "id": "lounge_sofa",
+          "displayName": "Mina",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 8
+          },
+          "spriteSheet": "female_office_worker_v2",
+          "storyPath": "scenarios/test_seating/ink/seat_npc.ink.json",
+          "currentKnot": "start",
+          "seated": {
+            "chair": "leather_sofa1"
+          },
+          "_comment": "Takes one of the sofa's two places; the player can take the other"
+        },
+        {
+          "id": "lounge_club",
+          "displayName": "Ade",
+          "npcType": "person",
+          "position": {
+            "x": 3,
+            "y": 9
+          },
+          "spriteSheet": "male_office_worker_v2",
+          "storyPath": "scenarios/test_seating/ink/seat_npc.ink.json",
+          "currentKnot": "start",
+          "seated": {
+            "chair": "club_chair_e1"
+          },
+          "_comment": "Side-view armchair facing east"
+        }
+      ],
+      "objects": []
     }
   }
 }

@@ -125,10 +125,20 @@ const STATIC_SEATS = {
     exec_chair_back1: { facing: 'north', seat: [19, 26] },
     exec_chair_black1: { facing: 'south', seat: [16, 33] },
     aw_studio_chair_n1: { facing: 'north', seat: [16, 10] },
+    m10_steel_chair1: { facing: 'south', seat: [8, 13] },
     // side-view sling chairs in receptions: left-1 faces west, right-1 east
     'chair-waiting-left-1': { facing: 'west', seat: [24, 23] },
     'chair-waiting-right-1': { facing: 'east', seat: [10, 23] },
-    aw_studio_chair_s1: { facing: 'south', seat: [16, 11] }
+    aw_studio_chair_s1: { facing: 'south', seat: [16, 11] },
+    // armchairs
+    sofa1: { facing: 'south', seat: [26, 41] },
+    club_chair_e1: { facing: 'east', seat: [16, 26] },
+    club_chair_w1: { facing: 'west', seat: [20, 26] },
+    leather_chair1: { facing: 'south', seat: [15, 30] },
+    // sofas and benches: several places, each taken by one person (two fit at this scale)
+    leather_sofa1: { facing: 'south', places: [[19, 25], [43, 25]] },
+    uni_sofa2: { facing: 'south', places: [[21, 25], [42, 25]] },
+    hce_bench1: { facing: 'south', places: [[19, 10], [41, 10]] }
 };
 
 const ROLL_SPEED = 0.8;        // seated rolling speed, as a share of walking speed
@@ -209,10 +219,48 @@ export function setChairFacing(chair, facing, seat = seatSpec(chair)) {
     if (chair.texture.key !== tex && chair.scene.textures.exists(tex)) chair.setTexture(tex);
 }
 
-/** World point where the sitter's hips go on this chair, facing `facing`. */
-function seatPoint(chair, seat, facing) {
-    const p = seat.kind === 'static' ? seat.seat : seat.family.seat[facing];
+/** World point where the sitter's hips go on this chair (place `place` of a sofa), facing `facing`. */
+function seatPoint(chair, seat, facing, place = 0) {
+    const p = seat.kind === 'static' ? (seat.places ? seat.places[place] : seat.seat) : seat.family.seat[facing];
     return { x: chair.x + p[0], y: chair.y + p[1] };
+}
+
+// ---- occupancy. A chair holds one person (chair.seatedBy); a sofa or bench one per
+// place (chair._places), and reads as seatedBy 'full' once every place is taken, so
+// code that only asks "is it free?" keeps working.
+
+/** Floor point under a place (or under the chair). */
+function placeFoot(chair, seat, place = 0) {
+    const x = seat?.places ? chair.x + seat.places[place][0] : chair.x + chair.width / 2;
+    return { x, y: chair.y + chair.height };
+}
+
+/** Free places, nearest to `near` first (a plain chair: [0] if free). */
+function freePlaces(chair, seat, near = null) {
+    if (!seat?.places) return chair.seatedBy ? [] : [0];
+    const taken = chair._places || {};
+    const free = seat.places.map((_, i) => i).filter(i => !taken[i]);
+    if (near) {
+        const d = i => { const f = placeFoot(chair, seat, i); return Math.hypot(f.x - near.x, f.y - near.y); };
+        free.sort((a, b) => d(a) - d(b));
+    }
+    return free;
+}
+
+/** Take a place for `who`; returns its index, or -1 when the chair is full. */
+function takePlace(chair, seat, who, near = null) {
+    const i = freePlaces(chair, seat, near)[0];
+    if (i === undefined) return -1;
+    if (!seat?.places) { chair.seatedBy = who; return 0; }
+    chair._places = chair._places || {};
+    chair._places[i] = who;
+    if (Object.keys(chair._places).length >= seat.places.length) chair.seatedBy = 'full';
+    return i;
+}
+
+function releasePlace(chair, seat, place = 0) {
+    if (seat?.places && chair._places) delete chair._places[place];
+    delete chair.seatedBy;
 }
 
 // ---------------------------------------------------------------- player state
@@ -239,6 +287,7 @@ export function trySit(chair) {
     if (state?.jumping) return true;
     if (state?.chair === chair) { standUp(); return true; }
     if (state) standUp();
+    if (!freePlaces(chair, seat).length) return true; // taken: nothing happens
     sitOn(chair, seat, canPlayerSit() ? 'sit' : 'stand');
     return true;
 }
@@ -289,6 +338,8 @@ function sitOn(chair, seat, pose) {
     player.body.setVelocity(0, 0);
 
     const approach = playerFeet(player);
+    const placeIdx = takePlace(chair, seat, 'player', approach);
+    if (placeIdx < 0) return false; // every place taken
     let facing;
     if (seat.kind === 'swivel') {
         facing = snapFacing(chairFacing(chair, seat), seat.valid);
@@ -317,7 +368,8 @@ function sitOn(chair, seat, pose) {
         moveDriverFeetTo(player, chair.x + footOffset.x, chair.y + footOffset.y);
     } else {
         // Static: no collisions while on it; the driver sits at the chair's foot.
-        footOffset = { x: chair.width / 2, y: chair.height - 2 };
+        const pf = placeFoot(chair, seat, placeIdx);
+        footOffset = { x: pf.x - chair.x, y: chair.height - 2 };
         player.body.checkCollision.none = true;
         moveDriverFeetTo(player, chair.x + footOffset.x, chair.y + footOffset.y);
     }
@@ -333,8 +385,7 @@ function sitOn(chair, seat, pose) {
     player.lastDirection = player.direction;
 
     state = { chair, seat, facing, pose, sprite, overlays, approach, footOffset, savedBody,
-              chairBodyWasEnabled, jumping: false, shownAnim: null };
-    chair.seatedBy = 'player';
+              chairBodyWasEnabled, jumping: false, shownAnim: null, place: placeIdx };
     applyPose();
     place();
     window.eventDispatcher?.emit?.(pose === 'sit' ? 'player_sat' : 'player_stood_on_chair',
@@ -364,11 +415,11 @@ function applyPose() {
 export function standUp(spot = null) {
     if (!state) return false;
     const player = window.player;
-    const { chair, seat, sprite, overlays, savedBody, approach, chairBodyWasEnabled, facing } = state;
+    const { chair, seat, sprite, overlays, savedBody, approach, chairBodyWasEnabled, facing, place: placeIdx } = state;
     state = null;
     sprite.destroy();
     overlays.forEach(o => o.destroy());
-    delete chair.seatedBy;
+    releasePlace(chair, seat, placeIdx);
 
     player.body.setVelocity(0, 0);
     player.body.setSize(savedBody.w, savedBody.h, false);
@@ -468,16 +519,37 @@ function proxyFeetOffset() {
     return { x: b.ox + b.w / 2, y: b.oy + b.h / 2 };
 }
 
+// Castor sound while rolling: the steady 1.5-7.5 s stretch of chair_roll.mp3 (it fades
+// out and has a gap after 8 s), looped. Same channel as footsteps (scene sound, not SoundManager).
+let rollSound = null;
+function updateRollSound(moving) {
+    try {
+        const scene = window.game;
+        if (!scene?.sound) return;
+        if (moving) {
+            if (!rollSound) {
+                if (!scene.cache?.audio?.exists?.('chair_roll')) return;
+                rollSound = scene.sound.add('chair_roll');
+                rollSound.addMarker({ name: 'roll', start: 1.5, duration: 6, config: { loop: true, volume: 0.9 } });
+            }
+            if (!rollSound.isPlaying) rollSound.play('roll');
+        } else if (rollSound?.isPlaying) {
+            rollSound.stop();
+        }
+    } catch (e) { /* sound unavailable */ }
+}
+
 /** Called right after the normal player movement each frame. */
 export function afterPlayerMovement() {
-    if (!state) { checkPending(); return; }
+    if (!state) { updateRollSound(false); checkPending(); return; }
     const player = window.player;
     if (window.playerHealth?.isKO?.()) { standUp(); return; }
-    if (state.jumping) { player.body.setVelocity(0, 0); return; }
+    if (state.jumping) { player.body.setVelocity(0, 0); updateRollSound(false); return; }
     if (state.seat.kind === 'swivel') {
         player.body.velocity.x *= ROLL_SPEED;
         player.body.velocity.y *= ROLL_SPEED;
     }
+    updateRollSound(state.seat.kind === 'swivel' && (player.body.velocity.x !== 0 || player.body.velocity.y !== 0));
     if (player.anims.isPlaying) player.anims.stop(); // no walk/idle animation on the hidden driver
 }
 
@@ -532,7 +604,7 @@ export function place() {
     applyPose();
 
     const facing = state.facing;
-    const sp = seatPoint(chair, seat, facing);
+    const sp = seatPoint(chair, seat, facing, state.place);
     const anchor = state.pose === 'sit' ? sitHip(sprite.texture.key, facing) : [proxyFeetOffset().x, proxyFeetOffset().y];
     sprite.setPosition(Math.round(sp.x - anchor[0]), Math.round(sp.y - anchor[1]));
     sprite.setVisible(chair.visible);
@@ -588,16 +660,18 @@ function chairsNear(roomId, x, y, maxDistance, want = null) {
         if (!obj.active || obj.seatedBy || !chairMatches(obj, want)) continue;
         const seat = seatSpec(obj);
         if (!seat) continue;
-        const fx = obj.x + obj.width / 2, fy = obj.y + obj.height;
-        const d = Math.hypot(fx - x, fy - y);
+        const i = freePlaces(obj, seat, { x, y })[0];
+        if (i === undefined) continue;
+        const f = placeFoot(obj, seat, i);
+        const d = Math.hypot(f.x - x, f.y - y);
         if (d <= maxDistance) out.push({ obj, seat, d });
     }
     return out.sort((a, b) => a.d - b.d);
 }
 
 /** Place a seated sprite (origin-aware) so its hips land on the chair's seat. */
-function poseSprite(sprite, chair, seat, facing) {
-    const sp = seatPoint(chair, seat, facing);
+function poseSprite(sprite, chair, seat, facing, place = 0) {
+    const sp = seatPoint(chair, seat, facing, place);
     const hip = sitHip(sprite.texture.key, facing);
     const x = Math.round(sp.x - hip[0] + sprite.displayOriginX);
     const y = Math.round(sp.y - hip[1] + sprite.displayOriginY);
@@ -617,7 +691,7 @@ function compassToward(dx, dy) {
 export function seatNPC(behavior, chair, opts = {}) {
     const sprite = behavior?.sprite;
     const seat = seatSpec(chair);
-    if (!sprite?.body || !seat || chair.seatedBy) return false;
+    if (!sprite?.body || !seat || !freePlaces(chair, seat).length) return false;
     if (!hasSitFrames(sprite.texture.key)) {
         if (!behavior._seatWarned) console.warn(`🪑 ${behavior.npcId}: atlas ${sprite.texture.key} has no seated frames; stays standing`);
         behavior._seatWarned = true;
@@ -636,14 +710,14 @@ export function seatNPC(behavior, chair, opts = {}) {
     sprite.body.checkCollision.none = true;
     sprite.body.immovable = true;
     if (chair.body) { chair.body.setVelocity(0, 0); chair.body.immovable = true; }
-    chair.seatedBy = behavior.npcId;
-    behavior._seat = { chair, seat, facing, saved, homeFacing: facing, facePlayer: opts.facePlayer !== false,
+    const placeIdx = takePlace(chair, seat, behavior.npcId, bodyFeet(sprite));
+    behavior._seat = { chair, seat, facing, saved, place: placeIdx, homeFacing: facing, facePlayer: opts.facePlayer !== false,
                        needsStop: opts.needsStop || null,
                        // needs seats: stand back up where the NPC works from
                        standAt: opts.needsStop ? bodyFeet(sprite) : null };
     behavior.isMoving = false;
     behavior.direction = COMPASS_TO_PLAYER[facing];
-    poseSprite(sprite, chair, seat, facing);
+    poseSprite(sprite, chair, seat, facing, placeIdx);
     window.eventDispatcher?.emit?.('npc_sat', { npcId: behavior.npcId, objectId: chair.objectId, facing });
     return true;
 }
@@ -653,16 +727,16 @@ export function unseatNPC(behavior) {
     const st = behavior?._seat;
     if (!st) return false;
     const sprite = behavior.sprite;
-    const { chair, seat, facing, saved, standAt, needsStop } = st;
+    const { chair, seat, facing, saved, standAt, needsStop, place: placeIdx } = st;
     behavior._seat = null;
     behavior._seatTried = true; // don't sit straight back down
-    delete chair.seatedBy;
+    releasePlace(chair, seat, placeIdx);
     if (chair.body && saved.chairImmovable !== null) chair.body.immovable = saved.chairImmovable;
     if (sprite?.body) {
         sprite.body.checkCollision.none = saved.none;
         sprite.body.immovable = saved.immovable;
         // Stand on the floor in front of the chair (or beside it)
-        const spot = standAt || (seat.kind === 'swivel' ? standSpot(chair, facing) : frontSpot(chair, facing));
+        const spot = standAt || (seat.kind === 'swivel' ? standSpot(chair, facing) : frontSpot(chair, facing, placeFoot(chair, seat, placeIdx)));
         if (spot) moveFeetTo(sprite, spot.x, spot.y);
     }
     if (needsStop) tuckIn(chair, seat, facing); // clear of the spot they come back to
@@ -672,10 +746,11 @@ export function unseatNPC(behavior) {
     return true;
 }
 
-function frontSpot(chair, facing) {
+function frontSpot(chair, facing, foot = null) {
     const a = (angleOf(facing) + 90) * Math.PI / 180;
-    const x = chair.x + chair.width / 2 + Math.cos(a) * 18;
-    const y = chair.y + chair.height - 4 + Math.sin(a) * 18;
+    const f = foot || { x: chair.x + chair.width / 2, y: chair.y + chair.height };
+    const x = f.x + Math.cos(a) * 18;
+    const y = f.y - 4 + Math.sin(a) * 18;
     return window.pathfindingManager?.findNearestWalkableWorldCell?.(x, y, 2) || { x, y };
 }
 
@@ -718,7 +793,7 @@ export function updateSeatedNPC(behavior, playerPos) {
         }
     }
     window.updateSpriteDepth?.(st.chair, st.chair.elevation || 0);
-    poseSprite(sprite, st.chair, st.seat, st.facing);
+    poseSprite(sprite, st.chair, st.seat, st.facing, st.place);
     return true;
 }
 
@@ -846,7 +921,7 @@ function updateNeedsSeat(behavior, ns, playerPos) {
             }
         }
         window.updateSpriteDepth?.(st.chair, st.chair.elevation || 0);
-        poseSprite(sprite, st.chair, st.seat, st.facing);
+        poseSprite(sprite, st.chair, st.seat, st.facing, st.place);
         return true;
     }
 

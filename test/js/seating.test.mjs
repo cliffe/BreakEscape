@@ -35,7 +35,10 @@ test('only known chairs are seats; trolleys and carts are not', () => {
     assert.equal(seatSpec(swivel('wheelchair-rotate', 2)), null);
     assert.equal(seatSpec({ texture: { key: 'hospital_chair_north' } })?.facing, 'north');
     assert.equal(seatSpec({ texture: { key: 'chair-waiting-left-1' } })?.facing, 'west');
-    assert.equal(seatSpec({ texture: { key: 'leather_sofa1' } }), null);
+    assert.equal(seatSpec({ texture: { key: 'leather_sofa1' } })?.places.length, 2); // two places
+    assert.equal(seatSpec({ texture: { key: 'm10_steel_chair1' } })?.facing, 'south');
+    assert.equal(seatSpec({ texture: { key: 'm10_steel_bench1' } }), null); // a workbench
+    assert.equal(seatSpec({ texture: { key: 'lecture_seat_row1' } }), null);
     assert.ok(isStaticSeatTexture('exec_chair_back1'));
     assert.ok(!isStaticSeatTexture('chair-grey-1')); // a static image that becomes a swivel chair
 });
