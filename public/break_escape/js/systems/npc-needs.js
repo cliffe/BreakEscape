@@ -467,7 +467,14 @@ export class NPCNeedsSystem {
 
     _useCandidate(s, name, objects, pos) {
         const opts = objects.filter(o => o.affordance && asList(o.affordance.satisfies).includes(name) && this._free(s, o));
-        const target = this._nearestReachable(s, opts, pos);
+        if (!opts.length) return null;
+        // Prefer the NPC's own post object (needsHome) when it satisfies this need
+        // and is reachable, so a person works at their own desk rather than the
+        // nearest free one. Only bites when the home object is among the options
+        // (e.g. the work need at an own-desk PC); other needs fall back to nearest.
+        const homeObj = s.home?.objectId ? opts.find(o => o.id === s.home.objectId) : null;
+        const target = (homeObj && (typeof this.world.reachable !== 'function' || this.world.reachable(s.npcId, homeObj)))
+            ? homeObj : this._nearestReachable(s, opts, pos);
         return target ? { kind: 'use', targetId: target.id } : null;
     }
 
