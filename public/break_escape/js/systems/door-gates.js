@@ -16,8 +16,16 @@
  * - `playerMayPassIf` names a global. While it is false, a player who comes within
  *   `openRadius` of the open gate shuts it at once (unless already in the doorway,
  *   where shutting it would trap them), and it stays shut while they are there.
- * - The player can't open it by clicking: doors.js handleDoorInteraction returns
- *   early for a gate ("Access denied") and emits door_gate_denied.
+ * - A bare player click never opens a gate: doors.js handleDoorInteraction routes a
+ *   gate click here and emits door_gate_denied. This holds regardless of the
+ *   underlying room's server lock state (an NPC route may have server-unlocked the
+ *   room only so its cross-room path could load; that must not grant the player
+ *   passage) — the gate is a client-side access control in its own right.
+ * - Clone-as-entry: a player who presents a credential satisfying the locked room's
+ *   `requires` (doors.js checks it, reusing the rfid clone path) calls playerOpen(),
+ *   which opens the gate for one holdMs window independent of `playerMayPassIf` and
+ *   emits door_gate_player_opened. Each gate learns its `requires` from the door's
+ *   doorProperties at register time (see register()).
  *
  * Open and close only toggle the door bodies and the pathfinding grid; they never go
  * through doors.js openDoor (which destroys the sprite) and never reload a room. Both
@@ -117,6 +125,7 @@ export class DoorGates {
             if (!cfg) return false;
             g = {
                 key, cfg, sprites: new Set(), open: false, lastNpcNear: -Infinity, forcedUntil: 0,
+                playerHoldUntil: 0, requires: props.requires ?? null,
                 x: props.worldX ?? sprite.x, y: props.worldY ?? sprite.y,
                 roomId: props.roomId, connectedRoom: props.connectedRoom, direction: props.direction,
                 isSideDoor: !!props.isSideDoor
@@ -125,6 +134,9 @@ export class DoorGates {
         } else if (cfg && !g.cfg) {
             g.cfg = cfg;
         }
+        // The locked room's credential (clone-as-entry). Any sprite of the doorway may
+        // carry it (the far room's door derives `requires` from the connected room too).
+        if (g.requires == null && props.requires != null) g.requires = props.requires;
         g.sprites.add(sprite);
         props.gate = g.cfg;
         props.gateKey = key;
@@ -134,6 +146,15 @@ export class DoorGates {
     }
 
     isGate(sprite) { return !!sprite?.doorProperties?.gateKey && this.groups.has(sprite.doorProperties.gateKey); }
+
+    /**
+     * The gate group whose doorway sits at (x, y), or null. Robust to a door sprite
+     * that never registered as a gate (e.g. the far room's sprite was created first
+     * with a null config, or a room reload dropped the `gate` field): doors.js uses it
+     * so a gate click is still caught and denied even when `doorProperties.gate` is
+     * absent, keeping player access decoupled from the room's server lock state.
+     */
+    groupAtPosition(x, y) { return this.groups.get(this._key(x, y)) || null; }
 
     /** The gate groups for a door named by the room it leads to (or comes from). */
     groupsFor(roomId) {
@@ -146,7 +167,8 @@ export class DoorGates {
     state(roomId) {
         return this.groupsFor(roomId).map(g => ({
             key: g.key, open: g.open, x: g.x, y: g.y, roomId: g.roomId, connectedRoom: g.connectedRoom,
-            direction: g.direction, sprites: g.sprites.size, forcedUntil: g.forcedUntil
+            direction: g.direction, sprites: g.sprites.size, forcedUntil: g.forcedUntil,
+            playerHoldUntil: g.playerHoldUntil || 0, requires: g.requires ?? null
         }));
     }
 
@@ -188,7 +210,7 @@ export class DoorGates {
         });
     }
 
-    open(g, now = Date.now()) {
+    open(g, now = Date.now(), eventName = 'door_gate_opened') {
         if (g.open) return false;
         this._prune(g);
         g.open = true;
@@ -203,8 +225,35 @@ export class DoorGates {
             pm.rebuildWorldGrid?.();
         }
         console.log(`🚪 Gate opened: ${g.roomId} ↔ ${g.connectedRoom}`);
-        this._afterToggle(g, 'door_gate_opened');
+        this._afterToggle(g, eventName);
         return true;
+    }
+
+    /**
+     * Open the gate(s) leading to/from `roomId` for the PLAYER and hold them open for
+     * holdMs, independent of `playerMayPassIf`. doors.js calls this when the player
+     * presents a credential that satisfies the gate's `requires` (clone-as-entry — the
+     * alternative to tailgating). Reuses open()/holdMs/the grid rebuild. Emits
+     * door_gate_player_opened (not door_gate_opened, so NPC-proximity mappings such as
+     * len_at_door are not triggered by the player's own entry).
+     * @returns {boolean} true when at least one gate was opened or held
+     */
+    playerOpen(roomId, { now = Date.now() } = {}) {
+        const groups = this.groupsFor(roomId);
+        if (!groups.length) {
+            console.warn(`door-gates: playerOpen "${roomId}" is not a gate door`);
+            return false;
+        }
+        let any = false;
+        for (const g of groups) {
+            this._prune(g);
+            if (!g.cfg) continue;
+            g.playerHoldUntil = now + Math.max(g.cfg.holdMs, 0);
+            if (g.open) this._afterToggle(g, 'door_gate_player_opened');   // already open (an NPC is passing)
+            else this.open(g, now, 'door_gate_player_opened');
+            any = true;
+        }
+        return any;
     }
 
     close(g) {
@@ -310,6 +359,7 @@ export class DoorGates {
                 continue;
             }
             if (inDoorway) continue;                 // never shut on the player
+            if (now < (g.playerHoldUntil || 0)) continue; // clone-as-entry: hold open through the window
             if (barred) { this.close(g); continue; } // undisguised player: shut at once
             if (npcNear) continue;
             if (now - g.lastNpcNear < g.cfg.holdMs) continue;

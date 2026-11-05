@@ -15,7 +15,7 @@ import {
     GRID_UNIT_HEIGHT_PX,
     DOOR_INTERACTION_RANGE
 } from '../utils/constants.js';
-import { handleUnlock, notifyServerUnlock } from './unlock-system.js';
+import { handleUnlock, notifyServerUnlock, playerHoldsRfidCredentialFor } from './unlock-system.js';
 import { isRepeatInteraction } from './interaction-repeat.js';
 import { waitForRoomReady } from './room-ready.js';
 
@@ -643,12 +643,28 @@ async function handleDoorInteraction(doorSprite) {
     const props = doorSprite.doorProperties;
     console.log(`Interacting with door: ${props.roomId} -> ${props.connectedRoom}`);
 
-    // A gate door (door-gates.js) only opens for its NPCs: the player never reaches
-    // handleUnlock -> openDoor, which would destroy the sprite for good.
-    if (props.gate) {
+    // A gate door (door-gates.js). The player never reaches handleUnlock -> openDoor
+    // (which would destroy the sprite for good) by clicking. A gate is a CLIENT-SIDE
+    // access control: a bare click never opens it, even when the room has been
+    // server-unlocked (an NPC's cross-room route unlocks it only so the room can
+    // load — that must not grant the PLAYER passage). Detect the gate robustly, by
+    // doorProperties or by a registered group at the doorway position, so this holds
+    // even for a sprite that lost its `gate` field on a room reload.
+    const gateGroup = window.doorGates?.groups?.get?.(props.gateKey)
+        || window.doorGates?.groupAtPosition?.(props.worldX ?? doorSprite.x, props.worldY ?? doorSprite.y)
+        || null;
+    if (props.gate || gateGroup) {
         // Both rooms' sprites of the doorway take the same click: answer once
-        const group = window.doorGates?.groups?.get?.(props.gateKey);
-        if (group && isRepeatInteraction(group)) return;
+        if (gateGroup && isRepeatInteraction(gateGroup)) return;
+        // Clone-as-entry: a held credential satisfying the locked room's `requires`
+        // (physical keycard or a clone saved on the rfid cloner) opens the gate for
+        // one hold window — the taught alternative to tailgating.
+        const requires = props.requires || gateGroup?.requires || null;
+        if (playerHoldsRfidCredentialFor(requires)
+            && window.doorGates?.playerOpen?.(props.connectedRoom)) {
+            window.gameAlert?.('Access granted: cloned staff badge accepted.', 'success', 'Door', 3000);
+            return;
+        }
         window.gameAlert?.('Access denied: this door only opens for authorised staff.', 'error', 'Door', 3000);
         window.eventDispatcher?.emit?.('door_gate_denied', {
             roomId: props.roomId, connectedRoom: props.connectedRoom, direction: props.direction

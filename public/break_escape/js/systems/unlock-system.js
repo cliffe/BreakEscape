@@ -56,6 +56,49 @@ function boundsOverlap(rect1, rect2) {
            rect1.y + rect1.height > rect2.y;
 }
 
+/**
+ * What RFID credentials the player currently holds for a lock's `requires` (a card id
+ * or an array of them). Shared by the rfid unlock path below and the gate clone-as-entry
+ * path (doors.js), so both agree on what counts as a valid card or clone.
+ *
+ * A match is a physical keycard, or a card saved on an rfid_cloner, whose id is one of
+ * the required ids. A card's id is its explicit `card_id`, else the lock it opens
+ * (window.lockRef) — the same rule everywhere.
+ */
+export function evaluateRfidCredential(requires) {
+    const requiredCardIds = Array.isArray(requires) ? requires : [requires];
+    const items = (window.inventory && window.inventory.items) || [];
+    const getCardId = (cardData) => cardData.card_id || window.lockRef(cardData);
+
+    const keycards = items.filter(item =>
+        item && item.scenarioData && item.scenarioData.type === 'keycard');
+    const matchingKeycard = keycards.find(card =>
+        requiredCardIds.includes(getCardId(card.scenarioData)));
+
+    const cloner = items.find(item =>
+        item && item.scenarioData && item.scenarioData.type === 'rfid_cloner');
+    const savedCards = (cloner && cloner.scenarioData && cloner.scenarioData.saved_cards) || [];
+    const hasValidClone = savedCards.some(card => requiredCardIds.includes(getCardId(card)));
+
+    return {
+        requiredCardIds,
+        keycards,
+        matchingKeycard,
+        hasValidCard: !!matchingKeycard,
+        cloner,
+        hasCloner: !!cloner,
+        savedCards,
+        hasValidClone
+    };
+}
+
+/** True when the player holds a keycard or saved clone satisfying `requires`. */
+export function playerHoldsRfidCredentialFor(requires) {
+    if (requires == null) return false;
+    const r = evaluateRfidCredential(requires);
+    return r.hasValidCard || r.hasValidClone;
+}
+
 export function handleUnlock(lockable, type) {
     console.log('UNLOCK ATTEMPT');
     playUISound('lock');
@@ -451,43 +494,18 @@ export function handleUnlock(lockable, type) {
         case 'rfid':
             console.log('RFID LOCK UNLOCK ATTEMPT');
 
-            // Support both single card ID (legacy) and array of card IDs
-            const requiredCardIds = Array.isArray(lockRequirements.requires) ?
-                lockRequirements.requires : [lockRequirements.requires];
+            // Support both single card ID (legacy) and array of card IDs, and find any
+            // matching physical keycard or saved clone — shared with the gate
+            // clone-as-entry path (evaluateRfidCredential).
+            const {
+                requiredCardIds, keycards, matchingKeycard, hasValidCard,
+                cloner, hasCloner, savedCards, hasValidClone
+            } = evaluateRfidCredential(lockRequirements.requires);
 
             // Check if door accepts UID-only emulation (for DESFire cards)
             const acceptsUIDOnly = lockRequirements.acceptsUIDOnly || false;
 
             console.log('RFID CARD REQUIRED', requiredCardIds, 'acceptsUIDOnly:', acceptsUIDOnly);
-
-            // Check for keycards in inventory
-            const keycards = window.inventory.items.filter(item =>
-                item && item.scenarioData &&
-                item.scenarioData.type === 'keycard'
-            );
-
-            // Helper to get card ID (standard: card_id, else the lock it opens)
-            const getCardId = (cardData) => cardData.card_id || window.lockRef(cardData);
-
-            // Find a matching physical keycard
-            const matchingKeycard = keycards.find(card =>
-                requiredCardIds.includes(getCardId(card.scenarioData))
-            );
-            const hasValidCard = !!matchingKeycard;
-
-            // Check for RFID cloner with saved cards
-            const cloner = window.inventory.items.find(item =>
-                item && item.scenarioData &&
-                item.scenarioData.type === 'rfid_cloner'
-            );
-
-            const hasCloner = !!cloner;
-            const savedCards = cloner?.scenarioData?.saved_cards || [];
-
-            // Check if any saved card matches
-            const hasValidClone = savedCards.some(card =>
-                requiredCardIds.includes(getCardId(card))
-            );
 
             console.log('RFID CHECK', {
                 requiredCardIds,

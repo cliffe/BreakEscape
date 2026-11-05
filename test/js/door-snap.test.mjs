@@ -12,7 +12,7 @@ const dataUrl = (src) => 'data:text/javascript;base64,' + Buffer.from(src).toStr
 let src = readFileSync(join(js, 'systems/doors.js'), 'utf8');
 const stub = (spec, body) => { src = src.replace(`from '${spec}'`, `from '${dataUrl(body)}'`); };
 stub('../utils/constants.js', 'export const TILE_SIZE = 32, GRID_UNIT_WIDTH_PX = 160, GRID_UNIT_HEIGHT_PX = 128, DOOR_INTERACTION_RANGE = 64;');
-stub('./unlock-system.js', 'export const handleUnlock = () => {}, notifyServerUnlock = () => {};');
+stub('./unlock-system.js', 'export const handleUnlock = () => {}, notifyServerUnlock = () => {}, playerHoldsRfidCredentialFor = () => false;');
 stub('./interaction-repeat.js', 'export const isRepeatInteraction = () => false;');
 stub('./room-ready.js', 'export const waitForRoomReady = () => Promise.resolve();');
 globalThis.window = {};
