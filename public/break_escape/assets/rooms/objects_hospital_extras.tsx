@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="660" columns="0">
+<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="663" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0">
   <image source="../objects/iv_stand1.png" width="25" height="60"/>
@@ -1980,5 +1980,14 @@
  </tile>
  <tile id="669">
   <image source="../objects/lw_ledger_shelves1.png" width="48" height="60"/>
+ </tile>
+ <tile id="670">
+  <image source="../objects/lw_time_clock1.png" width="24" height="44"/>
+ </tile>
+ <tile id="671">
+  <image source="../objects/lw_franking_machine1.png" width="24" height="19"/>
+ </tile>
+ <tile id="672">
+  <image source="../objects/lw_card_index1.png" width="36" height="29"/>
  </tile>
 </tileset>

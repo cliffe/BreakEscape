@@ -1122,6 +1122,7 @@ WALL_MOUNTED_EXTRAS = {
     "lw_sign_press_exit",
     "lw_sign_kitroom",
     "lw_pigeonholes",
+    "lw_time_clock",
 }
 
 

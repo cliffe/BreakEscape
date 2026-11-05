@@ -428,6 +428,9 @@ export function preload() {
     this.load.image('lw_credenza1', 'objects/lw_credenza1.png');
     this.load.image('lw_oval_table1', 'objects/lw_oval_table1.png');
     this.load.image('lw_ledger_shelves1', 'objects/lw_ledger_shelves1.png');
+    this.load.image('lw_time_clock1', 'objects/lw_time_clock1.png');
+    this.load.image('lw_franking_machine1', 'objects/lw_franking_machine1.png');
+    this.load.image('lw_card_index1', 'objects/lw_card_index1.png');
     this.load.image('page-builder', 'objects/page-builder.png');
     this.load.image('report-workstation', 'objects/report-workstation.png');
     this.load.image('suitcase', 'objects/suitcase-1.png');
