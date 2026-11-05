@@ -182,3 +182,68 @@ test('transition into an unloaded room waits', async () => {
     assert.equal(b.config.patrol.currentSegmentIndex, 0);
     assert.ok(b._pathRetryAfter > 0);
 });
+
+// ── route action useObject ──────────────────────────────────────────────────
+
+const READER_ROUTE = [
+    { room: 'a', waypoints: [{ x: 2, y: 2 }, { x: 4, y: 1, action: { useObject: 'reader' } }, { x: 5, y: 5 }] },
+    { room: 'b', waypoints: [{ x: 4, y: 6 }] }
+];
+
+test('useObject: the NPC faces the named object, makes no network call, and the route carries on', async () => {
+    const { b, loads, unlocks, requests } = setup({ bLoaded: true, bLocked: false });
+    const faced = [];
+    b.faceWorldPoint = (x, y) => faced.push([x, y]);
+    window.rooms.a.objects = { reader: { x: 300, y: 200 } };
+    b.config = await silently(() => b.parseConfig({ patrol: { enabled: true, multiRoom: true, route: READER_ROUTE } }));
+    loads.length = 0;
+    const arrive = () => { b._pendingRouteAction = b.patrolTarget?.routeAction || null; b.currentPath = []; };
+    await silently(() => b.chooseNewPatrolTarget(0));                  // wp0
+    arrive();
+    await silently(() => b.chooseNewPatrolTarget(0));                  // wp1: carries the action
+    assert.deepEqual(requests.at(-1), { x: 128, y: 352 });
+    arrive();
+    assert.deepEqual(b._pendingRouteAction, { useObject: 'reader' });
+    await silently(() => b.chooseNewPatrolTarget(0));                  // runs the action
+    assert.deepEqual(faced, [[300, 200]]);
+    assert.equal(b._pendingRouteAction, null);
+    assert.equal(b._routeWait, null);
+    assert.deepEqual(unlocks, []);
+    assert.deepEqual(loads, []);
+    const before = requests.length;
+    await silently(() => b.chooseNewPatrolTarget(0));                  // on to wp2
+    assert.equal(requests.length, before + 1);
+    assert.deepEqual(requests.at(-1), { x: 160, y: 480 });
+});
+
+test('useObject finds an object by its scenario id in any loaded room, and survives an unknown id', async () => {
+    const { b } = setup({ bLoaded: true, bLocked: false });
+    const faced = [];
+    b.faceWorldPoint = (x, y) => faced.push([x, y]);
+    window.rooms.b.objects = { sprite_17: { x: 70, y: 80, scenarioData: { id: 'reader' } } };
+    b._pendingRouteAction = { useObject: 'reader' };
+    b.config = { patrol: { route: READER_ROUTE, currentSegmentIndex: 0, waypointIndex: 0 } };
+    b._runRouteAction({ useObject: 'reader' }, 0);
+    assert.deepEqual(faced, [[70, 80]]);
+    assert.equal(b._pendingRouteAction, null);
+    faced.length = 0;
+    b._pendingRouteAction = { useObject: 'no_such_object' };
+    assert.doesNotThrow(() => b._runRouteAction({ useObject: 'no_such_object' }, 0));
+    assert.deepEqual(faced, []);
+    assert.equal(b._pendingRouteAction, null);
+    assert.equal(b._routeWait, null);
+});
+
+test('useObject together with unlockRoom on an already loaded room: faces, no unlock, no wait', async () => {
+    const { b, loads, unlocks } = setup({ bLoaded: true, bLocked: true });
+    const faced = [];
+    b.faceWorldPoint = (x, y) => faced.push([x, y]);
+    window.rooms.a.objects = { reader: { x: 5, y: 6 } };
+    b._pendingRouteAction = { unlockRoom: 'b', useObject: 'reader' };
+    b._runRouteAction(b._pendingRouteAction, 0);
+    assert.deepEqual(faced, [[5, 6]]);
+    assert.deepEqual(unlocks, []);
+    assert.deepEqual(loads, []);
+    assert.equal(b._routeWait, null);
+    assert.equal(b._pendingRouteAction, null);
+});

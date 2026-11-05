@@ -342,3 +342,99 @@ test('wind-up: the tell is emitted at the post, the NPC leaves only after the de
     assert.ok(names().indexOf('npc_action_windup:clerk') < names().indexOf('npc_left_post:clerk'));
     assert.ok(w.calls.moves.some(m => m.id === 'clerk'));
 });
+
+// ── needsHome preference (f816f09a5): _useCandidate and _carryCandidate ─────────
+
+/** A clerk whose home object is the FARTHER of two caffeine machines. */
+function homePrefCfg() {
+    const cfg = office({ objects: [
+        { id: 'near_machine', x: 130, y: 130, affordance: { satisfies: 'caffeine', restores: 70, useSeconds: 5 } },
+        { id: 'home_machine', x: 600, y: 300, affordance: { satisfies: 'caffeine', restores: 70, useSeconds: 5 } }
+    ] });
+    cfg.objects = cfg.objects.filter(o => o.id !== 'coffee_machine');
+    cfg.npcs.clerk.rec.needsHome = 'home_machine';
+    cfg.npcs.clerk.rec.needs.caffeine.jitterPct = 0;
+    return cfg;
+}
+
+function firstTargets(cfg, tweak) {
+    const w = makeWorld(cfg);
+    if (tweak) tweak(w);
+    const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+    w.attach(sys);
+    sys.registerAll();
+    sys.step(4 * 60000);
+    return { sys, w, targets: sys.getLog().filter(e => e.npc === 'clerk' && e.ev === 'job_start').map(e => e.target) };
+}
+
+test('needsHome: the NPC\'s own object beats a nearer free one', () => {
+    const { targets } = firstTargets(homePrefCfg());
+    assert.ok(targets.length >= 1);
+    assert.ok(targets.every(t => t === 'home_machine'), JSON.stringify(targets));
+});
+
+test('needsHome: without a home preference the nearer object wins (control)', () => {
+    const cfg = homePrefCfg();
+    cfg.npcs.clerk.rec.needsHome = undefined;
+    const { targets } = firstTargets(cfg);
+    assert.ok(targets.length >= 1);
+    assert.ok(targets.every(t => t === 'near_machine'), JSON.stringify(targets));
+});
+
+test('needsHome: an unreachable home object falls back to the nearest reachable one', () => {
+    const { targets } = firstTargets(homePrefCfg(), w => { w.world.reachable = (id, o) => o.id !== 'home_machine'; });
+    assert.ok(targets.length >= 1);
+    assert.ok(targets.every(t => t === 'near_machine'), JSON.stringify(targets));
+});
+
+test('needsHome: a busy home object (on cooldown) falls back to the nearest free one', () => {
+    const cfg = homePrefCfg();
+    const w = makeWorld(cfg);
+    const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+    w.attach(sys);
+    sys.registerAll();
+    sys.states.get('clerk').cooldowns.home_machine = Infinity;   // _free() reads the live state
+    sys.step(4 * 60000);
+    const targets = sys.getLog().filter(e => e.npc === 'clerk' && e.ev === 'job_start').map(e => e.target);
+    assert.ok(targets.length >= 1);
+    assert.ok(targets.every(t => t === 'near_machine'), JSON.stringify(targets));
+});
+
+test('needsHome: a home object that does not satisfy the need is ignored (nearest wins)', () => {
+    const cfg = homePrefCfg();
+    cfg.npcs.clerk.rec.needsHome = 'clerk_pc';          // satisfies nothing
+    const { targets } = firstTargets(cfg);
+    assert.ok(targets.length >= 1);
+    assert.ok(targets.every(t => t === 'near_machine'), JSON.stringify(targets));
+});
+
+/** Carry job: the finder's home PC is farther than a second accepting PC. */
+function carryHomeCfg() {
+    const cfg = curiousCfg();
+    cfg.objects.push({ id: 'near_pc', x: 170, y: 168, affordance: { accepts: ['found_item'], useSeconds: 15 } });
+    return cfg;
+}
+
+function carryTarget(tweak) {
+    const w = makeWorld(carryHomeCfg());
+    if (tweak) tweak(w);
+    const sys = new NPCNeedsSystem(w.world, { seed: 3, manualClock: true });
+    w.attach(sys);
+    sys.registerAll();
+    sys.step(30000);
+    w.objs.push({ id: 'dropped_thing', x: 160, y: 160, roomId: 'office', pickable: true, needsTag: 'found_item' });
+    sys.step(60000);
+    return sys.getLog().find(e => e.npc === 'finder' && e.ev === 'job_start');
+}
+
+test('needsHome (carry): the finder takes the item to its own PC, not the nearer accepting one', () => {
+    const start = carryTarget();
+    assert.ok(start, 'job started');
+    assert.equal(start.target, 'finder_pc');
+});
+
+test('needsHome (carry): an unreachable home PC falls back to the nearest accepting one', () => {
+    const start = carryTarget(w => { w.world.reachable = (id, o) => o.id !== 'finder_pc'; });
+    assert.ok(start, 'job started');
+    assert.equal(start.target, 'near_pc');
+});
