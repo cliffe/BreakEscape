@@ -201,14 +201,26 @@ export function trySit(chair) {
     return true;
 }
 
-function playerFeet(player) {
-    return player.body ? { x: player.body.center.x, y: player.body.center.y } : { x: player.x, y: player.y };
+/**
+ * Feet (body-collider centre) of a sprite, from its transform and body offset. Not
+ * body.center: that is stale between a body.reset() and the next physics step.
+ */
+function bodyFeet(sprite) {
+    const b = sprite.body;
+    if (!b) return { x: sprite.x, y: sprite.y };
+    return {
+        x: sprite.x + (b.offset.x - sprite.displayOriginX) * sprite.scaleX + b.width / 2,
+        y: sprite.y + (b.offset.y - sprite.displayOriginY) * sprite.scaleY + b.height / 2
+    };
 }
+const playerFeet = bodyFeet;
 
-function moveDriverFeetTo(player, x, y) {
-    const f = playerFeet(player);
-    player.body.reset(player.x + (x - f.x), player.y + (y - f.y));
+/** Move a sprite so its feet land on (x, y). */
+function moveFeetTo(sprite, x, y) {
+    const f = bodyFeet(sprite);
+    sprite.body.reset(sprite.x + (x - f.x), sprite.y + (y - f.y));
 }
+const moveDriverFeetTo = moveFeetTo;
 
 function sitOn(chair, seat, pose) {
     const player = window.player;
@@ -329,8 +341,8 @@ function landingSpot(chair, seat, facing, approach) {
 function standSpot(chair, facing) {
     const pfm = window.pathfindingManager;
     const b = chair.body;
-    const cx = b ? b.center.x : chair.x + chair.width / 2;
-    const cy = b ? b.center.y : chair.y + chair.height;
+    const foot = b ? bodyFeet(chair) : { x: chair.x + chair.width / 2, y: chair.y + chair.height };
+    const cx = foot.x, cy = foot.y;
     const reach = (b ? Math.max(b.width, b.height) / 2 : 10) + 10;
     const start = COMPASS.indexOf(facing);
     for (const step of [0, 1, -1, 2, -2, 3, -3, 4]) {
@@ -521,6 +533,7 @@ function poseSprite(sprite, chair, seat, facing) {
     const x = Math.round(sp.x - hip[0] + sprite.displayOriginX);
     const y = Math.round(sp.y - hip[1] + sprite.displayOriginY);
     if (sprite.x !== x || sprite.y !== y) {
+        // body.reset also resets prevFrame, so the physics write-back adds no delta
         if (sprite.body) sprite.body.reset(x, y); else sprite.setPosition(x, y);
     }
     if (sprite.anims?.isPlaying) sprite.anims.stop();
@@ -577,10 +590,7 @@ export function unseatNPC(behavior) {
         sprite.body.immovable = saved.immovable;
         // Stand on the floor in front of the chair (or beside it)
         const spot = seat.kind === 'swivel' ? standSpot(chair, facing) : frontSpot(chair, facing);
-        if (spot) {
-            const f = sprite.body.center;
-            sprite.body.reset(sprite.x + (spot.x - f.x), sprite.y + (spot.y - f.y));
-        }
+        if (spot) moveFeetTo(sprite, spot.x, spot.y);
     }
     behavior.direction = COMPASS_TO_PLAYER[facing];
     behavior.playAnimation?.('idle', behavior.direction);
@@ -607,7 +617,7 @@ export function updateSeatedNPC(behavior, playerPos) {
         const room = window.rooms[behavior.roomId];
         if (!room?.objects || !Object.keys(room.objects).length) return false; // room not built yet
         behavior._seatTried = true;
-        const f = behavior.sprite.body.center;
+        const f = bodyFeet(behavior.sprite);
         const found = chairsNear(behavior.roomId, f.x, f.y, cfg.maxDistance ?? NPC_DEFAULT_REACH)[0];
         if (!found) {
             console.warn(`🪑 ${behavior.npcId}: "seated" but no free chair within ${cfg.maxDistance ?? NPC_DEFAULT_REACH}px of its spawn`);
@@ -621,7 +631,7 @@ export function updateSeatedNPC(behavior, playerPos) {
     if (behavior.hostile || ko || !st.chair.active) { unseatNPC(behavior); return false; }
     sprite.body.setVelocity(0, 0);
     if (st.seat.kind === 'swivel' && st.facePlayer && playerPos) {
-        const p = sprite.body.center;
+        const p = bodyFeet(sprite);
         const dx = playerPos.x - p.x, dy = playerPos.y - p.y;
         const near = dx * dx + dy * dy <= (behavior.config?.facePlayerDistanceSq ?? 96 * 96);
         const want = snapFacing(near ? compassToward(dx, dy) : st.homeFacing, st.seat.valid);
