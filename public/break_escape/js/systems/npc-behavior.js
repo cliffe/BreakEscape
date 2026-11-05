@@ -924,6 +924,21 @@ class NPCBehavior {
     }
 
     /**
+     * The one clock for this NPC's patrol timers (lastPatrolChange, dwell, settling,
+     * path retry back-off, route waits, stuck watch): Phaser scene time, which
+     * update(time) also receives. In Phaser 3.60 that is the rAF timestamp, on the
+     * performance.now() timeline (ms since page load), so performance.now() is the
+     * fallback before the scene clock has started. Never Date.now(): epoch ms is
+     * ~1.8e12 and stamped into lastPatrolChange it made `time - lastPatrolChange`
+     * hugely negative, so the stall re-target never fired again for that NPC.
+     */
+    clockNow() {
+        const t = this.scene?.time?.now;
+        if (Number.isFinite(t) && t > 0) return t;
+        return typeof performance !== 'undefined' ? performance.now() : 0;
+    }
+
+    /**
      * Returns the world position of this NPC's physics body centre (feet collider).
      * Use this for all pathfinding, LOS and distance checks — mirrors playerBodyPos()
      * in player.js.
@@ -976,6 +991,13 @@ class NPCBehavior {
     }
     updatePatrol(time, delta) {
         if (!this.config.patrol.enabled) return;
+
+        // Belt and braces for clockNow(): a stamp from another clock lies far in
+        // this clock's future and would never expire (a frozen NPC). Pull it back.
+        if (this.lastPatrolChange > time) this.lastPatrolChange = time;
+        if (this.isSettling && this.settleEndTime - time > this.settleDuration) {
+            this.settleEndTime = time + this.settleDuration;
+        }
 
         // If settling after collision, pause patrol briefly to let physics settle
         if (this.isSettling) {
@@ -1281,7 +1303,7 @@ class NPCBehavior {
                     // Waypoint is unreachable — back off before retrying so we don't flood
                     // the pathfinding queue every 50ms. 2 s gives the scene time to settle
                     // (e.g. an NPC or object that was blocking a tile may have moved).
-                    this._pathRetryAfter = performance.now() + 2000;
+                    this._pathRetryAfter = this.clockNow() + 2000;
                     console.warn(`⚠️ [${this.npcId}] No path found to waypoint, will retry in 2s`);
                     this.currentPath = [];
                     this.patrolTarget = null;
@@ -1296,7 +1318,7 @@ class NPCBehavior {
      * Handles transitioning between rooms when waypoints in current room are exhausted
      */
     chooseWaypointTargetMultiRoom(time) {
-        const now = performance.now();
+        const now = this.clockNow();
         // Waiting on a route action (unlock + load the next room): stand still, retry
         // after the back-off, time out after 15 s. Never advance into an unloaded room.
         if (this._routeWait) {
@@ -1415,7 +1437,7 @@ class NPCBehavior {
                     // Unreachable (a shut door, a body in the way): stay on this
                     // waypoint and retry after a back-off; never skip a room.
                     console.warn(`⚠️ [${this.npcId}] Waypoint (${nextWaypoint.x}, ${nextWaypoint.y}) in ${currentSegment.room} unreachable, retrying in 2s`);
-                    this._pathRetryAfter = performance.now() + 2000;
+                    this._pathRetryAfter = this.clockNow() + 2000;
                     this.currentPath = [];
                     this.patrolTarget = null;
                     this.pathFollowingActive = false;
@@ -1465,7 +1487,7 @@ class NPCBehavior {
             return;
         }
         const token = {};
-        this._routeWait = { roomId, inFlight: true, until: performance.now() + 15000, token };
+        this._routeWait = { roomId, inFlight: true, until: this.clockNow() + 15000, token };
         this.patrolTarget = null;
         this.currentPath = [];
         this.pathFollowingActive = false;
@@ -1489,7 +1511,7 @@ class NPCBehavior {
         }).catch(err => {
             if (this._routeWait?.token !== token) return;
             console.warn(`⚠️ [${this.npcId}] Route action for ${roomId} failed (${err?.message || err}), retrying in 5s`);
-            this._routeWait = { roomId, retryAt: performance.now() + 5000 };
+            this._routeWait = { roomId, retryAt: this.clockNow() + 5000 };
         });
     }
 
@@ -1521,7 +1543,7 @@ class NPCBehavior {
         // Never head into a room that isn't loaded (locked, no route action run yet)
         if (!window.rooms?.[nextSegment.room]) {
             console.warn(`⚠️ [${this.npcId}] Next route room ${nextSegment.room} not loaded, retrying in 2s`);
-            this._pathRetryAfter = performance.now() + 2000;
+            this._pathRetryAfter = this.clockNow() + 2000;
             this.patrolTarget = null;
             this.currentPath = [];
             this.pathFollowingActive = false;

@@ -1285,7 +1285,7 @@ function handleNPCCollision(npcSprite, otherNPC) {
 
     // ALWAYS trigger settling on collision, regardless of patrol type
     // This prevents NPCs from being pushed across the room by pausing their behavior briefly
-    const gameTime = npcSprite.scene?.time?.now || Date.now();
+    const gameTime = npcBehavior.clockNow ? npcBehavior.clockNow() : (npcSprite.scene?.time?.now ?? performance.now());
     npcBehavior.triggerSettling(gameTime);
     if (npcSprite.body) {
         npcSprite.body.setVelocity(0, 0);
@@ -1345,7 +1345,7 @@ function handleNPCCollision(npcSprite, otherNPC) {
     
     // Trigger settling state to pause patrol briefly while physics settles
     if (npcBehavior) {
-        const gameTime = npcSprite.scene?.time?.now || Date.now();
+        const gameTime = npcBehavior.clockNow ? npcBehavior.clockNow() : (npcSprite.scene?.time?.now ?? performance.now());
         npcBehavior.triggerSettling(gameTime);
         // Ensure velocity is zero while settling
         if (npcSprite.body) {
@@ -1436,7 +1436,7 @@ function handleNPCCollision(npcSprite, otherNPC) {
                     
                     // Immediately choose new waypoint (the avoidance waypoint)
                     if (typeof npcBehavior.chooseWaypointTarget === 'function') {
-                        npcBehavior.chooseWaypointTarget(Date.now());
+                        npcBehavior.chooseWaypointTarget(npcBehavior.clockNow ? npcBehavior.clockNow() : (npcSprite.scene?.time?.now ?? performance.now()));
                     }
                 }
             }
@@ -1478,7 +1478,7 @@ function handleNPCPlayerCollision(npcSprite, player) {
 
     // ALWAYS trigger settling on collision, regardless of patrol type
     // This prevents NPCs from being pushed across the room by pausing their behavior briefly
-    const gameTime = npcSprite.scene?.time?.now || Date.now();
+    const gameTime = npcBehavior.clockNow ? npcBehavior.clockNow() : (npcSprite.scene?.time?.now ?? performance.now());
     npcBehavior.triggerSettling(gameTime);
     if (npcSprite.body) {
         npcSprite.body.setVelocity(0, 0);
@@ -1536,7 +1536,7 @@ function handleNPCPlayerCollision(npcSprite, player) {
     
     // Trigger settling state to pause patrol briefly while physics settles
     if (npcBehavior) {
-        const gameTime = npcSprite.scene?.time?.now || Date.now();
+        const gameTime = npcBehavior.clockNow ? npcBehavior.clockNow() : (npcSprite.scene?.time?.now ?? performance.now());
         npcBehavior.triggerSettling(gameTime);
         // Ensure velocity is zero while settling
         if (npcSprite.body) {
@@ -1624,7 +1624,7 @@ function handleNPCPlayerCollision(npcSprite, player) {
                     
                     // Immediately choose new waypoint (the avoidance waypoint)
                     if (typeof npcBehavior.chooseWaypointTarget === 'function') {
-                        npcBehavior.chooseWaypointTarget(Date.now());
+                        npcBehavior.chooseWaypointTarget(npcBehavior.clockNow ? npcBehavior.clockNow() : (npcSprite.scene?.time?.now ?? performance.now()));
                     }
                 }
             }
