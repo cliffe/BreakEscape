@@ -22,7 +22,8 @@ player is facing when E picks a target.
 How it works: the player sprite stays the physics and movement driver but is hidden.
 A separate sprite shows the pose on the chair. On a swivel chair the driver's body takes
 the chair's footprint and the chair follows it; the chair's own body is off until the
-player gets up. Footsteps stop while seated.
+player gets up. Footsteps stop while seated; rolling plays a looped stretch (1.5–7.5 s)
+of `chair_roll.mp3`.
 
 ## Layering
 
@@ -40,8 +41,15 @@ clears the tall backrest.
 | `hospital_chair_south`, `aw_chair_south_*`, `exec_chair_black1`, `aw_studio_chair_s1` | static | south |
 | `hospital_chair_north`, `hospital_chair_north2`, `aw_chair_north_*`, `exec_chair_back1`, `aw_studio_chair_n1` | static | north |
 | `chair-waiting-left-1` / `chair-waiting-right-1` | static | west / east |
+| `m10_steel_chair1`, `sofa1` (an armchair), `leather_chair1` | static | south |
+| `club_chair_e1` / `club_chair_w1` | static | east / west |
+| `leather_sofa1`, `uni_sofa2`, `hce_bench1` | static, two places each | south |
 
-Not seats (yet): sofas, benches, lecture rows, `m10_steel_chair1` (facing unclear),
+A sofa or bench has `places` instead of one `seat`: each place holds one person (three
+sitters overlap at this scale, so two fit), and the free place nearest the player or NPC
+is taken. A full sofa reads as `seatedBy: 'full'`.
+
+Not seats (yet): lecture rows (in the ideas backlog), `m10_steel_bench1` (a workbench),
 the wheelchair, trolleys and carts.
 
 The rotation sheets don't share one frame order: `chair-exec` runs S, SE, E…, the grey,
@@ -66,9 +74,9 @@ unchanged (the converter keeps them out of the standing feet-line sampling).
 hip point is measured once at runtime from its `sit_south` frame, because characters land
 a pixel or two apart on the 80x80 canvas.
 
-Atlases with seated frames (2026-11-05): `female_hacker_hood_v2`, `ruth_adeyemi`,
-`female_office_worker_v2`, `gareth_fairbairn`, `junior_analyst`, `male_office_worker_v2`,
-`male_security_guard_v2`, `male_telecom_v2`, `tomasz`.
+Which atlases have them: `sit_from` in `tools/pixellab_characters.json`. Since
+2026-11-05 that is every PixelLab atlas a scenario uses and every selectable player
+avatar; the few non-PixelLab atlases (legacy sheets such as `hacker`) stand.
 
 ## NPCs placed sitting
 
