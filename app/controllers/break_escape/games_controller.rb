@@ -1867,15 +1867,59 @@ module BreakEscape
           end
         end
       elsif location[:type] == 'flag_station'
-        # Flag station items are valid if they're in the player's inventory (already awarded server-side)
-        # or if the corresponding flag has been submitted
+        # A flag station's item is its reward for a flag: collectible only once
+        # one of the flags whose give_item reward hands over this item has been
+        # submitted. (Submitting the flag adds it server-side already; this
+        # path is a re-collect, e.g. after the item was used up or removed.)
         flag_station_id = location[:flag_station_id]
-        Rails.logger.info "[BreakEscape] Item from flag station #{flag_station_id}, allowing (flag reward)"
-        # Flag rewards are always valid - the server already validated and added them
+        unless flag_station_item_earned?(location[:station], found_item)
+          error_msg = "Flag not submitted for this reward: #{flag_station_id}"
+          Rails.logger.warn "[BreakEscape] #{error_msg}"
+          return error_msg
+        end
       end
 
       Rails.logger.info "[BreakEscape] Item collection valid: #{item_type}"
       nil # No error
+    end
+
+    # Has the player submitted a flag whose give_item reward on this station hands
+    # over held_item? Rewards are paired with flags as find_flag_rewards pairs
+    # them (hash keyed by flag; array with the station's single `requires`; array
+    # indexed by `flags`), and the reward names its item as process_item_reward
+    # resolves it. Flags compare without regard to case, as submission does.
+    def flag_station_item_earned?(station, held_item)
+      return false unless station.is_a?(Hash) && held_item.is_a?(Hash)
+
+      rewards = station['flagRewards']
+      pairs = case rewards
+      when Hash
+                rewards.map { |flag, reward| [flag, reward] }
+      when Array
+                if station['requires']
+                  rewards.map { |reward| [station['requires'], reward] }
+                else
+                  flags = Array(station['flags'])
+                  rewards.each_with_index.map { |reward, i| [flags[i], reward] }
+                end
+      else
+                []
+      end
+
+      earned = (Array(@game.player_state['flag_rewards_claimed']) + Array(@game.player_state['submitted_flags']))
+               .map { |f| f.to_s.downcase }.reject(&:empty?)
+      return false if earned.empty?
+
+      held = Array(station['itemsHeld'])
+      pairs.any? do |flag_ref, reward|
+        next false unless reward.is_a?(Hash) && reward['type'] == 'give_item'
+
+        given = held.find { |i| i['type'] == reward['item_type'] || i['name'] == reward['item_name'] }
+        next false unless given == held_item
+
+        value = resolve_flag_value(flag_ref)
+        value.present? && earned.include?(value.downcase)
+      end
     end
 
     # A headless email record (social.characters.*.emailRecord, 00 S8): a scenario
@@ -1973,7 +2017,7 @@ module BreakEscape
           if obj['type'] == 'flag-station' && obj['itemsHeld'].present?
             obj['itemsHeld'].each do |held_item|
               if matches.call(held_item)
-                return { item: held_item, location: { type: 'flag_station', flag_station_id: obj['id'] || obj['name'], room_id: room_id } }
+                return { item: held_item, location: { type: 'flag_station', flag_station_id: obj['id'] || obj['name'], room_id: room_id, station: obj } }
               end
             end
           end
