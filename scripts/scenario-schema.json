@@ -3847,7 +3847,12 @@
             "small_office_room2_1x1gu",
             "small_office_room3_1x1gu",
             "small_room_closet_east_connections_only_1x1gu",
-            "hall_1x2gu"
+            "hall_1x2gu",
+            "room_lw_reception",
+            "room_lw_hall",
+            "room_lw_office",
+            "room_lw_ceo",
+            "room_lw_store"
           ]
         },
         "connections": {
