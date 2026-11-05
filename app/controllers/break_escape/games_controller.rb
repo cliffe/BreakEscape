@@ -907,10 +907,12 @@ module BreakEscape
             type: 'object'
           }
 
-          # If object has contents, include them in response
+          # If object has contents, include them in response, filtered as
+          # GET /container filters them (M7): a nested lock's requires and a
+          # nested locked container's contents never leave the server.
           if object_data && object_data['contents'].present?
             response[:hasContents] = true
-            response[:contents] = object_data['contents']
+            response[:contents] = filter_container_contents(object_data)
           end
 
           # If this was a flag-unlock: submit to Hacktivity, process rewards, complete linked task
