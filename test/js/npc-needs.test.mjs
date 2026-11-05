@@ -321,3 +321,24 @@ test('npc_used carries playerNearby and playerDistance from the world', () => {
         assert.equal(used.data.playerDistance, 64);
     }
 });
+
+test('wind-up: the tell is emitted at the post, the NPC leaves only after the delay', () => {
+    const cfg = office();
+    cfg.npcs.clerk.rec.needs.caffeine.jitterPct = 0;
+    const w = makeWorld(cfg);
+    w.world.windupMs = () => 1000;
+    const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+    w.attach(sys);
+    sys.registerAll();
+    const names = () => w.calls.emits.map(e => e.name);
+    let guard = 0;
+    while (!names().includes('npc_action_windup:clerk') && guard++ < 4000) sys.step(NEEDS_TICK_MS);
+    assert.ok(names().includes('npc_action_windup:clerk'), 'tell emitted');
+    assert.ok(!names().includes('npc_left_post:clerk'), 'still at the post');
+    assert.equal(w.calls.moves.filter(m => m.id === 'clerk').length, 0);
+    assert.equal(sys.getState('clerk').job.windingUp, true);
+    sys.step(1250);
+    assert.ok(names().includes('npc_left_post:clerk'), 'leaves after the wind-up');
+    assert.ok(names().indexOf('npc_action_windup:clerk') < names().indexOf('npc_left_post:clerk'));
+    assert.ok(w.calls.moves.some(m => m.id === 'clerk'));
+});

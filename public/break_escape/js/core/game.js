@@ -1892,6 +1892,8 @@ export async function create() {
                     needs.installNpcNeeds();
                     console.log('✅ NPC needs system initialised');
                     // Workstation screen lock/unlock follows npc_left_post / npc_returned_post
+                    const sceneRef = this;
+                    import('../systems/npc-action-icons.js').then(m => m.installNpcActionIcons(sceneRef)).catch(e => console.warn('npc action icons failed', e));
                     return import('../systems/workstation-state.js').then(ws => ws.installWorkstationState());
                 });
             })

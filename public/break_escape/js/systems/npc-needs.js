@@ -354,6 +354,13 @@ export class NPCNeedsSystem {
             this.world.emit(`npc_returned_post:${id}`, { npcId: id });
         }
 
+        if (s.mode === 'job' && s.job?.windupUntil) {
+            if (this.clockMs < s.job.windupUntil) return;
+            s.job.windupUntil = 0;
+            this._leavePost(s);
+            return;
+        }
+
         if (s.mode === 'job') {
             this._advanceJob(s, arrived);
             return;
@@ -489,9 +496,23 @@ export class NPCNeedsSystem {
         };
         s.mode = 'job';
         this._log(id, 'job_start', { need: pick.need || undefined, tag: pick.tag || undefined, target: pick.targetId, item: pick.itemId || undefined });
+        // Pre-action tell: a short wind-up while the NPC is still at its post, so the
+        // leaving-desk window is catchable. world.windupMs() is 0 in stub worlds (no wind-up).
+        const windup = s.atPost ? Math.max(0, Number(this.world.windupMs?.() || 0)) : 0;
+        if (windup > 0) {
+            s.job.windupUntil = this.clockMs + windup;
+            this._log(id, 'windup', { target: pick.targetId });
+            this.world.emit(`npc_action_windup:${id}`, { npcId: id, need: pick.need, targetId: pick.targetId, tag: pick.tag || null, ms: windup });
+            return;
+        }
+        this._leavePost(s);
+    }
+
+    _leavePost(s) {
+        const id = s.npcId;
         if (s.atPost) {
             s.atPost = false;
-            this.world.emit(`npc_left_post:${id}`, { npcId: id, need: pick.need, targetId: pick.targetId });
+            this.world.emit(`npc_left_post:${id}`, { npcId: id, need: s.job.need, targetId: s.job.targetId });
         }
         this._moveForPhase(s);
     }
@@ -643,7 +664,7 @@ export class NPCNeedsSystem {
         for (const k of Object.keys(s.levels)) levels[k] = round2(s.levels[k]);
         return {
             npcId, mode: s.mode, levels, atPost: s.atPost, scriptSuspended: s.scriptSuspended,
-            job: s.job ? { need: s.job.need, kind: s.job.kind, phase: s.job.phase, targetId: s.job.targetId, itemId: s.job.itemId, carrying: s.job.carrying } : null,
+            job: s.job ? { windingUp: !!s.job.windupUntil, need: s.job.need, kind: s.job.kind, phase: s.job.phase, targetId: s.job.targetId, itemId: s.job.itemId, carrying: s.job.carrying } : null,
             home: s.home ? { x: Math.round(s.home.x), y: Math.round(s.home.y), roomId: s.home.roomId } : null,
             clockMs: this.clockMs, tick: this.tickCount
         };
@@ -693,6 +714,8 @@ export function createEngineWorld() {
     const behaviour = id => W().npcBehaviorManager?.getBehavior?.(id) || null;
 
     return {
+        // Wind-up before an NPC leaves its post (ms). scenario.npcWindupMs, default 700; 0 turns it off.
+        windupMs: () => { const v = W().gameScenario?.npcWindupMs; return Number.isFinite(v) ? v : 700; },
         elapsedMs: () => (W().gameClock ? W().gameClock.elapsedMs() : Date.now()),
         isVmActive: () => !!W().isVmContextActive?.(),
         npcIds: () => [...(W().npcManager?.npcs?.keys?.() || [])],

@@ -126,6 +126,13 @@
         }
       }
     },
+    "actionIcons": {
+      "type": "object",
+      "description": "NPC current-action icon (systems/npc-action-icons.js). Key = target object id, affordance satisfies, or object type; also 'curiosity' (pickup jobs) and 'fallback'. Value = a short placeholder glyph.",
+      "additionalProperties": { "type": "string" }
+    },
+    "npcWindupMs": { "type": "number", "minimum": 0, "description": "Pre-action tell: ms an NPC winds up (icon pulses, npc_action_windup:<id> fires) before leaving its post for a needs job. Default 700, 0 = off." },
+    "showNpcIntentBubbles": { "type": "boolean", "description": "Parked hook for a later next-want intent bubble. Default false. Current-action icons render regardless." },
     "disguises": {
       "type": "object",
       "description": "Open map of player costumes for the set_costume / clear_costume actions (systems/costume-actions.js). Key = costume id; value = { sprite, talk? }. set_costume writes the persisted global pp_disguise = id; it is re-applied on reload.",
