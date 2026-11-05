@@ -219,6 +219,12 @@
       "optional": false
     },
     {
+      "id": "relay_printout",
+      "label": "Relay Printout",
+      "kind": "item",
+      "optional": false
+    },
+    {
       "id": "server_access_log_excerpt",
       "label": "Server Access Log (excerpt)",
       "kind": "item",
@@ -554,6 +560,11 @@
     {
       "from": "server_room",
       "to": "gitlist_repository_server",
+      "soft": false
+    },
+    {
+      "from": "server_room",
+      "to": "relay_printout",
       "soft": false
     },
     {
