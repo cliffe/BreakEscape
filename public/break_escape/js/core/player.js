@@ -176,8 +176,8 @@ export async function updatePlayerSprite(newSpriteKey) {
 
     player.setTexture(newSpriteKey, initialFrame);
     
-    // Recreate animations for the new sprite (now reads updated scenario)
-    createPlayerAnimations();
+    // Recreate animations for the new sprite
+    createPlayerAnimations(newSpriteKey);
     
     // Play appropriate animation
     const animKey = wasMoving ? `walk-${currentDirection}` : `idle-${currentDirection}`;
@@ -484,8 +484,10 @@ function updateAnimationSpeed(isRunning) {
     }
 }
 
-function createPlayerAnimations() {
-    const playerSprite = window.breakEscapeConfig?.playerSprite || window.gameScenario?.player?.spriteSheet || 'male_hacker_hood_v2';
+function createPlayerAnimations(spriteKey) {
+    // An explicit key (a costume swap) wins over the chosen avatar; otherwise its idle animation
+    // would be built from the chosen avatar's frames and put the old texture straight back.
+    const playerSprite = spriteKey || window.breakEscapeConfig?.playerSprite || window.gameScenario?.player?.spriteSheet || 'male_hacker_hood_v2';
     createAtlasPlayerAnimations(playerSprite);
 }
 
