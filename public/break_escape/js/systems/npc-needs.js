@@ -769,9 +769,11 @@ export function createEngineWorld() {
             const pr = pl.body?.center || { x: pl.x, y: pl.y };
             const distance = Math.hypot(pr.x - pos.x, pr.y - pos.y);
             const sameRoom = !W().currentPlayerRoom || !pos.roomId || W().currentPlayerRoom === pos.roomId;
+            // Clear of walls and closed doors: the same test the NPC uses to turn to the
+            // player (not the physics line, which furniture between them would block).
             let clear = true;
-            const pm = W().pathfindingManager;
-            if (pm?.hasWorldPhysicsLineOfSight) { try { clear = !!pm.hasWorldPhysicsLineOfSight(pos.x, pos.y, pr.x, pr.y); } catch (e) { clear = true; } }
+            const b = behaviour(id);
+            if (b?.canSeePlayerToFace) { try { clear = !!b.canSeePlayerToFace({ x: pr.x, y: pr.y }); } catch (e) { clear = true; } }
             return { nearby: sameRoom && distance <= 96 && clear, distance };
         },
         tileToWorld(roomId, x, y) {
