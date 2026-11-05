@@ -120,6 +120,11 @@ test('undisguised player near the open gate shuts it at once and keeps it shut',
     assert.equal(a.body.enable, true);
     gates.update(300);                                // guard still near: stays shut
     assert.equal(a.body.enable, true);
+    // In the doorway band (the closed door's body is only its bottom strip): still shut
+    window.player = { x: 100, y: 80, body: { left: 91, right: 109, top: 75, bottom: 85 } };
+    gates.update(350);
+    assert.equal(a.body.enable, true);
+    window.player = { x: 100, y: 150 };
     // Disguised: the guard reopens it with the player beside him
     window.gameState.globalVariables.disguised = true;
     gates.update(400);

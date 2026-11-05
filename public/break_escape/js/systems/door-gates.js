@@ -11,8 +11,8 @@
  *
  * - Opens when any `openFor` NPC's centre is within `openRadius` of the door centre.
  * - Stays open while one is, and for `holdMs` after the last one leaves.
- * - Never closes while the player is in the doorway, nor while an `openFor` NPC's
- *   remaining path still crosses it.
+ * - Never closes while the player overlaps the door's body (+4px), nor while an
+ *   `openFor` NPC's remaining path still crosses the doorway.
  * - `playerMayPassIf` names a global. While it is false, a player who comes within
  *   `openRadius` of the open gate shuts it at once (unless already in the doorway,
  *   where shutting it would trap them), and it stays shut while they are there.
@@ -48,6 +48,16 @@ export function normaliseGate(raw) {
         holdMs: Number.isFinite(h) && h >= 0 ? h : DEFAULT_GATE_HOLD_MS,
         playerMayPassIf: typeof raw.playerMayPassIf === 'string' && raw.playerMayPassIf ? raw.playerMayPassIf : null
     };
+}
+
+/**
+ * The door's collision body (doors.js): an N/S door's is the 8px strip at the bottom
+ * of its 1x2-tile sprite; an E/W door's is the whole 1x1 sprite. Only this blocks the
+ * player, so only overlapping it means "shutting now would trap him".
+ */
+function doorBodyRect(g) {
+    if (g.isSideDoor) return { left: g.x - TILE / 2, right: g.x + TILE / 2, top: g.y - TILE / 2, bottom: g.y + TILE / 2 };
+    return { left: g.x - TILE / 2, right: g.x + TILE / 2, top: g.y + TILE - 8, bottom: g.y + TILE };
 }
 
 /** The doorway's footprint: the 1x2-tile N/S sprite, or the 1x1 E/W one. */
@@ -212,9 +222,10 @@ export class DoorGates {
         return true;
     }
 
+    /** The player overlaps the door's body (+4px): shutting it now would trap him. */
     playerInDoorway(g) {
         const pr = playerRect();
-        return !!pr && overlaps(pr, doorRect(g), 4);
+        return !!pr && overlaps(pr, doorBodyRect(g), 4);
     }
 
     /** Whether an openFor NPC's remaining path crosses the doorway. */
@@ -294,7 +305,8 @@ export class DoorGates {
             const inDoorway = this.playerInDoorway(g);
 
             if (!g.open) {
-                if (npcNear && !(barred && !inDoorway) && now >= g.forcedUntil) this.open(g, now);
+                // An undisguised player close by keeps it shut, even beside the guard
+                if (npcNear && !barred && now >= g.forcedUntil) this.open(g, now);
                 continue;
             }
             if (inDoorway) continue;                 // never shut on the player
