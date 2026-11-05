@@ -400,18 +400,6 @@
      "width": 78,
      "x": 122,
      "y": 140
-    },
-    {
-     "gid": 107,
-     "height": 39,
-     "id": 30,
-     "name": "",
-     "rotation": 0,
-     "type": "",
-     "visible": true,
-     "width": 78,
-     "x": 200,
-     "y": 140
     }
    ],
    "opacity": 1,
