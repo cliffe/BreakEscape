@@ -134,6 +134,15 @@
     },
     "imported": "2026-10-22"
   },
+  "courier_hivis": {
+    "character_id": "83b01ba9-5c0e-4135-89d8-8dffe6dcff75",
+    "name": "Make portrait for Courier (hi-vis delivery driver)...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-05"
+  },
   "dani_okonkwo": {
     "character_id": "767f499f-074f-4067-bdb4-6f2b84789e48",
     "name": "Make portrait for Dani Okonkwo\nA lean British-Nige...",
