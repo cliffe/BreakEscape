@@ -7,12 +7,14 @@ Raised by the feature test work (docs/achitechture/NEW_FEATURES_TEST_MATRIX.md) 
 - **What happens:** `npc-needs.js:301` caches the home on the first tick: `if (!s.home) s.home = this._resolveHome(s, pos)`. If the `needsHome` object isn't found yet, `_resolveHome` (`npc-needs.js:628-640`) returns the spawn point with `objectId: null`, and that result is never replaced. The start room's NPCs register before its objects exist (`core/game.js:2004-2006`), so for them the home-object preference (`npc-needs.js:475`, commit f816f09a5) never applies and staff work at each other's desks. Found live in test_needs_sims game 499; a room that loads later resolves correctly.
 - **Proposed fix (small):** when `needsHome` names an object that isn't found yet, mark the home as provisional and try again on later ticks until the object is there. Add a node test for the late-object case and re-run test_needs_sims live.
 - **Recommendation:** fix it. It's a bug in a feature built this week, and lab_physical_pentest relies on the same preference.
+- **Outcome (2026-11-05): done** (commits 6b602b2ff, e20f40ca9). The home is provisional until the object exists, retried every 4 ticks, then cached (`home_resolved` in the log). A second cause turned up live: the adapter's `reachable()` said an NPC on its own desk's approach cell couldn't reach it (EasyStar gives no path for start == end), so Sanjay still took `tom_pc`; fixed too. Live in test_needs_sims game 517 without `setSeed()`: all four start-room staff worked at their own desks. lab_physical_pentest regression not run live: the run couldn't get out of the briefing room (no path to its east exit), see the note under D2.
 
 ## D2. Needs debug overlay (engine addition)
 
 - **What:** an opt-in `systems/npc-needs-debug.js` that draws each NPC's need bars above their head (off by default, switched on by a scenario flag or a `__test` call). About 150 lines plus three one-line hooks. Proposal in scenarios/test_needs_sims/README.md.
 - **Why:** today the only signs on screen are the job icon and the console. The demo can't show what each NPC wants without it.
 - **Recommendation:** build it, opt-in only, so the demo can show the system and testers can see the state.
+- **Outcome (2026-11-05): done** (commits 6b602b2ff, e20f40ca9). `systems/npc-needs-debug.js`, scenario flag `needsDebugOverlay` (schema and validator known fields), `window.__test.needs.overlay(true|false|null)`, one install line in `core/game.js`. On in test_needs_sims; verified live (bars move, toggle cleans up, no console errors). Open: in the lab regression run (game 521) the pathfinder found no route from the player's side of the briefing-room kit table to the exit to reception, so the open plan was never reached; not caused by these changes, needs a look by whoever owns the lab layout.
 
 ## D3. Server hides a room item that matches an inventory item by type and name (server behaviour)
 

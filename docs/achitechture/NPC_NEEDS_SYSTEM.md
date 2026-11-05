@@ -148,6 +148,8 @@ Runs after `patrolOverride` in the same mapping.
 
 `npcNeedsSeed` (prov.): number or string. Default: the scenario name.
 
+`needsDebugOverlay`: boolean, default false. Turns on the need-bar debug overlay (section 4.1).
+
 ---
 
 ## 4. Runtime architecture
@@ -163,6 +165,33 @@ Runs after `patrolOverride` in the same mapping.
 - Movement goes **only** through `goToAndStay(x, y, speed, {owner:'needs', yieldToPlayer})`.
   The needs system never writes velocities or waypoints, so collision, wall
   escape, stalls and depth sorting work as they do today.
+
+**Home resolution.** `s.home` is resolved on the NPC's first tick with a sprite. When
+`needsHome` names an object that isn't registered yet (start-room NPCs register before
+the room's objects; an object in a room that loads later), the home is **provisional**:
+the NPC's current spot, `objectId: null`, retried once a second (every 4 ticks) until
+the object exists. The resolved home replaces it, the log gets `home_resolved`, and it
+is never looked up again. A coordinate home or one found first time is cached at once.
+`getState().home` carries `objectId` and `provisional`. The live adapter's `reachable()`
+treats a target whose approach cell is within one tile as reachable (EasyStar returns
+no path when start and end share a tile, which used to send an NPC at its own desk to
+a colleague's).
+
+### 4.1 Debug overlay (`systems/npc-needs-debug.js`)
+
+Off by default. On with the scenario flag `"needsDebugOverlay": true`, or from the
+console / a test with `window.__test.needs.overlay(true)` (`false` hides it, `null`
+goes back to the scenario flag). Above each needs NPC it draws a small panel: one bar
+per need, in name order, with the need's initial (green above `urgentAt`, amber at or
+below it, red once unmet for `maxUnmetMin`), and a line `<npc>: <job>` (`idle`,
+`windup <target>`, `goto_target <target>`, `using 4s <target>`, `returning`, `frozen`,
+`suspended`). Installed beside the action icons in `core/game.js` with a dynamic
+import, so no test-harness copy list needs it. It reads `npcNeedsSystem.states` and
+writes nothing back; positions follow the sprite each frame, bars redraw every 200 ms,
+graphics are made once per NPC and destroyed when the sprite goes (room unload, NPC
+removed) or the overlay is turned off. Depth 5001, no physics, no input. The pure
+helpers `barColour`, `barLayout` and `jobLabel` are tested in
+`test/js/npc-needs-debug.test.mjs`.
 
 Per-NPC state: `levels`, `lastSatisfiedAt`, `mode` (`idle | job | returning | frozen`),
 flags `scriptSuspended`, `blocked`, `atPost`, the current `job`
@@ -376,7 +405,7 @@ The decision log never contains payload contents (only `payloadPresent`).
   seed and player actions; tick numbers can drift a few ticks because walking time
   depends on frame timing and the player's body.
 - **Test bridge** (implemented in `systems/test-bridge/index.js`; `ids()` and `log(sinceTick)` added): `window.__test.needs` =
-  `{ setSeed(n) /* resets */, setManualClock(bool), step(ms), state(npcId), log(), set(npcId, need, level) }`,
+  `{ setSeed(n) /* resets */, setManualClock(bool), step(ms), state(npcId), log(), set(npcId, need, level), overlay(on) }`,
   all JSON in/out. It controls the needs clock only; it never moves an NPC or
   triggers a use directly (the bridge's "real input" rule).
 
