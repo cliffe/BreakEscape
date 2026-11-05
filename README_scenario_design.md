@@ -1165,7 +1165,7 @@ For multi-room routes use `"multiRoom": true` with a `"route"` array instead of 
 
 | Action | Description |
 |--------|-------------|
-| `unlockRoom: "room_id"` | The NPC unlocks that room on the server as itself (it needs an `eventMapping` with `unlockDoor` naming the room), loads it, waits for the path grid to include it, then carries on. A refusal retries after 5 s; the route never moves into the unloaded room. Once the room is loaded the action is only a pause |
+| `unlockRoom: "room_id"` | The NPC unlocks that room on the server as itself (it needs an `eventMapping` with `unlockDoor` naming the room), loads it, waits for the path grid to include it, then carries on. A refusal retries after 5 s; the route never moves into the unloaded room. Once the room is loaded the action is only a pause. The matching `unlockDoor` mapping is required, not optional: without it the server refuses and the NPC retries forever; the validator errors on a missing one, and the engine logs one console warning |
 | `useObject: "object_id"` | The NPC turns to face that object (a scenario object id, in any loaded room). It does not trigger the object's own behaviour. Combine with `unlockRoom` for a visible reader or keypad |
 
 #### Bark Notifications

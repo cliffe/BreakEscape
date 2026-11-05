@@ -163,6 +163,28 @@ test('a refused unlock backs off 5 s and retries; the route never advances into 
     } finally { performance.now = realNow; }
 });
 
+test('a refused unlock warns once per NPC and room, naming the fix, however many retries follow', async () => {
+    const { b } = setup();
+    window.NPCGameBridge = { unlockDoor: async () => ({ success: false, error: 'denied' }) };
+    b.config = await silently(() => b.parseConfig({ patrol: { enabled: true, multiRoom: true, route: ROUTE } }));
+    const warnings = [];
+    const realWarn = console.warn;
+    console.log = () => {};
+    console.warn = (...a) => warnings.push(a.join(' '));
+    try {
+        for (let i = 0; i < 3; i++) {
+            b._runRouteAction({ unlockRoom: 'b' }, 0);
+            await flush(); await flush();
+        }
+    } finally { console.log = quiet; console.warn = realWarn; }
+    const refusals = warnings.filter(w => w.includes('refused') && w.includes('unlockDoor'));
+    assert.equal(refusals.length, 1);
+    assert.match(refusals[0], /\[guard\]/);
+    assert.match(refusals[0], /'b'/);
+    assert.match(refusals[0], /add an eventMapping with unlockDoor/i);
+    assert.equal(warnings.filter(w => w.includes('retrying in 5s')).length, 3, 'the retry behaviour is unchanged');
+});
+
 test('an unreachable leg backs off on the same waypoint instead of skipping a room', async () => {
     const { b, requests } = setup({ bLoaded: true, bLocked: false, pathOk: () => false });
     b.config = await silently(() => b.parseConfig({ patrol: { enabled: true, multiRoom: true, route: ROUTE } }));

@@ -27,8 +27,8 @@ function build() {
     globalThis.fetch = async (url) => { calls.fetch.push(url); return { ok: true, json: async () => ({ room: { type: 'room_office' } }) }; };
     const createRoom = (id) => { calls.create.push(id); window.rooms[id] = { id, created: calls.create.length }; };
     const revealRoom = (id) => { calls.reveal.push(id); };
-    const loadRoom = new Function('roomDataCache', 'createRoom', 'revealRoom',
-        `${body}; return loadRoom;`)(roomDataCache, createRoom, revealRoom);
+    const loadRoom = new Function('roomDataCache', 'createRoom', 'revealRoom', 'roomLoadsInFlight',
+        `${body}; return loadRoom;`)(roomDataCache, createRoom, revealRoom, new Map());
     return { loadRoom, calls, roomDataCache };
 }
 
@@ -85,11 +85,26 @@ test('unlock-response data is used instead of a fetch, and consumed', async () =
     assert.equal(roomDataCache.has('vault'), false);
 });
 
-// Two callers racing (a route NPC's unlock action and the player's door click) both pass the
-// "already loaded" check before either createRoom runs; createRoom's own guard (rooms[roomId])
-// then stops the duplicate, but the fetch and the NPC load still happen twice.
-test('two simultaneous calls fetch once', { skip: "engine gap: the already-loaded check runs before the await, so concurrent callers each fetch (rooms.js:781 loadRoom); createRoom's own guard prevents a duplicate room" }, async () => {
+// Two callers racing (a route NPC's unlock action and the player's door click) share one
+// in-flight load: one fetch, one NPC load, one createRoom.
+test('two simultaneous calls fetch once', async () => {
     const { loadRoom, calls } = build();
     await silent(() => Promise.all([loadRoom('vault'), loadRoom('vault')]));
     assert.equal(calls.fetch.length, 1);
+    assert.equal(calls.npc.length, 1);
+    assert.equal(calls.create.length, 1);
+    assert.equal(calls.reveal.length, 1);
+});
+
+test('a failed load can be retried', async () => {
+    const { loadRoom, calls } = build();
+    const okFetch = globalThis.fetch;
+    globalThis.fetch = async (url) => { calls.fetch.push(url); return { ok: false, status: 500, statusText: 'boom' }; };
+    await silent(() => Promise.all([loadRoom('vault'), loadRoom('vault')]));
+    assert.equal(calls.fetch.length, 1, 'the racing callers shared the failed attempt');
+    assert.equal(window.rooms.vault, undefined);
+    globalThis.fetch = okFetch;
+    await silent(() => loadRoom('vault'));
+    assert.equal(calls.fetch.length, 2);
+    assert.deepEqual(calls.create, ['vault']);
 });

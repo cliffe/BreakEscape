@@ -1625,7 +1625,10 @@ class NPCBehavior {
             const locked = !!window.gameScenario?.rooms?.[roomId]?.locked;
             if (locked) {
                 const res = await window.NPCGameBridge?.unlockDoor?.(roomId, this.npcId);
-                if (!res?.success) throw new Error(res?.error || 'unlock refused');
+                if (!res?.success) {
+                    this._warnUnlockRefusedOnce(roomId);
+                    throw new Error(res?.error || 'unlock refused');
+                }
             }
             await window.loadRoom?.(roomId);
             if (!window.rooms?.[roomId]) throw new Error('room did not load');
@@ -1641,6 +1644,16 @@ class NPCBehavior {
             console.warn(`⚠️ [${this.npcId}] Route action for ${roomId} failed (${err?.message || err}), retrying in 5s`);
             this._routeWait = { roomId, retryAt: this.clockNow() + 5000 };
         });
+    }
+
+    /** One console.warn per NPC+room when the server refuses a route unlockRoom (retries stay quiet). */
+    _warnUnlockRefusedOnce(roomId) {
+        if (!this._unlockRefusalWarned) this._unlockRefusalWarned = new Set();
+        if (this._unlockRefusalWarned.has(roomId)) return;
+        this._unlockRefusalWarned.add(roomId);
+        console.warn(`⚠️ [${this.npcId}] The server refused this NPC's route unlockRoom for '${roomId}'. ` +
+            `Fix: add an eventMapping with unlockDoor: "${roomId}" to this NPC (see README_scenario_design.md); ` +
+            `without one the NPC retries at the door forever.`);
     }
 
     _faceRouteObject(objectId) {

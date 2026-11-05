@@ -769,8 +769,30 @@ const OBJECT_SCALES = {
     'bluetooth_scanner': 0.7
 };
 
+// In-flight loads by room id. Two overlapping loadRoom calls (a route NPC's unlockRoom
+// and the player clicking the same door) share one load instead of each fetching and
+// loading the room's NPCs. The entry is removed when the load settles, so a failed
+// load can be retried.
+const roomLoadsInFlight = new Map();
+
 // Function to load a room lazily via API endpoint
 async function loadRoom(roomId) {
+    if (window.rooms && window.rooms[roomId]) {
+        console.log(`Room ${roomId} is already loaded, skipping reload`);
+        return;
+    }
+    const pending = roomLoadsInFlight.get(roomId);
+    if (pending) return pending;
+    const load = loadRoomOnce(roomId);
+    roomLoadsInFlight.set(roomId, load);
+    try {
+        return await load;
+    } finally {
+        if (roomLoadsInFlight.get(roomId) === load) roomLoadsInFlight.delete(roomId);
+    }
+}
+
+async function loadRoomOnce(roomId) {
     const position = window.roomPositions[roomId];
 
     if (!position) {
