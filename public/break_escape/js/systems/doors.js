@@ -390,7 +390,7 @@ export function initializeDoors(gameInstance, roomsRef) {
 }
 
 // Function to create door sprites based on gameScenario connections
-export function createDoorSpritesForRoom(roomId, position) {
+export function createDoorSpritesForRoom(roomId, position, fullRoomData = null) {
     const gameScenario = window.gameScenario;
     const roomData = gameScenario.rooms[roomId];
     if (!roomData || !roomData.connections) {
@@ -553,6 +553,15 @@ export function createDoorSpritesForRoom(roomId, position) {
             difficulty: doorSprite.doorProperties.difficulty
         });
 
+        // Gate door (systems/door-gates.js): `gate` on the door definition. The bootstrap
+        // scenario drops `doors`, so read the full room data from /room/:id too. The far
+        // room's sprite joins the doorway's gate by position (register with null).
+        const fullDoorDefinition = fullRoomData?.doors?.find?.(d =>
+            d.connectedRoom === connectedRoom && d.direction === direction
+        );
+        const gateRaw = lockProps.gate || fullDoorDefinition?.gate || null;
+        const isGate = !!window.doorGates?.register?.(doorSprite, gateRaw);
+
         // Set up door info for transition detection
         doorSprite.doorInfo = {
             roomId: roomId,
@@ -584,8 +593,9 @@ export function createDoorSpritesForRoom(roomId, position) {
         doorSprite.interactionZone = zone;
         doorSprites.push(doorSprite);
 
-        // If door starts unlocked, mark it as walkable in pathfinding
-        if (!doorSprite.doorProperties.locked && window.pathfindingManager) {
+        // If door starts unlocked, mark it as walkable in pathfinding (a gate starts shut;
+        // door-gates.js marks it when it opens)
+        if (!isGate && !doorSprite.doorProperties.locked && window.pathfindingManager) {
             window.pathfindingManager.markDoorWalkable(
                 roomId,
                 doorSprite.doorProperties.worldX,
@@ -629,6 +639,16 @@ async function handleDoorInteraction(doorSprite) {
 
     const props = doorSprite.doorProperties;
     console.log(`Interacting with door: ${props.roomId} -> ${props.connectedRoom}`);
+
+    // A gate door (door-gates.js) only opens for its NPCs: the player never reaches
+    // handleUnlock -> openDoor, which would destroy the sprite for good.
+    if (props.gate) {
+        window.gameAlert?.('Access denied: this door only opens for authorised staff.', 'error', 'Door', 3000);
+        window.eventDispatcher?.emit?.('door_gate_denied', {
+            roomId: props.roomId, connectedRoom: props.connectedRoom, direction: props.direction
+        });
+        return;
+    }
 
     // Check if locks are disabled for testing
     if (window.DISABLE_LOCKS) {

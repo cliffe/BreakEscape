@@ -572,6 +572,34 @@ export class NPCPathfindingManager {
      * the connected room (one TILE_SIZE away in the door direction).
      * The top and bottom rows of the combined span stay blocked to prevent corner clipping.
      */
+    /**
+     * Forget an opened doorway (a gate door shutting again, door-gates.js): drop it
+     * from openDoorways, openNSDoors and openSideDoorCorridors so the next
+     * rebuildWorldGrid() bakes the re-enabled door body back in and stops carving
+     * the gap. The caller rebuilds the grid.
+     *
+     * @param {number} worldX - Door sprite centre X (as given to markDoorWalkable)
+     * @param {number} worldY - Door sprite centre Y
+     * @param {string} direction - Door direction (either room's; N/S and E/W are matched by axis)
+     */
+    unmarkDoor(worldX, worldY, direction) {
+        const ns = direction === 'north' || direction === 'south';
+        // openDoorways holds canonical centres: for N/S the sprite centre; for E/W ±16px
+        this.openDoorways = this.openDoorways.filter(d => {
+            if (ns) return !(d.axis === 'y' && Math.abs(d.cx - worldX) < 2 && Math.abs(d.cy - worldY) < 2);
+            return !(d.axis === 'x' && Math.abs(d.cx - worldX) <= 18 && Math.abs(d.cy - worldY) < 2);
+        });
+        if (ns) {
+            // markDoorWalkable stored the top-left of the tile holding the centre, per room
+            this.openNSDoors = this.openNSDoors.filter(d =>
+                !(worldX - d.worldX >= 0 && worldX - d.worldX < TILE_SIZE &&
+                  worldY - d.worldY >= 0 && worldY - d.worldY < TILE_SIZE));
+        } else {
+            this.openSideDoorCorridors = this.openSideDoorCorridors.filter(c =>
+                !(Math.abs(c.worldX - worldX) < 2 && Math.abs(c.worldY - worldY) < 2));
+        }
+    }
+
     markSideDoorCorridor(worldX, worldY, direction) {
         addDoorway(this.openDoorways, { x: worldX, y: worldY, direction });
         // Store so rebuildWorldGrid() can reapply after future rebuilds.

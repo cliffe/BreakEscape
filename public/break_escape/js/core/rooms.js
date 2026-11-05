@@ -848,6 +848,7 @@ export function initializeRooms(gameInstance) {
     console.log('Initializing rooms');
     rooms = {};
     window.rooms = rooms; // Ensure window.rooms references the same object
+    window.doorGates?.reset?.(); // gate doors belong to the previous scenario's sprites
     currentRoom = '';
     currentPlayerRoom = '';
     window.currentPlayerRoom = '';
@@ -1812,7 +1813,8 @@ export function createRoom(roomId, roomData, position) {
         const roomWorldY = position.y + TILE_SIZE * 2; // Room Y is 2 tiles south of room position
         
         // Create door sprites based on gameScenario connections
-        const doorSprites = createDoorSpritesForRoom(roomId, position);
+        // roomData is the full room from /room/:id: its `doors` (gate config) is not in the bootstrap scenario
+        const doorSprites = createDoorSpritesForRoom(roomId, position, roomData);
         rooms[roomId].doorSprites = doorSprites;
         console.log(`Stored ${doorSprites.length} door sprites in room ${roomId}`);
         

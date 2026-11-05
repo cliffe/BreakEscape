@@ -38,6 +38,7 @@ import { ScenarioTimerUI } from '../ui/scenario-timer.js';  // [Phase 5] Countdo
 import { ScenarioTimerDispatcher } from '../ui/scenario-timer-dispatcher.js';  // [Phase 5] Timer event dispatcher
 import { GameClock } from '../systems/game-clock.js';  // Elapsed game time (resumes after a reload) and the in-game clock
 import { sightChallengeWatcher } from '../systems/npc-sight-challenge.js';  // Opt-in los.challengeOnSight guards
+import { doorGates } from '../systems/door-gates.js';  // Gate doors: open for listed NPCs, hold, relock (sets window.doorGates)
 import '../systems/npc-sight-occlusion.js';  // Walls, doors and tall props block NPC sight (sets window.npcSightOcclusion)
 import { CommandBoardRecorder } from '../minigames/command-board/command-board-timeline.js';  // Board entries stamped as they happen
 import { initLighting } from '../systems/lighting.js';
@@ -2413,6 +2414,9 @@ export function update() {
     if (!window.isVmContextActive?.()) {
         sightChallengeWatcher.update(Date.now());
     }
+
+    // Gate doors open as their NPCs near them and shut after the hold window
+    doorGates.update(Date.now());
 
     // [Phase 5] Update scenario timers (fire timers and dispatch events)
     if (window.scenarioTimerDispatcher) {
