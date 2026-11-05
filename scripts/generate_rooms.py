@@ -1109,6 +1109,19 @@ WALL_MOUNTED_EXTRAS = {
     "lw_sign_briefing",
     "lw_sign_records",
     "lw_sign_admin",
+    "lw_sash_window",
+    "lw_baize_board",
+    "lw_directory",
+    "lw_evac_plan",
+    "lw_exit_button",
+    "lw_sign_post",
+    "lw_sign_accounts",
+    "lw_sign_records_office",
+    "lw_sign_staff_only",
+    "lw_sign_fire_door",
+    "lw_sign_press_exit",
+    "lw_sign_kitroom",
+    "lw_pigeonholes",
 }
 
 

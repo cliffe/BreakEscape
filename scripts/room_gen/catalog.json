@@ -6133,6 +6133,102 @@
       "w": 27,
       "h": 11,
       "gid": 1454
+    },
+    "lw_sash_window1": {
+      "id": 654,
+      "w": 40,
+      "h": 40,
+      "gid": 1455
+    },
+    "lw_baize_board1": {
+      "id": 655,
+      "w": 42,
+      "h": 31,
+      "gid": 1456
+    },
+    "lw_directory1": {
+      "id": 656,
+      "w": 40,
+      "h": 48,
+      "gid": 1457
+    },
+    "lw_evac_plan1": {
+      "id": 657,
+      "w": 32,
+      "h": 24,
+      "gid": 1458
+    },
+    "lw_exit_button1": {
+      "id": 658,
+      "w": 14,
+      "h": 22,
+      "gid": 1459
+    },
+    "lw_sign_post1": {
+      "id": 659,
+      "w": 43,
+      "h": 11,
+      "gid": 1460
+    },
+    "lw_sign_accounts1": {
+      "id": 660,
+      "w": 39,
+      "h": 11,
+      "gid": 1461
+    },
+    "lw_sign_records_office1": {
+      "id": 661,
+      "w": 63,
+      "h": 11,
+      "gid": 1462
+    },
+    "lw_sign_staff_only1": {
+      "id": 662,
+      "w": 47,
+      "h": 11,
+      "gid": 1463
+    },
+    "lw_sign_fire_door1": {
+      "id": 663,
+      "w": 83,
+      "h": 11,
+      "gid": 1464
+    },
+    "lw_sign_press_exit1": {
+      "id": 664,
+      "w": 59,
+      "h": 11,
+      "gid": 1465
+    },
+    "lw_sign_kitroom1": {
+      "id": 665,
+      "w": 39,
+      "h": 11,
+      "gid": 1466
+    },
+    "lw_pigeonholes3": {
+      "id": 666,
+      "w": 84,
+      "h": 27,
+      "gid": 1467
+    },
+    "lw_credenza1": {
+      "id": 667,
+      "w": 64,
+      "h": 36,
+      "gid": 1468
+    },
+    "lw_oval_table1": {
+      "id": 668,
+      "w": 80,
+      "h": 40,
+      "gid": 1469
+    },
+    "lw_ledger_shelves1": {
+      "id": 669,
+      "w": 48,
+      "h": 60,
+      "gid": 1470
     }
   }
 }

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="644" columns="0">
+<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="660" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0">
   <image source="../objects/iv_stand1.png" width="25" height="60"/>
@@ -1932,5 +1932,53 @@
  </tile>
  <tile id="653">
   <image source="../objects/lw_sign_admin1.png" width="27" height="11"/>
+ </tile>
+ <tile id="654">
+  <image source="../objects/lw_sash_window1.png" width="40" height="40"/>
+ </tile>
+ <tile id="655">
+  <image source="../objects/lw_baize_board1.png" width="42" height="31"/>
+ </tile>
+ <tile id="656">
+  <image source="../objects/lw_directory1.png" width="40" height="48"/>
+ </tile>
+ <tile id="657">
+  <image source="../objects/lw_evac_plan1.png" width="32" height="24"/>
+ </tile>
+ <tile id="658">
+  <image source="../objects/lw_exit_button1.png" width="14" height="22"/>
+ </tile>
+ <tile id="659">
+  <image source="../objects/lw_sign_post1.png" width="43" height="11"/>
+ </tile>
+ <tile id="660">
+  <image source="../objects/lw_sign_accounts1.png" width="39" height="11"/>
+ </tile>
+ <tile id="661">
+  <image source="../objects/lw_sign_records_office1.png" width="63" height="11"/>
+ </tile>
+ <tile id="662">
+  <image source="../objects/lw_sign_staff_only1.png" width="47" height="11"/>
+ </tile>
+ <tile id="663">
+  <image source="../objects/lw_sign_fire_door1.png" width="83" height="11"/>
+ </tile>
+ <tile id="664">
+  <image source="../objects/lw_sign_press_exit1.png" width="59" height="11"/>
+ </tile>
+ <tile id="665">
+  <image source="../objects/lw_sign_kitroom1.png" width="39" height="11"/>
+ </tile>
+ <tile id="666">
+  <image source="../objects/lw_pigeonholes3.png" width="84" height="27"/>
+ </tile>
+ <tile id="667">
+  <image source="../objects/lw_credenza1.png" width="64" height="36"/>
+ </tile>
+ <tile id="668">
+  <image source="../objects/lw_oval_table1.png" width="80" height="40"/>
+ </tile>
+ <tile id="669">
+  <image source="../objects/lw_ledger_shelves1.png" width="48" height="60"/>
  </tile>
 </tileset>
