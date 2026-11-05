@@ -2558,7 +2558,6 @@ function gatherInteractablesNearClick(worldX, worldY) {
         if (room.objects) {
             Object.values(room.objects).forEach(obj => {
                 if (!obj.active || !obj.interactable || !obj.visible) return;
-                if (obj.isSeat && !window.seating?.canPlayerSit()) return; // no seated frames: a plain chair
                 if (!isObjectInInteractionRange(obj)) return;
                 // Swivel props (rolling chairs, trolleys) count only when the tap is on their own
                 // sprite: the radial slop round their top-left put a chair into the menu for

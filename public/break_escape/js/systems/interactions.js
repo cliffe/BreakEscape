@@ -728,7 +728,7 @@ export function handleObjectInteraction(sprite) {
         });
     }
     
-    // A chair: sit on it (seating.js). Without seated frames a swivel chair still gets kicked.
+    // A chair: sit on it, or stand on it when the avatar has no seated frames (seating.js)
     if (window.seating?.trySit(sprite)) return;
 
     // Handle swivel chair interaction - a jab kicks it
@@ -1969,7 +1969,6 @@ export function tryInteractWithNearest() {
             Object.values(room.objects).forEach(obj => {
                 if (!obj.active || !obj.interactable || !obj.visible) return;
                 if (seatedOn && obj === seatedOn) return; // E from a chair reaches what's around it
-                if (obj.isSeat && !window.seating?.canPlayerSit()) return; // no seated frames: a plain chair
                 consider(reachX(obj, px), obj.y, () => handleObjectInteraction(obj), INTERACTION_RANGE_SQ, null, obj, aimX(obj));
             });
         }

@@ -293,8 +293,8 @@ function setupKeyboardInput() {
         // Spacebar for jump
         if (key === ' ') {
             keyboardInput.space = true;
-            if (window.seating?.isSeated()) { // Space stands up from a chair
-                if (!event.repeat) window.seating.standUp();
+            if (window.seating?.isSeated()) { // on a chair: sit -> stand on it -> jump off
+                if (!event.repeat) window.seating.onJumpKey();
                 event.preventDefault();
                 return;
             }

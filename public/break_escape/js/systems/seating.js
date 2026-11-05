@@ -1,24 +1,31 @@
 /**
- * Seating: the player sits on chairs.
+ * Seating: the player sits on chairs, or stands on them.
  *
- * Interacting with a supported chair (E, or a click) sits the player down. The
- * player sprite stays the physics/movement driver but is hidden; a separate image
- * shows the atlas's seated frame ("sit_<compass>_frame_000", see
- * tools/pixellab_pipeline.py import --sit-from) on the chair.
+ * Interacting with a supported chair (E, or a click) puts the player on it. The
+ * player sprite stays the physics/movement driver but is hidden; a separate sprite
+ * shows the pose on the chair:
+ *  - sit: the atlas's seated frame ("sit_<compass>_frame_000", made by
+ *    tools/pixellab_pipeline.py import --sit-from);
+ *  - stand: the player's idle animation, feet on the seat. An avatar without seated
+ *    frames stands on the chair instead of sitting.
  *
+ * Controls while on a chair:
  *  - Swivel chairs roll with the player: normal movement (keys or click-to-move)
  *    moves the chair, with no walk animation, and the seat turns to the direction of
  *    travel, snapped to the chair's valid facings.
  *  - Static chairs: any move (keys or a click) hops the player off.
- *  - Space, punching or blocking stands the player up; E still reaches objects
- *    nearby (a desk PC) and stands up only when there's nothing else in reach.
+ *  - Space: from sitting, stand up on the chair; from standing on it, jump off.
+ *  - Punching or blocking gets the player off. E still reaches objects nearby
+ *    (a desk PC) and gets off only when there's nothing else in reach.
  *
  * Layering (from the 8-direction render tests): facing away (N, NE, NW) the chair is
- * drawn over the sitter, so the backrest hides the torso; every other facing draws
- * the sitter over the chair, with armrest strips redrawn on top where a chair has them.
+ * drawn over the player, so the backrest hides the torso; every other facing draws
+ * the player over the chair, with armrest strips redrawn on top where a chair has them
+ * (seated only: standing, the player is above the armrests).
  *
  * Anchors: seat points are in chair-texture pixels (origin top-left); hip points are
- * in the 80x80 character atlas frame (PixelLab 60px seated rotations pasted at +10,+12).
+ * in the 80x80 character atlas frame (PixelLab 60px seated rotations pasted at +10,+12);
+ * standing, the feet (the body collider's centre) go on the seat point.
  */
 
 export const COMPASS = ['south', 'south-east', 'east', 'north-east', 'north', 'north-west', 'west', 'south-west'];
@@ -167,24 +174,29 @@ function seatPoint(chair, seat, facing) {
 
 // ---------------------------------------------------------------- player state
 
-let state = null; // { chair, seat, facing, image, overlays[], approach, footOffset, savedBody, chairBodyWasEnabled }
+// { chair, seat, facing, pose, sprite, overlays[], approach, footOffset, savedBody,
+//   chairBodyWasEnabled, jumping }
+let state = null;
 
 export function isSeated() { return !!state; }
 export function currentSeat() { return state?.chair || null; }
+export function currentPose() { return state?.pose || null; }
 export function canRoll() { return state?.seat.kind === 'swivel'; }
 
+/** Whether the player's avatar has seated frames (otherwise it stands on chairs). */
 export function canPlayerSit() {
     const player = window.player;
     return !!player && hasSitFrames(player.texture?.key);
 }
 
-/** Interaction entry point: sit on a chair. Returns true when it handled the sprite. */
+/** Interaction entry point: get on a chair. Returns true when it handled the sprite. */
 export function trySit(chair) {
     const seat = seatSpec(chair);
-    if (!seat || !canPlayerSit()) return false;
+    if (!seat || !window.player?.body) return false;
+    if (state?.jumping) return true;
     if (state?.chair === chair) { standUp(); return true; }
     if (state) standUp();
-    sitOn(chair, seat);
+    sitOn(chair, seat, canPlayerSit() ? 'sit' : 'stand');
     return true;
 }
 
@@ -197,7 +209,7 @@ function moveDriverFeetTo(player, x, y) {
     player.body.reset(player.x + (x - f.x), player.y + (y - f.y));
 }
 
-function sitOn(chair, seat) {
+function sitOn(chair, seat, pose) {
     const player = window.player;
     const scene = chair.scene;
     window.cancelClickToMove?.();
@@ -231,13 +243,13 @@ function sitOn(chair, seat) {
         player.body.setOffset(cx - bw / 2, cy - bh / 2);
         moveDriverFeetTo(player, chair.x + footOffset.x, chair.y + footOffset.y);
     } else {
-        // Static: no collisions while seated; the driver sits at the chair's foot.
+        // Static: no collisions while on it; the driver sits at the chair's foot.
         footOffset = { x: chair.width / 2, y: chair.height - 2 };
         player.body.checkCollision.none = true;
         moveDriverFeetTo(player, chair.x + footOffset.x, chair.y + footOffset.y);
     }
 
-    const image = scene.add.image(0, 0, player.texture.key, `sit_${facing}_frame_000`).setOrigin(0, 0);
+    const sprite = scene.add.sprite(0, 0, player.texture.key).setOrigin(0, 0);
     const overlays = [0, 1].map(() => scene.add.image(0, 0, chair.texture.key).setOrigin(0, 0).setVisible(false));
 
     player.setVisible(false);
@@ -247,19 +259,41 @@ function sitOn(chair, seat) {
     player.direction = COMPASS_TO_PLAYER[facing];
     player.lastDirection = player.direction;
 
-    state = { chair, seat, facing, image, overlays, approach, footOffset, savedBody, chairBodyWasEnabled };
+    state = { chair, seat, facing, pose, sprite, overlays, approach, footOffset, savedBody,
+              chairBodyWasEnabled, jumping: false, shownAnim: null };
     chair.seatedBy = 'player';
+    applyPose();
     place();
-    window.eventDispatcher?.emit?.('player_sat', { objectId: chair.objectId, facing });
+    window.eventDispatcher?.emit?.(pose === 'sit' ? 'player_sat' : 'player_stood_on_chair',
+        { objectId: chair.objectId, facing });
 }
 
-/** Stand the player up beside the chair. */
-export function standUp() {
+/** Show the current pose on the proxy sprite. */
+function applyPose() {
+    const { sprite, pose, facing } = state;
+    const player = window.player;
+    if (pose === 'sit') {
+        state.shownAnim = null;
+        sprite.anims.stop();
+        const frame = `sit_${facing}_frame_000`;
+        if (sprite.frame.name !== frame) sprite.setFrame(frame);
+    } else {
+        const key = `idle-${COMPASS_TO_PLAYER[facing]}`;
+        if (state.shownAnim !== key) {
+            state.shownAnim = key;
+            if (player.anims.animationManager.exists(key)) sprite.play(key, true);
+            else sprite.setFrame(player.frame.name);
+        }
+    }
+}
+
+/** Get off the chair: stand beside it (or at `spot`). */
+export function standUp(spot = null) {
     if (!state) return false;
     const player = window.player;
-    const { chair, seat, image, overlays, savedBody, approach, chairBodyWasEnabled, facing } = state;
+    const { chair, seat, sprite, overlays, savedBody, approach, chairBodyWasEnabled, facing } = state;
     state = null;
-    image.destroy();
+    sprite.destroy();
     overlays.forEach(o => o.destroy());
     delete chair.seatedBy;
 
@@ -268,17 +302,12 @@ export function standUp() {
     player.body.setOffset(savedBody.ox, savedBody.oy);
     player.body.checkCollision.none = savedBody.none;
 
-    let spot;
-    if (seat.kind === 'swivel') {
-        if (chair.body) {
-            chair.body.enable = chairBodyWasEnabled;
-            chair.body.reset(chair.x, chair.y);
-            chair.body.setVelocity(0, 0);
-        }
-        spot = standSpot(chair, facing);
-    } else {
-        spot = approach;
+    if (seat.kind === 'swivel' && chair.body) {
+        chair.body.enable = chairBodyWasEnabled;
+        chair.body.reset(chair.x, chair.y);
+        chair.body.setVelocity(0, 0);
     }
+    spot = spot || landingSpot(chair, seat, facing, approach);
     if (spot) moveDriverFeetTo(player, spot.x, spot.y);
 
     player.isSeated = false;
@@ -288,6 +317,11 @@ export function standUp() {
     if (player.anims.animationManager.exists(animKey)) player.anims.play(animKey, true);
     window.eventDispatcher?.emit?.('player_stood', { objectId: chair.objectId });
     return true;
+}
+
+/** Where the player lands getting off: beside a swivel chair, back where they came from for a static one. */
+function landingSpot(chair, seat, facing, approach) {
+    return seat.kind === 'swivel' ? standSpot(chair, facing) : approach;
 }
 
 /** A walkable spot next to a swivel chair, in front of it first. */
@@ -308,31 +342,82 @@ function standSpot(chair, facing) {
 }
 
 /**
- * Called right after the normal player movement each frame. Returns true when
- * movement should be abandoned for this frame (unused for now).
- * Swivel: slows the roll and keeps the seat facing the way the player moves.
+ * Space on a chair: sitting -> stand up on the seat; standing on it -> jump off.
+ * Returns true when it handled the key.
  */
+export function onJumpKey() {
+    if (!state) return false;
+    if (state.jumping) return true;
+    if (state.pose === 'sit') {
+        state.pose = 'stand';
+        applyPose();
+        place();
+        window.eventDispatcher?.emit?.('player_stood_on_chair', { objectId: state.chair.objectId, facing: state.facing });
+        return true;
+    }
+    jumpOff();
+    return true;
+}
+
+const JUMP_MS = 320;
+const JUMP_HEIGHT = 14;
+
+/** Hop from the seat to the floor beside the chair, then hand control back. */
+function jumpOff() {
+    const player = window.player;
+    const { chair, seat, facing, approach, sprite } = state;
+    // Work out the landing spot with the chair's own body back in place.
+    const spot = landingSpot(chair, seat, facing, approach);
+    if (!spot) { standUp(); return; }
+    state.jumping = true;
+    player.body.setVelocity(0, 0);
+    window.cancelClickToMove?.();
+    // The proxy's feet move from the seat to the spot along an arc.
+    const feet = proxyFeetOffset();
+    const fromX = sprite.x, fromY = sprite.y;
+    const toX = Math.round(spot.x - feet.x), toY = Math.round(spot.y - feet.y);
+    sprite.setDepth(Math.max(sprite.depth, chair.depth) + 1);
+    state.overlays.forEach(o => o.setVisible(false));
+    chair.scene.tweens.addCounter({
+        from: 0, to: 1, duration: JUMP_MS,
+        onUpdate: (tw) => {
+            const t = tw.getValue();
+            sprite.setPosition(Math.round(fromX + (toX - fromX) * t),
+                               Math.round(fromY + (toY - fromY) * t - Math.sin(t * Math.PI) * JUMP_HEIGHT));
+        },
+        onComplete: () => { if (state?.sprite === sprite) standUp(spot); }
+    });
+}
+
+/** Feet point inside the player's frame: the centre of its (standing) body collider. */
+function proxyFeetOffset() {
+    const b = state.savedBody;
+    return { x: b.ox + b.w / 2, y: b.oy + b.h / 2 };
+}
+
+/** Called right after the normal player movement each frame. */
 export function afterPlayerMovement() {
     if (!state) return;
     const player = window.player;
     if (window.playerHealth?.isKO?.()) { standUp(); return; }
+    if (state.jumping) { player.body.setVelocity(0, 0); return; }
     if (state.seat.kind === 'swivel') {
         player.body.velocity.x *= ROLL_SPEED;
         player.body.velocity.y *= ROLL_SPEED;
     }
-    if (player.anims.isPlaying) player.anims.stop(); // no walk/idle animation while seated
+    if (player.anims.isPlaying) player.anims.stop(); // no walk/idle animation on the hidden driver
 }
 
 /** Static chairs: a move attempt hops the player off first. */
 export function onMoveIntent() {
-    if (state && state.seat.kind === 'static') standUp();
+    if (state && !state.jumping && state.seat.kind === 'static') standUp();
 }
 
-/** Position the chair, the seated image and armrest strips (scene postupdate). */
+/** Position the chair, the pose sprite and armrest strips (scene postupdate). */
 export function place() {
-    if (!state) return;
+    if (!state || state.jumping) return;
     const player = window.player;
-    const { chair, seat, image, overlays, footOffset } = state;
+    const { chair, seat, sprite, overlays, footOffset } = state;
     if (!chair.active || !player?.body) { standUp(); return; }
 
     if (seat.kind === 'swivel') {
@@ -349,21 +434,20 @@ export function place() {
         // Static seats keep their facing (a conversation may have turned the driver).
         player.direction = COMPASS_TO_PLAYER[state.facing];
     }
+    applyPose();
 
     const facing = state.facing;
-    const frame = `sit_${facing}_frame_000`;
-    if (image.frame.name !== frame) image.setFrame(frame);
     const sp = seatPoint(chair, seat, facing);
-    const hip = SIT_HIP[facing];
-    image.setPosition(Math.round(sp.x - hip[0]), Math.round(sp.y - hip[1]));
-    image.setVisible(chair.visible);
+    const anchor = state.pose === 'sit' ? SIT_HIP[facing] : [proxyFeetOffset().x, proxyFeetOffset().y];
+    sprite.setPosition(Math.round(sp.x - anchor[0]), Math.round(sp.y - anchor[1]));
+    sprite.setVisible(chair.visible);
 
     const rear = REAR.has(facing);
-    image.setDepth(chair.depth + (rear ? -SEAT_DEPTH_STEP : SEAT_DEPTH_STEP));
+    sprite.setDepth(chair.depth + (rear ? -SEAT_DEPTH_STEP : SEAT_DEPTH_STEP));
     // The hidden driver keeps a depth too, for anything that reads it.
-    player.setDepth(image.depth);
+    player.setDepth(sprite.depth);
 
-    const strips = (!rear && seat.kind === 'swivel' && seat.family.front?.[facing]) || [];
+    const strips = (state.pose === 'sit' && !rear && seat.kind === 'swivel' && seat.family.front?.[facing]) || [];
     overlays.forEach((o, i) => {
         const r = strips[i];
         if (!r) { o.setVisible(false); return; }
@@ -379,8 +463,8 @@ export function installSeating(scene) {
 }
 
 const seating = {
-    seatSpec, isSeat, isStaticSeatTexture, hasSitFrames, canPlayerSit, trySit, standUp,
-    isSeated, currentSeat, canRoll, afterPlayerMovement, onMoveIntent, place, installSeating,
+    seatSpec, isSeat, isStaticSeatTexture, hasSitFrames, canPlayerSit, trySit, standUp, onJumpKey,
+    isSeated, currentSeat, currentPose, canRoll, afterPlayerMovement, onMoveIntent, place, installSeating,
     chairFacing, setChairFacing, snapFacing
 };
 window.seating = seating;
