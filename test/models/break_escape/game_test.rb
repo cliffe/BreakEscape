@@ -117,6 +117,30 @@ module BreakEscape
       refute @game.add_item_to_room!('main_office', sent, { 'npc_id' => 'nobody', 'source_type' => 'npc_defeated' })
     end
 
+    # D3: the "already in inventory" filter matches ids when both sides have one,
+    # names only when either side lacks an id.
+    ITEM_FILTER_CASES = [
+        ['same name, different ids: kept', { 'type' => 'suitcase', 'name' => 'Locked Briefcase', 'id' => 'bag_2' }, { 'type' => 'suitcase', 'name' => 'Locked Briefcase', 'id' => 'bag_1' }, false],
+        ['same id: hidden', { 'type' => 'suitcase', 'name' => 'Locked Briefcase', 'id' => 'bag_1' }, { 'type' => 'suitcase', 'name' => 'Locked Briefcase', 'id' => 'bag_1' }, true],
+        ['room id only, same name: hidden by name', { 'type' => 'suitcase', 'name' => 'Locked Briefcase', 'id' => 'bag_1' }, { 'type' => 'suitcase', 'name' => 'Locked Briefcase' }, true],
+        ['inventory id only, same name: hidden by name', { 'type' => 'suitcase', 'name' => 'Locked Briefcase' }, { 'type' => 'suitcase', 'name' => 'Locked Briefcase', 'id' => 'bag_1' }, true],
+        ['both id-less, same name: hidden', { 'type' => 'suitcase', 'name' => 'Locked Briefcase' }, { 'type' => 'suitcase', 'name' => 'Locked Briefcase' }, true],
+        ['opens_lock-only keys: hidden', { 'type' => 'key', 'name' => 'Office Key', 'opens_lock' => 'office' }, { 'type' => 'key', 'name' => 'Office Key', 'opens_lock' => 'office' }, true],
+        ['opens_lock-only keys, different locks: kept', { 'type' => 'key', 'name' => 'Key', 'opens_lock' => 'a' }, { 'type' => 'key', 'name' => 'Key', 'opens_lock' => 'b' }, false],
+        ['different type, same name: kept', { 'type' => 'notes', 'name' => 'Locked Briefcase' }, { 'type' => 'suitcase', 'name' => 'Locked Briefcase' }, false],
+        ['room item with no id or name: hidden by type', { 'type' => 'suitcase' }, { 'type' => 'suitcase', 'name' => 'Locked Briefcase', 'id' => 'bag_1' }, true],
+      ].freeze
+
+    ITEM_FILTER_CASES.each_with_index do |(label, room_item, held, hidden), i|
+      test "filtered_room_data item filter case #{i}: #{label}" do
+        @game.scenario_data = { 'startRoom' => 'lab', 'rooms' => { 'lab' => { 'objects' => [room_item.dup], 'npcs' => [] } } }
+        @game.player_state['unlockedRooms'] = ['lab']
+        @game.player_state['inventory'] = [held.dup]
+        objs = @game.filtered_room_data('lab')['objects']
+        assert_equal hidden ? 0 : 1, objs.length
+      end
+    end
+
     test "player drop persists a held droppable item and survives pickup, drop again, pickup" do
       thing = { 'type' => 'notes', 'name' => 'Tagged thing', 'id' => 'tagged_thing', 'needsTag' => 'found_item', 'droppable' => true }
       @game.scenario_data = { 'startRoom' => 'lab', 'rooms' => { 'lab' => { 'objects' => [thing.dup], 'npcs' => [] } } }

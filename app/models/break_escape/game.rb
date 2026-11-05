@@ -720,43 +720,9 @@ module BreakEscape
     # find_npc_in_scenario is defined once, in the public section below, on top of
     # scenario_npc_records (this file used to define it twice; Ruby kept the later one).
 
-    # Check if an item is already in the player's inventory
-    # Matches by type, id, or name (similar to container filtering logic)
+    # Check if an item is already in the player's inventory (see ItemIdentity.held_in?)
     def item_in_inventory?(item, inventory)
-      return false if inventory.blank? || item.blank?
-
-      # Normalize item data (handle both string and symbol keys)
-      item_type = item['type'] || item[:type]
-      item_id = BreakEscape::ItemIdentity.identity_candidates(item).first
-      item_name = item['name'] || item[:name]
-
-      inventory.any? do |inv_item|
-        # Inventory items are stored as flat objects (not nested in scenarioData)
-        # Handle both string and symbol keys
-        inv_type = inv_item['type'] || inv_item[:type]
-        inv_id = BreakEscape::ItemIdentity.identity_candidates(inv_item).first
-        inv_name = inv_item['name'] || inv_item[:name]
-
-        # Must match type
-        next false unless inv_type == item_type
-
-        # If both have IDs, match by ID (most specific)
-        if item_id.present? && inv_id.present?
-          return true if inv_id.to_s == item_id.to_s
-        end
-
-        # If both have names, match by name (fallback if no ID match)
-        if item_name.present? && inv_name.present?
-          return true if inv_name.to_s == item_name.to_s
-        end
-
-        # If item has no ID or name, match by type only (less specific, but works for generic items)
-        if item_id.blank? && item_name.blank?
-          return true
-        end
-
-        false
-      end
+      BreakEscape::ItemIdentity.held_in?(item, inventory)
     end
 
     # Check if an NPC has a specific item in their itemsHeld array

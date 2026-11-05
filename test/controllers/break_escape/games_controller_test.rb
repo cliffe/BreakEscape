@@ -700,6 +700,29 @@ module BreakEscape
     # controls to prevent players from skipping game narrative and directly
     # accessing VM consoles.
 
+    # D3: container contents are filtered with the same shared rule as room objects.
+    CONTAINER_FILTER_CASES = [
+        ['same name, different ids: kept', { 'type' => 'suitcase', 'name' => 'Locked Briefcase', 'id' => 'bag_2' }, { 'type' => 'suitcase', 'name' => 'Locked Briefcase', 'id' => 'bag_1' }, false],
+        ['same id: hidden', { 'type' => 'suitcase', 'name' => 'Locked Briefcase', 'id' => 'bag_1' }, { 'type' => 'suitcase', 'name' => 'Locked Briefcase', 'id' => 'bag_1' }, true],
+        ['room id only, same name: hidden by name', { 'type' => 'suitcase', 'name' => 'Locked Briefcase', 'id' => 'bag_1' }, { 'type' => 'suitcase', 'name' => 'Locked Briefcase' }, true],
+        ['inventory id only, same name: hidden by name', { 'type' => 'suitcase', 'name' => 'Locked Briefcase' }, { 'type' => 'suitcase', 'name' => 'Locked Briefcase', 'id' => 'bag_1' }, true],
+        ['both id-less, same name: hidden', { 'type' => 'suitcase', 'name' => 'Locked Briefcase' }, { 'type' => 'suitcase', 'name' => 'Locked Briefcase' }, true],
+        ['opens_lock-only keys: hidden', { 'type' => 'key', 'name' => 'Office Key', 'opens_lock' => 'office' }, { 'type' => 'key', 'name' => 'Office Key', 'opens_lock' => 'office' }, true],
+        ['opens_lock-only keys, different locks: kept', { 'type' => 'key', 'name' => 'Key', 'opens_lock' => 'a' }, { 'type' => 'key', 'name' => 'Key', 'opens_lock' => 'b' }, false],
+        ['different type, same name: kept', { 'type' => 'notes', 'name' => 'Locked Briefcase' }, { 'type' => 'suitcase', 'name' => 'Locked Briefcase' }, false],
+        ['room item with no id or name: hidden by type', { 'type' => 'suitcase' }, { 'type' => 'suitcase', 'name' => 'Locked Briefcase', 'id' => 'bag_1' }, true],
+      ].freeze
+
+    CONTAINER_FILTER_CASES.each_with_index do |(label, item, held, hidden), i|
+      test "filter_container_contents item filter case #{i}: #{label}" do
+        @game.player_state['inventory'] = [held.dup]
+        controller = GamesController.new
+        controller.instance_variable_set(:@game, @game)
+        result = controller.send(:filter_container_contents, { 'contents' => [item.dup] })
+        assert_equal hidden ? 0 : 1, result.length
+      end
+    end
+
     test 'find_vm_launcher_room finds room containing vm-launcher for matching vm title' do
       controller = GamesController.new
       scenario = {

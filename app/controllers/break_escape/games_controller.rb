@@ -1732,52 +1732,9 @@ module BreakEscape
       filtered_contents
     end
 
-    # Check if an item is already in the player's inventory
-    # Matches by type, id, or name (similar to validation logic)
+    # Check if an item is already in the player's inventory (see ItemIdentity.held_in?)
     def item_in_inventory?(item, inventory)
-      return false if inventory.blank? || item.blank?
-
-      # Normalize item data (handle both string and symbol keys)
-      item_type = item['type'] || item[:type]
-      item_id = BreakEscape::ItemIdentity.identity_candidates(item).first
-      item_name = item['name'] || item[:name]
-
-      Rails.logger.debug "[BreakEscape] Checking if item in inventory: type=#{item_type}, id=#{item_id}, name=#{item_name}"
-
-      inventory.any? do |inv_item|
-        # Inventory items are stored as flat objects (not nested in scenarioData)
-        # Handle both string and symbol keys
-        inv_type = inv_item['type'] || inv_item[:type]
-        inv_id = BreakEscape::ItemIdentity.identity_candidates(inv_item).first
-        inv_name = inv_item['name'] || inv_item[:name]
-
-        Rails.logger.debug "[BreakEscape] Comparing with inventory item: type=#{inv_type}, id=#{inv_id}, name=#{inv_name}"
-
-        # Must match type
-        next false unless inv_type == item_type
-
-        # If both have IDs, match by ID (most specific)
-        if item_id.present? && inv_id.present?
-          match = inv_id.to_s == item_id.to_s
-          Rails.logger.debug "[BreakEscape] ID match: #{match} (#{item_id} == #{inv_id})"
-          return true if match
-        end
-
-        # If both have names, match by name (fallback if no ID match)
-        if item_name.present? && inv_name.present?
-          match = inv_name.to_s == item_name.to_s
-          Rails.logger.debug "[BreakEscape] Name match: #{match} (#{item_name} == #{inv_name})"
-          return true if match
-        end
-
-        # If item has no ID or name, match by type only (less specific, but works for generic items)
-        if item_id.blank? && item_name.blank?
-          Rails.logger.debug "[BreakEscape] Type-only match (no ID/name)"
-          return true
-        end
-
-        false
-      end
+      BreakEscape::ItemIdentity.held_in?(item, inventory)
     end
 
     # Items that are always allowed in inventory (core game mechanics)

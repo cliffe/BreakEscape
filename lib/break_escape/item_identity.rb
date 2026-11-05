@@ -73,6 +73,36 @@ module BreakEscape
       [name, id].any? { |n| n.present? && n.to_s == obj_name.to_s }
     end
 
+    # Is the room item `item` already represented by something in `inventory`?
+    # Used by the server's reload-recovery filter (Game#filtered_room_data and the
+    # container-contents filter). Type must match; then:
+    #   - both sides have an identity (id, else opens_lock): only equal ids count,
+    #     so two props sharing a name but not an id stay distinct;
+    #   - either side lacks one: a shared non-blank name counts;
+    #   - the room item has neither identity nor name: type alone.
+    def held_in?(item, inventory)
+      return false if inventory.blank? || item.blank?
+
+      item_id = identity_candidates(item).first
+      item_name = fetch(item, 'name')
+
+      inventory.any? do |inv_item|
+        next false if inv_item.blank?
+        next false unless fetch(inv_item, 'type') == fetch(item, 'type')
+
+        inv_id = identity_candidates(inv_item).first
+        inv_name = fetch(inv_item, 'name')
+
+        if item_id.present? && inv_id.present?
+          inv_id.to_s == item_id.to_s
+        elsif item_name.present? && inv_name.present?
+          inv_name.to_s == item_name.to_s
+        else
+          item_id.blank? && item_name.blank?
+        end
+      end
+    end
+
     # Reads a key from a hash that may use string or symbol keys.
     def fetch(item, key)
       return nil unless item.respond_to?(:[])
