@@ -419,7 +419,7 @@ def check_unknown_fields(json_data)
 
   # Known NPC los fields, and those of the opt-in los.challengeOnSight
   known_los_fields = %w[enabled range angle visualize challengeOnSight _comment]
-  known_sight_challenge_fields = %w[enabled cooldown event rooms requireGlobal skipIfGlobal _comment]
+  known_sight_challenge_fields = %w[enabled cooldown event rooms requireGlobal skipIfGlobal near _comment]
   sight_challenges = []   # { path:, event: } checked against every eventMapping below
   mapping_patterns = []
 
@@ -437,7 +437,7 @@ def check_unknown_fields(json_data)
     bark message barkDelay
     targetKnot conversationMode background disableClose resume voiced callLabel videoLabel participantTag
     patrolOverride setPatrolSpeed setDwellMultiplier setVisible
-    sendTimedMessage sendEmail setGlobal completeTask skipTask unlockTask unlockAim unlockDoor
+    sendTimedMessage sendEmail setGlobal completeTask skipTask unlockTask unlockAim unlockDoor closeDoor
     openMinigame endingCheck needs addCapture emitEvent emitEventData
     _comment
   ]

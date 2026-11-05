@@ -112,3 +112,17 @@ test('validator: unlockDoor is a known mapping field and its rooms must exist',
         assert.equal(bad.length, 1, issues.join('\n'));
         assert.match(bad[0], /eventMappings\[1\]\/unlockDoor' names room "nowhere"/);
     });
+
+test('closeDoor: the mapping config carries it and a firing mapping asks doorGates to force-close each room', async () => {
+    const m = new NPCManager(makeDispatcher(), null);
+    assert.deepEqual(m._buildMappingConfig({ eventPattern: 'x', closeDoor: ['a', 'b'] }, 0).closeDoor, ['a', 'b']);
+    const calls = [];
+    window.doorGates = { closeNow: (roomId, opts) => { calls.push([roomId, opts]); return true; } };
+    try {
+        m.npcs.set('guard', { id: 'guard', npcType: 'person' });
+        m._setupEventMappings('guard', [{ eventPattern: 'player_in_view_near:guard', closeDoor: 'vault' }]);
+        m.eventDispatcher.emit('player_in_view_near:guard', {});
+        for (let i = 0; i < 3; i++) await tick();
+        assert.deepEqual(calls, [['vault', { force: true }]]);
+    } finally { delete window.doorGates; }
+});

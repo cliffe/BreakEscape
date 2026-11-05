@@ -837,6 +837,7 @@ export default class NPCManager {
         unlockTask: mapping.unlockTask,      // taskId or [taskId] — unlock tasks directly
         unlockAim: mapping.unlockAim,        // aimId or [aimId] — unlock aims directly
         unlockDoor: mapping.unlockDoor,      // roomId or [roomId] — unlock doors on the server (persists)
+        closeDoor: mapping.closeDoor,        // roomId or [roomId] — shut a gate door now (door-gates.js)
         openMinigame:  mapping.openMinigame  || null,   // a minigame registry type, or { type, minigameData }
         emitEvent:     mapping.emitEvent     || null,   // event name to emit when mapping fires
         emitEventData: mapping.emitEventData || {},     // optional payload for that event
@@ -1100,6 +1101,18 @@ export default class NPCManager {
           console.log(`🔓 Event unlockDoor: ${roomId}`, result?.success ? 'ok' : result?.error);
         }
       })();
+    }
+
+    // Shut a gate door now (systems/door-gates.js): "closeDoor": "<room the door leads to>"
+    // (or a list). Forced, so it skips the "an NPC is still crossing" hold, but it never
+    // closes on a player standing in the doorway. Ordinary doors are ignored (warning).
+    if (config.closeDoor) {
+      const rooms = Array.isArray(config.closeDoor) ? config.closeDoor : [config.closeDoor];
+      rooms.forEach(roomId => {
+        const ok = window.doorGates?.closeNow?.(roomId, { force: true });
+        if (ok === undefined) console.warn(`[event mapping] closeDoor: no gate door system loaded (${roomId})`);
+        else console.log(`🚪 Event closeDoor: ${roomId}`, ok ? 'closed' : 'not closed');
+      });
     }
 
     // Emit a custom event if specified (enables event chaining from NPC mappings)
