@@ -82,6 +82,18 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
 
   "show_scenario_brief": "once",
 
+  <%# Top-level flags block (m01/m03/m06/m07/m08 pattern; game.rb primary source for
+      scenario_data["flags"], the table the VM-step runner matches captured output
+      against). Keyed on the SecGen target system name bms_jump_server, flag_1..flag_4
+      in SecGen document order (website -> proftpd -> sudoedit -> erlang), mirroring
+      the flag-station's own flags array below. vm_flags_json emits flag_1..flag_N;
+      in Hacktivity mode the real per-build values replace these placeholders, keyed
+      by the same system name. This is additive to the flag-station's flags array,
+      which still drives in-game submission. %>
+  "flags": {
+    "bms_jump_server": <%= vm_flags_json('bms_jump_server', ['flag{network_scan_complete}', 'flag{ftp_intel_gathered}', 'flag{privesc_complete}', 'flag{erlang_rce_complete}']) %>
+  },
+
   <%# Pass 5 alignment A2 (m03 P1-31 pattern): one condition per story phase, so a
       reload (game_loaded) and the end of a fight (all_hostiles_ko) return to the
       phase's own playlist instead of the opening noir. The four are mutually

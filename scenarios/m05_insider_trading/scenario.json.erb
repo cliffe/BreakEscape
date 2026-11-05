@@ -87,6 +87,18 @@ door_log_text = "QDC BADGE READERS - AFTER-HOURS SWIPES (19:00-07:00)\nWed 16 Se
 torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing retainer if I finish the upload tonight. Elena's first trial dose is Monday.\n\nI know what this costs. Thirty to forty-five people, by their own projections. Ambulances that don't arrive in time.\n\nI've talked myself round with their philosophy. The system is rotten. Collateral damage for the greater good.\n\nI read that back and I don't recognise the man who wrote it. Elena wouldn't either."
 %>
 {
+  <%# Top-level flags block (m01/m03/m06/m07/m08 pattern; game.rb primary source for
+      scenario_data["flags"], the table the VM-step runner matches captured output
+      against). Keyed on the SecGen target system name qdc_research_server, flag_1..
+      flag_4 (the four game flags only, not the flag5 bonus), mirroring the flag-
+      station's own flags array below. vm_flags_json emits flag_1..flag_N; in
+      Hacktivity mode the real per-build values replace these placeholders, keyed by
+      the same system name. Additive to the flag-station's flags array, which still
+      drives in-game submission. %>
+  "flags": {
+    "qdc_research_server": <%= vm_flags_json('qdc_research_server', ['flag{leaked_bludit_admin_credentials}', 'flag{bludit_authenticated_upload_rce}', 'flag{torres_staging_manifest}', 'flag{architect_acquisition_authorisation}']) %>
+  },
+
   "narrator": {
     "id": "narrator",
     "skipTextValidation": true,
