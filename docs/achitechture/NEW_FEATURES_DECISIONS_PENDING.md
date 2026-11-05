@@ -19,3 +19,22 @@ Raised by the feature test work (docs/achitechture/NEW_FEATURES_TEST_MATRIX.md) 
 - **What happens:** `games_controller.rb` `item_in_inventory?` (around line 1766) treats a room item as already collected when the inventory holds anything of the same type and name, even with a different id. test_needs_sims worked around it by renaming the floor mugs.
 - **Open question:** this may be deliberate (stops a collected item reappearing on reload) or a bug (identical props can't coexist).
 - **Recommendation:** have an agent find out why it matches on type and name rather than id (git blame, tests). Report before changing anything, because it affects every mission.
+
+## D4. Two loadRoom calls at once both load the room (engine bug)
+
+- **What happens:** `core/rooms.js:781` checks `window.rooms[roomId]` before its first `await`, so two overlapping `loadRoom` calls each fetch the room and load its NPCs. `createRoom`'s own guard stops a duplicate room, but NPC loading can run twice. Shown by the skipped test "two simultaneous calls fetch once" in `test/js/load-room-idempotent.test.mjs` (commit 1cea1c34f).
+- **When it can happen:** a route NPC's `unlockRoom` loads the room while the player clicks the same door, which is exactly the lab's tailgate moment.
+- **Proposed fix:** keep a per-room in-flight promise and return it to the second caller; un-skip the test.
+- **Recommendation:** fix it. It's small and contained, and the lab's tailgate can hit it.
+
+## D5. A route `unlockRoom` without an `unlockDoor` mapping retries forever without telling anyone (tooling)
+
+- **What happens:** an NPC route action `unlockRoom` only works if the NPC also carries an `unlockDoor` eventMapping for that room (server permission, `game.rb` `npc_mapping_unlocks_door?`). Without one the NPC silently retries at the door forever. It bit test_gate_tailgate (b7a6f8b87), and a reviewer removed the lab's mapping as "dead" (5e12edcd9, restored in 3ad1e358c).
+- **Proposed fix:** a validator error when a route `unlockRoom` has no matching `unlockDoor` mapping on the same NPC, plus a one-time console warning in `_runRouteAction` when the unlock is refused.
+- **Recommendation:** add both.
+
+## D6. m07: Ray Hollis never patrols while the player is near the spawn (other mission)
+
+- **What happens:** Ray's patrol pauses to face the player within 96 px (`pauseForPlayer` defaults to true, `npc-behavior.js:396,407-408,854`). The m07 spawn is 55 px from him, so he stands still until the player walks away. Already there before this week's engine work (reproduced on the parent of 4143d47d0).
+- **Proposed fix:** set `"pauseForPlayer": false` (or a smaller `facePlayerDistance`) on Ray's patrol. His line-of-sight challenge already covers the player being noticed.
+- **Recommendation:** fix it in m07 (one line). It's another mission, so it needs your OK.
