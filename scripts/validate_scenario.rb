@@ -16,6 +16,7 @@ require 'set'
 require 'base64'
 require 'open3'
 require_relative 'validate_social'
+require_relative 'validate_npc_needs'
 
 # Try to load json-schema gem, provide helpful error if missing
 begin
@@ -389,7 +390,7 @@ def check_unknown_fields(json_data)
     scenario_id scenario_name scenario_brief endGoal version startRoom startPosition resumeSpawn titleScreenName
     show_scenario_brief disableAttacks creditsTheme creditsOverlay gameClock flags music startItemsInInventory globalVariables
     player objectives rooms npcs phoneNPCs narrator timers _comment mutuallyExclusiveGlobals lighting
-    importGlobals exportGlobals social
+    importGlobals exportGlobals social npcNeedsSeed
   ]
 
   # Check top-level unknown fields
@@ -412,7 +413,8 @@ def check_unknown_fields(json_data)
     voice behavior globalVarOnKO restartOnRetalk reopenRefreshesHub livePreview taskOnKO koImmune storyPath callId currentKnot avatar
     phoneId phoneTheme handle profile voiced callLabel unlockable externalVariables persistentVariables
     timedMessages timedConversation eventMappings itemsHeld puzzle_graph_actions
-    observations disableClose los rfidCard chatBackground spriteStyle gender portraitVariants _comment
+    observations disableClose los rfidCard chatBackground spriteStyle gender portraitVariants
+    needs interests needsHome needsSpeed usePayload onUse _comment
   ]
 
   # Known NPC los fields, and those of the opt-in los.challengeOnSight
@@ -436,7 +438,7 @@ def check_unknown_fields(json_data)
     targetKnot conversationMode background disableClose resume voiced callLabel videoLabel participantTag
     patrolOverride setPatrolSpeed setDwellMultiplier setVisible
     sendTimedMessage sendEmail setGlobal completeTask skipTask unlockTask unlockAim unlockDoor
-    openMinigame endingCheck
+    openMinigame endingCheck needs
     _comment
   ]
 
@@ -501,6 +503,7 @@ def check_unknown_fields(json_data)
     storyPath currentKnot
     completesTask completesTaskOnOpen
     puzzle_graph_links hintOnlyFlags acceptsVmLabels
+    affordance needsTag droppable
     _comment
   ]
 
@@ -5709,6 +5712,7 @@ def main
     common_issues += check_vm_flags_load_bearing(json_data)
     common_issues += check_recurring_bugs(json_data, repo_root)
     common_issues += check_unheard_room_triggers(json_data, repo_root)
+    common_issues += ValidateNpcNeeds.check(json_data)
     common_issues += check_tooling_pass4c(json_data, repo_root)
     common_issues += check_carry_over(json_data, repo_root, File.basename(File.dirname(erb_path)),
                                       File.dirname(File.dirname(erb_path)), carry_imports, own_globals)

@@ -126,6 +126,10 @@
         }
       }
     },
+    "npcNeedsSeed": {
+      "type": ["number", "string"],
+      "description": "Seed for the NPC needs system's per-NPC jitter RNG (systems/npc-needs.js). Default: the scenario name. Same seed and inputs give the same decision log."
+    },
     "startItemsInInventory": {
       "type": "array",
       "description": "Items that start in player inventory",
@@ -4348,6 +4352,70 @@
         "itemsHeld": {
           "type": "array",
           "items": { "$ref": "#/definitions/item" }
+        },
+        "needs": {
+          "type": "object",
+          "description": "NPC needs system (opt-in, systems/npc-needs.js): needs that decay over game time and send the NPC to an object whose affordance satisfies them, then back to needsHome. Key = need name, matched against affordance.satisfies. Must not be combined with behavior.patrol.enabled.",
+          "additionalProperties": {
+            "type": "object",
+            "required": ["decayPerMin", "urgentAt"],
+            "properties": {
+              "decayPerMin": { "type": "number", "exclusiveMinimum": 0, "maximum": 600, "description": "Level points lost per needs-clock minute" },
+              "urgentAt": { "type": "number", "minimum": 1, "maximum": 99, "description": "Level at or below which the need is urgent" },
+              "initial": { "type": "number", "minimum": 0, "maximum": 100, "description": "Level at start and after a reload (default 100); sets when the first beat happens" },
+              "weight": { "type": "number", "minimum": 0.1, "maximum": 10, "description": "Scales the need's score (default 1)" },
+              "maxUnmetMin": { "type": "number", "exclusiveMinimum": 0, "description": "Starvation guard: this long since last satisfied, the need wins outright" },
+              "jitterPct": { "type": "number", "minimum": 0, "maximum": 50, "description": "Seeded plus or minus spread on initial and each top-up" },
+              "_comment": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "interests": {
+          "type": "object",
+          "description": "NPC needs system: item tags this NPC is drawn to. Key = item needsTag. A number is the weight; an object adds noticeRooms. No level, no decay: it gives an option only while a matching reachable item exists.",
+          "additionalProperties": {
+            "oneOf": [
+              { "type": "number", "minimum": 0.1, "maximum": 10 },
+              {
+                "type": "object",
+                "properties": {
+                  "weight": { "type": "number", "minimum": 0.1, "maximum": 10 },
+                  "noticeRooms": { "type": "array", "items": { "type": "string" }, "description": "Room ids where the NPC notices items (default: the room of needsHome)" },
+                  "_comment": { "type": "string" }
+                },
+                "required": ["weight"],
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "needsHome": {
+          "description": "NPC needs system: where the NPC idles and returns. An object id (it stands at that object's approach cell) or a { room, x, y } tile. Default: spawn point.",
+          "oneOf": [
+            { "type": "string" },
+            {
+              "type": "object",
+              "required": ["room", "x", "y"],
+              "properties": { "room": { "type": "string" }, "x": { "type": "number" }, "y": { "type": "number" } },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "needsSpeed": { "type": "number", "minimum": 1, "description": "NPC needs system: walk speed (px/s) for needs moves. Default behavior.patrol.speed, else 80." },
+        "usePayload": { "description": "NPC needs system: any JSON value, opaque to the engine and owned by the NPC. A clone rides on every npc_used event this NPC emits." },
+        "onUse": {
+          "type": "object",
+          "description": "NPC needs system: object id -> hook applied when THIS NPC completes a use of THAT object.",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "setGlobal": { "type": "string", "description": "Global set to true" },
+              "emitEvent": { "type": "string", "description": "Event name emitted with { npcId, objectId }" },
+              "_comment": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
         }
       }
     },
@@ -4474,6 +4542,18 @@
             "delaySeconds": {"type": "number", "minimum": 0},
             "account": {"type": "string"}
           }
+        },
+        "needs": {
+          "description": "NPC needs system: \"suspend\" stops the needs loop without moving, \"resume\" walks the NPC home and re-enables it, { set: { need: level } } sets levels. Runs after patrolOverride in the same mapping.",
+          "oneOf": [
+            { "type": "string", "enum": ["suspend", "resume"] },
+            {
+              "type": "object",
+              "required": ["set"],
+              "properties": { "set": { "type": "object", "additionalProperties": { "type": "number", "minimum": 0, "maximum": 100 } } },
+              "additionalProperties": false
+            }
+          ]
         },
         "setGlobal": { "type": "object" },
         "completeTask": {},
@@ -4787,6 +4867,22 @@
         },
         "requiresItemHint": { "type": "string", "description": "Message shown when requiresItem is set but the player is not carrying the item." },
         "consumesItem": { "type": "boolean", "description": "With requiresItem: remove the matched item from the inventory (and its server copy) after the triggerOnInteract actions fire, so the kit is 'left' on the target." },
+        "affordance": {
+          "type": "object",
+          "description": "NPC needs system: what an NPC can do at this object. Carries no content.",
+          "properties": {
+            "satisfies": { "oneOf": [ { "type": "string" }, { "type": "array", "items": { "type": "string" } } ], "description": "Need name(s) a use tops up" },
+            "restores": { "type": "number", "minimum": 1, "maximum": 100, "description": "Points added on completion" },
+            "useSeconds": { "type": "number", "minimum": 0, "maximum": 600, "description": "Dwell at the object before the use completes (default 20)" },
+            "useFrom": { "type": "object", "properties": { "dx": { "type": "number" }, "dy": { "type": "number" } }, "required": ["dx", "dy"], "additionalProperties": false, "description": "Where the NPC stands, in tiles from the object's centre" },
+            "capacity": { "type": "integer", "minimum": 1, "description": "NPCs that can hold a job on it at once (default 1)" },
+            "accepts": { "type": "array", "items": { "type": "string" }, "description": "Carried items with these needsTag values can be used here" },
+            "_comment": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
+        "needsTag": { "type": "string", "description": "NPC needs system: one tag. NPCs with a matching interests entry are drawn to this item." },
+        "droppable": { "type": "boolean", "description": "true: clicking this item in the inventory drops it at the player's feet (systems/item-drop.js). Needs a unique id; usually paired with needsTag." },
         "revealOnGlobal": { "type": "string", "description": "This object stays hidden and non-interactive until the named global turns true, then appears (and persists across reload, since globals are restored before the room reveals). Models a planted device appearing in place — e.g. a keylogger that shows on the PC once planted." }
       }
     },
