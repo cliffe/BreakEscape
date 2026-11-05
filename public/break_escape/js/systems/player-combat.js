@@ -98,6 +98,7 @@ export class PlayerCombat {
   attack(toward = null) {
     if (attacksDisabled() || this.isBlocking || !window.player) return false;
     if (this.fightingPaused()) return false;
+    window.seating?.standUp(); // punching gets the player off a chair
 
     if (this.isPunching) {
       this.queuedPress = true;
@@ -191,6 +192,7 @@ export class PlayerCombat {
   startBlock() {
     if (attacksDisabled() || this.isBlocking || !window.player) return false;
     if (this.fightingPaused()) return false;
+    window.seating?.standUp(); // so does blocking
     this.isBlocking = true;
     this.queuedPress = false;
     window.cancelClickToMove?.();

@@ -42,6 +42,7 @@ import { doorGates } from '../systems/door-gates.js';  // Gate doors: open for l
 import '../systems/npc-sight-occlusion.js';  // Walls, doors and tall props block NPC sight (sets window.npcSightOcclusion)
 import { CommandBoardRecorder } from '../minigames/command-board/command-board-timeline.js';  // Board entries stamped as they happen
 import { initLighting } from '../systems/lighting.js';
+import { installSeating } from '../systems/seating.js';  // Sitting on chairs (sets window.seating)
 import { collectCharacterSprites, queueCharacterAtlases, ensureCharacterTexture } from '../systems/character-textures.js';
 import { mailScheduler } from '../systems/mail-scheduler.js';  // Mail jobs and mailState (social missions)
 import { installTimedEmails } from '../systems/mail-ink.js';  // Ink-driven plain email: contacts' timedEmails
@@ -1781,6 +1782,7 @@ export async function create() {
 
     // Create player first like in original
     createPlayer(this);
+    installSeating(this);
 
     // Store player globally for access from other modules
     window.player = player;
@@ -2398,6 +2400,7 @@ export function update() {
     
     // Update player movement
     updatePlayerMovement();
+    window.seating?.afterPlayerMovement();
     
     // Update player room (check for room transitions)
     updatePlayerRoom();
@@ -2555,6 +2558,7 @@ function gatherInteractablesNearClick(worldX, worldY) {
         if (room.objects) {
             Object.values(room.objects).forEach(obj => {
                 if (!obj.active || !obj.interactable || !obj.visible) return;
+                if (obj.isSeat && !window.seating?.canPlayerSit()) return; // no seated frames: a plain chair
                 if (!isObjectInInteractionRange(obj)) return;
                 // Swivel props (rolling chairs, trolleys) count only when the tap is on their own
                 // sprite: the radial slop round their top-left put a chair into the menu for

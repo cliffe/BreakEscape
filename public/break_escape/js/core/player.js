@@ -54,6 +54,7 @@ let footstepSound = null;
 let footstepPlaying = false;
 
 function updateFootstepSound(isPlayerMoving) {
+    if (player?.isSeated) isPlayerMoving = false; // rolling on a chair: no footsteps
     try {
         if (!window.game || !window.game.sound) return;
         if (isPlayerMoving) {
@@ -292,6 +293,11 @@ function setupKeyboardInput() {
         // Spacebar for jump
         if (key === ' ') {
             keyboardInput.space = true;
+            if (window.seating?.isSeated()) { // Space stands up from a chair
+                if (!event.repeat) window.seating.standUp();
+                event.preventDefault();
+                return;
+            }
             if (window.createPlayerJump) {
                 window.createPlayerJump();
             }
@@ -724,6 +730,7 @@ function drawPathDebug(fromX, fromY, smoothed, raw) {
 }
 
 export function movePlayerToPoint(x, y) {
+    window.seating?.onMoveIntent(); // a static chair: hop off first
     const worldBounds = gameRef.physics.world.bounds;
 
     // Ensure coordinates are within bounds
@@ -1020,6 +1027,7 @@ export function updatePlayerMovement() {
 
     // Handle keyboard movement (takes priority over mouse movement)
     if (isKeyboardMoving) {
+        window.seating?.onMoveIntent(); // a static chair: hop off first
         updatePlayerKeyboardMovement();
     } else {
         // Handle mouse-based movement (original behavior)

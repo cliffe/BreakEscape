@@ -728,6 +728,9 @@ export function handleObjectInteraction(sprite) {
         });
     }
     
+    // A chair: sit on it (seating.js). Without seated frames a swivel chair still gets kicked.
+    if (window.seating?.trySit(sprite)) return;
+
     // Handle swivel chair interaction - a jab kicks it
     if (sprite.isSwivelChair && sprite.body) {
         if (window.player && window.playerCombat) {
@@ -1941,6 +1944,7 @@ export function tryInteractWithNearest() {
     // No hard cone cutoff — avoids false negatives caused by fake-perspective coordinate mismatches.
     let best = null;
     let bestScore = Infinity;
+    const seatedOn = window.seating?.currentSeat?.() || null;
 
     function consider(objX, objY, handleFn, rangeSq = INTERACTION_RANGE_SQ, npcSprite = null, target = npcSprite, faceX = objX) {
         const dx = objX - px;
@@ -1950,7 +1954,8 @@ export function tryInteractWithNearest() {
         if (distSq > rangeSq) return;
         if (target && !interactionLineClear(player, target)) return; // wall between
         const dist = Math.sqrt(distSq);
-        const score = angularDiff(faceX, objY) * 1000 + dist; // angle to the object's centre, range to its nearest part
+        let score = angularDiff(faceX, objY) * 1000 + dist; // angle to the object's centre, range to its nearest part
+        if (target && !npcSprite && window.seating?.isSeat(target)) score += 30000; // a chair loses to anything else faced
         if (score < bestScore) { bestScore = score; best = { objX: faceX, objY, handleFn }; }
     }
 
@@ -1963,6 +1968,8 @@ export function tryInteractWithNearest() {
         if (room.objects) {
             Object.values(room.objects).forEach(obj => {
                 if (!obj.active || !obj.interactable || !obj.visible) return;
+                if (seatedOn && obj === seatedOn) return; // E from a chair reaches what's around it
+                if (obj.isSeat && !window.seating?.canPlayerSit()) return; // no seated frames: a plain chair
                 consider(reachX(obj, px), obj.y, () => handleObjectInteraction(obj), INTERACTION_RANGE_SQ, null, obj, aimX(obj));
             });
         }
@@ -1988,7 +1995,10 @@ export function tryInteractWithNearest() {
         }
     });
 
-    if (!best) return;
+    if (!best) {
+        if (seatedOn) window.seating.standUp(); // nothing else in reach: E stands up
+        return;
+    }
 
     // If the best item is not roughly in the facing direction, turn toward it before interacting
     if (angularDiff(best.objX, best.objY) > ANGLE_TOLERANCE) {

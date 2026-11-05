@@ -2752,6 +2752,13 @@ export function createRoom(roomId, roomData, position) {
                         sprite.noInteractionHighlight = true;
                         console.log(`Marked swivel chair ${sprite.objectId} as interactable (no highlight)`);
                     }
+
+                    // Static chairs the player can sit on (seating.js), likewise unhighlighted
+                    if (!sprite.isSwivelChair && window.seating?.isStaticSeatTexture(imageName)) {
+                        sprite.interactable = true;
+                        sprite.noInteractionHighlight = true;
+                        sprite.isSeat = true;
+                    }
                     
                     // Note: Click handling is now done by the main scene's pointerdown handler
                     // which checks for all objects at the clicked position
