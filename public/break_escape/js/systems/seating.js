@@ -535,8 +535,9 @@ export function place() {
 // ---------------------------------------------------------------- NPCs
 //
 // An NPC with "seated": true (or { "maxDistance": 48, "facing": "west",
-// "facePlayer": true }) in its scenario entry sits on the nearest free chair within
-// maxDistance px of its spawn. Its own sprite shows the seated frame and stays the
+// "facePlayer": true, "chair": "exec_chair_back1" }) in its scenario entry sits on the
+// nearest free chair within maxDistance px of its spawn (only chairs matching "chair",
+// an object id, id suffix or image name, when given). Its own sprite shows the seated frame and stays the
 // interaction and sight target. It holds the chair (no patrol) until a scripted move
 // (goToAndStay, the needs system), hostility or a KO gets it up. On a swivel chair it
 // turns to face a player within its facePlayerDistance unless facePlayer is false.
@@ -551,12 +552,20 @@ function npcSeatConfig(behavior) {
     return raw === true ? {} : raw;
 }
 
-function chairsNear(roomId, x, y, maxDistance) {
+/** Does a chair match a "chair" filter: its object id (or id suffix) or its image name. */
+function chairMatches(obj, want) {
+    if (!want) return true;
+    const id = obj.objectId || '';
+    return id === want || id.endsWith(`_${want}`) || obj.name === want || obj.scenarioData?.id === want
+        || (obj.originalTexture || '').replace(/-rotate\d+$/, '') === want;
+}
+
+function chairsNear(roomId, x, y, maxDistance, want = null) {
     const room = window.rooms?.[roomId];
     if (!room?.objects) return [];
     const out = [];
     for (const obj of Object.values(room.objects)) {
-        if (!obj.active || obj.seatedBy) continue;
+        if (!obj.active || obj.seatedBy || !chairMatches(obj, want)) continue;
         const seat = seatSpec(obj);
         if (!seat) continue;
         const fx = obj.x + obj.width / 2, fy = obj.y + obj.height;
@@ -665,7 +674,7 @@ export function updateSeatedNPC(behavior, playerPos) {
         if (!room?.objects || !Object.keys(room.objects).length) return false; // room not built yet
         behavior._seatTried = true;
         const f = bodyFeet(behavior.sprite);
-        const found = chairsNear(behavior.roomId, f.x, f.y, cfg.maxDistance ?? NPC_DEFAULT_REACH)[0];
+        const found = chairsNear(behavior.roomId, f.x, f.y, cfg.maxDistance ?? NPC_DEFAULT_REACH, cfg.chair || null)[0];
         if (!found) {
             console.warn(`🪑 ${behavior.npcId}: "seated" but no free chair within ${cfg.maxDistance ?? NPC_DEFAULT_REACH}px of its spawn`);
             return false;

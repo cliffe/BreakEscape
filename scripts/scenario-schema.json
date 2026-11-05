@@ -4055,6 +4055,7 @@
                 "facing": { "type": "string", "enum": ["south", "south-east", "east", "north-east", "north", "north-west", "west", "south-west"] },
                 "facePlayer": { "type": "boolean" },
                 "fetch": { "type": "boolean", "description": "Needs NPCs: false never fetches a chair to work on (default true)" },
+                "chair": { "type": "string", "description": "Only chairs matching this: an object id (or its suffix, e.g. exec_chair_back1_11) or a chair image name (exec_chair_back1)" },
                 "_comment": { "type": "string" }
               },
               "additionalProperties": false
