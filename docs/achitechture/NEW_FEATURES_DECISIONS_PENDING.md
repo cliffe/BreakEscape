@@ -48,6 +48,7 @@ Raised by the feature test work (docs/achitechture/NEW_FEATURES_TEST_MATRIX.md) 
 - **Proposed fix:** a validator error when a route `unlockRoom` has no matching `unlockDoor` mapping on the same NPC, plus a one-time console warning in `_runRouteAction` when the unlock is refused.
 - **Recommendation:** add both.
 - **Outcome:** done. Engine: `_runRouteAction` logs one `console.warn` per NPC+room when the server refuses the unlock, naming the NPC, the room and the `unlockDoor` fix; retry behaviour unchanged; once-only test added to `npc-route-multiroom.test.mjs` (ec1dd839f). Validator: new ERROR in `check_npc_patrol_and_catch_locks` (it landed inside 6b602b2ff, which committed the whole of `validate_scenario.rb` while another agent's work was in it). lab_physical_pentest passes, test_gate_tailgate passes, a temp copy of test_gate_tailgate without Sam's mapping errors. README_scenario_design.md route-action table carries the rule. `bin/test-js` 376/376, `bin/rails test` 899 runs, 0 failures.
+- **Commit note:** the D5 validator check landed inside 6b602b2ff (the D1/D2 needs commit), which took in `scripts/validate_scenario.rb` as well; the rest of D5 is in ec1dd839f and c57dace19. History left as is.
 
 ## D6. m07: Ray Hollis never patrols while the player is near the spawn (other mission)
 
