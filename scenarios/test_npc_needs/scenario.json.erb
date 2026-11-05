@@ -113,7 +113,7 @@
           "usePayload": { "role": "finder", "tag": "payload-finder" },
           "onUse": { "finder_pc": { "setGlobal": "finder_used_item" } },
           "eventMappings": [
-            { "eventPattern": "npc_used:finder_pc", "condition": "playerNearby === true", "setGlobal": { "finder_used_near_player": true }, "onceOnly": true },
+            { "eventPattern": "npc_used:finder_pc", "condition": "data.playerNearby === true", "setGlobal": { "finder_used_near_player": true }, "onceOnly": true },
             { "eventPattern": "item_dropped:sample_binder", "setGlobal": { "item_was_dropped": true }, "onceOnly": true }
           ]
         },
