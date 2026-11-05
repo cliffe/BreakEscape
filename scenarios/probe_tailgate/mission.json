@@ -1,7 +1,0 @@
-{
-  "display_name": "Probe: Tailgate Gate Door",
-  "description": "Throwaway engine probe: a guard loops through a gate door that opens for him and relocks; a disguised player may follow.",
-  "difficulty_level": 1,
-  "secgen_scenario": null,
-  "collection": "testing"
-}
