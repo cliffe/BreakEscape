@@ -413,8 +413,8 @@ def check_unknown_fields(json_data)
     voice behavior globalVarOnKO restartOnRetalk reopenRefreshesHub livePreview taskOnKO koImmune storyPath callId currentKnot avatar
     phoneId phoneTheme handle profile voiced callLabel unlockable externalVariables persistentVariables
     timedMessages timedConversation eventMappings itemsHeld puzzle_graph_actions
-    observations disableClose los rfidCard chatBackground spriteStyle gender portraitVariants
-    needs interests needsHome needsSpeed usePayload onUse _comment
+    needs interests needsHome needsSpeed usePayload onUse
+    observations disableClose los rfidCard chatBackground spriteStyle gender portraitVariants _comment
   ]
 
   # Known NPC los fields, and those of the opt-in los.challengeOnSight
