@@ -4234,6 +4234,20 @@
                       "description": "Never while this global (or any of these globals) is truthy",
                       "oneOf": [ { "type": "string" }, { "type": "array", "items": { "type": "string" } } ]
                     },
+                    "near": {
+                      "description": "Only while the player is within radius px (default 64) of a door into/out of room `door`, an object `object`, or room tile x,y of `room`. With rooms set, the player may be in any listed room (across a doorway from the NPC). The event payload gains targetId/targetType.",
+                      "type": "object",
+                      "properties": {
+                        "door": { "type": "string" },
+                        "object": { "type": "string" },
+                        "x": { "type": "number" },
+                        "y": { "type": "number" },
+                        "room": { "type": "string" },
+                        "radius": { "type": "number", "minimum": 1 },
+                        "_comment": { "type": "string" }
+                      },
+                      "additionalProperties": false
+                    },
                     "_comment": { "type": "string" }
                   },
                   "additionalProperties": false
