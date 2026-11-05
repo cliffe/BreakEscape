@@ -621,7 +621,9 @@ export function seatNPC(behavior, chair, opts = {}) {
     if (chair.body) { chair.body.setVelocity(0, 0); chair.body.immovable = true; }
     chair.seatedBy = behavior.npcId;
     behavior._seat = { chair, seat, facing, saved, homeFacing: facing, facePlayer: opts.facePlayer !== false,
-                       needsStop: opts.needsStop || null };
+                       needsStop: opts.needsStop || null,
+                       // needs seats: stand back up where the NPC works from
+                       standAt: opts.needsStop ? bodyFeet(sprite) : null };
     behavior.isMoving = false;
     behavior.direction = COMPASS_TO_PLAYER[facing];
     poseSprite(sprite, chair, seat, facing);
@@ -634,7 +636,7 @@ export function unseatNPC(behavior) {
     const st = behavior?._seat;
     if (!st) return false;
     const sprite = behavior.sprite;
-    const { chair, seat, facing, saved } = st;
+    const { chair, seat, facing, saved, standAt, needsStop } = st;
     behavior._seat = null;
     behavior._seatTried = true; // don't sit straight back down
     delete chair.seatedBy;
@@ -643,9 +645,10 @@ export function unseatNPC(behavior) {
         sprite.body.checkCollision.none = saved.none;
         sprite.body.immovable = saved.immovable;
         // Stand on the floor in front of the chair (or beside it)
-        const spot = seat.kind === 'swivel' ? standSpot(chair, facing) : frontSpot(chair, facing);
+        const spot = standAt || (seat.kind === 'swivel' ? standSpot(chair, facing) : frontSpot(chair, facing));
         if (spot) moveFeetTo(sprite, spot.x, spot.y);
     }
+    if (needsStop) tuckIn(chair, seat, facing); // clear of the spot they come back to
     behavior.direction = COMPASS_TO_PLAYER[facing];
     behavior.playAnimation?.('idle', behavior.direction);
     window.eventDispatcher?.emit?.('npc_stood', { npcId: behavior.npcId, objectId: chair.objectId });
@@ -767,13 +770,32 @@ function staticFacesToward(seat, from, to) {
     return d <= 67;
 }
 
-/** Feet points of every other needs NPC's post (their chairs aren't fetched). */
+/** Feet points of every other needs NPC's post (their chairs aren't taken or fetched). */
 function otherPosts(npcId) {
     const out = [];
+    const world = window.npcNeedsSystem?.world;
     for (const [id, st] of window.npcNeedsSystem?.states || []) {
-        if (id !== npcId && st.home) out.push(st.home);
+        if (id === npcId) continue;
+        if (st.home) { out.push(st.home); continue; }
+        // Not ticked yet: work it out from its needsHome object, as the needs system will
+        const home = window.npcManager?.getNPC?.(id)?.needsHome;
+        const obj = typeof home === 'string' ? world?.getObject?.(home) : null;
+        const cell = obj ? world?.approachCell?.(obj) : null;
+        if (cell) out.push(cell);
     }
     return out;
+}
+
+const TUCK_PX = 12;
+
+/** Slide a swivel chair so its foot is at (x, y) (pulling it out to sit, tucking it in on leaving). */
+function slideChairFootTo(chair, x, y) {
+    if (!chair.body) return;
+    const f = bodyFeet(chair);
+    chair.x = Math.round(chair.x + (x - f.x));
+    chair.y = Math.round(chair.y + (y - f.y));
+    chair.body.reset(chair.x, chair.y);
+    window.updateSpriteDepth?.(chair, chair.elevation || 0);
 }
 
 function updateNeedsSeat(behavior, ns, playerPos) {
@@ -829,6 +851,7 @@ function updateNeedsSeat(behavior, ns, playerPos) {
     const near = chairsNear(behavior.roomId, feet.x, feet.y, NEAR_CHAIR)
         .find(c => free(c) && (c.seat.kind === 'swivel' || staticFacesToward(c.seat, feet, toward)));
     if (near) {
+        if (near.seat.kind === 'swivel') slideChairFootTo(near.obj, feet.x, feet.y); // pull it out
         return seatNPC(behavior, near.obj, { toward, facePlayer: false, needsStop: stop.key });
     }
     if (pref !== 'fetch') return false;
@@ -837,6 +860,14 @@ function updateNeedsSeat(behavior, ns, playerPos) {
     if (!fetchable) return false; // work standing
     startFetch(behavior, fetchable.obj, feet, toward, stop.key);
     return true;
+}
+
+/** Push a swivel chair in toward where its sitter faced, clear of the spot they work from. */
+function tuckIn(chair, seat, facing) {
+    if (seat?.kind !== 'swivel' || !chair.body || chair.seatedBy) return;
+    const a = (angleOf(facing) + 90) * Math.PI / 180;
+    const f = bodyFeet(chair);
+    slideChairFootTo(chair, f.x + Math.cos(a) * TUCK_PX, f.y + Math.sin(a) * TUCK_PX);
 }
 
 /** Walk to a swivel chair, roll it back to `spot`, sit on it. */
