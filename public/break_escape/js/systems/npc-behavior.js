@@ -2023,6 +2023,7 @@ class NPCBehavior {
     }
 
     playAnimation(state, direction) {
+        if (this._seat) return; // seated (seating.js): the sit frame stays
         // Don't interrupt attack animations (red tint placeholder)
         const currentAnim = this.sprite.anims?.currentAnim?.key || '';
         if ((currentAnim.includes('attack') || currentAnim.includes('punch') || currentAnim.includes('-jab-')) &&
@@ -2283,6 +2284,7 @@ class NPCBehavior {
      */
     goToAndStay(worldX, worldY, speed, opts = {}) {
         window.seating?.unseatNPC?.(this); // a seated NPC gets up first
+        if (!opts?.fromSeating) window.seating?.cancelFetch?.(this); // and drops a chair it was fetching
         // Who asked for the move (npc-needs.js passes owner 'needs'); a move by
         // anyone else suspends the NPC's needs, so scripts always win.
         this._moveOwner = opts?.owner;

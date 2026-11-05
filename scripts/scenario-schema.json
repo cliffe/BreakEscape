@@ -4054,6 +4054,7 @@
                 "maxDistance": { "type": "number", "minimum": 1 },
                 "facing": { "type": "string", "enum": ["south", "south-east", "east", "north-east", "north", "north-west", "west", "south-west"] },
                 "facePlayer": { "type": "boolean" },
+                "fetch": { "type": "boolean", "description": "Needs NPCs: false never fetches a chair to work on (default true)" },
                 "_comment": { "type": "string" }
               },
               "additionalProperties": false
@@ -4931,6 +4932,7 @@
             "useFrom": { "type": "object", "properties": { "dx": { "type": "number" }, "dy": { "type": "number" } }, "required": ["dx", "dy"], "additionalProperties": false, "description": "Where the NPC stands, in tiles from the object's centre" },
             "capacity": { "type": "integer", "minimum": 1, "description": "NPCs that can hold a job on it at once (default 1)" },
             "accepts": { "type": "array", "items": { "type": "string" }, "description": "Carried items with these needsTag values can be used here" },
+            "seat": { "oneOf": [ { "type": "boolean", "enum": [false] }, { "type": "string", "enum": ["fetch", "stay", "stand"] } ], "description": "Seating while an NPC uses this object (systems/seating.js): 'fetch' (default) sits on a free chair at the spot or rolls a free swivel chair over from the same room; 'stay' sits only if a chair is already there; false or 'stand' always stands. NPCs whose atlas has no seated frames always stand." },
             "_comment": { "type": "string" }
           },
           "additionalProperties": false

@@ -1,0 +1,307 @@
+{
+  "scenario_id": "test_seating",
+  "scenario_name": "Test: Seating",
+  "scenario_brief": "Engine test for chairs (systems/seating.js). Not a mission. Briefing room: NPCs placed with \"seated\" (exec chairs facing south and north, a swivel chair that turns to face you, and one atlas with no seated frames that stays standing). Reception: two people on waiting chairs. Office: needs NPCs that sit at their PCs, one who fetches a chair, and a coffee station they get up for. Sit on any chair with E or a click; on a swivel chair move to roll it; Space to stand on it, Space again to jump off.",
+  "endGoal": "Engine test only.",
+  "startRoom": "seat_briefing",
+  "npcWindupMs": 700,
+  "rooms": {
+    "seat_briefing": {
+      "type": "room_se_engagement",
+      "door_sign": "Briefing",
+      "connections": {
+        "east": "seat_reception"
+      },
+      "npcs": [
+        {
+          "id": "ruth",
+          "displayName": "Ruth Adeyemi",
+          "npcType": "person",
+          "position": {
+            "x": 4,
+            "y": 7
+          },
+          "spriteSheet": "ruth_adeyemi",
+          "storyPath": "scenarios/test_seating/ink/seat_npc.ink.json",
+          "currentKnot": "start",
+          "seated": true,
+          "_comment": "Exec chair at the table, facing south"
+        },
+        {
+          "id": "tomasz",
+          "displayName": "Tomasz",
+          "npcType": "person",
+          "position": {
+            "x": 8,
+            "y": 6
+          },
+          "spriteSheet": "tomasz",
+          "storyPath": "scenarios/test_seating/ink/seat_npc.ink.json",
+          "currentKnot": "start",
+          "seated": {
+            "facePlayer": true
+          },
+          "_comment": "Swivel chair: turns to face a player who comes near"
+        },
+        {
+          "id": "fairbairn",
+          "displayName": "Gareth Fairbairn",
+          "npcType": "person",
+          "position": {
+            "x": 3,
+            "y": 8
+          },
+          "spriteSheet": "gareth_fairbairn",
+          "storyPath": "scenarios/test_seating/ink/seat_npc.ink.json",
+          "currentKnot": "start",
+          "seated": {
+            "maxDistance": 56
+          },
+          "_comment": "Exec chair on the near side of the table, facing north"
+        },
+        {
+          "id": "no_frames",
+          "displayName": "Standing Hacker",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 8
+          },
+          "spriteSheet": "hacker",
+          "storyPath": "scenarios/test_seating/ink/seat_npc.ink.json",
+          "currentKnot": "start",
+          "seated": {
+            "maxDistance": 56
+          },
+          "_comment": "Atlas without seated frames: stays standing (console warns)"
+        }
+      ],
+      "objects": []
+    },
+    "seat_reception": {
+      "type": "room_lw_reception",
+      "door_sign": "Reception",
+      "connections": {
+        "west": "seat_briefing",
+        "east": "seat_office"
+      },
+      "npcs": [
+        {
+          "id": "guard",
+          "displayName": "Len",
+          "npcType": "person",
+          "position": {
+            "x": 3,
+            "y": 7
+          },
+          "spriteSheet": "male_security_guard_v2",
+          "storyPath": "scenarios/test_seating/ink/seat_npc.ink.json",
+          "currentKnot": "start",
+          "seated": true,
+          "_comment": "Waiting chair facing east"
+        },
+        {
+          "id": "priya",
+          "displayName": "Sofia Lord",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 7
+          },
+          "spriteSheet": "female_office_worker_v2",
+          "storyPath": "scenarios/test_seating/ink/seat_npc.ink.json",
+          "currentKnot": "start",
+          "seated": true,
+          "_comment": "Waiting chair facing west"
+        }
+      ],
+      "objects": []
+    },
+    "seat_office": {
+      "type": "room_lw_office",
+      "door_sign": "Office",
+      "connections": {
+        "west": "seat_reception"
+      },
+      "npcs": [
+        {
+          "id": "dale",
+          "displayName": "Chris Hampshire",
+          "npcType": "person",
+          "position": {
+            "x": 2,
+            "y": 6
+          },
+          "spriteSheet": "male_office_worker_v2",
+          "storyPath": "scenarios/test_seating/ink/seat_npc.ink.json",
+          "currentKnot": "start",
+          "needsHome": "dale_pc",
+          "needsSpeed": 100,
+          "needs": {
+            "work": {
+              "decayPerMin": 30,
+              "urgentAt": 50,
+              "initial": 45
+            },
+            "caffeine": {
+              "decayPerMin": 20,
+              "urgentAt": 50,
+              "initial": 75,
+              "maxUnmetMin": 3
+            }
+          },
+          "_comment": "Chair at his desk: sits to work, gets up for coffee, sits again"
+        },
+        {
+          "id": "nadia",
+          "displayName": "Nadia",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 6
+          },
+          "spriteSheet": "junior_analyst",
+          "storyPath": "scenarios/test_seating/ink/seat_npc.ink.json",
+          "currentKnot": "start",
+          "needsHome": "nadia_pc",
+          "needsSpeed": 100,
+          "needs": {
+            "work": {
+              "decayPerMin": 30,
+              "urgentAt": 50,
+              "initial": 45
+            },
+            "caffeine": {
+              "decayPerMin": 20,
+              "urgentAt": 50,
+              "initial": 75,
+              "maxUnmetMin": 3
+            }
+          }
+        },
+        {
+          "id": "sam",
+          "displayName": "Sam",
+          "npcType": "person",
+          "position": {
+            "x": 8,
+            "y": 4
+          },
+          "spriteSheet": "male_telecom_v2",
+          "storyPath": "scenarios/test_seating/ink/seat_npc.ink.json",
+          "currentKnot": "start",
+          "needsHome": "sam_pc",
+          "needsSpeed": 100,
+          "needs": {
+            "work": {
+              "decayPerMin": 30,
+              "urgentAt": 50,
+              "initial": 45
+            },
+            "caffeine": {
+              "decayPerMin": 20,
+              "urgentAt": 50,
+              "initial": 75,
+              "maxUnmetMin": 3
+            }
+          },
+          "_comment": "No chair at his PC: fetches a free swivel chair from the far desk"
+        }
+      ],
+      "objects": [
+        {
+          "type": "pc",
+          "id": "dale_pc",
+          "name": "Chris's PC",
+          "position": {
+            "x": 2,
+            "y": 5
+          },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "Chris's PC. A test workstation.",
+          "affordance": {
+            "satisfies": "work",
+            "restores": 60,
+            "useSeconds": 20,
+            "useFrom": {
+              "dx": 0,
+              "dy": 1
+            }
+          }
+        },
+        {
+          "type": "pc",
+          "id": "nadia_pc",
+          "name": "Nadia's PC",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "Nadia's PC. A test workstation.",
+          "affordance": {
+            "satisfies": "work",
+            "restores": 60,
+            "useSeconds": 20,
+            "useFrom": {
+              "dx": 0,
+              "dy": 1
+            }
+          }
+        },
+        {
+          "type": "pc",
+          "id": "sam_pc",
+          "name": "Sam's PC",
+          "position": {
+            "x": 8,
+            "y": 3
+          },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "Sam's PC. A test workstation.",
+          "affordance": {
+            "satisfies": "work",
+            "restores": 60,
+            "useSeconds": 20,
+            "useFrom": {
+              "dx": 0,
+              "dy": 1
+            }
+          }
+        },
+        {
+          "type": "coffee_station",
+          "id": "coffee_station",
+          "name": "Coffee station",
+          "sprite": "coffee_station1",
+          "position": {
+            "x": 8,
+            "y": 8
+          },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "observations": "The office coffee station.",
+          "affordance": {
+            "satisfies": "caffeine",
+            "restores": 70,
+            "useSeconds": 10,
+            "useFrom": {
+              "dx": 0,
+              "dy": -1
+            }
+          }
+        }
+      ]
+    }
+  }
+}

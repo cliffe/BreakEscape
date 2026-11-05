@@ -43,6 +43,43 @@ const SIT_HIP = {
     'north': [40, 50], 'north-west': [44, 52], 'west': [45, 52], 'south-west': [41, 54]
 };
 
+// Atlases differ by a pixel or two in where the seated figure lands on the 80x80 canvas
+// (the converter centres each character on its own standing pose), so SIT_HIP is
+// corrected per atlas from the sit_south frame's opaque bounds, measured once. The
+// reference is female_hacker_hood_v2: columns 28-51, last row 71.
+const SIT_REF = { centreX: 39.5, bottom: 71 };
+const hipShift = new Map();
+
+function sitShift(textureKey) {
+    if (hipShift.has(textureKey)) return hipShift.get(textureKey);
+    let shift = { x: 0, y: 0 };
+    try {
+        const tm = window.game?.textures;
+        const frame = tm?.getFrame(textureKey, 'sit_south_frame_000');
+        if (frame && tm.getPixelAlpha) {
+            let minX = Infinity, maxX = -1, bottom = -1;
+            for (let y = 0; y < frame.height; y++) {
+                for (let x = 0; x < frame.width; x++) {
+                    if (tm.getPixelAlpha(x, y, textureKey, 'sit_south_frame_000') > 0) {
+                        if (x < minX) minX = x;
+                        if (x > maxX) maxX = x;
+                        bottom = y;
+                    }
+                }
+            }
+            if (bottom >= 0) shift = { x: Math.round((minX + maxX) / 2 - SIT_REF.centreX), y: bottom - SIT_REF.bottom };
+        }
+    } catch (e) { /* keep the reference anchors */ }
+    hipShift.set(textureKey, shift);
+    return shift;
+}
+
+/** Hip point in the atlas frame for this texture and facing. */
+function sitHip(textureKey, facing) {
+    const h = SIT_HIP[facing], d = sitShift(textureKey);
+    return [h[0] + d.x, h[1] + d.y];
+}
+
 // Seat point per facing for each chair shape. front: [x, y, w, h] strips of the chair
 // (armrests) drawn over the sitter.
 const FAMILIES = {
@@ -86,6 +123,9 @@ const STATIC_SEATS = {
     exec_chair_back1: { facing: 'north', seat: [19, 26] },
     exec_chair_black1: { facing: 'south', seat: [16, 33] },
     aw_studio_chair_n1: { facing: 'north', seat: [16, 10] },
+    // side-view sling chairs in receptions: left-1 faces west, right-1 east
+    'chair-waiting-left-1': { facing: 'west', seat: [24, 23] },
+    'chair-waiting-right-1': { facing: 'east', seat: [10, 23] },
     aw_studio_chair_s1: { facing: 'south', seat: [16, 11] }
 };
 
@@ -473,7 +513,7 @@ export function place() {
 
     const facing = state.facing;
     const sp = seatPoint(chair, seat, facing);
-    const anchor = state.pose === 'sit' ? SIT_HIP[facing] : [proxyFeetOffset().x, proxyFeetOffset().y];
+    const anchor = state.pose === 'sit' ? sitHip(sprite.texture.key, facing) : [proxyFeetOffset().x, proxyFeetOffset().y];
     sprite.setPosition(Math.round(sp.x - anchor[0]), Math.round(sp.y - anchor[1]));
     sprite.setVisible(chair.visible);
 
@@ -529,7 +569,7 @@ function chairsNear(roomId, x, y, maxDistance) {
 /** Place a seated sprite (origin-aware) so its hips land on the chair's seat. */
 function poseSprite(sprite, chair, seat, facing) {
     const sp = seatPoint(chair, seat, facing);
-    const hip = SIT_HIP[facing];
+    const hip = sitHip(sprite.texture.key, facing);
     const x = Math.round(sp.x - hip[0] + sprite.displayOriginX);
     const y = Math.round(sp.y - hip[1] + sprite.displayOriginY);
     if (sprite.x !== x || sprite.y !== y) {
@@ -559,6 +599,10 @@ export function seatNPC(behavior, chair, opts = {}) {
     }
     let facing = seat.kind === 'static' ? seat.facing
         : snapFacing(opts.facing && COMPASS.includes(opts.facing) ? opts.facing : chairFacing(chair, seat), seat.valid);
+    if (seat.kind === 'swivel' && opts.toward) {
+        const f = bodyFeet(sprite);
+        facing = snapFacing(compassToward(opts.toward.x - f.x, opts.toward.y - f.y), seat.valid);
+    }
     if (seat.kind === 'swivel') setChairFacing(chair, facing, seat);
     const saved = { none: sprite.body.checkCollision.none, immovable: sprite.body.immovable,
                     chairImmovable: chair.body ? chair.body.immovable : null };
@@ -567,7 +611,8 @@ export function seatNPC(behavior, chair, opts = {}) {
     sprite.body.immovable = true;
     if (chair.body) { chair.body.setVelocity(0, 0); chair.body.immovable = true; }
     chair.seatedBy = behavior.npcId;
-    behavior._seat = { chair, seat, facing, saved, homeFacing: facing, facePlayer: opts.facePlayer !== false };
+    behavior._seat = { chair, seat, facing, saved, homeFacing: facing, facePlayer: opts.facePlayer !== false,
+                       needsStop: opts.needsStop || null };
     behavior.isMoving = false;
     behavior.direction = COMPASS_TO_PLAYER[facing];
     poseSprite(sprite, chair, seat, facing);
@@ -610,6 +655,8 @@ function frontSpot(chair, facing) {
  * rest of its behaviour should be skipped this tick.
  */
 export function updateSeatedNPC(behavior, playerPos) {
+    const ns = window.npcNeedsSystem?.states?.get?.(behavior?.npcId);
+    if (ns) return updateNeedsSeat(behavior, ns, playerPos);
     if (!behavior?._seat) {
         if (behavior._seatTried || !window.rooms) return false;
         const cfg = npcSeatConfig(behavior);
@@ -646,6 +693,192 @@ export function updateSeatedNPC(behavior, playerPos) {
     return true;
 }
 
+// ---------------------------------------------------------------- NPC needs (npc-needs.js)
+//
+// A needs NPC that has stopped at an object (using it, or idle at its post) sits on
+// a free chair right there, facing the object. With none close it fetches a free
+// swivel chair from the same room (rolling it to where it works), unless the object's
+// affordance says "seat": "stay" (sit only if one is there) or false (always stand);
+// with nothing to fetch it works standing. Chairs at another needs NPC's post are left
+// alone. Any needs move (coffee, going home) gets it up: goToAndStay unseats.
+// Atlases without seated frames always stand.
+
+const NEAR_CHAIR = 36;      // px from the NPC's feet to a chair's foot to sit straight down
+const FETCH_RANGE = 192;    // px to look for a chair to fetch
+const FETCH_TIMEOUT_MS = 15000;
+
+/** Where a needs NPC is parked: { key, targetId } or null while it's on the move. */
+function needsStop(ns) {
+    if (ns.mode === 'job' && ns.job?.phase === 'using') return { key: `use:${ns.job.targetId}`, targetId: ns.job.targetId };
+    if (ns.mode === 'idle' && ns.atPost) {
+        const home = window.npcManager?.getNPC?.(ns.npcId)?.needsHome;
+        return { key: `post:${typeof home === 'string' ? home : 'tile'}`, targetId: typeof home === 'string' ? home : null };
+    }
+    return null;
+}
+
+function needsObject(id) {
+    return id ? window.npcNeedsSystem?.world?.getObject?.(id) || null : null;
+}
+
+function seatPreference(obj, npcRec) {
+    const a = obj?.affordance?.seat;
+    if (a === false || a === 'never' || a === 'stand') return 'stand';
+    if (a === 'stay' || a === 'near') return 'near';
+    const n = npcRec?.seated;
+    if (n === false) return 'stand';
+    if (n && typeof n === 'object' && n.fetch === false) return 'near';
+    return 'fetch';
+}
+
+/** Facing a static chair allows: within 67 degrees of the way to the object. */
+function staticFacesToward(seat, from, to) {
+    if (!to) return true;
+    const want = compassToward(to.x - from.x, to.y - from.y);
+    let d = Math.abs(angleOf(want) - angleOf(seat.facing)) % 360;
+    if (d > 180) d = 360 - d;
+    return d <= 67;
+}
+
+/** Feet points of every other needs NPC's post (their chairs aren't fetched). */
+function otherPosts(npcId) {
+    const out = [];
+    for (const [id, st] of window.npcNeedsSystem?.states || []) {
+        if (id !== npcId && st.home) out.push(st.home);
+    }
+    return out;
+}
+
+function updateNeedsSeat(behavior, ns, playerPos) {
+    const sprite = behavior.sprite;
+    const stop = needsStop(ns);
+    const status = window.npcNeedsSystem?.world?.npcStatus?.(behavior.npcId) || {};
+
+    if (behavior._fetch) return advanceFetch(behavior, ns, stop);
+
+    if (behavior._seat) {
+        const st = behavior._seat;
+        if (!stop || stop.key !== st.needsStop || status.ko || status.hostile || !st.chair.active) {
+            unseatNPC(behavior);
+            behavior._seatTried = false;
+            return false;
+        }
+        sprite.body.setVelocity(0, 0);
+        // Swivel: face the work, or the player while they talk
+        if (st.seat.kind === 'swivel') {
+            const chatting = window.npcNeedsSystem?.world?.inChatWith?.(behavior.npcId);
+            let want = st.homeFacing;
+            if (chatting && playerPos) {
+                const p = bodyFeet(sprite);
+                want = compassToward(playerPos.x - p.x, playerPos.y - p.y);
+            }
+            want = snapFacing(want, st.seat.valid);
+            if (want !== st.facing) {
+                st.facing = want;
+                setChairFacing(st.chair, want, st.seat);
+                behavior.direction = COMPASS_TO_PLAYER[want];
+            }
+        }
+        window.updateSpriteDepth?.(st.chair, st.chair.elevation || 0);
+        poseSprite(sprite, st.chair, st.seat, st.facing);
+        return true;
+    }
+
+    if (!stop || status.ko || status.hostile) { behavior._seatStopKey = null; return false; }
+    if (behavior.isMoving || behavior._goToStayDest) return false;
+    if (behavior._seatStopKey === stop.key) return false; // already tried at this stop
+    behavior._seatStopKey = stop.key;
+    if (!hasSitFrames(sprite.texture.key)) return false;
+
+    const obj = needsObject(stop.targetId);
+    const npcRec = window.npcManager?.getNPC?.(behavior.npcId);
+    const pref = seatPreference(obj, npcRec);
+    if (pref === 'stand') return false;
+    const feet = bodyFeet(sprite);
+    const toward = obj ? { x: obj.x, y: obj.y } : null;
+    // Chairs at another needs NPC's post are theirs, unless this is that spot too
+    const posts = otherPosts(behavior.npcId).filter(p => Math.hypot(p.x - feet.x, p.y - feet.y) > NEAR_CHAIR);
+    const free = c => !posts.some(p => Math.hypot(p.x - (c.obj.x + c.obj.width / 2), p.y - (c.obj.y + c.obj.height)) < NEAR_CHAIR);
+    const near = chairsNear(behavior.roomId, feet.x, feet.y, NEAR_CHAIR)
+        .find(c => free(c) && (c.seat.kind === 'swivel' || staticFacesToward(c.seat, feet, toward)));
+    if (near) {
+        return seatNPC(behavior, near.obj, { toward, facePlayer: false, needsStop: stop.key });
+    }
+    if (pref !== 'fetch') return false;
+    const fetchable = chairsNear(behavior.roomId, feet.x, feet.y, FETCH_RANGE)
+        .filter(c => c.seat.kind === 'swivel' && c.obj.body && free(c))[0];
+    if (!fetchable) return false; // work standing
+    startFetch(behavior, fetchable.obj, feet, toward, stop.key);
+    return true;
+}
+
+/** Walk to a swivel chair, roll it back to `spot`, sit on it. */
+function startFetch(behavior, chair, spot, toward, stopKey) {
+    const foot = bodyFeet(chair);
+    behavior._fetch = { chair, spot: { x: spot.x, y: spot.y }, toward, stopKey, phase: 'to_chair',
+                        until: Date.now() + FETCH_TIMEOUT_MS, issued: false };
+    chair.seatedBy = behavior.npcId; // reserved
+    const pm = window.pathfindingManager;
+    const grab = pm?.findNearestWalkableWorldCell?.(foot.x, foot.y + 12, 2) || { x: foot.x, y: foot.y + 12 };
+    moveNeeds(behavior, grab.x, grab.y);
+    window.eventDispatcher?.emit?.('npc_fetching_chair', { npcId: behavior.npcId, objectId: chair.objectId });
+}
+
+function moveNeeds(behavior, x, y) {
+    // owner 'needs' so the needs system isn't suspended; its arrival is ignored while using
+    behavior.goToAndStay(x, y, window.npcNeedsSystem?.world?.speedFor?.(behavior.npcId), { owner: 'needs', fromSeating: true });
+    behavior._fetch.issued = true;
+}
+
+function endFetch(behavior, seatIt) {
+    const f = behavior._fetch;
+    behavior._fetch = null;
+    if (!f) return false;
+    const chair = f.chair;
+    if (chair.body) { chair.body.enable = true; chair.body.reset(chair.x, chair.y); chair.body.setVelocity(0, 0); }
+    if (chair.seatedBy === behavior.npcId) delete chair.seatedBy;
+    if (!seatIt) return false;
+    return seatNPC(behavior, chair, { toward: f.toward, facePlayer: false, needsStop: f.stopKey });
+}
+
+/** A move from elsewhere (a script, the needs selector) drops a chair being fetched where it is. */
+export function cancelFetch(behavior) {
+    if (behavior?._fetch) endFetch(behavior, false);
+}
+
+function advanceFetch(behavior, ns, stop) {
+    const f = behavior._fetch;
+    const status = window.npcNeedsSystem?.world?.npcStatus?.(behavior.npcId) || {};
+    // The work ended (or the NPC was called away) while fetching: leave the chair where it is
+    if (!stop || stop.key !== f.stopKey || status.ko || status.hostile || Date.now() > f.until || !f.chair.active) {
+        if (behavior._goToStayDest && stop && stop.key === f.stopKey) behavior.cancelMove?.();
+        endFetch(behavior, false);
+        return false;
+    }
+    const arrived = f.issued && !behavior._goToStayDest && !behavior.isMoving;
+    const feet = bodyFeet(behavior.sprite);
+    if (f.phase === 'to_chair') {
+        if (!arrived) return false;
+        f.phase = 'pushing';
+        if (f.chair.body) { f.chair.body.setVelocity(0, 0); f.chair.body.enable = false; }
+        moveNeeds(behavior, f.spot.x, f.spot.y);
+        return false;
+    }
+    // pushing: the chair rolls just ahead of the NPC's feet
+    const dirC = PLAYER_TO_COMPASS[behavior.direction] || 'south';
+    const a = (angleOf(dirC) + 90) * Math.PI / 180;
+    const seat = seatSpec(f.chair);
+    const off = f.chair.body ? { x: f.chair.body.offset.x + f.chair.body.width / 2, y: f.chair.body.offset.y + f.chair.body.height / 2 }
+                             : { x: f.chair.width / 2, y: f.chair.height };
+    const ahead = arrived ? 0 : 14;
+    f.chair.x = Math.round(feet.x + Math.cos(a) * ahead - off.x);
+    f.chair.y = Math.round(feet.y + Math.sin(a) * ahead - off.y);
+    if (seat?.kind === 'swivel' && !arrived) setChairFacing(f.chair, snapFacing(dirC, seat.valid), seat);
+    window.updateSpriteDepth?.(f.chair, f.chair.elevation || 0);
+    if (!arrived) return false;
+    return endFetch(behavior, true);
+}
+
 export function installSeating(scene) {
     scene.events.on('postupdate', place);
     scene.events.once('shutdown', () => { state = null; });
@@ -654,7 +887,7 @@ export function installSeating(scene) {
 const seating = {
     seatSpec, isSeat, isStaticSeatTexture, hasSitFrames, canPlayerSit, trySit, standUp, onJumpKey, queueSit,
     isSeated, currentSeat, currentPose, canRoll, afterPlayerMovement, onMoveIntent, place, installSeating,
-    chairFacing, setChairFacing, snapFacing, seatNPC, unseatNPC, updateSeatedNPC
+    chairFacing, setChairFacing, snapFacing, seatNPC, unseatNPC, updateSeatedNPC, cancelFetch
 };
 window.seating = seating;
 export default seating;

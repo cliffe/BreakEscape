@@ -296,7 +296,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-09-29"
+    "imported": "2026-11-05",
+    "sit_from": "6bdfe1f3-5b87-4120-940d-cfa8f580ec74"
   },
   "female_scientist_v2": {
     "character_id": "9179b19e-bd42-427d-b0ba-b27ea874ce16",
@@ -359,7 +360,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-10-22"
+    "imported": "2026-11-05",
+    "sit_from": "6ae441cc-52cd-4bd0-9167-3a73cf3b82bd"
   },
   "gary_whitlock": {
     "character_id": "2b2d5800-1695-4dcd-bdc4-593bc34e4b43",
@@ -521,7 +523,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-10-17"
+    "imported": "2026-11-05",
+    "sit_from": "42bcce6b-fdd2-4b50-82dc-63d80ff54b85"
   },
   "kemal_aydin": {
     "character_id": "4a3ac519-2fe1-41b1-a8fd-ba5f0541a5ad",
@@ -621,7 +624,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-09-30"
+    "imported": "2026-11-05",
+    "sit_from": "2700d754-04d2-4dbf-8739-a56afcaed3f0"
   },
   "male_security_guard_v2": {
     "character_id": "7f4b98d0-6ef6-4064-8f01-c032e0cd8050",
@@ -630,7 +634,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-09-26"
+    "imported": "2026-11-05",
+    "sit_from": "a6edc8b7-5486-45be-b33f-7a7e8490a38a"
   },
   "male_spy_v2": {
     "character_id": "7f1e42c3-a32c-49b3-ba27-f9190b4c6a93",
@@ -648,7 +653,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-09-30"
+    "imported": "2026-11-05",
+    "sit_from": "d8f040ad-0cb2-47a0-ad69-6a2ae51c5e1d"
   },
   "marcus_hale": {
     "character_id": "b66f2234-2f20-4cd9-b80b-e8dc80c1547d",
@@ -864,7 +870,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-10-22"
+    "imported": "2026-11-05",
+    "sit_from": "356c8f00-a7ed-40b9-a646-21b1ef7f9070"
   },
   "ruth_halloran": {
     "character_id": "95250c5f-3ff8-4987-9900-1367ad0c2a23",
@@ -999,7 +1006,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-10-22"
+    "imported": "2026-11-05",
+    "sit_from": "73e5f2a4-eb31-499d-849b-096aea8aa896"
   },
   "tomasz_wisniewski": {
     "character_id": "dfd23c35-e54c-478e-b795-f49f469a44a4",
