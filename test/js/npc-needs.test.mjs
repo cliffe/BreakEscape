@@ -6,52 +6,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { NPCNeedsSystem, needTiming, NEEDS_TICK_MS, createEngineWorld } from '../../public/break_escape/js/systems/npc-needs.js';
 
-const TILE = 32;
+import { makeWorld } from './fixtures/needs-stub-world.mjs';
 
-/** A flat world: moves complete at once (arrival queued), no walls. */
-function makeWorld({ npcs, objects, arrive = true }) {
-    const pos = {};
-    for (const [id, n] of Object.entries(npcs)) pos[id] = { ...n.pos, roomId: n.room || 'office' };
-    const objs = objects.map(o => ({ roomId: 'office', pickable: true, ...o }));
-    const calls = { moves: [], emits: [], globals: {}, consumed: [], dropped: [], cancels: [] };
-    let sys = null;
-    let chatWith = null;
-    const world = {
-        elapsedMs: () => 0,
-        isVmActive: () => false,
-        npcIds: () => Object.keys(npcs),
-        getNpc: id => npcs[id]?.rec || null,
-        npcPos: id => (pos[id] ? { ...pos[id] } : null),
-        npcStatus: () => ({}),
-        inChatWith: id => chatWith === id,
-        listObjects: () => objs.filter(o => o.roomId),
-        getObject: id => objs.find(o => o.id === id && o.roomId) || null,
-        approachCell: o => ({ x: o.x, y: o.y + TILE }),
-        tileToWorld: (r, x, y) => ({ x: x * TILE, y: y * TILE }),
-        speedFor: () => 80,
-        moveTo(id, x, y, speed, opts) {
-            calls.moves.push({ id, x, y, yieldToPlayer: opts.yieldToPlayer });
-            if (arrive) { pos[id].x = x; pos[id].y = y; sys.onArrived(id, 'needs'); }
-        },
-        cancelMove: id => calls.cancels.push(id),
-        faceTo() {},
-        pickUp(npcId, itemId) {
-            const o = objs.find(x => x.id === itemId);
-            if (!o || !o.roomId) return false;
-            o.roomId = null; // gone from the world
-            return true;
-        },
-        consumeHeld: (npcId, itemId) => calls.consumed.push({ npcId, itemId }),
-        dropHeld: (npcId, itemId) => calls.dropped.push({ npcId, itemId }),
-        emit: (name, data) => calls.emits.push({ name, data }),
-        setGlobal: (name, v) => { calls.globals[name] = v; }
-    };
-    return {
-        world, calls, objs, pos,
-        attach(s) { sys = s; },
-        setChat(id) { chatWith = id; }
-    };
-}
+const TILE = 32;
 
 function office(extra = {}) {
     return {
@@ -552,4 +509,28 @@ test('work at another object still emits left then returned', () => {
     assert.ok(names.includes('npc_left_post:clerk'));
     assert.ok(names.includes('npc_returned_post:clerk'));
     assert.ok(names.indexOf('npc_left_post:clerk') < names.indexOf('npc_returned_post:clerk'));
+});
+
+// ── tick-cost hygiene (slice 1): office() logs are unchanged ────────────────────
+// More in npc-needs-tick-cost.test.mjs (the test_needs_sims fixture, back-off, benchmark).
+
+test('tick-cost steps 1-3 leave the office() decision logs byte-identical', () => {
+    const legacy = { tickCache: false, selectBackoff: false };
+    const cfgs = [() => office(), () => curiousCfg(), () => homePrefCfg(), () => carryHomeCfg(), () => ownDeskCfg({ spare: true })];
+    for (const make of cfgs) {
+        for (const reach of [null, (id, o) => !/home|finder_pc|coffee/.test(o.id)]) {
+            const runWith = opts => {
+                const w = makeWorld(make());
+                if (reach) w.world.reachable = reach;
+                const sys = new NPCNeedsSystem(w.world, { seed: 42, manualClock: true, ...opts });
+                w.attach(sys);
+                sys.registerAll();
+                sys.step(3 * 60000);
+                w.objs.push({ id: 'dropped_thing', x: 160, y: 160, roomId: 'office', pickable: true, needsTag: 'found_item' });
+                sys.step(10 * 60000);
+                return JSON.stringify(sys.getLog());
+            };
+            assert.equal(runWith({ selectBackoff: false }), runWith(legacy));
+        }
+    }
 });

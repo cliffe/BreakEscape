@@ -24,6 +24,7 @@ const LOG_CAP = 2000;
 const FAIL_COOLDOWN_MS = 60000;
 const HOME_EPS = 12;
 const HOME_RETRY_TICKS = 4;   // provisional needsHome re-lookup: once a second
+const SELECT_BACKOFF_TICKS = 4; // a selection that path-searched and found nothing retries after 1 s
 
 export function hash32(str) {
     let h = 0x811c9dc5;
@@ -119,6 +120,18 @@ export class NPCNeedsSystem {
         this.states = new Map();
         this.log = [];
         this._arrivals = new Set();
+        // Tick-cost hygiene (OFFICE_LIFE_PLAN 2.0). tickCache: skip the object scan for an NPC with
+        // nothing urgent, build the object list once per tick, cache reachability per tick (the
+        // decision log is unchanged). selectBackoff: an NPC whose selection path-searched and found
+        // nothing re-selects after 1 s, not every tick. Both default on; false is for comparison tests.
+        this.tickCache = opts.tickCache !== false;
+        this.selectBackoff = opts.selectBackoff !== false;
+        this._tickObjects = null;
+        this._reachCache = null;
+        this._selectSearched = false;
+        this._knownRooms = new Set();
+        // Read-outs for tests and live measurement; never feed a decision
+        this.stats = { ticks: 0, selects: 0, objectScans: 0, pathSearches: 0, backoffs: 0 };
     }
 
     // ── setup ──────────────────────────────────────────────────────────────
@@ -283,7 +296,10 @@ export class NPCNeedsSystem {
 
     tick() {
         this.tickCount++;
+        this.stats.ticks++;
         this.clockMs += NEEDS_TICK_MS;
+        this._worldChanged();
+        this._checkRooms();
         for (const id of [...this.states.keys()].sort()) {
             try {
                 this._tickNpc(this.states.get(id));
@@ -291,6 +307,62 @@ export class NPCNeedsSystem {
                 if (typeof console !== 'undefined') console.error(`[needs] tick error for ${id}`, e);
             }
         }
+        this._worldChanged();
+    }
+
+    /** Drop the per-tick object list and reachability answers (something in the world changed). */
+    _worldChanged() {
+        this._tickObjects = null;
+        this._reachCache = null;
+    }
+
+    /** emit / setGlobal through here: a listener may reveal, move or remove objects mid-tick. */
+    _emit(name, data) {
+        this.world.emit(name, data);
+        this._worldChanged();
+    }
+
+    /**
+     * Room loads. A room that appears (a door opened) can bring the object a blocked NPC lacked, so
+     * every select back-off is cleared. The world reports loaded room ids (`roomIds`); a world
+     * without it (the node stub) has no room loads to notice.
+     */
+    _checkRooms() {
+        if (typeof this.world.roomIds !== 'function') return;
+        const fresh = [];
+        for (const id of this.world.roomIds() || []) {
+            if (!this._knownRooms.has(id)) { this._knownRooms.add(id); fresh.push(id); }
+        }
+        if (fresh.length) this._onRoomsLoaded(fresh.sort());
+    }
+
+    _onRoomsLoaded(roomIds) {
+        this._clearBackoffs();
+    }
+
+    _clearBackoffs() {
+        for (const o of this.states.values()) o.selectRetryAt = 0;
+    }
+
+    /** The loaded objects with an affordance or needsTag, scanned at most once per tick. */
+    _objects() {
+        if (this.tickCache && this._tickObjects) return this._tickObjects;
+        this.stats.objectScans++;
+        const list = this.world.listObjects();
+        if (this.tickCache) this._tickObjects = list;
+        return list;
+    }
+
+    /** world.reachable, answered once per (NPC, object) per tick. A world without it reaches everything. */
+    _reachable(s, o) {
+        if (typeof this.world.reachable !== 'function') return true;
+        this._selectSearched = true;
+        const key = `${s.npcId}\u0000${o.id}`;
+        if (this.tickCache && this._reachCache?.has(key)) return this._reachCache.get(key);
+        this.stats.pathSearches++;
+        const ok = !!this.world.reachable(s.npcId, o);
+        if (this.tickCache) (this._reachCache || (this._reachCache = new Map())).set(key, ok);
+        return ok;
     }
 
     _tickNpc(s) {
@@ -354,7 +426,7 @@ export class NPCNeedsSystem {
             if (!s.atPost) {
                 s.atPost = true;
                 this._log(id, 'returned_post');
-                this.world.emit(`npc_returned_post:${id}`, { npcId: id });
+                this._emit(`npc_returned_post:${id}`, { npcId: id });
             }
         }
 
@@ -371,8 +443,19 @@ export class NPCNeedsSystem {
         }
 
         // idle or returning: an urgent need may start a job
+        if (this.selectBackoff && s.selectRetryAt && this.tickCount < s.selectRetryAt) return;
+        this._selectSearched = false;
         const pick = this._select(s, pos);
-        if (pick) this._startJob(s, pick);
+        if (pick) {
+            s.selectRetryAt = 0;
+            this._startJob(s, pick);
+        } else if (this.selectBackoff && this._selectSearched) {
+            // A free target it could not reach, or an item with nowhere to take it: searching
+            // again next tick would find the same. Waiting on a claimed target searches nothing
+            // and keeps the 250 ms check.
+            s.selectRetryAt = this.tickCount + SELECT_BACKOFF_TICKS;
+            this.stats.backoffs++;
+        }
     }
 
     _decay(s) {
@@ -384,8 +467,9 @@ export class NPCNeedsSystem {
             const urgent = s.levels[name] <= n.urgentAt;
             if (urgent && !s.urgentFlag[name]) {
                 s.urgentFlag[name] = true;
+                s.selectRetryAt = 0;   // a newly urgent need is worth a look now
                 this._log(s.npcId, 'urgent', { need: name, level: round2(s.levels[name]) });
-                this.world.emit(`npc_need_urgent:${s.npcId}`, { npcId: s.npcId, need: name, level: round2(s.levels[name]) });
+                this._emit(`npc_need_urgent:${s.npcId}`, { npcId: s.npcId, need: name, level: round2(s.levels[name]) });
             } else if (!urgent) {
                 s.urgentFlag[name] = false;
             }
@@ -440,13 +524,23 @@ export class NPCNeedsSystem {
             return da - db || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
         });
         for (const o of sorted) {
-            if (typeof this.world.reachable !== 'function' || this.world.reachable(s.npcId, o)) return o;
+            if (this._reachable(s, o)) return o;
         }
         return null;
     }
 
+    _anyUrgent(s) {
+        for (const name of Object.keys(s.needs)) {
+            if (s.levels[name] <= s.needs[name].urgentAt || this._starved(s, name)) return true;
+        }
+        return false;
+    }
+
     _select(s, pos) {
-        const objects = this.world.listObjects();
+        // Nothing urgent or starved and no interests: nothing to choose, so no object scan
+        if (this.tickCache && !Object.keys(s.interests).length && !this._anyUrgent(s)) return null;
+        this.stats.selects++;
+        const objects = this._objects();
         let best = null;
         for (const name of Object.keys(s.needs)) {
             const n = s.needs[name];
@@ -477,7 +571,7 @@ export class NPCNeedsSystem {
         // nearest free one. Only bites when the home object is among the options
         // (e.g. the work need at an own-desk PC); other needs fall back to nearest.
         const homeObj = s.home?.objectId ? opts.find(o => o.id === s.home.objectId) : null;
-        const target = (homeObj && (typeof this.world.reachable !== 'function' || this.world.reachable(s.npcId, homeObj)))
+        const target = (homeObj && this._reachable(s, homeObj))
             ? homeObj : this._nearestReachable(s, opts, pos);
         return target ? { kind: 'use', targetId: target.id } : null;
     }
@@ -491,7 +585,7 @@ export class NPCNeedsSystem {
         const targets = objects.filter(o => o.affordance && asList(o.affordance.accepts).includes(tag) && this._free(s, o));
         if (!targets.length) return null;
         const homeObj = s.home?.objectId ? targets.find(t => t.id === s.home.objectId) : null;
-        const target = (homeObj && (typeof this.world.reachable !== 'function' || this.world.reachable(s.npcId, homeObj)))
+        const target = (homeObj && this._reachable(s, homeObj))
             ? homeObj : this._nearestReachable(s, targets, item);
         if (!target) return null;
         return { kind: 'carry', targetId: target.id, itemId: item.id, tag };
@@ -513,7 +607,7 @@ export class NPCNeedsSystem {
         if (windup > 0) {
             s.job.windupUntil = this.clockMs + windup;
             this._log(id, 'windup', { target: pick.targetId });
-            this.world.emit(`npc_action_windup:${id}`, { npcId: id, need: pick.need, targetId: pick.targetId, tag: pick.tag || null, ms: windup });
+            this._emit(`npc_action_windup:${id}`, { npcId: id, need: pick.need, targetId: pick.targetId, tag: pick.tag || null, ms: windup });
             return;
         }
         this._leavePost(s);
@@ -529,7 +623,7 @@ export class NPCNeedsSystem {
         const id = s.npcId;
         if (s.atPost && !this._atOwnPost(s)) {
             s.atPost = false;
-            this.world.emit(`npc_left_post:${id}`, { npcId: id, need: s.job.need, targetId: s.job.targetId });
+            this._emit(`npc_left_post:${id}`, { npcId: id, need: s.job.need, targetId: s.job.targetId });
         }
         this._moveForPhase(s);
     }
@@ -563,10 +657,12 @@ export class NPCNeedsSystem {
                 return;
             }
             if (job.phase === 'goto_item') {
-                if (!this.world.pickUp(id, job.itemId)) { this._abortJob(s, 'item_gone', { cancel: false }); this._goHome(s); return; }
+                const took = this.world.pickUp(id, job.itemId);
+                this._worldChanged();
+                if (!took) { this._abortJob(s, 'item_gone', { cancel: false }); this._goHome(s); return; }
                 job.carrying = true;
                 this._log(id, 'picked_up', { item: job.itemId });
-                this.world.emit(`npc_picked_up:${job.itemId}`, { npcId: id, itemId: job.itemId, tag: job.tag });
+                this._emit(`npc_picked_up:${job.itemId}`, { npcId: id, itemId: job.itemId, tag: job.tag });
                 job.phase = 'goto_target';
                 this._moveForPhase(s);
                 return;
@@ -594,10 +690,10 @@ export class NPCNeedsSystem {
             s.levels[job.need] = clamp(s.levels[job.need] + restores, 0, 100);
             s.lastSatisfiedAt[job.need] = this.clockMs;
         }
-        if (job.carrying) this.world.consumeHeld(id, job.itemId);
+        if (job.carrying) { this.world.consumeHeld(id, job.itemId); this._worldChanged(); }
         const rec = this.world.getNpc(id) || {};
         this._log(id, 'used', { need: job.need || undefined, tag: job.tag || undefined, target: job.targetId, item: job.itemId || undefined, level: n ? round2(s.levels[job.need]) : undefined, payloadPresent: rec.usePayload !== undefined });
-        this.world.emit(`npc_used:${job.targetId}`, {
+        this._emit(`npc_used:${job.targetId}`, {
             npcId: id, objectId: job.targetId, need: job.need,
             itemId: job.carrying ? job.itemId : null, tag: job.carrying ? job.tag : null,
             payload: cloneData(rec.usePayload),
@@ -605,10 +701,11 @@ export class NPCNeedsSystem {
         });
         const hook = rec.onUse && rec.onUse[job.targetId];
         if (hook && typeof hook === 'object') {
-            if (typeof hook.setGlobal === 'string' && hook.setGlobal) this.world.setGlobal(hook.setGlobal, true);
-            if (typeof hook.emitEvent === 'string' && hook.emitEvent) this.world.emit(hook.emitEvent, { npcId: id, objectId: job.targetId });
+            if (typeof hook.setGlobal === 'string' && hook.setGlobal) { this.world.setGlobal(hook.setGlobal, true); this._worldChanged(); }
+            if (typeof hook.emitEvent === 'string' && hook.emitEvent) this._emit(hook.emitEvent, { npcId: id, objectId: job.targetId });
         }
         s.job = null;
+        this._clearBackoffs();   // a target or item may have come free; waiting NPCs do not know which
         this._goHome(s);
     }
 
@@ -621,7 +718,7 @@ export class NPCNeedsSystem {
     _failJob(s, reason) {
         const job = s.job;
         if (job) s.cooldowns[job.phase === 'goto_item' ? job.itemId : job.targetId] = this.clockMs + FAIL_COOLDOWN_MS;
-        this.world.emit(`npc_job_failed:${s.npcId}`, { npcId: s.npcId, need: job?.need, targetId: job?.targetId, reason });
+        this._emit(`npc_job_failed:${s.npcId}`, { npcId: s.npcId, need: job?.need, targetId: job?.targetId, reason });
         this._abortJob(s, reason, { cancel: true, failed: true });
         this._goHome(s);
     }
@@ -630,9 +727,10 @@ export class NPCNeedsSystem {
         const job = s.job;
         if (!job) return;
         if (cancel) this.world.cancelMove(s.npcId);
-        if (job.carrying) this.world.dropHeld(s.npcId, job.itemId);
+        if (job.carrying) { this.world.dropHeld(s.npcId, job.itemId); this._worldChanged(); }
         this._log(s.npcId, failed ? 'job_failed' : 'job_aborted', { need: job.need || undefined, tag: job.tag || undefined, target: job.targetId, reason });
         s.job = null;
+        this._clearBackoffs();
     }
 
     /**
@@ -754,6 +852,8 @@ export function createEngineWorld() {
         elapsedMs: () => (W().gameClock ? W().gameClock.elapsedMs() : Date.now()),
         isVmActive: () => !!W().isVmContextActive?.(),
         npcIds: () => [...(W().npcManager?.npcs?.keys?.() || [])],
+        // Loaded rooms; a new id is a room load (the needs system clears its select back-offs)
+        roomIds: () => Object.keys(W().rooms || {}),
         getNpc: id => W().npcManager?.getNPC?.(id) || W().npcManager?.npcs?.get?.(id) || null,
         npcPos(id) {
             const b = behaviour(id);

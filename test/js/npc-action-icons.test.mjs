@@ -14,3 +14,25 @@ test('pickIcon: no job -> null; pickup job -> curiosity; object id beats satisfi
     assert.equal(pickIcon({ kind: 'need' }, icons, { id: 'zzz', type: 'chair' }), DEFAULT_ICONS.fallback);
     assert.equal(pickIcon({ kind: 'need' }, { fallback: 'F' }, null), 'F');
 });
+
+test('targetInfo: cached by id after one room scan; dropped when the sprite is destroyed; misses not cached', async () => {
+    const { targetInfo } = await import('../../public/break_escape/js/systems/npc-action-icons.js');
+    const sp = { scene: {}, scenarioData: { id: 'coffee', type: 'coffee_station1', affordance: { satisfies: ['caffeine', 'x'] } } };
+    let scans = 0;
+    const objects = { coffee: sp };
+    globalThis.window = { rooms: { get office() { scans++; return { objects }; } } };
+    try {
+        const cache = new Map();
+        assert.deepEqual(targetInfo('coffee', cache), { id: 'coffee', type: 'coffee_station1', satisfies: 'caffeine' });
+        assert.equal(targetInfo('coffee', cache).satisfies, 'caffeine');
+        assert.equal(scans, 1, 'second lookup came from the cache');
+        assert.equal(targetInfo('kettle', cache), null);
+        assert.equal(cache.has('kettle'), false);
+        sp.scene = undefined;                 // Phaser clears scene on destroy
+        delete objects.coffee;
+        assert.equal(targetInfo('coffee', cache), null);
+        assert.equal(cache.has('coffee'), false);
+    } finally {
+        delete globalThis.window;
+    }
+});

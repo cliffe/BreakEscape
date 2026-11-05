@@ -33,14 +33,26 @@ export function pickIcon(job, actionIcons = {}, target = null) {
 
 const win = () => (typeof window !== 'undefined' ? window : {});
 
-function targetInfo(id) {
+/**
+ * The job target's { id, type, satisfies }. Found by scanning every loaded room once, then cached
+ * by id with its sprite; the entry is dropped when that sprite is destroyed (consumed, removed).
+ * A target that is not found is not cached, so one in a room that loads later is still found.
+ */
+export function targetInfo(id, cache = null) {
+    const hit = cache?.get(id);
+    if (hit) {
+        if (!hit.sp.destroyed && hit.sp.scene !== null && hit.sp.scene !== undefined) return hit.info;
+        cache.delete(id);
+    }
     const rooms = win().rooms || {};
     for (const room of Object.values(rooms)) {
         for (const sp of Object.values(room?.objects || {})) {
             const d = sp?.scenarioData;
             if (d && d.id === id) {
                 const sat = d.affordance?.satisfies;
-                return { id: d.id, type: d.type, satisfies: Array.isArray(sat) ? sat[0] : sat };
+                const info = { id: d.id, type: d.type, satisfies: Array.isArray(sat) ? sat[0] : sat };
+                if (cache && !sp.destroyed && sp.scene) cache.set(id, { info, sp });
+                return info;
             }
         }
     }
@@ -48,7 +60,7 @@ function targetInfo(id) {
 }
 
 export class NpcActionIcons {
-    constructor() { this.icons = new Map(); this.windups = new Map(); this.sceneHooked = null; }
+    constructor() { this.icons = new Map(); this.windups = new Map(); this.targets = new Map(); this.sceneHooked = null; }
 
     get showIntentBubbles() { return win().gameScenario?.showNpcIntentBubbles === true; }
 
@@ -64,7 +76,7 @@ export class NpcActionIcons {
             const show = !!(st?.job && sprite && sprite.active && sprite.visible && !sprite.destroyed);
             let ic = this.icons.get(id);
             if (!show) { if (ic) ic.text.setVisible(false); continue; }
-            const glyph = pickIcon(st.job, actionIcons, st.job.targetId ? targetInfo(st.job.targetId) : null);
+            const glyph = pickIcon(st.job, actionIcons, st.job.targetId ? targetInfo(st.job.targetId, this.targets) : null);
             if (!ic || !ic.text.scene) {
                 const text = sprite.scene.add.text(0, 0, glyph, {
                     fontFamily: 'monospace', fontSize: '16px', fontStyle: 'bold', color: '#ffffff',
