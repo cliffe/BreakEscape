@@ -1,47 +1,44 @@
-# NPC Needs System (Sims-lite) — Design Spec
+# NPC Needs System (Sims-lite) — Design Contract
 
-Status: **design, not implemented**. Written 2026-11-04 for an engine implementer.
-Scope: engine-wide and cyber-neutral. It does not say what any mission's beats
-*mean*; it only emits generic events that a scenario (or another agent) wires
-meaning onto.
+Status: **design locked 2026-11-04; partly implemented** (section 15 lists what
+exists and what is left). This document is the contract for three roles:
 
-Field names marked **(prov.)** are invented by this spec and may be renamed during
-implementation. Rename them in the schema, validator and this doc together.
+- **Engine implementer** builds the generic system (sections 1–11, 14–15).
+- **Cyber Security agent** builds device behaviour and captures against the hooks
+  in section 13 only, without touching the generic engine.
+- **Scenario author** wires the demo lab from section 12.
+
+The generic system is cyber-neutral. It moves NPCs, moves items, and emits generic
+events. It never knows what an item *is* or what using an object *reveals*.
+
+Field names marked **(prov.)** were invented for this system. Rename them in the
+engine, schema, validator and this doc together, or not at all.
 
 ---
 
-## 1. What it is
+## 1. Model in one paragraph
 
-NPCs that opt in carry **needs** that decay over game time. Scenario **objects
-advertise affordances**: which need they satisfy and by how much. A small selector
-sends an NPC to its most urgent need's best affordance, the NPC uses it, the need
-is topped up, and the NPC walks back to its post. The behaviour comes out of the
-numbers; there is no scripted list of jobs.
-
-Two motivating patterns (generic):
-
-- **Periodic absence.** A `caffeine` need makes an NPC leave its post at regular
-  intervals to visit a coffee source, opening a recurring window when it is away
-  from its desk.
-- **Curiosity collection.** A `curiosity` need makes an NPC collect a world item
-  carrying a matching **tag**, carry it to an object that **accepts** that tag, and
-  use it there. When the player places such an item, a curious NPC collects it soon
-  afterwards and takes it to that object.
+NPCs that opt in carry **needs** that decay over game time and **interests** in
+tagged items. Objects advertise **affordances**: which need they satisfy, how much
+they restore, how long a use takes, how many NPCs fit, and which item tags they
+**accept**. At each fixed tick an idle NPC scores its options: an urgent need with
+a reachable free affordance, or a reachable item whose tag it is interested in.
+It takes the best, walks there, uses it (or picks the item up and carries it to an
+accepting object, then uses it), and walks back to its post (`needsHome`). With no
+option it **holds still**. Idle NPCs never wander and never search.
 
 Rules that hold throughout:
 
-1. **Opt-in.** An NPC with no `needs` block runs exactly the code path it runs
-   today. The needs system never touches it.
-2. **No idle wandering.** A needs NPC with nothing urgent holds still.
-3. **Stillness.** A needs NPC stays put when the player walks up to it, unless a
-   need is urgent.
-4. **Conversation freezes.** While the player is in a person-chat with the NPC,
-   it does not move, even if a need turns urgent. It resumes afterwards.
-5. **Scripts win.** An eventMapping `patrolOverride` (or any other scripted move)
-   suspends the needs loop for that NPC. Needs never fight a script (section 7).
+1. **Opt-in.** An NPC with no `needs` and no `interests` runs exactly today's code.
+2. **No idle wandering, no searching.** No option → stand still.
+3. **Stillness.** A needs NPC stays put when the player walks up, unless it is
+   heading somewhere because an option won (urgent need or present item).
+4. **Conversation freezes** the NPC being talked to, even mid-walk and even if a
+   need turns urgent; it resumes afterwards. Other needs NPCs carry on.
+5. **Scripts win.** Any scripted move suspends needs for that NPC (section 8).
 6. **Deterministic.** Same seed + same inputs → same decision log (section 9).
-
-Out of scope: section 13.
+7. **Objects carry no content.** Anything an NPC "supplies" when it uses an
+   object lives on the NPC (`usePayload`), never on the object.
 
 ---
 
@@ -49,573 +46,391 @@ Out of scope: section 13.
 
 | Fact | Where |
 |---|---|
-| `goToAndStay(worldX, worldY, speed)` overwrites `config.patrol.waypoints` with one waypoint, sets `patrol.enabled = true`, `_stopOnArrival = true` | `systems/npc-behavior.js:2129-2163` |
-| On arrival `_triggerGoToStayArrival` sets `patrol.enabled = false`, resets `homePosition` to the arrival point, and emits `npc_arrived:<npcId>` `{npcId, x, y}` once | `npc-behavior.js:2171-2207` |
-| There is no resume: after arrival the NPC stands there until something moves it again | same |
-| Path following goes through `pathfindingManager.findWorldPath`, the unified world grid, so world-coordinate targets in **other loaded rooms** route through doors | `npc-behavior.js:973`, `systems/npc-pathfinding.js:720` |
-| A `goToAndStay` move never pauses for the player (`!this._stopOnArrival` guard on `face_player`) | `npc-behavior.js:796` |
-| Patrol defaults off; NPCs with no `behavior` block stand still | `npc-behavior.js:380` |
-| `patrolOverride` reads only `targetTile` and `speed`; `stopOnArrival` is ignored; `targetTile` resolves against the NPC's **current** room | `systems/npc-manager.js:1124-1146` |
-| eventMappings match `eventPattern` exactly (one dispatcher listener per pattern) | `npc-manager.js:585-610` |
-| The dispatcher also supports `prefix*` wildcard listeners | `systems/npc-events.js:45-58` |
-| Behaviour manager ticks every 50 ms and freezes every NPC while the player is on the VM (`window.isVmContextActive`) | `npc-behavior.js:90-120`, `freezeAll` at `:130` |
-| `window.gameClock.elapsedMs()` is wall time since game start minus time the page was closed, restored on reload. It does **not** pause. Its `rate` and `anchors` only change the displayed time of day; "elapsed game time is real time and is not scaled" | `systems/game-clock.js:5-22, 149` |
-| Scenario objects are registered as `window.rooms[roomId].objects[<scenario id>]` (`sprite.objectId = scenarioObj.id`) only once their room is loaded | `core/rooms.js:383, 457` |
-| `revealOnGlobal` shows a hidden object when a global turns true; with `requiresItem`/`consumesItem` this already lets a player "place" an item in the world | `core/rooms.js:2913-2945`, `systems/interactions.js:789-812` |
-| Person-chat state: `window.currentConversationNPCId` and `window.currentConversationMinigameType === 'person-chat'`. Person-chat also sets `currentConversationNPCId` briefly to other values and restores it (save/restore around nested calls), so it is not a clean "chat open" flag. On close person-chat emits `conversation_closed:<npcId>` | `minigames/person-chat/person-chat-minigame.js:455, 1189-1217, 1932`; `systems/npc-barks.js:176` |
-| Open minigame: `window.MinigameFramework.currentMinigame` | `npc-manager.js:634, 705` |
-| NPC records already carry `itemsHeld: []` | `npc-manager.js:259` |
-| Existing waypoint patrol uses `Math.random()`; the needs system must not | `npc-behavior.js:1175, 1277` |
+| `goToAndStay(worldX, worldY, speed)` sets one waypoint, `patrol.enabled = true`, `_stopOnArrival = true` | `systems/npc-behavior.js` `goToAndStay` |
+| Arrival (`_triggerGoToStayArrival`) disables patrol, resets `homePosition`, emits `npc_arrived:<npcId>` once. No automatic resume | same |
+| Paths use `pathfindingManager.findWorldPath` (unified grid), so world targets in other **loaded** rooms route through **open** doors | `npc-behavior.js` patrol, `systems/npc-pathfinding.js` `findWorldPath` |
+| Locked doors are not walkable; `openDoor` marks the door walkable and destroys the door sprite. **Doors never re-close** | `systems/doors.js` `openDoor` |
+| A `goToAndStay` move never pauses for the player (`!this._stopOnArrival` guard) | `npc-behavior.js` `determineState` |
+| Every sprite NPC gets a behaviour, even with no `behavior` block; patrol is off by default | `core/rooms.js` (`registerBehavior(..., npc.behavior \|\| {})`), `parseConfig` |
+| NPC records are built by `registerNPC(npcDef)` with `Object.assign`, so extra scenario fields (`needs`, `usePayload`…) arrive on the record. NPCs register lazily per room | `systems/npc-manager.js` `registerNPC`, `systems/npc-lazy-loader.js` |
+| `patrolOverride` reads only `targetTile` (current-room relative) and `speed`; `stopOnArrival` is ignored | `npc-manager.js` `_handleEventMapping` |
+| eventMappings match `eventPattern` exactly; the dispatcher also supports `prefix*` listeners (called with `(data, eventName)`) | `npc-manager.js`, `systems/npc-events.js` |
+| Mapping `condition` strings can test event-data keys (`value === true`) and `globalVars.x` | `npc-manager.js` `safeEvaluateCondition` |
+| Behaviour manager ticks every 50 ms; all NPCs freeze while the player is on the VM (`window.isVmContextActive`) | `npc-behavior.js` `update`, `freezeAll` |
+| `gameClock.elapsedMs()` = wall time since start minus closed time; survives reload; never pauses; `rate`/`anchors` change only time of day | `systems/game-clock.js` |
+| Objects live at `window.rooms[roomId].objects[<scenario id>]` once their room is loaded | `core/rooms.js` |
+| Person-chat sets `window.currentConversationNPCId` (and swaps it briefly around nested calls) and emits `conversation_closed:<npcId>` on close | `minigames/person-chat/person-chat-minigame.js` |
+| Inventory clicks go to `handleObjectInteraction(itemImg)`; inventory items have `scenarioData.takeable = false`; `removeFromInventory` does not sync to the server | `systems/inventory.js`, `systems/interactions.js` |
+| NPC KO drops already create a world item sprite and register it in `room.objects` (pattern reused by the player drop) | `systems/npc-hostile.js` drop code |
 
 ---
 
 ## 3. Scenario schema
 
-### 3.1 On an NPC
+### 3.1 NPC fields
 
 ```json
 {
-  "id": "receptionist",
-  "needsHome": "reception_chair",
+  "id": "clerk",
+  "needsHome": "clerk_pc",
   "needs": {
-    "caffeine":  { "decayPerMin": 8,  "urgentAt": 30, "initial": 50, "maxUnmetMin": 6 },
-    "work":      { "decayPerMin": 5,  "urgentAt": 40, "initial": 90 },
-    "curiosity": { "decayPerMin": 40, "urgentAt": 60, "initial": 0,  "weight": 1.5, "seeks": "found_item", "noticeRooms": ["reception"] }
+    "caffeine": { "decayPerMin": 10, "urgentAt": 30, "initial": 55, "maxUnmetMin": 5 },
+    "work":     { "decayPerMin": 6,  "urgentAt": 50, "initial": 80 }
   },
-  "usePayload": "opaque — never read by the needs system",
-  "onUse": {
-    "reception_pc": { "setGlobal": "receptionist_used_pc", "emitEvent": "receptionist_at_pc" }
-  }
+  "interests": { "found_item": { "weight": 3, "noticeRooms": ["office"] } },
+  "usePayload": { "any": "JSON value, opaque to the engine" },
+  "onUse": { "clerk_pc": { "setGlobal": "clerk_used_pc", "emitEvent": "clerk_at_pc" } },
+  "needsSpeed": 90
 }
 ```
 
-`needs` is a top-level NPC field, beside `behavior`, so a needs NPC can still have
-a `behavior` block (`facePlayer`, `personalSpace`, `hostile`). An NPC whose
-`behavior.patrol.enabled` is true **must not** also declare `needs`; the validator
-errors (section 11). That is the "leave needs off an NPC with scripted movement"
-rule, enforced.
+`needs` and `interests` are top-level NPC fields beside `behavior`. An NPC with
+`behavior.patrol.enabled: true` must not also declare them (validator error).
 
-Per need (keys are need names, free strings, matched against affordances):
+**Need** (key = need name, any string, matched against `affordance.satisfies`):
 
-| Field | Type / bounds | Default | Meaning |
+| Field | Bounds | Default | Meaning |
 |---|---|---|---|
-| `decayPerMin` | number > 0, ≤ 600 | required | Level points lost per minute of needs-clock time (section 5.1) |
-| `urgentAt` | number 1–99 | required | Level at or below which the need is **urgent** |
-| `initial` **(prov.)** | 0–100 | 100 | Level at game start (and after a reload, see 10). The main lever for *when the first beat happens* |
-| `weight` **(prov.)** | number 0.1–10 | 1 | Multiplies the urgency score when needs compete |
-| `maxUnmetMin` **(prov.)** | number > 0 | none | Starvation guard: once this long has passed since the need was last satisfied, it is treated as urgent with top score (section 6.2) |
-| `jitterPct` **(prov.)** | 0–50 | 0 | Seeded ± spread applied to `initial` and to each top-up, so several NPCs on the same numbers don't move in lockstep |
-| `seeks` **(prov.)** | tag string | none | Only for **carry** needs: the item tag this need collects (3.3). A need with `seeks` is satisfied only by carrying a tagged item to an accepting object |
-| `noticeRooms` **(prov.)** | room ids | `[room of needsHome]` | For `seeks` needs: rooms in which the NPC notices tagged items. Keeps "curious" local and predictable |
+| `decayPerMin` | >0, ≤600 | required | Level points lost per needs-clock minute |
+| `urgentAt` | 1–99 | required | Level at or below which the need is urgent |
+| `initial` (prov.) | 0–100 | 100 | Level at start and after a reload. Sets when the first beat happens |
+| `weight` (prov.) | 0.1–10 | 1 | Scales the need's score |
+| `maxUnmetMin` (prov.) | >0 | none | Starvation guard: this long since last satisfied → wins outright |
+| `jitterPct` (prov.) | 0–50 | 0 | Seeded ± spread on `initial` and each top-up |
 
-Levels are clamped to 0–100. 100 = fully satisfied.
+Levels are clamped to 0–100; 100 = fully satisfied.
 
-NPC-level fields:
+**Interest** (key = item tag) (prov.): a number (the weight) or
+`{ "weight": 0.1–10, "noticeRooms": [roomId…] }`. `noticeRooms` defaults to the
+room of `needsHome`. An interest has **no level and no decay**. It produces an
+option only while a matching item is present (section 5.2).
+
+**Other NPC fields** (all prov.):
 
 | Field | Meaning |
 |---|---|
-| `needsHome` **(prov.)** | Object id (preferred) or `{room, x, y}` tile where the NPC idles and returns after each job. Default: its spawn tile |
-| `usePayload` **(prov.)** | Any JSON value. **Opaque, NPC-owned.** The needs system never reads, logs or interprets it; it passes it through on `npc_used` events (section 8). Different NPCs using the same object carry different payloads; the object holds none |
-| `onUse` **(prov.)** | Map of object id → `{ setGlobal?: string, emitEvent?: string }`. Lets a scenario set a global or emit a named event when **this NPC** uses **that object**. Content-free; the global is set to `true` |
-| `needsSpeed` **(prov.)** | Walk speed for needs moves, px/s. Default: `behavior.patrol.speed` or 80 |
+| `needsHome` | Object id (preferred; the NPC stands at its approach cell) or `{room, x, y}` tile. Where the NPC idles and returns. Default: spawn point |
+| `usePayload` | Any JSON value. **Opaque and NPC-owned.** Never read, logged or interpreted by the engine; a clone rides on every `npc_used` event this NPC emits |
+| `onUse` | Object id → `{ setGlobal?: name, emitEvent?: name }`. Applied when **this** NPC completes a use of **that** object. `setGlobal` sets the global to `true` |
+| `needsSpeed` | Walk speed for needs moves (px/s). Default `behavior.patrol.speed`, else 80 |
 
-### 3.2 On an object (affordance)
+### 3.2 Object fields
 
 ```json
-{ "id": "coffee_machine", "type": "...", "affordance": { "satisfies": "caffeine", "restores": 70, "useSeconds": 40 } }
-{ "id": "reception_pc",   "type": "...", "affordance": { "satisfies": "work", "restores": 60, "useSeconds": 30, "accepts": ["found_item"] } }
+{ "id": "coffee_machine", "affordance": { "satisfies": "caffeine", "restores": 70, "useSeconds": 45 } }
+{ "id": "clerk_pc", "affordance": { "satisfies": "work", "restores": 50, "useSeconds": 30, "accepts": ["found_item"], "useFrom": {"dx": 0, "dy": 1} } }
 ```
 
-| Field | Type / bounds | Default | Meaning |
+| `affordance` field | Bounds | Default | Meaning |
 |---|---|---|---|
-| `satisfies` | need name or array of names | — | Which need(s) using this object tops up |
-| `restores` | 1–100 | required with `satisfies` | Points added to the need's level when the use completes |
-| `useSeconds` **(prov.)** | 0–600 | 20 | Seconds (needs-clock) the NPC stays at the object before the use completes. This is the "away window" for a periodic absence |
-| `useFrom` **(prov.)** | `{dx, dy}` tile offset from the object's tile | nearest walkable cell (5.4) | Where the NPC stands to use it. Objects have collision bodies, so the object's own tile is never a valid destination |
-| `capacity` **(prov.)** | integer ≥ 1 | 1 | NPCs that can use it at once |
-| `accepts` **(prov.)** | array of tags | none | This object is a valid destination for carried items with these tags ("usable as") |
+| `satisfies` | name or array | — | Need(s) a use tops up |
+| `restores` | 1–100 | 0 | Points added on completion |
+| `useSeconds` (prov.) | 0–600 | 20 | Dwell at the object before the use completes |
+| `useFrom` (prov.) | `{dx, dy}` tiles | nearest walkable cell | Where the NPC stands, relative to the object's centre |
+| `capacity` (prov.) | ≥1 | 1 | NPCs that can hold a job on it at once |
+| `accepts` (prov.) | array of tags | none | Carried items with these tags can be used here ("usable as") |
 
-An affordance carries **no content**: no data, secrets or payload. Meaning lives
-on the NPC (`usePayload`, `onUse`) or in whoever listens to the events.
+An affordance carries **no content**.
 
-Object id resolution: `affordance` objects are looked up by scenario `id` in
-`window.rooms[roomId].objects`. Only **loaded** rooms count (open question Q2).
-
-### 3.3 Carry items (curiosity)
-
-A world item opts in with a tag:
-
-```json
-{ "id": "found_thing", "type": "...", "takeable": true, "needsTag": "found_item", "revealOnGlobal": "found_thing_placed" }
-```
+### 3.3 Item fields (tagged, droppable)
 
 | Field | Meaning |
 |---|---|
-| `needsTag` **(prov.)** | Tag string. An NPC need with `seeks: "<tag>"` will collect this item |
+| `needsTag` (prov.) | One tag string. NPCs with a matching interest are drawn to it |
+| `droppable` (prov.) | `true`: clicking the item in the inventory drops it (section 6) |
 
-A carry job for need N with `seeks: T`:
+### 3.4 eventMapping field
 
-1. **Notice.** A visible, interactable world object with `needsTag === T` exists in
-   one of N's `noticeRooms`.
-2. **Go to item.** Walk to the item's approach cell.
-3. **Pick up.** Remove the item sprite from the world (hidden, non-interactive,
-   removed from `rooms[r].objects`), push `{id, needsTag, type}` onto the NPC's
-   `itemsHeld`. Emit `npc_picked_up:<itemId>`.
-4. **Go to target.** The nearest object (by path length, ties by id) in a loaded room
-   whose `affordance.accepts` includes T. Prefer the NPC's `needsHome` object if it
-   accepts T.
-5. **Use.** Dwell `useSeconds`, then emit `npc_used:<targetId>` with `item` set, run
-   `onUse[targetId]`, remove the item from `itemsHeld`, and add the target's
-   `restores` (or 100 if the target does not `satisfies` N) to N.
-6. **Return** to `needsHome`.
+`"needs"` (prov.): `"suspend"` | `"resume"` | `{ "set": { "<need>": level } }`.
+Runs after `patrolOverride` in the same mapping.
 
-How the item got into the world (pre-placed, revealed by `revealOnGlobal` after a
-`requiresItem`/`consumesItem` interaction, or a future drop action) is not this
-system's concern. The existing reveal path is enough for a first mission. A
-general "drop from inventory" action is a separate feature (Q4).
+### 3.5 Scenario field
 
-If the player picks the item up again between steps 1 and 3, the job aborts at
-step 3 (item gone) and the NPC returns home. Not an error.
+`npcNeedsSeed` (prov.): number or string. Default: the scenario name.
 
 ---
 
 ## 4. Runtime architecture
 
-New module `public/break_escape/js/systems/npc-needs.js`, exporting `NPCNeedsSystem`
-and `createSeededRng`. One instance, `window.npcNeedsSystem`, built after the
-behaviour manager. It holds per-NPC state only for NPCs that declare `needs`.
+- Module `public/break_escape/js/systems/npc-needs.js` (exists): `NPCNeedsSystem`
+  core (pure logic, takes a `world` adapter), `createEngineWorld()` (live adapter),
+  `installNpcNeeds()`. No static imports, so node tests import it directly and no
+  test-harness copy list needs it.
+- Module `public/break_escape/js/systems/item-drop.js` (exists): the drop action.
+- `core/game.js` imports both after the behaviour manager loads and calls
+  `window.npcNeedsSystem.update()` each frame after `npcBehaviorManager.update`.
+- `npc-lazy-loader.js` calls `npcNeedsSystem.register(id)` after each `registerNPC`.
+- Movement goes **only** through `goToAndStay(x, y, speed, {owner:'needs', yieldToPlayer})`.
+  The needs system never writes velocities or waypoints, so collision, wall
+  escape, stalls and depth sorting work as they do today.
 
-```
-NeedsState(npcId) {
-  levels: {need: 0..100},
-  lastSatisfiedAt: {need: needsClockMs},
-  job: null | { need, kind: 'use'|'carry', phase, targetId, itemId?, startedAt, moveToken },
-  mode: 'idle' | 'job' | 'returning' | 'frozen' | 'suspended',
-  rng: mulberry32(seedFor(npcId))
-}
-```
-
-Hook: call `window.npcNeedsSystem?.update(time, delta)` from the same place
-`npcBehaviorManager.update` is called (game scene update), **after** the behaviour
-update. The needs system runs on a **fixed step** (section 5.1), not every frame.
-
-The needs system **drives movement only through `goToAndStay`** (extended per 5.3).
-It never writes velocities or waypoints itself, so collision avoidance, wall escape,
-stall handling and depth sorting keep working as they do.
+Per-NPC state: `levels`, `lastSatisfiedAt`, `mode` (`idle | job | returning | frozen`),
+flags `scriptSuspended`, `blocked`, `atPost`, the current `job`
+(`{need|null, tag|null, kind:'use'|'carry', phase, targetId, itemId, carrying, deadline, useUntil}`),
+`home`, per-target `cooldowns`, and its own seeded RNG.
 
 ---
 
-## 5. Runtime design
+## 5. Runtime behaviour
 
-### 5.1 The needs clock and decay
+### 5.1 Needs clock and decay
 
-- `needsClockMs` advances by `min(Δ, 1000)` each frame, where
-  `Δ = gameClock.elapsedMs() − lastElapsed`. The clamp stops a background tab,
-  a long frame or a reload from dumping minutes of decay at once.
-- It does **not** advance while `window.isVmContextActive?.()` is true (NPCs are
-  frozen then anyway; otherwise every NPC returns from a VM session urgent at once).
-- It **does** advance during conversations and minigames, so a need can become
-  urgent during a chat. Servicing is deferred (5.5).
-- "perMin" means needs-clock minutes, which run at real speed. The game clock's
-  story `rate` and `anchors` are ignored on purpose: they move time of day, and an
-  anchor jump would empty every need at once.
-- Work happens in **ticks of `NEEDS_TICK_MS = 250`**. Each frame, while the
-  accumulator ≥ 250, run one tick: `level -= decayPerMin * 250 / 60000` for every
-  need not currently being serviced, then evaluate (5.2). All decisions happen at
-  tick boundaries, which is what makes the log reproducible (section 9).
+- Each frame: `Δ = gameClock.elapsedMs() − last`; add `min(Δ, 1000)` to an
+  accumulator. Skip (no accumulation) while `isVmContextActive()`.
+- Run one **tick** per 250 ms in the accumulator. All decisions happen in ticks.
+- Per tick, each need loses `decayPerMin × 250 / 60000`, except the need being
+  serviced during its `using` dwell. Crossing `urgentAt` downward emits
+  `npc_need_urgent:<npcId>` once.
+- Decay continues during conversations and minigames; servicing waits (5.5).
+- "Per minute" means needs-clock minutes (real speed). The story `rate` and clock
+  anchors are ignored on purpose.
+- NPCs are processed in sorted id order every tick.
 
-### 5.2 Selector
+### 5.2 Selector (bounded utility)
 
-At each tick, for each needs NPC in mode `idle` (only; see preemption below):
+Run for an NPC in mode `idle` or `returning` (a new job cancels the walk home).
+A running job is never preempted.
 
 ```
-urgent = needs where level <= urgentAt
-         or (maxUnmetMin && now - lastSatisfiedAt >= maxUnmetMin*60000)
-for each urgent need n:
-    score(n) = starved(n) ? 1000 + weight
-             : weight * (urgentAt - level) / urgentAt        // 0..weight, bounded
-candidates = urgent needs that have a reachable, free affordance (or, for seeks
-             needs, a noticed tagged item AND an accepting target)
-pick max score; ties → declaration order in the NPC's needs block
-if none: stay idle (an urgent need with nothing to satisfy it just waits)
+best = none
+for each need n in declaration order:
+    urgent  = level(n) <= urgentAt(n)
+    starved = maxUnmetMin(n) && now - lastSatisfied(n) >= maxUnmetMin(n)
+    if not (urgent or starved): continue
+    score = starved ? 1000 + weight(n) : weight(n) * (urgentAt(n) - level(n)) / urgentAt(n)   // 0..weight
+    if best and score <= best.score: continue
+    target = nearest reachable free object whose affordance.satisfies includes n
+    if target: best = {kind:'use', need:n, target, score}
+for each interest tag t in declaration order:
+    score = weight(t)                                   // flat, same 0.1–10 scale
+    if best and score <= best.score: continue
+    item   = nearest reachable, visible, unclaimed item with needsTag == t in noticeRooms(t)
+    target = needsHome object if it accepts t and is free, else nearest reachable free object whose affordance.accepts includes t
+    if item and target: best = {kind:'carry', tag:t, item, target, score}
+start best, or hold still
 ```
 
-- **Bounded:** the score is bounded by `weight`, so no need can grow without limit
-  and swamp the others. Starvation is handled only by `maxUnmetMin`.
-- **Affordance choice** within a need: shortest path length from the NPC, ties by
-  object id. No randomness. (Path length can come from a `findWorldPath` result
-  length, cached per tick.)
-- **Capacity:** an affordance is "free" when fewer than `capacity` NPCs hold a job
-  on it. Claims are made in NPC id order within a tick, so two NPCs never race.
-- **No preemption.** A job runs to completion (or failure). The selector runs again
-  when the NPC is idle. That keeps the maximum delay of any beat to one job length,
-  which is easy to reason about. Option for later: a `preemptMargin`.
+- **Presence-driven collection.** An interest gives utility only while a matching,
+  reachable item exists. No item, no option. Tags filter: an NPC never picks up an
+  item whose tag it has no interest in, and nothing is "searched for".
+- **Fair competition.** A need's score runs 0..weight as it empties. An interest
+  scores its weight flat. So `interests.found_item.weight = 3` beats any need of
+  weight ≤ 3 that is not starved; weight 0.5 loses to a need half-empty at weight 1.
+  `maxUnmetMin` lets a real need win when it matters.
+- **Nearest:** straight-line distance, ties by object id. **Reachable** (required,
+  not yet implemented): the object's room is loaded **and** either it is the NPC's
+  current room or `findWorldPath` from the NPC to the approach cell returns a path
+  (it is synchronous: `calculate()` runs inside the call). Unreachable targets are
+  skipped, not failed. This is what stops an NPC choosing a cabinet behind a locked door.
+- **Free:** fewer than `capacity` other NPCs hold a job on it, and it is not on
+  this NPC's failure cooldown.
+- **Claimed item:** an item already in another NPC's carry job is skipped.
 
-### 5.3 Driving the move path
-
-Extend `NPCBehavior.goToAndStay(worldX, worldY, speed, opts = {})` (backwards
-compatible):
-
-- `opts.owner` **(prov.)**: string, e.g. `'needs'`. Stored as `this._moveOwner`
-  and included in the arrival event payload: `npc_arrived:<id>` →
-  `{npcId, x, y, owner}`. Existing listeners ignore the new field.
-- `opts.yieldToPlayer` **(prov.)**: boolean. When true, the `face_player` branch at
-  `npc-behavior.js:796` is allowed even though `_stopOnArrival` is set (the NPC
-  pauses for the player and continues once the player moves away). Default false,
-  so `patrolOverride` behaves exactly as today.
-- Both are cleared in `_triggerGoToStayArrival`.
-
-Also add to `NPCBehaviorManager`: `cancelMove(npcId)`, which clears `_stopOnArrival`,
-`_goToStayDest`, path and velocity and sets `patrol.enabled = false` without
-emitting arrival. Used when a job aborts.
-
-The needs system listens on the wildcard `npc_arrived:*` once and routes by
-`npcId`, acting only when `owner === 'needs'` and the NPC has a job. Arrival does
-not restore the need; it starts the use dwell.
-
-Job phases:
+### 5.3 Jobs and moves
 
 ```
-'use' job:   goto_target → using(useSeconds) → [complete] → returning → idle
-'carry' job: goto_item → (pickup) → goto_target → using(useSeconds) → [complete] → returning → idle
+use:   goto_target → using(useSeconds) → complete → returning → idle
+carry: goto_item → pick up → goto_target → using(useSeconds) → complete → returning → idle
 ```
 
-On **complete**: `level = min(100, level + restores ± jitter)`, set
-`lastSatisfiedAt`, emit `npc_used:<objId>` (section 8), apply `onUse`.
-
-On **returning**: `goToAndStay(home, speed, {owner:'needs', yieldToPlayer:true})`.
-No need is urgent on the way back, so the stillness rule applies and the NPC
-stops for the player. If a need turns urgent on the way back, the selector may
-start a new job from wherever the NPC is (it counts as idle-returning for
-selection; a new job cancels the return).
-
-`_triggerGoToStayArrival` resets `homePosition` to the arrival point. That is
-harmless here: the needs system keeps its own `needsHome`, and
-`checkAndHandleHomePush` working off the latest arrival point is what we want while
-the NPC is at the coffee machine.
-
-**Failure.** If a job's move has not arrived within
-`max(20 s, 3 × straight-line distance / speed)` of needs-clock time, or
-`findWorldPath` returns null (the existing patrol code warns and stalls), the job
-fails: `cancelMove`, log `job_failed`, put that affordance on a 60 s cooldown for
-this NPC, go to `returning`. A failed beat is a log line and a console warning, so
-playtests catch it.
+- Each move: approach cell (5.4), `deadline = now + max(20 s, 3 × distance / speed)`,
+  `goToAndStay(..., {owner:'needs', yieldToPlayer:false})`. Already there (≤12 px) →
+  treated as arrived.
+- Arrival comes from `npc_arrived:*` with `owner === 'needs'`, queued and handled
+  at the next tick.
+- **Pick up:** hide the sprite, make it non-interactive, remove it from
+  `room.objects`, keep it on the NPC record (`_needsCarried`). Emit
+  `npc_picked_up:<itemId>`. If the item is gone (player took it back), abort and go home.
+- **Using:** face the object; after `useSeconds` → complete.
+- **Complete:** add `restores` (± jitter) to the need if the object satisfies it
+  (a carry use by an interest changes no level); set `lastSatisfiedAt`; destroy a
+  carried item; emit `npc_used:<objectId>` (section 7); apply `onUse[objectId]`.
+- **Returning:** `goToAndStay(home, {owner:'needs', yieldToPlayer:true})`; on arrival
+  emit `npc_returned_post:<npcId>`.
+- **Failure:** deadline passed or no approach cell → `npc_job_failed:<npcId>`,
+  cancel the move, drop any carried item at the NPC's feet, 60 s cooldown on that
+  target for this NPC, go home.
+- `npc_left_post:<npcId>` is emitted when a job starts while the NPC is at its post.
 
 ### 5.4 Approach cells
 
-The NPC walks to a cell beside the object. Resolution order: `useFrom` offset;
-else the nearest walkable world-grid cell within 2 tiles of the object's body centre,
-scanning a fixed order (S, E, W, N, then diagonals) so the choice is deterministic.
-Use the existing `findNearestWalkableStartCell` logic as the walkability test.
-On arrival the NPC faces the object (`calculateDirection` toward the object centre,
-`playAnimation('idle', dir)`).
+`useFrom` offset from the object's centre, snapped with
+`findNearestWalkableWorldCell(x, y, 1)`; otherwise
+`findNearestWalkableWorldCell(centre, 3)` (ring scan, deterministic). A floor item
+resolves to its own cell. On arrival the NPC turns to face the object.
 
-### 5.5 Stillness, urgency and conversation (implementable rule)
+### 5.5 Stillness, urgency, conversation
 
-Evaluated per needs NPC at each tick, in this order:
+Per needs NPC per tick, in order:
 
 ```
-if behaviour is KO, hostile, or sprite body disabled:   mode = 'suspended' (no jobs, decay continues)
-elif mode == 'suspended' by script (section 7):          do nothing
-elif inPersonChatWith(npcId):                            mode = 'frozen'
-     // inPersonChatWith: the open minigame (MinigameFramework.currentMinigame) is a
-     //   person-chat whose npcId === npcId. Prefer that over currentConversationNPCId,
-     //   which person-chat swaps transiently. Implementer: confirm the property name
-     //   person-chat exposes for its NPC (this.npcId at person-chat-minigame.js:455).
-     // on entering frozen: remember job + phase, cancelMove, velocity 0, idle anim facing player
-     // the use-dwell timer and the move are paused, not abandoned
-elif mode == 'frozen':                                   // conversation_closed:<npcId> seen, or the check above went false
-     resume: re-issue goToAndStay for the remembered phase (fresh path from where it stands),
-             or continue the dwell; mode = previous mode
-elif mode == 'idle':                                     run selector (5.2). Nothing urgent → hold position.
-elif mode == 'job':                                      advance job; moves use yieldToPlayer:false (urgent → walks on)
-elif mode == 'returning':                                moves use yieldToPlayer:true (not urgent → stops for player)
+if KO / hostile / body disabled:    abort job (drop carried item), blocked; on recovery walk home
+elif scriptSuspended:               do nothing
+elif inPersonChatWith(npc):         mode = frozen: remember mode, pause dwell timer, cancelMove
+elif mode == frozen:                restore mode; re-issue the remembered move from where it stands
+                                    (deadline extended by the frozen time) or continue the dwell
+elif idle / returning:              selector (5.2); nothing → hold position
+elif job:                           advance (5.3)
 ```
 
-What the player sees:
+`inPersonChatWith(id)`: the open minigame is a person-chat for this NPC. Base it on
+the minigame instance's own `npcId`, not on `currentConversationNPCId` alone
+(person-chat swaps it briefly).
 
-- Walk up to an idle needs NPC: it faces you (existing `face_player` state, since
-  patrol is off) and does not move.
-- Walk up while it is heading somewhere because a need is urgent: it keeps going.
-  (Talking to it still freezes it: interaction opens the person-chat, which
-  triggers `frozen`.)
-- Walk up while it is returning home: it stops and faces you; it carries on when
-  you leave.
-- Mid-conversation a need turns urgent: nothing happens until the chat closes,
-  then it leaves.
+Behaviour-layer guard (exists): in `NPCBehavior.update`, a needs NPC in a chat with
+the player gets velocity 0 and returns before `executeState`. Without it an
+in-flight `goToAndStay` keeps walking during the chat.
 
-The behaviour layer also needs one guard: in `NPCBehavior.update`, if the NPC is a
-needs NPC and `inPersonChatWith(npcId)`, set velocity 0 and return before
-`executeState`. Without it, an in-flight `goToAndStay` keeps walking during the
-chat (the `_stopOnArrival` path never pauses). Scope the guard to needs NPCs so no
-existing NPC changes behaviour.
+`goToAndStay(..., {yieldToPlayer:true})` lets the existing `face_player` branch fire
+during the walk home (exists). Player-facing behaviour:
 
-Q1 asks whether *other* needs NPCs should also pause while any person-chat or
-minigame is open. The default proposed here: no. Only the NPC you are talking to
-freezes.
-
----
-
-## 6. Making emergent beats reliable
-
-No duties layer, so reliability comes from the numbers. These rules are what the
-validator checks and what a mission author tunes.
-
-### 6.1 Timing formulas
-
-For a single-need NPC (or the dominant need):
-
-- **First beat** (time until first urgent): `T1 = (initial − urgentAt) / decayPerMin` minutes.
-- **Away window** ≈ travel out + `useSeconds` + travel back.
-- **Period** between departures:
-  `P = (min(100, urgentAt + restores) − urgentAt) / decayPerMin + away` minutes.
-
-Worked example, `caffeine {decayPerMin: 8, urgentAt: 30, initial: 50}`, coffee
-machine `restores: 70, useSeconds: 40`, 10 s of walking each way:
-T1 = 2.5 min; away ≈ 60 s; P = 70/8 + 1 ≈ 9.75 min. The user's original shape
-(no `initial`, so 100) gives T1 = 8.75 min, too slow for a lab. That is why
-`initial` exists.
-
-### 6.2 Guarantees
-
-- **A periodic beat recurs** as long as its affordance is reachable: decay is
-  monotonic, the selector runs every 250 ms when idle, and jobs are never
-  preempted. Worst-case delay after going urgent = the length of one other job
-  already in progress (bounded by its travel + `useSeconds` + failure timeout).
-- **Starvation guard.** With competing needs, `maxUnmetMin` makes a need win
-  outright once it has gone unmet too long. Set it on the beat-bearing need to
-  `T1 + 1 or 2` minutes for the first beat and roughly `P × 1.5` thereafter.
-- **Curiosity is "always ready".** Give a `seeks` need a high `urgentAt` (e.g. 60)
-  and a fast decay (e.g. 40/min, so it is urgent within a minute of any top-up) and
-  `initial: 0`. With nothing tagged in the world it is urgent but has no candidate,
-  so the NPC holds still. When a tagged item appears in `noticeRooms`, the next tick
-  (≤ 250 ms) selects it, unless the NPC is mid-job or in a chat. Worst case is one
-  job length. Give it a higher `weight` than routine needs so it wins ties at the
-  moment of noticing.
-- **Event-triggered re-evaluation.** Ticks every 250 ms make polling cheap, so
-  nothing listens for item placement. Keep it that way; it removes a class of
-  missed-event bugs.
-- **Bounded by design rule:** for any beat a mission relies on, the author states
-  a window ("NPC leaves within 4 min of start; collects a placed item within
-  60 s"). The validator computes T1/P/worst-case from the numbers and warns when
-  the window is not met (section 11).
-- **Things that can still stop a beat**, all logged: affordance in an unloaded room
-  (Q2), no path (blocked door, prop), the player holding a conversation open,
-  the NPC turned hostile/KO, a script suspended needs. The playtest acceptance
-  checks (section 12) cover each.
-
----
-
-## 7. Composing with eventMappings and `patrolOverride`
-
-Scripts win, and the needs system stands aside:
-
-1. A `patrolOverride` arriving on a needs NPC (i.e. `goToAndStay` called with no
-   `owner`, or owner ≠ `'needs'`) **suspends** needs for that NPC: the current job
-   is dropped (no `cancelMove`, since the script's move has replaced it), any
-   carried item is dropped back at the NPC's feet (visible, interactable again),
-   mode = `suspended`. Implement by having `goToAndStay` notify
-   `window.npcNeedsSystem?.onExternalMove(npcId, owner)`.
-2. Needs stay suspended after the scripted move arrives. The NPC stands where the
-   script put it, as today.
-3. A new eventMapping field `needs` **(prov.)** controls the loop explicitly:
-   - `"needs": "resume"`: back to `returning` (walk to `needsHome`) then `idle`.
-   - `"needs": "suspend"`: suspend without moving (e.g. while a scripted scene plays).
-   - `"needs": { "set": { "caffeine": 0 } }`: set levels. This is how a scenario
-     *nudges* a beat while it still plays out through the needs system: the
-     NPC goes for coffee because caffeine is now 0, by the normal route and timing.
-   Handled in `_handleEventMapping` next to `patrolOverride` (`npc-manager.js:~1124`).
-4. **`patrolOverride.resume`:** not needed for needs NPCs. The needs loop issues
-   its own next move, and `"needs": "resume"` is the restore. For NPCs *without*
-   needs, a `resume` that restores the pre-override patrol config is still a useful
-   separate fix, but it is not a prerequisite of this system and is not specified here.
-5. `npc_arrived:<id>` keeps firing for needs moves (now with `owner: 'needs'`), so a
-   scenario mapping on `npc_arrived:<id>` will see every needs arrival. Mappings
-   that only care about scripted arrivals should add a condition on `owner`, or
-   listen to the needs events in section 8 instead. Check existing scenarios that
-   map `npc_arrived:<id>` (as of 2026-11-04 only `lab_physical_pentest`) when needs is added to the same NPC.
-
-Optional small fix in the same area: `patrolOverride.targetObject` **(prov.)**, an
-object id resolved through `window.rooms[*].objects` to world coordinates. This
-removes the current-room limitation of `targetTile` for cross-room scripted moves.
-Not required by the needs system, which resolves object ids itself.
-
----
-
-## 8. Extension points (where meaning gets attached)
-
-The needs system emits only generic events through `window.eventDispatcher`. It
-never sets mission state except through the NPC-declared `onUse` map.
-
-| Event | Payload | When |
+| NPC is… | Player walks up | Player talks to it |
 |---|---|---|
-| `npc_need_urgent:<npcId>` | `{npcId, need, level}` | A need crosses `urgentAt` (once per crossing) |
-| `npc_left_post:<npcId>` | `{npcId, need, targetId}` | A job starts and the NPC leaves `needsHome` |
-| `npc_returned_post:<npcId>` | `{npcId}` | It arrives back at `needsHome` |
-| `npc_picked_up:<itemId>` | `{npcId, itemId, tag}` | Carry step 3 |
-| `npc_used:<objectId>` | `{npcId, objectId, need, itemId \| null, tag \| null, payload}` | A use completes |
-| `npc_job_failed:<npcId>` | `{npcId, need, targetId, reason}` | 5.3 failure |
+| idle at post | faces player, stays | freezes |
+| heading to an option (urgent need or present item) | keeps going | freezes, resumes after |
+| walking home | stops, faces player, carries on when player leaves | freezes |
+| using an object | stays (dwell continues) | freezes, dwell paused |
 
-`payload` on `npc_used` is the NPC's `usePayload`, passed through unchanged
-(structured-cloned so a listener cannot mutate the NPC's copy). It is keyed to the
-**NPC**, so two NPCs using the same object deliver different payloads, and the
-object never holds the data. The needs system does not log `payload` contents in
-its decision log (it logs `payloadPresent: true`).
+---
 
-The "away from post" window is `npc_left_post` → `npc_returned_post`.
+## 6. General drop action (exists)
 
-Attaching meaning, without touching the needs system:
+- An inventory item with `"droppable": true` is dropped when clicked in the
+  inventory (branch in `handleObjectInteraction`, before consumables).
+- It lands at the player's feet, snapped to a walkable cell, in
+  `window.currentPlayerRoom`, as an ordinary takeable world object (the player can
+  pick it up again) with its scenario `id` and `needsTag`.
+- Emits `item_dropped:<itemId>` `{itemId, tag, roomId, x, y}`.
+- **Persistence:** client-side only. `removeFromInventory` does not tell the
+  server, so after a reload an uncollected dropped item is back in the inventory,
+  and an item an NPC used is also back (the server never heard of either). The
+  scenario's globals (set from `item_dropped`/`npc_used`) persist and are what gate
+  progress; mappings must be `onceOnly` so a second drop after reload does no harm.
+  Server-side drop/consume sync is listed as optional work (15).
+- A world-placed tagged item (not dropped, just `needsTag` in the room's objects)
+  works the same way, including one revealed by `revealOnGlobal`.
 
-- Per NPC: `onUse: { "<objectId>": { "setGlobal": "...", "emitEvent": "..." } }`.
-- Per scenario: an eventMapping on any NPC with `"eventPattern": "npc_used:<objectId>"`
-  and a `condition` on the payload's `npcId`, or a listener in engine code.
-- What a payload contains and what using a given object reveals belongs to the
-  scenario author or the separate Cyber Security agent. Those are named hooks
-  here and deliberately empty.
+What a dropped item *is* (a USB device, a QR card) and whether its target
+"inserts" or "scans" it is scenario meaning; the engine only moves it and emits
+events.
+
+---
+
+## 7. Events the system emits
+
+| Event | Payload |
+|---|---|
+| `npc_need_urgent:<npcId>` | `{npcId, need, level}` |
+| `npc_left_post:<npcId>` | `{npcId, need, targetId}` (`need` null for an interest job) |
+| `npc_returned_post:<npcId>` | `{npcId}` |
+| `npc_picked_up:<itemId>` | `{npcId, itemId, tag}` |
+| `npc_used:<objectId>` | `{npcId, objectId, need, itemId, tag, payload, playerNearby}` |
+| `npc_job_failed:<npcId>` | `{npcId, need, targetId, reason}` (`timeout`, `no_approach`) |
+| `item_dropped:<itemId>` | `{itemId, tag, roomId, x, y}` (drop action) |
+| `npc_arrived:<npcId>` | existing, now plus `owner` (`'needs'` or undefined) |
+
+`npc_used` details:
+- `need`: the need satisfied, or `null` for an interest (carry) use.
+- `itemId`, `tag`: the carried item, or `null`.
+- `payload`: structured clone of the NPC's `usePayload` (or `null`). Listeners
+  cannot mutate the NPC's copy.
+- `playerNearby` (prov., **not yet implemented**): `true` when the player is in the
+  NPC's room within 3 tiles (96 px) with a clear line (`canSeePlayerToFace`).
+  Lets a scenario condition on "the player was right there when the NPC used it",
+  which the tailgating beat needs (12.3).
+
+The decision log never contains payload contents (only `payloadPresent`).
+
+---
+
+## 8. Composition with scripts
+
+1. Any `goToAndStay` without `owner:'needs'` (a `patrolOverride`, the
+   conversation walk-home in `npc-manager.js`, anything else) calls
+   `npcNeedsSystem.onExternalMove`: the job is dropped (carried item back on the
+   floor), needs are suspended. The NPC stays where the script leaves it.
+2. `"needs": "resume"` walks it home and re-enables selection. `"suspend"` stops
+   it without moving. `{set:{…}}` sets levels. This is how a scenario nudges a beat
+   while still letting it play out through the needs path (e.g. set `work` to 0 so
+   the NPC goes and uses its PC at the next idle moment).
+3. `patrolOverride.resume` is not needed: the needs loop issues its own moves.
+4. Mappings on `npc_arrived:<id>` see needs arrivals too. A scenario that keeps an
+   old `npc_arrived` beat on a needs NPC must condition on `owner`; better, move
+   the beat to `npc_used:<objectId>`.
 
 ---
 
 ## 9. Determinism
 
-- **Seed.** `scenario.npcNeedsSeed` **(prov.)** if set; else a stable hash of the
-  scenario id. The test bridge can override it. Per NPC:
-  `rng = mulberry32(hash32(seed + ':' + npcId))`, so one NPC's draws don't depend on
-  how many other NPCs exist or their update order.
-- **Use the RNG only for** `jitterPct` (initial levels, top-ups). All other choices
-  are deterministic orderings: need declaration order, path length then object id,
-  NPC id order for capacity claims. Never call `Math.random()` in `npc-needs.js`.
-- **Fixed-step decisions** at 250 ms ticks.
-- **Decision log.** Every state change appends
-  `{tick, npcId, event, need, targetId, level}` to a ring buffer (last 2000 entries),
-  exposed as `window.npcNeedsSystem.getLog()`.
-- **What "identical" means.** In *manual clock* mode (test bridge, below) the
-  needs clock advances only by explicit steps and moves are completed
-  synchronously by the bridge, so the full log, ticks included, is identical for a
-  seed. In live play, travel time depends on frame timing and the player's body
-  blocking corridors, so the **sequence** of `(npcId, event, need, targetId)` is
-  identical for the same seed and player actions, but tick numbers can drift by a
-  few ticks. Tests compare the sequence; manual mode compares everything.
-- **Test bridge** (`systems/test-bridge/`): `__test.needs.setSeed(n)`,
-  `__test.needs.setManualClock(bool)`, `__test.needs.step(ms)`,
-  `__test.needs.state(npcId)`, `__test.needs.log()`, `__test.needs.set(npcId, need, level)`.
+- Per NPC RNG: `mulberry32(fnv1a32(seed + ':' + npcId))`, used only for `jitterPct`.
+- Every other choice is an ordering: declaration order, distance then id, NPC id
+  order for capacity claims. No `Math.random()` in the module.
+- Decision log: `{t: tick, npc, ev, need?, tag?, target?, item?, level?}`, ring
+  buffer of 2000, `npcNeedsSystem.getLog()`. Events: `registered urgent job_start
+  picked_up using used returned_post job_failed job_aborted frozen unfrozen
+  suspended resumed level_set blocked unblocked`.
+- **Manual clock** (`new NPCNeedsSystem(world, {manualClock:true})` / test
+  bridge): the clock moves only through `step(ms)`; with a world whose moves
+  complete at once the log is byte-identical for a seed (node tests do this).
+- **Live:** the sequence `(npc, ev, need/tag, target, item)` repeats for the same
+  seed and player actions; tick numbers can drift a few ticks because walking time
+  depends on frame timing and the player's body.
+- **Test bridge** (not yet implemented): `window.__test.needs` =
+  `{ setSeed(n) /* resets */, setManualClock(bool), step(ms), state(npcId), log(), set(npcId, need, level) }`,
+  all JSON in/out. It controls the needs clock only; it never moves an NPC or
+  triggers a use directly (the bridge's "real input" rule).
 
 ---
 
-## 10. Persistence
+## 10. Reload
 
-Keep it minimal for v1:
-
-- Need levels are **not** saved. After a reload each NPC restarts from `initial`
-  (with the same seeded jitter), so timing after a reload is as predictable as at
-  start. Acceptable for lab missions. Q3 asks whether to save levels.
-- A carried item that has not yet been used is **not** removed from room state; on
-  reload it reappears where it was found and the NPC starts again. The item is
-  removed from room state permanently only when the use completes (through the same
-  removal sync the player pickup uses; the implementer confirms the call in
-  `systems/room-state-sync.js` / `inventory.js`).
-- Globals set by `onUse` persist like any global.
+- Need levels reset to `initial` (same seeded jitter). No state sync.
+- Dropped items: see section 6.
+- Globals set by `onUse` and by scenario mappings persist as usual.
 
 ---
 
-## 11. Validator and schema
+## 11. Validator and schema (not yet implemented)
 
-`scripts/scenario-schema.json` and `scripts/validate_scenario.rb` (known fields
-list, as done for `revealOnGlobal` in cae4d1ac2):
+`scripts/scenario-schema.json` (insert as text; do not re-serialise the file, which
+reformats ~10k lines): NPC `needs interests needsHome needsSpeed usePayload onUse`;
+item `affordance needsTag droppable`; eventMapping `needs`; top level `npcNeedsSeed`.
 
-- Register NPC fields `needs`, `needsHome`, `usePayload`, `onUse`, `needsSpeed`,
-  object fields `affordance`, `needsTag`, mapping field `needs`, scenario field
-  `npcNeedsSeed`.
-- **Errors:** a need with no object anywhere that `satisfies` it (or, for `seeks`,
-  no object that `accepts` the tag); bounds violated; `onUse` / `needsHome` naming a
-  missing object; an NPC with both `needs` and `behavior.patrol.enabled: true`.
-- **Warnings:** an affordance object in a room the NPC cannot reach without a locked
-  door; `urgentAt` ≥ `initial` (urgent from the first tick, usually a slip unless
-  it is a `seeks` need); computed `T1` and `P` per need printed in the report, with a
-  warning when `T1 > 5 min` for any need named in an `onUse` entry.
-- Add the new module to every JS test-harness copy list (see the harness list in
-  `bin/test-js` and the node test runners), or node tests fail with
-  `ERR_MODULE_NOT_FOUND`.
+`scripts/validate_scenario.rb`: add the same names to the known-field lists
+(`known_npc_fields`, `known_item_fields`, `known_event_mapping_fields`,
+`known_top_level`). Put the checks in a new `scripts/validate_npc_needs.rb`
+(`require_relative`, like `validate_social.rb`) called from the common-issues list:
 
----
-
-## 12. Acceptance tests
-
-Node unit tests (`npc-needs.js` with a stub behaviour manager and manual clock) and
-one headless browser check through the test bridge on a small fixture scenario
-(not a mission):
-
-1. **Reproducible.** Same seed, manual clock, the same 20 minutes of steps → two
-   runs produce byte-identical logs. A different seed with `jitterPct > 0` gives a
-   different log.
-2. **Opt-out is unchanged.** An NPC without `needs` (with and without a patrol
-   `behavior`) has the same position trace over 2 minutes with the needs system
-   loaded and absent. `goToAndStay` without `opts` behaves as before (no face-player
-   pause, arrival event still fires, payload gains only `owner: undefined`).
-3. **Periodic absence.** With `caffeine {8, 30, initial 50}` and a coffee machine
-   in the next room: the NPC emits `npc_left_post` within `T1 + 15 s` of start, is
-   away for `useSeconds` plus travel, returns, and leaves again within `P + 15 s`.
-4. **Curiosity.** Reveal a `needsTag` item in the NPC's room → within 30 s (manual
-   clock: within the computed bound) the log shows `npc_picked_up:<item>` then
-   `npc_used:<pc>` with `itemId` set and the NPC's own `npcId`; the item is gone
-   from the world.
-5. **Per-NPC payload.** Two NPCs with different `usePayload` use the same object →
-   two `npc_used:<obj>` events whose `npcId` and `payload` differ; the object's
-   scenario data is unchanged.
-6. **Stillness.** Player stands next to an idle needs NPC for 60 s: it does not
-   move. Player stands next to it while it returns home: it stops, then continues
-   after the player leaves. While a need is urgent it walks past the player.
-7. **Conversation freeze.** Open a person-chat with the NPC mid-walk: velocity 0
-   at once; force the need urgent during the chat; nothing moves until
-   `conversation_closed`, then the job resumes from where it stopped.
-8. **Scripts win.** A `patrolOverride` mapping fires mid-job: the NPC follows the
-   script, the needs log shows `suspended`, no needs move is issued until a
-   `"needs": "resume"` mapping fires.
-9. **Failure is visible.** Block the only path to the affordance: `npc_job_failed`
-   within the timeout, NPC returns home, cooldown respected.
+- **Errors:** bounds; a need with no object anywhere that `satisfies` it; an
+  interest tag with no object that `accepts` it, or no item with that `needsTag`;
+  `needsHome`/`onUse` naming a missing object; `needs`/`interests` together with
+  `behavior.patrol.enabled: true`; `droppable` without `needsTag` (warning only).
+- **Report per need:** `T1 = (initial − urgentAt)/decayPerMin` and
+  `P = (min(100, urgentAt + restores) − urgentAt)/decayPerMin` minutes, using the
+  nearest satisfying object's `restores`.
+- **Warnings:** T1 > 5 min for a need of an NPC that has any `onUse` entry; an
+  affordance or `accepts` target in a room other than the NPC's `needsHome` room
+  ("may be unloaded when needed"; rooms load lazily and the system only sees
+  loaded rooms); an affordance behind a `locked` room from the NPC's room; an
+  interest whose `noticeRooms` excludes every room an item with that tag starts in
+  (fine for droppable items: say "player must drop it in …").
 
 ---
 
-## 13. Out of scope
+## 12. Demo scenario: `lab_physical_pentest` mechanical wiring — TO BE WRITTEN BY opus48
 
-- Duties, required-intent lists, or any layer that guarantees a beat outside the
-  needs numbers. Reliability comes from tuning (section 6) and the validator.
-- Idle wandering or ambient patrol for needs NPCs.
-- Any Cyber Security meaning: what `usePayload` holds, what using an object
-  reveals, capture stores, or how the player observes it. Those are hooks
-  (section 8) for a separate agent.
-- A general player "drop item" action (Q4).
-- Saving need levels across reloads (Q3).
-- Changing `patrolOverride` semantics for NPCs without needs (including a
-  `patrolOverride.resume`).
+## 13. Cyber Security hook contract — TO BE WRITTEN BY opus48
 
----
-
-## 14. Files to touch
-
-| File | Change |
-|---|---|
-| `public/break_escape/js/systems/npc-needs.js` | **New.** Needs state, clock, selector, job FSM, seeded RNG, log, events |
-| `public/break_escape/js/systems/npc-behavior.js` | `goToAndStay` `opts {owner, yieldToPlayer}` (~2129); arrival payload `owner` (~2201); `face_player` guard honours `yieldToPlayer` (~796); conversation guard for needs NPCs in `update` (~656); `onExternalMove` notify; manager `cancelMove` (~174) |
-| `public/break_escape/js/systems/npc-manager.js` | Read `needs`/`needsHome`/`usePayload`/`onUse` into the NPC record (~259); mapping field `needs` beside `patrolOverride` (~1124); optional `targetObject` |
-| `public/break_escape/js/core/game.js` (~2378, where `npcBehaviorManager.update` is called) | Call `npcNeedsSystem.update` after it; construct the system at NPC init |
-| `public/break_escape/js/systems/test-bridge/` | `__test.needs` API (section 9) |
-| `scripts/scenario-schema.json`, `scripts/validate_scenario.rb` | Section 11 |
-| JS test-harness copy lists, node tests | New module + tests in section 12 |
-| `docs/achitechture/NPC_NEEDS_SYSTEM.md` | Mark implemented; keep the field names in sync |
-
----
-
-## 15. Open questions for the user
-
-- **Q1.** While the player is talking to one NPC, should *other* needs NPCs keep
-  going about their needs (proposed), or pause so no beat happens behind the
-  chat window?
-- **Q2.** Affordances and tagged items in rooms the player has not loaded yet are
-  invisible to the system (rooms load lazily). Proposed: needs only work within
-  loaded rooms, and missions put a needs NPC's affordances in rooms that are loaded
-  together (or the validator warns). Alternative: preload those rooms.
-- **Q3.** Is "levels reset to `initial` on reload" acceptable, or should levels
-  be saved through state sync?
-- **Q4.** Is the existing `requiresItem`/`consumesItem` + `revealOnGlobal` pattern
-  enough for "the player drops an item", or should a general inventory drop action
-  be scheduled?
+> Sections 12 and 13 are owned by the opus48 (Opus 4.8) cyber agent. An earlier
+> draft of §12 was removed because it was cut off mid-sentence; do not reconstruct
+> it from memory — rebuild it against the committed engine (`npc-needs.js`,
+> `item-drop.js`) and the generic contract in sections 1–11 above, which is stable:
+> the needs/interests schema (§3), runtime behaviour (§5), the general drop action
+> (§6), the `npc_used` / `npc_job_failed` events and the `usePayload` shape (§7),
+> and script composition (§8). The three beats map to: Dale's caffeine need
+> vacating `staff_pc`; Priya's interest in a player-dropped tagged device she
+> carries to a PC and uses; Len's walk to a badge reader whose `npc_used`
+> (gated on `playerNearby` + the lanyard global) calls the existing `unlockDoor`.
+> Note: engine doors never re-close (`openDoor` destroys the sprite), so the
+> tailgating beat uses an NPC-triggered `unlockDoor`, not a held-open door.
+`staff_pc` gains `"affordance": { "sat
