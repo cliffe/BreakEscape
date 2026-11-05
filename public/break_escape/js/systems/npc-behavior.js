@@ -30,6 +30,16 @@ import { resolveFightStyle, pickFleeHeading } from './fight-styles.js';
 // How long an NPC's "can I see the player to turn to them" answer is reused (canSeePlayerToFace)
 const FACE_SIGHT_MS = 150;
 
+// Stuck watch (_checkPathStuck): an NPC walking a path that neither moves
+// NPC_STUCK_MOVE_PX nor reaches a path node for NPC_STUCK_MS is wedged and
+// recovers. A gap of more than NPC_STUCK_GAP_MS between checks (it paused for the
+// player, dwelt, talked, settled) re-arms the watch. Times on clockNow().
+export const NPC_STUCK_MS = 4000;
+export const NPC_STUCK_MOVE_PX = TILE_SIZE / 2;
+const NPC_STUCK_GAP_MS = 500;
+const NPC_STUCK_NUDGE_MAX_PX = TILE_SIZE;   // never nudge further than one tile
+const NPC_STUCK_PLAYER_PX = TILE_SIZE * 1.5; // the player this close: not wedged, held up
+
 /**
  * NPCBehaviorManager - Manages all NPC behaviors
  *
@@ -1170,6 +1180,10 @@ class NPCBehavior {
                 return; // Let next frame handle the new waypoint
             }
 
+            // Wedged on the way (a corner, a prop, another NPC)? Recover rather
+            // than push at it for ever.
+            if (this._checkPathStuck(time)) return;
+
             // Move toward current waypoint
             const velocityX = (dx / distance) * this.config.patrol.speed;
             const velocityY = (dy / distance) * this.config.patrol.speed;
@@ -1185,6 +1199,120 @@ class NPCBehavior {
             // No path found, choose new target
             this.chooseNewPatrolTarget(time);
         }
+    }
+
+    /**
+     * Stuck watch. Called only from updatePatrol's path-following branch, so it
+     * never runs while the NPC dwells, settles, has arrived (goToAndStay), sits,
+     * talks, is KO or hidden, waits on a route action or has no path. It also
+     * re-arms while a path request is in flight and while the player stands
+     * beside the NPC (the player holding it up is play, not a wedge).
+     * Progress is NPC_STUCK_MOVE_PX of movement or reaching a path node. After
+     * NPC_STUCK_MS without progress it recovers, escalating while the NPC stays
+     * put: 1) re-path to the same target; 2) nudge onto the nearest walkable
+     * cell (at most a tile) and re-path; 3) drop the target, so the patrol
+     * chooses again next frame. Real progress resets the escalation.
+     * @returns {boolean} true when it acted this frame (the caller stops there)
+     */
+    _checkPathStuck(time) {
+        const { x, y } = this.npcBodyPos();
+        const w = this._stuckWatch;
+        const moved = w && (x - w.x) ** 2 + (y - w.y) ** 2 > NPC_STUCK_MOVE_PX ** 2;
+        const advanced = w && w.path === this.currentPath && this.pathIndex > w.pathIndex;
+        if (!w || moved || advanced) {
+            this._stuckWatch = { x, y, since: time, lastSeen: time,
+                path: this.currentPath, pathIndex: this.pathIndex, attempts: 0 };
+            return false;
+        }
+        const rearm = !(time >= w.lastSeen) || time - w.lastSeen > NPC_STUCK_GAP_MS ||
+            this._pathfindingInProgress || !(this.config.patrol.speed > 0) || this._playerBeside(x, y);
+        w.lastSeen = time;
+        w.path = this.currentPath;
+        w.pathIndex = this.pathIndex;
+        if (rearm) {
+            w.x = x; w.y = y; w.since = time;
+            return false;
+        }
+        if (time - w.since < NPC_STUCK_MS) return false;
+
+        w.attempts++;
+        w.since = time;
+        const anchor = this._recoverFromStuck(w.attempts, x, y);
+        w.x = anchor.x; w.y = anchor.y;
+        if (w.attempts >= 3) w.attempts = 0;
+        return true;
+    }
+
+    /** Is the player's body within NPC_STUCK_PLAYER_PX of (x, y)? */
+    _playerBeside(x, y) {
+        const p = window.player;
+        if (!p) return false;
+        const px = p.body?.center?.x ?? p.x;
+        const py = p.body?.center?.y ?? p.y;
+        if (!Number.isFinite(px) || !Number.isFinite(py)) return false;
+        return (px - x) ** 2 + (py - y) ** 2 < NPC_STUCK_PLAYER_PX ** 2;
+    }
+
+    /**
+     * One recovery step for _checkPathStuck. Returns where the NPC now stands
+     * (the stuck watch's new anchor, so a nudge doesn't count as progress).
+     */
+    _recoverFromStuck(attempt, x, y) {
+        const pfm = this.pathfindingManager || window.pathfindingManager;
+        const target = this.patrolTarget;
+        this.sprite.body.setVelocity(0, 0);
+        this.isMoving = false;
+        this._patrolProgress = null;
+        this._needsPathRecalc = false;
+        console.warn(`🧱 [${this.npcId}] No progress for ${NPC_STUCK_MS}ms at (${x.toFixed(0)}, ${y.toFixed(0)}), recovery step ${Math.min(attempt, 3)}`);
+
+        if (attempt >= 3 || !target || typeof pfm?.findWorldPath !== 'function') {
+            this.currentPath = [];
+            this.pathIndex = 0;
+            this.patrolTarget = null;
+            this.pathFollowingActive = false;
+            this._pathRetryAfter = 0;
+            return { x, y };
+        }
+
+        let at = { x, y };
+        if (attempt >= 2) at = this._nudgeToWalkable(pfm, x, y);
+        const from = pfm.findNearestWalkableStartCell?.(at.x, at.y) || at;
+        this._pathfindingInProgress = true;
+        pfm.findWorldPath(from.x, from.y, target.x, target.y, (path) => {
+            this._pathfindingInProgress = false;
+            if (this.patrolTarget !== target) return; // re-targeted meanwhile
+            if (path && path.length > 0) {
+                this.currentPath = path;
+                this.pathIndex = 0;
+                this.pathFollowingActive = true;
+            } else {
+                this.currentPath = [];
+                this.patrolTarget = null;
+                this.pathFollowingActive = false;
+                this._pathRetryAfter = this.clockNow() + 2000;
+            }
+        });
+        return at;
+    }
+
+    /**
+     * Move the NPC's feet onto the centre of the nearest walkable grid cell, if
+     * that is within NPC_STUCK_NUDGE_MAX_PX (an NPC clipping a corner or a
+     * prop's clearance). Returns the new feet position.
+     */
+    _nudgeToWalkable(pfm, x, y) {
+        const cell = pfm.findNearestWalkableStartCell?.(x, y);
+        if (!cell) return { x, y };
+        const dx = cell.x - x, dy = cell.y - y;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < 4 || d2 > NPC_STUCK_NUDGE_MAX_PX ** 2) return { x, y };
+        const sx = this.sprite.x + dx, sy = this.sprite.y + dy;
+        if (typeof this.sprite.body.reset === 'function') this.sprite.body.reset(sx, sy);
+        else if (typeof this.sprite.setPosition === 'function') this.sprite.setPosition(sx, sy);
+        else { this.sprite.x = sx; this.sprite.y = sy; }
+        console.log(`↔️ [${this.npcId}] Nudged ${Math.sqrt(d2).toFixed(0)}px onto a walkable cell`);
+        return { x: cell.x, y: cell.y };
     }
 
     /** Does this patrol follow waypoints (single-room or a multi-room route)? */
