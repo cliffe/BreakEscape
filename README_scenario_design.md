@@ -1033,6 +1033,7 @@ In-world characters with sprites that the player can walk up to and interact wit
 | `behavior.initiallyHidden` | `true` hides NPC at spawn — use `setVisible` in an event mapping to reveal them later |
 | `behavior.facePlayer` / `facePlayerDistance` | The NPC turns to face the player within `facePlayerDistance` pixels (default `true` and `96`); a patrolling NPC with `pauseForPlayer` also stops there |
 | `behavior.personalSpace` | `{ "enabled": true, "distance": 48, "backAwaySpeed": 30, "backAwayDistance": 5 }` — the NPC backs away when the player comes closer than `distance` pixels. Off unless `enabled` |
+| `seated` | `true` or `{ "maxDistance": 40, "chair": "exec_chair_back1", "facing": "west", "facePlayer": true, "fetch": true }`: the NPC sits on the nearest free chair within `maxDistance` px of its spawn (only chairs matching `chair`, an object id, id suffix or image name, when given), and holds it until a scripted move, hostility or a KO gets it up. On a swivel chair it turns to face a nearby player unless `facePlayer` is false. Needs NPCs sit at their PC without this field; `"fetch": false` stops them fetching a chair. Needs its atlas to have seated frames (`pixellab_pipeline.py import --sit-from`); without them it stands. See `docs/achitechture/SEATING.md` |
 
 #### Casting voices
 

@@ -473,8 +473,8 @@ export class PlayerCombat {
     let chairsHit = 0;
     if (window.chairs && window.chairs.length > 0) {
       window.chairs.forEach(chair => {
-        // Only kick swivel chairs with physics bodies
-        if (!chair.isSwivelChair || !chair.body) {
+        // Only kick swivel chairs with physics bodies, and not one someone sits on (seating.js)
+        if (!chair.isSwivelChair || !chair.body || chair.seatedBy) {
           return;
         }
 
