@@ -1,0 +1,36 @@
+{
+  "scenario": "test_needs_sims",
+  "start_room": "office",
+  "nodes": [
+    {
+      "id": "office",
+      "label": "Office",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "kitchen",
+      "label": "Kitchen",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "lounge",
+      "label": "Lounge",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "office",
+      "to": "kitchen",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "lounge",
+      "soft": false
+    }
+  ]
+}

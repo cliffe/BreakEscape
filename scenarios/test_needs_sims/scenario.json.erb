@@ -1,0 +1,371 @@
+{
+  "scenario_brief": "TEST: Needs (Sims-style office day)\n\nA demo of the NPC needs system. Nothing to solve. Five staff get thirsty, hungry, tired and bored, want coffee and want to work, and walk to whatever fixes it before going back to their own desks. Open the kitchen door (west) and the lounge door (east) once so they can get there. Drop the parcel or the dirty mugs from your inventory and watch someone deal with them. The whiteboard by the office's back wall shows the last thing anyone used.",
+  "endGoal": "Demo only: watch the staff.",
+  "startRoom": "office",
+  "startPosition": { "x": 4, "y": 5 },
+  "npcNeedsSeed": "test_needs_sims",
+  "npcWindupMs": 700,
+
+  "actionIcons": {
+    "caffeine": "C",
+    "hunger": "F",
+    "thirst": "W",
+    "rest": "Z",
+    "social": "S",
+    "work": "PC",
+    "curiosity": "?",
+    "fallback": "*"
+  },
+
+  "globalVariables": {
+    "last_activity": "",
+    "tom_had_lunch": false,
+    "amara_opened_parcel": false,
+    "parcel_dropped": false,
+    "mugs_dropped": false
+  },
+
+  "startItemsInInventory": [
+    {
+      "type": "m09_box_taped1",
+      "id": "parcel",
+      "name": "Parcel for Amara",
+      "takeable": true,
+      "droppable": true,
+      "needsTag": "post",
+      "observations": "A small parcel addressed to Amara. Click it in your inventory to put it down on the office floor."
+    },
+    {
+      "type": "dirty_mugs1",
+      "id": "player_mugs",
+      "name": "Dirty Mugs",
+      "takeable": true,
+      "droppable": true,
+      "needsTag": "dirty_mugs",
+      "observations": "Two mugs that need washing. Click them in your inventory to leave them on the floor."
+    }
+  ],
+
+  "objectives": [
+    {
+      "aimId": "watch_the_office",
+      "title": "Watch the office",
+      "description": "Nothing to solve. Each task ticks when you have seen that behaviour happen.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        { "taskId": "see_coffee", "title": "Someone makes a coffee", "type": "custom", "status": "active" },
+        { "taskId": "see_work", "title": "Someone works at their own desk", "type": "custom", "status": "active" },
+        { "taskId": "see_back_at_desk", "title": "Someone walks back to their desk", "type": "custom", "status": "active" },
+        { "taskId": "see_meal", "title": "Someone eats in the kitchen", "type": "custom", "status": "active" },
+        { "taskId": "see_drink", "title": "Someone has a drink at the water cooler", "type": "custom", "status": "active" },
+        { "taskId": "see_rest", "title": "Someone rests on the lounge sofa", "type": "custom", "status": "active" },
+        { "taskId": "see_parcel", "title": "Amara takes a dropped parcel to her desk", "type": "custom", "status": "active" },
+        { "taskId": "see_mugs", "title": "Grace takes dirty mugs to the kitchen", "type": "custom", "status": "active" }
+      ]
+    }
+  ],
+
+  "rooms": {
+    "office": {
+      "type": "room_office",
+      "door_sign": "Office",
+      "connections": { "west": "kitchen", "east": "lounge" },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "amara_pc",
+          "name": "Amara's PC",
+          "takeable": false,
+          "locked": false,
+          "observations": "Amara's desk PC.",
+          "affordance": { "satisfies": "work", "restores": 60, "useSeconds": 10, "accepts": ["post"] }
+        },
+        {
+          "type": "pc",
+          "id": "tom_pc",
+          "name": "Tom's PC",
+          "takeable": false,
+          "locked": false,
+          "observations": "Tom's desk PC. There is a sandwich menu taped to the monitor.",
+          "affordance": { "satisfies": "work", "restores": 60, "useSeconds": 10 }
+        },
+        {
+          "type": "pc",
+          "id": "sanjay_pc",
+          "name": "Sanjay's PC",
+          "takeable": false,
+          "locked": false,
+          "observations": "Sanjay's desk PC.",
+          "affordance": { "satisfies": "work", "restores": 60, "useSeconds": 10 }
+        },
+        {
+          "type": "laptop",
+          "id": "grace_laptop",
+          "name": "Grace's Laptop",
+          "takeable": false,
+          "observations": "Grace's laptop, open on a rota spreadsheet."
+        },
+        {
+          "type": "coffee_station1",
+          "id": "office_coffee",
+          "name": "Office Coffee Station",
+          "position": { "x": 8, "y": 8 },
+          "takeable": false,
+          "observations": "The office coffee station. One person at a time.",
+          "affordance": { "satisfies": "caffeine", "restores": 70, "useSeconds": 12, "useFrom": { "dx": -1, "dy": 0 } }
+        },
+        {
+          "type": "dirty_mugs1",
+          "id": "office_mugs",
+          "name": "Dirty Mugs",
+          "position": { "x": 4, "y": 7 },
+          "takeable": true,
+          "needsTag": "dirty_mugs",
+          "observations": "Someone's left their mugs on the floor again."
+        },
+        {
+          "type": "chalkboard",
+          "id": "activity_board",
+          "name": "Activity Board",
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "observations": "A whiteboard. Someone keeps a note of the last thing anyone used.",
+          "observationVariants": [
+            { "condition": "globalVars.amara_opened_parcel && globalVars.tom_had_lunch", "value": "A whiteboard. Ticked off in the corner: 'Amara's parcel: opened. Tom: has eaten.'" },
+            { "condition": "globalVars.amara_opened_parcel", "value": "A whiteboard. Ticked off in the corner: 'Amara's parcel: opened.'" },
+            { "condition": "globalVars.tom_had_lunch", "value": "A whiteboard. Ticked off in the corner: 'Tom: has eaten.'" },
+            { "condition": "globalVars.parcel_dropped", "value": "A whiteboard. Someone has written 'WHO LEFT THAT ON THE FLOOR?' in the corner." },
+            { "condition": "globalVars.mugs_dropped", "value": "A whiteboard. Someone has written 'WHO LEFT THAT ON THE FLOOR?' in the corner." }
+          ],
+          "text": "LAST SEEN\n\nNothing yet. Give it a minute.",
+          "textVariants": [
+            { "condition": "globalVars.last_activity === 'office_coffee'", "value": "LAST SEEN\n\nSomeone made a coffee at the office coffee station." },
+            { "condition": "globalVars.last_activity === 'kitchen_coffee'", "value": "LAST SEEN\n\nSomeone made a coffee in the kitchen." },
+            { "condition": "globalVars.last_activity === 'fridge'", "value": "LAST SEEN\n\nSomeone had something from the kitchen fridge." },
+            { "condition": "globalVars.last_activity === 'microwave'", "value": "LAST SEEN\n\nSomeone heated their lunch in the microwave." },
+            { "condition": "globalVars.last_activity === 'water_cooler'", "value": "LAST SEEN\n\nSomeone had a drink and a chat at the water cooler." },
+            { "condition": "globalVars.last_activity === 'sofa'", "value": "LAST SEEN\n\nSomeone put their feet up on the lounge sofa." },
+            { "condition": "globalVars.last_activity === 'washing_up'", "value": "LAST SEEN\n\nSomeone took dirty mugs to the washing-up tray." },
+            { "condition": "globalVars.last_activity === 'desk_work'", "value": "LAST SEEN\n\nSomeone got some work done at their own desk." },
+            { "condition": "globalVars.last_activity === 'parcel'", "value": "LAST SEEN\n\nAmara opened a parcel at her desk." }
+          ]
+        }
+      ],
+      "npcs": [
+        {
+          "id": "amara",
+          "displayName": "Amara Okoye",
+          "npcType": "person",
+          "position": { "x": 3, "y": 4 },
+          "spriteSheet": "female_office_worker_v2",
+          "spriteTalk": "assets/characters/female_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
+          "storyPath": "scenarios/test_needs_sims/ink/amara.json",
+          "currentKnot": "start",
+          "voice": { "name": "Aoede", "style": "Office administrator, thirties, British Nigerian, London accent. Warm and quick.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "needsHome": "amara_pc",
+          "needsSpeed": 90,
+          "needs": {
+            "caffeine": { "decayPerMin": 20, "urgentAt": 40, "initial": 58 },
+            "work": { "decayPerMin": 10, "urgentAt": 50, "initial": 72 }
+          },
+          "interests": { "post": { "weight": 3, "noticeRooms": ["office"] } },
+          "usePayload": { "who": "amara" },
+          "onUse": { "amara_pc": { "setGlobal": "amara_opened_parcel" } },
+          "eventMappings": [
+            { "eventPattern": "npc_used:office_coffee", "cooldown": 0, "setGlobal": { "last_activity": "office_coffee" } },
+            { "eventPattern": "npc_used:office_coffee", "onceOnly": true, "cooldown": 0, "completeTask": "see_coffee" },
+            { "eventPattern": "npc_used:kitchen_coffee", "cooldown": 0, "setGlobal": { "last_activity": "kitchen_coffee" } },
+            { "eventPattern": "npc_used:kitchen_coffee", "onceOnly": true, "cooldown": 0, "completeTask": "see_coffee" },
+            { "eventPattern": "npc_used:fridge", "cooldown": 0, "setGlobal": { "last_activity": "fridge" } },
+            { "eventPattern": "npc_used:fridge", "onceOnly": true, "cooldown": 0, "completeTask": "see_meal" },
+            { "eventPattern": "npc_used:microwave", "cooldown": 0, "setGlobal": { "last_activity": "microwave" } },
+            { "eventPattern": "npc_used:microwave", "onceOnly": true, "cooldown": 0, "completeTask": "see_meal" },
+            { "eventPattern": "npc_used:water_cooler", "cooldown": 0, "setGlobal": { "last_activity": "water_cooler" } },
+            { "eventPattern": "npc_used:water_cooler", "onceOnly": true, "cooldown": 0, "completeTask": "see_drink" },
+            { "eventPattern": "npc_used:lounge_sofa", "cooldown": 0, "setGlobal": { "last_activity": "sofa" } },
+            { "eventPattern": "npc_used:lounge_sofa", "onceOnly": true, "cooldown": 0, "completeTask": "see_rest" },
+            { "eventPattern": "npc_used:washing_up_tray", "cooldown": 0, "setGlobal": { "last_activity": "washing_up" } },
+            { "eventPattern": "npc_used:washing_up_tray", "onceOnly": true, "cooldown": 0, "completeTask": "see_mugs" },
+            { "eventPattern": "npc_used:amara_pc", "condition": "data.tag === \"post\"", "cooldown": 0, "setGlobal": { "last_activity": "parcel" } },
+            { "eventPattern": "npc_used:amara_pc", "condition": "data.tag === \"post\"", "onceOnly": true, "cooldown": 0, "completeTask": "see_parcel" },
+            { "eventPattern": "npc_used:amara_pc", "condition": "data.need === \"work\"", "cooldown": 0, "setGlobal": { "last_activity": "desk_work" } },
+            { "eventPattern": "npc_used:amara_pc", "condition": "data.need === \"work\"", "onceOnly": true, "cooldown": 0, "completeTask": "see_work" },
+            { "eventPattern": "npc_used:tom_pc", "cooldown": 0, "setGlobal": { "last_activity": "desk_work" } },
+            { "eventPattern": "npc_used:tom_pc", "onceOnly": true, "cooldown": 0, "completeTask": "see_work" },
+            { "eventPattern": "npc_used:sanjay_pc", "cooldown": 0, "setGlobal": { "last_activity": "desk_work" } },
+            { "eventPattern": "npc_used:sanjay_pc", "onceOnly": true, "cooldown": 0, "completeTask": "see_work" },
+            { "eventPattern": "npc_returned_post:amara", "onceOnly": true, "cooldown": 0, "completeTask": "see_back_at_desk" },
+            { "eventPattern": "npc_returned_post:tom", "onceOnly": true, "cooldown": 0, "completeTask": "see_back_at_desk" },
+            { "eventPattern": "item_dropped:parcel", "onceOnly": true, "cooldown": 0, "setGlobal": { "parcel_dropped": true } },
+            { "eventPattern": "item_dropped:player_mugs", "onceOnly": true, "cooldown": 0, "setGlobal": { "mugs_dropped": true } }
+          ]
+        },
+        {
+          "id": "tom",
+          "displayName": "Tom Fletcher",
+          "npcType": "person",
+          "position": { "x": 3, "y": 6 },
+          "spriteSheet": "male_office_worker_v2",
+          "spriteTalk": "assets/characters/male_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+          "storyPath": "scenarios/test_needs_sims/ink/tom.json",
+          "currentKnot": "start",
+          "voice": { "name": "Charon", "style": "Sales assistant, late twenties, white British, Yorkshire accent. Cheerful and easily distracted.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "needsHome": "tom_pc",
+          "needsSpeed": 80,
+          "needs": {
+            "caffeine": { "decayPerMin": 20, "urgentAt": 40, "initial": 60 },
+            "hunger": { "decayPerMin": 10, "urgentAt": 40, "initial": 65 },
+            "work": { "decayPerMin": 8, "urgentAt": 50, "initial": 80 }
+          },
+          "onUse": { "fridge": { "setGlobal": "tom_had_lunch" } }
+        },
+        {
+          "id": "grace",
+          "displayName": "Grace Lindqvist",
+          "npcType": "person",
+          "position": { "x": 6, "y": 6 },
+          "spriteSheet": "female_blowse_v2",
+          "spriteTalk": "assets/characters/female_blowse_talk.png",
+          "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+          "storyPath": "scenarios/test_needs_sims/ink/grace.json",
+          "currentKnot": "start",
+          "voice": { "name": "Kore", "style": "Office manager, early sixties, Swedish-born, decades in the UK. Kind and brisk.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "needsHome": "grace_laptop",
+          "needsSpeed": 70,
+          "needs": {
+            "rest": { "decayPerMin": 12, "urgentAt": 40, "initial": 64 },
+            "thirst": { "decayPerMin": 15, "urgentAt": 40, "initial": 79 }
+          },
+          "interests": { "dirty_mugs": { "weight": 3, "noticeRooms": ["office", "kitchen"] } }
+        },
+        {
+          "id": "sanjay",
+          "displayName": "Sanjay Mehta",
+          "npcType": "person",
+          "position": { "x": 7, "y": 4 },
+          "spriteSheet": "male_nerd_v2",
+          "spriteTalk": "assets/characters/male_nerd_talk.png",
+          "spriteVisemes": "assets/characters/male_nerd_visemes.png",
+          "storyPath": "scenarios/test_needs_sims/ink/sanjay.json",
+          "currentKnot": "start",
+          "voice": { "name": "Puck", "style": "Developer, mid twenties, British Indian, Leicester accent. Polite and a little shy.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "needsHome": "sanjay_pc",
+          "needsSpeed": 85,
+          "needs": {
+            "work": { "decayPerMin": 15, "urgentAt": 50, "initial": 65 },
+            "hunger": { "decayPerMin": 8, "urgentAt": 40, "initial": 64 },
+            "social": { "decayPerMin": 12, "urgentAt": 40, "initial": 76 }
+          }
+        }
+      ]
+    },
+
+    "kitchen": {
+      "type": "room_break",
+      "door_sign": "Kitchen",
+      "connections": { "east": "office" },
+      "objects": [
+        {
+          "type": "qdc_fridge1",
+          "id": "fridge",
+          "name": "Fridge",
+          "position": { "x": 1, "y": 2 },
+          "takeable": false,
+          "observations": "The office fridge. Mostly yoghurts with names on.",
+          "affordance": { "satisfies": "hunger", "restores": 80, "useSeconds": 15, "useFrom": { "dx": 0, "dy": 1 } }
+        },
+        {
+          "type": "microwave1",
+          "id": "microwave",
+          "name": "Microwave",
+          "position": { "x": 5, "y": 3 },
+          "takeable": false,
+          "observations": "A microwave on the kitchen table.",
+          "affordance": { "satisfies": "hunger", "restores": 60, "useSeconds": 10 }
+        },
+        {
+          "type": "coffee_station1",
+          "id": "kitchen_coffee",
+          "name": "Kitchen Coffee Station",
+          "position": { "x": 6, "y": 8 },
+          "takeable": false,
+          "observations": "The kitchen's coffee station.",
+          "affordance": { "satisfies": "caffeine", "restores": 70, "useSeconds": 12, "useFrom": { "dx": 0, "dy": -1 } }
+        },
+        {
+          "type": "water_cooler1",
+          "id": "water_cooler",
+          "name": "Water Cooler",
+          "position": { "x": 1, "y": 7 },
+          "takeable": false,
+          "observations": "A water cooler. Room for two to stand and chat.",
+          "affordance": { "satisfies": ["thirst", "social"], "restores": 70, "useSeconds": 15, "capacity": 2 }
+        },
+        {
+          "type": "mugs_tray1",
+          "id": "washing_up_tray",
+          "name": "Washing-up Tray",
+          "position": { "x": 3, "y": 3 },
+          "takeable": false,
+          "observations": "A tray for dirty mugs. Somebody will wash them. Eventually.",
+          "affordance": { "accepts": ["dirty_mugs"], "useSeconds": 5 }
+        }
+      ]
+    },
+
+    "lounge": {
+      "type": "room_meeting",
+      "door_sign": "Lounge",
+      "connections": { "west": "office" },
+      "objects": [
+        {
+          "type": "laptop",
+          "id": "rosa_laptop",
+          "name": "Rosa's Laptop",
+          "takeable": false,
+          "observations": "Rosa's laptop, open on next week's plan."
+        },
+        {
+          "type": "leather_sofa1",
+          "id": "lounge_sofa",
+          "name": "Lounge Sofa",
+          "position": { "x": 6, "y": 8 },
+          "takeable": false,
+          "observations": "A leather sofa. Two can sit on it.",
+          "affordance": { "satisfies": "rest", "restores": 80, "useSeconds": 20, "capacity": 2, "useFrom": { "dx": 0, "dy": -1 } }
+        }
+      ],
+      "npcs": [
+        {
+          "id": "rosa",
+          "displayName": "Rosa Delgado",
+          "npcType": "person",
+          "position": { "x": 4, "y": 6 },
+          "spriteSheet": "female_scientist_v2",
+          "spriteTalk": "assets/characters/female_scientist_talk.png",
+          "spriteVisemes": "assets/characters/female_scientist_visemes.png",
+          "storyPath": "scenarios/test_needs_sims/ink/rosa.json",
+          "currentKnot": "start",
+          "voice": { "name": "Leda", "style": "Team lead, forties, Spanish-born, years in the UK. Relaxed and friendly.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "needsHome": "rosa_laptop",
+          "needsSpeed": 85,
+          "needs": {
+            "social": { "decayPerMin": 15, "urgentAt": 40, "initial": 70 },
+            "caffeine": { "decayPerMin": 15, "urgentAt": 40, "initial": 85 },
+            "rest": { "decayPerMin": 10, "urgentAt": 40, "initial": 75 }
+          }
+        }
+      ]
+    }
+  }
+}
