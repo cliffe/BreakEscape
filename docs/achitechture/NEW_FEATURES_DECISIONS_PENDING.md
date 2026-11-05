@@ -36,12 +36,14 @@ Raised by the feature test work (docs/achitechture/NEW_FEATURES_TEST_MATRIX.md) 
 - **When it can happen:** a route NPC's `unlockRoom` loads the room while the player clicks the same door, which is exactly the lab's tailgate moment.
 - **Proposed fix:** keep a per-room in-flight promise and return it to the second caller; un-skip the test.
 - **Recommendation:** fix it. It's small and contained, and the lab's tailgate can hit it.
+- **Outcome:** fixed in ec1dd839f. `loadRoom` keeps a per-room in-flight promise map (cleared when the load settles, success or failure); the already-loaded early return stays. The skipped test is live, plus a new test that a failed load can be retried (7 tests, 0 skipped). Live on test_gate_tailgate (game 518, keyless :3001, headless): a second `loadRoom('staff_room')` issued while Sam's unlock-triggered load was in flight gave 1 room fetch and 1 NPC load, Sam unlocked, loaded and walked through the staff room and back for 30 s, still 1 fetch.
 
 ## D5. A route `unlockRoom` without an `unlockDoor` mapping retries forever without telling anyone (tooling)
 
 - **What happens:** an NPC route action `unlockRoom` only works if the NPC also carries an `unlockDoor` eventMapping for that room (server permission, `game.rb` `npc_mapping_unlocks_door?`). Without one the NPC silently retries at the door forever. It bit test_gate_tailgate (b7a6f8b87), and a reviewer removed the lab's mapping as "dead" (5e12edcd9, restored in 3ad1e358c).
 - **Proposed fix:** a validator error when a route `unlockRoom` has no matching `unlockDoor` mapping on the same NPC, plus a one-time console warning in `_runRouteAction` when the unlock is refused.
 - **Recommendation:** add both.
+- **Outcome:** done. Engine: `_runRouteAction` logs one `console.warn` per NPC+room when the server refuses the unlock, naming the NPC, the room and the `unlockDoor` fix; retry behaviour unchanged; once-only test added to `npc-route-multiroom.test.mjs` (ec1dd839f). Validator: new ERROR in `check_npc_patrol_and_catch_locks` (it landed inside 6b602b2ff, which committed the whole of `validate_scenario.rb` while another agent's work was in it). lab_physical_pentest passes, test_gate_tailgate passes, a temp copy of test_gate_tailgate without Sam's mapping errors. README_scenario_design.md route-action table carries the rule. `bin/test-js` 376/376, `bin/rails test` 899 runs, 0 failures.
 
 ## D6. m07: Ray Hollis never patrols while the player is near the spawn (other mission)
 
