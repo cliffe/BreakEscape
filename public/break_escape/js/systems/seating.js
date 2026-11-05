@@ -397,7 +397,7 @@ function proxyFeetOffset() {
 
 /** Called right after the normal player movement each frame. */
 export function afterPlayerMovement() {
-    if (!state) return;
+    if (!state) { checkPending(); return; }
     const player = window.player;
     if (window.playerHealth?.isKO?.()) { standUp(); return; }
     if (state.jumping) { player.body.setVelocity(0, 0); return; }
@@ -408,9 +408,31 @@ export function afterPlayerMovement() {
     if (player.anims.isPlaying) player.anims.stop(); // no walk/idle animation on the hidden driver
 }
 
-/** Static chairs: a move attempt hops the player off first. */
+/** Static chairs: a move attempt hops the player off first. Any move drops a queued sit. */
 export function onMoveIntent() {
+    pending = null;
     if (state && !state.jumping && state.seat.kind === 'static') standUp();
+}
+
+// A chair tapped from out of reach: sit once the walk there ends in reach.
+let pending = null; // { chair, until, still }
+const PENDING_MS = 8000;
+
+export function queueSit(chair) {
+    pending = { chair, until: Date.now() + PENDING_MS, still: 0 };
+}
+
+function checkPending() {
+    if (!pending) return;
+    const player = window.player;
+    const { chair } = pending;
+    if (Date.now() > pending.until || !chair.active || state) { pending = null; return; }
+    const v = player.body.velocity;
+    pending.still = (v.x === 0 && v.y === 0) ? pending.still + 1 : 0;
+    if (pending.still >= 3 && window.isObjectInInteractionRange?.(chair)) {
+        pending = null;
+        trySit(chair);
+    }
 }
 
 /** Position the chair, the pose sprite and armrest strips (scene postupdate). */
@@ -463,7 +485,7 @@ export function installSeating(scene) {
 }
 
 const seating = {
-    seatSpec, isSeat, isStaticSeatTexture, hasSitFrames, canPlayerSit, trySit, standUp, onJumpKey,
+    seatSpec, isSeat, isStaticSeatTexture, hasSitFrames, canPlayerSit, trySit, standUp, onJumpKey, queueSit,
     isSeated, currentSeat, currentPose, canRoll, afterPlayerMovement, onMoveIntent, place, installSeating,
     chairFacing, setChairFacing, snapFacing
 };

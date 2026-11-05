@@ -2170,8 +2170,8 @@ export async function create() {
                             facePlayerToward(aimX(obj), obj.y); // the object's centre, as the E key faces it
                             if (window.getTutorialManager) window.getTutorialManager().notifyPlayerInteracted();
                             window.handleObjectInteraction(obj);
-                        } else if (obj.isSwivelChair) {
-                            // Chairs: move onto the clicked position (player sits/stands at the chair).
+                        } else if (obj.isSwivelChair && !window.seating?.isSeat(obj)) {
+                            // Swivel props (trolleys, carts): move onto the clicked position.
                             movePlayerToPoint(worldX, worldY);
                         } else {
                             // Object is out of range - walk until it's within reach.
@@ -2221,6 +2221,8 @@ export async function create() {
                                     }
                                 }
                                 movePlayerToPoint(target.x, target.y);
+                                // A chair: sit down on arrival (seating.js)
+                                if (window.seating?.isSeat(obj)) window.seating.queueSit(obj);
                             }
                         }
                         return; // Handled (either interact or move)
@@ -2566,13 +2568,15 @@ function gatherInteractablesNearClick(worldX, worldY) {
                 const data = obj.scenarioData || {};
                 const name = data.name || obj.name || 'Item';
                 const detail = resolveObjectField(data, 'observations', obj.observations || null);
-                // Chairs are kicked (jab); everything else uses the open-hand interact icon.
-                const icon = obj.isSwivelChair ? jabHandIcon() : openHandIcon();
+                // Swivel props that aren't seats are kicked (jab); chairs are sat on, and
+                // everything else uses the open-hand interact icon.
+                const seat = !!window.seating?.isSeat(obj);
+                const icon = obj.isSwivelChair && !seat ? jabHandIcon() : openHandIcon();
                 candidates.push({
-                    label: name,
+                    label: seat ? `Sit: ${name}` : name,
                     detail,
                     icon,
-                    isChair: !!obj.isSwivelChair,
+                    isChair: !!obj.isSwivelChair || seat,
                     onSelect: () => {
                         facePlayerToward(aimX(obj), obj.y); // the object's centre, as the E key faces it
                         if (window.getTutorialManager) window.getTutorialManager().notifyPlayerInteracted();
