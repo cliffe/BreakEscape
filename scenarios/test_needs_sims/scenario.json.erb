@@ -62,7 +62,8 @@
         { "taskId": "see_drink", "title": "Someone has a drink at the water cooler", "type": "custom", "status": "active" },
         { "taskId": "see_rest", "title": "Someone rests on the lounge sofa", "type": "custom", "status": "active" },
         { "taskId": "see_parcel", "title": "Amara takes a dropped parcel to her desk", "type": "custom", "status": "active" },
-        { "taskId": "see_mugs", "title": "Grace takes dirty mugs to the kitchen", "type": "custom", "status": "active" }
+        { "taskId": "see_mugs", "title": "Grace takes dirty mugs to the kitchen", "type": "custom", "status": "active" },
+        { "taskId": "see_caught", "title": "Get caught at someone's desk", "type": "custom", "status": "active" }
       ]
     }
   ],
@@ -225,7 +226,10 @@
             "hunger": { "decayPerMin": 10, "urgentAt": 40, "initial": 65 },
             "work": { "decayPerMin": 8, "urgentAt": 50, "initial": 80 }
           },
-          "onUse": { "fridge": { "setGlobal": "tom_had_lunch" } }
+          "onUse": { "fridge": { "setGlobal": "tom_had_lunch" } },
+          "eventMappings": [
+            { "eventPattern": "npc_caught_at_post:tom", "cooldown": 30000, "bark": "Er, that's my desk. Can I help you?", "completeTask": "see_caught" }
+          ]
         },
         {
           "id": "grace",

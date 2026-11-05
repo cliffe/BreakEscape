@@ -56,3 +56,49 @@ test('snapFacing keeps a valid facing and picks the nearest otherwise', () => {
     assert.equal(snapFacing('west', ['north', 'south']), 'north'); // a tie keeps list order
     assert.equal(COMPASS.length, 8);
 });
+
+// ── slice 2 (OFFICE_LIFE_PLAN 2.11): seated through an own-desk use ────────────
+test('needsStop: an own-desk work use keeps the home stop in every phase and on the returning tick after it', async () => {
+    const { NPCNeedsSystem, NEEDS_TICK_MS } = await import('../../public/break_escape/js/systems/npc-needs.js');
+    const { makeWorld } = await import('./fixtures/needs-stub-world.mjs');
+    const rec = { id: 'clerk', needsHome: 'own_pc', needs: { work: { decayPerMin: 20, urgentAt: 40, initial: 30, jitterPct: 0 } } };
+    const w = makeWorld({ npcs: { clerk: { pos: { x: 100, y: 100 }, rec } },
+        objects: [{ id: 'own_pc', x: 100, y: 68, affordance: { satisfies: 'work', restores: 60, useSeconds: 10 } }] });
+    const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+    w.attach(sys);
+    sys.registerAll();
+    const prev = window.npcManager;
+    window.npcManager = { getNPC: id => (id === 'clerk' ? rec : null) };
+    try {
+        const seen = new Set();
+        for (let i = 0; i < (10 * 60000) / NEEDS_TICK_MS; i++) {
+            sys.step(NEEDS_TICK_MS);
+            const ns = sys.states.get('clerk');
+            seen.add(ns.mode + (ns.job ? ':' + ns.job.phase : ''));
+            const stop = seating.needsStop(ns);
+            assert.ok(stop, `null stop at tick ${sys.tickCount} (${ns.mode}${ns.job ? ' ' + ns.job.phase : ''})`);
+            assert.equal(stop.key, 'at:own_pc');
+            assert.equal(stop.post, true);
+        }
+        assert.ok(seen.has('job:using') && seen.has('returning') && seen.has('idle'), [...seen].join(','));
+        assert.ok(sys.getLog().filter(e => e.ev === 'used' && e.target === 'own_pc').length >= 2);
+    } finally {
+        window.npcManager = prev;
+    }
+});
+
+test('needsStop: a real trip still unseats (null while walking out and back)', () => {
+    const prev = window.npcManager;
+    window.npcManager = { getNPC: () => ({ needsHome: 'own_pc' }) };
+    try {
+        const job = (phase, targetId) => ({ kind: 'use', phase, targetId, need: 'caffeine' });
+        assert.equal(seating.needsStop({ npcId: 'c', mode: 'job', atPost: false, job: job('goto_target', 'coffee') }), null);
+        assert.equal(seating.needsStop({ npcId: 'c', mode: 'returning', atPost: false, job: null }), null);
+        assert.equal(seating.needsStop({ npcId: 'c', mode: 'job', atPost: false, job: job('using', 'coffee') }).key, 'at:coffee');
+        // Own desk picked while away (walking back to it): not at the post, so no stop until using
+        assert.equal(seating.needsStop({ npcId: 'c', mode: 'job', atPost: false, job: job('goto_target', 'own_pc') }), null);
+        assert.equal(seating.needsStop({ npcId: 'c', mode: 'job', atPost: true, job: job('goto_target', 'own_pc') }).key, 'at:own_pc');
+    } finally {
+        window.npcManager = prev;
+    }
+});

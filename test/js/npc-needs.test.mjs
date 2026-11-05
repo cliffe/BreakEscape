@@ -534,3 +534,126 @@ test('tick-cost steps 1-3 leave the office() decision logs byte-identical', () =
         }
     }
 });
+
+test('an own-desk use that is aborted emits neither left nor returned, and the owner stays at the post', () => {
+    const w = makeWorld(ownDeskCfg());
+    const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+    w.attach(sys);
+    sys.registerAll();
+    let guard = 0;
+    while (sys.getState('clerk').job?.phase !== 'using' && guard++ < 4000) sys.step(NEEDS_TICK_MS);
+    assert.equal(sys.getState('clerk').job.targetId, 'own_pc');
+    sys.control('clerk', 'suspend');
+    assert.ok(sys.getLog().some(e => e.npc === 'clerk' && e.ev === 'job_aborted' && e.target === 'own_pc'));
+    sys.control('clerk', 'resume');
+    sys.step(2000);
+    const names = w.calls.emits.map(e => e.name);
+    assert.ok(!names.includes('npc_left_post:clerk'));
+    assert.ok(!names.includes('npc_returned_post:clerk'));
+    assert.equal(sys.getState('clerk').atPost, true);
+});
+
+// ── slice 2: caught at the desk, expectedAwayMs ─────────────────────────────────
+
+/** office() with no jitter, run until the clerk's first npc_left_post. */
+function firstLeave(playerAtPost) {
+    const cfg = office();
+    cfg.npcs.clerk.rec.needs.caffeine.jitterPct = 0;
+    const w = makeWorld(cfg);
+    if (playerAtPost) w.world.playerAtPost = playerAtPost;
+    w.world.playerProximity = () => ({ nearby: false, distance: 250 });
+    const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+    w.attach(sys);
+    sys.registerAll();
+    return { w, sys };
+}
+
+test('npc_left_post carries expectedAwayMs (walk out and back at speedFor, plus useSeconds) and player proximity', () => {
+    const { w, sys } = firstLeave();
+    sys.step(4 * 60000);
+    const left = w.calls.emits.find(e => e.name === 'npc_left_post:clerk');
+    const back = w.calls.emits.find(e => e.name === 'npc_returned_post:clerk');
+    assert.ok(left && back);
+    // clerk at (100,100) = home; coffee approach cell (300,332); speed 80 px/s; dwell 40 s
+    const walk = 2 * Math.hypot(200, 232) / 80 * 1000;
+    assert.equal(left.data.expectedAwayMs, Math.round(walk + 40000));
+    assert.equal(left.data.targetId, 'coffee_machine');
+    assert.equal(left.data.playerNearby, false);
+    assert.equal(left.data.playerDistance, 250);
+    assert.equal(back.data.playerDistance, 250);
+});
+
+test('expectedAwayMs for a carry includes the leg via the item', () => {
+    const cfg = office();
+    cfg.npcs.clerk.rec.interests = { found_item: { weight: 5 } };
+    cfg.objects.push({ id: 'thing', x: 100, y: 300, needsTag: 'found_item' });
+    const w = makeWorld(cfg);
+    const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+    w.attach(sys);
+    sys.registerAll();
+    sys.step(NEEDS_TICK_MS * 2);
+    const left = w.calls.emits.find(e => e.name === 'npc_left_post:clerk');
+    assert.ok(left, 'left for the item');
+    // (100,100) -> thing cell (100,332) -> clerk_pc cell (100,100) -> home (100,100); dwell 10 s
+    assert.equal(left.data.expectedAwayMs, Math.round(232 * 2 / 80 * 1000 + 10000));
+});
+
+test('caught at the desk: once per return, before npc_returned_post, with distance and inMinigame', () => {
+    const { w, sys } = firstLeave(() => ({ distance: 20.4, inMinigame: false }));
+    sys.step(20 * 60000);
+    const names = w.calls.emits.map(e => e.name);
+    const caught = w.calls.emits.filter(e => e.name === 'npc_caught_at_post:clerk');
+    const backs = names.filter(n => n === 'npc_returned_post:clerk').length;
+    assert.ok(backs >= 2, `returns: ${backs}`);
+    assert.equal(caught.length, backs, 'one catch per return');
+    assert.ok(names.indexOf('npc_caught_at_post:clerk') < names.indexOf('npc_returned_post:clerk'));
+    assert.deepEqual(caught[0].data, { npcId: 'clerk', objectId: 'clerk_pc', playerDistance: 20, inMinigame: false });
+    assert.ok(sys.getLog().some(e => e.ev === 'caught_at_post'));
+});
+
+test('caught at the desk: a minigame open on the home object counts from any distance', () => {
+    const { w, sys } = firstLeave((id, home) => ({ distance: null, inMinigame: home.objectId === 'clerk_pc' }));
+    sys.step(4 * 60000);
+    const caught = w.calls.emits.find(e => e.name === 'npc_caught_at_post:clerk');
+    assert.deepEqual(caught?.data, { npcId: 'clerk', objectId: 'clerk_pc', playerDistance: null, inMinigame: true });
+});
+
+test('not caught when the player is elsewhere, or (with the player at the desk) after an own-desk use', () => {
+    const far = firstLeave(() => ({ distance: 49, inMinigame: false }));
+    far.sys.step(10 * 60000);
+    assert.ok(far.w.calls.emits.some(e => e.name === 'npc_returned_post:clerk'));
+    assert.ok(!far.w.calls.emits.some(e => e.name === 'npc_caught_at_post:clerk'));
+
+    const w = makeWorld(ownDeskCfg());
+    w.world.playerAtPost = () => ({ distance: 10, inMinigame: true });
+    const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+    w.attach(sys);
+    sys.registerAll();
+    sys.step(10 * 60000);
+    assert.ok(sys.getLog().some(e => e.ev === 'used' && e.target === 'own_pc'));
+    assert.ok(!w.calls.emits.some(e => e.name === 'npc_caught_at_post:clerk'));
+});
+
+test('caught at the desk: not while the returning NPC is still in another room', () => {
+    const cfg = office();
+    cfg.npcs.clerk.rec.needs.caffeine.jitterPct = 0;
+    const w = makeWorld({ ...cfg, arrive: false });
+    w.world.playerAtPost = () => ({ distance: 5, inMinigame: false });
+    const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+    w.attach(sys);
+    sys.registerAll();
+    const arriveAt = (x, y) => { w.pos.clerk.x = x; w.pos.clerk.y = y; sys.onArrived('clerk', 'needs'); };
+    let guard = 0;
+    while (sys.getState('clerk').job?.phase !== 'goto_target' && guard++ < 4000) sys.step(NEEDS_TICK_MS);
+    w.pos.clerk.roomId = 'kitchen';
+    arriveAt(300, 332);
+    sys.step(41000);                                   // 40 s use, then returning
+    assert.equal(sys.getState('clerk').mode, 'returning');
+    const caught = () => w.calls.emits.filter(e => e.name === 'npc_caught_at_post:clerk').length;
+    assert.equal(caught(), 0, 'still in the kitchen');
+    w.pos.clerk.roomId = 'office';
+    sys.step(NEEDS_TICK_MS);
+    assert.equal(caught(), 1, 'caught once back in the office');
+    sys.step(NEEDS_TICK_MS * 4);
+    assert.equal(caught(), 1, 'once per return');
+});

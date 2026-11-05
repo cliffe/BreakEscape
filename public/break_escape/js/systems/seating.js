@@ -812,9 +812,16 @@ const FETCH_RANGE = 192;    // px to look for a chair to fetch
 const FETCH_TIMEOUT_MS = 15000;
 
 /** Where a needs NPC is parked: { key, targetId } or null while it's on the move. */
-function needsStop(ns) {
+export function needsStop(ns) {
     const home = window.npcManager?.getNPC?.(ns.npcId)?.needsHome;
     const homeId = typeof home === 'string' ? home : null;
+    // Own-desk work never leaves the post (npc-needs _atOwnPost): the home stop in every phase
+    // (start, goto_target, using) and on the one `returning` tick after it, so the key never
+    // changes and the NPC stays seated (OFFICE_LIFE_PLAN 2.11)
+    const ownDesk = ns.atPost && ns.mode === 'job' && ns.job?.kind === 'use' && homeId && ns.job.targetId === homeId;
+    if (ownDesk || (ns.mode === 'returning' && ns.atPost)) {
+        return { key: `at:${homeId || 'post'}`, targetId: homeId, post: true, need: ownDesk ? ns.job.need : undefined };
+    }
     // Keyed on the object, so finishing work at one's own desk doesn't stand the NPC up
     if (ns.mode === 'job' && ns.job?.phase === 'using') {
         return { key: `at:${ns.job.targetId}`, targetId: ns.job.targetId, post: ns.job.targetId === homeId, need: ns.job.need };

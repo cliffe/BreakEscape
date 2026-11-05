@@ -33,7 +33,8 @@
  *
  * Generic: this module knows nothing of what a workstation holds. State is not saved across a
  * reload (the needs system restarts with the NPCs at their posts), so it resets to "owner
- * present, screen open". Objects are found on demand (live room sprites first, then the
+ * present, screen open", and install() writes both globals false for every workstation so a
+ * save taken during an absence does not keep the "away" or "locked" text. Objects are found on demand (live room sprites first, then the
  * scenario), because rooms and their objects load lazily.
  */
 
@@ -83,7 +84,21 @@ export class WorkstationState {
     install() {
         this.env.on('npc_left_post:*', (d) => this.onLeft(d?.npcId));
         this.env.on('npc_returned_post:*', (d) => this.onReturned(d?.npcId));
+        this.resetGlobals();
         return this;
+    }
+
+    /**
+     * Every workstation starts attended and open: after a reload the NPCs are back at their posts
+     * and the away map is empty, but saved globals may still say "away"/"locked" from the save.
+     */
+    resetGlobals() {
+        const seen = new Set();
+        for (const data of this.env.objects()) {
+            if (!isWorkstation(data) || seen.has(data.id)) continue;
+            seen.add(data.id);
+            this._publish(data);   // the away map is empty here: both globals false
+        }
     }
 
     _stationsOf(npcId) {

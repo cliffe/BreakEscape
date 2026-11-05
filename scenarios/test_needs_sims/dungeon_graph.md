@@ -11,7 +11,7 @@ A demo of the NPC needs system. Nothing to solve. Five staff get thirsty, hungry
 | Metric | Value |
 |---|---|
 | Story aims | 1 |
-| Total tasks | 8 (0 optional) |
+| Total tasks | 9 (0 optional) |
 | VM flag challenges | 0 |
 | Physical locks | 0 |
 | AND-gate convergences | 0 |

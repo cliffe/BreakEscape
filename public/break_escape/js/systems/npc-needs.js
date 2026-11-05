@@ -25,6 +25,7 @@ const FAIL_COOLDOWN_MS = 60000;
 const HOME_EPS = 12;
 const HOME_RETRY_TICKS = 4;   // provisional needsHome re-lookup: once a second
 const SELECT_BACKOFF_TICKS = 4; // a selection that path-searched and found nothing retries after 1 s
+const CAUGHT_RADIUS = 48;     // px (1.5 tiles) from the home approach cell: "you were in my chair"
 
 export function hash32(str) {
     let h = 0x811c9dc5;
@@ -420,13 +421,16 @@ export class NPCNeedsSystem {
 
         const arrived = this._arrivals.delete(id);
 
+        // Coming back from a real leave: is the player at the desk? (once per return)
+        if (s.mode === 'returning' && !s.atPost && !s.caughtEmitted) this._checkCaught(s, pos);
+
         if (s.mode === 'returning' && arrived) {
             s.mode = 'idle';
             // Only a real trip emits; a session at one's own post object never left it
             if (!s.atPost) {
                 s.atPost = true;
                 this._log(id, 'returned_post');
-                this._emit(`npc_returned_post:${id}`, { npcId: id });
+                this._emit(`npc_returned_post:${id}`, { npcId: id, ...this._playerProximity(id) });
             }
         }
 
@@ -623,9 +627,54 @@ export class NPCNeedsSystem {
         const id = s.npcId;
         if (s.atPost && !this._atOwnPost(s)) {
             s.atPost = false;
-            this._emit(`npc_left_post:${id}`, { npcId: id, need: s.job.need, targetId: s.job.targetId });
+            s.caughtEmitted = false;
+            this._emit(`npc_left_post:${id}`, {
+                npcId: id, need: s.job.need, targetId: s.job.targetId,
+                expectedAwayMs: this._expectedAwayMs(s), ...this._playerProximity(id)
+            });
         }
         this._moveForPhase(s);
+    }
+
+    /**
+     * Rough length of this absence: straight-line walk out and back at the NPC's needs speed (via
+     * the item for a carry) plus the target's dwell. A lower bound: paths round furniture and
+     * waits for a busy target make the real absence longer.
+     */
+    _expectedAwayMs(s) {
+        const job = s.job;
+        const start = this.world.npcPos(s.npcId) || s.home;
+        if (!job || !start) return null;
+        const cellOf = (oid) => { const o = this.world.getObject(oid); return o ? { o, c: this.world.approachCell(o) } : null; };
+        const legs = [start];
+        if (job.kind === 'carry' && job.itemId) { const it = cellOf(job.itemId); if (it?.c) legs.push(it.c); }
+        const t = cellOf(job.targetId);
+        if (!t?.c) return null;
+        legs.push(t.c, s.home || start);
+        let dist = 0;
+        for (let i = 1; i < legs.length; i++) dist += Math.hypot(legs[i].x - legs[i - 1].x, legs[i].y - legs[i - 1].y);
+        const speed = Math.max(1, Number(this.world.speedFor(s.npcId)) || 80);
+        const secs = Number(t.o.affordance?.useSeconds);
+        const useMs = (Number.isFinite(secs) ? clamp(secs, 0, 600) : 20) * 1000;
+        return Math.round(dist / speed * 1000 + useMs);
+    }
+
+    /**
+     * While an NPC walks back from a real leave and is in its home room: the player within 1.5
+     * tiles of the home object's approach cell, or with a minigame open on that object, emits
+     * npc_caught_at_post:<npcId> once per return. Needs world.playerAtPost (absent: never).
+     */
+    _checkCaught(s, pos) {
+        const home = s.home;
+        if (!home?.objectId || typeof this.world.playerAtPost !== 'function') return;
+        if (home.roomId && pos?.roomId && pos.roomId !== home.roomId) return;
+        const p = this.world.playerAtPost(s.npcId, home) || {};
+        const near = Number.isFinite(p.distance) && p.distance <= CAUGHT_RADIUS;
+        if (!near && !p.inMinigame) return;
+        s.caughtEmitted = true;
+        const playerDistance = Number.isFinite(p.distance) ? Math.round(p.distance) : null;
+        this._log(s.npcId, 'caught_at_post', { target: home.objectId, playerDistance, inMinigame: !!p.inMinigame });
+        this._emit(`npc_caught_at_post:${s.npcId}`, { npcId: s.npcId, objectId: home.objectId, playerDistance, inMinigame: !!p.inMinigame });
     }
 
     _moveForPhase(s) {
@@ -952,6 +1001,21 @@ export function createEngineWorld() {
             const b = behaviour(id);
             if (b?.canSeePlayerToFace) { try { clear = !!b.canSeePlayerToFace({ x: pr.x, y: pr.y }); } catch (e) { clear = true; } }
             return { nearby: sameRoom && distance <= 96 && clear, distance };
+        },
+        // For npc_caught_at_post: the player's distance to an NPC's home point (null when the
+        // player is in another room) and whether the open minigame belongs to the home object.
+        // PC-type minigames carry their object in a param (lockable, sprite, containerItem).
+        playerAtPost(id, home) {
+            const pl = W().player;
+            let distance = null;
+            if (pl && (!W().currentPlayerRoom || !home.roomId || W().currentPlayerRoom === home.roomId)) {
+                const pr = pl.body?.center || { x: pl.x, y: pl.y };
+                distance = Math.hypot(pr.x - home.x, pr.y - home.y);
+            }
+            const params = W().MinigameFramework?.currentMinigame?.params;
+            const inMinigame = !!(params && home.objectId && Object.values(params).some(v =>
+                v && typeof v === 'object' && (v.scenarioData?.id === home.objectId || v.objectId === home.objectId)));
+            return { distance, inMinigame };
         },
         tileToWorld(roomId, x, y) {
             const room = W().rooms?.[roomId];

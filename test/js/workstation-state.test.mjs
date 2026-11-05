@@ -155,3 +155,15 @@ test('an own-desk work session keeps the owner present and the screen unchanged;
     assert.equal(trip.globals.pc_a_owner_away, false);
     assert.ok('pc_a_owner_away' in trip.globals, 'away flag was written by the trip');
 });
+
+test('install resets saved away/locked globals to false (a reload puts every owner back at the desk)', () => {
+    const globals = { pc_a_owner_away: true, pc_a_screen_locked: true, pc_b_owner_away: true, other: true };
+    const env = {
+        objects: () => [{ id: 'pc_a', workstation: true }, { id: 'pc_b', locksScreenOnLeave: false }, { id: 'lamp' }],
+        npcs: () => [{ id: 'ann', needsHome: 'pc_a' }, { id: 'bob', needsHome: 'pc_b' }],
+        on: () => {}, emit: () => {}, setGlobal: (k, v) => { globals[k] = v; }, roll: () => 0.5
+    };
+    const ws = new WorkstationState(env).install();
+    assert.deepEqual(globals, { pc_a_owner_away: false, pc_a_screen_locked: false, pc_b_owner_away: false, pc_b_screen_locked: false, other: true });
+    assert.equal(ws.onInteract('pc_a'), 'attended');
+});
