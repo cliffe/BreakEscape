@@ -99,7 +99,7 @@ test('a blocked patroller re-targets after a bump that used the NPC clock', () =
     let retargeted = false;
     const orig = b.chooseNewPatrolTarget;
     b.chooseNewPatrolTarget = function (t) { retargeted = true; return orig.call(this, t); };
-    for (let i = 0; i < 60; i++) b.step(100, 0); // 6 s pressed against something
+    for (let i = 0; i < 80; i++) b.step(100, 0); // 8 s pressed against something (interval + stall window)
     assert.ok(retargeted, 'stall re-target never fired');
 });
 
@@ -110,7 +110,7 @@ test('a timer stamped from Date.now() (the old bug) no longer freezes the patrol
     let retargeted = false;
     const orig = b.chooseNewPatrolTarget;
     b.chooseNewPatrolTarget = function (t) { retargeted = true; return orig.call(this, t); };
-    for (let i = 0; i < 60; i++) b.step(100, 0);
+    for (let i = 0; i < 80; i++) b.step(100, 0);
     assert.ok(b.lastPatrolChange < 1e11, 'foreign stamp was not pulled back to the scene clock');
     assert.ok(retargeted, 'stall re-target never fired');
 });
