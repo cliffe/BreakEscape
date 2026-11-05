@@ -2020,6 +2020,97 @@ def check_npc_patrol_and_catch_locks(json_data, repo_root = nil, engine_cuts_leg
   issues
 end
 
+# A scenario-side `give_item` action (timers, eventMappings, triggerOnInteract ...) only
+# reaches the player if the server's validate_item_collectible accepts the add
+# (games_controller.rb): the item must be always-allowed (notepad), a decor cup, a start
+# item, or match (ItemIdentity.addressed_by?: type, then id / opens_lock / keyId, else
+# name) a takeable object in a room, a container's contents, a flag station or an NPC's
+# itemsHeld. A reward with no such world object is refused and the player never gets it
+# (lab_physical_pentest F11). Ink #give_item needs no extra check here: it names an NPC
+# itemsHeld entry, which the ink cross-reference in check_ink_files already requires.
+GIVE_ITEM_ALWAYS_ALLOWED = %w[notepad].freeze
+GIVE_ITEM_DECOR_CUPS = %w[office-misc-cup office-misc-cup2 office-misc-cup3 office-misc-cup4
+                          office-misc-cup5 coffee_cups1 mugs_tray1].freeze
+
+def check_give_item_collectible(json_data)
+  issues = []
+  rooms = json_data['rooms'].is_a?(Hash) ? json_data['rooms'] : {}
+
+  identities = lambda do |o|
+    ids = [o['id'], o['opens_lock'], o['key_id'], o['keyId']].compact.map(&:to_s).reject(&:empty?)
+    ids.uniq
+  end
+  # Mirrors ItemIdentity.addressed_by?(obj, type, id, name)
+  addressed = lambda do |obj, type, id, name|
+    next false unless obj.is_a?(Hash) && obj['type'] == type
+    ids = identities.call(obj)
+    next ids.include?(id.to_s) if id && !id.to_s.empty? && ids.any?
+    next false if obj['name'].to_s.empty?
+    [name, id].any? { |n| n && n.to_s == obj['name'].to_s }
+  end
+
+  # Every candidate holder: [match_target, room_id, kind, locked_room, locked_container]
+  holders = []
+  rooms.each do |rid, room|
+    next unless room.is_a?(Hash)
+    room_locked = room['locked'] == true
+    Array(room['objects']).each do |obj|
+      next unless obj.is_a?(Hash)
+      holders << [obj, rid, :room, room_locked, false]
+      Array(obj['contents']).each { |c| holders << [c, rid, :container, room_locked, obj['locked'] == true] if c.is_a?(Hash) }
+      if obj['type'] == 'flag-station'
+        Array(obj['itemsHeld']).each { |c| holders << [c, rid, :flag_station, room_locked, false] if c.is_a?(Hash) }
+      end
+    end
+    Array(room['npcs']).each do |npc|
+      next unless npc.is_a?(Hash)
+      Array(npc['itemsHeld']).each { |c| holders << [c, rid, :npc, room_locked, false] if c.is_a?(Hash) }
+    end
+  end
+  start_items = Array(json_data['startItemsInInventory']).select { |i| i.is_a?(Hash) }
+
+  walk = lambda do |node, path|
+    case node
+    when Hash
+      if node['type'] == 'give_item' && node['item'].is_a?(Hash) && node['item']['type'].is_a?(String)
+        item = node['item']
+        type = item['type']
+        id = identities.call(item).first
+        name = item['name']
+        label = "#{type}#{id ? "/#{id}" : ''}"
+        skip = GIVE_ITEM_ALWAYS_ALLOWED.include?(type) ||
+               (item['decor'] == true && GIVE_ITEM_DECOR_CUPS.include?(type) && item['id']) ||
+               start_items.any? { |si| si['type'] == type && (si['id'] == id || si['name'] == name) }
+        unless skip
+          found = holders.select { |h, *| addressed.call(h, type, id, name) }
+          if found.empty?
+            issues << "❌ ERROR: '#{path}' is a give_item for '#{label}', but no object in the scenario has that type and id. " \
+                      "The server's validate_item_collectible refuses an item it cannot find, so the player never receives it. " \
+                      "Fix: add a takeable, active:false object with the same type and id to the room where it should come from."
+          elsif found.none? { |h, *| h['takeable'] }
+            issues << "❌ ERROR: '#{path}' is a give_item for '#{label}', but the matching object in " \
+                      "#{found.map { |_, r, *| "'#{r}'" }.uniq.join(', ')} is not takeable, so the server refuses it. " \
+                      "Fix: set takeable: true on that object."
+          else
+            ok = found.select { |h, *| h['takeable'] }
+            if ok.all? { |_, _, kind, room_locked, cont_locked| %i[room container].include?(kind) && (room_locked || cont_locked) }
+              where = ok.map { |_, r, kind, rl, cl| cl ? "a locked container in '#{r}'" : "locked room '#{r}'" }.uniq.join(', ')
+              issues << "⚠️ WARNING: '#{path}' give_item '#{label}' only matches an object in #{where}. The server accepts the " \
+                        "add only once that room (or container) is unlocked, so a reward that fires earlier is refused. " \
+                        "Move the object to a room the player has already opened, or check the trigger can't fire first."
+            end
+          end
+        end
+      end
+      node.each { |k, v| walk.call(v, "#{path}/#{k}") }
+    when Array
+      node.each_with_index { |v, i| walk.call(v, "#{path}[#{i}]") }
+    end
+  end
+  json_data.each { |k, v| walk.call(v, k) unless %w[startItemsInInventory].include?(k) }
+  issues
+end
+
 def check_common_issues(json_data, valid_item_types = nil)
   issues = []
 
@@ -5733,6 +5824,7 @@ def main
     common_issues += check_lock_credentials(json_data)
     common_issues += check_pin_locks(json_data)
     common_issues += check_npc_patrol_and_catch_locks(json_data, repo_root)
+    common_issues += check_give_item_collectible(json_data)
     common_issues += check_engine_limits(json_data)
     common_issues += check_vm_flags_load_bearing(json_data)
     common_issues += check_recurring_bugs(json_data, repo_root)

@@ -799,7 +799,7 @@ Control how observation text is displayed using `observationDisplay`:
 | `complete_task` | `taskId` | Marks an objective task complete |
 | `unlock_object` | `objectId` | Unlocks a world object |
 | `unlock_door` | `room_id` | Unlocks a door connection |
-| `give_item` | `item` | Adds an item to inventory |
+| `give_item` | `item` | Adds an item to inventory. The server only accepts it if a takeable world object (or start item, or NPC `itemsHeld` entry) has the same `type` and `id`: add a hidden `active: false`, `takeable: true` object to a room. The validator errors when none exists and warns when it only sits in a locked room |
 | `confirm_action` | `text`, `onConfirm` | Shows confirmation dialog, executes nested actions on confirm |
 | `tint_objects` | `roomId`, `textureKey`, `color`, `pulse` | Tints all sprites of a type in a room |
 | `show_end_screen` | `title`, `body`, `buttonText`, `outcome` | Shows scenario end screen |
