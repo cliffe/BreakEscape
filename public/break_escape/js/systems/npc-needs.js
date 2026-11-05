@@ -803,6 +803,8 @@ export function createEngineWorld() {
             if (!held) return;
             delete rec._needsCarried[itemId];
             try { held.sprite.destroy?.(); } catch (e) { /* already gone */ }
+            // Used up: take it off the server's room state too, or a reload brings it back
+            try { Promise.resolve(W().RoomStateSync?.removeItemFromRoom?.(held.roomId, itemId)).catch(() => {}); } catch (e) { /* offline */ }
         },
         dropHeld(npcId, itemId) {
             const rec = W().npcManager?.getNPC?.(npcId);

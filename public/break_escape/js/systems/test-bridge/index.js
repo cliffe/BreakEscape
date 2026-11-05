@@ -1620,6 +1620,54 @@ const bridge = {
     clearLog: clear,
     note: logNote,
 
+    // ── NPC needs clock (docs/achitechture/NPC_NEEDS_SYSTEM.md section 9) ───
+
+    /**
+     * Drives the needs clock only. It never moves an NPC or triggers a use: the
+     * NPC still walks, queues arrivals and dwells through the real engine, so
+     * step() needs real frames between calls (waitFrames / sleep) for walking
+     * NPCs to arrive. All JSON in and out.
+     */
+    needs: {
+        _sys() { return window.npcNeedsSystem || null; },
+        /** Reset all needs state and set the seed (jitter). */
+        setSeed(seed) {
+            const s = this._sys();
+            if (!s) return { ok: false, reason: 'no-needs-system' };
+            s.reset(seed);
+            return { ok: true, seed: s.seed, npcs: [...s.states.keys()].sort() };
+        },
+        /** true: the clock moves only through step(); false: back to game time. */
+        setManualClock(on) {
+            const s = this._sys();
+            if (!s) return { ok: false, reason: 'no-needs-system' };
+            s.manualClock = !!on;
+            s._lastElapsed = null; // re-baseline when handing the clock back
+            s._acc = 0;
+            return { ok: true, manualClock: s.manualClock };
+        },
+        /** Advance the needs clock by ms (whole 250 ms ticks). Manual clock only. */
+        step(ms) {
+            const s = this._sys();
+            if (!s) return { ok: false, reason: 'no-needs-system' };
+            if (!s.manualClock) return { ok: false, reason: 'not-manual-clock' };
+            const ticks = s.step(ms);
+            return { ok: true, ticks, clockMs: s.clockMs, tick: s.tickCount };
+        },
+        /** One NPC's state (mode, levels, job, home) or null when not registered. */
+        state(npcId) { return this._sys()?.getState(npcId) ?? null; },
+        /** Registered needs NPC ids, sorted. */
+        ids() { return this._sys() ? [...this._sys().states.keys()].sort() : []; },
+        /** The decision log, optionally only entries after tick `sinceTick`. */
+        log(sinceTick = 0) { return (this._sys()?.getLog() || []).filter(e => e.t > sinceTick); },
+        /** Set a need level (same path as an eventMapping `needs: {set}`). */
+        set(npcId, need, level) {
+            const s = this._sys();
+            if (!s) return { ok: false, reason: 'no-needs-system' };
+            return { ok: s.control(npcId, { set: { [need]: level } }) };
+        }
+    },
+
     // ── Minigames ───────────────────────────────────────────────────────────
 
     /** The currently open minigame's namespace (see minigames.js). */

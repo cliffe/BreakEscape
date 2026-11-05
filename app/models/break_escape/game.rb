@@ -417,6 +417,28 @@ module BreakEscape
         ).merge('id' => held_item['id'].presence || item['id']).merge('takeable' => true, 'interactable' => true, 'active' => true, 'visible' => true)
       end
 
+      # A player drop (item-drop.js): the item must be one the player holds and it must
+      # be flagged droppable. Persist the held (already validated) copy, never the client's
+      # fields, so a client cannot invent an object. Only placement comes from the client.
+      if source_data['source_type'] == 'player_drop'
+        held = (player_state['inventory'] || []).find do |inv|
+          data = inv['scenarioData'] || inv
+          item['id'].present? && data['id'] == item['id']
+        end
+        held_data = held && (held['scenarioData'] || held)
+        unless held_data && held_data['droppable'] == true
+          Rails.logger.warn "[BreakEscape] player_drop rejected: #{item['id'].inspect} is not a held droppable item"
+          return false
+        end
+        item = held_data.deep_dup.merge(
+          item.slice('x', 'y', 'position', 'texture')
+        ).merge('takeable' => true, 'interactable' => true, 'active' => true, 'visible' => true)
+        # The same id may sit in objects_removed (a scenario object the player once
+        # picked up). Keep it there so the scenario copy stays filtered; the added
+        # copy below is the one that appears.
+        player_state['room_states'][room_id]['objects_added'].reject! { |obj| obj['id'] == item['id'] }
+      end
+
       # Generate unique ID if not provided
       item['id'] ||= "#{room_id}_added_#{SecureRandom.hex(4)}"
 
@@ -436,7 +458,16 @@ module BreakEscape
       # Already removed: succeed without writing. A readable takeable note is removed
       # twice (on pickup and when read into the notebook), so the second request is a
       # normal repeat, not an error.
-      return true if player_state['room_states'][room_id]['objects_removed'].include?(item_id)
+      if player_state['room_states'][room_id]['objects_removed'].include?(item_id)
+        # A dropped copy of a scenario object (same id) lives in objects_added: picking
+        # it up again removes that copy and leaves the id in objects_removed.
+        added = player_state['room_states'][room_id]['objects_added']
+        if added.any? { |obj| obj['id'] == item_id }
+          added.reject! { |obj| obj['id'] == item_id }
+          save!
+        end
+        return true
+      end
 
       # Check if item exists in room (scenario or added)
       item_exists = item_in_room?(room_id, item_id)
@@ -656,7 +687,7 @@ module BreakEscape
       # Check if removed
       removed = player_state.dig('room_states', room_id, 'objects_removed')&.include?(item_id)
 
-      (scenario_has_item || added) && !removed
+      (scenario_has_item && !removed) || added
     end
 
     # Check if two rooms are connected

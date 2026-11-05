@@ -117,6 +117,45 @@ module BreakEscape
       refute @game.add_item_to_room!('main_office', sent, { 'npc_id' => 'nobody', 'source_type' => 'npc_defeated' })
     end
 
+    test "player drop persists a held droppable item and survives pickup, drop again, pickup" do
+      thing = { 'type' => 'notes', 'name' => 'Tagged thing', 'id' => 'tagged_thing', 'needsTag' => 'found_item', 'droppable' => true }
+      @game.scenario_data = { 'startRoom' => 'lab', 'rooms' => { 'lab' => { 'objects' => [thing.dup], 'npcs' => [] } } }
+      @game.player_state['unlockedRooms'] = ['lab']
+      # Picked up from the scenario room, so its id sits in objects_removed
+      @game.player_state['inventory'] = [thing.dup]
+      assert @game.remove_item_from_room!('lab', 'tagged_thing')
+      meta = { 'source_type' => 'player_drop' }
+      sent = { 'id' => 'tagged_thing', 'type' => 'notes', 'name' => 'Tagged thing', 'x' => 10, 'y' => 20, 'position' => { 'x' => 2.5, 'y' => 3 } }
+
+      # Client-supplied fields other than placement are ignored; the held copy is stored
+      assert @game.add_item_to_room!('lab', sent.merge('needsTag' => 'forged', 'droppable' => false), meta)
+      @game.remove_inventory_item!('tagged_thing')
+      objs = @game.filtered_room_data('lab')['objects']
+      assert_equal ['tagged_thing'], objs.map { |o| o['id'] }
+      assert_equal 'found_item', objs.first['needsTag']
+      assert_equal({ 'x' => 2.5, 'y' => 3 }, objs.first['position'])
+
+      # Pick it up again: gone from the room, in the inventory
+      assert @game.remove_item_from_room!('lab', 'tagged_thing')
+      assert_empty @game.filtered_room_data('lab')['objects']
+      @game.add_inventory_item!(thing.dup)
+
+      # Drop twice leaves one copy
+      assert @game.add_item_to_room!('lab', sent, meta)
+      assert @game.add_item_to_room!('lab', sent, meta)
+      assert_equal 1, @game.player_state['room_states']['lab']['objects_added'].count { |o| o['id'] == 'tagged_thing' }
+    end
+
+    test "player drop is refused for an item the player does not hold or that is not droppable" do
+      @game.scenario_data = { 'startRoom' => 'lab', 'rooms' => { 'lab' => { 'objects' => [], 'npcs' => [] } } }
+      @game.player_state['unlockedRooms'] = ['lab']
+      meta = { 'source_type' => 'player_drop' }
+      sent = { 'id' => 'x', 'type' => 'key', 'name' => 'x' }
+      refute @game.add_item_to_room!('lab', sent, meta)
+      @game.player_state['inventory'] = [{ 'type' => 'key', 'name' => 'x', 'id' => 'x' }]
+      refute @game.add_item_to_room!('lab', sent, meta)
+    end
+
     test "should unlock room" do
       @game.unlock_room!('office')
       assert @game.room_unlocked?('office')
