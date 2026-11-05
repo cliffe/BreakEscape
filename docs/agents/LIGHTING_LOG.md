@@ -245,3 +245,10 @@ Lessons:
 - Check every proposed ambient against the readability floor (luma about 175): two review suggestions fell below it.
 
 - m01 daylight darkness (2026-10-26): lights-off rooms were near-black, which didn't fit a daytime visit to a glass-fronted office. Scenario-level `darkAmbient` `#5a6378` (daylight through glass); hallways `#3c4458` (borrowed light, interior); storage closet `#1c2234` (no window); server room keeps `#0a0f1c`. Motion strikes still read, glows still bloom. Pattern for any daytime glazed building: set `darkAmbient` at scenario level, override windowless rooms.
+
+### lab_physical_pentest (2026-11-05, Round 5)
+
+An authorised daytime physical pentest of Calderbank Mutual (scenario default day ambient; `lighting.enabled`, `defaultMode: "on"`). Room-type blocks reused from earlier missions where the role matched.
+- **On:** briefing_room (`room_se_engagement`) reuses lab_social_engineering/engagement_office emitters (power-panel green glow, fire-alarm point off); open_plan (`room_se_ops`) is the live staff floor, comms-cabinet green blink (`leds`), fire-alarm off, map staff-PC screens left glowing (role differs from the ops-office block, which zeroed them).
+- **Motion:** secure_area (`room_servers`) reuses m01 server_room motion block (`darkAmbient #0a0f1c`, lit `#a0b0c0`, server rack glow + floorTint); starts lit anyway because ruth_debrief stands there, so it reads as a moody rack-lit records room. store_room (`room_se_ops`, the ops map behind a picked lock) is a dark back room with `flicker: true` (optional room, player doesn't linger); desk PCs (pc6/pc8/pc12/laptop7) zeroed so the green comms-cabinet controller — the store_shelf clue — carries the dark read.
+- No engine change (no EMITTERS edits). Renders: dark + lit for every room reviewed, all read well; no further round warranted.
