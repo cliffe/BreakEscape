@@ -44,12 +44,13 @@
               "waypointMode": "sequential",
               "route": [
                 { "room": "probe_a", "waypoints": [
-                  { "x": 4, "y": 5 },
-                  { "x": 5, "y": 3, "dwellTime": 600, "action": { "unlockRoom": "probe_b" } }
+                  { "x": 5, "y": 6 },
+                  { "x": 2, "y": 2, "dwellTime": 600, "action": { "unlockRoom": "probe_b" },
+                    "_comment": "Door-side, inside the gate's openRadius: a shut gate blocks the path grid, so each room's last waypoint must be where the gate opens for him" }
                 ] },
                 { "room": "probe_b", "waypoints": [
-                  { "x": 5, "y": 5 },
-                  { "x": 3, "y": 4 }
+                  { "x": 5, "y": 4 },
+                  { "x": 2, "y": 8, "dwellTime": 400 }
                 ] }
               ]
             }
