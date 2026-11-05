@@ -217,8 +217,7 @@ start best, or hold still
   scores its weight flat. So `interests.found_item.weight = 3` beats any need of
   weight ≤ 3 that is not starved; weight 0.5 loses to a need half-empty at weight 1.
   `maxUnmetMin` lets a real need win when it matters.
-- **Nearest:** straight-line distance, ties by object id. **Reachable** (required,
-  not yet implemented): the object's room is loaded **and** either it is the NPC's
+- **Nearest:** straight-line distance, ties by object id. **Reachable** (implemented; `world.reachable` turns EasyStar sync on for the one call, because 0.4 otherwise hands the result to its callback through `setTimeout`): the object's room is loaded **and** either it is the NPC's
   current room or `findWorldPath` from the NPC to the approach cell returns a path
   (it is synchronous: `calculate()` runs inside the call). Unreachable targets are
   skipped, not failed. This is what stops an NPC choosing a cabinet behind a locked door.
@@ -301,7 +300,7 @@ during the walk home (exists). Player-facing behaviour:
   `window.currentPlayerRoom`, as an ordinary takeable world object (the player can
   pick it up again) with its scenario `id` and `needsTag`.
 - Emits `item_dropped:<itemId>` `{itemId, tag, roomId, x, y}`.
-- **Persistence:** client-side only. `removeFromInventory` does not tell the
+- **Persistence (synced 2026-11-05):** the drop is saved as a room object (`update_room` `add_object`, `sourceType: 'player_drop'`, accepted only for a held `droppable` item, stored from the server's held copy) and the inventory entry is removed, so the world item and the emptied slot survive a reload. A player pickup removes it as any pickup does; an NPC consuming it removes the room object too. Earlier text, now out of date: client-side only. `removeFromInventory` does not tell the
   server, so after a reload an uncollected dropped item is back in the inventory,
   and an item an NPC used is also back (the server never heard of either). The
   scenario's globals (set from `item_dropped`/`npc_used`) persist and are what gate
@@ -334,9 +333,10 @@ events.
 - `itemId`, `tag`: the carried item, or `null`.
 - `payload`: structured clone of the NPC's `usePayload` (or `null`). Listeners
   cannot mutate the NPC's copy.
-- `playerNearby` (prov., **not yet implemented**): `true` when the player is in the
+- `playerDistance`: px between NPC and player at use time (rounded), or `null`.
+- `playerNearby` (prov., implemented): `true` when the player is in the
   NPC's room within 3 tiles (96 px) with a clear line (`canSeePlayerToFace`).
-  Lets a scenario condition on "the player was right there when the NPC used it",
+  A mapping reads it as `data.playerNearby === true` (a bare `playerNearby` is not resolved by `safeEvaluateCondition`). Lets a scenario condition on "the player was right there when the NPC used it",
   which the tailgating beat needs (12.3).
 
 The decision log never contains payload contents (only `payloadPresent`).
@@ -375,7 +375,7 @@ The decision log never contains payload contents (only `payloadPresent`).
 - **Live:** the sequence `(npc, ev, need/tag, target, item)` repeats for the same
   seed and player actions; tick numbers can drift a few ticks because walking time
   depends on frame timing and the player's body.
-- **Test bridge** (not yet implemented): `window.__test.needs` =
+- **Test bridge** (implemented in `systems/test-bridge/index.js`; `ids()` and `log(sinceTick)` added): `window.__test.needs` =
   `{ setSeed(n) /* resets */, setManualClock(bool), step(ms), state(npcId), log(), set(npcId, need, level) }`,
   all JSON in/out. It controls the needs clock only; it never moves an NPC or
   triggers a use directly (the bridge's "real input" rule).
@@ -390,7 +390,7 @@ The decision log never contains payload contents (only `payloadPresent`).
 
 ---
 
-## 11. Validator and schema (not yet implemented)
+## 11. Validator and schema (implemented 2026-11-05: `scripts/validate_npc_needs.rb`)
 
 `scripts/scenario-schema.json` (insert as text; do not re-serialise the file, which
 reformats ~10k lines): NPC `needs interests needsHome needsSpeed usePayload onUse`;
