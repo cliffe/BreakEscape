@@ -229,6 +229,7 @@ export function preload() {
     this.load.tilemapTiledJSON('room_lw_records', 'rooms/room_lw_records.json'); // lab_physical_pentest open-plan records/admin office (from room_lw_office; ops decor replaced with filing/binders/records signage)
     this.load.tilemapTiledJSON('room_lw_briefing', 'rooms/room_lw_briefing.json'); // lab_physical_pentest kit & briefing room (from room_se_engagement; Ledgerwell carpet/signage, kit bench, Tarnside decor removed)
     this.load.tilemapTiledJSON('room_lw_kitroom', 'rooms/room_lw_kitroom.json'); // lab_physical_pentest kit room, Ledgerwell identity (old partners' room: oxblood carpet, walnut sideboards, baize RoE board)
+    this.load.tilemapTiledJSON('room_lw_front_desk', 'rooms/room_lw_front_desk.json'); // lab_physical_pentest front desk, Ledgerwell identity (old bank counter of walnut sideboards, oak boards and green runner, staff directory, time clock; from room_lw_reception)
     this.load.tilemapTiledJSON('room_lw_ceo', 'rooms/room_lw_ceo.json'); // from room_zds_ceo (m03 portrait, magazine cover and static filing cabinet removed)
     this.load.tilemapTiledJSON('room_lw_store', 'rooms/room_lw_store.json'); // from small_room_storage_1x1gu
 
