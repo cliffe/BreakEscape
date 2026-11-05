@@ -344,3 +344,58 @@ plus **12: the guard unlocks and loads `probe_b` from its route action, then rou
 (`probe_b` is `locked: true` on the server; `window.rooms.probe_b` is absent before the action
 and present after; no 403 in the console). Also a regression playtest of an existing
 waypoint-patrol mission and a live random-patrol NPC moving. Use the keyless :3001 server.
+
+---
+
+## Build status and handover, round 2 (2026-11-05, build agent)
+
+### Built and committed
+
+| Piece | Commit | What |
+|---|---|---|
+| 1 | `41e2f050f` | `challengeOnSight.near` (`{door\|object\|x,y,room, radius}`, default 64) in `systems/npc-sight-challenge.js`; payload `targetId`/`targetType`; with `near` + `rooms` the player may be across the doorway; "in sight but not near" counts as out of sight. Unit tests in `test/js/npc-sight-challenge.test.mjs`. |
+| 2 | `ef4df969f` | `closeDoor` mapping action (`npc-manager.js`, after `unlockDoor`) → `window.doorGates.closeNow(room, {force:true})`; validator knows `closeDoor` and `near`. |
+| 3 | `384167c47`, fixes `124be78d6`, `e82271612`, `7b2e541bf` | `systems/door-gates.js` (new; `window.doorGates`), registered from `doors.js createDoorSpritesForRoom` **after the body exists**; gate config read from the full `/room/:id` data (`createRoom` now passes `roomData`), because the bootstrap scenario strips `doors` (`game.rb filtered_scenario_for_bootstrap` keeps a fixed field list); the far room's sprite joins by position. Click → "Access denied" + `door_gate_denied`, once per click. `PathfindingManager.unmarkDoor()`. Loop tick in `core/game.js`. `initializeRooms` resets gates. "Player in the doorway" = overlapping the door **body** (+4px), not the 2-tile doorway. |
+| 4+5 | `b4a4fc52c` | `npc-behavior.js` (one commit, same functions): route-only NPCs now follow their route (`chooseNewPatrolTarget` used to send them to random patrol when there were no top-level `waypoints`); waypoint `action: { unlockRoom, useObject }` → `_runRouteAction` (NPCGameBridge.unlockDoor as the NPC if the room is locked, `loadRoom`, 300 ms for the grid rebuild; 15 s timeout; 5 s back-off and retry; never advances into an unloaded room; idempotent once loaded); locked route rooms are not pre-loaded; no `relocateNPCSprite` (walks through); **the last waypoint of each room was being skipped** (index wrapped before use) — fixed; unreachable leg → 2 s back-off on the same waypoint, `_pathfindingInProgress` guard, no room skip; `pathFollowingActive` on legs; wall colliders per loaded route room; `npc.roomId` follows position for route walkers; `pauseForPlayer` defaults to false for route walkers (explicit value wins). Unit tests `test/js/npc-route-multiroom.test.mjs`. |
+| 6 | `206aa69f5`, `5530748b1` | `scenarios/probe_tailgate/` (mission row created directly, id 234, no full seed). Schema knows `challengeOnSight.near`; validator knows room `doors`. |
+
+No Rails change. `bin/test-js`: 368/368 after the last commit.
+
+### Design rule found by the probe (scenario authors and the lab must follow it)
+
+A shut gate's body is baked into the path grid, so **no path crosses a shut gate**. The guard only opens it by standing within `openRadius`. So **each route segment's last waypoint must be door-side, inside `openRadius` of the door centre** (probe: `probe_a` (2,2) → 46 px, `probe_b` (2,8) → 36 px; check with the grid, the wall rows beside an N/S door are blocked). The unlock action waypoint is that door-side point. A mid-room waypoint before the door gives "unreachable, retrying in 2s" forever.
+
+Also note: `npcCrossing` pads the doorway by 8 px, so a door-side waypoint inside that pad counts as "crossing"; the gate then stays open for the whole trip to that point, which lengthens the tailgate window beyond `holdMs`. Harmless in the probe; tighten if the lab wants a strict window.
+
+### Probe results (keyless :3001, games 447–451, headless; load avg ~28)
+
+Driver: a standalone Playwright sampler (50 ms) for 1–5, 10, 12, plus the harness for 6–9 (`window.__test`, `walk`, `moveTo`). Sampler script was in the session scratchpad (not kept); rebuild from this list if needed.
+
+1. Loop: **pass.** 7 loops in 90 s, waypoints in order both ways, `roomId` alternates probe_a/probe_b, no 3 s stall, no "Cannot find door".
+2. No teleport: **pass.** Max 5.4 px per 50 ms sample.
+3. Open: **pass.** Opens on the sample he reaches 56 px; both bodies `enable=false`; door cells 0; one `door_gate_opened` per approach.
+4. Close: **pass.** 2500–2561 ms after he was last within 56 px; never closed while his path crossed (0 samples); cells back to 1, `openDoorways`/`openNSDoors` back to 0.
+5. No reload: **pass.** `loadRoom('probe_b')` called once (by the route action); `rooms.probe_b` identity unchanged.
+6. Disguised tailgate: **pass.** Walked through the open gate into probe_b; no challenge; gate shut after both clear.
+7. Undisguised: **pass after fix `7b2e541bf`.** Shuts on the same frame the player reaches 56 px and stays shut; player held at the strip in probe_a. (Before the fix it reopened 108 ms later and let him through.)
+8. Sight: **pass** for in-cone + undisguised (one event, `targetId` probe_b, person-chat, gate shut) and for disguised (42 samples in cone and near, no event). A repeat came 17.9 s later, after the 8 s cooldown, on a new sighting (correct). Out-of-cone and within-cooldown suppression: unit tests only, not live.
+9. Click: **pass after fix `e82271612`.** Denial toast + `door_gate_denied` once; no player unlock call; sprites intact.
+10. Never trapped: **pass.** Four forced `closeNow` with the guard mid-doorway; each time he finished the leg through the shut door and carried on; no stall.
+11. Regression playtest of an existing waypoint-patrol mission: **NOT RUN.**
+12. Route unlock-then-load: **pass.** probe_b absent at start, `/unlock` 200 then `/room/probe_b` 200, present after, no 403, route continued into it.
+
+### Left to do
+
+1. **A11 regression**: a browser playtest of a single-room waypoint-patrol mission (m01 or m02) and `scenarios/test_npc_patrol_override` (goToAndStay), to show waypoint patrols are unchanged. Shared code touched: `chooseNewPatrolTarget` now dispatches on `_isWaypointPatrol()` (same result for single-room waypoints), `updateCurrentRoom` (only route walkers change), `parseConfig` `pauseForPlayer` default (only route walkers change).
+2. **Live random-patrol check** (post-`f962375e1`): a random-patrol NPC (e.g. `scenarios/test-npc-patrol`, bounds-only patrol) still moves. Not done.
+3. `scenarios/test-multiroom-npc` now behaves differently (it relied on the old code): its guard has no door-side waypoints, but its door is a plain unlocked door, so it should still loop. Worth one live look.
+4. Rails suite and `reopencheck` were not run (no Ruby or ink-runtime change apart from the validator field lists).
+5. Delete `scenarios/probe_tailgate/` and mission row 234 once the lab is wired (throwaway).
+6. Not built: the stuck detector and the two `Date.now()` fixes (section D, optional).
+
+### For wiring the real lab
+
+- Door: in the lab room's full scenario data, `"doors": [{ "connectedRoom": "<secure room>", "direction": "north"|"south", "gate": { "openFor": ["<guard>"], "openRadius": 56, "holdMs": 2500, "playerMayPassIf": "<disguise global>" } }]` on the guard's spawn room (the far room's sprite joins by position). N/S only.
+- Guard: `behavior.patrol { enabled: true, multiRoom: true, waypointMode: "sequential", route: [...] }`, no top-level `waypoints`; each segment ends door-side within `openRadius`; the near-side door-side waypoint carries `"action": { "unlockRoom": "<secure room>" }`; add a never-firing eventMapping `{ "eventPattern": "<x>_never_fires", "unlockDoor": "<secure room>" }` so `game.rb npc_mapping_unlocks_door?` accepts the NPC unlock.
+- Sight: `los.challengeOnSight { event: "player_in_view_near:<guard>", near: { door: "<secure room>", radius: 64 }, skipIfGlobal: "<disguise global>", cooldown, rooms: [both] }` plus a person-chat mapping with `closeDoor: "<secure room>"`.
+- The secure room can stay `locked: true` with no key: the player cannot click the gate open (`door_gate_denied` is mappable for a hint).
