@@ -23,12 +23,32 @@ const CONFIG_URL = 'https://localhost:3000/break_escape/configuration?game_id=68
 // A minimal Playwright-page stand-in. It records calls and models the DOM just
 // enough for the gate: the sprite radio and submit button, and the navigation
 // that submitting the form triggers.
+//
+// The real sprite radios are display:none (a 0x0 box) and styled via their
+// visible <label> cards, so a Playwright `waitForSelector` with the default
+// `visible` state can never resolve for them -- only `state:'attached'` does.
+// The stub models that: waitForSelector honours the options argument and
+// *throws* (like a real timeout) if a visibility wait targets the hidden sprite
+// radio, so a regression back to a visible wait fails the suite.
 function makeStubPage({ startUrl, afterSubmitUrl }) {
   const calls = { waitForSelector: [], evaluate: [], click: [], goto: [], waitForNavigation: 0 };
   const state = { url: startUrl, spriteChecked: false };
+  // Visibility of each selector in the modelled DOM. The sprite radio is hidden
+  // (display:none, 0x0); the submit button is visible.
+  const visible = { [SPRITE_SELECTOR]: false, [SUBMIT_SELECTOR]: true };
   const page = {
     url: () => state.url,
-    waitForSelector: async (sel) => { calls.waitForSelector.push(sel); return {}; },
+    waitForSelector: async (sel, opts = {}) => {
+      calls.waitForSelector.push({ sel, opts });
+      const wantsVisible = opts.state === undefined || opts.state === 'visible';
+      if (wantsVisible && visible[sel] === false) {
+        throw new Error(
+          `page.waitForSelector: Timeout ${opts.timeout ?? 30000}ms exceeded. ` +
+          `waiting for locator(${JSON.stringify(sel)}) to be visible`
+        );
+      }
+      return {};
+    },
     evaluate: async (fn, sel) => {
       calls.evaluate.push(sel);
       // Model the one evaluate the gate runs: check the sprite radio.
@@ -63,6 +83,22 @@ test('a fresh game: the gate completes the form and returns to the play URL', as
   assert.deepEqual(calls.click, [SUBMIT_SELECTOR], 'should click the primary submit once');
   assert.deepEqual(calls.goto, [PLAY_URL], 'should return to the play URL');
   assert.equal(state.url, PLAY_URL);
+  assert.ok(emitted.some(e => e.event === 'configuration-completed'));
+});
+
+test('a hidden (display:none) sprite radio: the gate waits for it attached, not visible', async () => {
+  // Regression guard: the sprite radios are display:none, so a default
+  // (visible) waitForSelector throws a timeout and the gate never completes.
+  // The gate must wait for the input to be *attached* and set .checked on the
+  // DOM node directly.
+  const { page, calls, state } = makeStubPage({ startUrl: CONFIG_URL, afterSubmitUrl: PLAY_URL });
+  const emitted = [];
+  const done = await completeConfiguration({ page, gotoUrl: PLAY_URL, emit: (o) => emitted.push(o) });
+  assert.equal(done, true, 'should complete even though the sprite radio is not visible');
+  assert.ok(state.spriteChecked, 'should check the hidden sprite radio via the DOM node');
+  const spriteWait = calls.waitForSelector.find(w => w.sel === SPRITE_SELECTOR);
+  assert.ok(spriteWait, 'should wait for the sprite radio');
+  assert.equal(spriteWait.opts.state, 'attached', 'must wait for attached, not visible');
   assert.ok(emitted.some(e => e.event === 'configuration-completed'));
 });
 

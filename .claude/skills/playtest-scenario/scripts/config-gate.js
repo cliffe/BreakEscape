@@ -40,7 +40,13 @@ async function completeConfiguration({ page, gotoUrl, emit = () => {} }) {
 
   // Select the first offered sprite. Any valid choice lets the form save; the
   // playtest player's appearance does not matter to the walkthrough.
-  await page.waitForSelector(SPRITE_SELECTOR, { timeout: 30000 });
+  //
+  // The sprite radios are display:none (0x0) and styled via visible <label>
+  // cards, so we must wait for the input to be *attached* rather than visible --
+  // the default `visible` wait never resolves and throws. We set `.checked` on
+  // the DOM node directly (plus a change/input event) rather than clicking the
+  // hidden input, so attachment is all we need.
+  await page.waitForSelector(SPRITE_SELECTOR, { state: 'attached', timeout: 30000 });
   await page.evaluate((sel) => {
     const radio = document.querySelector(sel);
     if (radio) {
