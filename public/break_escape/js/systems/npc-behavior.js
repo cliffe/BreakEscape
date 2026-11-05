@@ -292,6 +292,9 @@ class NPCBehavior {
         this.pathFollowingActive = false; // Track whether we're currently following a path to target
         this._pathfindingInProgress = false; // True while an async findWorldPath call is in flight (prevents flood, mirrors chasePathPending)
         this._pathRetryAfter = 0;            // Timestamp after which a failed path may be retried
+        this._routeWait = null;              // Multi-room route: waiting on a waypoint action (unlock + load a room)
+        this._pendingRouteAction = null;     // The action of the route waypoint just reached
+        this._routeWallRooms = new Set();    // Route rooms whose wall boxes this NPC already collides with
 
         // Chase state (for hostile NPCs)
         this.chasePath = [];             // Path to player when chasing
@@ -389,7 +392,10 @@ class NPCBehavior {
                 waypoints: config.patrol?.waypoints || null,        // List of waypoints
                 waypointMode: config.patrol?.waypointMode || 'sequential',  // sequential or random
                 waypointIndex: 0,  // Current waypoint index for sequential mode
-                pauseForPlayer: config.patrol?.pauseForPlayer !== undefined ? config.patrol.pauseForPlayer : true,  // Stop patrol when player nearby
+                // Stop patrol when player nearby. A multi-room route walker defaults to false:
+                // stopping for a player who follows him through a doorway jams the route.
+                pauseForPlayer: config.patrol?.pauseForPlayer !== undefined ? config.patrol.pauseForPlayer
+                    : !(config.patrol?.multiRoom && config.patrol?.route?.length > 0),
                 // Multi-room route support
                 multiRoom: config.patrol?.multiRoom || false,        // Enable multi-room patrolling
                 route: config.patrol?.route || null,                 // Array of {room, waypoints} segments
@@ -644,6 +650,13 @@ class NPCBehavior {
             for (const segment of route) {
                 const roomId = segment.room;
                 if (window.rooms && !window.rooms[roomId]) {
+                    // A locked room would be refused by the server (403): its route
+                    // action (a waypoint "action": { "unlockRoom": ... }) unlocks and
+                    // loads it when the NPC gets there.
+                    if (gameScenario.rooms[roomId]?.locked) {
+                        console.log(`🔒 Not pre-loading locked route room ${roomId} (its route action loads it)`);
+                        continue;
+                    }
                     // Pre-load the room if not already loaded
                     window.loadRoom(roomId).catch(err => {
                         console.warn(`⚠️ Failed to pre-load room ${roomId}:`, err);
@@ -692,6 +705,12 @@ class NPCBehavior {
             // This allows hostile NPCs to chase across rooms with correct pathfinding
             this.updateCurrentRoom();
 
+            // A route walker collides with the walls of every route room once loaded
+            // (npc-sprites.js only adds the spawn room's)
+            if (this.config?.patrol?.multiRoom && this.config.patrol.route?.length > 0) {
+                this._ensureRouteWallColliders();
+            }
+
             // Check if NPC is stuck in a wall and needs to escape
             this.checkAndEscapeWall(time);
 
@@ -737,6 +756,11 @@ class NPCBehavior {
                 if (this.roomId !== roomId) {
                     console.log(`🚪 [${this.npcId}] Moved from ${this.roomId} to ${roomId}`);
                     this.roomId = roomId;
+                    // A route walker's room is where he is (sight checks, LOS read npc.roomId)
+                    if (this.config?.patrol?.multiRoom && this.config.patrol.route?.length > 0) {
+                        const npcData = window.npcManager?.npcs?.get(this.npcId);
+                        if (npcData) npcData.roomId = roomId;
+                    }
                     
                     // Clear chase path since we're in a new room
                     this.chasePath = [];
@@ -1106,6 +1130,8 @@ class NPCBehavior {
                     }
                     // Path complete, mark reached time and stop following path
                     this.patrolReachedTime = time;
+                    // A route waypoint with an action runs it before the next leg
+                    if (this.patrolTarget?.routeAction) this._pendingRouteAction = this.patrolTarget.routeAction;
                     this.pathFollowingActive = false; // Path is done, dwell will start next frame
                     this.sprite.body.setVelocity(0, 0); // Stop movement immediately
                     this.isMoving = false;
@@ -1161,8 +1187,8 @@ class NPCBehavior {
             return;
         }
 
-        // Check if using waypoint patrol
-        if (this.config.patrol.waypoints && this.config.patrol.waypoints.length > 0) {
+        // Check if using waypoint patrol (a multi-room route needs no top-level waypoints)
+        if (this._isWaypointPatrol()) {
             this.chooseWaypointTarget(time);
         } else {
             // Fall back to random patrol
@@ -1264,6 +1290,24 @@ class NPCBehavior {
      * Handles transitioning between rooms when waypoints in current room are exhausted
      */
     chooseWaypointTargetMultiRoom(time) {
+        const now = performance.now();
+        // Waiting on a route action (unlock + load the next room): stand still, retry
+        // after the back-off, time out after 15 s. Never advance into an unloaded room.
+        if (this._routeWait) {
+            const w = this._routeWait;
+            if (w.inFlight && now > w.until) {
+                console.warn(`⏱️ [${this.npcId}] Route action for ${w.roomId} timed out, retrying in 5s`);
+                this._routeWait = { roomId: w.roomId, retryAt: now + 5000 };
+            } else if (!w.inFlight && now >= w.retryAt) {
+                this._runRouteAction(this._pendingRouteAction, time);
+            }
+            return;
+        }
+        if (this._pendingRouteAction) {
+            this._runRouteAction(this._pendingRouteAction, time);
+            return;
+        }
+
         const route = this.config.patrol.route;
         const currentSegmentIndex = this.config.patrol.currentSegmentIndex;
         const currentSegment = route[currentSegmentIndex];
@@ -1280,16 +1324,13 @@ class NPCBehavior {
         // Get next waypoint in current room
         let nextWaypoint;
         if (this.config.patrol.waypointMode === 'sequential') {
-            nextWaypoint = currentRoomWaypoints[this.config.patrol.waypointIndex];
-            this.config.patrol.waypointIndex = (this.config.patrol.waypointIndex + 1) % currentRoomWaypoints.length;
-
-            // Check if we've completed all waypoints in this room
-            if (this.config.patrol.waypointIndex === 0) {
-                // Just wrapped around - all waypoints done, move to next room
+            // All of this room's waypoints visited (the last one included): next room
+            if (this.config.patrol.waypointIndex >= currentRoomWaypoints.length) {
                 console.log(`🔄 [${this.npcId}] Completed all waypoints in room ${currentSegment.room}, transitioning...`);
                 this.transitionToNextRoom(time);
                 return;
             }
+            nextWaypoint = currentRoomWaypoints[this.config.patrol.waypointIndex];
         } else {
             // Random: pick random waypoint
             const randomIndex = Math.floor(Math.random() * currentRoomWaypoints.length);
@@ -1302,62 +1343,163 @@ class NPCBehavior {
             return;
         }
 
-        // Convert tile coordinates to world coordinates for current room
+        // Convert tile coordinates to world coordinates for current room. A room that
+        // isn't loaded (locked, its route action not run yet): wait, don't wander.
         const roomData = window.rooms?.[currentSegment.room];
         if (!roomData) {
-            console.warn(`⚠️ Room ${currentSegment.room} not loaded for multi-room navigation`);
-            this.chooseRandomPatrolTarget(time);
+            console.warn(`⚠️ [${this.npcId}] Route room ${currentSegment.room} not loaded, retrying in 2s`);
+            this._pathRetryAfter = now + 2000;
+            this.patrolTarget = null;
+            this.currentPath = [];
+            this.pathFollowingActive = false;
+            this._haltForRoute();
             return;
         }
 
-        const roomWorldX = roomData.position?.x || 0;
-        const roomWorldY = roomData.position?.y || 0;
-        const worldX = roomWorldX + (nextWaypoint.x * TILE_SIZE);
-        const worldY = roomWorldY + (nextWaypoint.y * TILE_SIZE);
-
-        this.patrolTarget = {
-            x: worldX,
-            y: worldY,
-            dwellTime: nextWaypoint.dwellTime || 0
-        };
-
-        this.lastPatrolChange = time;
-        this.pathIndex = 0;
-        this.currentPath = [];
-        this.patrolReachedTime = 0;
-
-        // Request pathfinding to waypoint in current room
         const pathfindingManager = this.pathfindingManager || window.pathfindingManager;
         if (!pathfindingManager) {
             console.warn(`⚠️ No pathfinding manager for ${this.npcId}`);
             return;
         }
 
+        const roomWorldX = roomData.position?.x || 0;
+        const roomWorldY = roomData.position?.y || 0;
+        const rawX = roomWorldX + (nextWaypoint.x * TILE_SIZE);
+        const rawY = roomWorldY + (nextWaypoint.y * TILE_SIZE);
+        // Snap to a walkable cell, as single-room waypoints do
+        const dest = pathfindingManager.findNearestWalkableWorldCell?.(rawX, rawY) || { x: rawX, y: rawY };
+
+        this.patrolTarget = {
+            x: dest.x,
+            y: dest.y,
+            dwellTime: nextWaypoint.dwellTime || 0,
+            routeAction: nextWaypoint.action || null
+        };
+
+        this.lastPatrolChange = time;
+        this.pathIndex = 0;
+        this.currentPath = [];
+        this.patrolReachedTime = 0;
+        this.pathFollowingActive = false;
+
+        const segmentAtRequest = currentSegmentIndex;
         const { x: mrnx, y: mrny } = this.npcBodyPos();
         const mrSnapped = pathfindingManager.findNearestWalkableStartCell(mrnx, mrny)
                           || { x: mrnx, y: mrny };
+        this._pathfindingInProgress = true;
         pathfindingManager.findWorldPath(
             mrSnapped.x,
             mrSnapped.y,
-            worldX,
-            worldY,
+            dest.x,
+            dest.y,
             (path) => {
+                this._pathfindingInProgress = false;
                 if (path && path.length > 0) {
+                    this._pathRetryAfter = 0;
                     this.currentPath = path;
                     this.pathIndex = 0;
+                    this.pathFollowingActive = true;   // so a dwell runs on arrival, not before the leg
+                    // This waypoint is taken: the next choice is the one after it
+                    if (this.config.patrol.waypointMode === 'sequential' &&
+                        this.config.patrol.currentSegmentIndex === segmentAtRequest) {
+                        this.config.patrol.waypointIndex++;
+                    }
                     console.log(`✅ [${this.npcId}] Route path with ${path.length} waypoints to (${nextWaypoint.x}, ${nextWaypoint.y}) in ${currentSegment.room}`);
                 } else {
-                    // Waypoint unreachable, try next room
-                    console.warn(`⚠️ [${this.npcId}] Waypoint unreachable in ${currentSegment.room}, trying next room...`);
-                    this.transitionToNextRoom(time);
+                    // Unreachable (a shut door, a body in the way): stay on this
+                    // waypoint and retry after a back-off; never skip a room.
+                    console.warn(`⚠️ [${this.npcId}] Waypoint (${nextWaypoint.x}, ${nextWaypoint.y}) in ${currentSegment.room} unreachable, retrying in 2s`);
+                    this._pathRetryAfter = performance.now() + 2000;
+                    this.currentPath = [];
+                    this.patrolTarget = null;
+                    this.pathFollowingActive = false;
                 }
             }
         );
     }
 
+    _ensureRouteWallColliders() {
+        if (!this._routeWallRooms.size) this._routeWallRooms.add(this.homeRoomId || this.roomId);   // spawn room: rooms.js added it
+        const physics = this.scene?.physics || window.game?.scene?.scenes?.[0]?.physics;
+        if (!physics?.add?.collider) return;
+        for (const seg of this.config.patrol.route) {
+            const roomId = seg?.room;
+            if (!roomId || this._routeWallRooms.has(roomId)) continue;
+            const room = window.rooms?.[roomId];
+            if (!room?.wallCollisionBoxes) continue;
+            room.wallCollisionBoxes.forEach(box => { if (box.body) physics.add.collider(this.sprite, box); });
+            this._routeWallRooms.add(roomId);
+            console.log(`🧱 [${this.npcId}] Wall collisions added for route room ${roomId}`);
+        }
+    }
+
+    /** Stop walking and idle (waiting on a route action or an unloaded room). */
+    _haltForRoute() {
+        if (this.sprite?.body) this.sprite.body.setVelocity(0, 0);
+        if (this.isMoving) {
+            this.isMoving = false;
+            this.playAnimation('idle', this.direction);
+        }
+    }
+
     /**
-     * Transition NPC to the next room in the multi-room route
-     * Finds connecting door and relocates sprite
+     * Run a route waypoint's action, e.g. { "unlockRoom": "vault", "useObject": "reader" }.
+     * unlockRoom: unlock the room on the server as this NPC (the NPC needs an
+     * eventMapping with unlockDoor naming the room: game.rb npc_mapping_unlocks_door?),
+     * load it, wait for the world grid to include it, then carry on. On failure, back
+     * off 5 s and retry; the route never moves on into an unloaded room. Once the room
+     * is loaded the action is only a pause (no network call).
+     */
+    _runRouteAction(action, time) {
+        const roomId = action?.unlockRoom;
+        if (action?.useObject) this._faceRouteObject(action.useObject);
+        if (!roomId || window.rooms?.[roomId]) {
+            this._pendingRouteAction = null;
+            this._routeWait = null;
+            return;
+        }
+        const token = {};
+        this._routeWait = { roomId, inFlight: true, until: performance.now() + 15000, token };
+        this.patrolTarget = null;
+        this.currentPath = [];
+        this.pathFollowingActive = false;
+        this._haltForRoute();
+        console.log(`🔑 [${this.npcId}] Route action: unlock and load ${roomId}`);
+        (async () => {
+            const locked = !!window.gameScenario?.rooms?.[roomId]?.locked;
+            if (locked) {
+                const res = await window.NPCGameBridge?.unlockDoor?.(roomId, this.npcId);
+                if (!res?.success) throw new Error(res?.error || 'unlock refused');
+            }
+            await window.loadRoom?.(roomId);
+            if (!window.rooms?.[roomId]) throw new Error('room did not load');
+            // initializeRoomPathfinding rebuilds the world grid 200 ms after the room is made
+            await new Promise(r => setTimeout(r, 300));
+        })().then(() => {
+            if (this._routeWait?.token !== token) return;
+            console.log(`✅ [${this.npcId}] Route action done: ${roomId} unlocked and loaded`);
+            this._routeWait = null;
+            this._pendingRouteAction = null;
+        }).catch(err => {
+            if (this._routeWait?.token !== token) return;
+            console.warn(`⚠️ [${this.npcId}] Route action for ${roomId} failed (${err?.message || err}), retrying in 5s`);
+            this._routeWait = { roomId, retryAt: performance.now() + 5000 };
+        });
+    }
+
+    _faceRouteObject(objectId) {
+        for (const room of Object.values(window.rooms || {})) {
+            const objs = room?.objects;
+            if (!objs) continue;
+            const sp = objs[objectId] || Object.values(objs).find(o => o?.scenarioData?.id === objectId);
+            if (sp && typeof this.faceWorldPoint === 'function') { this.faceWorldPoint(sp.x, sp.y); return; }
+        }
+    }
+
+    /**
+     * Move on to the next room in the multi-room route. The sprite is never moved:
+     * the NPC walks to the next room's first waypoint through the doorway, on the
+     * world grid, and its room follows its position (updateCurrentRoom).
      */
     transitionToNextRoom(time) {
         const route = this.config.patrol.route;
@@ -1366,35 +1508,24 @@ class NPCBehavior {
             return;
         }
 
-        // Move to next room in route
         const nextSegmentIndex = (this.config.patrol.currentSegmentIndex + 1) % route.length;
         const currentSegment = route[this.config.patrol.currentSegmentIndex];
         const nextSegment = route[nextSegmentIndex];
 
-        console.log(`🚪 [${this.npcId}] Transitioning: ${currentSegment.room} → ${nextSegment.room}`);
-
-        // Update NPC's roomId in npcManager
-        const npcData = window.npcManager?.npcs?.get(this.npcId);
-        if (npcData) {
-            npcData.roomId = nextSegment.room;
+        // Never head into a room that isn't loaded (locked, no route action run yet)
+        if (!window.rooms?.[nextSegment.room]) {
+            console.warn(`⚠️ [${this.npcId}] Next route room ${nextSegment.room} not loaded, retrying in 2s`);
+            this._pathRetryAfter = performance.now() + 2000;
+            this.patrolTarget = null;
+            this.currentPath = [];
+            this.pathFollowingActive = false;
+            this._haltForRoute();
+            return;
         }
 
-        // Update behavior's room tracking
-        this.roomId = nextSegment.room;
+        console.log(`🚪 [${this.npcId}] Route: ${currentSegment.room} → ${nextSegment.room} (walking)`);
         this.config.patrol.currentSegmentIndex = nextSegmentIndex;
         this.config.patrol.waypointIndex = 0;
-
-        // Relocate sprite to next room
-        if (window.relocateNPCSprite) {
-            window.relocateNPCSprite(
-                this.sprite,
-                currentSegment.room,
-                nextSegment.room,
-                this.npcId
-            );
-        } else {
-            console.warn(`⚠️ relocateNPCSprite not available for ${this.npcId}`);
-        }
 
         // Choose waypoint in new room
         this.chooseNewPatrolTarget(time);
