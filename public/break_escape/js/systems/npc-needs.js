@@ -23,6 +23,7 @@ const MAX_FRAME_MS = 1000;
 const LOG_CAP = 2000;
 const FAIL_COOLDOWN_MS = 60000;
 const HOME_EPS = 12;
+const HOME_RETRY_TICKS = 4;   // provisional needsHome re-lookup: once a second
 
 export function hash32(str) {
     let h = 0x811c9dc5;
@@ -298,7 +299,7 @@ export class NPCNeedsSystem {
 
         const pos = this.world.npcPos(id);
         if (!pos) return; // sprite not loaded: decay only
-        if (!s.home) s.home = this._resolveHome(s, pos);
+        if (!s.home || (s.home.provisional && this.tickCount >= (s.homeRetryAt || 0))) this._updateHome(s, pos);
 
         const status = this.world.npcStatus(id) || {};
         if (status.ko || status.hostile || status.hidden) {
@@ -625,6 +626,23 @@ export class NPCNeedsSystem {
         s.job = null;
     }
 
+    /**
+     * Resolve (or re-resolve) the NPC's post. A `needsHome` object that isn't registered yet
+     * (start-room NPCs register before the room's objects) gives a provisional home at the
+     * current spot, retried every HOME_RETRY_TICKS until the object is there; a resolved
+     * home is cached and never looked up again.
+     */
+    _updateHome(s, pos) {
+        const h = this._resolveHome(s, pos);
+        if (!h.provisional) {
+            if (s.home?.provisional) this._log(s.npcId, 'home_resolved', { target: h.objectId || undefined });
+            s.home = h;
+            return;
+        }
+        if (!s.home) s.home = h;   // keep the first provisional spot; don't chase the NPC's position
+        s.homeRetryAt = this.tickCount + HOME_RETRY_TICKS;
+    }
+
     _resolveHome(s, pos) {
         const rec = this.world.getNpc(s.npcId) || {};
         const h = rec.needsHome;
@@ -632,6 +650,7 @@ export class NPCNeedsSystem {
             const obj = this.world.getObject(h);
             const cell = obj ? this.world.approachCell(obj) : null;
             if (cell) return { x: cell.x, y: cell.y, roomId: obj.roomId, objectId: h };
+            return { x: pos.x, y: pos.y, roomId: pos.roomId || null, objectId: null, provisional: true };
         } else if (h && typeof h === 'object' && h.room) {
             const w = this.world.tileToWorld(h.room, h.x, h.y);
             if (w) return { x: w.x, y: w.y, roomId: h.room, objectId: null };
@@ -672,7 +691,7 @@ export class NPCNeedsSystem {
         return {
             npcId, mode: s.mode, levels, atPost: s.atPost, scriptSuspended: s.scriptSuspended,
             job: s.job ? { windingUp: !!s.job.windupUntil, need: s.job.need, kind: s.job.kind, phase: s.job.phase, targetId: s.job.targetId, itemId: s.job.itemId, carrying: s.job.carrying } : null,
-            home: s.home ? { x: Math.round(s.home.x), y: Math.round(s.home.y), roomId: s.home.roomId } : null,
+            home: s.home ? { x: Math.round(s.home.x), y: Math.round(s.home.y), roomId: s.home.roomId, objectId: s.home.objectId || null, provisional: !!s.home.provisional } : null,
             clockMs: this.clockMs, tick: this.tickCount
         };
     }

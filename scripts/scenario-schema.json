@@ -145,6 +145,10 @@
         "required": ["sprite"]
       }
     },
+    "needsDebugOverlay": {
+      "type": "boolean",
+      "description": "Debug overlay (systems/npc-needs-debug.js): need-level bars and the current job above each needs NPC. Default false. Also toggled by window.__test.needs.overlay(true|false)."
+    },
     "npcNeedsSeed": {
       "type": ["number", "string"],
       "description": "Seed for the NPC needs system's per-NPC jitter RNG (systems/npc-needs.js). Default: the scenario name. Same seed and inputs give the same decision log."

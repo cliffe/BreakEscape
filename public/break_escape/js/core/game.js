@@ -1916,6 +1916,7 @@ export async function create() {
                     // Workstation screen lock/unlock follows npc_left_post / npc_returned_post
                     const sceneRef = this;
                     import('../systems/npc-action-icons.js').then(m => m.installNpcActionIcons(sceneRef)).catch(e => console.warn('npc action icons failed', e));
+                    import('../systems/npc-needs-debug.js').then(m => m.installNpcNeedsDebug(sceneRef)).catch(e => console.warn('npc needs debug overlay failed', e));
                     return import('../systems/workstation-state.js').then(ws => ws.installWorkstationState());
                 });
             })

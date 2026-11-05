@@ -1665,6 +1665,12 @@ const bridge = {
             const s = this._sys();
             if (!s) return { ok: false, reason: 'no-needs-system' };
             return { ok: s.control(npcId, { set: { [need]: level } }) };
+        },
+        /** Need-bar debug overlay (npc-needs-debug.js): true / false, or null = the scenario's needsDebugOverlay flag. */
+        overlay(on) {
+            const d = window.npcNeedsDebug;
+            if (!d) return { ok: false, reason: 'no-needs-overlay' };
+            return { ok: true, enabled: d.setEnabled(on), panels: d.panels.size };
         }
     },
 

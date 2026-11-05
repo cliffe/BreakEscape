@@ -438,3 +438,54 @@ test('needsHome (carry): an unreachable home PC falls back to the nearest accept
     assert.ok(start, 'job started');
     assert.equal(start.target, 'near_pc');
 });
+
+// ── provisional needsHome (D1): the home object registers after the NPC ─────────
+
+test('needsHome: an object that appears after N ticks becomes the home and the preference applies', () => {
+    const cfg = homePrefCfg();
+    const home = cfg.objects.find(o => o.id === 'home_machine');
+    home.roomId = null;                           // not registered yet (start-room order)
+    const w = makeWorld(cfg);
+    const lookups = [];
+    const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+    const resolve = sys._resolveHome.bind(sys);
+    sys._resolveHome = (s, p) => { lookups.push(sys.tickCount); return resolve(s, p); };
+    w.attach(sys);
+    sys.registerAll();
+    sys.step(10 * NEEDS_TICK_MS);
+    let st = sys.getState('clerk');
+    assert.equal(st.home.provisional, true);
+    assert.equal(st.home.objectId, null);
+    assert.ok(lookups.length >= 2 && lookups.length <= 4, `throttled retries: ${lookups}`);
+    w.objs.find(o => o.id === 'home_machine').roomId = 'office';
+    sys.step(8 * NEEDS_TICK_MS);
+    st = sys.getState('clerk');
+    assert.equal(st.home.provisional, false);
+    assert.equal(st.home.objectId, 'home_machine');
+    assert.deepEqual([st.home.x, st.home.y], [600, 300 + TILE]);
+    assert.ok(sys.getLog().some(e => e.npc === 'clerk' && e.ev === 'home_resolved' && e.target === 'home_machine'));
+    sys.step(4 * 60000);
+    const targets = sys.getLog().filter(e => e.npc === 'clerk' && e.ev === 'job_start').map(e => e.target);
+    assert.ok(targets.length >= 1);
+    assert.ok(targets.every(t => t === 'home_machine'), JSON.stringify(targets));
+});
+
+test('needsHome: a home found on the first tick is never looked up again; coordinate homes are not provisional', () => {
+    const cfg = homePrefCfg();
+    const w = makeWorld(cfg);
+    let lookups = 0;
+    const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+    const resolve = sys._resolveHome.bind(sys);
+    sys._resolveHome = (s, p) => { lookups++; return resolve(s, p); };
+    w.attach(sys);
+    sys.registerAll();
+    sys.step(4 * 60000);
+    assert.equal(lookups, 1);
+    assert.equal(sys.getState('clerk').home.provisional, false);
+
+    const cfg2 = office();
+    cfg2.npcs.clerk.rec.needsHome = { room: 'office', x: 2, y: 3 };
+    const { sys: sys2 } = run(1, 1, cfg2);
+    const h = sys2.getState('clerk').home;
+    assert.deepEqual([h.x, h.y, h.provisional], [64, 96, false]);
+});

@@ -390,7 +390,7 @@ def check_unknown_fields(json_data)
     scenario_id scenario_name scenario_brief endGoal version startRoom startPosition resumeSpawn titleScreenName
     show_scenario_brief disableAttacks creditsTheme creditsOverlay gameClock flags music startItemsInInventory globalVariables
     player objectives rooms npcs phoneNPCs narrator timers _comment mutuallyExclusiveGlobals lighting
-    importGlobals exportGlobals social npcNeedsSeed disguises actionIcons npcWindupMs showNpcIntentBubbles
+    importGlobals exportGlobals social npcNeedsSeed disguises actionIcons npcWindupMs showNpcIntentBubbles needsDebugOverlay
   ]
 
   # Check top-level unknown fields
@@ -1990,6 +1990,30 @@ def check_npc_patrol_and_catch_locks(json_data, repo_root = nil, engine_cuts_leg
           issues << "⚠️ WARNING: '#{mpath}' (#{npc['id']}) only catches a pick of '#{id}', but that object isn't a locked " \
                     "lockType 'key' lock, so the lockpick minigame never opens on it and the catch never fires."
         end
+      end
+    end
+  end
+
+  # --- 3. a route unlockRoom needs an unlockDoor mapping on the same NPC ----------------------
+  # The server lets an NPC open a door only if its eventMappings carry `unlockDoor: <room>`
+  # (game.rb npc_mapping_unlocks_door?). Without one the unlock is refused and the NPC
+  # retries at the door every 5 s forever (test_gate_tailgate; the lab's Len).
+  each_npc.call do |rid, i, npc|
+    patrol = npc.dig('behavior', 'patrol')
+    next unless patrol.is_a?(Hash)
+    wp_lists = []
+    wp_lists << [patrol['waypoints'], "rooms/#{rid}/npcs[#{i}]"] if patrol['waypoints'].is_a?(Array)
+    if patrol['route'].is_a?(Array)
+      patrol['route'].each_with_index { |seg, si| wp_lists << [seg['waypoints'], "rooms/#{rid}/npcs[#{i}]/route[#{si}]"] if seg.is_a?(Hash) && seg['waypoints'].is_a?(Array) }
+    end
+    mapped = Array(npc['eventMappings']).flat_map { |m| m.is_a?(Hash) ? Array(m['unlockDoor']) : [] }
+    wp_lists.each do |wps, where|
+      wps.each_with_index do |wp, wi|
+        target = wp.is_a?(Hash) && wp['action'].is_a?(Hash) ? wp['action']['unlockRoom'] : nil
+        next unless target.is_a?(String) && !mapped.include?(target)
+        issues << "❌ ERROR: '#{where}' (#{npc['id']}) waypoint #{wi} has action.unlockRoom '#{target}', but #{npc['id']} has no " \
+                  "eventMapping with unlockDoor: \"#{target}\". The server refuses the unlock (game.rb npc_mapping_unlocks_door?) " \
+                  "and the NPC retries at the door forever. Add an eventMapping with \"unlockDoor\": \"#{target}\" to this NPC."
       end
     end
   end
