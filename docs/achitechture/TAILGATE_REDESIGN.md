@@ -116,15 +116,46 @@ that is not the start room or in `unlockedRooms` (`games_controller.rb:456-467`)
 never loads. Then `chooseWaypointTargetMultiRoom` finds no room data (`npc-behavior.js:1306-1310`)
 and falls back to random patrol. Two options:
 
-- **(Recommended) Server-unlocked, client-gated.** The `secure_area` room is not `locked` on
-  the server, so it loads, and the door is a **gate door** (B). Trade-off: someone using
-  devtools could load the room's data without going through the door. For a teaching beat
-  inside a lab that is acceptable, but record it. If it later matters, the server can learn
-  a `gate` door type.
-- Keep `locked: true` and have Len's first pass fire a mapping `unlockDoor`. The first
-  unlock still has to happen before the route needs the room, it is one-way, and the player
-  then has a server-unlocked door they could click open. This adds complexity and does not
-  give a relock.
+**User decision (2026-11-05): the NPC unlocks the room as an action on his route.**
+`secure_area` stays `locked: true` on the server. The client-gate idea (server-unlocked,
+client-gated) was rejected, and so was a one-off mapping `unlockDoor`. Instead Len performs
+an unlock action at a route waypoint (the badge reader, via its affordance). That action
+genuinely unlocks the room on the server and triggers its load. His route waits for the load
+before taking the next leg into the room. The gate door (B) still controls the physical
+opening; the server unlock only makes the room exist on the client.
+
+**Route-unlock-then-load design (piece 4, not built yet):**
+- **Config:** a route waypoint gains an action, e.g.
+  `{ "x": 5, "y": 2, "action": { "unlockRoom": "secure_area", "useObject": "badge_reader_1" } }`.
+  Alternatively, a badge-reader object affordance `unlocksRoom: "secure_area"` that the
+  waypoint names. `useObject` is only for facing and animation.
+- **Server permission:** the NPC unlock path accepts the NPC when it has an eventMapping
+  `unlockDoor` naming the room (`game.rb:1340-1348`) or passes `validate_npc_unlock`. The
+  probe and the lab need one of those, or `npc_mapping_unlocks_door?` learns to read
+  `behavior.patrol.route[*].waypoints[*].action.unlockRoom`. The second option is cleaner
+  and is a Ruby change, so tell the user.
+- **Client sequence:** add `NPCBehavior._runRouteAction(wp)`, called where a route leg
+  finishes (`npc-behavior.js:1101-1115`, multi-room branch):
+  1. Set `this._routeWait = { roomId, until: time + 15000 }`, stop and play idle. While
+     `_routeWait` is set, `updatePatrol` returns early, apart from the timeout.
+  2. If `window.rooms[roomId]` already exists, skip to step 5.
+  3. `await NPCGameBridge.unlockDoor(roomId, npcId)` (`npc-game-bridge.js:77`; posts
+     `unlock('door', roomId, npcId, 'npc')`, sets door `locked=false`, emits
+     `door_unlocked_by_npc`). If the response has `roomData`, put it in
+     `window.roomDataCache` as `unlockDoor` does (`doors.js:656-659`). The bridge does
+     not do this today.
+  4. `await window.loadRoom(roomId)` (`rooms.js:773`; returns early if already loaded,
+     fetches `/room/:id`, now allowed). Then `waitForRoomReady`-style polling until
+     `window.rooms[roomId]` and the 200ms world-grid rebuild have happened
+     (`initializeRoomPathfinding` schedules it).
+  5. Clear `_routeWait` and call `transitionToNextRoom` (no teleport, see A2).
+  6. On failure (unlock refused, load failed, timeout): log, keep `_routeWait` cleared,
+     back off 5s, retry the action. Never advance into an unloaded room.
+- **Pre-load fix:** `validateMultiRoomRoute` (`:642-652`) pre-loads every route room.
+  For a locked room that is a 403 and a console error. Skip rooms that are `locked` and not
+  yet in the client's unlocked set; the route action loads them later.
+- **Idempotent:** after the first loop the room is loaded and unlocked, so the action is
+  only the badge-tap pause (dwell plus facing) and no network call.
 
 ---
 
@@ -286,3 +317,30 @@ Assertions:
 11. **Regression:** run an existing single-room patrol mission's playtest (m01 or m02) after A2/A3, to show that waypoint patrols and `goToAndStay` are unchanged.
 
 Only after 1–10 pass should the gate, the `near` watch and the route move into the real lab.
+
+---
+
+## Build status and handover (2026-11-05)
+
+The agent stopped at its context/tool-call limit before building. **Nothing below is built yet.**
+
+Already committed separately: `f962375e1`, the per-room grid / `core/pathfinding.js`
+dead-code removal (366/366 JS test files green; lab validator clean). Random patrol now uses
+the world grid; it has unit coverage and **no live proof yet**.
+
+Build order (commit after each; explicit paths; run `bin/test-js` after 3 and 5):
+1. `near` on `challengeOnSight` → `player_in_view_near:<npcId>` (`npc-sight-challenge.js:42-149`).
+2. `closeDoor` mapping action (`npc-manager.js` next to `unlockDoor` at `:1095`).
+3. `systems/door-gates.js`, the `handleDoorInteraction` early return (`doors.js:606`),
+   `PathfindingManager.unmarkDoor()`, and the game-loop call (`core/game.js` next to
+   `sightChallengeWatcher.update` at about `:2418`). A new static import in `game.js` or
+   `doors.js` means updating each `test/js` harness copy list that copies those files.
+4. Route-unlock-then-load (section A6 above).
+5. Multi-room fixes (A2, A3, D): explicit no-teleport hand-off, back-off plus in-flight
+   guard, `pathFollowingActive` on route legs, wall colliders for route rooms.
+
+Then: the `scenarios/probe_tailgate/` scenario (N/S gate door) and assertions 1–11 (section E),
+plus **12: the guard unlocks and loads `probe_b` from its route action, then routes into it**
+(`probe_b` is `locked: true` on the server; `window.rooms.probe_b` is absent before the action
+and present after; no 403 in the console). Also a regression playtest of an existing
+waypoint-patrol mission and a live random-patrol NPC moving. Use the keyless :3001 server.
