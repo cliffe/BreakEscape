@@ -980,7 +980,9 @@ module BreakEscape
           end
 
           Rails.logger.info "[BreakEscape] Adding item to inventory: #{item['type']} / #{item['name']}"
-          @game.add_inventory_item!(item.to_unsafe_h)
+          # Store the server's copy, never the client's fields (M6): the key and
+          # lockpick checks read opens_lock, scenarioData and type from it.
+          @game.add_inventory_item!(canonical_inventory_item(item.to_unsafe_h))
           # Remember what an NPC has handed over, so a reload does not restore it
           # to that NPC's itemsHeld (a later KO would drop a duplicate).
           if @collectible_location && @collectible_location[:type] == 'npc'
@@ -1749,8 +1751,37 @@ module BreakEscape
       office-misc-cup5 coffee_cups1 mugs_tray1
     ].freeze
 
+    # Fields that make a stored item open something: the key check reads the
+    # first three and scenarioData, the lockpick and PIN-cracker checks read type
+    # and scenarioData.type, the flag-station lookup reads flags. A client-built
+    # item (notepad, decor cup) has no scenario copy, so these are removed.
+    CLIENT_ITEM_FORBIDDEN_FIELDS = %w[
+      opens_lock key_id keyId scenarioData requires lockType locked
+      contents itemsHeld flags flagRewards keyPins saved_cards
+    ].freeze
+
+    # What the inventory stores for an add that validate_item_collectible passed.
+    # A scenario item is stored as the server's own copy, filtered exactly as the
+    # client received it, so nothing in the client's hash can add a lock
+    # reference, a lockpick type or a flag list. A held container the player
+    # has unlocked is stored unlocked, as the client would have sent it.
+    def canonical_inventory_item(client_item)
+      source = @collectible_item
+      unless source.is_a?(Hash)
+        return client_item.except(*CLIENT_ITEM_FORBIDDEN_FIELDS)
+      end
+
+      copy = source.deep_dup
+      if copy['locked'] && copy['id'].present? && @game.object_unlocked?(copy['id'])
+        copy['locked'] = false
+      end
+      @game.send(:filter_requires_and_contents_recursive, copy)
+      copy
+    end
+
     def validate_item_collectible(item, source_npc_id = nil)
       @collectible_location = nil
+      @collectible_item = nil
       item_type = item['type']
       # A key is addressed by the lock it opens; everything else by its id.
       item_id = BreakEscape::ItemIdentity.identity_candidates(item).first
@@ -1771,11 +1802,12 @@ module BreakEscape
       end
 
       # Check if this is a starting item first (if so, skip all other checks)
-      is_starting_item = @game.scenario_data['startItemsInInventory']&.any? do |start_item|
+      starting_item = @game.scenario_data['startItemsInInventory']&.find do |start_item|
         start_item['type'] == item_type && (start_item['id'] == item_id || start_item['name'] == item_name)
       end
 
-      if is_starting_item
+      if starting_item
+        @collectible_item = starting_item
         Rails.logger.info "[BreakEscape] Item is a starting item, skipping room/container checks"
         return nil # Starting items are always valid
       end
@@ -1792,6 +1824,7 @@ module BreakEscape
       found_item = found_item_info[:item]
       location = found_item_info[:location]
       @collectible_location = location
+      @collectible_item = found_item
 
       # Check if item is takeable
       unless found_item['takeable']

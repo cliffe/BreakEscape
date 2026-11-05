@@ -210,6 +210,10 @@ module BreakEscape
       # item's own id is accepted too, because scenarios predating the
       # opens_lock/id split used one field for both jobs.
       found = inventory.any? do |item|
+        # A notepad or a room-map cup is built by the client, with no scenario
+        # copy to check its id against, so it never counts as a key (M6).
+        next false if item['type'] == 'notepad' || item['decor'] == true
+
         data = item['scenarioData'] || item
         candidates = BreakEscape::ItemIdentity.identity_candidates(data)
         candidates |= BreakEscape::ItemIdentity.identity_candidates(item)
