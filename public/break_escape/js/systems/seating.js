@@ -718,11 +718,13 @@ const FETCH_TIMEOUT_MS = 15000;
 
 /** Where a needs NPC is parked: { key, targetId } or null while it's on the move. */
 function needsStop(ns) {
-    if (ns.mode === 'job' && ns.job?.phase === 'using') return { key: `use:${ns.job.targetId}`, targetId: ns.job.targetId };
-    if (ns.mode === 'idle' && ns.atPost) {
-        const home = window.npcManager?.getNPC?.(ns.npcId)?.needsHome;
-        return { key: `post:${typeof home === 'string' ? home : 'tile'}`, targetId: typeof home === 'string' ? home : null };
+    const home = window.npcManager?.getNPC?.(ns.npcId)?.needsHome;
+    const homeId = typeof home === 'string' ? home : null;
+    // Keyed on the object, so finishing work at one's own desk doesn't stand the NPC up
+    if (ns.mode === 'job' && ns.job?.phase === 'using') {
+        return { key: `at:${ns.job.targetId}`, targetId: ns.job.targetId, post: ns.job.targetId === homeId, need: ns.job.need };
     }
+    if (ns.mode === 'idle' && ns.atPost) return { key: `at:${homeId || 'post'}`, targetId: homeId, post: true };
     return null;
 }
 
@@ -730,14 +732,30 @@ function needsObject(id) {
     return id ? window.npcNeedsSystem?.world?.getObject?.(id) || null : null;
 }
 
-function seatPreference(obj, npcRec) {
+/**
+ * 'stand', 'near' (sit only on a chair already there) or 'fetch'. Default: fetch for
+ * work and at the NPC's own post; elsewhere (the coffee machine) only a chair already there.
+ */
+function seatPreference(obj, npcRec, stop) {
     const a = obj?.affordance?.seat;
     if (a === false || a === 'never' || a === 'stand') return 'stand';
     if (a === 'stay' || a === 'near') return 'near';
     const n = npcRec?.seated;
     if (n === false) return 'stand';
     if (n && typeof n === 'object' && n.fetch === false) return 'near';
-    return 'fetch';
+    if (a === 'fetch') return 'fetch';
+    const sat = [].concat(obj?.affordance?.satisfies || []);
+    return stop?.post || sat.includes('work') ? 'fetch' : 'near';
+}
+
+/** The point an NPC at this object faces: back along useFrom when given (square to the desk). */
+function facePointFor(obj, feet) {
+    if (!obj) return null;
+    const uf = obj.affordance?.useFrom;
+    if (uf && Number.isFinite(uf.dx) && Number.isFinite(uf.dy) && (uf.dx || uf.dy)) {
+        return { x: feet.x - uf.dx * 32, y: feet.y - uf.dy * 32 };
+    }
+    return { x: obj.x, y: obj.y };
 }
 
 /** Facing a static chair allows: within 67 degrees of the way to the object. */
@@ -801,10 +819,10 @@ function updateNeedsSeat(behavior, ns, playerPos) {
 
     const obj = needsObject(stop.targetId);
     const npcRec = window.npcManager?.getNPC?.(behavior.npcId);
-    const pref = seatPreference(obj, npcRec);
+    const pref = seatPreference(obj, npcRec, stop);
     if (pref === 'stand') return false;
     const feet = bodyFeet(sprite);
-    const toward = obj ? { x: obj.x, y: obj.y } : null;
+    const toward = facePointFor(obj, feet);
     // Chairs at another needs NPC's post are theirs, unless this is that spot too
     const posts = otherPosts(behavior.npcId).filter(p => Math.hypot(p.x - feet.x, p.y - feet.y) > NEAR_CHAIR);
     const free = c => !posts.some(p => Math.hypot(p.x - (c.obj.x + c.obj.width / 2), p.y - (c.obj.y + c.obj.height)) < NEAR_CHAIR);
