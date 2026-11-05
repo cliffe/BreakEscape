@@ -91,7 +91,7 @@ flowchart TD
   operations_floor("Operations Floor")
   plant_maintenance_key{"Plant Maintenance Key"}
   shift_handover_sheet{"Shift Handover Sheet"}
-  vm_access_terminal["VM Access Terminal"]
+  field_console_kali["Field Console (Kali)"]
   safetynet_relay_terminal{"SAFETYNET Relay Terminal"}
   npc_elena_rodriguez{"Elena Rodriguez"}
   action_question_elena>"Get the SCADA control room password from Elena"]
@@ -135,7 +135,7 @@ flowchart TD
   plant_maintenance_key --> door_generator_room
   operations_floor --> shift_handover_sheet
   shift_handover_sheet --> lock_badge_printer
-  server_room --> vm_access_terminal
+  server_room --> field_console_kali
   server_room --> safetynet_relay_terminal
   safetynet_relay_terminal --> door_scada_control
   server_room --> npc_elena_rodriguez
@@ -159,14 +159,14 @@ flowchart TD
   vmch_terminate_cascade_scripts --> vmfl_terminate_cascade_scripts
   vmfl_escalate_on_attack_host -.-> vmch_terminate_cascade_scripts
   vmfl_terminate_cascade_scripts --> lock_crisis_control_system
-  vm_access_terminal --> vmch_recover_coordination_traffic
+  field_console_kali --> vmch_recover_coordination_traffic
   security_checkpoint --> operations_floor
 
   class door_server_room,door_scada_control,door_generator_room,door_cable_vault,lock_badge_printer,contractor_badge_station,lock_crisis_control_system,cascade_control_system lock
   class server_room,scada_control,generator_room,cable_vault,security_checkpoint,operations_floor room
   class lock_pick_kit,rfid_cloner,fingerprint_kit,threat_desk_summary_tasking_02_41_pt,audited_visitor_log,shift_handover_sheet,safetynet_relay_terminal,signed_casualty_projection,plant_maintenance_log,recovered_site_reference_tomb_gamma,intercepted_mail_deployment_confirmed item
   class printed_contractor_badge,npc_ray_hollis,facility_access_badge_server_zone,plant_maintenance_key,npc_elena_rodriguez,backup_power_transfer_switch key
-  class vm_access_terminal,vmch_recover_coordination_traffic,vmch_intercept_c2_channel,vmch_escalate_on_attack_host,vmch_terminate_cascade_scripts vm
+  class field_console_kali,vmch_recover_coordination_traffic,vmch_intercept_c2_channel,vmch_escalate_on_attack_host,vmch_terminate_cascade_scripts vm
   class action_question_elena action
   class andgate1 gate
   class vmfl_recover_coordination_traffic,vmfl_intercept_c2_channel,vmfl_escalate_on_attack_host,vmfl_terminate_cascade_scripts flag
@@ -263,7 +263,7 @@ flowchart TD
   operations_floor("Operations Floor")
   plant_maintenance_key{"Plant Maintenance Key"}
   shift_handover_sheet{"Shift Handover Sheet"}
-  vm_access_terminal["VM Access Terminal"]
+  field_console_kali["Field Console (Kali)"]
   safetynet_relay_terminal{"SAFETYNET Relay Terminal"}
   npc_elena_rodriguez{"Elena Rodriguez"}
   action_question_elena>"Get the SCADA control room password from Elena"]
@@ -314,7 +314,7 @@ flowchart TD
   plant_maintenance_key --> door_generator_room
   operations_floor --> shift_handover_sheet
   shift_handover_sheet --> lock_badge_printer
-  server_room --> vm_access_terminal
+  server_room --> field_console_kali
   server_room --> safetynet_relay_terminal
   safetynet_relay_terminal --> door_scada_control
   server_room --> npc_elena_rodriguez
@@ -338,7 +338,7 @@ flowchart TD
   vmch_terminate_cascade_scripts --> vmfl_terminate_cascade_scripts
   vmfl_escalate_on_attack_host -.-> vmch_terminate_cascade_scripts
   vmfl_terminate_cascade_scripts --> lock_crisis_control_system
-  vm_access_terminal --> vmch_recover_coordination_traffic
+  field_console_kali --> vmch_recover_coordination_traffic
   security_checkpoint --> operations_floor
   aim_commit_the_team -.-> aim_reach_the_control_network
   aim_reach_the_control_room -.-> aim_take_the_attack_host
@@ -361,7 +361,7 @@ flowchart TD
   class server_room,scada_control,generator_room,cable_vault,security_checkpoint,operations_floor room
   class lock_pick_kit,rfid_cloner,fingerprint_kit,threat_desk_summary_tasking_02_41_pt,audited_visitor_log,shift_handover_sheet,safetynet_relay_terminal,signed_casualty_projection,plant_maintenance_log,recovered_site_reference_tomb_gamma,intercepted_mail_deployment_confirmed item
   class printed_contractor_badge,npc_ray_hollis,facility_access_badge_server_zone,plant_maintenance_key,npc_elena_rodriguez,backup_power_transfer_switch key
-  class vm_access_terminal,vmch_recover_coordination_traffic,vmch_intercept_c2_channel,vmch_escalate_on_attack_host,vmch_terminate_cascade_scripts vm
+  class field_console_kali,vmch_recover_coordination_traffic,vmch_intercept_c2_channel,vmch_escalate_on_attack_host,vmch_terminate_cascade_scripts vm
   class action_question_elena action
   class andgate1 gate
   class vmfl_recover_coordination_traffic,vmfl_intercept_c2_channel,vmfl_escalate_on_attack_host,vmfl_terminate_cascade_scripts flag
@@ -468,7 +468,7 @@ flowchart TD
   rc_substation_map_19{"147-Substation Wall Map"}
   rc_shift_handover_sheet_20{"Shift Handover Sheet"}
   rc_ops_floor_workstation_21{"Abandoned Operator Workstation"}
-  rc_vm_launcher_attack_terminal_22{"VM Access Terminal"}
+  rc_vm_launcher_attack_terminal_22{"Field Console (Kali)"}
   rc_flag_station_safetynet_relay_23{"SAFETYNET Relay Terminal"}
   rc_scada_backup_server_24{"SCADA Backup Server"}
   rc_rack_cabling_note_25{"Cabling Survey Note"}

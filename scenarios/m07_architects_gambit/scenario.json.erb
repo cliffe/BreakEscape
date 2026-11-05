@@ -1905,6 +1905,8 @@ scada_password = "CascadeWindow19"
           "observations": "The Kali box you set up here on the maintenance VLAN -- your working machine for reaching the host that is running the cascade.",
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
           "vm": <%= vm_object('attack_vm', {"id":1,"title":"attack_vm","ip":"192.168.100.50","enable_console":true}) %>,
+          "showPostit": true,
+          "postitNote": "user: kali\npassword: kali",
           "puzzle_graph_role": "vm"
         },
         {
