@@ -19,7 +19,14 @@
  * CONSOLE_SIZE, CONSOLE_TOKEN_TIMEOUT_S):
  *   CONSOLE_BEATS        (required) JSON array of beats. Each: { "label": "nmap",
  *                        "text": "nmap -Pn -sV -p 22 172.16.0.2", "settleMs": 6000,
- *                        "delayMs"?: per-char typing delay, "enter"?: false to type without running }
+ *                        "delayMs"?: per-char typing delay, "enter"?: false to type without running,
+ *                        "clearBefore"?: true/false to override the CONSOLE_CLEAR_BEFORE default }
+ *   CONSOLE_CLEAR_BEFORE    "yes"/"1"/"true" to run `clear` at the START of every beat, so each step
+ *                        is recorded on a clean screen with no earlier step's scrollback behind it
+ *                        (the editor can then snip each step out as a self-contained segment). A
+ *                        `${label}-clear` mark is emitted at the cleared frame. Default off.
+ *   CONSOLE_CLEAR_SETTLE_MS how long to hold the freshly cleared screen before typing the step
+ *                        (default 700)
  *   CONSOLE_GO_FILE      optional: wait for this file (the orchestrator touches it once the terminal
  *                        is open) before typing. Without it, wait CONSOLE_GO_FALLBACK_MS then type.
  *   CONSOLE_GO_TIMEOUT_S how long to wait for CONSOLE_GO_FILE (default 60)
@@ -42,6 +49,7 @@ export function parseBeats(env = process.env) {
   if (!Array.isArray(raw) || raw.length === 0) throw new Error('CONSOLE_BEATS must be a non-empty JSON array');
   const typeDelayMs = Number(env.CONSOLE_TYPE_DELAY_MS) || 110;
   const beatSettleMs = Number(env.CONSOLE_BEAT_SETTLE_MS) || 4000;
+  const clearDefault = /^(yes|1|true)$/i.test(env.CONSOLE_CLEAR_BEFORE || '');
   const beats = raw.map((b, i) => {
     if (!b || typeof b !== 'object') throw new Error(`beat ${i} is not an object`);
     if (typeof b.text !== 'string' || !b.text) throw new Error(`beat ${i} has no text`);
@@ -51,6 +59,7 @@ export function parseBeats(env = process.env) {
       label,
       text: b.text,
       enter: b.enter !== false,
+      clearBefore: typeof b.clearBefore === 'boolean' ? b.clearBefore : clearDefault,
       delayMs: Number(b.delayMs) > 0 ? Number(b.delayMs) : typeDelayMs,
       settleMs: Number(b.settleMs) >= 0 ? Number(b.settleMs) : beatSettleMs,
     };
@@ -60,6 +69,7 @@ export function parseBeats(env = process.env) {
     goFile: env.CONSOLE_GO_FILE || null,
     goTimeoutS: Number(env.CONSOLE_GO_TIMEOUT_S) || 60,
     goFallbackMs: Number(env.CONSOLE_GO_FALLBACK_MS) || 9000,
+    clearSettleMs: Number(env.CONSOLE_CLEAR_SETTLE_MS) >= 0 ? Number(env.CONSOLE_CLEAR_SETTLE_MS) : 700,
   };
 }
 
@@ -88,6 +98,15 @@ export default async function take(page, _bridge, mark) {
   await focusCanvas(page);
   for (const b of plan.beats) {
     await sleep(500);            // a short, even gap between beats
+    if (b.clearBefore) {
+      // Run `clear` first so this step begins on a clean screen with no earlier step's scrollback
+      // behind it. The ${label}-clear mark lands on the freshly cleared frame, so the editor can
+      // snip each step out as a self-contained segment that starts blank.
+      await page.keyboard.type('clear', { delay: b.delayMs });
+      await page.keyboard.press('Enter');
+      await sleep(plan.clearSettleMs);
+      mark(`${b.label}-clear`);
+    }
     mark(`${b.label}-type`);
     await page.keyboard.type(b.text, { delay: b.delayMs });
     if (b.enter) {

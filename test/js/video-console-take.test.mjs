@@ -122,6 +122,20 @@ test('vm_console_beats: parseBeats requires a non-empty JSON array and fills def
   assert.equal(p.beats[0].delayMs, 110);                 // default per-char delay
   assert.deepEqual([p.beats[1].label, p.beats[1].enter], ['beat2', false]);  // auto label, no Enter
   assert.equal(p.beats[1].settleMs, 4000);               // default settle
+  assert.equal(p.beats[0].clearBefore, false);           // clear-before off unless asked
+});
+
+test('vm_console_beats: CONSOLE_CLEAR_BEFORE sets a per-beat default a beat can override', () => {
+  // Global default on: every beat clears the screen first unless it opts out.
+  const on = vcb.parseBeats({ CONSOLE_CLEAR_BEFORE: 'yes', CONSOLE_CLEAR_SETTLE_MS: '900', CONSOLE_BEATS: '[{"text":"a"},{"text":"b","clearBefore":false}]' });
+  assert.equal(on.beats[0].clearBefore, true);           // inherits the global default
+  assert.equal(on.beats[1].clearBefore, false);          // per-beat override wins
+  assert.equal(on.clearSettleMs, 900);
+  // Global default off: a single beat can still opt in.
+  const off = vcb.parseBeats({ CONSOLE_BEATS: '[{"text":"a","clearBefore":true},{"text":"b"}]' });
+  assert.equal(off.beats[0].clearBefore, true);
+  assert.equal(off.beats[1].clearBefore, false);
+  assert.equal(off.clearSettleMs, 700);                  // default clear settle
 });
 
 test('vm_console_beats: GO file and timing settings parse from the environment', () => {
