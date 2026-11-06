@@ -1,7 +1,7 @@
 # Handover: office life slice 7, carry outcomes and reveal slots (2026-11-06)
 
-**Status: built, unit-tested, committed and proven live in `test_needs_sims` (game 643). Open: the
-`test_needs_leash` regression, the `lab_physical_pentest` regression run and its log line.** Plan:
+**Status: built, unit-tested, committed and proven live in `test_needs_sims` (game 643). Regressions
+done 2026-11-06: `test_needs_leash` game 645, `lab_physical_pentest` game 646 (score 100).** Plan:
 `OFFICE_LIFE_PLAN.md` 2.2 Part A (Built line lists the choices made without asking).
 
 ## Done
@@ -24,18 +24,15 @@
 - Commits: fcb8817a4 (slice), f97960f2e (parcel global mapping), 3ff1efa29 (slot depth, tray spot).
 
 ## Left
-1. `test_needs_leash` live regression. A script from slice 5 exists at
-   `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/c84d7b68-c29e-4285-9c19-4612b082eed3/scratchpad/s5/leash6.py`
-   (read it first; it expects a fresh leash game). Pass as in the sims README "Re-run on a quiet
-   machine" note (game 630): leashed Ravi takes the long way, 0 samples on Maya's floor, no errors.
-2. `lab_physical_pentest` regression: one run per `OFFICE_LIFE_HANDOVER_SESSION.md` section 4 (Haiku
-   is fine): `verify-run.rb` score 100, no "No path found"/"Failed to escape wall" for staff, no
-   console errors, `drain` before stopping. The lab declares no `outputOf` slots, so slice 7 should
-   change nothing there except that `rooms.js` now sets two `window` functions.
-3. Then add one line to the "Office-life slices" note at the end of
-   `scenarios/lab_physical_pentest/IMPROVEMENT_LOOP_LOG.md`: slice 7, commits fcb8817a4, 3ff1efa29,
-   f97960f2e (and the docs commit), lab game id, score. That line is the only lab file to touch.
-4. Update the handover session table row for slice 7 once 1-2 pass.
+Nothing open. Regressions run 2026-11-06 on keyless :3001, headless:
+1. `test_needs_leash`, game 645: leashed Ravi went ravi_office, west_corridor, store and back, 0 of 46
+   samples on Maya's floor, 28 s; unleashed he cut through `maya_office`, 11 of 30 samples. No page
+   errors.
+2. `lab_physical_pentest`, game 646: `verify-run.rb` score 100, 9/9 tasks (the lab now lists more optional
+   tasks; none were played). Keylogger and USB beats fired, Len opened secure_area (`door_gate_opened`),
+   `kp_badge_tailgated` true, debrief closed the engagement and showed credits. No "No path found" or
+   "Failed to escape wall" in the session log; the only console errors were keyless-server TTS 503s.
+3. Lab log line added to "Office-life slices" in `IMPROVEMENT_LOOP_LOG.md`; session table row updated.
 
 ## Gotchas
 - `session-start.sh` needs `--headless`, or the harness launches a headed browser and fails after
