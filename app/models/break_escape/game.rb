@@ -1289,7 +1289,29 @@ module BreakEscape
           return found if found
         end
       end
+      # Not in a room: a declared grant the player holds (a Remote Session opener and
+      # its nested archive), which exists for the server only while it is held.
+      held_grant_items.each do |grant_item|
+        found = find_object_in_contents(grant_item, target_id)
+        return found if found
+      end
       nil
+    end
+
+    # The scenario's declared grants (DeclaredGrants.for), walked once per instance:
+    # scenario_data is the game's snapshot and does not change within a request.
+    def declared_grants
+      @declared_grants ||= BreakEscape::DeclaredGrants.for(scenario_data)
+    end
+
+    # Declared grant items the player holds right now (ItemIdentity.held_in?). Not
+    # memoised: the inventory changes per request and the container action reloads.
+    def held_grant_items
+      inventory = player_state.is_a?(Hash) ? (player_state['inventory'] || []) : []
+      return [] if inventory.empty?
+
+      declared_grants.map { |grant| grant['item'] }
+                     .select { |item| BreakEscape::ItemIdentity.held_in?(item, inventory) }
     end
 
     # Match this object (by id/name, or the given client id at the top level) or any object nested
@@ -2857,6 +2879,10 @@ module BreakEscape
       case obj
       when Hash
         self.class.strip_puzzle_graph_keys!(obj)
+        # A declared grant's contents are served from the held item, never shipped.
+        # Deep, because this filter descends only into objects, npcs, contents and the
+        # like, not into an object's triggerOnInteract or onInteract actions.
+        BreakEscape::DeclaredGrants.strip_all_grant_contents!(obj)
 
         # Remove 'requires' for exploitable lock types (key/pin/password)
         # Keep it for biometric/bluetooth/rfid since they reference collectible items, not answers

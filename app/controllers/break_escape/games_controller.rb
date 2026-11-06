@@ -1580,6 +1580,8 @@ module BreakEscape
         lock_type = obj['lockType']
         BreakEscape::Game.set_pin_length!(obj) # PIN pad length, before the PIN goes
         BreakEscape::Game.strip_puzzle_graph_keys!(obj) # generator-only authoring fields
+        # A declared grant's contents are served from the held item, never shipped
+        BreakEscape::DeclaredGrants.strip_grant_contents!(obj)
         if lock_type && !%w[biometric bluetooth rfid].include?(lock_type)
           obj.delete('requires')
         end
@@ -1650,7 +1652,9 @@ module BreakEscape
           return container if container
         end
       end
-      nil
+      # A declared grant the player holds (Game#held_grant_items), after the rooms so a
+      # game whose snapshot still has the old twin answers from it as before.
+      find_container_recursive(@game.held_grant_items, container_id)
     end
 
     def find_container_recursive(objects, container_id)
@@ -1677,6 +1681,11 @@ module BreakEscape
           found = find_object_in_object(obj, object_id)
           return found if found
         end
+      end
+      # Then a declared grant the player holds, as find_container_in_scenario.
+      @game.held_grant_items.each do |grant_item|
+        found = find_object_in_object(grant_item, object_id)
+        return found if found
       end
       nil
     end
@@ -1774,6 +1783,12 @@ module BreakEscape
       end
 
       copy = source.deep_dup
+      # A declared grant's contents stay on the server, served from the held grant
+      # (an unlocked grant would otherwise keep them through the filter below).
+      if @collectible_location.is_a?(Hash) && @collectible_location[:type] == 'grant' && copy.key?('contents')
+        copy.delete('contents')
+        copy['hasContents'] = true
+      end
       if copy['locked'] && copy['id'].present? && @game.object_unlocked?(copy['id'])
         copy['locked'] = false
       end
@@ -1812,6 +1827,24 @@ module BreakEscape
         @collectible_item = starting_item
         Rails.logger.info "[BreakEscape] Item is a starting item, skipping room/container checks"
         return nil # Starting items are always valid
+      end
+
+      # A declared grant (DeclaredGrants: an identified give_item the scenario runs
+      # from a timer or an interaction). The scenario declaring it is the permission:
+      # the reward is in no room, so no room, container or takeable check applies.
+      # Decided here on the full identity rule, so a name-only claim for a granted
+      # item never falls through to another object. An NPC give keeps the NPC rule.
+      # NOTE: no trigger check; a declared grant can be claimed at any time (plan §1.4).
+      if source_npc_id.blank?
+        grant = @game.declared_grants.find do |g|
+          BreakEscape::ItemIdentity.addressed_by?(g['item'], item_type, item_id, item_name)
+        end
+        if grant
+          @collectible_location = { type: 'grant', path: grant['path'] }
+          @collectible_item = grant['item']
+          Rails.logger.info "[BreakEscape] Item is a declared grant: #{item_type} at #{grant['path']}"
+          return nil
+        end
       end
 
       # Search for item, prioritizing accessible locations (not locked containers/rooms)
