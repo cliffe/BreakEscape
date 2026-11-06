@@ -556,28 +556,94 @@ export function standUp(spot = null) {
 }
 
 /** Where the player lands getting off: beside a swivel chair, back where they came from for a static one. */
-function landingSpot(chair, seat, facing, approach) {
-    return seat.kind === 'swivel' ? standSpot(chair, facing) : approach;
+function landingSpot(chair, seat, facing, approach, forced = true) {
+    return seat.kind === 'swivel' ? standSpot(chair, facing, { approach, forced }) : approach;
+}
+
+/**
+ * Seat-box experiment: the stand-up order (SEAT_BOX_PLAN.md, "Standing up"). Pure, so each
+ * branch can be tested with fakes. `io` gives:
+ *   cellNear(x, y, r)    nearest walkable grid cell within r cells, or null
+ *   boxClear(x, y)       an 18x10 walking box with its feet at (x, y) overlaps no immovable body
+ *   lineClear(x, y)      the line from the chair's castor base to (x, y) crosses no immovable body
+ *   flood(maxCells)      walkable cells reachable from the chair's cell through walkable cells,
+ *                        within maxCells steps, nearest first (never across a desk)
+ * Order: 1 the compass candidates (forward, sides, back, forward diagonals); 2 the flood
+ * fill, 4 cells; 3 the approach point; then a voluntary jump-off returns null (stay
+ * seated), and a forced stand takes the flood fill to 8 cells (box only), then the approach
+ * point unchecked. Never an unchecked cell picked by direction.
+ */
+export function pickStandSpot({ cx, cy, facing, reach, approach = null, forced = true }, io) {
+    const start = Math.max(0, COMPASS.indexOf(facing));
+    // Forward, the sides, back, and the forward diagonals last: a chair tucked in faces its
+    // desk, and a forward diagonal steps round the desk's corner to its far side.
+    for (const step of [0, 2, -2, 3, -3, 4, 1, -1]) {
+        const a = forwardRad(COMPASS[(start + step + 8) % 8]);
+        const x = cx + Math.cos(a) * reach, y = cy + Math.sin(a) * reach;
+        const cell = io.cellNear(x, y, 1);
+        if (cell && Math.hypot(cell.x - x, cell.y - y) < 12 && io.boxClear(cell.x, cell.y) && io.lineClear(cell.x, cell.y)) {
+            return { x: cell.x, y: cell.y, via: 'compass' };
+        }
+    }
+    for (const c of io.flood(4)) {
+        if (io.boxClear(c.x, c.y) && io.lineClear(c.x, c.y)) return { x: c.x, y: c.y, via: 'flood' };
+    }
+    if (approach && io.boxClear(approach.x, approach.y)) return { x: approach.x, y: approach.y, via: 'approach' };
+    if (!forced) return null;
+    for (const c of io.flood(8)) {
+        if (io.boxClear(c.x, c.y)) return { x: c.x, y: c.y, via: 'forced-flood' };
+    }
+    return approach ? { x: approach.x, y: approach.y, via: 'forced-approach' } : null;
+}
+
+/** Seat-box experiment: walkable cells reachable from (x, y) within maxCells steps, nearest first. */
+function floodCells(pfm, x, y, maxCells) {
+    const B = pfm?.worldGridBounds, G = pfm?.worldGrid;
+    if (!B || !G) return [];
+    const { minX, minY, cols, rows, step } = B;
+    const sx = Math.floor((x - minX) / step), sy = Math.floor((y - minY) / step);
+    const seen = new Set([`${sx},${sy}`]);
+    const out = [];
+    let frontier = [[sx, sy]];
+    for (let d = 0; d < maxCells && frontier.length; d++) {
+        const next = [];
+        for (const [fx, fy] of frontier) {
+            for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) {
+                const nx = fx + dx, ny = fy + dy, k = `${nx},${ny}`;
+                if (seen.has(k) || nx < 0 || ny < 0 || nx >= cols || ny >= rows) continue;
+                seen.add(k);
+                if (G[ny][nx] !== 0) continue; // only through walkable cells: never across a desk
+                next.push([nx, ny]);
+                out.push({ x: minX + nx * step + step / 2, y: minY + ny * step + step / 2 });
+            }
+        }
+        frontier = next;
+    }
+    return out.sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y));
 }
 
 /** A walkable spot next to a swivel chair, in front of it first. */
-function standSpot(chair, facing) {
+function standSpot(chair, facing, opts = {}) {
     const pfm = window.pathfindingManager;
     const b = chair.body;
     const foot = b ? bodyFeet(chair) : { x: chair.x + chair.width / 2, y: chair.y + chair.height };
     const cx = foot.x, cy = foot.y;
     const reach = (b ? Math.max(b.width, b.height) / 2 : 10) + 14; // clear of the chair body
+    if (window.__seatBox) {
+        const line = (x, y) => [0.25, 0.5, 0.75].every(k => clearOfTables(chair, cx + (x - cx) * k, cy + (y - cy) * k, 1, 1));
+        return pickStandSpot({ cx, cy, facing, reach, approach: opts.approach || null, forced: opts.forced !== false }, {
+            cellNear: (x, y, r) => pfm?.findNearestWalkableWorldCell?.(x, y, r) || null,
+            boxClear: (x, y) => clearOfTables(chair, x, y, 9, 5),
+            lineClear: line,
+            flood: n => floodCells(pfm, cx, cy, n)
+        });
+    }
     const start = COMPASS.indexOf(facing);
-    // Seat-box experiment: a chair tucked in at a desk faces it, so the spot in front is
-    // on the desk. Skip spots where a walking box would overlap a desk's (table's) box.
-    const clear = window.__seatBox
-        ? (x, y) => [0.25, 0.5, 0.75, 1].every(k => clearOfTables(chair, cx + (x - cx) * k, cy + (y - cy) * k, k < 1 ? 1 : 9, k < 1 ? 1 : 5))
-        : () => true; // ...and don't land across one (the line from the chair to the spot)
     for (const step of [0, 1, -1, 2, -2, 3, -3, 4]) {
         const a = forwardRad(COMPASS[(start + step + 8) % 8]);
         const x = cx + Math.cos(a) * reach, y = cy + Math.sin(a) * reach;
         const cell = pfm?.findNearestWalkableWorldCell?.(x, y, 1);
-        if (cell && Math.hypot(cell.x - x, cell.y - y) < 12 && clear(cell.x, cell.y)) return { x: cell.x, y: cell.y };
+        if (cell && Math.hypot(cell.x - x, cell.y - y) < 12) return { x: cell.x, y: cell.y };
     }
     return pfm?.findNearestWalkableWorldCell?.(cx, cy + reach, 3) || null;
 }
@@ -619,7 +685,9 @@ function jumpOff() {
     const player = window.player;
     const { chair, seat, facing, approach, sprite } = state;
     // Work out the landing spot with the chair's own body back in place.
-    const spot = landingSpot(chair, seat, facing, approach);
+    // Seat-box experiment: a voluntary jump-off with no clear spot stays seated, with a line.
+    const spot = landingSpot(chair, seat, facing, approach, !window.__seatBox);
+    if (!spot && window.__seatBox) { window.gameAlert?.('No room to stand up here.', 'info', 'Seat', 2500); return; }
     if (!spot) { standUp(); return; }
     state.jumping = true;
     updateBreath(state, sprite, false);

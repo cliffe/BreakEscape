@@ -249,3 +249,35 @@ test('seated block (option G experiment) is inert unless window.__seatBox is set
     // the live default reads window.__seatBox, which nothing in the engine sets
     assert.equal(window.__seatBox, undefined);
 });
+
+test('pickStandSpot (seat-box experiment): compass, flood, approach, then stay seated or forced', () => {
+    // A desk box at x 48..126, y 264..280; the chair's castor base at (87, 260), facing south.
+    const desk = { x0: 48, x1: 126, y0: 264, y1: 280 };
+    const inDesk = (x, y, hw, hh) => x + hw > desk.x0 && x - hw < desk.x1 && y + hh > desk.y0 && y - hh < desk.y1;
+    const at = { cx: 87, cy: 260, facing: 'south', reach: 20 };
+    const world = (blocked = () => false, floodCells = []) => ({
+        cellNear: (x, y) => (blocked(x, y) || inDesk(x, y, 0, 0) ? null : { x, y }),
+        boxClear: (x, y) => !blocked(x, y) && !inDesk(x, y, 9, 5),
+        lineClear: (x, y) => [0.25, 0.5, 0.75].every(k => !inDesk(87 + (x - 87) * k, 260 + (y - 260) * k, 1, 1)),
+        flood: n => floodCells.slice(0, n * 4)
+    });
+    // 1. open floor behind the desk: a compass spot on the near side, never south of the desk
+    const a = seating.pickStandSpot(at, world());
+    assert.equal(a.via, 'compass');
+    assert.ok(a.y < desk.y0 - 5, `landed at y ${a.y}, desk back edge ${desk.y0}`);
+    // 2. every compass spot blocked (a wall to the north, the desk to the south): flood fill
+    const wallN = (x, y) => y < 252;
+    const b = seating.pickStandSpot(at, world(wallN, [{ x: 120, y: 256 }, { x: 140, y: 256 }]));
+    assert.equal(b.via, 'flood');
+    // 3. nothing near: the approach point
+    const shut = () => true;
+    const c = seating.pickStandSpot({ ...at, approach: { x: 87, y: 230 } }, { ...world(shut), boxClear: (x, y) => y === 230 });
+    assert.deepEqual([c.x, c.y, c.via], [87, 230, 'approach']);
+    // 4. a voluntary jump-off with nowhere clear stays seated
+    assert.equal(seating.pickStandSpot({ ...at, approach: { x: 87, y: 230 }, forced: false }, world(shut)), null);
+    // 5. forced (KO, punch, chair gone): the approach point even if blocked; never across the desk
+    const e = seating.pickStandSpot({ ...at, approach: { x: 87, y: 230 } }, world(shut));
+    assert.deepEqual([e.x, e.y, e.via], [87, 230, 'forced-approach']);
+    // the south cell across the desk is never returned by any branch
+    for (const r of [a, b, c, e]) assert.ok(!(r.y > desk.y1), JSON.stringify(r));
+});
