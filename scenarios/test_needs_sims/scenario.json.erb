@@ -85,7 +85,10 @@
         { "taskId": "see_left_behind", "title": "Spot something left on an empty desk (Tom often forgets his ID badge when he gets up, and pockets it when he sits down again)", "type": "custom", "status": "active" },
         { "taskId": "hear_rota_exchange", "title": "Overhear Sanjay and Rosa talk about the kitchen rota (read the Activity Board, open the lounge door and stay near the water cooler; they say it once)", "type": "custom", "status": "active" },
         { "taskId": "hear_parcel_exchange", "title": "Overhear Tom and Amara talk about the parcel (after Amara has opened it, read the Activity Board and stand by the coffee queue)", "type": "custom", "status": "active" },
-        { "taskId": "see_look_round", "title": "See someone look round at a conversation (read the Coffee Notice: when Sanjay turns back from the coffee and grumbles, the staff at their desks nearby turn their chairs towards him)", "type": "custom", "status": "active" }
+        { "taskId": "see_look_round", "title": "See someone look round at a conversation (read the Coffee Notice: when Sanjay turns back from the coffee and grumbles, the staff at their desks nearby turn their chairs towards him)", "type": "custom", "status": "active" },
+        { "taskId": "hear_screen_lock", "title": "Hear a screen lock as its owner walks off (stay in the office: Amara leaves her screen open for a quick trip, but locks it with a soft chime before a longer one, such as the kitchen run after you read the Deadline Memo)", "type": "custom", "status": "active" },
+        { "taskId": "see_auto_lock", "title": "Watch a screen lock itself (Sanjay never locks his PC, but it locks on its own 30 seconds after he walks off)", "type": "custom", "status": "active" },
+        { "taskId": "use_open_screen", "title": "Use Sanjay's screen while he is away (using it keeps it awake)", "type": "custom", "status": "active" }
       ]
     }
   ],
@@ -103,10 +106,11 @@
           "takeable": false,
           "locked": false,
           "observations": "Amara's desk PC.",
-          "_comment": "officePresets: type pc gives the desk_pc preset (work, restores 60, 10 s). Only what differs is written here. workstation: Amara locks it every time she leaves (locksScreenOnLeave defaults to true), shown by a steady blue dot at the screen's corner.",
+          "_comment": "officePresets: type pc gives the desk_pc preset (work, restores 60, 10 s). Only what differs is written here. workstation: true with no lock field, so Amara's own screenHabit decides (slice 16): she locks it only for a trip she expects to take over 20 s. Locked: a steady blue dot at the screen's corner; open and away: a breathing white one.",
           "workstation": true,
           "observationVariants": [
-            { "condition": "globalVars.amara_pc_screen_locked", "value": "Amara's desk PC. She locked it before she walked off." }
+            { "condition": "globalVars.amara_pc_screen_locked", "value": "Amara's desk PC. She locked it before she walked off." },
+            { "condition": "globalVars.amara_pc_owner_away", "value": "Amara's desk PC. She has only stepped away, and left it unlocked." }
           ],
           "affordance": { "accepts": ["post", "printout"], "private": true }
         },
@@ -144,9 +148,12 @@
           "takeable": false,
           "locked": false,
           "observations": "Sanjay's desk PC.",
+          "_comment": "Slice 16: Sanjay's habit is never to lock (screenHabit.lockChance 0); the machine's policy locks it after 30 s idle with him away (autoLockSeconds). Using it restarts the idle clock.",
           "workstation": true,
+          "autoLockSeconds": 30,
           "observationVariants": [
-            { "condition": "globalVars.sanjay_pc_screen_locked", "value": "Sanjay's desk PC. He locked it before he walked off." }
+            { "condition": "globalVars.sanjay_pc_screen_locked", "value": "Sanjay's desk PC. It has gone to its lock screen." },
+            { "condition": "globalVars.sanjay_pc_owner_away", "value": "Sanjay's desk PC. He has left it unlocked; it will lock itself if nobody touches it." }
           ],
           "affordance": { "private": true }
         },
@@ -310,6 +317,7 @@
           "voice": { "name": "Aoede", "style": "Office administrator, thirties, British Nigerian, London accent. Warm and quick.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
           "needsHome": "amara_pc",
+          "screenHabit": { "lockIfAwayOverSeconds": 20 },
           "needsSpeed": 90,
           "needs": {
             "caffeine": { "decayPerMin": 20, "urgentAt": 40, "initial": 58 },
@@ -357,6 +365,9 @@
             { "eventPattern": "item_dropped:parcel", "onceOnly": true, "cooldown": 0, "setGlobal": { "parcel_dropped": true } },
             { "eventPattern": "npc_exchange_heard:exchange_tom_parcel", "onceOnly": true, "cooldown": 0, "completeTask": "hear_parcel_exchange" },
             { "eventPattern": "npc_swivelled:*", "condition": "data.reason === 'listen'", "onceOnly": true, "cooldown": 0, "completeTask": "see_look_round" },
+            { "eventPattern": "workstation_lock_heard:amara_pc", "condition": "data.how === 'leave'", "onceOnly": true, "cooldown": 0, "completeTask": "hear_screen_lock" },
+            { "eventPattern": "workstation_screen_changed:sanjay_pc", "condition": "data.how === 'auto'", "onceOnly": true, "cooldown": 0, "completeTask": "see_auto_lock" },
+            { "eventPattern": "workstation_accessed:sanjay_pc", "onceOnly": true, "cooldown": 0, "completeTask": "use_open_screen" },
             { "eventPattern": "item_dropped:player_mugs", "onceOnly": true, "cooldown": 0, "setGlobal": { "mugs_dropped": true } }
           ]
         },
@@ -426,6 +437,7 @@
           "voice": { "name": "Puck", "style": "Developer, mid twenties, British Indian, Leicester accent. Polite and a little shy.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
           "needsHome": "sanjay_pc",
+          "screenHabit": { "lockChance": 0 },
           "needsSpeed": 85,
           "onUse": { "sanjay_pc": { "revealOutput": "office_copier" } },
           "needs": {
