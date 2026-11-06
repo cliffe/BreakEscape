@@ -7,6 +7,7 @@
   "npcWindupMs": 700,
   "needsDebugOverlay": true,
   "officePresets": true,
+  "lighting": { "enabled": true, "defaultMode": "on" },
 
   "actionIcons": {
     "lounge_kettle": { "sprite": "kettle1", "text": "K" }
@@ -60,6 +61,7 @@
         { "taskId": "see_caught", "title": "Get caught at someone's desk", "type": "custom", "status": "active" },
         { "taskId": "see_long_way", "title": "Tom or Amara fetches a coffee from the kitchen, not the lounge kettle", "type": "custom", "status": "active" },
         { "taskId": "hear_drink", "title": "Stand close enough to hear someone drink", "type": "custom", "status": "active" },
+        { "taskId": "spot_open_screen", "title": "Spot an unlocked, unattended screen (a breathing white dot; a steady blue dot means locked)", "type": "custom", "status": "active" },
         { "taskId": "hear_snack", "title": "Hear someone eat in the kitchen (the fridge and microwave take their settings and sound from their type)", "type": "custom", "status": "active" }
       ]
     }
@@ -78,7 +80,11 @@
           "takeable": false,
           "locked": false,
           "observations": "Amara's desk PC.",
-          "_comment": "officePresets: type pc gives the desk_pc preset (work, restores 60, 10 s). Only what differs is written here.",
+          "_comment": "officePresets: type pc gives the desk_pc preset (work, restores 60, 10 s). Only what differs is written here. workstation: Amara locks it every time she leaves (locksScreenOnLeave defaults to true), shown by a steady blue dot at the screen's corner.",
+          "workstation": true,
+          "observationVariants": [
+            { "condition": "globalVars.amara_pc_screen_locked", "value": "Amara's desk PC. She locked it before she walked off." }
+          ],
           "affordance": { "accepts": ["post"], "private": true }
         },
         {
@@ -88,6 +94,12 @@
           "takeable": false,
           "locked": false,
           "observations": "Tom's desk PC. There is a sandwich menu taped to the monitor.",
+          "_comment": "lockChance 0.5: a seeded roll on each leave. Open: a breathing warm-white dot; locked: a steady blue one.",
+          "lockChance": 0.5,
+          "observationVariants": [
+            { "condition": "globalVars.tom_pc_screen_locked", "value": "Tom's desk PC. He locked it before he walked off." },
+            { "condition": "globalVars.tom_pc_owner_away", "value": "Tom's desk PC. He has left it unlocked, his inbox open on the screen." }
+          ],
           "affordance": { "private": true }
         },
         {
@@ -97,6 +109,10 @@
           "takeable": false,
           "locked": false,
           "observations": "Sanjay's desk PC.",
+          "workstation": true,
+          "observationVariants": [
+            { "condition": "globalVars.sanjay_pc_screen_locked", "value": "Sanjay's desk PC. He locked it before he walked off." }
+          ],
           "affordance": { "private": true }
         },
         {
@@ -244,6 +260,7 @@
           },
           "onUse": { "fridge": { "setGlobal": "tom_had_lunch" } },
           "eventMappings": [
+            { "eventPattern": "workstation_owner_left:tom_pc", "condition": "data.screenLocked === false", "onceOnly": true, "cooldown": 0, "completeTask": "spot_open_screen" },
             { "eventPattern": "npc_caught_at_post:tom", "cooldown": 30000, "bark": "Er, that's my desk. Can I help you?", "completeTask": "see_caught" },
             { "eventPattern": "object_interacted", "condition": "data.objectName === 'Deadline Memo'", "cooldown": 30000, "needs": { "set": { "caffeine": 20 } } }
           ]
