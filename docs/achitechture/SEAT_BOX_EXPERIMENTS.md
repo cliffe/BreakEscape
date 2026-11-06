@@ -35,6 +35,9 @@ groups (Tiled `tables` + `table_items`), so monitors and lamps draw with their d
 
 ## Recommendation
 
+> Superseded by `SEAT_BOX_PLAN.md` Q0: the block is the chair's own 18 × 8 body; the front and back stops are unchanged.
+
+
 - **Seated block: 12 x 8**, centred on the castor base, kept on the empty chair as well
   (`keep: true`), or at least never more than ~4 px smaller than the chair's own body along
   the roll axis (see "Standing up" for why).
@@ -103,6 +106,9 @@ player to the approach spot south of the chair, clear of the desk box. Static ch
 body, so option G doesn't change them; their map placement sets the look.
 
 ## What the NPC side needs (office-life session, not changed here)
+
+> Superseded by `SEAT_BOX_PLAN.md` Q0: the block is the chair's own 18 × 8 body; the front and back stops are unchanged.
+
 
 - `seatNPC`/`updateNeedsSeat`: on a swivel chair, give the chair (or the NPC) the same block,
   and pull the chair out to the contact line (front: castor at F + 4 for 12x8; behind: at the

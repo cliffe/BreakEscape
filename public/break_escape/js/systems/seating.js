@@ -28,6 +28,8 @@
  * standing, the feet (the body collider's centre) go on the seat point.
  */
 
+import { walkBoxClear, pathClear, chairRect, localStandGrid, nearestCell, floodStandCells } from './seat-box.js';
+
 export const COMPASS = ['south', 'south-east', 'east', 'north-east', 'north', 'north-west', 'west', 'south-west'];
 const REAR = new Set(['north', 'north-east', 'north-west']);
 
@@ -424,14 +426,10 @@ const moveDriverFeetTo = moveFeetTo;
 
 /**
  * Collision box the driver takes on a swivel chair, centred on the chair body's centre
- * (the castor base under the seat). Default: the chair's whole footprint. Experiment
- * (docs/achitechture/SEAT_BOX_EXPERIMENTS.md, "option G"): `window.__seatBox = { w, h }`
- * shrinks it to a small block, so the chair tucks in until that block meets the desk's
- * box. Off unless both are positive numbers.
+ * (the castor base under the seat): the chair's own body (SEAT_BOX_PLAN.md Q0; for the
+ * office chairs that is seat-box.js SEAT_BLOCKS.office40, 18 x 8).
  */
-export function seatedBlock(chairBody, toggle) {
-    const w = Number(toggle?.w), h = Number(toggle?.h);
-    if (w > 0 && h > 0) return { w, h };
+export function seatedBlock(chairBody) {
     return { w: chairBody.width, h: chairBody.height };
 }
 
@@ -462,7 +460,7 @@ function sitOn(chair, seat, pose) {
     if (seat.kind === 'swivel' && chair.body) {
         // The driver's body takes over the chair's footprint; the chair follows it.
         footOffset = { x: chair.body.offset.x + chair.body.width / 2, y: chair.body.offset.y + chair.body.height / 2 };
-        const { w: bw, h: bh } = seatedBlock(chair.body, window.__seatBox);
+        const { w: bw, h: bh } = seatedBlock(chair.body);
         const cx = savedBody.ox + savedBody.w / 2, cy = savedBody.oy + savedBody.h / 2;
         chair.body.setVelocity(0, 0);
         chairBodyWasEnabled = chair.body.enable;
@@ -533,18 +531,21 @@ export function standUp(spot = null) {
 
     if (seat.kind === 'swivel' && chair.body) {
         chair.body.enable = chairBodyWasEnabled;
-        // Seat-box experiment, `keep: true`: the empty chair keeps the small block too, so its
-        // own (bigger) body isn't left sunk in the desk box it was tucked against.
-        const box = window.__seatBox;
-        if (box?.keep && seatedBlock(chair.body, box) !== null && Number(box.w) > 0 && Number(box.h) > 0) {
-            const cx = chair.body.offset.x + chair.body.width / 2, cy = chair.body.offset.y + chair.body.height / 2;
-            chair.body.setSize(Number(box.w), Number(box.h), false);
-            chair.body.setOffset(cx - Number(box.w) / 2, cy - Number(box.h) / 2);
-        }
         placeBody(chair, chair.x, chair.y);
         chair.body.setVelocity(0, 0);
     }
-    spot = spot || landingSpot(chair, seat, facing, approach);
+    // The player is already off the chair (state cleared, proxy gone, body restored), so a
+    // throw while choosing the spot must not leave them invisible and "seated": land on the
+    // approach point and finish (SEAT_BOX_PLAN.md 1.3, R3 M1).
+    if (!spot) {
+        try {
+            spot = landingSpot(chair, seat, facing, approach);
+        } catch (e) {
+            console.error('🪑 standUp: landing spot failed, back to where the player sat down', e);
+            spot = approach;
+            noteStand({ via: 'error-approach', x: approach?.x, y: approach?.y, forced: true });
+        }
+    }
     if (spot) moveDriverFeetTo(player, spot.x, spot.y);
 
     player.isSeated = false;
@@ -558,21 +559,32 @@ export function standUp(spot = null) {
 
 /** Where the player lands getting off: beside a swivel chair, back where they came from for a static one. */
 function landingSpot(chair, seat, facing, approach, forced = true) {
-    return seat.kind === 'swivel' ? standSpot(chair, facing, { approach, forced }) : approach;
+    if (seat.kind !== 'swivel') return approach;
+    const spot = window.__seatBox === false ? legacyStandSpot(chair, facing)
+        : playerStandSpot(chair, facing, { approach, forced });
+    noteStand(spot ? { via: spot.via, x: spot.x, y: spot.y, forced }
+        : { via: window.__seatBox === false ? 'legacy-none' : (forced ? 'none' : 'refused'), forced });
+    return spot;
 }
 
+/** Max distance from the castor base for a voluntary stand to take the approach point (R2 m4). */
+export const VOLUNTARY_APPROACH_PX = 32;
+
 /**
- * Seat-box experiment: the stand-up order (SEAT_BOX_PLAN.md, "Standing up"). Pure, so each
- * branch can be tested with fakes. `io` gives:
- *   cellNear(x, y, r)    nearest walkable grid cell within r cells, or null
- *   boxClear(x, y)       an 18x10 walking box with its feet at (x, y) overlaps no immovable body
- *   lineClear(x, y)      the line from the chair's castor base to (x, y) crosses no immovable body
+ * The stand-up order (SEAT_BOX_PLAN.md 1.3). Pure, so each branch can be tested with fakes.
+ * `facing` is the player's facing at stand time (state.facing, the way they last rolled; R3 M3).
+ * `io` gives:
+ *   cellNear(x, y, r)    nearest walkable cell of the local stand grid within r cells, or null
+ *   boxClear(x, y)       an 18x10 walking box with its feet at (x, y) overlaps no solid body and
+ *                        not the chair just left
+ *   lineClear(x, y)      the line from the chair's castor base to (x, y) crosses no solid body
  *   flood(maxCells)      walkable cells reachable from the chair's cell through walkable cells,
  *                        within maxCells steps, nearest first (never across a desk)
- * Order: 1 the compass candidates (forward, sides, back, forward diagonals); 2 the flood
- * fill, 4 cells; 3 the approach point; then a voluntary jump-off returns null (stay
- * seated), and a forced stand takes the flood fill to 8 cells (box only), then the approach
- * point unchecked. Never an unchecked cell picked by direction.
+ * Order: 1 the compass candidates (forward, sides, back diagonals, back, forward diagonals
+ * last); 2 the flood fill, 4 cells; 3 the approach point (a voluntary stand only when it is
+ * within 32 px and line clear); then a voluntary jump-off returns null (stay seated), and a
+ * forced stand takes the flood fill to 8 cells (box only), then the approach point unchecked.
+ * Never an unchecked cell picked by direction.
  */
 export function pickStandSpot({ cx, cy, facing, reach, approach = null, forced = true }, io) {
     const start = Math.max(0, COMPASS.indexOf(facing));
@@ -589,7 +601,10 @@ export function pickStandSpot({ cx, cy, facing, reach, approach = null, forced =
     for (const c of io.flood(4)) {
         if (io.boxClear(c.x, c.y) && io.lineClear(c.x, c.y)) return { x: c.x, y: c.y, via: 'flood' };
     }
-    if (approach && io.boxClear(approach.x, approach.y)) return { x: approach.x, y: approach.y, via: 'approach' };
+    if (approach && io.boxClear(approach.x, approach.y)
+        && (forced || (Math.hypot(approach.x - cx, approach.y - cy) <= VOLUNTARY_APPROACH_PX && io.lineClear(approach.x, approach.y)))) {
+        return { x: approach.x, y: approach.y, via: 'approach' };
+    }
     if (!forced) return null;
     for (const c of io.flood(8)) {
         if (io.boxClear(c.x, c.y)) return { x: c.x, y: c.y, via: 'forced-flood' };
@@ -597,67 +612,63 @@ export function pickStandSpot({ cx, cy, facing, reach, approach = null, forced =
     return approach ? { x: approach.x, y: approach.y, via: 'forced-approach' } : null;
 }
 
-/** Seat-box experiment: walkable cells reachable from (x, y) within maxCells steps, nearest first. */
-function floodCells(pfm, x, y, maxCells) {
-    const B = pfm?.worldGridBounds, G = pfm?.worldGrid;
-    if (!B || !G) return [];
-    const { minX, minY, cols, rows, step } = B;
-    const sx = Math.floor((x - minX) / step), sy = Math.floor((y - minY) / step);
-    const seen = new Set([`${sx},${sy}`]);
-    const out = [];
-    let frontier = [[sx, sy]];
-    for (let d = 0; d < maxCells && frontier.length; d++) {
-        const next = [];
-        for (const [fx, fy] of frontier) {
-            for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) {
-                const nx = fx + dx, ny = fy + dy, k = `${nx},${ny}`;
-                if (seen.has(k) || nx < 0 || ny < 0 || nx >= cols || ny >= rows) continue;
-                seen.add(k);
-                if (G[ny][nx] !== 0) continue; // only through walkable cells: never across a desk
-                next.push([nx, ny]);
-                out.push({ x: minX + nx * step + step / 2, y: minY + ny * step + step / 2 });
-            }
-        }
-        frontier = next;
-    }
-    return out.sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y));
-}
-
-/** A walkable spot next to a swivel chair, in front of it first. */
-function standSpot(chair, facing, opts = {}) {
-    const pfm = window.pathfindingManager;
+/** Castor base and stand reach of a swivel chair. */
+function castorOf(chair) {
     const b = chair.body;
     const foot = b ? bodyFeet(chair) : { x: chair.x + chair.width / 2, y: chair.y + chair.height };
-    const cx = foot.x, cy = foot.y;
-    const reach = (b ? Math.max(b.width, b.height) / 2 : 10) + 14; // clear of the chair body
-    if (window.__seatBox) {
-        const line = (x, y) => [0.25, 0.5, 0.75].every(k => clearOfTables(chair, cx + (x - cx) * k, cy + (y - cy) * k, 1, 1));
-        return pickStandSpot({ cx, cy, facing, reach, approach: opts.approach || null, forced: opts.forced !== false }, {
-            cellNear: (x, y, r) => pfm?.findNearestWalkableWorldCell?.(x, y, r) || null,
-            boxClear: (x, y) => clearOfTables(chair, x, y, 9, 5),
-            lineClear: line,
-            flood: n => floodCells(pfm, cx, cy, n)
-        });
-    }
+    return { cx: foot.x, cy: foot.y, reach: (b ? Math.max(b.width, b.height) / 2 : 10) + 14 }; // clear of the chair body
+}
+
+/** Record the last player stand for the stand audit (window.seating.lastStand). */
+function noteStand(rec) {
+    if (window.seating && typeof window.seating === 'object') window.seating.lastStand = rec;
+}
+
+/**
+ * A walkable spot next to a swivel chair, in front of it first: the stand-up code before the
+ * seat box plan. NPCs still use it (their stand-up changes in slice 6), and the player does
+ * under `window.__seatBox === false` (test-only, for the stand audit's side by side). It can
+ * land on or across a desk; there is no box or line check.
+ */
+function legacyStandSpot(chair, facing) {
+    const pfm = window.pathfindingManager;
+    const { cx, cy, reach } = castorOf(chair);
     const start = COMPASS.indexOf(facing);
     for (const step of [0, 1, -1, 2, -2, 3, -3, 4]) {
         const a = forwardRad(COMPASS[(start + step + 8) % 8]);
         const x = cx + Math.cos(a) * reach, y = cy + Math.sin(a) * reach;
         const cell = pfm?.findNearestWalkableWorldCell?.(x, y, 1);
-        if (cell && Math.hypot(cell.x - x, cell.y - y) < 12) return { x: cell.x, y: cell.y };
+        if (cell && Math.hypot(cell.x - x, cell.y - y) < 12) return { x: cell.x, y: cell.y, via: 'legacy-compass' };
     }
-    return pfm?.findNearestWalkableWorldCell?.(cx, cy + reach, 3) || null;
+    const fb = pfm?.findNearestWalkableWorldCell?.(cx, cy + reach, 3);
+    return fb ? { x: fb.x, y: fb.y, via: 'legacy-fallback' } : null;
 }
 
-/** Seat-box experiment: is a walking box (18x10) with feet at (x, y) clear of every table box in the chair's room? */
-function clearOfTables(chair, x, y, hw = 9, hh = 5) {
-    const room = window.rooms?.[chair.roomId] || Object.values(window.rooms || {}).find(r => r.objects?.[chair.objectId]);
-    for (const o of Object.values(room?.objects || {})) {
-        const b = o.body;
-        if (!b || !b.enable || o === chair || b.physicsType !== 1) continue; // static furniture (desks)
-        if (x + hw > b.x && x - hw < b.x + b.width && y + hh > b.y && y - hh < b.y + b.height) return false;
-    }
-    return true;
+/**
+ * The player's landing spot off a swivel chair: the order in SEAT_BOX_PLAN.md 1.3 over a local
+ * stand grid built from the live bodies without the chair and the player, so cells only they
+ * block (or a chair an NPC baked into the world grid) are free. `facing` is state.facing at
+ * stand time. Returns { x, y, via } or null (voluntary, nothing clear: stay seated).
+ */
+function playerStandSpot(chair, facing, { approach = null, forced = true } = {}) {
+    const player = window.player;
+    const scene = chair.scene || window.pathfindingManager?.scene;
+    const { cx, cy, reach } = castorOf(chair);
+    const rect = chairRect(chair);
+    const built = localStandGrid(window.pathfindingManager, { exclude: [chair, player] });
+    const ignore = [chair, player];
+    return pickStandSpot({ cx, cy, facing, reach, approach, forced }, {
+        cellNear: (x, y, r) => nearestCell(built, x, y, r),
+        boxClear: (x, y) => walkBoxClear(scene, x, y, { ignore, extra: rect ? [rect] : [] }),
+        lineClear: (x, y) => pathClear(scene, { x: cx, y: cy }, { x, y }, { ignore }),
+        flood: n => floodStandCells(built, cx, cy, n)
+    });
+}
+
+/** NPC stand-up beside a swivel chair: unchanged until slice 6. */
+function standSpot(chair, facing) {
+    const s = legacyStandSpot(chair, facing);
+    return s ? { x: s.x, y: s.y } : null;
 }
 
 /**
@@ -685,10 +696,19 @@ const JUMP_HEIGHT = 14;
 function jumpOff() {
     const player = window.player;
     const { chair, seat, facing, approach, sprite } = state;
-    // Work out the landing spot with the chair's own body back in place.
-    // Seat-box experiment: a voluntary jump-off with no clear spot stays seated, with a line.
-    const spot = landingSpot(chair, seat, facing, approach, !window.__seatBox);
-    if (!spot && window.__seatBox) { window.gameAlert?.('No room to stand up here.', 'info', 'Seat', 2500); return; }
+    // A voluntary stand: with nowhere clear the player stays seated, with a line, and can roll
+    // somewhere else (SEAT_BOX_PLAN.md 1.3 step 4). `__seatBox === false` (test-only) keeps the
+    // old code, which never refuses.
+    const legacy = window.__seatBox === false;
+    let spot;
+    try {
+        spot = landingSpot(chair, seat, facing, approach, legacy);
+    } catch (e) {
+        console.error('🪑 jumpOff: landing spot failed; standing up instead', e);
+        standUp();
+        return;
+    }
+    if (!spot && !legacy) { window.gameAlert?.('No room to stand up here.', 'info', 'Seat', 2500); return; }
     if (!spot) { standUp(); return; }
     state.jumping = true;
     updateBreath(state, sprite, false);
