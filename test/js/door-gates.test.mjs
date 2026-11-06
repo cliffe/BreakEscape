@@ -10,7 +10,7 @@ import { dirname, join } from 'node:path';
 const js = join(dirname(fileURLToPath(import.meta.url)), '../../public/break_escape/js');
 const dataUrl = (src) => 'data:text/javascript;base64,' + Buffer.from(src).toString('base64');
 globalThis.window = {};
-const { DoorGates, normaliseGate } = await import(dataUrl(readFileSync(join(js, 'systems/door-gates.js'), 'utf8')));
+const { DoorGates, normaliseGate, GUARD_PRIORITY_MS } = await import(dataUrl(readFileSync(join(js, 'systems/door-gates.js'), 'utf8')));
 
 // A N/S doorway at (100, 100) between lobby (south) and vault (north)
 function setup(gate = { openFor: ['guard'], openRadius: 56, holdMs: 2500, playerMayPassIf: 'disguised' }) {
@@ -129,6 +129,50 @@ test('undisguised player near the open gate shuts it at once and keeps it shut',
     window.gameState.globalVariables.disguised = true;
     gates.update(400);
     assert.equal(a.body.enable, false);
+});
+
+test('a barred (undisguised) player never traps the openFor guard: the gate opens for him after the grace', () => {
+    // Regression: lab_physical_pentest, Len parked in secure_area because an
+    // undisguised player at the door barred the gate he needed to cross back
+    // through, so his route stalled for good and len_at_door never re-fired.
+    const { gates, a, guard, events } = setup();
+    guard.x = 100; guard.y = 140;                     // near the door, wants through
+    window.player = { x: 100, y: 150 };               // 50px: barred (undisguised)
+    gates.update(1000);
+    assert.equal(a.body.enable, true, 'barred: shut at first');
+    assert.deepEqual(events.map(e => e[0]), [], 'did not open yet');
+    gates.update(1000 + GUARD_PRIORITY_MS - 1);
+    assert.equal(a.body.enable, true, 'still within the grace: still shut');
+    gates.update(1000 + GUARD_PRIORITY_MS);
+    assert.equal(a.body.enable, false, 'grace elapsed: opens for the guard despite the barred player');
+    assert.deepEqual(events.map(e => e[0]), ['door_gate_opened']);
+});
+
+test('the grace timer resets when the guard leaves, so it is per-visit not cumulative', () => {
+    const { gates, a, guard } = setup();
+    window.player = { x: 100, y: 150 };               // barred
+    guard.x = 100; guard.y = 140;                     // near
+    gates.update(1000);
+    assert.equal(a.body.enable, true);
+    guard.x = 400; guard.y = 400;                     // guard wanders off
+    gates.update(2000);
+    guard.x = 100; guard.y = 140;                     // comes back: grace restarts
+    gates.update(3000);
+    gates.update(3000 + GUARD_PRIORITY_MS - 1);
+    assert.equal(a.body.enable, true, 'grace restarted on his return, not carried over');
+    gates.update(3000 + GUARD_PRIORITY_MS);
+    assert.equal(a.body.enable, false);
+});
+
+test('a guard mid-crossing is not shut out by a barred player', () => {
+    const { gates, a, guard, behaviour } = setup();
+    guard.x = 100; guard.y = 140;
+    gates.update(0);                                  // opens (player far)
+    assert.equal(a.body.enable, false);
+    behaviour.currentPath = [{ x: 100, y: 100 }];     // his path crosses the doorway
+    window.player = { x: 100, y: 150 };               // now a barred player arrives
+    gates.update(100);
+    assert.equal(a.body.enable, false, 'stays open while he crosses, barred player notwithstanding');
 });
 
 test('closeNow: forced close skips the crossing hold, keeps the doorway hold, stays shut a while', () => {

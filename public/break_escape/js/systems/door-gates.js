@@ -38,6 +38,16 @@
 
 export const DEFAULT_GATE_RADIUS = 56;
 export const DEFAULT_GATE_HOLD_MS = 2500;
+// A gate opens for an openFor guard the moment he nears, UNLESS the player is
+// barred there (undisguised) or it was just force-shut — the anti-tailgate
+// rule. That rule must never trap the guard, though: a routed guard who cannot
+// cross his own door stops his patrol for good (and a proximity-driven global
+// like `len_at_door` never fires again). So once a near guard has been blocked
+// this long, the gate opens for him regardless. The player is still kept from
+// CLAIMING the crossing by the scenario's own credit condition (a disguise or a
+// cloned badge), not by trapping the guard. Longer than a couple of hold
+// windows, so ordinary disguised play (never barred) never waits on it.
+export const GUARD_PRIORITY_MS = 5000;
 const TILE = 32;
 const OPPOSITE = { north: 'south', south: 'north', east: 'west', west: 'east' };
 
@@ -125,7 +135,7 @@ export class DoorGates {
             if (!cfg) return false;
             g = {
                 key, cfg, sprites: new Set(), open: false, lastNpcNear: -Infinity, forcedUntil: 0,
-                playerHoldUntil: 0, requires: props.requires ?? null,
+                npcBlockedSince: -1, playerHoldUntil: 0, requires: props.requires ?? null,
                 x: props.worldX ?? sprite.x, y: props.worldY ?? sprite.y,
                 roomId: props.roomId, connectedRoom: props.connectedRoom, direction: props.direction,
                 isSideDoor: !!props.isSideDoor
@@ -218,6 +228,7 @@ export class DoorGates {
         this._prune(g);
         g.open = true;
         g.openedAt = now;
+        g.npcBlockedSince = -1;
         for (const s of g.sprites) this._applySprite(s, true);
         const pm = W().pathfindingManager;
         if (pm) {
@@ -263,6 +274,7 @@ export class DoorGates {
         if (!g.open) return false;
         this._prune(g);
         g.open = false;
+        g.npcBlockedSince = -1;
         for (const s of g.sprites) this._applySprite(s, false);
         const pm = W().pathfindingManager;
         if (pm) {
@@ -358,15 +370,31 @@ export class DoorGates {
 
             if (!g.open) {
                 // An undisguised player close by keeps it shut, even beside the guard
-                if (npcNear && !barred && now >= g.forcedUntil) this.open(g, now);
+                if (npcNear && !barred && now >= g.forcedUntil) {
+                    this.open(g, now);
+                    g.npcBlockedSince = -1;
+                } else if (npcNear) {
+                    // Guard wants through but is blocked (barred player or a recent
+                    // force-shut). Hold the anti-tailgate rule briefly, then open for
+                    // the guard anyway so his patrol can never stop for good.
+                    if (g.npcBlockedSince < 0) g.npcBlockedSince = now;
+                    else if (now - g.npcBlockedSince >= GUARD_PRIORITY_MS) {
+                        this.open(g, now);
+                        g.npcBlockedSince = -1;
+                    }
+                } else {
+                    g.npcBlockedSince = -1;
+                }
                 continue;
             }
             if (inDoorway) continue;                 // never shut on the player
             if (now < (g.playerHoldUntil || 0)) continue; // clone-as-entry: hold open through the window
+            // A guard mid-crossing keeps it open even past a barred player — shutting
+            // now would wall him into the doorway and strand his patrol.
+            if (this.npcCrossing(g)) { g.npcBlockedSince = -1; continue; }
             if (barred) { this.close(g); continue; } // undisguised player: shut at once
             if (npcNear) continue;
             if (now - g.lastNpcNear < g.cfg.holdMs) continue;
-            if (this.npcCrossing(g)) continue;
             this.close(g);
         }
     }
