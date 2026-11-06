@@ -1,8 +1,10 @@
 # Declared grants: plan
 
-Status: plan only, nothing implemented. Written 2026-11-05, rewritten the same day after
+Status: approved, being built. Written 2026-11-05, rewritten the same day after
 review R1 (`DECLARED_GRANTS_PLAN_REVIEW_R1.md`, verdict rethink) to the reviewer's simpler
-design, which the user chose. §7 lists what happened to each finding.
+design, which the user chose. §7 lists what happened to each R1 finding. Review R2
+(`DECLARED_GRANTS_PLAN_REVIEW_R2.md`, revise lightly, then build) is folded in on 2026-11-06;
+§8 lists its outcomes.
 
 Goal: a scenario's own client-side `give_item` actions become the server's allowlist for
 those rewards. The server stores the scenario's copy of a granted item, and serves a granted
@@ -12,11 +14,11 @@ work: a declared grant can be claimed at any time, which is no weaker than today
 physical lab and slightly weaker for the SE lab (§3.2). Checking triggers waits until the
 labs have triggers the server establishes itself (§6.3, Q3).
 
-Out of scope, landing separately (another agent): client item fields stored as sent (a lock
-bypass, R1 M6, committed as 37701964a), the unlock response returning nested `contents` with
-`requires` (R1 M7, committed as cd9abc187), and flag-station `itemsHeld` claimable without the
-flag (R1 m1, in progress, uncommitted in `games_controller.rb` at the time of writing). This
-plan builds on those fixes and says where it touches them.
+Out of scope, landed separately: client item fields stored as sent (a lock bypass, R1 M6,
+37701964a), the unlock response returning nested `contents` with `requires` (R1 M7,
+cd9abc187), and flag-station `itemsHeld` claimable without the flag (R1 m1, e5a401bdc,
+`flag_station_item_earned?`, tested in `flag_station_item_claim_test.rb`). This plan builds on
+those fixes and says where it touches them.
 
 Line numbers in `games_controller.rb` and `game.rb` are from the working tree on 2026-11-05 and
 are moving while those fixes land; method names are the stable reference.
@@ -159,36 +161,55 @@ fired even when the claim fails (step 3), a failed claim is lost for good on rel
 ### 2.1 The grant list
 
 A plain Ruby module, `BreakEscape::DeclaredGrants`, in `lib/break_escape/declared_grants.rb`
-beside `item_identity.rb`. It uses no ActiveSupport (`blank?`, `deep_dup`), so
-`scripts/validate_scenario.rb` can `require_relative` it and both sides agree on what a grant
-is (§4.3).
+beside `item_identity.rb`. It uses no ActiveSupport (`blank?`, `deep_dup`) and does **not**
+call `ItemIdentity`, which uses `blank?`/`present?` (R2 m1), so `scripts/validate_scenario.rb`
+and `scripts/generate_dungeon_graph.rb` can `require_relative` it and all three agree on what a
+grant is (§4.3).
 
 ```ruby
-DeclaredGrants.for(scenario_data)   # => [{ 'path' => 'timers[0]/actions[0]', 'item' => {...} }, ...]
-DeclaredGrants.strip_contents!(hash) # removes 'contents' from every declared grant item in hash
+DeclaredGrants.for(scenario_data)        # => [{ 'path' => 'timers[0]/actions[0]', 'item' => {...} }, ...]
+DeclaredGrants.unexecuted(scenario_data) # identified give_items outside an executed path (validator)
+DeclaredGrants.identities(item)          # id, opens_lock, key_id, keyId (strings, non-empty, unique)
+DeclaredGrants.strip_grant_contents!(node) # on a give_item node: drop item.contents, set hasContents
 ```
 
-**A declared grant** is any node `{ "type": "give_item", "item": { ... } }` anywhere in the
-scenario where the item hash has a string `type` and an identity (`id`, or `opens_lock` for a
-key, or legacy `key_id`/`keyId`: `ItemIdentity.identity_candidates` is not empty), except:
+**Identity** is one rule everywhere: `id`, `opens_lock`, legacy `key_id`, legacy `keyId`. That
+is the set `ItemIdentity.addressed_by?` reads on the scenario side and the set the validator's
+`identities` lambda already uses (`validate_scenario.rb:2040`). `identity_candidates` omits
+`keyId`, but it is only used on the claim side, where it stays as it is.
 
-- anything under a flag-station's `flagRewards` (server-delivered; today those rewards have no
-  `item` hash anyway, but a future one with a hash must not become a no-flag-needed allowlist
-  entry and undo the separate flag-station fix);
+**A declared grant** is a node `{ "type": "give_item", "item": { ... } }` where the item hash
+has a string `type` and a non-empty identity, and the node sits on a path the engine runs:
+
+- `timers[i].actions[j]` (`scenario-timer-dispatcher.js:231`);
+- any object's `triggerOnInteract[j]` (`interactions.js:820, 845`);
+- any object's `onInteract.actions[j]` (`interactions.js:1819`);
+- esd-pushbutton `completionActions[j]` and `conditionalActions[k].actions[j]`
+  (`esd-pushbutton-minigame.js:213–222`);
+- `onConfirm[j]` of a `confirm_action` that itself sits on one of these paths
+  (`apply-actions.js:262`).
+
+Excluded:
+
+- any subtree under a `flagRewards` key, on any parent (`flag-station`, `vm-launcher`,
+  `launch-device`, flag-locked objects) and in hash or array form (R2 m5): the server delivers
+  those rewards itself;
+- any subtree under `eventMappings`: npc-manager.js never runs a give_item (R2 m2);
 - `startItemsInInventory`;
 - always-allowed and decor types (`notepad`, `DECOR_CUP_TYPES`), which never need a lookup.
 
-Walking every give_item rather than a list of known sources covers timers, `triggerOnInteract`,
-`onInteract.actions`, `confirm_action.onConfirm` and the esd-pushbutton `entry.actions` /
-`completionActions` (R1 m2) without naming them, and it is the rule the validator already uses
-(`validate_scenario.rb:2072–2105`). A give_item whose item has no identity is not a grant and
-keeps today's world-object rule (§6.3, Q2).
+A give_item with an identified `item` hash anywhere else (an eventMapping, an authoring scratch
+block) is not a grant, and the validator errors on it, naming the path (R2 m2). Allowlisting
+only executed paths means nothing the engine never hands out can be claimed. A give_item whose
+item has no identity is not a grant and keeps today's world-object rule (§6.3, Q2).
 
 `Game#declared_grants` memoises `DeclaredGrants.for(scenario_data)` per instance. No cache
 across requests: the scenario is a per-game snapshot rendered at create, `inventory` already
-loads it, and the walk is a few hundred nodes. Games created before the change get grants from
-their stored snapshot, but their snapshot still holds the twin and an item without `contents`,
-so they keep working through the room-object lookups (§2.3) until restarted.
+loads it, and the walk is a few hundred nodes. `held_grant_items` is **not** memoised: the
+`container` action calls `@game.reload` and the inventory changes per request (R2 §3.4). Games
+created before the change get grants from their stored snapshot, but their snapshot still holds
+the twin and an item without `contents`, so they keep working through the room-object lookups
+(§2.3) until a New Session renders a fresh snapshot (Reset keeps the old `scenario_data`).
 
 ### 2.2 Matching a claim
 
@@ -210,6 +231,12 @@ start-items check (~`:1807–1815`) and before `find_accessible_item` (called ~`
 - If none matches: today's path, unchanged.
 - Two grants with the same identity: the first in walk order wins. The validator makes this an
   error (§4.3).
+- The grant step runs before `find_accessible_item`, so a grant that shares a type and identity
+  with a gated holder (a flag-station or NPC `itemsHeld` entry, a key in a locked room) would
+  make that item free and skip its gate (R2 M2). The server does not try to detect this; the
+  validator errors on any such collision against every holder it collects (§4.3), and the same
+  for a grant whose type and name equal an id-less holder's, which would otherwise divert that
+  holder's honest pickup to the grant (R2 m3).
 
 On accept, `inventory` stores **the scenario's copy**, not the client's hash. The M6 fix
 (37701964a) already does this for every add: `canonical_inventory_item` (`:1770`) deep-copies
@@ -263,11 +290,15 @@ puts them in `scenario_data['timers']`, and the bootstrap (`GamesController#scen
 `Game#filtered_scenario_for_bootstrap` `game.rb:790`) sends timers to the client. Its
 `filter_requires_recursive` (`:1572`) strips `requires` but not unlocked `contents`, so without
 a change the payroll file and the archive's own files would be readable from the first second.
-`filtered_scenario_for_bootstrap` and `filtered_room_data` (for give_items that sit on room
-objects) call `DeclaredGrants.strip_contents!` on their copy, which deletes `contents` from each
-declared grant item and sets `hasContents: true`. The client never needs them: the opener's
-contents always come from the server (`unlock-system.js` copies the unlock response into
-`scenarioData.contents`, then `container-minigame.js` fetches).
+The strip goes inside the two filters rather than the two payload builders (R2 m4):
+`filter_requires_recursive` (controller, run on the bootstrap) and
+`filter_requires_and_contents_recursive` (`Game`, run on room payloads, container contents,
+the unlock response and the stored inventory copy) both call
+`DeclaredGrants.strip_grant_contents!` on any `{ type: 'give_item', item: <identified> }` hash
+they meet, which deletes `item.contents` and sets `item.hasContents: true`. Every route that
+filters inherits it. The client never needs the contents: the opener's contents always come
+from the server (`unlock-system.js` copies the unlock response into `scenarioData.contents`,
+then `container-minigame.js` fetches).
 
 ### 2.4 Save, reload and reset
 
@@ -277,9 +308,10 @@ contents always come from the server (`unlock-system.js` copies the unlock respo
 - Reset: `reset_player_state!` (`game.rb:89`) keeps only listed keys, so the inventory and
   `scenarioClock` go. The opener is gone and its contents stop being served; the timer can fire
   again once the trigger is re-earned. Nothing new to clear.
-- A game created before the change keeps its old snapshot: twin present, item without contents.
-  The grant step accepts the claim (the old item has an id), the room lookups find the twin.
-  Unchanged behaviour.
+- A game created before the change keeps its old snapshot, through Reset too, until a New
+  Session (`new_session`) renders a fresh one: twin present, item without contents. The grant
+  step accepts the claim (the old item has an id) and stores the timer item; the room lookups
+  find the twin. Unchanged behaviour.
 
 ### 2.5 Lost-grant retry (client)
 
@@ -290,13 +322,18 @@ retries.
 - `applyActions` (`apply-actions.js:72`) returns an array of the `addToInventory` promises it
   started for give_item actions (empty for everything else). Other callers ignore the return
   value, as they do now.
+- `applyActions` returns `[]` on its early return for an empty or missing list (R2 m6).
 - `_fireTimer` (`scenario-timer-dispatcher.js:202`) runs `setGlobal` and the actions once as
-  now, but adds the id to `firedTimers` only when every give has settled with `ok: true`,
-  `reason: 'already'` or `reason: 'rejected'`. An `_inFlight` set stops `update()` firing it
-  again meanwhile.
+  now, but adds the id to `firedTimers` only when every give has settled with anything other
+  than `reason: 'error'` (`ok: true`, `'already'`, `'rejected'`, `'invalid'`, `'no-ui'`), so a
+  timer cannot sit in flight for ever. An `_inFlight` set stops `update()` firing it again
+  meanwhile.
 - A give that settles with `reason: 'error'` is retried on its own (the give_item action only,
-  not the timer's other actions) after 1 s, 3 s and 10 s. After the third failure the timer is
-  marked fired and a warning logged, so a dead server does not loop for ever.
+  not the timer's other actions) after 1 s, 3 s and 10 s. After the third retry fails the timer
+  is **left unfired** (R2 m6): it stays out of `firedTimers` and in `_inFlight`, so this page
+  stops retrying, but `exportState` still lists it under `started`, and the next load re-fires
+  it once the server is back. No loop, and no reward lost to an outage. Pending retry timeouts
+  are cleared in `destroy()`.
 - A refusal is not retried: a declared grant is refused only if the scenario is wrong, which
   the validator catches.
 - If the page closes mid-flight, the id is not in the synced `fired` list. On reload the global
@@ -320,21 +357,24 @@ retries.
 
 ### 2.7 Files touched
 
-- `lib/break_escape/declared_grants.rb` (new): walk and `strip_contents!`, plain Ruby.
+- `lib/break_escape/declared_grants.rb` (new): walk, identity, `strip_grant_contents!`, plain
+  Ruby.
 - `app/models/break_escape/game.rb`: `declared_grants`, `held_grant_items`, the
-  `find_scenario_object` fallback, `strip_contents!` in `filtered_scenario_for_bootstrap` and
-  `filtered_room_data`.
+  `find_scenario_object` fallback, the strip in `filter_requires_and_contents_recursive`.
 - `app/controllers/break_escape/games_controller.rb`: the grant step in
-  `validate_item_collectible`, storing the scenario copy in `inventory`, the
-  `find_object_in_scenario` and `find_container_in_scenario` fallbacks.
+  `validate_item_collectible`, the contents strip in `canonical_inventory_item`, the strip in
+  `filter_requires_recursive`, the `find_object_in_scenario` and `find_container_in_scenario`
+  fallbacks.
 - `public/break_escape/js/systems/apply-actions.js`: return the give promises.
 - `public/break_escape/js/ui/scenario-timer-dispatcher.js`: await them, retry on error.
-- `scripts/validate_scenario.rb`: §4.3.
+- `scripts/validate_scenario.rb`: §4.3, plus `check_item_fields` and `check_item_type` over each
+  grant item and its contents (R2 M1).
+- `scripts/generate_dungeon_graph.rb`: a node per declared grant, its contents walked (R2 M1).
 - Both lab scenarios: §4.2.
 - No new static imports. If one is added, update every node harness copy list (`bin/test-js`
   runs plain node).
-- `games_controller.rb` and `game.rb` are being edited by the agent fixing the three separate
-  holes. Land after their commits, commit in small steps with explicit paths.
+- M6, M7 and the flag-station fix are all committed (e5a401bdc); `app/` was clean at review R2.
+  Commit in small steps with explicit paths.
 
 ## 3. Threat model
 
@@ -350,13 +390,17 @@ requests with their own session.
   lock `operations_door`) is unlocked. In honest play that room is always open before the phish
   (the only mail client is inside it, R1 §7), so the room gate only stops a cheat who has not
   yet found the key.
+- **Read the twin's files with no request at all** (R2 §5 item 5). Both twins are
+  `locked: false`, and `filter_requires_and_contents_recursive` drops `contents` only from locked
+  objects, so every load of `open_plan` or `operations_room` already ships the twin's files (the
+  archive arrives without `requires` or `contents`).
 - **Read the twin's contents without the item.** The twin is `locked:false`, so
   `POST /unlock` `{ targetType: 'object', targetId: 'sofia_remote', method: 'unlocked' }`
   succeeds with no room and no item ("Object is unlocked in scenario data"), and
   `GET /container/sofia_remote` then serves the contents. Since M7 the nested archive's password
   is no longer in the response; the archive itself still needs it.
 - **Inject fields:** closed by M6 (37701964a).
-- **Flag-station items without the flag:** being closed separately (R1 m1).
+- **Flag-station items without the flag:** closed by e5a401bdc (R1 m1).
 
 ### 3.2 After this change
 
@@ -392,6 +436,10 @@ requests with their own session.
   (`key`, `keycard`, `lockpick`, `rfid_cloner`), so the author sees it (§4.3).
 - A room object that shares a grant's id wins the content lookups (room first). The validator
   errors on that (§4.3).
+- A grant that shares a type and identity with any gated holder (flag-station or NPC
+  `itemsHeld`, a key or item in a locked room or container) makes that item claimable without
+  its gate, because the grant step runs first (R2 M2). The server behaviour stays as planned;
+  the validator errors on every such collision, naming the gate the grant would bypass (§4.3).
 
 ### 3.4 Later: cheat resistance (Q3)
 
@@ -428,13 +476,20 @@ For each lab, in one commit with the server change:
    `name`, `hasContents: true`, `locked: false`, `observations`.
 2. Delete the twin object and its comments (physical `:909–938`; SE `:1795–1871`).
 3. Rewrite the comments that describe the pairing: physical F11 at `:164–168`; SE header at
-   `:158–166` and `:289`; the stale code comment at `public/break_escape/js/systems/interactions.js:1488`
-   (it describes `sofia_remote` as a room object gated by `requiresGlobal`).
+   `:158–166`, `:289` and `:906–909` (R2 m8); the stale code comment at
+   `public/break_escape/js/systems/interactions.js:1488` (it describes `sofia_remote` as a room
+   object gated by `requiresGlobal`).
 4. Leave the SE lab's `foothold.containerId: "sofia_remote"` capture descriptor (`:911`) alone:
    nothing reads `containerId` (grep), and the id does not change.
-5. Run the validator on both and regenerate both dungeon graphs. `lab_physical_pentest`'s
-   `dungeon_graph.*` and `EXPANSION_PLAN.md` have someone else's uncommitted edits in the shared
-   tree: stage only the scenario file and the regenerated graph after checking the diff is ours.
+5. Run the validator on both and regenerate both dungeon graphs. The regenerated graphs must
+   still show the Remote Session node and, for the SE lab, the `payroll_backup.zip` password
+   lock (R2 M1). `lab_physical_pentest`'s `dungeon_graph.*` may carry someone else's uncommitted
+   edits in the shared tree: stage only the scenario file and the regenerated graph after
+   checking the diff is ours.
+6. `lab_physical_pentest/EXPANSION_PLAN.md` plans to move and "repoint" `records_remote_session`
+   in the open-plan resize (R2 m8). Whichever of the two lands second drops that step; the
+   migration adds a line to the expansion plan's "Changes after review" notes saying the twin no
+   longer exists.
 
 The twin path stays valid in the engine. A scenario that still pairs a hidden object with an
 id-less give_item works as today; the validator nudges it towards an id.
@@ -447,8 +502,13 @@ shares a give_item's type and identity, and WARNs when the only match is behind 
 container (the false positive R1 §7 traced for the SE lab). It changes to:
 
 1. Use `DeclaredGrants.for` (`require_relative '../lib/break_escape/declared_grants'`) to decide
-   which give_items are declared grants, so the server and the validator agree. Flag rewards,
-   start items, notepad and decor cups are skipped as now.
+   which give_items are declared grants, so the server and the validator agree. Start items,
+   notepad and decor cups are skipped as now. Flag rewards are now skipped explicitly (any
+   subtree under `flagRewards`); until now they passed only because none carries an `item` hash
+   (R2 §5 item 7).
+1a. ERROR on a give_item with an identified `item` hash that is not on an executed path
+   (`DeclaredGrants.unexecuted`), for example under `eventMappings`, naming the path: the engine
+   never runs it, so the reward never arrives (R2 m2).
 2. **Declared grant: no twin needed.** Drop the "no matching object" ERROR and the locked-room
    WARNING for it. Instead check it is well formed and its contents exist:
    - ERROR if `hasContents: true` and `contents` is missing, not an array, or empty: the opener
@@ -461,10 +521,16 @@ container (the false positive R1 §7 traced for the SE lab). It changes to:
      duplicating them.
    - ERROR if two declared grants share a type and identity but differ in any field: which copy
      is stored would depend on walk order.
-   - ERROR if any room object, at any depth, shares the grant's type and identity, or shares an
-     id with any entry in the grant's `contents`: the room lookups run first and would answer
-     instead of the grant. (This is the twin left behind after migration; the message says to
-     move its `contents` into the grant and delete it.)
+   - ERROR if any holder shares the grant's type and identity (R2 M2). Holders are every list
+     the validator collects in `holders` (`validate_scenario.rb:2053`), widened to any depth:
+     room objects and their nested `contents`, flag-station (and any object's) `itemsHeld`, NPC
+     `itemsHeld`. The message names the gate the grant would bypass (locked room, locked
+     container, flag station, NPC encounter). For a room object it is the twin left behind after
+     migration, and the message says to move its `contents` into the grant and delete it.
+   - ERROR if any room object shares an id with an entry in the grant's `contents`: the room
+     lookups run first and would answer instead of the grant.
+   - ERROR if a grant's type and name equal those of an id-less holder, or of another grant with
+     a different identity: an id-less pickup would be decided by the grant step (R2 m3).
    - WARNING if the grant carries `opens_lock`/`keyId`, or its type is one the server's lock
      checks read (`key`, `keycard`, `lockpick`, `rfid_cloner`): it can be claimed from the first
      second (§3.3).
@@ -476,9 +542,20 @@ container (the false positive R1 §7 traced for the SE lab). It changes to:
 4. Rewrite today's ERROR fix text ("add a takeable, active:false object with the same type and
    id") to "give the item an id; it is then a declared grant and needs no object".
 
-Update `validator-give-item-collectible.test.mjs` to match: the "no matching world object
-errors" case becomes a pass for an item with an id, and keeps erroring for one without. Add
-cases for each new rule.
+5. Run `check_item_fields` (unknown fields) and `check_item_type` (sprite exists) over each grant
+   item and its `contents`, as they run over room objects, start items and `itemsHeld` (R2 M1).
+
+`validator-give-item-collectible.test.mjs` is rewritten, not patched (R2 m7). Five of its seven
+cases give an id-bearing item with a matching world object; under the new rules each is a
+declared grant whose matching object is the twin-left-behind error. Those cases keep their
+meaning with id-less items, and new cases cover each grant rule above.
+
+**Dungeon graph** (R2 M1). `generate_dungeon_graph.rb` walks room objects only, so moving the
+contents would drop the SE lab's `payroll_backup.zip` lock and both Remote Session containers
+from the map. It gains: for each declared grant, a puzzle-graph item node (attached to the node
+for its timer's `startOnGlobal`, or to the start room), with `walk_objects` over its `contents`
+so nested locks get their lock nodes; and in the Rooms + Contents tab a "granted" node with its
+contents walked by `walk_room_contents`.
 
 ## 5. Tests
 
@@ -511,6 +588,13 @@ Allow and refuse:
 - Repeat while held → 200 through the `:971` short cut, inventory not duplicated. Claim again
   after `remove` → 200.
 - `visible desk_pc` pickup in the open room → 200, unchanged by grants.
+- `flagRewards` in hash form and under a `vm-launcher`, and a give_item under an NPC
+  `eventMappings`: none is a grant (R2 m2, m5).
+- A grant sharing a flag-station `itemsHeld` identity (a scenario the validator rejects): the
+  test pins today's server behaviour and the validator error together, so nobody relies on the
+  server to catch it (R2 M2).
+- An id-bearing claim for an id-less grant name, and the reverse (name-only claim): decided as
+  §2.2 says.
 
 Contents served only while held (the opener's real path):
 - Before the claim: `POST /unlock` `{ targetType: 'object', targetId: 'remote_x', method: 'unlocked' }`
@@ -524,6 +608,10 @@ Contents served only while held (the opener's real path):
 - The scenario JSON: `GET /scenario` holds the timer with `hasContents: true` and **no
   `contents`**, and the response body contains neither the text file's text nor `"pw"`. The
   inventory response and `playerInventory` hold no `contents` either.
+- `GET /room/<id>` for a room whose object carries a `triggerOnInteract` grant with `contents`:
+  no `contents` in the payload (R2 §6.1).
+- `password_case_mismatch?` through the fallback: the nested archive with the right password in
+  the wrong case → 422 with `caseMismatch: true` (pins the third `find_scenario_object` caller).
 
 Reload and reset:
 - After a claim, `GET /scenario` returns `playerInventory` with the stored copy, and the
@@ -532,21 +620,27 @@ Reload and reset:
 
 Legacy:
 - A scenario with the old twin and an id-carrying grant item without `contents`: the claim is
-  accepted by the grant step and all three lookups answer from the twin, as today (games
-  created before the change).
+  accepted by the grant step, the stored copy is the timer item (no `contents`), and all three
+  lookups answer from the twin, as today (games created before the change).
 - Unchanged and passing: `npc_give_test.rb`, `headless_give_test.rb`,
-  `flag_reward_unlock_door_test.rb`, `game_state_locking_test.rb`, the M6/M7 tests, and the
-  nested-archive test in `test/models/break_escape/game_test.rb` (~208).
+  `flag_reward_unlock_door_test.rb`, `flag_station_item_claim_test.rb`,
+  `game_state_locking_test.rb`, the M6/M7 tests, and the nested-archive test in
+  `test/models/break_escape/game_test.rb` (~208).
 - Model test for `DeclaredGrants.for` over both labs' rendered JSON (after migration): exactly
   one grant each, with `contents`; and zero grants for m02, m03, m06, m07 and secgen_vm_lab.
 
 ### 5.2 Node (`bin/test-js`)
 
-- `applyActions` returns one promise per give_item and an empty array otherwise.
-- Dispatcher: a give resolving `ok: true`, `'already'` or `'rejected'` marks the timer fired
-  once; `'error'` leaves it unfired, retries the give alone at 1 s, 3 s and 10 s (fake clock),
-  then marks it fired after the third failure; `update()` does not re-fire while in flight; the
-  timer's other actions run once.
+- `applyActions` returns one promise per give_item, an empty array otherwise, and `[]` for an
+  empty list.
+- Dispatcher: a give resolving `ok: true`, `'already'`, `'rejected'` or `'invalid'` marks the
+  timer fired once; `'error'` leaves it unfired, retries the give alone at 1 s, 3 s and 10 s
+  (fake clock), and after the third retry fails leaves it unfired and stops; `update()` does not
+  re-fire while in flight; the timer's other actions run once; `destroy()` cancels a pending
+  retry.
+- Validator: the executed-path error (eventMapping give_item), the holder collision errors, the
+  name collision error, the field and sprite checks on grant contents. Graph generator: a grant
+  node and the nested archive's lock node appear.
 - Reload mid-flight: a restored clock without the id in `fired` and the global true → the timer
   fires again and sends the give.
 - `inventory-restore-no-revalidate.test.mjs` and `scenario-timer-countdown.test.mjs` unchanged
@@ -569,7 +663,10 @@ Drive with the `window.__test` bridge (playtest-scenario skill), on a fresh game
   `archive_opened` task completes. Reload, open the opener and the archive again.
 - **Lost grant:** in either lab, block `/inventory` (devtools request blocking or a `fetch`
   stub through the bridge) as the timer fires, unblock within 10 s → the opener arrives from
-  the retry. Repeat with a reload while blocked → the opener arrives after the reload.
+  the retry. Repeat with a reload while blocked → the opener arrives after the reload. Block for
+  longer than the retry window, then reload with the server back → the opener arrives (R2 §6.2).
+- **Graph:** after the SE run, regenerate the graph and confirm the `payroll_backup.zip` lock and
+  the Remote Session node are still drawn (R2 M1).
 - **Documented, not a failure:** a console POST of the opener's add before the beat is accepted
   in both labs (§3.2). Say so in the commit message so nobody files it as a regression.
 
@@ -584,28 +681,27 @@ Drive with the `window.__test` bridge (playtest-scenario skill), on a fresh game
 | `held_grant_items` and the three lookup fallbacks | 40 |
 | `strip_contents!` in the bootstrap and room payloads | 10 |
 | Client: `applyActions` return, dispatcher await and retry | 35 |
-| Validator rule change (net) | 60 |
+| Validator rule change, executed paths, collisions, field/sprite walks (net) | 120 |
+| Dungeon-graph grant nodes | 25 |
 | Scenario migration (contents moved, twins and comments deleted) | about −60 net |
-| **Code** | **~220** |
-| Rails, node and validator tests | ~280 |
-| **Total** | **~500 changed lines** |
+| **Code** | **~300** |
+| Rails, node and validator tests | ~330 |
+| **Total** | **~600–650 changed lines** |
 
-About half a working day of agent time for the code and tests, plus one review round and the two
-live checks: roughly a day end to end. The first draft was ~700 lines for phase 1 and ~300 more
-for phase 2, and kept the twins until then.
+About a day end to end with the two live checks (R2 m9). The first draft was ~700 lines for
+phase 1 and ~300 more for phase 2, and kept the twins until then.
 
 ### 6.2 Risks
 
 - **Moving contents without stripping them** from the bootstrap would publish the SE lab's
   payroll and archive files to every player from the first second. The strip, its test and the
   migration go in one commit.
-- **Concurrent edits.** `games_controller.rb` has the flag-station fix uncommitted in the
-  shared tree; `game.rb` and the controller moved by 30 to 80 lines while this plan was written.
-  Start after that commit lands, re-read `validate_item_collectible` and
-  `canonical_inventory_item`, stage explicit paths and check `git diff --cached --stat`.
+- **Concurrent edits.** The flag-station fix is committed (e5a401bdc). Other agents still edit
+  engine JS and the lab scenarios in the shared tree: re-read before editing, stage explicit
+  paths and check `git diff --cached --stat`.
 - **Retry noise.** Each failed attempt still shows `inventory.js`'s "Network error" alert
-  (`:490–500`). Three alerts in 14 s on a dead network is tolerable; a `quiet` option on
-  `addToInventory` is a later nicety.
+  (`:496–498`). The first POST plus three retries is four alerts in about 14 s on a dead
+  network (R2 m6); tolerable, and a `quiet` option on `addToInventory` is a later nicety.
 - **Older games** keep the twin from their snapshot and work as today. A restarted game picks up
   the new snapshot. Nothing to migrate in the database.
 - **Expectations.** Neither reward is cheat-resistant after this change, and the SE lab's
@@ -624,8 +720,8 @@ for phase 2, and kept the twins until then.
 3. **Trigger checks: when?** Default: not in this work. Add a backlog entry to
    `docs/IDEAS_BACKLOG.md` for server-established lab triggers (§3.4), and ask the user whether
    the labs need cheat resistance at all before planning it.
-4. **Retry policy.** Default: three retries at 1 s, 3 s and 10 s, network errors only; then mark
-   fired and log.
+4. **Retry policy.** Default: three retries at 1 s, 3 s and 10 s, network errors only; then
+   leave the timer unfired and stop retrying on this page, so the next load tries again (R2 m6).
 5. **Contents gate: held, or ever claimed?** Default: held (`ItemIdentity.held_in?`). Dropping
    the opener ends access to its contents; claiming it again restores it.
 6. **Ink `#give_item` and eventMapping give_item.** Default: unchanged. Ink gifts are declared by
@@ -645,7 +741,7 @@ The user chose the reviewer's simpler design (R1 §4). Each finding's outcome:
 | **M5** `pendingGrants` undefined for interact grants | Dropped; replaced by the client-side retry (§2.5). |
 | **M6** field injection is a lock bypass | Out of scope; landed separately as 37701964a. The grant path reuses its `canonical_inventory_item` and adds the contents strip (§2.2). |
 | **M7** unlock response leaks nested lock answers | Out of scope; landed separately as cd9abc187. Grant contents go through the same filter (§2.3). |
-| **m1** flag-station check is not "a few lines" | Out of scope; in progress separately. `flagRewards` are excluded from grants so the allowlist cannot undo it (§2.1). |
+| **m1** flag-station check is not "a few lines" | Out of scope; landed as e5a401bdc. `flagRewards` subtrees on any parent are excluded from grants, and the validator errors on a grant that shares a flag-station item's identity, so the allowlist cannot undo it (§2.1, §4.3, R2 M2). |
 | **m2** walk misses esd-pushbutton sources | Fixed. Every give_item with an identified `item` hash outside `flagRewards` is a grant, the validator's own rule, shared through `lib/break_escape/declared_grants.rb` (§2.1, §4.3). |
 | **m3** 409 retry dead code, alert noise | Moot: no 409. Network-error retries keep the existing alert (§6.2). |
 | **m4** once-only interact grants alert on every later interaction | Moot: no once-only rule (§2.6). |
@@ -655,3 +751,23 @@ The user chose the reviewer's simpler design (R1 §4). Each finding's outcome:
 | **m8 / R1 §8** stale details | Fixed: route is `GET /container/:container_id`; the opener's `POST /unlock` and its response are the other two lookups; the fired list is `scenarioClock.timers.fired`; field injection was not limited to real objects (now closed by M6); esd source added; `check_give_item_collectible` is committed (65513244e); twin line numbers updated (physical twin now `:909–938`); the "33 call sites" count removed. |
 | **R1 §7** SE lab locked-room warning | Goes away: declared grants no longer need a world object, so the validator's locked-room warning does not apply to them (§4.3). |
 | **R1 Q table** | Q1, Q2, Q5, Q6, Q7 moot or settled as above; Q3 and Q9 kept (§6.3 Q6); Q4 separate; Q8 becomes §6.3 Q3. |
+
+## 8. Changes after review R2
+
+Review R2 (`DECLARED_GRANTS_PLAN_REVIEW_R2.md`): revise lightly, then build; 0 blocker, 2 major,
+9 minor. Every finding was checked against the tree on 2026-11-06 before folding.
+
+| Finding | Checked | Outcome |
+|---|---|---|
+| **M1** graph and room-only validator checks lose the moved contents | `generate_dungeon_graph.rb` `walk_objects` (`:152`) and `walk_room_contents` (`:970`) take room objects, start items and NPC `itemsHeld` only; `check_item_fields` (`validate_scenario.rb:511`) and `check_item_type` (`:2178`) the same | Folded. The generator adds grant nodes and walks their contents; the validator runs both checks over grants (§2.7, §4.2 step 5, §4.3 rule 5, §5.2) |
+| **M2** a grant sharing a gated holder's identity bypasses the gate | Grant step precedes `find_accessible_item` (`games_controller.rb:1818`); `holders` (`validate_scenario.rb:2053`) is the list to check | Folded. Validator ERROR against every holder at any depth, naming the gate; server unchanged (§2.2, §3.3, §4.3) |
+| **m1** shared module cannot call `ItemIdentity`; `keyId` disagreement | `ItemIdentity` uses `blank?`/`present?`; `identity_candidates` omits `keyId`, `addressed_by?` and the validator include it | Folded. `DeclaredGrants` has its own plain-Ruby `identities` (id, opens_lock, key_id, keyId), the set `addressed_by?` reads on the scenario side; `ItemIdentity` is not changed (§2.1) |
+| **m2** eventMapping give_items become grants nobody receives | npc-manager.js has no give_item | Folded, one step further than suggested: the server counts only executed paths as grants, and the validator errors on identified give_items elsewhere (§2.1, §4.3 rule 1a) |
+| **m3** name collisions divert an honest pickup | as described | Folded as a validator ERROR (§4.3) |
+| **m4** strip lives in two builders, not the filters | `filter_container_contents` and `canonical_inventory_item` go through `filter_requires_and_contents_recursive` | Folded. The strip runs inside both filters (§2.3) |
+| **m5** `flagRewards` exclusion must be a subtree rule for any parent | `vm-launcher` and flag-locked objects carry `flagRewards`; hash and array forms | Folded (§2.1, §5.1) |
+| **m6** retry details | `applyActions` early return is `undefined`; `'invalid'` and `'no-ui'` exist; four alerts | Folded. Unfired on final failure, everything but `'error'` settles, `[]` on empty, `destroy()` clears retries (§2.5, §6.2, §6.3 Q4) |
+| **m7** validator test churn | five of seven cases are id-bearing | Folded: the file is rewritten (§4.3) |
+| **m8** migration completeness | `EXPANSION_PLAN.md` repoint; SE comment `:906–909` | Folded (§4.2 steps 3 and 6) |
+| **m9** size | — | Folded: ~600–650 lines (§6.1) |
+| §5 stale items 1–11 | — | Fixed in §0, §2.1, §2.4, §2.7, §3.1, §4.3, §5.1, §6.2, §7 |
