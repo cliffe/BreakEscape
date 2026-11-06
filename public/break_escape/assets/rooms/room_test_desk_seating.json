@@ -1015,19 +1015,19 @@
      "visible": true,
      "width": 28,
      "x": 62,
-     "y": 125
+     "y": 115
     },
     {
-     "gid": 960,
-     "height": 25,
+     "gid": 350,
+     "height": 23,
      "id": 77,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 23,
-     "x": 96,
-     "y": 125
+     "width": 12,
+     "x": 101,
+     "y": 115
     },
     {
      "gid": 356,
@@ -1039,19 +1039,19 @@
      "visible": true,
      "width": 28,
      "x": 210,
-     "y": 135
+     "y": 123
     },
     {
-     "gid": 960,
-     "height": 25,
+     "gid": 350,
+     "height": 23,
      "id": 79,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 23,
-     "x": 226,
-     "y": 130
+     "width": 12,
+     "x": 231,
+     "y": 123
     },
     {
      "gid": 356,
@@ -1063,19 +1063,19 @@
      "visible": true,
      "width": 28,
      "x": 334,
-     "y": 125
+     "y": 115
     },
     {
-     "gid": 960,
-     "height": 25,
+     "gid": 350,
+     "height": 23,
      "id": 81,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 23,
-     "x": 368,
-     "y": 125
+     "width": 12,
+     "x": 373,
+     "y": 115
     },
     {
      "gid": 356,
@@ -1087,19 +1087,19 @@
      "visible": true,
      "width": 28,
      "x": 62,
-     "y": 265
+     "y": 255
     },
     {
-     "gid": 960,
-     "height": 25,
+     "gid": 350,
+     "height": 23,
      "id": 87,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 23,
-     "x": 96,
-     "y": 265
+     "width": 12,
+     "x": 101,
+     "y": 255
     },
     {
      "gid": 356,
@@ -1111,19 +1111,19 @@
      "visible": true,
      "width": 28,
      "x": 210,
-     "y": 275
+     "y": 263
     },
     {
-     "gid": 960,
-     "height": 25,
+     "gid": 350,
+     "height": 23,
      "id": 91,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 23,
-     "x": 380,
-     "y": 265
+     "width": 12,
+     "x": 385,
+     "y": 255
     },
     {
      "gid": 356,
@@ -1135,7 +1135,7 @@
      "visible": true,
      "width": 28,
      "x": 480,
-     "y": 265
+     "y": 255
     }
    ],
    "opacity": 1,
