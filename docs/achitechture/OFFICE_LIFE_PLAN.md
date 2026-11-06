@@ -2713,7 +2713,7 @@ and their log, `ownRoomOnly`, limiter channels, installing under either switch).
 that owns no workstation (warning: nothing to lock), or whose stations all carry a lock field
 (warning: the object wins); `autoLockSeconds` on a non-workstation (warning), or on one with
 `locksScreenOnLeave: true` and no habit that leaves it open (warning: never applies). Schema about 15
-(`screenHabit`, `autoLockSeconds`, `lockCues`). **About 210 lines, M.**
+(`screenHabit`, `autoLockSeconds`, `lockCues`). **About 205 lines (65 + 5 + 35 + 60 + 25 + 15), M.**
 
 **Save and reload.** Nothing new is saved. The away clocks reset with the needs state, and the
 install-time reset of `_owner_away`/`_screen_locked` (`resetGlobals` 97-116) is unchanged.
@@ -2768,8 +2768,10 @@ whether to keep `lockCues` on.
 (`_carryCandidate` 1237-1252), and every finished job at the hooked object prints (1524). Print and
 forget gives a printout an owner and the owner a habit.
 
-- **The printer owns the printout.** `revealOutput` stamps the slot with the NPC that printed it
-  (client only, `_printedBy`). Nothing is saved: a reload files every shown slot already (stow on
+- **The printer owns the printout, when ownership applies.** `revealOutput` stamps the slot with the
+  NPC that printed it (client only, `_printedBy`) **only when that NPC has a `printHabit` or the print
+  comes from a `print` command**. Every other print stays unowned, as today, so Sanjay's prints are
+  still free for Amara's interest. Nothing is saved: a reload files every shown slot already (stow on
   sight, 3.3a), and the reservations go with it.
 - **Only a need use prints.** The `revealOutput` hook fires only for a job with a need that carried
   nothing (`job.need && !job.carrying`). Today it also fires when an item is delivered to the
@@ -2782,14 +2784,19 @@ forget gives a printout an owner and the owner a habit.
   the job, and `s.job.prints` (the printing action icon, 1268) is set from that roll, so the icon
   never promises a print the job will not make.
 - **The habit** is an NPC field, `printHabit: { fetchAfterSeconds: [min, max], forgetChance,
-  weight }`. At the print, two seeded rolls on the print's id: forget (`forgetChance`, default 0),
+  weight }`. At the print, two seeded rolls on `<ownerId>:<printCount>` (a per-owner count of owned
+  prints, not the slot id, so a recycled or re-used slot does not repeat its fate): forget (`forgetChance`, default 0),
   else a due time inside `fetchAfterSeconds` (default `[20, 60]`).
 - **The fetch errand.** From the due time the owner has a carry option for that slot only, scored
   `weight` (default 2) like an interest, so an urgent coffee can still win. It runs only from idle
   or returning (the selector's usual rule; no preemption). The target is the owner's `needsHome`
   object without an `accepts` check, as section 2.2 Part B planned for carries to a named person,
   and the outcome is `place`, then filed after `placeSeconds` (Part A). A leashed owner who cannot
-  reach the copier is skipped by the usual back-off.
+  reach the copier is skipped by the usual back-off. On arrival the errand **completes without entering
+  `using`**: entering it for one tick would give seating the post stop (`seating.js` 1073-1075) and could
+  start a chair fetch, and would fire slice 20's `npc_use_started` for a use that never happens. For the
+  same reason `_expectedAwayMs` leaves out the target's `useSeconds` (1376-1377) when `job.errand`
+  holds, so the lock habit (12.2) does not judge an errand 10 s too long.
 - **The way back is the return.** A carry to the NPC's own `needsHome` is not `_atOwnPost` (that
   needs a `use`, `npc-needs.js` 1295-1298), so today the owner stays in `job` mode on the way back,
   goes into `using` on its own PC for the PC's `useSeconds` (10 s from `desk_pc`, seated), and only
@@ -2798,8 +2805,12 @@ forget gives a printout an owner and the owner a habit.
   back. So **for the print errand only** the last leg counts as the return. The errand job carries
   `job.errand`, set when it starts, and only that flag changes anything: the NPC stays in `job` mode on
   the leg (switching it to `returning` would let `_tickNpc` select a new job for an idle-or-returning
-  NPC, 717-724, with the printout still in hand); `_advanceJob` calls `_checkCaught` while `job.errand`
-  holds and the NPC is in its home room; on arrival the slot is placed (an errand always carries a
+  NPC, 717-724, with the printout still in hand); `_advanceJob` calls `_checkCaught` only while
+  **`job.errand && job.carrying && !s.atPost && !s.caughtEmitted`**. `_checkCaught` itself has no
+  once-per-return guard (1393-1404; the guard sits at today's call site, 691), and the errand holds
+  `job.errand` from its start, so without these conditions it would emit `npc_caught_at_post` four
+  times a second, and fire on the outbound leg when the copier is in the home room (as the showcase's
+  is), before the owner had been away at all; on arrival the slot is placed (an errand always carries a
   slot) with no PC dwell; then `_goHome({ stayPut })` gives the `returning` arrival on the next tick, so
   `npc_returned_post` (and with it the unlock and the wake flash, 12.2) fires before the next `work`
   use. Every other carry to an own `needsHome` keeps today's path and timing: Amara's parcel and printout
@@ -2813,16 +2824,19 @@ forget gives a printout an owner and the owner a habit.
   cache on (the live default) a due errand would never be seen. The guard also checks "no due print
   errand" (and, with slice 18b, "no known magnet in the tempt band"). Node tests run with the tick
   cache on and off.
-- **Reserved.** While a slot has an owner, other NPCs' interests do not see it (`describe` reports
-  it not `pickable` to them). A forgotten slot stays reserved, so it lies on the tray until a reload
+- **Reserved.** While a slot has an owner, other NPCs' interests do not see it. `pickable` stays as it
+  is (`describe` has no viewer, 2117, and `_advanceJob` reads it for the owner's own fetch, 1455, so a
+  reserved slot marked unpickable would abort the errand with `item_gone`); the reservation is a filter
+  in `_carryCandidate` (1239: skip `o.printedBy && o.printedBy !== s.npcId`) and in the errand
+  candidate. A forgotten slot stays reserved, so it lies on the tray until a reload
   or until the player deals with it; `printHabit.shareAfterSeconds` (unset by default) hands it to
   the interest NPCs after that long, for a scenario that wants a tidy colleague.
 - **Uncollected.** A reserved slot still on the tray after `uncollectedAfterSeconds` (on the
   producer's affordance, default 60) emits `npc_print_uncollected:<ownerId>`
   `{ ownerId, slotId, producerId, ageMs, forgotten }` once. Per owner, because mapping patterns
   match exactly.
-- **A full pool.** Slots are taken by id (adapter `revealOutput` 2511-2535). When an owned print finds
-  no free slot, it **recycles the oldest forgotten reserved slot of that producer**: that slot is filed
+- **A full pool.** Slots are taken by id (adapter `revealOutput` 2511-2535). When **any** print, owned or
+  not, finds no free slot, it **recycles the oldest forgotten reserved slot of that producer**: that slot is filed
   (stowed, as a reload would), logged `recycled`, and the new print takes it, with its owner and errand.
   With no forgotten slot to recycle, the print falls back to today's cosmetic copy (no owner, no errand,
   no timer) and logs `print_no_slot`. The printing icon is decided at job start (12.3, `chance`), so the
@@ -2856,18 +2870,21 @@ only owner, timing and tray.
   "needs": { "print": { "producer": "office_copier", "fetchAfterSeconds": [5, 10], "forget": false } } }
 ```
 
-**Engine.** `npc-needs.js` about 110 lines (the need-use rule for `revealOutput`, the start-time
+**Engine.** `npc-needs.js` about 125 lines (the need-use rule for `revealOutput`, the start-time
 `chance` roll and the icon from it, owner stamp and habit rolls, the errand candidate and the wider
 early-return guard in `_select`, the reservation in the carry filter, the uncollected and gone timers
 on the existing `_placed`-style map, the `print` command, the `job.errand` return leg about 15, the
-full-pool recycling and the start-time slot check about 15). Adapter about 15 (`printedBy` on the slot,
-`pickable` by viewer, stowing a recycled slot). Validator about 35: `chance`, `fetchAfterSeconds` and `forgetChance`
+full-pool recycling for any print and the start-time slot check about 15, the caught guard, the
+no-`using` arrival, the estimate without dwell, the conditional stamp and the `<ownerId>:<printCount>`
+rolls about 15). Adapter about 10 (`printedBy` on the slot when ownership applies, stowing a recycled
+slot). Validator about 35: `chance`, `fetchAfterSeconds` and `forgetChance`
 bounds; `printHabit` on an NPC with no `revealOutput` hook and no mapping `print` command (warning);
 an owner with no `needsHome` object (error: the errand has nowhere to go); an owner whose home room and
 the producer's room are not joined by rooms it may enter (warning); per producer, the number of slots
 against the number of printing NPCs (info: forgotten prints hold slots until a reload, and an empty
 pool prints only cosmetic copies). Schema about 20 (`printHabit`, `onUse.*.chance`,
-`affordance.uncollectedAfterSeconds`, the `needs.print` command). **About 180 lines, M.**
+`affordance.uncollectedAfterSeconds`, the `needs.print` command). **About 190 lines (125 + 10 + 35 +
+20), M.**
 
 **What the player sees.** A printout appears on the tray. Nobody comes. A minute later its owner
 walks over with the printout icon, carries it back in hand and puts it on the desk; or never comes,
@@ -2878,11 +2895,14 @@ gets up for the copier.
 [30, 120], forgetChance: 0.5 }`. Tom's work use comes about every 7.5 minutes, so left to chance the
 "uncollected" beat could take most of an hour: a second lever, reading a note in the office (a mapping
 on `object_interacted` with `needs: { print: { producer: "office_copier", forget: true } }`), prints
-as Tom at once and is never fetched; it is `onceOnly`, so the player cannot fill the pool with it. Two
+as Tom at once and is never fetched; it has a 60 s `cooldown`, not `onceOnly`, because `onceOnly`
+is saved to the server (`npc-manager.js` 1004-1009) while a reload files the forgotten print, so a
+reload would lose the quick beat for good. Recycling keeps repeated reads from exhausting the pool. Two
 more non-takeable slots that read in place (`copier_out_d`, `copier_out_e`, neutral text: Tom's holiday
 request) widen the pool. Slots are filled by id, so Tom's first forgotten print takes `copier_out_a`,
 the one takeable slot, which then waits on the tray for the player; `b` to `e` read in place. The extra
-slots do not by themselves protect Sanjay's beat; recycling the oldest forgotten slot does. Sanjay has no `printHabit`, so his prints stay unowned and Amara still delivers them
+slots do not by themselves protect Sanjay's beat; recycling does, because any print, Sanjay's unowned
+ones included, recycles the oldest forgotten slot. Sanjay has no `printHabit`, so his prints stay unowned and Amara still delivers them
 (`see_printout` unchanged). The showcase copier sets `uncollectedAfterSeconds: 150`, above Tom's
 `fetchAfterSeconds` range of 30 to 120, so the uncollected objective marks a print that is really
 forgotten (the payload's `forgotten` flag says so in any case). Objectives: "A printout sits uncollected on the copier" on
@@ -2901,8 +2921,13 @@ when the stub reports the player in a minigame on the home object, and `npc_retu
 the next `work` use; a lab-shaped fixture (a plain item carried to an own `needsHome` whose
 affordance authors `useSeconds: 6`) keeps its dwell and its log, and `GOLDEN_SIMS_DAY` is unchanged; a
 full pool with one forgotten print recycles it and the lever's print gets an errand; a full pool with no
-forgotten print makes a cosmetic copy, no errand and no printing icon; the note lever fires once. Live: screenshots of Tom's printout on the tray, in his hand and on his desk; the
-lever with the player still in Tom's minigame when he comes back; the note lever's forgotten print still there two minutes later; the lever from
+forgotten print makes a cosmetic copy, no errand and no printing icon; an unowned print with a full pool
+recycles the oldest forgotten slot; a print by an NPC with no `printHabit` stays unowned and Amara can
+take it; the owner's own errand never aborts with `item_gone` on a reserved slot; a player at the desk
+during the outbound leg gives no `npc_caught_at_post`; one errand gives at most one; an errand started
+from `returning` emits at most once across the walk and the errand; the errand completes without a
+`using` phase; the note lever's cooldown allows a second read after 60 s. Live: screenshots of Tom's printout on the tray, in his hand and on his desk; the
+lever with the player still in Tom's minigame when he comes back; the note lever's forgotten print still there two minutes later, with no reload in between; the lever from
 Tom's open PC; the lab regression.
 
 **Risks.** Forgotten prints fill a producer's pool until a reload; the validator's info line and
@@ -2956,8 +2981,10 @@ without scripting the NPC. The engine stays neutral: it moves people and emits e
   because `_pickBark` returns a picture, not null, for a topic with no lines whenever pictures are
   allowed (1147-1160, `chatterPool` 110-121), which would turn every existing grumble into a `social`
   picture, the lab's two spoken grumbles about Sofia included (`lab_physical_pentest/scenario.json.erb`
-  43-45). `PICTURE_CHATTER` gains `grumble_off` and `grumble_gone` with the grumble icon, so a speaker on
-  cooldown shows the right picture. A scenario's `grumble` pool is often about a person (the lab's
+  43-45). `PICTURE_CHATTER` gains `grumble_off` and `grumble_gone`. Their picture is the need's own icon
+  (`npc-caffeine`, `npc-hunger`), falling back to `avoid`, since the grumble picture today is `avoid`
+  (`PICTURE_CHATTER.grumble`, 69-74), which reads as avoiding a person. `_grumble` logs the topic it
+  chose, not always `grumble` (1108, 1114). A scenario's `grumble` pool is often about a person (the lab's
   is), so a scenario that uses `offWhen` adds a `grumble_off` pool.
 - **One turn-back function, a table of reasons.** `_turnBack` (1080-1097) today always sets
   `mindChanged`, grumbles, re-selects with the source excluded, and goes home. With four reasons:
@@ -2968,6 +2995,7 @@ without scripting the NPC. The engine stays neutral: it moves people and emits e
   | `off` (18a) | no | `grumble_off`, else `grumble` | yes | yes, unless `job.tempted` |
   | `gone` (18b) | no | `grumble_gone`, else `grumble` | yes | yes, unless `job.tempted` |
   | `answered` (19, a colleague's phone job, `need: null`) | no | none | no | no: straight home |
+  | `rang_out` (19, an answerer still on the way when the phone rings out) | no | none | no | no: straight home; the call chosen at the claim is dropped |
 - **Only `avoid` sets `mindChanged`** (the table). `_turnBack` sets `mindChanged[need]` (1083), which today stops a
   second avoidance turn-back in the same episode. An `off` (or 18b's `gone`) turn-back does not set it,
   so a later avoidance still works.
@@ -2987,7 +3015,10 @@ without scripting the NPC. The engine stays neutral: it moves people and emits e
   `onceOnly` mapping on `global_variable_changed:office_coffee_off` instead; event mappings can bark
   from an NPC but have no player hint (`npc-manager.js` mapping fields 840-860), so a bark would read
   as a message from a colleague. The hint therefore stays in the trigger and is written as a state, not
-  an action, so it reads well on every click: "The coffee machine is switched off at the wall." 
+  an action, so it reads well on every click: "The coffee machine is switched off at the wall." It
+  carries a neutral `title` ("Wall socket"): without one, `hint` shows the alert under "Intelligence
+  Received" (`apply-actions.js` 168-171), a spy title in a neutral showcase. The validator warns on a
+  `hint` with no `title` in `test_needs_sims` and in any scenario with no security story.
 
 ```jsonc
 "globalVariables": { "office_coffee_off": false },
@@ -2995,17 +3026,19 @@ without scripting the NPC. The engine stays neutral: it moves people and emits e
 { "id": "office_coffee_socket", "type": "notes_postit1", "name": "Wall socket",
   "_comment": "Stand-in sprite until a wall-socket sprite is approved; room dressing replaces it.",
   "triggerOnInteract": [{ "type": "set_global", "key": "office_coffee_off", "value": true },
-                        { "type": "hint", "message": "The coffee machine is switched off at the wall." }] }
+                        { "type": "hint", "title": "Wall socket", "message": "The coffee machine is switched off at the wall." }] }
 ```
 
 No wall-socket sprite exists (`assets/objects` has only large switchgear and panels); a small one is
 **[approval]**, and until then the switch is the existing 9×9 `notes_postit1`. An existing
 `spriteVariants` or emitter variant on the global shows the machine off.
 
-**Engine.** `npc-needs.js` about 55 lines (`offWhen` in the candidate filter, the check in
+**Engine.** `npc-needs.js` about 60 lines (`offWhen` in the candidate filter, the check in
 `_advanceJob`, the `off` reason, `mindChanged` only for `avoid`, the wake on a real global change,
-`grumble_<reason>` chosen by lines, the turn-back table, two `PICTURE_CHATTER` entries). Validator about 15 (`offWhen` names a declared global; no object in the scenario can set it,
-warning). Schema about 10. **About 80 lines, S.**
+`grumble_<reason>` chosen by lines with its own icon and logged topic, the turn-back table, two
+`PICTURE_CHATTER` entries). Validator about 15 (`offWhen` names a declared global; no object in the scenario can set it,
+warning; a `hint` with no `title` where the default title does not fit, warning). Schema about 10.
+**About 85 lines (60 + 15 + 10), S.**
 
 **Showcase and tests.** `test_needs_sims`: `office_coffee` gains `offWhen`; a socket object beside it.
 Objective "Switch the coffee off and watch someone go to the kitchen" on `npc_turned_back:sanjay` and
@@ -3017,7 +3050,9 @@ be walking or queued at the moment of the click (Sanjay's caffeine decays 1 poin
 fallback takes the kitchen; an `off` turn-back leaves a later `avoid` turn-back possible; a real global
 change wakes a parked need and a repeated set of the same value does not; `grumble_off` is used when it
 has lines and a scenario with only a `grumble` pool still grumbles a spoken line for `off` (the lab's
-case); the `answered` reason goes straight home with no grumble; the sims-day log byte-identical with no `offWhen`. Live: the socket click,
+case); the `answered` and `rang_out` reasons go straight home with no grumble; the `grumble_off` picture is
+the need's icon and the log names the topic chosen; the validator warns on a `hint` with no `title` in
+the showcase; the sims-day log byte-identical with no `offWhen`. Live: the socket click,
 the turn-back bubble, the walk to the kitchen.
 
 #### Slices 18b-i and 18b-ii: magnets (split at the end of this part)
@@ -3028,7 +3063,9 @@ the turn-back bubble, the walk to the kitchen.
    (`hunger`, `social`), its `capacity`, a `chatter` topic for pairs that meet there, and
    `magnet: { tempt, servings, perPerson, announce, newsRadius }`.
 2. **Who knows.** An NPC learns of a magnet by **sight** (it is in the magnet's room, lit or not,
-   while the magnet shows; checked each tick against `npcPos(id).roomId`) or by **word**. The
+   while the magnet shows; checked each tick against `npcPos(id).roomId`, reading the shown magnets
+   from the per-tick object cache, not a fresh scan, so the tick-cost bound `objectScans <= ticks + 40`,
+   `test/js/npc-needs-tick-cost.test.mjs` 95, still holds; that test is re-run in 18b-i) or by **word**. The
    knowledge map is client only; after a reload, NPCs in the magnet's room notice it again.
 3. **Word of mouth.** Telling is a state change, not a line. A knower who gets back to its post, or
    arrives at its post room from the magnet, announces once per magnet: every NPC in the same room
@@ -3099,7 +3136,10 @@ the turn-back bubble, the walk to the kitchen.
    this, an NPC starting at 25 with `restores: 40` ends at 65, still inside a band of 70, and eats
    again at once. Eaters are remembered client side, so after a reload someone may have one more.
    **Redeploying:** when a magnet's reveal global turns true while its servings are 0, the engine
-   refills them, so a second pizza at the same spot is a full one.
+   refills them, so a second pizza at the same spot is a full one. **A reload between the last serving
+   and the last eater** would restore 0 servings with the reveal global still true, and nobody would
+   ever finish it. So at install, and whenever nobody is using it, a shown magnet at 0 servings finishes
+   (hidden, global false, `magnet_finished`).
 7. **A hidden object is not a use target.** `_useCandidate` skips an object whose `revealOnGlobal`
    global is not true (today `listObjects` 2238-2252 lists it). Hidden is read from the global, not
    from `visible`, which other code toggles. No shipped scenario has a hidden object with an
@@ -3159,11 +3199,11 @@ with its own `revealOnGlobal`, and some spot's `triggerOnInteract` must set that
 characters with no `{ }` (the existing pool checks); `<id>_servings` declared and equal to `servings`
 (error); `satisfies` names a need some NPC has (warning, naming those who will never come); the magnet's
 room forbidden to every NPC with the need (warning); a magnet on a `droppable` or `takeable` item
-(warning: unsupported). Schema about 30 (`affordance.magnet`). No server change. These parts sum to
-about 355 lines with the quiet look's back-off and the starved exclusion (about 5 more), so 18b is built
-as two slices, each with its own live proof:
+(warning: unsupported). Schema about 30 (`affordance.magnet`). No server change. With the quiet look's
+back-off, the starved exclusion, the reload finish and the sight cache, these parts sum to about 370
+lines (260 + 15 + 65 + 30), so 18b is built as two slices (245 + 125), each with its own live proof:
 
-- **18b-i, the magnet** (about 235): the magnet object and hidden objects not targets, sight,
+- **18b-i, the magnet** (about 245, with the reload finish and the sight cache): the magnet object and hidden objects not targets, sight,
   temptation with the parking rules, the quiet look and `job.tempted`, servings, `perPerson`, refill and
   finish, the `gone` reason, the wider `_select` guard, the validator's magnet, spot, item and servings
   checks, the schema. Proof: the player puts the pizza out, people in the kitchen eat, the boxes empty,
@@ -3197,7 +3237,8 @@ announcement per knower; `tempt` raises the threshold only towards known magnets
 prefers a known magnet; a told, leashed NPC keeps its level and logs no `parked`; a parked need is not
 tempted, and learning of a magnet wakes it for that NPC only; a told, leashed NPC over 2 minutes of
 needs clock logs no `leashed`, `private_skipped` or `parked` and emits no `npc_needs_leashed`; a tempted
-walker turned back with `gone` does not park; the hearers are those in range when the line shows, and
+walker turned back with `gone` does not park; a fresh system with servings 0 and the reveal global
+true finishes the magnet at install; the tick-cost bound holds with the sight check; the hearers are those in range when the line shows, and
 an announce with nobody to tell makes no line and no TTS request; the `news` picture follows the
 magnet's first `satisfies`; an NPC that learns mid-job does not retarget; capacity 3 with one serving left and three tempted NPCs:
 one eats, two turn back with `gone`, the count ends at 0; `perPerson: 1` stops a second helping by
@@ -3242,7 +3283,9 @@ a job.
   (`npc-manager.js` 842) or an object's `triggerOnInteract` `emit_event` (`apply-actions.js` 114). No
   new action type. Timed messages emit no arbitrary event (`npc-manager.js` 1711-1737), so a timed
   ring needs a mapping on the message's delivery. It rings `rings` times (default 4), one every 3 s
-  **of the needs clock**, so it pauses while a VM is open. Ringing while already ringing is ignored.
+  **of the needs clock**, so it pauses while a VM is open. A ring while the phone is ringing **or in a
+  call** is ignored, so a second ring from the spare phone mid-call does nothing, and an owner arriving
+  then does not answer a busy line.
 - **The owner at its post answers there, as a call overlay, not a job.** Every use job walks to the
   target's approach cell and starts `using` on arrival (`_advanceJob` 1458-1475), seating keeps an NPC
   down only for a job on its own `needsHome` (`needsStop`, `seating.js` 1067), and a desk-phone use
@@ -3267,7 +3310,8 @@ a job.
   decided to go) or talking to the player: the phone rings out and emits
   `desk_phone_unanswered:<phoneId>` `{ ownerId, playerNearby, playerDistance }`.
 - **A colleague may walk over.** From the second ring, the nearest NPC with `answersPhones: true` in
-  the phone's room that is idle at its post and compatible with the owner (no avoidance, 7.3) takes
+  the phone's room that is idle at its post, not on a call of its own (`s.call`), and compatible with
+  the owner (no avoidance, 7.3) takes
   an ordinary use job on the phone: a real leave, so its own screen window opens. It stands because
   the phone's affordance says `seat: "stand"`. Without that, the phone satisfies nothing, so seating
   falls to `near` and sits on a chair within 36 px, and the phone's required closeness to the owner's
@@ -3282,9 +3326,18 @@ a job.
   The phone **keeps ringing while an answerer holds a claim on it**, so a wind-up (0.7 s,
   `npc-needs.js` 2201) and a long walk do not let it ring out. This is the lever: ring an empty desk
   and its neighbour leaves theirs.
+- **Ring-out ends every answerer job.** When the phone rings out (no answerer arrived, or the only one
+  was frozen in a player chat, which does not keep it ringing), every answerer job on that phone ends
+  with the turn-back reason `rang_out` (12.4's table: no `mindChanged`, no grumble, no fallback select,
+  straight home) and the call chosen at the claim is dropped. A frozen answerer has its job cleared and
+  its `prevMode` set to `returning`, so the unfreeze runs `_goHome` (`_tickNpc` 682-683) instead of
+  restoring the job and walking on to a dead line (671-680). One ring therefore fires either
+  `desk_phone_unanswered` or `desk_phone_answered`, never both.
 - **Half a conversation.** The answerer's `phoneCalls: [{ knot, requireGlobal }]` names ink knots in
   its own story whose lines are all its own (no `Name:` prefixes). They run on the slice 15 machinery
-  (`exchangeLines`, a separate story instance, `npcChatterVoice.say` in the answerer's voice), one line
+  (`exchangeLines`, a separate story instance, voiced in the answerer's voice through `_speak` with the
+  per-line `overheard` flag, which hands it to `npcChatterVoice.say`, so slice 20's bed dips under a
+  call the player hears), one line
   per bubble with a seeded listening gap of 1.5 to 3 s between lines, so the other half is silence.
   `preload` (`npc-needs-chatter.js` 144-148) also loads the stories of NPCs with `phoneCalls`, or the
   first call would find no lines. The audience rule is the exchange rule: same room, lit, in range,
@@ -3297,7 +3350,9 @@ a job.
   its speaker enters a chat with the player**: the remaining lines are dropped, the speech lock is
   released, the knot stays unplayed (no `heard_<knot>`, no `npc_call_heard`), the overlay or the
   colleague's use ends, and the system emits `desk_phone_hung_up:<phoneId>`
-  `{ speakerId, reason: "player" }`, so a scenario can map a "Sorry, had to go" beat. The line already
+  `{ speakerId, reason: "player" }`, so a scenario can map a "Sorry, had to go" beat. A call also ends
+  when its speaker turns KO, hostile or hidden, or is script-suspended (the blocked branch, 644-651,
+  aborts a job but would leave `s.call` set): the same drop and release, with `reason: "unavailable"`. The line already
   playing stops too: `npcChatterVoice` gains `cancel(npcId)`, which stops that NPC's audio and drops its
   queued lines (`say` 214-235 has no way to stop a clip today), so it does not play over the
   conversation's opening. The hang-up sets the colleague's `job.useRemaining` to 0, since the freeze
@@ -3306,8 +3361,8 @@ a job.
   speaker would go on voicing the call over the conversation's own lines, and a player in a chat with
   Tom would pass the audience check and complete "Overhear Tom on the phone" behind the chat window. Heard to the end, it sets `heard_<knot>` and emits
   `npc_call_heard:<knot>`, once per game. With nobody listening the call still happens (picture chat
-  with the phone icon) and the knot stays unplayed. When every knot is heard, calls use the `phone`
-  bark pool, then picture chat. A colleague's knots are its own ("Tom's phone. No, he's stepped out.
+  with the phone icon) and the knot stays unplayed. When every knot is heard, calls use the owner's
+  `phone` pool or a colleague's `phone_message` pool, then picture chat. A colleague's knots are its own ("Tom's phone. No, he's stepped out.
   Can I take a message?"). A scenario-level pool is merged into every NPC's (`chatterPool`, 110-119),
   so lines that name the owner go on the owner (`chatter.phone` on Tom), and answerers draw from a
   separate topic, `phone_message`; scenario-level lines stay speaker-neutral.
@@ -3345,7 +3400,7 @@ player opens a chat with the speaker; the ring is an event, not a mapping action
 // the lever: a spare phone the player can use
 { "id": "spare_phone", "type": "phone2", "name": "Spare desk phone", "takeable": false,
   "triggerOnInteract": [{ "type": "emit_event", "event_name": "desk_phone_ring:tom_phone" },
-                        { "type": "hint", "message": "You dial Tom's extension." }] },
+                        { "type": "hint", "title": "Desk phone", "message": "You dial Tom's extension." }] },
 // the answerers: owner lines on the owner, a separate topic for colleagues
 { "id": "tom", "phoneCalls": [{ "knot": "call_supplier" }],
   "chatter": { "phone": ["Hello, Tom speaking.", "Can I call you back?"] } },
@@ -3353,12 +3408,13 @@ player opens a chat with the speaker; the ring is an event, not a mapping action
   "chatter": { "phone_message": ["He's not at his desk.", "Can I take a message?"] } }
 ```
 
-**Engine.** `npc-needs.js` about 200 lines: ring state and timing on the needs clock 50, the call
-overlay at the post 40, the colleague's job with the call's length, the claim that keeps it ringing and
-the `answered` turn-back 40, no selection during a call 10, the call chosen at the claim 10, the call
-runner in the system tick (one speaker, listening gaps, the lock
-held only while heard, audience, `heard_<knot>`, the hang-up on a player chat) 60, `call` in `getState`
-5, the event payloads 5. `seating.js` about 10 (`needsStop`, the typing bob and the swivel read
+**Engine.** `npc-needs.js` about 240 lines: ring state and timing on the needs clock, with rings ignored
+while ringing or in a call, 55, the call overlay at the post 40, the colleague's job with the call's
+length, the claim that keeps it ringing and the `answered` turn-back 40, the `rang_out` end with the
+frozen answerer sent home 10, no selection during a call 10, the call chosen at the claim 10, the call
+runner in the system tick (one speaker, listening gaps, lines through `_speak`, the lock held only while
+heard, audience, `heard_<knot>`, the hang-up on a player chat or an unavailable speaker) 65, `call` in
+`getState` 5, the event payloads 5. `seating.js` about 10 (`needsStop`, the typing bob and the swivel read
 `s.call`). `npc-action-icons.js` about 5 (the phone icon from `getState().call`).
 `npc-needs-chatter.js` about 13 (`preload` for `phoneCalls`, `cancel(npcId)`). Visuals about 25 (flash or glyph, rattle, the ring channel once
 approved, the phone icon). Validator about 40: `phoneOwner` exists and has a `needsHome` in the phone's
@@ -3369,8 +3425,8 @@ NPC's display name (warning: every NPC may say it); each `phoneCalls` knot exist
 that `splitPrefix` would read as a speaker prefix (error, since it is refused at run time), and the NPC
 has a voice (warning); `heard_<knot>` declared (warning); an `answersPhones` NPC with no phone in its
 room (warning); `phone` pool lines pass the pool checks. Schema about 20 (`phoneOwner`, `rings`,
-`answersPhones`, `phoneCalls`; `seat` in the preset). With the validator's chair-spot warning, **about
-335 lines, L.** No server change: ink lines are already
+`answersPhones`, `phoneCalls`; `seat` in the preset). **About 355 lines (240 + 10 + 5 + 13 + 25 + 42 +
+20), L.** No server change: ink lines are already
 extracted and validated, and the `phone` pool is a scenario-level chatter pool.
 
 **What the player sees and hears.** Tom's phone rings while he types; he stops typing and picks up
@@ -3396,6 +3452,10 @@ room, its answer is a real leave with `useUntil` and `expectedAwayMs` at the cal
 turns the colleague back with `answered` and no grumble; a chat opened on the second line leaves the
 knot unplayed, fires no `npc_call_heard`, releases the lock and emits `desk_phone_hung_up`; the lock is
 released in a gap once the player is out of earshot; `getState().call` is set during a call; an
+colleague frozen in a chat on the way, then the phone rings out and the chat ends: she goes home, with
+one `desk_phone_unanswered`, no `desk_phone_answered` and no call lines; a ring during a call is
+ignored; an NPC on its own call is never chosen to answer; a speaker turned KO or script-suspended ends
+the call with `reason: "unavailable"`; call lines go through `_speak` with `overheard`; an
 urgent need, a due print errand and a tempted magnet each start no job during a call and start on the
 first select after it; a hang-up stops the line in flight, the colleague's remainder is 0, and a
 colleague frozen on the way does not keep it ringing; the call is chosen at the claim and a pending
@@ -3416,44 +3476,74 @@ job uses the ordinary move, so the usual stall recovery applies.
 
 **Design.** Two layers, both heard only from the player's room.
 
-- **A bed**: one quiet loop per room profile (air handling and distant murmur for an office, a fridge
-  hum for a kitchen, near silence for a meeting room). It uses the existing ambient track: a room with
-  no `ambientSound` takes its profile's loop and level. Which loop plays is decided in this order:
+**Opt-in, and what shipped missions keep.** Everything in this slice that changes which loop plays, or
+at what level, runs only when the scenario sets `"roomTone": true`: the bed order, the profile beds,
+"own room first", the null-room keep, the crossfade and the preference for an open door. A scenario
+without `roomTone` keeps today's `recalculateAmbientVolume` and `fadeAmbientTo` behaviour, with one
+change: **a key that is not loaded fades the current loop out over the usual 400 ms instead of
+stopping it at once.** The level it ends at is the same as today (silence), so no audible level
+changes; only a hard cut becomes a fade. In shipped missions that touches exactly the two sis01 rooms
+that author unloaded keys, `ward_7` (`hospital_ambient`) and `major_incident_room` (`office_ambient`)
+(`sis01_healthcare/scenario.json.erb` 727, 2133), and the rooms next to them whose recalculation picks
+those keys. Nothing else in m01-m10, sis01 or sis02 changes. Separately, approving the `office_ambient`
+file (12.8) makes sis01's `major_incident_room` (a `room_hospital_meeting`) play it at its authored
+0.15, with or without `roomTone`; the approval page says so.
+
+Why the gate: built for everyone, "own room first" would raise authored levels that playtests have
+never heard. In rooms order, an earlier adjacent ambient room wins today, so these rooms play a
+neighbour's 0.125 or 0.01 instead of their own level: m04 `battery_hall_2` (its own 0.6;
+`battery_hall_1` is listed first), m09 `server_closet` (0.4), `restricted_cage` (0.5), `tape_room`
+(0.35) and `salvage_cage` (0.6), and sis01 `it_security_office` (0.25, silent today because `ward_7`'s
+unloaded key comes first and cuts the loop). Those missions belong to the other session. With
+`roomTone` on in a local copy, those are the rooms whose levels change, and the live check listens to
+two of them.
+
+- **A bed** (with `roomTone`): one quiet loop per room profile (air handling and distant murmur for an
+  office, a fridge hum for a kitchen, near silence for a meeting room), on the existing ambient track.
+  Which loop plays is decided in this order:
   1. the player's room's **authored** `ambientSound`, at its `ambientVolume`;
   2. the player's room's **profile bed**, at the profile level;
-  3. an adjacent room's **authored** loop, at today's 0.125 with the door open or 0.01 shut;
+  3. an adjacent room's **authored** loop, at today's 0.125 with the door open or 0.01 shut; with two
+     authored neighbours, one with an open door first, then rooms order (sis02's
+     `scada_control_room` touches `battery_hall_1` and `engineering_workshop`; three m09 rooms have two
+     each);
   4. nothing.
-  Profile beds never bleed into a neighbour (the "no bleed" default). So m01's server room keeps
-  `server_room_ventilation` at its authored 0.4 (`m01_first_contact/scenario.json.erb` 2070), and in
-  `it_room` next door (`room_it`, a profile bed) the office bed replaces today's 0.125 bleed of the
-  ventilation, a deliberate change when the scenario sets `roomTone`; the m01 copy used for the
-  north-south proof sounds different for that reason.
-- **A key with no sound is no bed.** `fadeAmbientTo` stops the current loop on a key change **before**
-  it checks the new key exists (`sound-manager.js` 366-372 against 393), so an unknown key cuts the bed
-  the player came from. sis01 already authors two unloaded keys, `hospital_ambient` and
-  `office_ambient` (`sis01_healthcare/scenario.json.erb` 727, 2133), so entering those rooms cuts any
-  ambient today. The resolver treats a key missing from the audio cache (not yet approved, or never
-  made) as "no bed" and moves to the next step, and `fadeAmbientTo` checks the new key before it stops
-  the old one (both in this slice, shared code). The office bed is keyed `office_ambient`, so sis01's
-  room picks it up once it is approved; `hospital_ambient` stays unloaded until someone makes it.
-- **No bleed by default.** With beds in every profiled room and the player's room checked first (the
-  fix below), the track always plays the player's own room's bed, so a neighbour's bed is not heard
-  through a door. That is the default. Bleed would need a second, quieter neighbour channel, built
-  only if the user asks for it (risks, below).
-- **Crossfades.** `fadeAmbientTo` stops the old loop at once on a key change and fades the new one in
-  (`sound-manager.js` 367-372). Today that happens only at a server-room door; with beds everywhere,
-  every doorway would cut the hum dead. `fadeAmbientTo` keeps the outgoing sound and fades it to 0 over
-  the same duration (about 15 lines, shared code, named in the slice report).
-- **North and south doorways.** A room's top two tile rows are wall, outside its floor
+  Profile beds never bleed into a neighbour. So m01's server room keeps `server_room_ventilation` at its
+  authored 0.4 (`m01_first_contact/scenario.json.erb` 2070), and in `it_room` next door (`room_it`, a
+  profile bed) the office bed replaces today's 0.125 bleed of the ventilation, a deliberate change when
+  the scenario sets `roomTone`; the m01 copy used for the north-south proof sounds different for that
+  reason.
+- **A key with no sound.** `fadeAmbientTo` stops the current loop on a key change **before** it checks
+  the new key exists (`sound-manager.js` 366-372 against 393), so an unknown key cuts the loop the
+  player came from. It now checks the key first. With `roomTone`, the resolver treats a key missing from
+  the audio cache (not yet approved, or never made) as "no bed" and moves to the next step, so the bed
+  already playing is not cut. Without `roomTone`, an unknown key fades the current loop out, as above.
+  The office bed is keyed `office_ambient`, so sis01's room picks it up once it is approved;
+  `hospital_ambient` stays unloaded until someone makes it.
+- **No bleed by default.** With beds in every profiled room and the player's room checked first, the
+  track always plays the player's own room's bed, so a neighbour's bed is not heard through a door.
+  Bleed would need a second, quieter neighbour channel, built only if the user asks for it.
+- **Crossfades that can turn back** (with `roomTone`). Today `fadeAmbientTo` holds one tween,
+  `_ambientTween`, stops the old loop at once on a key change, and for a key already playing tweens it
+  from its current volume (360-404). A crossfade keeps the **outgoing sound and its tween in their own
+  fields** (`_outgoing`, `_outgoingTween`) and fades it to 0 over the same 400 ms. When `fadeAmbientTo`
+  is asked for the outgoing key while it is still fading (the player steps back through the door),
+  it cancels that fade-out, tweens the sound up from its current volume, and fades the other one out.
+  Without this, A to B and back to A inside 400 ms would leave A's fade-out running: A stops and the
+  room the player stands in goes silent until the next room change or door event. A to B to C fades
+  both A and B out and leaves C. About 15 lines more than a plain crossfade, in shared code, named in
+  the slice report.
+- **North and south doorways** (with `roomTone`). A room's top two tile rows are wall, outside its floor
   (`updatePlayerRoom`, `core/rooms.js` 3074-3103), so walking through a north or south door the player's
   feet are in no room. `updatePlayerRoom` still calls `recalculateAmbientVolume(null)` before its "keep
-  previous" return (3113-3117), and with a null room the loop ends in a fade to 0 (3207), so the bed drops out
-  in the doorway and the next one starts after it; the crossfade never sees a key change.
-  `recalculateAmbientVolume` returns without change when the room is null, keeping the current bed, as
-  the comment at 3116 already intends. This also removes a dip at m01's server-room door today, which
-  joins `it_room` to the north (`m01_first_contact/scenario.json.erb` 2067-2071).
-- **Spot sounds**, one-shots gated with `ownRoomOnly` (12.2): **activity first**.
-  - **Use sounds** stay as slice 3 built them: one `useSound` per affordance, at completion.
+  previous" return (3113-3117), and with a null room the loop ends in a fade to 0 (3207), so the bed
+  drops out in the doorway and the next one starts after it. With `roomTone`, a null room leaves the
+  current bed as it is, as the comment at 3116 already intends. Without `roomTone` the doorway dip stays
+  as it is today (m01's server-room door joins `it_room` to the north, 2067-2071).
+- **Spot sounds**, one-shots gated with `ownRoomOnly` (12.2) and played only with `roomTone`: **activity
+  first**.
+  - **Use sounds** stay as slice 3 built them: one `useSound` per affordance, at completion, in every
+    scenario as today.
   - **`affordance.startSound`** is new: played when the `using` phase starts, so a coffee machine can
     grind at the start of a use and `drink_gulp` still plays at the end. The needs system emits nothing
     when `using` begins (`_advanceJob` 1475-1478 only logs), so it gains `npc_use_started:<objectId>`
@@ -3464,15 +3554,14 @@ job uses the ordinary move, so the usual stall recovery applies.
   - **`affordance.outputSound`** is new: played at the producer on `object_revealed:<slot>`, which the
     adapter already emits with `producerId` (`npc-needs.js` 2531). Nobody uses the copier (the print
     comes from the PC's hook, 1524, and the copier preset satisfies nothing), so a copier is heard when
-    it prints, not when someone stands at it. A cosmetic copy (no free slot) emits no `object_revealed`
-    (2525-2534), so the adapter also plays `outputSound` when it makes one; otherwise the copier would
-    go quiet once forgotten prints fill its pool (12.3). `outputSound` plays only for a payload with a
-    `producerId`: `object_revealed` also fires for left-behind items (`npc-needs.js` 2571) and for any
-    core reveal (the pizza), which must stay silent.
+    it prints. A cosmetic copy emits no `object_revealed` (2525-2534), so the adapter emits
+    `object_revealed:<producerId>` with `cosmetic: true` when it makes one, and the visuals play
+    `outputSound` for it **under the same gates** (`roomTone`, `ownRoomOnly`); the adapter never plays a
+    sound itself. `outputSound` plays only for a payload with a `producerId`: `object_revealed` also
+    fires for left-behind items (2571) and for any core reveal (the pizza), which must stay silent.
   - **Behind `roomTone`.** `startSound` and `outputSound` sit in the `coffee`, `kettle` and `copier`
-    presets, but the office visuals play them only when the scenario sets `roomTone`, so a
-    presets-on scenario without room tone hears nothing new once the files are approved. `useSound`
-    (slice 3) is unchanged.
+    presets, but the office visuals play them only when the scenario sets `roomTone`, so a presets-on
+    scenario without room tone hears nothing new once the files are approved.
   - **The kettle gets its own preset.** `kettle` and `kettle1` are in the `coffee` preset's types
     (`office-presets.json` 5), so a kettle and a coffee machine could not sound different by default.
     A new `kettle` preset with the coffee values (so every decision log is unchanged) adds
@@ -3480,7 +3569,8 @@ job uses the ordinary move, so the usual stall recovery applies.
     `outputSound: copier_run`. The validator's `officeType` enum gains `kettle`.
   - **Typing**: while one or more seated NPCs in the player's room are in a `work` use (the state
     `typingBob` already reads), a soft typing loop plays, louder with more typists, capped at three.
-    Seating publishes the count; nothing is computed per frame per NPC.
+    Seating publishes the count per room once per frame from its existing loop (`seating.js`, about 5
+    lines); nothing is computed per NPC pair.
   - **Background spots** fill the gaps: every 20 s of needs clock, a seeded roll per room
     (`seededRoll(seed, roomId, 'tone:' + slot)`, `npc-needs.js` 153) may play one sound from the
     profile's list, filtered by what the room holds (no copier spot in a room with no copier). A distant
@@ -3501,23 +3591,20 @@ job uses the ordinary move, so the usual stall recovery applies.
   | `room_servers` (18) | server | `server_room_ventilation` (exists) | 0.6 where nothing is authored | none |
 
   A meeting room is quiet by design: no bed, so the previous room's bed fades out on entry. A room type
-  not in the table and not mapped has no profile and no bed. No new sound beyond the eight in the table
-  below. Scenario switch `"roomTone": true`,
-  off by default, so no shipped mission changes.
+  not in the table and not mapped has no profile and no bed.
+- **Installing.** `office-room-tone.js` is imported in `core/game.js` beside the office visuals
+  (1966), and installs only when the scenario sets `roomTone`.
 - **`server_room_ventilation` stays an MP3.** It exists (credited CC0, BigSoundBank, `sound-manager.js`
   116-117) and is used by m01, m04, sis01 and sis02 as the server-room bed and by m09 as a stand-in
   loop. It needs no approval; it joins the live seam check, since MP3 padding can gap at the loop point.
 - **Volume.** Beds and spots go through Phaser, so they follow the player's **SFX** slider, as every
   ambient loop already does (`music/music-widget.js` 186-195; `volumeSettings.music` is a constant 0.5
   that nothing changes, `sound-manager.js` 447). No new volume category.
-- **One fix in the shared ambient code.** `recalculateAmbientVolume` returns at the first room in
-  `gameScenario.rooms` order that is the player's or adjacent (3172-3203), so an earlier adjacent room
-  can beat the player's own. It checks the player's room first. About 5 lines in `core/rooms.js`;
-  missions with `ambientSound` only gain from it.
-- **Speech stays clear.** While a needs line **that the player hears** is playing (`_speak` already
-  passes `overheard`; the lock itself is taken for every bark, heard or not, 1163-1167, and a grumble
-  two rooms away must not duck the office) **or any conversation minigame is open** (a voiced person-chat or phone call with the player, which the
-  lock does not cover), the bed ducks to half and no spot starts. The duck is a multiplier held inside
+- **Speech stays clear** (with `roomTone`). While a needs line **that the player hears** is playing
+  (`_speak` passes `overheard`; calls go through `_speak` too, 12.5; the lock itself is taken for every
+  bark, heard or not, 1163-1167, and a grumble two rooms away must not duck the office) **or any
+  conversation minigame is open** (a voiced person-chat or phone call with the player, which the lock
+  does not cover), the bed ducks to half and no spot starts. The duck is a multiplier held inside
   `sound-manager.js`, applied in `fadeAmbientTo`, so the next `recalculateAmbientVolume` (on a room
   change or a door event, `core/rooms.js` 3113, 3164) keeps it instead of undoing it.
 
@@ -3536,7 +3623,7 @@ job uses the ordinary move, so the usual stall recovery applies.
 
 | Key | What | Length | Format | Used by |
 |---|---|---|---|---|
-| `office_ambient` | office bed: air handling, faint murmur | 20-30 s loop | OGG | 12.6 bed |
+| `office_ambient` | office bed: air handling, faint murmur | 20-30 s loop | OGG | 12.6 bed; sis01's `major_incident_room` once approved |
 | `kitchen_tone` | fridge hum | 10-20 s loop | OGG | 12.6 bed |
 | `typing_loop` | soft keyboard typing | 4-6 s loop | OGG | 12.6 typing |
 | `copier_run` | copier printing a few pages | 3-5 s | MP3 | copier preset `outputSound`, spots |
@@ -3545,9 +3632,10 @@ job uses the ordinary move, so the usual stall recovery applies.
 | `desk_phone_ring` | UK double ring, one cycle | about 2 s | MP3 | 12.5 ring |
 | `distant_phone` | the ring through walls | about 2 s | MP3, made from `desk_phone_ring` with an ffmpeg low-pass | 12.6 spots |
 
-Eight files from Freesound, plus the two run-time chimes of 12.2. Until a file is approved its layer
-stays silent (OQ16's rule: never a placeholder that reads as something else, which is why
-`phone_vibrate` stands in for nothing). `server_room_ventilation` stays the server-room bed.
+Eight files: seven Freesound downloads and one ffmpeg derivative, plus the two run-time chimes of
+12.2. Until a file is approved its layer stays silent (OQ16's rule: never a placeholder that reads as
+something else, which is why `phone_vibrate` stands in for nothing). `server_room_ventilation` stays
+the server-room bed.
 
 **Authoring.**
 
@@ -3562,55 +3650,61 @@ stays silent (OQ16's rule: never a placeholder that reads as something else, whi
 
 **Engine.** New `systems/office-room-tone.js` about 100 lines (profile lookup, the bed fallback, the
 spot scheduler, typing by count, the duck conditions); `npc-needs.js` about 5 (`npc_use_started`);
-`core/rooms.js` about 20 (the four-step bed order in `recalculateAmbientVolume`, no change on a null
-room, a missing key treated as no bed); `sound-manager.js` about 35 (the new keys in both lists
-with OGG and MP3 URLs for loops, the crossfade, the duck multiplier, the key check before the stop); `npc-office-visuals.js` about 15
-(`startSound` on `npc_use_started`, `outputSound` on `object_revealed`); the adapter about 3
-(`outputSound` for a cosmetic copy); `office-presets.json` the `kettle` split
-and the three sound fields; validator about 30 (unknown profile or mapped type, profile sounds loaded,
-`roomTone` with no room that resolves to a profile, a `useSound`, `startSound` or `outputSound` key not
-loaded, an authored `ambientSound` key not in `loaded_sounds` (warning), profile bed keys not loaded
-(info until the approval list clears, or every `roomTone` scenario would warn), the `kettle` preset in
-the `officeType` enum); schema about 20 (`roomTone`, `roomToneTypes`,
-`affordance.startSound`, `affordance.outputSound`). Any new static import goes on every test-harness copy
-list (memory note `js-test-harness-copy-list`). **About 235 lines, M.**
+`core/rooms.js` about 25 (behind `roomTone`: the four-step bed order, the open-door preference, no
+change on a null room, a missing key treated as no bed); `sound-manager.js` about 50 (the new keys in
+both lists with OGG and MP3 URLs for loops, the crossfade with the outgoing sound and its tween tracked
+and reversed, the duck multiplier, the key check before the stop, the fade-out for an unknown key
+without `roomTone`); `npc-office-visuals.js` about 15 (`startSound` on `npc_use_started`, `outputSound` on
+`object_revealed` with a `producerId`, both gated); `seating.js` about 5 (the typist count); the adapter
+about 3 (the `cosmetic` emit); `core/game.js` about 3 (the install); `office-presets.json` the `kettle`
+split and the three sound fields; validator about 30 (unknown profile or mapped type, profile sounds
+loaded, `roomTone` with no room that resolves to a profile, a `useSound`, `startSound` or `outputSound`
+key not loaded, an authored `ambientSound` key not in `loaded_sounds` (warning), profile bed keys not
+loaded (info until the approval list clears, or every `roomTone` scenario would warn), the `kettle`
+preset in the `officeType` enum); schema about 20 (`roomTone`, `roomToneTypes`, `affordance.startSound`,
+`affordance.outputSound`). Any new static import goes on every test-harness copy list (memory note
+`js-test-harness-copy-list`). **About 256 lines (100 + 5 + 25 + 50 + 15 + 5 + 3 + 3 + 30 + 20), M.**
 
 **What the player hears.** In the office, a low hum and keyboards while people work, the copier when
 it prints; walking through the kitchen door the hum crossfades to a fridge, and the kettle when someone
 makes tea; in the lounge, quiet. Nothing from a room the player is not in. The bed dips under a voiced
-line or a conversation.
+line, a call the player hears, or a conversation.
 
 **Showcase.** `test_needs_sims`: `"roomTone": true` (its three rooms are `room_office`, `room_break`
 and `room_meeting`, all default profiles). Objective "Hear the office at work" on a new
 `room_tone_started:<roomId>` (once per room, when its bed first plays). Live: the play log from each
 room and doorway (spots only from the player's room, the bed's volume by room); a recorded walk through
-one east-west and one north-south doorway with no gap in the bed (the showcase's rooms join east to
-west, so the north-south case uses a local copy of m01 with `roomTone` on, or a north-south pair added
-to the showcase); typing level with one, two and three seated workers; ducking under
-a voiced bark and under an open person-chat (request log on keyless :3001); the copier's sound on a
-print with nobody at the copier. Until at least one bed file is approved, the playback proof is the
-play log and the fade calls, not audio; since an unapproved bed resolves to "no bed", the north-south
-proof needs the one loaded bed, `server_room_ventilation`, on one side of the door, which the m01 copy
-gives.
+one east-west and one north-south doorway with no gap in the bed, and a step back through a door
+inside 400 ms; typing level with one, two and three seated workers; ducking under a voiced bark, a call
+and an open person-chat (request log on keyless :3001); the copier's sound on a print with nobody at
+the copier. **Local copies of shipped missions, never committed** (generated and deleted by the check,
+as slice 1's 15-NPC copy is): m01 with `roomTone` on, for the north-south door (its server room gives
+the one loaded bed, so the proof works before any approval); m04 with `roomTone` on, standing in
+`battery_hall_2`; sis01 with `roomTone` on, standing in `it_security_office`, and stepping between
+`major_incident_room` and `it_security_office`. Each shipped mission is also played once **without**
+`roomTone` (the real files) to show nothing changes apart from sis01's fade-out of an unknown key.
+Until at least one new bed file is approved, the playback proof is the play log and the fade calls,
+not audio.
 
 **Tests.** Node: profile resolution (exact type, scenario map, authored `ambientSound` wins); the spot
 scheduler is seeded and respects the room's objects; no distant phone with a desk phone present;
-typing count capped; ducking while a heard line plays or a chat minigame is open, not for a line the
-player does not hear, kept across a `recalculateAmbientVolume`; a null room keeps the current bed; the
-four-step bed order (authored own, profile own, authored neighbour, nothing); an unknown key leaves the
-current bed playing; `startSound` and `outputSound` silent without `roomTone`; `outputSound` only with a
-`producerId`; the tick-cost bound holds with `npc_use_started`;
-`npc_use_started` fires once per use; a cosmetic copy plays `outputSound`; the crossfade keeps the outgoing sound until it reaches 0;
-`recalculateAmbientVolume` picks the player's room over an earlier adjacent one; `startSound` plays at
-`using` start and `useSound` at completion; `outputSound` plays on `object_revealed`; the preset parity
-test is byte-identical with the `kettle` split. Live as above, plus one mission with `ambientSound`
-(m01's server room) to show it is unchanged apart from the crossfade.
+typing count capped; ducking while a heard line or call plays or a chat minigame is open, not for a
+line the player does not hear, kept across a `recalculateAmbientVolume`; with `roomTone`, a null room
+keeps the current bed, the four-step bed order holds, two authored neighbours prefer the open door, and
+an unknown key leaves the current bed playing; without `roomTone`, `recalculateAmbientVolume` gives
+exactly today's choices (rooms order, the null-room fade) and an unknown key fades out instead of
+stopping; the crossfade (with the tween stub the sound-manager tests use, or a fake scene): A to B to A
+inside 400 ms leaves A playing at its level and B stopped, and A to B to C leaves only C;
+`startSound` and `outputSound` silent without `roomTone`; `outputSound` only with a `producerId`, and
+for a cosmetic copy through the visuals; the tick-cost bound holds with `npc_use_started`;
+`npc_use_started` fires once per use; `startSound` plays at `using` start and `useSound` at completion;
+the preset parity test is byte-identical with the `kettle` split.
 
 **Risks.** Loop seams and fatigue over a 30-minute session: OGG loops, a live seam check, and low
 starting levels. Room types are bespoke in many scenarios (`room_aw_*`, `room_lw_*`), so the default
-table covers few rooms until a mission maps them. The crossfade changes how m01's server-room door
-sounds (a fade instead of a cut), which is the point; it is checked on m01. If the user wants a
-neighbour's bed heard through an open door, that is a second channel and about 30 more lines.
+table covers few rooms until a mission maps them. A mission that later sets `roomTone` hears the level
+changes listed above; whoever opts it in plays those rooms first. If the user wants a neighbour's bed
+heard through an open door, that is a second channel and about 30 more lines.
 
 ### 12.7 Idle swivel (slice 21)
 
@@ -3646,7 +3740,7 @@ chair is a static seat and never turns, so the lab's staff, on static seats
 list, one change at the `want = st.homeFacing` line in `updateNeedsSeat`, 1203); `npc-needs.js` about
 10 (the per-tick speakers list); an event `npc_swivelled:<npcId>` `{ facing, reason: "idle" | "listen" }`
 on each turn. Schema about 5 (`swivel`), validator about 8 (`swivel` on an NPC with no needs, and
-`los.enabled` on a seated needs NPC, warnings). **About 60 lines, S.** No new art.
+`los.enabled` on a seated needs NPC, warnings). **About 58 lines (35 + 10 + 5 + 8), S.** No new art.
 
 **What the player sees.** Seated staff glance left and right between bursts of typing, and turn
 towards two colleagues talking nearby.
@@ -3679,17 +3773,17 @@ in the session scratchpad, the README live-proof table, then the `test_needs_lea
 
 | Order | # | Slice | Size | Depends on | Visible or audible change |
 |---|---|---|---|---|---|
-| 1 | 21 | Idle swivel (12.7), with the per-tick speakers list; none while on a call, paired or talking | S, ~60 | none | seated staff look round, and towards a conversation |
-| 2 | 16 | Lock-screen habits and cues (12.2): `screenHabit`, idle-based `autoLockSeconds`, `workstation_screen_changed`, `lighting.flash`, the no-lighting glyph, run-time chimes, `ownRoomOnly` and limiter channels, `lockCues`, no cue for a late decision | M, ~210 | 2 (`expectedAwayMs`), 5 (indicators): built | the lock shrinks to a dot on screen, or a padlock glyph without lighting; the wake flash; chimes once approved |
-| 3 | 18a | Coffee off (12.4): `offWhen`, the `off` turn-back outside `_recheck`, the wake on the global, the switch object with a state-worded hint, grumble topic chosen by lines, the turn-back table | S, ~80 | 14 (turn back, parking): built | someone turns round at a dead machine and goes to the kitchen |
-| 4 | 17 | Print and forget, and the print-job lever (12.3), with the need-use rule for `revealOutput`, the wider `_select` guard, the return leg for the errand only (`job.errand`), recycling the oldest forgotten slot | M, ~180 | 7 (slots), 11: built | a printout waits on the tray; its owner comes late or never; Tom gets up for a job the player sent |
-| 5 | 18b-i | The magnet (12.4): hidden objects, sight, temptation with the parking rules, the quiet tempted look with its back-off, servings at `using` start with `gone`, `perPerson` | M, ~235 | 17 (the `_select` guard), 18a (the turn-back table), 14: built | pizza on the kitchen table, the kitchen eats, the boxes empty, "Missed it." |
+| 1 | 21 | Idle swivel (12.7), with the per-tick speakers list; none while on a call, paired or talking | S, ~58 | none | seated staff look round, and towards a conversation |
+| 2 | 16 | Lock-screen habits and cues (12.2): `screenHabit`, idle-based `autoLockSeconds`, `workstation_screen_changed`, `lighting.flash`, the no-lighting glyph, run-time chimes, `ownRoomOnly` and limiter channels, `lockCues`, no cue for a late decision | M, ~205 | 2 (`expectedAwayMs`), 5 (indicators): built | the lock shrinks to a dot on screen, or a padlock glyph without lighting; the wake flash; chimes once approved |
+| 3 | 18a | Coffee off (12.4): `offWhen`, the `off` turn-back outside `_recheck`, the wake on the global, the switch object with a state-worded hint, grumble topic chosen by lines, the turn-back table with `rang_out`, a neutral hint title | S, ~85 | 14 (turn back, parking): built | someone turns round at a dead machine and goes to the kitchen |
+| 4 | 17 | Print and forget, and the print-job lever (12.3), with the need-use rule for `revealOutput`, the wider `_select` guard, the return leg for the errand only (`job.errand`), recycling the oldest forgotten slot for any print, the guarded caught check, ownership only with a habit or command | M, ~190 | 7 (slots), 11: built | a printout waits on the tray; its owner comes late or never; Tom gets up for a job the player sent |
+| 5 | 18b-i | The magnet (12.4): hidden objects, sight, temptation with the parking rules, the quiet tempted look with its back-off, servings at `using` start with `gone`, `perPerson`, the reload finish, sight from the tick cache | M, ~245 | 17 (the `_select` guard), 18a (the turn-back table), 14: built | pizza on the kitchen table, the kitchen eats, the boxes empty, "Missed it." |
 | 6 | 18b-ii | Word of mouth (12.4): telling, the announce, the `news` picture, `_wakeParkedFor` | M, ~125 | 18b-i; 15: built | the announce bubble in the office, and the people who get up |
-| 7 | 19 | Desk-phone calls (12.5): the call overlay with no selection during a call, the colleague's standing walk-over to a side cell, half-conversations chosen at the claim that end on a player chat | L, ~335 | 15 (exchange machinery); 16 (flash, glyph layer, limiter channels) | a ringing desk phone, half a call overheard, a colleague walking over to answer |
-| 8 | 20 | Room tone (12.6): the four-step bed order, unknown keys as no bed, crossfades, no drop in a doorway, `startSound`/`outputSound` behind `roomTone`, typing, ducking for heard speech | M, ~235 | 16 (`ownRoomOnly`, channels); the sounds' approval for anything to be heard; after the lab's room dressing settles if the lab adopts it | a room that sounds like an office at work |
+| 7 | 19 | Desk-phone calls (12.5): the call overlay with no selection during a call, the colleague's standing walk-over to a side cell, half-conversations chosen at the claim that end on a player chat or an unavailable speaker, `rang_out` for answerers on the way, no ring on a busy line | L, ~355 | 15 (exchange machinery); 16 (flash, glyph layer, limiter channels) | a ringing desk phone, half a call overheard, a colleague walking over to answer |
+| 8 | 20 | Room tone (12.6), all behind `roomTone`: the four-step bed order, unknown keys as no bed, crossfades that can turn back, no drop in a doorway, `startSound`/`outputSound` behind `roomTone`, typing, ducking for heard speech | M, ~256 | 16 (`ownRoomOnly`, channels); the sounds' approval for anything to be heard; after the lab's room dressing settles if the lab adopts it | a room that sounds like an office at work |
 
-**About 1,475 lines in all** (after review round 3, 13c: 60 + 210 + 80 + 180 + 235 + 125 + 335 + 235;
-each figure is the sum of its slice's parts). The reviewer's order, adopted: 21 first (no
+**About 1,519 lines in all** (after review round 4, 13d: 58 + 205 + 85 + 190 + 245 + 125 + 355 + 256;
+each figure is the sum of its slice's parts, given in its section). The reviewer's order, adopted: 21 first (no
 dependencies, no approvals, smallest; it touches only `seating.js` and a few lines of
 `npc-needs.js`), then 16, then 18a (a small lever that reuses slice 14 directly), then 17 and 18b-i
 (18b-i extends 17's `_select` guard and 18a's turn-back table), then 18b-ii, then 19, then 20 last,
@@ -3718,7 +3812,7 @@ see or hear, in one place, so that 16, 19 and 20 can ship heard rather than sile
 |---|---|---|---|
 | `screen_lock`, `screen_unlock` | two run-time WebAudio chimes, with a short recorded sample of each for the page | 16 | logged as `unapproved`, not played |
 | `npc-lock` closed and `npc-lock` open | two 16×16 icons (PixelLab, as section 9) | 16 (cue without lighting) | text glyph stand-in |
-| `office_ambient`, `kitchen_tone`, `typing_loop` | OGG loops, Freesound CC0 | 20 | no bed (the room's previous bed is not cut) |
+| `office_ambient`, `kitchen_tone`, `typing_loop` | OGG loops, Freesound CC0. **Approving `office_ambient` changes a shipped mission:** sis01's `major_incident_room` authors that key at 0.15 and plays it once the file loads, with or without `roomTone` | 20 | no bed (the room's previous bed is not cut) |
 | `copier_run`, `kettle_boil`, `coffee_machine` | MP3 one-shots, Freesound CC0 | 20 | silent |
 | `distant_phone` | not a download: made from `desk_phone_ring` with an ffmpeg low-pass, so it is judged once, with the ring | 20 | silent |
 | `desk_phone_ring` | MP3, Freesound CC0 | 19 | the ring is visual only |
@@ -3740,13 +3834,22 @@ fields; 18a is opt-in by data, and its grumble-topic rule keeps every existing g
 changes when a `revealOutput` hook fires (need uses only), and nothing else unless an NPC has
 `printHabit` or a hook has `chance` (the return leg is scoped to `job.errand`, so the sims-day golden
 and the lab's footholds are unchanged); 18b stops hidden `revealOnGlobal`
-objects being use targets (none shipped); 19 is opt-in by data; 20 is opt-in, apart from the ambient
-crossfade, "own room first", the null-room keep and an unknown key no longer cutting the bed, which
-every mission with `ambientSound` gets (sis01's two unloaded keys stop cutting its ambience).
+objects being use targets (none shipped); 19 is opt-in by data; 20 is opt-in by `roomTone`, bed order,
+crossfade, "own room first" and null-room keep included.
+
+**What changes for shipped missions (m01-m10, sis01, sis02), none of which sets `roomTone`:** only that
+an ambient key that is not loaded fades the current loop out over 400 ms instead of stopping it at once,
+ending at the same silence as today. In shipped content that is sis01's `ward_7` (`hospital_ambient`) and
+`major_incident_room` (`office_ambient`), and the rooms next to them whose recalculation picks those
+keys. Approving the `office_ambient` file later makes `major_incident_room` play it at its authored 0.15
+(the approval page says so). Slices 21 and 16, whose visuals are on by default, change no shipped
+mission: only `lab_physical_pentest` and the test scenarios declare `needsHome` or a workstation field
+(checked with grep; the `needs` arrays in m02 and sis01 are puzzle fields, not NPC needs). The lab's
+seats are static, so 21 leaves it alone, and the lab session decides `lockCues` for 16.
 
 ### 12.9 Open questions (recommended default in bold)
 
-Numbered on from 4.3. Revised after review round 1 (section 13).
+Numbered on from 4.3. Revised after review rounds 1-4 (sections 13, 13b, 13c, 13d).
 
 27. **Lock cues on every workstation?** **Yes by default, with their own switch (`"lockCues": false`),
     since `"officeVisuals": false` also hides carried items and use sounds. The lab session agrees
@@ -3779,7 +3882,7 @@ Numbered on from 4.3. Revised after review round 1 (section 13).
 37. **Who answers an unattended phone?** **Only NPCs with `answersPhones: true`, from the second
     ring, idle, in the phone's room and compatible with the owner; the phone keeps ringing while an
     answerer is on the way; they stand; the owner arriving first wins and the colleague turns back with
-    `answered`.**
+    `answered`; an answerer still on the way when the phone rings out goes home (`rang_out`).**
 38. **Are calls heard once?** **Yes, like exchanges (`heard_<knot>`); then the owner's `phone` pool or
     the colleague's `phone_message` pool, then picture chat.**
 39. **Does an NPC in conversation with the player answer its phone?** **No: it misses the call
@@ -3824,12 +3927,19 @@ Numbered on from 4.3. Revised after review round 1 (section 13).
     `desk_phone_hung_up:<phoneId>` fires with `reason: "player"`.**
 54. **Are grumble lines per reason?** **Yes: `grumble_<reason>` (`grumble_off`, `grumble_gone`) when that
     pool has lines, else `grumble`, chosen before `_pickBark` so an existing spoken grumble never turns
-    into a picture.**
+    into a picture. The picture for `grumble_off` and `grumble_gone` is the need's own icon, falling back
+    to `avoid`.**
 55. **Can an NPC on a phone call start a job?** **No: while `s.call` holds, selection waits. Decay goes
     on; an urgent need, a due errand or a tempted magnet starts on the first select after the call.**
-56. **An owned print with a full slot pool?** **It recycles the oldest forgotten reserved slot of that
-    producer (filed, logged `recycled`); with none, a cosmetic copy, `print_no_slot`, and no printing
-    icon.**
+56. **A print with a full slot pool?** **Any print, owned or not, recycles the oldest forgotten reserved
+    slot of that producer (filed, logged `recycled`); with none, a cosmetic copy, `print_no_slot`, and no
+    printing icon.**
+57. **Should room tone's ambient changes reach missions that do not set `roomTone`?** **No: the bed
+    order, "own room first", the null-room keep and the crossfade run only with `roomTone`. The one change
+    for everyone is that an unloaded key fades the current loop out instead of cutting it, which ends at
+    the same level as today.**
+58. **How often can the note lever print a forgotten job for Tom?** **Once a minute (`cooldown: 60000`),
+    not `onceOnly`, which is saved to the server and would lose the beat after a reload.**
 
 ### 12.10 What it means for the lab
 
@@ -4056,3 +4166,52 @@ lines.
 mapping field later. (2) Only `copier_out_a` of the showcase's slots is takeable. (3) sis01's two
 authored ambient keys are unloaded today, and slice 20's key check fixes the cut they cause; naming the
 office bed `office_ambient` means its meeting room gains a bed once the file is approved.
+
+### 13d. Changes after section 12 review R4
+
+Review: `OFFICE_LIFE_PLAN_REVIEW_S12_R4.md` (commit 744eb1cf7; 0 blockers, 3 major, 19 minor; round 3's M3
+and m16 marked partly fixed, with follow-ons on m1, m2, m3, m6, m7 and m9). Every finding was checked
+against the working tree at 744eb1cf7 before it went in. **All 22 are folded in; none is rejected.** One
+goes further than the reviewer asked: m14 is answered by putting the whole ambient change behind
+`roomTone` (the coordinator's rule that shipped missions change only if they opt in), not only by
+listing the changed rooms.
+
+| Finding | Checked against | Outcome | Section |
+|---|---|---|---|
+| **M1** a frozen answerer answers after the phone rang out | `_tickNpc` 659-683 (freeze keeps the job; unfreeze calls `_moveForPhase`) | Folded: ring-out ends every answerer job with `rang_out` (no `mindChanged`, grumble, fallback or park) and drops the chosen call; a frozen answerer's job is cleared and `prevMode` set to `returning`; one ring fires unanswered or answered, never both; node test; OQ37 | 12.4 (18a table), 12.5, OQ37 |
+| **M2** the errand's caught check has no guard and runs on the way out | `_checkCaught` 1393-1404 (no guard); call site 691; `_leavePost` 1304; showcase copier and `tom_pc` both in `office` | Folded: called only while `job.errand && job.carrying && !s.atPost && !s.caughtEmitted`; tests for the outbound leg, at most one per errand, and an errand started from `returning` | 12.3 |
+| **M3** a crossfade that turns back silences the room | `sound-manager.js` 360-404 (one `_ambientTween`; a playing key is not restarted) | Folded: the outgoing sound and its tween are tracked in their own fields; asking for the outgoing key cancels its fade-out and tweens it up; node test A to B to A within 400 ms, and A to B to C | 12.6 |
+| m1 recycling does not cover Sanjay's unowned prints | 12.3 "A full pool" | Folded: any print, owned or not, recycles the oldest forgotten slot; test with an unowned print (closes R3 M3's remainder with m2 and m6) | 12.3, OQ56 |
+| m2 ownership stamped unconditionally | 12.3 design bullet | Folded: an owner is stamped only with a `printHabit` or a `print` command | 12.3 |
+| m3 `pickable` has no viewer | `describe` 2117; `_advanceJob` 1455; `_carryCandidate` 1239 | Folded: `pickable` unchanged; the reservation is a filter in `_carryCandidate` and the errand candidate | 12.3 |
+| m4 the errand's arrival and estimate | `seating.js` 1073-1075; `_expectedAwayMs` 1376-1377 | Folded: the errand completes on arrival without `using`; its estimate leaves out the target's `useSeconds` | 12.3 |
+| m5 the print's roll id | 12.3 habit bullet | Folded: rolls on `<ownerId>:<printCount>` | 12.3 |
+| m6 the note lever's `onceOnly` and reloads | `npc-manager.js` 1004-1009 | Folded: a 60 s cooldown instead; OQ58 | 12.3, OQ58 |
+| m7 the hint's default title | `apply-actions.js` 168-171 | Folded: neutral titles ("Wall socket", "Desk phone"); validator warning on an untitled hint in the showcase or a scenario with no security story | 12.4 (18a), 12.5 |
+| m8 a magnet left on show at 0 servings after a reload | 12.4 item 6 | Folded: at install and whenever nobody is using it, a shown magnet at 0 servings finishes; test | 12.4 (18b-i) |
+| m9 the sight check and the tick-cost bound | `npc-needs-tick-cost.test.mjs` 95 | Folded: sight reads the per-tick object cache; the test is re-run in 18b-i | 12.4 (18b-i) |
+| m10 `grumble_off` with the `avoid` icon; logged topic | `PICTURE_CHATTER` 69-74; `_grumble` 1108, 1114 | Folded: the need's own icon, falling back to `avoid`; the chosen topic is logged; OQ54 | 12.4 (18a), OQ54 |
+| m11 a ring during a call | 12.5 ring rule | Folded: a ring while ringing or in a call is ignored; test | 12.5 |
+| m12 answerers on their own call; other ways a call stops | `_tickNpc` 644-651 | Folded: NPCs with `s.call` never answer; KO, hostile, hidden or script-suspended ends the call with `reason: "unavailable"` | 12.5 |
+| m13 call lines and the duck | `_speak` and `overheard` | Folded: call lines go through `_speak` with `overheard`; calls in 20's duck test | 12.5, 12.6 |
+| m14 own-room-first changes levels in four shipped missions | m04 `battery_hall_2`; m09 four rooms; sis01 `it_security_office`, `ward_7` (rooms order and door neighbours) | Folded, further than asked: the bed order, own room first, the null-room keep and the crossfade run only with `roomTone`, so none of these rooms changes; the rooms are listed as what a mission hears if it opts in; local, uncommitted copies of m01, m04 and sis01 with `roomTone` on join the live check, and each shipped mission is also played without it; OQ57 | 12.6, 12.8, OQ57 |
+| m15 two authored neighbours | sis02 `scada_control_room`; m09 three rooms | Folded (with `roomTone`): an open door first, then rooms order; test | 12.6 |
+| m16 approving `office_ambient` changes sis01 | sis01 2133 (`room_hospital_meeting`) | Folded: the approval table and 12.6 say so; the room type is corrected | 12.6, 12.8 |
+| m17 the cosmetic copy's sound skips the gate | 12.6 adapter text | Folded: the adapter emits `object_revealed:<producerId>` with `cosmetic: true` and the visuals play it under the same gates | 12.6 |
+| m18 files missing from 20's brief | `core/game.js` 1966 | Folded: `seating.js` (the typist count, about 5) and the install site beside the office visuals | 12.6 |
+| m19 sizes and stale text | part sums; 12.9 header; 12.6 file count; 12.5 pool sentence | Folded: every slice size is now its parts' sum, written beside it; the 12.9 header, "seven downloads and one derivative" and the `phone_message` pool corrected (closes R3 m16) | 12.5, 12.6, 12.8, 12.9 |
+
+**What changes for shipped missions.** Only an unloaded ambient key: it fades the current loop out over
+400 ms instead of cutting it, ending at the same silence as today (sis01's `ward_7` and
+`major_incident_room` and their neighbours). Approving `office_ambient` would later make sis01's
+`major_incident_room` play it at 0.15. Nothing else: no shipped mission has needs NPCs or workstation
+fields, and none sets `roomTone`.
+
+**Final slice list after round 4, in build order:** 21 idle swivel (S, ~58); 16 lock-screen habits and
+cues (M, ~205); 18a coffee off (S, ~85); 17 print and forget (M, ~190); 18b-i the magnet (M, ~245);
+18b-ii word of mouth (M, ~125); 19 desk-phone calls (L, ~355); 20 room tone (M, ~256). About 1,519 lines.
+
+**Found while folding in.** (1) No shipped mission declares needs NPCs or workstation fields, so slices
+16 and 21 cannot change one; the `needs` arrays in m02 and sis01 are puzzle fields. (2) Gating the
+ambient change behind `roomTone` also removes the m01 server-room crossfade from shipped play, which
+round 3 had listed as a deliberate change; it now applies only to the local m01 copy used for the proof.
