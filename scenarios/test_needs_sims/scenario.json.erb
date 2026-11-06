@@ -1,5 +1,5 @@
 {
-  "scenario_brief": "TEST: Needs (Sims-style office day)\n\nA demo of the NPC needs system. Nothing to solve. Five staff get thirsty, hungry, tired and bored, want coffee and want to work, and walk to whatever fixes it before going back to their own desks. Open the kitchen door (west) and the lounge door (east) once so they can get there. Drop the parcel or the dirty mugs from your inventory and watch someone deal with them. The whiteboard by the office's back wall shows the last thing anyone used.",
+  "scenario_brief": "TEST: Needs (Sims-style office day)\n\nA demo of the NPC needs system. Nothing to solve. Five staff get thirsty, hungry, tired and bored, want coffee and want to work, and walk to whatever fixes it before going back to their own desks. Open the kitchen door (west) and the lounge door (east) once so they can get there. The lounge is Rosa's room: only she and Grace use it, and each PC is used only by its owner. Read the deadline memo in the office and Tom and Amara both want a coffee at once; whoever misses the office station walks to the kitchen, not to Rosa's kettle. Drop the parcel or the dirty mugs from your inventory and watch someone deal with them. The whiteboard by the office's back wall shows the last thing anyone used.",
   "endGoal": "Demo only: watch the staff.",
   "startRoom": "office",
   "startPosition": { "x": 5, "y": 6 },
@@ -63,7 +63,8 @@
         { "taskId": "see_rest", "title": "Someone rests on the lounge sofa", "type": "custom", "status": "active" },
         { "taskId": "see_parcel", "title": "Amara takes a dropped parcel to her desk", "type": "custom", "status": "active" },
         { "taskId": "see_mugs", "title": "Grace takes dirty mugs to the kitchen", "type": "custom", "status": "active" },
-        { "taskId": "see_caught", "title": "Get caught at someone's desk", "type": "custom", "status": "active" }
+        { "taskId": "see_caught", "title": "Get caught at someone's desk", "type": "custom", "status": "active" },
+        { "taskId": "see_long_way", "title": "Tom or Amara fetches a coffee from the kitchen, not the lounge kettle", "type": "custom", "status": "active" }
       ]
     }
   ],
@@ -81,7 +82,7 @@
           "takeable": false,
           "locked": false,
           "observations": "Amara's desk PC.",
-          "affordance": { "satisfies": "work", "restores": 60, "useSeconds": 10, "accepts": ["post"] }
+          "affordance": { "satisfies": "work", "restores": 60, "useSeconds": 10, "accepts": ["post"], "private": true }
         },
         {
           "type": "pc",
@@ -90,7 +91,7 @@
           "takeable": false,
           "locked": false,
           "observations": "Tom's desk PC. There is a sandwich menu taped to the monitor.",
-          "affordance": { "satisfies": "work", "restores": 60, "useSeconds": 10 }
+          "affordance": { "satisfies": "work", "restores": 60, "useSeconds": 10, "private": true }
         },
         {
           "type": "pc",
@@ -99,7 +100,7 @@
           "takeable": false,
           "locked": false,
           "observations": "Sanjay's desk PC.",
-          "affordance": { "satisfies": "work", "restores": 60, "useSeconds": 10 }
+          "affordance": { "satisfies": "work", "restores": 60, "useSeconds": 10, "private": true }
         },
         {
           "type": "laptop",
@@ -154,6 +155,16 @@
             { "condition": "globalVars.last_activity === 'desk_work'", "value": "LAST SEEN\n\nSomeone got some work done at their own desk." },
             { "condition": "globalVars.last_activity === 'parcel'", "value": "LAST SEEN\n\nAmara opened a parcel at her desk." }
           ]
+        },
+        {
+          "type": "notes1",
+          "id": "deadline_memo",
+          "name": "Deadline Memo",
+          "takeable": false,
+          "readable": true,
+          "addToNotes": false,
+          "text": "MEMO\n\nThe quarterly report is due by four, not five. Sorry, all.\n\nTom, Amara: your sections, please.",
+          "observations": "A memo pinned up for Tom and Amara. Reading it out loud would ruin their afternoon."
         }
       ],
       "npcs": [
@@ -203,6 +214,9 @@
             { "eventPattern": "npc_used:sanjay_pc", "onceOnly": true, "cooldown": 0, "completeTask": "see_work" },
             { "eventPattern": "npc_returned_post:amara", "onceOnly": true, "cooldown": 0, "completeTask": "see_back_at_desk" },
             { "eventPattern": "npc_returned_post:tom", "onceOnly": true, "cooldown": 0, "completeTask": "see_back_at_desk" },
+            { "eventPattern": "npc_used:kitchen_coffee", "condition": "data.npcId === \"tom\"", "onceOnly": true, "cooldown": 0, "completeTask": "see_long_way" },
+            { "eventPattern": "npc_used:kitchen_coffee", "condition": "data.npcId === \"amara\"", "onceOnly": true, "cooldown": 0, "completeTask": "see_long_way" },
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Deadline Memo'", "cooldown": 30000, "needs": { "set": { "caffeine": 20 } } },
             { "eventPattern": "item_dropped:parcel", "onceOnly": true, "cooldown": 0, "setGlobal": { "parcel_dropped": true } },
             { "eventPattern": "item_dropped:player_mugs", "onceOnly": true, "cooldown": 0, "setGlobal": { "mugs_dropped": true } }
           ]
@@ -228,7 +242,8 @@
           },
           "onUse": { "fridge": { "setGlobal": "tom_had_lunch" } },
           "eventMappings": [
-            { "eventPattern": "npc_caught_at_post:tom", "cooldown": 30000, "bark": "Er, that's my desk. Can I help you?", "completeTask": "see_caught" }
+            { "eventPattern": "npc_caught_at_post:tom", "cooldown": 30000, "bark": "Er, that's my desk. Can I help you?", "completeTask": "see_caught" },
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Deadline Memo'", "cooldown": 30000, "needs": { "set": { "caffeine": 20 } } }
           ]
         },
         {
@@ -301,7 +316,7 @@
           "type": "coffee_station1",
           "id": "kitchen_coffee",
           "name": "Kitchen Coffee Station",
-          "position": { "x": 6, "y": 8 },
+          "position": { "x": 3, "y": 8 },
           "takeable": false,
           "observations": "The kitchen's coffee station.",
           "affordance": { "satisfies": "caffeine", "restores": 70, "useSeconds": 12, "useFrom": { "dx": 0, "dy": -1 } }
@@ -330,6 +345,7 @@
     "lounge": {
       "type": "room_meeting",
       "door_sign": "Lounge",
+      "needsPrivateTo": ["rosa", "grace"],
       "connections": { "west": "office" },
       "objects": [
         {
@@ -347,6 +363,15 @@
           "takeable": false,
           "observations": "A leather sofa. Two can sit on it.",
           "affordance": { "satisfies": "rest", "restores": 80, "useSeconds": 20, "capacity": 2, "useFrom": { "dx": 0, "dy": -1 } }
+        },
+        {
+          "type": "kettle1",
+          "id": "lounge_kettle",
+          "name": "Rosa's Kettle",
+          "position": { "x": 1, "y": 3 },
+          "takeable": false,
+          "observations": "Rosa's own kettle, by the lounge door. Nearer to most desks than the kitchen, but nobody else touches it.",
+          "affordance": { "satisfies": "caffeine", "restores": 70, "useSeconds": 12, "useFrom": { "dx": 1, "dy": 0 } }
         }
       ],
       "npcs": [

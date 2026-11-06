@@ -847,6 +847,22 @@ test('private objects: another NPC may still deliver to a private object (OQ26)'
     assert.ok(r.log.some(e => e.npc === 'sanjay' && e.ev === 'used' && e.target === 'tom_pc' && e.item === 'letter'));
 });
 
+test('leash: a job chosen after the leash removed an option carries job.leashed (the overlay label); an open choice does not', () => {
+    const firstJob = rec => {
+        const r = leashRun({ npcs: { tom: { pos: { x: 100, y: 100 }, room: 'office', rec } }, objects: kitchenOffice }, 0);
+        for (let i = 0; i < 400 && !r.sys.states.get('tom').job; i++) r.sys.step(250);
+        return { raw: r.sys.states.get('tom').job, view: r.sys.getState('tom').job };
+    };
+    const leashed = firstJob(tomRec({ needsAvoidRooms: ['lounge'] }));
+    assert.equal(leashed.raw?.targetId, 'kitchen_cooler');
+    assert.equal(leashed.raw.leashed, true);
+    assert.equal(leashed.view.leashed, true, 'getState (and so window.__test.needs.state) shows it');
+    const open = firstJob(tomRec());
+    assert.equal(open.raw?.targetId, 'lounge_cooler');
+    assert.equal('leashed' in open.raw, false, 'no field on an unleashed job');
+    assert.equal(open.view.leashed, false);
+});
+
 test('leash: nothing permitted left logs leashed once per urgent episode, with chose null', () => {
     const r = leashRun({ npcs: { tom: { pos: { x: 100, y: 100 }, room: 'office', rec: tomRec({ needsAvoidRooms: ['lounge', 'kitchen'] }) } }, objects: kitchenOffice }, 1);
     const l = r.log.filter(e => e.ev === 'leashed');

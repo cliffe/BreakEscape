@@ -45,10 +45,21 @@ export function barLayout({ needs = {}, levels = {}, lastSatisfiedAt = {}, clock
     });
 }
 
-/** Pure: the job line, e.g. "goto amara_pc", "using 4s office_coffee", "frozen", "idle". */
+/**
+ * Pure: the job line, e.g. "goto amara_pc", "using 4s office_coffee", "frozen", "idle".
+ * " leashed" is added when the room leash or a private object removed an option: on the
+ * job it chose (job.leashed), or while idle with an urgent need it left with nothing (leashNoted).
+ */
 export function jobLabel(st, job) {
     if (!st) return '';
     if (st.scriptSuspended) return 'suspended';
+    const base = jobBase(st, job);
+    const leashed = job ? job.leashed === true
+        : Object.values(st.leashNoted || {}).some(Boolean);
+    return leashed ? `${base} leashed` : base;
+}
+
+function jobBase(st, job) {
     if (st.mode === 'frozen') return job ? `frozen ${job.targetId || ''}`.trim() : 'frozen';
     if (!job) return st.mode === 'returning' ? 'returning' : 'idle';
     const target = job.targetId || job.itemId || '';

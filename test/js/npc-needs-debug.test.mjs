@@ -38,6 +38,15 @@ test('jobLabel: idle, returning, frozen, windup, goto, using with seconds left, 
     assert.equal(jobLabel({ mode: 'idle', scriptSuspended: true, clockMs: 0 }, null), 'suspended');
 });
 
+test('jobLabel: "leashed" on a job the leash shaped, and on an idle NPC the leash left with nothing', () => {
+    assert.equal(jobLabel({ mode: 'job', clockMs: 1000 }, { phase: 'goto_target', targetId: 'kitchen_coffee', leashed: true }), 'goto_target kitchen_coffee leashed');
+    assert.equal(jobLabel({ mode: 'job', clockMs: 1000 }, { phase: 'using', useUntil: 4200, targetId: 'k', leashed: true }), 'using 4s k leashed');
+    assert.equal(jobLabel({ mode: 'idle', clockMs: 0, leashNoted: { thirst: true } }, null), 'idle leashed');
+    assert.equal(jobLabel({ mode: 'idle', clockMs: 0, leashNoted: { thirst: false } }, null), 'idle');
+    assert.equal(jobLabel({ mode: 'job', clockMs: 0, leashNoted: { thirst: true } }, { phase: 'goto_target', targetId: 'pc' }), 'goto_target pc', 'the job decides once there is one');
+    assert.equal(jobLabel({ mode: 'idle', scriptSuspended: true, clockMs: 0, leashNoted: { thirst: true } }, null), 'suspended');
+});
+
 test('overlay is off by default and setEnabled(null) returns to the scenario flag', () => {
     globalThis.window = { gameScenario: {} };
     const d = new NpcNeedsDebug();

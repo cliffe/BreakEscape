@@ -689,6 +689,7 @@ export class NPCNeedsSystem {
             phase: pick.kind === 'carry' ? 'goto_item' : 'goto_target',
             startedAt: this.clockMs, deadline: 0, useUntil: 0, carrying: false
         };
+        if (pick.leashed) s.job.leashed = true;   // the debug overlay's "leashed" label
         s.mode = 'job';
         this._log(id, 'job_start', { need: pick.need || undefined, tag: pick.tag || undefined, target: pick.targetId, item: pick.itemId || undefined });
         if (pick.leashed) this._emitLeashed(s, { need: pick.need || undefined, skipped: pick.leashed, chose: pick.targetId });
@@ -937,7 +938,7 @@ export class NPCNeedsSystem {
         for (const k of Object.keys(s.levels)) levels[k] = round2(s.levels[k]);
         return {
             npcId, mode: s.mode, levels, atPost: s.atPost, scriptSuspended: s.scriptSuspended,
-            job: s.job ? { windingUp: !!s.job.windupUntil, need: s.job.need, kind: s.job.kind, phase: s.job.phase, targetId: s.job.targetId, itemId: s.job.itemId, carrying: s.job.carrying } : null,
+            job: s.job ? { windingUp: !!s.job.windupUntil, need: s.job.need, kind: s.job.kind, phase: s.job.phase, targetId: s.job.targetId, itemId: s.job.itemId, carrying: s.job.carrying, leashed: !!s.job.leashed } : null,
             home: s.home ? { x: Math.round(s.home.x), y: Math.round(s.home.y), roomId: s.home.roomId, objectId: s.home.objectId || null, provisional: !!s.home.provisional } : null,
             clockMs: this.clockMs, tick: this.tickCount
         };
