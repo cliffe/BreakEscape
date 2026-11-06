@@ -3883,7 +3883,8 @@
             "room_lw_accounts",
             "room_lw_postroom",
             "room_lw_comms",
-            "room_lw_kitchen"
+            "room_lw_kitchen",
+            "room_lw_archive"
           ]
         },
         "connections": {

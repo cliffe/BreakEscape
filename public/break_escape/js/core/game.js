@@ -235,6 +235,7 @@ export function preload() {
     this.load.tilemapTiledJSON('room_lw_accounts', 'rooms/room_lw_accounts.json'); // lab_physical_pentest 20x10 accounts open plan (Ledgerwell oatmeal office shell, room_lw_tiles_20); replaces room_lw_records for open_plan
     this.load.tilemapTiledJSON('room_lw_postroom', 'rooms/room_lw_postroom.json'); // lab_physical_pentest P1 post & print room (10x6 back-of-house shell, room_lw_concrete floor; from room_lw_hall geometry)
     this.load.tilemapTiledJSON('room_lw_comms', 'rooms/room_lw_comms.json'); // lab_physical_pentest P3 comms cupboard (5x6 back-of-house shell, room_lw_concrete floor; from room_lw_store geometry)
+    this.load.tilemapTiledJSON('room_lw_archive', 'rooms/room_lw_archive.json'); // lab_physical_pentest P4 deeds & archive room (10x6 back-of-house shell, room_lw_concrete floor; from room_lw_postroom geometry)
     this.load.tilemapTiledJSON('room_lw_kitchen', 'rooms/room_lw_kitchen.json'); // lab_physical_pentest P2 staff kitchen (10x10 shell, room_lw_vinyl grey-green lino floor; from room_lw_kitroom geometry)
 
     // Load room images (now using smaller 32px scale images)
@@ -924,6 +925,7 @@ export function preload() {
     this.load.image('nurse_call_display1', 'objects/nurse_call_display1.png');
     this.load.image('filing_cabinet_steel1', 'objects/filing_cabinet_steel1.png');
     this.load.image('binder_shelves1', 'objects/binder_shelves1.png');
+    this.load.spritesheet('lw_deed_boxes', 'objects/binder_shelves1.png', { frameWidth: 48, frameHeight: 60 }); // lab_physical_pentest P4: binder_shelves1 registered as a single-frame NPC sprite sheet for the deed-box static-sprite scope-choice entity (createNPCSprite needs a spritesheet/atlas, not a plain image); stand-in for japanned deed boxes
     this.load.image('kvm_cart1', 'objects/kvm_cart1.png');
     this.load.image('checkin_kiosk1', 'objects/checkin_kiosk1.png');
     this.load.image('drinks_vending1', 'objects/drinks_vending1.png');
