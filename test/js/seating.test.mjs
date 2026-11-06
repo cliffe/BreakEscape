@@ -211,3 +211,29 @@ test('needs NPC back at its post sits in its own chair though the walk stopped a
         assert.equal(rig.sprite.frame.name, 'sit_north_frame_000');
     } finally { rig.restore(); }
 });
+
+test('breathDown: head and shoulders are down for 40% of each 3.6s breath, offset by phase', () => {
+    let down = 0;
+    for (let t = 0; t < 3600; t += 10) if (seating.breathDown(t, 0)) down++;
+    assert.equal(down, 144); // 1440 ms of 3600
+    assert.equal(seating.breathDown(1700, 0), false);
+    assert.equal(seating.breathDown(1800, 0), true);
+    assert.equal(seating.breathDown(1700, 100), true); // phase shifts the cycle
+    assert.equal(seating.breathDown(3600 + 1800, 0), true); // repeats
+});
+
+test('breathRows: the cut sits 42% down the opaque figure; blank or tiny frames do not breathe', () => {
+    const prev = window.game;
+    // a 10x80 frame, opaque on rows 20..70
+    window.game = { textures: {
+        getFrame: (key, name) => (name === 'empty' || name === 'sit' ? { width: 10, height: 80 } : null),
+        getPixelAlpha: (x, y, key, name) => (name === 'sit' && y >= 20 && y <= 70 ? 255 : 0)
+    } };
+    try {
+        assert.deepEqual(seating.breathRows('stub_a', 'sit'), { top: 20, cut: 20 + Math.round(0.42 * 50) });
+        assert.equal(seating.breathRows('stub_a', 'empty'), null);
+        assert.equal(seating.breathRows('stub_a', 'missing'), null);
+    } finally {
+        window.game = prev;
+    }
+});
