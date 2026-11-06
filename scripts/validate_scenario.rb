@@ -391,7 +391,7 @@ def check_unknown_fields(json_data)
     scenario_id scenario_name scenario_brief endGoal version startRoom startPosition resumeSpawn titleScreenName
     show_scenario_brief disableAttacks creditsTheme creditsOverlay gameClock flags music startItemsInInventory globalVariables
     player objectives rooms npcs phoneNPCs narrator timers _comment mutuallyExclusiveGlobals lighting
-    importGlobals exportGlobals social npcNeedsSeed disguises actionIcons officeVisuals npcWindupMs showPressingNeeds showNpcIntentBubbles needsDebugOverlay officePresets
+    importGlobals exportGlobals social npcNeedsSeed disguises actionIcons officeVisuals npcWindupMs showPressingNeeds showNpcIntentBubbles needsDebugOverlay officePresets chatter
   ]
 
   # Check top-level unknown fields
@@ -414,7 +414,7 @@ def check_unknown_fields(json_data)
     voice behavior globalVarOnKO restartOnRetalk reopenRefreshesHub livePreview taskOnKO koImmune storyPath callId currentKnot avatar
     phoneId phoneTheme handle profile voiced callLabel unlockable externalVariables persistentVariables
     timedMessages timedConversation eventMappings itemsHeld puzzle_graph_actions
-    needs interests needsHome needsSpeed needsRooms needsAvoidRooms usePayload onUse
+    needs interests needsHome needsSpeed needsRooms needsAvoidRooms needsCompany chatter chattiness usePayload onUse
     observations disableClose los rfidCard chatBackground spriteStyle gender portraitVariants _comment
   ]
 

@@ -42,6 +42,7 @@ module ValidateNpcNeeds
     check_private(json, npcs, objs, issues)
     check_visuals(json, objs, issues)
     check_slots(json, objs, issues)
+    check_social(json, npcs, objs, issues)
     npcs.each { |room_id, npc| check_npc(json, npc, room_id, objs, issues, npcs) }
     issues
   end
@@ -108,6 +109,136 @@ module ValidateNpcNeeds
     end
   end
 
+  # ── social pairing and compatibility (OFFICE_LIFE_PLAN 2.4, 7.3; slice 8) ──
+  # Chatter lines are one bubble each: at most 40 characters, no line breaks. An object's
+  # affordance.chatter must name a pool (built-in, scenario or some NPC's) and needs capacity 2+.
+  # needsCompany: avoids name real NPCs and declared groups; a requireGlobal names a declared
+  # global (warning). Info: an NPC whose every object for some need is shared with someone it
+  # avoids (either way, unconditionally) can only use it when they are not there.
+
+  BUILTIN_CHATTER = %w[coffee cooler greet].freeze
+  CHAT_LINE_MAX = 40
+
+  def self.pool_lines(pool)
+    return pool if pool.is_a?(Array)
+    return Array(pool['lines']) if pool.is_a?(Hash)
+
+    []
+  end
+
+  def self.check_pool_lines(where, pools, issues)
+    return unless pools.is_a?(Hash)
+
+    pools.each do |topic, pool|
+      next if topic == '_comment'
+
+      unless pool.is_a?(Array) || (pool.is_a?(Hash) && pool['lines'].is_a?(Array))
+        issues << "❌ ERROR: #{where} chatter '#{topic}' must be a list of lines or { lines: [...] }."
+        next
+      end
+      pool_lines(pool).each do |line|
+        if !line.is_a?(String) || line.strip.empty?
+          issues << "❌ ERROR: #{where} chatter '#{topic}' has an empty or non-text line."
+        elsif line.include?("\n")
+          issues << "❌ ERROR: #{where} chatter '#{topic}' line #{line.inspect} has a line break; a bubble is one line."
+        elsif line.length > CHAT_LINE_MAX
+          issues << "❌ ERROR: #{where} chatter '#{topic}' line #{line.inspect} is #{line.length} characters; a bubble holds at most #{CHAT_LINE_MAX}."
+        end
+      end
+    end
+  end
+
+  def self.avoid_hits?(entry, other, groups_of)
+    who = entry.is_a?(Hash) ? (entry['npc'] || (entry['group'] && "group:#{entry['group']}")) : entry
+    return false unless who.is_a?(String)
+    return true if who == '*' || who == other['id']
+
+    who.start_with?('group:') && groups_of.call(other).include?(who.sub('group:', ''))
+  end
+
+  def self.check_social(json, npcs, objs, issues)
+    sc = json['chatter']
+    if json.key?('chatter') && sc != false && !sc.is_a?(Hash)
+      issues << "❌ ERROR: chatter must be an object of pools by topic, or false."
+    end
+    check_pool_lines('scenario', sc, issues) if sc.is_a?(Hash)
+    pools = (sc == false ? [] : BUILTIN_CHATTER) + (sc.is_a?(Hash) ? sc.keys : [])
+    npcs.each do |_r, n|
+      check_pool_lines("NPC '#{n['id']}'", n['chatter'], issues) if n['chatter'].is_a?(Hash)
+      pools += n['chatter'].keys if n['chatter'].is_a?(Hash)
+    end
+    objs.each do |o|
+      aff = o.data['affordance']
+      next unless aff.is_a?(Hash) && aff.key?('chatter')
+
+      topic = aff['chatter']
+      issues << "⚠️ WARNING: object '#{o.id}' affordance.chatter '#{topic}' is not a chatter pool (#{pools.uniq.sort.join(', ')}); nobody will speak there." unless pools.include?(topic)
+      issues << "⚠️ WARNING: object '#{o.id}' affordance.chatter needs capacity 2 or more; one NPC at a time never chats." if (aff['capacity'] || 1).to_i < 2
+    end
+
+    ids = npcs.map { |_r, n| n['id'] }
+    groups_of = ->(n) { Array(n.is_a?(Hash) ? n.dig('needsCompany', 'groups') : nil).select { |g| g.is_a?(String) } }
+    groups = npcs.flat_map { |_r, n| groups_of.call(n) }.uniq
+    globals = json['globalVariables'].is_a?(Hash) ? json['globalVariables'].keys : []
+    npcs.each do |_r, n|
+      nc = n['needsCompany']
+      next if nc.nil?
+
+      where = "NPC '#{n['id']}' needsCompany"
+      unless nc.is_a?(Hash)
+        issues << "❌ ERROR: #{where} must be an object { groups, avoids }."
+        next
+      end
+      Array(nc['avoids']).each do |e|
+        who = e.is_a?(Hash) ? (e['npc'] || (e['group'] && "group:#{e['group']}")) : e
+        unless who.is_a?(String)
+          issues << "❌ ERROR: #{where} avoids entry #{e.inspect} needs an NPC id, 'group:<name>', '*', or { npc | group, requireGlobal }."
+          next
+        end
+        if who.start_with?('group:')
+          g = who.sub('group:', '')
+          issues << "⚠️ WARNING: #{where} avoids group '#{g}', which no NPC lists in needsCompany.groups." unless groups.include?(g)
+        elsif who != '*' && !ids.include?(who)
+          issues << "❌ ERROR: #{where} avoids unknown NPC '#{who}'."
+        elsif who == n['id']
+          issues << "⚠️ WARNING: #{where} avoids itself."
+        end
+        rg = e.is_a?(Hash) ? e['requireGlobal'] : nil
+        names = rg.is_a?(String) ? [rg] : (rg.is_a?(Hash) ? rg.keys : [])
+        names.each do |g|
+          issues << "⚠️ WARNING: #{where} requireGlobal '#{g}' is not in globalVariables; the avoidance applies only once something sets it." unless globals.include?(g)
+        end
+      end
+    end
+
+    # Info: every object for one of an NPC's needs is shared with someone it avoids unconditionally
+    avoid_pair = lambda do |a, b|
+      [[a, b], [b, a]].any? do |x, y|
+        Array(x.dig('needsCompany', 'avoids')).any? { |e| !(e.is_a?(Hash) && e.key?('requireGlobal')) && avoid_hits?(e, y, groups_of) }
+      end
+    end
+    return unless npcs.any? { |_r, n| n['needsCompany'].is_a?(Hash) }
+
+    npcs.each do |_r, n|
+      next unless n['needs'].is_a?(Hash)
+
+      n['needs'].each_key do |need|
+        sat = objs.select { |o| o.data['affordance'].is_a?(Hash) && list(o.data['affordance']['satisfies']).include?(need) }
+        next if sat.empty? || sat.any? { |o| (o.data['affordance']['capacity'] || 1).to_i < 2 }
+
+        blockers = sat.map do |o|
+          users = npcs.map(&:last).select do |m|
+            m != n && m['needs'].is_a?(Hash) && m['needs'].keys.any? { |k| list(o.data['affordance']['satisfies']).include?(k) } && avoid_pair.call(n, m)
+          end
+          users.map { |m| m['id'] }
+        end
+        next if blockers.any?(&:empty?)
+
+        issues << "ℹ️ NPC needs #{n['id']}.#{need}: every object for it (#{sat.map(&:id).sort.join(', ')}) is shared with someone it avoids (#{blockers.flatten.uniq.sort.join(', ')}); it uses them only while they are not there."
+      end
+    end
+  end
+
   # ── office visuals (OFFICE_LIFE_PLAN 2.12, slice 3) ──────────────────────
 
   ASSETS = File.expand_path('../public/break_escape/assets', __dir__)
@@ -156,8 +287,8 @@ module ValidateNpcNeeds
 
     icons.each do |key, v|
       path = if v.is_a?(String) && v.start_with?('icon:') then File.join(ASSETS, 'icons', "#{v[5..]}.png")
-             elsif v.is_a?(Hash) && v['sprite'].is_a?(String) then File.join(ASSETS, 'objects', "#{v['sprite']}.png")
-             end
+      elsif v.is_a?(Hash) && v['sprite'].is_a?(String) then File.join(ASSETS, 'objects', "#{v['sprite']}.png")
+      end
       next if path.nil? || File.file?(path)
 
       issues << "⚠️ WARNING: actionIcons '#{key}' texture #{path.sub("#{ASSETS}/", 'assets/')} does not exist; the text stand-in shows instead."

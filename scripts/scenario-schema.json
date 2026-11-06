@@ -148,6 +148,7 @@
     "officeVisuals": { "type": "boolean", "description": "NPC office visuals (systems/npc-office-visuals.js, OFFICE_LIFE_PLAN 2.12): carried items shown in the carrier's hand, use sounds (affordance.useSound) heard by room and distance, the seated typing bob. Default true; false hides carried items again and turns the sounds and bob off." },
     "npcWindupMs": { "type": "number", "minimum": 0, "description": "Pre-action tell: ms an NPC winds up (icon pulses, npc_action_windup:<id> fires) before leaving its post for a needs job. Default 700, 0 = off." },
     "showPressingNeeds": { "type": "boolean", "description": "Pressing-need thought bubbles (systems/npc-action-icons.js, OFFICE_LIFE_PLAN 9.2). Default false. true: beside a needs NPC's head, a thought bubble shows its most pressing need that it is not acting on yet (at or below urgentAt; lowest level/urgentAt, ties by name), pulsing slowly below half urgentAt; it goes when a job for that need starts. Also turns on the no-job action icons 'noticed' (after npc_caught_at_post) and 'blocked' (urgent need, nothing permitted). Same room/dark rule as the action icons. Off by default because it telegraphs when someone is about to leave the desk." },
+    "chatter": { "description": "NPC needs system, social pairing (OFFICE_LIFE_PLAN 2.4): chatter pools by topic name, each a list of one-line speech bubbles (at most 40 characters) or { lines, hush, overhearRadius }. A pool here replaces the built-in pool of that name (coffee, cooler, greet: office small talk); false turns the built-ins off (NPC pools still apply). An object's affordance.chatter names the pool its pairs use.", "oneOf": [ { "type": "boolean", "enum": [false] }, { "type": "object", "additionalProperties": { "oneOf": [ { "type": "array", "items": { "type": "string", "minLength": 1, "maxLength": 40 } }, { "type": "object", "properties": { "lines": { "type": "array", "items": { "type": "string", "minLength": 1, "maxLength": 40 } }, "hush": { "type": "boolean", "description": "Stop after the current line when the player comes within 96 px (gossip). Default false." }, "overhearRadius": { "type": "number", "minimum": 1, "description": "px for npc_chatted overheard (default 160)" }, "_comment": { "type": "string" } }, "required": ["lines"], "additionalProperties": false } ] } } ] },
     "showNpcIntentBubbles": { "type": "boolean", "description": "Old name of showPressingNeeds, no longer read. The validator warns; rename it." },
     "disguises": {
       "type": "object",
@@ -4527,6 +4528,37 @@
         "needsSpeed": { "type": "number", "minimum": 1, "description": "NPC needs system: walk speed (px/s) for needs moves. Default behavior.patrol.speed, else 80." },
         "needsRooms": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "NPC needs system, room leash (allow list): the only rooms this NPC's needs may use objects in or walk through; its home room (needsHome's) is always allowed. Fixed per NPC. Scripts and route patrols ignore it." },
         "needsAvoidRooms": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "NPC needs system, room leash (deny list): rooms this NPC's needs never use objects in or walk through, even as a short cut; it goes the long way or waits. The home room may not be listed. Fixed per NPC. Scripts and route patrols ignore it." },
+        "needsCompany": {
+          "type": "object",
+          "description": "NPC needs system, social compatibility (OFFICE_LIFE_PLAN 7.3). Two NPCs chat at a shared object only if neither avoids the other and they share a group (or either has none). An avoidance is declared one way and acts BOTH ways: it also stops the two sharing a capacity-2 object (the second waits; npc_avoided:<npcId>). With no needsCompany anywhere, everyone pairs.",
+          "properties": {
+            "groups": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "Group names. A group mismatch only stops chat; the two may still share an object in silence." },
+            "avoids": {
+              "type": "array",
+              "description": "Who this NPC will not chat or share with (mutual): an NPC id, 'group:<name>', '*' (everyone), or { npc: id or '*', requireGlobal } / { group, requireGlobal }, which applies only while the global(s) hold (a name, truthy; or { name: value }, all must match).",
+              "items": {
+                "oneOf": [
+                  { "type": "string", "minLength": 1 },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "npc": { "type": "string", "minLength": 1 },
+                      "group": { "type": "string", "minLength": 1 },
+                      "requireGlobal": { "oneOf": [ { "type": "string", "minLength": 1 }, { "type": "object" } ] },
+                      "_comment": { "type": "string" }
+                    },
+                    "oneOf": [ { "required": ["npc"] }, { "required": ["group"] } ],
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            },
+            "_comment": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
+        "chatter": { "type": "object", "description": "NPC needs system, social pairing: this NPC's own chatter lines by topic; they add to the scenario's (or built-in) pool of that name when this NPC speaks.", "additionalProperties": { "oneOf": [ { "type": "array", "items": { "type": "string", "minLength": 1, "maxLength": 40 } }, { "type": "object", "properties": { "lines": { "type": "array", "items": { "type": "string", "minLength": 1, "maxLength": 40 } }, "hush": { "type": "boolean", "description": "Stop after the current line when the player comes within 96 px (gossip). Default false." }, "overhearRadius": { "type": "number", "minimum": 1, "description": "px for npc_chatted overheard (default 160)" }, "_comment": { "type": "string" } }, "required": ["lines"], "additionalProperties": false } ] } },
+        "chattiness": { "type": "number", "minimum": 0, "maximum": 1, "description": "Social pairing: the seeded chance this NPC says a line on its turn (default 1; 0 = listens only)." },
         "usePayload": { "description": "NPC needs system: any JSON value, opaque to the engine and owned by the NPC. A clone rides on every npc_used event this NPC emits." },
         "onUse": {
           "type": "object",
@@ -5016,6 +5048,8 @@
             "onDeliver": { "type": "string", "enum": ["place", "stow"], "description": "What happens to a delivered reveal slot (an object with outputOf): 'place' (default) sets it down on this object; 'stow' files it away at once (a shredder, a filing cabinet). Plain items are always consumed." },
             "placeAt": { "type": "object", "properties": { "dx": { "type": "number" }, "dy": { "type": "number" } }, "required": ["dx", "dy"], "additionalProperties": false, "description": "Where a delivered slot is set down, in tiles from this object's centre (default: halfway from the centre towards the approach cell)" },
             "placeSeconds": { "type": "number", "minimum": 0, "maximum": 3600, "description": "Needs-clock seconds a placed slot stays before the engine files it away (default 60; 0 = until a reload). On a producer: how long a cosmetic copy stays when no slot is free." },
+            "chatter": { "type": "string", "minLength": 1, "description": "NPC needs system, social pairing (OFFICE_LIFE_PLAN 2.4): the chatter pool two compatible NPCs using this object at once (capacity 2 or more) draw one-line speech bubbles from, turn about, while both are still using it. Built-in pools: coffee, cooler (the cooler preset sets it), greet; the scenario's chatter adds or replaces pools. Each line emits npc_chatted:<objectId>." },
+            "overhearRadius": { "type": "number", "minimum": 1, "description": "Social pairing: px within which (same room, clear line) the player overhears a chat line here (npc_chatted overheard, npc_overheard:<speakerId>). Default 160; overrides the pool's." },
             "seat": { "oneOf": [ { "type": "boolean", "enum": [false] }, { "type": "string", "enum": ["fetch", "stay", "stand"] } ], "description": "Seating while an NPC uses this object (systems/seating.js): 'fetch' (default) sits on a free chair at the spot or rolls a free swivel chair over from the same room; 'stay' sits only if a chair is already there; false or 'stand' always stands. NPCs whose atlas has no seated frames always stand." },
             "_comment": { "type": "string" }
           },

@@ -29,6 +29,9 @@
  *                          Same room/dark rule as the action icons (OFFICE_LIFE_PLAN 9.2).
  *                          The old name showNpcIntentBubbles is not read (the validator warns).
  *
+ * While the NPC is saying a chat line (getState().talking, slice 8) its speech bubble replaces
+ * both the action icon and the thought bubble.
+ *
  * Shown only for NPCs in the player's current room, and not while that room is dark (a room
  * without lighting counts as lit). A job that is winding up (npc_action_windup) pulses its icon
  * before the NPC moves. Reads window.npcNeedsSystem.getState(); changes nothing in the needs system.
@@ -308,7 +311,9 @@ export class NpcActionIcons {
             const roomId = b?.roomId;
             const seen = !!(st && sprite && sprite.active && sprite.visible && !sprite.destroyed)
                 && iconShown({ npcRoom: roomId, playerRoom, dark: roomIsDark(roomId) });
-            const bubble = seen ? pressingBubble(st, actionIcons, optIn) : null;
+            // A speech bubble (slice 8, npc-world-bubbles.js) hides both while the NPC talks
+            const talking = !!st?.talking;
+            const bubble = seen && !talking ? pressingBubble(st, actionIcons, optIn) : null;
             let bb = this.bubbles.get(id);
             if (!bubble) { if (bb) bb.box.setVisible(false); }
             else {
@@ -322,7 +327,7 @@ export class NpcActionIcons {
                 bb.box.setData('icon', bb.shown);
                 bb.box.setScale(bubble.pulse && !reducedMotion() ? 1 + 0.12 * Math.abs(Math.sin(Date.now() / 400)) : 1);
             }
-            const entry = !seen ? null
+            const entry = (!seen || talking) ? null
                 : (st.job ? pickIconEntry(st.job, actionIcons, st.job.targetId ? targetInfo(st.job.targetId, this.targets) : null)
                     : stateIconEntry(st, actionIcons, optIn));
             let ic = this.icons.get(id);

@@ -32,6 +32,63 @@ const RETURN_STILL_PX = 4;    // less than this between ticks counts as standing
 const CAUGHT_RADIUS = 48;    // px (1.5 tiles) from the home approach cell: "you were in my chair"
 export const NOTICED_MS = 3000;   // getState().noticed after npc_caught_at_post (the "noticed" action icon)
 
+// Social pairing and chatter (OFFICE_LIFE_PLAN 2.4, 7.3; slice 8). Two compatible NPCs using one
+// object whose affordance names a `chatter` pool take turns at one-line speech bubbles, timed on
+// the needs clock and only while both are still using it. Nothing here is saved.
+export const CHAT_BASE_MS = 2500;
+export const CHAT_PER_CHAR_MS = 50;
+export const CHAT_MAX_MS = 4000;
+export const CHAT_GAP_MS = 500;
+export const OVERHEAR_RADIUS = 160;   // px, five tiles: npc_chatted `overheard`
+export const CHAT_LINE_MAX = 40;      // characters; the validator enforces it
+/** How long a chat line's bubble shows: 2.5 s + 50 ms per character, at most 4 s. */
+export function bubbleMs(line) {
+    return Math.min(CHAT_MAX_MS, CHAT_BASE_MS + CHAT_PER_CHAR_MS * String(line || '').length);
+}
+// Built-in pools: office small talk, no work, security or plot content. A scenario's `chatter`
+// replaces a pool by name; `"chatter": false` turns these off (NPC pools still apply).
+export const DEFAULT_CHATTER = Object.freeze({
+    coffee: Object.freeze(["Machine's slow again.", 'Who finished the milk?', 'Is this one decaf?', 'Third one today.', 'Need this, honestly.']),
+    cooler: Object.freeze(['Did you see the car park email?', 'Friday drinks?', 'Good weekend?', 'Is it raining again?', 'Busy morning?', 'Train was late again.', 'Any plans for lunch?', 'Not bad, you?']),
+    greet: Object.freeze(['Morning.', 'Alright?', "How's it going?", 'Not bad, you?'])
+});
+
+/** Pure: a pool as { lines, hush, overhearRadius } from an array or { lines, hush, overhearRadius }. */
+export function normalisePool(p) {
+    if (Array.isArray(p)) return { lines: p.filter(l => typeof l === 'string' && l.trim()), hush: false, overhearRadius: null };
+    if (p && typeof p === 'object') {
+        const r = Number(p.overhearRadius);
+        return { lines: (Array.isArray(p.lines) ? p.lines : []).filter(l => typeof l === 'string' && l.trim()), hush: p.hush === true, overhearRadius: r > 0 ? r : null };
+    }
+    return null;
+}
+
+/**
+ * Pure: the topic's pool for one speaker. The scenario's pool of that name replaces the built-in
+ * one (`scenarioChatter === false`: no built-ins); the NPC's own pool of that name adds to it.
+ */
+export function chatterPool(topic, scenarioChatter, npcChatter) {
+    let base = null;
+    if (scenarioChatter && typeof scenarioChatter === 'object' && scenarioChatter[topic] !== undefined) base = normalisePool(scenarioChatter[topic]);
+    else if (scenarioChatter !== false && DEFAULT_CHATTER[topic]) base = normalisePool([...DEFAULT_CHATTER[topic]]);
+    const own = npcChatter && typeof npcChatter === 'object' ? normalisePool(npcChatter[topic]) : null;
+    return {
+        lines: [...(base?.lines || []), ...(own?.lines || [])],
+        hush: !!(base?.hush || own?.hush),
+        overhearRadius: base?.overhearRadius || own?.overhearRadius || null
+    };
+}
+
+/** requireGlobal: a name (truthy) or { name: value } (all must match). Copied from npc-sight-challenge.js (review m10). */
+export function requiredGlobalsHold(requireGlobal, globals) {
+    if (!requireGlobal) return true;
+    if (typeof requireGlobal === 'string') return !!globals[requireGlobal];
+    if (typeof requireGlobal === 'object') {
+        return Object.entries(requireGlobal).every(([name, value]) => globals[name] === value);
+    }
+    return true;
+}
+
 export function hash32(str) {
     let h = 0x811c9dc5;
     for (let i = 0; i < str.length; i++) {
@@ -139,6 +196,11 @@ export class NPCNeedsSystem {
         // Reveal slots set down at a target or shown as a cosmetic copy (slice 7): id -> clock ms
         // at which the engine stows (or removes) it. Client only; a reload stows on sight instead.
         this._placed = new Map();
+        // Social pairing (slice 8): objectId -> chat. _anyCompany: some NPC has needsCompany, so
+        // _free checks avoidances (without it the decision log is unchanged).
+        this._chats = new Map();
+        this._chatSeq = 0;
+        this._anyCompany = false;
         // Read-outs for tests and live measurement; never feed a decision
         this.stats = { ticks: 0, selects: 0, objectScans: 0, pathSearches: 0, backoffs: 0 };
     }
@@ -189,9 +251,11 @@ export class NPCNeedsSystem {
         const roomList = v => (Array.isArray(v) ? v.filter(r => typeof r === 'string' && r) : null);
         const allow = roomList(rec.needsRooms), deny = roomList(rec.needsAvoidRooms);
         const leash = (allow || deny?.length) ? { allow: allow ? new Set(allow) : null, deny: new Set(deny || []) } : null;
+        if (rec.needsCompany && typeof rec.needsCompany === 'object') this._anyCompany = true;
         this.states.set(npcId, {
             npcId, needs, interests, levels, lastSatisfiedAt, rng, leash,
             leashNoted: {},
+            avoidNoted: {},
             privateNoted: {},
             urgentFlag: {},
             mode: 'idle',
@@ -223,6 +287,8 @@ export class NPCNeedsSystem {
             if (s.job) this._abortJob(s, 'reset', { cancel: true });
         }
         this.states.clear();
+        this._chats.clear();
+        this._chatSeq = 0;
         this.log = [];
         this.clockMs = 0;
         this.tickCount = 0;
@@ -323,6 +389,7 @@ export class NPCNeedsSystem {
                 if (typeof console !== 'undefined') console.error(`[needs] tick error for ${id}`, e);
             }
         }
+        if (this._chats.size) this._tickChats();
         this._worldChanged();
     }
 
@@ -628,7 +695,17 @@ export class NPCNeedsSystem {
 
     _free(s, obj) {
         const cap = Math.max(1, Number(obj.affordance?.capacity) || 1);
-        if (this._claims(obj.id, s.npcId) >= cap) return false;
+        const claims = this._claims(obj.id, s.npcId);
+        if (claims >= cap) return false;
+        // Social compatibility (7.3): a shared object claimed by someone this NPC avoids, or who
+        // avoids it, counts as full; the NPC waits rather than standing silently beside them
+        if (cap >= 2 && claims > 0 && this._anyCompany) {
+            for (const id of [...this.states.keys()].sort()) {
+                const o = this.states.get(id);
+                if (o === s || o.job?.targetId !== obj.id) continue;
+                if (this._avoids(s, o)) { this._noteAvoided(s, o, obj); return false; }
+            }
+        }
         const cd = s.cooldowns[obj.id];
         return !(cd && cd > this.clockMs);
     }
@@ -751,6 +828,7 @@ export class NPCNeedsSystem {
             phase: pick.kind === 'carry' ? 'goto_item' : 'goto_target',
             startedAt: this.clockMs, deadline: 0, useUntil: 0, carrying: false
         };
+        s.avoidNoted = {};   // a new episode: npc_avoided may fire again next time
         if (pick.leashed) s.job.leashed = true;   // the debug overlay's "leashed" label
         if (pick.privateSkipped) s.job.privateSkipped = true;   // the overlay's "private" label
         // For the action icons (OFFICE_LIFE_PLAN 9.1): a use that prints, a carry to a stow target
@@ -841,8 +919,21 @@ export class NPCNeedsSystem {
         const job = s.job;
         const destId = job.phase === 'goto_item' ? job.itemId : job.targetId;
         const obj = this.world.getObject(destId);
-        const cell = obj ? this.world.approachCell(obj) : null;
+        let cell = obj ? this.world.approachCell(obj) : null;
         if (!cell) { this._failJob(s, 'no_approach'); return; }
+        // A shared object (capacity 2+) someone else is already headed for: stand beside them, so
+        // the two can face each other (slice 8). Only a world with besideCell (the live adapter).
+        if (job.phase === 'goto_target' && typeof this.world.besideCell === 'function'
+            && (Number(obj.affordance?.capacity) || 1) >= 2) {
+            const taken = [];
+            for (const o of this.states.values()) {
+                if (o !== s && o.job?.targetId === job.targetId && o.job.dest) taken.push(o.job.dest);
+            }
+            if (taken.some(d => Math.hypot(d.x - cell.x, d.y - cell.y) <= HOME_EPS)) {
+                const alt = this.world.besideCell(cell, taken);
+                if (alt) cell = alt;
+            }
+        }
         const pos = this.world.npcPos(id) || cell;
         const speed = this.world.speedFor(id);
         const dist = Math.hypot(cell.x - pos.x, cell.y - pos.y);
@@ -884,6 +975,7 @@ export class NPCNeedsSystem {
             const secs = Number(obj?.affordance?.useSeconds);
             job.useUntil = this.clockMs + (Number.isFinite(secs) ? clamp(secs, 0, 600) : 20) * 1000;
             this._log(id, 'using', { need: job.need, target: job.targetId });
+            if (obj) this._maybePair(s, obj);
             return;
         }
         if (job.phase === 'using' && this.clockMs >= job.useUntil) this._completeJob(s);
@@ -1057,6 +1149,162 @@ export class NPCNeedsSystem {
         s.returnWatch = { x: pos.x, y: pos.y, since: this.clockMs };
     }
 
+    // ── social pairing and compatibility (slice 8: OFFICE_LIFE_PLAN 2.4, 7.3) ──
+
+    _company(s) {
+        const nc = this.world.getNpc(s.npcId)?.needsCompany;
+        return nc && typeof nc === 'object' ? nc : null;
+    }
+
+    _groups(s) {
+        const g = this._company(s)?.groups;
+        return Array.isArray(g) ? g.filter(x => typeof x === 'string' && x) : [];
+    }
+
+    _globalHolds(cond) {
+        return typeof this.world.globalHolds === 'function' ? !!this.world.globalHolds(cond) : false;
+    }
+
+    /** Does a's own avoids list name b? (an id, "group:<name>", "*", or { npc | group, requireGlobal }) */
+    _avoidsOneWay(a, b) {
+        const list = this._company(a)?.avoids;
+        if (!Array.isArray(list)) return false;
+        const hit = (who) => {
+            if (who === '*' || who === b.npcId) return true;
+            return typeof who === 'string' && who.startsWith('group:') && this._groups(b).includes(who.slice(6));
+        };
+        for (const e of list) {
+            if (typeof e === 'string') { if (hit(e)) return true; continue; }
+            if (!e || typeof e !== 'object') continue;
+            const named = typeof e.npc === 'string' ? hit(e.npc) : (typeof e.group === 'string' && this._groups(b).includes(e.group));
+            if (!named) continue;
+            if (e.requireGlobal !== undefined && !this._globalHolds(e.requireGlobal)) continue;
+            return true;
+        }
+        return false;
+    }
+
+    /** Declared one way, acts both ways. */
+    _avoids(a, b) {
+        return this._avoidsOneWay(a, b) || this._avoidsOneWay(b, a);
+    }
+
+    /** May a and b chat? No avoidance either way, and a shared group unless one has no groups. */
+    _compatible(a, b) {
+        if (this._avoids(a, b)) return false;
+        const ga = this._groups(a), gb = this._groups(b);
+        return !ga.length || !gb.length || ga.some(g => gb.includes(g));
+    }
+
+    _noteAvoided(s, other, obj) {
+        const key = `${other.npcId}|${obj.id}`;
+        if (s.avoidNoted[key]) return;
+        s.avoidNoted[key] = true;
+        this._log(s.npcId, 'avoided', { avoided: other.npcId, target: obj.id });
+        this._emit(`npc_avoided:${s.npcId}`, { npcId: s.npcId, avoidedId: other.npcId, objectId: obj.id });
+    }
+
+    _usingObj(s, objectId) {
+        return !!(s && s.mode === 'job' && s.job?.phase === 'using' && s.job.targetId === objectId);
+    }
+
+    /** On entering `using`: pair with a compatible NPC already using the same chatter object. */
+    _maybePair(s, obj) {
+        const aff = obj.affordance || {};
+        if (typeof aff.chatter !== 'string' || !aff.chatter) return;
+        if ((Number(aff.capacity) || 1) < 2 || this._chats.has(obj.id)) return;
+        for (const id of [...this.states.keys()].sort()) {
+            const o = this.states.get(id);
+            if (o === s || !this._usingObj(o, obj.id)) continue;
+            if (!this._compatible(s, o)) continue;   // share in silence
+            const seq = this._chatSeq++;
+            const first = this.roll(`${o.npcId}+${s.npcId}`, `chat:${obj.id}:${seq}:first`) < 0.5 ? o.npcId : s.npcId;
+            this._chats.set(obj.id, {
+                objectId: obj.id, topic: aff.chatter, overhearRadius: Number(aff.overhearRadius) > 0 ? Number(aff.overhearRadius) : null,
+                a: o.npcId, b: s.npcId, seq, n: 0, speaker: first, nextAt: this.clockMs, current: null, hushed: false
+            });
+            const pa = this.world.npcPos(o.npcId), pb = this.world.npcPos(s.npcId);
+            if (pa && pb) { this.world.faceTo(o.npcId, pb.x, pb.y); this.world.faceTo(s.npcId, pa.x, pa.y); }
+            return;
+        }
+    }
+
+    _scenarioChatter() {
+        return typeof this.world.chatterConfig === 'function' ? this.world.chatterConfig() : undefined;
+    }
+
+    _tickChats() {
+        for (const oid of [...this._chats.keys()].sort()) {
+            const c = this._chats.get(oid);
+            const A = this.states.get(c.a), B = this.states.get(c.b);
+            // Either one frozen in a conversation, gone, or finished: the pairing ends
+            if (!this._usingObj(A, oid) || !this._usingObj(B, oid)) { this._chats.delete(oid); continue; }
+            if (c.current && this.clockMs >= c.current.until) c.current = null;
+            if (c.current) {
+                if (c.hush && !c.hushed && this._playerWithin([c.a, c.b])) c.hushed = true;
+                continue;
+            }
+            if (c.hushed) { this._chats.delete(oid); continue; }
+            if (this.clockMs < c.nextAt) continue;
+            const partnerId = c.speaker === c.a ? c.b : c.a;
+            const rec = this.world.getNpc(c.speaker) || {};
+            const pool = chatterPool(c.topic, this._scenarioChatter(), rec.chatter);
+            const salt = `chat:${oid}:${c.seq}:${c.n}`;
+            c.n++;
+            // chattiness: the seeded chance this speaker says something on its turn (default 1)
+            const chatty = Number.isFinite(Number(rec.chattiness)) && rec.chattiness !== null ? clamp(Number(rec.chattiness), 0, 1) : 1;
+            if (!pool.lines.length || this.roll(c.speaker, `${salt}:chatty`) >= chatty) {
+                if (c.n > 40) { this._chats.delete(oid); continue; }   // two silent NPCs: give up
+                c.speaker = partnerId;
+                c.nextAt = this.clockMs + CHAT_GAP_MS;
+                continue;
+            }
+            const idx = Math.floor(this.roll(c.speaker, `${salt}:line`) * pool.lines.length);
+            const line = pool.lines[idx];
+            const ms = bubbleMs(line);
+            // Only while both are still using it: a line that would outlast the overlap is not started
+            if (this.clockMs + ms > Math.min(A.job.useUntil, B.job.useUntil)) { this._chats.delete(oid); continue; }
+            c.current = { speakerId: c.speaker, partnerId, line, until: this.clockMs + ms };
+            c.hush = pool.hush;
+            const radius = c.overhearRadius || pool.overhearRadius || OVERHEAR_RADIUS;
+            const h = typeof this.world.playerHears === 'function' ? (this.world.playerHears(c.speaker, radius) || {}) : {};
+            const data = {
+                speakerId: c.speaker, partnerId, topic: c.topic, lineId: `${c.topic}:${idx}`, line, objectId: oid,
+                overheard: !!h.overheard, playerDistance: Number.isFinite(h.distance) ? Math.round(h.distance) : null
+            };
+            this._emit(`npc_chatted:${oid}`, data);
+            if (data.overheard) this._emit(`npc_overheard:${c.speaker}`, { ...data });
+            if (c.hush && this._playerWithin([c.a, c.b])) c.hushed = true;
+            c.speaker = partnerId;
+            c.nextAt = c.current.until + CHAT_GAP_MS;
+        }
+    }
+
+    /** Is the player near any of these NPCs: playerProximity's `nearby` (96 px, same room, clear line)? */
+    _playerWithin(ids) {
+        return ids.some(id => this._playerProximity(id).playerNearby);
+    }
+
+    /** The line an NPC is saying now, or null: { line, partnerId, topic, objectId, remainingMs }. */
+    _talking(npcId) {
+        for (const c of this._chats.values()) {
+            const cur = c.current;
+            if (cur && cur.speakerId === npcId && this.clockMs < cur.until) {
+                return { line: cur.line, partnerId: cur.partnerId, topic: c.topic, objectId: c.objectId, remainingMs: cur.until - this.clockMs };
+            }
+        }
+        return null;
+    }
+
+    /** The NPC's chat partner while paired at an object, or null. */
+    _chatPartner(npcId) {
+        for (const c of this._chats.values()) {
+            if (c.a === npcId) return c.b;
+            if (c.b === npcId) return c.a;
+        }
+        return null;
+    }
+
     // ── read-outs ──────────────────────────────────────────────────────────
 
     _log(npcId, ev, extra = {}) {
@@ -1104,6 +1352,8 @@ export class NPCNeedsSystem {
             npcId, mode: s.mode, levels, atPost: s.atPost, scriptSuspended: s.scriptSuspended,
             job: s.job ? { windingUp: !!s.job.windupUntil, need: s.job.need, kind: s.job.kind, phase: s.job.phase, targetId: s.job.targetId, itemId: s.job.itemId, carrying: s.job.carrying, tag: s.job.tag || null, leashed: !!s.job.leashed, privateSkipped: !!s.job.privateSkipped, prints: !!s.job.prints, files: !!(s.job.stowAt && s.job.slot) } : null,
             pressing: this._pressing(s),
+            talking: this._talking(npcId),
+            chatPartner: this._chatPartner(npcId),
             blockedNeed: this._blockedNeed(s),
             noticed: Number.isFinite(s.caughtAt) && this.clockMs - s.caughtAt < NOTICED_MS,
             home: s.home ? { x: Math.round(s.home.x), y: Math.round(s.home.y), roomId: s.home.roomId, objectId: s.home.objectId || null, provisional: !!s.home.provisional } : null,
@@ -1356,6 +1606,34 @@ export function createEngineWorld() {
             const b = behaviour(id);
             if (b?.canSeePlayerToFace) { try { clear = !!b.canSeePlayerToFace({ x: pr.x, y: pr.y }); } catch (e) { clear = true; } }
             return { nearby: sameRoom && distance <= 96 && clear, distance };
+        },
+        // Chat overhearing (slice 8): the playerProximity tests (same room, clear line) at a chat radius
+        playerHears(id, radius) {
+            const pl = W().player;
+            const pos = this.npcPos(id);
+            if (!pl || !pos) return { overheard: false, distance: null };
+            const pr = pl.body?.center || { x: pl.x, y: pl.y };
+            const distance = Math.hypot(pr.x - pos.x, pr.y - pos.y);
+            const sameRoom = !W().currentPlayerRoom || !pos.roomId || W().currentPlayerRoom === pos.roomId;
+            if (!sameRoom || distance > radius) return { overheard: false, distance };
+            let clear = true;
+            const b = behaviour(id);
+            if (b?.canSeePlayerToFace) { try { clear = !!b.canSeePlayerToFace({ x: pr.x, y: pr.y }); } catch (e) { clear = true; } }
+            return { overheard: clear, distance };
+        },
+        // Scenario chatter pools (object, false, or undefined for the built-ins)
+        chatterConfig: () => W().gameScenario?.chatter,
+        // needsCompany requireGlobal (requiredGlobalsHold, copied from npc-sight-challenge.js)
+        globalHolds: cond => requiredGlobalsHold(cond, W().gameState?.globalVariables || {}),
+        // A second user of a shared object stands one tile beside the first: right, left, below, above
+        besideCell(cell, taken) {
+            const pm = W().pathfindingManager;
+            if (!pm?.findNearestWalkableWorldCell) return null;
+            for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+                const c = pm.findNearestWalkableWorldCell(cell.x + dx * TILE, cell.y + dy * TILE, 0);
+                if (c && !taken.some(t => Math.hypot(t.x - c.x, t.y - c.y) < TILE / 2)) return c;
+            }
+            return null;
         },
         // For npc_caught_at_post: the player's distance to an NPC's home point (null when the
         // player is in another room) and whether the open minigame belongs to the home object.
