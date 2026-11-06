@@ -1,6 +1,6 @@
 # Handover: office life slice 4, affordance presets (2026-11-06)
 
-**Status: built, unit-tested and committed (aab2943c1); live proof only partly done.** Plan:
+**Status: built, unit-tested and committed (aab2943c1); live proof done for the sims scenario (2026-11-06); the leash live run is still open.** Plan:
 `OFFICE_LIFE_PLAN.md` 2.1 (Built line lists the choices made without asking).
 
 ## Done
@@ -30,7 +30,7 @@
   `scratchpad/s4/office-coffee-own-usefrom.png`.
 
 ## Open
-1. **Kitchen and lounge live check, and the README slice 4 table.** Both live scripts
+1. **DONE 2026-11-06 (game 601): kitchen and lounge live check, and the README slice 4 table.** Original note: Both live scripts
    (`scratchpad/s4/live.py`, `leash.py`) were blocked by the "Welcome to Hacktivity Games"
    tutorial modal: every `enter` returned `blocking-ui`, and `__test.dismissBlockingUi?.()` in an
    eval did not clear it. Click `#tutorial-no` first (or use the harness's dismiss command), then
@@ -38,7 +38,7 @@
    `see_meal` and `see_long_way` to complete, and kitchen/lounge objects in the preset probe
    (compare with the validator's 10-object list). Then add a "Slice 4" table to
    `scenarios/test_needs_sims/README.md`.
-2. **`test_needs_leash` live regression** (game 600 was blocked by the same modal; Ravi never
+2. **OPEN, inconclusive: `test_needs_leash` live regression** (games 602, 606, 617 at about 1 fps: Ravi fails the far-cooler job on its 20 s deadline and jitters at (205,144); needs a re-run when the machine is quiet; unit tests pass). Original note: (game 600 was blocked by the same modal; Ravi never
    moved). Re-run `leash.py` after dismissing it: expect the long way, 0 samples on Maya's floor.
    The leash scenario has no `officePresets`, so the resolver returns its authored affordances.
 3. **`lab_physical_pentest` regression skipped**: another agent was dressing the accounts floor
@@ -46,5 +46,11 @@
    finds no preset and no error there.
 
 ## Gotchas
+- The modal is plain DOM shown 1 s after load on every new game in a fresh browser profile (nothing
+  stored yet). `dismissBlockingUi()` with no label refuses when there are two buttons
+  (`ambiguous-blocking-ui`): call `bootstrap {"tutorial":"decline","resume":"new"}` or
+  `dismissBlockingUi("No")`. The s4 scripts never called `bootstrap`.
+- Under heavy load (about 1 fps) `enter` replies `door-did-not-open` or `did-not-cross` and the room
+  changes minutes later; check `window.rooms` rather than the reply, and give `cmd.sh` long timeouts.
 - A new game shows the tutorial modal and the needs clock barely moves until it is dismissed.
 - `enter` returns `{ok:true, result:{ok:false, reason}}`: check `result.ok`.

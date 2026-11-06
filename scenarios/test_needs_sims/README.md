@@ -106,6 +106,35 @@ points and the cooler, `eat_snack` at the fridge and microwave). New task `hear_
 | `leashed` only for rooms | PASS | 9 `leashed` (all `lounge_kettle`), 0 for `work`; 11 `private_skipped`, all `work` |
 | Objectives | PASS | `hear_drink`, `see_parcel`, `see_mugs`, `see_long_way` and the rest completed |
 
+### Slice 4 re-run: affordance presets (2026-11-06, keyless :3001, headless)
+
+Games 599 (office half) and 601 (kitchen and lounge half). The scenario sets `"officePresets": true`.
+PCs keep only `private` (Amara also `accepts`), laptops are `affordance: false`, the coffee points and
+the kettle keep only `useFrom`, and the fridge, microwave, cooler and sofa have no `affordance` at all.
+New task `hear_snack` on `npc_use_heard:*` with `data.key === 'eat_snack'`. The load average was 25 to
+38 and the browser ran at about 1 frame a second (other agents' headless browsers were using most of
+the CPU), so the rooms loaded slowly and the run took about 35 minutes; nothing below depends on speed.
+
+| Feature | Result | Evidence |
+|---|---|---|
+| Preset objects match the validator | PASS | the live probe lists exactly the 10 objects the validator prints as `Office preset:` (`amara_pc`, `tom_pc`, `sanjay_pc` as `desk_pc`; `office_coffee`, `kitchen_coffee`, `lounge_kettle` as `coffee`; `fridge`, `microwave`, `water_cooler` as `fridge`, `microwave`, `cooler`; `lounge_sofa` as `sofa`) |
+| Decor and opted-out objects | PASS | `office_laptop1`, `office_laptop5` (decor) and `grace_laptop`, `rosa_laptop` (`affordance: false`) have no preset; no `_owner_away` or `_screen_locked` globals |
+| Listed to the needs system | PASS | the 10 plus `office_mugs` and `washing_up_tray` (the carry points, which are not presets) |
+| Own `useFrom` wins (game 599) | PASS | Amara at (238,251) using the office coffee at (269,277), from the left; `hear_drink` completed from the preset's default sound |
+| Kitchen snack from the preset (game 601) | PASS | `sanjay used fridge`; play log `eat_snack` once, with `drink_gulp` four times; `see_meal` and `hear_snack` completed |
+| Kitchen coffee and lounge | PASS | `tom` heads for `kitchen_coffee` (screenshot), `rosa used lounge_kettle` four times; lounge sofa and kettle resolve to presets |
+| Tasks | PASS | `see_work`, `see_back_at_desk`, `see_meal`, `see_caught`, `hear_drink`, `hear_snack` completed; `see_coffee`, `see_drink`, `see_rest`, `see_parcel`, `see_mugs`, `see_long_way` not reached in the time (the parcel and mugs are drops, which this run did not do) |
+
+Screenshot: `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/c84d7b68-c29e-4285-9c19-4612b082eed3/scratchpad/s4/kitchen-601-presets.png`. Probe: `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/c84d7b68-c29e-4285-9c19-4612b082eed3/scratchpad/s4/probe-601.json`.
+
+`test_needs_leash` has no `officePresets`, so the resolver returns its authored affordances. Static
+proof: `validate_scenario.rb` finds no preset there, and `npc-room-leash`, `npc-needs`,
+`office-presets` and both validator tests pass. The live leash run (games 602, 606, 617) was
+inconclusive at 1 frame a second: Ravi started the far-cooler job and failed it on the 20 s deadline
+every time (`job_failed timeout`), jittering between (205,144) and (218,127) in his own office, and
+never stood on Maya's floor (0 of 584, 625 and 2,208 samples). That says nothing about the leash and
+needs a re-run at a normal frame rate.
+
 ## Engine findings
 
 1. **Fixed 2026-11-05.** The home is now provisional until the `needsHome` object exists and is re-resolved once a second; and an NPC standing on its own desk's approach cell now counts as able to reach it (EasyStar gave no path for start == end, which is why Sanjay chose `tom_pc` in game 501). Original finding: **Needs homes in the start room resolve to the spawn point and stay there.** `npc-needs.js:301` resolves `s.home` on the first tick that has a sprite position and caches it; `_resolveHome` (`npc-needs.js:628-640`) falls back to the spawn point with `objectId: null` when `getObject`/`approachCell` fail. For the start room the NPCs are registered (`core/game.js:2004-2006`) before the room's objects or pathfinding are ready, so every start-room needs NPC gets the fallback and the home-object preference in `_useCandidate` (`npc-needs.js:475`) never applies. NPCs in rooms loaded later (Rosa, lounge) resolve correctly. Repro: load this scenario, then `[...npcNeedsSystem.states].map(([k,s]) => [k, s.home.objectId])` gives null for amara, tom, grace and sanjay, `rosa_laptop` for rosa. Suggested fix: don't cache a fallback home while `needsHome` names an object that isn't found yet (retry each tick until the object exists, or for a few seconds). `test_npc_needs` and `lab_physical_pentest` start-room NPCs are likely affected too, but hidden because each spawns at its own desk. Workaround here: each NPC spawns beside its own desk, and the work task reads "Someone works at a desk". Even so, game 501 had Sanjay choose `tom_pc` over his own adjacent PC (nearest-reachable from his seated position), so the workaround isn't reliable.
