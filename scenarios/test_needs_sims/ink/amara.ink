@@ -19,7 +19,7 @@ Morning. I'm at my desk, apart from the coffee runs.
 // Tom and Amara chat (the coffee queue) after she has opened the parcel, with the player in
 // earshot. Never reached from the player's conversation.
 === exchange_tom_parcel ===
-Tom: Was that parcel by the door for you?
+Tom: Was that parcel on the floor for you?
 Amara: It was. New headsets for the team.
 Tom: Any chance of one before Friday?
 Amara: Get in the queue, Tom.
