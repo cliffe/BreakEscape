@@ -25,6 +25,19 @@ the chair's footprint and the chair follows it; the chair's own body is off unti
 player gets up. Footsteps stop while seated; rolling plays a looped stretch (1.5–7.5 s)
 of `chair_roll.mp3`.
 
+## Breathing and fidgeting
+
+Anyone seated breathes: the head and shoulders (the top 42% of the figure) sink 1px for
+part of a 3.6 s cycle, each sitter on its own phase. The sitter is cropped below the cut
+and an image of the rows above it is drawn 1px lower, so no gap opens. The standing
+breathing-idle frames can't be reused: they are redrawn frame to frame (faces change)
+and drawn at another scale from the seated state. Breathing is off under reduced motion,
+for a sprite with a glow (postFX), and while a needs NPC types (the typing bob moves the
+whole figure instead).
+
+A seated NPC on a swivel chair also rolls up to 3px sideways or 2px back (never forward
+into the desk) every 4–11 s, and holds still while it faces the player or talks.
+
 ## Layering
 
 From the 8-direction render tests: facing away (N, NE, NW) the chair is drawn over the
