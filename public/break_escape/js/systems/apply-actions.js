@@ -70,7 +70,10 @@ if (typeof window !== 'undefined') window.recordSECapture = recordSECapture;
  * @param {*}      [opts.gameId]      Game ID passed to ApiClient for server-side persists.
  */
 export function applyActions(actions, { source = 'scenario', gameId = null } = {}) {
-    if (!Array.isArray(actions) || actions.length === 0) return;
+    // The addToInventory promises started for give_item actions, in order, so a caller
+    // (the timer dispatcher) can retry a give lost to the network. Other callers ignore it.
+    const gives = [];
+    if (!Array.isArray(actions) || actions.length === 0) return gives;
 
     for (const action of actions) {
         switch (action.type) {
@@ -181,7 +184,7 @@ export function applyActions(actions, { source = 'scenario', gameId = null } = {
                         setVisible: function() { return this; }
                     };
                     console.log('[applyActions] give_item:', action.item.name);
-                    window.addToInventory(itemSprite);
+                    gives.push(Promise.resolve(window.addToInventory(itemSprite)));
                 }
                 break;
 
@@ -279,6 +282,7 @@ export function applyActions(actions, { source = 'scenario', gameId = null } = {
                 console.warn('[applyActions] Unknown action type:', action.type, action);
         }
     }
+    return gives;
 }
 
 /**
