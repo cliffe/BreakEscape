@@ -111,7 +111,7 @@ option only while a matching item is present (section 5.2).
 |---|---|
 | `needsHome` | Object id (preferred; the NPC stands at its approach cell) or `{room, x, y}` tile. Where the NPC idles and returns. Default: spawn point |
 | `usePayload` | Any JSON value. **Opaque and NPC-owned.** Never read, logged or interpreted by the engine; a clone rides on every `npc_used` event this NPC emits |
-| `onUse` | Object id → `{ setGlobal?: name, emitEvent?: name }`. Applied when **this** NPC completes a use of **that** object. `setGlobal` sets the global to `true` |
+| `onUse` | Object id → `{ setGlobal?: name, emitEvent?: name, revealOutput?: producerId }`. Applied when **this** NPC completes a use of **that** object (need or carry). `setGlobal` sets the global to `true`; `revealOutput` shows the producer's next free reveal slot (3.3a) |
 | `needsSpeed` | Walk speed for needs moves (px/s). Default `behavior.patrol.speed`, else 80 |
 | `needsRooms` | Room leash, allow list: the only rooms this NPC's needs use objects in or walk through. The home room is always allowed. Fixed per NPC (no global conditions) |
 | `needsAvoidRooms` | Room leash, deny list: rooms its needs never use or cross, even as a short cut; it goes round or waits. May not list the home room |
@@ -154,6 +154,9 @@ the corridor; unleashed, 32 of 86 samples on it, out and back through it) and
 | `useFrom` (prov.) | `{dx, dy}` tiles | nearest walkable cell | Where the NPC stands, relative to the object's centre |
 | `capacity` (prov.) | ≥1 | 1 | NPCs that can hold a job on it at once |
 | `accepts` (prov.) | array of tags | none | Carried items with these tags can be used here ("usable as") |
+| `onDeliver` | `"place"`, `"stow"` | `"place"` | What happens to a delivered reveal slot (3.6): set down here, or filed at once (a shredder, a filing cabinet). Plain items are always consumed |
+| `placeAt` | `{dx, dy}` tiles | halfway from the centre to the approach cell | Where a delivered slot is set down, from this object's centre |
+| `placeSeconds` | 0–3600 | 60 | Needs-clock seconds a placed slot stays before it is filed (0: until a reload). On a producer: how long a cosmetic copy stays when no slot is free |
 
 An affordance carries **no content**.
 
@@ -186,6 +189,49 @@ lists each object that gained a preset (`ℹ️ Office preset: ...`), errors on 
 |---|---|
 | `needsTag` (prov.) | One tag string. NPCs with a matching interest are drawn to it |
 | `droppable` (prov.) | `true`: clicking the item in the inventory drops it (section 6) |
+
+### 3.3a Reveal slots (office life slice 7, `OFFICE_LIFE_PLAN.md` 2.2 Part A)
+
+A **reveal slot** is a declared object with `outputOf: "<producer id>"` and its own
+`revealOnGlobal`, which the engine owns: it sets the global `true` when it shows the slot and
+`false` when it files it away, so no condition, mapping or other object may use it (validator
+error). The slot starts hidden (the usual `revealOnGlobal` rule) and is shown by an NPC's
+`onUse` hook `{ "revealOutput": "<producer id>" }` (3.1, `onUse`).
+
+```jsonc
+{ "id": "copier_out_b", "type": "notes1", "name": "Printout", "takeable": false, "readable": true,
+  "readDisplay": "gameDisplay", "text": "...", "outputOf": "office_copier",
+  "revealOnGlobal": "copier_out_b_shown", "needsTag": "printout", "position": { "x": 4.65, "y": 2.9 } }
+"onUse": { "sanjay_pc": { "revealOutput": "office_copier" } }       // on the NPC who prints
+```
+
+- **Pool.** `revealOutput` takes the producer's first **free** slot by id (free: loaded, not
+  destroyed, `active !== false`, global not `true`, not held, placed or in the inventory), sets its
+  global, shows it with a direct `showRevealedObject` call (after a reload there is no reveal
+  listener), lifts it above the producer's depth and emits `object_revealed:<slotId>`. With no free
+  slot, a cosmetic copy (the first slot's texture, else `notes1`) stands on the producer for the
+  producer's `placeSeconds` (default 60); nobody can take it. Logs `revealed` (`item`, or
+  `reason: "no_free_slot"`).
+- **Outcome follows the item's kind.** A plain item (anything not a slot: the parcel, mugs, a
+  player drop) is consumed when delivered, exactly as before. A slot is **placed** on the target
+  (sprite registered under the room it now sits in, keyed by its object id; `sp.roomId` stays the
+  declared room, which is the one a player pickup reports to the server), or **stowed** at once when
+  the target says `onDeliver: "stow"`. The `used` log entry gains `outcome: "place" | "stow"`.
+  A placed slot is not a carry candidate (`pickable` is false while `_npcPlacedBy` is set). After
+  the target's `placeSeconds` the engine files it: hidden at its declared spot, re-inserted into its
+  declared room's `objects` under its original key, global `false`, no server call. A slot the
+  player took meanwhile is left alone. An abort while carrying a slot files it rather than dropping
+  it (the server could not keep a dropped position).
+- **Reading.** A readable `notes*` object opened the default way goes through the notes minigame,
+  which removes it on first read. A non-takeable readable `notes*` slot must use
+  `"readDisplay": "gameDisplay"` (validator error otherwise); it reads in place and cycles for ever.
+  A takeable slot is one beat: once taken (or read through the notebook) it is gone server-side.
+- **Reload: stow on sight.** Needs state resets, globals do not, so a revealed slot comes back on
+  its tray. When the needs system first sees a room (every loaded room at install, later rooms as
+  they load) it files every revealed slot nobody holds. The tray is empty after a reload; the next
+  print shows a slot again. A taken slot is not in the room payload, so it never comes back.
+- `core/rooms.js` exports `showRevealedObject` and `hideRevealedObject` and puts both on `window`
+  (the adapter reaches them there, so `npc-needs.js` has no static import of `rooms.js`).
 
 ### 3.4 eventMapping field
 
@@ -359,7 +405,7 @@ carry: goto_item → pick up → goto_target → using(useSeconds) → complete 
 - **Using:** face the object; after `useSeconds` → complete.
 - **Complete:** add `restores` (± jitter) to the need if the object satisfies it
   (a carry use by an interest changes no level); set `lastSatisfiedAt`; destroy a
-  carried item; emit `npc_used:<objectId>` (section 7); apply `onUse[objectId]`.
+  carried plain item, or place/stow a carried reveal slot (3.3a); emit `npc_used:<objectId>` (section 7); apply `onUse[objectId]`.
 - **Returning:** `goToAndStay(home, {owner:'needs', yieldToPlayer:true})`; on arrival
   emit `npc_returned_post:<npcId>`. **The yield is bounded (2026-11-06):** if the NPC has not
   moved 4 px in `RETURN_YIELD_MS` (3 s of needs clock) it logs `return_resumed` and the walk is
@@ -466,7 +512,9 @@ events.
 | `npc_caught_at_post:<npcId>` | `{npcId, objectId, playerDistance, inMinigame}` (5.3) |
 | `npc_picked_up:<itemId>` | `{npcId, itemId, tag}` |
 | `npc_used:<objectId>` | `{npcId, objectId, need, itemId, tag, payload, playerNearby}` |
-| `npc_job_failed:<npcId>` | `{npcId, need, targetId, reason}` (`timeout`, `no_approach`) |
+| `npc_job_failed:<npcId>` | `{npcId, need, targetId, reason}` (`timeout`, `no_approach`); `{npcId, need, targetId, itemId, reason: "item_gone"}` when the player took the item an NPC was fetching (slice 7) |
+| `object_revealed:<slotId>` | `{producerId, npcId, objectId}` (a reveal slot shown by `revealOutput`, 3.3a) |
+| `npc_placed:<itemId>` | `{npcId, itemId, targetId, roomId}` (a delivered slot set down, 3.3a) |
 | `item_dropped:<itemId>` | `{itemId, tag, roomId, x, y}` (drop action) |
 | `npc_arrived:<npcId>` | existing, now plus `owner` (`'needs'` or undefined) |
 
@@ -544,6 +592,8 @@ The decision log never contains payload contents (only `payloadPresent`).
 ## 10. Reload
 
 - Need levels reset to `initial` (same seeded jitter). No state sync.
+- Reveal slots revealed before the reload are filed on sight (3.3a): hidden, global false. Placed
+  positions are client only and are not restored.
 - Dropped items: see section 6.
 - Globals set by `onUse` and by scenario mappings persist as usual.
 - Workstation globals (`<id>_owner_away`, `<id>_screen_locked`, `workstation-state.js`)
@@ -571,6 +621,13 @@ item `affordance needsTag droppable`; eventMapping `needs`; top level `npcNeedsS
 `known_top_level`). Put the checks in a new `scripts/validate_npc_needs.rb`
 (`require_relative`, like `validate_social.rb`) called from the common-issues list:
 
+- **Reveal slots (slice 7):** errors for a slot without `revealOnGlobal`, an `outputOf` or
+  `onUse.revealOutput` naming no object, a slot global shared with another object or used anywhere
+  else, and a non-takeable readable `notes*` slot without `readDisplay: "gameDisplay"`; a warning
+  for `onDeliver` on an object whose `accepts` reaches no slot's `needsTag`, and for a
+  `revealOutput` producer with no slots; an info line per producer with its takeable beats.
+  `validate_scenario.rb` skips its pinned-proximity warning for a slot and its producer, or two
+  slots of one producer (they share the tray on purpose).
 - **Errors:** bounds; a need with no object anywhere that `satisfies` it; an
   interest tag with no object that `accepts` it, or no item with that `needsTag`;
   `needsHome`/`onUse` naming a missing object; `needs`/`interests` together with

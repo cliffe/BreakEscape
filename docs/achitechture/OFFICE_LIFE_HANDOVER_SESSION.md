@@ -42,7 +42,7 @@ in order, one at a time: they all touch `npc-needs.js`.
 | 4 | Affordance presets by object type | 2.1 | Built (aab2943c1); live games 599 and 601 |
 | fix | Walk home stops yielding after 3 s; seat found from the home cell; icon anchored to the head | NPC_NEEDS_SYSTEM.md | Built (8d3520267, 80c2a8dd5) |
 | 5 | Workstation indicators (away-open white dot that breathes, away-locked steady blue dot) | 2.3 | Built (b820a5d24, b2577fac1, b14016be1, fb3383de6); lab game 636 scores 100 |
-| **7** | **Carry outcomes and reveal slots** | 2.2 Part A | **Next** |
+| 7 | Carry outcomes and reveal slots | 2.2 Part A | Built (fcb8817a4, 3ff1efa29, f97960f2e); live game 643; leash and lab regressions open (`HANDOVER_OFFICE_S7.md`) |
 | 8 | Speech bubbles and social pairing, with compatibility | 2.4, 7.3 | To do |
 | 10 | Queues at shared machines, and chatter | 2.5, 7.3 | To do |
 | 11 | Left behind (scoped: `leftBehindChance`; piles wait for slice 9, which wasn't chosen) | 2.10 | To do |
@@ -134,8 +134,8 @@ about 30. Playtests ran at 1.3 fps and the leash test timed out, which looked li
 
 ## 7. Open findings
 
-- **Never caught: a carry heading south.** Every carry in the showcase heads north or west. Slice 7 adds
-  carries, so catch one there.
+- **Closed (slice 7, game 643): a carry heading south.** Amara carried a printout on `walk-down-right`;
+  the item draws in front of her body.
 - **Minor: "leashed" vs "private_skipped".** `leashed` now fires only when a room rule removed a target.
   Passing over another owner's object logs `private_skipped` and fires no event. Mappings that care about a
   use should listen for that use, filtered by `data.npcId`. Event-mapping conditions support `&&` but not

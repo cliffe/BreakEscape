@@ -482,6 +482,19 @@ Amara's hand (with slice 3) and on her desk; read a non-takeable one and check i
 takeable one, reload, and check it stays gone, the tray is empty, and the next print shows a
 non-takeable slot.
 
+**Built: 2026-11-06 (fcb8817a4, 3ff1efa29; showcase f97960f2e).** As written, with these choices made
+without asking: an abort while carrying a slot files it (stow) instead of `dropHeld`, following the
+schedules section's interruption rule ("or stowed if it is a slot"), since the server could not keep a dropped position; `revealOutput` lifts a
+shown slot's depth above its producer (a tray slot is y-sorted under a tall copier otherwise); the
+`used` log entry gains `outcome` only for slots, so plain-item logs are byte-identical (test against
+a digest recorded before the change); new events `object_revealed:<slotId>` and `npc_placed:<itemId>`;
+`placeSeconds` is clamped to 0-3600; `rooms.js` puts `showRevealedObject`/`hideRevealedObject` on
+`window` as well as exporting them, so `npc-needs.js` gains no static import; the validator's
+"global used elsewhere" rule is an error (any string naming it outside `globalVariables`), and
+`validate_scenario.rb`'s pinned-proximity warning skips a slot with its producer or a sibling slot.
+Tests: `test/js/npc-needs-slots.test.mjs` (18). Live: game 643 (sims README, slice 7 table), which
+also caught a carry heading south.
+
 #### Part B: routines (slice 9)
 
 **Idea.** A routine is an ordered list of steps, and each step is a job the system already runs:

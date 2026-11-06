@@ -178,6 +178,49 @@ entry on the object id with `"indicators": [...]` replaces them (`[]` turns them
 Screenshots: `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/c84d7b68-c29e-4285-9c19-4612b082eed3/scratchpad/s5/sheet-634.png` (Tom away open and locked, lit and dark), `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/c84d7b68-c29e-4285-9c19-4612b082eed3/scratchpad/s5/zoom-634.png`
 (Tom's PC in six states, enlarged for review only), and the originals `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/c84d7b68-c29e-4285-9c19-4612b082eed3/scratchpad/s5/sims-634-*.png`.
 
+### Slice 7 re-run: carry outcomes and reveal slots (2026-11-06, keyless :3001, headless, load 11-16)
+
+What changed in this scenario: an `office_copier` (`photocopier1`, copier preset) in the office, three
+printout slots on its front tray (`copier_out_a` takeable, so one beat; `copier_out_b` and `_c` read in
+place with `readDisplay: "gameDisplay"`, so they cycle), Sanjay's `onUse.sanjay_pc.revealOutput`,
+Amara's `printout` interest, `amara_pc` accepting `["post", "printout"]`, and the task `see_printout`
+on `npc_used:amara_pc` with `data.tag === "printout"`. Separately, `amara_opened_parcel` is now set by
+an `npc_used` mapping on tag `post` instead of `onUse.amara_pc`, which had fired on every use of her
+PC (engine finding 4) and would have fired on printouts too.
+
+```jsonc
+{ "id": "copier_out_b", "type": "notes1", "takeable": false, "readable": true, "readDisplay": "gameDisplay",
+  "outputOf": "office_copier", "revealOnGlobal": "copier_out_b_shown", "needsTag": "printout" }
+// Sanjay: "onUse": { "sanjay_pc": { "revealOutput": "office_copier" } }
+```
+
+Game 643 (session log `tools/playtest/s7-sims-643-session.jsonl`). Levels were nudged through
+`npcNeedsSystem.states` to start a print at once; for the take, read and reload checks Amara's
+`printout` interest was lifted from her live state so the slots waited on the tray.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Print shows the first free slot on the tray | PASS | tick 1075: `copier_out_a` visible, global true, depth 111 over the copier's 110 |
+| In Amara's hand | PASS | tick 1081: held, walking right to `amara_pc` |
+| Placed on her desk, not re-fetched | PASS | tick 1124: `_npcPlacedBy: amara`, room `office`, `roomId` still `office`; no fetch of it while placed |
+| Filed after `placeSeconds` | PASS | tick 1365 (241 ticks later): hidden at the tray spot, global false |
+| Pool order | PASS | Sanjay printed again while `a` lay on the desk: `copier_out_b` revealed |
+| Task | PASS | `see_printout` completed |
+| Take the takeable slot | PASS | notes minigame, then `a` gone from the room; server `remove_object` for room `office` |
+| Read a non-takeable slot | PASS | `copier_out_b` opened in the game display dialog ("Room booking list ..."); after Close it is still visible, active, global true |
+| Reload | PASS | `a` not loaded (global still true, never shown again); `b` filed on sight (hidden, global false); no slot visible on the tray |
+| Next print after the reload | PASS | `copier_out_b` (non-takeable) |
+| Carry heading south (open finding) | PASS | Amara carrying `copier_out_b` on `npc-amara-walk-down-right` (vx 64, vy 64): the printout draws in front of her body |
+| Console | PASS | `drain`: no page errors |
+
+Screenshots in `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/3c2d3b5d-38a4-49b2-b79e-4c3ee8f76ed6/scratchpad/s7/`: `sheet-643.png` (tray, hand, desk, filed), `zoom-643.png` (desk, tray, held
+printout close up), `read-b-643.png`, `reload-tray-643.png`, `next-print-643.png`,
+`carry-south-crop-643.png` (and the full frames `*-643.png`).
+
+Notes: the notes minigame sends `remove_object` twice for a taken notes item (server log, two
+identical requests); this predates slice 7. A copier slot defaults to standing in front of the
+copier; with no `placeAt`, the printout lands on Amara's desk in front of her monitor.
+
 ## Engine findings
 
 1. **Fixed 2026-11-05.** The home is now provisional until the `needsHome` object exists and is re-resolved once a second; and an NPC standing on its own desk's approach cell now counts as able to reach it (EasyStar gave no path for start == end, which is why Sanjay chose `tom_pc` in game 501). Original finding: **Needs homes in the start room resolve to the spawn point and stay there.** `npc-needs.js:301` resolves `s.home` on the first tick that has a sprite position and caches it; `_resolveHome` (`npc-needs.js:628-640`) falls back to the spawn point with `objectId: null` when `getObject`/`approachCell` fail. For the start room the NPCs are registered (`core/game.js:2004-2006`) before the room's objects or pathfinding are ready, so every start-room needs NPC gets the fallback and the home-object preference in `_useCandidate` (`npc-needs.js:475`) never applies. NPCs in rooms loaded later (Rosa, lounge) resolve correctly. Repro: load this scenario, then `[...npcNeedsSystem.states].map(([k,s]) => [k, s.home.objectId])` gives null for amara, tom, grace and sanjay, `rosa_laptop` for rosa. Suggested fix: don't cache a fallback home while `needsHome` names an object that isn't found yet (retry each tick until the object exists, or for a few seconds). `test_npc_needs` and `lab_physical_pentest` start-room NPCs are likely affected too, but hidden because each spawns at its own desk. Workaround here: each NPC spawns beside its own desk, and the work task reads "Someone works at a desk". Even so, game 501 had Sanjay choose `tom_pc` over his own adjacent PC (nearest-reachable from his seated position), so the workaround isn't reliable.
