@@ -12,7 +12,8 @@
 
   "chatter": {
     "coffee": ["Go on, after you.", "Is there any milk left?", "This machine takes forever.", "Strong one today?", "Who keeps taking the mugs?", "Busy morning?"],
-    "cooler": ["Did you see the car park email?", "Friday drinks again?", "How was the weekend?", "Is it raining again?", "Train was late again.", "Any plans for lunch?", "Not bad, you?", "That printer jammed again."]
+    "cooler": ["Did you see the car park email?", "Friday drinks again?", "How was the weekend?", "Is it raining again?", "Train was late again.", "Any plans for lunch?", "Not bad, you?", "That printer jammed again."],
+    "grumble": ["Not with him there.", "I'll come back later.", "Maybe the kitchen's quieter."]
   },
 
   "actionIcons": {
@@ -74,10 +75,11 @@
         { "taskId": "spot_open_screen", "title": "Spot an unlocked, unattended screen (a breathing white dot; a steady blue dot means locked)", "type": "custom", "status": "active" },
         { "taskId": "hear_snack", "title": "Hear someone eat in the kitchen (the fridge and microwave take their settings and sound from their type)", "type": "custom", "status": "active" },
         { "taskId": "see_chat", "title": "Two people chat at the water cooler (read the Activity Board and Sanjay and Rosa both want a chat)", "type": "custom", "status": "active" },
-        { "taskId": "see_outcast", "title": "Nobody chats with the contractor: read the Kitchen Rota and Marek heads for the cooler; Sanjay waits at his desk until Marek has gone", "type": "custom", "status": "active" },
+        { "taskId": "see_outcast", "title": "Nobody chats with the contractor: read the Kitchen Rota and Marek heads for the cooler; Sanjay stays at his desk (a greyed bubble with a storm cloud) until Marek has gone", "type": "custom", "status": "active" },
         { "taskId": "see_queue", "title": "A queue forms at the coffee machine (read the Activity Board before opening the kitchen: Amara and Tom want a coffee, and Marek joins the line behind Tom)", "type": "custom", "status": "active" },
         { "taskId": "see_queue_chat", "title": "Chat in the coffee queue (nobody chats with Marek, even in the queue)", "type": "custom", "status": "active" },
         { "taskId": "see_printout", "title": "A printout is delivered to a desk (Sanjay prints at his PC; Amara takes it from the copier tray to her desk, where it is filed a minute later)", "type": "custom", "status": "active" },
+        { "taskId": "see_turned_back", "title": "Someone turns back rather than stand near a person they avoid (with the kitchen shut, read the Coffee Notice: Marek goes for a coffee, Sanjay sets off too, sees Marek and turns back; open the kitchen and he goes there instead)", "type": "custom", "status": "active" },
         { "taskId": "see_left_behind", "title": "Spot something left on an empty desk (Tom often forgets his ID badge when he gets up, and pockets it when he sits down again)", "type": "custom", "status": "active" }
       ]
     }
@@ -274,6 +276,17 @@
           "addToNotes": false,
           "text": "KITCHEN ROTA\n\nThis week: Sanjay.\n\nContractors: the water cooler is in the kitchen.",
           "observations": "The kitchen rota. Reading it reminds Marek that he is parched; as he heads for the cooler, Sanjay decides he fancies a chat too."
+        },
+        {
+          "type": "notes1",
+          "id": "coffee_notice",
+          "name": "Coffee Notice",
+          "takeable": false,
+          "readable": true,
+          "addToNotes": false,
+          "text": "FRESH BEANS\n\nNew beans in the office machine. Help yourselves.",
+          "observations": "A notice about the coffee. Reading it sends Marek to the office machine, and Sanjay fancies one too.",
+          "_comment": "Slice 14 (OFFICE_LIFE_PLAN 10): Marek's caffeine is set low on reading it; Sanjay's follows npc_left_post:marek to office_coffee. Sanjay queues behind Marek's claim, then turns back when Marek comes within two tiles (avoidRadius), grumbles, and with the kitchen shut parks with the closed-door badge."
         }
       ],
       "npcs": [
@@ -405,10 +418,17 @@
           "needs": {
             "work": { "decayPerMin": 15, "urgentAt": 50, "initial": 65 },
             "hunger": { "decayPerMin": 8, "urgentAt": 40, "initial": 64 },
-            "social": { "decayPerMin": 12, "urgentAt": 40, "initial": 76 }
+            "social": { "decayPerMin": 12, "urgentAt": 40, "initial": 76 },
+            "caffeine": { "decayPerMin": 1, "urgentAt": 30, "initial": 95 }
           },
+          "_comment": "Slice 14: avoids Marek (avoidRadius 2 by default): he turns back from a source Marek is using, queued for or standing near, and parks the need (2 min) if nothing else will do. The caffeine need is slow on purpose: it only fires through the Coffee Notice beat.",
+          "needsCompany": { "avoids": ["marek"] },
+          "needsDeferMin": 2,
+          "maxQueue": 1,
           "eventMappings": [
             { "eventPattern": "object_interacted", "condition": "data.objectName === 'Activity Board'", "cooldown": 30000, "needs": { "set": { "social": 10 } } },
+            { "eventPattern": "npc_left_post:marek", "condition": "data.targetId === 'office_coffee'", "cooldown": 30000, "needs": { "set": { "caffeine": 10 } } },
+            { "eventPattern": "npc_turned_back:sanjay", "onceOnly": true, "cooldown": 0, "completeTask": "see_turned_back" },
             { "eventPattern": "npc_left_post:marek", "condition": "data.targetId === 'water_cooler'", "cooldown": 30000, "needs": { "set": { "social": 10 } } }
           ]
         },
@@ -427,13 +447,14 @@
           "_comment": "Slice 8 (OFFICE_LIFE_PLAN 7.3): the outcast. avoids '*' acts both ways: nobody shares the cooler with him or chats with him. His post is the bottom-left corner (moved from beside the coffee station in slice 10, where it stood in the queue). His thirst is slow so he goes only when the Kitchen Rota is read (or after about half an hour). Slice 10: a slow caffeine need too; when Tom joins the coffee queue Marek wants one, so he queues behind Tom, in silence.",
           "needsHome": { "room": "office", "x": 3, "y": 8 },
           "needsSpeed": 80,
-          "needsCompany": { "avoids": ["*"] },
+          "needsCompany": { "avoids": ["*"], "avoidRadius": 0 },
           "needs": {
             "thirst": { "decayPerMin": 2, "urgentAt": 30, "initial": 95 },
             "caffeine": { "decayPerMin": 1, "urgentAt": 30, "initial": 95 }
           },
           "eventMappings": [
             { "eventPattern": "object_interacted", "condition": "data.objectName === 'Kitchen Rota'", "cooldown": 30000, "needs": { "set": { "thirst": 10 } } },
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Coffee Notice'", "cooldown": 30000, "needs": { "set": { "caffeine": 10 } } },
             { "eventPattern": "npc_queued:office_coffee", "condition": "data.npcId === 'tom'", "cooldown": 30000, "needs": { "set": { "caffeine": 10 } } }
           ]
         }
