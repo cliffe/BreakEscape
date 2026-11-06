@@ -755,7 +755,10 @@ export class NPCNeedsSystem {
         if (pick.privateSkipped) s.job.privateSkipped = true;   // the overlay's "private" label
         // For the action icons (OFFICE_LIFE_PLAN 9.1): a use that prints, a carry to a stow target
         if (pick.kind === 'use' && this.world.getNpc(id)?.onUse?.[pick.targetId]?.revealOutput) s.job.prints = true;
-        if (pick.kind === 'carry' && this.world.getObject(pick.targetId)?.affordance?.onDeliver === 'stow') s.job.stowAt = true;
+        if (pick.kind === 'carry') {
+            if (this.world.getObject(pick.targetId)?.affordance?.onDeliver === 'stow') s.job.stowAt = true;
+            if (this.world.getObject(pick.itemId)?.slot) s.job.slot = true;   // known from the start, so the wind-up shows "file" too
+        }
         s.mode = 'job';
         this._log(id, 'job_start', { need: pick.need || undefined, tag: pick.tag || undefined, target: pick.targetId, item: pick.itemId || undefined });
         if (pick.leashed) this._emitLeashed(s, { need: pick.need || undefined, skipped: pick.leashed, chose: pick.targetId });

@@ -147,6 +147,29 @@ test('blockedNeed: an urgent need whose only target a room rule forbids; job.pri
     assert.equal(job.files, false);
 });
 
+test('job.files: a slot carried to an onDeliver stow target, set from the job start (wind-up included)', () => {
+    const mk = onDeliver => {
+        const cfg = {
+            npcs: { amara: { pos: { x: 100, y: 100 }, rec: { id: 'amara', needsHome: 'amara_pc', interests: { printout: { weight: 2 } } } } },
+            objects: [
+                { id: 'amara_pc', x: 100, y: 68, affordance: { accepts: ['printout'], useSeconds: 5, ...(onDeliver ? { onDeliver } : {}) } },
+                { id: 'out_a', x: 200, y: 100, needsTag: 'printout', slot: true }
+            ]
+        };
+        const w = makeWorld(cfg);
+        w.world.windupMs = () => 5000;
+        const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+        w.attach(sys);
+        sys.registerAll();
+        sys.step(NEEDS_TICK_MS);
+        return sys.getState('amara').job;
+    };
+    const stow = mk('stow');
+    assert.equal(stow.windingUp, true, 'still winding up');
+    assert.equal(stow.files, true);
+    assert.equal(mk(null).files, false, 'placed, not filed');
+});
+
 test('noticed: true for NOTICED_MS after npc_caught_at_post, then false', () => {
     const { w, sys } = world({ caffeine: { decayPerMin: 8, urgentAt: 30, initial: 32, jitterPct: 0 } },
         { objects: [{ id: 'coffee', x: 300, y: 300, affordance: { satisfies: 'caffeine', restores: 70, useSeconds: 10 } }] });
