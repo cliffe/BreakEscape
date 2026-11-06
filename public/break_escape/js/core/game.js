@@ -855,6 +855,7 @@ export function preload() {
     this.load.image('bedside_locker1', 'objects/bedside_locker1.png');
     this.load.image('coffee_station1', 'objects/coffee_station1.png');
     this.load.image('wall_socket1', 'objects/wall_socket1.png');
+    this.load.image('cake1', 'objects/cake1.png');
     this.load.image('first_aid_cabinet1', 'objects/first_aid_cabinet1.png');
     this.load.image('instrument_trolley1', 'objects/instrument_trolley1.png');
     this.load.image('step_stool1', 'objects/step_stool1.png');

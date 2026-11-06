@@ -15,7 +15,8 @@
     "cooler": ["Did you see the car park email?", "Friday drinks again?", "How was the weekend?", "Is it raining again?", "Train was late again.", "Any plans for lunch?", "Not bad, you?", "That printer jammed again."],
     "grumble": ["Not with him there.", "I'll come back later.", "Maybe the kitchen's quieter."],
     "grumble_off": ["Who switched the coffee off?", "It's off. Typical.", "No coffee here, then."],
-    "grumble_gone": ["Missed it."]
+    "grumble_gone": ["Missed it."],
+    "cake": ["Who brought cake in?", "Go on, just a small slice.", "Whose birthday is it?", "This is really good."]
   },
 
   "actionIcons": {
@@ -36,7 +37,8 @@
     "tom_badge_left": false,
     "heard_exchange_rosa_rota": false,
     "heard_exchange_tom_parcel": false,
-    "office_coffee_off": false
+    "office_coffee_off": false,
+    "cake_servings": 2
   },
 
   "startItemsInInventory": [
@@ -57,6 +59,19 @@
       "droppable": true,
       "needsTag": "dirty_mugs",
       "observations": "Two mugs that need washing. Click them in your inventory to leave them on the floor."
+    },
+    {
+      "type": "cake1",
+      "id": "cake",
+      "name": "Cake",
+      "takeable": true,
+      "droppable": true,
+      "observations": "A cake for the office. Click it in your inventory to put it down where people will see it; the kitchen is a good bet.",
+      "affordance": {
+        "satisfies": ["hunger", "social"], "restores": 40, "useSeconds": 12, "capacity": 3, "chatter": "cake", "useSound": "eat_snack",
+        "magnet": { "tempt": 30, "servings": 2, "perPerson": 1 }
+      },
+      "_comment": "Slice 18b-i magnet: two servings for three hungry people (Tom, Sanjay, Amara all start inside the tempt band, 40 + 30), so whoever is third turns back with 'Missed it.'. People learn of it by seeing it (being in its room); word of mouth is slice 18b-ii."
     }
   ],
 
@@ -96,7 +111,9 @@
         { "taskId": "use_open_screen", "title": "Use Sanjay's screen while he is away (using it keeps it awake)", "type": "custom", "status": "active" },
         { "taskId": "see_uncollected", "title": "See a printout sit uncollected on the copier (Tom prints now and then and forgets about half his prints; read the Print Queue note to send one he never collects, and wait two and a half minutes)", "type": "custom", "status": "active" },
         { "taskId": "send_print_job", "title": "Send a print job from Tom's open screen and watch him fetch it (when he leaves his PC unlocked, use it: a few seconds after he is back he walks to the copier, carries the printout to his desk and puts it down)", "type": "custom", "status": "active" },
-        { "taskId": "see_coffee_off", "title": "Switch the office coffee off at the wall socket beside it and watch someone go to the kitchen instead (open the kitchen door first; it stays off once switched)", "type": "custom", "status": "active" }
+        { "taskId": "see_coffee_off", "title": "Switch the office coffee off at the wall socket beside it and watch someone go to the kitchen instead (open the kitchen door first; it stays off once switched)", "type": "custom", "status": "active" },
+        { "taskId": "see_cake_eaten", "title": "Put the cake out and watch it go (click it in your inventory to set it down; people who see it and fancy a slice get up for it, two slices only)", "type": "custom", "status": "active" },
+        { "taskId": "see_missed_it", "title": "See someone miss the cake (three hungry people, two slices: whoever arrives last turns back)", "type": "custom", "status": "active" }
       ]
     }
   ],
@@ -384,7 +401,8 @@
           "needsSpeed": 90,
           "needs": {
             "caffeine": { "decayPerMin": 20, "urgentAt": 40, "initial": 58 },
-            "work": { "decayPerMin": 10, "urgentAt": 50, "initial": 72 }
+            "work": { "decayPerMin": 10, "urgentAt": 50, "initial": 72 },
+            "hunger": { "decayPerMin": 1, "urgentAt": 40, "initial": 65 }
           },
           "interests": { "post": { "weight": 3, "noticeRooms": ["office"] }, "printout": { "weight": 2, "noticeRooms": ["office"] } },
           "usePayload": { "who": "amara" },
@@ -430,6 +448,8 @@
             { "eventPattern": "npc_swivelled:*", "condition": "data.reason === 'listen'", "onceOnly": true, "cooldown": 0, "completeTask": "see_look_round" },
             { "eventPattern": "npc_turned_back:*", "condition": "data.reason === 'off'", "onceOnly": true, "cooldown": 0, "completeTask": "see_coffee_off" },
             { "eventPattern": "npc_used:kitchen_coffee", "condition": "globalVars.office_coffee_off", "onceOnly": true, "cooldown": 0, "completeTask": "see_coffee_off" },
+            { "eventPattern": "magnet_finished:cake", "onceOnly": true, "cooldown": 0, "completeTask": "see_cake_eaten" },
+            { "eventPattern": "npc_turned_back:*", "condition": "data.reason === 'gone'", "onceOnly": true, "cooldown": 0, "completeTask": "see_missed_it" },
             { "eventPattern": "workstation_lock_heard:amara_pc", "condition": "data.how === 'leave'", "onceOnly": true, "cooldown": 0, "completeTask": "hear_screen_lock" },
             { "eventPattern": "workstation_screen_changed:sanjay_pc", "condition": "data.how === 'auto'", "onceOnly": true, "cooldown": 0, "completeTask": "see_auto_lock" },
             { "eventPattern": "workstation_accessed:sanjay_pc", "onceOnly": true, "cooldown": 0, "completeTask": "use_open_screen" },
