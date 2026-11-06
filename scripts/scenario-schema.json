@@ -3923,6 +3923,7 @@
           "enum": ["easy", "medium", "hard", "tutorial"]
         },
         "door_sign": { "type": "string" },
+        "needsPrivateTo": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "NPC needs system, room leash: only these NPCs' needs may use objects in this room or walk through it (someone's office). Other NPCs go round or wait. Scripts and route patrols ignore it." },
         "lighting": {
           "type": "object",
           "description": "Per-room lighting. 'motion': dark until the player or an NPC walks in. Rooms with people in them start lit unless startOn is false.",
@@ -4503,6 +4504,8 @@
           ]
         },
         "needsSpeed": { "type": "number", "minimum": 1, "description": "NPC needs system: walk speed (px/s) for needs moves. Default behavior.patrol.speed, else 80." },
+        "needsRooms": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "NPC needs system, room leash (allow list): the only rooms this NPC's needs may use objects in or walk through; its home room (needsHome's) is always allowed. Fixed per NPC. Scripts and route patrols ignore it." },
+        "needsAvoidRooms": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "NPC needs system, room leash (deny list): rooms this NPC's needs never use objects in or walk through, even as a short cut; it goes the long way or waits. The home room may not be listed. Fixed per NPC. Scripts and route patrols ignore it." },
         "usePayload": { "description": "NPC needs system: any JSON value, opaque to the engine and owned by the NPC. A clone rides on every npc_used event this NPC emits." },
         "onUse": {
           "type": "object",
@@ -4984,6 +4987,8 @@
             "useFrom": { "type": "object", "properties": { "dx": { "type": "number" }, "dy": { "type": "number" } }, "required": ["dx", "dy"], "additionalProperties": false, "description": "Where the NPC stands, in tiles from the object's centre" },
             "capacity": { "type": "integer", "minimum": 1, "description": "NPCs that can hold a job on it at once (default 1)" },
             "accepts": { "type": "array", "items": { "type": "string" }, "description": "Carried items with these needsTag values can be used here" },
+            "private": { "type": "boolean", "description": "NPC needs system: only its owners' needs use it (satisfies); other NPCs may still deliver to it (accepts). Owners = owners, else screenOwner, else the NPC whose needsHome is this object. The player is unaffected." },
+            "owners": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "With private: the NPC ids allowed to use this object (default: screenOwner, else the NPC whose needsHome is this object)" },
             "seat": { "oneOf": [ { "type": "boolean", "enum": [false] }, { "type": "string", "enum": ["fetch", "stay", "stand"] } ], "description": "Seating while an NPC uses this object (systems/seating.js): 'fetch' (default) sits on a free chair at the spot or rolls a free swivel chair over from the same room; 'stay' sits only if a chair is already there; false or 'stand' always stands. NPCs whose atlas has no seated frames always stand." },
             "_comment": { "type": "string" }
           },

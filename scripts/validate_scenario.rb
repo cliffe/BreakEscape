@@ -405,7 +405,7 @@ def check_unknown_fields(json_data)
   known_room_fields = %w[
     type door_sign connections locked lockType requires keyPins lockedHint difficulty
     ambientSound ambientVolume objects npcs _comment dimensions biometricMatchThreshold lighting
-    chatBackground doors
+    chatBackground doors needsPrivateTo
   ]
 
   # Known NPC fields
@@ -414,7 +414,7 @@ def check_unknown_fields(json_data)
     voice behavior globalVarOnKO restartOnRetalk reopenRefreshesHub livePreview taskOnKO koImmune storyPath callId currentKnot avatar
     phoneId phoneTheme handle profile voiced callLabel unlockable externalVariables persistentVariables
     timedMessages timedConversation eventMappings itemsHeld puzzle_graph_actions
-    needs interests needsHome needsSpeed usePayload onUse
+    needs interests needsHome needsSpeed needsRooms needsAvoidRooms usePayload onUse
     observations disableClose los rfidCard chatBackground spriteStyle gender portraitVariants _comment
   ]
 

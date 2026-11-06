@@ -15,7 +15,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const js = join(here, '../../public/break_escape/js');
 const dir = mkdtempSync(join(tmpdir(), 'path-avoid-'));
 writeFileSync(join(dir, 'pa.mjs'), readFileSync(join(js, 'systems/path-avoid.js'), 'utf8'));
-const { AVOID_CELL_COST, prefersAvoid, avoidFootprint, collectAvoidRects, avoidCells, crossesAvoidRect }
+const { AVOID_CELL_COST, prefersAvoid, avoidFootprint, collectAvoidRects, avoidCells, crossesAvoidRect, roomFloorRect, floorRingCells }
     = await import(pathToFileURL(join(dir, 'pa.mjs')).href);
 
 const STEP = 8;
@@ -31,8 +31,10 @@ function openGrid(cols, rows) {
     return Array.from({ length: rows }, () => new Array(cols).fill(0));
 }
 
-// Dijkstra on the grid with EasyStar's cost model. Returns the cell path.
-function route(grid, costs, sx, sy, ex, ey) {
+// Dijkstra on the grid with EasyStar's cost model. Returns the cell path. `avoid` (a Set of
+// "x,y") models avoidAdditionalPoint as EasyStar 0.4.4 applies it: only to the cell being
+// entered; the no-corner-cutting test reads the grid alone (isTileWalkable).
+function route(grid, costs, sx, sy, ex, ey, avoid = null) {
     const rows = grid.length, cols = grid[0].length;
     const key = (x, y) => y * cols + x;
     const dist = new Map([[key(sx, sy), 0]]);
@@ -49,6 +51,7 @@ function route(grid, costs, sx, sy, ex, ey) {
             if (!dx && !dy) continue;
             const nx = x + dx, ny = y + dy;
             if (!free(nx, ny)) continue;
+            if (avoid && avoid.has(`${nx},${ny}`)) continue; // avoid points: entered cell only
             if (dx && dy && (!free(x + dx, y) || !free(x, y + dy))) continue; // no corner cutting
             const nd = d + (dx && dy ? 1.4 : 1) * cost(nx, ny);
             if (nd < (dist.get(key(nx, ny)) ?? Infinity)) {
@@ -154,4 +157,36 @@ test('straight-line shortcuts refuse to cross an avoided object', () => {
         'the raw route goes through anyway');
     assert.equal(crossesAvoidRect(160, 40, 160, 200, rects, { via: [{ x: 160, y: 92 }] }), true,
         'a route cell skirting the edge is not through it');
+});
+
+// ── room leash rings (OFFICE_LIFE_PLAN 7.2, slice 2a; review m1) ─────────────
+
+// Three 4x4-tile rooms in a row on an open grid (no walls, the worst case): the middle room's
+// inner floor ring must stop every path from the west room to the east room.
+const ringBounds = { minX: 0, minY: 0, cols: 48, rows: 16, step: STEP };
+const middle = roomFloorRect({ position: { x: 128, y: 0 }, map: { widthInPixels: 128, heightInPixels: 128 } });
+const keys = cells => new Set(cells.map(c => `${c.cx},${c.cy}`));
+
+test('a full inner ring round the middle room leaves no path across it', () => {
+    const grid = openGrid(48, 16);
+    const ring = keys(floorRingCells(middle, ringBounds));
+    // The wall rows above the floor are open in this model: the route goes round over them
+    const over = route(grid, new Map(), 2, 10, 45, 10, ring);
+    assert.ok(over, 'a route over the top rows exists');
+    assert.ok(over.every(([x, y]) => !(x >= 16 && x <= 31 && y >= 8)), 'never on the middle floor');
+    // Close the top: rows 0..7 blocked across the middle room's span (its wall rows)
+    for (let y = 0; y < 8; y++) for (let x = 16; x <= 31; x++) grid[y][x] = 1;
+    assert.equal(route(grid, new Map(), 2, 10, 45, 10, ring), null);
+    assert.ok(route(grid, new Map(), 2, 10, 45, 10), 'and without the ring the short way is open');
+});
+
+test('a ring without its corner cells leaks diagonally (the model matches EasyStar)', () => {
+    const grid = openGrid(48, 16);
+    for (let y = 0; y < 8; y++) for (let x = 16; x <= 31; x++) grid[y][x] = 1;
+    const cornerless = floorRingCells(middle, ringBounds)
+        .filter(c => !((c.cx === 16 || c.cx === 31) && (c.cy === 8 || c.cy === 15)));
+    // From outside the bottom-left corner: onto the missing corner cell, then diagonally inside
+    const into = route(grid, new Map(), 15, 15, 17, 14, keys(cornerless));
+    assert.ok(into, 'cornerless ring is crossed at a corner');
+    assert.equal(route(grid, new Map(), 15, 15, 17, 14, keys(floorRingCells(middle, ringBounds))), null);
 });

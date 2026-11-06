@@ -1050,7 +1050,7 @@ class NPCBehavior {
                 const { x: rnx, y: rny } = this.npcBodyPos();
                 const rSnapped = pathfindingManager.findNearestWalkableStartCell(rnx, rny)
                                  || { x: rnx, y: rny };
-                pathfindingManager.findWorldPath(
+                this._planMovePath(pathfindingManager,
                     rSnapped.x,
                     rSnapped.y,
                     this.patrolTarget.x,
@@ -1279,7 +1279,7 @@ class NPCBehavior {
         if (attempt >= 2) at = this._nudgeToWalkable(pfm, x, y);
         const from = pfm.findNearestWalkableStartCell?.(at.x, at.y) || at;
         this._pathfindingInProgress = true;
-        pfm.findWorldPath(from.x, from.y, target.x, target.y, (path) => {
+        this._planMovePath(pfm, from.x, from.y, target.x, target.y, (path) => {
             this._pathfindingInProgress = false;
             if (this.patrolTarget !== target) return; // re-targeted meanwhile
             if (path && path.length > 0) {
@@ -1313,6 +1313,18 @@ class NPCBehavior {
         else { this.sprite.x = sx; this.sprite.y = sy; }
         console.log(`↔️ [${this.npcId}] Nudged ${Math.sqrt(d2).toFixed(0)}px onto a walkable cell`);
         return { x: cell.x, y: cell.y };
+    }
+
+    /**
+     * findWorldPath for the walk's own planning points (chooseWaypointTarget, the multi-room
+     * route, the collision repath, the stuck recovery). During a needs move it carries the move's
+     * room leash (OFFICE_LIFE_PLAN 7.2), so the walk takes the same permitted route the needs
+     * system's reachability check approved. Any other move or patrol plans unconstrained.
+     */
+    _planMovePath(pfm, sx, sy, ex, ey, callback) {
+        const rooms = this._moveOwner === 'needs' ? this._moveAvoidRooms : null;
+        if (rooms?.length) return pfm.findWorldPath(sx, sy, ex, ey, callback, false, { avoidRooms: rooms });
+        return pfm.findWorldPath(sx, sy, ex, ey, callback);
     }
 
     /** Does this patrol follow waypoints (single-room or a multi-room route)? */
@@ -1414,7 +1426,7 @@ class NPCBehavior {
         const wpSnapped = pathfindingManager.findNearestWalkableStartCell(wpnx, wpny)
                           || { x: wpnx, y: wpny };
         this._pathfindingInProgress = true;
-        pathfindingManager.findWorldPath(
+        this._planMovePath(pathfindingManager,
             wpSnapped.x,
             wpSnapped.y,
             wpDest.x,
@@ -1543,7 +1555,7 @@ class NPCBehavior {
         const mrSnapped = pathfindingManager.findNearestWalkableStartCell(mrnx, mrny)
                           || { x: mrnx, y: mrny };
         this._pathfindingInProgress = true;
-        pathfindingManager.findWorldPath(
+        this._planMovePath(pathfindingManager,
             mrSnapped.x,
             mrSnapped.y,
             dest.x,
@@ -2451,6 +2463,11 @@ class NPCBehavior {
         // Who asked for the move (npc-needs.js passes owner 'needs'); a move by
         // anyone else suspends the NPC's needs, so scripts always win.
         this._moveOwner = opts?.owner;
+        // Room leash for a needs move: rooms the walk must not enter. A needs move without
+        // avoidRooms (seating's chair fetch, in the NPC's own room) keeps the current value;
+        // any other move drops it (scripts ignore the leash).
+        if (opts?.owner !== 'needs') this._moveAvoidRooms = undefined;
+        else if (Array.isArray(opts.avoidRooms)) this._moveAvoidRooms = opts.avoidRooms.slice();
         // Walk-home moves pause for a nearby player like a patrol does.
         this._moveYieldsToPlayer = !!opts?.yieldToPlayer;
         if (opts?.owner !== 'needs') window.npcNeedsSystem?.onExternalMove?.(this.npcId, opts?.owner);
@@ -2500,6 +2517,7 @@ class NPCBehavior {
         this._stopOnArrival = false;
         this._goToStayDest = null;
         this._moveOwner = undefined;
+        this._moveAvoidRooms = undefined;
         this._moveYieldsToPlayer = false;
         this.config.patrol.enabled = false;
         this.pathFollowingActive = false;
@@ -2524,6 +2542,7 @@ class NPCBehavior {
     _triggerGoToStayArrival() {
         const owner = this._moveOwner;
         this._moveOwner = undefined;
+        this._moveAvoidRooms = undefined;
         this._moveYieldsToPlayer = false;
         this._stopOnArrival = false;
         this._goToStayDest = null;

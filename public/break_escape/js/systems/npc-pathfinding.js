@@ -15,7 +15,7 @@
 
 import { TILE_SIZE, PATHFINDING_STEP } from '../utils/constants.js';
 import { addDoorway } from './path-doorways.js';
-import { AVOID_CELL_COST, collectAvoidRects, avoidCells, crossesAvoidRect } from './path-avoid.js';
+import { AVOID_CELL_COST, collectAvoidRects, avoidCells, crossesAvoidRect, roomFloorRect, onFloor, floorRingCells } from './path-avoid.js';
 
 const PATROL_EDGE_OFFSET = 2; // Distance from room edge (2 tiles)
 
@@ -343,8 +343,11 @@ export class NPCPathfindingManager {
      * Find a path via the unified world grid (works across any rooms).
      * Callback receives an array of world {x,y} waypoints, or null on failure.
      * Pass avoidNPCs=true (player only) to route around active NPC bodies.
+     * opts.avoidRooms: room ids the path must not enter (the needs room leash, OFFICE_LIFE_PLAN
+     * 7.2). Each loaded one except the room whose floor holds the start gets its floor's inner
+     * ring avoided for this search only.
      */
-    findWorldPath(startX, startY, endX, endY, callback, avoidNPCs = false) {
+    findWorldPath(startX, startY, endX, endY, callback, avoidNPCs = false, opts = null) {
         if (!this.worldPathfinder || !this.worldGridBounds) {
             console.warn('⚠️ findWorldPath: world grid not ready');
             callback(null);
@@ -377,12 +380,40 @@ export class NPCPathfindingManager {
         // before it returns, so the costs are cleared straight after it.
         const costed = avoidNPCs ? this._applyPreferAvoidCosts() : 0;
 
-        this.worldPathfinder.findPath(sx, sy, toCX(endX), toCY(endY), (tilePath) => {
-            if (avoidNPCs) this.worldPathfinder.stopAvoidingAllAdditionalPoints();
-            callback(tilePath?.length > 0 ? tilePath.map(p => toWorld(p.x, p.y)) : null);
-        });
-        this.worldPathfinder.calculate();
-        if (costed) this.worldPathfinder.removeAllAdditionalPointCosts();
+        // Room leash: calculate() runs every queued search to the end before it returns, so the
+        // rings are removed in the finally straight after it (never in the callback, which runs a
+        // tick later in async mode), cell by cell so the player's NPC-avoid set is kept.
+        const ringed = opts?.avoidRooms?.length ? this._avoidRoomRings(opts.avoidRooms, startX, startY) : null;
+        try {
+            this.worldPathfinder.findPath(sx, sy, toCX(endX), toCY(endY), (tilePath) => {
+                if (avoidNPCs) this.worldPathfinder.stopAvoidingAllAdditionalPoints();
+                callback(tilePath?.length > 0 ? tilePath.map(p => toWorld(p.x, p.y)) : null);
+            });
+            this.worldPathfinder.calculate();
+        } finally {
+            if (ringed) for (const { cx, cy } of ringed) this.worldPathfinder.stopAvoidingAdditionalPoint(cx, cy);
+            if (costed) this.worldPathfinder.removeAllAdditionalPointCosts();
+        }
+    }
+
+    /**
+     * Avoid the inner floor ring of each loaded room in roomIds, except the room whose floor holds
+     * (x, y): an NPC left inside a forbidden room can walk out. Returns the cells avoided. No
+     * walkability filter and no cache: doors.js edits the grid in place when a door opens, and an
+     * avoid point on a blocked cell does nothing.
+     */
+    _avoidRoomRings(roomIds, x, y) {
+        const rooms = (typeof window !== 'undefined' && window.rooms) || {};
+        const out = [];
+        for (const id of roomIds) {
+            const rect = roomFloorRect(rooms[id], TILE_SIZE);
+            if (!rect || onFloor(rect, x, y)) continue;
+            for (const c of floorRingCells(rect, this.worldGridBounds)) {
+                this.worldPathfinder.avoidAdditionalPoint(c.cx, c.cy);
+                out.push(c);
+            }
+        }
+        return out;
     }
 
     /** Footprints of every "prefer to route around" object in the loaded rooms. */

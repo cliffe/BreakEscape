@@ -671,3 +671,187 @@ test('own-desk work by a seated NPC (body ~30 px off its home cell) issues no mo
     assert.equal(w.calls.moves.filter(m => m.id === 'clerk').length, 0, 'never moved');
     assert.equal(sys.getState('clerk').atPost, true);
 });
+
+// ── room leash and private objects (OFFICE_LIFE_PLAN 7.2, slice 2a) ───────────
+
+/**
+ * Three rooms in a row, kitchen | office | lounge, each 320 px wide. Reachability walks the room
+ * adjacency and refuses any room in avoidRooms except the one the NPC stands in, as the live
+ * pathfinder's start-room exemption does.
+ */
+function leashWorld({ npcs, objects, privateTo = {}, adj = { kitchen: ['office'], office: ['kitchen', 'lounge'], lounge: ['office'] } }) {
+    const w = makeWorld({ npcs, objects });
+    const roomOfX = x => (x < 0 ? 'kitchen' : x < 320 ? 'office' : 'lounge');
+    w.reach = [];
+    w.world.roomIds = () => Object.keys(adj);
+    w.world.roomPrivateTo = r => privateTo[r] || null;
+    w.world.reachable = (id, o, opts) => {
+        const avoid = new Set(opts?.avoidRooms || []);
+        w.reach.push({ id, target: o.id, avoidRooms: opts?.avoidRooms || null });
+        const start = w.pos[id].roomId || roomOfX(w.pos[id].x);
+        avoid.delete(start);
+        const seen = new Set([start]), q = [start];
+        while (q.length) {
+            const r = q.shift();
+            if (r === o.roomId) return true;
+            for (const n of adj[r] || []) if (!seen.has(n) && !avoid.has(n)) { seen.add(n); q.push(n); }
+        }
+        return false;
+    };
+    const move = w.world.moveTo;
+    w.world.moveTo = (id, x, y, speed, opts) => {
+        move(id, x, y, speed, opts);
+        w.calls.moves[w.calls.moves.length - 1].avoidRooms = opts.avoidRooms;
+        w.pos[id].roomId = roomOfX(x);
+    };
+    return w;
+}
+
+function leashRun(cfg, minutes = 4, seed = 1) {
+    const w = leashWorld(cfg);
+    const sys = new NPCNeedsSystem(w.world, { seed, manualClock: true });
+    w.attach(sys);
+    sys.registerAll();
+    sys.step(minutes * 60000);
+    const log = sys.getLog();
+    return { sys, w, log, used: id => log.filter(e => e.npc === id && e.ev === 'used').map(e => e.target) };
+}
+
+const thirsty = { thirst: { decayPerMin: 30, urgentAt: 60, initial: 62, jitterPct: 0 } };
+const tomRec = (extra = {}) => ({ id: 'tom', roomId: 'office', needsHome: 'tom_pc', needs: thirsty, ...extra });
+const kitchenOffice = [
+    { id: 'tom_pc', roomId: 'office', x: 100, y: 68, affordance: { useSeconds: 5 } },
+    { id: 'lounge_cooler', roomId: 'lounge', x: 340, y: 100, affordance: { satisfies: 'thirst', restores: 60, useSeconds: 5 } },
+    { id: 'kitchen_cooler', roomId: 'kitchen', x: -200, y: 100, affordance: { satisfies: 'thirst', restores: 60, useSeconds: 5 } }
+];
+
+test('leash: no leash fields anywhere leaves choices alone and passes empty avoidRooms', () => {
+    const r = leashRun({ npcs: { tom: { pos: { x: 100, y: 100 }, room: 'office', rec: tomRec() } }, objects: kitchenOffice });
+    assert.equal(r.used('tom')[0], 'lounge_cooler', 'nearest wins');
+    assert.equal(r.log.filter(e => e.ev === 'leashed').length, 0);
+    assert.ok(r.w.calls.moves.every(m => Array.isArray(m.avoidRooms) && m.avoidRooms.length === 0));
+});
+
+test('leash: a deny list drops a room\'s objects, the next candidate wins, leashed is logged and emitted', () => {
+    const r = leashRun({ npcs: { tom: { pos: { x: 100, y: 100 }, room: 'office', rec: tomRec({ needsAvoidRooms: ['lounge'] }) } }, objects: kitchenOffice });
+    assert.deepEqual([...new Set(r.used('tom'))], ['kitchen_cooler']);
+    const l = r.log.find(e => e.ev === 'leashed');
+    assert.deepEqual({ need: l.need, skipped: l.skipped, chose: l.chose }, { need: 'thirst', skipped: ['lounge_cooler'], chose: 'kitchen_cooler' });
+    const ev = r.w.calls.emits.find(e => e.name === 'npc_needs_leashed:tom');
+    assert.deepEqual(ev.data, { npcId: 'tom', need: 'thirst', skipped: ['lounge_cooler'], chose: 'kitchen_cooler' });
+    // Every move and every reachability search carries the forbidden room
+    assert.ok(r.w.calls.moves.every(m => m.avoidRooms.join() === 'lounge'));
+    assert.ok(r.w.reach.every(c => c.avoidRooms.join() === 'lounge'));
+});
+
+test('leash: an allow list implies the home room', () => {
+    const objects = [...kitchenOffice, { id: 'office_cooler', roomId: 'office', x: 250, y: 100, affordance: { satisfies: 'thirst', restores: 60, useSeconds: 5 } }];
+    const r = leashRun({ npcs: { tom: { pos: { x: 100, y: 100 }, room: 'office', rec: tomRec({ needsRooms: ['kitchen'] }) } }, objects });
+    assert.deepEqual([...new Set(r.used('tom'))], ['office_cooler'], 'home room allowed although not listed');
+    assert.ok(r.w.calls.moves.every(m => m.avoidRooms.join() === 'lounge'));
+});
+
+test('leash: an allow list while the home is still provisional takes the home room from scenario data (review M2)', () => {
+    // tom_pc is not loaded yet, so the resolved home is provisional with no room; the spawn
+    // roomId still exempts the office. Without it the office would be forbidden.
+    const objects = [
+        { id: 'office_cooler', roomId: 'office', x: 250, y: 100, affordance: { satisfies: 'thirst', restores: 60, useSeconds: 5 } },
+        { id: 'kitchen_cooler', roomId: 'kitchen', x: -200, y: 100, affordance: { satisfies: 'thirst', restores: 60, useSeconds: 5 } }
+    ];
+    const npcs = rec => ({ tom: { pos: { x: 100, y: 100 }, room: null, rec } });
+    const a = leashRun({ npcs: npcs(tomRec({ needsRooms: ['kitchen'] })), objects });
+    assert.equal(a.sys.getState('tom').home.provisional, true);
+    assert.equal(a.used('tom')[0], 'office_cooler');
+    const b = leashRun({ npcs: npcs(tomRec({ needsRooms: ['kitchen'], roomId: undefined })), objects });
+    assert.equal(b.used('tom')[0], 'kitchen_cooler', 'control: with no spawn room the office is forbidden');
+});
+
+test('leash: needsPrivateTo lets the listed NPC in and keeps others out', () => {
+    const cfg = {
+        npcs: {
+            tom: { pos: { x: 100, y: 100 }, room: 'office', rec: tomRec() },
+            rosa: { pos: { x: 120, y: 100 }, room: 'office', rec: { id: 'rosa', roomId: 'office', needs: thirsty } }
+        },
+        objects: kitchenOffice,
+        privateTo: { lounge: ['rosa'] }
+    };
+    const r = leashRun(cfg);
+    assert.equal(r.used('rosa')[0], 'lounge_cooler');
+    assert.equal(r.used('tom')[0], 'kitchen_cooler');
+    assert.equal(r.log.filter(e => e.ev === 'leashed' && e.npc === 'rosa').length, 0);
+});
+
+test('leash: a target beyond a forbidden room is not chosen, and the search carries the room', () => {
+    // Only the kitchen cooler; the NPC lives in the lounge and may not cross the office
+    const objects = [kitchenOffice[2], { id: 'grace_sofa', roomId: 'lounge', x: 500, y: 100, affordance: { useSeconds: 5 } }];
+    const r = leashRun({
+        npcs: { grace: { pos: { x: 500, y: 140 }, room: 'lounge', rec: { id: 'grace', roomId: 'lounge', needsHome: 'grace_sofa', needs: thirsty, needsAvoidRooms: ['office'] } } },
+        objects
+    });
+    assert.equal(r.used('grace').length, 0);
+    assert.ok(r.w.reach.some(c => c.target === 'kitchen_cooler' && c.avoidRooms.join() === 'office'));
+    // Without the leash the same NPC walks through the office to it
+    const open = leashRun({ npcs: { grace: { pos: { x: 500, y: 140 }, room: 'lounge', rec: { id: 'grace', roomId: 'lounge', needsHome: 'grace_sofa', needs: thirsty } } }, objects });
+    assert.equal(open.used('grace')[0], 'kitchen_cooler');
+});
+
+test('leash: an NPC a script left inside a forbidden room still walks home', () => {
+    const r = leashRun({ npcs: { tom: { pos: { x: 400, y: 100 }, room: 'lounge', rec: tomRec({ needsAvoidRooms: ['lounge'] }) } }, objects: kitchenOffice }, 0.5);
+    r.sys.control('tom', 'suspend');
+    r.sys.control('tom', 'resume');
+    const home = r.w.calls.moves.filter(m => m.id === 'tom' && m.yieldToPlayer === true);
+    assert.ok(home.length >= 1, 'walk home issued');
+    assert.equal(home[0].avoidRooms.join(), 'lounge', 'the start room is exempted by the pathfinder, not dropped here');
+});
+
+test('private objects: owners from affordance.owners, screenOwner and needsHome; capacity 2 serves two owners', () => {
+    const coolerAt = (id, x, aff) => ({ id, roomId: 'office', x, y: 100, affordance: { satisfies: 'thirst', restores: 60, useSeconds: 30, private: true, ...aff } });
+    const npc = (id, x) => ({ pos: { x, y: 100 }, room: 'office', rec: { id, roomId: 'office', needs: thirsty, needsHome: `${id}_desk` } });
+    const desk = (id, x) => ({ id: `${id}_desk`, roomId: 'office', x, y: 68, affordance: { useSeconds: 5 } });
+    // needsHome rule: a private "desk" that satisfies thirst serves only its owner
+    let r = leashRun({
+        npcs: { amy: npc('amy', 100), ben: npc('ben', 200) },
+        objects: [{ ...desk('amy', 100), affordance: { satisfies: 'thirst', restores: 60, useSeconds: 5, private: true } }, coolerAt('pub', 280, { private: false })]
+    });
+    assert.ok(r.used('amy').includes('amy_desk'));
+    assert.ok(!r.used('ben').includes('amy_desk'));
+    // screenOwner
+    r = leashRun({
+        npcs: { amy: npc('amy', 100), ben: npc('ben', 200) },
+        objects: [desk('amy', 100), desk('ben', 200), { ...coolerAt('kettle', 150), screenOwner: 'ben' }, coolerAt('pub', 280, { private: false })]
+    });
+    assert.ok(r.used('ben').includes('kettle') && !r.used('amy').includes('kettle'));
+    // owners list with capacity 2: both owners together, the third waits or goes elsewhere
+    r = leashRun({
+        npcs: { amy: npc('amy', 100), ben: npc('ben', 110), cat: npc('cat', 120) },
+        objects: [desk('amy', 100), desk('ben', 110), desk('cat', 120), coolerAt('shared', 130, { owners: ['amy', 'ben'], capacity: 2 }), coolerAt('pub', 280, { private: false })]
+    });
+    assert.ok(r.used('amy').includes('shared') && r.used('ben').includes('shared'));
+    assert.ok(!r.used('cat').includes('shared') && r.used('cat').includes('pub'));
+    const starts = r.log.filter(e => e.ev === 'job_start' && e.target === 'shared').map(e => e.t);
+    assert.equal(starts[0], starts[1], 'the two owners share it at once');
+});
+
+test('private objects: another NPC may still deliver to a private object (OQ26)', () => {
+    const cfg = {
+        npcs: {
+            sanjay: { pos: { x: 100, y: 100 }, room: 'office', rec: { id: 'sanjay', roomId: 'office', interests: { post: { weight: 5 } } } },
+            tom: { pos: { x: 200, y: 100 }, room: 'office', rec: { id: 'tom', roomId: 'office', needsHome: 'tom_pc' } }
+        },
+        objects: [
+            { id: 'tom_pc', roomId: 'office', x: 200, y: 68, affordance: { accepts: ['post'], private: true, useSeconds: 5 } },
+            { id: 'letter', roomId: 'office', x: 120, y: 120, needsTag: 'post' }
+        ]
+    };
+    const r = leashRun(cfg, 1);
+    assert.ok(r.log.some(e => e.npc === 'sanjay' && e.ev === 'used' && e.target === 'tom_pc' && e.item === 'letter'));
+});
+
+test('leash: nothing permitted left logs leashed once per urgent episode, with chose null', () => {
+    const r = leashRun({ npcs: { tom: { pos: { x: 100, y: 100 }, room: 'office', rec: tomRec({ needsAvoidRooms: ['lounge', 'kitchen'] }) } }, objects: kitchenOffice }, 1);
+    const l = r.log.filter(e => e.ev === 'leashed');
+    assert.equal(l.length, 1);
+    assert.deepEqual(l[0].skipped, ['lounge_cooler', 'kitchen_cooler']);
+    assert.equal(r.w.calls.emits.find(e => e.name === 'npc_needs_leashed:tom').data.chose, null);
+    assert.equal(r.used('tom').length, 0);
+});

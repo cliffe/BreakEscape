@@ -177,8 +177,13 @@ export class NPCNeedsSystem {
             levels[name] = clamp(n.initial * (1 + (rng() * 2 - 1) * n.jitterPct / 100), 0, 100);
             lastSatisfiedAt[name] = this.clockMs;
         }
+        // Room leash (OFFICE_LIFE_PLAN 7.2): fixed per NPC, authored beside needsHome
+        const roomList = v => (Array.isArray(v) ? v.filter(r => typeof r === 'string' && r) : null);
+        const allow = roomList(rec.needsRooms), deny = roomList(rec.needsAvoidRooms);
+        const leash = (allow || deny?.length) ? { allow: allow ? new Set(allow) : null, deny: new Set(deny || []) } : null;
         this.states.set(npcId, {
-            npcId, needs, interests, levels, lastSatisfiedAt, rng,
+            npcId, needs, interests, levels, lastSatisfiedAt, rng, leash,
+            leashNoted: {},
             urgentFlag: {},
             mode: 'idle',
             prevMode: null,
@@ -361,9 +366,83 @@ export class NPCNeedsSystem {
         const key = `${s.npcId}\u0000${o.id}`;
         if (this.tickCache && this._reachCache?.has(key)) return this._reachCache.get(key);
         this.stats.pathSearches++;
-        const ok = !!this.world.reachable(s.npcId, o);
+        const avoidRooms = this._avoidRooms(s);
+        const ok = !!(avoidRooms.length ? this.world.reachable(s.npcId, o, { avoidRooms }) : this.world.reachable(s.npcId, o));
         if (this.tickCache) (this._reachCache || (this._reachCache = new Map())).set(key, ok);
         return ok;
+    }
+
+    // ── room leash and private objects (OFFICE_LIFE_PLAN 7.2, slice 2a) ─────
+
+    /**
+     * The NPC's home room, from scenario data rather than the resolved home (which stays
+     * provisional at the spawn point until the needsHome object loads): a coordinate home's room;
+     * the resolved home's room; the needsHome object's room once it can be found; the spawn room.
+     */
+    _homeRoom(s) {
+        const rec = this.world.getNpc(s.npcId) || {};
+        const h = rec.needsHome;
+        if (h && typeof h === 'object' && typeof h.room === 'string') return h.room;
+        if (s.home && !s.home.provisional && s.home.roomId) return s.home.roomId;
+        if (typeof h === 'string') {
+            const o = this.world.getObject(h);
+            if (o?.roomId) return o.roomId;
+        }
+        return rec.roomId || null;
+    }
+
+    /** May this NPC's needs not enter roomId? Its home room never is (the validator errors on that). */
+    _roomForbidden(s, roomId) {
+        if (!roomId) return false;
+        const L = s.leash;
+        let out = !!L && ((L.allow && !L.allow.has(roomId)) || L.deny.has(roomId));
+        if (!out && typeof this.world.roomPrivateTo === 'function') {
+            const priv = this.world.roomPrivateTo(roomId);
+            out = Array.isArray(priv) && !priv.includes(s.npcId);
+        }
+        return out && roomId !== this._homeRoom(s);
+    }
+
+    /** Loaded rooms this NPC's routes must not enter (passed to reachable and moveTo). */
+    _avoidRooms(s) {
+        if (typeof this.world.roomIds !== 'function') return [];
+        return (this.world.roomIds() || []).filter(r => this._roomForbidden(s, r)).sort();
+    }
+
+    /**
+     * Owners of an object: affordance.owners, else screenOwner, else the first registered NPC
+     * whose needsHome is the object (workstation-state's ownerOf rule, one owner).
+     */
+    _owners(o) {
+        const aff = o.affordance || {};
+        if (Array.isArray(aff.owners)) return aff.owners;
+        if (typeof o.screenOwner === 'string' && o.screenOwner) return [o.screenOwner];
+        for (const id of this.world.npcIds()) {
+            if (this.world.getNpc(id)?.needsHome === o.id) return [id];
+        }
+        return [];
+    }
+
+    /** Room rules for any object; `private` only for a use (deliveries ignore it, OQ26). */
+    _permitted(s, o, use) {
+        if (this._roomForbidden(s, o.roomId)) return false;
+        if (use && o.affordance?.private === true) return this._owners(o).includes(s.npcId);
+        return true;
+    }
+
+    /** Nothing permitted was left: log and emit once per urgent episode of this need. */
+    _noteLeash(s, key, data) {
+        if (s.leashNoted[key]) return;
+        s.leashNoted[key] = true;
+        this._emitLeashed(s, { ...data, chose: undefined });
+    }
+
+    _emitLeashed(s, data) {
+        this._log(s.npcId, 'leashed', data);
+        const payload = { npcId: s.npcId };
+        for (const [k, v] of Object.entries(data)) if (v !== undefined) payload[k] = v;
+        payload.chose = data.chose || null;
+        this._emit(`npc_needs_leashed:${s.npcId}`, payload);
     }
 
     _tickNpc(s) {
@@ -476,6 +555,7 @@ export class NPCNeedsSystem {
                 this._emit(`npc_need_urgent:${s.npcId}`, { npcId: s.npcId, need: name, level: round2(s.levels[name]) });
             } else if (!urgent) {
                 s.urgentFlag[name] = false;
+                s.leashNoted[name] = false;
             }
         }
     }
@@ -568,8 +648,11 @@ export class NPCNeedsSystem {
     }
 
     _useCandidate(s, name, objects, pos) {
-        const opts = objects.filter(o => o.affordance && asList(o.affordance.satisfies).includes(name) && this._free(s, o));
-        if (!opts.length) return null;
+        const free = objects.filter(o => o.affordance && asList(o.affordance.satisfies).includes(name) && this._free(s, o));
+        // Room leash and private objects, before the home preference (OFFICE_LIFE_PLAN 7.2)
+        const opts = free.filter(o => this._permitted(s, o, true));
+        const skipped = free.length > opts.length ? free.filter(o => !opts.includes(o)).map(o => o.id) : null;
+        if (!opts.length) { if (skipped) this._noteLeash(s, name, { need: name, skipped }); return null; }
         // Prefer the NPC's own post object (needsHome) when it satisfies this need
         // and is reachable, so a person works at their own desk rather than the
         // nearest free one. Only bites when the home object is among the options
@@ -577,16 +660,19 @@ export class NPCNeedsSystem {
         const homeObj = s.home?.objectId ? opts.find(o => o.id === s.home.objectId) : null;
         const target = (homeObj && this._reachable(s, homeObj))
             ? homeObj : this._nearestReachable(s, opts, pos);
-        return target ? { kind: 'use', targetId: target.id } : null;
+        if (!target) { if (skipped) this._noteLeash(s, name, { need: name, skipped }); return null; }
+        return skipped ? { kind: 'use', targetId: target.id, leashed: skipped } : { kind: 'use', targetId: target.id };
     }
 
     _carryCandidate(s, tag, it, objects, pos) {
         const rooms = it.noticeRooms || (s.home?.roomId ? [s.home.roomId] : (pos.roomId ? [pos.roomId] : []));
         const items = objects.filter(o => o.needsTag === tag && o.pickable && rooms.includes(o.roomId)
-            && !this._itemClaimed(o.id, s.npcId) && !(s.cooldowns[o.id] > this.clockMs));
+            && !this._itemClaimed(o.id, s.npcId) && !(s.cooldowns[o.id] > this.clockMs) && this._permitted(s, o, false));
         const item = this._nearestReachable(s, items, pos);
         if (!item) return null;
-        const targets = objects.filter(o => o.affordance && asList(o.affordance.accepts).includes(tag) && this._free(s, o));
+        // Deliveries honour the room rules only: `private` limits uses, not drops (OQ26)
+        const targets = objects.filter(o => o.affordance && asList(o.affordance.accepts).includes(tag) && this._free(s, o)
+            && this._permitted(s, o, false));
         if (!targets.length) return null;
         const homeObj = s.home?.objectId ? targets.find(t => t.id === s.home.objectId) : null;
         const target = (homeObj && this._reachable(s, homeObj))
@@ -605,6 +691,7 @@ export class NPCNeedsSystem {
         };
         s.mode = 'job';
         this._log(id, 'job_start', { need: pick.need || undefined, tag: pick.tag || undefined, target: pick.targetId, item: pick.itemId || undefined });
+        if (pick.leashed) this._emitLeashed(s, { need: pick.need || undefined, skipped: pick.leashed, chose: pick.targetId });
         // Pre-action tell: a short wind-up while the NPC is still at its post, so the
         // leaving-desk window is catchable. world.windupMs() is 0 in stub worlds (no wind-up).
         const windup = s.atPost && !this._atOwnPost(s) ? Math.max(0, Number(this.world.windupMs?.() || 0)) : 0;
@@ -692,7 +779,7 @@ export class NPCNeedsSystem {
         // Own-desk work never moves the NPC: seated, its body sits ~30 px off the home cell, and a
         // move would stand it up (goToAndStay unseats)
         if (dist <= HOME_EPS || (s.atPost && this._atOwnPost(s))) { this._arrivals.add(id); return; }
-        this.world.moveTo(id, cell.x, cell.y, speed, { yieldToPlayer: false });
+        this.world.moveTo(id, cell.x, cell.y, speed, { yieldToPlayer: false, avoidRooms: this._avoidRooms(s) });
     }
 
     _advanceJob(s, arrived) {
@@ -827,7 +914,7 @@ export class NPCNeedsSystem {
             this._arrivals.add(id);
             return;
         }
-        this.world.moveTo(id, s.home.x, s.home.y, this.world.speedFor(id), { yieldToPlayer: true });
+        this.world.moveTo(id, s.home.x, s.home.y, this.world.speedFor(id), { yieldToPlayer: true, avoidRooms: this._avoidRooms(s) });
     }
 
     // ── read-outs ──────────────────────────────────────────────────────────
@@ -881,6 +968,7 @@ export function createEngineWorld() {
             id, roomId, x: c.x, y: c.y,
             affordance: sd.affordance && typeof sd.affordance === 'object' ? sd.affordance : null,
             needsTag: typeof sd.needsTag === 'string' ? sd.needsTag : null,
+            screenOwner: typeof sd.screenOwner === 'string' ? sd.screenOwner : null,
             pickable: sp.visible !== false && sp.active !== false && !sp._npcCarried && !sp.destroyed,
             _sprite: sp
         };
@@ -907,6 +995,12 @@ export function createEngineWorld() {
         npcIds: () => [...(W().npcManager?.npcs?.keys?.() || [])],
         // Loaded rooms; a new id is a room load (the needs system clears its select back-offs)
         roomIds: () => Object.keys(W().rooms || {}),
+        // Room leash: a loaded room's needsPrivateTo (createRoom keeps it; the bootstrap scenario
+        // strips room fields it does not list, so the scenario copy is only a fallback)
+        roomPrivateTo(roomId) {
+            const v = W().rooms?.[roomId]?.needsPrivateTo ?? W().gameScenario?.rooms?.[roomId]?.needsPrivateTo;
+            return Array.isArray(v) ? v : null;
+        },
         getNpc: id => W().npcManager?.getNPC?.(id) || W().npcManager?.npcs?.get?.(id) || null,
         npcPos(id) {
             const b = behaviour(id);
@@ -964,7 +1058,7 @@ export function createEngineWorld() {
             }
             return { x: obj.x, y: obj.y + TILE };
         },
-        reachable(id, obj) {
+        reachable(id, obj, opts) {
             const pm = W().pathfindingManager;
             const pos = this.npcPos(id);
             if (!pm?.findWorldPath || !pos) return true;
@@ -982,7 +1076,9 @@ export function createEngineWorld() {
             let ok = false, called = false;
             if (canSync) pf.enableSync();
             try {
-                pm.findWorldPath(pos.x, pos.y, cell.x, cell.y, p => { called = true; ok = !!(p && p.length); });
+                const cb = p => { called = true; ok = !!(p && p.length); };
+                if (opts?.avoidRooms?.length) pm.findWorldPath(pos.x, pos.y, cell.x, cell.y, cb, false, { avoidRooms: opts.avoidRooms });
+                else pm.findWorldPath(pos.x, pos.y, cell.x, cell.y, cb);
             } catch (e) {
                 return false;
             } finally {
@@ -1033,7 +1129,7 @@ export function createEngineWorld() {
             return behaviour(id)?.config?.patrol?.speed || 80;
         },
         moveTo(id, x, y, speed, opts) {
-            W().npcBehaviorManager?.goToAndStay(id, x, y, speed, { owner: 'needs', yieldToPlayer: !!opts?.yieldToPlayer });
+            W().npcBehaviorManager?.goToAndStay(id, x, y, speed, { owner: 'needs', yieldToPlayer: !!opts?.yieldToPlayer, avoidRooms: opts?.avoidRooms || [] });
         },
         cancelMove(id) {
             W().npcBehaviorManager?.cancelMove?.(id);

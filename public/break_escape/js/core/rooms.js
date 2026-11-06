@@ -1820,7 +1820,9 @@ export function createRoom(roomId, roomData, position) {
             objects: {},
             position
         };
-        
+        // NPC needs room leash (npc-needs.js): the bootstrap scenario strips this room field
+        if (Array.isArray(roomData?.needsPrivateTo)) rooms[roomId].needsPrivateTo = roomData.needsPrivateTo.slice();
+
         // Ensure window.rooms is updated
         window.rooms = rooms;
 
