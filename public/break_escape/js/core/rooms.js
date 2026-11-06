@@ -737,10 +737,14 @@ function addScenarioItemToTableGroup(group, sprite, type, scenarioObj, roomId) {
     registerSpriteVariantListeners(sprite, scenarioObj, roomId);
 }
 
+/** How far above a table's top edge an item's bottom may sit and still count as on its back edge. */
+const TABLE_BACK_EDGE_PX = 4;
+
 /**
  * The table an item belongs with. Among tables whose sprite rectangle overlaps the item's, the
- * southmost. With no overlap: null when overlapOnly is set, otherwise the nearest table by
- * centre distance (the old fallback).
+ * southmost; with none, a table whose top edge is under the item's bottom (within
+ * TABLE_BACK_EDGE_PX). Otherwise null when overlapOnly is set, or the nearest table by centre
+ * distance (the old fallback).
  */
 function findClosestTable(itemSprite, tableObjects, { overlapOnly = false } = {}) {
     const itemLeft   = itemSprite.x;
@@ -767,6 +771,25 @@ function findClosestTable(itemSprite, tableObjects, { overlapOnly = false } = {}
         }
         console.log(`Found overlapping table for item ${itemSprite.name} (${overlappingTables.length} overlap(s), using southmost)`);
         return southmostTable;
+    }
+
+    // Resting on a back edge: an item whose bottom is on, or up to TABLE_BACK_EDGE_PX above, a
+    // table's top edge, across its width, sits on that table's back edge (room_lw_records'
+    // laptops and plants). It counts as on that table, the nearest such edge first, so a swivel
+    // chair behind the desk doesn't draw over it.
+    let backEdgeTable = null, backEdgeGap = Infinity;
+    for (const table of tableObjects) {
+        const tableLeft  = table.sprite.x;
+        const tableRight = table.sprite.x + table.sprite.width;
+        const gap = table.sprite.y - itemBottom;
+        if (itemLeft < tableRight && itemRight > tableLeft && gap >= 0 && gap <= TABLE_BACK_EDGE_PX && gap < backEdgeGap) {
+            backEdgeTable = table;
+            backEdgeGap = gap;
+        }
+    }
+    if (backEdgeTable) {
+        console.log(`Found table under the back of item ${itemSprite.name} (gap ${backEdgeGap} px)`);
+        return backEdgeTable;
     }
 
     if (overlapOnly) return null;

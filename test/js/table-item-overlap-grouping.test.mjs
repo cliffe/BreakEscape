@@ -75,6 +75,23 @@ test('findClosestTable: overlap wins; with no overlap the nearest table, or null
     });
 });
 
+test('findClosestTable: an item resting on a back edge (bottom 0-4 px above the top) counts as on that table', () => {
+    // room_lw_records: laptop7 (bottom 217) on zds_desk1 (top 217), smallplant5 4 px above it
+    const { findClosestTable } = build();
+    const { desk, tableObjects } = world();
+    quiet(() => {
+        assert.equal(findClosestTable(spr('laptop', 62, 84, 22, 17), tableObjects, { overlapOnly: true }), desk);
+        assert.equal(findClosestTable(spr('plant', 62, 78, 16, 19), tableObjects, { overlapOnly: true }), desk);
+        assert.equal(findClosestTable(spr('plant', 62, 77, 16, 19), tableObjects, { overlapOnly: true }), null, '5 px is off');
+        assert.equal(findClosestTable(spr('plant', 130, 82, 16, 19), tableObjects, { overlapOnly: true }), null, 'no x overlap');
+    });
+    // a strict overlap with another table wins over a back edge
+    const north = { sprite: spr('north', 48, 60, 78, 39) };
+    const south = { sprite: spr('south', 48, 101, 78, 39) };
+    const { value } = quiet(() => findClosestTable(spr('lamp', 60, 75, 12, 23), [south, north], { overlapOnly: true }));
+    assert.equal(value, north);
+});
+
 test('findClosestTable: of two overlapping tables the southmost', () => {
     const { findClosestTable } = build();
     const north = { sprite: spr('north', 0, 0, 80, 40) };
