@@ -2,14 +2,38 @@
 
 Status: revised after review round 1 (`SEAT_BOX_PLAN_REVIEW_R1.md`, a4faba799), then updated
 with the user's decisions (Q0 the 18 × 8 body, Q10 option E, the seating-scale dependency),
-then revised after review round 2 (`SEAT_BOX_PLAN_REVIEW_R2.md`, 1c51fabfb), 2026-11-06. No
-room or scenario file has changed for it.
+then revised after review round 2 (`SEAT_BOX_PLAN_REVIEW_R2.md`, 1c51fabfb), then revised
+after review round 3 (`SEAT_BOX_PLAN_REVIEW_R3.md`, c938d2fdb), 2026-11-06. No room or
+scenario file has changed for it.
+
+**Revised after R3.** Every R3 finding is folded in, checked against the code at c938d2fdb; the
+user's decisions are unchanged. R3's verdict was "ready with conditions"; these are the
+conditions. Slices 2 and 4 were already being built when this revision was made: two R3 minors
+add to slice 2 (m6, a scaled desk falls back; m7, the reopen check) and nothing changes slice 4.
+
+| R3 | What changed | Where |
+|---|---|---|
+| M1 the window breaks the carve helpers | **No window.** The local stand grid is built full size with `buildWorldGrid({ exclude })`, as `rebuildWorldGrid` builds after every room load; the flood is bounded by its cell count, and a stand-up is rare. The carves run on the full grid exactly as today, so nothing clamps to a window edge. Tests: a side-door corridor and an N/S door beside the chair, and a chair at the world grid's edge, each equal to the world grid's cells but for the excluded bodies. `standUp` can no longer be left half done: a throw while choosing the spot is caught, logged and falls back to the approach point, so the player is never invisible with `isSeated` true | 1.3, slice 0, slice 1, 8.1 |
+| M2 the chair's body is stale on `jumpOff` | The box check's `extra` takes **rectangles**, and `standSpot` builds the chair's from its sprite position plus the body's offset and size (as `bodyFeet` does), never from `body.left/top`, which is stale while the body is disabled (`jumpOff` chooses the spot before `standUp` re-enables and places it, seating.js:689, 534–544). Unit case: a disabled chair whose body sits away from its sprite | 1.3, slice 1 |
+| M3 the player's home facing | Player: the facing at stand time (`state.facing`), as proved in game 876. NPC: `st.homeFacing`. Nothing records a sit-time facing for the player | 1.3, slice 1 |
+| M4 an NPC's approach point is its chair | For an NPC seated at load, the recorded approach is its spawn, which authors put on the chair (Tomasz: both at (11, 4)). The NPC's last steps are now: the approach only if a walking box there misses the chair's rectangle; then the nearest walkable cell a no-box-check flood of the local grid reaches (it can't cross a desk); then stay seated, warn once, retry next tick. The spawn fallback goes. Unit case with the approach equal to the castor. 8.2 reworded: a forced player stand avoids desks except when boxed in, where the player goes back to where they sat down | 1.3, slice 1, 8.2 |
+| M5 no cross-mission check of the landing rule | A **scripted stand audit** (`tools/playtest/stand-audit.mjs`, slice 0): every placed swivel chair in every mission row, sit, Space–Space, then a forced `standUp()`, logging the branch, the landing point and whether it is in a body or across a desk. Slice 0 takes the baseline on today's code; slice 1 runs it under the legacy switch and the new order on the same rows. Slice 1 isn't done until it passes (no landing in a body or across a desk) and the user has seen the list of chairs where a voluntary stand now refuses | slice 0, slice 1, 8.1 |
+| M6 two slices short of the three proofs | Slice 0: a live grid hash on two game rows (one with an opened side door, after `unlock-all-rooms.rb`), before and after the split commit; equal hashes pass. Slice 3: two `pc` objects in `test_desk_seating` that match `table_items` placeholders, one positioned off every desk and one on a desk, with both depths read live | slice 0, slice 3, 8.1 |
+| m1 the split test compares one implementation | Today's grid for the fixture world is written into the test as a golden array **before** the refactor. `exclude` is matched by `body.gameObject` | slice 0 |
+| m2 the agreed order is stale | Rewritten to the office-life plan at c1111c266 (order 21, 16, 18a, 17, 18b, 19, 20): slice 21 lands first and hand-off items 2 and 6 rebase on it. The note adds that slice 7 turns the lab's staff chairs into Tiled swivels, so after slice 7 idle swivel acts on Chris, Melanie and Sofia, and slice 21's lab regression should expect it | 6 |
+| m3 what `__seatBox = false` means | Today's stand-up code is kept intact behind `window.__seatBox === false` (the old compass loop and its unchecked fallback, and a `jumpOff` that never refuses), for the stand audit's comparison only. Unset means the new order. A unit test asserts nothing in the engine sets it | slice 0, slice 1 |
+| m4 gate doors make the record timing-dependent | The walk record and the grid hash stub `npcBehaviorManager.update` in the page before waking the loop, so no NPC walks, sits or opens a gate while the bodies settle. The tool logs every gated door's state and fails its coverage line if one is open | slice 0 |
+| m5 (d) and (h) keys | (d) takes each swivel chair's position before the loop wakes, recorded separately. (h) keys walls by room and rectangle | slice 0 |
+| m6 scaled desks | `deskBoxOf` returns null (the fallback) for scale ≠ 1, as for rotation, until a scaled desk exists. **Slice 2 change** | 2.4, slice 2, 6a |
+| m7 reopen check and commit order | The reopen check is added to slices 1–3 (**slice 2 change**). The order is the standing shared-tree rule: fast node tests for the touched modules, commit own files, then the full node and Rails suites and the live checks, with fixes in a follow-up commit before any later slice builds on it. AGENTS.md:227 says to run the suites before each engine commit; that conflict is settled this way and stated in section 3 | 3, 8.1 |
+| m8 `sweepBlock` has no caller | Kept in slice 1, unit-tested but unused until slice 6, so the hand-off note's list of what slice 1 added stays true. Its live proof is slice 6's | slice 1 |
+| m9 check (f) from the grid | (f) is computed in (h)'s geometry pass: corridors 8 ≤ gap < 10 px that border a pocket from (g) | slice 0 |
 
 **Revised after R2.** Every R2 finding is folded in; the user's decisions are unchanged.
 
 | R2 | What changed | Where |
 |---|---|---|
-| M1 flood fails for seated NPCs | Compass snapping and the flood now run over a **local stand grid**: a window of 8 cells round the chair, built from the live bodies with the world grid's padding, leaving out the chair and its sitter. Baked or stale cells from a sitter can't trap a stand-up. `ignore` is a list (`[chair, sitter]`). Every seated NPC records the point it sat down from as its approach point, so the forced order always ends somewhere; behaviour on null is written down. New unit case (chair cells blocked in the fake grid) and live cases in `test_seating` (seated at load, and after a door opens) | 1.3, slice 1, 8.1, 8.2 |
+| M1 flood fails for seated NPCs | Compass snapping and the flood now run over a **local stand grid**: a window of 8 cells round the chair (full size after R3 M1), built from the live bodies with the world grid's padding, leaving out the chair and its sitter. Baked or stale cells from a sitter can't trap a stand-up. `ignore` is a list (`[chair, sitter]`). Every seated NPC records the point it sat down from as its approach point, so the forced order always ends somewhere; behaviour on null is written down. New unit case (chair cells blocked in the fake grid) and live cases in `test_seating` (seated at load, and after a door opens) | 1.3, slice 1, 8.1, 8.2 |
 | M2 walk audit blind spots | The walk record's grid is built by the tool with the engine's own builder, without NPC bodies or swivel chairs, after the loop is awake and the deferred bodies have settled. New check (g): walkable cells reachable from the doors before and not after (pockets). New check (h): gap and corridor geometry against the 18 × 10 walking box, from the real bodies, which sees 18–24 px gaps the grid can't | slice 0, 4.4, 8.1 |
 | m1 12 × 8 leftovers | Check (f) keeps only the 8–10 px height clause. Slice 1 names what goes: the `{ w, h }` toggle in `seatedBlock` and the `keep` branch in `standUp` | slice 0, slice 1 |
 | m2 experiments doc | Slice 1's commit adds a one-line "superseded by plan Q0" pointer to two sections of `SEAT_BOX_EXPERIMENTS.md` (not done in this plan-only revision) | header, slice 1 |
@@ -17,7 +41,7 @@ room or scenario file has changed for it.
 | m4 voluntary approach | A voluntary stand takes the approach point only within 32 px of the castor and line clear | 1.3 |
 | m5 flood spots on the chair | The box check counts the chair's own body at every step; only the line check ignores it | 1.3, slice 1 |
 | m6 NPC facing | NPCs stand (and tuck) by `homeFacing`, not the facing they turned to the player with | 1.3, slice 1, 6 item 4 |
-| m7 office-life slices 16–21 | The hand-off note names them and sets an agreed order for the shared `seating.js` facing code (seat box items 2 and 6 first, slice 21 after). No answer from that session by the time slices 2–4 land: ask the user | 6 |
+| m7 office-life slices 16–21 | The hand-off note names them and sets an agreed order for the shared `seating.js` facing code (seat box items 2 and 6 first, slice 21 after; reversed after R3 m2 to match the office-life plan's order). No answer from that session by the time slices 2–4 land: ask the user | 6 |
 | m8 numbers that slice 6a may move | Hand-off item 8 and slice 7's hip line take their numbers from the scale audit; the castor lines stay | 1.1, 6 item 8, 7 |
 
 **`SEAT_BOX_EXPERIMENTS.md` is partly superseded.** Its "Recommendation" (12 × 8 with `keep`)
@@ -144,8 +168,13 @@ the side case above, which is cosmetic.
 `standSpot` (players and NPCs) follows this order. It is built and unit-tested as the pure
 `pickStandSpot` in the prototype (seating.js, 619d58928, live only with `window.__seatBox`).
 "Box clear" means an 18 × 10 walking box with its feet at the spot overlaps no enabled
-immovable body and not the chair just left (R2 m5: the chair is dynamic again by then, so
-`walkBoxClear` takes it as an extra body). "Line clear" means the line from the castor base to
+immovable body and not the chair just left (R2 m5: the chair is dynamic once the stand
+finishes, so a walking box on top of it gets shoved). The chair is passed as a **rectangle**
+built from its sprite position plus its body's offset and size, the way `bodyFeet` reads
+them (seating.js:389–396), never from `body.left/top` (R3 M2). Those are stale while the body
+is disabled: `jumpOff` chooses its spot before `standUp` re-enables the body and moves it to
+the sprite (seating.js:689, 534–544), so after any roll the body still sits where the player
+sat down. "Line clear" means the line from the castor base to
 the spot crosses no enabled immovable body (¼, ½, ¾, 2 × 2 probe); it ignores the chair and the
 sitter, because it starts inside them.
 
@@ -157,20 +186,29 @@ after every door opening (doors.js:828) and on door-gate changes (door-gates.js:
 nothing rebuilds on unseat. So a seated NPC's chair and body are usually baked into the grid,
 and stay there after the NPC stands. A flood that only steps through walkable cells can't leave
 a cell ringed by them, and the compass snap can land on their padding. So `standSpot` builds a
-small grid of its own: a window of 17 × 17 cells (8 cells each way, the forced flood's reach)
-centred on the chair's cell, aligned with the world grid, marked from the **live** enabled
-static and immovable bodies with the world grid's padding rule, leaving out the chair and its
-sitter, with the open-door carves applied. It uses the same builder as `rebuildWorldGrid`
-(slice 1), so the two can't drift. Cells the chair or sitter alone blocked are walkable in it;
+grid of its own, **full size** (R3 M1): `buildWorldGrid({ exclude: [chair, sitter] })` marks
+the **live** enabled static and immovable bodies with the world grid's padding rule, leaving
+out the chair and its sitter, and applies the open-door carves, exactly as `rebuildWorldGrid`
+does after every room load. It is the same builder (slice 0), so the two can't drift. An
+earlier draft clipped it to a 17 × 17-cell window round the chair; R3 M1 showed the carve
+helpers clamp to the grid instead of clipping (npc-pathfinding.js:676–687, 706–717), so a
+side-door corridor across the window's edge got a blocked row in its middle and one wholly
+outside gave a negative row index and threw. The flood is bounded by its cell count, so
+the full grid costs only the build, and a stand-up is rare. Cells the chair or sitter alone blocked are walkable in it;
 cells another body blocks stay blocked, and so do desks, so the flood still can't cross one.
 This also covers the player sitting on a chair an NPC left since the last rebuild.
 
 1. **Compass candidates.** At `reach` (half the chair body's longer side + 14) in the order:
    forward, the two sides, the two back diagonals, back, and the two forward diagonals last,
-   counted from the **home facing**: for the player, the facing they sat with; for an NPC,
-   `st.homeFacing`, not `st.facing`, which turns towards the player within 96 px
-   (seating.js:1026–1035), while chatting (1201–1210) and, after office-life slice 21, at
-   random (R2 m6). Each snaps to the nearest walkable cell of the local grid within 1 cell,
+   counted from the **home facing**. For the player that is the facing at stand time,
+   `state.facing` (R3 M3): `place()` sets it to the direction the player last rolled
+   (seating.js:786–792), so it is the way they faced as they came up to the desk, which is
+   what game 876 used and proved. Nothing records a sit-time facing, and one must not be
+   added: sit facing east, roll north to tuck behind a desk, and a sit-time facing makes the
+   forward diagonals relative to the desk (NE, NW) into back diagonals, the game 875 corner
+   case. For an NPC it is `st.homeFacing`, not `st.facing`, which turns towards the player
+   within 96 px (seating.js:1026–1035), while chatting (1201–1210) and, after office-life
+   slice 21, at random (R2 m6). Each snaps to the nearest walkable cell of the local grid within 1 cell,
    under 12 px from the target, and must be box clear and line clear. (Forward diagonals go
    last because a chair tucked in faces its desk, and a forward diagonal steps round the desk's
    corner to its far side. In game 875, with the old order, the 18 × 8 body at the west end of
@@ -193,18 +231,39 @@ This also covers the player sitting on a chair an NPC left since the last rebuil
 5. **Out of options, forced** (`standUp()` with no spot: KO, seating.js:675; punch and block,
    player-combat.js:101, 195; the chair going inactive, seating.js:717; E with nothing in
    reach, interactions.js:1998; `trySit` on another chair; NPC `unseatNPC`): the flood fill over
-   the local grid to 8 cells with box clear only, then the approach point with no check. Never
-   a cell picked by direction alone, which is what landed the player across the desk.
+   the local grid to 8 cells with box clear only. Then, for the **player**, the approach point
+   with no check (where they stood to sit down, so always a floor spot they reached on foot).
+   For an **NPC**, step 6. Never a cell picked by direction alone, which is what landed the
+   player across the desk.
+6. **NPC last resort (R3 M4).** An NPC's recorded approach is often its chair: `seatNPC`
+   records `bodyFeet(sprite)` before posing (seating.js:953), which for an NPC `seated` at
+   load is its spawn, and authors put the spawn on the chair (Tomasz spawns at (11, 4) and
+   `tomasz_chair` is at (11, 4), lab scenario.json.erb:659, 1153; `chairsNear` accepts any
+   chair within 40 px). For needs seats the approach is also the castor, because the chair is
+   slid or fetched to the feet first (1246, 1324). So for an NPC:
+   1. the approach point, only if a walking box there misses the chair's rectangle;
+   2. otherwise the nearest walkable cell the local-grid flood reaches, up to 8 cells, with no
+      box check (walkable cells only, so it can't cross a desk);
+   3. otherwise null: the NPC stays seated, `unseatNPC` returns false with `_seat` kept, and a
+      console warning naming the NPC and the chair is logged once. Both callers run every tick
+      (seating.js:1023 for hostile, KO or an inactive chair; 1195 for needs), so the stand is
+      retried on the next tick. Both must treat a kept `_seat` as still seated, so the NPC
+      isn't walked off while posed. When the chair is inactive there is no chair rectangle to
+      miss, and step 1 takes the approach as it is.
 
-**When the order returns null (R2 M1).** The player always has an approach point, so a forced
-stand never returns null for the player; a voluntary one returns null and stays seated (step
-4). With `st.approach` recorded, the same holds for NPCs. Null is then possible only on a code
-path that seats an NPC without going through `seatNPC`, so no approach is recorded. For that
-case `unseatNPC` falls back to the NPC's spawn position from the scenario (which the validator
-warning in 4.4 and walk-audit check (c) keep out of bodies) and logs a console warning naming
-the NPC and the chair. It never leaves the NPC standing inside its chair (today's `if (spot)`,
-seating.js:981), and it never uses `frontSpot`, whose forward step points into the desk a
-tucked chair faces.
+**When the order returns null.** The player always has an approach point, so a forced stand
+never returns null for the player; a voluntary one returns null and stays seated (step 4). An
+NPC returns null only when boxed in so tightly that no walkable cell is within 8 cells and its
+approach is on its chair; it stays seated and retries (step 6). The spawn-position fallback of
+the R2 revision is dropped, because the spawn is the same point as the approach for every NPC
+seated at load. The order never leaves an NPC standing inside its chair (today's `if (spot)`,
+seating.js:981), and never uses `frontSpot`, whose forward step points into the desk a tucked
+chair faces.
+
+**A stand-up is never left half done (R3 M1).** `standUp` sets `state = null`, destroys the
+proxy and restores the body (seating.js:518–531) before `landingSpot` runs (546). A throw in
+between leaves the player invisible with `isSeated` true. `standUp` wraps the spot choice in a
+try/catch: on a throw it logs the error and uses the approach point, then finishes as normal.
 
 Line numbers are at a4faba799 unless they name 1c51fabfb's file (seating.js:950–981,
 1026–1035, 1201–1210). Static chairs are unchanged (`landingSpot` returns the approach point;
@@ -217,10 +276,11 @@ the desk). Live, game 876 (`r1_prove2.out`): the 9 experiment cases for the 18 �
 (`18x8`, now the design) and a 12 × 8 block (`12x8k`), every one on the near side, not in a desk box, walk-away 49–58 px; and a forced
 `standUp()` from behind `desk1` for both, landing at [100, 244] (back edge 264). The cramped
 branches (2–5) were not reached live, because the test room has open floor on every case;
-slice 1 adds a cramped case to its tests. Game 876 ran without the local grid, the chair in the
-box check or the home facing; none of those changes a case with open floor and a fresh grid,
-but slice 1 re-runs all 9 cases anyway, since counting the chair can reject a compass spot that
-snapped to within 18 px of the castor sideways.
+slice 1 adds a cramped case to its tests. Game 876 ran without the local grid or the chair in
+the box check, and with the player's stand-time facing, which stays (R3 M3); neither addition
+changes a case with open floor and a fresh grid, but slice 1 re-runs all 9 cases anyway, since
+counting the chair can reject a compass spot that snapped to within 18 px of the castor
+sideways. The stand audit (slice 0, run again in slice 1) is the cross-mission proof (R3 M5).
 
 ## 2. The desk footprint data
 
@@ -318,15 +378,31 @@ texture and write a `measured` entry or a `legacyBox` line (as `TABLE_SURFACE_PL
 planned).
 
 Rotation and flips: no `tables`-layer object is rotated or flipped today (0 of 445), and none
-is scaled. `deskBoxOf` returns null (fallback) for rotation ≠ 0, mirrors `x` under `flipX`,
-and multiplies by `scaleX`/`scaleY`, so later rooms behave.
+is scaled. `deskBoxOf` returns null (fallback) for rotation ≠ 0 and for `scaleX` or `scaleY`
+≠ 1, and mirrors `x` under `flipX`. Scale falls back rather than multiplying (R3 m6): tables
+are static bodies (`physics.add.existing(sprite, true)`, rooms.js:2136, 2637), and Arcade
+scales a static body's size and offset by different rules from a dynamic one's, so a multiply
+invites double scaling with no scaled desk to test it on. A scaled desk gets its rule when one
+exists.
 
 ## 3. Engine changes, in slices
 
 Each slice is one commit (engine before data), with explicit paths
-(`git commit -m "..." -- <paths>`, after checking `git diff --cached --stat`). The tree is
-shared, so commit your own files first, then run the node suite (`bin/test-js`) and the Rails
-suite, and make any fixes as follow-up commits (R1 m3). Any new static import in an engine
+(`git commit -m "..." -- <paths>`, after checking `git diff --cached --stat`). The order for
+each engine slice (R1 m3, R3 m7), following the standing shared-tree rule:
+
+1. run the fast node unit tests for the touched modules (for example
+   `node --test test/js/seating.test.mjs test/js/seat-box.test.mjs`) before the engine commit;
+2. commit your own files, because the live servers and other agents read the shared tree;
+3. straight after, run the full node suite (`bin/test-js`), the Rails suite
+   (`bin/rails test`), the phone reopen check (`node scripts/ink_runtime_check/reopencheck.mjs
+   scripts/ink_runtime_check/missions.json`, slices 1–3) and the slice's live checks;
+4. fix anything they find in a follow-up commit, before any later slice builds on this one.
+   A slice isn't done until step 3 passes.
+
+AGENTS.md:227 says to run the suites before each engine commit. In this shared tree the
+standing rule (commit own files before tests and live checks) wins, with step 1 as the guard
+and step 4 as the catch; the user can overrule. Any new static import in an engine
 module goes on each JS test harness copy list. Ownership is in section 6: slices 1–5 and 8 are
 this work, slice 6 is the office-life session's (or this session's, once that session agrees),
 slice 6a is the separate scale audit's, and slice 7 is the lab.
@@ -338,14 +414,28 @@ neither, so the snapshot can't see this plan's main risk, and it leaves out swiv
 NPCs. So slice 0 adds a walkability record to the same run.
 
 - **The grid builder split** (`npc-pathfinding.js`, its own commit, no behaviour change).
-  `rebuildWorldGrid` becomes `buildWorldGrid({ exclude, window })` plus today's EasyStar set-up.
-  The builder returns `{ grid, bounds }` and never touches the live grid. It marks the same
-  sources with the same padding (251–277), skipping any body in `exclude`, limited to
-  `window` (a cell rectangle) when given, and applies the side-door carves and the N/S corner
-  blocks (297–305) to its own grid. The carve helpers take the grid they write to. With no
-  options, `rebuildWorldGrid` builds exactly today's grid; a node test compares the two on a
-  fixture world with an open side door and an open north door. The walk record (below) and the
-  local stand grid (1.3, slice 1) both use it.
+  `rebuildWorldGrid` becomes `buildWorldGrid({ exclude })` plus today's EasyStar set-up.
+  The builder returns `{ grid, bounds }` and never touches the live grid. It always builds the
+  full world rectangle (no `window` option, R3 M1). It marks the same sources with the same
+  padding (251–277), skipping any body whose `body.gameObject` is in `exclude` (the list holds
+  game objects; the builder iterates bodies), and applies the side-door carves and the N/S
+  corner blocks (297–305) to its own grid. The carve helpers take the grid and bounds they
+  write to; `markSideDoorCorridor` and `markDoorWalkable` (634–641, 177–216) still write the
+  live grid, so they pass `this.worldGrid` and `this.worldGridBounds`. `rebuildWorldGrid`
+  assigns the returned grid and calls `setGrid` last, as today.
+  - **Behaviour-neutral proof, unit (R3 m1).** Before the refactor, the test file takes today's
+    grid for a fixture world (an open side door, an open north door, a static desk, an
+    immovable wall strip) and stores it as a golden array. After the refactor,
+    `buildWorldGrid()` with no options must equal the golden array cell for cell. A frozen
+    copy of the old function is not kept.
+  - **Behaviour-neutral proof, live (R3 M6).** `tools/playtest/grid-hash.mjs <game_id>`
+    loads a game the walk record's way (below: NPC updates stubbed, bodies settled), calls
+    `rebuildWorldGrid()` and prints a hash of `worldGrid` and `worldGridBounds`, three times
+    per load to show it is stable. Run on two game rows, one of them with an opened side door
+    (after `unlock-all-rooms.rb`), on the commit before the split and again on the split
+    commit. Equal hashes pass.
+
+  The walk record (below) and the local stand grid (1.3, slice 1) both use the builder.
 - `room-snapshot.mjs --walk` also writes, for each room:
   - every enabled static or immovable body (the sources `rebuildWorldGrid` uses,
     npc-pathfinding.js:269–279), **leaving out NPC bodies and swivel chairs** (R2 M2 iii).
@@ -366,9 +456,22 @@ NPCs. So slice 0 adds a walkability record to the same run.
   loads, the tool wakes the loop and waits until `scene.time.now` has advanced at least 300 ms
   past the last load, then builds the walk grid itself. It doesn't rely on the engine's
   rebuild having happened.
+- **No NPC moves while the bodies settle (R3 m4).** Gate doors open for NPCs
+  (`door-gates.js`, Len's `openFor` in the lab, scenario.json.erb:652), disable their bodies
+  and rebuild (door-gates.js:243, 285), so two records of the lab could differ at the records
+  door. Before waking the loop, the tool replaces `window.npcBehaviorManager.update` with a
+  no-op in the page (test-only, no engine change; it is called from game.js:2464). No NPC
+  walks, sits, slides a chair or opens a gate. The tool logs every gated door's state, and its
+  coverage line fails if any gate is open at record time.
+- **Swivel chair positions at load (R3 m5).** Check (d) needs each swivel chair where the map
+  put it, but swivels are left out of the walk record. The tool records each swivel chair's
+  position and body rectangle separately, from the sprite before the loop wakes, with its
+  Tiled object id. With NPC updates stubbed, no needs NPC can slide or fetch it first
+  (seating.js:1160–1167, 1299–1330).
 - Two init-script switches let one game row be loaded both ways with no scenario or map edit:
   `window.__deskBoxes = 'legacy' | 'footprint'` (read in slice 2, overriding the map
-  property) and `window.__seatBox = false` (read in slice 1).
+  property) and `window.__seatBox = false` (read in slice 1: today's stand-up code, kept
+  intact for the stand audit's comparison; R3 m3).
 - `walk-audit-diff.mjs before.json after.json` runs a flood fill over each room's grid from its
   doors and reports:
   - (a) key points reachable before and not after;
@@ -376,10 +479,12 @@ NPCs. So slice 0 adds a walkability record to the same run.
     constants.js:65);
   - (c) NPC spawns, waypoints or needs cells now inside a body;
   - (d) swivel chairs whose body overlaps a desk body at load (Arcade won't separate more than
-    4 px, so these stay sunk);
+    4 px, so these stay sunk), from the chair positions recorded before the loop wakes (above);
   - (e) the cells added per room;
-  - (f) for opted-in maps: gaps 8–10 px high (passable seated, by an 8 px high block, not by
-    the 10 px walker) that border a region not otherwise reachable. The width clause is gone
+  - (f) for opted-in maps: corridors 8 ≤ gap < 10 px high (passable seated, by an 8 px high
+    block, not by the 10 px walker) that border a pocket from (g). It is computed in (h)'s
+    geometry pass from the real bodies, not from the walk grid (R3 m9): an 8 px grid with 2 px
+    vertical padding can't show a gap of 8–10 px. The width clause is gone
     (R2 m1): every seated block and chair body is at least 18 px wide (office chairs 18,
     `chair-white` 22, exec 28; section 5), so nothing passes sideways seated that a walker
     can't;
@@ -399,7 +504,8 @@ NPCs. So slice 0 adds a walkability record to the same run.
     its padding blocks any gap under about 24 px both before and after, while the player moves
     by physics with an 18 × 10 box. Gaps that end between 18 and 24 px are listed, not failed
     (open on foot, closed to click-to-move and NPCs, as many are today). Bodies are paired
-    across the two records by object id, so only the boxes differ.
+    across the two records by object id, so only the boxes differ. Wall bodies have no object
+    id; they are keyed by room and rectangle, which don't change between box modes (R3 m5).
 
   It exits 1 on (a)–(d) and (f)–(h) outside `--allow`.
 - **The test scenario without a Mission row (B2).** The experiment's scratch `swap_game.rb`
@@ -414,15 +520,38 @@ NPCs. So slice 0 adds a walkability record to the same run.
   full walk audit only runs for maps being opted in. Slice 0 records:
   - the walk record for `room_test_desk_seating` and `room_lw_accounts` (the two maps opted in
     first), with `__deskBoxes = 'legacy'`;
-  - for the landing rule, which is global (slice 1): a light baseline of one game per room
-    that has a swivel chair (`chair-darkgray-1`, grey-1, grey-4, white, exec; section 5 gives
-    9 + 9 + 4 rooms for the office chairs before overlaps, plus the white and exec rooms),
-    recording each chair's position and the room's key points,
-    plus a sample of five high-traffic shared rooms (`room_office`, `room_uni_staff`,
+  - for the landing rule, which is global (slice 1): the **stand audit** baseline below, on
+    today's code;
+  - a sample of five high-traffic shared rooms (`room_office`, `room_uni_staff`,
     `room_IT`, `room_office5`, `room_break`) with the full walk record, so a later map opt-in
     there has a baseline ready.
 
   Every later slice is compared against this baseline, on the same game rows.
+- **The stand audit (R3 M5).** The landing rule changes every player stand-up on every swivel
+  chair in every mission, and a voluntary jump-off can now refuse where today it always lands.
+  The walk record can't show where a player lands, so slice 0 adds
+  `tools/playtest/stand-audit.mjs <game_id>...`, on the snapshot tool's loader (all rooms,
+  `unlock-all-rooms.rb`, NPC updates stubbed as above). For each placed swivel chair
+  (`chair-darkgray-1`, grey-1, grey-4, white, exec; section 5 gives 9 + 9 + 4 rooms for the
+  office chairs before overlaps, plus the white and exec rooms) in every mission row
+  `snapshot-games.sh` lists, plus `test_desk_seating` by game id:
+  1. move the player to the chair's approach side and sit through the seating module, with the
+     chair at its placed position (no roll);
+  2. Space, Space (the voluntary `jumpOff`), and log the result;
+  3. sit again, then a forced `standUp()`, and log it.
+
+  Each stand logs the chair id, room, `via` (the 1.3 branch, or `legacy`), the landing point,
+  whether the 18 × 10 walking box there overlaps an enabled static or immovable body ("in a
+  body"), and whether the line from the castor to it crosses a desk body ("across a desk",
+  `pathClear` with the chair and the player ignored). A chair with a seated NPC on it is skipped
+  and listed (the NPC stand has its own tests in slice 1). No scenario edit.
+  - **Baseline (slice 0):** run on today's code. Legacy landings in a body or across a desk
+    are expected and listed; they are the bug slice 1 fixes.
+  - **Slice 1:** run again on the same rows, under `__seatBox = false` (legacy, for the
+    side-by-side) and with the new order. **Fail** on any new-order landing in a body or
+    across a desk. List every chair where the voluntary stand now refuses ("No room to stand
+    up here."), with a 2× screenshot of each, for the user to look at before slice 1 is called
+    done.
 
 ### Slice 1: the landing rule (player and NPC)
 
@@ -446,35 +575,50 @@ families.
   - `blockFor(chair)`: the family's block, or null.
   - `walkBoxClear(scene, x, y, { ignore = [], extra = [] })`: true when an 18 × 10 walking
     box with its feet at (x, y) overlaps no enabled static or immovable body outside `ignore`,
-    and no body in `extra`. It uses the sources `rebuildWorldGrid` uses, so desks, walls,
-    locked doors and immovable furniture all count. The prototype looked only at static bodies
-    in `room.objects`, which misses wall boxes. `ignore` is a list (R2 M1): `standSpot` passes
-    `[sitter]`, because a sitter with `behavior.immovable` (npc-sprites.js:138–139; Tomasz in
-    the lab is one) would otherwise block its own landing, and `[chair]` in `extra`, because by
-    the time the spot is chosen the chair is dynamic again (the player: `standUp` re-enables it,
-    seating.js:534; an NPC: `unseatNPC` restores `immovable`, 975) and a walking box on top of it
-    gets shoved by Arcade (R2 m5).
+    and none of the **rectangles** in `extra` (`{ x, y, w, h }` in world px). It uses the
+    sources `rebuildWorldGrid` uses, so desks, walls, locked doors and immovable furniture all
+    count. The prototype looked only at static bodies in `room.objects`, which misses wall
+    boxes. `ignore` is a list (R2 M1): `standSpot` passes `[sitter]`, because a sitter with
+    `behavior.immovable` (npc-sprites.js:138–139; Tomasz in the lab is one) would otherwise
+    block its own landing. `extra` holds the chair's rectangle (R2 m5), because once the stand
+    finishes the chair is dynamic again (the player: `standUp` re-enables it, seating.js:534;
+    an NPC: `unseatNPC` restores `immovable`, 975) and a walking box on top of it gets shoved
+    by Arcade.
+  - `chairRect(chair)`: the chair's body rectangle from its sprite position plus the body's
+    offset and size, scaled as `bodyFeet` does (seating.js:389–396), never `body.left/top`
+    (R3 M2). On the voluntary path `jumpOff` asks before `standUp` re-enables the body and
+    `placeBody`s it (seating.js:689, 534–544), and Arcade doesn't update a disabled body, so
+    its bounds are where the player sat down, not where they rolled to.
   - `pathClear(scene, from, to, { ignore = [] })`: the prototype's ¼, ½, ¾ samples with a
     2 × 2 probe. `standSpot` passes `ignore: [chair, sitter]`, since the line starts inside
     both.
-  - `localStandGrid(pfm, x, y, { exclude })`: the local stand grid of 1.3, from slice 0's
-    `buildWorldGrid({ exclude, window })` with a 17 × 17-cell window centred on (x, y)'s cell.
-    `standSpot` passes `exclude: [chair, sitter]`.
+  - `localStandGrid(pfm, { exclude })`: the local stand grid of 1.3, slice 0's
+    `buildWorldGrid({ exclude })` at full size (no window, R3 M1). `standSpot` passes
+    `exclude: [chair, sitter]`.
   - `nearestCell(grid, x, y, r)` and `floodStandCells(grid, x, y, maxCells)`: the snap and the
     prototype's `floodCells`, over the local grid instead of `pfm.worldGrid`; walkable cells
     reachable through walkable cells, nearest first.
-  - `pickStandSpot(...)`: the prototype's pure order (1.3), with two changes: the voluntary
-    approach check (within 32 px and line clear, R2 m4), and `facing` meaning the home facing.
+  - `pickStandSpot(...)`: the prototype's pure order (1.3), with these changes: the voluntary
+    approach check (within 32 px and line clear, R2 m4); `facing` meaning the home facing,
+    which the caller passes (the player's `state.facing` at stand time, an NPC's
+    `st.homeFacing`; R3 M3); and an `npc` flag that selects step 6 (R3 M4) in place of the
+    player's unchecked approach.
   - `sweepBlock(scene, rect, dx, dy, ignore)`: how far a block can move along (dx, dy) before
     it meets an immovable body. Slice 6 uses it for the NPC slide and tuck targets, and it is
-    pure geometry over the real bodies, so it needs no footprint data.
+    pure geometry over the real bodies, so it needs no footprint data. **It ships in slice 1
+    unit-tested but unused** (R3 m8): it belongs with the other block geometry in
+    `seat-box.js`, and the hand-off note names it as something slice 1 added. Its live proof
+    is slice 6's.
 - **On sitting** (`sitOn`): no change. The driver takes the chair's body, which for `office40`
   is `blockFor(chair)`. Slice 5 decides whether `white32` and `exec` need a block of their own;
   only then does `sitOn` read `blockFor`.
 - **Landing** (`standSpot`): the order in 1.3, with `walkBoxClear` (all immovable sources,
   walls and locked doors included, not only the room's static objects as in the prototype) and
   `pathClear`. `jumpOff` passes `forced: false`; every other caller is forced. The unchecked
-  `findNearestWalkableWorldCell(cx, cy + reach, 3)` fallback is deleted.
+  `findNearestWalkableWorldCell(cx, cy + reach, 3)` fallback is deleted from the default path
+  (it survives only in the legacy code behind `__seatBox === false`, below).
+- **`standUp` can't be left half done (R3 M1).** The call to `landingSpot` (seating.js:546)
+  goes in a try/catch: on a throw, log it and use the approach point, then finish the stand.
 - The landing rule is **global** and not behind a flag. Today's `standSpot` lands the player on
   or behind a desk when the chair faces one (EXPERIMENTS: 100% of front and side cases), and
   that happens with today's boxes too, so this is a fix everywhere.
@@ -483,17 +627,25 @@ families.
   office-life code: the office-life session reviews the slice 1 diff before it is committed
   (or, under the section 6 fallback, agrees to it). Three NPC-side lines change with it:
   - `seatNPC` keeps the feet point it already reads before posing (seating.js:953) as
-    `st.approach`, for every seated NPC (R2 M1);
-  - `unseatNPC` passes `st.homeFacing` and `st.approach` to `standSpot`, not `st.facing`
-    (R2 m6: `st.facing` follows the player within 96 px, seating.js:1026–1035, and while
-    chatting, 1201–1210);
-  - when `standSpot` returns null, `unseatNPC` uses the spawn-position fallback in 1.3 with a
-    console warning, never "stay where it is" (today's `if (spot)`, seating.js:981).
+    `st.approach`, for every seated NPC (R2 M1). For an NPC seated at load this is usually on
+    its chair, which step 6 of 1.3 allows for (R3 M4);
+  - `unseatNPC` passes `st.homeFacing`, `st.approach` and `npc: true` to `standSpot`, not
+    `st.facing` (R2 m6: `st.facing` follows the player within 96 px, seating.js:1026–1035,
+    and while chatting, 1201–1210);
+  - when `standSpot` returns null, `unseatNPC` stays seated (1.3 step 6): it returns false
+    with `_seat` kept, before releasing the place or restoring the bodies, warns once per
+    seating, and the next tick's call retries. The two callers (seating.js:1023, 1195) are
+    checked so that a kept `_seat` stays posed and isn't walked off. Never "stand where it
+    is" (today's `if (spot)`, seating.js:981), and no spawn fallback (dropped after R3 M4).
   The needs path (`standAt` set) is unchanged.
-- `window.__seatBox` stays as a test-only off switch (`false` = today's behaviour). The
-  experiment's code for the smaller block goes (R2 m1): the `{ w, h }` toggle in `seatedBlock`
-  (seating.js:431–435), which then always returns the chair's body, and the `keep` branch in
-  `standUp` (535–542).
+- **`window.__seatBox === false`** (R3 m3) selects today's stand-up code, kept intact for the
+  stand audit's side-by-side: the old compass loop with its unchecked fallback (seating.js:
+  641–648) and a `jumpOff` that never refuses. Unset (the default) is the new order. It is
+  test-only; a unit test asserts nothing in the engine sets it, as the prototype's test does.
+  It goes when slice 8 opts the last audited map in, or earlier if the stand audit is retired.
+  The experiment's code for the smaller block goes (R2 m1): the `{ w, h }` toggle in
+  `seatedBlock` (seating.js:431–435), which then always returns the chair's body, and the
+  `keep` branch in `standUp` (535–542).
 - **The experiments doc (R2 m2).** The slice 1 commit adds one line at the top of
   `SEAT_BOX_EXPERIMENTS.md`'s "Recommendation" and "What the NPC side needs": "Superseded by
   `SEAT_BOX_PLAN.md` Q0: the block is the chair's own 18 × 8 body; the front and back stops
@@ -506,8 +658,19 @@ Tests (`seating.test.mjs`, a new `seat-box.test.mjs`):
   wall box; the sitter ignored as a list member; an immovable sitter not ignored blocks);
 - **the chair counts in the box check** (R2 m5): a flood cell 8 px from the castor is rejected
   because the walking box overlaps the 18 × 8 chair body; the same cell passes the line check;
+- **a disabled chair whose body is stale** (R3 M2): the chair's sprite has moved 30 px since
+  its body was disabled; `chairRect` follows the sprite, a spot clear of the old body but on
+  the new rectangle is rejected, and one on the old body but clear of the new rectangle passes;
 - `localStandGrid`: cells covered only by the chair and the sitter are walkable, a cell also
-  covered by a desk stays blocked, and the window matches `buildWorldGrid`'s cells elsewhere;
+  covered by a desk stays blocked, and every other cell equals the world grid's (R3 M1).
+  Three edge cases, each compared with `buildWorldGrid()` with no options, cell for cell,
+  except the excluded bodies' cells: a side-door corridor within 68 px of the chair, an N/S
+  door beside it, and a chair at the world grid's edge;
+- **`standUp` survives a throw** (R3 M1): with a grid builder that throws, `standUp` still
+  restores the player's body, makes them visible, clears `isSeated` and lands on the approach
+  point;
+- **player facing** (R3 M3): a player who sat facing east and rolled north behind a desk
+  stands on the desk's near side (north), counted from `state.facing`;
 - `sweepBlock` stops at the contact line from all four sides;
 - `pickStandSpot`, each branch of 1.3 (the prototype's test, extended), including the forced
   8-cell flood and the **voluntary approach** rule (R2 m4): an approach 40 px away, or across a
@@ -523,8 +686,11 @@ Tests (`seating.test.mjs`, a new `seat-box.test.mjs`):
 - an **NPC stand** case: a seated NPC with no `standAt`, its chair tucked behind a desk,
   `unseatNPC` puts it on the near side; repeated with the NPC turned to face the player on a
   forward diagonal (`st.facing` ≠ `st.homeFacing`), which must still stand on the near side
-  (R2 m6); and with every spot closed, where it lands on its recorded approach point, never
-  inside the chair.
+  (R2 m6); and boxed in (R3 M4): every box-clear spot closed, with the recorded approach
+  **equal to the castor** (as for an NPC seated at load), where it takes the nearest walkable
+  cell of the no-box-check flood, outside the chair's rectangle and on the chair's side of the
+  desk; and with no walkable cell within 8, where `unseatNPC` returns false, keeps `_seat`,
+  warns once, and stands on a later tick once a cell opens. Never inside the chair.
 
 Live (:3001, `test_desk_seating` through `swap-scenario-game.rb`): the 9 cases on today's boxes
 and on footprint boxes, the behind-`desk1` case named in the log with its stand y, a forced
@@ -539,7 +705,11 @@ walk-away ≥ 40 px. Then:
   does). Pass: it lands outside its chair, on the side its home facing puts it, and the log
   names the branch. Repeat after opening a door while it sits (doors.js:828), and once with the
   player sitting on that chair after the NPC has left it, before any rebuild.
+- **The stand audit** (slice 0, R3 M5) on the baseline's game rows, legacy and new order. Pass:
+  no new-order landing in a body or across a desk. The list of chairs where a voluntary stand
+  now refuses, with screenshots, goes to the user; slice 1 is done once they have seen it.
 - A regression sit-and-roll in one `room_office` mission.
+- The phone reopen check (section 3, step 3).
 
 ### Slice 2: desk boxes from the footprint data (opt-in)
 
@@ -549,9 +719,10 @@ A body at 2136–2148, through one shared `applyTableBody(sprite, mode)`),
 `measure_table_surfaces.py --footprint`, `room_edit.py` and the generators (set the property),
 and `validate_scenario.rb` (reports legacy maps).
 
-- `deskBoxOf(sprite)` returns `{ x, y, w, h }` in sprite px from the entry (with `x`, `floor`,
-  scale and `flipX` applied), or null when the texture has no `foot`, is in `legacyBox`, or is
-  rotated.
+- `deskBoxOf(sprite)` returns `{ x, y, w, h }` in sprite px from the entry (with `x`, `floor`
+  and `flipX` applied), or null when the texture has no `foot`, is in `legacyBox`, is
+  rotated, or has `scaleX` or `scaleY` ≠ 1 (R3 m6, 2.4; a change to slice 2 as first written,
+  which multiplied by the scale).
 - `applyTableBody` uses the footprint box when the room's map has opted in and `deskBoxOf`
   gives one. Otherwise it keeps today's box exactly (`w − 20` × `h / 4`, offset (10, `3h/4`)).
 - **Opt-in per map, for good (M3).** A Tiled map property, `deskBoxes` = `footprint`, in the
@@ -593,8 +764,8 @@ and `validate_scenario.rb` (reports legacy maps).
   after a look at the contact sheet, and the `legacyBox` list. The low-confidence textures
   stay on the fallback until their hand values are in (Q3), so they don't hold the slice up.
 
-Tests: `deskBoxOf` for an entry, no entry, `legacyBox`, rotation, `flipX`, scale and `floor`
-padding; `mapProperty` with the Tiled array form, a plain object, `properties` absent, the name
+Tests: `deskBoxOf` for an entry, no entry, `legacyBox`, rotation, `flipX`, a scale ≠ 1
+(null, the fallback; R3 m6) and `floor` padding; `mapProperty` with the Tiled array form, a plain object, `properties` absent, the name
 absent and another value; `applyTableBody` choosing legacy or footprint by the map property
 and the override; `room_edit.py set-map-prop` on a `Doc` file with and without a `.tmj` twin and
 on a `PyDoc` file, each re-opened in both forms (`json.loads`, and `Room` reading the property
@@ -604,11 +775,13 @@ coverage test (2.4); a Python test that `--footprint` reproduces `desk1` 16 and 
 from the PNGs. Live: `test_desk_seating`, all 9 experiment cases (front, behind, sides, the
 24 px gap, the static chair), rolled with the arrow keys through `window.__test.walk` as the
 experiment did, on both box modes. The footprint numbers must match section 1.1 to ±1 px, and
-the screenshots must match `best_*.png`.
+the screenshots must match `best_*.png`. Then the phone reopen check (section 3, step 3; R3 m7,
+added to slice 2 after it was first specified).
 
 ### Slice 3: group a matched table item only when it overlaps a desk
 
-File: `rooms.js` only.
+Files: `rooms.js`, and `scenarios/test_desk_seating/scenario.json.erb` for the demo case
+(R3 M6, below).
 
 - In the placeholder branch (2308–2320), a scenario object that matched a `table_items` or
   `conditional_table_items` placeholder joins a table group only if its final sprite rectangle
@@ -629,6 +802,15 @@ File: `rooms.js` only.
 
 Tests: a unit test with a fake pool (an overlapping match grouped, an off-desk match stored on
 its own with listeners), and `table-group-variant-listeners.test.mjs` still passing.
+
+**Demo scenario (R3 M6).** `test_desk_seating` has no scenario objects today; its map has
+`pc1` and `bankers_lamp1` placeholders in `table_items`. Slice 3 adds two `pc` objects to
+`scenarios/test_desk_seating/scenario.json.erb`: one with no `position`, which takes a `pc1`
+placeholder on a desk, and one whose explicit `position` puts it on open floor off every desk.
+Live, through `swap-scenario-game.rb`: read both sprites' depths. Pass: the on-desk PC is in
+its desk's group (depth `F + 0.5 + 0.01·i`), the off-desk PC has its own depth (bottom + 0.5)
+and the console warning names it. Also the lab's `cable_note` at its own depth, the snapshot
+diff, and the phone reopen check (section 3, step 3).
 
 ### Slice 4: `room_edit.py` firstgid check
 
@@ -669,8 +851,10 @@ change any sprite's scale or art. What it takes from the audit:
   place of the y 3.5 / 6.5 positions and the elevation values in section 7.
 - **If a desk's art or scale changes**, its `foot` entry in `table_surfaces.json` is measured
   again (`--footprint`), and the contact numbers in 1.1 for that desk are re-rolled in
-  `test_desk_seating` (slice 2's live check) before slice 7 relies on them. A Tiled scale is
-  already handled by `deskBoxOf`; redrawn art is not.
+  `test_desk_seating` (slice 2's live check) before slice 7 relies on them. A desk given a
+  Tiled scale ≠ 1 falls back to today's box (`deskBoxOf` returns null, R3 m6), so a scale fix
+  done that way needs a scale rule in `deskBoxOf` first; redrawn art at native size needs only
+  the new `foot`.
 - Slices 0–5 don't wait: the landing rule, the map opt-in, the grouping fix and the
   `room_edit.py` fix don't depend on sprite scale.
 
@@ -880,23 +1064,32 @@ whether to go ahead (slice 1 reviewed by a fresh Opus reviewer briefed with
 `OFFICE_LIFE_HANDOVER_SESSION.md`, and slice 6 built here under the fallback), rather than
 wait.
 
-**Agreed order for the shared facing code (R2 m7 a).** The office-life plan gained slices
-16–21 after this note was first written (bd837adb2, `OFFICE_LIFE_PLAN.md` section 12). Slice 21
-(idle swivel, 12.7) changes the `want = st.homeFacing` line in `updateNeedsSeat`
-(seating.js:1203 at 1c51fabfb) and calls `setChairFacing`; hand-off items 2 (slide target,
-seating.js:1246) and 6 (fidget clamp, `fidgetChair` 907–928) edit the same function and its
-neighbour. The order proposed to that session:
+**Agreed order for the shared facing code (R2 m7 a, rewritten after R3 m2).** The
+office-life plan gained slices 16–21 (bd837adb2, `OFFICE_LIFE_PLAN.md` section 12), and its
+revision after its own review (c1111c266) builds them in the order 21, 16, 18a, 17, 18b, 19,
+20 (12.8, the "Order" column; section 13). Slice 21 (idle swivel, 12.7) is first, has no
+dependencies, and isn't built yet at c938d2fdb. It changes the `want = st.homeFacing` line in
+`updateNeedsSeat` (seating.js:1203 at 1c51fabfb) and calls `setChairFacing`; hand-off items 2
+(slide target, seating.js:1246) and 6 (fidget clamp, `fidgetChair` 907–928) edit the same
+function and its neighbour. So:
 
-1. Seat box items 2 and 6 first (inside slice 6), then slice 21 on top. It is simpler that way
-   round: `setChairFacing` only changes the chair's texture and frame counter (301–310), never
-   its body or position, so idle swivel can't move a chair the sweep has placed.
-2. Whatever the order, one rule holds and both sides test it: the slide, the tuck, the fidget
-   and the stand-up read `st.homeFacing`, never `st.facing`. `fidgetChair` already does
-   (916); slice 1 makes `unseatNPC`'s stand do so (R2 m6), and item 4 below does the tuck.
-   With that, idle swivel and the player-facing turn change only what is drawn.
-3. If slice 21 lands first (12.8 lets it move earlier when a slot opens), items 2 and 6 are
-   rebased onto it. Whoever lands second re-reads `seating.js` just before editing and runs
-   both sessions' `seating.test.mjs` cases.
+1. **Slice 21 lands first; seat box items 2 and 6 rebase on it** (inside slice 6). That order
+   is safe: `setChairFacing` only changes the chair's texture and frame counter (301–310),
+   never its body or position, so idle swivel can't move a chair the sweep later places.
+   Whoever lands second (the slice 6 builder, on this order) re-reads `seating.js` just before
+   editing and runs both sessions' `seating.test.mjs` cases.
+2. One rule holds and both sides test it: the slide, the tuck, the fidget and the stand-up
+   read `st.homeFacing`, never `st.facing`. `fidgetChair` already does (916); slice 1 makes
+   `unseatNPC`'s stand do so (R2 m6), and item 4 below does the tuck. With that, idle swivel
+   and the player-facing turn change only what is drawn.
+3. **The lab changes under slice 21 once slice 7 lands.** Office-life 12.7 and 12.10 say
+   slice 21 changes nothing in the lab, because Chris, Melanie and Sofia sit on
+   scenario-placed static seats (`lab_physical_pentest/scenario.json.erb` 1115–1121), and only
+   Tiled map chairs are swivels (rooms.js 2536–2539). Slice 7 deletes those `aw_chair_*`
+   objects and puts five `chair-darkgray-1` swivels in `room_lw_accounts`, so after slice 7
+   idle swivel acts on all three. Slice 21's "lab regression: no change expected" holds only
+   until slice 7; after it, the lab regression should expect idle swivel on the staff (and
+   none on Tomasz, a non-needs seated NPC, if 12.7's rule limits it to needs NPCs).
 
 This session doesn't edit the office-life plan; the order goes to that session in the note
 below, and is recorded in its log by that session.
@@ -913,15 +1106,20 @@ below, and is recorded in its log by that session.
 > swivel NPC with no `standAt` (seating.js:980 at 1c51fabfb)**: it now follows the order in
 > plan 1.3 and never lands across a desk. It floods a local grid that leaves out the chair and
 > its sitter (a seated NPC's chair is baked into the world grid by any rebuild), every seated
-> NPC keeps `st.approach` (where it sat down from), and the stand uses `st.homeFacing`. You
-> reviewed that diff.
+> NPC keeps `st.approach` (where it sat down from), and the stand uses `st.homeFacing`. When
+> nothing is clear and the approach is on the chair (an NPC seated at load), the NPC takes the
+> nearest walkable cell, or stays seated and retries next tick; `unseatNPC` can now return
+> false with `_seat` kept. You reviewed that diff.
 >
 > **Your slices 16–21.** Slice 21 (idle swivel) edits the same part of `updateNeedsSeat` as
-> items 2 and 6 below. Proposed order: items 2 and 6 first, slice 21 after; either way, the
-> slide, tuck, fidget and stand read `st.homeFacing`, never `st.facing`, so a swivel or a turn
-> towards the player changes only what is drawn. Whoever lands second re-reads `seating.js` and
-> runs both sets of tests (plan section 6, "Agreed order"). Slices 16–20 don't touch the
-> seating code this plan changes. Please:
+> items 2 and 6 below. Your plan builds 21 first (order 21, 16, 18a, 17, 18b, 19, 20), so
+> items 2 and 6 rebase on it. The slide, tuck, fidget and stand read `st.homeFacing`, never
+> `st.facing`, so a swivel or a turn towards the player changes only what is drawn. Whoever
+> lands second re-reads `seating.js` and runs both sets of tests (plan section 6, "Agreed
+> order"). Slices 16–20 don't touch the seating code this plan changes. **The lab after our
+> slice 7:** the staff's static `aw_chair_*` seats become Tiled `chair-darkgray-1` swivels, so
+> slice 21's idle swivel then acts on Chris, Melanie and Sofia; your lab regression's "no
+> change expected" holds only until then. Please:
 > 1. **Block.** Nothing to do: the chair's body is already the block. The NPC's own body stays
 >    collision-none and immovable while seated, as now.
 > 2. **Slide target.** `updateNeedsSeat` pulls a swivel to the NPC's feet
@@ -1086,10 +1284,10 @@ new engine proof. Their exact spot and elevation on the top follow the scale aud
 
 | Slice | Unit and static | Live (:3001, headless, one browser, stopped by PID) |
 |---|---|---|
-| 0 | `buildWorldGrid` with no options equals today's grid (fixture world with open side and north doors); `exclude` and `window` on the same fixture; the diff tool against fixture snapshots (a closed key point, a waypoint in a body, a sunk chair, a seated-only gap 8–10 px high, a pocket with no key point for (g), a 20 px side gap closing to 14 px and a 12 px corridor closing to 6 px for (h), a 22 px gap closing to 19 px listed but not failed); the record excludes a seated NPC and its chair; `swap-scenario-game.rb` prints a game id and leaves the Mission table unchanged (count before and after) | the scoped baseline (slice 0): the two first maps, the swivel-chair rooms and the five-room sample, each recorded twice on the same row with no difference (proves the record ignores NPC timing); the tool prints its coverage |
-| 1 | `seat-box.test.mjs`, `seating.test.mjs`: each branch of 1.3 (forced 8-cell flood and the voluntary approach rule included), behind `desk1`, cramped, boxed in, the chair counted in the box check, the baked-chair grid, the local grid, the NPC stand cases (near side, turned to the player, boxed in onto its approach) | `test_desk_seating` on today's and footprint boxes: the 9 cases, behind `desk1` logged with its stand y, a forced stand, a cramped case; `test_seating`'s swivel NPC standing with a baked grid, after a door opening, and the player on its vacated chair; a regression sit-and-roll in one `room_office` mission |
-| 2 | `deskBoxOf`; `mapProperty` (array, object, absent); `applyTableBody`; `set-map-prop` on `Doc`, `Doc` + `.tmj` and `PyDoc`; the validator's legacy-map line; the Python coverage and `--footprint` tests | the 9 cases on footprint boxes against 1.1 (±1 px) and the 18 × 8 column of `compare_12x8_vs_18x8.png`; grid cells over a desk before and after; walk audit for the two opted-in maps; a legacy map unchanged |
-| 3 | grouping unit test; variant-listener test | snapshot diff lists only the regrouped items; the lab's `cable_note` at its own depth |
+| 0 | `buildWorldGrid` with no options equals the golden array taken before the refactor (fixture world with open side and north doors; R3 m1); `exclude` matched by `body.gameObject` on the same fixture; the diff tool against fixture snapshots (a closed key point, a waypoint in a body, a sunk chair, a seated-only corridor 8–10 px high bordering a pocket for (f), a pocket with no key point for (g), a 20 px side gap closing to 14 px and a 12 px corridor closing to 6 px for (h), a 22 px gap closing to 19 px listed but not failed, walls paired by room and rectangle); the record excludes a seated NPC and its chair; `swap-scenario-game.rb` prints a game id and leaves the Mission table unchanged (count before and after) | **grid hash** (R3 M6): `grid-hash.mjs` on two game rows, one with an opened side door, equal before and after the split commit; the scoped baseline (slice 0): the two first maps and the five-room sample, each recorded twice on the same row with no difference (NPC updates stubbed, gates logged closed; R3 m4); the **stand audit** baseline over every placed swivel chair (R3 M5); the tools print their coverage |
+| 1 | `seat-box.test.mjs`, `seating.test.mjs`: each branch of 1.3 (forced 8-cell flood and the voluntary approach rule included), behind `desk1`, cramped, boxed in, the chair counted in the box check, a stale disabled chair body (R3 M2), the baked-chair grid, the full-size local grid and its three edge cases (R3 M1), `standUp` surviving a throw, the player's stand-time facing (R3 M3), the NPC stand cases (near side, turned to the player, boxed in with the approach equal to the castor, nothing within 8 cells so it stays seated and retries; R3 M4), `sweepBlock`, nothing in the engine setting `__seatBox` | `test_desk_seating` on today's and footprint boxes: the 9 cases, behind `desk1` logged with its stand y, a forced stand, a cramped case; `test_seating`'s swivel NPC standing with a baked grid, after a door opening, and the player on its vacated chair; the **stand audit** on the baseline rows, legacy and new order, no new-order landing in a body or across a desk, refusals listed for the user (R3 M5); a regression sit-and-roll in one `room_office` mission; reopen check |
+| 2 | `deskBoxOf` (scale ≠ 1 gives null, R3 m6); `mapProperty` (array, object, absent); `applyTableBody`; `set-map-prop` on `Doc`, `Doc` + `.tmj` and `PyDoc`; the validator's legacy-map line; the Python coverage and `--footprint` tests | the 9 cases on footprint boxes against 1.1 (±1 px) and the 18 × 8 column of `compare_12x8_vs_18x8.png`; grid cells over a desk before and after; walk audit for the two opted-in maps; a legacy map unchanged; reopen check |
+| 3 | grouping unit test; variant-listener test | `test_desk_seating`'s two `pc` objects, on a desk (grouped) and off every desk (own depth) (R3 M6); snapshot diff lists only the regrouped items; the lab's `cable_note` at its own depth; reopen check |
 | 4 | `test_room_edit.py` | none (tool only) |
 | 5 | `blockFor` for the new families | the 48-roll sweep and its contact sheet |
 | 6 | office life's fixture tests (6, item 10), including fetch | `test_needs_sims`, `test_needs_leash`, the lab |
@@ -1099,6 +1297,13 @@ new engine proof. Their exact spot and elevation on the top follow the scale aud
 
 Look at every screenshot before calling a slice done. A claim that a slice is fixed needs the
 live path, not only a unit test that passes.
+
+**Order of tests and commits (R3 m7).** As section 3 sets out: the fast node tests for the
+touched modules before an engine commit; commit your own files with explicit paths before any
+live or browser check, because the tree is shared; straight after, the full node suite, the
+Rails suite, the reopen check (slices 1–3) and the live column above; fixes in a follow-up
+commit before any later slice builds on it. A slice is done when its live column passes, not
+when it is committed.
 
 ### 8.2 Risks
 
@@ -1120,15 +1325,23 @@ live path, not only a unit test that passes.
   re-rolls that desk before slice 7.
 - **No landing spot** in a cramped corner: the order in 1.3. A voluntary jump-off with nothing
   clear stays seated with "No room to stand up here."; a forced stand (KO, punch, block, chair
-  gone) takes the 8-cell flood fill, then the approach point. Never a cell across a desk.
-  NPCs have a recorded approach point too, and a spawn-position fallback with a warning if
-  even that is missing; never "stand inside the chair".
+  gone) takes the 8-cell flood fill, then the approach point. Forced stands avoid desks except
+  in the boxed-in case, where the player goes back to where they sat down; after a long roll
+  that point can be across a desk, which is accepted as the last resort (R3 M4). NPCs take
+  their approach point only if it is off the chair, then the nearest walkable cell (which
+  can't cross a desk), and otherwise stay seated and retry each tick with one warning; never
+  "stand inside the chair".
+- **A seated NPC that can't stand** (R3 M4) stays posed while hostile or KO until a cell opens.
+  It needs a ring of blocked cells 8 deep round its chair, which no audited room has; the
+  warning names it if one ever does.
 - **A stale or baked world grid** (R2 M1): seated NPCs' chairs and bodies stay in the grid
   until the next rebuild. Stand-ups use the local stand grid, built from live bodies. The world
   grid itself is unchanged by this plan, so NPC paths still route round a chair someone has
   just left until the next rebuild, as today.
-- **The landing rule is global**, including NPC stand-up (`unseatNPC`). The swivel-chair rooms'
-  baseline (slice 0) and the slice 1 NPC tests cover it, and office life reviews the diff.
+- **The landing rule is global**, including NPC stand-up (`unseatNPC`). The stand audit over
+  every placed swivel chair (slice 0 baseline, re-run in slice 1; R3 M5), the slice 1 NPC
+  tests, and office life's review of the diff cover it. A voluntary jump-off that used to land
+  (often on or across a desk) can now refuse; the audit lists every such chair for the user.
 - **The walk record's grid differs from the live grid** on purpose (no NPCs or swivel chairs).
   A pocket that only a seated NPC's chair closes isn't flagged; that closure is temporary and
   changes with whoever sits.
