@@ -72,7 +72,7 @@
         { "taskId": "spot_open_screen", "title": "Spot an unlocked, unattended screen (a breathing white dot; a steady blue dot means locked)", "type": "custom", "status": "active" },
         { "taskId": "hear_snack", "title": "Hear someone eat in the kitchen (the fridge and microwave take their settings and sound from their type)", "type": "custom", "status": "active" },
         { "taskId": "see_chat", "title": "Two people chat at the water cooler (read the Activity Board and Sanjay and Rosa both want a chat)", "type": "custom", "status": "active" },
-        { "taskId": "see_outcast", "title": "Nobody chats with the contractor: read the Kitchen Rota and Sanjay waits at his desk until Marek has left the cooler", "type": "custom", "status": "active" },
+        { "taskId": "see_outcast", "title": "Nobody chats with the contractor: read the Kitchen Rota and Marek heads for the cooler; Sanjay waits at his desk until Marek has gone", "type": "custom", "status": "active" },
         { "taskId": "see_printout", "title": "A printout is delivered to a desk (Sanjay prints at his PC; Amara takes it from the copier tray to her desk, where it is filed a minute later)", "type": "custom", "status": "active" }
       ]
     }
@@ -256,7 +256,7 @@
           "readable": true,
           "addToNotes": false,
           "text": "KITCHEN ROTA\n\nThis week: Sanjay.\n\nContractors: the water cooler is in the kitchen.",
-          "observations": "The kitchen rota. Reading it reminds Sanjay he fancies a chat and Marek that he is parched."
+          "observations": "The kitchen rota. Reading it reminds Marek that he is parched; as he heads for the cooler, Sanjay decides he fancies a chat too."
         }
       ],
       "npcs": [
@@ -386,7 +386,7 @@
           },
           "eventMappings": [
             { "eventPattern": "object_interacted", "condition": "data.objectName === 'Activity Board'", "cooldown": 30000, "needs": { "set": { "social": 10 } } },
-            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Kitchen Rota'", "cooldown": 30000, "needs": { "set": { "social": 10 } } }
+            { "eventPattern": "npc_left_post:marek", "condition": "data.targetId === 'water_cooler'", "cooldown": 30000, "needs": { "set": { "social": 10 } } }
           ]
         },
         {
