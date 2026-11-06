@@ -139,9 +139,11 @@ A door entry in a room's `doors` array can carry a `gate`: it opens for listed N
 | `openFor` | — | NPC ids (string or list) whose approach opens it |
 | `openRadius` | `56` | Pixels from the door centre at which an `openFor` NPC opens it |
 | `holdMs` | `2500` | How long it stays open after the last NPC leaves (the tailgate window) |
-| `playerMayPassIf` | none | A global. While it is false, a player who comes within `openRadius` of the open gate shuts it |
+| `playerMayPassIf` | none | A global. While it is false, a player who comes within `openRadius` of the gate shuts it and keeps it shut, even beside the NPC |
 
-N/S doorways only; E/W gates are untested. Events: `door_gate_opened`, `door_gate_closed`, `door_gate_denied` (a bare click), `door_gate_player_opened` (credential accepted). An NPC mapping's `closeDoor` shuts one early. See `docs/achitechture/TAILGATE_REDESIGN.md`.
+**A held guard turns back.** While the player is barred the gate never opens for the NPC. A route NPC (`behavior.patrol.multiRoom` route) near the shut gate whose route leg needs him across it waits 5 s, then gives up that crossing: he glances at the player, carries on with his route from the next segment in the room he is in, and tries the door again on his next cycle. His patrol never stops, so the tailgate window comes back once the player moves off or meets `playerMayPassIf`. Only route NPCs turn back; any other NPC simply waits. A guard standing in the doorway is never shut in, even by `closeDoor`. Design the scenario so the player can do anything that needs the guard at the open door (such as watching him key a PIN) from just outside `openRadius`, measured from the player's feet.
+
+N/S doorways only; E/W gates are untested. Events: `door_gate_opened`, `door_gate_closed`, `door_gate_denied` (a bare click), `door_gate_player_opened` (credential accepted), `door_gate_guard_turned_back` (`npcId`). An NPC mapping's `closeDoor` shuts one early. See `docs/achitechture/TAILGATE_REDESIGN.md`.
 
 #### Designing Solvable Scenarios with the Grid System
 

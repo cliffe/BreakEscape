@@ -808,17 +808,29 @@ skipped once `courier_ready` or `records_clone_held` is set) emits `player_in_vi
 which challenges the player at the door, or records the PIN capture when he is at the
 keypad. The scenario file is the reference for the exact mappings.
 
-**Guard-priority at the gate (door-gates.js, 2026-11-06).** The records door is a gate
-(`openFor:["len"]`, `playerMayPassIf:"courier_ready"`); `_playerBarred` keeps it shut for an
-undisguised player within `openRadius`, which is also the PIN-surf posture. A shut gate is a
-wall in the pathfinding grid, so a barred gate used to trap Len on either side: his route leg
-had no path, he retried forever (the stuck-watch only runs while path-following), his patrol
-stopped for good and `len_at_door` never re-fired. door-gates now frees a near `openFor` guard
-after `GUARD_PRIORITY_MS` (5 s) regardless of the barred player, and never shuts a gate on a
-guard mid-crossing, so Len's patrol always cycles and the tailgate window returns within one
-cycle. The player is still kept from *claiming* an undisguised crossing by the credit path
-(the `tailgate_in` enter_room task and the `kp_badge_tailgated` debrief flag), not by trapping
-the guard.
+**Len turns back at a barred gate (door-gates.js + npc-behavior.js, 2026-11-06).** The
+records door is a gate (`openFor:["len"]`, `playerMayPassIf:"courier_ready"`). `_playerBarred`
+keeps it shut, with no guard override, while an undisguised player's body centre is within
+`openRadius` (56 px): staff don't badge through with a stranger at their shoulder. A shut gate
+is a wall in the pathfinding grid, so a barred crossing used to trap Len on either side (his
+route leg retried every 2 s for ever, his patrol stopped and `len_at_door` never re-fired).
+Now, when a near `openFor` guard whose route leg wants him across the gate
+(`NPCBehavior.wantsToCrossGate`: his route segment is in the gate's other room) has been held
+for `GUARD_TURN_BACK_MS` (5 s), door-gates calls `turnBackFromGate`: he glances at the player,
+resumes his route at the next segment in the room he stands in (Len inside records walks his
+records loop again; Len on the floor walks back to his dwell point), and tries the door on his
+next cycle. Event `door_gate_guard_turned_back` (`npcId`). A guard who only dwells beside the
+gate is never timed. A guard physically in the doorway is never shut in, by the barred close or
+by a forced `closeDoor`; a path merely planned through the door no longer holds it open past a
+barred player. (Commit 1e6e6dbba's earlier fix opened the gate for him after 5 s instead, which
+let an undisguised camper follow him in; replaced in 7721dcf50.)
+
+The PIN surf is unaffected: it needs the gate open (`len_at_door`) and the player within 64 px
+of the door by sprite centre, in Len's view; the bar measures the body centre (about 31 px
+lower) against 56 px, so the player can watch from just outside the bar. The badge-reader
+fallback works from about 85 px. Live, game 671: passive surf fired with the body 57 px from
+the gate; a camp at 46 px kept the gate shut for 122 s while Len turned back 7 times; with the
+hi-vis on, his next crossing opened beside the player and `tailgate_in` completed (score 100).
 
 ### 12.4 Capture view
 
