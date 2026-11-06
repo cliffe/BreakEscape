@@ -58,6 +58,7 @@ Raised by the feature test work (docs/achitechture/NEW_FEATURES_TEST_MATRIX.md) 
 - **Proposed fix:** set `"pauseForPlayer": false` (or a smaller `facePlayerDistance`) on Ray's patrol. His line-of-sight challenge already covers the player being noticed.
 - **Recommendation:** fix it in m07 (one line). It's another mission, so it needs your OK.
 - **Outcome (2026-11-05):** done in fd6c756b4. Haiku check (game 513): Ray now walks his strip (x 121–207) while the player stands at the spawn; no console errors. **Side effect to judge:** his challengeOnSight cone now spots a player who never left the spawn (`player_spotted:ray_hollis` about 29 s in) and opens his challenge. Whether that's acceptable for m07's opening is m07's design call; options are moving the spawn out of his patrol's view or shortening his route. Not changed.
+- **Side effect fixed (2026-11-06, cb726979e + 982011949):** Ray's `los.angle` 130 to 50, and his last waypoint (5, 6.0) to (5, 6.6) so the return leg no longer runs up-left past the spawn (a first run with the cone change alone still glimpsed the player as he turned, game 582). Live on :3001, headless: game 584, player still at the spawn for 97 s, Ray patrolled (18 distinct positions), no `player_spotted:ray_hollis`, no sight-test hits, no console errors; then `moveTo` into his strip and he spotted and opened his challenge about 10 s later (110.5 s after the hook, PersonChatMinigame for ray_hollis).
 
 ## D7. Server security fixes (declared-grants review R1: M6, M7, flag stations)
 
