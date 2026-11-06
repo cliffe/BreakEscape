@@ -36,6 +36,7 @@ BreakEscape::Engine.routes.draw do
 
       # Objectives system
       get 'objectives'                                      # Get current objective state
+      get 'capture_secrets'   # SE: authored secret for each earned credential capture (stripped from the bootstrap)
       post 'objectives/tasks/:task_id', to: 'games#complete_task', as: 'complete_task'
       post 'objectives/tasks/:task_id/skip', to: 'games#skip_task', as: 'skip_task'  # Story closed a task off: shown skipped, not counted
       put 'objectives/tasks/:task_id', to: 'games#update_task_progress', as: 'update_task_progress'

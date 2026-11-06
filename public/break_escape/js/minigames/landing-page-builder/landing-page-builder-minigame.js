@@ -151,6 +151,8 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
         this._attached = false;        // this session attached the page
         this._inspectionComplete = false;
         this._capturesView = false;    // view:'captures' — the read-only captures list
+        this._capturedSecrets = null;  // { targetId: secret } served by /capture_secrets once earned
+        this._secretRows = [];         // { targetId, node } for the credential rows to fill in
         this._invalid = null;          // a reason string when the page/target is wrong
         this._live = '';
         // ── step 6 (Inspect) state ──
@@ -449,9 +451,14 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
         if (!entries.length) {
             list.appendChild(h('li', { class: 'lpb-captures-empty', text: 'No captures yet.' }));
         }
+        this._secretRows = [];
         for (const entry of entries) list.appendChild(this._captureRow(entry));
         this.root = h('div', { class: 'lpb-root lpb-captures', tabindex: '-1' }, head, banner, list);
         this.gameContainer.appendChild(this.root);
+
+        // The real secret is not in the bootstrap; fetch it for the earned captures (reveal labs
+        // only, and only when there is a credential row to fill). Masks stay if the fetch fails.
+        if (reveal && this._secretRows.length) this._loadCaptureSecrets();
     }
 
     _captureRow(entry) {
@@ -463,10 +470,39 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
             row.appendChild(h('div', { class: 'lpb-captures-foothold',
                 text: entry.note ? `Foothold on ${where} \u2014 ${entry.note}` : `Foothold on ${where}` }));
         } else {
-            const secret = displaySecret(entry, this.social);
-            row.appendChild(h('div', { class: 'lpb-captures-secret', text: secret == null ? maskSecret() : secret }));
+            const secret = displaySecret(entry, this.social, this._capturedSecrets);
+            const node = h('div', { class: 'lpb-captures-secret', text: secret == null ? maskSecret() : secret });
+            row.appendChild(node);
+            if (capturesReveal(this.social)) this._secretRows.push({ targetId: entry.targetId, node });
         }
         return row;
+    }
+
+    /** Fill each credential row's secret from a { targetId: secret } map (the server's earned-capture reveal). */
+    _applyCaptureSecrets(secrets) {
+        if (!secrets || typeof secrets !== 'object') return;
+        this._capturedSecrets = secrets;
+        for (const { targetId, node } of (this._secretRows || [])) {
+            const s = secrets[targetId];
+            if (typeof s === 'string' && s) node.textContent = s;
+        }
+    }
+
+    /**
+     * Fetch the authored secret for each earned credential capture and reveal it. The secret is
+     * stripped from the scenario bootstrap, so the server serves it from GET /capture_secrets only
+     * once its own se_captures record shows the capture landed. A just-landed capture is synced
+     * first so the server holds it; on any failure the rows keep their mask.
+     */
+    async _loadCaptureSecrets() {
+        try { await window.stateSync?.syncConfirmed?.(); } catch { /* best effort: ask anyway */ }
+        try {
+            const { ApiClient } = await import('../../api-client.js');
+            const resp = await ApiClient.get('/capture_secrets');
+            if (resp && resp.secrets) this._applyCaptureSecrets(resp.secrets);
+        } catch (err) {
+            console.warn('[captures] could not load capture secrets', err?.message || err);
+        }
     }
 
     _buildShell() {
@@ -1288,7 +1324,8 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
     getTestState() {
         if (this._capturesView) {
             return { ...super.getTestState(), builder: { view: 'captures', invalid: null,
-                rows: this.container.querySelectorAll('.lpb-captures-row').length } };
+                rows: this.container.querySelectorAll('.lpb-captures-row').length,
+                secrets: [...this.container.querySelectorAll('.lpb-captures-secret')].map((n) => n.textContent) } };
         }
         const rec = this._record();
         const g = this.globals;

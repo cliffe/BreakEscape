@@ -848,7 +848,62 @@ module BreakEscape
       # Strip top-level flag values — client must never see actual flag answers.
       filtered.delete('flags')
 
+      # Strip the authored capture secret (e.g. the phished portal password) from the
+      # bootstrap: the browser must not hold it until the capture is earned. The real
+      # secret is served by GET /capture_secrets once the server's own se_captures record
+      # shows the phish landed (see capture_secrets_for_client). The capture's address,
+      # note and the revealSecret flag are not secret and stay. Today the only capture
+      # secret lives under social.landingPages[].capture, so the walk is scoped to social.
+      strip_capture_secrets!(filtered['social']) if filtered['social'].is_a?(Hash)
+
       filtered
+    end
+
+    # { target_id => secret } for every SE credential capture the server's own persisted
+    # se_captures record shows was earned, with the secret read from the authored
+    # (unfiltered) scenario_data. Empty unless social.captures.revealSecret is true, so an
+    # awareness lab reusing the minigame never serves it. This trusts the server's persisted
+    # record of the client-computed verdict (se_captures is written only when a phish lands
+    # and is synced to the server), not a bare request claim: a fresh game, whose persisted
+    # se_captures is empty, gets nothing.
+    def capture_secrets_for_client
+      social = scenario_data['social']
+      return {} unless social.is_a?(Hash)
+
+      captures_cfg = social['captures']
+      return {} unless captures_cfg.is_a?(Hash) && captures_cfg['revealSecret'] == true
+
+      earned = player_state.dig('globalVariables', 'se_captures')
+      return {} unless earned.is_a?(Hash) && earned.any?
+
+      # The authored secrets, by the capture address they were authored beside.
+      by_address = {}
+      only_secret = nil
+      secret_count = 0
+      pages = social['landingPages']
+      (pages.is_a?(Array) ? pages : []).each do |page|
+        cap = page.is_a?(Hash) ? page['capture'] : nil
+        next unless cap.is_a?(Hash)
+
+        secret = cap['secret']
+        next unless secret.is_a?(String) && !secret.empty?
+
+        addr = cap['address']
+        by_address[addr] = secret if addr.is_a?(String) && !addr.empty?
+        only_secret = secret
+        secret_count += 1
+      end
+      return {} if secret_count.zero?
+
+      out = {}
+      earned.each do |target_id, entry|
+        next unless entry.is_a?(Hash)
+        next if entry['kind'] && entry['kind'] != 'credential'
+
+        secret = by_address[entry['address']] || (secret_count == 1 ? only_secret : nil)
+        out[target_id] = secret if secret
+      end
+      out
     end
 
     def filtered_room_data(room_id)
@@ -2873,6 +2928,20 @@ module BreakEscape
       hash.delete_if do |k, _|
         k.is_a?(String) && k.start_with?('puzzle_graph_') && !PUZZLE_GRAPH_CLIENT_KEYS.include?(k)
       end
+    end
+
+    # Delete the 'secret' field from every capture descriptor ({ "capture": { "secret": ... } })
+    # anywhere in the given tree. Walks the whole subtree so a capture nested under any key is
+    # covered; everything else in the capture (address, note) is left intact.
+    def strip_capture_secrets!(node)
+      case node
+      when Hash
+        node['capture'].delete('secret') if node['capture'].is_a?(Hash)
+        node.each_value { |v| strip_capture_secrets!(v) }
+      when Array
+        node.each { |v| strip_capture_secrets!(v) }
+      end
+      node
     end
 
     def filter_requires_and_contents_recursive(obj)

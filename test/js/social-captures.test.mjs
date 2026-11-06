@@ -95,6 +95,20 @@ test('displaySecret masks unless the scenario reveals, and is null for a foothol
   assert.equal(displaySecret(noSecret, { captures: { revealSecret: true } }), null, 'nothing to show');
 });
 
+test('displaySecret takes the server-served secret from the secretsById map', () => {
+  // The secret is stripped from the bootstrap, so a fresh entry carries none; the view passes
+  // the { targetId: secret } map served by /capture_secrets once the capture is earned.
+  const noSecret = makeCaptureEntry({ targetId: 'lord', kind: 'credential' });
+  const reveal = { captures: { revealSecret: true } };
+  assert.equal(displaySecret(noSecret, reveal), null, 'no secret anywhere yet → mask (null) in the view');
+  assert.equal(displaySecret(noSecret, reveal, { lord: 'Sofia2026!' }), 'Sofia2026!', 'the map supplies it');
+  assert.equal(displaySecret(noSecret, { captures: {} }, { lord: 'Sofia2026!' }), maskSecret(),
+    'reveal off still masks, even with a map');
+  const withOld = makeCaptureEntry({ targetId: 'lord', kind: 'credential', secret: 'OLD' });
+  assert.equal(displaySecret(withOld, reveal, { lord: 'NEW' }), 'NEW', 'the served secret wins over a stale stored one');
+  assert.equal(displaySecret(withOld, reveal, {}), 'OLD', 'falls back to a stored secret when the map lacks it');
+});
+
 // ---- readCaptures / captureList -------------------------------------------------------
 
 test('captureList is oldest-first by at, then target id', () => {

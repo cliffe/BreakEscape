@@ -24,7 +24,7 @@ module BreakEscape
       policy.worker_src  :self, :blob
     end
 
-    before_action :set_game, only: [:show, :scenario, :scenario_map, :ink, :room, :container, :update_room, :unlock, :inventory, :objectives, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :tts, :reset, :new_session, :vm_panel, :vm_set_panel, :conclude_mission]
+    before_action :set_game, only: [:show, :scenario, :scenario_map, :ink, :room, :container, :update_room, :unlock, :inventory, :objectives, :capture_secrets, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :tts, :reset, :new_session, :vm_panel, :vm_set_panel, :conclude_mission]
     # A host may also route the game page under its own address (Hacktivity: /hacktivities/:event_id/play/mission/:id,
     # inside a Game event's web app scope). The game must belong to that event: any other pair is a 404.
     before_action :require_game_in_host_event, only: [:show]
@@ -1032,6 +1032,18 @@ module BreakEscape
       authorize @game if defined?(Pundit)
 
       render json: @game.objectives_state
+    end
+
+    # GET /games/:id/capture_secrets
+    # The authored secret for each SE credential capture the server sees was earned.
+    # filtered_scenario_for_bootstrap strips the secret from the bootstrap, so the browser
+    # holds it only once the capture has landed (the captures view fetches it then). Gated
+    # on the server's own persisted se_captures record and on social.captures.revealSecret;
+    # see Game#capture_secrets_for_client.
+    def capture_secrets
+      authorize @game if defined?(Pundit)
+
+      render json: { secrets: @game.capture_secrets_for_client }
     end
 
     # POST /games/:id/objectives/unlock
