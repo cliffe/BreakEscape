@@ -35,7 +35,8 @@ module ValidateNpcNeeds
     objs = expand_presets(json, objs, issues)
     droppables = objs.select { |o| o.data['droppable'] == true }
     droppables.each do |o|
-      issues << "⚠️ WARNING: item '#{o.id || o.data['name']}' is droppable without a needsTag — dropping it will not attract any NPC." unless o.data['needsTag'].is_a?(String)
+      magnet = o.data['affordance'].is_a?(Hash) && o.data['affordance']['magnet'].is_a?(Hash)
+      issues << "⚠️ WARNING: item '#{o.id || o.data['name']}' is droppable without a needsTag — dropping it will not attract any NPC." unless o.data['needsTag'].is_a?(String) || magnet
       issues << "❌ ERROR: droppable item '#{o.data['name']}' has no id; the drop is saved by id, so give it a unique one." if o.id.to_s.empty?
     end
 
@@ -51,7 +52,55 @@ module ValidateNpcNeeds
     check_lock_habits(json, npcs, objs, issues)
     check_off_when(json, npcs, objs, issues)
     check_print_habits(json, npcs, objs, issues)
+    check_magnets(json, npcs, objs, issues)
     issues
+  end
+
+  # Slice 18b-i (OFFICE_LIFE_PLAN 12.4): a magnet is a droppable held item carrying
+  # affordance.magnet, dropped anywhere (item-drop.js). It needs a fixed id (the servings global and
+  # the decision log are keyed on it) and no needsTag (an interested NPC would carry it off); the
+  # engine-owned <id>_servings global is declared at the starting count; tempt, servings and
+  # perPerson are numbers in range; satisfies names a need some NPC has. A magnet as a room object
+  # (the declared spot) is not built yet.
+  def self.check_magnets(json, npcs, objs, issues)
+    globals = json['globalVariables'].is_a?(Hash) ? json['globalVariables'] : {}
+    have = npcs.flat_map { |_, n| n['needs'].is_a?(Hash) ? n['needs'].keys : [] }.uniq
+    objs.each do |o|
+      aff = o.data['affordance']
+      next unless aff.is_a?(Hash) && aff.key?('magnet')
+
+      m = aff['magnet']
+      label = o.id || o.data['name'] || o.data['type']
+      unless m.is_a?(Hash)
+        issues << "❌ ERROR: item '#{label}' affordance.magnet must be an object ({ tempt, servings, perPerson })."
+        next
+      end
+      unless o.data['droppable'] == true && o.room.nil?
+        issues << "⚠️ WARNING: '#{label}' has affordance.magnet but is not a droppable item the player holds; only a dropped magnet is built (slice 18b-i), so it draws nobody."
+      end
+      issues << "❌ ERROR: magnet item '#{label}' has no id; its servings global and the decision log are keyed on the item's id, so give it a fixed one." if o.id.to_s.empty?
+      issues << "❌ ERROR: magnet item '#{label}' has a needsTag; an NPC with that interest would pick it up and carry it off. Remove it." if o.data.key?('needsTag')
+      { 'tempt' => [0, 95], 'servings' => [1, 1000], 'perPerson' => [1, 1000] }.each do |k, (lo, hi)|
+        next unless m.key?(k)
+
+        v = m[k]
+        issues << "❌ ERROR: magnet '#{label}' magnet.#{k} must be a number from #{lo} to #{hi} (got #{v.inspect})." unless v.is_a?(Numeric) && v >= lo && v <= hi
+      end
+      servings = m['servings'].is_a?(Numeric) ? m['servings'].floor : 1
+      unless o.id.to_s.empty?
+        key = "#{o.id}_servings"
+        if !globals.key?(key)
+          issues << "❌ ERROR: magnet '#{o.id}' needs '#{key}' declared in globalVariables at #{servings} (the engine saves the servings left there, so a reload keeps a half-eaten one)."
+        elsif globals[key] != servings
+          issues << "❌ ERROR: magnet '#{o.id}' globalVariables '#{key}' is #{globals[key].inspect}; declare it at the starting count, #{servings}."
+        end
+      end
+      Array(aff['satisfies']).each do |need|
+        next if have.include?(need)
+
+        issues << "⚠️ WARNING: magnet '#{label}' satisfies '#{need}', which no NPC has; nobody will come for that."
+      end
+    end
   end
 
   # Slice 17 (OFFICE_LIFE_PLAN 12.3): print and forget. A hook's chance (0-1); printHabit's shape

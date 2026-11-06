@@ -94,6 +94,21 @@ export const TURN_BACK = Object.freeze({
     answered: Object.freeze({ mindChanged: false, grumble: false, fallback: false, parks: false }),
     rang_out: Object.freeze({ mindChanged: false, grumble: false, fallback: false, parks: false })
 });
+/** Slice 18b-i (OFFICE_LIFE_PLAN 12.4): temptation's default band above urgentAt, in points. */
+export const MAGNET_TEMPT = 30;
+
+/**
+ * Pure: an affordance's magnet block, normalised ({ tempt, servings, perPerson }), or null. A
+ * magnet is food the player puts out: it lowers the level at which an NPC that knows about it acts
+ * on a need it satisfies (never raising the need itself), and is eaten a serving at a time.
+ */
+export function magnetOf(aff) {
+    const m = aff?.magnet;
+    if (!m || typeof m !== 'object') return null;
+    const num = (v, d, lo, hi) => { const n = Number(v); return Number.isFinite(n) ? clamp(n, lo, hi) : d; };
+    return { tempt: num(m.tempt, MAGNET_TEMPT, 0, 95), servings: Math.floor(num(m.servings, 1, 0, 1000)), perPerson: Math.floor(num(m.perPerson, 1, 1, 1000)) };
+}
+
 /** Pure: the names an offWhen (requireGlobal form) reads: a name, or the keys of { name: value }. */
 export function offWhenNames(cond) {
     if (typeof cond === 'string') return cond ? [cond] : [];
@@ -285,6 +300,12 @@ export class NPCNeedsSystem {
         // ({ ownerId, producerId, at, dueAt, forgotten, ... }). Client only: a reload files every
         // shown slot (stow on sight), and the reservations go with it.
         this._prints = new Map();
+        // Magnets (slice 18b-i, OFFICE_LIFE_PLAN 12.4): magnetId -> { id, cfg, aff, satisfies, key,
+        // servings, wasShown }. Found on a drop (onItemDropped), a room load or any object scan; the
+        // servings count is mirrored in the engine-owned <id>_servings global, which survives a reload.
+        // Who knows of a magnet (s.knows) is client only. _magShown: the shown magnets, per tick.
+        this._magnets = new Map();
+        this._magShown = null;
         // Read-outs for tests and live measurement; never feed a decision
         this.stats = { ticks: 0, selects: 0, objectScans: 0, pathSearches: 0, backoffs: 0 };
     }
@@ -341,6 +362,11 @@ export class NPCNeedsSystem {
             // Slice 17: need uses per object (salts a print hook's chance) and owned prints (salts the habit)
             useCounts: {},
             printCount: 0,
+            // Slice 18b-i: magnets this NPC knows of, servings it has had from each, and needs whose
+            // tempted job already turned back once for avoidance (mindChanged is cleared above urgentAt)
+            knows: new Set(),
+            ate: {},
+            temptBack: {},
             leashNoted: {},
             avoidNoted: {},
             privateNoted: {},
@@ -488,6 +514,176 @@ export class NPCNeedsSystem {
         return off;
     }
 
+    // ── magnets (slice 18b-i, OFFICE_LIFE_PLAN 12.4) ───────────────────────
+
+    /**
+     * item_dropped:<id> (item-drop.js): the player put a held item down. A magnet (affordance.magnet)
+     * becomes a source where it lies. magnet_placed lists the NPCs with a need it satisfies whose
+     * leash and privacy allow its room; with nobody, magnet_unreachable explains a dead drop.
+     * Nobody knows of it yet: NPCs learn by sight (or, in 18b-ii, by word).
+     */
+    onItemDropped(itemId) {
+        const o = typeof itemId === 'string' ? this.world.getObject(itemId) : null;
+        const cfg = o ? magnetOf(o.affordance) : null;
+        if (!cfg) return false;
+        if (!this._magnets.has(o.id)) this._addMagnet(o, cfg);
+        const m = this._magnets.get(o.id);
+        this._worldChanged();
+        this._clearBackoffs();
+        const reachable = [...this.states.keys()].sort().filter(id => {
+            const s = this.states.get(id);
+            return m.satisfies.some(n => s.needs[n]) && !this._roomForbidden(s, o.roomId);
+        });
+        this._log(null, 'magnet_placed', { target: o.id, room: o.roomId, reachable, servings: m.servings });
+        this._emit(`magnet_placed:${o.id}`, { magnetId: o.id, roomId: o.roomId ?? null, x: Math.round(o.x), y: Math.round(o.y), how: 'drop', reachable, servings: m.servings });
+        if (!reachable.length) {
+            this._log(null, 'magnet_unreachable', { target: o.id, room: o.roomId });
+            this._emit(`magnet_unreachable:${o.id}`, { magnetId: o.id, roomId: o.roomId ?? null });
+        }
+        return true;
+    }
+
+    /** Find magnets among the loaded objects (a room load, a reload). Not counted as a tick's scan. */
+    scanMagnets() {
+        if (typeof this.world.listObjects === 'function') this._noteMagnets(this.world.listObjects() || []);
+    }
+
+    _noteMagnets(list) {
+        for (const o of list || []) {
+            if (this._magnets.has(o.id)) continue;
+            const cfg = magnetOf(o.affordance);
+            if (cfg) this._addMagnet(o, cfg);
+        }
+    }
+
+    /** Servings come from the <id>_servings global when it holds a number (a reload), else the block's. */
+    _addMagnet(o, cfg) {
+        const key = `${o.id}_servings`;
+        const g = typeof this.world.getGlobal === 'function' ? Number(this.world.getGlobal(key)) : NaN;
+        const servings = Number.isFinite(g) ? Math.max(0, Math.floor(g)) : cfg.servings;
+        this._magnets.set(o.id, { id: o.id, cfg, aff: o.affordance, satisfies: asList(o.affordance.satisfies), key, servings, wasShown: false });
+        this._magShown = null;
+    }
+
+    /** The magnets showing now (in a room, not picked up, not hidden), id -> object; cached per tick. */
+    _shownMagnets() {
+        if (!this._magnets.size) return null;
+        if (this._magShown && this._magShown.tick === this.tickCount) return this._magShown.map;
+        const map = new Map();
+        for (const id of [...this._magnets.keys()].sort()) {
+            const o = this.world.getObject(id);
+            if (o && o.roomId && o.pickable !== false && !this._hidden(o)) map.set(id, o);
+        }
+        this._magShown = { tick: this.tickCount, map };
+        return map;
+    }
+
+    _servingsLeft(id) {
+        return this._magnets.get(id)?.servings ?? 0;
+    }
+
+    /** A revealOnGlobal object whose global is not true is no use target (12.4 point 7). */
+    _hidden(o) {
+        const g = o?.revealOnGlobal;
+        return typeof g === 'string' && g !== '' && !this._globalHolds(g);
+    }
+
+    /** A magnet is a source only for an NPC that knows of it, while it shows and has servings left. */
+    _magnetBarred(s, o) {
+        if (!this._magnets.has(o.id)) return !!magnetOf(o.affordance);   // not yet seen by the registry
+        return !s.knows.has(o.id) || !this._shownMagnets()?.has(o.id) || this._servingsLeft(o.id) <= 0;
+    }
+
+    /** Known, live magnets for a need; a tempted look skips those whose perPerson this NPC has had. */
+    _magnetsFor(s, name, tempted) {
+        if (!s.knows.size) return null;
+        const shown = this._shownMagnets();
+        const out = [];
+        for (const id of [...s.knows].sort()) {
+            const m = this._magnets.get(id), o = shown?.get(id);
+            if (!m || !o || m.servings <= 0 || !m.satisfies.includes(name)) continue;
+            if (tempted && (s.ate[id] || 0) >= m.cfg.perPerson) continue;
+            out.push(o);
+        }
+        return out;
+    }
+
+    /** The widest tempt band of a known, live magnet that still tempts this NPC for `name`; 0 if none. */
+    _temptBand(s, name) {
+        if (!s.knows.size || s.parked[name]) return 0;   // a parked need is not tempted (OQ35)
+        let band = 0;
+        for (const o of this._magnetsFor(s, name, true) || []) band = Math.max(band, this._magnets.get(o.id).cfg.tempt);
+        return band;
+    }
+
+    /** _select's early-return guard: some need sits in a known magnet's tempt band. */
+    _tempting(s) {
+        if (!s.knows.size) return false;
+        for (const name of Object.keys(s.needs)) {
+            const n = s.needs[name];
+            const band = this._temptBand(s, name);
+            if (band > 0 && s.levels[name] > n.urgentAt && s.levels[name] <= Math.min(95, n.urgentAt + band)) return true;
+        }
+        return false;
+    }
+
+    /** Sight: an NPC in a shown magnet's room, lit or not, knows of it. */
+    _sight(s, pos) {
+        const shown = this._shownMagnets();
+        if (!shown?.size || !pos.roomId) return;
+        for (const [id, o] of shown) {
+            if (o.roomId !== pos.roomId || s.knows.has(id)) continue;
+            s.knows.add(id);
+            s.selectRetryAt = 0;
+            this._log(s.npcId, 'magnet_seen', { target: id });
+            this._emit(`npc_saw_magnet:${s.npcId}`, { npcId: s.npcId, magnetId: id, roomId: o.roomId });
+        }
+    }
+
+    /** A serving is taken as eating starts; the count is written to <id>_servings. */
+    _takeServing(s, id) {
+        const m = this._magnets.get(id);
+        if (!m || m.servings <= 0) return false;
+        m.servings--;
+        s.ate[id] = (s.ate[id] || 0) + 1;
+        this.world.setGlobal(m.key, m.servings);
+        this._worldChanged();
+        this._log(s.npcId, 'serving_taken', { target: id, left: m.servings });
+        this._emit(`magnet_serving:${id}`, { npcId: s.npcId, magnetId: id, left: m.servings });
+        return true;
+    }
+
+    /**
+     * Per tick: a magnet that stopped showing (picked up) is forgotten by everyone, so a re-drop is
+     * learnt again; its servings are kept. One showing at 0 servings with nobody eating is finished
+     * (also the reload case: 0 servings restored with the item still in its room).
+     */
+    _tickMagnets() {
+        const shown = this._shownMagnets() || new Map();
+        for (const id of [...this._magnets.keys()].sort()) {
+            const m = this._magnets.get(id);
+            const on = shown.has(id);
+            if (!on && m.wasShown) {
+                m.wasShown = false;
+                for (const st of this.states.values()) st.knows.delete(id);
+                this._log(null, 'magnet_gone', { target: id, left: m.servings });
+            } else if (on) m.wasShown = true;
+            if (on && m.servings <= 0 && ![...this.states.values()].some(st => st.job?.targetId === id && st.job.phase === 'using')) {
+                this._finishMagnet(id, shown.get(id));
+            }
+        }
+    }
+
+    /** The last serving is eaten: the item is taken away (room removal, so a reload keeps it gone). */
+    _finishMagnet(id, o) {
+        this._magnets.delete(id);
+        for (const st of this.states.values()) st.knows.delete(id);
+        if (typeof this.world.removeMagnet === 'function') this.world.removeMagnet(id);
+        this._worldChanged();
+        this._log(null, 'magnet_finished', { target: id });
+        this._emit(`magnet_finished:${id}`, { magnetId: id, roomId: o?.roomId ?? null });
+    }
+
     /** eventMapping `needs` field: "resume" | "suspend" | { set: {need: level} }. */
     control(npcId, cmd) {
         const s = this.states.get(npcId);
@@ -543,6 +739,7 @@ export class NPCNeedsSystem {
         this._checkRooms();
         if (this._placed.size) this._tickPlaced();
         if (this._prints.size) this._tickPrints();
+        if (this._magnets.size) this._tickMagnets();
         for (const id of [...this.states.keys()].sort()) {
             try {
                 this._tickNpc(this.states.get(id));
@@ -586,6 +783,7 @@ export class NPCNeedsSystem {
     _worldChanged() {
         this._tickObjects = null;
         this._reachCache = null;
+        this._magShown = null;
     }
 
     /** emit / setGlobal through here: a listener may reveal, move or remove objects mid-tick. */
@@ -611,6 +809,8 @@ export class NPCNeedsSystem {
     _onRoomsLoaded(roomIds) {
         this._clearBackoffs();
         this._wakeParked();
+        // Slice 18b-i: a dropped magnet comes back with its room after a reload
+        this.scanMagnets();
         // Stow on sight (OFFICE_LIFE_PLAN 2.2 Part A): after a reload a revealed slot comes back
         // at its declared spot with its global still true and nobody holding it; file it away so
         // the pool is whole again. At install every loaded room is new, so this covers them too.
@@ -647,6 +847,7 @@ export class NPCNeedsSystem {
         this.stats.objectScans++;
         const list = this.world.listObjects();
         if (this.tickCache) this._tickObjects = list;
+        this._noteMagnets(list);
         return list;
     }
 
@@ -749,6 +950,7 @@ export class NPCNeedsSystem {
 
         const pos = this.world.npcPos(id);
         if (!pos) return; // sprite not loaded: decay only
+        if (this._magnets.size) this._sight(s, pos);
         if (!s.home || (s.home.provisional && this.tickCount >= (s.homeRetryAt || 0))) this._updateHome(s, pos);
 
         const status = this.world.npcStatus(id) || {};
@@ -954,7 +1156,8 @@ export class NPCNeedsSystem {
     _select(s, pos, exclude = null) {
         // Nothing urgent or starved and no interests: nothing to choose, so no object scan
         // ... and no due print errand (slice 17: Tom has no interests, so without this he never fetches)
-        if (this.tickCache && !Object.keys(s.interests).length && !this._anyUrgent(s) && !this._dueErrand(s)) return null;
+        // ... and no known magnet in a need's tempt band (slice 18b-i)
+        if (this.tickCache && !Object.keys(s.interests).length && !this._anyUrgent(s) && !this._dueErrand(s) && !this._tempting(s)) return null;
         this.stats.selects++;
         const objects = this._objects();
         let best = null;
@@ -962,12 +1165,29 @@ export class NPCNeedsSystem {
             const n = s.needs[name];
             const starved = this._starved(s, name);
             const level = s.levels[name];
-            if (!(level <= n.urgentAt) && !starved) continue;
-            const score = starved ? 1000 + n.weight : n.weight * (n.urgentAt - level) / n.urgentAt;
+            // Slice 18b-i: a need inside a known magnet's tempt band (urgentAt < level <= urgentAt +
+            // tempt, capped at 95, not starved, not parked) is "tempted": known magnets only, scored
+            // against the raised threshold, and a quiet look (no leash or private notes, no parking)
+            let thr = n.urgentAt, tempted = false;
+            if (!(level <= n.urgentAt) && !starved) {
+                const band = this._temptBand(s, name);
+                if (!(band > 0 && level <= Math.min(95, n.urgentAt + band))) continue;
+                thr = Math.min(95, n.urgentAt + band);
+                tempted = true;
+            }
+            const score = starved ? 1000 + n.weight : n.weight * (thr - level) / thr;
             if (best && !(score > best.score)) continue;
             s.giveUp = null;
-            const cand = this._useCandidate(s, name, objects, pos, exclude?.need === name ? exclude.targetId : null);
-            if (cand) best = { ...cand, need: name, score };
+            const excludeId = exclude?.need === name ? exclude.targetId : null;
+            let cand = null;
+            // A known magnet first (an urgent need prefers it, OQ36), then the usual sources
+            const mags = this._magnets.size ? this._magnetsFor(s, name, tempted) : null;
+            if (mags?.length) cand = this._useCandidate(s, name, mags, pos, excludeId, true);
+            s.giveUp = null;
+            if (tempted) {
+                if (!cand) { this._selectSearched = true; continue; }   // the quiet look's back-off
+            } else if (!cand) cand = this._useCandidate(s, name, objects, pos, excludeId);
+            if (cand) best = { ...cand, need: name, score, ...(tempted ? { tempted: true } : {}) };
             else if (s.giveUp && !exclude?.noPark) this._park(s, name, s.giveUp);
             s.giveUp = null;
         }
@@ -987,9 +1207,12 @@ export class NPCNeedsSystem {
         return best;
     }
 
-    _useCandidate(s, name, objects, pos, excludeId = null) {
-        // A switched-off source (affordance.offWhen, slice 18a) is no candidate at all
-        const sat = objects.filter(o => o.affordance && asList(o.affordance.satisfies).includes(name) && o.id !== excludeId && !this._isOff(o));
+    _useCandidate(s, name, objects, pos, excludeId = null, quiet = false) {
+        // A switched-off source (affordance.offWhen, slice 18a) is no candidate at all; nor (18b-i) a
+        // hidden object (revealOnGlobal not true), nor a magnet this NPC does not know of or that is
+        // gone or empty. quiet: a magnet look that found nothing notes nothing and parks nothing.
+        const sat = objects.filter(o => o.affordance && asList(o.affordance.satisfies).includes(name) && o.id !== excludeId && !this._isOff(o)
+            && !this._hidden(o) && !this._magnetBarred(s, o));
         const free = sat.filter(o => this._free(s, o));
         // Room leash and private objects, before the home preference (OFFICE_LIFE_PLAN 7.2)
         let opts = free.filter(o => this._permitted(s, o, true));
@@ -1016,6 +1239,7 @@ export class NPCNeedsSystem {
             }
         }
         const nothing = () => {
+            if (quiet) return null;
             if (skipped) this._noteLeash(s, name, { need: name, skipped });
             if (priv) this._notePrivate(s, name, { need: name, skipped: priv });
             s.giveUp = this._giveUpReason(s, sat, pos, ctx);
@@ -1044,8 +1268,8 @@ export class NPCNeedsSystem {
         if (!target) return queued();
         const pick = { kind: 'use', targetId: target.id };
         if (target.affordance.offWhen !== undefined) pick.offWhen = target.affordance.offWhen;
-        if (skipped) pick.leashed = skipped;
-        if (priv) pick.privateSkipped = priv;
+        if (skipped && !quiet) pick.leashed = skipped;
+        if (priv && !quiet) pick.privateSkipped = priv;
         return withAnyway(pick);
     }
 
@@ -1192,7 +1416,7 @@ export class NPCNeedsSystem {
         job.avoidSig = who || '';
         job.goingAnyway = null;
         if (!who) return false;
-        if (!this._deferrable(s, job.need) || s.mindChanged[job.need]) { job.goingAnyway = who; return false; }
+        if (!this._deferrable(s, job.need) || s.mindChanged[job.need] || (job.tempted && s.temptBack[job.need])) { job.goingAnyway = who; return false; }
         this._turnBack(s, 'avoid', who);
         return true;
     }
@@ -1202,8 +1426,9 @@ export class NPCNeedsSystem {
         const id = s.npcId;
         const rule = TURN_BACK[reason] || TURN_BACK.avoid;
         const { need, targetId } = s.job;
-        const tempted = !!s.job.tempted;   // set by 18b's temptation; never yet
+        const tempted = !!s.job.tempted;   // slice 18b-i: a tempted job never parks
         if (rule.mindChanged && need) s.mindChanged[need] = true;
+        if (rule.mindChanged && need && tempted) s.temptBack[need] = true;   // _decay clears mindChanged above urgentAt
         s.turnCount++;
         const topic = rule.grumble ? this._grumbleTopic(s, reason) : undefined;
         this._log(id, 'turned_back', { need, target: targetId, reason, avoided: avoidedId || undefined, grumble: topic });
@@ -1403,6 +1628,9 @@ export class NPCNeedsSystem {
             startedAt: this.clockMs, deadline: 0, useUntil: 0, carrying: false
         };
         if (pick.offWhen !== undefined) s.job.offWhen = pick.offWhen;   // slice 18a: checked on the way
+        if (pick.tempted) s.job.tempted = true;   // slice 18b-i: recorded now, the level may decay on the way
+        const mag = pick.kind === 'use' ? this._magnets.get(pick.targetId) : null;
+        if (mag) { s.job.magnet = true; s.job.aff = mag.aff; }   // kept: a finished or picked-up magnet is gone
         if (pick.queue) { s.job.qSeq = this._queueSeq++; s.job.queuedAt = this.clockMs; s.job.qCell = null; s.job.qArrived = false; }
         s.avoidNoted = {};   // a new episode: npc_avoided may fire again next time
         if (pick.goingAnyway) { s.job.goingAnyway = pick.goingAnyway; s.job.avoidSig = pick.goingAnyway; }   // slice 14
@@ -1623,6 +1851,13 @@ export class NPCNeedsSystem {
             this._turnBack(s, 'off');
             return;
         }
+        // Slice 18b-i: a magnet picked up, finished or out of servings. Walkers and queuers turn back
+        // with `gone`; one eating finishes at once (its serving was taken at the start)
+        if (job.magnet) {
+            const live = !!this._shownMagnets()?.has(job.targetId);
+            if (job.phase === 'using' && !live) { this._log(id, 'magnet_left', { target: job.targetId }); this._completeJob(s); return; }
+            if ((job.phase === 'goto_target' || job.phase === 'queued') && (!live || this._servingsLeft(job.targetId) <= 0)) { this._turnBack(s, 'gone'); return; }
+        }
         // Slice 14: someone avoided turned up at the target while on the way or in its queue
         if ((job.phase === 'goto_target' || job.phase === 'queued') && this._recheck(s)) return;
         if (job.phase === 'queued') { this._advanceQueued(s, arrived); return; }
@@ -1651,6 +1886,8 @@ export class NPCNeedsSystem {
             if (obj) this.world.faceTo(id, obj.x, obj.y);
             // A print errand completes on arrival, without `using` (no post stop, no chair fetch)
             if (job.errand) { this._completeJob(s); return; }
+            // Slice 18b-i: a serving is taken as eating starts, so nobody eats one that is not there
+            if (job.magnet && !this._takeServing(s, job.targetId)) { this._turnBack(s, 'gone'); return; }
             job.phase = 'using';
             const secs = Number(obj?.affordance?.useSeconds);
             job.useUntil = this.clockMs + (Number.isFinite(secs) ? clamp(secs, 0, 600) : 20) * 1000;
@@ -1666,7 +1903,8 @@ export class NPCNeedsSystem {
         const job = s.job;
         const n = job.need ? s.needs[job.need] : null;
         const obj = this.world.getObject(job.targetId);
-        const aff = obj?.affordance || {};
+        const aff = obj?.affordance || job.aff || {};
+        if (n && s.temptBack[job.need]) delete s.temptBack[job.need];
         if (n) {
             let restores = asList(aff.satisfies).includes(job.need) ? Number(aff.restores) || 0 : 0;
             restores *= 1 + (s.rng() * 2 - 1) * n.jitterPct / 100;
@@ -2456,6 +2694,8 @@ export function createEngineWorld() {
             _sprite: sp
         };
         if (isSlot(sp)) { out.slot = true; out.takeable = sd.takeable === true; }
+        // Slice 18b-i: a hidden object (reveal global not true) is no use target
+        if (sd.affordance && globalOf(sp)) out.revealOnGlobal = globalOf(sp);
         return out;
     };
     // A producer's reveal slots, by id, and the free test (loaded, not destroyed, active, global not
@@ -2959,6 +3199,31 @@ export function createEngineWorld() {
         },
         setGlobal(name, value) {
             setGlobalVar(name, value);
+        },
+        // Slice 18b-i: magnets. The servings global as saved; a finished dropped magnet is removed as a
+        // room object (consumeHeld's path), so the server forgets it and a reload keeps it gone.
+        getGlobal: name => W().gameState?.globalVariables?.[name],
+        removeMagnet(id) {
+            const f = findSprite(id);
+            if (!f) return false;
+            const sp = f.sp;
+            if (f.sp.proximityGhost) { try { f.sp.proximityGhost.destroy(); } catch (e) { /* ok */ } delete f.sp.proximityGhost; }
+            delete W().rooms[f.roomId].objects[f.key];
+            try { sp.destroy?.(); } catch (e) { /* already gone */ }
+            try { Promise.resolve(W().RoomStateSync?.removeItemFromRoom?.(sp.roomId || f.roomId, id)).catch(() => {}); } catch (e) { /* offline */ }
+            return true;
+        },
+        // A picked-up item stays in its old room's objects, inactive; a re-drop in another room must
+        // not be shadowed by it (findSprite takes the first match)
+        dropStale(id) {
+            const rooms = W().rooms || {};
+            for (const roomId of Object.keys(rooms)) {
+                const objs = rooms[roomId]?.objects || {};
+                for (const k of Object.keys(objs)) {
+                    const sp = objs[k];
+                    if ((k === id || sp?.scenarioData?.id === id) && (sp.active === false || sp.destroyed)) delete objs[k];
+                }
+            }
         }
     };
 }
@@ -2976,6 +3241,12 @@ export function installNpcNeeds(opts = {}) {
         });
         // Slice 14: an opened door retries parked needs (room loads are noticed by _checkRooms)
         w.eventDispatcher?.on('door_opened', () => w.npcNeedsSystem.onDoorOpened());
+        // Slice 18b-i: a dropped magnet (affordance.magnet) becomes a source where it lies
+        w.eventDispatcher?.on('item_dropped:*', (data) => {
+            if (typeof data?.itemId !== 'string') return;
+            w.npcNeedsSystem?.world?.dropStale?.(data.itemId);
+            w.npcNeedsSystem?.onItemDropped(data.itemId);
+        });
         // Slice 18a: a source switched back on (affordance.offWhen) retries parked needs
         w.eventDispatcher?.on('global_variable_changed:*', (data, name) => {
             const g = data?.name || (typeof name === 'string' ? name.slice('global_variable_changed:'.length) : null);
