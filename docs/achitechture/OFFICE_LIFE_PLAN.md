@@ -5,8 +5,8 @@ Status: **plan, 2026-11-05, revised after adversarial reviews R1 and R2
 and amended the same day for social compatibility and a room leash (section 7, new slice 2a),
 then revised on 2026-11-06 after the amendment's review (`OFFICE_LIFE_PLAN_REVIEW_AMEND1.md`;
 outcomes in section 8). Slices 0, 1 and 2 have landed (b642594be, 5b1749a05, b670d2fcd and
-b6b579e39); slice 2a, slice 3 and slice 4 landed on 2026-11-06 (Built lines in 7.2, 2.12 and 2.1); slice
-5 is next.** Line numbers drift as slices land; the function names are the
+b6b579e39); slice 2a, slice 3, slice 4 and slice 5 landed on 2026-11-06 (Built lines in 7.2, 2.12, 2.1 and
+2.3); slice 6 is next.** Line numbers drift as slices land; the function names are the
 stable reference. Engine changes
 need the user's approval (AGENTS.md); so does any new art or audio (marked **[approval]**). Builds on the needs system (`NPC_NEEDS_SYSTEM.md`), seating (`SEATING.md`) and the
 showcase `scenarios/test_needs_sims`, which becomes the test bed for every slice below.
@@ -612,6 +612,22 @@ screenshots of the printout on the tray, in Sanjay's hand and on Tom's desk with
 step timeout and the four-step warning keep that bounded.
 
 ### 2.3 Visible object state (proposal 3)
+
+**Built: 2026-11-06 (b820a5d24, b2577fac1; showcase b14016be1).** As written, with these choices made
+without asking: the dots sit at the object's top-right corner, inset 5 px (offsets from its display
+size); after the first screenshots read faint, indicator records draw at full strength in a lit room
+(other `above` glows keep 0.6) and the first colours changed to locked `#3d8bff` radius 10, steady,
+and open `#fff1c8` radius 14, `breathe`; the light-map stamp stays (no halo seen). A workstation whose
+art has no glow still gets its dot. A room `indicators` list works by object id only (never by texture
+prefix), and it can also give a non-workstation dots of its own. The owner is looked up when the
+room's emitters are built (live NPC manager, else the scenario). `lighting.js` now imports
+`isWorkstation`/`ownerOf` from `workstation-state.js`, so the five lighting test harness copy lists
+copy it. Tests: `test/js/lighting-workstation-indicators.test.mjs` (9); the own-desk test already
+existed in `workstation-state.test.mjs`. Live (keyless :3001): `test_needs_sims` games 631 and 634
+(Tom's PC at desk, away-open and away-locked, lit and dark; `spot_open_screen` completed);
+`lab_physical_pentest` game 636, score 100, 11/11 tasks, Len's route unlock, the keylogger planted
+while Chris was away and locked (blue dot on his PC), Melanie's open screen (white dot) accessed.
+`test_needs_leash` game 630 passes. Screenshots and the README table: `test_needs_sims/README.md`.
 
 **What exists.** `workstation-state.js` already decides locked or open on every leave, publishes
 two globals, and an author can already hang a lighting emitter variant or a `spriteVariants`
@@ -1353,7 +1369,7 @@ are engine, validator and schema lines, excluding tests. S = under 100, M = 100-
 | 2a | Room leash and private objects (7.2 as revised in section 8; amendment 2026-11-05, requested) | M, ~230 | 1 (fixture, back-off); build after slice 2's edits are committed (same functions) | any mission that gives needs to NPCs with their own rooms (m01's Derek kept out of Maya's office); sims: colleagues stop working at each other's desks, the lounge is Rosa's and Grace's |
 | 3 | What the player sees: sprite icons, item in hand, seated typing bob, room-limited use sounds (2.12) | M, ~205 | none (1 helps) | every needs scenario: deliveries, coffee runs and desk work become legible. New icons for hunger and rest, use animations, office sounds and room tone wait for **[approval]** |
 | 4 | Affordance presets (2.1): **built** (aab2943c1) | M, ~150 | 1 (fixture) | `test_needs_sims` drops to a short list of per-object overrides; new scenarios get an office from `type` alone |
-| 5 | Workstation indicators: a second emitter record per workstation (2.3) | S, ~65 | 0, 2 | lab: Melanie's open screen and Chris's locked one read from across the lit open plan |
+| 5 | Workstation indicators: a second emitter record per workstation (2.3): **built** (b820a5d24) | S, ~65 | 0, 2 | lab: Melanie's open screen and Chris's locked one read from across the lit open plan |
 | 6 | Traits (2.6) | M, ~125 | 0 (workstation link); 5 to see it | lab: lock habits become traits; awareness scenarios get careful and careless staff from one field |
 | 7 | Reveal slots: place and stow instead of consume (2.2 Part A) | M, ~245 | 1 (fixture); 3 to see items in hand | sims: a printout appears on the copier tray and is put on Amara's desk, then filed. Lab: a findable document on a tray if the lab wants one, as a single beat |
 | 8 | Speech bubbles and pairing at capacity-2 objects (2.4), with social compatibility (7.3) | L, ~365 | 1, 3 (room/dark rule) | sims: cooler chat, and an outcast contractor nobody chats with. Lab: none directly (its coffee station is capacity 1; its chatter comes with slice 10) |

@@ -134,6 +134,49 @@ inconclusive at 1 frame a second: Ravi started the far-cooler job and failed it 
 every time (`job_failed timeout`), jittering between (205,144) and (218,127) in his own office, and
 never stood on Maya's floor (0 of 584, 625 and 2,208 samples). That says nothing about the leash and
 needs a re-run at a normal frame rate.
+Re-run on a quiet machine (game 630, 2026-11-06): leashed, Ravi went by `west_corridor` both ways,
+0 of 41 samples on Maya's floor; unleashed, he came back through `maya_office` (6 of 32). PASS.
+
+### Slice 5 re-run: workstation indicators (2026-11-06, keyless :3001, headless, load about 6)
+
+What changed in this scenario, on purpose (a behaviour change of the showcase):
+
+```jsonc
+"lighting": { "enabled": true, "defaultMode": "on" },   // new: without it no glow or dot draws at all
+
+{
+  "type": "pc", "id": "tom_pc", "name": "Tom's PC",
+  "lockChance": 0.5,              // makes it a workstation; each leave rolls locked or open from the
+                                  // seeded needs RNG, so a fixed seed gives the same sequence each play
+  "observationVariants": [        // what the player reads on clicking it while he is away
+    { "condition": "globalVars.tom_pc_screen_locked", "value": "... He locked it before he walked off." },
+    { "condition": "globalVars.tom_pc_owner_away",    "value": "... He has left it unlocked ..." }
+  ],
+  "affordance": { "private": true }
+}
+// amara_pc and sanjay_pc: "workstation": true (locksScreenOnLeave defaults to true: locked on every leave)
+// Tom's mappings: workstation_owner_left:tom_pc with data.screenLocked === false -> spot_open_screen
+```
+
+Nothing else is authored for the dots. Every workstation whose owner is known (`needsHome` or
+`screenOwner`) gets them from `lighting.js`: a steady blue dot at the screen's top-right corner while
+`<id>_screen_locked`, a larger warm-white dot that breathes while `<id>_owner_away` and not locked,
+none while the owner is at the desk. The screen's own glow does not change. A room `lighting.emitters`
+entry on the object id with `"indicators": [...]` replaces them (`[]` turns them off).
+
+| Check | Result | Evidence |
+|---|---|---|
+| Dots only on owned workstations | PASS | game 634 probe: `tom_pc`, `amara_pc`, `sanjay_pc` each have a screen record and an indicator record; `grace_laptop` (not a workstation) has only its screen glow |
+| Owner at desk | PASS | all three indicator records resolve to nothing; no dot in the screenshot |
+| Away, open | PASS | Tom's first leave rolled open: `fff1c8`, `breathe`, radius 14, offset (11,-10); screen record unchanged (`9fd4ff`, `screen`, 44) |
+| Away, locked | PASS | Tom's fourth leave rolled locked: `3d8bff`, steady, radius 10; locked wins over away |
+| Seeded sequence | PASS | games 631 and 634 both: open, open, open, locked; Amara locked on her leave |
+| Lit and dark | PASS | both dots read at game zoom, lit and with the office switched dark |
+| Task | PASS | `spot_open_screen` completed on Tom's first leave; also `see_coffee`, `hear_drink`, `see_back_at_desk`, `see_work` |
+| Console | PASS | no errors in `drain` |
+
+Screenshots: `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/c84d7b68-c29e-4285-9c19-4612b082eed3/scratchpad/s5/sheet-634.png` (Tom away open and locked, lit and dark), `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/c84d7b68-c29e-4285-9c19-4612b082eed3/scratchpad/s5/zoom-634.png`
+(Tom's PC in six states, enlarged for review only), and the originals `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/c84d7b68-c29e-4285-9c19-4612b082eed3/scratchpad/s5/sims-634-*.png`.
 
 ## Engine findings
 

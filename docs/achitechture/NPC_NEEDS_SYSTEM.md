@@ -554,6 +554,9 @@ The decision log never contains payload contents (only `payloadPresent`).
   This closes the gap where the lab's `staff_pc_2` (open plan, unloaded after a reload
   into the briefing room) read "walked off without locking" while Melanie sat at it. A lone
   `*_owner_away` global with no partner is not touched.
+- The same two globals drive the workstation indicator dots in `lighting.js` (office life slice
+  5, `OFFICE_LIFE_PLAN.md` 2.3): blue while locked, a breathing white dot while the owner is away
+  and the screen open. Nothing is saved for them; after a reload they follow the reset globals.
 
 ---
 
