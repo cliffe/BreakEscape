@@ -47,7 +47,29 @@ module ValidateNpcNeeds
     check_exchanges(json, npcs, issues)
     check_queues(json, npcs, objs, issues)
     npcs.each { |room_id, npc| check_npc(json, npc, room_id, objs, issues, npcs) }
+    check_swivel(npcs, issues)
     issues
+  end
+
+  # Slice 21 (OFFICE_LIFE_PLAN 12.7): the idle swivel turns needs NPCs' swivel chairs. `swivel` on
+  # an NPC with no needs does nothing; LOS cones read the facing the swivel sets.
+  def self.check_swivel(npcs, issues)
+    npcs.each do |_, npc|
+      where = "NPC '#{npc['id']}'"
+      needs_npc = npc['needs'].is_a?(Hash) || npc['interests'].is_a?(Hash)
+      if (npc.key?('swivel') || npc.key?('swivelChance')) && !needs_npc
+        issues << "⚠️ WARNING: #{where} sets swivel/swivelChance but has no needs; only needs NPCs swivel, so it does nothing."
+      end
+      if npc.key?('swivel') && ![true, false].include?(npc['swivel'])
+        issues << "❌ ERROR: #{where} swivel must be true or false."
+      end
+      if npc.key?('swivelChance') && !(npc['swivelChance'].is_a?(Numeric) && npc['swivelChance'] >= 0 && npc['swivelChance'] <= 1)
+        issues << "❌ ERROR: #{where} swivelChance must be a number from 0 to 1 (default 0.05)."
+      end
+      if needs_npc && npc.dig('los', 'enabled') == true && npc['swivel'] != false
+        issues << "⚠️ WARNING: #{where} is a needs NPC with los.enabled; the idle swivel would turn its sight cone, so it never swivels. Set swivel: false to say so."
+      end
+    end
   end
 
   # ── affordance presets (OFFICE_LIFE_PLAN 2.1, slice 4) ───────────────────

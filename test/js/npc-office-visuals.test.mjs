@@ -356,3 +356,25 @@ test('validator: oversized held item, unloaded useSound and a missing icon textu
     assert.ok(has("actionIcons 'a'"));
     assert.ok(!has("actionIcons 'b'") && !has("actionIcons 'c'"));
 });
+
+test('validator (slice 21): swivel on an NPC with no needs and los.enabled on a needs NPC are warnings; a bad swivelChance is an error', { skip: ruby.status !== 0 && 'ruby not found' }, () => {
+    const needs = { work: { decayPerMin: 1, urgentAt: 20 } };
+    const scenario = { rooms: { office: { objects: [{ id: 'desk_pc', type: 'pc1' }], npcs: [
+        { id: 'guard', swivel: false },
+        { id: 'watcher', needs, needsHome: 'desk_pc', los: { enabled: true } },
+        { id: 'quiet_watcher', needs, needsHome: 'desk_pc', los: { enabled: true }, swivel: false },
+        { id: 'jumpy', needs, needsHome: 'desk_pc', swivelChance: 2 },
+        { id: 'ok', needs, needsHome: 'desk_pc', swivelChance: 0.1 }
+    ] } } };
+    const script = `require ${JSON.stringify(join(root, 'scripts/validate_npc_needs.rb'))}
+      puts JSON.generate(ValidateNpcNeeds.check(JSON.parse(STDIN.read)))`;
+    const r = spawnSync('ruby', ['-e', script], { input: JSON.stringify(scenario), encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' } });
+    assert.equal(r.status, 0, r.stderr);
+    const issues = JSON.parse(r.stdout.trim().split('\n').pop()).filter(s => /swivel|los\.enabled/.test(s));
+    const has = f => issues.some(s => s.includes(f));
+    assert.ok(has("WARNING: NPC 'guard' sets swivel"));
+    assert.ok(has("WARNING: NPC 'watcher' is a needs NPC with los.enabled"));
+    assert.ok(!has("'quiet_watcher'"));
+    assert.ok(has("ERROR: NPC 'jumpy' swivelChance"));
+    assert.ok(!has("'ok'"));
+});

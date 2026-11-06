@@ -217,6 +217,7 @@ export class NPCNeedsSystem {
         this.seed = opts.seed !== undefined ? opts.seed : 0;
         this.manualClock = !!opts.manualClock;
         this.clockMs = 0;
+        this.speakers = [];   // slice 21: who is speaking, rebuilt each tick (_buildSpeakers)
         this.tickCount = 0;
         this._acc = 0;
         this._lastElapsed = null;
@@ -356,6 +357,7 @@ export class NPCNeedsSystem {
         this._exPlayed.clear();
         this.log = [];
         this.clockMs = 0;
+        this.speakers = [];
         this.tickCount = 0;
         this._acc = 0;
         this._lastElapsed = null;
@@ -467,7 +469,29 @@ export class NPCNeedsSystem {
         }
         this._tickQueueChats();
         if (this._chats.size) this._tickChats();
+        this.speakers = this._buildSpeakers();
         this._worldChanged();
+    }
+
+    /**
+     * Who is speaking now, once per tick, for seated colleagues to look round at (slice 21,
+     * OFFICE_LIFE_PLAN 12.7): [{ npcId, roomId, x, y, until }], until on the needs clock.
+     * Chat and exchange lines, pictures and grumbles. Read-only: no roll, no log line.
+     */
+    _buildSpeakers() {
+        const out = [];
+        const add = (npcId, until) => {
+            const p = this.world.npcPos(npcId);
+            if (p) out.push({ npcId, roomId: p.roomId ?? null, x: p.x, y: p.y, until });
+        };
+        for (const c of this._chats.values()) {
+            const cur = c.current;
+            if (cur && this.clockMs < cur.until) add(cur.speakerId, cur.until);
+        }
+        for (const s of this.states.values()) {
+            if (s.saying && this.clockMs < s.saying.until) add(s.npcId, s.saying.until);
+        }
+        return out;
     }
 
     /** Drop the per-tick object list and reachability answers (something in the world changed). */

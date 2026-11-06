@@ -909,43 +909,136 @@ export function compassToward(dx, dy) {
     return COMPASS[((Math.round((90 - a) / 45) % 8) + 8) % 8];
 }
 
-// ---- fidget: a seated NPC on a swivel chair rolls a few pixels now and again, sideways
-// or back from where it faces (never forward, into the desk), then settles.
+// ---- idle motion (OFFICE_LIFE_PLAN 12.7, slice 21). The roll: a seated NPC on a swivel chair
+// rolls a few pixels, mostly along x on screen and never towards the desk, holds 1 to 2 s and
+// rolls back to where it sat down. Cosmetic: Math.random, no event, outside the decision log.
+// The swivel: now and then a seated needs NPC turns its chair one compass step and back, on a
+// seeded roll per 6 s slot of the needs clock; it turns towards a colleague speaking nearby.
 const FIDGET_MIN_MS = 4000, FIDGET_MAX_MS = 11000, FIDGET_ROLL_MS = 700;
-const FIDGET_SIDE = 3, FIDGET_BACK = 2;
+const FIDGET_HOLD_MIN_MS = 1000, FIDGET_HOLD_MAX_MS = 2000;
+const FIDGET_X = 3, FIDGET_X_AWAY = 2;
 
-/** A roll offset for a chair facing `facing`: up to 3px sideways and 2px back. */
+/**
+ * A roll offset for a chair facing `facing`, in screen pixels: `x` within 3 px and `y` within
+ * 1 px, never towards the desk. Where the facing has an east or west part, `x` goes only away
+ * from the desk, up to 2 px; where it has a north or south part, so does `y`. Never zero.
+ */
 export function fidgetOffset(facing, rand = Math.random) {
-    if (rand() < 0.3) return { x: 0, y: 0 }; // back to where it sat down
     const a = forwardRad(facing); // forward, as tuckIn
     const fx = Math.cos(a), fy = Math.sin(a);
-    const side = Math.round((rand() * 2 - 1) * FIDGET_SIDE);
-    const back = Math.round(rand() * FIDGET_BACK);
-    return { x: Math.round(-fy * side - fx * back), y: Math.round(fx * side - fy * back) };
+    const awayX = Math.abs(fx) > 0.1 ? -Math.sign(fx) : 0;
+    const awayY = Math.abs(fy) > 0.1 ? -Math.sign(fy) : 0;
+    const span = awayX ? FIDGET_X_AWAY : FIDGET_X;
+    const mag = 1 + Math.min(Math.floor(rand() * span), span - 1);
+    const x = (awayX || (rand() < 0.5 ? -1 : 1)) * mag;
+    const r = rand();
+    const y = awayY ? (r < 0.5 ? 0 : awayY) : (r < 1 / 3 ? -1 : r < 2 / 3 ? 0 : 1);
+    return { x, y: y || 0 };
 }
 
-/** Move a seated NPC's swivel chair along its current roll; `hold` starts no new roll. */
-function fidgetChair(st, sprite, hold) {
+/** A fresh roll state: waiting at the spot the NPC sat down. */
+export function newFidget(now, rand = Math.random) {
+    return { phase: 'wait', from: { x: 0, y: 0 }, to: { x: 0, y: 0 }, cur: { x: 0, y: 0 }, start: now,
+             until: now + FIDGET_MIN_MS + rand() * (FIDGET_MAX_MS - FIDGET_MIN_MS) };
+}
+
+/**
+ * Advance a roll to `now` and return its offset: wait, roll out (700 ms), hold 1 to 2 s, roll back,
+ * wait 4 to 11 s. `held` starts no roll and brings a roll that is out straight back.
+ */
+export function fidgetStep(fd, now, { held = false, facing = 'south', rand = Math.random } = {}) {
+    const ease = () => {
+        const t = Math.min(1, (now - fd.start) / FIDGET_ROLL_MS);
+        const e = 0.5 - Math.cos(t * Math.PI) / 2;
+        fd.cur = { x: fd.from.x + (fd.to.x - fd.from.x) * e, y: fd.from.y + (fd.to.y - fd.from.y) * e };
+        return t >= 1;
+    };
+    const back = () => { fd.phase = 'back'; fd.from = { ...fd.cur }; fd.to = { x: 0, y: 0 }; fd.start = now; };
+    if (fd.phase === 'wait') {
+        if (!held && now >= fd.until) {
+            fd.phase = 'out'; fd.from = { ...fd.cur }; fd.to = fidgetOffset(facing, rand); fd.start = now;
+        }
+    } else if (fd.phase === 'hold' && (held || now >= fd.until)) {
+        back();
+    } else if (fd.phase === 'out' && held) {
+        back();
+    }
+    if (fd.phase === 'out' && ease()) {
+        fd.phase = 'hold';
+        fd.until = now + FIDGET_HOLD_MIN_MS + rand() * (FIDGET_HOLD_MAX_MS - FIDGET_HOLD_MIN_MS);
+    } else if (fd.phase === 'back' && ease()) {
+        fd.phase = 'wait'; fd.cur = { x: 0, y: 0 };
+        fd.until = now + FIDGET_MIN_MS + rand() * (FIDGET_MAX_MS - FIDGET_MIN_MS);
+    }
+    return fd.cur;
+}
+
+/** Move a seated NPC's swivel chair along its current roll; `held` starts none and rolls back. */
+function fidgetChair(st, sprite, held) {
     const chair = st.chair;
     if (st.seat.kind !== 'swivel' || !chair.body) return;
     const now = sprite.scene?.time?.now ?? performance.now();
-    const wait = () => now + FIDGET_MIN_MS + Math.random() * (FIDGET_MAX_MS - FIDGET_MIN_MS);
-    const fd = st.fidget || (st.fidget = { home: { x: chair.x, y: chair.y }, from: { x: 0, y: 0 },
-                                           to: { x: 0, y: 0 }, cur: { x: 0, y: 0 }, start: 0, next: wait() });
-    if (now >= fd.next && !hold) {
-        fd.from = { ...fd.cur };
-        fd.to = fidgetOffset(st.homeFacing);
-        fd.start = now;
-        fd.next = wait();
-    }
-    const t = Math.min(1, (now - fd.start) / FIDGET_ROLL_MS);
-    const e = 0.5 - Math.cos(t * Math.PI) / 2;
-    fd.cur = { x: fd.from.x + (fd.to.x - fd.from.x) * e, y: fd.from.y + (fd.to.y - fd.from.y) * e };
-    const x = Math.round(fd.home.x + fd.cur.x), y = Math.round(fd.home.y + fd.cur.y);
+    if (!st.fidget) st.fidget = { ...newFidget(now), home: { x: chair.x, y: chair.y } };
+    const fd = st.fidget;
+    const cur = fidgetStep(fd, now, { held, facing: st.homeFacing });
+    const x = Math.round(fd.home.x + cur.x), y = Math.round(fd.home.y + cur.y);
     if (chair.x !== x || chair.y !== y) {
         chair.x = x; chair.y = y;
         placeBody(chair, x, y);
     }
+}
+
+export const SWIVEL_SLOT_MS = 6000;
+export const SWIVEL_CHANCE = 0.05;
+export const LISTEN_RADIUS = 128; // px, four tiles
+
+/** True while a needs NPC is typing: a `work` use in its `using` phase (the typing bob's rule). */
+export function isTyping(ns) {
+    const job = ns?.job;
+    return !!(ns && ns.mode === 'job' && job && job.kind === 'use' && job.need === 'work' && job.phase === 'using');
+}
+
+/** Pure: the roll and the swivel are held on a call, paired at a chatter object, saying a line, typing or chatting with the player. */
+export function idleMotionHeld({ call = false, paired = false, talking = false, typing = false, chatting = false } = {}) {
+    return !!(call || paired || talking || typing || chatting);
+}
+
+/**
+ * Pure: the facing of an idle swivel at `clockMs` (needs clock). Each 6 s slot, the seeded
+ * `roll('swivel:' + slot)` below `chance` turns the chair one compass step (left or right, and a
+ * hold of 2 to 4 s, both from the same roll), snapped to `valid`, then back to `homeFacing`.
+ * Never while typing. The same seed gives the same facing at the same clock.
+ */
+export function swivelFacing({ state, clockMs, homeFacing, valid = COMPASS, roll, chance = SWIVEL_CHANCE }) {
+    if (isTyping(state) || typeof roll !== 'function' || !COMPASS.includes(homeFacing)) return homeFacing;
+    const clock = Number(clockMs) || 0;
+    const slot = Math.floor(clock / SWIVEL_SLOT_MS);
+    const r = roll(`swivel:${slot}`);
+    if (!(r < chance)) return homeFacing;
+    const u = r / chance; // uniform in [0, 1)
+    const hold = 2000 + Math.floor(((u * 2) % 1) * 2000);
+    if (clock - slot * SWIVEL_SLOT_MS >= hold) return homeFacing;
+    const i = COMPASS.indexOf(homeFacing);
+    return snapFacing(COMPASS[(i + (u < 0.5 ? 1 : 7)) % 8], valid);
+}
+
+/** Pure: the nearest colleague speaking in the same room within `radius`, or null. */
+export function listenTarget({ npcId, roomId, x, y, speakers, clockMs, radius = LISTEN_RADIUS }) {
+    let best = null, bestD = Infinity;
+    for (const sp of speakers || []) {
+        if (!sp || sp.npcId === npcId || sp.roomId !== roomId || !(sp.until > clockMs)) continue;
+        const d = Math.hypot(sp.x - x, sp.y - y);
+        if (d <= radius && d < bestD) { best = sp; bestD = d; }
+    }
+    return best;
+}
+
+/** Swivel on for this NPC: not `swivel: false`, not `"officeVisuals": false`, no `los.enabled` (LOS reads the facing). */
+export function swivelEnabled(rec, scenario) {
+    if (scenario?.officeVisuals === false) return false;
+    if (rec?.swivel === false) return false;
+    if (rec?.los?.enabled) return false;
+    return true;
 }
 
 /** Sit an NPC (its behaviour object) on a chair. Returns true when seated. */
@@ -1218,22 +1311,43 @@ function updateNeedsSeat(behavior, ns, playerPos) {
             return false;
         }
         sprite.body.setVelocity(0, 0);
-        // Swivel: face the work, or the player while they talk
-        const chatting = window.npcNeedsSystem?.world?.inChatWith?.(behavior.npcId);
+        // Swivel: face the work, the player while they talk, a colleague speaking nearby, or now
+        // and then a glance round (slice 21); the roll and the swivel wait while the NPC is busy
+        const sys = window.npcNeedsSystem;
+        const chatting = sys?.world?.inChatWith?.(behavior.npcId);
+        const held = idleMotionHeld({ call: !!ns.call, paired: !!sys?._chatPartner?.(behavior.npcId),
+            talking: !!sys?._talking?.(behavior.npcId), typing: isTyping(ns), chatting: !!chatting });
         if (st.seat.kind === 'swivel') {
-            let want = st.homeFacing;
+            let want = st.homeFacing, reason = null;
             if (chatting && playerPos) {
                 const p = bodyFeet(sprite);
                 want = compassToward(playerPos.x - p.x, playerPos.y - p.y);
+            } else if (!held && sys && swivelEnabled(window.npcManager?.getNPC?.(behavior.npcId), window.gameScenario)) {
+                const p = sys.world?.npcPos?.(behavior.npcId) || bodyFeet(sprite); // body centre, as the speakers list
+                const sp = listenTarget({ npcId: behavior.npcId, roomId: behavior.roomId, x: p.x, y: p.y,
+                    speakers: sys.speakers, clockMs: sys.clockMs });
+                if (sp) {
+                    want = compassToward(sp.x - p.x, sp.y - p.y);
+                    reason = 'listen';
+                } else {
+                    const chance = Number(window.npcManager?.getNPC?.(behavior.npcId)?.swivelChance);
+                    want = swivelFacing({ state: ns, clockMs: sys.clockMs, homeFacing: st.homeFacing, valid: st.seat.valid,
+                        roll: salt => sys.roll(behavior.npcId, salt),
+                        chance: Number.isFinite(chance) ? chance : SWIVEL_CHANCE });
+                    reason = 'idle';
+                }
             }
             want = snapFacing(want, st.seat.valid);
             if (want !== st.facing) {
                 st.facing = want;
                 setChairFacing(st.chair, want, st.seat);
                 behavior.direction = COMPASS_TO_PLAYER[want];
+                if (reason && want !== st.homeFacing) {
+                    window.eventDispatcher?.emit?.(`npc_swivelled:${behavior.npcId}`, { npcId: behavior.npcId, facing: want, reason });
+                }
             }
         }
-        fidgetChair(st, sprite, !!chatting);
+        fidgetChair(st, sprite, held);
         window.updateSpriteDepth?.(st.chair, st.chair.elevation || 0);
         const bob = typingBob(ns, window.npcNeedsSystem?.clockMs,
             { reduced: prefersReducedMotion(), off: window.gameScenario?.officeVisuals === false });

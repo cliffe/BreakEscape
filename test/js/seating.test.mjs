@@ -103,21 +103,6 @@ test('needsStop: a real trip still unseats (null while walking out and back)', (
     }
 });
 
-test('fidgetOffset: a seated NPC rolls at most 3px sideways and 2px back, never forward', () => {
-    const forward = { south: [0, 1], north: [0, -1], east: [1, 0], west: [-1, 0],
-                      'south-east': [0.7071, 0.7071], 'north-west': [-0.7071, -0.7071] };
-    let seq = 0;
-    const rand = () => { seq = (seq * 9301 + 49297) % 233280; return seq / 233280; };
-    for (const [facing, [fx, fy]] of Object.entries(forward)) {
-        for (let i = 0; i < 200; i++) {
-            const o = seating.fidgetOffset(facing, rand);
-            assert.ok(Number.isInteger(o.x) && Number.isInteger(o.y), `${facing} whole pixels`);
-            assert.ok(Math.hypot(o.x, o.y) <= 4.3, `${facing} ${o.x},${o.y} too far`);
-            assert.ok(o.x * fx + o.y * fy <= 0.75, `${facing} ${o.x},${o.y} rolls forward`);
-        }
-    }
-});
-
 test('compassToward: screen offsets map to the right facing (east is +x, south is +y)', () => {
     const cases = { east: [1, 0], west: [-1, 0], south: [0, 1], north: [0, -1],
                     'south-east': [1, 1], 'north-east': [1, -1], 'south-west': [-1, 1], 'north-west': [-1, -1] };
@@ -549,4 +534,268 @@ test('standUp survives a throw (R3 M1): body restored, visible, not seated, on t
         assert.equal(seating.isSeated(), false);
         assert.equal(rig.player.visible, true);
     } finally { console.error = err; rig.restore(); }
+});
+
+// ── slice 21 (OFFICE_LIFE_PLAN 12.7): the chair roll mostly along x, out and back, and a rare swivel ──
+
+function lcg(seed = 1) {
+    let v = seed;
+    return () => { v = (v * 9301 + 49297) % 233280; return v / 233280; };
+}
+
+test('fidgetOffset: |y| <= 1 and |x| <= 3 on screen, never zero, never towards the desk; east and west roll back up to 2 px', () => {
+    const forward = { south: [0, 1], north: [0, -1], east: [1, 0], west: [-1, 0],
+                      'south-east': [1, 1], 'north-west': [-1, -1], 'north-east': [1, -1], 'south-west': [-1, 1] };
+    const rand = lcg(7);
+    for (const [facing, [fx, fy]] of Object.entries(forward)) {
+        const xs = new Set();
+        for (let i = 0; i < 300; i++) {
+            const o = seating.fidgetOffset(facing, rand);
+            assert.ok(Number.isInteger(o.x) && Number.isInteger(o.y), `${facing} whole pixels`);
+            assert.ok(Math.abs(o.x) <= 3 && Math.abs(o.y) <= 1, `${facing} ${o.x},${o.y} out of range`);
+            assert.ok(o.x !== 0 || o.y !== 0, `${facing} a roll that goes nowhere`);
+            assert.ok(o.x * fx <= 0 && o.y * fy <= 0, `${facing} ${o.x},${o.y} rolls towards the desk`);
+            if (fx) assert.ok(Math.abs(o.x) <= 2, `${facing} ${o.x} past 2 px back`);
+            xs.add(o.x);
+        }
+        if (!fx) assert.ok(xs.has(-3) && xs.has(3), `${facing}: both ways along x, up to 3 px`);
+    }
+    // A stub rand at its edges stays in range
+    for (const facing of Object.keys(forward)) {
+        for (const v of [0, 0.999999]) {
+            const o = seating.fidgetOffset(facing, () => v);
+            assert.ok(Math.abs(o.x) <= 3 && Math.abs(o.y) <= 1 && (o.x || o.y), `${facing} rand ${v}`);
+        }
+    }
+});
+
+test('fidgetStep: out, hold 1 to 2 s, back to zero; held starts none and brings a roll straight back', () => {
+    const rand = () => 0.5;
+    const fd = seating.newFidget(0, rand);
+    assert.equal(fd.phase, 'wait');
+    const start = fd.until;
+    assert.deepEqual(seating.fidgetStep(fd, start - 1, { facing: 'south', rand }), { x: 0, y: 0 });
+    // Held when due: no roll
+    seating.fidgetStep(fd, start, { held: true, facing: 'south', rand });
+    assert.equal(fd.phase, 'wait');
+    seating.fidgetStep(fd, start + 10, { facing: 'south', rand });
+    assert.equal(fd.phase, 'out');
+    const out = seating.fidgetStep(fd, start + 10 + 700, { facing: 'south', rand });
+    assert.equal(fd.phase, 'hold');
+    assert.ok(out.x !== 0 || out.y !== 0);
+    const holdEnd = fd.until;
+    assert.ok(holdEnd - (start + 710) >= 1000 && holdEnd - (start + 710) <= 2000, `hold ${holdEnd - start - 710}`);
+    assert.deepEqual(seating.fidgetStep(fd, holdEnd - 1, { facing: 'south', rand }), out, 'holds where it rolled to');
+    seating.fidgetStep(fd, holdEnd, { facing: 'south', rand });
+    assert.equal(fd.phase, 'back');
+    assert.deepEqual(seating.fidgetStep(fd, holdEnd + 700, { facing: 'south', rand }), { x: 0, y: 0 });
+    assert.equal(fd.phase, 'wait');
+    assert.ok(fd.until - (holdEnd + 700) >= 4000 && fd.until - (holdEnd + 700) <= 11000);
+    // Held mid-roll: it eases straight back, from where it is
+    seating.fidgetStep(fd, fd.until, { facing: 'south', rand });
+    const t0 = fd.start;
+    const mid = seating.fidgetStep(fd, t0 + 350, { facing: 'south', rand });
+    seating.fidgetStep(fd, t0 + 360, { held: true, facing: 'south', rand });
+    assert.equal(fd.phase, 'back');
+    assert.ok(Math.abs(fd.from.x - mid.x) <= Math.abs(mid.x) + 0.5);
+    assert.deepEqual(seating.fidgetStep(fd, t0 + 360 + 700, { held: true, facing: 'south', rand }), { x: 0, y: 0 });
+    assert.equal(fd.phase, 'wait');
+});
+
+test('idleMotionHeld: a call, a pairing, a line, typing or a chat with the player holds the roll and the swivel', () => {
+    assert.equal(seating.idleMotionHeld({}), false);
+    for (const k of ['call', 'paired', 'talking', 'typing', 'chatting']) assert.equal(seating.idleMotionHeld({ [k]: true }), true, k);
+    assert.equal(seating.isTyping({ mode: 'job', job: { kind: 'use', need: 'work', phase: 'using' } }), true);
+    assert.equal(seating.isTyping({ mode: 'job', job: { kind: 'use', need: 'caffeine', phase: 'using' } }), false);
+    assert.equal(seating.isTyping({ mode: 'idle', job: null }), false);
+});
+
+test('swivelFacing: same for a seed, about 5% of 6 s slots, one compass step snapped to valid, back to home, never typing', async () => {
+    const { seededRoll } = await import('../../public/break_escape/js/systems/npc-needs.js');
+    const roll = seed => salt => seededRoll(seed, 'tom', salt);
+    const idle = { mode: 'idle', job: null };
+    const facings = (seed, opts = {}) => {
+        const out = [];
+        for (let slot = 0; slot < 1000; slot++) {
+            out.push(seating.swivelFacing({ state: idle, clockMs: slot * 6000 + 500, homeFacing: 'south', roll: roll(seed), ...opts }));
+        }
+        return out;
+    };
+    const a = facings(1), b = facings(1), c = facings(2);
+    assert.deepEqual(a, b, 'same seed, same swivels');
+    assert.notDeepEqual(a, c);
+    const turned = a.filter(f => f !== 'south');
+    assert.ok(turned.length >= 30 && turned.length <= 75, `turned in ${turned.length} of 1000 slots`);
+    assert.ok(turned.every(f => f === 'south-east' || f === 'south-west'), 'one compass step');
+    assert.ok(turned.includes('south-east') && turned.includes('south-west'), 'both ways');
+    // Back to home within the slot (hold 2 to 4 s)
+    for (let slot = 0; slot < 1000; slot++) {
+        const f = seating.swivelFacing({ state: idle, clockMs: slot * 6000 + 4000, homeFacing: 'south', roll: roll(1) });
+        assert.equal(f, 'south', `slot ${slot} still turned after 4 s`);
+    }
+    // Snapped to the chair's valid facings
+    const snapped = facings(1, { valid: ['south', 'east', 'west'] });
+    assert.ok(snapped.every(f => ['south', 'east', 'west'].includes(f)));
+    // A swivelChance of 1 turns every slot; 0 none
+    assert.ok(facings(1, { chance: 1 }).every(f => f !== 'south'));
+    assert.ok(facings(1, { chance: 0 }).every(f => f === 'south'));
+    // Never while typing
+    const typing = { mode: 'job', job: { kind: 'use', need: 'work', phase: 'using' } };
+    for (let slot = 0; slot < 200; slot++) {
+        assert.equal(seating.swivelFacing({ state: typing, clockMs: slot * 6000 + 500, homeFacing: 'south', roll: roll(1), chance: 1 }), 'south');
+    }
+    // A coffee use (not work) may swivel
+    const coffee = { mode: 'job', job: { kind: 'use', need: 'caffeine', phase: 'using' } };
+    assert.notEqual(seating.swivelFacing({ state: coffee, clockMs: 500, homeFacing: 'south', roll: roll(1), chance: 1 }), 'south');
+});
+
+test('listenTarget: the nearest speaker in the same room within four tiles, until the line ends; never itself', () => {
+    const speakers = [
+        { npcId: 'rosa', roomId: 'office', x: 300, y: 100, until: 5000 },
+        { npcId: 'amara', roomId: 'office', x: 180, y: 100, until: 5000 },
+        { npcId: 'grace', roomId: 'kitchen', x: 110, y: 100, until: 5000 },
+        { npcId: 'tom', roomId: 'office', x: 100, y: 100, until: 5000 }
+    ];
+    const base = { npcId: 'tom', roomId: 'office', x: 100, y: 100, speakers };
+    assert.equal(seating.listenTarget({ ...base, clockMs: 1000 })?.npcId, 'amara');
+    assert.equal(seating.listenTarget({ ...base, clockMs: 5000 }), null, 'the line has ended');
+    assert.equal(seating.listenTarget({ ...base, x: 400, y: 400, clockMs: 1000 }), null, 'too far');
+    assert.equal(seating.listenTarget({ ...base, speakers: [], clockMs: 0 }), null);
+});
+
+test('swivelEnabled: swivel false, officeVisuals false and los.enabled turn it off', () => {
+    assert.equal(seating.swivelEnabled({}, {}), true);
+    assert.equal(seating.swivelEnabled({ swivel: false }, {}), false);
+    assert.equal(seating.swivelEnabled({}, { officeVisuals: false }), false);
+    assert.equal(seating.swivelEnabled({ los: { enabled: true } }, {}), false);
+    assert.equal(seating.swivelEnabled({ los: { enabled: false } }, {}), true);
+});
+
+test('the needs system builds the speakers list once per tick: chat lines and grumbles, with room and position', async () => {
+    const { NPCNeedsSystem, NEEDS_TICK_MS } = await import('../../public/break_escape/js/systems/npc-needs.js');
+    const { makeWorld } = await import('./fixtures/needs-stub-world.mjs');
+    const rec = id => ({ id, needsHome: `${id}_pc`, needs: { work: { decayPerMin: 1, urgentAt: 10, initial: 90, jitterPct: 0 } } });
+    const w = makeWorld({ npcs: { a: { pos: { x: 100, y: 100 }, rec: rec('a') }, b: { pos: { x: 160, y: 100 }, rec: rec('b'), room: 'kitchen' } },
+        objects: [] });
+    const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+    w.attach(sys);
+    sys.registerAll();
+    let built = 0;
+    const orig = sys._buildSpeakers.bind(sys);
+    sys._buildSpeakers = () => { built++; return orig(); };
+    for (let i = 0; i < 5; i++) sys.step(NEEDS_TICK_MS);
+    assert.equal(built, 5, 'once per tick');
+    assert.deepEqual(sys.speakers, []);
+    // A grumble (one-off line) and a chat line
+    sys.states.get('a').saying = { line: 'Not again.', until: sys.clockMs + 3000 };
+    sys._chats.set('cooler', { a: 'a', b: 'b', current: { speakerId: 'b', partnerId: 'a', line: 'Hi', until: sys.clockMs + 2000 } });
+    const list = sys._buildSpeakers();
+    assert.deepEqual(list.map(s => [s.npcId, s.roomId, s.x, s.y, s.until - sys.clockMs]).sort(),
+        [['a', 'office', 100, 100, 3000], ['b', 'kitchen', 160, 100, 2000]]);
+    sys._chats.clear();
+    sys.states.get('a').saying = null;
+    assert.deepEqual(sys._buildSpeakers(), []);
+});
+
+// The live path: updateSeatedNPC on a needs NPC at its post, with stub sprites
+function seatedNeedsRig({ rec = {}, ns = {}, speakers = [], clockMs = 500, partner = null, talking = null, chatWith = false } = {}) {
+    const chair = { isSwivelChair: true, originalTexture: 'chair-grey-1-rotate1', currentFrame: 0, texture: { key: 'chair-grey-1-rotate1' },
+        x: 100, y: 120, depth: 10, active: true, scene: { textures: { exists: () => true } },
+        body: { reset(x, y) { chair.bx = x; chair.by = y; } },
+        setTexture(k) { this.texture.key = k; } };
+    const seat = seating.seatSpec(chair);
+    const sprite = { x: 100, y: 100, displayOriginX: 40, displayOriginY: 40, scaleX: 1, scaleY: 1, active: false,
+        texture: { key: 'stub_atlas' }, frame: { name: '' }, anims: { isPlaying: false }, scene: { time: { now: 0 } },
+        body: { offset: { x: 30, y: 60 }, width: 20, height: 10, setVelocity() {}, reset() {} },
+        setFrame(n) { this.frame.name = n; }, setDepth() {}, setPosition() {} };
+    const behavior = { npcId: 'tom', roomId: 'office', sprite,
+        _seat: { chair, seat, facing: 'south', homeFacing: 'south', place: 0, needsStop: 'at:tom_pc', facePlayer: false } };
+    const state = { npcId: 'tom', mode: 'idle', atPost: true, job: null, ...ns };
+    const emitted = [];
+    const sys = {
+        states: new Map([['tom', state]]), speakers, clockMs,
+        world: { npcStatus: () => ({}), inChatWith: () => chatWith, npcPos: () => ({ x: 100, y: 100, roomId: 'office' }) },
+        _chatPartner: () => partner, _talking: () => talking,
+        roll: () => 0.01
+    };
+    return { behavior, chair, state, emitted, sys,
+        install() {
+            window.npcNeedsSystem = sys;
+            window.npcManager = { getNPC: () => ({ needsHome: 'tom_pc', ...rec }) };
+            window.eventDispatcher = { emit: (name, data) => emitted.push({ name, data }) };
+            window.gameScenario = {};
+        } };
+}
+
+test('updateSeatedNPC (needs): an idle swivel turns the chair and emits npc_swivelled with reason idle', () => {
+    const prev = { n: window.npcNeedsSystem, m: window.npcManager, e: window.eventDispatcher, g: window.gameScenario };
+    try {
+        const rig = seatedNeedsRig();
+        rig.install();
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), true);
+        assert.notEqual(rig.behavior._seat.facing, 'south');
+        assert.equal(rig.emitted.length, 1);
+        assert.equal(rig.emitted[0].name, 'npc_swivelled:tom');
+        assert.equal(rig.emitted[0].data.reason, 'idle');
+        // Back to home after the hold, no second event
+        rig.sys.clockMs = 5900;
+        seating.updateSeatedNPC(rig.behavior, null);
+        assert.equal(rig.behavior._seat.facing, 'south');
+        assert.equal(rig.emitted.length, 1);
+    } finally {
+        Object.assign(window, { npcNeedsSystem: prev.n, npcManager: prev.m, eventDispatcher: prev.e, gameScenario: prev.g });
+    }
+});
+
+test('updateSeatedNPC (needs): listening faces the speaker and ends with the line; a chat with the player overrides it', () => {
+    const prev = { n: window.npcNeedsSystem, m: window.npcManager, e: window.eventDispatcher, g: window.gameScenario };
+    try {
+        const rig = seatedNeedsRig({ speakers: [{ npcId: 'amara', roomId: 'office', x: 200, y: 100, until: 3000 }], clockMs: 1000 });
+        rig.sys.roll = () => 0.99; // no idle swivel
+        rig.install();
+        seating.updateSeatedNPC(rig.behavior, null);
+        assert.equal(rig.behavior._seat.facing, 'east');
+        assert.deepEqual(rig.emitted.map(e => [e.name, e.data.reason, e.data.facing]), [['npc_swivelled:tom', 'listen', 'east']]);
+        rig.sys.clockMs = 3000;
+        seating.updateSeatedNPC(rig.behavior, null);
+        assert.equal(rig.behavior._seat.facing, 'south', 'the line ended');
+        // A chat with the player wins over a speaker
+        rig.sys.clockMs = 1000;
+        rig.sys.world.inChatWith = () => true;
+        seating.updateSeatedNPC(rig.behavior, { x: 0, y: 105 });
+        assert.equal(rig.behavior._seat.facing, 'west');
+    } finally {
+        Object.assign(window, { npcNeedsSystem: prev.n, npcManager: prev.m, eventDispatcher: prev.e, gameScenario: prev.g });
+    }
+});
+
+test('updateSeatedNPC (needs): no swivel or listening on a call, paired, talking, typing, with los.enabled or swivel false', () => {
+    const prev = { n: window.npcNeedsSystem, m: window.npcManager, e: window.eventDispatcher, g: window.gameScenario };
+    const speakers = [{ npcId: 'amara', roomId: 'office', x: 200, y: 100, until: 3000 }];
+    const cases = {
+        call: { ns: { call: { objectId: 'tom_phone' } } },
+        paired: { partner: 'amara' },
+        talking: { talking: { line: 'Hi' } },
+        typing: { ns: { mode: 'job', job: { kind: 'use', need: 'work', phase: 'using', targetId: 'tom_pc' } } },
+        los: { rec: { los: { enabled: true } } },
+        off: { rec: { swivel: false } }
+    };
+    try {
+        for (const [name, opts] of Object.entries(cases)) {
+            const rig = seatedNeedsRig({ speakers, clockMs: 1000, ...opts });
+            rig.install();
+            seating.updateSeatedNPC(rig.behavior, null);
+            assert.equal(rig.behavior._seat.facing, 'south', name);
+            assert.equal(rig.emitted.length, 0, name);
+            if (name !== 'los' && name !== 'off') {
+                // and the roll is held: no roll starts, however long it waits
+                rig.behavior.sprite.scene.time.now = 60000;
+                seating.updateSeatedNPC(rig.behavior, null);
+                assert.equal(rig.behavior._seat.fidget.phase, 'wait', `${name}: roll held`);
+                assert.equal(rig.chair.x, 100, name);
+            }
+        }
+    } finally {
+        Object.assign(window, { npcNeedsSystem: prev.n, npcManager: prev.m, eventDispatcher: prev.e, gameScenario: prev.g });
+    }
 });
