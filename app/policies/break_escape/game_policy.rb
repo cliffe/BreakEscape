@@ -50,6 +50,10 @@ module BreakEscape
       show?
     end
 
+    def capture_secrets?
+      show?
+    end
+
     def complete_task?
       show?
     end
