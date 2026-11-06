@@ -4,31 +4,80 @@
  * is DOING or seeking right now, never its hidden next want.
  *
  * Scenario config (all optional):
- *   actionIcons          { "<object id | affordance satisfies | object type>": "<glyph>", "curiosity": "?",
- *                          "fallback": "..." }. Looked up in that order for the job's target object.
- *                          A value is a short text glyph (placeholder art; real icons come later).
+ *   actionIcons          { "<key>": <icon> }. For a use job the keys are tried in the order:
+ *                          target object id, the job's need, the target's first `satisfies`,
+ *                          object type. For a carry job: the item's needsTag (e.g. "post"),
+ *                          then "curiosity". Then "fallback". The scenario's entries are merged
+ *                          over DEFAULT_ICONS, so an explicit entry always wins.
+ *                        An <icon> is a texture or text (OFFICE_LIFE_PLAN 2.12):
+ *                          "icon:talk"              assets/icons/talk.png
+ *                          { "sprite": "kettle1" }  assets/objects/kettle1.png (optional "text")
+ *                          "C"                      a short text glyph
+ *                        Textures draw at native size (never scaled) on the dark backing; each
+ *                        loads on first use and the text glyph shows until it arrives.
  *   npcWindupMs          pre-action tell length before an NPC leaves its post (npc-needs.js). Default 700, 0 = off.
- *   showNpcIntentBubbles false (default). Parked hook for a later "next want" bubble. Current-action
- *                        icons render regardless; nothing is built for the bubble yet.
+ *   showNpcIntentBubbles false (default). Parked hook for a later "next want" bubble.
  *
- * Interest / pickup jobs (the NPC fetches an item) show the curiosity icon.
- * A job that is winding up (npc_action_windup) pulses its icon before the NPC moves.
- * Reads window.npcNeedsSystem.getState(); changes nothing in the needs system.
+ * Shown only for NPCs in the player's current room, and not while that room is dark (a room
+ * without lighting counts as lit). A job that is winding up (npc_action_windup) pulses its icon
+ * before the NPC moves. Reads window.npcNeedsSystem.getState(); changes nothing in the needs system.
  */
+import { iconShown, roomIsDark } from './npc-office-visuals.js';
 
-export const DEFAULT_ICONS = { curiosity: '?', fallback: '•' };
+// Defaults from existing art, none resized (OFFICE_LIFE_PLAN 2.12). Hunger and rest have no
+// suitable art yet, so they stay text until icons are drawn [approval].
+export const DEFAULT_ICONS = {
+    caffeine: { sprite: 'coffee_cups1' },
+    thirst: { sprite: 'office-misc-cup' },
+    work: 'icon:clipboard',
+    social: 'icon:talk',
+    curiosity: 'icon:mark-question',
+    post: 'icon:mail-new',
+    printout: 'icon:mail-new',
+    hunger: 'F',
+    rest: 'Z',
+    fallback: '•'
+};
 
-/** Pure: which glyph for a job. `target` is { id, type, satisfies } or null. */
-export function pickIcon(job, actionIcons = {}, target = null) {
+// Text shown while a default texture loads (or if it fails)
+const TEXT_STANDIN = { caffeine: 'C', thirst: 'W', work: 'PC', social: 'S', curiosity: '?', post: 'P', printout: 'P' };
+
+const usable = v => (typeof v === 'string' && v) || (v && typeof v === 'object' && typeof v.sprite === 'string' && v.sprite);
+
+/** Pure: { key, value } of the icon for a job. `target` is { id, type, satisfies } or null. */
+export function pickIconEntry(job, actionIcons = {}, target = null) {
     if (!job) return null;
-    const icons = { ...DEFAULT_ICONS, ...(actionIcons || {}) };
-    if (job.kind === 'carry' || job.itemId) return icons.curiosity;
-    if (target) {
-        for (const key of [target.id, target.satisfies, target.type]) {
-            if (key && typeof icons[key] === 'string' && icons[key]) return icons[key];
-        }
+    const own = actionIcons || {};
+    // A scenario entry wins where it is usable; an unusable one falls back to the default
+    const icon = k => (usable(own[k]) ? own[k] : (usable(DEFAULT_ICONS[k]) ? DEFAULT_ICONS[k] : null));
+    const keys = (job.kind === 'carry' || job.itemId)
+        ? [job.tag, 'curiosity']
+        : (target ? [target.id, job.need, target.satisfies, target.type] : [job.need]);
+    for (const key of keys) {
+        const v = key ? icon(key) : null;
+        if (v) return { key, value: v };
     }
-    return icons.fallback;
+    return { key: 'fallback', value: icon('fallback') };
+}
+
+/** Pure: the icon value (texture spec or glyph) for a job. */
+export function pickIcon(job, actionIcons = {}, target = null) {
+    return pickIconEntry(job, actionIcons, target)?.value ?? null;
+}
+
+/**
+ * Pure: how to draw an icon value. { kind: 'sprite', key, path, glyph } for "icon:<name>" and
+ * { sprite }, else { kind: 'text', glyph }. `glyph` is the text stand-in.
+ */
+export function resolveIcon(value, standIn = '•') {
+    if (typeof value === 'string' && value.startsWith('icon:') && value.length > 5) {
+        const name = value.slice(5);
+        return { kind: 'sprite', key: `icon:${name}`, path: `icons/${name}.png`, glyph: standIn };
+    }
+    if (value && typeof value === 'object' && typeof value.sprite === 'string' && value.sprite) {
+        return { kind: 'sprite', key: value.sprite, path: `objects/${value.sprite}.png`, glyph: typeof value.text === 'string' && value.text ? value.text : standIn };
+    }
+    return { kind: 'text', glyph: typeof value === 'string' && value ? value : standIn };
 }
 
 const win = () => (typeof window !== 'undefined' ? window : {});
@@ -60,9 +109,51 @@ export function targetInfo(id, cache = null) {
 }
 
 export class NpcActionIcons {
-    constructor() { this.icons = new Map(); this.windups = new Map(); this.targets = new Map(); this.sceneHooked = null; }
+    constructor() { this.icons = new Map(); this.windups = new Map(); this.targets = new Map(); this.sceneHooked = null; this.textures = new Map(); }
 
     get showIntentBubbles() { return win().gameScenario?.showNpcIntentBubbles === true; }
+
+    /** Is a texture ready? Starts a one-off load the first time; false until it has arrived. */
+    textureReady(scene, r) {
+        if (scene.textures?.exists?.(r.key)) return true;
+        const st = this.textures.get(r.key);
+        if (st) return false;   // loading or failed
+        this.textures.set(r.key, 'loading');
+        try {
+            scene.load.image(r.key, r.path);
+            scene.load.once(`filecomplete-image-${r.key}`, () => this.textures.delete(r.key));
+            scene.load.once('loaderror', (file) => { if (file?.key === r.key) this.textures.set(r.key, 'failed'); });
+            if (!scene.load.isLoading?.()) scene.load.start();
+        } catch (e) { this.textures.set(r.key, 'failed'); }
+        return false;
+    }
+
+    _make(scene) {
+        const bg = scene.add.rectangle(0, 0, 10, 10, 0x1b2a41).setOrigin(0.5, 1);
+        const text = scene.add.text(0, -1, '', {
+            fontFamily: 'monospace', fontSize: '16px', fontStyle: 'bold', color: '#ffffff'
+        }).setOrigin(0.5, 1);
+        const img = scene.add.image(0, -2, '__DEFAULT').setOrigin(0.5, 1).setVisible(false);
+        const box = scene.add.container(0, 0, [bg, text, img]).setDepth(5000);
+        return { box, bg, text, img, shown: null };
+    }
+
+    /** Draw `r` into the icon; re-laid out only when what it shows changes. */
+    _render(scene, ic, r) {
+        const sprite = r.kind === 'sprite' && this.textureReady(scene, r);
+        const sig = sprite ? `s:${r.key}` : `t:${r.glyph}`;
+        if (ic.shown === sig) return;
+        ic.shown = sig;
+        if (sprite) {
+            ic.img.setTexture(r.key).setVisible(true);
+            ic.text.setVisible(false);
+            ic.bg.setSize(ic.img.width + 6, ic.img.height + 4);
+        } else {
+            ic.img.setVisible(false);
+            ic.text.setText(r.glyph).setVisible(true);
+            ic.bg.setSize(ic.text.width + 8, ic.text.height + 2);
+        }
+    }
 
     /** Per-frame: sync one icon per needs NPC with a job. */
     update() {
@@ -70,28 +161,30 @@ export class NpcActionIcons {
         const mgr = win().npcBehaviorManager;
         if (!sys || !mgr) return;
         const actionIcons = win().gameScenario?.actionIcons;
+        const playerRoom = win().currentPlayerRoom;
         for (const id of sys.states.keys()) {
             const st = sys.getState(id);
-            const sprite = mgr.getBehavior?.(id)?.sprite;
-            const show = !!(st?.job && sprite && sprite.active && sprite.visible && !sprite.destroyed);
+            const b = mgr.getBehavior?.(id);
+            const sprite = b?.sprite;
+            const roomId = b?.roomId;
+            const show = !!(st?.job && sprite && sprite.active && sprite.visible && !sprite.destroyed)
+                && iconShown({ npcRoom: roomId, playerRoom, dark: roomIsDark(roomId) });
             let ic = this.icons.get(id);
-            if (!show) { if (ic) ic.text.setVisible(false); continue; }
-            const glyph = pickIcon(st.job, actionIcons, st.job.targetId ? targetInfo(st.job.targetId, this.targets) : null);
-            if (!ic || !ic.text.scene) {
-                const text = sprite.scene.add.text(0, 0, glyph, {
-                    fontFamily: 'monospace', fontSize: '16px', fontStyle: 'bold', color: '#ffffff',
-                    backgroundColor: '#1b2a41', padding: { x: 4, y: 1 }
-                }).setOrigin(0.5, 1).setDepth(5000);
-                ic = { text, glyph };
+            if (!show) { if (ic) ic.box.setVisible(false); continue; }
+            const entry = pickIconEntry(st.job, actionIcons, st.job.targetId ? targetInfo(st.job.targetId, this.targets) : null);
+            const r = resolveIcon(entry.value, TEXT_STANDIN[entry.key] || DEFAULT_ICONS.fallback);
+            if (!ic || !ic.box.scene) {
+                ic = this._make(sprite.scene);
                 this.icons.set(id, ic);
             }
-            if (ic.glyph !== glyph) { ic.text.setText(glyph); ic.glyph = glyph; }
+            this._render(sprite.scene, ic, r);
             const top = sprite.getTopCenter ? sprite.getTopCenter() : { x: sprite.x, y: sprite.y - 40 };
-            ic.text.setPosition(top.x, top.y + 6).setVisible(true);
+            ic.box.setPosition(Math.round(top.x), Math.round(top.y + 6)).setVisible(true);
             const winding = !!st.job.windingUp;
-            ic.text.setData('windup', winding);
-            ic.text.setData('job', st.job.targetId || '');
-            ic.text.setScale(winding ? 1 + 0.35 * Math.abs(Math.sin(Date.now() / 120)) : 1);
+            ic.box.setData('windup', winding);
+            ic.box.setData('job', st.job.targetId || '');
+            ic.box.setData('icon', ic.shown);
+            ic.box.setScale(winding ? 1 + 0.35 * Math.abs(Math.sin(Date.now() / 120)) : 1);
         }
     }
 }

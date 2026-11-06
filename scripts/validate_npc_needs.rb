@@ -39,8 +39,59 @@ module ValidateNpcNeeds
     end
 
     check_private(json, npcs, objs, issues)
+    check_visuals(json, objs, issues)
     npcs.each { |room_id, npc| check_npc(json, npc, room_id, objs, issues, npcs) }
     issues
+  end
+
+  # ── office visuals (OFFICE_LIFE_PLAN 2.12, slice 3) ──────────────────────
+
+  ASSETS = File.expand_path('../public/break_escape/assets', __dir__)
+  SOUND_MANAGER = File.expand_path('../public/break_escape/js/systems/sound-manager.js', __dir__)
+  HELD_MAX_PX = 24
+
+  # [width, height] from a PNG header, or nil.
+  def self.png_size(path)
+    return nil unless File.file?(path)
+
+    head = File.binread(path, 24)
+    return nil unless head && head.bytesize == 24 && head[0, 8] == "\x89PNG\r\n\x1A\n".b
+
+    head[16, 8].unpack('NN')
+  rescue StandardError
+    nil
+  end
+
+  def self.loaded_sounds
+    @loaded_sounds ||= File.file?(SOUND_MANAGER) ? File.read(SOUND_MANAGER).scan(/load\.audio\(\s*'([^']+)'/).flatten : []
+  end
+
+  # A carried item shows in the NPC's hand at native size: over 24 px looks like furniture.
+  # useSound must be a sound the game loads. actionIcons textures must exist.
+  def self.check_visuals(json, objs, issues)
+    objs.each do |o|
+      if o.data['needsTag'].is_a?(String) && o.data['type'].is_a?(String)
+        size = png_size(File.join(ASSETS, 'objects', "#{o.data['type']}.png"))
+        if size && (size[0] > HELD_MAX_PX || size[1] > HELD_MAX_PX)
+          issues << "⚠️ WARNING: needsTag item '#{o.id}' (#{o.data['type']}, #{size[0]}x#{size[1]}) is over #{HELD_MAX_PX} px on a side; an NPC carries it in hand at native size, so it will look like carrying furniture."
+        end
+      end
+      snd = o.data.dig('affordance', 'useSound') if o.data['affordance'].is_a?(Hash)
+      next unless snd.is_a?(String) && !loaded_sounds.empty? && !loaded_sounds.include?(snd)
+
+      issues << "⚠️ WARNING: object '#{o.id}' affordance.useSound '#{snd}' is not a sound the game loads (sound-manager.js); it will not play."
+    end
+    icons = json['actionIcons']
+    return unless icons.is_a?(Hash)
+
+    icons.each do |key, v|
+      path = if v.is_a?(String) && v.start_with?('icon:') then File.join(ASSETS, 'icons', "#{v[5..]}.png")
+             elsif v.is_a?(Hash) && v['sprite'].is_a?(String) then File.join(ASSETS, 'objects', "#{v['sprite']}.png")
+             end
+      next if path.nil? || File.file?(path)
+
+      issues << "⚠️ WARNING: actionIcons '#{key}' texture #{path.sub("#{ASSETS}/", 'assets/')} does not exist; the text stand-in shows instead."
+    end
   end
 
   # ── room leash and private objects (OFFICE_LIFE_PLAN 7.2, slice 2a) ──────

@@ -51,6 +51,7 @@
 import { TILE_SIZE, LIGHT_DEPTH, SPRITE_PADDING_BOTTOM_ATLAS, SPRITE_PADDING_BOTTOM_LEGACY } from '../utils/constants.js';
 import { evaluateGlobalCondition } from '../utils/conditional-text.js';
 import { spriteStyleLight } from './npc-sprite-style.js';
+import { hearingLevel } from './room-hearing.js';
 
 const LIGHT_TEX = 'be_light_soft';
 const LIGHT_TEX_SIZE = 128;
@@ -704,10 +705,7 @@ export class LightingSystem {
 
   /** How loud a room's sounds are where the player is: own room 1, through a door 0.4, else 0. */
   hearing(roomId) {
-    const here = window.currentPlayerRoom;
-    if (!roomId || roomId === here) return 1;
-    const doors = window.rooms?.[here]?.doorSprites || [];
-    return doors.some(d => d.doorProperties?.connectedRoom === roomId) ? 0.4 : 0;
+    return hearingLevel(roomId);
   }
 
   /** A fluorescent tube's tink as it strikes, synthesised (no asset). */

@@ -17,8 +17,10 @@ writeFileSync(join(dir, 'conditional-text.mjs'), readFileSync(join(js, 'utils/co
 writeFileSync(join(dir, 'lighting.mjs'), readFileSync(join(js, 'systems/lighting.js'), 'utf8')
   .replace("'../utils/constants.js'", "'./constants.mjs'")
   .replace("'../utils/conditional-text.js'", "'./conditional-text.mjs'")
-  .replace("'./npc-sprite-style.js'", "'./npc-sprite-style.mjs'"));
+  .replace("'./npc-sprite-style.js'", "'./npc-sprite-style.mjs'")
+  .replace("'./room-hearing.js'", "'./room-hearing.mjs'"));
 writeFileSync(join(dir, 'npc-sprite-style.mjs'), readFileSync(join(js, 'systems/npc-sprite-style.js'), 'utf8'));
+writeFileSync(join(dir, 'room-hearing.mjs'), readFileSync(join(js, 'systems/room-hearing.js'), 'utf8'));
 const { npcTorchStrength } = await import(pathToFileURL(join(dir, 'lighting.mjs')).href);
 
 test('no beam in a lit office', () => {

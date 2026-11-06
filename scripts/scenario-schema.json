@@ -128,9 +128,23 @@
     },
     "actionIcons": {
       "type": "object",
-      "description": "NPC current-action icon (systems/npc-action-icons.js). Key = target object id, affordance satisfies, or object type; also 'curiosity' (pickup jobs) and 'fallback'. Value = a short placeholder glyph.",
-      "additionalProperties": { "type": "string" }
+      "description": "NPC current-action icon (systems/npc-action-icons.js), merged over built-in defaults from existing art. Keys: for a use job the target object id, the job's need, the target's first satisfies, the object type; for a carry job the item's needsTag, then 'curiosity'; then 'fallback'. Value: a texture ('icon:<name>' for assets/icons/<name>.png, or { sprite: '<object texture>' } for assets/objects/<name>.png, drawn at native size) or a short text glyph. Shown only for NPCs in the player's room while it is lit.",
+      "additionalProperties": {
+        "oneOf": [
+          { "type": "string", "minLength": 1 },
+          {
+            "type": "object",
+            "properties": {
+              "sprite": { "type": "string", "minLength": 1, "description": "Object texture key (assets/objects/<sprite>.png), drawn at native size" },
+              "text": { "type": "string", "description": "Text shown while the texture loads, or if it fails" }
+            },
+            "required": ["sprite"],
+            "additionalProperties": false
+          }
+        ]
+      }
     },
+    "officeVisuals": { "type": "boolean", "description": "NPC office visuals (systems/npc-office-visuals.js, OFFICE_LIFE_PLAN 2.12): carried items shown in the carrier's hand, use sounds (affordance.useSound) heard by room and distance, the seated typing bob. Default true; false hides carried items again and turns the sounds and bob off." },
     "npcWindupMs": { "type": "number", "minimum": 0, "description": "Pre-action tell: ms an NPC winds up (icon pulses, npc_action_windup:<id> fires) before leaving its post for a needs job. Default 700, 0 = off." },
     "showNpcIntentBubbles": { "type": "boolean", "description": "Parked hook for a later next-want intent bubble. Default false. Current-action icons render regardless." },
     "disguises": {
@@ -4990,6 +5004,7 @@
             "accepts": { "type": "array", "items": { "type": "string" }, "description": "Carried items with these needsTag values can be used here" },
             "private": { "type": "boolean", "description": "NPC needs system: only its owners' needs use it (satisfies); other NPCs may still deliver to it (accepts). Owners = owners, else screenOwner, else the NPC whose needsHome is this object. The player is unaffected." },
             "owners": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "With private: the NPC ids allowed to use this object (default: screenOwner, else the NPC whose needsHome is this object)" },
+            "useSound": { "type": "string", "minLength": 1, "description": "Sound key (a loaded effect such as drink_gulp, eat_snack, drawer_open, page_turn) played when an NPC's use of this object completes, only near the player: effects volume x 0.4, fading to silence at eight tiles, x1 in the player's room, x0.4 through a door, else silent (systems/npc-office-visuals.js). Emits npc_use_heard:<objectId> when audible." },
             "seat": { "oneOf": [ { "type": "boolean", "enum": [false] }, { "type": "string", "enum": ["fetch", "stay", "stand"] } ], "description": "Seating while an NPC uses this object (systems/seating.js): 'fetch' (default) sits on a free chair at the spot or rolls a free swivel chair over from the same room; 'stay' sits only if a chair is already there; false or 'stand' always stands. NPCs whose atlas has no seated frames always stand." },
             "_comment": { "type": "string" }
           },

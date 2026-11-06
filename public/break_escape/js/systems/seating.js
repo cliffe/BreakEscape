@@ -674,12 +674,15 @@ function chairsNear(roomId, x, y, maxDistance, want = null) {
     return out.sort((a, b) => a.d - b.d);
 }
 
-/** Place a seated sprite (origin-aware) so its hips land on the chair's seat. */
-function poseSprite(sprite, chair, seat, facing, place = 0) {
+/**
+ * Place a seated sprite (origin-aware) so its hips land on the chair's seat. `dy` (0 or 1 px)
+ * is the typing bob: applied here because this runs every frame and would undo it otherwise.
+ */
+export function poseSprite(sprite, chair, seat, facing, place = 0, dy = 0) {
     const sp = seatPoint(chair, seat, facing, place);
     const hip = sitHip(sprite.texture.key, facing);
     const x = Math.round(sp.x - hip[0] + sprite.displayOriginX);
-    const y = Math.round(sp.y - hip[1] + sprite.displayOriginY);
+    const y = Math.round(sp.y - hip[1] + sprite.displayOriginY) + dy;
     if (Math.round(sprite.x) !== x || Math.round(sprite.y) !== y) placeBody(sprite, x, y);
     if (sprite.anims?.isPlaying) sprite.anims.stop();
     const frame = `sit_${facing}_frame_000`;
@@ -877,6 +880,29 @@ export function needsStop(ns) {
     return null;
 }
 
+export const TYPING_BOB_MS = 600;
+
+let reducedMotionQuery;
+function prefersReducedMotion() {
+    try {
+        if (reducedMotionQuery === undefined) reducedMotionQuery = window.matchMedia?.('(prefers-reduced-motion: reduce)') || null;
+        return reducedMotionQuery?.matches === true;
+    } catch (e) { return false; }
+}
+
+/**
+ * Pure: the seated typing bob (OFFICE_LIFE_PLAN 2.12), 0 or 1 px. Only while the NPC's job is
+ * a `work` use in its `using` phase, alternating every TYPING_BOB_MS of the needs clock (so it
+ * stops with the clock and is the same in every run). Off under reduced motion and with
+ * `"officeVisuals": false`.
+ */
+export function typingBob(ns, clockMs, { reduced = false, off = false } = {}) {
+    if (reduced || off || !ns || ns.mode !== 'job') return 0;
+    const job = ns.job;
+    if (!job || job.kind !== 'use' || job.need !== 'work' || job.phase !== 'using') return 0;
+    return Math.floor((Number(clockMs) || 0) / TYPING_BOB_MS) % 2;
+}
+
 function needsObject(id) {
     return id ? window.npcNeedsSystem?.world?.getObject?.(id) || null : null;
 }
@@ -976,7 +1002,10 @@ function updateNeedsSeat(behavior, ns, playerPos) {
         }
         fidgetChair(st, sprite, !!chatting);
         window.updateSpriteDepth?.(st.chair, st.chair.elevation || 0);
-        poseSprite(sprite, st.chair, st.seat, st.facing, st.place);
+        const bob = typingBob(ns, window.npcNeedsSystem?.clockMs,
+            { reduced: prefersReducedMotion(), off: window.gameScenario?.officeVisuals === false });
+        poseSprite(sprite, st.chair, st.seat, st.facing, st.place, bob);
+        behavior._typingBob = bob;
         return true;
     }
 

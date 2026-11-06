@@ -1945,6 +1945,7 @@ export async function create() {
                     const sceneRef = this;
                     import('../systems/npc-action-icons.js').then(m => m.installNpcActionIcons(sceneRef)).catch(e => console.warn('npc action icons failed', e));
                     import('../systems/npc-needs-debug.js').then(m => m.installNpcNeedsDebug(sceneRef)).catch(e => console.warn('npc needs debug overlay failed', e));
+                    import('../systems/npc-office-visuals.js').then(m => m.installNpcOfficeVisuals(sceneRef)).catch(e => console.warn('npc office visuals failed', e));
                     return import('../systems/workstation-state.js').then(ws => ws.installWorkstationState());
                 });
             })

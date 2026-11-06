@@ -123,3 +123,44 @@ test('compassToward: screen offsets map to the right facing (east is +x, south i
                     'south-east': [1, 1], 'north-east': [1, -1], 'south-west': [-1, 1], 'north-west': [-1, -1] };
     for (const [facing, [dx, dy]] of Object.entries(cases)) assert.equal(seating.compassToward(dx, dy), facing);
 });
+
+// ---- typing bob (OFFICE_LIFE_PLAN 2.12, slice 3)
+
+function seatedSprite() {
+    return {
+        x: 0, y: 0, displayOriginX: 40, displayOriginY: 40, texture: { key: 'bob_test_atlas' },
+        frame: { name: '' }, anims: { isPlaying: false }, body: null, moves: 0,
+        setPosition(x, y) { this.x = x; this.y = y; this.moves++; },
+        setFrame(n) { this.frame.name = n; }, setDepth(d) { this.depth = d; }
+    };
+}
+
+test('poseSprite: dy 1 places the sprite one pixel lower, and the next frame keeps it there while the bob is due', () => {
+    const chair = { x: 100, y: 200, depth: 230 };
+    const seat = { kind: 'static', seat: [16, 20], facing: 'south' };
+    const a = seatedSprite(), b = seatedSprite();
+    seating.poseSprite(a, chair, seat, 'south', 0, 0);
+    seating.poseSprite(b, chair, seat, 'south', 0, 1);
+    assert.equal(b.y, a.y + 1);
+    assert.equal(b.x, a.x);
+    const moves = b.moves;
+    seating.poseSprite(b, chair, seat, 'south', 0, 1);
+    assert.equal(b.y, a.y + 1, 'held while the bob is due');
+    assert.equal(b.moves, moves, 'not moved again');
+    seating.poseSprite(b, chair, seat, 'south', 0, 0);
+    assert.equal(b.y, a.y, 'back down');
+});
+
+test('typingBob: only a work use in its using phase, every 600 ms of the needs clock; off under reduced motion or officeVisuals false', () => {
+    const working = { mode: 'job', job: { kind: 'use', need: 'work', phase: 'using' } };
+    assert.equal(seating.typingBob(working, 0), 0);
+    assert.equal(seating.typingBob(working, 599), 0);
+    assert.equal(seating.typingBob(working, 600), 1);
+    assert.equal(seating.typingBob(working, 1250), 0);
+    assert.equal(seating.typingBob(working, 600, { reduced: true }), 0);
+    assert.equal(seating.typingBob(working, 600, { off: true }), 0);
+    assert.equal(seating.typingBob({ mode: 'job', job: { kind: 'use', need: 'work', phase: 'goto_target' } }, 600), 0);
+    assert.equal(seating.typingBob({ mode: 'job', job: { kind: 'use', need: 'caffeine', phase: 'using' } }, 600), 0);
+    assert.equal(seating.typingBob({ mode: 'idle', job: null }, 600), 0);
+    assert.equal(seating.typingBob(null, 600), 0);
+});
