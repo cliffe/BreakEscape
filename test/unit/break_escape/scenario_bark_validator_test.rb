@@ -83,5 +83,30 @@ module BreakEscape
       npc = { "timedMessages" => [{ "message" => "Patient alert received" }] }
       assert ScenarioBarkValidator.validate(npc, "Patient alert received")
     end
+
+    # ─── chatter (OFFICE_LIFE_PLAN 11.3) ─────────────────────────────────────
+
+    test "bark_texts collects the NPC's own chatter pools, arrays and { lines } objects" do
+      npc = { "chatter" => { "cooler" => ["Busy day?"], "grumble" => { "lines" => ["Not now."], "hush" => true } } }
+      texts = ScenarioBarkValidator.bark_texts(npc)
+      assert_includes texts, "Busy day?"
+      assert_includes texts, "Not now."
+    end
+
+    test "bark_texts ignores chatter false and non-string lines" do
+      assert_empty ScenarioBarkValidator.bark_texts({ "chatter" => false })
+      assert_empty ScenarioBarkValidator.bark_texts({ "chatter" => { "cooler" => [nil, 3, " "] } })
+    end
+
+    test "validate_shared accepts a scenario chatter line and refuses others" do
+      scenario = { "chatter" => { "cooler" => ["Friday drinks again?"], "gossip" => { "lines" => ["Psst."] } } }
+      assert ScenarioBarkValidator.validate_shared(scenario, "friday drinks again")
+      assert ScenarioBarkValidator.validate_shared(scenario, "Psst.")
+      refute ScenarioBarkValidator.validate_shared(scenario, "Something else.")
+      refute ScenarioBarkValidator.validate_shared({ "chatter" => false }, "Psst.")
+      refute ScenarioBarkValidator.validate_shared({}, "Psst.")
+      refute ScenarioBarkValidator.validate_shared(nil, "Psst.")
+    end
+
   end
 end

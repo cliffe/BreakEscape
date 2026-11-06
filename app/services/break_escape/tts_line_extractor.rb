@@ -15,6 +15,13 @@ module BreakEscape
   # phone-chat eventMapping or on its timedConversation, F17): its story is a
   # host like a person-chat one, read as phone-call-voice.js voices it (no
   # narration), but only the lines in the call's own knots (call_knots, F20).
+  #
+  # Office chatter (OFFICE_LIFE_PLAN 11.3): an NPC's own `chatter` pools and the
+  # scenario's shared `chatter` pools are spoken on first play and cached. The
+  # batch lists them under each voiced NPC only when opted in (`chatter: true`,
+  # or the scenario's `"ttsPregenerateChatter": true`). `keys` (what the client
+  # can request, read by tts:wasted) always includes them, so their clips are
+  # never reported as unrequested.
   class TtsLineExtractor
     Entry = Struct.new(:npc_id, :text, :voice, :source, :path, :key, keyword_init: true)
     Note = Struct.new(:source, :path, :text, :reason, keyword_init: true)
@@ -44,7 +51,8 @@ module BreakEscape
       text.to_s.downcase.gsub(/[^\w\s]/, '').strip.gsub(/\s+/, ' ')
     end
 
-    def initialize(scenario_name, scenario_data, tts_service: TtsService.new)
+    def initialize(scenario_name, scenario_data, tts_service: TtsService.new, chatter: nil)
+      @chatter = chatter.nil? ? scenario_data['ttsPregenerateChatter'] == true : chatter
       @scenario_name = scenario_name
       @scenario_data = scenario_data
       @tts_service = tts_service
@@ -61,8 +69,30 @@ module BreakEscape
       @entries
     end
 
+    # Every clip key the client can request: the batch's entries plus chatter
+    # lines, whether or not the batch pre-generates them.
     def keys
-      entries.map(&:key).to_set
+      set = entries.map(&:key).to_set
+      return set if @chatter
+
+      each_chatter_line do |npc_id, text, _path|
+        voice = voices[npc_id]
+        set << @tts_service.cache_key_for(text, voice['name'], voice['style'], voice['language']) if voice
+      end
+      set
+    end
+
+    # Chatter lines each voiced NPC can speak: its own `chatter` pools, then the
+    # scenario's shared pools. Yields [npc_id, text, path].
+    def each_chatter_line
+      shared = ScenarioBarkValidator.chatter_texts(scenario_data['chatter'])
+      each_room_npc do |npc|
+        next unless npc['voice'].is_a?(Hash) && npc['id']
+        next if npc['npcType'] == 'phone'
+
+        ScenarioBarkValidator.chatter_texts(npc['chatter']).each { |t| yield npc['id'], t, 'npc.chatter' }
+        shared.each { |t| yield npc['id'], t, 'scenario.chatter' }
+      end
     end
 
     # Ink stories this scenario's voiced conversation hosts load.
@@ -296,6 +326,10 @@ module BreakEscape
         next unless obj['ttsVoice'].is_a?(Hash) && obj['voice'].is_a?(String)
         add_entry(seen, obj['id'], obj['voice'], obj['id'], 'object.voice')
       end
+
+      return unless @chatter
+
+      each_chatter_line { |npc_id, text, path| add_entry(seen, npc_id, text, npc_id, path) }
     end
 
     # Every voiced line of every host story, with the speaker the client asks

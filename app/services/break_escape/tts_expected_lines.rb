@@ -108,6 +108,8 @@ module BreakEscape
       return false if text.to_s.strip.empty?
       return true if @ink_json_files.any? { |f| InkTextValidator.validate(f.to_s, text) }
       norm = TtsService.normalize_text(text)
+      # Scenario-level chatter pools, spoken by any voiced NPC (OFFICE_LIFE_PLAN 11.3)
+      return true if ScenarioBarkValidator.validate_shared(@scenario_data, text)
       each_hash(@scenario_data) do |h|
         return true if h["voice"].is_a?(Hash) && ScenarioBarkValidator.validate(h, text)
         return true if h["voice"].is_a?(String) && TtsService.normalize_text(h["voice"]) == norm
