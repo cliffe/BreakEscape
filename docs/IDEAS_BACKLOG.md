@@ -173,3 +173,6 @@ The user generated two 4 s Veo clips of the SAFETYNET agent and the keyhole (`vi
 
 ## Declared grants: server-checked triggers (2026-11-06, DECLARED_GRANTS_PLAN.md §3.4, Q3)
 A declared grant (a timer's give_item reward, such as the labs' Remote Session openers) can be claimed with one POST at any time, because both labs' triggers are client-set globals. A trigger check is worth adding once the server establishes the trigger itself: the BadUSB use recorded through an endpoint that checks the device is held and the target room unlocked, or the mail runner marking the exe foothold server-side when it delivers the reply. Then a grant can name `grantAfter: { flag | room | object | task }`, checked against server state only. Ask the user first whether the labs need cheat resistance at all.
+
+## Rear-view monitor sprites (2026-11-06, SEATED_SCALE_AUDIT.md §4)
+Every PC sprite shows the screen side, so a sitter behind a desk (facing south, like Tomasz in the accounts room) looks at the back of a monitor drawn facing the viewer. Either put a laptop or no monitor on desks used from behind, or make back-of-monitor sprites at the PCs' native sizes (PixelLab, needs the user's approval). Not urgent.
