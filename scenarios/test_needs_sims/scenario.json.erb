@@ -13,7 +13,9 @@
   "chatter": {
     "coffee": ["Go on, after you.", "Is there any milk left?", "This machine takes forever.", "Strong one today?", "Who keeps taking the mugs?", "Busy morning?"],
     "cooler": ["Did you see the car park email?", "Friday drinks again?", "How was the weekend?", "Is it raining again?", "Train was late again.", "Any plans for lunch?", "Not bad, you?", "That printer jammed again."],
-    "grumble": ["Not with him there.", "I'll come back later.", "Maybe the kitchen's quieter."]
+    "grumble": ["Not with him there.", "I'll come back later.", "Maybe the kitchen's quieter."],
+    "grumble_off": ["Who switched the coffee off?", "It's off. Typical.", "No coffee here, then."],
+    "grumble_gone": ["Missed it."]
   },
 
   "actionIcons": {
@@ -31,7 +33,8 @@
     "copier_out_c_shown": false,
     "tom_badge_left": false,
     "heard_exchange_rosa_rota": false,
-    "heard_exchange_tom_parcel": false
+    "heard_exchange_tom_parcel": false,
+    "office_coffee_off": false
   },
 
   "startItemsInInventory": [
@@ -88,7 +91,8 @@
         { "taskId": "see_look_round", "title": "See someone look round at a conversation (read the Coffee Notice: when Sanjay turns back from the coffee and grumbles, the staff at their desks nearby turn their chairs towards him)", "type": "custom", "status": "active" },
         { "taskId": "hear_screen_lock", "title": "Hear a screen lock as its owner walks off (stay in the office: Amara leaves her screen open for a quick trip, but locks it with a soft chime before a longer one, such as the kitchen run after you read the Deadline Memo)", "type": "custom", "status": "active" },
         { "taskId": "see_auto_lock", "title": "Watch a screen lock itself (Sanjay never locks his PC, but it locks on its own 20 seconds after he walks off)", "type": "custom", "status": "active" },
-        { "taskId": "use_open_screen", "title": "Use Sanjay's screen while he is away (using it keeps it awake)", "type": "custom", "status": "active" }
+        { "taskId": "use_open_screen", "title": "Use Sanjay's screen while he is away (using it keeps it awake)", "type": "custom", "status": "active" },
+        { "taskId": "see_coffee_off", "title": "Switch the office coffee off at the wall socket beside it and watch someone go to the kitchen instead (open the kitchen door first; it stays off once switched)", "type": "custom", "status": "active" }
       ]
     }
   ],
@@ -173,8 +177,20 @@
           "position": { "x": 8, "y": 8 },
           "takeable": false,
           "observations": "The office coffee station. One person at a time; anyone else waits in line.",
-          "_comment": "The coffee preset stands the NPC below the machine (useFrom 0,1) and queues two a row below; this one's own useFrom and queue win. Slice 10: the queue runs left along the bottom row (the row below is the wall; up and left put the line on the way back to the desks, where people walking home ran into it), and the coffee pool gives the user and the first in line something to say.",
-          "affordance": { "useFrom": { "dx": -1, "dy": 0 }, "queue": { "cells": [{ "dx": -1, "dy": 0 }, { "dx": -2, "dy": 0 }] }, "chatter": "coffee" }
+          "_comment": "The coffee preset stands the NPC below the machine (useFrom 0,1) and queues two a row below; this one's own useFrom and queue win. Slice 10: the queue runs left along the bottom row (the row below is the wall; up and left put the line on the way back to the desks, where people walking home ran into it), and the coffee pool gives the user and the first in line something to say. Slice 18a: offWhen office_coffee_off (set by the wall socket): while it holds the machine is no source; anyone walking to it or queued for it turns back with a grumble_off line and goes to the kitchen (or parks while the kitchen is shut); anyone pouring finishes.",
+          "affordance": { "useFrom": { "dx": -1, "dy": 0 }, "queue": { "cells": [{ "dx": -1, "dy": 0 }, { "dx": -2, "dy": 0 }] }, "chatter": "coffee", "offWhen": "office_coffee_off" }
+        },
+        {
+          "type": "wall_socket1",
+          "id": "office_coffee_socket",
+          "name": "Wall socket",
+          "position": { "x": 9.05, "y": 7.3 },
+          "takeable": false,
+          "_comment": "Slice 18a: the coffee machine's switch is its own object, so clicking the machine still shows its observations. One-way (set_global has no toggle). The hint is worded as a state, so it reads well on every click, and carries a neutral title (without one it shows under 'Intelligence Received').",
+          "triggerOnInteract": [
+            { "type": "set_global", "key": "office_coffee_off", "value": true },
+            { "type": "hint", "title": "Wall socket", "message": "The coffee machine is switched off at the wall." }
+          ]
         },
         {
           "type": "dirty_mugs1",
@@ -365,6 +381,8 @@
             { "eventPattern": "item_dropped:parcel", "onceOnly": true, "cooldown": 0, "setGlobal": { "parcel_dropped": true } },
             { "eventPattern": "npc_exchange_heard:exchange_tom_parcel", "onceOnly": true, "cooldown": 0, "completeTask": "hear_parcel_exchange" },
             { "eventPattern": "npc_swivelled:*", "condition": "data.reason === 'listen'", "onceOnly": true, "cooldown": 0, "completeTask": "see_look_round" },
+            { "eventPattern": "npc_turned_back:*", "condition": "data.reason === 'off'", "onceOnly": true, "cooldown": 0, "completeTask": "see_coffee_off" },
+            { "eventPattern": "npc_used:kitchen_coffee", "condition": "globalVars.office_coffee_off", "onceOnly": true, "cooldown": 0, "completeTask": "see_coffee_off" },
             { "eventPattern": "workstation_lock_heard:amara_pc", "condition": "data.how === 'leave'", "onceOnly": true, "cooldown": 0, "completeTask": "hear_screen_lock" },
             { "eventPattern": "workstation_screen_changed:sanjay_pc", "condition": "data.how === 'auto'", "onceOnly": true, "cooldown": 0, "completeTask": "see_auto_lock" },
             { "eventPattern": "workstation_accessed:sanjay_pc", "onceOnly": true, "cooldown": 0, "completeTask": "use_open_screen" },
@@ -453,7 +471,7 @@
           "eventMappings": [
             { "eventPattern": "object_interacted", "condition": "data.objectName === 'Activity Board'", "cooldown": 30000, "needs": { "set": { "social": 10 } } },
             { "eventPattern": "npc_left_post:marek", "condition": "data.targetId === 'office_coffee'", "cooldown": 30000, "needs": { "set": { "caffeine": 10 } } },
-            { "eventPattern": "npc_turned_back:sanjay", "onceOnly": true, "cooldown": 0, "completeTask": "see_turned_back" },
+            { "eventPattern": "npc_turned_back:sanjay", "condition": "data.reason === 'avoid'", "onceOnly": true, "cooldown": 0, "completeTask": "see_turned_back" },
             { "eventPattern": "npc_exchange_heard:exchange_rosa_rota", "onceOnly": true, "cooldown": 0, "completeTask": "hear_rota_exchange" },
             { "eventPattern": "npc_left_post:marek", "condition": "data.targetId === 'water_cooler'", "cooldown": 30000, "needs": { "set": { "social": 10 } } }
           ]
