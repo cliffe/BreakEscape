@@ -48,7 +48,83 @@ module ValidateNpcNeeds
     check_queues(json, npcs, objs, issues)
     npcs.each { |room_id, npc| check_npc(json, npc, room_id, objs, issues, npcs) }
     check_swivel(npcs, issues)
+    check_lock_habits(json, npcs, objs, issues)
     issues
+  end
+
+  # Slice 16 (OFFICE_LIFE_PLAN 12.2): the owner's screenHabit and the machine's autoLockSeconds.
+  # The same rules as systems/workstation-state.js: an object's own lockChance or
+  # locksScreenOnLeave wins over the habit; auto-lock only ever locks an open screen.
+  LOCK_FIELDS = %w[lockChance locksScreenOnLeave].freeze
+
+  def self.workstation?(data)
+    data['workstation'] == true || LOCK_FIELDS.any? { |f| data.key?(f) }
+  end
+
+  def self.station_owner(data, npcs)
+    return data['screenOwner'] if data['screenOwner'].is_a?(String) && !data['screenOwner'].empty?
+
+    npcs.find { |_, n| n['needsHome'] == data['id'] }&.last&.dig('id')
+  end
+
+  # Does this habit ever leave the screen open on a leave?
+  def self.habit_leaves_open?(habit)
+    return false unless habit.is_a?(Hash)
+    return true if habit['lockIfAwayOverSeconds'].is_a?(Numeric)
+
+    habit['lockChance'].is_a?(Numeric) && habit['lockChance'] < 1
+  end
+
+  def self.check_lock_habits(json, npcs, objs, issues)
+    if json.key?('lockCues') && ![true, false].include?(json['lockCues'])
+      issues << "❌ ERROR: lockCues must be true or false (default true)."
+    end
+    stations = objs.select { |o| o.data.is_a?(Hash) && o.data['id'].is_a?(String) && workstation?(o.data) }
+    npcs.each do |_, npc|
+      next unless npc.key?('screenHabit')
+
+      where = "NPC '#{npc['id']}' screenHabit"
+      h = npc['screenHabit']
+      unless h.is_a?(Hash)
+        issues << "❌ ERROR: #{where} must be an object { lockChance, lockIfAwayOverSeconds }."
+        next
+      end
+      (h.keys - %w[lockChance lockIfAwayOverSeconds _comment]).each do |k|
+        issues << "⚠️ WARNING: #{where} has unknown field '#{k}' (lockChance, lockIfAwayOverSeconds)."
+      end
+      if h.key?('lockChance') && !(h['lockChance'].is_a?(Numeric) && h['lockChance'] >= 0 && h['lockChance'] <= 1)
+        issues << "❌ ERROR: #{where}.lockChance must be a number from 0 to 1."
+      end
+      if h.key?('lockIfAwayOverSeconds') && !(h['lockIfAwayOverSeconds'].is_a?(Numeric) && h['lockIfAwayOverSeconds'] >= 0)
+        issues << "❌ ERROR: #{where}.lockIfAwayOverSeconds must be a number of seconds, 0 or more."
+      end
+      own = stations.select { |o| station_owner(o.data, npcs) == npc['id'] }
+      if own.empty?
+        issues << "⚠️ WARNING: #{where} but the NPC owns no workstation (needsHome or screenOwner on an object with workstation: true): nothing to lock."
+      elsif own.all? { |o| LOCK_FIELDS.any? { |f| o.data.key?(f) } }
+        issues << "⚠️ WARNING: #{where} never applies: every station it owns (#{own.map(&:id).join(', ')}) sets lockChance or locksScreenOnLeave, and the object wins. Remove the object's field to use the habit."
+      end
+    end
+    objs.each do |o|
+      d = o.data
+      next unless d.is_a?(Hash) && d.key?('autoLockSeconds')
+
+      where = "object '#{o.id}' autoLockSeconds"
+      unless d['autoLockSeconds'].is_a?(Numeric) && d['autoLockSeconds'] > 0
+        issues << "❌ ERROR: #{where} must be a number of seconds above 0."
+        next
+      end
+      unless workstation?(d)
+        issues << "⚠️ WARNING: #{where} is set on an object that is not a workstation (workstation: true): it never locks."
+        next
+      end
+      owner_id = station_owner(d, npcs)
+      habit = npcs.find { |_, n| n['id'] == owner_id }&.last&.dig('screenHabit')
+      always = d['lockChance'].is_a?(Numeric) ? d['lockChance'] >= 1 : (d.key?('locksScreenOnLeave') ? d['locksScreenOnLeave'] != false : !habit_leaves_open?(habit))
+      if always
+        issues << "⚠️ WARNING: #{where} never applies: the screen always locks when its owner leaves (locksScreenOnLeave, lockChance 1 or no habit that leaves it open), and auto-lock only locks an open screen."
+      end
+    end
   end
 
   # Slice 21 (OFFICE_LIFE_PLAN 12.7): the idle swivel turns needs NPCs' swivel chairs. `swivel` on

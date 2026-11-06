@@ -31,6 +31,21 @@
  *                                `globalVars.<objId>_screen_locked`
  *   owner present             -> nothing
  *
+ * Lock habits and auto-lock (OFFICE_LIFE_PLAN 12.2, slice 16):
+ *
+ *   NPC `screenHabit: { lockChance, lockIfAwayOverSeconds }`: the person's habit, used only when
+ *     the object has neither lockChance nor locksScreenOnLeave (the object wins). A trip expected
+ *     (npc_left_post expectedAwayMs) to last at most lockIfAwayOverSeconds stays open; a longer one
+ *     (or one with no estimate) rolls lockChance (implied 1 when only the threshold is set), salt
+ *     `habit:<objectId>:<leaves>`, so the object's `screen:` sequence never shifts.
+ *   Object `autoLockSeconds`: the machine's idle lock. The clock starts at the leave, restarts on
+ *     workstation_accessed and while a minigame is open on the object, runs on the needs clock
+ *     (tick(nowMs), called after every needs tick) and locks an open screen once.
+ *
+ *   workstation_screen_changed:<objId> { objectId, ownerId, locked, how } on every change of the
+ *   locked state: how "leave" | "auto" | "return", or "late" for a station whose state is first
+ *   decided when the player clicks it after its owner left (no cue plays for "late").
+ *
  * Generic: this module knows nothing of what a workstation holds. State is not saved across a
  * reload (the needs system restarts with the NPCs at their posts), so it resets to "owner
  * present, screen open", and install() writes both globals false for every workstation so a
@@ -57,12 +72,21 @@ export function ownerOf(data, npcs) {
     return null;
 }
 
+/** The owner's screen habit, or null. */
+export function habitOf(ownerId, npcs) {
+    const npc = (npcs || []).find(n => n?.id === ownerId);
+    const h = npc?.screenHabit;
+    return h && typeof h === 'object' ? h : null;
+}
+
 /**
  * Decide whether the screen locks on this leave. A lockChance wins over locksScreenOnLeave and
  * is resolved through `roll(npcId, salt)` (NPCNeedsSystem.roll, seeded); without a roller it
- * falls back to the plain config so the mechanic still works in a stub world.
+ * falls back to the plain config so the mechanic still works in a stub world. With neither
+ * field on the object, the owner's `habit` (screenHabit) decides; `expectedAwayMs` is the
+ * leave's estimate (null counts as a long trip). With no habit either, the screen locks.
  */
-export function decideLocked(data, ownerId, leaveCount, roll) {
+export function decideLocked(data, ownerId, leaveCount, roll, habit = null, expectedAwayMs = null) {
     if (typeof data.lockChance === 'number' && Number.isFinite(data.lockChance)) {
         const chance = Math.max(0, Math.min(1, data.lockChance));
         if (chance <= 0) return false;
@@ -70,21 +94,45 @@ export function decideLocked(data, ownerId, leaveCount, roll) {
         if (typeof roll !== 'function') return data.locksScreenOnLeave !== false;
         return roll(ownerId, `screen:${data.id}:${leaveCount}`) < chance;
     }
-    return data.locksScreenOnLeave !== false;
+    if (data.locksScreenOnLeave !== undefined || !habit) return data.locksScreenOnLeave !== false;
+    const over = Number(habit.lockIfAwayOverSeconds);
+    const hasOver = habit.lockIfAwayOverSeconds !== undefined && Number.isFinite(over);
+    if (hasOver && typeof expectedAwayMs === 'number' && expectedAwayMs <= over * 1000) return false;
+    const raw = habit.lockChance;
+    if (typeof raw !== 'number' || !Number.isFinite(raw)) return true;   // threshold alone, or nothing: locks
+    const chance = Math.max(0, Math.min(1, raw));
+    if (chance <= 0) return false;
+    if (chance >= 1) return true;
+    if (typeof roll !== 'function') return true;
+    return roll(ownerId, `habit:${data.id}:${leaveCount}`) < chance;
+}
+
+/** The object's auto-lock delay in ms, or null. */
+export function autoLockMs(data) {
+    const s = Number(data?.autoLockSeconds);
+    return data?.autoLockSeconds !== undefined && Number.isFinite(s) && s > 0 ? s * 1000 : null;
 }
 
 export class WorkstationState {
     /**
      * @param {Object} env - { objects() -> scenarioData[], npcs() -> npc[], on(pattern, cb),
-     *                         emit(name, data), setGlobal(k, v), roll(npcId, salt) }
+     *                         emit(name, data), setGlobal(k, v), roll(npcId, salt),
+     *                         clock() -> needs-clock ms, inMinigame(objectId) -> bool }
      */
     constructor(env) {
         this.env = env;
-        this.away = new Map(); // ownerId -> { away, leaves }
+        this.away = new Map(); // ownerId -> { away, leaves, leftAt, expectedAwayMs }
+        this.idle = new Map(); // objectId -> needs-clock ms the idle clock started (open, owner away)
+    }
+
+    _now() { return typeof this.env.clock === 'function' ? (Number(this.env.clock()) || 0) : 0; }
+
+    _changed(data, ownerId, locked, how) {
+        this.env.emit(`workstation_screen_changed:${data.id}`, { objectId: data.id, ownerId, locked, how });
     }
 
     install() {
-        this.env.on('npc_left_post:*', (d) => this.onLeft(d?.npcId));
+        this.env.on('npc_left_post:*', (d) => this.onLeft(d?.npcId, d));
         this.env.on('npc_returned_post:*', (d) => this.onReturned(d?.npcId));
         this.resetGlobals();
         return this;
@@ -138,16 +186,23 @@ export class WorkstationState {
         this.env.setGlobal(`${data.id}_owner_away`, !!this.away.get(owner)?.away);
     }
 
-    onLeft(npcId) {
+    onLeft(npcId, payload = {}) {
         if (!npcId) return;
         const rec = this.away.get(npcId) || { away: false, leaves: 0 };
         rec.away = true;
         rec.leaves += 1;
+        rec.leftAt = this._now();
+        const est = payload?.expectedAwayMs;
+        rec.expectedAwayMs = typeof est === 'number' && Number.isFinite(est) ? est : null;
         this.away.set(npcId, rec);
+        const habit = habitOf(npcId, this.env.npcs());
         for (const data of this._stationsOf(npcId)) {
-            data.screenLocked = decideLocked(data, npcId, rec.leaves, this.env.roll);
+            const was = !!data.screenLocked;
+            data.screenLocked = decideLocked(data, npcId, rec.leaves, this.env.roll, habit, rec.expectedAwayMs);
+            if (data.screenLocked) this.idle.delete(data.id); else this.idle.set(data.id, rec.leftAt);
             this._publish(data);
             this.env.emit(`workstation_owner_left:${data.id}`, { objectId: data.id, ownerId: npcId, screenLocked: data.screenLocked });
+            if (data.screenLocked !== was) this._changed(data, npcId, data.screenLocked, 'leave');
         }
     }
 
@@ -157,9 +212,34 @@ export class WorkstationState {
         rec.away = false;
         this.away.set(npcId, rec);
         for (const data of this._stationsOf(npcId)) {
+            const was = !!data.screenLocked;
             data.screenLocked = false;
+            this.idle.delete(data.id);
             this._publish(data);
             this.env.emit(`workstation_owner_returned:${data.id}`, { objectId: data.id, ownerId: npcId });
+            if (was) this._changed(data, npcId, false, 'return');
+        }
+    }
+
+    /**
+     * After every needs tick (needs-clock ms): auto-lock. An open station whose owner is away
+     * locks once its idle clock passes the object's autoLockSeconds; a minigame open on it keeps
+     * restarting the clock, so it never locks under a player using it.
+     */
+    tick(nowMs = this._now()) {
+        if (!this.idle.size) return;
+        for (const [objectId, since] of [...this.idle]) {
+            const data = this._find(objectId);
+            const ms = autoLockMs(data);
+            if (!data || ms === null || data.screenLocked !== false) { this.idle.delete(objectId); continue; }
+            const ownerId = ownerOf(data, this.env.npcs());
+            if (!this.away.get(ownerId)?.away) { this.idle.delete(objectId); continue; }
+            if (typeof this.env.inMinigame === 'function' && this.env.inMinigame(objectId)) { this.idle.set(objectId, nowMs); continue; }
+            if (nowMs - since < ms) continue;
+            this.idle.delete(objectId);
+            data.screenLocked = true;
+            this._publish(data);
+            this._changed(data, ownerId, true, 'auto');
         }
     }
 
@@ -170,13 +250,22 @@ export class WorkstationState {
         const ownerId = ownerOf(data, this.env.npcs());
         const rec = this.away.get(ownerId);
         if (!rec?.away) return 'attended';
-        // A station discovered after its owner left (room loaded late) takes the state now.
-        if (data.screenLocked === undefined) data.screenLocked = decideLocked(data, ownerId, rec.leaves, this.env.roll);
+        // A station discovered after its owner left (room loaded late) takes the state now, through
+        // the habit with the leave's estimate; its idle clock counts from the leave. No cue ("late").
+        if (data.screenLocked === undefined) {
+            const habit = habitOf(ownerId, this.env.npcs());
+            let locked = decideLocked(data, ownerId, rec.leaves, this.env.roll, habit, rec.expectedAwayMs ?? null);
+            const ms = autoLockMs(data);
+            if (!locked && ms !== null && this._now() - (rec.leftAt ?? this._now()) >= ms) locked = true;
+            data.screenLocked = locked;   // globals as before: not republished here
+            if (locked) this._changed(data, ownerId, true, 'late');
+        }
         if (data.screenLocked) {
             this.env.emit(`workstation_locked_attempt:${objectId}`, { objectId, ownerId });
             return 'locked';
         }
         this.env.setGlobal(`${objectId}_accessed`, true);
+        if (autoLockMs(data) !== null) this.idle.set(objectId, this._now());   // activity restarts the idle clock
         this.env.emit(`workstation_accessed:${objectId}`, { objectId, ownerId });
         return 'accessed';
     }
@@ -218,7 +307,14 @@ export function installWorkstationState() {
             g[k] = v;
             w.eventDispatcher?.emit(`global_variable_changed:${k}`, { name: k, value: v, oldValue: old });
         },
-        roll: (npcId, salt) => (w.npcNeedsSystem ? w.npcNeedsSystem.roll(npcId, salt) : 0.5)
+        roll: (npcId, salt) => (w.npcNeedsSystem ? w.npcNeedsSystem.roll(npcId, salt) : 0.5),
+        clock: () => w.npcNeedsSystem?.clockMs ?? 0,
+        // The same test npc_caught_at_post uses: the open minigame carries its object in a param.
+        inMinigame: (objectId) => {
+            const params = w.MinigameFramework?.currentMinigame?.params;
+            return !!(params && Object.values(params).some(v =>
+                v && typeof v === 'object' && (v.scenarioData?.id === objectId || v.objectId === objectId)));
+        }
     };
     w.workstationState = new WorkstationState(env).install();
     return w.workstationState;

@@ -391,7 +391,7 @@ def check_unknown_fields(json_data)
     scenario_id scenario_name scenario_brief endGoal version startRoom startPosition resumeSpawn titleScreenName
     show_scenario_brief disableAttacks creditsTheme creditsOverlay gameClock flags music startItemsInInventory globalVariables
     player objectives rooms npcs phoneNPCs narrator timers _comment mutuallyExclusiveGlobals lighting
-    importGlobals exportGlobals social npcNeedsSeed disguises actionIcons officeVisuals npcWindupMs showPressingNeeds showNpcIntentBubbles needsDebugOverlay officePresets chatter
+    importGlobals exportGlobals social npcNeedsSeed disguises actionIcons officeVisuals npcWindupMs showPressingNeeds showNpcIntentBubbles needsDebugOverlay officePresets chatter lockCues
     ttsPregenerateChatter
   ]
 
@@ -416,7 +416,7 @@ def check_unknown_fields(json_data)
     phoneId phoneTheme handle profile voiced callLabel unlockable externalVariables persistentVariables
     timedMessages timedConversation eventMappings itemsHeld puzzle_graph_actions
     needs interests needsHome needsSpeed needsRooms needsAvoidRooms needsCompany chatter chattiness usePayload onUse
-    maxQueue needsDeferMin exchanges chatterCooldownMin swivel swivelChance
+    maxQueue needsDeferMin exchanges chatterCooldownMin swivel swivelChance screenHabit
     observations disableClose los rfidCard chatBackground spriteStyle gender portraitVariants _comment
   ]
 
@@ -507,7 +507,7 @@ def check_unknown_fields(json_data)
     completesTask completesTaskOnOpen
     puzzle_graph_links hintOnlyFlags acceptsVmLabels
     affordance needsTag droppable officeType
-    workstation locksScreenOnLeave lockChance screenOwner screenLocked
+    workstation locksScreenOnLeave lockChance screenOwner screenLocked autoLockSeconds
     _comment
   ]
 

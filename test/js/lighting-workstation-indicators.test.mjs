@@ -30,7 +30,7 @@ writeFileSync(join(dir, 'npc-los.mjs'), readFileSync(join(js, 'systems/npc-los.j
 globalThis.Phaser = { AUTO: 0, Scale: { NONE: 0, CENTER_BOTH: 0, FIT: 0 }, BlendModes: { ADD: 1, MULTIPLY: 2 }, Math: { Clamp: (v, a, b) => Math.max(a, Math.min(b, v)), DegToRad: (d) => d * Math.PI / 180, Vector2: class { constructor() { this.x = 0; this.y = 0; } } } };
 const NPCS = [{ id: 'tom', needsHome: 'tom_pc' }, { id: 'amara', needsHome: 'amara_pc' }];
 globalThis.window = { gameState: { globalVariables: {} }, npcManager: { npcs: new Map(NPCS.map(n => [n.id, n])) } };
-const { LightingSystem, workstationIndicators } = await import(pathToFileURL(join(dir, 'lighting.mjs')).href);
+const { LightingSystem, workstationIndicators, flashShape, FLASH_MS, FLASH_REDUCED_MS } = await import(pathToFileURL(join(dir, 'lighting.mjs')).href);
 
 function fakeImage() {
   const img = {};
@@ -175,4 +175,104 @@ test('a workstation whose art has no glow still gets its dot', () => {
   sys.buildEmitters(state, [obj({ id: 'amara_pc', workstation: true }, 'desk_plain')]);
   assert.equal(state.emitters.length, 1);
   assert.equal(state.emitters[0].indicator, true);
+});
+
+// ── slice 16 (OFFICE_LIFE_PLAN 12.2): lightingSystem.flash ──
+
+function trackedImage(log) {
+  const img = { visible: false, destroyed: false };
+  for (const m of ['setBlendMode', 'setDepth', 'setTint', 'setPosition']) img[m] = () => img;
+  img.setVisible = (v) => { img.visible = v; return img; };
+  img.setScale = (k) => { img.scale = k; return img; };
+  img.setAlpha = (a) => { img.alpha = a; return img; };
+  img.destroy = () => { img.destroyed = true; };
+  log.push(img);
+  return img;
+}
+
+function flashRig(reduced = false) {
+  const images = [];
+  const sys = Object.create(LightingSystem.prototype);
+  sys.scene = { add: { image: () => trackedImage(images) } };
+  sys.config = {};
+  sys.flashes = new Map();
+  sys.reducedMotion = reduced;
+  const state = { roomId: 'office', emitters: [], level: 1 };
+  sys.configureRoom(state, { map: { widthInPixels: 320, heightInPixels: 256 }, position: { x: 0, y: 0 } }, { panels: false });
+  sys.buildEmitters(state, [obj({ id: 'tom_pc', lockChance: 0.5 }, 'pc3')]);
+  return { sys, state, images };
+}
+const stamps = () => { const out = []; return { out, rt: { stamp: (...a) => out.push(a) } }; };
+
+test('flashShape: lock shrinks 18 -> 10 at full strength; unlock fades at 16; over at t >= 1', () => {
+  assert.equal(flashShape('lock', 0).radius, 18);
+  assert.equal(flashShape('lock', 0.999).radius > 9.99, true);
+  assert.ok(Math.abs(flashShape('lock', 0.999).radius - 10) < 0.01);
+  assert.equal(flashShape('lock', 0.5).alpha, 1);
+  assert.equal(flashShape('unlock', 0).alpha, 1);
+  assert.ok(flashShape('unlock', 0.9).alpha < 0.1);
+  assert.equal(flashShape('unlock', 0.5).radius, 16);
+  assert.equal(flashShape('lock', 1), null);
+  assert.equal(flashShape('nope', 0), null);
+  assert.equal(flashShape('lock', 0).color, 0x3d8bff);
+  assert.equal(flashShape('unlock', 0).color, 0xfff1c8);
+});
+
+test('flash: appears in the side map, draws at the dot, expires and is destroyed; records untouched', () => {
+  const { sys, state, images } = flashRig();
+  const before = state.emitters.map(e => ({ variants: e.variants, base: e.base, indicator: e.indicator, glow: e.glow }));
+  const nImages = images.length;
+  assert.equal(sys.flash('tom_pc', 'lock'), true);
+  assert.equal(sys.flash('tom_pc', 'bogus'), false);
+  assert.equal(sys.flashes.size, 1);
+  const f = sys.flashes.get('tom_pc');
+  assert.equal(f.ms, FLASH_MS);
+  const { rt, out } = stamps();
+  sys.drawFlashes(state, 1000, rt, { }, 0, 0);
+  assert.equal(f.start, 1000, 'the clock starts on the first draw');
+  assert.equal(f.img.visible, true);
+  assert.equal(out.length, 1, 'hue-keep stamp in a lit room');
+  sys.drawFlashes(state, 1250, rt, {}, 0, 0);
+  assert.ok(f.img.scale < (18 * 0.6) / 64, 'shrinking');
+  sys.drawFlashes(state, 1500, rt, {}, 0, 0);
+  assert.equal(sys.flashes.size, 0, 'expired');
+  assert.equal(f.img.destroyed, true);
+  assert.equal(images.length, nImages + 1, 'one image for the flash');
+  state.emitters.forEach((e, i) => {
+    assert.equal(e.variants, before[i].variants);
+    assert.equal(e.base, before[i].base);
+    assert.equal(e.indicator, before[i].indicator);
+    assert.equal(e.glow, before[i].glow);
+  });
+});
+
+test('flash: survives an emitter rebuild (side map keyed by object id)', () => {
+  const { sys, state } = flashRig();
+  sys.flash('tom_pc', 'unlock');
+  sys.drawFlashes(state, 0, null, null, 0, 0);
+  sys.buildEmitters(state, [obj({ id: 'tom_pc', lockChance: 0.5 }, 'pc3')]);   // a texture-signature rebuild
+  assert.equal(sys.flashes.size, 1);
+  sys.drawFlashes(state, 200, null, null, 0, 0);
+  assert.equal(sys.flashes.get('tom_pc').img.visible, true, 'still drawn against the new indicator record');
+  sys.drawFlashes(state, 600, null, null, 0, 0);
+  assert.equal(sys.flashes.size, 0);
+});
+
+test('flash: not drawn for an object with no indicator record in the room; reduced motion is one 300 ms step', () => {
+  let { sys, state } = flashRig();
+  sys.flash('elsewhere_pc', 'lock');
+  sys.drawFlashes(state, 0, null, null, 0, 0);
+  assert.equal(sys.flashes.get('elsewhere_pc').start, null, 'waits for its room');
+
+  ({ sys, state } = flashRig(true));
+  sys.flash('tom_pc', 'lock');
+  const f = sys.flashes.get('tom_pc');
+  assert.equal(f.ms, FLASH_REDUCED_MS);
+  sys.drawFlashes(state, 0, null, null, 0, 0);
+  const s0 = f.img.scale;
+  sys.drawFlashes(state, 150, null, null, 0, 0);
+  assert.equal(f.img.scale, s0, 'no shrink');
+  assert.equal(s0, (10 * 0.6) / 64, 'at the end size');
+  sys.drawFlashes(state, 300, null, null, 0, 0);
+  assert.equal(sys.flashes.size, 0);
 });

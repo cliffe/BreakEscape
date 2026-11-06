@@ -471,6 +471,11 @@ export class NPCNeedsSystem {
         if (this._chats.size) this._tickChats();
         this.speakers = this._buildSpeakers();
         this._worldChanged();
+        // Slice 16 (OFFICE_LIFE_PLAN 12.2): the live adapter runs workstation auto-lock here, on
+        // the needs clock; the stubs have no afterTick, so the decision log is unchanged.
+        if (typeof this.world.afterTick === 'function') {
+            try { this.world.afterTick(this.clockMs); } catch (e) { if (typeof console !== 'undefined') console.error('[needs] afterTick error', e); }
+        }
     }
 
     /**
@@ -2399,6 +2404,10 @@ export function createEngineWorld() {
                 out.push({ x: c.x, y: c.y, roomId: roomAt(c.x, c.y) });
             }
             return out;
+        },
+        // After every needs tick: workstation auto-lock (workstation-state.js), on the needs clock.
+        afterTick(clockMs) {
+            W().workstationState?.tick?.(clockMs);
         },
         // For npc_caught_at_post: the player's distance to an NPC's home point (null when the
         // player is in another room) and whether the open minigame belongs to the home object.

@@ -189,3 +189,150 @@ test('install resets a workstation in an unloaded room by its saved global pair 
         guard_owner_away: true, other: true
     });
 });
+
+// ── slice 16 (OFFICE_LIFE_PLAN 12.2): lock habits, auto-lock, workstation_screen_changed ──
+
+import { habitOf, autoLockMs } from '../../public/break_escape/js/systems/workstation-state.js';
+
+function rig16(objects, npcs, { seed = 's1', minigame = () => false } = {}) {
+    const globals = {}; const emitted = []; const handlers = {};
+    const sys = new NPCNeedsSystem({}, { seed });
+    let now = 0;
+    const env = {
+        objects: () => objects, npcs: () => npcs,
+        on: (p, cb) => { handlers[p] = cb; },
+        emit: (n, d) => emitted.push([n, d]),
+        setGlobal: (k, v) => { globals[k] = v; },
+        roll: (id, salt) => sys.roll(id, salt),
+        clock: () => now,
+        inMinigame: (id) => minigame(id)
+    };
+    const ws = new WorkstationState(env).install();
+    return { ws, sys, globals, emitted, handlers, setNow: (t) => { now = t; }, changes: () => emitted.filter(e => e[0].startsWith('workstation_screen_changed:')).map(e => e[1]) };
+}
+
+test('slice 16 precedence: object lockChance and locksScreenOnLeave win over the habit; workstation: true alone defers; no habit locks', () => {
+    const never = { lockChance: 0 };
+    assert.equal(decideLocked({ id: 'p', lockChance: 1 }, 'ann', 1, () => 0.9, never, 0), true, 'object lockChance wins');
+    assert.equal(decideLocked({ id: 'p', locksScreenOnLeave: true }, 'ann', 1, () => 0.9, never, 0), true, 'object locksScreenOnLeave wins');
+    assert.equal(decideLocked({ id: 'p', locksScreenOnLeave: false }, 'ann', 1, () => 0.9, { lockChance: 1 }, 0), false);
+    assert.equal(decideLocked({ id: 'p', workstation: true }, 'ann', 1, () => 0.9, never, 0), false, 'workstation: true defers to the habit');
+    assert.equal(decideLocked({ id: 'p', workstation: true }, 'ann', 1, () => 0.9, null, 0), true, 'no habit: the default locks');
+    assert.equal(habitOf('ann', [{ id: 'ann', screenHabit: never }]), never);
+    assert.equal(habitOf('bob', [{ id: 'ann', screenHabit: never }]), null);
+});
+
+test('slice 16 lockIfAwayOverSeconds: a short trip stays open, a long one locks; alone it implies lockChance 1; a null estimate is long', () => {
+    const d = { id: 'p', workstation: true };
+    const h = { lockIfAwayOverSeconds: 20 };
+    assert.equal(decideLocked(d, 'ann', 1, () => 0.99, h, 12000), false, '12 s trip: open');
+    assert.equal(decideLocked(d, 'ann', 1, () => 0.99, h, 20000), false, 'exactly the threshold: open');
+    assert.equal(decideLocked(d, 'ann', 1, () => 0.99, h, 20001), true, 'over: locks (implied lockChance 1)');
+    assert.equal(decideLocked(d, 'ann', 1, () => 0.99, h, null), true, 'no estimate counts as long');
+    // both set: short stays open, long rolls
+    const both = { lockIfAwayOverSeconds: 20, lockChance: 0.5 };
+    assert.equal(decideLocked(d, 'ann', 1, () => 0.1, both, 5000), false);
+    assert.equal(decideLocked(d, 'ann', 1, () => 0.1, both, 60000), true);
+    assert.equal(decideLocked(d, 'ann', 1, () => 0.9, both, 60000), false);
+});
+
+test('slice 16 the habit rolls with its own salt; an object screen: sequence is unchanged by adding a habit', () => {
+    const salts = [];
+    const roll = (id, salt) => { salts.push(salt); return 0.3; };
+    decideLocked({ id: 'pc_a', workstation: true }, 'ann', 4, roll, { lockChance: 0.5 }, 1000);
+    assert.deepEqual(salts, ['habit:pc_a:4']);
+    // object lockChance: the same screen: rolls with or without a habit on the owner
+    const seq = (npcs) => {
+        const pc = { id: 'pc_a', lockChance: 0.5 };
+        const r = rig16([pc], npcs, { seed: 'fixed' });
+        const out = [];
+        for (let i = 0; i < 12; i++) { r.handlers['npc_left_post:*']({ npcId: 'ann', expectedAwayMs: 5000 }); out.push(pc.screenLocked); r.handlers['npc_returned_post:*']({ npcId: 'ann' }); }
+        return out;
+    };
+    const plain = seq([{ id: 'ann', needsHome: 'pc_a' }]);
+    const withHabit = seq([{ id: 'ann', needsHome: 'pc_a', screenHabit: { lockChance: 0.5, lockIfAwayOverSeconds: 1 } }]);
+    assert.deepEqual(withHabit, plain);
+    assert.ok(plain.includes(true) && plain.includes(false), 'the sequence mixes');
+});
+
+test('slice 16 install passes the leave payload: expectedAwayMs drives the habit; events carry how', () => {
+    const pc = { id: 'pc_a', workstation: true };
+    const r = rig16([pc], [{ id: 'ann', needsHome: 'pc_a', screenHabit: { lockIfAwayOverSeconds: 20 } }]);
+    r.handlers['npc_left_post:*']({ npcId: 'ann', expectedAwayMs: 8000 });
+    assert.equal(pc.screenLocked, false);
+    assert.deepEqual(r.changes(), [], 'open on leave: no change, no event');
+    r.handlers['npc_returned_post:*']({ npcId: 'ann' });
+    assert.deepEqual(r.changes(), [], 'a return to an open screen fires nothing');
+    r.handlers['npc_left_post:*']({ npcId: 'ann', expectedAwayMs: 45000 });
+    assert.equal(pc.screenLocked, true);
+    r.handlers['npc_returned_post:*']({ npcId: 'ann' });
+    assert.deepEqual(r.changes(), [
+        { objectId: 'pc_a', ownerId: 'ann', locked: true, how: 'leave' },
+        { objectId: 'pc_a', ownerId: 'ann', locked: false, how: 'return' }
+    ]);
+    // workstation_owner_left keeps its payload
+    const left = r.emitted.find(e => e[0] === 'workstation_owner_left:pc_a')[1];
+    assert.deepEqual(Object.keys(left).sort(), ['objectId', 'ownerId', 'screenLocked']);
+});
+
+test('slice 16 auto-lock fires once after autoLockSeconds idle on the needs clock, and not after a return', () => {
+    const pc = { id: 'pc_s', workstation: true, autoLockSeconds: 30 };
+    const r = rig16([pc], [{ id: 'san', needsHome: 'pc_s', screenHabit: { lockChance: 0 } }]);
+    r.setNow(1000);
+    r.handlers['npc_left_post:*']({ npcId: 'san', expectedAwayMs: 60000 });
+    assert.equal(pc.screenLocked, false);
+    r.ws.tick(30999);
+    assert.equal(pc.screenLocked, false, 'not yet');
+    r.ws.tick(31000);
+    assert.equal(pc.screenLocked, true);
+    assert.equal(r.globals.pc_s_screen_locked, true);
+    r.ws.tick(90000);
+    assert.deepEqual(r.changes(), [{ objectId: 'pc_s', ownerId: 'san', locked: true, how: 'auto' }], 'once');
+    r.handlers['npc_returned_post:*']({ npcId: 'san' });
+    r.ws.tick(200000);
+    assert.equal(pc.screenLocked, false, 'no auto-lock while the owner is back');
+    assert.equal(autoLockMs({ autoLockSeconds: 0 }), null);
+});
+
+test('slice 16 auto-lock restarts on access and holds while a minigame is open on the object', () => {
+    let open = false;
+    const pc = { id: 'pc_s', workstation: true, autoLockSeconds: 30 };
+    const r = rig16([pc], [{ id: 'san', needsHome: 'pc_s', screenHabit: { lockChance: 0 } }], { minigame: (id) => open && id === 'pc_s' });
+    r.setNow(0);
+    r.handlers['npc_left_post:*']({ npcId: 'san', expectedAwayMs: 60000 });
+    r.setNow(20000);
+    assert.equal(r.ws.onInteract('pc_s'), 'accessed');
+    r.ws.tick(40000);
+    assert.equal(pc.screenLocked, false, 'the access at 20 s restarted the clock');
+    open = true;
+    r.ws.tick(55000); r.ws.tick(120000);
+    assert.equal(pc.screenLocked, false, 'never under a player using it');
+    open = false;
+    r.ws.tick(149999);
+    assert.equal(pc.screenLocked, false);
+    r.ws.tick(150000);
+    assert.equal(pc.screenLocked, true, '30 s after the minigame closed');
+});
+
+test('slice 16 a station found after the leave decides through the habit with the stored estimate, idle clock from the leave, how late', () => {
+    const objects = [];
+    const npcs = [{ id: 'ann', needsHome: 'pc_a', screenHabit: { lockIfAwayOverSeconds: 20 } }, { id: 'san', needsHome: 'pc_s', screenHabit: { lockChance: 0 } }];
+    const r = rig16(objects, npcs);
+    r.setNow(0);
+    r.handlers['npc_left_post:*']({ npcId: 'ann', expectedAwayMs: 60000 });
+    r.handlers['npc_left_post:*']({ npcId: 'san', expectedAwayMs: 60000 });
+    const a = { id: 'pc_a', workstation: true };
+    const s = { id: 'pc_s', workstation: true, autoLockSeconds: 30 };
+    objects.push(a, s);   // their room loads now
+    r.setNow(45000);
+    assert.equal(r.ws.onInteract('pc_a'), 'locked', 'long trip by the stored estimate');
+    assert.equal(r.ws.onInteract('pc_s'), 'locked', 'habit leaves it open, but 45 s since the leave passes autoLockSeconds');
+    assert.deepEqual(r.changes().map(c => c.how), ['late', 'late']);
+});
+
+test('slice 16 the reload reset is unchanged: install writes both globals false', () => {
+    const r = rig16([{ id: 'pc_s', workstation: true, autoLockSeconds: 30 }], [{ id: 'san', needsHome: 'pc_s' }]);
+    assert.equal(r.globals.pc_s_screen_locked, false);
+    assert.equal(r.globals.pc_s_owner_away, false);
+    assert.equal(r.ws.idle.size, 0);
+});

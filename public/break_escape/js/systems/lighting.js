@@ -43,6 +43,11 @@
  * <id>_owner_away (and not locked), nothing while the owner is at the desk. A room "emitters" entry
  * on the object id with "indicators": [variant, ...] replaces the built-ins ([] turns them off) or
  * gives any other object dots of its own; by object id only, never by texture prefix.
+ * Lock flash (OFFICE_LIFE_PLAN 12.2, slice 16): lightingSystem.flash(objectId, 'lock' | 'unlock', ms)
+ * shows one transient glow at the object's indicator point, held in a side map keyed by object id
+ * and drawn after the emitters (an emitter rebuild never drops it): `lock` a blue glow shrinking
+ * from radius 18 to the steady 10 px dot, `unlock` a warm-white radius-16 glow fading out, 500 ms.
+ * Under prefers-reduced-motion, one 300 ms step at the end size.
  * Objects with lockType "ransomware_display" glow red while globalVars.ransomware_deployed holds
  * (a room "emitters" variant on the object's id wins over that, e.g. a screen that has recovered).
  * Brownout: lightingSystem.dip({ level: 0.5, ms: 1600 }), the "lighting_dip" scenario action, or the
@@ -107,6 +112,26 @@ const INDICATOR_LOCKED = { color: 0x3d8bff, radius: 10, intensity: 1, effect: nu
 const INDICATOR_OPEN = { color: 0xfff1c8, radius: 14, intensity: 1, effect: 'breathe', above: true };
 // Inset of the dot from the object's top-right corner, px.
 const INDICATOR_INSET = 5;
+// Lock flashes (slice 16): one per change of a screen's locked state (WCAG 2.3.1: one flash).
+const FLASH_KINDS = {
+  lock: { color: INDICATOR_LOCKED.color, from: 18, to: INDICATOR_LOCKED.radius, fade: false },
+  unlock: { color: INDICATOR_OPEN.color, from: 16, to: 16, fade: true },
+};
+export const FLASH_MS = 500;
+export const FLASH_REDUCED_MS = 300;
+
+/**
+ * Pure: a flash's look at progress t (0..1): { color, radius, alpha }, or null once it is over.
+ * Under reduced motion: one step at the end size (a lock holds the dot's size; an unlock holds
+ * its glow at full strength) for the whole of its shorter time.
+ */
+export function flashShape(kind, t, reduced = false) {
+  const f = FLASH_KINDS[kind];
+  if (!f || !(t >= 0) || t >= 1) return null;
+  if (reduced) return { color: f.color, radius: f.to, alpha: 1 };
+  const e = smooth(t);
+  return { color: f.color, radius: f.from + (f.to - f.from) * e, alpha: f.fade ? 1 - e : 1 };
+}
 
 /**
  * Built-in indicator variants for a workstation object: none unless it is a workstation with a
@@ -336,6 +361,7 @@ export class LightingSystem {
     this.rooms = new Map();   // roomId -> lighting state
     this.subscribed = false;
     this.reducedMotion = prefersReducedMotion();
+    this.flashes = new Map();   // objectId -> { kind, ms, start, img } (slice 16 lock flashes)
 
     this.createLightTexture();
     const cam = scene.cameras.main;
@@ -1155,6 +1181,7 @@ export class LightingSystem {
           rt.stamp(LIGHT_TEX, null, (x - ox) * RES, (fy - oy) * RES, multOpts);
         }
       }
+      if (this.flashes.size) this.drawFlashes(state, time, rt, multOpts, ox, oy);
       if (state === here) this.stampTorch(rt, stamp, ox, oy, here, player);
       this.stampNpcTorches(rt, stamp, ox, oy, state, ambient, time);
       this.stampNpcGlows(stamp, state);
@@ -1417,7 +1444,53 @@ export class LightingSystem {
       .some(d => d.doorProperties?.open && d.doorProperties.connectedRoom === toRoomId);
   }
 
+  /**
+   * One transient glow on a workstation's indicator point (slice 16): 'lock' or 'unlock'. A new
+   * flash on the same object replaces the old. Returns false for an unknown kind.
+   */
+  flash(objectId, kind, ms = FLASH_MS) {
+    if (!objectId || !FLASH_KINDS[kind]) return false;
+    const prev = this.flashes.get(objectId);
+    const img = prev?.img || this.scene.add.image(0, 0, LIGHT_TEX).setBlendMode(Phaser.BlendModes.ADD).setVisible(false);
+    const dur = this.reducedMotion ? FLASH_REDUCED_MS : (Number(ms) > 0 ? Number(ms) : FLASH_MS);
+    this.flashes.set(objectId, { kind, ms: dur, start: null, img });
+    return true;
+  }
+
+  /**
+   * Draw the flashes whose object has an indicator record in this room, at that record's point
+   * (the dot's offset from the object's centre), above the light map. The clock starts on the
+   * first draw, so a flash raised in a room off screen is not spent before it is seen; it ends
+   * after its time and its image is destroyed. Emitter records are read, never changed.
+   */
+  drawFlashes(state, time, rt, multOpts, ox, oy) {
+    const c = this.tmpFlashCentre || (this.tmpFlashCentre = new Phaser.Math.Vector2());
+    for (const [id, f] of this.flashes) {
+      const e = state.emitters.find(r => r.indicator && (r.obj?.scenarioData?.id ?? r.obj?.objectId) === id);
+      if (!e) continue;
+      const obj = e.obj;
+      if (!obj?.active || !obj.visible) { f.img.setVisible(false); continue; }
+      if (f.start === null) f.start = time;
+      const shape = flashShape(f.kind, (time - f.start) / f.ms, this.reducedMotion);
+      if (!shape) { f.img.destroy(); this.flashes.delete(id); continue; }
+      const v = e.variants[0] || {};
+      const p = obj.getCenter ? obj.getCenter(c) : obj;
+      const x = p.x + (v.offsetX || 0), y = p.y + (v.offsetY || 0);
+      f.img.setTint(shape.color).setScale((shape.radius * 0.6) / (LIGHT_TEX_SIZE / 2))
+        .setPosition(x, y).setDepth(LIGHT_DEPTH + 2).setAlpha(shape.alpha).setVisible(true);
+      // Keep the hue in a lit room, as the indicator dots do
+      if (rt && multOpts && state.level > 0.05 && this.preserveHue !== false) {
+        multOpts.tint = lerpColor(0xffffff, lightColorFor(shape.color), HUE_KEEP_MIX);
+        multOpts.alpha = Math.min(1, state.level * shape.alpha);
+        multOpts.scale = (shape.radius * HUE_KEEP_RADIUS * RES) / (LIGHT_TEX_SIZE / 2);
+        rt.stamp(LIGHT_TEX, null, (x - ox) * RES, (y - oy) * RES, multOpts);
+      }
+    }
+  }
+
   destroy() {
+    for (const f of this.flashes?.values() || []) f.img?.destroy();
+    this.flashes?.clear();
     this.lightMap?.destroy();
     for (const state of this.rooms.values()) {
       state.emitters.forEach(e => { e.glow?.destroy(); e.leds?.forEach(l => l.img.destroy()); e.flames?.forEach(f => f.img.destroy()); });
