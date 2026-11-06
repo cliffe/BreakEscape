@@ -404,6 +404,8 @@ export class NPCNeedsSystem {
         if (cmd && typeof cmd === 'object' && cmd.set && typeof cmd.set === 'object') {
             for (const [name, v] of Object.entries(cmd.set)) {
                 if (s.needs[name] && Number.isFinite(Number(v))) {
+                    // A mapping that sets a parked need means "now": it is unparked first (slice 14)
+                    if (s.parked[name]) this._unpark(s, name, 'set');
                     s.levels[name] = clamp(Number(v), 0, 100);
                     this._log(npcId, 'level_set', { need: name, level: round2(s.levels[name]) });
                 }
@@ -997,13 +999,13 @@ export class NPCNeedsSystem {
     }
 
     /** Timer up (or woken): urgent again at exactly urgentAt, retried on this tick's select. */
-    _unpark(s, name) {
+    _unpark(s, name, why = null) {
         const p = s.parked[name];
         delete s.parked[name];
         s.lastSatisfiedAt[name] += this.clockMs - p.since;
         s.levels[name] = s.needs[name].urgentAt;
         s.selectRetryAt = 0;
-        this._log(s.npcId, 'unparked', { need: name, reason: p.woken ? 'woken' : 'timer' });
+        this._log(s.npcId, 'unparked', { need: name, reason: why || (p.woken ? 'woken' : 'timer') });
     }
 
     /** A room loaded or a door opened: every parked need retries soon, one NPC after another. */

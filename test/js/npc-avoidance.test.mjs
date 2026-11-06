@@ -237,6 +237,17 @@ test('a door opening retries parked needs the same way', () => {
     assert.deepEqual(o.evs('unparked').map(e => e.reason), ['woken']);
 });
 
+test('a mapping that sets a parked need unparks it first (found live, game 689)', () => {
+    const o = office({ tom: { rec: { needs: { hunger: { decayPerMin: 1, urgentAt: 40, initial: 20 } } } } });
+    o.ticks(1);
+    o.sys.control('tom', { set: { hunger: 10 } });
+    assert.deepEqual(o.sys.getState('tom').parked, []);
+    assert.deepEqual(o.evs('unparked').map(e => e.reason), ['set']);
+    assert.equal(o.sys.getState('tom').levels.hunger, 10);
+    o.ticks(1);
+    assert.equal(o.evs('parked').length, 2, 'still no source: parked again on the next select');
+});
+
 // ── hysteresis ────────────────────────────────────────────────────────────
 
 test('once per episode: an avoided NPC arriving, leaving and arriving again turns the NPC back once', () => {
