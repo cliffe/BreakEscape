@@ -1677,6 +1677,19 @@ has its tick cache); function names are the stable reference.
 
 ### 7.2 Room leash and private objects (slice 2a)
 
+**Built: 2026-11-06 (engine, validator, schema, tests: 42575dda0; `test_needs_leash`: 2af3d7493).**
+As revised in section 8. Live, :3001 headless, load about 25, game 583 (`test_needs_leash`, all
+four doors opened first): leashed, Ravi went `ravi_office → west_corridor → store` and back the
+same way, never on `maya_office`'s floor (sampled every 250 ms); with `needsPrivateTo` removed
+from the loaded room, the same NPC came back through `maya_office`. Screenshot of the long route
+in the session scratchpad. **Differences from the plan:** (1) a target cut off only by the route
+(rooms in a row, the middle forbidden) is skipped by `reachable` without a `leashed` entry; the
+log notes only options the filter removed. (2) The debug overlay's "leashed" label is not built.
+(3) The `test_needs_sims` showcase changes (private PCs, the lounge `needsPrivateTo`, the kettle,
+the objective) and the sims and lab live regression runs are **not done yet** (handover note
+`HANDOVER_OFFICE_S2A.md`); the sims node fixture's decision log is byte-identical before and
+after the engine change.
+
 **Authoring.** Three forms, from coarse to fine. Prefer the room form for "someone's office": one
 line on the room instead of a deny list on every other NPC.
 

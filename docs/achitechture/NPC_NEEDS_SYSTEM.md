@@ -113,6 +113,22 @@ option only while a matching item is present (section 5.2).
 | `usePayload` | Any JSON value. **Opaque and NPC-owned.** Never read, logged or interpreted by the engine; a clone rides on every `npc_used` event this NPC emits |
 | `onUse` | Object id → `{ setGlobal?: name, emitEvent?: name }`. Applied when **this** NPC completes a use of **that** object. `setGlobal` sets the global to `true` |
 | `needsSpeed` | Walk speed for needs moves (px/s). Default `behavior.patrol.speed`, else 80 |
+| `needsRooms` | Room leash, allow list: the only rooms this NPC's needs use objects in or walk through. The home room is always allowed. Fixed per NPC (no global conditions) |
+| `needsAvoidRooms` | Room leash, deny list: rooms its needs never use or cross, even as a short cut; it goes round or waits. May not list the home room |
+
+**Room leash and private objects (slice 2a, built 2026-11-06).** Room field `needsPrivateTo: [npcIds]`
+keeps every other NPC's needs out of a room (someone's office). Object fields
+`affordance.private: true` and `affordance.owners: [npcIds]` limit **uses** to the owners
+(`owners`, else `screenOwner`, else the NPC whose `needsHome` is the object); any NPC may still
+deliver to it (`accepts`). The home room comes from scenario data (coordinate home, the needsHome
+object's room, else the spawn room), so a provisional home never forbids it. Candidates are
+filtered in `_useCandidate`/`_carryCandidate`; routes carry `avoidRooms` into `reachable` and
+`goToAndStay`, and the behaviour passes them to `findWorldPath` at every planning point, which
+avoids each loaded forbidden room's inner floor ring (corners included) for that search only,
+skipping the room the search starts in. Scripts and route patrols ignore the leash. When the leash
+removes an option the log gets `leashed {need, skipped, chose}` and the system emits
+`npc_needs_leashed:<npcId>` (once per job, or once per urgent episode when nothing is left).
+Live proof: `scenarios/test_needs_leash` (four rooms in a loop).
 
 ### 3.2 Object fields
 
