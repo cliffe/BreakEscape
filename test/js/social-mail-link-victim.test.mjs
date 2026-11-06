@@ -132,7 +132,7 @@ test('a built page: linkInfo is filled, linkCredible passes, and the message lan
 
 test('a submitted send writes the victim record and adds the capture note once', () => {
     const notes = [];
-    window.addNote = (t) => notes.push(t);
+    window.addNote = (title, content, important) => notes.push({ title, content, important });
     window.gameState = { globalVariables: { se_landing_pages: { payroll_login: builtRecord() } } };
     const scene = fakeScene(window.gameState.globalVariables);
 
@@ -140,7 +140,8 @@ test('a submitted send writes the victim record and adds the capture note once',
     const rec = window.gameState.globalVariables.se_landing_pages.payroll_login;
     assert.deepEqual(rec.victim, { visited: true, submitted: true, noticed: false, domainId: 'd_word' }, 'meets + landed = submitted');
     assert.equal(notes.length, 1, 'capture note added on the first submit');
-    assert.equal(notes[0], 'Sofia Lord was captured. Report it.');
+    // addNote(title, content, important): a single object argument threw in the real notes system.
+    assert.deepEqual(notes[0], { title: 'Credential captured', content: 'Sofia Lord was captured. Report it.', important: false });
 
     // A second submitting send does not add the note again (captureGranted is false).
     bridge.performSend(scene, linkMessage());
@@ -150,7 +151,7 @@ test('a submitted send writes the victim record and adds the capture note once',
 
 test('a below-threshold page: victim is noticed, no capture, linkCredible fails', () => {
     const notes = [];
-    window.addNote = (t) => notes.push(t);
+    window.addNote = (title, content, important) => notes.push({ title, content, important });
     const weak = builtRecord({ credibility: 40, meetsThreshold: false, gatesPassed: false });
     window.gameState = { globalVariables: { se_landing_pages: { payroll_login: weak } } };
     const scene = fakeScene(window.gameState.globalVariables);
