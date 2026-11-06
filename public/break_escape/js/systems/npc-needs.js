@@ -57,16 +57,40 @@ export const ENVIRONMENTAL_NEEDS = Object.freeze(['caffeine', 'thirst', 'hunger'
 export function bubbleMs(line) {
     return Math.min(CHAT_MAX_MS, CHAT_BASE_MS + CHAT_PER_CHAR_MS * String(line || '').length);
 }
-// Built-in pools: office small talk, no work, security or plot content. A scenario's `chatter`
-// replaces a pool by name; `"chatter": false` turns these off (NPC pools still apply).
-export const DEFAULT_CHATTER = Object.freeze({
-    coffee: Object.freeze(["Machine's slow again.", 'Who finished the milk?', 'Is this one decaf?', 'Third one today.', 'Need this, honestly.']),
-    cooler: Object.freeze(['Did you see the car park email?', 'Friday drinks?', 'Good weekend?', 'Is it raining again?', 'Busy morning?', 'Train was late again.', 'Any plans for lunch?', 'Not bad, you?']),
-    greet: Object.freeze(['Morning.', 'Alright?', "How's it going?", 'Not bad, you?']),
-    // Said once by an NPC turning back from a source someone it avoids is at (slice 14). The one
-    // place grumble text lives; a scenario's `chatter.grumble` replaces it, an NPC's adds to it.
-    grumble: Object.freeze(["I'll come back later.", 'Not now.', 'Later, maybe.'])
+// Voiced chatter (slice 15, OFFICE_LIFE_PLAN 11). Every spoken line lives in a scenario file: an
+// NPC's `chatter` pools, the scenario's shared `chatter` pools, or an ink exchange knot. The engine
+// has no spoken text of its own: a topic with nothing to say (or a speaker on cooldown) gets picture
+// chat, a speech bubble holding an icon. Lines come from a seeded shuffle-bag per NPC and topic.
+export const CHATTER_COOLDOWN_MIN = 5;     // chatterCooldownMin default: needs-clock minutes between barks
+export const PICTURE_MS = 2500;            // a picture-chat bubble shows this long
+export const EXCHANGE_LINE_MAX_MS = 6000;  // an exchange line may be longer than a bark
+export const EXCHANGE_MAX_MS = 60000;      // the pair's overlap is extended by the knot, at most this
+// Picture chat by topic (icon names from npc-action-icons.js NPC_ICON_NAMES); cycled per speaker
+export const PICTURE_CHATTER = Object.freeze({
+    coffee: Object.freeze(['caffeine', 'social', 'work']),
+    cooler: Object.freeze(['thirst', 'social', 'work']),
+    greet: Object.freeze(['social']),
+    grumble: Object.freeze(['avoid'])
 });
+const PICTURE_DEFAULT = Object.freeze(['social']);
+/** An exchange line's bubble: like bubbleMs, with a longer cap. */
+export function exchangeLineMs(line) {
+    return Math.min(EXCHANGE_LINE_MAX_MS, CHAT_BASE_MS + CHAT_PER_CHAR_MS * String(line || '').length);
+}
+/** Pure: the icons picture chat cycles through for a topic. */
+export function pictureIcons(topic) {
+    return PICTURE_CHATTER[topic] || PICTURE_DEFAULT;
+}
+/** Pure: a seeded Fisher-Yates order of 0..n-1; never starts with `avoidFirst` when n > 1. */
+export function bagOrder(n, rng, avoidFirst = -1) {
+    const order = Array.from({ length: n }, (_, i) => i);
+    for (let i = n - 1; i > 0; i--) {
+        const j = Math.floor(rng() * (i + 1));
+        [order[i], order[j]] = [order[j], order[i]];
+    }
+    if (n > 1 && order[0] === avoidFirst) [order[0], order[1]] = [order[1], order[0]];
+    return order;
+}
 
 /** Pure: a pool as { lines, hush, overhearRadius } from an array or { lines, hush, overhearRadius }. */
 export function normalisePool(p) {
@@ -79,18 +103,19 @@ export function normalisePool(p) {
 }
 
 /**
- * Pure: the topic's pool for one speaker. The scenario's pool of that name replaces the built-in
- * one (`scenarioChatter === false`: no built-ins); the NPC's own pool of that name adds to it.
+ * Pure: the topic's spoken pool for one speaker: the scenario's pool of that name plus the NPC's
+ * own. There are no built-in lines (slice 15): with neither, the topic is picture chat only.
+ * `pictures` is false when the scenario sets `"chatter": false` (no picture chat either).
  */
 export function chatterPool(topic, scenarioChatter, npcChatter) {
     let base = null;
     if (scenarioChatter && typeof scenarioChatter === 'object' && scenarioChatter[topic] !== undefined) base = normalisePool(scenarioChatter[topic]);
-    else if (scenarioChatter !== false && DEFAULT_CHATTER[topic]) base = normalisePool([...DEFAULT_CHATTER[topic]]);
     const own = npcChatter && typeof npcChatter === 'object' ? normalisePool(npcChatter[topic]) : null;
     return {
         lines: [...(base?.lines || []), ...(own?.lines || [])],
         hush: !!(base?.hush || own?.hush),
-        overhearRadius: base?.overhearRadius || own?.overhearRadius || null
+        overhearRadius: base?.overhearRadius || own?.overhearRadius || null,
+        pictures: scenarioChatter !== false
     };
 }
 
@@ -216,6 +241,12 @@ export class NPCNeedsSystem {
         this._chats = new Map();
         this._chatSeq = 0;
         this._anyCompany = false;
+        // Voiced chatter (slice 15): shuffle-bags (npcId|topic), the speech lock (one voiced line at
+        // a time, across all NPCs) and exchanges played this session (the heard_<knot> global is
+        // what survives a reload)
+        this._bags = new Map();
+        this._speechUntil = 0;
+        this._exPlayed = new Set();
         // Queues (slice 10): claim order across the whole system, so queue order is deterministic
         this._queueSeq = 0;
         // Read-outs for tests and live measurement; never feed a decision
@@ -320,6 +351,9 @@ export class NPCNeedsSystem {
         this._chats.clear();
         this._chatSeq = 0;
         this._queueSeq = 0;
+        this._bags.clear();
+        this._speechUntil = 0;
+        this._exPlayed.clear();
         this.log = [];
         this.clockMs = 0;
         this.tickCount = 0;
@@ -1067,19 +1101,137 @@ export class NPCNeedsSystem {
      * turn-back count. Overheard like a chat line (npc_overheard); no npc_chatted (it is no chat).
      */
     _grumble(s, objectId) {
-        const pool = chatterPool('grumble', this._scenarioChatter(), this._rec(s).chatter);
-        if (!pool.lines.length) return;
-        const idx = Math.floor(this.roll(s.npcId, `grumble:${s.turnCount}`) * pool.lines.length);
-        const line = pool.lines[idx];
-        s.saying = { line, topic: 'grumble', objectId, until: this.clockMs + bubbleMs(line) };
+        const pick = this._pickBark(s, 'grumble');
+        if (!pick) return;
+        const { line, idx, picture, pool } = pick;
+        const until = this.clockMs + (picture ? PICTURE_MS : bubbleMs(line));
+        s.saying = { line, picture, topic: 'grumble', objectId, until };
         const radius = pool.overhearRadius || OVERHEAR_RADIUS;
         const h = typeof this.world.playerHears === 'function' ? (this.world.playerHears(s.npcId, radius) || {}) : {};
+        if (line) this._speak(s.npcId, line, until, { topic: 'grumble', objectId, overheard: !!h.overheard });
         if (h.overheard) {
             this._emit(`npc_overheard:${s.npcId}`, {
-                speakerId: s.npcId, partnerId: null, topic: 'grumble', lineId: `grumble:${idx}`, line, objectId,
+                speakerId: s.npcId, partnerId: null, topic: 'grumble', lineId: picture ? `picture:${picture}` : `grumble:${idx}`, line, picture, objectId,
                 overheard: true, playerDistance: Number.isFinite(h.distance) ? Math.round(h.distance) : null
             });
         }
+    }
+
+    // ── voiced chatter: bag, cooldown, speech lock, picture chat (slice 15) ──
+
+    /** The next line index from this NPC's bag for a topic: no repeat until the bag is empty. */
+    _bagNext(npcId, topic, lines) {
+        const key = `${npcId}|${topic}`;
+        const sig = lines.join('\n');
+        let b = this._bags.get(key);
+        if (!b || b.sig !== sig) { b = { sig, order: [], round: 0, last: -1 }; this._bags.set(key, b); }
+        if (!b.order.length) b.order = bagOrder(lines.length, createSeededRng(hash32(`${this.seed}:${key}:bag:${b.round++}`)), b.last);
+        b.last = b.order.shift();
+        return b.last;
+    }
+
+    _cooldownMs(s) {
+        const v = Number(this._rec(s).chatterCooldownMin);
+        return (Number.isFinite(v) && v >= 0 ? v : CHATTER_COOLDOWN_MIN) * 60000;
+    }
+
+    _speechFree() {
+        return this.clockMs >= this._speechUntil;
+    }
+
+    /**
+     * What a speaker says on a turn: a bark from the bag when it has lines, is off cooldown and the
+     * speech lock is free; otherwise a picture. Returns { line, idx, picture, pool } or null (silent:
+     * `"chatter": false` and nothing to say). Taking a bark starts the cooldown.
+     */
+    _pickBark(s, topic, { waitForLock = false } = {}) {
+        const pool = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter);
+        const ready = pool.lines.length && !(s.chatterQuietUntil > this.clockMs);
+        if (ready && this._speechFree()) {
+            const idx = this._bagNext(s.npcId, topic, pool.lines);
+            s.chatterQuietUntil = this.clockMs + this._cooldownMs(s);
+            return { line: pool.lines[idx], idx, picture: null, pool };
+        }
+        if (ready && waitForLock) return { wait: true, pool };
+        if (!pool.pictures) return null;
+        const icons = pictureIcons(topic);
+        s.pictureN = (s.pictureN || 0) + 1;
+        return { line: null, idx: -1, picture: icons[(s.pictureN - 1) % icons.length], pool };
+    }
+
+    /** A voiced line: take the speech lock until it ends and hand it to the world to speak. */
+    _speak(npcId, line, until, info) {
+        this._speechUntil = Math.max(this._speechUntil, until);
+        if (typeof this.world.speak === 'function') {
+            try { this.world.speak(npcId, line, { ...info, ms: until - this.clockMs }); } catch (e) { /* audio never breaks a tick */ }
+        }
+    }
+
+    // ── scripted exchanges (slice 15, OFFICE_LIFE_PLAN 11.4) ────────────────
+
+    _exchangeHeard(knot) {
+        return this._exPlayed.has(knot) || this._globalHolds(`heard_${knot}`);
+    }
+
+    /** Does an exchanges[] entry's `with` name the other NPC (an id or "group:<name>")? */
+    _exchangeWith(entry, other) {
+        const w = entry?.with;
+        if (typeof w !== 'string' || !w) return false;
+        if (w === other.npcId) return true;
+        return w.startsWith('group:') && this._groups(other).includes(w.slice(6));
+    }
+
+    /**
+     * The first unplayed exchange for this pair whose speakers are exactly the two of them, or null.
+     * The lower id's list is read first. Lines come from the world (a separate ink story instance);
+     * null lines (story not loaded yet) give { pending: true }, so a later turn tries again.
+     */
+    _findExchange(A, B) {
+        let pending = false;
+        for (const [own, other] of [A, B].sort((x, y) => (x.npcId < y.npcId ? -1 : 1)).map((x, i, arr) => [x, arr[1 - i]])) {
+            const list = this._rec(own).exchanges;
+            if (!Array.isArray(list)) continue;
+            for (const e of list) {
+                if (!e || typeof e.knot !== 'string' || !e.knot || !this._exchangeWith(e, other)) continue;
+                if (this._exchangeHeard(e.knot)) continue;
+                if (e.requireGlobal !== undefined && !this._globalHolds(e.requireGlobal)) continue;
+                const lines = typeof this.world.exchangeLines === 'function' ? this.world.exchangeLines(own.npcId, e.knot) : null;
+                if (lines === null || lines === undefined) { pending = true; continue; }
+                if (!Array.isArray(lines) || !lines.length) continue;
+                if (!lines.every(l => l && typeof l.text === 'string' && (l.speakerId === A.npcId || l.speakerId === B.npcId))) continue;
+                return { knot: e.knot, ownerId: own.npcId, lines: lines.map(l => ({ speakerId: l.speakerId, text: l.text })), i: 0 };
+            }
+        }
+        return pending ? { pending: true } : null;
+    }
+
+    /** Is the player in earshot of the pair (slice 8 `overheard`: same room, lit, in range, clear line)? */
+    _audience(c, radius) {
+        if (typeof this.world.playerHears !== 'function') return false;
+        return [c.a, c.b].some(id => !!(this.world.playerHears(id, radius) || {}).overheard);
+    }
+
+    /** Start an exchange on a chat: hold both uses for the knot's length (capped). */
+    _startExchange(c, ex, A, B) {
+        let total = 0;
+        for (const l of ex.lines) total += exchangeLineMs(l.text) + CHAT_GAP_MS;
+        const end = this.clockMs + Math.min(total, EXCHANGE_MAX_MS);
+        if (A.job && A.job.useUntil < end) A.job.useUntil = end;
+        if (!c.queue && B.job && B.job.useUntil < end) B.job.useUntil = end;
+        c.ex = ex;
+        this._log(ex.ownerId, 'exchange_started', { knot: ex.knot, with: ex.ownerId === c.a ? c.b : c.a });
+    }
+
+    _finishExchange(c) {
+        const ex = c.ex;
+        c.ex = null;
+        c.exDone = true;
+        this._exPlayed.add(ex.knot);
+        if (typeof this.world.setGlobal === 'function') {
+            try { this.world.setGlobal(`heard_${ex.knot}`, true); } catch (e) { /* keep the session flag */ }
+        }
+        this._log(ex.ownerId, 'exchange_heard', { knot: ex.knot });
+        this._emit(`npc_exchange_heard:${ex.knot}`, { knot: ex.knot, ownerId: ex.ownerId, npcIds: [c.a, c.b].sort(), objectId: c.objectId });
     }
 
     _carryCandidate(s, tag, it, objects, pos) {
@@ -1588,37 +1740,71 @@ export class NPCNeedsSystem {
             const A = this.states.get(c.a), B = this.states.get(c.b);
             // Either one frozen in a conversation, gone, or finished: the pairing ends
             if (!this._usingObj(A, oid) || !(c.queue ? this._queuedFront(B, oid) : this._usingObj(B, oid))) { this._chats.delete(oid); continue; }
-            if (c.current && this.clockMs >= c.current.until) c.current = null;
+            if (c.current && this.clockMs >= c.current.until) {
+                c.current = null;
+                if (c.ex && c.ex.i >= c.ex.lines.length) this._finishExchange(c);
+            }
             if (c.current) {
                 if (c.hush && !c.hushed && this._playerWithin([c.a, c.b])) c.hushed = true;
                 continue;
             }
             if (c.hushed) { this._chats.delete(oid); continue; }
             if (this.clockMs < c.nextAt) continue;
+            const overlapEnd = c.queue ? A.job.useUntil : Math.min(A.job.useUntil, B.job.useUntil);
+            // Order of preference (11.4): an unplayed exchange with the player in earshot, then a
+            // bark from the bag, then picture chat
+            if (!c.ex && !c.exDone) {
+                const ex = this._findExchange(A, B);
+                if (ex && !ex.pending && this._audience(c, c.overhearRadius || OVERHEAR_RADIUS)) this._startExchange(c, ex, A, B);
+                else if (!ex) c.exDone = true;   // none for this pair: no need to look again this meeting
+            }
+            if (c.ex) {
+                if (!this._speechFree()) { c.nextAt = this._speechUntil; continue; }   // queue behind another line
+                const l = c.ex.lines[c.ex.i];
+                const ms = exchangeLineMs(l.text);
+                const partnerId = l.speakerId === c.a ? c.b : c.a;
+                c.current = { speakerId: l.speakerId, partnerId, line: l.text, until: this.clockMs + ms, knot: c.ex.knot };
+                c.ex.i++;
+                const h = typeof this.world.playerHears === 'function' ? (this.world.playerHears(l.speakerId, c.overhearRadius || OVERHEAR_RADIUS) || {}) : {};
+                this._speak(l.speakerId, l.text, c.current.until, { topic: c.topic, objectId: oid, knot: c.ex.knot, overheard: !!h.overheard });
+                const pa = this.world.npcPos(partnerId);
+                if (pa) this.world.faceTo(l.speakerId, pa.x, pa.y);
+                const data = {
+                    speakerId: l.speakerId, partnerId, topic: c.topic, lineId: `${c.ex.knot}:${c.ex.i - 1}`, line: l.text, objectId: oid,
+                    exchange: c.ex.knot, overheard: !!h.overheard, playerDistance: Number.isFinite(h.distance) ? Math.round(h.distance) : null
+                };
+                this._emit(`npc_chatted:${oid}`, data);
+                if (data.overheard) this._emit(`npc_overheard:${l.speakerId}`, { ...data });
+                c.speaker = partnerId;
+                c.nextAt = c.current.until + CHAT_GAP_MS;
+                continue;
+            }
             const partnerId = c.speaker === c.a ? c.b : c.a;
+            const sp = this.states.get(c.speaker);
             const rec = this.world.getNpc(c.speaker) || {};
-            const pool = chatterPool(c.topic, this._scenarioChatter(), rec.chatter);
             const salt = `chat:${oid}:${c.seq}:${c.n}`;
             c.n++;
             // chattiness: the seeded chance this speaker says something on its turn (default 1)
             const chatty = Number.isFinite(Number(rec.chattiness)) && rec.chattiness !== null ? clamp(Number(rec.chattiness), 0, 1) : 1;
-            if (!pool.lines.length || this.roll(c.speaker, `${salt}:chatty`) >= chatty) {
+            const pick = this.roll(c.speaker, `${salt}:chatty`) < chatty ? this._pickBark(sp, c.topic, { waitForLock: true }) : null;
+            if (pick?.wait) { c.n--; c.nextAt = this._speechUntil; continue; }   // a voiced line is playing: queue
+            if (!pick) {
                 if (c.n > 40) { this._chats.delete(oid); continue; }   // two silent NPCs: give up
                 c.speaker = partnerId;
                 c.nextAt = this.clockMs + CHAT_GAP_MS;
                 continue;
             }
-            const idx = Math.floor(this.roll(c.speaker, `${salt}:line`) * pool.lines.length);
-            const line = pool.lines[idx];
-            const ms = bubbleMs(line);
+            const { line, idx, picture, pool } = pick;
+            const ms = picture ? PICTURE_MS : bubbleMs(line);
             // Only while both are still using it: a line that would outlast the overlap is not started
-            if (this.clockMs + ms > (c.queue ? A.job.useUntil : Math.min(A.job.useUntil, B.job.useUntil))) { this._chats.delete(oid); continue; }
-            c.current = { speakerId: c.speaker, partnerId, line, until: this.clockMs + ms };
+            if (this.clockMs + ms > overlapEnd) { this._chats.delete(oid); continue; }
+            c.current = { speakerId: c.speaker, partnerId, line, picture, until: this.clockMs + ms };
             c.hush = pool.hush;
             const radius = c.overhearRadius || pool.overhearRadius || OVERHEAR_RADIUS;
             const h = typeof this.world.playerHears === 'function' ? (this.world.playerHears(c.speaker, radius) || {}) : {};
+            if (line) this._speak(c.speaker, line, c.current.until, { topic: c.topic, objectId: oid, overheard: !!h.overheard });
             const data = {
-                speakerId: c.speaker, partnerId, topic: c.topic, lineId: `${c.topic}:${idx}`, line, objectId: oid,
+                speakerId: c.speaker, partnerId, topic: c.topic, lineId: picture ? `picture:${picture}` : `${c.topic}:${idx}`, line, picture, objectId: oid,
                 overheard: !!h.overheard, playerDistance: Number.isFinite(h.distance) ? Math.round(h.distance) : null
             };
             this._emit(`npc_chatted:${oid}`, data);
@@ -1639,12 +1825,12 @@ export class NPCNeedsSystem {
         for (const c of this._chats.values()) {
             const cur = c.current;
             if (cur && cur.speakerId === npcId && this.clockMs < cur.until) {
-                return { line: cur.line, partnerId: cur.partnerId, topic: c.topic, objectId: c.objectId, remainingMs: cur.until - this.clockMs };
+                return { line: cur.line, picture: cur.picture || null, knot: cur.knot || null, partnerId: cur.partnerId, topic: c.topic, objectId: c.objectId, remainingMs: cur.until - this.clockMs };
             }
         }
         // A grumble (slice 14) is a one-off line with no partner
         const say = this.states.get(npcId)?.saying;
-        if (say && this.clockMs < say.until) return { line: say.line, partnerId: null, topic: say.topic, objectId: say.objectId, remainingMs: say.until - this.clockMs };
+        if (say && this.clockMs < say.until) return { line: say.line, picture: say.picture || null, knot: null, partnerId: null, topic: say.topic, objectId: say.objectId, remainingMs: say.until - this.clockMs };
         return null;
     }
 
@@ -2134,6 +2320,9 @@ export function createEngineWorld() {
             const distance = Math.hypot(pr.x - pos.x, pr.y - pos.y);
             const sameRoom = !W().currentPlayerRoom || !pos.roomId || W().currentPlayerRoom === pos.roomId;
             if (!sameRoom || distance > radius) return { overheard: false, distance };
+            // Lit: nobody overhears in a dark room (slice 15 audience rule, OFFICE_LIFE_PLAN 11.4)
+            const ls = W().lightingSystem, lit = ls?.rooms?.get?.(pos.roomId);
+            if (lit && typeof ls.roomLevel === 'function' && ls.roomLevel(lit) < 0.5) return { overheard: false, distance };   // roomIsDark (DARK_LEVEL)
             let clear = true;
             const b = behaviour(id);
             if (b?.canSeePlayerToFace) { try { clear = !!b.canSeePlayerToFace({ x: pr.x, y: pr.y }); } catch (e) { clear = true; } }
@@ -2141,6 +2330,16 @@ export function createEngineWorld() {
         },
         // Scenario chatter pools (object, false, or undefined for the built-ins)
         chatterConfig: () => W().gameScenario?.chatter,
+        // Voiced chatter (slice 15): npc-needs-chatter.js speaks lines and runs exchange knots on
+        // a separate ink story instance; until it has loaded, lines are bubbles only
+        speak: (id, line, info) => W().npcChatterVoice?.say(id, line, info),
+        exchangeLines: (id, knot) => W().npcChatterVoice?.exchangeLines(id, knot) ?? null,
+        setGlobal(name, value) {
+            const v = W().npcChatterVoice;
+            if (v?.setGlobal) { v.setGlobal(name, value); return; }
+            const g = W().gameState?.globalVariables;
+            if (g) g[name] = value;
+        },
         // needsCompany requireGlobal (requiredGlobalsHold, copied from npc-sight-challenge.js)
         globalHolds: cond => requiredGlobalsHold(cond, W().gameState?.globalVariables || {}),
         // A second user of a shared object stands one tile beside the first: right, left, below, above

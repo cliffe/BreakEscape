@@ -11,7 +11,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import {
-    NPCNeedsSystem, NEEDS_TICK_MS, requiredGlobalsHold, DEFAULT_CHATTER, AVOID_BUBBLE_MS, NEEDS_DEFER_MIN, WAKE_BASE_MS, WAKE_STEP_MS
+    NPCNeedsSystem, NEEDS_TICK_MS, requiredGlobalsHold, PICTURE_CHATTER, AVOID_BUBBLE_MS, NEEDS_DEFER_MIN, WAKE_BASE_MS, WAKE_STEP_MS
 } from '../../public/break_escape/js/systems/npc-needs.js';
 import { makeWorld } from './fixtures/needs-stub-world.mjs';
 import { runSimsDay } from './fixtures/needs-sims-world.mjs';
@@ -161,7 +161,9 @@ test('turning back on the way: turned_back, npc_turned_back, the grumble, then t
     const st = o.sys.getState('sanjay');
     assert.equal(st.job.targetId, 'b_coffee', 'fallback to the far machine');
     assert.equal(st.avoiding, 'marek', 'face bubble after turning back');
-    assert.ok(DEFAULT_CHATTER.grumble.includes(st.talking.line));
+    // No grumble pool in this office: slice 15's picture chat (the engine has no spoken lines)
+    assert.equal(st.talking.line, null);
+    assert.ok(PICTURE_CHATTER.grumble.includes(st.talking.picture));
     assert.equal(st.talking.topic, 'grumble');
     assert.equal(st.talking.partnerId, null);
     o.ticks(Math.ceil(st.talking.remainingMs / NEEDS_TICK_MS) + 1);
@@ -335,7 +337,8 @@ test('the grumble is overheard like a chat line (npc_overheard, no npc_chatted);
     assert.equal(ov[0].data.topic, 'grumble');
     assert.equal(ov[0].data.partnerId, null);
     assert.equal(ov[0].data.playerDistance, 70);
-    assert.ok(DEFAULT_CHATTER.grumble.includes(ov[0].data.line));
+    assert.equal(ov[0].data.line, null);
+    assert.ok(PICTURE_CHATTER.grumble.includes(ov[0].data.picture));
     assert.equal(heard.emitted('npc_chatted').length, 0);
     const own = turn({ chatter: { grumble: ['Not with him there.'] } });
     assert.equal(own.sys.getState('sanjay').talking.line, 'Not with him there.');

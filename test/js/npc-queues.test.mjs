@@ -197,7 +197,7 @@ test('the user and the first in line chat; the second in line never does', () =>
     assert.ok(lines.length >= 2, `got ${lines.length}`);
     for (const e of lines) {
         assert.ok(['ann', 'bob'].includes(e.data.speakerId) && ['ann', 'bob'].includes(e.data.partnerId));
-        assert.ok(e.data.line.length > 0);
+        assert.ok((e.data.line || e.data.picture).length > 0);
     }
     assert.ok(o.sys.getState('ann').chatPartner === 'bob' || lines.length);
     // Each line ends before the user's use does

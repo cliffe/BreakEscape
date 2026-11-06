@@ -29,7 +29,9 @@
     "copier_out_a_shown": false,
     "copier_out_b_shown": false,
     "copier_out_c_shown": false,
-    "tom_badge_left": false
+    "tom_badge_left": false,
+    "heard_exchange_rosa_rota": false,
+    "heard_exchange_tom_parcel": false
   },
 
   "startItemsInInventory": [
@@ -80,7 +82,9 @@
         { "taskId": "see_queue_chat", "title": "Chat in the coffee queue (nobody chats with Marek, even in the queue)", "type": "custom", "status": "active" },
         { "taskId": "see_printout", "title": "A printout is delivered to a desk (Sanjay prints at his PC; Amara takes it from the copier tray to her desk, where it is filed a minute later)", "type": "custom", "status": "active" },
         { "taskId": "see_turned_back", "title": "Someone turns back rather than stand near a person they avoid (with the kitchen shut, read the Coffee Notice: Marek goes for a coffee, Sanjay sets off too, sees Marek and turns back; open the kitchen and he goes there instead)", "type": "custom", "status": "active" },
-        { "taskId": "see_left_behind", "title": "Spot something left on an empty desk (Tom often forgets his ID badge when he gets up, and pockets it when he sits down again)", "type": "custom", "status": "active" }
+        { "taskId": "see_left_behind", "title": "Spot something left on an empty desk (Tom often forgets his ID badge when he gets up, and pockets it when he sits down again)", "type": "custom", "status": "active" },
+        { "taskId": "hear_rota_exchange", "title": "Overhear Sanjay and Rosa talk about the kitchen rota (read the Activity Board, open the lounge door and stay near the water cooler; they say it once)", "type": "custom", "status": "active" },
+        { "taskId": "hear_parcel_exchange", "title": "Overhear Tom and Amara talk about the parcel (after Amara has opened it, read the Activity Board and stand by the coffee queue)", "type": "custom", "status": "active" }
       ]
     }
   ],
@@ -299,6 +303,8 @@
           "spriteTalk": "assets/characters/female_office_worker_talk.png",
           "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
           "storyPath": "scenarios/test_needs_sims/ink/amara.json",
+          "chatter": { "cooler": ["Lovely and cold, this.", "Is it Friday yet?"], "grumble": ["Never mind, I'll go later."] },
+          "exchanges": [{ "with": "tom", "knot": "exchange_tom_parcel", "requireGlobal": "amara_opened_parcel" }],
           "currentKnot": "start",
           "voice": { "name": "Aoede", "style": "Office administrator, thirties, British Nigerian, London accent. Warm and quick.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
@@ -348,6 +354,7 @@
             { "eventPattern": "npc_use_heard:*", "condition": "data.key === 'drink_gulp'", "onceOnly": true, "cooldown": 0, "completeTask": "hear_drink" },
             { "eventPattern": "npc_use_heard:*", "condition": "data.key === 'eat_snack'", "onceOnly": true, "cooldown": 0, "completeTask": "hear_snack" },
             { "eventPattern": "item_dropped:parcel", "onceOnly": true, "cooldown": 0, "setGlobal": { "parcel_dropped": true } },
+            { "eventPattern": "npc_exchange_heard:exchange_tom_parcel", "onceOnly": true, "cooldown": 0, "completeTask": "hear_parcel_exchange" },
             { "eventPattern": "item_dropped:player_mugs", "onceOnly": true, "cooldown": 0, "setGlobal": { "mugs_dropped": true } }
           ]
         },
@@ -360,6 +367,7 @@
           "spriteTalk": "assets/characters/male_office_worker_talk.png",
           "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
           "storyPath": "scenarios/test_needs_sims/ink/tom.json",
+          "chatter": { "cooler": ["Anyone watching the match tonight?", "I'm starving already."], "grumble": ["Oh, forget it."] },
           "currentKnot": "start",
           "voice": { "name": "Charon", "style": "Sales assistant, late twenties, white British, Yorkshire accent. Cheerful and easily distracted.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
@@ -389,6 +397,7 @@
           "spriteTalk": "assets/characters/female_blowse_talk.png",
           "spriteVisemes": "assets/characters/female_blowse_visemes.png",
           "storyPath": "scenarios/test_needs_sims/ink/grace.json",
+          "chatter": { "cooler": ["Who left the window open?", "Drink more water, all of you."], "grumble": ["I'll try again later."] },
           "currentKnot": "start",
           "voice": { "name": "Kore", "style": "Office manager, early sixties, Swedish-born, decades in the UK. Kind and brisk.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
@@ -409,6 +418,8 @@
           "spriteTalk": "assets/characters/male_nerd_talk.png",
           "spriteVisemes": "assets/characters/male_nerd_visemes.png",
           "storyPath": "scenarios/test_needs_sims/ink/sanjay.json",
+          "chatter": { "cooler": ["Long morning, this.", "Did you get any lunch?"], "grumble": ["I'll skip it for now."] },
+          "exchanges": [{ "with": "rosa", "knot": "exchange_rosa_rota" }],
           "currentKnot": "start",
           "voice": { "name": "Puck", "style": "Developer, mid twenties, British Indian, Leicester accent. Polite and a little shy.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
@@ -429,6 +440,7 @@
             { "eventPattern": "object_interacted", "condition": "data.objectName === 'Activity Board'", "cooldown": 30000, "needs": { "set": { "social": 10 } } },
             { "eventPattern": "npc_left_post:marek", "condition": "data.targetId === 'office_coffee'", "cooldown": 30000, "needs": { "set": { "caffeine": 10 } } },
             { "eventPattern": "npc_turned_back:sanjay", "onceOnly": true, "cooldown": 0, "completeTask": "see_turned_back" },
+            { "eventPattern": "npc_exchange_heard:exchange_rosa_rota", "onceOnly": true, "cooldown": 0, "completeTask": "hear_rota_exchange" },
             { "eventPattern": "npc_left_post:marek", "condition": "data.targetId === 'water_cooler'", "cooldown": 30000, "needs": { "set": { "social": 10 } } }
           ]
         },
@@ -441,6 +453,7 @@
           "spriteTalk": "assets/characters/male_telecom_talk.png",
           "spriteVisemes": "assets/characters/male_telecom_visemes.png",
           "storyPath": "scenarios/test_needs_sims/ink/marek.json",
+          "chatter": { "cooler": ["Cold enough today."], "grumble": ["Fine. Later, then."] },
           "currentKnot": "start",
           "voice": { "name": "Charon", "style": "Telecoms contractor, fifties, Polish-born, years in the UK. Gruff but not unfriendly.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
@@ -556,6 +569,7 @@
           "spriteTalk": "assets/characters/female_scientist_talk.png",
           "spriteVisemes": "assets/characters/female_scientist_visemes.png",
           "storyPath": "scenarios/test_needs_sims/ink/rosa.json",
+          "chatter": { "cooler": ["How's your week going?", "Lunch in the park, anyone?"], "grumble": ["It can wait."] },
           "currentKnot": "start",
           "voice": { "name": "Leda", "style": "Team lead, forties, Spanish-born, years in the UK. Relaxed and friendly.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },

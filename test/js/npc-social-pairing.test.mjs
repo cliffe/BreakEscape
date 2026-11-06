@@ -5,7 +5,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-    NPCNeedsSystem, NEEDS_TICK_MS, bubbleMs, chatterPool, DEFAULT_CHATTER, CHAT_LINE_MAX, requiredGlobalsHold,
+    NPCNeedsSystem, NEEDS_TICK_MS, bubbleMs, chatterPool, PICTURE_CHATTER, CHAT_LINE_MAX, requiredGlobalsHold,
     createEngineWorld, OVERHEAR_RADIUS
 } from '../../public/break_escape/js/systems/npc-needs.js';
 import { NpcActionIcons } from '../../public/break_escape/js/systems/npc-action-icons.js';
@@ -44,15 +44,17 @@ test('bubbleMs: 2.5 s + 50 ms a character, at most 4 s', () => {
     assert.equal(bubbleMs('x'.repeat(40)), 4000);
 });
 
-test('chatterPool: scenario replaces a built-in by name, false turns built-ins off, NPC lines add', () => {
-    assert.deepEqual(chatterPool('cooler', undefined, null).lines, [...DEFAULT_CHATTER.cooler]);
+test('chatterPool: no built-in lines (slice 15: picture only), false turns pictures off, NPC lines add', () => {
+    assert.deepEqual(chatterPool('cooler', undefined, null).lines, []);
+    assert.equal(chatterPool('cooler', undefined, null).pictures, true);
+    assert.equal(chatterPool('cooler', false, null).pictures, false);
     assert.deepEqual(chatterPool('cooler', { cooler: ['A'] }, null).lines, ['A']);
     assert.deepEqual(chatterPool('cooler', false, null).lines, []);
     assert.deepEqual(chatterPool('cooler', false, { cooler: ['Mine.'] }).lines, ['Mine.']);
     assert.deepEqual(chatterPool('cooler', { cooler: ['A'] }, { cooler: ['B'] }).lines, ['A', 'B']);
     const g = chatterPool('gossip', { gossip: { lines: ['Psst.'], hush: true, overhearRadius: 64 } }, null);
-    assert.deepEqual(g, { lines: ['Psst.'], hush: true, overhearRadius: 64 });
-    for (const pool of Object.values(DEFAULT_CHATTER)) for (const l of pool) assert.ok(l.length <= CHAT_LINE_MAX, l);
+    assert.deepEqual(g, { lines: ['Psst.'], hush: true, overhearRadius: 64, pictures: true });
+    for (const icons of Object.values(PICTURE_CHATTER)) for (const i of icons) assert.ok(typeof i === 'string' && i.length < CHAT_LINE_MAX, i);
 });
 
 test('requiredGlobalsHold: a name (truthy) or { name: value }, all must match', () => {
@@ -66,13 +68,15 @@ test('requiredGlobalsHold: a name (truthy) or { name: value }, all must match', 
 
 test('pairing: two at a chatter cooler take turns; lines fit the overlap; same seed, same partner and lines', () => {
     const run = (seed) => {
-        const o = office({ ann: { needs: thirsty() }, bob: { needs: thirsty() } }, { seed });
+        const o = office({ ann: { needs: thirsty() }, bob: { needs: thirsty() } }, { seed, chatter: { cooler: ['Busy day?', 'Not bad, you?', 'Rain again.'] } });
         o.sys.step(20000);
         return o.emitted('npc_chatted:').map(e => ({ s: e.data.speakerId, p: e.data.partnerId, l: e.data.lineId }));
     };
     const a = run(1), b = run(1);
     assert.deepEqual(a, b, 'deterministic for a seed');
-    assert.ok(a.length >= 2 && a.length <= 4, `15 s overlap gives 2-4 lines, got ${a.length}`);
+    // One bark each (then the 5 min cooldown), then picture chat (2.5 s bubbles)
+    assert.ok(a.length >= 2 && a.length <= 6, `15 s overlap gives 2-6 turns, got ${a.length}`);
+    assert.equal(a.filter(e => !e.l.startsWith('picture:')).length, 2, 'one bark each');
     for (let i = 1; i < a.length; i++) assert.notEqual(a[i].s, a[i - 1].s, 'speakers alternate');
     for (const e of a) assert.ok((e.s === 'ann' && e.p === 'bob') || (e.s === 'bob' && e.p === 'ann'));
     // Lines are timed: each starts after the previous bubble and a 0.5 s gap
@@ -184,7 +188,8 @@ test('chattiness 0: that NPC only listens; NPC lines add to the pool', () => {
     const lines = o.emitted('npc_chatted:');
     assert.ok(lines.length >= 1);
     assert.ok(lines.every(e => e.data.speakerId === 'bob'));
-    assert.ok(lines.every(e => ['Hi.', 'Bob here.'].includes(e.data.line)));
+    assert.ok(lines.every(e => e.data.line === null || ['Hi.', 'Bob here.'].includes(e.data.line)));
+    assert.ok(lines.some(e => e.data.line), 'one voiced line before the cooldown');
 });
 
 // ── compatibility ────────────────────────────────────────────────────────

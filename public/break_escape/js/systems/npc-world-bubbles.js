@@ -14,6 +14,10 @@
  *   - While shown, the NPC's action icon and thought bubble are hidden (npc-action-icons.js reads
  *     the same getState().talking).
  * Bubbles are pooled per NPC and re-laid out only when the line changes.
+ *
+ * Picture chat (slice 15, OFFICE_LIFE_PLAN 11.2): when talking.picture is set the bubble holds a
+ * 16x16 icon (icons/npc-<name>.png, loaded on first use; a text stand-in until it has arrived)
+ * and no text. Pictures are never voiced.
  */
 import { iconShown, roomIsDark, npcIconAnchor } from './npc-office-visuals.js';
 
@@ -48,26 +52,54 @@ export function speechPosition(at) {
     return { x: Math.round(at.x), y: Math.round(at.y) };
 }
 
+/** Pure: the texture key and path of a picture-chat icon. */
+export function pictureTexture(name) {
+    return { key: `icon:npc-${name}`, path: `icons/npc-${name}.png` };
+}
+
+export const PICTURE_PX = 16;
+
 export class NpcWorldBubbles {
-    constructor() { this.bubbles = new Map(); this.sceneHooked = null; }
+    constructor() { this.bubbles = new Map(); this.sceneHooked = null; this.textures = new Map(); }
 
     _make(scene) {
         const g = scene.add.graphics();
         const text = scene.add.text(0, 0, '', {
             fontFamily: 'monospace', fontSize: `${SPEECH_FONT_PX}px`, color: '#1b2a41', resolution: 2
         }).setOrigin(0.5, 1);
-        const box = scene.add.container(0, 0, [g, text]).setDepth(5001);
-        return { box, g, text, line: null };
+        const img = scene.add.image(0, 0, '__DEFAULT').setOrigin(0.5, 1).setVisible(false);
+        const box = scene.add.container(0, 0, [g, text, img]).setDepth(5001);
+        return { box, g, text, img, line: null };
     }
 
-    _render(bb, line) {
-        if (bb.line === line) return;
-        bb.line = line;
-        bb.text.setText(line);
-        const w = Math.ceil(bb.text.width) + PAD_X * 2;
-        const h = Math.ceil(bb.text.height) + PAD_Y * 2;
+    /** Is a picture's texture ready? Starts a one-off load the first time. */
+    _textureReady(scene, r) {
+        if (scene.textures?.exists?.(r.key)) return true;
+        if (this.textures.get(r.key)) return false;
+        this.textures.set(r.key, 'loading');
+        try {
+            scene.load.image(r.key, r.path);
+            scene.load.once(`filecomplete-image-${r.key}`, () => this.textures.delete(r.key));
+            if (!scene.load.isLoading?.()) scene.load.start();
+        } catch (e) { this.textures.set(r.key, 'failed'); }
+        return false;
+    }
+
+    _render(bb, line, picture = null) {
+        const tex = picture ? pictureTexture(picture) : null;
+        const ready = !!(tex && bb.box.scene && this._textureReady(bb.box.scene, tex));
+        const sig = picture ? `pic:${picture}:${ready}` : line;
+        if (bb.line === sig) return;
+        bb.line = sig;
+        bb.picture = picture;
+        bb.img.setVisible(ready);
+        if (ready) bb.img.setTexture(tex.key);
+        bb.text.setText(picture ? (ready ? '' : '…') : line);
+        const w = (ready ? PICTURE_PX : Math.ceil(bb.text.width)) + PAD_X * 2;
+        const h = (ready ? PICTURE_PX : Math.ceil(bb.text.height)) + PAD_Y * 2;
         // Container origin is the tail tip; the box sits TAIL px above it
         bb.text.setPosition(0, -TAIL - PAD_Y);
+        bb.img.setPosition(0, -TAIL - PAD_Y);
         const g = bb.g;
         g.clear();
         g.fillStyle(FILL, 1);
@@ -110,10 +142,11 @@ export class NpcWorldBubbles {
             const { sprite, talking } = info.get(id);
             let bb = this.bubbles.get(id);
             if (!bb || !bb.box.scene) { bb = this._make(sprite.scene); this.bubbles.set(id, bb); }
-            this._render(bb, talking.line);
+            this._render(bb, talking.line, talking.picture || null);
             const pos = speechPosition(npcIconAnchor(sprite));
             bb.box.setPosition(pos.x, pos.y).setVisible(true);
             bb.box.setData('line', talking.line);
+            bb.box.setData('picture', talking.picture || null);
             bb.box.setData('partner', talking.partnerId);
         }
     }
