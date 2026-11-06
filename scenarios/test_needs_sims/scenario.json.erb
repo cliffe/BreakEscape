@@ -87,7 +87,7 @@
         { "taskId": "hear_parcel_exchange", "title": "Overhear Tom and Amara talk about the parcel (after Amara has opened it, read the Activity Board and stand by the coffee queue)", "type": "custom", "status": "active" },
         { "taskId": "see_look_round", "title": "See someone look round at a conversation (read the Coffee Notice: when Sanjay turns back from the coffee and grumbles, the staff at their desks nearby turn their chairs towards him)", "type": "custom", "status": "active" },
         { "taskId": "hear_screen_lock", "title": "Hear a screen lock as its owner walks off (stay in the office: Amara leaves her screen open for a quick trip, but locks it with a soft chime before a longer one, such as the kitchen run after you read the Deadline Memo)", "type": "custom", "status": "active" },
-        { "taskId": "see_auto_lock", "title": "Watch a screen lock itself (Sanjay never locks his PC, but it locks on its own 30 seconds after he walks off)", "type": "custom", "status": "active" },
+        { "taskId": "see_auto_lock", "title": "Watch a screen lock itself (Sanjay never locks his PC, but it locks on its own 20 seconds after he walks off)", "type": "custom", "status": "active" },
         { "taskId": "use_open_screen", "title": "Use Sanjay's screen while he is away (using it keeps it awake)", "type": "custom", "status": "active" }
       ]
     }
@@ -148,9 +148,9 @@
           "takeable": false,
           "locked": false,
           "observations": "Sanjay's desk PC.",
-          "_comment": "Slice 16: Sanjay's habit is never to lock (screenHabit.lockChance 0); the machine's policy locks it after 30 s idle with him away (autoLockSeconds). Using it restarts the idle clock.",
+          "_comment": "Slice 16: Sanjay's habit is never to lock (screenHabit.lockChance 0); the machine's policy locks it after 20 s idle with him away (autoLockSeconds; the plan's 30 s rarely showed, since his coffee, microwave and cooler trips take 19 to 27 s). Using it restarts the idle clock.",
           "workstation": true,
-          "autoLockSeconds": 30,
+          "autoLockSeconds": 20,
           "observationVariants": [
             { "condition": "globalVars.sanjay_pc_screen_locked", "value": "Sanjay's desk PC. It has gone to its lock screen." },
             { "condition": "globalVars.sanjay_pc_owner_away", "value": "Sanjay's desk PC. He has left it unlocked; it will lock itself if nobody touches it." }
