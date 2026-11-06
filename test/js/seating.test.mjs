@@ -117,3 +117,9 @@ test('fidgetOffset: a seated NPC rolls at most 3px sideways and 2px back, never 
         }
     }
 });
+
+test('compassToward: screen offsets map to the right facing (east is +x, south is +y)', () => {
+    const cases = { east: [1, 0], west: [-1, 0], south: [0, 1], north: [0, -1],
+                    'south-east': [1, 1], 'north-east': [1, -1], 'south-west': [-1, 1], 'north-west': [-1, -1] };
+    for (const [facing, [dx, dy]] of Object.entries(cases)) assert.equal(seating.compassToward(dx, dy), facing);
+});

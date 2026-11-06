@@ -187,6 +187,11 @@ function angleOf(compass) {
     return COMPASS.indexOf(compass) * 45;
 }
 
+/** Screen angle (radians, 0 = east, +y = south) of the way a compass facing points. */
+function forwardRad(compass) {
+    return (90 - angleOf(compass)) * Math.PI / 180;
+}
+
 /** Nearest valid facing to a wanted one. */
 export function snapFacing(wanted, valid = COMPASS) {
     if (valid.includes(wanted)) return wanted;
@@ -457,7 +462,7 @@ function standSpot(chair, facing) {
     const reach = (b ? Math.max(b.width, b.height) / 2 : 10) + 14; // clear of the chair body
     const start = COMPASS.indexOf(facing);
     for (const step of [0, 1, -1, 2, -2, 3, -3, 4]) {
-        const a = (angleOf(COMPASS[(start + step + 8) % 8]) + 90) * Math.PI / 180; // compass 0 = south = +y
+        const a = forwardRad(COMPASS[(start + step + 8) % 8]);
         const x = cx + Math.cos(a) * reach, y = cy + Math.sin(a) * reach;
         const cell = pfm?.findNearestWalkableWorldCell?.(x, y, 1);
         if (cell && Math.hypot(cell.x - x, cell.y - y) < 12) return { x: cell.x, y: cell.y };
@@ -682,9 +687,9 @@ function poseSprite(sprite, chair, seat, facing, place = 0) {
     sprite.setDepth(chair.depth + (REAR.has(facing) ? -SEAT_DEPTH_STEP : SEAT_DEPTH_STEP));
 }
 
-function compassToward(dx, dy) {
+export function compassToward(dx, dy) {
     const a = (Math.atan2(dy, dx) * 180 / Math.PI + 360) % 360; // 0 = east, 90 = south
-    return COMPASS[Math.round(((a - 90 + 360) % 360) / 45) % 8];
+    return COMPASS[((Math.round((90 - a) / 45) % 8) + 8) % 8];
 }
 
 // ---- fidget: a seated NPC on a swivel chair rolls a few pixels now and again, sideways
@@ -695,7 +700,7 @@ const FIDGET_SIDE = 3, FIDGET_BACK = 2;
 /** A roll offset for a chair facing `facing`: up to 3px sideways and 2px back. */
 export function fidgetOffset(facing, rand = Math.random) {
     if (rand() < 0.3) return { x: 0, y: 0 }; // back to where it sat down
-    const a = (angleOf(facing) + 90) * Math.PI / 180; // forward, as tuckIn
+    const a = forwardRad(facing); // forward, as tuckIn
     const fx = Math.cos(a), fy = Math.sin(a);
     const side = Math.round((rand() * 2 - 1) * FIDGET_SIDE);
     const back = Math.round(rand() * FIDGET_BACK);
@@ -786,7 +791,7 @@ export function unseatNPC(behavior) {
 }
 
 function frontSpot(chair, facing, foot = null) {
-    const a = (angleOf(facing) + 90) * Math.PI / 180;
+    const a = forwardRad(facing);
     const f = foot || { x: chair.x + chair.width / 2, y: chair.y + chair.height };
     const x = f.x + Math.cos(a) * 18;
     const y = f.y - 4 + Math.sin(a) * 18;
@@ -1007,7 +1012,7 @@ function updateNeedsSeat(behavior, ns, playerPos) {
 /** Push a swivel chair in toward where its sitter faced, clear of the spot they work from. */
 function tuckIn(chair, seat, facing) {
     if (seat?.kind !== 'swivel' || !chair.body || chair.seatedBy) return;
-    const a = (angleOf(facing) + 90) * Math.PI / 180;
+    const a = forwardRad(facing);
     const f = bodyFeet(chair);
     slideChairFootTo(chair, f.x + Math.cos(a) * TUCK_PX, f.y + Math.sin(a) * TUCK_PX);
 }
@@ -1066,7 +1071,7 @@ function advanceFetch(behavior, ns, stop) {
     }
     // pushing: the chair rolls just ahead of the NPC's feet
     const dirC = PLAYER_TO_COMPASS[behavior.direction] || 'south';
-    const a = (angleOf(dirC) + 90) * Math.PI / 180;
+    const a = forwardRad(dirC);
     const seat = seatSpec(f.chair);
     const off = f.chair.body ? { x: f.chair.body.offset.x + f.chair.body.width / 2, y: f.chair.body.offset.y + f.chair.body.height / 2 }
                              : { x: f.chair.width / 2, y: f.chair.height };
