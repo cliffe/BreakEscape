@@ -2411,3 +2411,101 @@ coffee, Sanjay turns back with the face bubble and a grumble, tries the kitchen,
 parks with the closed-door badge, and goes when the player opens the kitchen; an objective on
 `npc_turned_back:sanjay`. Live proof of each, then the leash and lab regressions; in the lab, check
 the coffee timing of Chris and Melanie, since `no_source` parking reaches every needs NPC.
+
+## 11. Addition 2026-11-06: voiced chatter and scripted exchanges (slice 15)
+
+**Requested by the user (2026-11-06):** chatter lines (slice 8 pools, slice 10 queue chat, slice 14
+grumbles) should be voiceable by the TTS, and must be integrated with the TTS rules so the cache
+tools do not treat their audio as unneeded. Add a few scripted interactions between particular
+NPCs. Don't repeat spoken lines too often; a full exchange should be heard once. The user approved
+this session making the server-side TTS change (normally the other session's area).
+
+### 11.1 What exists (checked 2026-11-06)
+
+- **Scenario barks are already voiceable.** The `/tts` endpoint accepts an NPC's text when
+  `ScenarioBarkValidator.bark_texts(npc)` lists it: `eventMappings[].bark`,
+  `eventMappings[].sendTimedMessage.message`, `timedMessages[].message`
+  (`app/services/break_escape/scenario_bark_validator.rb`). `npc-barks.js` speaks a bark through a
+  per-NPC `TTSManager` when the NPC has a voice. Slice 11's "Has anyone seen my badge?" is such a
+  bark (`test_needs_sims` line ~365), so it is voiceable today.
+- **The pruner is already safe for scenario strings.** `TtsExpectedLines` unions every string in the
+  rendered `scenario.json.erb` (its source 4), so a clip for any scenario string is never an orphan.
+  Batch generation (`TtsLineExtractor`) does not pre-generate barks; they are generated on first
+  request and cached.
+- **Not voiceable:** slice 8's chatter pools (NPC `chatter` lines, scenario-level `chatter` pools)
+  and the engine's built-in pools. The endpoint refuses them because `bark_texts` does not read
+  those fields; the built-in pools are not in any scenario file at all.
+- **Ink:** `InkTextValidator` accepts a line spoken by an NPC in its own story, and a co-speaker's
+  prefixed line is accepted only for that speaker (`spoken_as_npc_in_scenario?`). Ink has once-only
+  sequences (`{!a|b}`) and visit counts.
+
+### 11.2 Where lines live: by kind
+
+| Kind | Where | Voiced | Repeats |
+|---|---|---|---|
+| **Bark** (one speaker, short, repeatable: greeting, grumble, cooler small talk, "anyone seen my badge") | scenario JSON on the NPC, beside its `eventMappings` barks: `"chatter": { "cooler": [...], "grumble": [...], "greet": [...] }` | yes, on first play (cached) | shuffle-bag per NPC and pool, seeded: no line again until the bag is empty; per-NPC cooldown (`chatterCooldownMin`, default 5 needs-clock minutes) |
+| **Shared bark pool** (scenario level, any NPC) | scenario JSON `chatter` (exists) | yes, for every NPC with a voice (the validator accepts scenario-level pool lines for any voiced NPC in the scenario); keep pools small, since each line is one clip per voice | as above |
+| **Scripted exchange** (two or more speakers, once, can carry story) | ink: a knot in one NPC's story, other speakers' lines prefixed with their name, e.g. `exchange_rosa_reorg` | yes, each line in its speaker's voice (existing co-speaker rule) | once per game; only with the player in earshot |
+| **Picture chat** (nothing new left to say) | engine | no | unlimited: a speech bubble holding an icon (coffee, weather, `social`), the Sims' pictogram idea |
+
+Engine built-in pools stop being spoken text: they become the picture-chat fallback, so nothing
+spoken lives outside a scenario file.
+
+### 11.3 Server change (this slice; approved)
+
+- `ScenarioBarkValidator.bark_texts(npc)` also returns the NPC's `chatter` pool strings, and a new
+  `ScenarioBarkValidator.validate_shared(scenario, text)` accepts scenario-level `chatter` lines for
+  any NPC that has a voice. The controller (or wherever `validate` is called) tries both. About 25
+  lines plus tests in the existing validator test.
+- `TtsLineExtractor` (batch top-up) gains an opt-in that lists NPC chatter and shared pool lines
+  under each voiced NPC, so a mission can pre-generate them (`tts:batch_generate` gets them; no
+  change for missions without chatter).
+- Ink exchange knots need no server change: they are ordinary ink lines, already extracted,
+  validated and kept.
+- Tests: the controller accepts an NPC chatter line for that NPC and refuses it for another; a
+  shared-pool line is accepted for a voiced NPC and refused for a scenario without that pool; the
+  pruner keeps a chatter clip (regression); the extractor lists chatter only when opted in.
+- Docs: the tts-audio skill (`.claude/skills/tts-audio/SKILL.md`, "Which lines exist") and its
+  rules get one paragraph: chatter lives in NPC or scenario `chatter` pools or in ink exchange
+  knots, never in engine code; rule 2 (no printed variables) applies.
+- The other session is told in the lab log's "Office-life slices" note.
+
+### 11.4 Engine
+
+- **Exchanges.** NPC config `"exchanges": [{ "with": "rosa" | "group:accounts", "knot":
+  "exchange_rosa_reorg", "requireGlobal": "reorg_announced" }]`. When a compatible pair meets
+  (slice 8 pairing or slice 10 queue chat) and the player is in earshot (slice 8 `overheard` rule:
+  same room, lit, within range, clear line), the engine plays the first unplayed exchange for that
+  pair: it runs the knot on a **separate** ink story instance for the NPC (never the player's
+  conversation state), one line per bubble, each line spoken in its speaker's voice through the
+  `TTSManager` of that speaker, speakers facing each other, the whole exchange held to the pair's
+  overlap (extended by the length of the knot, capped). When it ends, global `heard_<knot>` is set
+  (saved server-side, so once per game survives a reload) and `npc_exchange_heard:<knot>` fires.
+  With no audience, the exchange stays unplayed; the pair falls back to a bark or picture chat.
+- **Order of preference** when two NPCs chat: an unplayed exchange (with audience), then a bark from
+  the bag (if off cooldown), then picture chat.
+- **Audio.** Chatter and grumbles play only from the player's room (slice 3 hearing), quieter with
+  distance, never two lines at once (a global speech lock, so exchanges and barks queue rather than
+  overlap); the bubble is the subtitle. Muted when TTS is off: bubbles only.
+- **Validator.** Every `exchanges[].knot` exists in that NPC's ink; every speaker named in the knot
+  is an NPC in the scenario with a voice (warning if not voiced); chatter strings have no `{var}`
+  (rule 2); warn when a scenario still relies on built-in pools (now picture-only).
+
+### 11.5 Size, order, tests
+
+About 260 lines: engine exchanges, bag and cooldown, speech lock and picture chat about 170;
+server validator and extractor about 40; engine validator about 30; schema about 20. Build after
+slice 14 (grumbles move from text-only to the voiced bag; same chatter code).
+
+Tests (node): bag never repeats until empty and is identical for a seed; cooldown; exchange only
+with the player in earshot, played once, `heard_<knot>` set, not replayed after a reload (global
+true); no audience → stays unplayed; separate story instance leaves the NPC's conversation state
+untouched; speech lock serialises two speakers; picture chat once nothing is left. Rails: the
+validator and extractor tests above. Showcase (`test_needs_sims`): voices for the cast if not
+already set; small `cooler` and `grumble` pools per NPC; two exchanges (Sanjay and Rosa about the
+kitchen rota; Tom and Amara about the parcel), each with an objective on
+`npc_exchange_heard:<knot>`. Live: hear an exchange once, stay for the next meeting and see a
+bark, then picture chat; reload and confirm the exchange does not replay; on :3001 (keyless) the
+audio requests return 503, so audio is proved by the requests made and accepted by the validator
+in a Rails test, not by sound. Run the npc-dialog-review skill on the new knots. Then the leash
+and lab regressions.
