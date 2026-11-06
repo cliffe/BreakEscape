@@ -687,6 +687,45 @@ function compassToward(dx, dy) {
     return COMPASS[Math.round(((a - 90 + 360) % 360) / 45) % 8];
 }
 
+// ---- fidget: a seated NPC on a swivel chair rolls a few pixels now and again, sideways
+// or back from where it faces (never forward, into the desk), then settles.
+const FIDGET_MIN_MS = 4000, FIDGET_MAX_MS = 11000, FIDGET_ROLL_MS = 700;
+const FIDGET_SIDE = 3, FIDGET_BACK = 2;
+
+/** A roll offset for a chair facing `facing`: up to 3px sideways and 2px back. */
+export function fidgetOffset(facing, rand = Math.random) {
+    if (rand() < 0.3) return { x: 0, y: 0 }; // back to where it sat down
+    const a = (angleOf(facing) + 90) * Math.PI / 180; // forward, as tuckIn
+    const fx = Math.cos(a), fy = Math.sin(a);
+    const side = Math.round((rand() * 2 - 1) * FIDGET_SIDE);
+    const back = Math.round(rand() * FIDGET_BACK);
+    return { x: Math.round(-fy * side - fx * back), y: Math.round(fx * side - fy * back) };
+}
+
+/** Move a seated NPC's swivel chair along its current roll; `hold` starts no new roll. */
+function fidgetChair(st, sprite, hold) {
+    const chair = st.chair;
+    if (st.seat.kind !== 'swivel' || !chair.body) return;
+    const now = sprite.scene?.time?.now ?? performance.now();
+    const wait = () => now + FIDGET_MIN_MS + Math.random() * (FIDGET_MAX_MS - FIDGET_MIN_MS);
+    const fd = st.fidget || (st.fidget = { home: { x: chair.x, y: chair.y }, from: { x: 0, y: 0 },
+                                           to: { x: 0, y: 0 }, cur: { x: 0, y: 0 }, start: 0, next: wait() });
+    if (now >= fd.next && !hold) {
+        fd.from = { ...fd.cur };
+        fd.to = fidgetOffset(st.homeFacing);
+        fd.start = now;
+        fd.next = wait();
+    }
+    const t = Math.min(1, (now - fd.start) / FIDGET_ROLL_MS);
+    const e = 0.5 - Math.cos(t * Math.PI) / 2;
+    fd.cur = { x: fd.from.x + (fd.to.x - fd.from.x) * e, y: fd.from.y + (fd.to.y - fd.from.y) * e };
+    const x = Math.round(fd.home.x + fd.cur.x), y = Math.round(fd.home.y + fd.cur.y);
+    if (chair.x !== x || chair.y !== y) {
+        chair.x = x; chair.y = y;
+        placeBody(chair, x, y);
+    }
+}
+
 /** Sit an NPC (its behaviour object) on a chair. Returns true when seated. */
 export function seatNPC(behavior, chair, opts = {}) {
     const sprite = behavior?.sprite;
@@ -781,10 +820,12 @@ export function updateSeatedNPC(behavior, playerPos) {
     const ko = window.npcHostileSystem?.isNPCKO?.(behavior.npcId);
     if (behavior.hostile || ko || !st.chair.active) { unseatNPC(behavior); return false; }
     sprite.body.setVelocity(0, 0);
+    let facingPlayer = false;
     if (st.seat.kind === 'swivel' && st.facePlayer && playerPos) {
         const p = bodyFeet(sprite);
         const dx = playerPos.x - p.x, dy = playerPos.y - p.y;
         const near = dx * dx + dy * dy <= (behavior.config?.facePlayerDistanceSq ?? 96 * 96);
+        facingPlayer = near;
         const want = snapFacing(near ? compassToward(dx, dy) : st.homeFacing, st.seat.valid);
         if (want !== st.facing) {
             st.facing = want;
@@ -792,6 +833,7 @@ export function updateSeatedNPC(behavior, playerPos) {
             behavior.direction = COMPASS_TO_PLAYER[want];
         }
     }
+    fidgetChair(st, sprite, facingPlayer);
     window.updateSpriteDepth?.(st.chair, st.chair.elevation || 0);
     poseSprite(sprite, st.chair, st.seat, st.facing, st.place);
     return true;
@@ -913,8 +955,8 @@ function updateNeedsSeat(behavior, ns, playerPos) {
         }
         sprite.body.setVelocity(0, 0);
         // Swivel: face the work, or the player while they talk
+        const chatting = window.npcNeedsSystem?.world?.inChatWith?.(behavior.npcId);
         if (st.seat.kind === 'swivel') {
-            const chatting = window.npcNeedsSystem?.world?.inChatWith?.(behavior.npcId);
             let want = st.homeFacing;
             if (chatting && playerPos) {
                 const p = bodyFeet(sprite);
@@ -927,6 +969,7 @@ function updateNeedsSeat(behavior, ns, playerPos) {
                 behavior.direction = COMPASS_TO_PLAYER[want];
             }
         }
+        fidgetChair(st, sprite, !!chatting);
         window.updateSpriteDepth?.(st.chair, st.chair.elevation || 0);
         poseSprite(sprite, st.chair, st.seat, st.facing, st.place);
         return true;

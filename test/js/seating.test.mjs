@@ -102,3 +102,18 @@ test('needsStop: a real trip still unseats (null while walking out and back)', (
         window.npcManager = prev;
     }
 });
+
+test('fidgetOffset: a seated NPC rolls at most 3px sideways and 2px back, never forward', () => {
+    const forward = { south: [0, 1], north: [0, -1], east: [1, 0], west: [-1, 0],
+                      'south-east': [0.7071, 0.7071], 'north-west': [-0.7071, -0.7071] };
+    let seq = 0;
+    const rand = () => { seq = (seq * 9301 + 49297) % 233280; return seq / 233280; };
+    for (const [facing, [fx, fy]] of Object.entries(forward)) {
+        for (let i = 0; i < 200; i++) {
+            const o = seating.fidgetOffset(facing, rand);
+            assert.ok(Number.isInteger(o.x) && Number.isInteger(o.y), `${facing} whole pixels`);
+            assert.ok(Math.hypot(o.x, o.y) <= 4.3, `${facing} ${o.x},${o.y} too far`);
+            assert.ok(o.x * fx + o.y * fy <= 0.75, `${facing} ${o.x},${o.y} rolls forward`);
+        }
+    }
+});
