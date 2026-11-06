@@ -344,6 +344,42 @@ out of the way worked. The interact command sometimes reads the Deadline Memo wh
 Activity Board (they are close); its mappings also send Amara and Tom for coffee, so the queue forms
 either way, and Marek follows Tom's `npc_queued` either way; only Sanjay's social follows the Board alone.
 
+### Slice 11 re-run: something left on an empty desk (2026-11-06, keyless :3001, headless, load 2-9)
+
+**Annotated example.** Tom's ID badge (`tom_badge`, `id_badge` sprite) is declared on the open
+desk top between his laptop and keyboard, hidden, with `"leftBehindBy": "tom"`,
+`"leftBehindChance": 0.7` and its own `"revealOnGlobal": "tom_badge_left"`. Each time Tom really
+leaves his desk (a coffee or a meal; working at his own PC doesn't count), a seeded roll keyed on
+his leave count decides whether he forgets it. With this scenario's seed, leaves 1, 2 and 4 leave it
+and leave 3 doesn't. It appears on the desk as he walks off (**Spot something left on an empty desk**
+ticks on `object_revealed:tom_badge`) and vanishes when he sits back down: he has pocketed it. If
+you take it while he is away, it is yours for good; when he gets back he says "Has anyone seen my
+badge? I'm sure I left it here." (`npc_left_item_gone:tom`) and never leaves it again. A reload while
+it is on the desk files it away. `npc_left_post` now also carries `leftBehind` and an
+`expectedAwayMs` that counts the coffee queue.
+
+Games 683 (placement checks) and 684 (session log
+`/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/3c2d3b5d-38a4-49b2-b79e-4c3ee8f76ed6/scratchpad/s11/sess684.jsonl`). Screenshots in
+`/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/3c2d3b5d-38a4-49b2-b79e-4c3ee8f76ed6/scratchpad/s11/`; `s11-contact-sheet.png` has nearest-neighbour crops of the eight frames
+below, captions checked against each frame. Tom's leaves were started by setting his caffeine
+through the bridge.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Left on the desk while Tom is away | PASS | game 684, leave 1: `left_behind` `{item: tom_badge, leave: 1}`, global true, badge visible and interactable, chair empty (`a1-away-684.png`) |
+| Collected on return | PASS | game 684: `returned_post` then `stowed` `reason: collected`, badge hidden, global false (`a1-back-684.png`) |
+| Left again on a later leave | PASS | leave 2 (Tom queued behind Amara): shown again (`b2-before-reload-684.png`) |
+| Reload with it showing: not shown | PASS | reload during leave 2: `global_variable_changed:tom_badge_left` true to false at load (stowed on sight), badge hidden (`c-after-reload-684.png`) |
+| Taken by the player: one beat | PASS | after the reload, leave 1 showed it (`d1-away-684.png`); the player took it (`d1-taken-684.png`, badge in the inventory bar); on return `left_item_gone`, `npc_left_item_gone:tom` and the bark (`d1-back-bark-684.png`) |
+| Taken, then reload: stays gone | PASS | after a second reload the badge is in the inventory, not in the office's objects; Tom's next leave logs no `left_behind` (`e-reload-taken-684.png`) |
+| Objective | PASS | `see_left_behind` completed |
+| Queue-aware `expectedAwayMs` | PASS | game 684: Amara at the machine 15.7 s, Tom first in line 28.2 s, Marek second 39.0 s (12 s dwell per place) |
+| Errors | PASS | no page errors in the drains |
+
+Placement note: declared desk items share their desk's depth (205.5 here), so at first the badge
+drew behind Tom's pen pot and speaker. The engine now lifts a left-behind item just above its
+owner's `needsHome` object while it shows.
+
 ## Engine findings
 
 1. **Fixed 2026-11-05.** The home is now provisional until the `needsHome` object exists and is re-resolved once a second; and an NPC standing on its own desk's approach cell now counts as able to reach it (EasyStar gave no path for start == end, which is why Sanjay chose `tom_pc` in game 501). Original finding: **Needs homes in the start room resolve to the spawn point and stay there.** `npc-needs.js:301` resolves `s.home` on the first tick that has a sprite position and caches it; `_resolveHome` (`npc-needs.js:628-640`) falls back to the spawn point with `objectId: null` when `getObject`/`approachCell` fail. For the start room the NPCs are registered (`core/game.js:2004-2006`) before the room's objects or pathfinding are ready, so every start-room needs NPC gets the fallback and the home-object preference in `_useCandidate` (`npc-needs.js:475`) never applies. NPCs in rooms loaded later (Rosa, lounge) resolve correctly. Repro: load this scenario, then `[...npcNeedsSystem.states].map(([k,s]) => [k, s.home.objectId])` gives null for amara, tom, grace and sanjay, `rosa_laptop` for rosa. Suggested fix: don't cache a fallback home while `needsHome` names an object that isn't found yet (retry each tick until the object exists, or for a few seconds). `test_npc_needs` and `lab_physical_pentest` start-room NPCs are likely affected too, but hidden because each spawns at its own desk. Workaround here: each NPC spawns beside its own desk, and the work task reads "Someone works at a desk". Even so, game 501 had Sanjay choose `tom_pc` over his own adjacent PC (nearest-reachable from his seated position), so the workaround isn't reliable.

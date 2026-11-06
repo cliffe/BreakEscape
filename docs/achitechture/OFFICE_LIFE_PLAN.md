@@ -1100,6 +1100,25 @@ Described as gameplay states only; what each one yields is scenario wiring.
 | Pile waiting to be shredded (**moved out of slice 11 to a slice after 9**, R3-M3: only a `shred` routine visits the shredder) | an object with `pileCount`, a `shred` routine that reduces it | about 50 lines. `spriteVariants` watch globals only (`core/rooms.js:688-722`), so the count is published as a global (`<id>_pile`, OQ3's opt-in `publishGlobal`) and sprite variants key on it; this one count is saved, which is fine (it self-heals by the routine). Sprites per pile level: try existing paper sprites (`notes_ledger1`, `supply_boxes1`) first, else **[approval]** |
 | Door held for someone carrying something | the lab's tailgate wiring (route + `challengeOnSight`, `data.playerNearby`) | generalise later; no engine work now |
 
+**Built: 2026-11-06 (slice 11, 5e3fd1e89, 5cccaf6ea). Regressions: `test_needs_leash` game 686
+(pass), `lab_physical_pentest` game 685 (score 100); see `HANDOVER_OFFICE_S11.md`.** Left-behind items
+and queue-aware `expectedAwayMs` as written; no piles. Choices made without asking (smallest option
+each time): (1) the roll's salt is `left:<leaveCount>:<itemId>`, so two items of one owner roll
+independently (the plan's `left:<leaveCount>` named one item); `leaveCount` counts in `_leavePost`
+before the roll, so the first leave is 1, and lives in the needs state (resets on reload);
+(2) the item shows as the owner leaves (before `npc_left_post`, which gains `leftBehind: [ids]`);
+it is collected on `npc_returned_post`, logged `stowed` `reason: "collected"`; (3) a taken item logs
+`left_item_gone` and emits `npc_left_item_gone:<npcId>` once on the owner's return (not in the plan;
+the counterpart of slot `item_gone`, so a scenario can map the owner noticing); its global stays
+true; (4) the item draws just above its owner's `needsHome` object when that is within two tiles
+(desk dressing shares the desk's depth, so the badge was hidden behind the pen pot), as a tray slot
+is lifted above its copier; stow puts the declared depth back; (5) the queue wait is
+`ceil(place / capacity) × useSeconds` (the plan's "position times the dwell" for capacity 1);
+(6) validator: `leftBehindBy` with `outputOf` is an error, an item outside the owner's post room a
+warning, missing `leftBehindChance` a warning (default 0). Tests: `test/js/npc-left-behind.test.mjs`
+(15), fixture `addLeftBehind`. Live: game 684 (sims README slice 11 table), `expectedAwayMs` with
+Tom first in the queue 28.2 s against Amara's 15.7 s at the machine (12 s dwell).
+
 Rules for scenario design (not engine): every window must be readable from the floor (an action
 icon, an indicator, a queue, an item in hand), must close again, and must reopen after a reload
 because need state resets. A window built on a **takeable** item is the exception: it is a single

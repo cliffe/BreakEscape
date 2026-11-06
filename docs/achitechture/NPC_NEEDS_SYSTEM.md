@@ -233,6 +233,35 @@ error). The slot starts hidden (the usual `revealOnGlobal` rule) and is shown by
 - `core/rooms.js` exports `showRevealedObject` and `hideRevealedObject` and puts both on `window`
   (the adapter reaches them there, so `npc-needs.js` has no static import of `rooms.js`).
 
+### 3.3b Left-behind items (office life slice 11, `OFFICE_LIFE_PLAN.md` 2.10)
+
+A **left-behind item** is a declared object at an NPC's post with `leftBehindBy: "<npcId>"`, a
+`leftBehindChance` (0-1, default 0) and its own engine-owned `revealOnGlobal`. It is a slot by
+3.3a's definition (same global rule, same read-in-place rule, same stow on sight).
+
+```jsonc
+{ "id": "tom_badge", "type": "id_badge", "name": "Tom's ID badge", "takeable": true,
+  "position": { "x": 1.75, "y": 5.25 }, "leftBehindBy": "tom", "leftBehindChance": 0.7,
+  "revealOnGlobal": "tom_badge_left" }
+```
+
+- **On a real leave** (2.11's rules: own-desk work is not a leave), `s.leaveCount` goes up by one
+  and each of the owner's free items (loaded, not taken, not already showing) rolls
+  `roll(npcId, "left:<leaveCount>:<itemId>") < leftBehindChance`. A hit shows it at its declared spot
+  by a direct `showRevealedObject` call, sets its global, lifts its depth just above the owner's
+  `needsHome` object when that is within two tiles (desk dressing shares the desk's depth), emits
+  `object_revealed:<itemId>` `{npcId, objectId, leftBehindBy}`, and logs `left_behind`
+  `{item, leave}`. `npc_left_post` gains `leftBehind: [ids]` when something was left.
+- **On return** (`npc_returned_post`), the owner collects each item it left: hidden, global
+  false, declared depth back, no server call; logged `stowed` with `reason: "collected"`. A later
+  leave can show it again.
+- **Taken by the player:** gone for good (server-side removal, as any takeable item). On return the
+  owner logs `left_item_gone` and emits `npc_left_item_gone:<npcId>` `{npcId, itemId,
+  playerNearby, playerDistance}` once; the item is never offered again.
+- **Reload:** the needs state resets (`leaveCount` 0); an item that was showing is filed on sight.
+- **Determinism:** a world without `leftBehindItems` (or a scenario with no such items) rolls
+  nothing and logs nothing, so existing decision logs are byte-identical.
+
 ### 3.4 eventMapping field
 
 `"needs"` (prov.): `"suspend"` | `"resume"` | `{ "set": { "<need>": level } }`.
@@ -577,7 +606,8 @@ during the walk home (exists). Player-facing behaviour:
   overlapping). The 1-tile stop still applies after 1.5 s held inside the tile (cell occupied).
   Walks home are unchanged. The cooler preset now stands its users in front (`useFrom 0,1`): the
   cooler sprite has no body, so its own cell was walkable and an exact arrival stood on it.
-- **Not in slice 10.** `expectedAwayMs` does not yet add the queue wait (slice 11).
+- **`expectedAwayMs` (slice 11).** For a queued job, `npc_left_post`'s estimate adds
+  `ceil(place / capacity) × useSeconds` to the walk and the dwell (place 1 is first in line).
 - **Validator.** Malformed `cells` (error); `maxWaitSeconds` not positive, a queue on an object that
   satisfies nothing, a cell within a tile of a wall that has a door, a cell outside the room
   (warnings; plus one per NPC that needs the machine and may not enter the neighbour room). A
@@ -611,13 +641,14 @@ events.
 | Event | Payload |
 |---|---|
 | `npc_need_urgent:<npcId>` | `{npcId, need, level}` |
-| `npc_left_post:<npcId>` | `{npcId, need, targetId, expectedAwayMs, playerNearby, playerDistance}` (`need` null for an interest job) |
+| `npc_left_post:<npcId>` | `{npcId, need, targetId, expectedAwayMs, playerNearby, playerDistance}` (`need` null for an interest job; `expectedAwayMs` includes the queue wait, 5.7; `leftBehind: [itemIds]` when something was left, 3.3b) |
 | `npc_returned_post:<npcId>` | `{npcId, playerNearby, playerDistance}` |
 | `npc_caught_at_post:<npcId>` | `{npcId, objectId, playerDistance, inMinigame}` (5.3) |
 | `npc_picked_up:<itemId>` | `{npcId, itemId, tag}` |
 | `npc_used:<objectId>` | `{npcId, objectId, need, itemId, tag, payload, playerNearby}` |
 | `npc_job_failed:<npcId>` | `{npcId, need, targetId, reason}` (`timeout`, `no_approach`); `{npcId, need, targetId, itemId, reason: "item_gone"}` when the player took the item an NPC was fetching (slice 7) |
-| `object_revealed:<slotId>` | `{producerId, npcId, objectId}` (a reveal slot shown by `revealOutput`, 3.3a) |
+| `object_revealed:<slotId>` | `{producerId, npcId, objectId}` (a reveal slot shown by `revealOutput`, 3.3a); `{npcId, objectId, leftBehindBy}` for a left-behind item (3.3b) |
+| `npc_left_item_gone:<npcId>` | `{npcId, itemId, playerNearby, playerDistance}` (back at the post, the item it left was taken, 3.3b) |
 | `npc_placed:<itemId>` | `{npcId, itemId, targetId, roomId}` (a delivered slot set down, 3.3a) |
 | `item_dropped:<itemId>` | `{itemId, tag, roomId, x, y}` (drop action) |
 | `npc_arrived:<npcId>` | existing, now plus `owner` (`'needs'` or undefined) |
@@ -705,8 +736,9 @@ The decision log never contains payload contents (only `payloadPresent`).
 ## 10. Reload
 
 - Need levels reset to `initial` (same seeded jitter). No state sync.
-- Reveal slots revealed before the reload are filed on sight (3.3a): hidden, global false. Placed
-  positions are client only and are not restored.
+- Reveal slots and left-behind items showing before the reload are filed on sight (3.3a, 3.3b):
+  hidden, global false. Placed positions are client only and are not restored. `leaveCount`
+  restarts at 0, so the left-behind rolls replay from the first leave.
 - Dropped items: see section 6.
 - Globals set by `onUse` and by scenario mappings persist as usual.
 - Workstation globals (`<id>_owner_away`, `<id>_screen_locked`, `workstation-state.js`)
@@ -741,6 +773,13 @@ item `affordance needsTag droppable`; eventMapping `needs`; top level `npcNeedsS
   `revealOutput` producer with no slots; an info line per producer with its takeable beats.
   `validate_scenario.rb` skips its pinned-proximity warning for a slot and its producer, or two
   slots of one producer (they share the tray on purpose).
+- **Left-behind items (slice 11):** errors for `leftBehindBy` naming no NPC or an NPC without
+  `needsHome`, `leftBehindChance` not a number from 0 to 1, no `revealOnGlobal`, a shared or
+  used-elsewhere global, both `outputOf` and `leftBehindBy`, and a non-takeable readable `notes*`
+  item without `readDisplay: "gameDisplay"`; warnings for no `leftBehindChance` (never left),
+  `leftBehindChance` without `leftBehindBy`, and an item in a room other than its owner's post;
+  an info line per item saying whether it is a single beat (takeable) or repeats. Schema:
+  `leftBehindBy`, `leftBehindChance`.
 - **Errors:** bounds; a need with no object anywhere that `satisfies` it; an
   interest tag with no object that `accepts` it, or no item with that `needsTag`;
   `needsHome`/`onUse` naming a missing object; `needs`/`interests` together with
