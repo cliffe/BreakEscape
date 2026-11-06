@@ -1,5 +1,7 @@
 # Seat box slice 0: handover (2026-11-06, 17:15)
 
+**Slice 0 is done (2026-11-06, 19:10).** Both baselines are written up in `SEAT_BOX_BASELINES.md` and committed in `tools/playtest/baselines/`. The "In progress" and "Open" sections below are history.
+
 Plan: `docs/achitechture/SEAT_BOX_PLAN.md` slice 0 (R3 revision). Scratch for this work:
 `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/c84d7b68-c29e-4285-9c19-4612b082eed3/scratchpad/seatbox-s0/` (called `S/` below).
 

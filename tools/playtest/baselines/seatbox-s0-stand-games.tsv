@@ -1,0 +1,159 @@
+biometric_breach	700	7	office
+ca00_first_play	701	1	
+ca01_invoice_fraud	702	1	
+ca01_invoice_fraud_defend	703	1	
+ca02_cv_lures	704	1	
+ca02_cv_lures_defend	705	1	
+ca03_helpdesk_reset	707	1	
+ca03_helpdesk_reset_defend	708	1	
+ca04_exec_whaling	710	1	
+ca04_exec_whaling_defend	711	1	
+ca05_signin_pages	712	1	
+ca05_signin_pages_defend	713	1	
+ca06_texts_and_qr	714	1	
+ca06_texts_and_qr_defend	715	1	
+ca07_voice_ceo	716	1	
+ca07_voice_ceo_defend	717	1	
+ca08_after_the_click	718	1	
+ca08_after_the_click_defend	719	1	
+ca09_passwords	720	1	
+ca09_passwords_defend	721	1	
+ca10_downloads_and_fake_checks	722	1	
+ca10_downloads_and_fake_checks_defend	723	1	
+ca11_misdirected_data	724	1	
+ca11_misdirected_data_defend	725	1	
+ca12_visitor_tailgater	726	2	
+ca12_visitor_tailgater_defend	727	1	
+ca13_ai_assistant	728	1	
+ca13_ai_assistant_defend	729	1	
+ca14_social_media	730	1	
+ca14_social_media_defend	731	1	
+ca15_shadow_it	732	1	
+ca15_shadow_it_defend	733	1	
+ca16_insider_risk	735	1	
+ca16_insider_risk_defend	736	1	
+ca17_acceptable_use_defend	737	1	
+ca18_credential_attacks_at_scale	738	1	
+ca18_credential_attacks_at_scale_defend	739	1	
+ca19_malware_and_updates	740	1	
+ca19_malware_and_updates_defend	741	1	
+ca20_remote_and_mobile_working	742	1	
+ca20_remote_and_mobile_working_defend	743	1	
+ca_annual_2027_defend	744	1	
+ca_post_data_conduct_ab	745	1	
+ca_post_data_conduct_ba	746	1	
+ca_post_executive_ab	747	1	
+ca_post_executive_ba	748	1	
+ca_post_finance_ab	749	1	
+ca_post_finance_ba	750	1	
+ca_post_general_v2_ab	751	1	
+ca_post_general_v2_ba	752	1	
+ca_post_helpdesk_ab	753	1	
+ca_post_helpdesk_ba	754	1	
+ca_post_hr_ab	755	1	
+ca_post_hr_ba	756	1	
+ca_post_mobile_ab	757	1	
+ca_post_mobile_ba	758	1	
+ca_pre_data_conduct_ab	759	1	
+ca_pre_data_conduct_ba	760	1	
+ca_pre_executive_ab	761	1	
+ca_pre_executive_ba	762	1	
+ca_pre_finance_ab	763	1	
+ca_pre_finance_ba	764	1	
+ca_pre_general_v2_ab	765	1	
+ca_pre_general_v2_ba	766	1	
+ca_pre_helpdesk_ab	767	1	
+ca_pre_helpdesk_ba	768	1	
+ca_pre_hr_ab	769	1	
+ca_pre_hr_ba	770	1	
+ca_pre_mobile_ab	771	1	
+ca_pre_mobile_ba	772	1	
+ceo_exfil	773	7	office
+chat_minigame_demo	774	1	office
+crypto1_captain_meow	775	6	office
+crypto2_rsa_asymmetric	776	5	office
+crypto3_aes_symmetric	777	5	office
+crypto4_encoding_encryption	778	5	office
+cybok_heist	779	3	office
+lab_encoding_encryption	780	2	office
+lab_exploitation	781	2	office
+lab_feeling_blu	782	2	office
+lab_intro_linux	783	2	office
+lab_malware_metasploit	784	2	office
+lab_physical_pentest	785	9	
+lab_post_exploitation	786	2	office
+lab_scanning	787	2	office
+lab_social_engineering	789	4	
+lab_tesseract_trials	790	11	
+lab_vulnerabilities	791	2	office
+lab_vulnerability_analysis	792	2	office
+lockpick_gauntlet	793	12	office
+m01_first_contact	794	13	office
+m02_ransomed_trust	795	13	
+m03_ghost_in_the_machine	796	7	
+m04_critical_failure	797	9	
+m05_insider_trading	798	10	
+m06_follow_the_money	799	9	
+m07_architects_gambit	800	6	
+m08_the_mole	801	9	
+m09_digital_archaeology	802	11	
+m10_full_disclosure	803	8	
+npc-hub-demo-ghost-protocol	804	4	office
+npc-patrol-lockpick	805	2	office
+npc-sprite-test2	806	1	office
+npc-sprite-test3	807	1	office
+ransomware-test	808	1	office
+secgen_vm_lab	809	4	office
+sis01_healthcare	810	3	
+sis02_energy	811	3	
+sis03_cyber_insurance	812	2	office
+test-ble-scanner	813	1	
+test-blockchain-explorer	814	1	office
+test_complex_multidirection	815	6	office
+test_dm_social	816	1	office
+test_event_cascade	817	1	
+test_exercise_station	818	2	office
+test_finale_calls_credits	819	1	office
+test_gate_tailgate	820	2	
+test_horizontal_layout	821	4	office
+test_ink_email	822	3	office
+test_ko_countdown	823	2	office
+test_mixed_room_sizes	824	4	
+test_multiple_connections	825	5	office
+test-multiroom-npc	826	2	office
+test_needs_leash	827	4	office
+test_needs_sims	828	3	office
+test-network-architecture	829	1	office
+test-network-segmentation-plan	830	1	office
+test-npc-face-player	831	1	office
+test_npc_needs	832	2	office
+test-npc-patrol	833	1	office
+test_npc_patrol_override	834	1	
+test-npc-personal-space	835	1	office
+test_npc_visibility	836	1	
+test-npc-waypoints	837	1	office
+test_objectives	838	2	office
+test_objectives_ink	839	1	
+test-phone-terminal	840	1	
+test-rfid	841	2	
+test-rfid-multiprotocol	842	5	office
+test_seating	843	4	
+test-shredded-document	844	2	office
+test-siem	845	1	office
+test_simple_success	846	1	office
+test_simple_vm_flag	847	1	office
+test_social_board_indicators	848	1	office
+test_social_docs_proof	849	2	office
+test_social_episode	850	1	office
+test_social_freetext	851	1	office
+test_social_m5_channels	852	1	office
+test_social_p7_channels	853	1	office
+test_social_p9	854	1	office
+test_social_slice	855	1	office
+test-tesseract-probes	856	1	office
+test_timer_system	857	1	
+test_unlock_silence	858	3	office
+test_vertical_layout	859	4	office
+timed_messages_example	860	1	
+title-screen-demo	861	2	office
+test_desk_seating	892
