@@ -2263,3 +2263,132 @@ Tests: node, `pickIconEntry` returns the new defaults and a scenario entry still
 `showPressingNeeds` off. Showcase: the option on, and a README row. Live: screenshots of each need
 bubble and of the bubble handing over to the action icon as the NPC leaves; then the lab
 regression (its scenario does not opt in, so its icons should be unchanged).
+
+## 10. Addition 2026-11-06: avoidance at a distance, balking and parked needs (slice 14)
+
+**Requested by the user (2026-11-06):** NPCs that avoid each other should do so around a need, not
+only when sharing an object: if someone they avoid is at the coffee, in its queue or near it, they
+walk away or look for another source. Show it ("a thought bubble of not wanting to be near
+someone"). Story needs should not give way; environmental needs (food, coffee) can. A queue that is
+too long sends an NPC to another source, and if there is none, it moves on to other things. A need
+with no source in any loaded room parks until a door opens or a room loads. Numbered slice 14
+because 12 and 13 are already used (schedules, consumables; not chosen).
+
+### 10.1 What exists (checked 2026-11-06)
+
+- **Avoidance applies to sharing only** (slice 8, `NPC_NEEDS_SYSTEM.md` compatibility): a capacity-2+
+  object held by someone this NPC avoids, or who avoids it, counts as full, so the NPC waits and
+  `npc_avoided` fires. Nobody turns back because an avoided person is *near* the object or in its
+  queue, and slice 10 deliberately lets an avoider queue silently behind someone it avoids.
+- **No source in reach already parks implicitly**: reachable means the object's room is loaded and a
+  path exists, so coffee behind a closed door is not an option; the NPC holds still and retries on
+  the selector back-off. Two flaws: the level keeps falling, so after `maxUnmetMin` the need is
+  starved and wins outright, and when a door opens every starved NPC rushes at once; and nothing
+  tells "about to go" apart from "can't get any".
+- **Queues** (slice 10): `maxWaitSeconds` already makes an NPC leave a line (reneging). Nothing makes
+  it refuse to join a long one (balking).
+
+### 10.2 One rule: unacceptable target, fallback, give up
+
+Avoidance, a long queue and no source all go through one path in the selector, not three special
+cases.
+
+1. **Unacceptable target.** Candidate filtering (where leash, privacy and capacity already filter)
+   gains two checks, for NPCs that opt in:
+   - **Social:** someone this NPC avoids (an id, `group:`, `"*"`, with `requireGlobal`, as in 7.3), or
+     who avoids it, is using the object, holds a place in its queue, or stands within
+     `needsCompany.avoidRadius` tiles of its approach cell (default 2; 0 restores slice 8's
+     sharing-only rule). Both ways, as now.
+   - **Queue:** the number already queued ahead is at least the NPC's `maxQueue` (balking). Unset means
+     no limit (today's behaviour).
+2. **Re-check while committed.** On the walk there and in a queue, the same checks run again, driven
+   by events (an NPC joins or leaves that object's queue, an NPC arrives at or leaves the object or
+   its radius), not every frame. An NPC changes its mind **at most once per job** (hysteresis), so it
+   cannot dither. Turning back is logged `turned_back` with the reason and emits
+   `npc_turned_back:<npcId>` `{need, targetId, reason: "avoid"|"queue", avoidedId?}`.
+3. **Fallback chain.** The selector takes the next acceptable source for the same need (nearest
+   first, as today). Only if none is acceptable does the NPC give up.
+4. **Give up: the need is parked.** For a **deferrable** need (the default for every need):
+   `deferredUntil = now + needsDeferMin` (needs clock; per NPC, default 4 min), the level holds at
+   `urgentAt + 1` with decay paused, and it cannot become starved while parked. Other needs and
+   interests run meanwhile; with nothing else urgent the NPC stays at, or goes back to, its post.
+   Logged `parked` `{need, reason: "avoid"|"queue"|"no_source"}`, event
+   `npc_need_parked:<npcId>`. A parked need is retried when its timer runs out, **and at once** when
+   any room loads or any door opens (an engine event the needs system already hears through the
+   lazy loader and `doors.js`), so a door opening releases parked NPCs one by one on their normal
+   select (staggered by the existing per-NPC select offset, not all on one tick).
+   - **No source** parks the same way, which fixes the starvation rush: a need with nothing
+     reachable no longer falls to starved while nothing can satisfy it.
+5. **Story needs do not give way.** A need declared `deferrable: false` (for scenario needs such as
+   a guard's rounds or "deliver the report") never parks for `avoid` or `queue`: the NPC goes anyway
+   and shows the avoidance bubble on the way, a deliberate moment. `no_source` still parks it (it
+   cannot do otherwise). The validator warns on `deferrable: false` for the built-in environmental
+   needs (caffeine, thirst, hunger, rest), since that is rarely meant.
+
+Parking, not topping up: a top-up would erase the tension and make `expectedAwayMs` wrong; a parked
+need keeps a believable trip for later.
+
+### 10.3 What the player sees
+
+- **Avoidance bubble:** while turning back (and for a few seconds after), and for a non-deferrable
+  NPC on its way, a thought bubble holds the **avoided person's face**: the head of their own walk
+  sprite (south-facing idle frame, top rows to the chin), cropped at native size as a Phaser frame,
+  never scaled, plus the new `npc-avoid` icon (a small storm cloud) beside it. No new art per
+  character.
+- **Parked need:** the need's bubble drawn greyed (alpha and a desaturated tint on the existing icon,
+  no new art) with a small badge: `npc-closed` (a closed door) for `no_source`, the existing
+  `npc-queue` with a red cross drawn in graphics for `queue`, `npc-avoid` for `avoid`. Shown under
+  `showPressingNeeds`, like every 3b bubble.
+- **Grumble:** turning back says one short line from a `grumble` chatter pool ("I'll come back
+  later.", "Not now.", "Maybe the kitchen's quieter."), a scenario pool replaces it as in slice 8.
+  It is a normal slice 8 speech bubble, so `npc_overheard` fires and the player can learn who avoids
+  whom.
+- **Art:** two new 16×16 icons, `npc-avoid` and `npc-closed`, made the same way as section 9 (one
+  PixelLab pro call each, 64 candidates, outline clean-up by hand). Approved by the user.
+
+### 10.4 Why players care (design intent)
+
+Borrowed from games that do this well: The Sims' face-in-bubble for relationships; RimWorld's
+readable reason for every decision; Prison Architect and Two Point Hospital's visible patience,
+balking and storming off; and above all Hitman's routines that are readable first and manipulable
+second. Here the avoidance map becomes a lever the player can pull (keep Derek at the coffee machine
+and Chris stays at his desk; make Chris walk to the far kitchen and the window is longer; open a
+locked kitchen and a coffee run starts), and overheard grumbles are social reconnaissance, which is
+what the lab and the awareness course teach. The engine stays cyber-neutral: it moves people and
+emits events; scenarios map them to intel.
+
+### 10.5 Authoring
+
+```jsonc
+// on an NPC
+"needsCompany": { "groups": ["accounts"], "avoids": ["marek"], "avoidRadius": 2 },
+"maxQueue": 1,            // refuse to join a line with 1 or more ahead
+"needsDeferMin": 4,       // how long a given-up need stays parked
+"needs": { "rounds": { "decayPerMin": 20, "urgentAt": 40, "deferrable": false } }
+
+// scenario level
+"chatter": { "grumble": ["I'll come back later.", "Not now."] }
+```
+
+Everything is opt-in per NPC: `avoidRadius` defaults to 2 **only for NPCs that declare
+`needsCompany.avoids`**; `maxQueue` unset means no limit; parking for `no_source` is on for every
+needs NPC (it replaces a starvation spiral that has no visible upside), so it is the one change
+that reaches existing scenarios, and the lab regression must check it.
+
+### 10.6 Size, order, tests
+
+About 220 lines (selector checks and the once-per-job re-check about 80, parking and wake on room
+load/door open about 60, bubbles, face crop and badges about 50, validator and schema about 30).
+Build after slice 11 (same functions in `npc-needs.js`).
+
+Tests (node, stub world): avoided NPC at the object, in its queue and within the radius each make
+the target unacceptable, both ways; radius 0 restores slice 8; the fallback picks the next source;
+no source left parks the need with the reason; parked level holds, decay paused, no starvation;
+timer expiry and a room-load event each retry, staggered; once-per-job hysteresis (an avoided NPC
+arriving, leaving and arriving again turns the NPC back once); `deferrable: false` goes anyway and
+shows the bubble; `maxQueue` balks; determinism (seeded, `Math.random` throwing); the sims-day log
+byte-identical where nobody avoids anyone and nothing is parked. Showcase: Marek at the office
+coffee, Sanjay turns back with the face bubble and a grumble, tries the kitchen, finds it shut,
+parks with the closed-door badge, and goes when the player opens the kitchen; an objective on
+`npc_turned_back:sanjay`. Live proof of each, then the leash and lab regressions; in the lab, check
+the coffee timing of Chris and Melanie, since `no_source` parking reaches every needs NPC.
