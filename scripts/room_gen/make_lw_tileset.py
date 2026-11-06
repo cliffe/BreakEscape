@@ -170,6 +170,30 @@ def paint_table_mark(px, box, fn):
             px[x, y] = (*(shade(fn(x, y), 0.7) if d == 0 else fn(x, y)), 255)
 
 
+def widen_sheet(src, cols_src=10, cols_dst=20):
+    """Make a cols_dst-wide room sheet from a cols_src-wide one by copying 32px tile
+    blocks. The left side wall comes from src column 0 and the right side wall from the
+    last src column, so the two corners land only at the ends; the interior columns cycle
+    the src interior. The Ledgerwell dado/rail is 32px-periodic and horizontal, so an
+    interior tile is self-contained and the shell stays continuous across tile joins; the
+    oatmeal carpet is near-uniform, so the per-column repeat reads as texture, not a seam.
+    (Dressing can refine the floor later; this is the mechanical 20-wide identity sheet.)"""
+    from PIL import Image
+    t = TILE if "TILE" in globals() else 32
+    h = src.height
+    out = Image.new("RGBA", (cols_dst * t, h), (0, 0, 0, 0))
+    for c in range(cols_dst):
+        if c == 0:
+            sc = 0
+        elif c == cols_dst - 1:
+            sc = cols_src - 1
+        else:
+            sc = 1 + ((c - 1) % (cols_src - 2))
+        block = src.crop((sc * t, 0, sc * t + t, h))
+        out.paste(block, (c * t, 0))
+    return out
+
+
 def main():
     walls = base_walls(dict(FRONT_WALLS, brand=LEDGERWELL_BRASS))
     sheets = {"room_lw_carpet": paint_floor(walls, CARPET_BOTTLE_GREEN)}
@@ -181,7 +205,10 @@ def main():
     boards = paint_floor(shell, boards_pixel)
     paint_green_runner(boards.load(), 76, 116)
     sheets["room_lw_boards"] = boards
-    sheets["room_lw_tiles"] = paint_floor(shell, OATMEAL)
+    tiles = paint_floor(shell, OATMEAL)
+    sheets["room_lw_tiles"] = tiles
+    # 20-wide version of the office sheet for the 20x10 accounts floor (room_lw_accounts).
+    sheets["room_lw_tiles_20"] = widen_sheet(tiles, cols_src=10, cols_dst=20)
     vinyl = paint_floor(shell, vinyl_green_pixel)
     paint_border(vinyl.load(), vinyl_green_pixel)
     sheets["room_lw_vinyl"] = vinyl

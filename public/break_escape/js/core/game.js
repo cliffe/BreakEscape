@@ -232,6 +232,7 @@ export function preload() {
     this.load.tilemapTiledJSON('room_lw_front_desk', 'rooms/room_lw_front_desk.json'); // lab_physical_pentest front desk, Ledgerwell identity (old bank counter of walnut sideboards, oak boards and green runner, staff directory, time clock; from room_lw_reception)
     this.load.tilemapTiledJSON('room_lw_ceo', 'rooms/room_lw_ceo.json'); // from room_zds_ceo (m03 portrait, magazine cover and static filing cabinet removed)
     this.load.tilemapTiledJSON('room_lw_store', 'rooms/room_lw_store.json'); // from small_room_storage_1x1gu
+    this.load.tilemapTiledJSON('room_lw_accounts', 'rooms/room_lw_accounts.json'); // lab_physical_pentest 20x10 accounts open plan (Ledgerwell oatmeal office shell, room_lw_tiles_20); replaces room_lw_records for open_plan
 
     // Load room images (now using smaller 32px scale images)
     this.load.image('room_reception', 'tiles/rooms/room1.png');
