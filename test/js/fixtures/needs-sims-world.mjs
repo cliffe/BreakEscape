@@ -311,3 +311,51 @@ export function addCopierBeat(w, { cfgNpcs = w.cfgNpcs, accepts = ['post', 'prin
     w.take = (id) => { const o = slots[id]; o.taken = true; o.roomId = null; o.pickable = false; };
     return w;
 }
+
+/**
+ * Slice 11 (left-behind items, OFFICE_LIFE_PLAN 2.10): Tom's ID badge on his desk, as the
+ * showcase declares it (leftBehindBy "tom", leftBehindChance 0.7, own revealOnGlobal), and the
+ * world's left-behind methods with the live adapter's rules (leftBehindItems, revealLeftBehind;
+ * stowSlot and stowRevealedSlots chain to any copier beat already added). Extra handles:
+ * w.badge, w.takeLeft(id) (the player takes it), w.globals, calls.leftShown / calls.leftStowed.
+ */
+export function addLeftBehind(w, { chance = 0.7, id = 'tom_badge', owner = 'tom', takeable = true } = {}) {
+    const calls = w.calls;
+    calls.leftShown = calls.leftShown || [];
+    calls.leftStowed = calls.leftStowed || [];
+    const g = calls.globals;
+    const item = { id, roomId: 'office', x: 104, y: 150, pickable: false, slot: true, leftBehindBy: owner, leftBehindChance: chance, global: `${id}_left`, takeable, home: { roomId: 'office', x: 104, y: 150 } };
+    w.objs.push(item);
+    const items = { [id]: item };
+    const stow = (o) => {
+        if (!o || o.taken) return false;
+        o.roomId = o.home.roomId; o.x = o.home.x; o.y = o.home.y; o.pickable = false;
+        g[o.global] = false;
+        calls.leftStowed.push(o.id);
+        return true;
+    };
+    const world = w.world;
+    world.leftBehindItems = npcId => Object.values(items)
+        .filter(o => o.leftBehindBy === npcId && o.roomId && !o.taken && g[o.global] !== true)
+        .sort((a, b) => (a.id < b.id ? -1 : 1))
+        .map(o => ({ id: o.id, chance: o.leftBehindChance }));
+    world.revealLeftBehind = (itemId, npcId) => {
+        const o = items[itemId];
+        if (!o || o.taken || !o.roomId) return false;
+        g[o.global] = true; o.pickable = true;
+        calls.leftShown.push({ npcId, itemId });
+        world.emit(`object_revealed:${itemId}`, { npcId, objectId: itemId, leftBehindBy: npcId });
+        return true;
+    };
+    const baseStow = world.stowSlot, baseOnSight = world.stowRevealedSlots;
+    world.stowSlot = itemId => (items[itemId] ? stow(items[itemId]) : (baseStow ? baseStow(itemId) : false));
+    world.stowRevealedSlots = roomIds => [
+        ...(baseOnSight ? baseOnSight(roomIds) : []),
+        ...Object.values(items).filter(o => roomIds.includes(o.roomId) && g[o.global] === true && !o.taken).filter(o => stow(o)).map(o => o.id)
+    ];
+    w.leftItems = items;
+    w.badge = item;
+    w.globals = g;
+    w.takeLeft = (itemId) => { const o = items[itemId]; o.taken = true; o.roomId = null; o.pickable = false; };
+    return w;
+}

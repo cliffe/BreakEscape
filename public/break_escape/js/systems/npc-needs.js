@@ -268,6 +268,10 @@ export class NPCNeedsSystem {
             prevMode: null,
             job: null,
             atPost: true,
+            // Real leaves so far (2.10, slice 11): salts the left-behind roll. Resets with the state
+            // on reload. leftItems: items this NPC left at its post on the current leave.
+            leaveCount: 0,
+            leftItems: [],
             home: null,
             cooldowns: {},
             scriptSuspended: false,
@@ -627,6 +631,7 @@ export class NPCNeedsSystem {
                 s.atPost = true;
                 this._log(id, 'returned_post');
                 this._emit(`npc_returned_post:${id}`, { npcId: id, ...this._playerProximity(id) });
+                this._collectLeftItems(s);
             }
         }
 
@@ -891,18 +896,63 @@ export class NPCNeedsSystem {
         if (s.atPost && !this._atOwnPost(s)) {
             s.atPost = false;
             s.caughtEmitted = false;
+            s.leaveCount++;
+            const left = this._leaveItemsBehind(s);
             this._emit(`npc_left_post:${id}`, {
                 npcId: id, need: s.job.need, targetId: s.job.targetId,
-                expectedAwayMs: this._expectedAwayMs(s), ...this._playerProximity(id)
+                expectedAwayMs: this._expectedAwayMs(s), ...this._playerProximity(id),
+                ...(left.length ? { leftBehind: left } : {})
             });
         }
         this._moveForPhase(s);
     }
 
     /**
+     * Left-behind items (OFFICE_LIFE_PLAN 2.10, slice 11): on a real leave, each declared item with
+     * leftBehindBy this NPC is shown at the post when a seeded roll falls under its
+     * leftBehindChance. The roll is keyed on the leave count and the item id, so a day replays the
+     * same. A world without leftBehindItems (the plain stubs) has none, and the log is unchanged.
+     */
+    _leaveItemsBehind(s) {
+        const out = [];
+        if (typeof this.world.leftBehindItems !== 'function') return out;
+        for (const it of this.world.leftBehindItems(s.npcId) || []) {
+            const chance = clamp(Number(it?.chance) || 0, 0, 1);
+            if (!it?.id || chance <= 0) continue;
+            if (this.roll(s.npcId, `left:${s.leaveCount}:${it.id}`) >= chance) continue;
+            if (!this.world.revealLeftBehind?.(it.id, s.npcId)) continue;
+            s.leftItems.push(it.id);
+            out.push(it.id);
+            this._log(s.npcId, 'left_behind', { item: it.id, leave: s.leaveCount });
+        }
+        if (out.length) this._worldChanged();
+        return out;
+    }
+
+    /**
+     * Back at the post: the owner picks up what it left (stow: hidden at its spot, global false, no
+     * server call), so a later leave can show it again. One the player took is gone for good:
+     * logged and emitted once, so a scenario can map the owner noticing.
+     */
+    _collectLeftItems(s) {
+        if (!s.leftItems.length) return;
+        const items = s.leftItems.splice(0);
+        for (const itemId of items) {
+            if (this.world.stowSlot?.(itemId)) {
+                this._log(s.npcId, 'stowed', { item: itemId, reason: 'collected' });
+            } else {
+                this._log(s.npcId, 'left_item_gone', { item: itemId });
+                this._emit(`npc_left_item_gone:${s.npcId}`, { npcId: s.npcId, itemId, ...this._playerProximity(s.npcId) });
+            }
+        }
+        this._worldChanged();
+    }
+
+    /**
      * Rough length of this absence: straight-line walk out and back at the NPC's needs speed (via
-     * the item for a carry) plus the target's dwell. A lower bound: paths round furniture and
-     * waits for a busy target make the real absence longer.
+     * the item for a carry) plus the target's dwell. Queued (slice 11): plus one dwell per
+     * place in the line, shared across the machine's capacity. A lower bound: paths round
+     * furniture make the real absence longer.
      */
     _expectedAwayMs(s) {
         const job = s.job;
@@ -919,7 +969,14 @@ export class NPCNeedsSystem {
         const speed = Math.max(1, Number(this.world.speedFor(s.npcId)) || 80);
         const secs = Number(t.o.affordance?.useSeconds);
         const useMs = (Number.isFinite(secs) ? clamp(secs, 0, 600) : 20) * 1000;
-        return Math.round(dist / speed * 1000 + useMs);
+        let waitMs = 0;
+        if (job.phase === 'queued') {
+            const line = this._queuers(job.targetId);
+            const place = line.includes(s) ? line.indexOf(s) + 1 : line.length + 1;
+            const cap = Math.max(1, Number(t.o.affordance?.capacity) || 1);
+            waitMs = Math.ceil(place / cap) * useMs;
+        }
+        return Math.round(dist / speed * 1000 + useMs + waitMs);
     }
 
     /**
@@ -1545,6 +1602,7 @@ export class NPCNeedsSystem {
             chatPartner: this._chatPartner(npcId),
             blockedNeed: this._blockedNeed(s),
             noticed: Number.isFinite(s.caughtAt) && this.clockMs - s.caughtAt < NOTICED_MS,
+            leaveCount: s.leaveCount, leftItems: [...s.leftItems],
             home: s.home ? { x: Math.round(s.home.x), y: Math.round(s.home.y), roomId: s.home.roomId, objectId: s.home.objectId || null, provisional: !!s.home.provisional } : null,
             clockMs: this.clockMs, tick: this.tickCount
         };
@@ -2005,6 +2063,35 @@ export function createEngineWorld() {
             }
             const cosmetic = makeCosmetic(producerId, slots[0]);
             return cosmetic ? { cosmetic } : {};
+        },
+        // Left-behind items (2.10, slice 11): loaded declared items with leftBehindBy this NPC that
+        // could be shown now (not taken, not already shown, not in a hand or set down), by id.
+        leftBehindItems(npcId) {
+            const out = [];
+            const rooms = W().rooms || {};
+            for (const roomId of Object.keys(rooms)) {
+                const objs = rooms[roomId]?.objects || {};
+                for (const k of Object.keys(objs)) {
+                    const sp = objs[k];
+                    const sd = sp?.scenarioData;
+                    if (!sd || sd.leftBehindBy !== npcId || !isSlot(sp)) continue;
+                    if (sp.destroyed || sp.active === false || sp._npcCarried || sp._npcPlacedBy || inInventory(sp)) continue;
+                    if (globalTrue(globalOf(sp))) continue;
+                    out.push({ id: sd.id || sp.objectId || k, chance: Number(sd.leftBehindChance) || 0 });
+                }
+            }
+            return out.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+        },
+        // Show a left-behind item at its declared spot by a direct call (after a reload there is no
+        // reveal listener), global true, object_revealed:<id> with leftBehindBy.
+        revealLeftBehind(itemId, npcId) {
+            const f = findSprite(itemId);
+            if (!f || f.sp.destroyed || f.sp.active === false || inInventory(f.sp)) return false;
+            slotHome(f.sp, f.roomId, f.key);
+            this.setGlobal(globalOf(f.sp), true);
+            W().showRevealedObject?.(f.sp);
+            W().eventDispatcher?.emit(`object_revealed:${itemId}`, { npcId, objectId: itemId, leftBehindBy: npcId });
+            return true;
         },
         removeCosmetic(handle) {
             const sp = cosmetics.get(handle);

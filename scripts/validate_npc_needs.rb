@@ -42,6 +42,7 @@ module ValidateNpcNeeds
     check_private(json, npcs, objs, issues)
     check_visuals(json, objs, issues)
     check_slots(json, objs, issues)
+    check_left_behind(json, npcs, objs, issues)
     check_social(json, npcs, objs, issues)
     check_queues(json, npcs, objs, issues)
     npcs.each { |room_id, npc| check_npc(json, npc, room_id, objs, issues, npcs) }
@@ -671,6 +672,59 @@ module ValidateNpcNeeds
       next unless (list(aff['accepts']) & slot_tags).empty?
 
       issues << "⚠️ WARNING: object '#{o.id}' sets affordance.onDeliver, but no slot's needsTag is in its accepts; onDeliver only affects reveal slots (plain items are always consumed)."
+    end
+  end
+
+  # ── left-behind items (OFFICE_LIFE_PLAN 2.10, slice 11) ─────────────────
+  # A declared item with leftBehindBy "<npcId>" is a slot by Part A's definition: the engine shows
+  # it at the owner's post on a real leave (seeded roll under leftBehindChance) and stows it on
+  # return, through its own revealOnGlobal. Same global and read-in-place rules as a reveal slot.
+  def self.check_left_behind(json, npcs, objs, issues)
+    by_npc = npcs.to_h { |room_id, n| [n['id'], [room_id, n]] }
+    by_id = objs.group_by(&:id)
+    objs.each do |o|
+      d = o.data
+      if d.key?('leftBehindChance') && !d.key?('leftBehindBy')
+        issues << "⚠️ WARNING: object '#{o.id || d['name']}' sets leftBehindChance without leftBehindBy; nothing rolls it."
+      end
+      next unless d.key?('leftBehindBy')
+
+      label = "left-behind item '#{o.id || d['name']}'"
+      issues << "❌ ERROR: #{label} has no id; left-behind items are shown and stowed by id." if o.id.to_s.empty?
+      issues << "❌ ERROR: #{label} has both outputOf and leftBehindBy; a slot belongs to a producer or an owner, not both." if d.key?('outputOf')
+      owner = by_npc[d['leftBehindBy']]
+      if owner.nil?
+        issues << "❌ ERROR: #{label} leftBehindBy names '#{d['leftBehindBy']}', which is not an NPC id in this scenario."
+      elsif owner[1]['needsHome'].nil?
+        issues << "❌ ERROR: #{label} leftBehindBy '#{d['leftBehindBy']}' has no needsHome; only a leave from a post can leave something behind."
+      else
+        home = owner[1]['needsHome']
+        home_room = home.is_a?(Hash) ? home['room'] : by_id[home]&.first&.room
+        if home_room && o.room && o.room != home_room
+          issues << "⚠️ WARNING: #{label} is in room '#{o.room}', but its owner's post is in '#{home_room}'; it shows wherever it is declared, so put it at the post."
+        end
+      end
+      c = d['leftBehindChance']
+      if c.nil?
+        issues << "⚠️ WARNING: #{label} has no leftBehindChance; the default is 0, so it is never left."
+      elsif !c.is_a?(Numeric) || c.negative? || c > 1
+        issues << "❌ ERROR: #{label} leftBehindChance must be a number from 0 to 1."
+      end
+      g = d['revealOnGlobal']
+      unless g.is_a?(String) && !g.empty?
+        issues << "❌ ERROR: #{label} has leftBehindBy but no revealOnGlobal; the engine shows and stows it through its own global."
+        next
+      end
+      others = objs.reject { |x| x.equal?(o) }.select { |x| x.data['revealOnGlobal'] == g }
+      issues << "❌ ERROR: #{label} revealOnGlobal '#{g}' is shared with #{others.map(&:id).inspect}; each left-behind item needs its own global." unless others.empty?
+      if global_used_elsewhere?(json, g)
+        issues << "❌ ERROR: #{label} revealOnGlobal '#{g}' is used elsewhere in the scenario; the engine owns it (true when left, false when collected), so no condition or mapping may read or set it."
+      end
+      if d['readable'] == true && d['type'].to_s.start_with?('notes') && d['takeable'] != true && d['readDisplay'] != 'gameDisplay'
+        issues << "❌ ERROR: #{label} is a non-takeable readable #{d['type']} without readDisplay \"gameDisplay\"; the notes minigame removes what it opens. Add \"readDisplay\": \"gameDisplay\" or make it takeable (one beat)."
+      end
+      beat = d['takeable'] == true ? 'takeable: one beat, gone for good once taken' : 'not takeable: repeats on later leaves'
+      issues << "ℹ️ Left-behind item '#{o.id}' (#{d['leftBehindBy']}, chance #{c.inspect}): #{beat}."
     end
   end
 

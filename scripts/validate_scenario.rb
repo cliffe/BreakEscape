@@ -496,7 +496,7 @@ def check_unknown_fields(json_data)
     hacktivityMode vm acceptsVms flags flagRewards
     mode onAbort onLaunch abortConfirmText launchConfirmText
     itemsHeld contents hasContents triggerOnInteract
-    requiresItem requiresItemHint consumesItem revealOnGlobal outputOf
+    requiresItem requiresItemHint consumesItem revealOnGlobal outputOf leftBehindBy leftBehindChance
     minigameData interactionType
     gateVar sealedMessage openableReadyMessage
     puzzle_graph_role puzzle_graph_aim puzzle_graph_unlocks

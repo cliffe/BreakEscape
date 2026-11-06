@@ -27,7 +27,8 @@
     "mugs_dropped": false,
     "copier_out_a_shown": false,
     "copier_out_b_shown": false,
-    "copier_out_c_shown": false
+    "copier_out_c_shown": false,
+    "tom_badge_left": false
   },
 
   "startItemsInInventory": [
@@ -76,7 +77,8 @@
         { "taskId": "see_outcast", "title": "Nobody chats with the contractor: read the Kitchen Rota and Marek heads for the cooler; Sanjay waits at his desk until Marek has gone", "type": "custom", "status": "active" },
         { "taskId": "see_queue", "title": "A queue forms at the coffee machine (read the Activity Board before opening the kitchen: Amara and Tom want a coffee, and Marek joins the line behind Tom)", "type": "custom", "status": "active" },
         { "taskId": "see_queue_chat", "title": "Chat in the coffee queue (nobody chats with Marek, even in the queue)", "type": "custom", "status": "active" },
-        { "taskId": "see_printout", "title": "A printout is delivered to a desk (Sanjay prints at his PC; Amara takes it from the copier tray to her desk, where it is filed a minute later)", "type": "custom", "status": "active" }
+        { "taskId": "see_printout", "title": "A printout is delivered to a desk (Sanjay prints at his PC; Amara takes it from the copier tray to her desk, where it is filed a minute later)", "type": "custom", "status": "active" },
+        { "taskId": "see_left_behind", "title": "Spot something left on an empty desk (Tom often forgets his ID badge when he gets up, and pockets it when he sits down again)", "type": "custom", "status": "active" }
       ]
     }
   ],
@@ -115,6 +117,18 @@
             { "condition": "globalVars.tom_pc_owner_away", "value": "Tom's desk PC. He has left it unlocked, his inbox open on the screen." }
           ],
           "affordance": { "private": true }
+        },
+        {
+          "type": "id_badge",
+          "id": "tom_badge",
+          "name": "Tom's ID badge",
+          "position": { "x": 1.9, "y": 4.9 },
+          "takeable": true,
+          "observations": "Tom's staff ID on a lanyard. He has left it on his desk again.",
+          "leftBehindBy": "tom",
+          "leftBehindChance": 0.7,
+          "revealOnGlobal": "tom_badge_left",
+          "_comment": "Slice 11 left-behind item: on each real leave a seeded roll under 0.7 shows it on Tom's desk; when he is back at his desk he pockets it (hidden again, no server call). Takeable, so a single beat: once the player takes it, it is gone for good and Tom notices on his return (npc_left_item_gone:tom). A reload while it shows files it away."
         },
         {
           "type": "pc",
@@ -347,6 +361,8 @@
           "eventMappings": [
             { "eventPattern": "workstation_owner_left:tom_pc", "condition": "data.screenLocked === false", "onceOnly": true, "cooldown": 0, "completeTask": "spot_open_screen" },
             { "eventPattern": "npc_caught_at_post:tom", "cooldown": 30000, "bark": "Er, that's my desk. Can I help you?", "completeTask": "see_caught" },
+            { "eventPattern": "object_revealed:tom_badge", "onceOnly": true, "cooldown": 0, "completeTask": "see_left_behind" },
+            { "eventPattern": "npc_left_item_gone:tom", "onceOnly": true, "cooldown": 0, "bark": "Has anyone seen my badge? I'm sure I left it here." },
             { "eventPattern": "object_interacted", "condition": "data.objectName === 'Activity Board'", "cooldown": 30000, "needs": { "set": { "caffeine": 10 } } },
             { "eventPattern": "object_interacted", "condition": "data.objectName === 'Deadline Memo'", "cooldown": 30000, "needs": { "set": { "caffeine": 20 } } }
           ]
