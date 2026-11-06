@@ -74,7 +74,10 @@ export const PICTURE_CHATTER = Object.freeze({
     // Slice 18a (OFFICE_LIFE_PLAN 12.4): a dead machine (off) or nothing left (gone, 18b). The
     // picture is the need's own icon (NEED_ICONS); this entry is the fallback for any other need.
     grumble_off: Object.freeze(['avoid']),
-    grumble_gone: Object.freeze(['avoid'])
+    grumble_gone: Object.freeze(['avoid']),
+    // Slice 18b-ii: word of mouth about a magnet. The picture is the magnet's first `satisfies`
+    // when that need has an icon (NEED_ICONS); this entry is the fallback.
+    news: Object.freeze(['social'])
 });
 const PICTURE_DEFAULT = Object.freeze(['social']);
 // The needs that have an icon of their own (npc-action-icons.js NPC_ICON_NAMES; not imported, so
@@ -96,6 +99,9 @@ export const TURN_BACK = Object.freeze({
 });
 /** Slice 18b-i (OFFICE_LIFE_PLAN 12.4): temptation's default band above urgentAt, in points. */
 export const MAGNET_TEMPT = 30;
+/** Slice 18b-ii: magnet.newsRadius default (tiles), and how long an announce waits for the speech lock. */
+export const NEWS_RADIUS = 5;
+export const NEWS_WAIT_MS = 30000;
 
 /**
  * Pure: an affordance's magnet block, normalised ({ tempt, servings, perPerson }), or null. A
@@ -106,7 +112,13 @@ export function magnetOf(aff) {
     const m = aff?.magnet;
     if (!m || typeof m !== 'object') return null;
     const num = (v, d, lo, hi) => { const n = Number(v); return Number.isFinite(n) ? clamp(n, lo, hi) : d; };
-    return { tempt: num(m.tempt, MAGNET_TEMPT, 0, 95), servings: Math.floor(num(m.servings, 1, 0, 1000)), perPerson: Math.floor(num(m.perPerson, 1, 1, 1000)) };
+    return {
+        tempt: num(m.tempt, MAGNET_TEMPT, 0, 95), servings: Math.floor(num(m.servings, 1, 0, 1000)), perPerson: Math.floor(num(m.perPerson, 1, 1, 1000)),
+        // Slice 18b-ii: the scenario chatter pool a knower announces it from (null: picture only)
+        // and the tiles within which the announce is heard
+        announce: typeof m.announce === 'string' && m.announce ? m.announce : null,
+        newsRadius: num(m.newsRadius, NEWS_RADIUS, 0, 50)
+    };
 }
 
 /** Pure: the names an offWhen (requireGlobal form) reads: a name, or the keys of { name: value }. */
@@ -367,6 +379,10 @@ export class NPCNeedsSystem {
             knows: new Set(),
             ate: {},
             temptBack: {},
+            // Slice 18b-ii: magnets this NPC has announced (once each), and an announce waiting for
+            // the speech lock ({ id, since }; a picture after NEWS_WAIT_MS)
+            announced: new Set(),
+            newsWait: null,
             leashNoted: {},
             avoidNoted: {},
             privateNoted: {},
@@ -637,6 +653,76 @@ export class NPCNeedsSystem {
             s.selectRetryAt = 0;
             this._log(s.npcId, 'magnet_seen', { target: id });
             this._emit(`npc_saw_magnet:${s.npcId}`, { npcId: s.npcId, magnetId: id, roomId: o.roomId });
+            this._wakeParkedFor(s, this._magnets.get(id)?.satisfies || []);   // OQ35: sight or word
+        }
+    }
+
+    // ── word of mouth (slice 18b-ii, OFFICE_LIFE_PLAN 12.4 point 3, OQ33) ────
+
+    /**
+     * A knower in its own (post) room, idle or walking home, away from the magnet's room, tells
+     * once per magnet: every NPC in the same room within newsRadius tiles that does not know yet
+     * and is not avoided either way (groups do not matter) learns of it, whatever is shown. The
+     * hearers are taken when the line or picture shows; with nobody to tell there is no announce
+     * at all. The line comes from the magnet's announce pool, ignores the bark cooldown and waits
+     * for the speech lock, up to NEWS_WAIT_MS; then a `news` picture. Telling happens even when
+     * nothing can be shown ("chatter": false).
+     */
+    _tickNews(s, pos) {
+        if (!pos.roomId || pos.roomId !== s.home?.roomId) return;
+        if (s.mode !== 'idle' && s.mode !== 'returning') return;
+        if (s.saying && s.saying.until > this.clockMs) return;
+        const shown = this._shownMagnets();
+        for (const id of [...s.knows].sort()) {
+            if (s.announced.has(id)) continue;
+            const m = this._magnets.get(id), o = shown?.get(id);
+            if (!m || !o || m.servings <= 0 || o.roomId === pos.roomId) continue;
+            const hearers = this._newsHearers(s, pos, m);
+            if (!hearers.length) continue;   // nobody would learn: no line, no picture, no TTS request
+            const topic = m.cfg.announce || 'news';
+            const waited = s.newsWait?.id === id ? this.clockMs - s.newsWait.since : 0;
+            const first = m.satisfies.find(n => NEED_ICONS.includes(n));
+            const pick = this._pickBark(s, topic, { waitForLock: waited < NEWS_WAIT_MS, ignoreCooldown: true, icons: [first || 'social'] });
+            if (pick?.wait) {
+                if (s.newsWait?.id !== id) s.newsWait = { id, since: this.clockMs };
+                return;
+            }
+            s.newsWait = null;
+            this._announce(s, m, hearers, pick, topic);
+            return;   // one announce per tick
+        }
+    }
+
+    /** Who would learn from this speaker now: same room, within newsRadius, not knowing, not avoided either way. */
+    _newsHearers(s, pos, m) {
+        const r = m.cfg.newsRadius * 32;
+        const out = [];
+        for (const id of [...this.states.keys()].sort()) {
+            if (id === s.npcId) continue;
+            const t = this.states.get(id);
+            if (t.knows.has(m.id)) continue;
+            const p = this.world.npcPos(id);
+            if (!p || p.roomId !== pos.roomId || Math.hypot(p.x - pos.x, p.y - pos.y) > r + 0.5) continue;
+            const st = this.world.npcStatus(id) || {};
+            if (st.ko || st.hostile || st.hidden) continue;
+            if (this._avoids(s, t)) continue;
+            out.push(t);
+        }
+        return out;
+    }
+
+    _announce(s, m, hearers, pick, topic) {
+        s.announced.add(m.id);
+        if (pick) this._showSaying(s, pick, topic, m.id);
+        const heard = hearers.map(t => t.npcId);
+        this._log(s.npcId, 'announced', { target: m.id, heard, line: pick?.line ? `${topic}:${pick.idx}` : undefined, picture: pick?.picture || undefined });
+        this._emit(`npc_announced:${s.npcId}`, { npcId: s.npcId, magnetId: m.id, heard, topic, line: pick?.line || null, picture: pick?.picture || null, ...this._playerProximity(s.npcId) });
+        for (const t of hearers) {
+            t.knows.add(m.id);
+            t.selectRetryAt = 0;
+            this._log(t.npcId, 'told', { target: m.id, from: s.npcId });
+            this._emit(`npc_told:${t.npcId}`, { npcId: t.npcId, magnetId: m.id, fromId: s.npcId });
+            this._wakeParkedFor(t, m.satisfies);
         }
     }
 
@@ -665,7 +751,7 @@ export class NPCNeedsSystem {
             const on = shown.has(id);
             if (!on && m.wasShown) {
                 m.wasShown = false;
-                for (const st of this.states.values()) st.knows.delete(id);
+                for (const st of this.states.values()) this._forgetMagnet(st, id);
                 this._log(null, 'magnet_gone', { target: id, left: m.servings });
             } else if (on) m.wasShown = true;
             if (on && m.servings <= 0 && ![...this.states.values()].some(st => st.job?.targetId === id && st.job.phase === 'using')) {
@@ -674,10 +760,17 @@ export class NPCNeedsSystem {
         }
     }
 
+    /** Knowledge of a magnet goes with it (picked up or finished): a re-drop is learnt and told again. */
+    _forgetMagnet(st, id) {
+        st.knows.delete(id);
+        st.announced.delete(id);
+        if (st.newsWait?.id === id) st.newsWait = null;
+    }
+
     /** The last serving is eaten: the item is taken away (room removal, so a reload keeps it gone). */
     _finishMagnet(id, o) {
         this._magnets.delete(id);
-        for (const st of this.states.values()) st.knows.delete(id);
+        for (const st of this.states.values()) this._forgetMagnet(st, id);
         if (typeof this.world.removeMagnet === 'function') this.world.removeMagnet(id);
         this._worldChanged();
         this._log(null, 'magnet_finished', { target: id });
@@ -1032,6 +1125,9 @@ export class NPCNeedsSystem {
             this._advanceJob(s, arrived);
             return;
         }
+
+        // Slice 18b-ii: a knower back in its own room passes the word on
+        if (s.knows.size && this._magnets.size) this._tickNews(s, pos);
 
         // idle or returning: an urgent need may start a job
         if (this.selectBackoff && s.selectRetryAt && this.tickCount < s.selectRetryAt) return;
@@ -1405,6 +1501,15 @@ export class NPCNeedsSystem {
         }
     }
 
+    /** Slice 18b-ii (OQ35): learning of a magnet wakes this NPC's parked needs it satisfies, and no others. */
+    _wakeParkedFor(s, needs) {
+        const at = this.clockMs + WAKE_BASE_MS;
+        for (const name of needs) {
+            const p = s.parked[name];
+            if (p && at < p.until) { p.until = at; p.woken = true; }
+        }
+    }
+
     /**
      * While walking to a target or queued for it: an avoided NPC arriving, joining or coming
      * within the radius turns this one back, at most once per need episode (until the need is
@@ -1464,6 +1569,11 @@ export class NPCNeedsSystem {
         const icons = reason !== 'avoid' && NEED_ICONS.includes(need) ? [need] : null;
         const pick = this._pickBark(s, topic, { icons });
         if (!pick) return;
+        this._showSaying(s, pick, topic, objectId);
+    }
+
+    /** A one-off line or picture over one NPC (a grumble, an announce): bubble, voice, npc_overheard. */
+    _showSaying(s, pick, topic, objectId) {
         const { line, idx, picture, pool } = pick;
         const until = this.clockMs + (picture ? PICTURE_MS : bubbleMs(line));
         s.saying = { line, picture, topic, objectId, until };
@@ -1514,9 +1624,9 @@ export class NPCNeedsSystem {
      * speech lock is free; otherwise a picture. Returns { line, idx, picture, pool } or null (silent:
      * `"chatter": false` and nothing to say). Taking a bark starts the cooldown.
      */
-    _pickBark(s, topic, { waitForLock = false, icons: iconsFor = null } = {}) {
+    _pickBark(s, topic, { waitForLock = false, ignoreCooldown = false, icons: iconsFor = null } = {}) {
         const pool = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter);
-        const ready = pool.lines.length && !(s.chatterQuietUntil > this.clockMs);
+        const ready = pool.lines.length && (ignoreCooldown || !(s.chatterQuietUntil > this.clockMs));
         if (ready && this._speechFree()) {
             const idx = this._bagNext(s.npcId, topic, pool.lines);
             s.chatterQuietUntil = this.clockMs + this._cooldownMs(s);

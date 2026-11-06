@@ -60,8 +60,8 @@ const useTicks = secs => Math.ceil(secs * 1000 / NEEDS_TICK_MS) + 2;
 
 test('magnetOf normalises the block; no block is no magnet', () => {
     assert.equal(magnetOf({ satisfies: 'hunger' }), null);
-    assert.deepEqual(magnetOf({ magnet: {} }), { tempt: MAGNET_TEMPT, servings: 1, perPerson: 1 });
-    assert.deepEqual(magnetOf({ magnet: { tempt: 200, servings: 2.7, perPerson: 0 } }), { tempt: 95, servings: 2, perPerson: 1 });
+    assert.deepEqual(magnetOf({ magnet: {} }), { tempt: MAGNET_TEMPT, servings: 1, perPerson: 1, announce: null, newsRadius: 5 });
+    assert.deepEqual(magnetOf({ magnet: { tempt: 200, servings: 2.7, perPerson: 0, announce: 'news_cake', newsRadius: 99 } }), { tempt: 95, servings: 2, perPerson: 1, announce: 'news_cake', newsRadius: 50 });
 });
 
 for (const tickCache of [true, false]) {

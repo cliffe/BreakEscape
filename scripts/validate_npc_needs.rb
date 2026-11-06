@@ -100,6 +100,40 @@ module ValidateNpcNeeds
 
         issues << "⚠️ WARNING: magnet '#{label}' satisfies '#{need}', which no NPC has; nobody will come for that."
       end
+      check_magnet_news(json, label, m, issues)
+    end
+  end
+
+  # Slice 18b-ii: word of mouth. announce names a scenario-level chatter pool with lines (the pool's
+  # own lines are checked with every scenario pool: 40 characters, no { }); newsRadius is in tiles,
+  # 0-50. A dropped magnet can be anywhere, so a line naming one of the scenario's rooms is flagged.
+  def self.check_magnet_news(json, label, m, issues)
+    if m.key?('newsRadius')
+      v = m['newsRadius']
+      issues << "❌ ERROR: magnet '#{label}' magnet.newsRadius must be a number of tiles from 0 to 50 (got #{v.inspect})." unless v.is_a?(Numeric) && v >= 0 && v <= 50
+    end
+    return unless m.key?('announce')
+
+    a = m['announce']
+    unless a.is_a?(String) && !a.empty?
+      issues << "❌ ERROR: magnet '#{label}' magnet.announce must name a scenario chatter pool (got #{a.inspect})."
+      return
+    end
+    sc = json['chatter'].is_a?(Hash) ? json['chatter'] : {}
+    lines = pool_lines(sc[a]).select { |l| l.is_a?(String) }
+    if lines.empty?
+      issues << "❌ ERROR: magnet '#{label}' magnet.announce '#{a}' names no scenario-level chatter pool with lines; add \"chatter\": { \"#{a}\": [...] } (announce lines are voiced for any NPC, so they live at scenario level)."
+      return
+    end
+    rooms = json['rooms'].is_a?(Hash) ? json['rooms'] : {}
+    words = rooms.flat_map do |rid, r|
+      [rid, r.is_a?(Hash) ? r['door_sign'] : nil, r.is_a?(Hash) && r['type'].is_a?(String) ? r['type'].sub(/^room_/, '') : nil]
+    end.compact.map { |w| w.to_s.downcase.tr('_', ' ').strip }.reject { |w| w.length < 3 }.uniq
+    lines.each do |line|
+      hit = words.find { |w| line.downcase.match?(/\b#{Regexp.escape(w)}\b/) }
+      next unless hit
+
+      issues << "⚠️ WARNING: magnet '#{label}' announce line #{line.inspect} names '#{hit}'; the player can drop it in any room, so the line may name the wrong one."
     end
   end
 
