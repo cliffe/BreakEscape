@@ -212,8 +212,9 @@ const STATIC_SEATS = {
     aw_studio_chair_n1: { facing: 'north', seat: [16, 10] },
     m10_steel_chair1: { facing: 'south', seat: [8, 13] },
     // side-view sling chairs in receptions: left-1 faces west, right-1 east
-    'chair-waiting-left-1': { facing: 'west', seat: [24, 23] },
-    'chair-waiting-right-1': { facing: 'east', seat: [10, 23] },
+    // seat 19 rows down (was 23: the sitter's feet went through the floor; SEATED_SCALE_AUDIT.md)
+    'chair-waiting-left-1': { facing: 'west', seat: [24, 19] },
+    'chair-waiting-right-1': { facing: 'east', seat: [10, 19] },
     aw_studio_chair_s1: { facing: 'south', seat: [16, 11] },
     // armchairs
     sofa1: { facing: 'south', seat: [26, 41] },
