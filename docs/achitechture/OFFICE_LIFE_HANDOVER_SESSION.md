@@ -49,6 +49,7 @@ in order, one at a time: they all touch `npc-needs.js`.
 | 11 | Left behind (scoped: `leftBehindChance`; piles wait for slice 9, which wasn't chosen), queue-aware `expectedAwayMs` | 2.10 | Built (5e3fd1e89, 5cccaf6ea); sims game 684; leash (game 686) and lab (game 685, score 100) regressions done 2026-11-06 (`HANDOVER_OFFICE_S11.md`) |
 | 14 | Avoidance at a distance, balking (`maxQueue`) and parked needs, face bubble | 10 | Built (b7606efd0, efe347968, e4408c2f9, 5e7dec2c7, b546cb3c8, a6f5fbc1f, 3f5350d40); sims games 689, 690, 691; leash (game 692) and lab (game 693, score 100) regressions done 2026-11-06 (`HANDOVER_OFFICE_S14.md`) |
 | 15 | Voiced chatter (server `/tts` accepts chatter pools), bag and cooldown, speech lock, picture chat, ink exchanges heard once | 11 | Built (c6288e3be, c4949a517, d6dc1f5b1, 5222d2d3f, da3387e92); sims game 694; leash (game 698) and lab (game 788, score 100) regressions done 2026-11-06 (`HANDOVER_OFFICE_S15.md`) |
+| 21 | Idle motion: the chair roll mostly along x, out and back, held while busy; a rare seeded swivel (`swivelChance` 0.05); listening turns towards a colleague speaking within four tiles (per-tick speakers list); `npc_swivelled` | 12.7 | Built (9779363f6, showcase cbfe37bea); sims games 896, 897; leash (game 899) and lab (game 900, score 100) regressions done 2026-11-06 (`HANDOVER_OFFICE_S21.md`) |
 
 Not chosen: 6 (traits), 9 (routines), 12 (schedules), 13 (consumables). Don't build them unless the user asks.
 

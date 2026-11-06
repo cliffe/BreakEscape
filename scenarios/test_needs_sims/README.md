@@ -458,6 +458,42 @@ retaken by clearing `heard_exchange_rosa_rota` live and replaying the exchange; 
 not a game feature. `test_needs_leash` game 698 and the lab game 788 are in the plan's section 11
 Built line.
 
+### Slice 21 re-run: idle chair roll, rare swivel and looking round (2026-11-06, keyless :3001, headless, load 13-20)
+
+What was added: seated staff on swivel chairs roll a pixel or two, mostly along x and never towards
+the desk, hold 1 to 2 s and roll back. About once in two minutes each one turns the chair one compass
+step and back (a seeded roll per 6 s slot of the needs clock). When a colleague in the same room
+within four tiles is speaking (a chat line, picture or grumble), the seated staff turn towards them for
+the line's length. None of it happens while typing, on a call, paired at a chatter object, saying a
+line or chatting with the player. Every office chair here is a Tiled swivel (`chair-white-*-rotate`),
+checked live in game 896.
+
+How to watch it: read the **Coffee Notice**. Marek goes for a coffee, Sanjay sets off too, sees Marek
+and turns back with a grumble ("Maybe the kitchen's quieter."); Amara, Tom and Grace, if seated and not
+typing, turn their chairs towards him. Task `see_look_round` (mapping `npc_swivelled:*` with
+`reason === 'listen'`).
+
+Strips (scratchpad `s21/`, viewing only; crops are nearest-neighbour 3x from the full frames beside
+them, which were checked whole): `roll-marek-strip-897.png` (at rest, rolled 1,-1 px, back),
+`idle-grace-strip-897.png` (turned south from south-east, back), `listen-amara-strip-897.png` (turned
+west towards Sanjay's grumble, back to north-east when the line ended); full frame
+`listen-amara-2turned-897.png` shows the grumble bubble and the turn together. The swivel and listen
+frames were caught by freezing the needs clock from an `npc_swivelled` listener, then unfreezing.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Roll mostly along x, never towards the desk | PASS | game 897: 433 rolls sampled at their hold (all five seated staff); `|dx|` 1 to 2, `|dy|` at most 1, `|dx| >= |dy|` in all 433; the first 17 checked by hand all roll away from the desk for their facing |
+| Out and back | PASS | game 897: every roll returned to 0,0 (`roll-marek-strip-897.png`) |
+| Rare idle swivel, one step and back | PASS | game 897: 31 idle turns in about 650 s of needs clock across five seated staff (about 5.7% of slots), each one compass step from home; Grace south-east to south and back (`idle-grace-strip-897.png`) |
+| Looking round at a speaker | PASS | game 896 (Coffee Notice) and game 897 (Marek's caffeine set through the bridge, the same chain): `npc_turned_back` sanjay, then `listen` turns by Amara (west), Tom and Grace in the same tick; Tom followed Sanjay as he walked (north, then north-west); speakers list `[sanjay]` until the line's end; back to home after it (`listen-amara-strip-897.png`) |
+| Held while busy | PASS | Tom typing (`work:using`) sat still in the two game 896 samples taken while he typed; node tests cover a call, a pairing, a line and the player chat |
+| Objective | PASS | game 897: `see_look_round` completed (verify-run) |
+| Errors | PASS | only keyless-server TTS 503s in the drains |
+
+Notes: in game 897 a second Coffee Notice read did not send Marek (the mapping had already fired), so
+the listen beat was replayed by setting his caffeine through the bridge, which is what the notice
+does. `test_needs_leash` game 899 and the lab game 900 are in the plan's 12.7 Built line.
+
 ## Engine findings
 
 1. **Fixed 2026-11-05.** The home is now provisional until the `needsHome` object exists and is re-resolved once a second; and an NPC standing on its own desk's approach cell now counts as able to reach it (EasyStar gave no path for start == end, which is why Sanjay chose `tom_pc` in game 501). Original finding: **Needs homes in the start room resolve to the spawn point and stay there.** `npc-needs.js:301` resolves `s.home` on the first tick that has a sprite position and caches it; `_resolveHome` (`npc-needs.js:628-640`) falls back to the spawn point with `objectId: null` when `getObject`/`approachCell` fail. For the start room the NPCs are registered (`core/game.js:2004-2006`) before the room's objects or pathfinding are ready, so every start-room needs NPC gets the fallback and the home-object preference in `_useCandidate` (`npc-needs.js:475`) never applies. NPCs in rooms loaded later (Rosa, lounge) resolve correctly. Repro: load this scenario, then `[...npcNeedsSystem.states].map(([k,s]) => [k, s.home.objectId])` gives null for amara, tom, grace and sanjay, `rosa_laptop` for rosa. Suggested fix: don't cache a fallback home while `needsHome` names an object that isn't found yet (retry each tick until the object exists, or for a few seconds). `test_npc_needs` and `lab_physical_pentest` start-room NPCs are likely affected too, but hidden because each spawns at its own desk. Workaround here: each NPC spawns beside its own desk, and the work task reads "Someone works at a desk". Even so, game 501 had Sanjay choose `tom_pc` over his own adjacent PC (nearest-reachable from his seated position), so the workaround isn't reliable.

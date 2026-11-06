@@ -3884,6 +3884,25 @@ heard through an open door, that is a second channel and about 30 more lines.
 
 ### 12.7 Idle swivel (slice 21)
 
+**Built: 2026-11-06 (slice 21: engine, validator, schema and tests 9779363f6; showcase cbfe37bea).
+Regressions: `test_needs_leash` game 899 (pass), `lab_physical_pentest` 900 (score 100); sims live proof
+games 896 and 897; see `HANDOVER_OFFICE_S21.md`.** As written (`fidgetOffset`, `fidgetStep`, `newFidget`,
+`isTyping`, `idleMotionHeld`, `swivelFacing`, `listenTarget`, `swivelEnabled` in `seating.js`;
+`_buildSpeakers` and `speakers` in `npc-needs.js`; `bin/test-js` 402 files pass, the sims-day golden
+unchanged), with these choices made without asking: (1) where a facing has an east or west part
+(diagonals too, not only east and west), `x` rolls only away from the desk, 1 to 2 px; where it has a
+north or south part, `y` is 0 or 1 px away; a roll is never zero; north- and south-facing chairs roll
+1 to 3 px either way along `x`. (2) A hold mid-roll eases straight back rather than finishing the
+hold. (3) The speakers list has chat, exchange and picture lines and grumbles; call speakers wait for
+slice 19, which must add them (the `s.call` hold is already read). (4) The listening position is the
+body centre, as `npcPos`, for both NPCs; no line-of-sight check. (5) `swivelChance` is an NPC field
+(schema, 0 to 1) beside `swivel`; the validator also errors on a `swivelChance` out of range. (6) The
+event fires on each turn away from `homeFacing` (including a listener following a moving speaker),
+not on the return. (7) The showcase maps `npc_swivelled:*` (any NPC) with `reason === "listen"`, not
+Tom alone: Tom is often typing when a line is spoken, and the Coffee Notice's turn-back grumble
+turned Amara, Tom and Grace in game 896. (8) Reduced motion does not stop the roll or the swivel
+(the plan does not ask it to; the typing bob still honours it).
+
 **The user's note (2026-11-06, OQ45):** "Do some small rolling motions mostly along x with just a
 little swivel very occasionally." So the idle motion is mostly a **chair roll along x**, and the
 swivel below becomes rare.
