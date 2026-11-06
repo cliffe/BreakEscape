@@ -38,7 +38,15 @@
    `see_meal` and `see_long_way` to complete, and kitchen/lounge objects in the preset probe
    (compare with the validator's 10-object list). Then add a "Slice 4" table to
    `scenarios/test_needs_sims/README.md`.
-2. **OPEN, inconclusive: `test_needs_leash` live regression** (games 602, 606, 617 at about 1 fps: Ravi fails the far-cooler job on its 20 s deadline and jitters at (205,144); needs a re-run when the machine is quiet; unit tests pass). Original note: (game 600 was blocked by the same modal; Ravi never
+2. **DONE 2026-11-06 (game 630, load about 6): `test_needs_leash` live regression passes.** Fresh
+   game, `bootstrap {"tutorial":"decline","resume":"new"}`, all four doors opened, thirst set to 5.
+   Leashed: `ravi_office → west_corridor → store → west_corridor → ravi_office`, 0 of 41 samples
+   (250 ms) on Maya's floor, `used far_cooler` then `returned_post`, `see_long_way` completed.
+   Unleashed (`needsPrivateTo` deleted from the loaded room and the scenario): out by
+   `west_corridor`, back `store → maya_office → ravi_office`, 6 of 32 samples on her floor. No
+   console errors in `drain`. Session log `tools/playtest/s5-leash-630-session.jsonl`; script and
+   results in the session scratchpad `s5/leash6.py`, `s5/leash-630.json`. The earlier stalls were
+   the overloaded machine, not the code. Earlier note: (games 602, 606, 617 at about 1 fps: Ravi fails the far-cooler job on its 20 s deadline and jitters at (205,144); needs a re-run when the machine is quiet; unit tests pass). Original note: (game 600 was blocked by the same modal; Ravi never
    moved). Re-run `leash.py` after dismissing it: expect the long way, 0 samples on Maya's floor.
    The leash scenario has no `officePresets`, so the resolver returns its authored affordances.
 3. **`lab_physical_pentest` regression skipped**: another agent was dressing the accounts floor
