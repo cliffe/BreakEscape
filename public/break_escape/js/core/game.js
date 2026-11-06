@@ -340,6 +340,7 @@ export function preload() {
     this.load.image('room_lw_exec', 'tiles/rooms/room_lw_exec.png'); // lab_physical_pentest: Ledgerwell bottle-green carpet with the executive rug
     this.load.image('room_lw_boards', 'tiles/rooms/room_lw_boards.png'); // lab_physical_pentest identity shell: oak boards, green runner (front of house)
     this.load.image('room_lw_tiles', 'tiles/rooms/room_lw_tiles.png'); // identity shell: oatmeal carpet tiles (offices)
+    this.load.image('room_lw_tiles_20', 'tiles/rooms/room_lw_tiles_20.png'); // identity shell: oatmeal carpet tiles, 20-wide (room_lw_accounts open plan)
     this.load.image('room_lw_vinyl', 'tiles/rooms/room_lw_vinyl.png'); // identity shell: grey-green vinyl (records)
     this.load.image('room_lw_concrete', 'tiles/rooms/room_lw_concrete.png'); // identity shell: painted concrete (back of house)
     this.load.image('room_lw_oxblood', 'tiles/rooms/room_lw_oxblood.png'); // identity shell: oxblood carpet with the table mark (kit room)
