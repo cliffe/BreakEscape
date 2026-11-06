@@ -1938,7 +1938,15 @@ export async function create() {
                 }
                 // NPC needs (npc-needs.js): only NPCs with a needs/interests block are touched
                 import('../systems/item-drop.js').catch(e => console.error('❌ item-drop failed to load', e));
-                return import('../systems/npc-needs.js').then(needs => {
+                // Affordance presets (office-presets.js, slice 4): installed first, and its table
+                // fetched only when the scenario opts in, so the needs system sees preset objects
+                // from its first tick. A failed fetch leaves objects with their own fields.
+                const presetsReady = import('../systems/office-presets.js').then(op => {
+                    window.officePresets = op;
+                    if (op.presetsOn(window.gameScenario)) return op.loadOfficePresets();
+                    return null;
+                }).catch(e => console.warn('office presets failed to load', e));
+                return presetsReady.then(() => import('../systems/npc-needs.js')).then(needs => {
                     needs.installNpcNeeds();
                     console.log('✅ NPC needs system initialised');
                     // Workstation screen lock/unlock follows npc_left_post / npc_returned_post

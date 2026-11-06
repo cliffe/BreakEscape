@@ -65,6 +65,30 @@ function objects() {
     ].map(o => (o.room ? { ...o, roomId: null } : o));
 }
 
+/**
+ * Slice 4 (office presets, OFFICE_LIFE_PLAN 2.1): the showcase as it is authored with
+ * "officePresets": true. Each object's type, and only the affordance fields that differ from its
+ * type's preset. This is the remaining-overrides list the plan names; test_needs_sims carries the
+ * same overrides.
+ */
+export const PRESET_OBJECTS = {
+    amara_pc: { type: 'pc', affordance: { accepts: ['post'], private: true } },   // the parcel beat; private (slice 2a)
+    tom_pc: { type: 'pc', affordance: { private: true } },
+    sanjay_pc: { type: 'pc', affordance: { private: true } },
+    grace_laptop: { type: 'laptop', affordance: false },                           // no affordance today
+    office_coffee: { type: 'coffee_station1', affordance: { useFrom: { dx: -1, dy: 0 } } },
+    office_mugs: { type: 'dirty_mugs1' },
+    activity_board: { type: 'chalkboard' },
+    fridge: { type: 'qdc_fridge1' },
+    microwave: { type: 'microwave1' },
+    kitchen_coffee: { type: 'coffee_station1', affordance: { useFrom: { dx: 0, dy: -1 } } },
+    water_cooler: { type: 'water_cooler1' },
+    washing_up_tray: { type: 'mugs_tray1', affordance: { accepts: ['dirty_mugs'], useSeconds: 5 } },  // no preset
+    rosa_laptop: { type: 'laptop', affordance: false },
+    lounge_sofa: { type: 'leather_sofa1' },
+    lounge_kettle: { type: 'kettle1', affordance: { useFrom: { dx: 1, dy: 0 } } }
+};
+
 const START = (room, tx, ty) => ({ x: tx * TILE + 16 + (room === 'kitchen' ? -320 : room === 'lounge' ? 320 : 0), y: ty * TILE + 16 });
 
 function npcs() {
@@ -139,16 +163,33 @@ export function simsApproachCell(o) {
 }
 
 /**
- * Build the showcase world. Returns makeWorld's handle plus:
+ * Build the showcase world (with `{ presets }`, its slice-4 preset copy). Returns makeWorld's handle plus:
  *   loadRoom(sys, roomId)  open a door: the room's objects appear (and Rosa, for the lounge)
  *   drop(id, tag, x, y)    the player drops a tagged item in the office
  *   searches               count of world.reachable calls (path searches)
  * With `{ reachable }` the world answers reachability through that function (default: all
  * reachable, but counted, so select back-off engages as it does live).
  */
-export function makeSimsWorld({ reachable = () => true } = {}) {
-    const cfg = { npcs: npcs(), objects: objects() };
+export function makeSimsWorld({ reachable = () => true, presets = null } = {}) {
+    let objs = objects();
+    // presets: { resolve(object) -> affordance }: the preset copy of the showcase. Objects carry
+    // their type and overrides only, and list/get hand the needs system the resolved affordance,
+    // as the live adapter's describe does.
+    if (presets) {
+        objs = objs.map(o => {
+            const { affordance, ...rest } = o;
+            const p = PRESET_OBJECTS[o.id];
+            return p ? { ...rest, ...p } : rest;
+        });
+    }
+    const cfg = { npcs: npcs(), objects: objs };
     const w = makeWorld(cfg);
+    if (presets) {
+        const view = o => ({ ...o, affordance: presets.resolve(o) });
+        const list = w.world.listObjects, get = w.world.getObject;
+        w.world.listObjects = () => list().map(view);
+        w.world.getObject = id => { const o = get(id); return o ? view(o) : null; };
+    }
     const loaded = new Set(['office']);
     w.world.approachCell = simsApproachCell;
     w.world.roomIds = () => [...loaded];
@@ -173,8 +214,8 @@ export function makeSimsWorld({ reachable = () => true } = {}) {
  * The README's "How to watch it" as a fixed script: watch the office, open both doors at 1:30,
  * drop the parcel and the mugs, then let the day run. Returns the system and world.
  */
-export function runSimsDay(NPCNeedsSystem, { minutes = 6, opts = {}, reachable } = {}) {
-    const w = makeSimsWorld({ reachable });
+export function runSimsDay(NPCNeedsSystem, { minutes = 6, opts = {}, reachable, presets } = {}) {
+    const w = makeSimsWorld({ reachable, presets });
     const sys = new NPCNeedsSystem(w.world, { seed: SIMS_SEED, manualClock: true, ...opts });
     w.attach(sys);
     sys.registerAll();

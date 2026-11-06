@@ -6,6 +6,7 @@
   "npcNeedsSeed": "test_needs_sims",
   "npcWindupMs": 700,
   "needsDebugOverlay": true,
+  "officePresets": true,
 
   "actionIcons": {
     "lounge_kettle": { "sprite": "kettle1", "text": "K" }
@@ -58,7 +59,8 @@
         { "taskId": "see_mugs", "title": "Grace takes dirty mugs to the kitchen", "type": "custom", "status": "active" },
         { "taskId": "see_caught", "title": "Get caught at someone's desk", "type": "custom", "status": "active" },
         { "taskId": "see_long_way", "title": "Tom or Amara fetches a coffee from the kitchen, not the lounge kettle", "type": "custom", "status": "active" },
-        { "taskId": "hear_drink", "title": "Stand close enough to hear someone drink", "type": "custom", "status": "active" }
+        { "taskId": "hear_drink", "title": "Stand close enough to hear someone drink", "type": "custom", "status": "active" },
+        { "taskId": "hear_snack", "title": "Hear someone eat in the kitchen (the fridge and microwave take their settings and sound from their type)", "type": "custom", "status": "active" }
       ]
     }
   ],
@@ -76,7 +78,8 @@
           "takeable": false,
           "locked": false,
           "observations": "Amara's desk PC.",
-          "affordance": { "satisfies": "work", "restores": 60, "useSeconds": 10, "accepts": ["post"], "private": true }
+          "_comment": "officePresets: type pc gives the desk_pc preset (work, restores 60, 10 s). Only what differs is written here.",
+          "affordance": { "accepts": ["post"], "private": true }
         },
         {
           "type": "pc",
@@ -85,7 +88,7 @@
           "takeable": false,
           "locked": false,
           "observations": "Tom's desk PC. There is a sandwich menu taped to the monitor.",
-          "affordance": { "satisfies": "work", "restores": 60, "useSeconds": 10, "private": true }
+          "affordance": { "private": true }
         },
         {
           "type": "pc",
@@ -94,14 +97,16 @@
           "takeable": false,
           "locked": false,
           "observations": "Sanjay's desk PC.",
-          "affordance": { "satisfies": "work", "restores": 60, "useSeconds": 10, "private": true }
+          "affordance": { "private": true }
         },
         {
           "type": "laptop",
           "id": "grace_laptop",
           "name": "Grace's Laptop",
           "takeable": false,
-          "observations": "Grace's laptop, open on a rota spreadsheet."
+          "observations": "Grace's laptop, open on a rota spreadsheet.",
+          "_comment": "affordance false: no preset. Grace's needsHome, not a work target.",
+          "affordance": false
         },
         {
           "type": "coffee_station1",
@@ -110,7 +115,8 @@
           "position": { "x": 8, "y": 8 },
           "takeable": false,
           "observations": "The office coffee station. One person at a time.",
-          "affordance": { "satisfies": "caffeine", "restores": 70, "useSeconds": 12, "useFrom": { "dx": -1, "dy": 0 }, "useSound": "drink_gulp" }
+          "_comment": "The coffee preset stands the NPC below the machine (useFrom 0,1); this one's own useFrom wins.",
+          "affordance": { "useFrom": { "dx": -1, "dy": 0 } }
         },
         {
           "type": "dirty_mugs1",
@@ -212,6 +218,7 @@
             { "eventPattern": "npc_used:kitchen_coffee", "condition": "data.npcId === \"amara\"", "onceOnly": true, "cooldown": 0, "completeTask": "see_long_way" },
             { "eventPattern": "object_interacted", "condition": "data.objectName === 'Deadline Memo'", "cooldown": 30000, "needs": { "set": { "caffeine": 20 } } },
             { "eventPattern": "npc_use_heard:*", "condition": "data.key === 'drink_gulp'", "onceOnly": true, "cooldown": 0, "completeTask": "hear_drink" },
+            { "eventPattern": "npc_use_heard:*", "condition": "data.key === 'eat_snack'", "onceOnly": true, "cooldown": 0, "completeTask": "hear_snack" },
             { "eventPattern": "item_dropped:parcel", "onceOnly": true, "cooldown": 0, "setGlobal": { "parcel_dropped": true } },
             { "eventPattern": "item_dropped:player_mugs", "onceOnly": true, "cooldown": 0, "setGlobal": { "mugs_dropped": true } }
           ]
@@ -296,7 +303,7 @@
           "position": { "x": 1, "y": 2 },
           "takeable": false,
           "observations": "The office fridge. Mostly yoghurts with names on.",
-          "affordance": { "satisfies": "hunger", "restores": 80, "useSeconds": 15, "useFrom": { "dx": 0, "dy": 1 }, "useSound": "eat_snack" }
+          "_comment": "No affordance: everything (hunger, 80, 15 s, useFrom 0,1, eat_snack) comes from the fridge preset."
         },
         {
           "type": "microwave1",
@@ -304,8 +311,7 @@
           "name": "Microwave",
           "position": { "x": 5, "y": 3 },
           "takeable": false,
-          "observations": "A microwave on the kitchen table.",
-          "affordance": { "satisfies": "hunger", "restores": 60, "useSeconds": 10, "useSound": "eat_snack" }
+          "observations": "A microwave on the kitchen table."
         },
         {
           "type": "coffee_station1",
@@ -314,7 +320,7 @@
           "position": { "x": 3, "y": 8 },
           "takeable": false,
           "observations": "The kitchen's coffee station.",
-          "affordance": { "satisfies": "caffeine", "restores": 70, "useSeconds": 12, "useFrom": { "dx": 0, "dy": -1 }, "useSound": "drink_gulp" }
+          "affordance": { "useFrom": { "dx": 0, "dy": -1 } }
         },
         {
           "type": "water_cooler1",
@@ -322,8 +328,7 @@
           "name": "Water Cooler",
           "position": { "x": 1, "y": 7 },
           "takeable": false,
-          "observations": "A water cooler. Room for two to stand and chat.",
-          "affordance": { "satisfies": ["thirst", "social"], "restores": 70, "useSeconds": 15, "capacity": 2, "useSound": "drink_gulp" }
+          "observations": "A water cooler. Room for two to stand and chat."
         },
         {
           "type": "mugs_tray1",
@@ -348,7 +353,8 @@
           "id": "rosa_laptop",
           "name": "Rosa's Laptop",
           "takeable": false,
-          "observations": "Rosa's laptop, open on next week's plan."
+          "observations": "Rosa's laptop, open on next week's plan.",
+          "affordance": false
         },
         {
           "type": "leather_sofa1",
@@ -356,8 +362,7 @@
           "name": "Lounge Sofa",
           "position": { "x": 6, "y": 8 },
           "takeable": false,
-          "observations": "A leather sofa. Two can sit on it.",
-          "affordance": { "satisfies": "rest", "restores": 80, "useSeconds": 20, "capacity": 2, "useFrom": { "dx": 0, "dy": -1 } }
+          "observations": "A leather sofa. Two can sit on it."
         },
         {
           "type": "kettle1",
@@ -366,7 +371,7 @@
           "position": { "x": 1, "y": 3 },
           "takeable": false,
           "observations": "Rosa's own kettle, by the lounge door. Nearer to most desks than the kitchen, but nobody else touches it.",
-          "affordance": { "satisfies": "caffeine", "restores": 70, "useSeconds": 12, "useFrom": { "dx": 1, "dy": 0 }, "useSound": "drink_gulp" }
+          "affordance": { "useFrom": { "dx": 1, "dy": 0 } }
         }
       ],
       "npcs": [

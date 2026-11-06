@@ -32,6 +32,7 @@ module ValidateNpcNeeds
     Array(json['startItemsInInventory']).each { |o| collect(o, nil, objs) }
 
     issues = []
+    objs = expand_presets(json, objs, issues)
     droppables = objs.select { |o| o.data['droppable'] == true }
     droppables.each do |o|
       issues << "⚠️ WARNING: item '#{o.id || o.data['name']}' is droppable without a needsTag — dropping it will not attract any NPC." unless o.data['needsTag'].is_a?(String)
@@ -42,6 +43,68 @@ module ValidateNpcNeeds
     check_visuals(json, objs, issues)
     npcs.each { |room_id, npc| check_npc(json, npc, room_id, objs, issues, npcs) }
     issues
+  end
+
+  # ── affordance presets (OFFICE_LIFE_PLAN 2.1, slice 4) ───────────────────
+  # The same table and rules as systems/office-presets.js: with "officePresets": true a declared
+  # object (has an id, not decor, not takeable, no lockType, affordance not false) gets the preset
+  # for its officeType, else its exact type; its own affordance fields win. Every later check sees
+  # the expanded affordances, and each object that gained a preset is listed.
+
+  PRESETS_FILE = File.expand_path('../public/break_escape/js/data/office-presets.json', __dir__)
+
+  def self.preset_table
+    @preset_table ||= File.file?(PRESETS_FILE) ? (JSON.parse(File.read(PRESETS_FILE))['presets'] || {}) : {}
+  end
+
+  def self.preset_id_for(data, table = preset_table)
+    return nil unless data.is_a?(Hash)
+    return nil if !data['id'].is_a?(String) || data['id'].empty? || data['decor'] == true
+    return nil if data['affordance'] == false || data['takeable'] == true || data['lockType']
+    return (table.key?(data['officeType']) ? data['officeType'] : nil) if data['officeType'].is_a?(String)
+
+    table.find { |_id, p| Array(p['types']).include?(data['type']) }&.first
+  end
+
+  def self.resolve_affordance(data, on, table = preset_table)
+    own = data['affordance'].is_a?(Hash) ? data['affordance'] : nil
+    return nil if data['affordance'] == false
+    return own unless on
+
+    pid = preset_id_for(data, table)
+    return own unless pid
+
+    JSON.parse(JSON.generate(table[pid]['affordance'] || {})).merge(own || {})
+  end
+
+  def self.expand_presets(json, objs, issues)
+    on = json['officePresets'] == true
+    objs.each do |o|
+      ot = o.data['officeType']
+      next unless ot
+
+      if !on
+        issues << "⚠️ WARNING: object '#{o.id}' has officeType '#{ot}' but the scenario does not set \"officePresets\": true; it gets no preset."
+      elsif !preset_table.key?(ot)
+        issues << "❌ ERROR: object '#{o.id}' officeType '#{ot}' is not a preset (#{preset_table.keys.join(', ')})."
+      end
+    end
+
+    objs.map do |o|
+      pid = on ? preset_id_for(o.data) : nil
+      # affordance: false (no affordance, no preset) is dropped so later checks see no Hash
+      next o unless pid || (o.data.key?('affordance') && !o.data['affordance'].is_a?(Hash))
+
+      if pid
+        own = o.data['affordance'].is_a?(Hash) ? o.data['affordance'].keys - ['_comment'] : []
+        note = own.empty? ? '' : " (own: #{own.join(', ')})"
+        issues << "ℹ️ Office preset: '#{o.id}' (type '#{o.data['type']}') gets '#{pid}'#{note}."
+      end
+      aff = resolve_affordance(o.data, on)
+      data = o.data.reject { |k, _| k == 'affordance' }
+      data['affordance'] = aff if aff
+      Obj.new(id: o.id, room: o.room, data: data, x: o.x, y: o.y)
+    end
   end
 
   # ── office visuals (OFFICE_LIFE_PLAN 2.12, slice 3) ──────────────────────

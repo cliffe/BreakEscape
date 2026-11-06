@@ -144,6 +144,7 @@
         ]
       }
     },
+    "officePresets": { "type": "boolean", "description": "Office-life affordance presets (systems/office-presets.js, table js/data/office-presets.json, OFFICE_LIFE_PLAN 2.1). Default false. true: each declared object (has an id; not decor, takeable or locked; affordance not false) gets a needs affordance from its exact type or its officeType, under its own affordance fields, which win field by field. Presets never make a workstation and set no seat." },
     "officeVisuals": { "type": "boolean", "description": "NPC office visuals (systems/npc-office-visuals.js, OFFICE_LIFE_PLAN 2.12): carried items shown in the carrier's hand, use sounds (affordance.useSound) heard by room and distance, the seated typing bob. Default true; false hides carried items again and turns the sounds and bob off." },
     "npcWindupMs": { "type": "number", "minimum": 0, "description": "Pre-action tell: ms an NPC winds up (icon pulses, npc_action_windup:<id> fires) before leaving its post for a needs job. Default 700, 0 = off." },
     "showNpcIntentBubbles": { "type": "boolean", "description": "Parked hook for a later next-want intent bubble. Default false. Current-action icons render regardless." },
@@ -4992,9 +4993,10 @@
         },
         "requiresItemHint": { "type": "string", "description": "Message shown when requiresItem is set but the player is not carrying the item." },
         "consumesItem": { "type": "boolean", "description": "With requiresItem: remove the matched item from the inventory (and its server copy) after the triggerOnInteract actions fire, so the kit is 'left' on the target." },
+        "officeType": { "type": "string", "enum": ["desk_pc", "coffee", "cooler", "fridge", "microwave", "sofa", "copier", "shredder", "filing", "post_tray", "desk_phone"], "description": "With officePresets: the affordance preset this object takes, by role instead of by type (wins over type). filing, post_tray and desk_phone are reached only this way." },
         "affordance": {
-          "type": "object",
-          "description": "NPC needs system: what an NPC can do at this object. Carries no content.",
+          "type": ["object", "boolean"],
+          "description": "NPC needs system: what an NPC can do at this object. Carries no content. false: no affordance, and no preset (officePresets).",
           "properties": {
             "satisfies": { "oneOf": [ { "type": "string" }, { "type": "array", "items": { "type": "string" } } ], "description": "Need name(s) a use tops up" },
             "restores": { "type": "number", "minimum": 1, "maximum": 100, "description": "Points added on completion" },

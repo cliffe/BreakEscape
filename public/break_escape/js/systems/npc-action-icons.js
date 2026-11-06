@@ -98,7 +98,11 @@ export function targetInfo(id, cache = null) {
         for (const sp of Object.values(room?.objects || {})) {
             const d = sp?.scenarioData;
             if (d && d.id === id) {
-                const sat = d.affordance?.satisfies;
+                // Through the preset resolver (office-presets.js), so a type-only object's preset
+                // satisfies picks the icon
+                const op = win().officePresets;
+                const aff = op?.spriteAffordance ? op.spriteAffordance(sp, win().gameScenario) : d.affordance;
+                const sat = aff?.satisfies;
                 const info = { id: d.id, type: d.type, satisfies: Array.isArray(sat) ? sat[0] : sat };
                 if (cache && !sp.destroyed && sp.scene) cache.set(id, { info, sp });
                 return info;

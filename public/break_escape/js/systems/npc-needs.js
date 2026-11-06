@@ -989,13 +989,21 @@ export function createEngineWorld() {
         const ox = sp.originX ?? 0.5, oy = sp.originY ?? 0.5;
         return { x: sp.x + w * (0.5 - ox), y: sp.y + h * (0.5 - oy) };
     };
+    // Affordance presets (office-presets.js, slice 4): window.officePresets resolves the object's
+    // own fields over its type's preset when the scenario says "officePresets": true
+    const affordanceOf = (sp) => {
+        const op = W().officePresets;
+        if (op?.spriteAffordance) return op.spriteAffordance(sp, W().gameScenario);
+        const a = sp?.scenarioData?.affordance;
+        return a && typeof a === 'object' ? a : null;
+    };
     const describe = (roomId, key, sp) => {
         const sd = sp.scenarioData || {};
         const id = sd.id || sp.objectId || key;
         const c = centreOf(sp);
         return {
             id, roomId, x: c.x, y: c.y,
-            affordance: sd.affordance && typeof sd.affordance === 'object' ? sd.affordance : null,
+            affordance: affordanceOf(sp),
             needsTag: typeof sd.needsTag === 'string' ? sd.needsTag : null,
             screenOwner: typeof sd.screenOwner === 'string' ? sd.screenOwner : null,
             pickable: sp.visible !== false && sp.active !== false && !sp._npcCarried && !sp.destroyed,
@@ -1064,7 +1072,7 @@ export function createEngineWorld() {
                 for (const k of Object.keys(objs).sort()) {
                     const sp = objs[k];
                     const sd = sp?.scenarioData;
-                    if (!sd || (!sd.affordance && !sd.needsTag)) continue;
+                    if (!sd || (typeof sd.needsTag !== 'string' && !affordanceOf(sp))) continue;
                     out.push(describe(roomId, k, sp));
                 }
             }
