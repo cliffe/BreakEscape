@@ -170,3 +170,6 @@ The user generated two 4 s Veo clips of the SAFETYNET agent and the keyhole (`vi
 
 ## Retire or fix test-multiroom-npc (2026-11-05)
 `scenarios/test-multiroom-npc` is a dev test scenario for the multi-room NPC patrol route (`patrol.multiRoom` + sequential waypoints + route actions). The `lab_physical_pentest` lab now exercises the same path in a real scenario (Len's unlock-on-route + tailgate). Decide whether to retire `test-multiroom-npc` or keep it as a focused regression fixture and bring it up to date with the current route API. (`probe_tailgate` was deleted 2026-11-05 — its purpose is served by the shipped lab.)
+
+## Declared grants: server-checked triggers (2026-11-06, DECLARED_GRANTS_PLAN.md §3.4, Q3)
+A declared grant (a timer's give_item reward, such as the labs' Remote Session openers) can be claimed with one POST at any time, because both labs' triggers are client-set globals. A trigger check is worth adding once the server establishes the trigger itself: the BadUSB use recorded through an endpoint that checks the device is held and the target room unlocked, or the mail runner marking the exe foothold server-side when it delivers the reply. Then a grant can name `grantAfter: { flag | room | object | task }`, checked against server state only. Ask the user first whether the labs need cheat resistance at all.
