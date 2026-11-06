@@ -107,6 +107,18 @@ export function decideLocked(data, ownerId, leaveCount, roll, habit = null, expe
     return roll(ownerId, `habit:${data.id}:${leaveCount}`) < chance;
 }
 
+/**
+ * Is an open minigame's params about this object? The npc_caught_at_post test (an object param
+ * whose scenarioData.id or objectId matches: lockable, sprite, containerItem), plus the examine
+ * view's string itemId / objectId, so looking at a screen also keeps it awake.
+ */
+export function minigameOnObject(params, objectId) {
+    if (!params || !objectId) return false;
+    if (params.itemId === objectId || params.objectId === objectId) return true;
+    return Object.values(params).some(v =>
+        v && typeof v === 'object' && (v.scenarioData?.id === objectId || v.objectId === objectId));
+}
+
 /** The object's auto-lock delay in ms, or null. */
 export function autoLockMs(data) {
     const s = Number(data?.autoLockSeconds);
@@ -309,12 +321,7 @@ export function installWorkstationState() {
         },
         roll: (npcId, salt) => (w.npcNeedsSystem ? w.npcNeedsSystem.roll(npcId, salt) : 0.5),
         clock: () => w.npcNeedsSystem?.clockMs ?? 0,
-        // The same test npc_caught_at_post uses: the open minigame carries its object in a param.
-        inMinigame: (objectId) => {
-            const params = w.MinigameFramework?.currentMinigame?.params;
-            return !!(params && Object.values(params).some(v =>
-                v && typeof v === 'object' && (v.scenarioData?.id === objectId || v.objectId === objectId)));
-        }
+        inMinigame: (objectId) => minigameOnObject(w.MinigameFramework?.currentMinigame?.params, objectId)
     };
     w.workstationState = new WorkstationState(env).install();
     return w.workstationState;

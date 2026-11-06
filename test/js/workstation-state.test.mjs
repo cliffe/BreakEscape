@@ -192,7 +192,7 @@ test('install resets a workstation in an unloaded room by its saved global pair 
 
 // ── slice 16 (OFFICE_LIFE_PLAN 12.2): lock habits, auto-lock, workstation_screen_changed ──
 
-import { habitOf, autoLockMs } from '../../public/break_escape/js/systems/workstation-state.js';
+import { habitOf, autoLockMs, minigameOnObject } from '../../public/break_escape/js/systems/workstation-state.js';
 
 function rig16(objects, npcs, { seed = 's1', minigame = () => false } = {}) {
     const globals = {}; const emitted = []; const handlers = {};
@@ -335,4 +335,13 @@ test('slice 16 the reload reset is unchanged: install writes both globals false'
     assert.equal(r.globals.pc_s_screen_locked, false);
     assert.equal(r.globals.pc_s_owner_away, false);
     assert.equal(r.ws.idle.size, 0);
+});
+
+test('slice 16 minigameOnObject: object params (lockable, sprite) and the examine view\'s string itemId', () => {
+    assert.equal(minigameOnObject({ lockable: { scenarioData: { id: 'pc_s' } } }, 'pc_s'), true);
+    assert.equal(minigameOnObject({ sprite: { objectId: 'pc_s' } }, 'pc_s'), true);
+    assert.equal(minigameOnObject({ title: "Sanjay's PC", itemId: 'pc_s', itemType: 'pc' }, 'pc_s'), true);
+    assert.equal(minigameOnObject({ itemId: 'pc_a' }, 'pc_s'), false);
+    assert.equal(minigameOnObject(null, 'pc_s'), false);
+    assert.equal(minigameOnObject({ title: 'pc_s' }, 'pc_s'), false, 'only id fields count');
 });
