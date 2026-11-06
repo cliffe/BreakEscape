@@ -541,6 +541,48 @@ during the walk home (exists). Player-facing behaviour:
   decision log gains `avoided` (`avoided`, `target`).
 - Nothing is saved; only loaded NPCs chat.
 
+### 5.7 Queues at shared machines (office life slice 10, `OFFICE_LIFE_PLAN.md` 2.5, 7.3)
+
+- **Authoring.** `affordance.queue: { cells: [{dx, dy}, ...], maxWaitSeconds }`: places in line, in
+  tiles from the approach cell. The `coffee` preset (coffee stations, kettles) queues two at
+  `(-1,1), (-2,1)`; `"queue": false` switches a preset queue off. No queue: the old behaviour (a
+  second NPC waits at its post).
+- **Choice.** A queue is an option only when the need has no free, permitted, reachable target: a
+  free machine in another room still wins (the showcase's long way to the kitchen is unchanged).
+  The nearest claimed machine with a queue place for this NPC is chosen; the job starts in phase
+  `queued`, logs `queued` `{target, place}` and emits `npc_queued:<objectId>`
+  `{npcId, objectId, need, place, playerNearby, playerDistance}`.
+- **Order and places.** Claim order (a system-wide sequence; ticks run in NPC id order, so it is
+  deterministic). Each queuer takes the first cell that is in a room it may enter (leash,
+  `needsPrivateTo`) and that nobody ahead of it holds; with none left it waits at its post instead.
+  Live cells snap exactly to a walkable 8 px cell (`findNearestWalkableWorldCell` radius 0); a cell
+  on furniture is dropped. Queued jobs do not count as claims; while a queue exists only its front
+  may take a freed place, so nobody jumps the line.
+- **Advancing and leaving.** The front takes the machine as soon as `_free` allows (log
+  `queue_front`); the rest step up. A queuer leaves (log `queue_left` with a reason, then walks
+  home) when its need is met some other way (`need_met`), after `maxWaitSeconds` (default 30,
+  counted from joining, paused while frozen in a conversation; `max_wait`, and that machine is
+  skipped for 60 s), or when no permitted cell is left (`no_queue_cell`). A queuer that cannot reach
+  its cell by the move deadline fails the job (`timeout`) as any job does.
+- **Queue chatter.** The NPC using a machine with a `chatter` pool pairs with the first queuer once it
+  stands in its cell within 1.5 tiles (48 px) of the approach cell, with 5.6's turn-taking, timing,
+  overhearing and hush; the line must end before the user's use does. Only compatible pairs (7.3):
+  an avoided or group-mismatched front queues in silence, and the second in line never chats.
+- **Icon.** While queued the action icon is `queue` (`icon:npc-queue`, an hourglass) whatever the
+  machine; a scenario `actionIcons.queue` entry overrides it. The pressing-need bubble does not show
+  the need being queued for.
+- **Arrival (slice 10 fix, shared `npc-behavior.js`).** Needs moves to a use, queue or pair cell pass
+  `arriveWithin: 6` to `goToAndStay`, so the NPC walks on to the cell instead of stopping up to a
+  tile short (the old 1-tile guard, which put cooler pairs two tiles north of the cooler and half
+  overlapping). The 1-tile stop still applies after 1.5 s held inside the tile (cell occupied).
+  Walks home are unchanged. The cooler preset now stands its users in front (`useFrom 0,1`): the
+  cooler sprite has no body, so its own cell was walkable and an exact arrival stood on it.
+- **Not in slice 10.** `expectedAwayMs` does not yet add the queue wait (slice 11).
+- **Validator.** Malformed `cells` (error); `maxWaitSeconds` not positive, a queue on an object that
+  satisfies nothing, a cell within a tile of a wall that has a door, a cell outside the room
+  (warnings; plus one per NPC that needs the machine and may not enter the neighbour room). A
+  capacity-1 chatter object with a queue no longer draws the "needs capacity 2" warning.
+
 ## 6. General drop action (exists)
 
 - An inventory item with `"droppable": true` is dropped when clicked in the
@@ -602,6 +644,8 @@ events.
   playerDistance }` for each chat line (slice 8). `overheard`: the player within `overhearRadius`
   (default 160 px; set on the object's affordance or the pool) in the same room with a clear line.
 - `npc_overheard:<speakerId>` with the same payload, only when `overheard` is true.
+- `npc_queued:<objectId>` `{ npcId, objectId, need, place, playerNearby, playerDistance }` when an
+  NPC joins a queue (slice 10); `place` is 1 for the front. Queue chat lines are `npc_chatted:<objectId>`.
 - `npc_avoided:<npcId>` `{ npcId, avoidedId, objectId }` when `npcId` was refused a shared object
   because of an avoidance (either way); once per pair and object until the NPC next starts a job.
 

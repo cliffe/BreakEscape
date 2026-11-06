@@ -21,7 +21,7 @@ A demo and live test of the NPC needs system (`public/break_escape/js/systems/np
 | Grace Lindqvist | female_blowse_v2 | grace_laptop | rest 12/40/64, thirst 15/40/79 | `dirty_mugs`, weight 3, office + kitchen |
 | Sanjay Mehta | male_nerd_v2 | sanjay_pc | work 15/50/65, hunger 8/40/64, social 12/40/76 | none |
 | Rosa Delgado | female_scientist_v2 | rosa_laptop (lounge) | social 15/40/70, caffeine 15/40/85, rest 10/40/75 | none |
-| Marek Nowak (slice 8) | male_telecom_v2 | spot office (6,8) | thirst 2/30/95 (sent by the Kitchen Rota); `needsCompany: { avoids: ["*"] }` | none |
+| Marek Nowak (slice 8) | male_telecom_v2 | spot office (3,8) (was (6,8), beside the coffee station, until slice 10 put the queue there) | thirst 2/30/95 (sent by the Kitchen Rota), caffeine 1/30/95 (slice 10: sent when Tom joins the coffee queue); `needsCompany: { avoids: ["*"] }` | none |
 
 Six need types: caffeine, hunger, thirst, rest, social, work. The engine has no fixed list (a need is any name matched against an object's `affordance.satisfies`), so these six are the scenario's choice.
 
@@ -306,6 +306,43 @@ half a body). The second NPC's beside-cell is one tile from the first's approach
 bodies push each other. Cosmetic; left for slice 10, which places queue cells. The second showcase
 pairing (game 667) was sent with `npcNeedsSystem.control(..., { set: { social: 10 } })`, the same
 call the mapping makes, so the player could wait in the kitchen.
+
+### Slice 10 re-run: queues at the coffee station (2026-11-06, keyless :3001, headless, load 12-19)
+
+**Annotated example.** Read the **Activity Board** before opening the kitchen. Its mappings set
+Amara's and Tom's caffeine to 10 (and Sanjay's social, as in slice 8). Amara (first by id) takes the
+office coffee station; Tom has no free machine (the kitchen isn't loaded), so he joins the queue,
+whose cells run left along the bottom row (`affordance.queue.cells` `(-1,0), (-2,0)` from the
+approach cell). `npc_queued:office_coffee` (place 1) ticks **A queue forms**, and Marek's mapping on
+that event (`data.npcId === 'tom'`) sends him to queue behind Tom, place 2. Both show the hourglass.
+Amara, pouring, and Tom, first in line, trade lines from the `coffee` pool (**Chat in the coffee
+queue** ticks on `npc_chatted:office_coffee`). When Amara leaves, Tom pours and Marek moves up; Marek
+avoids everyone, so the two say nothing. Sanjay meanwhile waits at his desk with the `social`
+thought bubble, because the cooler is in the shut kitchen. With the kitchen open, Tom walks to the
+kitchen station instead (a free machine always beats a queue), so the queue needs the kitchen shut
+or both stations busy. Rosa's kettle has `"queue": false` (the preset's cells would sit in the
+lounge doorway).
+
+Games 675, 676 and 679 (session logs `tools/playtest/s10-sims-675-session.jsonl`, `-676-`, `-679-`).
+Screenshots in `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/3c2d3b5d-38a4-49b2-b79e-4c3ee8f76ed6/scratchpad/s10/` (`s10-contact-sheet.png` has nearest-neighbour crops of the five
+frames below; captions checked against each frame).
+
+| Check | Result | Evidence |
+|---|---|---|
+| A queue of two or more, queue icon | PASS | game 675: Board read, Amara `using`, Tom `queued` place 1, Marek place 2, both with icon `queue` (`q3-speech-amara-2-675.png`; Tom's hourglass is under Amara's bubble in that frame; the state read at that moment lists `queue` for both) |
+| Compatible queue chatter | PASS | game 675: `npc_chatted:office_coffee` Tom to Amara "Is there any milk left?", Amara "Busy morning?", Tom "Strong one today?" (`q3-speech-amara-2-675.png`, `q3-speech-tom-3-675.png`) |
+| The second in line says nothing | PASS | game 675: no `npc_chatted` with Marek while Tom was first |
+| Incompatible pair in the queue | PASS | game 675: Tom pouring, Marek first for 12 s, no line; game 679 (needs set through the bridge): Marek pouring, Tom first, no bubble, events `npc_queued` only, then Amara queued behind Tom and chatted with him once he poured (`incompat-clean2-679.png`) |
+| Advancing | PASS | game 675: Amara `used`, Tom `queue_front` then `using` within 0.5 s, Marek moved up a cell |
+| Sanjay waits at his desk (social thought bubble) | PASS | game 675, kitchen shut: Sanjay idle at his PC with the `social` bubble in the same frames as the queue (`q3-speech-*-675.png`) |
+| Cooler pair on separate cells | PASS | game 676 (needs set through the bridge): Sanjay at the cooler's `useFrom 0,1` cell, Rosa one tile to his right, 31 px apart, facing; "That printer jammed again.", "Any plans for lunch?" (`cooler2-speech-*-676.png`). Before slice 10 the pair stood about two tiles north and half overlapping: the behaviour layer stopped a needs walk a tile short |
+| Errors | PASS | no page errors; 0 "No path found", 0 "Failed to escape wall" |
+
+Notes: in an earlier game 676 attempt Rosa stood still beside the kitchen tables for 18 s and her
+cooler job timed out; the player stood in the walkway at the time. A second try with the player
+out of the way worked. The interact command sometimes reads the Deadline Memo when aimed at the
+Activity Board (they are close); its mappings also send Amara and Tom for coffee, so the queue forms
+either way, and Marek follows Tom's `npc_queued` either way; only Sanjay's social follows the Board alone.
 
 ## Engine findings
 

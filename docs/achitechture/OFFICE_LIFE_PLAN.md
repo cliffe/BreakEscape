@@ -861,6 +861,24 @@ enforced. Writers' time: every scenario now wants lines; the default pools cover
 
 ### 2.5 Queues at shared machines (proposal 4, second half)
 
+**Built: 2026-11-06 (367a27627, 1bcdc550c, 3da2015f6, 33a7a8643; tests 963f790ef; showcase
+4f16579b2). Regressions: `test_needs_leash` game 681 (pass), `lab_physical_pentest` game 680 (score
+100); see `HANDOVER_OFFICE_S10.md`.** As written, with these choices made without asking (smallest
+option each time): (1) queue cells are tile offsets from the approach cell, snapped exactly (radius
+0) and dropped if not walkable; the coffee preset default is the plan's example `(-1,1), (-2,1)`, and
+`queue: false` switches a preset queue off; (2) a queue is an option only when no free permitted
+target is reachable, so a free machine elsewhere still wins (the long way to the kitchen keeps
+working); (3) while a queue exists only its front may take a freed place (no queue jumping);
+(4) `maxWaitSeconds` counts from joining and pauses while frozen; leaving logs `queue_left` with
+`need_met`, `max_wait` or `no_queue_cell` and emits nothing; (5) only the first queuer can chat, and
+an incompatible front means silence (the second never steps in); (6) the queued icon is `queue`
+alone, so a scenario's per-object icon does not hide it; (7) the doorway check is static: a cell
+within a tile of a wall that has a door, or outside the room. Two fixes outside the queue code, for
+the slice 8 leftovers: needs moves walk on to their cell (`goToAndStay` `arriveWithin`, shared
+`npc-behavior.js`; the 1-tile stop is kept as a 1.5 s fallback), and the cooler preset gains
+`useFrom 0,1`. Queue-aware `expectedAwayMs` stays in slice 11. Live, :3001 headless, games 675,
+676, 679 (sims README slice 10 table).
+
 **Today.** A second NPC whose need goes urgent while the only target is claimed waits **at its
 desk** (README, "Contention"). That is tidy but invisible.
 
@@ -2010,7 +2028,8 @@ unchanged.
 
 ### 7.3 Social compatibility (in slices 8 and 10)
 
-**Built: 2026-11-06 with slice 8 (see 2.4's Built line).** As written, with these choices made
+**Built: 2026-11-06 with slice 8 (see 2.4's Built line); the slice 10 part (queue chatter for
+compatible pairs only, avoided pairs queue in silence) with slice 10 (see 2.5's Built line).** As written, with these choices made
 without asking: (1) `npc_avoided:<npcId>` names the NPC that was refused and waits; it fires once per
 pair and object until that NPC next starts a job; (2) `_free` checks avoidances only when some
 registered NPC has `needsCompany`, so scenarios without it run exactly as before; (3) a `requireGlobal`

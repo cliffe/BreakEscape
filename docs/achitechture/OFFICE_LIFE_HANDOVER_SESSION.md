@@ -45,7 +45,7 @@ in order, one at a time: they all touch `npc-needs.js`.
 | 7 | Carry outcomes and reveal slots | 2.2 Part A | Built (fcb8817a4, 3ff1efa29, f97960f2e); live game 643; leash (game 645) and lab (game 646, score 100) regressions done 2026-11-06 (`HANDOVER_OFFICE_S7.md`) |
 | 3b | Icon set (16x16 `npc-*`) and pressing-need thought bubbles (`showPressingNeeds`) | 9 | Built (59f291e82, d19e81840, 8ffa8502d); sims game 649, leash game 656, lab game 658 (score 100) |
 | 8 | Speech bubbles and social pairing, with compatibility | 2.4, 7.3 | Built (0af49071a, 224a177c2, 3a51f2aac, 40d8c3ea3); sims games 665, 667; leash (game 668) and lab (game 669, score 100) regressions done 2026-11-06 (`HANDOVER_OFFICE_S8.md`) |
-| 10 | Queues at shared machines, and chatter | 2.5, 7.3 | To do |
+| 10 | Queues at shared machines, and chatter | 2.5, 7.3 | Built (367a27627, 963f790ef, 1bcdc550c, 3da2015f6, 4f16579b2, 33a7a8643); sims games 675, 676, 679; leash (game 681) and lab (game 680, score 100) regressions done 2026-11-06 (`HANDOVER_OFFICE_S10.md`) |
 | 11 | Left behind (scoped: `leftBehindChance`; piles wait for slice 9, which wasn't chosen) | 2.10 | To do |
 
 Not chosen: 6 (traits), 9 (routines), 12 (schedules), 13 (consumables). Don't build them unless the user asks.
