@@ -37,6 +37,12 @@
  *                                          // load, so a reload keeps it. A change applies at once, without a strike:
  *                                          // on → lit, dark → off, motion → lit only if someone is in the room.
  *   }
+ * Workstation indicators: every workstation (workstation-state.js isWorkstation) with a known owner
+ * gets a small `above` dot at its top-right corner, as a second emitter record beside the screen's
+ * own glow: steady blue while <id>_screen_locked, a larger warm-white breathing dot while
+ * <id>_owner_away (and not locked), nothing while the owner is at the desk. A room "emitters" entry
+ * on the object id with "indicators": [variant, ...] replaces the built-ins ([] turns them off) or
+ * gives any other object dots of its own; by object id only, never by texture prefix.
  * Objects with lockType "ransomware_display" glow red while globalVars.ransomware_deployed holds
  * (a room "emitters" variant on the object's id wins over that, e.g. a screen that has recovered).
  * Brownout: lightingSystem.dip({ level: 0.5, ms: 1600 }), the "lighting_dip" scenario action, or the
@@ -52,6 +58,7 @@ import { TILE_SIZE, LIGHT_DEPTH, SPRITE_PADDING_BOTTOM_ATLAS, SPRITE_PADDING_BOT
 import { evaluateGlobalCondition } from '../utils/conditional-text.js';
 import { spriteStyleLight } from './npc-sprite-style.js';
 import { hearingLevel } from './room-hearing.js';
+import { isWorkstation, ownerOf } from './workstation-state.js';
 
 const LIGHT_TEX = 'be_light_soft';
 const LIGHT_TEX_SIZE = 128;
@@ -86,6 +93,39 @@ const RESOLVE_MS = 250;
 // offsetY comes from the base entry (kiosk screens sit high). `ransom` keeps the glow
 // above the light map in lit rooms too, and tints the floor red (see the draw loop).
 const RANSOM_VARIANT = { condition: 'globalVars.ransomware_deployed', color: 0xff3b30, radius: 44, intensity: 0.8, effect: 'breathe', ransom: true, floorTint: 0.85 };
+// Workstation indicators (OFFICE_LIFE_PLAN 2.3): a small `above` dot at the screen's top-right
+// corner while the owner is away. Locked: steady blue, listed first so it wins. Open (owner away,
+// not locked): a larger warm-white dot that breathes. Colour is never the only cue: they differ
+// in size, and in motion unless reduced motion is on.
+const INDICATOR_LOCKED = { color: 0x4da3ff, radius: 8, intensity: 0.95, effect: null, above: true };
+const INDICATOR_OPEN = { color: 0xfff1c8, radius: 11, intensity: 1, effect: 'breathe', above: true };
+// Inset of the dot from the object's top-right corner, px.
+const INDICATOR_INSET = 5;
+
+/**
+ * Built-in indicator variants for a workstation object: none unless it is a workstation with a
+ * known owner. Offsets put the dot at the object's top-right corner (from its display size).
+ */
+export function workstationIndicators(data, npcs, size = {}) {
+  if (!isWorkstation(data) || !ownerOf(data, npcs)) return [];
+  const w = size.width || 32, h = size.height || 32;
+  const offsetX = Math.round(w / 2 - INDICATOR_INSET);
+  const offsetY = -Math.round(h / 2 - INDICATOR_INSET);
+  return [
+    { ...INDICATOR_LOCKED, condition: `globalVars.${data.id}_screen_locked`, offsetX, offsetY },
+    { ...INDICATOR_OPEN, condition: `globalVars.${data.id}_owner_away`, offsetX, offsetY },
+  ];
+}
+
+/** NPCs for owner lookup: the live manager's, else the scenario's. */
+function knownNpcs() {
+  const mgr = window.npcManager;
+  const live = mgr?.npcs ? [...mgr.npcs.values()] : [];
+  if (live.length) return live;
+  const out = [];
+  for (const room of Object.values(window.gameScenario?.rooms || {})) for (const n of room?.npcs || []) out.push(n);
+  return out;
+}
 // Below this room level, glows draw above the light map so they bloom in the dark.
 const GLOW_ABOVE_LEVEL = 0.5;
 // A glow whose centre a character stands in front of fades to this.
@@ -410,8 +450,18 @@ export class LightingSystem {
     const litAmbient = parseColor(cfg.ambient, parseColor(this.config.ambient, DEFAULT_LIT_AMBIENT));
     // Per-room emitter variants: { key: [variant, ...] }, key = object id or texture-key prefix.
     const emitterCfg = {};
+    // Indicator lists by object id: an entry's `indicators` replaces a workstation's built-in
+    // dots (an empty list turns them off) and gives any other object with that id its own.
+    const indicatorCfg = {};
     for (const [key, val] of Object.entries(cfg.emitters || {})) {
-      const list = (Array.isArray(val) ? val : [val]).map(normaliseVariant).filter(Boolean);
+      const raw = Array.isArray(val) ? val : [val];
+      const ind = raw.find(v => v && Array.isArray(v.indicators));
+      if (ind) indicatorCfg[key] = ind.indicators.map(normaliseVariant).filter(Boolean);
+      const list = raw.map(v => {
+        if (!v || !('indicators' in v)) return v;
+        const { indicators, ...rest } = v;
+        return Object.keys(rest).length ? rest : null;
+      }).map(normaliseVariant).filter(Boolean);
       if (list.length) emitterCfg[key] = list;
     }
     Object.assign(state, {
@@ -429,6 +479,7 @@ export class LightingSystem {
       // glow (1 at the default ambient or brighter, 0 at a very dark one).
       glowLitFade: Phaser.Math.Clamp((luma(litAmbient) - 0.45) / (luma(DEFAULT_LIT_AMBIENT) - 0.45), 0, 1),
       emitterCfg,
+      indicatorCfg,
       panels: cfg.panels === false ? [] : this.layoutPanels(room),
       extraLights: (cfg.lights || []).map(l => ({
         x: room.position.x + l.x * TILE_SIZE,
@@ -532,27 +583,45 @@ export class LightingSystem {
   buildEmitters(state, objs) {
     state.emitters.forEach(e => { e.glow?.destroy(); e.leds?.forEach(l => l.img.destroy()); e.flames?.forEach(f => f.img.destroy()); });
     state.emitters = [];
+    let npcs = null;
     for (const obj of objs) {
       const key = obj?.texture?.key;
       if (!key) continue;
       const base = EMITTERS.find(d => d.re.test(key)) || null;
       const variants = this.variantsFor(state, obj, key);
       // Without an EMITTERS match, an object glows only through a variant that says how.
-      if (!base && !variants.some(v => v.color != null && v.radius != null)) continue;
-      const glow = this.scene.add.image(0, 0, LIGHT_TEX)
-        .setBlendMode(Phaser.BlendModes.ADD)
-        .setVisible(false);
-      // LEDs for the densest setting any state asks for (a room emitter can give a
-      // mission's own rack art `leds`); the current state's `leds` shows a share of them.
-      const ledsMax = Math.max(base?.leds || 0, ...variants.map(v => Number(v.leds) || 0));
-      state.emitters.push({
-        obj, key, base, variants, def: null, variantIdx: -2, glow,
-        phase: Math.random() * Math.PI * 2,
-        leds: ledsMax > 0 ? this.createLeds(obj, { leds: ledsMax }) : [],
-        ledsMax,
-        flames: this.createFlames([base, ...variants]),
-        glowK: 1, stampK: 1,
-      });
+      if (base || variants.some(v => v.color != null && v.radius != null)) {
+        const glow = this.scene.add.image(0, 0, LIGHT_TEX)
+          .setBlendMode(Phaser.BlendModes.ADD)
+          .setVisible(false);
+        // LEDs for the densest setting any state asks for (a room emitter can give a
+        // mission's own rack art `leds`); the current state's `leds` shows a share of them.
+        const ledsMax = Math.max(base?.leds || 0, ...variants.map(v => Number(v.leds) || 0));
+        state.emitters.push({
+          obj, key, base, variants, def: null, variantIdx: -2, glow,
+          phase: Math.random() * Math.PI * 2,
+          leds: ledsMax > 0 ? this.createLeds(obj, { leds: ledsMax }) : [],
+          ledsMax,
+          flames: this.createFlames([base, ...variants]),
+          glowK: 1, stampK: 1,
+        });
+      }
+      // Indicator dots (workstations, or a room entry's `indicators`): a second record on the
+      // same object, after the screen's so it draws on top. base null: it shows only while one
+      // of its variants holds, and the screen's own record and glow are untouched.
+      const id = obj.scenarioData?.id ?? obj.objectId;
+      let indicators = id ? state.indicatorCfg?.[id] : null;
+      if (!indicators && isWorkstation(obj.scenarioData)) {
+        indicators = workstationIndicators(obj.scenarioData, npcs || (npcs = knownNpcs()),
+          { width: obj.displayWidth, height: obj.displayHeight });
+      }
+      if (indicators?.length) {
+        state.emitters.push({
+          obj, key, base: null, variants: indicators, indicator: true, def: null, variantIdx: -2,
+          glow: this.scene.add.image(0, 0, LIGHT_TEX).setBlendMode(Phaser.BlendModes.ADD).setVisible(false),
+          phase: Math.random() * Math.PI * 2, leds: [], ledsMax: 0, flames: [], glowK: 1, stampK: 1,
+        });
+      }
     }
   }
 
