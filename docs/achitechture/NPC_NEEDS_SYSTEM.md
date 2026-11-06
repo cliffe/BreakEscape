@@ -504,6 +504,43 @@ during the walk home (exists). Player-facing behaviour:
 
 ---
 
+### 5.6 Social pairing, chatter and compatibility (office life slice 8, `OFFICE_LIFE_PLAN.md` 2.4, 7.3)
+
+- **Pairing.** When an NPC enters `using` on an object whose affordance has `chatter: "<pool>"` and
+  `capacity` 2 or more, it pairs with a compatible NPC already using that object (one pair per
+  object). Both turn to face each other. The first speaker is a seeded roll; then they alternate.
+  A lone NPC at a chatter object says nothing. The cooler preset sets `chatter: "cooler"`.
+- **Timing.** A line shows for 2.5 s + 50 ms a character, at most 4 s, then a 0.5 s gap, on the
+  needs clock. A line starts only if it ends before the first of the two uses does, so a 15 s
+  overlap gives three or four lines and a short one gives one. Dwell times never stretch.
+- **Pools.** Built-in `coffee`, `cooler`, `greet` (office small talk). The scenario's `chatter`
+  replaces a pool by name; `"chatter": false` turns the built-ins off. An NPC's own `chatter` lines
+  for that topic add to the pool when it speaks. A pool is a list or `{ lines, hush, overhearRadius }`.
+  `chattiness` (0..1, default 1) is the seeded chance an NPC speaks on its turn. Lines are at most
+  40 characters, one line (validator error).
+- **Ends** when either NPC is frozen in a conversation, finishes, or is interrupted; the other
+  finishes its use in silence. A `hush` pool stops after the current line once the player is
+  within 96 px (same room, clear line). Without `hush`, chatter carries on with the player close.
+- **Compatibility** (`needsCompany: { groups, avoids }` on the NPC). Two NPCs chat only if neither
+  avoids the other and they share a group (or either has none); a group mismatch alone means they
+  share the object in silence. An avoidance (an NPC id, `group:<name>`, `"*"`, or
+  `{ npc | group, requireGlobal }`) is declared one way and **acts both ways**, and it also stops
+  sharing: in `_free`, a capacity-2+ object claimed by someone this NPC avoids, or who avoids it,
+  counts as full, so the NPC waits (and emits `npc_avoided`). `requireGlobal` is a name (truthy)
+  or `{ name: value }`; it is read when `_free` runs and when a pair forms, so a global that flips
+  mid-chat lets the pairing finish. With no `needsCompany` anywhere, `_free` never checks, and the
+  decision log is byte-identical.
+- **Second user's spot.** The live adapter's `besideCell` puts the second NPC heading for a shared
+  object one walkable tile beside the first one's approach cell (right, left, below, above).
+- **Bubbles** (`systems/npc-world-bubbles.js`) draw `getState().talking`: the speaker's line in a
+  white rounded box above the head. Only for NPCs in the player's room, not while it is dark, not
+  under any open minigame, at most four on screen (nearest the player). While an NPC talks its
+  action icon and pressing-need thought bubble are hidden. The phone-style barks are separate.
+- **Read-outs.** `getState()` gains `talking: { line, partnerId, topic, objectId, remainingMs } | null`
+  and `chatPartner`. Chat lines are events only; they are not written to the decision log. The
+  decision log gains `avoided` (`avoided`, `target`).
+- Nothing is saved; only loaded NPCs chat.
+
 ## 6. General drop action (exists)
 
 - An inventory item with `"droppable": true` is dropped when clicked in the
@@ -560,6 +597,13 @@ events.
   round furniture and a wait for a busy target make the real absence longer.
 - `playerNearby`, `playerDistance`: as for `npc_used`, at the moment of leaving (also on
   `npc_returned_post`, at arrival).
+
+- `npc_chatted:<objectId>` `{ speakerId, partnerId, topic, lineId, line, objectId, overheard,
+  playerDistance }` for each chat line (slice 8). `overheard`: the player within `overhearRadius`
+  (default 160 px; set on the object's affordance or the pool) in the same room with a clear line.
+- `npc_overheard:<speakerId>` with the same payload, only when `overheard` is true.
+- `npc_avoided:<npcId>` `{ npcId, avoidedId, objectId }` when `npcId` was refused a shared object
+  because of an avoidance (either way); once per pair and object until the NPC next starts a job.
 
 A mapping for the catch, e.g. a bark or a conversation:
 

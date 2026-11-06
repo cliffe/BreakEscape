@@ -21,6 +21,7 @@ A demo and live test of the NPC needs system (`public/break_escape/js/systems/np
 | Grace Lindqvist | female_blowse_v2 | grace_laptop | rest 12/40/64, thirst 15/40/79 | `dirty_mugs`, weight 3, office + kitchen |
 | Sanjay Mehta | male_nerd_v2 | sanjay_pc | work 15/50/65, hunger 8/40/64, social 12/40/76 | none |
 | Rosa Delgado | female_scientist_v2 | rosa_laptop (lounge) | social 15/40/70, caffeine 15/40/85, rest 10/40/75 | none |
+| Marek Nowak (slice 8) | male_telecom_v2 | spot office (6,8) | thirst 2/30/95 (sent by the Kitchen Rota); `needsCompany: { avoids: ["*"] }` | none |
 
 Six need types: caffeine, hunger, thirst, rest, social, work. The engine has no fixed list (a need is any name matched against an object's `affordance.satisfies`), so these six are the scenario's choice.
 
@@ -256,6 +257,55 @@ from the game frames and enlarged 3x nearest-neighbour for viewing), `s3b-handov
 Notes: the player's talk prompt sits over a nearby NPC's action icon (it predates this slice). Grace's
 lounge job failed once on a timeout while the player stood in the lounge doorway (the known doorway
 gotcha).
+
+### Slice 8 re-run: chat at the cooler, and the outcast (2026-11-06, keyless :3001, headless, load 12-22)
+
+What changed in this scenario. One new NPC, **Marek Nowak** (`marek`, sprite `male_telecom_v2`, a
+Polish-born telecoms contractor in his fifties), home spot `office` (6,8). Nobody chats with him or
+shares the cooler with him. One line on him does it, because an avoidance acts both ways:
+
+```jsonc
+"chatter": { "cooler": ["Did you see the car park email?", "Friday drinks again?", "..."] },  // replaces the built-in pool
+// the cooler has no chatter field of its own: its preset (cooler) sets "chatter": "cooler", capacity 2
+{ "id": "marek",
+  "needsCompany": { "avoids": ["*"] },                   // declared one way, acts both ways
+  "needs": { "thirst": { "decayPerMin": 2, "urgentAt": 30, "initial": 95 } },   // slow: goes only when sent
+  "eventMappings": [{ "eventPattern": "object_interacted", "condition": "data.objectName === 'Kitchen Rota'",
+                      "cooldown": 30000, "needs": { "set": { "thirst": 10 } } }] }
+// Sanjay: reading the Activity Board, or Marek leaving for the cooler, sets his social to 10
+{ "eventPattern": "npc_left_post:marek", "condition": "data.targetId === 'water_cooler'", "cooldown": 30000,
+  "needs": { "set": { "social": 10 } } }
+// Rosa: reading the Activity Board sets her social to 10. Amara holds the two objective mappings:
+{ "eventPattern": "npc_chatted:water_cooler", "onceOnly": true, "completeTask": "see_chat" }
+{ "eventPattern": "npc_avoided:sanjay", "condition": "data.avoidedId === \"marek\"", "onceOnly": true, "completeTask": "see_outcast" }
+```
+
+How to watch it: open the kitchen once, then read the **Activity Board** and walk into the kitchen.
+Sanjay and Rosa meet at the cooler and trade lines in speech bubbles. Then read the **Kitchen
+Rota**: Marek walks to the cooler, and Sanjay, who wants a chat as Marek leaves, finds him there
+and waits at his desk (thought bubble `social`). He goes once Marek has gone.
+
+Games 665 and 667 (session logs `tools/playtest/s8-sims-665-session.jsonl`, `-667-`). Screenshots in
+`/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/3c2d3b5d-38a4-49b2-b79e-4c3ee8f76ed6/scratchpad/s8/` (`s8-contact-sheet.png` has nearest-neighbour crops of them all).
+
+| Check | Result | Evidence |
+|---|---|---|
+| Two compatible NPCs pair and talk | PASS | game 665: Activity Board read, Sanjay and Rosa at the cooler, "Any plans for lunch?" over Sanjay, his action icon hidden while he speaks, Rosa's shown (`pair-sanjay-1-665.png`) |
+| Lines fit the overlap | PASS | game 665, Sanjay and Grace (a natural meeting): three lines in a 15 s overlap, 4 s apart; the dwell was unchanged |
+| `see_chat` ticks | PASS | `objective_task_completed:see_chat` in both games |
+| The outcast: Marek alone, Sanjay waits | PASS | game 667: Kitchen Rota read; Marek `using water_cooler` alone (`outcast-kitchen-marek-alone-667.png`; Sanjay idle at his desk in the next room with the `social` thought bubble, `outcast-office-sanjay-waits-667.png`); `npc_avoided:sanjay` `{npcId: sanjay, avoidedId: marek, objectId: water_cooler}` once; Sanjay used the cooler after Marek left, with no chat (`outcast-kitchen-sanjay-after-667.png`) |
+| Both ways | PASS | game 665: Marek, sent while Grace held the cooler, was refused (`npc_avoided:marek`, avoidedId `grace`), then again for Sanjay, who joined Grace and chatted; Marek went alone after both had left |
+| `see_outcast` ticks | PASS | `objective_task_completed:see_outcast` (game 667) |
+| No bubble from the next room | PASS | player in the office while Rosa said "Is it raining again?" in the kitchen: `talking` set, no speech bubble (`vis-office-chat-in-kitchen-667.png`) |
+| No bubble in the dark | PASS | kitchen switched off mid-line (`lightingSystem.switchOff`, level 0): bubble and icons gone, back when switched on (`vis-kitchen-lit/-dark/-relit-667.png`) |
+| Overheard | PASS | `npc_overheard:rosa` and `npc_overheard:sanjay` once each in game 667 (player in the kitchen, within 160 px) |
+| Errors | PASS | no page errors; 0 "No path found", 0 "Failed to escape wall" in either session log |
+
+Notes: in the dark-room shot Rosa and Sanjay stand closer than in game 665 (they overlap by about
+half a body). The second NPC's beside-cell is one tile from the first's approach cell, and NPC
+bodies push each other. Cosmetic; left for slice 10, which places queue cells. The second showcase
+pairing (game 667) was sent with `npcNeedsSystem.control(..., { set: { social: 10 } })`, the same
+call the mapping makes, so the player could wait in the kitchen.
 
 ## Engine findings
 

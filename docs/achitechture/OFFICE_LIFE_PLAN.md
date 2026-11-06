@@ -741,6 +741,23 @@ an owner get indicators.
 
 ### 2.4 Speech bubbles and social pairing (proposal 4, first half)
 
+**Built: 2026-11-06 (0af49071a; showcase 224a177c2, 40d8c3ea3; test 3a51f2aac). Regressions
+(`test_needs_leash`, lab) not yet run: see `HANDOVER_OFFICE_S8.md`.** As written, with these choices
+made without asking (smallest option each time): (1) an NPC's own pool for a topic adds to the
+scenario's (or built-in) pool, and a scenario pool replaces the built-in pool of that name; (2)
+`chattiness` is the seeded chance a speaker says a line on its turn (default 1); (3) the cooler
+preset sets `chatter: "cooler"`, the sofa none (resting), so no scenario that uses presets gets
+chatter on a sofa; no lab object has a chatter topic; (4) one pair per object (a capacity-3 object
+still pairs only two); (5) the first speaker is a seeded roll, then they alternate; a line starts only
+if it ends before the first of the two uses ends; (6) `hush` uses `playerNearby` (96 px, same room,
+clear line) of either NPC; (7) the second NPC heading for a shared object stands one walkable tile
+beside the first one's approach cell (adapter `besideCell`; the stub world has none, so fixture logs
+are unchanged), so the two can face each other; (8) chat lines are events only, never in the decision
+log, so every existing fixture's log is unchanged (tested on the sims day with and without chatter);
+(9) bubbles: white rounded box with a tail, 10 px monospace, above the head where the action icon
+sits; at most four, nearest the player; hidden under any open minigame; (10) `npc_chatted` also
+carries `line` and `objectId`. Live, :3001 headless, games 665 and 667 (sims README slice 8 table).
+
 **What exists.** Nothing in the world: barks are phone-style DOM notifications (`npc-barks.js`
 15-65). Water cooler and sofa already have `capacity: 2`. Both coffee stations in the showcase
 (`office_coffee`, `kitchen_coffee`) and the lab's `coffee_station`
@@ -1991,6 +2008,19 @@ NPC search between the player's `calculate()` and its deferred callback; that is
 unchanged.
 
 ### 7.3 Social compatibility (in slices 8 and 10)
+
+**Built: 2026-11-06 with slice 8 (see 2.4's Built line).** As written, with these choices made
+without asking: (1) `npc_avoided:<npcId>` names the NPC that was refused and waits; it fires once per
+pair and object until that NPC next starts a job; (2) `_free` checks avoidances only when some
+registered NPC has `needsCompany`, so scenarios without it run exactly as before; (3) a `requireGlobal`
+read with no adapter (the node stub without `globalHolds`) counts as not holding; (4) the showcase's
+outcast is Marek Nowak (`male_telecom_v2`), and Sanjay's chat urge is mapped to `npc_left_post:marek`
+(target the cooler) rather than to the rota itself, so Marek always claims the cooler first and
+Sanjay is the one who waits (with both set at once, whoever was at the cooler already, often Grace,
+decided it); (5) validator: an over-long or multi-line chat line is an error, an unknown pool name or a
+chatter object below capacity 2 a warning, an unknown NPC in `avoids` an error, an undeclared group or
+global a warning, and the info line names every need whose objects are all shared with someone the NPC
+avoids unconditionally.
 
 **Authoring.** On the NPC:
 
