@@ -5,6 +5,15 @@
 // player and swivel chairs (moved by sitters at run time) are left out. Diff two snapshots with tools/playtest/room-snapshot-diff.mjs.
 //
 //   node tools/playtest/room-snapshot.mjs <games.tsv> <out.json> [--port 3001] [--only name,name]
+//        [--walk walk.json] [--desk-boxes legacy|footprint]
+//
+// --walk (SEAT_BOX_PLAN.md slice 0) also writes a walk record per room to walk.json
+// (tools/playtest/lib/walk-record.mjs: bodies without NPCs and swivel chairs, a walk grid from
+// pathfindingManager.buildWorldGrid, key points, swivel chairs' placed positions, gate states).
+// With --walk the games load through tools/playtest/lib/all-rooms-loader.mjs, so NPC behaviour
+// updates are stubbed from boot, and after the last room the loop runs 300 ms of game time before
+// anything is recorded. --desk-boxes sets window.__deskBoxes before the game loads. Diff two walk
+// records with tools/playtest/walk-audit-diff.mjs.
 //
 // Determinism: Math.random is replaced by a seeded generator before any game script runs, and is
 // re-seeded from "<scenario>|<room>" with the game loop asleep just before each room loads, so
@@ -13,6 +22,8 @@
 // with a room_office room is missing.
 import { chromium } from 'playwright';
 import fs from 'node:fs';
+import { prepare, loadAllRooms, settle, headCommit } from './lib/all-rooms-loader.mjs';
+import { collectWalkRecord } from './lib/walk-record.mjs';
 
 const args = process.argv.slice(2);
 const tsv = args[0], outPath = args[1];
@@ -20,6 +31,9 @@ if (!tsv || !outPath) { console.error('usage: room-snapshot.mjs <games.tsv> <out
 const opt = (k, d) => { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : d; };
 const port = opt('--port', '3001');
 const only = opt('--only', '') ? new Set(opt('--only', '').split(',')) : null;
+const walkPath = opt('--walk', null);
+const deskBoxes = opt('--desk-boxes', null);
+const walk = { made: new Date().toISOString(), commit: await headCommit(), deskBoxes, scenarios: {} };
 
 const rows = fs.readFileSync(tsv, 'utf8').trim().split('\n').map(l => l.split('\t'))
   .map(([name, gid, rooms, office]) => ({ name, gid: Number(gid), rooms: Number(rooms), office: office === 'office' }))
@@ -34,7 +48,8 @@ for (const row of rows) {
   if (!row.gid) { problems.push(`${row.name}: no game`); continue; }
   const ctx = await browser.newContext({ viewport: { width: 1200, height: 900 } });
   const page = await ctx.newPage();
-  await page.addInitScript(() => {
+  if (walkPath) await prepare(page, { stubNpc: true, deskBoxes });
+  else await page.addInitScript(() => {
     // mulberry32, seeded from a string
     const seedOf = s => { let h = 1779033703 ^ s.length; for (let i = 0; i < s.length; i++) { h = Math.imul(h ^ s.charCodeAt(i), 3432918353); h = (h << 13) | (h >>> 19); } return h >>> 0; };
     let a = seedOf('boot');
@@ -42,10 +57,15 @@ for (const row of rows) {
     window.__reseed = s => { a = seedOf(s); };
   });
   try {
-    await page.goto(`http://127.0.0.1:${port}/break_escape/games/${row.gid}`, { waitUntil: 'domcontentloaded', timeout: 60000 });
-    await page.waitForFunction(() => window.gameScenario && window.rooms && window.loadRoom && window.roomPositions
-      && Object.keys(window.rooms).length > 0, null, { timeout: 60000 });
-    await page.waitForTimeout(1500);
+    if (walkPath) {
+      await loadAllRooms(page, { gid: row.gid, port, scen: row.name });
+      await settle(page, 300);
+    } else {
+      await page.goto(`http://127.0.0.1:${port}/break_escape/games/${row.gid}`, { waitUntil: 'domcontentloaded', timeout: 60000 });
+      await page.waitForFunction(() => window.gameScenario && window.rooms && window.loadRoom && window.roomPositions
+        && Object.keys(window.rooms).length > 0, null, { timeout: 60000 });
+      await page.waitForTimeout(1500);
+    }
     const snap = await page.evaluate(async (scen) => {
       const game = window.game;
       const ids = Object.keys(window.gameScenario.rooms);
@@ -93,6 +113,13 @@ for (const row of rows) {
       return { loaded, failed, rooms: out };
     }, row.name);
     result.scenarios[row.name] = { gid: row.gid, office: row.office, ...snap };
+    if (walkPath) {
+      const rec = await page.evaluate(collectWalkRecord);
+      walk.scenarios[row.name] = { gid: row.gid, ...rec };
+      const open = rec.gates.filter(g => g.open);
+      console.log(`  walk: rooms ${Object.keys(rec.rooms).length}, excluded bodies ${rec.excluded}, gates ${rec.gates.length} (open ${open.length})`);
+      if (open.length) problems.push(`${row.name}: gate open at record time: ${open.map(g => g.key).join(',')}`);
+    }
     const nSprites = Object.values(snap.rooms).reduce((t, l) => t + l.length, 0);
     console.log(`${row.name}\tgame ${row.gid}\trooms ${snap.loaded.length}/${snap.loaded.length + snap.failed.length}\tsprites ${nSprites}${snap.failed.length ? `\tFAILED ${snap.failed.join(',')}` : ''}`);
     if (snap.failed.length) problems.push(`${row.name}: rooms not loaded: ${snap.failed.join(',')}`);
@@ -107,6 +134,7 @@ await browser.close();
 for (const row of rows) if (row.office && !result.scenarios[row.name]) problems.push(`${row.name}: room_office scenario missing from the snapshot`);
 result.problems = problems;
 fs.writeFileSync(outPath, JSON.stringify(result));
+if (walkPath) fs.writeFileSync(walkPath, JSON.stringify(walk));
 console.log(`scenarios ${Object.keys(result.scenarios).length}/${rows.length}, office ${rows.filter(r => r.office && result.scenarios[r.name]).length}/${rows.filter(r => r.office).length}, problems ${problems.length}`);
 for (const p of problems) console.log(`PROBLEM ${p}`);
 process.exit(problems.length ? 1 : 0);
