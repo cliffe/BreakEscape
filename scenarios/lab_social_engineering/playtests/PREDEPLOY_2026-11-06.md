@@ -36,6 +36,19 @@ Completed honestly end to end: offensive campaign (all three targets landed — 
 
 The Blue Team defensive phase (inbox triage of 8 messages, defender profile, closing debrief) was entered: the room renders, Tomasz's briefing plays, and the `inbox-triage` minigame opens, renders and accepts input (1/8 sorted correctly, recorded server-side). It was **not** completed to the ending in this run — it is beyond the seven specified checks. `test_account` was skipped by the engine; `triage_passed`, `profile_done`, `closing_debrief` remain open, so the mission did not reach credits (score 85, not full).
 
+## Blue Team phase to the ending (follow-up, same game 661)
+
+Resumed game 661 (HEAD `129eaedb6`, engine identical to `511ba3119` — the only intervening commit is this log file) and completed the one part not previously proven:
+
+- **Inbox triage (8 messages):** sorted all eight, `triage_passed`. Round score **75% — "A pass"**. The lab's intended answers (learned from the result cards): report = own_pierce, own_lord, lookalike_payroll (ledgerwell-hr look-alike), supplier_bank_change (office-**suppiies** typo), **and cv_portfolio** (the careers CV has a link-goes-elsewhere tell — a phish, not a genuine application); trust = fwd_balance_sheet (SPF fail but DKIM/DMARC pass — mailing list), vendor_invoice (office-**supplies**, auth passes), **newsletter** (genuine internal, Trust not Delete). My two misses were cv_portfolio (trusted) and newsletter (deleted); 6/8 still passes. The verdict-button control indices shift when a message has a link row, so each message must be read before clicking — worth noting for future scripted runs.
+- **Defender profile / exposure review (SOC board):** both exposures reduced correctly (keep staff addresses unpublished + role inboxes; strip file author/metadata before publishing). `profile_done`.
+- **Closing debrief:** Tomasz debrief completed (chose the service-desk call-back rule). `closing_debrief`, `engagement_closed`.
+- **Ending:** the `bond_visualiser` conclusion screen opened (`.bv-stage` / `#bv-credits-overlay`), credits cycling through mission-specific lines ("THE ENGAGEMENT", "Report: filed, with no names in it", …). This is the terminal state by design.
+
+`verify-run.rb 661`: **24 of 25 tasks completed** (`test_account` skipped — a conditional task, not a failure), **score 100**, globals incl. `triage_pass`, `profile_done`, `report_filed`, `engagement_closed`, `ending_track_heard`.
+
+Final `drain`: only one keyless **TTS 503** (debrief voice line). No other console output, no errors.
+
 ## Verdict
 
-All seven checks PASS on `511ba3119`. The `5be4c6625` capture-note fix is confirmed live (note appears, no error). **Nothing found that should block a deploy.**
+All seven checks PASS on `511ba3119`, and the **Blue Team phase runs through to the credits (score 100)** on the same engine. The `5be4c6625` capture-note fix is confirmed live (note appears, no error). **Nothing found that should block a deploy.**
