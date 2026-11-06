@@ -63,7 +63,7 @@ test('a decor-shaped sprite (synthetic scenarioData, no id) resolves to no affor
 
 test('own fields win field by field; useFrom is replaced whole; the table is not mutated', () => {
     const a = resolveAffordance({ id: 'c', type: 'water_cooler1', affordance: { useSeconds: 20 } }, ON);
-    assert.deepEqual(a, { satisfies: ['thirst', 'social'], restores: 70, useSeconds: 20, capacity: 2, useSound: 'drink_gulp' });
+    assert.deepEqual(a, { satisfies: ['thirst', 'social'], restores: 70, useSeconds: 20, capacity: 2, useSound: 'drink_gulp', chatter: 'cooler' });
     const b = resolveAffordance({ id: 'k', type: 'kettle1', affordance: { useFrom: { dx: 1, dy: 0 }, useSound: 'page_turn' } }, ON);
     assert.deepEqual(b.useFrom, { dx: 1, dy: 0 });
     assert.equal(b.useSound, 'page_turn');
