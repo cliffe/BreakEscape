@@ -13,6 +13,11 @@
  *   - One bubble per NPC, at most MAX_BUBBLES on screen: the speakers nearest the player.
  *   - While shown, the NPC's action icon and thought bubble are hidden (npc-action-icons.js reads
  *     the same getState().talking).
+ *   - While shown, the press-to-talk icon (interactions.js sprite.interactionIndicator, talk.png) of
+ *     the speaker and its partner is hidden too: it sits at overlay depth over the speech bubble and
+ *     read as a second, empty bubble. It comes back when the line ends if the player is still in
+ *     range (talkIconVisible is left alone, so interactions.js does not re-show it meanwhile). The
+ *     pass runs on the scene's postupdate, after checkObjectInteractions, so it never flashes.
  * Bubbles are pooled per NPC and re-laid out only when the line changes.
  *
  * Picture chat (slice 15, OFFICE_LIFE_PLAN 11.2): when talking.picture is set the bubble holds a
@@ -60,7 +65,7 @@ export function pictureTexture(name) {
 export const PICTURE_PX = 16;
 
 export class NpcWorldBubbles {
-    constructor() { this.bubbles = new Map(); this.sceneHooked = null; this.textures = new Map(); }
+    constructor() { this.bubbles = new Map(); this.sceneHooked = null; this.textures = new Map(); this.talkHidden = new Set(); }
 
     _make(scene) {
         const g = scene.add.graphics();
@@ -135,6 +140,14 @@ export class NpcWorldBubbles {
             info.set(id, { sprite, talking: st.talking });
         }
         const shown = new Set(pickShown(cands));
+        const muteTalk = new Set();
+        for (const id of shown) {
+            muteTalk.add(info.get(id).sprite);
+            const partner = info.get(id).talking.partnerId;
+            const ps = partner ? mgr.getBehavior?.(partner)?.sprite : null;
+            if (ps) muteTalk.add(ps);
+        }
+        this._muteTalkIcons(muteTalk);
         for (const [id, bb] of this.bubbles) {
             if (!shown.has(id)) bb.box.setVisible(false);
         }
@@ -150,6 +163,19 @@ export class NpcWorldBubbles {
             bb.box.setData('partner', talking.partnerId);
         }
     }
+
+    /**
+     * Hide the press-to-talk icon of these sprites; show again the ones hidden last frame that
+     * interactions.js still holds as visible (player in range).
+     */
+    _muteTalkIcons(sprites) {
+        for (const s of this.talkHidden) {
+            if (sprites.has(s)) continue;
+            if (s.talkIconVisible && s.interactionIndicator?.scene) s.interactionIndicator.setVisible(true);
+        }
+        for (const s of sprites) if (s.interactionIndicator?.visible) s.interactionIndicator.setVisible(false);
+        this.talkHidden = sprites;
+    }
 }
 
 export function installNpcWorldBubbles(scene) {
@@ -158,7 +184,8 @@ export function installNpcWorldBubbles(scene) {
     const inst = w.npcWorldBubbles;
     if (scene?.events && inst.sceneHooked !== scene) {
         inst.sceneHooked = scene;
-        scene.events.on('update', () => { try { inst.update(); } catch (e) { /* never break a frame */ } });
+        // postupdate: after the scene's update() (checkObjectInteractions shows the talk icon there)
+        scene.events.on('postupdate', () => { try { inst.update(); } catch (e) { /* never break a frame */ } });
     }
     return inst;
 }
