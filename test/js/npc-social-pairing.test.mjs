@@ -403,5 +403,6 @@ test('validator: long lines, unknown pools, capacity 1, unknown NPCs and groups,
     // No needsCompany anywhere: no info lines
     const plain = needsCheck({ rooms: { office: { type: 'room_office', objects: [{ id: 'cooler', affordance: { satisfies: 'thirst', capacity: 2, chatter: 'cooler' } }], npcs: [npc('ann'), npc('bob')] } } });
     assert.ok(!plain.some(s => s.includes('shared with someone')));
-    assert.ok(!plain.some(s => s.includes('chatter')));
+    // Slice 15: a built-in topic with no lines anywhere is picture chat only (a warning, nothing else)
+    assert.deepEqual(plain.filter(s => s.includes('chatter')).map(s => s.includes('picture chat only')), [true]);
 });
