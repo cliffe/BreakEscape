@@ -2090,6 +2090,14 @@ export function createEngineWorld() {
             slotHome(f.sp, f.roomId, f.key);
             this.setGlobal(globalOf(f.sp), true);
             W().showRevealedObject?.(f.sp);
+            // On the owner's desk: drawn above the desk's dressing (it shares the home object's depth),
+            // as a tray slot is lifted above its copier. Stow puts the declared depth back.
+            const homeId = this.getNpc(npcId)?.needsHome;
+            const home = typeof homeId === 'string' ? findSprite(homeId) : null;
+            if (home && home.roomId === f.roomId && Number.isFinite(home.sp.depth) && !(f.sp.depth > home.sp.depth)) {
+                const a = centreOf(home.sp), b = centreOf(f.sp);
+                if (Math.hypot(a.x - b.x, a.y - b.y) <= 2 * TILE) f.sp.setDepth?.(home.sp.depth + 0.1);
+            }
             W().eventDispatcher?.emit(`object_revealed:${itemId}`, { npcId, objectId: itemId, leftBehindBy: npcId });
             return true;
         },

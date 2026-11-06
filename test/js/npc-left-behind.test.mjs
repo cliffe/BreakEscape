@@ -203,11 +203,12 @@ function fakeWindow({ globals = {} } = {}) {
         rooms: { office: { position: { x: 0, y: 0 }, objects: { tom_badge: badge, ann_mug: mug, tom_pc: plain } } },
         gameState: { globalVariables: { ...globals } },
         inventory: { items: [] },
+        npcManager: { getNPC: id => (id === 'tom' ? { id: 'tom', needsHome: 'tom_pc' } : null) },
         eventDispatcher: { on() {}, emit(n, d) { (win._emits = win._emits || []).push({ n, d }); } },
         showRevealedObject(obj) { obj.setVisible(true); obj.interactable = true; obj.setInteractive(); },
         hideRevealedObject(obj) { obj.setVisible(false); obj.interactable = false; obj.disableInteractive(); }
     };
-    return { win, badge };
+    return { win, badge, plain };
 }
 
 function withWindow(win, fn) {
@@ -231,6 +232,19 @@ test('adapter: leftBehindItems lists the owner\'s items; reveal shows it, stowSl
         assert.equal(win.gameState.globalVariables.tom_badge_left, false);
         assert.equal(win.rooms.office.objects.tom_badge, badge, 'still under its key');
         assert.deepEqual(w.leftBehindItems('tom'), [{ id: 'tom_badge', chance: 0.7 }], 'free again');
+    });
+});
+
+test('adapter: shown above the owner\'s desk dressing, and back to its own depth when collected', () => {
+    const { win, badge, plain } = fakeWindow();
+    plain.depth = 205.5;                       // a desk's items share the PC's depth (desk front y)
+    withWindow(win, () => {
+        const w = createEngineWorld();
+        const own = badge.depth;
+        w.revealLeftBehind('tom_badge', 'tom');
+        assert.equal(badge.depth, 205.6);
+        w.stowSlot('tom_badge');
+        assert.equal(badge.depth, own);
     });
 });
 
