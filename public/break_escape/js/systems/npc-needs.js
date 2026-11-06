@@ -1470,6 +1470,9 @@ export function createEngineWorld() {
                 slotHome(free.sp, free.roomId, free.key);
                 this.setGlobal(globalOf(free.sp), true);
                 W().showRevealedObject?.(free.sp);
+                // On its producer's tray: drawn above the producer whatever their y-sorted depths
+                const prod = findSprite(producerId)?.sp;
+                if (prod && Number.isFinite(prod.depth) && !(free.sp.depth > prod.depth)) free.sp.setDepth?.(prod.depth + 0.5);
                 W().eventDispatcher?.emit(`object_revealed:${free.id}`, { producerId, npcId, objectId: free.id });
                 return { slotId: free.id };
             }
