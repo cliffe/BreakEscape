@@ -4488,7 +4488,8 @@
               "urgentAt": { "type": "number", "minimum": 1, "maximum": 99, "description": "Level at or below which the need is urgent" },
               "initial": { "type": "number", "minimum": 0, "maximum": 100, "description": "Level at start and after a reload (default 100); sets when the first beat happens" },
               "weight": { "type": "number", "minimum": 0.1, "maximum": 10, "description": "Scales the need's score (default 1)" },
-              "maxUnmetMin": { "type": "number", "exclusiveMinimum": 0, "description": "Starvation guard: this long since last satisfied, the need wins outright" },
+              "maxUnmetMin": { "type": "number", "exclusiveMinimum": 0, "description": "Starvation guard: this long since last satisfied, the need wins outright (not while the need is parked)" },
+              "deferrable": { "type": "boolean", "description": "Slice 14 (OFFICE_LIFE_PLAN 10): default true, the need may be parked when every source is unacceptable (someone avoided there, a queue past maxQueue). false (a story need: a guard's rounds, delivering a report): the NPC goes anyway, showing the avoidance bubble; it still parks when no source exists at all. The validator warns on false for caffeine, thirst, hunger and rest." },
               "jitterPct": { "type": "number", "minimum": 0, "maximum": 50, "description": "Seeded plus or minus spread on initial and each top-up" },
               "_comment": { "type": "string" }
             },
@@ -4529,10 +4530,13 @@
         "needsSpeed": { "type": "number", "minimum": 1, "description": "NPC needs system: walk speed (px/s) for needs moves. Default behavior.patrol.speed, else 80." },
         "needsRooms": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "NPC needs system, room leash (allow list): the only rooms this NPC's needs may use objects in or walk through; its home room (needsHome's) is always allowed. Fixed per NPC. Scripts and route patrols ignore it." },
         "needsAvoidRooms": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "NPC needs system, room leash (deny list): rooms this NPC's needs never use objects in or walk through, even as a short cut; it goes the long way or waits. The home room may not be listed. Fixed per NPC. Scripts and route patrols ignore it." },
+        "maxQueue": { "type": "integer", "minimum": 0, "description": "NPC needs system, balking (OFFICE_LIFE_PLAN 10, slice 14): refuse to join a queue that already holds this many; the NPC tries another source, else parks the need (reason queue). 0 never queues. Unset: no limit." },
+        "needsDeferMin": { "type": "number", "exclusiveMinimum": 0, "description": "NPC needs system, parked needs (OFFICE_LIFE_PLAN 10, slice 14): minutes (needs clock) a need with no acceptable source stays parked, level held at urgentAt + 1 and decay paused, before it is retried. A room loading or a door opening retries it sooner. Default 4." },
         "needsCompany": {
           "type": "object",
-          "description": "NPC needs system, social compatibility (OFFICE_LIFE_PLAN 7.3). Two NPCs chat at a shared object only if neither avoids the other and they share a group (or either has none). An avoidance is declared one way and acts BOTH ways: it also stops the two sharing a capacity-2 object (the second waits; npc_avoided:<npcId>). With no needsCompany anywhere, everyone pairs.",
+          "description": "NPC needs system, social compatibility (OFFICE_LIFE_PLAN 7.3). Two NPCs chat at a shared object only if neither avoids the other and they share a group (or either has none). An avoidance is declared one way and acts BOTH ways: it also stops the two sharing a capacity-2 object (the second waits; npc_avoided:<npcId>). With no needsCompany anywhere, everyone pairs. Slice 14: an NPC that declares avoids (or an avoidRadius) also turns away from a source someone avoided (either way) is using, is queued for, or stands within avoidRadius tiles of (npc_turned_back, npc_need_parked).",
           "properties": {
+            "avoidRadius": { "type": "number", "minimum": 0, "maximum": 10, "description": "Tiles from a source's approach cell within which someone avoided (either way) makes it unacceptable. Default 2 when avoids is declared, else 0. 0 restores slice 8's sharing-only rule." },
             "groups": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "Group names. A group mismatch only stops chat; the two may still share an object in silence." },
             "avoids": {
               "type": "array",

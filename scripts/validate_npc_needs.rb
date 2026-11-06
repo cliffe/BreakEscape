@@ -118,7 +118,9 @@ module ValidateNpcNeeds
   # global (warning). Info: an NPC whose every object for some need is shared with someone it
   # avoids (either way, unconditionally) can only use it when they are not there.
 
-  BUILTIN_CHATTER = %w[coffee cooler greet].freeze
+  BUILTIN_CHATTER = %w[coffee cooler greet grumble].freeze
+  # Slice 14: needs the validator warns about when declared deferrable: false (environmental)
+  ENVIRONMENTAL_NEEDS = %w[caffeine thirst hunger rest].freeze
   CHAT_LINE_MAX = 40
 
   def self.pool_lines(pool)
@@ -260,6 +262,9 @@ module ValidateNpcNeeds
       unless nc.is_a?(Hash)
         issues << "❌ ERROR: #{where} must be an object { groups, avoids }."
         next
+      end
+      if nc.key?('avoidRadius') && !(nc['avoidRadius'].is_a?(Numeric) && nc['avoidRadius'] >= 0 && nc['avoidRadius'] <= 10)
+        issues << "❌ ERROR: #{where} avoidRadius must be a number of tiles from 0 to 10 (default 2 with avoids; 0 is slice 8's sharing-only rule)."
       end
       Array(nc['avoids']).each do |e|
         who = e.is_a?(Hash) ? (e['npc'] || (e['group'] && "group:#{e['group']}")) : e
@@ -478,6 +483,13 @@ module ValidateNpcNeeds
     where = "NPC '#{nid}'"
     patrol = npc.dig('behavior', 'patrol', 'enabled') == true
     issues << "❌ ERROR: #{where} declares needs/interests and behavior.patrol.enabled: true; a needs NPC must not patrol (the needs loop owns its movement)." if patrol
+    # Slice 14: balking and parked needs
+    if npc.key?('maxQueue') && !(npc['maxQueue'].is_a?(Integer) && npc['maxQueue'] >= 0)
+      issues << "❌ ERROR: #{where} maxQueue must be a whole number >= 0 (0 never queues; unset is no limit)."
+    end
+    if npc.key?('needsDeferMin') && !(npc['needsDeferMin'].is_a?(Numeric) && npc['needsDeferMin'].positive? && npc['needsDeferMin'] <= 120)
+      issues << "❌ ERROR: #{where} needsDeferMin must be minutes > 0 and <= 120 (default 4)."
+    end
 
     by_id = objs.select(&:id).group_by(&:id)
     home = npc['needsHome']
@@ -547,6 +559,13 @@ module ValidateNpcNeeds
       end
       if n.key?('jitterPct') && !(n['jitterPct'].is_a?(Numeric) && n['jitterPct'] >= 0 && n['jitterPct'] <= 50)
         issues << "❌ ERROR: #{where} need '#{name}' jitterPct must be 0 to 50."
+      end
+      if n.key?('deferrable')
+        if n['deferrable'] != true && n['deferrable'] != false
+          issues << "❌ ERROR: #{where} need '#{name}' deferrable must be true or false."
+        elsif n['deferrable'] == false && ENVIRONMENTAL_NEEDS.include?(name)
+          issues << "⚠️ WARNING: #{where} need '#{name}' is deferrable: false; the NPC will walk past anyone it avoids and join any queue for it. That is meant for story needs (rounds, a delivery), rarely for #{name}."
+        end
       end
       next unless decay.is_a?(Numeric) && decay > 0 && urgent.is_a?(Numeric) && initial.is_a?(Numeric)
 

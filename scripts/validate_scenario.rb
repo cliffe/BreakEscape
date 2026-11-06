@@ -415,6 +415,7 @@ def check_unknown_fields(json_data)
     phoneId phoneTheme handle profile voiced callLabel unlockable externalVariables persistentVariables
     timedMessages timedConversation eventMappings itemsHeld puzzle_graph_actions
     needs interests needsHome needsSpeed needsRooms needsAvoidRooms needsCompany chatter chattiness usePayload onUse
+    maxQueue needsDeferMin
     observations disableClose los rfidCard chatBackground spriteStyle gender portraitVariants _comment
   ]
 

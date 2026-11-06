@@ -7,6 +7,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 import {
     NPCNeedsSystem, NEEDS_TICK_MS, requiredGlobalsHold, DEFAULT_CHATTER, AVOID_BUBBLE_MS, NEEDS_DEFER_MIN, WAKE_BASE_MS, WAKE_STEP_MS
 } from '../../public/break_escape/js/systems/npc-needs.js';
@@ -361,4 +364,30 @@ test('the sims day (nobody avoids anyone, nothing parks) is byte-identical to be
     const log = sys.getLog();
     assert.equal(log.filter(e => ['parked', 'unparked', 'turned_back'].includes(e.ev)).length, 0);
     assert.equal(createHash('sha256').update(JSON.stringify(log)).digest('hex'), GOLDEN_SIMS_DAY);
+});
+
+// ── validator ─────────────────────────────────────────────────────────────
+
+const ruby = spawnSync('ruby', ['--version']);
+test('validator: deferrable, maxQueue, needsDeferMin, avoidRadius and the grumble pool', { skip: ruby.status !== 0 && 'ruby not found' }, () => {
+    const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
+    const check = scenario => {
+        const script = `require ${JSON.stringify(join(root, 'scripts/validate_npc_needs.rb'))}
+          puts JSON.generate(ValidateNpcNeeds.check(JSON.parse(STDIN.read)))`;
+        const r = spawnSync('ruby', ['-e', script], { input: JSON.stringify(scenario), encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' } });
+        assert.equal(r.status, 0, r.stderr);
+        return JSON.parse(r.stdout.trim().split('\n').pop());
+    };
+    const npc = (extra) => ({ id: 'sam', needsHome: { room: 'office', x: 2, y: 2 }, needs: { caffeine: { decayPerMin: 1, urgentAt: 40 } }, ...extra });
+    const scen = (n, more = {}) => ({ ...more, rooms: { office: { type: 'room_office', objects: [{ id: 'm', type: 'coffee_station1', affordance: { satisfies: 'caffeine', restores: 50 } }], npcs: [n, { id: 'marek', needsHome: { room: 'office', x: 5, y: 5 } }] } } });
+    const ok = check(scen(npc({ maxQueue: 1, needsDeferMin: 4, needsCompany: { avoids: ['marek'], avoidRadius: 2 }, needs: { caffeine: { decayPerMin: 1, urgentAt: 40 }, rounds: { decayPerMin: 1, urgentAt: 40, deferrable: false } } })));
+    assert.deepEqual(ok.filter(s => /maxQueue|needsDeferMin|avoidRadius|deferrable/.test(s)), []);
+    const bad = check(scen(npc({ maxQueue: 1.5, needsDeferMin: 0, needsCompany: { avoids: ['marek'], avoidRadius: -1 }, needs: { caffeine: { decayPerMin: 1, urgentAt: 40, deferrable: 'no' } } })));
+    for (const f of ['maxQueue must be a whole number', 'needsDeferMin must be minutes', 'avoidRadius must be a number of tiles', 'deferrable must be true or false']) {
+        assert.ok(bad.some(s => s.includes(f)), f);
+    }
+    const env = check(scen(npc({ needs: { caffeine: { decayPerMin: 1, urgentAt: 40, deferrable: false } } })));
+    assert.ok(env.some(s => s.startsWith('⚠️') && s.includes("need 'caffeine' is deferrable: false")));
+    const pool = check(scen(npc({}), { chatter: { grumble: ['Not with him there.', 'This line is far, far too long for a bubble.'] } }));
+    assert.ok(pool.some(s => s.includes("chatter 'grumble' line") && s.includes('at most 40')));
 });
