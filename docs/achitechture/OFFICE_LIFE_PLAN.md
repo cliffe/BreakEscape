@@ -2110,3 +2110,70 @@ One addition the review did not raise, found while checking M2: the bootstrap sc
 client strips room fields it does not list (`Game#filtered_scenario_for_bootstrap`), and the full
 room from `/room/:id` is not kept after `createRoom`, so `needsPrivateTo` would be invisible to
 the engine. `createRoom` keeps it on `window.rooms[roomId]` (one line); only loaded rooms matter.
+
+## 9. Addition 2026-11-06: an icon set for actions and pressing needs (slice 3b)
+
+**Requested by the user (2026-11-06):** use PixelLab to make a set of icons for the NPCs' current
+actions and their pressing needs. This lifts two items from 4.2 Defer: "new icons (hunger, rest)"
+and the "next want" thought bubble (`showNpcIntentBubbles`). Paid art approved for this set; the
+user asked for icons generated several to an image (grid extract, memory note
+`pixellab-grid-extract`).
+
+### 9.1 Art
+
+One consistent 16×16 set, the size of the existing UI icons (`clipboard`, `talk`,
+`mark-question`), drawn at that size and never rescaled. Generated as grids, several icons per
+PixelLab image, then cut out with exact pixel crops and reviewed on a nearest-neighbour contact
+sheet. Files go in `assets/icons/npc-<name>.png`, so they cannot clash with the UI icons.
+
+| Group | Icon | Shows | Replaces |
+|---|---|---|---|
+| Needs | `npc-caffeine` | steaming coffee mug | `coffee_cups1` object sprite |
+| | `npc-thirst` | glass of water | `office-misc-cup` object sprite |
+| | `npc-hunger` | sandwich | text `F` |
+| | `npc-rest` | "Zz" | text `Z` |
+| | `npc-social` | two speech bubbles | `talk` |
+| | `npc-work` | monitor and keyboard | `clipboard` |
+| | `npc-curiosity` | magnifying glass | `mark-question` |
+| Actions | `npc-post` | envelope / parcel | `mail-new` |
+| | `npc-printout` | printed sheet | `mail-new` |
+| | `npc-print` | printer / copier (a use of a copier, slice 7) | — |
+| | `npc-queue` | hourglass (waiting in a queue, slice 10) | — |
+| | `npc-file` | folder (stowing a slot, slice 7) | — |
+| | `npc-blocked` | no-entry sign (urgent need, nothing permitted reachable: `leashed`) | — |
+| | `npc-noticed` | exclamation (caught someone at the desk, slice 2) | — |
+| | `fallback` | small dot | text `•` |
+
+The defaults in `npc-action-icons.js` `DEFAULT_ICONS` switch to these. A scenario's own
+`actionIcons` still win, so the lab's emoji glyphs stay until the other session opts in.
+
+### 9.2 Pressing needs
+
+A **pressing need** is a need at or below its `urgentAt` (the existing `urgentFlag`) that the NPC
+is not acting on yet: no job, a job for a different need, or a back-off after `leashed`/no target.
+It shows as the need's icon inside a thought bubble (a rounded backing with two trailing dots,
+drawn with Phaser graphics, no extra art) beside the head, offset from the action icon. When the
+NPC starts a job for that need, the bubble goes and the action icon takes over, so the same need
+is never shown twice.
+
+- One bubble per NPC: the most pressing need, lowest `level / urgentAt`, ties by need name
+  (determinism).
+- Same visibility rule as action icons: the player's room only, not while it is dark.
+- A need below half its `urgentAt` pulses slowly (the wind-up pulse at a lower rate).
+- Slice 8's speech bubbles hide it while the NPC talks.
+- Opt-in per scenario: `showPressingNeeds: true` (schema; the parked `showNpcIntentBubbles` is
+  renamed to it, the validator warns on the old name). Off by default, because in a mission it
+  telegraphs when someone is about to leave the desk, which changes how hard a window is to catch.
+  `test_needs_sims` turns it on; the lab decides for itself.
+- `getState` already returns `levels`; it gains `pressing: { need, ratio } | null`, worked out in
+  the needs system from its own `urgentAt` so the icon module does not read needs config.
+
+### 9.3 Size, order, tests
+
+About 70 lines: the icon module (defaults, thought bubble, pulse), `getState.pressing`, schema
+and validator rename. Build after slice 7 and before slice 8, since 8's bubbles must hide it.
+Tests: node, `pickIconEntry` returns the new defaults and a scenario entry still wins;
+`pressing` picks the lowest ratio and clears when a job for that need starts; no bubble with
+`showPressingNeeds` off. Showcase: the option on, and a README row. Live: screenshots of each need
+bubble and of the bubble handing over to the action icon as the NPC leaves; then the lab
+regression (its scenario does not opt in, so its icons should be unchanged).
