@@ -706,6 +706,7 @@ const vmSteps = createVmSteps({
       const seen = new Set();
       const seenLines = new Set();
       let staleLines = 0;
+      let lastLine = null;
       let exhaustedBranches = false;
       let turns = 0;
       let endingAccepted = false;
@@ -730,13 +731,21 @@ const vmSteps = createVmSteps({
           return st && st.dialogue ? st.dialogue : null;
         });
         if (!d) break;
+        const dialogueKey = [d.speaker, d.text, d.awaitingChoice, d.canContinue, (d.choices || []).length].join('|');
         if (d.text) {
           const line = `${d.speaker || ''}: ${d.text}`.trim();
           // Hub conversations re-tell the same lines forever. Once nothing new
           // has been said for a while, the branches are spent — leave, rather
           // than burning the whole turn budget as Maya and Derek both did.
-          if (seenLines.has(line)) { staleLines += 1; } else { staleLines = 0; seenLines.add(line); }
-          transcript.push(line);
+          // The panel keeps showing the last line while choices are up and again when the
+          // conversation ends, and a continue can still be pending, so the same line is read
+          // on consecutive turns. The player sees it once: record it once. (A hub that
+          // really repeats a line has the player's choice echo between the two.)
+          if (line !== lastLine) {
+            if (seenLines.has(line)) { staleLines += 1; } else { staleLines = 0; seenLines.add(line); }
+            transcript.push(line);
+            lastLine = line;
+          }
           if (staleLines >= 8) { exhaustedBranches = true; break; }
         }
 
@@ -769,6 +778,20 @@ const vmSteps = createVmSteps({
         } else {
           break;
         }
+        // waitForDialogue resolves at once while the old line still shows a Continue
+        // button, so wait for the panel to actually change (or close) before reading
+        // again; otherwise the same line is read, and a turn spent, on every pass.
+        await page.evaluate((k) => new Promise(resolve => {
+          const t0 = Date.now();
+          const tick = () => {
+            const m = window.MinigameFramework && window.MinigameFramework.currentMinigame;
+            const st = m && window.__test.minigame.getState();
+            const dd = st && st.dialogue;
+            const now = dd ? [dd.speaker, dd.text, dd.awaitingChoice, dd.canContinue, (dd.choices || []).length].join('|') : 'closed';
+            if (now !== k || Date.now() - t0 > 3000) resolve(); else setTimeout(tick, 50);
+          };
+          tick();
+        }), dialogueKey).catch(() => {});
         await page.evaluate(() => window.__test.waitForDialogue({ timeoutMs: 15000 })).catch(() => {});
         await pause(speed.dialogue);
       }
