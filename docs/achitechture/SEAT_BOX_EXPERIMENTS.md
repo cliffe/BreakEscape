@@ -2,6 +2,9 @@
 
 Date: 2026-11-06. Status: experiments done, recommendation below; engine change not made.
 
+> **Superseded in part (user, Q0, 2026-11-06):** office chairs keep their own 18x8 body; the 12x8
+> shrink and the empty chair's `keep` are dropped. The plan of record is `SEAT_BOX_PLAN.md`.
+
 Option G: while someone sits, their collision box (and the chair's) shrinks to a small block
 at the centre of the chair's castor base. Desks keep a box of their own. A chair rolls in
 until the block meets the desk's box and physics stops it there. Desks stay ordinary table
