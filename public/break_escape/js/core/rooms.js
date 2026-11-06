@@ -721,6 +721,21 @@ function registerSpriteVariantListeners(sprite, scenarioObj, roomId) {
     }
 }
 
+/**
+ * Put a scenario object into a table group: the group's item list, the room's objects, and
+ * its spriteVariants listeners. Ungrouped scenario objects get their listeners where they are
+ * stored (setDepthAndStore callers); grouped ones used to be pushed straight into the group and
+ * never got them, so a grouped object kept its first texture until a reload (m02's ward
+ * terminal). Depth is still set by the caller and the final group pass; a swap changes only the
+ * texture, not the depth or the group order.
+ */
+function addScenarioItemToTableGroup(group, sprite, type, scenarioObj, roomId) {
+    sprite.elevation = 0;
+    group.items.push({ sprite, type });
+    rooms[roomId].objects[sprite.objectId] = sprite;
+    registerSpriteVariantListeners(sprite, scenarioObj, roomId);
+}
+
 // ===== END: ITEM POOL MANAGEMENT (PHASE 2 IMPROVEMENTS) =====
 
 // Static tileset props that become 8-direction swivel props at runtime.
@@ -2217,9 +2232,7 @@ export function createRoom(roomId, roomData, position) {
                             // else: fromTableLayer && no explicit coords → keep Tiled position
 
                             // Depth will be recalculated by the final tableGroups pass
-                            sprite.elevation = 0;
-                            group.items.push({ sprite, type: 'scenario_table_item' });
-                            rooms[roomId].objects[sprite.objectId] = sprite;
+                            addScenarioItemToTableGroup(group, sprite, 'scenario_table_item', tableItemObj, roomId);
                         }
                     });
 
@@ -2301,13 +2314,10 @@ export function createRoom(roomId, roomData, position) {
                                 // Table items don't need elevation - they're grouped with the table
                                 const itemDepth = group.baseDepth + (group.items.length + 1) * 0.01;
                                 sprite.setDepth(itemDepth);
-                                
-                                // No elevation for table items
-                                sprite.elevation = 0;
-                                group.items.push({ sprite, type: sourceLayer });
-                                
-                                // Store table items in objects collection so interaction system can find them
-                                rooms[roomId].objects[sprite.objectId] = sprite;
+
+                                // No elevation for table items; stored in the room's objects so
+                                // the interaction system can find them; variant listeners too
+                                addScenarioItemToTableGroup(group, sprite, sourceLayer, scenarioObj, roomId);
                             }
                         }
                     } else {
