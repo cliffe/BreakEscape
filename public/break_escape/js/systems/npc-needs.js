@@ -1021,6 +1021,9 @@ export class NPCNeedsSystem {
         if (s.mode === 'job' && s.job?.windupUntil) {
             if (this.clockMs < s.job.windupUntil) return;
             s.job.windupUntil = 0;
+            // Slice 18b-i: a magnet picked up, finished or emptied during the windup is a `gone`
+            // turn-back now, not a silent no_approach failure (and its fail cooldown) on leaving
+            if (s.job.magnet && (!this._shownMagnets()?.has(s.job.targetId) || this._servingsLeft(s.job.targetId) <= 0)) { this._turnBack(s, 'gone'); return; }
             this._leavePost(s);
             return;
         }

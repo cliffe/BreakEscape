@@ -243,6 +243,24 @@ test('a pickup: walkers turn back gone, the one eating finishes at once, knowled
     assert.equal(o.sys.getState('bob').job?.targetId, 'cake', 'seen again');
 });
 
+test('a pickup during the windup: the walker turns back gone when it would leave (no job_failed, no cooldown), and a re-drop tempts it again', () => {
+    const o = office({ ann: { rec: { needs: hunger(60) } } }, { objects: [cake({}, { servings: 2 })] });
+    o.w.world.windupMs = () => 3000;
+    o.sys.scanMagnets();
+    o.know('ann');
+    o.ticks(1);
+    assert.ok(o.sys.states.get('ann').job?.windupUntil, 'ann is winding up at her desk');
+    o.pickUp();
+    o.ticks(useTicks(4));
+    assert.deepEqual(o.evs('turned_back').map(e => [e.npc, e.reason]), [['ann', 'gone']]);
+    assert.equal(o.evs('job_failed').length, 0, 'no silent no_approach failure');
+    assert.equal(o.sys.states.get('ann').cooldowns.cake, undefined, 'no fail cooldown on the cake');
+    o.drop('office', { x: 150, y: 500 });
+    o.w.pos.ann = { x: 100, y: 500, roomId: 'office' };
+    o.ticks(2);
+    assert.equal(o.sys.getState('ann').job?.targetId, 'cake', 'seen again and tempted');
+});
+
 test('a reload: servings come from the global; 0 servings with the item still out finishes it at once', () => {
     const o = office({ tom: { rec: { needs: hunger(60) } } }, { objects: [cake()], globals: { cake_servings: 1 } });
     o.sys.scanMagnets();
