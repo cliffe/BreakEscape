@@ -802,12 +802,14 @@ Control how observation text is displayed using `observationDisplay`:
 | `complete_task` | `taskId` | Marks an objective task complete |
 | `unlock_object` | `objectId` | Unlocks a world object |
 | `unlock_door` | `room_id` | Unlocks a door connection |
-| `give_item` | `item` | Adds an item to inventory. The server only accepts it if a takeable world object (or start item, or NPC `itemsHeld` entry) has the same `type` and `id`: add a hidden `active: false`, `takeable: true` object to a room. The validator errors when none exists and warns when it only sits in a locked room |
+| `give_item` | `item` | Adds an item to inventory. Give the item its own `id` and it is a **declared grant** — the server allowlists the scenario's own `give_item` actions, so it needs **no** world object (see the note below). |
 | `confirm_action` | `text`, `onConfirm` | Shows confirmation dialog, executes nested actions on confirm |
 | `tint_objects` | `roomId`, `textureKey`, `color`, `pulse` | Tints all sprites of a type in a room |
 | `show_end_screen` | `title`, `body`, `buttonText`, `outcome` | Shows scenario end screen |
 
 **Note**: The deprecated `onInteract` field (object format) is still functional but will log warnings. Migrate to `triggerOnInteract` + `observationDisplay` for new scenarios.
+
+**Declared grants (the compatible way to `give_item`)**: a `give_item` whose `item` has an `id` (or `opens_lock`) is a *declared grant*. The server reads the scenario's own `give_item` actions as its allowlist, so the grant needs **no** world object — do **not** add a hidden `active:false`/`takeable:true` twin (the old pattern): the validator now errors on a twin that shares the grant's `id` ("a declared grant needs no world object"). Put a granted container's files in the grant's own `contents`; the server serves them from the held item, and a nested password archive unlocks against it. The `give_item` must sit on a path the engine actually runs — `timers[].actions`, an object's `triggerOnInteract` / `onInteract.actions`, esd-button actions, or a nested `confirm_action.onConfirm` — **not** under `eventMappings` (never run; the validator reports it) or `flagRewards` (server-delivered, named by `item_name`/`item_type` with no `item` hash). There is no trigger check: a declared grant can be claimed from the first second, so never grant a key or lock tool this way (the validator warns). `BreakEscape::DeclaredGrants` (`lib/break_escape/declared_grants.rb`) is the single definition the server, the validator (`check_give_item_collectible`) and the dungeon-graph generator share, so all three agree on what a grant is. Full design: `docs/achitechture/DECLARED_GRANTS_PLAN.md`. The ink `#give_item:<type>:<id>` tag is a separate path (an item out of the speaking NPC's `itemsHeld`) and is unaffected.
 
 ### Container Objects
 
