@@ -2,11 +2,11 @@
 
 Status: **plan, 2026-11-05, revised after adversarial reviews R1 and R2
 (`OFFICE_LIFE_PLAN_REVIEW_R1.md`, `OFFICE_LIFE_PLAN_REVIEW_R2.md`; outcomes in sections 5 and 6),
-and amended the same day for social compatibility and a room leash (section 7, new slice 2a).
-Nothing here is built, except that the core of slice 2 (an own-desk use is not a leave) is being
-fixed in `npc-needs.js` by another agent and lands separately (2.11).** Line numbers in
-`npc-needs.js` are as of commit e20f40ca9 and will drift with that fix; the function names are
-the stable reference. Engine changes
+and amended the same day for social compatibility and a room leash (section 7, new slice 2a),
+then revised on 2026-11-06 after the amendment's review (`OFFICE_LIFE_PLAN_REVIEW_AMEND1.md`;
+outcomes in section 8). Slices 0, 1 and 2 have landed (b642594be, 5b1749a05, b670d2fcd and
+b6b579e39); slice 2a is next.** Line numbers drift as slices land; the function names are the
+stable reference. Engine changes
 need the user's approval (AGENTS.md); so does any new art or audio (marked **[approval]**). Builds on the needs system (`NPC_NEEDS_SYSTEM.md`), seating (`SEATING.md`) and the
 showcase `scenarios/test_needs_sims`, which becomes the test bed for every slice below.
 
@@ -215,6 +215,15 @@ mis-hit. An object can name its role instead with `officeType` (a preset id), wh
 `affordance: false`. So the 49 takeable `phone` items, the `filing_cabinet_locked*` puzzles and
 `printer_3d2` stay as they are; a desk phone, a filing cabinet NPCs may use and a post tray are
 opted in with `officeType`.
+
+**Only scenario-declared objects (R3-M1, a condition of building this slice).** Unreserved Tiled
+items are registered in `rooms[roomId].objects` with a synthetic `scenarioData` whose `type` is
+the image name without digits (`core/rooms.js` about 2736-2741), so decor `laptop6.png` reads as
+`type: "laptop"` and would become a work target. `resolveAffordance` therefore gives no preset to
+an object without a scenario `id` (or with `decor: true`): presets apply only to objects declared
+in `scenario.rooms[*].objects`. Node test: a decor-shaped sprite (`{ type: 'laptop',
+takeable: false }`, no id) resolves to no affordance. Live: the slice-4 run lists every object
+with a resolved preset through `window.__test` and compares the list with the validator's.
 
 Preset table (one value per cell; the values are `test_needs_sims`'s hand-wired ones where it has
 the object, so the parity test below has few overrides). A blank `useFrom` means the preset sets
@@ -707,11 +716,12 @@ for queues** (slice 10): there, the NPC using the machine pairs with the first N
 says nothing. (The alternative, `capacity: 2` on a coffee station, changes Chris's and Melanie's
 coffee timing in the lab; open question 19.)
 
-**Who may pair (amendment, 7.3).** Only compatible NPCs pair: a per-NPC `social: { groups,
-avoids }`, where an avoidance (an NPC id, `group:<name>`, `"*"`, or an entry with a
-`requireGlobal` condition) is declared one way and acts both ways, and also stops the two sharing a
-capacity-2 object (the second waits, `npc_avoided:<npcId>`). A group mismatch only stops chat.
-With no `social` anywhere, everyone pairs as above. When a line is overheard, the system also emits
+**Who may pair (amendment, 7.3).** Only compatible NPCs pair: a per-NPC `needsCompany: { groups,
+avoids }` (named so after review m9: the scenario-level `social` block is the social-engineering
+contract, and `social` is also a need name), where an avoidance (an NPC id, `group:<name>`, `"*"`,
+or an object entry `{ npc | group, requireGlobal }`) is declared one way and acts both ways, and
+also stops the two sharing a capacity-2 object (the second waits, `npc_avoided:<npcId>`). A group
+mismatch only stops chat. With no `needsCompany` anywhere, everyone pairs as above. When a line is overheard, the system also emits
 `npc_overheard:<speakerId>`. This adds about 95 lines to the slice.
 
 **Timing fits the dwell; the dwell does not stretch.** Bubbles get their own timing, not the
@@ -792,9 +802,13 @@ goes home with a 60 s cooldown on that object. About 120 lines. Queue order is c
 with a `chatter` pool pairs with the first queued NPC within 1.5 tiles of the approach cell, using
 slice 8's turn-taking; about 20 lines in the pairing code. This is how coffee-machine chatter
 happens at capacity-1 machines, and only between compatible NPCs (7.3): an avoided NPC still
-queues, in silence (about 10 lines). Queue cells are honoured by the leash (7.2) because the
-machine itself is a permitted object. Validator about 20 lines: a queue cell within one tile of a door
-(it would sit in the doorway), a cell that does not snap to a walkable tile. Schema about 10
+queues, in silence (about 10 lines). **Queue cells and the leash (review m8):** a queue that runs
+through a doorway can put a cell in a room that is forbidden to a queuer (7.2), where the ring
+makes it unreachable and the queuer would stall until its job times out. Queue places skip cells
+in rooms forbidden to that NPC (the queuer takes the next permitted cell, or waits at its post if
+none is left). Validator about 25 lines: a queue cell within one tile of a door (it would sit in
+the doorway), a cell that does not snap to a walkable tile, a cell in a room forbidden to an NPC
+that needs the machine (warning). Schema about 10
 lines (`affordance.queue`). About 180 lines.
 
 **Why it matters for gameplay.** A queue lengthens an absence in a way the player can read from
@@ -991,8 +1005,8 @@ Described as gameplay states only; what each one yields is scenario wiring.
 | Owner away, screen open | workstation-state (exists), the own-desk fix (2.11), indicators (2.3), traits (2.6) | none beyond those |
 | Owner queuing or on a long routine | queues (2.5), routines (2.2) | `npc_left_post` carries `expectedAwayMs`: from slice 2, walk estimate there and back plus the dwell; from slice 9, summed over a routine's steps; from slice 10, plus the queue position times the dwell. A scenario hint or an NPC line can say "back in a minute" |
 | Document waiting on a copier tray | reveal slots (2.2 Part A) | none beyond Part A. Each takeable slot is one beat (constraint 1.2.2); a pool gives a few; non-takeable slots that read in place (`readDisplay: "gameDisplay"`) repeat for ever. Taking a slot an NPC is fetching emits `npc_job_failed` with `reason: "item_gone"` (the emit is added in Part A; today `_abortJob` emits nothing), which a scenario can map to the owner noticing |
-| Item left on a desk | traits (`tidiness`), Part A's slots, direct show and hide, and `stow` | a declared item with `leftBehindBy: "<npcId>"` and its own `revealOnGlobal` (a slot by Part A's definition). On a real leave (2.11's rules), a seeded roll `roll(npcId, 'left:' + s.leaveCount) < 1 - tidiness` (`leaveCount` from slice 9; slice 11 adds it if 9 has not landed) reveals it with `showRevealedObject`; on return the owner **stows** it (`hideRevealedObject`, global false, no server call), so it can be left again on a later leave. If the player takes it, it is gone for good: a single beat, like a slot. A reload with it revealed stows it on sight (Part A); the owner is at the desk after a reload, so that matches. About 45 lines |
-| Pile waiting to be shredded | an object with `pileCount`, a `shred` routine that reduces it | about 50 lines. `spriteVariants` watch globals only (`core/rooms.js:688-722`), so the count is published as a global (`<id>_pile`, OQ3's opt-in `publishGlobal`) and sprite variants key on it; this one count is saved, which is fine (it self-heals by the routine). Sprites per pile level: try existing paper sprites (`notes_ledger1`, `supply_boxes1`) first, else **[approval]** |
+| Item left on a desk | an item field `leftBehindChance` (R3-M3: not the `tidiness` trait, which is slice 6 and not chosen), Part A's slots, direct show and hide, and `stow` | a declared item with `leftBehindBy: "<npcId>"`, `leftBehindChance` (0-1) and its own `revealOnGlobal` (a slot by Part A's definition). On a real leave (2.11's rules), a seeded roll `roll(npcId, 'left:' + s.leaveCount) < leftBehindChance` (`leaveCount` from slice 9; slice 11 adds it if 9 has not landed; a later slice 6 may fill `leftBehindChance` from `tidiness` without changing the roll) reveals it with `showRevealedObject`; on return the owner **stows** it (`hideRevealedObject`, global false, no server call), so it can be left again on a later leave. If the player takes it, it is gone for good: a single beat, like a slot. A reload with it revealed stows it on sight (Part A); the owner is at the desk after a reload, so that matches. About 45 lines |
+| Pile waiting to be shredded (**moved out of slice 11 to a slice after 9**, R3-M3: only a `shred` routine visits the shredder) | an object with `pileCount`, a `shred` routine that reduces it | about 50 lines. `spriteVariants` watch globals only (`core/rooms.js:688-722`), so the count is published as a global (`<id>_pile`, OQ3's opt-in `publishGlobal`) and sprite variants key on it; this one count is saved, which is fine (it self-heals by the routine). Sprites per pile level: try existing paper sprites (`notes_ledger1`, `supply_boxes1`) first, else **[approval]** |
 | Door held for someone carrying something | the lab's tailgate wiring (route + `challengeOnSight`, `data.playerNearby`) | generalise later; no engine work now |
 
 Rules for scenario design (not engine): every window must be readable from the floor (an action
@@ -1000,22 +1014,21 @@ icon, an indicator, a queue, an item in hand), must close again, and must reopen
 because need state resets. A window built on a **takeable** item is the exception: it is a single
 beat by design, and the scenario says so.
 
-**Engine size.** Left-behind items about 45, piles about 50, queue-aware `expectedAwayMs` about
-15, validator about 30 (`leftBehindBy` NPC exists and has a `needsHome`; the item has its own
-`revealOnGlobal`; a readable left-behind `notes*` item reads in place, Part A's rule; pile
-variants cover every level), schema about 15 (`leftBehindBy`, `pileCount`, `publishGlobal`).
-About 155 lines.
+**Engine size (slice 11, scoped by R3-M3 to left-behind items and queue-aware
+`expectedAwayMs`).** Left-behind items about 45, queue-aware `expectedAwayMs` about 15, validator
+about 20 (`leftBehindBy` NPC exists and has a `needsHome`; `leftBehindChance` in 0-1; the item has
+its own `revealOnGlobal`; a readable left-behind `notes*` item reads in place, Part A's rule),
+schema about 10 (`leftBehindBy`, `leftBehindChance`). About 90 lines. Piles (`pileCount`,
+`publishGlobal`, about 50 more) wait for a slice after 9.
 
-**Visible change.** A badge or a phone sometimes sits on an empty desk; a paper pile shrinks after
-someone visits the shredder.
+**Visible change.** A badge or a phone sometimes sits on an empty desk.
 
-**Tests.** Node: left-behind roll is seeded and respects `tidiness`; the owner's return stows the
-item and a later leave can reveal it again; a taken item never comes back; reload with the item
-revealed stows it on load, and a later leave can reveal it again (no listener needed); pile count
-drives the global and decreases per `shred` use.
-`test_needs_sims`: Tom (`tidiness: 0.3`) has a declared ID badge (`id_badge` sprite, exists) on
-his desk with `leftBehindBy: "tom"`; a shred pile beside the kitchen door; objectives "Spot something left on an
-empty desk" and "Watch the pile go down". Live: screenshots of the badge on the empty desk and
+**Tests.** Node: left-behind roll is seeded and respects `leftBehindChance`; the owner's return
+stows the item and a later leave can reveal it again; a taken item never comes back; reload with
+the item revealed stows it on load, and a later leave can reveal it again (no listener needed).
+`test_needs_sims`: Tom has a declared ID badge (`id_badge` sprite, exists) on his desk with
+`leftBehindBy: "tom"` and `leftBehindChance: 0.7`; objective "Spot something left on an empty
+desk" (no pile, no "Watch the pile go down"). Live: screenshots of the badge on the empty desk and
 gone after Tom's return; take it once and check it never reappears after a reload.
 
 ### 2.11 Noticing the player at the desk (proposal 10)
@@ -1023,7 +1036,9 @@ gone after Tom's return; take it once and check it never reappears after a reloa
 **Built: 2026-11-06 (slice 2, commits b670d2fcd, b6b579e39).** `npc_caught_at_post`, checked only
 while the returning NPC is in its home room; `expectedAwayMs` and proximity on
 `npc_left_post`, proximity on `npc_returned_post`; `needsStop` keeps the home stop for an at-post
-job in every phase and for `returning && atPost` (R3-M2); the install-time workstation reset;
+job in every phase and for `returning && atPost` (R3-M2, a condition of building slice 2; in code
+at `seating.js` `needsStop`, about line 822, test in `seating.test.mjs`); the install-time
+workstation reset;
 `inMinigame` read from the open minigame's params (`lockable`, `sprite`, `containerItem` carry the
 object), so `interactions.js` was not touched; showcase objective `see_caught` with a bark on
 Tom. **The plan was wrong twice.** (1) A seated NPC's body sits about 30 px off its home cell, so
@@ -1278,10 +1293,10 @@ are engine, validator and schema lines, excluding tests. S = under 100, M = 100-
 
 | # | Slice | Size | Depends on | Who benefits first |
 |---|---|---|---|---|
-| 0 | Own-desk use is not a leave (core of 2.11) | ~30 | none | **landing separately** (another agent, `npc-needs.js`); listed so the order is clear, not part of this plan's work |
+| 0 | Own-desk use is not a leave (core of 2.11) | ~30 | none | **built** (b642594be) |
 | 1 | Tick-cost hygiene (2.0), plus the sims node fixture | S, ~90 (+ ~150 test fixture) | none | every needs scenario; unblocks larger casts; the fixture is what slices 4, 7 and 9 test on |
 | 2 | Caught at the desk; `expectedAwayMs`; workstation reload fix; seated through an own-desk use (2.11) | S, ~60 | 0 | lab: Chris returns to find the player at `staff_pc` during the keylogger beat; stale "away" text after a reload goes; no stand-and-sit hop at the desk |
-| 2a | Room leash and private objects (7.2; amendment 2026-11-05, requested) | M, ~200 | 1 (fixture, back-off) | any mission that gives needs to NPCs with their own rooms (m01's Derek kept out of Maya's office); sims: colleagues stop working at each other's desks, the lounge is Rosa's and Grace's |
+| 2a | Room leash and private objects (7.2 as revised in section 8; amendment 2026-11-05, requested) | M, ~230 | 1 (fixture, back-off); build after slice 2's edits are committed (same functions) | any mission that gives needs to NPCs with their own rooms (m01's Derek kept out of Maya's office); sims: colleagues stop working at each other's desks, the lounge is Rosa's and Grace's |
 | 3 | What the player sees: sprite icons, item in hand, seated typing bob, room-limited use sounds (2.12) | M, ~205 | none (1 helps) | every needs scenario: deliveries, coffee runs and desk work become legible. New icons for hunger and rest, use animations, office sounds and room tone wait for **[approval]** |
 | 4 | Affordance presets (2.1) | M, ~150 | 1 (fixture) | `test_needs_sims` drops to a short list of per-object overrides; new scenarios get an office from `type` alone |
 | 5 | Workstation indicators: a second emitter record per workstation (2.3) | S, ~65 | 0, 2 | lab: Melanie's open screen and Chris's locked one read from across the lit open plan |
@@ -1290,7 +1305,7 @@ are engine, validator and schema lines, excluding tests. S = under 100, M = 100-
 | 8 | Speech bubbles and pairing at capacity-2 objects (2.4), with social compatibility (7.3) | L, ~365 | 1, 3 (room/dark rule) | sims: cooler chat, and an outcast contractor nobody chats with. Lab: none directly (its coffee station is capacity 1; its chatter comes with slice 10) |
 | 9 | Routines, with `visit` pairing (2.2 Part B) | L, ~450 | 4, 7; 8 for `visit` bubbles | sims: print and deliver, fetch the post. Lab: staff gain reasons to leave the desk other than coffee; the keylogger beat holds because a `$home` step still emits `npc_used:staff_pc` |
 | 10 | Queues, and chatter in the queue between compatible NPCs (2.5, 7.3) | M, ~180 | 1, 4; 8 for queue chatter | lab: a queue at the coffee station stretches Chris's absence in a way the player can see, and the player can overhear the queue (`overheard`), a place for a social-intel grant in the awareness build |
-| 11 | Window helpers: left-behind items, piles, queue-aware `expectedAwayMs` (2.10) | M, ~155 | 6, 7; 9 for `leaveCount` (or adds it); 10 for the queue part | lab and awareness: more than one kind of window per office without scripting |
+| 11 | Window helpers: left-behind items (`leftBehindChance`, not `tidiness`) and queue-aware `expectedAwayMs` (2.10; scoped by R3-M3, piles move after slice 9) | S, ~90 | 7; adds `leaveCount` if 9 has not landed; 10 for the queue part | lab and awareness: more than one kind of window per office without scripting |
 | 12 | Schedule, preemption, leave/arrive, desk phone (2.8, 2.9) | L, ~490 | 9 | longer scenarios with a stand-up or a fire drill; lab: optional later move of Len's badge round onto a schedule |
 | 13 | Consumables and refills (2.7) | M, ~160 | 9 | deferred until a scenario asks |
 
@@ -1305,13 +1320,15 @@ workstation with an owner (the lab's two PCs, and the showcase's three once it o
 which it does in that slice on purpose). Slice 7 is the first that changes where items end up, and
 only for slots: plain items are still consumed. Slice 2a (amendment, section 7) changes what NPCs
 choose, but only for NPCs, rooms and objects that carry the new leash or `private` fields; slice
-8's avoidance changes who shares a cooler only for NPCs with `social`. Slice 9 is the first that
+8's avoidance changes who shares a cooler only for NPCs with `needsCompany`. Slice 9 is the first that
 changes choices for NPCs that list routines.
 
 **The user's chosen slices (2026-11-05): 1, 2, 2a (requested with the amendment), 3, 4, 5, 7, 8,
-10, 11.** About 1,715 lines plus the 150-line fixture (7.4).
+10, 11.** About 1,685 lines plus the 150-line fixture (7.4, adjusted in section 8: slice 2a up
+about 30, slice 10 up about 5, slice 11 down about 65).
 
-`test_needs_sims` grows by no rooms (the copier and post tray go in the office, the start room, so
+`test_needs_sims` grows by no rooms (the room-leash route proof of slice 2a uses its own small
+scenario, `test_needs_leash`, section 8; the copier and post tray go in the office, the start room, so
 they are always loaded and no objective waits on a door) and at most one NPC (an outcast contractor
 from slice 8, who also queues in slice 10 and can serve refills later). Keep the five current staff
 and their timings, so the README's live-proof table stays valid apart from the changes slices 1, 2
@@ -1445,16 +1462,27 @@ Added with the amendment of 2026-11-05 (section 7):
     group mismatch stops chat only.
 21. **One-way or mutual avoidance?** **Declared one way, acts both ways**, so one line on the
     distrusted NPC is enough.
-22. **NPCs with no `social`.** **Compatible with everyone**, so slice 8 behaves as written until a
-    scenario opts in.
+22. **NPCs with no `needsCompany`.** **Compatible with everyone**, so slice 8 behaves as written
+    until a scenario opts in.
 23. **Do scripted moves and route patrols honour the leash?** **No: scripts win, as with
     suspend.** A needs NPC a script leaves inside a forbidden room walks out by the shortest
     route; only its targets and the rooms it crosses on the way are restricted.
-24. **Leash conditions on globals** (a room becomes private only after a story beat)? **Not in
-    slice 2a: the leash is static. Add `requireGlobal` on `needsPrivateTo` later if a mission asks;
-    avoidances already take it.**
+24. **Leash conditions on globals** (a room becomes private only after a story beat)? **Decided by
+    the user, 2026-11-06: the leash is fixed per NPC, with no global condition.** (Review m15 asked
+    whether "sometimes leash an NPC" meant some NPCs or some times; it means some NPCs.) No
+    `requireGlobal` on `needsRooms`, `needsAvoidRooms` or `needsPrivateTo`; avoidances (7.3) keep
+    theirs.
 25. **Should presets (slice 4) make desk PCs private?** **No: `private` is opt-in per object, since
     it changes which desk an NPC uses (README finding F); revisit with OQ8.**
+
+Added after the amendment's review (section 8):
+
+26. **Does `private` stop deliveries (`accepts`) or only uses (`satisfies`)?** (Review m7.) A desk
+    that accepts deliveries is a drop point: slice 9's Sanjay delivering a printout to `tom_pc`
+    would be refused if `private` covered carries. **Uses only: `private` and `owners` are read
+    when the object is chosen for a `satisfies` need; any NPC may still deliver to it. Room rules
+    (forbidden rooms) apply to both.** An author who wants a desk nobody else drops things on can
+    leave `accepts` off it.
 
 ---
 
@@ -1611,10 +1639,14 @@ has its tick cache); function names are the stable reference.
   (291). `findWorldPath` (347-386) already applies **per-search constraints and removes them
   straight after `calculate()`**: `avoidAdditionalPoint` for the player's NPC avoidance (313-340)
   and `setAdditionalPointCost` for prefer-avoid objects (403-409). So a route *can* be kept out of
-  a room with the mechanism already in use; no fallback heuristic is needed. Two searches must
-  carry it: the needs system's synchronous reachability check (`reachable`, `npc-needs.js`
-  914-941) and the walk itself, which the behaviour plans separately after `goToAndStay`
-  (`npc-behavior.js` 2448) in its waypoint code (1053) and its stall repath (1282).
+  a room with the mechanism already in use; no fallback heuristic is needed. Two kinds of search
+  must carry it: the needs system's synchronous reachability check (`reachable`, `npc-needs.js`
+  `createEngineWorld`) and the walk itself. `goToAndStay` (`npc-behavior.js` about 2448) only
+  writes a one-waypoint patrol; **the walk is planned in `chooseWaypointTarget` (about 1417)**,
+  or in `chooseWaypointTargetMultiRoom` (about 1546) for a `patrol.multiRoom` route, and
+  re-planned after collision avoidance inside `updatePatrol` (about 1053) and by the stuck
+  recovery (`_recoverFromStuck`, about 1282). All four are planning points (review M1; the
+  amendment named only 1053 and 1282, which would have let the first plan take the short cut).
 - **Which room a point is in.** The player's room is the room whose floor (its rectangle minus
   the top two tile rows of wall) holds the feet (`core/rooms.js` `updatePlayerRoom` 3052-3080).
   An NPC's room uses the full rectangle, first match (`npc-behavior.js` `updateCurrentRoom`
@@ -1665,34 +1697,72 @@ line on the room instead of a deny list on every other NPC.
 
 **Rules.**
 - An NPC's forbidden rooms are: every room outside `needsRooms` (when given), every room in
-  `needsAvoidRooms`, and every room whose `needsPrivateTo` does not list it. Its home room (the
-  room of `needsHome`) is never forbidden; the validator errors if an author forbids it.
-- **Candidates.** A new `_permitted(s, o)`: the object's room is not forbidden, and the object is
-  not `private` or the NPC is one of its owners. It is applied in `_useCandidate` (the options
-  filter, 567) and in `_carryCandidate` (items, 581; accepting targets, 585). The home-object
-  preference is unchanged.
-- **Routes.** `reachable` and the walk both pass `avoidRooms` (the forbidden rooms minus the room
-  whose floor the NPC stands on, so an NPC that a script left inside a forbidden room can still
-  walk out). `findWorldPath` gains an options argument: for each **loaded** room in `avoidRooms`
-  it marks the one-cell ring round the room's floor (walkable cells only) with
-  `avoidAdditionalPoint`, runs the search, then removes **those same cells** with
+  `needsAvoidRooms`, and every room whose `needsPrivateTo` does not list it. The leash is fixed
+  per NPC (OQ24, decided): no global conditions. Its home room is never forbidden; the validator
+  errors if an author forbids it.
+- **The home room comes from scenario data, not the resolved home (review M2).** `register` sets
+  `home: null`, and an object home stays provisional (at the spawn point, `objectId: null`) until
+  its object loads; start-room NPCs register before their room's objects. So "forbidden" is a
+  per-room predicate, `_roomForbidden(s, roomId)`, evaluated when candidates are filtered, not a
+  set built at register. The home room it exempts is, in order: `needsHome.room` (coordinate
+  home); the room of the `needsHome` object once the world can find it (`getObject`); the
+  resolved home's room; the NPC record's spawn `roomId`. All four are static or settle once.
+  Room `needsPrivateTo` is read from the loaded room (the bootstrap scenario strips room fields it
+  does not list, so `createRoom` keeps `needsPrivateTo` on `window.rooms[roomId]`); an unloaded
+  room has no objects to choose and no ring to draw, so nothing is lost.
+- **Candidates.** A new `_permitted(s, o, use)`: the object's room is not forbidden, and, for a
+  use (`satisfies`), the object is not `private` or the NPC is one of its owners. It is applied in
+  `_useCandidate` (the options filter) and in `_carryCandidate` (items, and accepting targets with
+  the room rule only: `private` does not stop deliveries, OQ26). The filter runs before the
+  home-object preference, so the preference is unchanged.
+- **Routes.** `reachable` and the walk both pass `avoidRooms` (the loaded forbidden rooms).
+  `findWorldPath` gains an options argument, `{ avoidRooms }`. For each **loaded** room in it,
+  except the room whose floor holds the search's start point (so an NPC that a script left inside
+  a forbidden room can still walk out), it marks the room's **inner ring**: the outermost cells
+  of the room's own floor, by the player's floor rule (`core/rooms.js` `updatePlayerRoom`: full
+  width, from two tiles below the top to the bottom edge), corners included, with
+  `avoidAdditionalPoint`. It then runs the search and removes **those same cells** with
   `stopAvoidingAdditionalPoint` (not `stopAvoidingAllAdditionalPoints`, which would also drop the
-  player's NPC-avoid set). A ring is enough because corner cutting is off: a diagonal step needs
-  both orthogonal neighbours free, so it cannot cross a one-cell line. A ring is about a tenth of
-  the floor's cells. Rings are cached per room and cleared in `rebuildWorldGrid`. Targets are
-  never inside a forbidden room (filtered above), so a ring never seals a destination.
+  player's NPC-avoid set) **in a `finally` straight after `calculate()`**, never in the callback,
+  which runs a tick later in async mode (review m4). `calculate()` runs every queued search to the
+  end before it returns, so nothing else can search while a ring is set; the early return when
+  the grid is not ready comes before any marking.
+- **Why a ring holds (corrected, review m1).** In EasyStar 0.4.4 the no-corner-cutting test reads
+  only the grid (`isTileWalkable`), not avoid points; avoid points are checked only for the cell
+  being entered. So a diagonal step *can* pass between two avoided orthogonal neighbours. A
+  closed ring still blocks because every step changes x and y by at most one, so a path from
+  outside to inside must land on a ring cell, **provided the ring includes its four corner cells**
+  (without them a diagonal step at a corner crosses it). The grid model in `path-avoid.test.mjs`
+  must check avoid points on the entered cell only, and include a cornerless ring that leaks, so
+  the model is known to match EasyStar.
+- **Inner, not outer (review m2).** A ring round the outside of the floor would sit in the
+  neighbouring rooms' edge cells and could seal a permitted target whose approach cell lands
+  there. The inner ring lies wholly in the forbidden room, which never holds a permitted target,
+  and any route into the room crosses it.
+- **No walkability filter, no cache (review m3).** `doors.js` opens a doorway by editing the grid
+  in place and rebuilds 250 ms later, so a cached "walkable cells only" ring would miss a door
+  opened in between. An avoid point on a blocked cell does nothing, so the ring is every cell of
+  the floor's edge, computed per search from the room's position and map size (a few hundred
+  integer pairs; no cache to clear).
 - **When the constrained search fails**, the candidate is unreachable, exactly as a walled-off
   target is today: `_nearestReachable` tries the next one and slice 1's back-off applies. No
   separate "skip candidates whose path crosses a forbidden room" step is needed, because the
   search itself refuses the crossing.
-- The behaviour keeps the move's `avoidRooms` (`this._moveAvoidRooms`) for the walk's own
-  searches (1053, 1282) and clears it on arrival, on `cancelMove` (2499) and on any `goToAndStay`
-  not owned by needs. The walk home passes it too. **Scripted moves and route patrols ignore the
-  leash** (scripts win, the same rule as `onExternalMove`).
-- **Owners** of a private object: `affordance.owners` when given, else the `ownerOf` rule
-  (`screenOwner`, else the NPCs whose `needsHome` is the object). npc-needs builds the map from
-  `world.getNpc` records in `registerAll`; it does not import `workstation-state.js`, so no test
-  harness copy list changes.
+- The behaviour keeps the move's `avoidRooms` (`this._moveAvoidRooms`) and passes it from **one
+  helper** used at all four planning points (`chooseWaypointTarget`,
+  `chooseWaypointTargetMultiRoom`, the collision repath in `updatePatrol`, `_recoverFromStuck`;
+  review M1). It is cleared on arrival, on `cancelMove` and on any `goToAndStay` not owned by
+  needs; **a needs move without `avoidRooms` keeps the current value** (review m5: seating's chair
+  fetch is a needs-owned move with no rooms, and stays in the NPC's own room). The walk home
+  passes it too. **Scripted moves and route patrols ignore the leash** (scripts win, the same rule
+  as `onExternalMove`). Node test: a needs `moveTo` followed by `chooseWaypointTarget` passes the
+  rooms to `findWorldPath`.
+- **Owners** of a private object: `affordance.owners` when given, else the `ownerOf` rule:
+  `screenOwner`, else the first NPC whose `needsHome` is the object (one owner, matching
+  `workstation-state.js` `ownerOf` and the validator). `screenOwner` is on the object, not on the
+  NPC record (review m6), so the adapter's `describe` gains `screenOwner`, and the `needsHome`
+  test reads the registered NPC records (`world.getNpc`). npc-needs does not import
+  `workstation-state.js`, so no test harness copy list changes.
 - **Private is about NPC needs only.** The player can still use the object; workstation-state is
   unchanged (a private PC still locks or stays open when its owner leaves); seating is unchanged
   (a non-owner never picks the object, so never sits there). Marking desks private closes README
@@ -1703,12 +1773,13 @@ line on the room instead of a deny list on every other NPC.
   `npc_needs_leashed:<npcId>` with the same payload, once per job start, or once per urgent
   episode when nothing was left to choose. The debug overlay shows "leashed" on the job label.
 
-**Engine.** `npc-needs.js` about 65 lines (forbidden set at register, `_permitted`, the owners
-map, `avoidRooms` to `reachable` and `moveTo`, the log and event). `npc-behavior.js` about 15
-(store, pass and clear `_moveAvoidRooms`). `npc-pathfinding.js` about 40 (options argument, ring
-cells and cache, exact removal). Validator about 55, schema about 25 (`needsRooms`,
-`needsAvoidRooms` on the NPC; `needsPrivateTo` on the room; `affordance.private`,
-`affordance.owners`). **About 200 lines, M.**
+**Engine.** `npc-needs.js` about 80 lines (`_roomForbidden` with the scenario-data home room,
+`_permitted`, owners, `avoidRooms` to `reachable` and `moveTo`, the log and event).
+`npc-behavior.js` about 20 (store, clear, and one helper used at the four planning points).
+`npc-pathfinding.js` about 35 (options argument, inner-ring cells, exact removal in a `finally`).
+`core/rooms.js` one line (keep `needsPrivateTo` on the loaded room). Validator about 60, schema
+about 25 (`needsRooms`, `needsAvoidRooms` on the NPC; `needsPrivateTo` on the room;
+`affordance.private`, `affordance.owners`). **About 230 lines, M.**
 
 **Validator** (`validate_npc_needs.rb`, beside the existing "no object" error at 107-110 and
 `room_warnings` at 153-160):
@@ -1723,15 +1794,22 @@ cells and cache, exact removal). Validator about 55, schema about 25 (`needsRoom
   skip it);
 - a private object with no owner (no `owners`, no `screenOwner`, no NPC with it as `needsHome`):
   warning, "serves nobody";
-- `noticeRooms` naming a forbidden room (warning).
+- `noticeRooms` naming a forbidden room (warning);
+- the T1/P timing report picks `nearest` from the targets the NPC may use, not all targets
+  (review m12).
 
 **Save and lazy loading.** All authored configuration; nothing is saved and nothing needs to be.
-An unloaded room has no objects to choose and no ring to draw.
+An unloaded room has no objects to choose and no ring to draw. `_moveAvoidRooms` is rebuilt by
+the next job after a reload.
 
-**Performance.** The forbidden set is computed once per NPC at register. A 12×10-tile room's
+**Performance.** `_roomForbidden` is a few list checks per object per select. A 12×10-tile room's
 floor is 48×32 cells, its ring about 160; two loaded forbidden rooms cost about 320 avoid calls
 and 320 removals per search, only for leashed NPCs, and searches are already limited by slice 1's
-per-tick cache and back-off. Slice 1's micro-benchmark gains a leashed variant.
+per-tick cache and back-off. A target cut off by the leash costs more than an open one: EasyStar
+floods the whole permitted region before it gives up, and `_nearestReachable` tries every
+candidate nearest first, so a leashed NPC with three cut-off candidates pays three floods per
+select, capped at one select a second by the back-off (review m14). Slice 1's micro-benchmark
+gains a leashed variant **that includes a cut-off candidate**, so that cost is measured.
 
 **Visible change.** An NPC goes the long way to the kitchen, or waits at its desk, instead of
 cutting through someone's office; nobody but its owner uses a private kettle; colleagues stop
@@ -1739,32 +1817,60 @@ sitting at each other's desks.
 
 **Tests.** Node, `npc-needs.test.mjs` (the stub world gains a room adjacency map and a
 `reachable(id, obj, {avoidRooms})` that walks it): a deny list removes a room's objects and the
-next candidate wins; an allow list with the home room implied; `needsPrivateTo` lets the owner in
-and keeps others out; rooms A-B-C in a row with B forbidden and the target in C: not chosen,
-`leashed` logged; an NPC starting inside a forbidden room walks home; private owners from
-`owners`, `screenOwner` and `needsHome`, and a capacity-2 private object; `moveTo` receives
-`avoidRooms`; the decision log is byte-identical for `office()` and the sims fixture, which have
-no leash fields. Pathfinding, in the pattern of `npc-pathfinding-world-grid.test.mjs`: ring cells
-(walkable only, cached, cleared on rebuild); `findWorldPath` with a recording stub pathfinder
-avoids the ring before `calculate()`, removes the same cells after, and never calls
-`stopAvoidingAllAdditionalPoints`; in `path-avoid.test.mjs`'s EasyStar-rules model, three rooms
-in a row with the middle ring avoided give no path. Validator: one fixture per check above.
-`test_needs_sims`: the three PCs get `private: true` (owners from `needsHome`); the lounge gets
-`"needsPrivateTo": ["rosa", "grace"]` (Rosa's room, where Grace rests) and a `lounge_kettle`
-(`kettle1`, 15×18, caffeine) that only those two may use; a note in the office whose mapping
-drops Tom's and Amara's caffeine together, so one finds `office_coffee` taken and walks to the
-kitchen, never the lounge kettle (place the kettle so it is nearer to their desks than
-`kitchen_coffee`, read off a live run, or the test proves nothing). Objective "Tom keeps out of the lounge" on
-`npc_needs_leashed:tom` (or Amara's). **Behaviour change in the showcase:** Rosa makes coffee in
-the lounge instead of walking to `office_coffee`, and README row "285 sanjay used work amara_pc"
-goes (Sanjay waits for his own desk); both recorded in the live-proof table re-run. Live: the
-decision log shows no job target and no NPC position inside the lounge for the other four, and a
-screenshot of Tom at `kitchen_coffee` while Amara is at `office_coffee`.
+next candidate wins; an allow list with the home room implied; **an allow list while the home is
+still provisional** (review M2: the home room still comes from `needsHome`'s object or the spawn
+room, never forbidden); `needsPrivateTo` lets the owner in and keeps others out; rooms A-B-C in a
+row with B forbidden and the target in C: not chosen, `leashed` logged; an NPC starting inside a
+forbidden room walks home; private owners from `owners`, `screenOwner` and `needsHome`, and a
+capacity-2 private object; a private object still accepts another NPC's delivery (OQ26);
+`moveTo` receives `avoidRooms`; the decision log is byte-identical for `office()` and the sims
+fixture, which have no leash fields. Behaviour (`npc-behavior.test.mjs` or a focused file): a
+needs `goToAndStay` with `avoidRooms` followed by `chooseWaypointTarget` passes the rooms to
+`findWorldPath`; a needs move without them keeps the value; a script move clears it.
+Pathfinding, in the pattern of `npc-pathfinding-world-grid.test.mjs`: inner-ring cells (the
+floor's edge, corners included, blocked cells included, the start room skipped);
+`findWorldPath` with a recording stub pathfinder avoids the ring before `calculate()`, removes
+the same cells after it even when `calculate()` throws, and never calls
+`stopAvoidingAllAdditionalPoints`. In `path-avoid.test.mjs`'s EasyStar-rules model, with avoid
+points checked on the entered cell only: three rooms in a row with the middle ring avoided give
+no path, and a ring without its corners leaks (review m1). Validator: one fixture per check
+above.
+
+**Showcase, `test_needs_sims`** (the candidate filter; its rooms lie in a row, so no shortest
+path ever crosses the lounge): the three PCs get `private: true` (owners from `needsHome`); the
+lounge gets `"needsPrivateTo": ["rosa", "grace"]` (Rosa's room, where Grace rests) and a
+`lounge_kettle` (`kettle1`, caffeine) that only those two may use; a note in the office whose
+mapping drops Tom's and Amara's caffeine together, so one finds `office_coffee` taken and walks
+to the kitchen, never the lounge kettle (place the kettle so it is nearer to their desks than
+`kitchen_coffee`, or the test proves nothing). The kettle is a candidate only once the lounge is
+loaded and the kitchen outcome needs the kitchen loaded, so **the live run opens both doors
+first and says so** (review m11). Objective "Tom keeps out of the lounge" keyed on
+`npc_used:kitchen_coffee` by Tom or Amara (an `eventMapping` condition on `data.npcId`), not on
+`npc_needs_leashed`, which fires whenever the leash removes an option, wherever the NPC then goes
+(review m11); `leashed` stays a decision-log check. **Behaviour change in the showcase:** Rosa
+makes coffee in the lounge instead of walking to `office_coffee`; private PCs stop the fallback
+to a colleague's free desk when one's own is taken (README row "285 sanjay used work amara_pc"
+was already superseded by the home-preference fix, row 65; 2a stops the fallback itself); the
+contention row (`README.md` 63) depends on the kitchen being unloaded at tick 241 and is
+re-checked. Both recorded in the live-proof table re-run. Live: the decision log shows no job
+target and no NPC position inside the lounge for the other four, and a screenshot of Tom at
+`kitchen_coffee` while Amara is at `office_coffee`.
+
+**Route proof, `test_needs_leash`** (review M3: the ring is the riskiest part and needs a live
+case on the real path): a small scenario with four rooms in a loop (two above, two below, each
+pair joined by doors), a needs NPC whose home is in one room and whose only target sits in the
+diagonally opposite room, and one of the two rooms between them private to someone else. The
+short way crosses the private room; the long way goes round. Proof: the decision log, the NPC's
+sampled positions (never on the private room's floor), and a screenshot of it on the long route;
+then the same NPC with the leash removed (a second game, or the room's field dropped through the
+test bridge before the job) taking the short route through the room.
 
 **Risks.** A leash too tight leaves an NPC never acting: the validator's impossible-need error and
 the `leashed` log catch it. A deny list on a corridor cuts off everything beyond it: the
-connectivity warning catches it. Two rooms whose floors meet without a wall would have the shared
-edge ringed, which is the intent. The player's own avoid points can still be present during an
+connectivity warning catches it. Two rooms whose floors meet without a wall: the inner ring sits
+on the forbidden side only, which is the intent. An approach cell snapped (up to three cells)
+onto a forbidden room's edge makes that target unreachable for a leashed NPC; the validator
+cannot see it, and the `leashed` log and job back-off show it. The player's own avoid points can still be present during an
 NPC search between the player's `calculate()` and its deferred callback; that is true today and
 unchanged.
 
@@ -1773,17 +1879,25 @@ unchanged.
 **Authoring.** On the NPC:
 
 ```jsonc
-"social": {
+"needsCompany": {
   "groups": ["research"],                       // optional
   "avoids": [
     "derek_lawson",                             // an NPC id
     "group:contractors",                        // everyone in a group
-    { "npc": "derek_lawson", "requireGlobal": "derek_exposed" }   // only while a global holds
+    { "npc": "derek_lawson", "requireGlobal": "derek_exposed" },  // only while a global holds
+    { "group": "contractors", "requireGlobal": "audit_running" },  // a group, conditionally
+    { "npc": "*", "requireGlobal": "derek_exposed" }               // everyone, conditionally
   ]
 }
 // Derek, whom nobody trusts: avoidance works both ways, so one line on him is enough
-{ "id": "derek_lawson", "social": { "avoids": ["*"] } }
+{ "id": "derek_lawson", "needsCompany": { "avoids": ["*"] } }
 ```
+
+**Name (review m9).** The field was `social` in the amendment. The scenario-level `social` block
+is the social-engineering contract (`scenario-schema.json` about 229, `validate_social.rb`,
+`social-influence.js`) and the sims NPCs have a need called `social`, so the NPC field is
+`needsCompany`, beside `needsHome`, `needsSpeed` and `needsRooms`. The object form of an
+avoidance takes `npc` (an id or `"*"`) or `group`, plus `requireGlobal` (review m10).
 
 `requireGlobal` takes the sight challenge's form (a name, truthy; or `{ name: value }`, all must
 match). It is the hook to existing trust data: a scenario with social influence can key an
@@ -1793,7 +1907,7 @@ it on a story global set from ink.
 **Rules.**
 - **Chat** (slice 8 pairing, slice 10 queue chatter) needs both: the **group test** (passes when
   either NPC has no `groups`, else they must share one) and **no avoidance** in either direction.
-  With no `social` on anyone, everyone pairs, exactly as slice 8 is written today.
+  With no `needsCompany` on anyone, everyone pairs, exactly as slice 8 is written today.
 - **An avoidance is declared one way and acts both ways.** The visible result (no chat, no
   sharing a cooler) is two-sided anyway, and one line on the distrusted NPC is easier to write
   than one on every colleague.
@@ -1809,13 +1923,15 @@ it on a story global set from ink.
   and `partnerId`; when `overheard` is true the system also emits `npc_overheard:<speakerId>` with
   the same payload, so a mapping can react to overhearing one particular NPC.
 - Globals are read through a new world-adapter call (`globalHolds(cond)`, reading
-  `window.gameState.globalVariables`), so npc-needs gains no static import.
+  `window.gameState.globalVariables`), so npc-needs gains no static import. `requiredGlobalsHold`
+  is not exported from `npc-sight-challenge.js`, and importing it would be a new static import
+  (test harness copy lists), so its six lines are copied into the adapter (review m10).
 
 **Engine.** Slice 8: `_compatible`, the `_free` check, the two events and their dedupe in
 `npc-needs.js` about 45 lines; the adapter call about 6; validator about 20 (unknown NPC ids and
 groups in `avoids`; a `requireGlobal` naming a global not in `globalVariables`, warning; an NPC
-whose only social object is shared with someone who avoids it, info); schema about 25 (`social`,
-`groups`, `avoids` and its object form). Slice 8 goes from about 270 to **about 365**. Slice 10:
+whose only social object is shared with someone who avoids it, info); schema about 25
+(`needsCompany`, `groups`, `avoids` and its object form). Slice 8 goes from about 270 to **about 365**. Slice 10:
 queue chatter calls `_compatible` (about 10 lines), from about 170 to **about 180**.
 
 **Save and lazy loading.** Nothing saved; conditions follow globals, which persist.
@@ -1828,10 +1944,11 @@ instead of joining him, and chat with each other once he has gone.
 **Tests.** Node: same group pairs and chats; different groups share in silence; an avoidance
 declared on one side stops chat and sharing in both directions, the second NPC waits and emits
 `npc_avoided`, then takes the place when the first leaves; `"*"` and `group:` entries;
-`requireGlobal` false pairs, true avoids; the log is byte-identical for fixtures without `social`;
+`requireGlobal` false pairs, true avoids (for `npc`, `group` and `"*"` object entries); the log is
+byte-identical for fixtures without `needsCompany`;
 `npc_overheard:<speakerId>` only when `overheard` is true. Slice 10: an avoided pair queues with
 no `npc_chatted`. `test_needs_sims` (slice 8): the one extra NPC the plan allows becomes an
-outcast contractor (`social: { avoids: ["*"] }`, a thirst need, a `needsHome` spot in the office;
+outcast contractor (`needsCompany: { avoids: ["*"] }`, a thirst need, a `needsHome` spot in the office;
 cast per the diversity rule, sprite from an existing atlas); a mapping sends him and Sanjay to the
 cooler together. Objective "Nobody chats with the contractor" on `npc_avoided:sanjay`. Live:
 screenshot of the contractor alone at the cooler and Sanjay at his desk, then Sanjay at the cooler
@@ -1845,12 +1962,48 @@ expect a one-way avoidance to be one-way; the schema description says it is mutu
 
 | Slice | Before | After | Change |
 |---|---|---|---|
-| **2a** Room leash and private objects (7.2), **new, requested** | — | M, ~200 | needs 1 (fixture, back-off); independent of 0 and 2 |
+| **2a** Room leash and private objects (7.2), **new, requested** | — | M, ~230 (was ~200; section 8) | needs 1 (fixture, back-off); build after slice 2's edits are committed |
 | 8 Speech bubbles and pairing | ~270 | ~365 (L) | social compatibility (7.3) |
-| 10 Queues and queue chatter | ~170 | ~180 (M) | compatible pairs only in the queue |
+| 10 Queues and queue chatter | ~170 | ~185 (M) | compatible pairs only in the queue; queue cells skip forbidden rooms (m8) |
+| 11 Window helpers | ~155 | ~90 (S) | scoped by R3-M3 (section 8) |
 
 The user's chosen slices become **1, 2, 2a, 3, 4, 5, 7, 8, 10, 11**: about 1,715 lines plus the
-150-line fixture, against about 1,410 for the same set before. Slice 9 (routines, not chosen)
+150-line fixture as the amendment had it, about 1,685 after section 8, against about 1,410 for
+the same set before. Slice 9 (routines, not chosen)
 would honour the leash for its steps, and a `visit` to a home in a private room would need its NPC
 listed; noted for when it is picked up.
 
+
+## 8. Changes after amendment review
+
+The amendment's review (`OFFICE_LIFE_PLAN_REVIEW_AMEND1.md`, 2026-11-06: 0 blockers, 4 major,
+15 minor; "revise, then build; no further review round needed") checked section 7 against the
+working tree and EasyStar 0.4.4. Every finding is folded in; each was checked against the code
+before it went in.
+
+| Finding | Where it was checked | Outcome | Section |
+|---|---|---|---|
+| **M1** wrong walk call sites | `npc-behavior.js`: `goToAndStay` writes a one-waypoint patrol; `chooseWaypointTarget` plans at about 1417, `chooseWaypointTargetMultiRoom` at about 1546, the collision repath at about 1053, `_recoverFromStuck` at about 1282 | All four go through one helper that adds `avoidRooms`; node test that a needs move then `chooseWaypointTarget` passes the rooms | 7.1, 7.2 Rules |
+| **M2** home room unknown at register | `register` sets `home: null`; `_resolveHome` gives a provisional home until the object loads | Per-room predicate `_roomForbidden`, home room from `needsHome.room`, the object's room, or the spawn room; test with a provisional home and an allow list | 7.2 Rules, Tests |
+| **M3** no live route proof | `test_needs_sims` rooms lie in a row (kitchen, office, lounge) | New `test_needs_leash`: four rooms in a loop, long route versus short route with the leash removed; the sims showcase keeps "no new rooms" | 7.2 Tests |
+| **M4** R3's three conditions not in the text | 2.1, 2.10, 2.11, slice table | Slice 4: presets only on declared objects, decor test, live list (2.1). Slice 2: `needsStop` covers `returning && atPost`, in code at `seating.js` about 822 (2.11 Built line). Slice 11: `leftBehindChance` in place of `tidiness`, piles after slice 9, ~90 lines (2.10, table) | 2.1, 2.10, 2.11, 3 |
+| m1 corner-cutting reason wrong | EasyStar 0.4.4: corner test reads the grid only; avoid points apply to the entered cell | Ring includes corners, reason corrected; the grid model checks the entered cell only and includes a leaking cornerless ring | 7.2 Rules, Tests |
+| m2 outer ring seals neighbours | `core/rooms.js` floor rule; wall colliders | Inner ring: the forbidden floor's own edge cells | 7.2 Rules |
+| m3 cached walkable-only ring misses a door | `doors.js` edits the grid in place, rebuilds 250 ms later | No walkability filter, no cache: computed per search | 7.2 Rules |
+| m4 where cleanup runs | `findWorldPath` clears NPC-avoid in the callback | Rings removed in a `finally` right after `calculate()` | 7.2 Rules |
+| m5 chair fetch is a needs move with no rooms | `seating.js` `moveNeeds` | A needs move without `avoidRooms` keeps the current value | 7.2 Rules |
+| m6 owners map source | `screenOwner` is on the object; `describe` lacked it; `ownerOf` returns the first match | `describe` carries `screenOwner`; one owner, the first match | 7.2 Rules |
+| m7 does `private` stop deliveries | `_carryCandidate` filters accepting targets | New OQ26: uses only by default; room rules apply to both | 4.3, 7.2 |
+| m8 queue cells in forbidden rooms | slice 10 text | Queue places skip forbidden cells; validator warning | 2.5 |
+| m9 `social` name collides | `scenario-schema.json` scenario-level `social` | NPC field renamed `needsCompany` | 2.4, 7.3, 3 |
+| m10 object form of an avoidance | `npc-sight-challenge.js` `requiredGlobalsHold` not exported | `group` and `"*"` object entries allowed; six lines copied into the adapter | 7.3 |
+| m11 showcase objective and README rows | `npc_needs_leashed` fires on any removed option | Objective on `npc_used:kitchen_coffee` by Tom or Amara; both doors opened first; README rows reworded | 7.2 Tests |
+| m12 T1/P report from all targets | `validate_npc_needs.rb` `nearest` | Permitted targets only | 7.2 Validator |
+| m13 stale status line | header | Slices 0, 1, 2 landed | header |
+| m14 cut-off searches cost more | `_nearestReachable`, slice 1 back-off | Benchmark includes a cut-off candidate | 7.2 Performance |
+| m15 "sometimes" leash: some NPCs or some times | OQ24 | **User, 2026-11-06: fixed per NPC, no global condition** | 4.3 OQ24 |
+
+One addition the review did not raise, found while checking M2: the bootstrap scenario sent to the
+client strips room fields it does not list (`Game#filtered_scenario_for_bootstrap`), and the full
+room from `/room/:id` is not kept after `createRoom`, so `needsPrivateTo` would be invisible to
+the engine. `createRoom` keeps it on `window.rooms[roomId]` (one line); only loaded rooms matter.
