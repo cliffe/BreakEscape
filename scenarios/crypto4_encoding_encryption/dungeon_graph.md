@@ -11,10 +11,10 @@ Your legendary cookie recipe has been stolen by the mischievous squirrels led by
 | Story aims | 0 |
 | Total tasks | 0 (0 optional) |
 | VM flag challenges | 0 |
-| Physical locks | 5 |
+| Physical locks | 6 |
 | AND-gate convergences | 0 |
 | Rooms | 4 |
-| Puzzle graph nodes / edges | 9 / 6 |
+| Puzzle graph nodes / edges | 10 / 6 |
 | Story graph nodes / edges | 0 / 0 |
 
 ## Critical Path
@@ -78,6 +78,7 @@ flowchart TD
   door_room_ceo["Room Ceo<br/>Password lock"]
   room_ceo("Room Ceo")
   lock_final_recipe_vault["Final Recipe Vault<br/>Password lock"]
+  lock_final_recipe_vault_2["Final Recipe Vault<br/>Password lock"]
   room_reception("Room Reception")
 
   door_room_office --> room_office
@@ -85,9 +86,9 @@ flowchart TD
   door_room_closet --> room_closet
   door_room_ceo --> room_ceo
   room_ceo --> lock_final_recipe_vault
-  room_ceo --> lock_final_recipe_vault
+  room_ceo --> lock_final_recipe_vault_2
 
-  class door_room_office,door_room_servers,door_room_closet,door_room_ceo,lock_final_recipe_vault lock
+  class door_room_office,door_room_servers,door_room_closet,door_room_ceo,lock_final_recipe_vault,lock_final_recipe_vault_2 lock
   class room_office,room_servers,room_closet,room_ceo,room_reception room
   class node_start start
 ```
@@ -152,6 +153,7 @@ flowchart TD
   door_room_ceo["Room Ceo<br/>Password lock"]
   room_ceo("Room Ceo")
   lock_final_recipe_vault["Final Recipe Vault<br/>Password lock"]
+  lock_final_recipe_vault_2["Final Recipe Vault<br/>Password lock"]
   room_reception("Room Reception")
 
   door_room_office --> room_office
@@ -159,9 +161,9 @@ flowchart TD
   door_room_closet --> room_closet
   door_room_ceo --> room_ceo
   room_ceo --> lock_final_recipe_vault
-  room_ceo --> lock_final_recipe_vault
+  room_ceo --> lock_final_recipe_vault_2
 
-  class door_room_office,door_room_servers,door_room_closet,door_room_ceo,lock_final_recipe_vault lock
+  class door_room_office,door_room_servers,door_room_closet,door_room_ceo,lock_final_recipe_vault,lock_final_recipe_vault_2 lock
   class room_office,room_servers,room_closet,room_ceo,room_reception room
   class node_start start
 ```
@@ -248,7 +250,7 @@ flowchart TD
   rc_obj9_9{"AES Encryption Safe"}
   rc_obj10_10[["Final Recipe Vault"]]
   rc_obj11_11{"Clue to the next safe"}
-  rc_obj12_12[["Final Recipe Vault"]]
+  rc_final_recipe_vault_2_12[["Final Recipe Vault"]]
   rc_obj13_13{"Recovered Cookie Recipe"}
 
   room_reception --> room_office
@@ -266,12 +268,12 @@ flowchart TD
   room_ceo --> rc_obj9_9
   room_ceo --> rc_obj10_10
   rc_obj10_10 --> rc_obj11_11
-  room_ceo --> rc_obj12_12
-  rc_obj12_12 --> rc_obj13_13
+  room_ceo --> rc_final_recipe_vault_2_12
+  rc_final_recipe_vault_2_12 --> rc_obj13_13
 
   class room_reception room
   class room_office,room_servers,room_closet,room_ceo lock
   class rc_obj1_1,rc_obj2_2,rc_obj3_3,rc_obj4_4,rc_obj5_5,rc_obj6_6,rc_obj7_7,rc_obj8_8,rc_obj9_9,rc_obj11_11,rc_obj13_13 item
-  class rc_obj10_10,rc_obj12_12 container
+  class rc_obj10_10,rc_final_recipe_vault_2_12 container
   class node_start start
 ```

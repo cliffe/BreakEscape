@@ -135,8 +135,8 @@
       "optional": false
     },
     {
-      "id": "vm_access_terminal",
-      "label": "VM Access Terminal",
+      "id": "field_console_kali",
+      "label": "Field Console (Kali)",
       "kind": "vm",
       "optional": false
     },
@@ -373,7 +373,7 @@
     },
     {
       "from": "server_room",
-      "to": "vm_access_terminal",
+      "to": "field_console_kali",
       "soft": false
     },
     {
@@ -492,7 +492,7 @@
       "soft": false
     },
     {
-      "from": "vm_access_terminal",
+      "from": "field_console_kali",
       "to": "vmch_recover_coordination_traffic",
       "soft": false
     },

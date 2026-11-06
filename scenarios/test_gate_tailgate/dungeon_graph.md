@@ -211,22 +211,20 @@ flowchart TD
   staff_room["Staff Only<br/>(locked)"]
   rc_kit_cloner_1{"RFID cloner"}
   rc_visitor_lanyard_2{"Visitor lanyard"}
-  rc_lanyard_return_3{"Lanyard return tray"}
-  rc_door_reader_4{"Staff door reader"}
-  rc_npc_sam_ellery_5("Sam Ellery")
-  rc_staff_notice_6{"Staff notice"}
+  rc_door_reader_3{"Staff door reader"}
+  rc_npc_sam_ellery_4("Sam Ellery")
+  rc_staff_notice_5{"Staff notice"}
 
   office --> staff_room
   office --> rc_kit_cloner_1
   office --> rc_visitor_lanyard_2
-  office --> rc_lanyard_return_3
-  office --> rc_door_reader_4
-  office --> rc_npc_sam_ellery_5
-  staff_room --> rc_staff_notice_6
+  office --> rc_door_reader_3
+  office --> rc_npc_sam_ellery_4
+  staff_room --> rc_staff_notice_5
 
   class office room
   class staff_room lock
-  class rc_kit_cloner_1,rc_visitor_lanyard_2,rc_lanyard_return_3,rc_door_reader_4,rc_staff_notice_6 item
-  class rc_npc_sam_ellery_5 npc
+  class rc_kit_cloner_1,rc_visitor_lanyard_2,rc_door_reader_3,rc_staff_notice_5 item
+  class rc_npc_sam_ellery_4 npc
   class node_start start
 ```

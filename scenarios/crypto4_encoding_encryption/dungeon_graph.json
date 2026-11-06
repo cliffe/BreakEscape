@@ -55,6 +55,12 @@
       "label": "Final Recipe Vault<br/>Password lock",
       "kind": "lock",
       "optional": false
+    },
+    {
+      "id": "lock_final_recipe_vault_2",
+      "label": "Final Recipe Vault<br/>Password lock",
+      "kind": "lock",
+      "optional": false
     }
   ],
   "edges": [
@@ -85,7 +91,7 @@
     },
     {
       "from": "room_ceo",
-      "to": "lock_final_recipe_vault",
+      "to": "lock_final_recipe_vault_2",
       "soft": false
     }
   ]

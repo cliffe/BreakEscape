@@ -280,27 +280,29 @@
   rc_slice_case_file_2{"Case File"}
   rc_slice_osint_3{"OSINT Workstation"}
   rc_slice_triage_4{"Triage Workstation"}
-  rc_slice_defender_board_5{"Defender case file"}
-  rc_slice_desk_phone_6{"Desk Phone"}
-  rc_slice_page_builder_7{"Page Builder"}
-  rc_npc_host_8("Host")
-  rc_npc_brandt_service_desk_9("Brandt (service desk)")
-  rc_npc_quinn_10("Quinn")
+  rc_slice_triage_collapsed_5{"Triage Workstation (collapsed headers)"}
+  rc_slice_defender_board_6{"Defender case file"}
+  rc_slice_desk_phone_7{"Desk Phone"}
+  rc_slice_page_builder_8{"Page Builder"}
+  rc_npc_host_9("Host")
+  rc_npc_brandt_service_desk_10("Brandt (service desk)")
+  rc_npc_quinn_11("Quinn")
 
   slice_room --> rc_slice_mail_terminal_1
   slice_room --> rc_slice_case_file_2
   slice_room --> rc_slice_osint_3
   slice_room --> rc_slice_triage_4
-  slice_room --> rc_slice_defender_board_5
-  slice_room --> rc_slice_desk_phone_6
-  slice_room --> rc_slice_page_builder_7
-  slice_room --> rc_npc_host_8
-  slice_room --> rc_npc_brandt_service_desk_9
-  slice_room --> rc_npc_quinn_10
+  slice_room --> rc_slice_triage_collapsed_5
+  slice_room --> rc_slice_defender_board_6
+  slice_room --> rc_slice_desk_phone_7
+  slice_room --> rc_slice_page_builder_8
+  slice_room --> rc_npc_host_9
+  slice_room --> rc_npc_brandt_service_desk_10
+  slice_room --> rc_npc_quinn_11
 
   class slice_room room
-  class rc_slice_mail_terminal_1,rc_slice_case_file_2,rc_slice_osint_3,rc_slice_triage_4,rc_slice_defender_board_5,rc_slice_desk_phone_6,rc_slice_page_builder_7 item
-  class rc_npc_host_8,rc_npc_brandt_service_desk_9,rc_npc_quinn_10 npc
+  class rc_slice_mail_terminal_1,rc_slice_case_file_2,rc_slice_osint_3,rc_slice_triage_4,rc_slice_triage_collapsed_5,rc_slice_defender_board_6,rc_slice_desk_phone_7,rc_slice_page_builder_8 item
+  class rc_npc_host_9,rc_npc_brandt_service_desk_10,rc_npc_quinn_11 npc
   class node_start start`
     };
     const rendered = {};
