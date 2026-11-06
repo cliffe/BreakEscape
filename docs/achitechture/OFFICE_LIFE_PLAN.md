@@ -3072,6 +3072,26 @@ task. (9) The validator's "nothing sets it" looks for `set_global` actions and m
 wherever they are when the socket is clicked, as designed; one who has already started pouring finishes (seen live). The new
 `grumble_off` and `grumble_gone` lines have no cached TTS audio yet (keyless :3001).
 
+**Built: 2026-11-06 (slice 18b-i: engine, validator, schema and tests 91227f828; showcase 60f41190f; fix from the live proof
+2643c23f3).** Regressions: `test_needs_leash` game 951 (pass), `lab_physical_pentest` game 952 (score 100, 9/9 tasks, keylogger
+creds 63.2 s, USB foothold 10.0 s); sims live proof games 930, 938, 939, 948, 949, 950 (README table); see `HANDOVER_OFFICE_S18B1.md`.
+`bin/test-js` 406 files pass, `npc-magnet` 16 tests, `GOLDEN_SIMS_DAY` unchanged. As written, drops only (the OQ31 redesign: the
+cake is a droppable start-inventory item, like the lab's USB), with these choices made without asking: (1) **The declared spot
+(option B) is cut**: no `triggerOnInteract` deploy, no refill at 0, no `hideRevealedObject` finish, no spot validator checks; only
+its "a `revealOnGlobal` object whose global does not hold is no use target" rule is in. A magnet declared as a room object gets a
+validator warning. (2) Magnets are found on a drop, on a room load and on any object scan; there is no per-tick scan of their own
+(the tick-cost test asserts no scans for an NPC with nothing urgent). (3) A magnet the NPC does not know of is no source at all,
+even for an urgent need (otherwise an unknowing NPC would walk to the nearest food, cake included); the magnet try for an urgent
+need is quiet too, and leash notes come from the usual-source try. (4) New events and log lines beyond the plan:
+`npc_saw_magnet:<npcId>`, `magnet_serving:<id>`, log `magnet_seen`, `serving_taken`, `magnet_gone`, `magnet_left`;
+`magnet_placed` also carries `servings`. (5) A tempted job's once-only avoid turn-back uses its own `temptBack` flag. (6) The
+showcase's cake chatter is room-free and there is no announce pool yet (18b-ii); the description points at the kitchen.
+**Found live and fixed:** a pickup during an NPC's windup failed the job with `no_approach` and a 60 s cooldown on the cake
+instead of a `gone` turn-back, so a re-drop tempted nobody; the windup end now checks the magnet first. **Found live, not
+changed:** "Missed it." is a voiced line and obeys the speech lock (a chatting eater turns it into the hunger icon); the existing
+avoidance keeps Sanjay from a cake within two tiles of Marek; a doorway drop takes the player's click on the door (it picks the
+cake up); a reloaded drop comes back about 13 px south-east. 18b-ii (word of mouth) is not started.
+
 **Design.** `affordance.offWhen` takes the `requireGlobal` form (a name, truthy, or
 `{ name: value }`, `requiredGlobalsHold` 123-130). While it holds, the object is not a candidate.
 

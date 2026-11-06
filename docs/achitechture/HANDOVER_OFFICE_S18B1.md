@@ -1,7 +1,8 @@
 # Handover: office life slice 18b-i, the magnet (2026-11-06)
 
-**Status: IN PROGRESS.** Engine, validator, schema, node tests and the showcase are committed; `bin/test-js` 406 files pass;
-one live run (game 929) done. Left: the rest of the live proof, the two regressions and the docs (list below). Plan:
+**Status: DONE (2026-11-06).** Engine, validator, schema, node tests and the showcase committed; live proof, one engine fix
+(2643c23f3, a pickup during the windup), the regressions (leash game 951, lab game 952 score 100) and the docs done; the results are in
+the plan's 12.4 Built line and `scenarios/test_needs_sims/README.md`. The "Left" list below is kept as the record of what was asked. Plan:
 `OFFICE_LIFE_PLAN.md` 12.4 "Slices 18b-i and 18b-ii" (with the OQ31 redesign: drop anywhere), 12.8 row 5, 12.9 OQ31, 32, 35,
 36, 13f.
 

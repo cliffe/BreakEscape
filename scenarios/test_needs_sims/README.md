@@ -591,6 +591,43 @@ Notes: interacting with the note through the bridge's `interact` failed out of r
 feet about (157, 196) works. Tom's natural hook prints (chance 0.4, one work use in about 7.5 minutes) were not waited for live; the
 node tests cover the share, the icon and the habit rolls.
 
+### Slice 18b-i re-run: the cake (a droppable magnet) (2026-11-06, keyless :3001, headless)
+
+How to watch it: the cake is in your inventory. Click it there to put it down where you stand (the kitchen is a good bet; the
+kitchen is at x -320 to 0, the office from 0). Whoever is hungry (Tom, Sanjay, Amara) and sees it walks over: a need in the 30-point
+band above its urgent level is tempted. Two servings; the third person turns back with "Missed it." (or the hunger icon when
+somebody else is speaking). Pick the cake up again and everyone walking turns back; drop it again and they only learn of it by
+seeing it. A cake dropped where nobody may go (here, with the kitchen denied by a run-time leash) raises `magnet_unreachable`.
+One cake per game: each beat below is its own game. Evidence is in the session scratchpad `s18b1/` (frames `*-<game>.png`, logs
+`sess<game>.jsonl`).
+
+| Check | Result | Evidence |
+|---|---|---|
+| Kitchen drop, kitchen staff eat (office coffee off) | PASS | game 930: `magnet_placed` room kitchen, reachable amara, sanjay, tom, servings 2; Amara and Tom came for the kitchen coffee, saw it (`npc_saw_magnet:amara` 58000, `:tom` 65250), tempted jobs, Tom `using` 13 s with the player beside him (`k1-kitchen-eating-930.png`), `serving_taken` 1 then 0, both `npc_used:cake`, `magnet_finished:cake` and the cake removed |
+| Three hungry, two servings: "Missed it." | PASS | game 938 (Tom's and Sanjay's chatter held quiet and Sanjay's `avoids` emptied, see the notes): Tom and Sanjay eat, Amara `npc_turned_back` reason `gone` (`m2a-quiet-missed-it-938.png`, the "Missed it." bubble); unstaged games 931 and 933: same, her bubble is the hunger icon (`m2b-missed-it-933.png`) |
+| Eaters' stance | PASS | games 933 and 938: two eat, one each side of the cake (Tom west, Sanjay east), the third turns back; nobody stacks on a cell (`m1b-eaters-933.png`); capacity 3 stays |
+| Drop in a doorway | PASS, with a note | game 939: cake at (44, 84), 28 px inside the office's west door (gap y 73 to 87); the eaters stood at (73, 62) and (50, 53), north of the gap, and Tom turned back; nobody was blocked (`d1-doorway-eaters-939.png`). A player who clicks the door there picks the cake up instead (`item_picked_up:cake1` at 16750; `d2-player-through-939.png`, the cake in the tray); a forced NPC through-trip was not staged (games 940, 941: Tom parked on the switched-off coffee) |
+| Pickup mid-walk by a real pointer click | PASS after a fix | game 948: `clickAt` on the cake gives the "Interact with" menu (the coffee station is in reach too), the Cake entry is a real DOM click: `item_picked_up:cake1`, log `magnet_gone` `left: 2`, then three `npc_turned_back` reason `gone` (`g1-walkers-windup-and-pick-menu-946.png`, the three in windup; `g3-gone-turnback-3-948.png`) |
+| Re-drop after the pickup | PASS | game 948: `magnet_placed.servings` 2, all five `npc_saw_magnet` again by sight, two ate, the third turned back |
+| Reload mid-meal | PASS | game 949: `cake_servings` 1 before (`h0-before-reload-mid-meal-949.png`), `sync` and `location.reload()`, bootstrap resume: the cake is back in the office, the first `serving_taken` after the load says `left: 0` (so 1 was restored), the second walker turned back `gone`, `magnet_finished` |
+| Unreachable drop | PASS | game 950: kitchen drop with `leash.deny kitchen` set on amara, tom and sanjay: `magnet_placed` `reachable: []`, `magnet_unreachable:cake`, Grace saw it (no hunger or social need), nobody started a cake job in 25 s, no `leashed`, `private_skipped` or `parked` lines, 2 servings kept (`u-unreachable-drop-950.png`, `u2-after-25s-950.png`) |
+
+Notes:
+
+- **Fixed in this run (2643c23f3).** A pickup during an NPC's windup (the second or two before they leave their desk) failed the job
+  silently with `no_approach` and a 60 s cooldown on the cake, so there was no `gone` turn-back and a re-drop tempted nobody
+  (game 947). The windup end now turns back with `gone` first; node test `npc-magnet` 16. Game 948 is the re-run.
+- "Missed it." is a spoken line, so it obeys the one-line speech lock: when an eater's cake chatter ("This is really good.") is on
+  at the moment the third person turns back, the grumble is the hunger icon instead (games 931, 933). The task `see_missed_it`
+  counts the turn-back, not the words.
+- Sanjay avoids Marek (`needsCompany.avoids`, radius 2 tiles): when Marek stands within two tiles of the cake he does not come, and
+  the tempted look is quiet (games 932, 934, 936 and the diagnostic in game 937: `_avoidedAt` gave `marek`). That is the existing
+  avoidance, not a magnet fault.
+- The cake comes back from a reload about 13 px south-east of where it was dropped ((252, 252) to (265, 266) in game 949): the
+  persisted room-relative tile position loses the sub-tile offset. The drop feature's own behaviour, not the magnet's.
+- Staging used: levels set to 60 inside the band so all three are tempted at once; the pickup beat nudges the player 8 px south
+  after the drop (the cake lands 33 px away and reach is 32).
+
 ## Engine findings
 
 1. **Fixed 2026-11-05.** The home is now provisional until the `needsHome` object exists and is re-resolved once a second; and an NPC standing on its own desk's approach cell now counts as able to reach it (EasyStar gave no path for start == end, which is why Sanjay chose `tom_pc` in game 501). Original finding: **Needs homes in the start room resolve to the spawn point and stay there.** `npc-needs.js:301` resolves `s.home` on the first tick that has a sprite position and caches it; `_resolveHome` (`npc-needs.js:628-640`) falls back to the spawn point with `objectId: null` when `getObject`/`approachCell` fail. For the start room the NPCs are registered (`core/game.js:2004-2006`) before the room's objects or pathfinding are ready, so every start-room needs NPC gets the fallback and the home-object preference in `_useCandidate` (`npc-needs.js:475`) never applies. NPCs in rooms loaded later (Rosa, lounge) resolve correctly. Repro: load this scenario, then `[...npcNeedsSystem.states].map(([k,s]) => [k, s.home.objectId])` gives null for amara, tom, grace and sanjay, `rosa_laptop` for rosa. Suggested fix: don't cache a fallback home while `needsHome` names an object that isn't found yet (retry each tick until the object exists, or for a few seconds). `test_npc_needs` and `lab_physical_pentest` start-room NPCs are likely affected too, but hidden because each spawns at its own desk. Workaround here: each NPC spawns beside its own desk, and the work task reads "Someone works at a desk". Even so, game 501 had Sanjay choose `tom_pc` over his own adjacent PC (nearest-reachable from his seated position), so the workaround isn't reliable.
