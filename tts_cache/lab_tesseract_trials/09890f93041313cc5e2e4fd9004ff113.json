@@ -1,0 +1,13 @@
+{
+  "key": "09890f93041313cc5e2e4fd9004ff113",
+  "npc": "closing_debrief_person",
+  "text": "I sent you in as a clean first-year. Ghost knew what you were from the start, and wanted you because of it.",
+  "voice": "Aoede",
+  "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

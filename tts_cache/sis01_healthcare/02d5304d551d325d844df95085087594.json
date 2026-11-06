@@ -1,0 +1,13 @@
+{
+  "key": "02d5304d551d325d844df95085087594",
+  "npc": "helen_carver",
+  "text": "Cloud restore's running. Eighteen hours, so the wards are on paper till the early hours. I'll tell the Board.",
+  "voice": "Pulcherrima",
+  "style": "NHS chief information officer in her mid-fifties, decisive and under pressure, clipped and authoritative. Speak with a consistent well-spoken North Yorkshire (Harrogate) accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

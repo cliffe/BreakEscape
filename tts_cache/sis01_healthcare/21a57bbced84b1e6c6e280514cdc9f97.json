@@ -1,0 +1,13 @@
+{
+  "key": "21a57bbced84b1e6c6e280514cdc9f97",
+  "npc": "patrol_nurse",
+  "text": "Without the central station I can't see the trend. If he needs more than my round, Sarah has to call it.",
+  "voice": "Despina",
+  "style": "Busy NHS staff nurse in her late twenties, brisk and focused. Speak with a consistent Sheffield, South Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

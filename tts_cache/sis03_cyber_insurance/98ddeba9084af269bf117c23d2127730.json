@@ -1,0 +1,13 @@
+{
+  "key": "98ddeba9084af269bf117c23d2127730",
+  "npc": "eleanor_vance",
+  "text": "Thorough is what we need. Not defensive. Just thorough.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:20:26Z"
+}

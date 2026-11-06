@@ -1,0 +1,282 @@
+{
+  "scenario_brief": "Test scenario for NPC waypoint patrol behavior",
+  "endGoal": "Test NPCs patrolling with waypoint coordinates instead of random bounds",
+  "startRoom": "test_waypoint_patrol",
+
+  "player": {
+    "id": "player",
+    "displayName": "Test Agent",
+    "spriteSheet": "hacker",
+    "spriteTalk": "assets/characters/hacker-talk.png",
+    "spriteConfig": {
+      "idleFrameStart": 20,
+      "idleFrameEnd": 23
+    }
+  },
+
+  "rooms": {
+    "test_waypoint_patrol": {
+      "type": "room_office",
+      "connections": {},
+      "npcs": [
+        {
+          "id": "waypoint_rectangle",
+          "displayName": "Rectangle Patrol (Sequential Waypoints)",
+          "npcType": "person",
+          "position": { "x": 3, "y": 3 },
+          "spriteSheet": "hacker",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/test-npc.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": false,
+            "patrol": {
+              "enabled": true,
+              "speed": 100,
+              "waypoints": [
+                {"x": 3, "y": 3},
+                {"x": 7, "y": 3},
+                {"x": 7, "y": 7},
+                {"x": 3, "y": 7}
+              ],
+              "waypointMode": "sequential"
+            }
+          },
+          "_comment": "Patrols rectangular route: (3,3) → (7,3) → (7,7) → (3,7) → repeat"
+        },
+
+        {
+          "id": "waypoint_triangle",
+          "displayName": "Triangle Patrol (Random Waypoints)",
+          "npcType": "person",
+          "position": { "x": 8, "y": 3 },
+          "spriteSheet": "hacker-red",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/test-npc.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": false,
+            "patrol": {
+              "enabled": true,
+              "speed": 100,
+              "waypoints": [
+                {"x": 8, "y": 3},
+                {"x": 6, "y": 7},
+                {"x": 8, "y": 7}
+              ],
+              "waypointMode": "random"
+            }
+          },
+          "_comment": "Randomly visits 3 waypoints forming a triangle"
+        },
+
+        {
+          "id": "waypoint_with_dwell",
+          "displayName": "Checkpoint Patrol (With Dwell Time)",
+          "npcType": "person",
+          "position": { "x": 3, "y": 8 },
+          "spriteSheet": "hacker",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/test-npc.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": false,
+            "patrol": {
+              "enabled": true,
+              "speed": 60,
+              "waypoints": [
+                {"x": 4, "y": 3, "dwellTime": 2000},
+                {"x": 4, "y": 7, "dwellTime": 2000},
+                {"x": 4, "y": 5, "dwellTime": 1000}
+              ],
+              "waypointMode": "sequential"
+            }
+          },
+          "_comment": "Sequential patrol with dwell times: (4,3) stand 2s → (4,7) stand 2s → (4,5) stand 1s → repeat"
+        },
+
+        {
+          "id": "waypoint_zigzag",
+          "displayName": "Zigzag Patrol",
+          "npcType": "person",
+          "position": { "x": 8, "y": 8 },
+          "spriteSheet": "hacker-red",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/test-npc.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": false,
+            "patrol": {
+              "enabled": true,
+              "speed": 100,
+              "waypoints": [
+                {"x": 3, "y": 3},
+                {"x": 8, "y": 3},
+                {"x": 3, "y": 6},
+                {"x": 8, "y": 6}
+              ],
+              "waypointMode": "sequential"
+            }
+          },
+          "_comment": "Zigzag pattern patrol across room"
+        },
+
+        {
+          "id": "waypoint_with_face",
+          "displayName": "Waypoint Patrol + Face Player",
+          "npcType": "person",
+          "position": { "x": 5, "y": 5 },
+          "spriteSheet": "hacker",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/test-npc.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96,
+            "patrol": {
+              "enabled": true,
+              "speed": 100,
+              "waypoints": [
+                {"x": 3, "y": 3},
+                {"x": 7, "y": 3},
+                {"x": 7, "y": 7},
+                {"x": 3, "y": 7}
+              ],
+              "waypointMode": "sequential"
+            }
+          },
+          "_comment": "Patrols waypoints normally, but stops to face player when nearby"
+        },
+
+        {
+          "id": "waypoint_line_vertical",
+          "displayName": "Vertical Line Patrol",
+          "npcType": "person",
+          "position": { "x": 2, "y": 3 },
+          "spriteSheet": "hacker-red",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/test-npc.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": false,
+            "patrol": {
+              "enabled": true,
+              "speed": 80,
+              "waypoints": [
+                {"x": 2, "y": 3},
+                {"x": 2, "y": 6},
+                {"x": 2, "y": 8}
+              ],
+              "waypointMode": "sequential"
+            }
+          },
+          "_comment": "Patrols up and down a vertical line"
+        },
+
+        {
+          "id": "waypoint_line_horizontal",
+          "displayName": "Horizontal Line Patrol",
+          "npcType": "person",
+          "position": { "x": 3, "y": 2 },
+          "spriteSheet": "hacker",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/test-npc.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": false,
+            "patrol": {
+              "enabled": true,
+              "speed": 100,
+              "waypoints": [
+                {"x": 3, "y": 2},
+                {"x": 5, "y": 2},
+                {"x": 7, "y": 2}
+              ],
+              "waypointMode": "sequential"
+            }
+          },
+          "_comment": "Patrols left and right on a horizontal line"
+        },
+
+        {
+          "id": "waypoint_fast",
+          "displayName": "Fast Waypoint Patrol",
+          "npcType": "person",
+          "position": { "x": 8, "y": 6 },
+          "spriteSheet": "hacker-red",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/test-npc.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": false,
+            "patrol": {
+              "enabled": true,
+              "speed": 200,
+              "waypoints": [
+                {"x": 8, "y": 6},
+                {"x": 6, "y": 6},
+                {"x": 6, "y": 4},
+                {"x": 8, "y": 4}
+              ],
+              "waypointMode": "sequential"
+            }
+          },
+          "_comment": "Fast rectangular patrol at 200 px/s"
+        },
+
+        {
+          "id": "waypoint_slow",
+          "displayName": "Slow Waypoint Patrol",
+          "npcType": "person",
+          "position": { "x": 3, "y": 6 },
+          "spriteSheet": "hacker",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/test-npc.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": false,
+            "patrol": {
+              "enabled": true,
+              "speed": 40,
+              "waypoints": [
+                {"x": 3, "y": 6},
+                {"x": 5, "y": 6},
+                {"x": 5, "y": 8},
+                {"x": 3, "y": 8}
+              ],
+              "waypointMode": "sequential"
+            }
+          },
+          "_comment": "Slow rectangular patrol at 40 px/s"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "key": "2c60775adc16ce4f574d7d08e91559eb",
+  "npc": "eleanor_vance",
+  "text": "Noted. We preserve the right without invoking. That's the legally defensible position and the one I'd recommend.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:26:58Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "247fc3ab6eabf8f92729b4dde8c9054a",
+  "npc": "director_netherton",
+  "text": "That is a line I do not let anyone cross. You are going in.",
+  "voice": "Charon",
+  "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried; sets the stakes then lets his people run the detail.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T00:50:38Z"
+}

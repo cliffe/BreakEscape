@@ -1,0 +1,13 @@
+{
+  "key": "052e02b34155c8d89adb78e095c9e6ca",
+  "npc": "helen_marsh",
+  "text": "At two per cent we evacuate. Nobody goes into that hall now. Fire service are on their way.",
+  "voice": "Aoede",
+  "style": "Senior SCADA engineer in her late forties from Nottinghamshire; warm, plain-spoken and calm under pressure. Speak with a consistent East Midlands (Nottingham) accent throughout. Do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis02_energy",
+  "source": "generate",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:14:32Z"
+}

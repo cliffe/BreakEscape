@@ -1,0 +1,13 @@
+{
+  "key": "26486b2971f2591c4c348dbcaa46f56d",
+  "npc": "narrator",
+  "text": "The cloner's antenna lights up -- it detects a MIFARE signal from her staff badge. Read it, then crack the keys.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:01:14Z"
+}

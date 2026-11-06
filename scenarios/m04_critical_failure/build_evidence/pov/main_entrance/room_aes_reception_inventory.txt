@@ -1,0 +1,83 @@
+Room room_aes_reception: 320x320 px (10x10 tiles; about 6 m wide, 6 m deep). Camera near the south wall looking north.
+Items left to right within each zone; desk/counter contents are listed under their table.
+Names are sprite names: look at the render to see what each one is.
+
+## back wall (hung on it)
+  aes_ppe_sign1  x=40..60 y=23..50
+  aes_ppe_rack1  x=62..88 y=31..56
+  ?(collision; look at the render)  x=96..210 y=16..64
+  aes_logo_sign1  x=124..193 y=17..36
+  hospital_chart_board1  x=200..245 y=12..44
+  aed_cabinet1  x=248..269 y=32..56
+  aes_cctv1  x=274..297 y=12..30
+
+## against the back wall (standing on the floor)
+  aes_security_desk1  x=96..157 y=57..112
+    on aes_security_desk1: notes1  x=128..144 (conditional; see EMPTY below)
+  zds_desk3  x=158..209 y=73..112
+    on zds_desk3: notes3  x=176..190 (conditional; see EMPTY below)
+
+## second row (may stand out on the floor in front of the back wall: check the render and tour shot for floor between it and the wall)
+  checkin_kiosk1  x=40..67 y=80..140  [feet ~1.3 m out from the back wall; a rough guide, confirm in the render]
+
+## right wall
+  fire_alarm_point1  x=292..308 y=112..132
+
+## floor, far left
+  ?(collision; look at the render)  x=42..65 y=120..130  [feet ~1.1 m out from the back wall; a rough guide, confirm in the render]
+
+## floor, mid right
+  ?(collision; look at the render)  x=266..286 y=180..190  [feet ~2.2 m out from the back wall; a rough guide, confirm in the render]
+
+## floor, near centre
+  aes_speed_gate1  x=96..147 y=169..222  [feet ~2.8 m out from the back wall; a rough guide, confirm in the render]
+
+## floor, near right
+  ?(collision; look at the render)  x=198..256 y=228..240  [feet ~3.1 m out from the back wall; a rough guide, confirm in the render]
+  glass_coffee_table1  x=200..252 y=182..212  [feet ~2.6 m out from the back wall; a rough guide, confirm in the render]
+  water_cooler1  x=264..288 y=153..200  [feet ~2.4 m out from the back wall; a rough guide, confirm in the render]
+  ?(collision; look at the render)  x=266..294 y=226..238  [feet ~3.1 m out from the back wall; a rough guide, confirm in the render]
+
+## near edge (bottom of the frame, mostly cropped; include only if it matters)
+  leather_sofa1  x=196..258 y=214..252  [feet ~3.4 m out from the back wall; a rough guide, confirm in the render]
+  planter_fig1  x=264..296 y=189..250  [feet ~3.3 m out from the back wall; a rough guide, confirm in the render]
+
+## lighting config (the mood to draw; compare it when reusing another mission's background)
+  { "emitters": { "fire_alarm_point": [ { "condition": "globalVars.attack_prevented === true", "intensity": 0 }, { "condition": "globalVars.crew_warned === true", "color": "#ff5050", "radius": 26, "intensity": 0.9, "effect": "pulse", "above": true }, { "intensity": 0 } ] } }
+  mission mood (scenarios/m04_critical_failure/LIGHTING_PLAN.md):
+    ## 1. Mood and where it comes from
+    Kind of game: SAFETYNET spy thriller. The lighting sets a night shift at a grid battery plant and tightens as the crisis builds. It never carries information a 
+    - **Night.** "It's tonight, and it's this hall" (`ink/m04_opening_briefing.ink:232`); the night crew in Hall 2 "till six" (`ink/m04_npc_robert_vance.ink:448`); 
+    | main_entrance | gate guard | on | scenario night | A manned gatehouse; papers on the desks. |
+
+## doors (scenario connections; the render does not draw doors)
+  {'south': 'operations_office'}
+  north = a door in the back wall (a single one sits in a back-wall corner);
+  east/west = doors in the side walls (position along the wall: see the in-game tour shot);
+  south = behind the camera.
+  Door art painted into the map's walls (render and strip) is not reliable: trust the connections and the tour shot.
+
+## scenario sprite overrides (the render shows the map sprite, the game shows these)
+  none
+
+## EMPTY in this mission: conditional slots no scenario object claims
+  NPCs drawn as static props (e.g. patients in beds) can still fill these: check the NPC list and the tour shot.
+  none
+
+## NPCs in this room (spriteSheet; static ones are drawn as props, not people)
+  opening_briefing_cutscene: agent_hax  at (500, 500): outside the room's tiles (phone-only or placed elsewhere)
+  director_netherton: netherton  at (480, 500): outside the room's tiles (phone-only or placed elsewhere)
+  agent_nightshade: nightshade  at (520, 500): outside the room's tiles (phone-only or placed elsewhere)
+  security_guard: security_guard  at (7.3, 4) tiles: 73% across, feet 50% of the way from the back wall. Back-wall items behind them: x~202..266
+  agent_0x99_debrief: agent_hax  at (500, 500): outside the room's tiles (phone-only or placed elsewhere)
+  In the chat the speaking NPC stands at about 83% of the background's width, so what the map
+  shows around them belongs at about 55-90% across (see 'Behind the NPC' in the skill).
+
+## slot audit: which map slot each scenario object takes
+  ok       notes "Visitor Sign-In Log" -> notes1 (conditional_table_items) at 128,87
+  ok       notes "Security Desk Procedures" -> notes3 (conditional_table_items) at 176,91
+
+## where this background will show
+  !! conversations in this room set their own background, which wins over chatBackground:
+     assets/backgrounds/background1.png  (grep it in the scenario to see which scenes)
+     assets/backgrounds/hq1.png  (grep it in the scenario to see which scenes)

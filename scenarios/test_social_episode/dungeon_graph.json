@@ -1,0 +1,10 @@
+{
+  "scenario": "test_social_episode",
+  "start_room": "ep_room",
+  "nodes": [
+
+  ],
+  "edges": [
+
+  ]
+}

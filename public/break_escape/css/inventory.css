@@ -1,0 +1,146 @@
+/* Inventory System Styles */
+
+#inventory-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    z-index: 1000;
+    font-family: 'GNF';
+}
+
+#inventory-container::-webkit-scrollbar {
+    height: 8px;
+}
+
+#inventory-container::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+#inventory-container::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+}
+
+.inventory-slot {
+    min-width: 60px;
+    height: 60px;
+    margin: 0 5px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    background: rgb(149 157 216 / 80%);
+}
+
+/* Pulse animation for newly added items */
+@keyframes pulse-slot {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+    }
+    50% {
+        transform: scale(1.5);
+        box-shadow: 0 0 0 10px rgba(255, 255, 255, 0);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+    }
+}
+
+.inventory-slot.pulse {
+    animation: pulse-slot 0.6s ease-out;
+}
+
+.inventory-item {
+    max-width: 48px;
+    max-height: 48px;
+    cursor: pointer;
+    transition: transform 0.2s;
+    transform: scale(2);
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+}
+
+.inventory-item:hover {
+    transform: scale(2.2);
+}
+
+.inventory-tooltip {
+    position: absolute;
+    bottom: 100%;
+    left: -10px;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 18px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.inventory-item:hover + .inventory-tooltip {
+    opacity: 1;
+}
+
+/* Key ring specific styling */
+.inventory-item[data-type="key_ring"] {
+    position: relative;
+}
+
+.inventory-item[data-type="key_ring"]::after {
+    content: attr(data-key-count);
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #ff6b6b;
+    color: white;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+/* Hide count badge for single keys */
+.inventory-item[data-type="key_ring"][data-key-count="1"]::after {
+    display: none;
+}
+
+/* Phone unread message badge */
+.inventory-slot {
+    position: relative;
+}
+
+.inventory-slot .phone-badge {
+    display: block;
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #5fcf69; /* Green to match phone LCD screen */
+    color: #000;
+    border: 2px solid #000;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 4px;
+    line-height: 16px; /* Center text vertically (20px - 2px border * 2 = 16px) */
+    text-align: center;
+    font-size: 12px;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.8);
+    z-index: 10;
+    border-radius: 0; /* Maintain pixel-art aesthetic */
+} 

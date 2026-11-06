@@ -1,0 +1,13 @@
+{
+  "key": "9afe455360c0a679b136c0f2843621cb",
+  "npc": "narrator",
+  "text": "He's past speaking now. His lips have gone dusky. His eyes find you and hold.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

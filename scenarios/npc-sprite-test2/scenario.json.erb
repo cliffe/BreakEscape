@@ -1,0 +1,186 @@
+{
+  "scenario_brief": "Test scenario for NPC sprite functionality",
+  "globalVariables": {
+    "player_joined_organization": false
+  },
+  "startRoom": "test_room",
+  
+  "startItemsInInventory": [
+            {
+              "type": "phone",
+              "name": "Your Phone 0",
+              "takeable": true,
+              "phoneId": "player_phone",
+              "npcIds": ["gossip_girl"],
+              "observations": "Your personal phone with some interesting contacts"
+            }
+  ],
+  
+  "player": {
+    "id": "player",
+    "displayName": "Agent 0x00",
+    "spriteSheet": "hacker",
+    "spriteTalk": "assets/characters/hacker-talk.png",
+    "spriteConfig": {
+      "idleFrameStart": 20,
+      "idleFrameEnd": 23
+    }
+  },
+  
+  "rooms": {
+    "test_room": {
+      "type": "room_office",
+      "connections": {},
+      "npcs": [
+        {
+            "id": "neye_eve",
+            "displayName": "Neye Eve",
+            "storyPath": "scenarios/ink/neye-eve.json",
+            "avatar": "assets/npc/avatars/npc_adversary.png",
+            "phoneId": "player_phone",
+            "currentKnot": "start",
+            "npcType": "phone"
+        },
+        {
+            "id": "gossip_girl",
+            "displayName": "Gossip Girl",
+            "storyPath": "scenarios/ink/gossip-girl.json",
+            "avatar": "assets/npc/avatars/npc_neutral.png",
+            "phoneId": "player_phone",
+            "currentKnot": "start",
+            "npcType": "phone",
+            "timedMessages": [
+                {
+                    "delay": 5000,
+                    "message": "Hey! 👋 Got any juicy gossip for me today?",
+                    "type": "text"
+                }
+            ]
+        },
+        {
+          "id": "test_npc_front",
+          "displayName": "Helper NPC",
+          "npcType": "person",
+          "position": { "x": 5, "y": 3 },
+          "spriteSheet": "hacker-red",
+          "spriteTalk": "assets/characters/hacker-red-talk.png",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/helper-npc.json",
+          "currentKnot": "start",
+          "itemsHeld": [
+            {
+              "type": "workstation",
+              "name": "Crypto Analysis Station",
+              "takeable": true,
+              "observations": "A powerful workstation for cryptographic analysis"
+            },
+            {
+              "type": "lockpick",
+              "name": "Lock Pick Kit",
+              "takeable": true,
+              "observations": "A professional lock picking kit with various picks and tension wrenches"
+            }
+          ]
+        },
+        {
+          "id": "test_npc_back",
+          "displayName": "Back NPC",
+          "npcType": "person",
+          "position": { "x": 6, "y": 8 },
+          "spriteSheet": "hacker",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/test2.json",
+          "currentKnot": "hub",
+          "timedConversation": {
+            "delay": 0,
+            "targetKnot": "group_meeting",
+            "background": "assets/backgrounds/hq1.png"
+          }
+        },
+        {
+          "id": "test_npc_influence",
+          "displayName": "Influence NPC",
+          "npcType": "person",
+          "position": { "x": 2, "y": 2 },
+          "spriteSheet": "hacker",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/influence-demo.json",
+          "currentKnot": "start"
+        },
+        {
+          "id": "container_test_npc",
+          "displayName": "Equipment Officer",
+          "npcType": "person",
+          "position": { "x": 8, "y": 5 },
+          "spriteSheet": "hacker-red",
+          "spriteTalk": "assets/characters/hacker-red-talk.png",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/equipment-officer.json",
+          "currentKnot": "start",
+          "itemsHeld": [
+            {
+              "type": "phone",
+              "name": "Your Phone 1",
+              "takeable": true,
+              "phoneId": "player_phone",
+              "npcIds": ["gossip_girl"],
+              "observations": "Your personal phone with some interesting contacts"
+            }, 
+            {
+              "type": "phone",
+              "name": "Your Phone 2",
+              "takeable": true,
+              "phoneId": "player_phone",
+              "npcIds": ["neye_eve"],
+              "observations": "Your personal phone with some interesting contacts"
+            }, 
+            {
+              "type": "lockpick",
+              "name": "Basic Lock Pick Kit",
+              "takeable": true,
+              "observations": "A basic set of lock picking tools"
+            },
+            {
+              "type": "lockpick",
+              "name": "Advanced Lock Pick Kit",
+              "takeable": true,
+              "observations": "An advanced set with precision tools"
+            },
+            {
+              "type": "workstation",
+              "name": "Analysis Workstation",
+              "takeable": true,
+              "observations": "Portable analysis workstation"
+            },
+            {
+              "type": "keycard",
+              "name": "Security Keycard",
+              "takeable": true,
+              "observations": "Electronic access keycard"
+            },
+            {
+              "type": "notes",
+              "name": "Security Log",
+              "takeable": true,
+              "readable": true,
+              "text": "Unusual after-hours access detected:\n- CEO office: 11:30 PM\n- Server room: 2:15 AM\n- CEO office again: 3:45 AM",
+              "observations": "A concerning security log from last night"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

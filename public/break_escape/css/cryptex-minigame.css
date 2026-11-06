@@ -1,0 +1,264 @@
+/* ── Cryptex / Scroll-Wheel Password Entry — MG-U ──────────────────────── */
+
+/* ── Wrapper ──────────────────────────────────────────────────────────────── */
+.cryptex-wrapper {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    min-height: 500px;
+    background: #0d1117;
+    color: #c9d1d9;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 14px;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+/* ── Header ───────────────────────────────────────────────────────────────── */
+.cryptex-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #1a233a;
+    padding: 16px 20px;
+    border-bottom: 2px solid #334466;
+    flex-shrink: 0;
+}
+
+.cryptex-header h2 {
+    margin: 0 0 8px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #ffffff;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.cryptex-header p {
+    margin: 0;
+    font-size: 12px;
+    color: #8899bb;
+    letter-spacing: 0.03em;
+}
+
+/* ── Main wheel container ───────────────────────────────────────────────── */
+.cryptex-wheels {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    padding: 40px 20px;
+    overflow: hidden;
+}
+
+/* ── Single wheel group ────────────────────────────────────────────────── */
+.cryptex-wheel-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.cryptex-wheel-label {
+    font-size: 10px;
+    color: #556688;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: bold;
+    min-height: 12px;
+}
+
+/* ── Wheel row: arrows and display ────────────────────────────────────── */
+.cryptex-wheel-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.cryptex-wheel-arrow {
+    background: #1a233a;
+    border: 1px solid #445566;
+    color: #8899bb;
+    font-family: inherit;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 6px 10px;
+    width: 36px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    flex-shrink: 0;
+}
+
+.cryptex-wheel-arrow:hover:not(:disabled) {
+    background: #223355;
+    color: #aabbdd;
+    border-color: #556688;
+}
+
+.cryptex-wheel-arrow:active:not(:disabled) {
+    background: #0a1420;
+    border-color: #f5a623;
+}
+
+.cryptex-wheel-arrow:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.cryptex-wheel-display {
+    font-size: 56px;
+    font-weight: bold;
+    color: #ffffff;
+    background: #0f1826;
+    border: 2px solid #334466;
+    padding: 10px 20px;
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Courier New', Courier, monospace;
+    letter-spacing: 0.1em;
+    flex-shrink: 0;
+    transition: border-color 0.2s, color 0.2s;
+}
+
+.cryptex-wheel-display.complete {
+    border-color: #44aa44;
+    color: #88ee88;
+}
+
+.cryptex-wheel-display.worn {
+    opacity: 0.3;
+    font-style: italic;
+}
+
+/* ── Hint strip ───────────────────────────────────────────────────────── */
+.cryptex-hint-strip {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: #0f1826;
+    border-top: 1px solid #334466;
+    border-bottom: 1px solid #334466;
+    min-height: 32px;
+    flex-shrink: 0;
+}
+
+.hint-char {
+    font-size: 18px;
+    font-weight: bold;
+    color: #f5a623;
+    font-family: 'Courier New', Courier, monospace;
+    letter-spacing: 0.05em;
+}
+
+.hint-char.hidden {
+    color: #556688;
+}
+
+.hint-char.worn {
+    opacity: 0.3;
+}
+
+/* ── Status message area ──────────────────────────────────────────────── */
+.cryptex-status {
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 20px;
+    background: #0f1826;
+    border-top: 1px solid #334466;
+    border-bottom: 1px solid #334466;
+}
+
+.cryptex-status-message {
+    font-size: 13px;
+    color: #c9d1d9;
+    text-align: center;
+    letter-spacing: 0.03em;
+}
+
+.cryptex-status-message.wrong {
+    color: #ff8888;
+    font-weight: bold;
+}
+
+.cryptex-status-message.success {
+    color: #88ee88;
+    font-weight: bold;
+}
+
+/* ── Footer with buttons ──────────────────────────────────────────────── */
+.cryptex-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: #0f1826;
+    padding: 12px 20px;
+    border-top: 2px solid #334466;
+    flex-shrink: 0;
+}
+
+.cryptex-reset-btn,
+.cryptex-submit-btn {
+    font-family: inherit;
+    font-size: 14px;
+    padding: 8px 16px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    cursor: pointer;
+    border: 1px solid #445566;
+}
+
+.cryptex-reset-btn {
+    background: #1a233a;
+    color: #8899bb;
+}
+
+.cryptex-reset-btn:hover {
+    background: #223355;
+    color: #aabbdd;
+    border-color: #556688;
+}
+
+.cryptex-submit-btn {
+    background: #1a1a1a;
+    color: #555555;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.cryptex-submit-btn.ready {
+    background: #1a2e1a;
+    color: #88ee88;
+    border-color: #44aa44;
+    cursor: pointer;
+    opacity: 1;
+}
+
+.cryptex-submit-btn.ready:hover {
+    background: #224422;
+    color: #ffffff;
+    border-color: #66cc66;
+}
+
+.cryptex-submit-btn.locked {
+    background: #2e1a1a;
+    color: #ff8888;
+    border-color: #664444;
+    cursor: not-allowed;
+    opacity: 0.6;
+}

@@ -1,0 +1,13 @@
+{
+  "key": "5e6e531620df682a88e429e03c01596a",
+  "npc": "ward_nurse",
+  "text": "Six beds in this bay. Two more bays down the corridor. Forty-seven altogether.",
+  "voice": "Kore",
+  "style": "Ward sister, twenty years on the wards. Consistent Belfast / Northern Irish accent throughout. Exhausted, dry, absolutely unsentimental about everything except her patients. Quiet controlled urgency, never raises her voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

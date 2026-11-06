@@ -1,0 +1,123 @@
+
+## R32 (struggling run A, S1, S6): when Kemal turns hostile, HaX says how to fight and that backing off is an option; Satoshi's 'Sit down. (Make him.)' warns it's a fight, and HaX's fight text follows.
+   {set {"briefing_played":true}}
+   {room security_checkpoint}
+
+--- guard ---
+  Narrator: A contract guard with a clipboard walks a slow line across the checkpoint, between you and the trading-floor door.
+  Checkpoint Guard: Evening. Floor's restricted. Who are you?
+     (4 options)
+ > Financial Conduct Authority. Routine supervisory visit.
+  Checkpoint Guard: Regulator. Yeah, they said there'd be one. Who are you here to see?
+     (3 options)
+ > Dr Volkova. The CTO.
+      [set_variable guard_waved_through=true]
+  Checkpoint Guard: Dr Volkova. You're on the list. She's on the floor.
+      [unlock_door trading_floor]
+  Checkpoint Guard: Door's open. Don't touch the screens; the traders bite.
+  [chat closes]
+   {room trading_floor}
+      [HaX text: You're on the floor. Two doors here are on RFID, and your cloner reads a badge from across a desk. Ask if you want the guide.]
+   {ko trader_npc}
+      [engine: trader_npc knocked out -> cover_strained=true]
+      [HaX text: Someone on that floor is going to ring the FCA...]
+      [HaX text: Okonkwo had done nothing. That goes in the report.]
+
+--- irina ---
+      [task: meet_irina]
+  Narrator: A sharp-eyed woman in her mid-thirties looks up from three monitors of transaction graphs.
+  Dr. Irina Volkova: You must be the FCA. Dr Irina Volkova, Chief Technology Officer.
+  Dr. Irina Volkova: A supervisory visit. Always a pleasure, I'm sure.
+     (3 options)
+ > Thirty-seven papers and nearly three thousand citations. I've read some of your work.
+  Dr. Irina Volkova: You read my work? Most people from your side see "cryptographer" and hear "hacker".
+  Dr. Irina Volkova: I built this exchange on sound principles. Zero-knowledge proofs, homomorphic encryption. Things I can defend.
+  Dr. Irina Volkova: My research is about financial privacy. Governments should not be able to read every transaction a person makes.
+  Dr. Irina Volkova: I would call that a privacy position. Your office calls it something else.
+     (2 options)
+ > Financial surveillance worries me too. I understand the principle.
+  Dr. Irina Volkova: Then we have that much in common.
+  Dr. Irina Volkova: Go on.
+     (5 options)
+ > I'll need to test your password strength. What do people here actually use?
+      [give text_file:m06_password_dictionary]
+  Dr. Irina Volkova: Reasonable request for a supervisor. Here.
+  Dr. Irina Volkova: My own audit wordlist. Every crypto firm on earth picks from the same twenty words and bolts a year on the end.
+  Dr. Irina Volkova: Sixty-one per cent of our staff accounts fell to that list last time I ran it. Management's response was to stop me running it.
+  Dr. Irina Volkova: What else?
+     (4 options)
+ > That's all for now.
+  Dr. Irina Volkova: Find me if you need anything else.
+  [chat closes]
+      [engine: Irina's first close -> exchange_infiltrated=true]
+      [HaX text: Their analysts sit east of the floor. If anyone has drawn the money, it's them.]
+   {set {"found_blockchain_evidence":true,"flag1_submitted":true,"flag2_submitted":true,"flag3_submitted":true,"flag4_submitted":true,"found_wallet_keys":true,"found_architects_fund":true}}
+
+--- irina ---
+  Dr. Irina Volkova: Yes?
+     (7 options)
+ > Satoshi's wing. You've a badge for it.
+  Narrator: You show her the authorisation line on the fund page, and nothing else.
+  Dr. Irina Volkova: Satoshi's Ghost. He signs the money with that name. He thinks it's funny.
+  Dr. Irina Volkova: *quietly* You're not from the FCA. ...No. Don't tell me yet.
+      [give keycard:executive_access_badge]
+  Dr. Irina Volkova: I put the readers in on his floor. Facilities lent me a spare to do it and never asked for it back. Here.
+  Dr. Irina Volkova: His wing is east of the data centre. He'll be at his desk; he always is.
+  Dr. Irina Volkova: Go on.
+     (6 options)
+ > That's all for now.
+  Dr. Irina Volkova: Find me if you need anything else.
+  [chat closes]
+   {room server_room}
+   {room data_center}
+      [engine: room_entered:data_center mapping -> at_console=true]
+   {room executive_wing}
+      [engine: room_entered:executive_wing mapping -> at_console=false]
+
+--- minder @on_sighted ---
+  Narrator: The man by the corner office turns, sees you, and steps squarely into your path.
+  Kemal Aydin: The FCA does not come up here.
+     (2 options)
+ > The FCA. Routine supervisory visit.
+  Kemal Aydin: Mr Nakamoto's phone has been ringing about you. The FCA has no file on you.
+  Kemal Aydin: I guarded banks that stole politely. He at least says what he is.
+  Kemal Aydin: So. Who are you really?
+     (3 options)
+ > Then step aside, or I'll move you.
+  Kemal Aydin: *takes off his watch and pockets it* Then come and move me.
+      [engine: satoshi_minder hostile]
+      [engine: npc_hostile_state_changed mapping -> minder_fighting=true]
+      [HaX text: He's coming for you, and he won't wait while you read this. Q for fists, then E or click. Q till the open hand shows to walk away.]
+  [chat closes]
+   [PASS] said: "he won't wait while you read this. Q for fists, then E or click. Q till the open hand shows to walk away."
+   [PASS] minder_hostile = true (expected true)
+   {ko satoshi_minder}
+      [engine: Kemal drops the CEO's office key (itemsHeld)]
+   {set {"door_open_satoshi_office":true}}
+   {room satoshi_office}
+
+--- satoshi ---
+      [task: confront_satoshi]
+      [set_variable satoshi_confronted=true]
+      [set_variable satoshi_spoken=true]
+  Narrator: A man in his early forties leans on the front of an executive desk. The Bitcoin whitepaper hangs framed behind him, level with his own head.
+  Satoshi Nakamoto II: Somebody here rang the FCA tonight. You're not on their books.
+  Satoshi Nakamoto II: And I heard Kemal hit the floor. He's guarded money for thirty years. He'll be embarrassed.
+  Satoshi Nakamoto II: SAFETYNET, right? So you've worked out what this place is for.
+     (4 options)
+ > I'm detaining you. Laundering and terrorist financing.
+  Satoshi Nakamoto II: On what evidence, exactly?
+  Satoshi Nakamoto II: You came in on a fake compliance booking, you've shown me nothing, and you want my wrists?
+  Satoshi Nakamoto II: No. I don't think I will.
+     (2 options)
+ > Sit down. (Make him.)
+  Satoshi Nakamoto II: Make me.
+  Narrator: He comes off the desk with his fists up. This is going to be a fight.
+      [engine: satoshi_nakamoto hostile]
+      [HaX text: He's fighting, and he won't wait while you read this. Q for your fists, then E or click when he's in front of you.]
+  [end]
+   [PASS] said: "This is going to be a fight"
+   [PASS] said: "He's fighting, and he won't wait while you read this. Q for your fists"
+
+[stats] spoken/narrated lines 42, choices 12, longest run without a choice 6 (irina); runs>=6: irina:6
+[result] all expectations met

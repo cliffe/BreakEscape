@@ -1,0 +1,10 @@
+Make portrait for Ruth Adeyemi
+A Black British woman of Nigerian (Yoruba) heritage, about 48, with deep brown skin, a calm oval face and fine lines at the eyes, close-cropped natural black hair with grey at the temples, and thin tortoiseshell reading glasses pushed up on her head, the engagement lead at a small cyber security consultancy and the student's boss. Warm dark brown eyes and a level, brisk, kindly look, as if about to hand over the next job. She wears a tailored charcoal blazer over a mustard-yellow crew-neck top, a dark staff lanyard with a blank white card, charcoal trousers and a slim black belt, and holds a slim black notebook against her side in one hand. Standing alone against an empty plain light-grey backdrop, no room or furniture behind her. No text, no writing and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-22, no reference images, one call (SE art batch A). Reframed with reframe_portrait.py --flip; unflipped original is wip/ruth_adeyemi_concept_1_raw.png.

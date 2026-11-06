@@ -1,0 +1,13 @@
+{
+  "key": "be916d98ee3f010bee2a87d4f367d4ee",
+  "npc": "receptionist",
+  "text": "Night reception, Nwosu. Logging a correction. The external consultant was booked at 01:02 on Dr Kim's authority and signed in by me personally.",
+  "voice": "Despina",
+  "style": "Night reception coordinator, eleven years on this desk. South London / Multicultural London English accent throughout -- warm, quick, dry. Unflappable on the surface, running on fumes underneath.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

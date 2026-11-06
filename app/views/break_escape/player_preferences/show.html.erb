@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<%# Opened from a host game shell (BreakEscape.configuration.shell_picker): its skin, backdrop and heading. %>
+<% shell_theme = @shell && (BreakEscape::Mission.normalise_ui_theme(@shell[:ui_theme]) || BreakEscape::Mission::DEFAULT_UI_THEME) %>
+<% heading = (@shell && @shell[:heading].presence) || 'Character Configuration' %>
+<html<% if shell_theme %> data-ui-theme="<%= shell_theme %>"<% end %>>
+<head>
+  <title><%= @shell ? heading : 'Character Configuration - BreakEscape' %></title>
+  <%= csrf_meta_tags %>
+  <%= csp_meta_tag %>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <%# All fonts are self-hosted in /break_escape/assets/fonts/ via fonts.css %>
+
+  <%# Load configuration CSS %>
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/fonts.css') %>">
+  <% if @shell %>
+    <%# the host's game shell skin (ui-themes.css sets the --ui-* variables player_preferences.css reads) %>
+    <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/ui-themes.css') %>">
+  <% end %>
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/player_preferences.css') %>">
+  <%= break_escape_import_map %>
+</head>
+<body class="configuration-page<%= ' shell-picker' if @shell %>">
+  <% if @shell %>
+    <div class="shell-picker-backdrop" style="<%= @shell[:backdrop_style] %>" aria-hidden="true"></div>
+  <% end %>
+  <div class="pk-screen">
+  <% if @shell %>
+    <%# the shell look is a game screen: Back and Save stay in the header, the character grid scrolls in its panel %>
+    <header class="pk-bar">
+      <%= link_to((@shell[:back_label].presence || 'Back'), @back_url, class: 'btn btn-secondary pk-back', id: 'config-back-link') %>
+      <h1><%= heading %></h1>
+      <%= submit_tag 'Save', form: 'preference-form', class: 'btn btn-primary pk-save', id: 'config-save-button' %>
+    </header>
+  <% end %>
+  <div class="configuration-container">
+    <% unless @shell %><h1><%= heading %></h1><% end %>
+
+    <% if params[:game_id].present? %>
+      <p class="config-prompt">⚠️ Please select your character before starting the mission.</p>
+    <% end %>
+
+    <%= form_with model: @player_preference,
+                  url: configuration_path,
+                  method: :patch,
+                  local: true,
+                  id: 'preference-form' do |f| %>
+
+      <% if @shell %>
+        <% available = @avatar_menu.reject { |e| e['status'] == 'locked' } %>
+        <% locked = @avatar_menu.select { |e| e['status'] == 'locked' } %>
+        <div class="form-group pk-name">
+          <%= f.label :in_game_name, "Your Code Name" %>
+          <%= f.text_field :in_game_name,
+                           value: suggested_in_game_name(@player_preference),
+                           class: 'form-control',
+                           maxlength: 20,
+                           placeholder: 'Zero' %>
+          <small>1-20 characters (letters, numbers, spaces, underscores only)</small>
+          <% preference_field_errors(@player_preference, :in_game_name).each do |msg| %>
+            <p class="field-error" role="alert"><%= msg %></p>
+          <% end %>
+        </div>
+
+        <div class="sprite-preview-large pk-preview">
+          <div id="sprite-preview-canvas-container"></div>
+          <p class="preview-label">Selected character</p>
+        </div>
+
+        <div class="pk-pick">
+          <p class="pk-pick-title">Select Your Character</p>
+          <% if @player_preference.selected_sprite.blank? %>
+            <p class="selection-required">⚠️ Character selection required</p>
+          <% end %>
+          <div class="sprite-grid" id="sprite-selection-grid">
+            <% available.each do |entry| %>
+              <%= render 'break_escape/player_preferences/sprite_card', entry: entry, f: f, id_prefix: 'sprite_', menu: @avatar_menu %>
+            <% end %>
+          </div>
+          <% if locked.any? %>
+            <details class="pk-locked">
+              <summary>Locked (<%= locked.size %>)</summary>
+              <div class="sprite-grid pk-locked-grid">
+                <% locked.each do |entry| %>
+                  <%= render 'break_escape/player_preferences/sprite_card', entry: entry, f: f, id_prefix: 'sprite_', menu: @avatar_menu %>
+                <% end %>
+              </div>
+            </details>
+          <% end %>
+        </div>
+      <% else %>
+        <!-- In-Game Name -->
+        <div class="form-group">
+          <%= f.label :in_game_name, "Your Code Name" %>
+          <%= f.text_field :in_game_name,
+                           value: suggested_in_game_name(@player_preference),
+                           class: 'form-control',
+                           maxlength: 20,
+                           placeholder: 'Zero' %>
+          <small>1-20 characters (letters, numbers, spaces, underscores only)</small>
+          <% preference_field_errors(@player_preference, :in_game_name).each do |msg| %>
+            <p class="field-error" role="alert"><%= msg %></p>
+          <% end %>
+        </div>
+
+        <!-- Sprite Selection -->
+        <div class="form-group">
+          <%= f.label :selected_sprite, "Select Your Character" %>
+          <% if @player_preference.selected_sprite.blank? %>
+            <p class="selection-required">⚠️ Character selection required</p>
+          <% end %>
+
+          <div class="sprite-selection-layout">
+            <!-- 160x160 animated preview of selected sprite -->
+            <div class="sprite-preview-large">
+              <div id="sprite-preview-canvas-container"></div>
+              <p class="preview-label">Selected character</p>
+            </div>
+
+            <!-- Grid of static headshots -->
+            <div class="sprite-grid" id="sprite-selection-grid">
+              <% @avatar_menu.each do |entry| %>
+                <%= render 'break_escape/player_preferences/sprite_card', entry: entry, f: f, id_prefix: 'sprite_', menu: @avatar_menu %>
+              <% end %>
+            </div>
+          </div>
+        </div>
+
+
+      <% end %>
+
+      <% if @shell %>
+        <%= hidden_field_tag :return_to, params[:return_to] %>
+      <% end %>
+
+      <!-- Hidden field for game_id if validating -->
+      <% if params[:game_id].present? %>
+        <%= hidden_field_tag :game_id, params[:game_id] %>
+      <% end %>
+
+      <!-- Submit -->
+      <% unless @shell %>
+      <div class="form-actions">
+        <% if @back_url.present? %>
+          <%= link_to((@shell && @shell[:back_label].presence) || 'Back', @back_url, class: 'btn btn-secondary', id: 'config-back-link') %>
+        <% end %>
+        <%= f.submit 'Save Configuration', class: 'btn btn-primary' %>
+
+        <% if params[:game_id].blank? && !@shell %>
+          <%= link_to 'Cancel', root_path, class: 'btn btn-secondary' %>
+        <% end %>
+      </div>
+      <% end %>
+    <% end %>
+  </div>
+  </div>
+
+  <!-- Load Phaser for 160x160 animated preview only -->
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js" nonce="<%= content_security_policy_nonce %>"></script>
+  <script type="module" nonce="<%= content_security_policy_nonce %>">
+    import { initializeSpritePreview } from '<%= be_asset_path('/break_escape/js/ui/sprite-grid.js') %>';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const sprites = <%= raw @avatar_menu.reject { |e| e['status'] == 'locked' }.map { |e| e['sprite'] }.to_json %>;
+      // Use preferred sprite for Mission 1 if none selected
+      let selectedSprite = '<%= @player_preference.selected_sprite.presence || BreakEscape::PlayerPreference::DEFAULT_SPRITE %>';
+
+      initializeSpritePreview(sprites, selectedSprite);
+
+      const grid = document.getElementById('sprite-selection-grid');
+
+      // Click on headshot selects radio and updates selected class
+      grid.addEventListener('click', function(e) {
+        const label = e.target.closest('label.sprite-card');
+        if (!label) return;
+        const radio = label.querySelector('input[type="radio"]');
+        if (radio && !radio.disabled) {
+          radio.checked = true;
+          radio.dispatchEvent(new Event('change', { bubbles: true }));
+          // Remove selected from all, add to clicked
+          document.querySelectorAll('label.sprite-card').forEach(l => l.classList.remove('selected'));
+          label.classList.add('selected');
+        }
+      });
+
+      // Headshot image fallback (replaces inline onerror — CSP: unsafe-inline blocked)
+      document.querySelectorAll('.sprite-grid .sprite-headshot').forEach(function(img) {
+        img.addEventListener('error', function() {
+          this.style.display = 'none';
+          const n = this.nextElementSibling;
+          if (n) n.classList.remove('headshot-fallback-hidden');
+        });
+      });
+    });
+  </script>
+</body>
+</html>

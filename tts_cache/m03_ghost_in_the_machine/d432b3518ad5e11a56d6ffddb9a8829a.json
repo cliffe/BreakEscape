@@ -1,0 +1,13 @@
+{
+  "key": "d432b3518ad5e11a56d6ffddb9a8829a",
+  "npc": "terry_mott",
+  "text": "Building's shut, mate. So you're either lost or you're trouble.",
+  "voice": "Algieba",
+  "style": "Contract security guard in his fifties. Speak with a consistent South London / Estuary English accent throughout -- do not shift to any other accent. Low, slightly gravelly pitch; slow, flat pace. Tired, dry and procedural; not stupid, and not paid enough to be a hero.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:27:58Z"
+}

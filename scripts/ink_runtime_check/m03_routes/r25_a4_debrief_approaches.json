@@ -1,0 +1,19 @@
+{"steps":[
+{"note":"R25 (A4 fix pass, S3): each briefing approach is named back in the debrief. thorough (cautious) with the full paper trail, recruited + protected; fast (aggressive) with one guard run-in, arrested + exposed; flexible (diplomatic), escaped + left; then flexible with Sterling knocked out."},
+{"set":{"exec_wing_entered":true,"exec_office_entered":true,"usb_seen":true,"roster_seen":true,"transaction_log_read":true,"lore_history_found":true,"catalogue_seen":true,"flag_scan_submitted":true,"flag_ftp_submitted":true,"flag_http_submitted":true,"flag_distcc_submitted":true}},
+{"note":"thorough"},
+{"talk":"briefing","knot":"mission_approach","picks":["thorough","I'm ready"]},
+{"set":{"victoria_fate":"recruited","danny_fate":"protected"}},
+{"talk":"debrief","picks":[0,0,0,0,0,0,0]},
+{"note":"fast"},
+{"talk":"briefing","reload":true,"knot":"mission_approach","picks":["move fast","I'm ready"]},
+{"set":{"victoria_fate":"arrested","danny_fate":"exposed","guard_detection_count":1,"lore_history_found":false,"debrief_played":false}},
+{"talk":"debrief","reload":true,"picks":[0,0,0,0,0,0,0]},
+{"note":"flexible"},
+{"talk":"briefing","reload":true,"knot":"mission_approach","picks":["flexible","I'm ready"]},
+{"set":{"victoria_fate":"escaped","danny_fate":"left","guard_detection_count":0,"debrief_played":false}},
+{"talk":"debrief","reload":true,"picks":[0,0,0,0,0,0,0]},
+{"note":"flexible, Sterling knocked out"},
+{"set":{"victoria_fate":"ko","danny_fate":"protected","debrief_played":false}},
+{"talk":"debrief","reload":true,"picks":[0,0,0,0,0,0,0]}
+]}

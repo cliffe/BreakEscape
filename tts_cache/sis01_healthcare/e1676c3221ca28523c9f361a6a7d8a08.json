@@ -1,0 +1,13 @@
+{
+  "key": "e1676c3221ca28523c9f361a6a7d8a08",
+  "npc": "dr_sharma",
+  "text": "For the Board, it's one test for both. What would it cost to make each risk smaller, and is that cost out of all proportion? That's ALARP.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

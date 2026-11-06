@@ -1,0 +1,13 @@
+{
+  "key": "6b072e67a4670295509ae2288b44a48c",
+  "npc": "dr_sharma",
+  "text": "Helen waited until she could say \"contained\". Article 33 doesn't ask for that. You could have sent what you knew, and what you were about to do, and followed up.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "da8c79ada58f93ca9bbba400ff1a27d0",
+  "npc": "terry_mott",
+  "text": "Between you and me, I keep out of her way. Everyone does.",
+  "voice": "Algieba",
+  "style": "Contract security guard in his fifties. Speak with a consistent South London / Estuary English accent throughout -- do not shift to any other accent. Low, slightly gravelly pitch; slow, flat pace. Tired, dry and procedural; not stupid, and not paid enough to be a hero.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:34:56Z"
+}

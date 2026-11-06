@@ -1,0 +1,142 @@
+{
+ "steps": [
+  {
+   "note": "R23 (puzzle browser F2, F3): Halloran hands over the visitor spare and the ask is gone in the same conversation; VM-first (flags 1 to 3), Patricia hands over the vetting files and names him in the same conversation. (The driver re-syncs globals after a hand-over, so it can't reproduce the engine's stale copy; the ink-side fixes are checked by inkcheck and the browser.) Post-engine follow-ups (2026-10-16, D1): flag 3 no longer makes him a suspect, so the badge log and the front-door reason come first (the pattern plus flag 3 is the exfil half)."
+  },
+  {
+   "talk": "briefing",
+   "picks": [
+    "Bought with what",
+    "damage so far",
+    "Who's this going to",
+    "What's the mission",
+    "And the third",
+    "my cover",
+    "Who else will I meet",
+    "I'm ready",
+    "Methodically",
+    "Any last advice"
+   ]
+  },
+  {
+   "set": {
+    "briefing_played": true
+   }
+  },
+  {
+   "talk": "patricia",
+   "picks": [
+    "Fill me in",
+    "Who has access",
+    "without tipping",
+    "Where should I start"
+   ]
+  },
+  {
+   "read": "security_incident_log"
+  },
+  {
+   "talk": "halloran",
+   "picks": [
+    "Walk me through what was taken",
+    "Tell me about your team",
+    "I need into the server hallway",
+    "That's all for now"
+   ]
+  },
+  {
+   "expect": {
+    "spare_badge_taken": true,
+    "server_badge_obtained": true
+   }
+  },
+  {
+   "set": {
+    "server_password_obtained": true,
+    "server_room_entered": true
+   }
+  },
+  {
+   "set": {
+    "flag1_submitted": true
+   }
+  },
+  {
+   "set": {
+    "flag2_submitted": true
+   }
+  },
+  {
+   "set": {
+    "flag3_submitted": true
+   }
+  },
+  {
+   "expect": {
+    "torres_suspected": false
+   }
+  },
+  {
+   "talk": "owen",
+   "picks": [
+    "What can you tell me",
+    "That's useful",
+    "23:47. Whose",
+    "That's everything"
+   ]
+  },
+  {
+   "talk": "patricia",
+   "picks": [
+    "I think I know who it is",
+    "David Torres",
+    "front door"
+   ]
+  },
+  {
+   "expect": {
+    "torres_suspected": true,
+    "case_exfil": true
+   }
+  },
+  {
+   "said": []
+  },
+  {
+   "talk": "patricia",
+   "picks": [
+    "I need your help with something",
+    "vetting files",
+    "I think I know who it is",
+    "David Torres",
+    [
+     "His own journal",
+     "Money. His wife"
+    ],
+    [
+     "staging manifest. Badge 4471",
+     "Staged by: D. Torres",
+     "upload schedule. He's"
+    ],
+    "You knew him",
+    "I'll stop him"
+   ]
+  },
+  {
+   "said": [
+    "Go slowly. I'm writing this down."
+   ],
+   "notSaid": [
+    "I need why"
+   ]
+  },
+  {
+   "expect": {
+    "torres_identified": true
+   }
+  },
+  {
+   "maxRun": 9
+  }
+ ]
+}

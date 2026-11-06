@@ -1,0 +1,13 @@
+{
+  "key": "d035dcee747726b07c2b2e41abe094c7",
+  "npc": "megan_oyelaran",
+  "text": "My mam's care-home fees are two months behind. I'm on an overdraft I'm not telling you the size of.",
+  "voice": "Leda",
+  "style": "First-year student, bright, skint and competitive. Consistent Manchester accent throughout. Quick, wry, proud.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

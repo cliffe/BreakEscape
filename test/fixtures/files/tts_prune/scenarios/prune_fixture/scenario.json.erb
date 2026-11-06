@@ -1,0 +1,37 @@
+{
+  "scenario_brief": "Fixture for tts_cache_pruner_test.rb",
+  "startRoom": "lobby",
+  "narrator": {
+    "id": "narrator",
+    "skipTextValidation": true,
+    "voice": { "name": "Algenib", "style": "Grave narrator.", "language": "en-GB" }
+  },
+  "rooms": {
+    "lobby": {
+      "type": "room_office",
+      "npcs": [
+        {
+          "id": "guard",
+          "displayName": "Guard",
+          "npcType": "person",
+          "storyPath": "scenarios/prune_fixture/ink/guard.json",
+          "voice": { "name": "Charon", "style": "Bored night guard.", "language": "en-GB" },
+          "eventMappings": [
+            { "eventPattern": "door_opened", "bark": "Oi! That door's alarmed." }
+          ],
+          "timedMessages": [
+            { "delay": 5000, "message": "Guard: Still here?\nYou: Yes." }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "id": "intercom",
+          "type": "intercom",
+          "voice": "Reception is closed. Please call back tomorrow.",
+          "ttsVoice": { "name": "Aoede", "style": null, "language": null }
+        }
+      ]
+    }
+  }
+}

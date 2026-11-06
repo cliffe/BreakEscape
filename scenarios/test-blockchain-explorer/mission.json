@@ -1,0 +1,14 @@
+{
+  "display_name": "Test Blockchain Explorer",
+  "description": "Quick test scenario for the Blockchain Explorer minigame. Trace a cryptocurrency payment chain, identify the mixing service, and pinpoint the ENTROPY destination wallet.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "testing",
+  "cybok": [
+    {
+      "ka": "F",
+      "topic": "Forensics",
+      "keywords": ["Cryptocurrency", "Blockchain OSINT", "Transaction tracing", "Mixing services"]
+    }
+  ]
+}

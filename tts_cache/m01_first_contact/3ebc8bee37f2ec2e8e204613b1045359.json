@@ -1,0 +1,13 @@
+{
+  "key": "3ebc8bee37f2ec2e8e204613b1045359",
+  "npc": "derek_lawson",
+  "text": "Yes. Between 42 and 85 people will die in the first 24 hours.",
+  "voice": "Algieba",
+  "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "batch",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:10:01Z"
+}

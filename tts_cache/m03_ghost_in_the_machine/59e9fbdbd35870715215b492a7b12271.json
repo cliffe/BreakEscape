@@ -1,0 +1,13 @@
+{
+  "key": "59e9fbdbd35870715215b492a7b12271",
+  "npc": "narrator",
+  "text": "She doesn't seem to have heard you come in. You ease back out before she turns round.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:26:22Z"
+}

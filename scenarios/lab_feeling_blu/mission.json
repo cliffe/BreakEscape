@@ -1,0 +1,70 @@
+{
+  "display_name": "Feeling Blu",
+  "description": "A comprehensive Capture The Flag challenge that brings together everything you've learned. Exploit a web server, gain access, escalate privileges, and hunt for flags. This simulates a real-world penetration test from start to finish.",
+  "difficulty_level": 2,
+  "secgen_scenario": "labs/introducing_attacks/9_feeling_blu.xml",
+  "collection": "vm_labs",
+  "cybok": [
+    {
+      "ka": "WAM",
+      "topic": "Fundamental Concepts and Approaches",
+      "keywords": ["authentication", "passwords and alternatives"]
+    },
+    {
+      "ka": "AAA",
+      "topic": "Authentication",
+      "keywords": ["user authentication", "BRUTEFORCE"]
+    },
+    {
+      "ka": "WAM",
+      "topic": "Server-Side Vulnerabilities and Mitigations",
+      "keywords": ["server-side misconfiguration and vulnerable components", "FILE UPLOAD VULNERABILITY"]
+    },
+    {
+      "ka": "MAT",
+      "topic": "Attacks and exploitation",
+      "keywords": ["EXPLOITATION", "EXPLOITATION FRAMEWORKS"]
+    },
+    {
+      "ka": "SS",
+      "topic": "Categories of Vulnerabilities",
+      "keywords": ["CVEs and CWEs"]
+    },
+    {
+      "ka": "SOIM",
+      "topic": "PENETRATION TESTING",
+      "keywords": ["PENETRATION TESTING - SOFTWARE TOOLS", "PENETRATION TESTING - ACTIVE PENETRATION"]
+    },
+    {
+      "ka": "AAA",
+      "topic": "Authorisation",
+      "keywords": ["access control", "Elevated privileges", "Vulnerabilities and attacks on access control misconfigurations"]
+    },
+    {
+      "ka": "OSV",
+      "topic": "Primitives for Isolation and Mediation",
+      "keywords": ["Access controls and operating systems", "Linux security model", "Attacks against SUDO"]
+    },
+    {
+      "ka": "AB",
+      "topic": "Models",
+      "keywords": ["kill chains"]
+    },
+    {
+      "ka": "MAT",
+      "topic": "Malicious Activities by Malware",
+      "keywords": ["cyber kill chain"]
+    },
+    {
+      "ka": "AC",
+      "topic": "Symmetric Cryptography",
+      "keywords": ["symmetric encryption and authentication"]
+    },
+    {
+      "ka": "AAA",
+      "topic": "Authentication",
+      "keywords": ["BRUTEFORCE"]
+    }
+  ]
+}
+

@@ -1,0 +1,120 @@
+{
+  "scenario": "crypto3_aes_symmetric",
+  "start_room": "room_reception",
+  "nodes": [
+    {
+      "id": "door_room_reception",
+      "label": "Room Reception<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "room_reception",
+      "label": "Room Reception",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_room_office",
+      "label": "Room Office<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "room_office",
+      "label": "Room Office",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_room_servers",
+      "label": "Room Servers<br/>Password lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "room_servers",
+      "label": "Room Servers",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_room_closet",
+      "label": "Room Closet<br/>Password lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "room_closet",
+      "label": "Room Closet",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_room_ceo",
+      "label": "Room Ceo<br/>Password lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "room_ceo",
+      "label": "Room Ceo",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "lock_safe1",
+      "label": "Safe1<br/>Password lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_final_safe",
+      "label": "Final Safe<br/>Password lock",
+      "kind": "lock",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_room_reception",
+      "to": "room_reception",
+      "soft": false
+    },
+    {
+      "from": "door_room_office",
+      "to": "room_office",
+      "soft": false
+    },
+    {
+      "from": "door_room_servers",
+      "to": "room_servers",
+      "soft": false
+    },
+    {
+      "from": "door_room_closet",
+      "to": "room_closet",
+      "soft": false
+    },
+    {
+      "from": "door_room_ceo",
+      "to": "room_ceo",
+      "soft": false
+    },
+    {
+      "from": "room_reception",
+      "to": "lock_safe1",
+      "soft": false
+    },
+    {
+      "from": "room_office",
+      "to": "lock_final_safe",
+      "soft": false
+    },
+    {
+      "from": "room_ceo",
+      "to": "lock_final_safe",
+      "soft": false
+    }
+  ]
+}

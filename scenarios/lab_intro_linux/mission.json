@@ -1,0 +1,19 @@
+{
+  "display_name": "Linux Fundamentals and Security Lab",
+  "description": "Learn essential Linux command-line skills, remote administration via SSH, and basic penetration testing techniques. Your technical instructor will guide you through the fundamentals before you practice in a hands-on VM lab environment.",
+  "difficulty_level": 1,
+  "secgen_scenario": "labs/introducing_attacks/1_intro_linux.xml",
+  "collection": "vm_labs",
+  "cybok": [
+    {
+      "ka": "NS",
+      "topic": "Network Protocols and Vulnerability",
+      "keywords": ["common network attacks"]
+    },
+    {
+      "ka": "SOIM",
+      "topic": "PENETRATION TESTING",
+      "keywords": ["PENETRATION TESTING - SOFTWARE TOOLS"]
+    }
+  ]
+}

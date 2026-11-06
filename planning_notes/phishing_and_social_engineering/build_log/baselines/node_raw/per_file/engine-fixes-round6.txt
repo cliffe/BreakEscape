@@ -1,0 +1,75 @@
+TAP version 13
+# Subtest: m06 M1: the knockout hit takes the phone hit notice down
+ok 1 - m06 M1: the knockout hit takes the phone hit notice down
+  ---
+  duration_ms: 352.123263
+  ...
+# 👆 Player chose: On my way.
+# 💾 Saved story state for hax
+# 📱 Phone closed by the story's own output; keeping 1 line(s) for hax
+# 💾 Saved story state for hax
+# 👆 Player chose: On my way.
+# 💾 Saved story state for hax
+# 🔍 Checking for tags after choice... {
+#   hasTags: true,
+#   tagsLength: 1,
+#   tags: [ 'complete_task:call_in_after_sweep' ]
+# }
+# ✅ Processing tags after choice: [ 'complete_task:call_in_after_sweep' ]
+# 💾 Saved story state for hax
+# ✅ NPC hostile system initialized
+# ⚔️ NPC athena hostile: false → true
+# ⚔️ Emitting NPC_HOSTILE_CHANGED for athena (isHostile=true)
+# NPC athena HP: 100 → 0
+# ⚠️ Death animation not found: npc-athena-death-down-right
+# ✅ NPC hostile system initialized
+# ⚔️ Restored hostility for 3 NPC(s)
+# Subtest: m06 M1: the KO screen and a phone closed by Esc take the notice down too
+ok 2 - m06 M1: the KO screen and a phone closed by Esc take the notice down too
+  ---
+  duration_ms: 702.368377
+  ...
+# Subtest: m06 M2: openPhoneThread reads the drawn lines of the open thread only
+ok 3 - m06 M2: openPhoneThread reads the drawn lines of the open thread only
+  ---
+  duration_ms: 0.333717
+  ...
+# Subtest: m06 M2: a bark already on screen goes when its contact's thread opens
+ok 4 - m06 M2: a bark already on screen goes when its contact's thread opens
+  ---
+  duration_ms: 0.439235
+  ...
+# Subtest: m06 M2: a bark repeating a line the open thread shows is not shown
+ok 5 - m06 M2: a bark repeating a line the open thread shows is not shown
+  ---
+  duration_ms: 0.52771
+  ...
+# Subtest: m06 M3: a choice whose own output closes the phone is saved as taken
+ok 6 - m06 M3: a choice whose own output closes the phone is saved as taken
+  ---
+  duration_ms: 1.140623
+  ...
+# Subtest: m06 M3: an ordinary choice is unchanged
+ok 7 - m06 M3: an ordinary choice is unchanged
+  ---
+  duration_ms: 1.511875
+  ...
+# Subtest: m08: Add to Notepad uses the 16 px notes icon, drawn at its own size
+ok 8 - m08: Add to Notepad uses the 16 px notes icon, drawn at its own size
+  ---
+  duration_ms: 1.268088
+  ...
+# Subtest: m08: a KO saves the facing it fell in and a reload restores it
+ok 9 - m08: a KO saves the facing it fell in and a reload restores it
+  ---
+  duration_ms: 4.455571
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1149.427466

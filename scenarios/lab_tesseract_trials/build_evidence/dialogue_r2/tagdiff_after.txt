@@ -1,0 +1,72 @@
+== scenarios/lab_tesseract_trials/ink/closing_debrief.ink [modified]
+  structure: unchanged
+  prose: 49 -> 49 lines, ~7 changed (7 old unmatched, 7 new unmatched); You: lines 0 -> 0
+== scenarios/lab_tesseract_trials/ink/npc_cliffe.ink [modified]
+  structure: 8 difference(s)
+  var:
+    + L15  VAR quiet = false
+  assign:
+    + L29  [common_room] quiet = false
+    + L51  [build] quiet = true
+    + L60  [leaflets] quiet = true
+    + L77  [workshop_hub] quiet = false
+    + L106  [workshop_build] quiet = true
+  condition:
+    + L28  [common_room] quiet
+    + L76  [workshop_hub] quiet
+  prose: 27 -> 27 lines, ~1 changed (1 old unmatched, 1 new unmatched); You: lines 0 -> 0
+== scenarios/lab_tesseract_trials/ink/npc_jordan.ink [modified]
+  structure: unchanged
+  prose: 12 -> 12 lines, ~1 changed (1 old unmatched, 1 new unmatched); You: lines 0 -> 0
+== scenarios/lab_tesseract_trials/ink/npc_megan.ink [modified]
+  structure: 6 difference(s)
+  var:
+    + L11  VAR quiet = false
+  assign:
+    + L31  [hub] quiet = false
+    + L60  [trial_two] quiet = true
+    + L66  [why] quiet = true
+    + L79  [warn_her] quiet = true
+  condition:
+    + L30  [hub] quiet
+  prose: 23 -> 23 lines, ~3 changed (3 old unmatched, 3 new unmatched); You: lines 0 -> 0
+== scenarios/lab_tesseract_trials/ink/npc_sidhu.ink [modified]
+  structure: 8 difference(s)
+  var:
+    + L14  VAR quiet = false
+  assign:
+    + L39  [start] quiet = true
+    + L45  [hub] quiet = false
+    + L71  [ledger] quiet = true
+    + L78  [hash_for] quiet = true
+    + L86  [signed_now] quiet = true
+    + L91  [signed_after] quiet = true
+  condition:
+    + L44  [hub] quiet
+  prose: 24 -> 23 lines, ~7 changed (7 old unmatched, 6 new unmatched); You: lines 0 -> 0
+== scenarios/lab_tesseract_trials/ink/npc_tom.ink [modified]
+  structure: 9 difference(s)
+  var:
+    + L14  VAR quiet = false
+  assign:
+    + L42  [magic] quiet = true
+    + L49  [hub] quiet = false
+    + L52  [hub] quiet = false
+    + L75  [terminal] quiet = true
+    + L83  [cryptosecure] quiet = true
+    + L90  [board] quiet = true
+  condition:
+    + L51  [hub] quiet
+    - (old L81)  [board] corridor_open
+  prose: 28 -> 26 lines, ~2 changed (2 old unmatched, 0 new unmatched); You: lines 0 -> 0
+== scenarios/lab_tesseract_trials/ink/opening_briefing.ink [modified]
+  structure: unchanged
+  prose: 33 -> 33 lines, ~1 changed (1 old unmatched, 1 new unmatched); You: lines 0 -> 0
+== scenarios/lab_tesseract_trials/ink/phone_agent_0x99.ink [modified]
+  structure: unchanged
+  prose: 65 -> 65 lines, ~2 changed (2 old unmatched, 2 new unmatched); You: lines 0 -> 0
+== scenarios/lab_tesseract_trials/ink/phone_ghost.ink [modified]
+  structure: unchanged
+  prose: 55 -> 55 lines, ~9 changed (9 old unmatched, 9 new unmatched); You: lines 0 -> 0
+
+31 structural differences

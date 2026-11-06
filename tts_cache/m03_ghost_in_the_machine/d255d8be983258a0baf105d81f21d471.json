@@ -1,0 +1,13 @@
+{
+  "key": "d255d8be983258a0baf105d81f21d471",
+  "npc": "terry_mott",
+  "text": "And Ms. Sterling's had a packed bag under her desk since Tuesday. Didn't think anything of it till now.",
+  "voice": "Algieba",
+  "style": "Contract security guard in his fifties. Speak with a consistent South London / Estuary English accent throughout -- do not shift to any other accent. Low, slightly gravelly pitch; slow, flat pace. Tired, dry and procedural; not stupid, and not paid enough to be a hero.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:32:48Z"
+}

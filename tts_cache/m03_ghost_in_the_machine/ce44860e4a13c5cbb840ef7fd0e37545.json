@@ -1,0 +1,13 @@
+{
+  "key": "ce44860e4a13c5cbb840ef7fd0e37545",
+  "npc": "narrator",
+  "text": "She slides a clipboard across the desk.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T00:57:10Z"
+}

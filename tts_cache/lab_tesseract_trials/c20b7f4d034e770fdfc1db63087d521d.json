@@ -1,0 +1,13 @@
+{
+  "key": "c20b7f4d034e770fdfc1db63087d521d",
+  "npc": "jordan_pike",
+  "text": "Go on, ask. It's all commission.",
+  "voice": "Puck",
+  "style": "Third-year student working a careers-fair stand for a referral bonus. Consistent Estuary English accent throughout. Upbeat, fast, salesy, laughs at his own lines.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

@@ -1,0 +1,481 @@
+TAP version 13
+# 📋 Setting up event mappings for val: [
+#   {
+#     eventPattern: 'lockpick_used_in_view',
+#     conversationMode: 'person-chat',
+#     targetKnot: 'on_lockpick_used',
+#     cooldown: 0
+#   }
+# ]
+#   📌 Registering listener for event: lockpick_used_in_view → on_lockpick_used
+# ✅ Registered 1 event mappings for val
+# 📋 Setting up event mappings for gary: [
+#   {
+#     eventPattern: 'lockpick_used_in_view',
+#     conversationMode: 'person-chat',
+#     targetKnot: 'on_cabinet_picked',
+#     cooldown: 0
+#   }
+# ]
+#   📌 Registering listener for event: lockpick_used_in_view → on_cabinet_picked
+# ✅ Registered 1 event mappings for gary
+# 👁️ [LOS CHECK] shouldInterruptLockpickingWithPersonChat: roomId="it_department", playerPos=(10, 10)
+# 👁️ [LOS CHECK] Checking NPC: "gary" (room: it_department, type: person)
+# 👁️ [LOS CHECK]   ✓ NPC has lockpick_used_in_view→person-chat mapping
+# 👁️ [LOS CHECK]   npcPos: (0, 0), losConfig: range=undefined, angle=undefined
+# 👁️ [LOS CHECK]   NPC Facing: 90.0°, Distance: 14.1px (range: undefined), Angle: 45.0° (FOV: undefined°), LOS: true
+# �🚫 INTERRUPTING LOCKPICKING: NPC "gary" in room "it_department" can see player and has person-chat mapped to lockpick event
+# 🚫 LOCKPICKING INTERRUPTED: Triggering person-chat with NPC "gary"
+# 🎯 Event triggered: lockpick_used_in_view for NPC: val {
+#   npcId: 'gary',
+#   roomId: 'it_department',
+#   lockable: { scenarioData: { type: 'filing_cabinet' } },
+#   timestamp: 1792579069769
+# }
+# ⏭️ Skipping lockpick_used_in_view for val: caught by gary
+# 🎯 Event triggered: lockpick_used_in_view for NPC: gary {
+#   npcId: 'gary',
+#   roomId: 'it_department',
+#   lockable: { scenarioData: { type: 'filing_cabinet' } },
+#   timestamp: 1792579069769
+# }
+# ✅ Event lockpick_used_in_view conditions passed, triggering NPC reaction
+# 📍 Updated gary current knot to: on_cabinet_picked
+# 🔍 Event config for lockpick_used_in_view: {
+#   conversationMode: 'person-chat',
+#   npcType: 'person',
+#   knot: 'on_cabinet_picked',
+#   fullConfig: {
+#     handlerIndex: 0,
+#     knot: 'on_cabinet_picked',
+#     bark: undefined,
+#     once: undefined,
+#     cooldown: 0,
+#     condition: undefined,
+#     delayMs: 0,
+#     maxTriggers: undefined,
+#     conversationMode: 'person-chat',
+#     changeStoryPath: undefined,
+#     sendTimedMessage: undefined,
+#     setGlobal: undefined,
+#     completeTask: undefined,
+#     skipTask: undefined,
+#     unlockTask: undefined,
+#     unlockAim: undefined,
+#     emitEvent: null,
+#     emitEventData: {},
+#     disableClose: false,
+#     background: null,
+#     setVisible: undefined,
+#     patrolOverride: null,
+#     setPatrolSpeed: undefined,
+#     setDwellMultiplier: undefined,
+#     navigateToPlayer: false
+#   }
+# }
+# 👤 Handling person-chat for event on NPC gary
+# 🔍 Event jump check: {
+#   targetNpcId: 'gary',
+#   currentConvNPCId: undefined,
+#   isConversationActive: false,
+#   activeMinigame: 'none',
+#   isPersonChatActive: false,
+#   hasJumpToKnot: false
+# }
+# ℹ️ Not jumping: isConversationActive=false, isPersonChatActive=false
+# 👤 Starting new person-chat conversation for NPC gary
+# [NPCManager] Event 'lockpick_used_in_view' triggered for NPC 'gary' → knot 'on_cabinet_picked'
+# ⚠️ MinigameFramework not available for person-chat
+# 📋 Setting up event mappings for val: [
+#   {
+#     eventPattern: 'lockpick_used_in_view',
+#     conversationMode: 'person-chat',
+#     targetKnot: 'on_lockpick_used',
+#     cooldown: 0
+#   }
+# ]
+#   📌 Registering listener for event: lockpick_used_in_view → on_lockpick_used
+# ✅ Registered 1 event mappings for val
+# 📋 Setting up event mappings for gary: [
+#   {
+#     eventPattern: 'lockpick_used_in_view',
+#     conversationMode: 'person-chat',
+#     targetKnot: 'on_cabinet_picked',
+#     cooldown: 0
+#   }
+# ]
+#   📌 Registering listener for event: lockpick_used_in_view → on_cabinet_picked
+# ✅ Registered 1 event mappings for gary
+# 👁️ [LOS CHECK] shouldInterruptLockpickingWithPersonChat: roomId="it_department", playerPos=(10, 10)
+# 👁️ [LOS CHECK] Checking NPC: "gary" (room: it_department, type: person)
+# 👁️ [LOS CHECK]   ✓ NPC has lockpick_used_in_view→person-chat mapping
+# 👁️ [LOS CHECK]   npcPos: (0, 0), losConfig: range=undefined, angle=undefined
+# 👁️ [LOS CHECK]   NPC Facing: 90.0°, Distance: 14.1px (range: undefined), Angle: 45.0° (FOV: undefined°), LOS: true
+# �🚫 INTERRUPTING LOCKPICKING: NPC "gary" in room "it_department" can see player and has person-chat mapped to lockpick event
+# 🚫 LOCKPICKING INTERRUPTED: Triggering person-chat with NPC "gary"
+# 🎯 Event triggered: lockpick_used_in_view for NPC: val {
+#   npcId: 'gary',
+#   roomId: 'it_department',
+#   lockable: { roomId: 'it_department' },
+#   timestamp: 1792579069800
+# }
+# ⏭️ Skipping lockpick_used_in_view for val: caught by gary
+# 🎯 Event triggered: lockpick_used_in_view for NPC: gary {
+#   npcId: 'gary',
+#   roomId: 'it_department',
+#   lockable: { roomId: 'it_department' },
+#   timestamp: 1792579069800
+# }
+# ✅ Event lockpick_used_in_view conditions passed, triggering NPC reaction
+# 📍 Updated gary current knot to: on_cabinet_picked
+# 🔍 Event config for lockpick_used_in_view: {
+#   conversationMode: 'person-chat',
+#   npcType: 'person',
+#   knot: 'on_cabinet_picked',
+#   fullConfig: {
+#     handlerIndex: 0,
+#     knot: 'on_cabinet_picked',
+#     bark: undefined,
+#     once: undefined,
+#     cooldown: 0,
+#     condition: undefined,
+#     delayMs: 0,
+#     maxTriggers: undefined,
+#     conversationMode: 'person-chat',
+#     changeStoryPath: undefined,
+#     sendTimedMessage: undefined,
+#     setGlobal: undefined,
+#     completeTask: undefined,
+#     skipTask: undefined,
+#     unlockTask: undefined,
+#     unlockAim: undefined,
+#     emitEvent: null,
+#     emitEventData: {},
+#     disableClose: false,
+#     background: null,
+#     setVisible: undefined,
+#     patrolOverride: null,
+#     setPatrolSpeed: undefined,
+#     setDwellMultiplier: undefined,
+#     navigateToPlayer: false
+#   }
+# }
+# 👤 Handling person-chat for event on NPC gary
+# 🔍 Event jump check: {
+#   targetNpcId: 'gary',
+#   currentConvNPCId: undefined,
+#   isConversationActive: false,
+#   activeMinigame: 'none',
+#   isPersonChatActive: false,
+#   hasJumpToKnot: false
+# }
+# ℹ️ Not jumping: isConversationActive=false, isPersonChatActive=false
+# 👤 Starting new person-chat conversation for NPC gary
+# [NPCManager] Event 'lockpick_used_in_view' triggered for NPC 'gary' → knot 'on_cabinet_picked'
+# ⚠️ MinigameFramework not available for person-chat
+# ⚠️ MinigameFramework not available for person-chat
+# ⚠️ MinigameFramework not available for person-chat
+# ⚠️ MinigameFramework not available for person-chat
+# 📋 Setting up event mappings for val: [
+#   {
+#     eventPattern: 'lockpick_used_in_view',
+#     conversationMode: 'person-chat',
+#     targetKnot: 'on_lockpick_used',
+#     cooldown: 0
+#   }
+# ]
+#   📌 Registering listener for event: lockpick_used_in_view → on_lockpick_used
+# ✅ Registered 1 event mappings for val
+# 📋 Setting up event mappings for gary: [
+#   {
+#     eventPattern: 'lockpick_used_in_view',
+#     conversationMode: 'person-chat',
+#     targetKnot: 'on_cabinet_picked',
+#     cooldown: 0
+#   }
+# ]
+#   📌 Registering listener for event: lockpick_used_in_view → on_cabinet_picked
+# ✅ Registered 1 event mappings for gary
+# 👁️ [LOS CHECK] shouldInterruptLockpickingWithPersonChat: roomId="office_corridor", playerPos=(10, 10)
+# 👁️ [LOS CHECK] Checking NPC: "val" (room: office_corridor, type: person)
+# 👁️ [LOS CHECK]   ✓ NPC has lockpick_used_in_view→person-chat mapping
+# 👁️ [LOS CHECK]   npcPos: (0, 0), losConfig: range=undefined, angle=undefined
+# 👁️ [LOS CHECK]   NPC Facing: 90.0°, Distance: 14.1px (range: undefined), Angle: 45.0° (FOV: undefined°), LOS: true
+# �🚫 INTERRUPTING LOCKPICKING: NPC "val" in room "office_corridor" can see player and has person-chat mapped to lockpick event
+# 🚫 LOCKPICKING INTERRUPTED: Triggering person-chat with NPC "val"
+# 🎯 Event triggered: lockpick_used_in_view for NPC: val {
+#   npcId: 'val',
+#   roomId: 'office_corridor',
+#   lockable: {
+#     doorProperties: { roomId: 'office_corridor', connectedRoom: 'security_office' }
+#   },
+#   timestamp: 1792579069808
+# }
+# ✅ Event lockpick_used_in_view conditions passed, triggering NPC reaction
+# 📍 Updated val current knot to: on_lockpick_used
+# 🔍 Event config for lockpick_used_in_view: {
+#   conversationMode: 'person-chat',
+#   npcType: 'person',
+#   knot: 'on_lockpick_used',
+#   fullConfig: {
+#     handlerIndex: 0,
+#     knot: 'on_lockpick_used',
+#     bark: undefined,
+#     once: undefined,
+#     cooldown: 0,
+#     condition: undefined,
+#     delayMs: 0,
+#     maxTriggers: undefined,
+#     conversationMode: 'person-chat',
+#     changeStoryPath: undefined,
+#     sendTimedMessage: undefined,
+#     setGlobal: undefined,
+#     completeTask: undefined,
+#     skipTask: undefined,
+#     unlockTask: undefined,
+#     unlockAim: undefined,
+#     emitEvent: null,
+#     emitEventData: {},
+#     disableClose: false,
+#     background: null,
+#     setVisible: undefined,
+#     patrolOverride: null,
+#     setPatrolSpeed: undefined,
+#     setDwellMultiplier: undefined,
+#     navigateToPlayer: false
+#   }
+# }
+# 👤 Handling person-chat for event on NPC val
+# 🔍 Event jump check: {
+#   targetNpcId: 'val',
+#   currentConvNPCId: undefined,
+#   isConversationActive: false,
+#   activeMinigame: 'none',
+#   isPersonChatActive: false,
+#   hasJumpToKnot: false
+# }
+# ℹ️ Not jumping: isConversationActive=false, isPersonChatActive=false
+# 👤 Starting new person-chat conversation for NPC val
+# [NPCManager] Event 'lockpick_used_in_view' triggered for NPC 'val' → knot 'on_lockpick_used'
+# 🎯 Event triggered: lockpick_used_in_view for NPC: gary {
+#   npcId: 'val',
+#   roomId: 'office_corridor',
+#   lockable: {
+#     doorProperties: { roomId: 'office_corridor', connectedRoom: 'security_office' }
+#   },
+#   timestamp: 1792579069808
+# }
+# ⏭️ Skipping lockpick_used_in_view for gary: caught by val
+# 📋 Setting up event mappings for val: [
+#   {
+#     eventPattern: 'lockpick_used_in_view',
+#     conversationMode: 'person-chat',
+#     targetKnot: 'on_lockpick_used',
+#     cooldown: 0
+#   }
+# ]
+#   📌 Registering listener for event: lockpick_used_in_view → on_lockpick_used
+# ✅ Registered 1 event mappings for val
+# 📋 Setting up event mappings for gary: [
+#   {
+#     eventPattern: 'lockpick_used_in_view',
+#     conversationMode: 'person-chat',
+#     targetKnot: 'on_cabinet_picked',
+#     cooldown: 0
+#   }
+# ]
+#   📌 Registering listener for event: lockpick_used_in_view → on_cabinet_picked
+# ✅ Registered 1 event mappings for gary
+# 🎯 Event triggered: lockpick_used_in_view for NPC: val { roomId: 'office_corridor' }
+# ✅ Event lockpick_used_in_view conditions passed, triggering NPC reaction
+# 📍 Updated val current knot to: on_lockpick_used
+# 🔍 Event config for lockpick_used_in_view: {
+#   conversationMode: 'person-chat',
+#   npcType: 'person',
+#   knot: 'on_lockpick_used',
+#   fullConfig: {
+#     handlerIndex: 0,
+#     knot: 'on_lockpick_used',
+#     bark: undefined,
+#     once: undefined,
+#     cooldown: 0,
+#     condition: undefined,
+#     delayMs: 0,
+#     maxTriggers: undefined,
+#     conversationMode: 'person-chat',
+#     changeStoryPath: undefined,
+#     sendTimedMessage: undefined,
+#     setGlobal: undefined,
+#     completeTask: undefined,
+#     skipTask: undefined,
+#     unlockTask: undefined,
+#     unlockAim: undefined,
+#     emitEvent: null,
+#     emitEventData: {},
+#     disableClose: false,
+#     background: null,
+#     setVisible: undefined,
+#     patrolOverride: null,
+#     setPatrolSpeed: undefined,
+#     setDwellMultiplier: undefined,
+#     navigateToPlayer: false
+#   }
+# }
+# 👤 Handling person-chat for event on NPC val
+# 🔍 Event jump check: {
+#   targetNpcId: 'val',
+#   currentConvNPCId: undefined,
+#   isConversationActive: false,
+#   activeMinigame: 'none',
+#   isPersonChatActive: false,
+#   hasJumpToKnot: false
+# }
+# ℹ️ Not jumping: isConversationActive=false, isPersonChatActive=false
+# 👤 Starting new person-chat conversation for NPC val
+# [NPCManager] Event 'lockpick_used_in_view' triggered for NPC 'val' → knot 'on_lockpick_used'
+# 🎯 Event triggered: lockpick_used_in_view for NPC: gary { roomId: 'office_corridor' }
+# ✅ Event lockpick_used_in_view conditions passed, triggering NPC reaction
+# 📍 Updated gary current knot to: on_cabinet_picked
+# 🔍 Event config for lockpick_used_in_view: {
+#   conversationMode: 'person-chat',
+#   npcType: 'person',
+#   knot: 'on_cabinet_picked',
+#   fullConfig: {
+#     handlerIndex: 0,
+#     knot: 'on_cabinet_picked',
+#     bark: undefined,
+#     once: undefined,
+#     cooldown: 0,
+#     condition: undefined,
+#     delayMs: 0,
+#     maxTriggers: undefined,
+#     conversationMode: 'person-chat',
+#     changeStoryPath: undefined,
+#     sendTimedMessage: undefined,
+#     setGlobal: undefined,
+#     completeTask: undefined,
+#     skipTask: undefined,
+#     unlockTask: undefined,
+#     unlockAim: undefined,
+#     emitEvent: null,
+#     emitEventData: {},
+#     disableClose: false,
+#     background: null,
+#     setVisible: undefined,
+#     patrolOverride: null,
+#     setPatrolSpeed: undefined,
+#     setDwellMultiplier: undefined,
+#     navigateToPlayer: false
+#   }
+# }
+# 👤 Handling person-chat for event on NPC gary
+# 🔍 Event jump check: {
+#   targetNpcId: 'gary',
+#   currentConvNPCId: undefined,
+#   isConversationActive: false,
+#   activeMinigame: 'none',
+#   isPersonChatActive: false,
+#   hasJumpToKnot: false
+# }
+# ℹ️ Not jumping: isConversationActive=false, isPersonChatActive=false
+# 👤 Starting new person-chat conversation for NPC gary
+# [NPCManager] Event 'lockpick_used_in_view' triggered for NPC 'gary' → knot 'on_cabinet_picked'
+# 📋 Setting up event mappings for val: [
+#   {
+#     eventPattern: 'lockpick_used_in_view',
+#     conversationMode: 'person-chat',
+#     targetKnot: 'on_lockpick_used',
+#     cooldown: 0
+#   }
+# ]
+#   📌 Registering listener for event: lockpick_used_in_view → on_lockpick_used
+# ✅ Registered 1 event mappings for val
+# 📋 Setting up event mappings for gary: [
+#   {
+#     eventPattern: 'lockpick_used_in_view',
+#     conversationMode: 'person-chat',
+#     targetKnot: 'on_cabinet_picked',
+#     cooldown: 0
+#   }
+# ]
+#   📌 Registering listener for event: lockpick_used_in_view → on_cabinet_picked
+# ✅ Registered 1 event mappings for gary
+# 👁️ [LOS CHECK] shouldInterruptLockpickingWithPersonChat: roomId="staff_room", playerPos=(10, 10)
+# 🎒 onPickup.setVariable: maintenance_key_found = true
+# [NPCManager] Scheduled timed conversation from briefing_cutscene at 0ms to knot: start
+# Subtest: container pick: the catch uses the player's live room (window.currentRoomId is never set)
+ok 1 - container pick: the catch uses the player's live room (window.currentRoomId is never set)
+  ---
+  duration_ms: 45.332245
+  ...
+# Subtest: container pick: the sprite's own roomId counts too
+ok 2 - container pick: the sprite's own roomId counts too
+  ---
+  duration_ms: 12.823962
+  ...
+# Subtest: corridor door picked in Val's view: only Val reacts, Gary (another room, already loaded) does not
+ok 3 - corridor door picked in Val's view: only Val reacts, Gary (another room, already loaded) does not
+  ---
+  duration_ms: 6.951472
+  ...
+# Subtest: a lockpick_used_in_view event with no named catcher still reaches every mapping (old payloads)
+ok 4 - a lockpick_used_in_view event with no named catcher still reaches every mapping (old payloads)
+  ---
+  duration_ms: 4.17319
+  ...
+# Subtest: nobody watching in the player's or the lock's room: no catch
+ok 5 - nobody watching in the player's or the lock's room: no catch
+  ---
+  duration_ms: 2.310281
+  ...
+# Subtest: onPickup.setVariable applies on pickup, once, and never for an item restored on reload
+ok 6 - onPickup.setVariable applies on pickup, once, and never for an item restored on reload
+  ---
+  duration_ms: 1.918957
+  ...
+# [NPCManager] Scheduled timed conversation from briefing_cutscene waiting for event 'game_loaded' (delay: 0ms) to knot: start
+# [NPCManager] Registered event listener for conversation 'game_loaded'
+# Subtest: opening cutscene pending: hasPendingOpeningConversation and the brief waits
+ok 7 - opening cutscene pending: hasPendingOpeningConversation and the brief waits
+  ---
+  duration_ms: 96.294354
+  ...
+# Subtest: a resumed game whose briefing already played does not hold the brief
+ok 8 - a resumed game whose briefing already played does not hold the brief
+  ---
+  duration_ms: 1.333201
+  ...
+# Subtest: tutorial decline is kept in the game's globals, so a fresh browser on the same game does not ask again
+ok 9 - tutorial decline is kept in the game's globals, so a fresh browser on the same game does not ask again
+  ---
+  duration_ms: 2.515035
+  ...
+# Subtest: a waypoint patrol keeps walking a leg longer than changeDirectionInterval
+ok 10 - a waypoint patrol keeps walking a leg longer than changeDirectionInterval
+  ---
+  duration_ms: 4.484269
+  ...
+# Subtest: ...and works with a long interval set as a mission workaround (m02 Val, 60000)
+ok 11 - ...and works with a long interval set as a mission workaround (m02 Val, 60000)
+  ---
+  duration_ms: 1.134234
+  ...
+# Subtest: a waypoint patrol that stops moving re-targets after the interval (unstick)
+ok 12 - a waypoint patrol that stops moving re-targets after the interval (unstick)
+  ---
+  duration_ms: 1.409232
+  ...
+# Subtest: random wandering still re-targets every changeDirectionInterval
+ok 13 - random wandering still re-targets every changeDirectionInterval
+  ---
+  duration_ms: 1.224586
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 465.744236

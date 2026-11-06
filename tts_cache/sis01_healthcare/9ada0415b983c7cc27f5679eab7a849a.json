@@ -1,0 +1,13 @@
+{
+  "key": "9ada0415b983c7cc27f5679eab7a849a",
+  "npc": "sarah_mitchell",
+  "text": "The ICO deadline's gone. They want you in the incident room, now.",
+  "voice": "Kore",
+  "style": "Black British charge nurse in her mid-40s, calm, tired but professional. Speak with a consistent Leeds, West Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "generate",
+  "generated": "2026-10-11",
+  "recorded_at": "2026-10-11T00:48:40Z"
+}

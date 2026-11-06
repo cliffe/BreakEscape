@@ -1,0 +1,35 @@
+TAP version 13
+# Subtest: printedExpressions finds values, skips fixed-string choosers
+ok 1 - printedExpressions finds values, skips fixed-string choosers
+  ---
+  duration_ms: 7.223066
+  ...
+# Subtest: person-chat: NPC and Narrator lines are voiced; player lines and choices are not
+ok 2 - person-chat: NPC and Narrator lines are voiced; player lines and choices are not
+  ---
+  duration_ms: 35.962981
+  ...
+# Subtest: multi-line conditional bodies are checked
+ok 3 - multi-line conditional bodies are checked
+  ---
+  duration_ms: 1.863573
+  ...
+# Subtest: phone: only "voice:" lines are voiced
+ok 4 - phone: only "voice:" lines are voiced
+  ---
+  duration_ms: 3.173635
+  ...
+# Subtest: allowlist entries move a hit to "allowed" with its reason
+ok 5 - allowlist entries move a hit to "allowed" with its reason
+  ---
+  duration_ms: 1.568535
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 339.20569

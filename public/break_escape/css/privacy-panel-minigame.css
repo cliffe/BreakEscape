@@ -1,0 +1,79 @@
+/* Privacy-settings panel (ENG-13): a switch per profile setting, and under it the found facts the
+   setting closes. Text is the pixel font (--se-font-readable); nothing is smaller than 13px.
+   Colours come from the neutral skin's --aw-* tokens when the awareness skin is on, else the
+   overlay palette; the fallbacks keep it readable with neither. State is shown by text as well as
+   colour. */
+
+.pp-root {
+    --pp-ink: var(--ui-text, #eef1f8);
+    --pp-dim: var(--ui-text-dim, #a8b2c8);
+    --pp-surface: var(--ui-surface, #10152a);
+    --pp-raised: var(--ui-surface-raised, #26304a);
+    --pp-line: var(--ui-line, #4c5b80);
+    --pp-accent: var(--ui-accent, #ffcc44);
+    --pp-good: var(--ui-success, #6ee08f);
+    --pp-bad: var(--ui-danger, #ff8a8a);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    box-sizing: border-box;
+    font-family: var(--se-font-readable);
+    font-size: 16px;
+    line-height: 1.45;
+    color: var(--pp-ink);
+    background: var(--pp-surface);
+}
+.pp-root.aw-skin {
+    --pp-ink: var(--aw-ink, #1f2933);
+    --pp-dim: #4a5a63;
+    --pp-surface: var(--aw-surface, #f6f8f7);
+    --pp-raised: #fff;
+    --pp-line: var(--aw-line, #cfd8d4);
+    --pp-accent: var(--aw-accent, #2f6f5e);
+    --pp-good: #1d6b3a;
+    --pp-bad: #a4262c;
+}
+
+.pp-toolbar { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-bottom: 2px solid var(--pp-line); background: var(--pp-raised); }
+.pp-title { flex: 1 1 auto; margin: 0; font-size: 18px; }
+/* The live region is for screen readers only; the visible count lives in .pp-counter. Hiding it
+   the way the concern form's .cf-live is keeps it from showing as a stray line (E14-m2). */
+.pp-live { position: absolute; width: 1px; height: 1px; margin: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.pp-stage { flex: 1; min-height: 0; overflow-y: auto; }
+
+.pp-panel { padding: 14px 16px; max-width: 920px; }
+.pp-heading { margin: 0 0 8px; font-size: 20px; color: var(--pp-accent); }
+.pp-heading:focus { outline: none; }
+.pp-text { margin: 0 0 10px; max-width: 62ch; }
+.pp-note { margin: 0 0 10px; max-width: 62ch; font-size: 15px; color: var(--pp-dim); }
+.pp-counter { margin: 0 0 10px; padding: 6px 10px; display: inline-block; font-weight: 700; background: var(--pp-raised); border: 2px solid var(--pp-line); }
+.pp-section { margin: 14px 0 6px; font-size: 17px; color: var(--pp-accent); }
+
+.pp-settings, .pp-facts { margin: 0; padding: 0; list-style: none; }
+.pp-setting { margin: 0 0 10px; padding: 10px 12px; background: var(--pp-raised); border: 2px solid var(--pp-line); border-left: 6px solid var(--pp-line); }
+.pp-setting[data-state="tight"] { border-left-color: var(--pp-good); }
+.pp-switch { display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; min-height: 44px; padding: 8px 14px; font-family: var(--se-font-readable); font-size: 16px; text-align: left; }
+.pp-switch-label { font-weight: 700; }
+.pp-switch-state { font-size: 14px; padding: 0 8px; border: 2px solid var(--pp-line); }
+.pp-switch[aria-checked="true"] .pp-switch-state { border-color: var(--pp-good); color: var(--pp-good); }
+.pp-switch:focus-visible { outline: 3px solid var(--pp-accent); outline-offset: 2px; }
+.pp-hint { margin: 6px 0 0; font-size: 15px; color: var(--pp-dim); }
+
+.pp-facts { margin: 8px 0 0; }
+.pp-fact { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 0 0 6px; padding: 4px 8px; font-size: 15px; border-left: 4px solid var(--pp-bad); }
+.pp-fact.pp-closed { border-left-color: var(--pp-good); }
+.pp-fact.pp-closed .pp-fact-text { text-decoration: line-through; color: var(--pp-dim); }
+.pp-fact-state { font-size: 13px; font-weight: 700; }
+.pp-fact.pp-open .pp-fact-state { color: var(--pp-bad); }
+.pp-fact.pp-closed .pp-fact-state { color: var(--pp-good); }
+.pp-fact-text { flex: 1 1 240px; min-width: 0; overflow-wrap: anywhere; }
+.pp-fact-board { font-size: 13px; color: var(--pp-dim); }
+.pp-fact-note { flex: 1 1 100%; font-size: 14px; color: var(--pp-dim); }
+
+.pp-button, .pp-done { font-family: var(--se-font-readable); font-size: 16px; min-height: 44px; }
+.pp-done { margin-top: 12px; padding: 8px 18px; }
+
+@media (max-width: 767px) {
+    .pp-panel { padding: 10px 12px; }
+}

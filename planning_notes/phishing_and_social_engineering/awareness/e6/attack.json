@@ -1,0 +1,168 @@
+{
+  "_note": "E6 mobile-phishing (quishing) attack fragment (wave 4, opus48 slot). A fragment of the `social` block; the full-episode shell copies these keys into scenarios/awareness_e6_*/scenario.json.erb and the defend-only/check shells leave the attack out. All companies and people are fictional (BRAND_SET.md `tarrowby_logistics`, Tarrowby Logistics). E6 is the 'general staff: mobile' episode: the whole attack beat runs on the mail client's phone layout (`awarenessEpisode.attack.layout: \"phone\"`, P7-G/P7-N), as a member of staff would see it on their handset. The learner, an authorised red-teamer, researches Tarrowby's depot, impersonates the Facilities Coordinator (Dev Acharya) and emails a general-staff member (phish target `mobile_staff` = Kaylee Dunford) a quishing message: scan a QR code with your phone to register your vehicle for the new depot parking permit before the Friday cut-off. No landing page is built and nothing is captured; the QR is pretext flavour, which the E6 defend set then teaches the learner to distrust (the `qr`, `sms` and page cards, tells `unexpected_qr`, `smish_shortlink_urgency`, `reply_stop_trick`). Structurally this mirrors E1: no payload, no scored link; required factors `senderTrust` and `pretextRelevant`, `urgencyCalibrated` advisory. See the P7 report 'Docs hand-off' for the globals the shell must declare and the cast additions for BRAND_SET.",
+
+  "_episodeAttack": {
+    "_note": "What the E6 full-episode shell sets as awarenessEpisode.attack. Pinned here so the shell and the validator agree. `layout: \"phone\"` is the E6-specific field (P7-G's mail-client phone frame, in the schema per the P7-N hand-off); every other field matches §2.1's attack block. Not scored.",
+    "target": "mobile_staff",
+    "siteIds": ["tarrowby_site", "tarrowby_social"],
+    "accountIds": ["analyst"],
+    "defaultAccount": "analyst",
+    "showRedFlagMeter": true,
+    "maxMessages": 1,
+    "scored": false,
+    "layout": "phone",
+    "stages": ["brief", "osint", "write", "flip", "defend", "debrief"]
+  },
+
+  "people": [
+    { "id": "kaylee", "kind": "cast", "address": "kaylee.dunford@tarrowby.example",
+      "forms": { "first": "Kaylee", "formal": "Ms Dunford", "full": "Kaylee Dunford" } },
+    { "id": "dev", "kind": "cast", "address": "dev.acharya@tarrowby.example",
+      "forms": { "first": "Dev", "formal": "Mr Acharya", "full": "Dev Acharya" } }
+  ],
+
+  "intelFacts": {
+    "tarrowby_target_staff": {
+      "text": "Kaylee Dunford is a warehouse operative at Tarrowby's depot, kaylee.dunford@tarrowby.example.",
+      "subject": "kaylee", "source": "blk_staff",
+      "provides": [],
+      "reduceNote": "A named junior staff member and address on the public site gives an attacker someone specific, and likely unpractised, to aim a mobile lure at."
+    },
+    "tarrowby_facilities_contact": {
+      "text": "Facilities at Tarrowby is run by Dev Acharya, dev.acharya@tarrowby.example, who sends the depot notices.",
+      "subject": "dev", "source": "blk_facilities",
+      "provides": [
+        { "type": "name", "about": "sender", "value": "dev_full", "label": "Dev Acharya", "kind": "distinctive" },
+        { "type": "address", "value": "dev_address", "label": "dev.acharya@tarrowby.example", "kind": "distinctive" }
+      ],
+      "reduceNote": "Publishing the name and address staff already act on for depot notices lets an attacker spoof a sender nobody on the floor questions."
+    },
+    "tarrowby_parking_scheme": {
+      "text": "A depot notice tells staff to register their vehicle for the new yard parking permit, the YardPass scheme, by scanning a QR code on the notice board.",
+      "subject": "dev", "source": "blk_parking",
+      "provides": [
+        { "type": "reference", "value": "yardpass", "label": "the YardPass permit", "kind": "distinctive" }
+      ],
+      "reduceNote": "A public notice that already asks staff to scan a QR code trains them to do it, so a fake QR prompt no longer stands out."
+    },
+    "tarrowby_parking_rush": {
+      "text": "Kaylee posted that the depot car park is being resurfaced and everyone is scrambling to register for a permit before the Friday cut-off.",
+      "subject": "kaylee", "source": "post_parking",
+      "provides": [],
+      "reduceNote": "A staff post about a deadline hands an attacker a ready-made reason to hurry you, and names the exact thing you are expecting to deal with."
+    }
+  },
+
+  "templates": {
+    "from_named": { "part": "from", "text": "{sender_name} <{sender_address}>",
+      "slots": [ { "id": "sender_name", "type": "name", "about": "sender", "label": "sender's name" },
+                 { "id": "sender_address", "type": "address", "label": "sender's address" } ] },
+    "greet_generic": { "part": "greeting", "text": "Hi,", "slots": [] },
+    "pretext_qr_permit": { "part": "pretext",
+      "text": "Quick one before Friday: we've moved the depot car park onto {scheme}, so everyone needs to register their vehicle. Scan the QR code on the parking notice with your phone camera and you're done.",
+      "slots": [ { "id": "scheme", "type": "reference", "label": "which permit scheme" } ],
+      "urgency": "high" },
+    "pretext_bulletin": { "part": "pretext", "text": "Here is this month's depot bulletin, no action needed.", "slots": [],
+      "urgency": "low" },
+    "pretext_qr_permit_calm": { "part": "pretext",
+      "text": "When you get a chance, we've moved the depot car park onto {scheme}, so staff need to register their vehicle. You can scan the QR code on the parking notice with your phone camera, or do it from the staff app, whichever suits.",
+      "slots": [ { "id": "scheme", "type": "reference", "label": "which permit scheme" } ],
+      "urgency": "low" },
+    "ask_scan": { "part": "ask", "text": "Can you scan it today so I can tick you off the list? You don't want to be clamped on Monday.", "slots": [],
+      "urgency": "medium" },
+    "ask_scan_calm": { "part": "ask", "text": "No rush on it, just sometime this week so I can keep the list up to date.", "slots": [],
+      "urgency": "low" }
+  },
+
+  "mailClient": {
+    "accounts": [
+      { "id": "analyst", "address": "analyst@tarrowby.example", "displayName": "Red-team analyst",
+        "kind": "given", "person": null, "mailbox": "analyst", "spoofsFrom": true }
+    ],
+    "mailboxes": [ { "id": "analyst" } ],
+    "contacts": [
+      { "id": "kaylee", "person": "kaylee", "name": "Kaylee Dunford",
+        "addresses": ["kaylee.dunford@tarrowby.example"], "role": "Warehouse operative",
+        "revealedBy": "se_intel_tarrowby_target_staff", "targetId": "mobile_staff" }
+    ],
+    "seededMessages": [
+      { "id": "brief", "mailbox": "analyst",
+        "from": { "name": "Red team lead", "address": "lead@redteam.example", "avatar": "npc_neutral" },
+        "to": "analyst@tarrowby.example", "subject": "Authorised exercise: Tarrowby Logistics",
+        "body": "Hello,\n\nThis is the authorised Tarrowby Logistics exercise. In scope: this inbox and the staff listed on it. You're on a phone-sized screen, the way a member of depot staff reads their mail. Research the depot, then write one message. Nothing leaves this account and no real site is touched.\n\nRed team lead",
+        "time": "09:04", "unread": true, "folder": "inbox" }
+    ],
+    "checklistTiming": "onSend",
+    "bodyMode": "templates",
+    "freeTextFlavour": false,
+    "showRedFlagMeter": true
+  },
+
+  "osint": {
+    "profile": "awareness",
+    "sites": [
+      { "id": "tarrowby_site", "name": "Tarrowby Logistics", "url": "tarrowby.example", "type": "company-site",
+        "pages": [
+          { "id": "team", "title": "Our depot team", "blocks": [
+            { "id": "blk_staff", "kind": "staff", "person": "kaylee", "name": "Kaylee Dunford",
+              "role": "Warehouse operative", "address": "kaylee.dunford@tarrowby.example", "fact": "tarrowby_target_staff" },
+            { "id": "blk_facilities", "kind": "staff", "person": "dev", "name": "Dev Acharya",
+              "role": "Facilities Coordinator", "address": "dev.acharya@tarrowby.example", "fact": "tarrowby_facilities_contact" } ] },
+          { "id": "notices", "title": "Depot notices", "blocks": [
+            { "id": "blk_parking", "kind": "p",
+              "text": "New yard parking: register your vehicle on the YardPass scheme. Scan the QR code on the notice board by Friday.",
+              "fact": "tarrowby_parking_scheme" } ] } ] },
+
+      { "id": "tarrowby_social", "name": "Friendface", "url": "friendface.example", "type": "social",
+        "profiles": [
+          { "person": "kaylee", "posts": [
+            { "id": "post_parking", "text": "Car park's getting dug up and now everyone's fighting to register for a permit before Friday. Chaos.",
+              "fact": "tarrowby_parking_rush" },
+            { "id": "post_kaylee_other", "text": "Night shift done, off to watch the football. Finally." } ] } ] }
+    ]
+  },
+
+  "phishTargets": [
+    {
+      "id": "mobile_staff",
+      "address": "kaylee.dunford@tarrowby.example",
+      "displayName": "Kaylee Dunford",
+      "role": "Warehouse operative",
+      "subjects": [
+        { "id": "s_permit", "text": "New car park permit", "topic": "facilities" },
+        { "id": "s_other", "text": "Quick note", "topic": "general" }
+      ],
+      "interests": { "topics": ["facilities"] },
+      "emailReplyDelay": 6,
+      "redFlagMeter": true,
+      "urgency": { "advisoryMax": "low" },
+      "templateSets": {
+        "from": ["from_named"],
+        "greeting": ["greet_generic"],
+        "pretext": ["pretext_qr_permit", "pretext_qr_permit_calm", "pretext_bulletin"],
+        "ask": ["ask_scan", "ask_scan_calm"]
+      },
+      "primedFor": {
+        "distinctiveValues": ["yardpass"],
+        "minDistinct": 1,
+        "trusts": ["dev"],
+        "story": "a prompt to register her vehicle for the new depot parking permit she has already been told to sort out"
+      },
+      "requiredFactors": ["senderTrust", "pretextRelevant"],
+      "advisoryFactors": ["urgencyCalibrated"],
+      "factorStrings": {
+        "open": { "pass": "✓ She would open it", "fail": "Nothing about the sender or the subject made her open it.", "redFlag": null },
+        "senderTrust": { "pass": "✓ From Facilities, who she'd expect a parking notice from", "fail": "She does not recognise this sender. Depot notices reach her from Facilities, not from a name she has never seen.", "redFlag": "The From line carries Dev Acharya's real Facilities address, so it reads as the depot notice Kaylee acts on, but it was forged: Facilities never sent it, and a From line can be set to show any name and address." },
+        "pretextRelevant": { "pass": "✓ Ties to the new parking permit she was told to register for", "fail": "No change she can match this to, so no reason to scan anything.", "redFlag": null },
+        "urgencyCalibrated": { "pass": "✓ The Friday deadline reads as believable", "fail": "'Scan it today or you'll be clamped on Monday' is a deadline and a threat rolled into one, which is the pressure that gets someone to scan before they check.", "failMissed": "", "redFlag": "The 'today, or you'll be clamped' line rushes you past checking whether the notice is genuine." }
+      },
+      "replies": { "landed": "Cheers Dev, scanning it now so I'm on the list.", "missed": "I'll check with the depot office first before I act on anything in this." },
+      "hints": [
+        "Which internal team would a member of depot staff expect a parking notice from?",
+        "What change were staff told to sort out, so an unexpected prompt reads as expected?",
+        "Set the From line to Facilities, the team she already acts on, not your own address."
+      ],
+      "outcome": { "setGlobal": { "phish_mobile_staff_landed": true } }
+    }
+  ]
+}

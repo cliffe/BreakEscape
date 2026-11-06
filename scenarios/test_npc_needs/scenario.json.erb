@@ -1,0 +1,204 @@
+{
+  "scenario_brief": "TEST: NPC Needs\n\nA throwaway engine test for the generic NPC needs system. Nothing here is a mission. One NPC leaves her desk for a drink and returns, one collects the Sample Binder when you drop it and takes it to his desk, and one has no needs at all.",
+  "endGoal": "Engine test only.",
+  "startRoom": "test_room",
+  "startPosition": { "x": 4, "y": 6 },
+  "npcNeedsSeed": "test_npc_needs",
+
+  "actionIcons": { "coffee_machine": "C", "finder_pc": "P", "caffeine": "C", "curiosity": "?", "fallback": "*" },
+
+  "disguises": {
+    "alpha": { "sprite": "female_office_worker_v2", "talk": "assets/characters/female_office_worker_talk.png" },
+    "beta": { "sprite": "male_office_worker_v2", "talk": "assets/characters/male_office_worker_talk.png" }
+  },
+
+  "globalVariables": {
+    "clerk_had_coffee": false,
+    "finder_used_item": false,
+    "finder_used_near_player": false,
+    "clerk_left_desk": false,
+    "item_was_dropped": false,
+    "finder_used_far_from_player": false,
+    "pp_disguise": "",
+    "clerk_pc_screen_locked": false,
+    "clerk_pc_owner_away": false,
+    "clerk_pc_accessed": false,
+    "finder_pc_screen_locked": false,
+    "finder_pc_owner_away": false,
+    "finder_pc_accessed": false,
+    "clerk_pc_hint_seen": false
+  },
+
+  "startItemsInInventory": [
+    {
+      "type": "book1",
+      "id": "sample_binder",
+      "name": "Sample Binder",
+      "takeable": true,
+      "droppable": true,
+      "needsTag": "found_item",
+      "observations": "A plain binder. Click it in the inventory to put it down."
+    }
+  ],
+
+  "objectives": [
+    {
+      "aimId": "engine_check",
+      "title": "Engine check",
+      "description": "Watch the NPCs.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        { "taskId": "see_binder_used", "title": "See the binder used", "type": "custom", "status": "active" }
+      ]
+    }
+  ],
+
+  "rooms": {
+    "test_room": {
+      "type": "room_office",
+      "door_sign": "Test Room",
+      "connections": { "north": "store_room" },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "clerk_pc",
+          "name": "Clerk's Desk PC",
+          "position": { "x": 2, "y": 2 },
+          "takeable": false,
+          "locked": false,
+          "workstation": true,
+          "observations": "A desk PC. The screen is open.",
+          "observationVariants": [
+            { "condition": "globalVars.clerk_pc_screen_locked", "value": "The screen is locked. Whoever sits here needs the password." }
+          ]
+        },
+        {
+          "type": "aes_toolbox1",
+          "id": "costume_a",
+          "name": "Costume Rack A",
+          "position": { "x": 1, "y": 6 },
+          "takeable": false,
+          "observations": "A costume rack.",
+          "triggerOnInteract": [ { "type": "set_costume", "costume": "alpha" } ]
+        },
+        {
+          "type": "aes_toolbox1",
+          "id": "costume_b",
+          "name": "Costume Rack B",
+          "position": { "x": 2, "y": 6 },
+          "takeable": false,
+          "observations": "Another costume rack.",
+          "triggerOnInteract": [ { "type": "set_costume", "costume": "beta" } ]
+        },
+        {
+          "type": "aes_toolbox1",
+          "id": "costume_off",
+          "name": "Costume Bin",
+          "position": { "x": 3, "y": 6 },
+          "takeable": false,
+          "observations": "A bin for taking the costume off.",
+          "triggerOnInteract": [ { "type": "clear_costume" } ]
+        },
+        {
+          "type": "coffee_station1",
+          "id": "coffee_machine",
+          "name": "Coffee Station",
+          "position": { "x": 5, "y": 2 },
+          "takeable": false,
+          "observations": "A coffee station.",
+          "affordance": { "satisfies": "caffeine", "restores": 70, "useSeconds": 5 }
+        },
+        {
+          "type": "pc3",
+          "id": "finder_pc",
+          "name": "Records Desk PC",
+          "position": { "x": 8, "y": 2 },
+          "takeable": false,
+          "locked": false,
+          "locksScreenOnLeave": false,
+          "observations": "A desk PC.",
+          "affordance": { "accepts": ["found_item"], "useSeconds": 4 }
+        }
+      ],
+      "npcs": [
+        {
+          "id": "clerk",
+          "displayName": "Clerk",
+          "npcType": "person",
+          "position": { "x": 2, "y": 4 },
+          "spriteSheet": "female_office_worker_v2",
+          "spriteTalk": "assets/characters/female_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
+          "storyPath": "scenarios/test_npc_needs/ink/clerk.json",
+          "currentKnot": "start",
+          "voice": { "name": "Kore", "style": "Calm office worker.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "needsHome": "clerk_pc",
+          "needs": {
+            "caffeine": { "decayPerMin": 12, "urgentAt": 30, "initial": 40, "maxUnmetMin": 5 }
+          },
+          "usePayload": { "role": "clerk", "tag": "payload-clerk" },
+          "onUse": { "coffee_machine": { "setGlobal": "clerk_had_coffee" } },
+          "eventMappings": [
+            { "eventPattern": "npc_left_post:clerk", "setGlobal": { "clerk_left_desk": true }, "onceOnly": true }
+          ]
+        },
+        {
+          "id": "finder",
+          "displayName": "Finder",
+          "npcType": "person",
+          "position": { "x": 8, "y": 4 },
+          "spriteSheet": "male_office_worker_v2",
+          "spriteTalk": "assets/characters/male_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+          "storyPath": "scenarios/test_npc_needs/ink/clerk.json",
+          "currentKnot": "start",
+          "voice": { "name": "Charon", "style": "Calm office worker.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "needsHome": "finder_pc",
+          "interests": { "found_item": { "weight": 3, "noticeRooms": ["test_room"] } },
+          "usePayload": { "role": "finder", "tag": "payload-finder" },
+          "onUse": { "finder_pc": { "setGlobal": "finder_used_item" } },
+          "eventMappings": [
+            { "eventPattern": "npc_used:finder_pc", "condition": "data.playerNearby === true", "setGlobal": { "finder_used_near_player": true }, "onceOnly": true },
+            { "eventPattern": "npc_used:finder_pc", "condition": "data.playerNearby === false", "setGlobal": { "finder_used_far_from_player": true }, "onceOnly": true },
+            { "eventPattern": "item_dropped:sample_binder", "setGlobal": { "item_was_dropped": true }, "onceOnly": true }
+          ]
+        },
+        {
+          "id": "bystander",
+          "displayName": "Bystander",
+          "npcType": "person",
+          "position": { "x": 5, "y": 6 },
+          "spriteSheet": "female_blowse_v2",
+          "spriteTalk": "assets/characters/female_blowse_talk.png",
+          "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+          "storyPath": "scenarios/test_npc_needs/ink/clerk.json",
+          "currentKnot": "start",
+          "voice": { "name": "Kore", "style": "Calm office worker.", "language": "en-GB" }
+        }
+      ]
+    },
+    "store_room": {
+      "type": "room_office",
+      "door_sign": "Store",
+      "locked": true,
+      "lockType": "key",
+      "requires": "store_key",
+      "keyPins": [30, 50, 40],
+      "connections": { "south": "test_room" },
+      "objects": [
+        {
+          "type": "coffee_station1",
+          "id": "store_coffee",
+          "name": "Store Coffee Station",
+          "position": { "x": 4, "y": 4 },
+          "takeable": false,
+          "observations": "A coffee station behind a locked door.",
+          "affordance": { "satisfies": "caffeine", "restores": 70, "useSeconds": 5 }
+        }
+      ]
+    }
+  }
+}

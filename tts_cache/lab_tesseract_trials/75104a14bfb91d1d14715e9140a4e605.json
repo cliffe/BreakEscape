@@ -1,0 +1,13 @@
+{
+  "key": "75104a14bfb91d1d14715e9140a4e605",
+  "npc": "closing_debrief_person",
+  "text": "You said no to Ghost on their own terms. That's rarer than you'd think.",
+  "voice": "Aoede",
+  "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

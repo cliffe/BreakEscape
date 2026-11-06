@@ -1,0 +1,13 @@
+{
+  "key": "a4e518fa7ca9a6cc12894f8d4d8a9c9a",
+  "npc": "sidhu_selvarajan",
+  "text": "If anyone hands you something signed, bring it to me. I like to watch a signature check out.",
+  "voice": "Enceladus",
+  "style": "Cyber security researcher, blockchain developer and journal editor. Consistent Indian English accent throughout. Calm, precise, courteous, warm.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

@@ -1,0 +1,173 @@
+{
+  "_note": "E7 deepfake-voice CEO attack fragment (wave 4). A fragment of the `social` block; the full-episode shell copies these keys into scenarios/awareness_e7_*/scenario.json.erb, and the defend-only/check shells leave the attack out. E7 is the optional cross-role finale (`11` A1, `11` §3.2 E7 row), reuses E1's Brightwell Foods cast (BRAND_SET.md `brightwell_foods`: 'E7 reuses E1 emails'), and HAS NO ATTACK SCORE (`scored: false`, like E1/E3/E5, and additionally checklist-only, never judged on audio realism). The learner, a junior red-teamer on an authorised Brightwell exercise, prepares the fictional script for a cloned-voice call that impersonates the chief executive Ravinder Sandhu and pressures the accounts-payable clerk (phish target `ceo_voice_target` = Tom Reilly) to release an urgent supplier payment. No real person's voice is used; the TTS 'clone' is a style variant of an in-world voice (`11` §3.2 note, held P7-Z1/Z2). The lesson is 'verify, don't trust the ear': voice alone is not proof. See 'Globals the shell must declare' and 'Open design questions' below.",
+
+  "_episodeAttack": {
+    "_note": "What the full E7 shell sets as awarenessEpisode.attack. Pinned here so the shell and the validator owner agree. C2-M4: the write beat is framed honestly as a written message, the email in the chief executive's name that would go with a cloned-voice call, authored on the write/mail surface (templates + phishTargets), which matches what the runner actually does (no audio, no dedicated voice-script stage; see 'Open design questions'). Unscored and checklist-only.",
+    "target": "ceo_voice_target",
+    "siteIds": ["brightwell_e7_site", "brightwell_e7_social"],
+    "accountIds": ["analyst"],
+    "defaultAccount": "analyst",
+    "showRedFlagMeter": true,
+    "maxMessages": 1,
+    "scored": false,
+    "stages": ["brief", "osint", "write", "flip", "defend", "debrief"],
+    "flipAudioClipId": "vo7_ceo_clone",
+    "_audioNote": "flipAudioClipId and the defend set's voicemail clips (vo6 to vo8) are named but not yet made (held P7-Z2); until then the flip and the voicemail cards stay transcript-only."
+  },
+
+  "people": [
+    { "id": "ravinder", "kind": "cast", "address": "ravinder.sandhu@brightwellfoods.example",
+      "forms": { "first": "Ravinder", "formal": "Mr Sandhu", "full": "Ravinder Sandhu" } },
+    { "id": "tom", "kind": "cast", "address": "tom.reilly@brightwellfoods.example",
+      "forms": { "first": "Tom", "full": "Tom Reilly" } }
+  ],
+
+  "intelFacts": {
+    "brightwell_ceo": {
+      "text": "Ravinder Sandhu is Brightwell Foods' chief executive and often speaks at food-industry events.",
+      "subject": "ravinder", "source": "blk_ceo",
+      "provides": [
+        { "type": "name", "about": "sender", "value": "ravinder_full", "label": "Ravinder Sandhu", "kind": "distinctive" },
+        { "type": "address", "value": "ravinder_address", "label": "ravinder.sandhu@brightwellfoods.example", "kind": "distinctive" }
+      ],
+      "reduceNote": "Recordings of a leader speaking in public are the raw material for a cloned voice; the voice is no longer private once it is on a conference stage."
+    },
+    "brightwell_ceo_travel": {
+      "text": "Ravinder Sandhu posted that he is away in Leeds this week visiting a supplier site, with a packed schedule.",
+      "subject": "ravinder", "source": "post_tradeshow",
+      "provides": [],
+      "reduceNote": "A post that puts a leader out of the office with no time to talk gives a caller a believable reason to be rushed and hard to reach back."
+    },
+    "brightwell_payments_clerk": {
+      "text": "Tom Reilly in accounts payable releases Brightwell's supplier payments.",
+      "subject": "tom", "source": "blk_ap_clerk",
+      "provides": [],
+      "reduceNote": "Naming the person who actually releases payments tells an attacker exactly whom to call, not just whom to email."
+    },
+    "brightwell_open_payment": {
+      "text": "Quarter-end note: a large supplier payment is due to go out this week once it is signed off.",
+      "subject": "tom", "source": "blk_payment",
+      "provides": [
+        { "type": "reference", "value": "payment_ref", "label": "the supplier payment due this week", "kind": "distinctive" }
+      ],
+      "reduceNote": "A known pending payment lets a caller name the exact thing they want pushed through, so the request sounds like business as usual."
+    }
+  },
+
+  "templates": {
+    "caller_ceo": { "part": "from", "text": "{sender_name} <{sender_address}>",
+      "slots": [ { "id": "sender_name", "type": "name", "about": "sender", "label": "sender's name" },
+                 { "id": "sender_address", "type": "address", "label": "the address it comes from" } ] },
+    "greet_rushed": { "part": "greeting", "text": "Tom, it's me, I've only got a minute between site visits.", "slots": [] },
+    "pretext_ceo_payment": { "part": "pretext",
+      "text": "I need {payment} pushed through today while I'm off-site. It's signed off at my end, I just can't get to a desk to do it myself.",
+      "slots": [ { "id": "payment", "type": "reference", "label": "which payment" } ],
+      "urgency": "high" },
+    "pretext_catchup": { "part": "pretext",
+      "text": "Just checking the month-end numbers are on track before I'm back.",
+      "slots": [],
+      "urgency": "low" },
+    "ask_pay_now": { "part": "ask", "text": "Release it today, and keep it between us until I'm back and can explain.", "slots": [],
+      "urgency": "high" }
+  },
+
+  "mailClient": {
+    "accounts": [
+      { "id": "analyst", "address": "analyst@brightwellfoods.example", "displayName": "Red-team analyst",
+        "kind": "given", "person": null, "mailbox": "analyst", "spoofsFrom": true }
+    ],
+    "mailboxes": [ { "id": "analyst" } ],
+    "contacts": [
+      { "id": "tom", "person": "tom", "name": "Tom Reilly",
+        "addresses": ["tom.reilly@brightwellfoods.example"], "role": "Accounts Payable",
+        "revealedBy": "se_intel_brightwell_payments_clerk", "targetId": "ceo_voice_target" }
+    ],
+    "seededMessages": [
+      { "id": "brief", "mailbox": "analyst",
+        "from": { "name": "Red team lead", "address": "lead@redteam.example", "avatar": "npc_neutral" },
+        "to": "analyst@brightwellfoods.example", "subject": "Authorised exercise: Brightwell Foods (finale)",
+        "body": "Hello,\n\nThis is the Brightwell Foods finale. In scope: this inbox and the people on it. Research what's public about the chief executive, then write one short message: the email in his name that would go with a cloned-voice call. No real person is used, nothing leaves this account, and you are not scored on how convincing it is.\n\nRed team lead",
+        "time": "09:04", "unread": true, "folder": "inbox" }
+    ],
+    "checklistTiming": "onSend",
+    "bodyMode": "templates",
+    "freeTextFlavour": false,
+    "showRedFlagMeter": true
+  },
+
+  "osint": {
+    "profile": "awareness",
+    "sites": [
+      { "id": "brightwell_e7_site", "name": "Brightwell Foods", "url": "brightwellfoods.example", "type": "company-site",
+        "pages": [
+          { "id": "leadership", "title": "Leadership", "blocks": [
+            { "id": "blk_ceo", "kind": "staff", "person": "ravinder", "name": "Ravinder Sandhu",
+              "role": "Chief Executive", "address": "ravinder.sandhu@brightwellfoods.example", "fact": "brightwell_ceo" } ] },
+          { "id": "team", "title": "Our team", "blocks": [
+            { "id": "blk_ap_clerk", "kind": "staff", "person": "tom", "name": "Tom Reilly",
+              "role": "Accounts Payable", "address": "tom.reilly@brightwellfoods.example", "fact": "brightwell_payments_clerk" } ] },
+          { "id": "finance_news", "title": "Finance update", "blocks": [
+            { "id": "blk_payment", "kind": "p",
+              "text": "Quarter-end: a large supplier payment is due to go out this week once it is signed off.",
+              "fact": "brightwell_open_payment" } ] } ] },
+
+      { "id": "brightwell_e7_social", "name": "Friendface", "url": "friendface.example", "type": "social",
+        "profiles": [
+          { "person": "ravinder", "posts": [
+            { "id": "post_tradeshow", "text": "In Leeds all week visiting sites, back to back, so bear with me on email. Good to see the teams up here.",
+              "fact": "brightwell_ceo_travel" },
+            { "id": "post_ravinder_other", "text": "Twenty-five years of the chilled range this month. Proud of the whole team." } ] } ] }
+    ]
+  },
+
+  "phishTargets": [
+    {
+      "id": "ceo_voice_target",
+      "address": "tom.reilly@brightwellfoods.example",
+      "displayName": "Tom Reilly",
+      "role": "Accounts Payable",
+      "subjects": [
+        { "id": "s_payment", "text": "Urgent payment", "topic": "finance" },
+        { "id": "s_other", "text": "Quick word", "topic": "general" }
+      ],
+      "interests": { "topics": ["finance"] },
+      "emailReplyDelay": 6,
+      "redFlagMeter": true,
+      "urgency": { "advisoryMax": "low" },
+      "templateSets": {
+        "from": ["caller_ceo"],
+        "greeting": ["greet_rushed"],
+        "pretext": ["pretext_ceo_payment", "pretext_catchup"],
+        "ask": ["ask_pay_now"]
+      },
+      "primedFor": {
+        "distinctiveValues": ["payment_ref"],
+        "minDistinct": 1,
+        "trusts": ["ravinder"],
+        "story": "a rushed call that sounds like the chief executive, pushing a payment he can explain later"
+      },
+      "requiredFactors": ["senderTrust", "pretextRelevant"],
+      "advisoryFactors": ["urgencyCalibrated"],
+      "factorStrings": {
+        "open": { "pass": "✓ He would take the call", "fail": "Nothing about the caller or the reason made him act on it.", "redFlag": null },
+        "senderTrust": { "pass": "✓ It sounds like the chief executive he knows", "fail": "He does not place this voice as the chief executive, so a rushed payment request carries no weight.", "redFlag": "The From line carries Ravinder Sandhu's real Brightwell address, so it reads as the chief executive, but it was forged: Ravinder never sent it, and a From line can be set to show any name and address." },
+        "pretextRelevant": { "pass": "✓ Ties to a payment he is already expecting to release", "fail": "No payment he can match this to, so no reason to act on it.", "redFlag": null },
+        "urgencyCalibrated": { "pass": "✓ The pressure reads as believable", "fail": "'Release it today, and keep it between us' leaves no time to check and no one to check with, which is the pressure that works here.", "failMissed": "", "redFlag": "The 'today, and keep it between us' line leaves no time to check and no one to ask." }
+      },
+      "replies": { "landed": "Of course, I'll release it now and keep it quiet until you're back.", "missed": "I'm not releasing that off a message. I'll ring Ravinder on the number we hold and confirm before anything moves." },
+      "hints": [
+        "Whose voice would a clerk in accounts payable act on without a second thought?",
+        "What payment is already due this week, so the request sounds like normal business?",
+        "Name the chief executive and tie the call to the payment on file; the rush then does the rest."
+      ],
+      "outcome": { "setGlobal": { "phish_ceo_voice_target_landed": true } }
+    }
+  ],
+
+  "_openDesignQuestions": {
+    "_note": "E7 is optional (`11` A1) and its runner/schema support is not scheduled. Flagged for the wave-4 runner and validator owners.",
+    "voiceScriptStage": "The write beat is framed (C2-M4) as the email in the CEO's name that would go with a cloned-voice call, authored here on the write/mail surface, because the runner plays no audio and the learner only ever writes a message. A dedicated voice-script surface (and flip playback of a clip) would be cleaner but needs a runner stage and schema that do not exist. Modelled as mail write so it validates against the existing phishTargets schema.",
+    "flipPlayback": "The E7 flip would replay the script as audio (vo7_ceo_clone) rather than render an email; audio is held (P7-Z2), so the flip stays transcript-only and the runner's mail-based flip view is the stand-in.",
+    "noAttackScore": "scored:false matches E1/E3/E5; E7 adds 'never judged on audio realism' and 'checklist only' (`11` §3.2). No extra scoring field is needed because the attack beat is unscored in every episode."
+  }
+}

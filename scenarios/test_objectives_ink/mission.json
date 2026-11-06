@@ -1,0 +1,7 @@
+{
+  "display_name": "Test Objectives (Ink Tags)",
+  "description": "Demonstrates objectives controlled via Ink dialogue tags: complete_task, unlock_task, and unlock_aim.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "testing"
+}

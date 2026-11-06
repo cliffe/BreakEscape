@@ -1,0 +1,13 @@
+{
+  "key": "8d729ecf98d5813732c7a47baf2bb1f3",
+  "npc": "dr_sharma",
+  "text": "Your internal audit asked for a medical device risk register six months ago. The drug library would have been on it, with someone named to watch who changes it.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

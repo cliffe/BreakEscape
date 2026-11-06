@@ -1,0 +1,42 @@
+{
+  "scenario": "test_horizontal_layout",
+  "start_room": "reception",
+  "nodes": [
+    {
+      "id": "door_office",
+      "label": "Office<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "office",
+      "label": "Office",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_servers",
+      "label": "Servers<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "servers",
+      "label": "Servers",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_office",
+      "to": "office",
+      "soft": false
+    },
+    {
+      "from": "door_servers",
+      "to": "servers",
+      "soft": false
+    }
+  ]
+}

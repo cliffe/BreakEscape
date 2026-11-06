@@ -1,0 +1,120 @@
+/* Sort drill (ENG-11): one situation card at a time, a button per bin, the reason after each
+   drop, then every bin as a column. Text is the pixel font (--se-font-readable); nothing is
+   smaller than 13px. Colours come from the neutral skin's --aw-* tokens when the awareness skin
+   is on, else the overlay palette; the fallbacks keep it readable with neither. */
+
+.sd-root {
+    --sd-ink: var(--ui-text, #eef1f8);
+    --sd-dim: var(--ui-text-dim, #a8b2c8);
+    --sd-surface: var(--ui-surface, #10152a);
+    --sd-raised: var(--ui-surface-raised, #26304a);
+    --sd-line: var(--ui-line, #4c5b80);
+    --sd-accent: var(--ui-accent, #ffcc44);
+    --sd-good: var(--ui-success, #6ee08f);
+    --sd-bad: var(--ui-danger, #ff8a8a);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    box-sizing: border-box;
+    font-family: var(--se-font-readable);
+    font-size: 16px;
+    line-height: 1.45;
+    color: var(--sd-ink);
+    background: var(--sd-surface);
+}
+.sd-root.aw-skin {
+    --sd-ink: var(--aw-ink, #1f2933);
+    --sd-dim: #4a5a63;
+    --sd-surface: var(--aw-surface, #f6f8f7);
+    --sd-raised: #fff;
+    --sd-line: var(--aw-line, #cfd8d4);
+    --sd-accent: var(--aw-accent, #2f6f5e);
+    --sd-good: #1d6b3a;
+    --sd-bad: #a4262c;
+}
+
+.sd-toolbar { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-bottom: 2px solid var(--sd-line); background: var(--sd-raised); }
+.sd-title { flex: 1 1 auto; margin: 0; font-size: 18px; }
+.sd-live { position: absolute; width: 1px; height: 1px; margin: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.sd-stage { flex: 1; min-height: 0; overflow-y: auto; }
+
+.sd-panel { padding: 14px 16px; max-width: 920px; }
+.sd-heading { margin: 0 0 8px; font-size: 20px; color: var(--sd-accent); }
+.sd-heading:focus, .sd-situation:focus { outline: none; }
+.sd-text { margin: 0 0 12px; max-width: 60ch; }
+.sd-bin-legend { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 10px 0; font-size: 15px; }
+.sd-bin-legend dt { font-weight: 700; }
+.sd-bin-legend dd { margin: 0; }
+.sd-reload-note { margin: 0 0 12px; max-width: 60ch; font-size: 14px; color: var(--sd-dim); }
+.sd-counter { margin: 0 0 6px; font-size: 14px; color: var(--sd-dim); }
+
+.sd-button, .sd-bin-btn { font-family: var(--se-font-readable); font-size: 16px; min-height: 44px; }
+.sd-button { margin-top: 12px; padding: 8px 18px; }
+
+.sd-card {
+    position: relative;
+    margin: 0 0 12px;
+    padding: 14px 16px;
+    background: var(--sd-raised);
+    border: 2px solid var(--sd-line);
+    border-left: 6px solid var(--sd-accent);
+}
+.sd-situation { margin: 0; font-size: 18px; font-weight: 700; }
+.sd-new {
+    display: inline-block;
+    margin: 0 0 6px;
+    padding: 0 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--sd-surface);
+    background: var(--sd-accent);
+}
+
+.sd-bins { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+.sd-bin-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 140px;
+    padding: 8px 14px;
+    text-align: left;
+}
+.sd-bin-key { font-size: 13px; color: var(--sd-dim); }
+.sd-bin-word { font-weight: 700; }
+.sd-bin-btn.sd-chosen { outline: 3px solid var(--sd-accent); }
+.sd-bin-btn:disabled:not(.sd-chosen) { opacity: 0.55; }
+
+.sd-feedback { margin: 0 0 8px; padding: 10px 12px; background: var(--sd-raised); border: 2px solid var(--sd-line); border-left-width: 6px; max-width: 70ch; }
+.sd-feedback p { margin: 4px 0; }
+.sd-feedback-line { font-weight: 700; }
+.sd-right { border-left-color: var(--sd-good); }
+.sd-wrong { border-left-color: var(--sd-bad); }
+.sd-caution { border-left-color: var(--sd-accent); }
+.sd-teach { border-left-color: var(--sd-line); }
+
+.sd-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; margin: 14px 0 0; }
+.sd-col { padding: 8px 10px; background: var(--sd-raised); border: 2px solid var(--sd-line); min-width: 0; }
+.sd-col-title { margin: 0 0 6px; font-size: 16px; color: var(--sd-accent); }
+.sd-col-list { margin: 0; padding: 0; list-style: none; }
+.sd-col-card { display: flex; flex-direction: column; gap: 2px; margin: 0 0 8px; font-size: 15px; overflow-wrap: anywhere; }
+.sd-col-empty { font-size: 14px; color: var(--sd-dim); }
+.sd-col-reason { font-size: 14px; color: var(--sd-dim); }
+.sd-col-mark { font-size: 14px; font-weight: 700; }
+/* Each summary verdict reads in words; colour only backs it up. Right and "that works" read as
+   good, a safe/cautious choice stays neutral (never red), only a genuine miss is marked red. */
+.sd-mark-right, .sd-mark-fits { color: var(--sd-good); }
+.sd-mark-caution, .sd-mark-suggest { color: var(--sd-dim); }
+.sd-mark-wrong { color: var(--sd-bad); }
+.sd-miss .sd-col-text { text-decoration: underline; text-decoration-color: var(--sd-bad); }
+.sd-score { margin: 0 0 8px; font-size: 17px; font-weight: 700; }
+
+.sd-close-ask { margin: 8px 12px; padding: 10px 12px; border: 2px solid var(--sd-accent); background: var(--sd-raised); }
+.sd-close-ask-text { margin: 0 0 8px; }
+.sd-close-ask-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+@media (max-width: 767px) {
+    .sd-panel { padding: 10px 12px; }
+    .sd-bin-btn { flex: 1 1 100%; }
+    .sd-board { grid-template-columns: 1fr; }
+}

@@ -1,0 +1,13 @@
+{
+  "key": "f1ce9f8225d91ab36bd1a03f99d0afc0",
+  "npc": "victoria_sterling",
+  "text": "Nor do they leave my receptionist on her own floor. She can't remember your face. I can.",
+  "voice": "Despina",
+  "style": "CEO and former conference speaker, late forties. Speak with a consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Smooth, low-to-mid pitch; unhurried, polished pace. Cool, precise and amused; never raises her voice, because she has never needed to.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:21:47Z"
+}

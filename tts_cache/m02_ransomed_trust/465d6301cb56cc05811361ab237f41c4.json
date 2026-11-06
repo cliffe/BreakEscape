@@ -1,0 +1,13 @@
+{
+  "key": "465d6301cb56cc05811361ab237f41c4",
+  "npc": "narrator",
+  "text": "She doesn't argue. She writes for thirty seconds, signs it, and holds it out without reading it back.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

@@ -1,0 +1,11 @@
+Make portrait for Darren Price
+A white British man in his mid forties from Bristol with fair, slightly ruddy skin, the IT service desk team lead at a commercial insurer, who wrote the desk's caller-verification script. Steady, patient, a bit dry. Short receding sandy-brown hair cropped close, a neat short beard flecked with grey, rectangular black-framed glasses. He wears office clothes: a light blue Oxford button-down shirt with the sleeves rolled to the forearm, no tie, a dark navy V-neck jumper over it, grey chinos with a brown leather belt. Hands relaxed at his sides.
+Standing alone against an empty plain light-grey backdrop, no room or furniture behind him. No text, no writing, no badges and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-22, no reference images, one call (art batch B, awareness episode hosts). Reframed with reframe_portrait.py --flip; unflipped original is wip/darren_price_concept_raw.png. Age and background from BRAND_SET.md and the episode fragments.

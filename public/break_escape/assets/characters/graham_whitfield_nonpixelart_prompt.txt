@@ -1,0 +1,10 @@
+Make portrait for Graham Whitfield
+A white British man in his early sixties from Halifax, fair weathered skin with a ruddy tint, the finance training lead at a Yorkshire food company. Unhurried and kind. Thinning short white-grey hair, clean-shaven, a pair of reading glasses tucked in his shirt pocket. He wears a burgundy V-neck wool jumper over a pale blue checked collared shirt, beige chinos with a brown belt, and a staff lanyard.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-22, no reference images, first render. Reframed with reframe_portrait.py --flip. Awareness check-mission host (art batch C). Age and ethnicity from BRAND_SET.md (P7-J additions).

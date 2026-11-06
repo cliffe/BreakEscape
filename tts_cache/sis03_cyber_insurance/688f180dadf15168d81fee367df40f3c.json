@@ -1,0 +1,13 @@
+{
+  "key": "688f180dadf15168d81fee367df40f3c",
+  "npc": "eleanor_vance",
+  "text": "If we hold Albion fully accountable for that — if we say \"you had to patch, no exceptions\" — we're ignoring the genuine safety constraint that made the deferral legitimate.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:30:47Z"
+}

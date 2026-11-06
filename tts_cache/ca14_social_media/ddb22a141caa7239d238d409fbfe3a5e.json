@@ -1,0 +1,13 @@
+{
+  "key": "ddb22a141caa7239d238d409fbfe3a5e",
+  "npc": "julian_sallow",
+  "text": "Welcome to the Merrin & Sallow exercise. Everyone here is fictional, and nothing you do leaves this room.",
+  "voice": "Rasalgethi",
+  "style": "Merrin & Sallow's co-founding partner, in his mid 60s, calm, measured and a little wry; sits on planning panels. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca14_social_media",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:18:03Z"
+}

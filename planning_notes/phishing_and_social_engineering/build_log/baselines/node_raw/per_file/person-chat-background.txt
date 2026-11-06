@@ -1,0 +1,100 @@
+TAP version 13
+# Subtest: an explicit background beats the room
+ok 1 - an explicit background beats the room
+  ---
+  duration_ms: 0.953449
+  ...
+# Subtest: explicit "none" means no background, with no room fallback
+ok 2 - explicit "none" means no background, with no room fallback
+  ---
+  duration_ms: 0.136906
+  ...
+# Subtest: no explicit background: the first known room decides
+ok 3 - no explicit background: the first known room decides
+  ---
+  duration_ms: 0.166893
+  ...
+# Subtest: the NPC's room without a chatBackground gives none, not the player's room
+ok 4 - the NPC's room without a chatBackground gives none, not the player's room
+  ---
+  duration_ms: 0.096469
+  ...
+# Subtest: unknown and unlisted room ids are skipped
+ok 5 - unknown and unlisted room ids are skipped
+  ---
+  duration_ms: 0.071799
+  ...
+# Subtest: nothing anywhere gives none
+ok 6 - nothing anywhere gives none
+  ---
+  duration_ms: 0.076583
+  ...
+# Subtest: video calls get no room fallback but keep an explicit background
+ok 7 - video calls get no room fallback but keep an explicit background
+  ---
+  duration_ms: 0.080763
+  ...
+# Subtest: room order: NPC live room, then assigned room, then player room
+ok 8 - room order: NPC live room, then assigned room, then player room
+  ---
+  duration_ms: 0.955999
+  ...
+# Subtest: personChatBackgroundFor reads live state
+ok 9 - personChatBackgroundFor reads live state
+  ---
+  duration_ms: 0.410868
+  ...
+# Subtest: an NPC's own chatBackground beats the room, loses to explicit
+ok 10 - an NPC's own chatBackground beats the room, loses to explicit
+  ---
+  duration_ms: 0.211894
+  ...
+# Subtest: personChatBackgroundFor reads the NPC chatBackground
+ok 11 - personChatBackgroundFor reads the NPC chatBackground
+  ---
+  duration_ms: 0.13287
+  ...
+# Subtest: a room with views by x picks the one under the NPC, else the first
+ok 12 - a room with views by x picks the one under the NPC, else the first
+  ---
+  duration_ms: 0.208953
+  ...
+# Subtest: personChatBackgroundFor uses the live sprite, then the placed position
+ok 13 - personChatBackgroundFor uses the live sprite, then the placed position
+  ---
+  duration_ms: 0.255409
+  ...
+# Subtest: a view whose condition holds wins; otherwise the next view
+ok 14 - a view whose condition holds wins; otherwise the next view
+  ---
+  duration_ms: 0.314099
+  ...
+# Subtest: conditions combine with views by x
+ok 15 - conditions combine with views by x
+  ---
+  duration_ms: 0.162799
+  ...
+# Subtest: views without conditions behave as before
+ok 16 - views without conditions behave as before
+  ---
+  duration_ms: 0.096774
+  ...
+# Subtest: every view false: no background from the room
+ok 17 - every view false: no background from the room
+  ---
+  duration_ms: 0.14961
+  ...
+# Subtest: personChatBackgroundFor reads the live global variables
+ok 18 - personChatBackgroundFor reads the live global variables
+  ---
+  duration_ms: 0.234402
+  ...
+1..18
+# tests 18
+# suites 0
+# pass 18
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 106.033674

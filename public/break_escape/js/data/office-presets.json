@@ -1,0 +1,16 @@
+{
+  "_comment": "Office-life affordance presets (OFFICE_LIFE_PLAN 2.1, slice 4). Read by systems/office-presets.js (fetched at install) and scripts/validate_npc_needs.rb. A scenario with \"officePresets\": true gives each declared object (one with an id in rooms[*].objects) the preset for its exact type, or for its officeType; the object's own affordance fields win field by field. Never preset: takeable, lockType, affordance: false, no id, decor: true. Presets set no seat and never make a workstation.",
+  "presets": {
+    "desk_pc":    { "types": ["pc", "pc3", "pc10", "laptop", "workstation"], "affordance": { "satisfies": "work", "restores": 60, "useSeconds": 10, "capacity": 1 } },
+    "coffee":     { "types": ["coffee_station", "coffee_station1", "kettle", "kettle1"], "affordance": { "satisfies": "caffeine", "restores": 70, "useSeconds": 12, "capacity": 1, "useFrom": { "dx": 0, "dy": 1 }, "useSound": "drink_gulp" } },
+    "cooler":     { "types": ["water_cooler", "water_cooler1"], "affordance": { "satisfies": ["thirst", "social"], "restores": 70, "useSeconds": 15, "capacity": 2, "useSound": "drink_gulp", "chatter": "cooler" } },
+    "fridge":     { "types": ["qdc_fridge1"], "affordance": { "satisfies": "hunger", "restores": 80, "useSeconds": 15, "capacity": 1, "useFrom": { "dx": 0, "dy": 1 }, "useSound": "eat_snack" } },
+    "microwave":  { "types": ["microwave1"], "affordance": { "satisfies": "hunger", "restores": 60, "useSeconds": 10, "capacity": 1, "useSound": "eat_snack" } },
+    "sofa":       { "types": ["leather_sofa1"], "affordance": { "satisfies": "rest", "restores": 80, "useSeconds": 20, "capacity": 2, "useFrom": { "dx": 0, "dy": -1 } } },
+    "copier":     { "types": ["photocopier", "photocopier1"], "affordance": { "useSeconds": 8, "capacity": 1, "useFrom": { "dx": 0, "dy": 1 } } },
+    "shredder":   { "types": ["shredder", "shredder1"], "affordance": { "useSeconds": 6, "capacity": 1, "useFrom": { "dx": 0, "dy": 1 }, "accepts": ["to_shred"] } },
+    "filing":     { "types": [], "affordance": { "useSeconds": 12, "capacity": 1, "useFrom": { "dx": 0, "dy": 1 }, "useSound": "drawer_open" } },
+    "post_tray":  { "types": [], "affordance": { "useSeconds": 5, "capacity": 1, "useFrom": { "dx": 0, "dy": 1 } } },
+    "desk_phone": { "types": [], "affordance": { "useSeconds": 0, "capacity": 1 } }
+  }
+}

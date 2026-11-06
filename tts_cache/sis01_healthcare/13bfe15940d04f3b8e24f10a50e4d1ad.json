@@ -1,0 +1,13 @@
+{
+  "key": "13bfe15940d04f3b8e24f10a50e4d1ad",
+  "npc": "narrator",
+  "text": "Ms Okafor is comfortable.",
+  "voice": "Schedar",
+  "style": "Calm, clinical narrator with a neutral southern English accent; measured, even pace. Keep the same accent throughout.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

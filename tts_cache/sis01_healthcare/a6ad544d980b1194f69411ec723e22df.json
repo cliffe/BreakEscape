@@ -1,0 +1,13 @@
+{
+  "key": "a6ad544d980b1194f69411ec723e22df",
+  "npc": "ravi_anand",
+  "text": "Someone logged in on the VPN yesterday morning. Find out who, from where, and why nothing stopped them.",
+  "voice": "Puck",
+  "style": "British Indian IT security manager in his mid-thirties, exhausted after a night shift, matter-of-fact. Speak with a consistent Leeds, with a light British Indian lilt, accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

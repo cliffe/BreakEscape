@@ -1,0 +1,63 @@
+{
+ "mission": "shared",
+ "id": "safetynet-open-silent",
+ "file_sep": "-",
+ "title": "SAFETYNET: Licence to Hack, opening bumper (silent: clip sound only, no music)",
+ "fps": 30,
+ "length": 6,
+ "status": "Reusable bumper cut from the safetynet-open preset. No music bed: the Veo clip's own sound only, for editors who add their own music. Loudness: the clip sound is far below -14 LUFS, so it is only peak-normalised to -1.5 dBTP.",
+ "music": {
+  "none": true,
+  "length": 6
+ },
+ "beat": {
+  "bpm": 120,
+  "period": 0.5,
+  "offset": 0,
+  "note": "window start 109.023 s is a downbeat. Lifts at 12/18/26/34/52 s (RMS jumps x3.4, x1.4, x1.4, x1.3, x2.0); quiet bar at 48 s; strong hits at 52, 54, 56, 58 s."
+ },
+ "duck": {
+  "db": -10,
+  "attack": 0.12,
+  "release": 0.3
+ },
+ "audio": {
+  "fade_ms": 8,
+  "target_lufs": -14,
+  "true_peak": -1.5,
+  "peak_normalize": true
+ },
+ "spoiler_rules": [
+  "no full codes, PINs or passwords",
+  "no identity reveal",
+  "no ending or choice screens",
+  "keypad only partly entered"
+ ],
+ "aspects": {
+  "16:9": [
+   1920,
+   1080
+  ],
+  "9:16": [
+   1080,
+   1920
+  ],
+  "1:1": [
+   1080,
+   1080
+  ]
+ },
+ "source_size": [
+  1920,
+  1080
+ ],
+ "effects": {
+  "cardJoin": "glitch",
+  "note": "set to 'dissolve' to render the pixel-dissolve version of the same edit; blur joins are never changed"
+ },
+ "shots": [
+  {
+   "preset": "safetynet-open"
+  }
+ ]
+}

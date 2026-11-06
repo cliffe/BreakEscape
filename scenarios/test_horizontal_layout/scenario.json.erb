@@ -1,0 +1,88 @@
+{
+  "scenario_brief": "Test Scenario: Horizontal Layout\n\nThis scenario demonstrates horizontal connections using east/west directions with the new grid-based layout system.\n\nLayout:\n[Storage] ← [Office] → [Servers]\n               ↑\n          [Reception]\n\nTests:\n- East/West connections\n- Single door placement on east/west edges\n- Four-direction connection support\n- Door alignment for east/west doors",
+  "startRoom": "reception",
+  "rooms": {
+    "reception": {
+      "type": "room_reception",
+      "connections": {
+        "north": "office"
+      },
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Facility Map",
+          "takeable": true,
+          "readable": true,
+          "text": "Test Scenario: Horizontal Layout\n\nFrom the office to the north:\n- West: Storage Room (contains key)\n- East: Server Room (locked)\n\nThis tests east/west connections."
+        },
+        {
+          "type": "key",
+          "name": "Office Key",
+          "takeable": true,
+          "observations": "Key to the office"
+        }
+      ]
+    },
+    "office": {
+      "type": "room_office",
+      "locked": true,
+      "lockType": "key",
+      "requires": "office_key",
+      "connections": {
+        "south": "reception",
+        "west": "storage",
+        "east": "servers"
+      },
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Office Note",
+          "takeable": true,
+          "readable": true,
+          "text": "This office connects in three directions:\n- South to Reception\n- West to Storage\n- East to Server Room\n\nCheck the storage room for the server access key."
+        }
+      ]
+    },
+    "storage": {
+      "type": "room_office",
+      "connections": {
+        "east": "office"
+      },
+      "objects": [
+        {
+          "type": "key",
+          "name": "Server Room Key",
+          "takeable": true,
+          "observations": "Electronic key card for server room"
+        },
+        {
+          "type": "notes",
+          "name": "Storage Log",
+          "takeable": true,
+          "readable": true,
+          "text": "Storage Room - West Wing\n\nThis room demonstrates east connection.\nThe door should be on the east wall of this room."
+        }
+      ]
+    },
+    "servers": {
+      "type": "room_servers",
+      "locked": true,
+      "lockType": "key",
+      "requires": "server_key",
+      "connections": {
+        "west": "office"
+      },
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Mission Complete",
+          "takeable": true,
+          "readable": true,
+          "text": "Success! Horizontal layout test complete.\n\nThis scenario demonstrated:\n- East/West connections\n- Four-direction navigation\n- Side door placement and alignment\n- Mixed connection types in one room",
+          "important": true,
+          "isEndGoal": true
+        }
+      ]
+    }
+  }
+}

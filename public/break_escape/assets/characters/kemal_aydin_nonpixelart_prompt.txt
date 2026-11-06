@@ -1,0 +1,11 @@
+Make portrait for Kemal Aydin
+A tall, lean but broad-shouldered Turkish-German man of about 58 with olive skin, lined face, hooded dark eyes and a hawkish nose, very short swept-back steel-grey hair, a trimmed grey moustache and faint grey stubble, a former bank vault security chief now working as a minder, courteous and immovable. He wears a tailored dark charcoal overcoat buttoned over a black roll-neck jumper, the black hood of a hoodie worn down and folded under the coat collar, a clear earpiece wire running from his ear into the collar, and a small plain silver lapel pin. Dark trousers and a black belt. Arms relaxed at his sides. No text, no writing and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-16, no reference images. Reframed with reframe_portrait.py --flip; unflipped original is kemal_aydin_concept_3_raw.png.
+# Concept 3 of three, picked by the user 2026-10-16. Own key 'kemal_aydin' (m06 NPC id satoshi_minder). Look: docs/agents/CAST_PROPOSALS.md M06-1.

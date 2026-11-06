@@ -1,0 +1,13 @@
+{
+  "key": "30a17554fe573e59212c4e21d2689d4f",
+  "npc": "narrator",
+  "text": "The main hallway is on its night lights. Somewhere off to the east, a guard's footsteps go round, and round again.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:13:49Z"
+}

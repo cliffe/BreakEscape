@@ -1,0 +1,13 @@
+{
+  "key": "0df9f3924fade7273970d844f47d0de3",
+  "npc": "patrol_nurse",
+  "text": "The pump library's back, but Sarah still wants a second nurse on every new rate.",
+  "voice": "Despina",
+  "style": "Busy NHS staff nurse in her late twenties, brisk and focused. Speak with a consistent Sheffield, South Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

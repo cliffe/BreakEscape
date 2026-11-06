@@ -1,0 +1,13 @@
+{
+  "key": "be056d999ea5d2bc872f442ed644f367",
+  "npc": "eleanor_vance",
+  "text": "The policy binder is there on the table. You'll need to review three sections: the insuring clause itself, the warranty schedule, and the act-of-war exclusion. Whitworth's incident notification is on the table as well — check it for the claim quantum breakdown and the containment timeline.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:18:55Z"
+}

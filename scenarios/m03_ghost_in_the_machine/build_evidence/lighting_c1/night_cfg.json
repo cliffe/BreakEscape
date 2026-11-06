@@ -1,0 +1,11 @@
+{
+  "reception_lobby": { "ambient": "#808aa0", "panels": false,
+    "lights": [ { "x": 5.2, "y": 3.6, "color": "#e8f0ff", "radius": 110, "intensity": 0.4 } ],
+    "emitters": { "reception_counter": { "color": "#4de8ff", "radius": 64, "intensity": 0.75, "offsetY": 8 }, "fire_alarm_point": [ { "intensity": 0 } ] } },
+  "main_hallway": { "mode": "on", "ambient": "#4a5268", "panels": false,
+    "lights": [ { "x": 2.5, "y": 3.2, "color": "#cfd8ff", "radius": 70, "intensity": 0.3 }, { "x": 7.5, "y": 3.2, "color": "#cfd8ff", "radius": 70, "intensity": 0.3 } ],
+    "emitters": { "threat_map": { "color": "#6ab4ff", "radius": 60, "intensity": 0.65, "offsetY": 6, "effect": "screen" }, "fire_alarm_point": [ { "intensity": 0 } ] } },
+  "executive_wing_hallway": { "mode": "on", "ambient": "#40465c", "panels": false,
+    "lights": [ { "x": 5, "y": 3, "color": "#ffe2b8", "radius": 80, "intensity": 0.3 } ],
+    "emitters": { "fire_alarm_point": [ { "intensity": 0 } ] } }
+}

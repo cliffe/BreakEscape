@@ -1,0 +1,13 @@
+{
+  "key": "c38ae8baf80de7f466cf82b013cf8cab",
+  "npc": "eleanor_vance",
+  "text": "They had three options: (1) refuse to renew, (2) renew with a warranty and a premium increase, or (3) renew without warranty.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:32:01Z"
+}

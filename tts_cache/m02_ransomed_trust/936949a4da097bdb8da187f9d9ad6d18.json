@@ -1,0 +1,13 @@
+{
+  "key": "936949a4da097bdb8da187f9d9ad6d18",
+  "npc": "closing_debrief_trigger",
+  "text": "ENTROPY has funding. That's also real. Both things are true simultaneously.",
+  "voice": "Aoede",
+  "style": "Intelligence handler giving a mission debrief in person. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

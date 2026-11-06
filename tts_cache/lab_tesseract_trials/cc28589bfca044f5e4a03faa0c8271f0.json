@@ -1,0 +1,13 @@
+{
+  "key": "cc28589bfca044f5e4a03faa0c8271f0",
+  "npc": "megan_oyelaran",
+  "text": "Eight digits, four-digit keypad. I typed the first four straight in and it locked me out. Three goes and you're done.",
+  "voice": "Leda",
+  "style": "First-year student, bright, skint and competitive. Consistent Manchester accent throughout. Quick, wry, proud.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

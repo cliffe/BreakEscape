@@ -1,0 +1,11 @@
+Make portrait for Fatima Begum
+A British Bangladeshi woman in her early thirties with warm medium-brown skin, the recruitment lead at a regional haulage and warehousing firm, who reads CVs all day. Brisk, friendly, organised. She wears a neatly pinned dusty-rose hijab that covers her hair and neck, with a long-sleeved navy knit cardigan over a plain white top, and dark grey straight-leg trousers with a thin brown belt. Dark brown eyes, a small silver wristwatch. Hands relaxed at her sides.
+Standing alone against an empty plain light-grey backdrop, no room or furniture behind her. No text, no writing, no badges and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-22, no reference images, one call (art batch B, awareness episode hosts). Reframed with reframe_portrait.py --flip; unflipped original is wip/fatima_begum_concept_raw.png. Age and background from BRAND_SET.md and the episode fragments.

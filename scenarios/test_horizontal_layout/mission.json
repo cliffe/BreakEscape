@@ -1,0 +1,7 @@
+{
+  "display_name": "Horizontal Layout Test",
+  "description": "Technical test for horizontally-oriented room layouts.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "testing"
+}

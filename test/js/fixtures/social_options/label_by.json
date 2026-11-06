@@ -1,0 +1,17 @@
+{
+  "_comment": "labelBy lint fixture. The report labels by role; t_named has no role, t_contact's contact has one.",
+  "scenario_brief": "labelBy fixture",
+  "startRoom": "office",
+  "rooms": { "office": { "type": "room_office", "connections": {}, "objects": [] } },
+  "social": {
+    "mailClient": {
+      "contacts": [ { "id": "c_contact", "person": "p2", "name": "Pat", "addresses": ["pat@ledgerwell.example"], "role": "Accounts clerk", "targetId": "t_contact" } ]
+    },
+    "phishTargets": [
+      { "id": "t_role", "role": "Finance officer" },
+      { "id": "t_contact" },
+      { "id": "t_named", "name": "Sam Lord" }
+    ],
+    "engagement": { "report": { "labelBy": "role" } }
+  }
+}

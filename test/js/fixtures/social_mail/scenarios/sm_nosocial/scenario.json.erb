@@ -1,0 +1,82 @@
+{
+  "scenario_brief": "Fixture: a clean mail and board scenario.",
+  "startRoom": "office",
+  "globalVariables": {
+    "acct_freemail": false,
+    "acct_freemail_choice": "",
+    "acct_jed_pc": false,
+    "se_intel_hampshire_careers": false,
+    "se_intel_careers_attachment": false,
+    "phish_hampshire_attempts": 0,
+    "phish_hampshire_landed": false,
+    "phish_pierce_attempts": 0,
+    "phish_pierce_landed": false,
+    "target_ready_hampshire": false,
+    "target_ready_pierce": false,
+    "mail_arrived": false,
+    "dock_ready": false
+  },
+  "objectives": [
+    {
+      "aimId": "a1",
+      "title": "One",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "t1",
+          "title": "Land it",
+          "status": "active",
+          "unlockCondition": {
+            "globalVariable": "phish_hampshire_landed",
+            "equals": true
+          },
+          "type": "enter_room",
+          "targetRoom": "office"
+        },
+        {
+          "taskId": "t2",
+          "title": "Land hers",
+          "status": "active",
+          "unlockCondition": {
+            "globalVariable": "phish_pierce_landed",
+            "equals": true
+          },
+          "type": "enter_room",
+          "targetRoom": "office"
+        }
+      ]
+    }
+  ],
+  "rooms": {
+    "office": {
+      "type": "room_office",
+      "connections": {},
+      "objects": [
+        {
+          "type": "mail_terminal",
+          "id": "desk_mail",
+          "name": "Mail",
+          "minigameData": {
+            "accountIds": [
+              "guest",
+              "freemail"
+            ],
+            "defaultAccount": "guest"
+          }
+        },
+        {
+          "type": "mail_terminal",
+          "id": "jed_laptop",
+          "name": "Jed's laptop",
+          "takeable": true,
+          "minigameData": {
+            "accountIds": [
+              "jed_pc"
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

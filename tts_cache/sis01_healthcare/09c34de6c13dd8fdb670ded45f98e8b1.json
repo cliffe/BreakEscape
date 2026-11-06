@@ -1,0 +1,13 @@
+{
+  "key": "09c34de6c13dd8fdb670ded45f98e8b1",
+  "npc": "dr_sharma",
+  "text": "Today you made the same kind of call. Isolation swapped one risk for another.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

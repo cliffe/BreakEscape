@@ -1,0 +1,13 @@
+{
+  "key": "59f4afd9b349a0a2e59236f2115b0c1b",
+  "npc": "closing_debrief",
+  "text": "A cold read, and a defensible one. She'll surface. We'll be holding the file when she does.",
+  "voice": "Aoede",
+  "style": "Intelligence handler giving a mission debrief in person. Speak with a consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:05:35Z"
+}

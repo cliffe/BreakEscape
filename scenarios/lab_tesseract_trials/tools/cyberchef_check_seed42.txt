@@ -1,0 +1,54 @@
+PASS L1 From Decimal: got "orchard"
+PASS L1 from the leaflet's whole note text (codes only): got "orchard"
+INFO L1 if the fingerprint line were in the same text: "orchard\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0005"
+INFO L2 run-together without splitting gives: "ERROR: Data is not a valid byteArray: [49565448]" (wrong, as intended)
+PASS L2 split pairs + From Decimal: got "1860"
+PASS L3 From Binary: got "lantana"
+PASS L4 From Hex: got "corridor door passphrase: cupola" (must contain "cupola")
+PASS L5 From Base64: got "Library keypad: 6191. The returns shelf has your next trial." (must contain "6191")
+PASS L6 From Base64 + ROT13(amount 20): got "Special Collections safe password: primer" (must contain "primer")
+PASS L6 From Base64 + ROT13(amount -6): got "Special Collections safe password: primer" (must contain "primer")
+PASS L7 Vigenère Decode: got "The pigeonholes open with sorting-33. Yours is number four. Your envelope is sealed to you"
+PASS L7 gives pigeonhole password: got "sorting-33"
+PASS L7 gives the IV: got "d13d0da3fc2ec7fcb01418ed86c23d83"
+INFO L7 with a header line copied in front (why fileContent is ciphertext only): "Gdvyh IUV. Rdr wrw ef aa rdr xrbcrd.\nTtn eygqxcxoxnh epqw ly"
+PASS L8a From Base64 + RSA Decrypt: got "51d776b37e2d3583b792c48925d1433b"
+PASS L8a PEM flattened to one line: got "51d776b37e2d3583b792c48925d1433b"
+PASS L8a PEM pasted after CyberChef's pre-filled header: got "51d776b37e2d3583b792c48925d1433b"
+INFO decoy envelope 1 with player's key: "ERROR: Error: Invalid RSAES-OAEP padding."
+INFO decoy envelope 2 with player's key: "ERROR: Error: Invalid RSAES-OAEP padding."
+INFO decoy envelope 3 with player's key: "ERROR: Error: Invalid RSAES-OAEP padding."
+PASS L8b AES Decrypt (key from L8a, IV from L7): got "padlock-92"
+INFO L8b without the IV (skipping L7): "ERROR: Invalid IV length; got 0 bytes and expected 16 bytes."
+INFO L8b with a guessed IV of zeros: "ERROR: Unable to decrypt input with these parameters."
+INFO L8b with a wrong key: ""
+PASS L10 SHA2-256 first 8: got "8841f594"
+INFO L10 with a trailing newline: 7f6f3097 (differs, as intended)
+PASS L10 as SHA2 added under AES Decrypt in the same recipe: got "8841f594"
+INFO L10 with SHA2's default size 512: ea9f4b34 (differs: set Size to 256)
+PASS Report From Base64: got "KEYHOLDER FIELD REPORT\nFROM: Agent 0x00 (undercover, Miskatonic University UK)\nTO: Agent H" (must contain "merlin-2685")
+PASS Report SHA2-256: got "19e4976ec027a47a09795c8ca18f83714c2aad01fc88260f9788184f3957f19e"
+PASS Report RSA Verify: got "Verified OK"
+INFO RSA Verify given report + hash + signature as one message: "Verification Failure" (why the report is split into three files)
+INFO RSA Verify with the DECODED report as Message: "Verification Failure"
+INFO RSA Verify with Message format set to Base64: "Verification Failure"
+INFO RSA Verify with the digest left on SHA-1: "Verification Failure"
+INFO RSA Verify with a new line after the Message: "Verification Failure"
+INFO SHA2 of the DECODED report matches report.sha256? false (it shouldn't: the hash is of the Base64 text)
+PASS Report pixel URL says locate: got "yes"
+INFO Report RSA Verify after one change: "Verification Failure"
+PASS Leaflet fingerprint = SHA2 of Ghost PEM: got "5fb0a36ac2315696"
+PASS EBCDIC From Hex + Decode text (37): got "MISKATONIC UNIVERSITY COMPUTING SERVICE 1979. JOB 0412 OWNER [REDACTED]. PROJECT KEYHOLDER"
+PASS Poster worked example: Hi! -> SGkh: got "SGkh"
+PASS answer l1 "orchard": 7 chars, lower case
+PASS answer l2 "1860": 4 chars, lower case
+PASS answer l3 "lantana": 7 chars, lower case
+PASS answer l4 "cupola": 6 chars, lower case
+PASS answer l5 "6191": 4 chars, lower case
+PASS answer l6 "primer": 6 chars, lower case
+PASS answer pigeon "sorting-33": 10 chars, lower case
+PASS answer l8 "padlock-92": 10 chars, lower case
+PASS answer l10 "8841f594": 8 chars, lower case
+PASS answer token "merlin-2685": 11 chars, lower case
+INFO longest typed answer this game: 11 characters
+ALL PASS

@@ -1,0 +1,120 @@
+{
+  "scenario_brief": "Test Scenario: Multiple Connections Per Direction\n\nThis scenario tests multiple room connections in the same direction, demonstrating the grid system's ability to position and align doors for side-by-side rooms.\n\nLayout:\n   [Server1][Server2][Server3]\n           ↑    ↑    ↑\n       [---- Hub ----]\n              ↑\n         [Reception]\n\nTests:\n- Multiple connections in one direction (Hub has 3 north connections)\n- Door spacing across wide rooms\n- Alignment of multiple doors\n- Array-based connection syntax",
+  "startRoom": "reception",
+  "rooms": {
+    "reception": {
+      "type": "room_reception",
+      "connections": {
+        "north": "hub"
+      },
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Facility Access",
+          "takeable": true,
+          "readable": true,
+          "text": "Multiple Connection Test\n\nThe server hub to the north connects to three server rooms.\nThis tests the system's ability to handle multiple doors on one wall.\n\nAll server keys are in the hub."
+        },
+        {
+          "type": "key",
+          "name": "Hub Key",
+          "takeable": true,
+          "observations": "Access key to server hub"
+        }
+      ]
+    },
+    "hub": {
+      "type": "room_office",
+      "locked": true,
+      "lockType": "key",
+      "requires": "hub_key",
+      "connections": {
+        "south": "reception",
+        "north": ["server1", "server2", "server3"]
+      },
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Hub Control",
+          "takeable": true,
+          "readable": true,
+          "text": "Server Hub - Central Control\n\nThis room has THREE north connections:\n- Server Room 1 (Northwest)\n- Server Room 2 (North)\n- Server Room 3 (Northeast)\n\nThe doors should be evenly spaced along the north wall."
+        },
+        {
+          "type": "key",
+          "name": "Server 1 Key",
+          "takeable": true,
+          "observations": "Access to Server 1"
+        },
+        {
+          "type": "key",
+          "name": "Server 2 Key",
+          "takeable": true,
+          "observations": "Access to Server 2"
+        },
+        {
+          "type": "key",
+          "name": "Server 3 Key",
+          "takeable": true,
+          "observations": "Access to Server 3"
+        }
+      ]
+    },
+    "server1": {
+      "type": "room_servers",
+      "locked": true,
+      "lockType": "key",
+      "requires": "server1_key",
+      "connections": {
+        "south": "hub"
+      },
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Server 1 Log",
+          "takeable": true,
+          "readable": true,
+          "text": "Server Room 1 - West Position\n\nThis is the leftmost server room.\nDoor should align with the hub's northwest door."
+        }
+      ]
+    },
+    "server2": {
+      "type": "room_servers",
+      "locked": true,
+      "lockType": "key",
+      "requires": "server2_key",
+      "connections": {
+        "south": "hub"
+      },
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Server 2 Log",
+          "takeable": true,
+          "readable": true,
+          "text": "Server Room 2 - Center Position\n\nThis is the middle server room.\nDoor should align with the hub's center north door."
+        }
+      ]
+    },
+    "server3": {
+      "type": "room_servers",
+      "locked": true,
+      "lockType": "key",
+      "requires": "server3_key",
+      "connections": {
+        "south": "hub"
+      },
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Mission Complete",
+          "takeable": true,
+          "readable": true,
+          "text": "Server Room 3 - East Position\n\nThis is the rightmost server room.\nDoor should align with the hub's northeast door.\n\nCONGRATULATIONS!\n\nMultiple connections test complete!\n\nThis scenario demonstrated:\n- Multiple connections in same direction (3 north doors on hub)\n- Proper door spacing and alignment\n- Array syntax for connections\n- Side-by-side room positioning\n- Asymmetric connection handling (hub: 3 south, each server: 1 north)",
+          "important": true,
+          "isEndGoal": true
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{"steps":[
+{"note":"R3 skip-all: skip briefing, straight to whiteboard (D3-21), bribe, Danny left, escape"},
+{"talk":"briefing","picks":["Skip the background","That's everything","Read the situation","I'm ready"]},
+{"set":{"briefing_played":true}},
+{"talk":"ffion","picks":["just sign and go"]},
+{"set":{"conference_reader_tried":true}},
+{"talk":"ffion","picks":["Lean in","Thanks. I'll head"]},
+{"talk":"victoria","picks":["Why am I here","responsible disclosure","whiteboard","What kind of services","That sounds more complex","lab can't have been cheap","Report it. Then invoice","Thanks for being straight"]},
+{"talk":"night"},
+{"set":{"mission_phase":"act2_infiltration","clone_call_done":true}},
+{"talk":"terry","picks":["I work here","ID badge","work something out","Five hundred"]},
+{"talk":"victoria","picks":["Look in"]},
+{"set":{"exec_wing_entered":true,"exec_office_entered":true,"flag_scan_submitted":true,"flag_ftp_submitted":true,"flag_http_submitted":true,"flag_distcc_submitted":true}},
+{"talk":"danny","picks":["SAFETYNET. I'm investigating","This isn't my call","only one that'll hold"]},
+{"set":{"night_confrontation_ready":true}},
+{"talk":"victoria","picks":["need to talk","read your approvals","story you tell","Go. I've got"]},
+{"talk":"debrief","picks":["She goes dark","We have the sectors","So that drive","He'll come in","When do we go at"]}
+]}

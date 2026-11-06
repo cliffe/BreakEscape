@@ -1,0 +1,39 @@
+{
+ "imports": {
+  "m05_final_choice": "combat_nonlethal"
+ },
+ "steps": [
+  {
+   "note": "R42 (carry-over, 2026-10-17): m05 ended with Torres knocked out in a fight and detained."
+  },
+  {
+   "talk": "briefing",
+   "picks": [
+    "Which payments",
+    "Why would Volkova",
+    "I'm ready"
+   ]
+  },
+  {
+   "said": [
+    "You knocked Torres out and stayed with him till the ambulance came. He hasn't said a word since. We traced the one going out the slow way.",
+    "Out: $847,000 to the Insider Threat Initiative for the Quantum Dynamics job, through TalentStack's wallet."
+   ],
+   "notSaid": [
+    "You turned Torres, so he's sti",
+    "You put the Initiative on the ",
+    "You handed Torres to the polic",
+    "The police took Torres with nh",
+    "You left Torres on that floor,"
+   ]
+  },
+  {
+   "set": {
+    "briefing_played": true
+   }
+  },
+  {
+   "maxRun": 9
+  }
+ ]
+}

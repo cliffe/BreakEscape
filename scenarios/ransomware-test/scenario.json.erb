@@ -1,0 +1,59 @@
+{
+  "scenario_brief": "Test the Ransomware Display minigame. A workstation has been compromised with ransomware. You must decide how to respond to the attack.",
+  "endGoal": "Successfully respond to the ransomware attack by making a critical decision.",
+  "startRoom": "office",
+  "startItemsInInventory": [],
+  "globalVariables": {
+    "ransomware_deployed": true
+  },
+  "objectives": [
+    {
+      "aimId": "test_ransomware",
+      "title": "Test Ransomware Display",
+      "description": "Investigate the compromised workstation and respond to the ransomware attack",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "access_workstation",
+          "title": "Access the infected workstation",
+          "type": "unlock_object",
+          "targetObject": "infected_workstation",
+          "status": "active"
+        },
+        {
+          "taskId": "make_decision",
+          "title": "Make a response decision",
+          "type": "manual",
+          "status": "active",
+          "description": "Choose how to respond to the ransomware attack"
+        }
+      ]
+    }
+  ],
+  "rooms": {
+    "office": {
+      "type": "room_office",
+      "connections": {},
+      "objects": [
+        {
+          "type": "pc",
+          "id": "infected_workstation",
+          "name": "Infected Workstation",
+          "takeable": false,
+          "locked": true,
+          "lockType": "ransomware_display",
+          "interactable": true,
+          "active": true,
+          "scenarioData": {
+            "id": "infected_workstation",
+            "name": "Ransomware Display",
+            "locked": true,
+            "lockType": "ransomware_display"
+          },
+          "observations": "The workstation screen displays an ominous message. All files appear encrypted."
+        }
+      ]
+    }
+  }
+}

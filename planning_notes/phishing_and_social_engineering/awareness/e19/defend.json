@@ -1,0 +1,253 @@
+{
+  "_about": "E19 malware-and-updates defend fragment (consequence-flip episode, ENG-04). Quayholt Insurance and everyone in it are fictional; every address ends .example. triageSets holds only the episode set e19_lock_the_doors (E19's update content is already measured by the general_v2 check pair, built by 10_CHECK_FORMS.md's own generator, not this fragment; see E19 spec section 14). Copy triageSets and the awarenessEpisode keys into the E19 shells: the wiring agent builds the full erb, the generator (gen_e8_e17_shells.py) builds the defend-only shell. The mistake/flip stage content (the sandbox beats, flip.mode and flipMontageByChoice) is NOT here: it is full-episode-only, so it lives in full_only.json, exactly as AGENT_RULES_CONTENT.md item 2 places `mistake`, `flip` and erb-only strings. The defend-only shell drops mistake/flip (awareness.rb mistake_checks errors if a defendOnly episode carries either block), so keeping them out of this shared fragment is deliberate. Brand roster and cast: ../BRAND_SET.md (Quayholt Insurance) plus the E19 additions in ./BRAND_ADDITIONS.md. ENG-04 (mistake/flip schema) and ENG-09b (conceptPanel array) and ENG-08 (schema) must have landed before the shells validate.",
+
+  "_brandAdditions_note": "The P11 brand-set additions for E19 (Piledocs, Leo Brennan, the fake-IT look-alike) and the reuse notes (Quayholt Files, Quayholt Protect, Fernside Catering, extension 4444) are written up in ./BRAND_ADDITIONS.md, with the name-clash grep recorded there. The orchestrator folds them into BRAND_SET.md.",
+
+  "triageSets": [
+    {
+      "reportReply": "Thanks. Security has it and is checking the device.",
+      "id": "e19_lock_the_doors",
+      "_prefix": "Prefix for the full episode (id e19_malware_and_updates): episode_e19_malware_and_updates_defend_. The defend-only shell (id e19_malware_and_updates_defend) sets episode_e19_malware_and_updates_defend_defend_ instead (the built double-suffix rule for an id that already ends _defend). No explicit stage on purpose (as E1/E5/E8): the effective stage is 'mission', and an explicit stage with passPercent 0 draws a validator warning.",
+      "_localTells": "app_consent_grab, ransomware_note, macro_enable_content and disable_security_software are consent/malware signs with no built equivalent, so they are scenario-local to this set (00 section 2's CHANNEL_TELLS is untouched, and no SKILL_NAMES entry is added to phish-rules.js/triage.rb). Each is declared in channelTells with a flagChips label and a set-level skillNames name (triage-flags.js reads set.skillNames for a local tell's skill name), and every flagging message carries a factorStrings.<id>.redFlag sentence. ransomware_note is the same local tell id E8 declares for its own set: each set declares it locally with its own flagChips label, so there is no shared-library change. Promote one to the shared library only if a 10 check item or a second set later scores it (then it also needs a SKILL_NAMES entry, ENG-08). The shared-library secrecy_or_bypass tell was dropped from this set (playtest F-E19-1, 2026-10-29): its chip reads 'keep it secret', which neither the enable-content nor the disable-protection message asks for, so scoring it produced an unfair 'weakest skill: Secrecy'. The bypass is still taught by each item's own local tell (macro_enable_content, disable_security_software).",
+      "_order": "Message array order is the teaching order (E19 spec section 11): the two consent cards first (the mirror pair, item 1 phish then item 2 genuine, so the 'allow this app' lesson is set before anything else), then the ransom-note heads-up (3), the enable-content document (4), the disable-protection message (5), and the genuine device-update prompt (6) as the calibration item, so 'anything unusual is a trap' cannot win.",
+      "title": "The desk inbox",
+      "brief": "You're covering a Quayholt desk inbox this afternoon. For each item, choose Trust, Report, Delete or Verify (check it yourself through a route you already trust, like ringing the service desk or Anjali on a number you already hold), then tick what you noticed. A program, a file or an app that wants to run or wants your access can do whatever you can do, so if you didn't expect it, don't open the door. Reporting when you're unsure is always fine and never marked down.",
+      "scoringProfile": "awareness",
+      "scoring": { "criticalPenalty": 5, "criticalPenaltyCap": 10 },
+      "verifyVerdict": true,
+      "feedbackMode": "immediate",
+      "headerPanel": "off",
+      "glossary": "closed",
+      "channelTells": ["app_consent_grab", "macro_enable_content", "disable_security_software", "ransomware_note"],
+      "flagChips": {
+        "app_consent_grab": "An app you didn't install, or didn't start, asking to read your mail or files",
+        "ransomware_note": "A message that your files are locked and a payment is demanded",
+        "macro_enable_content": "A document that needs you to enable content or switch something on to view it",
+        "disable_security_software": "A request to turn off, allow or override what the security software blocked"
+      },
+      "labels": {
+        "verdictFeedback": {
+          "verify": {
+            "phish": "Checking first is a sound habit. That one put the device at risk."
+          },
+          "trust": {
+            "phish": "Not this time. That one put the device at risk."
+          }
+        },
+        "verdict": {
+          "report": {
+            "hint": "This needs reporting. Send it to security."
+          }
+        },
+        "teamBadge": "Problems reported for the team: {n}",
+        "teamBadgeTitle": "Messages and incidents you reported or checked this round rather than acting on them",
+        "phishCaughtLabel": "Problems caught",
+        "scoreLine": "Right call is most of the score; naming what you noticed is the rest."
+      },
+      "bands": [
+        {
+          "min": 85,
+          "headline": "Well done: you caught the problems and knew why"
+        },
+        {
+          "min": 60,
+          "headline": "Getting there: a few signs slipped past"
+        },
+        {
+          "min": 0,
+          "headline": "Worth practising: here's where to look first"
+        }
+      ],
+      "resultCopy": {
+        "criticalLead": "let a problem through",
+        "reportedPct": "Reported {pct}% of the problems",
+        "noFlagsLead": "You didn't tick anything you noticed, so there's nothing to grade skill by skill.",
+        "noFlags": "Next time, tick what looks off. The review cards show what to look for in each one."
+      },
+      "genuineCopy": {
+        "binnedLeadOne": "One real one was treated as a threat",
+        "binnedLeadMany": "{n} real ones were treated as threats",
+        "costBoth": "Reporting when you're unsure is never wrong, but a report on a real one takes security's time to check, and a refused update leaves a device unpatched.",
+        "costReport": "Reporting when you're unsure is never wrong, but a report on a real one takes security's time to check, and the update waits.",
+        "costBin": "Refusing a real update or sign-in has a cost: a device is left unpatched or a setup stalls.",
+        "whyBothHalves": "Both halves matter: stopping the risky prompt protects the device, and accepting the real update keeps it patched."
+      },
+      "criticalWhat": "agreeing to something that put the device at risk",
+      "skillNames": {
+        "app_consent_grab": "Spotting an app asking for your access",
+        "ransomware_note": "Recognising a ransom note",
+        "macro_enable_content": "Spotting an enable-content document",
+        "disable_security_software": "Spotting a request to turn off security"
+      },
+      "outcome": { "setGlobalPrefix": "episode_e19_malware_and_updates_defend_", "passPercent": 0 },
+      "messages": [
+        {
+          "id": "e19_consent_unknown",
+          "_note": "Row 1. The normal-looking phish half of the consent mirror pair (aw5). An 'allow this app' request from an app the learner did not install or start. The tell is not that a box appeared (row 2 is the same shape and genuine): it is that you, or IT, did not set this up. This is the staff-level form of 'a link that acts as you'; the word CSRF never appears.",
+          "from": { "name": "Piledocs", "address": "invites@piledocs.example" },
+          "to": "you@quayholt.example",
+          "subject": "Connect Piledocs to your Quayholt account",
+          "time": "13:20",
+          "body": "Piledocs is asking to:\n- read your email\n- read and save your files\nReview and allow to finish connecting.\nPiledocs",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "piledocs.example", "replyTo": "invites@piledocs.example" },
+          "factorStrings": {
+            "app_consent_grab": { "redFlag": "An app you didn't install or start, asking to read your mail or your files" }
+          },
+          "truth": {
+            "isPhish": true,
+            "flags": ["app_consent_grab"],
+            "perFlagNote": {
+              "app_consent_grab": "Clicking Allow here hands Piledocs your access to your mail and files, with no password needed, for as long as you leave it connected. You didn't install Piledocs or start this; only ever allow an app you, or IT, set up and trust"
+            },
+            "ifTrusted": "Allowing it would give Piledocs your access to your mail and files, as you, for as long as it stayed connected.",
+            "reportReply": "Thanks. We've denied the request and blocked the app. An app asking for your access, that you or IT didn't start, is one to deny and report every time."
+          }
+        },
+        {
+          "id": "e19_consent_quayholt_files",
+          "_note": "Row 2. The suspicious-looking genuine half of the consent mirror pair (aw5), placed right after row 1 so a learner who reported row 1 meets a request that looks the same and is the right one to approve. It is the app IT rolled out, and the learner started it a moment ago from Quayholt Apps. Under the awareness profile, Trust (approve) and Verify both score full, and reporting is never marked down. Quayholt Files is the existing core_06/core_07 Quayholt slot.",
+          "from": { "name": "Quayholt Apps", "address": "apps@quayholt.example" },
+          "to": "you@quayholt.example",
+          "subject": "Finish setting up Quayholt Files",
+          "time": "13:24",
+          "body": "You started setting up Quayholt Files, the file store IT rolled out this week, a moment ago from Quayholt Apps.\nTo finish, approve access to read and save your files.\nQuayholt Apps",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quayholt.example", "replyTo": "apps@quayholt.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "default": "This is the app IT rolled out, and you started it yourself a moment ago from Quayholt Apps, so approving it is right. The tell isn't that a box appeared; it's whether you, or IT, started it. If you're ever not sure a request like this is genuine, a quick check with the service desk is always fine."
+            },
+            "falseAlarmCost": "Reported instead of approved, your Quayholt Files setup stays half-finished until the service desk confirms the step you already started, and your files don't sync across your devices until it's done."
+          }
+        },
+        {
+          "id": "e19_ransom_note",
+          "_note": "Row 3. A colleague's panicked heads-up that their screen has locked (the ransom note is authored as the text of this email, exactly as E8 authors malware signs as plain email rows; no new page state, no working 'support' link). isPhish:true is only the scoring vehicle that makes Report the full-marks move for a sign of compromise (the convention E8/E9/E18 use); it is not a claim that Leo's message is a phishing email. truth.kindLine and truth.missLabel (ENG UX batch, BUILD_LOG 2026-10-29) carry that distinction into the engine copy: on a Trust/Verify verdict and in the critical-miss tally the learner reads what this really was, not 'This one was a phish' or 'let an attacker straight in'. Leo Brennan is the fast-reporting operations colleague from the 03_WORLD_AND_CAST no-clash pool (new to the awareness cast; text-only, no art, no sender NPC). No ransom amount shown, no countdown timer rendered, no pay button.",
+          "from": { "name": "Leo Brennan", "address": "leo.brennan@quayholt.example" },
+          "to": "you@quayholt.example",
+          "subject": "Help, my screen's locked",
+          "time": "14:05",
+          "body": "My screen's gone to a message saying all my files are encrypted, there's a countdown, and a 'Contact support' button wanting payment. What do I do?!\nLeo",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quayholt.example", "replyTo": "leo.brennan@quayholt.example" },
+          "factorStrings": {
+            "ransomware_note": { "redFlag": "A message that your files are locked, with a demand to pay to get them back" }
+          },
+          "truth": {
+            "isPhish": true,
+            "kindLine": "This was a real ransom message on a colleague's screen, and it needed reporting fast.",
+            "missLabel": "a colleague's locked screen going unreported",
+            "verifyLine": "Calling it in straight away is exactly right.",
+            "reportLine": "Right call: reported. Telling security fast is what limits the damage, and Leo gets help sooner.",
+            "flags": ["ransomware_note"],
+            "perFlagNote": {
+              "ransomware_note": "A screen saying files are locked, with a countdown and a demand to pay, is ransomware. Get the security team on extension 4444 straight away, from another phone if Leo's is affected; reporting fast is what limits how far it spreads"
+            },
+            "ifTrusted": "Waiting, paying, or telling Leo to click Contact support gives the attacker what they want and lets it keep spreading while nobody has told the team.",
+            "reportReply": "Thanks, we're on Leo's machine now. Tell Leo not to pay, not to click Contact support, and not to try to fix it or switch it off; if we ask, unplug the network cable and leave it switched on. Reporting fast is exactly what helps."
+          }
+        },
+        {
+          "id": "e19_enable_content",
+          "_note": "Row 4. An unexpected 'enable content' document from a supplier look-alike. Builds on E2's macro concept (a recruiter's CV at Tarrowby) as an ordinary internal/supplier document; does not repeat E2's cards. The macro is described in plain words, never demonstrated: no payload, no file-format trick. Fernside Catering is reused from E10's _brandAdditions. E10 is now built; its Fernside register is fernside.example (genuine), orders.fernside.example (genuine portal) and orders-fernside.example (look-alike portal). E19's accounts@fernside-invoices.example is a deliberate, distinct invoice-email look-alike (a portal shape would not fit an invoice sender), accepted as intended rather than re-pointed (design review C1 MI2, BUILD_LOG 2026-10-29); see BRAND_ADDITIONS.md. The look-alike sender domain IS scored (senderTrust, the sender-address chip) beside the enable-content ask; ruling after blind playtest E19 B1 M-1, 2026-10-29: a careful player who ticks the sender chip must not be told 'Not a flag here'. The reportReply still names only the enable-content ask.",
+          "from": { "name": "Fernside Catering", "address": "accounts@fernside-invoices.example" },
+          "to": "you@quayholt.example",
+          "subject": "Credit note 0423",
+          "time": "14:40",
+          "body": "Credit note 0423 attached.\nThe document is protected. Click Enable content at the top to view it.\nFernside Catering, Accounts",
+          "attachments": [ { "label": "Credit-note-0423.xlsm", "kind": "spreadsheet" } ],
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "fernside-invoices.example", "replyTo": "accounts@fernside-invoices.example" },
+          "factorStrings": {
+            "macro_enable_content": { "redFlag": "A document that needs you to enable content or switch something on before it will show" }
+          },
+          "truth": {
+            "isPhish": true,
+            "flags": ["macro_enable_content", "senderTrust"],
+            "perFlagNote": {
+              "senderTrust": "The sender's address is on fernside-invoices.example, with an added word. Fernside Catering is fernside.example, so this came from a separate domain anyone can register",
+              "macro_enable_content": "'Enable content' switches on the small program (a macro) inside the file, and it runs with your access, able to reach what you can reach. A real document shows up as soon as you open it"
+            },
+            "ifTrusted": "Enabling it would run the file's hidden program as you, reaching whatever you can reach, before you ever saw a credit note.",
+            "reportReply": "Thanks. You weren't expecting this credit note, and it asked you to switch content on before it would show. Leaving it shut and reporting it left nothing to clean up."
+          }
+        },
+        {
+          "id": "e19_disable_protection",
+          "_note": "Row 5. A fake 'Quayholt IT Support' on a look-alike address asking the learner to allow or override what Quayholt Protect blocked. Teaches 'never switch off or override security software' (LO3). The look-alike IT address reuses the E5/E8 Quayholt look-alike shape; flagged in BRAND_ADDITIONS.md. It is scored as senderTrust beside disable_security_software (blind playtest E19 B1 M-1 ruling, 2026-10-29).",
+          "from": { "name": "Quayholt IT Support", "address": "support@quayholt-it-support.example" },
+          "to": "you@quayholt.example",
+          "subject": "Action needed: allow the required update",
+          "time": "15:10",
+          "body": "Our security software is wrongly blocking a required update.\nPlease click Allow when Quayholt Protect warns you, so the update can run.\nQuayholt IT Support",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quayholt-it-support.example", "replyTo": "support@quayholt-it-support.example" },
+          "factorStrings": {
+            "disable_security_software": { "redFlag": "A request to turn off, allow or override what the security software blocked" }
+          },
+          "truth": {
+            "isPhish": true,
+            "flags": ["disable_security_software", "senderTrust"],
+            "perFlagNote": {
+              "senderTrust": "The sender's address is on quayholt-it-support.example, with extra words added. Quayholt is quayholt.example, so this came from a separate domain anyone can register",
+              "disable_security_software": "Genuine IT never asks you to allow or turn off what the security software blocked; that's how an attacker gets their program to run as you. Leave protection on and allow nothing it blocked"
+            },
+            "ifTrusted": "Allowing what Quayholt Protect blocked would let the attacker's program run as you, the very thing the block stopped.",
+            "reportReply": "Thanks. Genuine IT never asks you to allow or turn off what the security software blocked. If a block is ever slowing real work, the service desk can tune it; they never ask you to switch it off."
+          }
+        },
+        {
+          "id": "e19_device_update",
+          "_note": "Row 6. The genuine calibration item (LO2): the device's own update, sent by IT, scored Trust (save and restart). The deliberate contrast with E10's web fake updates (which are never genuine); E19 cross-references E10, does not repeat it. After a run of real signs it is tempting to report everything, so the calibration item makes 'anything unusual is a trap' lose.",
+          "from": { "name": "Quayholt device management", "address": "device-management@quayholt.example" },
+          "to": "you@quayholt.example",
+          "subject": "Updates installed: restart within a day",
+          "time": "15:30",
+          "body": "Updates have been installed on your laptop. Restart within a day to finish.\nAfter three days it will restart itself at 19:00. Save your work first.\nQuayholt device management",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quayholt.example", "replyTo": "device-management@quayholt.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "urgencyCalibrated": "'Restart within a day, or it restarts itself at 19:00' is a clear deadline with a stated reason, from IT's own address. That is how a genuine update prompt reads, not a tell.",
+              "default": "This is your device's own update, sent by IT, and acting on it is exactly right: save your work and restart the same day; many fixes only finish after a restart. This is not a web page offering you an update (those are never genuine); it's your machine finishing a fix IT already sent."
+            },
+            "falseAlarmCost": "Reported rather than acted on, the fix doesn't finish, the laptop restarts itself at 19:00 as the notice warned, and any work you left unsaved goes with it."
+          }
+        }
+      ]
+    }
+  ],
+
+  "awarenessEpisode": {
+    "role": "general_staff",
+    "company": "quayholt_insurance",
+    "brand": { "name": "Quayholt Insurance", "logoText": "QUAYHOLT", "accent": "#6b4c9a" },
+    "scopeNote": "Authorised exercise at Quayholt Insurance, a fictional company. In scope: your own choices at the desk this afternoon, and the desk inbox. Nothing you do here leaves the game, and nothing here is real malware.",
+    "defend": { "setId": "e19_lock_the_doors", "reportAlwaysVisible": true },
+    "debrief": { "mondayCard": "slot:customer_report_route", "noBlameLine": true },
+    "strings": {
+      "weakestTells": "The signs most often missed: {names} ({counts} each).",
+      "weakestTell": "The sign most often missed: {names} ({counts}).",
+      "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. It is an ordinary Thursday afternoon at a Quayholt desk. First you make the everyday calls anyone makes on a busy afternoon: a restart prompt, a document that wants you to switch something on, a warning from the security software, a file to save. Then you see where each one led by the end of the day. After that you take the desk inbox one item at a time. Only the inbox is scored. This episode shows a ransomware message and plays out where an afternoon's choices lead, your own machine among them; there are no alarms or flashing screens.",
+      "flipHeading": "Later that afternoon",
+      "allPhishRight": "Every problem was caught, with every sign named.",
+      "noBlameLine": "Opening the wrong file, or postponing a restart, happens to careful people on a busy afternoon; this is how most incidents start, not a sign anyone was careless. What turns it into harm is silence. Nobody at Quayholt is in trouble for reporting, including their own slip.",
+      "noBlameLineCritical": "A busy afternoon and a message from a colleague are easy to read the wrong way, so a miss here says more about the day than about you. The points only show where to look next time.",
+      "teamLine": "By reporting or checking {n} of these rather than acting on them, you kept a problem away from the rest of your team.",
+      "mondayCard": "On Monday, three things at home: turn on automatic updates on your phone and your computer, and restart when they ask; keep a backup of anything you'd hate to lose, somewhere separate from the computer; and never pay or reply to a ransom message, report it instead. At work: restart when it asks, save where it's backed up, and if something looks wrong, report it straight away using the route in the box below. Quayholt keeps backups the attacker can't reach and runs Quayholt Protect, so a reported incident can be recovered.",
+      "defendOnly": "Any of these can catch a careful person on a busy afternoon. The ones you were caught out by are shown below, with what good looks like. Reporting fast is what limits the harm.",
+      "conceptPanel": [
+        { "heading": "It runs with your access", "text": "A program, a macro inside a document, or an app you connect, runs with your access. It can read what you can read, send as you, and reach the shared drives you reach. That's why a file or an app you weren't expecting is worth stopping for, even a familiar-looking one." },
+        { "heading": "Updates close known holes", "text": "Most updates fix a hole attackers already know about. When your device or IT asks, install it and restart the same day; many only finish after a restart. A web page offering you an update is a different thing, and never genuine." },
+        { "heading": "Ransomware, and what you do", "text": "You might see files that won't open or have strange names, or a message that your files are locked with a demand to pay. Report it straight away. Don't pay, don't contact the attackers, don't try to fix it; if the team asks, disconnect from the network and leave the device switched on." },
+        { "heading": "Allow this app?", "text": "A link or an app asking to read your mail or your files is asking for your access without a password. Only approve something you, or IT, set up and trust. If you didn't start it, deny it and report it." }
+      ],
+      "_moduleLine": "FOLDED into the Monday card (BUILD_LOG 2026-10-29): the spec's module line ('Restart when it asks. Save where it's backed up. If something looks wrong, report it straight away.') is carried by the mondayCard clause 'At work: restart when it asks, save where it's backed up, and if something looks wrong, report it straight away using the route in the box below.' No strings.moduleLine slot was built. The backup point (LO6) is in that card and in the montage.",
+      "_orgSlotLine": "FOLDED into the Monday card (BUILD_LOG 2026-10-29): the organisation-slot line is carried by the mondayCard close 'Quayholt keeps backups the attacker can't reach and runs Quayholt Protect, so a reported incident can be recovered.' No organisation-slot string key was built."
+    },
+    "_defendOnly": {
+      "_use": "Strings for the defend-only shell (e19_malware_and_updates_defend), which has no mistake or flip stage. The generator copies brief over strings.brief and scopeNote over scopeNote; every other string above is shared (flipHeading is harmless and unused in the defend-only shell, and flipMontageByChoice is never carried into it). The conceptPanel array is carried over, so all four concept cards show in the defend-only debrief (ENG-09b).",
+      "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. You're covering a desk inbox this afternoon. Some of what turns up is ordinary, some is a program or a page trying to get you to open a door, and one is a colleague whose screen has just locked. Sort it, and report or check anything that doesn't sit right. Reporting when you're unsure is always fine and never marked down. No real malware runs here.",
+      "scopeNote": "Authorised exercise at Quayholt Insurance, a fictional company. In scope: the desk inbox."
+    }
+  }
+}

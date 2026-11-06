@@ -1,0 +1,13 @@
+{
+  "key": "6a3e08de815d4e888581736ae7c38c60",
+  "npc": "sidhu_selvarajan",
+  "text": "Good systems store passwords that way too, with salt and a slow hash. But that is another lecture.",
+  "voice": "Enceladus",
+  "style": "Cyber security researcher, blockchain developer and journal editor. Consistent Indian English accent throughout. Calm, precise, courteous, warm.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

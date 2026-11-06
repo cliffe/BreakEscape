@@ -1,0 +1,63 @@
+   {set {"briefing_played":true,"reception_badge_cloned":true}}
+
+--- victoria ---
+  Narrator: Victoria Sterling rises as you come in, composed and sure of herself.
+  Victoria Sterling: Victoria Sterling. Sit down. Let's see if you match your file.
+  Narrator: She gestures to the conference table.
+  Victoria Sterling: Freelance pen testing. Some CTF work. Competent.
+  Victoria Sterling: Competent is cheap. That's not why you're here.
+     (3 options)
+ > Why am I here, then?
+  Victoria Sterling: To find out what you're worth. Your CV only tells me what you cost.
+  Victoria Sterling: You find a hole and do the decent thing. The vendor sits on it for six months. Somebody less decent finds it in three.
+     (3 options)
+ > So, responsible disclosure or full disclosure?
+  Victoria Sterling: Neither. Both assume the vendor deserves it for free.
+  Victoria Sterling: Everything breaks in the end. Some people call that entropy. I call it stock.
+  Victoria Sterling: What matters is who knows first, and who pays them for knowing.
+  Victoria Sterling: What else would you like to know?
+     (4 options)
+ > Is that your training lab on the whiteboard?
+  Narrator: You get up and go to the board, close to Victoria.
+  Victoria Sterling: The training lab. Have a look.
+  Narrator: The cloner in your pocket starts reading her card. Custom keys: you'll need Darkside afterwards, and that takes about thirty seconds. Keep her talking while it reads.
+  Victoria Sterling: Real kit, every box of it. We leave the holes in on purpose.
+     (4 options)
+ > What kind of services do you run in the lab environment?
+  Victoria Sterling: FTP, a web host, some legacy services. There's a distcc box on there we keep telling the students not to touch.
+  Narrator: Halfway. The cloner is still reading.
+  Victoria Sterling: The lab's the easy part. The money is in knowing who'll pay, and how much.
+     (3 options)
+ > That sounds more complex than pure technical work.
+  Victoria Sterling: That's why I don't hire coders. I hire people who can count.
+  Victoria Sterling: You ask questions like someone taking notes. I like that in staff. I watch for it in guests.
+  Narrator: Against your leg, the cloner is still working. A few seconds more.
+     (3 options)
+ > Do you offer any formal certifications?
+  Victoria Sterling: Certificates are for people who want permission. My students don't ask.
+  Narrator: The cloner buzzes once against your leg. Card read. Now run Darkside on it.
+      [RFID minigame: card saved]
+  Narrator: You step back from the whiteboard, easing the distance open again.
+  Victoria Sterling: Before you go. One question. I ask everyone, and most people get it wrong.
+  Victoria Sterling: You find a hole in an NHS trust's patient records. The vendor offers you a T-shirt and a thank-you. A buyer offers forty thousand. What do you do?
+     [0] Take the forty. The vendor had years to find it.
+     [1] Report it. Then invoice the vendor for my time anyway.
+     [2] I'd want to know what the buyer wanted it for.
+  [stopped: no pick]
+
+## player closes the chat at the question (card already saved), walks out; night
+   {set {"mission_phase":"act2_infiltration","clone_call_done":true}}
+
+--- victoria ---
+  Narrator: Sterling is on the phone by the window, her back to the door, voice low.
+  Victoria Sterling: No. Not tonight. I said I'd deal with it myself.
+  Narrator: She doesn't seem to have heard you come in. You ease back out before she turns round.
+ > Look in on Sterling
+  Narrator: Sterling is on the phone by the window, her back to the door, voice low.
+  Victoria Sterling: No. Not tonight. I said I'd deal with it myself.
+  Narrator: She doesn't seem to have heard you come in. You ease back out before she turns round.
+  [chat closes]
+
+## (D5-21) probe end: the night call played instead of the afternoon question (D4-12)
+
+[stats] spoken/narrated lines 32, choices 7, longest run without a choice 5 (victoria); runs>=6: 

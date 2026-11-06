@@ -1,0 +1,52 @@
+{
+  "scenario": "test_needs_leash",
+  "start_room": "ravi_office",
+  "nodes": [
+    {
+      "id": "ravi_office",
+      "label": "Ravi",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "maya_office",
+      "label": "Maya (private)",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "west_corridor",
+      "label": "Corridor",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "store",
+      "label": "Store",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "ravi_office",
+      "to": "maya_office",
+      "soft": false
+    },
+    {
+      "from": "ravi_office",
+      "to": "west_corridor",
+      "soft": false
+    },
+    {
+      "from": "maya_office",
+      "to": "store",
+      "soft": false
+    },
+    {
+      "from": "west_corridor",
+      "to": "store",
+      "soft": false
+    }
+  ]
+}

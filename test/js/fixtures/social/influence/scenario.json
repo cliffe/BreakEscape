@@ -1,0 +1,73 @@
+{
+  "_comment": "Fixture for test/js/social-influence.test.mjs (packet P0-F). Priya and Dev follow 00 §8; trusts is an \"above\" threshold; lou locks out until a global; pierce exercises influence.display.",
+  "globalVariables": {
+    "priya_influence": -20, "priya_latched": "", "priya_wary": false, "priya_refusing": false,
+    "helpdesk_alerted": false, "priya_trusting": false,
+    "priya_lockout_until": 0, "priya_lockout_channel": "",
+    "dev_influence": -10, "dev_latched": "", "dev_wary": false, "dev_refusing": false, "dev_reported": false,
+    "dev_lockout_until": 0, "dev_lockout_channel": "",
+    "lou_influence": 0, "lou_latched": "", "lou_lockout_until": 0, "lou_lockout_channel": "", "lou_cleared": false,
+    "pierce_influence": 0, "pierce_latched": "", "pierce_wary": false,
+    "gary_influence": 0
+  },
+  "social": {
+    "influenceDisplay": { "number": false },
+    "characters": {
+      "priya": {
+        "displayName": "Priya Nair",
+        "channels": { "person": "priya_helpdesk", "phone": "priya_helpdesk_phone" },
+        "influence": { "global": "priya_influence", "min": -100, "max": 100, "start": -20 },
+        "thresholds": [
+          { "id": "trusts", "at": 40, "when": "above", "icon": "trusts",
+            "effects": [ { "type": "setGlobal", "global": "priya_trusting", "value": true, "clearOnRearm": true },
+                         { "type": "toast", "text": "Priya trusts you." } ] },
+          { "id": "wary", "at": -40, "icon": "wary",
+            "effects": [ { "type": "setGlobal", "global": "priya_wary", "value": true, "clearOnRearm": true } ] },
+          { "id": "refuses", "at": -50, "icon": "refuses",
+            "effects": [ { "type": "setGlobal", "global": "priya_refusing", "value": true, "clearOnRearm": true } ] },
+          { "id": "reports", "at": -70, "icon": "reports",
+            "effects": [ { "type": "setGlobal", "global": "helpdesk_alerted", "value": true },
+                         { "type": "endConversation" } ] },
+          { "id": "lockout", "at": -90, "icon": "hostile",
+            "effects": [ { "type": "lockout", "scope": "channel", "until": { "afterMinutes": 10 }, "recoverTo": -30 } ] }
+        ]
+      },
+      "dev": {
+        "displayName": "Dev",
+        "channels": { "phone": "dev_service_desk" },
+        "influence": { "global": "dev_influence", "min": -100, "max": 100, "start": -10 },
+        "thresholds": [
+          { "id": "wary", "at": -40, "icon": "wary", "effects": [ { "type": "setGlobal", "global": "dev_wary", "value": true, "clearOnRearm": true } ] },
+          { "id": "refuses", "at": -50, "icon": "refuses", "effects": [ { "type": "setGlobal", "global": "dev_refusing", "value": true, "clearOnRearm": true } ] },
+          { "id": "reports", "at": -70, "icon": "reports",
+            "effects": [ { "type": "setGlobal", "global": "dev_reported", "value": true },
+                         { "type": "endConversation" },
+                         { "type": "lockout", "scope": "channel", "until": { "afterMinutes": 2 }, "recoverTo": -30 } ] }
+        ]
+      },
+      "lou": {
+        "displayName": "Lou",
+        "channels": { "person": "lou_desk", "phone": "lou_phone" },
+        "influence": { "min": -100, "max": 100, "start": 0, "rearmMargin": 5 },
+        "mirrorToBehavior": true,
+        "thresholds": [
+          { "id": "reports", "at": -60, "icon": "reports",
+            "effects": [ { "type": "lockout", "scope": "character", "until": { "global": "lou_cleared" }, "recoverTo": -20 },
+                         { "type": "combatHostile" } ] }
+        ]
+      },
+      "pierce": {
+        "displayName": "Melanie Pierce",
+        "channels": { "email": "pierce_mail" },
+        "influence": { "global": "pierce_influence", "min": -40, "max": 100, "start": 0,
+                       "display": { "pip": false, "number": true } },
+        "thresholds": [ { "id": "wary", "at": -30, "icon": "wary",
+                          "effects": [ { "type": "setGlobal", "global": "pierce_wary", "value": true, "clearOnRearm": true } ] } ]
+      }
+    },
+    "pretextNpcs": [
+      { "character": "priya", "callId": "helpdesk_call",
+        "outcomes": { "reported": { "line": "I'll ring you back on the number we hold for you." } } }
+    ]
+  }
+}

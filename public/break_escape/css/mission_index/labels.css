@@ -1,0 +1,63 @@
+/*
+ * BreakEscape Label Styles
+ * Mirrors Hacktivity's label styling for consistency
+ */
+
+/* Base label styles */
+.label {
+  display: inline-block;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: default;
+}
+
+/* CyBOK label specific styling */
+.label-cybok {
+  background-color: #2d5a27;
+  color: #ffffff;
+  border: 1px solid #3d7a37;
+}
+
+.label-cybok:hover {
+  background-color: #3d7a37;
+}
+
+/* Difficulty labels */
+.label-difficulty {
+  background-color: #00ff00;
+  color: #000000;
+}
+
+.label-difficulty-1 {
+  background-color: #4ade80;
+  color: #000000;
+}
+
+.label-difficulty-2 {
+  background-color: #22c55e;
+  color: #000000;
+}
+
+.label-difficulty-3 {
+  background-color: #f59e0b;
+  color: #000000;
+}
+
+.label-difficulty-4 {
+  background-color: #ef4444;
+  color: #ffffff;
+}
+
+.label-difficulty-5 {
+  background-color: #7c2d12;
+  color: #ffffff;
+}
+
+/* Collection labels */
+.label-collection {
+  background-color: #3b82f6;
+  color: #ffffff;
+  border: 1px solid #2563eb;
+}

@@ -1,0 +1,13 @@
+{
+  "key": "79d820c9dee8fff71dc7fc3a87f441d5",
+  "npc": "dr_sharma",
+  "text": "Right. Ward 7 was never on the new VLAN. Nobody had checked the claim against the hospital since it was written.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

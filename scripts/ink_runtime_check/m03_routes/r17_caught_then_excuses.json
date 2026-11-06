@@ -1,0 +1,6 @@
+{"steps":[
+{"note":"R17 (C5-1, reworked in pass 2 blind fixes 2): a player Terry catches picking a lock gets no talking: on_lockpick_detected carries #hostile:terry_mott and the detection counts. A later talk (if he hasn't chased them down) gets his hostile line, not the excuse menu."},
+{"set":{"briefing_played":true,"victoria_card_cloned":true,"mission_phase":"act2_infiltration","clone_call_done":true,"day_greeted":false}},
+{"talk":"terry","knot":"on_lockpick_detected","picks":[]},
+{"talk":"terry","knot":"start","picks":[]}
+]}

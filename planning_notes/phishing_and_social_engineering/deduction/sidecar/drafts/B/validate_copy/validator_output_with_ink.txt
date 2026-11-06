@@ -1,0 +1,32 @@
+Validating scenario: /home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/planning_notes/phishing_and_social_engineering/deduction/sidecar/drafts/B/validate_copy/no_deduction/test_social_deduction_b/scenario.json.erb
+Using schema: /home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/scripts/scenario-schema.json
+
+Checking scenario directory structure...
+✓ Directory structure is valid
+
+Loaded 1112 valid item types from assets/objects/
+
+Rendering ERB template...
+✓ ERB rendered successfully
+
+Checking JSON structure...
+✓ JSON structure is valid
+
+Checking for unknown fields...
+✓ No unknown fields
+
+Checking ink files...
+✗ Ink file validation failed with 6 error(s):
+
+1. ❌ INVALID: 'rooms/b_office/npcs[0]' references ink file 'scenarios/test_social_deduction_b/ink/ded_b_okoro.json' which does not exist (checked for both .json and .ink versions)
+
+2. ❌ INVALID: 'rooms/b_office/npcs[1]' references ink file 'scenarios/test_social_deduction_b/ink/ded_b_haddad.json' which does not exist (checked for both .json and .ink versions)
+
+3. ❌ INVALID: 'rooms/b_office/npcs[2]' references ink file 'scenarios/test_social_deduction_b/ink/ded_b_security_manager.json' which does not exist (checked for both .json and .ink versions)
+
+4. ❌ INVALID: 'rooms/b_kitchen/npcs[0]' references ink file 'scenarios/test_social_deduction_b/ink/ded_b_tomas.json' which does not exist (checked for both .json and .ink versions)
+
+5. ❌ INVALID: 'rooms/b_kitchen/npcs[1]' references ink file 'scenarios/test_social_deduction_b/ink/ded_b_lindqvist.json' which does not exist (checked for both .json and .ink versions)
+
+6. ❌ INVALID: 'rooms/b_kitchen/npcs[2]' references ink file 'scenarios/test_social_deduction_b/ink/ded_b_morgan.json' which does not exist (checked for both .json and .ink versions)
+

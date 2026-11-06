@@ -1,0 +1,13 @@
+{
+  "key": "310b91a6c56b9f69ab18c00c39f5b7ca",
+  "npc": "dr_sharma",
+  "text": "Almost everything that failed today was known before Monday. The segmentation gap, the vendor VPN, the overdue rehearsal.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

@@ -1,0 +1,91 @@
+
+## R32 (Phase 8 final check F1): Relay turned hostile and still on her feet after the shutdown. 'Bring me in' says why it waits (a hostile operative would cut the debrief); the player can back out, or, once Relay is down, the call-in proceeds. A second pass checks the 'well clear' way out for a player who got away from her instead.
+   {set {"briefing_played":true,"guard_admitted":true,"vance_met":true,"vance_spoken":true,"vance_provided_keycard":true,"vance_card_cloned":true,"vance_is_ally":true,"anomaly_detected":true,"crew_warned":true}}
+      [engine: early alarm -> crew_warned_early, clock_started]
+      [clock: h2_advisory_alarm started at 0 min]
+      [clock: racks_vent_alarm started at 0 min]
+
+--- relay ---
+  Narrator: The strobes are still going. She's standing in the middle of the aisle, watching the door, as if she's been waiting for it to open.
+  ENTROPY Operative 'Relay': Nine of them went past me in their hi-vis. Somebody told them to. That'll be you.
+  ENTROPY Operative 'Relay': You're not getting to those rack banks.
+     (4 options)
+ > Say nothing.
+  Narrator: The silence goes on a beat too long.
+  ENTROPY Operative 'Relay': Last chance to be somewhere else.
+     (2 options)
+ > Then we do this the hard way.
+      [engine: operative_relay hostile]
+  [end]
+   [PASS] relay_engaged = true (expected true)
+   [PASS] operative_relay_defeated = false (expected false)
+   {set {"server_room_reached":true,"flag_network_scan_submitted":true,"flag_ftp_intel_submitted":true,"flag_distcc_exploit_submitted":true,"flag_privesc_submitted":true,"all_flags_in":true,"attack_mechanism_known":true,"crew_hint_texted":true,"plant_room_entered":true,"operative_static_defeated":true}}
+      [clock: h2_advisory started at 0 min]
+      [clock: racks_vent started at 0 min]
+   {ko voltage}
+   {set {"esd_authorized":true,"attack_prevented":true}}
+
+--- phone ---
+     (3 options)
+ > I'm done here. Bring me in.
+  Not with Relay still on you. Lose her or put her down, then call.
+     (2 options)
+ > Understood.
+     [0] I'm done here. Bring me in.
+     [1] Where do I stand?
+     [2] Nothing right now.
+  [stopped: no pick]
+   [PASS] said: "Not with Relay still on you. Lose her or put her down, then call."
+   [PASS] not said: "Car's at the loading dock"
+   [PASS] mission_complete = false (expected false)
+   {ko operative_relay}
+
+--- phone ---
+     (3 options)
+ > I'm done here. Bring me in.
+  Once you're out, you don't go back in. Whatever you haven't read stays for forensics.
+  Voltage's operation log is still on the plant-room bench, for one.
+  And there's a go-bag at the dock nobody's opened.
+     (2 options)
+ > Bring me in.
+  Car's at the loading dock. Two minutes.
+ > On my way.
+      [task: call_in_after_sweep]
+      [set_global mission_complete=true]
+  See you at HQ.
+     [0] Where do I stand?
+     [1] Nothing right now.
+  [stopped: no pick]
+   [PASS] said: "Car's at the loading dock. Two minutes."
+   [PASS] not said: "Not with Relay"
+   [PASS] mission_complete = true (expected true)
+
+## Second pass: Relay hostile and up, the player says they're clear of her.
+   {set {"operative_relay_defeated":false,"mission_complete":false}}
+
+--- phone ---
+   (after a reload: variables kept, visit counts and position reset)
+     (3 options)
+ > I'm done here. Bring me in.
+  Not with Relay still on you. Lose her or put her down, then call.
+     (2 options)
+ > I'm well clear of them. Bring me in.
+  Once you're out, you don't go back in. Whatever you haven't read stays for forensics.
+  Voltage's operation log is still on the plant-room bench, for one.
+  And there's a go-bag at the dock nobody's opened.
+     (2 options)
+ > Bring me in.
+  Car's at the loading dock. Two minutes.
+ > On my way.
+      [task: call_in_after_sweep]
+      [set_global mission_complete=true]
+  See you at HQ.
+     [0] Where do I stand?
+     [1] Nothing right now.
+  [stopped: no pick]
+   [PASS] said: "Not with Relay still on you"
+   [PASS] said: "Car's at the loading dock. Two minutes."
+   [PASS] mission_complete = true (expected true)
+
+[stats] spoken/narrated lines 17, choices 11, longest run without a choice 3 (relay); runs>=6: 
+[result] all expectations met

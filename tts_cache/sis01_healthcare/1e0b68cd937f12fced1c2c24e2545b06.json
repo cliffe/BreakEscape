@@ -1,0 +1,13 @@
+{
+  "key": "1e0b68cd937f12fced1c2c24e2545b06",
+  "npc": "dr_sharma",
+  "text": "None of that is exotic. MFA on every remote login is in your DSPT. So is reviewing who still has access.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

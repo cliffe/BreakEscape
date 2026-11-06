@@ -1,0 +1,156 @@
+
+## R4 (pass 5 alignment, decision 1): the crew warned early through Vance's phone; the clock started on the alarm and ran out (racks_vent timer) before the shutdown. The crew were out, so crew_lost stays false: ALL ELEVEN walked out, and the casualties line is the feed only. A second route check: once a bank has vented the warn choice is gone (vance_unwarned part).
+   {set {"briefing_played":true,"guard_admitted":true,"vance_met":true,"vance_is_ally":true,"vance_provided_keycard":true,"anomaly_detected":true,"vance_spoken":true}}
+
+--- vance_phone ---
+  Vance. What do you need?
+     (6 options)
+ > The night crew in Hall 2. Can you get them out?
+  I can sound the evacuation from here. Klaxon and strobes in every hall.
+  And whoever's in my plant room hears it too. He'll not wait for morning.
+  Half an hour, maybe, and you've not finished in the workshop.
+     (2 options)
+ > Sound it. Get them out.
+      [set_global crew_warned=true]
+  Sounding it now. They're moving. Nine of them, out through the Hall 2 fire doors.
+      [engine: early alarm -> crew_warned_early, clock_started]
+      [clock: h2_advisory_alarm started at 0 min]
+      [clock: racks_vent_alarm started at 0 min]
+     (5 options)
+ > That's everything for now.
+  Call me if you need it.
+  I'm not going anywhere.
+  [chat closes]
+   [PASS] crew_warned = true (expected true)
+   [PASS] clock_started = true (expected true)
+
+## Round 2 clock model: the early alarm started the 30-minute alarm clock; the VM stage takes longer. The h2 advisory at 24 min, the vent at 30.
+   {advance 24 min}
+      [clock 24 min: h2_advisory_alarm FIRES {"hydrogen_alarm":true,"urgency_stage":3}]
+   [PASS] hydrogen_alarm = true (expected true)
+   [PASS] racks_vented = false (expected false)
+   {advance 7 min}
+      [clock 30 min: racks_vent_alarm FIRES {"racks_vented":true,"casualties_occurred":true,"vented_by_alarm_clock":true,"urgency_stage":4}]
+   [PASS] racks_vented = true (expected true)
+   [PASS] vented_by_alarm_clock = true (expected true)
+   [PASS] crew_lost = false (expected false)
+   [PASS] crew_warned_early = true (expected true)
+
+--- vance_phone ---
+     (5 options)
+ > How bad is it?
+  Bank B's gone. A and C are holding, for now.
+  The hardwired shutdown isolates what's left and forces the vents. Get to it.
+     (5 options)
+ > That's everything for now.
+  Call me if you need it.
+  And hurry.
+  [chat closes]
+   {set {"voltage_captured":true,"voltage_neutralised":true,"operative_static_defeated":true,"flag_network_scan_submitted":true,"flag_ftp_intel_submitted":true,"flag_distcc_exploit_submitted":true,"flag_privesc_submitted":true,"all_flags_in":true,"attack_mechanism_known":true,"esd_authorized":true,"attack_prevented":true,"lore_architect_directive_found":true,"lore_safehouse_address_found":true}}
+      [clock: h2_advisory started at 31 min]
+      [clock: racks_vent started at 31 min]
+
+--- phone ---
+     (3 options)
+ > I'm done here. Bring me in.
+  Once you're out, you don't go back in. Whatever you haven't read stays for forensics.
+     (2 options)
+ > Bring me in.
+  Car's at the loading dock. Two minutes.
+ > On my way.
+      [task: call_in_after_sweep]
+      [set_global mission_complete=true]
+  See you at HQ.
+     [0] Where do I stand?
+     [1] Nothing right now.
+  [stopped: no pick]
+   [PASS] mission_complete = true (expected true)
+
+--- debrief ---
+      [set_global debrief_started=true]
+  Agent, report.
+     (2 options)
+ > Bank B went before I reached the button. Shutdown held A and C.
+  Bank B's gone, but you isolated A and C and forced the vents. It could have been the whole hall. It wasn't.
+  And you've got Voltage.
+ > What did we get out of there?
+  The directive said it: Zero Day supplies, Critical Mass executes, grid storage this winter. Tonight was that plan, running.
+  Voltage is in a room now. So far he's given us one thing: his casualty figure.
+  The documents show Critical Mass and Social Fabric coordinating the one attack, in their own handwriting. That's the proof we've chased since Zero Day.
+  And that card from the go-bag. It decodes to Calder Wharf, Social Fabric's regional safehouse. That goes on the board.
+  Keep the OptiGrid print kit. Forensics can have the case it came in.
+ > And how did they get in? How did I?
+  Agent HaX: Before you write it up. Here's what let them in. Nearly all of it let you in too.
+  Agent HaX: Their door cards are old prox. They hand their number to anything that asks. You could have had Vance's from across his desk.
+  Agent HaX: The HV door took one finger, and that finger was on a panel he touched every two hours. A print names you. It can't prove you're the one standing there.
+  Agent HaX: And the control room believed its own sensors. The honest ones weren't on the bus: a dial on a wall, and a gas monitor off their network.
+     (2 options)
+ > So what do they fix first?
+  Agent HaX: A legacy compile service on an OT box, trusting whatever it was sent. That comes off the network.
+  Agent HaX: An FTP service handing their cross-cell plan to anyone who looked, and a jump-server account with more privilege than it ever needed. Somebody reviews those.
+  Agent HaX: And on site: encrypted cards, a second factor on the HV door, and a gauge in every hall that somebody reads.
+     (2 options)
+ > It goes in the report. Vance will want every line.
+  Social Fabric had disinformation queued for the morning, ready to turn a fire into a panic.
+     (2 options)
+ > The Architect. He's running all of it.
+  The same name the Zero Day directive carried. The Architect.
+  We've just watched one of his strikes from the inside. Now we know how the cells fit together.
+  This site was a rehearsal.
+  Netherton wants a standing team on The Architect. Hunt the coordination, not the cells.
+  He's calling it Task Force Null. Your name's on his list.
+     (2 options)
+ > I'm in. When do we start?
+  He'll call when he's ready. Not tonight.
+  Agent HaX: Your alarm started his clock. Bank B and two on the feed are what it cost.
+  Agent HaX: Nine people in Hall 2 are what it bought. Hall 2 was empty when it went.
+  Narrator: Vance is on the line from the Albion ops desk.
+  How do we handle this publicly?
+     (3 options)
+ > Full public disclosure. People have a right to know.
+  Full transparency. The attack, the holes it came through, ENTROPY. All of it.
+  Robert Vance: There'll be hell to pay for this place. Fair enough.
+  The public gets the truth and the warning with it. Albion takes the hit, every other storage site gets audited, and someone in Parliament finally answers for the funding.
+  Netherton will back that.
+  Done.
+  Statement goes out with the local authorities.
+  Robert Vance: I don't follow all of it. I know the hall's still standing.
+     (2 options)
+ > It was an honour working with you, Mr Vance.
+  Robert Vance: We've run this place on hope and gaffer tape for years.
+  Robert Vance: That stops on my shift.
+  Voltage will keep.
+  Sleep. I'll call.
+      [task: report_to_0x99]
+  [end]
+
+--- credits ---
+   COSTLY SUCCESS
+   MISSION 4: CRITICAL FAILURE
+   ALL ELEVEN ON SITE WALKED OUT
+   NIGHT CREW: out of Hall 2 on Vance's alarm, and the cell heard it too
+   RACK BANK B LOST — banks A and C isolated in time
+   CASUALTIES: two on the dropped feed. Hall 2 was empty when it went
+   ── DECISIONS ──
+   VOLTAGE: CAPTURED — Blackout's field lead in custody
+   ROBERT VANCE: brought in — ran the desk while you ran the halls
+   SOCIAL FABRIC SAFEHOUSE: located
+   DISCLOSED IN FULL — the attack, the vulnerabilities, and how close it came
+   THE ARCHITECT: identity still unknown. Phase 3 looms.
+   ENTROPY: Still operational. Cross-cell strikes continue.
+
+## Separately: a bank vented with the crew never warned. Vance's phone no longer offers the evacuation.
+   {set {"crew_warned":false,"attack_prevented":false,"mission_complete":false}}
+      [engine: racks_vented with the crew in Hall 2 -> crew_lost]
+
+--- vance_phone ---
+   (after a reload: variables kept, visit counts and position reset)
+  Vance. The hydrogen's still climbing.
+     (5 options)
+ > That's everything for now.
+  Call me if you need it.
+  And hurry.
+  [chat closes]
+
+[stats] spoken/narrated lines 54, choices 18, longest run without a choice 7 (debrief); runs>=6: debrief:7
+[result] all expectations met

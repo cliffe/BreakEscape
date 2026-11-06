@@ -1,0 +1,13 @@
+{
+  "key": "39cdf6820ff3d745447fb0408bb61298",
+  "npc": "dr_sharma",
+  "text": "Your \"soon\" to Sarah was a risk decision too. It was taken for Mr Ahmed, without the facts to back it.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

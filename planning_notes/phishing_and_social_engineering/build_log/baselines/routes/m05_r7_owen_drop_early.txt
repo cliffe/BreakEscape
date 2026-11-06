@@ -1,0 +1,358 @@
+
+## R7 (round 2, B1): Owen knocked out before anyone suspects Torres; his dropped office spare picked off the floor (round-1 F6); the journal makes Torres a suspect; vault paperwork; named before flag 3 without ever reasoning the badge log. The early bar still runs (it's elapsed time), but no credit, no debrief line, no scene line.
+
+--- briefing ---
+      [task: receive_mission_briefing]
+  Narrator: A SAFETYNET briefing room. Director Netherton stands at the head of the table. Beside him, Nightshade has three monitors of access logs open.
+  Director Magnus Netherton: Agent 0x00. This one is close to home in a way I dislike. Someone inside a Home Office contractor is handing ENTROPY the crown jewels.
+  Director Magnus Netherton: I have brought Nightshade in because catching a mole is precisely his trade. Learn from him. HaX will run you on the ground.
+  Director Magnus Netherton: Task Force Null is three people and a whiteboard so far. Every cell we've hit bought something. This time it's bought a person. I want to know how.
+     (2 options)
+ > Bought with what?
+  Director Magnus Netherton: That is what you are going to tell me.
+  Agent 0x47 'Nightshade': Insiders are hard to catch because they never have to break in. They're already trusted.
+  Agent 0x47 'Nightshade': So you hunt the pattern. Access a little too broad, hours a little too odd.
+  Agent 0x47 'Nightshade': And the calm of someone who's decided the rules don't apply to them. Find whose behaviour stopped matching their story.
+  Director Magnus Netherton: Sound advice. HaX -- the detail.
+  Agent HaX: Quantum Dynamics Corporation, on a science park outside Cambridge. Quantum-safe cryptography, under contract to the Home Office.
+  Agent HaX: Someone on the inside is stealing it.
+     (3 options)
+ > What's the damage so far?
+      [ink: handler_trust=55]
+  Agent HaX: Project Heisenberg. Quantum-safe key material for the national emergency dispatch network. The system that routes nine-nine-nine calls.
+  Agent HaX: Seventy-three per cent of the package is already staged to go. The rest goes out within four hours unless we stop it.
+     (3 options)
+ > Who's this going to?
+      [ink: knows_full_stakes=true]
+  Agent HaX: No foreign buyer. ENTROPY's Insider Threat Initiative is taking it and keeping it.
+  Agent HaX: Hold the keys during a rotation window and you can force the network onto a degraded routing path.
+  Agent HaX: Every ambulance, fire and police call through it runs six to eleven minutes slower.
+  Agent HaX: Early modelling: thirty to forty-five excess civilian deaths in the first rollout wave.
+  Agent HaX: Cardiac arrests. Strokes. Structure fires. The calls where minutes decide it.
+     (2 options)
+ > What's the mission?
+  Agent HaX: Three things, then.
+  Agent HaX: One. Find the insider. QDC's security chief has it down to eight people in the cryptography division.
+  Agent HaX: Their access is real, so nothing will look like a break-in.
+  Agent HaX: Look at the edges. A badge at an odd hour. Money that doesn't add up. Someone who's changed.
+  Agent HaX: And don't take anyone's hunch for proof. Patricia's included.
+  Agent HaX: Two. Build the case. Enough for the police to act on when we pass it over anonymously, or enough to turn them.
+     (2 options)
+ > And the third?
+  Agent HaX: Three. Stop the final upload. The rotation windows are in that last part, and they stay in the building.
+     (2 options)
+ > What's my cover?
+  Agent HaX: You're going in as an external security consultant.
+  Agent HaX: Your kit goes in with you. Picks, the cloner, and the print kit you brought back from Albion. Auditors carry odd bags; nobody looks.
+  Agent HaX: Still no PIN cracker. The lab isn't finished with it.
+  Agent HaX: Chief Security Officer Patricia Morgan is expecting you. Ex-military police, fifteen years at the National Crime Agency. She called us in.
+  Agent HaX: She'll get you in. The CEO would rather none of it was happening, and wants it kept quiet.
+     (2 options)
+ > Who else will I meet?
+  Agent HaX: Dr Ruth Halloran leads the cryptography team. Brilliant scientist, protective of her people.
+  Agent HaX: Owen Gallagher, IT. He holds the spare cards and the server-room password, and he logs who gets them.
+  Agent HaX: Lisa Park in marketing notices things. Office gossip, mostly. Some of it useful.
+     (2 options)
+ > I'm ready.
+  Agent HaX: Last thing. How are you going to play it?
+     (3 options)
+ > Methodically. Document everything, interview everyone.
+      [ink: player_approach="cautious"]
+  Agent HaX: Good. Write it all down. The police will want every page.
+  Agent HaX: Thirty to forty-five lives ride on that upload. Keep the number with you.
+  Agent HaX: Just watch the clock while you're at it.
+  Agent HaX: I'm on the phone throughout. Call with what you find. Flags go in the drop-site.
+     (2 options)
+ > Any last advice?
+  Agent HaX: Don't decide the insider's story until you've seen all of it.
+  Agent HaX: Good luck, Agent.
+  Agent HaX: Quantum Dynamics. Wednesday afternoon, half past four.
+  Agent HaX: The final upload goes tonight. You have four hours.
+      [task: receive_mission_briefing]
+  Agent HaX: Patricia Morgan's expecting you. Go.
+  [end]
+   [text agent_0x99_handler +3000ms] You're in. Patricia Morgan's office is off reception, on the east side. Start with her. The clock's running.
+   {set {"briefing_played":true}}
+
+--- patricia ---
+      [task: meet_handler]
+  Narrator: A woman in her early fifties looks up from a wall of access logs. Military bearing, and a mug of tea gone cold by the keyboard.
+  Patricia Morgan: You'll be the consultant. Patricia Morgan, Chief Security Officer. Thanks for coming at short notice.
+     (3 options)
+ > Fill me in. What have you found so far?
+  Patricia Morgan: Data leaving the building. Four point two terabytes over six weeks.
+  Patricia Morgan: Project Heisenberg. Quantum-safe key material for the national emergency dispatch rollout.
+  Patricia Morgan: If ENTROPY gets the rest of it, people die waiting for ambulances that come too late.
+     (2 options)
+ > Who has access to the data?
+  Patricia Morgan: Eight people with developed vetting in the cryptography division.
+  Patricia Morgan: Dr Ruth Halloran leads the team. Five senior researchers, two junior engineers.
+  Patricia Morgan: All vetted. All trusted. One of them shouldn't be.
+     (2 options)
+ > Can you get me in front of them without tipping anyone off?
+  Patricia Morgan: Already done. As far as the building knows, you're a routine security audit.
+      [kit: Visitor Badge]
+  Patricia Morgan: Here. Visitor badge. It gets you through the front of the building and nowhere that matters.
+  Patricia Morgan: Owen Gallagher in IT holds the spare cards. Dr Halloran's badge opens the server side. I can lean on either of them if you need me to.
+  Patricia Morgan: My log of what's been flagged is on the desk, by your hand. Read it before you go. The who starts in there.
+     (2 options)
+ > Where should I start?
+  Patricia Morgan: People. Someone in this building has noticed something and not said it. Then the servers.
+  Patricia Morgan: When you think you have a name, bring me the why and the proof. Both.
+  [chat closes]
+      [mapping patricia_phone: set patricia_phone_available=true]
+   [text patricia_phone +2500ms] Patricia. This is my mobile. Ring me if anything changes; don't walk it back through reception.
+      [reads: Security Incident Log]
+   {ko owen_gallagher}
+      [task: talk_to_owen (taskOnKO)]
+   [opens agent_0x99_handler @on_owen_ko_relay (phone-chat)]
+
+--- phone @on_owen_ko_relay ---
+      [kit: Staff Badge (relayed copy)]
+      [mapping agent_0x99_handler: set server_badge_obtained=true]
+      [kit: Server-Room Password (from IT's ticket queue)]
+      [mapping agent_0x99_handler: set server_password_obtained=true]
+  Owen's down. That wasn't how I'd have done it.
+  I've rebuilt his badge from the reader logs. It's in your kit.
+  So is the server-room password. It was sitting in IT's ticket queue.
+      [kit: Badge-Reader Log (from IT's archive)]
+      [mapping agent_0x99_handler: set door_log_held=true]
+  And the night badge log he'd have pulled for you. Read it properly.
+  Past the server room is the key vault. Fingerprint reader, two prints enrolled: Dr Halloran's and David Torres'.
+  Whatever else he knew, you'll have to find the hard way.
+ > I'll manage.
+  [chat closes]
+   {pickup torres_office_keycard}
+      [kit: IT Spare Office Card]
+      [mapping agent_0x99_handler: set office_card_obtained=true]
+   {enter torres_office}
+      [reads: Personal Journal]
+      [mapping agent_0x99_handler: set case_motive=true]
+      [mapping agent_0x99_handler: set torres_suspected=true]
+      [aim unlocked: gather_evidence]
+      [task: name_a_suspect]
+      [task: establish_motive]
+   [PASS] torres_suspected = true (expected true)
+   [PASS] door_log_reasoned = false (expected false)
+   {event fingerprint_collected:david_torres}
+      [mapping agent_0x99_handler: set torres_print_collected=true]
+   [text agent_0x99_handler +1500ms] Print's lifted off his mug. You didn't match it, but the vault reader will tell you whose it is. North of the server room.
+   {enter data_center}
+      [mapping agent_0x99_handler: set data_center_entered=true]
+      [reads: Upload Schedule]
+      [mapping agent_0x99_handler: set case_exfil=true]
+      [mapping agent_0x99_handler: set case_ready_notified=true]
+      [aim unlocked: confront_insider]
+   [text agent_0x99_handler +8000ms] That's both halves: why he'd do it, and proof it's leaving the building. Patricia will act on that. Call her.
+      [mapping agent_0x99_handler: set torres_suspected=true]
+      [reads: Data Package Manifest]
+
+--- patricia ---
+  Patricia Morgan: What now?
+     (6 options)
+ > I think I know who it is.
+  Patricia Morgan: Go on, then. Who?
+     (4 options)
+ > David Torres.
+  Patricia Morgan: David. Go slowly. I'm writing this down. Why?
+     (3 options)
+ > His own journal. He knows what it costs, and he's doing it anyway.
+  Patricia Morgan: In his own hand. All right. And the proof it's leaving?
+     (4 options)
+ > The staging manifest. Badge 4471 staged it, and his swipe lets that spare in.
+  Patricia Morgan: ...Damn.
+     (2 options)
+ > You knew him.
+  Patricia Morgan: I sat three desks from him at the Christmas party. His kids drew on the tablecloth.
+      [ink: torres_identified=true]
+      [ink: patricia_authorised_office=true]
+      [aim unlocked: confront_insider]
+      [mapping agent_0x99_handler: set named_before_portal=true]
+      [david_torres shown]
+      [task: identify_torres]
+  Patricia Morgan: Right. Your call from here.
+  Patricia Morgan: His badge just went through the hallway and the vault's logged him in. He's at the upload terminal.
+  Patricia Morgan: Stop him first. Then finish whatever you were doing on that research server. Your people will want all of it.
+  Patricia Morgan: You've got his print, then. Good.
+  Patricia Morgan: When you've got him, keep him there and tell him the police are coming. I'll ring them. They get him, and your evidence, without your name on it.
+  Patricia Morgan: Be careful. He's never been cornered before, and nobody knows what he does then.
+     (3 options)
+ > I'll stop him.
+  Patricia Morgan: Then go.
+  [chat closes]
+      [mapping recruiter: set recruiter_texted=true]
+   [text agent_0x99_handler +12000ms] That TalentStack number is the Recruiter. Hear her out if you want. Just don't give her anything.
+   [text recruiter +7500ms] TalentStack Executive Recruiting. We should talk before you do anything you can't take back. - R.
+   [PASS] named_before_portal = true (expected true)
+   [PASS] door_log_reasoned = false (expected false)
+
+--- torres ---
+  Narrator: Eight-oh-two. The data centre. The racks roar.
+  Narrator: David Torres sits alone at the terminal, a USB drive in the front port. The transfer bar reads 88 per cent. Twenty-eight minutes to the window.
+  Narrator: He doesn't turn around.
+  David Torres: I know you're there. Patricia sent you.
+  David Torres: "Security consultant." You're not an auditor.
+  David Torres: The vault logged me in twice tonight. One of them was you.
+     (2 options)
+ > It's over, David. Step away from the terminal.
+  Narrator: He turns slowly. His hand stays near the keyboard.
+  David Torres: Is it?
+  David Torres: Do you know what a clinical trial costs, when the insurer says no? I do. To the dollar.
+  David Torres: Did you read my journal as well? Three months of me lying to myself, in my own handwriting.
+     (2 options)
+ > They lied to you. What did they tell you it was for?
+      [ink: confront_stance="sympathetic"]
+  David Torres: At first? Investigative journalists, exposing a corrupt contractor. That's what the Recruiter said. For about two weeks.
+  David Torres: Then they showed me the casualty projection.
+  David Torres: I've known for two months. It was never going to a newspaper. ENTROPY wants the dispatch network for themselves.
+  David Torres: Thirty to forty-five people, the first time they use it. Ambulances that don't arrive.
+     (2 options)
+ > You knew people would die. Why did you keep going?
+  David Torres: Because the system is rotten. Because it would all come down anyway, and better it comes down on purpose...
+  David Torres: Because Elena was dying and nobody else was going to pay...
+  David Torres: Because thirty to forty-five people is... is...
+  David Torres: Is thirty to forty-five families. Like mine.
+  David Torres: You read it. "Collateral damage for the greater good." I wrote that about strangers so I wouldn't have to think of them as people.
+  David Torres: Three months ago I was trying to save my wife.
+  David Torres: Now I'm half an hour from getting people killed.
+  Narrator: The transfer bar ticks to 89 per cent.
+     (4 options)
+ > It's over. You're staying here until the police arrive.
+      [task: confront_torres]
+  David Torres: You're not police. So Patricia's ringing them.
+  David Torres: So what are you?
+     (2 options)
+ > It doesn't matter. What matters is who arrives next.
+  David Torres: That's not an answer.
+  David Torres: Elena's trial. If I'm in a cell, nobody pays for it.
+  David Torres: She dies. Sofia and Miguel watch it happen.
+     (2 options)
+ > I'm not a social worker, David.
+  David Torres: No. Of course not.
+  David Torres: Then I've got nothing to say to you. I'll wait for them.
+      [ink: final_choice="arrest"]
+      [ink: torres_arrested=true]
+      [task unlocked: call_in_after_sweep]
+      [task: make_critical_choice]
+  Narrator: The transfer bar sits at 91 per cent. His hand is still beside the keyboard.
+     [0] Pull the drive myself.
+     [1] Cancel it, David. Your hand, not mine.
+  [stopped: no pick]
+      [mapping agent_0x99_handler: set flags_nag_sent=true]
+   [text agent_0x99_handler +2000ms] The upload's dead. Good. Finish that research server before I pull you out: all four flags in the drop-site. Then sweep the vault and call me.
+   [PASS] said: "88 per cent"
+   {enter server_room}
+      [mapping agent_0x99_handler: set server_room_entered=true]
+   {set {"flag1_submitted":true}}
+      [task: access_bludit_vm]
+   [text agent_0x99_handler +1500ms] Login flag in. An admin login, left lying about in a handover note. Somebody wanted that box easy to get into.
+   {set {"flag2_submitted":true}}
+   [text agent_0x99_handler +1500ms] Foothold flag in. You're on the research portal's box now. Find out who's been living on it.
+   {set {"flag3_submitted":true}}
+      [mapping agent_0x99_handler: set privesc_guide_offered=true]
+   [text agent_0x99_handler +1500ms] Manifest flag verified. Staged by badge 4471, no name on it. Find who carries that spare. The authorisation sits where only root can read. Sudo guide's yours.
+   {set {"flag4_submitted":true}}
+   [text agent_0x99_handler +6000ms] That's the last flag. Sweep the vault if you haven't, then call me and I'll bring you in.
+
+--- phone ---
+     (6 options)
+ > I'm done here. Bring me in.
+  Once you're out, QDC's own people go through that vault before ours do. Whatever you haven't read could walk.
+  There's an envelope under the terminal keyboard nobody's opened.
+  That TalentStack text never got an answer. She's lost him. Ring her if you want to hear her lose.
+     (2 options)
+ > Bring me in.
+  Car's at the front entrance. Two minutes.
+ > On my way.
+      [ink: mission_complete=true]
+   [opens closing_debrief_trigger @start (person-chat)]
+      [task: call_in_after_sweep]
+      [set_global mission_complete=true]
+  See you at HQ.
+     [0] I've read his journal. He knew.
+     [1] About that flag.
+     [2] Send me a field guide.
+     [3] Where do I stand?
+     [4] Nothing right now.
+  [stopped: no pick]
+   [PASS] mission_complete = true (expected true)
+
+--- debrief ---
+      [ink: handler_trust=45]
+      [ink: debrief_played=true]
+  Narrator: SAFETYNET headquarters, Thursday, nine o'clock. HaX has your report up on the screen.
+  Agent HaX: Let's go through it.
+  Agent HaX: You built enough to move, and you closed it. There are gaps in the file, but it'll stand.
+  Agent HaX: QDC's readiness review passed. Nobody asked who told Patricia to stop looking.
+  Agent HaX: You said you'd be methodical. You were.
+  Agent HaX: The final upload stopped at ninety-one per cent. The key material left in pieces over six weeks. The rotation windows were in the last of it, and they never went.
+  Agent HaX: Without those, what they have is a very expensive paperweight.
+     (2 options)
+ > How close was it?
+  Agent HaX: Nine per cent to spare. You bought that yourself.
+  Agent HaX: The badge log was in your kit. Its front-door lines had him all along.
+  Agent HaX: Owen Gallagher has a concussion. He'd have given you anything you asked for.
+  Agent HaX: Every locked door in that building, you opened on someone else's trust. A colleague's badge, a colleague's password, his thumbprint.
+  Agent HaX: In the logs, that looks exactly like an insider. It's why nobody saw him.
+     (2 options)
+ > And the research portal?
+  Agent HaX: Old software with a known flaw nobody had patched, and an admin login sitting in a handover note.
+  Agent HaX: Once you were in, one account was allowed to run far more than its job needed. That's how you reached the Architect's sign-off.
+     (2 options)
+ > Whose job was it to fix that?
+  Agent HaX: Owen's, on paper. One sysadmin, after the budget cuts. The CEO wanted a clean audit more than a safe one.
+  Agent HaX: For the training file: hours. Two in the morning, week after week, and nobody asked why.
+  Agent HaX: You held him and Patricia called the police. He hasn't said a word to them or to us.
+  Agent HaX: Our evidence reached them without our name on it. What a court gives him is out of our hands.
+  Agent HaX: Elena's treatment is unfunded. She has months, maybe. Sofia and Miguel may watch that with their father on remand.
+     (2 options)
+ > He did this. Actions have consequences.
+  Agent HaX: They do. For everyone near him.
+  Agent HaX: Without him, we're blind on the Initiative. The placements carry on, and so does TalentStack's recruiting.
+  Agent HaX: The Architect's authorisation is the part I keep coming back to. A casualty projection, reviewed, and filed as an acceptable cost.
+     (2 options)
+ > Same hand as the other cells?
+  Agent HaX: The same hand.
+  Agent HaX: Ransomware Incorporated. Zero Day Syndicate. Critical Mass. Now the Insider Threat Initiative.
+  Agent HaX: The cells share suppliers, targets and a signature. The Architect runs them like a business.
+  Agent HaX: And pays them like one. The Initiative got eight hundred and forty-seven thousand dollars for this job alone.
+  Agent HaX: The authorisation goes up on Task Force Null's wall, with every other directive we've pulled off a cell.
+  Agent HaX: Somebody pays the Architect, too. Next, we follow the money.
+     (2 options)
+ > Did I get him right?
+  Agent HaX: Ask me in a year.
+  Agent HaX: You went looking for the man underneath. That mattered, whatever you decided in the end.
+  Agent HaX: The job got done. I'm still deciding about the rest.
+  Agent HaX: Go home. Take the rest of the day.
+  Agent HaX: The people who'd have waited too long for that ambulance will never know your name. But they're alive.
+      [task: hear_debrief]
+  Agent HaX: That's everything.
+  [end]
+
+--- credits ---
+   MISSION COMPLETE
+   INSIDER TRADING
+   OPERATION SCHRÖDINGER: STOPPED
+   CIVILIAN LIVES SAVED: 30-45 (estimated, first rollout wave)
+   ── THE CASE ──
+   RECRUITMENT PIPELINE — TalentStack link not documented
+   ── DAVID TORRES ──
+   HANDED TO THE POLICE — said nothing
+   ── ELENA TORRES ──
+   Still fighting Stage 3 cancer — treatment unfunded
+   ── SOFIA (11) AND MIGUEL (8) TORRES ──
+   Father facing trial, mother untreated
+   ── THE RECRUITER ──
+   TALENTSTACK LIST — left unread under the terminal keyboard
+   ── QUANTUM DYNAMICS ──
+   WHO TOLD SECURITY TO STOP — never asked
+   ── QUANTUM DYNAMICS STAFF ──
+   OWEN GALLAGHER: concussion, on your account
+   The Architect remains at large...
+   [PASS] not said: "NAMED ON THE EVIDENCE"
+   [PASS] not said: "You had him before the server did"
+   [PASS] not said: "Somebody read Owen's sheet"
+   [PASS] longest run 8 (torres) <= 9
+
+[stats] spoken/narrated lines 145, choices 36, longest run without a choice 8 (torres); runs>=6: briefing:7, briefing:6, phone:6, patricia:7, torres:6, torres:8, debrief:7, debrief:6, debrief:6
+[result] all expectations met

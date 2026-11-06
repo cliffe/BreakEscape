@@ -1,0 +1,90 @@
+Room room_aes_security: 320x320 px (10x10 tiles; about 6 m wide, 6 m deep). Camera near the south wall looking north.
+Items left to right within each zone; desk/counter contents are listed under their table.
+Names are sprite names: look at the render to see what each one is.
+
+## back wall (hung on it)
+  aes_hivis_hook1  x=66..96 y=31..56
+  cctv_monitors1  x=98..144 y=16..50
+  cctv_monitors2  x=146..192 y=16..50
+  key_cabinet1  x=196..216 y=22..46
+  aes_radio_charger1  x=218..234 y=26..46
+  rota_board1  x=238..268 y=23..44
+
+## against the back wall (standing on the floor)
+  ?(collision; look at the render)  x=242..267 y=98..110
+
+## second row (may stand out on the floor in front of the back wall: check the render and tour shot for floor between it and the wall)
+  desk1  x=104..182 y=79..118  [feet ~0.9 m out from the back wall; a rough guide, confirm in the render]
+    on desk1: pc8  x=106..140
+    on desk1: phone4  x=140..154
+    on desk1: notes1  x=157..173 (conditional; see EMPTY below)
+  desk2  x=182..226 y=79..118  [feet ~0.9 m out from the back wall; a rough guide, confirm in the render]
+    on desk2: security_monitor1  x=190..214
+  filing_cabinet_locked1  x=240..269 y=61..122  [feet ~0.9 m out from the back wall; a rough guide, confirm in the render]
+
+## left wall
+  fire_alarm_point1  x=14..30 y=120..140
+
+## behind the camera (leave out)
+  photocopier1  x=214..249 y=254..300  [feet ~4.3 m out from the back wall; a rough guide, confirm in the render]
+  ?(collision; look at the render)  x=216..247 y=280..290  [feet ~4.1 m out from the back wall; a rough guide, confirm in the render]
+  filing_cabinet_steel1  x=258..287 y=239..300  [feet ~4.3 m out from the back wall; a rough guide, confirm in the render]
+  ?(collision; look at the render)  x=260..285 y=280..290  [feet ~4.1 m out from the back wall; a rough guide, confirm in the render]
+
+## floor, mid centre
+  ?(collision; look at the render)  x=120..137 y=184..194  [feet ~2.3 m out from the back wall; a rough guide, confirm in the render]
+  chair-grey-1  x=132..156 y=110..148  [feet ~1.4 m out from the back wall; a rough guide, confirm in the render]
+
+## floor, near centre
+  bin8  x=118..139 y=179..204  [feet ~2.5 m out from the back wall; a rough guide, confirm in the render]
+
+## floor, near left
+  desk3  x=60..111 y=161..200  [feet ~2.4 m out from the back wall; a rough guide, confirm in the render]
+    on desk3: notes3  x=68..82 (conditional; see EMPTY below)
+    on desk3: binders1  x=91..111
+  chair-grey-2  x=76..101 y=193..230  [feet ~3.0 m out from the back wall; a rough guide, confirm in the render]
+
+## floor, near right
+  undercounter_fridge1  x=212..234 y=209..238  [feet ~3.1 m out from the back wall; a rough guide, confirm in the render]
+  ?(collision; look at the render)  x=214..232 y=218..228  [feet ~2.9 m out from the back wall; a rough guide, confirm in the render]
+  smalldesk2  x=236..268 y=195..236  [feet ~3.1 m out from the back wall; a rough guide, confirm in the render]
+    on smalldesk2: kettle1  x=238..253
+    on smalldesk2: mugs_tray1  x=250..270
+  aes_dvr1  x=252..288 y=154..210  [feet ~2.6 m out from the back wall; a rough guide, confirm in the render]
+  ?(collision; look at the render)  x=254..286 y=190..200  [feet ~2.4 m out from the back wall; a rough guide, confirm in the render]
+
+## lighting config (the mood to draw; compare it when reusing another mission's background)
+  { "mode": "motion", "emitters": { "aes_dvr": { "color": "#7dffa0", "radius": 10, "intensity": 0.5, "above": true }, "fire_alarm_point": [ { "condition": "globalVars.attack_prevented === true", "intensity": 0 }, { "condition": "globalVars.crew_warned === true", "color": "#ff5050", "radius": 26, "intensity": 0.9, "effect": "pulse", "above": true }, { "intensity": 0 } ] } }
+  mission mood (scenarios/m04_critical_failure/LIGHTING_PLAN.md):
+    ## 1. Mood and where it comes from
+    Kind of game: SAFETYNET spy thriller. The lighting sets a night shift at a grid battery plant and tightens as the crisis builds. It never carries information a 
+    - **Night.** "It's tonight, and it's this hall" (`ink/m04_opening_briefing.ink:232`); the night crew in Hall 2 "till six" (`ink/m04_npc_robert_vance.ink:448`); 
+    | main_entrance | gate guard | on | scenario night | A manned gatehouse; papers on the desks. |
+
+## doors (scenario connections; the render does not draw doors)
+  {'north': 'operations_office'}
+  north = a door in the back wall (a single one sits in a back-wall corner);
+  east/west = doors in the side walls (position along the wall: see the in-game tour shot);
+  south = behind the camera.
+  Door art painted into the map's walls (render and strip) is not reliable: trust the connections and the tour shot.
+
+## scenario sprite overrides (the render shows the map sprite, the game shows these)
+  none
+
+## EMPTY in this mission: conditional slots no scenario object claims
+  NPCs drawn as static props (e.g. patients in beds) can still fill these: check the NPC list and the tour shot.
+  none
+
+## NPCs in this room (spriteSheet; static ones are drawn as props, not people)
+  none
+  In the chat the speaking NPC stands at about 83% of the background's width, so what the map
+  shows around them belongs at about 55-90% across (see 'Behind the NPC' in the skill).
+
+## slot audit: which map slot each scenario object takes
+  ok       pc "Security Camera Monitors" -> cctv_monitors1 (items) at 98,50
+  ok       notes "Camera System Logs" -> notes1 (conditional_table_items) at 157,97
+  ok       notes "Access Control Export: HV Plant Room" -> notes3 (conditional_table_items) at 68,177
+  ok       safe "Security Equipment Locker" -> filing_cabinet_locked1 (items) at 240,122
+
+## where this background will show
+  !! no NPCs in this room: the background shows only if an NPC from elsewhere talks here

@@ -1,0 +1,13 @@
+{
+  "key": "95846fc8993d6e3ff4167c52b4b25224",
+  "npc": "dr_sharma",
+  "text": "Right. The control existed on paper. The audit log had the change in it, and nobody read it.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "877b14f11a646ac6bd2d1ad6f32c7b6c",
+  "npc": "dr_sharma",
+  "text": "And the wards had their printouts before the link went. Most teams forget that part.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

@@ -1,0 +1,25 @@
+{
+  "scenario": "test-shredded-document",
+  "start_room": "it_office",
+  "nodes": [
+    {
+      "id": "it_office",
+      "label": "It Office",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "server_room",
+      "label": "Server Room",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "it_office",
+      "to": "server_room",
+      "soft": false
+    }
+  ]
+}

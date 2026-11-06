@@ -1,0 +1,13 @@
+{
+  "key": "bfbd24db169f97936ddefae2935cb8e9",
+  "npc": "anjali_rao",
+  "text": "Anjali Rao, information security. You're not here to catch anyone. Start at the kiosk: raise a concern as facts, then sort the messages. Tell me what you're offered.",
+  "voice": "Kore",
+  "style": "Quayholt's information security analyst, about 35, who moved to the UK from Bengaluru; calm and attentive. Speak with a consistent educated Indian English accent, softened by years in the UK, throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca16_insider_risk_defend",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:19:44Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "2cde7a941a6d64d88c8e7df0127fee0c",
+  "npc": "narrator",
+  "text": "Sterling's card is saved in the cloner. You sign out at the front desk and walk out into the afternoon with the last of the visitors.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:13:36Z"
+}

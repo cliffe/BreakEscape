@@ -1,0 +1,42 @@
+Validating scenario: /home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/planning_notes/phishing_and_social_engineering/deduction/sidecar/drafts/B/validate_copy/test_social_deduction_b/scenario.json.erb
+Using schema: /home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/scripts/scenario-schema.json
+
+Checking scenario directory structure...
+✓ Directory structure is valid
+
+Loaded 1112 valid item types from assets/objects/
+
+Rendering ERB template...
+✓ ERB rendered successfully
+
+Checking JSON structure...
+✓ JSON structure is valid
+
+Checking for unknown fields...
+⚠️ Found 5 unknown field(s):
+
+1. ⚠️ WARNING: Top-level field '_note' is not recognized in the schema — this field will be ignored by the game engine. Remove it if not needed, or check if the spelling is correct.
+2. ⚠️ WARNING: Top-level field 'triggers' is not recognized in the schema — this field will be ignored by the game engine. Remove it if not needed, or check if the spelling is correct.
+3. ⚠️ WARNING: Room 'b_office' has unknown field '_note' — this field will be ignored by the game engine.
+4. ❌ ERROR: 'rooms/b_server/objects[0](badge_log_terminal)' minigameData has undeclared field '_note' — not in schema for 'log_filter_terminal'. Add it to minigame-data-schemas.json or remove it.
+5. ⚠️ WARNING: 'rooms/b_server/objects[1](dhcp_printout)' has unknown field '_note' — if this is minigame-specific configuration data, nest it under 'minigameData' instead.
+
+⏭️ Skipping ink file validation (--skip-ink)
+
+Checking objective task wiring...
+✓ Objective task wiring OK
+
+Checking room layout geometry...
+Checking door alignment...
+[DEPRECATION NOTICE] json-schema support for MultiJSON is deprecated and will be removed in a future version. To stop using MultiJSON, add `JSON::Validator.use_multi_json = false` to your application's initialization code.
+✓ Room layout geometry OK — no world-space overlaps
+
+✓ Door alignment OK
+
+Validating against schema...
+Checking for common issues...
+Checking recommended fields...
+✗ Schema validation failed with 1 error(s):
+
+1. The property '#/rooms/b_server/objects/1/triggerOnInteract/4/type' value "hint" did not match one of the following values: set_global, emit_event, complete_task, unlock_task, unlock_aim, confirm_action, unlock_object, unlock_door, give_item, tint_objects, show_end_screen, lighting_dip, grant_fact in schema cb3bd7dc-a572-513d-ac28-6388a43b2ca4#
+

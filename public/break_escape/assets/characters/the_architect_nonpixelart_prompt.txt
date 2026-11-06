@@ -1,0 +1,10 @@
+Make portrait for The Architect
+A man in his sixties as a near-black backlit silhouette, head and shoulders, with no facial features visible at all: the face is a flat, solid shadow with no eyes, nose or mouth showing. Only the outline gives him away: short, neatly combed hair, the narrow shoulders and lapels of a tailored dark suit, a shirt collar, and a single thin glint of cold light along the rim of his glasses. Behind him a soft, cold blue-grey glow from a wall of blurred monitor screens throws a fine rim light round his head and shoulders. Calm, patient, unknowable. No text, no writing and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. The portrait is a head-and-shoulders headshot, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-16, no reference images. Reframed with reframe_portrait.py, not flipped (already faces right); raw is the_architect_concept_2_raw.png.

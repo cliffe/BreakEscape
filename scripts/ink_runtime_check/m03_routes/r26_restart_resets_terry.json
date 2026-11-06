@@ -1,0 +1,17 @@
+{"steps":[
+{"note":"R26 (fix pass 2026-10-17, ENGINE_REGRESSION F4, the Restart ruling): Terry fought after a police threat, the player is KO'd and Restarts. The reset event sets terry_fight_reset; the next sighting must not play 'Right. I warned you.' or re-fire #hostile, and the global must clear. (a) warned and answered: his one wary line, then the hub. (b) a lockpick catch before any challenge, then Restart: the first challenge ('The one with the picks'), no wary line."},
+{"set":{"briefing_played":true,"victoria_card_cloned":true,"mission_phase":"act2_infiltration","clone_call_done":true}},
+{"note":"(a) warned, answered, ordered out, then a fight on the next sighting"},
+{"set":{"player_warned":true,"excuse_given":true,"ordered_out":true,"guard_hostile":true,"idle_quiet":false}},
+{"talk":"terry","knot":"on_sighted","picks":[]},
+{"note":"Restart: reset:true sets terry_fight_reset, guard_attacking cleared"},
+{"set":{"terry_fight_reset":true,"guard_attacking":false}},
+{"talk":"terry","reload":"page","knot":"on_sighted","picks":["let you get on"]},
+{"note":"a later talk is the ordinary re-entry (no second wary line), terry_fight_reset now false"},
+{"talk":"terry","reload":"page","knot":"start","picks":[]},
+{"note":"(b) fresh night: a lockpick catch with no challenge first, then Restart"},
+{"set":{"player_warned":false,"excuse_given":false,"ordered_out":false,"guard_hostile":false,"guard_detection_count":0,"idle_quiet":false}},
+{"talk":"terry","reload":"page","knot":"on_lockpick_detected","picks":[]},
+{"set":{"terry_fight_reset":true,"guard_attacking":false}},
+{"talk":"terry","reload":"page","knot":"on_sighted","picks":[]}
+]}

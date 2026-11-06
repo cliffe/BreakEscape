@@ -1,0 +1,14 @@
+{
+  "display_name": "Test Log Filter",
+  "description": "Quick test scenario for the Log Filter minigame. Filter VPN authentication logs to identify an anomalous login from an unexpected country.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "testing",
+  "cybok": [
+    {
+      "ka": "NS",
+      "topic": "Network Security",
+      "keywords": ["VPN", "Authentication logs", "Anomaly detection", "Impossible travel", "Threat intelligence"]
+    }
+  ]
+}

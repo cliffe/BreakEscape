@@ -1,0 +1,13 @@
+{
+  "key": "fc5ca24474405e3abec3e8d7da3e8b1d",
+  "npc": "eleanor_vance",
+  "text": "We're not being unreasonable here. We set a deadline. We got a claim instead of a completion notice.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:21:13Z"
+}

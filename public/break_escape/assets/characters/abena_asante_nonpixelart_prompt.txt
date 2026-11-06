@@ -1,0 +1,10 @@
+Make portrait for Dr Abena Asante
+A tall Ghanaian-British woman of about 45 from Peckham, London, with deep dark-brown skin, a strong, composed face, and close-cropped natural black hair with a few flecks of grey, the systems lead who wrote a release pipeline and stands by it. Dark eyes behind square tortoiseshell glasses and a cool, direct, unapologetic look. She wears a rust-red roll-neck jumper, black tailored trousers, a slim black leather belt, small gold stud earrings and a slim gold watch; her arms are loosely folded at waist height. Standing alone against an empty plain light-grey backdrop, no room or furniture behind her. No text, no writing, no badges and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-22, no reference images. Reframed with reframe_portrait.py --flip. Approved by the user as abena_asante_concept_1 (wip/), adopted as the PixelLab pipeline concept.

@@ -1,0 +1,13 @@
+{
+  "key": "cbf7ecb3a177e04a464c1e736a6865a5",
+  "npc": "narrator",
+  "text": "A beat.",
+  "voice": "Algenib",
+  "style": "Cinematic narrator for a spy thriller set at a British university. Calm, low, unhurried. Consistent British Received Pronunciation throughout.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

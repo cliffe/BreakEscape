@@ -1,0 +1,179 @@
+{
+"steps": [
+{
+"note": "R7 (round 2, B1): Owen knocked out before anyone suspects Torres; his dropped office spare picked off the floor (round-1 F6); the journal makes Torres a suspect; vault paperwork; named before flag 3 without ever reasoning the badge log. The early bar still runs (it's elapsed time), but no credit, no debrief line, no scene line."
+},
+{
+"talk": "briefing",
+"picks": [
+"Bought with what",
+"damage so far",
+"Who's this going to",
+"What's the mission",
+"And the third",
+"my cover",
+"Who else will I meet",
+"I'm ready",
+"Methodically",
+"Any last advice"
+]
+},
+{
+"set": {
+"briefing_played": true
+}
+},
+{
+"talk": "patricia",
+"picks": [
+"Fill me in",
+"Who has access",
+"without tipping",
+"Where should I start"
+]
+},
+{
+"read": "security_incident_log"
+},
+{
+"ko": "owen_gallagher"
+},
+{
+"talk": "phone",
+"knot": "on_owen_ko_relay",
+"picks": [
+"I'll manage"
+]
+},
+{
+"pickup": "torres_office_keycard"
+},
+{
+"enter": "torres_office"
+},
+{
+"read": "personal_journal"
+},
+{
+"expect": {
+"torres_suspected": true,
+"door_log_reasoned": false
+}
+},
+{
+"event": "fingerprint_collected:david_torres"
+},
+{
+"enter": "data_center"
+},
+{
+"read": "upload_schedule"
+},
+{
+"read": "data_package_manifest"
+},
+{
+"said": []
+},
+{
+"talk": "patricia",
+"picks": [
+"I think I know who it is",
+"David Torres",
+[
+"His own journal",
+"Money. His wife"
+],
+[
+"staging manifest. Badge 4471",
+"Staged by: D. Torres",
+"upload schedule. He's"
+],
+"You knew him",
+"I'll stop him"
+]
+},
+{
+"expect": {
+"named_before_portal": true,
+"door_log_reasoned": false
+}
+},
+{
+"talk": "torres",
+"picks": [
+"It's over, David",
+"They lied to you",
+"You knew people would die",
+"staying here until the police",
+"It doesn't matter",
+"social worker"
+]
+},
+{
+"said": [
+"88 per cent"
+]
+},
+{
+"enter": "server_room"
+},
+{
+"set": {
+"flag1_submitted": true
+}
+},
+{
+"set": {
+"flag2_submitted": true
+}
+},
+{
+"set": {
+"flag3_submitted": true
+}
+},
+{
+"set": {
+"flag4_submitted": true
+}
+},
+{
+"talk": "phone",
+"picks": [
+"Bring me in",
+"Bring me in",
+"On my way"
+]
+},
+{
+"expect": {
+"mission_complete": true
+}
+},
+{
+"talk": "debrief",
+"picks": [
+0,
+"And the research portal",
+"Whose job",
+"He did this",
+"Same hand",
+"Did I get him right"
+]
+},
+{
+"credits": true
+},
+{
+"notSaid": [
+"NAMED ON THE EVIDENCE",
+"You had him before the server did",
+"Somebody read Owen's sheet"
+]
+},
+{
+"maxRun": 9
+}
+]
+}

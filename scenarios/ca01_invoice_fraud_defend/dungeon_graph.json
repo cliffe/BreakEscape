@@ -1,0 +1,10 @@
+{
+  "scenario": "ca01_invoice_fraud_defend",
+  "start_room": "training_room",
+  "nodes": [
+
+  ],
+  "edges": [
+
+  ]
+}

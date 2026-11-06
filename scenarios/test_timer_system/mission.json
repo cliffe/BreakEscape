@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: Countdown Timer System",
+  "description": "Tests the Phase 5 countdown timer HUD widget with color urgency indicators and timer event firing.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 5,
+  "test_type": "phase_5_timer_widget",
+  "test_objective": "Verify timer widget displays, counts down, changes colors at thresholds, and fires events"
+}

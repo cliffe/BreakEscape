@@ -1,0 +1,13 @@
+{
+  "key": "7eb861d60cc88a4719bba4e2c84521ef",
+  "npc": "closing_debrief",
+  "text": "Their records sat on the one box they knew was broken: a distcc daemon exploitable since 2004, left listening because it was useful.",
+  "voice": "Aoede",
+  "style": "Intelligence handler giving a mission debrief in person. Speak with a consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:11:01Z"
+}

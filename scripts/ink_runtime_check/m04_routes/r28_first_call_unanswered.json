@@ -1,0 +1,15 @@
+{
+"steps": [
+{"note": "R28 (post-close fix: first-call hub guard): HaX's first call opened at the gate and closed unanswered. The player gets inside and finishes the night; reopening the phone lands on the hub, not the stale first-call answers, and 'Bring me in' is there. Then a fresh-start check: a first open inside still gets the inside answers."},
+{"set": {"briefing_played": true}},
+{"talk": "phone", "picks": []},
+{"said": ["Agent, status check. Are you inside the facility?", "Not yet. I'm at the gate."]},
+{"set": {"guard_admitted": true, "checkpoint_passed": true, "vance_met": true, "vance_spoken": true, "vance_provided_keycard": true, "vance_card_cloned": true}},
+{"set": {"anomaly_detected": true, "server_room_reached": true, "plant_reader_seen": true, "fingerprint_kit_found": true, "flag_network_scan_submitted": true, "flag_ftp_intel_submitted": true, "flag_distcc_exploit_submitted": true, "flag_privesc_submitted": true, "all_flags_in": true, "attack_mechanism_known": true, "plant_room_entered": true, "operative_static_defeated": true}},
+{"ko": "voltage"},
+{"set": {"esd_authorized": true, "attack_prevented": true}},
+{"talk": "phone", "picks": ["Bring me in", "Bring me in", "On my way"]},
+{"notSaid": ["Inside the facility. Beginning investigation now.", "Met Robert Vance, the facility manager"]},
+{"expect": {"mission_complete": true}}
+]
+}

@@ -1,0 +1,13 @@
+{
+  "key": "7a1c702e26e0c721b41b0385edaf0e06",
+  "npc": "eleanor_vance",
+  "text": "It's a strategic question, not just a legal one. I want you to think carefully before we put this in the claim record. What's your final position?",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:26:54Z"
+}

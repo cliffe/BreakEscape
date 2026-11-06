@@ -1,0 +1,39 @@
+# Postgres, matching Hacktivity and production.
+#
+# This was SQLite until the write contention became untenable: a single ink line
+# can fire two #complete_task tags and a #give_item in the same tick, which land
+# as parallel POSTs, and sqlite3 1.5.3 does not release the GVL while waiting on
+# a busy lock -- so busy_timeout never applies under Puma and one write in the
+# burst dies with SQLite3::BusyException. That is how game 1021 lost
+# talk_to_gary and could never conclude.
+#
+# Locally this connects over the unix socket as the "deploy" role, so no host
+# or password is needed. CI and other environments override via BE_DB_*.
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  username: <%= ENV.fetch("BE_DB_USER") { "deploy" } %>
+  password: <%= ENV["BE_DB_PASSWORD"] %>
+  host: <%= ENV["BE_DB_HOST"] %>
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 20 } %>
+
+development:
+  <<: *default
+  database: break_escape_development
+
+test:
+  <<: *default
+  database: break_escape_test
+
+production:
+  <<: *default
+  database: break_escape_production
+
+# The pre-migration SQLite databases are still in test/dummy/storage/ and the
+# sqlite3 gem is still bundled, so this remains readable if it is ever needed:
+#
+# development:
+#   adapter: sqlite3
+#   pool: 5
+#   timeout: 5000
+#   database: storage/development.sqlite3

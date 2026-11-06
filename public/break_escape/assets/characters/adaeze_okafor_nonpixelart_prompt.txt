@@ -1,0 +1,11 @@
+Make portrait for Adaeze Okafor
+A Nigerian-British woman in her mid forties with deep dark-brown skin, the finance manager of a mid-sized food manufacturer, who came up through accounts payable and signs off every supplier payment. Composed, exact, quietly authoritative. Shoulder-length black braids gathered into a low bun at the nape, small gold stud earrings. She wears smart office clothes: a tailored deep plum blazer over a cream silk blouse, charcoal tailored trousers with a slim black belt. Thin rectangular tortoiseshell reading glasses. Hands relaxed at her sides.
+Standing alone against an empty plain light-grey backdrop, no room or furniture behind her. No text, no writing, no badges and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-22, no reference images, one call (art batch B, awareness episode hosts). Reframed with reframe_portrait.py --flip; unflipped original is wip/adaeze_okafor_concept_raw.png. Age and background from BRAND_SET.md and the episode fragments.

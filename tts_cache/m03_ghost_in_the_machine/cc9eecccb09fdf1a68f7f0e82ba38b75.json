@@ -1,0 +1,13 @@
+{
+  "key": "cc9eecccb09fdf1a68f7f0e82ba38b75",
+  "npc": "narrator",
+  "text": "Sterling's card is saved in the cloner. You leave by the fire stairs before anyone wonders why the front desk is empty.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:13:30Z"
+}

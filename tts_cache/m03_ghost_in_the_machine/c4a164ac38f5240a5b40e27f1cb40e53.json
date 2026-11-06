@@ -1,0 +1,13 @@
+{
+  "key": "c4a164ac38f5240a5b40e27f1cb40e53",
+  "npc": "terry_mott",
+  "text": "Not even her. Right. I'm going to regret this.",
+  "voice": "Algieba",
+  "style": "Contract security guard in his fifties. Speak with a consistent South London / Estuary English accent throughout -- do not shift to any other accent. Low, slightly gravelly pitch; slow, flat pace. Tired, dry and procedural; not stupid, and not paid enough to be a hero.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:32:10Z"
+}

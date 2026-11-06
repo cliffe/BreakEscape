@@ -1,0 +1,82 @@
+{
+  "flags": {
+    "desktop": <%= vm_flags_json('desktop') %>
+  },
+
+  "scenario_brief": "TEST: Simple VM Flag\n\nThis is a minimal 1-room scenario for testing the VM launcher, flag station, and submit_flags task type.\n\nLaunch the Desktop VM, capture the flag, then submit it at the Flag Submission Terminal.",
+  "endGoal": "Submit the flag captured from the desktop VM at the Flag Submission Terminal.",
+  "startRoom": "test_room",
+
+  "objectives": [
+    {
+      "aimId": "capture_flag",
+      "title": "Capture the Flag",
+      "description": "Launch the desktop VM, capture the flag, and submit it.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "submit_desktop_flag",
+          "title": "Submit flag from desktop VM",
+          "type": "submit_flags",
+          "targetFlags": ["desktop-flag1"],
+          "targetCount": 1,
+          "currentCount": 0,
+          "showProgress": true,
+          "status": "active"
+        }
+      ]
+    }
+  ],
+
+  "rooms": {
+    "test_room": {
+      "type": "room_office",
+      "door_sign": "VM Flag Test Room",
+      "connections": {},
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Instructions",
+          "position": { "x": 2, "y": 2 },
+          "takeable": false,
+          "readable": true,
+          "text": "TEST: Simple VM Flag\n\n1. Interact with the DESKTOP VM TERMINAL to launch the VM\n2. Inside the VM, find and capture the flag\n3. Submit the flag at the FLAG SUBMISSION TERMINAL\n\nExpected result: submit_flags task completes, aim completes.\n\nIn offline/dev mode the flag is: flag{test_flag_captured}",
+          "observations": "A note with test instructions."
+        },
+        {
+          "type": "vm-launcher",
+          "id": "vm_launcher_desktop",
+          "name": "Desktop VM Terminal",
+          "position": { "x": 5, "y": 3 },
+          "takeable": false,
+          "observations": "Terminal providing access to the test desktop VM.",
+          "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
+          "vm": <%= vm_object('test_simple_vm_flag', {
+            "id": 1,
+            "title": "desktop",
+            "ip": "192.168.1.100",
+            "enable_console": true
+          }) %>
+        },
+        {
+          "type": "flag-station",
+          "id": "flag_station_desktop",
+          "name": "Flag Submission Terminal",
+          "position": { "x": 8, "y": 3 },
+          "takeable": false,
+          "observations": "Submit the flag captured from the desktop VM here.",
+          "acceptsVms": ["desktop"],
+          "flags": <%= flags_for_vm('desktop', ['flag{test_flag_captured}']) %>,
+          "flagRewards": [
+            {
+              "type": "emit_event",
+              "event_name": "desktop_flag_submitted",
+              "description": "Desktop flag submitted — submit_flags task will auto-complete"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

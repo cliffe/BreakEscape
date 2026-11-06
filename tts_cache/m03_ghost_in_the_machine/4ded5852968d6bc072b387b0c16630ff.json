@@ -1,0 +1,13 @@
+{
+  "key": "4ded5852968d6bc072b387b0c16630ff",
+  "npc": "narrator",
+  "text": "SAFETYNET headquarters. The morning after WhiteHat Security.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:02:01Z"
+}

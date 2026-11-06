@@ -1,0 +1,39 @@
+{
+ "imports": {
+  "m05_final_choice": "combat_lethal"
+ },
+ "steps": [
+  {
+   "note": "R43 (carry-over, 2026-10-17): m05 ended with Torres dead after the fight."
+  },
+  {
+   "talk": "briefing",
+   "picks": [
+    "Which exchange",
+    "Why would Volkova",
+    "I'm ready"
+   ]
+  },
+  {
+   "said": [
+    "You left Torres on that floor and he died. What he knew went with him. We traced the one going out without him.",
+    "HashChain Exchange"
+   ],
+   "notSaid": [
+    "You turned Torres, so he's sti",
+    "You put the Initiative on the ",
+    "You handed Torres to the polic",
+    "The police took Torres with nh",
+    "You knocked Torres out and sta"
+   ]
+  },
+  {
+   "set": {
+    "briefing_played": true
+   }
+  },
+  {
+   "maxRun": 9
+  }
+ ]
+}

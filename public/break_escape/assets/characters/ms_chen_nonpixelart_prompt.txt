@@ -1,0 +1,12 @@
+Make portrait for Ms Chen
+An elderly British-Chinese woman aged seventy-one, a lucid and composed post-operative hospital patient sitting propped up in bed, recovering and calm and alert. Short neat greying dark hair, a pair of reading glasses, an intelligent dignified face with a faint knowing look. A retired schoolteacher. She holds a small hardback book in her hands. A green hospital blanket over her lap and a pale hospital gown. Awake and clear-eyed, unlike the critically ill patients around her.
+Sitting propped up against the pillows, upper body, face angled in a three-quarter view toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the patient sitting up in a hospital bed, upper body and head, a green hospital blanket over the lap, holding a book, against a solid plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism. Smooth vector linework, NOT pixel art.
+Slightly anime. Neutral expression.
+Square aspect ratio
+solid plain background, no gradient, no pattern
+
+# Post: reframe_portrait.py --flip (character faces right, cast convention). Background solid warm taupe.
+# Post-op patient, lucid: sitting-up framing (distinct from the two unconscious bed patients). Bed sprite (objects/bed5.png) used as a DESCRIPTION guide only, NOT as a Gemini reference image.

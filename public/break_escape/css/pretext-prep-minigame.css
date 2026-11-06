@@ -1,0 +1,301 @@
+/* Pretext preparation (06 beats 1 and 2). Linked from the game page
+   (show.html.erb). Chrome headings use the theme face. Every string the
+   player reads uses Source Sans 3. */
+
+.pretext-prep-container {
+    background: var(--ui-backdrop, rgba(6, 8, 16, 0.78));
+}
+
+.pretext-prep-game {
+    padding: 0;
+}
+
+.pretext-prep {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: min(640px, 96vw);
+    max-height: min(92vh, 820px);
+    margin: 4vh auto;
+    box-sizing: border-box;
+    overflow: hidden;
+    color: var(--ui-text, #eef1f8);
+    background: var(--ui-surface, rgba(24, 30, 48, 0.94));
+    border: 3px solid var(--ui-line, #4c5b80);
+    font-family: var(--se-font-readable, "Source Sans 3", "Segoe UI", Arial, sans-serif);
+    font-size: 16px;
+    line-height: 1.4;
+}
+
+.pretext-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 16px;
+    padding: 10px 14px;
+    background: var(--ui-surface, rgba(24, 30, 48, 0.94));
+    border-bottom: 3px solid var(--ui-line, #4c5b80);
+}
+
+.pretext-title {
+    margin: 0;
+    flex: 1 1 auto;
+    font-family: "Press Start 2P", monospace;
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 1.5;
+}
+
+.pretext-who {
+    margin: 0;
+    font-size: 18px;
+}
+
+.pretext-close {
+    min-width: 88px;
+    min-height: 44px;
+    font-family: "GNF", monospace;
+    cursor: pointer;
+}
+
+.pretext-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+    overflow-wrap: anywhere;
+    padding: 14px 16px 8px;
+}
+
+.pretext-brief,
+.pretext-card {
+    margin: 0 0 16px;
+}
+
+.pretext-hint {
+    margin: 0 0 16px;
+    padding: 8px 10px;
+    border-left: 3px solid var(--ui-line, #4c5b80);
+    color: var(--ui-text, #eef1f8);
+}
+
+.pretext-scope,
+.pretext-ethics,
+.pretext-held-empty,
+.pretext-no-blanks,
+.pretext-readiness,
+.pretext-gate,
+.pretext-line {
+    margin: 0 0 8px;
+}
+
+.pretext-held-title,
+.pretext-card-title {
+    margin: 12px 0 6px;
+    font-family: "GNF", monospace;
+    font-size: 15px;
+    font-weight: 400;
+    color: var(--ui-text-dim, #a8b2c8);
+}
+
+.pretext-objectives,
+.pretext-held,
+.pretext-lines {
+    margin: 0 0 8px;
+    padding-left: 1.2em;
+}
+
+.pretext-gap {
+    border-bottom: 1px solid var(--ui-text-dim, #a8b2c8);
+    padding: 0 4px;
+}
+
+.pretext-value {
+    font-weight: 700;
+}
+
+.pretext-blank-field {
+    margin: 0 0 8px;
+}
+
+.pretext-blank,
+.pretext-begin {
+    min-height: 44px;
+    font-family: var(--se-font-readable, "Source Sans 3", "Segoe UI", Arial, sans-serif);
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.pretext-blank {
+    width: 100%;
+    text-align: left;
+}
+
+.pretext-blank[data-empty="true"] {
+    opacity: 0.7;
+    cursor: default;
+}
+
+.pretext-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-top: 3px solid var(--ui-line, #4c5b80);
+}
+
+.pretext-begin[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pretext-readiness,
+.pretext-gate {
+    color: var(--ui-warn, #e6b04d);
+}
+
+.pretext-picker {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    background: rgba(8, 10, 20, 0.6);
+}
+
+.pretext-picker-list {
+    margin: 0;
+    padding: 4px;
+    list-style: none;
+    width: 100%;
+    max-height: 60%;
+    overflow: auto;
+    box-sizing: border-box;
+    background: var(--ui-surface, rgba(24, 30, 48, 1));
+    border: 2px solid var(--ui-line, #4c5b80);
+}
+
+.pretext-picker-option {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 12px;
+    min-height: 44px;
+    align-items: center;
+    cursor: pointer;
+}
+
+.pretext-picker-option.active,
+.pretext-picker-option[aria-selected="true"] {
+    background: color-mix(in srgb, var(--ui-accent, #3b6ea5) 28%, transparent);
+    box-shadow: inset 4px 0 0 var(--ui-accent, #ffcc44);
+}
+
+.pretext-picker-kind {
+    font-size: 13px;
+    font-style: italic;
+    color: var(--ui-text-dim, #c3ccdf);
+    white-space: nowrap;
+}
+
+.pretext-picker-kind.kind-stale {
+    color: var(--ui-warn, #e6b04d);
+}
+
+.pretext-prep button:focus-visible,
+.pretext-prep [tabindex]:focus-visible {
+    outline: 3px solid var(--ui-accent, #ffcc44);
+    outline-offset: 2px;
+}
+
+@media (max-width: 600px) {
+    .pretext-prep {
+        width: 100%;
+        max-width: 100vw;
+        margin: 0;
+        max-height: 100vh;
+    }
+    .pretext-prep * {
+        max-width: 100%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pretext-prep,
+    .pretext-prep * {
+        animation: none !important;
+        transition: none !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* The end-of-call debrief (person-chat-pretext.js renderDebrief), batch-5 F-E12-3. It was an
+   unstyled node bottom-left over the open chat; it is now a centred modal over a full backdrop
+   that covers the chat (nothing hidden, the live bar not read beside the outcome). The panel
+   keeps its own solid surface and dark ink so it reads over either the neutral awareness chat or
+   the dark lab chat behind it. Every string is set in the readable body face; targets are >=44px. */
+.pretext-debrief-backdrop {
+    /* fixed, not absolute (m2): inset:0 then covers the viewport regardless of whether the chat's
+       container is a positioned ancestor, so the "covers the open chat" guarantee always holds. */
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    box-sizing: border-box;
+    background: rgba(8, 12, 20, 0.74);
+    font-family: var(--se-font-readable, 'Source Sans 3', 'Segoe UI', Arial, sans-serif);
+}
+
+.pretext-debrief {
+    width: 100%;
+    max-width: 460px;
+    max-height: 100%;
+    overflow-y: auto;
+    box-sizing: border-box;
+    padding: 20px;
+    background: #f5f7fa;
+    color: #1b2230;
+    border: 1px solid #c9d3e0;
+    border-radius: 10px;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+}
+
+.pretext-debrief-title {
+    margin: 0 0 8px;
+    font-size: 20px;
+}
+
+.pretext-debrief-outcome {
+    margin: 0 0 12px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.pretext-debrief-lines,
+.pretext-debrief-defender {
+    margin: 0 0 12px;
+    padding-left: 20px;
+    font-size: 15px;
+    line-height: 1.4;
+}
+
+.pretext-debrief-lines li,
+.pretext-debrief-defender li {
+    margin: 4px 0;
+}
+
+.pretext-debrief-done {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    min-width: 88px;
+    padding: 10px 20px;
+    font-size: 16px;
+    font-family: inherit;
+    cursor: pointer;
+}

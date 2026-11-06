@@ -1,0 +1,12 @@
+{"steps":[
+{"note":"R9b (cycle 3, D4-3): Terry met by day; Ffion told 'sterling' at night; the files excuse, no reload."},
+{"set":{"briefing_played":true,"badge_received":true}},
+{"talk":"ffion","picks":["Thanks. I'll head"]},
+{"talk":"terry","picks":["wrong turn"]},
+{"set":{"mission_phase":"act2_infiltration","clone_call_done":true,"victoria_card_cloned":true}},
+{"talk":"ffion","picks":["She said to come back"]},
+{"talk":"terry","picks":["Sterling asked me","enrolment forms","let you get on"]},
+{"note":"a different player who met Terry by day and tells Ffion nothing: recognition lines"},
+{"set":{"ffion_night_story":"","player_warned":false}},
+{"talk":"terry","reload":true,"knot":"start","picks":["I work here","That's what I came back for","Ring Ms. Sterling","Alright, I'm going"]}
+]}

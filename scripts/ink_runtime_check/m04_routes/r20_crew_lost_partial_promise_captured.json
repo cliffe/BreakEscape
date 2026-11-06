@@ -1,0 +1,60 @@
+{
+"steps": [
+{
+"note": "R20 (phase 4 dialogue C1, D5-2/D5-3/D5-32): the briefing's 'alive' promise, an ally Vance at trust 60 who is never asked to sound the alarm, bank B vents with the crew in Hall 2. Static down, the player asks Voltage the number, then takes him. Partial disclosure: the debrief names the nine, ties them to the alarm on Vance's desk, and pays off both stances."
+},
+{
+"talk": "briefing",
+"picks": ["Go ahead", "timeline", "expect a fight", "bring Voltage in alive", "What are my orders", "So this is the attack", "Got it"]
+},
+{
+"expect": {"promised_voltage_alive": true}
+},
+{
+"set": {
+"briefing_played": true, "guard_admitted": true, "vance_met": true, "vance_spoken": true,
+"vance_provided_keycard": true, "vance_card_cloned": true, "vance_is_ally": true,
+"vance_trust_level": 60, "anomaly_detected": true
+}
+},
+{
+"set": {
+"server_room_reached": true, "plant_reader_seen": true, "fingerprint_kit_found": true,
+"flag_network_scan_submitted": true, "flag_ftp_intel_submitted": true,
+"flag_distcc_exploit_submitted": true, "flag_privesc_submitted": true,
+"all_flags_in": true, "attack_mechanism_known": true
+}
+},
+{"advance": 15},
+{"expect": {"crew_lost": true}},
+{"set": {"plant_room_entered": true, "operative_static_defeated": true}},
+{
+"talk": "voltage",
+"picks": ["It's over", "Make me understand", "Why infrastructure", "How many does the hall take", "And you came anyway", "coming with me", "check your sums"]
+},
+{"expect": {"asked_the_number": true, "voltage_captured": true}},
+{"set": {"voltage_neutralised": true, "esd_authorized": true, "attack_prevented": true}},
+{"talk": "phone", "picks": ["Bring me in", "Bring me in", "On my way"]},
+{
+"talk": "debrief",
+"picks": ["Bank B went", "Tell me we came out", "how did they get in", "And the network", "goes in the report", "How far", "I'm in", "Say there was an incident", "sorry about your people"]
+},
+{
+"said": [
+"To the decimal this time",
+"You said you'd bring him in breathing",
+"The night crew were still in Hall 2 when Bank B went. Nine of them.",
+"Nine in Hall 2. Two more on the feed",
+"The hall's standing. Nine of mine aren't.",
+"I'll not forget either.",
+"Vance had the evacuation alarm on his desk all night",
+"Vance is on the line from the Albion ops desk",
+"An incident, nine dead, cause withheld",
+"Upstairs will like that. The inquest won't.",
+"People hear the number, not the reason",
+"Keep the OptiGrid print kit"
+],
+"notSaid": ["Stability", "maintenance fault", "how close it came", "Get some rest", "You chose the button", "You did right by this place", "A shame", "Thorough", "Harder than it looks", "None of this was random"]
+}
+]
+}

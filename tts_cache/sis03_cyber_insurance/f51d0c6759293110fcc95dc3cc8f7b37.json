@@ -1,0 +1,13 @@
+{
+  "key": "f51d0c6759293110fcc95dc3cc8f7b37",
+  "npc": "eleanor_vance",
+  "text": "The evidence shows the attacker used the c.ellison account — a contractor account that should have gone over a year ago — to establish the RDP session that gave them SCADA access.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:23:33Z"
+}

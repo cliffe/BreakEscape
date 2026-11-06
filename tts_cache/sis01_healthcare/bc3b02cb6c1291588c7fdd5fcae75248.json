@@ -1,0 +1,13 @@
+{
+  "key": "bc3b02cb6c1291588c7fdd5fcae75248",
+  "npc": "sarah_mitchell",
+  "text": "Look at Bed 4's monitor, then come back to me. The paper drug charts are in my desk drawer.",
+  "voice": "Kore",
+  "style": "Black British charge nurse in her mid-40s, calm, tired but professional. Speak with a consistent Leeds, West Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

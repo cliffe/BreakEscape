@@ -1,0 +1,625 @@
+<%# DRAFT of fixture A (DEDUCTION_IMPLEMENTATION_PLAN.md §9.2), written by the sidecar to prove the
+    plan is buildable. The real fixture is scenarios/test_social_deduction_a/, built by P10-K-A.
+    Every value the plan does not give carries a "_note": "invented: plan silent" key (or a note
+    naming the plan conflict it resolves); INVENTED.md lists them with plan lines.
+    Plan read at 3327 lines. %>
+{
+  "scenario_id": "test_social_deduction_a",
+  "scenario_name": "Open evening",
+  "scenario_brief": "You are undercover at the Tesseract Institute's open evening. Five guests have come to see the Codex, and the lodge has people in the room. Find them.\n\nWhat to look for. A guest who fits any of these is a cultist.\nKeyholder: Carries the brass Tesseract key. There is only one.\nCourier: Was in the Archive, wants the Codex, and carries no ward charm.\nDevotee: Has three or more marked clues.\n\nName an innocent guest and the lodge will close ranks against you. Miss a cultist and they will be waiting at the ritual.\n\nDon't do favours for anyone you haven't checked.",
+  "_note_brief": "invented: plan silent on the brief's wording beyond profile text, briefText and the favour rule (§7.9); no guilty number, no 'the cultist'",
+  "show_scenario_brief": "on_resume",
+  "_note_show_scenario_brief": "invented: plan silent",
+  "startRoom": "a_hall",
+  "startPosition": { "x": 5, "y": 7 },
+  "_note_startPosition": "invented: plan silent",
+
+  "player": {
+    "id": "player",
+    "displayName": "Agent",
+    "spriteSheet": "female_hacker_hood_v2",
+    "_note": "invented: plan silent (placeholder sprite, as test_social_board_indicators)"
+  },
+
+  "startItemsInInventory": [
+    { "type": "lockpick", "name": "Lockpick", "takeable": true, "observations": "A slim set of picks, tucked into your cuff." },
+    { "type": "fingerprint_kit", "name": "Fingerprint Kit", "takeable": true, "observations": "Powder, brush and lifting tape." },
+    { "type": "phone", "name": "Your phone", "takeable": true, "phoneId": "player_phone", "npcIds": ["ded_a_handler"],
+      "observations": "HaX is on speed dial.",
+      "_note": "invented: plan lists the lockpick and fingerprint kit only (§9.2 Rooms), but HaX is a phone NPC, so the player needs a phone to call him" }
+  ],
+
+  "creditsOverlay": { "ticker": ["CASE CLOSED", "OPEN EVENING"] },
+
+  "objectives": [
+    {
+      "aimId": "a_investigate",
+      "title": "Find the lodge's people",
+      "description": "Work out which guests are cultists, and name them.",
+      "status": "active",
+      "order": 0,
+      "_note": "invented: plan silent on aims other than the conclusion aim; this one holds the solved task",
+      "tasks": [
+        { "taskId": "a_case_solved", "title": "Call every guest right", "type": "manual", "status": "active" }
+      ]
+    },
+    {
+      "aimId": "a_conclusion",
+      "title": "End the evening",
+      "description": "Close the case with HaX, then finish it at the altar, or get out.",
+      "status": "active",
+      "order": 1,
+      "missionConclusion": true,
+      "conclusionScreen": { "type": "bond_visualiser", "bondVisualiserOpts": { "headerText": "CASE CLOSED" } },
+      "_note": "aim id, title and description invented: plan silent; conclusionScreen as §9.2",
+      "tasks": [
+        { "taskId": "a_evening_over", "title": "End the evening", "type": "manual", "status": "active" }
+      ]
+    }
+  ],
+
+  "music": {
+    "events": [
+      {
+        "trigger": "global_variable_changed:a_ending",
+        "condition": "globalVars.a_ending === true",
+        "playlist": "victory",
+        "autoStop": true,
+        "disableClose": true,
+        "fade": true,
+        "headerText": "CASE CLOSED",
+        "statusText": "CLOSED",
+        "_note": "playlist, autoStop, disableClose, fade, statusText and closingCard invented: plan silent (§9.2 gives the trigger, headerText and the credit lines)",
+        "closingCard": {
+          "lines": [
+            "The open evening is over.",
+            "The Codex stays in its case, for now."
+          ]
+        },
+        "credits": [
+          { "text": "CASE CLOSED", "style": "title" },
+          { "text": "OPEN EVENING AT THE TESSERACT INSTITUTE", "style": "subtitle" },
+          { "text": "" },
+          { "section": "THE RITUAL", "lines": [
+            { "text": "The ritual began a voice short.", "condition": "globalVars.a_ritual_weakened" },
+            { "text": "You were thrown out before the ritual.", "condition": "globalVars.a_thrown_out" }
+          ] },
+          { "section": "THE KEY", "lines": [
+            { "text": "You faced Okafor down in the hall, key and all.", "condition": "globalVars.a_key_choice === 'confront'" },
+            { "text": "The key was taken off Okafor at the door.", "condition": "globalVars.a_key_choice === 'seize'" },
+            { "text": "You let Okafor walk, and watched where she went.", "condition": "globalVars.a_key_choice === 'follow'" }
+          ] },
+          { "section": "THE GUESTS", "lines": [
+            { "text": "Okafor walked free with the key.", "condition": "globalVars.deduction_outcome_ded_a_okafor === 'missed_guilty'" },
+            { "text": "Marsh slipped out before the doors were locked.", "condition": "globalVars.deduction_outcome_ded_a_marsh === 'missed_guilty'" },
+            { "text": "Venn was thrown out of the lodge for nothing.", "condition": "globalVars.deduction_outcome_ded_a_venn === 'wrong_guilty'" },
+            { "text": "Ishikawa was marked as a traitor for nothing.", "condition": "globalVars.deduction_outcome_ded_a_ishikawa === 'wrong_guilty'" },
+            { "text": "Delacroix was shown the door for nothing.", "condition": "globalVars.deduction_outcome_ded_a_delacroix === 'wrong_guilty'" }
+          ] }
+        ]
+      }
+    ]
+  },
+
+  "triggers": [
+    { "id": "t_a_badge_log",
+      "on": "global_variable_changed:a_badge_log_done",
+      "where": { "value": true },
+      "actions": [
+        { "type": "grant_fact", "fact": "a_okafor_lecture_hall" },
+        { "type": "grant_fact", "fact": "a_venn_archive_pass" },
+        { "type": "grant_fact", "fact": "a_marsh_garden" },
+        { "type": "grant_fact", "fact": "a_ishikawa_archive_pass" },
+        { "type": "grant_fact", "fact": "a_delacroix_lecture_hall" }
+      ] },
+    { "id": "t_a_camera",
+      "on": "a_camera_viewed",
+      "actions": [ { "type": "grant_fact", "fact": "a_okafor_brass_key" } ],
+      "_note": "invented: the plan calls the camera route both 't_a_camera' (a trigger) and 'the monitor's triggerOnInteract'; here the monitor's triggerOnInteract emits a_camera_viewed and this trigger grants, with the route's room set to a_archive" },
+    { "id": "t_a_key_drop",
+      "on": "item_picked_up:key",
+      "where": { "itemId": "brass_tesseract_key" },
+      "actions": [ { "type": "grant_fact", "fact": "a_okafor_brass_key" } ] },
+    { "id": "t_a_coat_venn",
+      "on": "item_picked_up:notes",
+      "where": { "itemId": "a_coat_venn" },
+      "condition": "!globalVars.a_lodge_suspicious",
+      "actions": [ { "type": "grant_fact", "fact": "a_venn_ward_charm" } ] },
+    { "id": "t_a_coat_ishikawa",
+      "on": "item_picked_up:notes",
+      "where": { "itemId": "a_coat_ishikawa" },
+      "condition": "!globalVars.a_lodge_suspicious",
+      "actions": [
+        { "type": "grant_fact", "fact": "a_ishikawa_ward_charm" },
+        { "type": "grant_fact", "fact": "a_ishikawa_notebook" }
+      ] },
+    { "id": "t_a_glass",
+      "on": "fingerprint_identified:ded_a_marsh",
+      "where": { "objectId": "a_wine_glass" },
+      "actions": [ { "type": "grant_fact", "fact": "a_marsh_sigil_ring" } ] },
+    { "id": "t_a_thrown_out_end",
+      "on": "global_variable_changed:a_case_closed",
+      "where": { "value": true },
+      "condition": "globalVars.a_thrown_out && globalVars.a_left_early",
+      "_note": "plan gives condition 'globalVars.a_thrown_out' only; with that, a player who said 'Not yet' to HaX's get-out call and later closed through 'Go in' (bridge-deduction-a-wrong A4 then A7) would have the evening end on close and never reach the sanctum, so a_left_early (set on 'Get out') narrows it",
+      "actions": [
+        { "type": "complete_task", "taskId": "a_evening_over" },
+        { "type": "set_global", "key": "a_ending", "value": true }
+      ] }
+  ],
+
+  "globalVariables": {
+    "se_intel_a_okafor_lecture_hall": false,
+    "se_intel_a_venn_archive_pass": false,
+    "se_intel_a_marsh_garden": false,
+    "se_intel_a_ishikawa_archive_pass": false,
+    "se_intel_a_delacroix_lecture_hall": false,
+    "se_intel_a_okafor_wants_codex": false,
+    "se_intel_a_venn_wants_funding": false,
+    "se_intel_a_marsh_wants_promotion": false,
+    "se_intel_a_ishikawa_wants_codex": false,
+    "se_intel_a_delacroix_wants_codex": false,
+    "se_intel_a_okafor_brass_key": false,
+    "se_intel_a_okafor_notebook": false,
+    "se_intel_a_venn_ward_charm": false,
+    "se_intel_a_marsh_sigil_ring": false,
+    "se_intel_a_marsh_burner_sim": false,
+    "se_intel_a_ishikawa_ward_charm": false,
+    "se_intel_a_ishikawa_notebook": false,
+    "se_intel_a_delacroix_umbrella": false,
+
+    "deduction_state": {},
+    "deduction_closed": false,
+    "deduction_verdict_ded_a_okafor": "",
+    "deduction_verdict_ded_a_venn": "",
+    "deduction_verdict_ded_a_marsh": "",
+    "deduction_verdict_ded_a_ishikawa": "",
+    "deduction_verdict_ded_a_delacroix": "",
+    "deduction_outcome_ded_a_okafor": "",
+    "deduction_outcome_ded_a_venn": "",
+    "deduction_outcome_ded_a_marsh": "",
+    "deduction_outcome_ded_a_ishikawa": "",
+    "deduction_outcome_ded_a_delacroix": "",
+    "deduction_favour_ded_a_marsh": false,
+    "scenario_triggers_fired": {},
+
+    "a_badge_log_done": false,
+    "a_lodge_suspicious": false,
+    "ded_a_ally_lost": false,
+    "a_thrown_out": false,
+    "a_ritual_weakened": false,
+    "a_case_closed": false,
+    "a_ending": false,
+    "a_key_choice": "",
+    "has_marsh_phone": false,
+
+    "a_left_early": false,
+    "a_briefed": false,
+
+    "ded_a_barstaff_influence": 0,
+    "ded_a_barstaff_latched": "",
+    "ded_a_barstaff_wary": false,
+    "ded_a_barstaff_reported": false,
+    "ded_a_intern_influence": 0,
+    "ded_a_intern_latched": "",
+    "ded_a_intern_wary": false,
+    "ded_a_intern_reported": false,
+
+    "_note": "a_left_early (see t_a_thrown_out_end) and a_briefed (HaX's opening call, once) invented; the witness globals follow §4.9's pattern for Tomás"
+  },
+
+  "social": {
+    "people": [
+      { "id": "ded_a_okafor",    "name": "Ifeoma Okafor",    "role": "Epigrapher, visiting from Lagos" },
+      { "id": "ded_a_venn",      "name": "Margaret Venn",    "role": "Retired librarian, raising a fund" },
+      { "id": "ded_a_marsh",     "name": "Imogen Marsh",     "role": "Junior fellow at the Institute" },
+      { "id": "ded_a_ishikawa",  "name": "Haruka Ishikawa",  "role": "Book conservator" },
+      { "id": "ded_a_delacroix", "name": "Colette Delacroix", "role": "Antiquarian dealer" },
+      { "id": "ded_a_barstaff",  "name": "Callum Reid",      "role": "Bar staff" },
+      { "id": "ded_a_intern",    "name": "Sunil Mehta",      "role": "Institute intern" },
+      { "id": "ded_a_handler",   "name": "HaX",              "role": "Your handler" }
+    ],
+    "_note_people": "invented: plan silent on names, roles and backgrounds (surnames from §9.2); cast varied in age and background per AGENTS.md. Okafor's first name avoids Adaeze, already a recurring character",
+
+    "characters": {
+      "ded_a_barstaff": {
+        "displayName": "Callum Reid",
+        "influence": { "global": "ded_a_barstaff_influence", "min": -100, "max": 100, "start": 0 },
+        "syncedVars": ["ded_a_barstaff_influence"],
+        "thresholds": [
+          { "id": "wary",    "at": -20, "icon": "wary",    "effects": [ { "type": "setGlobal", "global": "ded_a_barstaff_wary", "value": true, "clearOnRearm": true } ] },
+          { "id": "refuses", "at": -40, "icon": "refuses", "effects": [ { "type": "endConversation" } ] },
+          { "id": "reports", "at": -60, "icon": "reports", "effects": [ { "type": "setGlobal", "global": "ded_a_barstaff_reported", "value": true } ] }
+        ],
+        "channels": { "person": "ded_a_barstaff" },
+        "_note": "thresholds as §7.2 defaults; displayName, syncedVars and icons invented (copied from lab_social_engineering); no tamper in A, so the reports flag is read by the bar staff's own ink only"
+      },
+      "ded_a_intern": {
+        "displayName": "Sunil Mehta",
+        "influence": { "global": "ded_a_intern_influence", "min": -100, "max": 100, "start": 0 },
+        "syncedVars": ["ded_a_intern_influence"],
+        "thresholds": [
+          { "id": "wary",    "at": -20, "icon": "wary",    "effects": [ { "type": "setGlobal", "global": "ded_a_intern_wary", "value": true, "clearOnRearm": true } ] },
+          { "id": "refuses", "at": -40, "icon": "refuses", "effects": [ { "type": "endConversation" } ] },
+          { "id": "reports", "at": -60, "icon": "reports", "effects": [ { "type": "setGlobal", "global": "ded_a_intern_reported", "value": true } ] }
+        ],
+        "channels": { "person": "ded_a_intern" },
+        "_note": "as ded_a_barstaff"
+      }
+    },
+
+    "intelFacts": {
+      "a_okafor_lecture_hall": {
+        "text": "The visitor badge log has Ifeoma Okafor's badge at the lecture hall door all evening.",
+        "label": "Okafor: in the lecture hall", "subject": "ded_a_okafor", "source": "a_badge_log",
+        "deduction": { "suspect": "ded_a_okafor", "clue": "lecture_hall", "routes": [ { "via": "trigger", "id": "t_a_badge_log" } ] } },
+      "a_venn_archive_pass": {
+        "text": "Margaret Venn's visitor badge opened the Archive at 19:40.",
+        "label": "Venn: signed into the Archive", "subject": "ded_a_venn", "source": "a_badge_log",
+        "deduction": { "suspect": "ded_a_venn", "clue": "archive_pass", "routes": [ { "via": "trigger", "id": "t_a_badge_log" } ] } },
+      "a_marsh_garden": {
+        "text": "Imogen Marsh's badge went out to the garden at 19:15 and did not come back through the Archive.",
+        "label": "Marsh: out in the garden", "subject": "ded_a_marsh", "source": "a_badge_log",
+        "deduction": { "suspect": "ded_a_marsh", "clue": "garden", "routes": [ { "via": "trigger", "id": "t_a_badge_log" } ] } },
+      "a_ishikawa_archive_pass": {
+        "text": "Haruka Ishikawa's visitor badge opened the Archive at 20:05.",
+        "label": "Ishikawa: signed into the Archive", "subject": "ded_a_ishikawa", "source": "a_badge_log",
+        "deduction": { "suspect": "ded_a_ishikawa", "clue": "archive_pass", "routes": [ { "via": "trigger", "id": "t_a_badge_log" } ] } },
+      "a_delacroix_lecture_hall": {
+        "text": "Colette Delacroix's badge never left the lecture hall door.",
+        "label": "Delacroix: in the lecture hall", "subject": "ded_a_delacroix", "source": "a_badge_log",
+        "deduction": { "suspect": "ded_a_delacroix", "clue": "lecture_hall", "routes": [ { "via": "trigger", "id": "t_a_badge_log" } ] } },
+
+      "a_okafor_wants_codex": {
+        "text": "Okafor has asked the bar staff three times when the Codex comes out of its case.",
+        "label": "Okafor: wants the Codex", "subject": "ded_a_okafor", "source": "ded_a_barstaff",
+        "deduction": { "suspect": "ded_a_okafor", "clue": "wants_codex", "routes": [ { "via": "npc", "id": "ded_a_barstaff" } ] } },
+      "a_venn_wants_funding": {
+        "text": "Venn is working the room for money for her library fund.",
+        "label": "Venn: wants funding", "subject": "ded_a_venn", "source": "ded_a_barstaff",
+        "deduction": { "suspect": "ded_a_venn", "clue": "wants_funding", "routes": [ { "via": "npc", "id": "ded_a_barstaff" } ] } },
+      "a_marsh_wants_promotion": {
+        "text": "Marsh wants a seat on the Institute's inner council, and tells anyone who'll listen.",
+        "label": "Marsh: wants a promotion", "subject": "ded_a_marsh", "source": "ded_a_intern",
+        "deduction": { "suspect": "ded_a_marsh", "clue": "wants_promotion", "routes": [ { "via": "npc", "id": "ded_a_intern" } ] } },
+      "a_ishikawa_wants_codex": {
+        "text": "Ishikawa has asked the intern to let her handle the Codex before the night is out.",
+        "label": "Ishikawa: wants the Codex", "subject": "ded_a_ishikawa", "source": "ded_a_intern",
+        "deduction": { "suspect": "ded_a_ishikawa", "clue": "wants_codex", "routes": [ { "via": "npc", "id": "ded_a_intern" } ] } },
+      "a_delacroix_wants_codex": {
+        "text": "Delacroix has made the Institute an offer for the Codex, in cash.",
+        "label": "Delacroix: wants the Codex", "subject": "ded_a_delacroix", "source": "ded_a_intern",
+        "deduction": { "suspect": "ded_a_delacroix", "clue": "wants_codex", "routes": [ { "via": "npc", "id": "ded_a_intern" } ] } },
+
+      "a_okafor_brass_key": {
+        "text": "Ifeoma Okafor carries the brass Tesseract key.",
+        "label": "Okafor: the brass Tesseract key", "subject": "ded_a_okafor", "source": "a_camera",
+        "deduction": { "suspect": "ded_a_okafor", "clue": "brass_key", "routes": [
+          { "via": "trigger", "id": "t_a_camera", "room": "a_archive" },
+          { "via": "trigger", "id": "t_a_key_drop" } ] },
+        "_note": "room override on t_a_camera invented: an emit_event trigger's room cannot be inferred (§8 'Room of a route')" },
+      "a_okafor_notebook": {
+        "text": "Okafor's notebook lies open on the reading desk, full of her own hand.",
+        "label": "Okafor: a notebook", "subject": "ded_a_okafor", "source": "a_reading_desk",
+        "deduction": { "suspect": "ded_a_okafor", "clue": "notebook", "routes": [ { "via": "object", "id": "a_reading_desk" } ] } },
+      "a_venn_ward_charm": {
+        "text": "A ward charm is sewn into the lining of Venn's coat.",
+        "label": "Venn: a ward charm", "subject": "ded_a_venn", "source": "a_coat_venn",
+        "deduction": { "suspect": "ded_a_venn", "clue": "ward_charm", "routes": [ { "via": "trigger", "id": "t_a_coat_venn" } ] } },
+      "a_marsh_sigil_ring": {
+        "text": "Marsh's prints on the wine glass carry the press of a ring cut with the lodge's sigil.",
+        "label": "Marsh: a sigil ring", "subject": "ded_a_marsh", "source": "a_wine_glass",
+        "deduction": { "suspect": "ded_a_marsh", "clue": "sigil_ring", "routes": [ { "via": "trigger", "id": "t_a_glass" } ] } },
+      "a_marsh_burner_sim": {
+        "text": "Marsh's phone runs on a burner SIM, bought for cash and used for one number.",
+        "label": "Marsh: a burner SIM", "subject": "ded_a_marsh", "source": "ded_a_marsh",
+        "deduction": { "suspect": "ded_a_marsh", "clue": "burner_sim", "routes": [] },
+        "_note": "routes empty on purpose: the favour route is implicit (§4.2) and the plan says the SIM comes only from her favour; whether the schema and DL18 accept an empty list is not stated" },
+      "a_ishikawa_ward_charm": {
+        "text": "Ishikawa's coat pocket holds a ward charm on a red thread.",
+        "label": "Ishikawa: a ward charm", "subject": "ded_a_ishikawa", "source": "a_coat_ishikawa",
+        "deduction": { "suspect": "ded_a_ishikawa", "clue": "ward_charm", "routes": [ { "via": "trigger", "id": "t_a_coat_ishikawa" } ] } },
+      "a_ishikawa_notebook": {
+        "text": "Ishikawa keeps a conservator's notebook in her coat: bindings, glues, page counts.",
+        "label": "Ishikawa: a notebook", "subject": "ded_a_ishikawa", "source": "a_coat_ishikawa",
+        "deduction": { "suspect": "ded_a_ishikawa", "clue": "notebook", "routes": [ { "via": "trigger", "id": "t_a_coat_ishikawa" } ] } },
+      "a_delacroix_umbrella": {
+        "text": "Delacroix carries a black umbrella and has not let go of it all evening.",
+        "label": "Delacroix: an umbrella", "subject": "ded_a_delacroix", "source": "ded_a_barstaff",
+        "deduction": { "suspect": "ded_a_delacroix", "clue": "umbrella", "routes": [ { "via": "npc", "id": "ded_a_barstaff" } ] } },
+      "_note": "fact ids follow a_<suspect>_<clue> (the plan names a_marsh_wants_promotion, a_okafor_brass_key, a_venn_ward_charm); every text and label invented: plan silent"
+    },
+
+    "deduction": {
+      "title": "Open evening",
+      "verdictNoun": { "guilty": "Cultist", "clear": "Not a cultist" },
+      "suspects": ["ded_a_okafor", "ded_a_venn", "ded_a_marsh", "ded_a_ishikawa", "ded_a_delacroix"],
+      "slots": [
+        { "id": "pass",  "label": "Where they were", "perSuspect": "exactlyOne" },
+        { "id": "want",  "label": "What they want",  "perSuspect": "exactlyOne" },
+        { "id": "carry", "label": "What they carry", "perSuspect": "oneOrMore" }
+      ],
+      "clues": {
+        "archive_pass":    { "slot": "pass",  "label": "signed into the Archive", "marked": false, "count": 2 },
+        "lecture_hall":    { "slot": "pass",  "label": "in the lecture hall",     "marked": false, "count": 2 },
+        "garden":          { "slot": "pass",  "label": "out in the garden",       "marked": false, "count": 1 },
+        "wants_codex":     { "slot": "want",  "label": "wants the Codex",         "marked": true,  "count": 3 },
+        "wants_promotion": { "slot": "want",  "label": "wants a promotion",       "marked": true,  "count": 1 },
+        "wants_funding":   { "slot": "want",  "label": "wants funding",           "marked": false, "count": 1 },
+        "brass_key":       { "slot": "carry", "label": "brass Tesseract key",     "marked": true,  "count": 1 },
+        "sigil_ring":      { "slot": "carry", "label": "sigil ring",              "marked": true,  "count": 1 },
+        "burner_sim":      { "slot": "carry", "label": "burner SIM",              "marked": true,  "count": 1 },
+        "ward_charm":      { "slot": "carry", "label": "ward charm",              "marked": false, "count": 2 },
+        "notebook":        { "slot": "carry", "label": "notebook",                "marked": false, "count": 2 },
+        "umbrella":        { "slot": "carry", "label": "umbrella",                "marked": false, "count": 1 }
+      },
+      "_note_clues": "labels invented where the plan gives none (§6.2 and §6.4 give 'sigil ring', 'burner SIM', 'wants a promotion', 'brass Tesseract key')",
+      "profiles": [
+        { "id": "keyholder", "label": "Keyholder",
+          "text": "Carries the brass Tesseract key. There is only one.",
+          "rule": { "has": "brass_key" } },
+        { "id": "courier", "label": "Courier",
+          "text": "Was in the Archive, wants the Codex, and carries no ward charm.",
+          "rule": { "all": [ { "has": "archive_pass" }, { "has": "wants_codex" }, { "not": { "has": "ward_charm" } } ] } },
+        { "id": "devotee", "label": "Devotee",
+          "text": "Has three or more marked clues.",
+          "rule": { "markedAtLeast": 3 } }
+      ],
+      "solution": {
+        "ded_a_okafor": "keyholder",
+        "ded_a_venn": null,
+        "ded_a_marsh": "devotee",
+        "ded_a_ishikawa": null,
+        "ded_a_delacroix": null
+      },
+      "brief": { "source": "scenario_brief" },
+      "verdicts": { "allowed": ["accuse", "ko", "act"], "when": "anytime", "reveal": "now" },
+      "closeHint": "Everyone here has been dealt with. Call HaX when you're ready for the sanctum.",
+      "stakes": {
+        "rigidity": "costly",
+        "disclosure": "brief",
+        "briefText": "Name an innocent guest and the lodge will close ranks against you. Miss a cultist and they will be waiting at the ritual.",
+        "onRightGuilty":  [ { "type": "set_global", "key": "a_ritual_weakened", "value": true } ],
+        "onWrongGuilty":  [ { "type": "set_global", "key": "a_lodge_suspicious", "value": true, "cost": true } ],
+        "onMissedGuilty": [ { "type": "reveal_hostiles", "npcs": ["ded_a_acolyte"], "room": "a_sanctum" } ],
+        "onRightClear":   [],
+        "suspects": {
+          "ded_a_venn": {
+            "onWrongGuilty": [ { "type": "lose_ally", "npc": "ded_a_venn", "global": "ded_a_ally_lost", "text": "Venn won't help you now." } ]
+          }
+        },
+        "escalation": [
+          { "wrongCount": 2, "actions": [ { "type": "reveal_hostiles", "npcs": ["ded_a_doorman"], "room": "a_hall" } ] },
+          { "wrongCount": 3, "actions": [ { "type": "set_global", "key": "a_thrown_out", "value": true, "cost": true } ] }
+        ],
+        "solvedTask": "a_case_solved",
+        "scoreLine": true,
+        "onClose": [ { "type": "set_global", "key": "a_case_closed", "value": true } ],
+        "retry": 0
+      },
+      "favours": {
+        "ded_a_marsh": {
+          "unlockFact": "a_marsh_wants_promotion",
+          "room": "a_cloakroom",
+          "item": "a_marsh_phone",
+          "onBackfire": [ { "type": "reveal_hostiles", "npcs": ["ded_a_lookout"], "room": "a_cloakroom" } ],
+          "debriefLine": "You fetched Marsh's phone before checking her: it was how she signalled the others."
+        }
+      },
+      "nudge": true,
+      "debrief": {
+        "closingLine": "The badge log, the cloakroom and the archive camera each settled someone. Watching who carries what told you more than anything the guests said about themselves."
+      },
+      "_note_debrief": "closingLine invented: plan silent; tamperText, earlyCollapse and allowEarly left at defaults (no tamper in A)"
+    }
+  },
+
+  "rooms": {
+    "a_hall": {
+      "type": "room_office",
+      "door_sign": "Great Hall",
+      "_note": "room type, sign and every position in this file invented: plan silent",
+      "connections": { "west": "a_cloakroom", "east": "a_archive" },
+      "npcs": [
+        { "id": "ded_a_okafor", "displayName": "Ifeoma Okafor", "npcType": "person",
+          "position": { "x": 3, "y": 3 }, "spriteSheet": "female_scientist_v2",
+          "storyPath": "scenarios/test_social_deduction_a/ink/ded_a_okafor.json", "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "itemsHeld": [
+            { "type": "key", "id": "brass_tesseract_key", "name": "Brass Tesseract Key", "takeable": true,
+              "keyPins": [31, 17, 44, 22], "observations": "Heavy, warm to the touch, and cut in a pattern no locksmith would sign.",
+              "_note": "keyPins and observations invented; the key opens no lock in A, so the KO route cannot reach the sanctum past HaX's warned close" }
+          ] },
+        { "id": "ded_a_venn", "displayName": "Margaret Venn", "npcType": "person",
+          "position": { "x": 5, "y": 3 }, "spriteSheet": "female_office_worker_v2",
+          "storyPath": "scenarios/test_social_deduction_a/ink/ded_a_venn.json", "currentKnot": "start",
+          "reopenRefreshesHub": true },
+        { "id": "ded_a_marsh", "displayName": "Imogen Marsh", "npcType": "person",
+          "position": { "x": 7, "y": 3 }, "spriteSheet": "female_blowse_v2",
+          "storyPath": "scenarios/test_social_deduction_a/ink/ded_a_marsh.json", "currentKnot": "start",
+          "reopenRefreshesHub": true },
+        { "id": "ded_a_ishikawa", "displayName": "Haruka Ishikawa", "npcType": "person",
+          "position": { "x": 3, "y": 5 }, "spriteSheet": "female_telecom_v2",
+          "storyPath": "scenarios/test_social_deduction_a/ink/ded_a_ishikawa.json", "currentKnot": "start",
+          "reopenRefreshesHub": true },
+        { "id": "ded_a_delacroix", "displayName": "Colette Delacroix", "npcType": "person",
+          "position": { "x": 7, "y": 5 }, "spriteSheet": "female_spy",
+          "storyPath": "scenarios/test_social_deduction_a/ink/ded_a_delacroix.json", "currentKnot": "start",
+          "reopenRefreshesHub": true },
+        { "id": "ded_a_barstaff", "displayName": "Callum Reid", "npcType": "person",
+          "position": { "x": 8.5, "y": 6 }, "spriteSheet": "male_office_worker_v2",
+          "storyPath": "scenarios/test_social_deduction_a/ink/ded_a_barstaff.json", "currentKnot": "start",
+          "reopenRefreshesHub": true },
+        { "id": "ded_a_intern", "displayName": "Sunil Mehta", "npcType": "person",
+          "position": { "x": 1.5, "y": 6 }, "spriteSheet": "male_office_worker_v2",
+          "storyPath": "scenarios/test_social_deduction_a/ink/ded_a_intern.json", "currentKnot": "start",
+          "reopenRefreshesHub": true },
+        { "id": "ded_a_handler", "displayName": "HaX", "npcType": "phone", "phoneId": "player_phone",
+          "avatar": "assets/characters/agent_hax_headshot.png",
+          "storyPath": "scenarios/test_social_deduction_a/ink/ded_a_handler.json", "currentKnot": "start",
+          "unlockable": ["a_sanctum"],
+          "_note": "unlockable invented: the server refuses an NPC #unlock_door without it (game.rb validate_npc_unlock); the opening-call mapping on game_loaded is invented (plan says only 'HaX's opening call')",
+          "eventMappings": [
+            { "eventPattern": "game_loaded", "condition": "!globalVars.a_briefed", "onceOnly": true,
+              "targetKnot": "start", "bark": "HaX: You're in. Call me when you can talk.", "barkDelay": 1500 },
+            { "eventPattern": "global_variable_changed:se_intel_a_okafor_brass_key",
+              "condition": "value === true && globalVars.deduction_verdict_ded_a_okafor === ''", "onceOnly": true,
+              "targetKnot": "key_seen", "bark": "HaX: That key on the camera. Call me. Now.", "barkDelay": 800 },
+            { "eventPattern": "global_variable_changed:a_thrown_out",
+              "condition": "value === true && !globalVars.deduction_closed", "onceOnly": true,
+              "targetKnot": "thrown_out", "bark": "HaX: They're onto you. Pick up.", "barkDelay": 800 }
+          ] },
+        { "id": "ded_a_doorman", "displayName": "Doorman", "npcType": "person",
+          "position": { "x": 5, "y": 8 }, "spriteSheet": "female_security_guard_v2",
+          "storyPath": "scenarios/test_social_deduction_a/ink/ded_a_foes.json", "currentKnot": "doorman",
+          "behavior": { "initiallyHidden": true, "hostile": { "chaseSpeed": 90, "attackDamage": 3, "pauseToAttack": true } },
+          "_note": "sprite, story and hostile numbers invented: plan silent" }
+      ],
+      "objects": [
+        { "id": "a_board", "type": "case-file", "name": "Case File", "position": { "x": 5, "y": 1 },
+          "takeable": false, "interactable": true, "active": true,
+          "observations": "Your notes on the guests, kept in a programme for the evening.",
+          "minigameData": { "mode": "deduction", "allowSubmit": false },
+          "_note": "id a_board, name and observations invented: plan says only 'the board'" },
+        { "id": "a_wine_glass", "type": "notes", "name": "Wine Glass", "position": { "x": 8, "y": 4 },
+          "takeable": false, "readable": false,
+          "hasFingerprint": true, "fingerprintOwner": "ded_a_marsh", "fingerprintDifficulty": "easy",
+          "observations": "A glass left on the bar with a smear of red at the rim. Somebody held it hard.",
+          "_note": "object type, difficulty and observations invented; Marsh's prints are on this object only (§7.7)" }
+      ]
+    },
+
+    "a_cloakroom": {
+      "type": "room_office",
+      "door_sign": "Cloakroom",
+      "locked": true,
+      "lockType": "key",
+      "requires": "a_cloakroom_door",
+      "keyPins": [20, 40, 30, 50],
+      "lockedHint": "Locked, and the attendant has gone home. The lock is old.",
+      "_note": "a key lock with no key anywhere, so the lockpick is the way in (plan: 'locked door (lockpick)'); requires, keyPins and hint invented",
+      "connections": { "east": "a_hall" },
+      "npcs": [
+        { "id": "ded_a_lookout", "displayName": "Lookout", "npcType": "person",
+          "position": { "x": 2, "y": 2 }, "spriteSheet": "female_security_guard_v2",
+          "storyPath": "scenarios/test_social_deduction_a/ink/ded_a_foes.json", "currentKnot": "lookout",
+          "behavior": { "initiallyHidden": true, "hostile": { "chaseSpeed": 90, "attackDamage": 3, "pauseToAttack": true } },
+          "_note": "sprite, story and hostile numbers invented: plan silent" }
+      ],
+      "objects": [
+        { "id": "a_locker", "type": "safe", "name": "Coat Locker", "position": { "x": 3, "y": 1 },
+          "takeable": false, "locked": false,
+          "observations": "A tall locker with the guests' coats on numbered hooks.",
+          "_note": "container type 'safe' and position invented; the plan says the locker is not locked",
+          "contents": [
+            { "type": "notes", "id": "a_coat_venn", "name": "Venn's Coat", "takeable": true, "readable": true,
+              "text": "A heavy tweed coat with a library ticket in the pocket. Something stiff is sewn into the lining: a ward charm, wrapped in silk.",
+              "textVariants": [
+                { "condition": "globalVars.a_lodge_suspicious",
+                  "value": "A heavy tweed coat. The lining has been slit and the pockets turned out. Someone got here before you." }
+              ],
+              "observations": "Ticket 14. Margaret Venn.",
+              "_note": "text and the suspicious variant invented: the trigger is gated on !a_lodge_suspicious, so the text must not show the charm when no fact is granted" },
+            { "type": "notes", "id": "a_coat_ishikawa", "name": "Ishikawa's Coat", "takeable": true, "readable": true,
+              "text": "A grey raincoat. In one pocket, a ward charm on a red thread. In the other, a notebook of bindings, glues and page counts.",
+              "textVariants": [
+                { "condition": "globalVars.a_lodge_suspicious",
+                  "value": "A grey raincoat with both pockets empty. Someone has been through it." }
+              ],
+              "observations": "Ticket 9. Haruka Ishikawa.",
+              "_note": "as Venn's coat" }
+          ] },
+        { "id": "a_marsh_phone", "type": "phone", "name": "Marsh's Phone", "position": { "x": 6, "y": 1 },
+          "takeable": true,
+          "observations": "A cheap phone hanging on a hook by its strap. The screen lights with a message preview: just a row of dots.",
+          "onPickup": { "setVariable": { "has_marsh_phone": true } },
+          "_note": "type 'phone' with no phoneId is a guess: the item must be takeable and must not open the player's phone UI; position and observations invented" },
+        { "id": "a_code_note", "type": "notes", "name": "Attendant's Note", "position": { "x": 8, "y": 3 },
+          "takeable": true, "readable": true,
+          "text": "Archive door is 2291 tonight. Do NOT give it to guests. The Director says so. - S",
+          "observations": "A note pinned behind the counter.",
+          "_note": "wording invented; the code 2291 is the plan's" }
+      ]
+    },
+
+    "a_archive": {
+      "type": "room_office",
+      "door_sign": "Archive",
+      "locked": true,
+      "lockType": "pin",
+      "requires": "2291",
+      "lockedHint": "A keypad. Four digits.",
+      "connections": { "west": "a_hall", "north": "a_sanctum" },
+      "npcs": [],
+      "objects": [
+        { "id": "a_badge_log", "type": "log_filter_terminal", "name": "Visitor Badge Log", "position": "as-type:pc",
+          "takeable": false,
+          "observations": "The front desk's badge log for tonight's visitors.",
+          "minigameData": {
+            "minigameId": "log-filter",
+            "title": "TESSERACT INSTITUTE: VISITOR BADGES, OPEN EVENING",
+            "logType": "badge_access",
+            "logEntries": [
+              { "timestamp": "19:02", "account": "V-07 OKAFOR",    "door": "Lecture hall", "status": "IN" },
+              { "timestamp": "19:05", "account": "V-11 DELACROIX", "door": "Lecture hall", "status": "IN" },
+              { "timestamp": "19:15", "account": "V-03 MARSH",     "door": "Garden",       "status": "OUT" },
+              { "timestamp": "19:40", "account": "V-14 VENN",      "door": "Archive",      "status": "IN" },
+              { "timestamp": "20:05", "account": "V-09 ISHIKAWA",  "door": "Archive",      "status": "IN" }
+            ],
+            "completionActions": [ { "type": "set_global", "key": "a_badge_log_done", "value": true } ]
+          },
+          "_note": "the log-filter's real minigameData has more required fields (anomaly, threatIntel, flag labels; sis02_energy); this draft shows only the entries and the completion global the plan needs" },
+        { "id": "a_camera", "type": "security_monitor", "name": "Security Monitor", "position": { "x": 6, "y": 1 },
+          "takeable": false,
+          "observations": "A grainy feed of the Archive's display case, on a ten-minute loop.",
+          "triggerOnInteract": [
+            { "type": "hint", "title": "Security Monitor",
+              "message": "On the loop, Ifeoma Okafor stops at the display case, glances at the door, and slips a brass key into her jacket." },
+            { "type": "emit_event", "event_name": "a_camera_viewed" }
+          ],
+          "_note": "hint wording and the emit_event hop invented (see t_a_camera); emit_event takes event_name (apply-actions.js:70-73)" },
+        { "id": "a_reading_desk", "type": "notes", "name": "Reading Desk", "position": { "x": 2, "y": 4 },
+          "takeable": false, "readable": false,
+          "observations": "A reading desk under a green lamp. A notebook lies open on it.",
+          "triggerOnInteract": [
+            { "type": "grant_fact", "fact": "a_okafor_notebook" },
+            { "type": "hint", "title": "Reading Desk",
+              "message": "The notebook's flyleaf says I. Okafor. Inside: rubbings of carved letters, and one page torn out." }
+          ],
+          "_note": "object type, position and text invented: plan silent" }
+      ]
+    },
+
+    "a_sanctum": {
+      "type": "room_office",
+      "door_sign": "Sanctum",
+      "locked": true,
+      "lockType": "rfid",
+      "requires": "a_sanctum_seal",
+      "lockedHint": "No handle, no keyhole. Just a reader, and nothing you carry opens it.",
+      "_note": "lockType invented: the plan says 'locked door (no key; opened by HaX's warned call)', but the player starts with a lockpick, which opens any key lock; an RFID reader that no card in the scenario opens keeps the warned close the only way in",
+      "connections": { "south": "a_archive" },
+      "npcs": [
+        { "id": "ded_a_acolyte", "displayName": "Acolyte", "npcType": "person",
+          "position": { "x": 5, "y": 3 }, "spriteSheet": "female_hacker_hood_v2",
+          "storyPath": "scenarios/test_social_deduction_a/ink/ded_a_foes.json", "currentKnot": "acolyte",
+          "behavior": { "initiallyHidden": true, "hostile": { "chaseSpeed": 100, "attackDamage": 4, "pauseToAttack": true } },
+          "_note": "sprite, story and hostile numbers invented: plan silent" }
+      ],
+      "objects": [
+        { "id": "a_altar", "type": "notes", "name": "Altar", "position": { "x": 5, "y": 1 },
+          "takeable": false, "readable": false,
+          "observations": "Black stone, still warm. The carving on it moves when you are not looking straight at it.",
+          "triggerOnInteract": [
+            { "type": "confirm_action",
+              "text": "End the evening? Anyone still standing here stays standing.",
+              "onConfirm": [
+                { "type": "complete_task", "taskId": "a_evening_over" },
+                { "type": "set_global", "key": "a_ending", "value": true }
+              ] }
+          ],
+          "_note": "object type and observations invented; confirm text as §9.2" }
+      ]
+    }
+  }
+}

@@ -1,0 +1,430 @@
+
+## R1: the intended route. Brief, three interviews, clone the Director. Timeline and door audit read, Nightshade confirms his row, HaX's ladder walks each step. Named to Netherton on the first reading, before the box (named_before_box). Flag 4 agrees. Suite code aloud. Handover, defended stance, the teacher-line beat.
+
+--- briefing ---
+  Narrator: SAFETYNET headquarters, the Citadel. Every badge reader blinks red. Nobody looks at the person at the next desk.
+  ATHENA: Welcome back, Agent 0x00. Security posture is Level Red. I have logged your entry, your route, and the precise time you crossed the threshold. Everyone's, actually. It's rather the point.
+  ATHENA: I have also logged your kit. One pick set, one RFID cloner, one fingerprint kit.
+  ATHENA: The PIN device you are thinking of is still signed out to Agent 0x47, Nightshade, as it has been since St. Catherine's.
+  ATHENA: Read nothing into it. Vector has a hardware token out tonight, and Phantom a travel pack. Everyone on the planning list keeps something they shouldn't.
+  ATHENA: You are wondering what happened here. Portland happened. Four sites in one night, one team to send, and an enemy who had the deployment before we did.
+  ATHENA: The leak came from inside this building. Director Netherton has three names, and one of them got two of your colleagues killed.
+  ATHENA: A word of advice, from the only voice here with no stake in the outcome. The moment they know you are hunting, they vanish. Be quiet. Be quick.
+  ATHENA: The Director's office is north of this lobby. Do try not to trust anyone on the way.
+  [end]
+   [text agent_0x99 +2500ms] I'm on the wire. Get the Director's brief before you spook anyone. And 0x00... whichever of the three it is, it's a friend of mine.
+   {set {"briefing_played":true}}
+
+--- netherton ---
+      [ink: brief_taken=true]
+      [task: brief_with_netherton]
+  Narrator: The Director's office, blinds drawn against the night. Netherton stands at the window, his back to the door. He does not turn round.
+  Director Magnus Netherton: Agent. Nine days ago I sent you to Portland, the one site where a person in the building could change the outcome. That was true.
+  Director Magnus Netherton: What I did not tell you, because I did not yet know it, is that ENTROPY had your name before I signed the order.
+  Narrator: Now he turns.
+  Director Magnus Netherton: They did not out-think us at Portland. They were handed the board: your assignment, your timing, your identity on the ground.
+  Director Magnus Netherton: Two of ours are dead at the sites the team could not reach. They are dead because someone in this building told the enemy where the gaps would be.
+  Director Magnus Netherton: I have run field operations for five years. I have never had to say the next sentence.
+  Director Magnus Netherton: There is a mole in SAFETYNET. I am reasonably certain they are within a hundred metres of where you are standing.
+  Director Magnus Netherton: Ask me what you need. Then go and prove something.
+     (7 options)
+ > Tell me about Nightshade.
+  Director Magnus Netherton: Agent 0x47. Cryptographic-hardware analyst, in the Crypto Lab. Planning access, like the other two. He taught your intake.
+  Director Magnus Netherton: He has stood beside me at most of your briefings. He helps write the plans ENTROPY seemed to be reading.
+  Director Magnus Netherton: If it is him, I have stood beside him for years and noticed nothing. I do not enjoy that thought.
+     (6 options)
+ > Tell me about Vector.
+  Director Magnus Netherton: Agent 0x23. Intelligence analyst, signals and cryptography, on the operations floor. Brilliant, friendless, keeps hours that make the roster clerk nervous.
+  Director Magnus Netherton: He carries a crypto annex badge and keeps a locked screen, and he has never once explained either. I should like to know why.
+     (5 options)
+ > I'll need access.
+  Director Magnus Netherton: Not yet. Talk to all three first. I want them to have seen you on the floor before anyone sees you at the server room.
+  Director Magnus Netherton: You have not seen Vector. Operations floor.
+  Director Magnus Netherton: You have not seen Phantom. Intelligence analysis, north of the operations floor.
+  Director Magnus Netherton: You have not seen Nightshade. The Crypto Lab, west of the lobby.
+     (5 options)
+ > I'm ready. Let me work.
+  Director Magnus Netherton: Go. Whoever it is was one of us this morning. Bring me a name I can prove.
+  [chat closes]
+   [text agent_0x99 +2000ms] Three names, three rooms. Vector on the ops floor, Phantom north of it, Nightshade in the Crypto Lab. See all three before the server room.
+   [PASS] said: "noticed nothing"
+   [PASS] said: "never once explained"
+   [PASS] not said: "empty file"
+   [PASS] not said: "very careful for a very long time"
+
+--- vector ---
+      [ink: vector_interviewed=true]
+      [mapping agent_0x99: set vector_seen=true]
+      [task: interview_vector]
+  Narrator: Vector does not look up until you are right on top of him, and then he looks up too fast, knocking a stylus off the desk.
+  Agent 0x23 'Vector': I know how it looks. The hours, the locked screen, me flinching just now.
+  Agent 0x23 'Vector': I've run the inference on myself and it's not flattering. Ask your questions, so I can watch you decide I'm boring.
+     (6 options)
+ > Where were you when the Portland plan leaked?
+      [ink: vector_alibi_known=true]
+  Agent 0x23 'Vector': In the crypto library. Alone. The single worst alibi a person can offer, and completely true.
+  Agent 0x23 'Vector': The library logs its own door. And the terminal auth for the leak window will show my account never touched the mission-planning share.
+      [set_global vector_alibi_known=true]
+  Agent 0x23 'Vector': My desk is out on the ops floor. Do the geography.
+     (5 options)
+ > That's all for now.
+  Agent 0x23 'Vector': You'll clear me on the evidence. Good. My face has never once done me a favour.
+  [chat closes]
+
+--- phantom ---
+      [ink: phantom_interviewed=true]
+      [mapping agent_0x99: set phantom_seen=true]
+      [task: interview_phantom]
+  Agent 0x88 'Phantom': Agent 0x00. The Director's own bloodhound. Sit.
+  Agent 0x88 'Phantom': Let me save you the first four questions. Yes, I ask too much. Yes, I disappear for hours. Yes, I'm on your little list.
+  Agent 0x88 'Phantom': And yes, I put myself there too. Charmed?
+     (5 options)
+ > Where were you in the leak window?
+  Agent 0x88 'Phantom': Out of the building. Where is my business.
+  Agent 0x88 'Phantom': You want my morning, find something that logged it. I'm not making your job easy just because I'd like to be off your list.
+     (4 options)
+ > We'll talk again.
+  Agent 0x88 'Phantom': Go and get onto that repo. When the logs back me, tell the Director I was right to look.
+  [chat closes]
+   [PASS] phantom_alibi_known = false (expected false)
+   [PASS] said: "Where is my business"
+
+--- nightshade ---
+      [ink: nightshade_interviewed=true]
+      [mapping agent_0x99: set nightshade_seen=true]
+      [mapping agent_0x99: set access_nudge_sent=true]
+   [text agent_0x99 +3000ms] That's all three. Now go and see the Director about the server room. Take the cloner, and give it time: his card has proper keys on it.
+      [task: interview_nightshade]
+  Narrator: The Crypto Lab is quiet. Nightshade turns as you come in and smiles as if the last nine days never happened.
+  Narrator: His desk behind him is bare: no photographs, no mug.
+  Agent 0x47 'Nightshade': There you are. I wondered when they'd send you.
+  Agent 0x47 'Nightshade': Of everyone in this building, they picked the one person who knows my tells. A compliment, or very poor planning. Ask me anything.
+     (6 options)
+ > Where were you when the plan leaked?
+  Agent 0x47 'Nightshade': Here, most likely. I'm always here. Pull the terminal logs. I'd genuinely encourage it.
+  Agent 0x47 'Nightshade': The truth clears people, properly examined. I've always found that a comfort.
+  Narrator: He offers it without a flicker.
+     (5 options)
+ > We're done here.
+  Agent 0x47 'Nightshade': Come back when you can prove something. I'll be right here. I always am.
+  [chat closes]
+   [PASS] task interview_vector is completed (expected completed)
+   [PASS] task interview_phantom is completed (expected completed)
+   [PASS] task interview_nightshade is completed (expected completed)
+   [PASS] task name_the_mole is open (expected open)
+   [PASS] aim work_the_suspects is open (expected open)
+
+--- netherton ---
+  Director Magnus Netherton: Agent. What do you need?
+     (6 options)
+ > I'll need access.
+  Director Magnus Netherton: Then, access. I am not handing my card to anyone tonight. The mole reads this building's paperwork, and a hand-over is paperwork.
+  Narrator: He turns back to the window and parts two slats of the blind with a finger. His lanyard hangs at his chest, card outward, well inside a cloner's reach.
+  Director Magnus Netherton: Stand where you like, Agent. I shall be looking out of the window.
+     (6 options)
+ > Step up beside him and let the cloner read his card.
+  Narrator: You step up beside him, as if to look out through the slats. The cloner in your jacket comes within an inch of his lanyard.
+      [RFID minigame: card saved]
+      [mapping agent_0x99: set netherton_card_cloned=true]
+      [mapping agent_0x99: set netherton_card_taken=true]
+   [text agent_0x99 +2500ms] You cloned the Director. At the reader, emulate it from the cloner's Saved list.
+  Narrator: He does not look down.
+  Director Magnus Netherton: The server room is east of the operations floor. The archives take a passphrase, and the suite takes a code from my safe.
+  Director Magnus Netherton: The safe you can work out. Everyone here has the same bad habit, myself included.
+  Director Magnus Netherton: Whatever you are carrying, Agent, I did not see it.
+ > Understood, Director.
+  Director Magnus Netherton: Go.
+  [chat closes]
+   [PASS] netherton_card_cloned = true (expected true)
+
+--- phone ---
+  Line's open. Same as Portland, except this time the target has a SAFETYNET lanyard and a name I probably know.
+  So I'm going to be very professional tonight. Bear with me.
+     (5 options)
+ > What does the Director need from me?
+  A name he can stand behind, and you haven't got one yet. Doors before faces. The archives keep the door audits.
+     (5 options)
+ > Nothing right now.
+  I'm here. Always am.
+  [chat closes]
+   [PASS] said: "Doors before faces"
+      [reads: Post-It On The Coffee Machine]
+   {enter security_archives}
+      [reads: Badge Audit Printout -- Leak Window]
+      [task: read_the_archives]
+
+--- phone ---
+     (4 options)
+ > What does the Director need from me?
+  You've got the door. Now you need the clock: when was the plan opened? Somebody in this building wrote it down.
+     (4 options)
+ > Nothing right now.
+  I'm here. Always am.
+  [chat closes]
+   [PASS] said: "Now you need the clock"
+      [reads: Leak Timeline (someone's working notes)]
+
+--- phone ---
+     (4 options)
+ > What does the Director need from me?
+  Door and clock. He'll want someone on that audit to stand behind their own row. Ask the men who badge through the lab door.
+     (4 options)
+ > Nothing right now.
+  I'm here. Always am.
+  [chat closes]
+   [PASS] said: "stand behind their own row"
+
+--- nightshade ---
+  Agent 0x47 'Nightshade': Back so soon. You must be enjoying my company, or getting nowhere. I hope it's the first.
+     (6 options)
+ > The door log has you in this lab from 10:15 to 11:43 that morning.
+      [ink: nightshade_audit_confirmed=true]
+  Agent 0x47 'Nightshade': Yes, that row's right. I told you: I'm always here. You've proved I keep long hours, 0x00.
+      [set_global nightshade_audit_confirmed=true]
+  Agent 0x47 'Nightshade': A door says who walked in. It doesn't say what anyone did at the bench.
+     (6 options)
+ > We're done here.
+  Agent 0x47 'Nightshade': Come back when you can prove something. I'll be right here. I always am.
+  [chat closes]
+   [PASS] nightshade_audit_confirmed = true (expected true)
+
+--- phone ---
+     (4 options)
+ > What does the Director need from me?
+  Door, clock, a confirmed row. Take it to him. Read the door against the minute, not the man.
+     (4 options)
+ > Nothing right now.
+  I'm here. Always am.
+  [chat closes]
+   [PASS] said: "Take it to him"
+
+--- netherton ---
+  Director Magnus Netherton: Agent. Go on.
+     (6 options)
+ > I can name the leak, sir.
+  Director Magnus Netherton: Then don't give me a suspect. Give me a reading.
+  Director Magnus Netherton: When was the plan opened?
+     (5 options)
+ > 10:38 UTC.
+  Director Magnus Netherton: Which of the three was behind that door at 10:38?
+     (5 options)
+ > Nightshade.
+  Director Magnus Netherton: Vector badged through the same door that morning. Why not him?
+     (5 options)
+ > The door log has him out of the lab at 10:32.
+  Director Magnus Netherton: That audit is Phantom's query, off Phantom's printer. Why trust it?
+     (5 options)
+ > The people on it confirm their own rows.
+      [ink: suspect_theory="nightshade"]
+      [ink: mole_identified=true]
+      [ink: named_on_evidence=true]
+      [ink: named_before_box=true]
+   [text agent_0x99 +5000ms] Put the rest of the box through the relay. I want the whole chain in front of him.
+      [task: name_the_mole]
+      [set_global named_on_evidence=true]
+      [set_global mole_identified=true]
+  Director Magnus Netherton: He walked into his own lab twenty-three minutes before that plan opened, and out again eighteen minutes after it closed.
+  Director Magnus Netherton: A door is not a login, and a court will want both. Get root on the box and bring me its logs.
+  Narrator: He puts one hand flat on the desk, as if the floor has moved.
+  Director Magnus Netherton: I sealed a warning about him a year ago and told myself it was prudence.
+  Director Magnus Netherton: When the whole chain is through the relay, he goes down to the suite. The code is 5386.
+  Director Magnus Netherton: The code card is in my safe as well, with Dr Okafor's evaluation. Read hers before you face him.
+     (5 options)
+ > I'm ready. Let me work.
+  Director Magnus Netherton: Go. Finish the chain. I want it all in front of him.
+  [chat closes]
+   [PASS] named_on_evidence = true (expected true)
+   [PASS] mole_identified = true (expected true)
+   [PASS] named_before_box = true (expected true)
+   [PASS] audit_misread = false (expected false)
+   [PASS] task name_the_mole is completed (expected completed)
+   [PASS] aim work_the_suspects is completed (expected completed)
+   [PASS] said: "Get root on the box and bring me its logs"
+   [PASS] said: "The code is 5386"
+   [PASS] music on global_variable_changed:mole_identified: [threat] (expected threat)
+   {enter server_room}
+      [mapping agent_0x99: set recon_guide_offered=true]
+      [mapping agent_0x99: set server_room_entered=true]
+      [task: breach_server_room]
+   [text agent_0x99 +2500ms] You're on their internal network now. Map it before you touch anything. Want the recon and network mapping field guide? Ask me on the line.
+   [PASS] task breach_server_room is completed (expected completed)
+   {flag 1}
+      [task: recover_gitlist_exposure]
+      [mapping agent_0x99: set found_gitlist_vuln=true]
+      [mapping agent_0x99: set gitsecrets_guide_offered=true]
+   [text agent_0x99 +1500ms] On the box already? Our own code server, no password. That's a report nobody will enjoy. Now read the history, not just the files. Want the git secrets guide?
+   {flag 2}
+      [task: recover_stashed_credentials]
+      [mapping agent_0x99: set found_leaked_creds=true]
+   [text agent_0x99 +1500ms] Credentials, committed straight into the repo and never scrubbed. Log in properly with them and let's see whose account it really is.
+   {flag 3}
+      [task: recover_home_flag]
+      [mapping agent_0x99: set found_architect_comms=true]
+      [mapping agent_0x99: set privesc_guide_offered=true]
+   [text agent_0x99 +1500ms] You're in as them. The sent mail goes to architect@entropy.onion, from the sender stripped off the Portland intercept. The logs need root, via that sudo rule. Privesc guide?
+   [PASS] aim confront_the_mole still locked (needs work_the_suspects + correlate_the_evidence)
+   {flag 4}
+      [task: escalate_to_root]
+      [mapping agent_0x99: set found_access_logs=true]
+      [mapping agent_0x99: set database_theft_understood=true]
+   [text agent_0x99 +2000ms] Root. Logs agree with your door audit: Cryptography Lab terminal 03, forty-seven minutes. The root file says what that night was for: our threat database. It's Nightshade. You had him first.
+      [mapping closing_debrief: set all_flags_submitted=true]
+   [text agent_0x99 +6000ms] Whole chain's in, and it has a name. He's in the interrogation room, south of the Crypto Lab. Suite code's in the Director's safe if you need it. Finish it.
+      [task: get_suite_code]
+      [nightshade_confrontation shown]
+   [PASS] said: "You had him first"
+   [PASS] said: "Whole chain's in, and it has a name"
+   [PASS] aim confront_the_mole unlocked (needs work_the_suspects + correlate_the_evidence)
+   [PASS] task get_suite_code is completed (expected completed)
+   {enter interrogation_room}
+      [mapping nightshade_confrontation: set in_suite=true]
+   [opens nightshade_confrontation @start (person-chat)]
+      [nightshade_confrontation shown]
+   [PASS] said: "[opens nightshade_confrontation"
+
+--- confront ---
+      [task: confront_nightshade]
+  Narrator: The interrogation room records everything. Nightshade stands at the table with both hands flat on it. He doesn't sit.
+  Narrator: Behind him the evidence wall is lit. He follows your eyes to it and waits.
+     (2 options)
+ > (Read the wall first.)
+  Narrator: The case runs down the wall in order. The repository, opened with no password. Credentials left in its history. Mail to the Architect.
+  Narrator: Root, and forty-seven minutes on the Portland plan from Cryptography Lab terminal 03.
+  Narrator: Pinned beside it, the door audit. One row ringed in red: 0x47, in at 10:15, out at 11:43.
+  Narrator: Nightshade lets you finish. He has read it already.
+ > (Turn back to him.)
+  Agent 0x47 'Nightshade': You found it. Forty-seven minutes on the Portland plan, two days before you deployed. My account, my terminal, my mail.
+  Agent 0x47 'Nightshade': The name they stripped off that intercept in the cable vault was mine. I could have scrubbed it years ago.
+  Agent 0x47 'Nightshade': You're wondering why I didn't. Some part of me wanted to be caught by someone who'd understand. I misjudged that, I think.
+  Agent 0x47 'Nightshade': You look at me like a stranger. Fair enough.
+  Agent 0x47 'Nightshade': The door log. I walked past that reader every morning for fifteen years and never once thought of it as a witness.
+ > It's over, Nightshade. Tell me why.
+  Agent 0x47 'Nightshade': Order is a candle in a hurricane. We stand round it with our hands cupped, night after night, and call it a career.
+  Agent 0x47 'Nightshade': ENTROPY only told me what I'd already worked out alone. The storm always wins.
+  Agent 0x47 'Nightshade': So I stopped shielding the flame. I helped the wind. God help me, it felt like honesty.
+     (6 options)
+ > The four attacks were cover for something else. Weren't they?
+  Agent 0x47 'Nightshade': Yes. The attacks were the noise. While you and Netherton chose which fire to fight, they walked the threat database out through a door I left open.
+  Agent 0x47 'Nightshade': Every vulnerability SAFETYNET has ever catalogued. The dead were... the cost of your attention being elsewhere.
+     (6 options)
+ > Then where did it go? Where's The Architect?
+  Narrator: He studies you for a long moment.
+  Agent 0x47 'Nightshade': You want the workshop. Tomb Gamma. I'll give it to you freely. I'd like, just once, to be the one who tips the board over.
+      [set_global tomb_gamma_location_known=true]
+  Agent 0x47 'Nightshade': Forty-seven point two-three-eight-two north. One-twelve point five-one-five-six west.
+  Agent 0x47 'Nightshade': An old Cold War bunker in Montana. The database went there, and so did the man who put me here fifteen years ago.
+     (5 options)
+ > Enough. It's time to decide what happens to you.
+  Narrator: The disposition screen behind you takes one entry per detainee, and the Director countersigns whatever goes in. Nightshade is watching you.
+  Agent 0x47 'Nightshade': So. What does SAFETYNET do with a man who thinks he was right?
+     (2 options)
+ > No deals. The police get the file. You answer for those two names in court.
+      [ink: nightshade_arrested=true]
+      [ink: fate_decided=true]
+      [task: decide_the_fate]
+  Agent 0x47 'Nightshade': Clean. Predictable. I'd expect nothing else from you, and I mean that as a compliment.
+  Agent 0x47 'Nightshade': Enter it. I won't fight it.
+  Agent 0x47 'Nightshade': Take the coordinates to Netherton. Tomb Gamma won't wait for you to grieve me.
+  Narrator: You type the entry. The Director's countersignature appears before you've looked away.
+  Agent 0x47 'Nightshade': And 0x00. Let it hurt afterwards, not during.
+  Narrator: You hold his eye a moment longer than you mean to. Then you go.
+  [chat closes]
+      [mapping closing_debrief: set start_debrief_cutscene=true]
+   [opens closing_debrief @start (person-chat)]
+   [PASS] nightshade_arrested = true (expected true)
+   [PASS] fate_decided = true (expected true)
+   [PASS] tomb_gamma_location_known = true (expected true)
+   [PASS] said: "The door log"
+   [PASS] said: "Let it hurt afterwards, not during"
+   [PASS] said: "[opens closing_debrief"
+   [PASS] not said: "tidied"
+   [PASS] not said: "Same classroom"
+
+--- debrief ---
+      [set_global debrief_played=true]
+  Narrator: Netherton finds you in the corridor. He looks older than he did at the briefing a few hours ago. Your phone buzzes once: HaX.
+  Agent HaX: He said it to you? Afterwards, not during. I was taught that line, and I say it to every agent I run.
+  Agent HaX: Same classroom, 0x00. Don't ask me whose yet.
+  Director Magnus Netherton: It's done, then. Agent 0x47. Nightshade.
+  Director Magnus Netherton: A year ago Dr Okafor put a warning about him on my desk. Ideological drift, she called it.
+  Director Magnus Netherton: I read it, and I sealed it. He was the best planner I had, and I did not want it to be true.
+  Director Magnus Netherton: Two of ours are dead in the space between what I knew and what I did.
+  Director Magnus Netherton: Say it, Agent. Whatever you think of me tonight. I would rather hear it than watch you swallow it.
+     (2 options)
+ > You had a warning and no proof, in a war. He's the crime, not you.
+      [ink: debrief_stance="defended"]
+      [set_global debrief_stance=defended]
+  Director Magnus Netherton: Kinder than I would be. I shall carry it regardless. Thank you.
+  Director Magnus Netherton: You named him to me before the box did, on something I could put in front of a lawyer. You read the clock, not the face.
+  Director Magnus Netherton: That, more than any instinct, is the reason you're still useful to me after they burned you.
+ > Our own code server let me in without a password, sir.
+  Director Magnus Netherton: And kept credentials in its history for anyone patient enough to read it, and a sudo rule that handed you the rest. That will be in my report as well.
+  Director Magnus Netherton: And no deal. He goes to the police with every page of the case file, and a court hears what he did.
+  Director Magnus Netherton: We have no claim on him after that, and we will not pretend to one.
+  Director Magnus Netherton: Beyond what he gave freely tonight, it buys us nothing, and I do not care. Some lines you hold because they are the line.
+     (5 options)
+ > He used HaX's line. "Let it hurt afterwards, not during."
+  Narrator: He is quiet for a moment.
+  Director Magnus Netherton: Then whoever taught her taught him. There are not many people left who could have done both, and I do not like any of the names.
+  Director Magnus Netherton: We will not say one aloud until we can prove it.
+     (4 options)
+ > Then what now.
+  Director Magnus Netherton: Now we use the one thing tonight bought us. Tomb Gamma: a coordinate in Montana, from Nightshade's own mouth.
+  Director Magnus Netherton: It is the first hard address we have ever had for The Architect's workshop, and it is where the database went.
+  Director Magnus Netherton: That is where this ends, or where we do.
+  Director Magnus Netherton: Take your seventy-two hours. Then we go to Montana and we get it back.
+     (3 options)
+ > Nothing more, sir.
+  Narrator: Netherton stops at the door.
+  Director Magnus Netherton: They spent fifteen years turning one of ours into a weapon and pointing it at the rest of us. Tonight you took it off them.
+  Director Magnus Netherton: Go home. Sleep if the building will let you.
+      [set_global mission_complete=true]
+      [task: take_the_debrief]
+  [end]
+   [PASS] said: "Your phone buzzes once"
+   [PASS] said: "Same classroom, 0x00"
+   [PASS] said: "Netherton finds you"
+   [PASS] said: "before the box did"
+   [PASS] said: "history for anyone patient"
+   [PASS] said: "a sudo rule that handed you the rest"
+   [PASS] said: "Beyond what he gave freely"
+   [PASS] said: "whoever taught her taught him"
+   [PASS] said: "Tonight you took it off them"
+   [PASS] debrief_stance = "defended" (expected "defended")
+   [PASS] mission_complete = true (expected true)
+
+--- credits ---
+   MISSION COMPLETE
+   THE MOLE
+   THE LEAK: Agent 0x47 'Nightshade', recruited by ENTROPY in training, then left to wait fifteen years
+   ── THE FATE ──
+   NIGHTSHADE: Handed to the police with the full case file. No deal.
+   TOMB GAMMA: Coordinates given up in the interrogation room -- Montana
+   ── THE SUSPECTS ──
+   VECTOR: Cleared on the evidence. His post-quantum work goes on.
+   PHANTOM: Cleared. Innocent, and running his own hunt the whole time.
+   THE CASE: Named from the door audit, before the root logs
+   ── RECOVERED ──
+   THE SERVER ROOM: The Director's card, cloned off his lanyard while he watched the window
+   GLOBAL THREAT DATABASE: Confirmed stolen during the four-site night
+   ── THE BOX ──
+   THE REPOSITORY BROWSER: Ours, never patched, open without a password
+   THE HISTORY: Credentials committed and never scrubbed
+   THE ACCOUNT: Logged in as its owner. The mail to the Architect was in it.
+   ROOT: Through a sudo rule. The logs put the plan on Cryptography Lab terminal 03 for forty-seven minutes.
+   ── ON THE RECORD ──
+   AGENT 0x00 TO THE DIRECTOR: He's the crime, not you
+   THE ARCHITECT: At large, with every weakness SAFETYNET ever catalogued.
+   ENTROPY: Still operational.
+   [PASS] said: "THE BOX"
+   [PASS] said: "Named from the door audit, before the root logs"
+   [PASS] said: "He's the crime, not you"
+   [PASS] not said: "Gone from his locker"
+   [PASS] not said: "misread"
+   [PASS] not said: "Tipped off"
+
+## Phase 4 dialogue C1 (D8-5, D8-8, D8-9, D8-18): every conversation, the opening cutscene included, stays at 9 lines or under without a choice.
+   [PASS] longest run 9 (briefing) <= 9
+
+[stats] spoken/narrated lines 139, choices 41, longest run without a choice 9 (briefing); runs>=6: briefing:9, netherton:9, netherton:6, confront:6, debrief:8
+[result] all expectations met

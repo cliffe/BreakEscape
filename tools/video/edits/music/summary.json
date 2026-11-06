@@ -1,0 +1,225 @@
+{
+ "generated_by": "analyse_music.py (librosa 1.0.0)",
+ "tracks": {
+  "public/break_escape/assets/music/SpyAction/Cold Bond Circuit.mp3": {
+   "file": "cold_bond_circuit.json",
+   "duration": 216.88,
+   "bpm": 85.98,
+   "beat_offset": 0.115,
+   "first_downbeat": 0.813,
+   "strongest_hits": [
+    {
+     "t": 59.431,
+     "strength": 1.0
+    },
+    {
+     "t": 53.847,
+     "strength": 0.9819999933242798
+    },
+    {
+     "t": 53.15,
+     "strength": 0.9580000042915344
+    },
+    {
+     "t": 58.038,
+     "strength": 0.9539999961853027
+    },
+    {
+     "t": 55.24,
+     "strength": 0.9190000295639038
+    }
+   ],
+   "best_window": {
+    "start": 53.847,
+    "end": 84.55,
+    "bars": 11,
+    "length": 30.704,
+    "start_hit": 0.98,
+    "build": 1.1,
+    "end_hit": 0.69,
+    "floor": 0.77,
+    "score": 2.415
+   }
+  },
+  "public/break_escape/assets/music/Noir/Midnight Cipher Chase.mp3": {
+   "file": "midnight_cipher_chase.json",
+   "duration": 194.96,
+   "bpm": 119.99,
+   "beat_offset": 0.01,
+   "first_downbeat": 1.01,
+   "strongest_hits": [
+    {
+     "t": 23.023,
+     "strength": 1.0
+    },
+    {
+     "t": 29.013,
+     "strength": 0.972000002861023
+    },
+    {
+     "t": 163.016,
+     "strength": 0.9459999799728394
+    },
+    {
+     "t": 167.021,
+     "strength": 0.8769999742507935
+    },
+    {
+     "t": 31.022,
+     "strength": 0.8519999980926514
+    }
+   ],
+   "best_window": {
+    "start": 107.023,
+    "end": 137.027,
+    "bars": 15,
+    "length": 30.004,
+    "start_hit": 0.78,
+    "build": 1.71,
+    "end_hit": 0.49,
+    "floor": 0.14,
+    "score": 2.164
+   }
+  },
+  "public/break_escape/assets/music/SpyAction/Midnight Trigger.mp3": {
+   "file": "midnight_trigger.json",
+   "duration": 159.92,
+   "bpm": 114.69,
+   "beat_offset": 0.4,
+   "first_downbeat": 0.923,
+   "strongest_hits": [
+    {
+     "t": 5.074,
+     "strength": 1.0
+    },
+    {
+     "t": 92.984,
+     "strength": 0.972000002861023
+    },
+    {
+     "t": 2.635,
+     "strength": 0.9679999947547913
+    },
+    {
+     "t": 0.128,
+     "strength": 0.949999988079071
+    },
+    {
+     "t": 157.872,
+     "strength": 0.8379999995231628
+    }
+   ],
+   "best_window": {
+    "start": 92.994,
+    "end": 122.29,
+    "bars": 14,
+    "length": 29.295,
+    "start_hit": 0.97,
+    "build": 1.19,
+    "end_hit": 0.29,
+    "floor": 0.61,
+    "score": 2.046
+   }
+  },
+  "public/break_escape/assets/music/CutScene/Shadow Code 1.mp3": {
+   "file": "shadow_code_1.json",
+   "duration": 148.64,
+   "bpm": 118.65,
+   "beat_offset": 0.04,
+   "first_downbeat": 1.051,
+   "strongest_hits": [
+    {
+     "t": 114.312,
+     "strength": 1.0
+    },
+    {
+     "t": 116.332,
+     "strength": 0.9559999704360962
+    },
+    {
+     "t": 128.476,
+     "strength": 0.8389999866485596
+    },
+    {
+     "t": 130.496,
+     "strength": 0.8379999995231628
+    },
+    {
+     "t": 120.384,
+     "strength": 0.8299999833106995
+    }
+   ],
+   "best_window": {
+    "start": 114.322,
+    "end": 144.662,
+    "bars": 15,
+    "length": 30.34,
+    "start_hit": 1.0,
+    "build": 1.0,
+    "end_hit": 0.31,
+    "floor": 0.63,
+    "score": 2.01
+   }
+  },
+  "public/break_escape/assets/music/SpyAgro/Shadow Protocol (Remastered).mp3": {
+   "file": "shadow_protocol_remastered.json",
+   "duration": 207.68,
+   "bpm": 140.12,
+   "beat_offset": 0.105,
+   "first_downbeat": 0.961,
+   "strongest_hits": [
+    {
+     "t": 38.638,
+     "strength": 1.0
+    },
+    {
+     "t": 45.488,
+     "strength": 0.8420000076293945
+    },
+    {
+     "t": 24.718,
+     "strength": 0.7870000004768372
+    },
+    {
+     "t": 17.856,
+     "strength": 0.7450000047683716
+    },
+    {
+     "t": 87.876,
+     "strength": 0.7059999704360962
+    }
+   ],
+   "best_window": {
+    "start": 14.663,
+    "end": 45.493,
+    "bars": 18,
+    "length": 30.83,
+    "start_hit": 0.35,
+    "build": 1.67,
+    "end_hit": 0.84,
+    "floor": 0.25,
+    "score": 1.889
+   }
+  }
+ },
+ "recommendation": {
+  "track": "Noir/Midnight Cipher Chase.mp3",
+  "window": [
+   107.023,
+   137.027
+  ],
+  "why": [
+   "Exact 120.00 BPM, beat offset 0.01 s: a clean grid, 30 s = 15 bars = 60 beats, so every shot duration snaps to 0.5 s.",
+   "Strong entry: downbeat hit at 107.0 s; build 1.71x (second half of the window is much louder than the first).",
+   "Built-in structure that matches the shot list: a sparse breakdown 113-121 s (window 6-14 s) carries the HaX briefing and 'Your Mission' card with the music already low, and the full groove drops in at 121 s (window 14 s) as the montage starts.",
+   "Clean ending: energy falls after 137.0 s (post-window ratio 0.68); a 0.9 s fade-out on the last bar finishes it.",
+   "Caveat: the quiet bars have rms 0.04 vs 0.2 elsewhere, so check by ear that the breakdown is not too empty under the briefing line."
+  ],
+  "fallbacks": [
+   "SpyAction/Cold Bond Circuit.mp3 53.847-84.55 (86 BPM, 11 bars, most even energy, strong start and end hit; slower cuts at 0.35 s eighth-notes)",
+   "SpyAction/Midnight Trigger.mp3 92.994-122.29 (114.7 BPM, 14 bars = 29.3 s, strong start, weak end hit)",
+   "CutScene/Shadow Code 1.mp3 114.322-144.662 (118.65 BPM, 15 bars, start hit 1.0, flat build)"
+  ],
+  "not_recommended": "SpyAgro/Shadow Protocol (Remastered).mp3: 140 BPM is too frantic for cards and a dialogue beat; best windows start weak or end on a drop"
+ }
+}

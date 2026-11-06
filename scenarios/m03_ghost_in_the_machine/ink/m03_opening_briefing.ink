@@ -1,0 +1,302 @@
+EXTERNAL player_name()
+
+// Pass 5 (P4-23): the stance of record is mission_approach's pick; earlier briefing
+// writes were always overwritten, so they're gone. A4 fix pass: last_advice no longer
+// overwrites it either, because the debrief names the pick back to the player.
+// player_approach and knows_m2_connection are scenario globals, so assigning them here
+// writes through to game state. The debrief reads player_approach; knows_m2_connection
+// is read only below. No EXTERNAL getters: the engine binds only six, and an unbound
+// one throws at runtime.
+VAR player_approach = ""
+VAR knows_m2_connection = false
+VAR handler_trust = 50 // Synced scenario global: HaX's trust in the player, carried into the debrief; also raised by m03_closing_debrief
+VAR asked_about_victoria = false
+VAR asked_clone = false
+VAR asked_network = false
+VAR asked_cover = false
+// D2-10: the short route. Local; replaces the dead player_approach "direct" write.
+VAR skipped_background = false
+// Imported (read-only) from m02 (docs/agents/CARRY_OVER_PLAN.md): false when the
+// player never finished m02. Never assign these here. Read in the same order as
+// m02's own debrief (m02_closing_debrief.ink patient_outcomes).
+VAR m02_paid_ransom = false              // Imported (read-only) from m02 paid_ransom
+VAR m02_ghost_keys_used = false          // Imported (read-only) from m02 ghost_keys_used
+VAR m02_ward_recovering = false          // Imported (read-only) from m02 ward_recovering: a fast restore (here: the combined one)
+VAR m02_bed4_manually_stabilised = false // Imported (read-only) from m02 bed4_manually_stabilised: the player bagged Mr Pryce by hand
+VAR m02_completed = false                // Imported (read-only): a finished m02 run exists (here: the slow offline restore)
+
+// Root divert. When a conversation has ended (-> DONE), the engine restores only
+// its variables on the next talk and continues from the root (npc-conversation-
+// state.js restoreNPCState). Without this line the root is empty and the player
+// sees "(End of conversation)" instead of the start knot's re-entry routing.
+-> start
+
+=== start ===
+Narrator: A SAFETYNET briefing room. Netherton by the screen, HaX with the file open, and a man in a lab coat half-buried in a laptop he built himself.
+
+Director Magnus Netherton: Agent 0x00. This is Operation Cyber Arsenal.
+Director Magnus Netherton: Zero Day Syndicate used to sell exploits to whoever paid. Now they choose the targets first.
+Director Magnus Netherton: That is a line I do not let anyone cross. You are going in.
+Director Magnus Netherton: HaX runs you, Nightshade the technical side. Listen to both.
+
+Agent 0x47 'Nightshade': Morning. Whatever they've built, I'll take it apart from here. You just get me close to it.
+
+Director Magnus Netherton: HaX. The floor's yours.
+
+Agent HaX: Right. Zero Day Syndicate. You heard of them?
+* [Remind me what their deal is.]
+    -> briefing_main
+* [The exploit marketplace. They find zero-days and sell them on.]
+    ~ handler_trust = handler_trust + 10
+    # influence_increased
+    Agent HaX: That's them. And they're escalating.
+    -> briefing_main
+* [Skip the background. What's the mission?]
+    ~ skipped_background = true
+    Agent HaX: Right to business.
+    -> briefing_main
+
+=== briefing_main ===
+#speaker:agent_0x99
+// D2-10 / D4-18: the short route carries the reason for the mission and the cover
+// name in two lines, and skips the background it asked to skip.
+{ skipped_background:
+    ~ knows_m2_connection = true
+    #set_global:knows_m2_connection:true
+    Agent HaX: Short version: the exploit that took down St. Catherine's came from Zero Day, behind a pentest front called WhiteHat. We want their books.
+    // D5-20: sets up Phase 2 on the short route.
+    Agent HaX: The client roster, the logs, and whatever they're planning next. There's a Phase 2.
+    -> objectives
+}
+Agent HaX: Zero Day runs behind a real pentest firm -- WhiteHat Security Services. Legitimate audits by day. An exploit marketplace in the back rooms.
+Agent HaX: They don't run the attacks. They arm the cells that do.
+* [Which cells buy from them?]
+    Agent HaX: Ransomware Incorporated. Critical Mass. Others we haven't confirmed. Zero Day is their common supplier.
+    ~ handler_trust = handler_trust + 5
+    # influence_increased
+    -> st_catherines_connection
+* [What are they dealing in?]
+    Agent HaX: Healthcare systems. Grid control. The things that hurt people when they fail.
+    -> st_catherines_connection
+* [This sounds more serious than the usual cell.]
+    Agent HaX: It is. They're the reason the others punch above their weight.
+    -> st_catherines_connection
+
+=== st_catherines_connection ===
+#speaker:agent_0x99
+Agent HaX: You worked St. Catherine's last month. The hospital that went dark.
+// Carry-over (2026-10-17): a player who finished m02 hears their recovery call
+// and what it cost, as m02's debrief told it. Never played: no extra line.
+{
+- m02_paid_ransom:
+    Agent HaX: You paid the ransom and had the wards back inside the hour. Two died. Ghost's cell is spending the money now.
+- m02_ghost_keys_used:
+    Agent HaX: You took Ghost's keys and had the wards back inside the hour. One died. Ghost can still walk back into that network.
+- m02_ward_recovering:
+    Agent HaX: You ran the combined restore and paid Ghost nothing. Two died, both critical before it started. The wards held.
+- m02_bed4_manually_stabilised:
+    Agent HaX: You restored from the offline keys and bagged Mr Pryce by hand. Five died in those eleven hours. He wasn't one of them.
+- m02_completed:
+    Agent HaX: You restored from the offline keys. Eleven and a half hours, and six people died in that window.
+}
+Agent HaX: The ransomware ran on a ProFTPD backdoor. That exploit didn't come from the crew who deployed it.
+* [Did Zero Day sell Ghost the way in?]
+    ~ knows_m2_connection = true
+    #set_global:knows_m2_connection:true
+    ~ handler_trust = handler_trust + 5
+    # influence_increased
+    Agent HaX: They did. An invoice turned up at St. Catherine's with Zero Day's name on the sale. Now we want their side of it.
+    -> mission_stakes
+* [The exploit at St. Catherine's traces back here?]
+    ~ knows_m2_connection = true
+    #set_global:knows_m2_connection:true
+    Agent HaX: Ghost pulled the trigger. Someone handed them the gun. That's what we go and find.
+    -> mission_stakes
+* [Walk me through St. Catherine's again.]
+    // Carry-over browser check: a player who finished m02 has just heard their
+    // own count, so the recap points back at their call instead of repeating it.
+    {m02_completed:
+        Agent HaX: A ward of patients on life support, encrypted in the night. The recovery call was yours, and you know what it cost.
+    - else:
+        Agent HaX: A ward of patients on life support, encrypted in the night. How many died came down to a recovery call.
+    }
+    Agent HaX: That's the buyer, Ghost. Zero Day sold the exploit and invoiced for it.
+    ~ knows_m2_connection = true
+    #set_global:knows_m2_connection:true
+    -> mission_stakes
+
+=== mission_stakes ===
+#speaker:agent_0x99
+Agent HaX: They sold it as a product. Twenty-five thousand on the invoice, healthcare premium already built into the price.
+// A4 fix pass: the old "murder with an invoice attached" read as a slogan. The
+// global keeps its id (called_it_murder); the debrief quotes the new wording.
+* [So they knew it was a hospital, and put a price on that.]
+    ~ handler_trust = handler_trust + 10
+    # influence_increased
+    #set_global:called_it_murder:true
+    Agent HaX: They knew, and they billed for knowing. That's the case we're building. And there's a Phase 2 behind it.
+    -> objectives
+* [Then we take the supplier off the board.]
+    ~ handler_trust = handler_trust + 5
+    # influence_increased
+    Agent HaX: That's the mission.
+    -> objectives
+* [What else are they planning?]
+    Agent HaX: There's a Phase 2. That's the other thing you're going in to find.
+    -> objectives
+
+=== objectives ===
+#speaker:agent_0x99
+Agent HaX: {skipped_background:Three things.|Three things, then.} One: get inside and clone Victoria Sterling's executive keycard. She's the front's CEO, and she runs this end of the cell for 0day.
+Agent HaX: Two: after hours, get onto their training network and pull the flags. Recon, the services, and the legacy distcc box where their records sit.
+Agent HaX: Three: the physical paper trail. Client roster, the catalogue, anything naming St. Catherine's or Phase 2.
+Agent HaX: Ask me whatever you need before you go in.
+-> briefing_hub
+
+=== briefing_hub ===
++ {not asked_about_victoria} [Who is Victoria Sterling?]
+    ~ asked_about_victoria = true
+    -> topic_victoria
++ {not asked_clone} [How do I clone her keycard?]
+    ~ asked_clone = true
+    -> topic_clone
++ {not asked_network} [What's the training network?]
+    ~ asked_network = true
+    -> topic_network
++ {not asked_cover} [What's my cover?]
+    ~ asked_cover = true
+    -> topic_cover
++ [That's everything. Let's talk approach.]
+    -> mission_approach
+
+=== topic_victoria ===
+#speaker:agent_0x99
+Agent HaX: Victoria Sterling. Founded WhiteHat in 2010, former conference speaker, respected researcher on the record.
+// Pass 5 blind (B-11): the player has now heard the name.
+#set_global:sable_named:true
+Agent HaX: On our side of the record she runs the front and answers to 0day and the Architect. Her sign-off name is Sable.
+* [So she runs the whole cell?]
+    Agent HaX: No. She runs the shop floor. 0day leads the cell, the Architect coordinates the network.
+    Agent HaX: Her name's on the invoices. That's why she's the one you can reach.
+    ~ handler_trust = handler_trust + 5
+    # influence_increased
+    -> briefing_hub
+* [Any chance she flips?]
+    ~ handler_trust = handler_trust + 10
+    # influence_increased
+    Agent HaX: Maybe. She's a believer, not a mercenary, so it won't be you moving her. But a source inside beats a cell we can't see into.
+    Agent HaX: That's a call for when you're stood in front of her. Not now.
+    -> briefing_hub
++ [Got it.]
+    -> briefing_hub
+
+=== topic_clone ===
+#speaker:agent_0x99
+// Pass 5 (P2-16): asking about cloning opens the receptionist's clone choice.
+#set_global:cloner_explained:true
+Agent HaX: Two stages. Reception first. The receptionist's badge opens the conference area. Weak defaults, so it cracks in seconds. Talk to her and lean in by her lanyard.
+Agent HaX: Then Sterling's executive card in the meeting. Custom keys, so it's Darkside -- about half a minute.
+Agent HaX: Your moment's at the whiteboard. Stand close and keep her talking while it reads.
+Agent 0x47 'Nightshade': Capture and replay. Her card broadcasts, we copy it, we wear it. Same trick they use on us.
+Agent 0x47 'Nightshade': One day it'll be our badge somebody clones. Remember how easy it was.
+Agent 0x47 'Nightshade': Last time, a card meant getting it off somebody. This time you just stand next to it.
+Agent HaX: Picks for anything keyed, the cloner for anything carded. No PIN cracker this time. Nightshade still has ours in pieces from St. Catherine's.
+* [What if she notices?]
+    Agent HaX: Play the curious recruit. She loves talking about the work. The cloner is passive until you trigger it.
+    -> briefing_hub
++ [Understood.]
+    -> briefing_hub
+
+=== topic_network ===
+#speaker:agent_0x99
+Agent HaX: In the server room you'll find their training lab: an isolated VM network, reachable only from a terminal in that room. It's where they rehearse exploits before they sell them.
+Agent HaX: Map it, work the services, and get to the legacy distcc box. That's where the operational logs live.
+* [What am I looking for exactly?]
+    Agent HaX: Recon, FTP, the web host's price list, then distcc for the logs. The distcc one is the case.
+    Agent HaX: Four flags. Submit each at the drop-site terminal in the server room -- it sends them to me.
+    -> briefing_hub
++ [Standard workflow. Got it.]
+    ~ handler_trust = handler_trust + 5
+    # influence_increased
+    Agent HaX: Scan, enumerate, exploit. You know the shape of it.
+    -> briefing_hub
+
+=== topic_cover ===
+#speaker:agent_0x99
+Agent HaX: You're a freelance pentester Sterling's looking at as a recruit. Small firms, drawn to the grey-market side. That's the profile that gets you a meeting.
+Agent HaX: Entry is a conference-room meeting this afternoon. After that the building empties and you come back for the real work.
+* [When do I hit the server room?]
+    Agent HaX: After dark. Most staff gone, a guard on patrol in the executive wing. That's your window.
+    -> briefing_hub
++ [I understand the setup.]
+    Agent HaX: Good. Be natural with her -- she reads people for a living.
+    -> briefing_hub
+
+=== mission_approach ===
+#speaker:agent_0x99
+Agent HaX: Before you go in -- how do you want to play it?
+Agent HaX: Your call.
++ [I'll be thorough. Document everything.]
+    ~ player_approach = "cautious"
+    #set_global:player_approach:cautious
+    // A4 fix pass: a reply that answers this option, not a generic one.
+    Agent HaX: Good. Zero Day invoices everything, so somewhere in that building St. Catherine's is on paper. Bring me the paper.
+    Agent HaX: Thorough takes time, though, and there's a guard on nights. Don't let him find you reading.
+    -> final_instructions
++ [I move fast, grab the objectives, get out.]
+    ~ player_approach = "aggressive"
+    #set_global:player_approach:aggressive
+    Agent HaX: Less time in the building, less time for it to go wrong. Just don't sprint past the distcc logs. They're the case.
+    -> final_instructions
++ [I'll stay flexible. Read the situation.]
+    ~ player_approach = "diplomatic"
+    #set_global:player_approach:diplomatic
+    ~ handler_trust = handler_trust + 10
+    # influence_increased
+    Agent HaX: Then watch Sterling, not the furniture. Whatever she wants most is your way in. Call if you need me.
+    -> final_instructions
+
+=== final_instructions ===
+#speaker:agent_0x99
+{ knows_m2_connection:
+    Agent HaX: Listen. Every life St. Catherine's lost, it lost to something Zero Day sold.
+}
+* [I'll get the evidence. Zero Day goes down.]
+    ~ handler_trust = handler_trust + 10
+    # influence_increased
+    Agent HaX: Good. Keep your head down in there.
+    -> deployment
+* [Anything else before I go in?]
+    -> last_advice
+* [I'm ready]
+    -> deployment
+
+=== last_advice ===
+#speaker:agent_0x99
+Agent HaX: Sterling will test you. Ethics questions dressed up as philosophy. Stay the curious recruit; don't argue her down.
+Agent HaX: And there's a consultant, Danny Foster. He did the hospital recon. Complicit, or lied to -- I can't tell you which. If you find him, your call.
+* [I'll decide when I've got the facts.]
+    ~ handler_trust = handler_trust + 5
+    # influence_increased
+    Agent HaX: Then get the facts. He'll still be there.
+    -> deployment
+// A4 fix pass: no longer overwrites player_approach. The debrief now names the
+// approach the player picked in mission_approach, and this is a verdict on Danny.
+* [If he did the recon, he's part of it.]
+    Agent HaX: Maybe. Get the proof before you make that call.
+    -> deployment
+* [Understood]
+    -> deployment
+
+=== deployment ===
+#speaker:agent_0x99
+Agent HaX: WhiteHat Security, Callaghan Square, Cardiff. I'm on comms the whole time. The drop-site terminal in the server room takes your flags and sends them straight to me.
+{ handler_trust >= 70:
+    Agent HaX: And one more thing. Come back in one piece.
+}
+{ (handler_trust >= 50) && (handler_trust < 70):
+    Agent HaX: Good luck.
+}
+Agent HaX: Meet Sterling, clone her card, then come back after dark. Go.
+#start_gameplay
+-> DONE

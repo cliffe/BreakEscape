@@ -1,0 +1,7 @@
+{
+  "display_name": "VM-Free Mission",
+  "description": "A minimal test mission that does not require VMs.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "requires_vms": false
+}

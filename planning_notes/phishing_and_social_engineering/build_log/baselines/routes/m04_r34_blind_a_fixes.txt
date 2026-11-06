@@ -1,0 +1,63 @@
+
+## R34 (pass 5, user blind run A fixes). m4: HaX's Relay-KO call lands on the hub, so the field guides and the exit are offered at once (it used to end on a lone 'On it.'). m1: Vance after the shutdown no longer says 'Call the moment you're moving'. Worst line 2: Voltage weighs the keystroke before the arrest.
+   {set {"briefing_played":true,"guard_admitted":true,"vance_met":true,"vance_spoken":true,"vance_provided_keycard":true,"vance_card_cloned":true,"vance_is_ally":true,"anomaly_detected":true,"rfid_guide_offered":true}}
+   {ko operative_relay}
+
+--- phone @on_relay_ko_card ---
+  Relay's down. I've pulled her Level 2 number off the reader logs and pushed you a copy. That's the workshop.
+     (5 options)
+ > Send me a field guide.
+  Which one?
+     (2 options)
+ > The RFID cloning guide.
+  Sent. Old prox cards just shout their number. Read it, save it, play it back at the reader.
+     [0] You wanted to talk about the dial reading.
+     [1] Can we get the night crew out of Hall 2?
+     [2] Where do I stand?
+     [3] Nothing right now.
+  [stopped: no pick]
+   [PASS] said: "pushed you a copy. That's the workshop."
+   [PASS] said: "Which one?"
+   [PASS] said: "Sent. Old prox cards"
+   [PASS] not said: "On it."
+   [PASS] rfid_guide_hint_given = true (expected true)
+   {set {"server_room_reached":true,"flag_network_scan_submitted":true,"flag_ftp_intel_submitted":true,"flag_distcc_exploit_submitted":true,"flag_privesc_submitted":true,"all_flags_in":true,"attack_mechanism_known":true,"plant_room_entered":true,"operative_static_defeated":true}}
+      [engine: attack mapped -> clock_started]
+      [clock: h2_advisory started at 0 min]
+      [clock: racks_vent started at 0 min]
+
+--- voltage @confrontation_choice ---
+  Narrator: The laptop's open on the bench, the trigger armed on screen. Behind him, on the wall, is the red mushroom head of the hardwired shutdown. You cannot reach both.
+  Voltage: So. The button, or me.
+  Voltage: Static's down. So it's you, me, and one keystroke.
+     (4 options)
+ > Step away from the bench. You're coming with me.
+  Narrator: He looks at your hands, then at the door behind you.
+  Voltage: You're between me and the dock. I could still make that keystroke before you reached me.
+  Voltage: So give me a reason not to.
+     (2 options)
+ > Hands where I can see them. A court can check your sums.
+      [task: confront_voltage]
+      [set_global blackout_named=true]
+  Voltage: ...A court. Fine. Let them read the casualty model. I signed it.
+  Narrator: He steps back from the bench with his hands open, and lets you take the laptop off it.
+      [task: confront_voltage]
+  [chat closes]
+   [PASS] said: "You're between me and the dock. I could still make that keystroke before you reached me."
+   [PASS] said: "So give me a reason not to."
+   [PASS] said: "Let them read the casualty model. I signed it."
+   [PASS] not said: "Nobody left to stop you"
+   [PASS] voltage_captured = true (expected true)
+   {set {"esd_authorized":true,"attack_prevented":true}}
+
+--- vance ---
+  Robert Vance: What do you need?
+     (2 options)
+ > I'm sweeping the site before I call it in. Stay on the desk.
+  Robert Vance: Aye. I'll sit here and watch that needle come down.
+  [chat closes]
+   [PASS] said: "I'll sit here and watch that needle come down."
+   [PASS] not said: "Call the moment you're moving"
+
+[stats] spoken/narrated lines 13, choices 5, longest run without a choice 3 (voltage); runs>=6: 
+[result] all expectations met

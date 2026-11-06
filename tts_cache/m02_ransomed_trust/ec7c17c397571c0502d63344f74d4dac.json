@@ -1,0 +1,13 @@
+{
+  "key": "ec7c17c397571c0502d63344f74d4dac",
+  "npc": "receptionist",
+  "text": "So Estates dumped every mechanical override on my hook and made it my problem.",
+  "voice": "Despina",
+  "style": "Night reception coordinator, eleven years on this desk. South London / Multicultural London English accent throughout -- warm, quick, dry. Unflappable on the surface, running on fumes underneath.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "cab1a3090b3557ae01cd3edaaa64366b",
+  "npc": "eleanor_vance",
+  "text": "Fix W-07 and the route is never there.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:23:17Z"
+}

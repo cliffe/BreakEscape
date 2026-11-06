@@ -1,0 +1,35 @@
+   [imports: {"m02_completed":true,"m02_paid_ransom":true,"m02_ward_recovering":true}]
+
+## R33: the short briefing (Skip the background) skips the St. Catherine's knot, so even a finished m02 hears no carry-over line there.
+
+--- briefing ---
+  Narrator: A SAFETYNET briefing room. Netherton by the screen, HaX with the file open, and a man in a lab coat half-buried in a laptop he built himself.
+  Director Magnus Netherton: Agent 0x00. This is Operation Cyber Arsenal.
+  Director Magnus Netherton: Zero Day Syndicate used to sell exploits to whoever paid. Now they choose the targets first.
+  Director Magnus Netherton: That is a line I do not let anyone cross. You are going in.
+  Director Magnus Netherton: HaX runs you, Nightshade the technical side. Listen to both.
+  Agent 0x47 'Nightshade': Morning. Whatever they've built, I'll take it apart from here. You just get me close to it.
+  Director Magnus Netherton: HaX. The floor's yours.
+  Agent HaX: Right. Zero Day Syndicate. You heard of them?
+     (3 options)
+ > Skip the background. What's the mission?
+  Agent HaX: Right to business.
+  Agent HaX: Short version: the exploit that took down St. Catherine's came from Zero Day, behind a pentest front called WhiteHat. We want their books.
+  Agent HaX: The client roster, the logs, and whatever they're planning next. There's a Phase 2.
+  Agent HaX: Three things. One: get inside and clone Victoria Sterling's executive keycard. She's the front's CEO, and she runs this end of the cell for 0day.
+  Agent HaX: Two: after hours, get onto their training network and pull the flags. Recon, the services, and the legacy distcc box where their records sit.
+  Agent HaX: Three: the physical paper trail. Client roster, the catalogue, anything naming St. Catherine's or Phase 2.
+  Agent HaX: Ask me whatever you need before you go in.
+     [0] Who is Victoria Sterling?
+     [1] How do I clone her keycard?
+     [2] What's the training network?
+     [3] What's my cover?
+     [4] That's everything. Let's talk approach.
+  [stopped: no pick]
+   [PASS] not said: "You paid the ransom and had the wards back"
+   [PASS] not said: "You took Ghost's keys"
+   [PASS] not said: "You ran the combined restore"
+   [PASS] not said: "bagged Mr Pryce by hand"
+   [PASS] not said: "Eleven and a half hours, and six people died"
+
+[stats] spoken/narrated lines 15, choices 1, longest run without a choice 8 (briefing); runs>=6: briefing:8, briefing:7

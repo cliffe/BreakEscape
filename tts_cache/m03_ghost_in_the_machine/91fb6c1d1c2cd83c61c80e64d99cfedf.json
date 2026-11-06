@@ -1,0 +1,13 @@
+{
+  "key": "91fb6c1d1c2cd83c61c80e64d99cfedf",
+  "npc": "terry_mott",
+  "text": "Back on your feet, then. One wrong move and I'm on the radio.",
+  "voice": "Algieba",
+  "style": "Contract security guard in his fifties. Speak with a consistent South London / Estuary English accent throughout -- do not shift to any other accent. Low, slightly gravelly pitch; slow, flat pace. Tired, dry and procedural; not stupid, and not paid enough to be a hero.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-17",
+  "recorded_at": "2026-10-17T22:22:38Z"
+}

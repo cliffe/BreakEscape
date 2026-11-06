@@ -1,0 +1,73 @@
+{
+ "steps": [
+  {
+   "note": "R39 (carry-over, 2026-10-17): a finished m06 run that never made the fund call (both choices false). The Director says the fund was never frozen; HaX's teacher line is the original."
+  },
+  {
+   "talk": "briefing",
+   "picks": [
+    "Understood. Talk to me",
+    "I've made the call",
+    "Fracture"
+   ]
+  },
+  {
+   "said": [
+    "You never froze that fund."
+   ],
+   "notSaid": [
+    "You froze it before the payout",
+    "You left it running so we could see where it went",
+    "Frozen or watched, the advances had already been paid"
+   ]
+  },
+  {
+   "expect": {
+    "team_assignment": "fracture"
+   }
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Understood. Let"
+   ]
+  },
+  {
+   "set": {
+    "architect_echo_heard": true
+   }
+  },
+  {
+   "talk": "phone",
+   "knot": "hub",
+   "picks": [
+    "He used your line"
+   ]
+  },
+  {
+   "said": [
+    "Somebody taught it to me, a long time ago"
+   ],
+   "notSaid": [
+    "You opened Satoshi's safe, so you've read the name"
+   ]
+  },
+  {
+   "expect": {
+    "m06_completed": true,
+    "m06_assets_seized": false,
+    "m06_monitoring_enabled": false,
+    "m06_architect_identity_found": false
+   }
+  },
+  {
+   "maxRun": 9
+  }
+ ],
+ "imports": {
+  "m06_completed": true,
+  "m06_assets_seized": false,
+  "m06_monitoring_enabled": false,
+  "m06_architect_identity_found": false
+ }
+}

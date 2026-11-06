@@ -1,0 +1,13 @@
+{
+  "key": "f7638b6da9451e9c2164b2f0f9d0c145",
+  "npc": "tomasz_wisniewski",
+  "text": "Tomasz Wiśniewski, data protection. I do a drop-in at this desk once a month, so I'm at the next chair if you need me.",
+  "voice": "Algieba",
+  "style": "Carrholme's Data Protection Officer, in his 50s, careful and reassuring; in the UK 25 years. Speak with a consistent, lightly Polish-accented English, softened by long years in the UK, throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca11_misdirected_data",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:19:16Z"
+}

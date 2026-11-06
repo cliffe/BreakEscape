@@ -1,0 +1,378 @@
+{
+ "steps": [
+  {
+   "note": "R2: commit Meltdown. Hollis is backed off, re-sighted (wary_again) and slipped past (evaded on the server hall). T-10 at 30 min with nothing found: the warning is in the open-window line. The window shuts at 40 min. Elena is turned after the window shut: door password, and the vault rule not the digits; no page forty without asking why. Flag 2 corroborates her. The decode is read late and the deduction lands with the window shut. Login before the control room door; the clock runs out. Park: entry chat, backed off, second visit backed off, third visit turns him hostile (r2 m7). Debrief: found-after-the-window split, no 'Above expectations'."
+  },
+  {
+   "talk": "briefing",
+   "picks": [
+    "Understood. Talk to me",
+    "I've made the call",
+    "Meltdown"
+   ]
+  },
+  {
+   "expect": {
+    "team_assignment": "meltdown"
+   }
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Understood. Let"
+   ]
+  },
+  {
+   "event": "player_spotted:ray_hollis"
+  },
+  {
+   "talk": "hollis",
+   "picks": [
+    "Back off. I'm leaving"
+   ]
+  },
+  {
+   "expect": {
+    "hollis_backed_off": true,
+    "hollis_resolved": ""
+   }
+  },
+  {
+   "event": "player_spotted:ray_hollis"
+  },
+  {
+   "talk": "hollis",
+   "picks": [
+    "Back off. I'm leaving"
+   ]
+  },
+  {
+   "said": [
+    "There you are. I knew something was in here."
+   ]
+  },
+  {
+   "enter": "operations_floor"
+  },
+  {
+   "read": "shift_handover_sheet"
+  },
+  {
+   "pickup": "printed_contractor_badge"
+  },
+  {
+   "enter": "server_room"
+  },
+  {
+   "expect": {
+    "hollis_resolved": "evaded"
+   }
+  },
+  {
+   "advance": 30
+  },
+  {
+   "said": [
+    "Ten minutes before your team is too committed to move"
+   ]
+  },
+  {
+   "talk": "architect",
+   "picks": [
+    "You're not as clever"
+   ]
+  },
+  {
+   "said": [
+    "It only requires you to wait.",
+    "You still have a door open"
+   ]
+  },
+  {
+   "advance": 11
+  },
+  {
+   "expect": {
+    "redirect_window_closed": true
+   }
+  },
+  {
+   "hud": null
+  },
+  {
+   "talk": "elena",
+   "picks": [
+    "Finish what",
+    "What were you told this was",
+    "The other three operations",
+    "The desk summary says ninety",
+    "Dispatch. As in 911",
+    "Help me stop it"
+   ]
+  },
+  {
+   "said": [
+    "What were you told about Austin",
+    "You've already sent them",
+    "One frightened engineer, but it fits. The window's shut."
+   ],
+   "notSaid": [
+    "page forty",
+    "Say the second half"
+   ]
+  },
+  {
+   "talk": "elena",
+   "picks": [
+    "Nine days. Dispatch systems. Decide."
+   ]
+  },
+  {
+   "said": [
+    "CascadeWindow19",
+    "last four of the serial on the transfer switch plate"
+   ],
+   "notSaid": [
+    "4703"
+   ]
+  },
+  {
+   "expect": {
+    "elena_outcome": "turned",
+    "scada_password_found": true,
+    "vault_pin_found": false,
+    "projection_revised": true,
+    "revision_found_open": false
+   }
+  },
+  {
+   "talk": "elena",
+   "picks": [
+    "Give me the control room door and the vault code again",
+    "Stay on the load-shed tables"
+   ]
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Can I still move the team",
+    "I'll call you back"
+   ]
+  },
+  {
+   "said": [
+    "that window's shut",
+    "You found the numbers were wrong"
+   ]
+  },
+  {
+   "event": "object_interacted",
+   "data": {
+    "objectType": "vm-launcher"
+   }
+  },
+  {
+   "flag": 1
+  },
+  {
+   "read": "coordination_extract"
+  },
+  {
+   "notSaid": [
+    "If a row in there doesn't match"
+   ]
+  },
+  {
+   "flag": 2
+  },
+  {
+   "said": [
+    "Same door password as Elena"
+   ],
+   "notSaid": [
+    "the control room door's included",
+    "Before you log in"
+   ]
+  },
+  {
+   "flag": 3
+  },
+  {
+   "expect": {
+    "logged_in_before_door": true,
+    "cascade_armed": true
+   }
+  },
+  {
+   "hud": "cascade_zero"
+  },
+  {
+   "enter": "scada_control"
+  },
+  {
+   "advance": 15
+  },
+  {
+   "expect": {
+    "countdown_expired": true
+   }
+  },
+  {
+   "said": [
+    "Seattle first. As scheduled.",
+    "Seattle's dark. Step one ran. Steps two to four haven't. Get root"
+   ]
+  },
+  {
+   "flag": 4
+  },
+  {
+   "task": "shut_down_the_cascade"
+  },
+  {
+   "enter": "generator_room"
+  },
+  {
+   "read": "backup_transfer_switch"
+  },
+  {
+   "enter": "cable_vault"
+  },
+  {
+   "said": [
+    "[opens thomas_park @start (person-chat)]"
+   ],
+   "notSaid": [
+    "briefed on a building, not a body count"
+   ]
+  },
+  {
+   "talk": "park",
+   "picks": [
+    "Nothing. I was never here."
+   ]
+  },
+  {
+   "expect": {
+    "park_resolved": "evaded"
+   }
+  },
+  {
+   "enter": "generator_room"
+  },
+  {
+   "enter": "cable_vault"
+  },
+  {
+   "said": [
+    "[opens thomas_park @start (person-chat)]",
+    "briefed on a building, not a body count"
+   ]
+  },
+  {
+   "talk": "park",
+   "knot": "start",
+   "picks": [
+    "Nothing. I was never here."
+   ]
+  },
+  {
+   "said": [
+    "Second time. There isn't a third."
+   ]
+  },
+  {
+   "enter": "cable_vault"
+  },
+  {
+   "note": "PASS 5 alignment r2 (m7): the third visit turns Park hostile; no hub."
+  },
+  {
+   "talk": "park",
+   "knot": "start",
+   "picks": []
+  },
+  {
+   "said": [
+    "I said there wasn't a third.",
+    "crimping tool swinging",
+    "Park's swinging. Q switches to fists"
+   ],
+   "notSaid": [
+    "Step away from the cable",
+    "You've got one sentence"
+   ]
+  },
+  {
+   "expect": {
+    "park_resolved": "ko"
+   }
+  },
+  {
+   "music": "npc_hostile_state_changed",
+   "isHostile": true,
+   "expect": null
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Bring me in"
+   ]
+  },
+  {
+   "enter": "server_room"
+  },
+  {
+   "talk": "debrief",
+   "picks": [
+    0,
+    1,
+    0,
+    1,
+    0,
+    0,
+    1,
+    0,
+    1,
+    "Nothing on the record",
+    "Two operations went dark",
+    0
+   ]
+  },
+  {
+   "said": [
+    "Three doors they left open. You went through all of them.",
+    "You logged in on their host before the control room door was open",
+    "You found it after the window had closed",
+    "The timing was his, not yours",
+    "You found it after the window shut",
+    "You finished it, Agent"
+   ],
+   "notSaid": [
+    "You knew. You found it",
+    "Above expectations",
+    "The team not moving is a separate sentence"
+   ]
+  },
+  {
+   "creditsSaid": [
+    "ran out one step before the abort",
+    "ORDER: logged in on the host before",
+    "CORRECTION FOUND AFTER THE WINDOW SHUT",
+    "Operation Meltdown",
+    "Evaded — still on the checkpoint desk",
+    "THOMAS PARK: Fought off, not stopped"
+   ],
+   "creditsNotSaid": [
+    "CORRECTION FOUND WITH THE WINDOW OPEN",
+    "stopped with time on it"
+   ]
+  },
+  {
+   "note": "Run-length guard (Phase 4 dialogue C1, D7-1): no conversation, the debrief included, runs more than nine lines without a choice."
+  },
+  {
+   "maxRun": 9
+  }
+ ]
+}

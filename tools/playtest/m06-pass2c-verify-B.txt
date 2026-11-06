@@ -1,0 +1,14 @@
+game            1176  (mission 50)
+created         2026-09-30 23:13:56 UTC
+last write      2026-09-30 23:18:33 UTC
+played for      277s of wall clock
+current room    "reception_lobby"
+unlocked rooms  7: reception_lobby, security_checkpoint, trading_floor, server_room, data_center, executive_wing, satoshi_office
+unlocked objs   0: 
+inventory       10: Your Phone, Notepad, Password Dictionary List, CTO Access Badge, Door Controller Export, Cold Storage Recovery Keys, Executive Access Badge, The Architect's Fund Allocation, Password Dictionary List (relayed copy), CTO Badge (relayed copy)
+NPCs met        8: opening_briefing_npc, director_netherton, agent_nightshade, agent_0x99_handler, closing_debrief_person, elena_volkov, trader_npc, satoshi_nakamoto
+flags submitted 4: flag{m06_follow_the_money_hackme_crack_me_lab_1_7bf90b}, flag{m06_follow_the_money_hackme_crack_me_lab_2_60b49a}, flag{m06_follow_the_money_hackme_crack_me_lab_3_01b2f3}, flag{m06_follow_the_money_hackme_crack_me_lab_4_56c3c3}
+globals set     31: assets_decided, assets_seized, briefing_played, cracking_guide_offered, debrief_played, elena_badge_obtained, elena_fate_decided, elena_ko, elena_ko_relayed, exchange_infiltrated, final_choice, flag1_submitted, flag2_submitted, flag3_submitted, flag4_submitted, found_architects_fund, found_password_lists, found_wallet_keys, fund_debrief_available, knows_architects_fund, knows_coordinated_attack, mission_priority, player_approach, player_name, privesc_guide_offered, resolve_aim_open, rfid_guide_offered, satoshi_arrested, satoshi_confronted, satoshi_revealed, start_debrief_cutscene
+
+VERDICT: progress recorded — 6 rooms beyond the first, 0 objects unlocked, 4 flags submitted.
+Cross-check the specifics above against the report.

@@ -1,0 +1,13 @@
+{
+  "key": "0be3436ff7d0b3329d5e816f994b9456",
+  "npc": "terry_mott",
+  "text": "It's an office, mate. Reception, conference rooms, a hallway, more offices.",
+  "voice": "Algieba",
+  "style": "Contract security guard in his fifties. Speak with a consistent South London / Estuary English accent throughout -- do not shift to any other accent. Low, slightly gravelly pitch; slow, flat pace. Tired, dry and procedural; not stupid, and not paid enough to be a hero.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:34:24Z"
+}

@@ -1,0 +1,14 @@
+{
+  "display_name": "Test: Shredded Document Reconstruction",
+  "description": "Test scenario for MG-B — Shredded Document Reconstruction. Covers easy mode (no rotation), hard mode (with rotation), and reopen-after-completion behaviour.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "testing",
+  "cybok": [
+    {
+      "ka": "POR",
+      "topic": "Privacy & Online Rights",
+      "keywords": ["Information disposal", "Paper shredder OSINT", "Dumpster diving", "Physical security"]
+    }
+  ]
+}

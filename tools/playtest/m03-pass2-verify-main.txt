@@ -1,0 +1,14 @@
+game            1155  (mission 47)
+created         2026-09-30 14:52:28 UTC
+last write      2026-09-30 15:35:15 UTC
+played for      2567s of wall clock
+current room    "reception_lobby"
+unlocked rooms  7: reception_lobby, main_hallway, conference_room_01, server_room, executive_wing_hallway, james_office, executive_office
+unlocked objs   3: victoria_computer, executive_office_suitcase_2, wall_safe_server
+inventory       7: Your Phone, RFID Cloner, Lock Pick Kit, Notepad, Visitor Badge, CyberChef Workstation, Zero Day Transaction Log
+NPCs met        9: briefing_cutscene, director_netherton, agent_nightshade, receptionist_npc, agent_0x99, closing_debrief, victoria_sterling, night_guard, danny_foster
+flags submitted 4: flag{m03_ghost_in_the_machine_ghost_in_machine_vm_network_1_f7e98a}, flag{m03_ghost_in_the_machine_ghost_in_machine_vm_network_2_63348a}, flag{m03_ghost_in_the_machine_ghost_in_machine_vm_network_3_7a7c99}, flag{m03_ghost_in_the_machine_ghost_in_machine_vm_network_4_20d925}
+globals set     17: briefing_played, danny_evidence_seen, flag_distcc_submitted, flag_ftp_submitted, flag_http_submitted, flag_scan_submitted, james_fate, lockpicking_guide_offered, mission_phase, netexploit_guide_offered, night_confrontation_ready, player_approach, time_of_day, victoria_arrested, victoria_choice_made, victoria_fate, whiteboard_seen
+
+VERDICT: progress recorded — 6 rooms beyond the first, 3 objects unlocked, 4 flags submitted.
+Cross-check the specifics above against the report.
