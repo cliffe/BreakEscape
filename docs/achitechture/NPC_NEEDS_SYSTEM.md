@@ -157,6 +157,29 @@ the corridor; unleashed, 32 of 86 samples on it, out and back through it) and
 
 An affordance carries **no content**.
 
+**Presets by object type (office life slice 4, `OFFICE_LIFE_PLAN.md` 2.1).** With the scenario
+field `"officePresets": true`, a declared object gets an affordance from its exact `type`
+(`pc`, `laptop`, `coffee_station1`, `kettle1`, `water_cooler1`, `qdc_fridge1`, `microwave1`,
+`leather_sofa1`, ...) or from `officeType`, a preset id that wins over `type` (`filing`,
+`post_tray` and `desk_phone` are reached only that way). The table is
+`public/break_escape/js/data/office-presets.json`; `systems/office-presets.js` resolves it and the
+validator reads the same file. The object's own `affordance` fields win field by field, and
+`"affordance": false` means none. No preset for an object with no `id`, with `decor: true`
+(unreserved Tiled items get a synthetic `scenarioData` whose `type` is the image name), `takeable`,
+or with a `lockType`. Presets give default `useSound`s (`drink_gulp` for coffee and the cooler,
+`eat_snack` for the fridge and microwave, `drawer_open` for filing), set no `seat`, and never make
+a workstation. The live adapter's `listObjects`/`getObject` and the action-icon target lookup all
+go through the one resolver (`window.officePresets.spriteAffordance`, cached on the sprite);
+`core/game.js` installs it and fetches the table before the needs system starts. The validator
+lists each object that gained a preset (`ℹ️ Office preset: ...`), errors on an unknown
+`officeType`, and warns about an `officeType` with the switch off.
+
+```json
+{ "id": "tom_pc", "type": "pc", "affordance": { "private": true } }
+{ "id": "office_coffee", "type": "coffee_station1", "affordance": { "useFrom": { "dx": -1, "dy": 0 } } }
+{ "id": "grace_laptop", "type": "laptop", "affordance": false }
+```
+
 ### 3.3 Item fields (tagged, droppable)
 
 | Field | Meaning |
@@ -174,6 +197,8 @@ Runs after `patrolOverride` in the same mapping.
 `npcNeedsSeed` (prov.): number or string. Default: the scenario name.
 
 `needsDebugOverlay`: boolean, default false. Turns on the need-bar debug overlay (section 4.1).
+
+`officePresets`: boolean, default false. Affordance presets by object type (section 3.2).
 
 ---
 

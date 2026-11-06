@@ -5,8 +5,8 @@ Status: **plan, 2026-11-05, revised after adversarial reviews R1 and R2
 and amended the same day for social compatibility and a room leash (section 7, new slice 2a),
 then revised on 2026-11-06 after the amendment's review (`OFFICE_LIFE_PLAN_REVIEW_AMEND1.md`;
 outcomes in section 8). Slices 0, 1 and 2 have landed (b642594be, 5b1749a05, b670d2fcd and
-b6b579e39); slice 2a and slice 3 landed on 2026-11-06 (Built lines in 7.2 and 2.12); slice 4 is
-next.** Line numbers drift as slices land; the function names are the
+b6b579e39); slice 2a, slice 3 and slice 4 landed on 2026-11-06 (Built lines in 7.2, 2.12 and 2.1); slice
+5 is next.** Line numbers drift as slices land; the function names are the
 stable reference. Engine changes
 need the user's approval (AGENTS.md); so does any new art or audio (marked **[approval]**). Builds on the needs system (`NPC_NEEDS_SYSTEM.md`), seating (`SEATING.md`) and the
 showcase `scenarios/test_needs_sims`, which becomes the test bed for every slice below.
@@ -193,6 +193,31 @@ the run.
 contention timing close to today.
 
 ### 2.1 Affordance presets by object type (proposal 1)
+
+**Built: 2026-11-06 (aab2943c1), apart from the `lab_physical_pentest` live regression (skipped:
+another agent was dressing its accounts floor; the lab has no `officePresets`, so the resolver
+returns its authored affordances unchanged, and the validator finds no preset there).** As
+written, with these choices: the table lives at `public/break_escape/js/data/office-presets.json`
+(the engine serves only `/js`, `/css` and `/assets`; a `/data` route would need a server
+restart), fetched relative to the module; `kettle1` joins the `coffee` types (the showcase's
+kettle from slice 2a); presets carry the default `useSound`s 2.12 lists (`drink_gulp` coffee and
+cooler, `eat_snack` fridge and microwave, `drawer_open` filing); the cooler's `chatter` waits for
+slice 8 (the schema's `affordance` takes no unknown keys); an unknown `officeType` gets no preset
+(validator error) and an `officeType` without the switch is a validator warning. The resolver
+reaches `npc-needs.js` and `npc-action-icons.js` through `window.officePresets` (npc-needs keeps
+no static imports), installed by `core/game.js` before the needs system, so no harness copy list
+changed. The validator expands presets before every other check, so `affordance: false` (now
+legal) no longer crashes its `dig` calls. The parity list gained the PCs' `private: true` (slice
+2a, OQ25) and the kettle's `useFrom`; the parity test runs a 15-minute sims day (43 uses at nine
+objects) and the logs are byte-identical. `test_needs_sims` opts in with exactly those overrides
+and a new task, `hear_snack` (the fridge and microwave now carry no affordance at all, so the
+`eat_snack` heard comes from the preset). Live (:3001 headless, game 599, office only so far):
+the four office objects resolve to their presets, the two decor `laptop` sprites with no id and
+the declared `grace_laptop` (`affordance: false`) do not, no workstation globals appear, the
+contention beat is unchanged (Amara `used office_coffee` at tick 278), Amara uses the office
+coffee from the left (own `useFrom` over the preset's), and `hear_drink` ticks from the preset's
+default `drink_gulp`. Kitchen, lounge and `test_needs_leash` live runs are open
+(`HANDOVER_OFFICE_S4.md`).
 
 **Authoring.** An object gets a working affordance from its `type` alone; anything written on the
 object overrides the preset field by field.
@@ -1327,7 +1352,7 @@ are engine, validator and schema lines, excluding tests. S = under 100, M = 100-
 | 2 | Caught at the desk; `expectedAwayMs`; workstation reload fix; seated through an own-desk use (2.11) | S, ~60 | 0 | lab: Chris returns to find the player at `staff_pc` during the keylogger beat; stale "away" text after a reload goes; no stand-and-sit hop at the desk |
 | 2a | Room leash and private objects (7.2 as revised in section 8; amendment 2026-11-05, requested) | M, ~230 | 1 (fixture, back-off); build after slice 2's edits are committed (same functions) | any mission that gives needs to NPCs with their own rooms (m01's Derek kept out of Maya's office); sims: colleagues stop working at each other's desks, the lounge is Rosa's and Grace's |
 | 3 | What the player sees: sprite icons, item in hand, seated typing bob, room-limited use sounds (2.12) | M, ~205 | none (1 helps) | every needs scenario: deliveries, coffee runs and desk work become legible. New icons for hunger and rest, use animations, office sounds and room tone wait for **[approval]** |
-| 4 | Affordance presets (2.1) | M, ~150 | 1 (fixture) | `test_needs_sims` drops to a short list of per-object overrides; new scenarios get an office from `type` alone |
+| 4 | Affordance presets (2.1): **built** (aab2943c1) | M, ~150 | 1 (fixture) | `test_needs_sims` drops to a short list of per-object overrides; new scenarios get an office from `type` alone |
 | 5 | Workstation indicators: a second emitter record per workstation (2.3) | S, ~65 | 0, 2 | lab: Melanie's open screen and Chris's locked one read from across the lit open plan |
 | 6 | Traits (2.6) | M, ~125 | 0 (workstation link); 5 to see it | lab: lock habits become traits; awareness scenarios get careful and careless staff from one field |
 | 7 | Reveal slots: place and stow instead of consume (2.2 Part A) | M, ~245 | 1 (fixture); 3 to see items in hand | sims: a printout appears on the copier tray and is put on Amara's desk, then filed. Lab: a findable document on a tray if the lab wants one, as a single beat |
