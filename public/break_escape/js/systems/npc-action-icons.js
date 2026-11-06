@@ -346,8 +346,9 @@ export class NpcActionIcons {
         bb.face.setVisible(false);
         bb.badge.setVisible(false);
         bb.cross.setVisible(false);
-        bb.img.setAlpha(1).clearTint();
-        bb.text.setAlpha(1);
+        bb.img.setAlpha?.(1);
+        bb.img.clearTint?.();
+        bb.text.setAlpha?.(1);
     }
 
     /**
