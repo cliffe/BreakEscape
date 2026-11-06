@@ -1489,10 +1489,15 @@ scada_password = "CascadeWindow19"
               the cone is drawn (visualize) so it can be read. Evading is still
               recorded on reaching the server hall. The 20 s cooldown lets a player
               who closes the chat walk off before he calls again. %>
+          <%# 2026-11-06: the cone is 50 degrees (was 130). The spawn is 25-55px from his strip,
+              so the wide cone spotted a player who had not moved (about 29 s in) and who
+              is usually reading the brief. Over a full patrol cycle the spawn sits at least
+              31 degrees off his facing, outside the 25 degree half-angle; a player who walks
+              into the strip, in front of him, is still seen at up to 150px. %>
           "los": {
             "enabled": true,
             "range": 150,
-            "angle": 130,
+            "angle": 50,
             "visualize": true,
             "challengeOnSight": {
               "cooldown": 20000,
