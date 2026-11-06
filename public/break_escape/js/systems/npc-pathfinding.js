@@ -20,6 +20,77 @@ import { AVOID_CELL_COST, collectAvoidRects, avoidCells, crossesAvoidRect, roomF
 const PATROL_EDGE_OFFSET = 2; // Distance from room edge (2 tiles)
 
 /**
+ * Carve an opened east/west door's corridor into `grid` (bounds { minX, minY, cols, rows, step }).
+ *
+ * Each side of the doorway has a 1×1 tile (32×32 px = 4×4 grid cells at 8 px
+ * step). We span BOTH tiles (current room + adjacent room, one TILE_SIZE apart
+ * in the door direction) and clear only the middle 2 rows, leaving the top and
+ * bottom rows blocked to prevent corner clipping.
+ *
+ *   BBBBBBBB   ← top row stays blocked  (both tiles)
+ *   ........   ← cleared (walkable)
+ *   ........   ← cleared (walkable)
+ *   BBBBBBBB   ← bottom row stays blocked (both tiles)
+ *
+ * The range is clamped to the grid (a full world grid always contains it). Returns the cell range.
+ */
+export function carveSideDoorCorridor(grid, bounds, worldX, worldY, direction) {
+    const { minX, minY, cols, rows, step } = bounds;
+
+    const halfTile = TILE_SIZE / 2;
+    const top = worldY - halfTile;
+
+    // The adjacent room's tile is one TILE_SIZE away in the door direction.
+    // Extend the horizontal span to cover both tiles.
+    let spanLeft, spanWidth;
+    if (direction === 'east') {
+        // This tile is left of the wall; adjacent tile is to the right.
+        spanLeft  = worldX - halfTile;
+        spanWidth = TILE_SIZE * 2;
+    } else {
+        // west — this tile is right of the wall; adjacent tile is to the left.
+        spanLeft  = worldX - halfTile - TILE_SIZE;
+        spanWidth = TILE_SIZE * 2;
+    }
+
+    // Grid cell range covering both tiles (8 columns × 4 rows at 8 px step).
+    const cx1 = Math.max(0,        Math.floor((spanLeft               - minX) / step));
+    const cy1 = Math.max(0,        Math.floor((top                    - minY) / step));
+    const cx2 = Math.min(cols - 1, Math.floor((spanLeft + spanWidth - 1 - minX) / step));
+    const cy2 = Math.min(rows - 1, Math.floor((top  + TILE_SIZE    - 1 - minY) / step));
+
+    // Clear the middle rows (skip first and last row of the tile height).
+    for (let cy = cy1 + 1; cy <= cy2 - 1; cy++) {
+        for (let cx = cx1; cx <= cx2; cx++) grid[cy][cx] = 0;
+    }
+    // Ensure top and bottom rows stay blocked across both tiles.
+    for (let cx = cx1; cx <= cx2; cx++) grid[cy1][cx] = 1;
+    for (let cx = cx1; cx <= cx2; cx++) grid[cy2][cx] = 1;
+    return { cx1, cy1, cx2, cy2 };
+}
+
+/**
+ * Re-block the outermost cell on each side of the south edge of an opened N/S door in `grid`
+ * (see NPCPathfindingManager._applyNSDoorCornerBlocks). Returns the cells blocked.
+ */
+export function applyNSDoorCornerBlocks(grid, bounds, doorWorldX, doorWorldY) {
+    const { minX, minY, cols, rows, step } = bounds;
+
+    const doorW = TILE_SIZE * 2;
+    const doorH = TILE_SIZE;
+
+    const cx1 = Math.max(0,        Math.floor((doorWorldX          - minX) / step));
+    const cx2 = Math.min(cols - 1, Math.ceil( (doorWorldX + doorW  - minX) / step));
+    const cy2 = Math.min(rows - 1, Math.ceil( (doorWorldY + doorH  - minY) / step));
+
+    if (grid[cy2]) {
+        grid[cy2][cx1] = 1;
+        grid[cy2][cx2] = 1;
+    }
+    return { cx1, cx2, cy2 };
+}
+
+/**
  * Set window.pathfindingDebug = true in the browser console to enable
  * verbose per-check logging for player pathfinding.
  * Automatically respects the existing visualDebugMode toggle (backtick key).
@@ -224,17 +295,24 @@ export class NPCPathfindingManager {
     // =========================================================================
 
     /**
-     * (Re)build the unified world-level EasyStar grid from all physics bodies.
-     * Called automatically at the end of initializeRoomPathfinding().
+     * Build a world grid from the live physics bodies without touching the live one.
+     * Marks every enabled static body and every enabled immovable dynamic body (padded one
+     * cell sideways and 2 px up and down), skipping any body whose gameObject is in
+     * `exclude`, then applies the open side-door corridors and the N/S door corner blocks.
+     * Always the full world rectangle. Returns { grid, bounds } or null when the physics
+     * world has no bounds yet. Used by rebuildWorldGrid (no options), the walk audit and
+     * the seat stand-up grid (SEAT_BOX_PLAN.md slice 0).
+     *
+     * @param {{ exclude?: Iterable<object> }} [opts] game objects whose bodies are left out
      */
-    rebuildWorldGrid() {
+    buildWorldGrid({ exclude = null } = {}) {
         const scene = this.scene;
-        if (!scene?.physics?.world) return;
+        if (!scene?.physics?.world) return null;
 
         const wb = scene.physics.world.bounds;
         if (!wb || wb.width === 0 || wb.height === 0) {
-            console.warn('⚠️ rebuildWorldGrid: physics world bounds not set yet');
-            return;
+            console.warn('⚠️ buildWorldGrid: physics world bounds not set yet');
+            return null;
         }
 
         const step = PATHFINDING_STEP;
@@ -242,8 +320,11 @@ export class NPCPathfindingManager {
         const minY = wb.y;
         const cols = Math.ceil(wb.width  / step) + 2; // +2 safety margin
         const rows = Math.ceil(wb.height / step) + 2;
+        const bounds = { minX, minY, cols, rows, step };
 
         const grid = Array.from({ length: rows }, () => new Array(cols).fill(0));
+        const skip = exclude ? new Set(exclude) : null;
+        const left = body => !!skip && !!body.gameObject && skip.has(body.gameObject);
 
         // Mark every grid cell that substantially overlaps an immovable physics body.
         // Subtracting 1 before flooring the right/bottom edge prevents a body whose
@@ -267,17 +348,39 @@ export class NPCPathfindingManager {
 
         // Phaser static bodies (StaticGroups etc.)
         scene.physics.world.staticBodies.iterate(body => {
-            if (body.enable) markBlocked(body.left, body.top, body.right, body.bottom);
+            if (body.enable && !left(body)) markBlocked(body.left, body.top, body.right, body.bottom);
         });
 
         // Dynamic-but-immovable bodies: wall strips, locked doors, furniture
         scene.physics.world.bodies.iterate(body => {
-            if (body.enable && body.immovable) {
+            if (body.enable && body.immovable && !left(body)) {
                 markBlocked(body.left, body.top, body.right, body.bottom);
             }
         });
 
-        this.worldGridBounds = { minX, minY, cols, rows, step };
+        // Re-carve any east/west door corridors that were opened before this build.
+        for (const corridor of this.openSideDoorCorridors) {
+            carveSideDoorCorridor(grid, bounds, corridor.worldX, corridor.worldY, corridor.direction);
+        }
+
+        // Re-apply south-edge corner blocks for any opened N/S doors.
+        for (const door of this.openNSDoors) {
+            applyNSDoorCornerBlocks(grid, bounds, door.worldX, door.worldY);
+        }
+
+        return { grid, bounds };
+    }
+
+    /**
+     * (Re)build the unified world-level EasyStar grid from all physics bodies.
+     * Called automatically at the end of initializeRoomPathfinding().
+     */
+    rebuildWorldGrid() {
+        const built = this.buildWorldGrid();
+        if (!built) return;
+        const { grid, bounds } = built;
+
+        this.worldGridBounds = bounds;
         this.worldGrid = grid;
 
         const pf = new EasyStar.js();
@@ -292,17 +395,7 @@ export class NPCPathfindingManager {
         this.worldPathfinder = pf;
 
         const blocked = grid.reduce((n, row) => n + row.filter(v => v === 1).length, 0);
-        console.log(`✅ World grid rebuilt: ${cols}×${rows} @${step}px — ${blocked} blocked`);
-
-        // Re-carve any east/west door corridors that were opened before this rebuild.
-        for (const corridor of this.openSideDoorCorridors) {
-            this._carveSideDoorCorridor(corridor.worldX, corridor.worldY, corridor.direction);
-        }
-
-        // Re-apply south-edge corner blocks for any opened N/S doors.
-        for (const door of this.openNSDoors) {
-            this._applyNSDoorCornerBlocks(door.worldX, door.worldY);
-        }
+        console.log(`✅ World grid rebuilt: ${bounds.cols}×${bounds.rows} @${bounds.step}px — ${blocked} blocked, ${this.openSideDoorCorridors.length} side-door corridors, ${this.openNSDoors.length} N/S door corner blocks`);
     }
 
     /**
@@ -654,40 +747,9 @@ export class NPCPathfindingManager {
      */
     _carveSideDoorCorridor(worldX, worldY, direction) {
         if (!this.worldGrid || !this.worldGridBounds) return;
-        const { minX, minY, cols, rows, step } = this.worldGridBounds;
-
-        const halfTile = TILE_SIZE / 2;
-        const top = worldY - halfTile;
-
-        // The adjacent room's tile is one TILE_SIZE away in the door direction.
-        // Extend the horizontal span to cover both tiles.
-        let spanLeft, spanWidth;
-        if (direction === 'east') {
-            // This tile is left of the wall; adjacent tile is to the right.
-            spanLeft  = worldX - halfTile;
-            spanWidth = TILE_SIZE * 2;
-        } else {
-            // west — this tile is right of the wall; adjacent tile is to the left.
-            spanLeft  = worldX - halfTile - TILE_SIZE;
-            spanWidth = TILE_SIZE * 2;
-        }
-
-        // Grid cell range covering both tiles (8 columns × 4 rows at 8 px step).
-        const cx1 = Math.max(0,        Math.floor((spanLeft               - minX) / step));
-        const cy1 = Math.max(0,        Math.floor((top                    - minY) / step));
-        const cx2 = Math.min(cols - 1, Math.floor((spanLeft + spanWidth - 1 - minX) / step));
-        const cy2 = Math.min(rows - 1, Math.floor((top  + TILE_SIZE    - 1 - minY) / step));
-
-        // Clear the middle rows (skip first and last row of the tile height).
-        for (let cy = cy1 + 1; cy <= cy2 - 1; cy++) {
-            for (let cx = cx1; cx <= cx2; cx++) this.worldGrid[cy][cx] = 0;
-        }
-        // Ensure top and bottom rows stay blocked across both tiles.
-        for (let cx = cx1; cx <= cx2; cx++) this.worldGrid[cy1][cx] = 1;
-        for (let cx = cx1; cx <= cx2; cx++) this.worldGrid[cy2][cx] = 1;
-
+        const c = carveSideDoorCorridor(this.worldGrid, this.worldGridBounds, worldX, worldY, direction);
         this.worldPathfinder?.setGrid(this.worldGrid);
-        console.log(`🚪 Side-door corridor carved at (${worldX.toFixed(0)},${worldY.toFixed(0)}) dir=${direction} — cells (${cx1},${cy1})→(${cx2},${cy2}), cleared rows ${cy1+1}–${cy2-1}`);
+        console.log(`🚪 Side-door corridor carved at (${worldX.toFixed(0)},${worldY.toFixed(0)}) dir=${direction} — cells (${c.cx1},${c.cy1})→(${c.cx2},${c.cy2}), cleared rows ${c.cy1+1}–${c.cy2-1}`);
     }
 
     /**
@@ -705,21 +767,9 @@ export class NPCPathfindingManager {
      */
     _applyNSDoorCornerBlocks(doorWorldX, doorWorldY) {
         if (!this.worldGrid || !this.worldGridBounds) return;
-        const { minX, minY, cols, rows, step } = this.worldGridBounds;
-
-        const doorW = TILE_SIZE * 2;
-        const doorH = TILE_SIZE;
-
-        const cx1 = Math.max(0,        Math.floor((doorWorldX          - minX) / step));
-        const cx2 = Math.min(cols - 1, Math.ceil( (doorWorldX + doorW  - minX) / step));
-        const cy2 = Math.min(rows - 1, Math.ceil( (doorWorldY + doorH  - minY) / step));
-
-        if (this.worldGrid[cy2]) {
-            this.worldGrid[cy2][cx1] = 1;
-            this.worldGrid[cy2][cx2] = 1;
-        }
+        const c = applyNSDoorCornerBlocks(this.worldGrid, this.worldGridBounds, doorWorldX, doorWorldY);
         this.worldPathfinder?.setGrid(this.worldGrid);
-        console.log(`🚪 N/S door corner blocks applied at (${doorWorldX.toFixed(0)},${doorWorldY.toFixed(0)}) — blocked (${cx1},${cy2}) and (${cx2},${cy2})`);
+        console.log(`🚪 N/S door corner blocks applied at (${doorWorldX.toFixed(0)},${doorWorldY.toFixed(0)}) — blocked (${c.cx1},${c.cy2}) and (${c.cx2},${c.cy2})`);
     }
 
     markWorldCellsWalkable(worldX, worldY, width, height) {
