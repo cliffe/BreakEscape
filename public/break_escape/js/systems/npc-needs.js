@@ -2746,8 +2746,9 @@ export function createEngineWorld() {
                 distance = Math.hypot(pr.x - home.x, pr.y - home.y);
             }
             const params = W().MinigameFramework?.currentMinigame?.params;
-            const inMinigame = !!(params && home.objectId && Object.values(params).some(v =>
-                v && typeof v === 'object' && (v.scenarioData?.id === home.objectId || v.objectId === home.objectId)));
+            // The examine view names its object by a string itemId (as workstation-state's minigameOnObject)
+            const inMinigame = !!(params && home.objectId && (params.itemId === home.objectId || params.objectId === home.objectId
+                || Object.values(params).some(v => v && typeof v === 'object' && (v.scenarioData?.id === home.objectId || v.objectId === home.objectId))));
             return { distance, inMinigame };
         },
         tileToWorld(roomId, x, y) {
