@@ -388,6 +388,18 @@
      "width": 80,
      "x": 112,
      "y": 232
+    },
+    {
+     "gid": 1468,
+     "height": 36,
+     "id": 44,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 64,
+     "x": 34,
+     "y": 176
     }
    ],
    "opacity": 1,
@@ -458,7 +470,7 @@
      "type": "",
      "visible": true,
      "width": 40,
-     "x": 130.0,
+     "x": 122.0,
      "y": 94.0
     },
     {
@@ -470,7 +482,7 @@
      "type": "",
      "visible": true,
      "width": 30,
-     "x": 172.0,
+     "x": 164.0,
      "y": 56.0
     },
     {
@@ -482,7 +494,7 @@
      "type": "",
      "visible": true,
      "width": 14,
-     "x": 206.0,
+     "x": 212.0,
      "y": 56.0
     },
     {
@@ -494,7 +506,7 @@
      "type": "",
      "visible": true,
      "width": 42,
-     "x": 240.0,
+     "x": 246.0,
      "y": 56.0
     },
     {
@@ -598,7 +610,7 @@
   }
  ],
  "nextlayerid": 14,
- "nextobjectid": 44,
+ "nextobjectid": 45,
  "orientation": "orthogonal",
  "renderorder": "right-down",
  "tiledversion": "1.11.2",
