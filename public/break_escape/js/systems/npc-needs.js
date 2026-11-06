@@ -41,6 +41,10 @@ export const CHAT_MAX_MS = 4000;
 export const CHAT_GAP_MS = 500;
 export const OVERHEAR_RADIUS = 160;   // px, five tiles: npc_chatted `overheard`
 export const CHAT_LINE_MAX = 40;      // characters; the validator enforces it
+// Queues at shared machines (slice 10: OFFICE_LIFE_PLAN 2.5)
+export const QUEUE_MAX_WAIT_S = 30;   // affordance.queue.maxWaitSeconds default
+export const QUEUE_COOLDOWN_MS = 60000;   // after giving up on a queue, that object is skipped this long
+export const QUEUE_CHAT_RADIUS = 48;  // px (1.5 tiles) from the approach cell: the front of the queue chats
 /** How long a chat line's bubble shows: 2.5 s + 50 ms per character, at most 4 s. */
 export function bubbleMs(line) {
     return Math.min(CHAT_MAX_MS, CHAT_BASE_MS + CHAT_PER_CHAR_MS * String(line || '').length);
@@ -201,6 +205,8 @@ export class NPCNeedsSystem {
         this._chats = new Map();
         this._chatSeq = 0;
         this._anyCompany = false;
+        // Queues (slice 10): claim order across the whole system, so queue order is deterministic
+        this._queueSeq = 0;
         // Read-outs for tests and live measurement; never feed a decision
         this.stats = { ticks: 0, selects: 0, objectScans: 0, pathSearches: 0, backoffs: 0 };
     }
@@ -289,6 +295,7 @@ export class NPCNeedsSystem {
         this.states.clear();
         this._chats.clear();
         this._chatSeq = 0;
+        this._queueSeq = 0;
         this.log = [];
         this.clockMs = 0;
         this.tickCount = 0;
@@ -389,6 +396,7 @@ export class NPCNeedsSystem {
                 if (typeof console !== 'undefined') console.error(`[needs] tick error for ${id}`, e);
             }
         }
+        this._tickQueueChats();
         if (this._chats.size) this._tickChats();
         this._worldChanged();
     }
@@ -598,6 +606,7 @@ export class NPCNeedsSystem {
                 if (s.job.phase === 'using') s.job.useUntil = this.clockMs + (s.job.useRemaining || 0);
                 else {
                     s.job.deadline += this.clockMs - (s.job.frozenAt || this.clockMs);
+                    if (s.job.phase === 'queued') { s.job.queuedAt += this.clockMs - (s.job.frozenAt || this.clockMs); s.job.qCell = null; }
                     this._moveForPhase(s);
                 }
             } else if (s.mode === 'returning') {
@@ -680,7 +689,7 @@ export class NPCNeedsSystem {
     _claims(objectId, exceptNpc) {
         let c = 0;
         for (const o of this.states.values()) {
-            if (o.npcId === exceptNpc || !o.job) continue;
+            if (o.npcId === exceptNpc || !o.job || o.job.phase === 'queued') continue;
             if (o.job.targetId === objectId) c++;
         }
         return c;
@@ -705,6 +714,11 @@ export class NPCNeedsSystem {
                 if (o === s || o.job?.targetId !== obj.id) continue;
                 if (this._avoids(s, o)) { this._noteAvoided(s, o, obj); return false; }
             }
+        }
+        // A queue is waiting (slice 10): only its front may take the place that came free
+        if (obj.affordance?.queue) {
+            const q = this._queuers(obj.id);
+            if (q.length && q[0] !== s) return false;
         }
         const cd = s.cooldowns[obj.id];
         return !(cd && cd > this.clockMs);
@@ -788,7 +802,14 @@ export class NPCNeedsSystem {
             if (priv) this._notePrivate(s, name, { need: name, skipped: priv });
             return null;
         };
-        if (!opts.length) return nothing();
+        const queued = () => {
+            const q = this._queueCandidate(s, name, objects, pos);
+            if (!q) return nothing();
+            if (skipped) q.leashed = skipped;
+            if (priv) q.privateSkipped = priv;
+            return q;
+        };
+        if (!opts.length) return queued();
         // Prefer the NPC's own post object (needsHome) when it satisfies this need
         // and is reachable, so a person works at their own desk rather than the
         // nearest free one. Only bites when the home object is among the options
@@ -796,7 +817,7 @@ export class NPCNeedsSystem {
         const homeObj = s.home?.objectId ? opts.find(o => o.id === s.home.objectId) : null;
         const target = (homeObj && this._reachable(s, homeObj))
             ? homeObj : this._nearestReachable(s, opts, pos);
-        if (!target) return nothing();
+        if (!target) return queued();
         const pick = { kind: 'use', targetId: target.id };
         if (skipped) pick.leashed = skipped;
         if (priv) pick.privateSkipped = priv;
@@ -825,9 +846,10 @@ export class NPCNeedsSystem {
         s.job = {
             need: pick.need, kind: pick.kind, targetId: pick.targetId,
             itemId: pick.itemId || null, tag: pick.tag || null,
-            phase: pick.kind === 'carry' ? 'goto_item' : 'goto_target',
+            phase: pick.kind === 'carry' ? 'goto_item' : (pick.queue ? 'queued' : 'goto_target'),
             startedAt: this.clockMs, deadline: 0, useUntil: 0, carrying: false
         };
+        if (pick.queue) { s.job.qSeq = this._queueSeq++; s.job.queuedAt = this.clockMs; s.job.qCell = null; s.job.qArrived = false; }
         s.avoidNoted = {};   // a new episode: npc_avoided may fire again next time
         if (pick.leashed) s.job.leashed = true;   // the debug overlay's "leashed" label
         if (pick.privateSkipped) s.job.privateSkipped = true;   // the overlay's "private" label
@@ -839,6 +861,11 @@ export class NPCNeedsSystem {
         }
         s.mode = 'job';
         this._log(id, 'job_start', { need: pick.need || undefined, tag: pick.tag || undefined, target: pick.targetId, item: pick.itemId || undefined });
+        if (pick.queue) {
+            const place = this._queuers(pick.targetId).indexOf(s) + 1;
+            this._log(id, 'queued', { need: pick.need || undefined, target: pick.targetId, place });
+            this._emit(`npc_queued:${pick.targetId}`, { npcId: id, objectId: pick.targetId, need: pick.need, place, ...this._playerProximity(id) });
+        }
         if (pick.leashed) this._emitLeashed(s, { need: pick.need || undefined, skipped: pick.leashed, chose: pick.targetId });
         if (pick.privateSkipped) this._log(id, 'private_skipped', { need: pick.need || undefined, skipped: pick.privateSkipped, chose: pick.targetId });
         // Pre-action tell: a short wind-up while the NPC is still at its post, so the
@@ -921,6 +948,13 @@ export class NPCNeedsSystem {
         const obj = this.world.getObject(destId);
         let cell = obj ? this.world.approachCell(obj) : null;
         if (!cell) { this._failJob(s, 'no_approach'); return; }
+        if (job.phase === 'queued') {
+            const place = this._queuePlace(s, obj);
+            if (!place) { this._leaveQueue(s, 'no_queue_cell'); return; }
+            cell = place.cell;
+            job.qCell = `${Math.round(cell.x)},${Math.round(cell.y)}`;
+            job.qArrived = false;
+        }
         // A shared object (capacity 2+) someone else is already headed for: stand beside them, so
         // the two can face each other (slice 8). Only a world with besideCell (the live adapter).
         if (job.phase === 'goto_target' && typeof this.world.besideCell === 'function'
@@ -948,6 +982,7 @@ export class NPCNeedsSystem {
     _advanceJob(s, arrived) {
         const id = s.npcId;
         const job = s.job;
+        if (job.phase === 'queued') { this._advanceQueued(s, arrived); return; }
         if (job.phase === 'goto_item' || job.phase === 'goto_target') {
             if (job.phase === 'goto_item') {
                 const item = this.world.getObject(job.itemId);
@@ -1238,7 +1273,7 @@ export class NPCNeedsSystem {
             const c = this._chats.get(oid);
             const A = this.states.get(c.a), B = this.states.get(c.b);
             // Either one frozen in a conversation, gone, or finished: the pairing ends
-            if (!this._usingObj(A, oid) || !this._usingObj(B, oid)) { this._chats.delete(oid); continue; }
+            if (!this._usingObj(A, oid) || !(c.queue ? this._queuedFront(B, oid) : this._usingObj(B, oid))) { this._chats.delete(oid); continue; }
             if (c.current && this.clockMs >= c.current.until) c.current = null;
             if (c.current) {
                 if (c.hush && !c.hushed && this._playerWithin([c.a, c.b])) c.hushed = true;
@@ -1263,7 +1298,7 @@ export class NPCNeedsSystem {
             const line = pool.lines[idx];
             const ms = bubbleMs(line);
             // Only while both are still using it: a line that would outlast the overlap is not started
-            if (this.clockMs + ms > Math.min(A.job.useUntil, B.job.useUntil)) { this._chats.delete(oid); continue; }
+            if (this.clockMs + ms > (c.queue ? A.job.useUntil : Math.min(A.job.useUntil, B.job.useUntil))) { this._chats.delete(oid); continue; }
             c.current = { speakerId: c.speaker, partnerId, line, until: this.clockMs + ms };
             c.hush = pool.hush;
             const radius = c.overhearRadius || pool.overhearRadius || OVERHEAR_RADIUS;
@@ -1303,6 +1338,159 @@ export class NPCNeedsSystem {
             if (c.b === npcId) return c.a;
         }
         return null;
+    }
+
+    // ── queues at shared machines (slice 10: OFFICE_LIFE_PLAN 2.5, 7.3) ──────
+
+    /** affordance.queue as { offsets, maxWaitMs }, or null (no queue: today's wait at the desk). */
+    _queueCfg(obj) {
+        const q = obj?.affordance?.queue;
+        if (!q || typeof q !== 'object' || !Array.isArray(q.cells)) return null;
+        const offsets = q.cells.filter(c => c && Number.isFinite(Number(c.dx)) && Number.isFinite(Number(c.dy)))
+            .map(c => ({ dx: Number(c.dx), dy: Number(c.dy) }));
+        if (!offsets.length) return null;
+        const w = Number(q.maxWaitSeconds);
+        return { offsets, maxWaitMs: (Number.isFinite(w) && w > 0 ? clamp(w, 1, 600) : QUEUE_MAX_WAIT_S) * 1000 };
+    }
+
+    /**
+     * The queue's cells in order, as world points with a room: the live adapter snaps each offset
+     * (tiles from the approach cell) to a walkable cell and drops one that does not snap; a world
+     * without queueCells (the node stub) takes the offsets as they are, in the object's room.
+     */
+    _queueCells(obj) {
+        const cfg = this._queueCfg(obj);
+        if (!cfg) return [];
+        if (typeof this.world.queueCells === 'function') return this.world.queueCells(obj, cfg.offsets) || [];
+        const base = this.world.approachCell(obj);
+        if (!base) return [];
+        return cfg.offsets.map(o => ({ x: base.x + o.dx * 32, y: base.y + o.dy * 32, roomId: obj.roomId }));
+    }
+
+    /** NPCs queued for an object, in claim order (tick, then NPC id: the order ticks run in). */
+    _queuers(objectId) {
+        const out = [];
+        for (const o of this.states.values()) if (o.job?.phase === 'queued' && o.job.targetId === objectId) out.push(o);
+        return out.sort((a, b) => a.job.qSeq - b.job.qSeq);
+    }
+
+    /**
+     * Each queuer, in order, takes the first cell that is in a room it may enter and that nobody
+     * ahead of it holds (review m8). `who` may be a newcomer not yet queued: it goes last.
+     * Returns { index, cell } for `who`, or null when no permitted cell is left.
+     */
+    _queuePlace(who, obj) {
+        const cells = this._queueCells(obj);
+        const line = this._queuers(obj.id).filter(o => o !== who);
+        line.push(who);
+        const held = new Set();
+        for (const o of line) {
+            let got = null;
+            for (let i = 0; i < cells.length; i++) {
+                if (held.has(i) || this._roomForbidden(o, cells[i].roomId)) continue;
+                got = i;
+                break;
+            }
+            if (got === null) { if (o === who) return null; continue; }
+            held.add(got);
+            if (o === who) return { index: got, cell: cells[got] };
+        }
+        return null;
+    }
+
+    /** No free target for this need: the nearest claimed one with a queue place for this NPC. */
+    _queueCandidate(s, name, objects, pos) {
+        const list = objects.filter(o => o.affordance?.queue && asList(o.affordance.satisfies).includes(name)
+            && this._permitted(s, o, true) && !(s.cooldowns[o.id] > this.clockMs)
+            && !this._free(s, o) && this._queuePlace(s, o));
+        if (!list.length) return null;
+        const target = this._nearestReachable(s, list, pos);
+        return target ? { kind: 'use', targetId: target.id, queue: true } : null;
+    }
+
+    _advanceQueued(s, arrived) {
+        const job = s.job;
+        const obj = this.world.getObject(job.targetId);
+        if (!obj || !this._queueCfg(obj)) { this._leaveQueue(s, 'gone'); return; }
+        // The need was met some other way (a mapping, a refill): no reason to stand here
+        if (job.need && s.needs[job.need] && s.levels[job.need] > s.needs[job.need].urgentAt && !this._starved(s, job.need)) {
+            this._leaveQueue(s, 'need_met');
+            return;
+        }
+        if (this.clockMs - job.queuedAt >= this._queueCfg(obj).maxWaitMs) {
+            s.cooldowns[job.targetId] = this.clockMs + QUEUE_COOLDOWN_MS;
+            this._leaveQueue(s, 'max_wait');
+            return;
+        }
+        // The front of the queue takes the place as soon as one is free
+        if (this._queuers(job.targetId)[0] === s && this._free(s, obj)) {
+            job.phase = 'goto_target';
+            job.qCell = null;
+            this._log(s.npcId, 'queue_front', { target: job.targetId });
+            this._moveForPhase(s);
+            return;
+        }
+        // Someone ahead left or moved up: step forward to this NPC's cell now
+        const place = this._queuePlace(s, obj);
+        if (!place) { this._leaveQueue(s, 'no_queue_cell'); return; }
+        const key = `${Math.round(place.cell.x)},${Math.round(place.cell.y)}`;
+        if (key !== job.qCell) { this._moveForPhase(s); return; }
+        if (arrived) {
+            job.qArrived = true;
+            this.world.faceTo(s.npcId, obj.x, obj.y);
+        } else if (!job.qArrived && this.clockMs >= job.deadline) {
+            this._failJob(s, 'timeout');
+        }
+    }
+
+    /** Leave a queue and walk back to the post. */
+    _leaveQueue(s, reason) {
+        this._log(s.npcId, 'queue_left', { target: s.job?.targetId, reason });
+        this._abortJob(s, reason, { cancel: true });
+        this._goHome(s);
+    }
+
+    /** Is s the front of the queue for objectId and standing in its cell? */
+    _queuedFront(s, objectId) {
+        return !!(s && s.mode === 'job' && s.job?.phase === 'queued' && s.job.targetId === objectId
+            && s.job.qArrived && this._queuers(objectId)[0] === s);
+    }
+
+    /**
+     * Queue chatter: the NPC using a chatter object pairs with the first queued NPC, once it stands
+     * within 1.5 tiles of the approach cell, with slice 8's turn-taking, if the two are compatible
+     * (7.3). An incompatible front queues in silence; the second in line never chats.
+     */
+    _tickQueueChats() {
+        let objIds = null;
+        for (const o of this.states.values()) {
+            if (o.job?.phase === 'queued' && o.job.qArrived) (objIds || (objIds = new Set())).add(o.job.targetId);
+        }
+        if (!objIds) return;
+        for (const oid of [...objIds].sort()) {
+            if (this._chats.has(oid)) continue;
+            const obj = this.world.getObject(oid);
+            const aff = obj?.affordance || {};
+            if (typeof aff.chatter !== 'string' || !aff.chatter) continue;
+            const front = this._queuers(oid)[0];
+            if (!this._queuedFront(front, oid)) continue;
+            const cell = this.world.approachCell(obj);
+            const fp = this.world.npcPos(front.npcId);
+            if (!cell || !fp || Math.hypot(fp.x - cell.x, fp.y - cell.y) > QUEUE_CHAT_RADIUS) continue;
+            let user = null;
+            for (const id of [...this.states.keys()].sort()) {
+                if (this._usingObj(this.states.get(id), oid)) { user = this.states.get(id); break; }
+            }
+            if (!user || !this._compatible(user, front)) continue;   // queue in silence
+            const seq = this._chatSeq++;
+            const first = this.roll(`${user.npcId}+${front.npcId}`, `chat:${oid}:${seq}:first`) < 0.5 ? user.npcId : front.npcId;
+            this._chats.set(oid, {
+                objectId: oid, topic: aff.chatter, overhearRadius: Number(aff.overhearRadius) > 0 ? Number(aff.overhearRadius) : null,
+                a: user.npcId, b: front.npcId, queue: true, seq, n: 0, speaker: first, nextAt: this.clockMs, current: null, hushed: false
+            });
+            const pa = this.world.npcPos(user.npcId);
+            if (pa) { this.world.faceTo(user.npcId, fp.x, fp.y); this.world.faceTo(front.npcId, pa.x, pa.y); }
+        }
     }
 
     // ── read-outs ──────────────────────────────────────────────────────────
@@ -1350,7 +1538,7 @@ export class NPCNeedsSystem {
         for (const k of Object.keys(s.levels)) levels[k] = round2(s.levels[k]);
         return {
             npcId, mode: s.mode, levels, atPost: s.atPost, scriptSuspended: s.scriptSuspended,
-            job: s.job ? { windingUp: !!s.job.windupUntil, need: s.job.need, kind: s.job.kind, phase: s.job.phase, targetId: s.job.targetId, itemId: s.job.itemId, carrying: s.job.carrying, tag: s.job.tag || null, leashed: !!s.job.leashed, privateSkipped: !!s.job.privateSkipped, prints: !!s.job.prints, files: !!(s.job.stowAt && s.job.slot) } : null,
+            job: s.job ? { windingUp: !!s.job.windupUntil, need: s.job.need, kind: s.job.kind, phase: s.job.phase, targetId: s.job.targetId, itemId: s.job.itemId, carrying: s.job.carrying, tag: s.job.tag || null, leashed: !!s.job.leashed, privateSkipped: !!s.job.privateSkipped, prints: !!s.job.prints, files: !!(s.job.stowAt && s.job.slot), queuePlace: s.job.phase === 'queued' ? this._queuers(s.job.targetId).indexOf(s) + 1 : null } : null,
             pressing: this._pressing(s),
             talking: this._talking(npcId),
             chatPartner: this._chatPartner(npcId),
@@ -1634,6 +1822,30 @@ export function createEngineWorld() {
                 if (c && !taken.some(t => Math.hypot(t.x - c.x, t.y - c.y) < TILE / 2)) return c;
             }
             return null;
+        },
+        // Queue cells (slice 10): offsets in tiles from the approach cell, each snapped to the exact
+        // walkable 8 px cell there (no search: a cell on furniture is dropped, not moved), with the
+        // room it lies in (the object's room first, for a cell on a shared edge)
+        queueCells(obj, offsets) {
+            const pm = W().pathfindingManager;
+            const base = this.approachCell(obj);
+            if (!base || !pm?.findNearestWalkableWorldCell) return [];
+            const rooms = W().rooms || {};
+            const roomAt = (x, y) => {
+                const inside = r => r?.position && r.map && x >= r.position.x && y >= r.position.y
+                    && x < r.position.x + r.map.widthInPixels && y < r.position.y + r.map.heightInPixels;
+                if (inside(rooms[obj.roomId])) return obj.roomId;
+                for (const id of Object.keys(rooms).sort()) if (inside(rooms[id])) return id;
+                return obj.roomId;
+            };
+            const out = [];
+            for (const o of offsets) {
+                const c = pm.findNearestWalkableWorldCell(base.x + o.dx * TILE, base.y + o.dy * TILE, 0);
+                if (!c) continue;
+                if ([base, ...out].some(t => Math.hypot(t.x - c.x, t.y - c.y) < TILE / 2)) continue;
+                out.push({ x: c.x, y: c.y, roomId: roomAt(c.x, c.y) });
+            }
+            return out;
         },
         // For npc_caught_at_post: the player's distance to an NPC's home point (null when the
         // player is in another room) and whether the open minigame belongs to the home object.

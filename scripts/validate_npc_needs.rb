@@ -43,6 +43,7 @@ module ValidateNpcNeeds
     check_visuals(json, objs, issues)
     check_slots(json, objs, issues)
     check_social(json, npcs, objs, issues)
+    check_queues(json, npcs, objs, issues)
     npcs.each { |room_id, npc| check_npc(json, npc, room_id, objs, issues, npcs) }
     issues
   end
@@ -156,6 +157,76 @@ module ValidateNpcNeeds
     who.start_with?('group:') && groups_of.call(other).include?(who.sub('group:', ''))
   end
 
+  # ── queues at shared machines (OFFICE_LIFE_PLAN 2.5, slice 10) ─────────
+  # affordance.queue: { cells: [{dx, dy}], maxWaitSeconds }, offsets in tiles from the approach
+  # cell (useFrom, else the object's own tile). The engine drops a cell that is not walkable and
+  # skips one in a room forbidden to the queuer; this flags what can be seen without the map: a
+  # malformed cell, a cell beside a wall with a door (it may sit in the doorway), and a cell
+  # outside the room in a neighbour forbidden to an NPC that needs the machine (review m8).
+
+  GAME_JS = File.expand_path('../public/break_escape/js/core/game.js', __dir__)
+
+  def self.room_tiles(type)
+    @room_tiles ||= {}
+    return @room_tiles[type] if @room_tiles.key?(type)
+
+    @tilemaps ||= File.exist?(GAME_JS) ? File.read(GAME_JS).scan(/tilemapTiledJSON\('([^']+)',\s*'rooms\/([^']+)'\)/).to_h : {}
+    file = @tilemaps[type]
+    path = file && File.expand_path("../public/break_escape/assets/rooms/#{file}", __dir__)
+    tj = path && File.exist?(path) ? (JSON.parse(File.read(path)) rescue nil) : nil
+    @room_tiles[type] = tj && tj['width'] ? [tj['width'].to_i, tj['height'].to_i] : nil
+  end
+
+  def self.check_queues(json, npcs, objs, issues)
+    objs.each do |o|
+      aff = o.data['affordance']
+      next unless aff.is_a?(Hash) && aff.key?('queue')
+
+      q = aff['queue']
+      next if q == false   # switches a preset's queue off
+
+      where = "object '#{o.id}' affordance.queue"
+      cells = q.is_a?(Hash) ? q['cells'] : nil
+      unless cells.is_a?(Array) && !cells.empty? && cells.all? { |c| c.is_a?(Hash) && c['dx'].is_a?(Numeric) && c['dy'].is_a?(Numeric) }
+        issues << "❌ ERROR: #{where} needs cells: a non-empty list of { dx, dy } tile offsets from the approach cell."
+        next
+      end
+      w = q['maxWaitSeconds']
+      issues << "⚠️ WARNING: #{where}.maxWaitSeconds must be a positive number of seconds (default 30)." if q.key?('maxWaitSeconds') && !(w.is_a?(Numeric) && w.positive?)
+      satisfies = list(aff['satisfies'])
+      issues << "⚠️ WARNING: #{where} is on an object that satisfies no need; nobody will queue there." if satisfies.empty?
+      room = json.dig('rooms', o.room)
+      dims = room.is_a?(Hash) ? room_tiles(room['type']) : nil
+      next if dims.nil? || o.room.nil?
+
+      uf = aff['useFrom'].is_a?(Hash) ? aff['useFrom'] : {}
+      bx = o.x.floor + uf['dx'].to_i
+      by = o.y.floor + uf['dy'].to_i
+      conns = room['connections'].is_a?(Hash) ? room['connections'] : {}
+      needers = npcs.select { |_r, n| n['needs'].is_a?(Hash) && (n['needs'].keys & satisfies).any? }
+      cells.each_with_index do |c, i|
+        cx = bx + c['dx'].round
+        cy = by + c['dy'].round
+        side = if cx.negative? then 'west' elsif cx >= dims[0] then 'east' elsif cy.negative? then 'north' elsif cy >= dims[1] then 'south' end
+        if side
+          nbr = Array(conns[side]).first
+          issues << "⚠️ WARNING: #{where} cell #{i + 1} (tile #{cx},#{cy}) lies outside room '#{o.room}'#{nbr ? " in '#{nbr}'" : ''}; it may sit in a doorway or a wall, and the engine drops a cell that is not walkable."
+          next unless nbr.is_a?(String)
+
+          needers.each do |hr, n|
+            rule = leash_rule(json, n, nbr, n['needsHome'].is_a?(Hash) ? n['needsHome']['room'] : hr)
+            issues << "⚠️ WARNING: #{where} cell #{i + 1} is in room '#{nbr}', #{rule} for NPC '#{n['id']}', who needs this machine; that NPC skips the cell (and waits at its post if no cell is left)." if rule
+          end
+        else
+          near = conns.keys.select do |dir|
+            (dir == 'west' && cx <= 1) || (dir == 'east' && cx >= dims[0] - 2) || (dir == 'north' && cy <= 2) || (dir == 'south' && cy >= dims[1] - 2)
+          end
+          issues << "⚠️ WARNING: #{where} cell #{i + 1} (tile #{cx},#{cy}) is within a tile of the #{near.join('/')} wall, which has a door; if it lands in the doorway a queuer blocks it." if near.any?
+        end
+      end
+    end
+  end
+
   def self.check_social(json, npcs, objs, issues)
     sc = json['chatter']
     if json.key?('chatter') && sc != false && !sc.is_a?(Hash)
@@ -173,7 +244,7 @@ module ValidateNpcNeeds
 
       topic = aff['chatter']
       issues << "⚠️ WARNING: object '#{o.id}' affordance.chatter '#{topic}' is not a chatter pool (#{pools.uniq.sort.join(', ')}); nobody will speak there." unless pools.include?(topic)
-      issues << "⚠️ WARNING: object '#{o.id}' affordance.chatter needs capacity 2 or more; one NPC at a time never chats." if (aff['capacity'] || 1).to_i < 2
+      issues << "⚠️ WARNING: object '#{o.id}' affordance.chatter needs capacity 2 or more, or a queue; one NPC at a time never chats." if (aff['capacity'] || 1).to_i < 2 && !aff['queue'].is_a?(Hash)
     end
 
     ids = npcs.map { |_r, n| n['id'] }

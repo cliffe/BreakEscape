@@ -1,5 +1,5 @@
 {
-  "scenario_brief": "TEST: Needs (Sims-style office day)\n\nA demo of the NPC needs system. Nothing to solve. Five staff get thirsty, hungry, tired and bored, want coffee and want to work, and walk to whatever fixes it before going back to their own desks. Open the kitchen door (west) and the lounge door (east) once so they can get there. The lounge is Rosa's room: only she and Grace use it, and each PC is used only by its owner. Read the deadline memo in the office and Tom and Amara both want a coffee at once; whoever misses the office station walks to the kitchen, not to Rosa's kettle. Drop the parcel or the dirty mugs from your inventory and watch someone deal with them. The whiteboard by the office's back wall shows the last thing anyone used. Icons over heads say what each person is doing, a thought bubble beside a head shows the need they will act on next, a carried parcel or mug shows in their hands, desk workers type, and you hear a drink or a snack when you are near enough.",
+  "scenario_brief": "TEST: Needs (Sims-style office day)\n\nA demo of the NPC needs system. Nothing to solve. Five staff get thirsty, hungry, tired and bored, want coffee and want to work, and walk to whatever fixes it before going back to their own desks. Open the kitchen door (west) and the lounge door (east) once so they can get there. The lounge is Rosa's room: only she and Grace use it, and each PC is used only by its owner. Read the deadline memo in the office and Tom and Amara both want a coffee at once; whoever misses the office station walks to the kitchen, not to Rosa's kettle (with the kitchen still shut, they wait in line at the office station instead). Read the Activity Board before opening the kitchen and Amara and Tom want a coffee, Marek queues behind Tom, and whoever is pouring chats with the first in line, unless that is Marek. Drop the parcel or the dirty mugs from your inventory and watch someone deal with them. The whiteboard by the office's back wall shows the last thing anyone used. Icons over heads say what each person is doing, a thought bubble beside a head shows the need they will act on next, a carried parcel or mug shows in their hands, desk workers type, and you hear a drink or a snack when you are near enough.",
   "endGoal": "Demo only: watch the staff.",
   "startRoom": "office",
   "startPosition": { "x": 5, "y": 6 },
@@ -11,6 +11,7 @@
   "lighting": { "enabled": true, "defaultMode": "on" },
 
   "chatter": {
+    "coffee": ["Go on, after you.", "Is there any milk left?", "This machine takes forever.", "Strong one today?", "Who keeps taking the mugs?", "Busy morning?"],
     "cooler": ["Did you see the car park email?", "Friday drinks again?", "How was the weekend?", "Is it raining again?", "Train was late again.", "Any plans for lunch?", "Not bad, you?", "That printer jammed again."]
   },
 
@@ -73,6 +74,8 @@
         { "taskId": "hear_snack", "title": "Hear someone eat in the kitchen (the fridge and microwave take their settings and sound from their type)", "type": "custom", "status": "active" },
         { "taskId": "see_chat", "title": "Two people chat at the water cooler (read the Activity Board and Sanjay and Rosa both want a chat)", "type": "custom", "status": "active" },
         { "taskId": "see_outcast", "title": "Nobody chats with the contractor: read the Kitchen Rota and Marek heads for the cooler; Sanjay waits at his desk until Marek has gone", "type": "custom", "status": "active" },
+        { "taskId": "see_queue", "title": "A queue forms at the coffee machine (read the Activity Board before opening the kitchen: Amara and Tom want a coffee, and Marek joins the line behind Tom)", "type": "custom", "status": "active" },
+        { "taskId": "see_queue_chat", "title": "Chat in the coffee queue (nobody chats with Marek, even in the queue)", "type": "custom", "status": "active" },
         { "taskId": "see_printout", "title": "A printout is delivered to a desk (Sanjay prints at his PC; Amara takes it from the copier tray to her desk, where it is filed a minute later)", "type": "custom", "status": "active" }
       ]
     }
@@ -141,9 +144,9 @@
           "name": "Office Coffee Station",
           "position": { "x": 8, "y": 8 },
           "takeable": false,
-          "observations": "The office coffee station. One person at a time.",
-          "_comment": "The coffee preset stands the NPC below the machine (useFrom 0,1); this one's own useFrom wins.",
-          "affordance": { "useFrom": { "dx": -1, "dy": 0 } }
+          "observations": "The office coffee station. One person at a time; anyone else waits in line.",
+          "_comment": "The coffee preset stands the NPC below the machine (useFrom 0,1) and queues two a row below; this one's own useFrom and queue win. Slice 10: the queue runs up and left of the approach cell (the row below is the wall), and the coffee pool gives the user and the first in line something to say.",
+          "affordance": { "useFrom": { "dx": -1, "dy": 0 }, "queue": { "cells": [{ "dx": -1, "dy": -1 }, { "dx": -2, "dy": -1 }] }, "chatter": "coffee" }
         },
         {
           "type": "dirty_mugs1",
@@ -292,6 +295,9 @@
             { "eventPattern": "npc_used:water_cooler", "cooldown": 0, "setGlobal": { "last_activity": "water_cooler" } },
             { "eventPattern": "npc_used:water_cooler", "onceOnly": true, "cooldown": 0, "completeTask": "see_drink" },
             { "eventPattern": "npc_chatted:water_cooler", "onceOnly": true, "cooldown": 0, "completeTask": "see_chat" },
+            { "eventPattern": "npc_queued:office_coffee", "onceOnly": true, "cooldown": 0, "completeTask": "see_queue" },
+            { "eventPattern": "npc_chatted:office_coffee", "onceOnly": true, "cooldown": 0, "completeTask": "see_queue_chat" },
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Activity Board'", "cooldown": 30000, "needs": { "set": { "caffeine": 10 } } },
             { "eventPattern": "npc_avoided:sanjay", "condition": "data.avoidedId === \"marek\"", "onceOnly": true, "cooldown": 0, "completeTask": "see_outcast" },
             { "eventPattern": "npc_used:lounge_sofa", "cooldown": 0, "setGlobal": { "last_activity": "sofa" } },
             { "eventPattern": "npc_used:lounge_sofa", "onceOnly": true, "cooldown": 0, "completeTask": "see_rest" },
@@ -341,6 +347,7 @@
           "eventMappings": [
             { "eventPattern": "workstation_owner_left:tom_pc", "condition": "data.screenLocked === false", "onceOnly": true, "cooldown": 0, "completeTask": "spot_open_screen" },
             { "eventPattern": "npc_caught_at_post:tom", "cooldown": 30000, "bark": "Er, that's my desk. Can I help you?", "completeTask": "see_caught" },
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Activity Board'", "cooldown": 30000, "needs": { "set": { "caffeine": 10 } } },
             { "eventPattern": "object_interacted", "condition": "data.objectName === 'Deadline Memo'", "cooldown": 30000, "needs": { "set": { "caffeine": 20 } } }
           ]
         },
@@ -401,15 +408,17 @@
           "currentKnot": "start",
           "voice": { "name": "Charon", "style": "Telecoms contractor, fifties, Polish-born, years in the UK. Gruff but not unfriendly.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
-          "_comment": "Slice 8 (OFFICE_LIFE_PLAN 7.3): the outcast. avoids '*' acts both ways: nobody shares the cooler with him or chats with him. His thirst is slow so he goes only when the Kitchen Rota is read (or after about half an hour).",
+          "_comment": "Slice 8 (OFFICE_LIFE_PLAN 7.3): the outcast. avoids '*' acts both ways: nobody shares the cooler with him or chats with him. His thirst is slow so he goes only when the Kitchen Rota is read (or after about half an hour). Slice 10: a slow caffeine need too; when Tom joins the coffee queue Marek wants one, so he queues behind Tom, in silence.",
           "needsHome": { "room": "office", "x": 6, "y": 8 },
           "needsSpeed": 80,
           "needsCompany": { "avoids": ["*"] },
           "needs": {
-            "thirst": { "decayPerMin": 2, "urgentAt": 30, "initial": 95 }
+            "thirst": { "decayPerMin": 2, "urgentAt": 30, "initial": 95 },
+            "caffeine": { "decayPerMin": 1, "urgentAt": 30, "initial": 95 }
           },
           "eventMappings": [
-            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Kitchen Rota'", "cooldown": 30000, "needs": { "set": { "thirst": 10 } } }
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Kitchen Rota'", "cooldown": 30000, "needs": { "set": { "thirst": 10 } } },
+            { "eventPattern": "npc_queued:office_coffee", "condition": "data.npcId === 'tom'", "cooldown": 30000, "needs": { "set": { "caffeine": 10 } } }
           ]
         }
       ]
@@ -444,7 +453,8 @@
           "position": { "x": 3, "y": 8 },
           "takeable": false,
           "observations": "The kitchen's coffee station.",
-          "affordance": { "useFrom": { "dx": 0, "dy": -1 } }
+          "_comment": "Slice 10: the preset's queue would run a row below, into the wall, and past the water cooler; this one runs up and right, clear of the cooler.",
+          "affordance": { "useFrom": { "dx": 0, "dy": -1 }, "queue": { "cells": [{ "dx": 1, "dy": -1 }, { "dx": 2, "dy": -1 }] } }
         },
         {
           "type": "water_cooler1",
@@ -495,7 +505,8 @@
           "position": { "x": 1, "y": 3 },
           "takeable": false,
           "observations": "Rosa's own kettle, by the lounge door. Nearer to most desks than the kitchen, but nobody else touches it.",
-          "affordance": { "useFrom": { "dx": 1, "dy": 0 } }
+          "_comment": "queue false: the coffee preset would queue two by the lounge door (the validator warns that a queuer could stand in the doorway); Rosa and Grace rarely want it at once.",
+          "affordance": { "useFrom": { "dx": 1, "dy": 0 }, "queue": false }
         }
       ],
       "npcs": [

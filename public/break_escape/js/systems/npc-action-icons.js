@@ -14,7 +14,8 @@
  *                        With no job: "noticed" for NOTICED_MS after npc_caught_at_post, else
  *                          "blocked" while an urgent need has nothing permitted (leashed). These
  *                          two show only with showPressingNeeds or an explicit scenario entry.
- *                          "queue" is registered for slice 10 (no queue exists yet).
+ *                          While queued at a shared machine (job.phase "queued", slice 10) only
+ *                          "queue" is tried (default icon:npc-queue, an hourglass).
  *                        An <icon> is a texture or text (OFFICE_LIFE_PLAN 2.12):
  *                          "icon:talk"              assets/icons/talk.png
  *                          { "sprite": "kettle1" }  assets/objects/kettle1.png (optional "text")
@@ -90,6 +91,8 @@ export function firstIcon(keys, actionIcons = {}, { fallback = true } = {}) {
  */
 export function pickIconEntry(job, actionIcons = {}, target = null) {
     if (!job) return null;
+    // Waiting in a queue (slice 10): the hourglass, whatever the machine (a scenario "queue" entry wins)
+    if (job.phase === 'queued') return firstIcon(['queue'], actionIcons);
     const keys = (job.kind === 'carry' || job.itemId)
         ? [job.files ? 'file' : null, job.tag, 'curiosity']
         : (target ? [target.id, (job.prints || target.print) ? 'print' : null, job.need, target.satisfies, target.type]
