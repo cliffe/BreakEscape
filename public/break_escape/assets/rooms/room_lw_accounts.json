@@ -815,39 +815,39 @@
      "y": 272
     },
     {
-     "gid": 960,
-     "height": 25,
+     "gid": 1474,
+     "height": 23,
      "id": 62,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 23,
-     "x": 232,
+     "width": 12,
+     "x": 237,
      "y": 162
     },
     {
-     "gid": 960,
-     "height": 25,
+     "gid": 1474,
+     "height": 23,
      "id": 63,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 23,
-     "x": 392,
+     "width": 12,
+     "x": 397,
      "y": 162
     },
     {
-     "gid": 960,
-     "height": 25,
+     "gid": 1474,
+     "height": 23,
      "id": 64,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 23,
-     "x": 232,
+     "width": 12,
+     "x": 237,
      "y": 258
     },
     {
@@ -1011,13 +1011,13 @@
     {
      "id": 0,
      "image": "../tables/hospital_desk1.png",
-     "imageheight": 48,
+     "imageheight": 44,
      "imagewidth": 62
     },
     {
      "id": 1,
      "image": "../tables/hospital_desk2.png",
-     "imageheight": 48,
+     "imageheight": 44,
      "imagewidth": 62
     },
     {
@@ -1088,7 +1088,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 663,
+   "tilecount": 664,
    "tileheight": 60,
    "tiles": [
     {
@@ -1694,7 +1694,7 @@
     {
      "id": 100,
      "image": "../objects/hospital_chair_north2.png",
-     "imageheight": 26,
+     "imageheight": 30,
      "imagewidth": 16
     },
     {
@@ -1790,7 +1790,7 @@
     {
      "id": 116,
      "image": "../objects/exec_desk1.png",
-     "imageheight": 46,
+     "imageheight": 42,
      "imagewidth": 80
     },
     {
@@ -2002,6 +2002,12 @@
      "image": "../objects/bankers_lamp1.png",
      "imageheight": 25,
      "imagewidth": 23
+    },
+    {
+     "id": 673,
+     "image": "../objects/office-misc-lamp4.png",
+     "imageheight": 23,
+     "imagewidth": 12
     },
     {
      "id": 160,
@@ -4772,7 +4778,7 @@
     {
      "id": 623,
      "image": "../objects/m10_steel_chair1.png",
-     "imageheight": 26,
+     "imageheight": 31,
      "imagewidth": 16
     },
     {
@@ -4850,13 +4856,13 @@
     {
      "id": 636,
      "image": "../objects/aw_chair_south_slate1.png",
-     "imageheight": 32,
+     "imageheight": 35,
      "imagewidth": 16
     },
     {
      "id": 637,
      "image": "../objects/aw_chair_north_slate1.png",
-     "imageheight": 26,
+     "imageheight": 30,
      "imagewidth": 16
     },
     {
@@ -4904,13 +4910,13 @@
     {
      "id": 645,
      "image": "../objects/aw_chair_south_charcoal1.png",
-     "imageheight": 32,
+     "imageheight": 35,
      "imagewidth": 16
     },
     {
      "id": 646,
      "image": "../objects/aw_chair_north_charcoal1.png",
-     "imageheight": 26,
+     "imageheight": 30,
      "imagewidth": 16
     },
     {

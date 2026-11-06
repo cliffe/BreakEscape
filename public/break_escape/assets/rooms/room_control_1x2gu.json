@@ -400,7 +400,7 @@
                  "visible":true,
                  "width":16,
                  "x":157.666666666667,
-                 "y":94
+                 "y":91
                 }, 
                 {
                  "gid":374,
@@ -412,7 +412,7 @@
                  "visible":true,
                  "width":27,
                  "x":139,
-                 "y":93.3333333333333
+                 "y":91.3333333333333
                 }, 
                 {
                  "gid":375,
@@ -472,7 +472,7 @@
                  "visible":true,
                  "width":16,
                  "x":230.0,
-                 "y":80.0
+                 "y":62.0
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -3402,7 +3402,7 @@
                 {
                  "id":100,
                  "image":"..\/objects\/hospital_chair_north2.png",
-                 "imageheight":26,
+                 "imageheight":30,
                  "imagewidth":16
                 }, 
                 {
@@ -3498,7 +3498,7 @@
                 {
                  "id":116,
                  "image":"..\/objects\/exec_desk1.png",
-                 "imageheight":46,
+                 "imageheight":42,
                  "imagewidth":80
                 }, 
                 {

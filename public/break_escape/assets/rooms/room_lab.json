@@ -107,15 +107,15 @@
                  "y":140
                 }, 
                 {
-                 "gid":109,
-                 "height":41,
+                 "gid":114,
+                 "height":39,
                  "id":4,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":50,
-                 "x":64,
+                 "width":51,
+                 "x":63,
                  "y":220
                 }],
          "opacity":1,
@@ -809,13 +809,13 @@
                 {
                  "id":0,
                  "image":"..\/tables\/hospital_desk1.png",
-                 "imageheight":48,
+                 "imageheight":44,
                  "imagewidth":62
                 }, 
                 {
                  "id":1,
                  "image":"..\/tables\/hospital_desk2.png",
-                 "imageheight":48,
+                 "imageheight":44,
                  "imagewidth":62
                 }, 
                 {
