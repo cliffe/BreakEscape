@@ -14,6 +14,11 @@
 // NPC start points are their scenario tiles (x 32 + 16, plus the room origin); the live sprites
 // stand within a few pixels of these.
 //
+// Slice 2a (2026-11-06, game 585 on :3001): the PCs are private, the lounge is private to Rosa
+// and Grace (needsPrivateTo), Rosa's kettle (lounge_kettle) stands by the lounge door, and the
+// kitchen coffee station moved from tile (6,8) to (3,8), so the kettle is nearer to Tom's and
+// Amara's desks than the kitchen station. Both centres and approach cells were read live.
+//
 // Lazy loading: the kitchen and lounge (and Rosa, who lives in the lounge) do not exist until
 // loadRoom() is called, as in the game, where a room loads when its door first opens.
 import { makeWorld } from './needs-stub-world.mjs';
@@ -40,9 +45,9 @@ export const RECORDED_CELLS = {
 function objects() {
     return [
         // office (start room)
-        { id: 'amara_pc', roomId: 'office', x: 229, y: 122, affordance: { satisfies: 'work', restores: 60, useSeconds: 10, accepts: ['post'] } },
-        { id: 'tom_pc', roomId: 'office', x: 88, y: 166, affordance: { satisfies: 'work', restores: 60, useSeconds: 10 } },
-        { id: 'sanjay_pc', roomId: 'office', x: 92.5, y: 122.5, affordance: { satisfies: 'work', restores: 60, useSeconds: 10 } },
+        { id: 'amara_pc', roomId: 'office', x: 229, y: 122, affordance: { satisfies: 'work', restores: 60, useSeconds: 10, accepts: ['post'], private: true } },
+        { id: 'tom_pc', roomId: 'office', x: 88, y: 166, affordance: { satisfies: 'work', restores: 60, useSeconds: 10, private: true } },
+        { id: 'sanjay_pc', roomId: 'office', x: 92.5, y: 122.5, affordance: { satisfies: 'work', restores: 60, useSeconds: 10, private: true } },
         { id: 'grace_laptop', roomId: 'office', x: 45.5, y: 175 },
         { id: 'office_coffee', roomId: 'office', x: 269, y: 276.5, affordance: { satisfies: 'caffeine', restores: 70, useSeconds: 12, useFrom: { dx: -1, dy: 0 } } },
         { id: 'office_mugs', roomId: 'office', x: 135.5, y: 231, needsTag: 'dirty_mugs' },
@@ -50,12 +55,13 @@ function objects() {
         // kitchen (loads when the west door opens)
         { id: 'fridge', room: 'kitchen', x: -270, y: 94.5, affordance: { satisfies: 'hunger', restores: 80, useSeconds: 15, useFrom: { dx: 0, dy: 1 } } },
         { id: 'microwave', room: 'kitchen', x: -149, y: 105, affordance: { satisfies: 'hunger', restores: 60, useSeconds: 10 } },
-        { id: 'kitchen_coffee', room: 'kitchen', x: -115, y: 276.5, affordance: { satisfies: 'caffeine', restores: 70, useSeconds: 12, useFrom: { dx: 0, dy: -1 } } },
+        { id: 'kitchen_coffee', room: 'kitchen', x: -211, y: 276.5, affordance: { satisfies: 'caffeine', restores: 70, useSeconds: 12, useFrom: { dx: 0, dy: -1 } } },
         { id: 'water_cooler', room: 'kitchen', x: -276, y: 247.5, affordance: { satisfies: ['thirst', 'social'], restores: 70, useSeconds: 15, capacity: 2 } },
         { id: 'washing_up_tray', room: 'kitchen', x: -214, y: 103.5, affordance: { accepts: ['dirty_mugs'], useSeconds: 5 } },
         // lounge (loads when the east door opens)
         { id: 'rosa_laptop', room: 'lounge', x: 494, y: 133.5 },
-        { id: 'lounge_sofa', room: 'lounge', x: 543, y: 275, affordance: { satisfies: 'rest', restores: 80, useSeconds: 20, capacity: 2, useFrom: { dx: 0, dy: -1 } } }
+        { id: 'lounge_sofa', room: 'lounge', x: 543, y: 275, affordance: { satisfies: 'rest', restores: 80, useSeconds: 20, capacity: 2, useFrom: { dx: 0, dy: -1 } } },
+        { id: 'lounge_kettle', room: 'lounge', x: 359.5, y: 105, affordance: { satisfies: 'caffeine', restores: 70, useSeconds: 12, useFrom: { dx: 1, dy: 0 } } }
     ].map(o => (o.room ? { ...o, roomId: null } : o));
 }
 
@@ -146,6 +152,7 @@ export function makeSimsWorld({ reachable = () => true } = {}) {
     const loaded = new Set(['office']);
     w.world.approachCell = simsApproachCell;
     w.world.roomIds = () => [...loaded];
+    w.world.roomPrivateTo = r => (r === 'lounge' && loaded.has('lounge') ? ['rosa', 'grace'] : null);
     w.searches = 0;
     w.world.reachable = (id, o) => { w.searches++; return reachable(id, o); };
     w.loadRoom = (sys, roomId) => {

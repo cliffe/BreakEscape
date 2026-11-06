@@ -22,7 +22,8 @@ test('sims fixture: approachCell honours useFrom like the live adapter, else the
     // Live game 541: office_coffee (useFrom -1,0) -> (236,276); kitchen_coffee (0,-1) -> (-116,244);
     // fridge (0,1) -> (-268,124); lounge_sofa (0,-1) -> (540,244)
     assert.deepEqual(simsApproachCell(obj('office_coffee')), { x: 236, y: 276 });
-    assert.deepEqual(simsApproachCell(obj('kitchen_coffee')), { x: -116, y: 244 });
+    assert.deepEqual(simsApproachCell(obj('kitchen_coffee')), { x: -212, y: 244 }, 'game 585, tile (3,8)');
+    assert.deepEqual(simsApproachCell(obj('lounge_kettle')), { x: 388, y: 108 }, 'game 585');
     assert.deepEqual(simsApproachCell(obj('fridge')), { x: -268, y: 124 });
     assert.deepEqual(simsApproachCell(obj('lounge_sofa')), { x: 540, y: 244 });
     assert.deepEqual(simsApproachCell(obj('tom_pc')), RECORDED_CELLS.tom_pc);
@@ -45,6 +46,36 @@ test('sims fixture: the scripted day reproduces the showcase beats', () => {
     const tomStart = log.find(e => e.npc === 'tom' && e.ev === 'job_start' && e.need === 'caffeine').t;
     assert.equal(tomStart, amaraDone);
     assert.equal(w.calls.globals.amara_opened_parcel, true);
+});
+
+test('sims fixture, slice 2a: own PCs only, the lounge for Rosa and Grace, the memo sends one of Tom and Amara to the kitchen', () => {
+    const w = makeSimsWorld();
+    const sys = new NPCNeedsSystem(w.world, { seed: SIMS_SEED, manualClock: true });
+    w.attach(sys);
+    sys.registerAll();
+    const at = (tick, fn) => { while (sys.tickCount < tick) sys.tick(); fn(); };
+    at(360, () => { w.loadRoom(sys, 'kitchen'); w.loadRoom(sys, 'lounge'); });
+    // The deadline memo: its object_interacted mappings set both caffeine levels to 20 (game 585 did this at tick 641)
+    const memo = () => { sys.control('tom', { set: { caffeine: 20 } }); sys.control('amara', { set: { caffeine: 20 } }); };
+    at(640, memo);
+    at(1280, memo);
+    while (sys.tickCount < 6 * 240) sys.tick();
+    const log = sys.getLog();
+    const lounge = new Set(['lounge_kettle', 'lounge_sofa', 'rosa_laptop']);
+    for (const id of ['amara', 'tom', 'sanjay']) {
+        assert.ok(!log.some(e => e.npc === id && ['job_start', 'used'].includes(e.ev) && lounge.has(e.target)), `${id} chose a lounge target`);
+    }
+    // Everyone works at their own PC
+    const homes = { amara: 'amara_pc', tom: 'tom_pc', sanjay: 'sanjay_pc' };
+    const work = log.filter(e => e.ev === 'used' && e.need === 'work');
+    assert.ok(work.length >= 3 && work.every(e => e.target === homes[e.npc]), work.map(e => `${e.npc}:${e.target}`).join(', '));
+    // After each memo: one at the office station, the other in the kitchen, the kettle skipped although nearer
+    const caf = log.filter(e => e.ev === 'used' && e.need === 'caffeine' && e.t > 640 && ['tom', 'amara'].includes(e.npc)).map(e => e.target);
+    assert.ok(caf.includes('kitchen_coffee') && caf.includes('office_coffee'), caf.join(', '));
+    const leashed = log.filter(e => e.ev === 'leashed' && e.need === 'caffeine' && e.chose === 'kitchen_coffee');
+    assert.ok(leashed.length >= 1 && leashed.every(e => e.skipped.includes('lounge_kettle')));
+    // Rosa makes her coffee at her own kettle
+    assert.ok(log.some(e => e.npc === 'rosa' && e.ev === 'used' && e.target === 'lounge_kettle'));
 });
 
 // ── steps 1-3: same decisions, less work ─────────────────────────────────────
