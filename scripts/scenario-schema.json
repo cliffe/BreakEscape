@@ -4298,6 +4298,7 @@
             "angle": { "type": "number", "description": "Field-of-view width in degrees" },
             "visualize": { "type": "boolean", "description": "Draw the detection cone on screen" },
             "occlusion": { "type": "boolean", "description": "Default true: walls, closed doors and tall props (npc-sight-occlusion.js) block this NPC's view and clip the drawn cone. false = sees through everything (range and angle only)" },
+            "origin": { "type": "string", "enum": ["torch", "body"], "description": "Where sight starts (npc-los.js). \"torch\": range, angle, occlusion and the drawn cone all start at the NPC's right hand, where its torch beam starts (lighting.js), so the cone lies over the beam. \"body\": the sprite centre (range and angle) and the feet (occlusion, drawn cone). Default: \"torch\" while the NPC holds a torch (behavior.torch, its condition holding), otherwise \"body\"." },
             "challengeOnSight": {
               "description": "Opt-in (default off). When the player is in this NPC's room and inside his cone, emit an event (default player_spotted:<npcId>) once per sighting, at most once per cooldown. Map the event in eventMappings to a person-chat knot, setGlobal, bark or emitEvent. true = all defaults. See README_scenario_design.md, 'Guards who challenge on sight'.",
               "oneOf": [

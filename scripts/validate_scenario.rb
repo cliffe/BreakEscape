@@ -419,7 +419,7 @@ def check_unknown_fields(json_data)
   ]
 
   # Known NPC los fields, and those of the opt-in los.challengeOnSight
-  known_los_fields = %w[enabled range angle visualize challengeOnSight _comment]
+  known_los_fields = %w[enabled range angle visualize occlusion origin challengeOnSight _comment]
   known_sight_challenge_fields = %w[enabled cooldown event rooms requireGlobal skipIfGlobal near _comment]
   sight_challenges = []   # { path:, event: } checked against every eventMapping below
   mapping_patterns = []
@@ -602,6 +602,9 @@ def check_unknown_fields(json_data)
             unless known_los_fields.include?(key)
               warnings << "⚠️ WARNING: '#{npc_path}/los' has unknown field '#{key}' — this field will be ignored by the game engine."
             end
+          end
+          if npc['los'].key?('origin') && !%w[torch body].include?(npc['los']['origin'])
+            warnings << "⚠️ WARNING: '#{npc_path}/los/origin' is #{npc['los']['origin'].inspect}; use \"torch\" (sight starts at the torch hand) or \"body\" (sprite centre and feet). The engine falls back to the default."
           end
           challenge = npc['los']['challengeOnSight']
           challenge = {} if challenge == true

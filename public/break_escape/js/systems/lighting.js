@@ -51,6 +51,11 @@
  * Torch on an NPC (scenario npc "behavior"): "torch": true, or { "condition": "globalVars.night", "color": "#fff0d8" }.
  * The NPC carries a beam the way they face, like the player's phone torch; it shows only in a dim
  * room (strength from the room's current ambient, npcTorchStrength), so it is invisible in a lit office.
+ * The beam starts at the NPC's right hand (npc-los.js torchHandOffset: about 10 px out from the body
+ * axis at row ~50 of the 80 px frame; near side facing east, far side facing west, viewer's left facing
+ * south, viewer's right facing north), with a faint pool at the feet. The aim is smoothed a quarter of
+ * the way per frame and the hand follows the smoothed aim, so turns don't jump. The NPC's line of sight
+ * and its drawn los cone start from the same hand point while the torch is held (los.origin, npc-los.js).
  * Disable for one player: ?lighting=off, or localStorage breakEscapeLighting=off.
  */
 
@@ -59,6 +64,7 @@ import { evaluateGlobalCondition } from '../utils/conditional-text.js';
 import { spriteStyleLight } from './npc-sprite-style.js';
 import { hearingLevel } from './room-hearing.js';
 import { isWorkstation, ownerOf } from './workstation-state.js';
+import { npcTorchOrigin, stepTorchAim, TORCH_AIM_FRESH_MS } from './npc-los.js';
 
 const LIGHT_TEX = 'be_light_soft';
 const LIGHT_TEX_SIZE = 128;
@@ -1219,13 +1225,31 @@ export class LightingSystem {
       const beh = window.npcBehaviorManager?.getBehavior?.(npc.id);
       if (window.npcHostileSystem?.isNPCKO?.(npc.id)) continue;  // a guard on the floor drops his torch
       const target = FACING_ANGLES[beh?.direction] ?? 90;
-      const prev = angles.get(npc.id) ?? target;
-      const diff = ((target - prev + 540) % 360) - 180;
-      const angle = (prev + diff * 0.25 + 360) % 360;
+      // A beam not drawn for a while (lit room, another room) starts at the facing again
+      const now = Date.now();
+      const last = npc._torchAim;
+      const fresh = last && now - (last.at ?? 0) <= TORCH_AIM_FRESH_MS;
+      const angle = stepTorchAim(fresh ? angles.get(npc.id) ?? last.angle : NaN, target);
       angles.set(npc.id, angle);
+      // npc-los.js reads this, so sight from the torch starts where the beam does
+      npc._torchAim = { angle, at: now };
+      // The beam leaves the right hand (npc-los.js torchHandOffset); the angle is
+      // smoothed, and the hand follows it round the body, so turns don't jump.
+      const hand = npcTorchOrigin(npc, now) || { x: sp.x, y: fy - 4 };
       const color = parseColor(typeof torch === 'object' ? torch.color : null, 0xfff0d8);
-      this.stampBeam(rt, stamp, ox, oy, room, sp.x, fy - 4, angle, k * 0.85, color);
+      this.stampBeam(rt, stamp, ox, oy, room, hand.x, hand.y, angle, k * 0.85, color, sp.x, fy - 4);
     }
+  }
+
+  /**
+   * True when the NPC's torch is on now: behavior.torch set and its condition (if
+   * any) holding. npc-los.js asks this for conditional torches.
+   */
+  npcTorchHeld(npc) {
+    const torch = npc?.behavior?.torch;
+    if (!torch) return false;
+    if (typeof torch !== 'object' || !torch.condition) return true;
+    try { return !!evaluateGlobalCondition(torch.condition, window.gameState?.globalVariables || {}); } catch (err) { return false; }
   }
 
   /**
@@ -1252,8 +1276,11 @@ export class LightingSystem {
     }
   }
 
-  /** A torch: a faint pool at (px, py) and a beam along `angle`, cut short at the wall it points at. */
-  stampBeam(rt, stamp, ox, oy, room, px, py, angle, k, color) {
+  /**
+   * A torch: a beam from (px, py) along `angle`, cut short at the wall it points at, and a
+   * faint pool at (poolX, poolY), default the beam's start (NPCs: the pool is at their feet).
+   */
+  stampBeam(rt, stamp, ox, oy, room, px, py, angle, k, color, poolX = px, poolY = py) {
     const rad = Phaser.Math.DegToRad(angle);
     const dx = Math.cos(rad), dy = Math.sin(rad);
     let reach = Infinity;
@@ -1261,7 +1288,7 @@ export class LightingSystem {
     if (dx < -0.01) reach = Math.min(reach, (room.position.x - px) / dx);
     if (dy > 0.01) reach = Math.min(reach, (room.position.y + room.map.heightInPixels - py) / dy);
     if (dy < -0.01) reach = Math.min(reach, (room.position.y + TILE_SIZE - py) / dy);
-    stamp(px, py + 2, 30, color, 0.4 * k);
+    stamp(poolX, poolY + 2, 30, color, 0.4 * k);
     const opts = this.beamOpts || (this.beamOpts = { blendMode: Phaser.BlendModes.ADD, originX: 0, originY: 0.5, tint: 0xfff0d8, scaleX: 1.1, scaleY: 1.1, angle: 0, alpha: 1, skipBatch: true });
     opts.tint = color;
     opts.angle = angle;

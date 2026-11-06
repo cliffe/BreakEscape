@@ -19,10 +19,12 @@ writeFileSync(join(dir, 'lighting.mjs'), readFileSync(join(js, 'systems/lighting
   .replace("'../utils/conditional-text.js'", "'./conditional-text.mjs'")
   .replace("'./npc-sprite-style.js'", "'./npc-sprite-style.mjs'")
   .replace("'./room-hearing.js'", "'./room-hearing.mjs'")
-  .replace("'./workstation-state.js'", "'./workstation-state.mjs'"));
+  .replace("'./workstation-state.js'", "'./workstation-state.mjs'")
+  .replace("'./npc-los.js'", "'./npc-los.mjs'"));
 writeFileSync(join(dir, 'npc-sprite-style.mjs'), readFileSync(join(js, 'systems/npc-sprite-style.js'), 'utf8'));
 writeFileSync(join(dir, 'room-hearing.mjs'), readFileSync(join(js, 'systems/room-hearing.js'), 'utf8'));
 writeFileSync(join(dir, 'workstation-state.mjs'), readFileSync(join(js, 'systems/workstation-state.js'), 'utf8'));
+writeFileSync(join(dir, 'npc-los.mjs'), readFileSync(join(js, 'systems/npc-los.js'), 'utf8'));
 
 globalThis.Phaser = { AUTO: 0, Scale: { NONE: 0, CENTER_BOTH: 0, FIT: 0 }, BlendModes: { ADD: 1, MULTIPLY: 2 },
   Math: { Clamp: (v, a, b) => Math.max(a, Math.min(b, v)), Vector2: class {} } };

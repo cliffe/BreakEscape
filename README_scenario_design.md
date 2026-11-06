@@ -1289,6 +1289,8 @@ A person NPC's `los` block sets his line of sight: `range` (pixels, default 200)
 
 Walls, closed doors and tall props block his view and clip the drawn cone (`npc-sight-occlusion.js`). Tall props are racks, shelving, bookcases, vending machines, lockers, filing and other tall cabinets (by sprite name, at least 50 px high, not hung on the back wall); give a scenario object `"blocksSight": true` or `false` to override. Sight is tested at floor level, feet to feet, so standing behind a rack hides the player and standing beside it doesn't. `"occlusion": false` in a `los` block makes that NPC see through everything, for a catch that must always fire (m02's Gary).
 
+**Torches.** `"torch": true` in an NPC's `behavior` (or `{ "condition": "globalVars.night", "color": "#fff0d8" }`) gives him a beam the way he faces, shown only in a dim room (`lighting.js`). The beam is about 51 degrees wide and plainly lit to about 100-120 px. It leaves his right hand: facing east the hand is on the near side, facing west on the far side, facing south on the viewer's left, facing north on the viewer's right. While he holds the torch his sight starts at that hand too (range, angle, walls and props, and the drawn cone), so with `los.angle` about 50 and `range` about 120 the beam shows the player what he can see and `visualize` can stay off (m07's Ray Hollis). `los.origin` overrides this: `"body"` keeps the old origin (sprite centre for range and angle, the feet for walls and the drawn cone) for a torch carrier, and `"torch"` uses the hand point on an NPC without one. A conditional torch only counts while its condition holds.
+
 ```json
 "los": {
   "enabled": true, "range": 150, "angle": 120,
