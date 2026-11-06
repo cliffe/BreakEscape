@@ -355,3 +355,46 @@ test('speech bubbles: not from another room, not in the dark, not under a miniga
         assert.equal(c.bubbles.get('tom').box.visible, true);
     } finally { delete globalThis.window; }
 });
+
+// ── validator (scripts/validate_npc_needs.rb check_social) ──────────────
+
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
+const skip = spawnSync('ruby', ['--version']).status !== 0 && 'ruby not found';
+function needsCheck(scenario) {
+    const script = `require ${JSON.stringify(join(root, 'scripts/validate_npc_needs.rb'))}
+      puts JSON.generate(ValidateNpcNeeds.check(JSON.parse(STDIN.read)))`;
+    const r = spawnSync('ruby', ['-e', script], { input: JSON.stringify(scenario), encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' } });
+    assert.equal(r.status, 0, r.stderr);
+    return JSON.parse(r.stdout.trim().split('\n').pop());
+}
+
+test('validator: long lines, unknown pools, capacity 1, unknown NPCs and groups, undeclared globals, the outcast info', { skip }, () => {
+    const npc = (id, extra = {}) => ({ id, needsHome: { room: 'office', x: 1, y: 1 }, needs: { thirst: { decayPerMin: 5, urgentAt: 40 } }, ...extra });
+    const issues = needsCheck({
+        globalVariables: { known: false },
+        chatter: { cooler: ['Fine.', 'x'.repeat(41)] },
+        rooms: { office: { type: 'room_office', objects: [
+            { id: 'cooler', type: 'water_cooler1', affordance: { satisfies: 'thirst', capacity: 2, chatter: 'cooler' } },
+            { id: 'tap', type: 'sink', affordance: { satisfies: 'tea', chatter: 'gossip' } }
+        ], npcs: [
+            npc('ann', { needsCompany: { avoids: ['*', 'ghost', 'group:nobody', { npc: 'bob', requireGlobal: 'unset_flag' }, { group: 'x', requireGlobal: { known: true } }] } }),
+            npc('bob', { chatter: { cooler: ['Hi.'] } })
+        ] } }
+    });
+    const has = f => issues.some(s => s.includes(f));
+    assert.ok(has("chatter 'cooler' line") && has('41 characters'), 'long line');
+    assert.ok(has("affordance.chatter 'gossip' is not a chatter pool"));
+    assert.ok(has("'tap' affordance.chatter needs capacity 2"));
+    assert.ok(has("avoids unknown NPC 'ghost'"));
+    assert.ok(has("avoids group 'nobody'"));
+    assert.ok(has("requireGlobal 'unset_flag' is not in globalVariables"));
+    assert.ok(!has("requireGlobal 'known'"));
+    assert.ok(has('NPC needs bob.thirst: every object for it (cooler) is shared with someone it avoids (ann)'));
+    // No needsCompany anywhere: no info lines
+    const plain = needsCheck({ rooms: { office: { type: 'room_office', objects: [{ id: 'cooler', affordance: { satisfies: 'thirst', capacity: 2, chatter: 'cooler' } }], npcs: [npc('ann'), npc('bob')] } } });
+    assert.ok(!plain.some(s => s.includes('shared with someone')));
+    assert.ok(!plain.some(s => s.includes('chatter')));
+});

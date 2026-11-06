@@ -10,6 +10,10 @@
   "officePresets": true,
   "lighting": { "enabled": true, "defaultMode": "on" },
 
+  "chatter": {
+    "cooler": ["Did you see the car park email?", "Friday drinks again?", "How was the weekend?", "Is it raining again?", "Train was late again.", "Any plans for lunch?", "Not bad, you?", "That printer jammed again."]
+  },
+
   "actionIcons": {
     "lounge_kettle": { "sprite": "kettle1", "text": "K" }
   },
@@ -67,6 +71,8 @@
         { "taskId": "hear_drink", "title": "Stand close enough to hear someone drink", "type": "custom", "status": "active" },
         { "taskId": "spot_open_screen", "title": "Spot an unlocked, unattended screen (a breathing white dot; a steady blue dot means locked)", "type": "custom", "status": "active" },
         { "taskId": "hear_snack", "title": "Hear someone eat in the kitchen (the fridge and microwave take their settings and sound from their type)", "type": "custom", "status": "active" },
+        { "taskId": "see_chat", "title": "Two people chat at the water cooler (read the Activity Board and Sanjay and Rosa both want a chat)", "type": "custom", "status": "active" },
+        { "taskId": "see_outcast", "title": "Nobody chats with the contractor: read the Kitchen Rota and Sanjay waits at his desk until Marek has left the cooler", "type": "custom", "status": "active" },
         { "taskId": "see_printout", "title": "A printout is delivered to a desk (Sanjay prints at his PC; Amara takes it from the copier tray to her desk, where it is filed a minute later)", "type": "custom", "status": "active" }
       ]
     }
@@ -241,6 +247,16 @@
           "addToNotes": false,
           "text": "MEMO\n\nThe quarterly report is due by four, not five. Sorry, all.\n\nTom, Amara: your sections, please.",
           "observations": "A memo pinned up for Tom and Amara. Reading it out loud would ruin their afternoon."
+        },
+        {
+          "type": "notes1",
+          "id": "kitchen_rota",
+          "name": "Kitchen Rota",
+          "takeable": false,
+          "readable": true,
+          "addToNotes": false,
+          "text": "KITCHEN ROTA\n\nThis week: Sanjay.\n\nContractors: the water cooler is in the kitchen.",
+          "observations": "The kitchen rota. Reading it reminds Sanjay he fancies a chat and Marek that he is parched."
         }
       ],
       "npcs": [
@@ -275,6 +291,8 @@
             { "eventPattern": "npc_used:microwave", "onceOnly": true, "cooldown": 0, "completeTask": "see_meal" },
             { "eventPattern": "npc_used:water_cooler", "cooldown": 0, "setGlobal": { "last_activity": "water_cooler" } },
             { "eventPattern": "npc_used:water_cooler", "onceOnly": true, "cooldown": 0, "completeTask": "see_drink" },
+            { "eventPattern": "npc_chatted:water_cooler", "onceOnly": true, "cooldown": 0, "completeTask": "see_chat" },
+            { "eventPattern": "npc_avoided:sanjay", "condition": "data.avoidedId === \"marek\"", "onceOnly": true, "cooldown": 0, "completeTask": "see_outcast" },
             { "eventPattern": "npc_used:lounge_sofa", "cooldown": 0, "setGlobal": { "last_activity": "sofa" } },
             { "eventPattern": "npc_used:lounge_sofa", "onceOnly": true, "cooldown": 0, "completeTask": "see_rest" },
             { "eventPattern": "npc_used:washing_up_tray", "cooldown": 0, "setGlobal": { "last_activity": "washing_up" } },
@@ -365,7 +383,34 @@
             "work": { "decayPerMin": 15, "urgentAt": 50, "initial": 65 },
             "hunger": { "decayPerMin": 8, "urgentAt": 40, "initial": 64 },
             "social": { "decayPerMin": 12, "urgentAt": 40, "initial": 76 }
-          }
+          },
+          "eventMappings": [
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Activity Board'", "cooldown": 30000, "needs": { "set": { "social": 10 } } },
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Kitchen Rota'", "cooldown": 30000, "needs": { "set": { "social": 10 } } }
+          ]
+        },
+        {
+          "id": "marek",
+          "displayName": "Marek Nowak",
+          "npcType": "person",
+          "position": { "x": 6, "y": 8 },
+          "spriteSheet": "male_telecom_v2",
+          "spriteTalk": "assets/characters/male_telecom_talk.png",
+          "spriteVisemes": "assets/characters/male_telecom_visemes.png",
+          "storyPath": "scenarios/test_needs_sims/ink/marek.json",
+          "currentKnot": "start",
+          "voice": { "name": "Charon", "style": "Telecoms contractor, fifties, Polish-born, years in the UK. Gruff but not unfriendly.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "_comment": "Slice 8 (OFFICE_LIFE_PLAN 7.3): the outcast. avoids '*' acts both ways: nobody shares the cooler with him or chats with him. His thirst is slow so he goes only when the Kitchen Rota is read (or after about half an hour).",
+          "needsHome": { "room": "office", "x": 6, "y": 8 },
+          "needsSpeed": 80,
+          "needsCompany": { "avoids": ["*"] },
+          "needs": {
+            "thirst": { "decayPerMin": 2, "urgentAt": 30, "initial": 95 }
+          },
+          "eventMappings": [
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Kitchen Rota'", "cooldown": 30000, "needs": { "set": { "thirst": 10 } } }
+          ]
         }
       ]
     },
@@ -472,7 +517,10 @@
             "social": { "decayPerMin": 15, "urgentAt": 40, "initial": 70 },
             "caffeine": { "decayPerMin": 15, "urgentAt": 40, "initial": 85 },
             "rest": { "decayPerMin": 10, "urgentAt": 40, "initial": 75 }
-          }
+          },
+          "eventMappings": [
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Activity Board'", "cooldown": 30000, "needs": { "set": { "social": 10 } } }
+          ]
         }
       ]
     }
