@@ -128,7 +128,14 @@ avoids each loaded forbidden room's inner floor ring (corners included) for that
 skipping the room the search starts in. Scripts and route patrols ignore the leash. When the leash
 removes an option the log gets `leashed {need, skipped, chose}` and the system emits
 `npc_needs_leashed:<npcId>` (once per job, or once per urgent episode when nothing is left).
-Live proof: `scenarios/test_needs_leash` (four rooms in a loop).
+Private desks make this fire on most work jobs (the colleagues' free PCs are the skipped
+options), so a mapping that wants "went the long way" should key on the `npc_used:<object>`
+it expects, conditioned on `data.npcId` (one mapping per NPC: conditions have `&&` but no `||`),
+as `test_needs_sims` does for its kitchen-coffee task. The debug overlay marks such jobs
+` leashed` (section 4.1). Live proof: `scenarios/test_needs_leash` (four rooms in a loop; game
+587: leashed, 0 of 1,966 samples on the private floor over three round trips, out and back by
+the corridor; unleashed, 32 of 86 samples on it, out and back through it) and
+`scenarios/test_needs_sims` (game 585: private PCs, the lounge private to Rosa and Grace).
 
 ### 3.2 Object fields
 
@@ -201,7 +208,9 @@ goes back to the scenario flag). Above each needs NPC it draws a small panel: on
 per need, in name order, with the need's initial (green above `urgentAt`, amber at or
 below it, red once unmet for `maxUnmetMin`), and a line `<npc>: <job>` (`idle`,
 `windup <target>`, `goto_target <target>`, `using 4s <target>`, `returning`, `frozen`,
-`suspended`). Installed beside the action icons in `core/game.js` with a dynamic
+`suspended`). The line ends in ` leashed` when the room leash or a private object removed an
+option: on a job chosen that way (`job.leashed`, also in `getState().job.leashed`), or while
+the NPC has no job and an urgent need was left with nothing permitted (`leashNoted`). Installed beside the action icons in `core/game.js` with a dynamic
 import, so no test-harness copy list needs it. It reads `npcNeedsSystem.states` and
 writes nothing back; positions follow the sprite each frame, bars redraw every 200 ms,
 graphics are made once per NPC and destroyed when the sprite goes (room unload, NPC

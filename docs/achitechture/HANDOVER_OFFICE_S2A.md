@@ -1,6 +1,7 @@
 # Handover: office life slice 2a (2026-11-06)
 
-Stopped at the context limit. Plan: `OFFICE_LIFE_PLAN.md` 7.2 (as revised in section 8).
+**Status: done, apart from the lab live regression (Open 1).** Plan: `OFFICE_LIFE_PLAN.md` 7.2
+(as revised in section 8); its Built line has the live evidence.
 
 ## Done
 - Step 1: amendment review folded into the plan, section 8 added (860bd16e7).
@@ -10,30 +11,39 @@ Stopped at the context limit. Plan: `OFFICE_LIFE_PLAN.md` 7.2 (as revised in sec
   inner floor rings in `npc-pathfinding.js` (helpers `roomFloorRect`, `onFloor`, `floorRingCells`
   in `path-avoid.js`), `createRoom` keeps `needsPrivateTo` on `window.rooms[id]`; schema;
   `validate_npc_needs.rb` checks; `validate_scenario.rb` known fields (42575dda0).
-- Tests: `npc-needs.test.mjs` (10 leash tests), `npc-room-leash.test.mjs` (behaviour),
-  `npc-pathfinding-world-grid.test.mjs` (rings, finally), `path-avoid.test.mjs` (entered-cell model,
-  cornerless leak), `validator-npc-leash.test.mjs`; door-gates stub fix (a80dbb358). Full suite 383/383.
-- `scenarios/test_needs_leash` (2af3d7493) and live proof on game 583 (plan 7.2 Built line).
-- Docs: NPC_NEEDS_SYSTEM.md, README_scenario_design.md, plan Built line (this commit).
+- Tests: `npc-needs.test.mjs`, `npc-room-leash.test.mjs`, `npc-pathfinding-world-grid.test.mjs`,
+  `path-avoid.test.mjs`, `validator-npc-leash.test.mjs`; door-gates stub fix (a80dbb358).
+- `scenarios/test_needs_leash` (2af3d7493) and first live proof on game 583.
+- Debug overlay `leashed` label: `job.leashed` set in `_startJob`, shown by `jobLabel` (also when
+  idle with a `leashNoted` need), exposed in `getState().job.leashed`; node tests (02f304b7c).
+- `test_needs_sims` showcase: private PCs, lounge `needsPrivateTo: ["rosa","grace"]`,
+  `lounge_kettle` (lounge (1,3), useFrom dx 1), `kitchen_coffee` moved (6,8) → (3,8), a
+  `deadline_memo` note whose `object_interacted` mappings (Tom, Amara) set caffeine to 20, task
+  `see_long_way` via two `npc_used:kitchen_coffee` mappings on `data.npcId` (02f304b7c).
+- Sims node fixture follows the scenario (live cells from game 585) plus a node test of the memo
+  beat (2e4a7a190).
+- `test_needs_leash` cooler moved to (8,2); live re-proof both directions on game 587.
+- Live sims run, game 585. Docs: plan Built line, NPC_NEEDS_SYSTEM.md (overlay label, mapping
+  advice, live proof), sims README (step 8, slice 2a table).
 
 ## Open
-1. `test_needs_sims` showcase per plan 7.2 "Showcase": PCs `private: true`; lounge
-   `needsPrivateTo: ["rosa","grace"]`; `lounge_kettle` nearer Tom's/Amara's desks than
-   `kitchen_coffee`; a note mapping that drops both caffeine levels; objective on
-   `npc_used:kitchen_coffee` for Tom or Amara (check whether eventMappings can condition on
-   `data.npcId`; if not, map on Tom's own NPC eventMappings). Re-run the README live-proof table
-   (open both doors first; re-check the contention row 63). Update the sims node fixture if its
-   objects change.
-2. Live regression: `lab_physical_pentest` open plan unchanged (no leash fields there, so only the
-   behaviour-helper and pathfinding paths changed). Another agent was editing that scenario.
-3. Optional: "leashed" on the debug overlay's job label; `leashed` for route-only cut-offs.
-4. Move the cooler in `test_needs_leash` to the store's north-east so the outbound leg also
-   differs (now only the return leg contrasts: leashed corridor, unleashed through Maya's office).
+1. **Live regression of `lab_physical_pentest`** (critical path to score 100, Len's route) was not
+   run. Its expansion step 2 (20x10 accounts floor, 2ea86f714) landed during this session and
+   the expansion agent owns that playtest; run it, or fold it into theirs, once that step settles.
+   Slice 2a touches the lab only through the behaviour helper and `findWorldPath` (no leash fields
+   there, so `avoidRooms` is always empty).
+2. Optional: a `leashed` entry for route-only cut-offs (plan 7.2 difference 1).
 
 ## Gotchas
 - The bootstrap scenario strips room fields it does not list (`Game#filtered_scenario_for_bootstrap`)
   and unloaded rooms' objects and NPCs; client code cannot see them.
 - A new scenario needs `bin/rails runner db/seeds.rb </dev/null` before `new-game.rb` (stdin closed
-  keeps the prune prompt from deleting anything).
+  keeps the prune prompt from deleting anything). Do not rerun seeds without the user's say-so.
 - Tests that stub `path-avoid.js` with a data URL (door-gates) must list every export npc-pathfinding imports.
-- A needs NPC walking home yields to a nearby player: move the player away before reading "stuck".
+- A needs NPC walking home yields to a nearby player (state `face_player`): move the player off the
+  route before reading "stuck". Game 587 lost two returns to this.
+- `test_needs_leash` has no `bootstrap` cutscene: close the title screen and the brief with
+  `MinigameFramework.endMinigame`, then click `#tutorial-no`. The harness `dismiss` does not close
+  the notes reader the memo opens; `endMinigame` does.
+- `object_interacted` carries `objectType`, `objectName`, `roomId` (no object id): key memo-style
+  mappings on `data.objectName`.

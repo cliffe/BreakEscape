@@ -7,11 +7,11 @@ A demo and live test of the NPC needs system (`public/break_escape/js/systems/np
 ## Layout and cast
 
 ```
- kitchen (room_break)  |  office (room_office, start)  |  lounge (room_meeting)
- fridge, microwave,    |  four desks, office coffee,   |  Rosa's laptop,
- kitchen coffee,       |  activity board, abandoned    |  leather sofa (capacity 2)
- water cooler (cap 2), |  mugs on the floor            |
- washing-up tray       |                               |
+ kitchen (room_break)  |  office (room_office, start)  |  lounge (room_meeting, private
+ fridge, microwave,    |  four desks (PCs private),    |  to Rosa and Grace)
+ kitchen coffee (3,8), |  office coffee, activity      |  Rosa's laptop, Rosa's kettle
+ water cooler (cap 2), |  board, deadline memo,        |  by the door, leather sofa
+ washing-up tray       |  abandoned mugs on the floor  |  (capacity 2)
 ```
 
 | NPC | Sprite | Home | Needs (decay/min, urgent at, start) | Interest |
@@ -37,7 +37,8 @@ Times are needs-clock time from the start, which runs at wall-clock speed.
 5. **2:00–4:00.** Grace rests on the lounge sofa, Tom heats lunch in the microwave, Sanjay has a chat at the water cooler and then raids the fridge, Rosa walks from the lounge through the office to the kitchen water cooler.
 6. **Conversation freeze.** Talk to anyone who is walking or using something. They stop where they are, and a use dwell pauses until you close the chat.
 7. **Yield to the player.** Stand in the path of someone walking back to their desk, within about three tiles. They stop and face you, and carry on when you step away.
-8. **Events.** The objectives panel ticks a task for each behaviour seen, and the **Activity Board** (the whiteboard on the office's back wall) shows the last thing anyone used. Both are driven by `npc_used:<object>`, `npc_returned_post:<id>` and `item_dropped:<id>` event mappings on Amara.
+8. **Room leash and private objects (slice 2a).** Each PC is used only by its owner, and only Rosa and Grace use anything in the lounge (`"needsPrivateTo": ["rosa", "grace"]`). Read the **Deadline Memo** in the office: its mappings set Tom's and Amara's caffeine to 20. One takes the office station; the other walks to the kitchen, although Rosa's kettle is nearer, and the overlay's job line ends in `leashed`. That ticks "Tom or Amara fetches a coffee from the kitchen, not the lounge kettle". Rosa makes her own coffee at the kettle.
+9. **Events.** The objectives panel ticks a task for each behaviour seen, and the **Activity Board** (the whiteboard on the office's back wall) shows the last thing anyone used. Both are driven by `npc_used:<object>`, `npc_returned_post:<id>` and `item_dropped:<id>` event mappings on Amara.
 
 Console: `window.__test.needs.state('tom')` and `window.__test.needs.log()` give levels, the current job and the decision log.
 
@@ -71,6 +72,21 @@ Game 499 (session log `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEs
 | `npc_used` visible | PASS | Activity Board read "Someone had a drink and a chat at the water cooler." with the onUse variant "Amara's parcel: opened."; all eight objectives ticked from the mappings |
 
 Screenshots in `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/c84d7b68-c29e-4285-9c19-4612b082eed3/scratchpad/lpp-sims/`: `02_kitchen.png` (Grace carrying the mugs, `?` icon, objectives ticking), `06_contention_own_desks.png` (`PC` and `C` action icons), `05_board_and_objectives.png` (the board and the completed aim), `03_lounge.png`, `04_chat_freeze.png`.
+
+### Slice 2a re-run (2026-11-06, keyless :3001, headless, load about 30)
+
+Game 585, commit 02f304b7c. Doors opened at 1:45, after the contention beat. Room samples every 250 ms by floor rectangle.
+
+| Feature | Result | Evidence |
+|---|---|---|
+| Contention (row above) | PASS, unchanged | `240 tom urgent caffeine`, `278 amara used caffeine office_coffee`, `278 tom job_start caffeine office_coffee` |
+| Own PCs only | PASS | work uses `281 sanjay sanjay_pc`, `569 amara amara_pc`, `942 tom tom_pc`, `1122 sanjay sanjay_pc`; `leashed` entries such as `240 sanjay work skipped amara_pc/tom_pc chose sanjay_pc` |
+| Lounge private to Rosa and Grace | PASS | no job target in the lounge for Amara, Tom or Sanjay; 899 samples, none on the lounge floor for those three; Grace `978 used lounge_sofa`, Rosa `1235 used lounge_kettle` |
+| Memo sends one to the kitchen | PASS, twice | `641 amara job_start office_coffee`, `666 tom job_start kitchen_coffee leashed skipped lounge_kettle`, `725 tom used kitchen_coffee`; again at tick 1289 (both `using` at 1316, both labels `leashed`) |
+| Objective | PASS | `see_long_way` completed |
+| Console | PASS | only the keyless TTS 503 and one 404 that the leash game shows too (not in the Rails log; probably the favicon, which answers 404 on :3001) |
+
+Screenshot: `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/c84d7b68-c29e-4285-9c19-4612b082eed3/scratchpad/s2a/sims-amara-office-coffee-leashed.png` (Amara's label `using 4s office_coffee leashed`, Tom's `... kitchen_coffee leashed` at the kitchen's edge, the kettle by the lounge door). The kettle is 274 px from Tom's desk and the kitchen station 323 px (game 585 centres), so the nearest-first choice would have been the kettle.
 
 ## Engine findings
 

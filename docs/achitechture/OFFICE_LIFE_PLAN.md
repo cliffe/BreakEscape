@@ -1682,13 +1682,28 @@ As revised in section 8. Live, :3001 headless, load about 25, game 583 (`test_ne
 four doors opened first): leashed, Ravi went `ravi_office → west_corridor → store` and back the
 same way, never on `maya_office`'s floor (sampled every 250 ms); with `needsPrivateTo` removed
 from the loaded room, the same NPC came back through `maya_office`. Screenshot of the long route
-in the session scratchpad. **Differences from the plan:** (1) a target cut off only by the route
-(rooms in a row, the middle forbidden) is skipped by `reachable` without a `leashed` entry; the
-log notes only options the filter removed. (2) The debug overlay's "leashed" label is not built.
-(3) The `test_needs_sims` showcase changes (private PCs, the lounge `needsPrivateTo`, the kettle,
-the objective) and the sims and lab live regression runs are **not done yet** (handover note
-`HANDOVER_OFFICE_S2A.md`); the sims node fixture's decision log is byte-identical before and
-after the engine change.
+in the session scratchpad. **Finished 2026-11-06 (02f304b7c, 2e4a7a190):** the overlay label,
+the sims showcase and a second leash proof. `test_needs_leash`'s cooler moved to the store's
+north-east (8,2), so both legs contrast; game 587, doors opened first: leashed, three round
+trips by `west_corridor`, 0 of 1,966 samples on Maya's floor, `returned_post` once the player
+stood clear; unleashed (field dropped through the bridge), out `maya_office → store` and back
+`maya_office → ravi_office`, 32 of 86 samples on her floor. `test_needs_sims` game 585 (doors
+opened at 1:45, after the contention beat): contention unchanged (Tom urgent at tick 240,
+`job_start office_coffee` at 278 as Amara's use ends); every work use at the NPC's own PC
+(`leashed` entries name the colleagues' PCs as skipped); the deadline memo set both caffeine
+levels to 20 and Tom took `kitchen_coffee` with `lounge_kettle` skipped though nearer (274 px
+against 323 from his desk), twice; Rosa used `lounge_kettle`; Amara, Tom and Sanjay were never on
+the lounge floor (899 samples); task `see_long_way` ticked; console errors only the keyless TTS
+503 and one 404 that also appears on the leash game (the favicon answers 404 on :3001).
+Screenshot `s2a/sims-amara-office-coffee-leashed.png` in the session scratchpad. **Differences
+from the plan:** (1) a target cut off only by the route (rooms in a row, the middle forbidden)
+is skipped by `reachable` without a `leashed` entry; the log notes only options the filter
+removed. (2) The objective needs two mappings (`data.npcId === "tom"`, `... "amara"`): mapping
+conditions have no `||`. (3) The memo is a readable note whose `object_interacted` mappings (on
+Tom and Amara, keyed on `data.objectName`) set `needs: { set: { caffeine: 20 } }`;
+`kitchen_coffee` moved from (6,8) to (3,8) so the kettle is nearer to Tom's desk too. (4) The
+`lab_physical_pentest` live regression was **not run**: its expansion step 2 landed mid-session
+(2ea86f714) and is the other agent's to prove; see the handover note.
 
 **Authoring.** Three forms, from coarse to fine. Prefer the room form for "someone's office": one
 line on the room instead of a deny list on every other NPC.
