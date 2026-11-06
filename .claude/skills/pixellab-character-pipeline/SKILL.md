@@ -1,6 +1,6 @@
 ---
 name: pixellab-character-pipeline
-description: Takes a Break Escape character from a reframed Gemini concept portrait to in-game assets through the PixelLab REST API (tools/pixellab_pipeline.py). It makes the pixel-art dialogue bust, the 2x2 talk sheet and/or a lip-sync viseme sheet, and an 8-direction walk character with the standard six animations. It then reviews and repairs bad animation frames and imports the atlas into the game. It generates alternatives and stops for a choice between stages. Trigger when a `<name>_nonpixelart.png` exists and the user asks to "make the pixel art version", "do the talk animation", "add lip sync", "run the PixelLab pipeline" or "create the walk sprite from the portrait", when they paste pixellab.ai character URLs and ask to "import" them or "add them to a mission", when they ask to "check/fix the animation frames", or to continue after character-talk-animation Step 1b. Hand edits to sprites must live in tools/pixellab_overrides (never paint on the atlas PNG): `import` refuses to replace an atlas with untracked edits, and tools/pixellab_drift_audit.py --adopt saves them.
+description: Takes a Break Escape character from a reframed Gemini concept portrait to in-game assets through the PixelLab REST API (tools/pixellab_pipeline.py). It makes the pixel-art dialogue bust, the 2x2 talk sheet and/or a lip-sync viseme sheet, and an 8-direction walk character with the standard six animations and seated frames (a "sitting in an invisible chair" state, imported with --sit-from). It then reviews and repairs bad animation frames and imports the atlas into the game. It generates alternatives and stops for a choice between stages. Trigger when a `<name>_nonpixelart.png` exists and the user asks to "make the pixel art version", "do the talk animation", "add lip sync", "run the PixelLab pipeline" or "create the walk sprite from the portrait", "add sitting/seated frames", "make X able to sit", when they paste pixellab.ai character URLs and ask to "import" them or "add them to a mission", when they ask to "check/fix the animation frames", or to continue after character-talk-animation Step 1b. Hand edits to sprites must live in tools/pixellab_overrides (never paint on the atlas PNG): `import` refuses to replace an atlas with untracked edits, and tools/pixellab_drift_audit.py --adopt saves them.
 ---
 
 # PixelLab character pipeline
@@ -156,6 +156,16 @@ python3 tools/pixellab_pipeline.py animate <name|id|url>
 
 This is the house set from the pixellab-character-animations skill: `breathing-idle` 4f, `walk` 6f, `cross-punch` 6f, `lead-jab` 3f, `taking-punch` 6f, `falling-back-death` 7f, in all 8 directions, template mode, 1 generation per direction (48 for a new character). It fills **only the gaps**. New directions go into the existing group for that template, so animations are never split. It keeps the 8 job slots full as they free up (the rolling 7+1 pattern, automatically), retries failed directions, then re-reads the character and reports anything still missing. The web UI shares the same 8 slots.
 
+## Stage 4b: seated frames
+
+Every character gets seated frames, so it can sit on chairs (`js/systems/seating.js`, docs/achitechture/SEATING.md). Without them a player or NPC stands on the chair instead. Since 2026-11-05 every PixelLab atlas a scenario uses and every selectable player avatar has them (108 entries with `sit_from` in `tools/pixellab_characters.json`), so a new character without them is the odd one out.
+
+1. **Make a seated state** of the finished walk character: `mcp__pixellab__create_character_state` (or `POST /create-character-state`) with the edit description **"sitting in an invisible chair"**. About 10 generations for a 60px character; say so before a batch. The state is a separate character in the same group, with 8 rotations and no animations; it needs none.
+2. **Look at all 8 rotations before importing.** Re-roll a take with a **floor shadow under the seat** (four of the November batch did): the chair art supplies the seat, and a shadow floats beside it. Also check that the pose reads as seated from the back (N, NE, NW), since the chair's backrest hides the torso on those facings and only the head should show, and that clothes and colours match the walk rotation.
+3. **Import** with the state: `import <key> --force --sit-from <state id or URL>`. The 8 rotations become one-frame `sit_<direction>` animations and every other frame is unchanged; the converter keeps them out of the standing feet-line sampling. The manifest records `sit_from`, so later re-imports keep them without the flag. The engine measures each atlas's hip point from `sit_south` at runtime, so no anchor needs setting.
+4. **Hand-edited atlases with no local export** (nightshade, agent_hax, sarah_mitchell in the November batch): don't re-import, which would lose the edits. Append the 8 sit frames as one new row on the committed atlas PNG and add the `sit_<direction>_frame_000` entries to its JSON, leaving every existing frame untouched.
+5. **Check in game** on a scenario with chairs: sit in all four swivel-chair families and one static chair, and look at the south, side and north facings (hips on the seat, head above the backrest when facing away).
+
 ## Stage 5: review and repair frames
 
 PixelLab often gets a frame, or a whole direction, wrong. Examples found on the mission 2 cast: a south idle facing away in all 4 frames; a single idle frame flipped to a back view; teal trousers across a north walk; lighter skin on one side view; a missing ponytail; an added tie or gloves. Re-rolling can repeat the error, so the tools let you patch or choose between takes.
@@ -220,6 +230,7 @@ After changing a scenario, run the validator (validate-scenario skill). If the u
 | visemes (inpaint)                | 6 per shape (~36 for all six) |
 | character (Pro)                  | 20–40 per variant             |
 | animate (template)               | 1 per direction               |
+| seated state (create-character-state, 60px) | ~10 per take       |
 | fix --use ai (edit-images-v2)    | 20 per call (up to 16 frames) |
 | reroll (template, one direction) | 1 per take                    |
 | ZIP export, reads, dry runs      | free                          |

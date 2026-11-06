@@ -5,7 +5,7 @@ description: Brings one or more existing PixelLab characters up to the project's
 
 # PixelLab — standard character animation set
 
-Adds the project's six stock animations, in all 8 directions, to characters that **already exist** in the PixelLab account. This does not create characters; it only animates existing ones.
+Adds the project's six stock animations, in all 8 directions, to characters that **already exist** in the PixelLab account. This does not create characters; it only animates existing ones. Seated frames are a separate step (a "sitting in an invisible chair" state imported with `--sit-from`): see Stage 4b of the pixellab-character-pipeline skill.
 
 **Prefer the scripted route:** `python3 tools/pixellab_pipeline.py animate <url|id> [--dry-run]` (see the pixellab-character-pipeline skill) does everything below over the REST API. It finds the gaps, extends existing groups, keeps the 8 slots full, retries failures and verifies the result, in one command, without the MCP's large `get_character` replies. Then `import` brings the character into the game; it first checks the existing atlas for hand edits not saved as overrides and stops if it finds any (adopt them with `tools/pixellab_drift_audit.py <key> --adopt`). The MCP procedure below is the fallback, and the reference for why the scripted route behaves as it does.
 
