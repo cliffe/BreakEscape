@@ -1493,7 +1493,7 @@ scada_password = "CascadeWindow19"
               he is dealt with: hollis_resolved is "talked", "evaded" or "ko" (all
               truthy) or he is knocked out. A player who backed off is challenged
               again on the next sighting (wary_again), so slipping past is a skill;
-              the cone is drawn (visualize) so it can be read. Evading is still
+              the cone is shown by his torch in the dimmed checkpoint (2026-11-06; visualize is off). Evading is still
               recorded on reaching the server hall. The 20 s cooldown lets a player
               who closes the chat walk off before he calls again. %>
           <%# 2026-11-06: the cone is 50 degrees (was 130). The spawn is 25-55px from his strip,
@@ -1505,7 +1505,7 @@ scada_password = "CascadeWindow19"
             "enabled": true,
             "range": 150,
             "angle": 50,
-            "visualize": true,
+            "visualize": false,
             "challengeOnSight": {
               "cooldown": 20000,
               "requireGlobal": "briefing_played",
