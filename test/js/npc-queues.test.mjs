@@ -97,7 +97,7 @@ test('nobody jumps the queue: an outsider whose need comes up as the machine fre
 });
 
 test('no queue configured: the second NPC waits at its post, as before', () => {
-    const o = office({ ann: { needs: wantsCoffee() }, bob: { needs: wantsCoffee() } }, { objects: [machine({}, undefined)] });
+    const o = office({ ann: { needs: wantsCoffee() }, bob: { needs: wantsCoffee() } }, { objects: [machine({}, null)] });
     o.sys.step(NEEDS_TICK_MS * 4);
     assert.equal(o.sys.getState('bob').job, null);
     assert.equal(o.emitted('npc_queued:').length, 0);
@@ -128,8 +128,9 @@ test('maxWaitSeconds sends a queuer home, and it skips that machine for 60 s', (
     assert.deepEqual(o.evs('queue_left').map(e => e.reason), ['max_wait']);
     o.sys.step(QUEUE_COOLDOWN_MS - 6000);
     assert.equal(o.emitted('npc_queued:').length, 1, 'no second try during the cooldown');
-    o.sys.step(3000);
-    assert.equal(o.emitted('npc_queued:').length, 2, 'queues again after it');
+    assert.equal(o.sys.getState('bob').job, null);
+    o.sys.step(7000);
+    assert.equal(o.sys.getState('bob').job?.targetId, 'coffee', 'tries the machine again after it');
     assert.equal(QUEUE_MAX_WAIT_S, 30);
     // The default wait is 30 s
     const d = office({ ann: { needs: wantsCoffee() }, bob: { needs: wantsCoffee() } }, { objects: [machine({ useSeconds: 60 })] });

@@ -1381,8 +1381,8 @@ export class NPCNeedsSystem {
      */
     _queuePlace(who, obj) {
         const cells = this._queueCells(obj);
-        const line = this._queuers(obj.id).filter(o => o !== who);
-        line.push(who);
+        const line = this._queuers(obj.id);
+        if (!line.includes(who)) line.push(who);
         const held = new Set();
         for (const o of line) {
             let got = null;
