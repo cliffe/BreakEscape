@@ -1,7 +1,9 @@
 # Seat box (option G): build plan
 
-Status: plan for adversarial review, 2026-11-06. No engine, room or scenario file has changed
-for it. Main input: `SEAT_BOX_EXPERIMENTS.md` (commit 9df5647b9) and its scratch outputs in
+Status: revised after review round 1 (`SEAT_BOX_PLAN_REVIEW_R1.md`, a4faba799), 2026-11-06.
+No room or scenario file has changed for it. The only engine change is to the default-off
+prototype in `seating.js` (619d58928, the stand-up order in 1.3, inert unless
+`window.__seatBox` is set). Main input: `SEAT_BOX_EXPERIMENTS.md` (commit 9df5647b9) and its scratch outputs in
 `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/c84d7b68-c29e-4285-9c19-4612b082eed3/scratchpad/seat-box/`
 (`sweep.json`, `contact_best.png`, `contact_sizes.png`, `part2_lab_desks.patch`, and the two
 audit scripts this plan used, `tables_usage.py` and `box_audit.py`).
@@ -11,7 +13,9 @@ The user's design, in short:
 - While someone sits on a swivel chair, their collision box and the chair's shrink to a small
   block at the centre of the chair's castor base. The desk keeps a box of its own. A chair rolls
   in until the block meets the desk box and physics stops it there, so a chair is never drawn
-  behind or inside a desk.
+  behind or inside a desk. (After R1: for the office chairs, the chair's own 18 × 8 body is
+  already that block in all but width, and gives the same front and back stops. Which one to
+  use is Q0.)
 - Desks stay ordinary table groups (Tiled `tables` and `table_items`). Monitors, lamps and other
   desk items go on the table-items layer and draw with their desk: "Monitors should be on a
   table items layer."
@@ -36,21 +40,59 @@ Coordinates are room pixels, y down. `F` is a desk's floor line (the sprite's bo
 "block" is the seated collision box. Tiles are 32 px; the pathfinding grid is 8 px
 (`PATHFINDING_STEP`, utils/constants.js:37).
 
+## Changes after review R1
+
+Evidence gathered for this revision, all on the keyless :3001 server, headless, one browser at
+a time, each stopped by PID. Test games were made with the scratch `swap_game.rb` (a
+`test_seating` game row whose `scenario_data` is swapped; no new Mission row, no `db:` task).
+
+- Games **874** (B1 reproduction, prototype as committed in 9df5647b9), **875** (first
+  version of the corrected order) and **876** (the order as committed in 619d58928). Session logs: scratchpad `seat-box/r1-874-session.jsonl`,
+  `r1-875-session.jsonl`, `r1-876-session.jsonl`; results `r1_prove2.out`, `r1_shots.out`.
+- The comparison image for M1:
+  `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/c84d7b68-c29e-4285-9c19-4612b082eed3/scratchpad/seat-box/compare_12x8_vs_18x8.png`
+  (front, behind and the desk's east end; 12 × 8 against 18 × 8, both on footprint boxes;
+  native captures at 3×, and the desk end at 12× with a per-pixel ruler).
+
+| Finding | Outcome | Where |
+|---|---|---|
+| B1 landing from behind `desk1` | **Fixed, cause found.** The committed prototype does not reproduce it: game 874, `12x8k` behind `desk1` with a fresh 18 × 8 chair body, stood at [100, 244] (walk-away 53), and so did `18x8` and `8x6k`. The most likely cause (inferred, since the earlier code wasn't saved): the verify page was running an earlier build of the check that tested only the walking box at the landing cell, not the line to it. Such a check accepts the south cell [84, 292] across the desk whenever it is under 12 px from the target (chair body 18 × 8, reach 23; or 8 × 6 with the castor at y 261), and rejects it when it isn't (8 × 6 body, reach 18). That explains all five verify rows, and the committed code has the line samples, so the doc's claim holds for the committed code but was never re-run on it until now. The unchecked fallback (`findNearestWalkableWorldCell(cx, cy + reach, 3)`, seating.js:582 at a4faba799) remains a real hazard whenever every candidate fails, so it goes. | 1.1, 1.3, slice 1 |
+| B2 `db:seed` | **Fixed.** Slice 0 promotes `swap_game.rb` to `tools/playtest/swap-scenario-game.rb`. No Mission row, no seed. | slice 0 |
+| M1 18 × 8 gives the same stops | **Both variants presented** (A: 12 × 8 block; B: the chair's own 18 × 8 body). Recommended: **B**. Left to the user as Q0, citing the image. | 1.1, Q0 |
+| M2 narrow block rolls through walker-only gaps | **Fixed by rule:** a block is never narrower than the walking box (18 px). B meets it with no change. Under A, the block widens to 18, which is B. Height (8 against 10) is covered by a walk-audit check. | 1.1, slice 1, 5 |
+| M3 opt-in on the map | **Fixed.** A Tiled map property, `deskBoxes: footprint`, read in `createRoom` where the table bodies are made. Opt-in for good; generators and `room_edit.py` set it for new and rebuilt rooms. The global flip (old slice 8) is dropped. Only the landing rule is global. | 2.1, slice 2, slice 8, 4.5 |
+| M4 Q2 beyond the tests | **Moot under B.** Under A, Q2 defaults to **no**. | Q2 |
+| M5 two fallback orders | **Fixed.** One written order (1.3), proved live in game 876 (875 ran the earlier candidate order) and by a unit test of its branches. | 1.3 |
+| M6 hand-off misses the fetch path | **Fixed.** Hand-off item for `advanceFetch` → `endFetch` → `seatNPC`, the `unseatNPC` note, an NPC stand test, and a fallback if the office-life session isn't free. | 6, slice 1 |
+| M7 section 7 stale | **Rewritten** against the post-step-9 lab. Step 9's proof is now logged (game 873, 930dbc221). Left-behind items get a drawing decision. | 7 |
+| m1 `smalldesk1` foot | **Fixed:** 27 (`measured`). | 1.1, 2.1, Q5 |
+| m2 `room_edit` range | **Fixed:** `max(tilecount, max id + 1)`; insert in firstgid order. | slice 4 |
+| m3 commit before tests | **Fixed.** | 3 |
+| m4 no hand-off fallback | **Fixed** (with M6). | 6 |
+| m5 walk audit scope | **Fixed:** opted-in maps plus a sample. | slice 0, 4.4 |
+| m6 validator key | **Fixed:** keys on the map's property. | 4.4 |
+
+**The `db:seed` rule.** AGENTS.md:218 and the memory note `worktree-live-proof-3002.md` say
+`db:seed` is fine, while the briefs for this work say never; this plan needs no seeding either
+way, and the conflict is the user's to settle.
+
 ## 1. The design and its numbers
 
 ### 1.1 Numbers, each traced to its evidence
 
 | What | Value | Evidence |
 |---|---|---|
-| Seated block | **12 × 8 px**, centred on the castor base | 216 rolls: 4 desk boxes × 6 block sizes × 9 cases (`sweep.json`; EXPERIMENTS "Measurements"). Stops move by half the block. Below 8 px high the sitter tucks further in than looks natural against `desk1`'s legs. At 16 × 12 a gap shows at the desk ends (`contact_sizes.png`, rows 1–4). 12 × 8 matches the 18 × 8 body's height, so the empty chair's body fits where it stopped |
+| Seated block, variant **A** | **12 × 8 px**, centred on the castor base | 216 rolls: 4 desk boxes × 6 block sizes × 9 cases (`sweep.json`; EXPERIMENTS "Measurements"). Stops move by half the block. Below 8 px high the sitter tucks further in than looks natural against `desk1`'s legs. At 16 × 12 a gap shows at the desk ends (`contact_sizes.png`, rows 1–4) |
+| Seated block, variant **B** (recommended, Q0) | **the chair's own body, 18 × 8**, unchanged; the driver takes it while seated, as `seatedBlock` already does with no toggle (seating.js:431–435) | `verify.json` rows `18x8` and game 876: the same front and back stops as A (castor F + 4; behind `desk1` castor 260, `smalldesk1` 248). At the desk's end, castor at end + 9 (A: end + 6). `chairInDeskBox` false in every case, so the empty chair is never left sunk and needs no `keep` |
+| Block width rule (M2) | a block is never narrower than the walking box (18 px); its height is 8 (the walker is 10) | A narrower block rolls through gaps of 12–18 px that no walker fits, and the player then stands up on the far side. B meets the rule as it is. Under A the block would have to widen to 18, which is B. Gaps of 8–10 px high (passable seated, not walking) are a walk-audit check (4.4) |
 | Castor base | the centre of the chair's existing body for the office chairs: `{w 18, h 8, x 11, y 31}` in the 40 × 40 rotation frame | `STATIC_SWIVEL_PROPS` for `chair-darkgray-1`, `chair-grey-1` and `chair-grey-4` (rooms.js:770–775); the prototype centres on it (`sitOn`, seating.js:461–466). The other families are unmeasured (section 5) |
-| The empty chair keeps the block | `keep: true` | Without it, standing restores the 18 × 8 body sunk into the desk box. Arcade only separates up to 4 px (`OVERLAP_BIAS`) without motion, so the chair stayed sunk at 4 × 4 to 8 × 6 from the front, and at every size under 18 wide at the sides (EXPERIMENTS "Standing up") |
-| Desk box | **the floor footprint**: from `F − foot` to `F`, the desk's full opaque width, no side inset | From behind, the bottom-quarter box let the castor stop 2–4 px inside `desk1`'s footprint and 12–16 px inside `smalldesk1`'s (rolled under the top). The footprint box stops it 2–6 px behind the back edge (EXPERIMENTS table "From behind"). At the sides, the 10 px inset let the castor stop 1–8 px inside. Inset 0 stops it at the end + w/2 (6 px clear for 12 × 8) |
-| `foot` for the tested desks | `desk1` 16, `zds_desk1` 16, `smalldesk1` 28 (sprite rows = floor px) | the experiment's `TOP` table (`exp.js`:10), proved by the sweep. The table-surface measurer gives `smalldesk1` `top 2, front 26` (24 rows), because it leaves out the 2 outline rows and the highlight row. The real top runs over rows 0–26 (the lip starts at row 27), so `foot` is a separate field, not `front − top` (2.2) |
-| Front contact | castor at `F + h/2` (F + 4 for 12 × 8); hip `F − 11`; chair depth F + 8.5 over the desk group's F + 0.5 | EXPERIMENTS "From the front"; `best_front_*.png` |
-| Back contact | castor `F − foot − 6 … F − foot − 2`; hip 5 px below `desk1`'s top edge; the desk group draws over the sitter's legs | EXPERIMENTS "From behind"; `best_behind_*.png` |
-| Side contact | castor at the end + 6; chair depth F − 0.5, so the end leg draws over the front castor and the feet (accepted: it reads as "at the end of the desk") | EXPERIMENTS "From the sides"; `best_east_end_desk1.png`, `best_west_end_zds.png` |
-| Landing rule on standing | reject a spot whose 18 × 10 walking box overlaps an immovable body, or whose line from the chair crosses one (sampled at ¼, ½, ¾ with a 2 × 2 probe) | Without it the player landed on the desk top or behind it in 100% of front and side cases, and across the desk from behind. With it every case landed on the near side and walked 50+ px away (EXPERIMENTS "Standing up") |
+| The empty chair keeps the block (A only) | `keep: true` | Without it, standing restores the 18 × 8 body sunk into the desk box. Arcade only separates up to 4 px (`OVERLAP_BIAS`) without motion, so the chair stayed sunk at 4 × 4 to 8 × 6 from the front, and at every size under 18 wide at the sides (EXPERIMENTS "Standing up"). Not needed under B |
+| Desk box | **the floor footprint**: from `F − foot` to `F`, the desk's full opaque width, no side inset | From behind, the bottom-quarter box let the castor stop 2–4 px inside `desk1`'s footprint and 12–16 px inside `smalldesk1`'s (rolled under the top). The footprint box stops it 2–6 px behind the back edge (EXPERIMENTS table "From behind"). At the sides, the 10 px inset let the castor stop 1–8 px inside. Inset 0 stops it at the end + w/2 (A 6 px clear, B 9 px) |
+| `foot` for the tested desks | `desk1` 16, `zds_desk1` 16, `smalldesk1` **27** (sprite rows = floor px) | `desk1`/`zds_desk1` from the experiment's `TOP` table (`exp.js`:10). `smalldesk1`: rows 0–26 are the top (row 26 the highlight lip), row 27 the first dark front-face row, so the plan's own definition gives 27 (R1 m1). The sweep used 28; the 1 px is inside slice 2's ±1 px tolerance. The table-surface measurer gives `smalldesk1` `top 2, front 26` because it leaves out the outline and highlight rows, so `foot` is a separate field, not `front − top` (2.2) |
+| Front contact | castor at `F + h/2` (F + 4 for both A and B); hip `F − 11`; chair depth F + 8.5 over the desk group's F + 0.5 | EXPERIMENTS "From the front"; `best_front_*.png`; game 876 |
+| Back contact | castor `F − foot − 6 … F − foot − 2` (A and B the same); hip 5 px below `desk1`'s top edge; the desk group draws over the sitter's legs | EXPERIMENTS "From behind"; `best_behind_*.png`; game 876 |
+| Side contact | A: castor at the end + 6, and the end leg (x 123–125 for `desk1` at x 48) covers 3 columns of the castor star, with 4 columns inside the desk outline. B: castor at the end + 9, 1 column under the leg. Chair depth F − 0.5 in both, so the leg draws over whatever is under it | `compare_12x8_vs_18x8.png`, detail rows; EXPERIMENTS "From the sides" |
+| Landing rule on standing | the order in 1.3: a spot's 18 × 10 walking box must overlap no immovable body, and the line from the castor base to it must cross none (sampled at ¼, ½, ¾ with a 2 × 2 probe); then a flood fill; never an unchecked cell | Without it the player landed on the desk top or behind it in 100% of front and side cases, and across the desk from behind. With the order in 1.3, games 875 and 876: all 9 cases for A and for B landed on the near side and walked 49–58 px away, and a forced `standUp()` from behind `desk1` landed at [100, 244], north of the back edge (264). B1 explains the earlier "across the desk" rows |
 | Walker box | unchanged, 18 × 10 | Two `desk1`s 24 px apart: the box gap is 24 px with no inset, and the walker crossed it with every desk box |
 | Static chairs | unchanged (no body) | `hospital_chair_north` in front of `desk1`: sits correctly, and hops off to the approach spot clear of the desk box (EXPERIMENTS "Static chairs") |
 
@@ -62,6 +104,47 @@ with their feet at `F − foot − 5` at the nearest, drawn under the desk group
 behind) and 5 (sitter in front) are now kept in place by physics: the block stops the chair at
 the contact line, so a chair foot can't end up between `F − foot` and `F`. The one exception is
 the side case above, which is cosmetic.
+
+### 1.3 Standing up: the one order (M5)
+
+`standSpot` (players and NPCs) follows this order. It is built and unit-tested as the pure
+`pickStandSpot` in the prototype (seating.js, 619d58928, live only with `window.__seatBox`).
+"Box clear" means an 18 × 10 walking box with its feet at the spot overlaps no enabled
+immovable body. "Line clear" means the line from the castor base to the spot crosses none
+(¼, ½, ¾, 2 × 2 probe).
+
+1. **Compass candidates.** At `reach` (half the chair body's longer side + 14) in the order:
+   forward, the two sides, the two back diagonals, back, and the two forward diagonals last.
+   Each snaps to the nearest walkable grid cell within 1 cell, under 12 px from the target,
+   and must be box clear and line clear. (Forward diagonals go last because a chair tucked in
+   faces its desk, and a forward diagonal steps round the desk's corner to its far side. In
+   game 875, with the old order, B at the west end of `zds_desk1` stood at [324, 116], behind
+   the desk's back edge. With this order, game 876 stood at [308, 108], beside the end.)
+2. **Flood fill, 4 cells.** From the chair's grid cell, through walkable cells only
+   (8-connected), up to 4 steps (32 px). Nearest first; the first cell that is box clear and
+   line clear. Walking only through walkable cells means it can't reach the far side of a desk
+   in 4 cells.
+3. **The approach point** (`state.approach`, where the player stood to sit), if box clear. NPCs
+   have no approach point and skip this.
+4. **Out of options, voluntary** (Space, Space: `jumpOff`): stay seated and show "No room to
+   stand up here." (`window.gameAlert`, 2.5 s). The player can roll somewhere else.
+5. **Out of options, forced** (`standUp()` with no spot: KO, seating.js:675; punch and block,
+   player-combat.js:101, 195; the chair going inactive, seating.js:717; E with nothing in
+   reach, interactions.js:1998; `trySit` on another chair; NPC `unseatNPC`): the flood fill to 8
+   cells with box clear only, then the approach point with no check. Never a cell picked by
+   direction alone, which is what landed the player across the desk.
+
+Line numbers are at a4faba799. Static chairs are unchanged (`landingSpot` returns the approach
+point).
+
+**Proof.** Unit: `seating.test.mjs` "pickStandSpot" covers every branch but the forced 8-cell flood (slice 1 adds it), with fakes (compass on
+the near side from behind a desk; flood when walls close every compass spot; approach; null for
+a voluntary jump with nowhere clear; the forced approach; no branch returns the cell across
+the desk). Live, game 876 (`r1_prove2.out`): the 9 experiment cases for A (`12x8k`) and B
+(`18x8`), every one on the near side, not in a desk box, walk-away 49–58 px; and a forced
+`standUp()` from behind `desk1` for both, landing at [100, 244] (back edge 264). The cramped
+branches (2–5) were not reached live, because the test room has open floor on every case;
+slice 1 adds a cramped case to its tests.
 
 ## 2. The desk footprint data
 
@@ -76,7 +159,7 @@ built now with G's field first:
   "sprites": {
     "desk1":      { "foot": 16, "source": "experiment" },
     "zds_desk1":  { "foot": 16, "source": "experiment" },
-    "smalldesk1": { "foot": 28, "source": "experiment" },
+    "smalldesk1": { "foot": 27, "source": "measured" },
     "desk3":      { "foot": 16, "x": [0, 51], "source": "measured" }
   },
   "legacyBox": ["batrack", "servers", "bookcase", "bed1"]
@@ -95,6 +178,12 @@ One file serves three readers, as in the table-surface plan:
   `chair_at_desk(desk, side)` placement helper (slice 7).
 
 Keys are texture keys. Variants (`desk1`/`desk2`/`desk3`) get one entry each.
+
+**Which maps use it** is not in this file. It is a property of the map (slice 2): a Tiled map
+property `deskBoxes` with the value `footprint`, in the map JSON's top-level `properties`.
+Walkability belongs to the map: `room_office` is shared by 64 scenarios, and room fixes are
+made in the map with `room_edit.py`, so a flag on the map keeps the fix and the flag together.
+A scenario can't turn it on or off.
 
 ### 2.2 Fields
 
@@ -134,9 +223,9 @@ beds, appliances, the hatch counters and anything else that isn't a desk.
   in `TABLE_SURFACE_PLAN.md` 3.2). They need a hand value. Most are used in one or two rooms.
 
 The hand values go on a review page (the AGENTS.md picks page): crop, proposed box, and a
-number box for each sprite. An agent fills it and the user checks it once (Q3). `smalldesk1` is
-the one known disagreement, 27 measured against 28 tested: keep 28 (`experiment`), because 28
-is what the sweep proved. Tall-legged tables whose top is deeper than their legs
+number box for each sprite. An agent fills it and the user checks it once (Q3). `smalldesk1`
+takes the measured 27, so one rule covers all 24 confident textures; the sweep's 28 is inside
+slice 2's ±1 px check (R1 m1). Tall-legged tables whose top is deeper than their legs
 (`hospital_conference_table`, `zds_conference_table1`: about 28 rows) get a footprint box as
 deep as the top. Whether that's right on the floor is what R1 m10 asked of the table-surface
 plan. It gets a look on the contact sheet and a walk-round in the test room (slice 2).
@@ -158,10 +247,12 @@ and multiplies by `scaleX`/`scaleY`, so later rooms behave.
 
 ## 3. Engine changes, in slices
 
-Each slice is one commit (engine before data), with explicit paths. The node suite
-(`bin/test-js`) and the Rails suite run before each engine commit. Any new static import in an
-engine module goes on each JS test harness copy list. Ownership is in section 6: slices 1–5
-and 8 are this work, slice 6 is the office-life session's, and slice 7 is the lab.
+Each slice is one commit (engine before data), with explicit paths
+(`git commit -m "..." -- <paths>`, after checking `git diff --cached --stat`). The tree is
+shared, so commit your own files first, then run the node suite (`bin/test-js`) and the Rails
+suite, and make any fixes as follow-up commits (R1 m3). Any new static import in an engine
+module goes on each JS test harness copy list. Ownership is in section 6: slices 1–5 and 8 are
+this work, slice 6 is the office-life session's (with a fallback), and slice 7 is the lab.
 
 ### Slice 0: the walk audit, before anything changes
 
@@ -176,9 +267,9 @@ NPCs. So slice 0 adds a walkability record to the same run.
   - the **key points**: the player start, each door's approach point, each NPC's spawn and
     patrol or route waypoints, every needs station's `approachCell`, and the nearest walkable
     cell to every interactable object.
-- Two init-script switches let one game row be loaded both ways with no scenario edit:
-  `window.__deskBoxes = 'legacy' | 'footprint'` (read in slice 2) and
-  `window.__seatBox = false` (read in slice 1).
+- Two init-script switches let one game row be loaded both ways with no scenario or map edit:
+  `window.__deskBoxes = 'legacy' | 'footprint'` (read in slice 2, overriding the map
+  property) and `window.__seatBox = false` (read in slice 1).
 - `walk-audit-diff.mjs before.json after.json` runs a flood fill over each room's grid from its
   doors and reports:
   - (a) key points reachable before and not after;
@@ -189,68 +280,128 @@ NPCs. So slice 0 adds a walkability record to the same run.
     4 px, so these stay sunk);
   - (e) the cells added per room.
 
-  It exits 1 on (a)–(d) outside `--allow`.
-- `test_desk_seating` gets a `Mission` row (`mission.json` exists; `db:seed` is allowed, the
-  other `db:` tasks are not). Live checks then use `new-game.rb` like every other scenario,
-  in place of the experiment's swapped game row.
-- **Baseline:** one `snapshot-games.sh` TSV for all scenarios, then
-  `room-snapshot.mjs --walk` with `__deskBoxes = 'legacy'`. Every later slice is compared
-  against this baseline, on the same game rows.
+  - (f) for opted-in maps: gaps 8–10 px high or 12–18 px wide (passable seated or by a pushed
+    chair, not on foot) that border a region not otherwise reachable (M2).
 
-### Slice 1: the seated block, the empty-chair block, the landing rule (player)
+  It exits 1 on (a)–(d) and (f) outside `--allow`.
+- **The test scenario without a Mission row (B2).** The experiment's scratch `swap_game.rb`
+  becomes `tools/playtest/swap-scenario-game.rb <host_mission> <scenario_dir> [--start-room
+  <id>]`. It makes one game of an existing test mission (`test_seating`) with `new-game.rb`'s
+  set-up, then replaces that one game row's `scenario_data` with the rendered scenario, the
+  same kind of test-only edit as `--start-room`. It prints the game id. No `db:` task, no
+  `db/seeds.rb`, no Mission row. Games 874–876 were made this way. `snapshot-games.sh`
+  lists missions from the DB, so it misses `test_desk_seating`; pass that game id to the
+  snapshot and walk tools explicitly.
+- **Baseline, scoped (R1 m5).** Footprint boxes are opt-in per map for good (slice 2), so the
+  full walk audit only runs for maps being opted in. Slice 0 records:
+  - the walk record for `room_test_desk_seating` and `room_lw_accounts` (the two maps opted in
+    first), with `__deskBoxes = 'legacy'`;
+  - for the landing rule, which is global (slice 1): a light baseline of one game per room
+    that has a swivel chair (`chair-darkgray-1`, grey-1, grey-4, white, exec; section 5 gives
+    9 + 9 + 4 rooms for the office chairs before overlaps, plus the white and exec rooms),
+    recording each chair's position and the room's key points,
+    plus a sample of five high-traffic shared rooms (`room_office`, `room_uni_staff`,
+    `room_IT`, `room_office5`, `room_break`) with the full walk record, so a later map opt-in
+    there has a baseline ready.
 
-Files: `seating.js` (the player parts: `sitOn`, `standUp`, `standSpot`, the prototype's
-`seatedBlock` and `clearOfTables`) and a new pure module, `systems/seat-box.js`, which the NPC
-half (slice 6) imports as well.
+  Every later slice is compared against this baseline, on the same game rows.
+
+### Slice 1: the landing rule (player and NPC), and the seated block if Q0 picks A
+
+Files: `seating.js` (`sitOn`, `standUp`, `jumpOff`, `standSpot`, `unseatNPC`'s call to it, the
+prototype's `seatedBlock`, `clearOfTables` and `pickStandSpot`) and a new pure module,
+`systems/seat-box.js`, which the NPC half (slice 6) imports as well.
+
+**Under B (recommended):** the office chairs' seated body doesn't change; the driver already
+takes the chair's 18 × 8 body (`seatedBlock` with no toggle). Slice 1 is then the landing rule,
+the helpers, and `SEAT_BLOCKS` holding `office40` = the existing body, so slice 5 has a place to
+put the other families. **Under A:** as below, with the 12 × 8 block and `keep`.
 
 - `seat-box.js` exports:
   - `SEAT_BLOCKS`: block per seat family, `{ w, h, cx, cy }` in rotation-frame px, the centre
-    being the castor base. `office40`: `{ 12, 8, 20, 35 }`, the centre of the 18 × 8 body at
-    (11, 31). `white32` and `exec` stay out until section 5 measures them, and those chairs
-    keep today's behaviour (the whole body), so nothing untested changes.
+    being the castor base. `office40`: B `{ 18, 8, 20, 35 }` (the existing body at (11, 31)),
+    or A `{ 12, 8, 20, 35 }`. Every block is at least 18 px wide (1.1, block width rule).
+    `white32` and `exec` stay out until section 5 measures them, and those chairs keep today's
+    behaviour (the whole body), so nothing untested changes.
   - `blockFor(chair)`: the family's block, or null.
   - `walkBoxClear(scene, x, y, ignore)`: true when an 18 × 10 walking box with its feet at
     (x, y) overlaps no enabled immovable body. It uses the static and immovable sources that
     `rebuildWorldGrid` uses, so desks, walls, locked doors and immovable furniture all count.
     The prototype looked only at static bodies in `room.objects`, which misses wall boxes.
   - `pathClear(scene, from, to, ignore)`: the prototype's ¼, ½, ¾ samples with a 2 × 2 probe.
+  - `floodStandCells(pfm, x, y, maxCells)`: the prototype's `floodCells`, walkable cells
+    reachable through walkable cells, nearest first.
+  - `pickStandSpot(...)`: the prototype's pure order (1.3), moved here unchanged.
   - `sweepBlock(scene, rect, dx, dy, ignore)`: how far a block can move along (dx, dy) before
     it meets an immovable body. Slice 6 uses it for the NPC slide and tuck targets, and it is
     pure geometry over the real bodies, so it needs no footprint data.
 - **On sitting** (`sitOn`): the driver's body becomes `blockFor(chair)`, centred on the castor
-  base. With no block, the whole body as now.
-- **On standing** (`standUp`): the chair keeps the block (`keep`), for chairs with a block only.
-- **Landing** (`standSpot`): the order of tries is unchanged (forward, then round the compass),
-  plus `walkBoxClear` and `pathClear`. If no spot passes, the current fallback
-  (`findNearestWalkableWorldCell(cx, cy + reach, 3)`), then the approach point the player sat
-  from (`state.approach`), which was walkable when they sat.
+  base. With no block, the whole body as now. Under B the two are the same for `office40`.
+- **On standing** (`standUp`), A only: the chair keeps the block (`keep`).
+- **Landing** (`standSpot`): the order in 1.3, with `walkBoxClear` (all immovable sources,
+  walls and locked doors included, not only the room's static objects as in the prototype) and
+  `pathClear`. `jumpOff` passes `forced: false`; every other caller is forced. The unchecked
+  `findNearestWalkableWorldCell(cx, cy + reach, 3)` fallback is deleted.
 - The landing rule is **global** and not behind a flag. Today's `standSpot` lands the player on
   or behind a desk when the chair faces one (EXPERIMENTS: 100% of front and side cases), and
   that happens with today's boxes too, so this is a fix everywhere.
-- The block applies only while someone sits, and to the empty chair after it has been sat on.
-  Whether every `office40` chair should start with the block at load is Q2.
+- **NPCs too (M6).** `unseatNPC` calls the same `standSpot` for a seated swivel NPC with no
+  `standAt` (seating.js:912 at a4faba799), so slice 1 changes NPC stand-up as well. That is
+  office-life code: the office-life session reviews the slice 1 diff before it is committed
+  (or, under the section 6 fallback, agrees to it).
+- Under A, the block applies only while someone sits and to the empty chair after it has been
+  sat on (Q2: not at load).
 - `window.__seatBox` stays as a test-only off switch (`false` = today's behaviour). The
   experiment's `{ w, h }` form goes.
 
-Tests (`seating.test.mjs`, a new `seat-box.test.mjs`): `blockFor` for each family (null for
-white and exec until slice 5); `walkBoxClear` and `pathClear` against fake bodies (a desk
-between the chair and the spot, a wall box, the chair itself ignored); `sweepBlock` stops at
-the contact line from all four sides; and the `standUp` fallback order.
+Tests (`seating.test.mjs`, a new `seat-box.test.mjs`):
+- `blockFor` for each family (null for white and exec until slice 5), and every block ≥ 18 wide;
+- `walkBoxClear` and `pathClear` against fake bodies (a desk between the chair and the spot, a
+  wall box, the chair itself ignored);
+- `sweepBlock` stops at the contact line from all four sides;
+- `pickStandSpot`, each branch of 1.3 (the prototype's test, extended);
+- named cases with fake bodies (R1 B1): **behind `desk1`** (castor 260, `F` 280, `foot` 16:
+  pass means stand y < F − foot = 264); in front; at each end; **cramped** (a chair behind a desk
+  with a wall 12 px north: compass all fail, the flood fill finds the cell beside the chair);
+  **boxed in** (a voluntary jump returns null, a forced stand returns the approach point);
+- an **NPC stand** case: a seated NPC with no `standAt`, its chair tucked behind a desk,
+  `unseatNPC` puts it on the near side.
+
+Live (:3001, `test_desk_seating` through `swap-scenario-game.rb`): the 9 cases on today's boxes
+and on footprint boxes, the behind-`desk1` case named in the log with its stand y, a forced
+`standUp()` from behind `desk1`, and one cramped case made by placing a chair between the back
+of `desk1` and a wall. Pass: every stand y < F − foot from behind, never inside a desk box,
+walk-away ≥ 40 px. Then a regression sit-and-roll in one `room_office` mission.
 
 ### Slice 2: desk boxes from the footprint data (opt-in)
 
 Files: `table_surfaces.json` (new), `systems/desk-footprints.js` (new), `game.js` (preload),
-`rooms.js` (the Tiled table body at 2635–2660 and the mode A body at 2134–2148, through one
-shared `applyTableBody(sprite)`), and `measure_table_surfaces.py --footprint`.
+`rooms.js` (`createRoom` reads the map property; the Tiled table body at 2640–2655 and the mode
+A body at 2136–2148, through one shared `applyTableBody(sprite, mode)`),
+`measure_table_surfaces.py --footprint`, `room_edit.py` and the generators (set the property),
+and `validate_scenario.rb` (reports legacy maps).
 
 - `deskBoxOf(sprite)` returns `{ x, y, w, h }` in sprite px from the entry (with `x`, `floor`,
   scale and `flipX` applied), or null when the texture has no `foot`, is in `legacyBox`, or is
   rotated.
-- `applyTableBody` uses the footprint box when the room has opted in and `deskBoxOf` gives
-  one. Otherwise it keeps today's box exactly (`w − 20` × `h / 4`, offset (10, `3h/4`)).
-- **Opt-in:** a room field in the scenario, `"deskBoxes": "footprint"`. The default is
-  `legacy` until slice 8. `window.__deskBoxes` overrides it for the audit. The lab's
-  `open_plan` and `test_desk_seating` opt in.
+- `applyTableBody` uses the footprint box when the room's map has opted in and `deskBoxOf`
+  gives one. Otherwise it keeps today's box exactly (`w − 20` × `h / 4`, offset (10, `3h/4`)).
+- **Opt-in per map, for good (M3).** A Tiled map property, `deskBoxes` = `footprint`, in the
+  map JSON's top-level `properties` array. `createRoom` (rooms.js:1766) already builds the
+  tilemap (`gameRef.make.tilemap`, 1797); it reads the property from the tilemap's
+  `properties` once, stores it on the room as `room.deskBoxes`, and both body sites read
+  `room.deskBoxes` inside their `delayedCall(0)`. No map has `properties` today, so no map
+  changes behaviour until it is opted in. `window.__deskBoxes` overrides it for the audit.
+  - **First maps:** `room_test_desk_seating` and `room_lw_accounts` (the lab's `open_plan`).
+  - **New rooms:** `generate_rooms.py` and any other room generator write the property, and
+    `room_edit.py` gets `set-map-prop deskBoxes footprint` for rebuilt rooms, run as part of
+    the walk audit for that map.
+  - **No scenario field.** `deskBoxes` never goes in a scenario room, so the validator's
+    `known_room_fields` (validate_scenario.rb:406) and the bootstrap filter (game.rb:819–823)
+    don't change. The validator gets an info line per scenario: which of its maps are still
+    legacy.
+  - **No default flip.** Legacy maps keep today's box for good, unless their mission is next
+    redressed (slice 8).
 - The body is still cut a frame after creation (`delayedCall(0)`). The sight-occlusion cache
   key already includes body height (npc-sight-occlusion.js:333–334), and the grid rebuild
   runs 200 ms after the load (npc-pathfinding.js:113), so both see the new box. Slice 2 checks
@@ -260,7 +411,9 @@ shared `applyTableBody(sprite)`), and `measure_table_surfaces.py --footprint`.
   stay on the fallback until their hand values are in (Q3), so they don't hold the slice up.
 
 Tests: `deskBoxOf` for an entry, no entry, `legacyBox`, rotation, `flipX`, scale and `floor`
-padding; `applyTableBody` choosing legacy or footprint by opt-in and override; a Python
+padding; reading the map property (present, absent, another value); `applyTableBody` choosing
+legacy or footprint by the map property and the override; `room_edit.py set-map-prop` round
+trip; a Python
 coverage test (2.4); a Python test that `--footprint` reproduces `desk1` 16 and `smalldesk1` 27
 from the PNGs. Live: `test_desk_seating`, all 9 experiment cases (front, behind, sides, the
 24 px gap, the static chair), rolled with the arrow keys through `window.__test.walk` as the
@@ -296,12 +449,16 @@ its own with listeners), and `table-group-variant-listeners.test.mjs` still pass
 File: `scripts/room_gen/room_edit.py` (`ensure_sprite`, 283–295). Today it asserts that a new
 tileset's `firstgid` is above the highest existing `firstgid` plus its tile count. That
 refuses `room_lw_accounts`, whose room tileset sits at 1500, when the `objects` tileset goes
-in at 115. The new check is real overlap: the new range `[firstgid, firstgid + tilecount)`
-must miss every existing range. An image-collection tileset's range is
-`[firstgid, firstgid + max(tile id) + 1)`, and one with neither `tilecount` nor tiles counts
-as 1. The message names the clashing tileset. A small `unittest` file
+in at 115. The new check is real overlap: the new range must miss every existing range. A
+tileset's range is `[firstgid, firstgid + max(tilecount, max tile id + 1))`, so it agrees with
+the engine (which resolves with `firstgid + tilecount`, rooms.js:478, 2468) and with Tiled
+(ids beyond the count: the `objects` reference tileset has `tilecount 373` and ids up to 379,
+`hospital_extras` 663 and 673; R1 m2). One with neither `tilecount` nor tiles counts as 1. The
+message names the clashing tileset. `put_tileset` inserts in firstgid order rather than
+appending, so the map reads the same in Tiled and in the engine. A small `unittest` file
 (`scripts/room_gen/test_room_edit.py`) covers a clean insert below a high tileset, a real
-clash and the external-`source` case. This slice depends on nothing else and can run in
+clash, a tileset whose ids run past its count, the insert order, and the external-`source`
+case. Slice 7's live check loads the patched map in the browser. This slice depends on nothing else and can run in
 parallel with slice 1. Slice 7 needs it, so that the lab patch can be made with the real tool.
 
 ### Slice 5: the untested chairs (section 5)
@@ -313,19 +470,28 @@ grey-1 and grey-4 are confirmed against `office40`.
 
 ### Slice 7: the lab (section 7)
 
-### Slice 8: footprint boxes by default
+### Slice 8: opt a map in when its mission is next dressed (no default flip)
 
-Once slices 2 and 6 have been live for the lab and the regressions in section 4 pass:
+There is no scheduled flip (M3). A map is opted in when a mission that uses it goes through
+room dressing, or a generator makes it new. For each map:
 
-1. run the walk audit over every scenario with `__deskBoxes = 'footprint'`, against the slice 0
-   baseline;
-2. fix each flagged room with `room_edit.py`: move a desk a few px in place, put a desk on
-   `legacyBox`, or accept the closure where walking between two touching desks was a bug;
-3. flip the default to `footprint`. `"deskBoxes": "legacy"` stays as a per-room escape hatch.
+1. take a walk record for every scenario that uses the map, legacy and footprint, on the same
+   game rows (`__deskBoxes` override);
+2. fix each flag with `room_edit.py`: move a desk a few px in place, put a desk on `legacyBox`,
+   or accept the closure where walking between two touching desks was a bug (Q8);
+3. set the map property with `room_edit.py set-map-prop deskBoxes footprint` and commit the map
+   JSON on its own, with explicit paths.
 
-One commit for the engine default, then one per room JSON, each with explicit paths.
+A shared map (`room_office`, 64 scenarios) is opted in only when every scenario on it passes
+the walk audit, and the room dressing owner agrees. The `mission-room-dressing` skill can name
+this step later; that edit isn't part of this plan.
 
-## 4. Blast radius: every desk's box changes
+## 4. Blast radius: every desk's box in an opted-in map changes
+
+After R1 this is the cost of opting a map in, not of a global change: no map changes until it
+is opted in (slice 2), and the only global change is the landing rule (slice 1). The estimates
+below are kept because they show which maps will need work when their missions are redressed.
+They were computed with `smalldesk1` at 28; at 27 its north edge moves 1 px less.
 
 ### 4.1 What changes
 
@@ -337,7 +503,7 @@ The ends move out by 10 px each. The north edge moves north by `foot − H/4`:
 | Desk | Today's depth | Footprint depth | North edge moves |
 |---|---|---|---|
 | `desk1`, `zds_desk1` | 9.75 | 16 | 6 px |
-| `smalldesk1` | 10.25 | 28 | 18 px |
+| `smalldesk1` | 10.25 | 27 | 17 px |
 | conference tables | 12–14 | about 28 | 14–16 px |
 
 ### 4.2 Estimated size, from the room files
@@ -373,7 +539,7 @@ placed tables, NPCs and doors need the slice 0 walk audit.
 - **Player walking.** Arrow keys use physics, so a walker stops at the new edges. Behind a
   desk the player can no longer stand inside the footprint (the walk-behind look shrinks to
   the desk's back edge). Click-to-move uses the grid, so it routes round the added cells.
-  Interaction reach from behind gets 6–18 px longer for items at the back of a top. Walk-audit
+  Interaction reach from behind gets 6–17 px longer for items at the back of a top. Walk-audit
   check (b) lists any interactable that ends up out of range.
 - **NPC patrols and needs routes.** Patrols path over the grid, so a closed gap reroutes them
   or, at worst, leaves a waypoint unreachable (check (a)). NPC–desk colliders
@@ -398,13 +564,17 @@ placed tables, NPCs and doors need the slice 0 walk audit.
 
 ### 4.4 How it's caught
 
-1. **Walk audit** (slice 0) on every scenario, `legacy` against `footprint`, same game rows.
-   Checks (a)–(d) fail the run outside `--allow`, and (e) is the cell list for the review.
-   Each flagged room gets a 2× screenshot with the old and new boxes drawn, for a look.
+1. **Walk audit** (slice 0), scoped (R1 m5): for each map being opted in, every scenario that
+   uses it, `legacy` against `footprint`, same game rows; plus the five-room sample and the
+   swivel-chair rooms for the landing rule. Checks (a)–(d) and (f) fail the run outside
+   `--allow`, and (e) is the cell list for the review. Each flagged room gets a 2× screenshot
+   with the old and new boxes drawn, for a look.
 2. **Room snapshot diff** (a7640b314) after each slice: slice 2 must show no sprite moved or
    flipped (a box isn't a sprite). Slice 3 lists its regrouped items and nothing else.
 3. **Patrol and needs regressions**, live on :3001, each scenario run twice from the same
-   game row, with `window.__deskBoxes` set by an init script. Each run records: stuck-in-wall
+   game row, with `window.__deskBoxes` set by an init script. Each runs when a map it uses is
+   opted in (the lab now; m03, m07 and the needs scenarios only when their maps are), and the
+   needs scenarios also run once after slice 1 for the global landing rule. Each run records: stuck-in-wall
    log lines, waypoint arrivals per NPC, needs cycles finished and time away from post, and
    the scenario's own beats.
    - m03 (`m03_ghost_in_the_machine`) and m07 (`m07_architects_gambit`): the guard patrols,
@@ -418,21 +588,27 @@ placed tables, NPCs and doors need the slice 0 walk audit.
    Pass: footprint runs no worse than legacy on every count, no new stuck lines, every beat
    fires. These are scripted runs, so they go to Haiku, with a Sonnet check of any "stuck"
    claim (the playtest model split).
-4. **A validator warning** (Ruby, reading `table_surfaces.json` and the room JSON) for
-   opted-in rooms: an NPC position, waypoint or seated chair foot inside a footprint box.
-   Static, cheap, and it catches new scenarios after slice 8.
+4. **A validator warning** (Ruby, reading `table_surfaces.json` and the map JSON), keyed on
+   the map (R1 m6): for every scenario room whose map has `deskBoxes: footprint`, an NPC
+   position, waypoint or seated chair foot inside a footprint box. No scenario field is added,
+   so `known_room_fields` doesn't change. Static, cheap, and it catches new scenarios on
+   opted-in maps.
 
-### 4.5 Opt-in first, then the default
+### 4.5 Opt-in per map, for good
 
-Opt-in first (slice 2), default later (slice 8). Reasons:
+Footprint boxes stay opt-in (slice 2), set on the map. There is no default flip (R1 M3).
+Reasons:
 
-- the lab needs the footprint box now, and nothing else does;
-- 102 rooms change walkability, and the audit's list should be worked through room by room,
-  not discovered in playtests;
-- the fallback is exactly today's box, so an opted-out room is untouched.
+- the user's goal is the accounts floor and future rooms; the lab needs the footprint box now,
+  and nothing else does;
+- a flip would change walkability in 102 rooms nobody is redecorating, and need a regression
+  campaign over shipped missions (m03, m07, the lab, the needs scenarios) for a tidier sitter
+  from behind;
+- the fallback is exactly today's box, so a legacy map is untouched;
+- generators set the property, so every new room gets footprint boxes, and maps join as their
+  missions are redressed (slice 8).
 
-Slice 8 flips the default once the walk audit is clean, or every remaining flag has an
-accepted reason in the log.
+The landing rule (slice 1) is the only global change, because it fixes a bug in every room.
 
 ## 5. The chairs the experiment didn't test
 
@@ -440,7 +616,7 @@ accepted reason in the log.
 |---|---|---|---|
 | `chair-darkgray-1` (tested) | 32 in 9 rooms | 40 × 40, `{18, 8}` at (11, 31) | none |
 | `chair-grey-1`, `chair-grey-4` | 13 + 12 in 9 + 4 rooms | 40 × 40, the same body (rooms.js:770–775); start offsets differ by 1–2 px | whether the castor base is at the body centre in all 8 frames |
-| `chair-white-1/2-rotateN` | 32 | 32 × 32, generic body 22 × 10.7 at (5, 21.3) | castor centre, block size (12 × 8 may be too wide for a 32 px frame), contact numbers |
+| `chair-white-1/2-rotateN` | 32 | 32 × 32, generic body 22 × 10.7 at (5, 21.3) | castor centre, block height and contact numbers (width at least 18, the walker's, by the block width rule; the body's 22 may simply stay) |
 | `chair-exec-rotateN` | 4 | 38 × 64, generic body 28 × 21.3 at (5, 42.7) | castor centre (likely well below the body centre at y 53), block, and how a tall back looks tucked from behind |
 | static chairs (`hospital_chair_*` 106, `exec_chair_*` 28, `aw_chair_*` 21, waiting, club, sofas) | about 190 | no body | nothing physical. Their approach and hop-off spots, and NPCs seated on them, are covered by walk-audit (c) |
 
@@ -454,11 +630,14 @@ Measurement, all free:
 2. **Sweep.** Move the experiment driver (`exp.js`) into the repo as
    `tools/playtest/seat-sweep.mjs`, with `--chair` and `--blocks`. Add a row per family to
    `room_test_desk_seating` (with the fixed `room_edit.py`): a white chair and an exec chair at
-   `desk1` and `smalldesk1`, front, behind and east end. Run blocks 8 × 6, 10 × 6, 12 × 8 and
-   16 × 12 against the footprint boxes, plus standing, as the experiment did:
-   2 families × 4 blocks × 6 cases = 48 rolls.
+   `desk1` and `smalldesk1`, front, behind and east end. Run blocks 18 × 6, 18 × 8, 18 × 10
+   and the family's own body against the footprint boxes, plus standing (the 1.3 order), as the
+   experiment did: 2 families × 4 blocks × 6 cases = 48 rolls. Nothing narrower than 18 (the
+   block width rule, R1 M2).
 3. **Pick per family** by the experiment's tests: no castor inside a footprint, the hip to
-   the desk's edge as in `best_*.png`, the empty chair not left sunk after standing. Write
+   the desk's edge as in `best_*.png`, the empty chair not left sunk after standing, and the
+   landing on the near side. Prefer the family's own body where it passes, as for `office40`
+   under B. Write
    `SEAT_BLOCKS.white32` and `.exec`, with a contact sheet like `contact_sizes.png` for the
    review.
 4. **Static chairs:** one sit and hop-off per static texture that the walk audit finds next to
@@ -472,109 +651,170 @@ The office-life session owns `npc-needs*`, the needs parts of `seating.js` (`sea
 needs path uses it, `updateNeedsSeat`, `needsSeatRef`, `tuckIn`,
 `startFetch`/`advanceFetch`, the fidget), `npc-office-visuals.js` and `workstation-state.js`
 (`TABLE_SURFACE_PLAN.md` 6). That session has finished slice 15 (HANDOVER_OFFICE_S15.md) and
-may be free. This work edits only the player parts of `seating.js`. Both sessions commit in
-turn, with explicit paths.
+may be free. This work edits the player parts of `seating.js`, plus the one shared function,
+`standSpot`, which `unseatNPC` also calls (slice 1). Both sessions commit in turn, with explicit
+paths.
 
-**Note to hand over** (send when slices 1 and 2 have landed):
+**When the office-life session isn't free (R1 m4).** If slice 6 hasn't started by the time
+slices 1–4 have landed, this work builds the NPC half itself, with that session's agreement:
+on the office-life plan's own fixture (`test/js/fixtures/needs-sims-world.mjs`) and tests, and
+with the office-life session (or, failing that, a fresh Opus reviewer briefed with
+`OFFICE_LIFE_HANDOVER_SESSION.md`) reviewing the diff before it is committed. Ask for that
+agreement when sending the slice 1 diff for review, so it is settled before it is needed.
+
+**Note to hand over** (send when slices 1 and 2 have landed; written for B, with A's
+differences in brackets):
 
 > Seat box (option G), slice 6 is yours. Plan: `docs/achitechture/SEAT_BOX_PLAN.md`.
 > Slices 1–2 added `systems/seat-box.js` (`blockFor(chair)`, `sweepBlock(scene, rect, dx,
-> dy, ignore)`, `walkBoxClear`, `pathClear`) and `systems/desk-footprints.js` (`deskBoxOf`).
-> In rooms with `"deskBoxes": "footprint"`, desks now have a body the size of their floor
-> footprint, full width, ending at the floor line. A swivel chair with a block (`office40`
-> today: darkgray, grey-1, grey-4) shrinks to a 12 × 8 block at its castor base while
-> anyone sits on it, and keeps that block once they stand. The player side and the landing
-> rule are done. Please:
-> 1. **Block.** In `seatNPC`, for a chair with `blockFor(chair)`, give the chair's body the
->    block (centred on the castor). Keep it in `unseatNPC`. The NPC's own body stays
->    collision-none and immovable while seated, as now.
+> dy, ignore)`, `walkBoxClear`, `pathClear`, `pickStandSpot`) and `systems/desk-footprints.js`
+> (`deskBoxOf`). In maps with the Tiled property `deskBoxes: footprint`, desks now have a body
+> the size of their floor footprint, full width, ending at the floor line. Office chairs
+> (`office40`: darkgray, grey-1, grey-4) keep their own 18 × 8 body, which is the seated block
+> [A: shrink to a 12 × 8 block at the castor base while anyone sits, and keep it]. The player
+> side is done. **Slice 1 also changed `standSpot`, which `unseatNPC` calls for a seated
+> swivel NPC with no `standAt` (seating.js:912 at a4faba799)**: it now follows the order in
+> plan 1.3 and never lands across a desk; you reviewed that diff. Please:
+> 1. **Block.** Under B, nothing: the chair's body is already the block. [A: in `seatNPC`, for a
+>    chair with `blockFor(chair)`, give the chair's body the block, centred on the castor, and
+>    keep it in `unseatNPC`.] The NPC's own body stays collision-none and immovable while
+>    seated, as now.
 > 2. **Slide target.** `updateNeedsSeat` pulls a swivel to the NPC's feet
 >    (`slideChairFootTo(near.obj, feet.x, feet.y)`, seating.js:1178), which puts the chair on
 >    the work cell, a tile from the desk. Instead, start from that point and run
 >    `sweepBlock` along the facing direction. Stop where the block meets a body, if it does
 >    within 24 px. Otherwise keep today's target. That gives castor `F + 4` in front, and the
 >    footprint's back edge − 4 behind: the positions the lab patch places by hand.
-> 3. **`tuckIn`** (seating.js:1190): move `min(TUCK_PX, sweep distance)`, not a fixed 12 px.
+> 3. **Fetch** (the path item 2 doesn't cover). A needs NPC with `pref: 'fetch'` pushes a
+>    chair by hand to the work cell (`startFetch` → `advanceFetch`, seating.js:1198–1262 at
+>    a4faba799), then `endFetch` → `seatNPC` there, with no sweep. So a fetched chair ends up a
+>    tile out from the desk. After `advanceFetch` arrives, and before `endFetch` seats the NPC,
+>    run the same sweep as item 2 from the arrival point along the facing direction. Slice 7's
+>    pass line (castor at F + 4 ± 1) depends on this path too.
+> 4. **`tuckIn`** (seating.js:1190): move `min(TUCK_PX, sweep distance)`, not a fixed 12 px.
 >    `slideChairFootTo` sets the position directly and physics never pushes back, so a fixed
 >    tuck puts the chair into the desk.
-> 4. **Getting up.** `standAt` stays the home cell. Where there is none, `standSpot` already
->    has the landing rule (slice 1); please confirm the needs path never lands across a desk.
-> 5. **Fidget** (`fidgetChair`, 2 px back, 3 px sideways): clamp with `sweepBlock`. The
->    experiment says 12 × 8 clears, but check it at the sides.
-> 6. **Paths round empty swivel chairs.** Chairs are dynamic bodies, not in the grid, and NPCs
+> 5. **Getting up.** `standAt` stays the home cell. Where there is none, `standSpot` follows
+>    plan 1.3 (slice 1). Please confirm the needs path never lands across a desk, and keep the
+>    slice 1 NPC stand test passing.
+> 6. **Fidget** (`fidgetChair`, 2 px back, 3 px sideways): clamp with `sweepBlock`. Check it at
+>    the sides, where B sits 3 px further out than A.
+> 7. **Paths round empty swivel chairs.** Chairs are dynamic bodies, not in the grid, and NPCs
 >    collide with them (`setupNPCChairCollisions`). Wedging on the accounts floor was the
 >    original reason its desks were made non-colliding (2f0562567). Check that needs NPCs pass
 >    tucked, empty chairs in the lab and in `test_needs_sims` with no stuck lines.
-> 7. **Approach cells in the lab.** The lab patch moves the four PCs up half a tile (y 3.5 /
+> 8. **Approach cells in the lab.** The lab patch moves the four PCs up half a tile (y 3.5 /
 >    6.5), so `approachCell` (object centre + `useFrom` × 32, nearest walkable cell) moves
 >    16 px north, into `desk1`'s footprint box (F − 16 … F). Slice 7 sets `useFrom.dy` 1 →
 >    1.5 on `staff_pc`, `staff_pc_2` and `usb_target_pc`, which puts the cells back. A
 >    general "approach from the desk's contact line" is optional.
-> 8. **Depth lifts.** Monitors and lamps now sit in desk groups at `F + 0.5 + 0.01·i`. Check
+> 9. **Depth lifts.** Monitors and lamps now sit in desk groups at `F + 0.5 + 0.01·i`. Check
 >    the four relative lifts in `npc-needs.js` (put-down +1, cosmetic +1, tray slot +0.5,
 >    left-behind +0.1; `TABLE_SURFACE_PLAN.md` 6, note item 3) with a grouped object in a
 >    test.
-> 9. **Tests.** Add a footprint desk and an `office40` swivel to
->    `test/js/fixtures/needs-sims-world.mjs`. Sit, stand, tuck and wait 2 s, then assert the
->    chair hasn't moved and its block doesn't overlap the desk. Live: `test_needs_sims`
+> 10. **Tests.** Add a footprint desk and an `office40` swivel to
+>    `test/js/fixtures/needs-sims-world.mjs`. Sit, stand, tuck, fetch, and wait 2 s, then
+>    assert the chair hasn't moved and its body doesn't overlap the desk. Live: `test_needs_sims`
 >    (hip against the contact line; back to the same chair after coffee, 80c2a8dd5),
 >    `test_needs_leash`, and the lab after slice 7.
 
 ## 7. The lab (Part 2)
 
-`part2_lab_desks.patch` (scratchpad `seat-box/`) does the following:
+Rewritten after R1 M7, against the lab after step 9 (b09d50eff, logged in 930dbc221) and its
+dialogue pass (3462bf359).
+
+**What it does** (the target, as `part2_lab_desks.patch` in scratchpad `seat-box/` sketched
+it before step 9):
 
 - in `room_lw_accounts`, moves desks #44–48 back to `tables`, and the lamps #62–64 and ledger
   #65 onto the desk tops in `table_items`;
 - adds four `pc1` placeholders and five `chair-darkgray-1` swivels (front castors at F + 4;
   Tomasz's behind desk #46 at the back edge − 4);
+- sets the map property `deskBoxes: footprint` on `room_lw_accounts` (slice 2);
 - in `open_plan`, drops `elevation` from the PCs and moves them to y 3.5 / 6.5, and deletes
   the five `aw_chair_*` objects.
 
-It still applies cleanly to HEAD (`git apply --check` at 9df5647b9, today).
+**The scratch patch is a reference only.** Its scenario hunk no longer applies
+(`git apply --check` fails at `scenario.json.erb:1044` since step 9). Its room hunk still
+applies, but it was made with a hand-patched copy of `room_edit.py`. Both halves are rebuilt
+(step 1), not applied.
 
 **Order.** It goes in after:
 
-1. the agent now adding expansion step 9 and the coffee queue to the lab has committed. Both
-   touch `scenario.json.erb`, and the queue may touch the floor's layout;
-2. slices 1–4 (block, landing, footprint boxes, the grouping fix, `room_edit.py`);
-3. slice 6. Without it, needs NPCs pull their swivels out to the work cell a tile from the
-   desk, which is not panel 3's look.
+1. **step 9's live proof is logged** in `IMPROVEMENT_LOOP_LOG.md`. This is now met: game 873,
+   score 100, 10/10 tasks (log, "Expansion step 9", commit 930dbc221). Re-check just before
+   starting that no later lab entry is open, because the lab is still being edited (the
+   dialogue pass, 3462bf359, came after);
+2. slices 1–4 (landing rule, footprint boxes on the map, the grouping fix, `room_edit.py`);
+3. slice 6 (or its fallback, section 6). Without it, needs NPCs pull their swivels out to the
+   work cell a tile from the desk, which is not panel 3's look.
+
+**The left-behind items (R1 M7).** Step 9 added `pierce_printout` (`notes`, tile (8, 5),
+"left on his desk") and `hampshire_badge` (`id_badge`, tile (4, 5), "in Melanie's desk tray"),
+both `leftBehindBy` with `revealOnGlobal`. Their top edge is y 160, the floor line of desks #45
+and #44, at the desk ends, so today they draw on the floor beside the desks. Moved onto a top
+as ordinary items, their depth (bottom + 0.5) would fall below the desk group's F + 0.5 and
+the desk would hide them. Three ways:
+
+| Option | What | For | Against |
+|---|---|---|---|
+| **E (recommended)** | stay ordinary items, moved onto their owner's desk top with `position.elevation`, as the lab's PCs had and `planted_deviceA` keeps (elevation 22) | `revealOnGlobal`, `leftBehindBy` and the "gone" beat are proven on ordinary items (game 873); no new engine path; elevation lifts the depth over the desk group (elevation ≥ F − item bottom + 1) | the one place on the floor where a desk item isn't in its desk's group; it can draw over a sitter's arm by a pixel or two |
+| P | a matched `table_items` placeholder (a `notes` and an `id_badge` sprite) at the spot, so the items join the desk group (slice 3 groups an overlapping match) | everything on the desk draws as one group, as the user asked for monitors | reveal and hide on a grouped table item is unproven; it needs a probe first, and the placeholder's own image shows until the item is revealed unless it is hidden too |
+| F | leave them on the floor and change the text ("dropped by his desk") | no layout change | the beat's text and look were the step 9 owner's choice; a printout on the floor reads as litter, not a clean-desk failure |
+
+Default E, because it touches only `position` on two objects whose fields belong to the step 9
+beat, and needs no new engine proof. The step 9 owner (the lab's agent) agrees before step 1;
+if they prefer P, it waits on a probe of reveal on a grouped item.
 
 **Steps** (Opus implements, since it's judgement-heavy; a fresh Opus reviews):
 
-1. Rebuild the room half with the fixed `room_edit.py`, not by applying the scratch JSON
-   hunks, which will be stale after step 9. Re-apply the scenario hunks by hand. Add:
-   - `"deskBoxes": "footprint"` on `open_plan`;
-   - `useFrom.dy` 1 → 1.5 on `staff_pc`, `staff_pc_2` and `usb_target_pc` (6, item 7);
+1. **Rebuild the room half** with the fixed `room_edit.py` (slice 4) against the current
+   `room_lw_accounts.json`, not by applying the scratch hunk: tables, table items, the five
+   swivels, the four `pc1` placeholders, and `set-map-prop deskBoxes footprint`. Check the
+   coffee station and its queue cells are untouched.
+2. **Regenerate the scenario hunk** by hand against the current `scenario.json.erb`, as a
+   fresh diff (saved in the scratchpad for the reviewer), not the old one:
+   - the four PCs lose `elevation` and move to y 3.5 / 6.5; the five `aw_chair_*` objects and
+     their ERB comments go;
+   - `useFrom.dy` 1 → 1.5 on `staff_pc`, `staff_pc_2` and `usb_target_pc` (6, item 8);
+   - `pierce_printout` and `hampshire_badge` onto their owners' desk tops with elevation
+     (option E): on the top band, clear of the PC and lamp, and within `INTERACTION_RANGE`
+     of the front contact line;
    - a check that `cable_note` stays off the desks (slice 3) and that no new `pc` object
-     before `staff_pc_2` steals a placeholder.
-2. Static checks: `ruby scripts/validate_scenario.rb` (with `--skip-ink --no-graph` if the
-   lab's owner is mid-edit), `python3 scripts/check_door_alignment.py`, room depth, reopencheck,
-   the snapshot and walk audit for `lab_physical_pentest` (allowed to change: `open_plan` only).
-3. Live proof on :3001:
+     before `staff_pc_2` steals a placeholder. No `deskBoxes` field in the scenario (it is on
+     the map).
+3. **Static checks:** `ruby scripts/validate_scenario.rb` (with `--skip-ink --no-graph` if
+   the lab's owner is mid-edit), `python3 scripts/check_door_alignment.py`, room depth,
+   reopencheck, the snapshot, and the walk audit for `lab_physical_pentest` (allowed to change:
+   `open_plan` only). The walk audit's key points add the coffee queue cells (`dx` −1, −2
+   from the station's approach cell) and both left-behind items' nearest walkable cells.
+4. **Live proof on :3001:**
    - **Score 100:** a scripted full run (Haiku, the playtest-scenario skill), confirmed with
      `verify-run.rb`.
+   - **The map loads** with the `objects` tileset inserted below the room tileset at 1500
+     (R1 m2): every sprite on the floor has the right image.
    - **Staff at desks:** Chris, Melanie and Sofia seated with the castor at F + 4 ± 1 and the
      hip at F − 11. Tomasz behind desk #46 with the castor at the back edge − 4 ± 2. Chairs
-     tucked when their owner is away. Back from coffee to the same chair. Read through
-     `window.__test` and logged as numbers.
+     tucked when their owner is away. Back from coffee to the same chair, including a
+     fetch-path NPC. Read through `window.__test` and logged as numbers.
    - **The beats:** every floor beat fires.
      - Len's PIN surf at the records door (`kp_pin_surfed`).
      - The USB drop on Sofia's PC (`usb_target_pc` accepts).
      - The planted device.
      - Caught at the desk.
-     - The coffee queue.
+     - The coffee queue and chatter.
+     - The left-behind items: revealed on the desk top, visible over the desk, readable or
+       takeable from the front, and the owner noticing the badge gone.
      - The shared printer.
      - The tap-menu pairs from `TABLE_SURFACE_PLAN.md` 7.3 (`captures_terminal`/
        `staff_pc_2`, `staff_pc`/`planted_deviceA`, `usb_target_pc`/`usb_malware_note`) still
-       open the right object.
+       open the right object, plus the left-behind items against the PCs beside them.
    - **Panel 3's look:** a 2× screenshot of the accounts floor, set beside R1's
      `tsreview/mock_accounts.png` panel 3 and `tsplan/mock_layering.png` panel 4. Monitors at
      the back of the tops, lamps on the tops, workers tucked with heads over the lip, and
      Tomasz behind his desk with it drawn over his legs. The user looks at it before the
      commit.
-4. Commit the room JSON and the scenario separately, with explicit paths. Who commits the
+5. Commit the room JSON and the scenario separately, with explicit paths. Who commits the
    scenario is Q6.
 
 ## 8. Tests, live proof, risks, open questions
@@ -583,36 +823,40 @@ It still applies cleanly to HEAD (`git apply --check` at 9df5647b9, today).
 
 | Slice | Unit and static | Live (:3001, headless, one browser, stopped by PID) |
 |---|---|---|
-| 0 | the diff tool against two fixture snapshots (a closed gap, a waypoint in a body, a sunk chair) | baseline snapshot and walk record for every scenario; the tool must print its coverage and fail on a missing `room_office` scenario or a room with tables |
-| 1 | `seat-box.test.mjs`, `seating.test.mjs` (1, slice 1) | `test_desk_seating` with today's boxes: sit, roll, stand in the 9 cases, landing on the near side every time; a regression sit-and-roll in one `room_office` mission |
-| 2 | `deskBoxOf`, `applyTableBody`, the Python coverage and `--footprint` tests | the 9 cases on footprint boxes against 1.1 (±1 px) and `best_*.png`; grid cells over a desk before and after; walk audit for the two opted-in scenarios |
+| 0 | the diff tool against fixture snapshots (a closed gap, a waypoint in a body, a sunk chair, a seated-only gap); `swap-scenario-game.rb` prints a game id and leaves the Mission table unchanged (count before and after) | the scoped baseline (slice 0): the two first maps, the swivel-chair rooms and the five-room sample; the tool prints its coverage |
+| 1 | `seat-box.test.mjs`, `seating.test.mjs`: each branch of 1.3, behind `desk1`, cramped, boxed in, the NPC stand case (slice 1) | `test_desk_seating` on today's and footprint boxes: the 9 cases, behind `desk1` logged with its stand y, a forced stand, a cramped case; a regression sit-and-roll in one `room_office` mission |
+| 2 | `deskBoxOf`, the map property, `applyTableBody`, `set-map-prop`, the Python coverage and `--footprint` tests | the 9 cases on footprint boxes against 1.1 (±1 px) and `best_*.png` (or `compare_12x8_vs_18x8.png` column B under B); grid cells over a desk before and after; walk audit for the two opted-in maps; a legacy map unchanged |
 | 3 | grouping unit test; variant-listener test | snapshot diff lists only the regrouped items; the lab's `cable_note` at its own depth |
 | 4 | `test_room_edit.py` | none (tool only) |
 | 5 | `blockFor` for the new families | the 48-roll sweep and its contact sheet |
-| 6 | office life's fixture tests (6, item 9) | `test_needs_sims`, `test_needs_leash`, the lab |
+| 6 | office life's fixture tests (6, item 10), including fetch | `test_needs_sims`, `test_needs_leash`, the lab |
 | 7 | validator, door alignment, depth, reopencheck | score 100, seated staff numbers, beats, panel 3 screenshot (7) |
-| 8 | the walk audit clean over every scenario | the regressions in 4.4 on footprint boxes, then one blind look at three high-change rooms (`room_office`, `room_uni_staff`, `room_IT`) |
+| 8 (per map) | the walk audit clean for every scenario on that map | the 4.4 regressions that touch the map; for a shared map, a blind look at it |
 
 Look at every screenshot before calling a slice done. A claim that a slice is fixed needs the
 live path, not only a unit test that passes.
 
 ### 8.2 Risks
 
-- **Paths close in shared rooms.** 102 rooms change, including `room_office` (64
-  scenarios). Handled by opt-in, the walk audit, and room fixes before the default flips.
+- **Paths close in shared rooms.** Only when a map is opted in (slice 8); a shared map such as
+  `room_office` (64 scenarios) goes in only when the walk audit passes for every scenario on
+  it. No default flip.
 - **NPCs inside new boxes** loop in the unstick routine. Walk-audit check (c) covers this,
   plus the validator warning.
-- **Sunk chairs at load.** One known (`room_lw_briefing`). Check (d) finds any more, and the
-  fix is a 1–6 px move in place.
+- **Sunk chairs at load.** One known (`room_lw_briefing`, a legacy map until its mission is
+  redressed). Check (d) finds any more when a map is opted in, and the fix is a 1–6 px move in
+  place.
 - **Wrong footprints** for deep-topped tables or hand-measured props block too much or too
   little. The contact-sheet review, and the fallback for anything not yet checked.
 - **The exec chair from behind.** Its 64 px back may cover the desk behind it oddly when
   tucked. Seen in the slice 5 sweep before its block is written.
-- **The side case** draws the castor under the desk's end leg (1.1). Accepted in the
-  experiment; Q7.
-- **No landing spot** in a cramped corner: the player goes back to the approach point. If
-  that is now blocked (a pushed chair), they stay seated and get a "no room to stand" line
-  (`window.gameAlert`) in place of landing on a desk.
+- **The side case** draws part of the castor star under the desk's end leg (1.1): 3 columns
+  under A, 1 under B (`compare_12x8_vs_18x8.png`). Q0, Q7.
+- **No landing spot** in a cramped corner: the order in 1.3. A voluntary jump-off with nothing
+  clear stays seated with "No room to stand up here."; a forced stand (KO, punch, block, chair
+  gone) takes the 8-cell flood fill, then the approach point. Never a cell across a desk.
+- **The landing rule is global**, including NPC stand-up (`unseatNPC`). The swivel-chair rooms'
+  baseline (slice 0) and the slice 1 NPC test cover it, and office life reviews the diff.
 - **Shared tree.** `seating.js` is shared with office life and the lab is being edited by
   another agent. Commit in turn with explicit paths, re-read files just before editing, and
   never stash, `checkout --` or reset.
@@ -621,31 +865,42 @@ live path, not only a unit test that passes.
 
 ### 8.3 Open questions (recommended default first)
 
-- **Q1. Opt-in first, then the default?** Default: yes. Opt-in per room (`"deskBoxes":
-  "footprint"`) in slice 2; the default flips in slice 8, after the walk audit is clean and
-  the regressions pass.
-- **Q2. Do empty office chairs start with the block at load?** Default: yes, for the
-  `office40` family. A chair that has been sat on keeps the block anyway, so the at-load state
-  is one every room reaches in play. Starting there gives one body per chair in all states,
-  and leaves fewer chairs sunk at load. The cost: the empty chair's body is 6 px narrower, so
-  walkers and NPCs pass 3 px closer on each side, and the walk audit's check (d) covers it.
-  If the user prefers the tested behaviour only, the block starts on the first sit.
+- **Q0. Seated block for the office chairs: A (12 × 8, kept on the empty chair) or B (the
+  chair's own 18 × 8 body, unchanged)?** See
+  `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/c84d7b68-c29e-4285-9c19-4612b082eed3/scratchpad/seat-box/compare_12x8_vs_18x8.png`.
+  Front and behind look the same in both (castor F + 4; back edge − 4). At the desk's end, A
+  sits 3 px closer (castor at end + 6) with 3 columns of the castor star under the end leg and
+  4 inside the desk outline; B sits at end + 9 with 1 column under the leg. **Recommended: B**,
+  because it gives the same front and back stops with no change to the chairs; it meets the
+  block width rule (M2) as it is; the empty chair is never left sunk, so there's no `keep`,
+  Q2 goes and slice 6 item 1 is nothing; and NPC chairs behave the same seated and empty.
+  What A buys is 3 px closer at the desk ends. The user decides.
+- **Q1. Where does the footprint opt-in live?** Settled by R1 M3: on the map (Tiled property
+  `deskBoxes: footprint`), opt-in for good, set by generators for new rooms and per map when a
+  mission is redressed. No default flip. The user can still ask for a flip later.
+- **Q2. Under A only: do empty office chairs start with the block at load?** Default: **no**
+  (R1 M4). The block starts on the first sit, as tested. Starting every `office40` chair with
+  it changes all 57 placements in every room, including legacy maps, and NPC-used chairs before
+  slice 6's fixture tests cover a blocked chair. Moot under B.
 - **Q3. Who checks the hand footprints?** Default: a review page with crops, the proposed
   box and number boxes, filled by an agent and checked once by the user.
 - **Q4. Do unreserved Tiled table items follow the overlap rule too?** Default: yes. 10 items
   in 7 rooms change depth (slice 3); each flipped pair on the snapshot diff gets a look.
-- **Q5. `smalldesk1` `foot`: 28 (tested) or 27 (measured)?** Default: 28, because it's the
-  value the sweep proved. One px only matters from behind.
-- **Q6. Who commits the lab scenario?** Default: this work prepares it after step 9 and the
-  queue land, and the lab's owner or the user commits.
-- **Q7. Side-on chairs at a desk end.** Default: accept the castor under the end leg (it reads
-  as "at the end of the desk"). The alternative, lifting side-facing chairs by +1 depth near
+- **Q5. `smalldesk1` `foot`: 28 (tested) or 27 (measured)?** Settled by R1 m1: 27
+  (`measured`), so one rule covers every measured texture; the 1 px is inside slice 2's ±1 px
+  check.
+- **Q6. Who commits the lab scenario?** Default: this work prepares it (step 9 and the queue
+  have landed), and the lab's owner or the user commits.
+- **Q7. Side-on chairs at a desk end.** Default: accept the castor star partly under the end
+  leg (it reads as "at the end of the desk"; 1 column under B). The alternative, lifting side-facing chairs by +1 depth near
   a desk, risks drawing the chair over the desk's top.
-- **Q8. Rooms the walk audit flags in slice 8.** Default: move the desk a few px in place with
+- **Q8. Rooms the walk audit flags when a map is opted in (slice 8).** Default: move the desk a few px in place with
   `room_edit.py`. `legacyBox` only for a room whose layout can't move, and closures between
   touching desks accepted as fixes.
 - **Q9. Other missions' desks on the `items` layer** (bodiless, as the lab's were). Default:
   out of scope. The validator can list them, and moving one is that mission owner's call.
+- **Q10. The left-behind items on the accounts desks** (section 7). Default: E, ordinary
+  items on the desk top with `elevation`; the step 9 owner agrees first.
 
 ## 9. What happens to the table-surface plan
 
