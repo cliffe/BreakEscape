@@ -97,6 +97,7 @@ Rules that hold throughout:
 | `weight` (prov.) | 0.1–10 | 1 | Scales the need's score |
 | `maxUnmetMin` (prov.) | >0 | none | Starvation guard: this long since last satisfied → wins outright |
 | `jitterPct` (prov.) | 0–50 | 0 | Seeded ± spread on `initial` and each top-up |
+| `deferrable` (slice 14) | bool | true | `false` marks a story need: it ignores the avoid and queue checks (5.8) and goes to the nearest source anyway. Validator warns when set on caffeine, thirst, hunger or rest |
 
 Levels are clamped to 0–100; 100 = fully satisfied.
 
@@ -613,6 +614,43 @@ during the walk home (exists). Player-facing behaviour:
   (warnings; plus one per NPC that needs the machine and may not enter the neighbour room). A
   capacity-1 chatter object with a queue no longer draws the "needs capacity 2" warning.
 
+### 5.8 Avoidance at a distance, balking and parked needs (office life slice 14, `OFFICE_LIFE_PLAN.md` section 10)
+
+- **Fields.** `needsCompany.avoidRadius` (tiles, 0 to 10; default 2 only for an NPC that declares
+  `avoids`, otherwise 0, which keeps the slice 8 rule), `maxQueue` and `needsDeferMin` (minutes, default
+  4) on the NPC record, `deferrable` on a need (3.1). `maxQueue` is the number already in a line at
+  which this NPC will not join; no value means no limit.
+- **Unacceptable targets (selector).** A source is skipped when an NPC this NPC avoids (the relation
+  holds both ways, and any NPC counts, needs or not) is using it, queued for it, or stands in the same
+  room within `avoidRadius` tiles of its approach cell; or when joining its queue would break
+  `maxQueue`. The NPC's own `needsHome` object is exempt. The next acceptable source is tried. A story
+  need (`deferrable: false`) skips both checks.
+- **Re-check.** While committed (`goto_target` or `queued`) the NPC re-checks each needs tick and
+  acts only when who is there has changed. It turns back at most once per need episode (first turn-back
+  until the need is met), so the fallback or a retry never turns back twice.
+- **Turn-back.** Logs `turned_back` `{need, target, reason, avoided}`, emits
+  `npc_turned_back:<npcId>` `{npcId, need, targetId, reason, avoidedId?}` (`reason` `avoid` or `queue`),
+  grumbles (a speech bubble from the `grumble` pool, `npc_overheard` only, no chattiness roll), aborts
+  the job and falls back through the selector with the abandoned source left out of that one choice.
+  After the grumble the thought bubble shows the avoided person's face beside a storm cloud for 4 s.
+- **Parking.** When nothing acceptable is left the need parks: its level holds at `urgentAt + 1` (decay
+  paused, so no starvation), the NPC goes about other needs or returns to its post, and the bubble is
+  a greyed need icon (alpha 0.5) with a badge: `closed` (a door, `no_source`), `queue` (red cross) or
+  the storm cloud (`avoid`). Log `parked` `{need, reason, avoided?, target?}`, event
+  `npc_need_parked:<npcId>` `{npcId, need, reason, targetId, avoidedId?, untilMs}` with `reason`
+  `no_source`, `avoid` or `queue`. Busy sources (claimed, cooling down) still mean wait, not park, and a
+  leash that leaves nothing permitted keeps the slice 2a `blocked` behaviour.
+- **Release.** After `needsDeferMin` (timer), or sooner when a room loads or a door opens
+  (`door_opened`, woken). The level is set to `urgentAt` and the need is selected at once; the unmet
+  clock shifts by the time parked. Wakes are staggered by id order: 1 s, then 0.5 s per further parked
+  NPC. A `needs: {set}` mapping on a parked need unparks it first. Log `unparked` `{need, reason}`
+  (`timer`, `woken`, `set`).
+- **State.** `getState(id).parked` lists `{need, reason}`; `.avoiding` holds the avoided id while the
+  face bubble shows. A thought bubble picks avoid, then pressing, then parked.
+- **Compatibility.** Nothing changes for scenarios with no `needsCompany`, no `maxQueue` and sources
+  that are always loaded. The sims-day golden log is byte-identical. `no_source` parking reaches every
+  needs NPC (the lab regression, game 693, showed no `parked` or `turned_back` entries).
+
 ## 6. General drop action (exists)
 
 - An inventory item with `"droppable": true` is dropped when clicked in the
@@ -675,6 +713,9 @@ events.
   playerDistance }` for each chat line (slice 8). `overheard`: the player within `overhearRadius`
   (default 160 px; set on the object's affordance or the pool) in the same room with a clear line.
 - `npc_overheard:<speakerId>` with the same payload, only when `overheard` is true.
+- `npc_turned_back:<npcId>` `{ npcId, need, targetId, reason, avoidedId?, playerNearby, playerDistance }`
+  when an NPC gives up a source it was walking to or queued for (5.8).
+- `npc_need_parked:<npcId>` `{ npcId, need, reason, targetId, avoidedId?, untilMs }` when a need parks (5.8).
 - `npc_queued:<objectId>` `{ npcId, objectId, need, place, playerNearby, playerDistance }` when an
   NPC joins a queue (slice 10); `place` is 1 for the front. Queue chat lines are `npc_chatted:<objectId>`.
 - `npc_avoided:<npcId>` `{ npcId, avoidedId, objectId }` when `npcId` was refused a shared object

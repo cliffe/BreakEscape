@@ -380,6 +380,45 @@ Placement note: declared desk items share their desk's depth (205.5 here), so at
 drew behind Tom's pen pot and speaker. The engine now lifts a left-behind item just above its
 owner's `needsHome` object while it shows.
 
+### Slice 14 re-run: avoidance at a distance, balking and parked needs (2026-11-06, keyless :3001, headless, load 2-7)
+
+**Annotated example.** Read the **Coffee Notice** (`coffee_notice`, a `notes1` object, auto-placed):
+its mapping sends Marek to the office coffee, and a mapping on `npc_left_post:marek` sends Sanjay
+(caffeine) after him. Sanjay declares `needsCompany: { "avoids": ["marek"] }`, `needsDeferMin: 2` and
+`maxQueue: 1`. Marek declares `avoidRadius: 0` so his slice 10 queue beat is unchanged. Sanjay queues
+behind Marek's claim, sees Marek within 2 tiles of the station, turns back with the grumble "Maybe the
+kitchen's quieter." (`chatter.grumble`, heard by the player as `npc_overheard`), shows Marek's face
+beside a storm cloud for 4 s, then tries the kitchen. With the kitchen shut he parks (`no_source`, a
+greyed cup with a closed-door badge). Opening the kitchen door wakes him (and anyone else parked) a
+second later, 0.5 s apart per NPC. The **See someone turn back** task completes on
+`npc_turned_back:sanjay`. A story need (`deferrable: false`) ignores all of this and goes anyway.
+
+Games 689 (parked, release), 690 (face bubble, fallback) and 691 (queue badge, story need). Session
+logs `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/3c2d3b5d-38a4-49b2-b79e-4c3ee8f76ed6/scratchpad/s14/sess689.jsonl`, `sess690.jsonl` and `sess691.jsonl`. Screenshots in `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/3c2d3b5d-38a4-49b2-b79e-4c3ee8f76ed6/scratchpad/s14/`;
+`s14-contact-sheet.png` has nearest-neighbour crops of seven frames, captions checked against each
+frame (the sheet is for viewing only). The face frame was caught by freezing the needs clock
+(`npcNeedsSystem.manualClock = true`) while the bubble kind was `avoid`, then unfreezing.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Turn-back near an avoided NPC | PASS | game 689: Marek left at clock 9250, Sanjay queued behind his claim, left at 10000, `turned_back` at 10750 `reason avoid`, `avoided marek`; game 690 log `t 119 turned_back` |
+| Grumble heard | PASS | game 689: `npc_overheard`, topic grumble, 58 px, "Maybe the kitchen's quieter." |
+| Face bubble (face crop plus storm cloud) | PASS | game 690: Marek's face and the cloud over Sanjay (`c-face-sanjay-690-crop.png`, contact sheet 2) |
+| Parked, kitchen shut | PASS | game 689: `npc_need_parked` `no_source`, greyed cup with closed-door badge (`b2-parked-closed-689-crop.png`) |
+| Parked badges together | PASS | game 689: Sanjay storm cloud (`avoid`), Grace greyed rest and Tom greyed hunger with the closed door (`c1-parked-badges-689-crop.png`) |
+| Door release | PASS | game 689: kitchen door at clock 180750; Grace woken 181750, Sanjay 182250, Tom 182750 (`d1-released-689.png`) |
+| Fallback to the kitchen | PASS | game 690: kitchen opened, Sanjay `unparked` `woken`, `job_start` `kitchen_coffee`, seen crossing the doorway (`e-fallback-690.png`) |
+| `maxQueue` queue badge | PASS | game 691 (Sanjay's `avoids` emptied live to isolate it): Tom and Amara at the coffee, Sanjay's caffeine set to 5, parked `queue`, greyed cup with a red cross (`g-queue-badge-691-crop.png`) |
+| `deferrable: false` goes anyway | PASS | game 691: flag cleared live, Marek in the queue, Sanjay's caffeine set: `queued` place 2 (past `maxQueue` 1), no `turned_back`, `using` at the station with the face bubble up (`h-nondeferrable-691-crop.png`, `h2-nondeferrable-arrives-691-crop.png`) |
+| A `needs: {set}` mapping on a parked need | PASS (fixed) | found in game 689 (a set while parked held the level at 10 with a pressing bubble); now unparks first, log `unparked` `reason set` |
+| Errors | PASS | no page errors in the session logs |
+
+Notes: the chain of mappings makes live checks racy (Marek's slice 10 queue mapping can send him back
+to the coffee, and Sanjay follows), so games 690 and 691 started each check by setting needs through
+the bridge from an in-page poll. In frame 4 of the contact sheet Sanjay's bubble shows the work icon,
+not coffee: his work need was the most pressing at that moment. The debug overlay text in the
+screenshots (`sanjay: goto_target kitchen_coffee`) is the engine's own, not part of the game UI.
+
 ## Engine findings
 
 1. **Fixed 2026-11-05.** The home is now provisional until the `needsHome` object exists and is re-resolved once a second; and an NPC standing on its own desk's approach cell now counts as able to reach it (EasyStar gave no path for start == end, which is why Sanjay chose `tom_pc` in game 501). Original finding: **Needs homes in the start room resolve to the spawn point and stay there.** `npc-needs.js:301` resolves `s.home` on the first tick that has a sprite position and caches it; `_resolveHome` (`npc-needs.js:628-640`) falls back to the spawn point with `objectId: null` when `getObject`/`approachCell` fail. For the start room the NPCs are registered (`core/game.js:2004-2006`) before the room's objects or pathfinding are ready, so every start-room needs NPC gets the fallback and the home-object preference in `_useCandidate` (`npc-needs.js:475`) never applies. NPCs in rooms loaded later (Rosa, lounge) resolve correctly. Repro: load this scenario, then `[...npcNeedsSystem.states].map(([k,s]) => [k, s.home.objectId])` gives null for amara, tom, grace and sanjay, `rosa_laptop` for rosa. Suggested fix: don't cache a fallback home while `needsHome` names an object that isn't found yet (retry each tick until the object exists, or for a few seconds). `test_npc_needs` and `lab_physical_pentest` start-room NPCs are likely affected too, but hidden because each spawns at its own desk. Workaround here: each NPC spawns beside its own desk, and the work task reads "Someone works at a desk". Even so, game 501 had Sanjay choose `tom_pc` over his own adjacent PC (nearest-reachable from his seated position), so the workaround isn't reliable.

@@ -47,6 +47,7 @@ in order, one at a time: they all touch `npc-needs.js`.
 | 8 | Speech bubbles and social pairing, with compatibility | 2.4, 7.3 | Built (0af49071a, 224a177c2, 3a51f2aac, 40d8c3ea3); sims games 665, 667; leash (game 668) and lab (game 669, score 100) regressions done 2026-11-06 (`HANDOVER_OFFICE_S8.md`) |
 | 10 | Queues at shared machines, and chatter | 2.5, 7.3 | Built (367a27627, 963f790ef, 1bcdc550c, 3da2015f6, 4f16579b2, 33a7a8643); sims games 675, 676, 679; leash (game 681) and lab (game 680, score 100) regressions done 2026-11-06 (`HANDOVER_OFFICE_S10.md`) |
 | 11 | Left behind (scoped: `leftBehindChance`; piles wait for slice 9, which wasn't chosen), queue-aware `expectedAwayMs` | 2.10 | Built (5e3fd1e89, 5cccaf6ea); sims game 684; leash (game 686) and lab (game 685, score 100) regressions done 2026-11-06 (`HANDOVER_OFFICE_S11.md`) |
+| 14 | Avoidance at a distance, balking (`maxQueue`) and parked needs, face bubble | 10 | Built (b7606efd0, efe347968, e4408c2f9, 5e7dec2c7, b546cb3c8, a6f5fbc1f, 3f5350d40); sims games 689, 690, 691; leash (game 692) and lab (game 693, score 100) regressions done 2026-11-06 (`HANDOVER_OFFICE_S14.md`) |
 
 Not chosen: 6 (traits), 9 (routines), 12 (schedules), 13 (consumables). Don't build them unless the user asks.
 

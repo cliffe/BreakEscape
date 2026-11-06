@@ -2412,6 +2412,32 @@ parks with the closed-door badge, and goes when the player opens the kitchen; an
 `npc_turned_back:sanjay`. Live proof of each, then the leash and lab regressions; in the lab, check
 the coffee timing of Chris and Melanie, since `no_source` parking reaches every needs NPC.
 
+**Built: 2026-11-06 (slice 14: engine b7606efd0, bubbles efe347968, validator and schema e4408c2f9,
+showcase 5e7dec2c7, fixes b546cb3c8, a6f5fbc1f, 3f5350d40). Regressions: `test_needs_leash` game 692
+(pass), `lab_physical_pentest` game 693 (score 100); sims live proof games 689 to 691; see
+`HANDOVER_OFFICE_S14.md`.** As written, with these choices made without asking (smallest option each
+time): (1) after a turn-back the abandoned source is left out of that one fallback, so the parked
+reason comes from the remaining sources (the showcase parks `no_source` with the closed door); (2) a
+busy source (claimed, cooling down) still means wait, as before: only avoid, queue and nothing
+reachable park, and a leash that leaves nothing permitted keeps the slice 2a/3b `blocked` behaviour
+(no parking); (3) the radius belongs to the checking NPC: default 2 only when it declares `avoids`,
+and an explicit `avoidRadius` opts in without `avoids`; the relation holds both ways; (4) hysteresis
+is per need episode (first turn-back until the need is met), so the fallback or a retry never turns
+back twice; the re-check runs each needs tick while committed and acts only on a change of who is
+there; (5) a story need (`deferrable: false`) ignores the avoid and queue checks, takes the nearest
+as before and shows the face bubble while someone avoided is there (`deferrable` is read from the NPC
+record each time); (6) a parked need's level is `urgentAt + 1`, on release it is set to `urgentAt`
+and selected at once, the unmet clock shifts by the time parked, and the wake is staggered by rank
+(id order): 1 s, then 0.5 s per parked NPC (no per-NPC select offset existed); (7) a grumble emits
+`npc_overheard` only (no `npc_chatted`, which would complete chat tasks) and rolls no chattiness; the
+built-in pool is neutral, the kitchen line lives in the showcase `chatter.grumble`; (8) an NPC's own
+`needsHome` object is exempt from the social check; (9) showcase: Marek `avoidRadius: 0` (keeps the
+slice 10 queue beat), Sanjay `needsDeferMin` 2 and `maxQueue` 1, and the notice is a new `notes1`
+object, auto-placed. Golden logs unchanged. Live proof found two bugs, both fixed: a `needs: {set}`
+mapping on a parked need now unparks it first, and the plain thought bubble resets dimming with
+optional calls. For the lab: staff who declare `needsCompany.avoids` (for example a guard avoided by
+id) would turn back from a coffee he stands near, because `_avoidedAt` counts any NPC with a position.
+
 ## 11. Addition 2026-11-06: voiced chatter and scripted exchanges (slice 15)
 
 **Requested by the user (2026-11-06):** chatter lines (slice 8 pools, slice 10 queue chat, slice 14

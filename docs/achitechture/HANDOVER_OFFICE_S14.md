@@ -1,8 +1,8 @@
 # Handover: office life slice 14, avoidance at a distance, balking and parked needs (2026-11-06)
 
-**Status: engine, bubbles, validator, schema, tests and the showcase beat are built and committed. Partial
-live proof in game 689 (keyless :3001, headless). Not yet done: the rest of the live proof, the leash and
-lab regressions, and the docs.** Plan: `OFFICE_LIFE_PLAN.md` section 10.
+**Status: DONE (2026-11-06). Engine, bubbles, validator, schema, tests, showcase, live proof (games 689 to 691),
+leash (game 692, pass), lab (game 693, score 100) and docs are all finished. The sections below are the
+record; "Left" is no longer open.** Full test suite: 395 files pass. Plan: `OFFICE_LIFE_PLAN.md` section 10.
 
 ## Done (commits on main, in order)
 
