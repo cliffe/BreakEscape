@@ -1,0 +1,17 @@
+{
+  "scenario_id": "test_desk_seating",
+  "scenario_name": "Test: Desk Seating",
+  "scenario_brief": "Engine test for chairs at desks. Top row: desk1, smalldesk1 and zds_desk1, each with a swivel chair and a static chair in front (sitter faces north), and a swivel chair off desk1's east end. Bottom row: desk1 and smalldesk1 used from behind (swivel chairs to the north, sitter faces south), and two desk1s 24 px apart to walk between. Sit with E, roll with the arrow keys, Space to get up. The seated collision block is a runtime toggle: window.__seatBox = { w, h }.",
+  "endGoal": "Engine test only.",
+  "startRoom": "desk_floor",
+  "startPosition": { "x": 15, "y": 6 },
+  "rooms": {
+    "desk_floor": {
+      "type": "room_test_desk_seating",
+      "door_sign": "Desk Seating",
+      "connections": {},
+      "npcs": [],
+      "objects": []
+    }
+  }
+}

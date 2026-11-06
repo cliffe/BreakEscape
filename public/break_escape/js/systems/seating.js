@@ -421,6 +421,19 @@ function moveFeetTo(sprite, x, y) {
 }
 const moveDriverFeetTo = moveFeetTo;
 
+/**
+ * Collision box the driver takes on a swivel chair, centred on the chair body's centre
+ * (the castor base under the seat). Default: the chair's whole footprint. Experiment
+ * (docs/achitechture/SEAT_BOX_EXPERIMENTS.md, "option G"): `window.__seatBox = { w, h }`
+ * shrinks it to a small block, so the chair tucks in until that block meets the desk's
+ * box. Off unless both are positive numbers.
+ */
+export function seatedBlock(chairBody, toggle) {
+    const w = Number(toggle?.w), h = Number(toggle?.h);
+    if (w > 0 && h > 0) return { w, h };
+    return { w: chairBody.width, h: chairBody.height };
+}
+
 function sitOn(chair, seat, pose) {
     const player = window.player;
     const scene = chair.scene;
@@ -448,7 +461,7 @@ function sitOn(chair, seat, pose) {
     if (seat.kind === 'swivel' && chair.body) {
         // The driver's body takes over the chair's footprint; the chair follows it.
         footOffset = { x: chair.body.offset.x + chair.body.width / 2, y: chair.body.offset.y + chair.body.height / 2 };
-        const bw = chair.body.width, bh = chair.body.height;
+        const { w: bw, h: bh } = seatedBlock(chair.body, window.__seatBox);
         const cx = savedBody.ox + savedBody.w / 2, cy = savedBody.oy + savedBody.h / 2;
         chair.body.setVelocity(0, 0);
         chairBodyWasEnabled = chair.body.enable;
@@ -519,6 +532,14 @@ export function standUp(spot = null) {
 
     if (seat.kind === 'swivel' && chair.body) {
         chair.body.enable = chairBodyWasEnabled;
+        // Seat-box experiment, `keep: true`: the empty chair keeps the small block too, so its
+        // own (bigger) body isn't left sunk in the desk box it was tucked against.
+        const box = window.__seatBox;
+        if (box?.keep && seatedBlock(chair.body, box) !== null && Number(box.w) > 0 && Number(box.h) > 0) {
+            const cx = chair.body.offset.x + chair.body.width / 2, cy = chair.body.offset.y + chair.body.height / 2;
+            chair.body.setSize(Number(box.w), Number(box.h), false);
+            chair.body.setOffset(cx - Number(box.w) / 2, cy - Number(box.h) / 2);
+        }
         placeBody(chair, chair.x, chair.y);
         chair.body.setVelocity(0, 0);
     }
@@ -547,13 +568,29 @@ function standSpot(chair, facing) {
     const cx = foot.x, cy = foot.y;
     const reach = (b ? Math.max(b.width, b.height) / 2 : 10) + 14; // clear of the chair body
     const start = COMPASS.indexOf(facing);
+    // Seat-box experiment: a chair tucked in at a desk faces it, so the spot in front is
+    // on the desk. Skip spots where a walking box would overlap a desk's (table's) box.
+    const clear = window.__seatBox
+        ? (x, y) => [0.25, 0.5, 0.75, 1].every(k => clearOfTables(chair, cx + (x - cx) * k, cy + (y - cy) * k, k < 1 ? 1 : 9, k < 1 ? 1 : 5))
+        : () => true; // ...and don't land across one (the line from the chair to the spot)
     for (const step of [0, 1, -1, 2, -2, 3, -3, 4]) {
         const a = forwardRad(COMPASS[(start + step + 8) % 8]);
         const x = cx + Math.cos(a) * reach, y = cy + Math.sin(a) * reach;
         const cell = pfm?.findNearestWalkableWorldCell?.(x, y, 1);
-        if (cell && Math.hypot(cell.x - x, cell.y - y) < 12) return { x: cell.x, y: cell.y };
+        if (cell && Math.hypot(cell.x - x, cell.y - y) < 12 && clear(cell.x, cell.y)) return { x: cell.x, y: cell.y };
     }
     return pfm?.findNearestWalkableWorldCell?.(cx, cy + reach, 3) || null;
+}
+
+/** Seat-box experiment: is a walking box (18x10) with feet at (x, y) clear of every table box in the chair's room? */
+function clearOfTables(chair, x, y, hw = 9, hh = 5) {
+    const room = window.rooms?.[chair.roomId] || Object.values(window.rooms || {}).find(r => r.objects?.[chair.objectId]);
+    for (const o of Object.values(room?.objects || {})) {
+        const b = o.body;
+        if (!b || !b.enable || o === chair || b.physicsType !== 1) continue; // static furniture (desks)
+        if (x + hw > b.x && x - hw < b.x + b.width && y + hh > b.y && y - hh < b.y + b.height) return false;
+    }
+    return true;
 }
 
 /**

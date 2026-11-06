@@ -237,3 +237,15 @@ test('breathRows: the cut sits 42% down the opaque figure; blank or tiny frames 
         window.game = prev;
     }
 });
+
+test('seated block (option G experiment) is inert unless window.__seatBox is set', () => {
+    const body = { width: 18, height: 8 };
+    // off: the driver takes the chair's whole footprint, as before
+    for (const off of [undefined, null, {}, { w: 0, h: 6 }, { w: 8 }, { w: 'x', h: 6 }, { w: -4, h: 4 }]) {
+        assert.deepEqual(seating.seatedBlock(body, off), { w: 18, h: 8 }, JSON.stringify(off));
+    }
+    // on: the small block
+    assert.deepEqual(seating.seatedBlock(body, { w: 8, h: 6 }), { w: 8, h: 6 });
+    // the live default reads window.__seatBox, which nothing in the engine sets
+    assert.equal(window.__seatBox, undefined);
+});
