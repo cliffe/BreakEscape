@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""Hand clean-up of the 14 PixelLab NPC need/action icons (16x16).
+"""Hand clean-up of the 16 PixelLab NPC need/action icons (16x16).
 
-The user picked these icons from PixelLab candidates (commit 8064c229c). The
+The user picked these icons from PixelLab candidates (commit 8064c229c; avoid
+and closed in d7825e5f0, set per icon with 'pick'). The
 generator left noisy, half-dark outlines, specks and doubled edges. This script
 re-applies the hand edits so they can be reviewed and redone.
 
@@ -31,7 +32,7 @@ from PIL import Image, ImageDraw
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ICON_DIR = os.path.join(REPO, 'public', 'break_escape', 'assets', 'icons')
-PICK_COMMIT = '8064c229c'   # the user's untouched picks
+PICK_COMMIT = '8064c229c'   # the user's untouched picks (an icon's 'pick' overrides)
 BACKING = (0x1b, 0x2a, 0x41)  # in-game navy behind the icons
 
 # One dark outline for the whole set, close to the near-black outlines of the
@@ -409,6 +410,68 @@ ICONS['noticed'] = dict(
         '................',
     ])
 
+# avoid: storm cloud with a lightning bolt ("doesn't want to be near
+# someone"). The cloud's edge mixed near-blacks with dark greys (a doubled
+# edge top right, grey pixels on the edge at (1,8) and (14,6)); outline
+# replaced with one symmetric shared one. Fill repainted in the original greys
+# (highlight top left, darker right) with a dark speck at (10,6) removed;
+# the dark underside row kept. Bolt colours kept; its ragged dark-red edge
+# became a closed 1-px outline hanging from the cloud's base.
+ICONS['avoid'] = dict(
+    pick='d7825e5f0',
+    pal={'t': '#797d83', 's': '#70747a', 'v': '#868a8f', 'C': '#aab1b6',
+         'E': '#b1bcc0', 'F': '#bfc7c6'},
+    grid=[
+        '................',
+        '.....OOOOOO.....',
+        '....OtCEttsO....',
+        '..OOvCFtttssOO..',
+        '.OtvCttttttsssO.',
+        'OtttttttttstsssO',
+        'OsstttttttttttsO',
+        'O==============O',
+        '.OOOOOOOOOOOOOO.',
+        '......O==OO.....',
+        '.....O=====O....',
+        '......OO==O.....',
+        '.......O=O......',
+        '......O=O.......',
+        '.......O........',
+        '................',
+    ])
+
+# closed: arched door with a padlock ("no source reachable"). The original
+# sat one pixel right of centre, its edge a muddle of dark browns and greys,
+# with a dark frame and base band that would double any outline, and a
+# padlock that was a grey smudge. The frame is gone, so the door itself is
+# now the silhouette: 12 px wide (frame width dropped) with a round arch,
+# centred, in the shared outline. Planks repainted in the original browns
+# (darker seams, light left edge, darker right edge, lighter arch top) over a
+# one-row dark sill. Padlock given its own outline, a dark shackle with a
+# hole and a keyhole, so it reads against the brown.
+ICONS['closed'] = dict(
+    pick='d7825e5f0',
+    pal={'w': '#9e5c3e', 'q': '#934727', 'h': '#763e31', 'k': '#7f422f',
+         '4': '#4a393b', 'A': '#746d5a', 'y': '#706253'},
+    grid=[
+        '................',
+        '......OOOO......',
+        '....OOwwwwOO....',
+        '...OwqhqqhqkO...',
+        '..OwqqhqqhqqkO..',
+        '..OwqqhqqhqqkO..',
+        '..OwqqhqOOOqkO..',
+        '..OwqqhqOqOqkO..',
+        '..OwqqhOOOOOkO..',
+        '..OwqqhOAAyOkO..',
+        '..OwqqhOAOyOkO..',
+        '..OwqqhOOOOOkO..',
+        '..OwqqhqqhqqkO..',
+        '..O4444444444O..',
+        '..OOOOOOOOOOOO..',
+        '................',
+    ])
+
 # Single-pixel touch-ups applied after the grid, (x, y): colour. Used for
 # dark specks the generator left just inside the new outline of icons whose
 # fill is otherwise kept.
@@ -422,7 +485,7 @@ FIXES = {
 }
 
 ORDER = ['caffeine', 'thirst', 'hunger', 'rest', 'social', 'work', 'curiosity',
-         'post', 'printout', 'print', 'queue', 'file', 'blocked', 'noticed']
+         'post', 'printout', 'print', 'queue', 'file', 'blocked', 'noticed', 'avoid', 'closed']
 
 
 def hex_rgba(h):
@@ -435,7 +498,8 @@ def load_original(name, src):
     if src:
         im = Image.open(os.path.join(src, 'npc-%s.png' % name))
     else:
-        blob = subprocess.check_output(['git', '-C', REPO, 'show', '%s:%s' % (PICK_COMMIT, rel)])
+        blob = subprocess.check_output(['git', '-C', REPO, 'show',
+                                        '%s:%s' % (ICONS[name].get('pick', PICK_COMMIT), rel)])
         im = Image.open(io.BytesIO(blob))
     im = im.convert('RGBA')
     assert im.size == (16, 16), (name, im.size)
@@ -529,7 +593,7 @@ def contact_sheet(pairs, path):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument('--src', help='folder of original npc-<name>.png files (default: git %s)' % PICK_COMMIT)
+    ap.add_argument('--src', help='folder of original npc-<name>.png files (default: git %s, or the icon\'s pick)' % PICK_COMMIT)
     ap.add_argument('--sheet', help='write a contact sheet PNG here')
     ap.add_argument('--diff', action='store_true', help='print every changed pixel')
     ap.add_argument('--dry-run', action='store_true', help='do not write the assets')
