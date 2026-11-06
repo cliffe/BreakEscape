@@ -80,13 +80,31 @@ Game 585, commit 02f304b7c. Doors opened at 1:45, after the contention beat. Roo
 | Feature | Result | Evidence |
 |---|---|---|
 | Contention (row above) | PASS, unchanged | `240 tom urgent caffeine`, `278 amara used caffeine office_coffee`, `278 tom job_start caffeine office_coffee` |
-| Own PCs only | PASS | work uses `281 sanjay sanjay_pc`, `569 amara amara_pc`, `942 tom tom_pc`, `1122 sanjay sanjay_pc`; `leashed` entries such as `240 sanjay work skipped amara_pc/tom_pc chose sanjay_pc` |
+| Own PCs only | PASS | work uses `281 sanjay sanjay_pc`, `569 amara amara_pc`, `942 tom tom_pc`, `1122 sanjay sanjay_pc`; `leashed` entries such as `240 sanjay work skipped amara_pc/tom_pc chose sanjay_pc` (since slice 3 these are `private_skipped`, and `leashed` names only the lounge) |
 | Lounge private to Rosa and Grace | PASS | no job target in the lounge for Amara, Tom or Sanjay; 899 samples, none on the lounge floor for those three; Grace `978 used lounge_sofa`, Rosa `1235 used lounge_kettle` |
 | Memo sends one to the kitchen | PASS, twice | `641 amara job_start office_coffee`, `666 tom job_start kitchen_coffee leashed skipped lounge_kettle`, `725 tom used kitchen_coffee`; again at tick 1289 (both `using` at 1316, both labels `leashed`) |
 | Objective | PASS | `see_long_way` completed |
 | Console | PASS | only the keyless TTS 503 and one 404 that the leash game shows too (not in the Rails log; probably the favicon, which answers 404 on :3001) |
 
 Screenshot: `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/c84d7b68-c29e-4285-9c19-4612b082eed3/scratchpad/s2a/sims-amara-office-coffee-leashed.png` (Amara's label `using 4s office_coffee leashed`, Tom's `... kitchen_coffee leashed` at the kitchen's edge, the kettle by the lounge door). The kettle is 274 px from Tom's desk and the kitchen station 323 px (game 585 centres), so the nearest-first choice would have been the kettle.
+
+### Slice 3 re-run: what the player sees (2026-11-06, keyless :3001, headless)
+
+Games 593 and 596. The scenario now lists only one `actionIcons` entry (`lounge_kettle` as
+`{ "sprite": "kettle1", "text": "K" }`, an example of the object form); every other icon is an
+engine default. Drinks and snacks carry `affordance.useSound` (`drink_gulp` at the three coffee
+points and the cooler, `eat_snack` at the fridge and microwave). New task `hear_drink` on
+`npc_use_heard:*` with `data.key === 'drink_gulp'`.
+
+| Feature | Result | Evidence |
+|---|---|---|
+| Sprite icons | PASS | coffee cups over Amara (caffeine), clipboard over Sanjay (work), talk over Rosa (social), cup over Grace (thirst), mail over Amara carrying the parcel, question mark over Grace carrying mugs; `F` (Tom, hunger) and `Z` (Grace, rest) as text |
+| Room rule | PASS | an NPC with a job outside the player's room shows no icon (Amara in the office while the player was in the kitchen; Grace in the kitchen seen through the door) |
+| Item in hand | PASS | parcel at Amara's side walking north to her desk; mugs at Grace's hip walking west into the kitchen, seen from the office |
+| Typing bob | PASS | Tom `work/using`: sprite y 117 → 118 → 117 every 600 ms of the needs clock; 0 when idle or on another need |
+| Sounds | PASS | play log: kitchen microwave 0.139 (in the kitchen), 0.006 (through the door), cooler 0 from the lounge (not played); cooler at 44 px 0.281 with the player's own gulp playing at the same time |
+| `leashed` only for rooms | PASS | 9 `leashed` (all `lounge_kettle`), 0 for `work`; 11 `private_skipped`, all `work` |
+| Objectives | PASS | `hear_drink`, `see_parcel`, `see_mugs`, `see_long_way` and the rest completed |
 
 ## Engine findings
 

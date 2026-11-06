@@ -126,13 +126,15 @@ filtered in `_useCandidate`/`_carryCandidate`; routes carry `avoidRooms` into `r
 `goToAndStay`, and the behaviour passes them to `findWorldPath` at every planning point, which
 avoids each loaded forbidden room's inner floor ring (corners included) for that search only,
 skipping the room the search starts in. Scripts and route patrols ignore the leash. When the leash
-removes an option the log gets `leashed {need, skipped, chose}` and the system emits
-`npc_needs_leashed:<npcId>` (once per job, or once per urgent episode when nothing is left).
-Private desks make this fire on most work jobs (the colleagues' free PCs are the skipped
-options), so a mapping that wants "went the long way" should key on the `npc_used:<object>`
-it expects, conditioned on `data.npcId` (one mapping per NPC: conditions have `&&` but no `||`),
-as `test_needs_sims` does for its kitchen-coffee task. The debug overlay marks such jobs
-` leashed` (section 4.1). Live proof: `scenarios/test_needs_leash` (four rooms in a loop; game
+removes an option (a forbidden room: `needsRooms`, `needsAvoidRooms`, a `needsPrivateTo` room)
+the log gets `leashed {need, skipped, chose}` and the system emits `npc_needs_leashed:<npcId>`
+(once per job, or once per urgent episode when nothing is left); `skipped` lists only the
+room-removed targets. Passing over another owner's `private` object is expected (colleagues'
+desks), so it is logged as `private_skipped {need, skipped, chose}` and emits nothing. A
+mapping that wants "went the long way" can key on `npc_needs_leashed`, or on the
+`npc_used:<object>` it expects conditioned on `data.npcId` (one mapping per NPC: conditions have
+`&&` but no `||`), as `test_needs_sims` does for its kitchen-coffee task. The debug overlay marks
+such jobs ` leashed`, and ` private` where a private object was passed over (section 4.1). Live proof: `scenarios/test_needs_leash` (four rooms in a loop; game
 587: leashed, 0 of 1,966 samples on the private floor over three round trips, out and back by
 the corridor; unleashed, 32 of 86 samples on it, out and back through it) and
 `scenarios/test_needs_sims` (game 585: private PCs, the lounge private to Rosa and Grace).
@@ -208,9 +210,23 @@ goes back to the scenario flag). Above each needs NPC it draws a small panel: on
 per need, in name order, with the need's initial (green above `urgentAt`, amber at or
 below it, red once unmet for `maxUnmetMin`), and a line `<npc>: <job>` (`idle`,
 `windup <target>`, `goto_target <target>`, `using 4s <target>`, `returning`, `frozen`,
-`suspended`). The line ends in ` leashed` when the room leash or a private object removed an
-option: on a job chosen that way (`job.leashed`, also in `getState().job.leashed`), or while
-the NPC has no job and an urgent need was left with nothing permitted (`leashNoted`). Installed beside the action icons in `core/game.js` with a dynamic
+`suspended`). The line ends in ` leashed` when a room rule removed an option: on a job chosen
+that way (`job.leashed`, also in `getState().job.leashed`), or while the NPC has no job and an
+urgent need was left with nothing permitted (`leashNoted`); and in ` private` the same way when
+another owner's private object was passed over (`job.privateSkipped`, `privateNoted`).
+
+**What the player sees (office life slice 3, `OFFICE_LIFE_PLAN.md` 2.12).** Action icons
+(`npc-action-icons.js`) take textures: `"icon:<name>"` (assets/icons) or `{ "sprite": "<object
+texture>" }`, at native size, defaults from existing art (caffeine coffee cups, thirst cup, work
+clipboard, social talk, curiosity question mark, `post`/`printout` mail; hunger `F` and rest `Z`
+stay text); a carry looks up its `needsTag`, a use its `need` before the target's `satisfies`.
+Icons show only for NPCs in the player's room while it is lit. `npc-office-visuals.js` keeps a
+carried item visible in the carrier's hand (follows on `postupdate`, behind the body facing
+north) and plays an object's `affordance.useSound` when a use completes, heard by distance (silent
+at eight tiles) and room (`room-hearing.js`: own room 1, through a door 0.4, else 0), at most one
+per second, emitting `npc_use_heard:<objectId>`. Seated NPCs bob 1 px every 600 ms of the needs
+clock during a `work` use (`seating.js` `typingBob`, off under reduced motion).
+`"officeVisuals": false` turns the held item, sounds and bob off. Installed beside the action icons in `core/game.js` with a dynamic
 import, so no test-harness copy list needs it. It reads `npcNeedsSystem.states` and
 writes nothing back; positions follow the sprite each frame, bars redraw every 200 ms,
 graphics are made once per NPC and destroyed when the sprite goes (room unload, NPC

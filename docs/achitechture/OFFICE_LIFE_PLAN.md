@@ -5,7 +5,8 @@ Status: **plan, 2026-11-05, revised after adversarial reviews R1 and R2
 and amended the same day for social compatibility and a room leash (section 7, new slice 2a),
 then revised on 2026-11-06 after the amendment's review (`OFFICE_LIFE_PLAN_REVIEW_AMEND1.md`;
 outcomes in section 8). Slices 0, 1 and 2 have landed (b642594be, 5b1749a05, b670d2fcd and
-b6b579e39); slice 2a is next.** Line numbers drift as slices land; the function names are the
+b6b579e39); slice 2a and slice 3 landed on 2026-11-06 (Built lines in 7.2 and 2.12); slice 4 is
+next.** Line numbers drift as slices land; the function names are the
 stable reference. Engine changes
 need the user's approval (AGENTS.md); so does any new art or audio (marked **[approval]**). Builds on the needs system (`NPC_NEEDS_SYSTEM.md`), seating (`SEATING.md`) and the
 showcase `scenarios/test_needs_sims`, which becomes the test bed for every slice below.
@@ -1175,6 +1176,31 @@ minigames (only the VM freezes them). Decide whether a catch closes the minigame
 
 ### 2.12 What the player sees (added after review R1; slice 3)
 
+**Built: 2026-11-06 (845dadb4c, 804e8dfde), apart from the `lab_physical_pentest` live regression
+(open, `HANDOVER_OFFICE_S3.md`).** As written, with these choices: the icon lookup for a use is
+object id, the job's `need`, the target's first `satisfies`, type (R2 m3's order; the 2.12
+sentence read as "need before id" would hide per-object entries); a scenario entry wins where it
+is usable and an unusable one falls back to the default; `useSound` is per object only (presets
+in slice 4 may give defaults); the hearing helper is `systems/room-hearing.js` (lighting imports
+it, so the five lighting harness copy lists gained it); an audible use emits
+`npc_use_heard:<objectId>` `{npcId, key, volume, hearing}`, which the showcase's new task
+`hear_drink` keys on; a carried item's physics body is switched off while it is in hand. The
+existing `see_parcel` task (retitled "Watch Amara carry a dropped parcel to her desk") is the
+plan's parcel objective. Live, :3001 headless: game 593 (`test_needs_sims`): every default icon
+seen over a head (coffee cups, cup, clipboard, talk, `F`, `Z`, mark-question, mail-new), icons
+hidden for NPCs outside the player's room; Sanjay and Tom typing, sprite y alternating 1 px every
+600 ms of the needs clock during `work/using` only; sounds from the play log: microwave in the
+kitchen 0.139 (151 px, hearing 1), microwave through the kitchen door 0.006 (245 px, hearing 0.4),
+cooler from the lounge 0 (hearing 0, not played), cooler at 44 px 0.281 with the player's own
+`drink_gulp` started in the same frame (two instances playing); `hear_drink`, `see_parcel`,
+`see_mugs`, `see_long_way` ticked. Game 596: Amara's parcel in hand walking north and north-east,
+Grace's mugs in hand at her hip in the kitchen seen from the office through the door (no icon over
+her, the office's icons showing). No pure south-facing carry was caught (the showcase's carries
+all head north or west); the front placement shows in the side and diagonal frames. Screenshots
+in the session scratchpad `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/c84d7b68-c29e-4285-9c19-4612b082eed3/scratchpad/s3/` (`icons-sheet.png`, `parcel-sheet.png`, `door-sheet.png`,
+`held-sheet-1.png`, `bob-sheet.png`; play logs `sound-log*.json`). `test_needs_leash` game 597:
+out and back by `west_corridor`, 0 of 96 samples on Maya's floor.
+
 The needs system already moves people about, but the player sees very little of what they are
 doing: `pickUp` hides the carried item (`npc-needs.js:872`), so a delivery is someone walking
 with a `?` over their head; action icons are monospace text (`"PC"`, `"C"`); a use is a figure
@@ -1677,7 +1703,12 @@ has its tick cache); function names are the stable reference.
 
 ### 7.2 Room leash and private objects (slice 2a)
 
-**Built: 2026-11-06 (engine, validator, schema, tests: 42575dda0; `test_needs_leash`: 2af3d7493).**
+**Built: 2026-11-06 (engine, validator, schema, tests: 42575dda0; `test_needs_leash`: 2af3d7493).** **Changed 2026-11-06 (845dadb4c, with slice 3):** `leashed` (log and `npc_needs_leashed`) now
+fires only when a room rule (`needsRooms`, `needsAvoidRooms`, a `needsPrivateTo` room) removed a
+target, and its `skipped` lists only those; passing over another owner's `private` object is
+expected and is logged as `private_skipped {need, skipped, chose}` with no event, and the overlay
+adds ` private` (`job.privateSkipped`, `privateNoted`). Game 593: 9 `leashed`, all skipping
+`lounge_kettle`, none for `work`; 11 `private_skipped`, all `work`.
 As revised in section 8. Live, :3001 headless, load about 25, game 583 (`test_needs_leash`, all
 four doors opened first): leashed, Ravi went `ravi_office → west_corridor → store` and back the
 same way, never on `maya_office`'s floor (sampled every 250 ms); with `needsPrivateTo` removed
