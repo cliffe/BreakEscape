@@ -858,6 +858,7 @@ export function updateSeatedNPC(behavior, playerPos) {
 // Atlases without seated frames always stand.
 
 const NEAR_CHAIR = 36;      // px from the NPC's feet to a chair's foot to sit straight down
+const POST_SNAP = 48;       // px (1.5 tiles): at its post, an NPC this close to its home cell looks from there
 const FETCH_RANGE = 192;    // px to look for a chair to fetch
 const FETCH_TIMEOUT_MS = 15000;
 
@@ -970,6 +971,22 @@ function slideChairFootTo(chair, x, y) {
     window.updateSpriteDepth?.(chair, chair.elevation || 0);
 }
 
+/**
+ * Where a parked needs NPC looks for a chair from. At its post (stop.post) and within POST_SNAP
+ * of its home cell, the home cell: a walk ends anywhere within a tile of its target (npc-behavior's
+ * arrival tolerance), so the feet can be ~32 px off the cell on the side it came from, and a chair
+ * ~14 px from the cell was then past NEAR_CHAIR (lab_physical_pentest: Melanie back from coffee
+ * at (235,172), her chair's foot (200,186), 37.7 px; she stood at her desk for good). Elsewhere,
+ * or farther off (a script moved it), the feet.
+ */
+export function needsSeatRef(feet, stop, home) {
+    if (stop?.post && home && Number.isFinite(home.x) && Number.isFinite(home.y)
+        && Math.hypot(home.x - feet.x, home.y - feet.y) <= POST_SNAP) {
+        return { x: home.x, y: home.y };
+    }
+    return { x: feet.x, y: feet.y };
+}
+
 function updateNeedsSeat(behavior, ns, playerPos) {
     const sprite = behavior.sprite;
     const stop = needsStop(ns);
@@ -1019,7 +1036,7 @@ function updateNeedsSeat(behavior, ns, playerPos) {
     const npcRec = window.npcManager?.getNPC?.(behavior.npcId);
     const pref = seatPreference(obj, npcRec, stop);
     if (pref === 'stand') return false;
-    const feet = bodyFeet(sprite);
+    const feet = needsSeatRef(bodyFeet(sprite), stop, ns.home);
     const toward = facePointFor(obj, feet);
     // Chairs at another needs NPC's post are theirs, unless this is that spot too
     const posts = otherPosts(behavior.npcId).filter(p => Math.hypot(p.x - feet.x, p.y - feet.y) > NEAR_CHAIR);

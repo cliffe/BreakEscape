@@ -164,3 +164,50 @@ test('typingBob: only a work use in its using phase, every 600 ms of the needs c
     assert.equal(seating.typingBob({ mode: 'idle', job: null }, 600), 0);
     assert.equal(seating.typingBob(null, 600), 0);
 });
+
+// ── a needs NPC back at its post sits from its home cell, not where the walk stopped ──────
+// Live, lab_physical_pentest game 624: Melanie (pierce) came back from coffee and stopped at
+// (235,172), within the behaviour layer's one-tile arrival tolerance of her home cell (204,172).
+// Her static chair's foot is (200,186): 37.7 px from her feet, past NEAR_CHAIR (36), so she
+// stood at her desk for good. Measured from the home cell it is 14.6 px.
+
+test('needsSeatRef: home cell at the post within 1.5 tiles; the feet elsewhere', () => {
+    const home = { x: 204, y: 172 };
+    assert.deepEqual(seating.needsSeatRef({ x: 235, y: 172 }, { post: true }, home), home);
+    assert.deepEqual(seating.needsSeatRef({ x: 235, y: 172 }, { post: false }, home), { x: 235, y: 172 });
+    assert.deepEqual(seating.needsSeatRef({ x: 300, y: 172 }, { post: true }, home), { x: 300, y: 172 }, 'moved away by a script');
+    assert.deepEqual(seating.needsSeatRef({ x: 235, y: 172 }, { post: true }, null), { x: 235, y: 172 });
+});
+
+function labSeatRig(feetX) {
+    const chair = { x: 192, y: 160, width: 16, height: 26, depth: 186, active: true, objectId: 'pierce_chair',
+        texture: { key: 'aw_chair_north_charcoal1' }, scenarioData: { id: 'pierce_chair' } };
+    const pc = { id: 'staff_pc_2', roomId: 'open_plan', x: 204, y: 140, affordance: { satisfies: 'work', useFrom: { dx: 0, dy: 1 } } };
+    const sprite = {
+        x: feetX, y: 172, displayOriginX: 40, displayOriginY: 40, scaleX: 1, scaleY: 1,
+        texture: { key: 'lab_worker' }, frame: { name: 'breathing-idle_east_frame_000' }, anims: { isPlaying: false },
+        body: { offset: { x: 30, y: 35 }, width: 20, height: 10, checkCollision: { none: false }, immovable: false,
+            setVelocity() {}, reset(x, y) { sprite.x = x; sprite.y = y; } },
+        setPosition(x, y) { this.x = x; this.y = y; }, setFrame(n) { this.frame.name = n; }, setDepth(d) { this.depth = d; }
+    };
+    const behavior = { npcId: 'pierce', roomId: 'open_plan', sprite, isMoving: false, playAnimation() {} };
+    const ns = { npcId: 'pierce', mode: 'idle', atPost: true, job: null, home: { x: 204, y: 172, roomId: 'open_plan', objectId: 'staff_pc_2' } };
+    const saved = {};
+    for (const k of ['npcNeedsSystem', 'npcManager', 'rooms', 'game', 'pathfindingManager']) saved[k] = window[k];
+    window.npcNeedsSystem = { states: new Map([['pierce', ns]]), world: { npcStatus: () => ({}), getObject: id => (id === 'staff_pc_2' ? pc : null), inChatWith: () => false }, clockMs: 0 };
+    window.npcManager = { getNPC: id => (id === 'pierce' ? { needsHome: 'staff_pc_2' } : null) };
+    window.rooms = { open_plan: { objects: { pierce_chair: chair } } };
+    window.game = { textures: { get: () => ({ has: () => true }) } };
+    window.pathfindingManager = null;
+    const restore = () => { for (const [k, v] of Object.entries(saved)) window[k] = v; };
+    return { chair, sprite, behavior, restore };
+}
+
+test('needs NPC back at its post sits in its own chair though the walk stopped a tile short', () => {
+    const rig = labSeatRig(235 - 0);   // body centre x: sprite.x + (30 - 40) + 10 = sprite.x
+    try {
+        assert.equal(seating.updateSeatedNPC(rig.behavior, { x: 320, y: 191 }), true, 'seated');
+        assert.equal(rig.chair.seatedBy, 'pierce');
+        assert.equal(rig.sprite.frame.name, 'sit_north_frame_000');
+    } finally { rig.restore(); }
+});

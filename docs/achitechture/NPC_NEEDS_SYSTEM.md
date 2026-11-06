@@ -367,7 +367,9 @@ carry: goto_item → pick up → goto_target → using(useSeconds) → complete 
   layer's `face_player` (player within 96 px and in sight) had no time limit and also skipped the
   one-tile arrival check, so a player standing near the route or the desk held the NPC in
   `returning` for good: in `lab_physical_pentest` (games 614, 619, 622, 623) staff stood by the
-  coffee station or beside their desk for 50 s+ and never sat back down.
+  coffee station or beside their desk for 50 s+ and never sat back down. The walk itself ends
+within a tile of home, so seating looks for the post's chair from the home cell
+(`seating.js` `needsSeatRef`, `SEATING.md`).
 - **Failure:** deadline passed or no approach cell → `npc_job_failed:<npcId>`,
   cancel the move, drop any carried item at the NPC's feet, 60 s cooldown on that
   target for this NPC, go home.

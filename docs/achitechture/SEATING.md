@@ -95,6 +95,10 @@ or its own post: it walks over, rolls it back and sits (`npc_fetching_chair`). E
 (the coffee machine) it sits only if a chair is already there, otherwise it stands.
 Chairs at another needs NPC's post are left alone. Leaving for coffee, it stands back
 on its work spot and tucks the chair 12px in, so the chair doesn't block its way back.
+At its own post it looks for the chair from its home cell, not its feet, when it is within
+1.5 tiles of the cell (`needsSeatRef`): a walk ends anywhere within a tile of its target, so
+an NPC back from coffee can stand ~32 px off the cell, and before 2026-11-06 a chair a little
+over 36 px from its feet was missed and it worked standing for good.
 
 Per object: `affordance.seat` = `"fetch"` (default for work and posts), `"stay"`
 (only a chair already there) or `false` (always stand). Per NPC: `"seated": false`
