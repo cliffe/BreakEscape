@@ -3,7 +3,7 @@
   "presets": {
     "desk_pc":    { "types": ["pc", "pc3", "pc10", "laptop", "workstation"], "affordance": { "satisfies": "work", "restores": 60, "useSeconds": 10, "capacity": 1 } },
     "coffee":     { "types": ["coffee_station", "coffee_station1", "kettle", "kettle1"], "affordance": { "satisfies": "caffeine", "restores": 70, "useSeconds": 12, "capacity": 1, "useFrom": { "dx": 0, "dy": 1 }, "useSound": "drink_gulp", "queue": { "cells": [{ "dx": -1, "dy": 1 }, { "dx": -2, "dy": 1 }] } } },
-    "cooler":     { "types": ["water_cooler", "water_cooler1"], "affordance": { "satisfies": ["thirst", "social"], "restores": 70, "useSeconds": 15, "capacity": 2, "useSound": "drink_gulp", "chatter": "cooler" } },
+    "cooler":     { "types": ["water_cooler", "water_cooler1"], "affordance": { "satisfies": ["thirst", "social"], "restores": 70, "useSeconds": 15, "capacity": 2, "useFrom": { "dx": 0, "dy": 1 }, "useSound": "drink_gulp", "chatter": "cooler" } },
     "fridge":     { "types": ["qdc_fridge1"], "affordance": { "satisfies": "hunger", "restores": 80, "useSeconds": 15, "capacity": 1, "useFrom": { "dx": 0, "dy": 1 }, "useSound": "eat_snack" } },
     "microwave":  { "types": ["microwave1"], "affordance": { "satisfies": "hunger", "restores": 60, "useSeconds": 10, "capacity": 1, "useSound": "eat_snack" } },
     "sofa":       { "types": ["leather_sofa1"], "affordance": { "satisfies": "rest", "restores": 80, "useSeconds": 20, "capacity": 2, "useFrom": { "dx": 0, "dy": -1 } } },
