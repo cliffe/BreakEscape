@@ -26,27 +26,28 @@ test('resolveIcon: icon: prefix, { sprite } and text, with the stand-in glyph', 
     assert.deepEqual(resolveIcon(null, '•'), { kind: 'text', glyph: '•' });
 });
 
-test('defaults come from existing art; hunger and rest stay text', () => {
-    assert.deepEqual(DEFAULT_ICONS.caffeine, { sprite: 'coffee_cups1' });
-    assert.deepEqual(DEFAULT_ICONS.thirst, { sprite: 'office-misc-cup' });
-    assert.equal(DEFAULT_ICONS.work, 'icon:clipboard');
-    assert.equal(DEFAULT_ICONS.social, 'icon:talk');
-    assert.equal(DEFAULT_ICONS.curiosity, 'icon:mark-question');
-    assert.equal(DEFAULT_ICONS.post, 'icon:mail-new');
-    assert.equal(DEFAULT_ICONS.hunger, 'F');
-    assert.equal(DEFAULT_ICONS.rest, 'Z');
+test('defaults are the npc-* icon set (slice 3b); fallback stays text', () => {
+    assert.equal(DEFAULT_ICONS.caffeine, 'icon:npc-caffeine');
+    assert.equal(DEFAULT_ICONS.thirst, 'icon:npc-thirst');
+    assert.equal(DEFAULT_ICONS.work, 'icon:npc-work');
+    assert.equal(DEFAULT_ICONS.social, 'icon:npc-social');
+    assert.equal(DEFAULT_ICONS.curiosity, 'icon:npc-curiosity');
+    assert.equal(DEFAULT_ICONS.post, 'icon:npc-post');
+    assert.equal(DEFAULT_ICONS.hunger, 'icon:npc-hunger');
+    assert.equal(DEFAULT_ICONS.rest, 'icon:npc-rest');
+    assert.equal(DEFAULT_ICONS.fallback, '•');
 });
 
 test('a carry tagged post gets the post icon; an untagged carry gets curiosity', () => {
-    assert.equal(pickIcon({ kind: 'carry', itemId: 'parcel', tag: 'post' }, {}, { id: 'amara_pc', satisfies: 'work' }), 'icon:mail-new');
-    assert.equal(pickIcon({ kind: 'carry', itemId: 'mugs', tag: 'dirty_mugs' }, {}, null), 'icon:mark-question');
+    assert.equal(pickIcon({ kind: 'carry', itemId: 'parcel', tag: 'post' }, {}, { id: 'amara_pc', satisfies: 'work' }), 'icon:npc-post');
+    assert.equal(pickIcon({ kind: 'carry', itemId: 'mugs', tag: 'dirty_mugs' }, {}, null), 'icon:npc-curiosity');
     assert.equal(pickIconEntry({ kind: 'carry', itemId: 'mugs', tag: 'dirty_mugs' }).key, 'curiosity');
 });
 
 test('a cooler use for social gets the social icon, not the first satisfies (thirst)', () => {
     const cooler = { id: 'water_cooler', satisfies: 'thirst', type: 'water_cooler1' };
-    assert.equal(pickIcon({ kind: 'use', need: 'social' }, {}, cooler), 'icon:talk');
-    assert.deepEqual(pickIcon({ kind: 'use', need: 'thirst' }, {}, cooler), { sprite: 'office-misc-cup' });
+    assert.equal(pickIcon({ kind: 'use', need: 'social' }, {}, cooler), 'icon:npc-social');
+    assert.equal(pickIcon({ kind: 'use', need: 'thirst' }, {}, cooler), 'icon:npc-thirst');
 });
 
 test('an explicit scenario entry wins: object id first, then the need', () => {
@@ -56,7 +57,7 @@ test('an explicit scenario entry wins: object id first, then the need', () => {
     // the lab's glyphs stay until it opts in
     assert.equal(pickIcon({ kind: 'use', need: 'work' }, { work: '🖥' }, { id: 'pc', satisfies: 'work' }), '🖥');
     // an invalid value is skipped, not drawn
-    assert.equal(pickIcon({ kind: 'use', need: 'work' }, { work: { nope: 1 } }, { id: 'pc' }), 'icon:clipboard');
+    assert.equal(pickIcon({ kind: 'use', need: 'work' }, { work: { nope: 1 } }, { id: 'pc' }), 'icon:npc-work');
 });
 
 // ── where icons show ─────────────────────────────────────────────────────
@@ -153,7 +154,7 @@ test('action icon: anchored just above a seated NPC\'s head; one of text or spri
 test('action icon: a sprite icon hides the text stand-in once its texture is ready; standing NPC too', () => {
     const rig = iconRig({ frameName: 'walk_east_frame_000', headRow: 15, textureReady: false });
     try {
-        window.gameScenario.actionIcons = {};          // default caffeine sprite (coffee_cups1)
+        window.gameScenario.actionIcons = {};          // default caffeine icon (npc-caffeine)
         const icons = new NpcActionIcons();
         icons.update();
         let ic = icons.icons.get('pierce');

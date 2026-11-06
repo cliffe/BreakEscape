@@ -30,6 +30,7 @@ const SELECT_BACKOFF_TICKS = 4; // a selection that path-searched and found noth
 export const RETURN_YIELD_MS = 3000;
 const RETURN_STILL_PX = 4;    // less than this between ticks counts as standing still
 const CAUGHT_RADIUS = 48;    // px (1.5 tiles) from the home approach cell: "you were in my chair"
+export const NOTICED_MS = 3000;   // getState().noticed after npc_caught_at_post (the "noticed" action icon)
 
 export function hash32(str) {
     let h = 0x811c9dc5;
@@ -752,6 +753,9 @@ export class NPCNeedsSystem {
         };
         if (pick.leashed) s.job.leashed = true;   // the debug overlay's "leashed" label
         if (pick.privateSkipped) s.job.privateSkipped = true;   // the overlay's "private" label
+        // For the action icons (OFFICE_LIFE_PLAN 9.1): a use that prints, a carry to a stow target
+        if (pick.kind === 'use' && this.world.getNpc(id)?.onUse?.[pick.targetId]?.revealOutput) s.job.prints = true;
+        if (pick.kind === 'carry' && this.world.getObject(pick.targetId)?.affordance?.onDeliver === 'stow') s.job.stowAt = true;
         s.mode = 'job';
         this._log(id, 'job_start', { need: pick.need || undefined, tag: pick.tag || undefined, target: pick.targetId, item: pick.itemId || undefined });
         if (pick.leashed) this._emitLeashed(s, { need: pick.need || undefined, skipped: pick.leashed, chose: pick.targetId });
@@ -823,6 +827,7 @@ export class NPCNeedsSystem {
         const near = Number.isFinite(p.distance) && p.distance <= CAUGHT_RADIUS;
         if (!near && !p.inMinigame) return;
         s.caughtEmitted = true;
+        s.caughtAt = this.clockMs;   // getState().noticed for NOTICED_MS (the action icons)
         const playerDistance = Number.isFinite(p.distance) ? Math.round(p.distance) : null;
         this._log(s.npcId, 'caught_at_post', { target: home.objectId, playerDistance, inMinigame: !!p.inMinigame });
         this._emit(`npc_caught_at_post:${s.npcId}`, { npcId: s.npcId, objectId: home.objectId, playerDistance, inMinigame: !!p.inMinigame });
@@ -1062,6 +1067,31 @@ export class NPCNeedsSystem {
         return this.log.map(e => ({ ...e }));
     }
 
+    /**
+     * The most pressing need the NPC is not acting on (OFFICE_LIFE_PLAN 9.2): at or below its
+     * urgentAt, not the current job's need; lowest level / urgentAt, ties by need name. null if none.
+     */
+    _pressing(s) {
+        let best = null;
+        for (const name of Object.keys(s.needs).sort()) {
+            if (s.job && s.job.need === name) continue;
+            const urgentAt = s.needs[name].urgentAt;
+            if (!(s.levels[name] <= urgentAt)) continue;
+            const ratio = s.levels[name] / urgentAt;
+            if (!best || ratio < best.ratio) best = { need: name, ratio };
+        }
+        return best ? { need: best.need, ratio: round2(best.ratio) } : null;
+    }
+
+    /** With no job: an urgent need that a room rule left nothing permitted for (the leashed back-off). */
+    _blockedNeed(s) {
+        if (s.job) return null;
+        for (const name of Object.keys(s.needs).sort()) {
+            if (s.leashNoted[name] && s.levels[name] <= s.needs[name].urgentAt) return name;
+        }
+        return null;
+    }
+
     getState(npcId) {
         const s = this.states.get(npcId);
         if (!s) return null;
@@ -1069,7 +1099,10 @@ export class NPCNeedsSystem {
         for (const k of Object.keys(s.levels)) levels[k] = round2(s.levels[k]);
         return {
             npcId, mode: s.mode, levels, atPost: s.atPost, scriptSuspended: s.scriptSuspended,
-            job: s.job ? { windingUp: !!s.job.windupUntil, need: s.job.need, kind: s.job.kind, phase: s.job.phase, targetId: s.job.targetId, itemId: s.job.itemId, carrying: s.job.carrying, tag: s.job.tag || null, leashed: !!s.job.leashed, privateSkipped: !!s.job.privateSkipped } : null,
+            job: s.job ? { windingUp: !!s.job.windupUntil, need: s.job.need, kind: s.job.kind, phase: s.job.phase, targetId: s.job.targetId, itemId: s.job.itemId, carrying: s.job.carrying, tag: s.job.tag || null, leashed: !!s.job.leashed, privateSkipped: !!s.job.privateSkipped, prints: !!s.job.prints, files: !!(s.job.stowAt && s.job.slot) } : null,
+            pressing: this._pressing(s),
+            blockedNeed: this._blockedNeed(s),
+            noticed: Number.isFinite(s.caughtAt) && this.clockMs - s.caughtAt < NOTICED_MS,
             home: s.home ? { x: Math.round(s.home.x), y: Math.round(s.home.y), roomId: s.home.roomId, objectId: s.home.objectId || null, provisional: !!s.home.provisional } : null,
             clockMs: this.clockMs, tick: this.tickCount
         };

@@ -23,7 +23,7 @@ test('targetInfo: cached by id after one room scan; dropped when the sprite is d
     globalThis.window = { rooms: { get office() { scans++; return { objects }; } } };
     try {
         const cache = new Map();
-        assert.deepEqual(targetInfo('coffee', cache), { id: 'coffee', type: 'coffee_station1', satisfies: 'caffeine' });
+        assert.deepEqual(targetInfo('coffee', cache), { id: 'coffee', type: 'coffee_station1', satisfies: 'caffeine', print: false });
         assert.equal(targetInfo('coffee', cache).satisfies, 'caffeine');
         assert.equal(scans, 1, 'second lookup came from the cache');
         assert.equal(targetInfo('kettle', cache), null);
