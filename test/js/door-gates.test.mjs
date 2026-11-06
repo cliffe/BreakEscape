@@ -1,5 +1,6 @@
 // Gate doors (systems/door-gates.js): open for listed NPCs as they near, hold for
-// holdMs, shut again; never on the player; undisguised player shuts it; closeNow.
+// holdMs, shut again; never on the player or a guard in the doorway; undisguised
+// player shuts it and keeps it shut, the held guard turns back; closeNow.
 // Also PathfindingManager.unmarkDoor. Run with: node test/js/door-gates.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -10,7 +11,7 @@ import { dirname, join } from 'node:path';
 const js = join(dirname(fileURLToPath(import.meta.url)), '../../public/break_escape/js');
 const dataUrl = (src) => 'data:text/javascript;base64,' + Buffer.from(src).toString('base64');
 globalThis.window = {};
-const { DoorGates, normaliseGate, GUARD_PRIORITY_MS } = await import(dataUrl(readFileSync(join(js, 'systems/door-gates.js'), 'utf8')));
+const { DoorGates, normaliseGate, GUARD_TURN_BACK_MS } = await import(dataUrl(readFileSync(join(js, 'systems/door-gates.js'), 'utf8')));
 
 // A N/S doorway at (100, 100) between lobby (south) and vault (north)
 function setup(gate = { openFor: ['guard'], openRadius: 56, holdMs: 2500, playerMayPassIf: 'disguised' }) {
@@ -21,7 +22,12 @@ function setup(gate = { openFor: ['guard'], openRadius: 56, holdMs: 2500, player
         doorProperties: { roomId, connectedRoom, direction, worldX: 100, worldY: 100, open: false }
     });
     const guard = { x: 300, y: 300, visible: true, active: true };
-    const behaviour = { currentPath: [], pathIndex: 0 };
+    // wantsCross: his route leg takes him across this gate; turnBacks: calls to turnBackFromGate
+    const behaviour = {
+        currentPath: [], pathIndex: 0, wantsCross: true, turnBacks: [],
+        wantsToCrossGate() { return this.wantsCross; },
+        turnBackFromGate(info) { if (!this.wantsCross) return false; this.turnBacks.push(info); this.wantsCross = false; return true; }
+    };
     window.npcManager = { npcs: new Map([['guard', { id: 'guard', _sprite: guard }]]) };
     window.npcBehaviorManager = { getBehavior: (id) => (id === 'guard' ? behaviour : null) };
     window.player = { x: 400, y: 400 };
@@ -131,48 +137,121 @@ test('undisguised player near the open gate shuts it at once and keeps it shut',
     assert.equal(a.body.enable, false);
 });
 
-test('a barred (undisguised) player never traps the openFor guard: the gate opens for him after the grace', () => {
-    // Regression: lab_physical_pentest, Len parked in secure_area because an
-    // undisguised player at the door barred the gate he needed to cross back
-    // through, so his route stalled for good and len_at_door never re-fired.
-    const { gates, a, guard, events } = setup();
-    guard.x = 100; guard.y = 140;                     // near the door, wants through
+test('an undisguised player at the gate means it never opens for the guard, however long he waits', () => {
+    // lab_physical_pentest: the old guard override (1e6e6dbba) opened it after 5 s, so a
+    // camping undisguised player followed Len through and skipped the hi-vis lesson.
+    const { gates, a, guard, behaviour, events } = setup();
+    behaviour.turnBackFromGate = () => false;       // keeps wanting through: worst case
+    guard.x = 100; guard.y = 140;
     window.player = { x: 100, y: 150 };               // 50px: barred (undisguised)
-    gates.update(1000);
-    assert.equal(a.body.enable, true, 'barred: shut at first');
-    assert.deepEqual(events.map(e => e[0]), [], 'did not open yet');
-    gates.update(1000 + GUARD_PRIORITY_MS - 1);
-    assert.equal(a.body.enable, true, 'still within the grace: still shut');
-    gates.update(1000 + GUARD_PRIORITY_MS);
-    assert.equal(a.body.enable, false, 'grace elapsed: opens for the guard despite the barred player');
-    assert.deepEqual(events.map(e => e[0]), ['door_gate_opened']);
+    for (let t = 0; t <= 60000; t += 250) gates.update(t);
+    assert.equal(a.body.enable, true, 'still shut after a minute');
+    assert.ok(!events.some(e => e[0] === 'door_gate_opened'));
 });
 
-test('the grace timer resets when the guard leaves, so it is per-visit not cumulative', () => {
-    const { gates, a, guard } = setup();
+test('a guard held at a barred gate turns back after GUARD_TURN_BACK_MS, once', () => {
+    const { gates, a, guard, behaviour, events } = setup();
+    guard.x = 100; guard.y = 140;                     // near, his leg crosses
     window.player = { x: 100, y: 150 };               // barred
-    guard.x = 100; guard.y = 140;                     // near
     gates.update(1000);
-    assert.equal(a.body.enable, true);
-    guard.x = 400; guard.y = 400;                     // guard wanders off
-    gates.update(2000);
-    guard.x = 100; guard.y = 140;                     // comes back: grace restarts
-    gates.update(3000);
-    gates.update(3000 + GUARD_PRIORITY_MS - 1);
-    assert.equal(a.body.enable, true, 'grace restarted on his return, not carried over');
-    gates.update(3000 + GUARD_PRIORITY_MS);
-    assert.equal(a.body.enable, false);
+    gates.update(1000 + GUARD_TURN_BACK_MS - 1);
+    assert.equal(behaviour.turnBacks.length, 0, 'not yet');
+    gates.update(1000 + GUARD_TURN_BACK_MS);
+    assert.equal(behaviour.turnBacks.length, 1, 'turned back');
+    assert.deepEqual(behaviour.turnBacks[0], { roomId: 'lobby', connectedRoom: 'vault', direction: 'north', x: 100, y: 100 });
+    assert.deepEqual(events.map(e => e[0]), ['door_gate_guard_turned_back']);
+    assert.equal(events[0][1].npcId, 'guard');
+    assert.equal(a.body.enable, true, 'and the gate stayed shut');
+    gates.update(1000 + 3 * GUARD_TURN_BACK_MS);      // no longer wants through: no repeat
+    assert.equal(behaviour.turnBacks.length, 1);
 });
 
-test('a guard mid-crossing is not shut out by a barred player', () => {
-    const { gates, a, guard, behaviour } = setup();
+test('a guard dwelling beside a barred gate (not crossing) is never turned back', () => {
+    const { gates, guard, behaviour } = setup();
+    behaviour.wantsCross = false;
+    guard.x = 100; guard.y = 140;
+    window.player = { x: 100, y: 150 };
+    gates.update(0);
+    gates.update(3000);                               // wants through only from now
+    behaviour.wantsCross = true;
+    gates.update(4000);
+    gates.update(4000 + GUARD_TURN_BACK_MS - 1);
+    assert.equal(behaviour.turnBacks.length, 0, 'the timer runs from when he wants to cross');
+    gates.update(4000 + GUARD_TURN_BACK_MS);
+    assert.equal(behaviour.turnBacks.length, 1);
+});
+
+test('the guard retries on his next cycle and crosses once the player has gone, or is disguised', () => {
+    const { gates, a, guard, behaviour, events } = setup();
+    guard.x = 100; guard.y = 140;
+    window.player = { x: 100, y: 150 };               // barred
+    gates.update(0);
+    gates.update(GUARD_TURN_BACK_MS);
+    assert.equal(behaviour.turnBacks.length, 1);
+    guard.x = 400; guard.y = 400;                     // walks his loop
+    gates.update(8000);
+    // Next cycle, player still camped: turned back again, still shut
+    guard.x = 100; guard.y = 140; behaviour.wantsCross = true;
+    gates.update(20000);
+    gates.update(20000 + GUARD_TURN_BACK_MS);
+    assert.equal(behaviour.turnBacks.length, 2);
+    assert.equal(a.body.enable, true);
+    // Next cycle, the player has gone: opens at once
+    guard.x = 400; guard.y = 400; gates.update(30000);
+    window.player = { x: 400, y: 400 };
+    guard.x = 100; guard.y = 140; behaviour.wantsCross = true;
+    gates.update(40000);
+    assert.equal(a.body.enable, false, 'opens for him');
+    assert.equal(behaviour.turnBacks.length, 2);
+    // Later cycle: the player is back but disguised: opens beside him
+    guard.y = 20; gates.update(41000); gates.update(45000);
+    assert.equal(a.body.enable, true);
+    window.player = { x: 100, y: 150 };
+    window.gameState.globalVariables.disguised = true;
+    guard.x = 100; guard.y = 140;
+    gates.update(50000);
+    assert.equal(a.body.enable, false, 'disguised: opens at once');
+    assert.equal(behaviour.turnBacks.length, 2);
+    assert.equal(events.filter(e => e[0] === 'door_gate_opened').length, 2);
+});
+
+test('a guard mid-crossing (in the doorway) is not shut in when a barred player arrives', () => {
+    const { gates, a, guard } = setup();
     guard.x = 100; guard.y = 140;
     gates.update(0);                                  // opens (player far)
-    assert.equal(a.body.enable, false);
-    behaviour.currentPath = [{ x: 100, y: 100 }];     // his path crosses the doorway
-    window.player = { x: 100, y: 150 };               // now a barred player arrives
+    guard.y = 100;                                    // in the doorway
+    window.player = { x: 100, y: 150 };               // barred player arrives
     gates.update(100);
-    assert.equal(a.body.enable, false, 'stays open while he crosses, barred player notwithstanding');
+    assert.equal(a.body.enable, false, 'stays open while he is in the doorway');
+    assert.equal(gates.closeNow('vault', { force: true, now: 150 }), false, 'even a forced close waits for him');
+    assert.equal(a.body.enable, false);
+    guard.y = 40;                                     // through, out of the doorway
+    gates.update(200);
+    assert.equal(a.body.enable, true, 'then the barred player shuts it');
+});
+
+test('a guard only walking towards the gate does not hold it open for a barred player', () => {
+    // His planned path crosses the doorway, but he is not in it: shut, or the
+    // undisguised player could follow him through.
+    const { gates, a, guard, behaviour } = setup();
+    guard.x = 100; guard.y = 150;
+    gates.update(0);
+    assert.equal(a.body.enable, false);
+    behaviour.currentPath = [{ x: 100, y: 140 }, { x: 100, y: 100 }, { x: 100, y: 20 }];
+    window.player = { x: 120, y: 145 };
+    gates.update(100);
+    assert.equal(a.body.enable, true);
+});
+
+test('disguised play is unchanged: the gate opens beside him at once and nobody turns back', () => {
+    const { gates, a, guard, behaviour } = setup();
+    window.gameState.globalVariables.disguised = true;
+    window.player = { x: 100, y: 150 };
+    guard.x = 100; guard.y = 140;
+    gates.update(0);
+    assert.equal(a.body.enable, false);
+    gates.update(GUARD_TURN_BACK_MS * 2);
+    assert.equal(behaviour.turnBacks.length, 0);
 });
 
 test('closeNow: forced close skips the crossing hold, keeps the doorway hold, stays shut a while', () => {

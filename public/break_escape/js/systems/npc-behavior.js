@@ -1551,6 +1551,7 @@ class NPCBehavior {
         this.pathFollowingActive = false;
 
         const segmentAtRequest = currentSegmentIndex;
+        const targetAtRequest = this.patrolTarget;
         const { x: mrnx, y: mrny } = this.npcBodyPos();
         const mrSnapped = pathfindingManager.findNearestWalkableStartCell(mrnx, mrny)
                           || { x: mrnx, y: mrny };
@@ -1562,6 +1563,8 @@ class NPCBehavior {
             dest.y,
             (path) => {
                 this._pathfindingInProgress = false;
+                // Turned back at a gate (turnBackFromGate) while this request was in flight
+                if (this.patrolTarget !== targetAtRequest) return;
                 if (path && path.length > 0) {
                     this._pathRetryAfter = 0;
                     this.currentPath = path;
@@ -1710,6 +1713,59 @@ class NPCBehavior {
 
         // Choose waypoint in new room
         this.chooseNewPatrolTarget(time);
+    }
+
+    /**
+     * Does this route walker's current leg take him across the gate described by
+     * `gate` ({ roomId, connectedRoom })? True when his route segment is in the
+     * gate's other room from the one he stands in. door-gates asks this before
+     * timing a held guard, so a guard who only dwells beside a gate is never
+     * turned back.
+     */
+    wantsToCrossGate(gate) {
+        const patrol = this.config?.patrol;
+        if (!patrol?.enabled || !patrol.multiRoom || !patrol.route?.length) return false;
+        const target = patrol.route[patrol.currentSegmentIndex]?.room;
+        const here = this.roomId;
+        if (!target || !here || target === here) return false;
+        const rooms = [gate?.roomId, gate?.connectedRoom];
+        return rooms.includes(target) && rooms.includes(here);
+    }
+
+    /**
+     * door-gates: the gate this guard wants to cross has been held shut against him
+     * (an undisguised player at his shoulder, or a recent force-shut). He gives up
+     * this crossing: glances at the player, then resumes his route at the next
+     * segment in the room he is in, as though the far room's leg were done. His
+     * patrol never stops, and he tries the door again on his next cycle.
+     * @returns {boolean} true if he turned back
+     */
+    turnBackFromGate(gate) {
+        if (!this.wantsToCrossGate(gate)) return false;
+        const patrol = this.config.patrol;
+        const route = patrol.route;
+        let resume = -1;
+        for (let k = 1; k <= route.length; k++) {
+            const i = (patrol.currentSegmentIndex + k) % route.length;
+            if (route[i]?.room === this.roomId) { resume = i; break; }
+        }
+        if (resume < 0) return false;
+        console.log(`↩️ [${this.npcId}] Gate to ${route[patrol.currentSegmentIndex].room} held shut: turning back to ${route[resume].room} segment ${resume}`);
+        patrol.currentSegmentIndex = resume;
+        patrol.waypointIndex = 0;
+        this.patrolTarget = null;
+        this.currentPath = [];
+        this.pathIndex = 0;
+        this.pathFollowingActive = false;
+        this.patrolReachedTime = 0;
+        this._pendingRouteAction = null;
+        this._routeWait = null;
+        this._haltForRoute();
+        // A beat facing the player who held the door before walking off
+        const p = window.player;
+        if (p) this.facePlayer?.({ x: p.body?.center?.x ?? p.x, y: p.body?.center?.y ?? p.y });
+        this._pathRetryAfter = this.clockNow() + 1000;
+        return true;
     }
 
     /**
