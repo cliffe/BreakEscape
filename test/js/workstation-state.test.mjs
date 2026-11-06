@@ -167,3 +167,25 @@ test('install resets saved away/locked globals to false (a reload puts every own
     assert.deepEqual(globals, { pc_a_owner_away: false, pc_a_screen_locked: false, pc_b_owner_away: false, pc_b_screen_locked: false, other: true });
     assert.equal(ws.onInteract('pc_a'), 'attended');
 });
+
+test('install resets a workstation in an unloaded room by its saved global pair (lab staff_pc_2 after a reload)', () => {
+    // Only pc_a's room is loaded; staff_pc_2's globals came back with the save. A lone
+    // *_owner_away with no *_screen_locked partner is not a workstation's and is left alone.
+    const globals = {
+        pc_a_owner_away: true, pc_a_screen_locked: true,
+        staff_pc_2_owner_away: true, staff_pc_2_screen_locked: false,
+        guard_owner_away: true, other: true
+    };
+    const env = {
+        objects: () => [{ id: 'pc_a', workstation: true }],
+        npcs: () => [{ id: 'ann', needsHome: 'pc_a' }],
+        globals: () => globals,
+        on: () => {}, emit: () => {}, setGlobal: (k, v) => { globals[k] = v; }, roll: () => 0.5
+    };
+    new WorkstationState(env).install();
+    assert.deepEqual(globals, {
+        pc_a_owner_away: false, pc_a_screen_locked: false,
+        staff_pc_2_owner_away: false, staff_pc_2_screen_locked: false,
+        guard_owner_away: true, other: true
+    });
+});

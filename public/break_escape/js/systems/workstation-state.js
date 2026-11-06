@@ -34,7 +34,9 @@
  * Generic: this module knows nothing of what a workstation holds. State is not saved across a
  * reload (the needs system restarts with the NPCs at their posts), so it resets to "owner
  * present, screen open", and install() writes both globals false for every workstation so a
- * save taken during an absence does not keep the "away" or "locked" text. Objects are found on demand (live room sprites first, then the
+ * save taken during an absence does not keep the "away" or "locked" text (stations in rooms not
+loaded yet included, found by name: every saved `<id>_owner_away` / `<id>_screen_locked` pair).
+Objects are found on demand (live room sprites first, then the
  * scenario), because rooms and their objects load lazily.
  */
 
@@ -98,6 +100,18 @@ export class WorkstationState {
             if (!isWorkstation(data) || seen.has(data.id)) continue;
             seen.add(data.id);
             this._publish(data);   // the away map is empty here: both globals false
+        }
+        // Workstations in rooms not loaded yet: the client has no objects for them (the bootstrap
+        // scenario strips room contents), but their globals came back with the save. _publish
+        // always writes the pair, so a prefix with both <id>_owner_away and <id>_screen_locked
+        // is a workstation's; reset it by name.
+        const g = typeof this.env.globals === 'function' ? (this.env.globals() || {}) : {};
+        for (const key of Object.keys(g)) {
+            const m = /^(.+)_owner_away$/.exec(key);
+            if (!m || seen.has(m[1]) || !(`${m[1]}_screen_locked` in g)) continue;
+            seen.add(m[1]);
+            this.env.setGlobal(`${m[1]}_screen_locked`, false);
+            this.env.setGlobal(`${m[1]}_owner_away`, false);
         }
     }
 
@@ -194,6 +208,7 @@ export function installWorkstationState() {
     };
     const env = {
         objects, npcs,
+        globals: () => w.gameState?.globalVariables || {},
         on: (p, cb) => w.eventDispatcher?.on(p, cb),
         emit: (n, d) => w.eventDispatcher?.emit(n, d),
         setGlobal: (k, v) => {

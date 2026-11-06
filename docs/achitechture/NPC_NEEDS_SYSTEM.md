@@ -468,11 +468,13 @@ The decision log never contains payload contents (only `payloadPresent`).
 - Dropped items: see section 6.
 - Globals set by `onUse` and by scenario mappings persist as usual.
 - Workstation globals (`<id>_owner_away`, `<id>_screen_locked`, `workstation-state.js`)
-  are written false at install for every workstation in a room loaded at that point.
-  **Open gap (2026-11-06):** a workstation whose room is not loaded at install (the lab's
-  open plan, since a reload restarts in the briefing room) keeps the saved value until
-  its owner next leaves and returns, so its "away" text can show while the owner sits at
-  the desk. `onInteract` still answers "attended", so no access event fires.
+  are written false at install for every workstation in a room loaded at that point, and
+  **by name for the rest** (2026-11-06): the bootstrap scenario carries no objects for
+  unloaded rooms, so install also resets every saved `<id>_owner_away` whose
+  `<id>_screen_locked` partner is in the globals too (`_publish` always writes the pair).
+  This closes the gap where the lab's `staff_pc_2` (open plan, unloaded after a reload
+  into the briefing room) read "walked off without locking" while Melanie sat at it. A lone
+  `*_owner_away` global with no partner is not touched.
 
 ---
 

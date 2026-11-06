@@ -1048,7 +1048,10 @@ job and its end never move the NPC (b6b579e39). (2) The reload reset at install 
 workstations in rooms loaded then; room objects are not in `gameScenario.rooms` before the room
 loads, and the lab restarts in the briefing room, so `staff_pc_2_owner_away` stayed true after a
 reload and Melanie's PC read "walked off without locking" while she sat at it (`onInteract` said
-"attended", so no capture). **Open**: needs a room-load hook (R3 m1) or a reset by global name.
+"attended", so no capture). **Fixed 2026-11-06 (follow-up):** install also resets by name every
+saved `<id>_owner_away` / `<id>_screen_locked` pair, which covers workstations in unloaded rooms
+(the client never has their objects: the bootstrap strips room contents); node test in
+`workstation-state.test.mjs`.
 Live, :3001, headless, load about 40: `test_needs_sims` games 552-553 (Amara and Tom seated through
 every own-desk use; caught at Tom's desk at 9 px, bark, task), `lab_physical_pentest` game 555
 (Pierce and Hampshire seated through own-desk work; Melanie's PC "attended" during her work and
