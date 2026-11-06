@@ -6,8 +6,8 @@ and amended the same day for social compatibility and a room leash (section 7, n
 then revised on 2026-11-06 after the amendment's review (`OFFICE_LIFE_PLAN_REVIEW_AMEND1.md`;
 outcomes in section 8). Built: slices 0, 1, 2, 2a, 3, 3b, 4, 5, 7, 8, 10, 11, 14 and 15 (Built
 lines in 2.0-2.5, 2.10-2.12, 7.2, 7.3 and sections 9-11). Not chosen: 6, 9, 12, 13. Section 12
-(slices 16-21, added 2026-11-06): review complete after five rounds (sections 13-13e); awaiting the
-user's decisions.** Line numbers
+(slices 16-21, added 2026-11-06): review complete after five rounds (sections 13-13e); the user's
+decisions are in (2026-11-06, section 13f), and building starts with slice 21.** Line numbers
 drift as slices land; the function names are the stable reference. Engine changes
 need the user's approval (AGENTS.md); so does any new art or audio (marked **[approval]**). Builds on the needs system (`NPC_NEEDS_SYSTEM.md`), seating (`SEATING.md`) and the
 showcase `scenarios/test_needs_sims`, which becomes the test bed for every slice below.
@@ -2567,8 +2567,10 @@ Fix 28422d70a: the "empty bubble" beside chatter lines was the press-to-talk ico
 ## 12. Addition 2026-11-06: player levers, lock-screen habits, print and forget, desk phones, room tone, idle swivel (slices 16-21)
 
 **Status: plan only, nothing built. Review complete: five rounds (`OFFICE_LIFE_PLAN_REVIEW_S12_R1.md` to
-`_R5.md`; outcomes in sections 13, 13b, 13c, 13d and 13e). Awaiting the user's decisions on the open
-questions (12.9) and the approval table (12.8).** The
+`_R5.md`; outcomes in sections 13, 13b, 13c, 13d and 13e). The user's decisions are in (2026-11-06):
+every item in the approval table (12.8) is approved, the open questions (12.9) are answered, and three
+answers changed the plan (magnets are dropped anywhere, the idle motion is mostly a chair roll, the new
+art is one PixelLab sheet; section 13f). Building starts with slice 21.** The
 user picked these on 2026-11-06, in this order:
 
 1. **Lock-screen habits**, with "some visual or audio cue when lock screen is locked and unlocked so
@@ -2763,6 +2765,32 @@ bigger glow. `expectedAwayMs` is a lower bound (`NPC_NEEDS_SYSTEM.md` 7), so a t
 threshold can stay open; it is still seeded, so a day replays the same. In the lab, Chris locks on
 every leave (object field), so his chime would play on every coffee run; the lab session decides
 whether to keep `lockCues` on.
+
+**Per-NPC credentials and desktops (the user's note on OQ28, checked 2026-11-06; not part of slice 16).**
+The user asked whether each NPC could have its own credentials and desktop, reusing the remote desktop
+the SE lab gives for a phished foothold. That desktop is not a minigame of its own. It is a declared
+grant: the timer `grant_remote_session` (`lab_social_engineering/scenario.json.erb` 170-234) starts on
+`phish_lord_foothold` and runs `give_item` with a `pc`-type item that has `hasContents`; the server
+stores the scenario's copy and serves its contents, and the unlock of a nested password-locked archive
+whose `requires` is her password, while the player holds it (`DECLARED_GRANTS_PLAN.md`); the container
+minigame shows it as a desktop because of the type (`container-minigame.js` 23-24, 114-123).
+- **Reuse for an open screen is free.** `workstation-state.js` 179 already sets `<objId>_accessed` when
+  the player sits at an open screen with the owner away, so a timer with `startOnGlobal:
+  "<objId>_accessed"` can grant "Melanie's session" with her files. Data only, no engine lines.
+- **Per-NPC credentials fit the same item**: a file in the session can hold a login, and a locked
+  archive inside it can take that NPC's password as `requires`, exactly as Sofia's archive does.
+- **Logging in at a locked screen needs engine work.** The object's own `locked`/`requires` lock cannot
+  model it: the server validates that lock and keeps it open for good, while a screen locks and unlocks
+  with every trip. It would need a `screenPassword` on the workstation, the existing password minigame
+  opened from `workstation_locked_attempt`, and on success the same `<objId>_accessed` write. Two gaps
+  remain: there is no `remove_item` action (`apply-actions.js`), so a sat-down session stays in the
+  inventory after the owner returns (right for a remote foothold, wrong for a borrowed chair), and a
+  declared grant can be claimed at any time (`DECLARED_GRANTS_PLAN.md` 3.2), so the password check at
+  the screen would be client side, like the drop and timer gates today.
+- **Where it goes:** a separate follow-on slice, **16b, per-NPC sessions** (about 70 lines: the screen
+  password through the password minigame 30, ending a sat-down session when the owner returns 25,
+  validator 15), not scheduled until the user picks it. Slice 16 keeps its size. Its README may show the
+  data-only open-screen grant as an authoring example, since that costs no engine lines.
 
 ### 12.3 Print and forget (slice 17)
 
@@ -3141,18 +3169,22 @@ the turn-back bubble, the walk to the kitchen.
    `<magnetId>_servings`, declared in `globalVariables` at the starting count (globals sync, and the
    server takes any key that is not an imported global; saved through the periodic sync and the
    pagehide flush, `state-sync.js` 126-148). When the last serving is taken and every NPC still
-   `using` the magnet has finished, the engine hides the magnet (`hideRevealedObject`), sets its reveal global false (so a reload keeps
-   it gone), logs `magnet_finished` and emits `magnet_finished:<magnetId>`. A walker turned back with
+   `using` the magnet has finished, the engine takes the magnet away, logs `magnet_finished` and emits
+   `magnet_finished:<magnetId>`. A dropped magnet (the usual case, OQ31) is removed as a room object
+   through the path an NPC's `consumeHeld` already uses (`RoomStateSync.removeItemFromRoom`), so the
+   server forgets it; a magnet at a declared spot is hidden (`hideRevealedObject`) with its reveal
+   global set false. Either way a reload keeps it gone. A walker turned back with
    `gone` grumbles from `grumble_gone` ("Missed it."); an untempted one falls back or parks, a tempted
    one (`job.tempted`) does neither. **One slice each:** `magnet.perPerson` (default 1) is how many servings
    one NPC takes before the magnet stops tempting it; a plain urgent need may still use it. Without
    this, an NPC starting at 25 with `restores: 40` ends at 65, still inside a band of 70, and eats
    again at once. Eaters are remembered client side, so after a reload someone may have one more.
-   **Redeploying:** when a magnet's reveal global turns true while its servings are 0, the engine
-   refills them, so a second pizza at the same spot is a full one. **A reload between the last serving
+   **Redeploying:** at a declared spot, when a magnet's reveal global turns true while its servings
+   are 0, the engine refills them, so a second pizza at the same spot is a full one. A dropped magnet
+   is gone once finished; a second one is a second item with its own id and servings global. **A reload between the last serving
    and the last eater** would restore 0 servings with the reveal global still true, and nobody would
    ever finish it. So at install, and whenever nobody is using it, a shown magnet at 0 servings finishes
-   (hidden, global false, `magnet_finished`).
+   (taken away as above, `magnet_finished`).
 7. **A hidden object is not a use target.** `_useCandidate` skips an object whose `revealOnGlobal`
    global is not true (today `listObjects` 2238-2252 lists it). Hidden is read from the global, not
    from `visible`, which other code toggles. No shipped scenario has a hidden object with an
@@ -3169,26 +3201,56 @@ declared object or a held droppable item can become a room object.
 | **B. Deploy at a declared spot** | A declared spot (a kitchen table) with `triggerOnInteract`, `requiresItem: "pizza"` and `consumesItem: true` runs `set_global kitchen_pizza_out`; a declared magnet object with `revealOnGlobal: kitchen_pizza_out` appears on the table (`interactions.js` 797-846, `core/rooms.js` 2970) | Existing primitives end to end (the lab's keylogger uses the same three fields); saved through one global; fixed position, so the validator can check approach cells, the leash and the announce pool; it sits on the table | One declared magnet per spot; the player can put it only where the scenario offers; the trigger replaces the table's normal click, which is acceptable for a table |
 | C. Drop with snapping | A, but the drop point snaps to a declared spot nearby | Free and tidy | A change to `item-drop.js` and the drop path, for little over B |
 
-**Recommended: B.** It needs no server change and nothing new in `interactions.js`, it survives a
-reload, and every magnet is a declared object the validator can check. Two spots (kitchen table,
-meeting-room table) are two declared magnets sharing one inventory item; whichever the player uses
-first consumes it. A also works with the engine as planned (it is any object with
-`affordance.magnet`), but the validator warns on a magnet on a `droppable` or `takeable` item.
-**Discoverability:** the table's own observations are never shown (it has a `triggerOnInteract`,
-which returns before the observation step, `interactions.js` 820-846, and the examine view skips it,
-`examine.js` 6-12). So the hint that the table takes food goes on the item's description ("Pizza for
-the office. The kitchen table is where people leave food to share.") and in `requiresItemHint`, which
-does show when the player clicks the table without the pizza. Once the pizza is out, a click shows that
-hint again; accepted (a mapping can instead remove the spot's trigger once the global is true).
+**Chosen by the user: A, drop it anywhere (2026-11-06), with B kept as a second, optional way.** The
+user wants the player to put a magnet out the way the lab's USB stick and QR code go down: click it in
+the inventory and it lands at the player's feet. That path exists end to end.
+`item-drop.js` (`dropInventoryItem`) places a held `droppable` item at the nearest walkable cell within
+two tiles of the player's feet (`dropPoint`), emits `item_dropped:<itemId>` `{ itemId, tag, roomId, x, y }`
+and saves it with `sourceType: 'player_drop'`; the server accepts that only for a held droppable item
+and saves **the held copy**, so the item's own `affordance` (and its `magnet` block) travels with it,
+with only the placement taken from the client (`game.rb` 427-440). The adapter's `listObjects`
+(`npc-needs.js` 2238-2252) already lists any room object with an affordance, so a dropped magnet is a
+use target with no new placement code. What 18b-i adds for drops:
+- **The magnet is the item.** The pizza in the inventory is `droppable: true` and carries
+  `affordance.magnet`. It has a fixed `id` (validator error without one: `dropInventoryItem` would
+  otherwise name it `dropped_<type>_<Date.now()>`, which breaks the `<id>_servings` global and the
+  object order the decision log depends on) and **no `needsTag`** (validator error: an NPC with a
+  matching interest would pick it up and carry it off, `npc-needs.js` 1239).
+- **Placed:** on the drop, the engine emits `magnet_placed:<id>` `{ roomId, x, y, how: "drop", reachable }`,
+  where `reachable` lists the NPCs with a need it satisfies whose leash and privacy allow that room. With
+  nobody, it logs `magnet_unreachable`, so a pizza in a store room nobody may enter is explained in the
+  log and a mapping can hint at it.
+- **Picked up again:** allowed; taking the pizza away is a lever too. The room object goes the usual way,
+  so walkers turn back with `gone`, an NPC `using` it finishes at once (the serving it took is eaten),
+  and every NPC's knowledge of it is cleared, so a re-drop is learnt again by sight or word. The servings
+  global keeps its count across the pickup.
+- **Finished:** removed as a room object (point 6), not hidden.
+
+**B, a declared spot,** stays as written above for a scenario that wants food on one table: it costs the
+hidden-object rule (point 7), the refill and the spot checks in the validator, about 35 lines, and can be
+cut if the build runs long. C is dropped. **Discoverability** for A: the item's description says where
+people eat ("Pizza for the office. Put it out where people will see it; the kitchen is a good bet."). For
+B, the table's own observations are never shown (its `triggerOnInteract` returns before the observation
+step, `interactions.js` 820-846, and the examine view skips it, `examine.js` 6-12), so the hint goes in
+`requiresItemHint`.
 
 **Authoring.**
 
 ```jsonc
 // scenario level: the announce pool lives in scenario JSON, voiced for any NPC (11.2)
 "chatter": { "news_pizza": ["There's pizza in the kitchen!", "Someone brought pizza in."] },
-"globalVariables": { "kitchen_pizza_out": false, "kitchen_pizza_servings": 2 },
+"globalVariables": { "pizza_servings": 2 },
 
-// the spot: deploy the carried item here
+// A (chosen): the magnet is the held item; the player drops it anywhere
+// (startItemsInInventory, or a give_item)
+{ "id": "pizza", "type": "pizza_boxes1", "name": "Pizza", "droppable": true,
+  "observations": "Pizza for the office. Put it out where people will see it; the kitchen is a good bet.",
+  "affordance": { "satisfies": ["hunger", "social"], "restores": 40, "useSeconds": 12, "capacity": 3,
+                  "chatter": "pizza", "useSound": "eat_snack",
+                  "magnet": { "tempt": 30, "servings": 2, "perPerson": 1, "announce": "news_pizza", "newsRadius": 5 } } }
+
+// B (optional): a declared spot, with "kitchen_pizza_out": false and "kitchen_pizza_servings": 2
+// in globalVariables. The spot: deploy the carried item here
 { "id": "kitchen_table", "type": "glass_coffee_table1", "name": "Kitchen table",
   "triggerOnInteract": [{ "type": "set_global", "key": "kitchen_pizza_out", "value": true }],
   "requiresItem": "pizza", "requiresItemHint": "Somewhere to put food out.", "consumesItem": true },
@@ -3205,29 +3267,38 @@ wider early-return guard 40, the parking rules, the quiet look and `job.tempted`
 lock wait, retry and the empty-room skip 70, servings at `using` start, `perPerson`, refill and finish
 45, the `gone` reason in 18a's check 10, hidden objects skipped 5, the `news` picture topic 5,
 `_wakeParkedFor` 10. Adapter about 15 (hide a
-finished magnet, the global write). Validator about 65: a magnet must be a declared, non-takeable object
-with its own `revealOnGlobal`, and some spot's `triggerOnInteract` must set that global with
+finished magnet, the global write). Validator about 65: a magnet declared as a room object (the spot
+way; a droppable item is checked by the drop rules below) must be non-takeable, with its own `revealOnGlobal`, and some spot's `triggerOnInteract` must set that global with
 `requiresItem` naming an item the player can hold (`startItemsInInventory` or a `give_item`) and
 `consumesItem: true` (error); `announce` names a scenario-level pool with lines (error), each at most 40
 characters with no `{ }` (the existing pool checks); `<id>_servings` declared and equal to `servings`
 (error); `satisfies` names a need some NPC has (warning, naming those who will never come); the magnet's
-room forbidden to every NPC with the need (warning); a magnet on a `droppable` or `takeable` item
-(warning: unsupported). Schema about 30 (`affordance.magnet`). No server change. With the quiet look's
+room forbidden to every NPC with the need (warning). Schema about 30 (`affordance.magnet`). No server change. With the quiet look's
 back-off, the starved exclusion, the reload finish and the sight cache (about 15 more in
 `npc-needs.js`, so 245 + 15 = 260 there), these parts sum to about 370 lines (260 + 15 + 65 + 30), so
-18b is built as two slices (245 + 125 = 370), each with its own live proof:
+18b is built as two slices (245 + 125 = 370), each with its own live proof.
 
-- **18b-i, the magnet** (about 245, with the reload finish and the sight cache): the magnet object and hidden objects not targets, sight,
-  temptation with the parking rules, the quiet look and `job.tempted`, servings, `perPerson`, refill and
-  finish, the `gone` reason, the wider `_select` guard, the validator's magnet, spot, item and servings
-  checks, the schema. Proof: the player puts the pizza out; the people told in the office walk over
-  together; two eat, the boxes empty, and the third turns back with "Missed it." (two servings, three
-  hungry NPCs, no staging).
+**Dropping, added after the user's decision (OQ31, 2026-11-06): about 70 more lines in 18b-i.**
+`npc-needs.js` about 35 (`magnet_placed` with `reachable` and `magnet_unreachable` 15, the pickup:
+walkers `gone`, an eater finishing at once and knowledge cleared 15, a dropped magnet live while it is a
+room object 5); adapter about 10 (finish a dropped magnet through the `removeItemFromRoom` path);
+validator about 20 (a droppable magnet item has an `id` and no `needsTag`, errors; the player can hold it;
+`<id>_servings` declared; this replaces the old "unsupported" warning); schema about 5 (`affordance` on
+an inventory item). No server change and nothing in `item-drop.js`. **18b-i is now about 315 (245 + 70),
+L**; dropping the optional declared spot would save about 35.
+
+- **18b-i, the magnet** (about 315, with the reload finish, the sight cache and dropping): the magnet
+  item dropped anywhere, `magnet_placed`, pickup, the optional declared spot with hidden objects not
+  targets, sight, temptation with the parking rules, the quiet look and `job.tempted`, servings,
+  `perPerson`, refill (spot) and finish, the `gone` reason, the wider `_select` guard, the validator's
+  magnet, drop item, spot and servings checks, the schema. Proof: the player drops the pizza in the
+  kitchen; the people told in the office walk over together; two eat, the boxes empty, and the third
+  turns back with "Missed it." (two servings, three hungry NPCs, no staging).
 - **18b-ii, word of mouth** (about 125): telling, the announce with the lock wait, retry and empty-room
   skip, the `news` picture, `_wakeParkedFor`, `npc_told`, the validator's announce-pool checks. Proof:
   the announce bubble in the office, the TTS request, the hearers who get up.
 
-**What the player sees and hears.** The player sets the pizza boxes on the kitchen table. Nobody is
+**What the player sees and hears.** The player puts the pizza boxes down in the kitchen. Nobody is
 in the kitchen, so nothing happens until someone comes in: Grace for water, or Tom, whose own hunger
 takes him to the kitchen. Grace has no hunger or social need and leaves the pizza alone, but back at
 her desk she says "There's pizza in the kitchen!" and the three in the office who want food, Tom,
@@ -3236,9 +3307,11 @@ to an empty box. Marek, at the cooler later, sees it too and does nothing: no ne
 to act on, and nobody who will listen to him. The boxes empty, and a late arrival turns back:
 "Missed it."
 
-**Showcase.** `test_needs_sims`: `pizza` (`pizza_boxes1`, already in `assets/objects`) in the start
-inventory, with a description that mentions the kitchen table; a declared `kitchen_table` spot and the
-`kitchen_pizza` magnet with **`servings: 2`**; a `news_pizza` pool and a `pizza` chatter pool. **Amara
+**Showcase.** `test_needs_sims`: `pizza` (`pizza_boxes1`, already in `assets/objects`; the cake
+sprite once the art sheet lands, OQ46) in the start inventory as a droppable magnet with
+**`servings: 2`**, its description pointing at the kitchen; the player drops it there (or anywhere);
+a `news_pizza` pool and a `pizza` chatter pool. The declared spot is shown only by a validator
+fixture and a node test, not by a showcase beat. **Amara
 gains a hunger need**, `{ "decayPerMin": 1, "urgentAt": 40, "initial": 65 }`: inside the tempt band
 (40 + 30 = 70) from the start, so the office announce sends Tom, Sanjay and Amara at once, two eat and
 one turns back with "Missed it." without staging. At 1 point a minute her hunger does not reach
@@ -3252,7 +3325,8 @@ minutes of the pizza going out, as slice 16's threshold is checked, and adjusts 
 (Tom's hunger and Grace's thirst both come due at about 2.5 minutes), so the objective "Word gets round"
 is a mapping per NPC on `npc_told:<id>` (Tom, Sanjay, Amara), each completing the same task, and the
 task's text says that whoever finds the pizza tells the office. "The pizza runs out" on
-`magnet_finished:kitchen_pizza`. The README states that Marek never comes (no hunger or social need),
+`magnet_finished:pizza`. The five-minute check assumes a drop in the kitchen; a drop elsewhere is
+the player's choice and may draw nobody (the `magnet_placed` event's `reachable` says who could come). The README states that Marek never comes (no hunger or social need),
 and that Tom's and Sanjay's hunger start at 65 and 64, already inside a band of 70, so for them
 temptation reads as "goes at once".
 
@@ -3270,11 +3344,21 @@ magnet's first `satisfies`; an NPC that learns mid-job does not retarget; capaci
 one eats, two turn back with `gone`, the count ends at 0; `perPerson: 1` stops a second helping by
 temptation; servings save to the global and a redeploy at 0 refills; a fresh system with the reveal
 global false sees no magnet; a hidden object is not a candidate; determinism; the sims-day log
-byte-identical with no magnets. Validator: one fixture per check. Live: the player puts the pizza out
-with the kitchen door open; screenshots of the first eater, the announce bubble in the office, two NPCs
-chatting at the boxes, the empty table; the play log of the voiced announce (keyless :3001 returns 503,
-so the request is the proof, as in slice 15); a reload mid-meal keeps the servings count. Then the
-leash and lab regressions.
+byte-identical with no magnets. Dropping (stub world, the magnet placed at fixed coordinates as the
+drop would place it): a dropped magnet is a candidate with no spot or reveal global; `magnet_placed`
+lists only NPCs whose leash and privacy allow the room, and a drop in a room nobody may enter logs
+`magnet_unreachable` and draws nobody; a pickup turns walkers back with `gone`, ends a use at once and
+clears knowledge, and a re-drop is learnt again only by sight or word; the servings count survives a
+pickup and re-drop; a finished dropped magnet is removed through the room-removal path and is absent
+after a reload; two runs with the same drop point give the same decision log. Validator: one fixture
+per check, including a droppable magnet without an `id` and one with a `needsTag`. Live: the player
+drops the pizza in the kitchen with the door open; screenshots of the first eater, the announce bubble
+in the office, two NPCs chatting at the boxes, the empty floor; one drop in a room every hungry NPC's
+leash forbids (nobody comes; `magnet_unreachable` in the log); one pickup mid-meal (eaters stop,
+walkers turn back); the play log of the voiced announce (keyless :3001 returns 503, so the request is
+the proof, as in slice 15); a reload mid-meal keeps the servings count and the pizza where it was
+dropped. Then the leash and lab regressions (the lab's USB and QR drops must behave as before: they
+carry a `needsTag` and no affordance, so the new code never sees them).
 
 **Risks.** A stampede: capacity, servings at `using` start and one announcement per knower keep it
 staggered. Pairing is one pair per object (slice 8 choice 4), so a third eater is silent; group chat is
@@ -3282,6 +3366,28 @@ not in this slice. A magnet near a leashed room can go unvisited; the validator 
 static case, and the parking rules keep a leashed, told NPC's level as it was. An announce line names a
 room ("in the kitchen"), so each spot's magnet has its own pool; `{ }` variables are not allowed in
 spoken lines.
+
+New risks from dropping anywhere (OQ31), checked against the rules above:
+- **Wrong room in the line.** A dropped pizza can be anywhere, but the pool says "in the kitchen". The
+  showcase's pool says where it was meant to go; a scenario that expects drops in several rooms writes
+  room-free lines ("Someone brought pizza in."). Validator: none possible; noted in the README.
+- **Leash and privacy** now apply at run time only: the static "room forbidden" warning cannot see a
+  drop. `magnet_placed` with `reachable`, and `magnet_unreachable`, make a dead drop visible in the log;
+  the parking rules still keep a told, leashed NPC's level as it was. Avoidance works as before, so
+  a pizza dropped beside someone others avoid draws fewer people, which is a lever, not a bug.
+- **Claims and capacity on open floor.** A dropped item has no `useFrom`, so `approachCell` finds one
+  walkable cell near it (`npc-needs.js` 2258-2262); where the second and third eaters stand with
+  `capacity: 3` is unverified, and a drop in a narrow corridor may block the way. The build checks
+  three eaters on open floor and in a corridor before the live proof, and lowers the showcase's
+  `capacity` if they stack.
+- **Servings global** is keyed on the item's scenario id, so the `id` rule above is required; the
+  server keeps that id on the drop (`game.rb` 427-440).
+- **Determinism.** The drop point comes from the player, so a magnet run's log depends on where the
+  player stood; with the same point it replays the same. `GOLDEN_SIMS_DAY` has no magnet and no drop,
+  so it does not move.
+- **Pickup as an exploit.** Picking the pizza up mid-meal and dropping it elsewhere drags the office
+  round the building. Each re-drop must be learnt again, and `perPerson` still caps servings, so it
+  costs the player time and gains little.
 
 ### 12.5 Desk-phone calls (slice 19)
 
@@ -3778,7 +3884,26 @@ heard through an open door, that is a second channel and about 30 more lines.
 
 ### 12.7 Idle swivel (slice 21)
 
-**Design.** A seated needs NPC on a swivel chair now and then turns its chair a little and back.
+**The user's note (2026-11-06, OQ45):** "Do some small rolling motions mostly along x with just a
+little swivel very occasionally." So the idle motion is mostly a **chair roll along x**, and the
+swivel below becomes rare.
+
+**The roll.** It already exists: `fidgetChair` and `fidgetOffset` (`seating.js` 912-948) roll a seated
+NPC's swivel chair up to 3 px sideways and 2 px back, relative to its facing, every 4 to 11 s, eased
+over 700 ms, using `Math.random`. Slice 21 retunes it rather than adding a second motion:
+- **Mostly x on screen.** `fidgetOffset` returns `x` within ±3 px and `y` within ±1 px in screen
+  terms, never towards the desk: for a chair facing east or west, `x` moves only away from the desk,
+  up to 2 px.
+- **Out and back.** Each roll goes out, holds 1 to 2 s, and eases back to where the NPC sat down, in
+  place of today's 30% chance of returning.
+- **Held** under the same conditions as the swivel (the "When" list below: a call, a pairing, a line,
+  typing, a chat with the player), not only during a chat with the player as today.
+- **Cosmetic and unseeded** (OQ34): it keeps `Math.random`, is outside the decision log and emits no
+  event. It moves only the chair and figure sprites (`placeBody` as today), never the NPC's position
+  for pathing.
+
+**The swivel**, now rare. A seated needs NPC on a swivel chair very occasionally turns its chair a
+little and back.
 No new frames: `setChairFacing` (301-310) already turns the chair, and the atlases have all eight
 seated facings. Only Tiled map chairs are swivels (`core/rooms.js` 2546-2549); a scenario-placed
 chair is a static seat and never turns, so the lab's staff, on static seats
@@ -3791,11 +3916,15 @@ chair is a static seat and never turns, so the lab's staff, on static seats
   the chair sets `behavior.direction` (`seating.js` 1211), which LOS cones read (`npc-los.js` 163).
   No seated needs NPC has `los` today; the validator warns if one gets both.
 - **How, deterministic and cheap.** The needs clock is cut into 6 s slots. Each slot, a seeded roll
-  `roll(npcId, 'swivel:' + slot)` below `swivelChance` (default 0.25) turns the chair one compass
+  `roll(npcId, 'swivel:' + slot)` below `swivelChance` (default **0.05**, about once in two minutes,
+  lowered from 0.25 for the user's "very occasionally") turns the chair one compass
   step left or right (the same roll picks which, and a hold of 2 to 4 s), snapped to the chair's
   valid facings, then back to `homeFacing`. A pure function, `swivelFacing({ state, clockMs,
   homeFacing, valid, roll })`, gives the facing for any moment, so a frame never stores state and a
-  reload replays the same. It stops with the needs clock, as the typing bob does.
+  reload replays the same. It stops with the needs clock, as the typing bob does. The swivel stays
+  on the keyed roll, not `Math.random`, because its rate and the `npc_swivelled` event are tested;
+  `roll` draws from its own stream (`npc-needs.js` 262-270), so it moves no other roll and no
+  decision-log line, which keeps OQ34's intent.
 - **Listening.** If an NPC in the same room within four tiles is speaking, the chair turns towards the
   speaker instead, for the line's length, with no roll. The needs system builds a speakers list
   (`{ npcId, roomId, x, y, until }`, call speakers included, so colleagues look round at Tom on the
@@ -3803,28 +3932,31 @@ chair is a static seat and never turns, so the lab's staff, on static seats
   `getState()` (which builds a large object, 2046-2068) for every pair of NPCs every frame.
 - **Off switches.** NPC `swivel: false`; scenario `"officeVisuals": false`. On by default for needs
   NPCs: it only turns chairs that seating already turns.
-- **Not touched.** The chair fidget keeps its `Math.random` (cosmetic, outside the decision log);
-  OQ34.
+- **Not touched.** The roll keeps its `Math.random` (cosmetic, outside the decision log); OQ34.
 
-**Engine.** `seating.js` about 35 lines (the pure function, the listening check from the speakers
-list, one change at the `want = st.homeFacing` line in `updateNeedsSeat`, 1203); `npc-needs.js` about
-10 (the per-tick speakers list); an event `npc_swivelled:<npcId>` `{ facing, reason: "idle" | "listen" }`
-on each turn. Schema about 5 (`swivel`), validator about 8 (`swivel` on an NPC with no needs, and
-`los.enabled` on a seated needs NPC, warnings). **About 58 lines (35 + 10 + 5 + 8), S.** No new art.
+**Engine.** `seating.js` about 42 lines (the pure swivel function, the listening check from the
+speakers list, one change at the `want = st.homeFacing` line in `updateNeedsSeat`, 1224; the roll's
+x-dominant offset, out-and-back and wider hold about 7); `npc-needs.js` about 10 (the per-tick speakers
+list); an event `npc_swivelled:<npcId>` `{ facing, reason: "idle" | "listen" }` on each turn. Schema
+about 5 (`swivel`), validator about 8 (`swivel` on an NPC with no needs, and `los.enabled` on a seated
+needs NPC, warnings). **About 65 lines (42 + 10 + 5 + 8), S.** No new art.
 
-**What the player sees.** Seated staff glance left and right between bursts of typing, and turn
-towards two colleagues talking nearby.
+**What the player sees.** Seated staff roll their chairs a few pixels side to side and back between
+bursts of typing, now and then glance round, and turn towards two colleagues talking nearby.
 
 **Showcase.** `test_needs_sims` declares no chairs, so its office chairs come from the Tiled map and
 should be swivels (slice 3's chair fetch, which rolls only swivels, seated Tom and Sanjay); the build
 checks this before writing the objective. Objective "See someone look round at a conversation" on
 `npc_swivelled:tom` with `data.reason === "listen"`.
 
-**Tests.** Node, `seating.test.mjs`: `swivelFacing` is the same for a seed, turns in about a quarter
-of slots over 1,000 slots, never during a `work` use, returns to `homeFacing`, snaps to `valid`;
+**Tests.** Node, `seating.test.mjs`: `swivelFacing` is the same for a seed, turns in about 5% of slots
+over 1,000 slots, never during a `work` use, returns to `homeFacing`, snaps to `valid`;
 listening faces the speaker and ends with the line; a chat with the player overrides both; no swivel
 while `s.call` holds or while paired or talking; a call speaker is in the speakers list; an NPC with
-`los.enabled` never swivels; the speakers list is built once per tick. Live: a three-frame strip of a
+`los.enabled` never swivels; the speakers list is built once per tick; `fidgetOffset` (with a stub
+`rand`) keeps `|y| <= 1` and `|x| <= 3`, never moves towards the desk for east and west facings, and
+returns to zero after the hold; the roll is held during typing, a call, a pairing and a line. Live: a
+strip of a roll out and back, a three-frame strip of a
 swivel and one of a listening turn towards the office coffee queue's chatter (the cooler is in the
 kitchen, where no needs NPC has a post, so no seated NPC is within four tiles of it); the lab regression (no change expected: static
 seats).
@@ -3832,7 +3964,9 @@ seats).
 **Risks.** A north-facing turn puts the face behind the backrest (seating draws rear facings behind
 the chair), which reads as looking away; the step is one compass point, so a desk facing north turns
 only to north-east or north-west. Too much movement in a busy office: `swivelChance` is per NPC and the
-default is low.
+default is now 0.05. The roll change reaches every NPC seated on a swivel chair, needs or not
+(`fidgetChair` is also called for `seated` NPCs, `seating.js` 1059); only `test_seating` and the lab
+declare `seated`, and the lab's seats are static, so no shipped mission changes.
 
 ### 12.8 Slices
 
@@ -3843,17 +3977,19 @@ in the session scratchpad, the README live-proof table, then the `test_needs_lea
 
 | Order | # | Slice | Size | Depends on | Visible or audible change |
 |---|---|---|---|---|---|
-| 1 | 21 | Idle swivel (12.7), with the per-tick speakers list; none while on a call, paired or talking | S, ~58 | none | seated staff look round, and towards a conversation |
+| 1 | 21 | Idle motion (12.7): the chair roll mostly along x, out and back, and a rare swivel, with the per-tick speakers list; none while on a call, paired, talking or typing | S, ~65 | none | seated staff roll a little side to side, glance round now and then, and turn towards a conversation |
 | 2 | 16 | Lock-screen habits and cues (12.2): `screenHabit`, idle-based `autoLockSeconds`, `workstation_screen_changed`, `lighting.flash`, the no-lighting glyph, run-time chimes, `ownRoomOnly` and limiter channels, `lockCues`, no cue for a late decision | M, ~205 | 2 (`expectedAwayMs`), 5 (indicators): built | the lock shrinks to a dot on screen, or a padlock glyph without lighting; the wake flash; chimes once approved |
 | 3 | 18a | Coffee off (12.4): `offWhen`, the `off` turn-back outside `_recheck`, the wake on the global, the switch object with a state-worded hint, grumble topic chosen by lines, the turn-back table with `rang_out`, a neutral hint title | S, ~85 | 14 (turn back, parking): built | someone turns round at a dead machine and goes to the kitchen |
 | 4 | 17 | Print and forget, and the print-job lever (12.3), with the need-use rule for `revealOutput`, the wider `_select` guard, the return leg for the errand only (`job.errand`), recycling the oldest forgotten slot for any print, the guarded caught check, ownership only with a habit or command | M, ~200 | 7 (slots), 11: built | a printout waits on the tray; its owner comes late or never; Tom gets up for a job the player sent |
-| 5 | 18b-i | The magnet (12.4): hidden objects, sight, temptation with the parking rules, the quiet tempted look with its back-off, servings at `using` start with `gone`, `perPerson`, the reload finish, sight from the tick cache; showcase with 2 servings and a hungry Amara | M, ~245 | 17 (the `_select` guard), 18a (the turn-back table), 14: built | pizza on the kitchen table, the kitchen eats, the boxes empty, "Missed it." |
+| 5 | 18b-i | The magnet (12.4): dropped anywhere like the lab's USB (OQ31), `magnet_placed` and pickup, the optional declared spot with hidden objects, sight, temptation with the parking rules, the quiet tempted look with its back-off, servings at `using` start with `gone`, `perPerson`, the reload finish, sight from the tick cache; showcase with 2 servings and a hungry Amara | L, ~315 | 17 (the `_select` guard), 18a (the turn-back table), 14: built | pizza on the kitchen table, the kitchen eats, the boxes empty, "Missed it." |
 | 6 | 18b-ii | Word of mouth (12.4): telling, the announce, the `news` picture, `_wakeParkedFor` | M, ~125 | 18b-i; 15: built | the announce bubble in the office, and the people who get up |
 | 7 | 19 | Desk-phone calls (12.5): the call overlay with no selection during a call, the colleague's standing walk-over to a side cell, half-conversations chosen at the claim that end on a player chat or an unavailable speaker, `rang_out` for answerers on the way, no ring on a busy line | L, ~366 | 15 (exchange machinery); 16 (flash, glyph layer, limiter channels) | a ringing desk phone, half a call overheard, a colleague walking over to answer |
 | 8 | 20 | Room tone (12.6), all behind `roomTone`: the four-step bed order, unknown keys as no bed, crossfades that can turn back, a bed at spawn (`refreshAmbient()`), the pure `ambient-choice.js`, no drop in a doorway, `startSound`/`outputSound` behind `roomTone`, typing, ducking for heard speech | L, ~279 | 16 (`ownRoomOnly`, channels); the sounds' approval for anything to be heard; after the lab's room dressing settles if the lab adopts it | a room that sounds like an office at work |
 
-**About 1,563 lines in all** (after review round 5, 13e: 58 + 205 + 85 + 200 + 245 + 125 + 366 + 279;
-each figure is the sum of its slice's parts, given in its section). The reviewer's order, adopted: 21 first (no
+**About 1,640 lines in all** (after the user's decisions, 13f: 65 + 205 + 85 + 200 + 315 + 125 + 366 + 279;
+each figure is the sum of its slice's parts, given in its section; it was 1,563 after review round 5).
+Not in the total or the order: **16b, per-NPC sessions** (about 70, 12.2), unscheduled until the user
+picks it. The reviewer's order, adopted: 21 first (no
 dependencies, no approvals, smallest; it touches only `seating.js` and a few lines of
 `npc-needs.js`), then 16, then 18a (a small lever that reuses slice 14 directly), then 17 and 18b-i
 (18b-i extends 17's `_select` guard and 18a's turn-back table), then 18b-ii, then 19, then 20 last,
@@ -3876,28 +4012,35 @@ every slice ready to build once its two majors (a bed at spawn in 20, showcase n
   in the slice report).
 
 **The approval list, one page before slice 16 starts (OQ42, OQ46).** Everything new that the user must
-see or hear, in one place, so that 16, 19 and 20 can ship heard rather than silent:
+see or hear, in one place, so that 16, 19 and 20 can ship heard rather than silent. **The user approved
+all of it on 2026-11-06.** The sounds still follow OQ42's sourcing rules, and each slice's
+screenshots or play log are the check that a file works in place. **The new art is one PixelLab sheet
+(OQ46):** the cake, the wall socket, both `npc-lock` icons and `npc-phone`, each in a cell at its native
+size (16×16 icons; the socket and cake sized from the object catalogue), cropped exactly, never resized
+(the grid-extract recipe). One attempt first; only a piece that fails is generated on its own.
 
-| Item | Kind | Needed by | Until approved |
-|---|---|---|---|
-| `screen_lock`, `screen_unlock` | two run-time WebAudio chimes, with a short recorded sample of each for the page | 16 | logged as `unapproved`, not played |
-| `npc-lock` closed and `npc-lock` open | two 16×16 icons (PixelLab, as section 9) | 16 (cue without lighting) | text glyph stand-in |
-| `office_ambient`, `kitchen_tone`, `typing_loop` | OGG loops, Freesound CC0. Approving them changes no shipped mission: sis01's `major_incident_room` authors `office_ambient`, but without `roomTone` the rooms-order loop never reaches that key (12.6) | 20 | no bed (the room's previous bed is not cut) |
-| `copier_run`, `kettle_boil`, `coffee_machine` | MP3 one-shots, Freesound CC0 | 20 | silent |
-| `distant_phone` | not a download: made from `desk_phone_ring` with an ffmpeg low-pass, so it is judged once, with the ring | 20 | silent |
-| `desk_phone_ring` | MP3, Freesound CC0 | 19 | the ring is visual only |
-| a small wall-socket sprite | object sprite | 18a | `notes_postit1` with a stand-in `_comment` |
-| a cake sprite | object sprite, optional | 18b, only if the user wants cake | `pizza_boxes1` (exists) |
-| `npc-phone` | 16×16 icon, optional | 19, only if `phone1` reads badly | `phone1` (exists), also the ring glyph without lighting |
+| Item | Kind | Needed by | Until it is in | Decision (2026-11-06) |
+|---|---|---|---|---|
+| `screen_lock`, `screen_unlock` | two run-time WebAudio chimes, with a short recorded sample of each for the page | 16 | logged as `unapproved`, not played | **Approved** |
+| `npc-lock` closed and `npc-lock` open | two 16×16 icons (PixelLab, as section 9) | 16 (cue without lighting) | text glyph stand-in | **Approved** |
+| `office_ambient`, `kitchen_tone`, `typing_loop` | OGG loops, Freesound CC0. Approving them changes no shipped mission: sis01's `major_incident_room` authors `office_ambient`, but without `roomTone` the rooms-order loop never reaches that key (12.6) | 20 | no bed (the room's previous bed is not cut) | **Approved** |
+| `copier_run`, `kettle_boil`, `coffee_machine` | MP3 one-shots, Freesound CC0 | 20 | silent | **Approved** |
+| `distant_phone` | not a download: made from `desk_phone_ring` with an ffmpeg low-pass, so it is judged once, with the ring | 20 | silent | **Approved** |
+| `desk_phone_ring` | MP3, Freesound CC0 | 19 | the ring is visual only | **Approved** |
+| a small wall-socket sprite | object sprite | 18a | `notes_postit1` with a stand-in `_comment` | **Approved** |
+| a cake sprite | object sprite, now wanted (OQ46) | 18b-i (the showcase magnet once it exists) | `pizza_boxes1` (exists) | **Approved** |
+| `npc-phone` | 16×16 icon, made in the art sheet; used if `phone1` reads badly | 19 | `phone1` (exists), also the ring glyph without lighting | **Approved** |
 
 Eight sound files (seven Freesound downloads and one ffmpeg derivative), two synthesised chimes, two
-required icons and one required sprite; the cake and `npc-phone` are optional. Round 3 changed only the
+required icons and one required sprite; the cake is now wanted and `npc-phone` is made with the sheet. Round 3 changed only the
 office bed's key, `office_tone` to `office_ambient`, so sis01's meeting room
 (`sis01_healthcare/scenario.json.erb` 2133) picks it up once approved. Round 2 added nothing new to it; it made the chimes' sample, the second
 `npc-lock` icon and the socket sprite explicit, and the ring glyph without lighting uses `phone1`, so it
 needs no art.
 
-Behaviour changes for existing scenarios: 21 turns seated needs NPCs' swivel chairs everywhere unless
+Behaviour changes for existing scenarios: 21 makes the existing chair roll mostly sideways on screen,
+out and back, for any NPC on a swivel chair (only `test_seating` and the test scenarios have one), and
+turns seated needs NPCs' swivel chairs everywhere unless
 `swivel: false` (static seats, the lab's included, never turn); 16 adds cues to every workstation with
 an owner unless `lockCues: false`, while lock decisions change only where a scenario adds the new
 fields; 18a is opt-in by data, and its grumble-topic rule keeps every existing grumble as it is; 17
@@ -3920,6 +4063,9 @@ seats are static, so 21 leaves it alone, and the lab session decides `lockCues` 
 ### 12.9 Open questions (recommended default in bold)
 
 Numbered on from 4.3. Revised after review rounds 1-5 (sections 13, 13b, 13c, 13d, 13e).
+**Answered by the user on 2026-11-06 (13f):** the default in bold is accepted for OQ27, 29, 30, 32,
+34-40, 42-44 and 47-59 (OQ41 is withdrawn). OQ33 was left unanswered and takes its default. OQ28, 45
+and 46 are accepted with a note, and OQ31 changed; each says so below.
 
 27. **Lock cues on every workstation?** **Yes by default, with their own switch (`"lockCues": false`),
     since `"officeVisuals": false` also hides carried items and use sounds. The lab session agrees
@@ -3927,14 +4073,19 @@ Numbered on from 4.3. Revised after review rounds 1-5 (sections 13, 13b, 13c, 13
 28. **Where does a lock habit live?** **The person's habit on the NPC (`screenHabit`, rolled with its
     own salt `habit:<objectId>:<leaves>`), the machine's auto-lock on the object (`autoLockSeconds`);
     an object's own `lockChance` or `locksScreenOnLeave` still wins.** (2.6 planned traits for this;
-    they were not chosen, and this is the smallest piece of them.)
+    they were not chosen, and this is the smallest piece of them.) *Accepted, with the user's note:
+    "Can we reuse the approach used for the remote desktop received via phishing?" for each NPC's own
+    credentials and desktop. Answered in 12.2: an open screen can grant a per-NPC session with no engine
+    lines; logging in at a locked screen is a follow-on slice 16b (about 70), unscheduled.*
 29. **Does an auto-lock make a sound?** **No: the flash or glyph only, since nobody touched the
     keyboard.**
 30. **May another NPC take someone's printout?** **No while it is reserved; `shareAfterSeconds` (unset
     by default) lets a scenario hand forgotten prints to a tidy colleague.**
-31. **How does the player put a magnet out?** **Option B: at a declared spot, through
-    `triggerOnInteract`, `requiresItem` and `consumesItem`, revealing a declared magnet.** A dropped
-    magnet works but is unsupported.
+31. **How does the player put a magnet out?** *Changed by the user:* **dropped anywhere, the way the
+    lab's USB stick and QR code are dropped (`item-drop.js`): the magnet is a droppable held item with
+    its own `affordance.magnet`, saved by the server's `player_drop` path; it can be picked up again.
+    A declared spot (`triggerOnInteract`, `requiresItem`, `consumesItem`, revealing a declared magnet)
+    stays as an optional second way.** (12.4; 18b-i grows to about 315.)
 32. **Are servings saved across a reload?** **Yes, in an engine-owned `<id>_servings` global, so a
     half-eaten pizza stays half-eaten; a redeploy at 0 refills. A magnet is free while
     `claims < capacity` and servings are left; a serving is taken at `using` start, never by an arrival
@@ -3942,6 +4093,7 @@ Numbered on from 4.3. Revised after review rounds 1-5 (sections 13, 13b, 13c, 13
     the player paid an item for should not refill.)
 33. **Who passes the word?** **Any compatible knower within `newsRadius` in its own room; avoidance
     blocks it both ways, groups do not; the telling happens whether or not the line is spoken.**
+    *Not answered; the default is taken.*
 34. **Seed the chair fidget as well?** **No: it is cosmetic and nothing tests it; seed it only if a
     test needs a fixed seated pose.**
 35. **How strong is temptation?** **`tempt` 30 points above `urgentAt` by default, capped at 95. A
@@ -3971,11 +4123,17 @@ Numbered on from 4.3. Revised after review rounds 1-5 (sections 13, 13b, 13c, 13
 44. **Hidden reveal objects as use targets.** **Never a target, in every scenario (none shipped
     relies on it); "hidden" means the `revealOnGlobal` global is not true, not `visible`.**
 45. **Swivel on by default?** **Yes, for seated needs NPCs on swivel chairs; `swivel: false` turns it
-    off. The lab is unaffected (static seats).**
+    off. The lab is unaffected (static seats).** *Accepted, with the user's note: "Do some small
+    rolling motions mostly along x with just a little swivel very occasionally." Slice 21 now retunes
+    the existing chair roll to move mostly along x, out and back, and lowers `swivelChance` to 0.05
+    (12.7).*
 46. **Art.** **Pizza first (`pizza_boxes1` exists); a cake sprite only if the user wants cake. The
     phone icon is `phone1` first; a 16×16 `npc-phone` only if the screenshot shows it reads badly.
     `phone1` stays the desk phone until a screenshot says otherwise (2.9). A small wall-socket sprite
-    for 18a, with `notes_postit1` until then.** All are **[approval]**.
+    for 18a, with `notes_postit1` until then.** All are **[approval]**. *Accepted and approved, with
+    the user's note: "Try to get them all on one sprite sheet (try once first)." The cake is wanted.
+    The cake, wall socket, both padlock icons and the phone icon are generated together on one PixelLab
+    sheet, one attempt first, and only a piece that fails is generated on its own (12.8).*
 47. **Does auto-lock reset when the player uses the screen?** **Yes: it is idle-based, restarting on
     `workstation_accessed` and holding while a minigame is open on the object.**
 48. **What does an owner do when its phone rings during its wind-up?** **It misses the call: it has
@@ -4042,7 +4200,7 @@ says what changed, and the other session decides.
   `usb_target_pc` (732, 987, the mappings at 766-799); the return-leg rule is scoped to the print
   errand (`job.errand`), so they keep their 6 s plug-in and their log.
 - **Slice 18b.** The staff kitchen (`room_lw_kitchen`, 1517) has a kitchenette that is a "social draw"
-  with no affordance (1511, 1567-1577). A pizza at a declared spot there, with an announce pool, would
+  with no affordance (1511, 1567-1577). A pizza dropped there (or at a declared spot), with an announce pool, would
   empty the accounts floor for a while: the player's lever for a longer window at both PCs. The
   slice 14 caveat applies: staff who declare `needsCompany.avoids` turn back from a source that an
   avoided NPC stands near.
@@ -4332,3 +4490,19 @@ shipped mission. Nothing else changes in m01-m10, sis01 or sis02.
 written beside it (16: 205; 17: 200; 18a: 85; 18b: 370 = 245 + 125; 19: 366; 20: 279; 21: 58; total
 1,563), and section 12 was searched for claims about sis01 and `office_ambient`: the only remaining
 mentions are the corrected ones.
+
+### 13f. User decisions (2026-11-06)
+
+The user answered 12.9 and the approval table in 12.8. What changed in the plan:
+
+| Decision | Change | Section |
+|---|---|---|
+| All nine rows of the approval table approved (chimes, lock icons, room-tone beds, one-shots, phone ring and its derivative, wall socket, cake, phone icon) | Table marked approved; the cake is now wanted and may replace pizza in the 18b-i showcase | 12.8 |
+| OQ27, 29, 30, 32, 34-40, 42-44, 47-59: defaults accepted; OQ33 unanswered, default taken | None | 12.9 |
+| OQ28 accepted, with a question about per-NPC credentials and desktops | Investigated: the SE lab's remote desktop is a declared `give_item` grant of a `pc` container; an open-screen session reuses it with data only, logging in at a locked screen needs a follow-on slice 16b (about 70, unscheduled); slice 16 unchanged | 12.2, 12.8 |
+| OQ31 changed: drop a magnet anywhere, like the lab's USB and QR | The magnet is a droppable held item with `affordance.magnet` through `item-drop.js` and the server's `player_drop`; `magnet_placed` with `reachable`, `magnet_unreachable`, pickup and re-drop rules, removal on finish; declared spot kept as an option; new risks listed; 18b-i 245 to 315 (L) | 12.4, 12.8, 12.10 |
+| OQ45 accepted, with "small rolling motions mostly along x, a little swivel very occasionally" | Slice 21 retunes the existing chair roll (`fidgetOffset`) to x-dominant, out and back, held while typing or talking, still `Math.random`; `swivelChance` 0.25 to 0.05; 58 to 65 lines | 12.7, 12.8 |
+| OQ46 accepted, with "try to get them all on one sprite sheet (try once first)" | Cake, wall socket, two padlock icons and phone icon on one PixelLab sheet at native cell sizes, one attempt, single generation only for failures | 12.8, 12.9 |
+
+**Sizes after the decisions:** 21 is about 65 and 18b-i about 315; the total is about 1,640 (was 1,563).
+Build order unchanged: 21, 16, 18a, 17, 18b-i, 18b-ii, 19, 20. **Building starts with slice 21.**
