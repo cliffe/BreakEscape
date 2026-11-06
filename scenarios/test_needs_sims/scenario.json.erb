@@ -263,7 +263,6 @@
           },
           "interests": { "post": { "weight": 3, "noticeRooms": ["office"] }, "printout": { "weight": 2, "noticeRooms": ["office"] } },
           "usePayload": { "who": "amara" },
-          "onUse": { "amara_pc": { "setGlobal": "amara_opened_parcel" } },
           "eventMappings": [
             { "eventPattern": "npc_used:office_coffee", "cooldown": 0, "setGlobal": { "last_activity": "office_coffee" } },
             { "eventPattern": "npc_used:office_coffee", "onceOnly": true, "cooldown": 0, "completeTask": "see_coffee" },
@@ -280,6 +279,7 @@
             { "eventPattern": "npc_used:washing_up_tray", "cooldown": 0, "setGlobal": { "last_activity": "washing_up" } },
             { "eventPattern": "npc_used:washing_up_tray", "onceOnly": true, "cooldown": 0, "completeTask": "see_mugs" },
             { "eventPattern": "npc_used:amara_pc", "condition": "data.tag === \"post\"", "cooldown": 0, "setGlobal": { "last_activity": "parcel" } },
+            { "eventPattern": "npc_used:amara_pc", "condition": "data.tag === \"post\"", "onceOnly": true, "cooldown": 0, "setGlobal": { "amara_opened_parcel": true } },
             { "eventPattern": "npc_used:amara_pc", "condition": "data.tag === \"post\"", "onceOnly": true, "cooldown": 0, "completeTask": "see_parcel" },
             { "eventPattern": "npc_used:amara_pc", "condition": "data.tag === \"printout\"", "onceOnly": true, "cooldown": 0, "completeTask": "see_printout" },
             { "eventPattern": "npc_used:amara_pc", "condition": "data.need === \"work\"", "cooldown": 0, "setGlobal": { "last_activity": "desk_work" } },
