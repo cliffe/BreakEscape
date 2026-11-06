@@ -107,7 +107,7 @@ test('the indicator follows the globals; the screen record resolves the same in 
 
   setGlobals({ tom_pc_owner_away: true, tom_pc_screen_locked: true });
   sys.resolveEmitters(state);
-  assert.equal(ind.def.color, 0x4da3ff, 'away and locked: locked wins');
+  assert.equal(ind.def.color, 0x3d8bff, "away and locked: locked wins");
   assert.equal(ind.def.effect, null);
   seen.push(screen.def);
 

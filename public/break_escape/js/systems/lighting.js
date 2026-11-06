@@ -97,8 +97,8 @@ const RANSOM_VARIANT = { condition: 'globalVars.ransomware_deployed', color: 0xf
 // corner while the owner is away. Locked: steady blue, listed first so it wins. Open (owner away,
 // not locked): a larger warm-white dot that breathes. Colour is never the only cue: they differ
 // in size, and in motion unless reduced motion is on.
-const INDICATOR_LOCKED = { color: 0x4da3ff, radius: 8, intensity: 0.95, effect: null, above: true };
-const INDICATOR_OPEN = { color: 0xfff1c8, radius: 11, intensity: 1, effect: 'breathe', above: true };
+const INDICATOR_LOCKED = { color: 0x3d8bff, radius: 10, intensity: 1, effect: null, above: true };
+const INDICATOR_OPEN = { color: 0xfff1c8, radius: 14, intensity: 1, effect: 'breathe', above: true };
 // Inset of the dot from the object's top-right corner, px.
 const INDICATOR_INSET = 5;
 
@@ -1112,7 +1112,9 @@ export class LightingSystem {
           ? this.figureOverlapsCircle(x, y, radius * 0.3, obj.depth, figures)
           : this.hiddenByFigure(x, y, obj.depth, figures);
         e.fade = (e.fade ?? 1) + ((covered ? GLOW_COVERED : 1) - (e.fade ?? 1)) * 0.35;
-        const fade = (def.ransom || def.above) ? 0.6 : glowFade;
+        // Indicator records (workstation dots) are small and must read across a lit room: full
+        // strength, where other `above` glows are held at 0.6.
+        const fade = e.indicator ? 1 : (def.ransom || def.above) ? 0.6 : glowFade;
         e.glow.setPosition(x, y).setDepth(above ? LIGHT_DEPTH + 1 : obj.depth + 0.01).setVisible(true)
           .setAlpha(Math.min(1, def.intensity * k * e.glowK * fade * (above ? e.fade : GLOW_BOOST)));
         // Keep an `above` glow's hue in a lit room (reds stayed red, not pink): multiply
