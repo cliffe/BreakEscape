@@ -302,7 +302,7 @@
   <image source="../objects/filing_cabinet_locked1.png" width="29" height="61"/>
  </tile>
  <tile id="100">
-  <image source="../objects/hospital_chair_north2.png" width="16" height="26"/>
+  <image source="../objects/hospital_chair_north2.png" width="16" height="30"/>
  </tile>
  <tile id="101">
   <image source="../objects/pigeonholes1.png" width="28" height="27"/>
@@ -350,7 +350,7 @@
   <image source="../objects/it_workbench1.png" width="60" height="58"/>
  </tile>
  <tile id="116">
-  <image source="../objects/exec_desk1.png" width="80" height="46"/>
+  <image source="../objects/exec_desk1.png" width="80" height="42"/>
  </tile>
  <tile id="117">
   <image source="../objects/radio_charger1.png" width="26" height="18"/>
@@ -1841,7 +1841,7 @@
   <image source="../objects/m10_steel_bench1.png" width="51" height="39"/>
  </tile>
  <tile id="623">
-  <image source="../objects/m10_steel_chair1.png" width="16" height="26"/>
+  <image source="../objects/m10_steel_chair1.png" width="16" height="31"/>
  </tile>
  <tile id="624">
   <image source="../objects/m10_field_screen_curve1.png" width="24" height="18"/>
@@ -1880,10 +1880,10 @@
   <image source="../objects/aw_hard_hat1.png" width="14" height="10"/>
  </tile>
  <tile id="636">
-  <image source="../objects/aw_chair_south_slate1.png" width="16" height="32"/>
+  <image source="../objects/aw_chair_south_slate1.png" width="16" height="35"/>
  </tile>
  <tile id="637">
-  <image source="../objects/aw_chair_north_slate1.png" width="16" height="26"/>
+  <image source="../objects/aw_chair_north_slate1.png" width="16" height="30"/>
  </tile>
  <tile id="638">
   <image source="../objects/aw_chair_w_slate1.png" width="17" height="32"/>
@@ -1907,10 +1907,10 @@
   <image source="../objects/aw_chairs_stacked_slate1.png" width="20" height="45"/>
  </tile>
  <tile id="645">
-  <image source="../objects/aw_chair_south_charcoal1.png" width="16" height="32"/>
+  <image source="../objects/aw_chair_south_charcoal1.png" width="16" height="35"/>
  </tile>
  <tile id="646">
-  <image source="../objects/aw_chair_north_charcoal1.png" width="16" height="26"/>
+  <image source="../objects/aw_chair_north_charcoal1.png" width="16" height="30"/>
  </tile>
  <tile id="647">
   <image source="../objects/aw_chair_w_charcoal1.png" width="17" height="32"/>

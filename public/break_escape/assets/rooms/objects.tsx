@@ -740,9 +740,9 @@
   <image source="../objects/hospital_chart_board2.png" width="38" height="39"/>
  </tile>
  <tile id="201">
-  <image source="../objects/hospital_chair_north.png" width="16" height="26"/>
+  <image source="../objects/hospital_chair_north.png" width="16" height="30"/>
  </tile>
  <tile id="202">
-  <image source="../objects/hospital_chair_south.png" width="16" height="32"/>
+  <image source="../objects/hospital_chair_south.png" width="16" height="35"/>
  </tile>
 </tileset>

@@ -179,7 +179,7 @@
                 }, 
                 {
                  "gid":316,
-                 "height":26,
+                 "height":30,
                  "id":10,
                  "name":"",
                  "rotation":0,
@@ -187,11 +187,11 @@
                  "visible":true,
                  "width":16,
                  "x":110,
-                 "y":222
+                 "y":226
                 }, 
                 {
                  "gid":316,
-                 "height":26,
+                 "height":30,
                  "id":11,
                  "name":"",
                  "rotation":0,
@@ -199,11 +199,11 @@
                  "visible":true,
                  "width":16,
                  "x":190,
-                 "y":222
+                 "y":226
                 }, 
                 {
                  "gid":317,
-                 "height":32,
+                 "height":35,
                  "id":12,
                  "name":"",
                  "rotation":0,
@@ -211,12 +211,12 @@
                  "visible":true,
                  "width":16,
                  "x":110,
-                 "y":158
+                 "y":161
                 },
             
                 {
                  "gid":317,
-                 "height":32,
+                 "height":35,
                  "id":13,
                  "name":"",
                  "rotation":0,
@@ -224,7 +224,7 @@
                  "visible":true,
                  "width":16,
                  "x":190,
-                 "y":158
+                 "y":161
                 }, 
                 {
                  "gid":125,
@@ -240,7 +240,7 @@
                 }, 
                 {
                  "gid":317,
-                 "height":32,
+                 "height":35,
                  "id":42,
                  "name":"",
                  "rotation":0,
@@ -248,11 +248,11 @@
                  "visible":true,
                  "width":16,
                  "x":150,
-                 "y":158
+                 "y":161
                 }, 
                 {
                  "gid":316,
-                 "height":26,
+                 "height":30,
                  "id":43,
                  "name":"",
                  "rotation":0,
@@ -260,7 +260,7 @@
                  "visible":true,
                  "width":16,
                  "x":150,
-                 "y":222
+                 "y":226
                 }, 
                 {
                  "gid":309,
@@ -627,13 +627,13 @@
                 {
                  "id":0,
                  "image":"..\/tables\/hospital_desk1.png",
-                 "imageheight":48,
+                 "imageheight":44,
                  "imagewidth":62
                 }, 
                 {
                  "id":1,
                  "image":"..\/tables\/hospital_desk2.png",
-                 "imageheight":48,
+                 "imageheight":44,
                  "imagewidth":62
                 }, 
                 {
@@ -1937,13 +1937,13 @@
                 {
                  "id":201,
                  "image":"..\/objects\/hospital_chair_north.png",
-                 "imageheight":26,
+                 "imageheight":30,
                  "imagewidth":16
                 }, 
                 {
                  "id":202,
                  "image":"..\/objects\/hospital_chair_south.png",
-                 "imageheight":32,
+                 "imageheight":35,
                  "imagewidth":16
                 }, 
                 {
@@ -3655,7 +3655,7 @@
                 {
                  "id":100,
                  "image":"..\/objects\/hospital_chair_north2.png",
-                 "imageheight":26,
+                 "imageheight":30,
                  "imagewidth":16
                 }, 
                 {
@@ -3751,7 +3751,7 @@
                 {
                  "id":116,
                  "image":"..\/objects\/exec_desk1.png",
-                 "imageheight":46,
+                 "imageheight":42,
                  "imagewidth":80
                 }, 
                 {
