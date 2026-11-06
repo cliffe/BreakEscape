@@ -1141,9 +1141,15 @@ class NPCBehavior {
             const { x: gnx, y: gny } = this.npcBodyPos();
             const gdx = this._goToStayDest.x - gnx;
             const gdy = this._goToStayDest.y - gny;
-            if (gdx * gdx + gdy * gdy < TILE_SIZE * TILE_SIZE) {
-                this._triggerGoToStayArrival();
-                return;
+            const d2 = gdx * gdx + gdy * gdy;
+            // A needs move to a use, queue or pair cell (arriveWithin, npc-needs.js slice 10) walks
+            // on to that cell, so two NPCs at one machine stand where they were sent; it still
+            // stops within the tile if it has been held there 1.5 s (the cell is occupied).
+            const tol = this._arriveWithin;
+            if (d2 < TILE_SIZE * TILE_SIZE) {
+                if (!tol || d2 <= tol * tol) { this._triggerGoToStayArrival(); return; }
+                if (!this._nearDestSince) this._nearDestSince = time;
+                else if (time - this._nearDestSince > 1500) { this._triggerGoToStayArrival(); return; }
             }
         }
 
@@ -2552,6 +2558,8 @@ class NPCBehavior {
         this.config.patrol.enabled = true;
         this._stopOnArrival = true; // New flag: disable patrol after reaching this waypoint
         this._goToStayDest = { x: worldX, y: worldY }; // Original destination for arrival-tolerance guard
+        this._arriveWithin = Number(opts?.arriveWithin) > 0 ? Number(opts.arriveWithin) : 0;   // 0: the 1-tile guard
+        this._nearDestSince = 0;
 
         // Optionally override speed
         if (speed !== undefined) {
