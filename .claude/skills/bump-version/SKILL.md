@@ -36,7 +36,7 @@ Do not run `bundle install` — the global `~/.bundle/config` has a mirror point
 
 ## Step 4 — update the Hacktivity repo's Gemfile.lock
 
-Hacktivity (`../../Hacktivity` from this repo, i.e. `/home/cliffe/Files/Projects/Code/Hacktivity`) loads Break Escape as a path gem, and its `Gemfile.lock` pins the same version. Its `Gemfile` only points at `../BreakEscape`, so the lockfile is the only file to change. Edit the `break_escape (X.Y.Z)` line in its PATH block the same way (again, no `bundle install`):
+Hacktivity (`../../Hacktivity` from this repo) loads Break Escape as a path gem, and its `Gemfile.lock` pins the same version. Its `Gemfile` only points at `../BreakEscape`, so the lockfile is the only file to change. Edit the `break_escape (X.Y.Z)` line in its PATH block the same way (again, no `bundle install`):
 
 ```
 PATH
