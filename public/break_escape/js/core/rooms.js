@@ -2966,9 +2966,24 @@ function hideUntilReveal(obj) {
     }
 }
 
+// Hide a revealOnGlobal object again, without a listener: the first half of
+// hideUntilReveal. Used by the needs system to stow a reveal slot (a printout
+// filed away) so it can be revealed again by a direct showRevealedObject call
+// (OFFICE_LIFE_PLAN 2.2 Part A). Its global is the caller's to reset.
+export function hideRevealedObject(obj) {
+    if (!obj || !obj.setVisible) return;
+    obj.setVisible(false);
+    obj.interactable = false;
+    try { obj.disableInteractive?.(); } catch (e) { /* sprite may lack an input zone */ }
+    if (obj.proximityGhost) {
+        try { obj.proximityGhost.destroy?.(); } catch (e) { /* already gone */ }
+        delete obj.proximityGhost;
+    }
+}
+
 // Reveal an object previously held back by revealOnGlobal: make it visible and
-// interactive again.
-function showRevealedObject(obj) {
+// interactive again. Exported (and on window) for the needs system's reveal slots.
+export function showRevealedObject(obj) {
     if (!obj || !obj.setVisible) return;
     obj.setVisible(true);
     obj.alpha = obj.originalAlpha || 1;
@@ -3361,3 +3376,9 @@ window.relocateNPCSprite = NPCSpriteManager.relocateNPCSprite;
 
 // Export functions for module imports
 export { updateDoorSpritesVisibility };
+
+// The needs system (npc-needs.js) reaches these through window, so it needs no static import
+if (typeof window !== 'undefined') {
+    window.showRevealedObject = showRevealedObject;
+    window.hideRevealedObject = hideRevealedObject;
+}

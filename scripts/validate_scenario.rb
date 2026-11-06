@@ -496,7 +496,7 @@ def check_unknown_fields(json_data)
     hacktivityMode vm acceptsVms flags flagRewards
     mode onAbort onLaunch abortConfirmText launchConfirmText
     itemsHeld contents hasContents triggerOnInteract
-    requiresItem requiresItemHint consumesItem revealOnGlobal
+    requiresItem requiresItemHint consumesItem revealOnGlobal outputOf
     minigameData interactionType
     gateVar sealedMessage openableReadyMessage
     puzzle_graph_role puzzle_graph_aim puzzle_graph_unlocks
@@ -4280,6 +4280,10 @@ def check_recurring_bugs(json_data, repo_root)
       dy = (a['position']['y'] - b['position']['y']) * 32.0
       dist = Math.sqrt(dx * dx + dy * dy)
       next if dist >= 32.0
+      # Reveal slots (NPC needs, slice 7) sit on their producer's tray on purpose: a slot and its
+      # producer, or two slots of one producer, are meant to share a spot
+      next if a['outputOf'].is_a?(String) && (a['outputOf'] == b['id'] || a['outputOf'] == b['outputOf'])
+      next if b['outputOf'].is_a?(String) && b['outputOf'] == a['id']
       issues << "⚠️ WARNING: rooms/#{rid}: objects[#{ai}] '#{a['name'] || a['id']}' and objects[#{bi}] '#{b['name'] || b['id']}' " \
                 "are pinned #{dist.round} px apart, inside the 32 px interaction range (constants.js INTERACTION_RANGE), so " \
                 "one click can open the other. Move them at least a tile apart. (Objects placed by Tiled slots aren't " \

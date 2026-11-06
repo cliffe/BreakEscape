@@ -41,6 +41,7 @@ module ValidateNpcNeeds
 
     check_private(json, npcs, objs, issues)
     check_visuals(json, objs, issues)
+    check_slots(json, objs, issues)
     npcs.each { |room_id, npc| check_npc(json, npc, room_id, objs, issues, npcs) }
     issues
   end
@@ -308,8 +309,16 @@ module ValidateNpcNeeds
       reach = leash_reach(json, npc, home_room)
     end
 
-    (npc['onUse'].is_a?(Hash) ? npc['onUse'] : {}).each_key do |oid|
+    (npc['onUse'].is_a?(Hash) ? npc['onUse'] : {}).each do |oid, hook|
       issues << "❌ ERROR: #{where} onUse names '#{oid}', which is not an object id in this scenario." unless by_id.key?(oid)
+      prod = hook.is_a?(Hash) ? hook['revealOutput'] : nil
+      next if prod.nil?
+
+      if !prod.is_a?(String) || !by_id.key?(prod)
+        issues << "❌ ERROR: #{where} onUse '#{oid}' revealOutput names '#{prod}', which is not an object id in this scenario."
+      elsif objs.none? { |o| o.data['outputOf'] == prod }
+        issues << "⚠️ WARNING: #{where} onUse '#{oid}' revealOutput names '#{prod}', but no object has outputOf '#{prod}'; every print shows only a cosmetic copy."
+      end
     end
     has_on_use = npc['onUse'].is_a?(Hash) && !npc['onUse'].empty?
 
@@ -406,6 +415,70 @@ module ValidateNpcNeeds
         issues << "⚠️ WARNING: #{where} interest '#{tag}' only notices #{notice.inspect} but items with that tag sit in #{item_rooms.inspect}; the NPC will not see them there."
       end
     end
+  end
+
+  # ── reveal slots and carry outcomes (OFFICE_LIFE_PLAN 2.2 Part A, slice 7) ──
+  # A slot is a declared object with outputOf and an engine-owned revealOnGlobal: the engine sets
+  # that global true on reveal and false on stow, so nothing else may use it. A non-takeable
+  # readable notes* slot must read in place (readDisplay gameDisplay): the notes minigame removes
+  # what it opens, so the slot could never cycle. onDeliver only affects slots.
+  def self.check_slots(json, objs, issues)
+    slots = objs.select { |o| o.data.key?('outputOf') }
+    by_id = objs.group_by(&:id)
+    slots.each do |o|
+      d = o.data
+      label = "slot '#{o.id || d['name']}'"
+      issues << "❌ ERROR: #{label} has no id; reveal slots are revealed and stowed by id." if o.id.to_s.empty?
+      unless d['outputOf'].is_a?(String) && by_id.key?(d['outputOf'])
+        issues << "❌ ERROR: #{label} outputOf names '#{d['outputOf']}', which is not an object id in this scenario."
+      end
+      g = d['revealOnGlobal']
+      unless g.is_a?(String) && !g.empty?
+        issues << "❌ ERROR: #{label} has outputOf but no revealOnGlobal; the engine shows and files a slot through its own global."
+        next
+      end
+      others = objs.reject { |x| x.equal?(o) }.select { |x| x.data['revealOnGlobal'] == g }
+      issues << "❌ ERROR: #{label} revealOnGlobal '#{g}' is shared with #{others.map(&:id).inspect}; each slot needs its own global." unless others.empty?
+      if global_used_elsewhere?(json, g)
+        issues << "❌ ERROR: #{label} revealOnGlobal '#{g}' is used elsewhere in the scenario; the engine owns it (true on reveal, false on stow), so no condition or mapping may read or set it."
+      end
+      if d['readable'] == true && d['type'].to_s.start_with?('notes') && d['takeable'] != true && d['readDisplay'] != 'gameDisplay'
+        issues << "❌ ERROR: #{label} is a non-takeable readable #{d['type']} without readDisplay \"gameDisplay\"; the notes minigame removes what it opens, so the slot would vanish on first read. Add \"readDisplay\": \"gameDisplay\" (reads in place) or make it takeable (one beat)."
+      end
+    end
+    slots.group_by { |o| o.data['outputOf'] }.each do |prod, list|
+      takeable = list.count { |o| o.data['takeable'] == true }
+      cycling = list.length - takeable
+      issues << "ℹ️ Reveal slots for '#{prod}': #{list.length} (#{takeable} takeable, one beat each; #{cycling} read in place and cycle). Used in id order: #{list.map(&:id).sort.inspect}."
+    end
+    slot_tags = slots.map { |o| o.data['needsTag'] }.compact
+    objs.each do |o|
+      aff = o.data['affordance']
+      next unless aff.is_a?(Hash) && aff.key?('onDeliver')
+
+      unless %w[place stow].include?(aff['onDeliver'])
+        issues << "❌ ERROR: object '#{o.id}' affordance.onDeliver must be \"place\" or \"stow\"."
+        next
+      end
+      next unless (list(aff['accepts']) & slot_tags).empty?
+
+      issues << "⚠️ WARNING: object '#{o.id}' sets affordance.onDeliver, but no slot's needsTag is in its accepts; onDeliver only affects reveal slots (plain items are always consumed)."
+    end
+  end
+
+  # Any string in the scenario (conditions, mappings, ink-free fields) naming the global, other than
+  # the slots' own revealOnGlobal and the globalVariables declaration.
+  def self.global_used_elsewhere?(json, name)
+    re = /(?<![A-Za-z0-9_])#{Regexp.escape(name)}(?![A-Za-z0-9_])/
+    walk = lambda do |v, key|
+      case v
+      when Hash then v.any? { |k, x| k != 'globalVariables' && (re.match?(k.to_s) && key != 'globalVariables' ? true : walk.call(x, k)) }
+      when Array then v.any? { |x| walk.call(x, key) }
+      when String then key != 'revealOnGlobal' && re.match?(v)
+      else false
+      end
+    end
+    walk.call(json, nil)
   end
 
   # A target in another room may be unloaded when needed (rooms load lazily and the

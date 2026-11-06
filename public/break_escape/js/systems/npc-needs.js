@@ -135,6 +135,9 @@ export class NPCNeedsSystem {
         this._reachCache = null;
         this._selectSearched = false;
         this._knownRooms = new Set();
+        // Reveal slots set down at a target or shown as a cosmetic copy (slice 7): id -> clock ms
+        // at which the engine stows (or removes) it. Client only; a reload stows on sight instead.
+        this._placed = new Map();
         // Read-outs for tests and live measurement; never feed a decision
         this.stats = { ticks: 0, selects: 0, objectScans: 0, pathSearches: 0, backoffs: 0 };
     }
@@ -311,6 +314,7 @@ export class NPCNeedsSystem {
         this.clockMs += NEEDS_TICK_MS;
         this._worldChanged();
         this._checkRooms();
+        if (this._placed.size) this._tickPlaced();
         for (const id of [...this.states.keys()].sort()) {
             try {
                 this._tickNpc(this.states.get(id));
@@ -349,6 +353,30 @@ export class NPCNeedsSystem {
 
     _onRoomsLoaded(roomIds) {
         this._clearBackoffs();
+        // Stow on sight (OFFICE_LIFE_PLAN 2.2 Part A): after a reload a revealed slot comes back
+        // at its declared spot with its global still true and nobody holding it; file it away so
+        // the pool is whole again. At install every loaded room is new, so this covers them too.
+        if (typeof this.world.stowRevealedSlots === 'function') {
+            const stowed = this.world.stowRevealedSlots(roomIds);
+            if (stowed && stowed.length) this._worldChanged();
+        }
+    }
+
+    /** Placed slots and cosmetic copies whose time is up: someone filed them away. */
+    _tickPlaced() {
+        for (const [id, p] of [...this._placed.entries()].sort((a, b) => (a[0] < b[0] ? -1 : 1))) {
+            if (this.clockMs < p.at) continue;
+            this._placed.delete(id);
+            if (p.cosmetic) this.world.removeCosmetic?.(id);
+            else if (this.world.stowSlot?.(id)) this._log(p.npcId, 'stowed', { item: id, reason: 'filed' });
+            this._worldChanged();
+        }
+    }
+
+    /** How long a placed slot (or a producer's cosmetic copy) stays out, in ms; 0 = until a reload. */
+    _placeMs(aff) {
+        const v = Number(aff?.placeSeconds);
+        return (Number.isFinite(v) ? clamp(v, 0, 3600) : 60) * 1000;
     }
 
     _clearBackoffs() {
@@ -824,7 +852,8 @@ export class NPCNeedsSystem {
         if (job.phase === 'goto_item' || job.phase === 'goto_target') {
             if (job.phase === 'goto_item') {
                 const item = this.world.getObject(job.itemId);
-                if (!item || !item.pickable) { this._abortJob(s, 'item_gone', { cancel: true }); this._goHome(s); return; }
+                if (!item || !item.pickable) { this._itemGone(s); this._abortJob(s, 'item_gone', { cancel: true }); this._goHome(s); return; }
+                if (item.slot) job.slot = true;
             }
             if (!arrived) {
                 if (this.clockMs >= job.deadline) this._failJob(s, 'timeout');
@@ -833,7 +862,7 @@ export class NPCNeedsSystem {
             if (job.phase === 'goto_item') {
                 const took = this.world.pickUp(id, job.itemId);
                 this._worldChanged();
-                if (!took) { this._abortJob(s, 'item_gone', { cancel: false }); this._goHome(s); return; }
+                if (!took) { this._itemGone(s); this._abortJob(s, 'item_gone', { cancel: false }); this._goHome(s); return; }
                 job.carrying = true;
                 this._log(id, 'picked_up', { item: job.itemId });
                 this._emit(`npc_picked_up:${job.itemId}`, { npcId: id, itemId: job.itemId, tag: job.tag });
@@ -864,9 +893,22 @@ export class NPCNeedsSystem {
             s.levels[job.need] = clamp(s.levels[job.need] + restores, 0, 100);
             s.lastSatisfiedAt[job.need] = this.clockMs;
         }
-        if (job.carrying) { this.world.consumeHeld(id, job.itemId); this._worldChanged(); }
+        // The outcome follows the item's kind (2.2 Part A): a plain item is consumed (today's path);
+        // a reveal slot is set down on the target, or filed at once when the target says stow
+        let outcome = null;
+        if (job.carrying && job.slot) {
+            outcome = aff.onDeliver === 'stow' ? 'stow' : 'place';
+            if (outcome === 'place' && this.world.placeHeld?.(id, job.itemId, obj)) {
+                const ms = this._placeMs(aff);
+                if (ms > 0) this._placed.set(job.itemId, { at: this.clockMs + ms, npcId: id });
+            } else {
+                outcome = 'stow';
+                this.world.stowHeld?.(id, job.itemId);
+            }
+            this._worldChanged();
+        } else if (job.carrying) { this.world.consumeHeld(id, job.itemId); this._worldChanged(); }
         const rec = this.world.getNpc(id) || {};
-        this._log(id, 'used', { need: job.need || undefined, tag: job.tag || undefined, target: job.targetId, item: job.itemId || undefined, level: n ? round2(s.levels[job.need]) : undefined, payloadPresent: rec.usePayload !== undefined });
+        this._log(id, 'used', { need: job.need || undefined, tag: job.tag || undefined, target: job.targetId, item: job.itemId || undefined, outcome: outcome || undefined, level: n ? round2(s.levels[job.need]) : undefined, payloadPresent: rec.usePayload !== undefined });
         this._emit(`npc_used:${job.targetId}`, {
             npcId: id, objectId: job.targetId, need: job.need,
             itemId: job.carrying ? job.itemId : null, tag: job.carrying ? job.tag : null,
@@ -877,6 +919,8 @@ export class NPCNeedsSystem {
         if (hook && typeof hook === 'object') {
             if (typeof hook.setGlobal === 'string' && hook.setGlobal) { this.world.setGlobal(hook.setGlobal, true); this._worldChanged(); }
             if (typeof hook.emitEvent === 'string' && hook.emitEvent) this._emit(hook.emitEvent, { npcId: id, objectId: job.targetId });
+            // Something that prints: show the producer's first free reveal slot (2.2 Part A)
+            if (typeof hook.revealOutput === 'string' && hook.revealOutput) this._revealOutput(hook.revealOutput, id);
         }
         const stayPut = s.atPost && this._atOwnPost(s);
         s.job = null;
@@ -898,11 +942,39 @@ export class NPCNeedsSystem {
         this._goHome(s);
     }
 
+    /** The player took the item an NPC was fetching: a scenario can map the owner noticing. */
+    _itemGone(s) {
+        const job = s.job;
+        this._emit(`npc_job_failed:${s.npcId}`, { npcId: s.npcId, need: job?.need, targetId: job?.targetId, itemId: job?.itemId, reason: 'item_gone' });
+    }
+
+    /**
+     * revealOutput hook: the producer's first free slot (id order) is shown; with none free, a
+     * cosmetic copy that nobody can take stands in for the producer's placeSeconds.
+     */
+    _revealOutput(producerId, npcId) {
+        if (typeof this.world.revealOutput !== 'function') return null;
+        const r = this.world.revealOutput(producerId, npcId) || {};
+        this._worldChanged();
+        if (r.slotId) {
+            this._log(npcId, 'revealed', { target: producerId, item: r.slotId });
+            return r.slotId;
+        }
+        this._log(npcId, 'revealed', { target: producerId, reason: 'no_free_slot' });
+        if (r.cosmetic) {
+            const ms = this._placeMs(this.world.getObject(producerId)?.affordance);
+            if (ms > 0) this._placed.set(r.cosmetic, { at: this.clockMs + ms, npcId, cosmetic: true });
+        }
+        return null;
+    }
+
     _abortJob(s, reason, { cancel, failed } = {}) {
         const job = s.job;
         if (!job) return;
         if (cancel) this.world.cancelMove(s.npcId);
-        if (job.carrying) { this.world.dropHeld(s.npcId, job.itemId); this._worldChanged(); }
+        // A slot is filed rather than dropped: the server cannot save where an NPC left it
+        if (job.carrying && job.slot && typeof this.world.stowHeld === 'function') { this.world.stowHeld(s.npcId, job.itemId); this._worldChanged(); }
+        else if (job.carrying) { this.world.dropHeld(s.npcId, job.itemId); this._worldChanged(); }
         this._log(s.npcId, failed ? 'job_failed' : 'job_aborted', { need: job.need || undefined, tag: job.tag || undefined, target: job.targetId, reason });
         s.job = null;
         this._clearBackoffs();
@@ -1028,18 +1100,35 @@ export function createEngineWorld() {
         const a = sp?.scenarioData?.affordance;
         return a && typeof a === 'object' ? a : null;
     };
+    // Reveal slots (OFFICE_LIFE_PLAN 2.2 Part A): a declared object with outputOf (or leftBehindBy)
+    // and an engine-owned revealOnGlobal. Delivered, it is placed or stowed, never consumed.
+    const globalOf = sp => sp?.revealOnGlobal || sp?.scenarioData?.revealOnGlobal || null;
+    const isSlot = sp => {
+        const sd = sp?.scenarioData || {};
+        return !!((sd.outputOf || sd.leftBehindBy) && globalOf(sp));
+    };
+    const globalTrue = name => W().gameState?.globalVariables?.[name] === true;
+    const inInventory = sp => {
+        const items = W().inventory?.items;
+        if (!Array.isArray(items)) return false;
+        const id = sp.scenarioData?.id || sp.objectId;
+        return items.some(it => it === sp || (id && (it?.scenarioData?.id === id || it?.objectId === id)));
+    };
     const describe = (roomId, key, sp) => {
         const sd = sp.scenarioData || {};
         const id = sd.id || sp.objectId || key;
         const c = centreOf(sp);
-        return {
+        const out = {
             id, roomId, x: c.x, y: c.y,
             affordance: affordanceOf(sp),
             needsTag: typeof sd.needsTag === 'string' ? sd.needsTag : null,
             screenOwner: typeof sd.screenOwner === 'string' ? sd.screenOwner : null,
-            pickable: sp.visible !== false && sp.active !== false && !sp._npcCarried && !sp.destroyed,
+            // A slot an NPC set down is not a carry candidate, or the deliverer would pick it straight up
+            pickable: sp.visible !== false && sp.active !== false && !sp._npcCarried && !sp._npcPlacedBy && !sp.destroyed,
             _sprite: sp
         };
+        if (isSlot(sp)) out.slot = true;
+        return out;
     };
     const findSprite = (id) => {
         const rooms = W().rooms || {};
@@ -1054,6 +1143,68 @@ export function createEngineWorld() {
         return null;
     };
     const behaviour = id => W().npcBehaviorManager?.getBehavior?.(id) || null;
+    const setCentre = (sp, at) => {
+        const w = sp.displayWidth || sp.width || 0, h = sp.displayHeight || sp.height || 0;
+        const ox = sp.originX ?? 0.5, oy = sp.originY ?? 0.5;
+        sp.x = at.x - w * (0.5 - ox);
+        sp.y = at.y - h * (0.5 - oy);
+    };
+    // A slot's declared spot, recorded the first time the engine handles it (it is on its tray then)
+    const slotHome = (sp, roomId, key) => {
+        if (sp._slotHome) return sp._slotHome;
+        sp._slotHome = { x: sp.x, y: sp.y, depth: sp.depth, roomId: sp.roomId || roomId, key: key || sp.objectId };
+        return sp._slotHome;
+    };
+    const stowSprite = (sp, fromRoomId, fromKey) => {
+        if (!sp || sp.destroyed || sp.active === false || inInventory(sp)) return false;
+        const home = slotHome(sp, fromRoomId, fromKey);
+        const hide = W().hideRevealedObject;
+        if (typeof hide === 'function') hide(sp);
+        else { sp.setVisible?.(false); sp.interactable = false; try { sp.disableInteractive?.(); } catch (e) { /* ok */ } }
+        sp.x = home.x; sp.y = home.y;
+        if (Number.isFinite(home.depth)) sp.setDepth?.(home.depth);
+        sp._npcCarried = null;
+        sp._npcPlacedBy = null;
+        if (sp._carryBodyOff) { sp._carryBodyOff = false; if (sp.body) sp.body.enable = true; }
+        const rooms = W().rooms || {};
+        if (fromRoomId && rooms[fromRoomId]?.objects?.[fromKey] === sp) delete rooms[fromRoomId].objects[fromKey];
+        const room = rooms[home.roomId];
+        if (room) { room.objects = room.objects || {}; room.objects[home.key] = sp; }
+        const g = globalOf(sp);
+        if (g) setGlobalVar(g, false);
+        return true;
+    };
+    const setGlobalVar = (name, value) => {
+        const gs = W().gameState;
+        if (!gs) return;
+        gs.globalVariables = gs.globalVariables || {};
+        const old = gs.globalVariables[name];
+        if (typeof W().setGlobalVariable === 'function') { W().setGlobalVariable(name, value); return; }
+        gs.globalVariables[name] = value;
+        W().eventDispatcher?.emit(`global_variable_changed:${name}`, { name, value, oldValue: old });
+    };
+    // No free slot: a copy of the first slot's texture (or notes1) on the producer, never takeable
+    const cosmetics = new Map();
+    let cosmeticSeq = 0;
+    const makeCosmetic = (producerId, first) => {
+        const scene = W().game;
+        const prod = findSprite(producerId);
+        if (!scene?.add?.sprite || !prod) return null;
+        let tex = first?.sp?.texture?.key || first?.sp?.scenarioData?.type || 'notes1';
+        if (scene.textures?.exists && !scene.textures.exists(tex)) tex = 'notes1';
+        let at = centreOf(prod.sp);
+        const fh = first?.sp?._slotHome;
+        if (fh) {
+            const fs = first.sp, w = fs.displayWidth || fs.width || 0, h = fs.displayHeight || fs.height || 0;
+            at = { x: fh.x + w * (0.5 - (fs.originX ?? 0.5)), y: fh.y + h * (0.5 - (fs.originY ?? 0.5)) };
+        }
+        const sp = scene.add.sprite(at.x, at.y, tex);
+        sp.setOrigin?.(0.5, 0.5);
+        sp.setDepth?.((prod.sp.depth || at.y) + 1);
+        const handle = `cosmetic:${producerId}:${++cosmeticSeq}`;
+        cosmetics.set(handle, sp);
+        return handle;
+    };
 
     return {
         // Wind-up before an NPC leaves its post (ms). scenario.npcWindupMs, default 700; 0 turns it off.
@@ -1209,6 +1360,7 @@ export function createEngineWorld() {
             const f = findSprite(itemId);
             if (!f || f.sp._npcCarried || f.sp.visible === false) return false;
             const sp = f.sp;
+            if (isSlot(sp)) slotHome(sp, f.roomId, f.key);   // its declared spot, for a later stow
             sp._npcCarried = npcId;
             // Office visuals (slice 3) keep it visible in the carrier's hand (npc-office-visuals.js
             // follows it on postupdate); with "officeVisuals": false it is hidden, as before
@@ -1251,17 +1403,106 @@ export function createEngineWorld() {
             const room = W().rooms?.[roomId] || W().rooms?.[held.roomId];
             if (room) { room.objects = room.objects || {}; room.objects[held.key] = sp; sp.roomId = roomId; }
         },
+        // ── reveal slots (slice 7) ──
+        // Set a delivered slot down on the target: at its centre plus placeAt {dx, dy} tiles, else
+        // halfway from the centre towards the approach cell. The sprite is registered under the room
+        // it now sits in, keyed by its object id (what player pickup looks up); sp.roomId stays the
+        // declared room, the one the server knows it in. Client only.
+        placeHeld(npcId, itemId, target) {
+            const rec = W().npcManager?.getNPC?.(npcId);
+            const held = rec?._needsCarried?.[itemId];
+            if (!held || !target) return false;
+            const sp = held.sprite;
+            slotHome(sp, held.roomId, held.key);
+            const pa = target.affordance?.placeAt;
+            let at;
+            if (pa && Number.isFinite(pa.dx) && Number.isFinite(pa.dy)) at = { x: target.x + pa.dx * TILE, y: target.y + pa.dy * TILE };
+            else {
+                const cell = this.approachCell(target);
+                at = cell ? { x: (target.x + cell.x) / 2, y: (target.y + cell.y) / 2 } : { x: target.x, y: target.y };
+            }
+            delete rec._needsCarried[itemId];
+            setCentre(sp, at);
+            sp._npcCarried = null;
+            sp._npcPlacedBy = npcId;
+            const base = target._sprite?.depth;
+            sp.setDepth?.(Number.isFinite(base) ? base + 1 : at.y + 1);
+            sp.setVisible?.(true);
+            sp.interactable = true;
+            try { sp.setInteractive?.({ useHandCursor: true }); } catch (e) { /* ok */ }
+            const room = W().rooms?.[target.roomId] || W().rooms?.[held.roomId];
+            if (room) { room.objects = room.objects || {}; room.objects[sp.objectId || held.key] = sp; }
+            W().eventDispatcher?.emit(`npc_placed:${itemId}`, { npcId, itemId, targetId: target.id, roomId: target.roomId });
+            return true;
+        },
+        // File a slot away: hidden at its declared spot, back in its declared room's objects under its
+        // original key, global false. No server call. False when it is gone (the player took it).
+        stowSlot(itemId) {
+            const f = findSprite(itemId);
+            if (!f) return false;
+            return stowSprite(f.sp, f.roomId, f.key);
+        },
+        stowHeld(npcId, itemId) {
+            const rec = W().npcManager?.getNPC?.(npcId);
+            const held = rec?._needsCarried?.[itemId];
+            if (!held) return false;
+            delete rec._needsCarried[itemId];
+            slotHome(held.sprite, held.roomId, held.key);
+            return stowSprite(held.sprite, null, null);
+        },
+        // revealOutput hook: the first free slot of the producer, by id. Free = loaded, not destroyed,
+        // active, global not true, not held, placed or in the inventory. Shown by a direct call (after
+        // a reload there is no reveal listener). None free: a cosmetic copy nobody can take.
+        revealOutput(producerId, npcId) {
+            const slots = [];
+            const rooms = W().rooms || {};
+            for (const roomId of Object.keys(rooms)) {
+                const objs = rooms[roomId]?.objects || {};
+                for (const k of Object.keys(objs)) {
+                    const sp = objs[k];
+                    if (sp?.scenarioData?.outputOf === producerId && isSlot(sp)) slots.push({ id: sp.scenarioData.id || sp.objectId || k, roomId, key: k, sp });
+                }
+            }
+            slots.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+            const free = slots.find(({ sp }) => !sp.destroyed && sp.active !== false && !globalTrue(globalOf(sp))
+                && !sp._npcCarried && !sp._npcPlacedBy && !inInventory(sp));
+            if (free) {
+                slotHome(free.sp, free.roomId, free.key);
+                this.setGlobal(globalOf(free.sp), true);
+                W().showRevealedObject?.(free.sp);
+                W().eventDispatcher?.emit(`object_revealed:${free.id}`, { producerId, npcId, objectId: free.id });
+                return { slotId: free.id };
+            }
+            const cosmetic = makeCosmetic(producerId, slots[0]);
+            return cosmetic ? { cosmetic } : {};
+        },
+        removeCosmetic(handle) {
+            const sp = cosmetics.get(handle);
+            cosmetics.delete(handle);
+            try { sp?.destroy?.(); } catch (e) { /* gone */ }
+        },
+        // Stow on sight: every revealed slot in these rooms that no NPC holds (after a reload the
+        // needs state is fresh, so nobody does). Returns the ids stowed.
+        stowRevealedSlots(roomIds) {
+            const out = [];
+            for (const roomId of roomIds || []) {
+                const objs = W().rooms?.[roomId]?.objects || {};
+                for (const k of Object.keys(objs)) {
+                    const sp = objs[k];
+                    if (!sp || !isSlot(sp) || sp._npcCarried || sp.destroyed || sp.active === false) continue;
+                    if (!globalTrue(globalOf(sp))) continue;
+                    slotHome(sp, roomId, k);
+                    if (stowSprite(sp, roomId, k)) out.push(sp.scenarioData?.id || k);
+                }
+            }
+            if (out.length) console.log('[needs] stowed on sight:', out.join(', '));
+            return out;
+        },
         emit(name, data) {
             W().eventDispatcher?.emit(name, data);
         },
         setGlobal(name, value) {
-            const gs = W().gameState;
-            if (!gs) return;
-            gs.globalVariables = gs.globalVariables || {};
-            const old = gs.globalVariables[name];
-            if (typeof W().setGlobalVariable === 'function') { W().setGlobalVariable(name, value); return; }
-            gs.globalVariables[name] = value;
-            W().eventDispatcher?.emit(`global_variable_changed:${name}`, { name, value, oldValue: old });
+            setGlobalVar(name, value);
         }
     };
 }

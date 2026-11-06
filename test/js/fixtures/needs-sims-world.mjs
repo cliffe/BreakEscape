@@ -191,6 +191,7 @@ export function makeSimsWorld({ reachable = () => true, presets = null } = {}) {
         w.world.getObject = id => { const o = get(id); return o ? view(o) : null; };
     }
     const loaded = new Set(['office']);
+    w.cfgNpcs = cfg.npcs;
     w.world.approachCell = simsApproachCell;
     w.world.roomIds = () => [...loaded];
     w.world.roomPrivateTo = r => (r === 'lounge' && loaded.has('lounge') ? ['rosa', 'grace'] : null);
@@ -225,4 +226,79 @@ export function runSimsDay(NPCNeedsSystem, { minutes = 6, opts = {}, reachable, 
     at(470, () => w.drop('player_mugs', 'dirty_mugs', 150, 230));
     while (sys.tickCount < minutes * 240) sys.tick();
     return { sys, w };
+}
+
+/**
+ * Slice 7 (reveal slots, OFFICE_LIFE_PLAN 2.2 Part A): the showcase's copier beat on the stub.
+ * Adds office_copier and its three slots (copier_out_a takeable, b and c read in place), Sanjay's
+ * onUse revealOutput, Amara's printout interest and amara_pc accepting printouts, and the world's
+ * slot methods (placeHeld, stowHeld, stowSlot, revealOutput, removeCosmetic, stowRevealedSlots)
+ * with the live adapter's rules. Positions are the scenario's tiles; live cells differ a little.
+ * Extra handles: w.slots (by id), w.take(id) (the player takes a slot), w.globals.
+ */
+export function addCopierBeat(w, { cfgNpcs = w.cfgNpcs, accepts = ['post', 'printout'], onDeliver } = {}) {
+    const calls = w.calls;
+    Object.assign(calls, { placed: [], stowed: [], revealed: [], cosmetics: [], cosmeticsRemoved: [] });
+    const copier = { id: 'office_copier', roomId: 'office', x: 157, y: 89, affordance: { useSeconds: 8, capacity: 1, useFrom: { dx: 0, dy: 1 } } };
+    w.objs.push(copier);
+    const slots = {};
+    for (const [id, takeable] of [['copier_out_a', true], ['copier_out_b', false], ['copier_out_c', false]]) {
+        const o = { id, roomId: 'office', x: 157, y: 75, needsTag: 'printout', slot: true, pickable: false, outputOf: 'office_copier', global: `${id}_shown`, takeable, home: { roomId: 'office', x: 157, y: 75 } };
+        slots[id] = o;
+        w.objs.push(o);
+    }
+    const amaraPc = w.objs.find(o => o.id === 'amara_pc');
+    if (amaraPc.affordance) amaraPc.affordance = { ...amaraPc.affordance, accepts, ...(onDeliver ? { onDeliver } : {}) };
+    const npcs = cfgNpcs;
+    npcs.amara.rec.interests = { ...npcs.amara.rec.interests, printout: { weight: 2, noticeRooms: ['office'] } };
+    npcs.sanjay.rec.onUse = { sanjay_pc: { revealOutput: 'office_copier' } };
+    const g = calls.globals;
+    const held = new Set();
+    let seq = 0;
+    const stow = (o) => {
+        if (!o || o.taken) return false;
+        o.roomId = o.home.roomId; o.x = o.home.x; o.y = o.home.y;
+        o.placed = null; o.pickable = false; held.delete(o.id);
+        g[o.global] = false;
+        calls.stowed.push(o.id);
+        return true;
+    };
+    const world = w.world;
+    const basePick = world.pickUp;
+    world.pickUp = (npcId, itemId) => {
+        const ok = basePick(npcId, itemId);
+        if (ok && slots[itemId]) held.add(itemId);
+        return ok;
+    };
+    world.placeHeld = (npcId, itemId, target) => {
+        const o = slots[itemId];
+        if (!o || !held.has(itemId)) return false;
+        held.delete(itemId);
+        o.roomId = target.roomId; o.x = target.x; o.y = target.y + 8;
+        o.placed = npcId; o.pickable = false;
+        calls.placed.push({ npcId, itemId, targetId: target.id });
+        return true;
+    };
+    world.stowHeld = (npcId, itemId) => (held.has(itemId) ? stow(slots[itemId]) : false);
+    world.stowSlot = itemId => stow(slots[itemId]);
+    world.revealOutput = (producerId, npcId) => {
+        const list = Object.values(slots).filter(o => o.outputOf === producerId).sort((a, b) => (a.id < b.id ? -1 : 1));
+        const free = list.find(o => o.roomId && !o.taken && g[o.global] !== true && !o.placed && !held.has(o.id));
+        if (free) {
+            g[free.global] = true; free.pickable = true;
+            calls.revealed.push({ producerId, npcId, slotId: free.id });
+            return { slotId: free.id };
+        }
+        const cosmetic = `cosmetic:${producerId}:${++seq}`;
+        calls.cosmetics.push(cosmetic);
+        return { cosmetic };
+    };
+    world.removeCosmetic = h => calls.cosmeticsRemoved.push(h);
+    world.stowRevealedSlots = roomIds => Object.values(slots)
+        .filter(o => roomIds.includes(o.roomId) && g[o.global] === true && !held.has(o.id) && !o.taken)
+        .filter(o => stow(o)).map(o => o.id);
+    w.slots = slots;
+    w.globals = g;
+    w.take = (id) => { const o = slots[id]; o.taken = true; o.roomId = null; o.pickable = false; };
+    return w;
 }

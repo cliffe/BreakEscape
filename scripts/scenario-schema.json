@@ -4534,6 +4534,7 @@
             "properties": {
               "setGlobal": { "type": "string", "description": "Global set to true" },
               "emitEvent": { "type": "string", "description": "Event name emitted with { npcId, objectId }" },
+              "revealOutput": { "type": "string", "minLength": 1, "description": "Object id of a producer (a copier): show its first free reveal slot (objects with outputOf naming it, in id order) and emit object_revealed:<slotId> { producerId, npcId }. No free slot: a cosmetic copy nobody can take stands on the producer for its placeSeconds." },
               "_comment": { "type": "string" }
             },
             "additionalProperties": false
@@ -5010,6 +5011,9 @@
             "private": { "type": "boolean", "description": "NPC needs system: only its owners' needs use it (satisfies); other NPCs may still deliver to it (accepts). Owners = owners, else screenOwner, else the NPC whose needsHome is this object. The player is unaffected." },
             "owners": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "With private: the NPC ids allowed to use this object (default: screenOwner, else the NPC whose needsHome is this object)" },
             "useSound": { "type": "string", "minLength": 1, "description": "Sound key (a loaded effect such as drink_gulp, eat_snack, drawer_open, page_turn) played when an NPC's use of this object completes, only near the player: effects volume x 0.4, fading to silence at eight tiles, x1 in the player's room, x0.4 through a door, else silent (systems/npc-office-visuals.js). Emits npc_use_heard:<objectId> when audible." },
+            "onDeliver": { "type": "string", "enum": ["place", "stow"], "description": "What happens to a delivered reveal slot (an object with outputOf): 'place' (default) sets it down on this object; 'stow' files it away at once (a shredder, a filing cabinet). Plain items are always consumed." },
+            "placeAt": { "type": "object", "properties": { "dx": { "type": "number" }, "dy": { "type": "number" } }, "required": ["dx", "dy"], "additionalProperties": false, "description": "Where a delivered slot is set down, in tiles from this object's centre (default: halfway from the centre towards the approach cell)" },
+            "placeSeconds": { "type": "number", "minimum": 0, "maximum": 3600, "description": "Needs-clock seconds a placed slot stays before the engine files it away (default 60; 0 = until a reload). On a producer: how long a cosmetic copy stays when no slot is free." },
             "seat": { "oneOf": [ { "type": "boolean", "enum": [false] }, { "type": "string", "enum": ["fetch", "stay", "stand"] } ], "description": "Seating while an NPC uses this object (systems/seating.js): 'fetch' (default) sits on a free chair at the spot or rolls a free swivel chair over from the same room; 'stay' sits only if a chair is already there; false or 'stand' always stands. NPCs whose atlas has no seated frames always stand." },
             "_comment": { "type": "string" }
           },
@@ -5021,6 +5025,7 @@
         "screenOwner": { "type": "string", "description": "Workstation: NPC id of the owner when it is not the NPC whose needsHome is this object." },
         "needsTag": { "type": "string", "description": "NPC needs system: one tag. NPCs with a matching interests entry are drawn to this item." },
         "droppable": { "type": "boolean", "description": "true: clicking this item in the inventory drops it at the player's feet (systems/item-drop.js). Needs a unique id; usually paired with needsTag." },
+        "outputOf": { "type": "string", "minLength": 1, "description": "Reveal slot (NPC needs, OFFICE_LIFE_PLAN 2.2 Part A): the object id of the producer (a copier) whose onUse revealOutput shows this object. Needs its own revealOnGlobal, which the engine owns (true on reveal, false when filed away; a reload files every revealed slot). A delivered slot is placed or stowed, never consumed. A non-takeable readable notes* slot must use readDisplay gameDisplay." },
         "revealOnGlobal": { "type": "string", "description": "This object stays hidden and non-interactive until the named global turns true, then appears (and persists across reload, since globals are restored before the room reveals). Models a planted device appearing in place — e.g. a keylogger that shows on the PC once planted." }
       }
     },

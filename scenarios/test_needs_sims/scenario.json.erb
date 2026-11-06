@@ -18,7 +18,10 @@
     "tom_had_lunch": false,
     "amara_opened_parcel": false,
     "parcel_dropped": false,
-    "mugs_dropped": false
+    "mugs_dropped": false,
+    "copier_out_a_shown": false,
+    "copier_out_b_shown": false,
+    "copier_out_c_shown": false
   },
 
   "startItemsInInventory": [
@@ -62,7 +65,8 @@
         { "taskId": "see_long_way", "title": "Tom or Amara fetches a coffee from the kitchen, not the lounge kettle", "type": "custom", "status": "active" },
         { "taskId": "hear_drink", "title": "Stand close enough to hear someone drink", "type": "custom", "status": "active" },
         { "taskId": "spot_open_screen", "title": "Spot an unlocked, unattended screen (a breathing white dot; a steady blue dot means locked)", "type": "custom", "status": "active" },
-        { "taskId": "hear_snack", "title": "Hear someone eat in the kitchen (the fridge and microwave take their settings and sound from their type)", "type": "custom", "status": "active" }
+        { "taskId": "hear_snack", "title": "Hear someone eat in the kitchen (the fridge and microwave take their settings and sound from their type)", "type": "custom", "status": "active" },
+        { "taskId": "see_printout", "title": "A printout is delivered to a desk (Sanjay prints at his PC; Amara takes it from the copier tray to her desk, where it is filed a minute later)", "type": "custom", "status": "active" }
       ]
     }
   ],
@@ -85,7 +89,7 @@
           "observationVariants": [
             { "condition": "globalVars.amara_pc_screen_locked", "value": "Amara's desk PC. She locked it before she walked off." }
           ],
-          "affordance": { "accepts": ["post"], "private": true }
+          "affordance": { "accepts": ["post", "printout"], "private": true }
         },
         {
           "type": "pc",
@@ -173,6 +177,61 @@
           ]
         },
         {
+          "type": "photocopier1",
+          "id": "office_copier",
+          "name": "Photocopier",
+          "position": { "x": 4.4, "y": 2 },
+          "takeable": false,
+          "observations": "The office photocopier. Sanjay's desk PC prints to it.",
+          "_comment": "Slice 7 producer: sanjay_pc's onUse revealOutput shows its first free slot (copier_out_a, then b, then c). The copier preset (photocopier1) gives it an affordance; nobody satisfies a need here."
+        },
+        {
+          "type": "notes1",
+          "id": "copier_out_a",
+          "name": "Printout",
+          "position": { "x": 4.65, "y": 2.1 },
+          "takeable": true,
+          "readable": true,
+          "addToNotes": false,
+          "text": "PRINTOUT\n\nSanjay's test-run figures. Page 1 of 1. Nothing anyone would miss.",
+          "observations": "A printout on the copier tray.",
+          "outputOf": "office_copier",
+          "revealOnGlobal": "copier_out_a_shown",
+          "needsTag": "printout",
+          "_comment": "Reveal slot, takeable: a single beat. Once the player takes it, it is gone for good; b and c keep cycling."
+        },
+        {
+          "type": "notes1",
+          "id": "copier_out_b",
+          "name": "Printout",
+          "position": { "x": 4.65, "y": 2.1 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "PRINTOUT\n\nRoom booking list for next week. Lounge: Rosa, Tuesday and Thursday.",
+          "observations": "A printout on the copier tray.",
+          "outputOf": "office_copier",
+          "revealOnGlobal": "copier_out_b_shown",
+          "needsTag": "printout",
+          "_comment": "Reveal slot that reads in place (readDisplay gameDisplay), so it cycles: revealed, carried, placed, filed, revealed again."
+        },
+        {
+          "type": "notes1",
+          "id": "copier_out_c",
+          "name": "Printout",
+          "position": { "x": 4.65, "y": 2.1 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "PRINTOUT\n\nKitchen rota. Whoever finishes the milk buys the milk.",
+          "observations": "A printout on the copier tray.",
+          "outputOf": "office_copier",
+          "revealOnGlobal": "copier_out_c_shown",
+          "needsTag": "printout"
+        },
+        {
           "type": "notes1",
           "id": "deadline_memo",
           "name": "Deadline Memo",
@@ -202,7 +261,7 @@
             "caffeine": { "decayPerMin": 20, "urgentAt": 40, "initial": 58 },
             "work": { "decayPerMin": 10, "urgentAt": 50, "initial": 72 }
           },
-          "interests": { "post": { "weight": 3, "noticeRooms": ["office"] } },
+          "interests": { "post": { "weight": 3, "noticeRooms": ["office"] }, "printout": { "weight": 2, "noticeRooms": ["office"] } },
           "usePayload": { "who": "amara" },
           "onUse": { "amara_pc": { "setGlobal": "amara_opened_parcel" } },
           "eventMappings": [
@@ -222,6 +281,7 @@
             { "eventPattern": "npc_used:washing_up_tray", "onceOnly": true, "cooldown": 0, "completeTask": "see_mugs" },
             { "eventPattern": "npc_used:amara_pc", "condition": "data.tag === \"post\"", "cooldown": 0, "setGlobal": { "last_activity": "parcel" } },
             { "eventPattern": "npc_used:amara_pc", "condition": "data.tag === \"post\"", "onceOnly": true, "cooldown": 0, "completeTask": "see_parcel" },
+            { "eventPattern": "npc_used:amara_pc", "condition": "data.tag === \"printout\"", "onceOnly": true, "cooldown": 0, "completeTask": "see_printout" },
             { "eventPattern": "npc_used:amara_pc", "condition": "data.need === \"work\"", "cooldown": 0, "setGlobal": { "last_activity": "desk_work" } },
             { "eventPattern": "npc_used:amara_pc", "condition": "data.need === \"work\"", "onceOnly": true, "cooldown": 0, "completeTask": "see_work" },
             { "eventPattern": "npc_used:tom_pc", "cooldown": 0, "setGlobal": { "last_activity": "desk_work" } },
@@ -299,6 +359,7 @@
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
           "needsHome": "sanjay_pc",
           "needsSpeed": 85,
+          "onUse": { "sanjay_pc": { "revealOutput": "office_copier" } },
           "needs": {
             "work": { "decayPerMin": 15, "urgentAt": 50, "initial": 65 },
             "hunger": { "decayPerMin": 8, "urgentAt": 40, "initial": 64 },
