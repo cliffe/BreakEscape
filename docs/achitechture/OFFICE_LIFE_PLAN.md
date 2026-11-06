@@ -2561,3 +2561,4 @@ Live proof (game 694, keyless): one exchange of five lines heard once with a bub
 global and the `hear_rota_exchange` task set, the next meeting a bark then a picture (thirst icon),
 after a reload only a bark; every `/tts` request (503) matched `window.npcChatterVoice.log` line for
 line. The lab has no chatter pools or exchanges, so its barks are unchanged: its `/tts` requests in game 788 are identical to game 693's (game 709 lacked Hampshire's bark request, a replay timing race with the Examine popup; score 100 too).
+Fix 28422d70a: the "empty bubble" beside chatter lines was the press-to-talk icon (`talk.png`, overlay depth, above the bubble) of the speaker or its partner when the player stood in range; `npc-world-bubbles.js` now hides it while a line shows and restores it after, on `postupdate` (live proof game 864, `s15/fix-*`).
