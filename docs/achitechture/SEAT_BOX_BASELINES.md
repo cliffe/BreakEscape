@@ -107,3 +107,34 @@ differences, so rebaseline from the same commit as the code under test when comp
 
 The walk record's 2x screenshots with the cells drawn (check (g)) were never built. The diff tool lists
 pocket boxes in world pixels instead.
+
+## Slice 1 results (2026-11-06)
+
+Engine commit `4130d7555` (player half of the seat box stand-up order). Committed copy of the new-order
+stand audit: `tools/playtest/baselines/seatbox-s1-stand.json` (header says `commit eebd0ed77`, `seatBox`
+unset, `deskBoxes` map; the engine under test is `4130d7555` onward, and nothing under `js/` changed
+afterwards that touches seating).
+
+**Stand audit, new order**, same 159 rows as slice 0: 158 of 159 games finished (`timed_messages_example`
+timed out again, as in the baseline). 700 chairs audited, 25 skipped, 1400 stands: 1400 landed, **0 in a
+body, 0 across a desk, 0 refused**, 0 could not sit. Every stand reports `via: compass`. The slice 0
+baseline had 224 across a desk. Refused-chair list for the user: **empty** (0 refused).
+
+**Stand audit, legacy switch** (`--seat-box false`, top-offender rows only: `biometric_breach`,
+`ceo_exfil`, `lockpick_gauntlet`, `test_desk_seating`): 78 chairs, 156 stands, 156 landed, 0 in a body,
+**26 across a desk** (biometric_breach 8, ceo_exfil 8, lockpick_gauntlet 10, test_desk_seating 0; each
+chair counts twice, voluntary and forced, so 4 + 4 + 5 chairs, as in the slice 0 table). Every stand
+`via: legacy-compass`. The old code still reproduces its landings under the switch.
+
+**Walk audit** against `seatbox-s0-walk.json` (`--desk-boxes legacy`, `--all-geometry`): 34 rooms, 0 fails,
+0 coverage problems, **0 differences** (blocked +0, opened +0 and reachable cells equal in every room),
+the same 6 listed (d) overlaps as the baseline. The map files of the four rows are unchanged since
+`00f04d534`; the later commits touch only other scenarios and the lab's ink and scenario text (the games
+are stored rows, so the audit read the baseline's maps).
+
+**Lab regression**: `lab_physical_pentest` game 909, replay of 41 commands from game 685 with slice 1's
+code. `verify-run.rb`: 9 tasks completed, **score 100**. No "No path found" or "Failed to escape wall".
+`drain` showed 41 page errors, all "Failed to load resource ... 503", which are the keyless server's
+`/tts` refusals (`games_controller.rb:691`), not seating. The lab scenario was being edited by another
+agent during the run; the replay was unaffected.
+

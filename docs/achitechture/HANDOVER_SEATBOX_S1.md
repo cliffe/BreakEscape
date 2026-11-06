@@ -1,5 +1,7 @@
 # Seat box slice 1: handover (2026-11-06)
 
+**Status: slice 1 DONE (checks finished 2026-11-06).** Results are in `SEAT_BOX_BASELINES.md` ("Slice 1 results"): new-order stand audit 0 in a body, 0 across a desk, 0 refused (refused-chair list: empty); legacy switch reproduces 26 bad stands on the four offender rows; walk audit 0 differences; lab game 909 score 100. New-order JSON: `tools/playtest/baselines/seatbox-s1-stand.json`. The "In progress" and "Open" sections below are historical.
+
 Plan: `SEAT_BOX_PLAN.md` slice 1 (R3 revision), **player half only**. The brief kept NPC behaviour
 unchanged: `unseatNPC` still calls the old compass loop (now `legacyStandSpot` behind the
 `standSpot` wrapper), `seatNPC` records no `st.approach`, `pickStandSpot` has no `npc` flag. Those
