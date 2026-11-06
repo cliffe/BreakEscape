@@ -657,3 +657,17 @@ test('caught at the desk: not while the returning NPC is still in another room',
     sys.step(NEEDS_TICK_MS * 4);
     assert.equal(caught(), 1, 'once per return');
 });
+
+test('own-desk work by a seated NPC (body ~30 px off its home cell) issues no move, before or after the use', () => {
+    const cfg = ownDeskCfg();
+    const w = makeWorld(cfg);
+    const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+    w.attach(sys);
+    sys.registerAll();
+    sys.step(NEEDS_TICK_MS);                          // home resolved at (100,100)
+    w.pos.clerk.x = 120; w.pos.clerk.y = 122;         // seated pose moved the body
+    sys.step(10 * 60000);
+    assert.ok(sys.getLog().filter(e => e.ev === 'used' && e.target === 'own_pc').length >= 2);
+    assert.equal(w.calls.moves.filter(m => m.id === 'clerk').length, 0, 'never moved');
+    assert.equal(sys.getState('clerk').atPost, true);
+});

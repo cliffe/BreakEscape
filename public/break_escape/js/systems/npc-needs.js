@@ -414,7 +414,7 @@ export class NPCNeedsSystem {
                     this._moveForPhase(s);
                 }
             } else if (s.mode === 'returning') {
-                this._goHome(s);
+                this._goHome(s, { stayPut: s.atPost });   // at its post: the own-desk returning tick
             }
             return;
         }
@@ -689,7 +689,9 @@ export class NPCNeedsSystem {
         const dist = Math.hypot(cell.x - pos.x, cell.y - pos.y);
         job.deadline = this.clockMs + Math.max(20000, 3 * dist / speed * 1000);
         job.dest = { x: cell.x, y: cell.y };
-        if (dist <= HOME_EPS) { this._arrivals.add(id); return; }
+        // Own-desk work never moves the NPC: seated, its body sits ~30 px off the home cell, and a
+        // move would stand it up (goToAndStay unseats)
+        if (dist <= HOME_EPS || (s.atPost && this._atOwnPost(s))) { this._arrivals.add(id); return; }
         this.world.moveTo(id, cell.x, cell.y, speed, { yieldToPlayer: false });
     }
 
@@ -753,9 +755,10 @@ export class NPCNeedsSystem {
             if (typeof hook.setGlobal === 'string' && hook.setGlobal) { this.world.setGlobal(hook.setGlobal, true); this._worldChanged(); }
             if (typeof hook.emitEvent === 'string' && hook.emitEvent) this._emit(hook.emitEvent, { npcId: id, objectId: job.targetId });
         }
+        const stayPut = s.atPost && this._atOwnPost(s);
         s.job = null;
         this._clearBackoffs();   // a target or item may have come free; waiting NPCs do not know which
-        this._goHome(s);
+        this._goHome(s, { stayPut });
     }
 
     /** Player proximity at use time: { playerNearby, playerDistance }. */
@@ -814,12 +817,13 @@ export class NPCNeedsSystem {
         return { x: pos.x, y: pos.y, roomId: pos.roomId || null, objectId: null };
     }
 
-    _goHome(s) {
+    /** stayPut: an own-desk use just ended; the NPC is at its post (maybe seated off the cell). */
+    _goHome(s, { stayPut = false } = {}) {
         const id = s.npcId;
         s.mode = 'returning';
         const pos = this.world.npcPos(id);
         if (!s.home || !pos) { s.mode = 'idle'; return; }
-        if (Math.hypot(pos.x - s.home.x, pos.y - s.home.y) <= HOME_EPS) {
+        if (stayPut || Math.hypot(pos.x - s.home.x, pos.y - s.home.y) <= HOME_EPS) {
             this._arrivals.add(id);
             return;
         }
