@@ -80,6 +80,7 @@ import NPCSpriteManager from '../systems/npc-sprites.js';
 import { resolveObjectField } from '../utils/conditional-text.js';
 import { drinkableCupName, isObjectConsumed } from '../systems/consumables.js';
 import { deskBoxModeFor, tableBodyBox } from '../systems/desk-footprints.js';
+import { blockFor, bodyOfBlock } from '../systems/seat-box.js';
 
 // True when the saved inventory (restored on reload) holds this room-map item
 function heldInSavedInventory(id) {
@@ -2670,6 +2671,10 @@ export function createRoom(roomId, roomData, position) {
                                 sprite.y += staticSwivel.offsetY || 0;
                                 sprite.swivelBody = staticSwivel.body || null;
                             }
+                            // A seat family's measured block is its body (SEAT_BOX_PLAN.md Q0,
+                            // section 5): the exec chairs' 18 x 8 on the castor base; white
+                            // chairs' block equals the generic box below.
+                            if (!staticSwivel) sprite.swivelBody = bodyOfBlock(blockFor(sprite));
                         }
 
                         // Calculate elevation for chairs (same as other objects)

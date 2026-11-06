@@ -16,17 +16,30 @@ export const WALK_BOX = { w: 18, h: 10 };
 
 /**
  * Seated block per seat family, in rotation-frame px: w x h centred on (cx, cy), the
- * castor base. office40 is the office chairs' existing body ({ w 18, h 8, x 11, y 31 },
- * rooms.js STATIC_SWIVEL_PROPS). Every block is at least WALK_BOX.w wide (plan 1.1, block
- * width rule). white32 and exec are left out until plan section 5 measures them; those
- * chairs keep the whole body.
+ * castor base. The block is the chair's own body (plan Q0): the seated driver takes the
+ * chair's body, so the empty chair and its sitter stop at the same line. Every block is at
+ * least WALK_BOX.w wide (plan 1.1, block width rule). Measured in plan section 5
+ * (scripts/room_gen/measure_castors.py, the slice 5 sweep tools/playtest/seat-sweep.mjs):
+ *  - office40 (40 x 40 frames): the existing body { w 18, h 8, x 11, y 31 } (rooms.js
+ *    STATIC_SWIVEL_PROPS). Castor star mean: darkgray-1 (20, 35.75), grey-1 (19.9, 36),
+ *    grey-4 (19.6, 36), all within 1 px of the body centre.
+ *  - white32 (32 x 32): the generic body rooms.js gives a 32 x 32 frame (width - 10, the
+ *    bottom third, 5 px inset: 22 x 32/3 at (5, 21.3)), kept. Castor star mean white-1
+ *    (16, 29), white-2 (16, 27.75); the body covers the star in every frame.
+ *  - exec (38 x 64): 18 x 8 on the castor star, mean (18.75, 60.6). The generic body
+ *    (28 x 21.3 at (5, 42.7), centre y 53.3) stopped the castor 18 px short of a desk's
+ *    front and left the empty chair inside the desk box in 3 of 6 sweep rolls.
  */
 export const SEAT_BLOCKS = {
-    office40: { w: 18, h: 8, cx: 20, cy: 35 }
+    office40: { w: 18, h: 8, cx: 20, cy: 35 },
+    white32: { w: 22, h: 32 / 3, cx: 16, cy: 32 - 16 / 3 },
+    exec: { w: 18, h: 8, cx: 19, cy: 61 }
 };
 
 const FAMILY_OF = [
-    [/^chair-(darkgray-1|grey-1|grey-4)-rotate\d*$/, 'office40']
+    [/^chair-(darkgray-1|grey-1|grey-4)-rotate\d*$/, 'office40'],
+    [/^chair-white-[12]-rotate\d*$/, 'white32'],
+    [/^chair-exec-rotate\d*$/, 'exec']
 ];
 
 /** Seat family of a swivel chair sprite, from its rotation texture, or null. */
@@ -40,6 +53,14 @@ export function seatFamilyOf(chair) {
 export function blockFor(chair) {
     const family = seatFamilyOf(chair);
     return family && SEAT_BLOCKS[family] ? { ...SEAT_BLOCKS[family] } : null;
+}
+
+/**
+ * The chair body a block gives, as rooms.js sets a swivel body: { w, h, x, y } in
+ * rotation-frame px, (x, y) the top-left corner. null for null.
+ */
+export function bodyOfBlock(block) {
+    return block ? { w: block.w, h: block.h, x: block.cx - block.w / 2, y: block.cy - block.h / 2 } : null;
 }
 
 function eachSolid(scene, ignore, fn) {

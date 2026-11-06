@@ -16,9 +16,15 @@
 // skipped and listed. Games load through tools/playtest/lib/all-rooms-loader.mjs (every room, NPC
 // updates stubbed), so the game rows need every room unlocked (snapshot-games.sh does that).
 //
+// Static seats (slice 5, --kinds static; on by default): every static chair, armchair, sofa and
+// bench place (seatSpec kind 'static'). The player's feet go to the nearest walkable cell to the
+// place's floor point (as click-to-move aims), it sits, then Space, Space and a forced standUp(), as
+// above. A static seat lands the player back where they sat down from, so the check is that this
+// spot is clear of bodies and not across a desk from the seat.
+//
 //   node tools/playtest/stand-audit.mjs <games.tsv | game_id[:name] ...> --out out.json
 //        [--port 3001] [--only name,name] [--seat-box false] [--desk-boxes legacy|footprint]
-//        [--shots dir]
+//        [--shots dir] [--kinds swivel,static]
 //
 // --seat-box false sets window.__seatBox = false (slice 1: today's stand-up code, for the
 // side-by-side). --shots writes a 2x screenshot of every refused voluntary stand.
@@ -39,7 +45,8 @@ const seatBox = seatBoxArg === null ? undefined : (seatBoxArg === 'false' ? fals
 const deskBoxes = opt('--desk-boxes', null);
 const shots = opt('--shots', null);
 const failOnLanding = args.includes('--fail-on-landing');
-const valued = new Set(['--port', '--out', '--only', '--seat-box', '--desk-boxes', '--shots']);
+const kinds = opt('--kinds', 'swivel,static').split(',');
+const valued = new Set(['--port', '--out', '--only', '--seat-box', '--desk-boxes', '--shots', '--kinds']);
 const positional = args.filter((a, i) => !a.startsWith('--') && !valued.has(args[i - 1]));
 if (!positional.length || !outPath) {
   console.error('usage: stand-audit.mjs <games.tsv | game_id[:name] ...> --out out.json [--only a,b] [--seat-box false] [--desk-boxes m] [--shots dir]');
@@ -54,7 +61,7 @@ rows = rows.filter(r => !only || only.has(r.name));
 if (shots) fs.mkdirSync(shots, { recursive: true });
 
 // Runs in the page: audit every swivel seat. Self-contained (serialised by page.evaluate).
-async function auditChairs() {
+async function auditChairs(kinds) {
   const S = window.seating, pm = window.pathfindingManager, player = window.player;
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   const scene = pm.scene;
@@ -90,9 +97,11 @@ async function auditChairs() {
   const origAlert = window.gameAlert;
   window.gameAlert = (msg, ...rest) => { alerts.push(String(msg)); return origAlert?.(msg, ...rest); };
 
-  const chairs = [];
+  const chairs = [], statics = [];
   for (const [rid, r] of Object.entries(window.rooms)) for (const s of Object.values(r.objects || {})) {
-    if (s?.isSwivelChair && S.isSeat?.(s) && S.seatSpec(s)?.kind === 'swivel') chairs.push({ rid, s });
+    const kind = s && S.isSeat?.(s) ? S.seatSpec(s)?.kind : null;
+    if (kind === 'swivel' && s.isSwivelChair && kinds.includes('swivel')) chairs.push({ rid, s });
+    if (kind === 'static' && kinds.includes('static')) statics.push({ rid, s });
   }
   const results = [], skipped = [];
   const home = c => ({ x: c.x, y: c.y, frame: c.currentFrame });
@@ -120,7 +129,7 @@ async function auditChairs() {
     const k = Math.hypot(dx, dy) || 1;
     const approach = pm.findNearestWalkableWorldCell(castor.x + dx / k * reach, castor.y + dy / k * reach, 3)
       || pm.findNearestWalkableWorldCell(castor.x, castor.y + reach, 6);
-    const rec = { chair: id, room: rid, texture: chair.texture.key, facing, castor: [r2(castor.x), r2(castor.y)], approach: approach ? [approach.x, approach.y] : null };
+    const rec = { kind: 'swivel', chair: id, room: rid, texture: chair.texture.key, facing, castor: [r2(castor.x), r2(castor.y)], approach: approach ? [approach.x, approach.y] : null };
     if (!approach) { skipped.push({ chair: id, room: rid, why: 'no walkable approach cell within 6 cells' }); continue; }
     const one = async (kind) => {
       restore(chair, h);
@@ -160,8 +169,47 @@ async function auditChairs() {
     restore(chair, h);
     results.push(rec);
   }
+  // Static seats: one row per place (a sofa or bench has several).
+  for (const { rid, s: chair } of statics) {
+    const seat = S.seatSpec(chair);
+    const places = seat.places ? seat.places.map((_, i) => i) : [0];
+    for (const pi of places) {
+      const id = places.length > 1 ? `${chair.objectId}#${pi}` : chair.objectId;
+      const foot = { x: chair.x - chair.displayOriginX + (seat.places ? seat.places[pi][0] : chair.width / 2), y: chair.y - chair.displayOriginY + chair.height };
+      const near = npcFeet.filter(n => Math.hypot(n.x - foot.x, n.y - foot.y) < 24);
+      if (near.length || chair.seatedBy) { skipped.push({ chair: id, room: rid, kind: 'static', why: `NPC at the seat: ${near.map(n => n.id).join(',') || chair.seatedBy}` }); continue; }
+      const approach = pm.findNearestWalkableWorldCell(foot.x, foot.y, 3) || pm.findNearestWalkableWorldCell(foot.x, foot.y, 6);
+      const rec = { kind: 'static', chair: id, room: rid, texture: chair.texture.key, facing: seat.facing, castor: [r2(foot.x), r2(foot.y)], approach: approach ? [approach.x, approach.y] : null };
+      if (!approach) { skipped.push({ chair: id, room: rid, kind: 'static', why: 'no walkable cell within 6 cells of the seat' }); continue; }
+      const one = async (kind) => {
+        placeFeet(player, approach.x, approach.y);
+        await waitGame(40);
+        S.trySit(chair);
+        await waitGame(40);
+        if (!S.isSeated()) return { kind, sat: false };
+        const a0 = alerts.length;
+        if (kind === 'voluntary') { S.onJumpKey(); await waitGame(30); S.onJumpKey(); await waitGame(450); }
+        else { S.standUp(); await waitGame(30); }
+        const refused = S.isSeated() && alerts.slice(a0).some(m => /No room to stand up/.test(m));
+        const stillSeated = S.isSeated();
+        const land = feetOf(player);
+        const out = { kind, sat: true, refused, stillSeated, via: 'approach', land: [r2(land.x), r2(land.y)],
+          dist: r2(Math.hypot(land.x - foot.x, land.y - foot.y)), alerts: alerts.slice(a0) };
+        if (!stillSeated) {
+          out.inBody = inBody(land.x, land.y, null).filter(l => l !== chair.objectId);
+          out.inChair = false;
+          out.acrossDesk = acrossDesk(foot, land, chair);
+        }
+        if (stillSeated) S.standUp();
+        return out;
+      };
+      rec.voluntary = await one('voluntary');
+      rec.forced = await one('forced');
+      results.push(rec);
+    }
+  }
   window.gameAlert = origAlert;
-  return { chairs: chairs.length, results, skipped };
+  return { chairs: chairs.length, statics: statics.length, results, skipped };
 }
 
 const commit = await headCommit();
@@ -178,12 +226,12 @@ for (const row of rows) {
     const lr = await loadAllRooms(page, { gid: row.gid, port, scen: row.name });
     await settle(page, 400);
     await page.evaluate(() => { try { window.pathfindingManager.rebuildWorldGrid(); } catch (e) {} });
-    const res = await page.evaluate(auditChairs);
+    const res = await page.evaluate(auditChairs, kinds);
     out.games[row.name] = { gid: row.gid, rooms: lr.loaded.length, failed: lr.failed, minigame: lr.minigame, ...res };
     if (lr.failed.length) problems.push(`${row.name}: rooms not loaded: ${lr.failed.join(',')}`);
     const bad = res.results.flatMap(r => [r.voluntary, r.forced].filter(s => s.sat && !s.stillSeated && (s.inBody.length || s.acrossDesk.length)));
     const refused = res.results.filter(r => r.voluntary.refused).length;
-    console.log(`${row.name}\tgame ${row.gid}\tchairs ${res.chairs}\taudited ${res.results.length}\tskipped ${res.skipped.length}\tbad landings ${bad.length}\trefused ${refused}`);
+    console.log(`${row.name}\tgame ${row.gid}\tchairs ${res.chairs}\tstatic ${res.statics}\taudited ${res.results.length}\tskipped ${res.skipped.length}\tbad landings ${bad.length}\trefused ${refused}`);
     if (shots) {
       for (const r of res.results.filter(x => x.voluntary.refused)) {
         await page.evaluate(({ x, y }) => { const cam = window.game.scene.scenes[0].cameras.main; cam.stopFollow?.(); cam.setZoom(2); cam.centerOn(x, y); }, { x: r.castor[0], y: r.castor[1] });
@@ -202,11 +250,15 @@ await browser.close();
 
 // Summary
 const all = Object.entries(out.games).flatMap(([g, v]) => v.results.map(r => ({ g, ...r })));
-const stands = all.flatMap(r => [r.voluntary, r.forced].map(s => ({ ...s, chair: r.chair, g: r.g })));
+const stands = all.flatMap(r => [r.voluntary, r.forced].map(s => ({ ...s, chair: r.chair, g: r.g, k: r.kind || 'swivel' })));
 const landed = stands.filter(s => s.sat && !s.stillSeated);
 const inBody = landed.filter(s => s.inBody.length), across = landed.filter(s => s.acrossDesk.length);
 const byVia = {}; for (const s of stands) byVia[s.via] = (byVia[s.via] || 0) + 1;
 console.log(`games ${Object.keys(out.games).length}/${rows.length}, chairs audited ${all.length}, skipped ${Object.values(out.games).reduce((n, v) => n + v.skipped.length, 0)}`);
+for (const k of ['swivel', 'static']) {
+  const st = stands.filter(s => s.k === k), ld = st.filter(s => s.sat && !s.stillSeated);
+  console.log(`${k}: seats ${all.filter(r => r.kind === k).length}, stands ${st.length}: landed ${ld.length}, in a body ${ld.filter(s => s.inBody.length).length}, across a desk ${ld.filter(s => s.acrossDesk.length).length}, refused ${st.filter(s => s.refused).length}, could not sit ${st.filter(s => !s.sat).length}`);
+}
 console.log(`stands ${stands.length}: landed ${landed.length}, in a body ${inBody.length}, across a desk ${across.length}, refused ${stands.filter(s => s.refused).length}, could not sit ${stands.filter(s => !s.sat).length}`);
 console.log(`via ${JSON.stringify(byVia)}`);
 for (const p of problems) console.log(`PROBLEM ${p}`);

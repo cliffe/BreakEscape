@@ -4,6 +4,9 @@
 // Run with: node test/js/seat-box.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { installEasyStar } from './fixtures/world-grid-fixture.mjs';
 
 globalThis.window = globalThis.window || {};
@@ -26,12 +29,17 @@ function scene(statics = [], dynamics = [], bounds = { x: 0, y: 0, width: 320, h
 const DESK = () => body(48, 264, 78, 16, { go: { name: 'desk1' } });
 
 // ── blocks ──────────────────────────────────────────────────────────────────
-test('blockFor: office chairs get the 18 x 8 body block; white and exec chairs have none yet', () => {
+test('blockFor: each swivel chair family has its measured block (slice 5)', () => {
     for (const base of ['chair-darkgray-1-rotate', 'chair-grey-1-rotate', 'chair-grey-4-rotate']) {
         assert.deepEqual(sb.blockFor({ originalTexture: `${base}3` }), { w: 18, h: 8, cx: 20, cy: 35 }, base);
     }
-    for (const base of ['chair-white-1-rotate', 'chair-white-2-rotate', 'chair-exec-rotate']) {
-        assert.equal(sb.blockFor({ originalTexture: `${base}1` }), null, base);
+    for (const base of ['chair-white-1-rotate', 'chair-white-2-rotate']) {
+        for (let f = 1; f <= 8; f++) assert.equal(sb.seatFamilyOf({ originalTexture: `${base}${f}` }), 'white32', `${base}${f}`);
+    }
+    for (let f = 1; f <= 8; f++) assert.deepEqual(sb.blockFor({ originalTexture: `chair-exec-rotate${f}` }), { w: 18, h: 8, cx: 19, cy: 61 });
+    // not swivel chairs, or not measured: none
+    for (const key of ['desk1', 'chair-grey-2', 'exec_chair_back1', 'crash-cart-rotate1', 'chair-white-3-rotate1']) {
+        assert.equal(sb.blockFor({ texture: { key } }), null, key);
     }
     assert.equal(sb.blockFor({ texture: { key: 'desk1' } }), null);
     // the block width rule: never narrower than the walking box
@@ -39,6 +47,30 @@ test('blockFor: office chairs get the 18 x 8 body block; white and exec chairs h
     // office40 is the existing body { w 18, h 8, x 11, y 31 } centred
     const o = sb.SEAT_BLOCKS.office40;
     assert.deepEqual([o.cx - o.w / 2, o.cy - o.h / 2], [11, 31]);
+});
+
+test('bodyOfBlock: the body rooms.js sets for each family', () => {
+    assert.deepEqual(sb.bodyOfBlock(sb.SEAT_BLOCKS.office40), { w: 18, h: 8, x: 11, y: 31 });
+    assert.deepEqual(sb.bodyOfBlock(sb.SEAT_BLOCKS.exec), { w: 18, h: 8, x: 10, y: 57 });
+    assert.equal(sb.bodyOfBlock(null), null);
+    // white32 keeps the generic box rooms.js gives a 32 x 32 frame (width - 10, bottom third, 5 px inset)
+    const w = sb.bodyOfBlock(sb.SEAT_BLOCKS.white32), H = 32;
+    assert.equal(w.w, 32 - 10);
+    assert.ok(Math.abs(w.h - H / 3) < 1e-9 && Math.abs(w.x - 5) < 1e-9 && Math.abs(w.y - (H - H / 3)) < 1e-9, JSON.stringify(w));
+    // the block sits on the castor star measured from the art (measure_castors.py, mean of 8 frames)
+    const CASTOR = { office40: [[20, 35.75], [19.94, 36], [19.62, 36]], white32: [[16, 29], [16, 27.75]], exec: [[18.75, 60.62]] };
+    for (const [fam, pts] of Object.entries(CASTOR)) {
+        const b = sb.bodyOfBlock(sb.SEAT_BLOCKS[fam]);
+        for (const [x, y] of pts) assert.ok(x > b.x && x < b.x + b.w && y > b.y && y < b.y + b.h, `${fam} castor (${x}, ${y}) in ${JSON.stringify(b)}`);
+    }
+    // grey-1 and grey-4 agree with office40's (20, 35) within 1 px (plan section 5, step 1)
+    for (const [x, y] of CASTOR.office40.slice(1)) assert.ok(Math.abs(x - 20) <= 1 && Math.abs(y - 35) <= 1);
+});
+
+test('rooms.js gives a rotation-tile swivel chair its family block as its body', () => {
+    const src = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '../../public/break_escape/js/core/rooms.js'), 'utf8');
+    assert.match(src, /import \{ blockFor, bodyOfBlock \} from '\.\.\/systems\/seat-box\.js';/);
+    assert.match(src, /if \(!staticSwivel\) sprite\.swivelBody = bodyOfBlock\(blockFor\(sprite\)\);/);
 });
 
 // ── walkBoxClear ────────────────────────────────────────────────────────────
