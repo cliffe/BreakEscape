@@ -764,6 +764,18 @@ skipped once `courier_ready` or `records_clone_held` is set) emits `player_in_vi
 which challenges the player at the door, or records the PIN capture when he is at the
 keypad. The scenario file is the reference for the exact mappings.
 
+**Guard-priority at the gate (door-gates.js, 2026-11-06).** The records door is a gate
+(`openFor:["len"]`, `playerMayPassIf:"courier_ready"`); `_playerBarred` keeps it shut for an
+undisguised player within `openRadius`, which is also the PIN-surf posture. A shut gate is a
+wall in the pathfinding grid, so a barred gate used to trap Len on either side: his route leg
+had no path, he retried forever (the stuck-watch only runs while path-following), his patrol
+stopped for good and `len_at_door` never re-fired. door-gates now frees a near `openFor` guard
+after `GUARD_PRIORITY_MS` (5 s) regardless of the barred player, and never shuts a gate on a
+guard mid-crossing, so Len's patrol always cycles and the tailgate window returns within one
+cycle. The player is still kept from *claiming* an undisguised crossing by the credit path
+(the `tailgate_in` enter_room task and the `kp_badge_tailgated` debrief flag), not by trapping
+the guard.
+
 ### 12.4 Capture view
 
 An `open_plan` `page-builder` object (`captures_terminal`, `minigameData:{ view:"captures" }`)
