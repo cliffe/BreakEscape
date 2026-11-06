@@ -871,3 +871,49 @@ test('leash: nothing permitted left logs leashed once per urgent episode, with c
     assert.equal(r.w.calls.emits.find(e => e.name === 'npc_needs_leashed:tom').data.chose, null);
     assert.equal(r.used('tom').length, 0);
 });
+
+test('private objects: passing over another owner\'s private object is private_skipped, not leashed, and emits nothing', () => {
+    // Amy is thirsty; Ben's private desk-kettle is nearer than the shared cooler
+    const objects = [
+        { id: 'amy_desk', roomId: 'office', x: 100, y: 68, affordance: { useSeconds: 5 } },
+        { id: 'ben_kettle', roomId: 'office', x: 130, y: 100, affordance: { satisfies: 'thirst', restores: 60, useSeconds: 5, private: true, owners: ['ben'] } },
+        { id: 'office_cooler', roomId: 'office', x: 300, y: 100, affordance: { satisfies: 'thirst', restores: 60, useSeconds: 5 } }
+    ];
+    const r = leashRun({ npcs: { amy: { pos: { x: 100, y: 100 }, room: 'office', rec: { id: 'amy', roomId: 'office', needsHome: 'amy_desk', needs: thirsty } } }, objects }, 0);
+    for (let i = 0; i < 400 && !r.sys.states.get('amy').job; i++) r.sys.step(250);
+    const job = r.sys.states.get('amy').job;
+    assert.equal(job.targetId, 'office_cooler');
+    assert.equal('leashed' in job, false);
+    assert.equal(job.privateSkipped, true, 'the overlay labels it "private"');
+    assert.equal(r.sys.getState('amy').job.privateSkipped, true);
+    const log = r.sys.getLog();
+    assert.equal(log.filter(e => e.ev === 'leashed').length, 0);
+    const p = log.find(e => e.ev === 'private_skipped');
+    assert.deepEqual({ need: p.need, skipped: p.skipped, chose: p.chose }, { need: 'thirst', skipped: ['ben_kettle'], chose: 'office_cooler' });
+    assert.equal(r.w.calls.emits.filter(e => e.name.startsWith('npc_needs_leashed')).length, 0);
+});
+
+test('private objects: with only another owner\'s private object left, private_skipped once per episode and no leashed', () => {
+    const objects = [
+        { id: 'amy_desk', roomId: 'office', x: 100, y: 68, affordance: { useSeconds: 5 } },
+        { id: 'ben_kettle', roomId: 'office', x: 130, y: 100, affordance: { satisfies: 'thirst', restores: 60, useSeconds: 5, private: true, owners: ['ben'] } }
+    ];
+    const r = leashRun({ npcs: { amy: { pos: { x: 100, y: 100 }, room: 'office', rec: { id: 'amy', roomId: 'office', needsHome: 'amy_desk', needs: thirsty } } }, objects }, 1);
+    assert.equal(r.log.filter(e => e.ev === 'private_skipped').length, 1);
+    assert.equal(r.log.filter(e => e.ev === 'leashed').length, 0);
+    assert.equal(r.w.calls.emits.filter(e => e.name.startsWith('npc_needs_leashed')).length, 0);
+    assert.equal(r.sys.states.get('amy').privateNoted.thirst, true);
+    assert.ok(!Object.values(r.sys.states.get('amy').leashNoted).some(Boolean), 'the overlay does not say leashed');
+});
+
+test('leash and private together: leashed lists only the room-removed targets; the private one is logged apart', () => {
+    const objects = [
+        ...kitchenOffice,
+        { id: 'ben_kettle', roomId: 'office', x: 130, y: 100, affordance: { satisfies: 'thirst', restores: 60, useSeconds: 5, private: true, owners: ['ben'] } }
+    ];
+    const r = leashRun({ npcs: { tom: { pos: { x: 100, y: 100 }, room: 'office', rec: tomRec({ needsAvoidRooms: ['lounge'] }) } }, objects });
+    const l = r.log.find(e => e.ev === 'leashed');
+    assert.deepEqual(l.skipped, ['lounge_cooler']);
+    assert.deepEqual(r.log.find(e => e.ev === 'private_skipped').skipped, ['ben_kettle']);
+    assert.deepEqual(r.w.calls.emits.find(e => e.name === 'npc_needs_leashed:tom').data.skipped, ['lounge_cooler']);
+});

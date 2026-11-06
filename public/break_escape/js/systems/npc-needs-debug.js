@@ -47,16 +47,20 @@ export function barLayout({ needs = {}, levels = {}, lastSatisfiedAt = {}, clock
 
 /**
  * Pure: the job line, e.g. "goto amara_pc", "using 4s office_coffee", "frozen", "idle".
- * " leashed" is added when the room leash or a private object removed an option: on the
- * job it chose (job.leashed), or while idle with an urgent need it left with nothing (leashNoted).
+ * " leashed" is added when a room rule (needsRooms, needsAvoidRooms, needsPrivateTo) removed an
+ * option: on the job it chose (job.leashed), or while idle with an urgent need it left with
+ * nothing (leashNoted). " private" is added the same way when only other owners' private
+ * objects were passed over (job.privateSkipped, privateNoted): expected, so not "leashed".
  */
 export function jobLabel(st, job) {
     if (!st) return '';
     if (st.scriptSuspended) return 'suspended';
-    const base = jobBase(st, job);
-    const leashed = job ? job.leashed === true
-        : Object.values(st.leashNoted || {}).some(Boolean);
-    return leashed ? `${base} leashed` : base;
+    let label = jobBase(st, job);
+    const leashed = job ? job.leashed === true : Object.values(st.leashNoted || {}).some(Boolean);
+    const priv = job ? job.privateSkipped === true : Object.values(st.privateNoted || {}).some(Boolean);
+    if (leashed) label += ' leashed';
+    if (priv) label += ' private';
+    return label;
 }
 
 function jobBase(st, job) {

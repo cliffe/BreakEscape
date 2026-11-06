@@ -184,6 +184,7 @@ export class NPCNeedsSystem {
         this.states.set(npcId, {
             npcId, needs, interests, levels, lastSatisfiedAt, rng, leash,
             leashNoted: {},
+            privateNoted: {},
             urgentFlag: {},
             mode: 'idle',
             prevMode: null,
@@ -437,6 +438,13 @@ export class NPCNeedsSystem {
         this._emitLeashed(s, { ...data, chose: undefined });
     }
 
+    /** Only other owners' private objects were left: log once per urgent episode, no event. */
+    _notePrivate(s, key, data) {
+        if (s.privateNoted[key]) return;
+        s.privateNoted[key] = true;
+        this._log(s.npcId, 'private_skipped', { ...data, chose: undefined });
+    }
+
     _emitLeashed(s, data) {
         this._log(s.npcId, 'leashed', data);
         const payload = { npcId: s.npcId };
@@ -556,6 +564,7 @@ export class NPCNeedsSystem {
             } else if (!urgent) {
                 s.urgentFlag[name] = false;
                 s.leashNoted[name] = false;
+                s.privateNoted[name] = false;
             }
         }
     }
@@ -651,8 +660,22 @@ export class NPCNeedsSystem {
         const free = objects.filter(o => o.affordance && asList(o.affordance.satisfies).includes(name) && this._free(s, o));
         // Room leash and private objects, before the home preference (OFFICE_LIFE_PLAN 7.2)
         const opts = free.filter(o => this._permitted(s, o, true));
-        const skipped = free.length > opts.length ? free.filter(o => !opts.includes(o)).map(o => o.id) : null;
-        if (!opts.length) { if (skipped) this._noteLeash(s, name, { need: name, skipped }); return null; }
+        // Only a room rule makes a choice "leashed"; another owner's private object is expected
+        // to be passed over (colleagues' desks), so it is logged as private_skipped instead
+        let skipped = null, priv = null;
+        if (free.length > opts.length) {
+            for (const o of free) {
+                if (opts.includes(o)) continue;
+                if (this._roomForbidden(s, o.roomId)) (skipped || (skipped = [])).push(o.id);
+                else (priv || (priv = [])).push(o.id);
+            }
+        }
+        const nothing = () => {
+            if (skipped) this._noteLeash(s, name, { need: name, skipped });
+            if (priv) this._notePrivate(s, name, { need: name, skipped: priv });
+            return null;
+        };
+        if (!opts.length) return nothing();
         // Prefer the NPC's own post object (needsHome) when it satisfies this need
         // and is reachable, so a person works at their own desk rather than the
         // nearest free one. Only bites when the home object is among the options
@@ -660,8 +683,11 @@ export class NPCNeedsSystem {
         const homeObj = s.home?.objectId ? opts.find(o => o.id === s.home.objectId) : null;
         const target = (homeObj && this._reachable(s, homeObj))
             ? homeObj : this._nearestReachable(s, opts, pos);
-        if (!target) { if (skipped) this._noteLeash(s, name, { need: name, skipped }); return null; }
-        return skipped ? { kind: 'use', targetId: target.id, leashed: skipped } : { kind: 'use', targetId: target.id };
+        if (!target) return nothing();
+        const pick = { kind: 'use', targetId: target.id };
+        if (skipped) pick.leashed = skipped;
+        if (priv) pick.privateSkipped = priv;
+        return pick;
     }
 
     _carryCandidate(s, tag, it, objects, pos) {
@@ -690,9 +716,11 @@ export class NPCNeedsSystem {
             startedAt: this.clockMs, deadline: 0, useUntil: 0, carrying: false
         };
         if (pick.leashed) s.job.leashed = true;   // the debug overlay's "leashed" label
+        if (pick.privateSkipped) s.job.privateSkipped = true;   // the overlay's "private" label
         s.mode = 'job';
         this._log(id, 'job_start', { need: pick.need || undefined, tag: pick.tag || undefined, target: pick.targetId, item: pick.itemId || undefined });
         if (pick.leashed) this._emitLeashed(s, { need: pick.need || undefined, skipped: pick.leashed, chose: pick.targetId });
+        if (pick.privateSkipped) this._log(id, 'private_skipped', { need: pick.need || undefined, skipped: pick.privateSkipped, chose: pick.targetId });
         // Pre-action tell: a short wind-up while the NPC is still at its post, so the
         // leaving-desk window is catchable. world.windupMs() is 0 in stub worlds (no wind-up).
         const windup = s.atPost && !this._atOwnPost(s) ? Math.max(0, Number(this.world.windupMs?.() || 0)) : 0;
@@ -938,7 +966,7 @@ export class NPCNeedsSystem {
         for (const k of Object.keys(s.levels)) levels[k] = round2(s.levels[k]);
         return {
             npcId, mode: s.mode, levels, atPost: s.atPost, scriptSuspended: s.scriptSuspended,
-            job: s.job ? { windingUp: !!s.job.windupUntil, need: s.job.need, kind: s.job.kind, phase: s.job.phase, targetId: s.job.targetId, itemId: s.job.itemId, carrying: s.job.carrying, leashed: !!s.job.leashed } : null,
+            job: s.job ? { windingUp: !!s.job.windupUntil, need: s.job.need, kind: s.job.kind, phase: s.job.phase, targetId: s.job.targetId, itemId: s.job.itemId, carrying: s.job.carrying, tag: s.job.tag || null, leashed: !!s.job.leashed, privateSkipped: !!s.job.privateSkipped } : null,
             home: s.home ? { x: Math.round(s.home.x), y: Math.round(s.home.y), roomId: s.home.roomId, objectId: s.home.objectId || null, provisional: !!s.home.provisional } : null,
             clockMs: this.clockMs, tick: this.tickCount
         };
@@ -1143,7 +1171,10 @@ export function createEngineWorld() {
             if (!f || f.sp._npcCarried || f.sp.visible === false) return false;
             const sp = f.sp;
             sp._npcCarried = npcId;
-            sp.setVisible?.(false);
+            // Office visuals (slice 3) keep it visible in the carrier's hand (npc-office-visuals.js
+            // follows it on postupdate); with "officeVisuals": false it is hidden, as before
+            if (W().gameScenario?.officeVisuals === false) sp.setVisible?.(false);
+            else if (sp.body && sp.body.enable !== false) { sp._carryBodyOff = true; sp.body.enable = false; }
             sp.interactable = false;
             try { sp.disableInteractive?.(); } catch (e) { /* no input zone */ }
             delete W().rooms[f.roomId].objects[f.key];
@@ -1174,6 +1205,7 @@ export function createEngineWorld() {
             const roomId = W().npcBehaviorManager?.getBehavior?.(npcId)?.roomId || held.roomId;
             if (pos) { sp.x = pos.x - (sp.displayWidth || 0) / 2; sp.y = pos.y - (sp.displayHeight || 0) / 2; }
             sp._npcCarried = null;
+            if (sp._carryBodyOff) { sp._carryBodyOff = false; if (sp.body) sp.body.enable = true; }
             sp.setVisible?.(true);
             sp.interactable = true;
             try { sp.setInteractive?.({ useHandCursor: true }); } catch (e) { /* ok */ }

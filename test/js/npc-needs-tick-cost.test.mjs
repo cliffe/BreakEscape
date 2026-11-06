@@ -74,6 +74,10 @@ test('sims fixture, slice 2a: own PCs only, the lounge for Rosa and Grace, the m
     assert.ok(caf.includes('kitchen_coffee') && caf.includes('office_coffee'), caf.join(', '));
     const leashed = log.filter(e => e.ev === 'leashed' && e.need === 'caffeine' && e.chose === 'kitchen_coffee');
     assert.ok(leashed.length >= 1 && leashed.every(e => e.skipped.includes('lounge_kettle')));
+    // Colleagues' private PCs are expected to be passed over: private_skipped, never leashed
+    assert.equal(log.filter(e => e.ev === 'leashed' && e.need === 'work').length, 0);
+    assert.ok(log.some(e => e.ev === 'private_skipped' && e.need === 'work'));
+    assert.ok(log.filter(e => e.ev === 'leashed').every(e => e.skipped.every(id => lounge.has(id))), 'leashed names only the lounge');
     // Rosa makes her coffee at her own kettle
     assert.ok(log.some(e => e.npc === 'rosa' && e.ev === 'used' && e.target === 'lounge_kettle'));
 });

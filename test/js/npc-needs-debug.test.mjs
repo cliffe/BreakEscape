@@ -59,3 +59,10 @@ test('overlay is off by default and setEnabled(null) returns to the scenario fla
     d.update();   // disabled, no needs system: a no-op that must not throw
     delete globalThis.window;
 });
+
+test('jobLabel: " private" when only other owners\' private objects were passed over; both labels can show', () => {
+    assert.equal(jobLabel({ mode: 'job', clockMs: 0 }, { phase: 'goto_target', targetId: 'pc', privateSkipped: true }), 'goto_target pc private');
+    assert.equal(jobLabel({ mode: 'job', clockMs: 0 }, { phase: 'goto_target', targetId: 'k', leashed: true, privateSkipped: true }), 'goto_target k leashed private');
+    assert.equal(jobLabel({ mode: 'idle', clockMs: 0, privateNoted: { work: true } }, null), 'idle private');
+    assert.equal(jobLabel({ mode: 'idle', clockMs: 0, privateNoted: { work: false } }, null), 'idle');
+});
