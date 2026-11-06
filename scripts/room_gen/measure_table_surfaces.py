@@ -280,6 +280,59 @@ def measure(path):
     }
 
 
+def footprint(path):
+    """`--footprint` (SEAT_BOX_PLAN.md 2.3): the desk's floor footprint for its collision box.
+
+    foot  = the first row of the front face minus the first opaque row. Pass 1's run of top
+            rows ends at the first row that changes colour; a highlight lip (a row as light as
+            the top or lighter, at most two) belongs to the top, so foot takes the next darker row.
+    floor = the last row with an opaque pixel, plus one (alpha > 0, as seating.js sitShift).
+    x     = the opaque column span of the top band, [x0, x1).
+    Returns None when the sprite has no pass-1 top run."""
+    im = np.array(Image.open(path).convert("RGBA")).astype(float)
+    h, w = im.shape[:2]
+    alpha = im[..., 3] > 16
+    if not alpha.any():
+        return None
+    ys = np.where(alpha.any(axis=1))[0]
+    xs = np.where(alpha.any(axis=0))[0]
+    y0, y1 = int(ys.min()), int(ys.max())
+    bw = int(xs.max() - xs.min() + 1)
+    t, f = top_run(im, alpha, y0, y1, bw)
+    if f > y1 or f - t < 2:
+        return None
+
+    def row_l(y):
+        m = alpha[y]
+        if not m.any():
+            return 0.0
+        return float(np.median(lum(im[y, m, :3])))
+    top_l = float(np.median([row_l(y) for y in range(t, f)]))
+    row = f
+    for _ in range(2):
+        if row <= y1 and row_l(row) >= top_l - 10:
+            row += 1
+    if row > y1:
+        return None
+    foot = row - y0
+    floor = int(np.where(im[..., 3].any(axis=1))[0].max()) + 1
+    band = alpha[y0:row]
+    cols = np.where(band.any(axis=0))[0]
+    x = [int(cols.min()), int(cols.max()) + 1]
+    return {"foot": int(foot), "floor": floor, "x": x, "w": w, "h": h}
+
+
+def footprint_entry(fp):
+    """The table_surfaces.json entry for a footprint: defaults (floor = h, x = [0, w]) left out."""
+    e = {"foot": fp["foot"]}
+    if fp["floor"] != fp["h"]:
+        e["floor"] = fp["floor"]
+    if fp["x"] != [0, fp["w"]]:
+        e["x"] = fp["x"]
+    e["source"] = "measured"
+    return e
+
+
 def draw_sheets(results, outdir, per_page=16, page_w=1800):
     pages, cur, x, y, row_h = [], [], 12, 12, 0
     tiles = []
@@ -298,6 +351,10 @@ def draw_sheets(results, outdir, per_page=16, page_w=1800):
         d.line([(r["insetL"] * SCALE, 0), (r["insetL"] * SCALE, H)], fill=(0, 90, 255, 255), width=1)
         xr = (r["w"] - r["insetR"]) * SCALE
         d.line([(xr, 0), (xr, H)], fill=(0, 90, 255, 255), width=1)
+        fp = r.get("footprint")
+        if fp:  # the footprint collision box, F - foot .. F across x
+            d.rectangle([fp["x"][0] * SCALE, (fp["floor"] - fp["foot"]) * SCALE,
+                         fp["x"][1] * SCALE - 1, fp["floor"] * SCALE - 1], outline=(255, 0, 255, 255), width=2)
         tiles.append((name, r, big))
 
     def flush(page):
@@ -310,7 +367,8 @@ def draw_sheets(results, outdir, per_page=16, page_w=1800):
             sheet.paste(big, (px, py + 30))
             flag = "" if r["confidence"] >= 0.6 else "  LOW"
             d.text((px, py + 2), f"{name} {r['w']}x{r['h']}", fill=(255, 255, 255))
-            d.text((px, py + 14), f"top {r['surfaceTop']} front {r['surfaceFront']} c={r['confidence']}{flag}",
+            foot = f" foot {r['footprint']['foot']}" if r.get("footprint") else ""
+            d.text((px, py + 14), f"top {r['surfaceTop']} front {r['surfaceFront']}{foot} c={r['confidence']}{flag}",
                    fill=(255, 220, 120) if flag else (170, 255, 170))
         pages.append(sheet)
 
@@ -339,6 +397,11 @@ def main(argv):
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[1])
     ap.add_argument("--out", required=True, help="output folder (keep it outside the repo)")
     ap.add_argument("--only", default="")
+    ap.add_argument("--footprint", action="store_true",
+                    help="also measure each sprite's floor footprint (foot, floor, x) and draw it in magenta")
+    ap.add_argument("--write", metavar="TABLE_SURFACES_JSON",
+                    help="with --footprint: add a 'measured' entry for each confident (>= 0.6) sprite used in a "
+                         "tables layer that has none yet; existing entries are never changed")
     a = ap.parse_args(argv)
     os.makedirs(a.out, exist_ok=True)
     only = set(filter(None, a.only.split(",")))
@@ -357,6 +420,8 @@ def main(argv):
         u = use.get(name)
         r["usedIn"] = sorted(u["rooms"]) if u else []
         r["layers"] = sorted(u["layers"]) if u else []
+        if a.footprint:
+            r["footprint"] = footprint(p)
         results.append((name, r))
     results.sort(key=lambda t: (-len(t[1]["usedIn"]), t[0]))
     out = {n: {k: v for k, v in r.items() if k != "path"} | {"sprite": os.path.relpath(r["path"], ROOT)}
@@ -368,6 +433,18 @@ def main(argv):
     low = [n for n, r in results if r["confidence"] < 0.6]
     print(f"{len(results)} sprites measured; {len(results) - len(low)} at confidence >= 0.6, {len(low)} low")
     print("JSON:", jp)
+    if a.footprint and a.write:
+        doc = json.load(open(a.write)) if os.path.exists(a.write) else {"version": 1, "sprites": {}, "legacyBox": []}
+        added = []
+        for n, r in results:
+            if r["confidence"] >= 0.6 and r.get("footprint") and "tables" in r["layers"] \
+                    and n not in doc["sprites"] and n not in doc.get("legacyBox", []):
+                doc["sprites"][n] = footprint_entry(r["footprint"])
+                added.append(n)
+        with open(a.write, "w") as f:
+            json.dump(doc, f, indent=1)
+            f.write("\n")
+        print(f"wrote {len(added)} new measured entries to {a.write}: {', '.join(added)}")
     for s in sheets:
         print("sheet:", s)
 

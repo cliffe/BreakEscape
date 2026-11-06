@@ -81,6 +81,10 @@ export function preload() {
     // Show loading text
     document.getElementById('loading').style.display = 'block';
 
+    // Desk footprint data for maps that opt in to footprint collision boxes
+    // (deskBoxes = footprint; systems/desk-footprints.js, rooms.js applyTableBody)
+    this.load.json('tableSurfaces', 'table_surfaces.json');
+
     // Load tilemap files and regular tilesets first
     this.load.tilemapTiledJSON('room_reception', 'rooms/room_reception.json');
     this.load.tilemapTiledJSON('room_office', 'rooms/room_office.json');

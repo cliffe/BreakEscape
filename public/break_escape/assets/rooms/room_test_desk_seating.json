@@ -1159,6 +1159,13 @@
  "nextlayerid": 14,
  "nextobjectid": 93,
  "orientation": "orthogonal",
+ "properties": [
+  {
+   "name": "deskBoxes",
+   "type": "string",
+   "value": "footprint"
+  }
+ ],
  "renderorder": "right-down",
  "tiledversion": "1.11.2",
  "tileheight": 32,

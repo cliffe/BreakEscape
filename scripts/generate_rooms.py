@@ -534,8 +534,30 @@ def export_json_with_tiled(tmj_path: Path, json_path: Path) -> bool:
     return True
 
 
+# Rooms built here that use desk footprint collision boxes (the Tiled map property
+# deskBoxes = footprint; docs/achitechture/SEAT_BOX_PLAN.md slice 2). Opt-in per map, never a
+# global flip: add a room here when it is new, or when its walk audit has passed. Rooms edited
+# by hand use `room_edit.py ROOM set-map-prop deskBoxes footprint` instead.
+DESK_BOX_FOOTPRINT_ROOMS: set = set()
+
+
+def with_map_property(room: dict, name: str, value: str) -> dict:
+    """The map with one string map property set, in Tiled's array form and key order."""
+    props = [p for p in room.get("properties", []) if p.get("name") != name]
+    props.append({"name": name, "type": "string", "value": value})
+    props.sort(key=lambda p: p["name"])
+    out = {k: v for k, v in room.items() if k != "properties"}
+    keys = list(out)
+    i = next((i for i, k in enumerate(keys) if k > "properties"), len(keys))
+    items = list(out.items())
+    items.insert(i, ("properties", props))
+    return dict(items)
+
+
 def write_room(room: dict, stem: str):
     """Write .tmj, then export game-ready .json with Tiled --embed-tilesets."""
+    if stem in DESK_BOX_FOOTPRINT_ROOMS:
+        room = with_map_property(room, "deskBoxes", "footprint")
     tmj_path = ROOMS_DIR / f"{stem}.tmj"
     json_path = ROOMS_DIR / f"{stem}.json"
 

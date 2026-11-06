@@ -5193,6 +5193,34 @@ GEOM_GU_W_PX     = 160  # GRID_UNIT_WIDTH_TILES(5)  * TILE_SIZE
 GEOM_GU_H_PX     = 128  # GRID_UNIT_HEIGHT_TILES(4) * TILE_SIZE
 GEOM_VISUAL_TOP  = 2    # VISUAL_TOP_TILES
 
+# A Tiled map property, read the way desk-footprints.js mapProperty reads it: Tiled's
+# array of {name, type, value}, or a plain object; nil when absent.
+def tiled_map_property(map_json, name)
+  props = map_json.is_a?(Hash) ? map_json['properties'] : nil
+  case props
+  when Array then props.find { |p| p.is_a?(Hash) && p['name'] == name }&.fetch('value', nil)
+  when Hash then props[name]
+  end
+end
+
+# Desk collision boxes per map (SEAT_BOX_PLAN.md slice 2): which of the scenario's room maps
+# have opted in to footprint boxes (map property deskBoxes = footprint) and which are legacy.
+# Returns { footprint: [types], legacy: [types] }; types whose map can't be found are skipped.
+def desk_box_maps(json_data, repo_root)
+  type_map = geom_type_to_tilemap(repo_root)
+  out = { footprint: [], legacy: [] }
+  types = (json_data['rooms'] || {}).values.map { |r| r.is_a?(Hash) ? r['type'] : nil }.compact.uniq.sort
+  types.each do |type|
+    file = type_map[type]
+    path = file && File.join(repo_root, 'public/break_escape/assets/rooms', file)
+    next unless path && File.exist?(path)
+    map = JSON.parse(File.read(path)) rescue nil
+    next unless map
+    (tiled_map_property(map, 'deskBoxes') == 'footprint' ? out[:footprint] : out[:legacy]) << type
+  end
+  out
+end
+
 # Build the room-type -> tilemap-file map from the engine's loader.
 def geom_type_to_tilemap(repo_root)
   game_js = File.join(repo_root, 'public/break_escape/js/core/game.js')
@@ -6050,6 +6078,16 @@ def main
     if options[:strict_social] && json_data.key?('social') && ValidateSocial.errors(social_issues).any?
       puts "✗ --strict-social: #{ValidateSocial.errors(social_issues).length} social lint error(s)"
       exit 1
+    end
+
+    # Info: desk collision boxes per map (footprint maps opt in with a Tiled map property)
+    desk_maps = desk_box_maps(json_data, File.expand_path('..', __dir__))
+    if desk_maps[:legacy].any? || desk_maps[:footprint].any?
+      puts "ℹ Desk boxes: legacy in #{desk_maps[:legacy].length} map(s)" \
+           "#{desk_maps[:legacy].any? ? " (#{desk_maps[:legacy].join(', ')})" : ''}; " \
+           "footprint in #{desk_maps[:footprint].length}" \
+           "#{desk_maps[:footprint].any? ? " (#{desk_maps[:footprint].join(', ')})" : ''}"
+      puts
     end
 
     # Exit with success (warnings don't cause failure)

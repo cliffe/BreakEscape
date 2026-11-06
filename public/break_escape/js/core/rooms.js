@@ -79,6 +79,7 @@ import { NPCPathfindingManager } from '../systems/npc-pathfinding.js';
 import NPCSpriteManager from '../systems/npc-sprites.js';
 import { resolveObjectField } from '../utils/conditional-text.js';
 import { drinkableCupName, isObjectConsumed } from '../systems/consumables.js';
+import { deskBoxModeFor, tableBodyBox } from '../systems/desk-footprints.js';
 
 // True when the saved inventory (restored on reload) holds this room-map item
 function heldInSavedInventory(id) {
@@ -1763,6 +1764,18 @@ export function calculateRoomPositions(gameInstance) {
     return positions;
 }
 
+// The collision box of a table (Tiled `tables` layer or a scenario-made table). `mode` is the
+// room's deskBoxes: 'footprint' uses the desk's floor footprint from table_surfaces.json when
+// the texture has an entry; anything else keeps today's box (bottom quarter, inset 10 px).
+// Call on a static body inside the delayedCall(0) that follows physics.add.existing.
+export function applyTableBody(sprite, mode) {
+    const data = gameRef?.cache?.json?.get?.('tableSurfaces');
+    const box = tableBodyBox(sprite, mode, data);
+    sprite.body.setSize(box.w, box.h);
+    sprite.body.setOffset(box.x, box.y);
+    return box;
+}
+
 export function createRoom(roomId, roomData, position) {
     try {
         // Check if room already exists - prevent recreating
@@ -1830,6 +1843,10 @@ export function createRoom(roomId, roomData, position) {
         // Initialize room data structure first
         rooms[roomId] = {
             map,
+            // Desk collision boxes: 'footprint' only when the map opts in with the Tiled map
+            // property deskBoxes = footprint (SEAT_BOX_PLAN.md slice 2); window.__deskBoxes
+            // overrides it for the walk audit. Read by applyTableBody.
+            deskBoxes: deskBoxModeFor(map, typeof window !== 'undefined' ? window.__deskBoxes : undefined),
             layers: {},
             wallsLayers: [],
             objects: {},
@@ -2137,15 +2154,8 @@ export function createRoom(roomId, roomData, position) {
                         gameRef.time.delayedCall(0, () => {
                             if (tableSprite.body) {
                                 tableSprite.body.immovable = true;
-                                const tw = tableSprite.width;
-                                const th = tableSprite.height;
-                                const collisionWidth  = tw - 20;          // 10 px inset on each side
-                                const collisionHeight = th / 4;           // bottom quarter
-                                const offsetX = 10;
-                                const offsetY = th - collisionHeight;     // position at bottom quarter
-                                tableSprite.body.setSize(collisionWidth, collisionHeight);
-                                tableSprite.body.setOffset(offsetX, offsetY);
-                                console.log(`Set dynamic table "${textureKey}" collision box: ${collisionWidth}x${collisionHeight} at offset (${offsetX}, ${offsetY})`);
+                                const box = applyTableBody(tableSprite, rooms[roomId]?.deskBoxes);
+                                console.log(`Set dynamic table "${textureKey}" collision box (${box.kind}): ${box.w}x${box.h} at offset (${box.x}, ${box.y})`);
                                 const player = window.player;
                                 if (player && player.body) {
                                     gameRef.physics.add.collider(player, tableSprite);
@@ -2642,18 +2652,11 @@ export function createRoom(roomId, roomData, position) {
                                 // Use direct property assignment (fallback method)
                                 sprite.body.immovable = true;
                                 
-                                // Set custom collision box - bottom quarter of height, inset 10px from sides
-                                const tableWidth = sprite.width;
-                                const tableHeight = sprite.height;
-                                const collisionWidth = tableWidth - 20; // 10px inset on each side
-                                const collisionHeight = tableHeight / 4; // Bottom quarter
-                                const offsetX = 10; // 10px inset from left
-                                const offsetY = tableHeight - collisionHeight; // Bottom quarter
-                                
-                                sprite.body.setSize(collisionWidth, collisionHeight);
-                                sprite.body.setOffset(offsetX, offsetY);
-                                
-                                console.log(`Set table ${imageName} collision box: ${collisionWidth}x${collisionHeight} at offset (${offsetX}, ${offsetY})`);
+                                // Collision box: today's bottom quarter inset 10 px, or the desk's
+                                // floor footprint when the map has opted in (applyTableBody)
+                                const box = applyTableBody(sprite, rooms[roomId]?.deskBoxes);
+
+                                console.log(`Set table ${imageName} collision box (${box.kind}): ${box.w}x${box.h} at offset (${box.x}, ${box.y})`);
                                 
                                 // Add collision with player
                                 const player = window.player;
