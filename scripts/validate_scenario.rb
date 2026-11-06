@@ -392,6 +392,7 @@ def check_unknown_fields(json_data)
     show_scenario_brief disableAttacks creditsTheme creditsOverlay gameClock flags music startItemsInInventory globalVariables
     player objectives rooms npcs phoneNPCs narrator timers _comment mutuallyExclusiveGlobals lighting
     importGlobals exportGlobals social npcNeedsSeed disguises actionIcons officeVisuals npcWindupMs showPressingNeeds showNpcIntentBubbles needsDebugOverlay officePresets chatter
+    ttsPregenerateChatter
   ]
 
   # Check top-level unknown fields
@@ -415,7 +416,7 @@ def check_unknown_fields(json_data)
     phoneId phoneTheme handle profile voiced callLabel unlockable externalVariables persistentVariables
     timedMessages timedConversation eventMappings itemsHeld puzzle_graph_actions
     needs interests needsHome needsSpeed needsRooms needsAvoidRooms needsCompany chatter chattiness usePayload onUse
-    maxQueue needsDeferMin
+    maxQueue needsDeferMin exchanges chatterCooldownMin
     observations disableClose los rfidCard chatBackground spriteStyle gender portraitVariants _comment
   ]
 

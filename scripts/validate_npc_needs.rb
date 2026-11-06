@@ -44,6 +44,7 @@ module ValidateNpcNeeds
     check_slots(json, objs, issues)
     check_left_behind(json, npcs, objs, issues)
     check_social(json, npcs, objs, issues)
+    check_exchanges(json, npcs, issues)
     check_queues(json, npcs, objs, issues)
     npcs.each { |room_id, npc| check_npc(json, npc, room_id, objs, issues, npcs) }
     issues
@@ -147,6 +148,9 @@ module ValidateNpcNeeds
           issues << "❌ ERROR: #{where} chatter '#{topic}' line #{line.inspect} has a line break; a bubble is one line."
         elsif line.length > CHAT_LINE_MAX
           issues << "❌ ERROR: #{where} chatter '#{topic}' line #{line.inspect} is #{line.length} characters; a bubble holds at most #{CHAT_LINE_MAX}."
+        elsif line.match?(/[{}]/)
+          # Slice 15: chatter is voiced; the TTS speaks the text as written (tts-audio rule 2)
+          issues << "❌ ERROR: #{where} chatter '#{topic}' line #{line.inspect} has a { } variable; spoken lines must not print variables."
         end
       end
     end
@@ -230,6 +234,103 @@ module ValidateNpcNeeds
     end
   end
 
+  def self.spoken_topic?(json, npcs, topic)
+    sc = json['chatter']
+    return true if sc.is_a?(Hash) && pool_lines(sc[topic]).any?
+
+    npcs.any? { |_r, n| n['chatter'].is_a?(Hash) && pool_lines(n['chatter'][topic]).any? }
+  end
+
+  # ── scripted exchanges (slice 15, OFFICE_LIFE_PLAN 11.4) ───────────────────
+  # exchanges: [{ with, knot, requireGlobal }]. The knot must be in the NPC's compiled story; every
+  # speaker it names ("Name: line", by id or displayName) must be an NPC in the scenario (error) with
+  # a voice (warning), and should be the owner or the `with` NPC (the engine plays only the pair's
+  # lines). No { } in the knot's text (rule 2). heard_<knot> is set when it ends: declare it.
+  REPO_ROOT = File.expand_path('..', __dir__)
+
+  def self.ink_knot_texts(story_path, knot)
+    path = File.join(REPO_ROOT, story_path.to_s)
+    return nil unless File.exist?(path)
+
+    root = JSON.parse(File.read(path).sub(/\A\uFEFF/, ''))['root']
+    named = root.is_a?(Array) ? root.last : nil
+    return nil unless named.is_a?(Hash) && named[knot].is_a?(Array)
+
+    out = []
+    walk = lambda do |node|
+      case node
+      when String then out << node[1..].strip if node.start_with?('^') && !node[1..].strip.empty?
+      when Array then node.each { |c| walk.call(c) }
+      when Hash then node.each { |k, v| walk.call(v) unless k == '#f' }
+      end
+    end
+    walk.call(named[knot])
+    out
+  rescue JSON::ParserError
+    nil
+  end
+
+  def self.check_exchanges(json, npcs, issues)
+    by_name = {}
+    npcs.each do |_r, n|
+      by_name[n['id'].to_s.downcase] = n if n['id']
+      by_name[n['displayName'].to_s.downcase] = n if n['displayName']
+    end
+    ids = npcs.map { |_r, n| n['id'] }
+    groups = npcs.flat_map { |_r, n| Array(n.is_a?(Hash) ? n.dig('needsCompany', 'groups') : nil) }.uniq
+    globals = json['globalVariables'].is_a?(Hash) ? json['globalVariables'] : {}
+    npcs.each do |_r, n|
+      next unless n.key?('exchanges')
+
+      where = "NPC '#{n['id']}' exchanges"
+      unless n['exchanges'].is_a?(Array)
+        issues << "❌ ERROR: #{where} must be a list of { with, knot, requireGlobal }."
+        next
+      end
+      n['exchanges'].each do |e|
+        unless e.is_a?(Hash) && e['knot'].is_a?(String) && e['with'].is_a?(String)
+          issues << "❌ ERROR: #{where}: each entry needs a 'with' (an NPC id or group:<name>) and a 'knot'."
+          next
+        end
+        w = e['with']
+        if w.start_with?('group:')
+          issues << "⚠️ WARNING: #{where} '#{e['knot']}' with '#{w}': no NPC declares that group." unless groups.include?(w[6..])
+        elsif !ids.include?(w)
+          issues << "❌ ERROR: #{where} '#{e['knot']}' with '#{w}' is not an NPC in this scenario."
+        end
+        rg = e['requireGlobal']
+        if rg.is_a?(String) && !globals.key?(rg)
+          issues << "⚠️ WARNING: #{where} '#{e['knot']}' requireGlobal '#{rg}' is not declared in globalVariables."
+        end
+        unless globals.key?("heard_#{e['knot']}")
+          issues << "⚠️ WARNING: #{where} '#{e['knot']}': declare heard_#{e['knot']} (false) in globalVariables; it is set when the exchange has been heard."
+        end
+        texts = n['storyPath'] ? ink_knot_texts(n['storyPath'], e['knot']) : nil
+        if texts.nil?
+          issues << "❌ ERROR: #{where}: knot '#{e['knot']}' is not in #{n['storyPath'] || 'a story (no storyPath)'}."
+          next
+        end
+        issues << "❌ ERROR: #{where}: knot '#{e['knot']}' has no lines." if texts.empty?
+        texts.each do |t|
+          m = /\A([^:\n]+?):\s+(\S.*)\z/m.match(t)
+          speaker = m ? by_name[m[1].strip.downcase] : n
+          speaker = n if m && m[1].strip.downcase == 'npc'
+          if m && speaker.nil?
+            issues << "❌ ERROR: #{where}: knot '#{e['knot']}' line #{t.inspect} names '#{m[1].strip}', who is not an NPC in this scenario."
+            next
+          end
+          unless speaker['voice'].is_a?(Hash)
+            issues << "⚠️ WARNING: #{where}: knot '#{e['knot']}' speaker '#{speaker['id']}' has no voice; the line shows as a bubble only."
+          end
+          if !w.start_with?('group:') && ![n['id'], w].include?(speaker['id'])
+            issues << "⚠️ WARNING: #{where}: knot '#{e['knot']}' line #{t.inspect} is spoken by '#{speaker['id']}', not by the pair; the engine will not play it."
+          end
+          issues << "❌ ERROR: #{where}: knot '#{e['knot']}' line #{t.inspect} has a { } variable; spoken lines must not print variables." if t.match?(/[{}]/)
+        end
+      end
+    end
+  end
+
   def self.check_social(json, npcs, objs, issues)
     sc = json['chatter']
     if json.key?('chatter') && sc != false && !sc.is_a?(Hash)
@@ -247,6 +348,10 @@ module ValidateNpcNeeds
 
       topic = aff['chatter']
       issues << "⚠️ WARNING: object '#{o.id}' affordance.chatter '#{topic}' is not a chatter pool (#{pools.uniq.sort.join(', ')}); nobody will speak there." unless pools.include?(topic)
+      if pools.include?(topic) && sc != false && !spoken_topic?(json, npcs, topic)
+        # Slice 15: the engine has no spoken lines; a built-in topic is picture chat only
+        issues << "⚠️ WARNING: object '#{o.id}' affordance.chatter '#{topic}' has no lines in the scenario's or any NPC's chatter; its pairs show picture chat only (built-in pools are not spoken)."
+      end
       issues << "⚠️ WARNING: object '#{o.id}' affordance.chatter needs capacity 2 or more, or a queue; one NPC at a time never chats." if (aff['capacity'] || 1).to_i < 2 && !aff['queue'].is_a?(Hash)
     end
 
