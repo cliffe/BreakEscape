@@ -1476,11 +1476,15 @@ scada_password = "CascadeWindow19"
                     stays on the clear floor strip below the desks and between the
                     chair rows (x3-7, y6-7). %>
                 { "x": 3.5, "y": 6.3, "dwellTime": 6000 },
-                { "x": 5, "y": 6.6, "dwellTime": 1500 },
+                { "x": 5, "y": 6.3, "dwellTime": 1500 },
                 { "x": 6.5, "y": 6.3, "dwellTime": 5000 },
                 <%# 2026-11-06: was (5, 6.0), which sent him up-left from the east end
-                    straight at the spawn; he now returns along the lower edge. %>
-                { "x": 5, "y": 6.6, "dwellTime": 1500 }
+                    straight at the spawn; he now returns along the lower edge.
+                    Torch pass (2026-11-06): 6.6 made the legs diagonal ("up-left" facing, 225 degrees) and
+                    the spawn sat only 2 degrees outside the 25 degree half-angle there (a 150 s sample
+                    measured 27 degrees; game 635 glimpsed the player once). All four waypoints are on
+                    y 6.3 now, so he only ever faces left or right and the spawn stays well clear. %>
+                { "x": 5, "y": 6.3, "dwellTime": 1500 }
               ],
               "waypointMode": "sequential",
               "loop": true,
