@@ -45,6 +45,14 @@ export const CHAT_LINE_MAX = 40;      // characters; the validator enforces it
 export const QUEUE_MAX_WAIT_S = 30;   // affordance.queue.maxWaitSeconds default
 export const QUEUE_COOLDOWN_MS = 60000;   // after giving up on a queue, that object is skipped this long
 export const QUEUE_CHAT_RADIUS = 48;  // px (1.5 tiles) from the approach cell: the front of the queue chats
+// Avoidance at a distance, balking and parked needs (slice 14, OFFICE_LIFE_PLAN 10)
+export const AVOID_RADIUS_TILES = 2;  // needsCompany.avoidRadius default, only for an NPC that declares avoids
+export const NEEDS_DEFER_MIN = 4;     // needsDeferMin default: how long a given-up need stays parked
+export const AVOID_BUBBLE_MS = 4000;  // the avoided person's face shows this long after a turn-back
+export const WAKE_BASE_MS = 1000;     // a door opening or a room loading retries parked needs after this...
+export const WAKE_STEP_MS = 500;      // ...plus this per parked NPC before it (id order), so they go one by one
+// Built-in needs that are environmental: the validator warns on `deferrable: false` for these
+export const ENVIRONMENTAL_NEEDS = Object.freeze(['caffeine', 'thirst', 'hunger', 'rest']);
 /** How long a chat line's bubble shows: 2.5 s + 50 ms per character, at most 4 s. */
 export function bubbleMs(line) {
     return Math.min(CHAT_MAX_MS, CHAT_BASE_MS + CHAT_PER_CHAR_MS * String(line || '').length);
@@ -54,7 +62,10 @@ export function bubbleMs(line) {
 export const DEFAULT_CHATTER = Object.freeze({
     coffee: Object.freeze(["Machine's slow again.", 'Who finished the milk?', 'Is this one decaf?', 'Third one today.', 'Need this, honestly.']),
     cooler: Object.freeze(['Did you see the car park email?', 'Friday drinks?', 'Good weekend?', 'Is it raining again?', 'Busy morning?', 'Train was late again.', 'Any plans for lunch?', 'Not bad, you?']),
-    greet: Object.freeze(['Morning.', 'Alright?', "How's it going?", 'Not bad, you?'])
+    greet: Object.freeze(['Morning.', 'Alright?', "How's it going?", 'Not bad, you?']),
+    // Said once by an NPC turning back from a source someone it avoids is at (slice 14). The one
+    // place grumble text lives; a scenario's `chatter.grumble` replaces it, an NPC's adds to it.
+    grumble: Object.freeze(["I'll come back later.", 'Not now.', 'Later, maybe.'])
 });
 
 /** Pure: a pool as { lines, hush, overhearRadius } from an array or { lines, hush, overhearRadius }. */
@@ -272,6 +283,15 @@ export class NPCNeedsSystem {
             // on reload. leftItems: items this NPC left at its post on the current leave.
             leaveCount: 0,
             leftItems: [],
+            // Slice 14: parked needs (need -> { reason, until, since, avoidedId }), needs whose
+            // NPC has already turned back once this episode (no second turn-back until met),
+            // turn-backs so far (salts the grumble), the face bubble after a turn-back, and a
+            // one-off grumble line ({ line, topic, objectId, until })
+            parked: {},
+            mindChanged: {},
+            turnCount: 0,
+            avoidShow: null,
+            saying: null,
             home: null,
             cooldowns: {},
             scriptSuspended: false,
@@ -354,6 +374,15 @@ export class NPCNeedsSystem {
         this._log(npcId, 'suspended', { reason: 'script' });
     }
 
+    /**
+     * door_opened (doors.js): a way may have opened to a source a parked need lacked. Clears the
+     * select back-offs and retries every parked need soon, staggered (slice 14).
+     */
+    onDoorOpened() {
+        this._clearBackoffs();
+        this._wakeParked();
+    }
+
     /** eventMapping `needs` field: "resume" | "suspend" | { set: {need: level} }. */
     control(npcId, cmd) {
         const s = this.states.get(npcId);
@@ -433,6 +462,7 @@ export class NPCNeedsSystem {
 
     _onRoomsLoaded(roomIds) {
         this._clearBackoffs();
+        this._wakeParked();
         // Stow on sight (OFFICE_LIFE_PLAN 2.2 Part A): after a reload a revealed slot comes back
         // at its declared spot with its global still true and nobody holding it; file it away so
         // the pool is whole again. At install every loaded room is new, so this covers them too.
@@ -669,6 +699,12 @@ export class NPCNeedsSystem {
     _decay(s) {
         for (const name of Object.keys(s.needs)) {
             const n = s.needs[name];
+            // Parked (slice 14): level held, decay paused, until the timer runs out
+            if (s.parked[name]) {
+                if (this.clockMs < s.parked[name].until) continue;
+                this._unpark(s, name);
+                continue;
+            }
             if (s.job && s.job.need === name && s.job.phase === 'using') continue;
             const before = s.levels[name];
             s.levels[name] = clamp(before - n.decayPerMin * NEEDS_TICK_MS / 60000, 0, 100);
@@ -682,13 +718,14 @@ export class NPCNeedsSystem {
                 s.urgentFlag[name] = false;
                 s.leashNoted[name] = false;
                 s.privateNoted[name] = false;
+                s.mindChanged[name] = false;
             }
         }
     }
 
     _starved(s, name) {
         const n = s.needs[name];
-        return !!n.maxUnmetMin && (this.clockMs - s.lastSatisfiedAt[name]) >= n.maxUnmetMin * 60000;
+        return !s.parked[name] && !!n.maxUnmetMin &&(this.clockMs - s.lastSatisfiedAt[name]) >= n.maxUnmetMin * 60000;
     }
 
     _claims(objectId, exceptNpc) {
@@ -761,7 +798,12 @@ export class NPCNeedsSystem {
         return false;
     }
 
-    _select(s, pos) {
+    /**
+     * `exclude` (slice 14): { need, targetId } just turned back from; that object is left out of
+     * this one selection for that need (the fallback chain). A need with no acceptable source is
+     * parked here (_useCandidate sets `s.giveUp`).
+     */
+    _select(s, pos, exclude = null) {
         // Nothing urgent or starved and no interests: nothing to choose, so no object scan
         if (this.tickCache && !Object.keys(s.interests).length && !this._anyUrgent(s)) return null;
         this.stats.selects++;
@@ -774,8 +816,11 @@ export class NPCNeedsSystem {
             if (!(level <= n.urgentAt) && !starved) continue;
             const score = starved ? 1000 + n.weight : n.weight * (n.urgentAt - level) / n.urgentAt;
             if (best && !(score > best.score)) continue;
-            const cand = this._useCandidate(s, name, objects, pos);
+            s.giveUp = null;
+            const cand = this._useCandidate(s, name, objects, pos, exclude?.need === name ? exclude.targetId : null);
             if (cand) best = { ...cand, need: name, score };
+            else if (s.giveUp) this._park(s, name, s.giveUp);
+            s.giveUp = null;
         }
         // Interests: a reachable item with the tag is the stimulus. No item, no
         // option (the NPC holds still); an item scores the flat interest weight.
@@ -788,16 +833,29 @@ export class NPCNeedsSystem {
         return best;
     }
 
-    _useCandidate(s, name, objects, pos) {
-        const free = objects.filter(o => o.affordance && asList(o.affordance.satisfies).includes(name) && this._free(s, o));
+    _useCandidate(s, name, objects, pos, excludeId = null) {
+        const sat = objects.filter(o => o.affordance && asList(o.affordance.satisfies).includes(name) && o.id !== excludeId);
+        const free = sat.filter(o => this._free(s, o));
         // Room leash and private objects, before the home preference (OFFICE_LIFE_PLAN 7.2)
-        const opts = free.filter(o => this._permitted(s, o, true));
+        let opts = free.filter(o => this._permitted(s, o, true));
+        // Unacceptable targets (slice 14): someone avoided at, queued for or near the object; a
+        // story need (deferrable: false) takes no notice and goes anyway (the bubble shows it)
+        const deferrable = this._deferrable(s, name);
+        const avoidOf = new Map();
+        const avoidedAt = (o) => {
+            if (!avoidOf.has(o.id)) avoidOf.set(o.id, this._avoidedAt(s, o));
+            return avoidOf.get(o.id);
+        };
+        const social = this._avoidRadius(s) > 0;
+        const ctx = { exclude: excludeId, avoidedAt: deferrable && social ? avoidedAt : null, balked: deferrable ? new Set() : null };
+        const allOpts = opts;
+        if (ctx.avoidedAt) opts = opts.filter(o => !avoidedAt(o));
         // Only a room rule makes a choice "leashed"; another owner's private object is expected
         // to be passed over (colleagues' desks), so it is logged as private_skipped instead
         let skipped = null, priv = null;
-        if (free.length > opts.length) {
+        if (free.length > allOpts.length) {
             for (const o of free) {
-                if (opts.includes(o)) continue;
+                if (allOpts.includes(o)) continue;
                 if (this._roomForbidden(s, o.roomId)) (skipped || (skipped = [])).push(o.id);
                 else (priv || (priv = [])).push(o.id);
             }
@@ -805,14 +863,20 @@ export class NPCNeedsSystem {
         const nothing = () => {
             if (skipped) this._noteLeash(s, name, { need: name, skipped });
             if (priv) this._notePrivate(s, name, { need: name, skipped: priv });
+            s.giveUp = this._giveUpReason(s, sat, pos, ctx);
             return null;
         };
+        const withAnyway = (pick) => {
+            // A story need heading for someone it avoids: the face bubble on the way
+            if (!deferrable && social) { const who = avoidedAt(this.world.getObject(pick.targetId) || { id: pick.targetId }); if (who) pick.goingAnyway = who; }
+            return pick;
+        };
         const queued = () => {
-            const q = this._queueCandidate(s, name, objects, pos);
+            const q = this._queueCandidate(s, name, objects, pos, ctx);
             if (!q) return nothing();
             if (skipped) q.leashed = skipped;
             if (priv) q.privateSkipped = priv;
-            return q;
+            return withAnyway(q);
         };
         if (!opts.length) return queued();
         // Prefer the NPC's own post object (needsHome) when it satisfies this need
@@ -826,7 +890,192 @@ export class NPCNeedsSystem {
         const pick = { kind: 'use', targetId: target.id };
         if (skipped) pick.leashed = skipped;
         if (priv) pick.privateSkipped = priv;
-        return pick;
+        return withAnyway(pick);
+    }
+
+    // ── avoidance at a distance, balking, parked needs (slice 14: OFFICE_LIFE_PLAN 10) ──
+
+    _rec(s) {
+        return this.world.getNpc(s.npcId) || {};
+    }
+
+    /** needsCompany.avoidRadius in tiles; default 2 only when the NPC declares avoids, else 0 (slice 8 only). */
+    _avoidRadius(s) {
+        const c = this._company(s);
+        if (!c) return 0;
+        if (c.avoidRadius !== undefined && c.avoidRadius !== null && Number.isFinite(Number(c.avoidRadius))) return clamp(Number(c.avoidRadius), 0, 10);
+        return Array.isArray(c.avoids) && c.avoids.length ? AVOID_RADIUS_TILES : 0;
+    }
+
+    /** maxQueue: refuse to join a line with this many or more already in it; null = no limit. */
+    _maxQueue(s) {
+        const v = this._rec(s).maxQueue;
+        if (v === undefined || v === null || !Number.isFinite(Number(v))) return null;
+        return Math.max(0, Math.floor(Number(v)));
+    }
+
+    _deferMs(s) {
+        const v = Number(this._rec(s).needsDeferMin);
+        return (Number.isFinite(v) && v > 0 ? clamp(v, 0.1, 120) : NEEDS_DEFER_MIN) * 60000;
+    }
+
+    /** Read from the NPC's record each time, so a live check can flip it. Default true. */
+    _deferrable(s, need) {
+        return this._rec(s).needs?.[need]?.deferrable !== false;
+    }
+
+    /**
+     * The first NPC (id order) that this one avoids, or that avoids it, and that is using `obj`,
+     * holds a place in its queue, or stands (same room, not hidden) within this NPC's avoidRadius
+     * of its approach cell; null if none, or with radius 0. Any NPC counts, needs or not. The
+     * NPC's own post object (needsHome) is exempt: nobody abandons their own desk for a passer-by.
+     */
+    _avoidedAt(s, obj) {
+        const r = this._avoidRadius(s);
+        if (r <= 0 || !obj) return null;
+        if (s.home?.objectId && s.home.objectId === obj.id) return null;
+        let cell = null, cellDone = false;
+        for (const id of [...this.world.npcIds()].sort()) {
+            if (id === s.npcId) continue;
+            const o = this.states.get(id) || { npcId: id };
+            if (!this._avoids(s, o)) continue;
+            const j = o.job;
+            if (j && j.targetId === obj.id && (j.phase === 'using' || j.phase === 'queued')) return id;
+            const p = this.world.npcPos(id);
+            if (!p) continue;
+            if (p.roomId && obj.roomId && p.roomId !== obj.roomId) continue;
+            const st = this.world.npcStatus(id) || {};
+            if (st.hidden || st.ko) continue;
+            if (!cellDone) { cell = this.world.approachCell(obj); cellDone = true; }
+            if (cell && Math.hypot(p.x - cell.x, p.y - cell.y) <= r * 32 + 0.5) return id;
+        }
+        return null;
+    }
+
+    /** Would joining obj's queue break this NPC's maxQueue? */
+    _balks(s, obj) {
+        const m = this._maxQueue(s);
+        if (m === null) return false;
+        return this._queuers(obj.id).filter(o => o !== s).length >= m;
+    }
+
+    /**
+     * Why a need found nothing, or null to wait as before. A source that is only busy (claimed,
+     * cooling down) means wait; one an avoided NPC is at, or one whose queue is too long, means
+     * give up with that reason (the nearest such source's); none permitted means the leash rule
+     * (unchanged, no parking); nothing at all, or nothing reachable, means `no_source`.
+     */
+    _giveUpReason(s, sat, pos, ctx) {
+        const permitted = sat.filter(o => this._permitted(s, o, true));
+        if (sat.length && !permitted.length) return null;
+        const sorted = [...permitted].sort((a, b) => {
+            const da = Math.hypot(a.x - pos.x, a.y - pos.y), db = Math.hypot(b.x - pos.x, b.y - pos.y);
+            return da - db || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+        });
+        let rejected = null, busy = false;
+        for (const o of sorted) {
+            const who = ctx.avoidedAt ? ctx.avoidedAt(o) : null;
+            if (who) { rejected = rejected || { reason: 'avoid', avoidedId: who, targetId: o.id }; continue; }
+            if (ctx.balked?.has(o.id)) { rejected = rejected || { reason: 'queue', targetId: o.id }; continue; }
+            if (!this._free(s, o)) busy = true;
+        }
+        if (busy) return null;
+        return rejected || { reason: 'no_source' };
+    }
+
+    /** Give up on a need for now: level held at urgentAt + 1, decay and the unmet clock paused. */
+    _park(s, name, why) {
+        const n = s.needs[name];
+        const until = this.clockMs + this._deferMs(s);
+        s.parked[name] = { reason: why.reason, until, since: this.clockMs, avoidedId: why.avoidedId || null };
+        s.levels[name] = clamp(n.urgentAt + 1, 0, 100);
+        this._log(s.npcId, 'parked', { need: name, reason: why.reason, avoided: why.avoidedId || undefined, target: why.targetId || undefined });
+        this._emit(`npc_need_parked:${s.npcId}`, {
+            npcId: s.npcId, need: name, reason: why.reason, targetId: why.targetId || null,
+            ...(why.avoidedId ? { avoidedId: why.avoidedId } : {}), untilMs: until - this.clockMs
+        });
+    }
+
+    /** Timer up (or woken): urgent again at exactly urgentAt, retried on this tick's select. */
+    _unpark(s, name) {
+        const p = s.parked[name];
+        delete s.parked[name];
+        s.lastSatisfiedAt[name] += this.clockMs - p.since;
+        s.levels[name] = s.needs[name].urgentAt;
+        s.selectRetryAt = 0;
+        this._log(s.npcId, 'unparked', { need: name, reason: p.woken ? 'woken' : 'timer' });
+    }
+
+    /** A room loaded or a door opened: every parked need retries soon, one NPC after another. */
+    _wakeParked() {
+        let k = 0;
+        for (const id of [...this.states.keys()].sort()) {
+            const s = this.states.get(id);
+            const names = Object.keys(s.parked).sort();
+            if (!names.length) continue;
+            const at = this.clockMs + WAKE_BASE_MS + k * WAKE_STEP_MS;
+            k++;
+            for (const name of names) {
+                const p = s.parked[name];
+                if (at < p.until) { p.until = at; p.woken = true; }
+            }
+        }
+    }
+
+    /**
+     * While walking to a target or queued for it: an avoided NPC arriving, joining or coming
+     * within the radius turns this one back, at most once per need episode (until the need is
+     * met). Acts on a change only. A story need, or a second time, goes on with the bubble.
+     */
+    _recheck(s) {
+        const job = s.job;
+        if (!job.need || job.kind !== 'use' || this._avoidRadius(s) <= 0) return false;
+        const obj = this.world.getObject(job.targetId);
+        const who = obj ? this._avoidedAt(s, obj) : null;
+        if ((who || '') === (job.avoidSig || '')) return false;
+        job.avoidSig = who || '';
+        job.goingAnyway = null;
+        if (!who) return false;
+        if (!this._deferrable(s, job.need) || s.mindChanged[job.need]) { job.goingAnyway = who; return false; }
+        this._turnBack(s, 'avoid', who);
+        return true;
+    }
+
+    _turnBack(s, reason, avoidedId) {
+        const id = s.npcId;
+        const { need, targetId } = s.job;
+        s.mindChanged[need] = true;
+        s.turnCount++;
+        this._log(id, 'turned_back', { need, target: targetId, reason, avoided: avoidedId || undefined });
+        this._emit(`npc_turned_back:${id}`, { npcId: id, need, targetId, reason, ...(avoidedId ? { avoidedId } : {}), ...this._playerProximity(id) });
+        if (avoidedId) s.avoidShow = { npcId: avoidedId, until: this.clockMs + AVOID_BUBBLE_MS };
+        this._grumble(s, targetId);
+        this._abortJob(s, 'turned_back', { cancel: true });
+        // Fallback chain: the next acceptable source for the same need, else the need parks
+        const pos = this.world.npcPos(id);
+        const pick = pos ? this._select(s, pos, { need, targetId }) : null;
+        if (pick) { this._startJob(s, pick); return; }
+        this._goHome(s);
+    }
+
+    /**
+     * One line from the `grumble` pool as a speech bubble (getState().talking), seeded by the
+     * turn-back count. Overheard like a chat line (npc_overheard); no npc_chatted (it is no chat).
+     */
+    _grumble(s, objectId) {
+        const pool = chatterPool('grumble', this._scenarioChatter(), this._rec(s).chatter);
+        if (!pool.lines.length) return;
+        const idx = Math.floor(this.roll(s.npcId, `grumble:${s.turnCount}`) * pool.lines.length);
+        const line = pool.lines[idx];
+        s.saying = { line, topic: 'grumble', objectId, until: this.clockMs + bubbleMs(line) };
+        const radius = pool.overhearRadius || OVERHEAR_RADIUS;
+        const h = typeof this.world.playerHears === 'function' ? (this.world.playerHears(s.npcId, radius) || {}) : {};
+        if (h.overheard) {
+            this._emit(`npc_overheard:${s.npcId}`, {
+                speakerId: s.npcId, partnerId: null, topic: 'grumble', lineId: `grumble:${idx}`, line, objectId,
+                overheard: true, playerDistance: Number.isFinite(h.distance) ? Math.round(h.distance) : null
+            });
+        }
     }
 
     _carryCandidate(s, tag, it, objects, pos) {
@@ -856,6 +1105,7 @@ export class NPCNeedsSystem {
         };
         if (pick.queue) { s.job.qSeq = this._queueSeq++; s.job.queuedAt = this.clockMs; s.job.qCell = null; s.job.qArrived = false; }
         s.avoidNoted = {};   // a new episode: npc_avoided may fire again next time
+        if (pick.goingAnyway) { s.job.goingAnyway = pick.goingAnyway; s.job.avoidSig = pick.goingAnyway; }   // slice 14
         if (pick.leashed) s.job.leashed = true;   // the debug overlay's "leashed" label
         if (pick.privateSkipped) s.job.privateSkipped = true;   // the overlay's "private" label
         // For the action icons (OFFICE_LIFE_PLAN 9.1): a use that prints, a carry to a stow target
@@ -1040,6 +1290,8 @@ export class NPCNeedsSystem {
     _advanceJob(s, arrived) {
         const id = s.npcId;
         const job = s.job;
+        // Slice 14: someone avoided turned up at the target while on the way or in its queue
+        if ((job.phase === 'goto_target' || job.phase === 'queued') && this._recheck(s)) return;
         if (job.phase === 'queued') { this._advanceQueued(s, arrived); return; }
         if (job.phase === 'goto_item' || job.phase === 'goto_target') {
             if (job.phase === 'goto_item') {
@@ -1386,6 +1638,9 @@ export class NPCNeedsSystem {
                 return { line: cur.line, partnerId: cur.partnerId, topic: c.topic, objectId: c.objectId, remainingMs: cur.until - this.clockMs };
             }
         }
+        // A grumble (slice 14) is a one-off line with no partner
+        const say = this.states.get(npcId)?.saying;
+        if (say && this.clockMs < say.until) return { line: say.line, partnerId: null, topic: say.topic, objectId: say.objectId, remainingMs: say.until - this.clockMs };
         return null;
     }
 
@@ -1457,10 +1712,19 @@ export class NPCNeedsSystem {
     }
 
     /** No free target for this need: the nearest claimed one with a queue place for this NPC. */
-    _queueCandidate(s, name, objects, pos) {
-        const list = objects.filter(o => o.affordance?.queue && asList(o.affordance.satisfies).includes(name)
+    _queueCandidate(s, name, objects, pos, ctx = null) {
+        let list = objects.filter(o => o.affordance?.queue && asList(o.affordance.satisfies).includes(name)
+            && o.id !== ctx?.exclude
             && this._permitted(s, o, true) && !(s.cooldowns[o.id] > this.clockMs)
             && !this._free(s, o) && this._queuePlace(s, o));
+        // Slice 14: not behind someone avoided, and not into a line that is too long (balking)
+        if (ctx && list.length) {
+            list = list.filter(o => {
+                if (ctx.avoidedAt && ctx.avoidedAt(o)) return false;
+                if (ctx.balked && this._balks(s, o)) { ctx.balked.add(o.id); return false; }
+                return true;
+            });
+        }
         if (!list.length) return null;
         const target = this._nearestReachable(s, list, pos);
         return target ? { kind: 'use', targetId: target.id, queue: true } : null;
@@ -1603,6 +1867,9 @@ export class NPCNeedsSystem {
             blockedNeed: this._blockedNeed(s),
             noticed: Number.isFinite(s.caughtAt) && this.clockMs - s.caughtAt < NOTICED_MS,
             leaveCount: s.leaveCount, leftItems: [...s.leftItems],
+            // Slice 14: parked needs (greyed bubble with a badge) and whose face the avoidance bubble shows
+            parked: Object.keys(s.parked).sort().map(n => ({ need: n, reason: s.parked[n].reason, remainingMs: Math.max(0, s.parked[n].until - this.clockMs) })),
+            avoiding: (s.avoidShow && this.clockMs < s.avoidShow.until) ? s.avoidShow.npcId : (s.job?.goingAnyway || null),
             home: s.home ? { x: Math.round(s.home.x), y: Math.round(s.home.y), roomId: s.home.roomId, objectId: s.home.objectId || null, provisional: !!s.home.provisional } : null,
             clockMs: this.clockMs, tick: this.tickCount
         };
@@ -2143,6 +2410,8 @@ export function installNpcNeeds(opts = {}) {
         w.eventDispatcher?.on('npc_arrived:*', (data) => {
             if (data?.npcId) w.npcNeedsSystem.onArrived(data.npcId, data.owner);
         });
+        // Slice 14: an opened door retries parked needs (room loads are noticed by _checkRooms)
+        w.eventDispatcher?.on('door_opened', () => w.npcNeedsSystem.onDoorOpened());
     }
     w.npcNeedsSystem.registerAll();
     return w.npcNeedsSystem;

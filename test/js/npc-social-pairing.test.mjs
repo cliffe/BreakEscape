@@ -212,11 +212,13 @@ function avoidCase(annRec, bobRec, opts) {
 }
 
 for (const [label, annRec, bobRec] of [
-    ['declared on the one already there', { needsCompany: { avoids: ['bob'] } }, {}],
-    ['declared on the newcomer', {}, { needsCompany: { avoids: ['ann'] } }],
-    ['"*" on the one already there', { needsCompany: { avoids: ['*'] } }, {}],
-    ['"*" on the newcomer', {}, { needsCompany: { avoids: ['*'] } }],
-    ['group: entry', { needsCompany: { groups: ['contractors'] } }, { needsCompany: { avoids: ['group:contractors'] } }]
+    // avoidRadius 0 throughout: slice 8's sharing-only rule (the newcomer waits). Slice 14's default
+    // radius of 2 makes a declaring newcomer park instead (npc-avoidance.test.mjs).
+    ['declared on the one already there', { needsCompany: { avoids: ['bob'], avoidRadius: 0 } }, {}],
+    ['declared on the newcomer', {}, { needsCompany: { avoids: ['ann'], avoidRadius: 0 } }],
+    ['"*" on the one already there', { needsCompany: { avoids: ['*'], avoidRadius: 0 } }, {}],
+    ['"*" on the newcomer', {}, { needsCompany: { avoids: ['*'], avoidRadius: 0 } }],
+    ['group: entry', { needsCompany: { groups: ['contractors'] } }, { needsCompany: { avoids: ['group:contractors'], avoidRadius: 0 } }]
 ]) {
     test(`avoidance ${label}: no sharing either way, npc_avoided once, then the place when the first leaves`, () => {
         const o = avoidCase(annRec, bobRec);

@@ -207,8 +207,10 @@ test('the user and the first in line chat; the second in line never does', () =>
 });
 
 for (const [label, extra] of [
-    ['declared on the user', { ann: { needsCompany: { avoids: ['bob'] } } }],
-    ['declared on the queuer', { bob: { needsCompany: { avoids: ['*'] } } }],
+    // avoidRadius 0: slice 10's rule (an avoider queues in silence); with slice 14's default
+    // radius of 2 the avoider would not join a queue behind someone it avoids (npc-avoidance.test.mjs)
+    ['declared on the user', { ann: { needsCompany: { avoids: ['bob'], avoidRadius: 0 } } }],
+    ['declared on the queuer', { bob: { needsCompany: { avoids: ['*'], avoidRadius: 0 } } }],
     ['group mismatch', { ann: { needsCompany: { groups: ['a'] } }, bob: { needsCompany: { groups: ['b'] } } }]
 ]) {
     test(`an incompatible pair queues in silence (${label})`, () => {
