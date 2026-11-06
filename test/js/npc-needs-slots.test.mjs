@@ -393,5 +393,5 @@ test('validator: test_needs_sims has no errors and lists its copier pool', { ski
     const r = spawnSync('ruby', [join(root, 'scripts/validate_scenario.rb'), join(root, 'scenarios/test_needs_sims/scenario.json.erb')], { encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' } });
     const out = r.stdout + r.stderr;
     assert.ok(!/❌ ERROR/.test(out), out.split('\n').filter(l => l.includes('ERROR')).join('\n'));
-    assert.ok(out.includes("Reveal slots for 'office_copier': 3 (1 takeable"));
+    assert.ok(out.includes("Reveal slots for 'office_copier': 5 (1 takeable"));
 });

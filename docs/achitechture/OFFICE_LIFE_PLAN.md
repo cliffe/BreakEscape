@@ -2816,6 +2816,24 @@ minigame shows it as a desktop because of the type (`container-minigame.js` 23-2
 
 ### 12.3 Print and forget (slice 17)
 
+**Built: 2026-11-06 (slice 17: engine, validator, schema and tests 351fb11fe; showcase 6e253b502; fix from the live proof da3a984db).
+Live proof games 923 and 924; leash game 925 (pass); lab game 926 (score 100, 9/9 tasks; keylogger creds 64.5 s and USB foothold 10.1 s, against 64.2 s and 10.1 s in game 920).** As written, with these choices made without
+asking: (1) the engine's own map of owned prints (`_prints`) is what reserves a slot, so the stubs need no change; the adapter's
+`_printedBy` stamp is set or cleared on every reveal and cleared on stow, as specified, but nothing reads it; (2) after an errand
+the owner goes home with a plain `_goHome(s)`, not `{ stayPut: true }`: standing on its home cell it arrives on the next tick
+anyway (live: `npc_returned_post` 250 ms after the placing), and a placing a few pixels off walks home instead of sitting down off
+the cell; (3) `useCount` counts at job start, so an aborted use still moves the roll on; (4) `print_no_slot` is logged beside the
+existing `revealed` `no_free_slot` line, and only where the world has `freeSlotOf` (the full-pool check ran); (5) the errand's
+target needs no `_free` check (the owner's own, usually private, post); (6) an errand that times out before the pickup keeps its
+reservation and may run again after the item's fail cooldown; one that picked the slot up, or found it gone, ends it; (7) a
+forgotten print the player takes is dropped without an event (`npc_print_gone` is for prints the owner meant to fetch), and an
+errand under way is never "uncollected"; (8) the roll salts are `print_forget:<n>` and `print_due:<n>` on the owner's id and
+per-owner print count; (9) the Print Queue note has no `position`, like the other notes, and lands on the desk south of the
+copier; (10) the live proof found `playerAtPost` missing the examine view's string `itemId` (slice 16 had fixed the same gap in
+`workstation-state.js`), so the caught payload said `inMinigame: false` with the view open; fixed in da3a984db; (11) 12.8 says
+`npc-needs-slots.test.mjs` is not to change, but one of its validator assertions pins the showcase pool at 3 slots, which the
+plan's slots d and e make 5; only that line changed, and `GOLDEN_SIMS_DAY` is the same digest.
+
 **Design.** Today a printout belongs to nobody: whoever has an interest in `printout` carries it off
 (`_carryCandidate` 1237-1252), and every finished job at the hooked object prints (1524). Print and
 forget gives a printout an owner and the owner a habit.

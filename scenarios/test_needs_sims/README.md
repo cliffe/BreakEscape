@@ -554,6 +554,43 @@ out of reach (it took an unrelated `npc_arrived` event as the confirmation); a c
 the office machine does not form while the kitchen machine is free (a free source wins over a queue), so the queuer turn-back is
 covered by the node test.
 
+### Slice 17 re-run: print and forget, and the print-job lever (2026-11-06, keyless :3001, headless)
+
+How to watch it: Tom now prints at his PC (`onUse.tom_pc.revealOutput` with `chance` 0.4) and owns what he prints
+(`printHabit`: fetch 30 to 120 s later, or forget about half of them). His printouts are his: Amara's printout interest leaves them
+on the tray. Two levers do not wait for chance. **Read the Print Queue note** (on the desk south of the copier): a job prints as Tom
+at once and he never fetches it; it is still on the tray two and a half minutes later (task `see_uncollected`). **Use Tom's open
+screen** while he is away: a print job goes to the copier, due 5 to 10 s later, so he usually comes back by way of the copier,
+picks the printout up, carries it to his desk and puts it down (task `send_print_job`). Stay at his desk or in his PC's examine
+view and he catches you on the way back. A fetch is one more leave, so Tom's screen window opens more often. The pool has five
+slots now (`copier_out_d` and `e` read in place); when it is full, a print recycles the oldest forgotten slot, read-in-place ones
+first, so the takeable `copier_out_a` is the last to go. Sanjay has no `printHabit`, so Amara still delivers his prints
+(`see_printout`).
+
+Evidence is in the session scratchpad `s17/`: `note-read-923.png`, `tray-forgotten-2min-923.png` (the forgotten printout on the
+tray 126 s after the print, Tom idle at his desk), `tray-uncollected-923.png`, `pcleave-a-tray-errand-start-924.png`,
+`pcleave-b-in-hand-924.png` (Tom carrying it back, the player at his desk, his caught bark), `pcleave-c-on-desk-924.png`,
+`pcstay-*-923.png` (the same in the examine view), logs `pcstay-923.json`, `pcleave-924.json`, `pcstay2-924.json`, sessions
+`sess923.jsonl`, `sess924.jsonl`, tasks `verify-923.txt`, `verify-923-print.txt`.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Note lever prints a forgotten job | PASS | game 923: `object_interacted` Print Queue at needs clock 65000, `object_revealed:copier_out_a` by tom, `print_reserved` forgotten, no errand |
+| Still there two minutes later, no reload | PASS | `tray-forgotten-2min-923.png` at 191250; `copier_out_a_shown` true and visible at 215000 |
+| `npc_print_uncollected:tom` once | PASS | at 215000: `{ slotId: copier_out_a, ageMs: 150000, forgotten: true }`; `see_uncollected` completed 22:40:10Z |
+| Reserved from Amara | PASS | Amara carried Sanjay's `copier_out_b` (unowned) to her desk while `copier_out_a` lay reserved |
+| Lever from Tom's open PC | PASS | `workstation_accessed:tom_pc` at 94000 (923), 20000 and 97500 (924), each `object_revealed` for tom in the same tick |
+| Errand from idle | PASS | game 923: back at 97500, due 100016, `npc_left_post` at 101000 with `expectedAwayMs` 2072 (no PC dwell), picked up 102250, placed 103750 |
+| Errand from returning | PASS | game 924: due at 25132 while Tom was still on his coffee trip; caught once at 31250 on the walk, picked up 34000, placed 35500, `npc_returned_post` only at 35750 |
+| No `using` phase, the way back is the return | PASS | `npc_used:tom_pc` with `need: null` and `npc_print_fetched:tom` `{ viaCommand: true }` in the placing tick, `npc_returned_post:tom` 250 ms later (all three runs); `send_print_job` completed 22:38:18Z |
+| Caught in the examine view | PASS after a fix | game 923: caught on the leg back, but `inMinigame: false` (fired on distance); `playerAtPost` now also matches the examine view's string `itemId` (da3a984db); game 924: `inMinigame: true` |
+| Printout on tray, in hand, on desk | PASS | `pcleave-a-tray-errand-start-924.png`, `pcleave-b-in-hand-924.png`, `pcleave-c-on-desk-924.png` |
+| Work mappings ignore the errand | PASS | Amara's `npc_used:tom_pc` mappings now need `data.need === "work"` |
+
+Notes: interacting with the note through the bridge's `interact` failed out of reach (33 px against 26); a real pointer click from
+feet about (157, 196) works. Tom's natural hook prints (chance 0.4, one work use in about 7.5 minutes) were not waited for live; the
+node tests cover the share, the icon and the habit rolls.
+
 ## Engine findings
 
 1. **Fixed 2026-11-05.** The home is now provisional until the `needsHome` object exists and is re-resolved once a second; and an NPC standing on its own desk's approach cell now counts as able to reach it (EasyStar gave no path for start == end, which is why Sanjay chose `tom_pc` in game 501). Original finding: **Needs homes in the start room resolve to the spawn point and stay there.** `npc-needs.js:301` resolves `s.home` on the first tick that has a sprite position and caches it; `_resolveHome` (`npc-needs.js:628-640`) falls back to the spawn point with `objectId: null` when `getObject`/`approachCell` fail. For the start room the NPCs are registered (`core/game.js:2004-2006`) before the room's objects or pathfinding are ready, so every start-room needs NPC gets the fallback and the home-object preference in `_useCandidate` (`npc-needs.js:475`) never applies. NPCs in rooms loaded later (Rosa, lounge) resolve correctly. Repro: load this scenario, then `[...npcNeedsSystem.states].map(([k,s]) => [k, s.home.objectId])` gives null for amara, tom, grace and sanjay, `rosa_laptop` for rosa. Suggested fix: don't cache a fallback home while `needsHome` names an object that isn't found yet (retry each tick until the object exists, or for a few seconds). `test_npc_needs` and `lab_physical_pentest` start-room NPCs are likely affected too, but hidden because each spawns at its own desk. Workaround here: each NPC spawns beside its own desk, and the work task reads "Someone works at a desk". Even so, game 501 had Sanjay choose `tom_pc` over his own adjacent PC (nearest-reachable from his seated position), so the workaround isn't reliable.
