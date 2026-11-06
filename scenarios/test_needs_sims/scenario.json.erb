@@ -84,7 +84,8 @@
         { "taskId": "see_turned_back", "title": "Someone turns back rather than stand near a person they avoid (with the kitchen shut, read the Coffee Notice: Marek goes for a coffee, Sanjay sets off too, sees Marek and turns back; open the kitchen and he goes there instead)", "type": "custom", "status": "active" },
         { "taskId": "see_left_behind", "title": "Spot something left on an empty desk (Tom often forgets his ID badge when he gets up, and pockets it when he sits down again)", "type": "custom", "status": "active" },
         { "taskId": "hear_rota_exchange", "title": "Overhear Sanjay and Rosa talk about the kitchen rota (read the Activity Board, open the lounge door and stay near the water cooler; they say it once)", "type": "custom", "status": "active" },
-        { "taskId": "hear_parcel_exchange", "title": "Overhear Tom and Amara talk about the parcel (after Amara has opened it, read the Activity Board and stand by the coffee queue)", "type": "custom", "status": "active" }
+        { "taskId": "hear_parcel_exchange", "title": "Overhear Tom and Amara talk about the parcel (after Amara has opened it, read the Activity Board and stand by the coffee queue)", "type": "custom", "status": "active" },
+        { "taskId": "see_look_round", "title": "See someone look round at a conversation (read the Coffee Notice: when Sanjay turns back from the coffee and grumbles, the staff at their desks nearby turn their chairs towards him)", "type": "custom", "status": "active" }
       ]
     }
   ],
@@ -355,6 +356,7 @@
             { "eventPattern": "npc_use_heard:*", "condition": "data.key === 'eat_snack'", "onceOnly": true, "cooldown": 0, "completeTask": "hear_snack" },
             { "eventPattern": "item_dropped:parcel", "onceOnly": true, "cooldown": 0, "setGlobal": { "parcel_dropped": true } },
             { "eventPattern": "npc_exchange_heard:exchange_tom_parcel", "onceOnly": true, "cooldown": 0, "completeTask": "hear_parcel_exchange" },
+            { "eventPattern": "npc_swivelled:*", "condition": "data.reason === 'listen'", "onceOnly": true, "cooldown": 0, "completeTask": "see_look_round" },
             { "eventPattern": "item_dropped:player_mugs", "onceOnly": true, "cooldown": 0, "setGlobal": { "mugs_dropped": true } }
           ]
         },
