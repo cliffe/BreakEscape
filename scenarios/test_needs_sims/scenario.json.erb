@@ -31,6 +31,8 @@
     "copier_out_a_shown": false,
     "copier_out_b_shown": false,
     "copier_out_c_shown": false,
+    "copier_out_d_shown": false,
+    "copier_out_e_shown": false,
     "tom_badge_left": false,
     "heard_exchange_rosa_rota": false,
     "heard_exchange_tom_parcel": false,
@@ -92,6 +94,8 @@
         { "taskId": "hear_screen_lock", "title": "Hear a screen lock as its owner walks off (stay in the office: Amara leaves her screen open for a quick trip, but locks it with a soft chime before a longer one, such as the kitchen run after you read the Deadline Memo)", "type": "custom", "status": "active" },
         { "taskId": "see_auto_lock", "title": "Watch a screen lock itself (Sanjay never locks his PC, but it locks on its own 20 seconds after he walks off)", "type": "custom", "status": "active" },
         { "taskId": "use_open_screen", "title": "Use Sanjay's screen while he is away (using it keeps it awake)", "type": "custom", "status": "active" },
+        { "taskId": "see_uncollected", "title": "See a printout sit uncollected on the copier (Tom prints now and then and forgets about half his prints; read the Print Queue note to send one he never collects, and wait two and a half minutes)", "type": "custom", "status": "active" },
+        { "taskId": "send_print_job", "title": "Send a print job from Tom's open screen and watch him fetch it (when he leaves his PC unlocked, use it: a few seconds after he is back he walks to the copier, carries the printout to his desk and puts it down)", "type": "custom", "status": "active" },
         { "taskId": "see_coffee_off", "title": "Switch the office coffee off at the wall socket beside it and watch someone go to the kitchen instead (open the kitchen door first; it stays off once switched)", "type": "custom", "status": "active" }
       ]
     }
@@ -236,8 +240,9 @@
           "name": "Photocopier",
           "position": { "x": 4.4, "y": 2 },
           "takeable": false,
-          "observations": "The office photocopier. Sanjay's desk PC prints to it.",
-          "_comment": "Slice 7 producer: sanjay_pc's onUse revealOutput shows its first free slot (copier_out_a, then b, then c). The copier preset (photocopier1) gives it an affordance; nobody satisfies a need here."
+          "observations": "The office photocopier. Sanjay's and Tom's desk PCs print to it.",
+          "affordance": { "uncollectedAfterSeconds": 150 },
+          "_comment": "Slice 7 producer: sanjay_pc's and tom_pc's onUse revealOutput show its first free slot (copier_out_a, then b to e). Slice 17: uncollectedAfterSeconds 150 is above Tom's fetchAfterSeconds range (30 to 120), so npc_print_uncollected:tom marks a print that is really forgotten. The copier preset (photocopier1) gives the rest of its affordance; nobody satisfies a need here."
         },
         {
           "type": "notes1",
@@ -284,6 +289,48 @@
           "outputOf": "office_copier",
           "revealOnGlobal": "copier_out_c_shown",
           "needsTag": "printout"
+        },
+        {
+          "type": "notes1",
+          "id": "copier_out_d",
+          "name": "Printout",
+          "position": { "x": 4.65, "y": 2.9 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "PRINTOUT\n\nHoliday request. Tom Fletcher, two weeks in August. Approved: (blank).",
+          "observations": "A printout on the copier tray.",
+          "outputOf": "office_copier",
+          "revealOnGlobal": "copier_out_d_shown",
+          "needsTag": "printout",
+          "_comment": "Slice 17: d and e widen the pool. Read in place, so they cycle."
+        },
+        {
+          "type": "notes1",
+          "id": "copier_out_e",
+          "name": "Printout",
+          "position": { "x": 4.65, "y": 2.9 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "PRINTOUT\n\nHoliday request, second copy. Tom Fletcher, two weeks in August.",
+          "observations": "A printout on the copier tray.",
+          "outputOf": "office_copier",
+          "revealOnGlobal": "copier_out_e_shown",
+          "needsTag": "printout"
+        },
+        {
+          "type": "notes1",
+          "id": "print_queue_note",
+          "name": "Print Queue",
+          "takeable": false,
+          "readable": true,
+          "addToNotes": false,
+          "text": "PRINT QUEUE\n\nOne job held for Tom Fletcher. Released when read.",
+          "observations": "A note about the copier's print queue. Reading it releases a job Tom sent and then forgot about.",
+          "_comment": "Slice 17 lever: a mapping on Tom prints as him at once, with forget true, so the printout waits on the tray and npc_print_uncollected:tom follows after 150 s. cooldown 60000, not onceOnly: onceOnly is saved to the server, while a reload files the forgotten print."
         },
         {
           "type": "notes1",
@@ -367,8 +414,8 @@
             { "eventPattern": "npc_used:amara_pc", "condition": "data.tag === \"printout\"", "onceOnly": true, "cooldown": 0, "completeTask": "see_printout" },
             { "eventPattern": "npc_used:amara_pc", "condition": "data.need === \"work\"", "cooldown": 0, "setGlobal": { "last_activity": "desk_work" } },
             { "eventPattern": "npc_used:amara_pc", "condition": "data.need === \"work\"", "onceOnly": true, "cooldown": 0, "completeTask": "see_work" },
-            { "eventPattern": "npc_used:tom_pc", "cooldown": 0, "setGlobal": { "last_activity": "desk_work" } },
-            { "eventPattern": "npc_used:tom_pc", "onceOnly": true, "cooldown": 0, "completeTask": "see_work" },
+            { "eventPattern": "npc_used:tom_pc", "condition": "data.need === \"work\"", "cooldown": 0, "setGlobal": { "last_activity": "desk_work" } },
+            { "eventPattern": "npc_used:tom_pc", "condition": "data.need === \"work\"", "onceOnly": true, "cooldown": 0, "completeTask": "see_work" },
             { "eventPattern": "npc_used:sanjay_pc", "cooldown": 0, "setGlobal": { "last_activity": "desk_work" } },
             { "eventPattern": "npc_used:sanjay_pc", "onceOnly": true, "cooldown": 0, "completeTask": "see_work" },
             { "eventPattern": "npc_returned_post:amara", "onceOnly": true, "cooldown": 0, "completeTask": "see_back_at_desk" },
@@ -409,8 +456,13 @@
             "hunger": { "decayPerMin": 10, "urgentAt": 40, "initial": 65 },
             "work": { "decayPerMin": 8, "urgentAt": 50, "initial": 80 }
           },
-          "onUse": { "fridge": { "setGlobal": "tom_had_lunch" } },
+          "onUse": { "fridge": { "setGlobal": "tom_had_lunch" }, "tom_pc": { "revealOutput": "office_copier", "chance": 0.4 } },
+          "printHabit": { "fetchAfterSeconds": [30, 120], "forgetChance": 0.5, "_comment": "Slice 17: about four in ten of his work uses print; he fetches a print 30 to 120 s later, or forgets it (half of them). His prints are his: Amara's printout interest leaves them alone." },
           "eventMappings": [
+            { "eventPattern": "workstation_accessed:tom_pc", "cooldown": 60000, "needs": { "print": { "producer": "office_copier", "fetchAfterSeconds": [5, 10], "forget": false } } },
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Print Queue'", "cooldown": 60000, "needs": { "print": { "producer": "office_copier", "forget": true } } },
+            { "eventPattern": "npc_print_uncollected:tom", "onceOnly": true, "cooldown": 0, "completeTask": "see_uncollected" },
+            { "eventPattern": "npc_print_fetched:tom", "condition": "data.viaCommand === true", "onceOnly": true, "cooldown": 0, "completeTask": "send_print_job" },
             { "eventPattern": "workstation_owner_left:tom_pc", "condition": "data.screenLocked === false", "onceOnly": true, "cooldown": 0, "completeTask": "spot_open_screen" },
             { "eventPattern": "npc_caught_at_post:tom", "cooldown": 30000, "bark": "Er, that's my desk. Can I help you?", "completeTask": "see_caught" },
             { "eventPattern": "object_revealed:tom_badge", "onceOnly": true, "cooldown": 0, "completeTask": "see_left_behind" },
