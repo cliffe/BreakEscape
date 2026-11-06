@@ -1493,7 +1493,9 @@ scada_password = "CascadeWindow19"
               he is dealt with: hollis_resolved is "talked", "evaded" or "ko" (all
               truthy) or he is knocked out. A player who backed off is challenged
               again on the next sighting (wary_again), so slipping past is a skill;
-              the cone is shown by his torch in the dimmed checkpoint (2026-11-06; visualize is off). Evading is still
+              the cone is shown by his torch in the dimmed checkpoint (2026-11-06; visualize is off). The torch texture is 141 px long and fades, so it
+              is plainly lit out to about 100-120 px; range is 120 (was 150) so what he sees is
+              what the beam lights, and its half-angle (25.7 degrees) matches los.angle 50. Evading is still
               recorded on reaching the server hall. The 20 s cooldown lets a player
               who closes the chat walk off before he calls again. %>
           <%# 2026-11-06: the cone is 50 degrees (was 130). The spawn is 25-55px from his strip,
@@ -1503,7 +1505,7 @@ scada_password = "CascadeWindow19"
               into the strip, in front of him, is still seen at up to 150px. %>
           "los": {
             "enabled": true,
-            "range": 150,
+            "range": 120,
             "angle": 50,
             "visualize": false,
             "challengeOnSight": {
