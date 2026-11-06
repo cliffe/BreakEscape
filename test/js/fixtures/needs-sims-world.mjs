@@ -49,13 +49,13 @@ function objects() {
         { id: 'tom_pc', roomId: 'office', x: 88, y: 166, affordance: { satisfies: 'work', restores: 60, useSeconds: 10, private: true } },
         { id: 'sanjay_pc', roomId: 'office', x: 92.5, y: 122.5, affordance: { satisfies: 'work', restores: 60, useSeconds: 10, private: true } },
         { id: 'grace_laptop', roomId: 'office', x: 45.5, y: 175 },
-        { id: 'office_coffee', roomId: 'office', x: 269, y: 276.5, affordance: { satisfies: 'caffeine', restores: 70, useSeconds: 12, useFrom: { dx: -1, dy: 0 } } },
+        { id: 'office_coffee', roomId: 'office', x: 269, y: 276.5, affordance: { satisfies: 'caffeine', restores: 70, useSeconds: 12, useFrom: { dx: -1, dy: 0 }, queue: { cells: [{ dx: -1, dy: -1 }, { dx: -2, dy: -1 }] }, chatter: 'coffee' } },
         { id: 'office_mugs', roomId: 'office', x: 135.5, y: 231, needsTag: 'dirty_mugs' },
         { id: 'activity_board', roomId: 'office', x: 230, y: 39 },
         // kitchen (loads when the west door opens)
         { id: 'fridge', room: 'kitchen', x: -270, y: 94.5, affordance: { satisfies: 'hunger', restores: 80, useSeconds: 15, useFrom: { dx: 0, dy: 1 } } },
         { id: 'microwave', room: 'kitchen', x: -149, y: 105, affordance: { satisfies: 'hunger', restores: 60, useSeconds: 10 } },
-        { id: 'kitchen_coffee', room: 'kitchen', x: -211, y: 276.5, affordance: { satisfies: 'caffeine', restores: 70, useSeconds: 12, useFrom: { dx: 0, dy: -1 } } },
+        { id: 'kitchen_coffee', room: 'kitchen', x: -211, y: 276.5, affordance: { satisfies: 'caffeine', restores: 70, useSeconds: 12, useFrom: { dx: 0, dy: -1 }, queue: { cells: [{ dx: 1, dy: -1 }, { dx: 2, dy: -1 }] } } },
         { id: 'water_cooler', room: 'kitchen', x: -276, y: 247.5, affordance: { satisfies: ['thirst', 'social'], restores: 70, useSeconds: 15, capacity: 2 } },
         { id: 'washing_up_tray', room: 'kitchen', x: -214, y: 103.5, affordance: { accepts: ['dirty_mugs'], useSeconds: 5 } },
         // lounge (loads when the east door opens)
@@ -76,17 +76,17 @@ export const PRESET_OBJECTS = {
     tom_pc: { type: 'pc', affordance: { private: true } },
     sanjay_pc: { type: 'pc', affordance: { private: true } },
     grace_laptop: { type: 'laptop', affordance: false },                           // no affordance today
-    office_coffee: { type: 'coffee_station1', affordance: { useFrom: { dx: -1, dy: 0 } } },
+    office_coffee: { type: 'coffee_station1', affordance: { useFrom: { dx: -1, dy: 0 }, queue: { cells: [{ dx: -1, dy: -1 }, { dx: -2, dy: -1 }] }, chatter: 'coffee' } },   // queue and chatter: slice 10
     office_mugs: { type: 'dirty_mugs1' },
     activity_board: { type: 'chalkboard' },
     fridge: { type: 'qdc_fridge1' },
     microwave: { type: 'microwave1' },
-    kitchen_coffee: { type: 'coffee_station1', affordance: { useFrom: { dx: 0, dy: -1 } } },
+    kitchen_coffee: { type: 'coffee_station1', affordance: { useFrom: { dx: 0, dy: -1 }, queue: { cells: [{ dx: 1, dy: -1 }, { dx: 2, dy: -1 }] } } },
     water_cooler: { type: 'water_cooler1' },
     washing_up_tray: { type: 'mugs_tray1', affordance: { accepts: ['dirty_mugs'], useSeconds: 5 } },  // no preset
     rosa_laptop: { type: 'laptop', affordance: false },
     lounge_sofa: { type: 'leather_sofa1' },
-    lounge_kettle: { type: 'kettle1', affordance: { useFrom: { dx: 1, dy: 0 } } }
+    lounge_kettle: { type: 'kettle1', affordance: { useFrom: { dx: 1, dy: 0 }, queue: false } }   // no queue by the door (slice 10)
 };
 
 const START = (room, tx, ty) => ({ x: tx * TILE + 16 + (room === 'kitchen' ? -320 : room === 'lounge' ? 320 : 0), y: ty * TILE + 16 });
@@ -170,8 +170,15 @@ export function simsApproachCell(o) {
  * With `{ reachable }` the world answers reachability through that function (default: all
  * reachable, but counted, so select back-off engages as it does live).
  */
-export function makeSimsWorld({ reachable = () => true, presets = null } = {}) {
-    let objs = objects();
+export function makeSimsWorld({ reachable = () => true, presets = null, queues = false } = {}) {
+    // queues (slice 10): the showcase's coffee queues. Off by default, so every golden day from
+    // earlier slices stays the day it was (no queue: a second coffee drinker waits at its desk).
+    const noQueue = a => {
+        if (queues || !a || typeof a !== 'object') return a;
+        const { queue, ...rest } = a;
+        return presets ? { ...rest, queue: false } : rest;
+    };
+    let objs = objects().map(o => (o.affordance ? { ...o, affordance: noQueue(o.affordance) } : o));
     // presets: { resolve(object) -> affordance }: the preset copy of the showcase. Objects carry
     // their type and overrides only, and list/get hand the needs system the resolved affordance,
     // as the live adapter's describe does.
@@ -179,7 +186,9 @@ export function makeSimsWorld({ reachable = () => true, presets = null } = {}) {
         objs = objs.map(o => {
             const { affordance, ...rest } = o;
             const p = PRESET_OBJECTS[o.id];
-            return p ? { ...rest, ...p } : rest;
+            if (!p) return rest;
+            return p.affordance && typeof p.affordance === 'object' ? { ...rest, ...p, affordance: noQueue(p.affordance) }
+                : (queues || p.affordance === false || !/coffee|kettle/.test(p.type) ? { ...rest, ...p } : { ...rest, ...p, affordance: { queue: false } });
         });
     }
     const cfg = { npcs: npcs(), objects: objs };
