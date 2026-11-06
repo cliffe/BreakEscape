@@ -193,7 +193,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-11-01"
+    "imported": "2026-11-05",
+    "sit_from": "f1d4cccb-cf0b-4ca1-9c1b-730b8bdb2600"
   },
   "david_osei": {
     "character_id": "ca153084-c850-42c8-85fc-8ec685ec6bdb",
@@ -202,7 +203,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-10-02"
+    "imported": "2026-11-05",
+    "sit_from": "b320403b-1921-47af-88f4-6dc471a62ad3"
   },
   "david_torres": {
     "character_id": "41eda13e-7ab3-4b81-9d8a-a698634b7698",
@@ -211,7 +213,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-10-17"
+    "imported": "2026-11-05",
+    "sit_from": "0de56971-33a1-4dad-9636-65ae53d0a4ce"
   },
   "delphine_arvanitis": {
     "character_id": "50493701-fdae-49b5-9190-db9ffeaefd5c",
@@ -220,7 +223,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-11-03"
+    "imported": "2026-11-05",
+    "sit_from": "58458568-e335-4437-8edb-048817f7652c"
   },
   "dev_malhotra": {
     "character_id": "17bea81b-0912-4868-b9ac-3ed08f124c09",
@@ -229,7 +233,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-10-22"
+    "imported": "2026-11-05",
+    "sit_from": "3beb367a-376b-41ce-a5e5-de8d77991219"
   },
   "elena_rodriguez": {
     "character_id": "2f1f7a20-6606-4a07-b264-9330cbfdc312",
@@ -238,7 +243,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-10-17"
+    "imported": "2026-11-05",
+    "sit_from": "6da96f6a-0d21-4e31-9460-5255e778a47c"
   },
   "farah_qureshi": {
     "character_id": "39dfe7c3-8ef6-45b5-a240-d74e93f46ecd",
@@ -247,7 +253,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-10-22"
+    "imported": "2026-11-05",
+    "sit_from": "0751dc20-1bc5-40ae-91a9-2f470a02fd98"
   },
   "fatima_begum": {
     "character_id": "35f2172d-7b82-4971-a00c-416241791ffe",
@@ -256,7 +263,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-11-01"
+    "imported": "2026-11-05",
+    "sit_from": "1b4b8b58-21af-43e4-a019-c3fc6c106b9c"
   },
   "female_blowse_v2": {
     "character_id": "df960bf2-20c6-4600-b725-44846cb0337f",
@@ -265,7 +273,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-09-30"
+    "imported": "2026-11-05",
+    "sit_from": "dac5beb6-07a8-401b-9112-93aca976e100"
   },
   "female_hacker_hood_down_v2": {
     "character_id": "41542288-ce3e-4823-8c10-51c1586622ed",
@@ -274,8 +283,9 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-09-29",
-    "idle_from": "9b005e8f-8923-41eb-b2dd-c70f963f68e9"
+    "imported": "2026-11-05",
+    "idle_from": "9b005e8f-8923-41eb-b2dd-c70f963f68e9",
+    "sit_from": "e6e37638-00d1-4829-8a9d-161fe740df6d"
   },
   "female_hacker_hood_v2": {
     "character_id": "c14d8060-5196-4812-adb8-5efff2d3b67b",
@@ -303,7 +313,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-09-27"
+    "imported": "2026-11-05",
+    "sit_from": "8d23f919-b227-437e-82b0-953be3040c3b"
   },
   "female_office_worker_v2": {
     "character_id": "c7f54eae-f3cc-4358-980d-35d076247969",
@@ -322,7 +333,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-09-29"
+    "imported": "2026-11-06",
+    "sit_from": "ace6ab66-8a37-4f8c-a3b2-78f1d94c62a1"
   },
   "female_security_guard_v2": {
     "character_id": "a394dbab-dc0e-4c6e-b74a-85a5e4c7b568",
@@ -331,7 +343,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-09-26"
+    "imported": "2026-11-06",
+    "sit_from": "3ad98f35-6726-4599-a5b1-ae5622d8fee6"
   },
   "female_telecom_v2": {
     "character_id": "c9ae81c0-04c7-4d6f-af99-437fd3ecd4b0",
@@ -340,7 +353,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-09-29"
+    "imported": "2026-11-06",
+    "sit_from": "6376b53b-db1b-4fcc-8c45-1b06509cd111"
   },
   "ffion_rees": {
     "character_id": "19c3a98e-6cbc-429b-83d4-f6a517db285a",
@@ -349,7 +363,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-10-12"
+    "imported": "2026-11-06",
+    "sit_from": "702d2782-e8ae-4a3c-9bd6-85f7966f266c"
   },
   "fiona_hartley": {
     "character_id": "21604761-bfe3-464c-b091-1deeb4842758",
@@ -358,7 +373,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-10-03"
+    "imported": "2026-11-06",
+    "sit_from": "cd207a44-062d-4e88-829a-80b560b8f98c"
   },
   "frank_callahan": {
     "character_id": "bd40558f-a851-40f0-bf32-52125dc7fd1f",
@@ -386,7 +402,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-09-26"
+    "imported": "2026-11-06",
+    "sit_from": "ce55b9a6-2d46-483d-a960-9417cabdc1e4"
   },
   "graham_reeves": {
     "character_id": "4909ebbd-79c1-47fb-99be-7889d50af44b",
@@ -395,7 +412,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-09-26"
+    "imported": "2026-11-06",
+    "sit_from": "af8bdb85-0c29-49a5-9a83-ca0973dfa632"
   },
   "graham_whitfield": {
     "character_id": "1514a72f-c6a0-4054-9ce9-0fd7d6136341",
@@ -404,7 +422,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-11-01"
+    "imported": "2026-11-06",
+    "sit_from": "3197a8cb-b6e7-408d-923e-05c3419771f8"
   },
   "gwen_pritchard": {
     "character_id": "cb0a2a4e-91cd-4b95-b259-ad2566b6dd10",
@@ -413,7 +432,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-11-03"
+    "imported": "2026-11-06",
+    "sit_from": "3f407731-f2c5-46e0-9386-cd74667e6cd9"
   },
   "halina_kowalczyk": {
     "character_id": "a444c74f-b8ea-4d0a-b26e-c9e0eb98c29d",
@@ -422,7 +442,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-10-22"
+    "imported": "2026-11-06",
+    "sit_from": "20cf23d1-7590-4f70-a799-e011eb0a051e"
   },
   "hamza_iqbal": {
     "character_id": "2298578f-deaa-49d9-b40a-d7f8b4e31886",
@@ -431,7 +452,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-10-03"
+    "imported": "2026-11-06",
+    "sit_from": "943b4412-4ab0-44b5-bcca-fc04008a45c0"
   },
   "harjit_singh": {
     "character_id": "29def7b5-5aac-4f8b-96ff-b65337435667",
@@ -449,7 +471,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-10-17"
+    "imported": "2026-11-06",
+    "sit_from": "f32bf9d9-61bc-4582-ae6b-5662b19a6c40"
   },
   "helen_carver": {
     "character_id": "588ca268-fa48-4c24-84a8-54772f85dc83",
@@ -458,7 +481,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-10-03"
+    "imported": "2026-11-06",
+    "sit_from": "b463fda0-bca7-4495-8bec-a78db86f7623"
   },
   "ibrahim_diallo": {
     "character_id": "2970778d-a8b5-424d-8966-3baabcfd5e76",
@@ -467,7 +491,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-11-01"
+    "imported": "2026-11-06",
+    "sit_from": "881db3d2-0117-4192-82bd-10ecc88489a7"
   },
   "imran_siddiqui": {
     "character_id": "0f14b104-c083-4b06-adf4-d28592be8965",
@@ -476,7 +501,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-10-22"
+    "imported": "2026-11-06",
+    "sit_from": "75ff2471-880f-48f2-9433-f81e38c8aa17"
   },
   "irina_volkova": {
     "character_id": "95fc9762-3a9d-4bff-9892-b1876aa69c95",
@@ -485,7 +511,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-10-17"
+    "imported": "2026-11-06",
+    "sit_from": "193e71f5-5fbe-44aa-a43c-bda29474598e"
   },
   "james_mercer": {
     "character_id": "2e9acd6e-94b2-4dc0-bc42-c939d179fa7a",
@@ -494,7 +521,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-10-17"
+    "imported": "2026-11-06",
+    "sit_from": "12311272-03bb-4a3d-8711-22b1668673b4"
   },
   "jesse_tran": {
     "character_id": "0492a91f-7896-4b4c-8142-362161eebfd7",
@@ -503,7 +531,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-10-22"
+    "imported": "2026-11-06",
+    "sit_from": "2bc80439-35e5-4ca1-b0ec-37fb2ee63d00"
   },
   "joanne_pell": {
     "character_id": "c2f1526f-636e-4e98-81da-bbdb6bb220d6",
@@ -512,7 +541,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-11-01"
+    "imported": "2026-11-06",
+    "sit_from": "4d857fed-e5ab-404a-bd00-d638ebe753bd"
   },
   "julian_sallow": {
     "character_id": "8474d33e-e390-48aa-ba03-52f5ec5277e5",
@@ -521,7 +551,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-11-01"
+    "imported": "2026-11-06",
+    "sit_from": "2438ab23-dcfa-4dd6-8432-a026b5d0cecc"
   },
   "jun_watanabe": {
     "character_id": "d9c29050-2563-4f12-bd44-9ad050d06fd3",
@@ -530,7 +561,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-11-01"
+    "imported": "2026-11-06",
+    "sit_from": "cb8723ec-ec3e-48d2-890f-da64e7b7add4"
   },
   "junior_analyst": {
     "character_id": "83c3edaa-ea1c-4130-a310-64adf6dd3713",
@@ -549,7 +581,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-10-16"
+    "imported": "2026-11-06",
+    "sit_from": "161fe42b-b83a-43fe-98ee-91966bb40015"
   },
   "kenji_arakawa": {
     "character_id": "cbe8850d-35b7-4447-b707-3e4d30c222b6",
@@ -558,7 +591,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-10-22"
+    "imported": "2026-11-06",
+    "sit_from": "d31ee10d-3c0d-4251-9d5b-b17a69a04f20"
   },
   "lerato_dlamini": {
     "character_id": "cfc36f50-e24a-4f9f-b361-1b40de1c4e1b",
@@ -567,7 +601,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-11-01"
+    "imported": "2026-11-06",
+    "sit_from": "b195e0fb-0f52-401b-84b8-6705679a9b24"
   },
   "lisa_park": {
     "character_id": "d652c8a0-906c-4762-9679-b0ac0af08855",
@@ -576,7 +611,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-10-17"
+    "imported": "2026-11-06",
+    "sit_from": "7506ca85-66ba-4c0d-a485-8ded202eb7fa"
   },
   "lorna_easton": {
     "character_id": "ccf1e354-4b1a-4252-a41b-7341bf74e054",
@@ -612,7 +648,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-09-27"
+    "imported": "2026-11-06",
+    "sit_from": "77a0ef19-8fe8-4fe8-9c13-0447aa85b67f"
   },
   "male_hacker_hood_v2": {
     "character_id": "e50525a5-0139-439f-83a5-31461054c3ac",
@@ -621,8 +658,9 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-10-27",
-    "idle_from": "b57e62b8-2e5a-4eff-982b-303a4b7f576f"
+    "imported": "2026-11-06",
+    "idle_from": "b57e62b8-2e5a-4eff-982b-303a4b7f576f",
+    "sit_from": "fb6e9642-1a85-4c10-8bfc-7c5064fffd1a"
   },
   "male_nerd_v2": {
     "character_id": "ae175532-182f-435a-8f0a-d7408d88eb2f",
@@ -631,7 +669,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-09-30"
+    "imported": "2026-11-06",
+    "sit_from": "d2346e82-0a06-4440-9efc-3bce63aca588"
   },
   "male_office_worker_v2": {
     "character_id": "f9fdf0ce-34a5-424e-a4c1-af43aaaa8f37",
@@ -660,7 +699,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-09-30"
+    "imported": "2026-11-06",
+    "sit_from": "adcbdf40-4e4c-420d-8446-4513565d65eb"
   },
   "male_telecom_v2": {
     "character_id": "7295d940-3676-431e-8a55-b3124508f56f",
@@ -688,7 +728,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-10-22"
+    "imported": "2026-11-06",
+    "sit_from": "915cfb1b-c5e6-4ebd-80ba-c1c5fc5b4211"
   },
   "marisol_quintero": {
     "character_id": "23f73103-d882-4376-9397-922e3c6c68d1",
@@ -697,7 +738,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-10-22"
+    "imported": "2026-11-06",
+    "sit_from": "8831fdcc-3c18-402a-aa5d-20754b076213"
   },
   "mei_lin_chow": {
     "character_id": "539e8526-a733-4519-adfd-95ba0b6257c5",
@@ -715,7 +757,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-10-13"
+    "imported": "2026-11-06",
+    "sit_from": "28d186c9-2286-44f7-b386-4ae04d0afb83"
   },
   "ngozi_adeyemi": {
     "character_id": "edaf401f-151b-4b76-aae0-f7e67c20bf2c",
@@ -742,7 +785,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-09-30"
+    "imported": "2026-11-06",
+    "sit_from": "b7458e5e-4dcd-4c64-9860-b78238708d86"
   },
   "nilesh_solanki": {
     "character_id": "f87617a7-5304-43fe-98c7-ffd23ce749fd",
