@@ -165,7 +165,7 @@ test('a sprite registered while the doorway is open is opened too', () => {
 const pfSrc = readFileSync(join(js, 'systems/npc-pathfinding.js'), 'utf8')
     .replace("'../utils/constants.js'", `'${dataUrl('export const TILE_SIZE = 32, PATHFINDING_STEP = 8;')}'`)
     .replace("'./path-doorways.js'", `'${dataUrl(readFileSync(join(js, 'systems/path-doorways.js'), 'utf8'))}'`)
-    .replace("'./path-avoid.js'", `'${dataUrl('export const AVOID_CELL_COST = 5; export const collectAvoidRects = () => []; export const avoidCells = () => []; export const crossesAvoidRect = () => false;')}'`);
+    .replace("'./path-avoid.js'", `'${dataUrl('export const AVOID_CELL_COST = 5; export const collectAvoidRects = () => []; export const avoidCells = () => []; export const crossesAvoidRect = () => false; export const roomFloorRect = () => null; export const onFloor = () => false; export const floorRingCells = () => [];')}'`);
 const { NPCPathfindingManager } = await import(dataUrl(pfSrc));
 
 test('unmarkDoor forgets an N/S doorway in both rooms, and an E/W corridor', () => {
