@@ -50,6 +50,7 @@ in order, one at a time: they all touch `npc-needs.js`.
 | 14 | Avoidance at a distance, balking (`maxQueue`) and parked needs, face bubble | 10 | Built (b7606efd0, efe347968, e4408c2f9, 5e7dec2c7, b546cb3c8, a6f5fbc1f, 3f5350d40); sims games 689, 690, 691; leash (game 692) and lab (game 693, score 100) regressions done 2026-11-06 (`HANDOVER_OFFICE_S14.md`) |
 | 15 | Voiced chatter (server `/tts` accepts chatter pools), bag and cooldown, speech lock, picture chat, ink exchanges heard once | 11 | Built (c6288e3be, c4949a517, d6dc1f5b1, 5222d2d3f, da3387e92); sims game 694; leash (game 698) and lab (game 788, score 100) regressions done 2026-11-06 (`HANDOVER_OFFICE_S15.md`) |
 | 21 | Idle motion: the chair roll mostly along x, out and back, held while busy; a rare seeded swivel (`swivelChance` 0.05); listening turns towards a colleague speaking within four tiles (per-tick speakers list); `npc_swivelled` | 12.7 | Built (9779363f6, showcase cbfe37bea); sims games 896, 897; leash (game 899) and lab (game 900, score 100) regressions done 2026-11-06 (`HANDOVER_OFFICE_S21.md`) |
+| 16 | Lock-screen habits (`screenHabit`) and cues: an object `autoLockSeconds`, `workstation_screen_changed`, lock and wake flash or glyph, chimes, `lockCues` | 12.2 | Built (aebba3ab5, a3cd35e6d, ea3ec20a2, f84c777de); sims games 904, 906, 912; leash (game 914) and lab (game 915, score 100) regressions done 2026-11-06 (`HANDOVER_OFFICE_S16.md`) |
 
 Not chosen: 6 (traits), 9 (routines), 12 (schedules), 13 (consumables). Don't build them unless the user asks.
 

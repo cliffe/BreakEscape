@@ -494,6 +494,36 @@ Notes: in game 897 a second Coffee Notice read did not send Marek (the mapping h
 the listen beat was replayed by setting his caffeine through the bridge, which is what the notice
 does. `test_needs_leash` game 899 and the lab game 900 are in the plan's 12.7 Built line.
 
+### Slice 16 re-run: lock-screen habits and cues (2026-11-06, keyless :3001, headless)
+
+How to watch it: Amara locks only for a longer trip (`screenHabit.lockIfAwayOverSeconds` 20: the office coffee stays open, a kitchen run
+or a queue place locks); Sanjay never locks on leaving (`lockChance` 0) but his PC locks itself 20 s after he goes (`autoLockSeconds`);
+Tom's object `lockChance` 0.5 still wins over any habit. Each lock plays a flash at the screen indicator (lighting on) or a padlock glyph
+(lighting off) and a soft two-note chime in the same room; each return plays the wake flash and the rising chime. Tasks `hear_screen_lock`
+(Amara), `see_auto_lock` (Sanjay) and `use_open_screen` (use Sanjay's PC while he is away and it is still open).
+
+Evidence is in the session scratchpad `s16/`: strips `strip-lit-amara-904.png` (white dot, lock flash, steady blue dot, wake flash),
+`strip-lit-sanjay-auto-904.png`, `strip-nolight-amara-906.png` (open then closed padlock on the lock, closed then open on the return,
+bodies aligned), chime log `playlog-904-a.json`, kitchen log `playlog-912-kitchen.json`, tasks `verify-912.txt`.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Habit splits by trip length | PASS | game 904: Amara's office coffee `expectedAwayMs` 15696, 15367, 15368 (stayed open, white dot); kitchen run with the office machine taken 21819 (locked, chime heard at 0.104); game 906: queued at the office coffee, 27696 (locked, `hear_screen_lock` completed) |
+| Lock and wake cue, lighting on | PASS | game 904: lock flash about 180 ms after the leave, steady blue dot, wake flash about 150 ms after the return, then no dot (`strip-lit-amara-904.png`) |
+| Lock and wake cue, lighting off | PASS | game 906 (`localStorage.breakEscapeLighting = 'off'`): padlock glyph open then closed on the lock, closed then open on the return, shown for 1 s (`strip-nolight-amara-906.png`) |
+| Auto-lock | PASS | game 904: Sanjay's PC locked 20 s after his leave (`strip-lit-sanjay-auto-904.png`); game 906: leave at 141750, lock at 161750, glyph shown, no chime (`cueLog`); `see_auto_lock` completed |
+| Chime heard in the office | PASS | game 904 `playlog-904-a.json`: every lock and unlock played on channel `chime`, hearing 1, volumes 0.077 to 0.104; the auto-lock has no entry |
+| Examine view holds the auto-lock | PASS | game 912 (after f84c777de): Sanjay left at needs clock 258500, the examine view opened on his open PC at 261250 and stayed open for 48 s; no `auto` event at 278500 (20 s after the leave) or at any later tick; he returned at 296750. The same check on game 904, before the fix, locked under the open view |
+| Objective `use_open_screen` | PASS | game 912: `completed` at 21:47:03Z in `verify-run.rb --tasks` (the loaded scenario still says `active`; that is not live state) |
+| Chime not heard from the kitchen | PASS | game 912, player in the `kitchen`: Tom then Amara sent for coffee; `screen_lock` and `screen_unlock` for both PCs logged with `hearing` 0, `volume` 0, `played` false, and no `workstation_lock_heard` event (`playlog-912-kitchen.json`) |
+| Tom's object roll still decides | PASS | game 904: locked on one leave, open on others |
+| Errors | PASS | only keyless-server TTS 503s in the drains |
+
+Notes: lock after the examine view closes (20 s later) was not seen in game 912 because Sanjay had already returned and the auto-lock
+does not run after a return; the idle restart on close is covered by the `workstation-state` tests. Sanjay's trips only start when a
+source is reachable: with the kitchen unloaded his hunger and social needs park with `no_source`, so open the kitchen door first. A
+standing player in the doorway blocks the NPCs' route (jobs time out), so stand clear of it.
+
 ## Engine findings
 
 1. **Fixed 2026-11-05.** The home is now provisional until the `needsHome` object exists and is re-resolved once a second; and an NPC standing on its own desk's approach cell now counts as able to reach it (EasyStar gave no path for start == end, which is why Sanjay chose `tom_pc` in game 501). Original finding: **Needs homes in the start room resolve to the spawn point and stay there.** `npc-needs.js:301` resolves `s.home` on the first tick that has a sprite position and caches it; `_resolveHome` (`npc-needs.js:628-640`) falls back to the spawn point with `objectId: null` when `getObject`/`approachCell` fail. For the start room the NPCs are registered (`core/game.js:2004-2006`) before the room's objects or pathfinding are ready, so every start-room needs NPC gets the fallback and the home-object preference in `_useCandidate` (`npc-needs.js:475`) never applies. NPCs in rooms loaded later (Rosa, lounge) resolve correctly. Repro: load this scenario, then `[...npcNeedsSystem.states].map(([k,s]) => [k, s.home.objectId])` gives null for amara, tom, grace and sanjay, `rosa_laptop` for rosa. Suggested fix: don't cache a fallback home while `needsHome` names an object that isn't found yet (retry each tick until the object exists, or for a few seconds). `test_npc_needs` and `lab_physical_pentest` start-room NPCs are likely affected too, but hidden because each spawns at its own desk. Workaround here: each NPC spawns beside its own desk, and the work task reads "Someone works at a desk". Even so, game 501 had Sanjay choose `tom_pc` over his own adjacent PC (nearest-reachable from his seated position), so the workaround isn't reliable.

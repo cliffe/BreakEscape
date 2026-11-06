@@ -1,7 +1,10 @@
 # Handover: office life slice 16, lock-screen habits and cues (2026-11-06)
 
-**Status: IN PROGRESS. Engine, validator, schema, tests and showcase are committed and green; most of
-the live proof is done. Left: two live checks, the two regressions and the docs (see "Left").**
+**Status: DONE (2026-11-06).** `bin/test-js` 402 files pass, live proof games 904, 906 and 912, leash game
+914 (pass), lab game 915 (score 100), docs written. The hold under the examine view and the kitchen-silence
+checks passed in game 912; the plan's 12.2 Built line lists the choices made without asking. Open for the
+lab session: the lab now gets the lock cues by default (`lockCues`), so it should confirm that or set
+`"lockCues": false`.
 Plan: `OFFICE_LIFE_PLAN.md` 12.2 (spec), 12.8 row 2, 12.9 OQ27-29 and OQ47, 13f. The art
 (`npc-lock.png`, `npc-lock-open.png`) and the two run-time chimes were approved by the user on
 2026-11-06, so the chimes play (no `unapproved` logging) and the glyph uses the icons.

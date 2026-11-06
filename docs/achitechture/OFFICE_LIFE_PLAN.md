@@ -2622,6 +2622,28 @@ reference. New sounds and art are marked
 
 ### 12.2 Lock-screen habits and cues (slice 16)
 
+**Built: 2026-11-06 (slice 16: engine, validator, schema and tests aebba3ab5; showcase a3cd35e6d, ea3ec20a2; fix from live proof f84c777de).
+Regressions: `test_needs_leash` game 914 (pass), `lab_physical_pentest` game 915 (score 100); sims live proof games 904, 906 and 912; see
+`HANDOVER_OFFICE_S16.md`.** As written (`habitOf`, `decideLocked` with the habit, `autoLockMs`, `tick` and the idle map in
+`workstation-state.js`; `afterTick` in `npc-needs.js`; `flash` in `lighting.js`; the cue layer in `npc-office-visuals.js`; the
+validator's `check_lock_habits`; `bin/test-js` 402 files pass, `bin/rails test` 953 runs, 0 failures, 1 skip), with these choices made
+without asking: (1) `lockIfAwayOverSeconds` counts a trip of exactly the threshold as short (`expectedAwayMs <= threshold` stays open);
+Amara's 20 s splits as hoped (office coffee 15.4 to 15.7 s open, kitchen 21.8 s and a queue place 27.7 s locked). (2) `sanjay_pc`
+`autoLockSeconds` is 20, not 30: his live trips take 19 to 27 s, so 30 s rarely showed the beat. (3) A late decision (`how: "late"`) fires
+the event only when it locks and does not republish the globals (unchanged behaviour); an auto-lock already due at discovery counts for a
+late station. (4) While a minigame is open on the object the idle clock restarts every tick, rather than pausing, so the screen locks
+`autoLockSeconds` after the minigame closes; f84c777de made the hold match a minigame whose params name the object by string `itemId` or
+`objectId` (the examine view a PC click opens), which the first version missed. (5) The glyph (no lighting) shows the first state for
+300 ms, then the end state until 1 s (lock: open then closed; return: closed then open), on the action icons' dark backing, 2 px above the
+object's top centre, depth 5000, with text stand-ins `L` and `U` until the icons load; both icons are preloaded on install when there is no
+lighting system. (6) Chimes are two 0.22 s sine notes 110 ms apart (A5 and D5), at half a use sound's level (`CHIME_SCALE` 0.5), with the
+use sounds' eight-tile fall-off, own room only, on their own limiter channel `chime`; leave and return only, never the auto-lock. (7) The
+flash is drawn in the room's pass (hidden with its room off screen) at depth `LIGHT_DEPTH + 2`, with the indicators' hue-keep stamp in a
+lit room; its clock starts on its first draw. (8) `npc_caught_at_post` still uses the object-param-only minigame test; only the
+workstation hold uses `minigameOnObject` (worth aligning later, not in scope). **The lab:** `lockCues` defaults on, so
+`lab_physical_pentest` now shows the lock flash and chime on Chris's PC and the wake flash on his return (12.10); its lock decisions are
+untouched (object `locksScreenOnLeave` and no `autoLockSeconds`). The lab session should confirm that or set `"lockCues": false`.
+
 **Design.** Two things change on a workstation, and they belong to different owners.
 
 - **The person's habit** goes on the NPC: `screenHabit: { lockChance, lockIfAwayOverSeconds }`.
