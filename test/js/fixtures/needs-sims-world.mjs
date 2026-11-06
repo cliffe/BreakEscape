@@ -245,13 +245,17 @@ export function runSimsDay(NPCNeedsSystem, { minutes = 6, opts = {}, reachable, 
  * with the live adapter's rules. Positions are the scenario's tiles; live cells differ a little.
  * Extra handles: w.slots (by id), w.take(id) (the player takes a slot), w.globals.
  */
-export function addCopierBeat(w, { cfgNpcs = w.cfgNpcs, accepts = ['post', 'printout'], onDeliver } = {}) {
+export function addCopierBeat(w, { cfgNpcs = w.cfgNpcs, accepts = ['post', 'printout'], onDeliver, extraSlots = false, uncollectedAfterSeconds } = {}) {
     const calls = w.calls;
     Object.assign(calls, { placed: [], stowed: [], revealed: [], cosmetics: [], cosmeticsRemoved: [] });
     const copier = { id: 'office_copier', roomId: 'office', x: 157, y: 89, affordance: { useSeconds: 8, capacity: 1, useFrom: { dx: 0, dy: 1 } } };
+    if (uncollectedAfterSeconds !== undefined) copier.affordance.uncollectedAfterSeconds = uncollectedAfterSeconds;
     w.objs.push(copier);
     const slots = {};
-    for (const [id, takeable] of [['copier_out_a', true], ['copier_out_b', false], ['copier_out_c', false]]) {
+    // extraSlots (slice 17): the showcase's d and e, read in place
+    const ids = [['copier_out_a', true], ['copier_out_b', false], ['copier_out_c', false]];
+    if (extraSlots) ids.push(['copier_out_d', false], ['copier_out_e', false]);
+    for (const [id, takeable] of ids) {
         const o = { id, roomId: 'office', x: 157, y: 75, needsTag: 'printout', slot: true, pickable: false, outputOf: 'office_copier', global: `${id}_shown`, takeable, home: { roomId: 'office', x: 157, y: 75 } };
         slots[id] = o;
         w.objs.push(o);
@@ -290,11 +294,15 @@ export function addCopierBeat(w, { cfgNpcs = w.cfgNpcs, accepts = ['post', 'prin
     };
     world.stowHeld = (npcId, itemId) => (held.has(itemId) ? stow(slots[itemId]) : false);
     world.stowSlot = itemId => stow(slots[itemId]);
-    world.revealOutput = (producerId, npcId) => {
-        const list = Object.values(slots).filter(o => o.outputOf === producerId).sort((a, b) => (a.id < b.id ? -1 : 1));
-        const free = list.find(o => o.roomId && !o.taken && g[o.global] !== true && !o.placed && !held.has(o.id));
+    const firstFree = producerId => Object.values(slots).filter(o => o.outputOf === producerId).sort((a, b) => (a.id < b.id ? -1 : 1))
+        .find(o => o.roomId && !o.taken && g[o.global] !== true && !o.placed && !held.has(o.id)) || null;
+    // Slice 17: the full-pool check and the owner stamp, as the live adapter
+    world.freeSlotOf = producerId => firstFree(producerId)?.id || null;
+    world.setPrintedBy = (id, npcId) => { if (slots[id]) slots[id].printedBy = npcId || null; };
+    world.revealOutput = (producerId, npcId, opts = null) => {
+        const free = firstFree(producerId);
         if (free) {
-            g[free.global] = true; free.pickable = true;
+            g[free.global] = true; free.pickable = true; free.printedBy = opts?.printedBy || null;
             calls.revealed.push({ producerId, npcId, slotId: free.id });
             return { slotId: free.id };
         }

@@ -50,7 +50,107 @@ module ValidateNpcNeeds
     check_swivel(npcs, issues)
     check_lock_habits(json, npcs, objs, issues)
     check_off_when(json, npcs, objs, issues)
+    check_print_habits(json, npcs, objs, issues)
     issues
+  end
+
+  # Slice 17 (OFFICE_LIFE_PLAN 12.3): print and forget. A hook's chance (0-1); printHabit's shape
+  # and bounds; a mapping's needs.print command; affordance.uncollectedAfterSeconds. An owner (a
+  # printHabit or a print command) needs a needsHome object, where the errand takes the print; a
+  # habit with nothing that prints for it does nothing; a producer in a room the owner may not
+  # reach is never fetched from. Per producer, slots against printing NPCs (forgotten prints hold
+  # slots until a reload or a recycle).
+  PRINT_HABIT_KEYS = %w[fetchAfterSeconds forgetChance weight shareAfterSeconds _comment].freeze
+
+  def self.fetch_range_ok?(v)
+    v.is_a?(Array) && v.length == 2 && v.all? { |x| x.is_a?(Numeric) && x >= 0 && x <= 3600 } && v[0] <= v[1]
+  end
+
+  def self.check_print_habits(json, npcs, objs, issues)
+    by_id = objs.select(&:id).group_by(&:id)
+    printers = Hash.new { |h, k| h[k] = [] }
+    objs.each do |o|
+      v = o.data.dig('affordance', 'uncollectedAfterSeconds')
+      next if v.nil? || (v.is_a?(Numeric) && v >= 0 && v <= 3600)
+
+      issues << "❌ ERROR: object '#{o.id}' affordance.uncollectedAfterSeconds must be seconds from 0 to 3600 (default 60)."
+    end
+    npcs.each do |npc_room, npc|
+      where = "NPC '#{npc['id']}'"
+      hooks = npc['onUse'].is_a?(Hash) ? npc['onUse'] : {}
+      hooked = []
+      hooks.each do |oid, hook|
+        next unless hook.is_a?(Hash)
+
+        if hook.key?('chance') && !(hook['chance'].is_a?(Numeric) && hook['chance'] >= 0 && hook['chance'] <= 1)
+          issues << "❌ ERROR: #{where} onUse '#{oid}' chance must be a number from 0 to 1 (default 1)."
+        end
+        issues << "⚠️ WARNING: #{where} onUse '#{oid}' sets chance without revealOutput; chance applies to prints only." if hook.key?('chance') && !hook.key?('revealOutput')
+        hooked << hook['revealOutput'] if hook['revealOutput'].is_a?(String)
+      end
+      commanded = []
+      Array(npc['eventMappings']).each do |m|
+        next unless m.is_a?(Hash) && m['needs'].is_a?(Hash) && m['needs'].key?('print')
+
+        cmd = m['needs']['print']
+        spec = cmd.is_a?(String) ? { 'producer' => cmd } : cmd
+        unless spec.is_a?(Hash) && spec['producer'].is_a?(String)
+          issues << "❌ ERROR: #{where} mapping '#{m['eventPattern']}' needs.print must be a producer id or { producer, fetchAfterSeconds, forget }."
+          next
+        end
+        prod = spec['producer']
+        if by_id.key?(prod)
+          commanded << prod
+          issues << "⚠️ WARNING: #{where} mapping '#{m['eventPattern']}' prints to '#{prod}', but no object has outputOf '#{prod}'; every print is only a cosmetic copy." if objs.none? { |o| o.data['outputOf'] == prod }
+        else
+          issues << "❌ ERROR: #{where} mapping '#{m['eventPattern']}' needs.print producer '#{prod}' is not an object id in this scenario."
+        end
+        if spec.key?('fetchAfterSeconds') && !fetch_range_ok?(spec['fetchAfterSeconds'])
+          issues << "❌ ERROR: #{where} mapping '#{m['eventPattern']}' needs.print fetchAfterSeconds must be [min, max] seconds, 0 <= min <= max <= 3600."
+        end
+        issues << "❌ ERROR: #{where} mapping '#{m['eventPattern']}' needs.print forget must be true or false." if spec.key?('forget') && ![true, false].include?(spec['forget'])
+      end
+      habit = npc['printHabit']
+      unless habit.nil?
+        if habit.is_a?(Hash)
+          (habit.keys - PRINT_HABIT_KEYS).each { |k| issues << "⚠️ WARNING: #{where} printHabit has unknown key '#{k}'." }
+          if habit.key?('fetchAfterSeconds') && !fetch_range_ok?(habit['fetchAfterSeconds'])
+            issues << "❌ ERROR: #{where} printHabit.fetchAfterSeconds must be [min, max] seconds, 0 <= min <= max <= 3600 (default [20, 60])."
+          end
+          issues << "❌ ERROR: #{where} printHabit.forgetChance must be a number from 0 to 1 (default 0)." if habit.key?('forgetChance') && !(habit['forgetChance'].is_a?(Numeric) && habit['forgetChance'] >= 0 && habit['forgetChance'] <= 1)
+          issues << "❌ ERROR: #{where} printHabit.weight must be 0.1 to 10 (default 2)." if habit.key?('weight') && !(habit['weight'].is_a?(Numeric) && habit['weight'] >= 0.1 && habit['weight'] <= 10)
+          issues << "❌ ERROR: #{where} printHabit.shareAfterSeconds must be seconds > 0 (unset: a forgotten print stays reserved)." if habit.key?('shareAfterSeconds') && !(habit['shareAfterSeconds'].is_a?(Numeric) && habit['shareAfterSeconds'].positive?)
+        else
+          issues << "❌ ERROR: #{where} printHabit must be an object."
+        end
+        if hooked.empty? && commanded.empty?
+          issues << "⚠️ WARNING: #{where} has a printHabit but no revealOutput hook and no mapping print command; nothing prints as it, so the habit does nothing."
+        end
+      end
+      owner_prods = (habit.nil? ? [] : hooked) + commanded
+      owner_prods.uniq.each { |prod| printers[prod] << npc['id'] }
+      hooked.uniq.each { |prod| printers[prod] << npc['id'] unless printers[prod].include?(npc['id']) }
+      next if owner_prods.empty?
+
+      home = npc['needsHome']
+      home_obj = home.is_a?(String) ? by_id[home]&.first : nil
+      unless home_obj
+        issues << "❌ ERROR: #{where} owns its prints (printHabit or a print command) but has no needsHome object; the fetch errand takes the print to its needsHome object and has nowhere to go."
+        next
+      end
+      home_room = home_obj.room || npc_room
+      reach = leash_reach(json, npc, home_room)
+      owner_prods.uniq.each do |prod|
+        p_obj = by_id[prod]&.first
+        next if p_obj.nil? || p_obj.room.nil? || reach.include?(p_obj.room)
+
+        issues << "⚠️ WARNING: #{where} prints to '#{prod}' in room '#{p_obj.room}', which its home room '#{home_room}' does not join through rooms it may enter; its prints are never fetched."
+      end
+    end
+    printers.each do |prod, ids|
+      slots = objs.count { |o| o.data['outputOf'] == prod }
+      issues << "ℹ️ Printing NPCs for '#{prod}': #{ids.length} (#{ids.sort.join(', ')}) for #{slots} slot(s); a forgotten print holds its slot until a reload, or until a print finds the pool full and recycles it (an empty pool prints only cosmetic copies)."
+    end
   end
 
   # Slice 18a (OFFICE_LIFE_PLAN 12.4): affordance.offWhen (the requireGlobal form) takes a source

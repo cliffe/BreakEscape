@@ -281,6 +281,10 @@ export class NPCNeedsSystem {
         // affordance.offWhen seen so far, with the off state last seen. A global change wakes parked
         // needs only when one of them really turns back on.
         this._offSeen = new Map();
+        // Print and forget (slice 17, OFFICE_LIFE_PLAN 12.3): slotId -> the owned print on it
+        // ({ ownerId, producerId, at, dueAt, forgotten, ... }). Client only: a reload files every
+        // shown slot (stow on sight), and the reservations go with it.
+        this._prints = new Map();
         // Read-outs for tests and live measurement; never feed a decision
         this.stats = { ticks: 0, selects: 0, objectScans: 0, pathSearches: 0, backoffs: 0 };
     }
@@ -334,6 +338,9 @@ export class NPCNeedsSystem {
         if (rec.needsCompany && typeof rec.needsCompany === 'object') this._anyCompany = true;
         this.states.set(npcId, {
             npcId, needs, interests, levels, lastSatisfiedAt, rng, leash,
+            // Slice 17: need uses per object (salts a print hook's chance) and owned prints (salts the habit)
+            useCounts: {},
+            printCount: 0,
             leashNoted: {},
             avoidNoted: {},
             privateNoted: {},
@@ -499,6 +506,19 @@ export class NPCNeedsSystem {
             this._log(npcId, 'resumed');
             return true;
         }
+        // Slice 17: { print: "<producerId>" } or { print: { producer, fetchAfterSeconds, forget } }
+        // prints as this NPC at once, owned, with its printHabit (the command's fields win)
+        if (cmd && typeof cmd === 'object' && cmd.print !== undefined) {
+            const spec = typeof cmd.print === 'string' ? { producer: cmd.print } : (cmd.print && typeof cmd.print === 'object' ? cmd.print : null);
+            if (!spec || typeof spec.producer !== 'string' || !spec.producer) return false;
+            const rec = this.world.getNpc(npcId) || {};
+            const own = { habit: rec.printHabit && typeof rec.printHabit === 'object' ? rec.printHabit : {}, viaCommand: true };
+            if (Array.isArray(spec.fetchAfterSeconds)) own.fetchAfterSeconds = spec.fetchAfterSeconds;
+            if (typeof spec.forget === 'boolean') own.forget = spec.forget;
+            this._log(npcId, 'print_command', { target: spec.producer });
+            this._revealOutput(spec.producer, npcId, own);
+            return true;
+        }
         if (cmd && typeof cmd === 'object' && cmd.set && typeof cmd.set === 'object') {
             for (const [name, v] of Object.entries(cmd.set)) {
                 if (s.needs[name] && Number.isFinite(Number(v))) {
@@ -522,6 +542,7 @@ export class NPCNeedsSystem {
         this._worldChanged();
         this._checkRooms();
         if (this._placed.size) this._tickPlaced();
+        if (this._prints.size) this._tickPrints();
         for (const id of [...this.states.keys()].sort()) {
             try {
                 this._tickNpc(this.states.get(id));
@@ -595,7 +616,7 @@ export class NPCNeedsSystem {
         // the pool is whole again. At install every loaded room is new, so this covers them too.
         if (typeof this.world.stowRevealedSlots === 'function') {
             const stowed = this.world.stowRevealedSlots(roomIds);
-            if (stowed && stowed.length) this._worldChanged();
+            if (stowed && stowed.length) { for (const sid of stowed) this._prints.delete(sid); this._worldChanged(); }
         }
     }
 
@@ -605,7 +626,7 @@ export class NPCNeedsSystem {
             if (this.clockMs < p.at) continue;
             this._placed.delete(id);
             if (p.cosmetic) this.world.removeCosmetic?.(id);
-            else if (this.world.stowSlot?.(id)) this._log(p.npcId, 'stowed', { item: id, reason: 'filed' });
+            else if (this.world.stowSlot?.(id)) { this._prints.delete(id); this._log(p.npcId, 'stowed', { item: id, reason: 'filed' }); }
             this._worldChanged();
         }
     }
@@ -932,7 +953,8 @@ export class NPCNeedsSystem {
      */
     _select(s, pos, exclude = null) {
         // Nothing urgent or starved and no interests: nothing to choose, so no object scan
-        if (this.tickCache && !Object.keys(s.interests).length && !this._anyUrgent(s)) return null;
+        // ... and no due print errand (slice 17: Tom has no interests, so without this he never fetches)
+        if (this.tickCache && !Object.keys(s.interests).length && !this._anyUrgent(s) && !this._dueErrand(s)) return null;
         this.stats.selects++;
         const objects = this._objects();
         let best = null;
@@ -956,6 +978,11 @@ export class NPCNeedsSystem {
             if (best && !(it.weight > best.score)) continue;
             const cand = this._carryCandidate(s, tag, it, objects, pos);
             if (cand) best = { ...cand, need: null, score: it.weight };
+        }
+        // A due print errand (slice 17): scored like an interest, printHabit.weight (default 2)
+        if (this._prints.size) {
+            const e = this._errandCandidate(s);
+            if (e && (!best || e.score > best.score)) best = e;
         }
         return best;
     }
@@ -1352,7 +1379,8 @@ export class NPCNeedsSystem {
     _carryCandidate(s, tag, it, objects, pos) {
         const rooms = it.noticeRooms || (s.home?.roomId ? [s.home.roomId] : (pos.roomId ? [pos.roomId] : []));
         const items = objects.filter(o => o.needsTag === tag && o.pickable && rooms.includes(o.roomId)
-            && !this._itemClaimed(o.id, s.npcId) && !(s.cooldowns[o.id] > this.clockMs) && this._permitted(s, o, false));
+            && !this._itemClaimed(o.id, s.npcId) && !(s.cooldowns[o.id] > this.clockMs) && this._permitted(s, o, false)
+            && !this._reservedFrom(o.id, s.npcId));   // slice 17: someone else's printout
         const item = this._nearestReachable(s, items, pos);
         if (!item) return null;
         // Deliveries honour the room rules only: `private` limits uses, not drops (OQ26)
@@ -1381,7 +1409,27 @@ export class NPCNeedsSystem {
         if (pick.leashed) s.job.leashed = true;   // the debug overlay's "leashed" label
         if (pick.privateSkipped) s.job.privateSkipped = true;   // the overlay's "private" label
         // For the action icons (OFFICE_LIFE_PLAN 9.1): a use that prints, a carry to a stow target
-        if (pick.kind === 'use' && this.world.getNpc(id)?.onUse?.[pick.targetId]?.revealOutput) s.job.prints = true;
+        // Slice 17: a print hook's chance is rolled here, so the icon never promises a print the job
+        // will not make, nor a fetch when the producer has no free or recyclable slot
+        if (pick.kind === 'use') {
+            const hook = this.world.getNpc(id)?.onUse?.[pick.targetId];
+            if (hook?.revealOutput) {
+                const n = s.useCounts[pick.targetId] || 0;
+                s.useCounts[pick.targetId] = n + 1;
+                const chance = Number(hook.chance);
+                const prints = !(Number.isFinite(chance) && chance < 1) || this.roll(id, `print:${n}`) < Math.max(0, chance);
+                if (prints) {
+                    s.job.printTo = hook.revealOutput;
+                    if (this._slotAvailable(hook.revealOutput)) s.job.prints = true;
+                }
+            }
+        }
+        if (pick.errand) {
+            s.job.errand = true;
+            s.job.viaCommand = !!pick.viaCommand;
+            const p = this._prints.get(pick.itemId);
+            if (p) p.errand = true;
+        }
         if (pick.kind === 'carry') {
             if (this.world.getObject(pick.targetId)?.affordance?.onDeliver === 'stow') s.job.stowAt = true;
             if (this.world.getObject(pick.itemId)?.slot) s.job.slot = true;   // known from the start, so the wind-up shows "file" too
@@ -1490,7 +1538,8 @@ export class NPCNeedsSystem {
         for (let i = 1; i < legs.length; i++) dist += Math.hypot(legs[i].x - legs[i - 1].x, legs[i].y - legs[i - 1].y);
         const speed = Math.max(1, Number(this.world.speedFor(s.npcId)) || 80);
         const secs = Number(t.o.affordance?.useSeconds);
-        const useMs = (Number.isFinite(secs) ? clamp(secs, 0, 600) : 20) * 1000;
+        // A print errand never enters `using` (slice 17): no dwell at the desk
+        const useMs = job.errand ? 0 : (Number.isFinite(secs) ? clamp(secs, 0, 600) : 20) * 1000;
         let waitMs = 0;
         if (job.phase === 'queued') {
             const line = this._queuers(job.targetId);
@@ -1562,6 +1611,9 @@ export class NPCNeedsSystem {
     _advanceJob(s, arrived) {
         const id = s.npcId;
         const job = s.job;
+        // Slice 17: the print errand's leg back to the desk is the return. _checkCaught has no
+        // once-per-return guard of its own, and the errand holds job.errand from its start
+        if (job.errand && job.carrying && !s.atPost && !s.caughtEmitted) this._checkCaught(s, this.world.npcPos(id));
         // Slice 18a: the target was switched off while on the way or in its queue. Not in _recheck,
         // which returns at once for an NPC with no avoidance radius. One already using it finishes.
         if ((job.phase === 'goto_target' || job.phase === 'queued') && job.kind === 'use' && job.offWhen !== undefined
@@ -1597,6 +1649,8 @@ export class NPCNeedsSystem {
             }
             const obj = this.world.getObject(job.targetId);
             if (obj) this.world.faceTo(id, obj.x, obj.y);
+            // A print errand completes on arrival, without `using` (no post stop, no chair fetch)
+            if (job.errand) { this._completeJob(s); return; }
             job.phase = 'using';
             const secs = Number(obj?.affordance?.useSeconds);
             job.useUntil = this.clockMs + (Number.isFinite(secs) ? clamp(secs, 0, 600) : 20) * 1000;
@@ -1645,8 +1699,18 @@ export class NPCNeedsSystem {
         if (hook && typeof hook === 'object') {
             if (typeof hook.setGlobal === 'string' && hook.setGlobal) { this.world.setGlobal(hook.setGlobal, true); this._worldChanged(); }
             if (typeof hook.emitEvent === 'string' && hook.emitEvent) this._emit(hook.emitEvent, { npcId: id, objectId: job.targetId });
-            // Something that prints: show the producer's first free reveal slot (2.2 Part A)
-            if (typeof hook.revealOutput === 'string' && hook.revealOutput) this._revealOutput(hook.revealOutput, id);
+            // Something that prints: show the producer's first free reveal slot (2.2 Part A). Only a
+            // need use prints (slice 17), never a delivery, and only when the start-time roll said so;
+            // the print is owned (reserved, fetched or forgotten) only when the NPC has a printHabit
+            if (typeof hook.revealOutput === 'string' && hook.revealOutput && job.need && !job.carrying && job.printTo) {
+                const habit = rec.printHabit && typeof rec.printHabit === 'object' ? rec.printHabit : null;
+                this._revealOutput(job.printTo, id, habit ? { habit } : null);
+            }
+        }
+        if (job.errand) {
+            this._prints.delete(job.itemId);
+            this._log(id, 'print_fetched', { item: job.itemId, viaCommand: !!job.viaCommand });
+            this._emit(`npc_print_fetched:${id}`, { npcId: id, slotId: job.itemId, viaCommand: !!job.viaCommand });
         }
         const stayPut = s.atPost && this._atOwnPost(s);
         s.job = null;
@@ -1678,20 +1742,159 @@ export class NPCNeedsSystem {
      * revealOutput hook: the producer's first free slot (id order) is shown; with none free, a
      * cosmetic copy that nobody can take stands in for the producer's placeSeconds.
      */
-    _revealOutput(producerId, npcId) {
+    _revealOutput(producerId, npcId, own = null) {
         if (typeof this.world.revealOutput !== 'function') return null;
-        const r = this.world.revealOutput(producerId, npcId) || {};
+        // Slice 17: a full pool recycles the oldest forgotten reserved slot of this producer, for any
+        // print, owned or not (read-in-place slots first, so the takeable one is the last to go)
+        let full = false;
+        if (typeof this.world.freeSlotOf === 'function' && !this.world.freeSlotOf(producerId)) {
+            const old = this._recyclable(producerId);
+            if (old) {
+                this._prints.delete(old);
+                this._placed.delete(old);
+                if (this.world.stowSlot?.(old)) this._log(npcId, 'recycled', { item: old, target: producerId });
+            } else full = true;
+        }
+        const r = this.world.revealOutput(producerId, npcId, { printedBy: own ? npcId : null }) || {};
         this._worldChanged();
         if (r.slotId) {
             this._log(npcId, 'revealed', { target: producerId, item: r.slotId });
+            this._prints.delete(r.slotId);
+            if (own) this._reserve(r.slotId, producerId, npcId, own);
             return r.slotId;
         }
         this._log(npcId, 'revealed', { target: producerId, reason: 'no_free_slot' });
+        if (full) this._log(npcId, 'print_no_slot', { target: producerId });
         if (r.cosmetic) {
             const ms = this._placeMs(this.world.getObject(producerId)?.affordance);
             if (ms > 0) this._placed.set(r.cosmetic, { at: this.clockMs + ms, npcId, cosmetic: true });
         }
         return null;
+    }
+
+    // ── print and forget (slice 17, OFFICE_LIFE_PLAN 12.3) ──────────────────
+
+    /** True when someone other than npcId owns the print on this slot (a reservation). */
+    _reservedFrom(slotId, npcId) {
+        if (!this._prints.size) return false;
+        const p = this._prints.get(slotId);
+        return !!(p && p.ownerId !== npcId);
+    }
+
+    /** The slot is shown on its tray: loaded, visible, not in a hand or set down, not taken. */
+    _onTray(slotId) {
+        const o = this.world.getObject(slotId);
+        return !!(o && o.pickable && o.roomId);
+    }
+
+    /** A print can land on a real slot: one is free, or a forgotten one can be recycled. */
+    _slotAvailable(producerId) {
+        if (typeof this.world.freeSlotOf !== 'function') return true;
+        return !!(this.world.freeSlotOf(producerId) || this._recyclable(producerId));
+    }
+
+    /** The oldest forgotten reserved slot of a producer still on its tray, read-in-place ones first. */
+    _recyclable(producerId) {
+        let best = null;
+        for (const [id, p] of this._prints) {
+            if (p.producerId !== producerId || !p.forgotten || p.errand || !this._onTray(id)) continue;
+            const key = [p.readInPlace ? 0 : 1, p.at, id];
+            if (!best || key[0] < best[0] || (key[0] === best[0] && (key[1] < best[1] || (key[1] === best[1] && key[2] < best[2])))) best = key;
+        }
+        return best ? best[2] : null;
+    }
+
+    /**
+     * An owned print: two seeded rolls on <ownerId>:<printCount> (a per-owner count, so a re-used
+     * slot does not repeat its fate): forget (forgetChance, default 0), else a due time inside
+     * fetchAfterSeconds (default [20, 60]). A command's forget / fetchAfterSeconds win.
+     */
+    _reserve(slotId, producerId, ownerId, own) {
+        const s = this.states.get(ownerId);
+        const habit = own.habit || {};
+        const count = s ? ++s.printCount : 0;
+        const range = Array.isArray(own.fetchAfterSeconds) ? own.fetchAfterSeconds : habit.fetchAfterSeconds;
+        let lo = 20, hi = 60;
+        if (Array.isArray(range) && range.length === 2 && range.every(v => Number.isFinite(Number(v)))) {
+            lo = clamp(Number(range[0]), 0, 3600); hi = clamp(Number(range[1]), lo, 3600);
+        }
+        let forgotten;
+        if (typeof own.forget === 'boolean') forgotten = own.forget;
+        else {
+            const fc = clamp(Number(habit.forgetChance) || 0, 0, 1);
+            forgotten = fc > 0 && this.roll(ownerId, `print_forget:${count}`) < fc;
+        }
+        const dueAt = forgotten ? null : this.clockMs + Math.round((lo + this.roll(ownerId, `print_due:${count}`) * (hi - lo)) * 1000);
+        const aff = this.world.getObject(producerId)?.affordance;
+        const unc = Number(aff?.uncollectedAfterSeconds);
+        const share = Number(habit.shareAfterSeconds);
+        const w = Number(habit.weight);
+        this._prints.set(slotId, {
+            ownerId, producerId, at: this.clockMs, dueAt, forgotten, viaCommand: !!own.viaCommand,
+            weight: Number.isFinite(w) && w > 0 ? clamp(w, 0.1, 10) : 2,
+            uncollectedAt: this.clockMs + (Number.isFinite(unc) ? clamp(unc, 0, 3600) : 60) * 1000,
+            shareAt: Number.isFinite(share) && share > 0 ? this.clockMs + share * 1000 : null,
+            readInPlace: this.world.getObject(slotId)?.takeable !== true,
+            uncollected: false, errand: false
+        });
+        this._log(ownerId, 'print_reserved', { item: slotId, target: producerId, forgotten, dueMs: dueAt === null ? undefined : dueAt - this.clockMs, viaCommand: own.viaCommand ? true : undefined });
+    }
+
+    /** This NPC has an owned print whose fetch is due (the _select early-return guard). */
+    _dueErrand(s) {
+        if (!this._prints.size) return false;
+        for (const p of this._prints.values()) {
+            if (p.ownerId === s.npcId && !p.forgotten && !p.errand && this.clockMs >= p.dueAt) return true;
+        }
+        return false;
+    }
+
+    /**
+     * The fetch errand: the owner's earliest due print still on the tray, carried to its needsHome
+     * object (no accepts check). Only the usual room rules and reachability apply.
+     */
+    _errandCandidate(s) {
+        const homeId = s.home?.objectId;
+        if (!homeId || !this.world.getObject(homeId)) return null;
+        let pick = null;
+        for (const [id, p] of [...this._prints.entries()].sort((a, b) => (a[1].dueAt - b[1].dueAt) || (a[0] < b[0] ? -1 : 1))) {
+            if (p.ownerId !== s.npcId || p.forgotten || p.errand || !(this.clockMs >= p.dueAt)) continue;
+            if (s.cooldowns[id] > this.clockMs) continue;
+            const item = this.world.getObject(id);
+            if (!item || !item.pickable || !this._permitted(s, item, false) || !this._reachable(s, item)) continue;
+            pick = { kind: 'carry', targetId: homeId, itemId: id, tag: item.needsTag || null, need: null, score: p.weight, errand: true, viaCommand: p.viaCommand };
+            break;
+        }
+        return pick;
+    }
+
+    /** Per tick: a print taken before its fetch, uncollected prints, and shared ones. */
+    _tickPrints() {
+        for (const [id, p] of [...this._prints.entries()].sort((a, b) => (a[0] < b[0] ? -1 : 1))) {
+            if (p.errand) continue;
+            const onTray = this._onTray(id);
+            if (!onTray) {
+                if (p.forgotten) { this._prints.delete(id); continue; }
+                if (this.clockMs < p.dueAt) continue;
+                // Taken first: the owner finds it gone at the due time and does not walk
+                this._prints.delete(id);
+                this._log(p.ownerId, 'print_gone', { item: id });
+                this._emit(`npc_print_gone:${p.ownerId}`, { npcId: p.ownerId, slotId: id, ...this._playerProximity(p.ownerId) });
+                continue;
+            }
+            if (!p.uncollected && this.clockMs >= p.uncollectedAt) {
+                p.uncollected = true;
+                const ageMs = this.clockMs - p.at;
+                this._log(p.ownerId, 'print_uncollected', { item: id, ageMs, forgotten: p.forgotten });
+                this._emit(`npc_print_uncollected:${p.ownerId}`, { ownerId: p.ownerId, slotId: id, producerId: p.producerId, ageMs, forgotten: p.forgotten });
+            }
+            if (p.shareAt !== null && this.clockMs >= p.shareAt) {
+                this._prints.delete(id);
+                this.world.setPrintedBy?.(id, null);
+                this._log(p.ownerId, 'print_shared', { item: id });
+                this._clearBackoffs();
+            }
+        }
     }
 
     _abortJob(s, reason, { cancel, failed } = {}) {
@@ -1702,6 +1905,13 @@ export class NPCNeedsSystem {
         if (job.carrying && job.slot && typeof this.world.stowHeld === 'function') { this.world.stowHeld(s.npcId, job.itemId); this._worldChanged(); }
         else if (job.carrying) { this.world.dropHeld(s.npcId, job.itemId); this._worldChanged(); }
         this._log(s.npcId, failed ? 'job_failed' : 'job_aborted', { need: job.need || undefined, tag: job.tag || undefined, target: job.targetId, reason });
+        // Slice 17: a print errand that never picked its slot up may try again; one that did, or found
+        // it gone, is over (the slot was filed, or the player has it)
+        if (job.errand) {
+            const p = this._prints.get(job.itemId);
+            if (p && (job.carrying || reason === 'item_gone')) this._prints.delete(job.itemId);
+            else if (p) p.errand = false;
+        }
         s.job = null;
         this._clearBackoffs();
     }
@@ -2178,7 +2388,7 @@ export class NPCNeedsSystem {
         for (const k of Object.keys(s.levels)) levels[k] = round2(s.levels[k]);
         return {
             npcId, mode: s.mode, levels, atPost: s.atPost, scriptSuspended: s.scriptSuspended,
-            job: s.job ? { windingUp: !!s.job.windupUntil, need: s.job.need, kind: s.job.kind, phase: s.job.phase, targetId: s.job.targetId, itemId: s.job.itemId, carrying: s.job.carrying, tag: s.job.tag || null, leashed: !!s.job.leashed, privateSkipped: !!s.job.privateSkipped, prints: !!s.job.prints, files: !!(s.job.stowAt && s.job.slot), queuePlace: s.job.phase === 'queued' ? this._queuers(s.job.targetId).indexOf(s) + 1 : null } : null,
+            job: s.job ? { windingUp: !!s.job.windupUntil, need: s.job.need, kind: s.job.kind, phase: s.job.phase, targetId: s.job.targetId, itemId: s.job.itemId, carrying: s.job.carrying, tag: s.job.tag || null, leashed: !!s.job.leashed, privateSkipped: !!s.job.privateSkipped, prints: !!s.job.prints, errand: !!s.job.errand, files: !!(s.job.stowAt && s.job.slot), queuePlace: s.job.phase === 'queued' ? this._queuers(s.job.targetId).indexOf(s) + 1 : null } : null,
             pressing: this._pressing(s),
             talking: this._talking(npcId),
             chatPartner: this._chatPartner(npcId),
@@ -2245,9 +2455,25 @@ export function createEngineWorld() {
             pickable: sp.visible !== false && sp.active !== false && !sp._npcCarried && !sp._npcPlacedBy && !sp.destroyed,
             _sprite: sp
         };
-        if (isSlot(sp)) out.slot = true;
+        if (isSlot(sp)) { out.slot = true; out.takeable = sd.takeable === true; }
         return out;
     };
+    // A producer's reveal slots, by id, and the free test (loaded, not destroyed, active, global not
+    // true, not held, placed or in the inventory)
+    const slotsOf = (producerId) => {
+        const slots = [];
+        const rooms = W().rooms || {};
+        for (const roomId of Object.keys(rooms)) {
+            const objs = rooms[roomId]?.objects || {};
+            for (const k of Object.keys(objs)) {
+                const sp = objs[k];
+                if (sp?.scenarioData?.outputOf === producerId && isSlot(sp)) slots.push({ id: sp.scenarioData.id || sp.objectId || k, roomId, key: k, sp });
+            }
+        }
+        return slots.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+    };
+    const freeSlot = ({ sp }) => !sp.destroyed && sp.active !== false && !globalTrue(globalOf(sp))
+        && !sp._npcCarried && !sp._npcPlacedBy && !inInventory(sp);
     const findSprite = (id) => {
         const rooms = W().rooms || {};
         for (const roomId of Object.keys(rooms)) {
@@ -2283,6 +2509,7 @@ export function createEngineWorld() {
         if (Number.isFinite(home.depth)) sp.setDepth?.(home.depth);
         sp._npcCarried = null;
         sp._npcPlacedBy = null;
+        sp._printedBy = null;   // slice 17: filed, so nobody's print any more
         if (sp._carryBodyOff) { sp._carryBodyOff = false; if (sp.body) sp.body.enable = true; }
         const rooms = W().rooms || {};
         if (fromRoomId && rooms[fromRoomId]?.objects?.[fromKey] === sp) delete rooms[fromRoomId].objects[fromKey];
@@ -2640,21 +2867,14 @@ export function createEngineWorld() {
         // revealOutput hook: the first free slot of the producer, by id. Free = loaded, not destroyed,
         // active, global not true, not held, placed or in the inventory. Shown by a direct call (after
         // a reload there is no reveal listener). None free: a cosmetic copy nobody can take.
-        revealOutput(producerId, npcId) {
-            const slots = [];
-            const rooms = W().rooms || {};
-            for (const roomId of Object.keys(rooms)) {
-                const objs = rooms[roomId]?.objects || {};
-                for (const k of Object.keys(objs)) {
-                    const sp = objs[k];
-                    if (sp?.scenarioData?.outputOf === producerId && isSlot(sp)) slots.push({ id: sp.scenarioData.id || sp.objectId || k, roomId, key: k, sp });
-                }
-            }
-            slots.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
-            const free = slots.find(({ sp }) => !sp.destroyed && sp.active !== false && !globalTrue(globalOf(sp))
-                && !sp._npcCarried && !sp._npcPlacedBy && !inInventory(sp));
+        // opts.printedBy (slice 17): the owner stamped on the slot, or null; every reveal sets or
+        // clears it, since slot sprites are reused.
+        revealOutput(producerId, npcId, opts = null) {
+            const slots = slotsOf(producerId);
+            const free = slots.find(freeSlot);
             if (free) {
                 slotHome(free.sp, free.roomId, free.key);
+                free.sp._printedBy = opts?.printedBy || null;
                 this.setGlobal(globalOf(free.sp), true);
                 W().showRevealedObject?.(free.sp);
                 // On its producer's tray: drawn above the producer whatever their y-sorted depths
@@ -2665,6 +2885,14 @@ export function createEngineWorld() {
             }
             const cosmetic = makeCosmetic(producerId, slots[0]);
             return cosmetic ? { cosmetic } : {};
+        },
+        // Slice 17: the id of the producer's first free slot, or null (the full-pool check)
+        freeSlotOf(producerId) {
+            return slotsOf(producerId).find(freeSlot)?.id || null;
+        },
+        setPrintedBy(slotId, npcId) {
+            const f = findSprite(slotId);
+            if (f) f.sp._printedBy = npcId || null;
         },
         // Left-behind items (2.10, slice 11): loaded declared items with leftBehindBy this NPC that
         // could be shown now (not taken, not already shown, not in a hand or set down), by id.
