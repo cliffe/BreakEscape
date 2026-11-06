@@ -800,7 +800,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-11-03"
+    "imported": "2026-11-06",
+    "sit_from": "0f499265-a225-478a-a96b-10a1c490325c"
   },
   "noor_haddad": {
     "character_id": "c27871de-0282-43d0-a8d4-932f659ae1f4",
@@ -979,7 +980,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-10-03"
+    "imported": "2026-11-06",
+    "sit_from": "3b5704b9-a6d5-4d32-a549-e598774b01d1"
   },
   "satoshi_nakamoto": {
     "character_id": "9ea1972f-67d1-420e-b81e-138c247e58df",
@@ -1028,7 +1030,8 @@
       "width": 60,
       "height": 60
     },
-    "imported": "2026-11-01"
+    "imported": "2026-11-06",
+    "sit_from": "f4f14844-3eb4-49cd-8940-d89576c9a06b"
   },
   "terry_mott": {
     "character_id": "f00ed76b-8cfd-4591-9fc7-367dd354af70",
