@@ -11,7 +11,25 @@
       "door_sign": "Desk Seating",
       "connections": {},
       "npcs": [],
-      "objects": []
+      "objects": [
+        {
+          "type": "pc",
+          "id": "desk_pc_on",
+          "name": "PC on a desk",
+          "takeable": false,
+          "interactable": true,
+          "observations": "Seat box slice 3: takes a pc1 table_items placeholder on a desk, so it draws in that desk's table group."
+        },
+        {
+          "type": "pc",
+          "id": "desk_pc_off",
+          "name": "PC on the floor",
+          "position": { "x": 17, "y": 4 },
+          "takeable": false,
+          "interactable": true,
+          "observations": "Seat box slice 3: takes a pc1 table_items placeholder but is moved to open floor off every desk, so it draws at its own depth (bottom + 0.5)."
+        }
+      ]
     }
   }
 }

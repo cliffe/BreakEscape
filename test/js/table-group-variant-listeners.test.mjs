@@ -78,7 +78,12 @@ test('a grouped object without spriteVariants registers nothing and never change
 test('every scenario path that joins a table group goes through addScenarioItemToTableGroup', () => {
     // The placeholder branch and the tableItems list (modes A and B) used to push into
     // group.items directly; a direct push of a scenario item would skip the listener.
+    // Since seat box slice 3 the placeholder branch goes through placeMatchedScenarioItem, which
+    // calls addScenarioItemToTableGroup for a match that overlaps a table.
     const create = slice('export function createRoom', 'function isGlobalTrue');
-    assert.equal((create.match(/addScenarioItemToTableGroup\(/g) || []).length, 2);
+    assert.equal((create.match(/addScenarioItemToTableGroup\(/g) || []).length, 1);
+    assert.equal((create.match(/placeMatchedScenarioItem\(/g) || []).length, 1);
+    const helper = slice('function placeMatchedScenarioItem', '\n}\n');
+    assert.equal((helper.match(/addScenarioItemToTableGroup\(/g) || []).length, 1);
     assert.doesNotMatch(create, /group\.items\.push\(\{ sprite, type: (sourceLayer|'scenario_table_item') \}\)/);
 });

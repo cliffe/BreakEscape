@@ -737,6 +737,107 @@ function addScenarioItemToTableGroup(group, sprite, type, scenarioObj, roomId) {
     registerSpriteVariantListeners(sprite, scenarioObj, roomId);
 }
 
+/**
+ * The table an item belongs with. Among tables whose sprite rectangle overlaps the item's, the
+ * southmost. With no overlap: null when overlapOnly is set, otherwise the nearest table by
+ * centre distance (the old fallback).
+ */
+function findClosestTable(itemSprite, tableObjects, { overlapOnly = false } = {}) {
+    const itemLeft   = itemSprite.x;
+    const itemRight  = itemSprite.x + itemSprite.width;
+    const itemTop    = itemSprite.y;
+    const itemBottom = itemSprite.y + itemSprite.height;
+
+    const overlappingTables = tableObjects.filter(table => {
+        const tableLeft   = table.sprite.x;
+        const tableRight  = table.sprite.x + table.sprite.width;
+        const tableTop    = table.sprite.y;
+        const tableBottom = table.sprite.y + table.sprite.height;
+
+        return itemLeft < tableRight && itemRight > tableLeft &&
+               itemTop  < tableBottom && itemBottom > tableTop;
+    });
+
+    if (overlappingTables.length > 0) {
+        let southmostTable = overlappingTables[0];
+        for (const table of overlappingTables) {
+            if (table.sprite.y > southmostTable.sprite.y) {
+                southmostTable = table;
+            }
+        }
+        console.log(`Found overlapping table for item ${itemSprite.name} (${overlappingTables.length} overlap(s), using southmost)`);
+        return southmostTable;
+    }
+
+    if (overlapOnly) return null;
+
+    let closestTable = null;
+    let closestDistance = Infinity;
+    tableObjects.forEach(table => {
+        const itemCenterX  = itemSprite.x + itemSprite.width  / 2;
+        const itemCenterY  = itemSprite.y + itemSprite.height / 2;
+        const tableCenterX = table.sprite.x + table.sprite.width  / 2;
+        const tableCenterY = table.sprite.y + table.sprite.height / 2;
+        const distance = Math.sqrt(
+            Math.pow(itemCenterX - tableCenterX, 2) +
+            Math.pow(itemCenterY - tableCenterY, 2)
+        );
+        if (distance < closestDistance) {
+            closestDistance = distance;
+            closestTable = table;
+        }
+    });
+
+    console.log(`Found closest table for item ${itemSprite.name} at distance ${closestDistance}`);
+    return closestTable;
+}
+
+/** The table group of the table an item overlaps, or null (seat box slice 3: overlap only). */
+function overlappingTableGroup(sprite, tableObjects, tableGroups) {
+    if (!tableObjects || tableObjects.length === 0) return null;
+    const table = findClosestTable(sprite, tableObjects, { overlapOnly: true });
+    return table ? (tableGroups.find(g => g.table === table) || null) : null;
+}
+
+/**
+ * A scenario object that took a Tiled placeholder. A match from table_items or
+ * conditional_table_items joins a table group only if its final sprite rectangle (after any
+ * explicit position) overlaps a table; otherwise it is stored at its own depth like any
+ * ungrouped object, with a warning naming it (seat box slice 3; the lab's cable_note, moved off
+ * the desks, used to join the nearest desk's group and draw with it). Returns the group or null.
+ */
+function placeMatchedScenarioItem({ sprite, isTableItem, sourceLayer, placeholder, scenarioObj,
+                                    tableObjects, tableGroups, position, roomId }) {
+    const group = isTableItem ? overlappingTableGroup(sprite, tableObjects, tableGroups) : null;
+    if (group) {
+        sprite.setDepth(group.baseDepth + (group.items.length + 1) * 0.01);
+        addScenarioItemToTableGroup(group, sprite, sourceLayer, scenarioObj, roomId);
+        return group;
+    }
+    if (isTableItem) {
+        console.warn(`[table group] ${scenarioObj.id || scenarioObj.type} took the ${sourceLayer} placeholder ${placeholder} but overlaps no table: stored at its own depth`);
+    }
+    setDepthAndStore(sprite, position, roomId, false, scenarioObj);
+    registerSpriteVariantListeners(sprite, scenarioObj, roomId);
+    return null;
+}
+
+/**
+ * An unreserved Tiled table_items object (processObject has already given it its own depth).
+ * It joins the table it overlaps; with no overlap it is stored as an ordinary item at that depth
+ * (seat box slice 3, plan Q4; it used to join the nearest table's group). Returns the group or null.
+ */
+function placeUnreservedTableItem(result, tableObjects, tableGroups, roomId) {
+    const group = overlappingTableGroup(result.sprite, tableObjects, tableGroups);
+    if (group) {
+        group.items.push(result);
+        return group;
+    }
+    rooms[roomId].objects[result.sprite.objectId] = result.sprite;
+    console.log(`[table group] unreserved table item ${result.sprite.name} overlaps no table: stored at its own depth`);
+    return null;
+}
+
 // ===== END: ITEM POOL MANAGEMENT (PHASE 2 IMPROVEMENTS) =====
 
 // Static tileset props that become 8-direction swivel props at runtime.
@@ -2315,26 +2416,10 @@ export function createRoom(roomId, roomData, position) {
                     if (scenarioObj.position?.x !== undefined) sprite.x = Math.round(position.x + scenarioObj.position.x * TILE_SIZE);
                     if (scenarioObj.position?.y !== undefined) sprite.y = Math.round(position.y + scenarioObj.position.y * TILE_SIZE);
 
-                    // If it's a table item, find the closest table and group it
-                    if (isTableItem && tableObjects.length > 0) {
-                        const closestTable = findClosestTable(sprite, tableObjects);
-                        if (closestTable) {
-                            const group = tableGroups.find(g => g.table === closestTable);
-                            if (group) {
-                                // Table items don't need elevation - they're grouped with the table
-                                const itemDepth = group.baseDepth + (group.items.length + 1) * 0.01;
-                                sprite.setDepth(itemDepth);
-
-                                // No elevation for table items; stored in the room's objects so
-                                // the interaction system can find them; variant listeners too
-                                addScenarioItemToTableGroup(group, sprite, sourceLayer, scenarioObj, roomId);
-                            }
-                        }
-                    } else {
-                        // Set depth and store for non-table items
-                        setDepthAndStore(sprite, position, roomId, false, scenarioObj);
-                        registerSpriteVariantListeners(sprite, scenarioObj, roomId);
-                    }
+                    // A table-layer match joins the table it overlaps; anything else (or a
+                    // table-layer match moved off every table) is stored at its own depth
+                    placeMatchedScenarioItem({ sprite, isTableItem, sourceLayer, placeholder: imageName,
+                        scenarioObj, tableObjects, tableGroups, position, roomId });
 
                 } else {
                     // No matching item found, create at random position (existing fallback behavior)
@@ -2404,20 +2489,9 @@ export function createRoom(roomId, roomData, position) {
                 // Use processObject to create sprite with all properties
                 const result = processObject(tiledItem, position, roomId, 'table_item', map);
                 if (result && result.sprite) {
-                    // Find the closest table to group this item with
-                    if (tableObjects.length > 0) {
-                        const closestTable = findClosestTable(result.sprite, tableObjects);
-                        if (closestTable) {
-                            const group = tableGroups.find(g => g.table === closestTable);
-                            if (group) {
-                                group.items.push(result);
-                                console.log(`Added unreserved table item ${imageName} to table group`);
-                            }
-                        }
-                    } else {
-                        // No tables, just store it as a regular item
-                        rooms[roomId].objects[result.sprite.objectId] = result.sprite;
-                        console.log(`Added unreserved table item ${imageName} to room objects (no tables to group with)`);
+                    // Joins the table it overlaps; otherwise stored at processObject's depth
+                    if (placeUnreservedTableItem(result, tableObjects, tableGroups, roomId)) {
+                        console.log(`Added unreserved table item ${imageName} to table group`);
                     }
                 }
             });
@@ -2816,61 +2890,6 @@ export function createRoom(roomId, roomData, position) {
             return null;
         }
         
-        // Helper function to find the closest table to an item
-        function findClosestTable(itemSprite, tableObjects) {
-            const itemLeft   = itemSprite.x;
-            const itemRight  = itemSprite.x + itemSprite.width;
-            const itemTop    = itemSprite.y;
-            const itemBottom = itemSprite.y + itemSprite.height;
-
-            // Collect all tables whose bounding box overlaps the item
-            const overlappingTables = tableObjects.filter(table => {
-                const tableLeft   = table.sprite.x;
-                const tableRight  = table.sprite.x + table.sprite.width;
-                const tableTop    = table.sprite.y;
-                const tableBottom = table.sprite.y + table.sprite.height;
-
-                return itemLeft < tableRight && itemRight > tableLeft &&
-                       itemTop  < tableBottom && itemBottom > tableTop;
-            });
-
-            if (overlappingTables.length > 0) {
-                // Among overlapping tables pick the southmost (highest Y value)
-                let southmostTable = overlappingTables[0];
-                for (const table of overlappingTables) {
-                    if (table.sprite.y > southmostTable.sprite.y) {
-                        southmostTable = table;
-                    }
-                }
-                console.log(`Found overlapping table for item ${itemSprite.name} (${overlappingTables.length} overlap(s), using southmost)`);
-                return southmostTable;
-            }
-
-            // Fallback: no overlap — return the closest table by center distance
-            let closestTable = null;
-            let closestDistance = Infinity;
-
-            tableObjects.forEach(table => {
-                const itemCenterX  = itemSprite.x + itemSprite.width  / 2;
-                const itemCenterY  = itemSprite.y + itemSprite.height / 2;
-                const tableCenterX = table.sprite.x + table.sprite.width  / 2;
-                const tableCenterY = table.sprite.y + table.sprite.height / 2;
-
-                const distance = Math.sqrt(
-                    Math.pow(itemCenterX - tableCenterX, 2) +
-                    Math.pow(itemCenterY - tableCenterY, 2)
-                );
-
-                if (distance < closestDistance) {
-                    closestDistance = distance;
-                    closestTable = table;
-                }
-            });
-
-            console.log(`Found closest table for item ${itemSprite.name} at distance ${closestDistance}`);
-            return closestTable;
-        }
-
         // Declared here (not after the Object Layer 1 block) so collision rectangles can use it
         const room = rooms[roomId];
 
