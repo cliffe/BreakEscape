@@ -2,7 +2,9 @@
 
 Status: plan and measurement prototype only. First version 2026-11-06 (74ca26e20);
 revised the same day after review round 1 (`TABLE_SURFACE_PLAN_REVIEW_R1.md`, 1 B, 10 M,
-10 m) and the user's answer to B1. No engine code or scenario has changed. Prototype:
+10 m) and the user's answer to B1, and again after review round 2
+(`TABLE_SURFACE_PLAN_REVIEW_R2.md`, 0 B, 3 M, 12 m; section 9). No engine code or
+scenario has changed. Prototype:
 `scripts/room_gen/measure_table_surfaces.py`.
 
 The report: PC monitors sit too far north of the desk they are on, and NPCs sit too far
@@ -39,10 +41,13 @@ All y values below are room pixels (y down) unless marked "sprite rows". Tiles a
   behind the top, and both seemed to perch on the back edge. In a table group they draw
   over the desk.
 
-Panel 3's positions on `desk1` (top 121, front 137, floor 160): PC top 112, base row 135
-(front − 2); lamp base row 135; hip 154; north chair foot 167. The monitor (rows 0–14,
+Panel 3's positions on `desk1` (top 121, front 137, floor 160): PC top 112, base row 134;
+lamp base row 134 (Tiled bottom y 135); hip 154; north chair foot 167. "Base row" always
+means the lowest opaque row, so both bases are at `front − 3`, 1 px north of the snap
+default `frontY − 2`. They are inside the band, so the snap leaves them alone (4.1,
+R2 m8). The monitor (rows 0–14,
 y 112–126) rises 9 px past the back edge, which is how a monitor at the back of a 16-row
-top looks in this projection; the keyboard (y 130–135) lies on the top.
+top looks in this projection; the keyboard (y 130–134) lies on the top.
 
 ### 0.2 The drawing order in a table group
 
@@ -55,11 +60,11 @@ from back to front:
 | # | What | Depth | Condition that keeps it in its place |
 |---|---|---|---|
 | 1 | Player or NPC walking behind the desk | feet + 0.5 < F + 0.5 | feet north of `F`. On a colliding desk the body stops them at the box; on a `collides: false` desk they can stand inside the footprint (feet `F − 16 … F`) and the desk's front hides their legs: the intended walk-behind effect |
-| 2 | Sitter behind the desk (facing south) and their chair | chair foot + 0.5 ± 0.01 < F + 0.5 | chair foot ≤ `F − 1`; the 4.2 rule puts it at about `northContact − 3` |
-| 3 | The desk | F + 0.5 (+ back-wall elevation, if any) | the group's `baseDepth` |
+| 2 | Sitter behind the desk (facing south) and their chair | chair foot + 0.5 ± 0.01 < F + 0.5 | chair foot ≤ `F − 1`, enforced by the 4.2 clamp (`hip ≤ F − 1 − drop`), not just by the contact rule, which fails on shallow tops (R2 M2) |
+| 3 | The desk | F + 0.5 (+ back-wall elevation, if any) | the group's `baseDepth`. A desk with back-wall elevation (rooms.js ~2606–2610) has a higher `baseDepth`, so it and its items also draw over walkers whose feet are a few px south of `F` (R2 m12) |
 | 4 | Items on the desk, back to front | F + 0.5 + 0.01·i, i = 1…n, ordered by **base row** | i ≤ 49, so the group stays below F + 1. A stacked item (`onTable: "<item id>"`) goes straight after its host |
 | 5 | Sitter in front of the desk (facing north), with the chair back over them | chair foot + 0.5 − 0.01 | chair foot ≥ `F + 1`. True for every chair the 4.2 rule places (the smallest seat-to-foot drop is 13 px) |
-| 6 | Player or NPC walking in front | feet + 0.5 > F + 1 | feet south of `F + 0.5`; a player whose feet are within half a pixel of `F` is drawn between the desk and its items, which no one can see |
+| 6 | Player or NPC walking in front | feet + 0.5 > F + 1 | feet south of `F + 0.5`. Feet in (F, F + 0.5) interleave with the items by index: drawn over items 1 … 100·(feet − F) and under the rest, which no one can see (R2 m12) |
 
 Rows 1–2 are drawn under the items, so a monitor on the desk covers the torso of the
 person behind it, as it should. Rows 5–6 are drawn over the items, so the tucked worker's
@@ -279,8 +284,9 @@ engine can derive everything else:
 
 The north line assumes the top's depth in rows equals its depth on the floor (R1 m10).
 That holds for `desk1`; for tall-legged tables such as `hospital_conference_table` (top
-28 rows, legs 25) it is checked with a south-facing sitter in the test scenario (slice 6)
-before the lint trusts it.
+28 rows, legs 25) it is checked with a south-facing sitter in the test scenario in slice
+4, alongside lint 2's fixtures, before the lint trusts it (R2 m2). Until that check
+passes, lint 2 skips any table whose top is deeper than its legs (`front − top > H − front`).
 
 Two values are not enough for side-on sprites, oval tops or rotated sprites (R1 m1, m2).
 These are handled without new required fields: the two `m09_hatch_counter` sprites and
@@ -305,7 +311,15 @@ for sprites that need them.
 Two top-level lists sit beside `sprites`: `notSurface` (texture keys the measurer's name
 filter catches that are not usable tops) and `baseRows` (texture key → `{w, h, baseRow}`
 for every item texture, keyed by the engine's `load.image` keys, so `pc` is `pc1.png`
-at 28×23 and `notes` is `notes1.png`; R1 m5). The measurer writes both.
+at 28×23 and `notes` is `notes1.png`; R1 m5). The measurer writes both. `baseRows` is for
+the validator and the generators, which have no image library; the engine measures base
+rows itself at load (4.0 item 3), and a test checks the two agree.
+
+Two more lists, also written by the measurer, give the lints data that lives in other
+languages (R2 m6): `seats` (texture key → facing and seat point, parsed from `seating.js`
+`STATIC_SEATS` and `FAMILIES`, with each texture's height) and `wallMounted` (parsed from
+`generate_rooms.py` `WALL_MOUNTED_EXTRAS`). A test fails when either copy no longer
+matches its source. Parsing, not exporting, keeps `seating.js` untouched (6).
 
 A north-side seating edge does not need its own field: it is the north contact line
 above. A desk that is only ever used from behind (the reception counters) still uses
@@ -404,7 +418,15 @@ contact sheet; nearly all of them are used in one or two rooms.
 Every desk an item can stand on is a table group, and every item on a desk is in that
 group. The group is the existing one: a sprite in the Tiled `tables` layer (or a mode A
 table), its `table_items` / `conditional_table_items`, scenario `tableItems`, and
-`baseDepth`. Four small changes to `rooms.js` let it cover the cases it misses:
+`baseDepth`. Five small changes to `rooms.js` let it cover the cases it misses.
+
+A group is **opted in** when its table has `collides: false`, or it holds at least one
+`onTable` or `tableItems` item. `collides` and `onTable` are new; `tableItems` is used only
+by the test scenario `test_table_items`. So no mission has an opted-in group, and item 3
+below changes nothing outside them (R2 M1). Item 4 is already today's behaviour for
+every grouped item. Items 1, 2 and 5 apply to every group: 1 and 2 act only where the new
+fields are present, and 5 fixes a listener gap without touching order or depth (for
+all groups if the user agrees, Q10; otherwise opted-in groups only).
 
 1. **`collides: false` on a table** (R1 M1). A Tiled custom property on a `tables`-layer
    object (and a scenario field of the same name on a mode A table) that skips
@@ -426,19 +448,53 @@ table), its `table_items` / `conditional_table_items`, scenario `tableItems`, an
    joining by matching a Tiled placeholder of the same type, which is fragile (an
    unrelated object of the same type elsewhere in the room grabs a placeholder and is
    then grouped with the nearest table, overlapping or not). Placeholders keep working
-   as they do.
-3. **Order by base row.** The final pass (~2407–2426) sorts by `sprite.y + baseRow`
-   (the lowest opaque row, from `baseRows`) instead of `sprite.y`, puts a stacked item
-   after its host, and caps the step so the group stays below `baseDepth + 0.5`
-   (0.01 × i up to 49 items, then 0.5 / (n + 1)).
+   as they do. **Join timing** (R2 m10): `onTable: "<id>"` can name a host later in the
+   scenario, and `onTable: true` can come before a mode A table it overlaps (mode A
+   tables are made during the scenario pass, ~2115). So `onTable` items are collected as
+   they are made and joined in the final pass (~2407), once every table and host exists.
+3. **Order by base row, in opted-in groups only** (R2 M1). The final pass (~2407–2420)
+   sorts **every** group by `sprite.y` today. Switching all of them would reorder 59 of the
+   132 Tiled groups with two or more items, in 36 rooms, `room_office` among them
+   (R2's `order.py`). So the final pass keeps `sprite.y` for groups that are not opted
+   in, byte for byte, and sorts opted-in groups by `sprite.y + baseRow × scaleY` (ties by
+   `sprite.y`, then insertion order), puts a stacked item straight after its host, and
+   caps the step so the group stays below `baseDepth + 0.5` (0.01 × i up to 49 items,
+   then 0.5 / (n + 1)). Whether to switch every group is a separate decision (Q9), made
+   from its own snapshot diff with each flipped pair looked at by eye.
+
+   **Where slice 1 gets base rows** (no `table_surfaces.json` until slice 3): it measures
+   them. `baseRowOf(textureKey)` scans the loaded texture's alpha bottom-up for the last
+   row with an opaque pixel (`textures.getPixelAlpha`, the call `seating.js` `sitShift`
+   already makes, seating.js ~53–75), once per texture key, cached for the session, and
+   falls back to the frame height if the scan throws. Chosen over a small slice 1 data
+   file because:
+   - it is right for every texture with no list to keep in step, including aliased keys
+     (`pc` → `pc1.png`) and padded PNGs, and for a sprite variant swapped in later;
+   - only opted-in group items are scanned, a handful per room, so the cost is nil;
+   - a hand-made slice 1 file would be a second source of the same number that slice 3
+     then replaces, and either could drift.
+
+   The engine keeps the scan after slice 3: `baseRows` in the JSON is for the Ruby and
+   Python tools, with a test that it matches what the scan gives on the same PNGs. That
+   departs from R2's suggestion to switch the engine to `baseRows` in slice 3: one
+   runtime source is simpler than two, and the test covers drift.
 4. **`position.elevation` is ignored on a grouped item**, as it already is for Tiled table
    items (`sprite.elevation = 0`), with a validator warning when both are given.
+5. **Sprite-variant listeners for grouped scenario objects** (R2 M3). The placeholder
+   branch that groups a scenario object (~2296–2312) sets depth and stores the sprite but
+   never calls `registerSpriteVariantListeners`; only the two non-table branches do
+   (~2316, ~2330). A grouped object with `spriteVariants` therefore keeps its first
+   texture until a reload. Slice 1 calls `registerSpriteVariantListeners` on every
+   grouped scenario object, in all three join paths (placeholder, `onTable`,
+   `tableItems`). In an opted-in group a swap re-measures the base row and re-sorts the
+   group; other groups sort by `sprite.y`, which a swap doesn't change, so they are not
+   re-sorted. The gap already affects m02 (7.1, item 1a).
 
 Items-layer desks (R1 M1: 26 placements, all five on the accounts floor) are not given
 groups by the engine. They move to the `tables` layer in the room JSON with
 `room_edit.py`, keeping their x and y, with `collides: false` where the room had them
-non-colliding on purpose. A room lint (5.3) flags any texture with a surface entry in an
-`items` or `conditional_items` layer. One knock-on: mode B maps the nth scenario table to
+non-colliding on purpose. A room lint (5.3) flags a texture with a surface entry in an
+`items` layer, except where a scenario claims it (R2 m3). One knock-on: mode B maps the nth scenario table to
 the nth Tiled table, so adding desks to `tables` shifts those indices; only
 `test_table_items` uses mode B, and its rooms have no items-layer desks.
 
@@ -448,9 +504,21 @@ part in the NPC table-overlap and unstick checks, and collides with every swivel
 (`object-physics.js` 43–50). Those are what made NPCs wedge on the accounts floor; a
 shallower box shrinks the problem but keeps all four mechanisms. A custom box is still
 possible later as a Tiled property, but it changes pathfinding cells in every room that
-uses it, which is Q3's separate decision. The cost of the flag: on a `collides: false`
-desk the player can walk into the footprint, drawn behind the desk (row 1 of 0.2), which
-the accounts floor already allows today.
+uses it, which is Q3's separate decision. The costs of the flag, all of them already true
+of the accounts floor's bodiless items-layer desks:
+
+- the player can walk into the footprint, drawn behind the desk (row 1 of 0.2);
+- **line of sight** (R2 question 3): `hasWorldPhysicsLineOfSight` treats every static
+  body as a blocker (`npc-pathfinding.js` ~743–785), so a colliding desk blocks a guard's
+  view of the player today and a `collides: false` desk does not. A room that relies on
+  a desk to hide the player from a guard should keep the body;
+- **step-over** (R2 m11): `player-effects.js` (~71–92) treats any object whose type isn't
+  a table, chair, desk, safe or workstation as a floor item the player steps over, so a
+  lamp or PC on a desk the player can walk into gets the step-over effect. Slice 1 skips
+  grouped items (`sprite.tableGroup`, set when an item joins) in that check.
+
+Sight occlusion, interaction reach and the tap menu don't use desk bodies (R2 question 3),
+so nothing else changes.
 
 The module `public/break_escape/js/systems/table-surfaces.js` owns the data and the
 geometry. It exports:
@@ -460,12 +528,13 @@ geometry. It exports:
   keeps today's behaviour);
 - `snapBase(item, table, { tolerance })` → the y that puts the item's base row in the
   band (unchanged if already inside by `tolerance`);
-- `deskSeat(chair, facing, roomId)` → the hip y a sitter on that chair should have (4.2),
-  or null when no desk with an entry lies in the facing direction within 24 px.
+- `deskSeat(chair, facing, roomId)` → the hip y a sitter on that chair should have (4.2,
+  with the back-side clamp), or null when no desk with an entry is in the facing
+  direction (defined in 4.2).
 
 There is no separate `tableUnder` index: the groups are the index, built from the
-`tables` layer before the scenario pass (~1952–1971), so an `onTable` item can find its
-group at the point it is created.
+`tables` layer before the scenario pass (~1952–1971) plus mode A tables during it, and
+`onTable` items are resolved against them in the final pass (item 2).
 
 New static imports must be added to each JS test harness copy list (`bin/test-js` runs
 plain `node`).
@@ -478,8 +547,10 @@ plain `node`).
   `onTable` only joins the group and the author sets y.
 - **Where in the band.** Default base row `frontY − 2`. That puts a PC's keyboard at the
   front of the top and its monitor at the back edge (panel 3), and a lamp's foot near the
-  front with the shade above the back. An author y already inside the band is kept, so a
-  ledger or in-tray can sit further back.
+  front with the shade above the back. An author y whose base row is already inside the
+  band is kept (`tolerance` 1 px past either edge, R2 m8), so a ledger or in-tray can sit
+  further back, and 7.0's half-tile positions (base row 134, `frontY − 3`) don't move
+  1 px when slice 3 lands.
 - **Mode A and mode B** (`tableItems`): replace `targetBottomY = table bottom` with a
   layout inside the band: one row with bases at `frontY − 2`, items spread across
   `x0…x1`; with more items than fit, a second row with bases at `backY + 0.4 × depth`.
@@ -493,9 +564,9 @@ plain `node`).
   from `items` to `table_items` with `room_edit.py`, with their base in the band. The
   existing unreserved-table-item path then groups them.
 
-The item's base row is its lowest opaque row, read from `baseRows` (the engine can also
-measure it once per texture at load, as `seating.js` does for hip rows), so padded PNGs
-land right.
+The item's base row is its lowest opaque row, measured by the engine once per texture at
+load (4.0 item 3), so padded PNGs land right. The tools read the same number from
+`baseRows`.
 
 ### 4.2 Sitters at a desk
 
@@ -507,20 +578,52 @@ desk lies in their facing direction:
 - **Facing south, desk to the south** (behind the desk): `hip = northContact − kBack`,
   `kBack = 20`.
 
-Both constants come from two body measurements in the 80×80 atlases: a seat height `s`
-(hip to floor contact, about 13 px) and a half body depth `d` (back of the hip to the
-belly, about 7 px). A sitter's body touches the desk's edge in floor space, so the floor
-point is `contact + d` in front and `contact − d` behind, and the hip is `s` above it:
-`kFront = s − d = 6`, `kBack = s + d = 20`. One constant can't serve both, because the
-two sitters touch opposite edges. On `desk1` this gives hip 154 in front (panel 3) and
-124 behind (Tomasz: chair foot 141).
+Both are **fitted constants** (R2 m1), tuned by eye on two cases: R1's panel 3 (front
+sitter, hip 154 on `desk1`) and Tomasz behind the supervisor's desk (hip 124, chair foot
+141). They are not derived from body measurements; the earlier `s ± d` derivation is
+dropped, because nothing in the atlases measures `d` and the seated body's reach below
+the hip varies (19 px facing south in all 108 atlases with sit frames; 13–19 px facing
+north, hidden by the chair back). They carry over to other characters because the hip is
+the anchor and the visible part above it is steady: with the runtime `sitShift`, the head
+top is 36 ± 1 px above the hip facing north (106 of 108 atlases) and 37 ± 1 facing south
+(R2's `sit.py`). One constant can't serve both sides, because the two sitters meet
+opposite edges.
+
+**"The desk is in the facing direction"** (R2 m7), used here, by `deskSeat` and by lint 2:
+the chair's x-centre is within the table sprite's x range, and the seat point is within
+24 px of the contact line on the side the chair faces from, without passing the far edge.
+For a north-facing chair: hip south of the north contact line and within 24 px of the
+south contact line (`F`). For a south-facing chair: hip north of `F` and within 24 px of
+the north contact line. Tomasz's chair today (hip 143, north contact 144, `F` 160)
+qualifies, so lint 2 fires on it; it is a lint fixture.
 
 The chair goes wherever puts that hip on the chair's seat point for the current facing:
 `chair.y = hip − seat[facing].y`, using the same `seatPoint` numbers `poseSprite` already
-uses (`poseSprite` then places the sprite by `SIT_HIP` as now). No new data per chair. Checks, all from 0.2: a
-front sitter's chair foot must be ≥ `F + 1` (the smallest drop from seat to foot is 13 px
-on the `aw_chair_*` chairs, so it always is), and a back sitter's chair foot ≤ `F − 1`
-(the largest south-facing drop is 23 px, `exec_chair_black1`: foot 147 on `desk1`).
+uses (`poseSprite` then places the sprite by `SIT_HIP` as now). No new data per chair.
+
+Checks, both from 0.2:
+
+- A front sitter's chair foot must be ≥ `F + 1`. It always is: the hip is `F − 6` and the
+  smallest north-facing seat-to-foot drop is 13 px (`aw_chair_north_*`,
+  `hospital_chair_north`).
+- A back sitter's chair foot must be ≤ `F − 1`, and the rule alone doesn't guarantee it
+  (R2 M2). It gives foot = `F − depth − 20 + drop`, which holds only when
+  `drop ≤ depth + 19`. The largest south-facing drop is the exec swivel's, **27**
+  (`chair-exec-rotate1.png` 38×64, south seat [19, 37]; the first version said 23, which
+  is `exec_chair_black1`, 56 − 33). So the exec swivel fails on any top shallower than 8
+  rows (`aes_console1` 5, `hce_console_table1` 4, `lecture_ledge1/2` 5,
+  `m10_console_controls1` 5, `lw_credenza1` 7, `m10_key_console1` 7,
+  `reception_counter1` about 6), and `exec_chair_black1` below 4. Chairs with a drop of 19
+  or less (`office40` 19, `aw_chair_south_*` 17, `m10_steel_chair1` 13) never fail.
+
+  So the back-side hip is **clamped**: `hip = min(northContact − kBack, F − 1 − drop)`.
+  `deskSeat` and lint 2 apply the same clamp. On a shallow top the sitter still sits,
+  just further back than the contact rule wants, by `drop − 19 − depth` px (at most 4 px
+  for the exec swivel on a 4-row top). Refusing the seat would break needs routines for a
+  few pixels, so there is no "no seating" case. Lint 2 warns when the clamp moves the hip
+  more than its 2 px tolerance, naming the gap and suggesting a chair with a smaller drop.
+  The slice 4 test scenario puts an exec swivel behind a shallow console to prove the
+  clamp (sitter and chair under the console and its items).
 
 Cases:
 
@@ -545,8 +648,8 @@ Cases:
   same clamp, so Arcade separation has nothing to push against. On a `collides: false`
   desk there is no body and no clamp.
 - **Chair facing away from the desk**, a side-facing chair (`chair-waiting-*`, club
-  chairs) or no desk within 24 px in the facing direction: unchanged, and not linted
-  (R1 m4).
+  chairs) or no desk in the facing direction (as defined above): unchanged, and not
+  linted (R1 m4).
 - **Two desks**: the one in the facing direction; if both, the nearer.
 
 Who applies it: static chairs by data (this work, slices 2 and 5). Swivel chairs by
@@ -573,6 +676,10 @@ Opt-in, so nothing moves until a mission asks for it:
 - Items join a group only with `onTable`, a `tableItems` list, a Tiled `table_items`
   placement, or a placeholder match (as today). Snapping applies only to `onTable` and
   `tableItems` items once slice 3 lands.
+- Groups keep today's `sprite.y` order unless opted in (4.0 item 3), so every mission's
+  group order is unchanged byte for byte until it adds `onTable` or `collides: false`.
+  The one change every mission may get is item 5, if the user agrees (Q10): a grouped
+  object with `spriteVariants` then swaps texture live (see m02, 7.1 item 1a).
 - Static chairs move only when their scenario y is edited. Swivel sitters move only in
   rooms where the scenario sets `"seatAtDesk": true` on the room or the NPC, until the
   default flips (Q2).
@@ -582,7 +689,7 @@ What changes when each is opted in:
 
 | Mission | Visible change |
 |---|---|
-| lab_physical_pentest | the five accounts-floor desks move to `tables` (`collides: false`); the four PCs, `usb_malware_note` and `planted_deviceA` join their desk's group, base 135 / 231, `elevation` removed, `useFrom.dy` 1.5; the three lamps and the ledger move to `table_items` with bases on the top; the four north chairs come in 19 px (foot 167 / 263); Tomasz's chair to foot 141; `kit_deviceB`, `visitor_book`, the badge printer settle on the credenzas |
+| lab_physical_pentest | the five accounts-floor desks move to `tables` (`collides: false`); the four PCs, `usb_malware_note` and `planted_deviceA` join their desk's group, base row 134 / 230, `elevation` removed, `useFrom.dy` 1.5; the three lamps and the ledger move to `table_items` with bases on the top; the four north chairs come in 19 px (foot 167 / 263); Tomasz's chair to foot 141; `kit_deviceB`, `visitor_book`, the badge printer settle on the credenzas |
 | m10_full_disclosure | `core_access_key` moves 20 px north onto the desk; `release_staging_card` only if Q4 says it belongs on the desk |
 | m09_digital_archaeology | `catalogue_login_slip` 12 px north |
 | sis01_healthcare | the ransom note moves 6 px south onto the conference table; `it_security_office` PC and notes 5–7 px north (`room_edit.py`) |
@@ -607,19 +714,37 @@ Warnings, not errors, each with the fix written out. Lints 1 and 2 go in
    true`" or "move it to `table_items`". An `elevation` on such an object gets "drop
    `elevation`, add `onTable`". When the move shifts an object that has a `useFrom`, it
    also prints the `useFrom.dy` that keeps the approach cell where it was (R1 M2). Skipped:
-   `"onFloor": true` (Q4), wall-mounted items (`WALL_MOUNTED_EXTRAS`, or a base inside the
+   `"onFloor": true` (Q4), wall-mounted items (the `wallMounted` list, or a base inside the
    back-wall band that gives auto-elevation > 0; R1 m4), `notSurface` and rotated tables.
-2. **Static chair off the desk edge.** A static chair (`STATIC_SEATS`) whose facing
-   points at a desk with an entry within 24 px (R1 m4: a chair with its back to the desk
-   is skipped): its seat point is more than 2 px from the 4.2 hip. Message: the error in
-   px and the chair's corrected y in tiles.
-3. **Desk in the wrong layer.** A texture with a surface entry in an `items` or
-   `conditional_items` layer. Message: "move it to `tables`", plus "with
-   `collides: false`" (items-layer desks have no body today, so this keeps behaviour).
+2. **Static chair off the desk edge.** A static chair (`seats` list) whose desk is in its
+   facing direction as 4.2 defines it (R1 m4: a chair with its back to the desk is
+   skipped; R2 m7): its seat point is more than 2 px from the 4.2 hip, with the
+   back-side clamp applied (R2 M2). Message: the error in px and the chair's corrected y
+   in tiles; when the clamp bound, also the gap left and "a chair with a smaller
+   seat-to-foot drop would meet the desk". Skips tables whose top is deeper than their
+   legs until the slice 4 conference-table check passes (2.1). Fixtures: Tomasz's chair
+   as it is today (must fire) and an exec swivel's south seat behind `aes_console1`
+   (clamp binds, warning).
+3. **Desk in the wrong layer.** A texture with a surface entry in an `items` layer.
+   Message: "move it to `tables`", plus "with `collides: false`" (items-layer desks have
+   no body today, so this keeps behaviour). It skips (R2 m3):
+   - every `conditional_*` layer, and
+   - any `items` object a scenario in the validator's scenario set claims by type,
+     sprite or `as-type:` (the claim rules of `TiledItemPool.findMatchFor`, rooms.js
+     ~258).
+
+   The item pool doesn't index `tables`, so moving a claimed object there would send its
+   scenario object to a random position. The case that prompted this is
+   `m10_key_console1` in `room_m10_core`'s `conditional_items`, which m10's `key_console`
+   takes through `"position": "as-type:m10_key_console"` (m10 scenario.json.erb
+   ~4280–4283). Such a surface stays out of a group for now; a way in (a scenario-side
+   `asTable` or similar) waits for a real need.
 
 Sizes and base rows come from `baseRows` in `table_surfaces.json`, keyed by the engine's
 `load.image` keys (R1 m5), so the validator needs no image library and doesn't use the
-catalog's sizes, which differ for aliased keys (`pc`, `notes`).
+catalog's sizes, which differ for aliased keys (`pc`, `notes`). Seat points and the
+wall-mounted set come from the `seats` and `wallMounted` lists (2.2, R2 m6), not from
+copies kept by hand.
 
 ## 6. Ownership
 
@@ -630,13 +755,15 @@ A separate Claude session owns the office-life files: `npc-needs*`, the needs pa
 
 | File | Part | Owner | Change |
 |---|---|---|---|
-| `rooms.js` | table groups, `processObject` table body, mode A | this work | 4.0 (slice 1), snap (slice 3) |
+| `rooms.js` | table groups, `processObject` table body, mode A, variant listeners | this work | 4.0 (slice 1), snap (slice 3) |
 | `table-surfaces.js` (new), `game.js` preload, `table_surfaces.json` | | this work | slices 1, 3 |
+| `player-effects.js` | step-over check | this work | skip grouped items (slice 1, R2 m11) |
+| `lighting.js` | screen glow depth (~1124, ~1143) | this work (not office life) | glow offsets `+ 0.01` / `+ 0.02` → `+ 0.003` / `+ 0.006`, so a glow never ties with the next group item's `+ 0.01` step (slice 1, R2 m4); ask whoever is mid-way through a lighting pass first |
 | validator, `slot_audit.py`, `measure_table_surfaces.py`, `register_object.py`, `generate_rooms.py` | | this work | slices 3, 4, 7 |
 | room JSONs, scenario files | data | this work, with each mission's owner told | slices 2, 5, 7, 8 |
 | `seating.js` | `seatNPC`, `updateNeedsSeat`, `tuckIn` | office life | swivel slide to `deskSeat`, the collision clamp (slice 6) |
-| `npc-needs.js` | `approachCell`, left-behind depth | office life | optional; see the note |
-| `npc-office-visuals.js` | screen glow | office life | re-check the glow offset on a moved PC |
+| `npc-needs.js` | `approachCell`, put-down, cosmetic, tray-slot and left-behind depth lifts | office life | optional; see the note |
+| `npc-office-visuals.js` | | office life | none (it has no glow; the first version put the glow here, R2 m4) |
 | `workstation-state.js` | | office life | none |
 
 Static chairs are scenario data and need nothing from `seating.js`, so slices 1–5 and
@@ -646,7 +773,10 @@ the accounts quick fix touch no office-life file.
 
 > Table surfaces, slice 6 is yours. `systems/table-surfaces.js` now exports
 > `deskSeat(chair, facing, roomId)`: the hip y a sitter should have so they meet the desk
-> in their facing direction (null when there is no desk within 24 px). Please:
+> in their facing direction (null when there is no desk in that direction, as the plan's
+> 4.2 defines it). Behind a desk the hip is already clamped so the chair's foot stays at
+> least 1 px north of the desk's floor line, which matters for the exec swivel (south
+> drop 27) on shallow consoles. Please:
 > 1. In `seatNPC` (both paths), for a swivel chair when the room or NPC has
 >    `seatAtDesk`, slide the chair so its seat point for the facing lands on that hip;
 >    re-solve when the sitter turns. Clamp so the chair body's top stays ≥ 1 px south of
@@ -655,9 +785,18 @@ the accounts quick fix touch no office-life file.
 >    home cells don't move; a general approach-from-contact-line rule for grouped items
 >    is optional.
 > 3. Grouped items now sit at `desk floor + 0.5 + 0.01·i` (PCs on the accounts floor fall
->    from 171.5 to about 160.51). Check the left-behind lift (`home.sp.depth + 0.1`,
->    5cccaf6ea) and the tray-slot lift still sort as meant, with a case in
->    `npc-left-behind.test.mjs` whose home object is in a table group.
+>    from 171.5 to about 160.51), and the group stays below `floor + 1`. Four lifts in
+>    `npc-needs.js` (line numbers at 344f8cdad) set a depth relative to an object that
+>    may now be in a group, and all four go past the next group item:
+>    - put-down: an item an NPC puts down takes `target.depth + 1` (~2284–2285);
+>    - cosmetic: a cosmetic copy takes `producer.depth + 1` (~2007);
+>    - tray slot: `producer.depth + 0.5` (~2331);
+>    - left-behind: `home.sp.depth + 0.1` (~2370, 5cccaf6ea).
+>
+>    Each still sorts under a front sitter (chair foot ≥ `F + 13`), so they are probably
+>    fine, but please check they sort as meant, with a case in `npc-left-behind.test.mjs`
+>    (and one for put-down) whose object is in a table group. The screen glow is in
+>    `lighting.js`, not your files; this work lowers its offsets (slice 1).
 > 4. Tests: extend `test/js/fixtures/needs-sims-world.mjs` with a `tables`-layer desk
 >    (colliding) and a `collides: false` desk; stand, tuck, wait 2 s, assert the chair
 >    hasn't moved; live: sitter hip against the contact line in `test_needs_sims`, and
@@ -700,6 +839,12 @@ elevation the user ruled out. So the quick fix comes straight after **slice 1** 
 | | `lord_chair`, `spare_desk_chair` | y 8 → 7.40625 (foot 263) |
 | | `tomasz_chair` | y 4 → 3.40625 (foot 141, hip 124) |
 
+`room_edit.py` can `relayer` but has no CLI operation for a Tiled custom property, and
+`room_lw_accounts.json` is in `json.dump` format, so `collides: false` goes in through the
+Python API: `set_fields(oid, properties=[{"name": "collides", "type": "bool", "value":
+false}])` (room_edit.py ~239) (R2 m9). A `prop ID NAME VALUE` CLI operation, with a test,
+is a small tooling addition for slice 2 if more rooms need it; the accounts floor doesn't.
+
 Then a live look at the accounts floor at 2× for the user, against `mock_layering.png`
 panels 3–4, before anything else moves. The scenario edit belongs to the lab's owner;
 this work prepares it and hands it over unless told to commit it.
@@ -708,15 +853,53 @@ this work prepares it and hands it over unless told to commit it.
 
 0. **Snapshot tool** (R1 M9), before any engine change: a headless run on :3001 that
    loads every scenario's rooms through `window.__test` and writes each room sprite's
-   x, y and depth to JSON. Each later slice diffs against it, and only opted-in objects
-   may move.
-1. **Table-group plumbing** (`rooms.js`): `collides: false`, `onTable` (true or an id),
-   sort by base row with the capped step, `elevation` ignored in a group, the warning
-   for an `onTable` item over no table. Unit tests on the group order (the six rows of
-   0.2) and a focused scenario `scenarios/test_table_surfaces` with a `tables` desk, a
-   `collides: false` desk, an `onTable` PC, a stacked item, a lamp in `table_items`, and
-   mode A and B lists. Live: read depths through `window.__test`, assert the 0.2 order,
-   walk the player behind and in front, screenshot at 2×.
+   texture, x, y, size and depth to JSON. `Math.random` is replaced with a fixed-seed
+   generator before the game's scripts run (an init script), so objects placed at random
+   (`createSpriteAtRandomPosition`, rooms.js ~650–657; mode A tables with no
+   coordinates, ~2088–2094) land in the same place every run (R2 m5). The diff reports
+   what a player would see: **pairs of sprites whose rectangles overlap and whose depth
+   order flipped**, plus sprites whose x or y moved. A raw depth change with no order
+   flip is counted, not listed. Each later slice diffs against it. Gate: only opted-in
+   objects may move or flip, and no non-opted group's order may change.
+1. **Table-group plumbing** (`rooms.js`, plus two small changes elsewhere):
+   - `collides: false`; `onTable` (true or an id), resolved in the final pass (R2 m10);
+   - for opted-in groups only, sort by base row with the capped step, base rows
+     measured from the texture at load (4.0 item 3, R2 M1); other groups keep
+     `sprite.y`;
+   - `elevation` ignored in a group; the warning for an `onTable` item over no table;
+   - `registerSpriteVariantListeners` on every grouped scenario object, in all three
+     join paths, with a re-sort of opted-in groups on a swap (4.0 item 5, R2 M3);
+   - `player-effects.js`: skip grouped items in the step-over check (R2 m11);
+   - `lighting.js`: glow offsets below the group step (R2 m4; ownership in 6).
+
+   Unit tests on the group order (the six rows of 0.2), on non-opted groups keeping the
+   `sprite.y` order, and on the variant listener for a grouped object. A focused scenario
+   `scenarios/test_table_surfaces` with a `tables` desk, a `collides: false` desk, an
+   `onTable` PC, an `onTable` item with `spriteVariants` (swap it from the console and
+   check the texture changes without a reload), a stacked item whose host comes later
+   in the scenario, a lamp in `table_items`, and mode A and B lists. Live: read depths
+   through `window.__test`, assert the 0.2 order, walk the player behind and in front,
+   screenshot at 2×. Snapshot diff: no change outside `test_table_surfaces` and
+   `test_table_items`.
+
+   **1a. m02 ward terminal** (R2 M3, needs the user's go-ahead). m02's
+   `ehr_terminal_ward` (type `pc`, sprite `pc_ransomware`, `spriteVariants` back to `pc`
+   when `ward_recovering` is set, no `position`) can only match the `pc` placeholders in
+   `room_hospital_ward`'s `conditional_table_items` (x 464 and 554). If it does, it is
+   grouped through the placeholder branch, gets no variant listener, and keeps the
+   ransom screen after the ward recovers until the next reload. That comes from the
+   code and hasn't been seen live. In slice 1:
+   - **before** the engine change, load m02 on :3001, go to the ward, set
+     `ward_recovering` through `window.__test`, and record whether the terminal swaps
+     (screenshot, texture key);
+   - **after** it, repeat: the terminal must swap live;
+   - nothing in m02's files changes: the fix is the slice 1 listener change.
+
+   m02 belongs to another mission owner, and the listener change alters what its players
+   see (the terminal now clears when the ward recovers). So the live check, and landing
+   the listener change for all groups, wait for the user's go-ahead (Q10). If the user
+   says no, slice 1 registers listeners only in opted-in groups, which leaves m02 exactly
+   as it is, and the gap goes to the m02 owner as a finding.
 2. **Accounts quick fix** (7.0), data only.
 3. **Surface data and snap.** Run the measurer, accept the 26 confident values and the
    12 flagged-but-right ones after a look, enter the 22 hand values on the contact-sheet
@@ -728,10 +911,14 @@ this work prepares it and hands it over unless told to commit it.
    prop import calls the same hook; a test fails when a texture in any `tables` layer,
    or a catalog name matching the surface regex, has neither an entry nor a `notSurface`
    line, or when `baseRows` doesn't match the PNGs.
-4. **Lints** (5.1–5.3), with fixture tests.
+4. **Lints** (5.1–5.3), with fixture tests (Tomasz's current chair must fire; an exec
+   swivel behind `aes_console1` must hit the clamp; a claimed `items` desk and a
+   `conditional_items` desk must not fire lint 3). Add to the test scenario a
+   south-facing sitter at `hospital_conference_table` (R1 m10; moved here from slice 5,
+   R2 m2) and an exec swivel behind a shallow console (R2 M2), and check both live
+   before lint 2 is trusted on deep-topped tables.
 5. **Static chairs and items elsewhere**: apply the lint's numbers mission by mission
-   (4.3 table), each mission's owner told. Add to the test scenario a south-facing
-   sitter at `hospital_conference_table` (R1 m10) and a chair facing away.
+   (4.3 table), each mission's owner told. Add a chair facing away to the test scenario.
 6. **Swivel sitters** (office-life session, the note in 6).
 7. **Generators**: `band_frac` on `place_on_table`; move the off-band `table_items` in
    place with `room_edit.py`; commit each room with explicit paths.
@@ -766,6 +953,11 @@ after coffee (80c2a8dd5). Every slice: the snapshot diff (slice 0).
   nudge that PC about 10 px sideways in the scenario.
 - **Walking into a `collides: false` desk.** The player is drawn behind it (0.2 row 1).
   This is today's accounts behaviour; Q8 asks whether to block the player only.
+- **Line of sight through a `collides: false` desk.** A guard sees the player over it,
+  where a colliding desk would block the view (4.0). No change on the accounts floor,
+  whose desks have no body now; any other room that opts in checks its guards first.
+- **A texture swap now happens live on grouped objects** (4.0 item 5). Correct, but
+  visible in any mission that grouped a variant object by accident (m02, 1a).
 - **Room JSON edits** churn files that generators also write; move objects in place with
   `room_edit.py`, one room per commit, explicit paths.
 - **Shared tree.** Office-life work is in flight in `seating.js` and the needs fixtures;
@@ -795,6 +987,16 @@ after coffee (80c2a8dd5). Every slice: the snapshot diff (slice 0).
 - **Q8. Should a `collides: false` desk still block the player?** Default: no (today's
   behaviour). A `collides: "player"` variant would need a body the pathfinding grid and
   NPC checks ignore, which is new engine work.
+- **Q9. Sort every table group by base row?** Default: not yet. Base-row order is right
+  for opted-in groups, but switching all groups reorders 59 of 132 groups in 36 rooms
+  (R2 `order.py`), including `room_office`. If wanted, it is its own step after slice 3:
+  a snapshot diff listing every flipped overlapping pair, looked at by eye, then one
+  commit.
+- **Q10. m02 ward terminal (7.1 item 1a): may this work check it live and let slice 1
+  fix it?** Default: yes. The fix is engine-side and makes the terminal clear when the
+  ward recovers, which is what m02's `spriteVariants` asks for; no m02 file or voiced
+  line changes. If no, listeners go only to opted-in groups and m02 is untouched. The
+  m02 owner is told either way.
 
 ## 8. Changes after review R1
 
@@ -826,3 +1028,30 @@ R1's "something simpler" is taken in spirit: the accounts floor is fixed first, 
 It can't be data alone, because the layering rule needs table groups the scenario can't
 reach today (7.0), so the order is slice 0–1, then the quick fix, then data and lints,
 then the engine snap and the office-life slice.
+
+## 9. Changes after review R2
+
+Review: `TABLE_SURFACE_PLAN_REVIEW_R2.md` (344f8cdad), 0 B, 3 M, 12 m, "ready with
+conditions". Each finding was checked against the code it cites before it was folded in;
+all fifteen hold.
+
+| ID | Sev | Outcome | Where |
+|---|---|---|---|
+| M1 | M | Fixed. The base-row sort applies only to opted-in groups (a `collides: false` table, or an `onTable` or `tableItems` item); every other group keeps `sprite.y` order byte for byte, and the slice 0 gate now says so. Slice 1 measures base rows from the loaded texture's alpha, once per key (as `sitShift` does), rather than shipping a slice 1 data file: no list to keep in step, right for aliased keys, padded PNGs and variant swaps. The engine keeps the scan after slice 3; `baseRows` serves the tools, with a test that the two agree (a departure from R2's "switch to `baseRows` in slice 3"). The global reorder is Q9 | 4.0 items 3, 4.3, 7.1 slices 0–1, 7.4 Q9 |
+| M2 | M | Fixed. Back-side hip clamped to `min(northContact − kBack, F − 1 − drop)` in both `deskSeat` and lint 2. Largest south drop corrected to 27 (exec swivel; 23 is `exec_chair_black1`). On a shallow top the sitter still sits, up to 4 px further back than the rule; lint 2 warns when the clamp moves the hip more than 2 px. No "no seating" case. Exec swivel behind a shallow console in the slice 4 test scenario | 0.2 row 2, 4.2, 5 lint 2, 6 note, 7.1 slice 4 |
+| M3 | M | Fixed. Slice 1 registers sprite-variant listeners on grouped scenario objects in all three join paths, and re-sorts opted-in groups on a swap. m02's `ehr_terminal_ward` gets its own item (7.1 1a): live check before and after slice 1, fix by the engine change only, and the user's go-ahead first because m02 has another owner (Q10). Without it, listeners go to opted-in groups only | 4.0 item 5, 7.1 slice 1 and 1a, 7.4 Q10 |
+| m1 | m | Fixed. `kFront` and `kBack` are fitted constants, tuned on panel 3 and Tomasz; the `s ± d` derivation is gone; the 108-atlas head-top spread (36 ± 1 north, 37 ± 1 south) is the reason they carry over | 4.2 |
+| m2 | m | Fixed. Conference-table sitter check moved to slice 4 with the lint fixtures; until it passes, lint 2 skips tables whose top is deeper than their legs | 2.1, 7.1 slices 4–5 |
+| m3 | m | Fixed. Lint 3 skips `conditional_*` layers and any `items` object a scenario claims by type, sprite or `as-type` (m10 `key_console` / `m10_key_console1`) | 4.0, 5 lint 3 |
+| m4 | m | Fixed. The office-life note names put-down (+1), cosmetic (+1), tray slot (+0.5) and left-behind (+0.1). The glow row moves to `lighting.js` (this work, not office life), whose offsets drop to +0.003 / +0.006 in slice 1, below the group's 0.01 step | 6, 7.1 slice 1 |
+| m5 | m | Fixed. Slice 0 seeds `Math.random` and reports overlapping pairs whose depth order flipped, plus moved x, y | 7.1 slice 0 |
+| m6 | m | Fixed. The measurer writes `seats` (parsed from `seating.js`) and `wallMounted` (from `generate_rooms.py`) into `table_surfaces.json`, with a test against the sources; `seating.js` is not touched | 2.2, 5 |
+| m7 | m | Fixed. "Desk in the facing direction" defined (x-centre over the table, seat point within 24 px of the contact line on the side the chair faces from, not past the far edge). Tomasz's current chair is a fixture that must fire | 4.2, 5 lint 2, 7.1 slice 4 |
+| m8 | m | Fixed. Snap tolerance 1 px; 7.0's half-tile positions give base row 134 (`frontY − 3`), inside the band, and are kept. 0.1 and 4.3 now say 134 / 230 | 0.1, 4.1, 4.3 |
+| m9 | m | Fixed. `collides: false` goes in through `room_edit.py`'s Python `set_fields`; a CLI `prop` operation is optional tooling | 7.0 |
+| m10 | m | Fixed. `onTable` items are joined in the final pass, after every table and host exists | 4.0 item 2 |
+| m11 | m | Fixed. Slice 1 skips grouped items in the `player-effects.js` step-over check. The line-of-sight side effect of `collides: false` (a guard sees the player over a bodiless desk) is now stated as a cost and a risk | 4.0, 6, 7.1 slice 1, 7.3 |
+| m12 | m | Fixed. Row 3 notes back-wall elevation; row 6 describes the interleaving for feet in (F, F + 0.5) | 0.2 |
+
+Line numbers for `npc-needs.js` are at 344f8cdad; the file has uncommitted edits from the
+office-life session, so they may have moved.
