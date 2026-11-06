@@ -803,6 +803,15 @@ Files: `rooms.js`, and `scenarios/test_desk_seating/scenario.json.erb` for the d
 Tests: a unit test with a fake pool (an overlapping match grouped, an off-desk match stored on
 its own with listeners), and `table-group-variant-listeners.test.mjs` still passing.
 
+**Built (617891946, fix 53ed4fce4; results in `SEAT_BOX_BASELINES.md`, "Slice 3 results").** Q4
+taken as yes: unreserved Tiled items follow the rule too, so no caller keeps the nearest-table
+fallback. One addition found by the snapshot review: an item with no strict overlap whose bottom
+is on, or up to 4 px above, a table's top edge (with x overlap) counts as on that table's back
+edge (`TABLE_BACK_EDGE_PX`). `room_lw_records` rests a laptop, plants, a cup, a phone and a photo
+on the desks' back edges, touching but not overlapping; at their own depth a swivel chair behind
+the desk drew over the laptop. A match that found no group used to be dropped (never stored);
+it is now stored at its own depth.
+
 **Demo scenario (R3 M6).** `test_desk_seating` has no scenario objects today; its map has
 `pc1` and `bankers_lamp1` placeholders in `table_items`. Slice 3 adds two `pc` objects to
 `scenarios/test_desk_seating/scenario.json.erb`: one with no `position`, which takes a `pc1`

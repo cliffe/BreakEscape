@@ -138,3 +138,53 @@ code. `verify-run.rb`: 9 tasks completed, **score 100**. No "No path found" or "
 `/tts` refusals (`games_controller.rb:691`), not seating. The lab scenario was being edited by another
 agent during the run; the replay was unaffected.
 
+
+## Slice 3 results (2026-11-06)
+
+Commits 617891946 (overlap grouping, `test_desk_seating` PCs) and 53ed4fce4 (back-edge rule from the
+snapshot review). Scratch: `scratchpad/seatbox-s3/` in session c84d7b68.
+
+**Tests.** `table-item-overlap-grouping.test.mjs` 12/12, `table-group-variant-listeners.test.mjs`
+passing. Full node suite after the first commit 403/403; after the fix 404/405, the one failure
+`npc-needs-slots.test.mjs` "test_needs_sims ... copier pool" (expects 3 reveal slots; office-life
+slice 17's showcase commit 6e253b502 made it 5; not this slice). Rails 953 runs, 0 failures, 1 skip.
+Reopen check: the same 4 m09 phone-ink problems as slice 1.
+
+**Demo, `test_desk_seating`** (game 911, swapped from a `test_seating` row; depths read from the page):
+`desk_pc_on` (pc1 placeholder on desk1, F 140) depth 140.51, in desk1's group; `desk_pc_off`
+(position 17,4) depth 151.5 = bottom + 0.5, no table under it, console warning
+"[table group] desk_pc_off took the table_items (regular) placeholder pc1 but overlaps no table".
+
+**Snapshot diff** against `scale-fix/snap_after.json` (same game rows, `ts-build/games_all.tsv`, 159/161
+loaded as before; maps unchanged since that snapshot). Full run on the first commit, then the 29
+scenarios that changed again on the fix. After the fix: 0 moves, 1 flip, 80 depth-only changes, all
+from grouping:
+- `room_servers` `phone4` (a wall phone, Tiled table item over no table; 17 rooms in: biometric_breach,
+  ceo_exfil, crypto1-4, secgen_vm_lab, test_complex_multidirection, test_horizontal_layout,
+  test_ink_email, test_multiple_connections ×3, test-rfid, test-rfid-multiprotocol,
+  test-shredded-document, lockpick_gauntlet, m01 it_room): from the nearest desk's group to its own
+  back-wall depth (-696.48 -> -703.447 and the like). Expected (plan Q4).
+- Group re-indexing by 0.01 or 0.02 where a scenario object placed by `position` on open floor left a
+  desk group it had joined as nearest (`success_terminal` at 5,4 in `room_office`'s test_room for
+  test_simple_success, test_simple_vm_flag, test_npc_needs, test_finale_calls_credits, test_ink_email;
+  the same in test_dm_social, test_exercise_station, test_unlock_silence, test_seating, m04
+  operations_office's kettle). The leaving objects aren't in the snapshot (its sprites are Tiled
+  ids; the scenario object's depth is now its own bottom + 0.5). Expected.
+- `room_lw_records` (test_gate_tailgate): the first run moved six items resting on the desks' back
+  edges to their own depths, and a swivel chair then drew over `laptop7` (screenshot
+  `seatbox-s3/lwrec_crop.png`). Fixed by the back-edge rule; five items are back to their old depths,
+  and `office-misc-smallplant5` (4 px above `zds_desk1_36`) now joins that desk (256.51) instead of
+  the top-row desk's group (192.55) it had as nearest. The one flip: it now ties with `laptop7`
+  (256.51, the neighbouring desk's group) where they overlap by 3 px. Accepted as minor (a depth
+  tie between two desks' groups). Screenshot after: `seatbox-s3/lwrec2_crop.png`.
+- Noise, not this slice: `talk` icons (NPC timing) in m07, test-npc-patrol, test-npc-personal-space,
+  npc-patrol-lockpick.
+
+**Walk audit** against `seatbox-s0-walk.json` (`--desk-boxes legacy --all-geometry`): 34 rooms, 0 fails,
+0 coverage problems, the same 6 listed (d) overlaps as the baseline. Slice 3 changes no body.
+
+**Lab regression**: `lab_physical_pentest` game 913, replay of the 41 commands from game 685 (first
+commit's code; the fix only adds the back-edge branch, and no lab sprite changed depth in either
+snapshot run). `verify-run.rb`: 9 tasks, **score 100**; no "No path found" or "Failed to escape
+wall", no page errors. `cable_note` in open_plan at depth 247.5 = its own bottom + 0.5, out of the
+desk groups (the PCs on the desks stay grouped, 171.651 and 267.747).
