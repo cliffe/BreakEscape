@@ -49,7 +49,70 @@ module ValidateNpcNeeds
     npcs.each { |room_id, npc| check_npc(json, npc, room_id, objs, issues, npcs) }
     check_swivel(npcs, issues)
     check_lock_habits(json, npcs, objs, issues)
+    check_off_when(json, npcs, objs, issues)
     issues
+  end
+
+  # Slice 18a (OFFICE_LIFE_PLAN 12.4): affordance.offWhen (the requireGlobal form) takes a source
+  # out while it holds. Each name it reads must be a declared global (error); something should set
+  # it (warning; ink is not read). A hint action with no title shows "Intelligence Received", a spy
+  # title, so in a scenario with needs NPCs or officePresets it warns.
+  def self.check_off_when(json, npcs, objs, issues)
+    globals = json['globalVariables'].is_a?(Hash) ? json['globalVariables'] : {}
+    objs.each do |o|
+      aff = o.data['affordance']
+      next unless aff.is_a?(Hash) && aff.key?('offWhen')
+
+      cond = aff['offWhen']
+      names = if cond.is_a?(String) && !cond.empty? then [cond]
+              elsif cond.is_a?(Hash) && !cond.empty? then cond.keys
+              end
+      unless names
+        issues << "❌ ERROR: object '#{o.id}' affordance.offWhen must be a global name or { name: value } (the requireGlobal form)."
+        next
+      end
+      names.each do |name|
+        unless globals.key?(name)
+          issues << "❌ ERROR: object '#{o.id}' affordance offWhen '#{name}' is not declared in globalVariables."
+          next
+        end
+        next if global_set_somewhere?(json, name)
+
+        issues << "⚠️ WARNING: object '#{o.id}' affordance offWhen '#{name}': nothing in the scenario sets it (a set_global action or a mapping's setGlobal; ink is not checked), so the source is never switched off."
+      end
+    end
+    needs_scenario = json['officePresets'] == true || npcs.any? { |_, n| n['needs'].is_a?(Hash) || n['interests'].is_a?(Hash) }
+    return unless needs_scenario
+
+    untitled_hints(json, nil).each do |owner|
+      issues << "⚠️ WARNING: #{owner || 'scenario'} has a hint action with no title; it shows under \"Intelligence Received\", a spy title. Give it a neutral title (e.g. the object's name)."
+    end
+  end
+
+  def self.global_set_somewhere?(json, name)
+    case json
+    when Hash
+      return true if json['type'] == 'set_global' && json['key'] == name
+      return true if json['setGlobal'].is_a?(Hash) && json['setGlobal'].key?(name)
+
+      json.any? { |k, v| k != 'globalVariables' && global_set_somewhere?(v, name) }
+    when Array then json.any? { |v| global_set_somewhere?(v, name) }
+    else false
+    end
+  end
+
+  # Owners ("object 'x'", "NPC 'y'") of every { type: 'hint' } action without a title
+  def self.untitled_hints(v, owner, out = [])
+    case v
+    when Hash
+      if v['id'].is_a?(String) && (v.key?('npcType') || v.key?('type'))
+        owner = v.key?('npcType') ? "NPC '#{v['id']}'" : "object '#{v['id']}'"
+      end
+      out << owner if v['type'] == 'hint' && v.key?('message') && !v.key?('title')
+      v.each { |k, x| untitled_hints(x, owner, out) unless k == '_comment' }
+    when Array then v.each { |x| untitled_hints(x, owner, out) }
+    end
+    out
   end
 
   # Slice 16 (OFFICE_LIFE_PLAN 12.2): the owner's screenHabit and the machine's autoLockSeconds.

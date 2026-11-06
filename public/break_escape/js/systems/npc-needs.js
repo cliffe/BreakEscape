@@ -70,9 +70,36 @@ export const PICTURE_CHATTER = Object.freeze({
     coffee: Object.freeze(['caffeine', 'social', 'work']),
     cooler: Object.freeze(['thirst', 'social', 'work']),
     greet: Object.freeze(['social']),
-    grumble: Object.freeze(['avoid'])
+    grumble: Object.freeze(['avoid']),
+    // Slice 18a (OFFICE_LIFE_PLAN 12.4): a dead machine (off) or nothing left (gone, 18b). The
+    // picture is the need's own icon (NEED_ICONS); this entry is the fallback for any other need.
+    grumble_off: Object.freeze(['avoid']),
+    grumble_gone: Object.freeze(['avoid'])
 });
 const PICTURE_DEFAULT = Object.freeze(['social']);
+// The needs that have an icon of their own (npc-action-icons.js NPC_ICON_NAMES; not imported, so
+// the test harness copy lists stay as they are)
+const NEED_ICONS = Object.freeze(['caffeine', 'thirst', 'hunger', 'rest', 'social', 'work']);
+/**
+ * Turn-back reasons (slice 18a, OFFICE_LIFE_PLAN 12.4). mindChanged: stops a second avoidance
+ * turn-back in this need episode (only `avoid`). grumble: says a line or shows a picture.
+ * fallback: re-selects for the same need with the target left out. parks: a fallback that finds
+ * nothing parks the need (a tempted job, 18b, never parks). answered and rang_out (slice 19, a
+ * phone job with no need) go straight home.
+ */
+export const TURN_BACK = Object.freeze({
+    avoid: Object.freeze({ mindChanged: true, grumble: true, fallback: true, parks: true }),
+    off: Object.freeze({ mindChanged: false, grumble: true, fallback: true, parks: true }),
+    gone: Object.freeze({ mindChanged: false, grumble: true, fallback: true, parks: true }),
+    answered: Object.freeze({ mindChanged: false, grumble: false, fallback: false, parks: false }),
+    rang_out: Object.freeze({ mindChanged: false, grumble: false, fallback: false, parks: false })
+});
+/** Pure: the names an offWhen (requireGlobal form) reads: a name, or the keys of { name: value }. */
+export function offWhenNames(cond) {
+    if (typeof cond === 'string') return cond ? [cond] : [];
+    if (cond && typeof cond === 'object' && !Array.isArray(cond)) return Object.keys(cond);
+    return [];
+}
 /** An exchange line's bubble: like bubbleMs, with a longer cap. */
 export function exchangeLineMs(line) {
     return Math.min(EXCHANGE_LINE_MAX_MS, CHAT_BASE_MS + CHAT_PER_CHAR_MS * String(line || '').length);
@@ -250,6 +277,10 @@ export class NPCNeedsSystem {
         this._exPlayed = new Set();
         // Queues (slice 10): claim order across the whole system, so queue order is deterministic
         this._queueSeq = 0;
+        // Switched-off sources (slice 18a): objectId -> { cond, off } for every object with an
+        // affordance.offWhen seen so far, with the off state last seen. A global change wakes parked
+        // needs only when one of them really turns back on.
+        this._offSeen = new Map();
         // Read-outs for tests and live measurement; never feed a decision
         this.stats = { ticks: 0, selects: 0, objectScans: 0, pathSearches: 0, backoffs: 0 };
     }
@@ -417,6 +448,37 @@ export class NPCNeedsSystem {
     onDoorOpened() {
         this._clearBackoffs();
         this._wakeParked();
+    }
+
+    /**
+     * global_variable_changed:<name> (slice 18a). set_global emits on every call, same value or
+     * not, so this compares states: parked needs retry, as for a door, only when an object whose
+     * offWhen reads `name` was last seen off and is now on.
+     */
+    onGlobalChanged(name) {
+        if (!this._offSeen.size || typeof name !== 'string') return;
+        let woke = false;
+        for (const id of [...this._offSeen.keys()].sort()) {
+            const rec = this._offSeen.get(id);
+            if (!offWhenNames(rec.cond).includes(name)) continue;
+            const off = this._globalHolds(rec.cond);
+            if (rec.off && !off) woke = true;
+            rec.off = off;
+        }
+        if (woke) {
+            this._log(null, 'switched_on', { global: name });
+            this._clearBackoffs();
+            this._wakeParked();
+        }
+    }
+
+    /** affordance.offWhen holds: not a source (slice 18a). Records the state for onGlobalChanged. */
+    _isOff(o) {
+        const cond = o?.affordance?.offWhen;
+        if (cond === undefined || cond === null || cond === false || cond === '') return false;
+        const off = this._globalHolds(cond);
+        this._offSeen.set(o.id, { cond, off });
+        return off;
     }
 
     /** eventMapping `needs` field: "resume" | "suspend" | { set: {need: level} }. */
@@ -884,7 +946,7 @@ export class NPCNeedsSystem {
             s.giveUp = null;
             const cand = this._useCandidate(s, name, objects, pos, exclude?.need === name ? exclude.targetId : null);
             if (cand) best = { ...cand, need: name, score };
-            else if (s.giveUp) this._park(s, name, s.giveUp);
+            else if (s.giveUp && !exclude?.noPark) this._park(s, name, s.giveUp);
             s.giveUp = null;
         }
         // Interests: a reachable item with the tag is the stimulus. No item, no
@@ -899,7 +961,8 @@ export class NPCNeedsSystem {
     }
 
     _useCandidate(s, name, objects, pos, excludeId = null) {
-        const sat = objects.filter(o => o.affordance && asList(o.affordance.satisfies).includes(name) && o.id !== excludeId);
+        // A switched-off source (affordance.offWhen, slice 18a) is no candidate at all
+        const sat = objects.filter(o => o.affordance && asList(o.affordance.satisfies).includes(name) && o.id !== excludeId && !this._isOff(o));
         const free = sat.filter(o => this._free(s, o));
         // Room leash and private objects, before the home preference (OFFICE_LIFE_PLAN 7.2)
         let opts = free.filter(o => this._permitted(s, o, true));
@@ -953,6 +1016,7 @@ export class NPCNeedsSystem {
             ? homeObj : this._nearestReachable(s, opts, pos);
         if (!target) return queued();
         const pick = { kind: 'use', targetId: target.id };
+        if (target.affordance.offWhen !== undefined) pick.offWhen = target.affordance.offWhen;
         if (skipped) pick.leashed = skipped;
         if (priv) pick.privateSkipped = priv;
         return withAnyway(pick);
@@ -1106,22 +1170,28 @@ export class NPCNeedsSystem {
         return true;
     }
 
+    /** One turn-back for every reason; what each does is the TURN_BACK table (slice 18a). */
     _turnBack(s, reason, avoidedId) {
         const id = s.npcId;
+        const rule = TURN_BACK[reason] || TURN_BACK.avoid;
         const { need, targetId } = s.job;
-        s.mindChanged[need] = true;
+        const tempted = !!s.job.tempted;   // set by 18b's temptation; never yet
+        if (rule.mindChanged && need) s.mindChanged[need] = true;
         s.turnCount++;
-        this._log(id, 'turned_back', { need, target: targetId, reason, avoided: avoidedId || undefined });
+        const topic = rule.grumble ? this._grumbleTopic(s, reason) : undefined;
+        this._log(id, 'turned_back', { need, target: targetId, reason, avoided: avoidedId || undefined, grumble: topic });
         this._emit(`npc_turned_back:${id}`, { npcId: id, need, targetId, reason, ...(avoidedId ? { avoidedId } : {}), ...this._playerProximity(id) });
         // The grumble's speech bubble hides the thought bubble, so the face shows after the line
-        this._grumble(s, targetId);
+        if (rule.grumble) this._grumble(s, targetId, reason, topic);
         const said = s.saying && s.saying.until > this.clockMs ? s.saying.until - this.clockMs : 0;
         if (avoidedId) s.avoidShow = { npcId: avoidedId, until: this.clockMs + said + AVOID_BUBBLE_MS };
         this._abortJob(s, 'turned_back', { cancel: true });
         // Fallback chain: the next acceptable source for the same need, else the need parks
-        const pos = this.world.npcPos(id);
-        const pick = pos ? this._select(s, pos, { need, targetId }) : null;
-        if (pick) { this._startJob(s, pick); return; }
+        if (rule.fallback && need) {
+            const pos = this.world.npcPos(id);
+            const pick = pos ? this._select(s, pos, { need, targetId, noPark: !rule.parks || tempted }) : null;
+            if (pick) { this._startJob(s, pick); return; }
+        }
         this._goHome(s);
     }
 
@@ -1129,21 +1199,37 @@ export class NPCNeedsSystem {
      * One line from the `grumble` pool as a speech bubble (getState().talking), seeded by the
      * turn-back count. Overheard like a chat line (npc_overheard); no npc_chatted (it is no chat).
      */
-    _grumble(s, objectId) {
-        const pick = this._pickBark(s, 'grumble');
+    _grumble(s, objectId, reason = 'avoid', chosen = null) {
+        // Slice 18a: the topic is chosen before _pickBark, by lines: grumble_<reason> when that pool
+        // has lines, else grumble when it has (the lab's spoken grumbles), else grumble_<reason>'s
+        // picture. _pickBark gives a picture, never null, for a topic with no lines, so it cannot be
+        // tried and fallen back from. An off or gone picture is the need's own icon.
+        const topic = chosen || this._grumbleTopic(s, reason);
+        const need = s.job?.need;
+        const icons = reason !== 'avoid' && NEED_ICONS.includes(need) ? [need] : null;
+        const pick = this._pickBark(s, topic, { icons });
         if (!pick) return;
         const { line, idx, picture, pool } = pick;
         const until = this.clockMs + (picture ? PICTURE_MS : bubbleMs(line));
-        s.saying = { line, picture, topic: 'grumble', objectId, until };
+        s.saying = { line, picture, topic, objectId, until };
         const radius = pool.overhearRadius || OVERHEAR_RADIUS;
         const h = typeof this.world.playerHears === 'function' ? (this.world.playerHears(s.npcId, radius) || {}) : {};
-        if (line) this._speak(s.npcId, line, until, { topic: 'grumble', objectId, overheard: !!h.overheard });
+        if (line) this._speak(s.npcId, line, until, { topic, objectId, overheard: !!h.overheard });
         if (h.overheard) {
             this._emit(`npc_overheard:${s.npcId}`, {
-                speakerId: s.npcId, partnerId: null, topic: 'grumble', lineId: picture ? `picture:${picture}` : `grumble:${idx}`, line, picture, objectId,
+                speakerId: s.npcId, partnerId: null, topic, lineId: picture ? `picture:${picture}` : `${topic}:${idx}`, line, picture, objectId,
                 overheard: true, playerDistance: Number.isFinite(h.distance) ? Math.round(h.distance) : null
             });
         }
+    }
+
+    /** The grumble topic for a turn-back reason (slice 18a): chosen by which pools have lines. */
+    _grumbleTopic(s, reason) {
+        const own = `grumble_${reason}`;
+        const lines = t => chatterPool(t, this._scenarioChatter(), this._rec(s).chatter).lines.length > 0;
+        if (reason !== 'avoid' && lines(own)) return own;
+        if (lines('grumble')) return 'grumble';
+        return PICTURE_CHATTER[own] ? own : 'grumble';
     }
 
     // ── voiced chatter: bag, cooldown, speech lock, picture chat (slice 15) ──
@@ -1173,7 +1259,7 @@ export class NPCNeedsSystem {
      * speech lock is free; otherwise a picture. Returns { line, idx, picture, pool } or null (silent:
      * `"chatter": false` and nothing to say). Taking a bark starts the cooldown.
      */
-    _pickBark(s, topic, { waitForLock = false } = {}) {
+    _pickBark(s, topic, { waitForLock = false, icons: iconsFor = null } = {}) {
         const pool = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter);
         const ready = pool.lines.length && !(s.chatterQuietUntil > this.clockMs);
         if (ready && this._speechFree()) {
@@ -1183,7 +1269,7 @@ export class NPCNeedsSystem {
         }
         if (ready && waitForLock) return { wait: true, pool };
         if (!pool.pictures) return null;
-        const icons = pictureIcons(topic);
+        const icons = iconsFor || pictureIcons(topic);
         s.pictureN = (s.pictureN || 0) + 1;
         return { line: null, idx: -1, picture: icons[(s.pictureN - 1) % icons.length], pool };
     }
@@ -1288,6 +1374,7 @@ export class NPCNeedsSystem {
             phase: pick.kind === 'carry' ? 'goto_item' : (pick.queue ? 'queued' : 'goto_target'),
             startedAt: this.clockMs, deadline: 0, useUntil: 0, carrying: false
         };
+        if (pick.offWhen !== undefined) s.job.offWhen = pick.offWhen;   // slice 18a: checked on the way
         if (pick.queue) { s.job.qSeq = this._queueSeq++; s.job.queuedAt = this.clockMs; s.job.qCell = null; s.job.qArrived = false; }
         s.avoidNoted = {};   // a new episode: npc_avoided may fire again next time
         if (pick.goingAnyway) { s.job.goingAnyway = pick.goingAnyway; s.job.avoidSig = pick.goingAnyway; }   // slice 14
@@ -1475,6 +1562,15 @@ export class NPCNeedsSystem {
     _advanceJob(s, arrived) {
         const id = s.npcId;
         const job = s.job;
+        // Slice 18a: the target was switched off while on the way or in its queue. Not in _recheck,
+        // which returns at once for an NPC with no avoidance radius. One already using it finishes.
+        if ((job.phase === 'goto_target' || job.phase === 'queued') && job.kind === 'use' && job.offWhen !== undefined
+            && this._globalHolds(job.offWhen)) {
+            const rec = this._offSeen.get(job.targetId);
+            if (rec) rec.off = true; else this._offSeen.set(job.targetId, { cond: job.offWhen, off: true });
+            this._turnBack(s, 'off');
+            return;
+        }
         // Slice 14: someone avoided turned up at the target while on the way or in its queue
         if ((job.phase === 'goto_target' || job.phase === 'queued') && this._recheck(s)) return;
         if (job.phase === 'queued') { this._advanceQueued(s, arrived); return; }
@@ -1933,7 +2029,7 @@ export class NPCNeedsSystem {
     /** No free target for this need: the nearest claimed one with a queue place for this NPC. */
     _queueCandidate(s, name, objects, pos, ctx = null) {
         let list = objects.filter(o => o.affordance?.queue && asList(o.affordance.satisfies).includes(name)
-            && o.id !== ctx?.exclude
+            && o.id !== ctx?.exclude && !this._isOff(o)
             && this._permitted(s, o, true) && !(s.cooldowns[o.id] > this.clockMs)
             && !this._free(s, o) && this._queuePlace(s, o));
         // Slice 14: not behind someone avoided, and not into a line that is too long (balking)
@@ -1946,7 +2042,10 @@ export class NPCNeedsSystem {
         }
         if (!list.length) return null;
         const target = this._nearestReachable(s, list, pos);
-        return target ? { kind: 'use', targetId: target.id, queue: true } : null;
+        if (!target) return null;
+        const pick = { kind: 'use', targetId: target.id, queue: true };
+        if (target.affordance.offWhen !== undefined) pick.offWhen = target.affordance.offWhen;
+        return pick;
     }
 
     _advanceQueued(s, arrived) {
@@ -2648,6 +2747,11 @@ export function installNpcNeeds(opts = {}) {
         });
         // Slice 14: an opened door retries parked needs (room loads are noticed by _checkRooms)
         w.eventDispatcher?.on('door_opened', () => w.npcNeedsSystem.onDoorOpened());
+        // Slice 18a: a source switched back on (affordance.offWhen) retries parked needs
+        w.eventDispatcher?.on('global_variable_changed:*', (data, name) => {
+            const g = data?.name || (typeof name === 'string' ? name.slice('global_variable_changed:'.length) : null);
+            w.npcNeedsSystem?.onGlobalChanged(g);
+        });
     }
     w.npcNeedsSystem.registerAll();
     return w.npcNeedsSystem;
