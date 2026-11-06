@@ -2535,3 +2535,29 @@ bark, then picture chat; reload and confirm the exchange does not replay; on :30
 audio requests return 503, so audio is proved by the requests made and accepted by the validator
 in a Rails test, not by sound. Run the npc-dialog-review skill on the new knots. Then the leash
 and lab regressions.
+
+**Built: 2026-11-06 (slice 15: server c6288e3be; engine c4949a517; validator and schema d6dc1f5b1;
+fixes 5222d2d3f, da3387e92; graph 33c55c3bb). Regressions: `test_needs_leash` game 698 (pass),
+`lab_physical_pentest` 788 (score 100); sims live proof game 694; see `HANDOVER_OFFICE_S15.md`.**
+As written, with these choices made without asking: (1) the extractor opt-in is the scenario flag
+`ttsPregenerateChatter` (plus a `chatter:` keyword), and `keys` always include chatter so
+`tts:wasted` never reports chatter clips as unrequested; (2) a bag is per NPC and topic over the pool
+that NPC speaks (shared plus own lines), refills when empty without starting on the line just said,
+and lives in memory only; (3) the cooldown (`chatterCooldownMin`, default 5) starts on a spoken line,
+pictures never start or wait for it, and a grumble on cooldown or with the lock busy shows the
+`avoid` picture; (4) the speech lock is global across rooms, bark and exchange turns wait for it, a
+turn that waits past the overlap ends the chat as before, `npc-needs-chatter.js` keeps its own audio
+queue because real clips can outrun the bubble, and a queued line older than 8 s is dropped; (5) an
+exchange plays only if every line's speaker is one of the pair (a `group:` partner is matched by
+`needsCompany.groups`), the audience is checked every turn so the player can walk up mid-meeting, a
+meeting interrupted mid-exchange leaves it unplayed, and afterwards the same meeting carries on with
+barks, then pictures; (6) exchange bubbles use `exchangeLineMs`, capped at 6 s; (7) picture icons come
+from the existing set (coffee: caffeine, social, work; cooler: thirst, social, work; greet: social;
+grumble: avoid), no new art; (8) distance volume sets the element volume (0.35 to 1) after play, which
+Chrome may ignore with Web Audio routing, and cannot be heard on keyless `:3001`; (9) `playerHears`
+now also needs the NPC's room lit (`roomLevel >= 0.5`), so slice 8's `npc_overheard` and slice 14
+grumbles no longer fire in a dark room (no shipped scenario maps `npc_overheard`; checked with grep).
+Live proof (game 694, keyless): one exchange of five lines heard once with a bubble per speaker, the
+global and the `hear_rota_exchange` task set, the next meeting a bark then a picture (thirst icon),
+after a reload only a bark; every `/tts` request (503) matched `window.npcChatterVoice.log` line for
+line. The lab has no chatter pools or exchanges, so its barks are unchanged: its `/tts` requests in game 788 are identical to game 693's (game 709 lacked Hampshire's bark request, a replay timing race with the Examine popup; score 100 too).

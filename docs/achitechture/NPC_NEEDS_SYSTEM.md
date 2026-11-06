@@ -274,6 +274,9 @@ Runs after `patrolOverride` in the same mapping.
 
 `needsDebugOverlay`: boolean, default false. Turns on the need-bar debug overlay (section 4.1).
 
+`ttsPregenerateChatter`: boolean, default false. Lets `TtsLineExtractor` list chatter lines for batch
+voice generation (5.6a).
+
 `officePresets`: boolean, default false. Affordance presets by object type (section 3.2).
 
 `showPressingNeeds`: boolean, default false. Pressing-need thought bubbles and the no-job icons
@@ -543,9 +546,10 @@ during the walk home (exists). Player-facing behaviour:
 - **Timing.** A line shows for 2.5 s + 50 ms a character, at most 4 s, then a 0.5 s gap, on the
   needs clock. A line starts only if it ends before the first of the two uses does, so a 15 s
   overlap gives three or four lines and a short one gives one. Dwell times never stretch.
-- **Pools.** Built-in `coffee`, `cooler`, `greet` (office small talk). The scenario's `chatter`
-  replaces a pool by name; `"chatter": false` turns the built-ins off. An NPC's own `chatter` lines
-  for that topic add to the pool when it speaks. A pool is a list or `{ lines, hush, overhearRadius }`.
+- **Pools.** Since slice 15 there are no built-in lines (5.6a): a scenario's `chatter` pools
+  (`coffee`, `cooler`, `greet`, `grumble`) and an NPC's own `chatter` lines for that topic make up
+  what an NPC can say, and with none it shows picture chat. `"chatter": false` turns chat off
+  entirely. A pool is a list or `{ lines, hush, overhearRadius }`.
   `chattiness` (0..1, default 1) is the seeded chance an NPC speaks on its turn. Lines are at most
   40 characters, one line (validator error).
 - **Ends** when either NPC is frozen in a conversation, finishes, or is interrupted; the other
@@ -570,6 +574,45 @@ during the walk home (exists). Player-facing behaviour:
   and `chatPartner`. Chat lines are events only; they are not written to the decision log. The
   decision log gains `avoided` (`avoided`, `target`).
 - Nothing is saved; only loaded NPCs chat.
+
+### 5.6a Voiced chatter, scripted exchanges and picture chat (office life slice 15, `OFFICE_LIFE_PLAN.md` section 11)
+
+- **Where lines live.** Barks are strings in a scenario `chatter` pool or an NPC's `chatter`; they are
+  voiced by the speaker's TTS voice on first play and cached like any bark. The server accepts them
+  (`ScenarioBarkValidator.bark_texts`, `validate_shared`; `/tts` and `TtsExpectedLines`), so the pruner
+  and `tts:wasted` never count a chatter clip as unrequested. `ttsPregenerateChatter: true` (scenario)
+  makes `TtsLineExtractor` batch-generate them too. Lines are plain text: `{ }` is a validator error.
+- **Bag.** An NPC draws from a seeded shuffle-bag per NPC and topic over the pool it speaks (shared
+  plus own lines). It refills when empty and a refill never starts with the line just said. Bags are
+  in memory only (not saved).
+- **Cooldown.** After a spoken line the NPC stays quiet for `chatterCooldownMin` needs-clock minutes
+  (NPC field, default 5). Pictures never start or wait for it.
+- **Speech lock.** One global lock (`_speechUntil`, across rooms): bark and exchange turns wait for
+  it; a turn that waits past the overlap ends the chat as before.
+- **Picture chat.** With no line to say (empty pool, bag spent, cooldown running, lock busy) the
+  speaker shows a speech bubble holding an icon, 2.5 s (`PICTURE_CHATTER`): coffee: caffeine, social,
+  work; cooler: thirst, social, work; greet: social; grumble: avoid. `npc_chatted` fires with
+  `line: null, picture`.
+- **Exchanges.** NPC field `exchanges: [{ with: "<npcId>" | "group:<name>", knot, requireGlobal }]`
+  (the lower id's list is read first). A `knot` is an ink knot on the owner's story whose lines are
+  prefixed `Name:` for the other speaker. When a compatible pair meets and the player hears them
+  (same room, lit, in range, clear line, checked every turn, so walking up mid-meeting works), the
+  first unheard exchange for the pair plays instead of a bark. Every speaker named in the knot must
+  be one of the pair, or it is not played. It runs on a separate `inkjs` story (the player's
+  conversation state is untouched), one line per bubble (`exchangeLineMs`, at most 6 s), each in its
+  speaker's voice through `systems/npc-needs-chatter.js` (`window.npcChatterVoice`; plays only in the
+  player's room, volume falls with distance, muted when barks are muted, `log` records every line).
+  The pair's overlap is extended by the knot, capped at 60 s. At the end the global `heard_<knot>` is
+  set (saved, so once per game survives a reload) and `npc_exchange_heard:<knot>` fires. A meeting
+  interrupted mid-exchange leaves it unplayed. Afterwards the same meeting carries on with barks,
+  then pictures.
+- **Order.** Each turn: unheard exchange (with audience), then a bark (if lines, off cooldown, lock
+  free), then a picture. `_grumble` (5.8) uses the same bag, cooldown and lock, and shows `avoid`
+  otherwise.
+- **Dark rooms.** `playerHears` now needs the NPC's room lit (`roomLevel >= 0.5`), so `overheard`,
+  `npc_overheard` (slice 8 and 14) and exchanges do not fire in a dark room.
+- **Decision log.** `exchange_started` (`knot`, `with`) and `exchange_heard` (`knot`).
+- **Not saved:** bags, cooldowns, the lock. Saved: `heard_<knot>`.
 
 ### 5.7 Queues at shared machines (office life slice 10, `OFFICE_LIFE_PLAN.md` 2.5, 7.3)
 
@@ -713,6 +756,9 @@ events.
   playerDistance }` for each chat line (slice 8). `overheard`: the player within `overhearRadius`
   (default 160 px; set on the object's affordance or the pool) in the same room with a clear line.
 - `npc_overheard:<speakerId>` with the same payload, only when `overheard` is true.
+- Slice 15: `npc_chatted` also carries `picture` (an icon name, with `line: null`) for picture chat
+  and `exchange` (the knot) for an exchange line. `npc_exchange_heard:<knot>` `{ knot, ownerId, npcIds,
+  objectId }` fires when an exchange finishes, once per game (global `heard_<knot>`).
 - `npc_turned_back:<npcId>` `{ npcId, need, targetId, reason, avoidedId?, playerNearby, playerDistance }`
   when an NPC gives up a source it was walking to or queued for (5.8).
 - `npc_need_parked:<npcId>` `{ npcId, need, reason, targetId, avoidedId?, untilMs }` when a need parks (5.8).

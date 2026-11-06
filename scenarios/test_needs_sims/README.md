@@ -419,6 +419,45 @@ the bridge from an in-page poll. In frame 4 of the contact sheet Sanjay's bubble
 not coffee: his work need was the most pressing at that moment. The debug overlay text in the
 screenshots (`sanjay: goto_target kitchen_coffee`) is the engine's own, not part of the game UI.
 
+### Slice 15 re-run: voiced chatter and scripted exchanges (2026-11-06, keyless :3001, headless, load 2-14)
+
+What was added: each NPC has small `cooler` and `grumble` pools (lines are voiceable; the engine has
+no built-in lines any more, so a topic with nothing to say shows a picture in a speech bubble).
+Two scripted exchanges, each heard once per game:
+
+- `exchange_rosa_rota` (knot in `sanjay.ink`, `exchanges: [{ with: rosa }]` on Sanjay): five lines
+  about the kitchen rota, played when Sanjay and Rosa meet at the water cooler with the player in
+  earshot. Completes the task `hear_rota_exchange` (mapping on `npc_exchange_heard`).
+- `exchange_tom_parcel` (knot in `amara.ink`, with Tom, `requireGlobal: amara_opened_parcel`): plays
+  once Amara has opened the dropped parcel. Task `hear_parcel_exchange`. Not driven live this round.
+
+Globals `heard_exchange_rosa_rota` and `heard_exchange_tom_parcel` make them play once (they survive
+a reload). Marek's voice is now Orus (he shared Tom's).
+
+How to watch it: open the kitchen and lounge doors, read the **Activity Board**, then stand within
+160 px of the cooler with a clear line. Sanjay and Rosa trade five bubbles; a lit room is required
+(`playerHears` now needs light). `window.npcChatterVoice.log` lists every line spoken, and on the
+keyless server each line makes a `POST /break_escape/games/<id>/tts` that returns 503.
+
+`s15-contact-sheet.png` (scratchpad, viewing only) has nearest-neighbour crops of eight frames,
+captions checked against each frame. Each bubble was caught by freezing the needs clock from an
+`npc_chatted` listener (`npcNeedsSystem.manualClock = true`), then unfreezing.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Exchange heard once with bubbles for each speaker | PASS | game 694: five `npc_chatted` events `exchange_rosa_rota:0` to `:4` alternating sanjay and rosa (clock 82000 to 101500, 4.5 to 5 s apart), `npc_overheard` on each, then `npc_exchange_heard:exchange_rosa_rota`; log `exchange_started`/`exchange_heard` |
+| Global and task | PASS | game 694: `heard_exchange_rosa_rota` true, `hear_rota_exchange` completed |
+| Same pair next meeting: bark, then picture | PASS | game 694: Rosa "Friday drinks again?", then Sanjay's `thirst` picture (no text, no `/tts`) |
+| Reload does not replay | PASS | game 694 after reload (`resume`): global still true, no `exchange_started`, Rosa's bark "Friday drinks again?" only |
+| `/tts` requests match the log | PASS | game 694: 8 requests before the reload, one per spoken line in order (six from the first meeting, then rosa and grace at the second, each with the stripped text), none for pictures, every one 503; one after the reload, "Friday drinks again?" by rosa |
+| A bark before the exchange | NOTE | game 694: Sanjay's first cooler line was a bark ("Did you get any lunch?") because the player was 216 px away; the exchange began when the player came within range, as designed |
+| Errors | PASS | no page errors in the session logs |
+
+Notes: the first bubble frames of the exchange were caught late (the poll lagged one line) and were
+retaken by clearing `heard_exchange_rosa_rota` live and replaying the exchange; that is a test aid,
+not a game feature. `test_needs_leash` game 698 and the lab game 788 are in the plan's section 11
+Built line.
+
 ## Engine findings
 
 1. **Fixed 2026-11-05.** The home is now provisional until the `needsHome` object exists and is re-resolved once a second; and an NPC standing on its own desk's approach cell now counts as able to reach it (EasyStar gave no path for start == end, which is why Sanjay chose `tom_pc` in game 501). Original finding: **Needs homes in the start room resolve to the spawn point and stay there.** `npc-needs.js:301` resolves `s.home` on the first tick that has a sprite position and caches it; `_resolveHome` (`npc-needs.js:628-640`) falls back to the spawn point with `objectId: null` when `getObject`/`approachCell` fail. For the start room the NPCs are registered (`core/game.js:2004-2006`) before the room's objects or pathfinding are ready, so every start-room needs NPC gets the fallback and the home-object preference in `_useCandidate` (`npc-needs.js:475`) never applies. NPCs in rooms loaded later (Rosa, lounge) resolve correctly. Repro: load this scenario, then `[...npcNeedsSystem.states].map(([k,s]) => [k, s.home.objectId])` gives null for amara, tom, grace and sanjay, `rosa_laptop` for rosa. Suggested fix: don't cache a fallback home while `needsHome` names an object that isn't found yet (retry each tick until the object exists, or for a few seconds). `test_npc_needs` and `lab_physical_pentest` start-room NPCs are likely affected too, but hidden because each spawns at its own desk. Workaround here: each NPC spawns beside its own desk, and the work task reads "Someone works at a desk". Even so, game 501 had Sanjay choose `tom_pc` over his own adjacent PC (nearest-reachable from his seated position), so the workaround isn't reliable.

@@ -1,7 +1,6 @@
 # Handover: office life slice 15, voiced chatter and scripted exchanges (2026-11-06)
 
-**Status: code, server change, validator, schema, showcase, unit tests and dialogue review are done and
-committed. Live proof, the two regressions and most docs are left (below).** Plan: `OFFICE_LIFE_PLAN.md`
+**Status: DONE (2026-11-06). Everything below "Left" has been completed: `bin/test-js` 396 files pass, live proof game 694, leash game 698, lab game 788 (score 100), docs written. The "Left" list is kept as the record.** Plan: `OFFICE_LIFE_PLAN.md`
 section 11. The user approved this session changing the server TTS code (limited to 11.3).
 
 ## Done (commits on main, in order; look them up with `git log --oneline --grep "slice 15"` after a rebase)
