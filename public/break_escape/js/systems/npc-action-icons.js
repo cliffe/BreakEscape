@@ -30,8 +30,17 @@
  *                          Same room/dark rule as the action icons (OFFICE_LIFE_PLAN 9.2).
  *                          The old name showNpcIntentBubbles is not read (the validator warns).
  *
- * While the NPC is saying a chat line (getState().talking, slice 8) its speech bubble replaces
- * both the action icon and the thought bubble.
+ * Slice 14 (OFFICE_LIFE_PLAN 10.3), also under showPressingNeeds, in the same thought-bubble slot:
+ *   - the avoidance bubble while getState().avoiding names someone (after a turn-back, or a story
+ *     need going anyway): that NPC's face, cropped at native size from their own south-facing
+ *     idle frame (top rows to the chin, a Phaser crop, never scaled), and icon:npc-avoid;
+ *   - a parked need (getState().parked) when nothing is pressing: the need's icon greyed (alpha
+ *     and a grey tint) with a badge: npc-closed for no_source, npc-queue with a red cross for
+ *     queue, npc-avoid for avoid.
+ *   Order: avoidance, then the pressing need, then a parked need.
+ *
+ * While the NPC is saying a chat line or a grumble (getState().talking, slices 8 and 14) its
+ * speech bubble replaces both the action icon and the thought bubble.
  *
  * Shown only for NPCs in the player's current room, and not while that room is dark (a room
  * without lighting counts as lit). A job that is winding up (npc_action_windup) pulses its icon
@@ -42,7 +51,7 @@ import { iconShown, roomIsDark, npcIconAnchor } from './npc-office-visuals.js';
 // The 16x16 NPC icon set (OFFICE_LIFE_PLAN 9.1, assets/icons/npc-<name>.png), drawn at native
 // size. Referenced by name only, so a swapped file needs no code change. No fallback art: text.
 export const NPC_ICON_NAMES = ['caffeine', 'thirst', 'hunger', 'rest', 'social', 'work', 'curiosity',
-    'post', 'printout', 'print', 'queue', 'file', 'blocked', 'noticed'];
+    'post', 'printout', 'print', 'queue', 'file', 'blocked', 'noticed', 'avoid', 'closed'];
 export const DEFAULT_ICONS = Object.freeze({
     ...Object.fromEntries(NPC_ICON_NAMES.map(n => [n, `icon:npc-${n}`])),
     fallback: '•'
@@ -50,7 +59,7 @@ export const DEFAULT_ICONS = Object.freeze({
 
 // Text shown while a default texture loads (or if it fails)
 const TEXT_STANDIN = { caffeine: 'C', thirst: 'W', hunger: 'F', rest: 'Z', work: 'PC', social: 'S', curiosity: '?',
-    post: 'P', printout: 'P', print: 'Pr', queue: '…', file: 'Fi', blocked: 'X', noticed: '!' };
+    post: 'P', printout: 'P', print: 'Pr', queue: '…', file: 'Fi', blocked: 'X', noticed: '!', avoid: '~', closed: '#' };
 
 /** Pure: is this object a copier or printer (its preset, officeType or type)? */
 export function isPrinter({ type, officeType, preset } = {}) {
@@ -126,6 +135,51 @@ export function pressingBubble(st, actionIcons = {}, on = false) {
     const entry = firstIcon([p.need], actionIcons);
     return { need: p.need, ratio: p.ratio, pulse: p.ratio < PRESSING_PULSE_BELOW, key: entry.key === 'fallback' ? p.need : entry.key, value: entry.value };
 }
+
+export const PARKED_BADGE = Object.freeze({ no_source: 'closed', queue: 'queue', avoid: 'avoid' });
+export const PARKED_ALPHA = 0.5;
+export const PARKED_TINT = 0x9a9a9a;
+
+/**
+ * Pure (slice 14): the thought bubble's content for getState() `st`, or null. Avoidance first
+ * ({ kind: 'avoid', npcId }), then the pressing need ({ kind: 'pressing', ...pressingBubble }), then
+ * the first parked need by name ({ kind: 'parked', need, reason, badge, key, value }). Off unless `on`.
+ */
+export function thoughtBubble(st, actionIcons = {}, on = false) {
+    if (!on || !st) return null;
+    if (typeof st.avoiding === 'string' && st.avoiding) return { kind: 'avoid', npcId: st.avoiding };
+    const p = pressingBubble(st, actionIcons, on);
+    if (p) return { kind: 'pressing', ...p };
+    const parked = Array.isArray(st.parked) ? st.parked.find(x => x && x.need && !(st.job && st.job.need === x.need)) : null;
+    if (!parked) return null;
+    const entry = firstIcon([parked.need], actionIcons);
+    return { kind: 'parked', need: parked.need, reason: parked.reason, badge: PARKED_BADGE[parked.reason] || 'closed',
+        key: entry.key === 'fallback' ? parked.need : entry.key, value: entry.value };
+}
+
+/**
+ * Pure (slice 14): the head of a walk frame, from its opaque columns per row (`rows[y]` is
+ * [minX, maxX] or null). From the top opaque row down to the neck: the narrowest row 8 to 22 rows
+ * down that comes before the shoulders widen (3 px or more). { x, y, w, h } in frame pixels, or null.
+ */
+export function headCrop(rows) {
+    const top = rows.findIndex(r => r);
+    if (top < 0) return null;
+    const w = i => (rows[i] ? rows[i][1] - rows[i][0] + 1 : 0);
+    let neck = null;
+    for (let i = top + 8; i <= Math.min(top + 22, rows.length - 2); i++) {
+        if (!rows[i]) break;
+        if (neck === null || w(i) <= w(neck)) neck = i;
+        if (w(i + 1) >= w(neck) + 3) break;
+    }
+    const chin = neck ?? Math.min(rows.length - 1, top + 14);
+    let x0 = Infinity, x1 = -Infinity;
+    for (let i = top; i <= chin; i++) if (rows[i]) { x0 = Math.min(x0, rows[i][0]); x1 = Math.max(x1, rows[i][1]); }
+    return { x: x0, y: top, w: x1 - x0 + 1, h: chin - top + 1 };
+}
+
+/** The south-facing idle frame of a walk atlas, else the sprite's current frame. */
+export const FACE_FRAME = 'breathing-idle_south_frame_000';
 
 /** Pure: the icon value (texture spec or glyph) for a job. */
 export function pickIcon(job, actionIcons = {}, target = null) {
@@ -210,7 +264,7 @@ function reducedMotion() {
 }
 
 export class NpcActionIcons {
-    constructor() { this.icons = new Map(); this.bubbles = new Map(); this.windups = new Map(); this.targets = new Map(); this.sceneHooked = null; this.textures = new Map(); }
+    constructor() { this.icons = new Map(); this.bubbles = new Map(); this.windups = new Map(); this.targets = new Map(); this.sceneHooked = null; this.textures = new Map(); this.faces = new Map(); }
 
     get showPressingNeeds() { return win().gameScenario?.showPressingNeeds === true; }
 
@@ -266,8 +320,122 @@ export class NpcActionIcons {
             fontFamily: 'monospace', fontSize: `${ICON_TEXT_PX - 4}px`, fontStyle: 'bold', color: '#1b2a41'
         }).setOrigin(0.5, 0.5);
         const img = scene.add.image(0, 0, '__DEFAULT').setOrigin(0.5, 0.5).setVisible(false);
-        const box = scene.add.container(0, 0, [g, text, img]).setDepth(5000);
-        return { box, g, text, img, shown: null, w: 0, h: 0 };
+        // Slice 14: the avoided person's face (a crop of their frame), and a badge with its cross
+        const face = scene.add.image(0, 0, '__DEFAULT').setOrigin(0, 0).setVisible(false);
+        const badge = scene.add.image(0, 0, '__DEFAULT').setOrigin(0.5, 0.5).setVisible(false);
+        const cross = scene.add.graphics().setVisible(false);
+        const box = scene.add.container(0, 0, [g, text, img, face, badge, cross]).setDepth(5000);
+        return { box, g, text, img, face, badge, cross, shown: null, w: 0, h: 0 };
+    }
+
+    /** The backing and its two trailing dots, redrawn only when the size changes. */
+    _drawBacking(bb, w, h) {
+        if (w === bb.w && h === bb.h) return;
+        bb.w = w; bb.h = h;
+        const g = bb.g;
+        g.clear();
+        g.fillStyle(BUBBLE_FILL, 1);
+        g.lineStyle(1, BUBBLE_LINE, 1);
+        g.fillRoundedRect(-w / 2, -h / 2, w, h, 5);
+        g.strokeRoundedRect(-w / 2, -h / 2, w, h, 5);
+        for (const d of bubbleDots(w, h)) { g.fillCircle(d.x, d.y, d.r); g.strokeCircle(d.x, d.y, d.r); }
+    }
+
+    /** Back to a plain bubble: no face, badge or cross; the icon undimmed. */
+    _plain(bb) {
+        bb.face.setVisible(false);
+        bb.badge.setVisible(false);
+        bb.cross.setVisible(false);
+        bb.img.setAlpha(1).clearTint();
+        bb.text.setAlpha(1);
+    }
+
+    /**
+     * { key, frame, crop } for an NPC's face: its walk texture's south idle frame (else its current
+     * frame), cropped to the head from the frame's own alpha. Measured once per texture and frame.
+     */
+    _faceOf(scene, npcId) {
+        const sp = win().npcBehaviorManager?.getBehavior?.(npcId)?.sprite;
+        const key = sp?.texture?.key;
+        if (!key || key === '__MISSING') return null;
+        const tex = scene.textures.get(key);
+        const frame = tex?.has?.(FACE_FRAME) ? FACE_FRAME : sp.frame?.name;
+        const id = `${key}|${frame}`;
+        if (this.faces.has(id)) return this.faces.get(id);
+        const f = tex.get(frame);
+        const W = f?.realWidth || f?.width || 0, H = f?.realHeight || f?.height || 0;
+        const rows = [];
+        for (let y = 0; y < H; y++) {
+            let x0 = -1, x1 = -1;
+            for (let x = 0; x < W; x++) {
+                const a = scene.textures.getPixelAlpha(x, y, key, frame);
+                if (a > 0) { if (x0 < 0) x0 = x; x1 = x; }
+            }
+            rows.push(x0 < 0 ? null : [x0, x1]);
+        }
+        const crop = headCrop(rows);
+        const out = crop ? { key, frame, crop } : null;
+        this.faces.set(id, out);
+        return out;
+    }
+
+    /** Avoidance: [face][storm cloud] on the light backing. */
+    _renderAvoid(scene, bb, npcId) {
+        const icon = resolveIcon(DEFAULT_ICONS.avoid, TEXT_STANDIN.avoid);
+        const ready = this.textureReady(scene, icon);
+        const face = this._faceOf(scene, npcId);
+        const sig = `a:${npcId}:${ready}:${face ? face.key : ''}`;
+        if (bb.shown === sig) return;
+        bb.shown = sig;
+        this._plain(bb);
+        const fw = face ? face.crop.w : 0, fh = face ? face.crop.h : 0;
+        const iw = ready ? 16 : ICON_TEXT_PX, ih = ready ? 16 : ICON_TEXT_PX;
+        const w = fw + (fw ? 2 : 0) + iw + BUBBLE_PAD * 2, h = Math.max(fh, ih) + BUBBLE_PAD * 2;
+        this._drawBacking(bb, w, h);
+        bb.w = w; bb.h = h;
+        if (face) {
+            // Native size: the crop shows only the head; the frame is shifted so the head sits at the left
+            bb.face.setTexture(face.key, face.frame).setCrop(face.crop.x, face.crop.y, face.crop.w, face.crop.h)
+                .setPosition(Math.round(-w / 2 + BUBBLE_PAD - face.crop.x), Math.round(-fh / 2 - face.crop.y)).setScale(1).setVisible(true);
+        }
+        const ix = Math.round(-w / 2 + BUBBLE_PAD + fw + (fw ? 2 : 0) + iw / 2);
+        if (ready) { bb.img.setTexture(icon.key).setPosition(ix, 0).setVisible(true); bb.text.setVisible(false); }
+        else { bb.img.setVisible(false); bb.text.setText(icon.glyph).setPosition(ix, 0).setVisible(true); }
+    }
+
+    /** Parked: the need's icon greyed, a badge at the lower right (the queue badge crossed out in red). */
+    _renderParked(scene, bb, bubble) {
+        const r = resolveIcon(bubble.value, TEXT_STANDIN[bubble.key] || DEFAULT_ICONS.fallback);
+        const badge = resolveIcon(DEFAULT_ICONS[bubble.badge], TEXT_STANDIN[bubble.badge]);
+        const sprite = r.kind === 'sprite' && this.textureReady(scene, r);
+        const bReady = this.textureReady(scene, badge);
+        const sig = `p:${sprite ? r.key : r.glyph}:${bubble.badge}:${bReady}`;
+        if (bb.shown === sig) return;
+        bb.shown = sig;
+        this._plain(bb);
+        let w, h;
+        if (sprite) {
+            bb.img.setTexture(r.key).setPosition(0, 0).setVisible(true).setAlpha(PARKED_ALPHA).setTint(PARKED_TINT);
+            bb.text.setVisible(false);
+            w = bb.img.width + BUBBLE_PAD * 2 + 6; h = bb.img.height + BUBBLE_PAD * 2 + 4;
+            bb.img.setPosition(-3, -2);
+        } else {
+            bb.img.setVisible(false);
+            bb.text.setText(r.glyph).setPosition(-3, -2).setAlpha(PARKED_ALPHA).setVisible(true);
+            w = Math.max(bb.text.width || 0, ICON_TEXT_PX) + BUBBLE_PAD * 2 + 6; h = ICON_TEXT_PX + BUBBLE_PAD * 2 + 4;
+        }
+        this._drawBacking(bb, w, h);
+        bb.w = w; bb.h = h;
+        const bx = Math.round(w / 2 - 5), by = Math.round(h / 2 - 5);
+        if (bReady) bb.badge.setTexture(badge.key).setPosition(bx, by).setVisible(true);
+        if (bubble.badge === 'queue') {
+            const c = bb.cross;
+            c.clear();
+            c.lineStyle(2, 0xd02020, 1);
+            c.lineBetween(bx - 6, by - 6, bx + 6, by + 6);
+            c.lineBetween(bx + 6, by - 6, bx - 6, by + 6);
+            c.setVisible(true);
+        }
     }
 
     /** Draw `r` into the bubble; the backing is redrawn only when its size changes. */
@@ -276,6 +444,9 @@ export class NpcActionIcons {
         const sig = sprite ? `s:${r.key}` : `t:${r.glyph}`;
         if (bb.shown === sig) return;
         bb.shown = sig;
+        this._plain(bb);
+        bb.img.setPosition(0, 0);
+        bb.text.setPosition(0, 0);
         let w, h;
         if (sprite) {
             bb.img.setTexture(r.key).setVisible(true);
@@ -286,16 +457,7 @@ export class NpcActionIcons {
             bb.text.setText(r.glyph).setVisible(true);
             w = Math.max(bb.text.width || 0, ICON_TEXT_PX) + BUBBLE_PAD * 2; h = ICON_TEXT_PX + BUBBLE_PAD * 2;
         }
-        if (w === bb.w && h === bb.h) return;
-        bb.w = w; bb.h = h;
-        const g = bb.g;
-        g.clear();
-        const dots = bubbleDots(w, h);
-        g.fillStyle(BUBBLE_FILL, 1);
-        g.lineStyle(1, BUBBLE_LINE, 1);
-        g.fillRoundedRect(-w / 2, -h / 2, w, h, 5);
-        g.strokeRoundedRect(-w / 2, -h / 2, w, h, 5);
-        for (const d of dots) { g.fillCircle(d.x, d.y, d.r); g.strokeCircle(d.x, d.y, d.r); }
+        this._drawBacking(bb, w, h);
     }
 
     /** Per-frame: one action icon per needs NPC with a job (or a noticed/blocked state), and the pressing-need bubble. */
@@ -316,17 +478,22 @@ export class NpcActionIcons {
                 && iconShown({ npcRoom: roomId, playerRoom, dark: roomIsDark(roomId) });
             // A speech bubble (slice 8, npc-world-bubbles.js) hides both while the NPC talks
             const talking = !!st?.talking;
-            const bubble = seen && !talking ? pressingBubble(st, actionIcons, optIn) : null;
+            const bubble = seen && !talking ? thoughtBubble(st, actionIcons, optIn) : null;
             let bb = this.bubbles.get(id);
             if (!bubble) { if (bb) bb.box.setVisible(false); }
             else {
                 if (!bb || !bb.box.scene) { bb = this._makeBubble(sprite.scene); this.bubbles.set(id, bb); }
-                this._renderBubble(sprite.scene, bb, resolveIcon(bubble.value, TEXT_STANDIN[bubble.key] || DEFAULT_ICONS.fallback));
+                if (bubble.kind === 'avoid') this._renderAvoid(sprite.scene, bb, bubble.npcId);
+                else if (bubble.kind === 'parked') this._renderParked(sprite.scene, bb, bubble);
+                else this._renderBubble(sprite.scene, bb, resolveIcon(bubble.value, TEXT_STANDIN[bubble.key] || DEFAULT_ICONS.fallback));
                 const at = npcIconAnchor(sprite);
                 const pos = bubblePosition(at, bb.w, bb.h);
                 bb.box.setPosition(pos.x, pos.y).setVisible(true);
-                bb.box.setData('need', bubble.need);
-                bb.box.setData('ratio', bubble.ratio);
+                bb.box.setData('kind', bubble.kind);
+                bb.box.setData('need', bubble.need || null);
+                bb.box.setData('ratio', bubble.ratio ?? null);
+                bb.box.setData('badge', bubble.badge || null);
+                bb.box.setData('avoiding', bubble.npcId || null);
                 bb.box.setData('icon', bb.shown);
                 bb.box.setScale(bubble.pulse && !reducedMotion() ? 1 + 0.12 * Math.abs(Math.sin(Date.now() / 400)) : 1);
             }

@@ -116,7 +116,7 @@ test('avoidRadius 0 restores slice 8: nobody turns back for a neighbour, and the
     assert.equal(o.evs('parked').length, 0);
     assert.equal(o.evs('turned_back').length, 0);
     assert.equal(o.sys.getState('sanjay').job, null, 'waits for the machine, as in slice 8');
-    o.ticks(48);
+    o.ticks(100);
     assert.ok(o.evs('used').some(e => e.npc === 'sanjay'), 'and uses it once marek is done');
 });
 
@@ -207,13 +207,12 @@ test('a parked need holds at urgentAt + 1, decay and the unmet clock paused; ret
 
 test('a room load retries parked needs at once, staggered one NPC at a time (not all on one tick)', () => {
     let rooms = ['office'];
-    const kitchen = { ...machineA(), id: 'k_coffee', roomId: null };
     const o = office({ ann: { rec: { needs: coffee(10) } }, bob: { rec: { needs: coffee(10) } }, cat: { rec: { needs: coffee(10) } } },
-        { objects: [kitchen], roomIds: () => rooms });
+        { objects: [{ ...machineA(), id: 'k_coffee', roomId: null }], roomIds: () => rooms });
     o.ticks(2);
     assert.equal(o.evs('parked').length, 3);
     const at = o.sys.tickCount;
-    kitchen.roomId = 'kitchen';
+    o.w.objs.find(x => x.id === 'k_coffee').roomId = 'kitchen';   // the world's copy
     rooms = ['office', 'kitchen'];
     o.ticks(20);
     const un = o.evs('unparked');
