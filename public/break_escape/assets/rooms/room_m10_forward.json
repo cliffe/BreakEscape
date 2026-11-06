@@ -401,7 +401,7 @@
                  "visible":true,
                  "width":24,
                  "x":204,
-                 "y":211.06
+                 "y":209.06
                 }, 
                 {
                  "gid":1398,
@@ -449,7 +449,7 @@
                  "visible":true,
                  "width":24,
                  "x":414,
-                 "y":79.06
+                 "y":77.06
                 }, 
                 {
                  "gid":382,
@@ -654,13 +654,13 @@
                 {
                  "id":0,
                  "image":"..\/tables\/hospital_desk1.png",
-                 "imageheight":48,
+                 "imageheight":44,
                  "imagewidth":62
                 }, 
                 {
                  "id":1,
                  "image":"..\/tables\/hospital_desk2.png",
-                 "imageheight":48,
+                 "imageheight":44,
                  "imagewidth":62
                 }, 
                 {
@@ -1953,13 +1953,13 @@
                 {
                  "id":201,
                  "image":"..\/objects\/hospital_chair_north.png",
-                 "imageheight":26,
+                 "imageheight":30,
                  "imagewidth":16
                 }, 
                 {
                  "id":202,
                  "image":"..\/objects\/hospital_chair_south.png",
-                 "imageheight":32,
+                 "imageheight":35,
                  "imagewidth":16
                 }, 
                 {
@@ -3667,7 +3667,7 @@
                 {
                  "id":100,
                  "image":"..\/objects\/hospital_chair_north2.png",
-                 "imageheight":26,
+                 "imageheight":30,
                  "imagewidth":16
                 }, 
                 {
@@ -3763,7 +3763,7 @@
                 {
                  "id":116,
                  "image":"..\/objects\/exec_desk1.png",
-                 "imageheight":46,
+                 "imageheight":42,
                  "imagewidth":80
                 }, 
                 {
@@ -6770,7 +6770,7 @@
                 {
                  "id":623,
                  "image":"..\/objects\/m10_steel_chair1.png",
-                 "imageheight":26,
+                 "imageheight":31,
                  "imagewidth":16
                 }],
          "tilewidth":252
