@@ -1,8 +1,9 @@
 # Handover: office life slice 8, speech bubbles and social pairing (2026-11-06)
 
 **Status: built, unit-tested, committed and proven live in `test_needs_sims` (games 665, 667).
-Regressions not run yet: `test_needs_leash`, then one `lab_physical_pentest` run, then the lab log
-line.** Plan: `OFFICE_LIFE_PLAN.md` 2.4 and 7.3 (Built lines list the choices made without asking).
+Regressions done 2026-11-06 on keyless :3001, headless: `test_needs_leash` game 668 (pass),
+`lab_physical_pentest` game 669 (score 100).** Plan: `OFFICE_LIFE_PLAN.md` 2.4 and 7.3 (Built lines
+list the choices made without asking).
 
 ## Done
 - Engine (`systems/npc-needs.js`): `_maybePair` on entering `using`, `_tickChats` (timing, chattiness,
@@ -29,20 +30,17 @@ line.** Plan: `OFFICE_LIFE_PLAN.md` 2.4 and 7.3 (Built lines list the choices ma
 - Commits (hashes after the other session's rebase): 0af49071a (engine), 224a177c2 (showcase),
   3a51f2aac (presets test), 40d8c3ea3 (Sanjay mapping), plus this docs commit.
 
-## Left (exact next steps)
-1. `test_needs_leash` regression, recipe in `HANDOVER_OFFICE_S7.md` "Left" 1 (leashed Ravi 0 samples
-   on Maya's floor, unleashed cuts through). The leash scenario has a water cooler with the cooler
-   preset, so it now has a chatter topic; if two NPCs meet there, bubbles appear (expected).
-2. One lab run per `OFFICE_LIFE_HANDOVER_SESSION.md` section 4 (Haiku agent; recipe and gotchas in
-   the brief that launched slice 8: bootstrap `{"tutorial":"decline","resume":"new"}`,
-   `session-start.sh --headless`, `waitFor` global takes `name`, wait on `len_at_door` not
-   `door_gate_opened`, hi-vis before the records door, USB drop is `openInventoryItem` with
-   `item: kit_deviceB` beside Sofia's PC, `mg close` on Len's chat before `ruth_debrief`). Pass:
-   `verify-run.rb` score 100, no "No path found"/"Failed to escape wall", `drain` before stopping.
-   The lab has no cooler and no `needsCompany`, so its decisions should be unchanged.
-3. Add the slice 8 line to "Office-life slices" at the end of
-   `scenarios/lab_physical_pentest/IMPROVEMENT_LOOP_LOG.md` (commits, lab game id, score); add the
-   leash and lab game ids to the plan 2.4 Built line and the session handover row; commit.
+## Left
+Nothing open. Regressions run 2026-11-06:
+1. `test_needs_leash`, game 668: leashed Ravi went ravi_office, west_corridor, store, west_corridor,
+   ravi_office, 0 of 45 samples on Maya's floor, 27 s; unleashed he cut through `maya_office`, 12 of 33
+   samples, 21 s. No page errors.
+2. `lab_physical_pentest`, game 669: `verify-run.rb` score 100, 9/9 tasks. Keylogger captured creds
+   (about 53 s), BadUSB foothold, Len opened secure_area and `kp_badge_tailgated` was true on entry,
+   debrief closed the engagement. No "No path found" or "Failed to escape wall"; the only console
+   errors were keyless-server TTS 503s (40). Decisions unchanged, as expected (no cooler, no
+   `needsCompany` in the lab).
+3. Lab log line added to "Office-life slices"; plan 2.4 Built line and session table row updated.
 
 ## Gotchas
 - With both NPCs' needs set at once, whoever already held the cooler decides the outcome (Grace

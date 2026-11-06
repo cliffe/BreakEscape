@@ -742,7 +742,8 @@ an owner get indicators.
 ### 2.4 Speech bubbles and social pairing (proposal 4, first half)
 
 **Built: 2026-11-06 (0af49071a; showcase 224a177c2, 40d8c3ea3; test 3a51f2aac). Regressions
-(`test_needs_leash`, lab) not yet run: see `HANDOVER_OFFICE_S8.md`.** As written, with these choices
+2026-11-06: `test_needs_leash` game 668 (pass), `lab_physical_pentest` game 669 (score 100); see
+`HANDOVER_OFFICE_S8.md`.** As written, with these choices
 made without asking (smallest option each time): (1) an NPC's own pool for a topic adds to the
 scenario's (or built-in) pool, and a scenario pool replaces the built-in pool of that name; (2)
 `chattiness` is the seeded chance a speaker says a line on its turn (default 1); (3) the cooler
