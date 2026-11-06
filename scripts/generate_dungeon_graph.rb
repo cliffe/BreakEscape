@@ -12,6 +12,7 @@ require 'json'
 require 'base64'
 require 'securerandom'
 require 'set'
+require_relative '../lib/break_escape/declared_grants'
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -249,6 +250,40 @@ rooms.each do |room_id, room|
       $action_aim_links << { from: act_id, to: "aim_#{nid(action['unlocks_aim'])}" } if action['unlocks_aim']
     end
   end
+end
+
+# ---------------------------------------------------------------------------
+# Declared grants: give_item rewards whose item (and contents) sit in no room, e.g. a
+# timer's "Remote Session" opener (DECLARED_GRANTS_PLAN.md). Each gets a node, from the
+# room of the object that gives it or else the start room, labelled with its trigger
+# global, and its contents are walked so nested locks keep their lock nodes.
+# ---------------------------------------------------------------------------
+DECLARED_GRANTS = BreakEscape::DeclaredGrants.for(scenario)
+
+def grant_source_room(grant, scenario, start_room)
+  room_id = grant['path'][%r{\Arooms/([^/\[]+)}, 1]
+  room_id || start_room
+end
+
+def grant_trigger(grant, scenario)
+  m = grant['path'].match(/\Atimers\[(\d+)\]/)
+  return nil unless m
+
+  timer = (scenario['timers'] || [])[m[1].to_i] || {}
+  timer['startOnGlobal'] || timer['id']
+end
+
+DECLARED_GRANTS.each do |grant|
+  item     = grant['item']
+  raw_id   = BreakEscape::DeclaredGrants.identities(item).first
+  grant_id = "grant_#{nid(raw_id)}"
+  src_room = grant_source_room(grant, scenario, start_room)
+  add_node(grant_id, "#{item['name'] || raw_id}<br/>(granted)", 'item')
+  if src_room && rooms.key?(src_room)
+    add_node(src_room, room_label(src_room, rooms[src_room]), 'room')
+    add_edge(src_room, grant_id, dashed: true, label: grant_trigger(grant, scenario))
+  end
+  walk_objects(item['contents'], grant_id, rooms)
 end
 
 # ---------------------------------------------------------------------------
@@ -1017,6 +1052,18 @@ rooms.each do |room_id, room|
     end
     walk_room_contents(npc['itemsHeld'], npc_id, rc_nodes, rc_edges, rc_edge_set)
   end
+end
+
+DECLARED_GRANTS.each do |grant|
+  item = grant['item']
+  $rc_counter += 1
+  raw_id  = BreakEscape::DeclaredGrants.identities(item).first
+  node_id = "rc_grant_#{nid(raw_id)}_#{$rc_counter}"
+  has_contents = item['contents'].is_a?(Array) && item['contents'].any?
+  rc_nodes[node_id] = { label: "#{item['name'] || raw_id}<br/>(granted)", klass: has_contents ? 'container' : 'item', optional: false }
+  src_room = grant_source_room(grant, scenario, start_room)
+  rc_edges << { from: src_room, to: node_id, dashed: true } if src_room && rc_nodes.key?(src_room)
+  walk_room_contents(item['contents'], node_id, rc_nodes, rc_edges, rc_edge_set) if has_contents
 end
 
 mermaid_contents = emit_mermaid_diagram(rc_nodes, rc_edges, start_node: start_room)

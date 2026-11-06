@@ -17,6 +17,7 @@ require 'base64'
 require 'open3'
 require_relative 'validate_social'
 require_relative 'validate_npc_needs'
+require_relative '../lib/break_escape/declared_grants'
 
 # Try to load json-schema gem, provide helpful error if missing
 begin
@@ -526,6 +527,14 @@ def check_unknown_fields(json_data)
     inv_path = "startItemsInInventory[#{idx}](#{item['id'] || item['type'] || '?'})"
     check_item_fields.call(item, inv_path)
     check_minigame_data.call(item, inv_path)
+  end
+
+  # Declared grants (give_item rewards the server allowlists) carry their own item and
+  # contents, which sit in no room: check their fields too (declared grants plan R2 M1).
+  BreakEscape::DeclaredGrants.for(json_data).each do |grant|
+    grant_path = "#{grant['path']}/item(#{grant['item']['id'] || grant['item']['type'] || '?'})"
+    check_item_fields.call(grant['item'], grant_path)
+    check_minigame_data.call(grant['item'], grant_path)
   end
 
   # Check room fields and recurse into NPCs and objects
@@ -2020,26 +2029,31 @@ def check_npc_patrol_and_catch_locks(json_data, repo_root = nil, engine_cuts_leg
   issues
 end
 
-# A scenario-side `give_item` action (timers, eventMappings, triggerOnInteract ...) only
+# A scenario-side `give_item` action (timers, triggerOnInteract, onInteract ...) only
 # reaches the player if the server's validate_item_collectible accepts the add
-# (games_controller.rb): the item must be always-allowed (notepad), a decor cup, a start
-# item, or match (ItemIdentity.addressed_by?: type, then id / opens_lock / keyId, else
-# name) a takeable object in a room, a container's contents, a flag station or an NPC's
-# itemsHeld. A reward with no such world object is refused and the player never gets it
-# (lab_physical_pentest F11). Ink #give_item needs no extra check here: it names an NPC
-# itemsHeld entry, which the ink cross-reference in check_ink_files already requires.
+# (games_controller.rb). Two kinds (docs/achitechture/DECLARED_GRANTS_PLAN.md §4.3):
+#
+# - A declared grant (BreakEscape::DeclaredGrants: an item with an id or opens_lock, on a
+#   path the engine runs) is accepted because the scenario declares it, and its contents
+#   are served from the held item. It needs no world object; the checks here are that it
+#   is well formed, and that it collides with nothing, because the grant step runs before
+#   every other lookup and would hand a gated item over without its gate.
+# - A give_item whose item has no identity is matched (ItemIdentity.addressed_by?) against
+#   a takeable world object: a room object, container contents, a flag station or an NPC's
+#   itemsHeld (lab_physical_pentest F11).
+#
+# Ink #give_item needs no extra check here: it names an NPC itemsHeld entry, which the ink
+# cross-reference in check_ink_files already requires.
 GIVE_ITEM_ALWAYS_ALLOWED = %w[notepad].freeze
 GIVE_ITEM_DECOR_CUPS = %w[office-misc-cup office-misc-cup2 office-misc-cup3 office-misc-cup4
                           office-misc-cup5 coffee_cups1 mugs_tray1].freeze
+GRANT_SENSITIVE_TYPES = %w[key keycard lockpick rfid_cloner].freeze
 
 def check_give_item_collectible(json_data)
   issues = []
   rooms = json_data['rooms'].is_a?(Hash) ? json_data['rooms'] : {}
-
-  identities = lambda do |o|
-    ids = [o['id'], o['opens_lock'], o['key_id'], o['keyId']].compact.map(&:to_s).reject(&:empty?)
-    ids.uniq
-  end
+  grants_mod = BreakEscape::DeclaredGrants
+  identities = ->(o) { grants_mod.identities(o) }
   # Mirrors ItemIdentity.addressed_by?(obj, type, id, name)
   addressed = lambda do |obj, type, id, name|
     next false unless obj.is_a?(Hash) && obj['type'] == type
@@ -2049,48 +2063,152 @@ def check_give_item_collectible(json_data)
     [name, id].any? { |n| n && n.to_s == obj['name'].to_s }
   end
 
-  # Every candidate holder: [match_target, room_id, kind, locked_room, locked_container]
+  # Every candidate holder: [match_target, room_id, kind, locked_room, locked_container, where]
+  # Room objects and their contents at any depth, any object's itemsHeld, NPC itemsHeld.
   holders = []
   rooms.each do |rid, room|
     next unless room.is_a?(Hash)
     room_locked = room['locked'] == true
-    Array(room['objects']).each do |obj|
+    add_obj = lambda do |obj, depth, cont_locked|
       next unless obj.is_a?(Hash)
-      holders << [obj, rid, :room, room_locked, false]
-      Array(obj['contents']).each { |c| holders << [c, rid, :container, room_locked, obj['locked'] == true] if c.is_a?(Hash) }
-      if obj['type'] == 'flag-station'
-        Array(obj['itemsHeld']).each { |c| holders << [c, rid, :flag_station, room_locked, false] if c.is_a?(Hash) }
-      end
+      holders << [obj, rid, depth.zero? ? :room : :container, room_locked, cont_locked]
+      Array(obj['contents']).each { |c| add_obj.call(c, depth + 1, cont_locked || obj['locked'] == true) }
+      kind = obj['type'] == 'flag-station' ? :flag_station : :object_held
+      Array(obj['itemsHeld']).each { |c| holders << [c, rid, kind, room_locked, false] if c.is_a?(Hash) }
     end
+    Array(room['objects']).each { |obj| add_obj.call(obj, 0, false) }
     Array(room['npcs']).each do |npc|
       next unless npc.is_a?(Hash)
-      Array(npc['itemsHeld']).each { |c| holders << [c, rid, :npc, room_locked, false] if c.is_a?(Hash) }
+      Array(npc['itemsHeld']).each { |c| holders << [c, rid, :npc, room_locked, false, npc['id']] if c.is_a?(Hash) }
+    end
+  end
+  gate_of = lambda do |(_, rid, kind, room_locked, cont_locked, npc_id)|
+    case kind
+    when :flag_station then "the flag-station reward in '#{rid}' (needs its flag)"
+    when :npc then "NPC '#{npc_id}''s itemsHeld in '#{rid}' (needs the encounter)"
+    when :object_held then "an object's itemsHeld in '#{rid}'"
+    else
+      if cont_locked then "a locked container in '#{rid}'"
+      elsif room_locked then "locked room '#{rid}'"
+      else "an object in '#{rid}'"
+      end
     end
   end
   start_items = Array(json_data['startItemsInInventory']).select { |i| i.is_a?(Hash) }
 
+  grants = grants_mod.for(json_data)
+  grant_paths = grants.map { |g| g['path'] }
+
+  # Identified give_items the engine never runs (e.g. an NPC eventMapping): not grants,
+  # so the reward never arrives (R2 m2).
+  grants_mod.unexecuted(json_data).each do |g|
+    issues << "❌ ERROR: '#{g['path']}' is a give_item for '#{g['item']['type']}/#{identities.call(g['item']).first}', but " \
+              "the engine never runs a give_item from there (only timers[].actions, triggerOnInteract, onInteract.actions, " \
+              "esd completionActions/conditionalActions[].actions and confirm_action onConfirm). The player never receives it. " \
+              "Fix: give it from a timer started by the same global (startOnGlobal)."
+  end
+
+  walk_contents = lambda do |list, &blk|
+    Array(list).each do |c|
+      blk.call(c)
+      walk_contents.call(c['contents'], &blk) if c.is_a?(Hash)
+    end
+  end
+  room_object_ids = holders.select { |_, _, kind| %i[room container].include?(kind) }
+                           .map { |h, *| h['id'] }.compact.map(&:to_s)
+
+  check_grant = lambda do |grant, index|
+    item = grant['item']
+    path = grant['path']
+    type = item['type']
+    ids = identities.call(item)
+    label = "#{type}/#{ids.first}"
+
+    contents = item['contents']
+    if item['hasContents'] == true && !(contents.is_a?(Array) && contents.any?)
+      issues << "❌ ERROR: '#{path}' declares hasContents for '#{label}' but carries no contents. The opener would show an empty desktop. " \
+                "Fix: put the contents in the grant's item (they no longer live on a hidden room object)."
+    end
+    walk_contents.call(contents) do |c|
+      unless c.is_a?(Hash) && c['type'].is_a?(String)
+        issues << "❌ ERROR: '#{path}' grant '#{label}' has a contents entry with no string type."
+        next
+      end
+      if c['locked'] == true && %w[pin password key].include?(c['lockType']) && c['requires'].to_s.empty?
+        issues << "❌ ERROR: '#{path}' grant '#{label}' contains locked '#{c['name'] || c['type']}' (#{c['lockType']}) with no requires: it can never be opened."
+      end
+      if c['locked'] == true && c.key?('contents') && c['id'].to_s.empty?
+        issues << "❌ ERROR: '#{path}' grant '#{label}' contains a locked container '#{c['name'] || c['type']}' with no id: its unlock and contents fetch key on the id."
+      end
+      if c['id'] && room_object_ids.include?(c['id'].to_s)
+        issues << "❌ ERROR: '#{path}' grant '#{label}' contains '#{c['id']}', which a room object also uses as its id. The room lookups run first and would answer instead of the grant."
+      end
+    end
+
+    grants.each_with_index do |other, j|
+      next if j <= index
+      o = other['item']
+      next unless o['type'] == type
+      if (identities.call(o) & ids).any? && o != item
+        issues << "❌ ERROR: '#{path}' and '#{other['path']}' grant '#{label}' with different fields. Which copy is stored depends on walk order; make them identical or give them different ids."
+      elsif (identities.call(o) & ids).empty? && !item['name'].to_s.empty? && o['name'].to_s == item['name'].to_s
+        issues << "❌ ERROR: '#{path}' and '#{other['path']}' grant two '#{type}' items both named '#{item['name']}' with different ids. A name-only claim would take the first; rename one."
+      end
+    end
+
+    holders.each do |h|
+      obj = h[0]
+      next unless obj['type'] == type
+      obj_ids = identities.call(obj)
+      if (obj_ids & ids).any?
+        if %i[room container].include?(h[2]) && obj['active'] == false
+          issues << "❌ ERROR: '#{path}' grant '#{label}' still has its hidden twin in '#{h[1]}'. A declared grant needs no world object, and the room lookups would answer instead of the grant. " \
+                    "Fix: move the twin's contents into the grant's item and delete the twin."
+        else
+          issues << "❌ ERROR: '#{path}' grant '#{label}' shares its type and id with #{gate_of.call(h)}. The grant step runs first, so that item could be claimed without its gate. " \
+                    "Fix: give the grant its own id."
+        end
+      elsif obj_ids.empty? && !item['name'].to_s.empty? && obj['name'].to_s == item['name'].to_s
+        issues << "❌ ERROR: '#{path}' grant '#{label}' has the same type and name as an id-less item (#{gate_of.call(h)}). Picking that item up would be decided by the grant and store the grant's copy. " \
+                  "Fix: give the other item an id, or rename one."
+      end
+    end
+
+    if item['opens_lock'] || item['keyId'] || item['key_id'] || GRANT_SENSITIVE_TYPES.include?(type)
+      issues << "⚠️ WARNING: '#{path}' grants '#{label}', a key or lock tool. A declared grant can be claimed from the first second of the game (no trigger check), so this opens its lock for anyone who asks the server directly."
+    end
+
+    if (m = path.match(/\Atimers\[(\d+)\]/))
+      timer = Array(json_data['timers'])[m[1].to_i]
+      if timer.is_a?(Hash) && (Array(timer['actions']).length > 1 || timer['setGlobal'])
+        issues << "⚠️ WARNING: timer '#{timer['id']}' gives '#{label}' and also has other actions or a setGlobal. If the page closes while the give is retrying, a reload fires the timer again and re-runs them. Put the give in a timer of its own."
+      end
+    end
+  end
+  grants.each_with_index { |g, i| check_grant.call(g, i) }
+
+  # give_items that are not grants: the world-object rule
   walk = lambda do |node, path|
     case node
     when Hash
-      if node['type'] == 'give_item' && node['item'].is_a?(Hash) && node['item']['type'].is_a?(String)
+      if node['type'] == 'give_item' && node['item'].is_a?(Hash) && node['item']['type'].is_a?(String) &&
+         identities.call(node['item']).empty?
         item = node['item']
         type = item['type']
-        id = identities.call(item).first
         name = item['name']
-        label = "#{type}#{id ? "/#{id}" : ''}"
+        label = type
         skip = GIVE_ITEM_ALWAYS_ALLOWED.include?(type) ||
-               (item['decor'] == true && GIVE_ITEM_DECOR_CUPS.include?(type) && item['id']) ||
-               start_items.any? { |si| si['type'] == type && (si['id'] == id || si['name'] == name) }
+               start_items.any? { |si| si['type'] == type && si['name'] == name }
         unless skip
-          found = holders.select { |h, *| addressed.call(h, type, id, name) }
+          found = holders.select { |h, *| addressed.call(h, type, nil, name) }
           if found.empty?
-            issues << "❌ ERROR: '#{path}' is a give_item for '#{label}', but no object in the scenario has that type and id. " \
-                      "The server's validate_item_collectible refuses an item it cannot find, so the player never receives it. " \
-                      "Fix: add a takeable, active:false object with the same type and id to the room where it should come from."
+            issues << "❌ ERROR: '#{path}' is a give_item for '#{label}' with no id, and no object in the scenario has that type and name. " \
+                      "The server refuses an item it cannot find, so the player never receives it. " \
+                      "Fix: give the item an id; it is then a declared grant and needs no object."
           elsif found.none? { |h, *| h['takeable'] }
             issues << "❌ ERROR: '#{path}' is a give_item for '#{label}', but the matching object in " \
                       "#{found.map { |_, r, *| "'#{r}'" }.uniq.join(', ')} is not takeable, so the server refuses it. " \
-                      "Fix: set takeable: true on that object."
+                      "Fix: give the item an id (a declared grant needs no object), or set takeable: true on that object."
           else
             ok = found.select { |h, *| h['takeable'] }
             if ok.all? { |_, _, kind, room_locked, cont_locked| %i[room container].include?(kind) && (room_locked || cont_locked) }
@@ -2099,10 +2217,12 @@ def check_give_item_collectible(json_data)
                         "add only once that room (or container) is unlocked, so a reward that fires earlier is refused. " \
                         "Move the object to a room the player has already opened, or check the trigger can't fire first."
             end
+            issues << "⚠️ WARNING: '#{path}' give_item '#{label}' has no id, so it depends on a world object with the same name. " \
+                      "Give it an id to make it a declared grant and drop the hidden object."
           end
         end
       end
-      node.each { |k, v| walk.call(v, "#{path}/#{k}") }
+      node.each { |k, v| walk.call(v, "#{path}/#{k}") unless k == 'flagRewards' }
     when Array
       node.each_with_index { |v, i| walk.call(v, "#{path}[#{i}]") }
     end
@@ -2956,6 +3076,11 @@ def check_common_issues(json_data, valid_item_types = nil)
         end
       end
     end
+  end
+
+  # Declared grants and their contents need sprites too (declared grants plan R2 M1)
+  BreakEscape::DeclaredGrants.for(json_data).each do |grant|
+    check_item_type.call(grant['item'], "#{grant['path']}/item")
   end
 
   # Check startItemsInInventory for security tools and readable items
