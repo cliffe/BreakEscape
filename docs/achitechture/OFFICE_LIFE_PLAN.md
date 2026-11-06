@@ -2126,6 +2126,29 @@ the engine. `createRoom` keeps it on `window.rooms[roomId]` (one line); only loa
 
 ## 9. Addition 2026-11-06: an icon set for actions and pressing needs (slice 3b)
 
+**Built: 2026-11-06 (art 59f291e82; code d19e81840, 8ffa8502d).** As written, with these choices made
+without asking (smallest option each time): (1) every scenario `actionIcons` entry is tried for all
+keys before any default, so a scenario's `work` beats the default `print`; (2) `print` is a use of
+an object whose preset is `copier`, whose `officeType` is `copier` or whose type contains
+"copier"/"printer", or a use whose NPC `onUse` has `revealOutput` (in the showcase, Sanjay's PC
+use shows the printer); (3) `file` is `job.files`: a reveal slot carried to a target with
+`onDeliver: "stow"`, known from the job start; (4) `blocked` and `noticed` show in the action slot
+only when the NPC has no job, `noticed` wins, `NOTICED_MS` = 3 s of the needs clock; both show only
+with `showPressingNeeds` or an explicit `actionIcons` entry, so the lab (no opt-in) is unchanged;
+(5) `blocked` means an urgent need that a room rule left with nothing permitted (`leashNoted`); an
+urgent need with nothing reachable at all shows only the bubble; (6) the bubble is drawn to the
+upper right of the head (13 px right, 6 px up), on a light backing so it reads apart from the dark
+action icon, and its pulse is 1 + 0.12 |sin(t/400)| (the wind-up is 0.35 at t/120), off under
+`prefers-reduced-motion` as seating's bob is; (7) `pressing` ignores `maxUnmetMin` starvation
+(the plan says "at or below urgentAt"); (8) the old `showNpcIntentBubbles` stays a known field so
+it draws one rename warning, not also an unknown-field warning. Slice 8's speech bubbles must hide
+the thought bubble (not built yet). Live, :3001 headless, game 649 (`test_needs_sims`): every icon
+but `queue` over a head, a bubble for each of the six needs, the bubble handing over to the hunger
+icon as Sanjay leaves for the kitchen (the `file` and `blocked` cases forced, see the sims README
+slice 3b table). `test_needs_leash` game 656: leashed 0 of 46 samples on Maya's floor, unleashed 6 of
+35. `lab_physical_pentest` game 658: score 100, 10/10 tasks. Screenshots:
+`/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/3c2d3b5d-38a4-49b2-b79e-4c3ee8f76ed6/scratchpad/s3b/` (`s3b-contact-sheet.png`, `s3b-handover-strip.png`).
+
 **Requested by the user (2026-11-06):** use PixelLab to make a set of icons for the NPCs' current
 actions and their pressing needs. This lifts two items from 4.2 Defer: "new icons (hunger, rest)"
 and the "next want" thought bubble (`showNpcIntentBubbles`). Paid art approved for this set; the
@@ -2155,7 +2178,7 @@ sheet. Files go in `assets/icons/npc-<name>.png`, so they cannot clash with the 
 | | `npc-file` | folder (stowing a slot, slice 7) | — |
 | | `npc-blocked` | no-entry sign (urgent need, nothing permitted reachable: `leashed`) | — |
 | | `npc-noticed` | exclamation (caught someone at the desk, slice 2) | — |
-| | `fallback` | small dot | text `•` |
+| | `fallback` | no icon drawn: stays the text `•` | — |
 
 The defaults in `npc-action-icons.js` `DEFAULT_ICONS` switch to these. A scenario's own
 `actionIcons` still win, so the lab's emoji glyphs stay until the other session opts in.

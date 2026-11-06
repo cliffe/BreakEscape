@@ -43,6 +43,7 @@ in order, one at a time: they all touch `npc-needs.js`.
 | fix | Walk home stops yielding after 3 s; seat found from the home cell; icon anchored to the head | NPC_NEEDS_SYSTEM.md | Built (8d3520267, 80c2a8dd5) |
 | 5 | Workstation indicators (away-open white dot that breathes, away-locked steady blue dot) | 2.3 | Built (b820a5d24, b2577fac1, b14016be1, fb3383de6); lab game 636 scores 100 |
 | 7 | Carry outcomes and reveal slots | 2.2 Part A | Built (fcb8817a4, 3ff1efa29, f97960f2e); live game 643; leash (game 645) and lab (game 646, score 100) regressions done 2026-11-06 (`HANDOVER_OFFICE_S7.md`) |
+| 3b | Icon set (16x16 `npc-*`) and pressing-need thought bubbles (`showPressingNeeds`) | 9 | Built (59f291e82, d19e81840, 8ffa8502d); sims game 649, leash game 656, lab game 658 (score 100) |
 | 8 | Speech bubbles and social pairing, with compatibility | 2.4, 7.3 | To do |
 | 10 | Queues at shared machines, and chatter | 2.5, 7.3 | To do |
 | 11 | Left behind (scoped: `leftBehindChance`; piles wait for slice 9, which wasn't chosen) | 2.10 | To do |

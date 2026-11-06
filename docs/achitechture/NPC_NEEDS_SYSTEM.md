@@ -246,6 +246,10 @@ Runs after `patrolOverride` in the same mapping.
 
 `officePresets`: boolean, default false. Affordance presets by object type (section 3.2).
 
+`showPressingNeeds`: boolean, default false. Pressing-need thought bubbles and the no-job icons
+`noticed` and `blocked` (section 4.1, slice 3b). The old name `showNpcIntentBubbles` is no longer
+read; the validator warns on it.
+
 ---
 
 ## 4. Runtime architecture
@@ -302,6 +306,27 @@ north) and plays an object's `affordance.useSound` when a use completes, heard b
 at eight tiles) and room (`room-hearing.js`: own room 1, through a door 0.4, else 0), at most one
 per second, emitting `npc_use_heard:<objectId>`. Seated NPCs bob 1 px every 600 ms of the needs
 clock during a `work` use (`seating.js` `typingBob`, off under reduced motion).
+
+**Icon set and pressing needs (office life slice 3b, `OFFICE_LIFE_PLAN.md` 9).** The defaults are
+the 16x16 set `assets/icons/npc-<name>.png` (caffeine, thirst, hunger, rest, social, work,
+curiosity, post, printout, print, queue, file, blocked, noticed), referenced by name only; the
+fallback stays the text `•`. Lookup keys: a use tries the object id, then `print` (a copier or
+printer by preset, `officeType` or type, or a use whose `onUse` has `revealOutput`:
+`job.prints`), then the need, `satisfies` and type; a carry tries `file` (a reveal slot carried to
+an `onDeliver: "stow"` target: `job.files`), then its tag, then `curiosity`. Every scenario entry
+is tried before any default, so the lab's `work` glyph beats the default `print`. With no job, the
+action slot shows `noticed` for `NOTICED_MS` (3 s of the needs clock) after
+`npc_caught_at_post`, else `blocked` while an urgent need has nothing permitted (`leashNoted`, the
+leashed back-off); both only with `showPressingNeeds` or an explicit `actionIcons` entry, so a
+scenario that has not opted in looks as before. `queue` is registered for slice 10. `getState()`
+gains `pressing` (`{ need, ratio } | null`: needs at or below `urgentAt`, not the current job's
+need, lowest `level / urgentAt`, ties by name), `blockedNeed` and `noticed`; the job gains
+`prints` and `files`. With `showPressingNeeds`, `pressing` draws as a thought bubble (Phaser
+graphics: light rounded backing, two trailing dots toward the head, the need's icon) to the
+upper right of the head, clear of the action icon, under the same room/dark rule; below half
+`urgentAt` it pulses slowly (off under `prefers-reduced-motion`). Starting a job for that need
+removes it from `pressing`, so the bubble goes as the action icon takes over. Tests:
+`test/js/npc-pressing-needs.test.mjs`.
 `"officeVisuals": false` turns the held item, sounds and bob off. Installed beside the action icons in `core/game.js` with a dynamic
 import, so no test-harness copy list needs it. It reads `npcNeedsSystem.states` and
 writes nothing back; positions follow the sprite each frame, bars redraw every 200 ms,

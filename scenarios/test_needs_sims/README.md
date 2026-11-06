@@ -221,6 +221,42 @@ Notes: the notes minigame sends `remove_object` twice for a taken notes item (se
 identical requests); this predates slice 7. A copier slot defaults to standing in front of the
 copier; with no `placeAt`, the printout lands on Amara's desk in front of her monitor.
 
+### Slice 3b re-run: icon set and pressing-need bubbles (2026-11-06, keyless :3001, headless, load 11-16)
+
+What changed in this scenario: one line. The default action icons are now the 16x16 `npc-*` set, so
+the scenario needs no `actionIcons` entries for them (it keeps only the kettle example).
+
+```jsonc
+"showPressingNeeds": true,   // thought bubble beside the head: the most pressing need not acted on yet;
+                             // also turns on the no-job icons "noticed" and "blocked". Off by default.
+```
+
+Game 649 (session log `tools/playtest/s3b-sims-649-session.jsonl`). Levels were nudged through
+`npcNeedsSystem.states` to make each case happen sooner. Two cases were forced: Tom's coffee
+cooldowns on both free stations (so only Rosa's private kettle was left: `blocked`), and a live
+`onDeliver: "stow"` on `amara_pc` for one print (the showcase has no stow target: `file`), restored
+afterwards.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Every action icon over a head | PASS | caffeine, thirst, hunger, rest, social, work, curiosity, post, printout, print (Sanjay's PC use, which reveals copier output), file, blocked, noticed. `queue` is registered only (slice 10) |
+| A bubble for each need | PASS | caffeine, thirst, hunger, rest, social, work |
+| Bubble while waiting | PASS | kitchen and lounge doors still shut: Tom, Grace and Sanjay each show a bubble, pulsing (scale up to 1.12) with the ratio below 0.5 |
+| Bubble while doing something else | PASS | Grace carrying the mugs (curiosity) with a thirst bubble; Amara carrying the parcel with a work bubble; Sanjay working with a social bubble |
+| Hand-over as the NPC leaves | PASS | kitchen door opened: Sanjay's hunger bubble (ratio 0.14, no job) goes as his microwave job starts, the hunger icon takes over, and 1.5 s later he is through the door |
+| Blocked | PASS | `leashed` `skipped: ["lounge_kettle"]`, no job: no-entry icon plus a caffeine bubble |
+| Noticed | PASS | player at `amara_pc` as she came back from coffee: `caught_at_post` (42 px) and the `!` icon for 3 s |
+| Room rule | PASS | icons and bubbles only for NPCs in the player's room (office, kitchen, lounge in turn) |
+| Console | PASS | 0 "No path found", 0 "Failed to escape wall"; one 422 from a server request around t=889 s, not traced (no request URL in the log) |
+
+Screenshots in `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/3c2d3b5d-38a4-49b2-b79e-4c3ee8f76ed6/scratchpad/s3b/`: `s3b-contact-sheet.png` (every icon and bubble, cropped
+from the game frames and enlarged 3x nearest-neighbour for viewing), `s3b-handover-strip.png`
+(bubble, hand-over, leaving), `pulse-three-bubbles-649.png`, and the full frames `*-649.png`.
+
+Notes: the player's talk prompt sits over a nearby NPC's action icon (it predates this slice). Grace's
+lounge job failed once on a timeout while the player stood in the lounge doorway (the known doorway
+gotcha).
+
 ## Engine findings
 
 1. **Fixed 2026-11-05.** The home is now provisional until the `needsHome` object exists and is re-resolved once a second; and an NPC standing on its own desk's approach cell now counts as able to reach it (EasyStar gave no path for start == end, which is why Sanjay chose `tom_pc` in game 501). Original finding: **Needs homes in the start room resolve to the spawn point and stay there.** `npc-needs.js:301` resolves `s.home` on the first tick that has a sprite position and caches it; `_resolveHome` (`npc-needs.js:628-640`) falls back to the spawn point with `objectId: null` when `getObject`/`approachCell` fail. For the start room the NPCs are registered (`core/game.js:2004-2006`) before the room's objects or pathfinding are ready, so every start-room needs NPC gets the fallback and the home-object preference in `_useCandidate` (`npc-needs.js:475`) never applies. NPCs in rooms loaded later (Rosa, lounge) resolve correctly. Repro: load this scenario, then `[...npcNeedsSystem.states].map(([k,s]) => [k, s.home.objectId])` gives null for amara, tom, grace and sanjay, `rosa_laptop` for rosa. Suggested fix: don't cache a fallback home while `needsHome` names an object that isn't found yet (retry each tick until the object exists, or for a few seconds). `test_npc_needs` and `lab_physical_pentest` start-room NPCs are likely affected too, but hidden because each spawns at its own desk. Workaround here: each NPC spawns beside its own desk, and the work task reads "Someone works at a desk". Even so, game 501 had Sanjay choose `tom_pc` over his own adjacent PC (nearest-reachable from his seated position), so the workaround isn't reliable.
