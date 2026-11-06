@@ -524,6 +524,36 @@ does not run after a return; the idle restart on close is covered by the `workst
 source is reachable: with the kitchen unloaded his hunger and social needs park with `no_source`, so open the kitchen door first. A
 standing player in the doorway blocks the NPCs' route (jobs time out), so stand clear of it.
 
+### Slice 18a re-run: coffee off (2026-11-06, keyless :3001, headless)
+
+How to watch it: open the kitchen door, stand by the office coffee station and click the wall socket on the wall beside it
+(`office_coffee_socket`) while someone is on the way to the machine. The hint "The coffee machine is switched off at the wall." shows
+under the title "Wall socket". Anyone walking to the machine or queued for it turns back with a `grumble_off` line ("Who switched the
+coffee off?") or, on bark cooldown, a picture of their need (a coffee cup), and goes to the kitchen machine; anyone already pouring
+finishes. The switch is one-way. With the kitchen shut, the need parks (`no_source`) instead. Task `see_coffee_off`.
+
+Evidence is in the session scratchpad `s18a/`: `walker-a1-walking-918.png` (Tom on his way to the office machine),
+`walker-b-turnback-grumble-918.png` (the bubble, the hint toast and Tom's new target `kitchen_coffee`), `walker-c-to-kitchen-918.png`,
+`near-turnback-918.png` (a second turn-back: the coffee-cup picture), `using-finishes-b-hint-918.png`, logs `beat-walker-tom-918.json`,
+`beat-using-finishes-tom-918.json`, session `sess918.jsonl`, tasks `verify-918.txt`.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Socket click switches the machine off | PASS | game 918: a real pointer click on the socket in reach; `office_coffee_off` true; alert "The coffee machine is switched off at the wall." titled "Wall socket" |
+| A walker turns back with `off` | PASS | `95 tom job_start caffeine office_coffee`, `104 tom turned_back caffeine office_coffee reason off grumble grumble_off`, `npc_turned_back:tom` with `reason: 'off'` |
+| Spoken `grumble_off` line | PASS | "Who switched the coffee off?" (`talking.topic` `grumble_off`); the TTS request is the 503 in the drain (keyless server) |
+| Fallback to the kitchen | PASS | `104 tom job_start caffeine kitchen_coffee`, `187 tom used caffeine kitchen_coffee` (`npc_used:kitchen_coffee`) |
+| Picture grumble shows the need | PASS | second turn-back, Tom on bark cooldown: picture `caffeine` with topic `grumble_off` (`near-turnback-918.png`); he queued at the kitchen machine and used it |
+| One already pouring finishes | PASS | the click landed after Tom started `using` the office machine: he finished there (`beat-using-finishes-tom-918.json`) |
+| Switching back on wakes | PASS | the global set false through `applyActions` `set_global`: `switched_on` logged once per real change (3 changes, 3 lines) |
+| Objective | PASS | `see_coffee_off` completed at 22:15:21Z (`verify-918.txt`); `see_turned_back` not ticked by the `off` turn-back |
+| Errors | PASS | only the keyless-server TTS 503 |
+
+Notes: the playtest bridge's `interact('office_coffee_socket')` reported "approached-then-interacted, confirmed" while the player was
+out of reach (it took an unrelated `npc_arrived` event as the confirmation); a click from feet about (272, 244) is in reach. A queue at
+the office machine does not form while the kitchen machine is free (a free source wins over a queue), so the queuer turn-back is
+covered by the node test.
+
 ## Engine findings
 
 1. **Fixed 2026-11-05.** The home is now provisional until the `needsHome` object exists and is re-resolved once a second; and an NPC standing on its own desk's approach cell now counts as able to reach it (EasyStar gave no path for start == end, which is why Sanjay chose `tom_pc` in game 501). Original finding: **Needs homes in the start room resolve to the spawn point and stay there.** `npc-needs.js:301` resolves `s.home` on the first tick that has a sprite position and caches it; `_resolveHome` (`npc-needs.js:628-640`) falls back to the spawn point with `objectId: null` when `getObject`/`approachCell` fail. For the start room the NPCs are registered (`core/game.js:2004-2006`) before the room's objects or pathfinding are ready, so every start-room needs NPC gets the fallback and the home-object preference in `_useCandidate` (`npc-needs.js:475`) never applies. NPCs in rooms loaded later (Rosa, lounge) resolve correctly. Repro: load this scenario, then `[...npcNeedsSystem.states].map(([k,s]) => [k, s.home.objectId])` gives null for amara, tom, grace and sanjay, `rosa_laptop` for rosa. Suggested fix: don't cache a fallback home while `needsHome` names an object that isn't found yet (retry each tick until the object exists, or for a few seconds). `test_npc_needs` and `lab_physical_pentest` start-room NPCs are likely affected too, but hidden because each spawns at its own desk. Workaround here: each NPC spawns beside its own desk, and the work task reads "Someone works at a desk". Even so, game 501 had Sanjay choose `tom_pc` over his own adjacent PC (nearest-reachable from his seated position), so the workaround isn't reliable.

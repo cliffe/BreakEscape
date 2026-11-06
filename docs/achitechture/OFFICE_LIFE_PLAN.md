@@ -3030,6 +3030,30 @@ without scripting the NPC. The engine stays neutral: it moves people and emits e
 
 #### Slice 18a: coffee off
 
+**Built: 2026-11-06 (slice 18a: engine, validator, schema and tests 84babc54c; showcase 9589e5bfd).
+Regressions: `test_needs_leash` game 919 (pass), `lab_physical_pentest` game 920 (score 100); sims live proof game 918; see
+`HANDOVER_OFFICE_S18A.md`.** As written (`offWhen` in the use and queue candidate filters, the `off` check in `_advanceJob` before
+`_recheck`, the `TURN_BACK` table with `rang_out`, `mindChanged` only for `avoid`, the wake on a real change, `grumble_<reason>` chosen by
+lines, `PICTURE_CHATTER.grumble_off` and `grumble_gone`, the validator's `check_off_when`, schema `affordance.offWhen`;
+`bin/test-js` 404 files pass, `npc-coffee-off` 12 tests; `GOLDEN_SIMS_DAY` unchanged), with these choices made without asking:
+(1) The switch is the approved `wall_socket1` (17×18, 9742108c2), not the `notes_postit1` stand-in, at (9.05, 7.3) on the office's east
+wall beside the machine, square to the wall; `game.js` preloads it; the stand-in `_comment` is gone. (2) The topic rule is
+`grumble_<reason>` when it has lines, else `grumble` when it has lines, else the `grumble_<reason>` picture; `avoid` never reads a
+`grumble_avoid` pool, so every existing grumble is unchanged. An `off` (or `gone`) picture is always the need's own icon, cooldown
+included, from a local `NEED_ICONS` list in `npc-needs.js` (no import of `npc-action-icons.js`, so the harness copy lists are unchanged),
+falling back to `avoid`. (3) The wake compares each `offWhen` object's off state, recorded at its last candidate check or turn-back,
+and wakes (with the select back-offs cleared, as a door does) only when one goes from off to on; switching off wakes nothing. It logs
+`switched_on` with `npc: null`, the only system-level line in the decision log. (4) The `off` check reads `job.offWhen`, copied from the
+target at job start, so a walking NPC costs no object lookup per tick; only `use` jobs check. (5) `turned_back` log entries carry
+`grumble: <topic>` for every reason that grumbles, `avoid` included. (6) The table has a `parks` column and `_select` takes
+`exclude.noPark`, ready for 18b's `job.tempted`; `answered` and `rang_out` need no `need`, and dropping the claimed call is left to slice 19.
+(7) The schema's `triggerOnInteract` action list gains `hint` (`applyActions` already ran it; the schema refused the socket). (8) The
+showcase objective `see_coffee_off` uses one mapping `npc_turned_back:*` with `data.reason === 'off'` (not two named ones) plus the
+kitchen mapping, on Amara's list; `see_turned_back` now needs `data.reason === 'avoid'`, so a dead machine does not tick the avoidance
+task. (9) The validator's "nothing sets it" looks for `set_global` actions and mapping `setGlobal`, not ink. (10) Walkers turn back
+wherever they are when the socket is clicked, as designed; one who has already started pouring finishes (seen live). The new
+`grumble_off` and `grumble_gone` lines have no cached TTS audio yet (keyless :3001).
+
 **Design.** `affordance.offWhen` takes the `requireGlobal` form (a name, truthy, or
 `{ name: value }`, `requiredGlobalsHold` 123-130). While it holds, the object is not a candidate.
 
