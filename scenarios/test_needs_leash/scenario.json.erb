@@ -1,0 +1,106 @@
+{
+  "scenario_brief": "TEST: Needs room leash\n\nFour rooms in a loop. Ravi works in the north-west office and gets thirsty; the only water cooler is in the south-east store. The short way there runs through Maya's private office (north-east); the long way goes round through the south-west corridor. Ravi's needs may not enter Maya's office, so he should go the long way. Open all four doors once so he can.",
+  "endGoal": "Demo only: watch Ravi take the long way round.",
+  "startRoom": "ravi_office",
+  "startPosition": { "x": 4, "y": 5 },
+  "npcNeedsSeed": "test_needs_leash",
+  "npcWindupMs": 0,
+  "needsDebugOverlay": true,
+
+  "globalVariables": {},
+
+  "objectives": [
+    {
+      "aimId": "watch_the_leash",
+      "title": "Watch the leash",
+      "description": "Nothing to solve.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        { "taskId": "see_long_way", "title": "Ravi fetches water without crossing Maya's office", "type": "custom", "status": "active" }
+      ]
+    }
+  ],
+
+  "rooms": {
+    "ravi_office": {
+      "type": "room_office",
+      "door_sign": "Ravi",
+      "connections": { "east": "maya_office", "south": "west_corridor" },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "ravi_pc",
+          "name": "Ravi's PC",
+          "takeable": false,
+          "locked": false,
+          "position": { "x": 7, "y": 3 },
+          "observations": "Ravi's desk PC.",
+          "affordance": { "useSeconds": 5 }
+        }
+      ],
+      "npcs": [
+        {
+          "id": "ravi",
+          "displayName": "Ravi Mehta",
+          "npcType": "person",
+          "position": { "x": 7, "y": 5 },
+          "spriteSheet": "male_office_worker_v2",
+          "storyPath": "scenarios/test_needs_sims/ink/tom.json",
+          "currentKnot": "start",
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "needsHome": "ravi_pc",
+          "needsSpeed": 90,
+          "needs": { "thirst": { "decayPerMin": 20, "urgentAt": 40, "initial": 70 } },
+          "eventMappings": [
+            { "eventPattern": "npc_used:far_cooler", "completeTask": "see_long_way" }
+          ]
+        }
+      ]
+    },
+
+    "maya_office": {
+      "type": "room_office",
+      "door_sign": "Maya (private)",
+      "needsPrivateTo": ["maya"],
+      "connections": { "west": "ravi_office", "south": "store" },
+      "objects": [],
+      "npcs": [
+        {
+          "id": "maya",
+          "displayName": "Maya Chen",
+          "npcType": "person",
+          "position": { "x": 6, "y": 3 },
+          "spriteSheet": "female_office_worker",
+          "storyPath": "scenarios/test_needs_sims/ink/tom.json",
+          "currentKnot": "start",
+          "behavior": { "facePlayer": true }
+        }
+      ]
+    },
+
+    "west_corridor": {
+      "type": "room_office",
+      "door_sign": "Corridor",
+      "connections": { "north": "ravi_office", "east": "store" },
+      "objects": []
+    },
+
+    "store": {
+      "type": "room_office",
+      "door_sign": "Store",
+      "connections": { "north": "maya_office", "west": "west_corridor" },
+      "objects": [
+        {
+          "type": "water_cooler1",
+          "id": "far_cooler",
+          "name": "Water Cooler",
+          "position": { "x": 2, "y": 3 },
+          "takeable": false,
+          "observations": "The only water cooler on the floor.",
+          "affordance": { "satisfies": "thirst", "restores": 70, "useSeconds": 6 }
+        }
+      ]
+    }
+  }
+}

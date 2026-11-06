@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: Needs room leash",
+  "description": "Test of the NPC needs room leash (OFFICE_LIFE_PLAN slice 2a): four rooms in a loop; a thirsty NPC goes the long way round rather than through a colleague's private office. Nothing to solve.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 3,
+  "test_type": "npc_needs",
+  "test_objective": "Prove on the real pathfinder that a leashed NPC never enters or routes through a forbidden room even when it is the shortest path, and takes the short way when the leash is removed"
+}
