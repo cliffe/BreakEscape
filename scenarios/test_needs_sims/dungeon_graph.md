@@ -4,14 +4,14 @@
 
 TEST: Needs (Sims-style office day)
 
-A demo of the NPC needs system. Nothing to solve. Five staff get thirsty, hungry, tired and bored, want coffee and want to work, and walk to whatever fixes it before going back to their own desks. Open the kitchen door (west) and the lounge door (east) once so they can get there. The lounge is Rosa's room: only she and Grace use it, and each PC is used only by its owner. Read the deadline memo in the office and Tom and Amara both want a coffee at once; whoever misses the office station walks to the kitchen, not to Rosa's kettle. Drop the parcel or the dirty mugs from your inventory and watch someone deal with them. The whiteboard by the office's back wall shows the last thing anyone used. Icons over heads say what each person is doing, a thought bubble beside a head shows the need they will act on next, a carried parcel or mug shows in their hands, desk workers type, and you hear a drink or a snack when you are near enough.
+A demo of the NPC needs system. Nothing to solve. Five staff get thirsty, hungry, tired and bored, want coffee and want to work, and walk to whatever fixes it before going back to their own desks. Open the kitchen door (west) and the lounge door (east) once so they can get there. The lounge is Rosa's room: only she and Grace use it, and each PC is used only by its owner. Read the deadline memo in the office and Tom and Amara both want a coffee at once; whoever misses the office station walks to the kitchen, not to Rosa's kettle (with the kitchen still shut, they wait in line at the office station instead). Read the Activity Board before opening the kitchen and Amara and Tom want a coffee, Marek queues behind Tom, and whoever is pouring chats with the first in line, unless that is Marek. Drop the parcel or the dirty mugs from your inventory and watch someone deal with them. The whiteboard by the office's back wall shows the last thing anyone used. Icons over heads say what each person is doing, a thought bubble beside a head shows the need they will act on next, a carried parcel or mug shows in their hands, desk workers type, and you hear a drink or a snack when you are near enough.
 
 ## Scenario Statistics
 
 | Metric | Value |
 |---|---|
 | Story aims | 1 |
-| Total tasks | 16 (0 optional) |
+| Total tasks | 18 (0 optional) |
 | VM flag challenges | 0 |
 | Physical locks | 0 |
 | AND-gate convergences | 0 |

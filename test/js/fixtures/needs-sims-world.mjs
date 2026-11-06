@@ -49,7 +49,7 @@ function objects() {
         { id: 'tom_pc', roomId: 'office', x: 88, y: 166, affordance: { satisfies: 'work', restores: 60, useSeconds: 10, private: true } },
         { id: 'sanjay_pc', roomId: 'office', x: 92.5, y: 122.5, affordance: { satisfies: 'work', restores: 60, useSeconds: 10, private: true } },
         { id: 'grace_laptop', roomId: 'office', x: 45.5, y: 175 },
-        { id: 'office_coffee', roomId: 'office', x: 269, y: 276.5, affordance: { satisfies: 'caffeine', restores: 70, useSeconds: 12, useFrom: { dx: -1, dy: 0 }, queue: { cells: [{ dx: -1, dy: -1 }, { dx: -2, dy: -1 }] }, chatter: 'coffee' } },
+        { id: 'office_coffee', roomId: 'office', x: 269, y: 276.5, affordance: { satisfies: 'caffeine', restores: 70, useSeconds: 12, useFrom: { dx: -1, dy: 0 }, queue: { cells: [{ dx: -1, dy: 0 }, { dx: -2, dy: 0 }] }, chatter: 'coffee' } },
         { id: 'office_mugs', roomId: 'office', x: 135.5, y: 231, needsTag: 'dirty_mugs' },
         { id: 'activity_board', roomId: 'office', x: 230, y: 39 },
         // kitchen (loads when the west door opens)
@@ -76,7 +76,7 @@ export const PRESET_OBJECTS = {
     tom_pc: { type: 'pc', affordance: { private: true } },
     sanjay_pc: { type: 'pc', affordance: { private: true } },
     grace_laptop: { type: 'laptop', affordance: false },                           // no affordance today
-    office_coffee: { type: 'coffee_station1', affordance: { useFrom: { dx: -1, dy: 0 }, queue: { cells: [{ dx: -1, dy: -1 }, { dx: -2, dy: -1 }] }, chatter: 'coffee' } },   // queue and chatter: slice 10
+    office_coffee: { type: 'coffee_station1', affordance: { useFrom: { dx: -1, dy: 0 }, queue: { cells: [{ dx: -1, dy: 0 }, { dx: -2, dy: 0 }] }, chatter: 'coffee' } },   // queue and chatter: slice 10
     office_mugs: { type: 'dirty_mugs1' },
     activity_board: { type: 'chalkboard' },
     fridge: { type: 'qdc_fridge1' },

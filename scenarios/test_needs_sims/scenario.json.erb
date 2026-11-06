@@ -145,8 +145,8 @@
           "position": { "x": 8, "y": 8 },
           "takeable": false,
           "observations": "The office coffee station. One person at a time; anyone else waits in line.",
-          "_comment": "The coffee preset stands the NPC below the machine (useFrom 0,1) and queues two a row below; this one's own useFrom and queue win. Slice 10: the queue runs up and left of the approach cell (the row below is the wall), and the coffee pool gives the user and the first in line something to say.",
-          "affordance": { "useFrom": { "dx": -1, "dy": 0 }, "queue": { "cells": [{ "dx": -1, "dy": -1 }, { "dx": -2, "dy": -1 }] }, "chatter": "coffee" }
+          "_comment": "The coffee preset stands the NPC below the machine (useFrom 0,1) and queues two a row below; this one's own useFrom and queue win. Slice 10: the queue runs left along the bottom row (the row below is the wall; up and left put the line on the way back to the desks, where people walking home ran into it), and the coffee pool gives the user and the first in line something to say.",
+          "affordance": { "useFrom": { "dx": -1, "dy": 0 }, "queue": { "cells": [{ "dx": -1, "dy": 0 }, { "dx": -2, "dy": 0 }] }, "chatter": "coffee" }
         },
         {
           "type": "dirty_mugs1",
@@ -400,7 +400,7 @@
           "id": "marek",
           "displayName": "Marek Nowak",
           "npcType": "person",
-          "position": { "x": 6, "y": 8 },
+          "position": { "x": 3, "y": 8 },
           "spriteSheet": "male_telecom_v2",
           "spriteTalk": "assets/characters/male_telecom_talk.png",
           "spriteVisemes": "assets/characters/male_telecom_visemes.png",
@@ -408,8 +408,8 @@
           "currentKnot": "start",
           "voice": { "name": "Charon", "style": "Telecoms contractor, fifties, Polish-born, years in the UK. Gruff but not unfriendly.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
-          "_comment": "Slice 8 (OFFICE_LIFE_PLAN 7.3): the outcast. avoids '*' acts both ways: nobody shares the cooler with him or chats with him. His thirst is slow so he goes only when the Kitchen Rota is read (or after about half an hour). Slice 10: a slow caffeine need too; when Tom joins the coffee queue Marek wants one, so he queues behind Tom, in silence.",
-          "needsHome": { "room": "office", "x": 6, "y": 8 },
+          "_comment": "Slice 8 (OFFICE_LIFE_PLAN 7.3): the outcast. avoids '*' acts both ways: nobody shares the cooler with him or chats with him. His post is the bottom-left corner (moved from beside the coffee station in slice 10, where it stood in the queue). His thirst is slow so he goes only when the Kitchen Rota is read (or after about half an hour). Slice 10: a slow caffeine need too; when Tom joins the coffee queue Marek wants one, so he queues behind Tom, in silence.",
+          "needsHome": { "room": "office", "x": 3, "y": 8 },
           "needsSpeed": 80,
           "needsCompany": { "avoids": ["*"] },
           "needs": {
