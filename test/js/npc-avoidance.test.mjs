@@ -164,8 +164,11 @@ test('turning back on the way: turned_back, npc_turned_back, the grumble, then t
     assert.ok(DEFAULT_CHATTER.grumble.includes(st.talking.line));
     assert.equal(st.talking.topic, 'grumble');
     assert.equal(st.talking.partnerId, null);
+    o.ticks(Math.ceil(st.talking.remainingMs / NEEDS_TICK_MS) + 1);
+    assert.equal(o.sys.getState('sanjay').talking, null, 'the grumble is over');
+    assert.equal(o.sys.getState('sanjay').avoiding, 'marek', 'the face shows after the line');
     o.ticks(AVOID_BUBBLE_MS / NEEDS_TICK_MS);
-    assert.equal(o.sys.getState('sanjay').avoiding, null, 'the bubble goes after AVOID_BUBBLE_MS');
+    assert.equal(o.sys.getState('sanjay').avoiding, null, 'and goes AVOID_BUBBLE_MS later');
     assert.equal(o.evs('parked').length, 0);
 });
 

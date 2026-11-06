@@ -48,7 +48,7 @@ export const QUEUE_CHAT_RADIUS = 48;  // px (1.5 tiles) from the approach cell: 
 // Avoidance at a distance, balking and parked needs (slice 14, OFFICE_LIFE_PLAN 10)
 export const AVOID_RADIUS_TILES = 2;  // needsCompany.avoidRadius default, only for an NPC that declares avoids
 export const NEEDS_DEFER_MIN = 4;     // needsDeferMin default: how long a given-up need stays parked
-export const AVOID_BUBBLE_MS = 4000;  // the avoided person's face shows this long after a turn-back
+export const AVOID_BUBBLE_MS = 4000;  // the avoided person's face shows this long after a turn-back's grumble
 export const WAKE_BASE_MS = 1000;     // a door opening or a room loading retries parked needs after this...
 export const WAKE_STEP_MS = 500;      // ...plus this per parked NPC before it (id order), so they go one by one
 // Built-in needs that are environmental: the validator warns on `deferrable: false` for these
@@ -1048,8 +1048,10 @@ export class NPCNeedsSystem {
         s.turnCount++;
         this._log(id, 'turned_back', { need, target: targetId, reason, avoided: avoidedId || undefined });
         this._emit(`npc_turned_back:${id}`, { npcId: id, need, targetId, reason, ...(avoidedId ? { avoidedId } : {}), ...this._playerProximity(id) });
-        if (avoidedId) s.avoidShow = { npcId: avoidedId, until: this.clockMs + AVOID_BUBBLE_MS };
+        // The grumble's speech bubble hides the thought bubble, so the face shows after the line
         this._grumble(s, targetId);
+        const said = s.saying && s.saying.until > this.clockMs ? s.saying.until - this.clockMs : 0;
+        if (avoidedId) s.avoidShow = { npcId: avoidedId, until: this.clockMs + said + AVOID_BUBBLE_MS };
         this._abortJob(s, 'turned_back', { cancel: true });
         // Fallback chain: the next acceptable source for the same need, else the need parks
         const pos = this.world.npcPos(id);
