@@ -1020,6 +1020,25 @@ gone after Tom's return; take it once and check it never reappears after a reloa
 
 ### 2.11 Noticing the player at the desk (proposal 10)
 
+**Built: 2026-11-06 (slice 2, commits b670d2fcd, b6b579e39).** `npc_caught_at_post`, checked only
+while the returning NPC is in its home room; `expectedAwayMs` and proximity on
+`npc_left_post`, proximity on `npc_returned_post`; `needsStop` keeps the home stop for an at-post
+job in every phase and for `returning && atPost` (R3-M2); the install-time workstation reset;
+`inMinigame` read from the open minigame's params (`lockable`, `sprite`, `containerItem` carry the
+object), so `interactions.js` was not touched; showcase objective `see_caught` with a bark on
+Tom. **The plan was wrong twice.** (1) A seated NPC's body sits about 30 px off its home cell, so
+`_moveForPhase` did not find it "already there": own-desk work called `moveTo`, which unseats,
+and with the stop key now unchanged the NPC never sat again. Fixed in `npc-needs.js`: an at-post
+job and its end never move the NPC (b6b579e39). (2) The reload reset at install sees only
+workstations in rooms loaded then; room objects are not in `gameScenario.rooms` before the room
+loads, and the lab restarts in the briefing room, so `staff_pc_2_owner_away` stayed true after a
+reload and Melanie's PC read "walked off without locking" while she sat at it (`onInteract` said
+"attended", so no capture). **Open**: needs a room-load hook (R3 m1) or a reset by global name.
+Live, :3001, headless, load about 40: `test_needs_sims` games 552-553 (Amara and Tom seated through
+every own-desk use; caught at Tom's desk at 9 px, bark, task), `lab_physical_pentest` game 555
+(Pierce and Hampshire seated through own-desk work; Melanie's PC "attended" during her work and
+opened only after her real departure; keylogger `npc_used:staff_pc` unchanged).
+
 **Authoring.** None required: the events gain data. A scenario maps them.
 
 ```jsonc
@@ -1043,11 +1062,12 @@ locking the screen" capture while she is sitting at it, and the `owner_away` obs
 (line 874) shows. Chris Hampshire's `staff_pc` reads "locked" (variant at 794) while he works at
 it. The keylogger beat (`npc_used:staff_pc`, 567) is not affected.
 
-**The core of this fix lands separately.** Another agent is fixing the own-desk `npc_left_post`
-in `npc-needs.js` now (the at-post semantics below). This plan does not redo it; slice 2 is what
-is left once it lands (caught at the desk, `expectedAwayMs`, the workstation reload fix, the
-seating change below if the fix does not already include it, docs), and slice 2 starts by reading
-the landed fix and its tests against the semantics below. R2's grep (its section 4) found no
+**The core of this fix landed as b642594be (slice 0).** It added `_atOwnPost(s)` (a `use` job
+whose target is the NPC's `needsHome` object), skips the wind-up and `_leavePost`'s
+`npc_left_post` for it, and emits `npc_returned_post` only when `atPost` is false. It does not send
+an own-desk use straight to idle: `_completeJob` still calls `_goHome`, so the use ends through
+one `returning` tick (with `atPost` true, emitting nothing) before idle. Slice 2 covers that tick
+in seating. R2's grep (its section 4) found no
 listener that the fix breaks: `test_npc_needs`'s clerk has only `caffeine`, `test_needs_sims`'s
 `see_back_at_desk` then ticks only after a real trip, and in the lab the Melanie capture and the
 "locked" text stop showing while the owner sits at the PC. It also means fewer counted `leaves` in
@@ -1059,10 +1079,12 @@ workstation-state, which salt `lockChance` rolls; no shipped scenario uses `lock
   a coordinate home has no object, so never). Carry jobs are never at post (the NPC fetches the
   item first).
 - An at-post job has no wind-up and emits no `npc_left_post`; `s.atPost` stays true. When it
-  completes or aborts, the NPC goes straight to idle at its post: no `returning` and no
-  `npc_returned_post`. `npc_used:<objectId>` still fires, so beats keyed on it hold.
-- `npc_returned_post` fires only if `npc_left_post` fired for this absence (a `s.leftEmitted`
-  flag), so the two events always pair and workstation-state's away map stays true to life.
+  completes, the NPC passes through one `returning` tick at its post (as built in b642594be) and
+  emits no `npc_returned_post`. `npc_used:<objectId>` still fires, so beats keyed on it hold.
+- `npc_returned_post` fires when `atPost` is false on arrival (the gate built in b642594be; no
+  `s.leftEmitted` flag). A script move clears `atPost` without `npc_left_post`, so a later needs
+  return emits an unpaired `npc_returned_post`; harmless today, since `onReturned` for an owner
+  who was never away re-publishes false (R3 m6).
 - Unchanged: a script move (`onExternalMove`) still clears `atPost` without emitting
   `npc_left_post`, as today; whether a scripted walk-off should count as a leave is open
   question 12.

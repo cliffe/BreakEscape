@@ -295,6 +295,23 @@ carry: goto_item → pick up → goto_target → using(useSeconds) → complete 
   cancel the move, drop any carried item at the NPC's feet, 60 s cooldown on that
   target for this NPC, go home.
 - `npc_left_post:<npcId>` is emitted when a job starts while the NPC is at its post.
+- **At-post jobs (own-desk work).** A `use` whose target is the NPC's `needsHome` object
+  is not a leave (b642594be, slice 2 of `OFFICE_LIFE_PLAN.md`): no wind-up, no
+  `npc_left_post`, `atPost` stays true, and the NPC is never moved, before or after the
+  use (a seated NPC's body sits about 30 px off its home cell, and a move would stand it
+  up). The use still emits `npc_used:<objectId>`. It ends through one `returning` tick
+  with `atPost` true, which emits nothing; seating's `needsStop` keeps the home stop
+  through the whole use and that tick, so the NPC stays seated. Carry jobs are never at
+  post. `npc_returned_post` is gated on `atPost` being false, not on a matching
+  `npc_left_post`: a script move clears `atPost` without emitting (open question 12 of
+  the office-life plan), so a later needs return emits an unpaired `npc_returned_post`.
+- **Caught at the desk.** While an NPC walks back from a real leave and is in its home
+  room, the player within 48 px (1.5 tiles) of its home object's approach cell, or with
+  a minigame open whose params carry that object (`lockable`, `sprite`,
+  `containerItem`), emits `npc_caught_at_post:<npcId>` once per return. It can fire on
+  the first returning tick, while the NPC is still at the coffee machine across the
+  room, and a player walking past the desk at that moment counts. Coordinate homes
+  never catch.
 
 ### 5.4 Approach cells
 
@@ -365,8 +382,9 @@ events.
 | Event | Payload |
 |---|---|
 | `npc_need_urgent:<npcId>` | `{npcId, need, level}` |
-| `npc_left_post:<npcId>` | `{npcId, need, targetId}` (`need` null for an interest job) |
-| `npc_returned_post:<npcId>` | `{npcId}` |
+| `npc_left_post:<npcId>` | `{npcId, need, targetId, expectedAwayMs, playerNearby, playerDistance}` (`need` null for an interest job) |
+| `npc_returned_post:<npcId>` | `{npcId, playerNearby, playerDistance}` |
+| `npc_caught_at_post:<npcId>` | `{npcId, objectId, playerDistance, inMinigame}` (5.3) |
 | `npc_picked_up:<itemId>` | `{npcId, itemId, tag}` |
 | `npc_used:<objectId>` | `{npcId, objectId, need, itemId, tag, payload, playerNearby}` |
 | `npc_job_failed:<npcId>` | `{npcId, need, targetId, reason}` (`timeout`, `no_approach`) |
@@ -383,6 +401,23 @@ events.
   NPC's room within 3 tiles (96 px) with a clear line (`canSeePlayerToFace`).
   A mapping reads it as `data.playerNearby === true` (a bare `playerNearby` is not resolved by `safeEvaluateCondition`). Lets a scenario condition on "the player was right there when the NPC used it",
   which the tailgating beat needs (12.3).
+
+`npc_left_post` details:
+- `expectedAwayMs`: straight-line walk out and back at the NPC's needs speed (via the
+  item for a carry) plus the target's `useSeconds` (default 20). A lower bound: paths
+  round furniture and a wait for a busy target make the real absence longer.
+- `playerNearby`, `playerDistance`: as for `npc_used`, at the moment of leaving (also on
+  `npc_returned_post`, at arrival).
+
+A mapping for the catch, e.g. a bark or a conversation:
+
+```jsonc
+{ "eventPattern": "npc_caught_at_post:tom", "cooldown": 30000,
+  "bark": "Er, that's my desk. Can I help you?" }
+```
+
+`inMinigame: true` means the player had the owner's PC (or other home object) open; the
+engine does not close it. A mapping can.
 
 The decision log never contains payload contents (only `payloadPresent`).
 
@@ -432,6 +467,12 @@ The decision log never contains payload contents (only `payloadPresent`).
 - Need levels reset to `initial` (same seeded jitter). No state sync.
 - Dropped items: see section 6.
 - Globals set by `onUse` and by scenario mappings persist as usual.
+- Workstation globals (`<id>_owner_away`, `<id>_screen_locked`, `workstation-state.js`)
+  are written false at install for every workstation in a room loaded at that point.
+  **Open gap (2026-11-06):** a workstation whose room is not loaded at install (the lab's
+  open plan, since a reload restarts in the briefing room) keeps the saved value until
+  its owner next leaves and returns, so its "away" text can show while the owner sits at
+  the desk. `onInteract` still answers "attended", so no access event fires.
 
 ---
 
@@ -541,25 +582,21 @@ task) is set by `item_dropped:kit_*` mappings on Priya (loaded in `open_plan`).
 and **no item opens it** (the validator warns; that is the taught point). The
 disguise is two carried/worn kit items whose `onPickup.setVariable` sets globals:
 `kit_hivis` → `has_hivis`, `kit_parcel` → `has_parcel` (the old `kit_lanyard` →
-`has_lanyard` is kept as optional cover). Len runs a `rounds` need
-(`decayPerMin:30, urgentAt:60, initial:70, maxUnmetMin:3`) satisfied by
-`badge_reader` beside the door (`affordance { satisfies:"rounds", restores:40, useSeconds:6 }`),
-so he walks over and taps through every ~20–40 s, each tap emitting
-`npc_used:badge_reader`. One gated mapping turns a tap into the tailgate:
+`has_lanyard` is kept as optional cover).
 
-```jsonc
-{ "eventPattern": "npc_used:badge_reader",
-  "condition": "data.playerNearby === true && globalVars.has_hivis === true && globalVars.has_parcel === true",
-  "onceOnly": true, "cooldown": 0,
-  "unlockDoor": "secure_area", "setGlobal": { "kp_badge_tailgated": true } }
-```
-
-`data.playerNearby` is the §7 flag (player in Len's room within 3 tiles with a clear
-line). Len badging while the player is absent or out of disguise fails the condition
-and does not consume the `onceOnly`, so he keeps badging until the player is right
-behind him in the hi-vis and parcel. The mapping calls the existing `unlockDoor`
-(the door sprite is destroyed and stays passable, §2); the player follows through
-and `secure_area` streams in. Ruth's debrief there concludes the mission.
+**As built now (corrected 2026-11-06; the earlier `rounds` need is gone).** Len has no
+needs block. He walks a multi-room `behavior.patrol.route` (`waypointMode: "sequential"`,
+`pauseForPlayer: false`): a dwell in `open_plan`, then a waypoint beside the records door
+with the route action `{ "unlockRoom": "secure_area", "useObject": "badge_reader" }`, then
+two points inside `secure_area`, and back. The route action faces the reader and opens
+the door through Len's `unlockDoor` mapping (a mapping on `len_never_fires` that must stay:
+the client and server both check for it before an NPC may unlock a room). The door gate
+emits `door_gate_opened` / `door_gate_closed`, which the scenario maps to the global
+`len_at_door`; `room_entered:secure_area` while `len_at_door` is true sets
+`kp_badge_tailgated`. His `los.challengeOnSight` (`near: { door: "secure_area", radius: 64 }`,
+skipped once `courier_ready` or `records_clone_held` is set) emits `player_in_view_near:len`,
+which challenges the player at the door, or records the PIN capture when he is at the
+keypad. The scenario file is the reference for the exact mappings.
 
 ### 12.4 Capture view
 
