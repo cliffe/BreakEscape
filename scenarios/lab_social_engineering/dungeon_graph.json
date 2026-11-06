@@ -105,15 +105,21 @@
       "optional": false
     },
     {
-      "id": "lock_sofia_archive",
-      "label": "payroll_backup.zip<br/>Password lock",
-      "kind": "lock",
-      "optional": false
-    },
-    {
       "id": "desk_phone",
       "label": "Desk Phone",
       "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "grant_sofia_remote",
+      "label": "Remote Session — LW-FIN-07<br/>(granted)",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "lock_sofia_archive",
+      "label": "payroll_backup.zip<br/>Password lock",
+      "kind": "lock",
       "optional": false
     },
     {
@@ -211,12 +217,18 @@
     },
     {
       "from": "operations_room",
-      "to": "lock_sofia_archive",
+      "to": "desk_phone",
       "soft": false
     },
     {
-      "from": "operations_room",
-      "to": "desk_phone",
+      "from": "engagement_office",
+      "to": "grant_sofia_remote",
+      "soft": true,
+      "label": "phish_lord_foothold"
+    },
+    {
+      "from": "grant_sofia_remote",
+      "to": "lock_sofia_archive",
       "soft": false
     },
     {

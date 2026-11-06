@@ -1484,8 +1484,8 @@ export function handleObjectInteraction(sprite) {
 
     // Optional stage gate: any object whose minigameData sets `requiresGlobal` stays locked until
     // that global is true (mirrors the minigame-starter gate above, for containers and other
-    // objects that dispatch here). Inert for any object that does not set it. The SE lab's remote
-    // desktop (sofia_remote, a pc container) keys this on the exe foothold (phish_lord_foothold).
+    // objects that dispatch here). Inert for any object that does not set it. (The SE lab's remote
+    // desktop no longer uses it: sofia_remote is a declared grant handed over by a timer.)
     {
         const gate = data.minigameData && data.minigameData.requiresGlobal;
         if (typeof gate === 'string' && gate &&

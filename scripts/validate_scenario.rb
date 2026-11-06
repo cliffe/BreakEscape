@@ -495,7 +495,7 @@ def check_unknown_fields(json_data)
     mac canScanBluetooth phoneId npcIds app
     hacktivityMode vm acceptsVms flags flagRewards
     mode onAbort onLaunch abortConfirmText launchConfirmText
-    itemsHeld contents triggerOnInteract
+    itemsHeld contents hasContents triggerOnInteract
     requiresItem requiresItemHint consumesItem revealOnGlobal
     minigameData interactionType
     gateVar sealedMessage openableReadyMessage

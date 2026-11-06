@@ -159,11 +159,14 @@
 
   <%# When the exe foothold lands (phish_lord_foothold, set from lord_mail.ink), hand the player a
       "Remote Session" opener in their inventory instead of leaving a remote-desktop PC sitting in
-      the Operations Room. Clicking the opener opens the sofia_remote container by id; its contents
-      and the nested archive's unlock resolve server-side from the hidden (active:false) room
-      object. delayMs 300 so the start time is set before it fires; the dispatcher fires it once and
-      remembers it across reloads (firedTimers). The item's type "pc" gives it the pc.png icon and
-      the desktop UI; its id "sofia_remote" is what the container-contents fetch keys on. %>
+      the Operations Room. It is a declared grant (DECLARED_GRANTS_PLAN.md): the server accepts this
+      give_item because the scenario declares it, stores this item without its contents, and serves
+      the contents and the nested archive's unlock from it while the player holds it. No hidden room
+      object is needed, and the contents never ship in the scenario JSON. Shows that a foothold is
+      access to the person's files and, from there, more credentials. delayMs 300 so the start time
+      is set before it fires; the dispatcher marks it fired once the server has the item (it retries
+      a give lost to the network). The type "pc" gives it the pc.png icon and the desktop UI; the id
+      "sofia_remote" is what the unlock and container fetch key on. %>
   "timers": [
     {
       "id": "grant_remote_session",
@@ -176,7 +179,58 @@
             "name": "Remote Session — LW-FIN-07",
             "hasContents": true,
             "locked": false,
-            "observations": "A remote desktop session on Sofia Lord's workstation — the foothold the installer gave you. Open it to see what it reaches."
+            "observations": "A remote desktop session on Sofia Lord's workstation — the foothold the installer gave you. Open it to see what it reaches.",
+            "contents": [
+              {
+                "type": "text_file",
+                "name": "Payroll_Q3_draft.xlsx",
+                "takeable": false,
+                "readable": true,
+                "text": "DRAFT — Q3 payroll run\n\nStaff net pay, sort codes and account numbers for the whole Finance team.\n\n(On a real engagement this is the point: the installer gave you her session, and her session reaches everything she can.)",
+                "observations": "A payroll working file open on her desktop"
+              },
+              {
+                "type": "text_file",
+                "name": "logins.txt",
+                "takeable": false,
+                "readable": true,
+                "text": "Notes to self:\n- Portal: Sofia2026! (same as laptop)\n- Shared drive maps on sign-in\n\nReusing one password means this foothold is now every account that password opens.",
+                "observations": "A plain-text password note on her desktop"
+              },
+              {
+                "type": "text_file",
+                "name": "README_this_is_simulated.txt",
+                "takeable": false,
+                "readable": true,
+                "text": "Simulated for training. No real machine was accessed and nothing here is real. In the engagement you would screenshot the access as proof, report it, and stop — you do not read staff files.",
+                "observations": "A reminder that this session is simulated"
+              },
+              {
+                <%# The password-reuse payoff: a zip on her desktop locked with the SAME password your
+                    fake portal captured (Sofia2026!). Opening it completes the final optional task.
+                    The zip_archive sprite is the archive icon copied into assets/objects. %>
+                "type": "zip_archive",
+                "id": "sofia_archive",
+                "name": "payroll_backup.zip",
+                "takeable": false,
+                "locked": true,
+                "lockType": "password",
+                "requires": "Sofia2026!",
+                "showKeyboard": true,
+                "maxAttempts": 5,
+                "observations": "A password-protected archive on her desktop. Worth trying a password you already have.",
+                "contents": [
+                  {
+                    "type": "text_file",
+                    "name": "personal_banking.txt",
+                    "takeable": false,
+                    "readable": true,
+                    "onRead": { "setVariable": { "sofia_archive_opened": true } },
+                    "text": "Simulated. The archive opened with the very password she'd typed into your fake portal minutes earlier. One reused password turned a captured sign-in into everything this file would hold. That reuse is the finding — not the zip."
+                  }
+                ]
+              }
+            ]
         } }
       ]
     }
@@ -285,8 +339,8 @@
     "se_landing_pages": {},
     "se_landing_drafts": {},
     "se_captures": {},
-    <%# Set from lord_mail.ink when Sofia runs the attached executable; unlocks the remote-desktop
-        PC container (sofia_remote) that presents the foothold. %>
+    <%# Set from lord_mail.ink when Sofia runs the attached executable; starts the
+        grant_remote_session timer, which hands over the sofia_remote "Remote Session" opener. %>
     "phish_lord_foothold": false,
     <%# Set when the player opens the password-protected archive on Sofia's desktop (reused
         password); completes the final optional task. %>
@@ -905,8 +959,9 @@
         },
         <%# The executable route (the "human is the exploit" beat). Sofia runs an attached .exe only
             under pressure: high urgency and a borrowed-authority ask. The foothold presents as a
-            remote desktop — the sofia_remote PC container, unlocked by phish_lord_foothold (set from
-            lord_mail.ink when she runs it). Finance/Careers have no runsExecutable, so they refuse. %>
+            remote desktop — the sofia_remote "Remote Session" opener the grant_remote_session timer
+            hands over once phish_lord_foothold is set (from lord_mail.ink when she runs it).
+            Finance/Careers have no runsExecutable, so they refuse. %>
         "runsExecutable": { "minUrgency": "high", "requiresTell": "borrowed_authority" },
         "foothold": { "host": "LW-FIN-07", "note": "ran Setup.exe", "containerId": "sofia_remote" },
         "requiredFactors": ["senderTrust", "addressedTo", "pretextRelevant", "linkCredible"],
@@ -1792,82 +1847,6 @@
           "locked": false,
           "observations": "A terminal collecting what the campaign has captured so far.",
           "minigameData": { "landingPageId": "payroll_login", "view": "captures" }
-        },
-        {
-          <%# The exe foothold's payoff: a remote desktop on Sofia's machine. Kept here as data
-              only — active:false, so it is never revealed or clickable in the Operations Room
-              (rooms.js reveals only active objects) — while the server still resolves its contents
-              and the nested archive's password unlock from this definition. The player never sees a
-              remote desktop sitting in the room. Instead, when the exe foothold lands
-              (phish_lord_foothold, from lord_mail.ink), the "grant_remote_session" timer hands a
-              "Remote Session" opener to the inventory; clicking it opens THIS container by id.
-              Shows that a foothold is access to the person's files and, from there, more
-              credentials — the compromise the hands-on VM lab used to teach. %>
-          "type": "pc",
-          "id": "sofia_remote",
-          "name": "Remote Session — LW-FIN-07",
-          "position": "as-type:pc",
-          <%# takeable:true is required even though this never renders: the timer's give_item is
-              validated server-side against THIS canonical object (validate_item_collectible →
-              find_accessible_item, which matches it despite active:false), and a takeable:false
-              object is refused ("Item is not takeable"). active:false keeps it out of the room, so
-              takeable:true is inert there — it only lets the inventory grant through. %>
-          "takeable": true,
-          "interactable": false,
-          "active": false,
-          "locked": false,
-          "observations": "A remote desktop session opened on Sofia Lord's workstation.",
-          "contents": [
-            {
-              "type": "text_file",
-              "name": "Payroll_Q3_draft.xlsx",
-              "takeable": false,
-              "readable": true,
-              "text": "DRAFT — Q3 payroll run\n\nStaff net pay, sort codes and account numbers for the whole Finance team.\n\n(On a real engagement this is the point: the installer gave you her session, and her session reaches everything she can.)",
-              "observations": "A payroll working file open on her desktop"
-            },
-            {
-              "type": "text_file",
-              "name": "logins.txt",
-              "takeable": false,
-              "readable": true,
-              "text": "Notes to self:\n- Portal: Sofia2026! (same as laptop)\n- Shared drive maps on sign-in\n\nReusing one password means this foothold is now every account that password opens.",
-              "observations": "A plain-text password note on her desktop"
-            },
-            {
-              "type": "text_file",
-              "name": "README_this_is_simulated.txt",
-              "takeable": false,
-              "readable": true,
-              "text": "Simulated for training. No real machine was accessed and nothing here is real. In the engagement you would screenshot the access as proof, report it, and stop — you do not read staff files.",
-              "observations": "A reminder that this session is simulated"
-            },
-            {
-              <%# The password-reuse payoff: a zip on her desktop locked with the SAME password your
-                  fake portal captured (Sofia2026!). Opening it completes the final optional task.
-                  The zip_archive sprite is the archive icon copied into assets/objects. %>
-              "type": "zip_archive",
-              "id": "sofia_archive",
-              "name": "payroll_backup.zip",
-              "takeable": false,
-              "locked": true,
-              "lockType": "password",
-              "requires": "Sofia2026!",
-              "showKeyboard": true,
-              "maxAttempts": 5,
-              "observations": "A password-protected archive on her desktop. Worth trying a password you already have.",
-              "contents": [
-                {
-                  "type": "text_file",
-                  "name": "personal_banking.txt",
-                  "takeable": false,
-                  "readable": true,
-                  "onRead": { "setVariable": { "sofia_archive_opened": true } },
-                  "text": "Simulated. The archive opened with the very password she'd typed into your fake portal minutes earlier. One reused password turned a captured sign-in into everything this file would hold. That reuse is the finding — not the zip."
-                }
-              ]
-            }
-          ]
         },
         {
           "type": "phone",
