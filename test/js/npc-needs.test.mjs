@@ -4,7 +4,7 @@
 // scenarios/test_npc_needs.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { NPCNeedsSystem, needTiming, NEEDS_TICK_MS, createEngineWorld } from '../../public/break_escape/js/systems/npc-needs.js';
+import { NPCNeedsSystem, needTiming, NEEDS_TICK_MS, RETURN_YIELD_MS, createEngineWorld } from '../../public/break_escape/js/systems/npc-needs.js';
 
 import { makeWorld } from './fixtures/needs-stub-world.mjs';
 
@@ -656,6 +656,45 @@ test('caught at the desk: not while the returning NPC is still in another room',
     assert.equal(caught(), 1, 'caught once back in the office');
     sys.step(NEEDS_TICK_MS * 4);
     assert.equal(caught(), 1, 'once per return');
+});
+
+test('walk home: a player standing in the way holds it for at most RETURN_YIELD_MS, then it carries on without yielding', () => {
+    // Live (lab_physical_pentest games 614, 619, 622, 623): the walk home yields to the player
+    // (face_player) for as long as the player stands within 96 px, so an NPC back from coffee
+    // stood in `returning` for 50 s+ and never sat down again.
+    const cfg = office();
+    cfg.npcs.clerk.rec.needs.caffeine.jitterPct = 0;
+    const w = makeWorld({ ...cfg, arrive: false });
+    const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+    w.attach(sys);
+    sys.registerAll();
+    let guard = 0;
+    while (sys.getState('clerk').job?.phase !== 'goto_target' && guard++ < 4000) sys.step(NEEDS_TICK_MS);
+    w.pos.clerk.x = 300; w.pos.clerk.y = 332; sys.onArrived('clerk', 'needs');
+    sys.step(41000);                                   // 40 s use, then returning
+    assert.equal(sys.getState('clerk').mode, 'returning');
+    const homeMoves = () => w.calls.moves.filter(m => m.id === 'clerk' && m.x === 100 && m.y === 100);
+    assert.equal(homeMoves().length, 1);
+    assert.equal(homeMoves()[0].yieldToPlayer, true, 'the walk home starts polite');
+
+    // Walking: progress each tick, so no re-issue however long it takes
+    for (let i = 0; i < 20; i++) { w.pos.clerk.x -= 4; sys.step(NEEDS_TICK_MS); }
+    assert.equal(homeMoves().length, 1, 'a walk that is making progress is left alone');
+
+    // The player stands beside it: it stops and faces them, then carries on
+    sys.step(RETURN_YIELD_MS - NEEDS_TICK_MS);
+    assert.equal(homeMoves().length, 1, 'a short courtesy pause');
+    sys.step(NEEDS_TICK_MS * 2);
+    assert.equal(homeMoves().length, 2, 'stalled walk home re-issued');
+    assert.equal(homeMoves()[1].yieldToPlayer, false, 'and no longer yields to the player');
+    assert.ok(sys.getLog().some(e => e.npc === 'clerk' && e.ev === 'return_resumed'));
+
+    // It gets there and counts as back
+    w.pos.clerk.x = 100; w.pos.clerk.y = 100; sys.onArrived('clerk', 'needs');
+    sys.step(NEEDS_TICK_MS);
+    assert.equal(sys.getState('clerk').mode, 'idle');
+    assert.equal(sys.getState('clerk').atPost, true);
+    assert.ok(w.calls.emits.some(e => e.name === 'npc_returned_post:clerk'));
 });
 
 test('own-desk work by a seated NPC (body ~30 px off its home cell) issues no move, before or after the use', () => {

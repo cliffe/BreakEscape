@@ -101,6 +101,64 @@ export function iconShown({ npcRoom, playerRoom, dark = false }) {
     return !!npcRoom && npcRoom === playerRoom && !dark;
 }
 
+// ---- head top, for the action icon (npc-action-icons.js) ----
+// Character frames are 80 px with empty canvas above the head (the head starts about row 13-15,
+// standing or seated), so the frame's top is not the head's. The icon sits ICON_HEAD_GAP px
+// above the first opaque row of the frame on screen.
+export const ICON_HEAD_GAP = 2;
+const FALLBACK_TOP_DY = 6;   // no pixel data (a canvas-less test, a failed read): the old offset
+const headRows = new Map();  // `${textureKey}|${frameName}` -> first opaque row (untrimmed frame px) or null
+
+/** Pure: the first row with any alpha > 0 in a w x h frame, or null for a blank frame. */
+export function firstOpaqueRow(alphaAt, w, h) {
+    for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) if (alphaAt(x, y) > 0) return y;
+    }
+    return null;
+}
+
+/** First opaque row of a sprite's current frame, read once per texture and frame from its source image. */
+export function frameHeadRow(sprite) {
+    const fr = sprite?.frame;
+    const key = sprite?.texture?.key;
+    if (!fr || !key) return null;
+    const ck = `${key}|${fr.name}`;
+    if (headRows.has(ck)) return headRows.get(ck);
+    let row = null;
+    try {
+        const img = fr.source?.image;
+        const w = fr.cutWidth, h = fr.cutHeight;
+        const doc = typeof document !== 'undefined' ? document : null;
+        if (img && doc && w > 0 && h > 0) {
+            const c = doc.createElement('canvas');
+            c.width = w; c.height = h;
+            const ctx = c.getContext('2d', { willReadFrequently: true });
+            ctx.drawImage(img, fr.cutX, fr.cutY, w, h, 0, 0, w, h);
+            const data = ctx.getImageData(0, 0, w, h).data;
+            const r = firstOpaqueRow((x, y) => data[(y * w + x) * 4 + 3], w, h);
+            // A trimmed atlas frame starts lower on the untrimmed canvas
+            if (r !== null) row = r + (fr.data?.trim ? (fr.data.spriteSourceSize?.y || 0) : 0);
+        }
+    } catch (e) { row = null; }
+    headRows.set(ck, row);
+    return row;
+}
+
+/**
+ * Pure: the icon's anchor (its bottom centre). `top` is the sprite's top centre on screen
+ * (getTopCenter), `row` the frame's first opaque row, `scaleY` the sprite's vertical scale.
+ */
+export function iconAnchor(top, row, scaleY = 1, gap = ICON_HEAD_GAP) {
+    if (row === null || row === undefined) return { x: Math.round(top.x), y: Math.round(top.y + FALLBACK_TOP_DY) };
+    return { x: Math.round(top.x), y: Math.round(top.y + row * Math.abs(scaleY || 1) - gap) };
+}
+
+/** The anchor for a live NPC sprite: just above its head, seated or standing. */
+export function npcIconAnchor(sprite) {
+    const top = sprite.getTopCenter ? sprite.getTopCenter() : { x: sprite.x, y: sprite.y - 40 };
+    return iconAnchor(top, frameHeadRow(sprite), sprite.scaleY);
+}
+
 export class NpcOfficeVisuals {
     constructor(scene = null) {
         this.scene = scene;

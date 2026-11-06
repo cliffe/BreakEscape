@@ -22,7 +22,7 @@
  * without lighting counts as lit). A job that is winding up (npc_action_windup) pulses its icon
  * before the NPC moves. Reads window.npcNeedsSystem.getState(); changes nothing in the needs system.
  */
-import { iconShown, roomIsDark } from './npc-office-visuals.js';
+import { iconShown, roomIsDark, npcIconAnchor } from './npc-office-visuals.js';
 
 // Defaults from existing art, none resized (OFFICE_LIFE_PLAN 2.12). Hunger and rest have no
 // suitable art yet, so they stay text until icons are drawn [approval].
@@ -41,6 +41,17 @@ export const DEFAULT_ICONS = {
 
 // Text shown while a default texture loads (or if it fails)
 const TEXT_STANDIN = { caffeine: 'C', thirst: 'W', work: 'PC', social: 'S', curiosity: '?', post: 'P', printout: 'P' };
+
+// Text glyph size (px). The backing is sized from this, not from the text's measured height:
+// an emoji glyph ("☕", the lab's coffee entry) measures about twice its font size, which made a
+// 34 px box that stood well clear of the head and read as an object on the desk behind.
+export const ICON_TEXT_PX = 16;
+
+/** Pure: the backing's { w, h } for what the icon shows. */
+export function backingSize(kind, { width = 0, height = 0 } = {}) {
+    if (kind === 'sprite') return { w: width + 6, h: height + 4 };
+    return { w: Math.max(width, ICON_TEXT_PX) + 8, h: Math.min(height || ICON_TEXT_PX, ICON_TEXT_PX + 4) + 2 };
+}
 
 const usable = v => (typeof v === 'string' && v) || (v && typeof v === 'object' && typeof v.sprite === 'string' && v.sprite);
 
@@ -134,9 +145,9 @@ export class NpcActionIcons {
 
     _make(scene) {
         const bg = scene.add.rectangle(0, 0, 10, 10, 0x1b2a41).setOrigin(0.5, 1);
-        const text = scene.add.text(0, -1, '', {
-            fontFamily: 'monospace', fontSize: '16px', fontStyle: 'bold', color: '#ffffff'
-        }).setOrigin(0.5, 1);
+        const text = scene.add.text(0, 0, '', {
+            fontFamily: 'monospace', fontSize: `${ICON_TEXT_PX}px`, fontStyle: 'bold', color: '#ffffff'
+        }).setOrigin(0.5, 0.5);
         const img = scene.add.image(0, -2, '__DEFAULT').setOrigin(0.5, 1).setVisible(false);
         const box = scene.add.container(0, 0, [bg, text, img]).setDepth(5000);
         return { box, bg, text, img, shown: null };
@@ -151,11 +162,14 @@ export class NpcActionIcons {
         if (sprite) {
             ic.img.setTexture(r.key).setVisible(true);
             ic.text.setVisible(false);
-            ic.bg.setSize(ic.img.width + 6, ic.img.height + 4);
+            const b = backingSize('sprite', { width: ic.img.width, height: ic.img.height });
+            ic.bg.setSize(b.w, b.h);
         } else {
             ic.img.setVisible(false);
             ic.text.setText(r.glyph).setVisible(true);
-            ic.bg.setSize(ic.text.width + 8, ic.text.height + 2);
+            const b = backingSize('text', { width: ic.text.width, height: ic.text.height });
+            ic.bg.setSize(b.w, b.h);
+            ic.text.setPosition(0, -b.h / 2);   // centred in the box; a tall emoji line box overflows invisibly
         }
     }
 
@@ -182,8 +196,9 @@ export class NpcActionIcons {
                 this.icons.set(id, ic);
             }
             this._render(sprite.scene, ic, r);
-            const top = sprite.getTopCenter ? sprite.getTopCenter() : { x: sprite.x, y: sprite.y - 40 };
-            ic.box.setPosition(Math.round(top.x), Math.round(top.y + 6)).setVisible(true);
+            // Just above the head (its first opaque row), standing or seated, not the 80 px frame's top
+            const at = npcIconAnchor(sprite);
+            ic.box.setPosition(at.x, at.y).setVisible(true);
             const winding = !!st.job.windingUp;
             ic.box.setData('windup', winding);
             ic.box.setData('job', st.job.targetId || '');

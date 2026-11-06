@@ -25,7 +25,11 @@ const FAIL_COOLDOWN_MS = 60000;
 const HOME_EPS = 12;
 const HOME_RETRY_TICKS = 4;   // provisional needsHome re-lookup: once a second
 const SELECT_BACKOFF_TICKS = 4; // a selection that path-searched and found nothing retries after 1 s
-const CAUGHT_RADIUS = 48;     // px (1.5 tiles) from the home approach cell: "you were in my chair"
+// The walk home yields to the player (stops and faces them). After this long without moving
+// it is re-issued without yielding, or a player standing near the route holds it for ever.
+export const RETURN_YIELD_MS = 3000;
+const RETURN_STILL_PX = 4;    // less than this between ticks counts as standing still
+const CAUGHT_RADIUS = 48;    // px (1.5 tiles) from the home approach cell: "you were in my chair"
 
 export function hash32(str) {
     let h = 0x811c9dc5;
@@ -521,6 +525,9 @@ export class NPCNeedsSystem {
             }
         }
 
+        // Walking home and not getting anywhere (stopped to face the player): carry on
+        if (s.mode === 'returning' && !s.atPost) this._watchReturn(s, pos);
+
         if (s.mode === 'job' && s.job?.windupUntil) {
             if (this.clockMs < s.job.windupUntil) return;
             s.job.windupUntil = 0;
@@ -933,17 +940,41 @@ export class NPCNeedsSystem {
         return { x: pos.x, y: pos.y, roomId: pos.roomId || null, objectId: null };
     }
 
-    /** stayPut: an own-desk use just ended; the NPC is at its post (maybe seated off the cell). */
-    _goHome(s, { stayPut = false } = {}) {
+    /**
+     * stayPut: an own-desk use just ended; the NPC is at its post (maybe seated off the cell).
+     * yieldToPlayer: the walk stops to face a player within reach (the behaviour layer's
+     * face_player); _watchReturn turns it off after RETURN_YIELD_MS without progress.
+     */
+    _goHome(s, { stayPut = false, yieldToPlayer = true } = {}) {
         const id = s.npcId;
         s.mode = 'returning';
+        s.returnWatch = null;
         const pos = this.world.npcPos(id);
         if (!s.home || !pos) { s.mode = 'idle'; return; }
         if (stayPut || Math.hypot(pos.x - s.home.x, pos.y - s.home.y) <= HOME_EPS) {
             this._arrivals.add(id);
             return;
         }
-        this.world.moveTo(id, s.home.x, s.home.y, this.world.speedFor(id), { yieldToPlayer: true, avoidRooms: this._avoidRooms(s) });
+        this.world.moveTo(id, s.home.x, s.home.y, this.world.speedFor(id), { yieldToPlayer, avoidRooms: this._avoidRooms(s) });
+    }
+
+    /**
+     * A walk home that has not moved RETURN_STILL_PX for RETURN_YIELD_MS of needs clock is
+     * re-issued without yielding to the player. The behaviour layer's face_player has no time
+     * limit, so a player standing within 96 px of the route (watching the desk, or idle at the
+     * coffee machine) used to hold the NPC in `returning` for good: it never got home, never
+     * sat. A re-issue also re-plans the path, which covers a walk wedged for another reason.
+     */
+    _watchReturn(s, pos) {
+        const w = s.returnWatch;
+        if (!w || Math.hypot(pos.x - w.x, pos.y - w.y) >= RETURN_STILL_PX) {
+            s.returnWatch = { x: pos.x, y: pos.y, since: this.clockMs };
+            return;
+        }
+        if (this.clockMs - w.since < RETURN_YIELD_MS) return;
+        this._log(s.npcId, 'return_resumed', { x: Math.round(pos.x), y: Math.round(pos.y) });
+        this._goHome(s, { yieldToPlayer: false });
+        s.returnWatch = { x: pos.x, y: pos.y, since: this.clockMs };
     }
 
     // ── read-outs ──────────────────────────────────────────────────────────

@@ -6,10 +6,10 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { pickIcon, pickIconEntry, resolveIcon, DEFAULT_ICONS } from '../../public/break_escape/js/systems/npc-action-icons.js';
+import { pickIcon, pickIconEntry, resolveIcon, DEFAULT_ICONS, NpcActionIcons, backingSize, ICON_TEXT_PX } from '../../public/break_escape/js/systems/npc-action-icons.js';
 import {
     useVolume, SoundLimiter, handOffset, heldPlacement, iconShown, roomIsDark, officeVisualsOn,
-    NpcOfficeVisuals, USE_SOUND_SCALE
+    NpcOfficeVisuals, USE_SOUND_SCALE, firstOpaqueRow, iconAnchor, frameHeadRow, ICON_HEAD_GAP
 } from '../../public/break_escape/js/systems/npc-office-visuals.js';
 import { hearingLevel } from '../../public/break_escape/js/systems/room-hearing.js';
 
@@ -60,6 +60,111 @@ test('an explicit scenario entry wins: object id first, then the need', () => {
 });
 
 // ── where icons show ─────────────────────────────────────────────────────
+
+// ── icon placement: just above the head, not the 80 px frame's top (game 603: Pierce's coffee
+// icon floated clear of her head beside the next desk's lamp) ─────────────────────────────
+
+test('firstOpaqueRow: the first row with any alpha; null for a blank frame', () => {
+    const alpha = (x, y) => (y >= 14 && x >= 28 && x <= 52 ? 255 : 0);
+    assert.equal(firstOpaqueRow(alpha, 80, 80), 14);
+    assert.equal(firstOpaqueRow(() => 0, 80, 80), null);
+});
+
+test('iconAnchor: head row minus the gap, scaled; the old +6 only without pixel data', () => {
+    const top = { x: 200.4, y: 123 };
+    assert.deepEqual(iconAnchor(top, 14), { x: 200, y: 123 + 14 - ICON_HEAD_GAP });
+    assert.deepEqual(iconAnchor(top, 13, 2), { x: 200, y: 123 + 26 - ICON_HEAD_GAP });
+    assert.deepEqual(iconAnchor(top, null), { x: 200, y: 129 });
+});
+
+test('backingSize: a tall emoji line box does not make a tall backing', () => {
+    // Live, "☕" at 16 px measured 34 px high and the box stood 42 px above the head
+    const emoji = backingSize('text', { width: 18, height: 32 });
+    assert.ok(emoji.h <= ICON_TEXT_PX + 6, `emoji box ${emoji.h} px high`);
+    assert.deepEqual(backingSize('text', { width: 20, height: 19 }), { w: 28, h: 21 });
+    assert.deepEqual(backingSize('sprite', { width: 16, height: 12 }), { w: 22, h: 16 });
+});
+
+/** A fake Phaser scene and NPC sprite for NpcActionIcons.update, with a canvas that reads the frame's alpha. */
+function iconRig({ frameName = 'sit_north_frame_000', headRow = 13, textureReady = false } = {}) {
+    const objs = [];
+    const mk = (kind) => {
+        const o = { kind, x: 0, y: 0, visible: true, w: 0, h: 0, data: {}, scene: null,
+            setOrigin() { return o; }, setVisible(v) { o.visible = v; return o; }, setPosition(x, y) { o.x = x; o.y = y; return o; },
+            setSize(w, h) { o.w = w; o.h = h; return o; }, setTexture(k) { o.key = k; o.width = 16; o.height = 12; return o; },
+            setText(t) { o.text = t; o.width = 18; o.height = 32; return o; }, setDepth() { return o; }, setScale(s) { o.scale = s; return o; },
+            setData(k, v) { o.data[k] = v; return o; } };
+        objs.push(o);
+        return o;
+    };
+    const scene = {
+        add: {
+            rectangle: () => mk('bg'), text: () => mk('text'), image: () => mk('img'),
+            container: (x, y, kids) => { const c = mk('box'); c.kids = kids; c.scene = scene; return c; }
+        },
+        textures: { exists: () => textureReady },
+        load: { image() {}, once() {}, isLoading: () => true, start() {} }
+    };
+    const sprite = {
+        x: 200, y: 163, scaleY: 1, active: true, visible: true, destroyed: false, scene,
+        texture: { key: `rig_${frameName}_${headRow}` },
+        frame: { name: frameName, cutX: 0, cutY: 0, cutWidth: 80, cutHeight: 80, source: { image: {} } },
+        getTopCenter() { return { x: this.x, y: this.y - 40 }; }
+    };
+    const job = { kind: 'use', need: 'caffeine', targetId: 'coffee_station', phase: 'goto_target', windingUp: false };
+    globalThis.window = {
+        gameScenario: { actionIcons: { coffee_station: '☕' } },
+        currentPlayerRoom: 'office',
+        rooms: {},
+        npcNeedsSystem: { states: new Map([['pierce', {}]]), getState: () => ({ job }) },
+        npcBehaviorManager: { getBehavior: () => ({ sprite, roomId: 'office' }) }
+    };
+    globalThis.document = {
+        createElement: () => ({ getContext: () => ({
+            drawImage() {},
+            getImageData: (x0, y0, w, h) => {
+                const data = new Uint8ClampedArray(w * h * 4);
+                for (let y = headRow; y < h; y++) for (let x = 28; x < 52; x++) data[(y * w + x) * 4 + 3] = 255;
+                return { data };
+            }
+        }) })
+    };
+    return { scene, sprite, job, objs };
+}
+
+function cleanupRig() { delete globalThis.window; delete globalThis.document; }
+
+test('action icon: anchored just above a seated NPC\'s head; one of text or sprite, never both', () => {
+    const rig = iconRig({ frameName: 'sit_north_frame_000', headRow: 13 });
+    try {
+        assert.equal(frameHeadRow(rig.sprite), 13);
+        const icons = new NpcActionIcons();
+        icons.update();
+        const ic = icons.icons.get('pierce');
+        // frame top 123, head at row 13 -> 136; the box's bottom 2 px above it
+        assert.deepEqual([ic.box.x, ic.box.y], [200, 136 - ICON_HEAD_GAP]);
+        assert.equal(ic.text.visible, true);
+        assert.equal(ic.img.visible, false);
+        assert.ok(ic.bg.h <= ICON_TEXT_PX + 6, `emoji backing ${ic.bg.h} px`);
+        assert.equal(ic.text.y, -ic.bg.h / 2, 'glyph centred in its box');
+    } finally { cleanupRig(); }
+});
+
+test('action icon: a sprite icon hides the text stand-in once its texture is ready; standing NPC too', () => {
+    const rig = iconRig({ frameName: 'walk_east_frame_000', headRow: 15, textureReady: false });
+    try {
+        window.gameScenario.actionIcons = {};          // default caffeine sprite (coffee_cups1)
+        const icons = new NpcActionIcons();
+        icons.update();
+        let ic = icons.icons.get('pierce');
+        assert.deepEqual([ic.text.visible, ic.img.visible], [true, false], 'stand-in while loading');
+        rig.scene.textures.exists = () => true;
+        icons.update();
+        ic = icons.icons.get('pierce');
+        assert.deepEqual([ic.text.visible, ic.img.visible], [false, true], 'texture only once ready');
+        assert.deepEqual([ic.box.x, ic.box.y], [200, 123 + 15 - ICON_HEAD_GAP]);
+    } finally { cleanupRig(); }
+});
 
 test('iconShown: only the player\'s room, and not while it is dark', () => {
     assert.equal(iconShown({ npcRoom: 'office', playerRoom: 'office' }), true);

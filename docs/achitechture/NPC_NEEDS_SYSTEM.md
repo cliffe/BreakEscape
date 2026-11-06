@@ -245,7 +245,12 @@ another owner's private object was passed over (`job.privateSkipped`, `privateNo
 texture>" }`, at native size, defaults from existing art (caffeine coffee cups, thirst cup, work
 clipboard, social talk, curiosity question mark, `post`/`printout` mail; hunger `F` and rest `Z`
 stay text); a carry looks up its `needsTag`, a use its `need` before the target's `satisfies`.
-Icons show only for NPCs in the player's room while it is lit. `npc-office-visuals.js` keeps a
+Icons show only for NPCs in the player's room while it is lit. An icon's bottom sits 2 px
+(`ICON_HEAD_GAP`) above the head: the first opaque row of the NPC's current frame, read once per
+texture and frame (`npc-office-visuals.js` `npcIconAnchor`), so it holds for seated frames too. The
+80 px frame's top is about 14 px above the head, and a text glyph's backing is sized from the 16 px
+font, not the measured line box (an emoji measured 34 px high); together they had the icon
+floating clear of the head (fixed 2026-11-06). A text glyph and a sprite never show together. `npc-office-visuals.js` keeps a
 carried item visible in the carrier's hand (follows on `postupdate`, behind the body facing
 north) and plays an object's `affordance.useSound` when a use completes, heard by distance (silent
 at eight tiles) and room (`room-hearing.js`: own room 1, through a door 0.4, else 0), at most one
@@ -356,7 +361,13 @@ carry: goto_item → pick up → goto_target → using(useSeconds) → complete 
   (a carry use by an interest changes no level); set `lastSatisfiedAt`; destroy a
   carried item; emit `npc_used:<objectId>` (section 7); apply `onUse[objectId]`.
 - **Returning:** `goToAndStay(home, {owner:'needs', yieldToPlayer:true})`; on arrival
-  emit `npc_returned_post:<npcId>`.
+  emit `npc_returned_post:<npcId>`. **The yield is bounded (2026-11-06):** if the NPC has not
+  moved 4 px in `RETURN_YIELD_MS` (3 s of needs clock) it logs `return_resumed` and the walk is
+  re-issued with `yieldToPlayer:false`, which also re-plans the path. Before this, the behaviour
+  layer's `face_player` (player within 96 px and in sight) had no time limit and also skipped the
+  one-tile arrival check, so a player standing near the route or the desk held the NPC in
+  `returning` for good: in `lab_physical_pentest` (games 614, 619, 622, 623) staff stood by the
+  coffee station or beside their desk for 50 s+ and never sat back down.
 - **Failure:** deadline passed or no approach cell → `npc_job_failed:<npcId>`,
   cancel the move, drop any carried item at the NPC's feet, 60 s cooldown on that
   target for this NPC, go home.
@@ -415,7 +426,7 @@ during the walk home (exists). Player-facing behaviour:
 |---|---|---|
 | idle at post | faces player, stays | freezes |
 | heading to an option (urgent need or present item) | keeps going | freezes, resumes after |
-| walking home | stops, faces player, carries on when player leaves | freezes |
+| walking home | stops and faces player; carries on when player leaves, or after 3 s still (`RETURN_YIELD_MS`) without yielding again | freezes |
 | using an object | stays (dwell continues) | freezes, dwell paused |
 
 ---
