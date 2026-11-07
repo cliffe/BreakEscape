@@ -1918,10 +1918,12 @@ export class NPCNeedsSystem {
     }
 
     /**
-     * Rough length of this absence: straight-line walk out and back at the NPC's needs speed (via
-     * the item for a carry) plus the target's dwell. Queued (slice 11): plus one dwell per
-     * place in the line, shared across the machine's capacity. A lower bound: paths round
-     * furniture make the real absence longer.
+     * Rough length of this absence: the walk out and back at the NPC's needs speed (via the item for
+     * a carry) plus the target's dwell. The legs follow the route the NPC will actually walk — through
+     * doors, round furniture — via world.routeLength (the same pathfinder and leash as moveTo), so a
+     * trip to another room is not underestimated. Falls back per leg to the straight-line lower bound
+     * when the route cannot be computed (grid not ready, room not loaded, or a stub world with no
+     * routeLength). Queued (slice 11): plus one dwell per place in the line, shared across capacity.
      */
     _expectedAwayMs(s) {
         const job = s.job;
@@ -1933,8 +1935,16 @@ export class NPCNeedsSystem {
         const t = cellOf(job.targetId);
         if (!t?.c) return null;
         legs.push(t.c, s.home || start);
+        const canRoute = typeof this.world.routeLength === 'function';
+        const avoid = canRoute ? this._avoidRooms(s) : [];
+        const opts = avoid.length ? { avoidRooms: avoid } : undefined;
         let dist = 0;
-        for (let i = 1; i < legs.length; i++) dist += Math.hypot(legs[i].x - legs[i - 1].x, legs[i].y - legs[i - 1].y);
+        for (let i = 1; i < legs.length; i++) {
+            const a = legs[i - 1], b = legs[i];
+            let leg = null;
+            if (canRoute) { const r = this.world.routeLength(a, b, opts); if (Number.isFinite(r) && r > 0) leg = r; }
+            dist += leg != null ? leg : Math.hypot(b.x - a.x, b.y - a.y);
+        }
         const speed = Math.max(1, Number(this.world.speedFor(s.npcId)) || 80);
         const secs = Number(t.o.affordance?.useSeconds);
         // A print errand never enters `using` (slice 17): no dwell at the desk
@@ -3439,6 +3449,35 @@ export function createEngineWorld() {
             // No answer (world grid not ready, or sync unsupported): unknown, so do
             // not block the NPC. The job timeout still catches a truly unreachable target.
             return called ? ok : true;
+        },
+        // Walked length (px) of the route the NPC would take between two world cells, following the
+        // same pathfinder (and leash rings) as moveTo, so a trip through a door is measured round the
+        // wall rather than straight through it. Used by _expectedAwayMs. Returns null when no path is
+        // found or the grid is not ready, so the caller can fall back to the straight-line lower bound.
+        routeLength(from, to, opts) {
+            const pm = W().pathfindingManager;
+            if (!pm?.findWorldPath || !from || !to) return null;
+            const straight = Math.hypot(to.x - from.x, to.y - from.y);
+            // Same tile: EasyStar gives no path when start and end share a cell (see reachable).
+            if (straight < TILE) return straight;
+            const pf = pm.worldPathfinder;
+            const canSync = !!(pf && pf.enableSync && pf.disableSync);
+            let path = null, called = false;
+            if (canSync) pf.enableSync();
+            try {
+                const cb = p => { called = true; path = p; };
+                if (opts?.avoidRooms?.length) pm.findWorldPath(from.x, from.y, to.x, to.y, cb, false, { avoidRooms: opts.avoidRooms });
+                else pm.findWorldPath(from.x, from.y, to.x, to.y, cb);
+            } catch (e) {
+                return null;
+            } finally {
+                if (canSync) pf.disableSync();
+            }
+            if (!called || !path || !path.length) return null;
+            // Sum the legs from `from` through the tile-centre waypoints (the last is `to`'s cell).
+            let d = 0, prev = from;
+            for (const w of path) { d += Math.hypot(w.x - prev.x, w.y - prev.y); prev = w; }
+            return d;
         },
         playerProximity(id) {
             const pl = W().player;

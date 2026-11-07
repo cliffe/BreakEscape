@@ -441,11 +441,11 @@ class SoundManager {
         const sound = this.sounds[soundName];
 
         if (!sound.isPlaying) {
-            // Set volume to 0 before play() to avoid a spike from the configured base volume
-            sound.setVolume(0);
             sound.play({ loop: true });
-            // play(config) puts back the configured volume; under room tone start the fade from silence
-            if (crossfade) sound.setVolume(0);
+            // play(config) puts back the configured base volume, so a new loop would start at full
+            // for a frame and then fade down. Zero it after play so every ambient fades in from
+            // silence (room tone and the shipped path alike).
+            sound.setVolume(0);
             console.log(`🎵 Ambient sound started: ${soundName}`);
         }
 
