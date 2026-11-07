@@ -124,7 +124,10 @@ export function edgeCell(centre, t, tables, nearestWalkable) {
  * The room-relative tile position a drop is saved with: the sprite's top-left (rooms.js
  * places a reloaded object by its top-left, origin 0), plus the elevation when it stands
  * on a table. Saving the centre made every reloaded drop come back half its size
- * south-east (slice 18b-i's ~13 px).
+ * south-east (slice 18b-i's ~13 px). The server keeps only x and y of it today
+ * (games_controller item_add_params), so a reload re-raises the item from the table
+ * under it (item-drop.js settleOnTable); the elevation rides along for a server that
+ * keeps it.
  */
 export function savedPosition(left, top, roomPos, elevation) {
     const pos = { x: (left - roomPos.x) / 32, y: (top - roomPos.y) / 32 };

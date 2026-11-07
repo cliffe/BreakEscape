@@ -9,7 +9,7 @@ import {
     snapToTable, tableUnder, edgeCell, savedPosition, reloadedPlacement, placedDepth, baseY, topRect,
     TABLE_SNAP_RANGE, TABLE_DEPTH_STEP
 } from '../../public/break_escape/js/systems/table-drop.js';
-import { roomTables, tableApproach } from '../../public/break_escape/js/systems/item-drop.js';
+import { roomTables, tableApproach, settleOnTable } from '../../public/break_escape/js/systems/item-drop.js';
 
 const ROOM = { x: -320, y: 0 };
 const CAKE = { w: 25, h: 27 };
@@ -144,4 +144,24 @@ test('item-drop room helpers: tables from a stub room, and the approach of an it
     assert.ok(c && c.y > tables[2].y + tables[2].h);
     assert.equal(tableApproach(sp('cake', ROOM.x + 150, 260, 25, 27), room, walk, null), null, 'on the floor: no table approach');
     assert.ok(TABLE_DEPTH_STEP > 0);
+});
+
+test('reload: a magnet back at its saved top-left with no elevation is drawn over the table again', () => {
+    const tables = kitchen();
+    const t = tables.find(south);
+    const s = snapToTable({ x: t.x + 20, y: t.y + t.h + 12 }, tables, CAKE);
+    // The server keeps position x and y only, so rooms.js gives it depth bottom + 0.5
+    const back = reloadedPlacement({ x: (s.left - ROOM.x) / 32, y: (s.top - ROOM.y) / 32 }, ROOM, CAKE);
+    assert.ok(back.depth < t.depth, 'under the table before settling');
+    const room = { position: ROOM, objects: {} };
+    for (const k of tables) room.objects[k.id] = { objectId: k.id, x: k.x, y: k.y, width: k.w, height: k.h, displayWidth: k.w, displayHeight: k.h, originX: 0, originY: 0, depth: k.depth, scenarioData: { type: 'table' }, texture: { key: 'smalldesk1' } };
+    let depth = back.depth;
+    const cake = { x: back.left, y: back.top, width: CAKE.w, height: CAKE.h, displayWidth: CAKE.w, displayHeight: CAKE.h, originX: 0, originY: 0, setDepth(d) { depth = d; } };
+    assert.equal(settleOnTable(cake, room, null), s.elevation);
+    assert.equal(depth, placedDepth(s.top, CAKE.h, s.elevation, ROOM.y), 'the same depth as at the drop');
+    // On the floor: untouched
+    let d2 = 7;
+    const floorCake = { ...cake, y: 260, setDepth(d) { d2 = d; } };
+    assert.equal(settleOnTable(floorCake, room, null), null);
+    assert.equal(d2, 7);
 });

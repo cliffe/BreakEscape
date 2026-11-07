@@ -611,6 +611,8 @@ export class NPCNeedsSystem {
         const servings = Number.isFinite(g) ? Math.max(0, Math.floor(g)) : cfg.servings;
         this._magnets.set(o.id, { id: o.id, cfg, aff: o.affordance, satisfies: asList(o.affordance.satisfies), key, servings, wasShown: false });
         this._magShown = null;
+        // Slice 23: one standing on a table is drawn over it (a reload brings no elevation back)
+        this.world.settleMagnet?.(o);
     }
 
     /** The magnets showing now (in a room, not picked up, not hidden), id -> object; cached per tick. */
@@ -3766,6 +3768,10 @@ export function createEngineWorld() {
             try { sp.destroy?.(); } catch (e) { /* already gone */ }
             try { Promise.resolve(W().RoomStateSync?.removeItemFromRoom?.(sp.roomId || f.roomId, id)).catch(() => {}); } catch (e) { /* offline */ }
             return true;
+        },
+        // Slice 23: a magnet standing on a table draws over it (item-drop.js); no-op on the floor
+        settleMagnet(o) {
+            if (o?._sprite && o.roomId) W().tableDrop?.settle?.(o._sprite, o.roomId);
         },
         // A picked-up item stays in its old room's objects, inactive; a re-drop in another room must
         // not be shadowed by it (findSprite takes the first match)

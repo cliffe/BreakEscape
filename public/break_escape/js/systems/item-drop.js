@@ -7,8 +7,9 @@
  * using it means is up to the scenario.
  *
  * A magnet (affordance.magnet) dropped within a tile of a table lands on the table
- * top instead (slice 23, table-drop.js): drawn over the table, its depth saved as
- * position.elevation so a reload draws it the same way.
+ * top instead (slice 23, table-drop.js), drawn over the table. The server keeps
+ * position x and y only, so the needs system re-raises a magnet on a table when it
+ * registers it after a reload (settleOnTable).
  *
  * Emits `item_dropped:<itemId>` { itemId, tag, roomId, x, y, onTable }.
  *
@@ -23,7 +24,7 @@
  * dynamically. Its one static import, table-drop.js, has none of its own.
  */
 
-import { snapToTable, spriteRect, savedPosition, placedDepth, tableUnder, edgeCell } from './table-drop.js';
+import { snapToTable, spriteRect, savedPosition, placedDepth, tableUnder, edgeCell, TABLE_DEPTH_STEP } from './table-drop.js';
 
 const TILE = 32;
 
@@ -194,8 +195,27 @@ export function tableApproach(sprite, room, nearestWalkable, surfaces) {
     return edgeCell({ x: r.x + r.w / 2, y: r.y + r.h / 2 }, t, tables, nearestWalkable);
 }
 
+/**
+ * Draw an item standing on a table over it: the depth snapToTable gives, from the table
+ * under the item's base. The server keeps only position x and y (games_controller
+ * item_add_params), so a reloaded drop comes back with no elevation; the needs system
+ * calls this when it registers a magnet (on a drop and on a room load). Returns the
+ * elevation, or null when the item is not on a table (left as it is).
+ */
+export function settleOnTable(sprite, room, surfaces) {
+    if (!sprite || !room || typeof sprite.setDepth !== 'function') return null;
+    const r = spriteRect(sprite);
+    const t = tableUnder(r, roomTables(room, surfaces));
+    if (!t) return null;
+    const elevation = Math.round((t.depth + TABLE_DEPTH_STEP - (r.y + r.h + 0.5)) * 1000) / 1000;
+    sprite.elevation = elevation;
+    sprite.setDepth(placedDepth(r.y, r.h, elevation, room.position?.y ?? 0));
+    return elevation;
+}
+
 if (typeof window !== 'undefined') {
     window.tableDrop = {
+        settle: (sprite, roomId) => settleOnTable(sprite, window.rooms?.[roomId], window.game?.cache?.json?.get?.('tableSurfaces')),
         approach: (sprite, roomId, nearestWalkable) => tableApproach(sprite, window.rooms?.[roomId], nearestWalkable,
             window.game?.cache?.json?.get?.('tableSurfaces'))
     };
