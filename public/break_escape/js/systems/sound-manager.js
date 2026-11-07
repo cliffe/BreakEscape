@@ -444,6 +444,8 @@ class SoundManager {
             // Set volume to 0 before play() to avoid a spike from the configured base volume
             sound.setVolume(0);
             sound.play({ loop: true });
+            // play(config) puts back the configured volume; under room tone start the fade from silence
+            if (crossfade) sound.setVolume(0);
             console.log(`🎵 Ambient sound started: ${soundName}`);
         }
 
@@ -522,7 +524,7 @@ class SoundManager {
         this._sideTweens[key] = null;
         if (prev) prev.stop();
         if (normalizedVolume === 0 && !sound.isPlaying) return;
-        if (!sound.isPlaying) { sound.setVolume(0); sound.play({ loop: true }); }
+        if (!sound.isPlaying) { sound.play({ loop: true }); sound.setVolume(0); } // play(config) resets the volume
         const target = this.volumeSettings.music * this.masterVolume * normalizedVolume * (this._ambientDuck ?? 1);
         const t = this.scene.tweens.addCounter({
             from: sound.volume,
