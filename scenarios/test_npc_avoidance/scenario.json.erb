@@ -16,7 +16,7 @@
           "id": "amy_walker",
           "displayName": "Amy",
           "npcType": "person",
-          "position": { "x": 3, "y": 5 },
+          "position": { "x": 2, "y": 5 },
           "spriteSheet": "female_office_worker_v2",
           "storyPath": "scenarios/test_npc_avoidance/ink/staff.json",
           "currentKnot": "start",
@@ -27,8 +27,8 @@
               "pauseForPlayer": false,
               "waypointMode": "sequential",
               "waypoints": [
-                { "x": 10, "y": 5, "dwellTime": 800 },
-                { "x": 3, "y": 5, "dwellTime": 800 }
+                { "x": 7, "y": 5, "dwellTime": 500 },
+                { "x": 2, "y": 5, "dwellTime": 500 }
               ]
             }
           }
@@ -37,7 +37,7 @@
           "id": "zed_walker",
           "displayName": "Zed",
           "npcType": "person",
-          "position": { "x": 10, "y": 5 },
+          "position": { "x": 7, "y": 5 },
           "spriteSheet": "male_office_worker_v2",
           "storyPath": "scenarios/test_npc_avoidance/ink/staff.json",
           "currentKnot": "start",
@@ -48,8 +48,8 @@
               "pauseForPlayer": false,
               "waypointMode": "sequential",
               "waypoints": [
-                { "x": 3, "y": 5, "dwellTime": 800 },
-                { "x": 10, "y": 5, "dwellTime": 800 }
+                { "x": 2, "y": 5, "dwellTime": 500 },
+                { "x": 7, "y": 5, "dwellTime": 500 }
               ]
             }
           }
@@ -58,7 +58,7 @@
           "id": "rob_router",
           "displayName": "Rob",
           "npcType": "person",
-          "position": { "x": 6, "y": 3 },
+          "position": { "x": 2, "y": 6 },
           "spriteSheet": "male_security_guard_v2",
           "storyPath": "scenarios/test_npc_avoidance/ink/staff.json",
           "currentKnot": "start",
@@ -70,8 +70,8 @@
               "pauseForPlayer": false,
               "speed": 70,
               "route": [
-                { "room": "bay", "waypoints": [ { "x": 6, "y": 3, "dwellTime": 1000 } ] },
-                { "room": "vault", "waypoints": [ { "x": 6, "y": 6, "dwellTime": 1000 } ] }
+                { "room": "bay", "waypoints": [ { "x": 2, "y": 7, "dwellTime": 800 } ] },
+                { "room": "vault", "waypoints": [ { "x": 2, "y": 3, "dwellTime": 800 } ] }
               ]
             }
           }
@@ -81,17 +81,19 @@
         {
           "type": "notes",
           "name": "Test Instructions",
-          "position": { "x": 1, "y": 7 },
+          "position": { "x": 8, "y": 7 },
           "takeable": false,
           "readable": true,
-          "text": "NPC LOCAL AVOIDANCE TEST\n\n- Two staff pace the lane in opposite phase and meet head-on at the desk pinch: one gives way, no deadlock.\n- Stand in front of a walker: it detours round you. Stand behind/beside: it ignores you.\n- Stand in the north doorway as Rob loops through: he waits, then squeezes gently or gives up. Never a sustained shove."
+          "text": "NPC LOCAL AVOIDANCE TEST\n\n- Two staff pace the lane (row 5) in opposite phase and meet head-on mid-lane: one gives way (detours or backs off) while the other passes, no deadlock, no overlap. (A true one-tile pinch needs desks whose collision does not inflate into row 5; desks here sit at rows 3 and 7.)\n- Stand in front of a walker: it stops then detours round you. Stand behind/beside: it ignores you.\n- Stand in the north-west doorway as Rob loops through: he waits, then squeezes gently or gives up. Never a sustained shove."
         },
-        { "type": "table", "name": "Desk N1", "position": { "x": 5, "y": 3 }, "takeable": false, "sprite": "smalldesk2" },
-        { "type": "table", "name": "Desk N2", "position": { "x": 6, "y": 3 }, "takeable": false, "sprite": "smalldesk2" },
-        { "type": "table", "name": "Desk N3", "position": { "x": 7, "y": 3 }, "takeable": false, "sprite": "smalldesk2" },
-        { "type": "table", "name": "Desk S1", "position": { "x": 5, "y": 7 }, "takeable": false, "sprite": "smalldesk2" },
-        { "type": "table", "name": "Desk S2", "position": { "x": 6, "y": 7 }, "takeable": false, "sprite": "smalldesk2" },
-        { "type": "table", "name": "Desk S3", "position": { "x": 7, "y": 7 }, "takeable": false, "sprite": "smalldesk2" }
+        { "type": "table", "name": "Desk N3", "position": { "x": 3, "y": 3 }, "takeable": false, "sprite": "smalldesk2" },
+        { "type": "table", "name": "Desk N4", "position": { "x": 4, "y": 3 }, "takeable": false, "sprite": "smalldesk2" },
+        { "type": "table", "name": "Desk N5", "position": { "x": 5, "y": 3 }, "takeable": false, "sprite": "smalldesk2" },
+        { "type": "table", "name": "Desk N6", "position": { "x": 6, "y": 3 }, "takeable": false, "sprite": "smalldesk2" },
+        { "type": "table", "name": "Desk S3", "position": { "x": 3, "y": 7 }, "takeable": false, "sprite": "smalldesk2" },
+        { "type": "table", "name": "Desk S4", "position": { "x": 4, "y": 7 }, "takeable": false, "sprite": "smalldesk2" },
+        { "type": "table", "name": "Desk S5", "position": { "x": 5, "y": 7 }, "takeable": false, "sprite": "smalldesk2" },
+        { "type": "table", "name": "Desk S6", "position": { "x": 6, "y": 7 }, "takeable": false, "sprite": "smalldesk2" }
       ]
     },
     "vault": {
