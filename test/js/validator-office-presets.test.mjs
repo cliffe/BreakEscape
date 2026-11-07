@@ -89,6 +89,6 @@ test('test_needs_sims: no needs error, and every preset object is listed', { ski
     assert.ok(!issues.some(s => s.startsWith('❌')), issues.filter(s => s.startsWith('❌')).join('\n'));
     if (sims.officePresets === true) {
         const listed = issues.filter(s => s.includes('Office preset')).map(s => /'([^']+)' \(type/.exec(s)[1]).sort();
-        assert.deepEqual(listed, ['amara_pc', 'fridge', 'kitchen_coffee', 'lounge_kettle', 'lounge_sofa', 'microwave', 'office_coffee', 'office_copier', 'sanjay_pc', 'tom_pc', 'water_cooler']);
+        assert.deepEqual(listed, ['amara_pc', 'fridge', 'kitchen_coffee', 'lounge_kettle', 'lounge_sofa', 'microwave', 'office_coffee', 'office_copier', 'sanjay_pc', 'tom_pc', 'tom_phone', 'water_cooler']);
     }
 });
