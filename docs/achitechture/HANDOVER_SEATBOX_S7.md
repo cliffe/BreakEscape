@@ -1,5 +1,12 @@
 # Seat box slice 7 — handover (2026-11-07)
 
+> **DONE (2026-11-07).** Built from this recipe. Room half `594226d2c`, scenario half `b5d8897d2`.
+> Orchestrator's three open items resolved (see the Built note in `SEAT_BOX_PLAN.md` section 7):
+> built interim (no slice 6), `usb_malware_note` retyped to `notes` (three `pc1` placeholders, not
+> four), no wedging fallback needed (walk-audit `pockets 0`, stand-audit 0 in body / 0 across desk /
+> 0 refused). Verification in the lab `IMPROVEMENT_LOOP_LOG.md` slice 7 entry. The recipe below is
+> kept as the record of what was built.
+
 Plan: `docs/achitechture/SEAT_BOX_PLAN.md` section 7 ("The lab (Part 2)"). This session did the
 groundwork and the engine/convention analysis for the `room_lw_accounts` rebuild, but did **not**
 commit any change to `room_lw_accounts.json` or `scenarios/lab_physical_pentest/scenario.json.erb`.

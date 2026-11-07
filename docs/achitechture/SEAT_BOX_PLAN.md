@@ -1304,6 +1304,45 @@ new engine proof. Their exact spot and elevation on the top follow the scale aud
 5. Commit the room JSON and the scenario separately, with explicit paths. Who commits the
    scenario is Q6.
 
+### Built (2026-11-07)
+
+Built from `HANDOVER_SEATBOX_S7.md` (recipe at commit `8e33f8802`). Two commits, explicit paths:
+
+- Room half `594226d2c` — `room_lw_accounts.json`: desks #44–48 → `tables`; lamps #62–64 and
+  ledger #65 → `table_items` tops (y → F−25: 135 top row, 231 bottom); **three** `pc1`
+  placeholders and five `chair-darkgray-1` swivels on the `items` layer; `deskBoxes: footprint`.
+  The `objects` reference tileset was auto-inserted at firstgid 115 (chair `268`, pc1 `356`), in
+  firstgid order, no gid clash.
+- Scenario half `b5d8897d2` — `scenario.json.erb`: `staff_pc`/`staff_pc_2`/`usb_target_pc` onto
+  the tops (y 3.5 / 3.5 / 6.5, `elevation` dropped), `useFrom.dy` 1 → 1.5; the five `aw_chair_*`
+  objects deleted (chairs are now Tiled map swivels, comment rewritten); `pierce_printout` and
+  `hampshire_badge` onto their owners' desk tops with `elevation` 22; `planted_deviceA` keeps
+  elevation 22; `cable_note` unchanged, off the desks.
+
+**Orchestrator decisions (this build), logged as its calls:**
+
+1. **Built now, not waiting for slice 6.** NPC chairs park a tile out from the desk (the engine
+   seats needs NPCs on swivels via `updateNeedsSeat` → `slideChairFootTo`); the tucked contact-line
+   look is deferred to slice 6. Accepted interim look.
+2. **`usb_malware_note` retyped `pc` → `notes`** (sprite `notes1`, kept at (3,7) elevation 22) so
+   it never consumes a `pc1` placeholder and Sofia's desk never shows a second monitor on reveal.
+   Checked: it has no `affordance`/`useFrom`/`npc_used` wiring and its reveal is `revealOnGlobal`
+   only, so the lure reveal and foothold flow are unchanged. **Consequence:** only **three** `pc1`
+   placeholders are needed (Chris/Melanie/Sofia); with four, `cable_note` (now the 4th type-`pc`
+   object) would have grabbed one and drawn a stray monitor at (16,7).
+3. **No wedging fallback needed.** Walk-audit `open_plan` `pockets 0` (no route sealed) and
+   stand-audit 0 in a body / 0 across a desk / 0 refused across all five chairs, so the needs
+   chairs stay map swivels (no `swivel: false`, no desk nudge, footprint boxes kept).
+
+**Verification (game 983 snapshot/audit; game 986 replay):** static — schema OK, room geometry
+0 overlaps, door alignment exit 0, reopencheck only the 4 pre-existing m09 phone-ink problems.
+Snapshot: lamps/ledger depth just above their desks, none hanging off. Walk-audit vs
+`seatbox-s0-walk.json`: open_plan `pockets 0`, `(e)` +240 blocked (the desks are now solid
+footprint boxes, intended); the briefing_room/reception credenza `(h)` gaps are stale-baseline
+drift from intervening commits, not slice 7 (those maps were not touched). Stand-audit (game 983,
+footprint): 20 stands, 0 in a body / 0 across a desk / 0 refused. Score-100 replay on game 986 and
+the panel-3 screenshot: see the lab `IMPROVEMENT_LOOP_LOG.md` slice 7 entry.
+
 ## 8. Tests, live proof, risks, open questions
 
 ### 8.1 Tests and live proof, per slice
