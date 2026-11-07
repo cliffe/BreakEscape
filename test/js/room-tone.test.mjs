@@ -297,10 +297,11 @@ test('startSound and outputSound: silent without roomTone; outputSound only with
 test('npc_use_started fires once per use, at the using start; the sims day log is unchanged by it', () => {
     const { sys, w } = runSimsDay(NPCNeedsSystem, { minutes: 15 });
     const started = w.calls.emits.filter(e => e.name.startsWith('npc_use_started:'));
-    const usingLogs = sys.getLog().filter(e => e.event === 'using' && e.need);
+    const usingLogs = sys.getLog().filter(e => e.ev === 'using');   // needs uses and carry drops alike
     assert.ok(started.length > 5);
     assert.equal(started.length, usingLogs.length);
-    for (const e of started) assert.ok(e.data.npcId && e.data.objectId && e.data.need && e.name === `npc_use_started:${e.data.objectId}`);
+    for (const e of started) assert.ok(e.data.npcId && e.data.objectId && e.name === `npc_use_started:${e.data.objectId}`);
+    assert.deepEqual(started.map(e => `${e.data.npcId}>${e.data.objectId}`), usingLogs.map(e => `${e.npc}>${e.target}`), 'one per using, in order');
 });
 
 test('the room tone runtime: duck on a heard line, typing by count, started once per room, spots on the clock', () => {
