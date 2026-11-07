@@ -4417,6 +4417,57 @@ risky and when: `workstation_screen_changed` (an open screen and for how long),
 `npc_print_uncollected`, the left-behind `object_revealed`, `desk_phone_answered` by a colleague.
 It needs a reporting interaction of its own, which is not planned here.
 
+### 12.12 Slice 22: printer power (added 2026-11-07)
+
+The user, 2026-11-07: "Having a way to disrupt printers (like the power off the coffee machine?) seems like a great way to
+allow the player to interact with the game systems, and force npcs to re-route their needs. Maybe the npc would seek out a
+printer in a nearby room, which would give the player more time with the npc out of the room." Numbered 12.12 because 12.10
+and 12.11 were taken. Built on 17 (print and forget) and 18a (`offWhen`).
+
+**Design (agreed with the user).**
+
+1. **A list of printers.** `revealOutput` on a use hook may be a list of producer ids in preference order; a string stays
+   valid and means a list of one. A print goes to the first producer that is on (its `affordance.offWhen` does not hold)
+   and has a free or recyclable slot (slice 17's `_slotAvailable`). When no producer that is on has one, the first producer
+   that is on gets today's full-pool path (a cosmetic copy, `print_no_slot`). Order is the scenario's; no new rolls. A
+   producer the world does not know (its room not loaded) counts as off in a list of two or more; a list of one keeps
+   today's behaviour, so every existing hook prints exactly as before. The `needs.print` command's `producer` takes the
+   same list, with the same rule.
+2. **The errand follows the paper.** The fetch errand already walks to the slot (a carry: item first, then the owner's
+   `needsHome`), so it goes to whichever printer printed. `_expectedAwayMs` already routes a carry through the item's cell,
+   so a print at a further printer gives a longer estimate on `npc_left_post`, and slice 16's lock habit
+   (`lockIfAwayOverSeconds`) sees the longer absence. No new code for this; tests prove it.
+3. **None on.** A use whose roll printed but finds every listed producer off prints nothing: log `print_blocked`
+   `{ target: <hooked object>, producers }`, event `npc_print_blocked:<npcId>` `{ npcId, objectId, producers, viaCommand,
+   playerNearby, playerDistance }`, and the owner grumbles from the chatter pool `grumble_printer_off` (scenario or NPC
+   JSON, TTS-voiceable, no room names); with no lines it shows the existing `blocked` picture (`PICTURE_CHATTER`). The
+   start-time printing icon is shown only when a producer is on and has a slot, so a blocked use shows no printing icon.
+   A command that finds none on logs and emits the same, with `viaCommand: true`, and no grumble (the NPC is elsewhere).
+4. **Switching off later.** A print already on a tray stays there when its printer is switched off (the paper is out);
+   the switch touches only where new prints go. An errand already walking to a printer that is then switched off still
+   collects: errands are carry jobs, and the 18a `off` turn-back checks only `use` jobs.
+5. **Copiers as need sources** (an NPC whose need a copier satisfies) already turn back through 18a's `offWhen`; a test
+   confirms it, nothing is added.
+6. **Validator.** Each listed producer is an object id (error) with output slots (warning, as today); an empty list
+   (error) and a repeated id (warning); for an owner (`printHabit` or a print command), a listed producer whose room the
+   owner's leash or a private room keeps it out of warns as today, for every entry of the list. Schema: string or array.
+7. **Showcase** (`test_needs_sims`): a second copier in the kitchen, square to a wall, with its own wall socket; a socket
+   beside the office copier (`wall_socket1`); Tom's hook and both levers list `["office_copier", "kitchen_copier"]`; a
+   `grumble_printer_off` pool; objectives "Switch the office copier off and keep Tom away from his desk longer" (his
+   print errand to the kitchen copier, `npc_print_fetched:tom` with the producer) and "Switch both copiers off and hear
+   Tom grumble" (`npc_print_blocked:tom`). Validate with `--no-graph`.
+
+**Size.** Engine about 45 (the list helper, `_pickProducer`, the hook and command paths, the blocked log, event and
+grumble, the producer on `npc_print_fetched`), validator about 25, schema about 6. **About 76 lines, S.**
+
+**Tests.** Node: list order (first on with a slot wins), fallback past an off producer, fallback past a full one, none
+on (no reveal, `print_blocked`, the event, the grumble line or the `blocked` picture, no printing icon), a string hook
+unchanged, the errand walks to the second printer and its `expectedAwayMs` is longer than the same errand to the first,
+a print on a tray stays when switched off, an errand walking to a printer switched off still collects, a copier as a
+need source turns back (18a), the command with a list, determinism (two runs, same log), `GOLDEN_SIMS_DAY` unchanged,
+validator fixtures. Live on :3001: copier off, Tom's print at the kitchen copier, Tom there and back with the longer
+away time (and his lock if his habit says so), both off (the grumble).
+
 ## 13. Changes after section 12 review R1
 
 Review: `OFFICE_LIFE_PLAN_REVIEW_S12_R1.md` (commit 20f8263b7; 0 blockers, 9 major, 17 minor; "not ready
