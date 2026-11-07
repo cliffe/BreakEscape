@@ -70,16 +70,22 @@ export function evaluateRfidCredential(requires) {
     const requiredCardIds = Array.isArray(requires) ? requires : [requires];
     const items = (window.inventory && window.inventory.items) || [];
     const getCardId = (cardData) => cardData.card_id || window.lockRef(cardData);
+    // A cancelled card_id (left-card consequence, §3.3b) no longer counts — neither the
+    // physical keycard nor a saved clone of it. The card still shows in the reader/cloner
+    // UI (so the player sees it refused there too, handled in rfid-minigame.js); it just
+    // never satisfies the lock.
+    const revoked = (id) => (typeof window !== 'undefined' && window.isCardRevoked) ? window.isCardRevoked(id) : false;
 
     const keycards = items.filter(item =>
         item && item.scenarioData && item.scenarioData.type === 'keycard');
     const matchingKeycard = keycards.find(card =>
-        requiredCardIds.includes(getCardId(card.scenarioData)));
+        requiredCardIds.includes(getCardId(card.scenarioData)) && !revoked(getCardId(card.scenarioData)));
 
     const cloner = items.find(item =>
         item && item.scenarioData && item.scenarioData.type === 'rfid_cloner');
     const savedCards = (cloner && cloner.scenarioData && cloner.scenarioData.saved_cards) || [];
-    const hasValidClone = savedCards.some(card => requiredCardIds.includes(getCardId(card)));
+    const hasValidClone = savedCards.some(card =>
+        requiredCardIds.includes(getCardId(card)) && !revoked(getCardId(card)));
 
     return {
         requiredCardIds,

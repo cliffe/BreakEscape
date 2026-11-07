@@ -510,6 +510,7 @@ def check_unknown_fields(json_data)
     affordance needsTag droppable officeType
     workstation locksScreenOnLeave lockChance screenOwner screenLocked autoLockSeconds
     phoneOwner rings
+    actions onOwnerNoticesMissing
     _comment
   ]
 
@@ -2249,6 +2250,7 @@ def check_interaction_warnings(json_data)
     set_global grant_fact emit_event complete_task unlock_task unlock_aim
     unlock_object unlock_door give_item remove_item add_capture set_costume
     clear_costume tint_objects lighting_dip confirm_action show_end_screen hint
+    revoke_card
   ]
   check_actions = lambda do |acts, p|
     unless acts.is_a?(Array)

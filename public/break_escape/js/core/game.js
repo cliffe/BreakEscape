@@ -1835,6 +1835,12 @@ export async function create() {
     // Store player globally for access from other modules
     window.player = player;
 
+    // Object action menu (action-menu.js): a tap on an object that offers more than one
+    // action shows the shared interaction-menu overlay listing them (e.g. a world keycard
+    // the player could clone or take with a cloner in hand). Loaded unconditionally — it
+    // applies to any scenario, not only office-life ones — and reached through window.
+    import('../systems/action-menu.js').catch(e => console.warn('⚠️ action menu failed to load:', e));
+
     // A costume put on in an earlier session (global pp_disguise, restored above) is lost
     // with the page: re-dress the avatar now the sprite exists. No-op without a costume.
     if (window.gameState?.globalVariables?.pp_disguise) {
@@ -1972,6 +1978,10 @@ export async function create() {
                         .then(() => import('../systems/office-room-tone.js')).then(m => m.installOfficeRoomTone(sceneRef)).catch(e => console.warn('room tone failed', e));
                     import('../systems/npc-world-bubbles.js').then(m => m.installNpcWorldBubbles(sceneRef)).catch(e => console.warn('npc speech bubbles failed', e));
                     import('../systems/npc-needs-chatter.js').then(m => m.installNpcChatterVoice()).catch(e => console.warn('npc voiced chatter failed', e));
+                    // Left-card consequence (left-card-consequence.js, §3.3b): runs an object's
+                    // onOwnerNoticesMissing actions when the owner returns and finds a left-behind
+                    // item the player took (npc_left_item_gone:<owner>).
+                    import('../systems/left-card-consequence.js').then(m => m.installLeftCardConsequence()).catch(e => console.warn('left-card consequence failed', e));
                     return import('../systems/workstation-state.js').then(ws => ws.installWorkstationState());
                 });
             })

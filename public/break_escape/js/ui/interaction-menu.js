@@ -134,7 +134,7 @@ function onKeyDown(e) {
  * @param {number} clientX - viewport X of the tap (event.clientX)
  * @param {number} clientY - viewport Y of the tap (event.clientY)
  */
-export function showInteractionMenu(candidates, clientX, clientY) {
+export function showInteractionMenu(candidates, clientX, clientY, titleText) {
     if (!candidates || candidates.length === 0) return;
     injectStyles();
     closeInteractionMenu(); // never stack two menus
@@ -148,7 +148,7 @@ export function showInteractionMenu(candidates, clientX, clientY) {
 
     const title = document.createElement('div');
     title.className = 'be-im-title';
-    title.textContent = 'Interact with…';
+    title.textContent = titleText || 'Interact with…';
     menuEl.appendChild(title);
 
     candidates.forEach(c => {

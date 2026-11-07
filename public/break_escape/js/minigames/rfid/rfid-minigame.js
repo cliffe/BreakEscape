@@ -103,6 +103,18 @@ export class RFIDMinigame extends MinigameScene {
 
         // Get card ID (standard: card_id, else the lock the card opens)
         const cardId = card.scenarioData?.card_id || window.lockRef(card.scenarioData);
+
+        // A cancelled card (left-card consequence, §3.3b) is refused at the reader even
+        // though its id still matches the lock.
+        if (this.isLockingAttempt && window.isCardRevoked?.(cardId)) {
+            if (window.playUISound) window.playUISound('reject');
+            this.animations.showTapFailure();
+            const name = card.scenarioData?.name || 'This card';
+            this._showDenial('Card cancelled', () => this.ui.showTapInterface(), 'revoked',
+                `${name} has been deactivated — the reader rejects it.`);
+            return;
+        }
+
         const isCorrect = !this.isLockingAttempt || this.requiredCardIds.includes(cardId);
 
         if (isCorrect) {
@@ -187,6 +199,26 @@ export class RFIDMinigame extends MinigameScene {
                 `Use the cloner at a door's card reader to emulate ${savedCard.name || 'this card'}.`, 'notice');
             return;
         }
+        // A cancelled card (left-card consequence, §3.3b): the clone no longer works,
+        // even though its id matches the lock. Refused at the reader.
+        if (this.isLockingAttempt && window.isCardRevoked?.(cardId)) {
+            if (window.playUISound) window.playUISound('reject');
+            this.animations.showEmulationFailure();
+            if (window.eventDispatcher) {
+                window.eventDispatcher.emit('card_emulated', {
+                    cardName: savedCard.name,
+                    cardId: cardId,
+                    protocol: savedCard.rfid_protocol || 'EM4100',
+                    success: false,
+                    revoked: true,
+                    timestamp: Date.now()
+                });
+            }
+            this._showDenial('Card cancelled', () => this.ui.showSavedCards(), 'revoked',
+                `The clone of ${savedCard.name || 'that card'} no longer works — the card has been deactivated.`);
+            return;
+        }
+
         const isCorrect = this.requiredCardIds.includes(cardId);
 
         // Check if UID-only emulation (MIFARE DESFire without master key)

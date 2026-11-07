@@ -41,6 +41,24 @@ export async function recordSECapture(input) {
 if (typeof window !== 'undefined') window.recordSECapture = recordSECapture;
 
 /**
+ * Card revocation (the left-card consequence, NPC_NEEDS_SYSTEM.md §3.3b).
+ *
+ * When the owner of a left-behind access card returns and finds it gone, the
+ * card is cancelled: neither the physical keycard nor any saved clone of the
+ * same `card_id` opens doors any more. The cancelled ids live in the global
+ * `revoked_card_ids` (an array, persisted and synced like any other global), so
+ * the state survives a reload. The RFID unlock path reads it through
+ * `window.isCardRevoked` (unlock-system.js `evaluateRfidCredential` and the
+ * cloner's tap/emulate paths), with no static import either way.
+ */
+export function isCardRevoked(cardId) {
+    if (cardId == null) return false;
+    const list = (typeof window !== 'undefined' && window.gameState?.globalVariables?.revoked_card_ids) || [];
+    return Array.isArray(list) && list.includes(cardId);
+}
+if (typeof window !== 'undefined') window.isCardRevoked = isCardRevoked;
+
+/**
  * Shared action executor for scenario-defined action descriptors.
  *
  * The same descriptor format is used by flag-station `flagRewards`,
@@ -227,6 +245,31 @@ export function applyActions(actions, { source = 'scenario', gameId = null } = {
                     console.log('[applyActions] remove_item:', id || action.item);
                 } catch (err) {
                     console.warn('[applyActions] remove_item failed:', err);
+                }
+                break;
+            }
+
+            // Cancel an access card: the physical keycard and any saved clone of this
+            // `card_id` stop opening RFID doors (left-card consequence, §3.3b). Intended
+            // for an object's `onOwnerNoticesMissing` list, fired by left-card-consequence.js
+            // when npc_left_item_gone:<owner> says the card was taken.
+            // action: { type: 'revoke_card', card_id: '<id>' | ['<id>', ...] }
+            case 'revoke_card': {
+                const ids = Array.isArray(action.card_id) ? action.card_id
+                          : (action.card_id != null ? [action.card_id] : []);
+                if (ids.length && window.gameState?.globalVariables) {
+                    const cur = window.gameState.globalVariables.revoked_card_ids;
+                    const next = Array.isArray(cur) ? cur.slice() : [];
+                    let changed = false;
+                    for (const id of ids) {
+                        if (id != null && !next.includes(id)) { next.push(id); changed = true; }
+                    }
+                    if (changed) {
+                        writeGlobal('revoked_card_ids', next, { emitAlways: true, openChat: false });
+                        if (typeof window !== 'undefined') window.stateSync?.sync?.();
+                    }
+                    ids.forEach(id => window.eventDispatcher?.emit?.('card_revoked', { cardId: id, source }));
+                    console.log('[applyActions] revoke_card:', ids.join(', '));
                 }
                 break;
             }
@@ -434,3 +477,7 @@ export function showEndScreen(opts = {}) {
 
 // Expose for objectives-manager.js (module boundary)
 window.showEndScreen = showEndScreen;
+
+// Expose applyActions so dynamically-loaded helpers (action-menu.js,
+// left-card-consequence.js) run scenario action lists without a static import.
+if (typeof window !== 'undefined') window.applyActions = applyActions;
