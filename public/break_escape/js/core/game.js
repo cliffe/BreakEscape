@@ -934,7 +934,7 @@ export function preload() {
     this.load.image('nurse_call_display1', 'objects/nurse_call_display1.png');
     this.load.image('filing_cabinet_steel1', 'objects/filing_cabinet_steel1.png');
     this.load.image('binder_shelves1', 'objects/binder_shelves1.png');
-    this.load.spritesheet('lw_deed_boxes', 'objects/lw_deed_boxes.png', { frameWidth: 48, frameHeight: 60 }); // lab_physical_pentest P4: dark japanned recolour of binder_shelves1 (bottle-green frame + spines, cream boxes), so the deed-box scope entity reads as a distinct vault bank rather than a twin of the grey ledger shelves beside it. Single-frame NPC sprite sheet (createNPCSprite needs a spritesheet/atlas). Interim; a bespoke japanned-deed-box prop is a paid-art candidate.
+    this.load.spritesheet('lw_deed_boxes', 'objects/lw_deed_boxes.png', { frameWidth: 38, frameHeight: 61 }); // lab_physical_pentest P4: bespoke japanned deed-box prop (38x61), so the deed-box scope entity reads as a distinct vault bank rather than a twin of the grey ledger shelves beside it. Single-frame NPC sprite sheet (createNPCSprite needs a spritesheet/atlas).
     this.load.image('kvm_cart1', 'objects/kvm_cart1.png');
     this.load.image('checkin_kiosk1', 'objects/checkin_kiosk1.png');
     this.load.image('drinks_vending1', 'objects/drinks_vending1.png');
