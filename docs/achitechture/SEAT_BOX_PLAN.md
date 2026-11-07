@@ -877,6 +877,15 @@ change any sprite's scale or art. What it takes from the audit:
 
 ### Slice 7: the lab (section 7)
 
+**Not built yet (2026-11-07).** A session did the engine/convention groundwork and wrote the full
+build recipe and verification plan into `docs/achitechture/HANDOVER_SEATBOX_S7.md`, but committed no
+change to `room_lw_accounts.json` or the lab scenario: the placement, approach cells and needs
+regression need a live render + playtest loop that exceeded that session's budget, and two items wait
+on the user (ship the interim look before seat-box slice 6, and whether `usb_malware_note` keeps a
+monitor placeholder). The engine supports the build now — seat-box slice 6 is not needed for sit/
+work/leave/return, only for the tucked contact-line look (order item 3). Office-life slice 21 (idle
+swivel) is already built; set `swivel: false` on any accounts staff that look wrong rolling/glancing.
+
 ### Slice 8: opt a map in when its mission is next dressed (no default flip)
 
 There is no scheduled flip (M3). A map is opted in when a mission that uses it goes through
