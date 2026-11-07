@@ -8,6 +8,7 @@
   "showPressingNeeds": true,
   "needsDebugOverlay": true,
   "officePresets": true,
+  "roomTone": true,
   "lighting": { "enabled": true, "defaultMode": "on" },
 
   "chatter": {
@@ -127,7 +128,8 @@
         { "taskId": "hear_cake_news", "title": "Watch the word get round (put the cake down in the kitchen and stay in the office: whoever sees it there tells the people near their desk when they get back, and the hungry ones get up; Marek keeps to himself, so nobody tells him and he tells nobody)", "type": "custom", "status": "active" },
         { "taskId": "hear_tom_call", "title": "Overhear Tom on the phone (use the spare desk phone to ring his extension while he is at his desk, and stay close enough to hear his side of the call)", "type": "custom", "status": "active" },
         { "taskId": "see_amara_answer", "title": "Ring Tom while he is out and see who answers (when he has gone for a coffee, ring him from the spare phone: Amara gets up and takes a message)", "type": "custom", "status": "active" },
-        { "taskId": "see_call_missed", "title": "Let a call ring out (ring Tom while he is away and Amara is busy, or while you are talking to him)", "type": "custom", "status": "active" }
+        { "taskId": "see_call_missed", "title": "Let a call ring out (ring Tom while he is away and Amara is busy, or while you are talking to him)", "type": "custom", "status": "active" },
+        { "taskId": "hear_office", "title": "Hear the office at work (each room has its own quiet bed: air handling in the office, a fridge hum in the kitchen, near silence in the lounge; keyboards while people type, the copier when it prints, the kettle and coffee machine when someone makes a drink)", "type": "custom", "status": "active" }
       ]
     }
   ],
@@ -496,6 +498,7 @@
             { "eventPattern": "object_interacted", "condition": "data.objectName === 'Deadline Memo'", "cooldown": 30000, "needs": { "set": { "caffeine": 20 } } },
             { "eventPattern": "npc_use_heard:*", "condition": "data.key === 'drink_gulp'", "onceOnly": true, "cooldown": 0, "completeTask": "hear_drink" },
             { "eventPattern": "npc_use_heard:*", "condition": "data.key === 'eat_snack'", "onceOnly": true, "cooldown": 0, "completeTask": "hear_snack" },
+            { "eventPattern": "room_tone_started:*", "onceOnly": true, "cooldown": 0, "completeTask": "hear_office" },
             { "eventPattern": "item_dropped:parcel", "onceOnly": true, "cooldown": 0, "setGlobal": { "parcel_dropped": true } },
             { "eventPattern": "npc_exchange_heard:exchange_tom_parcel", "onceOnly": true, "cooldown": 0, "completeTask": "hear_parcel_exchange" },
             { "eventPattern": "npc_swivelled:*", "condition": "data.reason === 'listen'", "onceOnly": true, "cooldown": 0, "completeTask": "see_look_round" },
