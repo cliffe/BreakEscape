@@ -101,3 +101,72 @@ Check `pgrep -fa 'chrom.*headless'` before launching; stop only your own PIDs.
 
 If any live proof shows a regression, fixes go in a FOLLOW-UP commit (do not amend
 `3b74f5fb8`).
+
+## Live verification — session 2 (2026-11-07, follow-up agent)
+
+Status: engine re-verified green; the live Len open-floor before/after is BLOCKED by
+mission state (Len parks), not by the avoidance change. No regression found; no code
+changed this session.
+
+### Done and green
+- `bin/test-js`: **415 passed, 0 failed**. Includes `npc-local-avoidance.test.mjs`
+  (13/13: nearestBlockerAhead ahead/behind/beside + look-ahead bound, deterministic
+  closest + id tie, yield rule, wait/squeeze/back-off/detour-adopt/off-switch) and the
+  office-life `npc-avoidance.test.mjs` (untouched, passes).
+- GOLDEN_SIMS_DAY byte-identical: `npc-needs-slots` passes within the suite and
+  `git status` shows no fixture change. Working tree clean apart from the three
+  pre-existing forbidden files (dungeon_graph.*, generate_rooms.py). I modified no
+  engine/test/golden file.
+- Engine read confirms the design: `_handleBlockerAhead` is gated by
+  `window.__npcAvoidOff`, runs only in updatePatrol's path-follow branch (so a parked/
+  dwelling NPC never enters it), only AHEAD bodies block, detour re-paths via
+  `avoidDynamic`, fall-through is back-off (NPC) or bounded squeeze (player/door).
+
+### Blocked / not reproduced live (the MAIN proof)
+Fresh lab game **1056** (`new-game.rb lab_physical_pentest`), driven to open_plan.
+- **Len parks at the records door and will not re-walk the open floor on demand.**
+  Once his multiRoom route reaches the `(1,2)` badge waypoint (pixel ~(1021,76),
+  open_plan origin (960,0), so (4,4)=(1104,144), (1,2)=(1008,80)), his next leg into
+  secure_area is gated/unreachable (`transitionToNextRoom` "unreachable, retry in 2s"
+  / `turnBackFromGate`), so he sits with `patrolTarget=null`, `pathFollowingActive=false`,
+  `v=0`. He stayed frozen at (1021,76) for 30s+ windows whether the player stood in
+  open_plan OR was moved out to hall.
+- Consequence: with the player standing in front of parked Len, **OFF and ON are
+  identical** (both `v=0`, `_avoid` never set, `avoidFrames=0`, no jitter, no shove) —
+  because `_handleBlockerAhead` only fires during path-follow, which parked Len isn't
+  doing. So the reported shove is NOT observable in this reachable state. The shove the
+  user saw must happen during Len's ACTIVE patrol legs, i.e. while the player is already
+  in open_plan as Len is still cycling early on — a timing window this run did not hit
+  (the player reaches open_plan only after Len has parked).
+- One upside worth noting: the avoidance change does NOT disturb Len's gate-hold/door
+  park (OFF==ON there), which satisfies the "guards' gate holds stay unchanged" bar.
+
+### Replay-to-100 also blocked by unrelated issues
+- The r4 `b1..b16` command files are STALE for the current re-dressed briefing_room
+  (re-dress commits `1e40e3e7a`/`af380d860` at 18:17–18:21 postdate r4 at 16:12), so
+  `moveToNear` on briefing_room/P1 objects now "arrives-but-outside-plain-range". My
+  setup drive hit the same misses.
+- The r5 `solve-cmds.jsonl` replay stalls at **`usb_target_pc` (Sofia's PC) in
+  open_plan** — the known seat-box slice 6 regression owned by the office-life session.
+  `git log` shows no fix on main past `af380d860`. Not caused by, and not fixed by, the
+  avoidance change.
+
+### What the NEXT agent should do (recommended, in priority order)
+1. Catch Len mid-patrol: drive a FRESH lab game to open_plan EARLY (minimal route,
+   don't trigger the tailgate/park), then stand the player on Len's open-floor diagonal
+   between (4,4)=(1104,144) and (1,2)=(1008,80) and sample OFF then ON. OR complete a
+   CLEAN tailgate (one `enter secure_area` at a time, verify `kp_badge_tailgated`
+   latches) so the gate closes and Len resumes into secure_area → loops back across the
+   open floor, then intercept him there.
+2. Prefer `scenarios/test_npc_avoidance` for the clean OFF/ON engine demo: its NPCs
+   patrol continuously (no mission-state gating), so the corridor pinch / standing-player
+   detour / doorway cases reproduce on demand. It is unseeded — swap it onto a game
+   (`tools/playtest/swap-scenario-game.rb`) or `db:seed` on :3001.
+3. `test_needs_sims` doorway head-on and `test_needs_leash` (`leash.py`) are the other
+   continuous-movement proofs.
+
+Harness notes for the next agent: the briefing_room moveToNear misses make the stale
+b-files unreliable; `enter` advances one room per call and a multi-room `enter` through
+an already-open gate left the player's `roomId` null (room tracking confused) — tailgate
+with single-step enters and verify the global, don't trust a chained enter. Headless
+chrome count stayed at 1 throughout (my session added/removed one cleanly).
