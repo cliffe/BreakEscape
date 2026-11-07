@@ -57,6 +57,8 @@ if (typeof window !== 'undefined') window.recordSECapture = recordSECapture;
  *   unlock_object  { objectId }      — unlocks a world object (+ optional server persist)
  *   unlock_door    { room_id }       — adds room_id to gameState.unlockedRooms
  *   give_item      { item }          — adds an item sprite to the player inventory
+ *   remove_item    { item }          — removes a named item (type/id/name, or an
+ *                                      array of them) from inventory + the server copy
  *   add_capture    { capture }       — records a credential/foothold into se_captures
  *   set_costume    { costume }       — swaps the player sprite to scenario.disguises[costume]
  *   clear_costume  {}                — restores the chosen avatar
@@ -187,6 +189,47 @@ export function applyActions(actions, { source = 'scenario', gameId = null } = {
                     gives.push(Promise.resolve(window.addToInventory(itemSprite)));
                 }
                 break;
+
+            // Remove a named item from the player inventory (and the server copy): the
+            // counterpart to give_item. `item` names the kit by type, id or name, or an
+            // array of any of those (first held match wins). Its intended use is inside a
+            // confirm_action's onConfirm, so a required-but-not-consumed item (an object
+            // with interactions.js `requiresItem` and NO `consumesItem`) is only taken once
+            // the player COMMITS to the dialog — cancelling keeps the kit (the engine consumes
+            // a `consumesItem` item when the confirm merely OPENS). No-op if the item isn't held.
+            // action: { type: 'remove_item', item: '<type|id|name>' | [ ... ] }
+            case 'remove_item': {
+                const wanted = Array.isArray(action.item) ? action.item : [action.item];
+                const held = (window.inventory?.items || []).find(it => {
+                    const d = it?.scenarioData || {};
+                    return wanted.includes(d.type) || wanted.includes(d.id) || wanted.includes(d.name);
+                });
+                if (!held) {
+                    console.log('[applyActions] remove_item: not held, no-op:', action.item);
+                    break;
+                }
+                try {
+                    window.removeFromInventory?.(held);
+                    const id = held?.scenarioData?.id;
+                    const gid = gameId || window.breakEscapeConfig?.gameId;
+                    if (id && gid) {
+                        fetch(`/break_escape/games/${gid}/inventory`, {
+                            method: 'POST',
+                            credentials: 'same-origin',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                            },
+                            body: JSON.stringify({ action_type: 'remove', item: { id } })
+                        }).catch(err => console.error('[applyActions] remove_item server sync failed:', err));
+                    }
+                    console.log('[applyActions] remove_item:', id || action.item);
+                } catch (err) {
+                    console.warn('[applyActions] remove_item failed:', err);
+                }
+                break;
+            }
 
             case 'add_capture':
                 // Static-descriptor capture (timers, triggerOnInteract). An NPC-used capture that

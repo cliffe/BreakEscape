@@ -679,7 +679,36 @@ export default class NPCManager {
       if (framework.currentMinigame) {
         framework.endMinigame(false, null);
       }
-      setTimeout(() => this._openScriptedConversation(conv), conv.startDelayMs);
+      setTimeout(() => {
+        // Busy-guard. During the start delay the player may have opened a chat or
+        // minigame of their own — e.g. an auto NPC challenge (sight/LOS) was scheduled
+        // while the player was walking, then they tapped into a person-chat or a PC
+        // before it opened. Opening over it here would close their minigame and steal
+        // input. (Any minigame already open when this fired was closed just above, so a
+        // scripted beat still interrupts what was open at emit time; this only guards a
+        // minigame opened AFTER, during the delay.) An auto-challenge is DROPPED — it is
+        // stale and re-fires on the next sighting; a scripted conversation is DEFERRED
+        // to the queue so it is not lost.
+        if (window.MinigameFramework?.currentMinigame) {
+          this._scriptedCall = null;
+          if (conv.dropIfBusy) {
+            console.log(`📵 ${conv.sceneType} for ${conv.npcId} (${conv.label}) dropped: player is in a minigame (auto-challenge, re-fires on next sighting)`);
+            if (this._scriptedCallQueue.length) this._pumpScriptedCallQueue();
+            return;
+          }
+          console.log(`📵 ${conv.sceneType} for ${conv.npcId} (${conv.label}) deferred: player opened a minigame during the start delay`);
+          this._scriptedCallQueue.push(conv);
+          this._pumpScriptedCallQueue();
+          return;
+        }
+        this._openScriptedConversation(conv);
+      }, conv.startDelayMs);
+      return;
+    }
+    // Already busy or a queue exists. An auto-challenge (dropIfBusy) is stale behind an
+    // open/starting conversation, so drop it rather than stack it up; a scripted beat waits.
+    if (conv.dropIfBusy) {
+      console.log(`📵 ${conv.sceneType} for ${conv.npcId} (${conv.label}) dropped: ${this._scriptedCall?.npcId || 'another'}'s conversation is starting or open (auto-challenge)`);
       return;
     }
     console.log(`📵 ${conv.sceneType} for ${conv.npcId} (${conv.label}) waits: ${this._scriptedCall?.npcId || 'another'}'s conversation is starting or open`);
@@ -1342,10 +1371,19 @@ export default class NPCManager {
 
         const knotToUse = config.targetKnot || config.knot || npc.currentKnot;
         console.log(`⏳ Waiting 500ms before starting person-chat cutscene for ${npcId}`);
+        // An auto-challenge is an NPC NOTICING the player (an LOS / line-of-sight event:
+        // `player_in_view*`, `lockpick_used_in_view`, any `*_in_view`), not a story beat
+        // the player walked into. Those should never open over, or just after, a minigame
+        // the player is in — a stale "can I help you?" that steals input (the lab's Len on
+        // the walk back). They are dropped if the player is busy when they would open: the
+        // NPC re-challenges on the next sighting. Scripted story conversations keep deferring
+        // (queued, never lost — m10 R3 / F25).
+        const dropIfBusy = /_in_view/.test(eventPattern);
         this._queueScriptedConversation({
           npcId: npc.id,
           label: eventPattern,
           sceneType: 'person-chat',
+          dropIfBusy,
           startDelayMs: NPCManager.SCRIPTED_CALL_START_MS,
           beforeOpen: () => {
             console.log(`✅ Starting person-chat minigame for ${npcId}`);
