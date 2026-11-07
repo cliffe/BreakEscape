@@ -177,3 +177,38 @@ test('a detour that is found is adopted, and avoidance state clears', () => {
     assert.equal(b.currentPath, detour);
     assert.equal(b._avoid, null);
 });
+
+// ── mustReach: a scripted route action must never be stalled by avoidance ─────────
+// Regression: a route NPC (e.g. Len) heading for a waypoint that carries an action
+// (unlockRoom) treated the player standing just beyond the action cell as a blocker
+// and yielded for ever, so the path never completed and the action never fired
+// (secure_area never unlocked). On the final approach to an action waypoint the yield
+// is time-boxed, then the NPC squeezes through to the cell so the action runs.
+test('mustReach: after a brief wait the NPC squeezes toward the action cell (never a sustained hold)', () => {
+    window.__npcAvoidOff = false;
+    window.player = { body: { enable: true, center: { x: 28, y: 0 } } }; // beyond the action cell
+    window.rooms = {};
+    // No pathfinder → a plain yield would give up and keep holding until the long
+    // give-up timer; mustReach must move the NPC forward regardless.
+    const b = walker();
+    let t = 100000;
+    b._handleBlockerAhead(t, { x: 400, y: 0 }, true);                 // brief wait first
+    assert.deepEqual(b._vel, { x: 0, y: 0 }, 'a brief wait before squeezing (no shove)');
+    t += 700;                                                        // just past AVOID_WAIT_MS
+    const handled = b._handleBlockerAhead(t, { x: 400, y: 0 }, true);
+    assert.equal(handled, true);
+    const speed = Math.hypot(b._vel.x, b._vel.y);
+    assert.ok(speed > 0 && speed < 90, `bounded squeeze toward the cell, not a full shove (got ${speed.toFixed(1)})`);
+    assert.ok(b._vel.x > 0, 'moving toward the action cell, not backing off or holding');
+});
+
+test('without mustReach the same early frame is still a hold — so mustReach is what frees the route', () => {
+    window.__npcAvoidOff = false;
+    window.player = { body: { enable: true, center: { x: 28, y: 0 } } };
+    window.rooms = {};
+    const b = walker();                 // no pathfinder → detour gives up immediately
+    let t = 100000;
+    b._handleBlockerAhead(t, { x: 400, y: 0 }, false);
+    t += 700; b._handleBlockerAhead(t, { x: 400, y: 0 }, false);     // past wait, before give-up squeeze
+    assert.deepEqual(b._vel, { x: 0, y: 0 }, 'a plain yield is still stopped here (the regression that stranded the route)');
+});

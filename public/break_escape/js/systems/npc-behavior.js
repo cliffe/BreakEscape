@@ -1249,8 +1249,13 @@ class NPCBehavior {
             if (this._checkPathStuck(time)) return;
 
             // The player or another NPC AHEAD on the path? Wait, then detour or
-            // give way — never shove into them.
-            if (this._handleBlockerAhead(time, nextWaypoint)) return;
+            // give way — never shove into them. Exception: on the final approach to
+            // a waypoint that carries a scripted route action (e.g. unlockRoom), a
+            // sustained yield would stop that action ever firing, so the yield is
+            // time-boxed and then squeezes through (handled inside via mustReach).
+            const mustReach = !!(this.patrolTarget?.routeAction &&
+                this.pathIndex === this.currentPath.length - 1);
+            if (this._handleBlockerAhead(time, nextWaypoint, mustReach)) return;
 
             // Move toward current waypoint
             const velocityX = (dx / distance) * this.config.patrol.speed;
@@ -1429,7 +1434,7 @@ class NPCBehavior {
      * Only bodies AHEAD block, so a player behind or beside is ignored (the
      * tailgate/body-block lever is untouched). Disabled with window.__npcAvoidOff.
      */
-    _handleBlockerAhead(time, nextWaypoint) {
+    _handleBlockerAhead(time, nextWaypoint, mustReach = false) {
         if (window.__npcAvoidOff) { this._avoid = null; return false; }
         if (!(this.config.patrol.speed > 0)) return false;
         const pos = this.npcBodyPos();
@@ -1451,6 +1456,16 @@ class NPCBehavior {
         this._stopHere();
         const waited = time - a.since;
         if (waited < AVOID_WAIT_MS) return true;
+
+        // Final approach to a scripted-action waypoint (unlockRoom, useObject, ...):
+        // the action only fires once the NPC reaches the cell, so a detour, back-off
+        // or indefinite hold would strand the route for ever. After the brief wait,
+        // squeeze straight through at the bounded speed until the cell is reached.
+        // (The action cell itself is not the blocker; the body is beyond it.)
+        if (mustReach) {
+            this._moveToward(nextWaypoint, this.config.patrol.speed * AVOID_SQUEEZE_FACTOR);
+            return true;
+        }
 
         const amYielder = hit.isPlayer || avoidanceYieldsTo(this.npcId, this._avoidIsBusy(), hit.id, hit.busy);
         // A higher-priority NPC first gives the yielder time to move, then tries its own detour.
