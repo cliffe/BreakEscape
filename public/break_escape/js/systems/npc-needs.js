@@ -660,7 +660,8 @@ export class NPCNeedsSystem {
     // ── word of mouth (slice 18b-ii, OFFICE_LIFE_PLAN 12.4 point 3, OQ33) ────
 
     /**
-     * A knower in its own (post) room, idle or walking home, away from the magnet's room, tells
+     * A knower in its own (post) room, idle, walking home or using its own post object (working at
+     * its desk), away from the magnet's room, tells
      * once per magnet: every NPC in the same room within newsRadius tiles that does not know yet
      * and is not avoided either way (groups do not matter) learns of it, whatever is shown. The
      * hearers are taken when the line or picture shows; with nobody to tell there is no announce
@@ -670,7 +671,8 @@ export class NPCNeedsSystem {
      */
     _tickNews(s, pos) {
         if (!pos.roomId || pos.roomId !== s.home?.roomId) return;
-        if (s.mode !== 'idle' && s.mode !== 'returning') return;
+        const atDesk = s.mode === 'job' && s.job?.phase === 'using' && !!s.home?.objectId && s.job.targetId === s.home.objectId;
+        if (s.mode !== 'idle' && s.mode !== 'returning' && !atDesk) return;
         if (s.saying && s.saying.until > this.clockMs) return;
         const shown = this._shownMagnets();
         for (const id of [...s.knows].sort()) {
@@ -1121,13 +1123,13 @@ export class NPCNeedsSystem {
             return;
         }
 
+        // Slice 18b-ii: a knower back in its own room (or working at its own desk) passes the word on
+        if (s.knows.size && this._magnets.size) this._tickNews(s, pos);
+
         if (s.mode === 'job') {
             this._advanceJob(s, arrived);
             return;
         }
-
-        // Slice 18b-ii: a knower back in its own room passes the word on
-        if (s.knows.size && this._magnets.size) this._tickNews(s, pos);
 
         // idle or returning: an urgent need may start a job
         if (this.selectBackoff && s.selectRetryAt && this.tickCount < s.selectRetryAt) return;

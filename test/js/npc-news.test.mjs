@@ -220,6 +220,29 @@ test('a knower away from its own room, or busy on a job, does not tell until it 
     assert.deepEqual(o.told(), [['tom', 'grace']]);
 });
 
+test('a knower working at its own desk tells; one using anything else does not', () => {
+    const desk = { id: 'grace_pc', roomId: 'office', x: 300, y: 268, affordance: { satisfies: 'work', restores: 50, useSeconds: 60 } };
+    const o = office({
+        grace: { home: 'grace_pc', rec: { needs: { work: { decayPerMin: 1, urgentAt: 50, initial: 30 } } } },
+        tom: { pos: at(2), rec: { needs: calm() } }
+    }, { objects: [cake(), desk], arrive: true });
+    o.ticks(3);
+    assert.equal(o.sys.states.get('grace').job?.phase, 'using');
+    assert.equal(o.sys.states.get('grace').job?.targetId, 'grace_pc');
+    o.know('grace');
+    o.ticks(1);
+    assert.deepEqual(o.told(), [['tom', 'grace']]);
+    const p = office({
+        grace: { rec: { needs: { thirst: { decayPerMin: 1, urgentAt: 40, initial: 30 } } } },
+        tom: { pos: at(2), rec: { needs: calm() } }
+    }, { objects: [cake(), { id: 'cooler', roomId: 'office', x: 300, y: 268, affordance: { satisfies: 'thirst', restores: 50, useSeconds: 60 } }], arrive: true });
+    p.ticks(3);
+    assert.equal(p.sys.states.get('grace').job?.phase, 'using');
+    p.know('grace');
+    p.ticks(4);
+    assert.deepEqual(p.told(), [], 'at the cooler, not her post');
+});
+
 test('learning by word wakes the hearer\'s parked needs the magnet satisfies, and no others; a told, tempted NPC gets up', () => {
     const o = office({
         grace: { rec: { needs: calm() } },
