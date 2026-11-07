@@ -4487,6 +4487,47 @@ need source turns back (18a), the command with a list, determinism (two runs, sa
 validator fixtures. Live on :3001: copier off, Tom's print at the kitchen copier, Tom there and back with the longer
 away time (and his lock if his habit says so), both off (the grumble).
 
+### 12.13 Slice 23: magnet on a table (added 2026-11-07)
+
+The user, 2026-11-07, yes to "Should a cake dropped beside a table snap onto the table?". Today a drop lands at the
+player's feet, so a cake put down beside the kitchen table sits on the floor (game 930, `k1-kitchen-eating-930.png`).
+
+**Design.**
+
+1. **Scope: magnets only.** A droppable item whose affordance has a `magnet` snaps; every other drop lands at the feet as
+   today. The lab's USB stick and QR card (a `needsTag`, no affordance) are collected by NPCs from the floor, and moving them
+   onto desks would change who can reach them and the lab's timings, so extending it is not trivially safe.
+2. **Which surfaces.** Sprites in the player's room whose `scenarioData.type` is `table` (the Tiled `tables` layer and
+   scenario-made tables), live and not destroyed. The top is the sprite's span, inset 2 px, with the item's base on one row:
+   `front - 2` when `table_surfaces.json` has a `front` for the texture (none do yet; TABLE_SURFACE_PLAN), else 40% of the
+   sprite height (inside the measured tops of desk1, smalldesk1 and hospital_desk1).
+3. **When it snaps.** The player's feet within 32 px (one tile) of a table's top rectangle (sprite top to that base row).
+   The nearest table wins, ties by object id; on it, the player's x clamped into the top. A spot whose item rectangle
+   would overlap another object on the table (a lamp, the microwave) slides along the top to the nearest clear x (4 px
+   steps); a table with no clear spot is skipped. Nothing in range: the floor, as today. Pure and deterministic, in a new
+   import-free module `table-drop.js` imported by `item-drop.js` (no test harness copies `item-drop.js`).
+4. **Drawing.** Depth is the table's depth + 0.05, written as `position.elevation` (table depth + 0.05 - (bottom + 0.5)),
+   so a reload's `setDepthAndStore` gives the same depth: drawn over the table and its items, under an NPC standing in front.
+   Elevation > 0 also keeps the cake out of path-avoid and sight occlusion, as the slice 19 phones are.
+5. **Persistence and the 13 px drift.** The drop saves `position` as the sprite's centre, but a reload places a scenario
+   object by its top-left (origin 0), so a 25x27 cake comes back half its size south-east. A client fix: save the top-left
+   (integer pixels) and the elevation; the server keeps `position` whole (`game.rb` add_object), so no server change.
+6. **Eaters.** `approachCell` for a magnet standing on a table (its base point inside a table's top) asks
+   `window.tableDrop.edgeCell`: the walkable cell just in front of the table under the cake, else the nearest of behind,
+   left or right, never a cell inside or within 4 px of any table (the kitchen's four tables touch). `besideCell` then puts
+   the second and third eater along the same edge. npc-needs.js keeps no static imports.
+7. **Pickup and doors.** Unchanged code: the cake is a takeable object above the table, so a click on it picks it up; a cake
+   on a table is no longer by a door, so a door click cannot grab it (a floor drop in a doorway still can).
+8. **No new scenario fields**; no validator or schema change.
+
+**Size.** `table-drop.js` about 90, `item-drop.js` about 20, the `approachCell` hook about 8. **About 120 lines, S.**
+
+**Tests.** Node (`table-drop.test.mjs`): snap within range, none beyond, nearest table and the tie by id, slide past an
+object, a full table skipped, determinism, the persistence round trip (the saved top-left and elevation, read back by the
+reload formula, give the same rectangle and depth; a floor drop no longer drifts), the edge cell (front first, never in a
+table gap). `GOLDEN_SIMS_DAY` byte-identical. Live on :3001: a drop beside the kitchen table lands on it, eaters at the edge
+with an eating frame, a reload keeps it there, pickup from the table, an open-floor drop on the floor; leash and lab regressions.
+
 ## 13. Changes after section 12 review R1
 
 Review: `OFFICE_LIFE_PLAN_REVIEW_S12_R1.md` (commit 20f8263b7; 0 blockers, 9 major, 17 minor; "not ready
