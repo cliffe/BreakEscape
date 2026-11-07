@@ -103,6 +103,13 @@ Re-run (twice, then diff; expect nothing between runs, and compare a later run t
 About 2.5 minutes per run. Maps changed since 00f04d534 (the scale-fix agent) will show as geometry
 differences, so rebaseline from the same commit as the code under test when comparing.
 
+## Known skips
+
+Two example scenarios misbehave under the all-rooms snapshot (`tools/playtest/room-snapshot.mjs`). The owner chose to leave them, so expect them in every run and don't treat them as regressions:
+
+- `timed_messages_example` never loads its rooms within the 60 s timeout.
+- `vm_free_mission` loads but records 0 sprites.
+
 ## Not built
 
 The walk record's 2x screenshots with the cells drawn (check (g)) were never built. The diff tool lists
