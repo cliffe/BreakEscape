@@ -99,6 +99,8 @@ export class NpcChatterVoice {
         this.loading = new Map();    // ownerId -> Promise
         this.tts = new Map();        // npcId -> TTSManager
         this.queue = Promise.resolve();
+        this.gen = new Map();        // npcId -> cancel generation (slice 19: a hung-up call)
+        this.current = null;         // { npcId, mgr, done } while a clip plays
         this.log = [];               // { at, npcId, text, spoken, reason } for tests and live proof
     }
 
@@ -140,10 +142,25 @@ export class NpcChatterVoice {
         return p;
     }
 
-    /** Start loading the stories of every NPC that declares exchanges. */
+    /** Start loading the stories of every NPC that declares exchanges or desk-phone calls (slice 19). */
     preload() {
         for (const npc of this._allNpcs()) {
-            if (Array.isArray(npc?.exchanges) && npc.exchanges.length && !this._storyJson(npc)) this._load(npc);
+            const has = k => Array.isArray(npc?.[k]) && npc[k].length;
+            if ((has('exchanges') || has('phoneCalls')) && !this._storyJson(npc)) this._load(npc);
+        }
+    }
+
+    /**
+     * Slice 19: a call hung up. Stops this NPC's clip in flight (and ends its wait, so later lines
+     * from anyone do not wait out the cancelled clip) and skips its queued lines.
+     */
+    cancel(npcId) {
+        this.gen.set(npcId, (this.gen.get(npcId) || 0) + 1);
+        const cur = this.current;
+        if (cur && cur.npcId === npcId) {
+            try { cur.mgr?.stop?.(); } catch (e) { /* already stopped */ }
+            cur.done?.();
+            this._note({ at: this.deps.now ? this.deps.now() : Date.now(), npcId, text: cur.text, spoken: false, reason: 'cancelled' });
         }
     }
 
@@ -220,15 +237,22 @@ export class NpcChatterVoice {
         if (this._hearing(npcId) < 1) { this._note({ ...base, spoken: false, reason: 'other_room' }); return this.queue; }
         const d = this._distance(npcId);
         const volume = Number.isFinite(d) ? Math.max(0.35, Math.min(1, 1 - d / 400)) : 1;
+        const gen = this.gen.get(npcId) || 0;
+        const live = () => (this.gen.get(npcId) || 0) === gen;
         this.queue = this.queue.then(async () => {
             const t = this.deps.now ? this.deps.now() : Date.now();
+            if (!live()) { this._note({ ...base, spoken: false, reason: 'cancelled' }); return; }
             if (t - now > STALE_MS) { this._note({ ...base, spoken: false, reason: 'stale' }); return; }
             const mgr = await this._ttsFor(npcId);
             this._note({ ...base, spoken: true, volume: Math.round(volume * 100) / 100 });
             const ms = await mgr.play(npcId, line);
             if (!ms) return;   // no clip (keyless server, quota): the bubble already carries the line
+            if (!live()) { try { mgr.stop?.(); } catch (e) { /* ok */ } return; }   // hung up while it loaded
             try { if (mgr.audio) mgr.audio.volume = volume; } catch (e) { /* routed audio ignores it */ }
-            await new Promise(r => setTimeout(r, ms));
+            await new Promise(r => {
+                const timer = setTimeout(() => { this.current = null; r(); }, ms);
+                this.current = { npcId, mgr, text: line, done: () => { clearTimeout(timer); this.current = null; r(); } };
+            });
         }).catch(() => {});
         return this.queue;
     }

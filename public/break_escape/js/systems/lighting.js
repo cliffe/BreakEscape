@@ -116,6 +116,8 @@ const INDICATOR_INSET = 5;
 const FLASH_KINDS = {
   lock: { color: INDICATOR_LOCKED.color, from: 18, to: INDICATOR_LOCKED.radius, fade: false },
   unlock: { color: INDICATOR_OPEN.color, from: 16, to: 16, fade: true },
+  // Slice 19: a desk phone's ring, amber, one per ring (every 3 s), drawn on the phone itself
+  ring: { color: 0xffb347, from: 18, to: 10, fade: true },
 };
 export const FLASH_MS = 500;
 export const FLASH_REDUCED_MS = 300;
@@ -1448,12 +1450,13 @@ export class LightingSystem {
    * One transient glow on a workstation's indicator point (slice 16): 'lock' or 'unlock'. A new
    * flash on the same object replaces the old. Returns false for an unknown kind.
    */
-  flash(objectId, kind, ms = FLASH_MS) {
+  flash(objectId, kind, ms = FLASH_MS, at = null) {
     if (!objectId || !FLASH_KINDS[kind]) return false;
     const prev = this.flashes.get(objectId);
     const img = prev?.img || this.scene.add.image(0, 0, LIGHT_TEX).setBlendMode(Phaser.BlendModes.ADD).setVisible(false);
     const dur = this.reducedMotion ? FLASH_REDUCED_MS : (Number(ms) > 0 ? Number(ms) : FLASH_MS);
-    this.flashes.set(objectId, { kind, ms: dur, start: null, img });
+    // at: { sprite, roomId } for an object with no indicator record (slice 19: a desk phone); drawn at its centre
+    this.flashes.set(objectId, { kind, ms: dur, start: null, img, at: at && at.sprite ? at : null });
     return true;
   }
 
@@ -1466,7 +1469,8 @@ export class LightingSystem {
   drawFlashes(state, time, rt, multOpts, ox, oy) {
     const c = this.tmpFlashCentre || (this.tmpFlashCentre = new Phaser.Math.Vector2());
     for (const [id, f] of this.flashes) {
-      const e = state.emitters.find(r => r.indicator && (r.obj?.scenarioData?.id ?? r.obj?.objectId) === id);
+      const e = state.emitters.find(r => r.indicator && (r.obj?.scenarioData?.id ?? r.obj?.objectId) === id)
+        || (f.at && f.at.roomId === state.roomId ? { obj: f.at.sprite, variants: [] } : null);
       if (!e) continue;
       const obj = e.obj;
       if (!obj?.active || !obj.visible) { f.img.setVisible(false); continue; }

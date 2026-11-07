@@ -85,6 +85,8 @@ class SoundManager {
         this.scene.load.audio('chair_roll', 'sounds/chair_roll.mp3');
         this.scene.load.audio('message_received', 'sounds/message_received.mp3');
         this.scene.load.audio('phone_vibrate', 'sounds/phone_vibrate.mp3');
+        // Desk phone ring, office life slice 19 (CC0, Freesound: guitarguy1985 "ring.wav", first double ring; docs/achitechture/OFFICE_LIFE_SOUND_CREDITS.md)
+        this.scene.load.audio('desk_phone_ring', 'sounds/desk_phone_ring.mp3');
         this.scene.load.audio('page_turn', 'sounds/page_turn.mp3');
         this.scene.load.audio('message_sent', 'sounds/message_sent.mp3');
         this.scene.load.audio('heartbeat', 'sounds/heartbeat.mp3');

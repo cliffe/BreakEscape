@@ -55,6 +55,12 @@ export function lockCuesOn(scenario = win().gameScenario) {
 export const GLYPH_MS = 1000;        // the padlock glyph without lighting
 export const GLYPH_SWAP_MS = 300;    // the first state shows this long, then the end state
 export const CHIME_SCALE = 0.5;      // a chime is quieter than a use sound at the same spot
+// Slice 19 (OFFICE_LIFE_PLAN 12.5): a desk phone's ring. One cue per ring: the amber flash (lighting)
+// or the phone glyph pulsing in alpha, a 1 px rattle for the ring's length, and the ring itself.
+export const RING_CUE_MS = 2250;     // desk_phone_ring.mp3: one double ring
+export const RING_FLASH_MS = 900;
+export const RING_SCALE = 0.8;       // louder than a use sound: a ringing phone carries across the room
+export const RATTLE_STEP_MS = 60;
 // The two icons share a padlock body 15 px wide: npc-lock (16x16) has it at x 0-14, npc-lock-open
 // (23x16) at x 8-22, the hoop swung off the left. Each image's left edge is placed so the body
 // centre sits on the anchor and does not move on the swap.
@@ -376,6 +382,78 @@ export class NpcOfficeVisuals {
         return true;
     }
 
+    /**
+     * desk_phone_ringing:<phoneId> (slice 19): the amber flash on the phone with lighting, else the
+     * phone glyph pulsing in alpha (never scaled); a 1 px rattle of the phone for the ring's length
+     * (client only; the declared position comes back); the ring through playAt, heard only in the
+     * phone's room, on its own limiter channel. desk_phone_ring_heard:<phoneId> when heard.
+     */
+    onPhoneRinging(data) {
+        const id = data?.phoneId;
+        if (!id) return;
+        const w = win();
+        const st = this._station(id);
+        const rec = { t: Date.now(), objectId: id, how: 'ring', ring: data.ring ?? null, flash: null, glyph: false, rattle: false, sound: null };
+        if (st) {
+            if (w.lightingSystem?.flash) rec.flash = w.lightingSystem.flash(id, 'ring', RING_FLASH_MS, { sprite: st.sprite, roomId: st.roomId }) ? 'ring' : null;
+            else rec.glyph = this.showPhoneGlyph(id, st.sprite);
+            rec.rattle = this.rattle(st.sprite);
+            const c = st.sprite.getCenter ? st.sprite.getCenter() : st.sprite;
+            const v = this.playAt('desk_phone_ring', c.x, c.y, st.roomId, { objectId: id, ownerId: data.ownerId, ring: data.ring },
+                { ownRoomOnly: true, channel: 'ring', scale: RING_SCALE });
+            rec.sound = { key: 'desk_phone_ring', volume: Math.round(v * 1000) / 1000 };
+            if (v > 0) {
+                w.eventDispatcher?.emit?.(`desk_phone_ring_heard:${id}`, { phoneId: id, ownerId: data.ownerId, ring: data.ring, volume: rec.sound.volume });
+            }
+        }
+        this.cueLog.push(rec);
+        if (this.cueLog.length > 100) this.cueLog.shift();
+    }
+
+    /** The phone1 glyph over the phone on the dark backing, pulsing in alpha for RING_CUE_MS. */
+    showPhoneGlyph(objectId, sprite) {
+        const scene = this.scene;
+        if (!scene?.add) return false;
+        this.glyphs.get(objectId)?.destroy?.();
+        const top = sprite.getTopCenter ? sprite.getTopCenter() : { x: sprite.x, y: sprite.y - (sprite.displayHeight || 32) / 2 };
+        const key = scene.textures?.exists?.('phone1') ? 'phone1' : null;
+        const fw = key ? (scene.textures.get(key).getSourceImage()?.width || 20) : 20;
+        const fh = key ? (scene.textures.get(key).getSourceImage()?.height || 17) : 12;
+        const bg = scene.add.rectangle(-Math.ceil(fw / 2) - 3, 0, fw + 6, fh + 4, 0x1b2a41).setOrigin(0, 1);
+        const parts = [bg];
+        if (key) parts.push(scene.add.image(-Math.ceil(fw / 2), -2, key).setOrigin(0, 1));
+        else parts.push(scene.add.text(0, -2, 'Ph', { fontFamily: 'monospace', fontSize: '12px', fontStyle: 'bold', color: '#ffb347' }).setOrigin(0.5, 1));
+        const box = scene.add.container(Math.round(top.x), Math.round(top.y) - 2, parts).setDepth(5000);
+        const tween = scene.tweens?.add?.({ targets: box, alpha: { from: 1, to: 0.35 }, duration: 300, yoyo: true, repeat: -1 });
+        const handle = {
+            box,
+            destroy: () => { try { tween?.remove?.(); } catch (e) { /* ok */ } if (!box.destroyed) box.destroy(); this.glyphs.delete(objectId); }
+        };
+        const t = scene.time?.delayedCall?.(RING_CUE_MS, () => { if (this.glyphs.get(objectId) === handle) handle.destroy(); });
+        if (!t) setTimeout(() => { if (this.glyphs.get(objectId) === handle) handle.destroy(); }, RING_CUE_MS);
+        this.glyphs.set(objectId, handle);
+        return true;
+    }
+
+    /** A 1 px side to side rattle for RING_CUE_MS; the sprite's x comes back exactly. */
+    rattle(sprite) {
+        const scene = this.scene;
+        if (!sprite || !scene?.time?.addEvent || sprite._rattle) return false;
+        const baseX = sprite.x;
+        let n = 0;
+        const steps = Math.floor(RING_CUE_MS / RATTLE_STEP_MS);
+        sprite._rattle = scene.time.addEvent({
+            delay: RATTLE_STEP_MS, repeat: steps - 1,
+            callback: () => {
+                n++;
+                if (sprite.destroyed || !sprite.scene) return;
+                sprite.x = n >= steps ? baseX : baseX + (n % 2 ? 1 : -1);
+                if (n >= steps) sprite._rattle = null;
+            }
+        });
+        return true;
+    }
+
     /** Load both padlock icons once, so the glyph has its art when the first change comes. */
     preloadGlyphs() {
         const scene = this.scene;
@@ -428,6 +506,7 @@ export function installNpcOfficeVisuals(scene) {
         scene.events?.on?.('postupdate', () => { try { if (officeVisualsOn()) inst.followHeld(); } catch (e) { /* never break a frame */ } });
         w.eventDispatcher?.on?.('npc_used:*', (data) => { try { if (officeVisualsOn()) inst.onUsed(data); } catch (e) { /* ignore */ } });
         w.eventDispatcher?.on?.('workstation_screen_changed:*', (data) => { try { inst.onScreenChanged(data); } catch (e) { /* ignore */ } });
+        w.eventDispatcher?.on?.('desk_phone_ringing:*', (data) => { try { if (officeVisualsOn()) inst.onPhoneRinging(data); } catch (e) { /* ignore */ } });
         if (lockCuesOn() && !w.lightingSystem) inst.preloadGlyphs();
     }
     return inst;

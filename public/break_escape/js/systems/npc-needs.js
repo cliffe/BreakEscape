@@ -77,7 +77,10 @@ export const PICTURE_CHATTER = Object.freeze({
     grumble_gone: Object.freeze(['avoid']),
     // Slice 18b-ii: word of mouth about a magnet. The picture is the magnet's first `satisfies`
     // when that need has an icon (NEED_ICONS); this entry is the fallback.
-    news: Object.freeze(['social'])
+    news: Object.freeze(['social']),
+    // Slice 19: a desk-phone call nobody hears (or with no lines left) shows the phone
+    phone: Object.freeze(['phone']),
+    phone_message: Object.freeze(['phone'])
 });
 const PICTURE_DEFAULT = Object.freeze(['social']);
 // The needs that have an icon of their own (npc-action-icons.js NPC_ICON_NAMES; not imported, so
@@ -102,6 +105,17 @@ export const MAGNET_TEMPT = 30;
 /** Slice 18b-ii: magnet.newsRadius default (tiles), and how long an announce waits for the speech lock. */
 export const NEWS_RADIUS = 5;
 export const NEWS_WAIT_MS = 30000;
+/**
+ * Slice 19 (OFFICE_LIFE_PLAN 12.5): desk phones. A ring every RING_MS of the needs clock, `rings`
+ * times (default RINGS); a call's listening gaps between lines are seeded in CALL_GAP_MS; a pool
+ * call takes up to CALL_POOL_LINES lines; a picture call (nothing to say) shows CALL_PICTURES phones.
+ */
+export const RING_MS = 3000;
+export const PICKUP_MS = 2250;   // the owner at its post picks up this long after the first ring (one ring heard)
+export const RINGS = 4;
+export const CALL_GAP_MS = Object.freeze([1500, 3000]);
+export const CALL_POOL_LINES = 3;
+export const CALL_PICTURES = 3;
 
 /**
  * Pure: an affordance's magnet block, normalised ({ tempt, servings, perPerson }), or null. A
@@ -318,6 +332,11 @@ export class NPCNeedsSystem {
         // Who knows of a magnet (s.knows) is client only. _magShown: the shown magnets, per tick.
         this._magnets = new Map();
         this._magShown = null;
+        // Desk phones (slice 19, OFFICE_LIFE_PLAN 12.5): phoneId -> ring { phoneId, ownerId, n, total,
+        // nextAt } while it rings, and phoneId -> call while someone is on it. Client only.
+        this._rings = new Map();
+        this._calls = new Map();
+        this._callSeq = 0;
         // Read-outs for tests and live measurement; never feed a decision
         this.stats = { ticks: 0, selects: 0, objectScans: 0, pathSearches: 0, backoffs: 0 };
     }
@@ -383,6 +402,8 @@ export class NPCNeedsSystem {
             // the speech lock ({ id, since }; a picture after NEWS_WAIT_MS)
             announced: new Set(),
             newsWait: null,
+            // Slice 19: { phoneId, until } while this NPC speaks on a desk phone (selection waits)
+            call: null,
             leashNoted: {},
             avoidNoted: {},
             privateNoted: {},
@@ -435,6 +456,9 @@ export class NPCNeedsSystem {
         this._bags.clear();
         this._speechUntil = 0;
         this._exPlayed.clear();
+        this._rings.clear();
+        this._calls.clear();
+        this._callSeq = 0;
         this.log = [];
         this.clockMs = 0;
         this.speakers = [];
@@ -835,6 +859,7 @@ export class NPCNeedsSystem {
         if (this._placed.size) this._tickPlaced();
         if (this._prints.size) this._tickPrints();
         if (this._magnets.size) this._tickMagnets();
+        if (this._rings.size) this._tickRings();
         for (const id of [...this.states.keys()].sort()) {
             try {
                 this._tickNpc(this.states.get(id));
@@ -844,6 +869,7 @@ export class NPCNeedsSystem {
         }
         this._tickQueueChats();
         if (this._chats.size) this._tickChats();
+        if (this._calls.size) this._tickCalls();
         this.speakers = this._buildSpeakers();
         this._worldChanged();
         // Slice 16 (OFFICE_LIFE_PLAN 12.2): the live adapter runs workstation auto-lock here, on
@@ -870,6 +896,11 @@ export class NPCNeedsSystem {
         }
         for (const s of this.states.values()) {
             if (s.saying && this.clockMs < s.saying.until) add(s.npcId, s.saying.until);
+        }
+        // Slice 19: a speaker on a desk phone, for the whole call (lines and listening gaps)
+        for (const c of this._calls.values()) {
+            const until = c.current ? c.current.until : Math.max(c.nextAt, this.clockMs + NEEDS_TICK_MS);
+            add(c.speakerId, until);
         }
         return out;
     }
@@ -1124,12 +1155,16 @@ export class NPCNeedsSystem {
         }
 
         // Slice 18b-ii: a knower back in its own room (or working at its own desk) passes the word on
-        if (s.knows.size && this._magnets.size) this._tickNews(s, pos);
+        if (s.knows.size && this._magnets.size && !s.call) this._tickNews(s, pos);
 
         if (s.mode === 'job') {
             this._advanceJob(s, arrived);
             return;
         }
+
+        // Slice 19 (OQ55): on a desk-phone call nothing is selected; decay goes on, and an urgent
+        // need, a due errand or a tempted magnet starts on the first select after the call
+        if (s.call) return;
 
         // idle or returning: an urgent need may start a job
         if (this.selectBackoff && s.selectRetryAt && this.tickCount < s.selectRetryAt) return;
@@ -1744,6 +1779,8 @@ export class NPCNeedsSystem {
         };
         if (pick.offWhen !== undefined) s.job.offWhen = pick.offWhen;   // slice 18a: checked on the way
         if (pick.tempted) s.job.tempted = true;   // slice 18b-i: recorded now, the level may decay on the way
+        // Slice 19: a colleague answering a desk phone; the call (and its length) is chosen at the claim
+        if (pick.phoneCall) { s.job.phone = true; s.job.call = pick.phoneCall; s.job.callMs = pick.phoneCall.total; }
         const mag = pick.kind === 'use' ? this._magnets.get(pick.targetId) : null;
         if (mag) { s.job.magnet = true; s.job.aff = mag.aff; }   // kept: a finished or picked-up magnet is gone
         if (pick.queue) { s.job.qSeq = this._queueSeq++; s.job.queuedAt = this.clockMs; s.job.qCell = null; s.job.qArrived = false; }
@@ -1882,7 +1919,8 @@ export class NPCNeedsSystem {
         const speed = Math.max(1, Number(this.world.speedFor(s.npcId)) || 80);
         const secs = Number(t.o.affordance?.useSeconds);
         // A print errand never enters `using` (slice 17): no dwell at the desk
-        const useMs = job.errand ? 0 : (Number.isFinite(secs) ? clamp(secs, 0, 600) : 20) * 1000;
+        // A desk-phone answer (slice 19) lasts the call chosen at the claim, not the phone's 0 s
+        const useMs = job.errand ? 0 : job.phone ? (job.callMs || 0) : (Number.isFinite(secs) ? clamp(secs, 0, 600) : 20) * 1000;
         let waitMs = 0;
         if (job.phase === 'queued') {
             const line = this._queuers(job.targetId);
@@ -2001,6 +2039,8 @@ export class NPCNeedsSystem {
             if (obj) this.world.faceTo(id, obj.x, obj.y);
             // A print errand completes on arrival, without `using` (no post stop, no chair fetch)
             if (job.errand) { this._completeJob(s); return; }
+            // Slice 19: a colleague at a ringing desk phone picks up (the call chosen at the claim)
+            if (job.phone) { this._colleagueAnswers(s, obj); return; }
             // Slice 18b-i: a serving is taken as eating starts, so nobody eats one that is not there
             if (job.magnet && !this._takeServing(s, job.targetId)) { this._turnBack(s, 'gone'); return; }
             job.phase = 'using';
@@ -2010,7 +2050,8 @@ export class NPCNeedsSystem {
             if (obj) this._maybePair(s, obj);
             return;
         }
-        if (job.phase === 'using' && this.clockMs >= job.useUntil) this._completeJob(s);
+        // Slice 19: a colleague's answer ends with its call (tick rounding can carry a call past useUntil)
+        if (job.phase === 'using' && this.clockMs >= job.useUntil && !(job.phone && s.call)) this._completeJob(s);
     }
 
     _completeJob(s) {
@@ -2516,6 +2557,13 @@ export class NPCNeedsSystem {
                 return { line: cur.line, picture: cur.picture || null, knot: cur.knot || null, partnerId: cur.partnerId, topic: c.topic, objectId: c.objectId, remainingMs: cur.until - this.clockMs };
             }
         }
+        // Slice 19: half a desk-phone call (no partner in the room)
+        for (const c of this._calls.values()) {
+            const cur = c.current;
+            if (cur && c.speakerId === npcId && this.clockMs < cur.until) {
+                return { line: cur.line, picture: cur.picture || null, knot: c.knot || null, partnerId: null, topic: c.topic, objectId: c.phoneId, call: true, remainingMs: cur.until - this.clockMs };
+            }
+        }
         // A grumble (slice 14) is a one-off line with no partner
         const say = this.states.get(npcId)?.saying;
         if (say && this.clockMs < say.until) return { line: say.line, picture: say.picture || null, knot: null, partnerId: null, topic: say.topic, objectId: say.objectId, remainingMs: say.until - this.clockMs };
@@ -2529,6 +2577,315 @@ export class NPCNeedsSystem {
             if (c.b === npcId) return c.a;
         }
         return null;
+    }
+
+    // ── desk phones (slice 19, OFFICE_LIFE_PLAN 12.5) ─────────────────────────
+
+    /**
+     * desk_phone_ring:<phoneId> (a mapping's emitEvent or an object's emit_event): the phone rings
+     * `rings` times (default RINGS), one every RING_MS of the needs clock, from the next tick. A
+     * phone already ringing or in a call ignores it (no ring on a busy line). True when it starts.
+     */
+    onPhoneRing(phoneId) {
+        const o = typeof phoneId === 'string' ? this.world.getObject(phoneId) : null;
+        const ownerId = o?.phoneOwner;
+        if (!o || typeof ownerId !== 'string' || !ownerId) { this._log(null, 'ring_ignored', { target: phoneId, reason: 'no_phone' }); return false; }
+        if (this._rings.has(o.id) || this._calls.has(o.id)) {
+            this._log(ownerId, 'ring_ignored', { target: o.id, reason: this._calls.has(o.id) ? 'call' : 'ringing' });
+            return false;
+        }
+        const n = Number(o.rings);
+        const total = Number.isFinite(n) && n >= 1 ? Math.min(20, Math.floor(n)) : RINGS;
+        this._rings.set(o.id, { phoneId: o.id, ownerId, roomId: o.roomId ?? null, n: 0, total, nextAt: this.clockMs, answerAt: Infinity });
+        this._log(ownerId, 'phone_ring', { target: o.id, rings: total });
+        return true;
+    }
+
+    /**
+     * Per tick, before the NPCs: the owner at its post answers (and wins over a colleague on the
+     * way); else the next ring; from the second ring an answersPhones colleague may claim it. The
+     * phone keeps ringing past `rings` while an answerer not frozen in a chat holds a claim; when it
+     * rings out every answerer turns back with `rang_out`.
+     */
+    _tickRings() {
+        for (const id of [...this._rings.keys()].sort()) {
+            const r = this._rings.get(id);
+            const owner = this.states.get(r.ownerId);
+            if (r.n >= 1 && this.clockMs >= r.answerAt && owner && this._ownerCanAnswer(owner)) { this._ownerAnswers(r, owner); continue; }
+            const answerers = this._answerers(id);
+            if (this.clockMs >= r.nextAt) {
+                if (r.n >= r.total && !answerers.some(a => a.mode !== 'frozen')) { this._ringOut(r, answerers); continue; }
+                r.n++;
+                if (r.n === 1) r.answerAt = this.clockMs + PICKUP_MS;
+                r.nextAt = this.clockMs + RING_MS;
+                this._log(r.ownerId, 'phone_ringing', { target: id, ring: r.n });
+                this._emit(`desk_phone_ringing:${id}`, { phoneId: id, ownerId: r.ownerId, ring: r.n, roomId: r.roomId });
+            }
+            if (r.n >= 2 && !answerers.length) this._claimAnswerer(r);
+        }
+    }
+
+    /** Idle at its post, or in a use of its own desk, and free: not on a call, in a chat or unavailable. */
+    _ownerCanAnswer(s) {
+        if (s.call || s.blocked || s.scriptSuspended || !s.atPost || s.mode === 'frozen') return false;
+        if (this.world.inChatWith(s.npcId)) return false;
+        const st = this.world.npcStatus(s.npcId) || {};
+        if (st.ko || st.hostile || st.hidden) return false;
+        if (s.mode === 'idle' || s.mode === 'returning') return true;   // returning at its post: the own-desk tick
+        return s.mode === 'job' && this._atOwnPost(s) && s.job.phase === 'using';
+    }
+
+    /** NPCs holding a claim on this phone (a colleague's answer job not yet picked up). */
+    _answerers(phoneId) {
+        const out = [];
+        for (const id of [...this.states.keys()].sort()) {
+            const s = this.states.get(id);
+            if (s.job?.phone && s.job.targetId === phoneId && s.job.phase !== 'using') out.push(s);
+        }
+        return out;
+    }
+
+    _ownerAnswers(r, s) {
+        this._rings.delete(r.phoneId);
+        for (const a of this._answerers(r.phoneId)) this._endAnswerer(a, 'answered');
+        this._beginCall(r, s, this._chooseCall(s, 'owner'), 'owner');
+    }
+
+    /**
+     * The nearest answersPhones NPC in the phone's room that is idle at its post, not on a call of
+     * its own and does not avoid the owner (either way) takes an ordinary use job on the phone: a
+     * real leave. The call and its length are chosen now, since npc_left_post fires at the end of
+     * the wind-up with the expected absence.
+     */
+    _claimAnswerer(r) {
+        const phone = this.world.getObject(r.phoneId);
+        if (!phone) return;
+        const owner = this.states.get(r.ownerId);
+        let best = null, bestD = Infinity;
+        for (const id of [...this.states.keys()].sort()) {
+            if (id === r.ownerId) continue;
+            const s = this.states.get(id);
+            if (this._rec(s).answersPhones !== true) continue;
+            if (s.mode !== 'idle' || !s.atPost || s.job || s.call || s.scriptSuspended || s.blocked || this.world.inChatWith(id)) continue;
+            const pos = this.world.npcPos(id);
+            if (!pos || pos.roomId !== phone.roomId || (s.home?.roomId && s.home.roomId !== phone.roomId)) continue;
+            const st = this.world.npcStatus(id) || {};
+            if (st.ko || st.hostile || st.hidden) continue;
+            if (owner && this._avoids(s, owner)) continue;
+            if (!this._reachable(s, phone)) continue;
+            const d = Math.hypot(pos.x - phone.x, pos.y - phone.y);
+            if (d < bestD) { best = s; bestD = d; }
+        }
+        if (!best) return;
+        const call = this._chooseCall(best, 'colleague');
+        this._log(best.npcId, 'phone_claimed', { target: r.phoneId, owner: r.ownerId, ring: r.n, knot: call.knot || undefined, ms: call.total });
+        this._startJob(best, { kind: 'use', need: null, targetId: r.phoneId, phoneCall: call });
+    }
+
+    /**
+     * An answerer on the way turns back (`answered`: the owner picked up; `rang_out`). One frozen in a
+     * chat has its job cleared and goes home when the chat ends, with no move now (a moveTo during
+     * the chat would be cancelled by the next tick anyway).
+     */
+    _endAnswerer(s, reason) {
+        if (s.mode !== 'frozen') { this._turnBack(s, reason); return; }
+        const job = s.job;
+        s.turnCount++;
+        this._log(s.npcId, 'turned_back', { need: job.need, target: job.targetId, reason });
+        this._emit(`npc_turned_back:${s.npcId}`, { npcId: s.npcId, need: job.need, targetId: job.targetId, reason, ...this._playerProximity(s.npcId) });
+        this._abortJob(s, 'turned_back', { cancel: false });
+        s.prevMode = 'returning';
+    }
+
+    _ringOut(r, answerers) {
+        this._rings.delete(r.phoneId);
+        for (const a of answerers) this._endAnswerer(a, 'rang_out');
+        this._log(r.ownerId, 'phone_unanswered', { target: r.phoneId, rings: r.n });
+        this._emit(`desk_phone_unanswered:${r.phoneId}`, { phoneId: r.phoneId, ownerId: r.ownerId, ...this._phoneProximity(r.phoneId) });
+    }
+
+    /** The player's distance to a phone: { playerNearby, playerDistance } (world.playerProximityAt). */
+    _phoneProximity(phoneId) {
+        const o = this.world.getObject(phoneId);
+        const p = o && typeof this.world.playerProximityAt === 'function' ? this.world.playerProximityAt(o) : null;
+        return { playerNearby: !!(p && p.nearby), playerDistance: p && Number.isFinite(p.distance) ? Math.round(p.distance) : null };
+    }
+
+    /** A colleague reached a still-ringing phone: it picks up and the use lasts the call. */
+    _colleagueAnswers(s, obj) {
+        const job = s.job;
+        const r = this._rings.get(job.targetId);
+        if (!r) { this._turnBack(s, 'rang_out'); return; }
+        this._rings.delete(r.phoneId);
+        job.phase = 'using';
+        job.useUntil = this.clockMs + (job.callMs || 0);
+        this._log(s.npcId, 'using', { target: job.targetId });
+        this._beginCall(r, s, job.call, 'colleague');
+    }
+
+    /**
+     * What a speaker says on this call: the first unheard phoneCalls knot whose lines are all its own
+     * (a story still loading falls to the pool for this call), else up to CALL_POOL_LINES lines from
+     * its `phone` (owner) or `phone_message` (colleague) pool, else CALL_PICTURES phone pictures.
+     * Listening gaps are seeded; the total is capped at EXCHANGE_MAX_MS.
+     */
+    _chooseCall(s, kind) {
+        const seq = this._callSeq++;
+        const topic = kind === 'owner' ? 'phone' : 'phone_message';
+        const rec = this._rec(s);
+        let knot = null, texts = null;
+        for (const e of Array.isArray(rec.phoneCalls) ? rec.phoneCalls : []) {
+            if (!e || typeof e.knot !== 'string' || !e.knot || this._exchangeHeard(e.knot)) continue;
+            if (e.requireGlobal !== undefined && !this._globalHolds(e.requireGlobal)) continue;
+            const lines = typeof this.world.exchangeLines === 'function' ? this.world.exchangeLines(s.npcId, e.knot) : null;
+            if (!Array.isArray(lines) || !lines.length) continue;
+            if (!lines.every(l => l && typeof l.text === 'string' && l.text && l.speakerId === s.npcId)) continue;
+            knot = e.knot;
+            texts = lines.map(l => l.text);
+            break;
+        }
+        const pool = chatterPool(topic, this._scenarioChatter(), rec.chatter);
+        if (!texts && pool.lines.length) {
+            texts = [];
+            for (let k = 0; k < Math.min(CALL_POOL_LINES, pool.lines.length); k++) texts.push(pool.lines[this._bagNext(s.npcId, topic, pool.lines)]);
+        }
+        const items = texts ? texts.map(t => ({ text: t, ms: exchangeLineMs(t) })) : Array.from({ length: CALL_PICTURES }, () => ({ text: null, ms: PICTURE_MS }));
+        const [lo, hi] = CALL_GAP_MS;
+        const gaps = items.map((_, i) => (i === 0 ? 0 : Math.round(lo + (hi - lo) * this.roll(s.npcId, `callgap:${seq}:${i}`))));
+        let total = 0;
+        items.forEach((it, i) => { total += gaps[i] + it.ms; });
+        return { knot, topic, items, gaps, pictures: pool.pictures !== false, total: Math.min(total, EXCHANGE_MAX_MS), seq };
+    }
+
+    _beginCall(r, s, call, kind) {
+        this._calls.set(r.phoneId, {
+            phoneId: r.phoneId, ownerId: r.ownerId, speakerId: s.npcId, kind, knot: call.knot, topic: call.topic,
+            items: call.items, gaps: call.gaps, pictures: call.pictures, i: 0, nextAt: this.clockMs, current: null,
+            heardAll: true, lockUntil: 0, waitLock: false
+        });
+        s.call = { phoneId: r.phoneId, until: this.clockMs + call.total };
+        // The owner's own-desk use is pushed back by the call, not aborted (an idle owner selects nothing)
+        if (kind === 'owner' && s.mode === 'job' && s.job?.phase === 'using') s.job.useUntil += call.total;
+        this._log(s.npcId, 'phone_answered', { target: r.phoneId, owner: r.ownerId, kind, knot: call.knot || undefined, ms: call.total });
+        this._emit(`desk_phone_answered:${r.phoneId}`, { phoneId: r.phoneId, ownerId: r.ownerId, answeredBy: s.npcId, knot: call.knot || null, ...this._phoneProximity(r.phoneId) });
+    }
+
+    /** Is the player in earshot of this speaker (the exchange audience rule: same room, lit, in range)? */
+    _callHeard(c) {
+        if (typeof this.world.playerHears !== 'function') return { overheard: false, distance: null };
+        return this.world.playerHears(c.speakerId, OVERHEAR_RADIUS) || { overheard: false, distance: null };
+    }
+
+    /** Release the speech lock this call holds (its line, or a listening gap). */
+    _releaseLock(c) {
+        if (c.lockUntil > this.clockMs && this._speechUntil <= c.lockUntil) this._speechUntil = this.clockMs;
+        c.lockUntil = 0;
+    }
+
+    /** Another voiced line holds the lock: the next line waits for it, and the call (and its use) is pushed back. */
+    _delayCall(c, ms) {
+        c.nextAt = this.clockMs + ms;
+        c.waitLock = true;
+        const s = this.states.get(c.speakerId);
+        if (s?.call) s.call.until += ms;
+        if (s?.job?.phase === 'using' && (c.kind === 'colleague' ? s.job.phone : this._atOwnPost(s))) s.job.useUntil += ms;
+    }
+
+    /**
+     * The call runner, after the chats each tick: one speaker, a line per bubble, seeded listening
+     * gaps. A line is voiced (through _speak, overheard) only with the player in earshot, checked
+     * line by line; otherwise it shows as the phone picture and the knot stays unplayed. Through a
+     * gap the lock is held only while the player is in earshot. A chat with the speaker hangs up
+     * (`player`); KO, hostile, hidden, script-suspended or a lost answer job hangs up (`unavailable`).
+     */
+    _tickCalls() {
+        for (const id of [...this._calls.keys()].sort()) {
+            const c = this._calls.get(id);
+            const s = this.states.get(c.speakerId);
+            const st = this.world.npcStatus(c.speakerId) || {};
+            if (!s || st.ko || st.hostile || st.hidden || s.scriptSuspended || s.blocked
+                || (c.kind === 'colleague' && !(s.job?.phone && s.job.targetId === id))) { this._hangUp(c, 'unavailable'); continue; }
+            if (this.world.inChatWith(c.speakerId)) { this._hangUp(c, 'player'); continue; }
+            if (c.current && this.clockMs >= c.current.until) c.current = null;
+            if (c.current) continue;
+            if (c.i >= c.items.length) { this._finishCall(c); continue; }
+            const h = this._callHeard(c);
+            if (this.clockMs < c.nextAt) {
+                if (c.waitLock) continue;
+                if (h.overheard) { c.lockUntil = c.nextAt; this._speechUntil = Math.max(this._speechUntil, c.nextAt); } else this._releaseLock(c);
+                continue;
+            }
+            const it = c.items[c.i];
+            const voiced = !!it.text && !!h.overheard;
+            if (voiced && !this._speechFree()) { this._delayCall(c, this._speechUntil - this.clockMs); continue; }
+            c.waitLock = false;
+            if (!voiced) c.heardAll = false;
+            const until = this.clockMs + it.ms;
+            c.current = { line: voiced ? it.text : null, picture: voiced || !c.pictures ? null : 'phone', until };
+            const lineId = it.text ? `${c.knot || c.topic}:${c.i}` : 'picture:phone';
+            c.i++;
+            c.nextAt = until + (c.gaps[c.i] || 0);
+            if (voiced) {
+                this._speak(c.speakerId, it.text, until, { topic: c.topic, objectId: id, knot: c.knot || undefined, call: true, overheard: true });
+                c.lockUntil = until;
+                this._emit(`npc_overheard:${c.speakerId}`, {
+                    speakerId: c.speakerId, partnerId: null, topic: c.topic, lineId, line: it.text, picture: null, objectId: id,
+                    call: id, overheard: true, playerDistance: Number.isFinite(h.distance) ? Math.round(h.distance) : null
+                });
+            } else this._releaseLock(c);
+            this._log(c.speakerId, 'call_line', { target: id, line: lineId, heard: voiced });
+        }
+    }
+
+    /** The last line ended: heard to the end, the knot is played (heard_<knot>, npc_call_heard). */
+    _finishCall(c) {
+        this._calls.delete(c.phoneId);
+        this._releaseLock(c);
+        const s = this.states.get(c.speakerId);
+        if (s) {
+            s.call = null;
+            s.selectRetryAt = 0;
+            if (c.kind === 'colleague' && s.job?.phone) s.job.useUntil = Math.min(s.job.useUntil, this.clockMs);
+        }
+        const heard = !!(c.knot && c.heardAll);
+        if (heard) {
+            this._exPlayed.add(c.knot);
+            if (typeof this.world.setGlobal === 'function') {
+                try { this.world.setGlobal(`heard_${c.knot}`, true); } catch (e) { /* keep the session flag */ }
+            }
+        }
+        this._log(c.speakerId, 'call_ended', { target: c.phoneId, reason: 'done', knot: c.knot || undefined, heard: c.knot ? heard : undefined });
+        if (heard) this._emit(`npc_call_heard:${c.knot}`, { knot: c.knot, speakerId: c.speakerId, ownerId: c.ownerId, phoneId: c.phoneId });
+    }
+
+    /**
+     * End a call early: the rest dropped, the lock released, the line in flight stopped, the knot
+     * unplayed; the colleague's use ends (its frozen remainder too), the owner's desk use loses the
+     * rest of the call. desk_phone_hung_up:<phoneId> { speakerId, reason }.
+     */
+    _hangUp(c, reason) {
+        this._calls.delete(c.phoneId);
+        c.current = null;
+        this._releaseLock(c);
+        if (typeof this.world.cancelSpeech === 'function') {
+            try { this.world.cancelSpeech(c.speakerId); } catch (e) { /* audio never breaks a tick */ }
+        }
+        const s = this.states.get(c.speakerId);
+        if (s) {
+            const left = s.call ? Math.max(0, s.call.until - this.clockMs) : 0;
+            s.call = null;
+            s.selectRetryAt = 0;
+            const job = s.job;
+            if (job && c.kind === 'colleague' && job.phone && job.targetId === c.phoneId) {
+                job.useRemaining = 0;
+                job.useUntil = Math.min(job.useUntil, this.clockMs);
+            } else if (job && c.kind === 'owner' && job.phase === 'using' && this._atOwnPost(s)) {
+                job.useUntil = Math.max(this.clockMs, job.useUntil - left);
+                if (Number.isFinite(job.useRemaining)) job.useRemaining = Math.max(0, job.useRemaining - left);
+            }
+        }
+        this._log(c.speakerId, 'call_ended', { target: c.phoneId, reason, knot: c.knot || undefined, line: c.i });
+        this._emit(`desk_phone_hung_up:${c.phoneId}`, { phoneId: c.phoneId, ownerId: c.ownerId, speakerId: c.speakerId, reason });
     }
 
     // ── queues at shared machines (slice 10: OFFICE_LIFE_PLAN 2.5, 7.3) ──────
@@ -2741,7 +3098,7 @@ export class NPCNeedsSystem {
         for (const k of Object.keys(s.levels)) levels[k] = round2(s.levels[k]);
         return {
             npcId, mode: s.mode, levels, atPost: s.atPost, scriptSuspended: s.scriptSuspended,
-            job: s.job ? { windingUp: !!s.job.windupUntil, need: s.job.need, kind: s.job.kind, phase: s.job.phase, targetId: s.job.targetId, itemId: s.job.itemId, carrying: s.job.carrying, tag: s.job.tag || null, leashed: !!s.job.leashed, privateSkipped: !!s.job.privateSkipped, prints: !!s.job.prints, errand: !!s.job.errand, files: !!(s.job.stowAt && s.job.slot), queuePlace: s.job.phase === 'queued' ? this._queuers(s.job.targetId).indexOf(s) + 1 : null } : null,
+            job: s.job ? { windingUp: !!s.job.windupUntil, need: s.job.need, kind: s.job.kind, phase: s.job.phase, targetId: s.job.targetId, itemId: s.job.itemId, carrying: s.job.carrying, tag: s.job.tag || null, leashed: !!s.job.leashed, privateSkipped: !!s.job.privateSkipped, prints: !!s.job.prints, errand: !!s.job.errand, files: !!(s.job.stowAt && s.job.slot), phone: !!s.job.phone, queuePlace: s.job.phase === 'queued' ? this._queuers(s.job.targetId).indexOf(s) + 1 : null } : null,
             pressing: this._pressing(s),
             talking: this._talking(npcId),
             chatPartner: this._chatPartner(npcId),
@@ -2750,6 +3107,8 @@ export class NPCNeedsSystem {
             leaveCount: s.leaveCount, leftItems: [...s.leftItems],
             // Slice 14: parked needs (greyed bubble with a badge) and whose face the avoidance bubble shows
             parked: Object.keys(s.parked).sort().map(n => ({ need: n, reason: s.parked[n].reason, remainingMs: Math.max(0, s.parked[n].until - this.clockMs) })),
+            // Slice 19: on a desk-phone call (the action icon shows the phone)
+            call: s.call ? { phoneId: s.call.phoneId, remainingMs: Math.max(0, s.call.until - this.clockMs) } : null,
             avoiding: (s.avoidShow && this.clockMs < s.avoidShow.until) ? s.avoidShow.npcId : (s.job?.goingAnyway || null),
             home: s.home ? { x: Math.round(s.home.x), y: Math.round(s.home.y), roomId: s.home.roomId, objectId: s.home.objectId || null, provisional: !!s.home.provisional } : null,
             clockMs: this.clockMs, tick: this.tickCount
@@ -2809,6 +3168,8 @@ export function createEngineWorld() {
             _sprite: sp
         };
         if (isSlot(sp)) { out.slot = true; out.takeable = sd.takeable === true; }
+        // Slice 19: a desk phone (its owner and ring count)
+        if (typeof sd.phoneOwner === 'string' && sd.phoneOwner) { out.phoneOwner = sd.phoneOwner; if (sd.rings !== undefined) out.rings = sd.rings; }
         // Slice 18b-i: a hidden object (reveal global not true) is no use target
         if (sd.affordance && globalOf(sp)) out.revealOnGlobal = globalOf(sp);
         return out;
@@ -3021,6 +3382,15 @@ export function createEngineWorld() {
             if (b?.canSeePlayerToFace) { try { clear = !!b.canSeePlayerToFace({ x: pr.x, y: pr.y }); } catch (e) { clear = true; } }
             return { nearby: sameRoom && distance <= 96 && clear, distance };
         },
+        // Slice 19: the player's distance to a desk phone (same room, 96 px for nearby)
+        playerProximityAt(obj) {
+            const pl = W().player;
+            if (!pl || !obj) return { nearby: false, distance: null };
+            const pr = pl.body?.center || { x: pl.x, y: pl.y };
+            const distance = Math.hypot(pr.x - obj.x, pr.y - obj.y);
+            const sameRoom = !W().currentPlayerRoom || !obj.roomId || W().currentPlayerRoom === obj.roomId;
+            return { nearby: sameRoom && distance <= 96, distance };
+        },
         // Chat overhearing (slice 8): the playerProximity tests (same room, clear line) at a chat radius
         playerHears(id, radius) {
             const pl = W().player;
@@ -3043,6 +3413,8 @@ export function createEngineWorld() {
         // Voiced chatter (slice 15): npc-needs-chatter.js speaks lines and runs exchange knots on
         // a separate ink story instance; until it has loaded, lines are bubbles only
         speak: (id, line, info) => W().npcChatterVoice?.say(id, line, info),
+        // Slice 19: a call hung up stops its speaker's line in flight and drops its queued lines
+        cancelSpeech: id => W().npcChatterVoice?.cancel?.(id),
         exchangeLines: (id, knot) => W().npcChatterVoice?.exchangeLines(id, knot) ?? null,
         setGlobal(name, value) {
             const v = W().npcChatterVoice;
@@ -3361,6 +3733,11 @@ export function installNpcNeeds(opts = {}) {
             if (typeof data?.itemId !== 'string') return;
             w.npcNeedsSystem?.world?.dropStale?.(data.itemId);
             w.npcNeedsSystem?.onItemDropped(data.itemId);
+        });
+        // Slice 19: a desk phone rings (a mapping's emitEvent or an object's emit_event)
+        w.eventDispatcher?.on('desk_phone_ring:*', (data, name) => {
+            const id = typeof name === 'string' && name.startsWith('desk_phone_ring:') ? name.slice('desk_phone_ring:'.length) : data?.phoneId;
+            if (typeof id === 'string' && id) w.npcNeedsSystem?.onPhoneRing(id);
         });
         // Slice 18a: a source switched back on (affordance.offWhen) retries parked needs
         w.eventDispatcher?.on('global_variable_changed:*', (data, name) => {

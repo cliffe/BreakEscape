@@ -54,12 +54,14 @@ export const NPC_ICON_NAMES = ['caffeine', 'thirst', 'hunger', 'rest', 'social',
     'post', 'printout', 'print', 'queue', 'file', 'blocked', 'noticed', 'avoid', 'closed'];
 export const DEFAULT_ICONS = Object.freeze({
     ...Object.fromEntries(NPC_ICON_NAMES.map(n => [n, `icon:npc-${n}`])),
+    // Slice 19 (OFFICE_LIFE_PLAN 12.5): on a desk-phone call, the desk phone itself (20x17, native size)
+    phone: Object.freeze({ sprite: 'phone1' }),
     fallback: '•'
 });
 
 // Text shown while a default texture loads (or if it fails)
 const TEXT_STANDIN = { caffeine: 'C', thirst: 'W', hunger: 'F', rest: 'Z', work: 'PC', social: 'S', curiosity: '?',
-    post: 'P', printout: 'P', print: 'Pr', queue: '…', file: 'Fi', blocked: 'X', noticed: '!', avoid: '~', closed: '#' };
+    post: 'P', printout: 'P', print: 'Pr', queue: '…', file: 'Fi', blocked: 'X', noticed: '!', avoid: '~', closed: '#', phone: 'Ph' };
 
 /** Pure: is this object a copier or printer (its preset, officeType or type)? */
 export function isPrinter({ type, officeType, preset } = {}) {
@@ -104,7 +106,7 @@ export function pickIconEntry(job, actionIcons = {}, target = null) {
     if (job.phase === 'queued') return firstIcon(['queue'], actionIcons);
     const keys = (job.kind === 'carry' || job.itemId)
         ? [job.files ? 'file' : null, job.tag, 'curiosity']
-        : (target ? [target.id, (job.prints || target.print) ? 'print' : null, job.need, target.satisfies, target.type]
+        : (target ? [target.id, target.phone ? 'phone' : null, (job.prints || target.print) ? 'print' : null, job.need, target.satisfies, target.type]
             : [job.prints ? 'print' : null, job.need]);
     return firstIcon(keys, actionIcons);
 }
@@ -226,7 +228,8 @@ export function targetInfo(id, cache = null) {
                 const sat = aff?.satisfies;
                 const preset = op?.spritePreset ? op.spritePreset(sp, win().gameScenario) : null;
                 const info = { id: d.id, type: d.type, satisfies: Array.isArray(sat) ? sat[0] : sat,
-                    print: isPrinter({ type: d.type, officeType: d.officeType, preset }) };
+                    print: isPrinter({ type: d.type, officeType: d.officeType, preset }),
+                    ...(typeof d.phoneOwner === 'string' && d.phoneOwner ? { phone: true } : {}) };
                 if (cache && !sp.destroyed && sp.scene) cache.set(id, { info, sp });
                 return info;
             }
@@ -498,7 +501,9 @@ export class NpcActionIcons {
                 bb.box.setData('icon', bb.shown);
                 bb.box.setScale(bubble.pulse && !reducedMotion() ? 1 + 0.12 * Math.abs(Math.sin(Date.now() / 400)) : 1);
             }
+            // Slice 19: on a desk-phone call (the owner at its desk, or a colleague at the phone) the phone
             const entry = (!seen || talking) ? null
+                : st.call ? firstIcon(['phone'], actionIcons)
                 : (st.job ? pickIconEntry(st.job, actionIcons, st.job.targetId ? targetInfo(st.job.targetId, this.targets) : null)
                     : stateIconEntry(st, actionIcons, optIn));
             let ic = this.icons.get(id);

@@ -995,7 +995,8 @@ export const LISTEN_RADIUS = 128; // px, four tiles
 /** True while a needs NPC is typing: a `work` use in its `using` phase (the typing bob's rule). */
 export function isTyping(ns) {
     const job = ns?.job;
-    return !!(ns && ns.mode === 'job' && job && job.kind === 'use' && job.need === 'work' && job.phase === 'using');
+    // Slice 19: on a desk-phone call the hands are off the keyboard
+    return !!(ns && !ns.call && ns.mode === 'job' && job && job.kind === 'use' && job.need === 'work' && job.phase === 'using');
 }
 
 /** Pure: the roll and the swivel are held on a call, paired at a chatter object, saying a line, typing or chatting with the player. */
@@ -1207,7 +1208,7 @@ function prefersReducedMotion() {
  * `"officeVisuals": false`.
  */
 export function typingBob(ns, clockMs, { reduced = false, off = false } = {}) {
-    if (reduced || off || !ns || ns.mode !== 'job') return 0;
+    if (reduced || off || !ns || ns.mode !== 'job' || ns.call) return 0;   // slice 19: not on a call
     const job = ns.job;
     if (!job || job.kind !== 'use' || job.need !== 'work' || job.phase !== 'using') return 0;
     return Math.floor((Number(clockMs) || 0) / TYPING_BOB_MS) % 2;
