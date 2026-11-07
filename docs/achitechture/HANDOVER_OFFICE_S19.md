@@ -1,9 +1,9 @@
 # Handover: office life slice 19, desk-phone calls (2026-11-07)
 
-**Status: IN PROGRESS, handed over part-way (the first session hit its tool-call budget, as
-expected for the largest slice).** Engine, validator, schema, node tests and showcase are built and
-committed; `bin/test-js` passed in full (408 files) after the engine commit. Live proof has case A
-only. Left: the rest of the live proof, regressions, docs.
+**Status: DONE (2026-11-07).** The second session finished the live proof, the regressions and the docs; see
+the plan's 12.5 Built line and the README table in `scenarios/test_needs_sims/`. Results: sims games 963, 964, 965 (lighting off),
+966; leash game 967 (pass); lab game 968 (score 100, 9/9, creds 63.3 s, USB 9.5 s). The user then changed choice 7 below: the ring is
+also heard at 0.4 through an open door (7dfc15b06). The rest of this file is the first session's record.
 
 Plan: `OFFICE_LIFE_PLAN.md` 12.5 (spec), 12.8 row 7 and the files list, 12.9 OQ37-39, OQ48, OQ53,
 OQ55, 13f. Hand-offs: `HANDOVER_OFFICE_S21.md` (call speakers in `_buildSpeakers`: done),
@@ -142,8 +142,8 @@ then `move(154,82)`, `move(250,190)` (clear of the desks).
 5. No `npc_announced` news while on a call (the speaker is on the phone).
 6. `desk_phone_answered` / `desk_phone_unanswered` carry the player's distance to the phone
    (`playerProximityAt`), not to an NPC.
-7. The ring sound is heard only in the phone's room (the brief), not the plan's 0.4 through a door;
-   `RING_SCALE` 0.8.
+7. The ring sound was heard only in the phone's room (the brief). **Changed by the user, 2026-11-07:** also 0.4 through an open
+   door to an adjacent room, silent with it shut (7dfc15b06); `RING_SCALE` 0.8.
 8. A ring warms the answerers' stories (`warmStory`), since `preload` at install sees no NPCs.
 9. `phone1` stays as the call icon and ring glyph (the 963 frame reads well); `npc-phone` is used
    only by picture chat (`icons/npc-phone.png`).

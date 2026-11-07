@@ -3721,6 +3721,32 @@ length (deterministic, and the README table notes it). A visual-only ring is eas
 sound is approved. A colleague crossing a room to a phone can collide with walkers at a desk row; the
 job uses the ordinary move, so the usual stall recovery applies.
 
+**Built: 2026-11-07 (slice 19: engine, validator, schema and tests c95a2fcb2, 108a0b557; showcase 108a0b557; fixes from the live proof
+ba7975873, a6f2d927e; the open-door ring 7dfc15b06).** Regressions: `test_needs_leash` game 967 (pass: leashed 0 samples on Maya's
+floor, unleashed 6), `lab_physical_pentest` game 968 (score 100, 9/9 tasks, keylogger creds 63.3 s, USB foothold 9.5 s, 0 "No path" /
+"Failed to escape wall"; the lab has no desk phones, so nothing changed); sims live proof games 963, 964, 965 (lighting off), 966; see
+`HANDOVER_OFFICE_S19.md` and the README table. `bin/test-js` 408 files pass, `npc-desk-phone` 25 tests, `npc-office-visuals` 35,
+`GOLDEN_SIMS_DAY` unchanged. As written, with these choices made without asking: (1) the owner picks up 2.25 s after the first ring
+(`PICKUP_MS`, one double ring heard), not at once; an owner arriving later answers at once. (2) A call line is voiced only with the
+player in earshot at that line, else it shows as the phone picture (no `/tts` request) and the knot stays unplayed; a call with no
+lines left is three phone pictures; a pool call is up to three lines from the speaker's bag. (3) With the speech lock busy at a line's
+start the call waits and is pushed back, its use too, as exchanges queue. (4) A colleague's phone use ends when its call ends (tick
+rounding can carry a call past `useUntil`). (5) No `npc_announced` news while on a call. (6) `desk_phone_answered` /
+`desk_phone_unanswered` carry the player's distance to the phone (`playerProximityAt`). (7) **The ring is heard in the phone's room
+and, by the user's decision of 2026-11-07, at 0.4 of the in-room level from an adjacent room whose connecting door is open (a door that
+was opened loses its sprite on both sides, so no sprite or `open: true` counts as open); silent with the door shut or further away**
+(`openDoorHearing`, `playAt` `openDoorOnly`; `RING_SCALE` 0.8; live: kitchen with the door open, hearing 0.4, volume 0.087 at 174 px,
+`desk_phone_ring_heard` emitted; the shut case was proved with a synthetic closed door sprite, since the engine cannot re-shut a
+door, and by the node test). The first build was the phone's room only. (8) A ring warms the answerers' stories (`warmStory`), since
+`preload` at install sees no NPCs. (9) `phone1` stays as the call icon and ring glyph; `npc-phone` is used only by picture chat.
+(10) Showcase phones use `position.elevation: 24` to draw on the desk. (11) The validator needs `useFrom` on every phone (warning)
+and checks reach only when both objects declare positions. (12) `validator-office-presets.test.mjs` lists `tom_phone` among the sims
+preset objects. Live results: the amber flash caught at 0.15 s (game 964); the phone1 glyph without lighting (965); silence from the
+kitchen under the first build (game 964, hearing 0, no `desk_phone_ring_heard`; superseded by 7); Amara answering at a side cell with Tom's chair empty
+(964); Tom arriving first, `npc_turned_back` `answered` (964); a ring-out with `rang_out` while Amara was held in a chat (964); a
+player chat ending Tom's call, `desk_phone_hung_up` reason `player` (966). Not seen live: a `cancelled` entry in `npcChatterVoice.log`
+(on the keyless server a clip resolves at once, so nothing is in flight; the node test covers it).
+
 ### 12.6 Room tone (slice 20)
 
 **Design.** Two layers, both heard only from the player's room.

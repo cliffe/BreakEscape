@@ -652,6 +652,29 @@ Notes:
 - Neither run told all three hungry people, so "Missed it." did not come from word of mouth here; 18b-i's games 931, 933 and 938
   show it by sight.
 
+### Slice 19: desk-phone calls (2026-11-07, keyless :3001, headless)
+
+Games 963 (owner call, lighting on), 964 (the rest, lighting on), 965 (`?lighting=off` set through localStorage), 966 (hang-up and the open
+door). Voiced call lines give `/tts` 503s on the keyless server (the log still records `spoken: true`). Evidence in the session scratchpad
+`s19/`.
+
+| Beat | Result | Evidence |
+|---|---|---|
+| Owner answers, five voiced lines | PASS | Game 963: ring, pick-up 2.25 s later, `call_supplier` lines voiced, `npc_call_heard:call_supplier`, `desk_phone_ring_heard` volume 0.528, colleagues turn (`npc_swivelled` reason `listen`) |
+| Amber ring flash with lighting | PASS | Game 964: `lightingSystem.flashes` holds `tom_phone` kind `ring`, alpha 0.94 at 150 ms; canvas snapshot `b1-flash-crop-964.png` shows the amber glow on the phone |
+| Phone glyph without lighting | PASS | Game 965: cueLog `flash: null, glyph: true`; glyph alpha 0.64 to 0.93 on the 200 and 600 ms frames; `b3-glyph-crop1-965.png` shows the dark backing and phone1 over the phone |
+| Silence from the kitchen | PASS under the phone's-room-only build | Game 964: `playLog` hearing 0, volume 0, played false, no `desk_phone_ring_heard`. Since 7dfc15b06 an open door gives 0.4 (next row) |
+| Ring through an open door | PASS | Game 966, player in the kitchen after `enter` (door open): hearing 0.4, volume 0.087 at 174 px, `desk_phone_ring_heard` emitted. A synthetic closed door sprite in the kitchen's list: hearing 0, volume 0, no event (the engine cannot re-shut a door, so the shut case is also covered by the node test `openDoorHearing`) |
+| Colleague answers, Tom's chair empty | PASS | Game 964: Tom left for coffee (`npc_left_post:tom` 364000), ring 1 at 365000, ring 2 at 368000, `npc_left_post:amara` 368750 (expectedAwayMs 31411), `desk_phone_answered` answeredBy amara 370500 (knot `call_take_message`), `npc_call_heard:call_take_message` 399500, tasks `hear_tom_call` and `see_amara_answer` complete; frames `c0..c2-amara-on-phone-964.png`. She stands at about (132, 157), beside the phone, not at Tom's chair |
+| Owner arrives first | PASS | Game 964 with Tom's and Amara's `needsSpeed` lowered to 30 and 25 for the beat: ring 2 at 488750 sends Amara, Tom is back at 490750, `npc_turned_back:amara` reason `answered` and `desk_phone_answered` answeredBy tom at 491000, no grumble; frames `d0`, `d1-tom-answers-964.png`. Tom walked about 120 px along y 149 and back while on the call at that slowed speed; not reproduced at normal speed (see below) |
+| Ring-out while Amara is in a chat | PASS | Game 964: chat opened with Amara on her way (`mode: frozen`), rings 1 to 4 at 1247000 to 1256000, `npc_turned_back:amara` reason `rang_out` and one `desk_phone_unanswered` at 1259000, no `desk_phone_answered`, no call lines; she went on to her own coffee need after the chat. Frames `e0-chat-open`, `e1-after-ringout` |
+| Player chat ends the call | PASS | Game 966: chat with Tom during line 1: `desk_phone_hung_up` reason `player`, no `npc_call_heard`, the knot replayed on the next call (it stays unplayed). The `cancelled` log entry needs a clip in flight, which the keyless server never leaves; the node test covers it |
+| Regressions | PASS | `test_needs_leash` game 967 (leashed 0 samples on Maya's floor, unleashed 6); `lab_physical_pentest` game 968, `verify-run.rb`: score 100, 9/9 tasks, creds 63.3 s, USB 9.5 s |
+
+Open observation: in the slowed owner-first run Tom's sprite moved east and back while `call` was set (the call is meant to hold him
+still). It came with the speed override and a `returned_post` before the chair, so it may be the seating approach (the desk-seating work
+in the tree is another agent's); it was not seen in games 963 or 966.
+
 ## Engine findings
 
 1. **Fixed 2026-11-05.** The home is now provisional until the `needsHome` object exists and is re-resolved once a second; and an NPC standing on its own desk's approach cell now counts as able to reach it (EasyStar gave no path for start == end, which is why Sanjay chose `tom_pc` in game 501). Original finding: **Needs homes in the start room resolve to the spawn point and stay there.** `npc-needs.js:301` resolves `s.home` on the first tick that has a sprite position and caches it; `_resolveHome` (`npc-needs.js:628-640`) falls back to the spawn point with `objectId: null` when `getObject`/`approachCell` fail. For the start room the NPCs are registered (`core/game.js:2004-2006`) before the room's objects or pathfinding are ready, so every start-room needs NPC gets the fallback and the home-object preference in `_useCandidate` (`npc-needs.js:475`) never applies. NPCs in rooms loaded later (Rosa, lounge) resolve correctly. Repro: load this scenario, then `[...npcNeedsSystem.states].map(([k,s]) => [k, s.home.objectId])` gives null for amara, tom, grace and sanjay, `rosa_laptop` for rosa. Suggested fix: don't cache a fallback home while `needsHome` names an object that isn't found yet (retry each tick until the object exists, or for a few seconds). `test_npc_needs` and `lab_physical_pentest` start-room NPCs are likely affected too, but hidden because each spawns at its own desk. Workaround here: each NPC spawns beside its own desk, and the work task reads "Someone works at a desk". Even so, game 501 had Sanjay choose `tom_pc` over his own adjacent PC (nearest-reachable from his seated position), so the workaround isn't reliable.
