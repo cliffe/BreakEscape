@@ -3394,6 +3394,11 @@ export function createEngineWorld() {
                     const c = pm.findNearestWalkableWorldCell(obj.x + uf.dx * TILE, obj.y + uf.dy * TILE, 1);
                     if (c) return c;
                 }
+                // Slice 23: a magnet standing on a table is used from the table's edge (item-drop.js)
+                if (obj.affordance?.magnet && obj._sprite && W().tableDrop?.approach) {
+                    const c = W().tableDrop.approach(obj._sprite, obj.roomId, (x, y, r) => pm.findNearestWalkableWorldCell(x, y, r));
+                    if (c) return c;
+                }
                 // Item on the floor: stand on it. Furniture: the nearest walkable cell.
                 return pm.findNearestWalkableWorldCell(obj.x, obj.y, 3);
             }
