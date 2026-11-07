@@ -32,7 +32,7 @@
  * npc-action-icons.js; the seated typing bob is in seating.js.
  */
 import { TILE_SIZE } from '../utils/constants.js';
-import { hearingLevel } from './room-hearing.js';
+import { hearingLevel, THROUGH_DOOR } from './room-hearing.js';
 
 export const USE_SOUND_SCALE = 0.4;
 export const HEAR_TILES = 8;
@@ -95,6 +95,23 @@ export function lockCuePlan({ how, locked }, { lighting = false } = {}) {
 /** Pure: the hearing factor with ownRoomOnly: 1 only in a known room that is the player's. */
 export function ownRoomHearing(roomId, playerRoom) {
     return !!roomId && !!playerRoom && roomId === playerRoom ? 1 : 0;
+}
+
+/**
+ * Pure: the hearing factor for a desk phone's ring (user's decision, 2026-11-07, OFFICE_LIFE_PLAN 12.5):
+ * 1 in the player's own room, THROUGH_DOOR (0.4) from a room joined to it by a connection whose door
+ * is open (a door that was opened loses its sprite on both sides, so no sprite counts as open), 0 with
+ * the door shut, in a room that is not adjacent, or with no known room. `rooms` is window.rooms,
+ * `connections` the player's room's scenario connections.
+ */
+export function openDoorHearing(roomId, playerRoom, rooms = {}, connections = {}) {
+    if (!roomId || !playerRoom) return 0;
+    if (roomId === playerRoom) return 1;
+    const linked = Object.values(connections || {}).some(v => (Array.isArray(v) ? v : [v]).includes(roomId));
+    if (!linked) return 0;
+    const shut = [playerRoom, roomId].some(r => (rooms?.[r]?.doorSprites || [])
+        .some(d => d && d.active !== false && d.doorProperties && d.doorProperties.connectedRoom === (r === playerRoom ? roomId : playerRoom) && !d.doorProperties.open));
+    return shut ? 0 : THROUGH_DOOR;
 }
 
 /** Pure: a use sound's volume. `distance` in px from the player; `hearing` 0..1. */
@@ -262,7 +279,7 @@ export class NpcOfficeVisuals {
 
     /**
      * Play a one-shot at a world point in a room. Returns the volume played (0 when not heard,
-     * rate-limited or unavailable). opts: ownRoomOnly (heard only in a known room that is the
+     * rate-limited or unavailable). opts: openDoorOnly (own room 1, an adjacent room through an open door 0.4, else 0: the ring), ownRoomOnly (heard only in a known room that is the
      * player's; hearingLevel alone trusts a missing room id), channel (limiter channel, default
      * 'use'), scale (default USE_SOUND_SCALE), synth (a function(volume) that plays the sound
      * itself, for run-time chimes with no audio file).
@@ -274,7 +291,8 @@ export class NpcOfficeVisuals {
         if (!key || !scene?.sound) return 0;
         const player = w.player;
         const distance = player ? Math.hypot(player.x - x, player.y - y) : Infinity;
-        const hearing = opts.ownRoomOnly ? ownRoomHearing(roomId, w.currentPlayerRoom) : hearingLevel(roomId);
+        const hearing = opts.openDoorOnly ? openDoorHearing(roomId, w.currentPlayerRoom, w.rooms, w.gameScenario?.rooms?.[w.currentPlayerRoom]?.connections)
+            : opts.ownRoomOnly ? ownRoomHearing(roomId, w.currentPlayerRoom) : hearingLevel(roomId);
         const effects = sm ? (sm.volumeSettings?.effects ?? 1) * (sm.masterVolume ?? 1) : 1;
         const scale = typeof opts.scale === 'number' ? opts.scale / USE_SOUND_SCALE : 1;
         const volume = useVolume({ effects, distance, hearing }) * scale;
@@ -400,7 +418,7 @@ export class NpcOfficeVisuals {
             rec.rattle = this.rattle(st.sprite);
             const c = st.sprite.getCenter ? st.sprite.getCenter() : st.sprite;
             const v = this.playAt('desk_phone_ring', c.x, c.y, st.roomId, { objectId: id, ownerId: data.ownerId, ring: data.ring },
-                { ownRoomOnly: true, channel: 'ring', scale: RING_SCALE });
+                { openDoorOnly: true, channel: 'ring', scale: RING_SCALE });
             rec.sound = { key: 'desk_phone_ring', volume: Math.round(v * 1000) / 1000 };
             if (v > 0) {
                 w.eventDispatcher?.emit?.(`desk_phone_ring_heard:${id}`, { phoneId: id, ownerId: data.ownerId, ring: data.ring, volume: rec.sound.volume });

@@ -10,7 +10,7 @@ import { pickIcon, pickIconEntry, resolveIcon, DEFAULT_ICONS, NpcActionIcons, ba
 import {
     useVolume, SoundLimiter, handOffset, heldPlacement, iconShown, roomIsDark, officeVisualsOn,
     NpcOfficeVisuals, USE_SOUND_SCALE, firstOpaqueRow, iconAnchor, frameHeadRow, ICON_HEAD_GAP,
-    lockCuesOn, lockCuePlan, ownRoomHearing, glyphLeft, glyphSequence, LOCK_GLYPHS, CHIME_SCALE, installNpcOfficeVisuals
+    lockCuesOn, lockCuePlan, ownRoomHearing, openDoorHearing, glyphLeft, glyphSequence, LOCK_GLYPHS, CHIME_SCALE, installNpcOfficeVisuals
 } from '../../public/break_escape/js/systems/npc-office-visuals.js';
 import { hearingLevel } from '../../public/break_escape/js/systems/room-hearing.js';
 
@@ -394,6 +394,42 @@ test('ownRoomOnly: 0 through a door and for a missing room id; playAt logs it', 
         assert.equal(v.playLog.at(-1).hearing, 0);
         assert.equal(v.playAt('screen_lock', 100, 100, undefined, {}, { ownRoomOnly: true, channel: 'chime', synth }), 0, 'no room id');
         assert.ok(v.playAt('screen_lock', 100, 100, 'office', {}, { ownRoomOnly: true, channel: 'chime', synth }) > 0);
+    } finally { delete globalThis.window; }
+});
+
+test('openDoorHearing (the desk-phone ring): own room 1, through an open door 0.4, shut or not adjacent or unknown 0', () => {
+    const conn = { west: 'kitchen', east: ['lounge'] };
+    const shutRooms = { office: { doorSprites: [{ active: true, doorProperties: { connectedRoom: 'kitchen', open: false } }] }, kitchen: { doorSprites: [] } };
+    const openRooms = { office: { doorSprites: [] }, kitchen: { doorSprites: [] } };
+    const flagged = { office: { doorSprites: [{ active: true, doorProperties: { connectedRoom: 'kitchen', open: true } }] } };
+    const otherSide = { office: { doorSprites: [] }, kitchen: { doorSprites: [{ active: true, doorProperties: { connectedRoom: 'office', open: false } }] } };
+    assert.equal(openDoorHearing('office', 'office', shutRooms, conn), 1);
+    assert.equal(openDoorHearing('kitchen', 'office', shutRooms, conn), 0, 'door shut');
+    assert.equal(openDoorHearing('kitchen', 'office', openRooms, conn), 0.4, 'opened door: no sprite');
+    assert.equal(openDoorHearing('kitchen', 'office', flagged, conn), 0.4, 'sprite flagged open');
+    assert.equal(openDoorHearing('kitchen', 'office', otherSide, conn), 0, 'shut from the other side');
+    assert.equal(openDoorHearing('lounge', 'office', openRooms, conn), 0.4, 'array connections');
+    assert.equal(openDoorHearing('store', 'office', openRooms, conn), 0, 'not adjacent');
+    assert.equal(openDoorHearing(undefined, 'office', openRooms, conn), 0);
+    assert.equal(openDoorHearing('kitchen', undefined, openRooms, conn), 0);
+});
+
+test('openDoorOnly in playAt: the ring plays at the reduced level through an open door, silent through a shut one', () => {
+    try {
+        const { v } = cueWorld({ playerRoom: 'office', scenario: { rooms: { office: { connections: { west: 'kitchen' } } } } });
+        const opts = { openDoorOnly: true, channel: 'ring', scale: 0.8 };
+        window.player = { x: 100, y: 100 };
+        const own = v.playAt('desk_phone_ring', 100, 100, 'office', {}, opts);   // sound.cache says no file, so read the log
+        assert.equal(v.playLog.at(-1).hearing, 1);
+        assert.equal(v.playLog.at(-1).volume, 0.8);
+        v.playAt('desk_phone_ring', 100, 100, 'kitchen', {}, opts);
+        assert.equal(v.playLog.at(-1).hearing, 0, 'door shut');
+        assert.equal(v.playLog.at(-1).volume, 0);
+        window.rooms.office.doorSprites = []; window.rooms.kitchen.doorSprites = [];
+        v.playAt('desk_phone_ring', 100, 100, 'kitchen', {}, opts);
+        assert.equal(v.playLog.at(-1).hearing, 0.4, 'door open');
+        assert.equal(v.playLog.at(-1).volume, 0.32, '0.4 of the in-room level at the same distance');
+        void own;
     } finally { delete globalThis.window; }
 });
 
