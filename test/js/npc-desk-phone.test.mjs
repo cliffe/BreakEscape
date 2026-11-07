@@ -9,6 +9,9 @@
 // Run with: bin/test-js test/js/npc-desk-phone.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 import {
     NPCNeedsSystem, NEEDS_TICK_MS, RING_MS, PICKUP_MS, EXCHANGE_MAX_MS, CALL_GAP_MS, exchangeLineMs, requiredGlobalsHold
 } from '../../public/break_escape/js/systems/npc-needs.js';
@@ -432,4 +435,62 @@ test('chatter voice: cancel stops the line in flight, skips that NPC\'s queued l
     assert.ok(played[1][2] - t0 < 1000, 'amara did not wait out the cancelled clip');
     assert.deepEqual(stopped, ['tom', 'amara']);
     assert.ok(v.log.some(e => e.npcId === 'tom' && e.text === 'No, the big boxes.' && e.reason === 'cancelled'));
+});
+
+// ── validator ──────────────────────────────────────────────────────────────
+
+const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
+const ruby = spawnSync('ruby', ['--version']);
+const validate = (scenario) => {
+    const script = `require ${JSON.stringify(join(root, 'scripts/validate_npc_needs.rb'))}
+require 'json'
+puts ValidateNpcNeeds.check(JSON.parse($stdin.read)).join("\\n")`;
+    const r = spawnSync('ruby', ['-e', script], { input: JSON.stringify(scenario), encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' } });
+    return r.stdout.split('\n').filter(Boolean);
+};
+const vScen = ({ phone = {}, tom = {}, amara = {}, presets = true, chatter = {} } = {}) => ({
+    officePresets: presets,
+    globalVariables: { heard_call_supplier: false },
+    chatter,
+    rooms: {
+        office: {
+            objects: [
+                { id: 'tom_pc', type: 'pc', position: { x: 2, y: 5 }, affordance: { satisfies: ['work'], useFrom: { dx: 0, dy: 1 } } },
+                { id: 'tom_phone', type: 'phone1', officeType: 'desk_phone', phoneOwner: 'tom', takeable: false, position: { x: 2.6, y: 5 }, affordance: { useFrom: { dx: 1.4, dy: 1 } }, ...phone }
+            ],
+            npcs: [
+                { id: 'tom', displayName: 'Tom Fletcher', needsHome: 'tom_pc', needs: { work: { decayPerMin: 1, urgentAt: 50, initial: 80 } }, voice: { name: 'Charon' }, storyPath: 'scenarios/test_needs_sims/ink/tom.json', phoneCalls: [{ knot: 'call_supplier' }], ...tom },
+                { id: 'amara', needsHome: { room: 'office', x: 6, y: 5 }, needs: { work: { decayPerMin: 1, urgentAt: 50, initial: 80 } }, answersPhones: true, ...amara }
+            ]
+        }
+    }
+});
+const phoneIssues = sc => validate(sc).filter(l => /phone|phoneCalls|answersPhones/i.test(l) && !l.startsWith('ℹ'));
+
+test('validator: a well-formed phone (preset, owner, reach, side cell) raises nothing', { skip: ruby.status !== 0 }, () => {
+    assert.deepEqual(phoneIssues(vScen()), []);
+});
+
+test('validator: owner, affordance, stand, takeable, reach, chair spot and rings', { skip: ruby.status !== 0 }, () => {
+    const has = (sc, re, kind = 'ERROR') => phoneIssues(sc).some(l => l.includes(kind) && re.test(l));
+    assert.ok(has(vScen({ phone: { phoneOwner: 'nobody' } }), /not an NPC/));
+    assert.ok(has(vScen({ tom: { needsHome: { room: 'office', x: 2, y: 6 } } }), /needsHome object/));
+    assert.ok(has(vScen({ presets: false, phone: { officeType: undefined, affordance: undefined } }), /no affordance/));
+    assert.ok(has(vScen({ presets: false, phone: { officeType: undefined, affordance: { useSeconds: 0, capacity: 1 } } }), /does not stand/));
+    assert.ok(has(vScen({ phone: { takeable: true } }), /takeable/));
+    assert.ok(has(vScen({ phone: { position: { x: 6, y: 5 } } }), /tiles from tom's post/));
+    assert.ok(has(vScen({ phone: { affordance: {} } }), /chair spot/, 'WARNING'));
+    assert.ok(has(vScen({ phone: { rings: 0 } }), /rings must be/));
+});
+
+test('validator: phoneCalls knots exist, are the NPC\'s own lines, voiced, heard_ declared; answersPhones needs a phone; no names in scenario phone lines', { skip: ruby.status !== 0 }, () => {
+    const has = (sc, re, kind = 'ERROR') => phoneIssues(sc).some(l => l.includes(kind) && re.test(l));
+    assert.ok(has(vScen({ tom: { phoneCalls: [{ knot: 'no_such_knot' }] } }), /not in/));
+    assert.ok(has(vScen({ tom: { voice: undefined } }), /no voice/, 'WARNING'));
+    const sc = vScen(); sc.globalVariables = {};
+    assert.ok(has(sc, /declare heard_call_supplier/, 'WARNING'));
+    const lone = vScen(); lone.rooms.office.objects.pop();
+    assert.ok(has(lone, /answersPhones, but no colleague/, 'WARNING'));
+    assert.ok(has(vScen({ chatter: { phone: ['Tom speaking.'] } }), /names Tom/, 'WARNING'));
+    assert.ok(!has(vScen({ chatter: { phone: ['Hello, who is this?'] } }), /names/, 'WARNING'));
 });

@@ -53,7 +53,137 @@ module ValidateNpcNeeds
     check_off_when(json, npcs, objs, issues)
     check_print_habits(json, npcs, objs, issues)
     check_magnets(json, npcs, objs, issues)
+    check_phones(json, npcs, objs, issues)
     issues
+  end
+
+  # ── desk phones (slice 19, OFFICE_LIFE_PLAN 12.5) ──────────────────────────
+  # A phone is a declared object with phoneOwner: the owner is an NPC with a needsHome object in the
+  # phone's room; the phone sits within 1.5 tiles of the owner's post (the owner answers without
+  # moving) and has a standing affordance (a colleague answering never takes the owner's chair), is
+  # not takeable, and its own approach cell (useFrom) is to the side of the owner's chair spot.
+  # phoneCalls knots are the NPC's own lines (no speaker prefix, which the engine refuses), voiced,
+  # with heard_<knot> declared. Scenario-level 'phone' lines are said by every NPC: no names.
+  PHONE_REACH_TILES = 1.5
+  NEAR_CHAIR_TILES = 36.0 / 32
+
+  def self.phone_cell(obj)
+    uf = obj.data['affordance'].is_a?(Hash) ? obj.data['affordance']['useFrom'] : nil
+    dx = uf.is_a?(Hash) && uf['dx'].is_a?(Numeric) ? uf['dx'] : 0
+    dy = uf.is_a?(Hash) && uf['dy'].is_a?(Numeric) ? uf['dy'] : 0
+    [obj.x + dx, obj.y + dy]
+  end
+
+  def self.positioned?(obj)
+    obj.data['position'].is_a?(Hash) && obj.data['position']['x'].is_a?(Numeric) && obj.data['position']['y'].is_a?(Numeric)
+  end
+
+  def self.check_phones(json, npcs, objs, issues)
+    by_id = npcs.to_h { |r, n| [n['id'], [r, n]] }
+    phones = objs.select { |o| o.data.key?('phoneOwner') }
+    globals = json['globalVariables'].is_a?(Hash) ? json['globalVariables'] : {}
+    phones.each do |ph|
+      where = "desk phone '#{ph.id}'"
+      owner_id = ph.data['phoneOwner']
+      if ph.id.to_s.empty?
+        issues << "❌ ERROR: a desk phone (phoneOwner '#{owner_id}') has no id; desk_phone_ring:<id> rings it by id."
+        next
+      end
+      if ph.data['takeable'] == true
+        issues << "❌ ERROR: #{where} is takeable; a desk phone stays on the desk (\"takeable\": false)."
+      end
+      if ph.data.key?('rings') && !(ph.data['rings'].is_a?(Integer) && ph.data['rings'].between?(1, 20))
+        issues << "❌ ERROR: #{where} rings must be a whole number from 1 to 20 (default 4)."
+      end
+      aff = ph.data['affordance']
+      if !aff.is_a?(Hash)
+        issues << "❌ ERROR: #{where} has no affordance: give it officeType 'desk_phone' (with \"officePresets\": true) or write out { \"useSeconds\": 0, \"capacity\": 1, \"seat\": \"stand\" }."
+      elsif aff['seat'] != 'stand'
+        issues << "❌ ERROR: #{where} affordance does not stand (seat '#{aff['seat']}'); a colleague answering it would sit in the owner's chair. Set \"seat\": \"stand\"."
+      end
+      unless owner_id.is_a?(String) && by_id[owner_id]
+        issues << "❌ ERROR: #{where} phoneOwner '#{owner_id}' is not an NPC in this scenario."
+        next
+      end
+      _r, owner = by_id[owner_id]
+      home_id = owner['needsHome']
+      home = home_id.is_a?(String) ? objs.find { |o| o.id == home_id } : nil
+      unless home && home.room == ph.room
+        issues << "❌ ERROR: #{where}: its owner '#{owner_id}' needs a needsHome object in room '#{ph.room}' (the owner answers from its post)."
+        next
+      end
+      uf = ph.data['affordance'].is_a?(Hash) ? ph.data['affordance']['useFrom'] : nil
+      unless uf.is_a?(Hash)
+        issues << "⚠️ WARNING: #{where} has no affordance useFrom: a colleague answering walks to the nearest free cell, usually #{owner_id}'s chair spot. Point useFrom to the side of the desk."
+        next
+      end
+      next unless positioned?(ph) && positioned?(home)
+
+      hx, hy = phone_cell(home)
+      d = Math.hypot(ph.x - hx, ph.y - hy)
+      if d > PHONE_REACH_TILES + 1e-6
+        issues << "❌ ERROR: #{where} is #{d.round(2)} tiles from #{owner_id}'s post '#{home_id}'; put it within #{PHONE_REACH_TILES} tiles so the owner can answer without moving."
+      end
+      px, py = phone_cell(ph)
+      if Math.hypot(px - hx, py - hy) <= NEAR_CHAIR_TILES
+        issues << "⚠️ WARNING: #{where}: a colleague answering would stand on #{owner_id}'s chair spot; give the phone an affordance useFrom to the side."
+      end
+    end
+
+    # The answerers and the call knots
+    npcs.each do |room_id, n|
+      where = "NPC '#{n['id']}'"
+      if n.key?('answersPhones') && ![true, false].include?(n['answersPhones'])
+        issues << "❌ ERROR: #{where} answersPhones must be true or false."
+      elsif n['answersPhones'] == true && phones.none? { |ph| ph.room == room_id && ph.data['phoneOwner'] != n['id'] }
+        issues << "⚠️ WARNING: #{where} answersPhones, but no colleague's desk phone is in room '#{room_id}'."
+      end
+      next unless n.key?('phoneCalls')
+
+      unless n['phoneCalls'].is_a?(Array)
+        issues << "❌ ERROR: #{where} phoneCalls must be a list of { knot, requireGlobal }."
+        next
+      end
+      if phones.none? { |ph| ph.data['phoneOwner'] == n['id'] } && n['answersPhones'] != true
+        issues << "⚠️ WARNING: #{where} has phoneCalls but owns no desk phone and does not answer others' (answersPhones)."
+      end
+      issues << "⚠️ WARNING: #{where} has phoneCalls but no voice; the call shows as bubbles only." unless n['voice'].is_a?(Hash)
+      n['phoneCalls'].each do |e|
+        unless e.is_a?(Hash) && e['knot'].is_a?(String) && !e['knot'].empty?
+          issues << "❌ ERROR: #{where} phoneCalls: each entry needs a 'knot'."
+          next
+        end
+        k = e['knot']
+        rg = e['requireGlobal']
+        issues << "⚠️ WARNING: #{where} phoneCalls '#{k}' requireGlobal '#{rg}' is not declared in globalVariables." if rg.is_a?(String) && !globals.key?(rg)
+        issues << "⚠️ WARNING: #{where} phoneCalls '#{k}': declare heard_#{k} (false) in globalVariables; it is set when the call has been heard." unless globals.key?("heard_#{k}")
+        texts = n['storyPath'] ? ink_knot_texts(n['storyPath'], k) : nil
+        if texts.nil?
+          issues << "❌ ERROR: #{where} phoneCalls: knot '#{k}' is not in #{n['storyPath'] || 'a story (no storyPath)'}."
+          next
+        end
+        issues << "❌ ERROR: #{where} phoneCalls: knot '#{k}' has no lines." if texts.empty?
+        texts.each do |t|
+          if /\A([^:\n]+?):\s+(\S.*)\z/m.match?(t)
+            issues << "❌ ERROR: #{where} phoneCalls: knot '#{k}' line #{t.inspect} reads as a speaker prefix; a call is the NPC's own half only (the engine refuses the knot)."
+          end
+          issues << "❌ ERROR: #{where} phoneCalls: knot '#{k}' line #{t.inspect} has a { } variable; spoken lines must not print variables." if t.match?(/[{}]/)
+        end
+      end
+    end
+
+    sc = json['chatter']
+    return unless sc.is_a?(Hash)
+
+    names = npcs.flat_map { |_r, n| [n['displayName'], n['displayName'].to_s.split.first].compact }.reject(&:empty?).uniq
+    %w[phone phone_message].each do |topic|
+      pool_lines(sc[topic]).each do |line|
+        next unless line.is_a?(String)
+
+        hit = names.find { |nm| line.match?(/\b#{Regexp.escape(nm)}\b/i) }
+        issues << "⚠️ WARNING: scenario chatter '#{topic}' line #{line.inspect} names #{hit}; scenario-level lines are said by every NPC, so put it on that NPC's own pool." if hit
+      end
+    end
   end
 
   # Slice 18b-i (OFFICE_LIFE_PLAN 12.4): a magnet is a droppable held item carrying

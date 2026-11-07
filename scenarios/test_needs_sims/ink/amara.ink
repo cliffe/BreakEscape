@@ -24,3 +24,13 @@ Amara: It was. New headsets for the team.
 Tom: Any chance of one before Friday?
 Amara: Get in the queue, Tom.
 -> DONE
+
+// Slice 19 (OFFICE_LIFE_PLAN 12.5): half a call, Amara's side only, played once when she answers
+// Tom's phone while he is out, with the player in earshot. Never reached from a conversation.
+=== call_take_message ===
+Tom's phone, Amara speaking.
+He's just stepped out. Can I help?
+Right, let me grab a pen.
+Tuesday, the big boxes. Got it.
+I'll leave a note on his desk. Bye.
+-> DONE

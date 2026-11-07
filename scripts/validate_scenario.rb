@@ -417,6 +417,7 @@ def check_unknown_fields(json_data)
     timedMessages timedConversation eventMappings itemsHeld puzzle_graph_actions
     needs interests needsHome needsSpeed needsRooms needsAvoidRooms needsCompany chatter chattiness usePayload onUse
     maxQueue needsDeferMin exchanges chatterCooldownMin swivel swivelChance screenHabit printHabit
+    answersPhones phoneCalls
     observations disableClose los rfidCard chatBackground spriteStyle gender portraitVariants _comment
   ]
 
@@ -508,6 +509,7 @@ def check_unknown_fields(json_data)
     puzzle_graph_links hintOnlyFlags acceptsVmLabels
     affordance needsTag droppable officeType
     workstation locksScreenOnLeave lockChance screenOwner screenLocked autoLockSeconds
+    phoneOwner rings
     _comment
   ]
 

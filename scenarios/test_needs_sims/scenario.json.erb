@@ -38,6 +38,8 @@
     "tom_badge_left": false,
     "heard_exchange_rosa_rota": false,
     "heard_exchange_tom_parcel": false,
+    "heard_call_supplier": false,
+    "heard_call_take_message": false,
     "office_coffee_off": false,
     "cake_servings": 2
   },
@@ -115,7 +117,10 @@
         { "taskId": "see_coffee_off", "title": "Switch the office coffee off at the wall socket beside it and watch someone go to the kitchen instead (open the kitchen door first; it stays off once switched)", "type": "custom", "status": "active" },
         { "taskId": "see_cake_eaten", "title": "Put the cake out and watch it go (click it in your inventory to set it down; people who see it and fancy a slice get up for it, two slices only)", "type": "custom", "status": "active" },
         { "taskId": "see_missed_it", "title": "See someone miss the cake (three hungry people, two slices: whoever arrives last turns back)", "type": "custom", "status": "active" },
-        { "taskId": "hear_cake_news", "title": "Watch the word get round (put the cake down in the kitchen and stay in the office: whoever sees it there tells the people near their desk when they get back, and the hungry ones get up; Marek keeps to himself, so nobody tells him and he tells nobody)", "type": "custom", "status": "active" }
+        { "taskId": "hear_cake_news", "title": "Watch the word get round (put the cake down in the kitchen and stay in the office: whoever sees it there tells the people near their desk when they get back, and the hungry ones get up; Marek keeps to himself, so nobody tells him and he tells nobody)", "type": "custom", "status": "active" },
+        { "taskId": "hear_tom_call", "title": "Overhear Tom on the phone (use the spare desk phone to ring his extension while he is at his desk, and stay close enough to hear his side of the call)", "type": "custom", "status": "active" },
+        { "taskId": "see_amara_answer", "title": "Ring Tom while he is out and see who answers (when he has gone for a coffee, ring him from the spare phone: Amara gets up and takes a message)", "type": "custom", "status": "active" },
+        { "taskId": "see_call_missed", "title": "Let a call ring out (ring Tom while he is away and Amara is busy, or while you are talking to him)", "type": "custom", "status": "active" }
       ]
     }
   ],
@@ -167,6 +172,31 @@
           "leftBehindChance": 0.7,
           "revealOnGlobal": "tom_badge_left",
           "_comment": "Slice 11 left-behind item: on each real leave a seeded roll under 0.7 shows it on Tom's desk; when he is back at his desk he pockets it (hidden again, no server call). Takeable, so a single beat: once the player takes it, it is gone for good and Tom notices on his return (npc_left_item_gone:tom). A reload while it shows files it away."
+        },
+        {
+          "type": "phone1",
+          "id": "tom_phone",
+          "name": "Tom's desk phone",
+          "officeType": "desk_phone",
+          "phoneOwner": "tom",
+          "takeable": false,
+          "position": { "x": 2.4, "y": 5.3 },
+          "affordance": { "useFrom": { "dx": 1, "dy": 0 } },
+          "observations": "Tom's desk phone. His extension is on a sticker on the handset.",
+          "_comment": "Slice 19 (OFFICE_LIFE_PLAN 12.5): rings on desk_phone_ring:tom_phone (the spare phone). Tom at his desk answers without getting up; away, it rings four times and stops unless Amara is on her way. The desk_phone preset makes whoever answers it stand; useFrom puts a colleague beside the desk, not on Tom's chair spot."
+        },
+        {
+          "type": "phone2",
+          "id": "spare_phone",
+          "name": "Spare desk phone",
+          "takeable": false,
+          "position": { "x": 5.5, "y": 5.3 },
+          "observations": "A spare desk phone on an empty desk. The internal extensions are on a card beside it.",
+          "triggerOnInteract": [
+            { "type": "emit_event", "event_name": "desk_phone_ring:tom_phone" },
+            { "type": "hint", "title": "Desk phone", "message": "You dial Tom's extension." }
+          ],
+          "_comment": "Slice 19: the lever. Using it rings Tom's phone (a ring while it rings or during a call is ignored)."
         },
         {
           "type": "pc",
@@ -393,8 +423,10 @@
           "spriteTalk": "assets/characters/female_office_worker_talk.png",
           "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
           "storyPath": "scenarios/test_needs_sims/ink/amara.json",
-          "chatter": { "cooler": ["Lovely and cold, this.", "Is it Friday yet?"], "grumble": ["Never mind, I'll go later."] },
+          "chatter": { "cooler": ["Lovely and cold, this.", "Is it Friday yet?"], "grumble": ["Never mind, I'll go later."], "phone_message": ["He's not at his desk just now.", "Can I take a message?", "I'll tell him you rang."] },
           "exchanges": [{ "with": "tom", "knot": "exchange_tom_parcel", "requireGlobal": "amara_opened_parcel" }],
+          "answersPhones": true,
+          "phoneCalls": [{ "knot": "call_take_message" }],
           "currentKnot": "start",
           "voice": { "name": "Aoede", "style": "Office administrator, thirties, British Nigerian, London accent. Warm and quick.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
@@ -453,6 +485,9 @@
             { "eventPattern": "magnet_finished:cake", "onceOnly": true, "cooldown": 0, "completeTask": "see_cake_eaten" },
             { "eventPattern": "npc_turned_back:*", "condition": "data.reason === 'gone'", "onceOnly": true, "cooldown": 0, "completeTask": "see_missed_it" },
             { "eventPattern": "npc_told:*", "onceOnly": true, "cooldown": 0, "completeTask": "hear_cake_news" },
+            { "eventPattern": "npc_call_heard:call_supplier", "onceOnly": true, "cooldown": 0, "completeTask": "hear_tom_call" },
+            { "eventPattern": "desk_phone_answered:tom_phone", "condition": "data.answeredBy === 'amara'", "onceOnly": true, "cooldown": 0, "completeTask": "see_amara_answer" },
+            { "eventPattern": "desk_phone_unanswered:tom_phone", "onceOnly": true, "cooldown": 0, "completeTask": "see_call_missed" },
             { "eventPattern": "workstation_lock_heard:amara_pc", "condition": "data.how === 'leave'", "onceOnly": true, "cooldown": 0, "completeTask": "hear_screen_lock" },
             { "eventPattern": "workstation_screen_changed:sanjay_pc", "condition": "data.how === 'auto'", "onceOnly": true, "cooldown": 0, "completeTask": "see_auto_lock" },
             { "eventPattern": "workstation_accessed:sanjay_pc", "onceOnly": true, "cooldown": 0, "completeTask": "use_open_screen" },
@@ -468,7 +503,8 @@
           "spriteTalk": "assets/characters/male_office_worker_talk.png",
           "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
           "storyPath": "scenarios/test_needs_sims/ink/tom.json",
-          "chatter": { "cooler": ["Anyone watching the match tonight?", "I'm starving already."], "grumble": ["Oh, forget it."] },
+          "chatter": { "cooler": ["Anyone watching the match tonight?", "I'm starving already."], "grumble": ["Oh, forget it."], "phone": ["Hello, Tom speaking.", "Can I call you back later?", "Yes, that's fine. Bye."] },
+          "phoneCalls": [{ "knot": "call_supplier" }],
           "currentKnot": "start",
           "voice": { "name": "Charon", "style": "Sales assistant, late twenties, white British, Yorkshire accent. Cheerful and easily distracted.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
