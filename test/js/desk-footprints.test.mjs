@@ -112,7 +112,8 @@ test('no shipped room map opts in except the desk seating test room', () => {
     const opted = readdirSync(dir).filter((f) => f.endsWith('.json'))
         .filter((f) => { try { return deskBoxModeFor(JSON.parse(readFileSync(join(dir, f), 'utf8'))) === 'footprint'; } catch { return false; } });
     // A map opts in when its walk audit has passed (SEAT_BOX_PLAN.md slices 2 and 8): add it here then.
-    const allowed = new Set(['room_test_desk_seating.json']);
+    // room_lw_accounts opted in with the slice 7 room half (594226d2c): walk-audit pockets 0, stand-audit clean.
+    const allowed = new Set(['room_test_desk_seating.json', 'room_lw_accounts.json']);
     assert.deepEqual(opted.filter((f) => !allowed.has(f)), []);
 });
 
