@@ -843,6 +843,14 @@ parallel with slice 1. Slice 7 needs it, so that the lab patch can be made with 
 Data only, plus tests: measured blocks for `white32` and `exec` go into `SEAT_BLOCKS`, and
 grey-1 and grey-4 are confirmed against `office40`.
 
+**Built (4b230732d; results in `SEAT_BOX_BASELINES.md`, "Slice 5 results").** grey-1 and grey-4 agree
+with `office40` within 1 px. `white32` = its own body (passes every case). `exec` = 18 × 8 at (19, 61):
+its own body left the empty chair sunk in 3 of 6 rolls and stopped 18 px short of the desk front. One
+change from the text above: since a seated block smaller than the empty body leaves the chair sunk,
+the exec block is the chair's body as well (Q0), set in rooms.js for rotation-tile chairs, and `sitOn`
+doesn't read `blockFor`. The stand audit now covers static seats too (step 4, run over every mission
+rather than only opted-in desks): 0 in a body, 0 across a desk, 0 refused.
+
 ### Slice 6: the NPC half (office-life session, or this session once it agrees; section 6)
 
 ### Slice 6a: the seated scale fixes (separate audit; a dependency, not this plan's work)

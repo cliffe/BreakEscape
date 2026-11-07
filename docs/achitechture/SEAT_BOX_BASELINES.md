@@ -188,3 +188,57 @@ commit's code; the fix only adds the back-edge branch, and no lab sprite changed
 snapshot run). `verify-run.rb`: 9 tasks, **score 100**; no "No path found" or "Failed to escape
 wall", no page errors. `cable_note` in open_plan at depth 247.5 = its own bottom + 0.5, out of the
 desk groups (the PCs on the desks stay grouped, 171.651 and 267.747).
+
+
+## Slice 5 results (2026-11-07)
+
+Commit `4b230732d` (the untested chairs). Scratch: `scratchpad/seatbox-s5/` in session c84d7b68.
+
+**Castor centres** (`scripts/room_gen/measure_castors.py`, bottom 6 opaque rows of each frame, mean over 8
+frames): darkgray-1 (20, 35.75), grey-1 (19.94, 36), grey-4 (19.62, 36), so grey-1 and grey-4 agree with
+office40's (20, 35) within 1 px (the method reads about 1 px low on the tested chair too). white-1 (16, 29),
+white-2 (16, 27.75), both inside the generic body (22 x 10.7 at (5, 21.3), centre y 26.7). exec (18.75,
+60.62), spread 5 px in x: the generic body (28 x 21.3 at (5, 42.7)) is centred 7 px above it.
+
+**Sweep** (`tools/playtest/seat-sweep.mjs`, game 927, a `test_desk_seating` row; desks on footprint
+boxes): 2 families x 4 blocks x 6 cases (front, behind and east end of `desk1` and `smalldesk1`) = 48
+rolls. The candidate block is set as the chair's body, centred on the castor.
+
+| Family, block | Castor in a footprint | Chair left in a desk box | Stood on the far side | Castor vs F (front) | vs back edge (behind) | vs end | Hip vs F, front desk1 |
+|---|---|---|---|---|---|---|---|
+| white32 18x6 / 18x8 / 18x10 | 0 | 0 | 0 | +3 / +4 / +5 | -3 / -4 / -5 | +9 | -15 / -14 / -13 |
+| **white32 own body** (picked) | 0 | 0 | 0 | +7 | -4 | +11 | **-11** (office40's figure) |
+| **exec 18x8** (picked; 18x6 and 18x10 the same but for 1 px) | 0 | 0 | 0 | +4 | -4 | +9 | -31 |
+| exec own body | 0 | **3 of 6** | **1** (east end of desk1, landed behind the desk) | +18 | -3 | +14 | -17 |
+
+Every landing via `compass`, walk-away 51-55 px. Picked: `SEAT_BLOCKS.white32` = its own body (plan Q0's
+preference), `SEAT_BLOCKS.exec` = 18 x 8 at (19, 61). Because a seated block smaller than the empty chair's
+body leaves the chair sunk (the old `keep` problem), the block is the exec chair's body too: rooms.js gives
+rotation-tile swivel chairs `bodyOfBlock(blockFor(sprite))` (white: the same numbers as the generic box;
+office chairs keep their STATIC_SWIVEL_PROPS body, equal to their block). `sitOn` is unchanged. Live after the
+commit (`sweep-exec-after.json`): the exec chair's own body gives the 18x8 row exactly.
+
+Contact sheets: `seatbox-s5/contact_exec.png`, `seatbox-s5/contact_white32.png` (18x8 and own body; rows
+desk1 then smalldesk1; columns front, behind, east end). Plan 8.2's exec risk is real: facing north at a desk's
+front, the 64 px back hides the sitter and the desk's front edge with either block (art, not the block). The
+only maps with a north-facing exec swivel are `room_hce_ceo` (two visitor chairs, m06 satoshi_office).
+
+**Stand audit** (`tools/playtest/baselines/seatbox-s5-stand.json`; swivel and, new in slice 5, static seats),
+same 159 rows: 158 finished (`timed_messages_example` timed out as before). Swivel: 702 seats, 1404 stands, **0
+in a body, 0 across a desk, 0 refused**, all `compass` (slice 1: 700 seats; +2 are the demo's new chairs).
+Static: 791 seats or places (20 textures: aw chairs 302, hospital 176, waiting 126, sofas and benches 75,
+studio 72, exec_chair_back1/black1 27, club 10, steel 3), 1582 stands, **0 in a body, 0 across a desk**.
+Skipped: 25 swivel, 9 static (seated NPCs). Refused-chair list for the user: **empty**. The 16 exec swivels
+(CEO rooms, m01 manager_office, m06 satoshi_office) all stood clear.
+
+**Walk audit** against `seatbox-s0-walk.json` (`--desk-boxes legacy --all-geometry`): 34 rooms, 0 fails, 0
+coverage problems, blocked +0 and opened +0 in every room (test_desk_seating's new chairs are a swivel pair
+the record leaves out and a bodiless static chair), the same 6 listed (d) overlaps.
+
+**Tests.** `seat-box.test.mjs` 14/14 (blocks per family, `bodyOfBlock`, castor inside each block, the rooms.js
+wiring), `seating.test.mjs` 33/33, full node suite 406/406 files, Rails 953 runs 0 failures 1 skip, reopen
+check the same 4 m09 phone-ink problems.
+
+**Lab regression**: `lab_physical_pentest` game 961, the 41 commands from game 685. `verify-run.rb`: 9 tasks,
+**score 100**; no "No path found" or "Failed to escape wall"; 41 page errors, all the keyless server's `/tts`
+503s. The lab has no white or exec swivel chairs.
