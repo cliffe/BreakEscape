@@ -1292,6 +1292,8 @@ const CONTACT_SWEEP_PX = 24; // a slid or fetched chair tucks to a desk only whe
  * edge − 4 behind; against today's bottom-quarter box it still lands the front castor at F + 4.
  */
 export function sweepChairToContact(chair, faceCompass) {
+    // __seatBoxNpc === false keeps the interim "chair a tile out" look, for the before/after audit only
+    if (typeof window !== 'undefined' && window.__seatBoxNpc === false) return;
     if (!chair?.body || !chair.scene) return;
     const a = forwardRad(faceCompass);
     const dx = Math.cos(a), dy = Math.sin(a);
