@@ -156,8 +156,10 @@ test('reload: a magnet back at its saved top-left with no elevation is drawn ove
     const room = { position: ROOM, objects: {} };
     for (const k of tables) room.objects[k.id] = { objectId: k.id, x: k.x, y: k.y, width: k.w, height: k.h, displayWidth: k.w, displayHeight: k.h, originX: 0, originY: 0, depth: k.depth, scenarioData: { type: 'table' }, texture: { key: 'smalldesk1' } };
     let depth = back.depth;
-    const cake = { x: back.left, y: back.top, width: CAKE.w, height: CAKE.h, displayWidth: CAKE.w, displayHeight: CAKE.h, originX: 0, originY: 0, setDepth(d) { depth = d; } };
+    const cake = { x: back.left, y: back.top, width: CAKE.w, height: CAKE.h, displayWidth: CAKE.w, displayHeight: CAKE.h, originX: 0, originY: 0, setDepth(d) { depth = d; },
+        setOrigin(x, y) { this.originX = x; this.originY = y; }, setPosition(x, y) { this.x = x; this.y = y; } };
     assert.equal(settleOnTable(cake, room, null), s.elevation);
+    assert.deepEqual([cake.x, cake.y, cake.originX], [s.x, s.y, 0.5], 'centre origin as at the drop, same place on screen');
     assert.equal(depth, placedDepth(s.top, CAKE.h, s.elevation, ROOM.y), 'the same depth as at the drop');
     // On the floor: untouched
     let d2 = 7;

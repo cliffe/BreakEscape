@@ -208,6 +208,12 @@ export function settleOnTable(sprite, room, surfaces) {
     const t = tableUnder(r, roomTables(room, surfaces));
     if (!t) return null;
     const elevation = Math.round((t.depth + TABLE_DEPTH_STEP - (r.y + r.h + 0.5)) * 1000) / 1000;
+    // Centre origin, as at the drop: reach is measured to sprite.y, and from in front of
+    // the table the top-left a reload gives (origin 0) is out of reach (38 px in game 981)
+    if ((sprite.originX ?? 0.5) !== 0.5 || (sprite.originY ?? 0.5) !== 0.5) {
+        sprite.setOrigin?.(0.5, 0.5);
+        sprite.setPosition?.(r.x + r.w / 2, r.y + r.h / 2);
+    }
     sprite.elevation = elevation;
     sprite.setDepth(placedDepth(r.y, r.h, elevation, room.position?.y ?? 0));
     return elevation;
