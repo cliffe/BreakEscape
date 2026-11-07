@@ -54,7 +54,68 @@ module ValidateNpcNeeds
     check_print_habits(json, npcs, objs, issues)
     check_magnets(json, npcs, objs, issues)
     check_phones(json, npcs, objs, issues)
+    check_room_tone(json, objs, issues)
     issues
+  end
+
+  # ── room tone (slice 20, OFFICE_LIFE_PLAN 12.6) ─────────────────────────────
+  # roomTone a boolean; roomToneTypes values are profiles in js/data/room-tones.json; with roomTone,
+  # at least one room resolves to a profile; profile sounds not loaded are info (no bed until a file
+  # is approved); an authored ambientSound not loaded is a warning in every scenario (without
+  # roomTone it fades the current loop out; with it, it is skipped as no bed).
+  ROOM_TONES_FILE = File.expand_path('../public/break_escape/js/data/room-tones.json', __dir__)
+
+  def self.room_tone_table
+    @room_tone_table ||= File.file?(ROOM_TONES_FILE) ? JSON.parse(File.read(ROOM_TONES_FILE)) : {}
+  end
+
+  def self.room_tone_profile(json, type, table = room_tone_table)
+    return nil unless type.is_a?(String)
+
+    map = json['roomToneTypes']
+    return (table.dig('profiles', map[type]) ? map[type] : nil) if map.is_a?(Hash) && map[type].is_a?(String)
+
+    table.dig('types', type)
+  end
+
+  def self.check_room_tone(json, objs, issues)
+    rooms = json['rooms']
+    rooms.each do |room_id, room|
+      next unless room.is_a?(Hash) && room['ambientSound'].is_a?(String) && !loaded_sounds.empty?
+      next if loaded_sounds.include?(room['ambientSound'])
+
+      issues << "⚠️ WARNING: room '#{room_id}' ambientSound '#{room['ambientSound']}' is not a sound the game loads (sound-manager.js): without roomTone it fades the ambient loop out (from this room and from rooms next to it that reach it first); with roomTone it counts as no bed."
+    end
+    issues << '❌ ERROR: roomTone must be true or false.' if json.key?('roomTone') && ![true, false].include?(json['roomTone'])
+    table = room_tone_table
+    map = json['roomToneTypes']
+    if json.key?('roomToneTypes')
+      if map.is_a?(Hash)
+        types = rooms.values.select { |r| r.is_a?(Hash) }.map { |r| r['type'] }
+        map.each do |type, prof|
+          issues << "❌ ERROR: roomToneTypes '#{type}' maps to '#{prof}', which is not a room tone profile (#{(table['profiles'] || {}).keys.join(', ')})." unless prof.is_a?(String) && table.dig('profiles', prof)
+          issues << "⚠️ WARNING: roomToneTypes maps '#{type}', but no room has that type." unless types.include?(type)
+        end
+      else
+        issues << '❌ ERROR: roomToneTypes must be an object of room type to profile.'
+      end
+      issues << '⚠️ WARNING: roomToneTypes is set but roomTone is not true; it is ignored.' unless json['roomTone'] == true
+    end
+    return unless json['roomTone'] == true
+
+    used = rooms.each_with_object({}) do |(room_id, room), h|
+      prof = room.is_a?(Hash) ? room_tone_profile(json, room['type'], table) : nil
+      (h[prof] ||= []) << room_id if prof
+    end
+    issues << '⚠️ WARNING: roomTone is true but no room resolves to a room tone profile (by exact type or roomToneTypes); only authored ambientSound loops play.' if used.empty?
+    used.each do |prof, ids|
+      p = table.dig('profiles', prof) || {}
+      keys = ([p['bed']] + Array(p['spots']) + (p['typing'] ? ['typing_loop'] : [])).compact
+      missing = keys.reject { |k| loaded_sounds.empty? || loaded_sounds.include?(k) }
+      next if missing.empty?
+
+      issues << "ℹ️ Room tone: profile '#{prof}' (#{ids.join(', ')}) needs #{missing.join(', ')}, not loaded yet; that layer stays silent."
+    end
   end
 
   # ── desk phones (slice 19, OFFICE_LIFE_PLAN 12.5) ──────────────────────────
@@ -931,10 +992,14 @@ module ValidateNpcNeeds
           issues << "⚠️ WARNING: needsTag item '#{o.id}' (#{o.data['type']}, #{size[0]}x#{size[1]}) is over #{HELD_MAX_PX} px on a side; an NPC carries it in hand at native size, so it will look like carrying furniture."
         end
       end
-      snd = o.data.dig('affordance', 'useSound') if o.data['affordance'].is_a?(Hash)
-      next unless snd.is_a?(String) && !loaded_sounds.empty? && !loaded_sounds.include?(snd)
+      next unless o.data['affordance'].is_a?(Hash)
 
-      issues << "⚠️ WARNING: object '#{o.id}' affordance.useSound '#{snd}' is not a sound the game loads (sound-manager.js); it will not play."
+      %w[useSound startSound outputSound].each do |field|
+        snd = o.data['affordance'][field]
+        next unless snd.is_a?(String) && !loaded_sounds.empty? && !loaded_sounds.include?(snd)
+
+        issues << "⚠️ WARNING: object '#{o.id}' affordance.#{field} '#{snd}' is not a sound the game loads (sound-manager.js); it will not play."
+      end
     end
     if json.key?('showNpcIntentBubbles')
       issues << "⚠️ WARNING: showNpcIntentBubbles was renamed to showPressingNeeds (OFFICE_LIFE_PLAN 9.2); the old name is ignored."

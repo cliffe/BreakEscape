@@ -339,3 +339,36 @@ test('the room tone runtime: duck on a heard line, typing by count, started once
     spots = rt.log.filter(e => e.what === 'spot').length;
     assert.ok(spots > 5 && spots < 40, `spots ${spots}`);
 });
+
+// ── the validator ───────────────────────────────────────────────────────────
+
+import { spawnSync } from 'node:child_process';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+
+function validate(scenario) {
+    const f = join(mkdtempSync(join(tmpdir(), 'roomtone-')), 's.json');
+    writeFileSync(f, JSON.stringify(scenario));
+    const script = `require 'json'; require ${JSON.stringify(join(root, 'scripts/validate_npc_needs.rb'))}; puts ValidateNpcNeeds.check(JSON.parse(File.read(ARGV[0])))`;
+    const r = spawnSync('ruby', ['-e', script, f], { encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' } });
+    assert.equal(r.status, 0, r.stderr);
+    return r.stdout.split('\n').filter(Boolean);
+}
+
+test('validator: roomTone, roomToneTypes, unloaded keys', () => {
+    const base = { rooms: { office: { type: 'room_office' }, accounts: { type: 'room_lw_accounts', ambientSound: 'hospital_ambient' } } };
+    let out = validate(base);
+    assert.ok(out.some(l => l.includes("WARNING: room 'accounts' ambientSound 'hospital_ambient'")), 'unloaded authored key warns without roomTone too');
+    assert.ok(!out.some(l => l.includes('Room tone')));
+    out = validate({ ...base, roomTone: 'yes' });
+    assert.ok(out.some(l => l.includes('ERROR: roomTone must be true or false')));
+    out = validate({ ...base, roomTone: true, roomToneTypes: { room_lw_accounts: 'office', room_nope: 'office', room_office: 'disco' } });
+    assert.ok(out.some(l => l.includes("'room_office' maps to 'disco'")));
+    assert.ok(out.some(l => l.includes("roomToneTypes maps 'room_nope', but no room")));
+    assert.ok(!out.some(l => l.includes('no room resolves')));
+    out = validate({ rooms: { x: { type: 'room_lw_x' } }, roomTone: true });
+    assert.ok(out.some(l => l.includes('no room resolves to a room tone profile')));
+    out = validate({ rooms: { x: { type: 'room_office', objects: [{ id: 'k', type: 'kettle1', affordance: { satisfies: 'caffeine', startSound: 'nope_sound', outputSound: 'nor_this' } }] } }, roomTone: true });
+    assert.ok(out.some(l => l.includes("affordance.startSound 'nope_sound'")));
+    assert.ok(out.some(l => l.includes("affordance.outputSound 'nor_this'")));
+});
