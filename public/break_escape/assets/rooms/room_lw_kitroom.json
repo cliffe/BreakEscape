@@ -186,20 +186,8 @@
                  "type":"",
                  "visible":true,
                  "width":22,
-                 "x":110,
+                 "x":131,
                  "y":40
-                }, 
-                {
-                 "gid":1455,
-                 "height":40,
-                 "id":35,
-                 "name":"",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":40,
-                 "x":122,
-                 "y":94
                 }, 
                 {
                  "gid":1123,
