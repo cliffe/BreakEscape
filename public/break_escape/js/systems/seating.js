@@ -1084,6 +1084,7 @@ export function unseatNPC(behavior) {
     const sprite = behavior.sprite;
     const { chair, seat, facing, saved, standAt, needsStop, place: placeIdx } = st;
     endBreath(st, sprite);
+    if (typeof window !== 'undefined') window.officeTypists?.delete(behavior.npcId);
     behavior._seat = null;
     behavior._seatTried = true; // don't sit straight back down
     releasePlace(chair, seat, placeIdx);
@@ -1349,6 +1350,9 @@ function updateNeedsSeat(behavior, ns, playerPos) {
             }
         }
         fidgetChair(st, sprite, held);
+        // Slice 20: seated typists per NPC (room tone counts the player's room); updated in this loop
+        const typists = window.officeTypists || (window.officeTypists = new Map());
+        if (isTyping(ns)) typists.set(behavior.npcId, behavior.roomId); else typists.delete(behavior.npcId);
         window.updateSpriteDepth?.(st.chair, st.chair.elevation || 0);
         const bob = typingBob(ns, window.npcNeedsSystem?.clockMs,
             { reduced: prefersReducedMotion(), off: window.gameScenario?.officeVisuals === false });

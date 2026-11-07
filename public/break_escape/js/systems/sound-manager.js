@@ -118,6 +118,23 @@ class SoundManager {
 
         // Ambient room sounds (CC0 public domain, source: bigsoundbank.com)
         this.scene.load.audio('server_room_ventilation', 'sounds/server_room_ventilation.mp3');
+
+        // Room tone, office life slice 20 (docs/achitechture/OFFICE_LIFE_SOUND_CREDITS.md). Loops are OGG
+        // (MP3 padding gaps at the loop point); one-shots MP3.
+        // CC0, Freesound: jbeetle "Air Conditioning Ambient sound loop" (274776)
+        this.scene.load.audio('office_ambient', ['sounds/office_ambient.ogg']);
+        // CC0, Freesound: Ironlink15 "Humming sound effect | from fridge" (353797)
+        this.scene.load.audio('kitchen_tone', ['sounds/kitchen_tone.ogg']);
+        // CC0, Freesound: cabled_mess "Computer keyboard typing snippet mono [loop]" (361639)
+        this.scene.load.audio('typing_loop', ['sounds/typing_loop.ogg']);
+        // CC0, Freesound: Eirikr "photocopy.wav" (185886)
+        this.scene.load.audio('copier_run', 'sounds/copier_run.mp3');
+        // CC0, Freesound: Soundeffects4You "001 - Electric kettle boiling water.wav" (217208)
+        this.scene.load.audio('kettle_boil', 'sounds/kettle_boil.mp3');
+        // CC0, Freesound: wrinkledsack "Baratza Virtuoso Conical Mill Coffee Grinder" (783963, grind) and Federico_Casazza "Pouring Coffee" (538932, pour)
+        this.scene.load.audio('coffee_machine', 'sounds/coffee_machine.mp3');
+        // CC0, derived from desk_phone_ring (guitarguy1985 "ring.wav", Freesound 53447) with an ffmpeg low-pass
+        this.scene.load.audio('distant_phone', 'sounds/distant_phone.mp3');
     }
 
     /**
@@ -159,7 +176,9 @@ class SoundManager {
             // Hit grunt sounds
             'grunt_male_soft', 'grunt_male_heavy', 'grunt_female_soft', 'grunt_female_heavy',
             // Ambient room sounds
-            'server_room_ventilation'
+            'server_room_ventilation',
+            // Room tone (slice 20): beds, the typing loop and the one-shots
+            'office_ambient', 'kitchen_tone', 'typing_loop', 'copier_run', 'kettle_boil', 'coffee_machine', 'distant_phone'
         ];
 
         for (const soundName of soundNames) {
@@ -358,22 +377,47 @@ class SoundManager {
      * @param {string} soundName - Key of the ambient sound
      * @param {number} normalizedVolume - Target multiplier: 0 = stop, 0.25/0.5/1.0 = zone levels
      * @param {number} duration - Fade duration in ms (default 400)
+     * @param {Object} opts - { crossfade }: with room tone (slice 20) a key change fades the old loop
+     *   out in its own fields (_outgoing, _outgoingTween) instead of stopping it, and asking for the
+     *   outgoing key while it fades turns it back.
      */
-    fadeAmbientTo(soundName, normalizedVolume, duration = 400) {
+    fadeAmbientTo(soundName, normalizedVolume, duration = 400, opts = {}) {
         if (!this.enabled) return;
         // After the credits only a fade to silence is allowed; ending-audio.js has
         // already stopped the sound itself.
         if (this.ambienceSuppressed && normalizedVolume !== 0) return;
+        const crossfade = !!opts?.crossfade;
 
-        // Switch to a different sound — stop current immediately
-        if (this.currentAmbient && this.currentAmbient !== soundName) {
-            const oldSound = this.sounds[this.currentAmbient];
-            if (oldSound?.isPlaying) oldSound.stop();
-            this.currentAmbient = null;
-            if (this._ambientTween) { this._ambientTween.stop(); this._ambientTween = null; }
+        // A key with no sound: check it before anything is stopped. The current loop fades out
+        // through the volume-0 path below (a step straight back finds it playing), never a cut.
+        if (normalizedVolume !== 0 && !this.sounds[soundName]) {
+            console.warn(`Ambient sound not found: ${soundName}`);
+            if (this.currentAmbient) this.fadeAmbientTo(this.currentAmbient, 0, duration, opts);
+            return;
+        }
+
+        // Crossfade turn-back: the outgoing loop is wanted again, so its fade-out is cancelled
+        if (crossfade && this._outgoing && this._outgoing === soundName) {
+            const t = this._outgoingTween;
+            this._outgoing = null;
+            this._outgoingTween = null;
+            if (t) t.stop();
+        }
+
+        // Switch to a different sound (or silence under crossfade)
+        if (this.currentAmbient && (this.currentAmbient !== soundName || (crossfade && normalizedVolume === 0))) {
+            if (crossfade) {
+                this._fadeOutgoing(duration);
+            } else {
+                const oldSound = this.sounds[this.currentAmbient];
+                if (oldSound?.isPlaying) oldSound.stop();
+                this.currentAmbient = null;
+                if (this._ambientTween) { this._ambientTween.stop(); this._ambientTween = null; }
+            }
         }
 
         if (normalizedVolume === 0) {
+            this._ambientLevel = 0;
             if (!this.currentAmbient) return;
             const sound = this.sounds[this.currentAmbient];
             this.currentAmbient = null;
@@ -391,9 +435,10 @@ class SoundManager {
             return;
         }
 
-        const targetVolume = this.volumeSettings.music * this.masterVolume * normalizedVolume;
+        // The duck (room tone: half under heard speech) is held here, so a recalculation keeps it
+        this._ambientLevel = normalizedVolume;
+        const targetVolume = this.volumeSettings.music * this.masterVolume * normalizedVolume * (this._ambientDuck ?? 1);
         const sound = this.sounds[soundName];
-        if (!sound) { console.warn(`Ambient sound not found: ${soundName}`); return; }
 
         if (!sound.isPlaying) {
             // Set volume to 0 before play() to avoid a spike from the configured base volume
@@ -417,6 +462,83 @@ class SoundManager {
         });
     }
 
+    /** Crossfade: the current loop becomes the outgoing one and fades out; an older one still fading stops at once. */
+    _fadeOutgoing(duration) {
+        const older = this._outgoing ? this.sounds[this._outgoing] : null;
+        const olderTween = this._outgoingTween;
+        this._outgoing = null;
+        this._outgoingTween = null;
+        if (olderTween) olderTween.stop();
+        if (older?.isPlaying) older.stop();
+        const key = this.currentAmbient;
+        const sound = this.sounds[key];
+        this.currentAmbient = null;
+        if (this._ambientTween) { this._ambientTween.stop(); this._ambientTween = null; }
+        if (!sound?.isPlaying) return;
+        this._outgoing = key;
+        const t = this.scene.tweens.addCounter({
+            from: sound.volume,
+            to: 0,
+            duration,
+            ease: 'Linear',
+            onUpdate: (tween) => sound.setVolume(tween.getValue()),
+            onComplete: () => {
+                if (this._outgoingTween !== t) return;
+                if (sound.isPlaying) sound.stop();
+                this._outgoing = null;
+                this._outgoingTween = null;
+            }
+        });
+        this._outgoingTween = t;
+    }
+
+    /**
+     * Room tone's duck (slice 20): a multiplier on the bed and the side loops (typing), 0.5 under
+     * heard speech, 1 otherwise. Re-applies the current level at once.
+     */
+    setAmbientDuck(mult = 1, duration = 300) {
+        const m = Math.max(0, Math.min(1, Number(mult)));
+        if (m === (this._ambientDuck ?? 1)) return;
+        this._ambientDuck = m;
+        if (this.currentAmbient && this._ambientLevel > 0) {
+            this.fadeAmbientTo(this.currentAmbient, this._ambientLevel, duration, { crossfade: true });
+        }
+        for (const [key, lvl] of Object.entries(this._sideLevels || {})) if (lvl > 0) this.fadeLoopTo(key, lvl, duration);
+    }
+
+    /**
+     * A second looping layer beside the bed (room tone's typing loop): fade to a normalised level,
+     * 0 fades out and stops. Ducks with the bed; its tween is tracked per key.
+     */
+    fadeLoopTo(key, normalizedVolume, duration = 400) {
+        if (!this.enabled) return;
+        if (this.ambienceSuppressed && normalizedVolume !== 0) return;
+        const sound = this.sounds[key];
+        if (!sound) return;
+        this._sideLevels = this._sideLevels || {};
+        this._sideTweens = this._sideTweens || {};
+        this._sideLevels[key] = normalizedVolume;
+        const prev = this._sideTweens[key];
+        this._sideTweens[key] = null;
+        if (prev) prev.stop();
+        if (normalizedVolume === 0 && !sound.isPlaying) return;
+        if (!sound.isPlaying) { sound.setVolume(0); sound.play({ loop: true }); }
+        const target = this.volumeSettings.music * this.masterVolume * normalizedVolume * (this._ambientDuck ?? 1);
+        const t = this.scene.tweens.addCounter({
+            from: sound.volume,
+            to: target,
+            duration,
+            ease: 'Linear',
+            onUpdate: (tween) => sound.setVolume(tween.getValue()),
+            onComplete: () => {
+                if (this._sideTweens[key] !== t) return;
+                this._sideTweens[key] = null;
+                if (normalizedVolume === 0 && sound.isPlaying) sound.stop();
+            }
+        });
+        this._sideTweens[key] = t;
+    }
+
     /**
      * Keep room ambience off (the end credits) or allow it again. Turning it on
      * forgets the current ambient and cancels its fade; the caller stops the sound,
@@ -428,6 +550,11 @@ class SoundManager {
         this._suppressedAmbientKey = this.currentAmbient;
         this.currentAmbient = null;
         if (this._ambientTween) { this._ambientTween.stop(); this._ambientTween = null; }
+        // Room tone: the crossfade's outgoing loop and the side loops (looping, so ending-audio stops them)
+        if (this._outgoingTween) { this._outgoingTween.stop(); this._outgoingTween = null; }
+        this._outgoing = null;
+        for (const k of Object.keys(this._sideTweens || {})) { this._sideTweens[k]?.stop?.(); this._sideTweens[k] = null; }
+        this._sideLevels = {};
     }
 
     /**

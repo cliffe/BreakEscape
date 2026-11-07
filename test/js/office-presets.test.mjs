@@ -22,7 +22,7 @@ test('exact type match only: pc, coffee_station1, kettle1 get presets; prefixes 
     assert.equal(presetIdFor({ id: 'a', type: 'pc' }), 'desk_pc');
     assert.equal(presetIdFor({ id: 'a', type: 'laptop' }), 'desk_pc');
     assert.equal(presetIdFor({ id: 'a', type: 'coffee_station1' }), 'coffee');
-    assert.equal(presetIdFor({ id: 'a', type: 'kettle1' }), 'coffee');
+    assert.equal(presetIdFor({ id: 'a', type: 'kettle1' }), 'kettle'); // slice 20: its own preset (startSound kettle_boil)
     assert.equal(presetIdFor({ id: 'a', type: 'water_cooler1' }), 'cooler');
     assert.equal(presetIdFor({ id: 'a', type: 'pc6' }), null);
     assert.equal(presetIdFor({ id: 'a', type: 'laptop6' }), null);

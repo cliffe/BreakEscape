@@ -1693,6 +1693,8 @@ export class NPCNeedsSystem {
     /** A voiced line: take the speech lock until it ends and hand it to the world to speak. */
     _speak(npcId, line, until, info) {
         this._speechUntil = Math.max(this._speechUntil, until);
+        // Slice 20: room tone ducks the bed only for a line the player hears
+        if (info?.overheard) this._heardUntil = Math.max(this._heardUntil || 0, until);
         if (typeof this.world.speak === 'function') {
             try { this.world.speak(npcId, line, { ...info, ms: until - this.clockMs }); } catch (e) { /* audio never breaks a tick */ }
         }
@@ -2064,6 +2066,8 @@ export class NPCNeedsSystem {
             const secs = Number(obj?.affordance?.useSeconds);
             job.useUntil = this.clockMs + (Number.isFinite(secs) ? clamp(secs, 0, 600) : 20) * 1000;
             this._log(id, 'using', { need: job.need, target: job.targetId });
+            // Slice 20: room tone's startSound. world.emit, not _emit: the per-tick object cache stays
+            this.world.emit(`npc_use_started:${job.targetId}`, { npcId: id, objectId: job.targetId, need: job.need });
             if (obj) this._maybePair(s, obj);
             return;
         }
@@ -3681,6 +3685,8 @@ export function createEngineWorld() {
                 return { slotId: free.id };
             }
             const cosmetic = makeCosmetic(producerId, slots[0]);
+            // Slice 20: a cosmetic copy is a print too, so the producer's outputSound can play
+            if (cosmetic) W().eventDispatcher?.emit(`object_revealed:${producerId}`, { producerId, npcId, objectId: producerId, cosmetic: true });
             return cosmetic ? { cosmetic } : {};
         },
         // Slice 17: the id of the producer's first free slot, or null (the full-pool check)

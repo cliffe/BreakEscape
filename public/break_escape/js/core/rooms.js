@@ -81,6 +81,7 @@ import { resolveObjectField } from '../utils/conditional-text.js';
 import { drinkableCupName, isObjectConsumed } from '../systems/consumables.js';
 import { deskBoxModeFor, tableBodyBox } from '../systems/desk-footprints.js';
 import { blockFor, bodyOfBlock } from '../systems/seat-box.js';
+import { chooseAmbient } from '../systems/ambient-choice.js';
 
 // True when the saved inventory (restored on reload) holds this room-map item
 function heldInSavedInventory(id) {
@@ -3213,46 +3214,48 @@ function ensureAmbientListenersRegistered() {
     });
 }
 
+// The choice of key and level is the pure systems/ambient-choice.js (slice 20). Without
+// roomTone it gives exactly the old rooms-order loop; with it, the four-step bed order.
 function recalculateAmbientVolume(playerRoom) {
     const sm = window.soundManager;
     if (!sm || !window.gameScenario?.rooms) return;
+    const roomTone = window.gameScenario.roomTone === true;
 
-    for (const [roomId, roomData] of Object.entries(window.gameScenario.rooms)) {
-        const ambientSound = roomData.ambientSound;
-        if (!ambientSound) continue;
-
-        if (playerRoom === roomId) {
-            sm.fadeAmbientTo(ambientSound, roomData.ambientVolume ?? 1.0);
-            return;
-        }
-
-        // Check if playerRoom is directly adjacent via any door
-        let isAdjacent = false;
-        let isDoorOpen = false;
+    // Is roomId directly adjacent to the player's room via any door, and is one open?
+    const link = (roomId) => {
+        let adjacent = false, open = false;
         for (const room of Object.values(rooms)) {
             if (!room.doorSprites) continue;
             for (const door of room.doorSprites) {
                 const props = door.doorProperties;
                 if (!props) continue;
-                const connects =
-                    (props.roomId === playerRoom && props.connectedRoom === roomId) ||
-                    (props.roomId === roomId && props.connectedRoom === playerRoom);
-                if (connects) {
-                    isAdjacent = true;
-                    if (props.open) isDoorOpen = true;
+                if ((props.roomId === playerRoom && props.connectedRoom === roomId) ||
+                    (props.roomId === roomId && props.connectedRoom === playerRoom)) {
+                    adjacent = true;
+                    if (props.open) open = true;
                 }
             }
         }
-
-        if (isAdjacent) {
-            sm.fadeAmbientTo(ambientSound, isDoorOpen ? 0.125 : 0.01);
-            return;
-        }
-    }
-
-    // Not in or adjacent to any ambient room — stop
-    if (sm.currentAmbient) sm.fadeAmbientTo(sm.currentAmbient, 0);
+        return { adjacent, open };
+    };
+    const choice = chooseAmbient({
+        rooms: Object.entries(window.gameScenario.rooms), playerRoom, link, roomTone,
+        profileFor: (id) => window.officeRoomTone?.profileFor?.(id) || null,
+        isLoaded: (key) => !!sm.sounds?.[key]
+    });
+    if (roomTone) window.ambientChoice = { room: playerRoom, ...choice };
+    if (choice.keep) return; // a north or south doorway: the bed carries on
+    const opts = roomTone ? { crossfade: true } : undefined;
+    if (choice.key) { sm.fadeAmbientTo(choice.key, choice.level, 400, opts); return; }
+    // Not in or adjacent to any ambient room (or no bed) — fade out
+    if (sm.currentAmbient) sm.fadeAmbientTo(sm.currentAmbient, 0, 400, opts);
 }
+
+/** Recalculate the ambient loop for the player's current room (room tone at spawn, slice 20). */
+export function refreshAmbient() {
+    recalculateAmbientVolume(currentPlayerRoom || null);
+}
+if (typeof window !== 'undefined') window.refreshAmbient = refreshAmbient;
 
 
 // Door collisions are now handled by sprite-based system

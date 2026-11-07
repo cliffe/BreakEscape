@@ -51,6 +51,11 @@ export function lockCuesOn(scenario = win().gameScenario) {
     return scenario?.lockCues !== false;
 }
 
+/** Is room tone on (slice 20)? Only when the scenario says `"roomTone": true`. */
+export function roomToneOn(scenario = win().gameScenario) {
+    return scenario?.roomTone === true;
+}
+
 // ---- lock cues (slice 16) ----
 export const GLYPH_MS = 1000;        // the padlock glyph without lighting
 export const GLYPH_SWAP_MS = 300;    // the first state shows this long, then the end state
@@ -327,6 +332,35 @@ export class NpcOfficeVisuals {
         }
     }
 
+    /**
+     * Slice 20, only with roomTone: npc_use_started:<objectId> plays the object's startSound at the
+     * NPC (a kettle boiling, a coffee machine grinding); heard only in the player's room.
+     */
+    onUseStarted(data) {
+        if (!roomToneOn() || !data?.npcId || !data.objectId || win().officeRoomTone?.ducked) return 0;
+        const obj = win().npcNeedsSystem?.world?.getObject?.(data.objectId);
+        const key = obj?.affordance?.startSound;
+        if (typeof key !== 'string' || !key) return 0;
+        const b = win().npcBehaviorManager?.getBehavior?.(data.npcId);
+        const at = b?.sprite || obj;
+        if (!at) return 0;
+        return this.playAt(key, at.x, at.y, b?.roomId || obj.roomId, { npcId: data.npcId, objectId: data.objectId, start: true },
+            { ownRoomOnly: true, channel: 'tone' });
+    }
+
+    /**
+     * Slice 20, only with roomTone: object_revealed:<id> with a producerId (a print on a slot, or a
+     * cosmetic copy) plays the producer's outputSound there; left-behind reveals have no producerId.
+     */
+    onRevealed(data) {
+        if (!roomToneOn() || !data?.producerId || win().officeRoomTone?.ducked) return 0;
+        const obj = win().npcNeedsSystem?.world?.getObject?.(data.producerId);
+        const key = obj?.affordance?.outputSound;
+        if (typeof key !== 'string' || !key || !obj) return 0;
+        return this.playAt(key, obj.x, obj.y, obj.roomId, { producerId: data.producerId, objectId: data.objectId, output: true, ...(data.cosmetic ? { cosmetic: true } : {}) },
+            { ownRoomOnly: true, channel: 'tone' });
+    }
+
     /** A screen's world point and room: its live sprite in a loaded room, else null. */
     _station(objectId) {
         for (const [roomId, room] of Object.entries(win().rooms || {})) {
@@ -515,7 +549,7 @@ export class NpcOfficeVisuals {
 
 export function installNpcOfficeVisuals(scene) {
     const w = win();
-    if (!officeVisualsOn() && !lockCuesOn()) return null;
+    if (!officeVisualsOn() && !lockCuesOn() && !roomToneOn()) return null;
     if (!w.npcOfficeVisuals) w.npcOfficeVisuals = new NpcOfficeVisuals(scene);
     const inst = w.npcOfficeVisuals;
     if (scene && inst.hooked !== scene) {
@@ -525,6 +559,8 @@ export function installNpcOfficeVisuals(scene) {
         w.eventDispatcher?.on?.('npc_used:*', (data) => { try { if (officeVisualsOn()) inst.onUsed(data); } catch (e) { /* ignore */ } });
         w.eventDispatcher?.on?.('workstation_screen_changed:*', (data) => { try { inst.onScreenChanged(data); } catch (e) { /* ignore */ } });
         w.eventDispatcher?.on?.('desk_phone_ringing:*', (data) => { try { if (officeVisualsOn()) inst.onPhoneRinging(data); } catch (e) { /* ignore */ } });
+        w.eventDispatcher?.on?.('npc_use_started:*', (data) => { try { inst.onUseStarted(data); } catch (e) { /* ignore */ } });
+        w.eventDispatcher?.on?.('object_revealed:*', (data) => { try { inst.onRevealed(data); } catch (e) { /* ignore */ } });
         if (lockCuesOn() && !w.lightingSystem) inst.preloadGlyphs();
     }
     return inst;

@@ -1965,7 +1965,9 @@ export async function create() {
                     const sceneRef = this;
                     import('../systems/npc-action-icons.js').then(m => m.installNpcActionIcons(sceneRef)).catch(e => console.warn('npc action icons failed', e));
                     import('../systems/npc-needs-debug.js').then(m => m.installNpcNeedsDebug(sceneRef)).catch(e => console.warn('npc needs debug overlay failed', e));
-                    import('../systems/npc-office-visuals.js').then(m => m.installNpcOfficeVisuals(sceneRef)).catch(e => console.warn('npc office visuals failed', e));
+                    import('../systems/npc-office-visuals.js').then(m => m.installNpcOfficeVisuals(sceneRef)).catch(e => console.warn('npc office visuals failed', e))
+                        // Room tone (slice 20): only with "roomTone": true; loads its table, then a bed at spawn
+                        .then(() => import('../systems/office-room-tone.js')).then(m => m.installOfficeRoomTone(sceneRef)).catch(e => console.warn('room tone failed', e));
                     import('../systems/npc-world-bubbles.js').then(m => m.installNpcWorldBubbles(sceneRef)).catch(e => console.warn('npc speech bubbles failed', e));
                     import('../systems/npc-needs-chatter.js').then(m => m.installNpcChatterVoice()).catch(e => console.warn('npc voiced chatter failed', e));
                     return import('../systems/workstation-state.js').then(ws => ws.installWorkstationState());
