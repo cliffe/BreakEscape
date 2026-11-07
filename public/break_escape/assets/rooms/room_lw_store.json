@@ -5,16 +5,16 @@
  "layers": [
   {
    "data": [
-    1,
     0,
     0,
     0,
-    10,
-    11,
+    0,
+    0,
+    0,
     12,
     13,
     14,
-    20,
+    0,
     21,
     0,
     0,
@@ -183,6 +183,18 @@
      "width": 14,
      "x": 112,
      "y": 78
+    },
+    {
+     "gid": 1474,
+     "height": 11,
+     "id": 88,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 27,
+     "x": 119.0,
+     "y": 24.0
     }
    ],
    "opacity": 1,
@@ -204,7 +216,7 @@
   }
  ],
  "nextlayerid": 11,
- "nextobjectid": 88,
+ "nextobjectid": 89,
  "orientation": "orthogonal",
  "renderorder": "right-down",
  "tiledversion": "1.11.2",
@@ -2173,7 +2185,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 663,
+   "tilecount": 664,
    "tileheight": 60,
    "tiles": [
     {
@@ -2779,7 +2791,7 @@
     {
      "id": 100,
      "image": "../objects/hospital_chair_north2.png",
-     "imageheight": 30,
+     "imageheight": 26,
      "imagewidth": 16
     },
     {
@@ -2875,7 +2887,7 @@
     {
      "id": 116,
      "image": "../objects/exec_desk1.png",
-     "imageheight": 42,
+     "imageheight": 46,
      "imagewidth": 80
     },
     {
@@ -5857,7 +5869,7 @@
     {
      "id": 623,
      "image": "../objects/m10_steel_chair1.png",
-     "imageheight": 31,
+     "imageheight": 26,
      "imagewidth": 16
     },
     {
@@ -5935,13 +5947,13 @@
     {
      "id": 636,
      "image": "../objects/aw_chair_south_slate1.png",
-     "imageheight": 35,
+     "imageheight": 32,
      "imagewidth": 16
     },
     {
      "id": 637,
      "image": "../objects/aw_chair_north_slate1.png",
-     "imageheight": 30,
+     "imageheight": 26,
      "imagewidth": 16
     },
     {
@@ -5989,13 +6001,13 @@
     {
      "id": 645,
      "image": "../objects/aw_chair_south_charcoal1.png",
-     "imageheight": 35,
+     "imageheight": 32,
      "imagewidth": 16
     },
     {
      "id": 646,
      "image": "../objects/aw_chair_north_charcoal1.png",
-     "imageheight": 30,
+     "imageheight": 26,
      "imagewidth": 16
     },
     {
@@ -6153,6 +6165,12 @@
      "image": "../objects/lw_card_index1.png",
      "imageheight": 29,
      "imagewidth": 36
+    },
+    {
+     "id": 673,
+     "image": "../objects/lw_sign_store1.png",
+     "imageheight": 11,
+     "imagewidth": 27
     }
    ],
    "tilewidth": 60
