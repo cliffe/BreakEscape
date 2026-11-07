@@ -260,3 +260,44 @@ was this avoidance regression (now fixed), not a door-gate design choice. The
 gate never opened because secure_area never unlocked because Len never reached
 (1,2). The separate safety bugs (clone route not loading the room; walking into
 unloaded void through an open gate) are with the user, per the coordinator.
+
+## Live verification — session 4 (2026-11-07, follow-up agent)
+
+All four outstanding live proofs ran green on :3001. **No regression; no engine
+file changed this session.** `bin/test-js` 416 passed / 0 failed (incl.
+`npc-local-avoidance` 15/15, `npc-avoidance`, `npc-needs-slots`); GOLDEN_SIMS_DAY
+byte-identical (`git status` shows no fixture change). Dense traces + per-run
+numbers in scratchpad `c84d7b68-.../scratchpad/` (`b_*.json`, `a_*.json`,
+`c2_*.json`, `cr3_*.json`, `cross_*`, `sims_obs.json`, `leash-1077.json`).
+
+1. **Lab fix live (2996a4944), game 1079** — `lab.py` + `lab_args920.json` drove
+   to **score 100**: USB foothold **12.8 s** (10–13 ✓), creds **64.4 s**
+   (57–65 ✓). Len reached the badge reader (`len_at_door`), `kp_badge_tailgated`
+   latched, secure_area unlocked, `closing_debrief` completed, `engagement_closed`.
+   The route-action squeeze works in a real lab run — the park is gone.
+2. **test_npc_avoidance, game 1076 (swap-scenario-game)** — OFF vs ON, each case:
+   - (a) NPC at standing player: OFF drives to d=1 (no avoid); ON waits at d=7
+     (`_avoid`), then detours round via y=140→182→212 and passes.
+   - (b) two walkers head-on in the lane: OFF one is shoved ~74 px (v=0, pushed
+     x167→241, d pinned 20 for ~5 s); ON the yielder detours off-lane, pass at
+     d=44–80, no sustained shove. Yielder = higher-id `zed_walker` in the
+     symmetric crossings (matches `avoidanceYieldsTo`: tie → higher id yields).
+   - (c) player fills the NW doorway: OFF rob shoves the player 23 px (y46→23);
+     ON rob waits + bounded squeeze (v≈32 briefly) and never displaces the
+     player, settles at d=13–21. No jitter.
+   Scenario geometry OK by eye (walkers pace, rob loops once vault is loaded; a
+   true one-tile pinch is still TODO per session 3, left as-is). rob parks until
+   the vault is loaded (lazy-load) — identical OFF/ON, not an avoidance issue.
+3. **test_needs_leash, game 1077** — leashed Ravi **0** Maya's-office samples,
+   unleashed **12** (≥1 ✓).
+4. **test_needs_sims, game 1078** — sit/work/leave/return confirmed from the
+   needs log (`used` work at sanjay_pc/amara_pc, coffee at office/kitchen,
+   meal at microwave; `job_start`=leave, `returned_post`=return); cycles smooth,
+   no deadlock/jitter. Office↔kitchen crossings pass cleanly (d≈16–17, ~5 brush
+   frames, resolve at once), identical OFF/ON. NOTE for office-life: I could not
+   stage a controlled *two-walking-NPC* head-on at the west door — needs-driven
+   dwell timing kept them in offset lanes (the second NPC passes a stationary
+   satisfier-user), so `_handleBlockerAhead` correctly never fires there. The
+   copier errand: `office_copier_off` sets fine via the socket, but the full
+   timed "Tom fetches to the kitchen copier and back" cycle needs the office-life
+   `beat.py`/`beat-tom` harness (fetchAfterSeconds 30–120) — not driven here.
