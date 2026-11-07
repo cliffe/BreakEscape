@@ -28,7 +28,7 @@
  * standing, the feet (the body collider's centre) go on the seat point.
  */
 
-import { walkBoxClear, pathClear, chairRect, localStandGrid, nearestCell, floodStandCells } from './seat-box.js';
+import { walkBoxClear, pathClear, chairRect, localStandGrid, nearestCell, floodStandCells, sweepBlock } from './seat-box.js';
 
 export const COMPASS = ['south', 'south-east', 'east', 'north-east', 'north', 'north-west', 'west', 'south-west'];
 const REAR = new Set(['north', 'north-east', 'north-west']);
@@ -981,7 +981,17 @@ function fidgetChair(st, sprite, held) {
     if (!st.fidget) st.fidget = { ...newFidget(now), home: { x: chair.x, y: chair.y } };
     const fd = st.fidget;
     const cur = fidgetStep(fd, now, { held, facing: st.homeFacing });
-    const x = Math.round(fd.home.x + cur.x), y = Math.round(fd.home.y + cur.y);
+    let ox = cur.x, oy = cur.y;
+    // Clamp a roll so the seated block can't push into a desk, at the front or the sides
+    // (slideChairFootTo sets the position directly; SEAT_BOX_PLAN.md section 6 item 6)
+    const mag = Math.hypot(ox, oy);
+    if (mag > 0 && chair.scene) {
+        const rect = chairRect(chair);
+        rect.x += fd.home.x - chair.x; rect.y += fd.home.y - chair.y; // the block at the home spot
+        const d = sweepBlock(chair.scene, rect, ox / mag, oy / mag, { ignore: [chair] });
+        if (d < mag) { ox = (ox / mag) * d; oy = (oy / mag) * d; }
+    }
+    const x = Math.round(fd.home.x + ox), y = Math.round(fd.home.y + oy);
     if (chair.x !== x || chair.y !== y) {
         chair.x = x; chair.y = y;
         placeBody(chair, x, y);
@@ -1096,7 +1106,7 @@ export function unseatNPC(behavior) {
         const spot = standAt || (seat.kind === 'swivel' ? standSpot(chair, facing) : frontSpot(chair, facing, placeFoot(chair, seat, placeIdx)));
         if (spot) moveFeetTo(sprite, spot.x, spot.y);
     }
-    if (needsStop) tuckIn(chair, seat, facing); // clear of the spot they come back to
+    if (needsStop) tuckIn(chair, seat, st.homeFacing); // tuck along the home facing, clear of the work spot
     behavior.direction = COMPASS_TO_PLAYER[facing];
     behavior.playAnimation?.('idle', behavior.direction);
     window.eventDispatcher?.emit?.('npc_stood', { npcId: behavior.npcId, objectId: chair.objectId });
@@ -1271,6 +1281,26 @@ function otherPosts(npcId) {
 }
 
 const TUCK_PX = 12;
+const CONTACT_SWEEP_PX = 24; // a slid or fetched chair tucks to a desk only when the desk is this close
+
+/**
+ * Tuck a just-placed swivel chair up to its desk's contact line (SEAT_BOX_PLAN.md section 6,
+ * items 2 and 3). From where the chair was pulled out to, sweep its seated block along
+ * `faceCompass` (the way its sitter faces, toward the desk) and slide it that far, but only
+ * when a solid body is within CONTACT_SWEEP_PX; otherwise the chair stays where it was pulled
+ * out to. In a footprint-boxed map this gives castor F + 4 in front and the footprint's back
+ * edge − 4 behind; against today's bottom-quarter box it still lands the front castor at F + 4.
+ */
+export function sweepChairToContact(chair, faceCompass) {
+    if (!chair?.body || !chair.scene) return;
+    const a = forwardRad(faceCompass);
+    const dx = Math.cos(a), dy = Math.sin(a);
+    const d = sweepBlock(chair.scene, chairRect(chair), dx, dy, { ignore: [chair] });
+    if (d > 0 && d <= CONTACT_SWEEP_PX) {
+        const f = bodyFeet(chair);
+        slideChairFootTo(chair, f.x + dx * d, f.y + dy * d);
+    }
+}
 
 /** Slide a swivel chair so its foot is at (x, y) (pulling it out to sit, tucking it in on leaving). */
 function slideChairFootTo(chair, x, y) {
@@ -1383,7 +1413,10 @@ function updateNeedsSeat(behavior, ns, playerPos) {
     const near = chairsNear(behavior.roomId, feet.x, feet.y, NEAR_CHAIR)
         .find(c => free(c) && (c.seat.kind === 'swivel' || staticFacesToward(c.seat, feet, toward)));
     if (near) {
-        if (near.seat.kind === 'swivel') slideChairFootTo(near.obj, feet.x, feet.y); // pull it out
+        if (near.seat.kind === 'swivel') {
+            slideChairFootTo(near.obj, feet.x, feet.y); // pull it out to the work cell
+            sweepChairToContact(near.obj, snapFacing(compassToward(toward.x - feet.x, toward.y - feet.y), near.seat.valid)); // then tuck to the desk front
+        }
         return seatNPC(behavior, near.obj, { toward, facePlayer: false, needsStop: stop.key });
     }
     if (pref !== 'fetch') return false;
@@ -1394,12 +1427,20 @@ function updateNeedsSeat(behavior, ns, playerPos) {
     return true;
 }
 
-/** Push a swivel chair in toward where its sitter faced, clear of the spot they work from. */
-function tuckIn(chair, seat, facing) {
+/**
+ * Push a swivel chair in toward where its sitter faced, clear of the spot they work from.
+ * Move min(TUCK_PX, sweep distance) along `facing` (the NPC's home facing), so a chair tucked
+ * against a footprint-boxed desk can't be driven into it (slideChairFootTo sets the position
+ * directly and physics never pushes back; SEAT_BOX_PLAN.md section 6 item 4).
+ */
+export function tuckIn(chair, seat, facing) {
     if (seat?.kind !== 'swivel' || !chair.body || chair.seatedBy) return;
     const a = forwardRad(facing);
+    const dx = Math.cos(a), dy = Math.sin(a);
+    const d = chair.scene ? sweepBlock(chair.scene, chairRect(chair), dx, dy, { ignore: [chair] }) : Infinity;
+    const dist = Math.min(TUCK_PX, d);
     const f = bodyFeet(chair);
-    slideChairFootTo(chair, f.x + Math.cos(a) * TUCK_PX, f.y + Math.sin(a) * TUCK_PX);
+    slideChairFootTo(chair, f.x + dx * dist, f.y + dy * dist);
 }
 
 /** Walk to a swivel chair, roll it back to `spot`, sit on it. */
@@ -1466,6 +1507,8 @@ function advanceFetch(behavior, ns, stop) {
     if (seat?.kind === 'swivel' && !arrived) setChairFacing(f.chair, snapFacing(dirC, seat.valid), seat);
     window.updateSpriteDepth?.(f.chair, f.chair.elevation || 0);
     if (!arrived) return false;
+    // Tuck the fetched chair to the desk's contact line before seating (section 6 item 3)
+    if (seat?.kind === 'swivel') sweepChairToContact(f.chair, snapFacing(compassToward(f.toward.x - feet.x, f.toward.y - feet.y), seat.valid));
     return endFetch(behavior, true);
 }
 
