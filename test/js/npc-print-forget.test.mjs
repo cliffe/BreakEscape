@@ -118,7 +118,7 @@ test('the print command with forget false: due inside the window, fetched from i
         assert.ok(!p.log().some(e => e.npc === 'tom' && e.ev === 'using' && e.t >= start.t && e.t <= used.t), 'no using phase');
         assert.ok(!p.evs('job_failed', 'tom').length, 'never item_gone on its own reserved slot');
         const fetched = p.emitted('npc_print_fetched:tom');
-        assert.deepEqual(fetched.map(e => e.data), [{ npcId: 'tom', slotId: 'copier_out_a', viaCommand: true }]);
+        assert.deepEqual(fetched.map(e => e.data), [{ npcId: 'tom', slotId: 'copier_out_a', producerId: 'office_copier', viaCommand: true }]);
         // npc_used:tom_pc rides along, with no need (the showcase's work mappings check data.need)
         assert.ok(p.emitted('npc_used:tom_pc').some(e => e.data.need === null && e.data.tag === 'printout'));
         // The way back is the return: npc_returned_post right after

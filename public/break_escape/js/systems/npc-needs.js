@@ -75,6 +75,8 @@ export const PICTURE_CHATTER = Object.freeze({
     // picture is the need's own icon (NEED_ICONS); this entry is the fallback for any other need.
     grumble_off: Object.freeze(['avoid']),
     grumble_gone: Object.freeze(['avoid']),
+    // Slice 22: a print with every listed printer switched off
+    grumble_printer_off: Object.freeze(['blocked']),
     // Slice 18b-ii: word of mouth about a magnet. The picture is the magnet's first `satisfies`
     // when that need has an icon (NEED_ICONS); this entry is the fallback.
     news: Object.freeze(['social']),
@@ -133,6 +135,12 @@ export function magnetOf(aff) {
         announce: typeof m.announce === 'string' && m.announce ? m.announce : null,
         newsRadius: num(m.newsRadius, NEWS_RADIUS, 0, 50)
     };
+}
+
+/** Pure (slice 22): revealOutput or a print command's producer as a list of ids (a string is a list of one). */
+export function printerList(v) {
+    if (typeof v === 'string') return v ? [v] : [];
+    return Array.isArray(v) ? v.filter(x => typeof x === 'string' && x) : [];
 }
 
 /** Pure: the names an offWhen (requireGlobal form) reads: a name, or the keys of { name: value }. */
@@ -824,14 +832,18 @@ export class NPCNeedsSystem {
         // Slice 17: { print: "<producerId>" } or { print: { producer, fetchAfterSeconds, forget } }
         // prints as this NPC at once, owned, with its printHabit (the command's fields win)
         if (cmd && typeof cmd === 'object' && cmd.print !== undefined) {
-            const spec = typeof cmd.print === 'string' ? { producer: cmd.print } : (cmd.print && typeof cmd.print === 'object' ? cmd.print : null);
-            if (!spec || typeof spec.producer !== 'string' || !spec.producer) return false;
+            const spec = typeof cmd.print === 'string' || Array.isArray(cmd.print) ? { producer: cmd.print } : (cmd.print && typeof cmd.print === 'object' ? cmd.print : null);
+            const list = printerList(spec?.producer);
+            if (!list.length) return false;
             const rec = this.world.getNpc(npcId) || {};
             const own = { habit: rec.printHabit && typeof rec.printHabit === 'object' ? rec.printHabit : {}, viaCommand: true };
             if (Array.isArray(spec.fetchAfterSeconds)) own.fetchAfterSeconds = spec.fetchAfterSeconds;
             if (typeof spec.forget === 'boolean') own.forget = spec.forget;
-            this._log(npcId, 'print_command', { target: spec.producer });
-            this._revealOutput(spec.producer, npcId, own);
+            // Slice 22: the first listed printer that is on and has a slot; none on prints nothing
+            const pick = this._pickProducer(list);
+            this._log(npcId, 'print_command', { target: pick.producerId || list[0] });
+            if (pick.producerId) this._revealOutput(pick.producerId, npcId, own, pick.skipped);
+            else this._printBlocked(s, null, list, true);
             return true;
         }
         if (cmd && typeof cmd === 'object' && cmd.set && typeof cmd.set === 'object') {
@@ -1798,9 +1810,12 @@ export class NPCNeedsSystem {
                 s.useCounts[pick.targetId] = n + 1;
                 const chance = Number(hook.chance);
                 const prints = !(Number.isFinite(chance) && chance < 1) || this.roll(id, `print:${n}`) < Math.max(0, chance);
-                if (prints) {
-                    s.job.printTo = hook.revealOutput;
-                    if (this._slotAvailable(hook.revealOutput)) s.job.prints = true;
+                const list = printerList(hook.revealOutput);
+                if (prints && list.length) {
+                    // Slice 22: a list of printers; the icon only when one is on and has a slot
+                    s.job.printTo = list;
+                    const pick = this._pickProducer(list);
+                    if (pick.producerId && pick.slot) s.job.prints = true;
                 }
             }
         }
@@ -2096,15 +2111,19 @@ export class NPCNeedsSystem {
             // Something that prints: show the producer's first free reveal slot (2.2 Part A). Only a
             // need use prints (slice 17), never a delivery, and only when the start-time roll said so;
             // the print is owned (reserved, fetched or forgotten) only when the NPC has a printHabit
-            if (typeof hook.revealOutput === 'string' && hook.revealOutput && job.need && !job.carrying && job.printTo) {
+            // Slice 22: the producer is chosen now, from the list, by which printers are on
+            if (printerList(hook.revealOutput).length && job.need && !job.carrying && job.printTo) {
                 const habit = rec.printHabit && typeof rec.printHabit === 'object' ? rec.printHabit : null;
-                this._revealOutput(job.printTo, id, habit ? { habit } : null);
+                const pick = this._pickProducer(job.printTo);
+                if (pick.producerId) this._revealOutput(pick.producerId, id, habit ? { habit } : null, pick.skipped);
+                else this._printBlocked(s, job.targetId, job.printTo, false);
             }
         }
         if (job.errand) {
+            const producerId = this._prints.get(job.itemId)?.producerId ?? null;
             this._prints.delete(job.itemId);
             this._log(id, 'print_fetched', { item: job.itemId, viaCommand: !!job.viaCommand });
-            this._emit(`npc_print_fetched:${id}`, { npcId: id, slotId: job.itemId, viaCommand: !!job.viaCommand });
+            this._emit(`npc_print_fetched:${id}`, { npcId: id, slotId: job.itemId, producerId, viaCommand: !!job.viaCommand });
         }
         const stayPut = s.atPost && this._atOwnPost(s);
         s.job = null;
@@ -2136,7 +2155,7 @@ export class NPCNeedsSystem {
      * revealOutput hook: the producer's first free slot (id order) is shown; with none free, a
      * cosmetic copy that nobody can take stands in for the producer's placeSeconds.
      */
-    _revealOutput(producerId, npcId, own = null) {
+    _revealOutput(producerId, npcId, own = null, skipped = null) {
         if (typeof this.world.revealOutput !== 'function') return null;
         // Slice 17: a full pool recycles the oldest forgotten reserved slot of this producer, for any
         // print, owned or not (read-in-place slots first, so the takeable one is the last to go)
@@ -2152,7 +2171,7 @@ export class NPCNeedsSystem {
         const r = this.world.revealOutput(producerId, npcId, { printedBy: own ? npcId : null }) || {};
         this._worldChanged();
         if (r.slotId) {
-            this._log(npcId, 'revealed', { target: producerId, item: r.slotId });
+            this._log(npcId, 'revealed', { target: producerId, item: r.slotId, skipped: skipped?.length ? skipped : undefined });
             this._prints.delete(r.slotId);
             if (own) this._reserve(r.slotId, producerId, npcId, own);
             return r.slotId;
@@ -2164,6 +2183,39 @@ export class NPCNeedsSystem {
             if (ms > 0) this._placed.set(r.cosmetic, { at: this.clockMs + ms, npcId, cosmetic: true });
         }
         return null;
+    }
+
+    /**
+     * Slice 22 (OFFICE_LIFE_PLAN 12.12): where a print goes. The first listed producer that is on
+     * (affordance.offWhen does not hold) and has a free or recyclable slot; else the first that is
+     * on (today's full-pool path); else none. A producer the world does not know (its room not
+     * loaded) is off in a list of two or more; a list of one keeps the old behaviour.
+     * Returns { producerId, slot, skipped }: skipped lists the producers passed over before it.
+     */
+    _pickProducer(list) {
+        const on = [];
+        for (const id of list) {
+            const o = this.world.getObject(id);
+            if (o ? !this._isOff(o) : list.length === 1) on.push(id);
+        }
+        const withSlot = on.find(id => this._slotAvailable(id));
+        const producerId = withSlot || on[0] || null;
+        const skipped = producerId ? list.slice(0, list.indexOf(producerId)) : list.slice();
+        return { producerId, slot: !!withSlot, skipped };
+    }
+
+    /**
+     * Slice 22: every listed printer is off, so nothing prints. Logged and emitted; the owner at its
+     * desk grumbles from grumble_printer_off (lines), else shows the blocked picture. A command
+     * (the NPC is elsewhere) does not grumble.
+     */
+    _printBlocked(s, objectId, list, viaCommand) {
+        const id = s.npcId;
+        this._log(id, 'print_blocked', { target: objectId || undefined, producers: list.slice(), viaCommand: viaCommand || undefined });
+        this._emit(`npc_print_blocked:${id}`, { npcId: id, objectId: objectId || null, producers: list.slice(), viaCommand: !!viaCommand, ...this._playerProximity(id) });
+        if (viaCommand) return;
+        const pick = this._pickBark(s, 'grumble_printer_off');
+        if (pick) this._showSaying(s, pick, 'grumble_printer_off', objectId);
     }
 
     // ── print and forget (slice 17, OFFICE_LIFE_PLAN 12.3) ──────────────────

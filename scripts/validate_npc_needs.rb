@@ -299,24 +299,28 @@ module ValidateNpcNeeds
           issues << "❌ ERROR: #{where} onUse '#{oid}' chance must be a number from 0 to 1 (default 1)."
         end
         issues << "⚠️ WARNING: #{where} onUse '#{oid}' sets chance without revealOutput; chance applies to prints only." if hook.key?('chance') && !hook.key?('revealOutput')
-        hooked << hook['revealOutput'] if hook['revealOutput'].is_a?(String)
+        # Slice 22: revealOutput is a producer id or a list of them in preference order
+        hooked.concat(printer_list(hook['revealOutput'])) if hook.key?('revealOutput')
       end
       commanded = []
       Array(npc['eventMappings']).each do |m|
         next unless m.is_a?(Hash) && m['needs'].is_a?(Hash) && m['needs'].key?('print')
 
         cmd = m['needs']['print']
-        spec = cmd.is_a?(String) ? { 'producer' => cmd } : cmd
-        unless spec.is_a?(Hash) && spec['producer'].is_a?(String)
-          issues << "❌ ERROR: #{where} mapping '#{m['eventPattern']}' needs.print must be a producer id or { producer, fetchAfterSeconds, forget }."
+        spec = cmd.is_a?(String) || cmd.is_a?(Array) ? { 'producer' => cmd } : cmd
+        prods = spec.is_a?(Hash) ? printer_list(spec['producer']) : []
+        unless spec.is_a?(Hash) && (spec['producer'].is_a?(String) || spec['producer'].is_a?(Array)) && !prods.empty? && prods.length == Array(spec['producer']).length
+          issues << "❌ ERROR: #{where} mapping '#{m['eventPattern']}' needs.print must be a producer id, a list of producer ids, or { producer, fetchAfterSeconds, forget }."
           next
         end
-        prod = spec['producer']
-        if by_id.key?(prod)
-          commanded << prod
-          issues << "⚠️ WARNING: #{where} mapping '#{m['eventPattern']}' prints to '#{prod}', but no object has outputOf '#{prod}'; every print is only a cosmetic copy." if objs.none? { |o| o.data['outputOf'] == prod }
-        else
-          issues << "❌ ERROR: #{where} mapping '#{m['eventPattern']}' needs.print producer '#{prod}' is not an object id in this scenario."
+        issues << "⚠️ WARNING: #{where} mapping '#{m['eventPattern']}' needs.print lists a producer twice; the second is never used." if prods.uniq.length < prods.length
+        prods.uniq.each do |prod|
+          if by_id.key?(prod)
+            commanded << prod
+            issues << "⚠️ WARNING: #{where} mapping '#{m['eventPattern']}' prints to '#{prod}', but no object has outputOf '#{prod}'; every print is only a cosmetic copy." if objs.none? { |o| o.data['outputOf'] == prod }
+          else
+            issues << "❌ ERROR: #{where} mapping '#{m['eventPattern']}' needs.print producer '#{prod}' is not an object id in this scenario."
+          end
         end
         if spec.key?('fetchAfterSeconds') && !fetch_range_ok?(spec['fetchAfterSeconds'])
           issues << "❌ ERROR: #{where} mapping '#{m['eventPattern']}' needs.print fetchAfterSeconds must be [min, max] seconds, 0 <= min <= max <= 3600."
@@ -357,7 +361,7 @@ module ValidateNpcNeeds
         p_obj = by_id[prod]&.first
         next if p_obj.nil? || p_obj.room.nil? || reach.include?(p_obj.room)
 
-        issues << "⚠️ WARNING: #{where} prints to '#{prod}' in room '#{p_obj.room}', which its home room '#{home_room}' does not join through rooms it may enter; its prints are never fetched."
+        issues << "⚠️ WARNING: #{where} prints to '#{prod}' in room '#{p_obj.room}', which its home room '#{home_room}' does not join through rooms it may enter (its leash, or a needsPrivateTo room); its prints there are never fetched."
       end
     end
     printers.each do |prod, ids|
@@ -1053,6 +1057,11 @@ module ValidateNpcNeeds
     v.is_a?(Array) ? v : (v.nil? ? [] : [v])
   end
 
+  # Slice 22: revealOutput or a print command's producer as a list of non-empty id strings.
+  def self.printer_list(v)
+    (v.is_a?(Array) ? v : [v]).select { |x| x.is_a?(String) && !x.empty? }
+  end
+
   def self.check_npc(json, npc, npc_room, objs, issues, npcs = [])
     nid = npc['id']
     needs = npc['needs']
@@ -1111,13 +1120,22 @@ module ValidateNpcNeeds
 
     (npc['onUse'].is_a?(Hash) ? npc['onUse'] : {}).each do |oid, hook|
       issues << "❌ ERROR: #{where} onUse names '#{oid}', which is not an object id in this scenario." unless by_id.key?(oid)
-      prod = hook.is_a?(Hash) ? hook['revealOutput'] : nil
-      next if prod.nil?
+      raw = hook.is_a?(Hash) ? hook['revealOutput'] : nil
+      next if raw.nil?
 
-      if !prod.is_a?(String) || !by_id.key?(prod)
-        issues << "❌ ERROR: #{where} onUse '#{oid}' revealOutput names '#{prod}', which is not an object id in this scenario."
-      elsif objs.none? { |o| o.data['outputOf'] == prod }
-        issues << "⚠️ WARNING: #{where} onUse '#{oid}' revealOutput names '#{prod}', but no object has outputOf '#{prod}'; every print shows only a cosmetic copy."
+      # Slice 22: a producer id or a list of them, in preference order
+      prods = raw.is_a?(Array) ? raw : [raw]
+      if raw.is_a?(Array) && raw.empty?
+        issues << "❌ ERROR: #{where} onUse '#{oid}' revealOutput is an empty list; name one producer or more."
+        next
+      end
+      issues << "⚠️ WARNING: #{where} onUse '#{oid}' revealOutput lists a producer twice; the second is never used." if prods.uniq.length < prods.length
+      prods.uniq.each do |prod|
+        if !prod.is_a?(String) || !by_id.key?(prod)
+          issues << "❌ ERROR: #{where} onUse '#{oid}' revealOutput names '#{prod}', which is not an object id in this scenario."
+        elsif objs.none? { |o| o.data['outputOf'] == prod }
+          issues << "⚠️ WARNING: #{where} onUse '#{oid}' revealOutput names '#{prod}', but no object has outputOf '#{prod}'; every print shows only a cosmetic copy."
+        end
       end
     end
     has_on_use = npc['onUse'].is_a?(Hash) && !npc['onUse'].empty?
