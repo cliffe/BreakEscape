@@ -170,3 +170,93 @@ b-files unreliable; `enter` advances one room per call and a multi-room `enter` 
 an already-open gate left the player's `roomId` null (room tracking confused) — tailgate
 with single-step enters and verify the global, don't trust a chained enter. Headless
 chrome count stayed at 1 throughout (my session added/removed one cleanly).
+
+## Live verification — session 3 (2026-11-07, follow-up agent)
+
+### THE REGRESSION WAS REAL AND IS NOW FIXED (commit 2996a4944)
+The coordinator diagnosed (and I confirmed in code) that 3b74f5fb8 broke the
+lab's secure_area: Len's multiRoom route waypoint at open_plan (1,2) carries
+`action:{unlockRoom:"secure_area"}`. When the player stands at the badge
+reader/door (one tile *beyond* (1,2)), `_handleBlockerAhead` saw the player as a
+blocker ahead and yielded forever, so the path never completed
+(`updatePatrol` L1223 `distance<8` never hit), `_pendingRouteAction` (L1236)
+never set, and the server-unlock never fired. Both player routes (clone entry,
+doors.js ~660; tailgate, door-gates.js open()) depend on that unlock → "Len
+parks at the records door". Game 1054 passed 18:52 (pre-commit); 1058 failed
+19:42 (post-commit).
+
+Fix in npc-behavior.js:
+- `updatePatrol` computes `mustReach = patrolTarget.routeAction && pathIndex ===
+  currentPath.length-1` (final leg to an action waypoint) and passes it to
+  `_handleBlockerAhead(time, nextWaypoint, mustReach)`.
+- In `_handleBlockerAhead`, after the brief `AVOID_WAIT_MS` wait, if `mustReach`
+  it squeezes straight toward the cell at `AVOID_SQUEEZE_FACTOR` (45%) speed —
+  no detour, no back-off, no indefinite hold — so the NPC reaches the cell and
+  the action fires. Still never a full-speed shove.
+- Unit tests: `test/js/npc-local-avoidance.test.mjs` now 15/15 (added: mustReach
+  squeezes forward after the wait; without it the same early frame still holds —
+  i.e. mustReach is exactly what frees the route).
+- `bin/test-js`: **415 passed, 0 failed**. GOLDEN_SIMS_DAY byte-identical
+  (`git status` shows no fixture change).
+
+### CRITICAL HARNESS FINDING — the 2fps throttle and the smoothStep fix
+Headless chrome throttles `requestAnimationFrame` to ~2fps (page treated as
+hidden; JS visibility/focus overrides do NOT lift it). Worse, Phaser's
+`loop.smoothStep=true` collapses the ~500ms throttled frame gap to ~16ms, so
+**physics integrates ~60x slower than the scene clock** while avoidance timers
+(scene-time) run near real-time — a severe desync. A body given velocity 60
+moved 1px/scene-sec. This is why NPC-movement live proofs have been so hard.
+Fix, per session, after popups are dismissed:
+  `g=window.game.sys.game; g.loop.smoothStep=false; g.loop.minFps=1;
+   window.game.physics.world.fixedStep=false;`
+That restores physics to ~0.5x real-time (30px/s for v=60) and roughly
+re-syncs movement with timers. Still ~2x slow and rAF-coarse (~1-2 samples/s),
+but usable. Manual `loop.step()` pumping does NOT help (Phaser 3.60 step() reads
+performance.now internally → delta≈0 in a tight loop).
+
+### Tooling (reusable)
+`.../scratchpad/avoid/drive2.py`: `setup(gid)` (dismiss popups + smoothStep off),
+`teleport_player`, `set_avoid`, `poll_player`/`poll_pair` (single-eval rAF
+samplers returning dense traces), `npc_pos`. Import and drive via
+tools/playtest/cmd.sh.
+
+### test_npc_avoidance scenario fixed (commit 12dcbf940)
+It never worked: walker waypoints used x=10 in a 10-tile room (interior x=1..8),
+so sequential patrol wedged at spawn and nobody paced; the doorway case targeted
+a non-existent centre door (the real door is NW, ~col 1-2). Rewrote: walkers
+pace row 5 cols 2..7 (cross mid-lane), Rob + the doorway case use the NW door.
+With avoidance ON the walkers now pace and pass without overlap or deadlock (both
+keep v=70, min sampled dist ~88px). NOTE: a true **one-tile pinch** is still
+TODO — desks at rows 4/6 made row 5 non-traversable (their collision inflates
+into the lane; walkers turned back at the pinch mouth, no contrast OFF vs ON), so
+desks now sit at rows 3/7 (open lane). Next: size/offset the pinch desks so row 5
+stays walkable by one body but not two.
+
+### What I could NOT finish (budget: hit the stop threshold on the regression pivot)
+These remain for the next session; the fix above is the priority deliverable and
+is done + committed + tested.
+1. **Live lab proof of the fix** (coordinator's ask). Fresh `new-game.rb
+   lab_physical_pentest` starts in **briefing_room** (1071 confirmed). Natural
+   drive briefing_room → reception → hall → open_plan (NOT a head-start spawn —
+   that puts open_plan at world origin and Len won't patrol). Stand the player at
+   the badge reader near (1,2); confirm Len now reaches (1,2), `unlockRoom` fires
+   and `window.rooms.secure_area` appears, for BOTH routes (tailgate behind Len;
+   clone+vest with the player waiting at the reader). The heavy lab page is very
+   slow through the harness (evals ~tens of seconds each), so allow long timeouts.
+2. **Full replay** with `.../scratchpad/lab-pov/solve-cmds-fixed.jsonl` to score
+   100 + credits. Coordinator's required patch: replace the truncated/invalid
+   lines 140-147 with the single line
+   `{"cmd":"wait","for":"condition","fn":"() => !!(window.rooms && window.rooms.secure_area)","timeoutMs":8000}`.
+   Harness only steps game time during active walk/moveTo, so a bare "wait" barely
+   advances Len — allow for that.
+3. `lab.py` with `lab_args920.json` (office-life s18a/): USB 10-13s, creds 57-65s.
+4. `test_needs_sims` doorway head-on + copier errand + sit/work/leave/return;
+   `test_needs_leash` (leash.py: leashed 0 samples, unleashed ≥1). Do NOT touch
+   npc-needs*/seating.js/test_needs_*/npc-avoidance.test.mjs.
+
+Len park question (asked in the brief): it is a **bug**, not intended — the park
+was this avoidance regression (now fixed), not a door-gate design choice. The
+`turnBackFromGate`/"retry in 2s" seen earlier was the *downstream* symptom: the
+gate never opened because secure_area never unlocked because Len never reached
+(1,2). The separate safety bugs (clone route not loading the room; walking into
+unloaded void through an open gate) are with the user, per the coordinator.
