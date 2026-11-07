@@ -4492,6 +4492,27 @@ away time (and his lock if his habit says so), both off (the grumble).
 The user, 2026-11-07, yes to "Should a cake dropped beside a table snap onto the table?". Today a drop lands at the
 player's feet, so a cake put down beside the kitchen table sits on the floor (game 930, `k1-kitchen-eating-930.png`).
 
+**Built: 2026-11-07 (slice 23: plan dce9f463c; engine and tests 2d6295ef5; fixes from the live proof ff5fd7a41, fdbc431a1,
+6cfc8e18e). Live proof games 979, 982, 985 (sims README "Slice 23"); leash game 987 (pass); lab game 989 (score 100, 9/9 tasks;
+creds 65 s, USB foothold 13 s) and game 988 (score 40: the replay's tailgate into `secure_area` failed); both lab games ran after
+seat box slice 7 moved the accounts PCs, `usb_target_pc` among them (594226d2c, b5d8897d2), which slice 23 cannot reach (no magnet
+in the lab; a non-magnet drop moves by at most half a pixel); `bin/test-js` 409 of 410 files pass, the one failure
+`desk-footprints.test.mjs` from the same seat box commit (`room_lw_accounts` now opts in); `table-drop` 10 tests,
+`GOLDEN_SIMS_DAY` unchanged; see `HANDOVER_OFFICE_S23.md`.** Built as the
+design below reads now; the points that changed from the first version, and the choices made without asking: (1) magnets only
+(point 1); (2) the snap range is measured to the table's drawn rectangle, not its top, because the player cannot stand nearer
+the top than the front face (37 px from the top band in front of a smalldesk1, which would never snap); (3) a table nobody can
+stand at is skipped for the next in range (game 978: the cake went onto the kitchen's north-east table, whose front and west end
+touch other tables, and the only edge left was behind it, closed in by the sofas; Sanjay "ate" it from his desk); (4) eaters
+never stand behind a table; (5) the server keeps only `position.x` and `.y` of a drop (`games_controller` `item_add_params`),
+so the elevation is not persisted; instead the needs system re-raises a magnet standing on a table when it registers it (on the
+drop and on a room load, `settleOnTable`), client only, no server change; (6) a reloaded magnet on a table takes the drop's
+centre origin again, since reach is measured to `sprite.y` and the top-left a reload gives was 38 px from the player in front
+of the table (game 981); (7) the floor drift fix (save the top-left) applies to every drop, magnet or not: it moves a drop by at
+most half a pixel at the drop and removes the reload drift; (8) no `front` data exists yet, so the base row is 40% of the sprite
+height (smalldesk1: row 16 of a 26-row top); (9) `validator-office-presets.test.mjs` had gone stale with slice 22's
+`kitchen_copier` and was updated (11044a15f). No scenario, validator or schema change.
+
 **Design.**
 
 1. **Scope: magnets only.** A droppable item whose affordance has a `magnet` snaps; every other drop lands at the feet as
@@ -4501,20 +4522,21 @@ player's feet, so a cake put down beside the kitchen table sits on the floor (ga
    scenario-made tables), live and not destroyed. The top is the sprite's span, inset 2 px, with the item's base on one row:
    `front - 2` when `table_surfaces.json` has a `front` for the texture (none do yet; TABLE_SURFACE_PLAN), else 40% of the
    sprite height (inside the measured tops of desk1, smalldesk1 and hospital_desk1).
-3. **When it snaps.** The player's feet within 32 px (one tile) of a table's top rectangle (sprite top to that base row).
-   The nearest table wins, ties by object id; on it, the player's x clamped into the top. A spot whose item rectangle
+3. **When it snaps.** The player's feet within 32 px (one tile) of a table's drawn rectangle, and the table usable (an
+   edge cell exists, point 6). The nearest table wins, ties by object id; on it, the player's x clamped into the top. A spot whose item rectangle
    would overlap another object on the table (a lamp, the microwave) slides along the top to the nearest clear x (4 px
    steps); a table with no clear spot is skipped. Nothing in range: the floor, as today. Pure and deterministic, in a new
    import-free module `table-drop.js` imported by `item-drop.js` (no test harness copies `item-drop.js`).
-4. **Drawing.** Depth is the table's depth + 0.05, written as `position.elevation` (table depth + 0.05 - (bottom + 0.5)),
-   so a reload's `setDepthAndStore` gives the same depth: drawn over the table and its items, under an NPC standing in front.
-   Elevation > 0 also keeps the cake out of path-avoid and sight occlusion, as the slice 19 phones are.
+4. **Drawing.** Depth is the table's depth + 0.05 as an elevation over the item's bottom + 0.5 (the `setDepthAndStore`
+   formula): drawn over the table and its items, under an NPC standing in front. Elevation > 0 also keeps the cake out of
+   path-avoid and sight occlusion, as the slice 19 phones are. The server drops `position.elevation`, so the needs system
+   re-applies it (and the centre origin) to a magnet standing on a table whenever it registers one (`settleOnTable`).
 5. **Persistence and the 13 px drift.** The drop saves `position` as the sprite's centre, but a reload places a scenario
    object by its top-left (origin 0), so a 25x27 cake comes back half its size south-east. A client fix: save the top-left
-   (integer pixels) and the elevation; the server keeps `position` whole (`game.rb` add_object), so no server change.
+   (integer pixels). The elevation rides along but the server keeps only `position.x` and `.y` (point 4 re-raises it).
 6. **Eaters.** `approachCell` for a magnet standing on a table (its base point inside a table's top) asks
-   `window.tableDrop.edgeCell`: the walkable cell just in front of the table under the cake, else the nearest of behind,
-   left or right, never a cell inside or within 4 px of any table (the kitchen's four tables touch). `besideCell` then puts
+   `window.tableDrop.approach`: the walkable cell just in front of the table under the cake, else the nearer of its left
+   and right ends, never behind it and never a cell inside or within 4 px of any table (the kitchen's four tables touch). `besideCell` then puts
    the second and third eater along the same edge. npc-needs.js keeps no static imports.
 7. **Pickup and doors.** Unchanged code: the cake is a takeable object above the table, so a click on it picks it up; a cake
    on a table is no longer by a door, so a door click cannot grab it (a floor drop in a doorway still can).

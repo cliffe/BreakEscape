@@ -691,6 +691,37 @@ it). Evidence in the session scratchpad `s22/`.
 | Both off: nothing prints, Tom grumbles | PASS | Kitchen socket clicked (hint "The kitchen copier is switched off at the wall."); Tom's ninth work use (seeded rolls 0.552, 0.892, ... 0.371 at use 9) gave `npc_print_blocked:tom` producers both, no printing icon while using, "Is anything switched on today?" (`grumble_printer_off`, overheard at 24 px); task `see_printer_grumble` complete; `c-1-blocked-grumble-973.png`. Sanjay's string hook gave `npc_print_blocked:sanjay` too |
 | Regressions | PASS | `test_needs_leash` game 974 (leashed 0 samples on Maya's floor, unleashed 6); `lab_physical_pentest` game 975, `verify-run.rb`: score 100, 9/9 tasks, creds 64.6 s, USB 11.2 s |
 
+### Slice 23: the cake lands on a table (2026-11-07, keyless :3001, headless)
+
+How to see it: carry the cake into the kitchen, stand in front of either south table (the two nearest the coffee station) and
+drop it. It goes onto the table top above you, and the people who come for it stand along the table's front edge. Dropped in open
+floor it stays on the floor, as before. Evidence in the session scratchpad `s23/` (frames `*-<game>.png`, logs `sess<game>.jsonl`).
+
+| Check | Result | Evidence |
+|---|---|---|
+| Drop beside the kitchen table lands on it | PASS | games 979, 982, 985: feet (-145, 221), `item_dropped:cake` `onTable: kitchen_smalldesk1_171`, cake top-left (-153, 148), depth 200.725 over the table's 200.5, elevation 25.05 (`k0-kitchen-drop-on-table-979.png`, `r0-before-reload-on-table-982.png`) |
+| An eater at the edge, eating frame | PASS | game 979, unstaged: Sanjay walked from his desk to the front of the table and ate there, `serving_taken` 1 then `npc_used:cake` (`k1-kitchen-eating-at-table-979.png`) |
+| Capacity 3 around the table | PASS, staged | game 985 (servings set to 3, all three hungry at 60 and told): destinations (-172, 212), (-140, 212), (-108, 212) along the front edge; Amara and Tom ate in front of it, Sanjay from the waiting chair at its east end; nobody stacked or stood on the table (`e3-eaters-at-table-985.png`) |
+| Reload keeps it on the table | PASS after two fixes | game 982 (NPCs kept full for the beat): after `sync` and a page reload the cake is at the same top-left (-153, 148), depth 200.725, elevation 25.05, centre origin (`r1-after-reload-on-table-982.png`) |
+| Pickup from the table by a real pointer click | PASS after a fix | game 982: the player walked up to the table front (feet (-139, 215), facing up), `isObjectInInteractionRange` true, `clickAt` on the cake gave `item_picked_up:cake1` and log `magnet_gone` `left: 2`; the cake in the inventory (`p2-after-pickup-from-table-982.png`) |
+| Open-floor drop stays on the floor, no reload drift | PASS | game 982: feet (-123, 255), 55 px from the nearest table: `onTable: null`, top-left (-136, 239), depth 266.5; after a reload the same top-left and depth (`f1-open-floor-drop-982.png`, `f2-floor-after-reload-982.png`). Before slice 23 a reload moved a drop about 13 px south-east |
+| Regressions | leash PASS; lab see note | `test_needs_leash` game 987 (leashed 0 samples on Maya's floor in 29 s, unleashed 6 in 22 s); `lab_physical_pentest` game 989 score 100, 9/9 tasks, creds 65 s, USB 13 s; game 988 score 40 (tailgate step failed). Both after seat box slice 7 moved the accounts PCs |
+
+Notes:
+
+- **Fixed in this run.** Game 978: the cake snapped to the kitchen's north-east table, whose only free edge was behind it (the
+  strip by the sofas), and Sanjay's job "arrived" from his own desk; a table nobody can stand at is now skipped, and eaters never
+  stand behind a table (ff5fd7a41). Game 980: the server keeps only `position.x` and `.y` of a drop, so a reloaded cake drew
+  under the table; the needs system now re-raises a magnet on a table when it registers it (fdbc431a1). Game 981: after a reload
+  the cake (origin 0) was 38 px from the player in front of the table, out of reach; it takes the drop's centre origin again
+  (6cfc8e18e).
+- Each game takes one cake, and the headless clock runs fast, so hungry staff finished it within a minute in games 979 to 981
+  before the reload beat; game 982 kept Tom, Sanjay and Amara at hunger and social 100 during the reload and pickup beats.
+- The third eater's destination is not always where they stop: in games 984 (a floor drop) and 985 Tom stopped beside Amara, 50
+  px short of his cell, as in slice 18b-i. Movement, not the table.
+- Game 984 was a floor drop by mistake (the player moved 64 px from the table before dropping); its three eaters stood round the
+  cake on the floor.
+
 ## Engine findings
 
 1. **Fixed 2026-11-05.** The home is now provisional until the `needsHome` object exists and is re-resolved once a second; and an NPC standing on its own desk's approach cell now counts as able to reach it (EasyStar gave no path for start == end, which is why Sanjay chose `tom_pc` in game 501). Original finding: **Needs homes in the start room resolve to the spawn point and stay there.** `npc-needs.js:301` resolves `s.home` on the first tick that has a sprite position and caches it; `_resolveHome` (`npc-needs.js:628-640`) falls back to the spawn point with `objectId: null` when `getObject`/`approachCell` fail. For the start room the NPCs are registered (`core/game.js:2004-2006`) before the room's objects or pathfinding are ready, so every start-room needs NPC gets the fallback and the home-object preference in `_useCandidate` (`npc-needs.js:475`) never applies. NPCs in rooms loaded later (Rosa, lounge) resolve correctly. Repro: load this scenario, then `[...npcNeedsSystem.states].map(([k,s]) => [k, s.home.objectId])` gives null for amara, tom, grace and sanjay, `rosa_laptop` for rosa. Suggested fix: don't cache a fallback home while `needsHome` names an object that isn't found yet (retry each tick until the object exists, or for a few seconds). `test_npc_needs` and `lab_physical_pentest` start-room NPCs are likely affected too, but hidden because each spawns at its own desk. Workaround here: each NPC spawns beside its own desk, and the work task reads "Someone works at a desk". Even so, game 501 had Sanjay choose `tom_pc` over his own adjacent PC (nearest-reachable from his seated position), so the workaround isn't reliable.
