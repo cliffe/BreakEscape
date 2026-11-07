@@ -5057,6 +5057,21 @@
         },
         "requiresItemHint": { "type": "string", "description": "Message shown when requiresItem is set but the player is not carrying the item." },
         "consumesItem": { "type": "boolean", "description": "With requiresItem: remove the matched item from the inventory (and its server copy) after the triggerOnInteract actions fire, so the kit is 'left' on the target." },
+        "interactionWarning": {
+          "type": "object",
+          "description": "An author-defined 'are you sure?' shown BEFORE this object's normal interaction (systems/interactions.js). text and the button labels render as plain text, never HTML. Decline runs onDecline and stops; Proceed runs onProceed, then the object's normal interaction. Answered state persists across reload as a global iw_<id>_answered. Proceed is always permanent; a Decline is recorded (so the warning won't show again) only when once is truthy. With once:false a Decline re-shows the warning on the next interaction. Never opens over a chat or minigame (busy-guard).",
+          "required": ["text"],
+          "properties": {
+            "text": { "type": "string", "minLength": 1, "description": "The warning text, plain text (textContent), never HTML." },
+            "proceedLabel": { "type": "string", "description": "Confirm button caption (default 'Proceed')." },
+            "declineLabel": { "type": "string", "description": "Cancel button caption (default 'Cancel')." },
+            "onProceed": { "type": "array", "description": "Actions (the apply-actions.js vocabulary) run when the player proceeds, before the normal interaction.", "items": { "type": "object" } },
+            "onDecline": { "type": "array", "description": "Actions (the apply-actions.js vocabulary) run when the player declines; the normal interaction is blocked.", "items": { "type": "object" } },
+            "once": { "type": "boolean", "description": "Default true. true: the warning is answered-and-done after either choice. false: a Decline is not recorded, so the warning shows again next time the player interacts (Proceed is always permanent)." },
+            "_comment": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
         "officeType": { "type": "string", "enum": ["desk_pc", "coffee", "kettle", "cooler", "fridge", "microwave", "sofa", "copier", "shredder", "filing", "post_tray", "desk_phone"], "description": "With officePresets: the affordance preset this object takes, by role instead of by type (wins over type). filing, post_tray and desk_phone are reached only this way." },
         "affordance": {
           "type": ["object", "boolean"],

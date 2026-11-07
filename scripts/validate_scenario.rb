@@ -2238,6 +2238,72 @@ def check_give_item_collectible(json_data)
   issues
 end
 
+# interactionWarning (systems/interactions.js): an author-defined "are you sure?" any
+# object may carry, shown before the object's normal interaction. Validate its shape
+# wherever it appears (walk the whole document, so nested contents/itemsHeld are covered).
+def check_interaction_warnings(json_data)
+  issues = []
+  # The apply-actions.js action vocabulary (its case labels) plus the extra names the
+  # triggerOnInteract schema enum accepts. Unknown types are a soft warning, not an error.
+  known_actions = %w[
+    set_global grant_fact emit_event complete_task unlock_task unlock_aim
+    unlock_object unlock_door give_item remove_item add_capture set_costume
+    clear_costume tint_objects lighting_dip confirm_action show_end_screen hint
+  ]
+  check_actions = lambda do |acts, p|
+    unless acts.is_a?(Array)
+      issues << "❌ INVALID: '#{p}' must be an array of actions."
+      return
+    end
+    acts.each_with_index do |a, i|
+      if !a.is_a?(Hash)
+        issues << "❌ INVALID: '#{p}[#{i}]' must be an action object."
+      elsif !a['type'].is_a?(String) || a['type'].empty?
+        issues << "❌ INVALID: '#{p}[#{i}]' needs a string 'type'."
+      elsif !known_actions.include?(a['type'])
+        issues << "⚠️ WARNING: '#{p}[#{i}]' has unknown action type '#{a['type']}'. " \
+                  "Known types: #{known_actions.join(', ')}."
+      end
+    end
+  end
+  walk = nil
+  walk = lambda do |node, path|
+    case node
+    when Hash
+      if node.key?('interactionWarning')
+        w = node['interactionWarning']
+        wp = "#{path}/interactionWarning"
+        if !w.is_a?(Hash)
+          issues << "❌ INVALID: '#{wp}' must be an object { text, proceedLabel, declineLabel, onProceed, onDecline, once }."
+        else
+          if !w['text'].is_a?(String) || w['text'].strip.empty?
+            issues << "❌ INVALID: '#{wp}/text' is required and must be a non-empty string."
+          end
+          ['proceedLabel', 'declineLabel'].each do |lk|
+            if w.key?(lk) && !w[lk].is_a?(String)
+              issues << "❌ INVALID: '#{wp}/#{lk}' must be a string."
+            end
+          end
+          if w.key?('once') && ![true, false].include?(w['once'])
+            issues << "❌ INVALID: '#{wp}/once' must be a boolean."
+          end
+          check_actions.call(w['onProceed'], "#{wp}/onProceed") if w.key?('onProceed')
+          check_actions.call(w['onDecline'], "#{wp}/onDecline") if w.key?('onDecline')
+          extra = w.keys - %w[text proceedLabel declineLabel onProceed onDecline once _comment]
+          unless extra.empty?
+            issues << "⚠️ WARNING: '#{wp}' has unrecognised key(s): #{extra.join(', ')}."
+          end
+        end
+      end
+      node.each { |k, v| walk.call(v, path.empty? ? k.to_s : "#{path}/#{k}") }
+    when Array
+      node.each_with_index { |v, i| walk.call(v, "#{path}[#{i}]") }
+    end
+  end
+  walk.call(json_data, '')
+  issues
+end
+
 def check_common_issues(json_data, valid_item_types = nil)
   issues = []
 
@@ -5989,6 +6055,7 @@ def main
     common_issues += check_pin_locks(json_data)
     common_issues += check_npc_patrol_and_catch_locks(json_data, repo_root)
     common_issues += check_give_item_collectible(json_data)
+    common_issues += check_interaction_warnings(json_data)
     common_issues += check_engine_limits(json_data)
     common_issues += check_vm_flags_load_bearing(json_data)
     common_issues += check_recurring_bugs(json_data, repo_root)
