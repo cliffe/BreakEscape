@@ -1,7 +1,7 @@
 # Handover: office-life engine fixes (slice 20 + slice 22 follow-ups), 2026-11-07
 
-**Status: IN PROGRESS** — both fixes implemented, unit-tested and live-proven; the lab-score and
-browser `test_needs_leash` regressions are the one outstanding step (see "Regressions — outstanding").
+**Status: DONE (2026-11-07)** — both fixes implemented, unit-tested, live-proven, and the lab and leash
+regressions pass (see "Regressions — DONE").
 
 Two small engine fixes the user approved on 2026-11-07, both follow-ups to the office-life section 12 slices.
 They are independent of each other and touch only the engine (no scenario/VM/SecGen content).
@@ -77,24 +77,22 @@ the clean isolated figure. Tom's own lock is a per-leave coin flip (no `screenHa
 per S22 handover), so his lock decision does not flip on the larger estimate; the slice-16 Amara showcase
 (`lockIfAwayOverSeconds` 20) is where a longer kitchen-run estimate reinforces the lock.
 
-## Regressions — outstanding
+## Regressions — DONE
 
-- Node leash tests (`npc-room-leash`, `npc-chase-leash`, `validator-npc-leash`) pass as part of
-  `bin/test-js`. The browser `test_needs_leash` run and the `lab_physical_pentest` score-100 replay were
-  **not run**: the slice-20/22 helper scripts (`scratchpad/leash.py`, `s18a/lab_args920.json`,
-  `scratchpad/lab.py`) lived in a previous session's scratchpad and are gone, and a from-scratch lab solve
-  was beyond this run's budget.
-- Risk read: Fix 1 is audio fade-in only and cannot affect movement, leashing or task completion. Fix 2
-  only changes the magnitude of `expectedAwayMs`, consumed by `workstation-state` screen-lock decisions;
-  it does not touch movement or the leash. The one place it could bite the lab is if a lab NPC has a
-  screen-lock habit whose flip, under a larger cross-room estimate, changes a task outcome. S22 ran the
-  lab clean (game 975) but on the old straight-line estimate, so this needs a fresh lab replay to confirm
-  score 100.
-- `scenarios/lab_physical_pentest/IMPROVEMENT_LOOP_LOG.md`: the one permitted lab-file line (under
-  "Office-life slices") is **not yet written** — add it only after a real lab replay scores 100, so it
-  records a true result.
+Run on :3001, headless, two sessions at once, using the rebuilt helpers in the session scratchpad
+(`leash.py`, `lab.py`, the game 920 command replay `s18a/lab_args920.json`). Logs: `scratchpad/fixes/`.
+
+- **Leash, game 1032: pass.** Leashed Ravi: 0 samples in Maya's office, route ravi_office, west_corridor, store,
+  west_corridor, ravi_office. Unleashed: 6 samples in Maya's office. Identical verdict to games 987 and 1000.
+- **Lab, game 1033: score 100**, 9/9 tasks (`verify-run.rb --tasks 1033`). Keylogger creds 63 s, USB foothold
+  12.5 s, tailgate passed first time (no retry needed). Inside the expected range (USB 12-13 s, creds 57-65 s).
+- The lab has no `lockIfAwayOverSeconds` and no `roomTone`, so neither fix could change it; the replay confirms it.
+- `scenarios/lab_physical_pentest/IMPROVEMENT_LOOP_LOG.md` now carries the one permitted line under "Office-life slices".
+- Node leash tests (`npc-room-leash`, `npc-chase-leash`, `validator-npc-leash`) also pass inside `bin/test-js`.
+- Not covered: a listen with real audio for the fade-in (headless audio is inaudible; the spy evidence stands).
 
 ## Commits
 
 - `977099989` engine + test: sound-manager, npc-needs, npc-expected-away-route.test.mjs, + first handover draft.
-- (pending) this handover update with the live-proof numbers.
+- ff7ab104e handover update with the live-proof numbers.
+- Regression results, plan notes and lab log line: the docs commit that marks this file DONE.

@@ -3768,6 +3768,8 @@ ambient loop can start near full and fade down; it was left alone on purpose. (b
 step at the very top of their own sample-step range (kitchen 0.078 against an in-file maximum of 0.051), so each wrap may carry a
 faint tick; it needs a listen, and if audible a short wrap crossfade baked into the two files fixes it.
 
+**Fix after the build (2026-11-07, commit 977099989):** the shipped `fadeAmbientTo` start spike is fixed. A new ambient is now zeroed straight after `play`, so it fades in from silence instead of starting at its base volume for a frame (live proof sis01 game 1030). See `HANDOVER_OFFICE_FIXES_S20S22.md`.
+
 **Design.** Two layers, both heard only from the player's room.
 
 **Opt-in, and what shipped missions keep.** Everything in this slice that changes which loop plays, or
@@ -4442,6 +4444,8 @@ The user, 2026-11-07: "Having a way to disrupt printers (like the power off the 
 allow the player to interact with the game systems, and force npcs to re-route their needs. Maybe the npc would seek out a
 printer in a nearby room, which would give the player more time with the npc out of the room." Numbered 12.12 because 12.10
 and 12.11 were taken. Built on 17 (print and forget) and 18a (`offWhen`).
+
+**Fix after the build (2026-11-07, commit 977099989):** `_expectedAwayMs` now follows the walking route through doors (`routeLength` on the engine world, straight-line fallback per leg) instead of a straight line. Live `npc_left_post:tom.expectedAwayMs` was 10935 ms against 4482 ms before (game 1028); `GOLDEN_SIMS_DAY` unchanged. See `HANDOVER_OFFICE_FIXES_S20S22.md`.
 
 **Built: 2026-11-07 (slice 22: plan f650c1a5f; engine, validator, schema and tests 9da18dfc9; showcase e787ce25b, 9053df59e,
 9600031e4). Live proof game 973; leash game 974 (pass); lab game 975 (score 100, 9/9 tasks; creds 64.6 s, USB foothold 11.2 s);
