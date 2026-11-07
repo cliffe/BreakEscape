@@ -180,8 +180,8 @@
           "officeType": "desk_phone",
           "phoneOwner": "tom",
           "takeable": false,
-          "position": { "x": 2.4, "y": 5.3 },
-          "affordance": { "useFrom": { "dx": 1, "dy": 0 } },
+          "position": { "x": 2.8, "y": 5.3, "elevation": 24 },
+          "affordance": { "useFrom": { "dx": 1, "dy": 0.5 } },
           "observations": "Tom's desk phone. His extension is on a sticker on the handset.",
           "_comment": "Slice 19 (OFFICE_LIFE_PLAN 12.5): rings on desk_phone_ring:tom_phone (the spare phone). Tom at his desk answers without getting up; away, it rings four times and stops unless Amara is on her way. The desk_phone preset makes whoever answers it stand; useFrom puts a colleague beside the desk, not on Tom's chair spot."
         },
@@ -190,7 +190,7 @@
           "id": "spare_phone",
           "name": "Spare desk phone",
           "takeable": false,
-          "position": { "x": 5.5, "y": 5.3 },
+          "position": { "x": 6.9, "y": 5.2, "elevation": 24 },
           "observations": "A spare desk phone on an empty desk. The internal extensions are on a card beside it.",
           "triggerOnInteract": [
             { "type": "emit_event", "event_name": "desk_phone_ring:tom_phone" },

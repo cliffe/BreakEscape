@@ -150,6 +150,12 @@ export class NpcChatterVoice {
         }
     }
 
+    /** Slice 19: start loading one NPC's story if it has phoneCalls (a phone just started ringing). */
+    warm(npcId) {
+        const npc = this._npc(npcId);
+        if (npc && Array.isArray(npc.phoneCalls) && npc.phoneCalls.length && !this._storyJson(npc)) this._load(npc);
+    }
+
     /**
      * Slice 19: a call hung up. Stops this NPC's clip in flight (and ends its wait, so later lines
      * from anyone do not wait out the cancelled clip) and skips its queued lines.

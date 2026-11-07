@@ -2598,6 +2598,15 @@ export class NPCNeedsSystem {
         const total = Number.isFinite(n) && n >= 1 ? Math.min(20, Math.floor(n)) : RINGS;
         this._rings.set(o.id, { phoneId: o.id, ownerId, roomId: o.roomId ?? null, n: 0, total, nextAt: this.clockMs, answerAt: Infinity });
         this._log(ownerId, 'phone_ring', { target: o.id, rings: total });
+        // Start loading the stories of whoever may answer (preload at install can run before the NPCs
+        // exist); the first ring's 2.25 s is time enough, and a story still loading falls to the pool
+        if (typeof this.world.warmStory === 'function') {
+            for (const id of [...this.states.keys()].sort()) {
+                if (id === ownerId || this._rec(this.states.get(id)).answersPhones === true) {
+                    try { this.world.warmStory(id); } catch (e) { /* lines come from the pool */ }
+                }
+            }
+        }
         return true;
     }
 
@@ -3415,6 +3424,7 @@ export function createEngineWorld() {
         speak: (id, line, info) => W().npcChatterVoice?.say(id, line, info),
         // Slice 19: a call hung up stops its speaker's line in flight and drops its queued lines
         cancelSpeech: id => W().npcChatterVoice?.cancel?.(id),
+        warmStory: id => W().npcChatterVoice?.warm?.(id),
         exchangeLines: (id, knot) => W().npcChatterVoice?.exchangeLines(id, knot) ?? null,
         setGlobal(name, value) {
             const v = W().npcChatterVoice;
