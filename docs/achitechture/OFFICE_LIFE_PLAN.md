@@ -4424,6 +4424,25 @@ allow the player to interact with the game systems, and force npcs to re-route t
 printer in a nearby room, which would give the player more time with the npc out of the room." Numbered 12.12 because 12.10
 and 12.11 were taken. Built on 17 (print and forget) and 18a (`offWhen`).
 
+**Built: 2026-11-07 (slice 22: plan f650c1a5f; engine, validator, schema and tests 9da18dfc9; showcase e787ce25b, 9053df59e,
+9600031e4). Live proof game 973; leash game 974 (pass); lab game 975 (score 100, 9/9 tasks; creds 64.6 s, USB foothold 11.2 s);
+`bin/test-js` 409 files pass, `npc-printer-power` 14 tests, `GOLDEN_SIMS_DAY` unchanged; see `HANDOVER_OFFICE_S22.md`.** As
+written, with these choices made without asking: (1) numbered 12.12, not 12.10, which was taken; (2) a producer the world does not
+know (its room not loaded) counts as off in a list of two or more, so with the office copier off and the kitchen never opened Tom's
+print is blocked rather than lost; a list of one keeps the old path; (3) the `needs.print` command takes the same list (string, list,
+or `{ producer: list }`), so both of Tom's levers still work with the copier off; a blocked command emits `viaCommand: true` and
+does not grumble; (4) `npc_print_fetched` gains `producerId`, which the showcase task reads, and slice 17's exact-payload test
+gained that field; (5) the `revealed` log line carries `skipped` only when a producer was passed over, so existing logs are
+byte-identical; (6) the kitchen copier has its own socket (the brief asked for one on the office copier), so the none-on beat can
+be played and the validator's "nothing sets it" warning does not fire; both sockets are one-way, like 18a's; (7) the kitchen slots
+read in place (they cycle); (8) the showcase's `npc_print_fetched:tom` now has two `onceOnly` mappings (`send_print_job`,
+`keep_tom_away`) that can fire together, which the validator warns about; a lever print fetched from the kitchen completes both,
+as intended; (9) Tom's lock is a 0.5 roll per leave (`lockChance` on `tom_pc`), not an away-time habit, so the longer absence
+does not change his lock; his screen stayed open on both live errands. Live: copier on, expectedAwayMs 2307, away 3.25 s of needs
+clock; copier off, the print at `kitchen_out_a`, expectedAwayMs 4482, away 10.25 s (the estimate is straight-line, a lower bound
+through the door); both off, Tom's ninth work use (his first print roll under 0.4 for this seed) gave `npc_print_blocked:tom` and
+"Is anything switched on today?"; Sanjay's string hook was blocked too.
+
 **Design (agreed with the user).**
 
 1. **A list of printers.** `revealOutput` on a use hook may be a list of producer ids in preference order; a string stays

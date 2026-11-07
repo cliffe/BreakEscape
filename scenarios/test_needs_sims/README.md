@@ -675,6 +675,22 @@ Open observation: in the slowed owner-first run Tom's sprite moved east and back
 still). It came with the speed override and a `returned_post` before the chair, so it may be the seating approach (the desk-seating work
 in the tree is another agent's); it was not seen in games 963 or 966.
 
+### Slice 22: printer power (2026-11-07, keyless :3001, headless)
+
+Game 973. Tom's hook and both levers list `["office_copier", "kitchen_copier"]`; each copier has a one-way wall socket. The errand
+runs were started with the lever's own command (`control('tom', { print: { producer: [both], fetchAfterSeconds: [3, 3] } })`) with
+Tom idle at his desk; the socket clicks were real pointer clicks (the office one through the pick-one menu, as Amara stood beside
+it). Evidence in the session scratchpad `s22/`.
+
+| Beat | Result | Evidence |
+|---|---|---|
+| Copier on: print and errand to the office copier | PASS | `copier_out_a` revealed, `npc_left_post:tom` expectedAwayMs 2307, `npc_print_fetched` producerId `office_copier`, away 3.25 s of needs clock; frames `a-copier-on-1-tray` to `4-back-973.png` |
+| Office copier switched off at the wall | PASS | `global_variable_changed:office_copier_off`, hint "The photocopier is switched off at the wall." titled "Wall socket"; `off-1-socket-hint-973.png` |
+| Print goes to the kitchen copier; Tom walks there and back | PASS | `object_revealed:kitchen_out_a` (log `skipped: ["office_copier"]`), expectedAwayMs 4482, picked up and placed on his desk, `npc_print_fetched` producerId `kitchen_copier`, away 10.25 s; task `keep_tom_away` complete; frames `b-copier-off-1-tray`, `2-walking`, `3-in-hand`, `4-back-973.png` |
+| His screen | as his habit says | `workstation_owner_left:tom_pc` screenLocked false on both errands (`tom_pc` lockChance 0.5, a roll per leave, not by away time) |
+| Both off: nothing prints, Tom grumbles | PASS | Kitchen socket clicked (hint "The kitchen copier is switched off at the wall."); Tom's ninth work use (seeded rolls 0.552, 0.892, ... 0.371 at use 9) gave `npc_print_blocked:tom` producers both, no printing icon while using, "Is anything switched on today?" (`grumble_printer_off`, overheard at 24 px); task `see_printer_grumble` complete; `c-1-blocked-grumble-973.png`. Sanjay's string hook gave `npc_print_blocked:sanjay` too |
+| Regressions | PASS | `test_needs_leash` game 974 (leashed 0 samples on Maya's floor, unleashed 6); `lab_physical_pentest` game 975, `verify-run.rb`: score 100, 9/9 tasks, creds 64.6 s, USB 11.2 s |
+
 ## Engine findings
 
 1. **Fixed 2026-11-05.** The home is now provisional until the `needsHome` object exists and is re-resolved once a second; and an NPC standing on its own desk's approach cell now counts as able to reach it (EasyStar gave no path for start == end, which is why Sanjay chose `tom_pc` in game 501). Original finding: **Needs homes in the start room resolve to the spawn point and stay there.** `npc-needs.js:301` resolves `s.home` on the first tick that has a sprite position and caches it; `_resolveHome` (`npc-needs.js:628-640`) falls back to the spawn point with `objectId: null` when `getObject`/`approachCell` fail. For the start room the NPCs are registered (`core/game.js:2004-2006`) before the room's objects or pathfinding are ready, so every start-room needs NPC gets the fallback and the home-object preference in `_useCandidate` (`npc-needs.js:475`) never applies. NPCs in rooms loaded later (Rosa, lounge) resolve correctly. Repro: load this scenario, then `[...npcNeedsSystem.states].map(([k,s]) => [k, s.home.objectId])` gives null for amara, tom, grace and sanjay, `rosa_laptop` for rosa. Suggested fix: don't cache a fallback home while `needsHome` names an object that isn't found yet (retry each tick until the object exists, or for a few seconds). `test_npc_needs` and `lab_physical_pentest` start-room NPCs are likely affected too, but hidden because each spawns at its own desk. Workaround here: each NPC spawns beside its own desk, and the work task reads "Someone works at a desk". Even so, game 501 had Sanjay choose `tom_pc` over his own adjacent PC (nearest-reachable from his seated position), so the workaround isn't reliable.
