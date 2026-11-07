@@ -1,6 +1,10 @@
 # Handover: office life slice 20, room tone (2026-11-07)
 
-**Status: IN PROGRESS (handed over at the ~80-call budget).** Plan: `OFFICE_LIFE_PLAN.md` 12.6 (spec), 12.8 row 8, 12.9 Q40/Q57.
+**Status: DONE (2026-11-07, second agent). A listen on a machine with audio is still needed: headless audio is inaudible, so every
+beat was proved from the sound manager's volumes and logs.** Live proof games 996 (room tone), 999 (sis01 without roomTone), 1000
+(leash, pass), 1001 (lab, score 100, USB 12 s, creds 63 s). `bin/test-js` 410/411 (desk-footprints, seat box commit 594226d2c). Results:
+sims README "Slice 20"; plan 12.6 "Built". Open for the user: the shipped `fadeAmbientTo` start-volume spike; a possible faint tick at
+the office and kitchen OGG loop seams. The "Left" list below is kept as written for the record. Earlier status: IN PROGRESS (handed over at the ~80-call budget). Plan: `OFFICE_LIFE_PLAN.md` 12.6 (spec), 12.8 row 8, 12.9 Q40/Q57.
 Evidence: session scratchpad `s20/` (`lib.py`, `proof.py <game> walk|turnback|state`, `static_check.rb`, `testjs1.txt`,
 `walk-995.json`, `turnback-995.json`).
 

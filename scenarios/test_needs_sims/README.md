@@ -722,6 +722,39 @@ Notes:
 - Game 984 was a floor drop by mistake (the player moved 64 px from the table before dropping); its three eaters stood round the
   cake on the floor.
 
+### Slice 20: room tone (2026-11-07, keyless :3001, headless)
+
+How to see it: `test_needs_sims` sets `"roomTone": true`. Walk between the office and the kitchen and the bed changes (air handling,
+fridge hum); desk workers type; a copier or a kettle starts up when you are in the room. Headless audio is inaudible, so every row is
+read from the sound manager's volumes (sampled every 50 to 100 ms) and the `officeRoomTone.log` / `npcOfficeVisuals.playLog`
+entries. A listen on a machine with audio is still needed. Evidence in the session scratchpad `s20/`.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Bed at spawn | PASS | games 995, 996: `table` then `started` (office, `office_ambient`, step 2) 0.4 s later; bed playing at 0.5 (`state-996.json`) |
+| Crossfade by walking, no gap | PASS | game 996, `enter` office to kitchen to office: two `fadeAmbientTo(..., 400, { crossfade: true })`, 113 samples, none with both beds at 0 (`walk-996.json`) |
+| Turn-back inside 400 ms | PASS | game 996, real arrow keys: left across the door, back after 100 ms; crossings 326 ms apart; at the turn the office bed was 0.146 and the kitchen bed 0.354 (sum 0.5), then the office bed settled at 0.5 and the kitchen bed stopped; no gap (`turnback2-996-60.json`) |
+| Typing with 1, 2 and 3 workers | PASS | game 996, work set to 0 for Tom, Amara, Sanjay: settled `typing_loop` volumes 0.2, 0.3 and 0.375 (levels 0.4, 0.6, 0.75 times the music setting 0.5); back down to 0.3, 0.2 and 0 as they finish (`typing-996.json`) |
+| Duck under a heard line | PASS | game 996: a heard bark ducked the bed 0.5 to 0.25 for the line's 3 s and restored it (`duck-bark-996.json`; the bark was injected through `_speak` with `overheard`, not a chatter pool line); a real ringing desk phone ducked for each of its two lines, typing ducked with it (0.2 to 0.1) (`duck-call-996.json`) |
+| Duck under person-chat | PASS | game 996: opening Tom's conversation ducked the bed to 0.25 for as long as the minigame was open, and it returned to 0.5 once it closed (`duck-chat-996.json`) |
+| `outputSound` | PASS | game 996: Tom's print command with nobody at the copier played `copier_run` at volume 0.21 (channel `tone`, `output: true`, `producerId` set) (`sfx-996.json`) |
+| `startSound` | PASS | game 996: Amara's coffee started `coffee_machine` at 0.114; a lounge kettle use (Grace and Rosa set thirsty) played `kettle_boil` at 0.297 with the player in the lounge (`sfx-all-996.json`, `kettle-996.json`) |
+| Own room only | PASS | game 996, player in the lounge: Tom's `coffee_machine` start in the office logged hearing 0, volume 0, not played |
+| Spot | PASS | game 996: a background `copier_run` (spot, slot 32) in the office at volume 0.12 |
+| Reload | PASS | game 996 after `location.reload()` and bootstrap: `table` then `started`, office bed playing at 0.5 at spawn (`state-996.json`) |
+| Loop seams | SEE NOTE | decoded with ffmpeg (`seams.txt`): `office_ambient` 24.0 s, seam step 0.029 against an in-file maximum 0.031; `kitchen_tone` 10.4 s, 0.078 against 0.051; `typing_loop` 5.0 s, quiet at both ends (RMS 0.0002 and 0.0005); `server_room_ventilation.mp3` 9.9 s, 0.003 (inside the file's range). The two beds sit at the top of their own step range, so each wrap may tick faintly |
+| sis01 without `roomTone` | PASS | game 999 (start in `major_incident_room`, rooms unlocked): the ventilation bleed fades in as before; entering `it_security_office` (its loop key `hospital_ambient` is not loaded) fades the current loop 0.063 to 0 over about 400 ms where it used to cut; `ward_7` stays silent; going back up fades the bleed in as before (`sis-999-it_security_office.json`, `sis-999-major_incident_room_it_security_office_ward_7_it_security_office.json`) |
+| Regressions | leash PASS; lab PASS | `test_needs_leash` game 1000 (leashed 0 samples on Maya's floor in 28 s, unleashed 6 in 22 s); `lab_physical_pentest` game 1001 score 100, 9/9 tasks, creds 63 s, USB foothold 12 s, tailgate passed first time (`lab1001.out`, `verify1001.txt`) |
+
+Notes:
+
+- **Open, for the user.** The shipped `fadeAmbientTo` path starts a new ambient loop near full volume and fades it down (Phaser's
+  `play({ loop: true })` puts back the configured volume after the `setVolume(0)`). Slice 20 fixed this on its own paths only
+  (83f3b58e9) and left the shipped path as it is.
+- Turning back needed real input: moving the body with `body.reset` does not change the player's room, so the proof holds the arrow
+  keys and reverses them when `currentPlayerRoom` changes.
+- The first run of the typing check missed the effect because a worker types for under ten seconds; sampling every 100 ms found it.
+
 ## Engine findings
 
 1. **Fixed 2026-11-05.** The home is now provisional until the `needsHome` object exists and is re-resolved once a second; and an NPC standing on its own desk's approach cell now counts as able to reach it (EasyStar gave no path for start == end, which is why Sanjay chose `tom_pc` in game 501). Original finding: **Needs homes in the start room resolve to the spawn point and stay there.** `npc-needs.js:301` resolves `s.home` on the first tick that has a sprite position and caches it; `_resolveHome` (`npc-needs.js:628-640`) falls back to the spawn point with `objectId: null` when `getObject`/`approachCell` fail. For the start room the NPCs are registered (`core/game.js:2004-2006`) before the room's objects or pathfinding are ready, so every start-room needs NPC gets the fallback and the home-object preference in `_useCandidate` (`npc-needs.js:475`) never applies. NPCs in rooms loaded later (Rosa, lounge) resolve correctly. Repro: load this scenario, then `[...npcNeedsSystem.states].map(([k,s]) => [k, s.home.objectId])` gives null for amara, tom, grace and sanjay, `rosa_laptop` for rosa. Suggested fix: don't cache a fallback home while `needsHome` names an object that isn't found yet (retry each tick until the object exists, or for a few seconds). `test_npc_needs` and `lab_physical_pentest` start-room NPCs are likely affected too, but hidden because each spawns at its own desk. Workaround here: each NPC spawns beside its own desk, and the work task reads "Someone works at a desk". Even so, game 501 had Sanjay choose `tom_pc` over his own adjacent PC (nearest-reachable from his seated position), so the workaround isn't reliable.

@@ -3749,6 +3749,25 @@ player chat ending Tom's call, `desk_phone_hung_up` reason `player` (966). Not s
 
 ### 12.6 Room tone (slice 20)
 
+**Built: 2026-11-07 (slice 20: engine and tests 881c13d1a; validator and schema 8ad1c6e4e; showcase 8006044a0; fix from the
+live proof 83f3b58e9). Live proof games 995 and 996 (sims README "Slice 20"); sis01 without `roomTone` game 999; leash game 1000
+(pass); lab game 1001 (score 100, 9/9 tasks; creds 63 s, USB foothold 12 s, tailgate passed first time); `bin/test-js` 410 of 411
+files pass, the one failure `desk-footprints.test.mjs` from the seat box commit 594226d2c; `room-tone.test.mjs` 17 tests,
+`GOLDEN_SIMS_DAY` unchanged; see `HANDOVER_OFFICE_S20.md`. A listen on a machine with audio is still needed: headless audio is
+inaudible, so every beat was checked through the sound manager's volumes and logs.** Built as the design below reads; the choices
+made without asking: (1) spots, `startSound` and `outputSound` are heard in the player's room only (`ownRoomOnly`), not through an
+open door, so `openDoorHearing` is not used; (2) the new loops ship as OGG only, because no MP3 fallback files exist, so Safari would
+not play them; (3) a spot rolls at chance 0.5 per 20 s slot, typing levels are 0.4 / 0.6 / 0.75 for one, two and three typists, and
+spot scales are copier 0.6 and distant phone 0.5 of a use sound; (4) a profile with no bed (meeting) falls through to step 3, an
+authored neighbour loop, as the four-step order reads; (5) room tone installs inside the needs install chain in `game.js`, so a
+`roomTone` scenario with no needs NPCs gets no room tone; (6) the validator warns in every scenario about an authored
+`ambientSound` that is not loaded (today only sis01 `ward_7`, `hospital_ambient`). Typing volumes read half the table (0.2, 0.3,
+0.375) because they multiply the music setting (0.5). **Open for the user:** (a) the shipped `fadeAmbientTo` path has the same
+start spike that 83f3b58e9 fixed on the room-tone paths (Phaser's `play({ loop: true })` undoes its `setVolume(0)`), so a shipped
+ambient loop can start near full and fade down; it was left alone on purpose. (b) The office and kitchen OGG loops have a seam
+step at the very top of their own sample-step range (kitchen 0.078 against an in-file maximum of 0.051), so each wrap may carry a
+faint tick; it needs a listen, and if audible a short wrap crossfade baked into the two files fixes it.
+
 **Design.** Two layers, both heard only from the player's room.
 
 **Opt-in, and what shipped missions keep.** Everything in this slice that changes which loop plays, or
