@@ -40,6 +40,64 @@ const NPC_STUCK_GAP_MS = 500;
 const NPC_STUCK_NUDGE_MAX_PX = TILE_SIZE;   // never nudge further than one tile
 const NPC_STUCK_PLAYER_PX = TILE_SIZE * 1.5; // the player this close: not wedged, held up
 
+// Local avoidance (_handleBlockerAhead): a walking NPC that meets the player or
+// another NPC AHEAD on its path waits, then detours, then (if there is no way
+// round) backs off or gently squeezes past — instead of shoving into the body.
+// A body behind or beside the NPC is ignored, so the tailgate/body-block lever is
+// untouched. Times on clockNow(). Tie-breaks are deterministic (no Math.random).
+export const AVOID_LOOKAHEAD_PX = TILE_SIZE + 10;   // a body within this far ahead blocks
+const AVOID_LANE_HALF_PX   = 13;    // lateral half-width of the "ahead" lane (~body half + a hair)
+const AVOID_WAIT_MS        = 600;   // stop and wait this long before acting
+const AVOID_PRIORITY_WAIT_MS = 1800; // a higher-priority NPC waits this long for the yielder first
+const AVOID_REPATH_MS      = 400;   // at most one detour re-path this often
+const AVOID_GIVEUP_MS      = 2500;  // no detour found by now: back off or squeeze
+const AVOID_SQUEEZE_MS     = 450;   // a gentle nudge lasts this long, then a cooldown wait
+const AVOID_SQUEEZE_FACTOR = 0.45;  // squeeze/back-off speed as a fraction of patrol speed
+
+/**
+ * The nearest blocker that lies AHEAD of a walker on its heading, or null.
+ * `pos` {x,y} the walker's feet; `heading` a unit vector toward the next
+ * waypoint; `blockers` [{x,y,...}] candidate feet centres. A blocker counts
+ * only when its forward offset is in (0, lookAhead] and its lateral offset is
+ * within laneHalf — so a body behind or beside the walker never blocks it.
+ * Returns the forward-closest blocker (with `.fwd` set), ties broken by id so
+ * the pick is deterministic.
+ * @private exported for unit tests
+ */
+export function nearestBlockerAhead(pos, heading, blockers, lookAhead = AVOID_LOOKAHEAD_PX, laneHalf = AVOID_LANE_HALF_PX) {
+    if (!blockers || !blockers.length) return null;
+    const hx = heading.x, hy = heading.y;
+    const hlen = Math.hypot(hx, hy);
+    if (hlen < 1e-6) return null;
+    const ux = hx / hlen, uy = hy / hlen;   // forward unit
+    const px = -uy, py = ux;                 // left/right unit
+    let best = null;
+    for (const b of blockers) {
+        const dx = b.x - pos.x, dy = b.y - pos.y;
+        const fwd = dx * ux + dy * uy;
+        if (fwd <= 0 || fwd > lookAhead) continue;
+        const lat = dx * px + dy * py;
+        if (Math.abs(lat) > laneHalf) continue;
+        if (!best || fwd < best.fwd ||
+            (fwd === best.fwd && String(b.id) < String(best.id))) {
+            best = { ...b, fwd, lat };
+        }
+    }
+    return best;
+}
+
+/**
+ * Deterministic tie-break for a head-on NPC meeting: does `self` give way to
+ * `other`? A busy NPC (on a scripted/needs errand) keeps its priority over an
+ * idle wanderer; between two equally-busy (or equally-idle) NPCs the higher id
+ * yields. No randomness, so two NPCs in a corridor never both yield or both
+ * push. @private exported for unit tests
+ */
+export function avoidanceYieldsTo(selfId, selfBusy, otherId, otherBusy) {
+    if (selfBusy !== otherBusy) return !selfBusy;      // idle yields to busy
+    return String(selfId) > String(otherId);           // tie: higher id yields
+}
+
 /**
  * NPCBehaviorManager - Manages all NPC behaviors
  *
@@ -1190,6 +1248,10 @@ class NPCBehavior {
             // than push at it for ever.
             if (this._checkPathStuck(time)) return;
 
+            // The player or another NPC AHEAD on the path? Wait, then detour or
+            // give way — never shove into them.
+            if (this._handleBlockerAhead(time, nextWaypoint)) return;
+
             // Move toward current waypoint
             const velocityX = (dx / distance) * this.config.patrol.speed;
             const velocityY = (dy / distance) * this.config.patrol.speed;
@@ -1327,6 +1389,149 @@ class NPCBehavior {
      * room leash (OFFICE_LIFE_PLAN 7.2), so the walk takes the same permitted route the needs
      * system's reachability check approved. Any other move or patrol plans unconstrained.
      */
+    /** Is this NPC on a job (scripted/needs move), so it keeps priority over an idle wanderer? */
+    _avoidIsBusy() {
+        return !!this._stopOnArrival;
+    }
+
+    /** Feet centres of the player and every other active, non-seated NPC. */
+    _dynamicBlockers() {
+        const out = [];
+        const pb = window.player?.body;
+        if (pb && pb.enable !== false) {
+            out.push({ x: pb.center.x, y: pb.center.y, id: null, busy: false, isPlayer: true });
+        }
+        const rooms = window.rooms || {};
+        for (const roomId in rooms) {
+            const sprites = rooms[roomId]?.npcSprites;
+            if (!sprites) continue;
+            for (const sprite of sprites) {
+                if (sprite === this.sprite) continue;
+                const b = sprite.body;
+                if (!b || !b.enable || b.immovable) continue;  // skip disabled and seated/held NPCs
+                const beh = window.npcBehaviorManager?.getBehavior?.(sprite.npcId);
+                out.push({ x: b.center.x, y: b.center.y, id: sprite.npcId,
+                    busy: !!beh?._avoidIsBusy?.(), isPlayer: false, sprite });
+            }
+        }
+        return out;
+    }
+
+    /**
+     * Local avoidance for the path-follow branch of updatePatrol. Returns true
+     * when it has taken over this NPC's movement for the frame (the caller then
+     * stops). The sequence, per OFFICE_LIFE avoidance design:
+     *   1. a body ahead within AVOID_LOOKAHEAD_PX → stop and wait (AVOID_WAIT_MS);
+     *   2. still blocked → re-path round the blocker (throttled AVOID_REPATH_MS);
+     *   3. no way round after AVOID_GIVEUP_MS → the yielder backs off (NPC meeting)
+     *      or a gentle, bounded squeeze toward the waypoint (player/doorway), then
+     *      a cooldown wait. Never a sustained shove, never per-frame jitter.
+     * Only bodies AHEAD block, so a player behind or beside is ignored (the
+     * tailgate/body-block lever is untouched). Disabled with window.__npcAvoidOff.
+     */
+    _handleBlockerAhead(time, nextWaypoint) {
+        if (window.__npcAvoidOff) { this._avoid = null; return false; }
+        if (!(this.config.patrol.speed > 0)) return false;
+        const pos = this.npcBodyPos();
+        const heading = { x: nextWaypoint.x - pos.x, y: nextWaypoint.y - pos.y };
+        const hit = nearestBlockerAhead(pos, heading, this._dynamicBlockers());
+        if (!hit) { this._avoid = null; return false; }
+
+        const a = this._avoid || (this._avoid = { since: time, repathAfter: 0, pending: false, gaveUp: false, squeezeUntil: 0 });
+        // Phase: gentle squeeze in progress — let the bounded nudge run, then cool down.
+        if (a.squeezeUntil && time < a.squeezeUntil) {
+            this._moveToward(nextWaypoint, this.config.patrol.speed * AVOID_SQUEEZE_FACTOR);
+            return true;
+        }
+        if (a.squeezeUntil && time >= a.squeezeUntil) {   // squeeze done → cooldown wait, re-assess
+            a.squeezeUntil = 0; a.since = time; a.gaveUp = false; a.repathAfter = 0;
+        }
+
+        // Default action while deciding: hold still (no shove).
+        this._stopHere();
+        const waited = time - a.since;
+        if (waited < AVOID_WAIT_MS) return true;
+
+        const amYielder = hit.isPlayer || avoidanceYieldsTo(this.npcId, this._avoidIsBusy(), hit.id, hit.busy);
+        // A higher-priority NPC first gives the yielder time to move, then tries its own detour.
+        if (!amYielder && waited < AVOID_PRIORITY_WAIT_MS) return true;
+
+        // Try a detour round the blocker (throttled).
+        if (!a.gaveUp && !a.pending && time >= a.repathAfter) {
+            a.repathAfter = time + AVOID_REPATH_MS;
+            this._requestDetour(a);
+            return true;
+        }
+        if (a.pending) return true;
+
+        if (a.gaveUp && waited > AVOID_GIVEUP_MS) {
+            // No way round. A yielding NPC meeting another NPC backs off to clear the
+            // path; otherwise (player, doorway) a short, gentle squeeze forward.
+            if (!hit.isPlayer && amYielder) {
+                this._moveAwayFrom(hit, this.config.patrol.speed * AVOID_SQUEEZE_FACTOR);
+                a.since = time; a.gaveUp = false; a.repathAfter = 0;   // re-assess after the step
+                return true;
+            }
+            a.squeezeUntil = time + AVOID_SQUEEZE_MS;
+            this._moveToward(nextWaypoint, this.config.patrol.speed * AVOID_SQUEEZE_FACTOR);
+            return true;
+        }
+        return true;
+    }
+
+    /** Stop and idle in place (helper for _handleBlockerAhead). */
+    _stopHere() {
+        if (this.sprite?.body) this.sprite.body.setVelocity(0, 0);
+        if (this.isMoving) { this.isMoving = false; this.playAnimation('idle', this.direction); }
+    }
+
+    /** Drive the body toward a world point at `speed` (used for squeeze and back-off). */
+    _moveToward(pt, speed) {
+        const pos = this.npcBodyPos();
+        const dx = pt.x - pos.x, dy = pt.y - pos.y;
+        const d = Math.hypot(dx, dy) || 1;
+        this.sprite.body.setVelocity((dx / d) * speed, (dy / d) * speed);
+        this.direction = this.calculateDirection(dx, dy);
+        this.playAnimation('walk', this.direction);
+        this.isMoving = true;
+    }
+
+    /** Step directly away from a blocker (the yielder clearing a corridor). */
+    _moveAwayFrom(hit, speed) {
+        const pos = this.npcBodyPos();
+        this._moveToward({ x: pos.x - (hit.x - pos.x), y: pos.y - (hit.y - pos.y) }, speed);
+    }
+
+    /**
+     * Ask for a detour to the current target that routes round the player and
+     * every other NPC. On success adopt it and clear the avoidance state; on
+     * failure mark gaveUp so _handleBlockerAhead backs off or squeezes.
+     */
+    _requestDetour(a) {
+        const pfm = this.pathfindingManager || window.pathfindingManager;
+        const target = this.patrolTarget;
+        if (!target || typeof pfm?.findWorldPath !== 'function') { a.gaveUp = true; return; }
+        const pos = this.npcBodyPos();
+        const from = pfm.findNearestWalkableStartCell?.(pos.x, pos.y) || pos;
+        a.pending = true;
+        const rooms = this._moveOwner === 'needs' ? this._moveAvoidRooms : null;
+        const opts = { avoidDynamic: { exceptSprite: this.sprite } };
+        if (rooms?.length) opts.avoidRooms = rooms;
+        pfm.findWorldPath(from.x, from.y, target.x, target.y, (path) => {
+            a.pending = false;
+            if (this.patrolTarget !== target) { this._avoid = null; return; }  // re-targeted meanwhile
+            if (path && path.length > 0) {
+                this.currentPath = path;
+                this.pathIndex = 0;
+                this.pathFollowingActive = true;
+                this._avoid = null;        // detour adopted — resume normal following
+                console.log(`↪️ [${this.npcId}] Detoured round a blocker (${path.length} waypoints)`);
+            } else {
+                a.gaveUp = true;           // nothing routes round the blocker
+            }
+        }, false, opts);
+    }
+
     _planMovePath(pfm, sx, sy, ex, ey, callback) {
         const rooms = this._moveOwner === 'needs' ? this._moveAvoidRooms : null;
         if (rooms?.length) return pfm.findWorldPath(sx, sy, ex, ey, callback, false, { avoidRooms: rooms });

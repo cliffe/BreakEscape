@@ -433,12 +433,53 @@ export class NPCPathfindingManager {
     }
 
     /**
+     * Temporarily mark grid cells occupied by the player and every active NPC
+     * body EXCEPT `exceptSprite` as avoided, so a walking NPC can re-plan a
+     * detour round whoever is in its way (npc-behavior.js local avoidance).
+     * Unlike _avoidNPCPositions (player routing) this also avoids the player's
+     * body and skips the walker's own sprite. skipCX/skipCY: never avoid the
+     * walker's own start cell.
+     */
+    _avoidDynamicPositions(exceptSprite, skipCX, skipCY) {
+        if (!this.worldPathfinder || !this.worldGridBounds) return;
+        const { minX, minY, cols, rows, step } = this.worldGridBounds;
+        const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+        const avoidBody = (body) => {
+            if (!body || !body.enable || body.immovable) return;
+            // One cell of clearance either side, as _avoidNPCPositions uses.
+            const cx1 = clamp(Math.floor((body.left   - minX) / step) - 1, 0, cols - 1);
+            const cy1 = clamp(Math.floor((body.top    - minY) / step) - 1, 0, rows - 1);
+            const cx2 = clamp(Math.floor((body.right  - minX - 1) / step) + 1, 0, cols - 1);
+            const cy2 = clamp(Math.floor((body.bottom - minY - 1) / step) + 1, 0, rows - 1);
+            for (let cy = cy1; cy <= cy2; cy++) {
+                for (let cx = cx1; cx <= cx2; cx++) {
+                    if (cx === skipCX && cy === skipCY) continue;
+                    if (this.worldGrid[cy]?.[cx] === 0) this.worldPathfinder.avoidAdditionalPoint(cx, cy);
+                }
+            }
+        };
+        // The player is a blocker too (a needs NPC routes round them).
+        const pb = window.player?.body;
+        if (pb && exceptSprite !== window.player) avoidBody(pb);
+        for (const roomId in (window.rooms || {})) {
+            const sprites = window.rooms[roomId]?.npcSprites;
+            if (!sprites) continue;
+            for (const sprite of sprites) {
+                if (sprite === exceptSprite) continue;
+                avoidBody(sprite.body);
+            }
+        }
+    }
+
+    /**
      * Find a path via the unified world grid (works across any rooms).
      * Callback receives an array of world {x,y} waypoints, or null on failure.
      * Pass avoidNPCs=true (player only) to route around active NPC bodies.
      * opts.avoidRooms: room ids the path must not enter (the needs room leash, OFFICE_LIFE_PLAN
      * 7.2). Each loaded one except the room whose floor holds the start gets its floor's inner
      * ring avoided for this search only.
+     * opts.avoidDynamic = { exceptSprite }: route round the player and every other active NPC
+     * body (npc-behavior.js local detour); exceptSprite is the walking NPC's own sprite.
      */
     findWorldPath(startX, startY, endX, endY, callback, avoidNPCs = false, opts = null) {
         if (!this.worldPathfinder || !this.worldGridBounds) {
@@ -468,6 +509,8 @@ export class NPCPathfindingManager {
         }
 
         if (avoidNPCs) this._avoidNPCPositions(sx, sy);
+        const avoidDyn = opts?.avoidDynamic || null;
+        if (avoidDyn) this._avoidDynamicPositions(avoidDyn.exceptSprite, sx, sy);
         // Player paths also pay extra to cross "prefer to route around" objects
         // (path-avoid.js). calculate() runs every queued search to the end
         // before it returns, so the costs are cleared straight after it.
@@ -479,7 +522,7 @@ export class NPCPathfindingManager {
         const ringed = opts?.avoidRooms?.length ? this._avoidRoomRings(opts.avoidRooms, startX, startY) : null;
         try {
             this.worldPathfinder.findPath(sx, sy, toCX(endX), toCY(endY), (tilePath) => {
-                if (avoidNPCs) this.worldPathfinder.stopAvoidingAllAdditionalPoints();
+                if (avoidNPCs || avoidDyn) this.worldPathfinder.stopAvoidingAllAdditionalPoints();
                 callback(tilePath?.length > 0 ? tilePath.map(p => toWorld(p.x, p.y)) : null);
             });
             this.worldPathfinder.calculate();
