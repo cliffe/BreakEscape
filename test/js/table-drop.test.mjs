@@ -72,6 +72,21 @@ test('a spot taken by another object slides along the top; a full table is skipp
     assert.equal(snapToTable(feet, [t], CAKE, [cover]), null);
 });
 
+test('a table nobody can stand at is skipped for the next in range', () => {
+    const tables = kitchen();
+    const walk = (x, y) => ({ x: Math.floor(x / 8) * 8 + 4, y: Math.floor(y / 8) * 8 + 4 });
+    // The player in the passage east of the block, level with the north row's front:
+    // nearest is the north-east table, whose front and west end touch other tables
+    const t1 = tables.find(t => t.id === 'kitchen_table_1');
+    const feet = { x: t1.x + t1.w - 1, y: t1.y + t1.h + 2 };
+    assert.equal(snapToTable(feet, tables, CAKE).tableId, 'kitchen_table_1');
+    // Its east end is closed too (the chairs): no edge cell, so the south-east table takes it
+    const noEast = (x, y) => (x > t1.x + t1.w ? null : walk(x, y));
+    const usable = t => !!edgeCell({ x: feet.x, y: t.y }, t, tables, noEast);
+    assert.equal(usable(t1), false);
+    assert.equal(snapToTable(feet, tables, CAKE, [], usable).tableId, 'kitchen_table_3');
+});
+
 test('deterministic: the same drop gives the same placement', () => {
     const feet = { x: ROOM.x + 150, y: 215 };
     const a = snapToTable(feet, kitchen(), CAKE);

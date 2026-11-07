@@ -135,9 +135,15 @@ export function dropInventoryItem(sprite) {
     obj.setOrigin(0.5, 0.5);
     const size = { w: obj.displayWidth || TILE, h: obj.displayHeight || TILE };
     // Slice 23: a magnet beside a table goes on the table top
-    const snap = isMagnet(data)
-        ? snapToTable(feet, roomTables(room, scene.cache?.json?.get?.('tableSurfaces')), size, roomObstacles(room, obj))
-        : null;
+    let snap = null;
+    if (isMagnet(data)) {
+        const tables = roomTables(room, scene.cache?.json?.get?.('tableSurfaces'));
+        const pm = w.pathfindingManager;
+        const nw = pm?.findNearestWalkableWorldCell ? (x, y, r) => pm.findNearestWalkableWorldCell(x, y, r) : null;
+        // Only a table someone can stand at (eaters use it from its edge)
+        const usable = nw ? (t => !!edgeCell({ x: feet.x, y: t.y }, t, tables, nw)) : null;
+        snap = snapToTable(feet, tables, size, roomObstacles(room, obj), usable);
+    }
     // Whole-pixel top-left, so the saved position reloads to the same place
     const left = snap ? snap.left : Math.round(at.x - size.w / 2);
     const top = snap ? snap.top : Math.round(at.y - size.h / 2);

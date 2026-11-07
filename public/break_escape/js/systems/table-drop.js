@@ -53,11 +53,13 @@ export function topRect(t) {
  * (the player cannot stand nearer the top than its front face and legs) are tried
  * nearest first (ties by id); on each, the feet x clamped into the top, then the
  * nearest clear x in SLIDE_STEP steps (never overlapping a rectangle in `obstacles`).
+ * `usable(table)`, when given, skips a table nobody could stand at (no edgeCell): in a
+ * block of touching tables the inner ones have no free edge.
  * Returns { tableId, left, top, x, y, depth, elevation } with integer left/top, the
  * centre x/y and the depth (table depth + TABLE_DEPTH_STEP) as an elevation over the
  * item's own bottom + 0.5, the reload formula (rooms.js setDepthAndStore).
  */
-export function snapToTable(feet, tables, item, obstacles = []) {
+export function snapToTable(feet, tables, item, obstacles = [], usable = null) {
     if (!feet || !Array.isArray(tables) || !item || !(item.w > 0) || !(item.h > 0)) return null;
     const near = tables
         .map(t => ({ t, d: distToRect(feet, t) }))
@@ -67,6 +69,7 @@ export function snapToTable(feet, tables, item, obstacles = []) {
         const lo = Math.ceil(t.x + TABLE_INSET);
         const hi = Math.floor(t.x + t.w - TABLE_INSET - item.w);
         if (hi < lo) continue;
+        if (typeof usable === 'function' && !usable(t)) continue;
         const top = Math.round(baseY(t) - item.h);
         const want = Math.min(hi, Math.max(lo, Math.round(feet.x - item.w / 2)));
         const clear = left => !obstacles.some(o => overlaps({ x: left, y: top, w: item.w, h: item.h }, o));
@@ -96,9 +99,11 @@ export function tableUnder(rect, tables) {
 
 /**
  * Where an NPC stands to use an item on table `t`: just in front of the table under the
- * item, else the nearest of behind, left and right of it; each snapped by
+ * item, else the nearer of its left and right ends; each snapped by
  * `nearestWalkable(x, y, radiusCells)` and dropped when it lies inside, or within
- * EDGE_CLEAR px of, any table (tables that touch leave only gaps). Null when none.
+ * EDGE_CLEAR px of, any table (tables that touch leave only gaps). Never behind: the
+ * strip behind a table is often closed in (a sofa, the back wall), and the walkable grid
+ * cannot tell. Null when none.
  */
 export function edgeCell(centre, t, tables, nearestWalkable) {
     if (!centre || !t || typeof nearestWalkable !== 'function') return null;
@@ -108,7 +113,6 @@ export function edgeCell(centre, t, tables, nearestWalkable) {
     const front = nearestWalkable(cx, t.y + t.h + 10, 2);
     if (ok(front)) return { x: front.x, y: front.y };
     const others = [
-        nearestWalkable(cx, t.y - 6, 2),
         nearestWalkable(t.x - 10, t.y + t.h - 6, 2),
         nearestWalkable(t.x + t.w + 10, t.y + t.h - 6, 2)
     ].filter(ok);
