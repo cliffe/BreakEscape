@@ -94,3 +94,27 @@ test('tuckIn: a reserved chair (seatedBy) or a static seat is left alone', () =>
     seating.tuckIn(reserved, seat, 'north');
     assert.deepEqual({ x: reserved.x, y: reserved.y }, before, 'reserved chair not tucked');
 });
+
+// Regression guard for "the chair sprite and its body come apart" (seat box slice 6
+// investigation, 2026-11-07): every chair move in this module goes through placeBody,
+// which re-syncs the body from the sprite. After a sweep or a tuck the body's top-left
+// must still equal the sprite's position plus the body offset — never left at the
+// pulled-out spot while the sprite moves to the desk. (Office40 body offset is (11, 31).)
+const glued = chair => chair.body.position.x === chair.x + chair.body.offset.x
+    && chair.body.position.y === chair.y + chair.body.offset.y;
+
+test('sweepChairToContact: the body stays glued to the sprite after a tuck', () => {
+    const d = desk(0, 200, 120, 16);     // F = 216
+    const chair = swivel(10, 205, [d]);  // castor 20 px past F + 4 — a real sweep
+    seating.sweepChairToContact(chair, 'north');
+    assert.notEqual(chair.y, 205, 'the chair actually moved (not a no-op)');
+    assert.ok(glued(chair), 'body top-left = sprite + offset after the sweep');
+});
+
+test('tuckIn: the body stays glued to the sprite after the tuck', () => {
+    const seat = seating.seatSpec(swivel(0, 0));
+    const open = swivel(10, 190, []);    // no desk: the full 12 px tuck
+    seating.tuckIn(open, seat, 'north');
+    assert.notEqual(open.y, 190, 'the chair actually moved');
+    assert.ok(glued(open), 'body top-left = sprite + offset after the tuck');
+});
