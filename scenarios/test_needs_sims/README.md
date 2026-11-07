@@ -628,6 +628,30 @@ Notes:
 - Staging used: levels set to 60 inside the band so all three are tempted at once; the pickup beat nudges the player 8 px south
   after the drop (the cake lands 33 px away and reach is 32).
 
+### Slice 18b-ii: word of mouth about the cake (2026-11-07, keyless :3001, headless)
+
+How to watch it: drop the cake in the kitchen and go back to the office. Whoever sees it there (often Grace, taking the dirty mugs
+to the kitchen sink) tells the people within five tiles of them as soon as they are back in the office, from the room-free
+`news_cake` pool, and the hungry ones get up. Avoidance blocks the telling both ways, so Marek (who avoids everyone) is never told
+and never tells; Sanjay and Marek never tell each other. A knower with nobody near says nothing and tells whoever comes close
+later; each knower announces a cake once. Evidence is in the session scratchpad `s18b2/` (frames `*-<game>.png`, logs
+`sess<game>.jsonl`, driver `w1.py`/`w3.py`).
+
+| Check | Result | Evidence |
+|---|---|---|
+| The announce bubble in the office, the TTS request | PASS | game 955: Grace `magnet_seen` in the kitchen (tick 69, after the mugs), back through the office door at tick 120: `npc_announced:grace` "Cake! It's somebody's birthday." heard by sanjay and tom (`b1-announce-955.png`); `npcChatterVoice.log` spoken, and the one keyless 503 in the drain is that request; task `hear_cake_news` completed |
+| The people who get up | PASS | game 955: `npc_told:sanjay` and `npc_told:tom` from grace, both tempted `job_start` cake on the same tick, walking to the kitchen 3 s later (`c1-getting-up-955.png`); both ate, `magnet_finished:cake` at tick 208 |
+| Avoidance blocks it | PASS | game 955, distances at the announce frame: Marek 130 px (inside five tiles), `_avoids` true, never told; Amara beyond the radius, not told |
+| Range from the door | PASS, with a note | game 954: Grace announced on entering the office, heard only by Sanjay; Tom at his desk was just beyond 160 px from the doorway and learned later by sight at the kitchen coffee (`b1-announce-954.png`, `c1-getting-up-954.png`) |
+
+Notes:
+
+- **Fixed in this run (e4a035212).** A told knower working at its own desk (a `using` job at its needsHome object) could never pass
+  the word on (game 954: Sanjay, back at his PC). It now tells from its desk too; node test `npc-news` "a knower working at its
+  own desk tells".
+- Neither run told all three hungry people, so "Missed it." did not come from word of mouth here; 18b-i's games 931, 933 and 938
+  show it by sight.
+
 ## Engine findings
 
 1. **Fixed 2026-11-05.** The home is now provisional until the `needsHome` object exists and is re-resolved once a second; and an NPC standing on its own desk's approach cell now counts as able to reach it (EasyStar gave no path for start == end, which is why Sanjay chose `tom_pc` in game 501). Original finding: **Needs homes in the start room resolve to the spawn point and stay there.** `npc-needs.js:301` resolves `s.home` on the first tick that has a sprite position and caches it; `_resolveHome` (`npc-needs.js:628-640`) falls back to the spawn point with `objectId: null` when `getObject`/`approachCell` fail. For the start room the NPCs are registered (`core/game.js:2004-2006`) before the room's objects or pathfinding are ready, so every start-room needs NPC gets the fallback and the home-object preference in `_useCandidate` (`npc-needs.js:475`) never applies. NPCs in rooms loaded later (Rosa, lounge) resolve correctly. Repro: load this scenario, then `[...npcNeedsSystem.states].map(([k,s]) => [k, s.home.objectId])` gives null for amara, tom, grace and sanjay, `rosa_laptop` for rosa. Suggested fix: don't cache a fallback home while `needsHome` names an object that isn't found yet (retry each tick until the object exists, or for a few seconds). `test_npc_needs` and `lab_physical_pentest` start-room NPCs are likely affected too, but hidden because each spawns at its own desk. Workaround here: each NPC spawns beside its own desk, and the work task reads "Someone works at a desk". Even so, game 501 had Sanjay choose `tom_pc` over his own adjacent PC (nearest-reachable from his seated position), so the workaround isn't reliable.

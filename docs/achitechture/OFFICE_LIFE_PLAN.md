@@ -3090,7 +3090,30 @@ showcase's cake chatter is room-free and there is no announce pool yet (18b-ii);
 instead of a `gone` turn-back, so a re-drop tempted nobody; the windup end now checks the magnet first. **Found live, not
 changed:** "Missed it." is a voiced line and obeys the speech lock (a chatting eater turns it into the hunger icon); the existing
 avoidance keeps Sanjay from a cake within two tiles of Marek; a doorway drop takes the player's click on the door (it picks the
-cake up); a reloaded drop comes back about 13 px south-east. 18b-ii (word of mouth) is not started.
+cake up); a reloaded drop comes back about 13 px south-east.
+
+**Built: 2026-11-07 (slice 18b-ii: engine, validator, schema and tests 94c190820; showcase 20d779678; fix from the live proof
+e4a035212).** Regressions: `test_needs_leash` game 956 (pass), `lab_physical_pentest` game 957 (score 100, 9/9 tasks, keylogger
+creds 65.0 s, USB foothold 10.8 s); sims live proof games 954 and 955 (README table); see `HANDOVER_OFFICE_S18B2.md`.
+`bin/test-js` 407 files pass, `npc-news` 16 tests, `npc-magnet` 16, `GOLDEN_SIMS_DAY` unchanged. As written (OQ33's default: any
+compatible knower within `newsRadius` in its own room tells; avoidance blocks it both ways, groups do not; the telling happens
+whether or not the line is spoken; OQ35: learning by sight or word wakes that NPC's parked needs the magnet satisfies, through
+`_wakeParkedFor`), with these choices made without asking: (1) **When a knower tells:** it is in its own post room, away from
+the magnet's room (everyone there can see it), and idle, walking home, or using its own post object (working at its desk; found
+live in game 954, where a told Sanjay back at his PC could never pass it on). Entering the post room counts, so a knower coming
+back through the door speaks there, and the radius is measured from the door. (2) **An empty-room skip keeps the news:** a knower
+with nobody to tell says nothing and tells whoever comes within range later; once it has spoken it never announces that magnet
+again. Told NPCs are knowers too, so the word can pass on. (3) The lock wait starts when a line first waits and survives a job in
+between; after 30 s the `news` picture shows (the first `satisfies` with an icon, else `social`). With no `announce` pool the
+picture shows at once. The announce ignores the bark cooldown and starts it. (4) New beyond the plan: log `announced` (`heard`,
+`line` or `picture`) and `told` (`from`), event `npc_announced:<speakerId>` `{ magnetId, heard, topic, line, picture }`; a pickup
+or finish also forgets who announced, so a re-drop is told again. (5) `_grumble`'s bubble, voice and `npc_overheard` are shared
+with the announce as `_showSaying`. (6) Validator `check_magnet_news`: `announce` names a scenario-level pool with lines (error),
+`newsRadius` 0-50 (error), and a line naming one of the scenario's rooms (id, door sign or type) warns, since a drop can be
+anywhere. (7) The showcase's `news_cake` lines are room-free; its task `hear_cake_news` maps `npc_told:*`. **Seen live:** Grace
+took the dirty mugs to the kitchen, saw the cake, and announced from the office door ("Cake! It's somebody's birthday."): Tom and
+Sanjay (14 and 22 px) were told and got up at once; Marek at 130 px was not (he avoids everyone), nor Amara, by then beyond five
+tiles; the TTS request came back 503 (keyless). Only two hungry people heard, so no "Missed it." in these runs.
 
 **Design.** `affordance.offWhen` takes the `requireGlobal` form (a name, truthy, or
 `{ name: value }`, `requiredGlobalsHold` 123-130). While it holds, the object is not a candidate.
