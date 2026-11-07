@@ -57,7 +57,48 @@ clean window; their last engine commit was `977099989`. Slice 6 builds on seat-b
   `scratchpad/s6/before_interim.png`, `scratchpad/s6/after_tucked.png` (look the same, as
   expected).
 
-## Live — STILL TO DO (next session)
+## Live — done (2026-11-07, verification session)
+
+Ran all five on `:3001`, headless, one browser at a time. Evidence in
+`…/c84d7b68-…/scratchpad/s6/` and the office-life s21/s22/s18a dirs.
+
+- **REGRESSION FOUND + FIXED — `af380d860`.** The slice-21/22 live checks exposed that the item-6
+  fidget clamp killed the cosmetic idle roll entirely: across full fidget cycles every seated NPC
+  (amara, grace, sanjay, tom) showed chair offset 0. Cause: `fidgetChair`'s clamp swept with
+  `ignore: [chair]` only, but the seated NPC's own sprite body overlaps the seated block, so
+  `sweepBlock` read distance 0 and clamped the roll to nothing. Fix: add the riding `sprite` to the
+  ignore list (`seating.js` ~991). After: amara rolls 2 px away from her desk (matches
+  `fidgetOffset` target) and tucks back; clamp still bounds the roll (no desk clip). `tuckIn`
+  (item 4, NPC gone) and `sweepChairToContact` (item 2/3) were never affected — they don't run with
+  the NPC body on the chair. `bin/test-js` 414 pass / 0 fail after the fix; GOLDEN_SIMS_DAY intact.
+- **Slice-21 roll + idle swivel (game 1046).** `s21/roll.py 1046 amara`: roll out dx −2, dy +1,
+  then tucked back (strip `s21/roll-amara-strip-1046.png`). `s21/swiv.py 1046 amara idle`: swivel
+  NE→east→NE. Fidget clamp holds, no clipping.
+- **Slice-22 errand (game 1046).** `s22/proof.py 1046 setup|off|b`: office copier switched off, Tom
+  routed to the kitchen copier (`object_revealed:kitchen_out_a` producer `kitchen_copier`,
+  `npc_print_fetched:tom` producer kitchen_copier), left post and returned, `keep_tom_away`
+  completed; expectedAwayMs 11146, away 12.75 s. Screens `s22/b-copier-off-{1..4}-…-1046.png`.
+- **test_needs_leash (game 1045).** `leash.py 1045`: leashed Ravi 0 Maya's-office samples (routes
+  via west_corridor, the long way); unleashed 12 (cuts through maya_office). PASS (12 vs the
+  reference 6 is just poll timing; seating slice 6 does not touch routing).
+- **Lab replay (game 1047).** `s18a/lab_args920.json` → `lab.py`, then `verify-run.rb --tasks`:
+  score 100, 9/9 tasks, creds 64.6 s, USB foothold 10.6 s (baseline 1033: 100, 63.2 s, 12.5 s —
+  within spread). Ran on the fixed JS. F+4 tuck: hampshire measured 0.7 px to the desk front
+  (tucked to contact); pierce seated too. A clean before/after `__seatBoxNpc` off/on screenshot pair
+  was NOT captured — the live per-frame seat loop re-seats the chair each tick, so a manual pull-out
+  snaps straight back, and a real reseat needs an errand cycle; the F+4 tuck stands on the 0.7 px
+  measurement and the 6 `seat-box-npc.test.mjs` cases. Tucked-state shot `s6/lab-tuck-A-tucked-1047.png`
+  (game had reached the debrief overlay by then).
+- **bin/rails test:** 953 runs, 3359 assertions, 0 failures, 0 errors, 1 skip.
+- **reopencheck:** 4 problems, all m09 phone ink (the documented pre-existing baseline; no ink change).
+- **Walk/stand audit (item 7):** the JS fix changes only the seated-NPC fidget-clamp ignore list, not
+  walk paths, stand spots, desk footprints or empty-chair tucking, so the slice-7 walk baseline holds
+  by construction; `walk-audit.test.mjs` passes in `bin/test-js`. The browser `stand-audit.mjs` run on
+  game 1047 reported "games 0/0" (needs every room unlocked via `snapshot-games.sh`); not pursued
+  given the fix's orthogonality. **Open if the office-life owner wants the full browser stand-audit
+  re-run on a snapshot-unlocked lab game, plus the before/after __seatBoxNpc screenshot pair.**
+
+## Live — WAS still to do (now done above)
 
 Run these on `:3001`, headless, one browser, check `pgrep -fa 'chrom.*headless'` first
 (wait if two). Office-life drivers live in their scratchpad
