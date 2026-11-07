@@ -988,7 +988,9 @@ function fidgetChair(st, sprite, held) {
     if (mag > 0 && chair.scene) {
         const rect = chairRect(chair);
         rect.x += fd.home.x - chair.x; rect.y += fd.home.y - chair.y; // the block at the home spot
-        const d = sweepBlock(chair.scene, rect, ox / mag, oy / mag, { ignore: [chair] });
+        // Ignore the chair and the NPC riding it: the seated sprite's own body overlaps the
+        // seated block, so without this the sweep reads distance 0 and the roll never moves.
+        const d = sweepBlock(chair.scene, rect, ox / mag, oy / mag, { ignore: [chair, sprite] });
         if (d < mag) { ox = (ox / mag) * d; oy = (oy / mag) * d; }
     }
     const x = Math.round(fd.home.x + ox), y = Math.round(fd.home.y + oy);
