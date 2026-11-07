@@ -235,6 +235,7 @@ export function preload() {
     this.load.tilemapTiledJSON('room_lw_kitroom', 'rooms/room_lw_kitroom.json'); // lab_physical_pentest kit room, Ledgerwell identity (old partners' room: oxblood carpet, walnut sideboards, baize RoE board)
     this.load.tilemapTiledJSON('room_lw_front_desk', 'rooms/room_lw_front_desk.json'); // lab_physical_pentest front desk, Ledgerwell identity (old bank counter of walnut sideboards, oak boards and green runner, staff directory, time clock; from room_lw_reception)
     this.load.tilemapTiledJSON('room_lw_ceo', 'rooms/room_lw_ceo.json'); // from room_zds_ceo (m03 portrait, magazine cover and static filing cabinet removed)
+    this.load.tilemapTiledJSON('room_lw_records_office', 'rooms/room_lw_records_office.json'); // lab_physical_pentest records office (from room_lw_ceo; grey-green vinyl floor, exec decor replaced with filing runs, records counter, key cabinet, ledger shelves, sorting table)
     this.load.tilemapTiledJSON('room_lw_store', 'rooms/room_lw_store.json'); // from small_room_storage_1x1gu
     this.load.tilemapTiledJSON('room_lw_accounts', 'rooms/room_lw_accounts.json'); // lab_physical_pentest 20x10 accounts open plan (Ledgerwell oatmeal office shell, room_lw_tiles_20); replaces room_lw_records for open_plan
     this.load.tilemapTiledJSON('room_test_desk_seating', 'rooms/room_test_desk_seating.json'); // test_desk_seating: desks with swivel/static chairs from the front, behind and side (seat-box experiments)
