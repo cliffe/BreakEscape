@@ -16,6 +16,7 @@
     "grumble": ["Not with him there.", "I'll come back later.", "Maybe the kitchen's quieter."],
     "grumble_off": ["Who switched the coffee off?", "It's off. Typical.", "No coffee here, then."],
     "grumble_gone": ["Missed it."],
+    "grumble_printer_off": ["Printer's off. Brilliant.", "Is anything switched on today?", "Fine, I'll print it later."],
     "cake": ["Who brought cake in?", "Go on, just a small slice.", "Whose birthday is it?", "This is really good."],
     "news_cake": ["Someone's brought a cake in!", "There's cake going, if you're quick.", "Cake! It's somebody's birthday."]
   },
@@ -41,6 +42,10 @@
     "heard_call_supplier": false,
     "heard_call_take_message": false,
     "office_coffee_off": false,
+    "office_copier_off": false,
+    "kitchen_copier_off": false,
+    "kitchen_out_a_shown": false,
+    "kitchen_out_b_shown": false,
     "cake_servings": 2
   },
 
@@ -112,8 +117,10 @@
         { "taskId": "hear_screen_lock", "title": "Hear a screen lock as its owner walks off (stay in the office: Amara leaves her screen open for a quick trip, but locks it with a soft chime before a longer one, such as the kitchen run after you read the Deadline Memo)", "type": "custom", "status": "active" },
         { "taskId": "see_auto_lock", "title": "Watch a screen lock itself (Sanjay never locks his PC, but it locks on its own 20 seconds after he walks off)", "type": "custom", "status": "active" },
         { "taskId": "use_open_screen", "title": "Use Sanjay's screen while he is away (using it keeps it awake)", "type": "custom", "status": "active" },
-        { "taskId": "see_uncollected", "title": "See a printout sit uncollected on the copier (Tom prints now and then and forgets about half his prints; read the Print Queue note to send one he never collects, and wait two and a half minutes)", "type": "custom", "status": "active" },
+        { "taskId": "see_uncollected", "title": "See a printout sit uncollected on a copier (Tom prints now and then and forgets about half his prints; read the Print Queue note to send one he never collects, and wait two and a half minutes)", "type": "custom", "status": "active" },
         { "taskId": "send_print_job", "title": "Send a print job from Tom's open screen and watch him fetch it (when he leaves his PC unlocked, use it: a few seconds after he is back he walks to the copier, carries the printout to his desk and puts it down)", "type": "custom", "status": "active" },
+        { "taskId": "keep_tom_away", "title": "Switch the office copier off and keep Tom away from his desk longer (open the kitchen door first, then switch the copier off at the wall socket beside it: Tom's next print goes to the kitchen copier, and he walks there to fetch it)", "type": "custom", "status": "active" },
+        { "taskId": "see_printer_grumble", "title": "Switch both copiers off and see Tom grumble when his print has nowhere to go (the kitchen copier has its own socket; both stay off once switched)", "type": "custom", "status": "active" },
         { "taskId": "see_coffee_off", "title": "Switch the office coffee off at the wall socket beside it and watch someone go to the kitchen instead (open the kitchen door first; it stays off once switched)", "type": "custom", "status": "active" },
         { "taskId": "see_cake_eaten", "title": "Put the cake out and watch it go (click it in your inventory to set it down; people who see it and fancy a slice get up for it, two slices only)", "type": "custom", "status": "active" },
         { "taskId": "see_missed_it", "title": "See someone miss the cake (three hungry people, two slices: whoever arrives last turns back)", "type": "custom", "status": "active" },
@@ -290,8 +297,20 @@
           "position": { "x": 4.4, "y": 2 },
           "takeable": false,
           "observations": "The office photocopier. Sanjay's and Tom's desk PCs print to it.",
-          "affordance": { "uncollectedAfterSeconds": 150 },
-          "_comment": "Slice 7 producer: sanjay_pc's and tom_pc's onUse revealOutput show its first free slot (copier_out_a, then b to e). Slice 17: uncollectedAfterSeconds 150 is above Tom's fetchAfterSeconds range (30 to 120), so npc_print_uncollected:tom marks a print that is really forgotten. The copier preset (photocopier1) gives the rest of its affordance; nobody satisfies a need here."
+          "affordance": { "uncollectedAfterSeconds": 150, "offWhen": "office_copier_off" },
+          "_comment": "Slice 7 producer: sanjay_pc's and tom_pc's onUse revealOutput show its first free slot (copier_out_a, then b to e). Slice 17: uncollectedAfterSeconds 150 is above Tom's fetchAfterSeconds range (30 to 120), so npc_print_uncollected:tom marks a print that is really forgotten. The copier preset (photocopier1) gives the rest of its affordance; nobody satisfies a need here. Slice 22: offWhen office_copier_off (set by office_copier_socket): while it holds Tom's prints go to the kitchen copier (his hook lists both) and Sanjay's (a string hook) print nothing; a print already on the tray stays."
+        },
+        {
+          "type": "wall_socket1",
+          "id": "office_copier_socket",
+          "name": "Wall socket",
+          "position": { "x": 5.6, "y": 1.75 },
+          "takeable": false,
+          "_comment": "Slice 22: the copier's switch, as the coffee machine's (slice 18a): one-way, a state-worded hint with a neutral title.",
+          "triggerOnInteract": [
+            { "type": "set_global", "key": "office_copier_off", "value": true },
+            { "type": "hint", "title": "Wall socket", "message": "The photocopier is switched off at the wall." }
+          ]
         },
         {
           "type": "notes1",
@@ -515,13 +534,15 @@
             "hunger": { "decayPerMin": 10, "urgentAt": 40, "initial": 65 },
             "work": { "decayPerMin": 8, "urgentAt": 50, "initial": 80 }
           },
-          "onUse": { "fridge": { "setGlobal": "tom_had_lunch" }, "tom_pc": { "revealOutput": "office_copier", "chance": 0.4 } },
+          "onUse": { "fridge": { "setGlobal": "tom_had_lunch" }, "tom_pc": { "revealOutput": ["office_copier", "kitchen_copier"], "chance": 0.4, "_comment": "Slice 22: the office copier first; while it is off, the kitchen copier; both off, nothing prints and he grumbles (grumble_printer_off)." } },
           "printHabit": { "fetchAfterSeconds": [30, 120], "forgetChance": 0.5, "_comment": "Slice 17: about four in ten of his work uses print; he fetches a print 30 to 120 s later, or forgets it (half of them). His prints are his: Amara's printout interest leaves them alone." },
           "eventMappings": [
-            { "eventPattern": "workstation_accessed:tom_pc", "cooldown": 60000, "needs": { "print": { "producer": "office_copier", "fetchAfterSeconds": [5, 10], "forget": false } } },
-            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Print Queue'", "cooldown": 60000, "needs": { "print": { "producer": "office_copier", "forget": true } } },
+            { "eventPattern": "workstation_accessed:tom_pc", "cooldown": 60000, "needs": { "print": { "producer": ["office_copier", "kitchen_copier"], "fetchAfterSeconds": [5, 10], "forget": false } } },
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Print Queue'", "cooldown": 60000, "needs": { "print": { "producer": ["office_copier", "kitchen_copier"], "forget": true } } },
             { "eventPattern": "npc_print_uncollected:tom", "onceOnly": true, "cooldown": 0, "completeTask": "see_uncollected" },
             { "eventPattern": "npc_print_fetched:tom", "condition": "data.viaCommand === true", "onceOnly": true, "cooldown": 0, "completeTask": "send_print_job" },
+            { "eventPattern": "npc_print_fetched:tom", "condition": "data.producerId === 'kitchen_copier'", "onceOnly": true, "cooldown": 0, "completeTask": "keep_tom_away" },
+            { "eventPattern": "npc_print_blocked:tom", "onceOnly": true, "cooldown": 0, "completeTask": "see_printer_grumble" },
             { "eventPattern": "workstation_owner_left:tom_pc", "condition": "data.screenLocked === false", "onceOnly": true, "cooldown": 0, "completeTask": "spot_open_screen" },
             { "eventPattern": "npc_caught_at_post:tom", "cooldown": 30000, "bark": "Er, that's my desk. Can I help you?", "completeTask": "see_caught" },
             { "eventPattern": "object_revealed:tom_badge", "onceOnly": true, "cooldown": 0, "completeTask": "see_left_behind" },
@@ -665,6 +686,59 @@
           "takeable": false,
           "observations": "A tray for dirty mugs. Somebody will wash them. Eventually.",
           "affordance": { "accepts": ["dirty_mugs"], "useSeconds": 5 }
+        },
+        {
+          "type": "photocopier1",
+          "id": "kitchen_copier",
+          "name": "Kitchen Copier",
+          "position": { "x": 8.1, "y": 2 },
+          "takeable": false,
+          "observations": "An old photocopier pushed into the kitchen corner. Tom's PC prints here when the office one is off.",
+          "affordance": { "uncollectedAfterSeconds": 150, "offWhen": "kitchen_copier_off" },
+          "_comment": "Slice 22: Tom's second printer (his hook lists office_copier first). Square to the north wall; the copier preset stands him below it. offWhen kitchen_copier_off, set by kitchen_copier_socket: with both copiers off his prints are blocked."
+        },
+        {
+          "type": "wall_socket1",
+          "id": "kitchen_copier_socket",
+          "name": "Wall socket",
+          "position": { "x": 9.05, "y": 2.3 },
+          "takeable": false,
+          "_comment": "Slice 22: the kitchen copier's switch, one-way like the others.",
+          "triggerOnInteract": [
+            { "type": "set_global", "key": "kitchen_copier_off", "value": true },
+            { "type": "hint", "title": "Wall socket", "message": "The kitchen copier is switched off at the wall." }
+          ]
+        },
+        {
+          "type": "notes1",
+          "id": "kitchen_out_a",
+          "name": "Printout",
+          "position": { "x": 8.35, "y": 2.9 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "PRINTOUT\n\nTom's expenses claim. Train fares, one sandwich.",
+          "observations": "A printout on the kitchen copier tray.",
+          "outputOf": "kitchen_copier",
+          "revealOnGlobal": "kitchen_out_a_shown",
+          "needsTag": "printout",
+          "_comment": "Slice 22: reads in place, so it cycles."
+        },
+        {
+          "type": "notes1",
+          "id": "kitchen_out_b",
+          "name": "Printout",
+          "position": { "x": 8.35, "y": 2.9 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "PRINTOUT\n\nTom's sales figures for the week, with a coffee ring on the corner.",
+          "observations": "A printout on the kitchen copier tray.",
+          "outputOf": "kitchen_copier",
+          "revealOnGlobal": "kitchen_out_b_shown",
+          "needsTag": "printout"
         }
       ]
     },
