@@ -510,7 +510,7 @@ def check_unknown_fields(json_data)
     affordance needsTag droppable officeType
     workstation locksScreenOnLeave lockChance screenOwner screenLocked autoLockSeconds
     phoneOwner rings
-    actions onOwnerNoticesMissing
+    actions onOwnerNoticesMissing interactionWarning saved_cards rfid_protocol
     _comment
   ]
 
