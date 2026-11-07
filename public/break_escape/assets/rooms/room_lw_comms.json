@@ -147,7 +147,44 @@
    "draworder": "topdown",
    "id": 5,
    "name": "items",
-   "objects": [],
+   "objects": [
+    {
+     "gid": 910,
+     "height": 14,
+     "id": 88,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 150,
+     "x": 6.0,
+     "y": 30.0
+    },
+    {
+     "gid": 1114,
+     "height": 57,
+     "id": 89,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 34,
+     "x": 120.0,
+     "y": 120.0
+    },
+    {
+     "gid": 1202,
+     "height": 24,
+     "id": 90,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 18,
+     "x": 128.0,
+     "y": 54.0
+    }
+   ],
    "opacity": 1,
    "type": "objectgroup",
    "visible": true,
@@ -167,7 +204,7 @@
   }
  ],
  "nextlayerid": 11,
- "nextobjectid": 88,
+ "nextobjectid": 91,
  "orientation": "orthogonal",
  "renderorder": "right-down",
  "tiledversion": "1.11.2",
