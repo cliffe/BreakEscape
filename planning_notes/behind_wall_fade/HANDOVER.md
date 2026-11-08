@@ -1,6 +1,6 @@
 # Behind-the-wall fade: handover (2026-11-08)
 
-Slices 1 and 2 are done and committed. Slices 3 and 4 are not started. Resume from DESIGN.md section 13, slice 3.
+Slices 1-4 are implemented and committed (slices 3-4 added 2026-11-08, see the end of this file). Suites after slice 4: bin/test-js 423 files pass; bin/rails test 953 runs, 0 failures; reopencheck prints Total problems: 4 (same as before, ink dialogue, untouched).
 
 ## Commits
 - 7b70feb85 design plan and review rounds
@@ -33,3 +33,25 @@ In m04 the workshop strip (dark room, nothing in it) is almost black while faded
 ## Next
 - Slice 3: four `* (obj.behindWallK ?? 1)` multipliers in systems/lighting.js (LED :1110, glow :1153 outside Math.min, flame :1172 outside Math.min, lock flash :1484), tests in test/js/lighting-emitter-leds.test.mjs and lighting-workstation-indicators.test.mjs, live glow/LED ratio checks (steps 6 and 7 glow parts). Commit before running tests.
 - Slice 4: the probe first (no engine edit), then the strip blend in lighting.js and test/js/lighting-strip-blend.test.mjs; then slice 4 live steps 3, 4 (lighting), 7, 8, 9, 10, 12, 13 and the m04 walk with lighting on; reopencheck and `bin/rails test` after.
+
+## Slices 3 and 4 (2026-11-08)
+
+Commits: 9c6d0a014 (slice 3 multipliers and tests), 105a12a8e (slice 3 live proof), 78a6e897f (slice 4 blend, test, probe), b0164ec93 (emitter test rig and live script), then the slice 4 proof commit (screenshots s4_*, s4_state.json).
+
+Probe (proof/s4_probe.mjs, readings in proof/s4_probe_result.json): PASS with no frame offset. The crop is not upside down: red at row 11 and blue at row 16 land on the same rows; a NORMAL stamp at alpha 0.5 onto white gave (255,128,128) and (128,128,255); onto grey 0x404040 gave (159,32,32) and (32,32,159); points outside the stamp were unchanged. One trap found: a batch that ends on ADD copies back as ADD, so the second batch must end on a NORMAL stamp (the code says so in a comment).
+
+Slice 3: four multipliers in lighting.js. Tests are in lighting-emitter-leds.test.mjs (a new `updateRig` that runs `update()` over one emitter object: LED, glow, clamped glow exactly 0.5, flame) and lighting-workstation-indicators.test.mjs (lock flash). Live: pc glow ratio 0.5000, rack glow 0.5000, rack LED 0.475 = 0.5 * 0.95 (proof/s3_live.mjs).
+
+Slice 4: `stripBlendSegments`, `STRIP_TEX`, `STAMP_OPT_KEYS`, `drawTarget`, `teeFor`, `getStripTexture`, `drawStripBlend`, `stripBlendDebug`, `destroy` removal. Any test rig that builds a LightingSystem with `Object.create` and calls `update()` needs `stripCmds`, `stripCmdCount`, `stripNorth`, `stripSegments` and `stripDebug` set (the constructor sets them); `lighting-emitter-leds.test.mjs`'s rig does.
+
+Deviations in slices 3-4:
+1. The glTexture handle swap is done by reading `strip.getWebGLTexture()` before every crop stamp (as planned). Proven only against the fake in the unit test plus the live resize check (step 10), not against a Phaser internals read.
+2. Step 7's final move into the server uses `player.setPosition` (feet on the server floor): with the hall/server door open the player stops at feet y 320 and never crosses, with `?behindWallFade=off` too, so it is not the fade. Cause not investigated (the server room has no door sprite of its own). Same for `enterRoom('hall')` from the server; s4_live.mjs has a `goRoom` helper that falls back to `setPosition`.
+3. Camera: after a teleport the camera can lag, so s4_live.mjs calls `cameras.main.centerOn(player)` and waits 400 ms before the 4, 8, 9 and 10 readings, and `lightAt` throws if a point is outside the light map.
+4. Step 10: no x in 100-310 had a positive margin from every emitter (best -8.4 at x = 310), so the farthest was used. The read was identical before and after the resize anyway.
+5. proof/lib.mjs gained an optional `reducedMotion` argument (media emulation, step 13). proof/s2_missions.mjs got a longer x list for m04 (the player stops short of the wall at some x, and which x works varied between runs).
+
+Unverified:
+- The spill replay through the strip (step 4's "no edge at the strip top") was not exercised: after `enterRoom('office_n')` there is no hall/office_n door sprite and no spill pool at (48,-6), so the two reads are both the dark ambient. The unit test covers recording and replaying spill commands only.
+- Step 7 screenshot 1 is `s4_7_1_unfaded.png`; screenshots 2 and 3 are `s4_7_2_faded.png` and `s4_7_3_in_server.png`; step 12's is `s4_12_killswitch.png` (same spot as 7_2).
+- m04 screenshot: the strip is lit with battery_hall_1's light, but the player at dx 60 stands behind a solid blue locker prop (not faded: its base is below the strip), so only the head shows. The lighting is right, the shot is not a good picture of the player.
