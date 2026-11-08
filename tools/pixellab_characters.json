@@ -447,6 +447,16 @@
     "imported": "2026-11-06",
     "sit_from": "20cf23d1-7590-4f70-a799-e011eb0a051e"
   },
+  "hampshire": {
+    "character_id": "6807f395-a142-4b85-ae4a-dac6975aa967",
+    "name": "Make portrait for Chris Hampshire\nA British Asian ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-08",
+    "sit_from": "7e026f23-c8b4-4588-957d-5c1971e18221"
+  },
   "hamza_iqbal": {
     "character_id": "2298578f-deaa-49d9-b40a-d7f8b4e31886",
     "name": "Make portrait for Hamza Iqbal\nA British Pakistani ...",
@@ -625,6 +635,16 @@
     },
     "imported": "2026-11-06",
     "sit_from": "7506ca85-66ba-4c0d-a485-8ded202eb7fa"
+  },
+  "lord": {
+    "character_id": "1a269247-6c5d-4eb7-9d87-d5f2b5a5d169",
+    "name": "Make portrait for Sofia Lord\nA British Indian woma...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-08",
+    "sit_from": "f46aacae-8dfe-4e2d-98b4-1342963866f6"
   },
   "lorna_easton": {
     "character_id": "ccf1e354-4b1a-4252-a41b-7341bf74e054",
