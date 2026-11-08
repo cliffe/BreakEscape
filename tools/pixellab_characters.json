@@ -913,6 +913,17 @@
     "imported": "2026-11-06",
     "sit_from": "27af146f-ec8d-4a89-9ed7-581f4d254e21"
   },
+  "pierce": {
+    "character_id": "8a5a96c8-c7ec-46dc-a0e4-1bec1c3c89ea",
+    "name": "Melanie Pierce (eyes fixed)",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-08",
+    "sit_from": "cd6e850e-833f-4fc7-ba4b-441817d08a6d",
+    "replaces": "25e40fb9-1d46-4265-a3c2-ce1a02defeb6 (retired, not deleted; hand-edited eye whites carried into the new character)"
+  },
   "pieter_vos": {
     "character_id": "cc1b5d89-ad2f-47c6-a775-2d6c382d3b85",
     "name": "Make portrait for Pieter Vos\nA tall, lean Dutch ma...",
