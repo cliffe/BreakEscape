@@ -346,6 +346,50 @@ function subtractRect(a, b) {
   return out;
 }
 
+// Behind-the-wall fade (planning_notes/behind_wall_fade/DESIGN.md 8.1): while a south room's back
+// wall is faded, its strip takes a blend of the north room's light. The north room's stamps are
+// recorded as they are drawn and replayed into this texture, which is then blended back.
+const STRIP_TEX = 'be_light_strip';
+const STRIP_HEIGHT = 64;
+const STAMP_OPT_KEYS = ['alpha', 'tint', 'angle', 'rotation', 'scale', 'scaleX', 'scaleY', 'originX', 'originY', 'blendMode', 'erase', 'skipBatch'];
+
+/**
+ * For each { roomId: S, weight, gaps }: S's strip { x: S.x, y: S.y, w: S.width, h: 64 } intersected with
+ * the rect of every other room N that has a map and lies north of S (N.position.y < S.position.y), minus
+ * [gx - 16, gx + 16) for each gx in gaps (an open doorway keeps S's light).
+ * Returns [{ south, north, x, y, w, h, weight }] in world pixels, non-empty pieces only.
+ */
+export function stripBlendSegments(weights, rooms) {
+  const out = [];
+  if (!Array.isArray(weights) || !rooms) return out;
+  for (const entry of weights) {
+    const S = rooms[entry?.roomId];
+    if (!S?.map || !S.position || !(entry.weight > 0)) continue;
+    const sx = S.position.x, sy = S.position.y, sw = S.map.widthInPixels;
+    for (const [nid, N] of Object.entries(rooms)) {
+      if (nid === entry.roomId || !N?.map || !N.position || !(N.position.y < sy)) continue;
+      const x0 = Math.max(sx, N.position.x), x1 = Math.min(sx + sw, N.position.x + N.map.widthInPixels);
+      const y0 = Math.max(sy, N.position.y), y1 = Math.min(sy + STRIP_HEIGHT, N.position.y + N.map.heightInPixels);
+      if (!(x1 > x0) || !(y1 > y0)) continue;
+      let pieces = [[x0, x1]];
+      for (const gx of entry.gaps || []) {
+        const next = [];
+        for (const [a, b] of pieces) {
+          const ga = gx - 16, gb = gx + 16;
+          if (gb <= a || ga >= b) { next.push([a, b]); continue; }
+          if (ga > a) next.push([a, ga]);
+          if (gb < b) next.push([gb, b]);
+        }
+        pieces = next;
+      }
+      for (const [a, b] of pieces) {
+        if (b > a) out.push({ south: entry.roomId, north: nid, x: a, y: y0, w: b - a, h: y1 - y0, weight: entry.weight });
+      }
+    }
+  }
+  return out;
+}
+
 function lightingDisabledByPlayer() {
   try {
     const param = new URLSearchParams(window.location.search).get('lighting');
@@ -364,6 +408,11 @@ export class LightingSystem {
     this.subscribed = false;
     this.reducedMotion = prefersReducedMotion();
     this.flashes = new Map();   // objectId -> { kind, ms, start, img } (slice 16 lock flashes)
+    this.stripCmds = [];        // recorded stamps of the north rooms and door spill (behind-wall strip blend)
+    this.stripCmdCount = 0;
+    this.stripNorth = new Set();
+    this.stripSegments = [];
+    this.stripDebug = { at: 0, segments: [] };
 
     this.createLightTexture();
     const cam = scene.cameras.main;
@@ -1016,11 +1065,14 @@ export class LightingSystem {
     // Every draw below goes into one batch (skipBatch) between beginDraw and endDraw.
     // Coordinates are world positions relative to the map's origin, scaled by RES.
     const blockOpts = { originX: 0, originY: 0, tint: 0xffffff, scaleX: 1, scaleY: 1, skipBatch: true };
+    // Where stamps go: the light map, or a tee that also records them (a north room's pass and door
+    // spill while a south room's strip is blended). Not called `target`: update() has one already.
+    let drawTarget = rt;
     const fillRect = (x, y, w, h, color) => {
       blockOpts.tint = color;
       blockOpts.scaleX = (w * RES) / BLOCK_SIZE;
       blockOpts.scaleY = (h * RES) / BLOCK_SIZE;
-      rt.stamp(BLOCK_TEX, null, x * RES, y * RES, blockOpts);
+      drawTarget.stamp(BLOCK_TEX, null, x * RES, y * RES, blockOpts);
     };
 
     rt.clear();
@@ -1044,6 +1096,21 @@ export class LightingSystem {
       visible.push(state);
     }
 
+    // Behind-wall strip blend: which north rooms' stamps to record this redraw.
+    this.stripCmdCount = 0;
+    this.stripNorth.clear();
+    let segments = this.stripSegments;
+    segments.length = 0;
+    try {
+      const weights = window.behindWallFade?.lightWeights?.();
+      if (Array.isArray(weights) && weights.length) {
+        for (const seg of stripBlendSegments(weights, window.rooms)) {
+          const sOk = visible.some(v => v.roomId === seg.south), nOk = visible.some(v => v.roomId === seg.north);
+          if (sOk && nOk) { segments.push(seg); this.stripNorth.add(seg.north); }
+        }
+      }
+    } catch (e) { segments.length = 0; this.stripNorth.clear(); }
+
     const stampOpts = { blendMode: Phaser.BlendModes.ADD, skipBatch: true };
     const multOpts = { blendMode: Phaser.BlendModes.MULTIPLY, skipBatch: true, tint: 0xffffff, alpha: 1, scale: 1 };
     const stamp = (x, y, radius, color, alpha) => {
@@ -1051,7 +1118,7 @@ export class LightingSystem {
       stampOpts.tint = color;
       stampOpts.alpha = Math.min(1, alpha);
       stampOpts.scale = (radius * RES) / (LIGHT_TEX_SIZE / 2);
-      rt.stamp(LIGHT_TEX, null, (x - ox) * RES, (y - oy) * RES, stampOpts);
+      drawTarget.stamp(LIGHT_TEX, null, (x - ox) * RES, (y - oy) * RES, stampOpts);
     };
 
     const player = window.player;
@@ -1084,7 +1151,9 @@ export class LightingSystem {
       // screens and racks are on UPS and hold.
       const lv = state.level * dip;
       state.drawLevel = lv;
+      drawTarget = this.stripNorth.has(state.roomId) ? this.teeFor(state.roomId) : rt;
       const ambient = lerpColor(state.darkAmbient, state.litAmbient, lv);
+      state.drawAmbient = ambient;
       for (const r of this.fillAreas(state.roomId)) {
         fillRect(Math.round(r.x - ox), Math.round(r.y - oy), r.w, r.h, ambient);
       }
@@ -1157,7 +1226,7 @@ export class LightingSystem {
           multOpts.tint = lerpColor(0xffffff, lightColorFor(glowColor), HUE_KEEP_MIX);
           multOpts.alpha = Math.min(1, state.level * Math.min(1, def.intensity * k) * e.fade);
           multOpts.scale = (radius * HUE_KEEP_RADIUS * RES) / (LIGHT_TEX_SIZE / 2);
-          rt.stamp(LIGHT_TEX, null, (x - ox) * RES, (y - oy) * RES, multOpts);
+          drawTarget.stamp(LIGHT_TEX, null, (x - ox) * RES, (y - oy) * RES, multOpts);
         }
         // Flame tongues: small yellow-orange blooms rising across the fire's width
         const burning = def.effect === 'fire';
@@ -1180,16 +1249,18 @@ export class LightingSystem {
           multOpts.tint = def.ransom ? RANSOM_FLOOR_TINT : lerpColor(0xffffff, def.color, FLOOR_TINT_MIX);
           multOpts.alpha = Math.min(1, def.floorTint * state.level * (def.ransom ? 0.8 + 0.2 * k : 1));
           multOpts.scale = (radius * 1.2 * RES) / (LIGHT_TEX_SIZE / 2);
-          rt.stamp(LIGHT_TEX, null, (x - ox) * RES, (fy - oy) * RES, multOpts);
+          drawTarget.stamp(LIGHT_TEX, null, (x - ox) * RES, (fy - oy) * RES, multOpts);
         }
       }
-      if (this.flashes.size) this.drawFlashes(state, time, rt, multOpts, ox, oy);
-      if (state === here) this.stampTorch(rt, stamp, ox, oy, here, player);
-      this.stampNpcTorches(rt, stamp, ox, oy, state, ambient, time);
+      if (this.flashes.size) this.drawFlashes(state, time, drawTarget, multOpts, ox, oy);
+      if (state === here) this.stampTorch(drawTarget, stamp, ox, oy, here, player);
+      this.stampNpcTorches(drawTarget, stamp, ox, oy, state, ambient, time);
       this.stampNpcGlows(stamp, state);
     }
     // Spill goes on after every fill, since it is meant to cross the doorway.
-    for (const state of visible) this.stampDoorSpill(state, stamp, rt, ox, oy);
+    drawTarget = segments.length ? this.teeFor('__spill') : rt;
+    for (const state of visible) this.stampDoorSpill(state, stamp, drawTarget, ox, oy);
+    drawTarget = rt;
     // Phaser 3.60: a batch whose last stamp is a MULTIPLY one (an emitter's floorTint)
     // is lost at endDraw and the whole map comes out white (every room unlit). Ending
     // on an ADD stamp avoids it; a black ADD adds nothing.
@@ -1198,6 +1269,97 @@ export class LightingSystem {
     stampOpts.scale = 1;
     rt.stamp(BLOCK_TEX, null, 0, 0, stampOpts);
     rt.endDraw();
+    if (segments.length) this.drawStripBlend(segments, visible, ox, oy);
+    if (segments.length || this.stripDebug.segments.length) this.stripDebug = { at: time, segments: segments.map(g => ({ south: g.south, north: g.north, x: g.x, y: g.y, w: g.w, h: g.h, weight: g.weight, rect: g.rect || null })) };
+  }
+
+  /** A stamp target that draws to the light map and records the stamp for the strip batch. */
+  teeFor(roomId) {
+    const tees = this.tees || (this.tees = new Map());
+    let tee = tees.get(roomId);
+    if (!tee) {
+      tee = {
+        stamp: (key, frame, x, y, opts) => {
+          const res = this.lightMap.stamp(key, frame, x, y, opts);
+          const n = this.stripCmdCount++;
+          const cmd = this.stripCmds[n] || (this.stripCmds[n] = { roomId: null, key: null, frame: null, x: 0, y: 0, opts: {} });
+          cmd.roomId = roomId; cmd.key = key; cmd.frame = frame; cmd.x = x; cmd.y = y;
+          // Every key, so a pooled command last used for a cone doesn't keep its angle for a light stamp.
+          for (let i = 0; i < STAMP_OPT_KEYS.length; i++) cmd.opts[STAMP_OPT_KEYS[i]] = opts ? opts[STAMP_OPT_KEYS[i]] : undefined;
+          return res;
+        },
+      };
+      tees.set(roomId, tee);
+    }
+    return tee;
+  }
+
+  /** The strip texture, made on first use and resized with the light map. */
+  getStripTexture() {
+    const rt = this.lightMap, tm = this.scene.textures;
+    if (!this.stripTex) this.stripTex = tm.exists(STRIP_TEX) ? tm.get(STRIP_TEX) : tm.addDynamicTexture(STRIP_TEX, rt.width, rt.height);
+    if (this.stripTex.width !== rt.width || this.stripTex.height !== rt.height) this.stripTex.setSize(rt.width, rt.height);
+    return this.stripTex;
+  }
+
+  /**
+   * Draw each north room's light into the strip texture (its ambient under each segment, then its
+   * recorded stamps, then door spill), and blend it onto the light map at the segment's weight:
+   * w * L_N + (1 - w) * L_S. The second batch has no clear and holds NORMAL stamps only: the
+   * copy back uses the batch's last blend mode, so it must end NORMAL (a black ADD would add nothing).
+   */
+  drawStripBlend(segments, visible, ox, oy) {
+    const rt = this.lightMap;
+    const rw = Math.floor(rt.width), rh = Math.floor(rt.height);
+    const rects = [];
+    for (const g of segments) {
+      const x0 = Math.max(0, Math.round((g.x - ox) * RES)), x1 = Math.min(rw, Math.round((g.x + g.w - ox) * RES));
+      const y0 = Math.max(0, Math.round((g.y - oy) * RES)), y1 = Math.min(rh, Math.round((g.y + g.h - oy) * RES));
+      if (x1 <= x0 || y1 <= y0) { g.rect = null; continue; }
+      g.rect = [x0, y0, x1, y1];
+      rects.push(g);
+    }
+    if (!rects.length) return;
+    const strip = this.getStripTexture();
+    const fillOpts = this.stripFillOpts || (this.stripFillOpts = { originX: 0, originY: 0, tint: 0xffffff, scaleX: 1, scaleY: 1, skipBatch: true });
+    const addOpts = this.stripAddOpts || (this.stripAddOpts = { blendMode: Phaser.BlendModes.ADD, tint: 0x000000, alpha: 1, scale: 1, skipBatch: true });
+    const cmds = this.stripCmds, n = this.stripCmdCount;
+    strip.clear();
+    strip.beginDraw();
+    for (const state of visible) {
+      if (!this.stripNorth.has(state.roomId)) continue;
+      for (const g of rects) {
+        if (g.north !== state.roomId) continue;
+        fillOpts.tint = state.drawAmbient ?? 0xffffff;
+        fillOpts.scaleX = (g.rect[2] - g.rect[0]) / BLOCK_SIZE;
+        fillOpts.scaleY = (g.rect[3] - g.rect[1]) / BLOCK_SIZE;
+        strip.stamp(BLOCK_TEX, null, g.rect[0], g.rect[1], fillOpts);
+      }
+      for (let i = 0; i < n; i++) if (cmds[i].roomId === state.roomId) strip.stamp(cmds[i].key, cmds[i].frame, cmds[i].x, cmds[i].y, cmds[i].opts);
+    }
+    for (let i = 0; i < n; i++) if (cmds[i].roomId === '__spill') strip.stamp(cmds[i].key, cmds[i].frame, cmds[i].x, cmds[i].y, cmds[i].opts);
+    strip.stamp(BLOCK_TEX, null, 0, 0, addOpts);
+    strip.endDraw();
+
+    const cropOpts = this.stripCropOpts || (this.stripCropOpts = { originX: 0, originY: 0, alpha: 1, tint: 0xffffff, blendMode: Phaser.BlendModes.NORMAL, skipBatch: true });
+    rt.beginDraw();   // no clear: the light map keeps L_S outside the stamps. Every stamp here is NORMAL.
+    for (let i = 0; i < rects.length; i++) {
+      const g = rects[i], [x0, y0, x1, y1] = g.rect;
+      const name = 'seg' + i;
+      let frame;
+      if (!strip.has(name)) frame = strip.add(name, 0, x0, y0, x1 - x0, y1 - y0);
+      else { frame = strip.get(name); frame.setSize(x1 - x0, y1 - y0, x0, y0); }
+      // A window resize replaces the texture's WebGL handle; a frame made earlier keeps the deleted one.
+      frame.glTexture = strip.getWebGLTexture();
+      cropOpts.alpha = g.weight;
+      rt.stamp(STRIP_TEX, name, x0, y0, cropOpts);
+    }
+    rt.endDraw();
+  }
+
+  /** The last redraw's strip blend segments (world rect and the rounded, clipped light-map rect). */
+  stripBlendDebug() {
+    return JSON.parse(JSON.stringify(this.stripDebug || { at: 0, segments: [] }));
   }
 
   /**
@@ -1496,6 +1658,8 @@ export class LightingSystem {
     for (const f of this.flashes?.values() || []) f.img?.destroy();
     this.flashes?.clear();
     this.lightMap?.destroy();
+    try { const tm = this.scene?.textures; if (tm?.exists(STRIP_TEX)) tm.remove(STRIP_TEX); } catch (e) { /* scene gone */ }
+    this.stripTex = null;
     for (const state of this.rooms.values()) {
       state.emitters.forEach(e => { e.glow?.destroy(); e.leds?.forEach(l => l.img.destroy()); e.flames?.forEach(f => f.img.destroy()); });
     }
