@@ -55,3 +55,7 @@ Unverified:
 - The spill replay through the strip (step 4's "no edge at the strip top") was not exercised: after `enterRoom('office_n')` there is no hall/office_n door sprite and no spill pool at (48,-6), so the two reads are both the dark ambient. The unit test covers recording and replaying spill commands only.
 - Step 7 screenshot 1 is `s4_7_1_unfaded.png`; screenshots 2 and 3 are `s4_7_2_faded.png` and `s4_7_3_in_server.png`; step 12's is `s4_12_killswitch.png` (same spot as 7_2).
 - m04 screenshot: the strip is lit with battery_hall_1's light, but the player at dx 60 stands behind a solid blue locker prop (not faded: its base is below the strip), so only the head shows. The lighting is right, the shot is not a good picture of the player.
+
+## Slice 5: opaque cap band (2026-11-08)
+
+Commit f8545bffb (module, unit tests, tools/survey_wall_cap.py) plus the proof commit. DESIGN.md section 5 describes it. Survey: the cap is 12 px on all 1075 bottom-row frames (148 maps, 107 tilesets), so `WALL_CAP_PX = 12` is a constant. bin/test-js 423 files pass. Live proof on :3001 (proof/s5_live.mjs before/after, s5_cleanup.mjs): s5_test_*.png and s5_m01_*.png; the white stripe is gone, the wall above stays at 0.5, the player still shows; caps 0 idle, 9 faded, 0 after release and after the kill switch. What remains at the bottom of the strip is S's own wall-face colour at full opacity, lighter than the faded wall above it. The player's feet are covered by the band while behind the wall (the player draws under the layers there).

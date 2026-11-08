@@ -6,12 +6,13 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 export const here = path.dirname(fileURLToPath(import.meta.url));
 
-export async function open(gid, { query = '', port = '3001', reducedMotion = null } = {}) {
+export async function open(gid, { query = '', port = '3001', reducedMotion = null, route = null } = {}) {
   const browser = await chromium.launch({ headless: !process.env.HEADED });
   const page = await browser.newPage({ viewport: { width: 1000, height: 700 } });
   if (reducedMotion) await page.emulateMedia({ reducedMotion });
   page.on('pageerror', e => console.log('PAGEERROR', String(e).slice(0, 200)));
   await page.addInitScript(() => { try { localStorage.setItem('tutorial_declined', 'true'); } catch (e) {} });
+  if (route) await route(page);
   await page.goto(`http://127.0.0.1:${port}/break_escape/games/${gid}?skip_resume=1${query}`, { waitUntil: 'domcontentloaded', timeout: 60000 });
   await page.waitForFunction(() => window.gameScenario && window.rooms && window.loadRoom && window.__test && window.player && window.player.body, null, { timeout: 90000 });
   await page.waitForTimeout(2000);

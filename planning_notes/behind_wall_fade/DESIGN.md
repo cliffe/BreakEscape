@@ -213,6 +213,15 @@ A companion stops being a candidate when its producer does, or when it is remove
 3. On the first tick of a fade, set `hidden.visible = false` (RunCull skips it, src/tilemaps/components/RunCull.js:47). The face is opaque art over it, so nothing changes on screen at k = 1.
 4. When k reaches 1: `face.alpha = 1`, `hidden.visible = true`, then forget the cell list.
 
+**Opaque cap band.** The north room N's bottom row sits under S's row 1, and its bottom 12 px are N's south-wall cap (2 px grey, 8 px white, 2 px grey). Seen through a 50% face tile that reads as a stray white stripe. So while S is faded, every row-1 cell that has a face tile gets a second display object: an Image of that tile's tileset frame cropped to its bottom `WALL_CAP_PX` (12) px, at alpha 1, centred on the bottom 12 px of the tile and drawn at `face layer depth + 0.01`. Everything above the band keeps fading with the tile.
+
+- `WALL_CAP_PX` is a constant. `tools/survey_wall_cap.py` measures the cap on every bottom-row tile of every map in `assets/rooms/*.json` (148 maps, 107 tilesets, 1075 distinct frames) and finds 12 px for all of them, so nothing is computed per map. Re-run the script after adding a tileset.
+- The crop is a sub-frame added once to the tileset texture (`bwf_cap_<gid>_<side>`), so no per-frame allocation. The images are made with the cell list when the fade starts, and destroyed with it (release at k = 1, kill switch, `clear()` at shutdown, a replaced or removed room object).
+- Flips and quarter turns: the side of the frame that ends up at the bottom of the screen is chosen from `tile.rotation`, `flipX` and `flipY` (`capBand`), and the image takes the same rotation and flips.
+- Doorway cells are skipped: they have no tile, and any cell whose centre is within 16 px of a north doorway x from the provider (open or closed) is skipped as well, so a door sprite is never covered.
+- Depth: the layers sit at the room's back-wall bottom (S.y + 64 + 0.4 for `room`), and every sprite that can be over the wall (player and NPCs at feet + 0.5, back-wall objects at +0.5, door sprites at +0.45) is above `face layer + 0.01`. A player behind the wall is under both, as before, so the opaque band covers the bottom 12 px of the player's legs and feet while the body is in the strip.
+- Each tick the image copies the face layer's `visible` and `alpha`, so a room that is not yet revealed shows no band.
+
 Doorway cells are null in every layer (§1) and are skipped by the null test, so the doorway itself never fades. The cell list is built once per fade from the live layers. Tiles are never added after creation, and a tile removed later is orphaned: writes to it are harmless. Layer alpha (revealRoom's 1, the starting 0) multiplies with tile alpha, so a reveal mid-fade keeps the fade.
 
 ## 6. Fade factor and sprite fade
