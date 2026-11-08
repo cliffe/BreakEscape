@@ -1,7 +1,7 @@
 // Slice 2 (and 4): one walk along a back wall in a shipped mission. node s2_missions.mjs <gid> m01|m04 [tag]
 import { open, loadRooms, shot, sleep } from './lib.mjs';
 const [gid, which, tag = 's2'] = process.argv.slice(2);
-const cfg = { m01: { S: 'reception_area', N: 'main_office_area', xs: [90, 130, 230, 270, 200] }, m04: { S: 'engineering_workshop', N: 'battery_hall_1', xs: [60, 100, 140, 180, 220, 340, 380, 420, 460, 500, 540, 580] } }[which];
+const cfg = { m01: { S: 'reception_area', N: 'main_office_area', xs: [90, 130, 230, 270, 200] }, m04: { S: 'engineering_workshop', N: 'battery_hall_1', xs: [60, 100, 140, 180, 220, 340, 380, 420, 460, 500, 540, 580, 20, 40, 80, 120, 160, 200, 240, 260, 280, 300, 320, 360, 400, 440, 480, 520, 560, 600] } }[which];
 const { browser, page } = await open(gid);
 await page.evaluate(async ([a, b]) => { await window.loadRoom(a); await window.loadRoom(b); }, [cfg.S, cfg.N]);
 const E = (f, a) => page.evaluate(f, a);

@@ -16,6 +16,7 @@ const moveTo = (x, y) => E(([x, y]) => window.__test.moveTo(x, y), [x, y]);
 const walk = (d, ms = 4500) => E(([d, ms]) => window.__test.walk(d, ms), [d, ms]);
 await E(() => {
   window.lightAt = (wx, wy) => { const m = window.lightingSystem.lightMap; let r = null;
+    if (wx < m.x || wy < m.y || wx >= m.x + m.width * 2 || wy >= m.y + m.height * 2) throw new Error('lightAt outside the light map: ' + wx + ',' + wy + ' map ' + m.x + ',' + m.y);
     m.texture.snapshotPixel(Math.floor((wx - m.x) * 0.5), Math.floor((wy - m.y) * 0.5), (c) => { r = [c.r, c.g, c.b]; }); return r; };
   window.luma = (c) => (0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]) / 255;
   // distance of a point beyond every emitter's reach: min over emitters of (dist to centre - (radius + 8))
@@ -31,6 +32,15 @@ const segs = () => E(() => window.lightingSystem.stripBlendDebug().segments);
 const fadeState = () => E(() => window.behindWallFade.debugState());
 const feet = () => E(() => ({ x: Math.round(window.player.body.center.x), y: Math.round(window.player.body.bottom), room: window.currentPlayerRoom }));
 const lightsOn = (id) => E((id) => window.lightingSystem.rooms.get(id).on, id);
+// the camera can lag the player after a teleport or a room change: centre it, then let lighting redraw
+const focus = async () => { await E(() => { const c = window.lightingSystem.scene.cameras.main; c.centerOn(window.player.x, window.player.y); }); await sleep(page, 400); };
+// enterRoom walks through the door; when it cannot cross (the server doorway), place the player instead
+const goRoom = async (room, x, y) => {
+  await E((r) => window.__test.enterRoom(r), room).catch(() => {});
+  await sleep(page, 500);
+  if ((await E(() => window.currentPlayerRoom)) !== room) { await E(([x, y]) => window.player.setPosition(x, y), [x, y]); await sleep(page, 800); }
+  console.log('goRoom', room, JSON.stringify(await feet()));
+};
 const set = (k, v) => { saved[k] = v; fs.writeFileSync(stateFile, JSON.stringify(saved, null, 1)); };
 
 if (phase === 'main') {
@@ -90,11 +100,12 @@ if (phase === 'main') {
   await shot(page, 's4_7_3_in_server');
 
   // ---- step 8: seam ----
-  await E(() => window.__test.enterRoom('hall')); await sleep(page, 400);
+  await goRoom('hall', 320, 150);
   await E(() => window.lightingSystem.switchOff('server')); await sleep(page, 600);
   await moveTo(320, 200); await walk('down', 4500);
   await wait('() => { const r = window.behindWallFade.debugState().rooms; return r.reception?.k === 0.5 && r.server?.k === 0.5; }');
   await sleep(page, 150);
+  await focus();
   const sg8 = await segs();
   console.log('8 segments', JSON.stringify(sg8.map(g => [g.south, g.north, g.x, g.w, g.weight])));
   const has = (s, n, x, w) => sg8.some(g => g.south === s && g.north === n && g.x === x && g.w === w && g.weight === 1);
@@ -102,10 +113,11 @@ if (phase === 'main') {
   await shot(page, 's4_8_seam');
 
   // ---- step 4: hall from office_n ----
-  await E(() => window.__test.enterRoom('office_n')); await sleep(page, 500);
+  await goRoom('office_n', 160, -100);
   await moveTo(160, -100); await walk('down', 4500);
   await wait('() => window.behindWallFade.debugState().rooms.hall?.k === 0.5');
   await sleep(page, 150);
+  await focus();
   const sg4 = await segs();
   console.log('4 feet', JSON.stringify(await feet()), 'segments', JSON.stringify(sg4.map(g => [g.south, g.north, g.x, g.w, g.weight])));
   const hallSegs = sg4.filter(g => g.south === 'hall' && g.north === 'office_n');
@@ -116,6 +128,9 @@ if (phase === 'main') {
   check('4 A matches B within 6/255 (strip is office_n\'s dark light)', maxDiff(A4, B4) <= 6, `${A4} vs ${B4}`);
   const far = await lightAt(480, 40); set('beyond480', far);
   console.log('4 (480,40) =', far);
+  const dr = await E(() => Object.values(window.rooms.office_n.doorSprites).concat(Object.values(window.rooms.hall.doorSprites)).filter(d => /hall|office_n/.test(d.doorProperties.connectedRoom)).map(d => [d.doorProperties.connectedRoom, d.x, d.y, d.active, d.doorProperties.open]));
+  console.log('4 doors', JSON.stringify(dr));
+  for (const pt of [[48, -30], [48, -6], [48, 10], [48, 40], [80, -3], [80, 3], [100, -3], [100, 3], [130, 3]]) console.log('4 spill probe', pt, JSON.stringify(await lightAt(...pt)));
   const spillIn = await lightAt(100, 3), spillOut = await lightAt(100, -3);
   check('4 spill pool continues into the strip within 6/255', maxDiff(spillIn, spillOut) <= 6, `${spillIn} vs ${spillOut}`);
   const f4 = await feet();
@@ -127,15 +142,16 @@ if (phase === 'main') {
   await shot(page, 's4_4_hall_from_office');
 
   // ---- step 9: beside the open door (segments) ----
-  await E(() => window.__test.enterRoom('hall')); await sleep(page, 400);
+  await goRoom('hall', 320, 150);
   await moveTo(48, 200); await walk('down', 3000);
   await wait('() => window.behindWallFade.debugState().rooms.reception?.k === 0.5');
   await E(() => window.__test.interact('door:hall->reception'));
   await wait('() => (window.behindWallFade.debugState().rooms.reception?.k ?? 1) === 1');
-  await E(() => window.__test.enterRoom('hall')); await sleep(page, 400);
+  await goRoom('hall', 320, 150);
   await moveTo(88, 200); await walk('down', 4500);
   await wait('() => window.behindWallFade.debugState().rooms.reception?.k === 0.5');
   await sleep(page, 150);
+  await focus();
   const sg9 = (await segs()).filter(g => g.south === 'reception');
   console.log('9 feet', JSON.stringify(await feet()), 'segments', JSON.stringify(sg9.map(g => [g.north, g.x, g.w])));
   check('9 reception fades beside the open door; segments exclude x 32-64', sg9.length >= 1 && sg9.every(g => g.x + g.w <= 32 || g.x >= 64) && sg9.some(g => g.x === 0 && g.w === 32) && sg9.some(g => g.x === 64), JSON.stringify(sg9.map(g => [g.x, g.w])));
@@ -145,6 +161,7 @@ if (phase === 'main') {
   await E(() => { window.__rm0 = window.lightingSystem.reducedMotion; window.lightingSystem.reducedMotion = true; });
   const [x10, m10] = await E(() => window.pickX(['hall', 'reception'], 300, 100, 310, 88, 60));
   await sleep(page, 300);
+  await focus();
   const R0 = await lightAt(x10, 300);
   const w0 = await E(() => window.lightingSystem.lightMap.width);
   await E(() => window.game.scale.resize(window.game.scale.width + 64, window.game.scale.height));
@@ -166,13 +183,13 @@ if (phase === 'main') {
 if (phase === 'off') {
   const xs = saved.xs ?? 456;
   check('12 enabled false', (await fadeState()).enabled === false);
-  await E(() => window.__test.enterRoom('office_n')); await sleep(page, 500);
+  await goRoom('office_n', 160, -100);
   await moveTo(160, -100); await walk('down', 4500); await sleep(page, 600);
   const far = await lightAt(480, 40);
   console.log('12 (480,40)', far, 'main run', saved.beyond480);
   check('12 no fade state and no segments in the office_n walk', Object.keys((await fadeState()).rooms).length === 0 && (await segs()).length === 0);
   if (saved.beyond480) check('12 (480,40) matches the fade-on value within 6/255', maxDiff(far, saved.beyond480) <= 6, `${far} vs ${saved.beyond480}`);
-  await E(() => window.__test.enterRoom('hall')); await sleep(page, 400);
+  await goRoom('hall', 320, 150);
   await E(() => { window.lightingSystem.reducedMotion = true; });
   await moveTo(440, 200); await sleep(page, 500);
   const A1 = await lightAt(xs, 300);
@@ -185,7 +202,7 @@ if (phase === 'off') {
 
 if (phase === 'rm') {
   check('13 reduced motion emulated', await E(() => matchMedia('(prefers-reduced-motion: reduce)').matches));
-  await E(() => window.__test.enterRoom('hall')); await sleep(page, 400);
+  await goRoom('hall', 320, 150);
   await moveTo(440, 200); await sleep(page, 500);
   await E(() => { window.__ser = []; const tick = () => { const st = window.behindWallFade.debugState().rooms.server; window.__ser.push([performance.now(), st?.k ?? 1, window.lightingSystem.stripBlendDebug().segments.map(g => g.weight)[0] ?? 0]); window.__rid = requestAnimationFrame(tick); }; tick(); });
   await walk('down', 4500); await sleep(page, 300);
