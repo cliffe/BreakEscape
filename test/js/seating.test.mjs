@@ -330,7 +330,7 @@ async function standRig({ castor, facing, approach, statics = [] }) {
     installEasyStar();
     const dynamics = [];
     const fakeImg = () => { const o = { texture: { key: 'x' }, frame: { name: '' }, depth: 0, x: 0, y: 0,
-        anims: { stop() {} }, play() {}, setOrigin() { return o; }, setVisible(v) { o.visible = v; return o; },
+        anims: { stop() {} }, play() {}, setOrigin() { return o; }, setVisible(v) { o.visible = v; return o; }, setAlpha(a) { o.alpha = a; return o; },
         setDepth(d) { o.depth = d; return o; }, setPosition(x, y) { o.x = x; o.y = y; return o; }, setCrop() { return o; },
         setTexture() { return o; }, setFrame(n) { o.frame.name = n; return o; }, destroy() { o.destroyed = true; } }; return o; };
     const scene = {
