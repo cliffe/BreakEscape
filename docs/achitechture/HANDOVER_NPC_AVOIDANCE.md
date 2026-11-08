@@ -208,7 +208,13 @@ hidden; JS visibility/focus overrides do NOT lift it). Worse, Phaser's
 moved 1px/scene-sec. This is why NPC-movement live proofs have been so hard.
 Fix, per session, after popups are dismissed:
   `g=window.game.sys.game; g.loop.smoothStep=false; g.loop.minFps=1;
-   window.game.physics.world.fixedStep=false;`
+   window.game.physics.world.setFPS(20);`   (leave `fixedStep` on)
+**Do not use `world.fixedStep=false`** (the original recipe here): the raw
+50-100 ms headless frame gap moves the player 7-15 px a step and it tunnels
+through the 8 px wall boxes (verified 2026-11-08: m01 walls and the
+test_behind_wall_fade hall top wall; with `setFPS(20)` the same walks stop at the
+wall). Fixed 50 ms sub-steps keep each step inside the separation allowance.
+Evidence: planning_notes/behind_wall_fade/proof/physics_*.mjs.
 That restores physics to ~0.5x real-time (30px/s for v=60) and roughly
 re-syncs movement with timers. Still ~2x slow and rAF-coarse (~1-2 samples/s),
 but usable. Manual `loop.step()` pumping does NOT help (Phaser 3.60 step() reads

@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 export const here = path.dirname(fileURLToPath(import.meta.url));
 
 export async function open(gid, { query = '', port = '3001', reducedMotion = null } = {}) {
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({ headless: !process.env.HEADED });
   const page = await browser.newPage({ viewport: { width: 1000, height: 700 } });
   if (reducedMotion) await page.emulateMedia({ reducedMotion });
   page.on('pageerror', e => console.log('PAGEERROR', String(e).slice(0, 200)));
