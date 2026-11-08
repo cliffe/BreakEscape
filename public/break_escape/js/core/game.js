@@ -241,6 +241,7 @@ export function preload() {
     this.load.tilemapTiledJSON('room_test_desk_seating', 'rooms/room_test_desk_seating.json'); // test_desk_seating: desks with swivel/static chairs from the front, behind and side (seat-box experiments)
     this.load.tilemapTiledJSON('room_lw_postroom', 'rooms/room_lw_postroom.json'); // lab_physical_pentest P1 post & print room (10x6 back-of-house shell, room_lw_concrete floor; from room_lw_hall geometry)
     this.load.tilemapTiledJSON('room_lw_comms', 'rooms/room_lw_comms.json'); // lab_physical_pentest P3 comms cupboard (5x6 back-of-house shell, room_lw_concrete floor; from room_lw_store geometry)
+    this.load.tilemapTiledJSON('room_lw_riser', 'rooms/room_lw_riser.json'); // lab_physical_pentest P5 server riser (5x6 back-of-house shell, room_lw_concrete floor; copied from room_lw_comms, dressed as a server riser)
     this.load.tilemapTiledJSON('room_lw_archive', 'rooms/room_lw_archive.json'); // lab_physical_pentest P4 deeds & archive room (10x6 back-of-house shell, room_lw_concrete floor; from room_lw_postroom geometry)
     this.load.tilemapTiledJSON('room_lw_kitchen', 'rooms/room_lw_kitchen.json'); // lab_physical_pentest P2 staff kitchen (10x10 shell, room_lw_vinyl grey-green lino floor; from room_lw_kitroom geometry)
 
