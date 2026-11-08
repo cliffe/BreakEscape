@@ -866,6 +866,14 @@ export function handleObjectInteraction(sprite) {
         return;
     }
 
+    // Action menu (action-menu.js): when an object offers more than one action right
+    // now (a world keycard the player could clone or take with a cloner in hand; an
+    // author-declared `actions` list), show the shared interaction-menu overlay listing
+    // the actions instead of acting. Busy-guarded; bypassed on re-entry from the menu's
+    // own "Take it" action (sprite._beActionMenuBypass). Loaded dynamically, so reached
+    // through window and inert until it is installed.
+    if (!sprite._beActionMenuBypass && window.maybeShowObjectActionMenu?.(sprite)) return;
+
     // Workstation screen state (workstation-state.js): note whether an unattended workstation
     // was reached open or locked. Emits workstation_accessed / workstation_locked_attempt; the
     // normal interaction below still runs, so the scenario decides what the access yields.
