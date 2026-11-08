@@ -115,6 +115,7 @@ function updateRig(emitterCfg, texKey, { level = 1, objExtra = {} } = {}) {
   };
   sys.config = {};
   sys.flashes = new Map();
+  sys.stripCmds = []; sys.stripCmdCount = 0; sys.stripNorth = new Set(); sys.stripSegments = []; sys.stripDebug = { at: 0, segments: [] };
   sys.reducedMotion = true;
   sys.tmpCentre = { x: 0, y: 0 };
   sys.lightMap = { x: 0, y: 0, width: 640, height: 512, displayWidth: 640, displayHeight: 512,
