@@ -465,7 +465,8 @@ function capScene() {
     const frames = new Map();
     const tex = { key: 'room1', has: (n) => frames.has(n), add(n, src, x, y, w, h) { frames.set(n, { x, y, w, h }); } };
     const tileset = { image: tex, tileWidth: 32, tileHeight: 32,
-        getTileTextureCoordinates: (i) => ({ x: ((i - 1) % 10) * 32, y: Math.floor((i - 1) / 10) * 32 }) };
+        firstgid: 1,
+        getTileTextureCoordinates(i) { const l = i - this.firstgid; return { x: (l % 10) * 32, y: Math.floor(l / 10) * 32 }; } };
     const scene = { add: { image(x, y, key, frame) {
         const img = { x, y, key, frame, depth: 0, alpha: 1, visible: true, destroyed: false, flipX: false, flipY: false, rotation: 0,
             setDepth(d) { this.depth = d; return this; }, setAlpha(a) { this.alpha = a; return this; },
@@ -488,7 +489,7 @@ function capWorld({ doorways = [], tileExtra = {} } = {}) {
     return { ...cs, S, rooms, player, fade, roomLayer };
 }
 
-test('caps: none while idle; one opaque image per shown row-1 face tile on the bottom 12 px, just above the layer', () => {
+test('caps: none while idle; one opaque image per shown row-1 face tile on the bottom 12 px, at the top of the band rows', () => {
     const w = capWorld();
     w.fade.update(0);
     w.fade.update(300);
@@ -497,7 +498,7 @@ test('caps: none while idle; one opaque image per shown row-1 face tile on the b
     assert.equal(a.x, 16);
     assert.equal(a.y, 256 + 64 - 6);                        // centre of the bottom 12 px of row 1
     assert.equal(b.x, 48);
-    assert.equal(a.depth, 256.4 + 0.01);
+    assert.equal(a.depth, 256 + 52);
     assert.equal(a.alpha, 1);
     assert.equal(a.key, 'room1');
     assert.deepEqual(w.frames.get(a.frame), { x: 0, y: 288 + 20, w: 32, h: 12 });   // frame 91: rows 20-31 of the tile
@@ -615,4 +616,38 @@ test('seating overlays copy the chair alpha; rooms.js records table items; npc-n
     const n = read('systems/npc-needs.js');
     assert.match(n, /_fadeCompanions \|\|= new Set\(\)\)\.add\(sp\)/);
     assert.match(n, /sp\?\._fadeOwner\?\._fadeCompanions\?\.delete\(sp\)/);
+});
+
+test('caps: depth sits above N\'s layers and below a player hugging N\'s south wall', () => {
+    const w = capWorld();
+    w.fade.update(0); w.fade.update(300);
+    const nLayerMax = 256 + 0.4;                 // N's layers are at most S.y + 0.4
+    const playerDepth = 256 + 60 + 0.5;          // feet at S.y + 60, depth feet + 0.5
+    for (const img of w.images) {
+        assert.ok(img.depth > nLayerMax);
+        assert.ok(img.depth < playerDepth);
+        assert.ok(img.depth < 256 + 56 + 0.5);   // and below a body bottom at S.y + 56
+    }
+});
+
+test('caps: the frame key is the tileset-local index, shared across maps with different firstgids', () => {
+    const cs = capScene();
+    const mk = (gid, firstgid) => Object.assign(new Tile(gid), { tileset: Object.assign(Object.create(cs.tileset), { firstgid }) });
+    const rooms = [[91, 1], [191, 101]];         // both are local frame 90
+    const frames = [];
+    for (const [gid, firstgid] of rooms) {
+        const tile = mk(gid, firstgid);
+        const grid = [[null], [tile]];
+        tile.x = 0; tile.y = 1;
+        const layer = { depth: 256.4, x: 0, y: 256, scene: cs.scene, visible: true, alpha: 1, getTileAt: (c, r) => grid[r]?.[c] ?? null };
+        const S = room(0, 256, 32, 320, { objects: {}, layers: { l: layer } });
+        S.map.width = 1;
+        const player = { body: { x: 10, y: 290, width: 18, height: 10 } };
+        const fade = createBehindWallFade({ rooms: () => ({ N: room(0, 0, 32, 320, { objects: {} }), S }), player: () => player, reducedMotion: () => false, doorways: () => [] });
+        fade.update(0); fade.update(300);
+        frames.push(cs.images[cs.images.length - 1].frame);
+    }
+    assert.equal(frames[0], frames[1]);
+    assert.equal(cs.frames.size, 1);
+    assert.deepEqual(cs.frames.get(frames[0]), { x: 0, y: 288 + 20, w: 32, h: 12 });
 });

@@ -21,10 +21,10 @@
 const TILE = 32;
 const BACK_WALL_ROWS = 2;   // utils/constants.js VISUAL_TOP_TILES
 const DOOR_HALF_WIDTH = 16; // a door sprite is 32 px wide
-// The bottom 12 px of every room tileset's wall tile are the south-wall cap: 2 px grey, 8 px white,
-// 2 px grey (tools/survey_wall_cap.py: 1075 of 1075 bottom-row frames in the 148 room maps, 107
-// tilesets). The north room's cap shows through a faded wall as a white stripe, so S's face tiles
-// get this much of their bottom redrawn opaque (DESIGN.md section 5).
+// The north room's bottom map row ends in a 12 px south-wall cap: 2 px grey, 8 px white, 2 px grey
+// (tools/survey_wall_cap.py: 1075 of 1075 bottom-row frames in the 148 room maps, 107 tilesets).
+// It shows through a faded S wall as a white stripe, so the bottom 12 px of S's row-1 face tiles
+// are redrawn opaque over it (DESIGN.md section 5).
 export const WALL_CAP_PX = 12;
 
 export const FADE_ALPHA = 0.5; // the faded k and the full-blend point of the strip light
@@ -134,7 +134,7 @@ function sameValues(r) {
 export function createBehindWallFade(env) {
     let enabled = env.enabled !== false;
     let lastNow = null;
-    const states = new Map();   // roomId -> { k, target, cells: null | [{ face, hidden: [] }], hiddenCount }
+    const states = new Map();   // roomId -> { k, target, room, cells: null | [{ face, hidden: [], layer }], hiddenCount, caps: null | [{ img, layer }] }
     const records = new Map();  // sprite -> { base, applied, roomId }
     const weightPool = [];      // reused entries for lightWeights()
     const weightEntries = new Map();
@@ -153,7 +153,9 @@ export function createBehindWallFade(env) {
         const tw = ts.tileWidth || TILE, th = ts.tileHeight || TILE;
         const xy = ts.getTileTextureCoordinates?.(tile.index);
         if (!xy || !Number.isFinite(xy.x) || !Number.isFinite(xy.y)) return null;
-        const name = `bwf_cap_${tile.index}_${band}`;
+        // Textures outlive maps and their firstgids differ, so key on the tileset-local frame, not the gid.
+        const local = tile.index - (ts.firstgid ?? 1);
+        const name = `bwf_cap_${local}_${band}`;
         if (!tex.has?.(name)) {
             // band: which side of the unrotated frame is the tile's bottom after rotation and flips
             const vertical = band === 'l' || band === 'r';
@@ -196,7 +198,9 @@ export function createBehindWallFade(env) {
                 const f = capFrame(face, layer, capBand(face));
                 if (!f) continue;
                 const img = scene.add.image(cx, layer.y + (face.y + 1) * TILE - WALL_CAP_PX / 2, f.key, f.frame);
-                img.setDepth((layer.depth ?? 0) + 0.01);
+                // Top of the band rows: above N's tile layers, below anything of N's standing in them
+                // (player and NPC feet + 0.5, props bottom + 0.5, doors at S.y + 64.45).
+                img.setDepth(layer.y + (face.y + 1) * TILE - WALL_CAP_PX);
                 if (face.rotation) img.setRotation(face.rotation);
                 if (face.flipX) img.setFlipX(true);
                 if (face.flipY) img.setFlipY(true);
