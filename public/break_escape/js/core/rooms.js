@@ -2538,6 +2538,9 @@ export function createRoom(roomId, roomData, position) {
                     console.log(`Final depth: table item ${item.sprite.name} to depth ${itemDepth} (position ${index + 1} of ${group.items.length})`);
                 });
                 
+                // The behind-wall fade (systems/behind-wall-fade.js) fades a table's items with it
+                group.table.sprite._tableItems = new Set(group.items.map(item => item.sprite));
+
                 // Store all group items in room objects
                 group.items.forEach(item => {
                     rooms[roomId].objects[item.sprite.objectId] = item.sprite;

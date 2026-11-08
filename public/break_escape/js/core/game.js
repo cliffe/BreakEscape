@@ -43,6 +43,7 @@ import '../systems/npc-sight-occlusion.js';  // Walls, doors and tall props bloc
 import { CommandBoardRecorder } from '../minigames/command-board/command-board-timeline.js';  // Board entries stamped as they happen
 import { initLighting } from '../systems/lighting.js';
 import { installSeating } from '../systems/seating.js';  // Sitting on chairs (sets window.seating)
+import { installBehindWallFade } from '../systems/behind-wall-fade.js';  // Fades a south room's back wall while the player is behind it
 import { collectCharacterSprites, queueCharacterAtlases, ensureCharacterTexture } from '../systems/character-textures.js';
 import { mailScheduler } from '../systems/mail-scheduler.js';  // Mail jobs and mailState (social missions)
 import { installTimedEmails } from '../systems/mail-ink.js';  // Ink-driven plain email: contacts' timedEmails
@@ -1832,6 +1833,7 @@ export async function create() {
     // Create player first like in original
     createPlayer(this);
     installSeating(this);
+    installBehindWallFade(this);
 
     // Store player globally for access from other modules
     window.player = player;
@@ -2500,6 +2502,10 @@ export function update() {
     if (window.scenarioTimerDispatcher) {
         window.scenarioTimerDispatcher.update(Date.now());
     }
+
+    // Behind-the-wall fade: after every writer of room-object alpha, before lighting reads its factors.
+    // this.time.delta does not exist (Clock has no delta), so pass only this.time.now.
+    window.behindWallFade?.update(this.time.now);
 
     if (window.lightingSystem) {
         window.lightingSystem.update(this.time.now);

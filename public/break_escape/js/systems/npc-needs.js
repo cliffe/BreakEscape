@@ -3341,6 +3341,9 @@ export function createEngineWorld() {
         sp.setDepth?.((prod.sp.depth || at.y) + 1);
         const handle = `cosmetic:${producerId}:${++cosmeticSeq}`;
         cosmetics.set(handle, sp);
+        // drawn as part of the producer: the behind-wall fade dims it with the producer
+        (prod.sp._fadeCompanions ||= new Set()).add(sp);
+        sp._fadeOwner = prod.sp;
         return handle;
     };
 
@@ -3776,6 +3779,7 @@ export function createEngineWorld() {
         removeCosmetic(handle) {
             const sp = cosmetics.get(handle);
             cosmetics.delete(handle);
+            sp?._fadeOwner?._fadeCompanions?.delete(sp);
             try { sp?.destroy?.(); } catch (e) { /* gone */ }
         },
         // Stow on sight: every revealed slot in these rooms that no NPC holds (after a reload the

@@ -838,7 +838,8 @@ export function place() {
         if (!r) { o.setVisible(false); return; }
         if (o.texture.key !== chair.texture.key) o.setTexture(chair.texture.key);
         o.setPosition(chair.x, chair.y).setCrop(r[0], r[1], r[2], r[3])
-            .setDepth(chair.depth + 2 * SEAT_DEPTH_STEP).setVisible(chair.visible);
+            .setDepth(chair.depth + 2 * SEAT_DEPTH_STEP).setVisible(chair.visible)
+            .setAlpha(chair.alpha); // match the chair when the behind-wall fade has dimmed it
     });
     updateBreath(state, sprite, state.pose === 'sit');
 }

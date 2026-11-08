@@ -5,7 +5,15 @@
  * rows of the room to its north, and the player can walk into that strip, "behind" S's wall. While
  * they stand there S's wall and the objects drawn in those rows fade to 50%.
  *
- * This file holds the detection (slice 1): which rooms' back walls the player's body is behind.
+ * Detection (roomsBehindWallAt) says which rooms' back walls the player's body is behind. The
+ * controller (createBehindWallFade) then steps one factor k per south room (1 -> 0.5 in 150 ms,
+ * back in 200 ms), fades one visible tile per cell of the strip, and fades the sprites that room
+ * owns whose drawn rect reaches into the strip. Doors, NPCs and the player never fade.
+ *
+ * Hook placement: update(now) runs in core/game.js update() after every writer of room-object
+ * alpha (reveals, the needs system, door gates, scenario timers) and before lightingSystem.update.
+ * A writer added later in the frame would win for one frame and be re-based on the next tick.
+ * Pass this.time.now: the scene Clock has no delta.
  *
  * No imports, so the node tests can load this file on its own.
  */
@@ -83,4 +91,307 @@ export function roomsBehindWallAt(body, rooms, { margin = 4, doorways = doorwayP
         if (!suppressed) out.push(id);
     }
     return out;
+}
+
+// ---- Controller -------------------------------------------------------------------------
+
+const FADE_OUT_MS = 150;
+const FADE_IN_MS = 200;
+const MAX_DT = 250;
+const EPS = 1e-4;
+const TABLE_BACK_EDGE_PX = 4; // core/rooms.js: the back-edge allowance table grouping uses
+
+const clamp01 = (v) => Math.max(0, Math.min(1, v));
+
+/** The sprite as drawn: its rect in world px (rotated sprites use their axis-aligned bounds). */
+export function drawnRect(sprite) {
+    if (sprite.rotation && typeof sprite.getBounds === 'function') {
+        const b = sprite.getBounds();
+        return { left: b.left ?? b.x, top: b.top ?? b.y, right: b.right ?? (b.x + b.width), bottom: b.bottom ?? (b.y + b.height) };
+    }
+    const w = sprite.displayWidth, h = sprite.displayHeight;
+    const left = sprite.x - w * (sprite.originX ?? 0.5), top = sprite.y - h * (sprite.originY ?? 0.5);
+    return { left, top, right: left + w, bottom: top + h };
+}
+
+function rectReachesStrip(r, strip) {
+    return r.top < strip.bottom - 0.5 && r.bottom > strip.top && r.right > strip.left && r.left < strip.right;
+}
+
+function sameValues(r) {
+    return r && Number.isFinite(r.left) && Number.isFinite(r.top) && Number.isFinite(r.right) && Number.isFinite(r.bottom);
+}
+
+/**
+ * env: { rooms(), player(), reducedMotion(), doorways(roomId) } (all optional but rooms and player).
+ * Returns { update, debugState, setEnabled, clear, lightWeights }.
+ */
+export function createBehindWallFade(env) {
+    let enabled = env.enabled !== false;
+    let lastNow = null;
+    const states = new Map();   // roomId -> { k, target, cells: null | [{ face, hidden: [] }], hiddenCount }
+    const records = new Map();  // sprite -> { base, applied, roomId }
+    const weightPool = [];      // reused entries for lightWeights()
+    const weightEntries = new Map();
+    const weights = [];
+
+    const getRooms = () => (env.rooms && env.rooms()) || {};
+    const getDoorways = () => env.doorways || doorwayProvider;
+
+    // ---- tiles (§5) ----
+    function buildCells(room, state) {
+        const layers = Object.values(room.layers || {}).filter(l => l && typeof l.getTileAt === 'function')
+            .sort((a, b) => (b.depth ?? 0) - (a.depth ?? 0));
+        const cols = room.map?.width ?? Math.round((room.map?.widthInPixels ?? 0) / TILE);
+        const cells = [];
+        let hiddenCount = 0;
+        for (let r = 0; r < BACK_WALL_ROWS; r++) {
+            for (let c = 0; c < cols; c++) {
+                let face = null; const hidden = [];
+                for (const layer of layers) {
+                    let tile = null;
+                    try { tile = layer.getTileAt(c, r); } catch (e) { tile = null; }
+                    if (!tile || tile.index < 0) continue;
+                    if (!face) face = tile; else hidden.push(tile);
+                }
+                if (face) { cells.push({ face, hidden }); hiddenCount += hidden.length; }
+            }
+        }
+        for (const cell of cells) for (const t of cell.hidden) t.visible = false;
+        state.cells = cells;
+        state.hiddenCount = hiddenCount;
+    }
+
+    function restoreTiles(state) {
+        if (!state.cells) return;
+        for (const cell of state.cells) {
+            try { cell.face.alpha = 1; for (const t of cell.hidden) t.visible = true; } catch (e) { /* tile gone */ }
+        }
+        state.cells = null;
+        state.hiddenCount = 0;
+    }
+
+    // ---- sprites (§4, §6, §7) ----
+    function release(sprite, rec) {
+        try {
+            if (sprite.scene && Math.abs(sprite.alpha - rec.applied) <= EPS) sprite.setAlpha(rec.base);
+        } catch (e) { /* never break a frame */ }
+        try { delete sprite.behindWallK; } catch (e) { /* frozen */ }
+        records.delete(sprite);
+    }
+
+    function releaseRoom(roomId) {
+        for (const [sprite, rec] of [...records]) if (rec.roomId === roomId) release(sprite, rec);
+    }
+
+    function usable(sprite, player) {
+        return !!sprite && !!sprite.scene && sprite.active !== false && !!sprite.visible
+            && !sprite._isNPC && !sprite._npcCarried && !sprite.doorProperties && sprite !== player;
+    }
+
+    /** Does another loaded room also list this sprite and claim it by roomId? Then that room owns it. */
+    function ownedElsewhere(sprite, S, rooms) {
+        const R = sprite.roomId;
+        if (!R || R === S || !rooms[R]) return false;
+        return Object.values(rooms[R].objects || {}).includes(sprite);
+    }
+
+    function onTable(member, table, tr) {
+        const mr = drawnRect(member);
+        if (!sameValues(mr)) return false;
+        if (mr.left < tr.right && mr.right > tr.left && mr.top < tr.bottom && mr.bottom > tr.top) return true;
+        return mr.right > tr.left && mr.left < tr.right && mr.bottom <= tr.top && mr.bottom >= tr.top - TABLE_BACK_EDGE_PX;
+    }
+
+    function candidates(S, room, rooms, player, taken) {
+        const strip = backWallStrip(room);
+        const list = new Set();
+        if (!strip) return list;
+        const objs = Object.values(room.objects || {});
+        const owned = new Set(objs);
+        const add = (sprite) => { if (!taken.has(sprite)) list.add(sprite); };
+        const addWithCompanions = (sprite) => {
+            add(sprite);
+            if (sprite._fadeCompanions) {
+                for (const c of sprite._fadeCompanions) {
+                    if (c && c.scene && c.active !== false && c.visible) add(c);
+                }
+            }
+        };
+        const primaries = [];
+        for (const sprite of objs) {
+            if (!usable(sprite, player)) continue;
+            if (sprite.roomId && sprite.roomId !== S && ownedElsewhere(sprite, S, rooms)) continue;
+            const r = drawnRect(sprite);
+            if (sameValues(r) && rectReachesStrip(r, strip)) primaries.push(sprite);
+        }
+        for (const sprite of primaries) {
+            addWithCompanions(sprite);
+            if (sprite._tableItems instanceof Set) {
+                const tr = drawnRect(sprite);
+                for (const m of sprite._tableItems) {
+                    if (!owned.has(m) || !usable(m, player)) continue;
+                    if (ownedElsewhere(m, S, rooms)) continue;
+                    if (onTable(m, sprite, tr)) addWithCompanions(m);
+                }
+            }
+        }
+        return list;
+    }
+
+    function spritePass(S, room, rooms, k, player, taken) {
+        const list = candidates(S, room, rooms, player, taken);
+        for (const sprite of list) {
+            taken.add(sprite);
+            let rec = records.get(sprite);
+            if (!rec || Math.abs(sprite.alpha - rec.applied) > EPS) {
+                rec = rec || { base: 1, applied: 1, roomId: S };
+                rec.base = sprite.alpha;
+                rec.roomId = S;
+                records.set(sprite, rec);
+            }
+            try {
+                sprite.setAlpha(rec.base * k);
+                rec.applied = sprite.alpha;
+                sprite.behindWallK = k;
+            } catch (e) { records.delete(sprite); }
+        }
+        for (const [sprite, rec] of [...records]) {
+            if (rec.roomId === S && !list.has(sprite)) release(sprite, rec);
+        }
+    }
+
+    function dropState(id, touch = true) {
+        const state = states.get(id);
+        if (touch) { releaseRoom(id); if (state) restoreTiles(state); }
+        states.delete(id);
+    }
+
+    // ---- per frame ----
+    function update(now) {
+        if (!enabled) return;
+        const rooms = getRooms();
+        const player = env.player && env.player();
+        let dt = 0;
+        if (lastNow !== null && Number.isFinite(now) && now > lastNow) dt = Math.min(MAX_DT, now - lastNow);
+        if (Number.isFinite(now)) lastNow = now;
+
+        const behind = new Set();
+        const b = player && player.body;
+        if (b && Number.isFinite(b.x) && Number.isFinite(b.y)) {
+            const w = b.width ?? 0, h = b.height ?? 0;
+            for (const id of roomsBehindWallAt({ left: b.x, right: b.x + w, feetY: b.y + h }, rooms, { doorways: getDoorways() })) {
+                behind.add(id);
+            }
+        }
+        for (const id of behind) if (!states.has(id)) states.set(id, { k: 1, target: 1, cells: null, hiddenCount: 0 });
+
+        const reduced = !!(env.reducedMotion && env.reducedMotion());
+        const taken = new Set();
+        for (const [id, state] of [...states]) {
+            const room = rooms[id];
+            if (!room) { states.delete(id); continue; } // rooms replaced: nothing stale to touch
+            state.target = behind.has(id) ? FADE_ALPHA : 1;
+            const before = state.k;
+            if (!Number.isFinite(state.k)) {
+                dropState(id);
+                continue;
+            }
+            if (reduced) state.k = state.target;
+            else if (state.k > state.target) state.k = Math.max(state.target, state.k - 0.5 * dt / FADE_OUT_MS);
+            else if (state.k < state.target) state.k = Math.min(state.target, state.k + 0.5 * dt / FADE_IN_MS);
+            if (!Number.isFinite(state.k)) { dropState(id); continue; }
+
+            if (state.k >= 1 && state.target === 1) { dropState(id); continue; }
+
+            if (!state.cells) buildCells(room, state);
+            if (state.k !== before || state.justBuilt !== false) {
+                for (const cell of state.cells) cell.face.alpha = state.k;
+            }
+            state.justBuilt = false;
+            spritePass(id, room, rooms, state.k, player, taken);
+        }
+    }
+
+    function lightWeights() {
+        weights.length = 0;
+        if (!enabled || states.size === 0) return weights;
+        const rooms = getRooms();
+        for (const [id, state] of states) {
+            if (!Number.isFinite(state.k)) continue;
+            const weight = clamp01((1 - state.k) / (1 - FADE_ALPHA));
+            if (!(weight > 0)) continue;
+            let e = weightEntries.get(id);
+            if (!e) { e = { roomId: id, weight: 0, gaps: [] }; weightEntries.set(id, e); }
+            e.weight = weight;
+            e.gaps.length = 0;
+            for (const d of openNorthDoorways(rooms, id, getDoorways())) e.gaps.push(d.x);
+            weights.push(e);
+        }
+        return weights;
+    }
+
+    function debugState() {
+        const out = { enabled, rooms: {} };
+        for (const [id, state] of states) {
+            let n = 0;
+            for (const rec of records.values()) if (rec.roomId === id) n++;
+            out.rooms[id] = {
+                k: state.k, target: state.target,
+                weight: Number.isFinite(state.k) ? clamp01((1 - state.k) / (1 - FADE_ALPHA)) : 0,
+                records: n, hiddenTiles: state.hiddenCount
+            };
+        }
+        return out;
+    }
+
+    function setEnabled(on) {
+        if (on === enabled) return;
+        if (!on) {
+            for (const [sprite, rec] of [...records]) release(sprite, rec);
+            for (const state of states.values()) { try { restoreTiles(state); } catch (e) { /* room gone */ } }
+            states.clear();
+            records.clear();
+        }
+        enabled = !!on;
+        lastNow = null;
+    }
+
+    /** Scene shutdown: forget everything without touching a display object. */
+    function clear() {
+        records.clear();
+        states.clear();
+        lastNow = null;
+    }
+
+    /** Test hook: put a state's k at an arbitrary value (a NaN must snap to 1 and release). */
+    function _forceK(id, k) { const s = states.get(id); if (s) s.k = k; }
+
+    return { update, debugState, setEnabled, clear, lightWeights, _forceK };
+}
+
+function urlOrStorageOff() {
+    try {
+        const v = new URLSearchParams(window.location.search).get('behindWallFade');
+        if (v === 'off' || v === '0') return true;
+    } catch (e) { /* no location */ }
+    try { if (window.localStorage.getItem('breakEscapeBehindWallFade') === 'off') return true; } catch (e) { /* no storage */ }
+    return false;
+}
+
+function prefersReducedMotion() {
+    try { return !!window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches; } catch (e) { return false; }
+}
+
+/** Build the controller with window getters and publish it as window.behindWallFade. */
+export function installBehindWallFade(scene) {
+    const fade = createBehindWallFade({
+        enabled: !urlOrStorageOff(),
+        rooms: () => window.rooms,
+        player: () => window.player,
+        reducedMotion: prefersReducedMotion
+    });
+    window.behindWallFade = fade;
+    try { scene.events.once('shutdown', fade.clear); } catch (e) { /* no events */ }
+    return fade;
 }
