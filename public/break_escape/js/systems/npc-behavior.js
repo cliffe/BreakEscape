@@ -1442,6 +1442,18 @@ class NPCBehavior {
         const hit = nearestBlockerAhead(pos, heading, this._dynamicBlockers());
         if (!hit) { this._avoid = null; return false; }
 
+        // A needs-driven NPC whose pickup/use cell has the player standing on or
+        // beside it must still reach that cell — the pickup/use only fires there — so
+        // a sustained yield or a detour round the player strands the errand. Treat it
+        // like a scripted route action: time-box the brief wait, then squeeze up to
+        // the cell rather than holding or routing the long way. (Office-life
+        // regression: Sofia stalled or detoured for seconds when the player stood by
+        // the BadUSB she was sent to collect — lab_physical_pentest games 1099–1124.)
+        if (!mustReach && hit.isPlayer && this._moveOwner === 'needs' && this.patrolTarget) {
+            const dxt = this.patrolTarget.x - hit.x, dyt = this.patrolTarget.y - hit.y;
+            if (dxt * dxt + dyt * dyt <= AVOID_LOOKAHEAD_PX * AVOID_LOOKAHEAD_PX) mustReach = true;
+        }
+
         const a = this._avoid || (this._avoid = { since: time, repathAfter: 0, pending: false, gaveUp: false, squeezeUntil: 0 });
         // Phase: gentle squeeze in progress — let the bounded nudge run, then cool down.
         if (a.squeezeUntil && time < a.squeezeUntil) {

@@ -212,3 +212,38 @@ test('without mustReach the same early frame is still a hold — so mustReach is
     t += 700; b._handleBlockerAhead(t, { x: 400, y: 0 }, false);     // past wait, before give-up squeeze
     assert.deepEqual(b._vel, { x: 0, y: 0 }, 'a plain yield is still stopped here (the regression that stranded the route)');
 });
+
+// ── needs pickup: the player standing on the item's cell must not strand the errand ──
+// Regression (lab_physical_pentest, games 1099–1124): a needs-driven NPC (Sofia) sent
+// to collect the BadUSB the player just dropped treated the player — standing on the
+// pickup cell — as a blocker and yielded/detoured for seconds (leg ~29 vs ~17 units),
+// a detour the player sees. The pickup only fires at the cell, so on the final approach
+// a needs errand squeezes up to a player at its target, exactly as a route action does.
+test('needs pickup: a player on the target cell makes the NPC squeeze up to it (not a sustained hold)', () => {
+    window.__npcAvoidOff = false;
+    window.player = { body: { enable: true, center: { x: 28, y: 0 } } };
+    window.rooms = {};
+    const b = walker({ target: { x: 30, y: 0 } });   // no pathfinder: a plain yield would hold for ever
+    b._moveOwner = 'needs';                           // a needs errand, not a wander
+    let t = 100000;
+    b._handleBlockerAhead(t, { x: 30, y: 0 });
+    assert.deepEqual(b._vel, { x: 0, y: 0 }, 'a brief wait first (no shove)');
+    t += 700;                                         // just past AVOID_WAIT_MS
+    const handled = b._handleBlockerAhead(t, { x: 30, y: 0 });
+    assert.equal(handled, true);
+    const speed = Math.hypot(b._vel.x, b._vel.y);
+    assert.ok(speed > 0 && speed < 90, `bounded squeeze toward the item, not a shove (got ${speed.toFixed(1)})`);
+    assert.ok(b._vel.x > 0, 'moving toward the pickup cell, not holding or detouring');
+});
+
+test('needs errand: a player far from the target (mid-path) is still a normal yield, not a squeeze', () => {
+    window.__npcAvoidOff = false;
+    window.player = { body: { enable: true, center: { x: 28, y: 0 } } };
+    window.rooms = {};
+    const b = walker({ target: { x: 400, y: 0 } });  // target far from the blocker → not the "at my cell" case
+    b._moveOwner = 'needs';
+    let t = 100000;
+    b._handleBlockerAhead(t, { x: 400, y: 0 });
+    t += 700; b._handleBlockerAhead(t, { x: 400, y: 0 });  // past wait, before give-up squeeze
+    assert.deepEqual(b._vel, { x: 0, y: 0 }, 'a mid-path player is still a plain hold — the squeeze is scoped to the pickup cell');
+});
