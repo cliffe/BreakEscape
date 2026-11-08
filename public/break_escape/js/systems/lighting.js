@@ -1107,7 +1107,7 @@ export class LightingSystem {
           const lx = left + l.dx, ly = top + l.dy;
           const lit = li < ledsShown && ledA > 0.01 && (still || ((time + l.offset) % l.period) / l.period < l.duty)
             && !this.hiddenByFigure(lx, ly, obj.depth, figures);
-          l.img.setPosition(lx, ly).setVisible(lit).setAlpha(ledA);
+          l.img.setPosition(lx, ly).setVisible(lit).setAlpha(ledA * (obj.behindWallK ?? 1));
         }
         const c = obj.getCenter ? obj.getCenter(centre) : obj;
         const x = c.x + (def.offsetX || 0), y = c.y + (def.offsetY || 0);
@@ -1150,7 +1150,7 @@ export class LightingSystem {
         // strength, where other `above` glows are held at 0.6.
         const fade = e.indicator ? 1 : (def.ransom || def.above) ? 0.6 : glowFade;
         e.glow.setPosition(x, y).setDepth(above ? LIGHT_DEPTH + 1 : obj.depth + 0.01).setVisible(true)
-          .setAlpha(Math.min(1, def.intensity * k * e.glowK * fade * (above ? e.fade : GLOW_BOOST)));
+          .setAlpha(Math.min(1, def.intensity * k * e.glowK * fade * (above ? e.fade : GLOW_BOOST)) * (obj.behindWallK ?? 1));
         // Keep an `above` glow's hue in a lit room (reds stayed red, not pink): multiply
         // its colour into the map under it first. Ransom screens have their own tint.
         if (def.above && !def.ransom && def.hueKeep !== false && this.preserveHue !== false && state.level > 0.05) {
@@ -1169,7 +1169,7 @@ export class LightingSystem {
             .setTint(lerpColor(FIRE_YELLOW, def.color, tg.rise))
             .setScale(tr / (LIGHT_TEX_SIZE / 2))
             .setDepth(above ? LIGHT_DEPTH + 1 : obj.depth + 0.02)
-            .setAlpha(Math.min(1, def.intensity * 0.9 * tg.alpha * (above ? e.fade : GLOW_BOOST)))
+            .setAlpha(Math.min(1, def.intensity * 0.9 * tg.alpha * (above ? e.fade : GLOW_BOOST)) * (obj.behindWallK ?? 1))
             .setVisible(true);
         }
         // ADD can't colour a near-white light map, so in a lit room an emitter with
@@ -1481,7 +1481,7 @@ export class LightingSystem {
       const p = obj.getCenter ? obj.getCenter(c) : obj;
       const x = p.x + (v.offsetX || 0), y = p.y + (v.offsetY || 0);
       f.img.setTint(shape.color).setScale((shape.radius * 0.6) / (LIGHT_TEX_SIZE / 2))
-        .setPosition(x, y).setDepth(LIGHT_DEPTH + 2).setAlpha(shape.alpha).setVisible(true);
+        .setPosition(x, y).setDepth(LIGHT_DEPTH + 2).setAlpha(shape.alpha * (obj.behindWallK ?? 1)).setVisible(true);
       // Keep the hue in a lit room, as the indicator dots do
       if (rt && multOpts && state.level > 0.05 && this.preserveHue !== false) {
         multOpts.tint = lerpColor(0xffffff, lightColorFor(shape.color), HUE_KEEP_MIX);

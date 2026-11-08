@@ -276,3 +276,16 @@ test('flash: not drawn for an object with no indicator record in the room; reduc
   sys.drawFlashes(state, 300, null, null, 0, 0);
   assert.equal(sys.flashes.size, 0);
 });
+
+test('flash: an object with behindWallK = 0.5 draws its flash at half shape.alpha', () => {
+  const { sys, state } = flashRig();
+  sys.flash('tom_pc', 'lock');
+  sys.drawFlashes(state, 1000, null, null, 0, 0);
+  sys.drawFlashes(state, 1100, null, null, 0, 0);
+  const f = sys.flashes.get('tom_pc');
+  const full = f.img.alpha;
+  assert.ok(full > 0.5, `lock flash at full strength (${full})`);
+  state.emitters.find(e => e.indicator).obj.behindWallK = 0.5;
+  sys.drawFlashes(state, 1100, null, null, 0, 0);
+  assert.ok(Math.abs(f.img.alpha - full * 0.5) < 1e-9);
+});
