@@ -596,6 +596,16 @@
     "imported": "2026-11-06",
     "sit_from": "d31ee10d-3c0d-4251-9d5b-b17a69a04f20"
   },
+  "len": {
+    "character_id": "d6814179-c356-43a2-87cb-204828ffa6c5",
+    "name": "Make portrait for Len Okafor\nA man in his fifties ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-07",
+    "sit_from": "aa51542b-72f6-4ce2-b529-07751bbf0487"
+  },
   "lerato_dlamini": {
     "character_id": "cfc36f50-e24a-4f9f-b361-1b40de1c4e1b",
     "name": "Make portrait for Lerato Dlamini\nA Black South Afr...",
