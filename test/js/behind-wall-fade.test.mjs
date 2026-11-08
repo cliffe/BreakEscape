@@ -459,6 +459,145 @@ test('NPCs / the player body outside every strip leave an idle controller empty'
     assert.deepEqual(w.fade.debugState().rooms, {});
 });
 
+// ---- opaque cap band over the faded face tiles (DESIGN.md section 5) ---------------------
+function capScene() {
+    const images = [];
+    const frames = new Map();
+    const tex = { key: 'room1', has: (n) => frames.has(n), add(n, src, x, y, w, h) { frames.set(n, { x, y, w, h }); } };
+    const tileset = { image: tex, tileWidth: 32, tileHeight: 32,
+        getTileTextureCoordinates: (i) => ({ x: ((i - 1) % 10) * 32, y: Math.floor((i - 1) / 10) * 32 }) };
+    const scene = { add: { image(x, y, key, frame) {
+        const img = { x, y, key, frame, depth: 0, alpha: 1, visible: true, destroyed: false, flipX: false, flipY: false, rotation: 0,
+            setDepth(d) { this.depth = d; return this; }, setAlpha(a) { this.alpha = a; return this; },
+            setVisible(v) { this.visible = v; return this; }, setRotation(r) { this.rotation = r; return this; },
+            setFlipX(v) { this.flipX = v; return this; }, setFlipY(v) { this.flipY = v; return this; },
+            destroy() { this.destroyed = true; } };
+        images.push(img); return img; } } };
+    return { scene, images, frames, tileset };
+}
+function capWorld({ doorways = [], tileExtra = {} } = {}) {
+    const cs = capScene();
+    const rows = [[0, 0, 0, 0, 0], [91, 92, 0, 94, 95]];   // row 1: four tiles and a gap at column 2
+    const grid = rows.map((row, r) => row.map((g, c) => (g ? Object.assign(new Tile(g), { x: c, y: r, tileset: cs.tileset }, tileExtra) : null)));
+    const roomLayer = { depth: 256.4, x: 0, y: 256, scene: cs.scene, visible: true, alpha: 1, grid, getTileAt: (c, r) => grid[r]?.[c] ?? null };
+    const S = room(0, 256, 160, 320, { objects: {}, layers: { s_room: roomLayer } });
+    S.map.width = 5;
+    const rooms = { N: room(0, 0, 160, 320, { objects: {} }), S };
+    const player = { body: { x: 60, y: 290, width: 18, height: 10 } };   // feet 300: in S's strip
+    const fade = createBehindWallFade({ rooms: () => rooms, player: () => player, reducedMotion: () => false, doorways: () => doorways });
+    return { ...cs, S, rooms, player, fade, roomLayer };
+}
+
+test('caps: none while idle; one opaque image per shown row-1 face tile on the bottom 12 px, just above the layer', () => {
+    const w = capWorld();
+    w.fade.update(0);
+    w.fade.update(300);
+    assert.equal(w.images.length, 4);                       // the gap cell and row 0 have none
+    const [a, b] = w.images;
+    assert.equal(a.x, 16);
+    assert.equal(a.y, 256 + 64 - 6);                        // centre of the bottom 12 px of row 1
+    assert.equal(b.x, 48);
+    assert.equal(a.depth, 256.4 + 0.01);
+    assert.equal(a.alpha, 1);
+    assert.equal(a.key, 'room1');
+    assert.deepEqual(w.frames.get(a.frame), { x: 0, y: 288 + 20, w: 32, h: 12 });   // frame 91: rows 20-31 of the tile
+    assert.deepEqual(w.frames.get(b.frame), { x: 32, y: 288 + 20, w: 32, h: 12 });
+    assert.equal(w.roomLayer.grid[1][0].alpha, 0.5);        // the tile itself still fades
+    const idle = capWorld();
+    idle.player.body.y = 500;
+    idle.fade.update(0); idle.fade.update(300);
+    assert.equal(idle.images.length, 0);
+});
+
+test('caps: no allocation per frame, the same images are reused', () => {
+    const w = capWorld();
+    w.fade.update(0);
+    for (let t = 16; t < 2000; t += 16) w.fade.update(t);
+    assert.equal(w.images.length, 4);
+    assert.equal(w.frames.size, 4);
+});
+
+test('caps: doorway cells are skipped, open or closed', () => {
+    // north doorways at x 48 (column 1) and 144 (column 4); the provider lists both whatever their state
+    const w = capWorld({ doorways: [{ to: 'N', direction: 'north', x: 48 }, { to: 'N', direction: 'north', x: 144 }, { to: 'W', direction: 'west', x: 16 }] });
+    w.S.doorSprites = { c: { active: true, doorProperties: { connectedRoom: 'N', worldX: 144, open: false } } };   // column 4 closed
+    w.player.body.x = 95;                                    // centre 104: clear of both doorways, still behind the wall
+    w.fade.update(0); w.fade.update(300);
+    assert.deepEqual(w.images.map(i => i.x), [16, 112]);    // columns 0 and 3 only
+});
+
+test('caps: flips and rotation pick the screen-bottom side of the frame', () => {
+    const flipY = capWorld({ tileExtra: { flipY: true } });
+    flipY.fade.update(0); flipY.fade.update(300);
+    assert.deepEqual(flipY.frames.get(flipY.images[0].frame), { x: 0, y: 288, w: 32, h: 12 });
+    assert.equal(flipY.images[0].flipY, true);
+    const quarter = capWorld({ tileExtra: { rotation: Math.PI / 2 } });
+    quarter.fade.update(0); quarter.fade.update(300);
+    assert.deepEqual(quarter.frames.get(quarter.images[0].frame), { x: 20, y: 288, w: 12, h: 32 });
+    assert.equal(quarter.images[0].rotation, Math.PI / 2);
+    const half = capWorld({ tileExtra: { rotation: Math.PI } });
+    half.fade.update(0); half.fade.update(300);
+    assert.deepEqual(half.frames.get(half.images[0].frame), { x: 0, y: 288, w: 32, h: 12 });
+    const left = capWorld({ tileExtra: { rotation: Math.PI * 1.5, flipX: true } });
+    left.fade.update(0); left.fade.update(300);
+    assert.deepEqual(left.frames.get(left.images[0].frame), { x: 20, y: 288, w: 12, h: 32 });
+    assert.equal(left.images[0].flipX, true);
+});
+
+test('caps: follow the layer visibility and alpha (a room not yet revealed shows no cap)', () => {
+    const w = capWorld();
+    w.roomLayer.visible = false; w.roomLayer.alpha = 0;
+    w.fade.update(0); w.fade.update(300);
+    assert.ok(w.images.every(i => i.visible === false && i.alpha === 0));
+    w.roomLayer.visible = true; w.roomLayer.alpha = 1;
+    w.fade.update(316);
+    assert.ok(w.images.every(i => i.visible === true && i.alpha === 1));
+});
+
+test('caps: destroyed on release, kill switch, shutdown, a replaced room and a removed room', () => {
+    const live = (w) => w.images.filter(i => !i.destroyed).length;
+    const release = capWorld();
+    release.fade.update(0); release.fade.update(300);
+    assert.equal(live(release), 4);
+    release.player.body.y = 500;
+    release.fade.update(316);
+    assert.equal(live(release), 4);                          // mid fade-back: still there
+    release.fade.update(700);
+    assert.equal(live(release), 0);
+    release.player.body.y = 290;                             // fade again: a fresh set
+    release.fade.update(716); release.fade.update(1000);
+    assert.equal(release.images.length, 8);
+    assert.equal(live(release), 4);
+
+    const kill = capWorld();
+    kill.fade.update(0); kill.fade.update(300);
+    kill.fade.setEnabled(false);
+    assert.equal(live(kill), 0);
+
+    const shutdown = capWorld();
+    shutdown.fade.update(0); shutdown.fade.update(300);
+    shutdown.fade.clear();
+    assert.equal(live(shutdown), 0);
+    assert.equal(shutdown.roomLayer.grid[1][0].alpha, 0.5);  // clear still touches no tile
+
+    const restart = capWorld();                              // scenario restart: rooms rebuilt under the same id
+    restart.fade.update(0); restart.fade.update(300);
+    const fresh = capWorld();
+    restart.rooms.S = fresh.S;
+    restart.fade.update(316);
+    assert.equal(live(restart), 0);
+    restart.fade.update(332); restart.fade.update(600);
+    assert.equal(fresh.images.length, 4);                    // the new room gets its own set
+    assert.equal(restart.images.length, 4);                  // the old one was not touched again
+    assert.equal(live(restart), 0);
+
+    const gone = capWorld();
+    gone.fade.update(0); gone.fade.update(300);
+    delete gone.rooms.S;
+    gone.fade.update(316);
+    assert.equal(live(gone), 0);
+});
+
 // ---- wiring (static checks) ----------------------------------------------------------
 const read = (p) => readFileSync(join(js, p), 'utf8');
 

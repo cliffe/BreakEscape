@@ -21,6 +21,11 @@
 const TILE = 32;
 const BACK_WALL_ROWS = 2;   // utils/constants.js VISUAL_TOP_TILES
 const DOOR_HALF_WIDTH = 16; // a door sprite is 32 px wide
+// The bottom 12 px of every room tileset's wall tile are the south-wall cap: 2 px grey, 8 px white,
+// 2 px grey (tools/survey_wall_cap.py: 1075 of 1075 bottom-row frames in the 148 room maps, 107
+// tilesets). The north room's cap shows through a faded wall as a white stripe, so S's face tiles
+// get this much of their bottom redrawn opaque (DESIGN.md section 5).
+export const WALL_CAP_PX = 12;
 
 export const FADE_ALPHA = 0.5; // the faded k and the full-blend point of the strip light
 
@@ -139,7 +144,83 @@ export function createBehindWallFade(env) {
     const getDoorways = () => env.doorways || doorwayProvider;
 
     // ---- tiles (§5) ----
-    function buildCells(room, state) {
+    // ---- opaque cap bands (§5) ----
+    /** Frame of the tile's cap side in its tileset texture, cached on the texture. Null if unknown. */
+    function capFrame(tile, layer, band) {
+        const ts = tile.tileset || layer.gidMap?.[tile.index];
+        const tex = ts?.image;
+        if (!ts || !tex || typeof tex.add !== 'function') return null;
+        const tw = ts.tileWidth || TILE, th = ts.tileHeight || TILE;
+        const xy = ts.getTileTextureCoordinates?.(tile.index);
+        if (!xy || !Number.isFinite(xy.x) || !Number.isFinite(xy.y)) return null;
+        const name = `bwf_cap_${tile.index}_${band}`;
+        if (!tex.has?.(name)) {
+            // band: which side of the unrotated frame is the tile's bottom after rotation and flips
+            const vertical = band === 'l' || band === 'r';
+            const w = vertical ? WALL_CAP_PX : tw, h = vertical ? th : WALL_CAP_PX;
+            const x = band === 'r' ? xy.x + tw - WALL_CAP_PX : xy.x;
+            const y = band === 'b' ? xy.y + th - WALL_CAP_PX : xy.y;
+            tex.add(name, 0, x, y, w, h);
+        }
+        return { key: tex.key, frame: name };
+    }
+
+    /** Side of the frame that ends up at the bottom of the screen, for a tile's rotation and flips. */
+    function capBand(tile) {
+        const quarter = ((Math.round((tile.rotation || 0) / (Math.PI / 2)) % 4) + 4) % 4;
+        if (quarter === 0) return tile.flipY ? 't' : 'b';
+        if (quarter === 1) return tile.flipX ? 'l' : 'r';
+        if (quarter === 2) return tile.flipY ? 'b' : 't';
+        return tile.flipX ? 'r' : 'l';
+    }
+
+    function northDoorXs(roomId) {
+        const provider = getDoorways();
+        if (!provider) return [];
+        try { return (provider(roomId) || []).filter(d => d && d.direction === 'north' && Number.isFinite(d.x)).map(d => d.x); }
+        catch (e) { return []; }
+    }
+
+    /** One opaque cropped image per shown row-1 face tile, outside the doorways. Made once per fade. */
+    function buildCaps(roomId, state) {
+        state.caps = [];
+        const doorXs = northDoorXs(roomId);
+        for (const cell of state.cells) {
+            const { face, layer } = cell;
+            if (!layer || face.y !== BACK_WALL_ROWS - 1) continue;
+            const scene = layer.scene;
+            if (!scene?.add || typeof scene.add.image !== 'function') continue;
+            try {
+                const left = layer.x + face.x * TILE, cx = left + TILE / 2;
+                if (doorXs.some(x => Math.abs(cx - x) < DOOR_HALF_WIDTH)) continue;
+                const f = capFrame(face, layer, capBand(face));
+                if (!f) continue;
+                const img = scene.add.image(cx, layer.y + (face.y + 1) * TILE - WALL_CAP_PX / 2, f.key, f.frame);
+                img.setDepth((layer.depth ?? 0) + 0.01);
+                if (face.rotation) img.setRotation(face.rotation);
+                if (face.flipX) img.setFlipX(true);
+                if (face.flipY) img.setFlipY(true);
+                state.caps.push({ img, layer });
+            } catch (e) { /* no cap for this cell */ }
+        }
+    }
+
+    /** Follow the layer: a room still hidden (or being revealed) must not show its cap early. */
+    function syncCaps(state) {
+        for (const { img, layer } of state.caps) {
+            const vis = layer.visible !== false, a = layer.alpha ?? 1;
+            if (img.visible !== vis) img.setVisible(vis);
+            if (img.alpha !== a) img.setAlpha(a);
+        }
+    }
+
+    function destroyCaps(state) {
+        if (!state.caps) return;
+        for (const { img } of state.caps) { try { img.destroy(); } catch (e) { /* scene gone */ } }
+        state.caps = null;
+    }
+
+    function buildCells(roomId, room, state) {
         const layers = Object.values(room.layers || {}).filter(l => l && typeof l.getTileAt === 'function')
             .sort((a, b) => (b.depth ?? 0) - (a.depth ?? 0));
         const cols = room.map?.width ?? Math.round((room.map?.widthInPixels ?? 0) / TILE);
@@ -147,22 +228,24 @@ export function createBehindWallFade(env) {
         let hiddenCount = 0;
         for (let r = 0; r < BACK_WALL_ROWS; r++) {
             for (let c = 0; c < cols; c++) {
-                let face = null; const hidden = [];
+                let face = null, faceLayer = null; const hidden = [];
                 for (const layer of layers) {
                     let tile = null;
                     try { tile = layer.getTileAt(c, r); } catch (e) { tile = null; }
                     if (!tile || tile.index < 0) continue;
-                    if (!face) face = tile; else hidden.push(tile);
+                    if (!face) { face = tile; faceLayer = layer; } else hidden.push(tile);
                 }
-                if (face) { cells.push({ face, hidden }); hiddenCount += hidden.length; }
+                if (face) { cells.push({ face, hidden, layer: faceLayer }); hiddenCount += hidden.length; }
             }
         }
         for (const cell of cells) for (const t of cell.hidden) t.visible = false;
         state.cells = cells;
         state.hiddenCount = hiddenCount;
+        buildCaps(roomId, state);
     }
 
     function restoreTiles(state) {
+        destroyCaps(state);
         if (!state.cells) return;
         for (const cell of state.cells) {
             try { cell.face.alpha = 1; for (const t of cell.hidden) t.visible = true; } catch (e) { /* tile gone */ }
@@ -284,13 +367,13 @@ export function createBehindWallFade(env) {
                 behind.add(id);
             }
         }
-        for (const id of behind) if (!states.has(id)) states.set(id, { k: 1, target: 1, cells: null, hiddenCount: 0 });
+        for (const id of behind) if (!states.has(id)) states.set(id, { k: 1, target: 1, cells: null, caps: null, room: null, hiddenCount: 0 });
 
         const reduced = !!(env.reducedMotion && env.reducedMotion());
         const taken = new Set();
         for (const [id, state] of [...states]) {
             const room = rooms[id];
-            if (!room) { states.delete(id); continue; } // rooms replaced: nothing stale to touch
+            if (!room) { destroyCaps(state); states.delete(id); continue; } // rooms replaced: nothing stale to touch
             state.target = behind.has(id) ? FADE_ALPHA : 1;
             const before = state.k;
             if (!Number.isFinite(state.k)) {
@@ -304,11 +387,18 @@ export function createBehindWallFade(env) {
 
             if (state.k >= 1 && state.target === 1) { dropState(id); continue; }
 
-            if (!state.cells) buildCells(room, state);
+            if (state.room && state.room !== room) { // the room object was replaced: its tiles are gone with it
+                destroyCaps(state);
+                states.delete(id);
+                continue;
+            }
+            state.room = room;
+            if (!state.cells) buildCells(id, room, state);
             if (state.k !== before || state.justBuilt !== false) {
                 for (const cell of state.cells) cell.face.alpha = state.k;
             }
             state.justBuilt = false;
+            if (state.caps) syncCaps(state);
             spritePass(id, room, rooms, state.k, player, taken);
         }
     }
@@ -357,8 +447,9 @@ export function createBehindWallFade(env) {
         lastNow = null;
     }
 
-    /** Scene shutdown: forget everything without touching a display object. */
+    /** Scene shutdown: forget everything. Only the cap images are destroyed; no tile or sprite is touched. */
     function clear() {
+        for (const state of states.values()) destroyCaps(state);
         records.clear();
         states.clear();
         lastNow = null;
