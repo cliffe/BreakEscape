@@ -275,3 +275,111 @@ needs to know.
   and `Game.needs_tracked?`.
 - `routes_scenario` in `test/support/access_model_scenario.rb` is a ready-made fixture for the
   later steps' server checks.
+
+## Steps 4 and 5: validator checks, dungeon graph identities (2026-11-09)
+
+### Built
+
+- `lib/break_escape/access_identities.rb` (new): `BreakEscape::AccessIdentities`, plain Ruby
+  (no ActiveSupport) like `declared_grants.rb`, so the validator and the graph generator share
+  one set of identity rules. It mirrors the server's `Game.identity_roles`, `acl_admits?`,
+  `needs_tracked?` (with `positive_number?`), `account_holder?`, `npc_card`,
+  `normalise_username` and `login_pc?`, read from the authored scenario. It adds `room_npcs`,
+  `room_objects` (room objects and NPC `itemsHeld`, recursing into `contents`), `workstation?`
+  (the `isWorkstation` rule plus every sign-in PC), `owner_id`, `locks` (locked `rfid` rooms as
+  doors, locked `rfid` objects, every sign-in PC), `cards` (one entry per `card_id` with every
+  holder), `card_opens?`, `account_admitted?`, `reach` and `uses_access_model?`.
+- `scripts/validate_scenario.rb`: `check_access_model(json_data, repo_root, scenario_dir)`,
+  called with the other common checks in `main`. Every error and warning in step 4's list, plus:
+  - an error for a sign-in PC id containing `|` (the step 3 note);
+  - an error for a sign-in PC whose `screenOwner` names no room NPC (an unresolved person);
+  - a warning for a profile with no `for` roles or people (it admits nobody, step 3 note).
+  - Identity reach: one `ℹ️ Identity reach:` line per NPC card (the doors and `rfid` objects
+    it opens, through `requires` or `access`) and per account (the sign-in PCs that admit it).
+  Messages never quote a password.
+- `scripts/generate_dungeon_graph.rb`: `login` labelled "Sign-in" in `LOCK_TYPE_LABELS`. For a
+  scenario that uses the access model, a key node per `card_id` that opens something
+  (`card_<card_id>`, labelled with the card name and every holder's display name) and per
+  account that can sign in somewhere (`signin_<npc id>`, labelled with the display name and
+  username), each with an edge from its holder's room and an edge to every lock it opens:
+  `door_<room>` for a door, `lock_<object id>` for an object or sign-in PC (created, from its
+  room, if no other walk made it).
+
+### Tests added
+
+- `test/js/validator-access-model.test.mjs` (23): a clean fixture with no error or warning;
+  reach lines; a scenario without access model fields gets no output; one fixture per error
+  (unresolved person, policy and card references; an unknown `screenOwner`; profile id clashes;
+  `role` or `creds` on top-level, phone and headless NPC records; a missing password and a
+  duplicate username; a keycard `identity`; a password in compiled ink, with no message quoting
+  it; `usePayload` and `addCapture` on an account holder, a case-only address difference
+  allowed; an `rfid` lock with neither field and `access` on a gate door, a disabled gate
+  allowed; `unlockable` and an `unlock_object` flag reward; `triggerOnInteract` and a `|` id)
+  and per warning (an unheld role and a profile admitting nobody; `needsHome` not admitted;
+  `lockChance` 0.5, but not 0 or 1; an untracked owner, an interest counting; owners in another
+  room, through `needsHome` and `screenOwner`; `maxAttempts`; a capture route without
+  `revealSecret`; another NPC's `#clone_keycard`, the speaker's own allowed; a shared card at an
+  access lock).
+- `test/js/dungeon-graph-identities.test.mjs` (5): a role-list door with an edge from each
+  admitted identity's card node and none from a card it does not admit; a shared card as one
+  node naming both holders; a sign-in PC with an edge from each admitted account's sign-in node
+  (an access list and no access list), no password in any label; a card matching `requires`;
+  no identity nodes for a scenario without access model fields.
+
+### Results
+
+- `bin/test-js`: 397 files, all pass (392 before; this step's two new files, the rest from step 6,
+  which was being built at the same time).
+- The new check over all 161 scenarios (rendered, `check_access_model` alone): no output for
+  any of them, so no existing scenario gains an error, a warning or a reach line. The full
+  validator (`--no-graph --no-lint`) on `lab_physical_pentest`, `m01_first_contact`,
+  `m10_full_disclosure` and `test_needs_sims` completes, with nothing from the access model;
+  the ink it recompiles came out unchanged (no diff).
+- RuboCop clean on `lib/break_escape/access_identities.rb`. The Rails suite was not run here
+  (the orchestrator runs it); nothing on the server changed.
+
+### Deviations and choices
+
+- **Shared rules in `lib/`.** The plan puts the checks in `validate_scenario.rb`; they are
+  there, but the identity rules sit in `lib/break_escape/access_identities.rb` so the graph uses
+  the same ones. `Game` keeps its own copies; the two must change together (the lib's header
+  says so).
+- **"Unresolved profile reference".** Nothing in the first slice refers to a profile by id (a
+  PC shows every profile whose `for` admits the account), so there is nothing to resolve. The
+  nearest fault, a profile with no `for`, is a warning.
+- **"Unresolved card reference"** is a card in the `requires` of an `rfid` lock that has
+  `access` which no NPC card or authored `card_id` anywhere in the scenario carries. A
+  requires-only lock keeps the existing `check_lock_credentials` warning, so legacy scenarios
+  get no new error. A keycard `identity` is its own error, as listed.
+- **Persons** are checked in `access.people`, profile `for.people` and a sign-in PC's
+  `screenOwner`, against room NPC ids (the only NPCs that can carry an identity).
+- **Usernames in `usePayload.address` and `addCapture.address`** compare normalised (trimmed,
+  case-insensitive), as the server's capture match does; `usePayload.secret` compares exactly.
+- **Gate doors**: a `doors[]` entry with a `gate` (not `enabled: false`) is an error when the
+  entry or its `connectedRoom` has `access`.
+- **Owner placement** applies to every workstation (`isWorkstation`, plus sign-in PCs), owned
+  through `needsHome` (a string) or `screenOwner`, reported once per owner and PC. No existing
+  scenario triggers it.
+- **Ink files** are every `storyPath` in the scenario (any record) plus the scenario's
+  `ink/*.json`. The password check reads the compiled JSON's strings (the `.ink` source when
+  there is no compiled file); the `#clone_keycard` check reads the `.ink` source when present.
+  Templated tags (`{card_card_id}`) are skipped, as are cards no NPC carries and files no NPC
+  uses. Without `repo_root` the ink checks are skipped.
+- **Reach lines and graph nodes appear only for scenarios that use the access model**
+  (`uses_access_model?`: `accountProfiles`, `policies`, `defaultPolicy`, NPC `creds` or `role`,
+  `access` on a room or object, or a sign-in PC), so every other scenario's validator output
+  and graph are unchanged. Errors and warnings that apply to any scenario (owner placement,
+  `#clone_keycard`, an `rfid` lock with no `requires`) run everywhere.
+- **Graph edges** from a room to an identity node are solid, like the NPC nodes'. A card held
+  only inside the room it opens makes a cycle (room, card, door, room); the critical path is
+  computed on the aim graph, so it is unaffected.
+- **No UID-only note in reach.** A DESFire card's copy is UID-only, but reach lists what the
+  identity opens, as the plan's step 4 says, and does not separate a copy from the real card.
+
+### For the next steps
+
+- Run the validator on each feature scenario as it is written (steps 7 to 9); `PLAYTEST.md`
+  lists the warnings expected there (for example `maxAttempts` on `test_access_signin`'s
+  `corp_default`, and `lockChance` between 0 and 1 if a beat needs one).
+- `BreakEscape::AccessIdentities` can serve later tooling (an "opens a lock earlier than
+  intended" check once the graph exposes an order).
