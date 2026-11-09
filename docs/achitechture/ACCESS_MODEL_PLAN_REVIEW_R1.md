@@ -230,3 +230,25 @@ avoids a silent empty note.
 - **M4 / 5.3:** is the default login prompt the portrait `accounts` picker, given it must list
   every admitted NPC across rooms (server-composed), or should the default be `known` (met NPCs
   only) to keep the list small and the leak minimal?
+
+## 6. Planner response
+
+The plan was rewritten as a complete document. Orchestrator decisions for the two user-decision items are
+recorded in plan section 2 (the user can overrule).
+
+| Finding | Outcome | What was done or why |
+|---|---|---|
+| B1 login content gate | fixed | Plan 5.3: sessions are the gate; `/login` and `/logout` are own routes that never touch `unlockedObjects`; `container` branches on `sessions[pcId]`, returns 403 without one and composes per identity; login PC contents stripped from room payloads unconditionally. |
+| B2 password leak via room endpoint | fixed | Plan 5.6 and step 2 of 10: strip in the NPC branch of `filter_requires_and_contents_recursive`; table of every path (room, NPC recursion, `update_room` NPCs, bootstrap, ink, captures, picker, sticky note, events); no-password test across endpoints. |
+| M1 role-ACL RFID on the client | fixed | Plan 4.1: client sends every held `card_id` for an `access` door and the server resolves; client UI follows the server answer. |
+| M2 cloned-card identity client-asserted | fixed (orchestrator decision) | Plan 4.3: `POST /clone_card` records `serverClones` after checking the NPC has `creds.card`, has been encountered, the server inventory holds a cloner, and `cloneable` is not false. Stated plainly as a tightening, not authentication; `saved_cards` never decides identity. |
+| M3 profile item ids | fixed | Plan 5.1 and step 1: `stamp_scenario_object_ids!` walks `accountProfiles`, lookups find profile items, validator errors on collisions. |
+| M4 account picker data | fixed (orchestrator decision) | Plan 5.3: server composes `{ username, displayName, portrait }` tiles (`loginAccounts`, refreshed by `GET /login_accounts`); `known` filters by `encounteredNPCs` or found usernames; never a password. |
+| M5 Copy and the already-held filters | fixed | Plan 5.1: `copiedItems` is a set, and all four sites are listed (container filter, room state overlay, inventory short-cut, session compose); test named. |
+| m1 login method plumbing | fixed | Plan 5.3: own `/login` route, outside `validate_unlock`; `login` deliberately not in `UNLOCK_METHODS_BY_LOCK_TYPE`. |
+| m2 `profiles` and `posts` name overlap | fixed | Renamed to `accountProfiles` and NPC `feed`; the OSINT names are left alone. |
+| m3 lockout state | fixed | Plan 5.3 state table names `loginFailures` and `loginLockouts`; reset drops them because it keeps only an allow list. |
+| m4 skip check needs lock-order data | deferred | Slice 1 lists the doors each identity opens; the earlier-than warning waits until the dungeon graph exposes a reachable order. |
+| m5 unlocked-session trust | fixed | The `sometimes` warning moved into slice 1 (5.4, 9, step 5 of 10). |
+| m6 two homes for a password | fixed | Plan 3: `usePayload` address and secret are filled from `creds`; a differing authored secret is a validator error. |
+| m7 sticky note reaches the login minigame | fixed | Plan 5.6 and step 4: server fills the login PC object's `postitNote` from `creds.password` only when `writesDown` is on; the login prompt reads the object's note. |
