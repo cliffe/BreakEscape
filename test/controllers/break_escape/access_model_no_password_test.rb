@@ -2,11 +2,11 @@ require 'test_helper'
 require_relative '../../support/access_model_scenario'
 
 module BreakEscape
-  # The no-password test (ACCESS_MODEL_PLAN.md section 6), over the routes that exist
-  # at step 2: GET /scenario, GET /room/:id, a door POST /unlock and GET
-  # /capture_secrets (with no entry, and with a forged entry for an NPC that has no
-  # capture route). No response carries an NPC password, a sign-in PC's contents or
-  # an account profile. Step 3 adds /login_accounts and /container/:id signed out.
+  # The no-password test (ACCESS_MODEL_PLAN.md section 6): GET /scenario, GET
+  # /room/:id, a door POST /unlock, GET /capture_secrets (with no entry, and with a
+  # forged entry for an NPC that has no capture route), GET /login_accounts and GET
+  # /container/:id signed out. No response carries an NPC password, a sign-in PC's
+  # contents or an account profile.
   class AccessModelNoPasswordTest < ActionDispatch::IntegrationTest
     include Engine.routes.url_helpers
 
@@ -86,6 +86,33 @@ module BreakEscape
       assert_response :success
       assert_equal({ 'secrets' => {} }, response.parsed_body)
       assert_no_secrets('/capture_secrets, forged entry')
+    end
+
+    test 'GET /login_accounts carries no password' do
+      build('unlockedRooms' => %w[lobby finance])
+      get login_accounts_game_url(@game), params: { pc_id: 'jake_pc' }
+      assert_response :success
+      assert_equal %w[jbrooks DWhite], response.parsed_body['loginAccounts'].map { |t| t['username'] }
+      assert_no_secrets('/login_accounts')
+    end
+
+    test 'GET /container/:id signed out carries no password, PC contents or profile' do
+      build('unlockedRooms' => %w[lobby finance], 'unlockedObjects' => %w[jake_pc jake_files_content_1])
+      get "/break_escape/games/#{@game.id}/container/jake_pc", as: :json
+      assert_response :forbidden
+      assert_no_secrets('/container/jake_pc signed out')
+      get "/break_escape/games/#{@game.id}/container/jake_files_content_1", as: :json
+      assert_response :forbidden
+      assert_no_secrets('/container/jake_files_content_1 signed out')
+    end
+
+    test 'failed sign-ins carry no password' do
+      build('unlockedRooms' => %w[lobby finance])
+      [['jbrooks', 'wrong'], ['jbrooks', AccessModelScenario::JAKE_PASSWORD.downcase], ['nobody', 'x']].each do |username, password|
+        post login_game_url(@game), params: { pc_id: 'jake_pc', username: username, password: password }, as: :json
+        assert_response :unprocessable_entity
+        assert_no_secrets("/login as #{username}")
+      end
     end
 
     test 'GET /capture_secrets serves the password of an account holder with a capture route once earned' do
