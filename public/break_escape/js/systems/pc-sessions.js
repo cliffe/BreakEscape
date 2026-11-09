@@ -16,7 +16,7 @@
  *   pc_signed_in       { pcId, npcId, username, via }  a sign-in (or the second half of a switch)
  *   pc_signed_out      { pcId, npcId }                 a sign-out, a switch, a 403 from container
  *   pc_signin_failed   { pcId, reason, attemptsLeft }  reason: wrong | not_permitted | locked_out
- *   pc_signin_shown    { pcId, usernames }             the sign-in screen opened with these tiles
+ *   pc_signin_shown    { pcId, usernames, usernameList } the sign-in screen opened with these tiles
  *   pc_desktop_opened  { pcId, npcId, via, restored }  a desktop loaded for a session; restored is
  *                                                      true for a session kept from before a reload
  *
@@ -212,7 +212,8 @@ export class PcSessions {
     /** The sign-in screen opened at pcId with these tiles. */
     screenShown(pcId, tiles = []) {
         const usernames = (Array.isArray(tiles) ? tiles : []).map(t => t?.username).filter(Boolean);
-        this._emit('pc_signin_shown', { pcId, usernames });
+        // usernameList: the same as one string, for eventMapping conditions (".includes('x')")
+        this._emit('pc_signin_shown', { pcId, usernames, usernameList: usernames.join(',') });
     }
 
     /** The desktop loaded for the session at pcId. */

@@ -4,7 +4,7 @@
  * reads what the client holds, so a scripted run can compare the browser's view with
  * what the server recorded (tools/playtest/verify-run.rb --access).
  *
- *   sessions()          the sign-in sessions systems/pc-sessions.js holds (empty until it exists)
+ *   sessions()          the sign-in sessions systems/pc-sessions.js holds
  *   workstation(pcId)   owner, present, the away record, screenLocked and lockAt
  *   savedCards()        the card copier's saved_cards ids (client-written; never decides identity)
  *

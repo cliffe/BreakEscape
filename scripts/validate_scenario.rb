@@ -1239,6 +1239,9 @@ def check_objectives_wiring(json_data, base_dir)
         # on a container goes through handleUnlock -> unlockTarget, which emits item_unlocked for any
         # object with `contents` (m07 crisis_control_system, m01 entropy_encrypted_archive).
         next if lock_type == 'flag' && obj['contents'].is_a?(Array) && !obj['contents'].empty?
+        # A sign-in PC (access model 5.3): the objectives manager meets the task on pc_signed_in,
+        # and the server's complete_task! reads signedInPcs.
+        next if lock_type == 'login'
 
         issues << "⚠️ WARNING: #{task_path} is type 'unlock_object' targeting '#{target_id}' " \
                   "(lockType: '#{lock_type}'). This lockType is not in the known set of types that emit " \

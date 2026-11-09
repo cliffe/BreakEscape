@@ -637,3 +637,213 @@ tools/playtest/session-start.sh --url <URL> --headless \
 Then follow `scenarios/test_access_doors/PLAYTEST.md` (D1 to D4, reload, D5), with
 `verify-run.rb <game_id> --access` and `access-leak-check.rb <game_id> <responses>` after each
 beat, and `tools/playtest/stop-keyless-server.sh` at the end.
+
+## Step 8: client sign-in, profiles and files, `test_access_signin` (2026-11-09)
+
+### Built
+
+All under `public/break_escape/js/` unless named otherwise.
+
+- `systems/pc-sessions.js` (new): `PcSessions`, a singleton exposed as `window.pcSessions`. The
+  only place the client signs in or out and the only source of the sign-in events. It holds the
+  sessions (`pcId -> { npcId, username, displayName, via, restored }`, from the server's answers),
+  the signed-in set and the open desktops (`registerDesktop(pcId, close)`). Methods: `load`
+  (password sessions kept and marked `restored`; a claimed one ends with `POST /logout` and
+  `pc_signed_out`), `signIn` (the old session stays until the new password is accepted, then
+  `pc_signed_out` for it and `pc_signed_in` for the new one), `signOut` (`POST /logout`,
+  `pc_signed_out`, the open desktop closes with "Signed out"), `dropLocal` (a container 403: no
+  request, one `pc_signed_out`), `has`, `get`, `list`, `wasSignedIn`, `signedInPcs`,
+  `screenShown`, `desktopOpened`. Events, each also as `<name>:<pcId>`: `pc_signed_in`
+  `{ pcId, npcId, username, via }`, `pc_signed_out` `{ pcId, npcId }`, `pc_signin_failed`
+  `{ pcId, reason, attemptsLeft }`, `pc_signin_shown` `{ pcId, usernames, usernameList }`,
+  `pc_desktop_opened` `{ pcId, npcId, via, restored }`.
+- `api-client.js`: `login(pcId, fields)`, `logout(pcId)`, `loginAccounts(pcId)`; a failed `GET`
+  now carries `err.status` (as `POST` already did), so the sign-in screen can tell an unreachable
+  PC from a network failure.
+- `core/game.js`: imports `pc-sessions.js` and calls `pcSessions.load(sessions, signedInPcs)` where
+  `savedGlobalVariables` is merged.
+- `systems/unlock-system.js`: `isLoginPc`, `openLoginPc` (desktop with a session, else the sign-in
+  screen), `openLoginDesktop` (`startContainerMinigame(lockable, null, false, true)`) and
+  `openLoginSignIn(lockable, { switching })`, which refreshes the tiles from `GET
+  /login_accounts`, emits `pc_signin_shown`, and starts the password minigame in sign-in mode
+  with no `maxAttempts`. On success it opens the desktop; after Switch user, leaving the screen
+  without a new sign-in reopens the desktop of the session that is still there. `handleUnlock`
+  sends a sign-in PC there first, before `DISABLE_LOCKS`, so it never reaches `unlockTarget` or
+  `/unlock`. `window.openLoginPc` and `window.openLoginSignIn`.
+- `systems/interactions.js`: a `lockType: "login"` branch ahead of the workstation call, calling
+  `handleUnlock(sprite, 'item')` and returning before the generic flow.
+- `minigames/password/password-minigame.js`: sign-in mode (`params.signIn`): the PC's name, a
+  "Signed in now" line on Switch user, account tiles (portrait, display name, username), Other
+  user, the username field (shown for Other user and `loginPicker: false`), the password field,
+  "Sign in", the PC's own `postitNote` with "Add to Notepad", and a message line with the server's
+  answer and `attemptsLeft`. No attempt limit of its own and no attempts counter; it stops only on
+  a lockout (the message, a "Locked out" toast, then it closes). No letter-case hint. Exported
+  helpers: `applyTilePortrait` (portrait, then `avatar`, then initials; a talk sheet shows only
+  its top-left frame through `background-size: 200% 200%`), `isTalkSheetSize`, `portraitUrl`,
+  `tileInitials`, `signInRefusalMessage`. `getTestState()` has a `signIn` block.
+- `minigames/container/container-minigame.js`: a sign-in PC (`loginPcId`) always loads its desktop
+  from `container` (it stays locked in room data); a 403 calls `pcSessions.dropLocal`, closes the
+  desktop and reopens the sign-in screen. The desktop registers with `pcSessions` and emits
+  `pc_desktop_opened`. The header shows "Signed in as <name> (<username>)" with Switch user and
+  Sign out above the observations. `sourcePcId` (the PC, or a folder's PC carried on the sprite
+  it was opened from) makes a takeable item open the Open / Copy to inventory / Move to inventory /
+  Cancel dialog (`transferChoices`: only Open and Cancel once held; `transfer` restricts the
+  takes). Open shows a copy of the file with `takeable: false`; Copy keeps the icon; Move removes
+  it. `getTestState()` has `signedInAs`, `sourcePcId` and `transferDialog`.
+- `systems/inventory.js`: the add sends `source_pc_id` and `transfer` (default `move`) when the
+  sprite has a `sourcePcId`, and `item_picked_up` carries `sourcePcId` and `transfer`.
+- `systems/objectives-manager.js`: `pc_signed_in` meets an `unlock_object` task on that PC; the
+  load-time reconcile also reads `pcSessions.wasSignedIn`.
+- `public/break_escape/css/password-minigame.css`, `container-minigame.css`: tiles, the sign-in
+  form and message, the account bar and the dialog (a title bar in the PC's window chrome).
+- `systems/test-bridge/access.js`, `docs/test-bridge.md`: `sessions()` notes updated (the module
+  now exists; it reads `list()`).
+- `scripts/validate_scenario.rb`: the objective wiring check no longer warns about an
+  `unlock_object` task on a `lockType: "login"` PC (the objectives manager meets it on
+  `pc_signed_in`, the server from `signedInPcs`).
+- `tools/playtest/lib/access_leak_scanner.rb`: a profile or sign-in PC item inside a folder may sit
+  in the top-level `contents` of a `POST /unlock` answer (see deviations).
+- `scenarios/test_access_signin/` (new): `scenario.json.erb`, `mission.json` (`test_scenarios`,
+  `test_type: access_model`), three ink files (Sam holds every task mapping; Ian; Lena),
+  `PLAYTEST.md`, dungeon graph. Lobby with the hot desk room north, the IT office east (finance
+  beyond it), the known-people room south and the lockout room west; every room within two doors.
+  Accounts: Sam (`staff`), Ian (`it`), Lena (`finance`). Policy `corp_default` (`maxAttempts: 5`,
+  no auto lock) on `hot_desk` and `lockout_pc` only. Profiles `staff_desktop` (handbook with the
+  archive password, mail) and `ian_files` (two takeable files, a copy-only file, a
+  password-locked archive with one file). Sam's password on the hot desk's `postitNote`, Ian's on
+  a note in his unlocked desk drawer. Seed `test_access_signin`, `npcWindupMs: 0`,
+  `needsDebugOverlay: true`; one task per beat: S3 is the `unlock_object` task on `ian_pc`, the
+  rest are `custom` tasks completed by Sam's mappings on `pc_signed_in`, `pc_signin_shown`,
+  `item_picked_up`, `item_unlocked`, `pc_signed_out`, `pc_signin_failed` and
+  `pc_desktop_opened` (S8: `restored === true`, so only after a reload).
+
+### Tests added
+
+- `test/js/pc-sessions.test.mjs` (9): the module is `window.pcSessions` with `list()`; a password
+  sign-in emits one `pc_signed_in` (and one `:<pcId>`) with `npcId` and `via: "password"`;
+  refusals (wrong, not permitted, locked out) keep no session and report the reason; no answer
+  is an error with no event; Sign out sends `POST /logout`, emits one `pc_signed_out` with
+  `npcId` and closes the open desktop with "Signed out"; a container 403 (`dropLocal`) emits one
+  `pc_signed_out` and sends nothing; a switch keeps the first session through a wrong password,
+  then emits `pc_signed_out` for the first and `pc_signed_in` for the second, in that order; on
+  load, password sessions are kept and `restored`, a claimed one ends with `POST /logout`;
+  `pc_signin_shown`.
+- `test/js/password-signin-mode.test.mjs` (11, real `password-minigame.js` and `base-minigame.js`
+  on jsdom): tiles plus Other user, the form per choice, the post-it, no attempts counter;
+  `loginPicker: false`; no attempt limit (fourteen refusals, the server's message and
+  `attemptsLeft`, still open); it stops only on a lockout; not permitted stays open and no
+  letter-case hint shows even when the answer carries `caseMismatch`; a correct password signs in
+  through `pcSessions.signIn`; empty fields; the talk-sheet rule and portrait URLs; a talk sheet
+  shows its top-left frame and a single image is shown whole; a failed portrait falls back to the
+  avatar, then initials; the refusal line.
+- `test/js/container-transfer-dialog.test.mjs` (12, real `container-minigame.js`,
+  `base-minigame.js` and `pc-sessions.js` on jsdom): `transferChoices`; the desktop loads from
+  `container` and shows the account bar above the observations; a takeable file offers Open,
+  Copy, Move and Cancel, Copy keeps it listed and sends `sourcePcId` and `transfer: "copy"`, then
+  only Open; Move removes it; `"transfer": "copy"` offers no Move; Open shows it without taking
+  it; a plain PC desktop keeps today's behaviour; a folder keeps its PC as the source; Sign out;
+  Switch user; a container 403 (one `pc_signed_out`, no `POST /logout`, the sign-in screen); the
+  `source_pc_id` and `transfer` fields in `inventory.js`.
+- `test/js/objectives-signin-pc.test.mjs` (3): `pc_signed_in` completes the `unlock_object` task
+  on that PC and no other (not one with no target); the load-time reconcile completes it when
+  `wasSignedIn`, and not otherwise.
+- `test/js/access-signin-routing.test.mjs` (8, real `unlock-system.js` with stubbed imports): with
+  a session the desktop opens with no `/unlock`; without one the sign-in screen opens with the
+  refreshed tiles, no `maxAttempts` and the post-it; `loginPicker: false`; `DISABLE_LOCKS` never
+  unlocks a sign-in PC; the screen's completion paths (signed in, cancelled switch, plain
+  cancel); an unreachable PC; the `interactions.js` branch order; the `api-client.js` calls.
+- `test/unit/access_leak_scanner_test.rb` (+1): a profile folder's own `/unlock` answer may
+  carry its contents; a top-level profile file or the folder's text elsewhere in an `/unlock`
+  answer is still a finding.
+
+### Results
+
+- `bin/test-js`: 404 files, all pass (399 before; 5 added). The existing password, container,
+  objectives, rfid and test bridge tests pass unchanged.
+- Rails: 1056 runs, 0 failures, 0 errors, 1 skip (1055 before; the scanner test added).
+  `test/dummy/db/schema.rb` unchanged. RuboCop clean on the scanner and its test.
+- `LANG=C.UTF-8 ruby scripts/validate_scenario.rb scenarios/test_access_signin/scenario.json.erb`:
+  valid, ink compiles, no dialogue lint findings, geometry and door alignment OK, schema passed;
+  the two expected warnings (`maxAttempts` on `hot_desk` and `lockout_pc`), identity reach lines
+  for the three accounts, and the generic suggestions. `scripts/check_door_alignment.py`: all OK.
+- `bundle exec rails db:seed`: `test_access_signin` created (mission 162). The seed's existing
+  `test_table_items` error is unrelated.
+- Headless smoke on the keyless server (:3001, started and stopped here; game 8 deleted), every
+  beat in one game: S2 showed only Sam before finance and all three after; S1 answered "Incorrect
+  username or password. 4 attempts left." then opened Sam's desktop (handbook and mail only);
+  S3 answered "This account can't sign in on this PC." for Sam and opened Ian's desktop, the task
+  completing; S4 kept Sam through a wrong password, returned to his desktop on cancel, then
+  switched to Ian with Ian's files; S5 offered Copy only for the licence keys, copied the rota
+  (still listed, then Open only) and moved the VPN notes; S6 opened the archive and Sign out closed
+  the desktop with "Signed out"; S7 counted 4, 3, 2, 1 down to "This account is locked on this
+  PC." for Sam (also with his right password) and for an invented username, then Ian signed in;
+  after the reload `sessions()` kept both of Ian's sessions, `ian_pc` opened without a password
+  showing the rota and not the VPN notes, and all eight tasks were complete. A session ended on
+  the server behind the browser's back (a direct `POST /logout`) gave one `pc_signed_out` and the
+  sign-in screen on the next click. `verify-run.rb --access` matched each beat's record; the leak
+  check over the 94 captured responses found nothing (after the scanner change below). The Haiku
+  runs were not done here.
+
+### Deviations and choices
+
+- **Extra events.** Besides `pc_signed_in` and `pc_signed_out`, `pc-sessions.js` emits
+  `pc_signin_failed`, `pc_signin_shown` and `pc_desktop_opened`, so every feature-scenario beat
+  has an event of its own for its task (S2, S7, S8). `pc_signin_shown` carries `usernameList`, a
+  comma-joined string, because mapping conditions support `.includes()` on strings only. Every
+  event is emitted under its bare name and as `<name>:<pcId>`, as `door_unlock_failed` is.
+- **The claim's reload rule is in `load` already.** Step 9 owns claims, but `load` has to do
+  something with a `via: "claim"` entry, and the plan's rule (sign it out with `POST /logout`) is
+  three lines; nothing in step 8 creates a claim.
+- **"Over the desktop".** The minigame framework runs one minigame at a time, so Switch user
+  replaces the desktop with the sign-in screen; leaving the screen without a new sign-in reopens
+  the desktop of the session that is still there.
+- **A lockout closes the screen** (the plan's "stops"), with the message and a "Locked out" toast.
+  Reopening it shows the same answer for that username.
+- **Sign out, not Log out**, as the plan's header and S6 name it.
+- **The dialog appears only on a sign-in desktop** (and folders opened from one), for every
+  takeable item there that is not a locked folder: the server requires `source_pc_id` and
+  `transfer` for any take from a sign-in PC. Plain PC desktops in existing missions keep today's
+  behaviour. Open shows a copy with `takeable: false`, so the viewer never takes the file; like
+  every text file viewer today, closing it returns to the world, not the desktop.
+- **Folders.** The sprite a desktop opens a folder from carries `sourcePcId`, so the archive's own
+  container sends `source_pc_id` for anything taken from it. No step 8 beat takes a file from the
+  archive.
+- **`ApiClient.get` errors carry `status`.** A shared change, additive only.
+- **Validator objective wiring**: `login` added beside the existing exceptions (the warning
+  assumed every lock type reaches `unlockTarget`).
+- **Leak scanner and folder unlocks.** Step 3 made `/unlock` answer a profile archive with its
+  contents (for a session that admits it), and the step 6 scanner allowed scoped content only in
+  `GET /container`, so the smoke run's archive unlock was reported as `profile_content`. The
+  scanner now allows an item inside a scoped folder in the top-level `contents` of a `POST
+  /unlock` answer; anywhere else in that answer it is still a finding. The answer does not name
+  its target, so the scanner cannot check which folder it was for.
+- **Scenario details**: the mail app is a read-only `text_file` called "Mail" (no mail client
+  object fits a profile); Ian's password note is in an unlocked desk drawer (`filing_cabinet`);
+  the hot desk's sticky note shows on its sign-in screen and its desktop. Finance is off the IT
+  office so the known-people PC (south of the lobby) is never next to it.
+
+### For the orchestrator: the two S runs
+
+Each run starts with its own new game.
+
+```bash
+export PATH=/opt/rbenv/bin:/opt/rbenv/shims:$PATH RBENV_VERSION=3.1.6
+export PLAYWRIGHT_CHROMIUM_EXECUTABLE=/opt/pw-browsers/chromium   # in a container
+tools/playtest/start-keyless-server.sh
+
+# Run A: S1 to S4, then a reload
+PLAYTEST_PORT=3001 BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/new-game.rb test_access_signin
+tools/playtest/session-start.sh --url <URL> --headless \
+  --log <scratch>/test_access_signin-haiku/session-<game_id>.jsonl \
+  --capture-responses <scratch>/test_access_signin-haiku/test_access_signin-A-responses.jsonl
+
+# Run B: S5 to S8 (S8 is the reload), on a second new game
+PLAYTEST_PORT=3001 BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/new-game.rb test_access_signin
+tools/playtest/session-start.sh --url <URL> --headless \
+  --log <scratch>/test_access_signin-haiku/session-<game_id>.jsonl \
+  --capture-responses <scratch>/test_access_signin-haiku/test_access_signin-B-responses.jsonl
+```
+
+Follow `scenarios/test_access_signin/PLAYTEST.md` (Run A, then Run B), with `verify-run.rb
+<game_id> --access` and `access-leak-check.rb <game_id> <that run's responses>` after each beat,
+then the step 7 run again as the suite, and `tools/playtest/stop-keyless-server.sh` at the end.

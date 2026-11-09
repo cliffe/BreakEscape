@@ -1,0 +1,410 @@
+{
+  "scenario_brief": "TEST: Access model sign-in\n\nA test floor for sign-in PCs (ACCESS_MODEL_PLAN.md, step 8). Eight beats, each with a sign. S1: the hot desk (north) shows a tile for every account; sign in as Sam with the password on its sticky note. S2: the known-people PC (south) shows only people you have met; visit finance (east of the IT office) and look again. S3: Ian's PC (in the IT office, east) takes a typed username and admits IT staff only; his password is in his desk drawer. S4: Switch user at the hot desk to Ian; his files follow him. S5: copy one of Ian's files and move another. S6: open the archive with the handbook's password, then sign out. S7: the lockout PC (west) locks a username out after five wrong passwords. S8: reload; Ian's session at his PC survives.",
+  "endGoal": "Test only: run the eight sign-in beats.",
+  "startRoom": "lobby",
+  "startPosition": { "x": 7, "y": 7 },
+  "npcNeedsSeed": "test_access_signin",
+  "npcWindupMs": 0,
+  "needsDebugOverlay": true,
+
+  "policies": {
+    "corp_default": { "autoLockMin": null, "maxAttempts": 5, "usb": "allowed", "social": "allowed" }
+  },
+
+  "globalVariables": {
+    "s2_without_lena": false,
+    "s5_copied": false,
+    "s5_moved": false,
+    "s6_archive_open": false,
+    "s7_locked_out": false
+  },
+
+  "accountProfiles": {
+    "staff_desktop": {
+      "for": { "roles": ["staff"] },
+      "contents": [
+        {
+          "type": "text_file",
+          "id": "staff_handbook",
+          "name": "Staff handbook.txt",
+          "takeable": false,
+          "readable": true,
+          "text": "Staff handbook (test floor).\n\nShared archives on staff desktops open with the archive password: staffarchive24\n\nEvery staff account sees this handbook on any PC it signs in to.",
+          "observations": "The staff handbook, on every staff desktop."
+        },
+        {
+          "type": "text_file",
+          "id": "staff_mail",
+          "name": "Mail",
+          "takeable": false,
+          "readable": true,
+          "text": "Mail: no new messages.",
+          "observations": "The staff mail app. Nothing new."
+        }
+      ]
+    },
+    "ian_files": {
+      "for": { "people": ["ian"] },
+      "contents": [
+        {
+          "type": "text_file",
+          "id": "ian_rota",
+          "name": "Server rota.txt",
+          "takeable": true,
+          "readable": true,
+          "text": "Server rota: Ian on call Monday to Wednesday, the contractor Thursday and Friday. (S5: copy this one; it stays on the PC.)",
+          "observations": "Ian's on-call rota."
+        },
+        {
+          "type": "text_file",
+          "id": "ian_vpn_notes",
+          "name": "VPN notes.txt",
+          "takeable": true,
+          "readable": true,
+          "text": "VPN notes: the old concentrator is being retired at the end of the month. (S5: move this one; it leaves every PC.)",
+          "observations": "Ian's notes on the VPN change."
+        },
+        {
+          "type": "text_file",
+          "id": "ian_licence_keys",
+          "name": "Licence keys.csv",
+          "takeable": true,
+          "readable": true,
+          "transfer": "copy",
+          "text": "Licence keys: a list of software licences and their renewal dates. (S5: this file can only be copied.)",
+          "observations": "A spreadsheet of licence renewals. It can only be copied."
+        },
+        {
+          "type": "zip_archive",
+          "id": "ian_archive",
+          "name": "Old configs.zip",
+          "takeable": false,
+          "locked": true,
+          "lockType": "password",
+          "requires": "staffarchive24",
+          "showKeyboard": true,
+          "observations": "A password-protected archive of old configuration files.",
+          "contents": [
+            {
+              "type": "text_file",
+              "id": "ian_router_backup",
+              "name": "router_backup.txt",
+              "takeable": false,
+              "readable": true,
+              "text": "Router backup from last year. (S6: the archive opened.)",
+              "observations": "An old router configuration backup."
+            }
+          ]
+        }
+      ]
+    }
+  },
+
+  "objectives": [
+    {
+      "aimId": "signin_beats",
+      "title": "Run the sign-in beats",
+      "description": "Test only. Each task ticks when its beat's sign-in event fires.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        { "taskId": "s1_account_tiles", "title": "S1: sign in as Sam at the hot desk", "type": "custom", "status": "active" },
+        { "taskId": "s2_known_people", "title": "S2: the known-people PC shows Lena only after you have met her", "type": "custom", "status": "active" },
+        { "taskId": "s3_ian_pc", "title": "S3: sign in to Ian's PC", "type": "unlock_object", "targetObject": "ian_pc", "status": "active" },
+        { "taskId": "s4_switch_user", "title": "S4: switch the hot desk to Ian", "type": "custom", "status": "active" },
+        { "taskId": "s5_copy_and_move", "title": "S5: copy the rota and move the VPN notes", "type": "custom", "status": "active" },
+        { "taskId": "s6_archive_and_sign_out", "title": "S6: open the archive, then sign out of the hot desk", "type": "custom", "status": "active" },
+        { "taskId": "s7_lockout", "title": "S7: a lockout at the lockout PC, then Ian signs in there", "type": "custom", "status": "active" },
+        { "taskId": "s8_reload", "title": "S8: after a reload, Ian's PC opens without a password", "type": "custom", "status": "active" }
+      ]
+    }
+  ],
+
+  "rooms": {
+    "lobby": {
+      "type": "room_reception",
+      "door_sign": "Lobby",
+      "connections": { "north": "hot_desk_room", "east": "it_room", "south": "known_room", "west": "lockout_room" },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_lobby",
+          "name": "Sign: Start here",
+          "position": { "x": 4, "y": 3 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Eight sign-in beats. Hot desk north (S1, S4, S5, S6), known-people PC south (S2), IT office east (S3, S8), lockout PC west (S7).\nFinance is through the IT office. Each beat room has its own sign.",
+          "observations": "A sign on a stand by the front desk."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "sam",
+          "displayName": "Sam Okafor",
+          "npcType": "person",
+          "position": { "x": 5, "y": 4 },
+          "spriteSheet": "male_office_worker_v2",
+          "spriteTalk": "assets/characters/male_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+          "storyPath": "scenarios/test_access_signin/ink/sam.json",
+          "currentKnot": "start",
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "staff",
+          "creds": { "username": "sokafor", "password": "Marmalade-82" },
+          "eventMappings": [
+            { "eventPattern": "pc_signed_in", "condition": "data.pcId === 'hot_desk' && data.npcId === 'sam'", "onceOnly": true, "completeTask": "s1_account_tiles" },
+            { "eventPattern": "pc_signin_shown", "condition": "data.pcId === 'known_pc' && !data.usernameList.includes('lfox') && !globalVars.s2_without_lena", "onceOnly": true, "setGlobal": { "s2_without_lena": true } },
+            { "eventPattern": "pc_signin_shown", "condition": "data.pcId === 'known_pc' && data.usernameList.includes('lfox') && globalVars.s2_without_lena", "onceOnly": true, "completeTask": "s2_known_people" },
+            { "eventPattern": "pc_signed_in", "condition": "data.pcId === 'hot_desk' && data.npcId === 'ian'", "onceOnly": true, "completeTask": "s4_switch_user" },
+            { "eventPattern": "item_picked_up:text_file", "condition": "data.itemId === 'ian_rota' && data.transfer === 'copy' && !globalVars.s5_copied", "onceOnly": true, "setGlobal": { "s5_copied": true } },
+            { "eventPattern": "item_picked_up:text_file", "condition": "data.itemId === 'ian_vpn_notes' && data.transfer === 'move' && !globalVars.s5_moved", "onceOnly": true, "setGlobal": { "s5_moved": true } },
+            { "eventPattern": "global_variable_changed:s5_copied", "condition": "globalVars.s5_copied && globalVars.s5_moved", "onceOnly": true, "completeTask": "s5_copy_and_move" },
+            { "eventPattern": "global_variable_changed:s5_moved", "condition": "globalVars.s5_copied && globalVars.s5_moved", "onceOnly": true, "completeTask": "s5_copy_and_move" },
+            { "eventPattern": "item_unlocked", "condition": "data.itemId === 'ian_archive' && !globalVars.s6_archive_open", "onceOnly": true, "setGlobal": { "s6_archive_open": true } },
+            { "eventPattern": "pc_signed_out", "condition": "data.pcId === 'hot_desk' && globalVars.s6_archive_open", "onceOnly": true, "completeTask": "s6_archive_and_sign_out" },
+            { "eventPattern": "pc_signin_failed", "condition": "data.pcId === 'lockout_pc' && data.reason === 'locked_out' && !globalVars.s7_locked_out", "onceOnly": true, "setGlobal": { "s7_locked_out": true } },
+            { "eventPattern": "pc_signed_in", "condition": "data.pcId === 'lockout_pc' && data.npcId === 'ian' && globalVars.s7_locked_out", "onceOnly": true, "completeTask": "s7_lockout" },
+            { "eventPattern": "pc_desktop_opened", "condition": "data.pcId === 'ian_pc' && data.restored === true", "onceOnly": true, "completeTask": "s8_reload" }
+          ]
+        }
+      ]
+    },
+
+    "hot_desk_room": {
+      "type": "room_office",
+      "door_sign": "Hot desk",
+      "connections": { "south": "lobby" },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "hot_desk",
+          "name": "Hot desk PC",
+          "position": { "x": 5, "y": 4 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "loginPicker": "accounts",
+          "policy": "corp_default",
+          "postitNote": "Sam: sokafor / Marmalade-82",
+          "showPostit": true,
+          "observations": "A shared hot desk PC. Anyone with an account can sign in here."
+        },
+        {
+          "type": "notes1",
+          "id": "sign_s1",
+          "name": "Sign: S1 Account tiles",
+          "position": { "x": 2, "y": 3 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "S1. The hot desk shows a tile for Sam, Ian and Lena, plus Other user. A wrong password for Sam says Incorrect username or password, 4 attempts left.\nSam's password is on the sticky note on the screen. Signing in shows Sam's desktop: the staff handbook and mail, none of Ian's files.",
+          "observations": "A sign by the hot desk."
+        },
+        {
+          "type": "notes1",
+          "id": "sign_s4",
+          "name": "Sign: S4 One profile, two PCs, and switching",
+          "position": { "x": 8, "y": 3 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "S4 (after S3). On Sam's desktop, Switch user, then Ian's tile. A wrong password leaves Sam signed in.\nIan's password signs him in instead, and the hot desk then shows the same files of Ian's as his own PC.",
+          "observations": "A sign by the hot desk."
+        },
+        {
+          "type": "notes1",
+          "id": "sign_s5",
+          "name": "Sign: S5 Copy and Move",
+          "position": { "x": 2, "y": 6 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "S5. Signed in as Ian, copy Server rota.txt: it stays listed, here and on Ian's PC. Move VPN notes.txt: it leaves both PCs.\nLicence keys.csv offers Copy only.",
+          "observations": "A sign by the hot desk."
+        },
+        {
+          "type": "notes1",
+          "id": "sign_s6",
+          "name": "Sign: S6 Locked folder and sign out",
+          "position": { "x": 8, "y": 6 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "S6. Still signed in as Ian, open Old configs.zip with the password in the staff handbook.\nThen Sign out: the desktop closes with Signed out, and the next click shows the sign-in screen.",
+          "observations": "A sign by the hot desk."
+        }
+      ]
+    },
+
+    "known_room": {
+      "type": "room_meeting",
+      "door_sign": "Known people",
+      "connections": { "north": "lobby" },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "known_pc",
+          "name": "Known-people PC",
+          "position": { "x": 5, "y": 4 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "loginPicker": "known",
+          "observations": "This PC lists only the people you have come across."
+        },
+        {
+          "type": "notes1",
+          "id": "sign_s2",
+          "name": "Sign: S2 Known people only",
+          "position": { "x": 2, "y": 3 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "S2. Open this PC before you have been to finance: no tile for Lena. Cancel.\nVisit finance (through the IT office, east side), come back and open it again: Lena's tile is there.",
+          "observations": "A sign by the PC."
+        }
+      ]
+    },
+
+    "it_room": {
+      "type": "room_it",
+      "door_sign": "IT office",
+      "connections": { "west": "lobby", "east": "finance_room" },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "ian_pc",
+          "name": "Ian's PC",
+          "position": { "x": 6, "y": 4 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "loginPicker": false,
+          "access": { "roles": ["it"] },
+          "observations": "Ian's workstation. It asks for a username: no account tiles."
+        },
+        {
+          "type": "filing_cabinet",
+          "id": "ian_drawer",
+          "name": "Ian's desk drawer",
+          "position": { "x": 3, "y": 6 },
+          "takeable": false,
+          "locked": false,
+          "observations": "Ian's desk drawer. It isn't locked.",
+          "contents": [
+            {
+              "type": "notes1",
+              "id": "ian_password_note",
+              "name": "Note: my sign-in",
+              "takeable": true,
+              "readable": true,
+              "text": "ishaw / Patchday!2026\n(don't tell security)",
+              "observations": "A scrap of paper in Ian's handwriting."
+            }
+          ]
+        },
+        {
+          "type": "notes1",
+          "id": "sign_s3",
+          "name": "Sign: S3 Typed username and the access list",
+          "position": { "x": 2, "y": 3 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "S3. Ian's PC has no tiles: type a username. Sam's correct details say This account can't sign in on this PC (IT staff only).\nIan's details are in his desk drawer. They open his desktop: the staff handbook and his own files.",
+          "observations": "A sign by Ian's desk."
+        },
+        {
+          "type": "notes1",
+          "id": "sign_s8",
+          "name": "Sign: S8 Reload",
+          "position": { "x": 8, "y": 6 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "S8. With Ian signed in here, reload the page. His PC then opens his desktop with no password, and the S3 task stays done.\nSam is still locked out at the lockout PC.",
+          "observations": "A sign by Ian's desk."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "ian",
+          "displayName": "Ian Shaw",
+          "npcType": "person",
+          "position": { "x": 4, "y": 7 },
+          "spriteSheet": "male_nerd_v2",
+          "spriteTalk": "assets/characters/male_nerd_talk.png",
+          "spriteVisemes": "assets/characters/male_nerd_visemes.png",
+          "storyPath": "scenarios/test_access_signin/ink/ian.json",
+          "currentKnot": "start",
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "it",
+          "creds": { "username": "ishaw", "password": "Patchday!2026" }
+        }
+      ]
+    },
+
+    "finance_room": {
+      "type": "room_ceo",
+      "door_sign": "Finance",
+      "connections": { "west": "it_room" },
+      "objects": [],
+      "npcs": [
+        {
+          "id": "lena",
+          "displayName": "Lena Fox",
+          "npcType": "person",
+          "position": { "x": 5, "y": 5 },
+          "spriteSheet": "female_blowse_v2",
+          "spriteTalk": "assets/characters/female_blowse_talk.png",
+          "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+          "storyPath": "scenarios/test_access_signin/ink/lena.json",
+          "currentKnot": "start",
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "finance",
+          "creds": { "username": "lfox", "password": "Ledger-Lena-9" }
+        }
+      ]
+    },
+
+    "lockout_room": {
+      "type": "room_office",
+      "door_sign": "Lockout",
+      "connections": { "east": "lobby" },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "lockout_pc",
+          "name": "Lockout PC",
+          "position": { "x": 5, "y": 4 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "corp_default",
+          "observations": "A PC under the corporate policy: five wrong passwords lock a username out here."
+        },
+        {
+          "type": "notes1",
+          "id": "sign_s7",
+          "name": "Sign: S7 Lockout",
+          "position": { "x": 2, "y": 3 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "S7. Five wrong passwords for Sam count down, then This account is locked on this PC. Sam's right password gets the same answer.\nAn invented username gets the same sequence. Ian still signs in here, and Sam still signs in at the hot desk.",
+          "observations": "A sign by the lockout PC."
+        }
+      ]
+    }
+  }
+}

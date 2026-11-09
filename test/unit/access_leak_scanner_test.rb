@@ -95,6 +95,19 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
                  summary(scan({ 'item' => { 'name' => 'Q3 budget forecast.xlsx' } }))
   end
 
+  test 'a profile folder\'s own /unlock answer may carry its contents, nothing else may' do
+    unlock = '/break_escape/games/1/unlock'
+    inner = { 'success' => true, 'hasContents' => true,
+              'contents' => [{ 'id' => 'jake_inner', 'name' => 'Inner memo.txt', 'text' => 'ARCHIVE-INNER-SECRET-TEXT' }] }
+    assert_empty scan(inner, path: unlock, method: 'POST')
+    # A profile file that is not inside a folder has no /unlock answer of its own.
+    top = { 'success' => true, 'contents' => [{ 'id' => 'jake_budget', 'text' => 'PROFILE-BUDGET-SECRET-TEXT' }] }
+    assert_equal [[1, 'profile_content', 'item:jake_budget']], summary(scan(top, path: unlock, method: 'POST'))
+    # The folder's contents anywhere else in an /unlock answer (a door's room data) are not its answer.
+    door = { 'success' => true, 'roomData' => { 'objects' => [{ 'id' => 'x', 'text' => 'ARCHIVE-INNER-SECRET-TEXT' }] } }
+    assert_equal [[1, 'profile_content', 'item:jake_inner']], summary(scan(door, path: unlock, method: 'POST'))
+  end
+
   test 'sign-in PC content is allowed only in that PC\'s container response' do
     local = { 'id' => 'jake_local', 'text' => 'PC-LOCAL-SECRET-TEXT' }
     assert_empty scan({ 'contents' => [local] }, path: '/break_escape/games/1/container/jake_pc')

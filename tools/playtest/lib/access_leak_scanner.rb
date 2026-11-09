@@ -279,6 +279,7 @@ class AccessLeakScanner
     {
       route: "#{method} #{path}",
       container: container,
+      unlock: method == 'POST' && path.end_with?('/unlock'),
       capture_secrets: path.end_with?('/capture_secrets')
     }
   end
@@ -329,7 +330,7 @@ class AccessLeakScanner
     end
     hits.each do |item_id, paths|
       info = scoped[item_id]
-      if allowed_login_route?(info, ctx[:container])
+      if allowed_login_route?(info, ctx[:container]) || folder_unlock_answer?(info, ctx, paths)
         legit << item_id
         next
       end
@@ -338,6 +339,14 @@ class AccessLeakScanner
       rule = info[:scope] == :profile ? 'profile_content' : 'signin_content'
       add.call(rule, "item:#{item_id}", safe_path(paths.first))
     end
+  end
+
+  # A folder inside a sign-in PC or profile (a locked archive) opened by /unlock: the server
+  # answers with the folder's contents only for a session that admits it (/unlock check 1),
+  # as GET /container/<folder> would. So an item inside a folder may sit in an /unlock
+  # answer's top-level contents.
+  def folder_unlock_answer?(info, ctx, paths)
+    ctx[:unlock] && info[:ancestors].any? && paths.all? { |p| p.start_with?('$.contents[') }
   end
 
   def allowed_login_route?(info, container)
