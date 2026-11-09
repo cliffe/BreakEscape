@@ -172,7 +172,11 @@ const vmSteps = createVmSteps({
   const pickDim = (a, e, d) => { const n = parseInt(a !== undefined && a !== true ? a : e, 10); return n > 0 ? n : d; };
   const VW = pickDim(argv.vw, process.env.VW, 1400);
   const VH = pickDim(argv.vh, process.env.VH, 1000);
+  // PLAYWRIGHT_CHROMIUM_EXECUTABLE: use a preinstalled Chromium when the
+  // project's Playwright expects a browser build that is not installed (cloud
+  // containers: /opt/pw-browsers/chromium).
   const browser = await chromium.launch({
+    ...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE } : {}),
     headless: argv.headless === true || argv.headless === 'true',
     args: [`--window-size=${VW},${VH}`]
   });

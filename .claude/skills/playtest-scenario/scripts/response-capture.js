@@ -1,4 +1,4 @@
-// response-capture.js — record every JSON response the page receives from the
+// response-capture.js: record every JSON response the page receives from the
 // Break Escape server, one line per response, for the access model's leak check
 // (docs/achitechture/ACCESS_MODEL_PLAN.md, "How the slice is tested" and step 6).
 //

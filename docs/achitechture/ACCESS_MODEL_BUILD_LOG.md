@@ -383,3 +383,127 @@ needs to know.
   `corp_default`, and `lockChance` between 0 and 1 if a beat needs one).
 - `BreakEscape::AccessIdentities` can serve later tooling (an "opens a lock earlier than
   intended" check once the graph exposes an order).
+
+## Step 6: playtest tooling (2026-11-09)
+
+### Built
+
+- `.claude/skills/playtest-scenario/scripts/response-capture.js` (new) and
+  `playtest-session.js --capture-responses <file>`. One line per JSON response from the game
+  server: `{ n, t, method, path, [query], status, cmdSeq, cmd, cmdActive, body }` (`bodyText`
+  when the body does not parse, `bodyError` when the browser no longer holds it). `cmdSeq` is
+  the session log `seq` of the command's `in` line (`logLine` now returns its seq); `cmd` is
+  the command's name only, since its arguments can hold typed secrets; `cmdActive` is false for
+  a response that arrived between commands (a timer's sync), which keeps the last command's
+  seq. Responses before the first command carry `cmdSeq: null`. The listener is on the browser
+  context and installed before the first navigation, so the bootstrap is captured. Kept: same
+  origin as `--url`, a JSON content type, not a static path (`/js/`, `/css/`, `/assets/`,
+  `/stylesheets/`), not a redirect. Lines are appended whole, in arrival order, and flushed
+  before the browser closes on `quit`. The session-open line reports `capturePath`.
+- `tools/playtest/lib/access_leak_scanner.rb` (new) and `tools/playtest/access-leak-check.rb`
+  (new): `bin/rails runner tools/playtest/access-leak-check.rb <game_id> <responses.jsonl>
+  [more.jsonl ...]`. The secrets come from the game's scenario data: every room NPC's
+  `creds.password`, and the name, text and content strings of every item under a sign-in PC,
+  under an account profile, or inside a container authored `locked: true`. Four rules:
+  `password`, `signin_content`, `profile_content`, `locked_content`. Each finding prints the
+  rule, `owner=npc:<id>` or `item:<id>`, the route (method and path, no query), the file and
+  line, the command's log seq and the JSON path; every output line goes through a redaction
+  pass against the secret values as a last guard. Exit 0 clean, 1 on any finding, 2 on a usage
+  error.
+- `tools/playtest/verify-run.rb`: an access section (`sessions` as `pc = npc (via)`,
+  `signedInPcs`, `serverClones` with source and UID-only, `copiedItems`, `loginFailures` as a
+  count per key in `seq` order, `loginLockouts`). The full report prints it when any key holds
+  something, else one line; `--access` (before or after the game id) prints only the game line
+  and the section and exits 0.
+- `public/break_escape/js/systems/test-bridge/access.js` (new), exposed as
+  `window.__test.access`: `sessions()`, `workstation(pcId)`, `savedCards()`. Documented in
+  `docs/test-bridge.md` ("Access model state").
+- `.claude/skills/playtest-scenario/SKILL.md`: the `--capture-responses` option row and an
+  "Access model checks" paragraph.
+- `test/js/fixtures/verify-run-stub.rb`: `STUB_PLAYER_STATE` (JSON merged into the stub's
+  player state).
+
+### Tests added
+
+- `test/unit/access_leak_scanner_test.rb` (10), over `test/fixtures/files/access_leak/`
+  (`scenario.json`, `responses.jsonl`): the fixture file gives exactly its five planted findings
+  with route, command seq and JSON path; a password planted in room data is reported, the same
+  password in an authored note (with its id, as notepad text without one, and as a
+  `postitNote`) is not, the bare password lifted out of a note is; `/capture_secrets` allowed
+  only under `revealSecret` for an NPC with a capture route, and only on that route; profile
+  text reported in a room response and another object's container, not in a sign-in PC's or
+  its own folder's container response; sign-in PC content only in that PC's container, and
+  allowed later once served there; a locked container's contents reported while marked locked
+  and not once marked unlocked, in its own container response or when listed locked without
+  contents; public and short strings ignored; no output line holds a secret; the runner script
+  (loaded against a `create_access_game` game) exits 1 with five findings and no values, and 0
+  on a clean file.
+- `test/js/playtest-session-capture.test.mjs` (6): one line per JSON response with the running
+  command's seq, the between-commands and before-first-command cases, the query, refusals kept;
+  static, other-origin, redirect and non-JSON responses skipped; arrival order kept when bodies
+  resolve out of order; unparsed and unreadable bodies; only the command's name recorded; the
+  harness wiring (listener before `page.goto`, start, end, flush).
+- `test/js/playtest-verify-run-access.test.mjs` (4): `--access` with every key set, `--access`
+  first and on a game without the keys, the section in the full report, the one-line form.
+- `test/js/test-bridge-access.test.mjs` (6): the block is exposed; `sessions()` without and
+  with a `pcSessions` module; `workstation()` through a real `WorkstationState` (present, away
+  and back, a non-workstation, an unknown id, `ownerPresent` and `lockAt` when present, a copy
+  of the away record); no module; `savedCards()`.
+
+### Results
+
+- `bin/test-js`: 397 files, all pass (392 before; this step adds 3, steps 4 and 5 add 2).
+- `bin/rails test test/unit/access_leak_scanner_test.rb`: 10 runs, 94 assertions, 0 failures.
+  The full Rails suite was not run here (the orchestrator runs it).
+- RuboCop clean on the new and changed Ruby files.
+- Live check on the keyless server (:3001, stopped afterwards): real `/scenario`, `/room/:id`,
+  `/capture_secrets`, `/login_accounts` and signed-out `/container/:id` responses for a game
+  built from `AccessModelScenario.routes_scenario` (all rooms unlocked, an earned capture for
+  Jake) gave no findings, with Jake's password served by `/capture_secrets` and allowed; a
+  tampered copy (a password in an NPC field, PC content in room data, the capture answer under
+  another path) gave exactly those three findings, without values, exit 1. `m01_first_contact`
+  (24 locked-container items, all rooms unlocked) and `m10_full_disclosure` gave no false
+  positives. `verify-run.rb --access` ran through `bin/rails runner`. The four games were
+  deleted afterwards. The browser harness itself could not be run here: this container's
+  Playwright expects chromium build 1254 and has 1243, so `--capture-responses` is tested
+  through the module and the wiring, not in a live browser session.
+
+### Deviations and choices
+
+- **The capture logic is its own module** (`response-capture.js`, beside `vm-steps.js` and
+  `config-gate.js`), so it is tested without a browser; `playtest-session.js` only wires it.
+- **A capture line names the command and its log seq, not its arguments.** The plan says "the
+  session log line of the command"; the seq points at that line, which already carries the
+  (redacted) arguments.
+- **Content that has been served by its own route may travel.** Once a sign-in PC or profile
+  item has appeared in an allowed `container` response, later responses carrying it (the
+  inventory add's answer, a reload's bootstrap) are not findings: the browser already held it
+  legitimately. The checker therefore takes several response files in order, for a run split
+  across sessions.
+- **Which strings count as content.** Names match a whole string; a text matches inside a
+  longer string only from 20 characters. Strings under 6 characters, and strings also authored
+  on an object outside every secret scope, are not checked, because they cannot be told apart
+  from ordinary data (a "Mail" app, a "Visitor log" in two places). A password under 6
+  characters is matched as a whole token rather than a substring.
+- **Deliberate clues.** A password is allowed inside a response hash whose `id` is an item
+  (not an NPC) with an authored string holding that password (any of its own fields, so
+  `text`, `postitNote`, observations), or in a string that contains such an authored string
+  whole (a note in the notepad). The bare password elsewhere is still a finding.
+- **The locked-container rule is per response**, as the plan says: a response that marks a
+  container `locked: true` anywhere and carries its contents' strings anywhere. A sign-in PC is
+  not treated as a locked container (it is always marked locked; its own rule covers it).
+- **`workstation(pcId)`** returns `workstation: false` rather than an error for an object the
+  module does not treat as a workstation, because a sign-in PC is not one until step 9; owner
+  and screen fields are still read. `present` uses `env.ownerPresent` when step 9 adds it, else
+  "not away".
+- **`sessions()`** reads `window.pcSessions`, through `list()` if it has one, else a
+  `sessions` map. Step 8 should expose the module as `window.pcSessions` with a `list()`
+  returning `[{ pcId, npcId, username, displayName, via }]`, or update `access.js`.
+
+### For step 7
+
+- Start each scripted run's session with `--capture-responses <scratch>/<scenario>-responses.jsonl`,
+  and after each beat run `verify-run.rb <game_id> --access` and
+  `access-leak-check.rb <game_id> <that file>` (SKILL.md, "Access model checks").
+- Live sessions need a Playwright whose chromium build is installed; in this container the
+  harness's `chromium.launch` fails (expects 1254, has 1243 under `/opt/pw-browsers`).

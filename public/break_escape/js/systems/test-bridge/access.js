@@ -1,5 +1,5 @@
 /**
- * window.__test.access — read-only access model state for playtests
+ * window.__test.access: read-only access model state for playtests
  * (docs/achitechture/ACCESS_MODEL_PLAN.md, step 6). Nothing here acts on the game: it only
  * reads what the client holds, so a scripted run can compare the browser's view with
  * what the server recorded (tools/playtest/verify-run.rb --access).
