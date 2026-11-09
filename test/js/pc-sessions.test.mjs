@@ -18,7 +18,7 @@ const js = join(dirname(fileURLToPath(import.meta.url)), '../../public/break_esc
 const dataUrl = (src) => 'data:text/javascript;base64,' + Buffer.from(src).toString('base64');
 
 globalThis.window = {};
-const { PcSessions, pcSessions: singleton, SIGNED_OUT_MESSAGE } =
+const { PcSessions, pcSessions: singleton, SIGNED_OUT_MESSAGE, SCREEN_LOCKED_MESSAGE } =
     await import(dataUrl(readFileSync(join(js, 'systems/pc-sessions.js'), 'utf8')));
 
 const ACCOUNTS = {
@@ -323,5 +323,32 @@ test('a claim granted after the owner has returned ends at once with owner_retur
     events.length = 0;
     assert.equal((await s.claim('dana_pc')).ok, true);
     assert.equal(s.has('dana_pc'), true);
+    delete window.workstationState;
+});
+
+// Code review R2, m3: workstation_auto_locked fired while the claim was in flight
+test('a claim granted after the screen auto locked ends at once with auto_locked', async () => {
+    const s = setup({
+        answer: (pcId, fields) => {
+            // The needs tick locks the screen while POST /login is answered
+            window.gameState.globalVariables.dana_pc_screen_locked = true;
+            return CLAIM_ANSWER(pcId, fields);
+        }
+    });
+    window.gameState = { globalVariables: { dana_pc_screen_locked: false, dana_pc_owner_away: true } };
+    window.workstationState = { presence: () => ({ ownerId: 'dana', present: false }) };
+    const r = await s.claim('dana_pc');
+    assert.equal(r.ok, false);
+    assert.equal(r.reason, 'auto_locked');
+    assert.equal(r.message, SCREEN_LOCKED_MESSAGE);
+    assert.equal(s.has('dana_pc'), false);
+    assert.deepEqual(calls.map(c => c[0]), ['login', 'logout']);
+    assert.deepEqual(named('pc_signed_out'), [{ pcId: 'dana_pc', npcId: 'dana', reason: 'auto_locked', firstAtPc: true }]);
+    // The screen still open after the answer: the claim stands
+    const t = setup({ answer: CLAIM_ANSWER });
+    window.gameState = { globalVariables: { dana_pc_screen_locked: false, dana_pc_owner_away: true } };
+    assert.equal((await t.claim('dana_pc')).ok, true);
+    assert.equal(t.has('dana_pc'), true);
+    delete window.gameState;
     delete window.workstationState;
 });

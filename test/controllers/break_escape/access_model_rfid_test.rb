@@ -293,6 +293,25 @@ module BreakEscape
       assert_empty @game.reload.player_state['serverClones'].to_h
     end
 
+    # Code review R2, m5: the client sends held_card for any keycard sprite with no id
+    # (interactions.js), so a world keycard with no id, lying in a reachable room and not
+    # picked up, arrives as a held-card source. It is not held, so it is refused.
+    test 'an id-less keycard lying in a reachable room is not a held-card copy source' do
+      data = AccessModelScenario.routes_scenario
+      data['rooms']['lobby']['objects'] << { 'type' => 'keycard', 'name' => 'Dropped badge',
+                                              'card_id' => 'DROPPED-01', 'rfid_protocol' => 'EM4100' }
+      @game = create_access_game(mission: break_escape_missions(:ceo_exfil), player: break_escape_demo_users(:test_user),
+                                 scenario: data,
+                                 player_state: { 'currentRoom' => 'lobby', 'unlockedRooms' => %w[lobby finance],
+                                                 'inventory' => [CLONER.dup] })
+      assert(@game.scenario_data['rooms']['lobby']['objects'].any? { |o| o['card_id'] == 'DROPPED-01' })
+      body = clone_card('DROPPED-01', held_card: true)
+      assert_response :forbidden
+      refute_equal true, body['recorded']
+      assert_empty @game.reload.player_state['serverClones'].to_h
+      assert_refused door('records', card_ids: ['DROPPED-01'])
+    end
+
     private
 
     def keycard_item(id)

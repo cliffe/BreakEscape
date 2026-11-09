@@ -199,6 +199,8 @@ export class PcSessions {
      *   { ok: false, reason: 'refused', message }  (the server's "Sign in required"; no event)
      *   { ok: false, reason: 'owner_returned', message }  (granted, but the owner was back by
      *                                    then: pc_signed_in, then pc_signed_out owner_returned)
+     *   { ok: false, reason: 'auto_locked', message }  (granted, but the screen auto locked by
+     *                                    then: pc_signed_in, then pc_signed_out auto_locked)
      *   { ok: false, reason: 'error', error: true, status, message }
      */
     async claim(pcId) {
@@ -232,6 +234,14 @@ export class PcSessions {
             const message = backAtDeskMessage(session.displayName);
             await this._endClaim(pcId, 'owner_returned', message);
             return { ok: false, reason: 'owner_returned', message };
+        }
+        // Likewise the auto lock: workstation_auto_locked fires once, at lockAt, and found no
+        // session if it fell while the claim was in flight. The workstation layer has set the
+        // screen global by then, so read it afresh and end the claim as that event would have.
+        const after = (typeof window !== 'undefined' && window.gameState?.globalVariables) || {};
+        if (after[`${pcId}_screen_locked`]) {
+            await this._endClaim(pcId, 'auto_locked', SCREEN_LOCKED_MESSAGE);
+            return { ok: false, reason: 'auto_locked', message: SCREEN_LOCKED_MESSAGE };
         }
         return { ok: true, session: publicSession(pcId, session) };
     }

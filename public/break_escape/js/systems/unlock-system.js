@@ -235,6 +235,13 @@ export async function interactLoginPc(lockable) {
             window.gameAlert?.(r.message, 'info', data.name || 'PC', 4000);
             return 'in_use';
         }
+        if (r?.reason === 'auto_locked') {
+            // The screen locked while the claim was answered: a locked screen is the sign-in
+            // screen, as a click after the lock would find
+            window.gameAlert?.(r.message, 'info', data.name || 'PC', 4000);
+            openLoginSignIn(lockable, { reason: 'locked' });
+            return 'signin';
+        }
         openLoginSignIn(lockable, { reason: 'claim_refused' });
         return 'claim_refused';
     }

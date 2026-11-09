@@ -267,6 +267,22 @@ module BreakEscape
       assert_equal %w[profile_pc], response.parsed_body['sessions'].keys
     end
 
+    # Code review R2, m1: the scenario action runs outside with_game_lock, so ending the
+    # claims takes the row lock and reloads; a write that committed after this record was
+    # loaded (a pagehide PUT /sync_state during a reload) survives.
+    test 'ending claimed sessions keeps a write that landed after the game was loaded' do
+      build(scenario: tracked_scenario)
+      claim
+      stale = Game.find(@game.id)
+      fresh = Game.find(@game.id)
+      fresh.player_state['unlockedObjects'] = Array(fresh.player_state['unlockedObjects']) + ['CONCURRENT_UNLOCK']
+      fresh.save!
+      stale.end_claimed_sessions!
+      state = @game.reload.player_state
+      assert_includes state['unlockedObjects'], 'CONCURRENT_UNLOCK', 'the concurrent write survived'
+      assert_nil state['sessions']['jake_pc'], 'the claimed session still ended'
+    end
+
     # Code review R1, m7
     test 'a claim never replaces a password session at the same PC' do
       build(scenario: tracked_scenario)

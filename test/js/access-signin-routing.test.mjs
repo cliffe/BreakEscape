@@ -33,6 +33,7 @@ for (const [spec, url] of Object.entries(stubs)) src = src.split(`'${spec}'`).jo
 globalThis.window = {};
 globalThis.__passwordStarts = 0;
 const { handleUnlock, openLoginSignIn, interactLoginPc } = await import(dataUrl(src));
+const { PcSessions } = await import(dataUrl(readFileSync(join(js, 'systems/pc-sessions.js'), 'utf8')));
 
 const TILES = [{ username: 'sokafor', displayName: 'Sam Okafor', portrait: null, avatar: null }];
 let calls, started, desktops, shown, sessionHeld;
@@ -196,15 +197,59 @@ test('step 9: accessed claims the session; a success opens the desktop, a refusa
     assert.equal(shown[0][0], 'hot_desk');
 });
 
-test('a claim that ends because the owner returned shows the message and opens no screen (code review R1, m4)', async () => {
+// Code review R1 m4 and R2 m3/m5: these run the real pc-sessions.js claim (not a stub), so
+// each fails if its guard in PcSessions.claim is removed. The ApiClient answer is where the
+// race happens: the owner sits down, or the screen auto locks, while POST /login is answered.
+function realSessions(duringLogin) {
+    const s = new PcSessions();
+    const api = [];
+    window.ApiClient = {
+        ...window.ApiClient,
+        login: async (pcId, fields) => {
+            api.push(['login', pcId, fields.claim]);
+            duringLogin();
+            return { success: true, npcId: 'dana', username: 'dreyes', displayName: 'Dana Reyes', via: 'claim' };
+        },
+        logout: async (pcId) => { api.push(['logout', pcId]); return { success: true }; }
+    };
+    window.pcSessions = s;
+    return { s, api };
+}
+
+test('a claim granted after the owner returned shows the message and opens no screen (code review R1, m4)', async () => {
     reset();
-    wsStub({ answer: 'accessed' });
-    window.pcSessions.claim = async () => ({ ok: false, reason: 'owner_returned', message: 'Dana Reyes is back at the desk' });
+    let ownerBack = false;
+    window.workstationState = {
+        presence: () => ({ ownerId: 'dana', present: ownerBack }),
+        onInteract: () => 'accessed'
+    };
+    const { s, api } = realSessions(() => { ownerBack = true; });
     assert.equal(await interactLoginPc(pc()), 'in_use');
     await settle();
+    assert.deepEqual(api, [['login', 'hot_desk', 'owner'], ['logout', 'hot_desk']]);
+    assert.equal(s.has('hot_desk'), false);
     assert.equal(desktops.length, 0);
     assert.equal(started.length, 0);
     assert.ok(calls.some(c => c[0] === 'alert' && c[1] === 'Dana Reyes is back at the desk'));
+});
+
+test('a claim granted after the screen auto locked shows the message and the sign-in screen, not the desktop (code review R2, m3)', async () => {
+    reset();
+    window.gameState = { globalVariables: { hot_desk_screen_locked: false, hot_desk_owner_away: true } };
+    window.workstationState = {
+        presence: () => ({ ownerId: 'dana', present: false }),
+        onInteract: () => 'accessed'
+    };
+    const { s, api } = realSessions(() => { window.gameState.globalVariables.hot_desk_screen_locked = true; });
+    assert.equal(await interactLoginPc(pc()), 'signin');
+    await settle();
+    assert.deepEqual(api.map(c => c[0]), ['login', 'logout']);
+    assert.equal(s.has('hot_desk'), false);
+    assert.equal(desktops.length, 0);
+    assert.equal(started.length, 1);
+    assert.equal(started[0][0], 'password');
+    assert.ok(calls.some(c => c[0] === 'alert' && c[1] === 'The screen locked'));
+    delete window.gameState;
 });
 
 test('step 9: locked, signin, attended (a race) and null all open the sign-in screen with no claim', async () => {

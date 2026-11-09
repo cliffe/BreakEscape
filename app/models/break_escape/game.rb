@@ -1487,12 +1487,25 @@ module BreakEscape
     # owner at the desk. Called by the scenario action after it has answered the sessions,
     # so the client still sees each claim and reports its end, without the end depending
     # on the client's POST /logout arriving.
+    #
+    # The scenario action is not under with_game_lock (it is a read for every other game),
+    # so the write takes the row lock itself: with_lock reloads the row first, so a locked
+    # write that committed after this record was loaded (a pagehide PUT /sync_state, say)
+    # is kept rather than overwritten with the stale player_state.
     def end_claimed_sessions!
-      claimed = access_sessions.select { |_pc_id, session| session.is_a?(Hash) && session['via'] == 'claim' }
-      return if claimed.empty?
+      return if claimed_session_ids.empty?
 
-      player_state['sessions'] = access_sessions.except(*claimed.keys)
-      save!
+      with_lock do
+        claimed = claimed_session_ids
+        next if claimed.empty?
+
+        player_state['sessions'] = access_sessions.except(*claimed)
+        save!
+      end
+    end
+
+    def claimed_session_ids
+      access_sessions.select { |_pc_id, session| session.is_a?(Hash) && session['via'] == 'claim' }.keys
     end
 
     # { pcId => { npcId, username, displayName, via } } for the scenario response (5.3).
