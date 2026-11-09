@@ -287,3 +287,29 @@ sign-in by `username`, but no validator check keeps either unique.
 One small one, in m2: whether a correct password at a PC the account may not use answers with the
 uniform "Incorrect username or password" or with "This account may not sign in to this PC".
 Everything else has an engineering fix within the decisions in plan section 2.
+
+## 7. Planner response
+
+The plan was rewritten as a complete document in the same section order. New in it: a client
+sessions module (`systems/pc-sessions.js`, 5.3), the interaction steps at a sign-in PC (5.4), a
+`signin` result from `onInteract`, `NPCNeedsSystem.isAvailable`, username rules at `/login`
+(section 6), and client tests in step 4.
+
+**Orchestrator decision (the user can overrule), m2's user question:** a correct password at a PC
+whose access list does not admit that account answers "This account can't sign in on this PC", as
+real systems do, because it teaches that access lists are separate from passwords. A wrong password,
+an unknown username and a locked account stay indistinguishable: the answer depends only on that
+username's failure count at that PC. Recorded in plan section 2 and the `/login` row of section 6.
+
+| Finding | Outcome | What was done or why |
+|---|---|---|
+| M1 removed, hidden or hostile owner leaves the PC "in use" | fixed | Plan 5.4: present also needs the needs system's availability test (sprite exists; not `ko`, `hostile` or `hidden`), moved into `NPCNeedsSystem.isAvailable` and reached through a new env function `ownerPresent`. An absent owner with no away record makes `onInteract` return `signin` and emit nothing. Step 4 names the client tests in `workstation-state.test.mjs` and `npc-needs.test.mjs`. |
+| m1 claim checks and client presence rules disagree | fixed | 5.4: `npc_ko` counts as leaving only for a tracked owner with no away record, so it neither re-rolls nor adds a leave, and an untracked owner never gets an away record. Claim check 3 (section 6) refuses an owner without `needs`, matching the client and the step 5 warning. |
+| m2 `attemptsLeft` and lockout answers give accounts away | fixed | Section 6: usernames are normalised, and failures and lockouts are counted for any typed username, so unknown and known usernames give the same sequence. A locked username answers `lockedOut: true` on every attempt, right password included. Maps are bounded (200 non-account entries, real accounts never dropped). The user question is settled by the orchestrator decision above. |
+| m3 client sign-in plumbing in step 4 | fixed | 5.3 "Client sessions": `pc-sessions.js` is the one place sign-ins and sign-outs happen and the one emitter of `pc_signed_in` / `pc_signed_out`. `core/game.js` hands it `sessions` and `signedInPcs` from the scenario response. 5.2: a sign-in never calls `unlockTarget` or sets `locked` false. 5.4: the interaction waits for the claim's answer. `sessions` records `via`, and claimed sessions are signed out on reload. The objectives reconcile reads `signedInPcs`. |
+| m4 `/clone_card` sources and the copier | fixed | 4.2 and section 6: an object source may be held in the server inventory or sit in a reachable room with an unlocked path. An unlock-mode read of a held keycard passes its object id. The client sends the saved `card_id`, and the server records only when it equals the source's own card (`recorded: false` otherwise), so the two copies never differ. There is a validator warning for a `clone_keycard` tag naming another NPC's card. A recorded copy counts only while an `rfid_cloner` is held. |
+| m5 `acceptsUIDOnly` never reaches the client | fixed | 4.1: `acceptsUIDOnly` is plumbed with `access` through the bootstrap allow list, `doorProperties` and both requirement builders (steps 2 and 4), so the `requires` path's minigame honours it too. |
+| m6 identity by value needs uniqueness rules | fixed | Section 3: usernames are unique (trimmed, case-insensitive; validator error). A shared `card_id` carries every holder's identity (orchestrator decision, section 2), the keycard `identity` must name a holder, and the graph draws one node per card. The validator errors on an account holder's `usePayload.address` or `addCapture.address` differing from `creds.username`. Step 7 gives Pierce `username: "m.pierce"`. |
+| m7 build order and reset wording | fixed | The no-password test is split: step 2 covers the routes that exist then, and step 3 adds `/login_accounts` and signed-out `container`. 5.3 and step 3: only `initialize_player_state` gains the keys, and they stay off `preserved_keys`. Step 1: the loader `normalise_access_model!` runs in `generate_scenario_data` before `stamp_scenario_object_ids!`. The server reads `creds.card \|\| rfidCard`, and the withholding never deletes an existing `rfidCard`. |
+| m8 small inaccuracies | fixed | The section 2 reference now points to 4.2. The capture write cites `sync_state` (`games_controller.rb:1485-1486`). Tiles are composed in `filtered_room_data`, so the door `/unlock` response carries them (5.3, the 5.6 table and the `/unlock` row). |
+| R3 B1 (partly closed) unowned or never-leaving owner reads "in use" for ever | fixed | Closed with M1: removed, hidden and hostile owners now read as not present. |
