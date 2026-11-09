@@ -44,6 +44,7 @@ import {
 } from './wait.js';
 import { logAction, logNote, installEventCapture, drain, peek, clear, currentSeq, eventsSince } from './log.js';
 import { minigameBridge } from './minigames.js';
+import { accessBridge } from './access.js';
 // Imported directly rather than read off window: player.js exports this but
 // never assigns it globally. Used only by moveTo's documented off-screen
 // exception — see moveTo below.
@@ -1673,6 +1674,14 @@ const bridge = {
             return { ok: true, enabled: d.setEnabled(on), panels: d.panels.size };
         }
     },
+
+    // ── Access model (docs/achitechture/ACCESS_MODEL_PLAN.md, step 6) ───────
+
+    /**
+     * Read-only: sessions(), workstation(pcId), savedCards(). See access.js.
+     * Compare with the server's record (tools/playtest/verify-run.rb --access).
+     */
+    access: accessBridge,
 
     // ── Minigames ───────────────────────────────────────────────────────────
 

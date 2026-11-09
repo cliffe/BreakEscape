@@ -12,6 +12,8 @@
  *                            [--vw 1400] [--vh 1000]     (or env VW / VH)
  *                            [--storage-state FILE]      (signed-in browser state from tools/video/capture/login.mjs)
  *                            [--hacktivity-dir PATH] [--game-id ID]   (VM steps; or env HACKTIVITY_DIR)
+ *                            [--capture-responses FILE]  (one line per JSON response from the game server,
+ *                                                         for tools/playtest/access-leak-check.rb; see response-capture.js)
  *
  * Commands (one JSON object per line):
  *   {"cmd":"bootstrap","tutorial":"decline","resume":"new"}   (stops at an open briefing: briefingPending:true,
@@ -70,6 +72,7 @@ const path = require('path');
 const { briefTasks } = require('./brief-tasks');
 const { createVmSteps } = require('./vm-steps');
 const { completeConfiguration } = require('./config-gate');
+const { createResponseCapture } = require('./response-capture');
 
 const args = process.argv.slice(2);
 const argv = {};
@@ -105,8 +108,9 @@ if (logPath) {
 }
 let seq = 0;
 function logLine(dir, obj) {
-  if (!logStream) return;
+  if (!logStream) return null;
   logStream.write(JSON.stringify({ seq: ++seq, t: new Date().toISOString(), dir, ...obj }) + '\n');
+  return seq;
 }
 
 function emit(obj) {
@@ -176,6 +180,17 @@ const vmSteps = createVmSteps({
   if (storageState && !fs.existsSync(storageState)) { emit({ ok: false, error: `missing --storage-state file: ${storageState}` }); await browser.close(); process.exit(1); }
   const context = await browser.newContext({ viewport: { width: VW, height: VH }, ignoreHTTPSErrors: true, ...(storageState ? { storageState } : {}) });
   const page = await context.newPage();
+
+  // --capture-responses FILE: every JSON response from the game server, one
+  // line each, tagged with the session log seq of the command that was running.
+  // Installed before the first navigation so the scenario bootstrap is in it.
+  let responseCapture = null;
+  if (typeof argv['capture-responses'] === 'string') {
+    responseCapture = createResponseCapture({ file: argv['capture-responses'], origin: new URL(argv.url).origin });
+    context.on('response', r => responseCapture.onResponse(r));
+  } else if (argv['capture-responses'] === true) {
+    emit({ ok: false, error: '--capture-responses needs a file path' }); await browser.close(); process.exit(1);
+  }
 
   // Toast capture. Installed before any page script runs, so it sees toasts
   // raised during load. Watches the whole document for added .notification
@@ -257,7 +272,7 @@ const vmSteps = createVmSteps({
   }
   const ready = await page.evaluate(() => window.__test.waitUntilReady({ timeoutMs: 60000 }));
   emit({ ok: true, event: 'session-open', ready, speed: argv.speed || 'fast', url: argv.url,
-         flagsConfigured: FLAGS.length, logPath, pid: process.pid });
+         flagsConfigured: FLAGS.length, logPath, capturePath: responseCapture ? responseCapture.file : null, pid: process.pid });
 
   const pause = (ms) => ms ? page.waitForTimeout(ms) : Promise.resolve();
 
@@ -1053,13 +1068,14 @@ const vmSteps = createVmSteps({
     try { cmd = JSON.parse(text); }
     catch (e) { emit({ ok: false, error: 'bad-json', line: text.slice(0, 200) }); continue; }
 
-    logLine('in', { cmd: vmSteps.redact(cmd) });
+    const inSeq = logLine('in', { cmd: vmSteps.redact(cmd) });
     if (cmd.cmd === 'quit') { logLine('out', { event: 'quit', commands: seq, flagsUsed: flagUses.length }); break; }
+    if (responseCapture) responseCapture.startCommand(inSeq, typeof cmd.cmd === 'string' ? cmd.cmd : null);
     cmd = substituteFlags(cmd, cmd.cmd);
     try { cmd = await vmSteps.substituteVmFlags(cmd, cmd.cmd); }
-    catch (err) { emit({ ok: false, cmd: cmd.cmd, error: String(err && err.message || err), ...(err && err.hint ? { hint: err.hint } : {}) }); continue; }
+    catch (err) { emit({ ok: false, cmd: cmd.cmd, error: String(err && err.message || err), ...(err && err.hint ? { hint: err.hint } : {}) }); if (responseCapture) responseCapture.endCommand(); continue; }
     const handler = handlers[cmd.cmd];
-    if (!handler) { emit({ ok: false, error: `unknown-cmd:${cmd.cmd}` }); continue; }
+    if (!handler) { emit({ ok: false, error: `unknown-cmd:${cmd.cmd}` }); if (responseCapture) responseCapture.endCommand(); continue; }
 
     try {
       const result = await handler(cmd);
@@ -1067,9 +1083,11 @@ const vmSteps = createVmSteps({
     } catch (err) {
       emit({ ok: false, cmd: cmd.cmd, error: String(err && err.message || err), ...(err && err.reason ? { reason: err.reason } : {}), ...(err && err.hint ? { hint: err.hint } : {}) });
     }
+    if (responseCapture) responseCapture.endCommand();
   }
 
   vmSteps.shutdown();
+  if (responseCapture) await responseCapture.flush();
   await browser.close();
   emit({ ok: true, event: 'session-closed', commands: seq, flagsUsed: flagUses.length, logPath });
   process.exit(0);

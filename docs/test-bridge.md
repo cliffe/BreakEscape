@@ -371,6 +371,25 @@ won't.
 
 ---
 
+## Access model state (`window.__test.access`)
+
+Read-only, for the access model's scripted runs
+(`docs/achitechture/ACCESS_MODEL_PLAN.md`, "How the slice is tested"). Nothing here acts
+on the game; compare it with the server's record from
+`tools/playtest/verify-run.rb <game_id> --access`. Source: `systems/test-bridge/access.js`.
+
+| Call | Returns |
+|---|---|
+| `sessions()` | The sign-in sessions the client holds, `[{ pcId, npcId, username, displayName, via }]`, read from `window.pcSessions` (`systems/pc-sessions.js`). Empty until that module exists (access model step 8). |
+| `workstation(pcId)` | `{ ok, id, workstation, owner, present, away, screenLocked, lockAt }` from `workstation-state.js`. `present` is the owner's presence (the env's `ownerPresent` once step 9 adds it, else "not away"); `away` is the owner's away record or null; `workstation` is false for an object the module does not treat as a workstation. `{ ok: false, reason }` when the module or object is missing. |
+| `savedCards()` | The card copier's `saved_cards` as card ids. This list is client-written and never decides identity: the server's copies are `serverClones` in `verify-run.rb --access`. |
+
+```json
+{"cmd":"eval","fn":"() => window.__test.access.workstation('jake_pc')"}
+```
+
+---
+
 ## Minigames
 
 All 43 minigames subclass `MinigameScene` (`minigames/framework/base-minigame.js`)

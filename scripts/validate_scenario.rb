@@ -18,6 +18,7 @@ require 'open3'
 require_relative 'validate_social'
 require_relative 'validate_npc_needs'
 require_relative '../lib/break_escape/declared_grants'
+require_relative '../lib/break_escape/access_identities'
 
 # Try to load json-schema gem, provide helpful error if missing
 begin
@@ -5714,6 +5715,409 @@ def check_door_alignment(erb_path, repo_root)
   issues
 end
 
+# ─────────────────────────────────────────────────────────────
+# Access model (docs/achitechture/ACCESS_MODEL_PLAN.md, section 8 step 4): NPC roles and
+# sign-in details, access lists on rfid locks and sign-in PCs, account profiles and
+# policies. The identity rules come from BreakEscape::AccessIdentities, which mirrors the
+# server's. repo_root (for storyPath) and scenario_dir (for ink/*.json) enable the ink
+# checks; without them those are skipped. Messages never quote a password.
+# ─────────────────────────────────────────────────────────────
+def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
+  issues = []
+  return issues unless json_data.is_a?(Hash)
+
+  ai = BreakEscape::AccessIdentities
+  err = ->(msg) { issues << "❌ ERROR: access model: #{msg}" }
+  warn = ->(msg) { issues << "⚠️ WARNING: access model: #{msg}" }
+
+  room_npcs = ai.room_npcs(json_data)
+  npc_by_id = {}
+  room_npcs.each { |e| npc_by_id[e[:npc]['id'].to_s] ||= e if e[:npc]['id'] }
+  accounts = room_npcs.select { |e| ai.account?(e[:npc]) }
+  objects = ai.room_objects(json_data)
+  pcs = objects.select { |e| ai.login_pc?(e[:object]) }
+  pc_ids = pcs.map { |e| e[:object]['id'] }.compact.map(&:to_s).to_set
+  rooms = json_data['rooms'].is_a?(Hash) ? json_data['rooms'] : {}
+  policies = json_data['policies'].is_a?(Hash) ? json_data['policies'] : {}
+  profiles = json_data['accountProfiles'].is_a?(Hash) ? json_data['accountProfiles'] : {}
+  name_of = ->(npc) { "'#{npc['id']}'" }
+
+  # role and creds only on room NPCs (section 3)
+  other_records = []
+  %w[npcs phoneNPCs].each do |key|
+    next unless json_data[key].is_a?(Array)
+
+    json_data[key].each_with_index { |npc, i| other_records << [npc, "#{key}[#{i}]"] if npc.is_a?(Hash) }
+  end
+  other_records.concat(headless_npc_records(json_data))
+  other_records.each do |npc, path|
+    %w[role creds].each do |field|
+      next unless npc.key?(field)
+
+      err.call("'#{path}' has '#{field}', which is allowed only on room NPCs (rooms.<id>.npcs[]): " \
+               'other NPC records reach the browser unfiltered.')
+    end
+  end
+
+  # Accounts: a password, unique usernames, one home for the password (section 3)
+  by_username = Hash.new { |h, k| h[k] = [] }
+  accounts.each do |e|
+    npc = e[:npc]
+    creds = npc['creds']
+    username = creds['username']
+    password = creds['password']
+    unless password.is_a?(String) && !password.empty?
+      err.call("NPC #{name_of.call(npc)} has creds.username '#{username}' but no creds.password.")
+    end
+    by_username[ai.normalise_username(username)] << npc['id']
+
+    payload = npc['usePayload']
+    if payload.is_a?(Hash)
+      if payload.key?('address') && ai.normalise_username(payload['address']) != ai.normalise_username(username)
+        err.call("NPC #{name_of.call(npc)} has usePayload.address '#{payload['address']}', which differs from " \
+                 "creds.username '#{username}'. The loader fills it from creds: remove it or make them match.")
+      end
+      if payload.key?('secret') && payload['secret'] != password
+        err.call("NPC #{name_of.call(npc)} has a usePayload.secret that differs from creds.password. The loader " \
+                 'fills it from creds: remove it.')
+      end
+    end
+    Array(npc['eventMappings']).each_with_index do |mapping, i|
+      capture = mapping.is_a?(Hash) ? mapping['addCapture'] : nil
+      next unless capture.is_a?(Hash)
+
+      if capture.key?('secret')
+        err.call("NPC #{name_of.call(npc)} eventMappings[#{i}].addCapture has a 'secret'. An account holder's " \
+                 'capture takes its secret from creds; a PIN or other capture belongs on an NPC without an account.')
+      end
+      if capture.key?('address') && ai.normalise_username(capture['address']) != ai.normalise_username(username)
+        err.call("NPC #{name_of.call(npc)} eventMappings[#{i}].addCapture.address '#{capture['address']}' differs " \
+                 "from creds.username '#{username}'.")
+      end
+    end
+
+    capture_route = payload.is_a?(Hash) ||
+                    Array(npc['eventMappings']).any? { |m| m.is_a?(Hash) && m['addCapture'].is_a?(Hash) }
+    reveal = json_data.dig('social', 'captures', 'revealSecret') if json_data['social'].is_a?(Hash) && json_data['social']['captures'].is_a?(Hash)
+    if capture_route && !reveal
+      warn.call("NPC #{name_of.call(npc)} has a capture route (usePayload or addCapture), but " \
+                'social.captures.revealSecret is not set, so a captured sign-in never shows its password.')
+    end
+  end
+  by_username.each do |username, ids|
+    next if ids.size < 2
+
+    err.call("accounts #{ids.map { |id| "'#{id}'" }.join(', ')} share the username '#{username}' " \
+             '(usernames compare trimmed and case-insensitively).')
+  end
+
+  # Access lists: people must be room NPCs; roles should be held by someone
+  roles_held = room_npcs.flat_map { |e| ai.identity_roles(e[:npc]) }.to_set
+  acl_sources = []
+  rooms.each { |room_id, room| acl_sources << [room['access'], "rooms/#{room_id}"] if room.is_a?(Hash) && room.key?('access') }
+  objects.each { |e| acl_sources << [e[:object]['access'], e[:path]] if e[:object].key?('access') }
+  profiles.each do |profile_id, profile|
+    next unless profile.is_a?(Hash)
+
+    acl = profile['for']
+    if !acl.is_a?(Hash) || (Array(acl['roles']).empty? && Array(acl['people']).empty?)
+      warn.call("profile 'accountProfiles/#{profile_id}' has no 'for' roles or people, so it admits nobody.")
+    else
+      acl_sources << [acl, "accountProfiles/#{profile_id}/for"]
+    end
+  end
+  acl_sources.each do |acl, where|
+    unless acl.is_a?(Hash)
+      err.call("'#{where}' access list must be an object { roles, people }.")
+      next
+    end
+    Array(acl['people']).each do |person|
+      next if npc_by_id.key?(person.to_s)
+
+      err.call("'#{where}' names unknown person '#{person}' (people must be room NPC ids).")
+    end
+    Array(acl['roles']).each do |role|
+      next if roles_held.include?(role.to_s)
+
+      warn.call("'#{where}' admits role '#{role}', which no NPC holds.")
+    end
+  end
+
+  # Policies
+  if json_data.key?('defaultPolicy') && !policies.key?(json_data['defaultPolicy'].to_s)
+    err.call("defaultPolicy '#{json_data['defaultPolicy']}' names no entry in 'policies'.")
+  end
+  objects.each do |e|
+    next unless e[:object].key?('policy')
+    next if policies.key?(e[:object]['policy'].to_s)
+
+    err.call("'#{e[:path]}' policy '#{e[:object]['policy']}' names no entry in 'policies'.")
+  end
+
+  # Profile item ids: unique across profiles and room objects (section 5.1)
+  room_ids = objects.map { |e| e[:object]['id'] }.compact.map(&:to_s).to_set
+  profile_items = []
+  walk_profile = lambda do |list, path|
+    next unless list.is_a?(Array)
+
+    list.each_with_index do |item, i|
+      next unless item.is_a?(Hash)
+
+      profile_items << [item, "#{path}[#{i}]"]
+      walk_profile.call(item['contents'], "#{path}[#{i}]/contents")
+    end
+  end
+  profiles.each { |profile_id, profile| walk_profile.call(profile['contents'], "accountProfiles/#{profile_id}/contents") if profile.is_a?(Hash) }
+  seen_profile_ids = {}
+  profile_items.each do |item, path|
+    id = item['id']
+    next if id.nil? || id.to_s.empty?
+
+    if seen_profile_ids.key?(id.to_s)
+      err.call("profile item id '#{id}' is used twice ('#{seen_profile_ids[id.to_s]}' and '#{path}'). Item ids are global.")
+    else
+      seen_profile_ids[id.to_s] = path
+    end
+    err.call("profile item id '#{id}' at '#{path}' is also a room object's id. Item ids are global.") if room_ids.include?(id.to_s)
+  end
+
+  # Cards: a keycard's identity must carry its card_id; a requires card on an access lock must exist
+  card_info = ai.cards(json_data)
+  keycard_items = objects.map { |e| [e[:object], e[:path]] } + profile_items
+  Array(json_data['startItemsInInventory']).each_with_index { |item, i| keycard_items << [item, "startItemsInInventory[#{i}]"] if item.is_a?(Hash) }
+  keycard_items.each do |item, path|
+    next unless item.key?('identity')
+
+    holder = npc_by_id[item['identity'].to_s]
+    holder_card = holder && ai.card_id_of(ai.npc_card(holder[:npc]))
+    next if holder_card && holder_card == item['card_id'].to_s
+
+    err.call("'#{path}' identity '#{item['identity']}' names no NPC carrying its card_id '#{item['card_id']}'.")
+  end
+  known_cards = Set.new(card_info.keys)
+  find_card_ids = lambda do |node|
+    case node
+    when Array then node.each { |n| find_card_ids.call(n) }
+    when Hash
+      known_cards << node['card_id'].to_s if node['card_id'].is_a?(String) || node['card_id'].is_a?(Integer)
+      node.each_value { |v| find_card_ids.call(v) }
+    end
+  end
+  find_card_ids.call(json_data)
+
+  # rfid locks: requires or access; requires cards on an access lock must exist
+  rfid_nodes = rooms.filter_map { |id, room| [room, "rooms/#{id}"] if room.is_a?(Hash) && room['lockType'] == 'rfid' }
+  rfid_nodes += objects.filter_map { |e| [e[:object], e[:path]] if e[:object]['lockType'] == 'rfid' }
+  rfid_nodes.each do |lock, path|
+    requires = Array(lock['requires']).reject { |r| r.nil? || r.to_s.empty? }
+    if requires.empty? && !lock.key?('access')
+      err.call("'#{path}' is an rfid lock with neither 'requires' nor 'access', so no card can open it.")
+    end
+    next unless lock.key?('access')
+
+    requires.each do |card_id|
+      next if known_cards.include?(card_id.to_s)
+
+      err.call("'#{path}' requires card '#{card_id}', which no NPC or keycard carries.")
+    end
+  end
+
+  # Gate doors take no access list in the first slice (section 4.1)
+  rooms.each do |room_id, room|
+    next unless room.is_a?(Hash) && room['doors'].is_a?(Array)
+
+    room['doors'].each_with_index do |door, i|
+      next unless door.is_a?(Hash) && door['gate'].is_a?(Hash) && door['gate']['enabled'] != false
+
+      target = rooms[door['connectedRoom']]
+      if door.key?('access') || (target.is_a?(Hash) && target.key?('access'))
+        err.call("'rooms/#{room_id}/doors[#{i}]' is a gate door into '#{door['connectedRoom']}' with an 'access' " \
+                 'list; gate doors open from requires alone, so use requires (or drop the gate).')
+      end
+    end
+  end
+
+  # Sign-in PCs
+  npc_records = scenario_npc_records(json_data).map(&:first) + other_records.map(&:first)
+  reward_targets = Set.new
+  find_rewards = lambda do |node|
+    case node
+    when Array then node.each { |n| find_rewards.call(n) }
+    when Hash
+      reward_targets << node['objectId'].to_s if node['type'] == 'unlock_object' && node.key?('objectId')
+      node.each_value { |v| find_rewards.call(v) }
+    end
+  end
+  find_rewards.call(json_data)
+  pcs.each do |e|
+    pc = e[:object]
+    where = "sign-in PC '#{pc['id'] || e[:path]}'"
+    err.call("#{where} id contains '|', which the server uses as a separator in sign-in failure keys.") if pc['id'].to_s.include?('|')
+    if pc.key?('triggerOnInteract')
+      err.call("#{where} has triggerOnInteract; its interaction is the sign-in flow. Map pc_signed_in or " \
+               'workstation events instead.')
+    end
+    npc_records.each do |npc|
+      next unless npc['unlockable'].is_a?(Array) && npc['unlockable'].map(&:to_s).include?(pc['id'].to_s)
+
+      err.call("NPC '#{npc['id']}' lists #{where} in 'unlockable'; a sign-in PC opens only through a sign-in.")
+    end
+    if [pc['id'], pc['name']].compact.map(&:to_s).any? { |ref| reward_targets.include?(ref) }
+      err.call("an unlock_object flag reward names #{where}; a sign-in PC opens only through a sign-in.")
+    end
+
+    owner_id = ai.owner_id(pc, json_data)
+    if owner_id
+      owner = npc_by_id[owner_id.to_s]
+      if owner.nil?
+        err.call("#{where} screenOwner '#{owner_id}' names unknown person (it must be a room NPC id).")
+      else
+        lock_chance = pc['lockChance']
+        if lock_chance.is_a?(Numeric) && lock_chance.positive? && lock_chance < 1
+          warn.call("#{where} has lockChance #{lock_chance}: whether its owner's session is left open depends on a " \
+                    'seeded roll. Fix the chance at 0 or 1, or make sure another route exists.')
+        end
+        unless ai.needs_tracked?(owner[:npc])
+          warn.call("#{where} is owned by '#{owner_id}', who has no valid needs or interests entry, so the owner " \
+                    'never leaves and no unlocked session is possible there.')
+        end
+      end
+    end
+
+    policy = policies[(pc['policy'] || json_data['defaultPolicy']).to_s]
+    if policy.is_a?(Hash) && ai.positive_number?(policy['maxAttempts'])
+      warn.call("#{where} is under a policy with maxAttempts #{policy['maxAttempts']}: a lockout lasts the mission, " \
+                'so confirm another route exists.')
+    end
+  end
+  accounts.each do |e|
+    home = e[:npc]['needsHome']
+    next unless home.is_a?(String) && pc_ids.include?(home)
+
+    pc = pcs.find { |p| p[:object]['id'] == home }[:object]
+    next if ai.account_admitted?(pc, e[:npc])
+
+    warn.call("account '#{e[:npc]['id']}' has needsHome '#{home}', a sign-in PC whose access list does not admit it.")
+  end
+
+  # Owners placed in a different room from their workstation (section 5.4)
+  workstations = objects.select { |e| ai.workstation?(e[:object]) }
+  ws_room = {}
+  workstations.each { |e| ws_room[e[:object]['id']] ||= e[:room] }
+  reported = Set.new
+  owner_pairs = []
+  room_npcs.each do |e|
+    home = e[:npc]['needsHome']
+    owner_pairs << [e, home] if home.is_a?(String) && ws_room.key?(home)
+  end
+  workstations.each do |w|
+    owner = w[:object]['screenOwner']
+    owner_pairs << [npc_by_id[owner], w[:object]['id']] if owner.is_a?(String) && npc_by_id[owner]
+  end
+  owner_pairs.each do |e, ws_id|
+    next if e[:room] == ws_room[ws_id] || reported.include?([e[:npc]['id'], ws_id])
+
+    reported << [e[:npc]['id'], ws_id]
+    warn.call("NPC '#{e[:npc]['id']}' owns workstation '#{ws_id}' in room '#{ws_room[ws_id]}' but is placed in room " \
+              "'#{e[:room]}'. The needs system starts every NPC at its post, so the PC reads as in use until the " \
+              "owner's first leave.")
+  end
+
+  # Ink: no account password in any compiled ink file; #clone_keycard of another NPC's card
+  if repo_root
+    ink_users = Hash.new { |h, k| h[k] = Set.new }
+    find_story = lambda do |node|
+      case node
+      when Array then node.each { |n| find_story.call(n) }
+      when Hash
+        if node['storyPath'].is_a?(String) && node['storyPath'].start_with?('scenarios/')
+          compiled = File.expand_path(File.join(repo_root, node['storyPath'].sub(/\.ink\z/, '.json')))
+          ink_users[compiled]
+          ink_users[compiled] << node['id'].to_s if node['id']
+        end
+        node.each_value { |v| find_story.call(v) }
+      end
+    end
+    find_story.call(json_data)
+    Dir.glob(File.join(scenario_dir, 'ink', '*.json')).each { |f| ink_users[File.expand_path(f)] } if scenario_dir
+    root_prefix = "#{File.expand_path(repo_root)}/"
+    passwords = accounts.filter_map do |e|
+      pw = e[:npc]['creds']['password']
+      [e[:npc]['id'], pw] if pw.is_a?(String) && !pw.empty?
+    end
+    ink_users.each do |compiled, users|
+      source = compiled.sub(/\.json\z/, '.ink')
+      label = File.expand_path(compiled).delete_prefix(root_prefix)
+      compiled_text = if File.exist?(compiled)
+                        begin
+                          strings = []
+                          collect = lambda do |node|
+                            case node
+                            when String then strings << node
+                            when Array then node.each { |n| collect.call(n) }
+                            when Hash then node.each { |k, v| strings << k.to_s; collect.call(v) }
+                            end
+                          end
+                          collect.call(JSON.parse(File.read(compiled)))
+                          strings.join("\n")
+                        rescue JSON::ParserError
+                          File.read(compiled)
+                        end
+                      end
+      source_text = File.exist?(source) ? File.read(source) : nil
+      text = compiled_text || source_text
+      next unless text
+
+      passwords.each do |npc_id, pw|
+        next unless text.include?(pw)
+
+        err.call("NPC '#{npc_id}' creds.password appears in ink file '#{label}'. Ink is served verbatim; give the " \
+                 'password away through a capture or an authored note instead.')
+      end
+
+      next if users.empty?
+
+      (source_text || text).scan(/#\s*\^?clone_keycard:([A-Za-z0-9_.\-]+)/).flatten.uniq.each do |card_id|
+        holders = card_info[card_id]
+        next unless holders
+
+        holder_ids = holders[:holders].map { |h| h[:npc]['id'].to_s }
+        next if (holder_ids & users.to_a).any?
+
+        warn.call("'#{label}' has #clone_keycard:#{card_id}, which is #{holder_ids.map { |id| "'#{id}'" }.join(', ')}'s " \
+                  "card, not the speaking NPC's (#{users.map { |id| "'#{id}'" }.join(', ')}). The copy works through " \
+                  "'requires' only and carries no identity.")
+      end
+    end
+  end
+
+  # Shared cards at access locks, and identity reach
+  reach = ai.reach(json_data)
+  reach[:cards].each do |c|
+    next unless c[:holders].size > 1
+
+    access_locks = c[:opens].select { |l| l[:lock].key?('access') }
+    next if access_locks.empty?
+
+    warn.call("card '#{c[:card_id]}' is carried by #{c[:holders].map { |h| "'#{h[:npc]['id']}'" }.join(', ')} and is " \
+              "used at access lock(s) #{access_locks.map { |l| "'#{l[:id]}'" }.join(', ')}: it opens what any holder may.")
+  end
+  if ai.uses_access_model?(json_data)
+    describe = ->(l) { "#{l[:kind] == 'door' ? 'door' : 'object'} '#{l[:id]}'" }
+    reach[:cards].each do |c|
+      holders = c[:holders].map { |h| h[:npc]['id'] }.join(', ')
+      opens = c[:opens].empty? ? 'nothing' : c[:opens].map(&describe).join(', ')
+      issues << "ℹ️ Identity reach: card '#{c[:card_id]}' (#{holders}) opens #{opens}"
+    end
+    reach[:accounts].each do |a|
+      opens = a[:opens].empty? ? 'no sign-in PC' : a[:opens].map { |l| "'#{l[:id]}'" }.join(', ')
+      issues << "ℹ️ Identity reach: account '#{a[:npc]['creds']['username']}' (#{a[:npc]['id']}) signs in at #{opens}"
+    end
+  end
+
+  issues
+end
+
 # Main execution
 def main
   options = {
@@ -5979,6 +6383,7 @@ def main
     common_issues += check_recurring_bugs(json_data, repo_root)
     common_issues += check_unheard_room_triggers(json_data, repo_root)
     common_issues += ValidateNpcNeeds.check(json_data)
+    common_issues += check_access_model(json_data, repo_root, File.dirname(erb_path))
     common_issues += check_tooling_pass4c(json_data, repo_root)
     common_issues += check_carry_over(json_data, repo_root, File.basename(File.dirname(erb_path)),
                                       File.dirname(File.dirname(erb_path)), carry_imports, own_globals)
