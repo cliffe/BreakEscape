@@ -392,6 +392,7 @@ def check_unknown_fields(json_data)
     show_scenario_brief disableAttacks creditsTheme creditsOverlay gameClock flags music startItemsInInventory globalVariables
     player objectives rooms npcs phoneNPCs narrator timers _comment mutuallyExclusiveGlobals lighting
     importGlobals exportGlobals social npcNeedsSeed disguises actionIcons officeVisuals npcWindupMs showPressingNeeds showNpcIntentBubbles needsDebugOverlay officePresets chatter
+    accountProfiles policies defaultPolicy
   ]
 
   # Check top-level unknown fields
@@ -405,7 +406,7 @@ def check_unknown_fields(json_data)
   known_room_fields = %w[
     type door_sign connections locked lockType requires keyPins lockedHint difficulty
     ambientSound ambientVolume objects npcs _comment dimensions biometricMatchThreshold lighting
-    chatBackground doors needsPrivateTo
+    chatBackground doors needsPrivateTo access acceptsUIDOnly
   ]
 
   # Known NPC fields
@@ -415,6 +416,7 @@ def check_unknown_fields(json_data)
     phoneId phoneTheme handle profile voiced callLabel unlockable externalVariables persistentVariables
     timedMessages timedConversation eventMappings itemsHeld puzzle_graph_actions
     needs interests needsHome needsSpeed needsRooms needsAvoidRooms needsCompany chatter chattiness usePayload onUse
+    role creds staff cloneable
     observations disableClose los rfidCard chatBackground spriteStyle gender portraitVariants _comment
   ]
 
@@ -506,6 +508,7 @@ def check_unknown_fields(json_data)
     puzzle_graph_links hintOnlyFlags acceptsVmLabels
     affordance needsTag droppable officeType
     workstation locksScreenOnLeave lockChance screenOwner screenLocked
+    access acceptsUIDOnly loginPicker policy transfer cloneable identity
     _comment
   ]
 
@@ -535,6 +538,20 @@ def check_unknown_fields(json_data)
     grant_path = "#{grant['path']}/item(#{grant['item']['id'] || grant['item']['type'] || '?'})"
     check_item_fields.call(grant['item'], grant_path)
     check_minigame_data.call(grant['item'], grant_path)
+  end
+
+  # Account profile items (access model 5.1) sit in no room: check their fields too.
+  if json_data['accountProfiles'].is_a?(Hash)
+    json_data['accountProfiles'].each do |profile_id, profile|
+      next unless profile.is_a?(Hash) && profile['contents'].is_a?(Array)
+
+      profile['contents'].each_with_index do |item, idx|
+        next unless item.is_a?(Hash)
+        item_path = "accountProfiles/#{profile_id}/contents[#{idx}](#{item['id'] || item['name'] || '?'})"
+        check_item_fields.call(item, item_path)
+        check_minigame_data.call(item, item_path)
+      end
+    end
   end
 
   # Check room fields and recurse into NPCs and objects

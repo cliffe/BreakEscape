@@ -791,6 +791,36 @@ module BreakEscape
       scenario_data.dig('flags', vm_name, flag_key)
     end
 
+    # Run the access model loader, then stamp object ids (ACCESS_MODEL_PLAN.md,
+    # step 1). generate_scenario_data calls it once at creation; a test that
+    # hand-writes scenario_data calls it through create_access_game, because
+    # generate_scenario_data returns at once when scenario_data is already set.
+    # Both steps are idempotent.
+    def prepare_scenario_data!
+      return unless scenario_data.is_a?(Hash)
+
+      normalise_access_model!
+      stamp_scenario_object_ids!
+    end
+
+    # An NPC has an account when creds.username is a non-empty string (section 3).
+    def self.account_holder?(npc)
+      return false unless npc.is_a?(Hash)
+
+      creds = npc['creds']
+      creds.is_a?(Hash) && creds['username'].is_a?(String) && !creds['username'].strip.empty?
+    end
+
+    # The card an NPC carries: creds.card, or rfidCard for scenario data that
+    # predates the loader (section 3).
+    def self.npc_card(npc)
+      return nil unless npc.is_a?(Hash)
+
+      card = npc['creds'].is_a?(Hash) ? npc['creds']['card'] : nil
+      card = npc['rfidCard'] unless card.is_a?(Hash)
+      card.is_a?(Hash) ? card : nil
+    end
+
     def filtered_scenario_for_bootstrap
       # Returns scenario data without room contents for lazy-loading
       # This significantly reduces initial payload by only sending metadata
@@ -817,8 +847,11 @@ module BreakEscape
           # appends it to the locked toast, so it must survive the bootstrap filter (lab R3 F1).
           # pinLength: digits on a PIN door's pad (not secret); the controller fills it from
           # `requires` when it strips the PIN, so a 5-digit door gets a 5-digit pad.
+          # access, acceptsUIDOnly: an rfid door's role list and whether a UID-only copy opens it
+          # (access model 4.1). They name roles and NPC ids, nothing secret.
           %w[type connections locked lockType requires difficulty door_sign keyPins lockedHint ambientSound ambientVolume
-             maxAttempts passwordHint showHint postitNote showPostit showKeyboard pinLength chatBackground lighting].each do |field|
+             maxAttempts passwordHint showHint postitNote showPostit showKeyboard pinLength chatBackground lighting
+             access acceptsUIDOnly].each do |field|
             kept_fields[field] = room_data[field] if room_data.key?(field)
           end
 
@@ -847,6 +880,11 @@ module BreakEscape
 
       # Strip top-level flag values — client must never see actual flag answers.
       filtered.delete('flags')
+
+      # Account profiles (access model 5.1) are served only by GET /container against a
+      # sign-in session, never in the bootstrap. policies and defaultPolicy hold no
+      # secrets and ship as authored (5.5).
+      filtered.delete('accountProfiles')
 
       # Strip the authored capture secret (e.g. the phished portal password) from the
       # bootstrap: the browser must not hold it until the capture is earned. The real
@@ -893,17 +931,63 @@ module BreakEscape
         only_secret = secret
         secret_count += 1
       end
-      return {} if secret_count.zero?
+
+      # Account holders with a capture route (access model 5.6), by normalised username.
+      # A scenario with no landing-page secret still gets this pass.
+      by_username = account_capture_passwords
 
       out = {}
       earned.each do |target_id, entry|
         next unless entry.is_a?(Hash)
         next if entry['kind'] && entry['kind'] != 'credential'
 
-        secret = by_address[entry['address']] || (secret_count == 1 ? only_secret : nil)
+        address = entry['address']
+        secret = by_address[address]
+        secret ||= by_username[self.class.normalise_username(address)] if address.is_a?(String)
+        # The single-secret fallback counts landing-page captures only.
+        secret ||= only_secret if secret_count == 1
         out[target_id] = secret if secret
       end
       out
+    end
+
+    # { normalised username => password } for each room NPC with an account and a
+    # capture route: an eventMappings[].addCapture on that NPC, or a usePayload (which
+    # the loader fills from creds). No other account's password is ever served.
+    def account_capture_passwords
+      out = {}
+      self.class.scenario_room_npcs(scenario_data).each do |npc|
+        next unless self.class.account_holder?(npc)
+
+        password = npc['creds']['password']
+        next unless password.is_a?(String) && !password.empty?
+        next unless self.class.capture_route?(npc)
+
+        out[self.class.normalise_username(npc['creds']['username'])] = password
+      end
+      out
+    end
+
+    def self.capture_route?(npc)
+      return true if npc['usePayload'].is_a?(Hash)
+
+      mappings = npc['eventMappings']
+      mappings.is_a?(Array) && mappings.any? { |m| m.is_a?(Hash) && m['addCapture'].is_a?(Hash) }
+    end
+
+    # Usernames compare trimmed and case-insensitively (section 3), at most 64 characters (section 6).
+    def self.normalise_username(value)
+      value.to_s.strip.downcase[0, 64]
+    end
+
+    # Every NPC listed under rooms.<id>.npcs, the only records allowed role and creds.
+    def self.scenario_room_npcs(data)
+      rooms = data.is_a?(Hash) ? data['rooms'] : nil
+      return [] unless rooms.is_a?(Hash)
+
+      rooms.values.flat_map do |room|
+        room.is_a?(Hash) && room['npcs'].is_a?(Array) ? room['npcs'].select { |npc| npc.is_a?(Hash) } : []
+      end
     end
 
     def filtered_room_data(room_id)
@@ -955,7 +1039,9 @@ module BreakEscape
         # Apply NPC additions
         if room_state['npcs_added'].present?
           room['npcs'] ||= []
-          room['npcs'].concat(room_state['npcs_added'])
+          # Copies: the filter withholds NPC fields in place (access model 5.6), and
+          # these records belong to player_state, which a later save would persist.
+          room['npcs'].concat(room_state['npcs_added'].deep_dup)
         end
 
         # Apply NPC state changes
@@ -2975,6 +3061,14 @@ module BreakEscape
           obj.delete('requires')
         end
 
+        # A sign-in PC's contents are served only by GET /container against a
+        # session (access model 5.3), so they leave every room response whether
+        # or not it is locked. hasContents routes it as a container on the client.
+        if lock_type == 'login'
+          obj.delete('contents')
+          obj['hasContents'] = true
+        end
+
         # Remove 'contents' if locked (lazy-loaded via separate endpoint), but
         # mark it so the client still treats it as a container once unlocked
         # (e.g. remotely, by a flag reward) and fetches the contents
@@ -3008,7 +3102,10 @@ module BreakEscape
         # itemsHeld matters: an NPC can carry a flag-station or launch-device
         # (see find_flag_station_for_flag), so skipping it leaves a leak.
         obj['objects']&.each { |o| filter_requires_and_contents_recursive(o) }
-        obj['npcs']&.each { |n| filter_requires_and_contents_recursive(n) }
+        obj['npcs']&.each do |n|
+          withhold_npc_secrets!(n)
+          filter_requires_and_contents_recursive(n)
+        end
         obj['tableItems']&.each { |t| filter_requires_and_contents_recursive(t) }
         obj['itemsHeld']&.each { |i| filter_requires_and_contents_recursive(i) }
         # Unlocked containers keep their contents in the room payload.
@@ -3016,6 +3113,35 @@ module BreakEscape
 
       when Array
         obj.each { |item| filter_requires_and_contents_recursive(item) }
+      end
+    end
+
+    # Access model 5.6: what an NPC record never takes to the browser. Sign-in details,
+    # role and (later slices) awareness, habits and workarounds go; for an account
+    # holder so do usePayload.secret and every addCapture.secret in its eventMappings,
+    # so an npc_used event carries the address and host only. The card is not secret
+    # (copying it is the game): rfidCard is set from creds.card, as authored, so
+    # clone_keycard and the RFID minigame keep working; an NPC with no creds.card
+    # keeps any rfidCard it already has.
+    WITHHELD_NPC_KEYS = %w[creds awareness habits role workarounds].freeze
+
+    def withhold_npc_secrets!(npc)
+      return unless npc.is_a?(Hash)
+
+      account = self.class.account_holder?(npc)
+      card = npc['creds'].is_a?(Hash) ? npc['creds']['card'] : nil
+      WITHHELD_NPC_KEYS.each { |key| npc.delete(key) }
+      npc['rfidCard'] = card if card.is_a?(Hash)
+      return unless account
+
+      npc['usePayload'].delete('secret') if npc['usePayload'].is_a?(Hash)
+      mappings = npc['eventMappings']
+      return unless mappings.is_a?(Array)
+
+      mappings.each do |mapping|
+        next unless mapping.is_a?(Hash) && mapping['addCapture'].is_a?(Hash)
+
+        mapping['addCapture'].delete('secret')
       end
     end
 
@@ -3045,10 +3171,38 @@ module BreakEscape
       # Inject player preferences into scenario
       inject_player_preferences(self.scenario_data)
 
-      # Stamp stable object IDs into scenario_data now, once, so every downstream
-      # code path (item_in_room?, apply_room_state_changes!, client fetch) reads
-      # the same id without ever re-deriving it from an index.
-      stamp_scenario_object_ids!
+      # Normalise the access model fields and stamp stable object IDs into
+      # scenario_data now, once, so every downstream code path (item_in_room?,
+      # apply_room_state_changes!, client fetch) reads the same data without ever
+      # re-deriving it.
+      prepare_scenario_data!
+    end
+
+    # Access model loader (docs/achitechture/ACCESS_MODEL_PLAN.md, section 3 and
+    # step 1). For each room NPC: an existing rfidCard becomes creds.card when
+    # creds.card is absent, and for an NPC with an account (creds.username) an
+    # authored usePayload takes its address and secret from creds, so the password
+    # has one home. A usePayload is never created: the author's usePayload is what
+    # makes a capture route (section 5.6). Idempotent.
+    def normalise_access_model!
+      self.class.scenario_room_npcs(scenario_data).each { |npc| normalise_npc_access!(npc) }
+    end
+
+    def normalise_npc_access!(npc)
+      card = npc['rfidCard']
+      if card.is_a?(Hash) && (npc['creds'].nil? || npc['creds'].is_a?(Hash))
+        npc['creds'] ||= {}
+        npc['creds']['card'] = card.deep_dup unless npc['creds']['card'].is_a?(Hash)
+      end
+
+      return unless self.class.account_holder?(npc)
+
+      payload = npc['usePayload']
+      return unless payload.is_a?(Hash)
+
+      creds = npc['creds']
+      payload['address'] = creds['username']
+      payload['secret'] = creds['password'] if creds['password'].is_a?(String)
     end
 
     # Write a stable 'id' field onto every scenario object and container item that
@@ -3061,6 +3215,21 @@ module BreakEscape
         room['objects']&.each_with_index do |obj, i|
           obj['id'] ||= "#{room_id}_#{obj['type']}_#{i}"
           stamp_contents_ids!(obj)
+        end
+      end
+
+      # Account profiles (access model 5.1): `<profile>_content_<n>`, nested as above.
+      profiles = scenario_data['accountProfiles']
+      return unless profiles.is_a?(Hash)
+
+      profiles.each do |profile_id, profile|
+        next unless profile.is_a?(Hash) && profile['contents'].is_a?(Array)
+
+        profile['contents'].each_with_index do |item, i|
+          next unless item.is_a?(Hash)
+
+          item['id'] ||= "#{profile_id}_content_#{i}"
+          stamp_contents_ids!(item)
         end
       end
     end

@@ -166,6 +166,34 @@
       "type": "boolean",
       "description": "Debug overlay (systems/npc-needs-debug.js): need-level bars and the current job above each needs NPC. Default false. Also toggled by window.__test.needs.overlay(true|false)."
     },
+    "accountProfiles": {
+      "type": "object",
+      "description": "Access model (ACCESS_MODEL_PLAN.md 5.1): desktop contents that follow an account to any sign-in PC it may use. Each profile lists who it is for (roles and people) and its contents. Never sent in the bootstrap; served by GET /container against a sign-in session.",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "for": { "$ref": "#/definitions/accessList" },
+          "contents": { "type": "array", "items": { "$ref": "#/definitions/item" } },
+          "_comment": { "type": "string" }
+        },
+        "required": ["for"]
+      }
+    },
+    "policies": {
+      "type": "object",
+      "description": "Access model (ACCESS_MODEL_PLAN.md 5.5): named PC policies, referenced by an object's policy or by defaultPolicy. Not secret; sent in the bootstrap.",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "autoLockMin": { "type": ["number", "null"], "minimum": 0, "description": "Game minutes after the owner leaves before an open screen locks; 0 locks in the leave roll; null: no auto lock." },
+          "maxAttempts": { "type": ["integer", "null"], "minimum": 1, "description": "Server-counted failed sign-ins per PC and username before a lockout; null: no limit." },
+          "usb": { "type": "string", "enum": ["allowed", "blocked"] },
+          "social": { "type": "string", "enum": ["allowed", "blocked"] },
+          "_comment": { "type": "string" }
+        }
+      }
+    },
+    "defaultPolicy": { "type": "string", "description": "Access model: the policy a PC with no policy of its own uses." },
     "npcNeedsSeed": {
       "type": ["number", "string"],
       "description": "Seed for the NPC needs system's per-NPC jitter RNG (systems/npc-needs.js). Default: the scenario name. Same seed and inputs give the same decision log."
@@ -3578,6 +3606,16 @@
       "patternProperties": {"^_": {}},
       "additionalProperties": false
     },
+    "accessList": {
+      "type": "object",
+      "description": "Access model section 4: who passes. A card or sign-in passes if its identity's roles meet roles, or its NPC id is in people. Not secret.",
+      "properties": {
+        "roles": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "people": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "_comment": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
     "emitterVariant": {
       "type": "object",
       "properties": {
@@ -3927,6 +3965,8 @@
           "type": "string",
           "enum": ["key", "pin", "rfid", "password", "bluetooth", "biometric", "flag", "ransomware_display", "network_architecture", "alarm_panel"]
         },
+        "access": { "$ref": "#/definitions/accessList" },
+        "acceptsUIDOnly": { "type": "boolean", "description": "Access model 4.1: an rfid lock with access also opens to a UID-only (DESFire) copy. Default false." },
         "biometricMatchThreshold": { "type": "number", "minimum": 0, "maximum": 1 },
         "requires": {
           "oneOf": [
@@ -4083,6 +4123,23 @@
           },
           "additionalProperties": true
         },
+        "role": {
+          "oneOf": [ { "type": "string", "minLength": 1 }, { "type": "array", "items": { "type": "string", "minLength": 1 } } ],
+          "description": "Access model section 3: this NPC's job role(s), free strings, read by access lists. Room NPCs only. Never sent to the browser."
+        },
+        "creds": {
+          "type": "object",
+          "description": "Access model section 3: this NPC's sign-in details. Room NPCs only. Never sent to the browser; the card is sent as rfidCard.",
+          "properties": {
+            "username": { "type": "string", "minLength": 1, "description": "Makes an account (a password is then required). Unique, compared trimmed and case-insensitively." },
+            "password": { "type": "string", "minLength": 1, "description": "The only place this account's password is authored." },
+            "card": { "type": "object", "description": "The card this NPC carries (replaces rfidCard): name, card_id, rfid_protocol and any protocol fields.", "additionalProperties": true },
+            "_comment": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
+        "staff": { "type": "boolean", "description": "Access model section 3: false drops the implicit staff role an NPC with creds has." },
+        "cloneable": { "type": "boolean", "description": "Access model 4.2: false stops the server recording a card copier copy of this NPC's card." },
         "spriteStyle": {
           "type": "object",
           "description": "Optional look laid over the NPC's world sprite (systems/npc-sprite-style.js), for holograms and ghosts such as m08's ATHENA. It holds through every animation and a knockout. alpha multiplies the engine's own alpha; glow is a postFX outline (WebGL) that, with light, also lights the room's light map round the NPC so dim rooms don't darken it; flicker is a rare flash-safe two-step dip, off under prefers-reduced-motion.",
@@ -4861,7 +4918,7 @@
         },
         "lockType": {
           "type": "string",
-          "enum": ["key", "pin", "rfid", "password", "bluetooth", "biometric", "flag", "ransomware_display", "network_architecture", "alarm_panel"]
+          "enum": ["key", "pin", "rfid", "password", "bluetooth", "biometric", "flag", "ransomware_display", "network_architecture", "alarm_panel", "login"]
         },
         "requires": {
           "oneOf": [
@@ -5059,6 +5116,13 @@
         "locksScreenOnLeave": { "type": "boolean", "description": "Workstation: screen locks when the owner leaves (default true)." },
         "lockChance": { "type": "number", "minimum": 0, "maximum": 1, "description": "Workstation: overrides locksScreenOnLeave; chance 0..1 that the screen locks on each leave, rolled from the needs system's seeded per-NPC RNG so a fixed seed is deterministic." },
         "screenOwner": { "type": "string", "description": "Workstation: NPC id of the owner when it is not the NPC whose needsHome is this object." },
+        "access": { "$ref": "#/definitions/accessList" },
+        "acceptsUIDOnly": { "type": "boolean", "description": "Access model 4.1: an rfid lock with access also opens to a UID-only (DESFire) copy. Default false." },
+        "loginPicker": { "oneOf": [ { "type": "string", "enum": ["accounts", "known"] }, { "type": "boolean", "enum": [false] } ], "description": "Access model 5.3: a sign-in PC's account tiles. accounts (default): every account its access admits; known: those the player has met; false: type the username." },
+        "policy": { "type": "string", "description": "Access model 5.5: the named policy (top-level policies) this PC follows." },
+        "transfer": { "type": "string", "enum": ["copy", "move", "both"], "description": "Access model 5.1: what a takeable file on a sign-in desktop allows. Default both." },
+        "cloneable": { "type": "boolean", "description": "Access model 4.2: false stops the server recording a card copier copy of this keycard." },
+        "identity": { "type": "string", "description": "Access model section 3: for readability, the NPC id whose card this keycard is; the validator checks that NPC carries its card_id." },
         "needsTag": { "type": "string", "description": "NPC needs system: one tag. NPCs with a matching interests entry are drawn to this item." },
         "droppable": { "type": "boolean", "description": "true: clicking this item in the inventory drops it at the player's feet (systems/item-drop.js). Needs a unique id; usually paired with needsTag." },
         "outputOf": { "type": "string", "minLength": 1, "description": "Reveal slot (NPC needs, OFFICE_LIFE_PLAN 2.2 Part A): the object id of the producer (a copier) whose onUse revealOutput shows this object. Needs its own revealOnGlobal, which the engine owns (true on reveal, false when filed away; a reload files every revealed slot). A delivered slot is placed or stowed, never consumed. A non-takeable readable notes* slot must use readDisplay gameDisplay." },
