@@ -77,6 +77,7 @@ object, role-only `access`).
 3. Copy Dana's badge (harness notes). `savedCards()` lists `FIN-DANA-01`.
 4. Try the door again: `door_unlocked`, toast "Card accepted". `enter` `finance_office`,
    `interact` `finance_cabinet`: it opens (`item_unlocked`), task `d2_copy_in_conversation` complete.
+   The cabinet's contents window opens at once and blocks movement: close it (`mg close`, or click its close button) before moving on.
 
 Server record afterwards: `serverClones 1: FIN-DANA-01 from npc dana`; `finance_office` and
 `finance_cabinet` unlocked.
