@@ -262,6 +262,10 @@ read; the validator warns on it.
 - `core/game.js` imports both after the behaviour manager loads and calls
   `window.npcNeedsSystem.update()` each frame after `npcBehaviorManager.update`.
 - `npc-lazy-loader.js` calls `npcNeedsSystem.register(id)` after each `registerNPC`.
+- `isAvailable(npcId)`: true when the sprite exists and the NPC is not knocked out, hostile or
+  hidden. `_tickNpc` blocks on it (decay only while there is no sprite), and the workstation
+  layer's presence test uses it (`ACCESS_MODEL_PLAN.md` 5.4). `onTick(fn)` runs `fn(system)` at the
+  end of every tick, after every NPC; listeners survive `reset()`. The workstation auto lock uses it.
 - Movement goes **only** through `goToAndStay(x, y, speed, {owner:'needs', yieldToPlayer})`.
   The needs system never writes velocities or waypoints, so collision, wall
   escape, stalls and depth sorting work as they do today.

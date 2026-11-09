@@ -426,9 +426,20 @@ client draws a tile as person-chat does: a square image of at least 256 pixels w
 `person-chat-portraits.js:523-528`); if the portrait fails to load it tries `avatar`, then shows the
 display name's initials.
 
-**Events and tasks.** `pc-sessions.js` emits `pc_signed_in:<pcId>` with
-`{ pcId, npcId, username, via: "password" | "claim" }` on a sign-in and `pc_signed_out:<pcId>` with
-`{ pcId, npcId }` on a sign-out. Scenarios map these like any other event. An `unlock_object` task
+**Events and tasks.** `pc-sessions.js` emits each event under its bare name and as
+`<name>:<pcId>`:
+
+| Event | Data | When |
+|---|---|---|
+| `pc_signed_in` | `{ pcId, npcId, username, via: "password" \| "claim", previousNpcId, firstAtPc }` | A sign-in, or the second half of a switch. `previousNpcId` is the account signed in at that PC just before (a switch), else null. `firstAtPc` is true when the PC was not yet in the signed-in set, which after a reload includes the server's `signedInPcs` |
+| `pc_signed_out` | `{ pcId, npcId, reason }` | A sign-out. `reason` is `sign_out` (the Sign out button), `switch` (the first half of a switch), `no_session` (a 403 from `container`), `claim_ended` (a claimed session ended on load), `owner_returned` or `auto_locked` (a claimed session ended by the owner's return or the screen's auto lock, 5.4). The last two also carry `firstAtPc`, true when the ended session was the first sign-in at that PC |
+| `pc_signin_failed` | `{ pcId, reason, attemptsLeft }` | A refused password: `reason` is `wrong`, `not_permitted` or `locked_out` |
+| `pc_signin_shown` | `{ pcId, usernames, usernameList, reason }` | The sign-in screen opened with these tiles. `usernameList` is the usernames as one comma-joined string, for mapping conditions. `reason` says why it opened: `signin`, `locked` or `attended` (the workstation answer, 5.4), `claim_refused`, `switch` (Switch user) or `direct` |
+| `pc_desktop_opened` | `{ pcId, npcId, via, restored }` | A desktop loaded for a session; `restored` is true for a session kept over a reload |
+| `pc_in_use` | `{ pcId, ownerId, signedInBefore }` | A click found the owner at the desk (5.4, step 1 of the interaction); `signedInBefore` is true when the PC is in the signed-in set |
+
+Scenarios map these like any other event; the extra fields let a task mapping tell one beat from
+another (a switch from a plain sign-in, the first claim at a PC from a later one). An `unlock_object` task
 whose target is a sign-in PC is met when the PC is in `signedInPcs` (`complete_task!`,
 `game.rb:1565-1568`). The objectives manager treats `pc_signed_in` like `item_unlocked` for that
 task (`objectives-manager.js:303-306`), and its load-time reconcile (`objectives-manager.js:247-252`,
@@ -494,7 +505,9 @@ their desk, and the validator warns when an owner is placed in a different room 
   (emitting `workstation_locked_attempt`), as today.
 - **Owner knocked out at the desk**: the workstation layer listens for `npc_ko:<id>`
   (`npc-hostile.js:350-354`) and treats it as leaving, running the leave roll above, but only when
-  the needs system tracks the owner and the owner has no current away record. A knock-out while
+  the needs system tracks the owner and the owner has no current away record.
+  `workstation_owner_left:<id>` carries `reason`: `needs` for a walk to a need, `ko` for a
+  knock-out. A knock-out while
   already away changes nothing (it neither adds a leave nor re-rolls the screen), and a knock-out of
   an untracked owner sets no away record. A knocked-out NPC stays down (`resetHostilesForRespawn`
   skips it, `npc-hostile.js:112-115`), so the owner never returns; an open screen stays open until

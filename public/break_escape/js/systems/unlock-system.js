@@ -180,6 +180,57 @@ export function openLoginPc(lockable) {
     }
 }
 
+/**
+ * A click on a sign-in PC (access model 5.4, "The interaction at a sign-in PC"):
+ *   1. owned and the owner present: "<owner> is using this PC", then the PC's resolved
+ *      observations, and stop (no workstation event; pc_in_use for task mappings);
+ *   2. a session held here: the desktop;
+ *   3. workstationState.onInteract: 'accessed' claims the owner's session through
+ *      pc-sessions.js (the desktop on success, the sign-in screen on a refusal); anything
+ *      else ('locked', 'signin', 'attended' from a race with step 1, null) the sign-in screen.
+ * Resolves to what it did: 'in_use' | 'desktop' | 'claimed' | 'claim_refused' | 'signin'.
+ */
+export async function interactLoginPc(lockable) {
+    const data = lockable?.scenarioData || {};
+    const pcId = data.id;
+    if (!pcId) return 'none';
+    const ws = window.workstationState;
+    const sessions = window.pcSessions;
+    const { ownerId, present } = ws?.presence ? ws.presence(pcId) : { ownerId: null, present: null };
+    if (ownerId && present) {
+        const owner = window.npcManager?.getNPC?.(ownerId);
+        const name = owner?.displayName || ownerId;
+        let obs = data.observations || '';
+        try {
+            const { resolveObjectField } = await import('../utils/conditional-text.js');
+            obs = resolveObjectField(data, 'observations', '') || '';
+        } catch (e) { /* unresolved base observations */ }
+        const message = obs ? `${name} is using this PC.\n${obs}` : `${name} is using this PC.`;
+        window.gameAlert?.(message, 'info', data.name || 'PC', 4000);
+        sessions?.inUseShown?.(pcId, ownerId);
+        return 'in_use';
+    }
+    if (sessions?.has?.(pcId)) {
+        openLoginDesktop(lockable);
+        return 'desktop';
+    }
+    let answer = null;
+    if (ws?.onInteract) {
+        try { answer = ws.onInteract(pcId); } catch (e) { console.warn('workstationState.onInteract failed', e); }
+    }
+    if (answer === 'accessed' && sessions?.claim) {
+        const r = await sessions.claim(pcId);
+        if (r?.ok) {
+            openLoginDesktop(lockable);
+            return 'claimed';
+        }
+        openLoginSignIn(lockable, { reason: 'claim_refused' });
+        return 'claim_refused';
+    }
+    openLoginSignIn(lockable, { reason: answer || 'direct' });
+    return 'signin';
+}
+
 /** The desktop for the current session (container-minigame fetches it from the server). */
 export function openLoginDesktop(lockable) {
     if (typeof window.startContainerMinigame === 'function') {
@@ -196,7 +247,7 @@ export function openLoginDesktop(lockable) {
  * without a new sign-in returns to the desktop of the session that is still there.
  * The screen has no attempt limit of its own; the server counts failures.
  */
-export async function openLoginSignIn(lockable, { switching = false } = {}) {
+export async function openLoginSignIn(lockable, { switching = false, reason = undefined } = {}) {
     const data = lockable?.scenarioData || {};
     const pcId = data.id;
     if (!pcId) return;
@@ -227,7 +278,7 @@ export async function openLoginSignIn(lockable, { switching = false } = {}) {
     if (!framework.mainGameScene && window.game) framework.init(window.game);
 
     const picker = data.loginPicker === undefined || data.loginPicker === null ? 'accounts' : data.loginPicker;
-    sessions?.screenShown?.(pcId, picker === false ? [] : tiles);
+    sessions?.screenShown?.(pcId, picker === false ? [] : tiles, switching ? 'switch' : reason);
     framework.startMinigame('password', null, {
         title: data.name || 'Sign in',
         lockable,
@@ -1004,5 +1055,6 @@ window.getLockRequirementsForDoor = getLockRequirementsForDoor;
 window.getLockRequirementsForItem = getLockRequirementsForItem;
 window.unlockTarget = unlockTarget;
 window.openLoginPc = openLoginPc;
+window.interactLoginPc = interactLoginPc;
 window.openLoginSignIn = openLoginSignIn;
 

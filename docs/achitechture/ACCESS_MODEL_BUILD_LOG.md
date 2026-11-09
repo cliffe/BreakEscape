@@ -896,3 +896,200 @@ straight to the PC. This is the menu working as designed; the harness picks the 
   completed S4; on a new game Sam's first sign-in through his tile completed S1. The sign-ins on
   game 11 were driven through `window.pcSessions.signIn` (the same path the sign-in screen uses);
   game 12's through the screen. Leak check on both: no leaks found.
+
+## Step 9: unlocked sessions and the workstation rule, `test_access_sessions` (2026-11-09)
+
+### Baseline first
+
+Before any step 9 code changed, `tools/playtest/needs-baseline-capture.js` (new, reusable)
+recorded `test_needs_sims`, `test_npc_needs` and `test_needs_leash` headless on :3001 (commit
+`dc0c4a52`, the step 8 engine). Each capture loads the scenario's rooms, resets the needs system to
+the scenario's seed with the manual clock, then steps it one 250 ms tick per 250 ms of real time
+over a fixed span (240 s, 120 s, 180 s), with a `debugKO` of one tracked owner at the desk where
+attacks are allowed (Tom at 20 s, the finder at 20 s), and writes the decision log, the needs,
+workstation, sign-in and task events and the workstation globals (each with the needs clock),
+every workstation's state changes, `onInteract` probes at fixed times, and task order. Outputs and
+a README are in `docs/achitechture/access_model_needs_baseline/`.
+`tools/playtest/needs-baseline-compare.js` (new) compares two captures by the order of decisions
+and events per NPC and per workstation.
+
+### Built
+
+All under `public/break_escape/js/` unless named otherwise.
+
+- `systems/npc-needs.js`: `isAvailable(npcId)` (sprite there; not `ko`, `hostile` or `hidden`),
+  which `_tickNpc` now calls after its no-sprite return and `_updateHome`, in place of the inline
+  status test; `onTick(fn)`, end-of-tick listeners that survive `reset()` (returns an unsubscribe).
+- `systems/workstation-state.js`: `isWorkstation` accepts any `lockType: "login"` object. The live
+  env gains `ownerTracked(id)` (`getState` not null), `ownerPresent(id)` (tracked, `atPost`,
+  `isAvailable`), `policyFor(data)` (`policies[data.policy || defaultPolicy]`), `clockMs()` and
+  `onTick(fn)`. `onInteract`: no owner answers `signin`; present answers `attended`; not present
+  with no away record answers `signin` (an env without `ownerPresent` keeps `attended`); otherwise
+  `accessed` or `locked` as before. `npc_ko:*` runs a leave for a tracked owner with no away record
+  (`onKnockedOut`). `decideLocked` takes the policy: `autoLockMin: 0` locks in the roll. An open
+  screen under `autoLockMin` above 0 gets `lockAt` (needs clock at the leave plus the minutes),
+  checked at the end of every needs tick and in `onInteract`; at `lockAt` the screen locks, the
+  globals are published and `workstation_auto_locked:<id>` `{ objectId, ownerId }` fires. The
+  owner's return clears it. `presence(objectId)` returns `{ ownerId, present }`.
+  `workstation_owner_left` carries `reason` (`needs` or `ko`).
+- `systems/pc-sessions.js`: `claim(pcId)` (`POST /login` with `claim: "owner"` and the two
+  workstation globals; `pc_signed_in` with `via: "claim"`; a refusal emits nothing);
+  `ownerReturned(pcId)` and `screenAutoLocked(pcId)` end a claimed session (never a password one)
+  with `POST /logout`, `pc_signed_out` (`reason` `owner_returned` or `auto_locked`, plus
+  `firstAtPc`) and the desktop closing with "<owner's displayName> is back at the desk" or "The
+  screen locked"; `listen()` wires them to `workstation_owner_returned:*` and
+  `workstation_auto_locked:*` (from `load` and `claim`, idempotent). Each session keeps the
+  `firstAtPc` of its sign-in. `inUseShown(pcId, ownerId)` emits `pc_in_use`
+  `{ pcId, ownerId, signedInBefore }`. `screenShown` takes a `reason`, added to `pc_signin_shown`.
+  The reload rule for claims was already in `load` (step 8).
+- `systems/unlock-system.js`: `interactLoginPc(lockable)`, the interaction at a sign-in PC (5.4):
+  owner present: the toast "<displayName> is using this PC." plus the resolved observations, and
+  `pc_in_use`; a session: the desktop; else `onInteract`, where `accessed` claims (desktop, or the
+  sign-in screen on a refusal) and anything else opens the sign-in screen. `openLoginSignIn` takes
+  `reason` (`switch` on Switch user). `window.interactLoginPc`.
+- `systems/interactions.js`: the `lockType: "login"` branch calls `window.interactLoginPc` (falls
+  back to `handleUnlock` when it is missing). Plain workstations keep the generic flow.
+- `systems/test-bridge/log.js`: the event log keeps `pc_*` and `workstation_*` events, so `drain`
+  shows them (`docs/test-bridge.md` updated).
+- `docs/achitechture/ACCESS_MODEL_PLAN.md`: section 5.3's event list now gives every field
+  `pc-sessions.js` carries (`previousNpcId`, `firstAtPc`, `reason` and its values, and the other
+  sign-in events); 5.4 documents `reason` on `workstation_owner_left`.
+  `docs/achitechture/NPC_NEEDS_SYSTEM.md` notes `isAvailable` and `onTick`.
+- `scenarios/test_access_sessions/` (new): `scenario.json.erb`, `mission.json` (`test_scenarios`,
+  `test_type: access_model`), four ink files (Rob at the front desk holds every task mapping; a
+  shared owner ink; Mei's, whose choice sets `mei_hidden`, which her own mapping turns into
+  `setVisible: false`; Tom's, whose choice sets `tom_removed` and runs `#remove_npc`),
+  `PLAYTEST.md`, dungeon graph. Lobby with Dana north (Omar beyond), Ian east (Kai beyond), Priya
+  south (Mei beyond) and the hot desk west (Tom beyond); every beat room within two doors. Seven
+  accounts, all tracked, each owner at the desk of an owned sign-in PC with `observations`, a
+  private coffee station in their own room (`needsRooms` leashes them there). Policies
+  `corp_default` (`autoLockMin: 5`) on `omar_pc` and `instant_lock` (`autoLockMin: 0`) on
+  `priya_pc`, no `defaultPolicy`, no `maxAttempts`. Profiles `staff_desktop` and `dana_files`
+  (a takeable forecast). Seed `test_access_sessions`, `npcWindupMs: 0`, `needsDebugOverlay: true`,
+  attacks allowed. One custom task per beat; `PLAYTEST.md` has a table of why each mapping fires
+  only from its own beat.
+
+### Tests added
+
+- `test/js/workstation-state.test.mjs` (+11): login objects are workstations and an unowned one
+  answers `signin` with no event (and a plain unowned one); present `attended`, away open
+  `accessed`, away locked `locked` with their events; a tracked owner knocked out at the desk rolls
+  once on a plain workstation and on a sign-in PC, `reason: "ko"`, and a second `npc_ko` changes
+  neither `leaves` nor the screen; a knock-out while already away; an untracked owner knocked out
+  sets no away record and answers `signin`; removed, hidden, hostile, untracked and scripted owners
+  answer `signin` with no event; an env without `ownerPresent` keeps today's answers;
+  `autoLockMin: 0` locks in the roll (and `decideLocked` with 0, 5 and null); `autoLockMin: 5` locks
+  only once the clock passes five minutes, emitting `workstation_auto_locked` once; `onInteract`
+  runs the check itself; the owner's return cancels it. The existing tests pass unchanged.
+- `test/js/npc-needs.test.mjs` (+4): `isAvailable` false with no sprite and for `ko`, `hostile`,
+  `hidden`; with no sprite `_tickNpc` only decays (no `blocked`, no home), and with one it blocks
+  exactly when `isAvailable` is false and unblocks after; an `interests`-only NPC is registered;
+  `onTick` runs once per tick after the NPCs, unsubscribes, and survives `reset`.
+- `test/js/pc-sessions.test.mjs` (+5): a claim sends the globals and emits one `pc_signed_in` with
+  `via: "claim"`, a refused one keeps no session and emits nothing; a claim ends on the owner's
+  return and on the auto lock (with their messages and `firstAtPc`), a password session on
+  neither; the dispatcher wiring (`listen`, idempotent); on load every restored claim is signed out
+  with one `pc_signed_out` each; `pc_in_use`.
+- `test/js/access-signin-routing.test.mjs` (+4, 1 changed): owner present shows the message with the
+  observations and stops, even with a session; a session with the owner away opens the desktop
+  without asking the workstation; `accessed` claims, opening the desktop or (refused) the sign-in
+  screen; `locked`, `signin`, `attended` and null open the sign-in screen with no claim. The
+  interactions.js source test now expects the `interactLoginPc` branch.
+- The whole needs suite (`npc-needs*.test.mjs`, `npc-pressing-needs.test.mjs`) and
+  `lighting-workstation-indicators.test.mjs` pass unchanged.
+
+### Results
+
+- `bin/test-js`: 404 files, all pass (no new files; tests added to existing ones).
+- Rails: 1056 runs, 0 failures, 0 errors, 1 skip. `test/dummy/db/schema.rb` unchanged.
+- `LANG=C.UTF-8 ruby scripts/validate_scenario.rb scenarios/test_access_sessions/scenario.json.erb`:
+  valid, ink compiles, no dialogue lint findings, objective wiring OK, geometry and door alignment
+  OK, schema passed, **no warnings**; needs timing lines, identity reach lines and the generic
+  suggestions only.
+- `bundle exec rails db:seed`: `test_access_sessions` created (mission 163); the known unrelated
+  `test_table_items` error.
+- Headless smoke on :3001 (game 17, one game, every beat): T1 toast and task; T2 claim (desktop
+  "Signed in as Dana Reyes (dreyes)"), copy, task; T3 "Dana Reyes is back at the desk", task, then
+  "is using" again; T4 note read, sign-in screen with Ian away, his password, the desktop stayed
+  open over his return, then "is using"; T5 sign-in screen, task; T11 claim on Dana's next leave,
+  reload: only `ian_pc` kept, Dana at her desk, Ian's desktop opened with no password once he left
+  (`restored`), task. T6 claim, manual clock: open at four minutes, "The screen locked" past five,
+  task; T7 `debugKO`, claim, task; after a reload Kai stayed down and `kai_pc` gave the sign-in
+  screen; T8, T9, T10 sign-in screens and tasks. All eleven tasks complete; `verify-run.rb
+  --access` matched; the leak check over all responses found nothing. Game 17 deleted.
+- Needs regression: see "Baseline comparison" below.
+
+### Deviations and choices
+
+- **The sign-in interaction lives in `unlock-system.js`** (`interactLoginPc`), called from the
+  `interactions.js` branch through `window.interactLoginPc`, so it can be tested with the existing
+  `unlock-system.js` harness and so the tests that stub `unlock-system.js` for `interactions.js`
+  keep working. The end messages are made in `pc-sessions.js` and handed to the desktop's
+  `close(message)` (the step 8 hook in `container-minigame.js`), which needed no change.
+- **The presence message is a toast** ("<owner> is using this PC." then the observations), as other
+  refusals are. The harness reports `no-effect-confirmed` for it; `PLAYTEST.md` says to read
+  `toasts`.
+- **Extra events and fields** so each beat's task fires only from its own beat: `pc_in_use`
+  (`signedInBefore`), `reason` on `pc_signin_shown`, `firstAtPc` on the claim-end
+  `pc_signed_out`, `reason` on `workstation_owner_left`. All additive; the plan's 5.3 and 5.4
+  now document them.
+- **`ownerTracked` in the env** beside the plan's `ownerPresent` and `policyFor`, for the knock-out
+  rule; an env without it treats the owner as tracked (unit tests). `clockMs` and `onTick` too.
+- **An owner with no owner is `signin` in every env**, not only with `ownerPresent` (the plan's
+  "unowned result" applies to every workstation; no existing test had an unowned workstation).
+- **Omar's station `useSeconds` is 600**, not 900: the schema caps `useSeconds` at 600. Ten
+  minutes still keeps him away past the five-minute auto lock.
+- **Kai, Mei and Tom have a slow need** (urgent after twelve minutes), not one that leaves within a
+  minute: their beats need them at the desk (knocked out, hidden, removed there). The other four
+  owners leave about 50 s after their room loads.
+- **Dana's, Ian's and Priya's coffee takes 45 s**, not about 30, to give a scripted run time to
+  copy a file or sign in while the owner is away.
+- **T11's task is Ian's kept desktop opening after the reload** (`pc_desktop_opened`,
+  `restored`), not the claim's end: the `claim_ended` sign-out fires while the page loads, before
+  the lobby NPC's mappings are certain to be registered. Because an owner at the desk blocks his PC
+  even with a session, the run waits for Ian to leave (about 50 s after his room loads) to open it.
+- **The needs clock starts per owner when their room loads**, so `PLAYTEST.md` times every wait
+  from entering the room.
+
+### Baseline comparison
+
+`docs/achitechture/access_model_needs_baseline/COMPARISON.md`. Every behavioural difference is one
+the plan predicts: in `test_npc_needs` and `test_needs_sims` the knocked-out owner now leaves the
+screen as rolled (`workstation_owner_left`, the globals, later clicks `accessed`); in
+`test_needs_sims` that also completes `spot_open_screen`, whose mapping is on that event.
+`test_needs_leash` is unchanged. Flagged and not in the plan's table: the new `reason` field on
+`workstation_owner_left` (additive). The first after-capture of `test_needs_sims` also differed in
+three NPCs' walks (timeouts and an order); a second capture on the same code
+(`test_needs_sims.after2.json`) reversed those, so they are walking variance under load.
+
+### For the orchestrator: the two T runs
+
+Each run starts with its own new game.
+
+```bash
+export PATH=/opt/rbenv/bin:/opt/rbenv/shims:$PATH RBENV_VERSION=3.1.6
+export PLAYWRIGHT_CHROMIUM_EXECUTABLE=/opt/pw-browsers/chromium   # in a container
+tools/playtest/start-keyless-server.sh
+
+# Run 1: T1 to T5, then T11 (the reload)
+PLAYTEST_PORT=3001 BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/new-game.rb test_access_sessions
+tools/playtest/session-start.sh --url <URL> --headless \
+  --log <scratch>/test_access_sessions-haiku/session-<game_id>.jsonl \
+  --capture-responses <scratch>/test_access_sessions-haiku/test_access_sessions-1-responses.jsonl
+
+# Run 2: T6 to T10, with a reload after T7, on a second new game
+PLAYTEST_PORT=3001 BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/new-game.rb test_access_sessions
+tools/playtest/session-start.sh --url <URL> --headless \
+  --log <scratch>/test_access_sessions-haiku/session-<game_id>.jsonl \
+  --capture-responses <scratch>/test_access_sessions-haiku/test_access_sessions-2-responses.jsonl
+```
+
+Follow `scenarios/test_access_sessions/PLAYTEST.md` (Run 1, then Run 2), with `verify-run.rb
+<game_id> --access` and `access-leak-check.rb <game_id> <that run's responses>` after each beat.
+Dana leaves about 50 s after her room loads, so Run 1 goes straight to `dana_room` for T1. Then
+the step 7 and step 8 runs again as the suite (the workstation rule now applies to their sign-in
+PCs, all unowned, so they should answer as before). The needs regression captures are already in
+`docs/achitechture/access_model_needs_baseline/`; to repeat them,
+`node tools/playtest/needs-baseline-capture.js --scenario <name> --out <file>` and
+`needs-baseline-compare.js`. Stop the server with `tools/playtest/stop-keyless-server.sh` at the
+end only if you started it.

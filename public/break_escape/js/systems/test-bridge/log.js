@@ -40,7 +40,9 @@ const INTERESTING = [
     /^minigame_/, /^conversation_/, /^npc_/,
     /^item_/, /^door_/, /^room_/,
     /^global_variable_changed:/,
-    /^player_/, /^game_/, /^mission_/
+    /^player_/, /^game_/, /^mission_/,
+    // Access model: sign-in sessions and the workstation rule (ACCESS_MODEL_PLAN.md 5.3, 5.4)
+    /^pc_/, /^workstation_/
 ];
 
 export function installEventCapture() {

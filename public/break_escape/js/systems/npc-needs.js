@@ -203,6 +203,8 @@ export class NPCNeedsSystem {
         this._anyCompany = false;
         // Read-outs for tests and live measurement; never feed a decision
         this.stats = { ticks: 0, selects: 0, objectScans: 0, pathSearches: 0, backoffs: 0 };
+        // End-of-tick listeners (onTick); kept across reset()
+        this._tickListeners = [];
     }
 
     // ── setup ──────────────────────────────────────────────────────────────
@@ -391,6 +393,35 @@ export class NPCNeedsSystem {
         }
         if (this._chats.size) this._tickChats();
         this._worldChanged();
+        if (this._tickListeners?.length) {
+            for (const fn of [...this._tickListeners]) {
+                try { fn(this); } catch (e) {
+                    if (typeof console !== 'undefined') console.error('[needs] onTick listener error', e);
+                }
+            }
+        }
+    }
+
+    /**
+     * Run fn(system) at the end of every tick, after every NPC was processed (the workstation
+     * auto lock, ACCESS_MODEL_PLAN.md 5.4). Listeners survive reset(). Returns an unsubscribe.
+     */
+    onTick(fn) {
+        if (typeof fn !== 'function') return () => {};
+        if (!this._tickListeners) this._tickListeners = [];
+        this._tickListeners.push(fn);
+        return () => { this._tickListeners = this._tickListeners.filter(f => f !== fn); };
+    }
+
+    /**
+     * True when the NPC's sprite exists and it is not knocked out, hostile or hidden
+     * (ACCESS_MODEL_PLAN.md 5.4). _tickNpc blocks on it; the workstation layer's presence test
+     * uses it, so an owner removed from the scene, hidden, hostile or knocked out is not present.
+     */
+    isAvailable(npcId) {
+        if (!this.world.npcPos(npcId)) return false;
+        const status = this.world.npcStatus(npcId) || {};
+        return !(status.ko || status.hostile || status.hidden);
     }
 
     /** Drop the per-tick object list and reachability answers (something in the world changed). */
@@ -561,8 +592,7 @@ export class NPCNeedsSystem {
         if (!pos) return; // sprite not loaded: decay only
         if (!s.home || (s.home.provisional && this.tickCount >= (s.homeRetryAt || 0))) this._updateHome(s, pos);
 
-        const status = this.world.npcStatus(id) || {};
-        if (status.ko || status.hostile || status.hidden) {
+        if (!this.isAvailable(id)) {
             if (!s.blocked) {
                 if (s.job) this._abortJob(s, 'unavailable', { cancel: true });
                 s.mode = 'idle';

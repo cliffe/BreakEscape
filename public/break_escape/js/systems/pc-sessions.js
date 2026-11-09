@@ -19,20 +19,37 @@
  *                      when the player had never signed in at this PC before (signedIn).
  *   pc_signed_out      { pcId, npcId, reason }         reason: sign_out (the Sign out button) |
  *                      switch (the first half of a switch) | no_session (a 403 from container) |
- *                      claim_ended (a claimed session ended on load)
+ *                      claim_ended (a claimed session ended on load) | owner_returned or
+ *                      auto_locked (a claimed session ended by the owner's return or the
+ *                      screen's auto lock; these two also carry firstAtPc, true when the ended
+ *                      session was the first sign-in at this PC)
  *   pc_signin_failed   { pcId, reason, attemptsLeft }  reason: wrong | not_permitted | locked_out
- *   pc_signin_shown    { pcId, usernames, usernameList } the sign-in screen opened with these tiles
+ *   pc_signin_shown    { pcId, usernames, usernameList, reason? } the sign-in screen opened with
+ *                      these tiles; reason (when the caller knows it) is why: signin (no owner,
+ *                      or an owner not present with no away record), locked (the owner is
+ *                      away and the screen locked), attended, claim_refused, switch or direct
  *   pc_desktop_opened  { pcId, npcId, via, restored }  a desktop loaded for a session; restored is
  *                                                      true for a session kept from before a reload
+ *   pc_in_use          { pcId, ownerId, signedInBefore } a click found the owner at the desk;
+ *                      signedInBefore is true when the player had signed in at this PC before
  *
  * The server holds the real sessions; this list only mirrors them, so a 403 from
  * `container` (no session there, for example after a reset) drops the local copy
- * without a request. The workstation claim (step 9) will sign in through here too.
+ * without a request.
+ *
+ * Unlocked sessions (5.4): claim(pcId) is POST /login with claim "owner" and the two
+ * workstation globals. A claimed session ends when the owner returns
+ * (workstation_owner_returned:<pcId>), when the screen auto locks
+ * (workstation_auto_locked:<pcId>), or on a reload (load); each sends POST /logout, emits
+ * pc_signed_out and closes an open desktop with "<owner> is back at the desk" or "The screen
+ * locked". A password session is ended by none of these.
  *
  * Exposed as window.pcSessions; window.__test.access.sessions() reads list().
  */
 
 export const SIGNED_OUT_MESSAGE = 'Signed out';
+export const SCREEN_LOCKED_MESSAGE = 'The screen locked';
+export const backAtDeskMessage = (name) => `${name || 'The owner'} is back at the desk`;
 
 function apiClient() {
     return (typeof window !== 'undefined' && (window.ApiClient || window.APIClient)) || null;
@@ -47,6 +64,21 @@ export class PcSessions {
         this.sessions = new Map();
         this.signedIn = new Set();
         this.desktops = new Map();
+        this._listening = null;
+    }
+
+    /**
+     * Listen for the workstation events that end a claimed session (idempotent; needs a
+     * dispatcher with on()). Called from load() and claim(); a dispatcher replaced later
+     * gets its own listeners.
+     */
+    listen() {
+        const dispatcher = typeof window !== 'undefined' ? window.eventDispatcher : null;
+        if (!dispatcher || typeof dispatcher.on !== 'function' || this._listening === dispatcher) return false;
+        this._listening = dispatcher;
+        dispatcher.on('workstation_owner_returned:*', (d) => { if (d?.objectId) this.ownerReturned(d.objectId); });
+        dispatcher.on('workstation_auto_locked:*', (d) => { if (d?.objectId) this.screenAutoLocked(d.objectId); });
+        return true;
     }
 
     _emit(name, data) {
@@ -67,6 +99,7 @@ export class PcSessions {
      * owner back at the desk, so the end rules for a claim could no longer apply (5.3).
      */
     load(sessions = {}, signedInPcs = []) {
+        this.listen();
         this.sessions.clear();
         this.signedIn.clear();
         (Array.isArray(signedInPcs) ? signedInPcs : []).forEach(pcId => {
@@ -159,6 +192,70 @@ export class PcSessions {
         return { ok: true, session: publicSession(pcId, session) };
     }
 
+    /**
+     * Claim the owner's unlocked session (5.4): POST /login with claim "owner" and the
+     * workstation globals, which the server only logs. Resolves
+     *   { ok: true, session }   (pc_signed_in with via "claim")
+     *   { ok: false, reason: 'refused', message }  (the server's "Sign in required"; no event)
+     *   { ok: false, reason: 'error', error: true, status, message }
+     */
+    async claim(pcId) {
+        this.listen();
+        const api = apiClient();
+        if (!api?.login) return { ok: false, reason: 'error', error: true, status: null, message: 'Sign-in is not available' };
+        const g = (typeof window !== 'undefined' && window.gameState?.globalVariables) || {};
+        const globals = {
+            [`${pcId}_screen_locked`]: !!g[`${pcId}_screen_locked`],
+            [`${pcId}_owner_away`]: !!g[`${pcId}_owner_away`]
+        };
+        let body;
+        try {
+            body = await api.login(pcId, { claim: 'owner', globals });
+        } catch (err) {
+            const b = err?.body || {};
+            if (err?.status === 422) return { ok: false, reason: 'refused', message: b.message || 'Sign in required' };
+            return { ok: false, reason: 'error', error: true, status: err?.status ?? null, message: b.message || b.error || 'Could not reach the sign-in service' };
+        }
+        if (!body || body.success === false || !body.npcId) {
+            return { ok: false, reason: 'refused', message: body?.message || 'Sign in required' };
+        }
+        const session = { npcId: body.npcId, username: body.username ?? null, displayName: body.displayName ?? null, via: 'claim' };
+        this._replace(pcId, session);
+        return { ok: true, session: publicSession(pcId, session) };
+    }
+
+    /** workstation_owner_returned:<pcId>: a claimed session there ends. */
+    async ownerReturned(pcId) {
+        const s = this.sessions.get(pcId);
+        if (!s || s.via !== 'claim') return false;
+        return this._endClaim(pcId, 'owner_returned', backAtDeskMessage(s.displayName));
+    }
+
+    /** workstation_auto_locked:<pcId>: a claimed session there ends. */
+    async screenAutoLocked(pcId) {
+        const s = this.sessions.get(pcId);
+        if (!s || s.via !== 'claim') return false;
+        return this._endClaim(pcId, 'auto_locked', SCREEN_LOCKED_MESSAGE);
+    }
+
+    async _endClaim(pcId, reason, message) {
+        const previous = this.sessions.get(pcId);
+        if (!previous) return false;
+        this.sessions.delete(pcId);
+        const api = apiClient();
+        if (api?.logout) {
+            try { await api.logout(pcId); } catch (e) { console.warn('[pc-sessions] logout of a claimed session failed', e); }
+        }
+        this._emit('pc_signed_out', { pcId, npcId: previous.npcId ?? null, reason, firstAtPc: !!previous.firstAtPc });
+        this._closeDesktop(pcId, message);
+        return true;
+    }
+
+    /** A click found the owner at the desk (5.4, step 1 of the interaction). */
+    inUseShown(pcId, ownerId) {
+        this._emit('pc_in_use', { pcId, ownerId: ownerId ?? null, signedInBefore: this.signedIn.has(pcId) });
+    }
+
     _replace(pcId, session) {
         const previous = this.sessions.get(pcId);
         const firstAtPc = !this.signedIn.has(pcId);
@@ -166,7 +263,7 @@ export class PcSessions {
             this.sessions.delete(pcId);
             this._emit('pc_signed_out', { pcId, npcId: previous.npcId ?? null, reason: 'switch' });
         }
-        this.sessions.set(pcId, { ...session, restored: false });
+        this.sessions.set(pcId, { ...session, restored: false, firstAtPc });
         this.signedIn.add(pcId);
         this._emit('pc_signed_in', {
             pcId, npcId: session.npcId, username: session.username, via: session.via,
@@ -219,10 +316,12 @@ export class PcSessions {
     }
 
     /** The sign-in screen opened at pcId with these tiles. */
-    screenShown(pcId, tiles = []) {
+    screenShown(pcId, tiles = [], reason = undefined) {
         const usernames = (Array.isArray(tiles) ? tiles : []).map(t => t?.username).filter(Boolean);
         // usernameList: the same as one string, for eventMapping conditions (".includes('x')")
-        this._emit('pc_signin_shown', { pcId, usernames, usernameList: usernames.join(',') });
+        const data = { pcId, usernames, usernameList: usernames.join(',') };
+        if (reason) data.reason = reason;
+        this._emit('pc_signin_shown', data);
     }
 
     /** The desktop loaded for the session at pcId. */

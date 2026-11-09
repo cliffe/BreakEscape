@@ -204,3 +204,105 @@ test('pc_signed_in tells a switch from a plain sign-in: previousNpcId and firstA
         ['lockout_pc', null, true]
     ]);
 });
+
+// ── Access model step 9 (5.4): the claim and when it ends ──────────────────────────────
+
+const CLAIM_ANSWER = (pcId, fields) => {
+    if (fields.claim === 'owner' && pcId === 'dana_pc') {
+        return { success: true, npcId: 'dana', username: 'dreyes', displayName: 'Dana Reyes', via: 'claim' };
+    }
+    if (fields.claim === 'owner') {
+        throw Object.assign(new Error('Sign in required'), { status: 422, body: { success: false, message: 'Sign in required' } });
+    }
+    const acct = ACCOUNTS[fields.username];
+    if (!acct || acct.password !== fields.password) {
+        throw Object.assign(new Error('x'), { status: 422, body: { success: false, message: 'Incorrect username or password', attemptsLeft: null } });
+    }
+    return { success: true, npcId: acct.npcId, username: fields.username, displayName: acct.displayName, via: 'password' };
+};
+
+test('step 9: a claim sends claim owner with the workstation globals and emits one pc_signed_in with via claim', async () => {
+    const s = setup({ answer: CLAIM_ANSWER });
+    window.gameState = { globalVariables: { dana_pc_screen_locked: false, dana_pc_owner_away: true } };
+    const r = await s.claim('dana_pc');
+    assert.equal(r.ok, true);
+    assert.deepEqual(calls, [['login', 'dana_pc', { claim: 'owner', globals: { dana_pc_screen_locked: false, dana_pc_owner_away: true } }]]);
+    assert.deepEqual(named('pc_signed_in'), [{ pcId: 'dana_pc', npcId: 'dana', username: 'dreyes', via: 'claim', previousNpcId: null, firstAtPc: true }]);
+    assert.equal(named('pc_signed_in:dana_pc').length, 1);
+    assert.deepEqual(s.get('dana_pc'), { pcId: 'dana_pc', npcId: 'dana', username: 'dreyes', displayName: 'Dana Reyes', via: 'claim' });
+    // A refused claim keeps no session and emits nothing (the sign-in screen opens instead)
+    events.length = 0;
+    const refused = await s.claim('ian_pc');
+    assert.equal(refused.ok, false);
+    assert.equal(refused.reason, 'refused');
+    assert.equal(s.has('ian_pc'), false);
+    assert.deepEqual(events, []);
+    delete window.gameState;
+});
+
+test('step 9: a claim ends on the owner\'s return and on the auto lock; a password session on neither', async () => {
+    const s = setup({ answer: CLAIM_ANSWER });
+    const closed = [];
+    await s.claim('dana_pc');
+    s.registerDesktop('dana_pc', (msg) => closed.push(msg));
+    await s.signIn('ian_pc', 'ishaw', 'right-ian');
+    events.length = 0; calls.length = 0;
+    await s.ownerReturned('ian_pc');
+    await s.screenAutoLocked('ian_pc');
+    assert.equal(s.has('ian_pc'), true, 'a password session is kept');
+    assert.deepEqual(calls, []);
+    await s.ownerReturned('dana_pc');
+    assert.equal(s.has('dana_pc'), false);
+    assert.deepEqual(calls, [['logout', 'dana_pc']]);
+    assert.deepEqual(named('pc_signed_out'), [{ pcId: 'dana_pc', npcId: 'dana', reason: 'owner_returned', firstAtPc: true }]);
+    assert.deepEqual(closed, ['Dana Reyes is back at the desk']);
+    // The next claim there is not the first; the auto lock ends it with "The screen locked"
+    events.length = 0; closed.length = 0;
+    await s.claim('dana_pc');
+    assert.equal(named('pc_signed_in')[0].firstAtPc, false);
+    s.registerDesktop('dana_pc', (msg) => closed.push(msg));
+    await s.screenAutoLocked('dana_pc');
+    assert.deepEqual(named('pc_signed_out'), [{ pcId: 'dana_pc', npcId: 'dana', reason: 'auto_locked', firstAtPc: false }]);
+    assert.deepEqual(closed, ['The screen locked']);
+});
+
+test('step 9: the workstation events reach the claim through the dispatcher', async () => {
+    const s = setup({ answer: CLAIM_ANSWER });
+    const handlers = {};
+    window.eventDispatcher.on = (pattern, cb) => { handlers[pattern] = cb; };
+    s.listen();
+    s.listen();   // idempotent
+    assert.deepEqual(Object.keys(handlers).sort(), ['workstation_auto_locked:*', 'workstation_owner_returned:*']);
+    await s.claim('dana_pc');
+    events.length = 0;
+    handlers['workstation_owner_returned:*']({ objectId: 'dana_pc', ownerId: 'dana' });
+    await settle();
+    assert.deepEqual(named('pc_signed_out').map(d => d.reason), ['owner_returned']);
+    delete window.eventDispatcher.on;
+});
+
+test('step 9: on load, every claimed session restored from sessions is signed out, each with one pc_signed_out', async () => {
+    const s = setup();
+    s.load({
+        dana_pc: { npcId: 'dana', username: 'dreyes', displayName: 'Dana Reyes', via: 'claim' },
+        kai_pc: { npcId: 'kai', username: 'kbrennan', displayName: 'Kai Brennan', via: 'claim' },
+        ian_pc: { npcId: 'ian', username: 'ishaw', displayName: 'Ian Shaw', via: 'password' }
+    }, ['dana_pc', 'kai_pc', 'ian_pc']);
+    await settle();
+    assert.deepEqual(calls.sort(), [['logout', 'dana_pc'], ['logout', 'kai_pc']]);
+    assert.deepEqual(named('pc_signed_out').map(d => [d.pcId, d.npcId, d.reason]).sort(),
+        [['dana_pc', 'dana', 'claim_ended'], ['kai_pc', 'kai', 'claim_ended']]);
+    assert.deepEqual(s.list().map(x => x.pcId), ['ian_pc']);
+    assert.deepEqual(s.signedInPcs().sort(), ['dana_pc', 'ian_pc', 'kai_pc']);
+});
+
+test('step 9: the owner-present message names the owner and reports pc_in_use with whether the PC was signed in before', () => {
+    const s = setup();
+    s.inUseShown('dana_pc', 'dana');
+    s.signedIn.add('dana_pc');
+    s.inUseShown('dana_pc', 'dana');
+    assert.deepEqual(named('pc_in_use'), [
+        { pcId: 'dana_pc', ownerId: 'dana', signedInBefore: false },
+        { pcId: 'dana_pc', ownerId: 'dana', signedInBefore: true }
+    ]);
+});

@@ -32,7 +32,7 @@ for (const [spec, url] of Object.entries(stubs)) src = src.split(`'${spec}'`).jo
 
 globalThis.window = {};
 globalThis.__passwordStarts = 0;
-const { handleUnlock, openLoginSignIn } = await import(dataUrl(src));
+const { handleUnlock, openLoginSignIn, interactLoginPc } = await import(dataUrl(src));
 
 const TILES = [{ username: 'sokafor', displayName: 'Sam Okafor', portrait: null, avatar: null }];
 let calls, started, desktops, shown, sessionHeld;
@@ -136,13 +136,13 @@ test('an unreachable PC says so and opens nothing', async () => {
     assert.ok(calls.some(c => c[0] === 'alert' && c[1] === "This PC can't be reached"));
 });
 
-test('interactions.js sends a sign-in PC to handleUnlock before the workstation call and the generic flow', () => {
+test('interactions.js sends a sign-in PC to interactLoginPc (step 9) before the workstation call and the generic flow', () => {
     const s = readFileSync(join(js, 'systems/interactions.js'), 'utf8');
     const branch = s.indexOf("if (sprite.scenarioData.lockType === 'login') {");
     const workstation = s.indexOf('window.workstationState.onInteract(sprite.scenarioData.id)');
     const trigger = s.indexOf('if (Array.isArray(sprite.scenarioData.triggerOnInteract))');
     assert.ok(branch > 0 && branch < workstation && workstation < trigger);
-    assert.match(s.slice(branch, branch + 200), /handleUnlock\(sprite, 'item'\);\s*return;/);
+    assert.match(s.slice(branch, branch + 300), /window\.interactLoginPc\(sprite\);[\s\S]*handleUnlock\(sprite, 'item'\);\s*\}\s*return;/);
 });
 
 test('api-client.js has login, logout and loginAccounts, and GET errors carry a status', () => {
@@ -151,4 +151,75 @@ test('api-client.js has login, logout and loginAccounts, and GET errors carry a 
     assert.match(s, /static async logout\(pcId\) \{\s*return this\.post\('\/logout', \{ pc_id: pcId \}\);/);
     assert.match(s, /static async loginAccounts\(pcId\) \{\s*return this\.get\(`\/login_accounts\?pc_id=\$\{encodeURIComponent\(pcId\)\}`\);/);
     assert.match(s, /err\.status = response\.status;\s*throw err;/);
+});
+
+// ── Step 9 (5.4): the interaction at a sign-in PC ─────────────────────────────────────
+
+function wsStub({ ownerId = 'dana', present = false, answer = 'signin' } = {}) {
+    const asked = [];
+    window.workstationState = {
+        presence: () => ({ ownerId, present }),
+        onInteract: (id) => { asked.push(id); return answer; }
+    };
+    return asked;
+}
+
+test('step 9: owner present shows "<owner> is using this PC" with the observations, and stops (even with a session)', async () => {
+    reset({ held: true });
+    const asked = wsStub({ present: true });
+    const inUse = [];
+    window.pcSessions.inUseShown = (pcId, ownerId) => inUse.push([pcId, ownerId]);
+    window.npcManager = { getNPC: () => ({ displayName: 'Dana Reyes' }) };
+    const r = await interactLoginPc(pc({ observations: 'Dana\'s desk.' }));
+    assert.equal(r, 'in_use');
+    const alert = calls.find(c => c[0] === 'alert');
+    assert.match(alert[1], /^Dana Reyes is using this PC\.\nDana's desk\.$/);
+    assert.deepEqual(asked, [], 'no workstation call, so no workstation event');
+    assert.deepEqual(inUse, [['hot_desk', 'dana']]);
+    assert.equal(desktops.length, 0);
+    assert.equal(started.length, 0);
+    delete window.npcManager;
+});
+
+test('step 9: with a session and the owner away, the desktop opens with no workstation call', async () => {
+    reset({ held: true });
+    const asked = wsStub({ present: false, answer: 'accessed' });
+    assert.equal(await interactLoginPc(pc()), 'desktop');
+    assert.equal(desktops.length, 1);
+    assert.deepEqual(asked, []);
+});
+
+test('step 9: accessed claims the session; a success opens the desktop, a refusal the sign-in screen', async () => {
+    reset();
+    wsStub({ answer: 'accessed' });
+    const claims = [];
+    window.pcSessions.claim = async (pcId) => { claims.push(pcId); return { ok: true }; };
+    assert.equal(await interactLoginPc(pc()), 'claimed');
+    assert.deepEqual(claims, ['hot_desk']);
+    assert.equal(desktops.length, 1);
+    assert.equal(started.length, 0);
+
+    reset();
+    wsStub({ answer: 'accessed' });
+    window.pcSessions.claim = async () => ({ ok: false, reason: 'refused' });
+    assert.equal(await interactLoginPc(pc()), 'claim_refused');
+    await settle();
+    assert.equal(desktops.length, 0);
+    assert.equal(started.length, 1);
+    assert.equal(started[0][0], 'password');
+    assert.equal(shown[0][0], 'hot_desk');
+});
+
+test('step 9: locked, signin, attended (a race) and null all open the sign-in screen with no claim', async () => {
+    for (const answer of ['locked', 'signin', 'attended', null]) {
+        reset();
+        wsStub({ answer, ownerId: answer === 'signin' ? null : 'dana' });
+        let claimed = 0;
+        window.pcSessions.claim = async () => { claimed++; return { ok: true }; };
+        assert.equal(await interactLoginPc(pc()), 'signin', String(answer));
+        await settle();
+        assert.equal(claimed, 0, String(answer));
+        assert.equal(started.length, 1, String(answer));
+        assert.equal(desktops.length, 0, String(answer));
+    }
 });

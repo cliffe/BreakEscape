@@ -956,3 +956,84 @@ test('leash and private together: leashed lists only the room-removed targets; t
     assert.deepEqual(r.log.find(e => e.ev === 'private_skipped').skipped, ['ben_kettle']);
     assert.deepEqual(r.w.calls.emits.find(e => e.name === 'npc_needs_leashed:tom').data.skipped, ['lounge_cooler']);
 });
+
+// ── Access model step 9 (ACCESS_MODEL_PLAN.md 5.4): isAvailable and onTick ───────────────
+
+test('step 9: isAvailable is false with no sprite and for ko, hostile and hidden, true otherwise', () => {
+    const w = makeWorld(office());
+    const status = {};
+    w.world.npcStatus = (id) => status[id] || {};
+    const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+    w.attach(sys);
+    sys.registerAll();
+    assert.equal(sys.isAvailable('clerk'), true);
+    for (const k of ['ko', 'hostile', 'hidden']) {
+        status.clerk = { [k]: true };
+        assert.equal(sys.isAvailable('clerk'), false, k);
+    }
+    status.clerk = {};
+    delete w.pos.clerk;
+    assert.equal(sys.isAvailable('clerk'), false, 'no sprite');
+});
+
+test('step 9: with no sprite _tickNpc only decays (no blocked, no home); with a sprite it blocks exactly when isAvailable is false', () => {
+    const w = makeWorld(office());
+    const status = {};
+    w.world.npcStatus = (id) => status[id] || {};
+    const saved = w.pos.clerk;
+    delete w.pos.clerk;
+    const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+    w.attach(sys);
+    sys.registerAll();
+    const before = sys.getState('clerk').levels.caffeine;
+    sys.step(60000);
+    const s = sys.states.get('clerk');
+    assert.ok(sys.getState('clerk').levels.caffeine < before, 'decayed');
+    assert.equal(s.blocked, false);
+    assert.equal(s.home, null);
+    assert.ok(!sys.getLog().some(e => e.npc === 'clerk' && e.ev === 'blocked'));
+    // Sprite back, status ko: blocked once, then unblocked when available again
+    w.pos.clerk = saved;
+    status.clerk = { ko: true };
+    sys.step(1000);
+    assert.equal(s.blocked, true);
+    assert.ok(s.home, 'home resolved before the availability test');
+    assert.equal(sys.getLog().filter(e => e.npc === 'clerk' && e.ev === 'blocked').length, 1);
+    status.clerk = {};
+    sys.step(250);
+    assert.equal(s.blocked, false);
+    assert.ok(sys.getLog().some(e => e.npc === 'clerk' && e.ev === 'unblocked'));
+});
+
+test('step 9: an NPC with interests only is registered, so getState is not null for it', () => {
+    const w = makeWorld(office({ npcs: { finder: { pos: { x: 200, y: 100 }, rec: { id: 'finder', needsHome: 'clerk_pc', interests: { found_item: 3 } } } } }));
+    const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+    w.attach(sys);
+    sys.registerAll();
+    assert.notEqual(sys.getState('finder'), null);
+    assert.equal(sys.getState('visitor'), null);
+});
+
+test('step 9: onTick listeners run once at the end of each tick', () => {
+    const w = makeWorld(office());
+    const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+    w.attach(sys);
+    sys.registerAll();
+    const seen = [];
+    const off = sys.onTick((s) => seen.push({ clock: s.clockMs, tick: s.tickCount, logLen: s.getLog().length }));
+    sys.step(1000);
+    assert.equal(seen.length, 4);
+    assert.deepEqual(seen.map(x => x.tick), [1, 2, 3, 4]);
+    assert.equal(seen[3].clock, 1000);
+    // Called after the NPCs were processed: the log the listener saw includes this tick's entries
+    assert.equal(seen[seen.length - 1].logLen, sys.getLog().length);
+    off();
+    sys.step(500);
+    assert.equal(seen.length, 4, 'unsubscribed');
+    // A reset keeps the listeners (the test bridge's setSeed)
+    const again = [];
+    sys.onTick(() => again.push(1));
+    sys.reset(2);
+    sys.step(250);
+    assert.equal(again.length, 1);
+});

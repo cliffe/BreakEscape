@@ -786,12 +786,19 @@ export function handleObjectInteraction(sprite) {
         return;
     }
 
-    // A sign-in PC (access model 5.3, step 8): its desktop when pc-sessions.js holds a
-    // session for it, else the sign-in screen. It never runs the generic flow below
-    // (no triggerOnInteract, no unlock, no pickup); the room data marks it hasContents,
-    // so it is a container that only its session opens.
+    // A sign-in PC (access model 5.3 and 5.4): the owner at the desk blocks it; else its
+    // desktop when pc-sessions.js holds a session for it; else the workstation answer, where
+    // only 'accessed' claims the owner's unlocked session and everything else opens the
+    // sign-in screen (window.interactLoginPc, unlock-system.js). It never runs the generic flow
+    // below (no triggerOnInteract, no unlock, no pickup); the room data marks it
+    // hasContents, so it is a container that only its session opens.
     if (sprite.scenarioData.lockType === 'login') {
-        handleUnlock(sprite, 'item');
+        if (typeof window.interactLoginPc === 'function') {
+            playUISound('lock');
+            window.interactLoginPc(sprite);
+        } else {
+            handleUnlock(sprite, 'item');
+        }
         return;
     }
 

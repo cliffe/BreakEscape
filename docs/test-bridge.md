@@ -364,7 +364,8 @@ by wrapping `eventDispatcher.emit` transparently — it calls through to the ori
 and never alters arguments or return value, so instrumenting cannot change behaviour
 under test. High-frequency chatter is filtered out; objectives, tasks, aims,
 minigames, conversations, NPCs, items, doors, rooms, `global_variable_changed:*`,
-player, game and mission events are kept.
+player, game and mission events are kept, and the access model's sign-in (`pc_*`) and
+workstation (`workstation_*`) events.
 
 Drain this after a failure — it usually explains it where a state snapshot alone
 won't.
