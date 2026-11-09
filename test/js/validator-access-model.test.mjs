@@ -296,3 +296,23 @@ test('a card carried by several NPCs and used at an access lock is a warning', {
     assertHas(warnings(out), "card '4F00A1C2' is carried by 'jake', 'dana' and is used at access lock(s) 'finance_office'");
     assertHas(out, "ℹ️ Identity reach: card '4F00A1C2' (jake, dana) opens door 'finance_office'");
 });
+
+// check_lock_credentials (step 7): a keycard carrying an NPC's card opens every access lock
+// that admits that NPC, so it is not "a credential that opens nothing".
+function lockCredentialIssues(scenario) {
+    const script = `require ${JSON.stringify(join(root, 'scripts/validate_scenario.rb'))}
+      puts JSON.generate(check_lock_credentials(JSON.parse(STDIN.read)))`;
+    const r = spawnSync('ruby', ['-e', script], {
+        input: JSON.stringify(scenario), encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' }
+    });
+    assert.equal(r.status, 0, r.stderr);
+    return JSON.parse(r.stdout.trim().split('\n').pop());
+}
+
+test('a keycard opening an access lock through its holder is not reported as opening nothing', { skip }, () => {
+    const sc = clean();
+    assert.ok(!has(lockCredentialIssues(sc), "credential '4F00A1C2'"), 'Jake\'s badge copy opens finance_office');
+    // a keycard whose card no access lock admits is still reported
+    lobby(sc).objects.push({ id: 'len_copy', type: 'keycard', name: "Len's spare", card_id: 'LEN-01' });
+    assertHas(lockCredentialIssues(sc), "credential 'LEN-01', but no rfid lock 'requires' it");
+});

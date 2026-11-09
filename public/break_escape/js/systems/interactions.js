@@ -892,7 +892,10 @@ export function handleObjectInteraction(sprite) {
             if (window.startRFIDMinigame) {
                 window.startRFIDMinigame(null, null, {
                     mode: 'clone',
-                    cardToClone: sprite.scenarioData
+                    cardToClone: sprite.scenarioData,
+                    // The copy's source, so a saved copy is recorded on the server as
+                    // this keycard's card (access model 4.2)
+                    cloneSource: sprite.scenarioData.id ? { object_id: sprite.scenarioData.id } : null
                 });
             } else {
                 window.gameAlert('RFID minigame not available', 'error', 'Error', 3000);

@@ -27,12 +27,7 @@ export async function notifyServerUnlock(lockable, type, method) {
     if (apiClient && gameId) {
         try {
             // Get target ID
-            let targetId;
-            if (type === 'door') {
-                targetId = lockable.doorProperties?.connectedRoom || lockable.doorProperties?.roomId;
-            } else {
-                targetId = lockable.scenarioData?.id || lockable.scenarioData?.name || lockable.objectId;
-            }
+            const targetId = unlockTargetId(lockable, type);
 
             console.log(`Notifying server of ${method} unlock:`, { type, targetId });
             serverResponse = await apiClient.unlock(type, targetId, null, method);
@@ -47,6 +42,14 @@ export async function notifyServerUnlock(lockable, type, method) {
     }
 
     return serverResponse;
+}
+
+// The id the server knows a lock by: a door's connected room, or the object's id.
+function unlockTargetId(lockable, type) {
+    if (type === 'door') {
+        return lockable.doorProperties?.connectedRoom || lockable.doorProperties?.roomId;
+    }
+    return lockable.scenarioData?.id || lockable.scenarioData?.name || lockable.objectId;
 }
 
 // Helper function to check if two rectangles overlap
@@ -98,6 +101,63 @@ export function playerHoldsRfidCredentialFor(requires) {
     if (requires == null) return false;
     const r = evaluateRfidCredential(requires);
     return r.hasValidCard || r.hasValidClone;
+}
+
+/** True when an rfid lock carries an access list (roles or people, access model 4.1). */
+export function hasRfidAccessList(lockRequirements) {
+    const access = lockRequirements && lockRequirements.access;
+    return !!access && typeof access === 'object' && !Array.isArray(access);
+}
+
+/**
+ * Every card id the player holds, for an rfid lock with an access list: the keycards
+ * in the inventory and the cards saved on a card copier, each id once. A card's id is
+ * worked out as evaluateRfidCredential does. The client never resolves a card to its
+ * owner's roles: the server does, because the admitted NPC may be in a room the client
+ * has not loaded (access model 4.1).
+ */
+export function heldRfidCardIds() {
+    const items = (window.inventory && window.inventory.items) || [];
+    const getCardId = (cardData) => cardData.card_id || window.lockRef(cardData);
+    const ids = [];
+    const add = (cardData) => {
+        if (!cardData) return;
+        const id = getCardId(cardData);
+        if (id != null && id !== '' && !ids.includes(String(id))) ids.push(String(id));
+    };
+    items.forEach(item => {
+        if (item && item.scenarioData && item.scenarioData.type === 'keycard') add(item.scenarioData);
+    });
+    items.forEach(item => {
+        if (item && item.scenarioData && item.scenarioData.type === 'rfid_cloner') {
+            (item.scenarioData.saved_cards || []).forEach(add);
+        }
+    });
+    return ids;
+}
+
+/**
+ * Ask the server to open an rfid lock with an access list, sending every held card id in
+ * one request. Resolves to { outcome, response }: 'unlocked' (response is the server's
+ * answer), 'uid_only' (a held card would pass but is a UID-only copy and the lock does
+ * not take one), 'denied' (any other refusal) or 'error' (no answer from the server).
+ */
+export async function requestRfidAccessUnlock(lockable, type, cardIds) {
+    const apiClient = window.ApiClient || window.APIClient;
+    if (!apiClient) return { outcome: 'error', response: null };
+    try {
+        const response = await apiClient.unlock(type, unlockTargetId(lockable, type), null, 'rfid',
+            { card_ids: cardIds });
+        if (response && response.success) return { outcome: 'unlocked', response };
+        return { outcome: response && response.reason === 'uid_only' ? 'uid_only' : 'denied', response };
+    } catch (error) {
+        if (error && error.status) {
+            const body = error.body || {};
+            return { outcome: body.reason === 'uid_only' ? 'uid_only' : 'denied', response: body };
+        }
+        console.error('RFID access list unlock failed:', error);
+        return { outcome: 'error', response: null };
+    }
 }
 
 export function handleUnlock(lockable, type) {
@@ -504,11 +564,15 @@ export function handleUnlock(lockable, type) {
 
             // Support both single card ID (legacy) and array of card IDs, and find any
             // matching physical keycard or saved clone — shared with the gate
-            // clone-as-entry path (evaluateRfidCredential).
+            // clone-as-entry path (evaluateRfidCredential). A lock with an access list
+            // and no `requires` has no specific card, so nothing can match step 1.
+            const rfidHasRequires = lockRequirements.requires != null && lockRequirements.requires !== '' &&
+                !(Array.isArray(lockRequirements.requires) && lockRequirements.requires.length === 0);
             const {
                 requiredCardIds, keycards, matchingKeycard, hasValidCard,
                 cloner, hasCloner, savedCards, hasValidClone
-            } = evaluateRfidCredential(lockRequirements.requires);
+            } = evaluateRfidCredential(hasRfidAccessList(lockRequirements) && !rfidHasRequires
+                ? [] : lockRequirements.requires);
 
             // Check if door accepts UID-only emulation (for DESFire cards)
             const acceptsUIDOnly = lockRequirements.acceptsUIDOnly || false;
@@ -526,36 +590,18 @@ export function handleUnlock(lockable, type) {
                 matchingKeycard: matchingKeycard?.scenarioData?.name
             });
 
-            // PRIORITY 1: If player has a matching physical keycard, open door directly
-            if (hasValidCard) {
-                const cardName = matchingKeycard.scenarioData.name || 'Keycard';
-                console.log(`RFID DIRECT UNLOCK with physical keycard: ${cardName}`);
-                
-                // Notify server and unlock
-                notifyServerUnlock(lockable, type, 'rfid').then(serverResponse => {
-                    // Play electric strike sound alongside door open
-                    try {
-                        if (window.game && window.game.sound) {
-                            const s = window.game.sound.get('rfid_unlock') || window.game.sound.add('rfid_unlock');
-                            s.play({ volume: 0.9 });
-                        }
-                    } catch (e) {}
-                    unlockTarget(lockable, type, lockable.layer, serverResponse);
-                    window.gameAlert(`Door opened with ${cardName}`, 'success', 'Access Granted', 3000);
-                }).catch(error => {
-                    console.error('RFID unlock failed:', error);
-                    window.gameAlert('Access denied', 'error', 'Error', 3000);
-                });
-            }
-            // A cloner with nothing to offer (no keycards to tap, no saved clones): the
-            // reader just refuses, rather than opening an empty cloner screen (m07 U9)
-            else if (hasCloner && keycards.length === 0 && savedCards.length === 0) {
-                console.log('RFID CLONER EMPTY: no keycards, no saved cards');
-                window.gameAlert(appendLockedHint('Access denied. No keycard, and nothing saved on the cloner.', lockable), 'error', 'Access Denied', lockedHintDuration(lockable, 4000));
-                emitDoorUnlockFailed('no_card');
-            }
-            // PRIORITY 2: If player has RFID cloner, open minigame to emulate or read cards
-            else if (hasCloner) {
+            const playRfidUnlockSound = () => {
+                // Play electric strike sound alongside door open
+                try {
+                    if (window.game && window.game.sound) {
+                        const s = window.game.sound.get('rfid_unlock') || window.game.sound.add('rfid_unlock');
+                        s.play({ volume: 0.9 });
+                    }
+                } catch (e) {}
+            };
+
+            // The card copier's reader screen: tap a held card or emulate a saved one
+            const startRfidReader = () => {
                 // Start RFID minigame in unlock mode
                 window.startRFIDMinigame(lockable, type, {
                     mode: 'unlock',
@@ -571,21 +617,78 @@ export function handleUnlock(lockable, type) {
                             // Notify server and get room/container data
                             const serverResponse = await notifyServerUnlock(lockable, type, 'rfid');
                             setTimeout(() => {
-                                // Play electric strike sound alongside door open
-                                try {
-                                    if (window.game && window.game.sound) {
-                                        const s = window.game.sound.get('rfid_unlock') || window.game.sound.add('rfid_unlock');
-                                        s.play({ volume: 0.9 });
-                                    }
-                                } catch (e) {}
+                                playRfidUnlockSound();
                                 unlockTarget(lockable, type, lockable.layer, serverResponse);
                                 window.gameAlert('RFID lock unlocked!', 'success', 'Access Granted', 3000);
                             }, 100);
                         }
                     }
                 });
+            };
+
+            // Access model 4.1: a lock with an access list (roles or people) is decided by
+            // the server from every card id the player holds.
+            const accessCardIds = hasRfidAccessList(lockRequirements) ? heldRfidCardIds() : [];
+
+            // STEP 1a: a held keycard matches `requires` - open directly (today's rule)
+            if (hasValidCard) {
+                const cardName = matchingKeycard.scenarioData.name || 'Keycard';
+                console.log(`RFID DIRECT UNLOCK with physical keycard: ${cardName}`);
+                
+                // Notify server and unlock
+                notifyServerUnlock(lockable, type, 'rfid').then(serverResponse => {
+                    playRfidUnlockSound();
+                    unlockTarget(lockable, type, lockable.layer, serverResponse);
+                    window.gameAlert(`Door opened with ${cardName}`, 'success', 'Access Granted', 3000);
+                }).catch(error => {
+                    console.error('RFID unlock failed:', error);
+                    window.gameAlert('Access denied', 'error', 'Error', 3000);
+                });
             }
-            // PRIORITY 3: No valid keycard and no cloner
+            // STEP 1b: a saved copy matches `requires` - the reader, where the minigame
+            // applies the lock's acceptsUIDOnly itself (today's rule)
+            else if (hasValidClone) {
+                startRfidReader();
+            }
+            // STEP 2: the lock has an access list - send every held card id in one request
+            // and show the server's answer
+            else if (accessCardIds.length > 0) {
+                console.log('RFID ACCESS LIST: asking the server', { cards: accessCardIds.length });
+                requestRfidAccessUnlock(lockable, type, accessCardIds).then(({ outcome, response }) => {
+                    if (outcome === 'unlocked') {
+                        // Container contents come back with an object unlock
+                        if (response.hasContents && response.contents && lockable.scenarioData) {
+                            lockable.scenarioData.contents = response.contents;
+                        }
+                        playRfidUnlockSound();
+                        unlockTarget(lockable, type, lockable.layer, response);
+                        window.gameAlert('Card accepted', 'success', 'Access Granted', 3000);
+                    } else if (outcome === 'uid_only') {
+                        playUISound('reject');
+                        window.gameAlert(appendLockedHint('Reader requires full authentication', lockable), 'error', 'Access Denied', lockedHintDuration(lockable, 4000));
+                        emitDoorUnlockFailed('uid_only');
+                    } else if (outcome === 'denied') {
+                        playUISound('reject');
+                        window.gameAlert(appendLockedHint('Access denied', lockable), 'error', 'Access Denied', lockedHintDuration(lockable, 4000));
+                        emitDoorUnlockFailed('wrong_card');
+                    } else {
+                        window.gameAlert('Failed to verify access', 'error', 'Error', 3000);
+                    }
+                });
+            }
+            // STEP 3: today's flow. A cloner with nothing to offer (no keycards to tap, no
+            // saved clones): the reader just refuses, rather than opening an empty cloner
+            // screen (m07 U9)
+            else if (hasCloner && keycards.length === 0 && savedCards.length === 0) {
+                console.log('RFID CLONER EMPTY: no keycards, no saved cards');
+                window.gameAlert(appendLockedHint('Access denied. No keycard, and nothing saved on the cloner.', lockable), 'error', 'Access Denied', lockedHintDuration(lockable, 4000));
+                emitDoorUnlockFailed('no_card');
+            }
+            // If player has RFID cloner, open minigame to emulate or read cards
+            else if (hasCloner) {
+                startRfidReader();
+            }
+            // No valid keycard and no cloner
             else {
                 console.log('NO RFID CARDS OR CLONER AVAILABLE');
                 window.gameAlert(appendLockedHint('Requires RFID keycard', lockable), 'error', 'Access Denied', lockedHintDuration(lockable, 4000));
@@ -610,7 +713,9 @@ export function getLockRequirementsForDoor(doorSprite) {
                 lockType: props.lockType,
                 requires: props.requires,
                 keyPins: props.keyPins,  // Include keyPins for scenario-based locks
-                difficulty: props.difficulty
+                difficulty: props.difficulty,
+                access: props.access ?? null,  // rfid access list (access model 4.1)
+                acceptsUIDOnly: props.acceptsUIDOnly ?? null
             };
         }
     }
@@ -655,7 +760,9 @@ export function getLockRequirementsForDoor(doorSprite) {
                 requires: roomData?.requires,
                 keyPins: roomData?.keyPins || roomData?.key_pins,  // Include keyPins from scenario (supports both cases)
                 difficulty: roomData?.difficulty,
-                locked: roomData?.locked
+                locked: roomData?.locked,
+                access: roomData?.access ?? null,
+                acceptsUIDOnly: roomData?.acceptsUIDOnly ?? null
             });
         }
     });
@@ -671,7 +778,9 @@ export function getLockRequirementsForDoor(doorSprite) {
             lockType: targetRoom.lockType,
             requires: targetRoom.requires,
             keyPins: targetRoom.keyPins,  // Include keyPins from scenario
-            difficulty: targetRoom.difficulty
+            difficulty: targetRoom.difficulty,
+            access: targetRoom.access,
+            acceptsUIDOnly: targetRoom.acceptsUIDOnly
         };
     }
     
@@ -686,7 +795,9 @@ export function getLockRequirementsForItem(item) {
         lockType: item.scenarioData.lockType || 'key',
         requires: item.scenarioData.requires || '',
         keyPins: item.scenarioData.keyPins,  // Include keyPins for scenario-based locks
-        difficulty: item.scenarioData.difficulty
+        difficulty: item.scenarioData.difficulty,
+        access: item.scenarioData.access ?? null,  // rfid access list (access model 4.1)
+        acceptsUIDOnly: item.scenarioData.acceptsUIDOnly ?? null
     };
 }
 

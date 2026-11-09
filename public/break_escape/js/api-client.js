@@ -93,13 +93,26 @@ export class ApiClient {
     return this.get(`/ink?npc=${npcId}`);
   }
 
-  // Validate unlock attempt
-  static async unlock(targetType, targetId, attempt, method) {
+  // Validate unlock attempt. `extra` carries optional fields for some lock types:
+  // { card_ids } for an rfid lock with an access list (access model 4.1).
+  static async unlock(targetType, targetId, attempt, method, extra = {}) {
     return this.post('/unlock', {
+      ...extra,
       targetType,
       targetId,
       attempt,
       method
+    });
+  }
+
+  // Record a card the card copier saved (access model 4.2). `source` is
+  // { npc_id } (copied in a conversation) or { object_id } (a held keycard).
+  // Answers { success, recorded }; recorded is false when the card is not the
+  // source's own card.
+  static async cloneCard(source, cardId) {
+    return this.post('/clone_card', {
+      ...source,
+      card_id: cardId
     });
   }
 

@@ -507,3 +507,133 @@ needs to know.
   `access-leak-check.rb <game_id> <that file>` (SKILL.md, "Access model checks").
 - Live sessions need a Playwright whose chromium build is installed; in this container the
   harness's `chromium.launch` fails (expects 1254, has 1243 under `/opt/pw-browsers`).
+
+## Step 7: client doors and card copies, `test_access_doors` (2026-11-09)
+
+### Built
+
+- `public/break_escape/js/api-client.js`: `unlock(targetType, targetId, attempt, method, extra)`
+  merges `extra` into the body (`{ card_ids }` for an access-list lock); `cloneCard(source,
+  cardId)` posts `/clone_card` with `{ npc_id | object_id, card_id }`.
+- `systems/doors.js`: `doorProperties` gains `access` and `acceptsUIDOnly` (door definition first,
+  then the connected room, like `requires`).
+- `systems/unlock-system.js`
+  - `getLockRequirementsForDoor` (both the `doorProperties` path and the scenario fallback) and
+    `getLockRequirementsForItem` return `access` and `acceptsUIDOnly`.
+  - New exports beside `evaluateRfidCredential`: `hasRfidAccessList(req)`, `heldRfidCardIds()`
+    (keycards, then the copier's `saved_cards`, each id once, ids worked out as
+    `evaluateRfidCredential` does) and `requestRfidAccessUnlock(lockable, type, cardIds)`, which
+    resolves to `unlocked`, `uid_only`, `denied` or `error`. A private `unlockTargetId` is shared
+    with `notifyServerUnlock`.
+  - The `rfid` branch runs: 1a a held keycard matching `requires` opens directly (unchanged); 1b a
+    saved copy matching `requires` opens the reader, which applies the lock's `acceptsUIDOnly`
+    (unchanged); 2 on a lock with `access` and at least one held card id, one `/unlock` with
+    `card_ids`: opened ("Card accepted"; an object takes the `contents` it gets back), `uid_only`
+    ("Reader requires full authentication", `door_unlock_failed` reason `uid_only`), any other
+    refusal ("Access denied", reason `wrong_card`), no answer ("Failed to verify access", no
+    event); 3 today's flow (empty copier refusal, the reader, "Requires RFID keycard"). Both
+    refusals append the lock's `lockedHint`.
+- `systems/interactions.js`: the held-keycard click passes `cloneSource: { object_id }` (the
+  keycard's scenario `id`; none when it has no id).
+- `minigames/helpers/chat-helpers.js`: `clone_keycard` passes `cloneSource: { npc_id }` (the
+  conversation's NPC).
+- `minigames/rfid/rfid-minigame.js`: `cloneSource` from the params; `recordCloneOnServer(cardData)`,
+  called in `handleSaveCard` once `saveCardToCloner` reports success (a new card or an update),
+  sends the source and the saved `card_id`, only in clone mode and only with a source and a
+  `card_id`. A failure is logged, never shown; the save stands.
+- `scripts/validate_scenario.rb` (`check_lock_credentials`): a keycard whose `card_id` is an NPC's
+  card that an access lock admits through that NPC's identity is no longer reported as "a
+  credential no rfid lock requires" (Ian's spare badge in D3 tripped it).
+- `scenarios/test_access_doors/` (new): `scenario.json.erb`, `mission.json` (`test_scenarios`,
+  `test_type: access_model`), six ink files (Sam at the front desk holds every task mapping; Dana,
+  Ian, Priya, Gary, Imran), `PLAYTEST.md`, dungeon graph. Lobby with Finance north, IT east,
+  Security south, Plant west; the visitor room is north of the IT lobby. Every beat room is open
+  and every locked room is within two doors of the start. Card copier and visitor card in the
+  lobby, a sign per beat, `npcNeedsSeed: "test_access_doors"`, `npcWindupMs: 0`,
+  `needsDebugOverlay: true`, one `custom` task per beat completed by Sam's mappings on the beat's
+  unlock event (D4: once `cctv_room` has opened and `evidence_store` has refused with `uid_only`,
+  in either order, through two globals).
+
+### Tests added
+
+- `test/js/access-rfid-acl.test.mjs` (17), `unlock-system.js` imported for real with its browser
+  imports stubbed: both getters return `access` and `acceptsUIDOnly`, and `doors.js` copies them;
+  `hasRfidAccessList`; `heldRfidCardIds`; a held card matching `requires` opens with no
+  `card_ids`; a saved copy matching `requires` opens the reader with the lock's `acceptsUIDOnly`;
+  every held card id in one request on an access lock; a mixed lock with a non-matching card;
+  `uid_only` and other refusals (as HTTP 422 and as a body), with `lockedHint`; an unreachable
+  server; an `rfid` object with role-only `access` taking its contents; "Requires RFID keycard"
+  for a lock without `access`; nothing held at an access lock; a keycard with no id at an
+  access-only lock.
+- `test/js/rfid-clone-card.test.mjs` (8), `chat-helpers.js`, the keycard click branch,
+  `rfid-minigame.js` and `rfid-data.js` run for real: a save from `clone_keycard` calls
+  `cloneCard` once with `npc_id`; an update calls it again; a tag naming another card still sends
+  the speaker; a held-keycard save calls it once with `object_id`; a keycard with no id sends
+  nothing; a failed save (copier full) and unlock mode call nothing; a server error leaves the save
+  in place.
+- `test/js/validator-access-model.test.mjs` (+1): the `check_lock_credentials` change, and a card
+  no access lock admits still reported.
+- The existing `rfid-*.test.mjs`, `locked-hint-refusals` and `minigame-launch-routes` tests pass
+  unchanged.
+
+### Results
+
+- `bin/test-js`: 399 files, all pass (397 before; 2 added).
+- Rails: 1055 runs, 0 failures, 0 errors, 1 skip (no server change in this step; the no-password
+  test is in the suite). `test/dummy/db/schema.rb` unchanged.
+- `LANG=C.UTF-8 ruby scripts/validate_scenario.rb scenarios/test_access_doors/scenario.json.erb`:
+  valid, no dialogue lint findings, geometry and door alignment OK, one expected warning (the
+  shared card `PLANT-SHARED-01` at `plant_room`, D5), identity reach lines for the four cards.
+  `scripts/check_door_alignment.py`: all OK.
+- `bundle exec rails db:seed`: `test_access_doors` seeded (mission 161). The seed's existing
+  `test_table_items` error ("Difficulty level is not included in the list") is unrelated.
+- Headless smoke on the keyless server (:3001, stopped afterwards; games 5 and 6 deleted): every
+  beat passed. D1 refused then opened with the visitor card; D2 sent `card_ids: ["VISITOR-07"]` and
+  was refused, then opened door and cabinet after Dana's copy; D3 recorded `IT-IAN-01 from object
+  ian_spare_badge` and opened; D4 opened `cctv_room` and refused `evidence_store` with
+  `reason: "uid_only"`; D5 opened `plant_room` with Gary's copy. After a reload the copier still
+  listed the three copies and the tasks stayed complete. `verify-run.rb --access` showed the
+  expected `serverClones`; the leak check found nothing. The Haiku run was not done here.
+
+### Deviations and choices
+
+- **Nothing held at an access lock sends no request.** Step 2 needs at least one held card id;
+  with none, the lock falls through to today's refusals ("Requires RFID keycard", or "Access
+  denied. No keycard, and nothing saved on the cloner." with an empty copier). The server could
+  only refuse an empty list, and an empty `card_ids` risks reaching the server as no `card_ids`,
+  which a mixed lock treats as today's trusted claim. D2's "Access denied" before the copy holds
+  because the visitor card is sent.
+- **An access lock with no `requires` skips step 1**, so a keycard with no `card_id` and no
+  `opens_lock` cannot match a missing `requires` through `lockRef` returning nothing.
+- **Success toast "Card accepted"** for an access-list unlock (the plan names no text); the server
+  does not say which card passed.
+- **"Reader requires full authentication" is a toast**, not the minigame screen: an access-list
+  lock is decided before any reader screen opens.
+- **A network failure is not a refusal**: "Failed to verify access" with no `door_unlock_failed`,
+  as `handleUnlock`'s other server checks do.
+- **Ink tag source**: `clone_keycard` always sends the conversation's NPC; the server answers
+  `recorded: false` for a card that is not theirs (plan 4.2).
+- **Validator `check_lock_credentials`** changed (above): the step 4 checks had not taught the old
+  "opens nothing" warning about access lists.
+- **Scenario layout**: the visitor room is off the IT lobby, not the lobby, because the lobby's four
+  sides go to the four NPC beats; it is still two doors from the start.
+- **Harness quirk**: `converse` with a named scan choice closes the card copier screen the clone
+  tag opens, so the copy is lost. `PLAYTEST.md` drives the choice with `mg chooseIndex` and clicks
+  Save through `eval`. Worth fixing in `playtest-session.js` later (treat an RFID clone minigame
+  opened by a tag as part of the conversation).
+
+### For the orchestrator: the D1 to D5 run
+
+```bash
+export PATH=/opt/rbenv/bin:/opt/rbenv/shims:$PATH RBENV_VERSION=3.1.6
+export PLAYWRIGHT_CHROMIUM_EXECUTABLE=/opt/pw-browsers/chromium   # in a container
+tools/playtest/start-keyless-server.sh
+PLAYTEST_PORT=3001 BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/new-game.rb test_access_doors
+tools/playtest/session-start.sh --url <URL> --headless \
+  --log <scratch>/test_access_doors-haiku/session-<game_id>.jsonl \
+  --capture-responses <scratch>/test_access_doors-haiku/test_access_doors-responses.jsonl
+```
+
+Then follow `scenarios/test_access_doors/PLAYTEST.md` (D1 to D4, reload, D5), with
+`verify-run.rb <game_id> --access` and `access-leak-check.rb <game_id> <responses>` after each
+beat, and `tools/playtest/stop-keyless-server.sh` at the end.

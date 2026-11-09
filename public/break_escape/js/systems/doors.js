@@ -525,6 +525,10 @@ export function createDoorSpritesForRoom(roomId, position, fullRoomData = null) 
             locked: lockProps.locked !== undefined ? lockProps.locked : (connectedRoomData?.locked || false),
             lockType: lockProps.lockType || connectedRoomData?.lockType || null,
             requires: lockProps.requires || connectedRoomData?.requires || null,
+            // An rfid door's access list (roles and people) and whether a UID-only copy
+            // opens it (access model 4.1). Neither is secret; the server decides the list.
+            access: lockProps.access ?? connectedRoomData?.access ?? null,
+            acceptsUIDOnly: lockProps.acceptsUIDOnly ?? connectedRoomData?.acceptsUIDOnly ?? null,
             keyPins: keyPinsArray,  // Include keyPins from scenario (supports both cases)
             difficulty: lockProps.difficulty || connectedRoomData?.difficulty,  // Include difficulty from scenario
             isSideDoor: isSideDoor,  // Track if this is a side (E/W) door for animation purposes

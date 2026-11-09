@@ -399,7 +399,10 @@ export async function processGameActionTags(tags, ui, options = {}) {
                     if (window.startRFIDMinigame) {
                         window.startRFIDMinigame(null, null, {
                             mode: 'clone',
-                            cardToClone: cardData
+                            cardToClone: cardData,
+                            // The copy's source, so a saved copy is recorded on the server
+                            // as this NPC's card (access model 4.2)
+                            cloneSource: cloneNpcId ? { npc_id: cloneNpcId } : null
                         });
 
                         result.success = true;

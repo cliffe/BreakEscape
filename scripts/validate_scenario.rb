@@ -1844,9 +1844,18 @@ def check_lock_credentials(json_data)
   end
   walk_items.call(json_data)
 
+  # A card an NPC carries opens every rfid lock whose access list admits that NPC (access
+  # model 4.1), so a keycard with that card_id is not a credential that opens nothing.
+  ai = BreakEscape::AccessIdentities
+  rfid_locks = ai.locks(json_data).reject { |l| l[:kind] == 'login' }
+  identity_opens = ai.cards(json_data).select do |card_id, info|
+    rfid_locks.any? { |l| ai.card_opens_by_access?(l[:lock], card_id, info[:holders]) }
+  end.keys.to_set
+
   # A credential item that opens nothing.
   key_items.each do |name, credential, lock_kind|
     next if credential_requires[lock_kind].include?(credential)
+    next if lock_kind == 'rfid' && identity_opens.include?(credential.to_s)
     issues << "⚠️ WARNING: key '#{name}' has credential '#{credential}', but no #{lock_kind} lock 'requires' it. " \
               "Either the lock is missing, the value is a typo, or this is really an identity and belongs in " \
               "'id'. A deliberate decoy key is the one legitimate case -- say so in a comment."
