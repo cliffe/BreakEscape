@@ -1245,3 +1245,69 @@ password was in one only: `GET /capture_secrets` (`{"secrets":{"pierce":...}}`),
 terminal opened. `access-leak-check.rb` accepted it: `VERDICT: no leaks found`. `verify-run.rb
 --access`: `sessions 1: staff_pc_2 = pierce (claim)`, `signedInPcs 1: staff_pc_2`. Game 29 was
 deleted afterwards.
+
+## `lab_physical_pentest`: Chris and Sofia become accounts (2026-11-09)
+
+Review round 2 noted that Chris's (`c.hampshire`) and Sofia's (`s.lord`) passwords still reached
+the browser in room data (inline `usePayload.secret`, and Chris's in the planted keylogger's log
+text). The user decided to migrate both the way Pierce was in step 10.
+
+### Changed
+
+- `scenarios/lab_physical_pentest/scenario.json.erb`:
+  - **Chris Hampshire** (`hampshire`): gains `"role": "front_of_house"` and `creds`
+    (`c.hampshire`, the password his capture carried). His `usePayload` keeps `host` only; the
+    loader fills the rest. His keylogger capture mapping on `npc_used:staff_pc` had no inline
+    address or secret and is unchanged.
+  - **Sofia Lord** (`lord`): gains `"role": "finance"` and `creds` (`s.lord`, the password her
+    capture carried). Her `usePayload` keeps `host` only. Her QR capture mapping
+    (`npc_used:usb_target_pc`, `dev_qr`) is unchanged.
+  - **The planted keylogger's log** (`planted_deviceA`, the `kp_creds_captured` text variant): the
+    password line now reads "password: recorded (read it on the Harvested Credentials terminal)".
+    This object's text ships in room data, so the password could not stay in it. The host,
+    the username, the "capture is the finding" lesson and the control are as before, and the
+    captures terminal in the same room shows the password once the capture is earned.
+  - **`staff_pc_2`** gains `"access": { "people": ["pierce"] }`. A sign-in PC with no access list
+    admits every account, so without it Chris and Sofia would have appeared as account tiles on
+    Melanie's PC and a captured password would have signed in there. With the list the PC behaves
+    exactly as before: one tile, Melanie's claim, her profile.
+- `scenarios/lab_physical_pentest/PLAYTEST.md`: beat 2 now reads the keylogger log and the captures
+  terminal, a new beat 4 covers Sofia's QR sign-in, and the leak check note, the earned-secrets
+  table and the expected validator output cover all three accounts.
+- `test/models/break_escape/lab_physical_pentest_secrets_test.rb` (new, 5 tests): on a game made
+  from the lab, the three accounts each have a capture route; no room answer and no bootstrap
+  answer holds any account password (the passwords are read from `creds`, so a later account is
+  covered); room NPCs keep the capture address and host with no secret; `capture_secrets_for_client`
+  is empty before a capture and serves only the recorded ones (Len's PIN entry gets nothing); and
+  Melanie's PC lists her tile only and refuses Chris's correct password as not permitted. Four of
+  the five fail on the scenario as it was before this change.
+
+### Results
+
+- Validator: no errors and no new warnings. Two new information lines: `c.hampshire` and `s.lord`
+  "sign in at no sign-in PC", which is intended.
+- Rails: 1074 runs, 0 failures, 0 errors, 1 skip. `bin/test-js`: 405 files, all pass.
+- Headless on the keyless server (:3001), game 30 (deleted afterwards):
+  - Sofia: the QR card dropped in `open_plan`, `kp_qr_phished` set about 6 s later,
+    `se_captures.lord` held `s.lord` and the host with no secret, and the captures terminal showed
+    her password.
+  - Chris: keylogger planted while he was at the coffee station, `kp_creds_captured` on his next
+    sign-in, `plant_kl` and `grab_creds` complete, `se_captures.hampshire` with no secret; the
+    keylogger log showed the new password line, and the captures terminal showed his password.
+  - Melanie (regression, with the new access list): the claim opened her desktop as before,
+    `opt_unlocked` complete, the terminal then listed all three.
+  - Of 71 captured responses, the passwords were in `GET /capture_secrets` answers only.
+    `access-leak-check.rb` (3 NPC passwords checked): `VERDICT: no leaks found`.
+    `verify-run.rb --access`: `sessions 1: staff_pc_2 = pierce (claim)`, no failures.
+
+### Deviations and choices
+
+- **No engine change.** The loader, the withholding and the account-holder pass of
+  `/capture_secrets` already covered both capture routes (`npc_used` with a `usePayload`).
+- **The keylogger log no longer prints the password.** The alternative, a text placeholder the
+  client fills from `/capture_secrets`, would be an engine change; it is the option to take if
+  the password should read on the device itself.
+- **Roles are new strings** (`front_of_house` for Chris; `finance` for Sofia, shared with Melanie).
+  Nothing in the lab reads them yet: `pierce_desktop` admits by person, not by role.
+- The lab sheet (in the lab sheets repo) was not checked for a line saying the keylogger log
+  shows the password.
