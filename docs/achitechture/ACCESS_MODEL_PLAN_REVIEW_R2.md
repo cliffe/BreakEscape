@@ -312,3 +312,33 @@ in Sarah's ink should also be caught. (Objects already read their own `postitNot
 ## 6. Open questions for the user
 
 None. Every finding has an engineering fix within the decisions in plan section 2.
+
+## 7. Planner response
+
+The plan was rewritten as a complete document. Round 2 findings, then the round 1 findings this
+review found not closed or partly closed.
+
+| Finding | Outcome | What was done or why |
+|---|---|---|
+| B1 taking files from a sign-in PC or profile | fixed | Plan 5.1 "The take request": the add sends `source_pc_id` and `transfer`; `find_accessible_item` gains `login_pc` and `profile` locations (recursive) and skips them otherwise; `validate_item_collectible` checks the session, scope, takeable and `transfer`; Copy writes `copiedItems` in the same request; tests in step 3. |
+| M1 client cannot see a door's `access` | fixed | Plan 4.1: `access` (not secret) added to the bootstrap allow list, `doorProperties` and `getLockRequirementsForDoor`; client order is `requires` match, then send `card_ids` for an `access` lock, then today's flow; server refuses a no-`card_ids` claim on an `access`-only lock. Files in steps 2 and 4. |
+| M2 capture route as password lookup, inline `addCapture.secret` | fixed | Plan 5.6 "Captures": served only for an account holder with a declared capture route, matched by `address` = `creds.username`, under `revealSecret`; single-secret fallback limited to landing pages; captures stated as client-reported (4.3 no longer cites them as server facts); `addCapture.secret` withheld and a validator error; test covers forged entries. |
+| M3 slice 1 relies on `locksScreen` and workstation state | fixed | Plan 5.4: slice 1 drives sessions from the PC's existing `lockChance` / `locksScreenOnLeave` (no field: always locks, the safe default); `isWorkstation` accepts `lockType: "login"`; claim refusals and the validator warning key on `lockChance`; the later habit only fills `lockChance` (6.2). No "would lock every time" warning, since that default is safe. |
+| m1 `container` lookup needs `contents` | fixed | Plan 5.3 "Content": the sign-in branch looks up with `find_object_in_scenario`; room data marks a sign-in PC `hasContents: true` so the client routes it as a container. |
+| m2 card copies from keycard objects, mixed doors | fixed | Plan 4.3: one call from the save point with `npc_id` or `object_id`, object checks named; 4.1 states a `requires` card keeps today's client-trusted rule on a mixed door. |
+| m3 gate doors | fixed | Plan 4.1: `access` not supported on gate doors in slice 1; validator error (step 5). |
+| m4 creds outside room NPCs | fixed | Plan 3 and 5.6: `role` and `creds` allowed on room NPCs only; validator error elsewhere. |
+| m5 nested containers bypass the session | fixed | Plan 5.1 lookups and 5.3 "Session scope": `login_scope_of` / `session_admits?` guard `container`, `/unlock` (even `method: "unlocked"`) and the take; `find_scenario_object` walks profiles; tests in step 3. |
+| m6 card-only NPCs and derived `rfidCard` | fixed | Plan 3: an account means `creds.username`; tiles, sign-in and the `needsHome` check apply only to accounts; the client `rfidCard` is the card as authored, `name` included. |
+| m7 sticky note slice and test clash; ink wording | fixed | `writesDown` fill moved to the habits slice (6.2, 5.6 "Deliberate clues"); the no-password test excludes an authored note; step 5 uses "any compiled ink file". |
+| m8 `known` picker sources | fixed | Plan 5.3: `known` means "whose room you have entered"; the intel-fact half dropped, with **Other user** typing in every mode; `portrait` sourced from `spriteTalk`, the derived portrait, else `avatar`. |
+| m9 small inaccuracies | fixed | Plan 5.6 names the `obj['npcs']` loop and a `withhold_npc_secrets!` helper; `copiedItems` sites cut to `filter_container_contents` and the compose step; bootstrap wording says "room NPCs". |
+| R1 B1 login content gate (lookup) | fixed | Closed with m1 above. |
+| R1 B2 password via room endpoint (gaps) | fixed | Closed with M2 and m4 above. |
+| R1 M1 role-ACL RFID on the client | fixed | Closed with M1 above. |
+| R1 M2 copied-card identity (gaps) | fixed | Closed with m2 and M2 above. |
+| R1 M3 profile item ids (lookups) | fixed | Closed with B1 and m5 above. |
+| R1 M5 Copy and the held filters | fixed | Closed with B1 and m9 above. |
+| R1 m5 unlocked-session trust (warning key) | fixed | Closed with M3 above. |
+| R1 m6 two homes for a password (`addCapture.secret`) | fixed | Closed with M2 above; the proof beat in `lab_physical_pentest` removes both inline secrets (step 7). |
+| R1 m7 sticky note | fixed | Closed with m7 above. |
