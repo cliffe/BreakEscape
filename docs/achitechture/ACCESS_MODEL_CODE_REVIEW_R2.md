@@ -26,11 +26,10 @@ the step 10 lab (details under "Step 10" below).
 ## Baseline
 
 - `bundle exec rails test` (run once): 1067 runs, 4328 assertions, 0 failures, 0 errors, 1 skip.
-- `bin/test-js`: 401 of 404 files passed in the full run, which shared the machine with my
-  mutation runs; the three that failed (`client-purchase`, `fingerprint-generator`,
-  `password-signin-mode`) printed no failure detail and each passes when run alone
-  (`password-signin-mode` 11 of 11). I read them as load flakes, not defects in this slice, but
-  the orchestrator may want one more clean `bin/test-js` run on an idle machine.
+- `bin/test-js`: 405 of 405 files pass on an idle machine. A first run that shared the machine
+  with my mutation runs had four load failures (`client-purchase`, `fingerprint-generator`,
+  `password-signin-mode`, and `player-regen`, which hung until I stopped it); each passes alone
+  and all pass in the clean rerun.
 - Mutation checks ran in a scratch copy of the repository (not the working tree), each against the
   named test file only. Scratch tests were never written into the repository.
 
