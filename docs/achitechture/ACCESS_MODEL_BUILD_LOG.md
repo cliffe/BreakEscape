@@ -1093,3 +1093,89 @@ PCs, all unowned, so they should answer as before). The needs regression capture
 `node tools/playtest/needs-baseline-capture.js --scenario <name> --out <file>` and
 `needs-baseline-compare.js`. Stop the server with `tools/playtest/stop-keyless-server.sh` at the
 end only if you started it.
+
+## Step 10: `lab_physical_pentest`, the converted Pierce beat (2026-11-09)
+
+### Built
+
+- `scenarios/lab_physical_pentest/scenario.json.erb`:
+  - Melanie Pierce (`pierce`) gains `"role": "finance"` and `creds` (`username: "m.pierce"`, the
+    password her capture carried). Her `usePayload` keeps only `host` (the loader fills `address`
+    and `secret` from `creds`); her `workstation_accessed:staff_pc_2` capture loses its inline
+    `secret` and keeps `address`, `host`, the note, `kp_unlocked_screen` and `opt_unlocked`.
+  - `staff_pc_2` is `"locked": true, "lockType": "login"`, keeping `workstation`,
+    `locksScreenOnLeave: false`, `screenOwner: "pierce"` and its `affordance`. No `contents`.
+  - New top-level `accountProfiles.pierce_desktop` (`for: { people: ["pierce"] }`) with one
+    `takeable: false` text file, "Saved logins" (`pierce_saved_logins`): the finance portal and
+    webmail logins for `m.pierce` on `LW-OPEN-07` with the passwords as dots, then why an unlocked
+    session matters, what you do on a real job (screenshot, note the time, stop) and the control
+    (Win+L, an auto lock policy as the backstop).
+  - `observationVariants`: one variant, the merged lesson for the desktop header; the away and
+    locked variants are removed. The base observation stays.
+  - Chris's `staff_pc` (keylogger), `usb_target_pc` and every other beat unchanged. No ink changed.
+- `scenarios/lab_physical_pentest/PLAYTEST.md` (new): the three beats for the Haiku run (Pierce's
+  claim, the keylogger beat, a reload during the claim), each with what should happen and the
+  `verify-run.rb --access` record, the earned-secrets table, the expected validator output, and the
+  timing and harness notes (from `test_access_sessions/PLAYTEST.md` plus two from this smoke check).
+- `scenarios/lab_physical_pentest/dungeon_graph.{html,json,md}`: regenerated (the sign-in node for
+  `m.pierce` and Len's card identity).
+
+### Results
+
+- Validator: no errors; the lab's existing warnings only (none from the access model), and two new
+  identity reach lines (`cm_records_badge` (len) opens `secure_area`; `m.pierce` signs in at
+  `staff_pc_2`). No `lockChance` warning (effective chance 0) and no `maxAttempts` warning.
+- `bundle exec rails db:seed`: "UPDATE: Physical Penetration Testing"; the known unrelated
+  `test_table_items` error.
+- Headless smoke on :3001 (games 24 and 25, both deleted):
+  - Beat 1 (game 24): with Melanie at the desk, the toast "Melanie Pierce is using this PC." plus
+    the base observation and `pc_in_use`, no workstation event; server no session. After
+    `npc_left_post:pierce` the click opened her desktop ("Signed in as Melanie Pierce (m.pierce)",
+    the lesson in the header, "Saved logins"); `pc_signed_in` `via: "claim"`, `firstAtPc: true`;
+    `se_captures.pierce` (no secret in the globals), `kp_unlocked_screen` true, `opt_unlocked`
+    complete; `/capture_secrets` answered for `pierce`; the file read as written; server
+    `sessions 1: staff_pc_2 = pierce (claim)`. On her return, `pc_signed_out` `reason:
+    "owner_returned"`, server `sessions 0`, `signedInPcs` kept, and a click gave "is using" with
+    the base observation.
+  - Beat 3 (game 24): a second claim on her next leave, `sync`, reload: browser and server
+    sessions empty, `kp_unlocked_screen` and the capture kept, `opt_unlocked` still complete on
+    the server, `signedInPcs 1: staff_pc_2`.
+  - Beat 2 (game 25, see below): keylogger taken, planted while Chris was at the coffee, his next
+    sign-in set `kp_creds_captured`; `plant_kl` and `grab_creds` complete on the server.
+  - Leak check over the whole responses file: no leaks found.
+- `bin/test-js`: 404 files, all pass. Rails: 1067 runs, 0 failures, 0 errors, 1 skip. Both ran on
+  the working tree with the review-round-1 fixes another agent has in progress (files outside this
+  step), so they cover those uncommitted changes as they stood.
+
+### Deviations and choices
+
+- **The header lesson's condition is `staff_pc_2_accessed && staff_pc_2_owner_away`**, not
+  `staff_pc_2_accessed` alone. Variants resolve first match and the "is using this PC" toast
+  resolves them too, so with `_accessed` alone the lesson would replace the base observation under
+  "is using" for the rest of the game, against the plan's "base observation kept while she is at
+  the desk". The claim happens only while she is away, so the header still shows the lesson on
+  every claim (and on a password sign-in while she is away).
+- **`roleLabel` and the capture note keep their existing wording** (with their em dashes); only the
+  `secret` was removed from that mapping. The new text (lesson, file, comments) has none.
+- **Beat 2 ran on a second game by accident.** After the reload, the second `bootstrap` defaulted
+  to `resume: "new"` and clicked New Session on the resume overlay, which made game 25. Beat 3's
+  checks were all made on game 24 before that; the keylogger beat then played on game 25 from a
+  fresh start, which is still the unchanged beat. `PLAYTEST.md` tells the run to bootstrap with
+  `"resume":"resume"` after a reload and to check `location.href`.
+- **No engine change.**
+
+### For the orchestrator: the Haiku run
+
+```bash
+export PATH=/opt/rbenv/bin:/opt/rbenv/shims:$PATH RBENV_VERSION=3.1.6
+export PLAYWRIGHT_CHROMIUM_EXECUTABLE=/opt/pw-browsers/chromium   # in a container
+tools/playtest/start-keyless-server.sh
+PLAYTEST_PORT=3001 BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/new-game.rb lab_physical_pentest
+tools/playtest/session-start.sh --url <URL> --headless \
+  --log <scratch>/lab_physical_pentest-haiku/session-<game_id>.jsonl \
+  --capture-responses <scratch>/lab_physical_pentest-haiku/lab_physical_pentest-responses.jsonl
+```
+
+Follow `scenarios/lab_physical_pentest/PLAYTEST.md` (beats 1, 2, 3 on one game), with
+`verify-run.rb <game_id> --access` and `access-leak-check.rb <game_id> <responses>` after each
+beat. Melanie and Chris first leave about two minutes after `open_plan` loads.
