@@ -51,6 +51,7 @@ import '../systems/mail-runner.js';  // Registers the ink-job runner on the mail
 import { notifyNewMail } from '../minigames/mail-client/mail-notification.js';  // HUD/bark for delivered mail (P1-F)
 import { watchReadinessGlobals } from '../systems/social-intel.js';  // needsGlobal readiness slots re-check on a global change
 import { chosenPlayerSprite, playerTalkPath } from '../utils/player-avatar.js';  // aw9: the chosen avatar wins, the portrait follows
+import { pcSessions } from '../systems/pc-sessions.js';  // Sign-in PC sessions (access model 5.3; sets window.pcSessions)
 
 // Global variables that will be set by main.js
 let gameScenario;
@@ -1653,6 +1654,9 @@ export async function create() {
         Object.assign(window.gameState.globalVariables, gameScenario.savedGlobalVariables);
         console.log('🌐 Merged saved global variables from server:', gameScenario.savedGlobalVariables);
     }
+    // Sign-in PC sessions and the PCs signed in to (access model 5.3): password
+    // sessions survive a reload, a claimed one ends (pc-sessions.js load).
+    pcSessions.load(gameScenario.sessions || {}, gameScenario.signedInPcs || []);
     // A save never overrides an imported value.
     importedNames.forEach(name => {
         window.gameState.globalVariables[name] = gameScenario.globalVariables?.[name];

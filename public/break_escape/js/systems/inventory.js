@@ -456,10 +456,13 @@ export async function addToInventory(sprite) {
                 // Create item data with ID from scenario if available
                 const itemData = sprite.scenarioData;
 
+                // A file taken from a sign-in desktop (access model 5.1) names its PC and
+                // the player's choice, Copy or Move; the server checks the session there.
                 const addBody = JSON.stringify({
                     action_type: 'add',
                     item: itemData,
-                    source_npc_id: sprite.sourceNpcId || undefined
+                    source_npc_id: sprite.sourceNpcId || undefined,
+                    ...(sprite.sourcePcId ? { source_pc_id: sprite.sourcePcId, transfer: sprite.transfer || 'move' } : {})
                 });
                 const response = await fetch(`/break_escape/games/${gameId}/inventory`, {
                     method: 'POST',
@@ -669,7 +672,9 @@ export async function addToInventory(sprite) {
                 itemName: sprite.scenarioData.name,
                 itemId: sprite.scenarioData.id || window.lockRef(sprite.scenarioData),
                 collectionGroup: sprite.scenarioData.collection_group || null,
-                roomId: window.currentPlayerRoom
+                roomId: window.currentPlayerRoom,
+                // From a sign-in desktop: which PC, and whether it was copied or moved
+                ...(sprite.sourcePcId ? { sourcePcId: sprite.sourcePcId, transfer: sprite.transfer || 'move' } : {})
             });
         }
         

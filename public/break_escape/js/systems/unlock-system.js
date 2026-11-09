@@ -160,9 +160,107 @@ export async function requestRfidAccessUnlock(lockable, type, cardIds) {
     }
 }
 
+// ── Sign-in PCs (access model 5.3, step 8) ─────────────────────────────────
+// A `lockType: "login"` PC is opened by a session, never by unlockTarget: the PC stays
+// locked in every room response, so the next click comes back here. pc-sessions.js
+// (window.pcSessions) holds the sessions and does every sign-in and sign-out.
+
+/** True for a sign-in PC object (not a door). */
+export function isLoginPc(lockable, type = 'item') {
+    return type !== 'door' && lockable?.scenarioData?.lockType === 'login';
+}
+
+/** Open a sign-in PC: its desktop when the client holds a session there, else the sign-in screen. */
+export function openLoginPc(lockable) {
+    const pcId = lockable?.scenarioData?.id;
+    if (pcId && window.pcSessions?.has(pcId)) {
+        openLoginDesktop(lockable);
+    } else {
+        openLoginSignIn(lockable);
+    }
+}
+
+/** The desktop for the current session (container-minigame fetches it from the server). */
+export function openLoginDesktop(lockable) {
+    if (typeof window.startContainerMinigame === 'function') {
+        window.startContainerMinigame(lockable, null, false, true);
+    } else {
+        console.error('Container minigame not available for the sign-in desktop');
+    }
+}
+
+/**
+ * The sign-in screen: the password minigame in sign-in mode, with the account tiles
+ * refreshed from GET /login_accounts every time it opens (5.3: "known" changes as the
+ * player explores). `switching`: opened from the desktop's Switch user, so leaving it
+ * without a new sign-in returns to the desktop of the session that is still there.
+ * The screen has no attempt limit of its own; the server counts failures.
+ */
+export async function openLoginSignIn(lockable, { switching = false } = {}) {
+    const data = lockable?.scenarioData || {};
+    const pcId = data.id;
+    if (!pcId) return;
+    const sessions = window.pcSessions;
+    let tiles = Array.isArray(data.loginAccounts) ? data.loginAccounts : [];
+    const apiClient = window.ApiClient || window.APIClient;
+    if (apiClient?.loginAccounts && window.breakEscapeConfig?.gameId) {
+        try {
+            const answer = await apiClient.loginAccounts(pcId);
+            if (Array.isArray(answer?.loginAccounts)) {
+                tiles = answer.loginAccounts;
+                data.loginAccounts = tiles;
+            }
+        } catch (error) {
+            if (error?.status === 403 || error?.status === 404) {
+                window.gameAlert?.("This PC can't be reached", 'error', data.name || 'Sign in', 3000);
+                return;
+            }
+            console.warn('Could not refresh the account tiles; using the room data', error);
+        }
+    }
+
+    const framework = window.MinigameFramework;
+    if (!framework) {
+        console.error('MinigameFramework not available for the sign-in screen');
+        return;
+    }
+    if (!framework.mainGameScene && window.game) framework.init(window.game);
+
+    const picker = data.loginPicker === undefined || data.loginPicker === null ? 'accounts' : data.loginPicker;
+    sessions?.screenShown?.(pcId, picker === false ? [] : tiles);
+    framework.startMinigame('password', null, {
+        title: data.name || 'Sign in',
+        lockable,
+        type: 'item',
+        signIn: {
+            pcId,
+            pcName: data.name || pcId,
+            picker,
+            tiles: picker === false ? [] : tiles,
+            current: sessions?.get?.(pcId) || null
+        },
+        postitNote: data.postitNote || '',
+        showPostit: !!data.postitNote && data.showPostit !== false,
+        requiresKeyboardInput: true,
+        onComplete: (success) => {
+            const signedIn = !!sessions?.has?.(pcId);
+            if ((success && signedIn) || (switching && signedIn)) {
+                openLoginDesktop(lockable);
+            }
+        }
+    });
+}
+
 export function handleUnlock(lockable, type) {
     console.log('UNLOCK ATTEMPT');
     playUISound('lock');
+
+    // A sign-in PC never goes through unlockTarget (not even with locks disabled): its
+    // session opens it (5.3).
+    if (isLoginPc(lockable, type)) {
+        openLoginPc(lockable);
+        return;
+    }
     
     // Check if locks are disabled for testing
     if (window.DISABLE_LOCKS) {
@@ -905,4 +1003,6 @@ window.handleUnlock = handleUnlock;
 window.getLockRequirementsForDoor = getLockRequirementsForDoor;
 window.getLockRequirementsForItem = getLockRequirementsForItem;
 window.unlockTarget = unlockTarget;
+window.openLoginPc = openLoginPc;
+window.openLoginSignIn = openLoginSignIn;
 

@@ -786,6 +786,15 @@ export function handleObjectInteraction(sprite) {
         return;
     }
 
+    // A sign-in PC (access model 5.3, step 8): its desktop when pc-sessions.js holds a
+    // session for it, else the sign-in screen. It never runs the generic flow below
+    // (no triggerOnInteract, no unlock, no pickup); the room data marks it hasContents,
+    // so it is a container that only its session opens.
+    if (sprite.scenarioData.lockType === 'login') {
+        handleUnlock(sprite, 'item');
+        return;
+    }
+
     // Workstation screen state (workstation-state.js): note whether an unattended workstation
     // was reached open or locked. Emits workstation_accessed / workstation_locked_attempt; the
     // normal interaction below still runs, so the scenario decides what the access yields.

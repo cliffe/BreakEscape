@@ -246,7 +246,10 @@ export class ObjectivesManager {
           
         case 'unlock_object':
           // Auto-complete if the target object was already unlocked in a prior session
-          if (window.gameState?.unlockedObjects?.includes(task.targetObject)) {
+          // A sign-in PC is "unlocked" once the player has signed in there (access model
+          // 5.3): the server's signedInPcs, restored into pc-sessions.js on load.
+          if (window.gameState?.unlockedObjects?.includes(task.targetObject) ||
+              window.pcSessions?.wasSignedIn?.(task.targetObject)) {
             console.log(`📋 Reconciled ${task.taskId}: object already unlocked`);
             this.completeTask(task.taskId);
           }
@@ -306,6 +309,12 @@ export class ObjectivesManager {
       this.handleObjectUnlock(data.itemName, data.itemType, data.itemId);
     });
     
+    // A sign-in on a sign-in PC meets an unlock_object task on that PC (access model 5.3).
+    // pc-sessions.js also emits pc_signed_in:<pcId>; listening to the bare name counts once.
+    this.eventDispatcher.on('pc_signed_in', (data) => {
+      if (data?.pcId) this.handleObjectUnlock(data.pcId, data.pcId, data.pcId);
+    });
+
     // Room entry
     this.eventDispatcher.on('room_entered', (data) => {
       this.handleRoomEntered(data.roomId);

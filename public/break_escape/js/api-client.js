@@ -17,7 +17,9 @@ export class ApiClient {
     });
 
     if (!response.ok) {
-      throw new Error(`API Error: ${response.status} ${response.statusText}`);
+      const err = new Error(`API Error: ${response.status} ${response.statusText}`);
+      err.status = response.status;
+      throw err;
     }
 
     return response.json();
@@ -114,6 +116,25 @@ export class ApiClient {
       ...source,
       card_id: cardId
     });
+  }
+
+  // Sign in at a sign-in PC (access model 5.3, 6). `fields` is { username, password }
+  // (the claim of step 9 sends { claim: "owner", globals } instead). Answers
+  // { success, npcId, username, displayName, via }; a refusal throws with err.status
+  // (422) and err.body { message, attemptsLeft, lockedOut?, notPermitted? }.
+  static async login(pcId, fields = {}) {
+    return this.post('/login', { ...fields, pc_id: pcId });
+  }
+
+  // End the session at a sign-in PC. Answers { success: true }.
+  static async logout(pcId) {
+    return this.post('/logout', { pc_id: pcId });
+  }
+
+  // The account tiles for a sign-in PC's loginPicker, refreshed each time its sign-in
+  // screen opens: { pc_id, loginAccounts: [{ username, displayName, portrait, avatar }] }.
+  static async loginAccounts(pcId) {
+    return this.get(`/login_accounts?pc_id=${encodeURIComponent(pcId)}`);
   }
 
   // Update inventory
