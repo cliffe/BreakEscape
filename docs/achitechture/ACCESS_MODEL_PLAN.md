@@ -13,14 +13,14 @@ between models **who** someone is or **what they may do**.
 
 This plan adds a middle tier without VMs:
 
-- NPCs have a **role** and their own **credentials** (username, password, card).
+- NPCs have a **role** and their own **sign-in details** (username, password, card).
 - Locks and PCs carry an **access list (ACL)**: which roles and which people may pass.
-- A credential is evidence of an identity, so a stolen or cloned credential gives the player **exactly
+- A set of sign-in details is evidence of an identity, so a copied or captured one gives the player **exactly
   its owner's access**.
 - PCs show a **login prompt**; contents come from **profiles** (a shared staff desktop, Jake's own
   files) that follow the account to any PC it logs into.
 - **Policies** (auto lock, attempt limits, USB, social media) apply to PCs by name.
-- NPC **awareness** (a preset plus overrides) sets the habits that leak access.
+- NPC **awareness** (a preset plus overrides) sets the habits that give access away.
 - **Work resources** and a **social media** need make access matter to NPCs, and their workarounds give
   the player openings.
 - **Networks** decide what can be reached at all.
@@ -35,7 +35,7 @@ This plan adds a middle tier without VMs:
 | Hand-written scenario language was too heavy; they built a forms tool | Small schema with defaults, ACLs on the thing protected, validator checks from day one |
 | Weak assessment record | Events for logins, sessions and workarounds, ready for logs and Hacktivity later |
 
-Not taken: probabilistic attack resolution (puzzles stay deterministic, section 9) and a budget loop
+Not taken: probabilistic resolution of outcomes (puzzles stay deterministic, section 9) and a budget loop
 (defender missions are in the backlog).
 
 ## 2. Decisions
@@ -44,18 +44,18 @@ User decisions (2026-11-09):
 
 | Area | Decision |
 |---|---|
-| Structure | **ACLs.** Role and credentials live on the NPC. Each lock, PC, profile or resource lists the roles and people it admits. No central grants table. |
+| Structure | **ACLs.** Role and sign-in details live on the NPC. Each lock, PC, profile or resource lists the roles and people it admits. No central grants table. |
 | Doors | An RFID door accepts specific cards (`requires`, as now) **or** roles/people (`access`), or both. |
-| Credentials | Cards resolve to their owner, so clones work too. Passwords captured any way work at any PC that account may use. Unlocked sessions give the owner's access. Legacy `requires` keeps working. |
+| Sign-in details | Cards resolve to their owner, so copies work too. Passwords captured any way work at any PC that account may use. Unlocked sessions give the owner's access. Legacy `requires` keeps working. |
 | Awareness | Preset (`low`, `medium`, `high`) plus per-habit overrides. It expands into the existing social engineering blocks rather than running alongside them. |
-| Habits | Locks screen, password strength (guessable from OSINT), sticky note, password reuse, holds doors, falls for phishing or pretext calls, challenges strangers. |
+| Habits | Locks screen, password strength (guessable from public posts), sticky note, password reuse, holds doors, falls for phishing or pretext calls, challenges strangers. |
 | Workstations | `needsHome` is the preferred station. PC contents depend on who is logged in. |
 | Policy | Named policies referenced by PCs: auto lock, attempt limit, USB blocked, social media blocked. |
 | Work | Abstract resources plus physical objects. Work requirements by role. Frustration, workarounds and outages. |
-| Social media | `social` need; phone or PC (if policy allows); posts appear in a readable feed and can leak facts; blocking raises frustration. |
+| Social media | `social` need; phone or PC (if policy allows); posts appear in a readable feed and can reveal facts; blocking raises frustration. |
 | Networks | Named networks with membership, Wi-Fi with a key, network jacks. |
 | Determinism | Seeded rolls (the existing `NPCNeedsSystem.roll`). |
-| Tooling | Validator: references exist, NPCs can reach their work, identities that skip locks are flagged. Identities appear in the dungeon graph. Attacker missions first. |
+| Tooling | Validator: references exist, NPCs can reach their work, identities that skip locks are flagged. Identities appear in the dungeon graph. Player missions first. |
 | Taking files | The player chooses Copy or Move in a desktop-themed dialog; items can restrict it. |
 | Login prompt | Portrait account picker by default; showing only known people, or typing the username, is optional per PC. |
 | `staff` role | Every NPC with creds has it implicitly. |
@@ -66,10 +66,10 @@ Orchestrator decisions (the user can overrule):
 
 | Area | Decision |
 |---|---|
-| Cloned cards | A clone counts toward an ACL door only if the **server recorded the clone** (section 4.3) or the card is a keycard item the server holds. The cloner's client-written `saved_cards` list never decides identity. |
+| Copied cards | A copy counts toward an ACL door only if the **server recorded the copy** (section 4.3) or the card is a keycard item the server holds. The card copier's client-written `saved_cards` list never decides identity. |
 | Account tiles | The default account picker is engineering, not an authoring choice: the server composes the tiles for each login PC (section 5.3). |
 
-## 3. Identities and credentials on the NPC
+## 3. Identities and sign-in details on the NPC
 
 ```jsonc
 {
@@ -92,11 +92,11 @@ Orchestrator decisions (the user can overrule):
 - `creds.card` replaces `rfidCard`. The loader treats an existing `rfidCard` as `creds.card`. The
   client still receives an `rfidCard` on the NPC (card id and protocol only, derived on the server), so
   `clone_keycard` and the RFID minigame keep working unchanged.
-- **Identity resolution.** A credential maps to an identity by value: a card by `card_id`, a login by
-  `username`. Nothing on the item needs to name its owner, so a clone (same `card_id`) carries the same
+- **Identity resolution.** A card or login maps to an identity by value: a card by `card_id`, a login by
+  `username`. Nothing on the item needs to name its owner, so a copy (same `card_id`) carries the same
   identity as the original. A keycard item may still say `"identity": "jake"` for readability; the
   validator checks it agrees with the `card_id`.
-- The player has no identity of their own. They act as whoever's credential or session they use.
+- The player has no identity of their own. They act as whoever's sign-in details or session they use.
 - One home for a password. `creds.password` is the only place an account password is authored. For an
   NPC with `creds`, a capture beat's `usePayload.address` and `usePayload.secret` are filled from
   `creds.username` and `creds.password` by the loader, and the validator errors if the author writes a
@@ -110,7 +110,7 @@ One field, `access`, wherever a lock can stand:
 "access": { "roles": ["finance", "it"], "people": ["dana"] }
 ```
 
-A credential passes if its identity's roles intersect `roles`, or its identity is in `people`.
+A card or login passes if its identity's roles intersect `roles`, or its identity is in `people`.
 
 ### 4.1 Doors (RFID)
 
@@ -127,7 +127,7 @@ fields is required (validator error otherwise). A door with `requires` only beha
 **Client.** `evaluateRfidCredential` and `playerHoldsRfidCredentialFor` (`unlock-system.js:69-94`, the
 branch at `:502-593`) currently match held cards against `requires` alone, so an `access`-only door
 would refuse with "Requires RFID keycard". For a door with `access`, the client offers **every held
-`card_id`** (keycards in inventory, and the cloner's `saved_cards`) in one unlock request and drives its
+`card_id`** (keycards in inventory, and the card copier's `saved_cards`) in one unlock request and drives its
 UI from the server's answer: unlocked, or access denied. It does not try to resolve cards to roles
 itself, because the admitted NPC may be in a room it has not loaded.
 
@@ -135,7 +135,7 @@ itself, because the admitted NPC may be in a room it has not loaded.
 is checked in this order, and the first that passes unlocks:
 
 1. it is held: a keycard item in the server's inventory whose scenario definition carries that
-   `card_id`, or a card recorded by a server-recorded clone (4.3);
+   `card_id`, or a card recorded by a server-recorded copy (4.3);
 2. it is in `requires`, or it equals some NPC's `creds.card.card_id` whose identity passes `access`.
 
 Doors with `requires` only keep today's behaviour (trusted from the client), so existing missions are
@@ -146,10 +146,10 @@ untouched.
 `access` is defined generically, but only `rfid` (doors and objects) and the new `login` (section 5)
 use it in the first slice. Keys, PINs and passwords stay as they are.
 
-### 4.3 Server-recorded clones
+### 4.3 Server-recorded card copies
 
-When the player clones a card, the client calls a new endpoint, `POST /clone_card` with `npc_id`
-(both the `clone_keycard` ink action and the RFID minigame's clone step call it). The server records
+When the player copies a card, the client calls a new endpoint, `POST /clone_card` with `npc_id`
+(both the `clone_keycard` ink action and the RFID minigame's copy step call it). The server records
 `player_state.serverClones[card_id] = npc_id` only if all of these hold:
 
 1. the NPC exists in the scenario and has `creds.card`;
@@ -158,10 +158,10 @@ When the player clones a card, the client calls a new endpoint, `POST /clone_car
 4. the NPC is not marked `"cloneable": false`.
 
 That is all it checks. The server cannot see positions, so "in conversation range" is not tested; step 2
-is the nearest fact it holds. It is a tightening, not authentication: a modified client can still call
-the endpoint for any NPC it has met. A puzzle that must not be bypassable should rest on a fact the
-server established independently (a keycard item physically held, a capture earned), not on a clone.
-The cloner's `saved_cards` list stays client-written and drives only the cloner's UI. `serverClones` is
+is the nearest fact it holds. It is a tightening, not a genuine identity check: a modified client can still call
+the endpoint for any NPC it has met. A puzzle that must not be possible to get past should rest on a fact the
+server established independently (a keycard item physically held, a capture earned), not on a copied card.
+The card copier's `saved_cards` list stays client-written and drives only the copier's UI. `serverClones` is
 cleared by a game reset.
 
 ## 5. PCs: logins, sessions and profiles
@@ -169,7 +169,7 @@ cleared by a game reset.
 ### 5.1 Profiles (roaming desktop contents)
 
 Contents that belong to an account rather than a machine are declared once, at scenario level, under
-`accountProfiles` (the name keeps it apart from the OSINT browser's social `profiles`):
+`accountProfiles` (the name keeps it apart from the social-media browser's social `profiles`):
 
 ```jsonc
 "accountProfiles": {
@@ -225,7 +225,7 @@ Contents that belong to an account rather than a machine are declared once, at s
 
 `needsHome: "jake_pc"` on Jake makes it his preferred station and the PC's **owner** for sessions
 (`ownerOf` in `workstation-state.js:52`, or `screenOwner`). A login PC stays `locked: true` in every room
-payload for the whole game: the session, not the object, is what opens it.
+response for the whole game: the session, not the object, is what opens it.
 
 ### 5.3 Sessions: the content gate, log out, switching, reload
 
@@ -261,14 +261,14 @@ has its own routes and never touches `unlockedObjects`:
 - `POST /login` with `pc_id` and `claim: "owner"` is the unlocked-session claim (5.4).
 - `POST /logout` with `pc_id` deletes `sessions[pcId]`. Logging in as someone else at the same PC
   replaces the session, but only after that account's own password (or a valid claim), so account
-  switching is never free: moving to a stronger account is the privilege escalation.
+  switching is never free: moving to an account with more access is the step that matters.
 - Both routes join the actions wrapped in `with_game_lock`.
 
 **Content.** `container` (`games_controller.rb:513`) branches first: for an object with
 `lockType: login` it ignores `unlockedObjects`, returns 403 when `sessions[pcId]` is unset, and
 otherwise composes the response for that identity: the PC's own `contents`, then each admitted profile
 (5.1), dropping items genuinely moved into the inventory but keeping `copiedItems`. A login PC's
-`contents` are stripped from every room payload unconditionally (not only when `locked`), so the
+`contents` are left out of every room response unconditionally (not only when `locked`), so the
 "unlocked containers keep their contents" rule cannot ship them. Taking an item whose source is a login
 PC or a profile (the inventory add, `games_controller.rb:973` area) requires the session to admit it;
 the implementer confirms the add path's source lookup before building.
@@ -281,7 +281,7 @@ the implementer confirms the add path's source lookup before building.
 | `"known"` | Only accounts whose NPC is in `encounteredNPCs`, or whose username the player has found as an intel fact |
 | `false` | No tiles: the player types the username, as on a hardened PC |
 
-The server composes the tiles, sent in the login PC's room payload entry as `loginAccounts` (and
+The server composes the tiles, sent in the login PC's room response entry as `loginAccounts` (and
 refreshed by `GET /login_accounts?pc_id=` when the prompt opens, because `known` changes as the player
 meets people): for each admitted identity, `{ username, displayName, portrait }` and nothing else. No
 password, role list, card or other `creds` field is ever in it. The client cannot build this list itself
@@ -328,7 +328,7 @@ therefore claim a session wherever the scenario allows one, so the validator war
 |---|---|
 | `autoLockMin` | Game minutes after the owner leaves (or the player stops using a session) before the screen locks, **whatever the owner's habit**. Until then the habit decides. Teaches that a technical control beats a human habit. `null`: no auto lock. |
 | `maxAttempts` | Server-counted failed logins (5.3) before that account is locked out on that PC for the mission (the helpdesk route is in the backlog). |
-| `usb` | `"blocked"`: USB-tagged items are not accepted at that PC (the needs system's `accepts` ignores them), so a BadUSB drop fails there. |
+| `usb` | `"blocked"`: USB-tagged items are not accepted at that PC (the needs system's `accepts` ignores them), so dropping a USB-tagged item there fails. |
 | `social` | `"blocked"`: the PC is not a `social` affordance (section 7.3). |
 
 A PC with no `policy` uses `defaultPolicy`; with neither, everything is allowed and nothing auto locks
@@ -336,20 +336,20 @@ A PC with no `policy` uses `defaultPolicy`; with neither, everything is allowed 
 
 ### 5.6 What the client never receives
 
-Everything an NPC's `creds` could reach the browser through, and the strip for each. The strip lives in
+Everything an NPC's `creds` could reach the browser through, and what is withheld for each. The withholding lives in
 the server code that ships the data, so every route inherits it; none relies on the author.
 
-| Path | Strip |
+| Path | Withheld |
 |---|---|
-| Lazy room payload, `GET /room/:id` (`filtered_room_data`, `game.rb:909`) | In the NPC branch of `filter_requires_and_contents_recursive` (`game.rb:3011`) delete `creds`, `awareness`, `habits`, `role` and `workarounds` from every NPC hash, and `usePayload.secret` when the NPC has `creds`. Ship the derived `rfidCard` (card id and protocol) only. This is the path that matters: the bootstrap already drops NPCs. |
-| NPC recursion | The same branch already recurses `npcs`, `itemsHeld`, `tableItems` and `contents`, so NPCs nested in any of them inherit the strip. NPCs added by `update_room` (`room_states.npcs_added`, `game.rb:957`) are merged before the filter runs, so they are stripped too. |
+| Lazy room data, `GET /room/:id` (`filtered_room_data`, `game.rb:909`) | In the NPC branch of `filter_requires_and_contents_recursive` (`game.rb:3011`) delete `creds`, `awareness`, `habits`, `role` and `workarounds` from every NPC hash, and `usePayload.secret` when the NPC has `creds`. Ship the derived `rfidCard` (card id and protocol) only. This is the path that matters: the bootstrap already drops NPCs. |
+| NPC recursion | The same branch already recurses `npcs`, `itemsHeld`, `tableItems` and `contents`, so NPCs nested in any of them inherit the withholding. NPCs added by `update_room` (`room_states.npcs_added`, `game.rb:957`) are merged before the filter runs, so the withholding reaches them too. |
 | Bootstrap, `GET /scenario` (`filtered_scenario_for_bootstrap`, `game.rb:794`) | Rooms are already reduced to an allow list with no NPCs. Add: delete the top-level `accountProfiles`; ship `policies` (no secrets) and `sessions`. |
-| Login PC contents | Stripped from room payloads unconditionally (5.3) and served only by `container` against a session. |
+| Login PC contents | Left out of room responses unconditionally (5.3) and served only by `container` against a session. |
 | Ink, `GET /ink` (`games_controller.rb:547`) | Serves compiled ink verbatim, so a password written in ink text is public. The validator errors when any NPC's `creds.password` appears in a compiled ink file. A character who gives a password away does so through a capture, not ink text. |
 | Captures, `GET /capture_secrets` (`games_controller.rb:1043`) | The only route for a captured secret. `capture_secrets_for_client` (`game.rb:869`) is extended to answer for a `creds` NPC from the server's earned `se_captures` record, keyed by capture target. |
 | Account picker | `{ username, displayName, portrait }` only (5.3). |
-| Sticky note | The `writesDown` fill puts `creds.password` into the login PC object's `postitNote` in the server's room payload, only when the habit is on, and the login prompt reads the object's note (today the password minigame reads `postitNote` from room fields for doors, `game.rb:820-821`). |
-| Events | `npc_used` events carry the NPC's `usePayload` to the client; with the strip above a `creds` NPC's payload holds the address and host only. |
+| Sticky note | The `writesDown` fill puts `creds.password` into the login PC object's `postitNote` in the server's room data, only when the habit is on, and the login prompt reads the object's note (today the password minigame reads `postitNote` from room fields for doors, `game.rb:820-821`). |
+| Events | `npc_used` events carry the NPC's `usePayload` to the client; with the withholding above a `creds` NPC's `usePayload` holds the address and host only. |
 
 A server test asserts that for a scenario with a cred-bearing NPC, no response from `/scenario`,
 `/room/:id`, `/container/:id` (logged out) or `/login_accounts` contains the password string.
@@ -371,7 +371,7 @@ habits for each NPC so authors see what they got.
 |---|---|---|
 | `locksScreen` | `never`, `sometimes`, `always` | Sets the workstation layer: `never` = `lockChance: 0`, `always` = 1, `sometimes` = 0.5 (seeded). An explicit `lockChance` on the PC still wins. Policy `autoLockMin` caps it. |
 | `writesDown` | bool | Puts the owner's password on a sticky note on their PC (the existing `postitNote` / `showPostit` fields, filled server-side from `creds.password`; see 5.6). |
-| `password` | `strong`, `guessable`, `reused` | Authoring intent the validator checks. `guessable`: at least one intel fact or social media post must point at it (it suits the `password-guesser` scene's `patternSlots`). `reused`: the same password appears in another credential, lock or scene. |
+| `password` | `strong`, `guessable`, `reused` | Authoring intent the validator checks. `guessable`: at least one intel fact or social media post must point at it (it suits the `password-guesser` scene's `patternSlots`). `reused`: the same password appears in another login, lock or scene. |
 | `holdsDoors` | bool | The NPC lets the player through gate doors they open (`door-gates.js` `openFor` plus the tailgate beat). |
 | `phishable` | `low`, `medium`, `high` | Expands into the NPC's `social.phishTargets` defaults: how many `requiredFactors`, how broad `primedFor.trusts`, `runsExecutable`. Only applies if the NPC is also a phish target. |
 | `pretextable` | `low`, `medium`, `high` | Expands into `social.pretextNpcs` defaults: `susceptibility` deltas per technique, whether asks have `verification`, `tuning.maxRefusals`. |
@@ -397,7 +397,7 @@ Proposed defaults, to tune in the first scenario that uses them:
 those. When an NPC also appears in those blocks, the preset supplies **defaults** for fields the author
 left out, and anything written explicitly wins. The SE systems still install only when
 `social.characters` exists, so missions without them are unaffected. What awareness adds that SE has no
-equivalent for is the physical and credential-hygiene layer: screen locking, sticky notes, holding
+equivalent for is the physical and sign-in hygiene layer: screen locking, sticky notes, holding
 doors and password reuse across systems.
 
 ## 7. Work, frustration and social media
@@ -464,14 +464,14 @@ printer sets it, work fails, frustration rises and NPCs leave their desks: a dis
 ]
 ```
 
-(`feed` is the NPC's own posts, kept distinct from the OSINT browser's `social.landingPages[].profiles[].posts`.)
+(`feed` is the NPC's own posts, kept distinct from the social-media browser's `social.landingPages[].profiles[].posts`.)
 
 - **Where it is satisfied.** The NPC's own phone (always available, used where they stand; a phone-in-hand
   pose) or their PC if its policy allows `social`. Preference: PC if allowed, else phone. Using the phone
   at a desk still counts as away from work but keeps the owner at the post, so the screen stays attended.
 - **Feed.** Each completed `social` use reveals that NPC's next post into a feed the player can read: a
   `social_feed` object or a phone app. This reuses the reveal-slot idea from the needs system. A post's
-  `intel` grants the named `social.intelFacts` entry when read, linking OSINT to password guessing.
+  `intel` grants the named `social.intelFacts` entry when read, linking public posts to password guessing.
 - **Awareness.** With `awareness: high` the validator warns if a post grants intel (high-awareness staff
   shouldn't overshare) unless the post is marked `"deliberate": true`.
 - **Blocked.** If `social` is blocked on the PC and the NPC has no phone (`"phone": false`), a social use
@@ -509,7 +509,7 @@ unlocked sessions do.
 
 ## 10. First slice
 
-Chosen by the user: roles on NPCs, identity-bearing credentials with ACL doors, per-account PC contents
+Chosen by the user: roles on NPCs, identity-bearing sign-in details with ACL doors, per-account PC contents
 with unlocked sessions, named policy with auto lock, validator checks. Build in this order; each step is
 testable before the next.
 
@@ -520,13 +520,13 @@ testable before the next.
      `access` on rooms and objects, top-level `accountProfiles`, `policies`, `defaultPolicy`,
      `lockType: "login"`, `loginPicker`, `transfer`, `cloneable`.
    - Extend `stamp_scenario_object_ids!` to walk `accountProfiles`.
-2. **Server stripping first**, before any content is authored with a password.
+2. **Server withholding first**, before any content is authored with a password.
    - Files: `game.rb` (NPC branch of `filter_requires_and_contents_recursive`;
-     `filtered_scenario_for_bootstrap`; unconditional contents strip for login objects),
+     `filtered_scenario_for_bootstrap`; unconditional contents removal for login objects),
      `test/models` and `test/controllers`.
    - Tests: the no-password assertion from 5.6 across `/scenario`, `/room/:id`, `/container/:id`;
      `update_room` with an added NPC.
-3. **Server: sessions, login, clone, ACL doors.**
+3. **Server: sessions, login, card copy, ACL doors.**
    - Files: `config/routes.rb` (`login`, `logout`, `login_accounts`, `clone_card`),
      `games_controller.rb` (new actions; `container` branch; `with_game_lock` list; `unlock` passes the
      card list), `game.rb` (`initialize_player_state` keys, `validate_unlock` ACL branch, session and
@@ -534,8 +534,8 @@ testable before the next.
      `capture_secrets_for_client` for `creds` NPCs, scenario response carries `sessions`).
    - Tests: login success, wrong username equals wrong password message, lockout after `maxAttempts`,
      logout then 403, switch account needs the second password, `/unlock` refuses a login PC,
-     reset clears every new key, claim refusal conditions, clone endpoint conditions, role-ACL door with
-     held, cloned (server-recorded) and forged (`saved_cards` only) cards.
+     reset clears every new key, claim refusal conditions, copy endpoint conditions, role-ACL door with
+     held, copied (server-recorded) and faked (`saved_cards` only) cards.
 4. **Client.**
    - Files: `public/break_escape/js/api-client.js` (new calls), `systems/unlock-system.js` (send every
      held `card_id` for `access` doors; open `login` locks), `minigames/password/password-minigame.js`

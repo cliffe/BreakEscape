@@ -14,25 +14,25 @@ password minigame counts attempts only in the browser, a `text_file` always open
 the workstation layer (`ownerOf`, `decideLocked`, `lockChance`, the `<id>_owner_away` /
 `<id>_screen_locked` globals) exists as described, `NPCNeedsSystem.roll` exists, the social
 engineering systems install only when `social.characters` is present, the capture store has a
-closed key set and strips the authored secret from the bootstrap, and the validator field lists
+closed key set and leaves the authored secret out of the bootstrap, and the validator field lists
 sit exactly at the cited lines. The schema is reasonable and most of the first slice is
 buildable as written.
 
 Two things in the first slice would silently fail in the engine as the plan describes them, and
 both are about where server state actually lives: the per-account content gate for login PCs
 (the plan composes per-identity contents but does not say the gate must be session-based, not
-`unlockedObjects`), and the `creds.password` strip (the obvious place, the bootstrap, already
-drops NPCs entirely, so stripping only there protects nothing; the leak is the lazy room
+`unlockedObjects`), and withholding `creds.password` (the obvious place, the bootstrap, already
+drops NPCs entirely, so acting only there protects nothing; the password reaches the browser through the lazy room
 endpoint). The majors are mostly under-specified client and server surfaces that the proof
 scenario in section 10 exercises directly: the role-ACL RFID door, the account picker's data,
-profile item identity, cloned-card resolution, and Copy semantics.
+profile item identity, copied-card resolution, and Copy semantics.
 
 ## 2. Severity table
 
 | Severity | Count | Items |
 |---|---|---|
-| Blocker | 2 | B1 login content gate, B2 password leak via the room endpoint |
-| Major | 5 | M1 role-ACL RFID on the client, M2 cloned-card identity is client-asserted, M3 profile item ids, M4 account picker data, M5 Copy and the already-held filters |
+| Blocker | 2 | B1 login content gate, B2 password exposed via the room endpoint |
+| Major | 5 | M1 role-ACL RFID on the client, M2 copied-card identity is client-asserted, M3 profile item ids, M4 account picker data, M5 Copy and the already-held filters |
 | Minor | 7 | m1 login method plumbing, m2 `profiles`/`posts` name overlap, m3 lockout state, m4 validator skip check feasibility, m5 unlocked-session trust, m6 two homes for a password, m7 postitNote on a login PC |
 
 ## 3. Findings
@@ -59,20 +59,20 @@ with `lockType: login` branches to compose from the session identity (PC `conten
 profiles, 5.1) and returns 403 when no session is set. Add the slice-1 server task "session gate
 and per-identity compose in `container`" to 10.2.
 
-**B2. `creds.password` leaks through the lazy room endpoint unless the strip is added there, not
-at the bootstrap.** Plan 10.2 says "strip `creds.password` and profile contents from the client
-payload", and section 3 marks the password "stripped from the client payload". The obvious target,
+**B2. `creds.password` reaches the browser through the lazy room endpoint unless the withholding is added there, not
+at the bootstrap.** Plan 10.2 says "withhold `creds.password` and profile contents from the data
+sent to the client", and section 3 marks the password "withheld from the data sent to the client". The obvious target,
 `filtered_scenario_for_bootstrap`, already removes every NPC from the bootstrap (it keeps only a
-short room-field allow list and drops `objects`/`npcs`, `game.rb:803-842`), so stripping there
+short room-field allow list and drops `objects`/`npcs`, `game.rb:803-842`), so withholding there
 protects nothing. NPC `creds` actually reach the client through the lazy room endpoint:
 `filtered_room_data` (`game.rb:909-921`) deep-dups the room and runs
-`filter_requires_and_contents_recursive`, which recurses into `npcs` (`game.rb:3011`) but strips
+`filter_requires_and_contents_recursive`, which recurses into `npcs` (`game.rb:3011`) but removes
 only lock fields (`requires`, locked `contents`, `flags`) and **no** NPC-specific field. So an NPC
-shipped to the client in its room payload carries `creds.password` verbatim unless a new NPC strip
-is added in that path. (Note also that `usePayload` already rides to the client on every
+shipped to the client in its room data carries `creds.password` verbatim unless those NPC fields are withheld
+in that path. (Note also that `usePayload` already rides to the client on every
 `npc_used` event and on the NPC record via `Object.assign`; keep authored secrets out of
 `creds.password` and `usePayload` alike, see m6.)
-*Change:* put the strip inside the NPC branch of `filter_requires_and_contents_recursive` (delete
+*Change:* put the withholding inside the NPC branch of `filter_requires_and_contents_recursive` (delete
 `creds.password`, and any other secret-bearing cred field) so every route that ships an NPC
 inherits it, and add a test that `GET /room/<id>` for a room with a cred-bearing NPC contains no
 password. Reword 10.2 to name `filtered_room_data` / the NPC recursion, not "the bootstrap".
@@ -81,35 +81,35 @@ password. Reword 10.2 to name `filtered_room_data` / the NPC recursion, not "the
 
 **M1. The role-ACL RFID door (the proof scenario's finance door) is not reachable by the current
 client RFID path.** The whole client RFID flow is `requires`-driven: `evaluateRfidCredential`
-matches held keycards and cloner `saved_cards` by `card_id` against `lockRequirements.requires`
-(`unlock-system.js:69-94`), and the unlock branch decides "direct unlock / open the cloner /
+matches held keycards and card-copier `saved_cards` by `card_id` against `lockRequirements.requires`
+(`unlock-system.js:69-94`), and the unlock branch decides "direct unlock / open the copier /
 access denied" from that result (`unlock-system.js:502-593`). An `access`-only door (10.6 asks for
 "a finance door with a role ACL") has no `requires`, so `requiredCardIds` is `[undefined]`, no card
 matches, and the door silently refuses with "Requires RFID keycard". Resolving a held card to a
 role needs card_id → owner NPC → roles, which the client can only do for NPCs in loaded rooms, and
 the admitted NPC may be elsewhere. Plan 10.3 lists only "RFID unlock sends the `card_id` it used",
 which does not cover how the client decides it holds a satisfying card or which card to offer.
-*Change:* for the first slice, have the client send every held `card_id` (keycards plus cloner
+*Change:* for the first slice, have the client send every held `card_id` (keycards plus card-copier
 `saved_cards`) for an `access`-bearing door and let the server resolve each against NPC `creds.card`
 and the door `access`; the server already has all NPC data. Extend `evaluateRfidCredential` /
 `playerHoldsRfidCredentialFor` to treat a card as valid when its id is in `requires` **or** resolves
 to an admitted identity (the server is the authority; the client result only drives UI). Say this
 in 4.1 and 10.3.
 
-**M2. Server-side identity resolution for cloned cards rests on a client-asserted store, so it is
-not an authentication boundary.** (USER DECISION: accept as client-trusted, or add a stronger
+**M2. Server-side identity resolution for copied cards rests on a client-asserted store, so it is
+not a genuine identity check.** (USER DECISION: accept as client-trusted, or add a stronger
 path.) Plan 4.1 says the server "checks the player holds it (a keycard in inventory or a
 `saved_cards` entry on a held `rfid_cloner`) and resolves it against NPC `creds.card`. This is
 tighter than today at no extra authoring cost." It is tighter than today (today `rfid` is trusted
-blind with no `card_id`, `game.rb:1156-1161, 1245-1248`). But the cloner's `saved_cards` are
+blind with no `card_id`, `game.rb:1156-1161, 1245-1248`). But the card copier's `saved_cards` are
 written by the client: the RFID minigame POSTs them (`rfid-data.js:369-370`) and the server stores
 the client's array verbatim (`games_controller.rb:1000-1003`, `game.rb:1825-1835`). A modified
 client can save any NPC's `card_id` and open its ACL door. Keycards in inventory are stronger,
 since M6 stores the server's canonical copy. So there is an asymmetry the plan should not paper
-over: cloned-card identity is as forgeable as today's blind trust.
+over: copied-card identity is as easy to fake as today's blind trust.
 *Change:* keep the mechanism (it is a real tightening and fits the game's client-trust model) but
-do not present cloned-card resolution as security. If a puzzle must not be bypassable, gate it on a
-server-established fact (a keycard physically held, a capture earned), not on a cloned-card
+do not present copied-card resolution as security. If a puzzle must not be possible to get past, gate it on a
+server-established fact (a keycard physically held, a capture earned), not on a copied-card
 identity. State this limit beside the 4.1 claim.
 
 **M3. Profile item ids are not stamped and are not checked for collision.** Item ids are global and
@@ -129,7 +129,7 @@ makes `loginPicker: "accounts"` (the default) show "Tiles for every account the 
 admits", with the NPC's portrait and username. With a role ACL (e.g. `{roles:[staff]}`) that is
 every NPC with `creds`, in any room; the client at the PC only holds loaded-room NPCs, so it cannot
 enumerate them, and it must not receive passwords. The plan does not say how the tiles arrive.
-*Change:* compose the picker server-side (a field on the login PC payload, or a small endpoint):
+*Change:* compose the picker server-side (a field on the login PC response, or a small endpoint):
 for each admitted identity, `{ npcId, username, portrait }` and nothing else. Note in 5.3 that the
 "accounts" list is server-built from `access`, that `"known"` additionally filters by
 `encounteredNPCs`, and that no password or `creds` field is ever in it. Add "account tiles" to the
@@ -158,7 +158,7 @@ whether login rides the unlock endpoint with a packed `attempt` or gets its own 
 `login` to the method table (or handle it before the table, as `npc`/`unlocked` are). Say so in
 5.3 / 10.2.
 
-**m2. `profiles` and `posts` already name different concepts.** The osint browser reads
+**m2. `profiles` and `posts` already name different concepts.** The social-media browser reads
 `social.landingPages[].profiles[].posts` (social-media profiles with posts; `osint-model.js:63`,
 e.g. `lab_social_engineering/scenario.json.erb:742`). The plan's top-level `profiles` (roaming
 desktop contents) and NPC-level `posts` (7.3 social-media feed) reuse both words for unrelated
@@ -177,7 +177,7 @@ needs per-lock ordering/depth, which the field-list validator does not compute t
 dungeon-graph tooling exposes a reachable order the validator can read, or scope this to "lists the
 doors each identity opens" (no ordering) for slice 1 and defer the earlier-than warning.
 
-**m5. Unlocked sessions are a client-trusted bypass of "contents only after a password"; bring the
+**m5. Unlocked sessions are a client-trusted way around "contents only after a password"; bring the
 section-9 warning into slice 1.** (Cost of a decided design.) The decision to honour unlocked-session
 claims "only where the scenario makes one possible" (2, 5.4) is the user's. The cost: the
 screen-locked outcome is a client-side seeded roll (`decideLocked`, `workstation-state.js:65-73`),
@@ -198,14 +198,14 @@ are known item fields (`validate_scenario.rb:492`) and survive the room filter (
 fields), so a login PC object can carry the note. But today the password minigame reads `postitNote`
 from room fields for door locks (kept at `game.rb:820-821`); confirm the login mode passes the
 **object's** `postitNote` through, and that the server fills it from `creds.password` only when the
-`writesDown` habit is on. A quick note in 6.2 that the fill is server-side on the object payload
+`writesDown` habit is on. A quick note in 6.2 that the fill is server-side on the object data
 avoids a silent empty note.
 
 ## 4. What checked out
 
 - RFID trusted from the client, no `card_id` sent: `game.rb:1156-1161, 1245-1248`;
   `unlock-system.js:38` (`apiClient.unlock(type, targetId, null, method)`).
-- `rfidCard` is already client-visible and drives the clone flow, so reading it as `creds.card`
+- `rfidCard` is already client-visible and drives the copy flow, so reading it as `creds.card`
   keeps `clone_keycard` and the RFID minigame working: `npc-conversation-state.js:675-698`,
   `chat-helpers.js:370-375`, `unlock-system.js:72-82`.
 - Attempts counted only client-side: `password-minigame.js:36, 458`.
@@ -215,21 +215,21 @@ avoids a silent empty note.
 - `NPCNeedsSystem.roll` / `seededRoll`: `npc-needs.js:113, 220`.
 - SE systems install only with `social.characters`: `social-influence.js:804`; `pretextNpcs`,
   `phishTargets`, influence bands all real (`interactions.js:665`, `mail-runner.js:101`).
-- Capture store closed key set and bootstrap secret strip: `captures.js:21`, `game.rb:851-857`.
+- Capture store closed key set and bootstrap secret removal: `captures.js:21`, `game.rb:851-857`.
 - Validator field lists at the cited lines: rooms `validate_scenario.rb:405-409`, NPC `:412-419`,
   items `:484-510`, top level `:390-394`. None of `role`, `creds`, `awareness`, `habits`,
   `access`, `profiles`, `policies`, `loginPicker`, `transfer` is used yet, so they are free to add
   (`needsHome` is already present, `:417`).
-- `saved_cards` is persisted server-side (so the held-cloner check in 4.1 can run), via
-  `update_cloner_saved_cards!` `game.rb:1825-1835` — but client-written, see M2.
+- `saved_cards` is persisted server-side (so the held card-copier check in 4.1 can run), via
+  `update_cloner_saved_cards!` `game.rb:1825-1835`, but client-written, see M2.
 
 ## 5. Open questions for the user
 
-- **M2:** accept cloned-card identity as client-trusted (consistent with today), or require a
-  stronger path for any door whose bypass must be prevented?
+- **M2:** accept copied-card identity as client-trusted (consistent with today), or require a
+  stronger path for any door that must not be possible to get past?
 - **M4 / 5.3:** is the default login prompt the portrait `accounts` picker, given it must list
   every admitted NPC across rooms (server-composed), or should the default be `known` (met NPCs
-  only) to keep the list small and the leak minimal?
+  only) to keep the list small and the data sent to the client minimal?
 
 ## 6. Planner response
 
@@ -238,15 +238,15 @@ recorded in plan section 2 (the user can overrule).
 
 | Finding | Outcome | What was done or why |
 |---|---|---|
-| B1 login content gate | fixed | Plan 5.3: sessions are the gate; `/login` and `/logout` are own routes that never touch `unlockedObjects`; `container` branches on `sessions[pcId]`, returns 403 without one and composes per identity; login PC contents stripped from room payloads unconditionally. |
-| B2 password leak via room endpoint | fixed | Plan 5.6 and step 2 of 10: strip in the NPC branch of `filter_requires_and_contents_recursive`; table of every path (room, NPC recursion, `update_room` NPCs, bootstrap, ink, captures, picker, sticky note, events); no-password test across endpoints. |
+| B1 login content gate | fixed | Plan 5.3: sessions are the gate; `/login` and `/logout` are own routes that never touch `unlockedObjects`; `container` branches on `sessions[pcId]`, returns 403 without one and composes per identity; login PC contents left out of room responses unconditionally. |
+| B2 password exposed via room endpoint | fixed | Plan 5.6 and step 2 of 10: withhold in the NPC branch of `filter_requires_and_contents_recursive`; table of every path (room, NPC recursion, `update_room` NPCs, bootstrap, ink, captures, picker, sticky note, events); no-password test across endpoints. |
 | M1 role-ACL RFID on the client | fixed | Plan 4.1: client sends every held `card_id` for an `access` door and the server resolves; client UI follows the server answer. |
-| M2 cloned-card identity client-asserted | fixed (orchestrator decision) | Plan 4.3: `POST /clone_card` records `serverClones` after checking the NPC has `creds.card`, has been encountered, the server inventory holds a cloner, and `cloneable` is not false. Stated plainly as a tightening, not authentication; `saved_cards` never decides identity. |
+| M2 copied-card identity client-asserted | fixed (orchestrator decision) | Plan 4.3: `POST /clone_card` records `serverClones` after checking the NPC has `creds.card`, has been encountered, the server inventory holds a card copier, and `cloneable` is not false. Stated plainly as a tightening, not a genuine identity check; `saved_cards` never decides identity. |
 | M3 profile item ids | fixed | Plan 5.1 and step 1: `stamp_scenario_object_ids!` walks `accountProfiles`, lookups find profile items, validator errors on collisions. |
 | M4 account picker data | fixed (orchestrator decision) | Plan 5.3: server composes `{ username, displayName, portrait }` tiles (`loginAccounts`, refreshed by `GET /login_accounts`); `known` filters by `encounteredNPCs` or found usernames; never a password. |
 | M5 Copy and the already-held filters | fixed | Plan 5.1: `copiedItems` is a set, and all four sites are listed (container filter, room state overlay, inventory short-cut, session compose); test named. |
 | m1 login method plumbing | fixed | Plan 5.3: own `/login` route, outside `validate_unlock`; `login` deliberately not in `UNLOCK_METHODS_BY_LOCK_TYPE`. |
-| m2 `profiles` and `posts` name overlap | fixed | Renamed to `accountProfiles` and NPC `feed`; the OSINT names are left alone. |
+| m2 `profiles` and `posts` name overlap | fixed | Renamed to `accountProfiles` and NPC `feed`; the social-media browser names are left alone. |
 | m3 lockout state | fixed | Plan 5.3 state table names `loginFailures` and `loginLockouts`; reset drops them because it keeps only an allow list. |
 | m4 skip check needs lock-order data | deferred | Slice 1 lists the doors each identity opens; the earlier-than warning waits until the dungeon graph exposes a reachable order. |
 | m5 unlocked-session trust | fixed | The `sometimes` warning moved into slice 1 (5.4, 9, step 5 of 10). |
