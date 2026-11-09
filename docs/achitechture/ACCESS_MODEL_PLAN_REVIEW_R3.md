@@ -276,3 +276,36 @@ Section 10, step 3's file list is one long sentence; a bullet per file would be 
 ## 6. Open questions for the user
 
 None. Every finding has an engineering fix within the decisions in plan section 2.
+
+## 7. Planner response
+
+The plan was rewritten as a complete document in a new order: 1 Why, 2 Decisions, 3 Identities,
+4 ACLs on locks (4.1 RFID doors and objects, 4.2 copying a card), 5 PCs (5.1 profiles, 5.2 the PC
+object, 5.3 sessions and content, 5.4 unlocked sessions, 5.5 policies, 5.6 withholding), 6 Server
+routes (one table, checks in order), 7 Determinism, 8 First slice (steps 1 to 7, files as bullets),
+9 Later slices (9.1 awareness and habits, 9.2 work, frustration and social media, 9.3 networks),
+10 Open questions.
+
+| Finding | Outcome | What was done or why |
+|---|---|---|
+| B1 unowned or never-leaving owner reads "in use" for ever | fixed | Plan 5.2: only a sign-in PC with an owner is a workstation; an unowned PC always opens the sign-in screen. 5.4: "present" means tracked by needs with `atPost: true` and not knocked out; `npc_ko:*` counts as leaving; an untracked or script-moved owner leaves the screen locked (sign-in, no claim). Validator warning for an owner with no `needs`; tests and proof scenario (unowned profile-only PC). |
+| M1 take path skips locked folders | fixed | Plan 5.1: lookups return scope and path; `path_unlocked?` required by take, `container` and `/unlock` (section 6); step 3 test with a locked archive in a profile, before and after. |
+| M2 `access` on rfid objects never reaches the client | fixed | Plan 4.1 and step 4: `access` added to `getLockRequirementsForItem` (`unlock-system.js:681-691`); proof scenario has a role-only `rfid` cabinet; step 3 test for an object. |
+| m1 `/unlock` guard placement, `npc` and `flag_reward` | fixed | Section 6 `/unlock` check 1 runs before the `unlockedObjects` return and both methods, refusing a `login` object for every method; validator error for `unlockable` or an `unlock_object` reward naming a sign-in PC; tests. |
+| m2 where `pc_id` is sent | fixed | `pc_id` dropped from `/unlock` and `container`: the server admits a scoped object when any current session admits its scope (5.1); step 4 notes no new client parameter. `source_pc_id` stays on the take. |
+| m3 no sign-in event or task hook | fixed | Plan 5.3 "Events and tasks": `pc_signed_in:<pcId>` / `pc_signed_out:<pcId>`; new `signedInPcs` key; `unlock_object` on a sign-in PC is met from it on the server and via `pc_signed_in` in the objectives manager. Chosen over a validator error so authors' natural task works. |
+| m4 `/capture_secrets` early return; other capture secrets | fixed | Plan 5.6: the `game.rb:896` return becomes "skip the landing-page pass"; step 2 test with no `landingPages`. Plan 3 states an account holder carries no other capture secret (PIN captures go on an NPC without an account). |
+| m5 copies ignore the copier's rules; whose `card_id` | fixed | Plan 4.2: the client sends no `card_id`, the server records the source's own card with `uidOnly` (DESFire); `/unlock` refuses a UID-only copy without `acceptsUIDOnly`, reason `uid_only` shown with the minigame's message. The 50-card limit is withdrawn as a concern: `serverClones` is keyed by scenario-defined cards, so it is bounded by the scenario (stated in 4.2). |
+| m6 permanent lockout; minigame's own limit | fixed | Plan 5.3: sign-in mode has no limit of its own and shows the server's `attemptsLeft` and lockout. Lockout stays per PC and account until reset (recovery route deferred to the backlog), with a validator warning on every sign-in PC under a `maxAttempts` policy, since the validator cannot know the intended route. |
+| m7 `/clone_card` lock; claim room check | fixed | Section 6: `/clone_card`, `/login`, `/logout` are locked routes; the claim runs the "PC reachable" check first. |
+| m8 portrait images | fixed | Plan 5.3: tiles carry `portrait` and `avatar`; a 2x2 talk sheet shows its top-left frame (the `_isTalkSheet` rule); on load failure `avatar`, then initials. |
+| m9 hard to follow | fixed | One server routes table (section 6) replaces the per-section rules; later slices moved after the first slice (section 9); step file lists split into bullets; repeated rules trimmed. |
+| R2 B1 take from sign-in PC or profile | fixed | Closed with M1. |
+| R2 M1 client cannot see `access` | fixed | Closed for objects with M2. |
+| R2 M2 capture lookup | fixed | Closed with m4. |
+| R2 M3 slice 1 workstation reliance | fixed | Closed with B1. |
+| R2 m2 copies from keycard objects | fixed | Closed with m5. |
+| R2 m5 nested containers bypass the session | fixed | Closed with m1 and m2. |
+| R2 m8 `known` picker sources | fixed | Closed with m8. |
+| R1 M1 role-ACL RFID on the client | fixed | Closed for objects with M2. |
+| R1 m4 skip check needs lock-order data | deferred | Unchanged: slice 1 lists the locks each identity opens; the "earlier than intended" warning waits for a reachable order from the dungeon graph. |
