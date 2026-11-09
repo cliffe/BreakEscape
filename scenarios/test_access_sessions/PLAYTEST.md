@@ -294,3 +294,10 @@ moves (`setManualClock`, `step`) and T7's knock-out (`debugKO`) are exercised, n
 is clean: no errors and no warnings (every `lockChance` is 0 or 1 and no policy sets
 `maxAttempts`). It prints the needs timing lines, the identity reach lines and the generic
 suggestions every small test scenario gets.
+
+## Timing and harness notes (from the 2026-11-09 Haiku runs)
+
+- `npc_left_post:<owner>` fires when the owner decides to leave, while they are still walking away. Wait a few seconds, or until they are out of range, before clicking their PC: otherwise the click can land on the owner and open a conversation instead.
+- A sign opens a game-display dialog: close it with its close button (`dismiss` with label `×`); Escape and an unlabelled dismiss are ambiguous.
+- Stepping the needs manual clock moves every owner's clock, so other owners may leave and return during T6. No assertion depends on them.
+- Do not run `drain` with its output discarded: it empties the bridge event buffer (events are still in the session log).
