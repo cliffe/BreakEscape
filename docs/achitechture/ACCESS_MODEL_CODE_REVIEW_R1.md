@@ -214,3 +214,33 @@ object; plain workstations' `onInteract` answers change only where the plan says
 untracked owner `signin`, knock-out as a leave), and `interactions.js` ignores them. The new
 `/clone_card` request after a conversation or keycard copy in m03 to m10 is harmless (recorded or
 403, logged only).
+
+## Fixer response
+
+Every finding is fixed; none withdrawn. Each fix has a test that failed on the code before it and
+passes after (checked by running the new test against the previous version of the changed files).
+
+| Finding | Outcome | What changed | Test |
+|---|---|---|---|
+| M1 | Fixed | `find_container_recursive` and `search_nested_contents` skip sign-in PCs and everything under them, and `find_container_in_scenario` no longer walks into a PC's contents, so a sign-in PC and its folders are reached only through the session branch of `container`. | `access_model_no_password_test.rb`: "a name shared with a lobby note does not open a sign-in PC folder with no session", "... does not open the sign-in PC's own contents with no session" |
+| M2 | Fixed | `Game#held_keycard_ids` (the `card_id`s on keycard items in the server inventory, which holds the server's own copy) decides "held" in `held_rfid_cards`; `clone_source_keycard` also requires the held item to carry the source's `card_id`, so a name match never stands in. | `access_model_rfid_test.rb`: "a held NPC badge does not count as another NPC's badge with the same name", "a held badge sharing a name with a distant keycard is not that keycard as a copy source" |
+| m1 | Fixed | The validator errors on `access` or `acceptsUIDOnly` on any `doors[]` entry, gate or not. The plan puts the list on the room (the 5.6 room allow list and the server's `room_data` read), so the validator closes the gap without a second server rule; `doors.js` is unchanged. No scenario has either field on a door entry. | `validator-access-model.test.mjs`: "access or acceptsUIDOnly on any door entry (gate or not) is an error" |
+| m2 | Fixed | A held keycard with no id sends `{ held_card: true }` as its copy source; `/clone_card` records it when a keycard in the server inventory carries that `card_id`, the scenario defines one, and neither is `cloneable: false` (source `{ held: <card_id> }`). The plan's `/clone_card` row says so. | `access_model_rfid_test.rb`: "a held keycard with no id is a copy source by its card_id, and the copy outlives the card", "a held-card copy of a card the player does not hold is refused"; `rfid-clone-card.test.mjs`: "a held keycard with no id (an NPC badge handed over) is recorded as a held card by its card_id" |
+| m3 | Fixed | A folder opened from a sign-in desktop (`sourcePcId`, not the PC itself) registers with `pcSessions.registerDesktop`, so a session end closes it with the same message. | `container-transfer-dialog.test.mjs`: "a folder opened from a sign-in desktop closes with the message when the session ends" |
+| m4 | Fixed | After a granted claim, `pcSessions.claim` checks `workstationState.presence`; with the owner back it ends the claim (`pc_signed_out`, `owner_returned`, `POST /logout`) and answers `owner_returned`, and `interactLoginPc` shows the message and opens no screen. | `pc-sessions.test.mjs`: "a claim granted after the owner has returned ends at once with owner_returned"; `access-signin-routing.test.mjs`: "a claim that ends because the owner returned shows the message and opens no screen" |
+| m5 | Fixed | The `scenario` action answers the sessions, then `Game#end_claimed_sessions!` ends every claimed one on the server, so the reload rule no longer rests on the client's `POST /logout`; the client still sees each claim and reports `claim_ended` as before. Small and as the plan intends (5.3: a reload ends a claim). No logout retry. | `access_model_login_test.rb`: "GET /scenario reports a claimed session and ends it on the server; a password session stays" |
+| m6 | Fixed | `recordCloneOnServer` keeps its request as `window.pendingCardCloneRecord` until it settles; `requestRfidAccessUnlock` waits for it (a failed record does not block). | `access-rfid-acl.test.mjs`: "an access-list request waits for a card copy record still in flight"; `rfid-clone-card.test.mjs`: "a save leaves its record as window.pendingCardCloneRecord until it settles" |
+| m7 | Fixed | A claim is refused ("Sign in required") when a session is already held at the PC. | `access_model_login_test.rb`: "a claim never replaces a password session at the same PC" |
+| m8 | Fixed | `logout_session!` resolves `pc_id` through `find_login_pc` and deletes the session under the PC's id. | `access_model_login_test.rb`: "POST /logout accepts the PC by name, as /login does" |
+| m9 | Fixed | The three source-text tests are replaced by `test/js/access-signin-requests.test.mjs`, which runs `api-client.js`, `inventory.js` and the sign-in branch of `interactions.js`. The no-password test gains name-addressed `/container` and `/unlock` cases, a `/unlock` of a scoped folder with no session and two `/inventory` adds with no session; the two-badge, claim-race and folder-session cases are above. The scanner's blind spot is noted in `test_access_signin/PLAYTEST.md` and in `access_leak_scanner.rb`. | `access-signin-requests.test.mjs` (10 tests); `access_model_no_password_test.rb`: "POST /unlock of a scoped folder with no session is refused and carries no contents", "POST /inventory add of a sign-in PC file with no session is refused and carries no text" |
+
+Not acted on: the deviations table's suggestion of a drift test between `lib/access_identities.rb`
+and the copies in `Game` (not a finding).
+
+Results: Rails 1067 runs, 0 failures, 0 errors, 1 skip; `bin/test-js` 405 files, all pass; the leak
+scanner's tests 11 runs, 0 failures. The validator raises no errors on `test_access_doors`,
+`test_access_signin`, `test_access_sessions` or `lab_physical_pentest`. A headless smoke of
+`test_access_sessions` on :3001 (game 26, deleted) covered the claim and the reload: a claim at
+`dana_pc` with Dana away opened her desktop; after a reload the scenario response still listed the
+claim, the browser held no sessions, the server record had none, and a click on `dana_pc` gave
+"Dana Reyes is using this PC."; the leak check found nothing.

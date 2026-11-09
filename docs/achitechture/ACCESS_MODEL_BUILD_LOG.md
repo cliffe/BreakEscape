@@ -1179,3 +1179,39 @@ tools/playtest/session-start.sh --url <URL> --headless \
 Follow `scenarios/lab_physical_pentest/PLAYTEST.md` (beats 1, 2, 3 on one game), with
 `verify-run.rb <game_id> --access` and `access-leak-check.rb <game_id> <responses>` after each
 beat. Melanie and Chris first leave about two minutes after `open_plan` loads.
+
+## Implementation review round 1: fixes (2026-11-09)
+
+The fixer acted on every finding of `ACCESS_MODEL_CODE_REVIEW_R1.md` (0 blockers, 2 majors, 9
+minors): all fixed, none withdrawn or deferred. The table with each outcome and its test is the
+review's "Fixer response". Each new test failed on the code before its fix.
+
+Behaviour that changed, for later rounds and runs:
+
+- **Sign-in PCs leave the generic container lookup** (M1): `GET /container` reaches a sign-in PC
+  and its folders only through the session branch. The step 3 deviation "`find_container_in_scenario`
+  is unchanged" no longer holds.
+- **"Held" is a `card_id` on a keycard in the server inventory** (M2), replacing the step 3 deviation
+  "held keycard by `ItemIdentity.held_in?`". A copy taken from a held keycard object also needs the
+  held item to carry that `card_id`.
+- **`/clone_card` takes `held_card: true`** (m2) for a held keycard with no id (an NPC's badge);
+  the record's source is `{ held: <card_id> }`. The plan's `/clone_card` row is updated.
+- **The validator errors on `access` or `acceptsUIDOnly` on any `doors[]` entry** (m1); the plan's
+  validator list is updated. `doors.js` still reads them from an override, which the validator now
+  forbids.
+- **The server ends claimed sessions when it answers `GET /scenario`** (m5), after putting them in
+  the answer, so the client's `claim_ended` sign-out still fires and its `POST /logout` is a no-op.
+  The plan's 5.3 note says so.
+- **A claim is refused where a session is held** (m7), and **`/logout` resolves the PC by id or
+  name** (m8); the plan's route rows are updated.
+- Client: a folder from a sign-in desktop closes on the session's end (m3); a claim granted after
+  the owner came back ends at once with `owner_returned` and shows the owner's message (m4); an
+  access-list unlock waits for a card copy record still in flight (`window.pendingCardCloneRecord`,
+  m6).
+- Tests: `test/js/access-signin-requests.test.mjs` (new) replaces three source-text tests (m9).
+
+Results: Rails 1067 runs, 0 failures, 0 errors, 1 skip; `bin/test-js` 405 files, all pass; the
+leak scanner's tests 11 runs, 0 failures; validator clean (no errors) on the three feature
+scenarios and `lab_physical_pentest`. Headless smoke of `test_access_sessions` on :3001 (game 26,
+deleted): a claim at `dana_pc`, then a reload ended it on both sides and Dana was at her desk; leak
+check clean. The other beats of the T runs were not repeated.
