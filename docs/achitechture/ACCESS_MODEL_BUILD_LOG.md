@@ -1215,3 +1215,33 @@ leak scanner's tests 11 runs, 0 failures; validator clean (no errors) on the thr
 scenarios and `lab_physical_pentest`. Headless smoke of `test_access_sessions` on :3001 (game 26,
 deleted): a claim at `dana_pc`, then a reload ended it on both sides and Dana was at her desk; leak
 check clean. The other beats of the T runs were not repeated.
+
+## Implementation review round 2: fixes (2026-11-09)
+
+The fixer acted on m1, m3, m4 and m5 of `ACCESS_MODEL_CODE_REVIEW_R2.md` (0 blockers, 0 majors,
+5 minors); m2 (NPC-given keycards and the plan's "held keycard" sentence) awaits the user. The
+review's "Fixer response" table has each outcome and its test; each new test failed with its fix
+taken out.
+
+Behaviour that changed:
+
+- **`end_claimed_sessions!` takes the row lock for its write** (m1). It still returns, unlocked,
+  when no claim is held, so `GET /scenario` stays a plain read for every other game; with a claim,
+  `with_lock` reloads the row and the claims are recomputed from it before the save.
+- **A claim answered as the screen auto locks ends at once** (m3), with `auto_locked` and "The
+  screen locked"; the click then shows that message and the sign-in screen, not the desktop.
+- `lab_physical_pentest/PLAYTEST.md` beat 3 checks whether Melanie is away before waiting for her
+  next leave (m4).
+- The owner-returned routing test now runs the real `PcSessions.claim` (m5).
+
+### The captures check (skipped by the last lab run)
+
+Headless on the keyless server (:3001), game 29 of `lab_physical_pentest`, PLAYTEST.md beat 1:
+after Melanie left, a click on `staff_pc_2` opened her desktop by a claim ("Signed in as Melanie
+Pierce (m.pierce)", the lesson, "Saved logins"). `se_captures.pierce` then held `m.pierce`,
+`LW-OPEN-07` and no secret, and `kp_unlocked_screen` was true. The "Harvested Credentials"
+terminal (captures view) listed `m.pierce` with her password. Of the 56 captured responses, her
+password was in one only: `GET /capture_secrets` (`{"secrets":{"pierce":...}}`), fetched when the
+terminal opened. `access-leak-check.rb` accepted it: `VERDICT: no leaks found`. `verify-run.rb
+--access`: `sessions 1: staff_pc_2 = pierce (claim)`, `signedInPcs 1: staff_pc_2`. Game 29 was
+deleted afterwards.

@@ -245,8 +245,12 @@ remove the record. `serverClones` is cleared by a game reset.
 not "is talking to them"; the server cannot see positions. It is a tightening, not a genuine
 identity check: a modified client can still call the route for any NPC whose room it has entered.
 A puzzle that must not be possible to get past should rest on a fact the server checks itself: a
-keycard item held, or a password or PIN typed and checked on the server. Captures (5.6) are
-client-reported and do not count. The `saved_cards` list stays client-written and drives only the
+keycard item picked up from a place the server knows is reachable (a room, or a container whose
+locks it has seen opened), or a password or PIN typed and checked on the server. A keycard an NPC
+hands over from `itemsHeld` is weaker: the server accepts the item once the player has entered the
+NPC's room (`encounteredNPCs`), and nothing records that the conversation ran the give, so it has
+the same strength as a card copy taken in conversation. Captures (5.6) are client-reported and do
+not count. The `saved_cards` list stays client-written and drives only the
 card copier's UI.
 
 ## 5. PCs: sign-in, sessions and profiles

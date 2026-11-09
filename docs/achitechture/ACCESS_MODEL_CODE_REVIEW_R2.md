@@ -252,3 +252,17 @@ scenario without sign-in PCs or profiles; the client `rfid` order is the same fo
   (`rfid_lock_passes?`, `game.rb:1632`). As planned, and round 1 judged it sound; noted again only
   because a modified client gets past such a lock by omitting `card_ids`, so authors who want the
   list enforced should not also set `requires`. The plan or the validator could say so.
+
+## Fixer response
+
+m1, m3, m4 and m5 are fixed; m2 is resolved by the user's decision to correct the plan wording. Each new test was run against the code
+with its fix taken out (in the working tree, put back straight after) and failed there; it
+passes with the fix.
+
+| Finding | Outcome | What changed | Test |
+|---|---|---|---|
+| m1 | Fixed | `Game#end_claimed_sessions!` (`app/models/break_escape/game.rb`) still returns early, with no lock, when no claim is held; otherwise it does the write inside `with_lock`, which reloads the row, and recomputes the claims from the reloaded state before saving. New helper `claimed_session_ids`. The scenario action stays out of `with_game_lock`. | `access_model_login_test.rb`: "ending claimed sessions keeps a write that landed after the game was loaded" (a second `Game` instance adds `CONCURRENT_UNLOCK` and saves between the load and the call; fails on the old method with "the concurrent write survived") |
+| m2 | Resolved by user decision (2026-11-09): correct the plan wording, no code change | `ACCESS_MODEL_PLAN.md` section 4.2 now says a keycard an NPC hands over from `itemsHeld` is client-reported (the server only knows the player entered the NPC's room). Server-proven hand-overs are in `docs/IDEAS_BACKLOG.md`. | None (documentation) |
+| m3 | Fixed | `PcSessions#claim` (`pc-sessions.js`), after the owner-returned check, rereads `window.gameState.globalVariables[pcId + '_screen_locked']`; if the screen locked while the claim was in flight it ends the claim with `auto_locked` (POST /logout, `pc_signed_out`, "The screen locked") and answers `{ ok: false, reason: 'auto_locked' }`. `interactLoginPc` (`unlock-system.js`) shows that message and opens the sign-in screen (reason `locked`), as a click after the lock would, instead of the desktop. | `pc-sessions.test.mjs`: "a claim granted after the screen auto locked ends at once with auto_locked"; `access-signin-routing.test.mjs`: "a claim granted after the screen auto locked shows the message and the sign-in screen, not the desktop (code review R2, m3)" |
+| m4 | Fixed | `scenarios/lab_physical_pentest/PLAYTEST.md` beat 3 step 1: check `window.__test.access.workstation('staff_pc_2')` first; if `present` is false, go straight on; otherwise wait for the next `npc_left_post:pierce`, counted from her latest return. | Documentation; the bridge call was used in this round's captures check. |
+| m5 | Fixed | The m1 test above. A new test for an id-less world keycard sent as a `held_card` source. The owner-returned routing test now runs the real `PcSessions.claim` (the ApiClient answer makes the owner sit down mid-request) instead of a stub, so it fails without the R1 m4 presence guard; the m3 routing test does the same for the auto lock. | `access_model_rfid_test.rb`: "an id-less keycard lying in a reachable room is not a held-card copy source" (fails with 200 when the `held_keycard_ids` check in `held_clone_source_keycard` is removed); `access-signin-routing.test.mjs`: "a claim granted after the owner returned shows the message and opens no screen (code review R1, m4)" (fails with the presence guard removed) |
