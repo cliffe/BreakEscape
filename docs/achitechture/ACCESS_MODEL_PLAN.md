@@ -74,7 +74,7 @@ Not taken: probabilistic attack resolution (puzzles stay deterministic, section 
 ```
 
 - `role` is a string or an array. Every NPC with `creds` implicitly also has the role `staff` unless
-  `"staff": false` is set, so "all staff" ACLs need no extra typing.
+  `"staff": false` is set, so "all staff" ACLs need no extra typing (decided 2026-11-09).
 - `creds.card` replaces `rfidCard`. The loader treats an existing `rfidCard` as `creds.card`, so
   `clone_keycard` and the RFID minigame keep working unchanged.
 - **Identity resolution.** A credential maps to an identity by value: a card by `card_id`, a login by
@@ -146,10 +146,16 @@ Contents that belong to an account rather than a machine are declared once, at s
   into. That covers "works when the user logs into multiple PCs".
 - Item ids are global, as now. A takeable file taken from a profile is gone from that profile on every
   PC (the server's existing "already held" filter does this).
-- **Taking files.** `takeable: false` items stay on the PC and open in place (viewer, app). A takeable
-  digital file moves into the inventory when clicked, where it can be read. This changes one rule in
-  `container-minigame.js`: today a `text_file` always opens the viewer; inside a login desktop a
-  takeable one goes to the inventory instead.
+- **Taking files** (decided 2026-11-09). `takeable: false` items stay on the PC and open in place
+  (viewer, app). Clicking a takeable digital file opens a small **desktop-themed dialog** (styled as the
+  PC's own window chrome): **Open**, **Copy to inventory**, **Move to inventory**, **Cancel**.
+  - *Copy*: the file stays on the PC (and in its profile on every PC); the player gets a copy that reads
+    the same. The server records it in `player_state.copiedItems` so the "already held" filter does
+    not hide the original.
+  - *Move*: as the engine does today; the file leaves the profile everywhere.
+  - A scenario can restrict the choice per item (`"transfer": "copy" | "move" | "both"`, default
+    `both`), for example when moving a file is the point (taking the only copy of evidence).
+  This changes one rule in `container-minigame.js`: today a `text_file` always opens the viewer.
 - A staff desktop used in several scenarios can be generated with an ERB helper later; nothing shared is
   needed for the first slice.
 
@@ -170,8 +176,21 @@ system). It also makes him the PC's **owner** for sessions (existing `ownerOf` i
 
 ### 5.3 The login prompt
 
-`lockType: "login"` opens the password minigame in a new `mode: "login"` with a **username** field
-above the password field. The server checks:
+`lockType: "login"` opens the password minigame in a new `mode: "login"`.
+
+**Choosing the account** (decided 2026-11-09). By default the prompt shows an **account picker**: one
+tile per account, with the NPC's portrait and username, as on a real login screen. The player picks a
+tile, then types the password. `loginPicker` on the PC (or scenario-wide) sets what is shown:
+
+| `loginPicker` | Prompt |
+|---|---|
+| `"accounts"` (default) | Tiles for every account the PC's `access` admits |
+| `"known"` | Tiles only for NPCs the player has met or whose username they have found |
+| `false` | No tiles: the player types the username, as on a hardened PC |
+
+Usernames are not secret, so the picker sends no password information to the client.
+
+The server checks:
 
 1. the username belongs to an NPC with `creds`;
 2. the password matches that NPC's `creds.password`;
@@ -193,9 +212,20 @@ existing workstation layer decides whether the screen locks (`lockChance`, `lock
 fed by the awareness habit `locksScreen`). Policy can force it (5.5).
 
 If the screen is **not** locked when the player interacts, they get the owner's session: no login, the
-owner's profiles shown, and the server records the session as the owner. The server cannot see NPC
-positions, so it trusts this the way it trusts RFID today; the same globals
-(`<id>_screen_locked`, `<id>_owner_away`) are sent with the request and logged.
+owner's profiles shown, and the server records the session as the owner.
+
+**Server rule** (decided 2026-11-09). Contents of a login PC are sent only after a correct password,
+with one exception: an unlocked-session claim, which the server honours **only where the scenario
+makes one possible**. It refuses the claim (and the player must log in) when:
+
+- the PC has no owner (no `screenOwner`, and no NPC with it as `needsHome`);
+- the owner's effective `locksScreen` is `always` (or the PC's `lockChance` is 1);
+- the PC's policy has `autoLockMin: 0`;
+- the session would be the owner's own and the owner has no `creds`.
+
+Otherwise it is still a claim from the browser (the server cannot see NPC positions), so it is
+limited to what the game allows anyway. The client sends the workstation globals
+(`<id>_screen_locked`, `<id>_owner_away`) with the claim and the server logs them.
 
 ### 5.5 Policies
 
@@ -381,9 +411,12 @@ contents with unlocked sessions, named policy with auto lock, validator checks.
    - RFID ACL check (held card or cloner entry resolved to an identity);
    - login check and `sessions`, with server-side attempt counting;
    - the container endpoint composes local contents plus profiles for the session identity;
-   - an unlocked-session request recorded as the owner.
+   - an unlocked-session claim honoured only where the scenario makes one possible (5.4), recorded as
+     the owner;
+   - copied files recorded in `copiedItems` (5.1).
 3. **Client**:
-   - login mode in the password minigame;
+   - login mode in the password minigame, with the portrait account picker;
+   - the desktop-themed Open / Copy / Move dialog for takeable files;
    - desktop header showing who is logged in, with a log out button;
    - takeable files go to the inventory inside login desktops;
    - RFID unlock sends the `card_id` it used;
@@ -405,10 +438,12 @@ Later slices, in order: awareness presets and habits (section 6); work resources
 
 ## 11. Open questions
 
-1. **Copy or move.** Should taking a digital file copy it (it stays on the PC, the player gets a copy;
-   more realistic) or move it (as the engine does today)? The plan assumes move.
-2. **Choosing an account.** At the login prompt, does the player type the username, or pick from
-   accounts they have found (captures and notes)? The plan assumes typing.
-3. **Implicit `staff` role.** Is giving every NPC with creds the `staff` role helpful, or surprising?
-4. **Session trust.** Unlocked sessions are trusted from the client, as RFID is today. Acceptable for the
-   labs?
+All answered 2026-11-09:
+
+- copy or move: the player chooses in a desktop dialog (5.1);
+- choosing an account: portrait picker by default, typing optional (5.3);
+- implicit `staff` role: yes (3);
+- session trust: contents only after a correct password, except unlocked-session claims, honoured only
+  where the scenario makes one possible (5.4).
+
+None open. New questions from the review rounds go here.
