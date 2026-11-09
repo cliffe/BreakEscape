@@ -66,6 +66,13 @@ User decisions (2026-11-09):
 | Content release | A sign-in PC's contents are sent only after a correct password, except unlocked-session claims, honoured only where the scenario makes one possible. |
 | Backlog | Defender and investigator mission types, SecGen export (`docs/IDEAS_BACKLOG.md`). |
 
+User decisions (2026-11-09, clarifications):
+
+| Area | Decision |
+|---|---|
+| Needs system | The needs system is in active development and this work is part of it. Changing its behaviour is acceptable, provided the change is folded into `scenarios/lab_physical_pentest` and that scenario is playtested. Section 5.4 states each change and what it touches there. |
+| `lab_physical_pentest` | It is the first needs-based scenario and has not shipped. Converting `staff_pc_2` to a sign-in PC is fine; the plan says what its desktop holds, where its teaching text goes, and includes a browser playtest of that beat (section 8, step 7). |
+
 Orchestrator decisions (the user can overrule):
 
 | Area | Decision |
@@ -75,6 +82,9 @@ Orchestrator decisions (the user can overrule):
 | Access list refusal | A correct password at a PC whose access list does not admit that account answers "This account can't sign in on this PC", as real systems do; it teaches that access lists are separate from passwords. A wrong password, an unknown username and a locked account never reveal which of them applies: the answer depends only on how many times that username has failed at that PC (section 6, `POST /login`). |
 | Shared cards | A `card_id` carried by several NPCs carries every holder's identity: it passes an ACL that admits any of them (section 3). |
 | Claimed sessions on reload | A session claimed from an open screen ends on a reload, because the workstation state resets with every owner back at the desk (section 5.3). Password sessions survive a reload. |
+| One workstation rule | The presence test, "knocked out at the desk counts as leaving", the unowned result and the auto lock apply to every workstation, not only sign-in PCs, so the workstation layer has one rule (section 5.4). A plain workstation differs from today only when its owner is knocked out at the desk, or its policy sets `autoLockMin`. |
+| Tracked owners | An owner is tracked when the needs system registers it: at least one valid `needs` **or** `interests` entry. The client and the server's claim check use the same rule (sections 5.4 and 6). |
+| When a claim ends | A claimed session ends when the owner returns, when the screen's auto lock fires (`autoLockMin` game minutes after the owner left), or on a reload. `autoLockMin: 0` locks the screen in the leave roll itself (section 5.5). |
 
 ## 3. Identities and sign-in details on the NPC
 
@@ -175,9 +185,10 @@ lists. `access` and `acceptsUIDOnly` are added to each of them (the `rfid` branc
    including the minigame's own `acceptsUIDOnly` handling, which now receives the lock's value.
 2. Otherwise, if the lock has `access`: send **every held `card_id`** (keycards in inventory and the
    card copier's `saved_cards`) as `card_ids` in one unlock request, and drive the UI from the
-   server's answer: unlocked, "Access denied", or (reason `uid_only`) the minigame's existing "Reader
-   requires full authentication" message. The client does not resolve cards to roles itself, because
-   the admitted NPC may be in a room it has not loaded.
+   server's answer: unlocked; a refusal carrying `reason: "uid_only"`, shown as the minigame's
+   existing "Reader requires full authentication" message; or any other refusal, shown as "Access
+   denied". The client does not resolve cards to roles itself, because the admitted NPC may be in a
+   room it has not loaded.
 3. Otherwise today's "Requires RFID keycard" or card copier flow.
 
 On a mixed lock a `requires` card keeps today's client-trusted rule, so the ACL is only as strong as
@@ -190,19 +201,23 @@ not take `access` in the first slice; the validator errors on the combination.
 
 A card is saved to the card copier in one place: `handleSaveCard` (`rfid-minigame.js:280-300`, from
 the read screen's Save button, `rfid-ui.js:767`) calling `saveCardToCloner` (`rfid-data.js:286`).
-Three things open that read screen:
+The read screen and its Save button read only `cardToClone`, which only clone mode sets
+(`rfid-minigame.js:45, 272`), and two things start clone mode:
 
-- the `clone_keycard` ink action (`chat-helpers.js:340-405`), in a conversation;
+- the `clone_keycard` ink action (`chat-helpers.js:340-405`, starting the minigame at `:398-402`),
+  in a conversation;
 - clicking a held keycard (`interactions.js:870-896`, which runs only for a keycard with
-  `takeable: false`, that is, one already in the inventory, often one an NPC handed over to borrow);
-- the minigame's unlock mode, which lists held keycards and saved copies (`availableCards`,
-  `rfid-minigame.js:43`) and can read one.
+  `takeable: false`, that is, one already in the inventory, often one an NPC handed over to borrow).
 
-Each passes the copy's **source** in the minigame parameters: the ink action the conversation's NPC
-id (`npc_id`), the keycard click and the unlock-mode read of a held keycard the keycard's object id
-(`object_id`). A read of a saved copy has no source and records nothing (it was recorded when first
-saved). At the save point the client calls a new route, `POST /clone_card`, with the source and the
-`card_id` it saved. The server records **only the source's own card** (the NPC's `creds.card`, or
+Unlock mode does not save: its **Read** opens the tap screen (`rfid-ui.js:124-130`), and tapping a
+held card or saved copy emulates it at the reader (`handleCardTap`, `rfid-minigame.js:101-122`).
+Any save path added to unlock mode later must pass a source in the same way.
+
+Each of the two passes the copy's **source** in the minigame parameters: the ink action the
+conversation's NPC id (`npc_id`), the keycard click the keycard's object id (`object_id`). When
+`saveCardToCloner` reports success (a new card or an update of one already saved), the client calls a
+new route, `POST /clone_card`, with the source and the `card_id` it saved; a failed save calls
+nothing. The server records **only the source's own card** (the NPC's `creds.card`, or
 the keycard object's card) and only when the saved `card_id` equals it; otherwise it records nothing
 and answers `recorded: false`. So a copy can only ever carry an identity the scenario gave that
 source, and the copy the player sees and the copy the server holds never differ. (A `clone_keycard`
@@ -318,9 +333,12 @@ the generic search skips sign-in PCs' contents and profiles. The checks are in s
   object, is what opens it. It never enters `unlockedObjects`. On the client a sign-in never calls
   `unlockTarget` and never sets the PC's `locked` to false, so the next click still reaches the
   sign-in path and never sends `method: "unlocked"` (which `/unlock` refuses, section 6).
-- A `lockType: "login"` PC **with an owner** is a workstation (`isWorkstation`,
-  `workstation-state.js:46-49`, learns it), so its owner's comings and goings are tracked. A PC with
-  no owner is not a workstation: it always opens the sign-in screen and never offers a claim.
+- Every `lockType: "login"` object is a workstation: `isWorkstation(data)`
+  (`workstation-state.js:46-49`) accepts it from the object alone, with no NPC list, so its callers,
+  including `lighting.js:620`, are unchanged. An owned one has its owner's comings and goings
+  tracked. For an unowned one `onInteract` returns `signin` (5.4), so it always opens the sign-in
+  screen and never offers a claim, and the desk indicator stays off because `workstationIndicators`
+  already requires an owner (`lighting.js:116`).
 - A sign-in PC takes no `triggerOnInteract`: its interaction is the sign-in flow (5.4), which returns
   before that step runs. The validator errors on the combination; scenarios map the sign-in and
   workstation events instead.
@@ -335,8 +353,8 @@ survive a reset), so `reset_player_state!` drops them all.
 |---|---|---|
 | `sessions` | `{ pcId: { id: identityId, via: "password" \| "claim" } }` | Who is signed in at each sign-in PC right now, and how |
 | `signedInPcs` | set of PC ids | Every sign-in PC the player has ever signed in to (for tasks) |
-| `loginFailures` | `{ "pcId\|username": n }` | Failed sign-ins per PC and typed username (normalised, section 6), counted on the server |
-| `loginLockouts` | `["pcId\|username", ...]` | Usernames locked out of that PC by `maxAttempts` |
+| `loginFailures` | `{ "pcId\|username": { n, seq } }` | Failed sign-ins per PC and typed username (normalised, section 6), counted on the server. `seq` orders the entries (section 6), because a `jsonb` object keeps no key order |
+| `loginLockouts` | `["pcId\|username", ...]` | Usernames locked out of that PC by `maxAttempts`, oldest first (a `jsonb` array keeps its order) |
 | `copiedItems` | set of item ids | Section 5.1 |
 | `serverClones` | `{ card_id: { source, uidOnly } }` | Section 4.2 |
 
@@ -360,20 +378,25 @@ container (`interactions.js:1524-1534`). The `login` case in `unlock-system.js` 
 sign-in screen, or the desktop when the client holds a session for it.
 
 **Client sessions.** One small client module, `systems/pc-sessions.js`, is the only place the client
-signs in or out. It keeps the session list (`pcId -> { username, displayName, via }`) and the set of
-signed-in PCs, and wraps the `api-client.js` calls for `/login` (password and claim) and `/logout`.
-Every sign-in and sign-out passes through it: the password screen, the claim from an open screen,
-the desktop header's **Sign out**, the owner's return, the `autoLockMin` timer, a 403 from
-`container` (the server holds no session, for example after a reset: the module drops it locally
-without a request) and the reload rule below. It emits the events below, so they fire once per
-sign-in and sign-out whatever caused them.
+signs in or out. It keeps the session list (`pcId -> { npcId, username, displayName, via }`, filled
+from the server's answers, which carry all four) and the set of signed-in PCs, and wraps the
+`api-client.js` calls for `/login` (password and claim) and `/logout`. Every sign-in and sign-out
+passes through it: the password screen, the claim from an open screen, the desktop header's **Sign
+out**, the end of a claim (the owner's return or the screen's auto lock, 5.4), a 403 from `container`
+(the server holds no session, for example after a reset: the module drops it locally without a
+request) and the reload rule below. It emits the events below, so they fire once per sign-in and
+sign-out whatever caused them. When a session ends while that PC's desktop is open, the desktop
+closes with a one-line message: "<owner's displayName> is back at the desk", "The screen locked", or
+"Signed out".
 
 **Sign-in screen.** The password minigame gains a sign-in mode: account tiles, **Other user** (type
 a username) in every mode, and the PC object's own `postitNote` (as objects already do,
 `unlock-system.js:341`). In sign-in mode it has no attempt limit of its own (today it defaults to
 `maxAttempts || 3`, `unlock-system.js:340`): it shows the server's message and `attemptsLeft`, and
 stops only when the server reports a lockout ("This account is locked on this PC") for the username
-typed. Sign-in goes through `pc-sessions.js`.
+typed. It shows no letter-case hint: `/unlock`'s `caseMismatch` (`games_controller.rb:878-880`) is
+not copied to `/login`, because it would tell the player which usernames are real accounts. Sign-in
+goes through `pc-sessions.js`.
 
 **Account tiles.** `loginPicker` sets which tiles the sign-in screen shows.
 
@@ -386,8 +409,11 @@ typed. Sign-in goes through `pc-sessions.js`.
 The server composes the tiles in `filtered_room_data` (`game.rb:909`), so every response that
 carries room data has them: `GET /room/:id` and the room data a door unlock returns
 (`games_controller.rb:888`). They sit on the sign-in PC's entry as `loginAccounts`, and
-`GET /login_accounts` refreshes them when the screen opens (because `known` changes as the player
-explores). Each tile is `{ username, displayName, portrait, avatar }` and nothing else: `portrait`
+`GET /login_accounts` refreshes them every time the screen opens. The refresh is required, not an
+optimisation: `known` changes as the player explores, and in both responses that carry room data
+`filtered_room_data` runs before `track_npc_encounters` (`games_controller.rb:479, 488` and
+`:888-892`), so a `"known"` PC's tiles in the first response for its room leave out the NPCs in that
+same room. Each tile is `{ username, displayName, portrait, avatar }` and nothing else: `portrait`
 is the talk image person-chat would use for that NPC (`spriteTalk`, else the path derived from its
 sprite, `person-chat-portraits.js:375-387`), and `avatar` is the NPC's `avatar` or null. The client
 cannot build this list itself because the admitted NPCs may be in rooms it has not loaded. The
@@ -407,75 +433,121 @@ completion request lost before a reload still lands.
 
 **Reload.** Sessions live on the server. The scenario response (the controller's `scenario` action,
 `games_controller.rb:267`, beside `savedGlobalVariables` at `:298`) carries `sessions` as
-`{ pcId: { username, displayName, via } }` and `signedInPcs`. `core/game.js` hands both to
+`{ pcId: { npcId, username, displayName, via } }` and `signedInPcs`. An NPC id is not secret (it
+already appears in `access` lists the client receives). `core/game.js` hands both to
 `pc-sessions.js` where it merges `savedGlobalVariables` (`core/game.js:1652-1654`). The module keeps
 password sessions, and signs out every claimed session (`POST /logout`, emitting `pc_signed_out`),
 because the workstation state resets on a reload with every owner back at the desk and its away map
 empty (`workstation-state.js:93-116`), so the end rules for a claim (5.4) could no longer apply.
 Opening a kept PC calls `container`; a 403 drops it back to the sign-in screen. The desktop header
-shows the signed-in account with a **Sign out** button.
+shows the signed-in account (display name and username) with a **Sign out** button, above the PC's
+`observations` with `observationVariants` resolved, as every container header shows them today
+(`headerObservations`, `container-minigame.js:85`).
 
 ### 5.4 Unlocked sessions
 
 The first slice drives unlocked sessions from the workstation fields a PC already has; the
-`locksScreen` habit (section 9.1) later only fills those fields in. All of this applies only to a
-sign-in PC with an owner.
+`locksScreen` habit (section 9.1) later only fills those fields in. The presence, knock-out,
+unowned and auto lock rules below live in `workstation-state.js` and apply to every workstation;
+the claim and the sign-in screen apply only to sign-in PCs.
+
+**Availability in the needs system.** One method, `NPCNeedsSystem.isAvailable(npcId)`, is true when
+the sprite exists (`world.npcPos` not null) and `world.npcStatus` reports not `ko`, not `hostile`
+and not `hidden` (`npc-needs.js:1510-1524`). `_tickNpc` (`npc-needs.js:557-578`) keeps its order:
+decay; with no sprite, return (decay only: no block, no job abort, no home lookup); `_updateHome`;
+then `if (!this.isAvailable(id))` replaces the inline status test, aborting the job and setting
+`blocked`, and recovery still unblocks and calls `_goHome`. At that point the sprite exists, so the
+call is exactly the old status test: the needs system's own behaviour does not change.
 
 **Owner present.** The owner counts as present when all of these hold:
 
-- the needs system tracks them: `npcNeedsSystem.getState(ownerId)` is not null (`npc-needs.js:1346`);
+- the needs system tracks them: `npcNeedsSystem.getState(ownerId)` is not null
+  (`npc-needs.js:1346`). The needs system registers an NPC with at least one valid `needs` entry
+  (`decayPerMin` and `urgentAt` both above 0, `normaliseNeed`, `npc-needs.js:131-135`) **or** one
+  valid `interests` entry (weight above 0, `normaliseInterest`, `:150-154`), `register`,
+  `:225-241`;
 - that state has `atPost: true`;
-- the needs system's own availability test passes: the sprite exists (`world.npcPos` not null) and
-  `world.npcStatus` reports not `ko`, not `hostile` and not `hidden` (`npc-needs.js:1510-1524`).
-  This is the test `_tickNpc` applies (`npc-needs.js:559-571`); it moves into one method,
-  `NPCNeedsSystem.isAvailable(npcId)`, that `_tickNpc` and the workstation layer both call.
+- `isAvailable(ownerId)`.
 
 An owner removed from the scene (`#remove_npc`, which destroys the sprite), hidden, turned hostile or
 knocked out is therefore not present, even though the needs system leaves `atPost` unchanged for
 them. The workstation env gains `ownerPresent(id)`, which runs the three tests. `onInteract`
 (`workstation-state.js:167-182`) uses it first: present returns `attended`. A stub env without
-`ownerPresent` (unit tests) keeps today's rule, so existing behaviour is unchanged.
+`ownerPresent` (unit tests) keeps today's rule, so the existing tests pass unchanged.
+
+The needs system registers every NPC with `atPost: true` (`npc-needs.js:264`), so an owner who
+spawns away from the desk reads as "using this PC" until its first leave. Owners are authored at
+their desk, and the validator warns when an owner is placed in a different room from its PC
+(section 8, step 5).
 
 **Owner not present.** `onInteract` then reads the away record:
 
-- **Owner left their post** (`npc_left_post`, as today): the workstation layer decided whether the
-  screen locked when they left (`decideLocked`, `workstation-state.js:65-74`): `lockChance` (0 to
-  1, seeded roll) wins; without it, `locksScreenOnLeave` (default true, so a PC with neither field
-  always locks, the safe default). Policy `autoLockMin` (5.5) then locks an open screen after that
-  many game minutes. `onInteract` returns `accessed` (open, emitting `workstation_accessed`) or
-  `locked` (emitting `workstation_locked_attempt`), as today.
+- **Owner left their post** (`npc_left_post`, as today): the leave roll decides whether the screen
+  locked (`decideLocked`, `workstation-state.js:65-74`). The PC's policy (5.5) is read first:
+  `autoLockMin: 0` locks the screen in the roll itself. Otherwise `lockChance` (0 to 1, seeded roll)
+  wins; without it, `locksScreenOnLeave` (default true, so a PC with neither field always locks, the
+  safe default). `onInteract` returns `accessed` (open, emitting `workstation_accessed`) or `locked`
+  (emitting `workstation_locked_attempt`), as today.
 - **Owner knocked out at the desk**: the workstation layer listens for `npc_ko:<id>`
-  (`npc-hostile.js:350-354`) and treats it as leaving, rolling the screen as above, but only when
+  (`npc-hostile.js:350-354`) and treats it as leaving, running the leave roll above, but only when
   the needs system tracks the owner and the owner has no current away record. A knock-out while
-  already away changes nothing (it neither adds a leave nor re-rolls the screen), and a knock-out
-  of an untracked owner sets no away record.
-- **No away record** (the owner is untracked, was moved by a script, `npc-needs.js:333-344`, or was
-  removed, hidden or turned hostile while at the desk): `onInteract` returns a new value, `signin`,
-  and emits nothing (no `workstation_locked_attempt`, which scenarios map to "she locked it while
-  she was away" hints). The screen counts as locked: the PC opens the sign-in screen and offers no
-  claim.
+  already away changes nothing (it neither adds a leave nor re-rolls the screen), and a knock-out of
+  an untracked owner sets no away record. A knocked-out NPC stays down (`resetHostilesForRespawn`
+  skips it, `npc-hostile.js:112-115`), so the owner never returns; an open screen stays open until
+  its auto lock.
+- **No away record, or no owner** (the owner is untracked, was moved by a script,
+  `npc-needs.js:333-344`, or was removed, hidden or turned hostile while at the desk; or the PC has
+  no owner): `onInteract` returns a new value, `signin`, and emits nothing (no
+  `workstation_locked_attempt`, which scenarios map to "she locked it while she was away" hints). At
+  a sign-in PC the screen counts as locked: it opens the sign-in screen and offers no claim.
 
-`onInteract` returns `accessed` or `locked` only for an owner with an away record, so a PC whose
-owner has no `needs` never offers a claim. The server applies the same rule (claim check 3,
-section 6) and the validator warns about such a PC (section 8, step 5).
+`onInteract` returns `accessed` or `locked` only for a tracked owner with an away record. The server
+applies the same tracking rule (claim check 3, section 6) and the validator warns about an owned
+sign-in PC whose owner is untracked (section 8, step 5).
+
+**Auto lock.** When an owner leaves and the roll leaves the screen open under a policy with
+`autoLockMin` above 0, the workstation layer records `lockAt` = the needs clock (`clockMs`) plus
+`autoLockMin` game minutes. `NPCNeedsSystem` gains `onTick(fn)`, a listener list called at the end of
+`tick()` (`npc-needs.js:378-393`); the workstation layer registers one that, for each open screen
+whose owner is still away and whose `lockAt` has passed, sets `screenLocked`, publishes the globals
+and emits `workstation_auto_locked:<id>` with `{ objectId, ownerId }`. `onInteract` runs the same
+check before it answers, so a stub env with a manual clock behaves the same. The owner's return
+clears `lockAt`. The needs clock stands still while a VM is open (`npc-needs.js:309`), and so does
+the auto lock.
+
+**What changes for existing scenarios.**
+
+| Change | Before | After | In `lab_physical_pentest` |
+|---|---|---|---|
+| Needs ticks | Inline status test in `_tickNpc` | `isAvailable`, same result | None |
+| Owner removed, hidden or hostile at the desk | `attended`, no event | `signin`, no event; a plain workstation's click runs the generic flow as before (`interactions.js:792-795` ignores the result) | None: no NPC there is removed, hidden or hostile |
+| Owner knocked out at the desk | `attended` for ever | Counts as a leave: the screen is rolled, `workstation_owner_left` fires, the globals are set, and a click emits `workstation_accessed` or `workstation_locked_attempt` | None: `"disableAttacks": true` (`scenario.json.erb:8`). In `test_needs_sims` and `test_npc_needs`, which allow attacks, a knocked-out owner now leaves the screen as rolled |
+| Unowned workstation | `attended` | `signin`; both emit nothing | None |
+| `autoLockMin` | Did not exist | Locks an open screen on any workstation under a policy | None: it defines no `policies`, so nothing auto locks |
+| `lockType: "login"` | Not a workstation | Always a workstation | `staff_pc_2` becomes a sign-in PC (section 8, step 7); `staff_pc` (Chris, the keylogger beat) stays a plain workstation |
+
+**Desk indicators.** An owner removed, hidden or hostile at the desk has no away record, so the
+desk's indicator shows "attended" (`lighting.js:116-122`). This is cosmetic and is left as it is
+unless a playtest finds it misleading.
 
 **The interaction at a sign-in PC.** `interactions.js` handles a `lockType: "login"` PC in its own
 branch where it calls `onInteract` today (`interactions.js:788-796`), and returns from it without
 running the rest of the generic flow:
 
 1. Owned and the owner present (`ownerPresent`, no events): show "<owner's displayName> is using
-   this PC" and stop. This holds for any session too: nobody can use a PC its owner is sitting at.
+   this PC", followed by the PC's resolved `observations` when it has any, and stop. This holds for
+   any session too: nobody can use a PC its owner is sitting at.
 2. The client holds a session for this PC: open the desktop (`handleUnlock`, whose `login` case
    fetches `container`).
-3. Owned: call `onInteract`. On `accessed`, wait for the claim's answer from `pc-sessions.js`; on
-   success open the owner's desktop, on refusal the sign-in screen. On `locked` or `signin`, open
-   the sign-in screen.
-4. Unowned: open the sign-in screen.
+3. Call `onInteract`. On `accessed`, wait for the claim's answer from `pc-sessions.js`; on success
+   open the owner's desktop, on refusal the sign-in screen. On anything else (`locked`, `signin`,
+   `attended` from a race with step 1, or `null`), open the sign-in screen.
 
-**Claimed sessions end** when the owner returns (`workstation_owner_returned:<pcId>`), or after
-`autoLockMin` game minutes away from that PC, or on a reload (5.3): `pc-sessions.js` sends
-`POST /logout`. A password session is not ended by the owner's return; step 1 above simply blocks
-the PC while the owner sits at it.
+**Claimed sessions end** when the owner returns (`workstation_owner_returned:<pcId>`), when the
+screen's auto lock fires (`workstation_auto_locked:<pcId>`), or on a reload (5.3): `pc-sessions.js`
+sends `POST /logout`. The absence that counts is the owner's: the auto lock runs from the owner's
+leave, and where the player is does not matter. A password session is ended by neither; step 1
+simply blocks the PC while the owner sits at it.
 
 **The claim** is `POST /login` with `claim: "owner"` (section 6). The server honours it **only where
 the scenario makes one possible**. Beyond that it is a client claim, because the server cannot see
@@ -496,13 +568,14 @@ PC whose session rests on a roll.
 
 | Field | Effect |
 |---|---|
-| `autoLockMin` | Game minutes (the needs system's clock) after the owner leaves before an open screen locks, **whatever `lockChance` or the habit say**. Teaches that a technical control beats a human habit. `0`: the screen locks at once, so no claim is possible. The client also signs the player out of a claimed session after this long away from that PC (a game rule the server does not enforce). `null`: no auto lock. |
+| `autoLockMin` | Game minutes (the needs system's clock) after the owner leaves before an open screen locks, **whatever `lockChance` or the habit say** (5.4, "Auto lock"). Teaches that a technical control beats a human habit. When it fires, a claimed session at that PC ends (a game rule the server does not enforce). `0`: the leave roll itself locks the screen, so no click ever finds it open and no claim is possible (claim check 7). `null`: no auto lock. Applies to every workstation under the policy. |
 | `maxAttempts` | Server-counted failed sign-ins before that username is locked out on that PC. The lockout is per PC and username, and lasts until a game reset (a helpdesk recovery route is in the backlog). `null`: no limit. |
 | `usb` | `"blocked"`: USB-tagged items are not accepted at that PC. Later slice (9.2). |
 | `social` | `"blocked"`: the PC is not a `social` affordance. Later slice (9.2). |
 
 A PC with no `policy` uses `defaultPolicy`; with neither, everything is allowed and nothing auto locks
-(today's behaviour). Policies hold no secrets and are sent in the bootstrap.
+(today's behaviour). Policies hold no secrets and are sent in the bootstrap; the workstation env
+reads a PC's effective policy from `gameScenario.policies`.
 
 ### 5.6 What the browser never receives
 
@@ -551,17 +624,29 @@ never locked.
 check, and failure and lockout keys use the normalised form. Failures and lockouts are counted for
 **any** typed username, an account's or not, so the answer never shows whether a username exists.
 To keep `player_state` bounded, `loginFailures` and `loginLockouts` each keep at most 200 entries for
-usernames that are not accounts, dropping the oldest such entry first; entries for real accounts are
-never dropped, so spamming invented names cannot reset an account's count.
+usernames that are not accounts; entries for real accounts are never dropped, so spamming invented
+names cannot reset an account's count. `player_state` is a Postgres `jsonb` column
+(`db/migrate/20251120155358_create_break_escape_games.rb:24`), which keeps no object key order, so
+the order is stored explicitly. A new `loginFailures` entry gets `seq` one more than the largest
+`seq` in the hash (1 when empty); a further failure raises `n` and leaves `seq` alone. When a new
+non-account entry would make 201, the non-account entry with the smallest `seq` is dropped.
+`loginLockouts` is an array, which `jsonb` keeps in order: a new key is appended, and the first
+non-account key is dropped when a 201st would be added.
+
+**Who has an account, who is tracked.** An account is an NPC with `creds.username` (section 3). An
+owner is tracked by the needs system when it has at least one valid `needs` entry (`decayPerMin` and
+`urgentAt` both numbers above 0) or one valid `interests` entry (a number above 0, or an object
+whose `weight` is above 0): the same rule as `register` and its normalisers on the client
+(`npc-needs.js:131-159, 225-241`). One server helper, `needs_tracked?(npc)`, applies it.
 
 | Route | Parameters | Checks, in order | Writes and answer |
 |---|---|---|---|
-| `POST /login` (new, locked) | `pc_id`, `username`, `password` | 1. PC reachable. 2. The username is not in `loginLockouts` for this PC; otherwise answer `lockedOut: true`, "This account is locked on this PC", whatever the password (a correct one included). 3. The username belongs to an account (section 3) **and** the password equals that NPC's `creds.password`. 4. The PC's `access` admits that identity (no `access`: every account). | Success: `sessions[pcId] = { id, via: "password" }`, add to `signedInPcs`, delete that username's `loginFailures` entry for this PC; answer `{ username, displayName }`. Check 3 fails (unknown username or wrong password, never said which): increment `loginFailures`; at the policy's `maxAttempts` add the username to `loginLockouts` and answer `lockedOut: true`; otherwise "Incorrect username or password" with `attemptsLeft` (`maxAttempts` minus that username's failures here; null without a limit). Check 4 fails: "This account can't sign in on this PC", `notPermitted: true`; failures unchanged. |
-| `POST /login` with a claim (new, locked) | `pc_id`, `claim: "owner"`, the two workstation globals | 1. PC reachable. 2. The PC has an owner (`screenOwner`, or an NPC with it as `needsHome`). 3. The owner has `needs` in the scenario (without them the client never offers a claim, 5.4). 4. The owner has an account. 5. The PC's `access` admits the owner. 6. The PC does not always lock: refused when `lockChance` is 1, or `lockChance` is unset and `locksScreenOnLeave` is not `false`. 7. The PC's policy does not have `autoLockMin: 0`. A lockout of the owner's username does not stop a claim: an open session needs no password. | Success: `sessions[pcId] = { id: ownerId, via: "claim" }`, add to `signedInPcs`, log the globals. Failure: "Sign in required"; the client shows the sign-in screen. |
+| `POST /login` (new, locked) | `pc_id`, `username`, `password` | 1. PC reachable. 2. The username is not in `loginLockouts` for this PC; otherwise answer `lockedOut: true`, "This account is locked on this PC", whatever the password (a correct one included). 3. The username belongs to an account (section 3) **and** the password equals that NPC's `creds.password`. 4. The PC's `access` admits that identity (no `access`: every account). | Success: `sessions[pcId] = { id, via: "password" }`, add to `signedInPcs`, delete that username's `loginFailures` entry for this PC; answer `{ npcId, username, displayName, via: "password" }`. Check 3 fails (unknown username or wrong password, never said which): increment `loginFailures`; at the policy's `maxAttempts` add the username to `loginLockouts` and answer `lockedOut: true`; otherwise "Incorrect username or password" with `attemptsLeft` (`maxAttempts` minus that username's failures here; null without a limit). Check 4 fails: "This account can't sign in on this PC", `notPermitted: true`; failures unchanged. |
+| `POST /login` with a claim (new, locked) | `pc_id`, `claim: "owner"`, the two workstation globals | 1. PC reachable. 2. The PC has an owner (`screenOwner`, or an NPC with it as `needsHome`). 3. The owner is tracked by the needs system (`needs_tracked?`: a valid `needs` or `interests` entry; without one the client never offers a claim, 5.4). 4. The owner has an account. 5. The PC's `access` admits the owner. 6. The PC does not always lock: refused when `lockChance` is 1, or `lockChance` is unset and `locksScreenOnLeave` is not `false`. 7. The PC's policy does not have `autoLockMin: 0`. A lockout of the owner's username does not stop a claim: an open session needs no password. | Success: `sessions[pcId] = { id: ownerId, via: "claim" }`, add to `signedInPcs`, log the globals; answer `{ npcId, username, displayName, via: "claim" }` for the owner, so a `loginPicker: false` PC's header and events still name the account. Failure: "Sign in required"; the client shows the sign-in screen. |
 | `POST /logout` (new, locked) | `pc_id` | None. | Delete `sessions[pcId]`. |
 | `GET /login_accounts` (new) | `pc_id` | 1. PC reachable. | The tiles for the PC's `loginPicker` (5.3). |
 | `POST /clone_card` (new, locked) | `npc_id` or `object_id`, and `card_id` | 1. The server inventory holds an `rfid_cloner`. 2. For an NPC: a room NPC with a card (`creds.card || rfidCard`), in `encounteredNPCs`, not `"cloneable": false`. For an object: a keycard with a `card_id`, not `"cloneable": false`, that the server inventory holds, or that sits in a room that is unlocked or never locked with `path_unlocked?` true for the containers above it. 3. `card_id` equals the source's own card's `card_id`. | Checks 1 and 2 fail: 403. Check 3 fails: `recorded: false`, nothing written. Success: `serverClones[card_id]` from the source's own card, with `uidOnly` (4.2); `recorded: true`. |
-| `POST /unlock` (changed, locked) | as today, plus `card_ids` for an `rfid` lock with `access` | 1. **Before any other check**, including the "already in `unlockedObjects`" return (`game.rb:1186-1189`) and the `npc` and `flag_reward` methods (`:1210-1213`, `:1223-1227`): refuse a `lockType: "login"` object for every method; refuse an object with a scope (5.1) unless `session_admits?(scope)` holds and `path_unlocked?` holds for the containers above it. 2. An `rfid` lock with `access` (doors `game.rb:1156-1161`, objects `:1245-1248`): with `card_ids`, each card in turn, and the first that passes unlocks. A card passes when it is **held** (a keycard item in the server inventory whose scenario definition carries that `card_id`, or a key of `serverClones` while the server inventory holds an `rfid_cloner`), is not a UID-only copy at a lock without `acceptsUIDOnly: true`, **and** its id is in `requires` or equals the card `card_id` (`creds.card || rfidCard`) of any NPC whose identity passes `access`. Without `card_ids` (today's trusted claim): accepted only when the lock has `requires`; refused on `access` alone. 3. Everything else as today. | As today; a door unlock's room data comes from `filtered_room_data`, so it carries the withholding and `loginAccounts` (5.3, 5.6). A refusal for a UID-only copy carries reason `uid_only`. |
+| `POST /unlock` (changed, locked) | as today, plus `card_ids` for an `rfid` lock with `access` | 1. **Before any other check**, including the "already in `unlockedObjects`" return (`game.rb:1186-1189`) and the `npc` and `flag_reward` methods (`:1210-1213`, `:1223-1227`): refuse a `lockType: "login"` object for every method; refuse an object with a scope (5.1) unless `session_admits?(scope)` holds and `path_unlocked?` holds for the containers above it. 2. An `rfid` lock with `access` (doors `game.rb:1156-1161`, objects `:1245-1248`): with `card_ids`, each card in turn, and the first that passes unlocks. A card passes when it is **held** (a keycard item in the server inventory whose scenario definition carries that `card_id`, or a key of `serverClones` while the server inventory holds an `rfid_cloner`), is not a UID-only copy at a lock without `acceptsUIDOnly: true`, **and** its id is in `requires` or equals the card `card_id` (`creds.card || rfidCard`) of any NPC whose identity passes `access`. Without `card_ids` (today's trusted claim): accepted only when the lock has `requires`; refused on `access` alone. 3. Everything else as today. | As today; a door unlock's room data comes from `filtered_room_data`, so it carries the withholding and `loginAccounts` (5.3, 5.6). A refusal for a UID-only copy answers `{ success: false, message: "Invalid attempt", reason: "uid_only" }`: `validate_unlock` still returns a boolean (`game.rb:1107`), and on a refusal of an `rfid` lock with `card_ids` the controller asks a new predicate, `@game.uid_only_refusal?(target_type, target_id, card_ids)` (true when some held card would have passed but for being a UID-only copy), beside the existing `pin_cracker_feedback` and `password_case_mismatch?` calls (`games_controller.rb:868-881`). |
 | `GET /container/:id` (changed, locked) | as today | A sign-in PC: 1. PC reachable. 2. `sessions[pcId]` is set (otherwise 403); `unlockedObjects` is ignored. An object with a scope (a folder in a PC or profile): 1. `session_admits?(scope)`. 2. `path_unlocked?` for its path and itself. Anything else: as today. | A sign-in PC: its own `contents`, then each profile admitted for the session's identity, through `filter_container_contents`. A scoped folder: its contents, through the same filter. |
 | `POST /inventory` add (changed, locked) | as today, plus `source_pc_id` and `transfer: "copy" \| "move"` from a sign-in desktop | With `source_pc_id`: 1. The PC is `lockType: "login"` and `sessions[source_pc_id]` is set. 2. The item is found in that PC's own contents or in a profile. 3. `session_admits?` for the item's scope, through that PC's session. 4. `path_unlocked?` for the item's path. 5. The item is takeable. 6. Its `transfer` allows the choice. Without `source_pc_id`: as today, and the search skips sign-in PCs' contents and profiles. | The item joins the inventory; on `copy`, its id joins `copiedItems` in the same request. |
 | `POST /complete_task` (changed, locked) | as today | An `unlock_object` task whose target is a sign-in PC: the PC is in `signedInPcs`. Otherwise as today. | As today. |
@@ -577,7 +662,9 @@ what keeps a sign-in PC shut there.
 password), no response from `/scenario`, `/room/:id`, a door `/unlock`, `/container/:id` (signed
 out), `/login_accounts` or `/capture_secrets` (with no entry, and with a forged entry for an NPC that
 has no capture route) contains the password string. Step 2 builds it over the routes that exist then;
-step 3 adds `/login_accounts` and the signed-out `container` case.
+step 3 adds `/login_accounts` and the signed-out `container` case. Its fixture scenario never has a
+`writesDown` habit (that later slice ships the password on purpose, 9.1), and it is run after every
+step that changes what the server sends.
 
 ## 7. Determinism
 
@@ -601,9 +688,17 @@ the next.
 Files:
 - `scripts/validate_scenario.rb`: top-level keys (`:390-394`), rooms (`:405-409`), NPC fields
   (`:412-419`), items (`:484-510`).
-- `app/models/break_escape/game.rb`: a loader method, `normalise_access_model!`, called from
-  `generate_scenario_data` (`game.rb:3022`) just before `stamp_scenario_object_ids!` (`:3051`), so
-  its result is persisted once with the scenario data; `stamp_scenario_object_ids!` itself.
+- `app/models/break_escape/game.rb`: a loader method, `normalise_access_model!`, and a public
+  `prepare_scenario_data!` that runs it and then `stamp_scenario_object_ids!` (`:3059`, private).
+  `generate_scenario_data` (`game.rb:3022`) calls `prepare_scenario_data!` where it calls
+  `stamp_scenario_object_ids!` today (`:3051`), so the result is persisted once with the scenario
+  data. Both steps are idempotent.
+- `test/test_helper.rb`: a helper, `create_access_game(mission:, player:, scenario:, player_state: {})`,
+  that builds the game, calls `prepare_scenario_data!` and saves it. `generate_scenario_data` returns at once when
+  `scenario_data` is already set (`game.rb:3023-3024`), which is how tests build games
+  (`Game.create!(scenario_data: ...)`), so without the helper a hand-written test scenario would run
+  without the loader, and a test relying on `usePayload` being filled from `creds` would pass or
+  fail for the wrong reason. Every access model test with a hand-written scenario uses the helper.
 
 Work:
 - Accept NPC `role` and `creds`. The loader copies `rfidCard` into `creds.card` when `creds.card` is
@@ -614,8 +709,9 @@ Work:
   `cloneable`. (`lockChance`, `locksScreenOnLeave` and `screenOwner` are workstation fields already.)
 - Extend `stamp_scenario_object_ids!` to walk `accountProfiles`.
 
-Tests (`test/models`): the loader fills `creds.card` and `usePayload` once; a scenario with only
-`rfidCard` keeps working.
+Tests (`test/models`): the loader fills `creds.card` and `usePayload` once and a second run changes
+nothing; a scenario with only `rfidCard` keeps working; a game created with `Game.create!` and
+hand-set `scenario_data`, without the helper, is left untouched (the guard is unchanged).
 
 ### Step 2. Server withholding
 
@@ -644,7 +740,8 @@ Files:
 - `app/controllers/break_escape/games_controller.rb`:
   - the new actions, and `login`, `logout`, `clone_card` in the `with_game_lock` list;
   - `container`: the sign-in branch via `find_object_in_scenario`, and the scoped-folder checks;
-  - `unlock` passes `card_ids`;
+  - `unlock` passes `card_ids`, and on a refusal of an `rfid` lock with `card_ids` asks
+    `uid_only_refusal?` and answers `reason: "uid_only"` when it holds;
   - inventory add takes `source_pc_id` and `transfer`;
   - `find_accessible_item`, `find_object_in_scenario`, `find_container_in_scenario` walk profiles
     and return scope and path;
@@ -654,27 +751,37 @@ Files:
 - `app/models/break_escape/game.rb`:
   - `initialize_player_state`: empty defaults for the six new keys (they stay off `preserved_keys`);
   - `validate_unlock`: the scope and `login` refusal first, then the `rfid` `access` branch with
-    `serverClones` (copier held) and `acceptsUIDOnly`;
+    `serverClones` (copier held) and `acceptsUIDOnly`; `uid_only_refusal?` beside
+    `pin_cracker_feedback` (`game.rb:1275`);
+  - `needs_tracked?(npc)` (section 6);
   - `find_scenario_object` walks profiles;
   - `login_scope_of`, `session_admits?`, `path_unlocked?`;
-  - session, username normalising, failure and lockout helpers (with the 200-entry bound);
+  - session, username normalising, failure and lockout helpers (with the 200-entry bound kept in
+    `seq` order, section 6);
   - the tile composer, called from `filtered_room_data` and `/login_accounts`;
   - `complete_task!`: `unlock_object` on a sign-in PC reads `signedInPcs`.
 
-Tests:
+Tests (every hand-written scenario through `create_access_game`):
 - The rest of the no-password test: `/login_accounts`, and `/container/:id` signed out.
 - Sign-in answers: success; an unknown username and a wrong password give the same message and the
   same `attemptsLeft` sequence; the right password for an account the PC's `access` does not admit
   answers "This account can't sign in on this PC" and leaves the count alone; a username locked out
   answers `lockedOut: true` with the right password, a wrong one and for an invented username locked
-  the same way; usernames match trimmed and case-insensitively; spamming 300 invented names leaves a
-  real account's count and lockout in place.
+  the same way; usernames match trimmed and case-insensitively; a password right apart from letter case
+  answers exactly as a wrong one (no `caseMismatch`); spamming 300 invented names, with
+  `game.reload` between attempts so the order survives the `jsonb` round trip, leaves a real
+  account's count and lockout in place, keeps 200 non-account entries in each key, and drops the
+  earliest ones first.
 - Sessions: sign-out then 403; switching account needs the second password; a PC holding only
-  profiles opens; reset clears every new key; the scenario response carries `sessions` with `via`
-  and `signedInPcs`.
+  profiles opens; reset clears every new key; the password and claim answers and each `sessions`
+  entry in the scenario response carry `npcId`, `username`, `displayName` and `via`, and the
+  response carries `signedInPcs`.
 - `/unlock` refuses a sign-in PC for `unlocked`, `npc` and `flag_reward`; a locked archive in a
-  profile, unlocked while signed in, is refused by `/unlock` and `container` after sign-out.
-- Each claim refusal condition, including an unreachable or unowned PC and an owner without `needs`.
+  profile, unlocked while signed in, is refused by `/unlock` and `container` after sign-out; a
+  UID-only refusal answers `reason: "uid_only"`, and other refusals carry no reason.
+- Each claim refusal condition, including an unreachable or unowned PC, an owner with neither
+  `needs` nor `interests`, and an owner whose only entries are invalid (`decayPerMin: 0`); a claim
+  for an owner with `interests` only succeeds.
 - `/clone_card`: an NPC source; a keycard held in the inventory; a keycard in a reachable room; a
   keycard inside a locked container (refused); a `card_id` that is not the source's own
   (`recorded: false`); no copier (refused).
@@ -694,55 +801,75 @@ Tests:
 Files, all under `public/break_escape/js/`:
 - `api-client.js`: the new calls (`login`, `logout`, `loginAccounts`, `cloneCard`).
 - `systems/pc-sessions.js` (new): the session list and signed-in set, sign-in and sign-out through
-  `api-client.js`, the `pc_signed_in` and `pc_signed_out` events, the reload rule (keep password
-  sessions, sign out claimed ones), the local drop on a `container` 403 (5.3).
+  `api-client.js`, each session keeping `{ npcId, username, displayName, via }` from the server's
+  answer; the `pc_signed_in` and `pc_signed_out` events; the end of a claim on
+  `workstation_owner_returned:*` and `workstation_auto_locked:*`; closing an open desktop when its
+  session ends; the reload rule (keep password sessions, sign out claimed ones); the local drop on a
+  `container` 403 (5.3).
 - `core/game.js`: hand the scenario response's `sessions` and `signedInPcs` to `pc-sessions.js`
   where `savedGlobalVariables` is merged (`:1652-1654`).
 - `systems/doors.js`: copy `access` and `acceptsUIDOnly` into `doorProperties`.
 - `systems/unlock-system.js`: return `access` and `acceptsUIDOnly` from `getLockRequirementsForDoor`
-  and `getLockRequirementsForItem`; the three-step `rfid` order (4.1), including the `uid_only`
-  message; the `login` case opens the desktop when `pc-sessions.js` holds a session, else the
+  and `getLockRequirementsForItem`; the three-step `rfid` order (4.1), showing "Reader requires
+  full authentication" for an answer with `reason: "uid_only"` and "Access denied" for any other
+  refusal; the `login` case opens the desktop when `pc-sessions.js` holds a session, else the
   sign-in screen, and never calls `unlockTarget`; sign-in mode passes no attempt limit.
 - `systems/interactions.js`: the sign-in branch at the `onInteract` call (5.4: present, session,
-  claim, sign-in screen), returning before the generic flow; a sign-in PC routes as a container;
-  the held-keycard click passes its object id to the minigame.
-- `systems/npc-needs.js`: `isAvailable(npcId)`, used by `_tickNpc` and by the workstation env.
-- `systems/workstation-state.js`: `isWorkstation` accepts a `lockType: "login"` PC with an owner;
-  the env gains `ownerPresent(id)` (5.4); `onInteract` tests presence first and returns `signin`
-  for an absent owner with no away record; `npc_ko:*` counts as leaving only for a tracked owner
-  not already away; the `autoLockMin` timer; a claimed session ends through `pc-sessions.js` when
-  the owner returns or after `autoLockMin` away.
+  then `onInteract`, where only `accessed` leads to a claim and every other result, `null`
+  included, opens the sign-in screen), returning before the generic flow; a sign-in PC routes as a
+  container; the held-keycard click passes its object id to the minigame. Plain workstations keep
+  the generic flow.
+- `systems/npc-needs.js`: `isAvailable(npcId)`, called by `_tickNpc` after its no-sprite return
+  and by the workstation env (5.4); `onTick(fn)`, the end-of-tick listener list.
+- `systems/workstation-state.js`: `isWorkstation(data)` also accepts any `lockType: "login"`
+  object, with no new argument, so `lighting.js:620` is unchanged; the env gains
+  `ownerPresent(id)` and `policyFor(data)` (5.4, 5.5); `onInteract` tests presence first and
+  returns `signin` for no owner, or an absent owner with no away record; `npc_ko:*` counts as
+  leaving only for a tracked owner not already away; `decideLocked` locks at once under
+  `autoLockMin: 0`; the auto lock (`lockAt`, checked from `onTick` and in `onInteract`, emitting
+  `workstation_auto_locked:<id>`). These rules apply to every workstation (5.4).
 - `minigames/password/password-minigame.js`: sign-in mode (tiles drawn as in 5.3, **Other user**,
   the object's `postitNote`, the server's message, `attemptsLeft` and lockout); signs in through
   `pc-sessions.js`.
 - `minigames/container/container-minigame.js`: the Open / Copy / Move dialog; header with account
-  and **Sign out** (through `pc-sessions.js`).
+  and **Sign out** (through `pc-sessions.js`) above the resolved observations; closes with the
+  session's end message when `pc-sessions.js` ends its session.
 - `systems/inventory.js`: send `source_pc_id` and `transfer`.
 - `systems/objectives-manager.js`: `pc_signed_in` meets an `unlock_object` task on that PC; the
   load-time reconcile also reads `signedInPcs`.
 - `minigames/helpers/chat-helpers.js`: pass the NPC id to the minigame as the copy's source.
-- `minigames/rfid/rfid-minigame.js`, `minigames/rfid/rfid-data.js`: call `clone_card` from the save
-  point with the source and the saved `card_id`; an unlock-mode read of a held keycard passes its
-  object id.
+- `minigames/rfid/rfid-minigame.js`: in `handleSaveCard`, once `saveCardToCloner`
+  (`rfid-data.js:286`) reports success, call `clone_card` with the source from the minigame
+  parameters and the saved `card_id`. The two sources are the ink action and the held-keycard
+  click (4.2); unlock mode saves nothing.
 
 Nested folders need no new client parameter: the server admits a scoped object when any current
 session admits its scope (5.1), so `notifyServerUnlock` (`unlock-system.js:25-45`) and the password
 minigame's server check send what they send today.
 
 Client tests (`test/js/`, run with the existing node test runner):
-- `workstation-state.test.mjs`: an unowned sign-in PC is not a workstation and an owned one is;
-  owner at the desk returns `attended` with no event; owner away with the screen open returns
-  `accessed` and emits `workstation_accessed`; owner away with the screen locked returns `locked`
-  and emits `workstation_locked_attempt`; a tracked owner knocked out at the desk rolls the screen
-  once, and a second `npc_ko` while away changes neither `leaves` nor the screen; an untracked
-  owner knocked out returns `signin`; an owner removed (no sprite), hidden, hostile, untracked or
-  moved by a script returns `signin` and emits nothing; an env without `ownerPresent` keeps today's
-  results (the existing tests pass unchanged).
-- `npc-needs.test.mjs`: `isAvailable` is false with no sprite and for `ko`, `hostile` and `hidden`,
-  and `_tickNpc` blocks exactly when it is false.
+- `workstation-state.test.mjs`: `isWorkstation` accepts a `lockType: "login"` object with or
+  without an owner, and an unowned one returns `signin` with no event; owner at the desk returns
+  `attended` with no event; owner away with the screen open returns `accessed` and emits
+  `workstation_accessed`; owner away with the screen locked returns `locked` and emits
+  `workstation_locked_attempt`; a tracked owner knocked out at the desk rolls the screen once, on a
+  plain workstation as on a sign-in PC, and a second `npc_ko` while away changes neither `leaves`
+  nor the screen; an untracked owner knocked out returns `signin`; an owner removed (no sprite),
+  hidden, hostile, untracked or moved by a script returns `signin` and emits nothing; an env without
+  `ownerPresent` keeps today's results (the existing tests pass unchanged); `autoLockMin: 0` locks
+  in the leave roll, so the first click after the leave returns `locked`; with `autoLockMin: 5` an
+  open screen locks and emits `workstation_auto_locked` once the clock passes five game minutes,
+  not before, and the owner's return cancels it.
+- `npc-needs.test.mjs`: `isAvailable` is false with no sprite and for `ko`, `hostile` and `hidden`;
+  with no sprite `_tickNpc` only decays (no `blocked`, no home), and with a sprite it blocks
+  exactly when `isAvailable` is false; an NPC with `interests` only is registered, so `getState`
+  is not null for it. The whole needs suite (`npc-needs*.test.mjs`,
+  `npc-pressing-needs.test.mjs`) and `lighting-workstation-indicators.test.mjs` pass unchanged.
 - `pc-sessions.test.mjs` (new): a password sign-in and a claim each emit one `pc_signed_in` with the
-  right `via`; every sign-out route emits one `pc_signed_out`; on load, password sessions are kept
-  and claimed ones signed out; a `container` 403 drops the session without a request.
+  right `npcId` and `via`; every sign-out route emits one `pc_signed_out` with `npcId`, including
+  the reload sign-out of a claimed session restored from `sessions`; a claim ends on the owner's
+  return and on the auto lock, and a password session on neither; on load, password sessions are
+  kept and claimed ones signed out; a `container` 403 drops the session without a request.
 - An objectives test: an `unlock_object` task on a sign-in PC completes on `pc_signed_in`, and on
   load when the PC is in `signedInPcs`.
 
@@ -768,7 +895,11 @@ Warnings:
 - an `access` role no NPC holds;
 - an account whose `needsHome` sign-in PC does not admit it;
 - an owned sign-in PC with `lockChance` between 0 and 1 (section 7);
-- an owned sign-in PC whose owner has no `needs` (no unlocked session is ever possible there);
+- an owned sign-in PC whose owner has neither a valid `needs` nor a valid `interests` entry (the
+  rule in section 6: no unlocked session is ever possible there);
+- an owner (`screenOwner`, or `needsHome` naming a workstation) placed in a different room from that
+  workstation: the needs system starts every NPC at its post (5.4), so the PC would read as in use
+  until the owner's first leave;
 - a sign-in PC under a policy with a `maxAttempts`, because a lockout lasts the mission: the author
   confirms another route exists;
 - a capture route on an account holder in a scenario without `social.captures.revealSecret`;
@@ -785,24 +916,88 @@ against the intended route is not computed in this slice (the validator has no p
 `scripts/generate_dungeon_graph.rb`: an identity appears as a key node (Jake's card, Jake's sign-in)
 with edges to the locks it opens; a shared card is one node naming every holder.
 
-### Step 7. Proof scenario and one converted beat
+### Step 7. Proof scenario, the converted beat and playtests
 
-`scenarios/test_access_model`:
-- three NPCs (finance, staff, IT), each with `needs`;
-- a finance door with a role-only ACL, and an `rfid` cabinet with a role-only ACL;
-- three sign-in PCs: one owned with `lockChance: 0`, one owned with `lockChance: 1`, one unowned
-  holding only profiles;
-- a staff profile, and a personal profile with a takeable file and a password-locked archive;
-- `corp_default` with `autoLockMin: 5`;
-- one cloneable card;
-- an `unlock_object` task on one sign-in PC.
+**`scenarios/test_access_model`** (new; a test scenario, kept small):
+- a start room with a card copier (`rfid_cloner`) on a table, so `/clone_card` check 1 can pass;
+- an office with three NPCs, each with `needs`, an account, and placed at their desk: Dana (role
+  `finance`, an EM4100 `creds.card`, ink whose conversation offers to scan her badge with
+  `#clone_keycard:<her card_id>`), Sam (role `staff` only) and Ian (role `it`);
+- a finance office behind an `rfid` door with role-only `access` (`finance`), holding an `rfid`
+  cabinet with role-only `access`;
+- three sign-in PCs: Dana's, owned, `lockChance: 0`, under `corp_default`; Ian's, owned,
+  `lockChance: 1`; and an unowned hot desk with no `contents`, holding only profiles;
+- `policies.corp_default` with `autoLockMin: 5` and `maxAttempts: 5` (the validator's lockout
+  warning is expected here);
+- a staff profile (`for: { roles: ["staff"] }`) with a handbook that gives the archive's password,
+  and a personal profile for Ian with a takeable file, a file with `"transfer": "copy"` and a
+  password-locked archive;
+- Ian's password on a hand-written note in a drawer in his room (a deliberate clue, 5.6);
+- an `unlock_object` task on Ian's PC.
 
-Then convert one beat of `scenarios/lab_physical_pentest/scenario.json.erb`: give Pierce (`pierce`,
-who has `needs` and `screenOwner` on `staff_pc_2`) a role and `creds` with `username: "m.pierce"`
-(the address its capture already uses, `:829, :835`), remove the inline `usePayload.secret` and
-`addCapture.secret` there, and make `staff_pc_2` a sign-in PC whose unlocked session the existing
-capture beat (on `workstation_accessed:staff_pc_2`) rides on. Its `locksScreenOnLeave: false`
-(`:925-935`) means the claim is allowed.
+**`scenarios/lab_physical_pentest/scenario.json.erb`**, the Melanie Pierce beat:
+- Pierce (`pierce`, `:813-840`) gains `"role": "finance"` and `creds` with `username: "m.pierce"`
+  (the address its capture already uses, `:829, :835`) and the password its capture carries today.
+  The inline `usePayload.secret` and `addCapture.secret` are removed (the loader fills `usePayload`
+  from `creds`, and `/capture_secrets` serves the password through the account-holder pass, since
+  the scenario sets `social.captures.revealSecret`, `:48`). The capture mapping on
+  `workstation_accessed:staff_pc_2` is unchanged, so `kp_unlocked_screen`, `opt_unlocked` and
+  Ruth's debrief lines keep working.
+- `staff_pc_2` (`:923-951`) becomes `"locked": true, "lockType": "login"`, keeping
+  `workstation: true`, `locksScreenOnLeave: false` (so the claim is allowed), `screenOwner` and its
+  `affordance`. It has no `contents`; its desktop is Pierce's profile. The scenario defines no
+  `policies`, so nothing auto locks and there is no attempt limit; the only account is Pierce's.
+- A new `accountProfiles.pierce_desktop` (`for: { people: ["pierce"] }`) holds one
+  `takeable: false` text file, "Saved logins": the browser's saved sign-ins for `LW-OPEN-07`
+  (`m.pierce` on the finance portal and webmail, passwords shown as dots), then the lesson: an
+  unattended, unlocked session hands over everything saved in it; on a real engagement you screenshot
+  that it was reachable and stop; the control is Win+L every time you stand up, with an auto lock
+  policy as the backstop.
+- The teaching text in `observationVariants` (`:936-949`) moves to where the player now sees it.
+  Variants resolve first match (`conditional-text.js`), and the desktop header shows them (5.3).
+  The `staff_pc_2_accessed` variant goes first and carries the merged lesson now shown in the
+  desktop header: Melanie walked off without locking her screen, you were straight into her live
+  session and its saved logins, no keylogger and no device were needed, the clean-desk and
+  lock-screen rule is the whole fix, and on a real job you screenshot that it was reachable and
+  stop. The `staff_pc_2_owner_away` and `staff_pc_2_screen_locked` variants are removed: the claim
+  sets `staff_pc_2_accessed` before the desktop opens, so the away text would never show, and the
+  screen never locks. The base `observations` ("watch for the moment she leaves the desk") stays and
+  is shown under "Melanie Pierce is using this PC" while she is at the desk (5.4, step 1).
+- `staff_pc` (Chris, the keylogger beat) and `usb_target_pc` are unchanged.
+
+**Static checks.** Validator clean on both scenarios (the expected `maxAttempts` warning aside), ink
+compiles, dungeon graphs regenerated, and the no-password test passing.
+
+**Browser playtests** (the `playtest-scenario` skill; draft runs on the keyless server on :3001 with
+`tools/playtest/new-game.rb` and `PLAYTEST_PORT=3001`; Haiku for the scripted runs, Sonnet to check
+any "stuck" report; `tools/playtest/verify-run.rb` must show progress on the server; every secret is
+fetched from its in-game source first, with the earned-secrets table).
+
+`test_access_model`:
+1. Claim: wait for Dana to leave her desk; click her PC: the desktop opens on her account (staff and
+   personal profiles, header naming her). Copy a file and reopen: it is still listed. When Dana
+   returns the desktop closes with "<Dana's displayName> is back at the desk", and a click shows
+   "<Dana's displayName> is using this PC".
+2. Auto lock: claim again and wait five game minutes: the desktop closes with "The screen locked",
+   and the next click opens the sign-in screen.
+3. Password: read Ian's note; at his PC (it always locks) the sign-in screen shows the tiles; sign in
+   as Ian; the `unlock_object` task completes. Open the archive with the handbook's password; Move
+   the takeable file (it leaves the PC); the copy-only file offers Copy only. Sign out.
+4. Hot desk: the unowned PC shows every account's tile and **Other user**; a wrong password shows
+   `attemptsLeft`; signing in as Sam shows the staff profile and none of Ian's files.
+5. Card copy: take the card copier, talk to Dana and scan her badge; the finance door opens through
+   its role list, and so does the cabinet.
+6. Reload during a claim: the claimed session is gone (the PC opens the sign-in screen), the password
+   session at Ian's PC is kept, and the task stays complete.
+
+`lab_physical_pentest`:
+1. The Pierce beat: wait for Melanie to leave for coffee; click her PC: the desktop opens on her
+   session with the lesson in the header and the "Saved logins" file; the capture is added,
+   "opt_unlocked" completes and the captures view shows the password. When she returns the desktop
+   closes, and a click shows she is using the PC with the base observation.
+2. The keylogger beat at Chris's PC plays as before.
+3. Reload during the claim: the claim ends, and the capture and task are kept; Ruth's debrief still
+   credits the unlocked screen.
 
 ## 9. Later slices
 

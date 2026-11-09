@@ -351,3 +351,35 @@ the planner.
     unless a playtest finds it misleading.
 14. **No-password test.** Keep it on a scenario without a `writesDown` habit (a later slice ships the
     password on purpose) and run it after every step that touches what the server sends.
+
+## 8. Planner response
+
+The plan was rewritten after this round so the implementer works from it alone. The user's
+clarifications of 2026-11-09 (the needs system may change if `lab_physical_pentest` absorbs and
+playtests the change; `staff_pc_2` may become a sign-in PC) are recorded in the plan's section 2.
+
+| Item | Outcome | Where and how |
+|---|---|---|
+| m1 `isAvailable` and `_tickNpc` | Fixed | 5.4: `isAvailable` = sprite and status clear; `_tickNpc` keeps its no-sprite "decay only" return and calls `isAvailable` after it, so needs behaviour is unchanged; the workstation changes are listed in a table with their effect on `lab_physical_pentest` (none apart from `staff_pc_2`). |
+| m2 interests-only owner | Fixed | One rule (valid `needs` or `interests`, as `register` and its normalisers) in 5.4, section 6 (`needs_tracked?`, claim check 3) and the step 5 warning. |
+| m3 `npcId` and the claim's account | Fixed | Both `/login` answers and every `sessions` entry carry `{ npcId, username, displayName, via }` (5.3, section 6). |
+| m4 order in a `jsonb` hash | Fixed | `loginFailures` entries are `{ n, seq }`, the lowest non-account `seq` is dropped; `loginLockouts` stays an ordered array; the spam test reloads between attempts (section 6, step 3). |
+| m5 unlock-mode copy source | Fixed | 4.2 and step 4 name two sources; unlock mode saves nothing, and any later save path there must pass a source. |
+| m6 `isWorkstation`, `onInteract`, scope | Fixed | `isWorkstation` accepts every `login` object with no new argument (`lighting.js:620` unchanged, indicators already need an owner); unowned returns `signin`; any result but `accessed` opens the sign-in screen; presence and knock-out rules apply to every workstation (orchestrator decision, 5.4). |
+| m7 Pierce beat | Fixed | Step 7: `pierce_desktop` profile with a "Saved logins" file and the lesson; the `accessed` variant goes first and carries the lesson into the desktop header; the away and locked variants are removed; browser playtest added. |
+| m8 `uid_only` reason, `autoLockMin` | Fixed | `uid_only_refusal?` beside `pin_cracker_feedback` gives `reason: "uid_only"`; a claim ends when the screen's auto lock fires (from the owner's leave, via a new `onTick` listener); `autoLockMin: 0` locks in the leave roll (5.4, 5.5, section 6). |
+| m9 proof scenario and loader tests | Fixed | The proof scenario has a card copier and a cloning conversation; a public `prepare_scenario_data!` and the `create_access_game` test helper run the loader for hand-written test scenarios (step 1). |
+| Open item 1 | Fixed | As m1; step 4 names the needs and indicator suites that must pass unchanged. |
+| Open item 2 | Fixed | As m2. |
+| Open item 3 | Fixed | As m3. |
+| Open item 4 | Fixed | As m4. |
+| Open item 5 | Fixed | As m5; `/clone_card` is called only after `saveCardToCloner` reports success. |
+| Open item 6 | Fixed | As m6. |
+| Open item 7 | Fixed | As m7. |
+| Open item 8 | Fixed | As m8. |
+| Open item 9 | Fixed | As m9. |
+| Open item 10 owners away from the desk | Fixed | 5.4 says owners are authored at their desk; step 5 warns when an owner is in a different room from its workstation. |
+| Open item 11 "known" tiles on first entry | Fixed | 5.3 makes the `GET /login_accounts` refresh on every opening a requirement and says why. |
+| Open item 12 no case hint at `/login` | Fixed | 5.3 and a step 3 test: a case-only mismatch answers exactly as a wrong password. |
+| Open item 13 lighting indicators | Deferred | Cosmetic; 5.4 records it and leaves it unless a playtest finds it misleading. |
+| Open item 14 no-password test | Fixed | Section 6: its fixture never has `writesDown`, and it runs after every step that changes what the server sends. |
