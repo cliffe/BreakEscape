@@ -376,9 +376,12 @@ module BreakEscape
         # Include current inventory from player_state for page reload recovery
         # This allows the client to restore inventory state on reload
         # Sign-in sessions and the PCs signed in to (access model 5.3), so a password
-        # session survives a reload and pc-sessions.js can end any claimed one.
+        # session survives a reload and pc-sessions.js can report the end of any claimed
+        # one. The server ends the claimed ones itself, here, so the end does not rest on
+        # the client's POST /logout.
         filtered['sessions'] = @game.sessions_for_client
         filtered['signedInPcs'] = @game.signed_in_pcs
+        @game.end_claimed_sessions!
 
         if @game.player_state['inventory'].present? && @game.player_state['inventory'].is_a?(Array)
           filtered['playerInventory'] = @game.player_state['inventory']
@@ -1119,7 +1122,8 @@ module BreakEscape
       result = @game.record_card_clone!(
         card_id: params[:card_id].to_s,
         npc_id: params[:npc_id].presence&.to_s,
-        object_id: params[:object_id].presence&.to_s
+        object_id: params[:object_id].presence&.to_s,
+        held_card: ActiveModel::Type::Boolean.new.cast(params[:held_card]) == true
       )
       render json: result[:body], status: result[:status]
     end
@@ -1760,8 +1764,10 @@ module BreakEscape
         container = find_container_recursive(room_data['objects'], container_id)
         return container if container
 
-        # Search nested contents
+        # Search nested contents (never under a sign-in PC: see find_container_recursive)
         room_data['objects']&.each do |obj|
+          next if BreakEscape::Game.login_pc?(obj)
+
           container = search_nested_contents(obj['contents'], container_id)
           return container if container
         end
@@ -1775,6 +1781,11 @@ module BreakEscape
       return nil unless objects
 
       objects.each do |obj|
+        # A sign-in PC and everything under it are served only through the scope branch
+        # of the container action (a session decides), never here: a name shared with an
+        # unscoped object would otherwise reach them through unlockedObjects.
+        next if BreakEscape::Game.login_pc?(obj)
+
         # Check if this object matches
         if obj['id'] == container_id || (obj['name'] && obj['name'] == container_id)
           return obj if obj['contents'].present?
@@ -1827,6 +1838,8 @@ module BreakEscape
       return nil unless contents
 
       contents.each do |item|
+        next if BreakEscape::Game.login_pc?(item)
+
         return item if (item['id'] == container_id || item['name'] == container_id) && item['contents'].present?
         nested = search_nested_contents(item['contents'], container_id)
         return nested if nested

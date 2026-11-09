@@ -306,3 +306,22 @@ test('step 9: the owner-present message names the owner and reports pc_in_use wi
         { pcId: 'dana_pc', ownerId: 'dana', signedInBefore: true }
     ]);
 });
+
+// Code review R1, m4: workstation_owner_returned fired while the claim was in flight
+test('a claim granted after the owner has returned ends at once with owner_returned', async () => {
+    const s = setup({ answer: CLAIM_ANSWER });
+    window.workstationState = { presence: () => ({ ownerId: 'dana', present: true }) };
+    const r = await s.claim('dana_pc');
+    assert.equal(r.ok, false);
+    assert.equal(r.reason, 'owner_returned');
+    assert.equal(r.message, 'Dana Reyes is back at the desk');
+    assert.equal(s.has('dana_pc'), false);
+    assert.deepEqual(calls.map(c => c[0]), ['login', 'logout']);
+    assert.deepEqual(named('pc_signed_out'), [{ pcId: 'dana_pc', npcId: 'dana', reason: 'owner_returned', firstAtPc: true }]);
+    // The owner away: the claim stands
+    window.workstationState = { presence: () => ({ ownerId: 'dana', present: false }) };
+    events.length = 0;
+    assert.equal((await s.claim('dana_pc')).ok, true);
+    assert.equal(s.has('dana_pc'), true);
+    delete window.workstationState;
+});

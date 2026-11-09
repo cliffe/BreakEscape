@@ -146,14 +146,14 @@ test('a save from a held-keycard click calls cloneCard once with object_id', asy
     assert.deepEqual(cloneCalls, [[{ object_id: 'ian_spare_badge' }, 'IT-IAN-01']]);
 });
 
-test('a keycard with no id passes no source, and its save calls nothing', async () => {
+test('a held keycard with no id (an NPC badge handed over) is recorded as a held card by its card_id', async () => {
     reset();
-    const badge = { type: 'keycard', takeable: false, name: 'Old card', card_id: 'OLD-1' };
+    const badge = { type: 'keycard', takeable: false, name: 'Old card', card_id: 'OLD-1', rfid_protocol: 'EM4100' };
     keycardBranch()({ objectId: 'inventory_keycard', scenarioData: badge }, window);
-    assert.equal(started[0][2].cloneSource, null);
+    assert.deepEqual(started[0][2].cloneSource, { held_card: true });
     minigameFrom(started[0][2]).handleSaveCard(badge);
     await settle();
-    assert.equal(cloneCalls.length, 0);
+    assert.deepEqual(cloneCalls, [[{ held_card: true }, 'OLD-1']]);
 });
 
 test('a failed save calls nothing', async () => {
@@ -186,4 +186,21 @@ test('a server error on the record is swallowed: the save still stands', async (
     await settle();
     assert.equal(cloner.scenarioData.saved_cards.length, 1);
     assert.equal(m.gameResult.cardSaved, true);
+});
+
+// Code review R1, m6: the record is kept where an access-list unlock can wait for it
+test('a save leaves its record as window.pendingCardCloneRecord until it settles', async () => {
+    reset();
+    let finish;
+    window.ApiClient.cloneCard = (source, cardId) => new Promise(r => { finish = r; cloneCalls.push([source, cardId]); });
+    await processGameActionTags(['clone_keycard:FIN-DANA-01'], { showNotification() {} });
+    const m = minigameFrom(started[0][2]);
+    m.handleSaveCard(started[0][2].cardToClone);
+    const pending = window.pendingCardCloneRecord;
+    assert.ok(pending && typeof pending.then === 'function', 'the record is pending');
+    await settle();
+    finish({ success: true, recorded: true });
+    assert.deepEqual(await pending, { success: true, recorded: true });
+    await settle();
+    assert.equal(window.pendingCardCloneRecord, null);
 });

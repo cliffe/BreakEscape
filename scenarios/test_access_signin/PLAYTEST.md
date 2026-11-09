@@ -37,6 +37,12 @@ expects below. `signedInPcs` lists every PC the player has ever signed in at in 
 PCs signed in now: a PC stays in it after Sign out. The sessions open now are the `sessions` line. `{"cmd":"eval","fn":"() => window.__test.access.sessions()"}` shows the sessions the
 browser holds; they should match the server's `sessions` line.
 
+What the leak check cannot see: it allows an item from a folder under a sign-in PC or in a profile
+in the top-level `contents` of any `POST /unlock` answer, because it does not know whether that
+answer's target was the folder. A folder served by `/unlock` or `GET /container` with no session
+(for example through a name it shares with another object) is covered by the server tests
+(`test/controllers/break_escape/access_model_no_password_test.rb`), not by the leak check.
+
 ## Harness notes for this scenario
 
 - **The sign-in screen.** `interact` on a PC opens it (or the desktop, when the browser holds a

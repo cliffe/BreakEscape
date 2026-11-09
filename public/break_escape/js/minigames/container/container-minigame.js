@@ -269,6 +269,12 @@ export class ContainerMinigame extends MinigameScene {
         // Call parent init first
         super.init();
 
+        // A folder opened from a sign-in desktop shows the session's files too, so it closes
+        // with the same message when that session ends (owner back, auto lock, sign out).
+        if (!this.loginPcId && this.sourcePcId && this.mode !== 'npc' && window.pcSessions?.registerDesktop) {
+            this._unregisterDesktop = window.pcSessions.registerDesktop(this.sourcePcId, (message) => this.closeForSessionEnd(message));
+        }
+
         // Play drawer/container opening sound (not for PC/desktop containers)
         if (this.mode !== 'pc' && !this.desktopMode) {
             try {

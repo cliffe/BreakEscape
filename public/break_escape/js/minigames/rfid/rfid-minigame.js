@@ -340,11 +340,12 @@ export class RFIDMinigame extends MinigameScene {
         const cardId = cardData && cardData.card_id;
         if (!source || !cardId) return undefined;
         const body = source.npc_id ? { npc_id: source.npc_id }
-            : (source.object_id ? { object_id: source.object_id } : null);
+            : (source.object_id ? { object_id: source.object_id }
+                : (source.held_card ? { held_card: true } : null));
         if (!body) return undefined;
         const apiClient = window.ApiClient || window.APIClient;
         if (!apiClient || typeof apiClient.cloneCard !== 'function') return undefined;
-        return Promise.resolve()
+        const record = Promise.resolve()
             .then(() => apiClient.cloneCard(body, cardId))
             .then(answer => {
                 console.log('💾 Card copy recorded on server:', answer && answer.recorded);
@@ -354,6 +355,15 @@ export class RFIDMinigame extends MinigameScene {
                 console.warn('💾 Could not record card copy on server:', error && error.message);
                 return null;
             });
+        // An access-list unlock waits for this (unlock-system.js requestRfidAccessUnlock),
+        // so a reader tapped straight after Save sees the recorded copy.
+        if (typeof window !== 'undefined') {
+            window.pendingCardCloneRecord = record;
+            record.then(() => {
+                if (window.pendingCardCloneRecord === record) window.pendingCardCloneRecord = null;
+            });
+        }
+        return record;
     }
 
     /**

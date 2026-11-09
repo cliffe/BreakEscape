@@ -108,7 +108,8 @@ export class ApiClient {
   }
 
   // Record a card the card copier saved (access model 4.2). `source` is
-  // { npc_id } (copied in a conversation) or { object_id } (a held keycard).
+  // { npc_id } (copied in a conversation), { object_id } (a held keycard) or
+  // { held_card: true } (a held keycard with no id, named by cardId).
   // Answers { success, recorded }; recorded is false when the card is not the
   // source's own card.
   static async cloneCard(source, cardId) {

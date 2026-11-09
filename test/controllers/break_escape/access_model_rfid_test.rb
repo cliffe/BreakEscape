@@ -26,8 +26,9 @@ module BreakEscape
       @game.scenario_data['rooms']['lobby']['objects'].find { |o| o['id'] == id }
     end
 
-    def clone_card(card_id, npc_id: nil, object_id: nil)
-      post clone_card_game_url(@game), params: { card_id: card_id, npc_id: npc_id, object_id: object_id }.compact, as: :json
+    def clone_card(card_id, npc_id: nil, object_id: nil, held_card: nil)
+      post clone_card_game_url(@game), params: { card_id: card_id, npc_id: npc_id, object_id: object_id,
+                                                 held_card: held_card }.compact, as: :json
       response.parsed_body
     end
 
@@ -236,6 +237,60 @@ module BreakEscape
       clone_card(JAKE_CARD_ID, npc_id: 'jake')
       @game.reload.remove_inventory_item!('card_copier')
       assert_refused object('finance_cabinet', card_ids: [JAKE_CARD_ID])
+    end
+
+    # ---- Code review R1: "held" is decided by card_id, never by name ------------------
+
+    STAFF_BADGE = { 'type' => 'keycard', 'name' => 'Staff badge', 'rfid_protocol' => 'EM4100' }.freeze
+
+    # Len and Morgan each hold an NPC badge named "Staff badge" (itemsHeld keycards carry
+    # no stamped id); Jake holds his own badge as an item too.
+    def build_with_npc_badges(inventory)
+      data = AccessModelScenario.routes_scenario
+      npcs = data['rooms'].values.flat_map { |room| Array(room['npcs']) }
+      npcs.find { |n| n['id'] == 'len' }['itemsHeld'] = [STAFF_BADGE.merge('card_id' => 'LOW-01')]
+      npcs.find { |n| n['id'] == 'exec' }['itemsHeld'] = [STAFF_BADGE.merge('card_id' => EXEC_CARD_ID)]
+      npcs.find { |n| n['id'] == 'jake' }['itemsHeld'] = [STAFF_BADGE.merge('name' => "Jake's badge", 'card_id' => JAKE_CARD_ID)]
+      @game = create_access_game(mission: break_escape_missions(:ceo_exfil), player: break_escape_demo_users(:test_user),
+                                 scenario: data,
+                                 player_state: { 'currentRoom' => 'lobby', 'unlockedRooms' => %w[lobby finance],
+                                                 'encounteredNPCs' => %w[len jake dana exec], 'inventory' => inventory })
+    end
+
+    test "a held NPC badge does not count as another NPC's badge with the same name" do
+      build_with_npc_badges([STAFF_BADGE.merge('card_id' => 'LOW-01')])
+      held = @game.held_rfid_cards
+      assert_equal false, held['LOW-01']
+      refute held.key?(EXEC_CARD_ID), "held_rfid_cards counts Morgan's badge: #{held.inspect}"
+      assert_refused door('exec_suite', card_ids: [EXEC_CARD_ID])
+      refute_includes Array(@game.reload.player_state['unlockedRooms']), 'exec_suite'
+    end
+
+    test 'a held badge sharing a name with a distant keycard is not that keycard as a copy source' do
+      build_with_npc_badges([CLONER.dup, STAFF_BADGE.merge('name' => 'Safe badge', 'card_id' => 'LOW-01')])
+      clone_card('SAFE-01', object_id: 'safe_badge')
+      assert_response :forbidden
+      assert_empty @game.reload.player_state['serverClones'].to_h
+    end
+
+    test 'a held keycard with no id is a copy source by its card_id, and the copy outlives the card' do
+      badge = STAFF_BADGE.merge('name' => "Jake's badge", 'card_id' => JAKE_CARD_ID)
+      build_with_npc_badges([CLONER.dup, badge])
+      assert_equal true, clone_card(JAKE_CARD_ID, held_card: true)['recorded']
+      assert_equal({ 'held' => JAKE_CARD_ID }, @game.reload.player_state['serverClones'][JAKE_CARD_ID]['source'])
+      # Handed back: the copy alone opens the finance-only door while the copier is held
+      @game.player_state['inventory'] = [CLONER.dup]
+      @game.save!
+      assert_equal true, door('records', card_ids: [JAKE_CARD_ID])['success']
+    end
+
+    test 'a held-card copy of a card the player does not hold is refused' do
+      build_with_npc_badges([CLONER.dup, STAFF_BADGE.merge('card_id' => 'LOW-01')])
+      clone_card(EXEC_CARD_ID, held_card: true)
+      assert_response :forbidden
+      clone_card(JAKE_CARD_ID, held_card: true)
+      assert_response :forbidden
+      assert_empty @game.reload.player_state['serverClones'].to_h
     end
 
     private

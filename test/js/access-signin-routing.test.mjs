@@ -136,22 +136,8 @@ test('an unreachable PC says so and opens nothing', async () => {
     assert.ok(calls.some(c => c[0] === 'alert' && c[1] === "This PC can't be reached"));
 });
 
-test('interactions.js sends a sign-in PC to interactLoginPc (step 9) before the workstation call and the generic flow', () => {
-    const s = readFileSync(join(js, 'systems/interactions.js'), 'utf8');
-    const branch = s.indexOf("if (sprite.scenarioData.lockType === 'login') {");
-    const workstation = s.indexOf('window.workstationState.onInteract(sprite.scenarioData.id)');
-    const trigger = s.indexOf('if (Array.isArray(sprite.scenarioData.triggerOnInteract))');
-    assert.ok(branch > 0 && branch < workstation && workstation < trigger);
-    assert.match(s.slice(branch, branch + 300), /window\.interactLoginPc\(sprite\);[\s\S]*handleUnlock\(sprite, 'item'\);\s*\}\s*return;/);
-});
-
-test('api-client.js has login, logout and loginAccounts, and GET errors carry a status', () => {
-    const s = readFileSync(join(js, 'api-client.js'), 'utf8');
-    assert.match(s, /static async login\(pcId, fields = \{\}\) \{\s*return this\.post\('\/login', \{ \.\.\.fields, pc_id: pcId \}\);/);
-    assert.match(s, /static async logout\(pcId\) \{\s*return this\.post\('\/logout', \{ pc_id: pcId \}\);/);
-    assert.match(s, /static async loginAccounts\(pcId\) \{\s*return this\.get\(`\/login_accounts\?pc_id=\$\{encodeURIComponent\(pcId\)\}`\);/);
-    assert.match(s, /err\.status = response\.status;\s*throw err;/);
-});
+// interactions.js routing and the api-client.js requests are run for real in
+// access-signin-requests.test.mjs (code review R1, m9).
 
 // ── Step 9 (5.4): the interaction at a sign-in PC ─────────────────────────────────────
 
@@ -208,6 +194,17 @@ test('step 9: accessed claims the session; a success opens the desktop, a refusa
     assert.equal(started.length, 1);
     assert.equal(started[0][0], 'password');
     assert.equal(shown[0][0], 'hot_desk');
+});
+
+test('a claim that ends because the owner returned shows the message and opens no screen (code review R1, m4)', async () => {
+    reset();
+    wsStub({ answer: 'accessed' });
+    window.pcSessions.claim = async () => ({ ok: false, reason: 'owner_returned', message: 'Dana Reyes is back at the desk' });
+    assert.equal(await interactLoginPc(pc()), 'in_use');
+    await settle();
+    assert.equal(desktops.length, 0);
+    assert.equal(started.length, 0);
+    assert.ok(calls.some(c => c[0] === 'alert' && c[1] === 'Dana Reyes is back at the desk'));
 });
 
 test('step 9: locked, signin, attended (a race) and null all open the sign-in screen with no claim', async () => {

@@ -1454,6 +1454,9 @@ module BreakEscape
       return refusal.call('PC not reachable') unless login_pc_reachable?(info)
 
       pc = info[:object]
+      # A session already held here (a password sign-in) is never replaced by a claim
+      return refusal.call('a session is already held at this PC') if access_sessions[pc['id'].to_s].is_a?(Hash)
+
       owner = login_pc_owner(pc)
       return refusal.call('no owner') unless owner
       return refusal.call('owner not tracked by the needs system') unless self.class.needs_tracked?(owner)
@@ -1470,10 +1473,25 @@ module BreakEscape
       { status: :ok, body: { success: true }.merge(login_session_answer(owner, 'claim')) }
     end
 
-    # POST /logout: no checks (section 6).
+    # POST /logout: no checks (section 6). The PC is named as /login names it (id or
+    # name, through find_login_pc) and the session is stored under its id.
     def logout_session!(pc_id)
+      info = find_login_pc(pc_id)
+      key = info ? info[:object]['id'].to_s : pc_id.to_s
       player_state['sessions'] = access_sessions
-      player_state['sessions'].delete(pc_id.to_s)
+      player_state['sessions'].delete(key)
+      save!
+    end
+
+    # A reload ends every claimed session (5.3): the workstation state restarts with every
+    # owner at the desk. Called by the scenario action after it has answered the sessions,
+    # so the client still sees each claim and reports its end, without the end depending
+    # on the client's POST /logout arriving.
+    def end_claimed_sessions!
+      claimed = access_sessions.select { |_pc_id, session| session.is_a?(Hash) && session['via'] == 'claim' }
+      return if claimed.empty?
+
+      player_state['sessions'] = access_sessions.except(*claimed.keys)
       save!
     end
 
@@ -1549,15 +1567,28 @@ module BreakEscape
       clones.is_a?(Hash) ? clones : {}
     end
 
-    # The cards the server knows the player holds: { card_id => uid_only }. A keycard
-    # item in the inventory (matched to its scenario definition, so a client-written
-    # field never counts) is the real card; a recorded copy counts only while an
-    # rfid_cloner is held (4.2), and is UID-only when recorded so.
+    # The card_ids carried by keycard items in the inventory. The inventory stores the
+    # server's own copy of every keycard (GamesController#canonical_inventory_item), so
+    # these are server-written, never a client's field.
+    def held_keycard_ids
+      Array(player_state['inventory']).filter_map do |item|
+        next unless item.is_a?(Hash) && (item['type'] || item.dig('scenarioData', 'type')) == 'keycard'
+
+        card_id = item['card_id'].presence || item.dig('scenarioData', 'card_id').presence
+        card_id&.to_s
+      end.uniq
+    end
+
+    # The cards the server knows the player holds: { card_id => uid_only }. A card_id is
+    # the real card when a keycard in the inventory carries it and the scenario defines a
+    # keycard with it (decided by card_id, never by name: two badges sharing a name are
+    # still two cards); a recorded copy counts only while an rfid_cloner is held (4.2),
+    # and is UID-only when recorded so.
     def held_rfid_cards
-      inventory = player_state['inventory'] || []
+      carried = held_keycard_ids
       held = {}
       scenario_keycard_definitions.each do |card|
-        held[card['card_id'].to_s] = false if BreakEscape::ItemIdentity.held_in?(card, inventory)
+        held[card['card_id'].to_s] = false if carried.include?(card['card_id'].to_s)
       end
       if rfid_cloner_held?
         server_clones.each do |card_id, record|
@@ -1627,7 +1658,7 @@ module BreakEscape
 
     # POST /clone_card (section 6): record a copy the card copier made, only of the
     # source's own card. Returns { status:, body: }.
-    def record_card_clone!(card_id:, npc_id: nil, object_id: nil)
+    def record_card_clone!(card_id:, npc_id: nil, object_id: nil, held_card: false)
       refuse = ->(message) { { status: :forbidden, body: { success: false, message: message } } }
       return refuse.call('No card copier') unless rfid_cloner_held?
 
@@ -1644,8 +1675,15 @@ module BreakEscape
         return refuse.call('Keycard not within reach') unless card
 
         source = { 'object' => card['id'] || object_id.to_s }
+      elsif held_card
+        # A held keycard with no id (an NPC's itemsHeld badge): the source is the held
+        # card that carries this card_id, as held_rfid_cards decides "held".
+        card = held_clone_source_keycard(card_id)
+        return refuse.call('Keycard not held') unless card
+
+        source = { 'held' => card['card_id'].to_s }
       else
-        return { status: :bad_request, body: { success: false, message: 'Missing npc_id or object_id' } }
+        return { status: :bad_request, body: { success: false, message: 'Missing npc_id, object_id or held_card' } }
       end
 
       return { status: :ok, body: { success: true, recorded: false } } unless card['card_id'].to_s == card_id.to_s
@@ -1659,6 +1697,21 @@ module BreakEscape
       { status: :ok, body: { success: true, recorded: true } }
     end
 
+    # The scenario keycard a held-card copy may be taken from: one the scenario defines
+    # with this card_id, a keycard in the inventory carries it, and neither the definition
+    # nor the held item is "cloneable": false. nil otherwise.
+    def held_clone_source_keycard(card_id)
+      card_id = card_id.to_s
+      return nil if card_id.empty? || !held_keycard_ids.include?(card_id)
+
+      held_item = Array(player_state['inventory']).find do |item|
+        item.is_a?(Hash) && item['type'] == 'keycard' && item['card_id'].to_s == card_id
+      end
+      return nil if held_item && held_item['cloneable'] == false
+
+      scenario_keycard_definitions.find { |k| k['card_id'].to_s == card_id && k['cloneable'] != false }
+    end
+
     # The keycard object a copy may be taken from: a keycard with a card_id, not
     # "cloneable": false, that the inventory holds or that sits in a reachable room with
     # every container above it unlocked. nil otherwise.
@@ -1668,7 +1721,10 @@ module BreakEscape
       card = located || scenario_keycard_definitions.find { |k| k['id'] == object_id.to_s }
       return nil unless card && card['type'] == 'keycard' && card['card_id'].present? && card['cloneable'] != false
 
-      return card if BreakEscape::ItemIdentity.held_in?(card, player_state['inventory'] || [])
+      # Held: the definition is in the inventory and the held item carries its card_id
+      # (a name match alone would let one badge stand for another with the same name).
+      return card if held_keycard_ids.include?(card['card_id'].to_s) &&
+                     BreakEscape::ItemIdentity.held_in?(card, player_state['inventory'] || [])
 
       in_reach = located.equal?(card) && info[:scope].nil? && info[:room_id] &&
                  (!room_data(info[:room_id])['locked'] || room_unlocked?(info[:room_id])) &&

@@ -190,6 +190,16 @@ test('an rfid lock with neither access nor requires, and access on a gate door, 
     assert.ok(!has(issues(sc), 'is a gate door'), 'a disabled gate is not a gate');
 });
 
+test('access or acceptsUIDOnly on any door entry (gate or not) is an error: the server reads the room', { skip }, () => {
+    const sc = clean();
+    lobby(sc).doors = [{ connectedRoom: 'finance_office', direction: 'north', access: { roles: ['it'] }, acceptsUIDOnly: true }];
+    const out = errors(issues(sc));
+    assertHas(out, "'rooms/lobby/doors[0]' has 'access'; put it on room 'finance_office'");
+    assertHas(out, "'rooms/lobby/doors[0]' has 'acceptsUIDOnly'; put it on room 'finance_office'");
+    lobby(sc).doors = [{ connectedRoom: 'finance_office', direction: 'north' }];
+    assert.ok(!has(issues(sc), "doors[0]' has"), 'a door entry without them is fine');
+});
+
 test('an NPC unlockable list or an unlock_object flag reward naming a sign-in PC is an error', { skip }, () => {
     const sc = clean();
     npc(sc, 'dana').unlockable = ['jake_pc'];

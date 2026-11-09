@@ -5939,7 +5939,17 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
     next unless room.is_a?(Hash) && room['doors'].is_a?(Array)
 
     room['doors'].each_with_index do |door, i|
-      next unless door.is_a?(Hash) && door['gate'].is_a?(Hash) && door['gate']['enabled'] != false
+      next unless door.is_a?(Hash)
+
+      # An access list belongs on the room the door leads into: the server reads the room
+      # (section 6), so a list on a door entry would be a client-only rule.
+      %w[access acceptsUIDOnly].each do |field|
+        next unless door.key?(field)
+
+        err.call("'rooms/#{room_id}/doors[#{i}]' has '#{field}'; put it on room '#{door['connectedRoom']}', " \
+                 'which is where the server reads it.')
+      end
+      next unless door['gate'].is_a?(Hash) && door['gate']['enabled'] != false
 
       target = rooms[door['connectedRoom']]
       if door.key?('access') || (target.is_a?(Hash) && target.key?('access'))

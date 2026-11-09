@@ -910,8 +910,10 @@ export function handleObjectInteraction(sprite) {
                     mode: 'clone',
                     cardToClone: sprite.scenarioData,
                     // The copy's source, so a saved copy is recorded on the server as
-                    // this keycard's card (access model 4.2)
-                    cloneSource: sprite.scenarioData.id ? { object_id: sprite.scenarioData.id } : null
+                    // this keycard's card (access model 4.2). A held keycard with no id (an
+                    // NPC's badge handed over) is named by the card_id it carries; the
+                    // server checks the inventory holds a keycard with that card_id.
+                    cloneSource: sprite.scenarioData.id ? { object_id: sprite.scenarioData.id } : { held_card: true }
                 });
             } else {
                 window.gameAlert('RFID minigame not available', 'error', 'Error', 3000);

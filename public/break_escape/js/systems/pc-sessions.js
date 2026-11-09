@@ -197,6 +197,8 @@ export class PcSessions {
      * workstation globals, which the server only logs. Resolves
      *   { ok: true, session }   (pc_signed_in with via "claim")
      *   { ok: false, reason: 'refused', message }  (the server's "Sign in required"; no event)
+     *   { ok: false, reason: 'owner_returned', message }  (granted, but the owner was back by
+     *                                    then: pc_signed_in, then pc_signed_out owner_returned)
      *   { ok: false, reason: 'error', error: true, status, message }
      */
     async claim(pcId) {
@@ -221,6 +223,16 @@ export class PcSessions {
         }
         const session = { npcId: body.npcId, username: body.username ?? null, displayName: body.displayName ?? null, via: 'claim' };
         this._replace(pcId, session);
+        // The owner came back while the claim was in flight: workstation_owner_returned
+        // fired before there was a session to end, so end it now, as that event would have.
+        const ws = typeof window !== 'undefined' ? window.workstationState : null;
+        let present = false;
+        try { present = !!(ws?.presence && ws.presence(pcId)?.present); } catch (e) { present = false; }
+        if (present) {
+            const message = backAtDeskMessage(session.displayName);
+            await this._endClaim(pcId, 'owner_returned', message);
+            return { ok: false, reason: 'owner_returned', message };
+        }
         return { ok: true, session: publicSession(pcId, session) };
     }
 

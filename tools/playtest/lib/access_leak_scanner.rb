@@ -344,7 +344,9 @@ class AccessLeakScanner
   # A folder inside a sign-in PC or profile (a locked archive) opened by /unlock: the server
   # answers with the folder's contents only for a session that admits it (/unlock check 1),
   # as GET /container/<folder> would. So an item inside a folder may sit in an /unlock
-  # answer's top-level contents.
+  # answer's top-level contents. The scanner does not know the answer's target, so a
+  # wrongly served folder here is not flagged: access_model_no_password_test.rb covers
+  # that class on the server.
   def folder_unlock_answer?(info, ctx, paths)
     ctx[:unlock] && info[:ancestors].any? && paths.all? { |p| p.start_with?('$.contents[') }
   end

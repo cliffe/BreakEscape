@@ -176,6 +176,30 @@ test('a folder opened from a sign-in desktop keeps the PC as the source of its f
     assert.equal(folder.offersTransfer({ takeable: true }), true);
 });
 
+// Code review R1, m3: the folder replaces the desktop minigame, whose cleanup unregisters it
+test('a folder opened from a sign-in desktop closes with the message when the session ends', async () => {
+    const desktop = await openDesktop();
+    desktop.cleanup();
+    const sprite = { scenarioData: { id: 'ian_archive', type: 'folder', name: 'Old configs', locked: false, contents: [] }, sourcePcId: 'hot_desk' };
+    const folder = new ContainerMinigame(document.getElementById('mg'), { containerItem: sprite, contents: null });
+    window.MinigameFramework.currentMinigame = folder;
+    await folder.init();
+    ended.length = 0; alerts.length = 0;
+    await sessions.signOut('hot_desk');
+    assert.equal(ended.length, 1, 'the folder closed');
+    assert.ok(alerts.some(a => a[0] === 'Signed out'), 'with the message');
+});
+
+test('a folder from a sign-in desktop that closes first leaves nothing registered', async () => {
+    const desktop = await openDesktop();
+    desktop.cleanup();
+    const sprite = { scenarioData: { id: 'ian_archive', type: 'folder', name: 'Old configs', locked: false, contents: [] }, sourcePcId: 'hot_desk' };
+    const folder = new ContainerMinigame(document.getElementById('mg'), { containerItem: sprite, contents: null });
+    await folder.init();
+    folder.cleanup();
+    assert.equal(sessions.desktops.has('hot_desk'), false);
+});
+
 test('Sign out: POST /logout, one pc_signed_out, and the desktop closes with "Signed out"', async () => {
     await openDesktop();
     document.getElementById('desktop-sign-out').click();
@@ -208,7 +232,5 @@ test('a container 403 drops the session locally (one pc_signed_out, no request) 
     assert.equal(document.querySelector('.desktop-icon'), null);
 });
 
-test('inventory.js sends source_pc_id and transfer on the add', () => {
-    const src = readFileSync(join(js, 'systems/inventory.js'), 'utf8');
-    assert.match(src, /\.\.\.\(sprite\.sourcePcId \? \{ source_pc_id: sprite\.sourcePcId, transfer: sprite\.transfer \|\| 'move' \} : \{\}\)/);
-});
+// The inventory add's source_pc_id and transfer are checked by running inventory.js in
+// access-signin-requests.test.mjs (code review R1, m9).

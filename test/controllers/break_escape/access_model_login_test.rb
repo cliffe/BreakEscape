@@ -251,6 +251,41 @@ module BreakEscape
       assert_equal 'claim', response.parsed_body['sessions']['jake_pc']['via']
     end
 
+    # Code review R1, m5: a reload ends claimed sessions on the server itself
+    test 'GET /scenario reports a claimed session and ends it on the server; a password session stays' do
+      build(scenario: tracked_scenario)
+      claim
+      login('dwhite', DANA_PASSWORD, pc_id: 'profile_pc')
+      get scenario_game_url(@game), as: :json
+      assert_equal %w[jake_pc profile_pc], response.parsed_body['sessions'].keys.sort
+      sessions = @game.reload.player_state['sessions']
+      assert_nil sessions['jake_pc'], 'the claimed session ended on the server'
+      assert_equal 'password', sessions['profile_pc']['via']
+      open_desktop('jake_pc')
+      assert_response :forbidden
+      get scenario_game_url(@game), as: :json
+      assert_equal %w[profile_pc], response.parsed_body['sessions'].keys
+    end
+
+    # Code review R1, m7
+    test 'a claim never replaces a password session at the same PC' do
+      build(scenario: tracked_scenario)
+      login('jbrooks', JAKE_PASSWORD)
+      assert_equal({ 'success' => false, 'message' => 'Sign in required' }, claim)
+      assert_response :unprocessable_entity
+      assert_equal({ 'id' => 'jake', 'via' => 'password' }, @game.reload.player_state['sessions']['jake_pc'])
+    end
+
+    # Code review R1, m8
+    test 'POST /logout accepts the PC by name, as /login does' do
+      build
+      login('jbrooks', JAKE_PASSWORD, pc_id: "Jake's PC")
+      assert_equal 'jake', @game.reload.player_state['sessions']['jake_pc']['id']
+      post logout_game_url(@game), params: { pc_id: "Jake's PC" }, as: :json
+      assert_response :success
+      assert_nil @game.reload.player_state['sessions']['jake_pc']
+    end
+
     test 'a claim for an owner with interests only succeeds' do
       build(scenario: tracked_scenario('interests' => { 'gossip' => 2 }))
       assert_equal 'claim', claim['via']

@@ -250,3 +250,30 @@ test('a keycard with no id cannot match an access-only lock\'s missing requires'
     await settle();
     assert.ok(!alerts.some(a => /Door opened with/.test(a[0])));
 });
+
+// Code review R1, m6: a copy saved a moment ago is still being recorded on the server
+test('an access-list request waits for a card copy record still in flight', async () => {
+    reset({ items: [cloner([{ card_id: 'DANA-1' }])] });
+    let finishRecord;
+    window.pendingCardCloneRecord = new Promise(r => { finishRecord = r; });
+    handleUnlock(door({ access: FINANCE }), 'door');
+    await settle();
+    await settle();
+    assert.equal(unlockCalls.length, 0, 'no request before the record lands');
+    finishRecord({ success: true, recorded: true });
+    await settle();
+    await settle();
+    assert.equal(unlockCalls.length, 1);
+    assert.deepEqual(unlockCalls[0][4], { card_ids: ['DANA-1'] });
+    window.pendingCardCloneRecord = null;
+});
+
+test('a failed card copy record does not block the access-list request', async () => {
+    reset({ items: [cloner([{ card_id: 'DANA-1' }])] });
+    window.pendingCardCloneRecord = Promise.reject(new Error('offline'));
+    handleUnlock(door({ access: FINANCE }), 'door');
+    await settle();
+    await settle();
+    assert.equal(unlockCalls.length, 1);
+    window.pendingCardCloneRecord = null;
+});

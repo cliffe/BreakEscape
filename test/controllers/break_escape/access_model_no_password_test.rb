@@ -106,6 +106,66 @@ module BreakEscape
       assert_no_secrets('/container/jake_files_content_1 signed out')
     end
 
+    # Code review R1, M1: an unscoped object without contents that shares a name with a
+    # folder under a sign-in PC (or with the PC itself) must not open the generic container
+    # path to them.
+    FOLDER_MARKER = 'PC-FOLDER-FILE-TEXT'.freeze
+
+    def build_name_collision(lobby_names)
+      data = AccessModelScenario.scenario
+      data['rooms']['lobby']['objects'] = lobby_names.map { |name| { 'type' => 'notes', 'name' => name, 'text' => 'a note' } }
+      pc = data['rooms']['finance']['objects'].find { |o| o['id'] == 'jake_pc' }
+      pc['contents'] << { 'type' => 'folder', 'name' => 'Archive folder', 'locked' => false,
+                          'contents' => [{ 'type' => 'text_file', 'name' => 'Old.txt', 'text' => FOLDER_MARKER }] }
+      @game = create_access_game(
+        mission: break_escape_missions(:ceo_exfil),
+        player: break_escape_demo_users(:test_user),
+        scenario: data,
+        player_state: { 'currentRoom' => 'lobby', 'unlockedRooms' => %w[lobby finance] }
+      )
+    end
+
+    test 'a name shared with a lobby note does not open a sign-in PC folder with no session' do
+      build_name_collision(['Archive folder'])
+      post unlock_game_url(@game), params: { targetType: 'object', targetId: 'Archive folder', method: 'unlocked' }, as: :json
+      refute_includes response.body, FOLDER_MARKER, '/unlock by a colliding name leaks the PC folder'
+      assert_no_secrets('/unlock Archive folder')
+      get "/break_escape/games/#{@game.id}/container/#{ERB::Util.url_encode('Archive folder')}", as: :json
+      assert response.status >= 400, "GET /container answered #{response.status}: #{response.body}"
+      refute_includes response.body, FOLDER_MARKER, '/container by a colliding name leaks the PC folder'
+    end
+
+    test "a name shared with a lobby note does not open the sign-in PC's own contents with no session" do
+      build_name_collision(["Jake's PC"])
+      post unlock_game_url(@game), params: { targetType: 'object', targetId: "Jake's PC", method: 'unlocked' }, as: :json
+      assert_no_secrets("/unlock Jake's PC")
+      get "/break_escape/games/#{@game.id}/container/#{ERB::Util.url_encode("Jake's PC")}", as: :json
+      assert response.status >= 400, "GET /container answered #{response.status}: #{response.body}"
+      assert_no_secrets("/container Jake's PC")
+    end
+
+    test 'POST /unlock of a scoped folder with no session is refused and carries no contents' do
+      build_name_collision([])
+      post unlock_game_url(@game), params: { targetType: 'object', targetId: 'Archive folder', method: 'unlocked' }, as: :json
+      assert response.status >= 400, "/unlock answered #{response.status}"
+      refute_includes response.body, FOLDER_MARKER
+      assert_no_secrets('/unlock scoped folder')
+      refute_includes Array(@game.reload.player_state['unlockedObjects']), 'Archive folder'
+    end
+
+    test 'POST /inventory add of a sign-in PC file with no session is refused and carries no text' do
+      build('unlockedRooms' => %w[lobby finance])
+      post inventory_game_url(@game), params: { action_type: 'add',
+                                                item: { type: 'text_file', name: 'Local.txt' } }, as: :json
+      assert response.status >= 400, "/inventory answered #{response.status}"
+      assert_no_secrets('/inventory add, no source PC')
+      post inventory_game_url(@game), params: { action_type: 'add', source_pc_id: 'jake_pc', transfer: 'move',
+                                                item: { type: 'text_file', name: 'Local.txt' } }, as: :json
+      assert response.status >= 400, "/inventory answered #{response.status}"
+      assert_no_secrets('/inventory add from jake_pc, no session')
+      refute(Array(@game.reload.player_state['inventory']).any? { |i| i['name'] == 'Local.txt' })
+    end
+
     test 'failed sign-ins carry no password' do
       build('unlockedRooms' => %w[lobby finance])
       [['jbrooks', 'wrong'], ['jbrooks', AccessModelScenario::JAKE_PASSWORD.downcase], ['nobody', 'x']].each do |username, password|

@@ -145,6 +145,12 @@ export function heldRfidCardIds() {
 export async function requestRfidAccessUnlock(lockable, type, cardIds) {
     const apiClient = window.ApiClient || window.APIClient;
     if (!apiClient) return { outcome: 'error', response: null };
+    // A card copy saved a moment ago is still being recorded (rfid-minigame.js
+    // recordCloneOnServer): wait for it, or the server refuses the copy it has not seen.
+    const pendingRecord = window.pendingCardCloneRecord;
+    if (pendingRecord && typeof pendingRecord.then === 'function') {
+        try { await pendingRecord; } catch (e) { /* the record's own failure is logged there */ }
+    }
     try {
         const response = await apiClient.unlock(type, unlockTargetId(lockable, type), null, 'rfid',
             { card_ids: cardIds });
@@ -223,6 +229,11 @@ export async function interactLoginPc(lockable) {
         if (r?.ok) {
             openLoginDesktop(lockable);
             return 'claimed';
+        }
+        if (r?.reason === 'owner_returned') {
+            // The owner sat back down while the claim was answered: as step 1, no screen
+            window.gameAlert?.(r.message, 'info', data.name || 'PC', 4000);
+            return 'in_use';
         }
         openLoginSignIn(lockable, { reason: 'claim_refused' });
         return 'claim_refused';
