@@ -13,8 +13,13 @@
  *              ends closes it with a one-line message.
  *
  * Events (each also as `<name>:<pcId>`):
- *   pc_signed_in       { pcId, npcId, username, via }  a sign-in (or the second half of a switch)
- *   pc_signed_out      { pcId, npcId }                 a sign-out, a switch, a 403 from container
+ *   pc_signed_in       { pcId, npcId, username, via, previousNpcId, firstAtPc }
+ *                      a sign-in (or the second half of a switch). previousNpcId is the account
+ *                      signed in at this PC just before (a switch), else null; firstAtPc is true
+ *                      when the player had never signed in at this PC before (signedIn).
+ *   pc_signed_out      { pcId, npcId, reason }         reason: sign_out (the Sign out button) |
+ *                      switch (the first half of a switch) | no_session (a 403 from container) |
+ *                      claim_ended (a claimed session ended on load)
  *   pc_signin_failed   { pcId, reason, attemptsLeft }  reason: wrong | not_permitted | locked_out
  *   pc_signin_shown    { pcId, usernames, usernameList } the sign-in screen opened with these tiles
  *   pc_desktop_opened  { pcId, npcId, via, restored }  a desktop loaded for a session; restored is
@@ -87,7 +92,7 @@ export class PcSessions {
 
     _endRestoredClaim(pcId, s) {
         const api = apiClient();
-        const done = () => this._emit('pc_signed_out', { pcId, npcId: s.npcId ?? null });
+        const done = () => this._emit('pc_signed_out', { pcId, npcId: s.npcId ?? null, reason: 'claim_ended' });
         if (api?.logout) {
             Promise.resolve(api.logout(pcId)).catch(e => console.warn('[pc-sessions] logout of a claimed session failed', e)).then(done);
         } else {
@@ -156,13 +161,17 @@ export class PcSessions {
 
     _replace(pcId, session) {
         const previous = this.sessions.get(pcId);
+        const firstAtPc = !this.signedIn.has(pcId);
         if (previous) {
             this.sessions.delete(pcId);
-            this._emit('pc_signed_out', { pcId, npcId: previous.npcId ?? null });
+            this._emit('pc_signed_out', { pcId, npcId: previous.npcId ?? null, reason: 'switch' });
         }
         this.sessions.set(pcId, { ...session, restored: false });
         this.signedIn.add(pcId);
-        this._emit('pc_signed_in', { pcId, npcId: session.npcId, username: session.username, via: session.via });
+        this._emit('pc_signed_in', {
+            pcId, npcId: session.npcId, username: session.username, via: session.via,
+            previousNpcId: previous?.npcId ?? null, firstAtPc
+        });
     }
 
     /**
@@ -177,7 +186,7 @@ export class PcSessions {
         if (api?.logout) {
             try { await api.logout(pcId); } catch (e) { console.warn('[pc-sessions] logout failed', e); }
         }
-        this._emit('pc_signed_out', { pcId, npcId: previous.npcId ?? null });
+        this._emit('pc_signed_out', { pcId, npcId: previous.npcId ?? null, reason: 'sign_out' });
         this._closeDesktop(pcId, message);
         return true;
     }
@@ -190,7 +199,7 @@ export class PcSessions {
         const previous = this.sessions.get(pcId);
         if (!previous) return false;
         this.sessions.delete(pcId);
-        this._emit('pc_signed_out', { pcId, npcId: previous.npcId ?? null });
+        this._emit('pc_signed_out', { pcId, npcId: previous.npcId ?? null, reason: 'no_session' });
         if (message) this._closeDesktop(pcId, message);
         else this.desktops.delete(pcId);
         return true;

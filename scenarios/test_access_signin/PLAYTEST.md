@@ -33,7 +33,8 @@ BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/access-leak-check.r
 
 The leak check must say `VERDICT: no leaks found` after every beat. Compare the `sessions`,
 `signedInPcs`, `copiedItems`, `loginFailures` and `loginLockouts` lines with the record each beat
-expects below. `{"cmd":"eval","fn":"() => window.__test.access.sessions()"}` shows the sessions the
+expects below. `signedInPcs` lists every PC the player has ever signed in at in this game, not the
+PCs signed in now: a PC stays in it after Sign out. The sessions open now are the `sessions` line. `{"cmd":"eval","fn":"() => window.__test.access.sessions()"}` shows the sessions the
 browser holds; they should match the server's `sessions` line.
 
 ## Harness notes for this scenario
@@ -84,7 +85,9 @@ Room: `hot_desk_room`, PC `hot_desk` (unowned, `loginPicker: "accounts"`, policy
    password. 4 attempts left." and the screen still open.
 3. Read Sam's password from the sticky note on the screen, and submit it. Expect the desktop:
    header "Signed in as Sam Okafor (sokafor)" with Switch user and Sign out; items "Staff
-   handbook.txt" and "Mail" only (none of Ian's files). Task `s1_account_tiles` complete.
+   handbook.txt" and "Mail" only (none of Ian's files). Task `s1_account_tiles` complete. It
+   completes only on the first sign-in at `hot_desk` in the game (Sam's, `firstAtPc`), so a later
+   sign-in as Sam there (S7 step 5) does not complete it.
 
 Server record afterwards: `sessions 1: hot_desk = sam (password)`; `signedInPcs` has `hot_desk`;
 `loginFailures 0` (the sign-in cleared Sam's failure there).
@@ -125,7 +128,8 @@ Room: `hot_desk_room`, Sam still signed in at `hot_desk`.
    password: "Incorrect username or password. 4 attempts left."
 3. Close the screen: Sam's desktop comes back (he is still signed in). Switch user again.
 4. Choose Ian's tile and submit his password. Expect Ian's desktop with the same files as on
-   `ian_pc`. Task `s4_switch_user` complete.
+   `ian_pc`. Task `s4_switch_user` complete. It completes only on a switch from Sam to Ian at
+   `hot_desk` (`previousNpcId` Sam); Ian signing in there with no one signed in does not.
 
 Server record afterwards: `sessions: hot_desk = ian (password); ian_pc = ian (password)`;
 `loginFailures 0` (Ian's success cleared his failure there).
@@ -133,7 +137,8 @@ Server record afterwards: `sessions: hot_desk = ian (password); ian_pc = ian (pa
 ### Reload (end of Run A)
 
 `{"cmd":"sync"}`, then `{"cmd":"eval","fn":"() => { location.reload(); return true; }"}`, wait about
-15 s, then `{"cmd":"bootstrap","tutorial":"decline"}`. Check:
+15 s, then `{"cmd":"bootstrap","tutorial":"decline"}`. After a reload the player starts in the
+lobby, wherever they were before, so walk back to a PC before opening it. Check:
 
 - `window.__test.access.sessions()` still lists `hot_desk` and `ian_pc`, both Ian, by password;
 - `hot_desk` opens Ian's desktop without a password;
@@ -146,7 +151,10 @@ Then `{"cmd":"sync"}`, the full `verify-run.rb <game_id>`, the leak check over t
 ## Run B: S5 to S8 (new game)
 
 Set-up for this run (exercised, not a beat): read Ian's note in `ian_drawer`, sign Ian in at
-`ian_pc` (S3 step 4), then go to the hot desk and sign Ian in there through his tile.
+`ian_pc` (S3 step 4), then go to the hot desk and sign Ian in there through his tile. The set-up
+completes `s3_ian_pc`. Signing Ian in at the hot desk with no one signed in there is not a switch,
+so `s4_switch_user` stays open, and it is the first sign-in at the hot desk, so Sam's sign-in there
+in S7 does not complete `s1_account_tiles`.
 
 ### 5. S5 Copy and Move
 
@@ -174,7 +182,8 @@ Room: `hot_desk_room`, Ian signed in at `hot_desk`.
 2. `take` "Old configs.zip" and enter the handbook's password: the archive opens and lists
    `router_backup.txt`. Close it.
 3. `interact` `hot_desk`, then Sign out. The desktop closes and the toast says "Signed out". Task
-   `s6_archive_and_sign_out` complete.
+   `s6_archive_and_sign_out` complete (only on the Sign out button with Ian signed in, not on a
+   Switch user).
 4. `interact` `hot_desk` again: the sign-in screen, not the desktop. Close it.
 
 Server record afterwards: `hot_desk` gone from `sessions` (`ian_pc` stays); `ian_archive` in
@@ -203,18 +212,21 @@ Server record afterwards: `loginLockouts 2: lockout_pc|sokafor; lockout_pc|nobod
 
 Ian signed in at `ian_pc` (since the run's set-up).
 
-1. Read `sign_s8`. `{"cmd":"sync"}`, then reload as in Run A and `bootstrap`.
+1. Read `sign_s8`. `{"cmd":"sync"}`, then reload as in Run A and `bootstrap`. The player starts in
+   the lobby.
 2. Go to the IT office and `interact` `ian_pc`: Ian's desktop opens without a password. Task
    `s8_reload` complete; task `s3_ian_pc` still complete.
-3. Go to `lockout_pc`, choose Sam and submit his correct password: still "This account is locked on
-   this PC."
+3. Go to `lockout_pc` and `interact` it: Ian's session there (from S7 step 4) is kept over the
+   reload, so his desktop opens first. Switch user, choose Sam and submit his correct password:
+   still "This account is locked on this PC." Ian stays signed in there.
 
 Server record afterwards: `sessions`, `signedInPcs` and `loginLockouts` unchanged from before the
 reload.
 
 At the end: `{"cmd":"sync"}`, the full `verify-run.rb <game_id>`, the leak check over the whole
 file, and the report (each step's result with its session log lines, the earned-secrets table and
-both checks per beat). In Run B, tasks `s5` to `s8` complete; `s3` completes in the set-up.
+both checks per beat). In Run B, tasks `s5` to `s8` complete; `s3` completes in the set-up;
+`s1`, `s2` and `s4` stay open (their beats are in Run A).
 
 ## Earned secrets
 

@@ -181,7 +181,7 @@ test('Sign out: POST /logout, one pc_signed_out, and the desktop closes with "Si
     document.getElementById('desktop-sign-out').click();
     await settle();
     assert.deepEqual(apiCalls.filter(c => c[0] === 'logout'), [['logout', 'hot_desk']]);
-    assert.deepEqual(events.filter(([n]) => n === 'pc_signed_out').map(([, d]) => d), [{ pcId: 'hot_desk', npcId: 'ian' }]);
+    assert.deepEqual(events.filter(([n]) => n === 'pc_signed_out').map(([, d]) => d), [{ pcId: 'hot_desk', npcId: 'ian', reason: 'sign_out' }]);
     assert.equal(ended.length, 1);
     assert.ok(alerts.some(a => a[0] === 'Signed out'));
     assert.equal(sessions.has('hot_desk'), false);
@@ -200,7 +200,7 @@ test('Switch user opens the sign-in screen over the desktop and leaves the sessi
 test('a container 403 drops the session locally (one pc_signed_out, no request) and opens the sign-in screen', async () => {
     await openDesktop({ answer: 403 });
     await settle(80);
-    assert.deepEqual(events.filter(([n]) => n === 'pc_signed_out').map(([, d]) => d), [{ pcId: 'hot_desk', npcId: 'ian' }]);
+    assert.deepEqual(events.filter(([n]) => n === 'pc_signed_out').map(([, d]) => d), [{ pcId: 'hot_desk', npcId: 'ian', reason: 'no_session' }]);
     assert.deepEqual(apiCalls.filter(c => c[0] === 'logout'), [], 'no POST /logout');
     assert.equal(sessions.has('hot_desk'), false);
     assert.equal(ended.length, 1);

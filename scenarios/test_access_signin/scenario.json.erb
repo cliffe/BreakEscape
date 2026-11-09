@@ -154,19 +154,19 @@
           "role": "staff",
           "creds": { "username": "sokafor", "password": "Marmalade-82" },
           "eventMappings": [
-            { "eventPattern": "pc_signed_in", "condition": "data.pcId === 'hot_desk' && data.npcId === 'sam'", "onceOnly": true, "completeTask": "s1_account_tiles" },
+            { "eventPattern": "pc_signed_in", "condition": "data.pcId === 'hot_desk' && data.npcId === 'sam' && data.firstAtPc === true", "onceOnly": true, "completeTask": "s1_account_tiles" },
             { "eventPattern": "pc_signin_shown", "condition": "data.pcId === 'known_pc' && !data.usernameList.includes('lfox') && !globalVars.s2_without_lena", "onceOnly": true, "setGlobal": { "s2_without_lena": true } },
             { "eventPattern": "pc_signin_shown", "condition": "data.pcId === 'known_pc' && data.usernameList.includes('lfox') && globalVars.s2_without_lena", "onceOnly": true, "completeTask": "s2_known_people" },
-            { "eventPattern": "pc_signed_in", "condition": "data.pcId === 'hot_desk' && data.npcId === 'ian'", "onceOnly": true, "completeTask": "s4_switch_user" },
+            { "eventPattern": "pc_signed_in", "condition": "data.pcId === 'hot_desk' && data.npcId === 'ian' && data.previousNpcId === 'sam'", "onceOnly": true, "completeTask": "s4_switch_user" },
             { "eventPattern": "item_picked_up:text_file", "condition": "data.itemId === 'ian_rota' && data.transfer === 'copy' && !globalVars.s5_copied", "onceOnly": true, "setGlobal": { "s5_copied": true } },
             { "eventPattern": "item_picked_up:text_file", "condition": "data.itemId === 'ian_vpn_notes' && data.transfer === 'move' && !globalVars.s5_moved", "onceOnly": true, "setGlobal": { "s5_moved": true } },
             { "eventPattern": "global_variable_changed:s5_copied", "condition": "globalVars.s5_copied && globalVars.s5_moved", "onceOnly": true, "completeTask": "s5_copy_and_move" },
             { "eventPattern": "global_variable_changed:s5_moved", "condition": "globalVars.s5_copied && globalVars.s5_moved", "onceOnly": true, "completeTask": "s5_copy_and_move" },
             { "eventPattern": "item_unlocked", "condition": "data.itemId === 'ian_archive' && !globalVars.s6_archive_open", "onceOnly": true, "setGlobal": { "s6_archive_open": true } },
-            { "eventPattern": "pc_signed_out", "condition": "data.pcId === 'hot_desk' && globalVars.s6_archive_open", "onceOnly": true, "completeTask": "s6_archive_and_sign_out" },
+            { "eventPattern": "pc_signed_out", "condition": "data.pcId === 'hot_desk' && data.npcId === 'ian' && data.reason === 'sign_out' && globalVars.s6_archive_open", "onceOnly": true, "completeTask": "s6_archive_and_sign_out" },
             { "eventPattern": "pc_signin_failed", "condition": "data.pcId === 'lockout_pc' && data.reason === 'locked_out' && !globalVars.s7_locked_out", "onceOnly": true, "setGlobal": { "s7_locked_out": true } },
             { "eventPattern": "pc_signed_in", "condition": "data.pcId === 'lockout_pc' && data.npcId === 'ian' && globalVars.s7_locked_out", "onceOnly": true, "completeTask": "s7_lockout" },
-            { "eventPattern": "pc_desktop_opened", "condition": "data.pcId === 'ian_pc' && data.restored === true", "onceOnly": true, "completeTask": "s8_reload" }
+            { "eventPattern": "pc_desktop_opened", "condition": "data.pcId === 'ian_pc' && data.npcId === 'ian' && data.restored === true", "onceOnly": true, "completeTask": "s8_reload" }
           ]
         }
       ]

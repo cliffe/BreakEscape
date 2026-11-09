@@ -3,7 +3,8 @@
 // the sign-in events. A password sign-in emits one pc_signed_in; Sign out and a container
 // 403 each emit one pc_signed_out, and the 403 sends no request; a switch keeps the first
 // session through a wrong password, then emits pc_signed_out for the first account and
-// pc_signed_in for the second; on load, password sessions are kept (and a claimed one ends).
+// pc_signed_in for the second (with previousNpcId; firstAtPc marks the first sign-in at a PC);
+// on load, password sessions are kept (and a claimed one ends). pc_signed_out says why (reason).
 // Run with: node test/js/pc-sessions.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -59,7 +60,7 @@ test('a password sign-in emits one pc_signed_in with the npcId and via password'
     const result = await s.signIn('hot_desk', 'sokafor', 'right-sam');
     assert.equal(result.ok, true);
     assert.deepEqual(result.session, { pcId: 'hot_desk', npcId: 'sam', username: 'sokafor', displayName: 'Sam Okafor', via: 'password' });
-    assert.deepEqual(named('pc_signed_in'), [{ pcId: 'hot_desk', npcId: 'sam', username: 'sokafor', via: 'password' }]);
+    assert.deepEqual(named('pc_signed_in'), [{ pcId: 'hot_desk', npcId: 'sam', username: 'sokafor', via: 'password', previousNpcId: null, firstAtPc: true }]);
     assert.equal(named('pc_signed_in:hot_desk').length, 1);
     assert.equal(named('pc_signed_out').length, 0);
     assert.deepEqual(calls, [['login', 'hot_desk', { username: 'sokafor', password: 'right-sam' }]]);
@@ -104,7 +105,7 @@ test('Sign out emits one pc_signed_out with the npcId, sends POST /logout and cl
     s.registerDesktop('hot_desk', (message) => closed.push(message));
     events.length = 0; calls.length = 0;
     assert.equal(await s.signOut('hot_desk'), true);
-    assert.deepEqual(named('pc_signed_out'), [{ pcId: 'hot_desk', npcId: 'sam' }]);
+    assert.deepEqual(named('pc_signed_out'), [{ pcId: 'hot_desk', npcId: 'sam', reason: 'sign_out' }]);
     assert.equal(named('pc_signed_out:hot_desk').length, 1);
     assert.deepEqual(calls, [['logout', 'hot_desk']]);
     assert.deepEqual(closed, [SIGNED_OUT_MESSAGE]);
@@ -121,7 +122,7 @@ test('a container 403 drops the session locally: one pc_signed_out, no request',
     await s.signIn('hot_desk', 'sokafor', 'right-sam');
     events.length = 0; calls.length = 0;
     assert.equal(s.dropLocal('hot_desk'), true);
-    assert.deepEqual(named('pc_signed_out'), [{ pcId: 'hot_desk', npcId: 'sam' }]);
+    assert.deepEqual(named('pc_signed_out'), [{ pcId: 'hot_desk', npcId: 'sam', reason: 'no_session' }]);
     assert.deepEqual(calls, []);
     assert.equal(s.has('hot_desk'), false);
     assert.equal(s.dropLocal('hot_desk'), false);
@@ -141,8 +142,8 @@ test('a switch keeps the first session through a wrong password, then signs the 
     await s.signIn('hot_desk', 'ishaw', 'right-ian');
     const order = events.filter(([n]) => n === 'pc_signed_out' || n === 'pc_signed_in');
     assert.deepEqual(order, [
-        ['pc_signed_out', { pcId: 'hot_desk', npcId: 'sam' }],
-        ['pc_signed_in', { pcId: 'hot_desk', npcId: 'ian', username: 'ishaw', via: 'password' }]
+        ['pc_signed_out', { pcId: 'hot_desk', npcId: 'sam', reason: 'switch' }],
+        ['pc_signed_in', { pcId: 'hot_desk', npcId: 'ian', username: 'ishaw', via: 'password', previousNpcId: 'sam', firstAtPc: false }]
     ]);
     assert.equal(s.get('hot_desk').npcId, 'ian');
 });
@@ -156,7 +157,7 @@ test('on load, password sessions are kept and marked restored; a claimed session
     await settle();
     assert.deepEqual(s.list(), [{ pcId: 'ian_pc', npcId: 'ian', username: 'ishaw', displayName: 'Ian Shaw', via: 'password' }]);
     assert.deepEqual(calls, [['logout', 'jake_pc']]);
-    assert.deepEqual(named('pc_signed_out'), [{ pcId: 'jake_pc', npcId: 'jake' }]);
+    assert.deepEqual(named('pc_signed_out'), [{ pcId: 'jake_pc', npcId: 'jake', reason: 'claim_ended' }]);
     assert.equal(named('pc_signed_in').length, 0, 'a kept session is not a new sign-in');
     assert.deepEqual(s.signedInPcs().sort(), ['hot_desk', 'ian_pc', 'jake_pc']);
 
@@ -174,4 +175,32 @@ test('the sign-in screen reports its tiles as usernames and a list for mapping c
     s.screenShown('known_pc', [{ username: 'sokafor' }, { username: 'lfox' }]);
     assert.deepEqual(named('pc_signin_shown'), [{ pcId: 'known_pc', usernames: ['sokafor', 'lfox'], usernameList: 'sokafor,lfox' }]);
     assert.equal(named('pc_signin_shown:known_pc').length, 1);
+});
+
+test('pc_signed_in tells a switch from a plain sign-in: previousNpcId and firstAtPc', async () => {
+    // Task mappings tell "switched from Sam to Ian here" (previousNpcId) from "Ian signed in
+    // here with no one signed in", and "the first sign-in at this PC" (firstAtPc) from a later one.
+    const s = setup();
+    await s.signIn('hot_desk', 'ishaw', 'right-ian');
+    await s.signOut('hot_desk');
+    await s.signIn('hot_desk', 'sokafor', 'right-sam');
+    await s.signIn('hot_desk', 'ishaw', 'right-ian');
+    assert.deepEqual(named('pc_signed_in').map(d => [d.npcId, d.previousNpcId, d.firstAtPc]), [
+        ['ian', null, true],
+        ['sam', null, false],
+        ['ian', 'sam', false]
+    ]);
+    assert.deepEqual(named('pc_signed_out').map(d => [d.npcId, d.reason]), [['ian', 'sign_out'], ['sam', 'switch']]);
+
+    // After a reload signedInPcs counts too, and a restored session is the previous account.
+    const r = setup();
+    r.load({ ian_pc: { npcId: 'ian', username: 'ishaw', displayName: 'Ian Shaw', via: 'password' } }, ['ian_pc', 'hot_desk']);
+    await r.signIn('hot_desk', 'sokafor', 'right-sam');
+    await r.signIn('ian_pc', 'sokafor', 'right-sam');
+    await r.signIn('lockout_pc', 'sokafor', 'right-sam');
+    assert.deepEqual(named('pc_signed_in').map(d => [d.pcId, d.previousNpcId, d.firstAtPc]), [
+        ['hot_desk', null, false],
+        ['ian_pc', 'ian', false],
+        ['lockout_pc', null, true]
+    ]);
 });

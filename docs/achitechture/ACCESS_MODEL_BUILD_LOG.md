@@ -847,3 +847,52 @@ tools/playtest/session-start.sh --url <URL> --headless \
 Follow `scenarios/test_access_signin/PLAYTEST.md` (Run A, then Run B), with `verify-run.rb
 <game_id> --access` and `access-leak-check.rb <game_id> <that run's responses>` after each beat,
 then the step 7 run again as the suite, and `tools/playtest/stop-keyless-server.sh` at the end.
+
+## Step 8 playtest fixes (2026-11-09)
+
+The two Haiku runs (Run A game 10, Run B game 9) passed every beat; report in
+`scenarios/test_access_signin/reports/2026-11-09_haiku_regression.md`. Their findings were task
+mappings that could complete outside their own beat.
+
+### Changed
+
+- `systems/pc-sessions.js`: `pc_signed_in` adds `previousNpcId` (the account signed in at that PC
+  just before, so set on a switch, else null) and `firstAtPc` (true when the PC was not yet in the
+  signed-in set, which after a reload includes the server's `signedInPcs`). `pc_signed_out` adds
+  `reason`: `sign_out` (the Sign out button), `switch` (the first half of a switch), `no_session`
+  (a container 403) or `claim_ended` (a claimed session ended on load). All additive.
+- `scenarios/test_access_signin/scenario.json.erb`: S1 needs `data.firstAtPc === true` (Sam's
+  sign-in at `hot_desk` in S7 had completed it); S4 needs `data.previousNpcId === 'sam'` (Ian's
+  plain sign-in at `hot_desk` in Run B's set-up had completed it); S6 needs `data.npcId === 'ian'`
+  and `data.reason === 'sign_out'` (a Switch user away from Ian after the archive opened would have
+  completed it); S8 also checks `data.npcId === 'ian'`. S2, S3, S5 and S7 already completed only
+  from their own beats.
+- `PLAYTEST.md`: S8 step 3 opens Ian's kept desktop at `lockout_pc`, so Switch user comes before
+  choosing Sam; a reload starts the player in the lobby; `signedInPcs` means "ever signed in at",
+  not "signed in now"; which tasks stay open in Run B and why.
+- Tests: `pc-sessions.test.mjs` (+1, now 10): a plain sign-in, a sign-in after Sign out and a
+  switch give the right `previousNpcId` and `firstAtPc`, also after a load, and each
+  `pc_signed_out` its `reason`; the existing event assertions there and in
+  `container-transfer-dialog.test.mjs` carry the new fields.
+
+### The interaction menu at `ian_pc` after the reload
+
+Not a duplicate interactable. After a reload the room has one `ian_pc` sprite; the menu listed
+"Ian's PC" and "Cup of coffee". The IT office's dressing has a coffee cup (`office-misc-cup`,
+a consumable) on the desk 26 px above the PC, and from where `moveToNear` stood the player after
+the reload (approaching from the lobby, y 119) both were in reach and within tap slop, so the game
+asked which was meant. Before the reload `moveToNear` had already reported the cup as a menu
+candidate (`viaMenu: true`), but the player stood further south (y 138) and the click went
+straight to the PC. This is the menu working as designed; the harness picks the PC from it.
+
+### Results
+
+- `bin/test-js`: 404 files, all pass.
+- Validator: clean apart from the two expected `maxAttempts` warnings.
+- `bundle exec rails db:seed`: `test_access_signin` updated (the `test_table_items` error is the
+  known unrelated one).
+- Headless on :3001 (games 11 and 12, left in place): Ian signing in at `hot_desk` with no one there
+  left S4 open; after Sign out, Sam's later sign-in there left S1 open; the switch from Sam to Ian
+  completed S4; on a new game Sam's first sign-in through his tile completed S1. The sign-ins on
+  game 11 were driven through `window.pcSessions.signIn` (the same path the sign-in screen uses);
+  game 12's through the screen. Leak check on both: no leaks found.
