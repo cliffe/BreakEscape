@@ -53,6 +53,10 @@ Not taken: probabilistic attack resolution (puzzles stay deterministic, section 
 | Networks | Named networks with membership, Wi-Fi with a key, network jacks. |
 | Determinism | Seeded rolls (the existing `NPCNeedsSystem.roll`). |
 | Tooling | Validator: references exist, NPCs can reach their work, identities that skip locks are flagged. Identities appear in the dungeon graph. Attacker missions first. |
+| Taking files | The player chooses Copy or Move in a desktop-themed dialog; items can restrict it. |
+| Login prompt | Portrait account picker by default; showing only known people, or typing the username, is optional per PC. |
+| `staff` role | Every NPC with creds has it implicitly. |
+| Content release | A login PC's contents are sent only after a correct password, except unlocked-session claims, honoured only where the scenario makes one possible. |
 | Backlog | Defender and investigator mission types, SecGen export (`docs/IDEAS_BACKLOG.md`). |
 
 ## 3. Identities and credentials on the NPC
@@ -74,7 +78,7 @@ Not taken: probabilistic attack resolution (puzzles stay deterministic, section 
 ```
 
 - `role` is a string or an array. Every NPC with `creds` implicitly also has the role `staff` unless
-  `"staff": false` is set, so "all staff" ACLs need no extra typing (decided 2026-11-09).
+  `"staff": false` is set, so "all staff" ACLs need no extra typing.
 - `creds.card` replaces `rfidCard`. The loader treats an existing `rfidCard` as `creds.card`, so
   `clone_keycard` and the RFID minigame keep working unchanged.
 - **Identity resolution.** A credential maps to an identity by value: a card by `card_id`, a login by
@@ -146,7 +150,7 @@ Contents that belong to an account rather than a machine are declared once, at s
   into. That covers "works when the user logs into multiple PCs".
 - Item ids are global, as now. A takeable file taken from a profile is gone from that profile on every
   PC (the server's existing "already held" filter does this).
-- **Taking files** (decided 2026-11-09). `takeable: false` items stay on the PC and open in place
+- **Taking files**. `takeable: false` items stay on the PC and open in place
   (viewer, app). Clicking a takeable digital file opens a small **desktop-themed dialog** (styled as the
   PC's own window chrome): **Open**, **Copy to inventory**, **Move to inventory**, **Cancel**.
   - *Copy*: the file stays on the PC (and in its profile on every PC); the player gets a copy that reads
@@ -178,7 +182,7 @@ system). It also makes him the PC's **owner** for sessions (existing `ownerOf` i
 
 `lockType: "login"` opens the password minigame in a new `mode: "login"`.
 
-**Choosing the account** (decided 2026-11-09). By default the prompt shows an **account picker**: one
+**Choosing the account**. By default the prompt shows an **account picker**: one
 tile per account, with the NPC's portrait and username, as on a real login screen. The player picks a
 tile, then types the password. `loginPicker` on the PC (or scenario-wide) sets what is shown:
 
@@ -214,7 +218,7 @@ fed by the awareness habit `locksScreen`). Policy can force it (5.5).
 If the screen is **not** locked when the player interacts, they get the owner's session: no login, the
 owner's profiles shown, and the server records the session as the owner.
 
-**Server rule** (decided 2026-11-09). Contents of a login PC are sent only after a correct password,
+**Server rule**. Contents of a login PC are sent only after a correct password,
 with one exception: an unlocked-session claim, which the server honours **only where the scenario
 makes one possible**. It refuses the claim (and the player must log in) when:
 
@@ -438,12 +442,4 @@ Later slices, in order: awareness presets and habits (section 6); work resources
 
 ## 11. Open questions
 
-All answered 2026-11-09:
-
-- copy or move: the player chooses in a desktop dialog (5.1);
-- choosing an account: portrait picker by default, typing optional (5.3);
-- implicit `staff` role: yes (3);
-- session trust: contents only after a correct password, except unlocked-session claims, honoured only
-  where the scenario makes one possible (5.4).
-
-None open. New questions from the review rounds go here.
+None. Questions raised by design review go here until the user answers them.
