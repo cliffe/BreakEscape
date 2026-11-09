@@ -859,6 +859,9 @@ async function loadRoomOnce(roomId) {
 
     createRoom(roomId, roomData, position);
 
+    // A PC whose owner is already away with the screen locked gets its locked look, silently
+    window.screenStates?.syncRoom(roomId);
+
     // Reveal (make visible) but do NOT mark as discovered
     // The room will only be marked as "discovered" when the player
     // actually enters it via door transition

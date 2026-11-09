@@ -15,6 +15,17 @@
  *   owner leaves    -> ownerAway = true, screenLocked = (config or roll)
  *   owner returns   -> ownerAway = false, screenLocked = false (occupied: nobody can sit down)
  *
+ * Events, one per station of the owner:
+ *
+ *   workstation_owner_left:<objId>      { objectId, ownerId, screenLocked, reason }
+ *   workstation_owner_returned:<objId>  { objectId, ownerId, wasLocked }: wasLocked is the
+ *                                       screen's state just before the return cleared it, so a
+ *                                       listener can tell "came back and typed a password" from
+ *                                       "came back to an open screen"
+ *
+ * `isLocked(objId)` answers "is this screen locked right now?" (owner away and screen locked)
+ * without emitting anything; systems/screen-states.js draws the locked look from it.
+ *
  * State lives on `sprite.scenarioData.screenLocked` and is mirrored to globals so text variants
  * can key on it (their conditions read globals only):
  *
@@ -151,6 +162,31 @@ export class WorkstationState {
         }
     }
 
+    /**
+     * A station discovered after its owner left (its room loaded late, so screenLocked is still
+     * undefined) takes its state now. The roll is keyed by owner, station and leave count, so
+     * the answer is the same whoever asks first (isLocked or onInteract).
+     */
+    _lateRoll(data, ownerId, rec) {
+        if (data.screenLocked !== undefined) return;
+        this._rollScreen(data, ownerId, rec);
+        this._publish(data);
+    }
+
+    /**
+     * Whether a workstation's screen is locked right now: its owner has an away record and the
+     * screen is locked. Emits no event (a late-found station is rolled and its globals written).
+     */
+    isLocked(objectId) {
+        const data = this._find(objectId);
+        if (!data) return false;
+        const ownerId = ownerOf(data, this.env.npcs());
+        const rec = ownerId ? this.away.get(ownerId) : null;
+        if (!rec?.away) return false;
+        this._lateRoll(data, ownerId, rec);
+        return !!data.screenLocked;
+    }
+
     /** Lock one open screen whose lockAt has passed while its owner is still away. */
     _checkAutoLock(data) {
         if (!data || data.lockAt === undefined || data.screenLocked) return false;
@@ -247,14 +283,19 @@ export class WorkstationState {
     onReturned(npcId) {
         if (!npcId) return;
         const rec = this.away.get(npcId) || { away: false, leaves: 0 };
+        const stations = this._stationsOf(npcId);
+        // A station nobody asked about since it was found still takes this leave's roll, so
+        // wasLocked does not depend on whether anything read it first
+        if (rec.away) for (const data of stations) if (data.screenLocked === undefined) this._rollScreen(data, npcId, rec);
         rec.away = false;
         this.away.set(npcId, rec);
-        for (const data of this._stationsOf(npcId)) {
+        for (const data of stations) {
+            const wasLocked = !!data.screenLocked;
             data.screenLocked = false;
             delete data.lockAt;
             this.pendingLocks.delete(data.id);
             this._publish(data);
-            this.env.emit(`workstation_owner_returned:${data.id}`, { objectId: data.id, ownerId: npcId });
+            this.env.emit(`workstation_owner_returned:${data.id}`, { objectId: data.id, ownerId: npcId, wasLocked });
         }
     }
 
@@ -271,8 +312,7 @@ export class WorkstationState {
         if (presenceKnown && this.env.ownerPresent(ownerId)) return 'attended';
         const rec = this.away.get(ownerId);
         if (!rec?.away) return presenceKnown ? 'signin' : 'attended';
-        // A station discovered after its owner left (room loaded late) takes the state now.
-        if (data.screenLocked === undefined) this._rollScreen(data, ownerId, rec);
+        this._lateRoll(data, ownerId, rec);
         this._checkAutoLock(data);
         if (data.screenLocked) {
             this.env.emit(`workstation_locked_attempt:${objectId}`, { objectId, ownerId });

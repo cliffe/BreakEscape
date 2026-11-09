@@ -383,3 +383,89 @@ test('step 9: the owner\'s return cancels a pending auto lock', () => {
     r.ws.onLeft('ann');
     assert.equal(a.lockAt, 12 * 60000 + 5 * 60000);
 });
+
+// ---- isLocked and wasLocked (screen states, PHYSICAL_PENTEST_ACCESS_FOLLOWUP_PLAN.md 3.1) ----
+
+// NPC records shaped like npcManager.npcs values (the live env's npcs())
+const liveNpcs = () => [
+    { id: 'ann', displayName: 'Ann', npcType: 'person', roomId: 'office', needsHome: 'pc_a', position: { x: 4, y: 4 }, behavior: {}, _sprite: null },
+    { id: 'bob', displayName: 'Bob', npcType: 'person', roomId: 'office', needsHome: 'pc_b', position: { x: 8, y: 4 }, behavior: {}, _sprite: null }
+];
+
+test('isLocked: false with the owner present, away and open, for an unowned or unknown object; true away and locked', () => {
+    const a = { id: 'pc_a', workstation: true };
+    const b = { id: 'pc_b', workstation: true, locksScreenOnLeave: false };
+    const hot = { id: 'hot', lockType: 'login' };
+    const r = rig9([a, b, hot, { id: 'plant' }], { npcs: liveNpcs(), present: { ann: true, bob: true } });
+    assert.equal(r.ws.isLocked('pc_a'), false);
+    assert.equal(r.ws.isLocked('pc_b'), false);
+    r.present.ann = false; r.present.bob = false;
+    r.ws.onLeft('ann'); r.ws.onLeft('bob');
+    r.emitted.length = 0;
+    assert.equal(r.ws.isLocked('pc_a'), true);
+    assert.equal(r.ws.isLocked('pc_b'), false);
+    assert.equal(r.ws.isLocked('hot'), false);
+    assert.equal(r.ws.isLocked('plant'), false);
+    assert.equal(r.ws.isLocked('nope'), false);
+    assert.deepEqual(r.names(), [], 'isLocked emits nothing');
+    r.present.ann = true;
+    r.ws.onReturned('ann');
+    assert.equal(r.ws.isLocked('pc_a'), false);
+});
+
+test('isLocked: true after an auto lock fires, false before', () => {
+    const a = { id: 'pc_a', workstation: true, lockChance: 0, policy: 'corp' };
+    const r = rig9([a], { npcs: liveNpcs(), policies: { corp: { autoLockMin: 5 } } });
+    r.ws.onLeft('ann');
+    r.advance(4 * 60000);
+    assert.equal(r.ws.isLocked('pc_a'), false);
+    r.advance(60000);
+    assert.equal(r.ws.isLocked('pc_a'), true);
+});
+
+test('a station found after its owner left is rolled once: isLocked and onInteract agree in either order', () => {
+    for (const first of ['isLocked', 'onInteract']) {
+        for (const seed of ['s1', 's2', 's3', 's4', 's5', 's6']) {
+            const objects = [];
+            const r = rig9(objects, { npcs: liveNpcs(), seed });
+            r.ws.onLeft('ann');                      // pc_a's room is not loaded yet
+            const a = { id: 'pc_a', workstation: true, lockChance: 0.5 };
+            objects.push(a);
+            assert.equal(a.screenLocked, undefined);
+            let locked, answer;
+            if (first === 'isLocked') { locked = r.ws.isLocked('pc_a'); answer = r.ws.onInteract('pc_a'); }
+            else { answer = r.ws.onInteract('pc_a'); locked = r.ws.isLocked('pc_a'); }
+            assert.equal(answer, locked ? 'locked' : 'accessed', `${first} first, seed ${seed}`);
+            assert.equal(a.screenLocked, locked);
+            // The same roll the leave itself would have made
+            assert.equal(locked, decideLocked(a, 'ann', 1, r.ws.env.roll));
+            // The late roll writes the globals the on-object texts read
+            assert.equal(r.globals.pc_a_screen_locked, locked);
+            assert.equal(r.globals.pc_a_owner_away, true);
+            // Asking again does not re-roll
+            assert.equal(r.ws.isLocked('pc_a'), locked);
+        }
+    }
+});
+
+test('workstation_owner_returned carries wasLocked: true from a locked screen, false from an open one, true after an auto lock', () => {
+    const a = { id: 'pc_a', workstation: true };
+    const b = { id: 'pc_b', workstation: true, locksScreenOnLeave: false };
+    const r = rig9([a, b], { npcs: liveNpcs() });
+    r.ws.onLeft('ann'); r.ws.onLeft('bob');
+    r.emitted.length = 0;
+    r.ws.onReturned('ann'); r.ws.onReturned('bob');
+    assert.deepEqual(r.emitted, [
+        ['workstation_owner_returned:pc_a', { objectId: 'pc_a', ownerId: 'ann', wasLocked: true }],
+        ['workstation_owner_returned:pc_b', { objectId: 'pc_b', ownerId: 'bob', wasLocked: false }]
+    ]);
+    assert.equal(a.screenLocked, false);
+
+    const c = { id: 'pc_a', workstation: true, lockChance: 0, policy: 'corp' };
+    const r2 = rig9([c], { npcs: liveNpcs(), policies: { corp: { autoLockMin: 5 } } });
+    r2.ws.onLeft('ann');
+    r2.advance(6 * 60000);
+    r2.emitted.length = 0;
+    r2.ws.onReturned('ann');
+    assert.deepEqual(r2.emitted, [['workstation_owner_returned:pc_a', { objectId: 'pc_a', ownerId: 'ann', wasLocked: true }]]);
+});

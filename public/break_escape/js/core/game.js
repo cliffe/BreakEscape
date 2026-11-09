@@ -1021,6 +1021,10 @@ export function preload() {
     this.load.image('uni_sofa2', 'objects/uni_sofa2.png');
     this.load.image('uni_poster8', 'objects/uni_poster8.png');
     this.load.image('pc_ransomware', 'objects/pc_ransomware.png');
+    // The navy desktop PC and its locked screen (systems/screen-states.js shows `<key>_locked`
+    // while the owner is away with the screen locked). The key `pc` is pc1.png, different art.
+    this.load.image('pc_desktop', 'objects/pc_desktop.png');
+    this.load.image('pc_desktop_locked', 'objects/pc_desktop_locked.png');
     this.load.image('pc5_ransomware', 'objects/pc5_ransomware.png');
     this.load.image('kvm_cart_ransomware', 'objects/kvm_cart_ransomware.png');
     this.load.image('checkin_kiosk_ransomware', 'objects/checkin_kiosk_ransomware.png');
@@ -1961,7 +1965,11 @@ export async function create() {
                     import('../systems/npc-needs-debug.js').then(m => m.installNpcNeedsDebug(sceneRef)).catch(e => console.warn('npc needs debug overlay failed', e));
                     import('../systems/npc-office-visuals.js').then(m => m.installNpcOfficeVisuals(sceneRef)).catch(e => console.warn('npc office visuals failed', e));
                     import('../systems/npc-world-bubbles.js').then(m => m.installNpcWorldBubbles(sceneRef)).catch(e => console.warn('npc speech bubbles failed', e));
-                    return import('../systems/workstation-state.js').then(ws => ws.installWorkstationState());
+                    return import('../systems/workstation-state.js').then(ws => {
+                        const state = ws.installWorkstationState();
+                        // The locked-screen look and its sounds follow the workstation events
+                        return import('../systems/screen-states.js').then(m => { m.installScreenStates(); return state; });
+                    });
                 });
             })
             .catch(error => {

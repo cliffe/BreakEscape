@@ -19,8 +19,10 @@ Usage:
   python3 scripts/room_gen/make_locked_screen.py pc --out DIR
       writes DIR/candidate_{a,b,c}.png and DIR/contact_sheet.png
   python3 scripts/room_gen/make_locked_screen.py pc3 --rect 4,2,20,12 --out DIR
-  python3 scripts/room_gen/make_locked_screen.py pc --install a
-      writes assets/objects/pc_locked.png from candidate a (only once picked)
+  python3 scripts/room_gen/make_locked_screen.py pc_desktop --install a
+      writes assets/objects/pc_desktop_locked.png from candidate a (only once picked).
+      The engine shows `<texture key>_locked` for a locked screen, so install under the
+      sprite's texture key: `pc_desktop` (a copy of pc.png), not `pc` (which loads pc1.png).
 
 Output is deterministic: the same base sprite gives the same bytes.
 """
@@ -35,7 +37,10 @@ ROOT = Path(__file__).resolve().parents[2]
 OBJECTS = ROOT / "public/break_escape/assets/objects"
 
 # Screen interior per base, inclusive (x0, y0, x1, y1).
-RECTS = {"pc": (3, 1, 24, 13)}
+# pc_desktop.png is a copy of pc.png under the name of its texture key: the engine loads the
+# key `pc` from pc1.png (different art), so the navy desktop PC and its locked look are the
+# keys `pc_desktop` and `pc_desktop_locked` (systems/screen-states.js).
+RECTS = {"pc": (3, 1, 24, 13), "pc_desktop": (3, 1, 24, 13)}
 
 # Colours that already occur in pc.png.
 BEZEL = (23, 25, 75, 255)
