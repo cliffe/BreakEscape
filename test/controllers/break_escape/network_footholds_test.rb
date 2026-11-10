@@ -239,7 +239,7 @@ module BreakEscape
       assert_response :not_found
     end
 
-    test 'the view lists the foothold network hosts and resources in scenario order and nothing else' do
+    test 'the view lists the foothold network hosts then resources, each sorted by id, and nothing else' do
       planted_with_box
       view = network_view
       assert_response :success
@@ -247,14 +247,10 @@ module BreakEscape
       foothold = view['footholds'][0]
       assert_equal 'jack_comms_port', foothold['id']
       assert_equal({ 'id' => 'office_lan', 'name' => NS::OFFICE_NAME }, foothold['network'])
-      # Hosts first, then resources. The order is the stored scenario's: rooms and
-      # resources are keyed maps, whose key order the jsonb column does not keep.
-      ids = foothold['hosts'].map { |h| h['id'] }
-      assert_equal %w[door_box kiosk_pc lena_pc sam_pc], ids.first(4).sort
-      assert_equal %w[ledger_archive print_queue scanned_inbox], ids.last(3).sort
-      data = @game.reload.scenario_data
-      assert_equal NetworkModel.sign_in_objects_on('office_lan', data).map { |e| e[:object]['id'] } +
-                   NetworkModel.resources_on('office_lan', data).map(&:first), ids
+      # Hosts first, then resources, each sorted by id: the order an author can predict
+      # (the jsonb column keeps keys in length order, not the order they were written).
+      assert_equal %w[door_box kiosk_pc lena_pc sam_pc ledger_archive print_queue scanned_inbox],
+                   foothold['hosts'].map { |h| h['id'] }
 
       sam = foothold['hosts'].find { |h| h['id'] == 'sam_pc' }
       assert_equal({ 'id' => 'sam_pc', 'kind' => 'pc', 'name' => "Sam's PC", 'host' => 'HB-DESK-01', 'sprite' => 'pc_desktop',

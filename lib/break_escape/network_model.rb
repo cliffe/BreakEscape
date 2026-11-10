@@ -92,19 +92,30 @@ module BreakEscape
       room_objects(data).select { |entry| jack?(entry[:object]) }
     end
 
-    # The sign-in objects on a network, in scenario order (3.4).
+    # The sign-in objects on a network, sorted by id (3.4). Not scenario order: the
+    # server stores scenario_data as jsonb, which keeps object keys sorted by length then
+    # bytes, so the order rooms were written in is gone by the time the server reads them.
+    # Sorting by id gives the server, the validator and the dungeon graph one order an
+    # author can predict.
     def sign_in_objects_on(network_id, data)
       return [] unless present_string?(network_id)
 
-      room_objects(data).select { |entry| sign_in_object?(entry[:object]) && entry[:network] == network_id }
+      found = room_objects(data).select { |entry| sign_in_object?(entry[:object]) && entry[:network] == network_id }
+      sort_by_id(found) { |entry| entry[:object]['id'] }
     end
 
-    # [[resourceId, resource]] on a network, in scenario order. A resource with no
-    # network is never listed (3.4).
+    # [[resourceId, resource]] on a network, sorted by id as the sign-in objects are. A
+    # resource with no network is never listed (3.4). A view lists hosts before resources.
     def resources_on(network_id, data)
       return [] unless present_string?(network_id)
 
-      resources(data).select { |_id, resource| resource['network'] == network_id }.to_a
+      found = resources(data).select { |_id, resource| resource['network'] == network_id }.to_a
+      sort_by_id(found, &:first)
+    end
+
+    # Sorted by the id the block returns, as a string; equal ids keep their order.
+    def sort_by_id(list)
+      list.each_with_index.sort_by { |item, idx| [yield(item).to_s, idx] }.map(&:first)
     end
 
     # Every definition of a rogue device (3.3): [{ item:, home:, path: }] where home is

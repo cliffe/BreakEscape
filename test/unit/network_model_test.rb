@@ -34,11 +34,13 @@ class NetworkModelTest < ActiveSupport::TestCase
     assert_equal %w[office_lan office_lan workshop_lan], jacks.map { |j| j[:network] }
   end
 
-  test 'the hosts and resources on a network, in scenario order' do
-    assert_equal %w[sam_pc lena_pc kiosk_pc door_box], ids(NM.sign_in_objects_on('office_lan', data)),
-                 'every sign-in object on the network, in the order the rooms and objects are authored'
+  # Sorted by id, not in scenario order: scenario_data is stored as jsonb, which keeps
+  # object keys sorted by length then bytes, so authored order cannot survive (D3).
+  test 'the hosts and resources on a network, sorted by id' do
+    assert_equal %w[door_box kiosk_pc lena_pc sam_pc], ids(NM.sign_in_objects_on('office_lan', data)),
+                 'every sign-in object on the network, sorted by id'
     assert_equal %w[bench_pc], ids(NM.sign_in_objects_on('workshop_lan', data))
-    assert_equal %w[scanned_inbox ledger_archive print_queue], NM.resources_on('office_lan', data).map(&:first)
+    assert_equal %w[ledger_archive print_queue scanned_inbox], NM.resources_on('office_lan', data).map(&:first)
     assert_equal %w[bench_notes], NM.resources_on('workshop_lan', data).map(&:first)
     assert_empty NM.sign_in_objects_on(nil, data)
     assert_empty NM.resources_on('', data)

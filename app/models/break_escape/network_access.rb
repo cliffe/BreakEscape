@@ -306,7 +306,7 @@ module BreakEscape
       { status: :ok, body: { footholds: footholds } }
     end
 
-    # The rows of a network's view: each sign-in host, then each resource, in scenario order.
+    # The rows of a network's view: each sign-in host, then each resource, each sorted by id.
     def network_rows(network_id)
       hosts = NetworkModel.sign_in_objects_on(network_id, scenario_data).map { |entry| host_row(entry[:object]) }
       hosts + NetworkModel.resources_on(network_id, scenario_data).map { |id, resource| resource_row(id, resource) }

@@ -77,8 +77,9 @@ module BreakEscape
       assert_response :not_found, 'a foothold alone does not open a share with an access list'
       sign_in('lena_pc', 'lfox', NS::LENA_PASSWORD, foothold: OFFICE)
       desktop = container('lena_pc', foothold: OFFICE)['contents']
-      assert_equal %w[lena_local scanned_inbox ledger_archive], desktop.map { |c| c['id'] }
-      assert_equal LEDGER_STUB, desktop.last
+      assert_equal %w[lena_local ledger_archive scanned_inbox], desktop.map { |c| c['id'] },
+                   'the profile first, then the mapped shares sorted by id'
+      assert_equal LEDGER_STUB, desktop[1]
       assert_equal %w[ledger_handover ledger_yearend], contents_ids('ledger_archive')
 
       write_state { |ps| ps['unlockedRooms'] << 'finance_office' }
