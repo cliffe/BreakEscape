@@ -12,6 +12,26 @@ import { getRoomDisplayName } from '../../utils/room-display-name.js';
 import { parsePortraitTag } from '../../utils/portrait-variants.js';
 import { hostileTurnMessage } from '../../systems/combat-input.js';
 
+/** Whether a choice's own tags (ink tags inside its brackets) include `ending_check`. */
+export function choiceAsksEnding(tags) {
+    return Array.isArray(tags) && tags.some((t) => String(t ?? '').split(':')[0].trim().toLowerCase() === 'ending_check');
+}
+
+/**
+ * The end-of-mission check for a choice, asked before the choice is taken (person chat and
+ * phone chat handleChoice). A choice tagged inside its brackets,
+ * `+ [Walk me through it. #ending_check]`, asks when optional objectives are open: "End the
+ * mission now" resolves true and the caller takes the choice as normal; "Keep going" resolves
+ * false and the caller takes nothing, so ink does not move and the same choices stay on
+ * screen. Resolves true at once when the choice has no such tag, nothing is open or the
+ * module is not loaded. A tag after the brackets keeps its old meaning (processGameActionTags).
+ */
+export async function confirmEndingBeforeChoice(tags, checker = (typeof window !== 'undefined' ? window.endingCheck : null)) {
+    if (!choiceAsksEnding(tags) || typeof checker?.confirm !== 'function') return true;
+    if (typeof checker.needsAnswer === 'function' && !checker.needsAnswer()) return true;
+    return !!(await checker.confirm({ reason: 'choice' }));
+}
+
 /**
  * Process game action tags from Ink story
  * Tags format: # unlock_door:ceo, # give_item:keycard|CEO Keycard, etc.
@@ -454,6 +474,16 @@ export async function processGameActionTags(tags, ui, options = {}) {
                     result.message = '🏁 Ending check: keeping going, the rest of this line\'s tags are skipped';
                     results.push(result);
                     return results;
+                }
+
+                case 'ending_confirmed': {
+                    // # ending_confirmed: the player has agreed in the dialogue's own words to leave the
+                    // optional objectives open now (a debrief that offers the choice itself). The credits
+                    // and a conclusion aim then do not ask about them, after a reload too.
+                    const ids = window.endingCheck?.confirmOpen?.() || [];
+                    result.success = true;
+                    result.message = `🏁 Ending confirmed in dialogue (${ids.length} optional left open)`;
+                    break;
                 }
 
                 case 'skip_task':

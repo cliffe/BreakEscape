@@ -476,6 +476,30 @@ export function structureFindings(text, { channel = 'person', names = [] } = {})
     }
   }
 
+  // ending-check-after-bracket: `#ending_check` after a choice's bracket belongs to what follows
+  // the choice, so ink has already moved on when the popup asks. "Keep going" only skips the
+  // rest of that line's tags: with no other tag there to skip and a divert into more dialogue,
+  // the debrief carries on whatever the player answers (lab_physical_pentest, user feedback
+  // 2026-11-10). Inside the brackets the chat asks before the choice is taken.
+  for (let i = 0; i < lines.length; i++) {
+    const L = lines[i];
+    if (L.kind !== 'choice') continue;
+    const close = L.t.lastIndexOf(']');
+    if (close < 0) continue;
+    const after = L.t.slice(close + 1).replace(/(^|\s)\/\/.*$/, '');
+    if (!/#\s*ending_check\b/.test(after)) continue;
+    const body = choiceBody(lines, i);
+    // tags on the choice line after the bracket, and tag-only lines straight after it, are one tag set
+    const tags = [...after.matchAll(/#\s*([^#]+)/g)].map(m => m[1].replace(/->.*$/, '').trim());
+    for (const B of body) { if (B.kind === 'tag') tags.push(...[...B.t.matchAll(/#\s*([^#]+)/g)].map(m => m[1].trim())); else if (B.kind !== 'comment' && B.kind !== 'blank') break; }
+    if (tags.some(t => !/^ending_check\b/.test(t))) continue;
+    const onward = (L.divert && !/^(?:DONE|END)$/.test(L.divert)) ||
+      body.some(B => (B.kind === 'divert' && B.divert && !/^(?:DONE|END)$/.test(B.divert)) || (B.kind === 'text' && B.printable));
+    if (!onward) continue;
+    F.push({ level: 'check', rule: 'ending-check-after-bracket', line: L.n, text: cleanInkText(L.t),
+      note: 'Keep going cannot stop this debrief; put the tag inside the choice\'s brackets.' });
+  }
+
   // emote-as-choice: a line starting "*word" is parsed by ink as a choice, not an emote
   // (seen in m02 after phone prefixes were stripped from lines like "Ghost: *leans in* ...")
   for (const L of lines) {

@@ -17,7 +17,7 @@ import PersonChatUI from './person-chat-ui.js';
 import PhoneChatConversation from '../phone-chat/phone-chat-conversation.js'; // Reuse phone-chat conversation logic
 import InkEngine from '../../systems/ink/ink-engine.js';
 import { attachPretext } from './person-chat-pretext.js';
-import { processGameActionTags, determineSpeaker as determineSpeakerFromTags } from '../helpers/chat-helpers.js';
+import { processGameActionTags, determineSpeaker as determineSpeakerFromTags, choiceAsksEnding, confirmEndingBeforeChoice } from '../helpers/chat-helpers.js';
 import { splitReplyTags, partitionSlowTags } from './person-chat-pending-reply.js';
 import npcConversationStateManager from '../../systems/npc-conversation-state.js';
 import TTSManager from '../../systems/tts-manager.js';
@@ -1042,15 +1042,42 @@ export class PersonChatMinigame extends MinigameScene {
     }
     
     /**
+     * The end-of-mission check for a choice tagged #ending_check inside its brackets, asked
+     * before the choice is taken (chat-helpers.js confirmEndingBeforeChoice). Returns true when
+     * it has taken over the click: the question is up (or already was), and handleChoice is
+     * called again only on "End the mission now". "Keep going" takes nothing, so ink does not
+     * move and the same choices stay on screen. Returns false when there is nothing to ask.
+     */
+    _askEndingBeforeChoice(choiceIndex) {
+        if (this._endingAsking) return true;
+        const asked = this.lastResult?.choices?.[choiceIndex];
+        if (!choiceAsksEnding(asked?.tags) || !window.endingCheck?.needsAnswer?.()) return false;
+        this._endingAsking = true;
+        const lastResult = this.lastResult;
+        confirmEndingBeforeChoice(asked.tags).then((endNow) => {
+            this._endingAsking = false;
+            // The chat closed, or moved on, while the question was up
+            if (!endNow || !this.conversation || this.lastResult !== lastResult) return;
+            this.handleChoice(choiceIndex, { endingAnswered: true });
+        }).catch((e) => {
+            this._endingAsking = false;
+            console.error('❌ Ending check before a choice failed:', e);
+        });
+        return true;
+    }
+
+    /**
      * Handle choice selection
      * @param {number} choiceIndex - Index of selected choice
+     * @param {{endingAnswered?: boolean}} [opts] - the end-of-mission question was answered
      */
-    handleChoice(choiceIndex) {
+    handleChoice(choiceIndex, { endingAnswered = false } = {}) {
         if (!this.conversation || !this.lastResult) return;
         if (!this.lastResult.choices || choiceIndex >= this.lastResult.choices.length) {
             console.warn(`⚠️ Choice ${choiceIndex} out of range (${this.lastResult.choices?.length ?? 0} available) — ignoring stale click`);
             return;
         }
+        if (!endingAnswered && this._askEndingBeforeChoice?.(choiceIndex)) return;
 
         try {
             console.log(`📝 Choice selected: ${choiceIndex}`);
