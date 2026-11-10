@@ -952,7 +952,11 @@ Files: `scripts/scenario-schema.json`, `scripts/validate_network.rb` (new),
 `README_scenario_design.md`: a "Networks" section after "Item plants" (fields, the jack and the
 device, what a foothold shows, headless hosts, shares, the events, and the two authoring rules: a
 chain that must need the foothold puts its payoff on a headless host or in a room with no other way
-in; and remote sign-in skips doors, so acknowledge it or block it in the policy).
+in; and remote sign-in skips doors, so acknowledge it or block it in the policy). The section
+says that `headless` on an object means "no screen or keyboard, managed only over the network",
+which is unrelated to the headless NPC records of the social engine (`emailRecord`,
+`Game#headless_npc_records`) and to a headless browser run, and that the implicit `staff` role
+counts in every access list a share or host uses.
 
 Tests: the two new node test files of section 7. The existing validator and graph tests pass
 unchanged, and every existing scenario validates as before (none uses a new field; section 11).
@@ -975,7 +979,12 @@ Files:
 - `public/break_escape/js/systems/test-bridge/access.js`: read-only `footholds()` (what
   `network-links.js` holds) and `networkView(footholdId)` (the last view fetched). Documented in
   `docs/test-bridge.md`.
-- `.claude/skills/playtest-scenario/SKILL.md`: one paragraph under "Access model checks".
+- `.claude/skills/playtest-scenario/SKILL.md`: one paragraph under "Access model checks", with
+  how a run drives the network screens: a row's control by its attributes (4.3), for example
+  `mg clickSelector '[data-host-id="lena_pc"] [data-action="sign-in"]'` while the view is the
+  active minigame, and the jack's prompt with the session's `click` command on its button text
+  (`{"cmd":"click","text":"Unplug it"}`), because a `gameConfirm` is not a minigame and
+  `mg clickSelector` looks only inside one. `docs/test-bridge.md` gains the same lines.
 
 Tests: `test/unit/access_leak_scanner_test.rb` gains a case per new rule (a network name planted in
 room data is reported; the same name in a `/network` answer is not; a five-letter resource name is
@@ -987,43 +996,57 @@ gain the new fields.
 
 Files, under `public/break_escape/js/`:
 - `api-client.js`: `networkPlant`, `networkUnplug`, `network`; `foothold` in `login`'s fields.
-- `systems/inventory.js`: two exported functions and nothing else changed in behaviour:
+- `systems/inventory.js`, after the engine feedback plan's stream E3 has committed its tray
+  refresh (section 14): two exported functions and nothing else changed in behaviour:
   `showServerItem(itemData)` (show an item the server has already added, with no request: the path
   a reload takes through `createInventorySprite`) and `syncInventoryFromServer(inventory)` (add
   what the server's list has and the tray lacks, remove what the tray has and the list lacks, for
-  the item ids passed). The inventory add also sends `source_resource_id` when the sprite carries
-  `sourceResourceId`. All of this slice's edits to `inventory.js` are in this step, by one builder.
+  the item ids passed). Each ends by calling E3's `refreshInventoryTray()`, so a server-made item
+  is filed and decorated like any other. The inventory add also sends `source_resource_id` when
+  the sprite carries `sourceResourceId`. All of this slice's edits to `inventory.js` are in this
+  step, by one builder.
 - `systems/network-links.js` (new, `window.networkLinks`): the foothold list, filled from the
-  server's answers and from the scenario response on load; `interactJack(sprite)`,
-  `open(footholdId, { returnTo })`, `openSession(pcId)` (open a held remote session's desktop
-  through its foothold; used by the view and offered to the capture log, 13.4), `view(footholdId)`;
-  the tray changes through the two functions above; the
-  jack's `plantedSprite`; `<jackId>_planted`; the events of 3.5; opening the view on a plant whose
-  answer says `first`. It is to networks what `pc-sessions.js` is to sessions: the only place the
-  client asks.
-- `systems/interactions.js`: two short branches in `handleObjectInteraction` after the sign-in PC
-  branch (`networkJack`, and an inventory item of type `network_link`), each a call into
-  `network-links.js` and a return.
+  server's answers and from the scenario response on load; `interactJack(sprite)`;
+  `open(footholdId, { returnTo })` and `openSession(pcId, { returnTo })` (open a held remote
+  session's desktop through its foothold; used by the view and offered to the capture log, 13.4),
+  each starting a trip, with `returnTo` an optional function as 4.3 defines it; the trip and its
+  landing table (4.3, "Getting back"): `resume(message)`, `leave(reason)`,
+  `landed(screen, reason)` and the `network_view_closed` event; `view(footholdId)`; the tray
+  changes through the two functions above; the jack's `plantedSprite`; `<jackId>_planted`, set
+  from the scenario response before any room loads (8); the events of 3.5; opening the view on a
+  plant whose answer says `first`. It is to networks what `pc-sessions.js` is to sessions: the
+  only place the client asks.
+- `systems/interactions.js`, after E3 has committed its edits to the file: two short branches in
+  `handleObjectInteraction` after the sign-in PC branch (`networkJack`, and an inventory item of
+  type `network_link`), each a call into `network-links.js` and a return.
 - `core/game.js`: hand `footholds` and `gainedFootholds` to `network-links.js` where it hands
   `sessions` to `pc-sessions.js`.
 - `systems/objectives-manager.js`: `network_foothold_gained` meets an `unlock_object` task on its
   source; the load-time reconcile also reads `gainedFootholds`.
 
-Until step 8 lands, `open` and `openSession` show a one-line toast naming the network; step 8
-supplies the view and the remote desktop they call, with no further edit to `network-links.js`
-(they look the two starters up on `window` when called).
+Until step 8 lands, `open` and `openSession` show a one-line toast naming the network and end the
+trip at once (`leave("closed")`, so a `returnTo` runs); step 8 supplies the view and the remote
+desktop they call, with no further edit to `network-links.js` (they look the two starters up on
+`window` when called).
 
 Client tests (`test/js/`):
 - `network-links.test.mjs` (new): a jack click with no device shows the resolved hint and sends
   nothing; with a device it confirms first, and a cancelled confirm sends nothing; a success shows
   the link item with no inventory request, removes the device from the tray, publishes
   `<jackId>_planted`, emits `network_device_planted` and `network_foothold_gained` once each and
-  opens the view when `first`; a planted jack asks "Unplug?", Cancel sends nothing, OK emits
-  `network_device_unplugged` with `endedPcIds` and restores the tray; on load the list is restored,
-  a missing link item is shown again and no request is sent.
+  opens the view when `first`; a planted jack asks with "Unplug it" and "Leave it", "Leave it"
+  and Esc send nothing, "Unplug it" emits `network_device_unplugged` with `endedPcIds` and
+  restores the tray; on load the list is restored, a missing link item is shown again, no request
+  is sent, and `<jackId>_planted` is true for each held foothold's source and false for a gained
+  one that is no longer held, before any room has loaded; the landing table of 4.3, one case per
+  row, with stub screens calling `landed`: `resume` and `leave` do nothing when a minigame has
+  opened in the meantime, `network_view_closed` fires once per trip and never on a handover, and
+  `returnTo` runs once, after the landing, with the reason.
 - `inventory-server-items.test.mjs` (new): `showServerItem` adds without a request;
-  `syncInventoryFromServer` adds and removes only what differs.
-- An objectives test: the task completes on the event and on load from `gainedFootholds`.
+  `syncInventoryFromServer` adds and removes only what differs; both call `refreshInventoryTray`
+  once; a link item whose `storeIn` names a held holder is filed by E3's rule.
+- `objectives-network-footholds.test.mjs` (new, in the pattern of `objectives-signin-pc.test.mjs`):
+  the task completes on the event and on load from `gainedFootholds`.
 - `interactions` routing: a jack and a link item each reach `network-links.js` and never the
   generic flow.
 
@@ -1037,7 +1060,9 @@ else in the scenario, so the leak check can test it.
 
 - **Networks:** `office_lan` ("Harbour office LAN") and `workshop_lan` ("Workshop bench LAN").
 - **Accounts** (three NPCs standing in the lobby, no needs, no owned PCs): Sam Okafor (`staff`
-  only), Lena Fox (`finance`), Ian Shaw (`it`).
+  only), Lena Fox (`finance`), Ian Shaw (`it`). Every account holder also has the implicit
+  `staff` role, so Lena and Ian can sign in at `sam_pc` and `kiosk_pc` too; the scenario's
+  `PLAYTEST.md` says so, and the expected validator output below counts it.
 - **Policies:** `hardened` (`remote: "blocked"`), `counted` (`maxAttempts: 5`,
   `remote: "allowed"`).
 - **Rooms and objects:**
@@ -1054,7 +1079,8 @@ else in the scenario, so the leak check can test it.
     `access: { roles: ["it"] }`. Its `contents`: "Door codes", which gives the `finance_office`
     door PIN and the `lobby_vault` PIN.
 - **Resources:** `scanned_inbox` ("Scanned-Inbox" on `HB-FS01`, open, `office_lan`), holding a
-  starter letter with Lena's password as a deliberate clue; `ledger_archive` ("Ledger-Archive" on
+  starter letter with Lena's username and password as a deliberate clue (the remote screen has no
+  tiles, so the username must be readable somewhere); `ledger_archive` ("Ledger-Archive" on
   `HB-FS01`, `office_lan`, `access: { roles: ["finance"] }`), holding an IT handover note with
   Ian's username and password and a PIN-locked folder "Year-end" whose PIN is in the same note;
   `print_queue` ("Office print queue" on `HB-PRN-01`, `office_lan`, `observations` only);
@@ -1071,12 +1097,20 @@ else in the scenario, so the leak check can test it.
 | P7 Remote sign-in off | `HB-KIOSK-01` | The row offers no sign-in. At the kiosk itself, Sam's password signs in | `sessions.kiosk_pc` Sam, no `foothold` |
 | P8 A host with no screen, and the chain | `door_box` in the `store` | A click on the box shows only its observation. From the view, Ian's details from the handover note sign in to `HB-DOOR-01`. "Door codes" gives the vault PIN; the vault opens and the last task completes | `sessions.door_box` Ian, with `foothold`; `lobby_vault` in `unlockedObjects` |
 | P9 Sit down at it | `finance_office`, opened with the PIN from "Door codes" | A click on `lena_pc` opens Lena's desktop with no password | `sessions.lena_pc` has no `foothold` now |
-| P10 Unplug | `comms_port`, with the `HB-DOOR-01` desktop reachable from the view | The jack asks "Unplug Network drop box?". OK returns the box (one box in the tray, none on the lobby table) and removes the link item. `lena_pc` still opens at its keyboard. After planting again, `HB-DOOR-01` asks for the password again | After the unplug: no `footholds`, no `sessions.door_box`, `sessions.lena_pc` kept; `signedInPcs` and `gainedFootholds` unchanged |
+| P10 Unplug | `comms_port`, with the `HB-DOOR-01` desktop reachable from the view | The jack says the box is plugged in here and offers "Unplug it" and "Leave it". "Unplug it" returns the box (one box in the tray, none on the lobby table) and removes the link item. `lena_pc` still opens at its keyboard. After planting again, `HB-DOOR-01` asks for the password again | After the unplug: no `footholds`, no `sessions.door_box`, `sessions.lena_pc` kept; `signedInPcs` and `gainedFootholds` unchanged |
 | P11 The other network | Unplug, then plant at `bench_port` | The link item is named for the bench port. Its view lists only "Bench-Notes", which opens. Nothing of the office network | `footholds.jack_bench_port` on `workshop_lan` only |
 | P12 Reload | A box planted at `comms_port` and a remote session at `HB-FIN-02` | After the reload the link item is in the tray, the jack shows its planted look, the view lists the same rows, Lena's desktop opens from the view with no password and every task stays complete | `footholds`, `gainedFootholds`, `sessions` and `signedInPcs` unchanged |
 
-Expected validator output: the "reachable without a foothold" information lines for `sam_pc`,
-`kiosk_pc` and "Scanned-Inbox"; the `maxAttempts` warning the first slice gives for `lena_pc`. No
+Task titles and sign texts ship in the bootstrap, so none names a network, a host label or a
+share ("Plant the box in the comms room", not "Reach HB-DOOR-01"); otherwise the leak check
+reports them.
+
+Expected validator output: the "reachable without a foothold" information lines for the hosts
+`sam_pc` and `kiosk_pc` (not headless, in open rooms) and for the share "Ledger-Archive", admitted
+for Lena Fox, who as `staff` signs in at both and gets it mapped there. "Scanned-Inbox" and
+"Bench-Notes" are open shares and are not on that list, and `lena_pc` (behind a PIN door) and
+`door_box` (headless) are not either. The chain still needs the box: the payoff, "Door codes",
+is on the headless `door_box`. The `maxAttempts` warning the first slice gives for `lena_pc`. No
 "doors skipped" warning (`counted` writes `remote` out). No errors.
 
 **Static checks.** Validator clean apart from the expected lines, dungeon graph generated, node and
@@ -1090,19 +1124,24 @@ against the record above, and `access-leak-check.rb` over the responses so far.
 ### Step 8. Client: the network view, remote sign-in and shares
 
 Files, under `public/break_escape/js/`:
-- `minigames/network-view/network-view-minigame.js` (new) and its stylesheet; registered with
+- `minigames/network-view/network-view-minigame.js` (new) and its stylesheet,
+  `public/break_escape/css/network-view-minigame.css`, linked from
+  `app/views/break_escape/games/show.html.erb` beside the other minigame stylesheets; registered with
   `MinigameFramework.registerScene('network-view', ...)` in `minigames/index.js`, where scenes are
   registered. It needs no entry in `systems/minigame-registry.js`, because it is never opened by an
   object type, an ink tag or an `openMinigame` mapping: only `network-links.js` opens it. It
-  renders one `GET /network` answer (4.3), calls out for every action, and is what a desktop or a
-  share opened from it returns to.
+  renders one `GET /network` answer (4.3) with the row attributes of 4.3, calls out for every
+  action, records its exit reason (`handover` before it opens a host or a share) and reports it
+  from its cleanup through `networkLinks.landed`.
 - `systems/unlock-system.js`: `openRemoteSignIn(hostRow, footholdId)` builds the remote lockable
   (4.4); `openLoginSignIn` and `openLoginDesktop` read `scenarioData.remote` and behave as 4.4
   says; `interactLoginPc` shows a headless object's observations and stops.
 - `systems/pc-sessions.js`: `signIn` passes the foothold; a session keeps `remote` and
   `footholdId`, and the events carry them; a 422 with `remoteBlocked` emits `pc_signin_failed` with
   reason `remote_blocked`; `network_device_unplugged` drops the sessions named in `endedPcIds` and
-  closes their desktops with "The link dropped".
+  closes their desktops with "The link dropped"; `list()` entries carry `remote`, `footholdId` and
+  `host` (4.4); the desktop close callback receives the reason as a second argument (`sign_out`,
+  `no_session`, `link_dropped`, `displaced`).
 - `minigames/password/password-minigame.js`: in sign-in mode with `remote`, no tiles, and the
   **Captured sign-ins** list (4.4), built from `readCaptures` (`systems/captures.js`) and the
   `accounts` and `secrets` maps of `/capture_secrets`.
@@ -1110,18 +1149,31 @@ Files, under `public/break_escape/js/`:
   lockable; the remote line in the header; Switch user and the 403 `no_session` fallback go
   through the remote path for a remote lockable (the two call sites of `openLoginSignIn`); a
   `network_share` item opens as a folder whose contents are fetched from `GET /container/<id>`; a
-  share started from the view carries `sourceResourceId` on what is taken from it; closing returns
-  to the view when it was opened from there.
+  share started from the view carries `sourceResourceId` on what is taken from it, through the
+  four places that test `sourcePcId` today (`offersTransfer` and `takeItem`, `:577-579` and
+  `:893-900`, and the two stand-in sprites that carry it into a reader or a nested folder,
+  `:751` and `:796`); a `network_share` stub has its own branch that starts the container
+  minigame for the share directly, never `handleObjectInteraction` or `POST /unlock` (4.5); a
+  network screen records its exit reason and reports it from its cleanup through
+  `networkLinks.landed` (4.3, "Getting back").
+- `minigames/text-file/text-file-minigame.js`: in `cleanup`, when `pendingContainerReturn` holds a
+  network screen (a remote lockable, or a share opened from the view), reopen it instead of
+  clearing the record (4.3). Other containers keep today's behaviour.
 
 Client tests (`test/js/`):
 - `network-view.test.mjs` (new): the rows and their actions for each kind of host and resource;
-  **Open** for a session held at a PC, whether or not it is remote; `network_viewed` and
-  `network_host_opened`; a refetch on return from a desktop; it never reads scenario data.
+  the order of 4.3 for a host row (remote sign-in off wins over a held session; a claimed session
+  shows **Sign in**); **Open** for a password session, whether or not it is remote; the row
+  attributes; `network_viewed` and `network_host_opened`; a refetch on return from a desktop; a
+  handover does not emit `network_view_closed` and the view's own Close does; it never reads
+  scenario data.
 - `access-remote-signin.test.mjs` (new): a remote lockable opens the screen with no
   `/login_accounts` request and no tiles, whatever picker the PC has; the request carries the
   foothold; Switch user on a remote desktop opens the remote screen, and a refused switch leaves
-  the first session's desktop; a 403 `no_session` on a remote desktop returns to the view and
-  never opens the physical screen; a headless object's click shows its observations and opens
+  the first session's desktop; a 403 `no_session` on a remote desktop returns to the view, drops
+  the client's session and never opens the physical screen; a 403 `unreachable` returns to the
+  view with its reason and keeps the client's session; closing the remote sign-in screen with no
+  session returns to the view; a headless object's click shows its observations and opens
   nothing.
 - `pc-sessions.test.mjs`: a remote sign-in emits `pc_signed_in` with `remote: true`;
   `remoteBlocked` emits reason `remote_blocked`; an unplug ends exactly the sessions named.
@@ -1129,11 +1181,14 @@ Client tests (`test/js/`):
   username always and the password only when `secrets` has it, and is empty with no captures.
 - `container-shares.test.mjs` (new): a share stub fetches its contents on open; the inventory add
   from a mapped share carries `source_pc_id`, from a share opened in the view
-  `source_resource_id`; the remote desktop fetch carries `foothold`.
+  `source_resource_id`; the remote desktop fetch carries `foothold`; a share stub never calls
+  `handleObjectInteraction` or `/unlock`; a text file read from a remote desktop reopens the
+  desktop when closed, and one read from an ordinary container still closes to the world.
 
 **Scripted runs**, each a new game, 10 to 15 minutes, every password read from its in-game source
 and listed in the earned-secrets table:
-- Run A: P1 to P6, with a reload after P5.
+- Run A: P1 to P6, with a reload after P5. In P5 the run reads the handover note, is back on
+  Lena's desktop when the reader closes, and closes the desktop to the view.
 - Run B: P2, P4, P5, then P7, P8 and P12.
 - Run C: P2, P4, P5, P8, then P9, P10 and P11.
 
@@ -1170,7 +1225,7 @@ the content plan's scenario stream, on whatever base the user pushes.
 | top level | `"networks": { "office_lan": { "name": "Ledgerwell office LAN" } }` |
 | `kit_dropbox` | Add `"rogueDevice": true` |
 | `network_port` (room `P3`) | Add `"networkJack": true`, `"network": "office_lan"`, `"plantedSprite": "pi_cluster1"`, `"linkName": "Drop box: comms cupboard"`, `"linkStoreIn": "capture_log"` (13.4; added only once the lab has the capture log item), and `"jackConfirm"` holding the confirm text the content plan writes for it. Remove `requiresItem`, `triggerOnInteract` and its `confirm_action` (the jack does all three); keep `requiresItemHint`. Add an `observationVariants` entry on the global `network_port_planted` for the content plan's "this is the foothold" text |
-| Ruth's mapping on `global_variable_changed:kp_netdrop_planted` | Change the pattern to `network_device_planted:network_port`; keep `onceOnly`, the `addCapture` and `completeTask: "opt_netdrop"`; add `setGlobal: { "kp_netdrop_planted": true }`, so her ink and the debrief keep reading the same global |
+| Ruth's mapping on `global_variable_changed:kp_netdrop_planted` | Change the pattern to `network_device_planted:network_port`; keep `onceOnly` and the `addCapture`. With the objective change in 10.2 accepted, drop its `completeTask`: the task completes itself. Until then keep `completeTask: "opt_netdrop"` and add `setGlobal: { "kp_netdrop_planted": true }`, so her ink and the debrief keep reading the same global |
 | object `network_port_planted` | Removed. The jack's own planted look shows the device where it was planted, which is what the engine feedback plan wants kept visible, and the jack's observation variant carries its text. (The published global has the same name as the removed object's id; they are different things) |
 
 The box is now really planted: it leaves the tray on confirm, the link item arrives, the view opens
@@ -1181,12 +1236,13 @@ by itself, and the box comes back on an unplug.
 | Content plan | Becomes |
 |---|---|
 | `dropbox_console` (content), its `give_item` timer on `kp_netdrop_planted`, and its file "What answers" | Not created. The link item and the network view are the console |
-| Host note "LW-FS01" (the records share is listed to any device, folder names only) | `resources.lw_fs01_records`: `kind: "file_share"`, `name: "records"`, `host: "LW-FS01"`, `network: "office_lan"`, **no `contents`**, and `observations` giving the top folder names and the content plan's line that reading them would be a breach of its own. Nothing in it can be opened, copied or taken, which is the scope rule made mechanical |
+| Host note "LW-FS01" (the records share is listed to any device, folder names only) | `resources.lw_fs01_records`: `kind: "file_share"`, `name: "Client-Records"` (a name no room text uses, so the leak scanner can check it; the word "records" is public all over the lab and would be skipped by the scanner's own rule; the content plan's mapped-drive file on `lord_desktop`, served only to a session, names the share the same way), `host: "LW-FS01"`, `network: "office_lan"`, **no `contents`**, and `observations` giving the top folder names and the content plan's line that reading them would be a breach of its own. Nothing in it can be opened, copied or taken, which is the scope rule made mechanical |
 | Host "LW-PRN02" (printer) | `resources.lw_prn02`: `kind: "printer"`, `host: "LW-PRN02"`, `network: "office_lan"`, a one-line `observations` |
 | "the staff PCs" | `hot_desk_pc` (content) and `staff_pc_2` gain `"network": "office_lan"` and a `host` (`staff_pc_2` is `LW-OPEN-07`, the host its capture already prints). Their `access` lists stay exactly as the content plan sets them: the hot desk admits its three people, Melanie's PC only her. `staff_pc` and `usb_target_pc` stay plain PCs and are not listed |
 | Host note "LW-DOOR01" and `door_admin_page` (content) with its two timers on `kp_netdrop_planted` and `kp_creds_captured` | A new object, `door_controller`, in `store_room` beside `store_shelf` (the shelf's text already places the controller there): `"type": "pc"`, a rack sprite, `"name": "Door entry controller"`, `"host": "LW-DOOR01"`, `"network": "office_lan"`, `"locked": true`, `"lockType": "login"`, `"headless": true`, `"loginPicker": false`, `"access": { "people": ["hampshire"] }`, an `observations` line saying it has no screen and is managed from the office network, and as `contents` the three pages the content plan wrote for `door_admin_page` (the door list, the card type, "Add badge: in reach, not pressed"). The two timers and the granted item are not created |
 | `kp_dropbox_viewed` set by `onRead` of "What answers" | Set by a mapping on `network_viewed:office_lan`, `onceOnly`, `setGlobal: { "kp_dropbox_viewed": true }`. The content plan's mapping from that global to `opt_dropbox_view` and its capture are unchanged |
-| `kp_door_admin` set by the first read of `door_admin_page` | Set by a mapping on `pc_signed_in:door_controller`, `onceOnly`, `setGlobal: { "kp_door_admin": true }`. The content plan's mapping to `opt_door_admin` is unchanged |
+| `kp_door_admin` set by the first read of `door_admin_page` | Set by the server, as below. Until that change is accepted: a mapping on `pc_signed_in:door_controller`, `onceOnly`, `setGlobal: { "kp_door_admin": true }`, and the content plan's mapping to `opt_door_admin` unchanged |
+| `opt_netdrop` and `opt_door_admin`, completed from client events and globals (for the content plan's owner to accept) | Two `unlock_object` tasks the server checks. `opt_netdrop`: `"type": "unlock_object"`, `"targetObject": "network_port"`, `"onComplete": { "setGlobal": { "kp_netdrop_planted": true } }`; the server completes it only when `gainedFootholds` holds the jack. `opt_door_admin`: `"type": "unlock_object"`, `"targetObject": "door_controller"`, `"onComplete": { "setGlobal": { "kp_door_admin": true } }`; the server completes it only when `signedInPcs` holds the controller, which only a sign-in through the box can put there. Each keeps its id, title and `optional`; the client completes it on `network_foothold_gained` and `pc_signed_in` (step 7 and the first slice). The server writes each global when it completes the task (section 2, "Globals"; both globals are already declared in the lab's `globalVariables`), so Ruth's ink and the credits follow a server check. The content plan's mapping from `kp_door_admin` to `opt_door_admin` goes; its `addCapture` moves to a mapping on `pc_signed_in:door_controller`, `onceOnly`. `opt_dropbox_view` stays a mapping on `kp_dropbox_viewed`: looking is not a gate |
 | The content plan's texts that say "its console is in your inventory" | Stay true: the link item is in the inventory |
 
 **Why this payoff needs the box.** The door controller is headless. It stands in the store room,
