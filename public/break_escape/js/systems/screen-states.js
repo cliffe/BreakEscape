@@ -16,11 +16,14 @@
  *
  *   workstation_owner_left:*, workstation_auto_locked:*, workstation_owner_returned:*
  *                                   -> apply(objectId, { audible: true })
+ *                                      (silent for an owner_left with reason 'ko': a
+ *                                      knocked-out owner locks nothing by hand)
  *   pc_signed_in, pc_signed_out     -> apply(pcId, { audible: false })
  *   a room's sprites are made       -> syncRoom(roomId), silent (core/rooms.js)
  *
  * A sound plays only on a real change of look, from one of the three workstation events, for a
- * PC in the room the player is in. So nothing flashes or sounds at boot or on a reload: the
+ * PC in the room the player is in (the last room they were in while they stand in a doorway
+ * or a gap between rooms). So nothing flashes or sounds at boot or on a reload: the
  * install pass and every syncRoom are silent, and after a load every owner is at their post.
  *
  * `transitions` keeps the last 50 changes, `{ objectId, locked, sound, at }` (sound is the name
@@ -91,7 +94,8 @@ export class ScreenStates {
         sprite._screenLocked = locked;
 
         let sound = null;
-        if (audible && roomId === w.currentPlayerRoom) {
+        // currentPlayerRoom is '' in a doorway or gap (core/rooms.js); the last room still hears it
+        if (audible && roomId === (w.currentPlayerRoom || w.lastPlayerRoom)) {
             sound = locked ? LOCK_SOUND : UNLOCK_SOUND;
             w.soundManager?.play?.(sound);
         }
@@ -118,7 +122,9 @@ export class ScreenStates {
             this._listening = dispatcher;
             const loud = (d) => { if (d?.objectId) this.apply(d.objectId, { audible: true }); };
             const quiet = (d) => { if (d?.pcId) this.apply(d.pcId, { audible: false }); };
-            dispatcher.on('workstation_owner_left:*', loud);
+            // A knock-out at the desk rolls the screen like any leave (workstation-state.js),
+            // but nobody pressed lock: the look follows, the click does not
+            dispatcher.on('workstation_owner_left:*', (d) => { if (d?.objectId) this.apply(d.objectId, { audible: d.reason !== 'ko' }); });
             dispatcher.on('workstation_auto_locked:*', loud);
             dispatcher.on('workstation_owner_returned:*', loud);
             dispatcher.on('pc_signed_in', quiet);

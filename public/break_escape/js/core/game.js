@@ -1968,7 +1968,8 @@ export async function create() {
                     return import('../systems/workstation-state.js').then(ws => {
                         const state = ws.installWorkstationState();
                         // The locked-screen look and its sounds follow the workstation events
-                        return import('../systems/screen-states.js').then(m => { m.installScreenStates(); return state; });
+                        return import('../systems/screen-states.js').then(m => { m.installScreenStates(); return state; })
+                            .catch(e => { console.warn('screen states failed', e); return state; });
                     });
                 });
             })

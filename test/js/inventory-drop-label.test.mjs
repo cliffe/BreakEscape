@@ -46,6 +46,17 @@ test('any other item keeps its plain name', () => {
     assert.equal(inventoryHoverLabel({ name: 'Mug', droppable: 'true' }), 'Mug');
 });
 
+// Code review R1 m6: interactions.js fires triggerOnInteract and returns before the drop.
+test('a droppable item with triggerOnInteract keeps its plain name: a click fires its actions and never drops it', () => {
+    assert.equal(inventoryHoverLabel({ name: 'Beacon', droppable: true, triggerOnInteract: [] }), 'Beacon');
+    assert.equal(inventoryHoverLabel({ name: 'Beacon', droppable: true, triggerOnInteract: [{ type: 'set_global', key: 'x', value: true }] }), 'Beacon');
+    // The order the label relies on: the triggerOnInteract block (which always returns) comes before the drop
+    const inter = readFileSync(join(js, 'systems/interactions.js'), 'utf8');
+    const trig = inter.indexOf('if (Array.isArray(sprite.scenarioData.triggerOnInteract)) {');
+    const drop = inter.indexOf('window.isDroppableInventoryItem?.(sprite, window.inventory?.items)');
+    assert.ok(trig > 0 && drop > trig);
+});
+
 test('a droppable item with no name gets no half label', () => {
     assert.equal(inventoryHoverLabel({ droppable: true }), undefined);
     assert.equal(inventoryHoverLabel(undefined), undefined);

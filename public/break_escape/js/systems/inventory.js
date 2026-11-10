@@ -26,14 +26,17 @@ export function createItemIdentifier(scenarioData) {
     return `${itemType}_${itemName}`;
 }
 
-// Initialize the inventory system
 // Hover label of an inventory item. A droppable item (item-drop.js) says how to drop
 // it, because clicking it in the inventory is the only way and nothing else says so.
+// One with triggerOnInteract keeps its plain name: a click fires its actions and never
+// reaches the drop (interactions.js).
 export function inventoryHoverLabel(scenarioData) {
     const name = scenarioData?.name;
-    return scenarioData?.droppable === true && name ? `${name} (click to drop)` : name;
+    const drops = scenarioData?.droppable === true && !Array.isArray(scenarioData.triggerOnInteract);
+    return drops && name ? `${name} (click to drop)` : name;
 }
 
+// Initialize the inventory system
 export function initializeInventory() {
     console.log('Inventory system initialized');
     

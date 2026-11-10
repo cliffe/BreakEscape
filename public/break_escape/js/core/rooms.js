@@ -877,6 +877,7 @@ export function initializeRooms(gameInstance) {
     currentRoom = '';
     currentPlayerRoom = '';
     window.currentPlayerRoom = '';
+    window.lastPlayerRoom = '';
     
     // Clear discovered rooms on scenario load
     // This ensures "first visit" detection works correctly for NPC events
@@ -3098,6 +3099,8 @@ export function updatePlayerRoom() {
 
     currentPlayerRoom = detectedRoom;
     window.currentPlayerRoom = detectedRoom;
+    // The last room the player stood in, kept while they are in a doorway or gap ('' above)
+    if (detectedRoom) window.lastPlayerRoom = detectedRoom;
 
     ensureAmbientListenersRegistered();
     recalculateAmbientVolume(detectedRoom);

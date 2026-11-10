@@ -176,3 +176,40 @@ test('a workstation whose art has no glow still gets its dot', () => {
   assert.equal(state.emitters.length, 1);
   assert.equal(state.emitters[0].indicator, true);
 });
+
+// Code review R1 m5: the locked-screen swap (screen-states.js) is not an emitter change.
+test('a locked-look swap keeps the room\'s emitters and their phases; a real texture change still rebuilds', () => {
+  const { sys, state } = stateWith();
+  const pc = obj({ id: 'tom_pc', lockChance: 0.5 }, 'pc_desktop');
+  const rack = obj({ id: 'rack_1' }, 'server1', 200, 100);
+  window.rooms = { office: { objects: { a: pc, b: rack } } };
+  state.objectSig = ''; state.lastResolve = -Infinity; state.emitterObjCount = 0;
+  try {
+    sys.refreshEmitters(state, 0);
+    const before = [...state.emitters];
+    assert.ok(before.length >= 3, 'screen, indicator and the rack');
+    const phases = before.map(e => e.phase);
+    // what screen-states.js does on a lock: remember the base key, swap the texture
+    pc._screenBaseKey = 'pc_desktop';
+    pc.texture = { key: 'pc_desktop_locked' };
+    sys.refreshEmitters(state, 10000);
+    assert.equal(state.emitters.length, before.length);
+    state.emitters.forEach((e, i) => assert.equal(e, before[i], 'the same emitter record'));
+    assert.deepEqual(state.emitters.map(e => e.phase), phases);
+    // and back on the unlock
+    pc.texture = { key: 'pc_desktop' };
+    sys.refreshEmitters(state, 20000);
+    state.emitters.forEach((e, i) => assert.equal(e, before[i]));
+    // a spriteVariants swap on another object is still a rebuild
+    rack.texture = { key: 'server2' };
+    sys.refreshEmitters(state, 30000);
+    assert.notEqual(state.emitters[0], before[0]);
+    // a rebuild while the padlock shows builds the PC's emitter from its base key
+    pc.texture = { key: 'pc_desktop_locked' };
+    rack.texture = { key: 'server1' };
+    sys.refreshEmitters(state, 40000);
+    assert.equal(state.emitters[0].key, 'pc_desktop');
+  } finally {
+    delete window.rooms;
+  }
+});

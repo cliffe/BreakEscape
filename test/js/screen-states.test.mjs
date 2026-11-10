@@ -11,22 +11,17 @@ globalThis.window = {};
 const { ScreenStates, installScreenStates, lockedKey, findSprite, LOCK_SOUND, UNLOCK_SOUND } =
     await import('../../public/break_escape/js/systems/screen-states.js');
 const { WorkstationState } = await import('../../public/break_escape/js/systems/workstation-state.js');
+// The engine's own dispatcher, so a change to its matching fails these tests
+const { default: NPCEventDispatcher } = await import('../../public/break_escape/js/systems/npc-events.js');
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '../..');
 
-/** A dispatcher with the engine's matching: exact names, and `prefix*` listeners. */
+/** The live NPCEventDispatcher, with a count of its listeners. */
 function dispatcher() {
-    const listeners = [];
-    return {
-        on(pattern, cb) { listeners.push([pattern, cb]); },
-        emit(name, data) {
-            for (const [p, cb] of [...listeners]) {
-                if (p === name || (p.endsWith('*') && name.startsWith(p.slice(0, -1)))) cb(data);
-            }
-        },
-        count: () => listeners.length
-    };
+    const d = new NPCEventDispatcher();
+    d.count = () => [...d.listeners.values()].reduce((n, arr) => n + arr.length, 0);
+    return d;
 }
 
 function sprite(data, key, { ghost = true } = {}) {
@@ -45,7 +40,7 @@ function sprite(data, key, { ghost = true } = {}) {
  * A stub world: one room `office` (the player's) and one room `far`, a real WorkstationState
  * on a real-shaped dispatcher, NPC records shaped like npcManager.npcs values.
  */
-function world({ objects, textures = ['pc_desktop', 'pc_desktop_locked', 'pc6'], installWs = true } = {}) {
+function world({ objects, textures = ['pc_desktop', 'pc_desktop_locked', 'pc6'], installWs = true, envExtra = null } = {}) {
     for (const k of Object.keys(window)) delete window[k];
     const d = dispatcher();
     const played = [];
@@ -76,7 +71,8 @@ function world({ objects, textures = ['pc_desktop', 'pc_desktop_locked', 'pc6'],
             const old = globals[k]; globals[k] = v;
             d.emit(`global_variable_changed:${k}`, { name: k, value: v, oldValue: old });
         },
-        roll: () => 0.5
+        roll: () => 0.5,
+        ...(envExtra || {})
     };
     const ws = new WorkstationState(env);
     if (installWs) { ws.install(); window.workstationState = ws; }
@@ -150,7 +146,6 @@ test('sound only when audible and the PC is in the player\'s room; the look and 
     w.back('cat');
     assert.deepEqual(w.played, [UNLOCK_SOUND]);
     // A direct silent apply in the player's room plays nothing
-    w.ws.onLeft('zed');   // nobody's stations
     const w2 = world({ objects: [pcA()] });
     const ss2 = new ScreenStates();
     w2.left('ann');       // nothing listening
@@ -219,16 +214,64 @@ test('a password session hides the padlock and its end shows it again, both sile
     assert.equal(ss.transitions.length, n);
 });
 
-test('an auto lock with a claimed session held sounds at once, whatever the listener order', () => {
-    const w = world({ objects: [pcB({ policy: 'corp' })] });
+test('an auto lock with a claimed session held sounds at once, whatever the listener order (the real tick path)', () => {
+    // The workstation state's own policy, clock and tick: its _checkAutoLock sets the state and emits
+    let clock = 0;
+    const ticks = [];
+    const w = world({ objects: [pcB({ policy: 'corp' })], envExtra: {
+        policyFor: (d) => (d.policy === 'corp' ? { autoLockMin: 5 } : null),
+        clockMs: () => clock,
+        onTick: (fn) => ticks.push(fn)
+    } });
+    const tick = (ms) => { clock += ms; ticks.forEach(fn => fn()); };
     window.pcSessions = { has: () => true, get: () => ({ pcId: 'pc_b', via: 'claim' }) };   // never cleared: as if pcSessions heard the event last
     const ss = new ScreenStates().install();
     w.left('bob');
+    tick(5 * 60000 - 1);
     assert.deepEqual(ss.transitions, []);
-    w.sprites.pc_b.scenarioData.screenLocked = true;    // what _checkAutoLock does before it emits
-    w.d.emit('workstation_auto_locked:pc_b', { objectId: 'pc_b', ownerId: 'bob' });
+    assert.equal(w.sprites.pc_b.texture.key, 'pc_desktop');
+    tick(1);
+    assert.equal(w.sprites.pc_b.scenarioData.screenLocked, true);
     assert.equal(w.sprites.pc_b.texture.key, 'pc_desktop_locked');
     assert.deepEqual(w.played, [LOCK_SOUND]);
+    assert.deepEqual(ss.transitions.map(t => [t.objectId, t.locked, t.sound]), [['pc_b', true, LOCK_SOUND]]);
+    tick(60000);
+    assert.deepEqual(w.played, [LOCK_SOUND], 'once');
+});
+
+// Code review R1 m2: the knock-out roll shows the look, but nobody pressed lock.
+test('an owner knocked out at the desk: the padlock shows with no lock sound; the return still sounds', () => {
+    const w = world({ objects: [pcA()], envExtra: { ownerTracked: () => true } });
+    const ss = new ScreenStates().install();
+    w.d.emit('npc_ko:ann', { npcId: 'ann' });
+    assert.equal(w.sprites.pc_a.texture.key, 'pc_desktop_locked');
+    assert.deepEqual(ss.transitions.map(t => [t.locked, t.sound]), [[true, null]]);
+    assert.deepEqual(w.played, []);
+    w.back('ann');
+    assert.deepEqual(w.played, [UNLOCK_SOUND]);
+});
+
+// Code review R1 m4: currentPlayerRoom is '' while the player's feet are in no room's floor.
+test('in a doorway or gap the last room the player stood in still hears the sound; another room does not', () => {
+    const w = world({ objects: [pcA(), { data: { id: 'pc_c', type: 'pc', workstation: true }, key: 'pc_desktop', room: 'far' }] });
+    new ScreenStates().install();
+    window.currentPlayerRoom = '';
+    window.lastPlayerRoom = 'office';
+    w.left('ann');
+    assert.deepEqual(w.played, [LOCK_SOUND]);
+    w.left('cat');
+    assert.deepEqual(w.played, [LOCK_SOUND], 'pc_c is in the far room');
+    // no room known at all (before the first room check): silent
+    window.lastPlayerRoom = '';
+    w.back('ann');
+    assert.deepEqual(w.played, [LOCK_SOUND]);
+    // a current room wins over the last one
+    window.currentPlayerRoom = 'far';
+    window.lastPlayerRoom = 'office';
+    w.left('ann');
+    assert.deepEqual(w.played, [LOCK_SOUND]);
+    w.back('cat');
+    assert.deepEqual(w.played, [LOCK_SOUND, UNLOCK_SOUND]);
 });
 
 test('a password session held across the owner\'s leave keeps the base look, with no sound', () => {
@@ -342,6 +385,11 @@ test('wiring: game.js preloads pc_desktop and pc_desktop_locked and installs aft
     const sync = rooms.indexOf('window.screenStates?.syncRoom(roomId);');
     assert.ok(made > 0 && sync > made && sync - made < 300, 'syncRoom straight after createRoom in loadRoomOnce');
     assert.equal(rooms.split('window.screenStates?.syncRoom(').length, 2, 'called in one place');
+    // rooms.js keeps the last room the player stood in beside currentPlayerRoom, and clears it with it
+    assert.match(rooms, /window\.currentPlayerRoom = detectedRoom;\s*(\/\/[^\n]*\s*)?if \(detectedRoom\) window\.lastPlayerRoom = detectedRoom;/);
+    assert.match(rooms, /window\.currentPlayerRoom = '';\s*window\.lastPlayerRoom = '';/);
+    // a failed import of screen-states.js is reported as itself, and the boot goes on
+    assert.match(game, /m\.installScreenStates\(\); return state; \}\)\s*\.catch\(e => \{ console\.warn\('screen states failed', e\); return state; \}\)/);
 });
 
 test('art: pc_desktop_locked.png is the same size as pc_desktop.png, which is pc.png (a swap never changes the display size)', () => {

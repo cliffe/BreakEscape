@@ -487,3 +487,43 @@ test('wasLocked does not depend on anything asking first: a station found after 
     r.ws.onReturned('bob');
     assert.deepEqual(r.emitted, [['workstation_owner_returned:pc_b', { objectId: 'pc_b', ownerId: 'bob', wasLocked: false }]]);
 });
+
+// Code review R1 m3: a lock time that passed before the station was found has already happened.
+test('a station found after its auto lock time is locked at once, with no workstation_auto_locked event then or on the next tick', () => {
+    for (const first of ['isLocked', 'onInteract']) {
+        const objects = [];
+        const r = rig9(objects, { npcs: liveNpcs(), policies: { corp: { autoLockMin: 5 } } });
+        r.ws.onLeft('ann');                          // at clock 0; pc_a's room is not loaded yet
+        r.advance(10 * 60000);
+        const a = { id: 'pc_a', workstation: true, lockChance: 0, policy: 'corp' };
+        objects.push(a);
+        r.emitted.length = 0;
+        if (first === 'isLocked') assert.equal(r.ws.isLocked('pc_a'), true);
+        else assert.equal(r.ws.onInteract('pc_a'), 'locked');
+        assert.equal(a.screenLocked, true);
+        assert.equal(a.lockAt, undefined);
+        assert.equal(r.globals.pc_a_screen_locked, true);
+        assert.equal(r.ws.pendingLocks.size, 0);
+        r.advance(250);
+        r.advance(60000);
+        assert.ok(!r.names().includes('workstation_auto_locked:pc_a'), r.names().join(','));
+        // the return still reports a locked screen
+        r.ws.onReturned('ann');
+        assert.deepEqual(r.emitted.at(-1), ['workstation_owner_returned:pc_a', { objectId: 'pc_a', ownerId: 'ann', wasLocked: true }]);
+    }
+});
+
+test('a station found before its auto lock time stays open, keeps the leave-based lockAt, and locks with the event when it passes', () => {
+    const objects = [];
+    const r = rig9(objects, { npcs: liveNpcs(), policies: { corp: { autoLockMin: 5 } } });
+    r.ws.onLeft('ann');
+    r.advance(2 * 60000);
+    const a = { id: 'pc_a', workstation: true, lockChance: 0, policy: 'corp' };
+    objects.push(a);
+    assert.equal(r.ws.isLocked('pc_a'), false);
+    assert.equal(a.lockAt, 5 * 60000);
+    r.emitted.length = 0;
+    r.advance(3 * 60000);
+    assert.deepEqual(r.names(), ['workstation_auto_locked:pc_a']);
+    assert.equal(r.ws.isLocked('pc_a'), true);
+});

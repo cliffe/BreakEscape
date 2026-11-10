@@ -5618,6 +5618,15 @@ def check_engine_limits(json_data)
         end
       end
 
+      # requiresItemHintVariants is read only in the requiresItem refusal (interactions.js),
+      # so without requiresItem the hints are authored and never shown.
+      if node['requiresItemHintVariants'].is_a?(Array) && !node['requiresItemHintVariants'].empty? &&
+         (node['requiresItem'].nil? || node['requiresItem'] == '' || node['requiresItem'] == [])
+        issues << "⚠️ WARNING: '#{path}' has requiresItemHintVariants but no requiresItem, so none of those hints " \
+                  "is ever shown. Add requiresItem (with triggerOnInteract), or use observationVariants or " \
+                  "textVariants for text that does not depend on a carried item."
+      end
+
       %w[observationVariants spriteVariants textVariants requiresItemHintVariants].each do |vk|
         Array(node[vk]).each_with_index do |v, i|
           next unless v.is_a?(Hash)

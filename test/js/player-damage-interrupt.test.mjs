@@ -99,7 +99,7 @@ test('lockpick failure toasts check minigameClosedByDamage', () => {
 // F2: the other failure toasts on close paths (wrong key, PIN, password) are guarded too.
 test('key, PIN and password failure toasts check minigameClosedByDamage', () => {
     const starters = readFileSync(join(here, '../../public/break_escape/js/systems/minigame-starters.js'), 'utf8');
-    for (const msg of ["'Wrong Key', 4000", '"Failed to enter correct PIN."', '"Failed to enter correct password."']) {
+    for (const msg of ["'Wrong Key', lockedHintDuration(", '"Failed to enter correct PIN."', '"Failed to enter correct password."']) {
         const i = starters.indexOf(msg);
         assert.ok(i > 0, `${msg}: toast present`);
         assert.match(starters.slice(i - 220, i), /minigameClosedByDamage/, `${msg}: toast guarded`);

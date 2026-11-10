@@ -124,6 +124,14 @@ export function workstationIndicators(data, npcs, size = {}) {
 }
 
 /** NPCs for owner lookup: the live manager's, else the scenario's. */
+/**
+ * The texture key an object's emitter is built from: the base key while screen-states.js
+ * shows the locked look (`<key>_locked`, same screen, same glow), else the live key.
+ */
+export function emitterKey(obj) {
+  return obj?._screenBaseKey ?? obj?.texture?.key;
+}
+
 function knownNpcs() {
   const mgr = window.npcManager;
   const live = mgr?.npcs ? [...mgr.npcs.values()] : [];
@@ -549,7 +557,9 @@ export class LightingSystem {
   /**
    * Emitters for a room's objects. Rebuilt when an object is added or removed or a
    * texture changes (spriteVariants swaps); variant conditions are re-resolved at most
-   * every RESOLVE_MS.
+   * every RESOLVE_MS. A workstation's locked-screen swap (screen-states.js) is not a
+   * change: its emitter is keyed by the base texture, so a lock or unlock does not rebuild
+   * the room's emitters and restart every glow and LED at a new phase.
    */
   refreshEmitters(state, time) {
     const room = window.rooms?.[state.roomId];
@@ -558,7 +568,7 @@ export class LightingSystem {
     const due = time - state.lastResolve >= RESOLVE_MS;
     if (!due && objs.length === state.emitterObjCount) return;
     if (due) state.lastResolve = time;
-    const sig = objs.map(o => o?.texture?.key || '').join('|');
+    const sig = objs.map(o => emitterKey(o) || '').join('|');
     if (sig !== state.objectSig) {
       state.objectSig = sig;
       state.emitterObjCount = objs.length;
@@ -591,7 +601,7 @@ export class LightingSystem {
     state.emitters = [];
     let npcs = null;
     for (const obj of objs) {
-      const key = obj?.texture?.key;
+      const key = emitterKey(obj);
       if (!key) continue;
       const base = EMITTERS.find(d => d.re.test(key)) || null;
       const variants = this.variantsFor(state, obj, key);

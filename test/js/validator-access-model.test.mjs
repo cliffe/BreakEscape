@@ -327,7 +327,7 @@ test('a keycard opening an access lock through its holder is not reported as ope
     assertHas(lockCredentialIssues(sc), "credential 'LEN-01', but no rfid lock 'requires' it");
 });
 
-// requiresItemHintVariants (physical pentest follow-up, 3.4): a known object field with the
+// requiresItemHintVariants (physical pentest follow-up, 3.3): a known object field with the
 // { condition, value } shape of the other variant lists, read by the &&-only evaluator.
 function validatorIssues(fn, scenario) {
     const script = `require ${JSON.stringify(join(root, 'scripts/validate_scenario.rb'))}
@@ -380,6 +380,24 @@ test("a requiresItemHintVariants condition with '||' or parentheses is an error,
     assertHas(errors(out), "requiresItemHintVariants[0]' condition \"globalVars.planted || globalVars.captured\" uses '||'");
     assertHas(errors(out), "requiresItemHintVariants[1]' condition \"(globalVars.planted)\" uses parentheses");
     assert.equal(out.filter(s => s.includes('requiresItemHintVariants[0]')).length, 1, out.join('\n'));
+    // "once" is the other walker leaving this field alone (its checked_elsewhere list)
+    assert.ok(!has(validatorIssues('check_or_in_global_conditions', sc), 'requiresItemHintVariants'));
+    // and that walker does report a '||' it owns, so the line above is not vacuous
+    const other = clean();
+    lobby(other).lighting = { variants: [{ condition: 'globalVars.planted || globalVars.captured', ambient: '#101020' }] };
+    assertHas(validatorIssues('check_or_in_global_conditions', other), "uses '||'");
+});
+
+test('requiresItemHintVariants without requiresItem is a warning: the hints are never shown', { skip }, () => {
+    const sc = withHintVariants([{ condition: 'globalVars.planted', value: 'Planted.' }]);
+    assert.ok(!has(validatorIssues('check_engine_limits', sc), 'but no requiresItem'));
+    const pc = lobby(sc).objects.find(o => o.id === 'plain_pc');
+    delete pc.requiresItem;
+    const out = validatorIssues('check_engine_limits', sc);
+    assert.equal(out.filter(s => s.includes('WARNING') && s.includes('has requiresItemHintVariants but no requiresItem')).length, 1, out.join('\n'));
+    // an empty list is nothing to warn about
+    pc.requiresItemHintVariants = [];
+    assert.ok(!has(validatorIssues('check_engine_limits', sc), 'but no requiresItem'));
 });
 
 // apply-actions.js runs a `hint` action from triggerOnInteract; the schema's action list has it.

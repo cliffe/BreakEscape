@@ -61,8 +61,8 @@
  * reload (the needs system restarts with the NPCs at their posts), so it resets to "owner
  * present, screen open", and install() writes both globals false for every workstation so a
  * save taken during an absence does not keep the "away" or "locked" text (stations in rooms not
-loaded yet included, found by name: every saved `<id>_owner_away` / `<id>_screen_locked` pair).
-Objects are found on demand (live room sprites first, then the
+ * loaded yet included, found by name: every saved `<id>_owner_away` / `<id>_screen_locked` pair).
+ * Objects are found on demand (live room sprites first, then the
  * scenario), because rooms and their objects load lazily.
  */
 
@@ -165,17 +165,25 @@ export class WorkstationState {
     /**
      * A station discovered after its owner left (its room loaded late, so screenLocked is still
      * undefined) takes its state now. The roll is keyed by owner, station and leave count, so
-     * the answer is the same whoever asks first (isLocked or onInteract).
+     * the answer is the same whoever asks first (isLocked or onInteract). An auto lock time
+     * that passed before the station was found has already happened: the screen is locked now,
+     * with no workstation_auto_locked event (nobody was there to see or hear it).
      */
     _lateRoll(data, ownerId, rec) {
         if (data.screenLocked !== undefined) return;
         this._rollScreen(data, ownerId, rec);
+        if (data.lockAt !== undefined && this._clock() >= data.lockAt) {
+            data.screenLocked = true;
+            delete data.lockAt;
+            this.pendingLocks.delete(data.id);
+        }
         this._publish(data);
     }
 
     /**
      * Whether a workstation's screen is locked right now: its owner has an away record and the
-     * screen is locked. Emits no event (a late-found station is rolled and its globals written).
+     * screen is locked. Emits no workstation event (a late-found station is rolled and its
+     * globals written, which emits global_variable_changed).
      */
     isLocked(objectId) {
         const data = this._find(objectId);
