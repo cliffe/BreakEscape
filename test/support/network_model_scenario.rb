@@ -6,10 +6,11 @@
 #   bench_port), and a third jack (server_port, office_lan) in a locked room;
 # - three accounts standing in the lobby: Sam (staff only), Lena (finance, with a capture
 #   route) and Ian (it);
-# - sign-in PCs: sam_pc (open room, office_lan), lena_pc (locked room, office_lan, policy
-#   counted), kiosk_pc (open room, office_lan, policy hardened: remote sign-in blocked),
-#   door_box (headless, office_lan, it only), bench_pc (workshop_lan) and offline_pc (on
-#   no network);
+# - sign-in PCs: sam_pc (open room, office_lan, owned by Sam, whose needs are tracked
+#   and whose screen can be left unlocked, so an owner claim there succeeds at the
+#   keyboard), lena_pc (locked room, office_lan, policy counted), kiosk_pc (open room,
+#   office_lan, policy hardened: remote sign-in blocked), door_box (headless, office_lan,
+#   it only), bench_pc (workshop_lan) and offline_pc (on no network);
 # - resources: an open share and a protected share (finance, with a locked folder) on
 #   office_lan, a printer with observations, and an open share on workshop_lan;
 # - the drop box (rogueDevice) on the lobby table, and an unlock_object task on the jack.
@@ -115,7 +116,8 @@ module NetworkModelScenario
           ],
           'npcs' => [
             { 'id' => 'sam', 'displayName' => 'Sam Okafor', 'npcType' => 'person', 'position' => { 'x' => 2, 'y' => 2 },
-              'creds' => { 'username' => 'sokafor', 'password' => SAM_PASSWORD } },
+              'creds' => { 'username' => 'sokafor', 'password' => SAM_PASSWORD },
+              'needs' => { 'coffee' => { 'decayPerMin' => 1, 'urgentAt' => 50 } } },
             { 'id' => 'lena', 'displayName' => 'Lena Fox', 'npcType' => 'person', 'position' => { 'x' => 3, 'y' => 2 },
               'role' => 'finance', 'creds' => { 'username' => 'lfox', 'password' => LENA_PASSWORD },
               'usePayload' => { 'host' => 'HB-FIN-02' } },
@@ -156,6 +158,7 @@ module NetworkModelScenario
           'objects' => [
             { 'id' => 'sam_pc', 'type' => 'pc', 'name' => "Sam's PC", 'host' => 'HB-DESK-01', 'network' => 'office_lan',
               'locked' => true, 'lockType' => 'login', 'access' => { 'roles' => ['staff'] },
+              'screenOwner' => 'sam', 'locksScreenOnLeave' => false,
               'contents' => [{ 'id' => 'sam_local', 'type' => 'text_file', 'name' => 'todo.txt', 'takeable' => false,
                                'text' => 'todo' }] },
             { 'id' => 'offline_pc', 'type' => 'pc', 'name' => 'Offline PC', 'locked' => true, 'lockType' => 'login',

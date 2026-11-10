@@ -1098,9 +1098,10 @@ module BreakEscape
       foothold = params[:foothold].presence&.to_s
       result =
         if params.key?(:claim)
-          # Every claim that carries a foothold is refused: an unlocked screen is physical
-          if params[:claim].to_s == 'owner' && foothold.nil?
-            @game.claim_login_session!(pc_id, claim_globals)
+          # The model refuses a claim that carries a foothold (an unlocked screen is
+          # physical), so it is passed on rather than checked here: one place of truth.
+          if params[:claim].to_s == 'owner'
+            @game.claim_login_session!(pc_id, claim_globals, foothold: foothold)
           else
             { status: :unprocessable_entity, body: { success: false, message: BreakEscape::Game::LOGIN_CLAIM_REFUSED } }
           end

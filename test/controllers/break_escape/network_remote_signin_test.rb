@@ -111,13 +111,35 @@ module BreakEscape
       assert_equal "This account can't sign in on this PC", body['message']
     end
 
-    test 'a claim with a foothold is refused, owner or invented' do
+    def claim(pc_id, kind = 'owner', foothold: nil)
+      params = { pc_id: pc_id, claim: kind }
+      params[:foothold] = foothold if foothold
+      post game_path('login'), params: params, as: :json
+      response.parsed_body
+    end
+
+    # Sam's PC can be claimed at the keyboard (the control), so the refusals below are
+    # the foothold's doing and not the fixture's.
+    test 'a claim with a foothold is refused, owner or invented, where the same claim at the keyboard succeeds' do
       with_office_foothold
-      %w[owner guest].each do |claim|
-        post game_path('login'), params: { pc_id: 'sam_pc', claim: claim, foothold: OFFICE }, as: :json
+      %w[owner guest].each do |kind|
+        body = claim('sam_pc', kind, foothold: OFFICE)
         assert_response :unprocessable_entity
-        assert_equal 'Sign in required', response.parsed_body['message']
+        assert_equal 'Sign in required', body['message']
       end
+      assert_equal({}, state['sessions'])
+
+      body = claim('sam_pc')
+      assert_response :success, body.inspect
+      assert_equal 'claim', body['via']
+      assert_equal({ 'id' => 'sam', 'via' => 'claim' }, state['sessions']['sam_pc'])
+    end
+
+    test 'the model itself refuses a claim through a foothold' do
+      with_office_foothold
+      result = @game.reload.claim_login_session!('sam_pc', nil, foothold: OFFICE)
+      assert_equal :unprocessable_entity, result[:status]
+      assert_equal 'Sign in required', result[:body][:message]
       assert_equal({}, state['sessions'])
     end
 
@@ -128,8 +150,6 @@ module BreakEscape
       body = sign_in('door_box', 'ishaw', NS::IAN_PASSWORD)
       assert_response :forbidden
       assert_equal 'PC not reachable', body['message']
-      post game_path('login'), params: { pc_id: 'door_box', claim: 'owner' }, as: :json
-      assert_equal 'Sign in required', response.parsed_body['message']
       get game_path('login_accounts'), params: { pc_id: 'door_box' }
       assert_response :forbidden
       assert_equal({}, state['sessions'])
@@ -137,6 +157,30 @@ module BreakEscape
       body = sign_in('door_box', 'ishaw', NS::IAN_PASSWORD, foothold: OFFICE)
       assert_response :success, body.inspect
       assert_equal 'HB-DOOR-01', body['host']
+    end
+
+    # The door controller given an owner whose screen could be claimed: the claim is
+    # refused only because the host is headless, which the control without headless shows.
+    def owned_door_box(headless: true)
+      data = NS.scenario
+      ian = data['rooms']['lobby']['npcs'].find { |npc| npc['id'] == 'ian' }
+      ian['needs'] = { 'coffee' => { 'decayPerMin' => 1, 'urgentAt' => 50 } }
+      door = data['rooms']['store']['objects'].find { |obj| obj['id'] == 'door_box' }
+      door.merge!('screenOwner' => 'ian', 'locksScreenOnLeave' => false)
+      door.delete('headless') unless headless
+      data
+    end
+
+    test 'an owner claim on a headless host is refused although its room is open and its owner could be claimed' do
+      build_network_game({}, owned_door_box(headless: false))
+      body = claim('door_box')
+      assert_response :success, "the control: the same host with a screen is claimed (#{body.inspect})"
+
+      build_network_game({}, owned_door_box)
+      body = claim('door_box')
+      assert_response :unprocessable_entity
+      assert_equal 'Sign in required', body['message']
+      assert_equal({}, state['sessions'])
     end
 
     test 'a headless desktop is served only through a foothold' do
