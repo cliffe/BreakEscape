@@ -232,6 +232,46 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
     assert_empty scan_net({ 'inventory' => [file] }, path: '/break_escape/games/1/inventory', method: 'POST', before: [served])
   end
 
+  # Review R1 M2: a share item that holds a password on purpose (the feature scenario's letter)
+  # is a clue only where the share's content may be, never a global exemption.
+  def share_clue_scenario
+    data = network_scenario
+    data['resources']['ledger_archive']['contents'] << {
+      'id' => 'dana_letter', 'type' => 'text_file', 'name' => 'scan_0412.pdf',
+      'text' => "Welcome aboard. Your first password is #{DANA_PASSWORD}.",
+      'observations' => "A scanned letter. It reads #{DANA_PASSWORD} at the bottom."
+    }
+    data
+  end
+
+  def scan_clue(body, path: ROOM, method: 'GET', before: [])
+    scan(body, path: path, method: method, data: share_clue_scenario, before: before)
+  end
+
+  test 'a share letter\'s password is not reported in its share\'s /container answer, or a folder in it' do
+    letter = { 'id' => 'dana_letter', 'name' => 'scan_0412.pdf', 'text' => "Welcome aboard. Your first password is #{DANA_PASSWORD}.",
+               'observations' => "A scanned letter. It reads #{DANA_PASSWORD} at the bottom." }
+    assert_empty scan_clue({ 'contents' => [letter] }, path: '/break_escape/games/1/container/ledger_archive')
+    # Once served by its share, it may follow into the inventory and the notepad.
+    served = { 'method' => 'GET', 'path' => '/break_escape/games/1/container/ledger_archive', 'body' => { 'contents' => [letter] } }
+    assert_empty scan_clue({ 'inventory' => [letter] }, path: '/break_escape/games/1/inventory', method: 'POST', before: [served])
+    assert_empty scan_clue({ 'notes' => [{ 'text' => "A scanned letter. It reads #{DANA_PASSWORD} at the bottom." }] },
+                           path: '/break_escape/games/1/sync_state', method: 'PUT', before: [served])
+  end
+
+  test 'a share letter\'s password in a room answer before any serve is reported, under its id or another' do
+    obs = "A scanned letter. It reads #{DANA_PASSWORD} at the bottom."
+    under_own_id = { 'room' => { 'objects' => [{ 'id' => 'dana_letter', 'observations' => obs }] } }
+    under_other_id = { 'room' => { 'objects' => [{ 'id' => 'desk_tray', 'observations' => obs }] } }
+    assert_includes summary(scan_clue(under_own_id)), [1, 'password', 'npc:dana']
+    assert_includes summary(scan_clue(under_other_id)), [1, 'password', 'npc:dana']
+    # And in the /container answer for another PC, or the /network view.
+    assert_includes summary(scan_clue({ 'contents' => [{ 'id' => 'dana_letter', 'observations' => obs }] },
+                                      path: '/break_escape/games/1/container/jake_pc')), [1, 'password', 'npc:dana']
+    assert_includes summary(scan_clue({ 'footholds' => [{ 'hosts' => [{ 'id' => 'x', 'observations' => obs }] }] },
+                                      path: '/break_escape/games/1/network')), [1, 'password', 'npc:dana']
+  end
+
   test 'no network finding line holds a value' do
     scanner = AccessLeakScanner.new(network_scenario)
     rows = [{ 'method' => 'GET', 'path' => ROOM, 'cmdSeq' => 1,

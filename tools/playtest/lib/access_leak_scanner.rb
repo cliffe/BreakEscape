@@ -33,6 +33,9 @@ require 'uri'
 #
 # - a share item's content anywhere but a GET /container/:id answer for that resource or a
 #   folder in it (once served that way, the item may follow into the inventory);
+# - a password a share item holds on purpose (a letter, a handover note) is a deliberate clue
+#   only by the same rule: in that answer, or after the item has been served that way.
+#   Anywhere else it is reported as a password, like any other;
 # - a network or resource string in any response other than GET /network, a /network/*
 #   answer, a /container answer, or the footholds block of GET /scenario. There is no
 #   exception for an NPC's work plan.
@@ -107,6 +110,9 @@ class AccessLeakScanner
     @login_pcs = Set.new
     @network_strings = {}    # string => [owner, ...] (network:<id>, resource:<id>)
     @share_items = {}        # item_id => { strings:, resource:, ancestors: }
+    # password => [{ label:, holder:, texts:, resource:, ancestors: }]: share items holding a
+    # password on purpose, exempt only where that item's content may be (scan_passwords)
+    @share_clues = Hash.new { |h, k| h[k] = [] }
     collect_passwords
     collect_items
     collect_network_secrets
@@ -148,7 +154,7 @@ class AccessLeakScanner
         findings << Finding.new(rule: rule, owner: owner, route: ctx[:route], source: source, line: line_no,
                                 cmd_seq: row['cmdSeq'], json_path: json_path)
       end
-      scan_passwords(body, ctx, add)
+      scan_passwords(body, ctx, legit, add)
       scan_withheld_keys(body, add)
       scan_login_content(body, ctx, legit, add)
       scan_locked_content(body, add)
@@ -256,11 +262,12 @@ class AccessLeakScanner
     (list.is_a?(Array) ? list : []).each do |item|
       next unless item.is_a?(Hash)
 
-      # A file in a share that holds a password holds it on purpose, as a note in a room
-      # does (the feature scenario's letter and handover note, slice 9.3a step 8)
-      note_clues(item)
       strings = CONTENT_FIELDS.filter_map { |f| item[f].strip if usable.call(item[f]) }.uniq
       label = item['id'] ? item['id'].to_s : "#{resource_id}/unnamed-#{@share_items.length + 1}"
+      # A file in a share that holds a password holds it on purpose, as a note in a room
+      # does (the feature scenario's letter and handover note, slice 9.3a step 8), but only
+      # where the share's content may be: kept apart from the room notes (review R1 M2)
+      share_clues(item, label, resource_id, ancestors)
       @share_items[label] = { strings: strings, resource: resource_id, ancestors: ancestors.dup } if strings.any?
       walk_share(item['contents'], resource_id, item['id'] ? ancestors + [item['id'].to_s] : ancestors, usable)
     end
@@ -366,6 +373,26 @@ class AccessLeakScanner
     end
   end
 
+  # A share item whose own strings hold a password: recorded with its share and folders, so
+  # the exemption applies only in a /container answer for that share or a folder in it, or
+  # after the item has been served that way (scan_passwords, share_clue?).
+  def share_clues(item, label, resource_id, ancestors)
+    return if npc_record?(item) || @passwords.empty?
+
+    own_strings(item).each do |str|
+      @passwords.each_key do |password|
+        next unless contains_password?(str, password)
+
+        entry = @share_clues[password].find { |e| e[:label] == label }
+        unless entry
+          entry = { label: label, holder: item['id']&.to_s, texts: Set.new, resource: resource_id, ancestors: ancestors.dup }
+          @share_clues[password] << entry
+        end
+        entry[:texts] << str
+      end
+    end
+  end
+
   # Strings on the item itself and in its non-item fields (observationVariants and the like),
   # not in the items it contains.
   def own_strings(node, top: true)
@@ -427,7 +454,7 @@ class AccessLeakScanner
     end
   end
 
-  def scan_passwords(body, ctx, add)
+  def scan_passwords(body, ctx, legit, add)
     return if @passwords.empty?
 
     note = ctx[:login_accounts] ? served_note_password(body) : nil
@@ -435,6 +462,7 @@ class AccessLeakScanner
       @passwords.each do |password, owners|
         next unless contains_password?(str, password)
         next if deliberate_clue?(password, str, holder)
+        next if share_clue?(password, str, holder, ctx, json_path, legit)
         next if note == password && json_path == '$.postitNote'
         next if @noted.include?(password) && json_path.include?('.savedNotes[')
 
@@ -493,6 +521,19 @@ class AccessLeakScanner
     return true if holder && @clue_holders[password].include?(holder)
 
     @clue_texts[password].any? { |text| str.include?(text) }
+  end
+
+  # A share item's password where that item's content may be: a GET /container answer for its
+  # share or a folder in it, a folder's own /unlock answer (as scan_share_content allows), or
+  # any route once the item has been served that way (legit). Anywhere else it is a leak.
+  def share_clue?(password, str, holder, ctx, json_path, legit)
+    @share_clues[password].any? do |entry|
+      next false unless (holder && holder == entry[:holder]) || entry[:texts].any? { |text| str.include?(text) }
+      next true if legit.include?("share:#{entry[:label]}")
+      next true if ctx[:container] && ([entry[:resource]] + entry[:ancestors]).include?(ctx[:container])
+
+      ctx[:unlock] && entry[:ancestors].any? && json_path.start_with?('$.contents[')
+    end
   end
 
   def scan_login_content(body, ctx, legit, add)
