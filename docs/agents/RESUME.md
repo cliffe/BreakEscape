@@ -1,3 +1,7 @@
+# Resume note: access model, lab follow-up and voice delivery tag (parked 2026-11-10)
+
+Handover `docs/handover/2026-11-10_ACCESS_MODEL_HANDOVER.md`: what is on main, four parked build branches saved as patches in `docs/handover/2026-11-10_parked_branches/` (voice delivery tag, m02 to m07 stage directions, 9.1 step 5 holdsDoors, 9.2 U and A), what is not started, and the user's open questions.
+
 # Resume note: awareness E8 to E20 build (started 2026-10-29)
 
 Plan `planning_notes/security_awareness_course/implementation/00_README.md`; log `implementation/BUILD_LOG.md` (waves, agents, decisions, review rounds). Wave 1: engine ENG-01/09b/09d, ENG-03a/03b, ENG-04, ENG-09a/11 (Sonnet, worktrees, merged by the orchestrator, bridges run on main after merge); content E8 fragments and ink, general_v2 items, WP-15 and core_17 annual (opus48, shared tree). Next: E8 wiring (Sonnet), then the review phases (design, dialogue, playtests) on E8 before E9/E10.
