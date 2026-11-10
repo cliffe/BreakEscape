@@ -19,7 +19,9 @@ require 'uri'
 # - a password anywhere in any response body, except inside an object whose authored text
 #   holds it on purpose (a note or postitNote: a deliberate clue), and except a
 #   /capture_secrets answer for an NPC with a capture route in a scenario that sets
-#   social.captures.revealSecret;
+#   social.captures.revealSecret. With served_npcs given (the game's own answer to "whose
+#   password would GET /capture_secrets serve now", which applies its capture proofs), the
+#   exception covers only those NPCs;
 # - the content of a sign-in PC or profile item in any response other than
 #   GET /container/:id for that PC (any sign-in PC, for a profile item) or a folder inside it;
 # - the content of a locked container in a response that still marks that container
@@ -39,6 +41,10 @@ require 'uri'
 # substring; a shorter one only as a whole JSON string value; one under three characters is
 # ignored; and a string that also appears somewhere public (a room, door sign, object or NPC
 # name, or any other text room data ships as authored) is not a secret and is skipped.
+#
+# Pages (engine plan section 6): a row with a "dom" key instead of a body is the text of a
+# page the tester read (the capture log device, a captures terminal), labelled by its "label".
+# It is checked for passwords like a /capture_secrets answer, since that is all such a page shows.
 #
 # A finding names the rule, the route, the response line and the secret's owner (an NPC or
 # item id), never the value. Every output line is checked against the secret values before it
@@ -70,8 +76,11 @@ class AccessLeakScanner
 
   attr_reader :passwords, :items
 
-  def initialize(scenario_data)
+  # served_npcs: when given, the NPC ids whose password the server would serve from
+  # GET /capture_secrets now (its capture proofs applied); nil keeps the scenario-only rule.
+  def initialize(scenario_data, served_npcs: nil)
     @data = scenario_data.is_a?(Hash) ? scenario_data : {}
+    @served_npcs = served_npcs&.map(&:to_s)&.to_set
     @passwords = {}          # password => [npc_id, ...]
     @capture_npcs = Set.new  # npc ids the capture_secrets exception covers
     @items = {}              # item_id => { strings:, scope:, profile:, pc:, ancestors:, locked_ancestors: }
@@ -107,7 +116,10 @@ class AccessLeakScanner
     lines.each do |source, line_no, row|
       next unless row.is_a?(Hash)
 
-      body = row.key?('body') ? row['body'] : row['bodyText']
+      body = if row.key?('dom') then row['dom']
+             elsif row.key?('body') then row['body']
+             else row['bodyText']
+             end
       next if body.nil?
 
       ctx = response_context(row)
@@ -362,6 +374,11 @@ class AccessLeakScanner
   # ---- scanning ----------------------------------------------------------------------------
 
   def response_context(row)
+    if row.key?('dom')
+      return { route: "page #{row['label'] || 'dom'}", container: nil, unlock: false, capture_secrets: true,
+               network: false, any_container: false, scenario: false }
+    end
+
     method = row['method'].to_s.upcase
     path = row['path'].to_s.split('?').first.to_s
     container = method == 'GET' && path =~ %r{/container/([^/]+)\z} ? URI.decode_www_form_component(Regexp.last_match(1)) : nil
@@ -396,7 +413,7 @@ class AccessLeakScanner
         next if deliberate_clue?(password, str, holder)
 
         owners.each do |npc_id|
-          next if ctx[:capture_secrets] && @capture_npcs.include?(npc_id)
+          next if ctx[:capture_secrets] && @capture_npcs.include?(npc_id) && (@served_npcs.nil? || @served_npcs.include?(npc_id))
 
           add.call('password', "npc:#{npc_id}", safe_path(json_path))
         end

@@ -9,6 +9,11 @@
 # holds a secret's value: each finding names the rule, the route, the response line and the
 # secret's owner (an NPC or item id). See tools/playtest/lib/access_leak_scanner.rb for the rules.
 #
+# A line {"dom": "<page text>", "label": "<what>"} in a file is the text of a page the tester read
+# (the capture log device: eval `() => document.querySelector('.capture-log')?.innerText`), checked
+# like a /capture_secrets answer. A password passes there, and in /capture_secrets, only for an
+# account the server would serve now (its capture proofs applied, engine plan section 6).
+#
 # Exit status: 0 when nothing leaked, 1 on any finding, 2 on a usage error.
 require_relative 'lib/access_leak_scanner'
 
@@ -24,7 +29,12 @@ unless missing.empty?
 end
 
 game = BreakEscape::Game.find(game_id)
-scanner = AccessLeakScanner.new(game.scenario_data || {})
+usernames = game.account_capture_passwords.keys
+served = BreakEscape::Game.scenario_room_npcs(game.scenario_data || {}).select do |npc|
+  BreakEscape::Game.account_holder?(npc) &&
+    usernames.include?(BreakEscape::Game.normalise_username(npc['creds']['username']))
+end.map { |npc| npc['id'] }
+scanner = AccessLeakScanner.new(game.scenario_data || {}, served_npcs: served)
 
 lines = []
 unreadable = 0

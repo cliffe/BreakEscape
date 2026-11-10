@@ -79,6 +79,23 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
     assert_equal [[1, 'password', 'npc:jake']], summary(scan({ 'secrets' => { 'jake' => JAKE_PASSWORD } }))
   end
 
+  # Engine plan section 6: the capture log device's page text, and capture proofs.
+  test 'a page text row is checked like a /capture_secrets answer, and served_npcs narrows the exception' do
+    page = ->(text) { [['dom.jsonl', 1, { 'dom' => text, 'label' => 'capture log' }]] }
+    assert_empty AccessLeakScanner.new(scenario).scan(page.call("Recruitment\n#{JAKE_PASSWORD}"))
+    findings = AccessLeakScanner.new(scenario).scan(page.call("Dana\n#{DANA_PASSWORD}"))
+    assert_equal [[1, 'password', 'npc:dana']], summary(findings)
+    assert_equal 'page capture log', findings.first.route
+
+    # A proof not holding: the server would not serve Jake, so his password is a finding.
+    no_proof = AccessLeakScanner.new(scenario, served_npcs: [])
+    assert_equal [[1, 'password', 'npc:jake']], summary(no_proof.scan(page.call(JAKE_PASSWORD)))
+    rows = [['r.jsonl', 1, { 'method' => 'GET', 'path' => '/break_escape/games/1/capture_secrets', 'status' => 200,
+                             'body' => { 'secrets' => { 'jake' => JAKE_PASSWORD } } }]]
+    assert_equal [[1, 'password', 'npc:jake']], summary(no_proof.scan(rows))
+    assert_empty AccessLeakScanner.new(scenario, served_npcs: ['jake']).scan(rows)
+  end
+
   test 'profile text in a room response is reported and in a container response is not' do
     budget = { 'id' => 'jake_budget', 'type' => 'text_file', 'name' => 'Q3 budget forecast.xlsx',
                'text' => 'PROFILE-BUDGET-SECRET-TEXT' }
