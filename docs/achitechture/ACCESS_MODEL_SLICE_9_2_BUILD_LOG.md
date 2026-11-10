@@ -80,7 +80,7 @@ Parked at the user's request mid-way through A-7. Branch `build/9-2-u-a`, base `
   roles, resources, the default mutter pools and one task per beat (commit `WIP: ...`). Browser
   run on game 135 (port 3017): **W1 pass** (Amy's use met, task done); **W2 pass** (Dana 34, 68,
   100; "Share's down again." twice then the fed-up line; tell 1 then 2; 3 report requests; client
-  marked her settled). **W3** was in progress (breaker reset, eases not yet confirmed). W4 to W7 not
+  marked her settled). **W3** half passes: after the breaker reset Dana's met uses eased her 100, 90, 80 ... 0 in steps of 10 (13 report requests in all, server record `dana level 0.0`), but the task `w3_eased` did not tick: its mapping condition `data.level < data.previous` compares two data fields, which the mapping condition evaluator probably does not support. Rewrite it (for example `data.level <= 90`) and re-run. W4 to W7 not
   run. `PLAYTEST.md` has no W section yet and no run report for W exists. Leak check and
   `verify-run` not yet run on game 135.
 
