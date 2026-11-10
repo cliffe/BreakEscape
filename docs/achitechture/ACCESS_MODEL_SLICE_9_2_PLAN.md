@@ -1831,32 +1831,61 @@ same.
 | Withheld keys | `WITHHELD_NPC_KEYS` already holds 9.1's `awareness` and `habits`; this slice adds its three |
 | `holdsDoors` and `prop_door` | Independent: one is a gate door behaviour, the other unlocks a room |
 
-**With 9.3 (networks).**
+**With 9.3a (networks, build-ready).** This slice is built after 9.3a and uses only what 9.3a
+builds.
 
 | Topic | Settled as |
 |---|---|
-| Reach | Taken from the server, as 9.3 asks. `compile_npc_plan!` adds `routes` per need from `NetworkModel.reach_conditions(station_network, resource)`; the browser's `reachable(need, globals)` reads only that. No network id, link or resource `network` reaches the browser from this slice. In a scenario with no `networks`, or with 9.3 not built, there are no `routes` and everything is reachable. The failure reason is `unreachable`, and "can fail" includes "the scenario has networks" |
-| `resources` | Shared. 9.3 owns `network`, `host`, `contents`, `observations`; this slice owns `object` and the work lists. Neither makes the other's fields required; both delete `resources` from the bootstrap. In the expected order 9.3 adds the key and this slice extends it |
-| Resource names in the `work` plan | Shipped, with `downIf` global names (section 9.2, decision 12). 9.3's no-exposure test and leak rule leave an NPC's `work` block out, as 9.3 already proposes |
+| Reach | Taken from the server, as 9.3 asks (its 13.2). `compile_npc_plan!` adds `routes` per need from `NetworkModel.reach_conditions(station_network, resource)`; the browser's `reachable(need, globals)` reads only that. With 9.3a the answer is `[[]]` or `[]` (its 4.2). No network id, link or resource `network` reaches the browser from this slice. In a scenario with no `networks` there are no `routes` and everything is reachable. The failure reason is `unreachable` |
+| Admitted | `resource_acl_admits?(resource, npc)` (9.3's 4.5): a missing list admits everyone, as both plans read `access` |
+| `resources` | Shared. 9.3 owns `network`, `host`, `contents`, `observations`; this slice owns `object`, the work lists and, for NPC work, `downIf`; both read `name`, `kind` and `access` the same way. Neither makes the other's fields required; both delete `resources` from the bootstrap. 9.3a adds the key to the schema and the validator's top-level list; this slice extends it |
+| The `work` plan and 9.3a's secrecy rule | The plan ships ids, kinds and global names and **no display name** (5.1, decision 12), which is inside 9.3a's rule (its section 6). So 9.3a's no-exposure test and leak rule need no exception for an NPC's `work` block |
 | "A resource no NPC needs" | Not reported when the resource has `contents` or a `host` |
-| A USB device under a blocking policy | Refused only for an item with `usbClass`, at three points: the end of an NPC's use, the player's `requiresItem` plant, and 9.3's implant route (section 7). It is not refused "at the drop": a dropped device is picked up and carried first. The slice that lands second adds the implant check; in the expected order that is this slice, in U-2 |
-| A station that is down | Two lines in 9.3's `network_view` and `session_usable?`, added by this slice in A-3 |
-| Sessions at a hot desk | A guest session is an ordinary session at a PC, claimed at the screen, so its desktop carries 9.3's mapped shares with no extra work. An NPC signing in at a PC ends any session the player holds there, a 9.3 remote session included, with `reason: "displaced"` |
-| Feed posts as a place a Wi-Fi key can be learned | The shape is `feed.posts[].text`; the slice that lands last adds it to the key warning's sources (this slice, C-2) |
+| Sessions at a hot desk | A guest session is an ordinary session at a PC, claimed at the screen, so its desktop carries 9.3a's mapped shares with no extra work. 9.3a refuses any claim that carries a foothold or targets a headless host, so this slice's `guest` claim needs no change there, and this slice's validator refuses a headless borrow PC |
+| A session displaced | An NPC signing in at a PC ends any session the player holds there, a 9.3a remote session included, with `pc_signed_out` reason `displaced`; 9.3a's client treats it as any other end. Because 9.3a lets a remote sign-in start while someone sits there, the displacement runs again on `npc_borrowed_session` (6.4) |
+| Lockout from the drop box | Remote and local attempts share one counter (9.3's 4.4), so a lockout caused from the drop box stops the owner's work under sub-slice L as one caused at the keyboard. A lockout answer from a remote `POST /login` counts as "seen" for the `check` rule (6.6) |
+| A station that is down | 9.3a has no outages for the player and no "not responding" row. This slice changes nothing in 9.3's view or `desktop_request_allowed?` (this plan's section 9.1) |
+| Server-set globals | A workaround's `setGlobal` is the one global the server sets itself; 9.3 allows for it (its 13.2) |
+| Validator layout | Each slice keeps its checks in its own file (`validate_network.rb`, `validate_access_work.rb`) and touches `validate_scenario.rb` only for a `require`, a call and the known-field lists |
 | `requiresReach` | Not used by either slice |
-| Outages | `downIf` means the same in both: the global truthy means down. This slice owns what an outage does to NPCs; 9.3 what it does to the player's reach |
-| Build order | 9.3 first, then 9.1, then this slice |
+| Build order | 9.3a, then 9.1, then this slice |
 
-**For the siblings' own text.** These are settled above and need the sibling plan's wording brought
-into line; none blocks this plan:
+**With 9.3b (links, outages, Wi-Fi, port security, implants: an ordered design, built later).**
+Everything this slice and 9.3b share is built by 9.3b, so nothing here waits for it:
 
-1. 9.3 (12.3) writes the feed as `feed[].text`. It is `feed.posts[].text`.
-2. 9.3 (12.3) says a BadUSB under `usb: "blocked"` "fails at the drop". It fails at the use, and
-   the implant route needs the check in section 7.
-3. 9.3's session rules should name `displaced` as a way a remote session at a hot desk ends.
-4. 9.1 (14.5) gives the build order as 9.1, 9.2, 9.3. The expected order is 9.3, 9.1, 9.2.
-5. 9.1 (14.2) offers `locksBorrowed` as an example name for the guest boolean. This plan's name is
-   `leavesOpen`, with the opposite sense, sent in the hand-over.
+| Topic | Built by 9.3b |
+|---|---|
+| Routes with globals in them | `reach_conditions` returns the `downIf` globals of every network on each route (its 12.1, 12.2); this slice's `reachable` already reads them, and its kick (5.6) and forced sync (5.4) already watch every route global. No change here |
+| A station that is down, seen from the network | A sign-in host whose own `downIf` is truthy listed "not responding" in `network_view`, and `desktop_request_allowed?` refusing it. 9.3b owns outages for the player (its 12.2), so it adds both lines when it adds "no route" |
+| The USB check on an implant | `POST /network/implant` refuses a device whose `usbClass` the PC's policy refuses (its 12.5), through a Ruby `usb_refused?` beside `effective_policy` (`game.rb:1373`) that reads this slice's table; with a validator warning for a `grant_foothold` whose PC refuses its device. The refusal is at the use, never at the drop. If the user schedules 9.3b before this slice, U-2 adds it |
+| Feed posts as a place a Wi-Fi key can be learned | 9.3b's "the key appears nowhere" warning reads `Clues.readable_texts`, to which this slice adds feed texts (C-2) |
+| Outages | `downIf` means the same in both: the global truthy, by JavaScript's rule, means down. This slice owns what an outage does to NPCs; 9.3b what it does to the player's reach |
+
+**With the engine plan (`PHYSICAL_PENTEST_FEEDBACK_PLAN_ENGINE.md`).**
+
+| Topic | Settled as |
+|---|---|
+| Shared files | Section 13: the engine streams come first on every shared file; E3 is the first holder of `inventory.js` and `interactions.js`; E2 before U-1 on the bubble renderer; E4 before H-1 on the three capture methods |
+| A heard login is a capture | `share_login` records its capture through `window.recordSECapture`, so it lands in `se_captures` and is a row in the capture log's Credentials section (its section 6) with no further work, beside the evidence note |
+| `sharedLogins` and the proof rule | E4 serves an account's captured password only when the capture route's `proof` holds (its section 6). An account holder in `sharedLogins` is a route whose proof holds: the server's own record of a heard "done". It is as strong as that client claim (6.5), the same strength as E4's `planted` and `dropped` proofs (the server's record, not sight of the act). H-1 adds this as one case in E4's check, after E4 |
+| Server-made items | This slice makes no inventory item. The note mark, the guest session and the feed are not items, so E4's holder rules are untouched |
+| `apply-actions.js` | Not edited by this slice (11.1); E3 and 9.3b hold it |
+
+**For the siblings' own text.** Settled above; the wording in the sibling plans needs bringing into
+line, and none of it blocks this plan:
+
+1. 9.3's 13.2, row "A station that is down", has this slice adding two lines to `network_view` and
+   `desktop_request_allowed?` in A-3. Those lines need 9.3b's outages and belong with 9.3b (above).
+2. 9.3's 13.2, row "Resource names and `downIf` global names", and its decision 11 say this slice
+   ships resource names and that 9.3's no-exposure test leaves an NPC's `work` block out. This
+   slice ships no display name, so no exception is needed.
+3. 9.3's 14 lists this slice as an editor of `systems/inventory.js`. It is not.
+4. The engine plan's shared-files table does not list this slice (section 13 gives the rows).
+
+Settled and already matching: 9.1 gives the build order as 9.3a, 9.1, 9.2, and names the guest
+boolean `leavesOpen`, sent in the hand-over (its 14.2); 9.3 writes the feed as
+`feed.posts[].text`, puts the USB refusal at the use, not the drop (its 12.5), and names
+`displaced` as a way a remote session ends (its 13.2).
 
 ## 16. Decisions
 

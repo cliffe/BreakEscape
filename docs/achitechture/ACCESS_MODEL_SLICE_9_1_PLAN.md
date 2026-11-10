@@ -104,7 +104,7 @@ so a habit that fills those fields needs no client change.
 
 **The locked look works on this branch.** The user's hands-on test reported no lock screens and no
 sounds. The engine plan's item 1 reproduced a real browser session on this branch: Chris's PC took
-the `pc_desktop_locked` texture and played the lock sound on his leave, and Melanie's, which never
+the `pc_desktop_locked` texture and played the lock sound on her leave, and Melanie's, which never
 locks, showed and played nothing. Its ranked causes are that two of the lab's three desk PCs can
 never lock and the third locks rarely, that the sounds are short and shared with other cues, and
 that the played copy may have differed from this branch. It is not a fault in `screen-states.js`.
@@ -170,7 +170,7 @@ sign-in key node, hung from the room its NPC stands in, with an edge to every PC
 (`generate_dungeon_graph.rb:293-338`).
 
 **The lab's hand-set habits.** At this commit, in `scenarios/lab_physical_pentest/scenario.json.erb`:
-Chris's `staff_pc` (a plain workstation) sets `"locksScreenOnLeave": true`, and his keylogger
+Chris's `staff_pc` (a plain workstation) sets `"locksScreenOnLeave": true`, and her keylogger
 capture depends on a lock at every leave (`workstation_owner_returned:staff_pc` with
 `data.wasLocked`), guarded by `test/models/break_escape/lab_physical_pentest_secrets_test.rb`.
 Melanie's `staff_pc_2` (a sign-in PC) sets `"locksScreenOnLeave": false`. Sofia's `usb_target_pc`
@@ -184,6 +184,30 @@ codebase (`social.awareness`, `awarenessEpisode`, `scripts/validate_social/aware
 `window.breakEscapeConfig.awareness`). The NPC field keeps the name the user chose. All new code is
 named for **habits** (`NpcHabits`, `validate_npc_habits.rb`, `npc_habits_*` tests), so a search for
 the course never lands in this slice and the reverse.
+
+### To re-check after the main merge
+
+A merge of another line of work into `main` is under way
+(`docs/achitechture/physical_pentest_followup/MERGE_NOTE_2026-11-10.md`). It rewrites
+`systems/door-gates.js` and `systems/workstation-state.js`, the two client files this slice's
+design leans on, and edits the lab. Everything in this section 2 about those files is as of
+`210e48eec` and must be checked again on the merged `main` before the streams named below start.
+Each line is an assumption the merged code may change, and what to do if it has:
+
+| Assumption | Where this plan relies on it | Streams | If the merged code differs |
+|---|---|---|---|
+| `decideLocked` reads the policy's `autoLockMin: 0` first, then `lockChance`, then `locksScreenOnLeave`, and nothing else decides a leave. The merge adds an owner `screenHabit` (with `expectedAwayMs`) and an object `autoLockSeconds` as further lock sources, with the policy as the seventh argument | 5.2 (`locksScreen` fills `lockChance`); 7.2 "Screen state mappings" (the effective lock); 7.3 (the "unlocked screen" edge); H1 to H5 and H8 | F, B, S | Write the merged precedence into 7.2's effective lock, so `screenHabit` and `autoLockSeconds` count (an `autoLockSeconds` is a late lock unless it is 0). Decide with the orchestrator how `locksScreen` and the owner's `screenHabit` relate: they describe the same behaviour on the same person, so either the expansion fills `screenHabit` instead of `lockChance`, or "explicit wins" treats an authored `screenHabit` as an authored lock field and the habit is not applied. Two names for one habit on one NPC is not acceptable |
+| `isWorkstation` is "an id and `workstation: true`, `locksScreenOnLeave`, `lockChance` or `lockType: "login"`" | 5.2's second and third tests (fill only an object that is already a workstation, never one that sets its own lock field) | F | Add any new workstation-making field (for example `autoLockSeconds`) to the third test's list of authored lock fields, and confirm a filled field still cannot turn an ordinary object into a workstation |
+| The events `workstation_locked_attempt`, `workstation_accessed`, `workstation_owner_returned` (with `wasLocked`) and `workstation_auto_locked` keep their names and payloads | 7.2's mapping rules; the H2, H4, H5 tasks; the lab's capture | B, S, L | The note says `wasLocked` stays. If `workstation_screen_changed` is now the event scenarios should map, add it to the rules with its `how` values; re-check the step 3 fixtures |
+| The server's `pc_always_locks?` reads `lockChance` and `locksScreenOnLeave` only | 5.2 (the claim check reads the filled `lockChance`) | F | If the merge gives the server another lock source, the loader test's claim assertions cover it; extend them |
+| Lock sounds come from `screen-states.js` and a lock transition is recorded by `screenTransitions()` | Step 0; the scripted runs' "a lock recorded a sound" | S | With office-life lock cues installed the chime moves to `npc-office-visuals.js`. Point step 0 and the runs at whatever records the transition on merged `main`, still without naming files |
+| Gates: one open period from `open(g)` to `close(g)`, `openToPlayer(g, now)` the one question, and E1's hard bar to build on. The merge keeps `openToPlayer` and `clickOutcome`, removes the soft bar and the guard priority, and adds a held guard who turns back (`GUARD_TURN_BACK_MS`, `turnBackFromGate`, `door_gate_guard_turned_back`) | 5.4 (the contract and the six places), step 5, H9 | D, and the engine plan's E1 before it | E1 is re-grounded on the merge first (its plan says so). Step 5 then re-checks all six contract items against the merged E1, and in particular that a guard who turns back clears or keeps `lastGuards` correctly (a turned-back guard never crossed, so the gate's open period, if any, still belongs to them) and that `close(g)` is still the one end. H9 waits for that |
+| `playerOpen()` starts its period through `open()` | Contract item 5 | D | The note says clone clicks still go through the server and then `playerOpen`; confirm the call path |
+| The lab's hand-set screen fields are `locksScreenOnLeave` on `staff_pc` and `staff_pc_2`; Chris and Melanie have no other lock fields | Section 12, the recipe | L | The merge keeps "the office-life fields on Chris and Melanie", which may include `screenHabit` or `autoLockSeconds`. The recipe already reads the file as it stands; add those fields to its step 1 list, and settle the `screenHabit` question in the first row before swapping anything |
+
+Nothing in steps 2 (the sticky note), 4's password edges, or 6 depends on either file, apart from
+step 2's one `syncRoom` call beside the screen states call in `core/rooms.js`, which is re-read
+anyway.
 
 ## 3. Decisions
 
@@ -1515,7 +1539,9 @@ re-read on 2026-11-10. There is no open disagreement.
 ### 14.5 Order
 
 1. 9.3a's streams, and the engine plan's streams, run first or alongside each other as those plans
-   say.
+   say. Once the merge into `main` has landed, every stream of this slice starts from the merged
+   code, and streams F, B, S, D and L first work through the table in section 2, "To re-check after
+   the main merge", recording in the build log what changed.
 2. This slice's steps 0 to 4, 6 and 7 start when 9.3a has committed its edits to the files in
    section 15. They wait for no engine plan stream, except that where an engine stream in build
    (E1's items 2 and 7, E2) holds a file this slice also edits, that stream commits first and this
