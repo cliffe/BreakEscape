@@ -75,3 +75,11 @@ test('single-level operands behave as before', () => {
     assert.equal(holds('globalVars.alarm', {}), true);
     assert.equal(holds('!globalVars.alarm', {}), false);
 });
+
+test('includes on a list tests membership (network_device_unplugged endedPcIds, slice 9.3a)', () => {
+    assert.equal(holds("data.endedPcIds.includes('door_box')", { endedPcIds: ['lena_pc', 'door_box'] }), true);
+    assert.equal(holds("data.endedPcIds.includes('door')", { endedPcIds: ['door_box'] }), false, 'whole ids only');
+    assert.equal(holds("data.endedPcIds.includes('door_box')", { endedPcIds: [] }), false);
+    assert.equal(holds("data.jackId === 'comms_port' && data.endedPcIds.includes('door_box')",
+        { jackId: 'comms_port', endedPcIds: ['door_box'] }), true);
+});

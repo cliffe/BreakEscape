@@ -84,6 +84,8 @@ function safeEvaluateCondition(conditionStr, eventData) {
     const includesMatch = expr.match(/^(value|data(?:\.\w+)+|globalVars(?:\.\w+)+)\.includes\(['"]([^'"]*)['"]\)$/);
     if (includesMatch) {
       const lhs = resolveLHS(includesMatch[1]);
+      // A list of ids (network_device_unplugged's endedPcIds) is tested by membership
+      if (Array.isArray(lhs)) return lhs.includes(includesMatch[2]);
       return !!(lhs && typeof lhs === 'string' && lhs.includes(includesMatch[2]));
     }
 
