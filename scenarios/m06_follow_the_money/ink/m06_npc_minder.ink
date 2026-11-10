@@ -174,8 +174,10 @@ Kemal Aydin: The door is open. I am going home. Do not look for me tonight.
 -> start.challenge
 
 === goes_hostile ===
+#speaker:narrator
+Narrator: Kemal takes off his watch and pockets it.
 #speaker:satoshi_minder
-Kemal Aydin: *takes off his watch and pockets it* Then come and move me.
+Kemal Aydin: Then come and move me.
 #hostile:satoshi_minder
 #exit_conversation
 -> start.challenge

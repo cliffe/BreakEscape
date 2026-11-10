@@ -222,7 +222,7 @@ Satoshi Nakamoto II: Look, every crash so far, the banks got rescued and everybo
 === corrupted_ideals ===
 #speaker:satoshi
 
-Satoshi Nakamoto II: *amused* Maybe. You wouldn't be the first to tell me.
+Satoshi Nakamoto II: Maybe. You wouldn't be the first to tell me. #delivery: amused
 
 // Dialogue C2 (D6-59): he knows when she's in handcuffs or on the floor.
 {
