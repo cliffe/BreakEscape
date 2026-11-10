@@ -277,6 +277,10 @@ export async function openLoginSignIn(lockable, { switching = false, reason = un
     if (!pcId) return;
     const sessions = window.pcSessions;
     let tiles = Array.isArray(data.loginAccounts) ? data.loginAccounts : [];
+    // The sticky note (slice 9.1, 5.3): a written-down password comes only in this
+    // answer, at the desk, and is never written onto the object's data, so each open asks
+    // again. Else the PC's own authored note, else none.
+    let servedNote = '';
     const apiClient = window.ApiClient || window.APIClient;
     if (apiClient?.loginAccounts && window.breakEscapeConfig?.gameId) {
         try {
@@ -285,6 +289,7 @@ export async function openLoginSignIn(lockable, { switching = false, reason = un
                 tiles = answer.loginAccounts;
                 data.loginAccounts = tiles;
             }
+            if (typeof answer?.postitNote === 'string' && answer.postitNote) servedNote = answer.postitNote;
         } catch (error) {
             if (error?.status === 403 || error?.status === 404) {
                 window.gameAlert?.("This PC can't be reached", 'error', data.name || 'Sign in', 3000);
@@ -302,7 +307,9 @@ export async function openLoginSignIn(lockable, { switching = false, reason = un
     if (!framework.mainGameScene && window.game) framework.init(window.game);
 
     const picker = data.loginPicker === undefined || data.loginPicker === null ? 'accounts' : data.loginPicker;
-    sessions?.screenShown?.(pcId, picker === false ? [] : tiles, switching ? 'switch' : reason);
+    const postitNote = servedNote || data.postitNote || '';
+    const showPostit = !!postitNote && data.showPostit !== false;
+    sessions?.screenShown?.(pcId, picker === false ? [] : tiles, switching ? 'switch' : reason, showPostit);
     framework.startMinigame('password', null, {
         title: data.name || 'Sign in',
         lockable,
@@ -314,8 +321,8 @@ export async function openLoginSignIn(lockable, { switching = false, reason = un
             tiles: picker === false ? [] : tiles,
             current: sessions?.get?.(pcId) || null
         },
-        postitNote: data.postitNote || '',
-        showPostit: !!data.postitNote && data.showPostit !== false,
+        postitNote,
+        showPostit,
         requiresKeyboardInput: true,
         onComplete: (success) => {
             const signedIn = !!sessions?.has?.(pcId);

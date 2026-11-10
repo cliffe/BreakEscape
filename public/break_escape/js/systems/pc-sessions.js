@@ -337,11 +337,16 @@ export class PcSessions {
         try { close(message); } catch (e) { console.warn('[pc-sessions] closing the desktop failed', e); }
     }
 
-    /** The sign-in screen opened at pcId with these tiles. */
-    screenShown(pcId, tiles = [], reason = undefined) {
+    /**
+     * The sign-in screen opened at pcId with these tiles. `hasPostit`: the screen shows a
+     * sticky note (slice 9.1, 5.3), so a scenario can credit "found the note". The sign-in
+     * screen always passes it; a caller that leaves it out sends no hasPostit.
+     */
+    screenShown(pcId, tiles = [], reason = undefined, hasPostit = undefined) {
         const usernames = (Array.isArray(tiles) ? tiles : []).map(t => t?.username).filter(Boolean);
         // usernameList: the same as one string, for eventMapping conditions (".includes('x')")
         const data = { pcId, usernames, usernameList: usernames.join(',') };
+        if (hasPostit !== undefined) data.hasPostit = !!hasPostit;
         if (reason) data.reason = reason;
         this._emit('pc_signin_shown', data);
     }

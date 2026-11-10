@@ -1005,6 +1005,8 @@ async function loadRoomOnce(roomId) {
     window.screenStates?.syncRoom(roomId);
     // A jack with a device in it shows its plantedSprite (slice 9.3a, network-links.js)
     window.networkLinks?.syncRoom?.(roomId);
+    // The sticky note picture on a sign-in PC whose screen shows a note (slice 9.1, 5.3)
+    window.postitMarks?.syncRoom(roomId);
 
     // Reveal (make visible) but do NOT mark as discovered
     // The room will only be marked as "discovered" when the player

@@ -1145,6 +1145,8 @@ module BreakEscape
     # time the sign-in screen opens.
     def login_accounts
       authorize @game if defined?(Pundit)
+      # The answer can carry a written-down password (slice 9.1, 5.3): never cached.
+      response.headers['Cache-Control'] = 'no-store'
 
       info = @game.find_login_pc(params[:pc_id].to_s)
       return render_error("Sign-in PC not found: #{params[:pc_id]}", :not_found) unless info
@@ -1153,7 +1155,10 @@ module BreakEscape
         return render_error("PC not reachable: #{params[:pc_id]}", :forbidden)
       end
 
-      render json: { pc_id: info[:object]['id'], loginAccounts: @game.login_account_tiles(info[:object]) }
+      answer = { pc_id: info[:object]['id'], loginAccounts: @game.login_account_tiles(info[:object]) }
+      note = @game.login_postit_for(info[:object])
+      answer[:postitNote] = note if note
+      render json: answer
     end
 
     # POST /games/:id/clone_card

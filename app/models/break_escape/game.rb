@@ -1471,6 +1471,24 @@ module BreakEscape
       npc_habit(npc, 'writesDown') == true
     end
 
+    # The sticky note on a sign-in PC (slice 9.1, 5.3): "<username> / <password>" from the
+    # owner's creds when the owner has an account and written_down?, and the PC authors no
+    # postitNote of its own and does not set showPostit: false; else nil. Served only by
+    # GET /login_accounts for a PC the player can reach, never on a remote sign-in screen.
+    def login_postit_for(pc)
+      return nil unless pc.is_a?(Hash) && self.class.login_pc?(pc)
+      return nil if pc['postitNote'].is_a?(String) && !pc['postitNote'].strip.empty?
+      return nil if pc['showPostit'] == false
+
+      owner = login_pc_owner(pc)
+      return nil unless owner && self.class.account_holder?(owner) && written_down?(owner)
+
+      password = owner['creds']['password']
+      return nil unless password.is_a?(String) && !password.empty?
+
+      "#{owner['creds']['username']} / #{password}"
+    end
+
     # POST /login with a username and password (section 6). Returns { status:, body: }.
     # A wrong password and an unknown username answer exactly alike, counted per PC and
     # normalised username; no letter-case hint.
@@ -2001,6 +2019,9 @@ module BreakEscape
         if self.class.login_pc?(obj) && !BreakEscape::NetworkModel.headless?(obj)
           pc = find_login_pc(obj['id'])&.dig(:object) || obj
           obj['loginAccounts'] = login_account_tiles(pc)
+          # A written-down password (slice 9.1, 5.3): room data says only that a note is
+          # there; its text is served by GET /login_accounts.
+          obj['hasPostit'] = true if login_postit_for(pc)
         end
         attach_login_accounts!(obj['contents']) if obj['contents'].is_a?(Array)
       end

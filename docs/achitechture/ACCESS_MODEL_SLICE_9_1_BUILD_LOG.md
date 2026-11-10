@@ -54,3 +54,32 @@ Deviations and notes:
 One-off check: every scenario under `scenarios/` (170) rendered through
 `Mission#generate_scenario_data` and run through `NpcHabits.expand!`: the output equals the input
 and the report is empty for all of them.
+
+## Step 2. The sticky note (2026-11-10)
+
+Built as planned: `Game#login_postit_for` (public), `hasPostit` in `attach_login_accounts!`
+inside the existing headless guard, `postitNote` and `Cache-Control: no-store` on every
+`GET /login_accounts` answer (404 and 403 included), the desk branch of `openLoginSignIn`
+(9.3a's remote branch is not on this branch yet; the test checks it if it appears),
+`hasPostit` on `pc_signin_shown`, and `systems/postit-marks.js` with its install in
+`core/game.js` and the `syncRoom` call in `core/rooms.js`.
+
+Notes:
+
+- `pcSessions.screenShown` adds `hasPostit` only when its fourth argument is given. The sign-in
+  screen always passes it (true or false); a three-argument call sends the same data as before,
+  so `pc-sessions.test.mjs` passes unchanged.
+- An authored `postitNote` that is empty or only spaces counts as no note on the server.
+- Postit marks install unconditionally (not only with the needs system), since a sign-in PC
+  with an authored note can be in any scenario.
+
+Browser check on :3001 (`test_access_signin`, game 90): the hot desk shows the note picture at
+its monitor's top-left (screenshot looked at); its sign-in screen shows the authored note (the
+fallback), `pc_signin_shown` carried `hasPostit: true`, and the `/login_accounts` answer was
+`no-store` with keys `pc_id` and `loginAccounts` only. The hot desk has no owner, so there is no
+indicator dot beside it; the dot and the note together are seen in step 7's scenario. The full
+`test_access_signin` scripted runs were not repeated by this builder (scripted runs are a
+separate tester's job, section 15).
+
+Node suite: 455 of 456 files passed; `fingerprint-generator.test.mjs` failed once under
+`-j 6` load and passes alone (unrelated to this step).

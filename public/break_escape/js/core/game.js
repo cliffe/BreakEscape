@@ -54,6 +54,7 @@ import { watchReadinessGlobals } from '../systems/social-intel.js';  // needsGlo
 import { chosenPlayerSprite, playerTalkPath } from '../utils/player-avatar.js';  // aw9: the chosen avatar wins, the portrait follows
 import { pcSessions } from '../systems/pc-sessions.js';  // Sign-in PC sessions (access model 5.3; sets window.pcSessions)
 import { networkLinks } from '../systems/network-links.js';  // Footholds and the jack (slice 9.3a; sets window.networkLinks)
+import { installPostitMarks } from '../systems/postit-marks.js';  // Sticky note picture on sign-in PCs (slice 9.1, 5.3)
 
 // Global variables that will be set by main.js
 let gameScenario;
@@ -2011,6 +2012,10 @@ export async function create() {
                 console.error('❌ Failed to initialize NPC Behavior Manager:', error);
             });
     }
+
+    // A sticky note picture on each sign-in PC whose screen shows a note (slice 9.1, 5.3);
+    // core/rooms.js syncs each room as its sprites are made.
+    installPostitMarks(this);
 
     // Initialize combat systems
     COMBAT_CONFIG.validate();
