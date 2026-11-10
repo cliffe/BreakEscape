@@ -1,9 +1,12 @@
 # Access model slice 9.3: networks
 
-Status: **design, 2026-11-10, not built.** It replaces the sketch in section 9.3 of
-`ACCESS_MODEL_PLAN.md` (called "the main plan" below). Sections 3 to 8 of the main plan are built and
-are the base this slice stands on. Claims about existing code were checked against the working tree
-on 2026-11-10; method names are the stable reference, line numbers move.
+Status: **design, 2026-11-10. 9.3a's server steps 1 to 4 are built** (`eab97afaa`, `f01172778`,
+`6a319d68a`, `9904e0746`); steps 5 to 9 and all of 9.3b are not. It replaces the sketch in section
+9.3 of `ACCESS_MODEL_PLAN.md` (called "the main plan" below). Sections 3 to 8 of the main plan are
+built and are the base this slice stands on. Claims about existing code were checked against
+commit `5122a9c92`, which holds the merge of `main` (`d9b910ac0`) and the four built steps; section
+2 describes the code as this slice found it, and where a line it cites now carries a built step,
+it says so. Method names are the stable reference; line numbers move.
 
 The slice is in two parts:
 
@@ -69,22 +72,24 @@ exposes is sent to the browser before the player has a foothold on it.
 | Sign-in | `POST /login` checks "PC reachable" first: the PC's room is unlocked or never locked and nothing above the PC is still locked. Then the lockout, the password and the PC's `access` | `Game#attempt_login!`, `Game#login_pc_reachable?` |
 | Sessions | `player_state.sessions[pcId] = { id, via }`, `via` being `password` or `claim`. The desktop is served by `GET /container/:id`, which checks the PC is reachable and a session is held, then composes the PC's `contents` and the admitted `accountProfiles` | `games_controller.rb` `container`, `render_login_desktop`; `Game#login_desktop_contents` |
 | Scoped objects | `login_scope_of` finds an object by id or name, rooms first, and says whether it sits under a sign-in PC or in a profile. A sign-in PC itself is returned with no scope and guarded by a special case in `unlock_scope_refused?`. `session_admits?` asks only whether a session exists that admits the scope; it does not test whether the PC is reachable. Neither does the inventory add from a desktop | `game.rb`; `validate_login_item_collectible` |
-| Access lists | `Game.acl_admits?` answers false when the list is not a hash. Only `pc_admits_account?` reads a missing list as "everyone". Every NPC with creds also has the implicit role `staff` unless it says `"staff": false`, so a list naming `staff` admits every account holder | `game.rb` (`Game.identity_roles`, `:1149-1157`; `Game.acl_admits?`, `:1160-1168`) |
+| Access lists | `Game.acl_admits?` answers false when the list is not a hash. Only `pc_admits_account?` reads a missing list as "everyone". Every NPC with creds also has the implicit role `staff` unless it says `"staff": false`, so a list naming `staff` admits every account holder | `game.rb` (`Game.identity_roles`, `:1168`; `Game.acl_admits?`, `:1178`) |
 | The sign-in screen | `openLoginSignIn` first asks `GET /login_accounts` and, on a 403 or 404, shows "This PC can't be reached" and returns. The desktop's Switch user button and the desktop's 403 fallback both call it | `unlock-system.js`, `container-minigame.js` |
-| Captures | `se_captures` is written by the client and synced. `GET /capture_secrets` answers nothing at all unless `social.captures.revealSecret` is true; under it, it serves an account holder's password for an entry whose `address` is that account's username (the account-holder pass, `account_capture_passwords`), and a landing-page secret by address, with a single-secret fallback that counts landing pages only. A landing-page capture's address is not an account username | `Game#capture_secrets_for_client` (`game.rb:907-952`), `#account_capture_passwords` (`:957-969`) |
+| Captures | `se_captures` is written by the client and synced. `GET /capture_secrets` answers nothing at all unless `social.captures.revealSecret` is true; under it, it serves an account holder's password for an entry whose `address` is that account's username (the account-holder pass, `account_capture_passwords`), and a landing-page secret by address, with a single-secret fallback that counts landing pages only. A landing-page capture's address is not an account username | `Game#capture_secrets_for_client` (`game.rb:915-960`), `#account_capture_passwords` (`:965-984`) |
 | Remote session (lab) | A declared grant: a timer's `give_item` hands the player a `pc` item, "Remote Session: LW-FIN-07", whose text files are hand-written. Nothing in it is connected to an account, a PC or a share | `lib/break_escape/declared_grants.rb`, `Game#held_grant_items` |
-| Drop box (lab, as in this repository) | `network_port` is a `pc` object with `requiresItem: "kit_dropbox"` and a `confirm_action` that sets the global `kp_netdrop_planted`. The box stays in the inventory. A second object, `network_port_planted`, is revealed by the global. A mapping on Ruth adds a "foothold" capture and completes `opt_netdrop` | `scenarios/lab_physical_pentest/scenario.json.erb`, room `P3` |
+| Drop box (lab) | `network_port` is a `pc` object with `requiresItem: "kit_dropbox"` and a `confirm_action` whose `onConfirm` sets the global `kp_netdrop_planted` and removes the box from the inventory with `remove_item` (no `consumesItem`, so a cancel keeps the box). A second object, `network_port_planted` (`pi_cluster1`), is revealed by the global. A mapping on Ruth, on `global_variable_changed:kp_netdrop_planted`, adds a `foothold` capture and completes `opt_netdrop`, a `manual` optional task. P3 also has a north door to the riser (P5, an RFID room with the rack `p5_riser_rack`) | `scenarios/lab_physical_pentest/scenario.json.erb`: `network_port` erb:2031-2052 (`remove_item` at :2047), `network_port_planted` :2053-2068, Ruth's mapping :606, `opt_netdrop` :246, P5 :2079-2105 |
 | Bootstrap | `filtered_scenario_for_bootstrap` deep-copies the whole scenario and deletes what must not ship. Rooms are reduced to a whitelist of fields. **Any new top-level key ships as authored unless this method deletes it** | `game.rb` |
-| Globals | Written by the client and merged by `PUT /sync_state` every 30 seconds and on page hide. The server sets one kind itself: when it completes a task (`POST /complete_task`, after the task type's own check), `apply_task_set_globals!` writes the task's `onComplete.setGlobal` values for globals the scenario declares in `globalVariables`. A global set that way follows a check the server made. Slice 9.2 plans a second case | `Game#merge_global_variables!`, `state-sync.js`; `Game#complete_task!` (`game.rb:2462`), `#process_task_completion` and `#apply_task_set_globals!` (`:3736-3780`) |
-| Positions | The server cannot see where the player stands. "Reachable" on the server means "the room is unlocked or never locked" | main plan 4.2 |
+| Globals | Written by the client and merged by `PUT /sync_state` every 30 seconds and on page hide. The server sets one kind itself: when it completes a task (`POST /complete_task`, after the task type's own check), `apply_task_set_globals!` writes the task's `onComplete.setGlobal` values for globals the scenario declares in `globalVariables`. A global set that way follows a check the server made. Slice 9.2 plans a second case | `Game#merge_global_variables!`, `state-sync.js`; `Game#complete_task!` (`game.rb:2519`), `#process_task_completion` and `#apply_task_set_globals!` (`:3799-3842`) |
+| Positions | The server cannot see where the player stands. "Reachable" on the server means "the room is unlocked or never locked" (`Game#login_pc_reachable?`, which since step 3 asks `object_reachable?`) | main plan 4.2 |
+| Gates | A gate door is a client-side control (`systems/door-gates.js`): its guard, its hold and the owner's rule that a barred player keeps it shut and the guard turns back play no part on the server. A gated room is unlocked on the server by its guard's route action, and a clone presented at a gate goes through `notifyServerUnlock` (`doors.js:687`), which unlocks the room as any RFID door does. So "reachable" on the server needs nothing from gates | `door-gates.js`, `doors.js`, `npc-behavior.js` (`_runRouteAction`) |
+| Workstations | A click on a sign-in PC whose owner is present says "<name> is using this PC" before anything else (`interactLoginPc`, `unlock-system.js:205-224`); presence is the needs system's `isAvailable` (an owner knocked out, hostile or hidden is absent, `workstation-state.js:478-482`). It blocks the physical click only. A claimed session ends on the owner's return and on a reload (`end_claimed_sessions!`, `game.rb:1539`). An owner is `screenOwner`, else the NPC whose `needsHome` is the PC (`ownerOf`, `workstation-state.js:96-102`; `login_pc_owner`, `game.rb:1421`). Office life's `screenHabit` decides a lock on the client; the server's claim check reads only the PC's own lock fields until slice 9.1 fixes it (9.1's 5.2), so a claim can be refused at a PC the client shows open. A remote session is a password sign-in and is not affected | as listed |
 | Inventory | An add is validated and the server stores its own copy of the item. The add for a room item checks that the room is open and the item takeable; it does not ask whether the item was taken before. A remove is not checked. Room data hides a taken item through `objects_removed`, with "it is in the inventory" as the fallback | `games_controller.rb` `inventory`, `find_accessible_item`; `Game#apply_room_state_changes!` |
 | Inventory on the client | Items in `playerInventory` are restored on load without a request, through `createInventorySprite` (not exported) and a private `_restoredFromSave` flag | `systems/inventory.js` |
-| Prompts | `window.gameConfirm(message, confirmLabel, cancelLabel)` has two buttons whose labels the caller sets, and resolves true or false. Esc and the close cross answer false, the same as the second button, so a prompt can carry one action and "do nothing", never two actions | `systems/notifications.js:264-291` |
-| A click on an object | Order in `handleObjectInteraction`: a sign-in PC's own branch, then the workstation call, then `triggerOnInteract` with `requiresItem`, then drops, consumables and the generic flow | `systems/interactions.js` (sign-in branch `:794-801`) |
+| Prompts | `window.gameConfirm(message, confirmLabel, cancelLabel)` has two buttons whose labels the caller sets, and resolves true or false. Esc and the close cross answer false, the same as the second button, so a prompt can carry one action and "do nothing", never two actions | `systems/notifications.js:279-330` |
+| A click on an object | Order in `handleObjectInteraction` (`:827`): the `interactionWarning` (`:842`), seats and NPCs, the object action menu when an object offers more than one action (`action-menu.js`, `:917`), a sign-in PC's own branch (`:925-933`), then the workstation call (`:939`), then `triggerOnInteract` with `requiresItem` (`:945-990`), then drops (`inventory-menu.js`, `:1000`), consumables and the generic flow | `systems/interactions.js` |
 | Minigame scenes | Registered with `MinigameFramework.registerScene` in `minigames/index.js`. `systems/minigame-registry.js` is a different table: object type to starter function. Each minigame's stylesheet is a `<link>` in the game page | both files; `app/views/break_escape/games/show.html.erb:25-62`, files in `public/break_escape/css/` |
 | Leaving a minigame | One minigame runs at a time: starting one ends the one that is open, without calling its own `complete` (`minigame-manager.js:57-80`). The framework's `returnTo` parameter reopens a parent only on a normal exit (`:280-287`, `:319-320`). The desktop's Close button, the frame's close cross and Esc all call `complete(false)` (`container-minigame.js:552-555`; `base-minigame.js:38-45`, `:73-80`). Opening a file or folder from a desktop stores `window.pendingContainerReturn`, closes the desktop and hands a stand-in sprite to `handleObjectInteraction` (`container-minigame.js:725-757`, `:772-802`); the notes reader then reopens the desktop (`returnToContainerAfterNotes`, `:1087`), but the text-file reader's cleanup clears the record (`text-file-minigame.js:368-378`), so a text file read from a desktop closes to the world. The sign-in screen's `onComplete` opens the desktop only when a session is held (`unlock-system.js:314-319`). `pc-sessions.js` closes an open desktop through the callback the desktop registered, with a message and no reason (`pc-sessions.js:328-339`) | the files named |
-| Refusals of an unknown id | `GET /container` answers 404 "Container not found" (`games_controller.rb:551`). `POST /unlock` answers 422 `{ success: false, message: "Invalid attempt" }` for an object it cannot find, as for a wrong attempt (`:897-913`; `Game#validate_unlock`, `game.rb:2097`). `POST /inventory` add answers 422 "Item not found in scenario: <type>" (`games_controller.rb:1010-1017`, `:2022-2025`) | `games_controller.rb` |
-| Authorisation and routes | Every action calls `authorize @game`; Pundit raises for an action whose policy method is missing, and `game_policy.rb` has one method per action (`container?`, `login?`, `capture_secrets?`, `:53-99`). In the routes' member block a nested path names its action with `to:` (`config/routes.rb:46-49`) | `app/policies/break_escape/game_policy.rb`, `config/routes.rb` |
+| Refusals of an unknown id | `GET /container` answers 404 "Container not found" (`games_controller.rb:544`, `:560`). `POST /unlock` answers 422 `{ success: false, message: "Invalid attempt" }` for an object it cannot find, as for a wrong attempt (`:909`; `Game#validate_unlock`, `game.rb:2049`). `POST /inventory` add answers 422 "Item not found in scenario: <type>" (`games_controller.rb:2120`) | `games_controller.rb` |
+| Authorisation and routes | Every action calls `authorize @game`; Pundit raises for an action whose policy method is missing, and `game_policy.rb` has one method per action (`container?`, `login?`, `capture_secrets?`, `:53-99`). In the routes' member block a nested path names its action with `to:` (`config/routes.rb:26-27`) | `app/policies/break_escape/game_policy.rb`, `config/routes.rb` |
 
 ## 3. Scenario fields (9.3a)
 
@@ -1208,17 +1213,16 @@ Section 10. It starts once step 8's runs pass and the conditions in section 10 h
 password that neither the box nor the password reaches alone.
 
 **Whose plan.** The lab's text, rules of engagement, Ruth's lines, objectives and debrief belong to
-`PHYSICAL_PENTEST_FEEDBACK_PLAN_CONTENT.md` ("the content plan"). That plan designed these beats
-before this mechanism existed, with hand-built stand-ins: an inventory item `dropbox_console`
-granted by a timer, and an item `door_admin_page` granted when two client globals are both true.
-This section replaces those two stand-ins with the real mechanism and changes nothing else in the
+`PHYSICAL_PENTEST_FEEDBACK_PLAN_CONTENT.md` ("the content plan"). Its items B1 (the drop box
+console) and B2 (the door controller) are written for this mechanism: no hand-built console item,
+no granted admin page, and the controller is the lab's existing `store_controller`, not a second
+object. This section is the mechanism's side of those two items and changes nothing else in the
 content plan's design. It keeps the content plan's scope rule: **client records stay out of
 scope**, so the records share is listed and never opened.
 
-**How to apply it.** The recipe is written by object id, global and task id, never by line number,
-because the user's own lab file has changes that are not in this repository. An id marked (content)
-is one the content plan creates; the builder applies this recipe to the lab file as it stands after
-the content plan's scenario stream, on whatever base the user pushes.
+**How to apply it.** The recipe is written by object id, global and task id, never by line number.
+An id marked (content) is one the content plan creates; the builder applies this recipe to the lab
+file as it stands after the content plan's scenario stream.
 
 ### 10.1 What the slice gives the lab with no content decision
 
@@ -1226,49 +1230,53 @@ the content plan's scenario stream, on whatever base the user pushes.
 |---|---|
 | top level | `"networks": { "office_lan": { "name": "Ledgerwell office LAN" } }` |
 | `kit_dropbox` | Add `"rogueDevice": true` |
-| `network_port` (room `P3`) | Add `"networkJack": true`, `"network": "office_lan"`, `"plantedSprite": "pi_cluster1"`, `"linkName": "Drop box: comms cupboard"`, `"linkStoreIn": "capture_log"` (13.4; added only once the lab has the capture log item), and `"jackConfirm"` holding the confirm text the content plan writes for it. Remove `requiresItem`, `triggerOnInteract` and its `confirm_action` (the jack does all three); keep `requiresItemHint`. Add an `observationVariants` entry on the global `network_port_planted` for the content plan's "this is the foothold" text |
-| Ruth's mapping on `global_variable_changed:kp_netdrop_planted` | Change the pattern to `network_device_planted:network_port`; keep `onceOnly` and the `addCapture`. With the objective change in 10.2 accepted, drop its `completeTask`: the task completes itself. Until then keep `completeTask: "opt_netdrop"` and add `setGlobal: { "kp_netdrop_planted": true }`, so her ink and the debrief keep reading the same global |
+| `network_port` (room `P3`) | Add `"networkJack": true`, `"network": "office_lan"`, `"plantedSprite": "pi_cluster1"`, `"linkName": "Drop box: comms cupboard"`, `"linkStoreIn": "capture_log"` (13.4; added only once the lab has the capture log item), and `"jackConfirm"` holding the confirm text the content plan writes for it. Remove `requiresItem`, `triggerOnInteract` and its `confirm_action`, **including the `onConfirm`'s `set_global kp_netdrop_planted` and `remove_item kit_dropbox`**: the jack's plant takes the box out of the inventory on the server (`POST /network/plant`, 4.1), which a client `remove_item` must not do a second time, and the global is set as the next rows say. Keep `requiresItemHint`. Add an `observationVariants` entry on the global `network_port_planted` for the content plan's "this is the foothold" text |
+| Ruth's mapping on `global_variable_changed:kp_netdrop_planted` (`condition: "value === true"`, `onceOnly`) | Change the pattern to `network_device_planted:network_port` and drop the `value === true` condition (the event fires only on a plant); keep `onceOnly` and the `addCapture`. With the objective change in 10.2 (accepted by the content plan, its B1), drop its `completeTask`: `opt_netdrop` becomes a server-checked task that sets the global itself. Until then keep `completeTask: "opt_netdrop"` and add `setGlobal: { "kp_netdrop_planted": true }`, so her ink, the debrief gate's credits line and the debrief keep reading the same global |
 | object `network_port_planted` | Removed. The jack's own planted look shows the device where it was planted, which is what the engine feedback plan wants kept visible, and the jack's observation variant carries its text. (The published global has the same name as the removed object's id; they are different things) |
 
-The box is now really planted: it leaves the tray on confirm, the link item arrives, the view opens
-by itself, and the box comes back on an unplug.
+The box is now really planted: the server takes it out of the inventory on confirm (as the lab's
+`remove_item` did on the client), the link item arrives, the view opens by itself, and the box
+comes back on an unplug, which the lab's one-way `remove_item` could not do.
 
-### 10.2 The content plan's hand-built pieces, mapped to this mechanism
+### 10.2 The content plan's network beats, mapped to this mechanism
 
 | Content plan | Becomes |
 |---|---|
-| `dropbox_console` (content), its `give_item` timer on `kp_netdrop_planted`, and its file "What answers" | Not created. The link item and the network view are the console |
-| Host note "LW-FS01" (the records share is listed to any device, folder names only) | `resources.lw_fs01_records`: `kind: "file_share"`, `name: "Client-Records"` (a name no room text uses, so the leak scanner can check it; the word "records" is public all over the lab and would be skipped by the scanner's own rule; the content plan's mapped-drive file on `lord_desktop`, served only to a session, names the share the same way), `host: "LW-FS01"`, `network: "office_lan"`, **no `contents`**, and `observations` giving the top folder names and the content plan's line that reading them would be a breach of its own. Nothing in it can be opened, copied or taken, which is the scope rule made mechanical |
+| A drop box console (its B1) | Not created. The link item and the network view are the console |
+| Host "LW-FS01" (the records share is listed to any device, folder names only) | `resources.lw_fs01_records`: `kind: "file_share"`, `name: "Client-Records"` (a name no room text uses, so the leak scanner can check it; the word "records" is public all over the lab and would be skipped by the scanner's own rule; the content plan's mapped-drive file on `lord_desktop`, served only to a session, names the share the same way), `host: "LW-FS01"`, `network: "office_lan"`, **no `contents`**, and `observations` giving the top folder names and the content plan's line that reading them would be a breach of its own. Nothing in it can be opened, copied or taken, which is the scope rule made mechanical |
 | Host "LW-PRN02" (printer) | `resources.lw_prn02`: `kind: "printer"`, `host: "LW-PRN02"`, `network: "office_lan"`, a one-line `observations` |
-| "the staff PCs" | `hot_desk_pc` (content) and `staff_pc_2` gain `"network": "office_lan"` and a `host` (`staff_pc_2` is `LW-OPEN-07`, the host its capture already prints). Their `access` lists stay exactly as the content plan sets them: the hot desk admits its three people, Melanie's PC only her. `staff_pc` and `usb_target_pc` stay plain PCs and are not listed |
-| Host note "LW-DOOR01" and `door_admin_page` (content) with its two timers on `kp_netdrop_planted` and `kp_creds_captured` | A new object, `door_controller`, in `store_room` beside `store_shelf` (the shelf's text already places the controller there): `"type": "pc"`, a rack sprite, `"name": "Door entry controller"`, `"host": "LW-DOOR01"`, `"network": "office_lan"`, `"locked": true`, `"lockType": "login"`, `"headless": true`, `"loginPicker": false`, `"access": { "people": ["hampshire"] }`, an `observations` line saying it has no screen and is managed from the office network, and as `contents` the three pages the content plan wrote for `door_admin_page` (the door list, the card type, "Add badge: in reach, not pressed"). The two timers and the granted item are not created |
-| `kp_dropbox_viewed` set by `onRead` of "What answers" | Set by a mapping on `network_viewed:office_lan`, `onceOnly`, `setGlobal: { "kp_dropbox_viewed": true }`. The content plan's mapping from that global to `opt_dropbox_view` and its capture are unchanged |
-| `kp_door_admin` set by the first read of `door_admin_page` | Set by the server, as below. Until that change is accepted: a mapping on `pc_signed_in:door_controller`, `onceOnly`, `setGlobal: { "kp_door_admin": true }`, and the content plan's mapping to `opt_door_admin` unchanged |
-| `opt_netdrop` and `opt_door_admin`, completed from client events and globals (for the content plan's owner to accept) | Two `unlock_object` tasks the server checks. `opt_netdrop`: `"type": "unlock_object"`, `"targetObject": "network_port"`, `"onComplete": { "setGlobal": { "kp_netdrop_planted": true } }`; the server completes it only when `gainedFootholds` holds the jack. `opt_door_admin`: `"type": "unlock_object"`, `"targetObject": "door_controller"`, `"onComplete": { "setGlobal": { "kp_door_admin": true } }`; the server completes it only when `signedInPcs` holds the controller, which only a sign-in through the box can put there. Each keeps its id, title and `optional`; the client completes it on `network_foothold_gained` and `pc_signed_in` (step 7 and the first slice). The server writes each global when it completes the task (section 2, "Globals"; it writes only a global declared in `globalVariables`: `kp_netdrop_planted` is declared today, `kp_door_admin` by the content plan), so Ruth's ink and the credits follow a server check. The content plan's mapping from `kp_door_admin` to `opt_door_admin` goes; its `addCapture` moves to a mapping on `pc_signed_in:door_controller`, `onceOnly`. `opt_dropbox_view` stays a mapping on `kp_dropbox_viewed`: looking is not a gate |
-| The content plan's texts that say "its console is in your inventory" | Stay true: the link item is in the inventory |
+| "the staff PCs" | `hot_desk_pc` (content) gains `"network": "office_lan"` and `"host": "LW-HOT-01"`, and `staff_pc_2` gains the network and `"host": "LW-OPEN-07"` (the host its capture already prints). Their `access` lists stay exactly as the content plan sets them: the hot desk admits its three people, Melanie's PC only her. `staff_pc` and `usb_target_pc` stay plain PCs and are not listed |
+| The door controller (its B2): the lab's `store_controller` in `store_room`, today a readable `notes` object whose folder sets `kp_controller_found` and completes `opt_controller` (a `manual` task) through Ruth's capture mapping | **`store_controller` is the host; its folder becomes a separate object.** `store_controller` keeps its id and becomes `"type": "pc"` with the controller sprite, `"host": "LW-DOOR01"`, `"network": "office_lan"`, `"locked": true`, `"lockType": "login"`, `"headless": true`, `"loginPicker": false`, `"access": { "people": ["hampshire"] }`, an `observations` line saying it has no screen and is managed from the office network, and as `contents` the three pages the content plan writes (the doors and holders, the card type, "Add badge: in reach, not pressed"). Its `readable`, `text`, `readDisplay`, `addToNotes` and `onRead` move to a new `store_controller_folder` (content) beside it, so `kp_controller_found`, Ruth's capture mapping and `opt_controller` are unchanged and stay the physical beat. A sign-in PC returns before `onRead` could run (section 2, "A click on an object"), which is why the folder has to be its own object |
+| `kp_dropbox_viewed` (content) | Set by a mapping on `network_viewed:office_lan`, `onceOnly`, `setGlobal: { "kp_dropbox_viewed": true }`. The content plan's mapping from that global to `opt_dropbox_view` and its capture are unchanged |
+| `kp_door_admin` (content) | Set by the server, as below. Until that change is accepted: a mapping on `pc_signed_in:store_controller`, `onceOnly`, `setGlobal: { "kp_door_admin": true }`, and the content plan's mapping to `opt_door_admin` unchanged |
+| `opt_netdrop` (today `manual`, completed by Ruth's mapping) and `opt_door_admin` (content) | Two `unlock_object` tasks the server checks. `opt_netdrop`: `"type": "unlock_object"`, `"targetObject": "network_port"`, `"onComplete": { "setGlobal": { "kp_netdrop_planted": true } }`; the server completes it only when `gainedFootholds` holds the jack. `opt_door_admin`: `"type": "unlock_object"`, `"targetObject": "store_controller"`, `"onComplete": { "setGlobal": { "kp_door_admin": true } }`; the server completes it only when `signedInPcs` holds the controller, which only a sign-in through the box can put there. Each keeps its id, title and `optional`; the client completes it on `network_foothold_gained` and `pc_signed_in` (step 7 and the first slice). The server writes each global when it completes the task (section 2, "Globals"; it writes only a global declared in `globalVariables`: `kp_netdrop_planted` is declared today, `kp_door_admin` by the content plan), so Ruth's ink and the credits follow a server check. The `addCapture` for the door moves to a mapping on `pc_signed_in:store_controller`, `onceOnly`. `opt_dropbox_view` stays a mapping on `kp_dropbox_viewed`: looking is not a gate. The content plan accepts the change for `opt_netdrop` (its B1) and writes `opt_door_admin` this way (its B2) |
+| The server riser's rack (`p5_riser_rack`, P5, behind an RFID door north of P3) | **Not a host.** The riser is the physical clone beat; a row for it in the view would blur the two, and the content plan says the same (its B1). It stays a readable object |
+| The content plan's texts that say the console is in the inventory | Stay true: the link item is in the inventory |
 
 **Why this payoff needs the box.** The door controller is headless. It stands in the store room,
-which a picked lock opens, and a click there shows only that it has no screen. The server refuses
-any sign-in to it that names no foothold on the office LAN (4.7), and then checks Chris's password,
-which the player has only from the keylogger. So the chain the content plan drew, "drop box plus
-Chris's password", is enforced by the server at both ends, where today it rests on two globals the
-browser sets, and with the objective change above the task that records it is completed only
-after the server's own check. Nothing else in the lab opens the controller's pages: Melanie's claimed session, the
-hot desk and the records share do not lead to it.
+which a picked lock opens, and a click there shows only that it has no screen; its folder beside
+it is the physical finding, as today. The server refuses any sign-in to it that names no foothold
+on the office LAN (4.7), and then checks Chris's password, which the player has only from the
+keylogger. So the chain the content plan draws, "drop box plus Chris's password", is enforced by
+the server at both ends, and with the objective change above the task that records it is completed
+only after the server's own check. Nothing else in the lab opens the controller's pages:
+Melanie's claimed session, the hot desk and the records share do not lead to it.
 
 **Left as they are by this slice:** the Remote Session item (`records_remote_session`) and its
-timer, `usb_target_pc`, `cable_note`, the hot desk beat and its three desktops, every global and
-task id the content plan names. 9.3b's implants may later offer the BadUSB beat a better form; that
-is a separate decision (section 12).
+timer, `usb_target_pc`, `cable_note`, the hot desk beat and its three desktops, the riser and its
+card beat, every global and task id the content plan names. 9.3b's implants may later offer the
+BadUSB beat a better form; that is a separate decision (section 12).
 
 ### 10.3 Tests and runs
 
 - `test/models/break_escape/lab_physical_pentest_secrets_test.rb` gains: no room or bootstrap answer
-  names the network or a resource before the plant; `door_controller`'s pages are served only to a
+  names the network or a resource before the plant; `store_controller`'s pages are served only to a
   session as `hampshire` opened through a foothold, and a sign-in there with her right password
-  and no foothold is refused; the records resource has no contents.
-- The content plan's playtest steps for the console and the chain (its H5.3 and H5.4) are rewritten
-  for the mechanism: plant, the view opens, `opt_dropbox_view` completes; with no capture the door
+  and no foothold is refused; the records resource has no contents; `kit_dropbox` is in the
+  inventory exactly once after an unplug.
+- The content plan's playtest steps for the console and the chain (its B2's `PLAYTEST.md` steps)
+  are written for the mechanism: plant, the view opens, `opt_dropbox_view` completes; reading the
+  folder beside the controller still completes `opt_controller`; with no capture the door
   controller's row refuses a guessed password; after the keylogger capture, **Captured sign-ins**
   offers `c.hampshire`, the sign-in succeeds, `opt_door_admin` completes; unplug; a reload with the
   box planted.
@@ -1283,10 +1291,8 @@ is a separate decision (section 12).
 This step starts when all of these hold:
 
 1. Step 8's runs pass.
-2. The content plan has been revised to use this mechanism in place of its two stand-ins (the user
-   or the orchestrator confirms it), and its own scenario stream has finished its edits to the lab
-   file. If the content plan's build runs before 9.3a is ready, it builds its stand-ins and this
-   step replaces them afterwards; either order ends in the same file.
+2. The content plan's scenario stream has finished its edits to the lab file (its items B1 and B2
+   wait for this step and add their content with it, or straight after it).
 3. Nobody else is editing `scenarios/lab_physical_pentest/scenario.json.erb` or
    `lab_physical_pentest_secrets_test.rb`. The lab file has one editor at a time; slice 9.1's lab
    step runs after this one.
@@ -1426,47 +1432,61 @@ It only refuses; a bypass is not part of this slice.
 
 ### 12.5 Implants
 
-An implant is a foothold that a member of staff gives the player by plugging in a dropped device.
+An implant is a foothold given by a device plugged into a PC rather than a jack. There are two
+ways in, the two USB beats of the device pitch (13.3): a member of staff plugs in a device the
+player dropped (the lab's rogue USB beat), or the player plugs a keystroke-injection device into a
+PC they are signed in to (the pitch's BadUSB, its device 3).
 
 - A scenario action, `{ "type": "grant_foothold", "pc": "<pc id>", "needsDropped": "<item id>",
-  "name": "..." }`, on a path the engine runs actions from and the server's declared-grant walk
-  covers. The validator errors on one under `flagRewards` (the flag station runs actions in the
-  browser, while that path is off the server's list) or `eventMappings`, and on one with no
-  `needsDropped`.
+  "name": "..." }` for the first, or `{ "type": "grant_foothold", "pc": "<pc id>",
+  "needsSession": true, "needsHeld": "<item id>", "name": "..." }` for the second, on a path the
+  engine runs actions from and the server's declared-grant walk covers. The validator errors on
+  one under `flagRewards` (the flag station runs actions in the browser, while that path is off
+  the server's list) or `eventMappings`, on one with neither `needsDropped` nor `needsSession`,
+  and on one with both.
 - **It gives a foothold and nothing else.** No session, no desktop, no owner's access. The foothold
   is on the PC's own network and, like every foothold, reaches only that network. The owner's
-  desktop still needs the owner's password through the ordinary remote sign-in. The BadUSB beat
+  desktop still needs the owner's password through the ordinary remote sign-in. The rogue USB beat
   becomes "the stick gives you the network; the keylogger or the phish gives you the account",
-  which is a chain and not a gift.
+  which is a chain and not a gift. The player's own BadUSB beat needs a session at the PC first
+  (a claimed unlocked screen or a password), so it turns one desk into a way onto the network, and
+  still opens no other account.
 - **The server checks what it can.** `POST /network/implant` requires: the scenario declares the
-  action for that PC; the server's own record shows the `needsDropped` item left the inventory
+  action for that PC; for `needsDropped`, the server's own record shows the item left the inventory
   through a drop, read from `droppedItems`, the grow-only list of accepted player drops that the
   engine feedback plan's stream E4 writes in `add_item_to_room!` (a drop's own room entry goes
-  when the item is picked up again, `game.rb:444-452`, so it is not a durable record); and, where
-  slice 9.2 is built, the PC's policy does not refuse that item's `usbClass`. A device under a
-  blocking USB policy fails **at the use**, not at the drop: it is dropped, picked up and carried
-  first, and refused when it is plugged in. The check is a Ruby `usb_refused?(pc, item)` beside
-  `effective_policy`, reading slice 9.2's table, with a validator warning for a `grant_foothold`
-  whose PC refuses its device; whichever of 9.2's sub-slice U and this part lands second adds
-  it. A repeat answers `already: true`.
-- Its trigger (the NPC's use) is still reported by the browser, so an implant is weaker than a
-  plant and is graded so. What it yields is bounded: a list of hosts, every one of which still
-  asks for a password the server checks. That is why it may be client-triggered.
+  when the item is picked up again, so it is not a durable record); for `needsSession`,
+  `sessions[pc]` holds a session the player has (a claim or a password sign-in, not through a
+  foothold) and the server's inventory holds `needsHeld`, which the implant then takes out of the
+  inventory as a plant does (4.1); and, where slice 9.2 is built, the PC's policy does not refuse
+  that item's `usbClass`. A device under a blocking USB policy fails **at the use**, not at the
+  drop: it is dropped, picked up and carried first, and refused when it is plugged in. The check is
+  a Ruby `usb_refused?(pc, item)` beside `effective_policy`, reading slice 9.2's table, with a
+  validator warning for a `grant_foothold` whose PC refuses its device; whichever of 9.2's
+  sub-slice U and this part lands second adds it. A repeat answers `already: true`.
+- The rogue USB trigger (the NPC's use) is still reported by the browser, so that implant is weaker
+  than a plant and is graded so. What it yields is bounded: a list of hosts, every one of which
+  still asks for a password the server checks. That is why it may be client-triggered. The BadUSB
+  trigger rests on the server's session and inventory records, as strong as a plant.
 - A scenario that wants "the stick lands you inside her session" builds it from pieces the server
   checks: an implant for the network and a captured password for the account.
+- The pitch's own shape for these beats (a timer that grants a hand-written remote session after a
+  `requiresItem` plant) is not used for a device that reaches a network: its "payload" is the
+  foothold, and what the foothold shows is the network view.
 
 ### 12.6 What 9.3b adds to the feature scenario and the tools
 
 Beats for each part above in `test_access_networks` (a second network linked to the first, a
 down-by-default network repaired by an object, two access points, a port-security jack, a dropped
-device an NPC uses), the leak scanner's rule for a Wi-Fi key (nowhere but an authored clue), and
+device an NPC uses, a BadUSB plugged in at a PC the player has claimed), the leak scanner's rule for a Wi-Fi key (nowhere but an authored clue), and
 `verify-run.rb` lines for the new foothold kinds.
 
 ## 13. Interfaces with other plans
 
-The build order is **9.3a, then 9.1, then 9.2**, with 9.3b after 9.3a at a time the user chooses.
-Both sibling plans and the engine feedback plan were re-read in their committed versions on
-2026-11-10.
+The build order is **9.3a, then 9.1, then 9.2**, with 9.3b after 9.3a at a time the user chooses;
+on every file a slice shares with the engine feedback plan, that plan's streams go first. Both
+sibling plans, the engine feedback plan and the content feedback plan were re-read on 2026-11-10,
+against the code at `5122a9c92`.
 
 ### 13.1 Slice 9.1 (awareness and habits)
 
@@ -1480,7 +1500,8 @@ No disagreement: 9.1 gives the same build order and waits for 9.3a's edits to th
 | `attach_login_accounts!` | 9.1 adds `hasPostit` there; this slice makes it skip a headless host. Different lines of one short method; 9.1 builds after 9.3a and re-reads it |
 | An NPC who notices a planted device | Not built by either. `network_device_planted` is the hook |
 | The lab file | One editor at a time: this slice's step 9, then 9.1's lab step (10.4) |
-| The probe 9.1 asks for (a sign-in PC with `affordance.accepts` still takes an NPC's deliveries) | Not needed by 9.3a: it converts no workstation to a sign-in PC. The lab's `door_controller` is a new headless object with no owner |
+| The probe 9.1 asks for (a sign-in PC with `affordance.accepts` still takes an NPC's deliveries) | Not needed by 9.3a: it converts no workstation to a sign-in PC. The lab's `store_controller` becomes a headless host with no owner and no `affordance` (10.2) |
+| The claim check and `screenHabit` | 9.1 makes the server's `pc_always_locks?` read the owner's `screenHabit` (its 5.2), so a claim at a PC the client shows open is no longer refused. A remote session is a password sign-in and never a claim (section 5), so nothing here changes; the view's **Sign in** for a claimed session stands |
 
 ### 13.2 Slice 9.2 (work, frustration, workarounds, USB policy, social media)
 
@@ -1491,31 +1512,43 @@ listed at the end of this table.
 |---|---|
 | `resources` | Shared. This slice owns `network`, `host`, `contents`, `observations`; 9.2 owns `object`, the work lists and, for NPC work, `downIf`. Both read `name`, `kind` and `access` the same way (no `access` means anyone who can reach it; `resource_acl_admits?`, 4.5). Neither makes the other's fields required; both delete `resources` from the bootstrap. 9.3a adds the key to the schema and the validator's top-level list; 9.2 extends it |
 | Reach for NPC work | Composed on the server. 9.2's `compile_npc_plan!` calls `NetworkModel.reach_conditions(data, station_network, resource)` and ships the answer as `routes`; no network id, link or resource `network` reaches the browser. 9.3a's answer is in 4.2 (always `[[]]` or `[]`: until 9.3b is built a scenario cannot author a network `downIf`, which 9.3a's validator refuses), 9.3b's in 12.2. In a scenario with no `networks` there are no `routes` and everything is reachable |
-| What an NPC's `work` plan ships | Resource ids, kinds, `admitted`, `downIf` and global names, `object`, `routes`, `stationDownIf`: never a display name, `host`, `contents` or `observations`. That is inside this slice's rule (section 6), so the no-exposure test and the leak rule make no exception for it |
+| What an NPC's `work` plan ships | Resource ids, kinds, `admitted`, `downIf` and global names, `object`, `routes`, `breakDrain`: never a display name, `host`, `contents` or `observations`. That is inside this slice's rule (section 6), so the no-exposure test and the leak rule make no exception for it |
 | "A resource no NPC needs" | 9.2 does not report it for a resource with `contents` or a `host` |
-| A station that is down | 9.2 adds `downIf` on a workstation for NPC work. 9.3a has no outages for the player: a sign-in host whose own `downIf` is truthy is still listed and still takes a remote sign-in. Listing it "not responding" in `network_view` and refusing it in `desktop_request_allowed?` are 9.3b's, built with its outages (12.2) |
+| A station that is down | For NPC work, 9.2 uses office life's `affordance.offWhen` on the workstation and adds no field of its own. 9.3a has no outages for the player: a sign-in host whose `offWhen` holds is still listed and still takes a remote sign-in. Listing it "not responding" in `network_view` and refusing it in `desktop_request_allowed?` are 9.3b's, built with its outages (12.2) |
 | A hot desk | A guest session 9.2's `borrow_session` leaves at a hot desk is an ordinary session at a PC on a network, so its desktop carries mapped shares with no extra work. It is claimed at the screen: section 5 refuses every claim that carries a foothold, and a claimed session is not offered over the network (4.3) |
 | A session can be displaced | When an NPC signs in at a PC, 9.2 ends any session the player holds there, a remote one included, with `pc_signed_out` reason `displaced`. This slice's client treats it like any other end: an open remote desktop closes to the view, whose row goes back to **Sign in** (4.3) |
 | Lockout from the drop box | Remote and local attempts share one counter (4.4), so the player can lock a member of staff out of their own PC from the network, which under 9.2's sub-slice L stops their work and sends them to the hot desk. That is a chain, and both plans allow it. The validator's remote-only lockout warning (7.2) covers the soft lock |
 | USB policy and implants | 12.5: the check is at the use, on an item with `usbClass`, in `POST /network/implant`, through `usb_refused?(pc, item)` beside `effective_policy`; whichever of 9.2's sub-slice U and 9.3b lands second adds it |
 | The feed | Its shape is `feed.posts[].text`. Where a feed is a source for a Wi-Fi key, the slice that lands last adds it to the key warning's sources (12.3) |
 | Server-set globals | The server already sets a task's `onComplete.setGlobal` when it completes the task (section 2). 9.2 adds a second case, a workaround's `setGlobal`. This plan's statements about globals (section 2, 3.5, 12.2) allow for both |
-| Outages | `downIf` means the same in both: the global truthy, by JavaScript's rule, means down. 9.2 owns what an outage does to NPCs; 9.3b what it does to the player's reach |
+| Outages | A `downIf` on a network or a resource means the same in both: the global truthy, by JavaScript's rule, means down. An object that is off is office life's `affordance.offWhen` in both. 9.2 owns what an outage does to NPCs; 9.3b what it does to the player's reach |
 | Validator layout | Each slice keeps its checks in its own file (`validate_network.rb`, 9.2's `validate_access_work.rb`) and touches `validate_scenario.rb` only for a `require`, a call and the known-field lists |
 | Shared client files | 9.2 does not edit `systems/inventory.js`. On `systems/interactions.js` (its `requiresItem` plant) and `systems/unlock-system.js` it comes after this slice (section 14) |
 
-Text in 9.2 to bring into line (it blocks neither plan): its section 5.1 and its row "Reach" with
-9.3a name `reach_conditions(station_network, resource)`; the function takes the scenario data
-first, `reach_conditions(data, station_network, resource)` (4.2).
+### 13.3 The lab's content feedback plan, and the device pitch
 
-### 13.3 The lab's content feedback plan
+**The content plan** (`PHYSICAL_PENTEST_FEEDBACK_PLAN_CONTENT.md`) writes its network beats for
+this mechanism: its item B1 (the drop box console) builds no console item and accepts the
+objective change for `opt_netdrop`, and its item B2 (the door controller) makes the lab's existing
+`store_controller` the headless host and moves its folder to `store_controller_folder` (10.2). It
+names the records share "Client-Records", gives the hot desk the host `LW-HOT-01`, keeps the
+server riser's rack off the network, and keeps the scope rule, the hot desk and every global and
+task id. Chris Hampshire is a woman in the lab; this plan's text about her says so.
 
-Section 10. What this plan asks of it: replace `dropbox_console`, `door_admin_page` and their three
-timers with the mechanism in 10.2; name the records share "Client-Records"; and accept the
-objective change in 10.2 (`opt_netdrop` and `opt_door_admin` as `unlock_object` tasks the server
-checks, each setting its global through `onComplete.setGlobal`). Everything else in it stands,
-including the hot desk, the scope rule and every global and task id. Chris Hampshire is a woman
-in the lab as merged; this plan's text about her says so.
+**The device pitch** (`planning_notes/physical_pentest_devices/DEVICE_PITCH.md`, commit
+`e1eb7004f`) proposes covert network and implant devices for the same lab. Its devices meet this
+slice in four places, so they are built once:
+
+| Pitch device | Where it lives in this slice |
+|---|---|
+| 2. Switch drop box ("plant now, remote access later"), and 7. the leave-behind Pi server | **This slice's 9.3a.** The pitch builds them from `requiresItem` and `consumesItem` on a wall port, a revealed object and a timer that grants a hand-written remote session. 9.3a is the checked form of the same beat: a `rogueDevice` in a `networkJack`, the link item and the view in place of the timer, and remote sign-in with a captured password in place of the hand-written desktop. A network device a later scenario adds is authored as a jack and a device, not with the pitch's timer pattern. The pitch's "pick the VLAN" step is a choice of jack: each jack names its own `network`, so a jack on a guest network gives a foothold whose view lists nothing of value, with no new field |
+| 1. Pocket rogue AP (evil twin and captive portal) | Two halves. The captured staff password is the social engineering lab's capture (an authored `landing-page-builder` secret), not this slice. A foothold over Wi-Fi is 9.3b's Wi-Fi (12.3), which keeps "no device and no range" |
+| 3. BadUSB keystroke injection by the player at an unattended PC | 9.3b's implants (12.5) take it as a second trigger: a player plant at a PC where the server holds the player's session gives a foothold and nothing else |
+| 9 and 10. The defender's sweep and the beacon in the SIEM | Left out of this slice (section 16, "Detection"); `network_device_planted` and `network_foothold_gained` are the hooks |
+
+The pitch's other devices (the covert cable, the screen and keyboard taps, the RF multitool, the
+4G exfil box) capture a credential, a frame or a door and need no network of this slice's kind.
+Which devices are built, and in which lab or mission, is the pitch's own open question.
 
 ### 13.4 The engine feedback plan (`PHYSICAL_PENTEST_FEEDBACK_PLAN_ENGINE.md`)
 
@@ -1560,34 +1593,6 @@ of remote sessions. What this slice makes, stated so that design can rely on it:
 
 9.3a works with none of that plan built: link items sit in the tray, and the jack click needs only
 `window.gameConfirm`. With E3 built, server-made items go through its tray refresh.
-
-### 13.5 To re-check after the main merge
-
-A large merge of the local main line into `main` is being made outside this branch
-(`docs/achitechture/physical_pentest_followup/MERGE_NOTE_2026-11-10.md`). It changes
-`systems/door-gates.js`, `systems/workstation-state.js` and `systems/npc-needs.js`, and the lab.
-This slice edits none of those three files, but it rests on these assumptions, which the builder
-re-checks against the merged `main` before streams S, C1, C2 and L start:
-
-- **Doors.** "Object reachable" and "PC reachable" mean the room is unlocked or never locked
-  (section 2, `login_pc_reachable?`); a gate's guard or its turn-back rule plays no part on the
-  server. The merge's gate rule (a held guard turns back; `clickOutcome` asked only for `pass` or
-  `denied`; a presented clone still goes through `notifyServerUnlock`) should leave that true.
-- **Workstations.** The "is using this PC" rule still blocks a click on the PC and not a remote
-  session (4.4); the merged `workstation-state.js` (lock sources from `screenHabit` and policy
-  `autoLockMin`, `decideLocked` with the policy as its seventh argument, `workstation_screen_changed`
-  with `how: "ko"`) must still give that answer. A claimed session still ends on the owner's
-  return through `end_claimed_sessions!`, and the view still shows **Sign in** for a claim.
-- **Validator.** The `headless` error reads `screenOwner` and an NPC's `needsHome` to find a
-  workstation with an owner (7.2); both fields must still mean that after the merge.
-- **Needs.** This slice changes nothing in `npc-needs.js` (section 11); the merge's `afterTick` and
-  `onTick` hooks need no change here.
-- **The lab.** `staff_pc_2` is a sign-in PC, passwords live in NPC `creds`, Chris Hampshire is a
-  woman, and the debrief gate changed. Section 10's recipe is by id; its ids (`network_port`,
-  `kit_dropbox`, `store_room`, `store_shelf`, `staff_pc_2`, `hampshire`, the globals and tasks)
-  are re-checked in the merged lab file before step 9.
-- **Line numbers.** Every `file:line` in this plan is from this branch's working tree and moves
-  with the merge; method names are the stable reference.
 
 ## 14. Build streams and shared files (9.3a)
 
@@ -1649,7 +1654,7 @@ recommendation, and the plan is written as if it is taken.
 | 1 | Split and order | The slice is split. 9.3a (the drop box's needs: a device in a jack, the link item, the view, remote sign-in, shares, secrecy and tooling) is built first of all the later slices, then 9.1, then 9.2. 9.3b holds links with a pivot, outages, Wi-Fi, port security and implants | Decided (orchestrator, under the user's latitude) |
 | 2 | Is remote sign-in on by default? | On for every sign-in host on a foothold's network unless its policy says `remote: "blocked"`. The validator's "doors skipped" is a **warning** until the author writes `remote` out in the PC's policy | Decided (orchestrator, under the user's latitude) |
 | 3 | Reach across a link | Never free. A foothold reaches its own network; a linked network is reached through a session the player holds on a host that reaches it (12.1) | Decided (orchestrator, under the user's latitude) |
-| 4 | Implants | In 9.3b, and only in a form that ends in something the server checks: an implant gives a foothold and no session, needs the server's record of the drop, and the account still needs its password (12.5) | Decided (orchestrator, under the user's latitude) |
+| 4 | Implants | In 9.3b, and only in a form that ends in something the server checks: an implant gives a foothold and no session, needs the server's record of the drop (an NPC's use) or of the player's session and held device (the player's BadUSB), and the account still needs its password (12.5) | Decided (orchestrator, under the user's latitude) |
 | 5 | The lab | The aim stands: plant the box, see what is exposed, reach something with a captured password. The payoff is the door controller, which needs the box and Chris's password; client records stay out of scope; this slice's mechanism replaces the content plan's hand-built console and admin page (section 10) | Decided (orchestrator, under the user's latitude) |
 | 6 | Art | Reuse existing art: a link item shows the planted device's own sprite, a planted jack `pi_cluster1`, a Wi-Fi link (9.3b) the access point's own sprite. The phone icon is not used for any link | Decided (orchestrator, under the user's latitude) |
 | 7 | How does a share with an access list open? | Only from the desktop of an account that may use it, as a mapped drive. One sign-in mechanic, and it shows that shares follow the account | Recommended |
