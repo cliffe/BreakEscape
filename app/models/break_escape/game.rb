@@ -1167,7 +1167,9 @@ module BreakEscape
       'footholds' => {}, 'gainedFootholds' => [],
       # Capture proofs (engine plan section 6): devices the server saw planted at a named
       # object, and items it accepted as player drops. Grow-only.
-      'plantedItems' => [], 'droppedItems' => []
+      'plantedItems' => [], 'droppedItems' => [],
+      # Slice 9.2 (ACCESS_MODEL_SLICE_9_2_PLAN.md 9.4): frustration per room NPC, held on the server
+      'npcFrustration' => {}
     }.freeze
 
     # loginFailures and loginLockouts keep at most this many entries for usernames that
@@ -4080,6 +4082,7 @@ module BreakEscape
         # (see find_flag_station_for_flag), so skipping it leaves a leak.
         obj['objects']&.each { |o| filter_requires_and_contents_recursive(o) }
         obj['npcs']&.each do |n|
+          compile_npc_plan!(n)
           withhold_npc_secrets!(n)
           filter_requires_and_contents_recursive(n)
         end
@@ -4101,6 +4104,24 @@ module BreakEscape
     # clone_keycard and the RFID minigame keep working; an NPC with no creds.card
     # keeps any rfidCard it already has.
     WITHHELD_NPC_KEYS = %w[creds awareness habits role workarounds].freeze
+    # Slice 9.2 (ACCESS_MODEL_SLICE_9_2_PLAN.md 9.2): work needs, frustration settings and the
+    # feed never ship; the NPC's resolved plan goes instead, as `work` (compile_npc_plan!).
+    WITHHELD_WORK_NPC_KEYS = %w[workNeeds frustration feed].freeze
+
+    # Slice 9.2 (5.2): a room NPC with a `work` plan (a work need and a non-empty resolved work
+    # list) gains `work`: resource ids, kinds, `admitted`, `downIf` names, `object`, `routes`
+    # (with networks) and `breakDrain`, never a display name or a network. Runs before
+    # withhold_npc_secrets!, which deletes the role it reads.
+    def compile_npc_plan!(npc)
+      return unless npc.is_a?(Hash) && npc['id'].is_a?(String) && scenario_room_npc(npc['id'])
+
+      plan = BreakEscape::AccessWork.plan(scenario_data, npc)
+      if plan
+        npc['work'] = plan
+      else
+        npc.delete('work')
+      end
+    end
 
     def withhold_npc_secrets!(npc)
       return unless npc.is_a?(Hash)
@@ -4108,6 +4129,7 @@ module BreakEscape
       account = self.class.account_holder?(npc)
       card = npc['creds'].is_a?(Hash) ? npc['creds']['card'] : nil
       WITHHELD_NPC_KEYS.each { |key| npc.delete(key) }
+      WITHHELD_WORK_NPC_KEYS.each { |key| npc.delete(key) }
       npc['rfidCard'] = card if card.is_a?(Hash)
       return unless account
 
