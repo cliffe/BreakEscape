@@ -1328,10 +1328,16 @@ reserves the right fields and the sibling slices know what to expect.
 - `networkLinks` is a list of pairs of network ids. A link is undirected and says that **members**
   of one network can reach the other: the staff PCs on the office LAN reach the server network.
 - **A rogue device is not a member.** A foothold from a jack still reaches only its own network.
-  This is the segmentation lesson in one rule: the firewall between two networks lets known
-  machines through and not a box somebody plugged into the wall.
-- **A session is a place to stand.** When the player holds a session at a sign-in host that was
-  opened through a foothold, that foothold's reach grows by every network the host reaches over
+  This is the segmentation lesson in one rule, taught as "the servers accept connections only
+  from managed machines", which is true where it is done (a firewall that filters by address
+  alone would let a box with an office address through).
+- **A host has one `network` in 9.3a.** The usual real control is that only named jump hosts reach
+  the server network, which needs a list of networks on a host or a per-host link. `network_of`
+  keeps returning one id in 9.3a, the schema does not forbid a list later, and `NetworkModel`
+  callers are written against "the networks of an object".
+- **A session is a place to stand.** When the player holds a session at a sign-in host that the
+  foothold reaches (any session there, however it was opened, so sitting down at a pivot host,
+  which clears the session's `foothold` in 9.3a, does not cut the pivot), that foothold's reach grows by every network the host reaches over
   links. The view shows those networks as a further block, "Servers, through HB-FIN-02 (signed in
   as Lena Fox)", and their hosts can be signed in to in turn, which can extend reach again. Signing
   out, or unplugging, shrinks it back.
@@ -1339,8 +1345,8 @@ reserves the right fields and the sibling slices know what to expect.
   session the player pivots through. Nothing between two networks rests on a client-written value.
 - Server: `NetworkModel.reach_from(network)` (the network and everything linked to it, through
   networks that are up) is what a member reaches; `player_reach(foothold)` starts from the
-  foothold's own network and repeatedly adds `reach_from(host network)` for each host that has a
-  session whose `foothold` is this one. Mapped shares on a desktop use `reach_from` of the PC's
+  foothold's own network and repeatedly adds `reach_from(host network)` for each host it already
+  reaches at which the player holds a session. Mapped shares on a desktop use `reach_from` of the PC's
   network, so a finance PC maps a share on the server network for the player exactly as it does for
   the member of staff.
 - `GET /network` gains, per foothold, `networks: [{ id, name, via: { hostId, host, displayName } |
@@ -1373,8 +1379,11 @@ reserves the right fields and the sibling slices know what to expect.
   last desktop showed a mapped share. An open view refetches every five seconds; it does not
   refetch on every global change, because the needs and workstation layers publish globals all the
   time.
-- **Strength.** A `downIf` global is written by the browser (and, once slice 9.2 exists, in one
-  case by the server). An outage is pacing and a distraction tool, never protection: anything that
+- **Strength.** A `downIf` global is written by the browser, or by the server when it completes a
+  task whose `onComplete.setGlobal` names it (section 2) or, once slice 9.2 exists, by a
+  workaround. A global tied to a server-checked task is stronger than a client event, but the
+  browser can still write any global, so an outage is pacing and a distraction tool, never
+  protection: anything that
   must not be read early sits behind a session as well. The validator warns about an open share
   with contents behind a network that starts down. An undeclared `downIf` global is a validator
   warning, the level slice 9.2 gives the same mistake.
@@ -1428,11 +1437,15 @@ An implant is a foothold that a member of staff gives the player by plugging in 
   which is a chain and not a gift.
 - **The server checks what it can.** `POST /network/implant` requires: the scenario declares the
   action for that PC; the server's own record shows the `needsDropped` item left the inventory
-  through a drop (`add_item_to_room!` accepts a drop only of a held droppable item); and, where
+  through a drop, read from `droppedItems`, the grow-only list of accepted player drops that the
+  engine feedback plan's stream E4 writes in `add_item_to_room!` (a drop's own room entry goes
+  when the item is picked up again, `game.rb:444-452`, so it is not a durable record); and, where
   slice 9.2 is built, the PC's policy does not refuse that item's `usbClass`. A device under a
   blocking USB policy fails **at the use**, not at the drop: it is dropped, picked up and carried
-  first, and refused when it is plugged in. Slice 9.2 adds the policy and this check in its step
-  U-2 if it lands after this part. A repeat answers `already: true`.
+  first, and refused when it is plugged in. The check is a Ruby `usb_refused?(pc, item)` beside
+  `effective_policy`, reading slice 9.2's table, with a validator warning for a `grant_foothold`
+  whose PC refuses its device; whichever of 9.2's sub-slice U and this part lands second adds
+  it. A repeat answers `already: true`.
 - Its trigger (the NPC's use) is still reported by the browser, so an implant is weaker than a
   plant and is graded so. What it yields is bounded: a list of hosts, every one of which still
   asks for a password the server checks. That is why it may be client-triggered.
