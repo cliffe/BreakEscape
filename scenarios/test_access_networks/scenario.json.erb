@@ -1,0 +1,528 @@
+{
+  "scenario_brief": "TEST: Access model networks\n\nA test floor for networks (ACCESS_MODEL_SLICE_9_3_PLAN.md, slice 9.3a). Twelve beats, each with a sign. Take the drop box from the lobby table and plug it into the wall port in the comms room (north): its link item in your inventory shows what that network exposes. Sam's PC is in the desk room (east), with the kiosk, the store and the finance office off it. The workshop (west) has a second port on a second network. Three people in the lobby hold the accounts.",
+  "endGoal": "Test only: run the twelve network beats.",
+  "startRoom": "lobby",
+  "startPosition": { "x": 7, "y": 7 },
+  "npcNeedsSeed": "test_access_networks",
+  "npcWindupMs": 0,
+  "needsDebugOverlay": true,
+
+  "networks": {
+    "office_lan": { "name": "Harbour office LAN" },
+    "workshop_lan": { "name": "Workshop bench LAN" }
+  },
+
+  "resources": {
+    "scanned_inbox": {
+      "kind": "file_share",
+      "name": "Scanned-Inbox",
+      "host": "HB-FS01",
+      "network": "office_lan",
+      "contents": [
+        {
+          "type": "text_file",
+          "id": "inbox_letter",
+          "name": "scan_0412.pdf",
+          "takeable": true,
+          "readable": true,
+          "text": "Scanned letter, page 1 of 1.\n\nWelcome to finance, Lena. Your account is ready.\nUsername: lfox\nStarter password: Ledger-Lena-9\n\nPlease change it when you first sign in. (Nobody does.)",
+          "observations": "A scanned welcome letter, left in the scanner's inbox."
+        }
+      ]
+    },
+    "ledger_archive": {
+      "kind": "file_share",
+      "name": "Ledger-Archive",
+      "host": "HB-FS01",
+      "network": "office_lan",
+      "access": { "roles": ["finance"] },
+      "contents": [
+        {
+          "type": "text_file",
+          "id": "ledger_handover",
+          "name": "IT handover.txt",
+          "takeable": true,
+          "readable": true,
+          "transfer": "copy",
+          "text": "IT handover, while Ian is on leave.\n\nDoor controller admin: ishaw / Patchday!2026\nThe year-end folder in this archive: PIN 2468\n\nDelete this file after reading. (Nobody will.)",
+          "observations": "A handover note from IT, filed in the finance archive."
+        },
+        {
+          "type": "safe",
+          "id": "ledger_yearend",
+          "name": "Year-end",
+          "takeable": false,
+          "locked": true,
+          "lockType": "pin",
+          "requires": "2468",
+          "observations": "A PIN-locked folder of year-end figures.",
+          "contents": [
+            {
+              "type": "text_file",
+              "id": "yearend_report",
+              "name": "Year-end report.xlsx",
+              "takeable": true,
+              "readable": true,
+              "text": "Year-end report: revenue up, costs up more. (P5: the locked folder opened.)",
+              "observations": "The year-end figures."
+            }
+          ]
+        }
+      ]
+    },
+    "print_queue": {
+      "kind": "printer",
+      "name": "Office print queue",
+      "host": "HB-PRN-01",
+      "network": "office_lan",
+      "observations": "A print queue anyone on the LAN can read: three payslips waiting for collection."
+    },
+    "bench_notes": {
+      "kind": "file_share",
+      "name": "Bench-Notes",
+      "host": "WS-NAS-01",
+      "network": "workshop_lan",
+      "contents": [
+        {
+          "type": "text_file",
+          "id": "bench_note",
+          "name": "bench_readme.txt",
+          "takeable": true,
+          "readable": true,
+          "text": "Bench readme: the soldering station is on its own network. (P11: this share opened.)",
+          "observations": "A readme from the workshop's storage box."
+        }
+      ]
+    }
+  },
+
+  "policies": {
+    "hardened": { "remote": "blocked" },
+    "counted": { "maxAttempts": 5, "remote": "allowed" }
+  },
+
+  "globalVariables": {
+    "comms_port_planted": false,
+    "bench_port_planted": false,
+    "p5_lena_remote": false
+  },
+
+  "objectives": [
+    {
+      "aimId": "network_beats",
+      "title": "Run the network beats",
+      "description": "Test only. Each task ticks when its beat's event fires; the plant and the vault are checked by the server.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        { "taskId": "p1_open_share_keyboard", "title": "P1: open the open share from Sam's desktop", "type": "custom", "status": "active" },
+        { "taskId": "p2_plant", "title": "P2: plant the box in the comms room", "type": "unlock_object", "targetObject": "comms_port", "status": "active" },
+        { "taskId": "p3_see", "title": "P3: look at what the box reaches", "type": "custom", "status": "active" },
+        { "taskId": "p4_share_from_view", "title": "P4: copy the letter from the open share", "type": "custom", "status": "active" },
+        { "taskId": "p5_remote_signin", "title": "P5: sign in to Lena's PC through the box, then open the locked folder", "type": "custom", "status": "active" },
+        { "taskId": "p6_switch_remote", "title": "P6: Switch user on Lena's remote desktop is refused for Sam", "type": "custom", "status": "active" },
+        { "taskId": "p7_remote_off", "title": "P7: sign in at the kiosk itself", "type": "custom", "status": "active" },
+        { "taskId": "p8_headless_chain", "title": "P8: open the lobby vault with the code from the store's door controller", "type": "unlock_object", "targetObject": "lobby_vault", "status": "active" },
+        { "taskId": "p9_sit_down", "title": "P9: open Lena's PC at her desk", "type": "custom", "status": "active" },
+        { "taskId": "p10_unplug", "title": "P10: unplug the box from the comms room", "type": "custom", "status": "active" },
+        { "taskId": "p11_other_network", "title": "P11: plant the box in the workshop and look", "type": "custom", "status": "active" },
+        { "taskId": "p12_reload", "title": "P12: after a reload, Lena's PC opens through the box with no password", "type": "custom", "status": "active" }
+      ]
+    }
+  ],
+
+  "rooms": {
+    "lobby": {
+      "type": "room_reception",
+      "door_sign": "Lobby",
+      "connections": { "north": "comms_room", "east": "desk_room", "west": "workshop" },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "kit_dropbox",
+          "name": "Network drop box",
+          "sprite": "drop_box1",
+          "position": { "x": 8, "y": 4 },
+          "takeable": true,
+          "rogueDevice": true,
+          "observations": "A small grey box with a network port and a status light. It plugs into a wall port."
+        },
+        {
+          "type": "safe",
+          "id": "lobby_vault",
+          "name": "Lobby vault",
+          "position": { "x": 2, "y": 6 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "pin",
+          "requires": "7031",
+          "observations": "A small wall safe with a keypad. The code is kept somewhere only IT can reach.",
+          "contents": [
+            {
+              "type": "notes1",
+              "id": "vault_prize",
+              "name": "Vault receipt",
+              "takeable": true,
+              "readable": true,
+              "text": "P8: the vault opened. The whole chain needed the box: the code came from a box with no screen.",
+              "observations": "A receipt from the vault."
+            }
+          ]
+        },
+        {
+          "type": "notes1",
+          "id": "sign_lobby",
+          "name": "Sign: Start here",
+          "position": { "x": 4, "y": 3 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Twelve network beats. The comms room is north (P2, P10), the desk room east (P1, P9), the workshop west (P11).\nThe kiosk, the store and the finance office are off the desk room. Each beat has its own sign.",
+          "observations": "A sign on a stand by the front desk."
+        },
+        {
+          "type": "notes1",
+          "id": "sign_p8",
+          "name": "Sign: P8 The vault",
+          "position": { "x": 2, "y": 3 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "P8. The vault's code is on the door controller in the store, which has no screen.\nSign in to it from the box's view with Ian's details (they are in the finance archive), read Door codes, then open the vault.",
+          "observations": "A sign by the vault."
+        },
+        {
+          "type": "notes1",
+          "id": "sign_p12",
+          "name": "Sign: P12 Reload",
+          "position": { "x": 10, "y": 3 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "P12. With the box in the comms room and Lena signed in through it, reload the page.\nThe link item is still in your inventory, the port still looks planted, and Lena's desktop opens from the view with no password.",
+          "observations": "A sign by the door."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "sam",
+          "displayName": "Sam Okafor",
+          "npcType": "person",
+          "position": { "x": 5, "y": 4 },
+          "spriteSheet": "male_office_worker_v2",
+          "spriteTalk": "assets/characters/male_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+          "storyPath": "scenarios/test_access_networks/ink/sam.json",
+          "currentKnot": "start",
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "staff",
+          "creds": { "username": "sokafor", "password": "Marmalade-82" },
+          "eventMappings": [
+            { "eventPattern": "network_share_opened", "condition": "data.resourceId === 'scanned_inbox' && data.via === 'session' && data.pcId === 'sam_pc'", "onceOnly": true, "completeTask": "p1_open_share_keyboard" },
+            { "eventPattern": "network_viewed", "condition": "data.networkId === 'office_lan' && data.hostList === 'door_box,kiosk_pc,lena_pc,sam_pc'", "onceOnly": true, "completeTask": "p3_see" },
+            { "eventPattern": "item_picked_up:text_file", "condition": "data.itemId === 'inbox_letter' && data.transfer === 'copy' && data.sourceResourceId === 'scanned_inbox'", "onceOnly": true, "completeTask": "p4_share_from_view" },
+            { "eventPattern": "pc_signed_in", "condition": "data.pcId === 'lena_pc' && data.npcId === 'lena' && data.remote === true && !globalVars.p5_lena_remote", "onceOnly": true, "setGlobal": { "p5_lena_remote": true } },
+            { "eventPattern": "item_unlocked", "condition": "data.itemId === 'ledger_yearend' && globalVars.p5_lena_remote", "onceOnly": true, "completeTask": "p5_remote_signin" },
+            { "eventPattern": "pc_signin_failed", "condition": "data.pcId === 'lena_pc' && data.reason === 'not_permitted' && globalVars.p5_lena_remote", "onceOnly": true, "completeTask": "p6_switch_remote" },
+            { "eventPattern": "pc_signed_in", "condition": "data.pcId === 'kiosk_pc' && data.npcId === 'sam' && data.remote !== true", "onceOnly": true, "completeTask": "p7_remote_off" },
+            { "eventPattern": "pc_desktop_opened", "condition": "data.pcId === 'lena_pc' && data.remote !== true && globalVars.p5_lena_remote", "onceOnly": true, "completeTask": "p9_sit_down" },
+            { "eventPattern": "network_device_unplugged", "condition": "data.jackId === 'comms_port' && data.endedPcIds.includes('door_box')", "onceOnly": true, "completeTask": "p10_unplug" },
+            { "eventPattern": "network_viewed", "condition": "data.networkId === 'workshop_lan'", "onceOnly": true, "completeTask": "p11_other_network" },
+            { "eventPattern": "pc_desktop_opened", "condition": "data.pcId === 'lena_pc' && data.restored === true && data.remote === true", "onceOnly": true, "completeTask": "p12_reload" }
+          ]
+        },
+        {
+          "id": "lena",
+          "displayName": "Lena Fox",
+          "npcType": "person",
+          "position": { "x": 7, "y": 5 },
+          "spriteSheet": "female_blowse_v2",
+          "spriteTalk": "assets/characters/female_blowse_talk.png",
+          "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+          "storyPath": "scenarios/test_access_networks/ink/lena.json",
+          "currentKnot": "start",
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "finance",
+          "creds": { "username": "lfox", "password": "Ledger-Lena-9" }
+        },
+        {
+          "id": "ian",
+          "displayName": "Ian Shaw",
+          "npcType": "person",
+          "position": { "x": 9, "y": 6 },
+          "spriteSheet": "male_nerd_v2",
+          "spriteTalk": "assets/characters/male_nerd_talk.png",
+          "spriteVisemes": "assets/characters/male_nerd_visemes.png",
+          "storyPath": "scenarios/test_access_networks/ink/ian.json",
+          "currentKnot": "start",
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "it",
+          "creds": { "username": "ishaw", "password": "Patchday!2026" }
+        }
+      ]
+    },
+
+    "comms_room": {
+      "type": "room_office",
+      "door_sign": "Comms room",
+      "network": "office_lan",
+      "connections": { "south": "lobby" },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "comms_port",
+          "name": "Spare wall port",
+          "sprite": "network_rack1",
+          "position": { "x": 5, "y": 3 },
+          "takeable": false,
+          "networkJack": true,
+          "jackConfirm": "Plug the drop box into this port?",
+          "plantedSprite": "pi_cluster1",
+          "linkName": "Drop box: comms room",
+          "requiresItemHint": "A spare network port. Something small could be plugged in here.",
+          "observations": "A spare network port on the wall, with a patch cable tucked beside it.",
+          "observationVariants": [
+            { "condition": "globalVars.comms_port_planted", "value": "Your drop box is plugged in here, its light blinking." }
+          ]
+        },
+        {
+          "type": "notes1",
+          "id": "sign_p2",
+          "name": "Sign: P2 Plant",
+          "position": { "x": 2, "y": 3 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "P2. Before you take the box, the port says something small could go here. With the box, cancelling the confirm changes nothing.\nConfirming plants it: the box leaves your inventory, a link item arrives, the port changes look and the view opens.",
+          "observations": "A sign by the wall port."
+        },
+        {
+          "type": "notes1",
+          "id": "sign_p3",
+          "name": "Sign: P3 See",
+          "position": { "x": 8, "y": 3 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "P3. The view lists four sign-in hosts (Sam's PC with Open, Lena's PC, the kiosk with remote sign-in off, the door controller), then an open share, a locked share and a printer.\nNothing from the workshop's network.",
+          "observations": "A sign by the wall port."
+        },
+        {
+          "type": "notes1",
+          "id": "sign_p10",
+          "name": "Sign: P10 Unplug",
+          "position": { "x": 2, "y": 6 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "P10. Click the port again: it says the box is plugged in here, with Unplug it and Leave it. Leave it does nothing.\nUnplug it gives the box back and ends the door controller's session. Lena's PC still opens at her desk. Plant again: the door controller asks for a password again.",
+          "observations": "A sign by the wall port."
+        }
+      ]
+    },
+
+    "workshop": {
+      "type": "room_office",
+      "door_sign": "Workshop",
+      "network": "workshop_lan",
+      "connections": { "east": "lobby" },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "bench_port",
+          "name": "Bench switch",
+          "sprite": "network_rack1",
+          "position": { "x": 5, "y": 3 },
+          "takeable": false,
+          "networkJack": true,
+          "plantedSprite": "pi_cluster1",
+          "observations": "A small switch on the workbench with a free port."
+        },
+        {
+          "type": "notes1",
+          "id": "sign_p11",
+          "name": "Sign: P11 The other network",
+          "position": { "x": 2, "y": 3 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "P11. Unplug the box from the comms room, then plug it in here. The link item is named for this switch.\nIts view lists one open share and nothing from the office.",
+          "observations": "A sign by the bench."
+        }
+      ]
+    },
+
+    "desk_room": {
+      "type": "room_office",
+      "door_sign": "Desks",
+      "connections": { "west": "lobby", "north": "finance_office", "east": "kiosk_room", "south": "store" },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "sam_pc",
+          "name": "Sam's PC",
+          "host": "HB-DESK-01",
+          "network": "office_lan",
+          "position": { "x": 5, "y": 4 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "access": { "roles": ["staff"] },
+          "postitNote": "Sam: sokafor / Marmalade-82",
+          "showPostit": true,
+          "observations": "Sam's desk PC. A sticky note clings to the screen."
+        },
+        {
+          "type": "notes1",
+          "id": "sign_p1",
+          "name": "Sign: P1 An open share at the keyboard",
+          "position": { "x": 2, "y": 3 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "P1. Before planting anything, sign in at Sam's PC with the sticky note. His desktop shows one mapped share folder and not the finance one.\nOpen the folder and read the letter in it.",
+          "observations": "A sign by Sam's desk."
+        },
+        {
+          "type": "notes1",
+          "id": "sign_p9",
+          "name": "Sign: P9 Sit down at it",
+          "position": { "x": 8, "y": 3 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "P9. After P5 and P8, open the finance door (north) with the code from the door controller.\nLena's PC then opens her desktop with no password: you are sitting at it now, so unplugging the box no longer ends that session.",
+          "observations": "A sign by the finance door."
+        }
+      ]
+    },
+
+    "finance_office": {
+      "type": "room_office",
+      "door_sign": "Finance office",
+      "connections": { "south": "desk_room" },
+      "locked": true,
+      "lockType": "pin",
+      "requires": "4455",
+      "network": "office_lan",
+      "objects": [
+        {
+          "type": "pc",
+          "id": "lena_pc",
+          "name": "Lena's PC",
+          "host": "HB-FIN-02",
+          "sprite": "pc_desktop",
+          "position": { "x": 5, "y": 4 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "loginPicker": false,
+          "access": { "roles": ["finance"] },
+          "policy": "counted",
+          "observations": "Lena's workstation."
+        },
+        {
+          "type": "notes1",
+          "id": "sign_p5",
+          "name": "Sign: P5 and P6 Remote sign-in",
+          "position": { "x": 2, "y": 3 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "P5 (from the box's view, with this door still locked). Lena's PC shows no tiles. Sam's right password is turned away; a wrong one for Lena leaves 4 attempts.\nHer password from the letter opens her desktop through the box, with the finance archive mapped. P6: Switch user, try Sam: refused, and Lena's desktop is still there.",
+          "observations": "A sign by Lena's desk."
+        }
+      ]
+    },
+
+    "kiosk_room": {
+      "type": "room_meeting",
+      "door_sign": "Kiosk",
+      "network": "office_lan",
+      "connections": { "west": "desk_room" },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "kiosk_pc",
+          "name": "Reception kiosk",
+          "host": "HB-KIOSK-01",
+          "position": { "x": 5, "y": 4 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "access": { "roles": ["staff"] },
+          "policy": "hardened",
+          "observations": "A visitor kiosk. Its policy turns remote sign-in off."
+        },
+        {
+          "type": "notes1",
+          "id": "sign_p7",
+          "name": "Sign: P7 Remote sign-in off",
+          "position": { "x": 2, "y": 3 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "P7. In the box's view the kiosk offers no sign-in.\nHere at the kiosk itself, Sam's password from his sticky note signs in.",
+          "observations": "A sign by the kiosk."
+        }
+      ]
+    },
+
+    "store": {
+      "type": "room_closet",
+      "door_sign": "Store",
+      "connections": { "north": "desk_room" },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "door_box",
+          "name": "Door controller",
+          "host": "HB-DOOR-01",
+          "sprite": "network_rack1",
+          "network": "office_lan",
+          "position": { "x": 4, "y": 3 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "headless": true,
+          "access": { "roles": ["it"] },
+          "observations": "A door controller with no screen or keyboard. It is managed over the network.",
+          "contents": [
+            {
+              "type": "text_file",
+              "id": "door_codes",
+              "name": "Door codes",
+              "takeable": false,
+              "readable": true,
+              "text": "Door controller: current codes.\n\nFinance office door: 4455\nLobby vault: 7031",
+              "observations": "The door controller's code list."
+            }
+          ]
+        },
+        {
+          "type": "notes1",
+          "id": "sign_p8_store",
+          "name": "Sign: P8 A host with no screen",
+          "position": { "x": 2, "y": 2 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "P8. Clicking the door controller only describes it: there is nothing to sign in to here.\nIt is reached from the box's view, with Ian's details.",
+          "observations": "A sign by the door controller."
+        }
+      ]
+    }
+  }
+}

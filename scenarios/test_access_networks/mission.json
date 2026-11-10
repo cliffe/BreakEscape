@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: Access model networks",
+  "description": "Test of networks (access slice 9.3a): a rogue device planted in a wall port gives a foothold, the link item opens a view of what that network exposes, remote sign-in with captured passwords, a headless door controller, open and protected file shares, unplugging, a second network, and footholds kept across a reload. Nothing to solve.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 20,
+  "test_type": "access_model",
+  "test_objective": "Prove a jack takes the drop box only after a confirm and the server's answer, the link item arrives with no inventory request and opens the network view, the view lists only the foothold's own network, remote sign-in needs a password and the foothold (and is refused under a remote-blocked policy), a headless host is reachable only over the network, shares open as their access lists allow, an unplug ends the remote sessions it carried, and footholds survive a reload"
+}
