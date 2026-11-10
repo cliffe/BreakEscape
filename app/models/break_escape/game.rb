@@ -1557,11 +1557,18 @@ module BreakEscape
       access_sessions.each_with_object({}) do |(pc_id, session), out|
         next unless session.is_a?(Hash)
 
-        npc = scenario_room_npc(session['id'])
-        next unless npc && self.class.account_holder?(npc)
-
-        out[pc_id] = login_session_answer(npc, session['via'], pc_id: pc_id, foothold: session['foothold'])
+        answer = session_for_client(pc_id)
+        out[pc_id] = answer if answer
       end
+    end
+
+    # One PC's entry of sessions_for_client, or nil.
+    def session_for_client(pc_id)
+      session = access_sessions[pc_id.to_s]
+      npc = session.is_a?(Hash) ? scenario_room_npc(session['id']) : nil
+      return nil unless npc && self.class.account_holder?(npc)
+
+      login_session_answer(npc, session['via'], pc_id: pc_id.to_s, foothold: session['foothold'])
     end
 
     def signed_in_pcs

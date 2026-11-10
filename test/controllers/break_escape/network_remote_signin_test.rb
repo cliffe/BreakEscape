@@ -209,12 +209,17 @@ module BreakEscape
       assert_equal OFFICE, state['sessions']['lena_pc']['foothold']
 
       write_state { |ps| ps['unlockedRooms'] << 'finance_office' }
-      container('lena_pc', foothold: OFFICE)
+      body = container('lena_pc', foothold: OFFICE)
       assert_response :success
       assert_equal OFFICE, state['sessions']['lena_pc']['foothold']
-      container('lena_pc')
+      assert_equal({ 'npcId' => 'lena', 'username' => 'lfox', 'displayName' => 'Lena Fox', 'via' => 'password',
+                     'remote' => true, 'footholdId' => OFFICE, 'host' => 'HB-FIN-02' }, body['session'],
+                   'a desktop fetched through a foothold says the session is remote')
+      body = container('lena_pc')
       assert_response :success
       assert_equal({ 'id' => 'lena', 'via' => 'password' }, state['sessions']['lena_pc'])
+      assert_equal({ 'npcId' => 'lena', 'username' => 'lfox', 'displayName' => 'Lena Fox', 'via' => 'password' }, body['session'],
+                   'a desktop fetched at the keyboard tells the client the session is now local')
 
       body = unplug('comms_port')
       assert_equal [], body['endedPcIds']

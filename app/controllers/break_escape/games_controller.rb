@@ -1939,6 +1939,9 @@ module BreakEscape
     # by Game#desktop_request_allowed?). The answer is its own contents, then each profile
     # admitted for the session's identity, then the mapped shares, through
     # filter_container_contents. Served at the keyboard, the session's foothold is cleared.
+    # The answer carries the session as GET /scenario gives it (remote, footholdId and
+    # host only on a remote one), so the client learns at once that a keyboard fetch made
+    # a remote session local (review R1, m3).
     def render_login_desktop(container_id)
       info = @game.find_login_pc(container_id)
       return render json: { error: "PC not reachable: #{container_id}", reason: 'unreachable' }, status: :forbidden unless info
@@ -1955,7 +1958,7 @@ module BreakEscape
       @game.settle_session_at_keyboard!(pc['id']) if foothold.nil?
 
       contents = filter_container_contents('contents' => @game.login_desktop_contents(pc, npc))
-      render json: { container_id: container_id, contents: contents }
+      render json: { container_id: container_id, contents: contents, session: @game.session_for_client(pc['id']) }
     end
 
     # The workstation globals a claim carries (<id>_screen_locked, <id>_owner_away),
