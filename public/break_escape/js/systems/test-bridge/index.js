@@ -39,7 +39,7 @@ import { reachX } from '../interaction-reach.js';
 import { wallClearFrom, sameRoomFrom } from '../interaction-walls.js';
 import { getState, scanNearby, activeMinigameSummary, detectBlockingUi, sessionOverlayShowing, sessionOverlayButtons, interactionMenuState, solveStandingPoint, engineInteractDistance, plainNearestEntity, roomContents, doorways } from './state.js';
 import {
-    waitUntil, waitForEvent, waitForMovementEnd, waitFrames,
+    waitUntil, waitForGlobal, waitForEvent, waitForMovementEnd, waitFrames,
     waitForMinigame, waitForMinigameClosed
 } from './wait.js';
 import { logAction, logNote, installEventCapture, drain, peek, clear, currentSeq, eventsSince } from './log.js';
@@ -1576,10 +1576,7 @@ const bridge = {
 
     /** Wait for a named global story variable to reach a value (or just be set). */
     waitForGlobal(name, expected = undefined, opts = {}) {
-        return waitUntil(() => {
-            const v = window.gameState?.globalVariables?.[name];
-            return expected === undefined ? (v !== undefined && v !== false && v !== null) : v === expected;
-        }, { label: `global:${name}`, ...opts });
+        return waitForGlobal(name, expected, opts);
     },
 
     /** Wait for an objectives task to reach completed. */

@@ -342,7 +342,7 @@ the entity you asked for, reporting `mode: 'via-interaction-menu'`. Use
 | Method | Resolves when |
 |---|---|
 | `waitUntil(predicate, { timeoutMs?, label? })` | predicate returns truthy, re-checked once per frame. Accepts a function or, for Playwright, a **source string** (functions can't cross the boundary). |
-| `waitForGlobal(name, expected?, opts?)` | a story variable is set (or equals `expected`) |
+| `waitForGlobal(name, expected?, opts?)` | a story variable is set (or equals `expected` exactly, `false` included). The reply's `value` is the global's own value when the wait ended, and `expected` is echoed. `alreadyMet: true` (with `elapsedMs: 0`) means the condition held when you asked, so no change was observed: to catch the next change ("start from a shut gate"), wait for the opposite value first, then for the one you want. A JSON command cannot send `undefined`: leave `expected` out to wait for "set". |
 | `waitForTask(taskId, opts?)` | an objectives task reaches `completed` |
 | `waitForEvent(name, opts?)` | the game emits that event on its dispatcher |
 | `waitForMovementEnd(opts?)` | the player's body is still for several consecutive frames, or (`ok:false, reason:"stuck"`) it has been "moving" for 800 ms without changing position, i.e. walking into a collider |
@@ -911,6 +911,12 @@ reports the last overworld position (the player is standing still behind the ove
 The `controls` and `fields` arrays come from the base class; `noteName`,
 `noteContent`, `observationText`, `noteIndex` and `noteCount` come from the
 `NotesMinigame` override.
+
+`text` is the overlay's whole visible text, cut at 2000 characters. When it is cut the
+reply says so: `textTruncated: true` and `textLength` (the full length). For a note,
+read `noteContent` instead: it is the note's own text, kept whole up to 20,000
+characters (`noteContentTruncated` marks a cut there too). Check a long document's
+paragraphs against `noteContent`, never against `text`.
 
 ```json
 {
