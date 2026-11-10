@@ -1,0 +1,1073 @@
+{
+  "scenario_brief": "TEST: Access model awareness and habits\n\nA test floor for NPC awareness and habits (ACCESS_MODEL_SLICE_9_1_PLAN.md, section 11). Eight beats, each with a sign. Dana (north, H1) never locks; Ian (east, H2) always locks; Omar (beyond Dana, H3) locks but keeps his password on a note; Priya (south, H4) and Kai (beyond Ian, H5) would never lock but the PC or its policy does; Mei (beyond Priya, H6) has a password you can work out; Tom (beyond Lena, H7) reuses his locker code; Lena (west, H8) sometimes locks.",
+  "endGoal": "Test only: run the eight habits beats.",
+  "startRoom": "lobby",
+  "startPosition": {
+    "x": 7,
+    "y": 7
+  },
+  "npcNeedsSeed": "test_access_habits",
+  "npcWindupMs": 0,
+  "needsDebugOverlay": true,
+  "disableAttacks": true,
+  "policies": {
+    "instant_lock": {
+      "autoLockMin": 0,
+      "maxAttempts": null,
+      "usb": "allowed",
+      "social": "allowed"
+    }
+  },
+  "roles": {
+    "front_desk": {
+      "awareness": "low"
+    }
+  },
+  "globalVariables": {
+    "h3_note_seen": false
+  },
+  "accountProfiles": {
+    "staff_desktop": {
+      "for": {
+        "roles": [
+          "staff"
+        ]
+      },
+      "contents": [
+        {
+          "type": "text_file",
+          "id": "staff_notice",
+          "name": "Staff notice.txt",
+          "takeable": false,
+          "readable": true,
+          "text": "Staff notice (test floor).\n\nLock your screen every time you stand up, and never write a password down.",
+          "observations": "The staff notice, on every staff desktop."
+        }
+      ]
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "habits_beats",
+      "title": "Run the habits beats",
+      "description": "Test only. Each task ticks when its beat's event fires.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "h1_never_locks",
+          "title": "H1: use Dana's open screen while she is away",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "h2_always_locks",
+          "title": "H2: Ian's screen is locked while he is away",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "h3_sticky_note",
+          "title": "H3: sign in at Omar's PC with the password on his note",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "h4_pc_field_wins",
+          "title": "H4: Priya's screen is locked while she is away",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "h5_policy_wins",
+          "title": "H5: Kai's screen is locked while he is away",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "h6_guessable",
+          "title": "H6: work out Mei's password and sign in",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "h7_reused",
+          "title": "H7: sign in at Tom's PC with his locker code",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "h8_sometimes",
+          "title": "H8: use Lena's screen on a leave she leaves it open",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "rooms": {
+    "lobby": {
+      "type": "room_reception",
+      "door_sign": "Lobby",
+      "connections": {
+        "north": "dana_room",
+        "east": "ian_room",
+        "south": "priya_room",
+        "west": "lena_room"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_lobby",
+          "name": "Sign: Start here",
+          "position": {
+            "x": 4,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Eight beats, a sign at each. Dana north (H1), Ian east (H2), Priya south (H4), Lena west (H8).\nOmar is beyond Dana (H3), Kai beyond Ian (H5), Mei beyond Priya (H6) and Tom beyond Lena (H7). Nobody here will tell you how careful they are: watch.",
+          "observations": "A sign on a stand."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "rowan",
+          "displayName": "Rowan Price",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 4
+          },
+          "spriteSheet": "male_telecom_v2",
+          "spriteTalk": "assets/characters/male_telecom_talk.png",
+          "spriteVisemes": "assets/characters/male_telecom_visemes.png",
+          "storyPath": "scenarios/test_access_habits/ink/rowan.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "pc_signed_in:dana_pc",
+              "onceOnly": true,
+              "completeTask": "h1_never_locks",
+              "condition": "data.via === 'claim'"
+            },
+            {
+              "eventPattern": "workstation_locked_attempt:ian_pc",
+              "onceOnly": true,
+              "completeTask": "h2_always_locks"
+            },
+            {
+              "eventPattern": "pc_signin_shown:omar_pc",
+              "condition": "data.hasPostit === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "h3_note_seen": true
+              }
+            },
+            {
+              "eventPattern": "pc_signed_in:omar_pc",
+              "onceOnly": true,
+              "completeTask": "h3_sticky_note",
+              "condition": "data.via === 'password' && globalVars.h3_note_seen"
+            },
+            {
+              "eventPattern": "workstation_locked_attempt:priya_pc",
+              "onceOnly": true,
+              "completeTask": "h4_pc_field_wins"
+            },
+            {
+              "eventPattern": "workstation_locked_attempt:kai_pc",
+              "onceOnly": true,
+              "completeTask": "h5_policy_wins"
+            },
+            {
+              "eventPattern": "pc_signed_in:mei_pc",
+              "onceOnly": true,
+              "completeTask": "h6_guessable",
+              "condition": "data.via === 'password'"
+            },
+            {
+              "eventPattern": "pc_signed_in:tom_pc",
+              "onceOnly": true,
+              "completeTask": "h7_reused",
+              "condition": "data.via === 'password'"
+            },
+            {
+              "eventPattern": "pc_signed_in:lena_pc",
+              "onceOnly": true,
+              "completeTask": "h8_sometimes",
+              "condition": "data.via === 'claim'"
+            }
+          ]
+        }
+      ]
+    },
+    "dana_room": {
+      "type": "room_office",
+      "door_sign": "Dana",
+      "connections": {
+        "south": "lobby",
+        "north": "omar_room"
+      },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "dana_pc",
+          "name": "Dana's PC",
+          "sprite": "pc_desktop",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "observations": "Dana's desk PC."
+        },
+        {
+          "type": "coffee_station1",
+          "id": "dana_coffee",
+          "name": "Dana coffee",
+          "position": {
+            "x": 8,
+            "y": 6
+          },
+          "takeable": false,
+          "observations": "Dana's coffee machine. Nobody else uses it.",
+          "affordance": {
+            "satisfies": "caffeine",
+            "restores": 70,
+            "useSeconds": 600,
+            "private": true,
+            "owners": [
+              "dana"
+            ]
+          }
+        },
+        {
+          "type": "notes1",
+          "id": "sign_h1",
+          "name": "Sign: H1 Never locks",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "H1. Dana sits at her desk. Within a minute she walks to her coffee.\nHer screen keeps its desktop look. Click her PC: her desktop opens, signed in as her. No note picture on her monitor.",
+          "observations": "A sign on a stand."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "dana",
+          "displayName": "Dana Reyes",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "female_office_worker_v2",
+          "spriteTalk": "assets/characters/female_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
+          "storyPath": "scenarios/test_access_habits/ink/owner.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "creds": {
+            "username": "dreyes",
+            "password": "Tide-Dana-17"
+          },
+          "needsHome": "dana_pc",
+          "needsRooms": [
+            "dana_room"
+          ],
+          "needsSpeed": 90,
+          "needs": {
+            "caffeine": {
+              "decayPerMin": 30,
+              "urgentAt": 40,
+              "initial": 65
+            }
+          },
+          "role": "front_desk"
+        }
+      ]
+    },
+    "ian_room": {
+      "type": "room_office",
+      "door_sign": "Ian",
+      "connections": {
+        "west": "lobby",
+        "east": "kai_room"
+      },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "ian_pc",
+          "name": "Ian's PC",
+          "sprite": "pc_desktop",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "observations": "Ian's desk PC."
+        },
+        {
+          "type": "coffee_station1",
+          "id": "ian_coffee",
+          "name": "Ian coffee",
+          "position": {
+            "x": 8,
+            "y": 6
+          },
+          "takeable": false,
+          "observations": "Ian's coffee machine. Nobody else uses it.",
+          "affordance": {
+            "satisfies": "caffeine",
+            "restores": 70,
+            "useSeconds": 600,
+            "private": true,
+            "owners": [
+              "ian"
+            ]
+          }
+        },
+        {
+          "type": "notes1",
+          "id": "sign_h2",
+          "name": "Sign: H2 Always locks",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "H2. Ian sits at his desk. When he walks to his coffee, the padlock shows on his monitor.\nClick his PC: the sign-in screen, with no note. There is no way in.",
+          "observations": "A sign on a stand."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "ian",
+          "displayName": "Ian Shaw",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "male_nerd_v2",
+          "spriteTalk": "assets/characters/male_nerd_talk.png",
+          "spriteVisemes": "assets/characters/male_nerd_visemes.png",
+          "storyPath": "scenarios/test_access_habits/ink/owner.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "creds": {
+            "username": "ishaw",
+            "password": "Quartz-Ian-62"
+          },
+          "needsHome": "ian_pc",
+          "needsRooms": [
+            "ian_room"
+          ],
+          "needsSpeed": 90,
+          "needs": {
+            "caffeine": {
+              "decayPerMin": 30,
+              "urgentAt": 40,
+              "initial": 65
+            }
+          },
+          "awareness": "high"
+        }
+      ]
+    },
+    "omar_room": {
+      "type": "room_office",
+      "door_sign": "Omar",
+      "connections": {
+        "south": "dana_room"
+      },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "omar_pc",
+          "name": "Omar's PC",
+          "sprite": "pc_desktop",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "observations": "Omar's desk PC. Something yellow is stuck to the monitor."
+        },
+        {
+          "type": "coffee_station1",
+          "id": "omar_coffee",
+          "name": "Omar coffee",
+          "position": {
+            "x": 8,
+            "y": 6
+          },
+          "takeable": false,
+          "observations": "Omar's coffee machine. Nobody else uses it.",
+          "affordance": {
+            "satisfies": "caffeine",
+            "restores": 70,
+            "useSeconds": 600,
+            "private": true,
+            "owners": [
+              "omar"
+            ]
+          }
+        },
+        {
+          "type": "notes1",
+          "id": "sign_h3",
+          "name": "Sign: H3 Careful, with a sticky note",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "H3. Look at the corner of Omar's monitor. While he sits there, his PC is his.\nWhen he walks to his coffee, the padlock shows. Click his PC: the sign-in screen, with what is written on the note. Save the note to your notebook, then click the PC again and sign in.",
+          "observations": "A sign on a stand."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "omar",
+          "displayName": "Omar Haddad",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "male_office_worker_v2",
+          "spriteTalk": "assets/characters/male_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+          "storyPath": "scenarios/test_access_habits/ink/owner.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "creds": {
+            "username": "ohaddad",
+            "password": "Cedar-Omar-58"
+          },
+          "needsHome": "omar_pc",
+          "needsRooms": [
+            "omar_room"
+          ],
+          "needsSpeed": 90,
+          "needs": {
+            "caffeine": {
+              "decayPerMin": 30,
+              "urgentAt": 40,
+              "initial": 65
+            }
+          },
+          "awareness": "high",
+          "habits": {
+            "writesDown": true
+          }
+        }
+      ]
+    },
+    "priya_room": {
+      "type": "room_office",
+      "door_sign": "Priya",
+      "connections": {
+        "north": "lobby",
+        "south": "mei_room"
+      },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "priya_pc",
+          "name": "Priya's PC",
+          "sprite": "pc_desktop",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "observations": "Priya's desk PC.",
+          "lockChance": 1
+        },
+        {
+          "type": "coffee_station1",
+          "id": "priya_coffee",
+          "name": "Priya coffee",
+          "position": {
+            "x": 8,
+            "y": 6
+          },
+          "takeable": false,
+          "observations": "Priya's coffee machine. Nobody else uses it.",
+          "affordance": {
+            "satisfies": "caffeine",
+            "restores": 70,
+            "useSeconds": 600,
+            "private": true,
+            "owners": [
+              "priya"
+            ]
+          }
+        },
+        {
+          "type": "notes1",
+          "id": "sign_h4",
+          "name": "Sign: H4 The PC's own setting wins",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "H4. Priya never locks her screen herself, but this PC is set to lock whenever she leaves.\nWhen she walks to her coffee, click her PC: the sign-in screen, no way into her session.",
+          "observations": "A sign on a stand."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "priya",
+          "displayName": "Priya Nair",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "female_blowse_v2",
+          "spriteTalk": "assets/characters/female_blowse_talk.png",
+          "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+          "storyPath": "scenarios/test_access_habits/ink/owner.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "creds": {
+            "username": "pnair",
+            "password": "Lotus-Priya-40"
+          },
+          "needsHome": "priya_pc",
+          "needsRooms": [
+            "priya_room"
+          ],
+          "needsSpeed": 90,
+          "needs": {
+            "caffeine": {
+              "decayPerMin": 30,
+              "urgentAt": 40,
+              "initial": 65
+            }
+          },
+          "awareness": "low"
+        }
+      ]
+    },
+    "kai_room": {
+      "type": "room_office",
+      "door_sign": "Kai",
+      "connections": {
+        "west": "ian_room"
+      },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "kai_pc",
+          "name": "Kai's PC",
+          "sprite": "pc_desktop",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "observations": "Kai's desk PC. The instant lock policy applies here.",
+          "policy": "instant_lock"
+        },
+        {
+          "type": "coffee_station1",
+          "id": "kai_coffee",
+          "name": "Kai coffee",
+          "position": {
+            "x": 8,
+            "y": 6
+          },
+          "takeable": false,
+          "observations": "Kai's coffee machine. Nobody else uses it.",
+          "affordance": {
+            "satisfies": "caffeine",
+            "restores": 70,
+            "useSeconds": 600,
+            "private": true,
+            "owners": [
+              "kai"
+            ]
+          }
+        },
+        {
+          "type": "notes1",
+          "id": "sign_h5",
+          "name": "Sign: H5 Policy beats habit",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "H5. Kai never locks his screen himself, but this PC is under a policy that locks it the moment he leaves.\nWhen he walks to his coffee, click his PC: the sign-in screen, and no claim.",
+          "observations": "A sign on a stand."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "kai",
+          "displayName": "Kai Brennan",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "male_spy_v2",
+          "spriteTalk": "assets/characters/male_spy_talk.png",
+          "spriteVisemes": "assets/characters/male_spy_visemes.png",
+          "storyPath": "scenarios/test_access_habits/ink/owner.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "creds": {
+            "username": "kbrennan",
+            "password": "Ember-Kai-73"
+          },
+          "needsHome": "kai_pc",
+          "needsRooms": [
+            "kai_room"
+          ],
+          "needsSpeed": 90,
+          "needs": {
+            "caffeine": {
+              "decayPerMin": 30,
+              "urgentAt": 40,
+              "initial": 65
+            }
+          },
+          "awareness": "low"
+        }
+      ]
+    },
+    "mei_room": {
+      "type": "room_office",
+      "door_sign": "Mei",
+      "connections": {
+        "north": "priya_room"
+      },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "mei_pc",
+          "name": "Mei's PC",
+          "sprite": "pc_desktop",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "observations": "Mei's desk PC."
+        },
+        {
+          "type": "coffee_station1",
+          "id": "mei_coffee",
+          "name": "Mei coffee",
+          "position": {
+            "x": 8,
+            "y": 6
+          },
+          "takeable": false,
+          "observations": "Mei's coffee machine. Nobody else uses it.",
+          "affordance": {
+            "satisfies": "caffeine",
+            "restores": 70,
+            "useSeconds": 600,
+            "private": true,
+            "owners": [
+              "mei"
+            ]
+          }
+        },
+        {
+          "type": "notes1",
+          "id": "mei_photo",
+          "name": "Framed photo",
+          "position": {
+            "x": 3,
+            "y": 6
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "A framed photo of a spaniel on a beach. The caption reads: Pepper, our first dog.",
+          "observations": "A framed photo on Mei's desk."
+        },
+        {
+          "type": "notes1",
+          "id": "mei_calendar",
+          "name": "Wall calendar",
+          "position": {
+            "x": 7,
+            "y": 2
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "A calendar with one date ringed in red: the day Mei and her husband married, in 1998.",
+          "observations": "A wall calendar."
+        },
+        {
+          "type": "notes1",
+          "id": "password_memo",
+          "name": "IT notice",
+          "position": {
+            "x": 8,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "IT notice: easy to remember passwords. Use your first pet's name with a capital first letter, then the year you married, and end with ! (Please do not.)",
+          "observations": "An IT notice pinned to the wall."
+        },
+        {
+          "type": "notes1",
+          "id": "sign_h6",
+          "name": "Sign: H6 Guessable password",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "H6. Mei locks her screen every time. Read what is around her desk and work her password out before you type: a wrong guess counts. Then sign in at her PC when she is away.",
+          "observations": "A sign on a stand."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "mei",
+          "displayName": "Mei Lin",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "female_scientist_v2",
+          "spriteTalk": "assets/characters/female_scientist_talk.png",
+          "spriteVisemes": "assets/characters/female_scientist_visemes.png",
+          "storyPath": "scenarios/test_access_habits/ink/owner.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "creds": {
+            "username": "mlin",
+            "password": "Pepper1998!"
+          },
+          "needsHome": "mei_pc",
+          "needsRooms": [
+            "mei_room"
+          ],
+          "needsSpeed": 90,
+          "needs": {
+            "caffeine": {
+              "decayPerMin": 30,
+              "urgentAt": 40,
+              "initial": 65
+            }
+          },
+          "awareness": "high",
+          "habits": {
+            "password": "guessable",
+            "passwordPattern": "password_memo"
+          }
+        }
+      ]
+    },
+    "lena_room": {
+      "type": "room_office",
+      "door_sign": "Lena",
+      "connections": {
+        "east": "lobby",
+        "west": "tom_room"
+      },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "lena_pc",
+          "name": "Lena's PC",
+          "sprite": "pc_desktop",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "observations": "Lena's desk PC."
+        },
+        {
+          "type": "coffee_station1",
+          "id": "lena_coffee",
+          "name": "Lena coffee",
+          "position": {
+            "x": 8,
+            "y": 6
+          },
+          "takeable": false,
+          "observations": "Lena's coffee machine. Nobody else uses it.",
+          "affordance": {
+            "satisfies": "caffeine",
+            "restores": 30,
+            "useSeconds": 20,
+            "private": true,
+            "owners": [
+              "lena"
+            ]
+          }
+        },
+        {
+          "type": "notes1",
+          "id": "sign_h8",
+          "name": "Sign: H8 Sometimes locks",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "H8. Lena pops out for coffee often and only sometimes locks her screen.\nOn each of her leaves, look at her monitor: an open screen lets you in, a padlock does not. After a reload her pattern starts again from the beginning.",
+          "observations": "A sign on a stand."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "lena",
+          "displayName": "Lena Fox",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "female_telecom_v2",
+          "spriteTalk": "assets/characters/female_telecom_talk.png",
+          "spriteVisemes": "assets/characters/female_telecom_visemes.png",
+          "storyPath": "scenarios/test_access_habits/ink/owner.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "creds": {
+            "username": "lfox",
+            "password": "Birch-Lena-26"
+          },
+          "needsHome": "lena_pc",
+          "needsRooms": [
+            "lena_room"
+          ],
+          "needsSpeed": 90,
+          "needs": {
+            "caffeine": {
+              "decayPerMin": 30,
+              "urgentAt": 40,
+              "initial": 65
+            }
+          },
+          "awareness": "medium"
+        }
+      ]
+    },
+    "tom_room": {
+      "type": "room_office",
+      "door_sign": "Tom",
+      "connections": {
+        "east": "lena_room"
+      },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "tom_pc",
+          "name": "Tom's PC",
+          "sprite": "pc_desktop",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "observations": "Tom's desk PC."
+        },
+        {
+          "type": "coffee_station1",
+          "id": "tom_coffee",
+          "name": "Tom coffee",
+          "position": {
+            "x": 8,
+            "y": 6
+          },
+          "takeable": false,
+          "observations": "Tom's coffee machine. Nobody else uses it.",
+          "affordance": {
+            "satisfies": "caffeine",
+            "restores": 70,
+            "useSeconds": 600,
+            "private": true,
+            "owners": [
+              "tom"
+            ]
+          }
+        },
+        {
+          "type": "safe",
+          "id": "tom_locker",
+          "name": "Gym locker",
+          "position": {
+            "x": 2,
+            "y": 6
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "password",
+          "requires": "Harbour-Lift-44",
+          "showKeyboard": true,
+          "observations": "Tom's gym locker, with a keypad.",
+          "contents": [
+            {
+              "type": "notes1",
+              "id": "tom_kit_list",
+              "name": "Kit list",
+              "takeable": true,
+              "readable": true,
+              "text": "Trainers, towel, padlock key."
+            }
+          ]
+        },
+        {
+          "type": "notes1",
+          "id": "locker_note",
+          "name": "Note on the locker",
+          "position": {
+            "x": 3,
+            "y": 6
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Gym locker code, so I stop forgetting it: Harbour-Lift-44",
+          "observations": "A note taped to the locker."
+        },
+        {
+          "type": "notes1",
+          "id": "sign_h7",
+          "name": "Sign: H7 Reused password",
+          "position": {
+            "x": 8,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "H7. Tom locks his screen every time. Open his gym locker with what is written by it.\nThen try the same at his PC when he is away.",
+          "observations": "A sign on a stand."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "tom",
+          "displayName": "Tom Fletcher",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "male_hacker_hood_down_v2",
+          "spriteTalk": "assets/characters/male_hacker_hood_down_v2_talk.png",
+          "spriteVisemes": "assets/characters/male_hacker_hood_down_v2_visemes.png",
+          "storyPath": "scenarios/test_access_habits/ink/owner.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "creds": {
+            "username": "tfletcher",
+            "password": "Harbour-Lift-44"
+          },
+          "needsHome": "tom_pc",
+          "needsRooms": [
+            "tom_room"
+          ],
+          "needsSpeed": 90,
+          "needs": {
+            "caffeine": {
+              "decayPerMin": 30,
+              "urgentAt": 40,
+              "initial": 65
+            }
+          },
+          "awareness": "high",
+          "habits": {
+            "password": "reused"
+          }
+        }
+      ]
+    }
+  }
+}

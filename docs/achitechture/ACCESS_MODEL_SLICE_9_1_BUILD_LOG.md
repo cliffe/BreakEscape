@@ -156,3 +156,26 @@ Notes:
   it; it also reports any NPC record carrying creds, role, awareness, habits or workarounds.
   The `habits` block of `verify-run.rb --access` and the validator's habits report name who
   never locks and whose password is on a note, so neither is shown to a tester playing blind."
+
+## Step 7. The feature scenario (2026-11-10)
+
+Built `scenarios/test_access_habits/` (scenario, mission.json, ink, PLAYTEST.md, dungeon graph)
+with beats H1 to H8; H9 waits for step 5. The validator raises no errors and no warnings and one
+habits suggestion (Lena's preset `sometimes`); ink compiles; `check_door_alignment.py` is clean;
+the graph has the expected habit edges. Lena's PC id `lena_pc` gives the seeded sequence open,
+open, locked, locked.
+
+Deviations:
+
+- The coffee stations take 600 seconds, not 900: the schema caps `useSeconds` at 600. Ten
+  minutes away is still "once gone they stay gone" for a beat.
+- H4's record: Priya's `screenHabit` is not filled. The plan's H4 row says lockChance 0, but 5.2
+  says nothing is filled when every PC the NPC owns sets its own field, and the build follows
+  5.2. `PLAYTEST.md` says so.
+- H3's task also needs the global `h3_note_seen`, set from `pc_signin_shown:omar_pc` with
+  `data.hasPostit === true`, so the run proves the note was shown before the sign-in.
+- The mission row was published alone (the fields `db/seeds.rb` sets), not with `db:seed`.
+
+Scripted runs (builder's own Playwright script, :3001): see
+`tools/playtest/test_access_habits-report.md`. Every beat passed once three script mistakes were
+corrected; the leak check was clean after every beat.
