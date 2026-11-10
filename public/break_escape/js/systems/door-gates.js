@@ -270,6 +270,20 @@ export class DoorGates {
         return any;
     }
 
+    /**
+     * An open gate the player may walk through as things stand: the clone window is
+     * running, or the gate has no playerMayPassIf, or that global is set. doors.js
+     * asks before refusing a click, so a door that is letting the player in never
+     * says "Access denied" (playtest E2). An undisguised player gets the refusal even
+     * while the gate is open for a guard: it shuts as he comes near.
+     */
+    openToPlayer(g, now = Date.now()) {
+        if (!g?.open) return false;
+        if (now < (g.playerHoldUntil || 0)) return true;
+        const name = g.cfg?.playerMayPassIf;
+        return !name || !!W().gameState?.globalVariables?.[name];
+    }
+
     close(g) {
         if (!g.open) return false;
         this._prune(g);

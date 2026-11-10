@@ -102,3 +102,39 @@ test('with no playerMayPassIf the player is never barred, so the gate follows th
     gates.update(1000);
     assert.equal(a.doorProperties.open, true);
 });
+
+// Playtest E2: a click on the records door while a member of staff held it open and the
+// player wore the hi-vis still toasted "Access denied ... you have no badge".
+test('openToPlayer: an open gate the player may pass is not refused; a shut or barred one is', () => {
+    const { gates } = setup();
+    const g = gates.groupsFor('vault')[0];
+    assert.equal(gates.openToPlayer(g, 1000), false, 'shut gate');
+    gates.open(g, 1000);
+    assert.equal(gates.openToPlayer(g, 1000), false, 'open for the guard, player undisguised');
+    window.gameState.globalVariables.disguised = true;
+    assert.equal(gates.openToPlayer(g, 1000), true, 'open and the player is disguised');
+    gates.close(g);
+    assert.equal(gates.openToPlayer(g, 1000), false, 'disguised but the gate is shut');
+});
+
+test('openToPlayer: the clone window counts, and a gate with no playerMayPassIf lets anyone through while open', () => {
+    const { gates } = setup();
+    const g = gates.groupsFor('vault')[0];
+    gates.playerOpen('vault', { now: 1000 });
+    assert.equal(gates.openToPlayer(g, 2000), true, 'inside the clone window, undisguised');
+    assert.equal(gates.openToPlayer(g, 1000 + 2600), false, 'window over, undisguised');
+    const plain = setup({ openFor: ['guard'], openRadius: 56, holdMs: 2500 });
+    const pg = plain.gates.groupsFor('vault')[0];
+    plain.gates.open(pg, 1000);
+    assert.equal(plain.gates.openToPlayer(pg, 1000), true);
+    assert.equal(plain.gates.openToPlayer(null, 1000), false);
+});
+
+test('doors.js asks openToPlayer before the gate refusal toast and the door_gate_denied event', () => {
+    const d = readFileSync(join(js, 'systems/doors.js'), 'utf8');
+    const ask = d.indexOf("window.doorGates?.openToPlayer?.(gateGroup)) return;");
+    const refuse = d.indexOf("const denied = 'Access denied: this door only opens for authorised staff.';");
+    const granted = d.indexOf("'Access granted: cloned staff badge accepted.'");
+    assert.ok(ask > 0 && refuse > ask, 'the open-gate check comes before the refusal');
+    assert.ok(granted > 0 && granted < ask, 'the clone entry still answers first');
+});

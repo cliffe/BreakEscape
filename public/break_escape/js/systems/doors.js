@@ -670,6 +670,9 @@ async function handleDoorInteraction(doorSprite) {
             window.gameAlert?.('Access granted: cloned staff badge accepted.', 'success', 'Door', 3000);
             return;
         }
+        // The gate is open and the player may pass (staff holding it, hi-vis on): the
+        // click walks him through, so there is nothing to refuse
+        if (gateGroup && window.doorGates?.openToPlayer?.(gateGroup)) return;
         // The hint lives on the locked room's side of the doorway; the group shares it
         const hintSource = { doorProperties: { lockedHint: props.lockedHint || gateGroup?.lockedHint || null } };
         const denied = 'Access denied: this door only opens for authorised staff.';
