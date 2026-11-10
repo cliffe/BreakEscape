@@ -230,3 +230,86 @@ module NetworkModelScenario
     data
   end
 end
+
+# Requests the network controller tests share. Include in an ActionDispatch::IntegrationTest
+# beside Engine.routes.url_helpers; build_network_game sets @game.
+module NetworkRequests
+  OPEN_ROOMS = %w[lobby comms_room desk_room workshop kiosk_room store].freeze
+
+  def build_network_game(player_state = {}, scenario = NetworkModelScenario.scenario)
+    @game = create_access_game(
+      mission: break_escape_missions(:ceo_exfil),
+      player: break_escape_demo_users(:test_user),
+      scenario: scenario,
+      player_state: { 'currentRoom' => 'lobby', 'unlockedRooms' => OPEN_ROOMS.dup,
+                      'encounteredNPCs' => %w[sam lena ian] }.merge(player_state)
+    )
+  end
+
+  def game_path(suffix)
+    "/break_escape/games/#{@game.id}/#{suffix}"
+  end
+
+  def take_drop_box
+    post game_path('inventory'), params: { action_type: 'add', item: { type: 'pc', id: 'kit_dropbox', name: 'Network drop box' } },
+                                 as: :json
+    assert_response :success, response.body
+  end
+
+  def plant(jack_id, device_id = nil)
+    params = { jack_id: jack_id }
+    params[:device_id] = device_id if device_id
+    post game_path('network/plant'), params: params, as: :json
+    response.parsed_body
+  end
+
+  def unplug(jack_id)
+    post game_path('network/unplug'), params: { jack_id: jack_id }, as: :json
+    response.parsed_body
+  end
+
+  def network_view(foothold = nil)
+    get game_path('network'), params: foothold ? { foothold: foothold } : {}, as: :json
+    response.parsed_body
+  end
+
+  def sign_in(pc_id, username, password, foothold: nil)
+    params = { pc_id: pc_id, username: username, password: password }
+    params[:foothold] = foothold if foothold
+    post game_path('login'), params: params, as: :json
+    response.parsed_body
+  end
+
+  def container(id, foothold: nil)
+    get game_path("container/#{id}"), params: foothold ? { foothold: foothold } : {}, as: :json
+    response.parsed_body
+  end
+
+  def unlock_object(id, method, attempt = nil)
+    post game_path('unlock'), params: { targetType: 'object', targetId: id, method: method, attempt: attempt }, as: :json
+    response.parsed_body
+  end
+
+  def add_item(type, id, name, source_pc_id: nil, source_resource_id: nil, transfer: nil)
+    params = { action_type: 'add', item: { type: type, id: id, name: name } }
+    params[:source_pc_id] = source_pc_id if source_pc_id
+    params[:source_resource_id] = source_resource_id if source_resource_id
+    params[:transfer] = transfer if transfer
+    post game_path('inventory'), params: params, as: :json
+    response.parsed_body
+  end
+
+  def held_ids
+    @game.reload.player_state['inventory'].map { |item| item['id'] }
+  end
+
+  def refute_exposed(context, strings = NetworkModelScenario::EXPOSED_STRINGS)
+    strings.each { |text| refute_includes response.body, text, "#{context} exposes #{text}" }
+  end
+
+  # Status and body, with the requested id written as <id>, so the answer for a real
+  # id can be compared with the answer for an invented one.
+  def answer_for(id)
+    [response.status, response.body.gsub(id, '<id>')]
+  end
+end

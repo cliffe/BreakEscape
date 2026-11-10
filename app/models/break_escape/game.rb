@@ -887,6 +887,11 @@ module BreakEscape
       # secrets and ship as authored (5.5).
       filtered.delete('accountProfiles')
 
+      # Networks (slice 9.3a, section 6): a network's name and what it exposes reach the
+      # browser only through GET /network and GET /container, for a foothold or session
+      # the server holds.
+      withhold_network_keys!(filtered)
+
       # Strip the authored capture secret (e.g. the phished portal password) from the
       # bootstrap: the browser must not hold it until the capture is earned. The real
       # secret is served by GET /capture_secrets once the server's own se_captures record
@@ -1004,6 +1009,11 @@ module BreakEscape
 
       # Account tiles on each sign-in PC (access model 5.3).
       attach_login_accounts!(room['objects'])
+
+      # Networks (slice 9.3a, section 6): no network membership ships; a jack says
+      # whether a device is planted in it.
+      room.delete('network')
+      attach_network_state!(room['objects'])
 
       room
     end
@@ -1904,7 +1914,8 @@ module BreakEscape
       Array(objects).each do |obj|
         next unless obj.is_a?(Hash)
 
-        if self.class.login_pc?(obj)
+        # A headless host (slice 9.3a, 3.4) shows no account tiles: it has no screen.
+        if self.class.login_pc?(obj) && !BreakEscape::NetworkModel.headless?(obj)
           pc = find_login_pc(obj['id'])&.dig(:object) || obj
           obj['loginAccounts'] = login_account_tiles(pc)
         end
@@ -3939,6 +3950,10 @@ module BreakEscape
         # entirely server-side (find_hint_only_message); the client never reads
         # it, so remove it outright rather than keeping a count.
         obj.delete('hintOnlyFlags')
+
+        # Networks (slice 9.3a, section 6): membership never ships, and a jack's link
+        # name and holder arrive on the link item instead.
+        BreakEscape::NetworkAccess::WITHHELD_OBJECT_FIELDS.each { |field| obj.delete(field) }
 
         # Keep lockType - client needs it to show correct UI
         # Keep locked - client needs it to show lock status

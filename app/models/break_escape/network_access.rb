@@ -14,6 +14,33 @@ module BreakEscape
   module NetworkAccess
     extend ActiveSupport::Concern
 
+    # Top-level scenario keys the bootstrap never ships (section 6).
+    WITHHELD_SCENARIO_KEYS = %w[networks networkLinks resources].freeze
+    # Fields deleted from every object the server sends: membership, and the jack's
+    # link name and holder, which arrive on the link item (section 6).
+    WITHHELD_OBJECT_FIELDS = %w[network linkName linkStoreIn].freeze
+
+    def withhold_network_keys!(filtered)
+      WITHHELD_SCENARIO_KEYS.each { |key| filtered.delete(key) }
+      filtered
+    end
+
+    # Room data (section 6): each jack carries jackPlanted, true while the server holds a
+    # foothold there, so the jack's look survives a reload.
+    def attach_network_state!(objects)
+      Array(objects).each do |obj|
+        next unless obj.is_a?(Hash)
+
+        obj['jackPlanted'] = network_footholds.key?(foothold_id_for(obj['id'])) if NetworkModel.jack?(obj)
+        attach_network_state!(obj['contents']) if obj['contents'].is_a?(Array)
+      end
+    end
+
+    # A jack's foothold id (4.1).
+    def foothold_id_for(jack_id)
+      "jack_#{jack_id}"
+    end
+
     # The footholds held now. A game from before this slice has no key: read as none.
     def network_footholds
       held = player_state.is_a?(Hash) ? player_state['footholds'] : nil
