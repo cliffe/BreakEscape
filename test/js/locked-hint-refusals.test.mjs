@@ -129,7 +129,7 @@ test('every lockedHintDuration call passes its base line; no fixed duration is l
             assert.ok(args.length >= 3 && args.slice(2).join(',').trim(), `${f}: lockedHintDuration(${m[1]}) has no base line`);
         }
     }
-    assert.equal(calls, 14, 'the callers this test knows: 9 in unlock-system (3 server refusals, feedback plan 7), 4 in minigame-starters, 1 in doors');
+    assert.equal(calls, 15, 'the callers this test knows: 9 in unlock-system (3 server refusals, feedback plan 7), 4 in minigame-starters, 2 in doors (the gate refusal and the clone refusal)');
     assert.doesNotMatch(src('systems/unlock-system.js'), /\b5500\b/);
     // every line that shows a hint takes its duration from the helper
     for (const f of files) {
