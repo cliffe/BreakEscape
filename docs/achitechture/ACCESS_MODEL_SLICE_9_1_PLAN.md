@@ -50,21 +50,23 @@ Design principles this plan keeps to (the user's):
 
 ## 2. What the code has today
 
-Every line here was checked against the code. **Line numbers are as of commit `210e48eec`.** Other
-builds are expected to land before this one and will move them, so a builder finds each place again
-by its method name.
+Every line here was checked against the code. **Line numbers are as of commit `da60a5937`**, on a
+branch that holds the merge of `main` (`d9b910ac0`, which brought office life's lock habits and
+lock cues, the owner's gate rule and the rebuilt lab). Other builds are expected to land before
+this one and will move them, so a builder finds each place again by its method name.
 
-**Withholding is already in place.** `withhold_npc_secrets!` (`app/models/break_escape/game.rb:3970`)
+**Withholding is already in place.** `withhold_npc_secrets!` (`app/models/break_escape/game.rb:3973`)
 deletes `creds`, `awareness`, `habits`, `role` and `workarounds` from every room NPC in room data
-(`WITHHELD_NPC_KEYS`, `:3968`). The bootstrap ships no room NPCs
-(`filtered_scenario_for_bootstrap`, `:824`), but it ships every other top-level key as authored
+(`WITHHELD_NPC_KEYS`, `:3971`). The bootstrap ships no room NPCs
+(`filtered_scenario_for_bootstrap`, `:825`), but it ships every other top-level key as authored
 unless that method deletes it. Nothing reads `awareness` or `habits` yet: the validator's known NPC
-fields (`scripts/validate_scenario.rb:414-422`) and the schema's NPC definition
-(`scripts/scenario-schema.json`, beside `creds` at `:4130`) do not list them.
+fields (`scripts/validate_scenario.rb:415-424`) and the schema's NPC definition
+(`scripts/scenario-schema.json`, beside `creds`) do not list them. An NPC's `screenHabit` is not
+withheld: it reaches the browser in room data, because the client decides the lock from it.
 
-**The loader.** `prepare_scenario_data!` (`game.rb:799`) runs `normalise_access_model!` (`:4029`)
-and then `stamp_scenario_object_ids!` (`:4055`), once, in `before_create`
-(`generate_scenario_data`, `:3990`), and the result is saved with the game. Tests reach it through
+**The loader.** `prepare_scenario_data!` (`game.rb:800`) runs `normalise_access_model!` (`:4032`)
+and then `stamp_scenario_object_ids!` (`:4058`), once, in `before_create`
+(`generate_scenario_data`, `:3993`), and the result is saved with the game. Tests reach it through
 `create_access_game` (`test/test_helper.rb`). Both steps are idempotent. A reset keeps
 `scenario_data`.
 
@@ -75,77 +77,135 @@ in the engine. On this Rails version (7.0.4) `bin/rails zeitwerk:check` does not
 autoload-only paths. The scripts load the same files with `require_relative`, in order
 (`validate_scenario.rb:20-21`, `generate_dungeon_graph.rb:15-16`).
 `lib/break_escape/access_identities.rb` is plain Ruby with no Rails and mirrors the server's
-identity rules for the scripts. Its `workstation?` is false for an object with no string `id`
-(`:102-106`); its `owner_id` compares `needsHome` to the object's `id` with no such guard
-(`:144-149`), so on data with no ids nil matches nil; its `identity_roles` gives an NPC's authored
-roles followed by the implicit `staff`.
+identity rules for the scripts; `game.rb` does not call it today. Its `workstation?` is false for
+an object with no string `id` (`:102-106`); its `owner_id` compares `needsHome` to the object's
+`id` with no such guard (`:144-149`), so on data with no ids nil matches nil; its `identity_roles`
+gives an NPC's authored roles followed by the implicit `staff` (`:60-66`).
 
 **Screens.** A workstation is an object with an id and `workstation: true`, `locksScreenOnLeave`,
 `lockChance` or `lockType: "login"` (`isWorkstation`,
-`public/break_escape/js/systems/workstation-state.js:72`). Its owner is `screenOwner`, else the NPC
-whose `needsHome` is its id (`ownerOf`, `:79`; on the server `login_pc_owner`, `game.rb:1397`,
-which reads stamped ids). On each leave `decideLocked` (`:92`) reads the policy's `autoLockMin: 0`
-first (`:93-94`; the policy is `policies[obj.policy || defaultPolicy]`), then `lockChance` (0, 1
-or a seeded roll), then `locksScreenOnLeave` (default true). A policy with `autoLockMin` above 0
-locks a screen the roll left open that many game minutes after the owner left (`_rollScreen`,
-`:150-162`), and `workstation_owner_returned` carries `wasLocked`, the state just before the
-return (`:296-306`). A click on a locked screen emits `workstation_locked_attempt:<id>` and on an
-open one `workstation_accessed:<id>` (`onInteract`, `:314-330`). The server's claim check reads
-`lockChance` and `locksScreenOnLeave` from the saved scenario (`pc_always_locks?`,
-`game.rb:1406`). Ids are stamped onto room objects that lack one as
-`"#{room_id}_#{obj['type']}_#{i}"`, and onto their contents as `<parent id>_content_<i>`
-(`stamp_scenario_object_ids!`, `game.rb:4055-4061`, and `stamp_contents_ids!`), mirrored in the
-client (`core/rooms.js:383`). The lab follow-up added the locked look (`systems/screen-states.js`: a
-`<key>_locked` texture where one is loaded for the sprite's key, today `pc_desktop` only, plus a
-lock and an unlock sound) and `wasLocked` on `workstation_owner_returned`. The room lighting system
-draws an indicator dot at the monitor's top-right corner, steady blue when locked and warm and
-breathing when left open (`systems/lighting.js:102-109`). All of these follow the fields on the PC,
-so a habit that fills those fields needs no client change.
+`public/break_escape/js/systems/workstation-state.js:89-93`); `autoLockSeconds` does not make one.
+Its owner is `screenOwner`, else the NPC whose `needsHome` is its id (`ownerOf`, `:96-102`; on the
+server `login_pc_owner`, `game.rb:1400`, which reads stamped ids).
 
-**The locked look works on this branch.** The user's hands-on test reported no lock screens and no
-sounds. The engine plan's item 1 reproduced a real browser session on this branch: Chris's PC took
-the `pc_desktop_locked` texture and played the lock sound on her leave, and Melanie's, which never
-locks, showed and played nothing. Its ranked causes are that two of the lab's three desk PCs can
-never lock and the third locks rarely, that the sounds are short and shared with other cues, and
-that the played copy may have differed from this branch. It is not a fault in `screen-states.js`.
+On each leave `decideLocked` (`:119-140`) settles the screen in this order:
+
+1. the policy's `autoLockMin: 0` locks it (the policy is `policies[obj.policy || defaultPolicy]`);
+2. else the object's `lockChance` (0, 1, or a seeded roll with salt `screen:<pcId>:<leaves>`);
+3. else the object's `locksScreenOnLeave`, if it is set at all;
+4. else the owner's **`screenHabit`** (`{ lockChance, lockIfAwayOverSeconds }` on the NPC, read by
+   `habitOf`, `:105-109`): a trip the needs system expects to last at most
+   `lockIfAwayOverSeconds` stays open, and a longer one (or one with no estimate) rolls the habit's
+   `lockChance` with salt `habit:<pcId>:<leaves>`, so the object's `screen:` sequence never shifts;
+   a habit with no `lockChance` locks;
+5. else it locks.
+
+Two late locks can then close a screen the leave left open: a policy with `autoLockMin` above 0
+(`lockAt`, `_rollScreen`, `:220-235`) and the object's own `autoLockSeconds`, an idle lock run on
+the needs clock (`tick`, `:410-425`). Both emit `workstation_auto_locked:<id>` (`:294`). Every change
+of the locked state emits `workstation_screen_changed:<id>` `{ objectId, ownerId, locked, how }`
+(`_changed`, `:176-178`), with `how` one of `leave`, `auto`, `return`, `ko` (a knock-out at the
+desk) or `late` (a station first settled when the player clicks it). `workstation_owner_left`
+carries `reason` (`:367`), and `workstation_owner_returned` carries `wasLocked`, the state just
+before the return (`:400`). A click on a locked screen emits `workstation_locked_attempt:<id>` and
+on an open one `workstation_accessed:<id>` (`onInteract`, `:428-447`). The schema and the office
+life validator already know `screenHabit` and `autoLockSeconds`
+(`scripts/validate_npc_needs.rb:496-570`, whose `habit_leaves_open?` at `:511-517` is the Ruby form
+of step 4 above).
+
+**The server's claim check has a gap.** `claim_login_session!` (`game.rb:1449`) refuses a claim at
+a PC that "always locks" (`pc_always_locks?`, `:1409-1414`) and, separately, under a policy with
+`autoLockMin: 0` (`:1470-1471`). `pc_always_locks?` reads only the object's `lockChance` and
+`locksScreenOnLeave`; nothing on the server reads `screenHabit`. A sign-in PC with neither field
+whose owner has a `screenHabit` that leaves it open is "always locks" to the server, so the client
+shows an open screen and offers the claim, and the server refuses it. This slice fixes that in
+step 1 (5.2), because the habit it builds fills `screenHabit`.
+
+Ids are stamped onto room objects that lack one as `"#{room_id}_#{obj['type']}_#{i}"`, and onto
+their contents as `<parent id>_content_<i>` (`stamp_scenario_object_ids!`, `game.rb:4058`, and
+`stamp_contents_ids!`), mirrored in the client (`core/rooms.js`).
+
+**The locked look, and the lock cues.** `systems/screen-states.js` draws a `<key>_locked` texture
+where one is loaded for the sprite's key (today `pc_desktop` only) and records every picture change
+for the test bridge (`window.__test.access.screenTransitions()`). Where office life's lock cues are
+installed (`window.npcOfficeVisuals`, installed with the needs system, `core/game.js:1987`, and on
+unless the scenario sets `"lockCues": false`), `screen-states.js` plays no sound and records
+`sound: null` (`:99-107`): the cue is office life's, on `workstation_screen_changed`
+(`onScreenChanged`, `systems/npc-office-visuals.js:375-397`). In a lit room it is
+`lightingSystem.flash`, otherwise a padlock glyph over the screen for a second; a lock or an
+unlock by a key press (`how` `leave` or `return`) also plays a chime in the player's own room.
+`auto` and `ko` play no chime and `late` no cue at all (`lockCuePlan`, `:90-99`). Each cue is
+recorded in `window.npcOfficeVisuals.cueLog` (`:256`, entries
+`{ t, objectId, how, locked, flash, glyph, chime }`, `chime` holding `key` and `volume`), and a chime
+that is heard emits `workstation_lock_heard:<id>`. The test bridge has no wrapper for `cueLog`; a
+script reads it from `window`. The room lighting system draws an indicator dot on every owned
+workstation, steady blue while locked and a warm breathing dot while left open
+(`systems/lighting.js:40-47`). All of these follow the workstation state, so a habit that feeds it
+needs no client change.
+
+**What the user saw.** The user's hands-on test of the lab reported no lock screens and no
+sounds. The build they played (`8261e7422`) had no `screen-states.js` at all. The merged branch
+swaps in `pc_desktop_locked` on Chris's PC and plays office life's cues on her leave and return.
+What is still thin is not a fault in `screen-states.js`: the chime is quiet and heard only in the
+player's own room, Melanie's PC never locks, and Sofia's PC is not a workstation, so only one of
+the three desks ever shows the look. The engine plan owns the cues (its item 1).
 
 **Sticky notes.** A sign-in screen shows the PC object's own `postitNote` unless the object sets
-`showPostit: false` (`openLoginSignIn`, `systems/unlock-system.js:268-321`, at `:311-312`). The
-screen refreshes its account tiles from `GET /login_accounts` every time it opens (`:275-281`;
-`games_controller.rb:1106-1114`, which checks the PC is reachable and answers with `pc_id`).
+`showPostit: false` (`openLoginSignIn`, `systems/unlock-system.js:274-327`, at `:317-318`). The
+screen refreshes its account tiles from `GET /login_accounts` every time it opens (`:279-290`;
+`games_controller.rb:1108-1116`, which checks the PC is reachable and answers with `pc_id`).
 Whenever a note shows, the screen has an "add to notebook" button
-(`password-minigame.js:728-794, 860-889`). Pressing it starts the notes minigame, which ends the
-sign-in screen (`minigame-manager.js:61-68`); nothing reopens it. A saved note is synced into
-`player_state['notes']` (`games_controller.rb:1637-1639`; only the client ever writes notes) and
-sent back as `savedNotes` on every later `GET /scenario` (`:306-308`). The sync's own answer holds
+(`minigames/password/password-minigame.js:187-192`, `:424-428`, `addPostitToNotebook` at `:728`).
+Pressing it starts the notes minigame, which ends the sign-in screen
+(`minigames/framework/minigame-manager.js:61-69`); nothing reopens it. A saved note is synced into
+`player_state['notes']` (`games_controller.rb:1703-1705`; only the client ever writes notes) and
+sent back as `savedNotes` on every later `GET /scenario` (`:307-309`). The sync's own answer holds
 no notes. Authored `postitNote`s also sit on password locks in shipped missions (m01 to m04,
-sis01). The `notes_postit1` picture (9 by 9 px) is preloaded (`core/game.js:1320`).
+sis01). The `notes_postit1` picture (9 by 9 px) is preloaded (`core/game.js:1334`).
 
 **Sign-in is exact.** The server compares a typed password with `creds.password` exactly, case
-included (`attempt_login!`, `game.rb:1416-1430`), and under a policy with `maxAttempts` a username
+included (`attempt_login!`, `game.rb:1419-1443`), and under a policy with `maxAttempts` a username
 is locked out at that PC for the rest of the game. So a password the player is meant to work out
 has to be wholly derivable from what they can read: one character they have to guess turns the
 puzzle into guessing, and can cost them the account.
 
 **Gates.** A gate door is `rooms.<id>.doors[].gate` with `openFor` (a list, or one string),
-`openRadius`, `holdMs` and `playerMayPassIf` (`normaliseGate`, `systems/door-gates.js:75`, which
-keeps those four keys). It reaches the client in room data (`doors.js:561-567`; the bootstrap drops
-`doors`). The gate opens when an `openFor` NPC is within the radius (`_npcNear`, `:399-407`, a
-boolean) and stays open for `holdMs` after the last one leaves it (`update`, `:446-487`): that hold
-is the tailgate window. `open(g)` starts an open period and `playerOpen()` goes through it
-(`:310-326`, at `:322`). `door_gate_opened` and `door_gate_closed` carry the group's `roomId` and
-`connectedRoom` (`_afterToggle`, `:236-241`), which are those of whichever door sprite registered
-first; `door_gate_denied` carries those of the sprite clicked (`doors.js:682-684`). Either way a
+`openRadius`, `holdMs` and `playerMayPassIf` (`normaliseGate`, `systems/door-gates.js:68-80`, which
+keeps those four keys). It reaches the client in room data (`doors.js:567`; the bootstrap drops
+`doors`). The gate opens when an `openFor` NPC is within the radius (`_npcNear`, `:454-462`, a
+boolean) and stays open for `holdMs` after the last one leaves it (`update`, `:503-528`): that hold
+is the tailgate window. `open(g)` (`:240-262`) starts an open period and `close(g)` (`:354-367`)
+ends it; `playerOpen()` starts its period through `open()`, or re-announces one already open
+(`:307-327`). `door_gate_opened` and `door_gate_closed` carry the group's `roomId` and
+`connectedRoom` (`_afterToggle`, `:232-238`), which are those of whichever door sprite registered
+first; `door_gate_denied` carries those of the sprite clicked (`doors.js:733`). Either way a
 mapping that means "this gate" needs one entry per field, because an `eventMappings` condition
 has no `||` (the lab learned this, `scenarios/lab_physical_pentest/IMPROVEMENT_LOOP_LOG.md:304`).
-`openToPlayer(g)` (`:335-340`) is the one question "may the player walk through this open gate
-now". Today the bar on a player is soft: one who waits five seconds at a
-gate with `playerMayPassIf` false walks in beside the guard (`GUARD_PRIORITY_MS`). A gated room is
-unlocked on the server by its guard's first pass, so its room data can be fetched from then on
-(`npc-behavior.js:664-672`, `doors.js:651-656`). Every gate in a scenario today has
-`playerMayPassIf` (`lab_physical_pentest`, `test_gate_tailgate`). A gate guard needs a multi-room
-route with an `unlockRoom` action at the door
-(`scenarios/test_gate_tailgate/scenario.json.erb:66-78`).
+`openToPlayer(g)` (`:332-337`) is the one question "may the player walk through this open gate
+now": a clone hold first, then `playerMayPassIf`. A click asks it through `clickOutcome`
+(`:349-352`) only for `pass` or `denied` (`doors.js:719-735`); a click with a clone goes to the
+server first (`notifyServerUnlock`, `doors.js:661-714`) and then to `playerOpen()`.
+
+**The owner's gate rule.** A player within the radius of a gate whose `playerMayPassIf` global is
+false is **barred** (`_playerBarred`, `:465-474`). A shut gate stays shut while a barred player is
+there, even beside its guard; a guard held at it for `GUARD_TURN_BACK_MS` (5 s) turns back, resumes
+his route on his own side and tries again next cycle (`_holdGuards`, `:437-452`, which calls his
+behaviour's `turnBackFromGate` and emits `door_gate_guard_turned_back` with his `npcId`). An open
+gate shuts at once when a barred player comes within the radius, skipping `holdMs`, but only after
+two checks that keep it open: the player overlapping the door's body, or a guard in the doorway
+(`update`, `:520-523`). Those two checks are the remaining way past a careful gate: a player who
+dashes into the doorway while it is open keeps it open and walks through. A forced shut
+(`closeNow`, `:482-500`, the scenario action `closeDoor`) keeps a gate shut for at least `holdMs` or
+3 s (`forcedUntil`). The engine plan's door work (its item 3) adds the body rule that closes the
+dash: a north or south gate whose open doorway is not open to the player is solid for them, and a
+walk into it is refused with `door_gate_denied`. That plan is being rewritten around this rule;
+it keeps the turn-back.
+
+A gated room is unlocked on the server by its guard's first pass, through his route's `unlockRoom`
+action (`_runRouteAction`, `systems/npc-behavior.js:1913-1921`), so its room data can be fetched from
+then on. Every gate in a scenario today has `playerMayPassIf` (`lab_physical_pentest`,
+`test_gate_tailgate`). A gate guard needs a multi-room route with an `unlockRoom` action at the
+door (`scenarios/test_gate_tailgate/scenario.json.erb`).
 
 **Social engineering blocks** (`social.characters`, `social.pretextNpcs`, `social.phishTargets`)
 ship in the bootstrap as authored, apart from capture secrets (`game.rb:895`). In every scenario
