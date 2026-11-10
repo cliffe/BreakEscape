@@ -334,6 +334,21 @@ export class DoorGates {
         return !name || !!W().gameState?.globalVariables?.[name];
     }
 
+    /**
+     * What a player's click on a gate door comes to (doors.js handleDoorInteraction):
+     *   'granted' - he holds a credential the gate takes; it is opened for him now
+     *   'pass'    - the gate is open and he may walk through; nothing to say
+     *   'denied'  - refuse, with the door's hint
+     * The credential answers first, so a clone opens (and is credited) even while
+     * the gate happens to be open for a guard.
+     * @param {object|null} g - the gate group clicked, when known
+     * @param {{holdsCredential?: boolean, connectedRoom?: string, now?: number}} click
+     */
+    clickOutcome(g, { holdsCredential = false, connectedRoom = null, now = Date.now() } = {}) {
+        if (holdsCredential && this.playerOpen(connectedRoom, { now })) return 'granted';
+        return g && this.openToPlayer(g, now) ? 'pass' : 'denied';
+    }
+
     close(g) {
         if (!g.open) return false;
         this._prune(g);

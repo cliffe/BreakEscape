@@ -1,6 +1,7 @@
 // Container Minigame
 import { MinigameScene } from '../framework/base-minigame.js';
-import { addToInventory, removeFromInventory } from '../../systems/inventory.js';
+import { addToInventory, removeFromInventory, inventoryImageKey } from '../../systems/inventory.js';
+import { containerImageUrl, containerImageHtml, takeStandIn } from './container-item-image.js';
 import { makeDraggable } from '../../utils/helpers.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { resolveObjectField } from '../../utils/conditional-text.js';
@@ -137,22 +138,12 @@ export class ContainerMinigame extends MinigameScene {
     }
 
     getContainerImageUrl() {
-        const key = this.containerItem?.texture?.key;
-        if (!key) return null;
-        // Maps Phaser texture keys to their actual filenames (where key !== filename stem)
-        const KEY_TO_FILE = {
-            'safe':         'safe1',
-            'pc':           'pc1',
-            'notes':        'notes1',
-            'phone':        'phone1',
-            'suitcase':     'suitcase-1',
-            'photo':        'picture1',
-            'book':         'book1',
-            'fingerprint':  'fingerprint_small',
-            'spoofing_kit': 'office-misc-headphones',
-        };
-        const file = KEY_TO_FILE[key] || key;
-        return `/break_escape/assets/objects/${file}.png`;
+        return containerImageUrl(this.containerItem, inventoryImageKey);
+    }
+
+    /** The header picture; nothing when the container has none to show. */
+    containerImageHtml() {
+        return containerImageHtml(this.getContainerImageUrl(), this.containerItem?.scenarioData?.name);
     }
 
     shouldUseDesktopMode() {
@@ -371,9 +362,7 @@ export class ContainerMinigame extends MinigameScene {
         this.gameContainer.innerHTML = `
             <div class="container-minigame">
                 <div class="container-image-section">
-                    <img src="${this.getContainerImageUrl()}"
-                         alt="${this.containerItem.scenarioData.name}"
-                         class="container-image">
+                    ${this.containerImageHtml()}
                     <div class="container-info">
                         <h4>${displayDashes(this.containerItem.scenarioData.name)}</h4>
                         <p>${displayDashes(this.headerObservations())}</p>
@@ -412,9 +401,7 @@ export class ContainerMinigame extends MinigameScene {
     createDesktopUI() {
         this.gameContainer.innerHTML = `
             <div class="container-image-section">
-                <img src="${this.getContainerImageUrl()}"
-                        alt="${this.containerItem.scenarioData.name}"
-                        class="container-image">
+                ${this.containerImageHtml()}
                 <div class="container-info">
                     <h4>${displayDashes(this.containerItem.scenarioData.name)}</h4>${this.accountBarHtml()}
                     <p>${displayDashes(this.headerObservations())}</p>
@@ -909,16 +896,8 @@ export class ContainerMinigame extends MinigameScene {
         const isCopy = fromSignIn && transfer === 'copy';
         
         // Create a temporary sprite-like object for the inventory system
-        const tempSprite = {
-            scenarioData: item,
-            name: item.type,
-            objectId: `temp_${Date.now()}`,
-            ...(fromSignIn ? { sourcePcId: this.sourcePcId, transfer: transfer || 'move' } : {}),
-            setVisible: function(visible) {
-                // Mock setVisible method for inventory compatibility
-                console.log(`Mock setVisible(${visible}) called on temp sprite`);
-            }
-        };
+        const tempSprite = takeStandIn(item, inventoryImageKey,
+            fromSignIn ? { sourcePcId: this.sourcePcId, transfer: transfer || 'move' } : {});
         
         // Add to inventory
         const addResult = await addToInventory(tempSprite);

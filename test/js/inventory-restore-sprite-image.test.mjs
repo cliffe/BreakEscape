@@ -122,3 +122,47 @@ test('no fallback when the missing picture is already the type image', () => {
     assert.equal(fallbackInventoryImage(img, 'usb'), false);
     assert.equal(img.src, 'http://x/break_escape/assets/objects/usb.png');
 });
+
+// ── Items taken out of a container, and the container's own header picture ──
+// (code review R2, E-m1; lab_physical_pentest playtest N12)
+const itemImageUrl = copy('minigames/container/container-item-image.js', 'container-item-image.mjs');
+const { takeStandIn, containerImageUrl, containerImageHtml } = await import(itemImageUrl);
+
+test('an item taken from a container names its tray picture by sprite first, as a restored item does', () => {
+    const card = { type: 'keycard', sprite: 'keycard-maintenance', name: 'Spare Power-Room Card' };
+    const standIn = takeStandIn(card, inventoryImageKey);
+    assert.equal(standIn.texture.key, 'keycard-maintenance');
+    assert.equal(standIn.name, 'keycard');
+    assert.equal(standIn.scenarioData, card);
+    assert.equal(standIn.setVisible(false), standIn);
+    assert.equal(takeStandIn({ type: 'usb', name: 'Plain stick' }, inventoryImageKey).texture.key, 'usb');
+    const fromPc = takeStandIn(card, inventoryImageKey, { sourcePcId: 'pc1', transfer: 'copy' });
+    assert.equal(fromPc.sourcePcId, 'pc1');
+    assert.equal(fromPc.transfer, 'copy');
+});
+
+test('the container minigame builds its take stand-in and its header picture with these helpers', () => {
+    const src = readFileSync(join(js, 'minigames/container/container-minigame.js'), 'utf8');
+    assert.match(src, /const tempSprite = takeStandIn\(item, inventoryImageKey,/);
+    assert.match(src, /return containerImageUrl\(this\.containerItem, inventoryImageKey\);/);
+    assert.doesNotMatch(src, /<img src="\$\{this\.getContainerImageUrl\(\)\}"/, 'no header <img> built from a possibly empty URL');
+    assert.equal(src.split('${this.containerImageHtml()}').length - 1, 2, 'both headers (standard and desktop) use the helper');
+});
+
+test('a container header: world sprite by texture key, tray item by its tray picture, never "null"', () => {
+    // A world container: the texture key, mapped to its file where they differ
+    assert.equal(containerImageUrl({ texture: { key: 'safe' } }, inventoryImageKey), '/break_escape/assets/objects/safe1.png');
+    assert.equal(containerImageUrl({ texture: { key: 'briefcase' } }, inventoryImageKey), '/break_escape/assets/objects/briefcase.png');
+    // Opened from the inventory tray: the item is the tray's <img>, which has no texture
+    const trayImg = { scenarioData: { type: 'pc', name: 'Remote Session' },
+        getAttribute: (n) => (n === 'src' ? '/break_escape/assets/objects/pc.png' : null) };
+    assert.equal(containerImageUrl(trayImg, inventoryImageKey), '/break_escape/assets/objects/pc.png');
+    // No texture and no tray picture: the item's own picture name
+    assert.equal(containerImageUrl({ scenarioData: { type: 'pc', sprite: 'drop_box1' } }, inventoryImageKey),
+        '/break_escape/assets/objects/drop_box1.png');
+    // Nothing to go on: no URL, and no <img> at all
+    assert.equal(containerImageUrl({}, inventoryImageKey), null);
+    assert.equal(containerImageHtml(null, 'x'), '');
+    assert.equal(containerImageHtml('/a.png', 'Sofia\'s "PC" <1>'),
+        '<img src="/a.png" alt="Sofia\'s &quot;PC&quot; &lt;1>" class="container-image">');
+});

@@ -72,7 +72,7 @@ const path = require('path');
 const { briefTasks } = require('./brief-tasks');
 const { createVmSteps } = require('./vm-steps');
 const { completeConfiguration } = require('./config-gate');
-const { nextBootstrapTarget, readBootstrapFacts } = require('./bootstrap-steps');
+const { nextBootstrapTarget, readBootstrapFacts, converseEnding } = require('./bootstrap-steps');
 const { createResponseCapture } = require('./response-capture');
 
 const args = process.argv.slice(2);
@@ -420,7 +420,9 @@ const vmSteps = createVmSteps({
       // One reading decides what to deal with: the session-resume overlay before any
       // minigame under it, and "nothing open" only once the world has loaded and no
       // opening conversation is still to come (bootstrap-steps.js).
-      const facts = await page.evaluate(readBootstrapFacts).catch(() => ({}));
+      // An unreadable page (a navigation in flight, the page reloading) is not a ready
+      // world: without worldReady:false two such ticks counted as "nothing open"
+      const facts = await page.evaluate(readBootstrapFacts).catch(() => ({ worldReady: false }));
       if (facts.openingPending && facts.worldReady && !openingSince) openingSince = Date.now();
       const target = nextBootstrapTarget({ ...facts, openingWaitedMs: openingSince ? Date.now() - openingSince : 0 });
       if (target === 'wait-overlay' || target === 'wait-world' || target === 'wait-opening') {
@@ -819,8 +821,14 @@ const vmSteps = createVmSteps({
       // Always leave the main world usable, whatever happened above, except
       // when stopped at an unnamed choice: that conversation stays open for the
       // caller to answer (close:true closes it anyway).
-      const keepOpen = !!pendingChoice && c.close !== true;
-      const closed = keepOpen ? { leftOpen: true } : await page.evaluate(() => {
+      // A minigame the conversation itself opened (a clone read, a lock, a container)
+      // is left open too: closing it would throw away what the line just handed over.
+      const nowActiveId = await page.evaluate(() => window.__test.getState().activeMinigame?.id || null);
+      const ending = converseEnding({ pendingChoice: !!pendingChoice, closeAsked: c.close === true, activeMinigameId: nowActiveId });
+      const keepOpen = ending === 'leave-choice';
+      const openedMinigame = ending === 'leave-minigame' ? nowActiveId : null;
+      const closed = keepOpen ? { leftOpen: true } : openedMinigame ? { leftOpen: true, minigame: openedMinigame }
+        : await page.evaluate(() => {
         if (!window.MinigameFramework?.currentMinigame) return { alreadyClosed: true };
         return window.__test.minigame.close();
       });
@@ -838,6 +846,7 @@ const vmSteps = createVmSteps({
         // conversation still open and the world input-locked unless close:true).
         ok: !pendingChoice && !after.activeMinigame && !nothingHappened,
         stoppedAtChoice: pendingChoice || undefined,
+        openedMinigame: openedMinigame || undefined,
         turns,
         exhaustedBranches,
         endingAccepted: endingAccepted || undefined,
@@ -847,9 +856,13 @@ const vmSteps = createVmSteps({
         closed,
         inventory: after.inventory,
         reason: pendingChoice ? (keepOpen ? 'stopped-at-choice' : 'closed-at-choice')
+          : openedMinigame ? 'opened-minigame'
           : after.activeMinigame ? 'still-open-after-close'
           : (nothingHappened ? 'no-dialogue-appeared' : undefined),
-        hint: !keepOpen && pendingChoice
+        hint: openedMinigame
+          ? `The conversation opened the "${openedMinigame}" minigame and converse left it open (ok:false on purpose). `
+            + 'Drive it with {"cmd":"mg",...}; closing it returns to the conversation.'
+          : !keepOpen && pendingChoice
           ? 'Reached a choice nobody named and closed the conversation without answering it (close:true). Nothing was '
             + 'chosen. Run converse again with "choices":["<regex>"] to answer it, or "explore":true to let it pick.'
           : keepOpen

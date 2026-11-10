@@ -64,6 +64,30 @@ test('render: a new aim below the fold is scrolled into view; the first render a
     assert.equal(panel.content.scrollTop, 40, 'nothing new: no jump');
 });
 
+test('render: with the HUD zoomed, rectangles in on-screen pixels still land the new aim in view', () => {
+    // Code review R2, E-m2: at --hud-zoom 2 getBoundingClientRect() is doubled while
+    // scrollTop and clientHeight are not, so the target was about twice too far down.
+    const panel = panelWith({ debrief: { top: 690, height: 63 } });
+    const c = panel.content;
+    c.offsetHeight = 560;
+    c.getBoundingClientRect = () => ({ top: 75, height: 2 * 560 });
+    c.querySelector = (sel) => (/data-aim-id="debrief"/.test(sel)
+        ? { getBoundingClientRect: () => ({ top: 75 + 2 * (690 - c.scrollTop), height: 2 * 63 }) } : null);
+    panel.render([aim('keylogger'), aim('bonus')]);
+    panel.render([aim('keylogger', 'completed'), aim('bonus'), aim('debrief')]);
+    assert.equal(c.scrollTop, 193, 'the same place as without a zoom');
+    // An aim in the middle of a long list is not scrolled past
+    const mid = panelWith({});
+    mid.content.offsetHeight = 560;
+    mid.content.scrollTop = 0;
+    mid.content.getBoundingClientRect = () => ({ top: 75, height: 2 * 560 });
+    mid.content.querySelector = (sel) => (/data-aim-id="extra"/.test(sel)
+        ? { getBoundingClientRect: () => ({ top: 75 + 2 * (600 - mid.content.scrollTop), height: 2 * 80 }) } : null);
+    mid.render([aim('a')]);
+    mid.render([aim('a'), aim('extra')]);
+    assert.equal(mid.content.scrollTop, 120, '600 + 80 - 560, not twice that');
+});
+
 test('stylesheet: the list has no max-height of its own and shares the panel as a flex column', () => {
     const css = readFileSync(join(root, 'public/break_escape/css/objectives.css'), 'utf8');
     const rule = (sel) => { const m = new RegExp(`(?:^|\\n)${sel.replace('.', '\\.')} \\{([^}]*)\\}`).exec(css); return m ? m[1] : ''; };

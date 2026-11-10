@@ -44,4 +44,22 @@ function readBootstrapFacts() {
   return out;
 }
 
-module.exports = { nextBootstrapTarget, readBootstrapFacts, OPENING_WAIT_MS };
+/**
+ * What `converse` does when it stops. It closes the conversation so the main world is
+ * usable again, with two exceptions: a stop at a choice nobody named (left open for
+ * the caller, unless close:true), and a minigame that the conversation itself opened
+ * (a dialogue tag such as #clone_keycard or #trigger_minigame). Closing that one threw
+ * away what the line had just handed the player: in lab_physical_pentest game 61 Len
+ * held his badge out, the cloner's read screen opened, and converse closed it at once,
+ * so the tester never saw it and reported the badge clone as unsolvable (N4).
+ * @returns {'leave-choice'|'leave-minigame'|'close'}
+ */
+const CHAT_MINIGAMES = ['person-chat', 'phone-chat'];
+
+function converseEnding({ pendingChoice = false, closeAsked = false, activeMinigameId = null } = {}) {
+  if (pendingChoice && !closeAsked) return 'leave-choice';
+  if (!pendingChoice && activeMinigameId && !CHAT_MINIGAMES.includes(activeMinigameId)) return 'leave-minigame';
+  return 'close';
+}
+
+module.exports = { nextBootstrapTarget, readBootstrapFacts, OPENING_WAIT_MS, converseEnding, CHAT_MINIGAMES };

@@ -100,3 +100,16 @@ test('findShownDuplicate: no container, or one with no query, finds nothing (fir
     assert.equal(T.findShownDuplicate(null, 'a', 'info', ''), null);
     assert.equal(T.findShownDuplicate({ appendChild() {} }, 'a', 'info', ''), null);
 });
+
+// Code review R2, E-m5: a toast that holdRecentNotifications has pulled back behind a
+// panel is on its way out, so the next identical call must make a new one.
+test('a toast pulled back behind a panel is not reused', async () => {
+    const first = T.gameAlert(HINT, 'info', '', 300);
+    first._toast.pulled = true;
+    const second = T.gameAlert(HINT, 'info', '', 300);
+    assert.notEqual(second, first, 'a new element, not the pulled one');
+    assert.equal(children.length, 2);
+    assert.equal(T.findShownDuplicate(container, HINT, 'info', ''), second);
+    await wait(700);
+    assert.equal(children.length, 0);
+});

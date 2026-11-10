@@ -665,14 +665,16 @@ async function handleDoorInteraction(doorSprite) {
         // (physical keycard or a clone saved on the rfid cloner) opens the gate for
         // one hold window — the taught alternative to tailgating.
         const requires = props.requires || gateGroup?.requires || null;
-        if (playerHoldsRfidCredentialFor(requires)
-            && window.doorGates?.playerOpen?.(props.connectedRoom)) {
+        const outcome = window.doorGates?.clickOutcome?.(gateGroup, {
+            holdsCredential: playerHoldsRfidCredentialFor(requires), connectedRoom: props.connectedRoom
+        }) || 'denied';
+        if (outcome === 'granted') {
             window.gameAlert?.('Access granted: cloned staff badge accepted.', 'success', 'Door', 3000);
             return;
         }
         // The gate is open and the player may pass (staff holding it, hi-vis on): the
         // way is clear, so there is nothing to refuse (playtest E2)
-        if (gateGroup && window.doorGates?.openToPlayer?.(gateGroup)) return;
+        if (outcome === 'pass') return;
         // The hint lives on the locked room's side of the doorway; the group shares it
         const hintSource = { doorProperties: { lockedHint: props.lockedHint || gateGroup?.lockedHint || null } };
         const denied = 'Access denied: this door only opens for authorised staff.';

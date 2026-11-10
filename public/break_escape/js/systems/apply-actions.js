@@ -60,7 +60,7 @@ if (typeof window !== 'undefined') window.recordSECapture = recordSECapture;
  *   add_capture    { capture }       — records a credential/foothold into se_captures
  *   set_costume    { costume }       — swaps the player sprite to scenario.disguises[costume]
  *   clear_costume  {}                — restores the chosen avatar
- *   hint           { message, title? } — shows an informational alert to the player
+ *   hint           { message, title? } — shows an informational alert to the player, for a time set by its length
  *   lighting_dip   { level?, ms? }   — one slow brownout dip of the room lights
  *
  * @param {Array}  actions            Array of action descriptor objects.
@@ -167,7 +167,14 @@ export function applyActions(actions, { source = 'scenario', gameId = null } = {
 
             case 'hint':
                 if (action.message) {
-                    window.gameAlert?.(action.message, 'info', action.title || 'Intelligence Received');
+                    // A hint is a sentence or two to read, so it lasts by length like the
+                    // refusal hints (utils/locked-hint.js hintToastMs: 300 ms a word, 6 to
+                    // 12 s). It used to last 5 s whatever its length, and a 21 word pointer
+                    // was gone before it could be read (lab_physical_pentest playtest N11).
+                    // Where the rule is not loaded the toast keeps its default duration.
+                    const hintMs = window.hintToastMs?.(action.message);
+                    if (Number.isFinite(hintMs)) window.gameAlert?.(action.message, 'info', action.title || 'Intelligence Received', hintMs);
+                    else window.gameAlert?.(action.message, 'info', action.title || 'Intelligence Received');
                     console.log('[applyActions] hint:', action.message);
                 }
                 break;

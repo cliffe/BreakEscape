@@ -58,7 +58,25 @@ test('readBootstrapFacts reads the page and never throws', () => {
 test('the session script uses the ordering, and the bridge reports the overlay over a minigame', () => {
     const session = readFileSync(join(scripts, 'playtest-session.js'), 'utf8');
     assert.match(session, /const target = nextBootstrapTarget\(/);
+    // Code review R2, E-m4: a page that cannot be read waits; it never counts as clear
+    assert.match(session, /page\.evaluate\(readBootstrapFacts\)\.catch\(\(\) => \(\{ worldReady: false \}\)\);/);
+    assert.equal(nextBootstrapTarget({ worldReady: false }), 'wait-world');
     assert.match(session, /const mg = target === 'session-overlay' \? null : facts\.mg;/);
     const state = readFileSync(join(root, 'public/break_escape/js/systems/test-bridge/state.js'), 'utf8');
     assert.match(state, /blockingUi: \(mg && !sessionOverlayShowing\(\)\) \? null : detectBlockingUi\(\),/);
+});
+
+// lab_physical_pentest N4: converse closed the cloner's read screen that Len's line had
+// just opened, so the tester never saw it.
+test('converse leaves open a minigame the conversation opened; closes a finished chat; keeps an unnamed choice', async () => {
+    const { converseEnding } = await import(join(scripts, 'bootstrap-steps.js')).then(m => m.default || m);
+    assert.equal(converseEnding({ activeMinigameId: 'rfid' }), 'leave-minigame');
+    assert.equal(converseEnding({ activeMinigameId: 'container' }), 'leave-minigame');
+    assert.equal(converseEnding({ activeMinigameId: 'person-chat' }), 'close');
+    assert.equal(converseEnding({ activeMinigameId: 'phone-chat' }), 'close');
+    assert.equal(converseEnding({ activeMinigameId: null }), 'close');
+    assert.equal(converseEnding({ pendingChoice: true, activeMinigameId: 'person-chat' }), 'leave-choice');
+    assert.equal(converseEnding({ pendingChoice: true, closeAsked: true, activeMinigameId: 'person-chat' }), 'close');
+    const session = readFileSync(join(scripts, 'playtest-session.js'), 'utf8');
+    assert.match(session, /const ending = converseEnding\(\{ pendingChoice: !!pendingChoice, closeAsked: c\.close === true, activeMinigameId: nowActiveId \}\);/);
 });

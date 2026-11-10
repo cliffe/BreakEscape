@@ -130,11 +130,39 @@ test('openToPlayer: the clone window counts, and a gate with no playerMayPassIf 
     assert.equal(plain.gates.openToPlayer(null, 1000), false);
 });
 
+// Code review R2, E-m3: the three answers to a click, tested as behaviour
+test('clickOutcome: a held credential is granted and opens the gate; an open passable gate passes; else denied', () => {
+    let s = setup();
+    let g = s.gates.groupsFor('vault')[0];
+    assert.equal(s.gates.clickOutcome(g, { connectedRoom: 'vault', now: 1000 }), 'denied', 'shut, no credential');
+    assert.equal(s.a.doorProperties.open, false);
+    s.gates.open(g, 1000);
+    assert.equal(s.gates.clickOutcome(g, { connectedRoom: 'vault', now: 1000 }), 'denied', 'open for the guard, player barred');
+    window.gameState.globalVariables.disguised = true;
+    assert.equal(s.gates.clickOutcome(g, { connectedRoom: 'vault', now: 1000 }), 'pass', 'open and the player may pass');
+    assert.deepEqual(s.events.map(e => e[0]), ['door_gate_opened'], 'a pass opens nothing and emits nothing');
+    // A credential answers first, even while the gate is open and passable
+    assert.equal(s.gates.clickOutcome(g, { holdsCredential: true, connectedRoom: 'vault', now: 1000 }), 'granted');
+    assert.deepEqual(s.events.map(e => e[0]), ['door_gate_opened', 'door_gate_player_opened']);
+    // And opens a shut gate
+    s = setup();
+    g = s.gates.groupsFor('vault')[0];
+    assert.equal(s.gates.clickOutcome(g, { holdsCredential: true, connectedRoom: 'vault', now: 1000 }), 'granted');
+    assert.equal(s.a.doorProperties.open, true);
+    // A credential for a door that is no gate grants nothing; an unknown group is denied
+    console.warn = () => {};
+    assert.equal(s.gates.clickOutcome(null, { holdsCredential: true, connectedRoom: 'cellar' }), 'denied');
+    assert.equal(s.gates.clickOutcome(null, {}), 'denied');
+});
+
 test('doors.js asks openToPlayer before the gate refusal toast and the door_gate_denied event', () => {
     const d = readFileSync(join(js, 'systems/doors.js'), 'utf8');
-    const ask = d.indexOf("window.doorGates?.openToPlayer?.(gateGroup)) return;");
+    const ask = d.indexOf("if (outcome === 'pass') return;");
     const refuse = d.indexOf("const denied = 'Access denied: this door only opens for authorised staff.';");
     const granted = d.indexOf("'Access granted: cloned staff badge accepted.'");
     assert.ok(ask > 0 && refuse > ask, 'the open-gate check comes before the refusal');
     assert.ok(granted > 0 && granted < ask, 'the clone entry still answers first');
+    // The three outcomes come from one tested function, called with the clicked group
+    assert.match(d, /const outcome = window\.doorGates\?\.clickOutcome\?\.\(gateGroup, \{\s*holdsCredential: playerHoldsRfidCredentialFor\(requires\), connectedRoom: props\.connectedRoom\s*\}\) \|\| 'denied';/);
+    assert.match(d, /if \(outcome === 'granted'\) \{\s*window\.gameAlert\?\.\('Access granted: cloned staff badge accepted\.'/);
 });

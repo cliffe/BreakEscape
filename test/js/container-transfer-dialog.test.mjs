@@ -28,7 +28,9 @@ put('utils/conditional-text.js', 'export function resolveObjectField(o, f, d) { 
 put('systems/inventory.js',
     'export const adds = [];\n' +
     'export async function addToInventory(sprite) { adds.push(sprite); globalThis.window.inventory.items.push({ scenarioData: sprite.scenarioData }); return { ok: true, reason: "added" }; }\n' +
-    'export function removeFromInventory() {}\n');
+    'export function removeFromInventory() {}\n' +
+    'export function inventoryImageKey(d) { return (typeof d?.sprite === "string" && d.sprite) || d?.type; }\n');
+copy('minigames/container/container-item-image.js');
 copy('minigames/framework/base-minigame.js');
 copy('minigames/container/container-minigame.js');
 copy('systems/pc-sessions.js');

@@ -239,11 +239,15 @@ export class ObjectivesPanel {
     if (!el || !el.getBoundingClientRect) return;
     const box = el.getBoundingClientRect();
     const view = c.getBoundingClientRect();
+    // The HUD is zoomed on large monitors (css/hud.css --hud-zoom, 1.5 at 1440p, 2 at
+    // 4K). Rectangles come back in zoomed, on-screen pixels; scrollTop and clientHeight
+    // are in the list's own. k converts one to the other, and is 1 without a zoom.
+    const k = c.offsetHeight && view.height ? view.height / c.offsetHeight : 1;
     c.scrollTop = ObjectivesPanel.scrollTopToReveal({
       scrollTop: c.scrollTop,
       viewHeight: c.clientHeight,
-      top: box.top - view.top + c.scrollTop,
-      height: box.height
+      top: (box.top - view.top) / k + c.scrollTop,
+      height: box.height / k
     });
   }
   

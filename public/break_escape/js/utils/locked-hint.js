@@ -38,6 +38,11 @@ export function hintToastMs(text) {
     return Math.min(HINT_MAX_MS, Math.max(HINT_MIN_MS, words * HINT_MS_PER_WORD));
 }
 
+// apply-actions.js reads the rule from here for its `hint` action. It is not imported
+// there: that file is copied by many node test harnesses that stub only its known
+// imports (see the note at its top).
+if (typeof window !== 'undefined') window.hintToastMs = hintToastMs;
+
 /**
  * Toast duration for a refusal line: `plainMs` without a hint; with one, by the length
  * of the whole line shown (`base`, the same text given to appendLockedHint or
