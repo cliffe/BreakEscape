@@ -11,6 +11,8 @@ import { addToInventory, createItemIdentifier } from './inventory.js';
 import { playUISound, playGameSound } from './ui-sounds.js';
 import { applyActions } from './apply-actions.js';
 import { resolveObjectField } from '../utils/conditional-text.js';
+import { requiresItemHint } from './requires-item-hint.js';
+import { hintToastMs } from '../utils/locked-hint.js';
 import { isRemoteFlagLock, remoteFlagLockMessage } from '../utils/flag-lock.js';
 import { npcReachDistSq } from './npc-reach.js';
 import { shouldExamine, startExamine } from './examine.js';
@@ -19,6 +21,11 @@ import { shouldConsumeOnInteract, useConsumable } from './consumables.js';
 import { interactionLineClear } from './interaction-walls.js';
 import { reachX, aimX } from './interaction-reach.js';
 import { hasMinigameStarter, startRegisteredMinigame } from './minigame-registry.js';
+// The inventory click menu (feedback plan, section 5) decides with the same two tests as
+// the chain's first two branches for a held item, imported from one place.
+import { hasTriggerOnInteract, isDroppableInventoryItem, dropInventoryItem, inventoryMenuFor } from './inventory-menu.js';
+
+export { inventoryMenuFor };
 
 let gameRef = null;
 
@@ -707,18 +714,133 @@ function startPretextCall(callId, { npcId = null, channel, app = null } = {}) {
 // A judged contact inside a phone-chat list (a DM gatekeeper) reaches the pretext card from there
 if (typeof window !== 'undefined') window.startPretextCall = startPretextCall;
 
+// interactionWarning: an author-defined "are you sure?" that any scenario object may
+// carry. It is shown BEFORE the object's normal interaction.
+//
+//   "interactionWarning": {
+//     "text": "...",            // author text, rendered as plain text (never HTML)
+//     "proceedLabel": "...",    // confirm button caption (default "Proceed")
+//     "declineLabel": "...",    // cancel button caption (default "Cancel")
+//     "onProceed": [actions],   // run on Proceed, then the normal interaction runs
+//     "onDecline": [actions],   // run on Decline; the normal interaction is blocked
+//     "once": true|false        // default true
+//   }
+//
+// Flow: Decline runs onDecline and stops. Proceed runs onProceed, then the object's
+// normal interaction (e.g. opening the readable note).
+//
+// "Already answered" rule (persisted, survives reload): Proceed is ALWAYS permanent —
+// once the player proceeds the warning never shows again (so onProceed's add_capture /
+// set_global never double-fire, and the note just opens on later visits). A Decline is
+// recorded only when `once` is truthy (the default); with `once: false` a Decline is NOT
+// recorded, so the warning shows again next time the player interacts — a "you can still
+// change your mind" object. The flag is a global, `iw_<id>_answered`, kept with the rest
+// of globalVariables and restored on reload (the same mechanism as re-entry guards like
+// briefing_played); no state-sync closed-key set is involved.
+function interactionWarningKey(sprite) {
+    const d = sprite?.scenarioData || {};
+    const id = d.id || sprite?.objectId || d.name || 'object';
+    return 'iw_' + String(id).replace(/[^A-Za-z0-9_]/g, '_') + '_answered';
+}
+
+function interactionWarningAnswered(sprite) {
+    const g = window.gameState?.globalVariables;
+    return !!(g && g[interactionWarningKey(sprite)]);
+}
+
+function recordInteractionWarningAnswered(sprite) {
+    const key = interactionWarningKey(sprite);
+    if (!window.gameState) window.gameState = {};
+    if (!window.gameState.globalVariables) window.gameState.globalVariables = {};
+    window.gameState.globalVariables[key] = true;
+    // Let NPC ink see the change and push it to the server, as other one-shot guards do.
+    try { window.npcConversationStateManager?.broadcastGlobalVariableChange?.(key, true, null); } catch (e) { /* best effort */ }
+    try { window.stateSync?.sync?.(); } catch (e) { /* best effort */ }
+}
+
+// Returns true when the warning intercepted this interaction (the caller must then return
+// without running the object's normal interaction). Returns false to let it run.
+export function maybeInteractionWarning(sprite) {
+    const w = sprite?.scenarioData?.interactionWarning;
+    if (!w || typeof w !== 'object') return false;
+    // Already answered (persisted): the warning is spent — let the normal interaction run.
+    if (interactionWarningAnswered(sprite)) return false;
+    // Busy-guard (commit 1dd843566): never open over a chat or minigame the player is in.
+    // Drop the interaction rather than barge over the open minigame and steal its input.
+    if (window.MinigameFramework?.currentMinigame) return true;
+    if (!window.gameConfirm) return false; // no dialog available: don't block the object
+
+    const text = typeof w.text === 'string' ? w.text : '';
+    const proceedLabel = typeof w.proceedLabel === 'string' && w.proceedLabel ? w.proceedLabel : 'Proceed';
+    const declineLabel = typeof w.declineLabel === 'string' && w.declineLabel ? w.declineLabel : 'Cancel';
+    const once = w.once !== false; // default true
+
+    window.gameConfirm(text, proceedLabel, declineLabel, { plainText: true }).then(proceed => {
+        if (proceed) {
+            recordInteractionWarningAnswered(sprite); // Proceed is always permanent
+            if (Array.isArray(w.onProceed)) applyActions(w.onProceed, { source: 'interaction_warning' });
+            // Re-run the normal interaction; the gate is now skipped (answered).
+            handleObjectInteraction(sprite);
+        } else {
+            if (once) recordInteractionWarningAnswered(sprite); // Decline recorded only when once is truthy
+            if (Array.isArray(w.onDecline)) applyActions(w.onDecline, { source: 'interaction_warning' });
+        }
+    });
+    return true;
+}
+
+/**
+ * The observations and text an interaction shows for an object, after their
+ * variants. handleObjectInteraction resolves them here before its display
+ * branches, and examineHeldItem uses the same function, so "Examine" in the
+ * inventory menu shows what a click on the item showed before the menu existed.
+ */
+export function examineTextFor(sprite) {
+    const data = sprite?.scenarioData || {};
+    return {
+        observations: resolveObjectField(data, 'observations', sprite?.observations || null),
+        text: resolveObjectField(data, 'text', null)
+    };
+}
+
+/**
+ * "Examine" in the inventory click menu (inventory-menu.js): the examine view
+ * of a held item, with the chain's own text. Without the examine scene (it is
+ * always registered in the game) the observation is shown as the chain's last
+ * step shows it. Returns true when something was shown.
+ */
+export function examineHeldItem(sprite) {
+    if (!sprite?.scenarioData) return false;
+    const { observations, text } = examineTextFor(sprite);
+    if (startExamine(sprite, { observations, text })) return true;
+    const data = sprite.scenarioData;
+    const name = data.name || sprite.name || '';
+    const message = observations ? `${name} Observations: ${observations}\n` : name;
+    if (data.observationDisplay === 'gameDisplay' && window.gameDisplay) {
+        window.gameDisplay(message, data.name);
+    } else {
+        window.gameAlert?.(message, 'info', data.name, 5000);
+    }
+    return true;
+}
+
 export function handleObjectInteraction(sprite) {
     console.log('OBJECT INTERACTION', {
-        name: sprite.name, 
+        name: sprite.name,
         id: sprite.objectId,
         scenarioData: sprite.scenarioData
     });
-    
+
     if (!sprite) {
         console.warn('Invalid sprite');
         return;
     }
-    
+
+    // interactionWarning gate: show the author's "are you sure?" before anything else,
+    // including the object_interacted event below. Returns true when it has taken over
+    // this interaction (warning shown, or dropped because the player is busy).
+    if (maybeInteractionWarning(sprite)) return;
+
     // Emit object interaction event (for NPCs to react)
     if (window.eventDispatcher && sprite.scenarioData) {
         window.eventDispatcher.emit('object_interacted', {
@@ -728,6 +850,9 @@ export function handleObjectInteraction(sprite) {
         });
     }
     
+    // A chair: sit on it, or stand on it when the avatar has no seated frames (seating.js)
+    if (window.seating?.trySit(sprite)) return;
+
     // Handle swivel chair interaction - a jab kicks it
     if (sprite.isSwivelChair && sprite.body) {
         if (window.player && window.playerCombat) {
@@ -783,9 +908,55 @@ export function handleObjectInteraction(sprite) {
         return;
     }
 
+    // Action menu (action-menu.js): when an object offers more than one action right
+    // now (a world keycard the player could clone or take with a cloner in hand; an
+    // author-declared `actions` list), show the shared interaction-menu overlay listing
+    // the actions instead of acting. Busy-guarded; bypassed on re-entry from the menu's
+    // own "Take it" action (sprite._beActionMenuBypass). Loaded dynamically, so reached
+    // through window and inert until it is installed.
+    if (!sprite._beActionMenuBypass && window.maybeShowObjectActionMenu?.(sprite)) return;
+
+    // A sign-in PC (access model 5.3 and 5.4): the owner at the desk blocks it; else its
+    // desktop when pc-sessions.js holds a session for it; else the workstation answer, where
+    // only 'accessed' claims the owner's unlocked session and everything else opens the
+    // sign-in screen (window.interactLoginPc, unlock-system.js). It never runs the generic flow
+    // below (no triggerOnInteract, no unlock, no pickup); the room data marks it
+    // hasContents, so it is a container that only its session opens.
+    if (sprite.scenarioData.lockType === 'login') {
+        if (typeof window.interactLoginPc === 'function') {
+            playUISound('lock');
+            window.interactLoginPc(sprite);
+        } else {
+            handleUnlock(sprite, 'item');
+        }
+        return;
+    }
+
+    // A network jack (slice 9.3a, 4.1): its click is the plant flow in network-links.js
+    // (plant, or unplug a device already in it). It never runs the generic flow below.
+    if (sprite.scenarioData.networkJack === true) {
+        window.networkLinks?.interactJack?.(sprite);
+        return;
+    }
+
+    // A network link item in the tray (slice 9.3a, 4.1): its own click opens the network
+    // view for its foothold. It has no menu, no contents and is never dropped.
+    if (sprite.scenarioData.type === 'network_link') {
+        if (sprite.scenarioData.footholdId) window.networkLinks?.open?.(sprite.scenarioData.footholdId);
+        return;
+    }
+
+    // Workstation screen state (workstation-state.js): note whether an unattended workstation
+    // was reached open or locked. Emits workstation_accessed / workstation_locked_attempt; the
+    // normal interaction below still runs, so the scenario decides what the access yields.
+    if (window.workstationState && sprite.scenarioData.id) {
+        try { window.workstationState.onInteract(sprite.scenarioData.id); }
+        catch (e) { console.warn('[Interaction] workstationState.onInteract failed:', e); }
+    }
+
     // triggerOnInteract: fire scenario-defined actions immediately on interaction,
     // with no minigame or flag entry required. Defined at the object's top level in the scenario.
-    if (Array.isArray(sprite.scenarioData.triggerOnInteract)) {
+    if (hasTriggerOnInteract(sprite.scenarioData)) {
         // requiresItem: gate the trigger on the player carrying a named piece of kit
         // (a type, id or name, or an array of any of those). Lets a scenario make an
         // interaction a real "deploy the item you carried here" action — e.g. clip a
@@ -801,29 +972,20 @@ export function handleObjectInteraction(sprite) {
                 return wanted.includes(d.type) || wanted.includes(d.id) || wanted.includes(d.name);
             });
             if (!held) {
-                const hint = sprite.scenarioData.requiresItemHint || 'You need the right kit in hand for this.';
-                window.gameAlert?.(hint, 'info', '', 3000);
+                // requiresItemHintVariants gives one hint per state (first match wins).
+                const hint = requiresItemHint(sprite.scenarioData);
+                window.gameAlert?.(hint, 'info', '', hintToastMs(hint));
                 return;
             }
             console.log('[Interaction] triggerOnInteract (requiresItem ok) firing for:', sprite.scenarioData.name || sprite.objectId);
-            applyActions(sprite.scenarioData.triggerOnInteract, { source: 'object_interact' });
+            applyActions(sprite.scenarioData.triggerOnInteract, { source: 'object_interact', objectId: sprite.scenarioData.id || null });
             if (sprite.scenarioData.consumesItem) {
                 try {
                     window.removeFromInventory?.(held);
                     const id = held?.scenarioData?.id;
-                    const gameId = window.breakEscapeConfig?.gameId;
-                    if (id && gameId) {
-                        fetch(`/break_escape/games/${gameId}/inventory`, {
-                            method: 'POST',
-                            credentials: 'same-origin',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/json',
-                                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
-                            },
-                            body: JSON.stringify({ action_type: 'remove', item: { id } })
-                        }).catch(err => console.error('[Interaction] Failed to sync consumed kit item:', err));
-                    }
+                    // used_on names this object, so the server records the plant (capture
+                    // proofs, engine plan section 6); awaited with one retry in apply-actions.js
+                    if (id) window.sendInventoryRemove?.(id, { usedOn: sprite.scenarioData.id || null });
                 } catch (err) {
                     console.warn('[Interaction] Could not consume kit item:', err);
                 }
@@ -831,14 +993,16 @@ export function handleObjectInteraction(sprite) {
             return;
         }
         console.log('[Interaction] triggerOnInteract firing for:', sprite.scenarioData.name || sprite.objectId);
-        applyActions(sprite.scenarioData.triggerOnInteract, { source: 'object_interact' });
+        applyActions(sprite.scenarioData.triggerOnInteract, { source: 'object_interact', objectId: sprite.scenarioData.id || null });
         return;
     }
 
     // Droppable inventory items (item-drop.js) go down at the player's feet as a
-    // world object an interested NPC can collect (npc-needs.js).
-    if (window.isDroppableInventoryItem?.(sprite, window.inventory?.items)) {
-        window.dropInventoryItem(sprite);
+    // world object an interested NPC can collect (npc-needs.js). A tray click on one
+    // opens its menu instead (inventory-menu.js) and never gets here; this branch is
+    // for every other caller, such as the test bridge.
+    if (isDroppableInventoryItem(sprite, window.inventory?.items)) {
+        dropInventoryItem(sprite);
         return;
     }
 
@@ -881,7 +1045,12 @@ export function handleObjectInteraction(sprite) {
             if (window.startRFIDMinigame) {
                 window.startRFIDMinigame(null, null, {
                     mode: 'clone',
-                    cardToClone: sprite.scenarioData
+                    cardToClone: sprite.scenarioData,
+                    // The copy's source, so a saved copy is recorded on the server as
+                    // this keycard's card (access model 4.2). A held keycard with no id (an
+                    // NPC's badge handed over) is named by the card_id it carries; the
+                    // server checks the inventory holds a keycard with that card_id.
+                    cloneSource: sprite.scenarioData.id ? { object_id: sprite.scenarioData.id } : { held_card: true }
                 });
             } else {
                 window.gameAlert('RFID minigame not available', 'error', 'Error', 3000);
@@ -1473,8 +1642,8 @@ export function handleObjectInteraction(sprite) {
 
     // Optional stage gate: any object whose minigameData sets `requiresGlobal` stays locked until
     // that global is true (mirrors the minigame-starter gate above, for containers and other
-    // objects that dispatch here). Inert for any object that does not set it. The SE lab's remote
-    // desktop (sofia_remote, a pc container) keys this on the exe foothold (phish_lord_foothold).
+    // objects that dispatch here). Inert for any object that does not set it. (The SE lab's remote
+    // desktop no longer uses it: sofia_remote is a declared grant handed over by a timer.)
     {
         const gate = data.minigameData && data.minigameData.requiresGlobal;
         if (typeof gate === 'string' && gate &&
@@ -1538,8 +1707,7 @@ export function handleObjectInteraction(sprite) {
         return;
     }
 
-    const resolvedObservations = resolveObjectField(data, 'observations', sprite.observations || null);
-    const resolvedText = resolveObjectField(data, 'text', null);
+    const { observations: resolvedObservations, text: resolvedText } = examineTextFor(sprite);
 
     let message = `${data.name || sprite.name} `;
     if (resolvedObservations) {
@@ -1685,9 +1853,12 @@ export function handleObjectInteraction(sprite) {
     // notebook page. A copy is still saved to notes unless "addToNotes": false (use that
     // for flavour, or for live displays whose text changes with textVariants).
     let readInPlace = false;
+    // An item filed in a holder (storeIn, the capture log: engine plan section 6) is in the
+    // holder, never also in the Notepad, whatever addToNotes says.
+    const filedInHolder = typeof data.storeIn === 'string' && data.storeIn.trim() !== '';
     if (data.readable && resolvedText && data.readDisplay === 'gameDisplay') {
         readInPlace = true;
-        if (data.addToNotes !== false && window.addNote) {
+        if (data.addToNotes !== false && !filedInHolder && window.addNote) {
             const addedNote = window.addNote(data.name, resolvedText, data.important || false);
             if (addedNote) {
                 window.gameAlert(`Added "${data.name}" to your notes.`, 'info', 'Note Added', 3000);
@@ -1735,14 +1906,16 @@ export function handleObjectInteraction(sprite) {
                 addToInventory(sprite); // Register with server (UI slot skipped in inventory.js)
             }
             if (window.startNotesMinigame) {
-                window.startNotesMinigame(sprite, resolvedText, resolvedObservations);
+                // A filed item opens the same page but is not added to the Notepad.
+                if (filedInHolder) window.startNotesMinigame(sprite, resolvedText, resolvedObservations, null, false, false);
+                else window.startNotesMinigame(sprite, resolvedText, resolvedObservations);
                 return;
             }
         }
 
         // Add readable text as a note (fallback for non-notes readable objects)
-        // Skip notepad items since they're handled specially
-        if (resolvedText.trim().length > 0 && data.type !== 'notepad') {
+        // Skip notepad items since they're handled specially, and items filed in a holder
+        if (resolvedText.trim().length > 0 && data.type !== 'notepad' && !filedInHolder) {
             const addedNote = window.addNote(data.name, resolvedText, data.important || false);
             if (addedNote) {
                 window.gameAlert(`Added "${data.name}" to your notes.`, 'info', 'Note Added', 3000);
@@ -1933,6 +2106,7 @@ export function tryInteractWithNearest() {
     // No hard cone cutoff — avoids false negatives caused by fake-perspective coordinate mismatches.
     let best = null;
     let bestScore = Infinity;
+    const seatedOn = window.seating?.currentSeat?.() || null;
 
     function consider(objX, objY, handleFn, rangeSq = INTERACTION_RANGE_SQ, npcSprite = null, target = npcSprite, faceX = objX) {
         const dx = objX - px;
@@ -1942,7 +2116,8 @@ export function tryInteractWithNearest() {
         if (distSq > rangeSq) return;
         if (target && !interactionLineClear(player, target)) return; // wall between
         const dist = Math.sqrt(distSq);
-        const score = angularDiff(faceX, objY) * 1000 + dist; // angle to the object's centre, range to its nearest part
+        let score = angularDiff(faceX, objY) * 1000 + dist; // angle to the object's centre, range to its nearest part
+        if (target && !npcSprite && window.seating?.isSeat(target)) score += 30000; // a chair loses to anything else faced
         if (score < bestScore) { bestScore = score; best = { objX: faceX, objY, handleFn }; }
     }
 
@@ -1955,6 +2130,7 @@ export function tryInteractWithNearest() {
         if (room.objects) {
             Object.values(room.objects).forEach(obj => {
                 if (!obj.active || !obj.interactable || !obj.visible) return;
+                if (seatedOn && obj === seatedOn) return; // E from a chair reaches what's around it
                 consider(reachX(obj, px), obj.y, () => handleObjectInteraction(obj), INTERACTION_RANGE_SQ, null, obj, aimX(obj));
             });
         }
@@ -1980,7 +2156,10 @@ export function tryInteractWithNearest() {
         }
     });
 
-    if (!best) return;
+    if (!best) {
+        if (seatedOn) window.seating.standUp(); // nothing else in reach: E stands up
+        return;
+    }
 
     // If the best item is not roughly in the facing direction, turn toward it before interacting
     if (angularDiff(best.objX, best.objY) > ANGLE_TOLERANCE) {
@@ -2050,6 +2229,7 @@ export function isObjectInInteractionRange(sprite) {
 // Export for global access
 window.checkObjectInteractions = checkObjectInteractions;
 window.handleObjectInteraction = handleObjectInteraction;
+window.examineHeldItem = examineHeldItem;
 window.handleContainerInteraction = handleContainerInteraction;
 window.tryInteractWithNearest = tryInteractWithNearest;
 window.tryInteractWithNPC = tryInteractWithNPC;

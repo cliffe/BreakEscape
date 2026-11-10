@@ -1,6 +1,6 @@
 ---
 name: bump-version
-description: Bumps the BreakEscape gem version and keeps Gemfile.lock in sync. Trigger when the user asks to "bump the version", "release a new version", "increment the version", or "update the version number".
+description: Bumps the BreakEscape gem version and keeps Gemfile.lock in sync in both BreakEscape and Hacktivity. Trigger when the user asks to "bump the version", "release a new version", "increment the version", or "update the version number".
 ---
 
 # Break Escape bump-version skill
@@ -34,11 +34,29 @@ PATH
 
 Do not run `bundle install` — the global `~/.bundle/config` has a mirror pointing to a local Hacktivity cache path that doesn't exist, which causes bundle install to fail in this project.
 
-## Step 4 — confirm and report
+## Step 4 — update the Hacktivity repo's Gemfile.lock
+
+Hacktivity (`../../Hacktivity` from this repo) loads Break Escape as a path gem, and its `Gemfile.lock` pins the same version. Its `Gemfile` only points at `../BreakEscape`, so the lockfile is the only file to change. Edit the `break_escape (X.Y.Z)` line in its PATH block the same way (again, no `bundle install`):
+
+```
+PATH
+  remote: ../BreakEscape
+  glob: {,BreakEscape/}break_escape.gemspec
+  specs:
+    break_escape (1.0.5)   ← update this line
+```
+
+`grep -n "break_escape (" Gemfile.lock` in Hacktivity finds it. Hacktivity changes go on `main`.
+
+## Step 5 — commit (when asked) and report
+
+Commit each repo separately, staging explicit paths only (shared trees):
+- BreakEscape: `lib/break_escape/version.rb` and `Gemfile.lock`
+- Hacktivity: `Gemfile.lock`
+
+Use a message like `chore: bump version to X.Y.Z` (Hacktivity: `chore: bump break_escape to X.Y.Z`). Check `git diff --cached --stat` before each commit.
 
 Tell the user:
 - The old version and the new version
-- That `Gemfile.lock` was updated (show the new PATH block)
-- That both files should be committed together
-
-Suggest a commit message like: `chore: bump version to X.Y.Z`
+- That both lockfiles were updated (show the new PATH lines)
+- What was committed, or that the three files still need committing

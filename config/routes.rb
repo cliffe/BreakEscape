@@ -34,8 +34,20 @@ BreakEscape::Engine.routes.draw do
       post 'unlock'       # Validate unlock attempt
       post 'inventory'    # Update inventory
 
+      # Access model: sign-in PCs and card copies (docs/achitechture/ACCESS_MODEL_PLAN.md section 6)
+      post 'login'           # Sign in at a sign-in PC (password, or claim the owner's open session)
+      post 'logout'          # End the session at a sign-in PC
+      get 'login_accounts'   # Account tiles for a sign-in PC's loginPicker
+      post 'clone_card'      # Record a card copy the card copier saved
+
+      # Networks (docs/achitechture/ACCESS_MODEL_SLICE_9_3_PLAN.md section 5)
+      get  'network',         to: 'games#network',         as: 'network'          # The view for each held foothold
+      post 'network/plant',   to: 'games#network_plant',   as: 'network_plant'    # Plant a rogue device in a jack
+      post 'network/unplug',  to: 'games#network_unplug',  as: 'network_unplug'   # Take it back
+
       # Objectives system
       get 'objectives'                                      # Get current objective state
+      get 'capture_secrets'   # SE: authored secret for each earned credential capture (stripped from the bootstrap)
       post 'objectives/tasks/:task_id', to: 'games#complete_task', as: 'complete_task'
       post 'objectives/tasks/:task_id/skip', to: 'games#skip_task', as: 'skip_task'  # Story closed a task off: shown skipped, not counted
       put 'objectives/tasks/:task_id', to: 'games#update_task_progress', as: 'update_task_progress'

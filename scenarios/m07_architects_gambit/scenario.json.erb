@@ -766,11 +766,15 @@ scada_password = "CascadeWindow19"
         { "x": [0.5, 1], "image": "assets/backgrounds/rooms/m07_security_checkpoint_blended.png" }
       ],
       "door_sign": "Security Checkpoint",
-      <%# LIGHTING (pass 5): front of house at night. Lit (Hollis is here), a little cooler than day. Call point off (a lone red pulse reads as a clue). %>
+      <%# LIGHTING (pass 5, revised 2026-11-06): front of house at night, dimmed to m03's night level
+          (#343a50) so Hollis's torch shows. His line of sight is a 50 degree cone (los.angle) and
+          npcTorchStrength only draws a beam when the room is dim (k about 0.97 here, 0 at the old
+          #bcc2ce). The beam is the cue for what he can see, so los.visualize is off. The reception
+          counter keeps a cool pool and the room still reads. Call point off (a lone red pulse reads as a clue). %>
       "lighting": {
-        "ambient": "#bcc2ce",
+        "ambient": "#343a50",
         "emitters": {
-          "reception_counter": [ { "color": "#6fe0ff", "radius": 40, "intensity": 0.3, "above": true } ],
+          "reception_counter": [ { "color": "#6fe0ff", "radius": 70, "intensity": 0.45, "above": true } ],
           "fire_alarm_point": [ { "intensity": 0 } ]
         }
       },
@@ -1457,18 +1461,30 @@ scada_password = "CascadeWindow19"
           <%# PASS 5 puzzle chains r1 (F2): hostile tuned beside the patrol. A guard
               in his mid-thirties: 100 and 4, a little under m04's guard (110). %>
           "behavior": {
+            "torch": true,
             "hostile": { "chaseSpeed": 100, "attackDamage": 4, "pauseToAttack": true },
             "patrol": {
               "enabled": true,
+              <%# 2026-11-05: the player spawn is 55px from Ray, inside the default 96px
+                  face-player radius, so with pauseForPlayer on he never left his first
+                  tile while the player stood near the start. His challengeOnSight cone
+                  still notices the player. %>
+              "pauseForPlayer": false,
               "waypoints": [
                 <%# PASS 2 review: the old circuit started on desk1 (x2.0-4.4, y3.5-4.7)
                     and ran through the waiting chairs and the potted plants. This one
                     stays on the clear floor strip below the desks and between the
                     chair rows (x3-7, y6-7). %>
                 { "x": 3.5, "y": 6.3, "dwellTime": 6000 },
-                { "x": 5, "y": 6.6, "dwellTime": 1500 },
+                { "x": 5, "y": 6.3, "dwellTime": 1500 },
                 { "x": 6.5, "y": 6.3, "dwellTime": 5000 },
-                { "x": 5, "y": 6.0, "dwellTime": 1500 }
+                <%# 2026-11-06: was (5, 6.0), which sent him up-left from the east end
+                    straight at the spawn; he now returns along the lower edge.
+                    Torch pass (2026-11-06): 6.6 made the legs diagonal ("up-left" facing, 225 degrees) and
+                    the spawn sat only 2 degrees outside the 25 degree half-angle there (a 150 s sample
+                    measured 27 degrees; game 635 glimpsed the player once). All four waypoints are on
+                    y 6.3 now, so he only ever faces left or right and the spawn stays well clear. %>
+                { "x": 5, "y": 6.3, "dwellTime": 1500 }
               ],
               "waypointMode": "sequential",
               "loop": true,
@@ -1481,14 +1497,21 @@ scada_password = "CascadeWindow19"
               he is dealt with: hollis_resolved is "talked", "evaded" or "ko" (all
               truthy) or he is knocked out. A player who backed off is challenged
               again on the next sighting (wary_again), so slipping past is a skill;
-              the cone is drawn (visualize) so it can be read. Evading is still
+              the cone is shown by his torch in the dimmed checkpoint (2026-11-06; visualize is off). The torch texture is 141 px long and fades, so it
+              is plainly lit out to about 100-120 px; range is 120 (was 150) so what he sees is
+              what the beam lights, and its half-angle (25.7 degrees) matches los.angle 50. Evading is still
               recorded on reaching the server hall. The 20 s cooldown lets a player
               who closes the chat walk off before he calls again. %>
+          <%# 2026-11-06: the cone is 50 degrees (was 130). The spawn is 25-55px from his strip,
+              so the wide cone spotted a player who had not moved (about 29 s in) and who
+              is usually reading the brief. Over a full patrol cycle the spawn sits at least
+              31 degrees off his facing, outside the 25 degree half-angle; a player who walks
+              into the strip, in front of him, is still seen at up to 150px. %>
           "los": {
             "enabled": true,
-            "range": 150,
-            "angle": 130,
-            "visualize": true,
+            "range": 120,
+            "angle": 50,
+            "visualize": false,
             "challengeOnSight": {
               "cooldown": 20000,
               "requireGlobal": "briefing_played",

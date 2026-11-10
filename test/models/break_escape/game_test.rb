@@ -117,6 +117,96 @@ module BreakEscape
       refute @game.add_item_to_room!('main_office', sent, { 'npc_id' => 'nobody', 'source_type' => 'npc_defeated' })
     end
 
+    # D3: the "already in inventory" filter matches ids when both sides have one,
+    # names only when either side lacks an id.
+    ITEM_FILTER_CASES = [
+        ['same name, different ids: kept', { 'type' => 'suitcase', 'name' => 'Locked Briefcase', 'id' => 'bag_2' }, { 'type' => 'suitcase', 'name' => 'Locked Briefcase', 'id' => 'bag_1' }, false],
+        ['same id: hidden', { 'type' => 'suitcase', 'name' => 'Locked Briefcase', 'id' => 'bag_1' }, { 'type' => 'suitcase', 'name' => 'Locked Briefcase', 'id' => 'bag_1' }, true],
+        ['room id only, same name: hidden by name', { 'type' => 'suitcase', 'name' => 'Locked Briefcase', 'id' => 'bag_1' }, { 'type' => 'suitcase', 'name' => 'Locked Briefcase' }, true],
+        ['inventory id only, same name: hidden by name', { 'type' => 'suitcase', 'name' => 'Locked Briefcase' }, { 'type' => 'suitcase', 'name' => 'Locked Briefcase', 'id' => 'bag_1' }, true],
+        ['both id-less, same name: hidden', { 'type' => 'suitcase', 'name' => 'Locked Briefcase' }, { 'type' => 'suitcase', 'name' => 'Locked Briefcase' }, true],
+        ['opens_lock-only keys: hidden', { 'type' => 'key', 'name' => 'Office Key', 'opens_lock' => 'office' }, { 'type' => 'key', 'name' => 'Office Key', 'opens_lock' => 'office' }, true],
+        ['opens_lock-only keys, different locks: kept', { 'type' => 'key', 'name' => 'Key', 'opens_lock' => 'a' }, { 'type' => 'key', 'name' => 'Key', 'opens_lock' => 'b' }, false],
+        ['different type, same name: kept', { 'type' => 'notes', 'name' => 'Locked Briefcase' }, { 'type' => 'suitcase', 'name' => 'Locked Briefcase' }, false],
+        ['room item with no id or name: hidden by type', { 'type' => 'suitcase' }, { 'type' => 'suitcase', 'name' => 'Locked Briefcase', 'id' => 'bag_1' }, true],
+      ].freeze
+
+    ITEM_FILTER_CASES.each_with_index do |(label, room_item, held, hidden), i|
+      test "filtered_room_data item filter case #{i}: #{label}" do
+        @game.scenario_data = { 'startRoom' => 'lab', 'rooms' => { 'lab' => { 'objects' => [room_item.dup], 'npcs' => [] } } }
+        @game.player_state['unlockedRooms'] = ['lab']
+        @game.player_state['inventory'] = [held.dup]
+        objs = @game.filtered_room_data('lab')['objects']
+        assert_equal hidden ? 0 : 1, objs.length
+      end
+    end
+
+    test "player drop persists a held droppable item and survives pickup, drop again, pickup" do
+      thing = { 'type' => 'notes', 'name' => 'Tagged thing', 'id' => 'tagged_thing', 'needsTag' => 'found_item', 'droppable' => true }
+      @game.scenario_data = { 'startRoom' => 'lab', 'rooms' => { 'lab' => { 'objects' => [thing.dup], 'npcs' => [] } } }
+      @game.player_state['unlockedRooms'] = ['lab']
+      # Picked up from the scenario room, so its id sits in objects_removed
+      @game.player_state['inventory'] = [thing.dup]
+      assert @game.remove_item_from_room!('lab', 'tagged_thing')
+      meta = { 'source_type' => 'player_drop' }
+      sent = { 'id' => 'tagged_thing', 'type' => 'notes', 'name' => 'Tagged thing', 'x' => 10, 'y' => 20, 'position' => { 'x' => 2.5, 'y' => 3 } }
+
+      # Client-supplied fields other than placement are ignored; the held copy is stored
+      assert @game.add_item_to_room!('lab', sent.merge('needsTag' => 'forged', 'droppable' => false), meta)
+      @game.remove_inventory_item!('tagged_thing')
+      objs = @game.filtered_room_data('lab')['objects']
+      assert_equal ['tagged_thing'], objs.map { |o| o['id'] }
+      assert_equal 'found_item', objs.first['needsTag']
+      assert_equal({ 'x' => 2.5, 'y' => 3 }, objs.first['position'])
+
+      # Pick it up again: gone from the room, in the inventory
+      assert @game.remove_item_from_room!('lab', 'tagged_thing')
+      assert_empty @game.filtered_room_data('lab')['objects']
+      @game.add_inventory_item!(thing.dup)
+
+      # Drop twice leaves one copy
+      assert @game.add_item_to_room!('lab', sent, meta)
+      assert @game.add_item_to_room!('lab', sent, meta)
+      assert_equal 1, @game.player_state['room_states']['lab']['objects_added'].count { |o| o['id'] == 'tagged_thing' }
+    end
+
+    test "player drop is refused for an item the player does not hold or that is not droppable" do
+      @game.scenario_data = { 'startRoom' => 'lab', 'rooms' => { 'lab' => { 'objects' => [], 'npcs' => [] } } }
+      @game.player_state['unlockedRooms'] = ['lab']
+      meta = { 'source_type' => 'player_drop' }
+      sent = { 'id' => 'x', 'type' => 'key', 'name' => 'x' }
+      refute @game.add_item_to_room!('lab', sent, meta)
+      @game.player_state['inventory'] = [{ 'type' => 'key', 'name' => 'x', 'id' => 'x' }]
+      refute @game.add_item_to_room!('lab', sent, meta)
+    end
+
+    # Feedback plan, section 5: a dropped item is drawn from its own sprite or type on a
+    # reload, so neither drop path keeps a client texture (the live drop once sent "key").
+    test "neither the player drop nor the NPC drop stores a client texture" do
+      device = { 'type' => 'usb', 'name' => 'BadUSB', 'id' => 'kit_deviceB', 'sprite' => 'icon_deviceB',
+                 'takeable' => true, 'droppable' => true }
+      held = { 'type' => 'launch-device', 'name' => 'Launch Device', 'id' => 'entropy_launch_device' }
+      @game.scenario_data = {
+        'startRoom' => 'lab',
+        'rooms' => { 'lab' => { 'objects' => [], 'npcs' => [{ 'id' => 'derek', 'itemsHeld' => [held] }] } }
+      }
+      @game.player_state['unlockedRooms'] = ['lab']
+      @game.player_state['inventory'] = [device.dup]
+
+      assert @game.add_item_to_room!('lab', { 'id' => 'kit_deviceB', 'type' => 'usb', 'name' => 'BadUSB',
+                                              'texture' => 'key', 'x' => 1, 'y' => 2 },
+                                     { 'source_type' => 'player_drop' })
+      assert @game.add_item_to_room!('lab', { 'id' => 'entropy_launch_device', 'type' => 'launch-device',
+                                              'name' => 'Launch Device', 'texture' => 'key', 'x' => 3, 'y' => 4 },
+                                     { 'npc_id' => 'derek' })
+
+      added = @game.player_state['room_states']['lab']['objects_added']
+      assert_equal %w[entropy_launch_device kit_deviceB], added.map { |o| o['id'] }.sort
+      added.each { |o| refute o.key?('texture'), "#{o['id']} kept a client texture" }
+      dropped = added.find { |o| o['id'] == 'kit_deviceB' }
+      assert_equal 'icon_deviceB', dropped['sprite'], 'the drop keeps the sprite a reload draws it from'
+    end
+
     test "should unlock room" do
       @game.unlock_room!('office')
       assert @game.room_unlocked?('office')

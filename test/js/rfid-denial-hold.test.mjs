@@ -1,4 +1,4 @@
-// RFID reader: "Access Denied" stays until the player taps or 3 s pass, and a refused card
+// RFID reader: "Access Denied" stays until the player taps or 5 s pass, and a refused card
 // at a door is reported as door_unlock_failed (via unlock-system's emitDoorUnlockFailed).
 // Run with: node --test test/js/rfid-denial-hold.test.mjs
 import test from 'node:test';
@@ -32,7 +32,7 @@ const url = copy('minigames/rfid/rfid-minigame.js', {
     "'./rfid-protocols.js'": "'./rfid-protocols.mjs'",
 });
 
-// Fake clock, so the 3 s hold runs instantly
+// Fake clock, so the 5 s hold runs instantly
 let now = 0, timers = [], nextId = 1;
 globalThis.setTimeout = (fn, ms = 0) => { const id = nextId++; timers.push({ id, at: now + ms, fn }); return id; };
 globalThis.clearTimeout = (id) => { timers = timers.filter(t => t.id !== id); };
@@ -77,16 +77,16 @@ function setup(params = {}) {
 const tapScreen = (screen) => (screen.listeners.click || []).slice().forEach(f => f({ stopPropagation() {} }));
 const wrongCard = { scenarioData: { name: 'Staff Access Badge', card_id: 'staff_badge' } };
 
-test('hold is 3 s', () => assert.equal(DENIAL_HOLD_MS, 3000));
+test('hold is 5 s', () => assert.equal(DENIAL_HOLD_MS, 5000));
 
-test('a wrong physical card: denial holds past the old 1.5 s, returns at 3 s', () => {
+test('a wrong physical card: denial holds past the old 3 s, returns at 5 s', () => {
     const { m, calls, screen } = setup();
     m.handleCardTap(wrongCard);
     assert.deepEqual(calls, [['error', 'Access Denied']]);
     assert.ok(screen.children.some(c => c.textContent === 'Tap to continue'));
-    advance(1500);
-    assert.deepEqual(calls, [['error', 'Access Denied']], 'still showing at 1.5 s');
-    advance(1499);
+    advance(3000);
+    assert.deepEqual(calls, [['error', 'Access Denied']], 'still showing at 3 s');
+    advance(1999);
     assert.equal(calls.length, 1);
     advance(1);
     assert.deepEqual(calls.at(-1), ['tap']);
@@ -110,7 +110,7 @@ test('a tap on the screen ends the denial early, once', () => {
 test('a wrong saved card: denial holds, then the saved list', () => {
     const { m, calls } = setup();
     m.handleEmulate({ name: 'Visitor', card_id: 'visitor', rfid_protocol: 'EM4100' });
-    advance(2999);
+    advance(4999);
     assert.deepEqual(calls.map(c => c[0]), ['error']);
     advance(1);
     assert.deepEqual(calls.at(-1), ['saved']);

@@ -355,7 +355,7 @@
    "objects": [
     {
      "gid": 103,
-     "height": 48,
+     "height": 44,
      "id": 59,
      "name": "",
      "rotation": 0,
@@ -367,7 +367,7 @@
     },
     {
      "gid": 104,
-     "height": 48,
+     "height": 44,
      "id": 60,
      "name": "",
      "rotation": 0,
@@ -475,7 +475,7 @@
     },
     {
      "gid": 316,
-     "height": 26,
+     "height": 30,
      "id": 68,
      "name": "",
      "rotation": 0,
@@ -483,11 +483,11 @@
      "visible": true,
      "width": 16,
      "x": 90,
-     "y": 172
+     "y": 176
     },
     {
      "gid": 901,
-     "height": 26,
+     "height": 30,
      "id": 69,
      "name": "",
      "rotation": 0,
@@ -495,11 +495,11 @@
      "visible": true,
      "width": 16,
      "x": 152,
-     "y": 172
+     "y": 176
     },
     {
      "gid": 316,
-     "height": 26,
+     "height": 30,
      "id": 70,
      "name": "",
      "rotation": 0,
@@ -507,7 +507,7 @@
      "visible": true,
      "width": 16,
      "x": 246,
-     "y": 174
+     "y": 178
     },
     {
      "gid": 125,
@@ -687,7 +687,7 @@
      "visible": true,
      "width": 34,
      "x": 92.0,
-     "y": 125.0
+     "y": 122.0
     },
     {
      "gid": 219,
@@ -711,7 +711,7 @@
      "visible": true,
      "width": 34,
      "x": 146.0,
-     "y": 125.0
+     "y": 122.0
     },
     {
      "gid": 305,
@@ -723,7 +723,7 @@
      "visible": true,
      "width": 16,
      "x": 178,
-     "y": 122
+     "y": 126
     },
     {
      "gid": 305,
@@ -735,7 +735,7 @@
      "visible": true,
      "width": 16,
      "x": 128,
-     "y": 121
+     "y": 125
     },
     {
      "gid": 304,
@@ -747,7 +747,7 @@
      "visible": true,
      "width": 16,
      "x": 70.0,
-     "y": 127.0
+     "y": 125.0
     },
     {
      "gid": 183,
@@ -759,7 +759,7 @@
      "visible": true,
      "width": 9,
      "x": 68,
-     "y": 110
+     "y": 114
     }
    ],
    "opacity": 1,
@@ -830,13 +830,13 @@
     {
      "id": 0,
      "image": "../tables/hospital_desk1.png",
-     "imageheight": 48,
+     "imageheight": 44,
      "imagewidth": 62
     },
     {
      "id": 1,
      "image": "../tables/hospital_desk2.png",
-     "imageheight": 48,
+     "imageheight": 44,
      "imagewidth": 62
     },
     {
@@ -2113,13 +2113,13 @@
     {
      "id": 201,
      "image": "../objects/hospital_chair_north.png",
-     "imageheight": 26,
+     "imageheight": 30,
      "imagewidth": 16
     },
     {
      "id": 202,
      "image": "../objects/hospital_chair_south.png",
-     "imageheight": 32,
+     "imageheight": 35,
      "imagewidth": 16
     },
     {
@@ -3814,7 +3814,7 @@
     {
      "id": 100,
      "image": "../objects/hospital_chair_north2.png",
-     "imageheight": 26,
+     "imageheight": 30,
      "imagewidth": 16
     },
     {
@@ -3910,7 +3910,7 @@
     {
      "id": 116,
      "image": "../objects/exec_desk1.png",
-     "imageheight": 46,
+     "imageheight": 42,
      "imagewidth": 80
     },
     {

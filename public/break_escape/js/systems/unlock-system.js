@@ -14,6 +14,7 @@ import { rooms } from '../core/rooms.js';
 import { unlockDoor } from './doors.js';
 import { startLockpickingMinigame, startKeySelectionMinigame, startPinMinigame, startPasswordMinigame, startRansomwareDisplayMinigame, startBackupRecoveryMinigame, startInfusionPumpMinigame } from './minigame-starters.js';
 import { playUISound } from './ui-sounds.js';
+import { appendLockedHint, lockedHintDuration, showLockedHintToast, doorRefusalTitle } from '../utils/locked-hint.js';
 import { startFingerprintReader } from '../minigames/biometrics/fingerprint-reader-minigame.js';
 import { catchLockpickInView } from './lockpick-catch.js';
 
@@ -26,12 +27,7 @@ export async function notifyServerUnlock(lockable, type, method) {
     if (apiClient && gameId) {
         try {
             // Get target ID
-            let targetId;
-            if (type === 'door') {
-                targetId = lockable.doorProperties?.connectedRoom || lockable.doorProperties?.roomId;
-            } else {
-                targetId = lockable.scenarioData?.id || lockable.scenarioData?.name || lockable.objectId;
-            }
+            const targetId = unlockTargetId(lockable, type);
 
             console.log(`Notifying server of ${method} unlock:`, { type, targetId });
             serverResponse = await apiClient.unlock(type, targetId, null, method);
@@ -48,6 +44,14 @@ export async function notifyServerUnlock(lockable, type, method) {
     return serverResponse;
 }
 
+// The id the server knows a lock by: a door's connected room, or the object's id.
+function unlockTargetId(lockable, type) {
+    if (type === 'door') {
+        return lockable.doorProperties?.connectedRoom || lockable.doorProperties?.roomId;
+    }
+    return lockable.scenarioData?.id || lockable.scenarioData?.name || lockable.objectId;
+}
+
 // Helper function to check if two rectangles overlap
 function boundsOverlap(rect1, rect2) {
     return rect1.x < rect2.x + rect2.width &&
@@ -56,9 +60,463 @@ function boundsOverlap(rect1, rect2) {
            rect1.y + rect1.height > rect2.y;
 }
 
+/**
+ * What RFID credentials the player currently holds for a lock's `requires` (a card id
+ * or an array of them). Shared by the rfid unlock path below and the gate clone-as-entry
+ * path (doors.js), so both agree on what counts as a valid card or clone.
+ *
+ * A match is a physical keycard, or a card saved on an rfid_cloner, whose id is one of
+ * the required ids. A card's id is its explicit `card_id`, else the lock it opens
+ * (window.lockRef) — the same rule everywhere.
+ */
+export function evaluateRfidCredential(requires) {
+    const requiredCardIds = Array.isArray(requires) ? requires : [requires];
+    const items = (window.inventory && window.inventory.items) || [];
+    const getCardId = (cardData) => cardData.card_id || window.lockRef(cardData);
+    // A cancelled card_id (left-card consequence, §3.3b) no longer counts — neither the
+    // physical keycard nor a saved clone of it. The card still shows in the reader/cloner
+    // UI (so the player sees it refused there too, handled in rfid-minigame.js); it just
+    // never satisfies the lock.
+    const revoked = (id) => (typeof window !== 'undefined' && window.isCardRevoked) ? window.isCardRevoked(id) : false;
+
+    const keycards = items.filter(item =>
+        item && item.scenarioData && item.scenarioData.type === 'keycard');
+    const matchingKeycard = keycards.find(card =>
+        requiredCardIds.includes(getCardId(card.scenarioData)) && !revoked(getCardId(card.scenarioData)));
+
+    const cloner = items.find(item =>
+        item && item.scenarioData && item.scenarioData.type === 'rfid_cloner');
+    const savedCards = (cloner && cloner.scenarioData && cloner.scenarioData.saved_cards) || [];
+    const hasValidClone = savedCards.some(card =>
+        requiredCardIds.includes(getCardId(card)) && !revoked(getCardId(card)));
+
+    return {
+        requiredCardIds,
+        keycards,
+        matchingKeycard,
+        hasValidCard: !!matchingKeycard,
+        cloner,
+        hasCloner: !!cloner,
+        savedCards,
+        hasValidClone
+    };
+}
+
+/** True when the player holds a keycard or saved clone satisfying `requires`. */
+export function playerHoldsRfidCredentialFor(requires) {
+    if (requires == null) return false;
+    const r = evaluateRfidCredential(requires);
+    return r.hasValidCard || r.hasValidClone;
+}
+
+/** True when an rfid lock carries an access list (roles or people, access model 4.1). */
+export function hasRfidAccessList(lockRequirements) {
+    const access = lockRequirements && lockRequirements.access;
+    return !!access && typeof access === 'object' && !Array.isArray(access);
+}
+
+/**
+ * Every card id the player holds, for an rfid lock with an access list: the keycards
+ * in the inventory and the cards saved on a card copier, each id once. A card's id is
+ * worked out as evaluateRfidCredential does. The client never resolves a card to its
+ * owner's roles: the server does, because the admitted NPC may be in a room the client
+ * has not loaded (access model 4.1).
+ */
+export function heldRfidCardIds() {
+    const items = (window.inventory && window.inventory.items) || [];
+    const getCardId = (cardData) => cardData.card_id || window.lockRef(cardData);
+    const ids = [];
+    const add = (cardData) => {
+        if (!cardData) return;
+        const id = getCardId(cardData);
+        if (id != null && id !== '' && !ids.includes(String(id))) ids.push(String(id));
+    };
+    items.forEach(item => {
+        if (item && item.scenarioData && item.scenarioData.type === 'keycard') add(item.scenarioData);
+    });
+    items.forEach(item => {
+        if (item && item.scenarioData && item.scenarioData.type === 'rfid_cloner') {
+            (item.scenarioData.saved_cards || []).forEach(add);
+        }
+    });
+    return ids;
+}
+
+/**
+ * Ask the server to open an rfid lock with an access list, sending every held card id in
+ * one request. Resolves to { outcome, response }: 'unlocked' (response is the server's
+ * answer), 'uid_only' (a held card would pass but is a UID-only copy and the lock does
+ * not take one), 'denied' (any other refusal) or 'error' (no answer from the server).
+ */
+export async function requestRfidAccessUnlock(lockable, type, cardIds) {
+    const apiClient = window.ApiClient || window.APIClient;
+    if (!apiClient) return { outcome: 'error', response: null };
+    // A card copy saved a moment ago is still being recorded (rfid-minigame.js
+    // recordCloneOnServer): wait for it, or the server refuses the copy it has not seen.
+    const pendingRecord = window.pendingCardCloneRecord;
+    if (pendingRecord && typeof pendingRecord.then === 'function') {
+        try { await pendingRecord; } catch (e) { /* the record's own failure is logged there */ }
+    }
+    try {
+        const response = await apiClient.unlock(type, unlockTargetId(lockable, type), null, 'rfid',
+            { card_ids: cardIds });
+        if (response && response.success) return { outcome: 'unlocked', response };
+        return { outcome: response && response.reason === 'uid_only' ? 'uid_only' : 'denied', response };
+    } catch (error) {
+        if (error && error.status) {
+            const body = error.body || {};
+            return { outcome: body.reason === 'uid_only' ? 'uid_only' : 'denied', response: body };
+        }
+        console.error('RFID access list unlock failed:', error);
+        return { outcome: 'error', response: null };
+    }
+}
+
+// ── Sign-in PCs (access model 5.3, step 8) ─────────────────────────────────
+// A `lockType: "login"` PC is opened by a session, never by unlockTarget: the PC stays
+// locked in every room response, so the next click comes back here. pc-sessions.js
+// (window.pcSessions) holds the sessions and does every sign-in and sign-out.
+
+/** True for a sign-in PC object (not a door). */
+export function isLoginPc(lockable, type = 'item') {
+    return type !== 'door' && lockable?.scenarioData?.lockType === 'login';
+}
+
+/** Open a sign-in PC: its desktop when the client holds a session there, else the sign-in screen. */
+export function openLoginPc(lockable) {
+    const pcId = lockable?.scenarioData?.id;
+    // A host with no screen (slice 9.3a, 3.4) is signed in to only over the network
+    if (isHeadlessHost(lockable)) {
+        showHeadlessObservations(lockable);
+        return;
+    }
+    if (pcId && window.pcSessions?.has(pcId)) {
+        openLoginDesktop(lockable);
+    } else {
+        openLoginSignIn(lockable);
+    }
+}
+
+// ── Remote sign-in (slice 9.3a, ACCESS_MODEL_SLICE_9_3_PLAN.md 4.3 and 4.4) ──────
+// A host row of the network view becomes a "remote lockable": the same shape a sign-in PC
+// sprite has, with scenarioData.remote = { footholdId }. openLoginSignIn and the desktop
+// (container-minigame.js) read `remote` and behave remotely: no GET /login_accounts and
+// no tiles, the foothold on the sign-in and on every desktop fetch, and every close
+// reported to window.networkLinks.landed, which owns the way back (4.3, "Getting back").
+
+/** True for a sign-in object with no screen of its own (`headless: true`) seen at its room. */
+export function isHeadlessHost(lockable) {
+    const data = lockable?.scenarioData;
+    return data?.lockType === 'login' && data.headless === true && !data.remote;
+}
+
+/** A click on a headless host shows its observations and nothing else (3.4). */
+async function showHeadlessObservations(lockable) {
+    const data = lockable?.scenarioData || {};
+    let obs = data.observations || '';
+    try {
+        const { resolveObjectField } = await import('../utils/conditional-text.js');
+        obs = resolveObjectField(data, 'observations', '') || '';
+    } catch (e) { /* unresolved base observations */ }
+    window.gameAlert?.(obs || 'It has no screen or keyboard.', 'info', data.name || 'Device', 4000);
+}
+
+/**
+ * The lockable for a host row of the network view (4.4): `row` is a GET /network host
+ * entry ({ id, name, host, sprite, ... }) or anything with an id, name and host.
+ */
+export function remoteLockable(row, footholdId) {
+    const sprite = row?.sprite || 'pc_desktop';
+    return {
+        scenarioData: {
+            id: row?.id, name: row?.name || row?.host || row?.id, host: row?.host || null,
+            type: 'pc', sprite, lockType: 'login', locked: true, loginPicker: false,
+            remote: { footholdId }
+        },
+        name: sprite,
+        texture: { key: sprite },
+        objectId: `remote_${row?.id}`
+    };
+}
+
+/** The host row for pcId from the last view fetched for this foothold, else what the session knows. */
+function remoteRowFor(pcId, footholdId) {
+    const view = window.networkLinks?.lastView?.(footholdId);
+    const row = (view?.hosts || []).find(h => h?.id === pcId);
+    if (row) return row;
+    const s = window.pcSessions?.get?.(pcId);
+    return { id: pcId, name: s?.host || pcId, host: s?.host || null };
+}
+
+/** The remote sign-in screen for a host row of the view (4.4). */
+export function openRemoteSignIn(hostRow, footholdId) {
+    return openLoginSignIn(remoteLockable(hostRow, footholdId));
+}
+
+/**
+ * A held remote session's desktop, through its foothold (network-links.js calls this from
+ * the view and from openSession; it starts no trip of its own).
+ */
+export function openRemoteDesktop(pcId, footholdId) {
+    openLoginDesktop(remoteLockable(remoteRowFor(pcId, footholdId), footholdId));
+}
+
+/**
+ * The remote screen's Captured sign-ins (4.4): the player's captures whose target the
+ * server lists in `accounts` of GET /capture_secrets (a missing map is {}), with the
+ * password only when `secrets` has it. A form filler; the server checks the password.
+ */
+async function remoteCapturedSignIns() {
+    let captures = {};
+    try {
+        const { readCaptures } = await import('./captures.js');
+        captures = readCaptures(window.gameState?.globalVariables);
+    } catch (e) { return []; }
+    if (!captures || Object.keys(captures).length === 0) return [];
+    const api = window.ApiClient || window.APIClient;
+    let answer = null;
+    try {
+        try { await window.stateSync?.syncConfirmed?.(); } catch (e) { /* ask anyway */ }
+        answer = api?.get ? await api.get('/capture_secrets') : null;
+    } catch (e) {
+        console.warn('Could not load the captured sign-ins', e);
+        return [];
+    }
+    const accounts = answer && typeof answer.accounts === 'object' && answer.accounts ? answer.accounts : {};
+    const secrets = answer && typeof answer.secrets === 'object' && answer.secrets ? answer.secrets : {};
+    const list = window.capturedSignIns;
+    return typeof list === 'function' ? list(captures, accounts, secrets) : [];
+}
+
+/**
+ * A click on a sign-in PC (access model 5.4, "The interaction at a sign-in PC"):
+ *   0. a headless host (slice 9.3a): its observations, and stop;
+ *   1. owned and the owner present: "<owner> is using this PC", then the PC's resolved
+ *      observations, and stop (no workstation event; pc_in_use for task mappings);
+ *   2. a session held here: the desktop;
+ *   3. workstationState.onInteract: 'accessed' claims the owner's session through
+ *      pc-sessions.js (the desktop on success, the sign-in screen on a refusal); anything
+ *      else ('locked', 'signin', 'attended' from a race with step 1, null) the sign-in screen.
+ * Resolves to what it did: 'headless' | 'in_use' | 'desktop' | 'claimed' | 'claim_refused' | 'signin'.
+ */
+export async function interactLoginPc(lockable) {
+    const data = lockable?.scenarioData || {};
+    const pcId = data.id;
+    if (!pcId) return 'none';
+    if (isHeadlessHost(lockable)) {
+        await showHeadlessObservations(lockable);
+        return 'headless';
+    }
+    const ws = window.workstationState;
+    const sessions = window.pcSessions;
+    const { ownerId, present } = ws?.presence ? ws.presence(pcId) : { ownerId: null, present: null };
+    if (ownerId && present) {
+        const owner = window.npcManager?.getNPC?.(ownerId);
+        const name = owner?.displayName || ownerId;
+        let obs = data.observations || '';
+        try {
+            const { resolveObjectField } = await import('../utils/conditional-text.js');
+            obs = resolveObjectField(data, 'observations', '') || '';
+        } catch (e) { /* unresolved base observations */ }
+        const message = obs ? `${name} is using this PC.\n${obs}` : `${name} is using this PC.`;
+        window.gameAlert?.(message, 'info', data.name || 'PC', 4000);
+        sessions?.inUseShown?.(pcId, ownerId);
+        return 'in_use';
+    }
+    if (sessions?.has?.(pcId)) {
+        openLoginDesktop(lockable);
+        return 'desktop';
+    }
+    let answer = null;
+    if (ws?.onInteract) {
+        try { answer = ws.onInteract(pcId); } catch (e) { console.warn('workstationState.onInteract failed', e); }
+    }
+    if (answer === 'accessed' && sessions?.claim) {
+        const r = await sessions.claim(pcId);
+        if (r?.ok) {
+            openLoginDesktop(lockable);
+            return 'claimed';
+        }
+        if (r?.reason === 'owner_returned') {
+            // The owner sat back down while the claim was answered: as step 1, no screen
+            window.gameAlert?.(r.message, 'info', data.name || 'PC', 4000);
+            return 'in_use';
+        }
+        if (r?.reason === 'auto_locked') {
+            // The screen locked while the claim was answered: a locked screen is the sign-in
+            // screen, as a click after the lock would find
+            window.gameAlert?.(r.message, 'info', data.name || 'PC', 4000);
+            openLoginSignIn(lockable, { reason: 'locked' });
+            return 'signin';
+        }
+        openLoginSignIn(lockable, { reason: 'claim_refused' });
+        return 'claim_refused';
+    }
+    openLoginSignIn(lockable, { reason: answer || 'direct' });
+    return 'signin';
+}
+
+/** The desktop for the current session (container-minigame fetches it from the server). */
+export function openLoginDesktop(lockable) {
+    if (typeof window.startContainerMinigame === 'function') {
+        window.startContainerMinigame(lockable, null, false, true);
+    } else {
+        console.error('Container minigame not available for the sign-in desktop');
+    }
+}
+
+/**
+ * The sign-in screen: the password minigame in sign-in mode, with the account tiles
+ * refreshed from GET /login_accounts every time it opens (5.3: "known" changes as the
+ * player explores). `switching`: opened from the desktop's Switch user, so leaving it
+ * without a new sign-in returns to the desktop of the session that is still there.
+ * The screen has no attempt limit of its own; the server counts failures.
+ *
+ * A remote lockable (scenarioData.remote, slice 9.3a 4.4) skips GET /login_accounts and
+ * shows no tiles and no post-it, whatever the PC's picker; it offers the Captured sign-ins;
+ * the sign-in carries the foothold; and its close is reported to networkLinks.landed:
+ * signed in, the remote desktop; otherwise the table decides (the desktop of a session
+ * still held there, else the view). `remote` ({ footholdId }) asks for the same of a
+ * lockable that does not carry it: a remote screen never asks for or shows the sticky note
+ * GET /login_accounts serves at the keyboard (slice 9.1, 5.3).
+ */
+export async function openLoginSignIn(lockable, { switching = false, reason = undefined, remote: remoteOpt = null } = {}) {
+    const data = lockable?.scenarioData || {};
+    const pcId = data.id;
+    if (!pcId) return;
+    const sessions = window.pcSessions;
+    const remote = data.remote && data.remote.footholdId ? data.remote
+        : (remoteOpt && remoteOpt.footholdId ? remoteOpt : null);
+    if (remote) {
+        const remoteLockableFor = data.remote ? lockable : { ...lockable, scenarioData: { ...data, remote: { footholdId: remote.footholdId } } };
+        return openRemoteSignInScreen(remoteLockableFor, { switching, reason });
+    }
+    let tiles = Array.isArray(data.loginAccounts) ? data.loginAccounts : [];
+    // The sticky note (slice 9.1, 5.3): a written-down password comes only in this
+    // answer, at the desk, and is never written onto the object's data, so each open asks
+    // again. Else the PC's own authored note, else none.
+    let servedNote = '';
+    const apiClient = window.ApiClient || window.APIClient;
+    if (apiClient?.loginAccounts && window.breakEscapeConfig?.gameId) {
+        try {
+            const answer = await apiClient.loginAccounts(pcId);
+            if (Array.isArray(answer?.loginAccounts)) {
+                tiles = answer.loginAccounts;
+                data.loginAccounts = tiles;
+            }
+            if (typeof answer?.postitNote === 'string' && answer.postitNote) servedNote = answer.postitNote;
+        } catch (error) {
+            if (error?.status === 403 || error?.status === 404) {
+                window.gameAlert?.("This PC can't be reached", 'error', data.name || 'Sign in', 3000);
+                return;
+            }
+            console.warn('Could not refresh the account tiles; using the room data', error);
+        }
+    }
+
+    const framework = window.MinigameFramework;
+    if (!framework) {
+        console.error('MinigameFramework not available for the sign-in screen');
+        return;
+    }
+    if (!framework.mainGameScene && window.game) framework.init(window.game);
+
+    const picker = data.loginPicker === undefined || data.loginPicker === null ? 'accounts' : data.loginPicker;
+    const postitNote = servedNote || data.postitNote || '';
+    const showPostit = !!postitNote && data.showPostit !== false;
+    sessions?.screenShown?.(pcId, picker === false ? [] : tiles, switching ? 'switch' : reason, showPostit);
+    framework.startMinigame('password', null, {
+        title: data.name || 'Sign in',
+        lockable,
+        type: 'item',
+        signIn: {
+            pcId,
+            pcName: data.name || pcId,
+            picker,
+            tiles: picker === false ? [] : tiles,
+            current: sessions?.get?.(pcId) || null
+        },
+        postitNote,
+        showPostit,
+        requiresKeyboardInput: true,
+        onComplete: (success) => {
+            const signedIn = !!sessions?.has?.(pcId);
+            if ((success && signedIn) || (switching && signedIn)) {
+                openLoginDesktop(lockable);
+            }
+        }
+    });
+}
+
+/** The remote half of openLoginSignIn (4.4): no tiles, the foothold, and the way back (4.3). */
+async function openRemoteSignInScreen(lockable, { switching = false, reason = undefined } = {}) {
+    const data = lockable.scenarioData;
+    const pcId = data.id;
+    const footholdId = data.remote.footholdId;
+    const sessions = window.pcSessions;
+
+    // The screen starts at once, replacing the view or desktop that opened it, and its
+    // Captured sign-ins fill in when /capture_secrets answers (review R1 minor 1): no wait
+    // with the opener still on screen, and no request before the screen exists.
+    const framework = window.MinigameFramework;
+    if (!framework) {
+        console.error('MinigameFramework not available for the sign-in screen');
+        return;
+    }
+    if (!framework.mainGameScene && window.game) framework.init(window.game);
+
+    const linkName = window.networkLinks?.get?.(footholdId)?.name || null;
+    const hostLabel = data.host || data.name || pcId;
+    sessions?.screenShown?.(pcId, [], switching ? 'switch' : (reason || 'remote'), false);
+    // The current session, unless it is a claim: an unlocked screen is not offered over
+    // the network (4.3), and a remote sign-in replaces it as a keyboard one would
+    const held = sessions?.get?.(pcId) || null;
+    const scene = framework.startMinigame('password', null, {
+        title: data.name || 'Sign in',
+        lockable,
+        type: 'item',
+        signIn: {
+            pcId,
+            pcName: data.host && data.name && data.host !== data.name ? `${data.name} (${data.host})` : hostLabel,
+            picker: false,
+            tiles: [],
+            current: held && held.via !== 'claim' ? held : null,
+            remote: { footholdId, linkName },
+            captured: [],
+            capturedLoading: true
+        },
+        postitNote: '',
+        showPostit: false,
+        requiresKeyboardInput: true,
+        onComplete: (success) => {
+            const signedIn = !!sessions?.has?.(pcId) && sessions.get(pcId)?.via !== 'claim';
+            const links = window.networkLinks;
+            if (success && signedIn) {
+                links?.landed?.('signin', 'handover', { pcId, host: hostLabel });
+                openLoginDesktop(lockable);
+                return;
+            }
+            const landing = links?.landed?.('signin', 'close', { pcId, host: hostLabel });
+            // No trip running (a screen opened outside the network screens): as at the keyboard
+            if ((!landing || landing.landing === 'none') && switching && signedIn) openLoginDesktop(lockable);
+        }
+    });
+    const captured = await remoteCapturedSignIns();
+    if (scene && framework.currentMinigame === scene && typeof scene.setCapturedSignIns === 'function') {
+        scene.setCapturedSignIns(captured);
+    }
+}
+
 export function handleUnlock(lockable, type) {
     console.log('UNLOCK ATTEMPT');
     playUISound('lock');
+
+    // A sign-in PC never goes through unlockTarget (not even with locks disabled): its
+    // session opens it (5.3).
+    if (isLoginPc(lockable, type)) {
+        openLoginPc(lockable);
+        return;
+    }
     
     // Check if locks are disabled for testing
     if (window.DISABLE_LOCKS) {
@@ -79,7 +537,7 @@ export function handleUnlock(lockable, type) {
             if (serverResponse && serverResponse.success) {
                 unlockTarget(lockable, type, lockable.layer, serverResponse);
             } else {
-                window.gameAlert('Access denied', 'error', 'Error', 3000);
+                window.gameAlert('Access denied', 'error', 'Error', lockedHintDuration(lockable, 3000, 'Access denied'));
             }
         }).catch(error => {
             console.error('Server verification failed:', error);
@@ -100,7 +558,7 @@ export function handleUnlock(lockable, type) {
             if (serverResponse && serverResponse.success) {
                 unlockTarget(lockable, type, lockable.layer, serverResponse);
             } else {
-                window.gameAlert('Access denied', 'error', 'Error', 3000);
+                window.gameAlert('Access denied', 'error', 'Error', lockedHintDuration(lockable, 3000, 'Access denied'));
             }
         }).catch(error => {
             console.error('Server verification failed:', error);
@@ -131,6 +589,13 @@ export function handleUnlock(lockable, type) {
         }
     };
     
+    // A refusal that came from inside a lock's own overlay (fingerprint reader, RFID cloner):
+    // report it, then show the door's lockedHint (if it has one) as the refusal toast.
+    const refusedWithHint = (reason) => {
+        emitDoorUnlockFailed(reason);
+        showLockedHintToast(lockable);
+    };
+
     switch(lockRequirements.lockType) {
         case 'key':
             // Note: requiredKey no longer available from server (security filtered)
@@ -236,9 +701,7 @@ export function handleUnlock(lockable, type) {
                 // Opt-in hint: a scenario may author `lockedHint` on the door/room to tell the
                 // player where the key comes from (SE lab F17). Doors without it keep the plain
                 // "Requires key" line unchanged, so shipped missions behave exactly as before.
-                const lockedHint = lockable.lockedHint || lockable.doorProperties?.lockedHint ||
-                                   lockable.scenarioData?.lockedHint || lockable.properties?.lockedHint || '';
-                window.gameAlert(lockedHint ? `Requires key. ${lockedHint}` : `Requires key`, 'error', 'Locked', lockedHint ? 5500 : 4000);
+                window.gameAlert(appendLockedHint('Requires key', lockable), 'error', 'Locked', lockedHintDuration(lockable, 4000, 'Requires key'));
             }
             break;
 
@@ -362,7 +825,7 @@ export function handleUnlock(lockable, type) {
                 notifyServerUnlock(lockable, type, 'biometric').then(serverResponse => {
                     unlockTarget(lockable, type, lockable.layer, serverResponse);
                 });
-            }, emitDoorUnlockFailed);
+            }, refusedWithHint);
             break;
             
         case 'bluetooth':
@@ -451,43 +914,22 @@ export function handleUnlock(lockable, type) {
         case 'rfid':
             console.log('RFID LOCK UNLOCK ATTEMPT');
 
-            // Support both single card ID (legacy) and array of card IDs
-            const requiredCardIds = Array.isArray(lockRequirements.requires) ?
-                lockRequirements.requires : [lockRequirements.requires];
+            // Support both single card ID (legacy) and array of card IDs, and find any
+            // matching physical keycard or saved clone — shared with the gate
+            // clone-as-entry path (evaluateRfidCredential). A lock with an access list
+            // and no `requires` has no specific card, so nothing can match step 1.
+            const rfidHasRequires = lockRequirements.requires != null && lockRequirements.requires !== '' &&
+                !(Array.isArray(lockRequirements.requires) && lockRequirements.requires.length === 0);
+            const {
+                requiredCardIds, keycards, matchingKeycard, hasValidCard,
+                cloner, hasCloner, savedCards, hasValidClone
+            } = evaluateRfidCredential(hasRfidAccessList(lockRequirements) && !rfidHasRequires
+                ? [] : lockRequirements.requires);
 
             // Check if door accepts UID-only emulation (for DESFire cards)
             const acceptsUIDOnly = lockRequirements.acceptsUIDOnly || false;
 
             console.log('RFID CARD REQUIRED', requiredCardIds, 'acceptsUIDOnly:', acceptsUIDOnly);
-
-            // Check for keycards in inventory
-            const keycards = window.inventory.items.filter(item =>
-                item && item.scenarioData &&
-                item.scenarioData.type === 'keycard'
-            );
-
-            // Helper to get card ID (standard: card_id, else the lock it opens)
-            const getCardId = (cardData) => cardData.card_id || window.lockRef(cardData);
-
-            // Find a matching physical keycard
-            const matchingKeycard = keycards.find(card =>
-                requiredCardIds.includes(getCardId(card.scenarioData))
-            );
-            const hasValidCard = !!matchingKeycard;
-
-            // Check for RFID cloner with saved cards
-            const cloner = window.inventory.items.find(item =>
-                item && item.scenarioData &&
-                item.scenarioData.type === 'rfid_cloner'
-            );
-
-            const hasCloner = !!cloner;
-            const savedCards = cloner?.scenarioData?.saved_cards || [];
-
-            // Check if any saved card matches
-            const hasValidClone = savedCards.some(card =>
-                requiredCardIds.includes(getCardId(card))
-            );
 
             console.log('RFID CHECK', {
                 requiredCardIds,
@@ -500,36 +942,14 @@ export function handleUnlock(lockable, type) {
                 matchingKeycard: matchingKeycard?.scenarioData?.name
             });
 
-            // PRIORITY 1: If player has a matching physical keycard, open door directly
-            if (hasValidCard) {
-                const cardName = matchingKeycard.scenarioData.name || 'Keycard';
-                console.log(`RFID DIRECT UNLOCK with physical keycard: ${cardName}`);
-                
-                // Notify server and unlock
-                notifyServerUnlock(lockable, type, 'rfid').then(serverResponse => {
-                    // Play electric strike sound alongside door open
-                    try {
-                        if (window.game && window.game.sound) {
-                            const s = window.game.sound.get('rfid_unlock') || window.game.sound.add('rfid_unlock');
-                            s.play({ volume: 0.9 });
-                        }
-                    } catch (e) {}
-                    unlockTarget(lockable, type, lockable.layer, serverResponse);
-                    window.gameAlert(`Door opened with ${cardName}`, 'success', 'Access Granted', 3000);
-                }).catch(error => {
-                    console.error('RFID unlock failed:', error);
-                    window.gameAlert('Access denied', 'error', 'Error', 3000);
-                });
-            }
-            // A cloner with nothing to offer (no keycards to tap, no saved clones): the
-            // reader just refuses, rather than opening an empty cloner screen (m07 U9)
-            else if (hasCloner && keycards.length === 0 && savedCards.length === 0) {
-                console.log('RFID CLONER EMPTY: no keycards, no saved cards');
-                window.gameAlert('Access denied. No keycard, and nothing saved on the cloner.', 'error', 'Access Denied', 4000);
-                emitDoorUnlockFailed('no_card');
-            }
-            // PRIORITY 2: If player has RFID cloner, open minigame to emulate or read cards
-            else if (hasCloner) {
+            // The electric strike alongside the door opening: the shared door sound
+            // (ui-sounds.js), the same one a gate door with an RFID lock plays
+            const playRfidUnlockSound = () => {
+                try { playUISound('door_release'); } catch (e) {}
+            };
+
+            // The card copier's reader screen: tap a held card or emulate a saved one
+            const startRfidReader = () => {
                 // Start RFID minigame in unlock mode
                 window.startRFIDMinigame(lockable, type, {
                     mode: 'unlock',
@@ -539,36 +959,93 @@ export function handleUnlock(lockable, type) {
                     hasCloner: hasCloner,
                     // A refused card or clone at the reader: door_unlock_failed (reason
                     // wrong_card or uid_only), same as a refused key or fingerprint
-                    onRefused: emitDoorUnlockFailed,
+                    onRefused: refusedWithHint,
                     onComplete: async (success) => {
                         if (success) {
                             // Notify server and get room/container data
                             const serverResponse = await notifyServerUnlock(lockable, type, 'rfid');
                             setTimeout(() => {
-                                // Play electric strike sound alongside door open
-                                try {
-                                    if (window.game && window.game.sound) {
-                                        const s = window.game.sound.get('rfid_unlock') || window.game.sound.add('rfid_unlock');
-                                        s.play({ volume: 0.9 });
-                                    }
-                                } catch (e) {}
+                                playRfidUnlockSound();
                                 unlockTarget(lockable, type, lockable.layer, serverResponse);
                                 window.gameAlert('RFID lock unlocked!', 'success', 'Access Granted', 3000);
                             }, 100);
                         }
                     }
                 });
+            };
+
+            // Access model 4.1: a lock with an access list (roles or people) is decided by
+            // the server from every card id the player holds.
+            const accessCardIds = hasRfidAccessList(lockRequirements) ? heldRfidCardIds() : [];
+
+            // STEP 1a: a held keycard matches `requires` - open directly (today's rule)
+            if (hasValidCard) {
+                const cardName = matchingKeycard.scenarioData.name || 'Keycard';
+                console.log(`RFID DIRECT UNLOCK with physical keycard: ${cardName}`);
+                
+                // Notify server and unlock
+                notifyServerUnlock(lockable, type, 'rfid').then(serverResponse => {
+                    playRfidUnlockSound();
+                    unlockTarget(lockable, type, lockable.layer, serverResponse);
+                    window.gameAlert(`Door opened with ${cardName}`, 'success', 'Access Granted', 3000);
+                }).catch(error => {
+                    console.error('RFID unlock failed:', error);
+                    window.gameAlert('Access denied', 'error', doorRefusalTitle(lockable, 'Error'), lockedHintDuration(lockable, 3000, 'Access denied'));
+                });
             }
-            // PRIORITY 3: No valid keycard and no cloner
+            // STEP 1b: a saved copy matches `requires` - the reader, where the minigame
+            // applies the lock's acceptsUIDOnly itself (today's rule)
+            else if (hasValidClone) {
+                startRfidReader();
+            }
+            // STEP 2: the lock has an access list - send every held card id in one request
+            // and show the server's answer
+            else if (accessCardIds.length > 0) {
+                console.log('RFID ACCESS LIST: asking the server', { cards: accessCardIds.length });
+                requestRfidAccessUnlock(lockable, type, accessCardIds).then(({ outcome, response }) => {
+                    if (outcome === 'unlocked') {
+                        // Container contents come back with an object unlock
+                        if (response.hasContents && response.contents && lockable.scenarioData) {
+                            lockable.scenarioData.contents = response.contents;
+                        }
+                        playRfidUnlockSound();
+                        unlockTarget(lockable, type, lockable.layer, response);
+                        window.gameAlert('Card accepted', 'success', 'Access Granted', 3000);
+                    } else if (outcome === 'uid_only') {
+                        playUISound('reject');
+                        window.gameAlert(appendLockedHint('Reader requires full authentication', lockable), 'error', doorRefusalTitle(lockable, 'Access Denied'), lockedHintDuration(lockable, 4000, 'Reader requires full authentication'));
+                        emitDoorUnlockFailed('uid_only');
+                    } else if (outcome === 'denied') {
+                        playUISound('reject');
+                        window.gameAlert(appendLockedHint('Access denied', lockable), 'error', doorRefusalTitle(lockable, 'Access Denied'), lockedHintDuration(lockable, 4000, 'Access denied'));
+                        emitDoorUnlockFailed('wrong_card');
+                    } else {
+                        window.gameAlert('Failed to verify access', 'error', 'Error', 3000);
+                    }
+                });
+            }
+            // STEP 3: today's flow. A cloner with nothing to offer (no keycards to tap, no
+            // saved clones): the reader just refuses, rather than opening an empty cloner
+            // screen (m07 U9)
+            else if (hasCloner && keycards.length === 0 && savedCards.length === 0) {
+                console.log('RFID CLONER EMPTY: no keycards, no saved cards');
+                window.gameAlert(appendLockedHint('Access denied. No keycard, and nothing saved on the cloner.', lockable), 'error', doorRefusalTitle(lockable, 'Access Denied'), lockedHintDuration(lockable, 4000, 'Access denied. No keycard, and nothing saved on the cloner.'));
+                emitDoorUnlockFailed('no_card');
+            }
+            // If player has RFID cloner, open minigame to emulate or read cards
+            else if (hasCloner) {
+                startRfidReader();
+            }
+            // No valid keycard and no cloner
             else {
                 console.log('NO RFID CARDS OR CLONER AVAILABLE');
-                window.gameAlert('Requires RFID keycard', 'error', 'Access Denied', 4000);
+                window.gameAlert(appendLockedHint('Requires RFID keycard', lockable), 'error', doorRefusalTitle(lockable, 'Access Denied'), lockedHintDuration(lockable, 4000, 'Requires RFID keycard'));
                 emitDoorUnlockFailed('no_card');
             }
             break;
 
         default:
-            window.gameAlert(`This ${type} requires ${lockRequirements.lockType} to unlock.`, 'info', 'Locked', 4000);
+            window.gameAlert(appendLockedHint(`This ${type} requires ${lockRequirements.lockType} to unlock.`, lockable), 'info', 'Locked', lockedHintDuration(lockable, 4000, `This ${type} requires ${lockRequirements.lockType} to unlock.`));
             break;
     }
 }
@@ -584,7 +1061,9 @@ export function getLockRequirementsForDoor(doorSprite) {
                 lockType: props.lockType,
                 requires: props.requires,
                 keyPins: props.keyPins,  // Include keyPins for scenario-based locks
-                difficulty: props.difficulty
+                difficulty: props.difficulty,
+                access: props.access ?? null,  // rfid access list (access model 4.1)
+                acceptsUIDOnly: props.acceptsUIDOnly ?? null
             };
         }
     }
@@ -629,7 +1108,9 @@ export function getLockRequirementsForDoor(doorSprite) {
                 requires: roomData?.requires,
                 keyPins: roomData?.keyPins || roomData?.key_pins,  // Include keyPins from scenario (supports both cases)
                 difficulty: roomData?.difficulty,
-                locked: roomData?.locked
+                locked: roomData?.locked,
+                access: roomData?.access ?? null,
+                acceptsUIDOnly: roomData?.acceptsUIDOnly ?? null
             });
         }
     });
@@ -645,7 +1126,9 @@ export function getLockRequirementsForDoor(doorSprite) {
             lockType: targetRoom.lockType,
             requires: targetRoom.requires,
             keyPins: targetRoom.keyPins,  // Include keyPins from scenario
-            difficulty: targetRoom.difficulty
+            difficulty: targetRoom.difficulty,
+            access: targetRoom.access,
+            acceptsUIDOnly: targetRoom.acceptsUIDOnly
         };
     }
     
@@ -660,7 +1143,9 @@ export function getLockRequirementsForItem(item) {
         lockType: item.scenarioData.lockType || 'key',
         requires: item.scenarioData.requires || '',
         keyPins: item.scenarioData.keyPins,  // Include keyPins for scenario-based locks
-        difficulty: item.scenarioData.difficulty
+        difficulty: item.scenarioData.difficulty,
+        access: item.scenarioData.access ?? null,  // rfid access list (access model 4.1)
+        acceptsUIDOnly: item.scenarioData.acceptsUIDOnly ?? null
     };
 }
 
@@ -768,4 +1253,10 @@ window.handleUnlock = handleUnlock;
 window.getLockRequirementsForDoor = getLockRequirementsForDoor;
 window.getLockRequirementsForItem = getLockRequirementsForItem;
 window.unlockTarget = unlockTarget;
+window.openLoginPc = openLoginPc;
+window.interactLoginPc = interactLoginPc;
+window.openLoginSignIn = openLoginSignIn;
+// The network screens (slice 9.3a): network-links.js looks openRemoteDesktop up on window
+window.openRemoteSignIn = openRemoteSignIn;
+window.openRemoteDesktop = openRemoteDesktop;
 

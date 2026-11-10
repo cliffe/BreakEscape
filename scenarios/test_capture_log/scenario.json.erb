@@ -1,0 +1,319 @@
+{
+  "scenario_id": "test_capture_log",
+  "scenario_name": "Test: Capture log and capture proofs",
+  "scenario_brief": "TEST: the capture log device and capture proofs (engine plan section 6).\n\nYou start with the capture log, a keylogger, a drop box and a QR card. Every capture, session and finding lands in the capture log, not in the tray. An account password is shown only once the server has seen the proof: the keylogger planted on Chris's desk, the QR card dropped where Sofia picks it up, or a session on Mel's PC. Ned's password opens nothing, so it is shown as soon as it is captured.\n\nSigns on the walls say what each beat proves. Nothing to win.",
+  "endGoal": "Engine test. No win condition.",
+  "version": "1.0",
+  "show_scenario_brief": "never",
+  "disableAttacks": true,
+  "startRoom": "office",
+
+  "lighting": { "enabled": true, "defaultMode": "on" },
+  "npcNeedsSeed": "test_capture_log",
+
+  "player": {
+    "id": "player",
+    "displayName": "Pentester",
+    "spriteSheet": "female_hacker_hood_v2"
+  },
+
+  "social": { "captures": { "revealSecret": true } },
+
+  "globalVariables": {
+    "logger_planted": false,
+    "box_planted": false,
+    "ned_read": false
+  },
+
+  "objectives": [
+    {
+      "aimId": "capture_log",
+      "title": "Fill the capture log",
+      "description": "Each beat records a capture, a session or a finding in the capture log.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        { "taskId": "beat_keylogger", "title": "Plant the keylogger on Chris's desk", "type": "custom", "status": "active" },
+        { "taskId": "beat_drop", "title": "Drop the QR card where Sofia will find it", "type": "custom", "status": "active" },
+        { "taskId": "beat_claim", "title": "Use Mel's open screen while she is away", "type": "custom", "status": "active" },
+        { "taskId": "beat_box", "title": "Plant the drop box in the wall port", "type": "custom", "status": "active" },
+        { "taskId": "beat_ned", "title": "Read Ned's desk note", "type": "custom", "status": "active" }
+      ]
+    }
+  ],
+
+  "startItemsInInventory": [
+    {
+      "type": "capture_log",
+      "id": "capture_log",
+      "name": "Capture log",
+      "sprite": "laptop1",
+      "takeable": true,
+      "holds": { "captures": true, "items": true },
+      "observations": "Your engagement device: every credential, session and finding you record."
+    },
+    {
+      "type": "usb",
+      "id": "kit_logger",
+      "name": "Hardware keylogger",
+      "sprite": "icon_deviceA",
+      "takeable": true,
+      "observations": "An inline keylogger. Clip it behind Chris's desk."
+    },
+    {
+      "type": "usb",
+      "id": "kit_box",
+      "name": "Network drop box",
+      "takeable": true,
+      "observations": "A small drop box. Plant it in the wall port."
+    },
+    {
+      "type": "hq_poster_postit",
+      "id": "kit_qr",
+      "name": "QR-code card",
+      "sprite": "qr_card",
+      "takeable": true,
+      "droppable": true,
+      "needsTag": "dev_qr",
+      "observations": "A QR card that points at a look-alike sign-in page. Drop it near Sofia's desk."
+    }
+  ],
+
+  "timers": [
+    {
+      "id": "finding_welcome",
+      "delayMs": 2000,
+      "actions": [
+        { "type": "give_item", "item": {
+            "id": "finding_scope", "type": "text_file", "name": "Finding: scope note", "storeIn": "capture_log",
+            "readable": true, "takeable": true,
+            "text": "FINDING (test)\n\nThe engagement scope: this office only. This text is a granted finding with storeIn, so it is filed in the capture log and never in the Notepad."
+        } }
+      ]
+    },
+    {
+      "id": "finding_box",
+      "startOnGlobal": "box_planted",
+      "delayMs": 500,
+      "actions": [
+        { "type": "give_item", "item": {
+            "id": "finding_wall_port", "type": "text_file", "name": "Finding: live wall port", "storeIn": "capture_log",
+            "readable": true, "takeable": true,
+            "text": "FINDING (test)\n\nA live, unused wall port took a rogue device without any check. The control: disable unused ports and use port security."
+        } }
+      ]
+    },
+    {
+      "id": "session_box",
+      "startOnGlobal": "box_planted",
+      "delayMs": 800,
+      "actions": [
+        { "type": "give_item", "item": {
+            "id": "remote_session_box", "type": "pc", "name": "Remote session: drop box", "storeIn": "capture_log",
+            "hasContents": true, "locked": false,
+            "observations": "A remote desktop through the drop box. Open it from the capture log.",
+            "contents": [
+              { "id": "box_readme", "type": "text_file", "name": "readme.txt", "takeable": false, "readable": true,
+                "text": "SESSION FILE (test)\n\nOpened from the remote session. Close it and you land back on the capture log." },
+              { "id": "box_note", "type": "notes", "name": "Desk note", "takeable": false, "readable": true,
+                "text": "SESSION NOTE (test)\n\nA note opened from the session desktop: it returns to the desktop, then to the capture log." }
+            ]
+        } }
+      ]
+    }
+  ],
+
+  "rooms": {
+    "office": {
+      "type": "room_office",
+      "door_sign": "Test Office",
+      "connections": {},
+      "npcs": [
+        {
+          "id": "chris",
+          "displayName": "Chris Hampshire",
+          "npcType": "person",
+          "position": { "x": 2, "y": 5 },
+          "spriteSheet": "male_office_worker_v2", "spriteTalk": "assets/characters/male_office_worker_talk.png",
+          "creds": { "username": "c.hampshire", "password": "Test-Chris-Keys-41" },
+          "captureProof": [
+            { "planted": "kit_logger", "on": "chris_desk" },
+            { "planted": "kit_box", "on": "wall_port" }
+          ],
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:logger_planted",
+              "condition": "value === true",
+              "onceOnly": true,
+              "addCapture": { "targetId": "hampshire", "roleLabel": "Test office, reception", "kind": "credential", "address": "c.hampshire", "host": "TEST-DESK-01", "note": "Recorded by the keylogger planted on Chris's desk (proof: planted)." },
+              "completeTask": "beat_keylogger"
+            }
+          ]
+        },
+        {
+          "id": "sofia",
+          "displayName": "Sofia Lord",
+          "npcType": "person",
+          "position": { "x": 6, "y": 5 },
+          "spriteSheet": "female_office_worker_v2", "spriteTalk": "assets/characters/female_office_worker_talk.png",
+          "creds": { "username": "s.lord", "password": "Test-Sofia-Qr-42" },
+          "needsHome": "sofia_desk",
+          "needsSpeed": 100,
+          "interests": { "dev_qr": { "weight": 3, "noticeRooms": ["office"] } },
+          "usePayload": { "host": "test-account-help.example" },
+          "captureProof": [ { "dropped": "kit_qr" } ],
+          "eventMappings": [
+            {
+              "eventPattern": "npc_used:sofia_desk",
+              "condition": "data.tag === \"dev_qr\"",
+              "onceOnly": true,
+              "cooldown": 0,
+              "addCapture": { "targetId": "lord", "roleLabel": "Test office, finance", "kind": "credential", "note": "Entered on a look-alike page from the dropped QR card (proof: dropped)." },
+              "completeTask": "beat_drop",
+              "bark": "A QR card? I'll scan it and sign in."
+            }
+          ]
+        },
+        {
+          "id": "mel",
+          "displayName": "Mel Pierce",
+          "npcType": "person",
+          "position": { "x": 6, "y": 2 },
+          "spriteSheet": "female_office_worker_v2", "spriteTalk": "assets/characters/female_office_worker_talk.png",
+          "creds": { "username": "m.pierce", "password": "Test-Mel-Screen-43" },
+          "needsHome": "mel_pc",
+          "needsSpeed": 90,
+          "needs": { "caffeine": { "decayPerMin": 2, "urgentAt": 30, "initial": 95 } },
+          "eventMappings": [
+            {
+              "eventPattern": "pc_signed_in:mel_pc",
+              "onceOnly": true,
+              "addCapture": { "targetId": "pierce", "roleLabel": "Test office, finance", "kind": "credential", "address": "m.pierce", "host": "TEST-DESK-03", "note": "Recorded from Mel's open screen (proof: session, the shorthand on this capture).", "proof": { "session": "mel_pc" } },
+              "completeTask": "beat_claim"
+            }
+          ]
+        },
+        {
+          "id": "ned",
+          "displayName": "Ned Okafor",
+          "npcType": "person",
+          "position": { "x": 8, "y": 5 },
+          "spriteSheet": "male_office_worker_v2", "spriteTalk": "assets/characters/male_office_worker_talk.png",
+          "creds": { "username": "n.okafor", "password": "Test-Ned-Opens-44" },
+          "usePayload": { "host": "TEST-NONE" }
+        }
+      ],
+      "objects": [
+        {
+          "type": "notes", "id": "sign_keylogger", "name": "Sign: keylogger", "position": { "x": 1, "y": 1 },
+          "takeable": false, "readable": true, "readDisplay": "gameDisplay", "addToNotes": false,
+          "observations": "Beat 1.",
+          "text": "BEAT 1: PLANTED\n\nClip the keylogger behind Chris's desk (left). The capture shows in the capture log, and its password is shown because the server saw the device leave your inventory at that desk."
+        },
+        {
+          "type": "notes", "id": "sign_drop", "name": "Sign: drop", "position": { "x": 4, "y": 1 },
+          "takeable": false, "readable": true, "readDisplay": "gameDisplay", "addToNotes": false,
+          "observations": "Beat 2.",
+          "text": "BEAT 2: DROPPED\n\nDrop the QR card (inventory menu, Drop here) near Sofia's desk. She picks it up and signs in on the look-alike page. The password is shown because the server accepted the drop."
+        },
+        {
+          "type": "notes", "id": "sign_claim", "name": "Sign: claim", "position": { "x": 7, "y": 1 },
+          "takeable": false, "readable": true, "readDisplay": "gameDisplay", "addToNotes": false,
+          "observations": "Beat 3.",
+          "text": "BEAT 3: SESSION\n\nWhen Mel goes for coffee her screen stays open. Use her PC: the capture is recorded when the session is yours, and the password is shown because the server holds that session."
+        },
+        {
+          "type": "notes", "id": "sign_box", "name": "Sign: wall port", "position": { "x": 2, "y": 8 },
+          "takeable": false, "readable": true, "readDisplay": "gameDisplay", "addToNotes": false,
+          "observations": "Beat 4.",
+          "text": "BEAT 4: CONFIRM AND REMOVE\n\nPlant the drop box in the wall port and confirm. A finding and a remote session arrive in the capture log. Open the session from the capture log; closing a file lands you back on the capture log."
+        },
+        {
+          "type": "notes", "id": "sign_ned", "name": "Sign: Ned", "position": { "x": 8, "y": 8 },
+          "takeable": false, "readable": true, "readDisplay": "gameDisplay", "addToNotes": false,
+          "observations": "Beat 5.",
+          "text": "BEAT 5: NO PROOF NEEDED\n\nNed's password opens no PC here, so his capture is shown at once. Click the note on his desk."
+        },
+        {
+          "type": "pc", "id": "chris_desk", "name": "Chris's desk", "position": { "x": 2, "y": 3 },
+          "takeable": false, "interactable": true, "active": true,
+          "observations": "Chris's desk. A keylogger would clip in behind the keyboard.",
+          "requiresItem": "kit_logger",
+          "requiresItemHint": "You need the keylogger in hand.",
+          "requiresItemHintVariants": [
+            { "condition": "globalVars.logger_planted", "value": "Your keylogger is clipped in behind this desk." }
+          ],
+          "consumesItem": true,
+          "triggerOnInteract": [
+            { "type": "set_global", "key": "logger_planted", "value": true }
+          ]
+        },
+        {
+          "type": "pc", "id": "chris_pc", "name": "Chris's PC", "position": { "x": 1, "y": 3 },
+          "takeable": false, "locked": true, "lockType": "login", "lockChance": 1,
+          "access": { "people": ["chris"] },
+          "observations": "Chris's PC. Only his account signs in here."
+        },
+        {
+          "type": "pc", "id": "sofia_desk", "name": "Sofia's desk", "position": { "x": 5, "y": 4 },
+          "takeable": false, "interactable": true, "active": true,
+          "observations": "Sofia's desk. She scans anything she finds here.",
+          "affordance": { "accepts": ["dev_qr"], "useSeconds": 4, "useFrom": { "dx": 0, "dy": 1.5 } }
+        },
+        {
+          "type": "pc", "id": "sofia_pc", "name": "Sofia's PC", "position": { "x": 4, "y": 4 },
+          "takeable": false, "locked": true, "lockType": "login", "lockChance": 1,
+          "access": { "people": ["sofia"] },
+          "observations": "Sofia's PC. Only her account signs in here."
+        },
+        {
+          "type": "pc", "id": "mel_pc", "name": "Mel's PC", "sprite": "pc_desktop", "position": { "x": 6, "y": 3 },
+          "takeable": false, "interactable": true, "active": true,
+          "locked": true, "lockType": "login", "workstation": true, "locksScreenOnLeave": false,
+          "screenOwner": "mel",
+          "access": { "people": ["mel"] },
+          "observations": "Mel's PC. She leaves the screen open when she gets up.",
+          "contents": [
+            { "id": "mel_todo", "type": "text_file", "name": "todo.txt", "takeable": false, "readable": true,
+              "text": "Mel's desktop (test). Nothing to find." }
+          ]
+        },
+        {
+          "type": "coffee_station1", "id": "office_coffee", "name": "Coffee station", "position": { "x": 8, "y": 6 },
+          "takeable": false, "interactable": true, "active": true,
+          "affordance": { "satisfies": "caffeine", "restores": 70, "useSeconds": 8 },
+          "observations": "A coffee station."
+        },
+        {
+          "type": "pc", "id": "wall_port", "name": "Wall port", "sprite": "network_rack1", "position": { "x": 4, "y": 8 },
+          "takeable": false, "interactable": true, "active": true,
+          "observations": "A live, unused network port.",
+          "requiresItem": "kit_box",
+          "requiresItemHint": "You need the drop box in hand.",
+          "requiresItemHintVariants": [
+            { "condition": "globalVars.box_planted", "value": "Your drop box is plugged in here." }
+          ],
+          "triggerOnInteract": [
+            { "type": "confirm_action", "text": "Plant the drop box in this port?", "onConfirm": [
+              { "type": "remove_item", "item": "kit_box" },
+              { "type": "set_global", "key": "box_planted", "value": true },
+              { "type": "complete_task", "taskId": "beat_box" }
+            ] }
+          ]
+        },
+        {
+          "type": "notes", "id": "ned_note", "name": "Ned's desk note", "position": { "x": 6, "y": 7 },
+          "takeable": false, "interactable": true, "active": true, "readable": true,
+          "readDisplay": "gameDisplay", "addToNotes": false,
+          "observations": "A note on Ned's desk.",
+          "text": "NED'S NOTE (test)\n\nReading this records Ned's sign-in in the capture log.",
+          "triggerOnInteract": [
+            { "type": "add_capture", "capture": { "targetId": "ned", "roleLabel": "Test office, post room", "kind": "credential", "address": "n.okafor", "note": "Read from a note on Ned's desk (no proof: his password opens nothing)." } },
+            { "type": "set_global", "key": "ned_read", "value": true },
+            { "type": "complete_task", "taskId": "beat_ned" }
+          ]
+        }
+      ]
+    }
+  }
+}

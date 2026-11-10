@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="640" columns="0">
+<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="664" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0">
   <image source="../objects/iv_stand1.png" width="25" height="60"/>
@@ -302,7 +302,7 @@
   <image source="../objects/filing_cabinet_locked1.png" width="29" height="61"/>
  </tile>
  <tile id="100">
-  <image source="../objects/hospital_chair_north2.png" width="16" height="26"/>
+  <image source="../objects/hospital_chair_north2.png" width="16" height="30"/>
  </tile>
  <tile id="101">
   <image source="../objects/pigeonholes1.png" width="28" height="27"/>
@@ -350,7 +350,7 @@
   <image source="../objects/it_workbench1.png" width="60" height="58"/>
  </tile>
  <tile id="116">
-  <image source="../objects/exec_desk1.png" width="80" height="46"/>
+  <image source="../objects/exec_desk1.png" width="80" height="42"/>
  </tile>
  <tile id="117">
   <image source="../objects/radio_charger1.png" width="26" height="18"/>
@@ -1841,7 +1841,7 @@
   <image source="../objects/m10_steel_bench1.png" width="51" height="39"/>
  </tile>
  <tile id="623">
-  <image source="../objects/m10_steel_chair1.png" width="16" height="26"/>
+  <image source="../objects/m10_steel_chair1.png" width="16" height="31"/>
  </tile>
  <tile id="624">
   <image source="../objects/m10_field_screen_curve1.png" width="24" height="18"/>
@@ -1880,10 +1880,10 @@
   <image source="../objects/aw_hard_hat1.png" width="14" height="10"/>
  </tile>
  <tile id="636">
-  <image source="../objects/aw_chair_south_slate1.png" width="16" height="32"/>
+  <image source="../objects/aw_chair_south_slate1.png" width="16" height="35"/>
  </tile>
  <tile id="637">
-  <image source="../objects/aw_chair_north_slate1.png" width="16" height="26"/>
+  <image source="../objects/aw_chair_north_slate1.png" width="16" height="30"/>
  </tile>
  <tile id="638">
   <image source="../objects/aw_chair_w_slate1.png" width="17" height="32"/>
@@ -1907,10 +1907,10 @@
   <image source="../objects/aw_chairs_stacked_slate1.png" width="20" height="45"/>
  </tile>
  <tile id="645">
-  <image source="../objects/aw_chair_south_charcoal1.png" width="16" height="32"/>
+  <image source="../objects/aw_chair_south_charcoal1.png" width="16" height="35"/>
  </tile>
  <tile id="646">
-  <image source="../objects/aw_chair_north_charcoal1.png" width="16" height="26"/>
+  <image source="../objects/aw_chair_north_charcoal1.png" width="16" height="30"/>
  </tile>
  <tile id="647">
   <image source="../objects/aw_chair_w_charcoal1.png" width="17" height="32"/>
@@ -1920,5 +1920,77 @@
  </tile>
  <tile id="649">
   <image source="../objects/aw_poster_report_carrholme1.png" width="16" height="21"/>
+ </tile>
+ <tile id="650">
+  <image source="../objects/lw_logo_sign1.png" width="72" height="19"/>
+ </tile>
+ <tile id="651">
+  <image source="../objects/lw_sign_briefing1.png" width="39" height="11"/>
+ </tile>
+ <tile id="652">
+  <image source="../objects/lw_sign_records1.png" width="35" height="11"/>
+ </tile>
+ <tile id="653">
+  <image source="../objects/lw_sign_admin1.png" width="27" height="11"/>
+ </tile>
+ <tile id="654">
+  <image source="../objects/lw_sash_window1.png" width="40" height="40"/>
+ </tile>
+ <tile id="655">
+  <image source="../objects/lw_baize_board1.png" width="42" height="31"/>
+ </tile>
+ <tile id="656">
+  <image source="../objects/lw_directory1.png" width="40" height="48"/>
+ </tile>
+ <tile id="657">
+  <image source="../objects/lw_evac_plan1.png" width="32" height="24"/>
+ </tile>
+ <tile id="658">
+  <image source="../objects/lw_exit_button1.png" width="14" height="22"/>
+ </tile>
+ <tile id="659">
+  <image source="../objects/lw_sign_post1.png" width="43" height="11"/>
+ </tile>
+ <tile id="660">
+  <image source="../objects/lw_sign_accounts1.png" width="39" height="11"/>
+ </tile>
+ <tile id="661">
+  <image source="../objects/lw_sign_records_office1.png" width="63" height="11"/>
+ </tile>
+ <tile id="662">
+  <image source="../objects/lw_sign_staff_only1.png" width="47" height="11"/>
+ </tile>
+ <tile id="663">
+  <image source="../objects/lw_sign_fire_door1.png" width="83" height="11"/>
+ </tile>
+ <tile id="664">
+  <image source="../objects/lw_sign_press_exit1.png" width="59" height="11"/>
+ </tile>
+ <tile id="665">
+  <image source="../objects/lw_sign_kitroom1.png" width="39" height="11"/>
+ </tile>
+ <tile id="666">
+  <image source="../objects/lw_pigeonholes3.png" width="84" height="27"/>
+ </tile>
+ <tile id="667">
+  <image source="../objects/lw_credenza1.png" width="64" height="36"/>
+ </tile>
+ <tile id="668">
+  <image source="../objects/lw_oval_table1.png" width="80" height="40"/>
+ </tile>
+ <tile id="669">
+  <image source="../objects/lw_ledger_shelves1.png" width="48" height="60"/>
+ </tile>
+ <tile id="670">
+  <image source="../objects/lw_time_clock1.png" width="24" height="44"/>
+ </tile>
+ <tile id="671">
+  <image source="../objects/lw_franking_machine1.png" width="24" height="19"/>
+ </tile>
+ <tile id="672">
+  <image source="../objects/lw_card_index1.png" width="36" height="29"/>
+ </tile>
+ <tile id="673">
+  <image source="../objects/lw_sign_store1.png" width="27" height="11"/>
  </tile>
 </tileset>

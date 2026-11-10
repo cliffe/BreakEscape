@@ -12,7 +12,10 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 LOG="$ROOT/tmp/keyless-3001.log"
 PIDFILE="tmp/pids/server-${PORT}.pid"   # relative to the dummy app, as rails resolves it
 
-if ss -ltn 2>/dev/null | grep -qE "[:.]${PORT}\s"; then
+# Check with curl as well as ss: some containers have no ss, and without this
+# check the script would truncate the running server's log and then fail.
+if ss -ltn 2>/dev/null | grep -qE "[:.]${PORT}\s" \
+   || curl -s -o /dev/null --max-time 2 "http://127.0.0.1:${PORT}/"; then
   echo "Already listening on :${PORT} - nothing to do."
   exit 0
 fi

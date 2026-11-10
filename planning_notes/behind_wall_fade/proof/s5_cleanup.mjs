@@ -1,0 +1,26 @@
+// Slice 5 live: caps appear while faded, are gone after release and after the kill switch. node s5_cleanup.mjs <gid>
+import { open, loadRooms, sleep } from './lib.mjs';
+const { browser, page } = await open(process.argv[2]);
+const E = (f, a) => page.evaluate(f, a);
+const caps = () => E(() => window.game.children.list.filter(o => typeof o.frame?.name === 'string' && o.frame.name.startsWith('bwf_cap_')).length);
+await loadRooms(page, ['reception', 'server', 'office_n', 'hall']);
+await E(() => window.__test.enterRoom('office_n')); await sleep(page, 600);
+const S = await E(() => window.rooms.reception.position);
+const log = [];
+log.push(['idle', await caps()]);
+await E(([x, y]) => window.__test.moveTo(x, y), [S.x + 96, S.y - 80]);
+await E(() => window.__test.walk('down', 4500));
+await sleep(page, 400);
+log.push(['faded', await caps(), (await E(() => window.behindWallFade.debugState())).rooms.reception?.k]);
+await E(([x, y]) => window.__test.moveTo(x, y), [S.x + 96, S.y - 120]);
+await E(() => window.__test.walk('up', 1500));
+await sleep(page, 800);
+log.push(['released', await caps(), JSON.stringify((await E(() => window.behindWallFade.debugState())).rooms)]);
+await E(([x, y]) => window.__test.moveTo(x, y), [S.x + 96, S.y - 80]);
+await E(() => window.__test.walk('down', 4500));
+await sleep(page, 400);
+log.push(['faded again', await caps()]);
+await E(() => window.behindWallFade.setEnabled(false)); await sleep(page, 200);
+log.push(['kill switch', await caps(), await E(() => window.rooms.reception.layers && Object.values(window.rooms.reception.layers).map(l => l.getTileAt(0, 1)?.alpha))]);
+console.log(JSON.stringify(log));
+await browser.close();

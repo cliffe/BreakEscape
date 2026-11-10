@@ -83,9 +83,18 @@ export function captureList(globals) {
 /**
  * How a capture's secret reads for display: the real (authored) secret when the scenario
  * reveals it, otherwise the mask. A foothold carries no secret, so this returns null for it.
+ *
+ * The secret is NOT shipped in the scenario bootstrap (the server strips it); it is served by
+ * GET /capture_secrets only once the capture is earned, as a { targetId: secret } map. Pass that
+ * map as `secretsById` and its entry wins. `entry.secret` is used as a fallback for a save made
+ * before the secret was stripped. With neither (a revealing scenario whose secret has not arrived
+ * yet) the mask is shown until the fetch fills it in.
  */
-export function displaySecret(entry, social) {
+export function displaySecret(entry, social, secretsById = null) {
   if (!isObj(entry) || entry.kind !== 'credential') return null;
-  if (!isStr(entry.secret) || !entry.secret) return null;
-  return capturesReveal(social) ? entry.secret : maskSecret();
+  const fromMap = isObj(secretsById) && isStr(secretsById[entry.targetId]) && secretsById[entry.targetId]
+    ? secretsById[entry.targetId] : null;
+  const secret = fromMap || (isStr(entry.secret) && entry.secret ? entry.secret : null);
+  if (!secret) return null;
+  return capturesReveal(social) ? secret : maskSecret();
 }

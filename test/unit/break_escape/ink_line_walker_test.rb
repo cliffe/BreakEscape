@@ -183,6 +183,28 @@ module BreakEscape
       assert_equal MAYA_VOICE, extractor.entries.find { |e| e.text == "I'm the co-speaker here." }.voice
     end
 
+    test "lists chatter under each voiced NPC only when opted in, and always in keys (OFFICE_LIFE_PLAN 11.3)" do
+      data = scenario
+      data['chatter'] = { 'cooler' => ['Busy morning?'] }
+      kevin = data['rooms'].values.first['npcs'].find { |n| n['id'] == 'kevin_park' }
+      kevin['chatter'] = { 'grumble' => { 'lines' => ['Not now.'] } }
+      plain = TtsLineExtractor.new('walker_test', data)
+      refute(plain.entries.any? { |e| ['Busy morning?', 'Not now.'].include?(e.text) })
+      service = TtsService.new
+      v = kevin['voice']
+      assert_includes plain.keys, service.cache_key_for('Not now.', v['name'], v['style'], v['language'])
+
+      opted = TtsLineExtractor.new('walker_test', data, chatter: true).entries.map { |e| [e.npc_id, e.text] }
+      assert_includes opted, ['kevin_park', 'Not now.']
+      assert_includes opted, ['kevin_park', 'Busy morning?']
+      assert_includes opted, ['maya_chen', 'Busy morning?']
+      refute_includes opted, ['maya_chen', 'Not now.']
+
+      data['ttsPregenerateChatter'] = true
+      by_flag = TtsLineExtractor.new('walker_test', data).entries.map { |e| [e.npc_id, e.text] }
+      assert_includes by_flag, ['kevin_park', 'Not now.']
+    end
+
     test "drops narrator lines when the scenario has no narrator voice" do
       data = scenario
       data.delete('narrator')

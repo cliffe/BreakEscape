@@ -69,7 +69,7 @@ export default class InkEngine {
       // Return structured result with text, choices, tags, and continue state
       return {
         text: text,
-        choices: (this.story.currentChoices || []).map((c, i) => ({ text: c.text, index: i })),
+        choices: (this.story.currentChoices || []).map((c, i) => ({ text: c.text, index: i, tags: Array.isArray(c.tags) ? c.tags.slice() : [] })),
         tags: tags,
         canContinue: this.story.canContinue,
         hasEnded: this.story.hasEnded
@@ -98,7 +98,7 @@ export default class InkEngine {
   // Return current choices as an array of objects { text, index }
   get currentChoices() {
     if (!this.story) return [];
-    return (this.story.currentChoices || []).map((c, i) => ({ text: c.text, index: i }));
+    return (this.story.currentChoices || []).map((c, i) => ({ text: c.text, index: i, tags: Array.isArray(c.tags) ? c.tags.slice() : [] }));
   }
 
   // Choose a choice index

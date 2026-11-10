@@ -1,0 +1,24 @@
+/* The capture log device (engine plan section 6). Capture rows reuse the landing page builder's
+   .lpb-captures-* row styles (landing-page-builder-minigame.css). */
+.capture-log { display: flex; flex-direction: column; gap: 14px; padding: 8px 4px; max-height: 70vh; overflow-y: auto;
+    color: var(--ui-text, #eef1f8); }
+.capture-log-section { display: flex; flex-direction: column; gap: 8px; }
+.capture-log-heading { margin: 0; font-size: 15px; letter-spacing: 1px; text-transform: uppercase; }
+.capture-log-banner { font-size: 13px; }
+.capture-log-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.capture-log-row { display: flex; align-items: flex-start; }
+.capture-log-open { flex: 1 1 auto; display: flex; align-items: center; gap: 10px; padding: 8px 10px; text-align: left;
+    background: var(--ui-surface, #1c2438); color: var(--ui-text, #eef1f8); border: 1px solid var(--ui-line, #4c5b80);
+    font: inherit; cursor: pointer; }
+.capture-log-open:hover, .capture-log-open:focus-visible { border-color: var(--ui-accent, #8fb3ff); outline: none; }
+.capture-log-picture { width: 32px; height: 32px; image-rendering: pixelated; flex: 0 0 auto; }
+.capture-log-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
+.capture-log-name { font-weight: bold; font-size: 14px; }
+.capture-log-line { font-size: 13px; opacity: 0.85; }
+.capture-log-session .capture-log-open { margin-left: 24px; }
+.capture-log-new-mark { align-self: flex-start; margin-left: 6px; padding: 1px 6px; font-size: 11px; font-weight: bold;
+    background: var(--ui-accent, #8fb3ff); color: #10141f; }
+.lpb-captures-row.capture-log-new .capture-log-new-mark { margin-left: 0; }
+.lpb-captures-host, .lpb-captures-note { font-size: 13px; }
+.capture-log-empty { margin: 0; padding: 16px 12px; border: 1px dashed var(--ui-line, #4c5b80); }
+@media (max-width: 700px) { .capture-log { max-height: 80vh; } }

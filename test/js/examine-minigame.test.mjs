@@ -8,6 +8,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
 import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { inventoryMenuUrl } from './fixtures/inventory-menu-url.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const js = join(here, '../../public/break_escape/js');
@@ -34,9 +35,13 @@ const stubs = {
     './biometrics.js': dataUrl('export function collectFingerprint() { return null; } export function handleBiometricScan() {}'),
     './inventory.js': dataUrl(record('addToInventory') + ' export function createItemIdentifier(d) { return d?.id; }'),
     './ui-sounds.js': dataUrl('export function playUISound() {} export function playGameSound() {}'),
-    './apply-actions.js': dataUrl('export function applyActions() {}'),
+    './apply-actions.js': dataUrl("export function applyActions(a) { globalThis.__calls.push(['applyActions', a?.length]); }"),
     '../utils/conditional-text.js': dataUrl(readFileSync(join(js, 'utils/conditional-text.js'), 'utf8')),
     '../utils/flag-lock.js': dataUrl(readFileSync(join(js, 'utils/flag-lock.js'), 'utf8')),
+    // the real hint resolver and the real duration rule (the requiresItem refusal test below)
+    './requires-item-hint.js': dataUrl(readFileSync(join(js, 'systems/requires-item-hint.js'), 'utf8')
+        .replace("'../utils/conditional-text.js'", `'${dataUrl(readFileSync(join(js, 'utils/conditional-text.js'), 'utf8'))}'`)),
+    '../utils/locked-hint.js': dataUrl(readFileSync(join(js, 'utils/locked-hint.js'), 'utf8')),
     './npc-reach.js': dataUrl('export function npcReachDistSq() { return 0; }'),
     './examine.js': examineUrl,
     './combat-input.js': dataUrl(readFileSync(join(js, 'systems/combat-input.js'), 'utf8')),
@@ -44,10 +49,13 @@ const stubs = {
     './interaction-walls.js': dataUrl(readFileSync(join(js, 'systems/interaction-walls.js'), 'utf8')),
     './interaction-reach.js': dataUrl(readFileSync(join(js, 'systems/interaction-reach.js'), 'utf8')),
     // the starter registry: none of these cases opens a registered minigame
-    './minigame-registry.js': dataUrl('export const hasMinigameStarter = () => false; export const startRegisteredMinigame = () => false;')
+    './minigame-registry.js': dataUrl('export const hasMinigameStarter = () => false; export const startRegisteredMinigame = () => false;'),
+    // the real inventory click menu and drop test (the chain's first two branches use them)
+    './inventory-menu.js': inventoryMenuUrl
 };
 
 const started = [];
+const alerts = [];
 const framework = {
     registeredScenes: { examine: class {}, notes: class {}, 'phone-chat': class {}, 'text-file': class {} },
     currentMinigame: null,
@@ -58,7 +66,7 @@ globalThis.window = {
     inventory: { items: [] },
     player: { x: 0, y: 0, direction: 'down' },
     gameState: { globalVariables: {} },
-    gameAlert: (msg, type, title) => calls.push(['gameAlert', title]),
+    gameAlert: (...a) => { calls.push(['gameAlert', a[2]]); alerts.push(a); },
     gameDisplay: (msg, title) => calls.push(['gameDisplay', title]),
     addNote: () => true,
     startNotesMinigame: (s) => calls.push(['notes', s.scenarioData?.id]),
@@ -68,9 +76,9 @@ globalThis.window = {
 
 let src = readFileSync(join(js, 'systems/interactions.js'), 'utf8');
 for (const [spec, url] of Object.entries(stubs)) src = src.split(`'${spec}'`).join(`'${url}'`);
-const { handleObjectInteraction } = await import(dataUrl(src));
+const { handleObjectInteraction, examineHeldItem, examineTextFor, inventoryMenuFor } = await import(dataUrl(src));
 
-function reset() { calls.length = 0; started.length = 0; framework.currentMinigame = null; window.inventory.items = []; }
+function reset() { calls.length = 0; started.length = 0; alerts.length = 0; framework.currentMinigame = null; window.inventory.items = []; }
 const roomSprite = (data) => ({ name: data.type, objectId: data.id, x: 0, y: 8, scenarioData: data,
     texture: { key: data.type }, frame: { name: '__BASE', cutWidth: 32, cutHeight: 24 } });
 const invImg = (data) => {
@@ -229,4 +237,128 @@ test('routing: a single key clicked in the inventory opens examine, not "Already
     assert.equal(started[0]?.[0], 'examine');
     assert.equal(started[0][1].observations, 'A brass key.');
     assert.equal(calls.some(c => c[0] === 'addToInventory'), false);
+});
+
+// Code review R1 m12: the requiresItem refusal branch really runs (not a source match).
+test('a requiresItem object clicked without the item: one toast with the variant text, for its by-length duration, and no actions', () => {
+    reset();
+    const words = (n) => Array.from({ length: n }, () => 'word').join(' ');
+    const pc = roomSprite({ id: 'staff_pc', type: 'pc', name: 'Staff PC', takeable: false,
+        requiresItem: 'keylogger', requiresItemHint: 'Collect the keylogger first.',
+        requiresItemHintVariants: [{ condition: 'globalVars.staff_pc_screen_locked', value: words(30) }],
+        triggerOnInteract: [{ type: 'set_global', key: 'planted', value: true }] });
+    window.gameState.globalVariables = { staff_pc_screen_locked: true };
+    try {
+        handleObjectInteraction(pc);
+        assert.deepEqual(alerts, [[words(30), 'info', '', 9000]]);
+        assert.equal(calls.some(c => c[0] === 'applyActions'), false);
+        // no variant holds: the base hint, at the minimum duration
+        window.gameState.globalVariables = {};
+        alerts.length = 0;
+        handleObjectInteraction(pc);
+        assert.deepEqual(alerts, [['Collect the keylogger first.', 'info', '', 6000]]);
+        // with the item in hand the actions fire and nothing is refused
+        alerts.length = 0;
+        window.inventory.items.push({ scenarioData: { id: 'kl_1', type: 'keylogger', name: 'Keylogger' } });
+        handleObjectInteraction(pc);
+        assert.deepEqual(alerts, []);
+        assert.deepEqual(calls.filter(c => c[0] === 'applyActions'), [['applyActions', 1]]);
+    } finally {
+        window.gameState.globalVariables = {};
+    }
+});
+
+// Feedback plan, section 5: "Examine" in the inventory click menu shows what a click on
+// the item showed before the menu (the chain's own text, through examineTextFor).
+test('examineHeldItem: a droppable device opens the examine view with the text a plain click gives', () => {
+    const device = { type: 'usb', id: 'kit_deviceB', name: 'BadUSB', sprite: 'icon_deviceB',
+        observations: 'A USB stick that types.', observationVariants: [{ condition: 'globalVars.seen', value: 'Seen before.' }] };
+
+    // Before the menu: the same item without droppable, clicked
+    reset();
+    handleObjectInteraction(invImg(device));
+    const viaClick = started[0];
+    assert.equal(viaClick?.[0], 'examine');
+
+    reset();
+    const held = invImg({ ...device, droppable: true });
+    assert.equal(examineHeldItem(held), true);
+    assert.equal(started[0]?.[0], 'examine');
+    assert.deepEqual(started[0][1], viaClick[1]);
+    assert.equal(started[0][1].observations, 'A USB stick that types.');
+
+    // Variants resolve the same way
+    window.gameState.globalVariables = { seen: true };
+    try {
+        assert.equal(examineTextFor(held).observations, 'Seen before.');
+        reset();
+        examineHeldItem(invImg({ ...device, droppable: true }));
+        assert.equal(started[0][1].observations, 'Seen before.');
+    } finally {
+        window.gameState.globalVariables = {};
+    }
+});
+
+test('examineHeldItem: without the examine view, the observation is shown as the chain shows it', () => {
+    reset();
+    const scenes = framework.registeredScenes;
+    framework.registeredScenes = {};
+    try {
+        assert.equal(examineHeldItem(invImg({ type: 'usb', id: 'u', name: 'BadUSB', droppable: true, observations: 'Types.' })), true);
+        assert.deepEqual(started, []);
+        assert.equal(alerts.length, 1);
+        assert.match(alerts[0][0], /Observations: Types\./);
+    } finally {
+        framework.registeredScenes = scenes;
+    }
+    assert.equal(examineHeldItem(null), false);
+});
+
+test('a droppable held item clicked through the chain (not the tray) still drops, never examines', () => {
+    reset();
+    const held = invImg({ type: 'usb', id: 'kit_usb', name: 'Storage stick', droppable: true, observations: 'x' });
+    // The chain's drop branch runs dropInventoryItem; with no scene it logs and returns.
+    handleObjectInteraction(held);
+    assert.deepEqual(started, []);
+    // and its menu, exported from interactions.js, is the drop menu
+    assert.deepEqual(inventoryMenuFor(held, { dropBlocked: null }).map(e => e.label), ['Drop here', 'Examine']);
+});
+
+// Capture log code review R1 m2: an item filed in a holder (storeIn) is never also added to the
+// Notepad, in either readable branch that adds a note, whatever addToNotes says.
+test('a storeIn item read in place or as a note is not added to the Notepad', () => {
+    const added = [];
+    const notesArgs = [];
+    const addNote = window.addNote;
+    const startNotes = window.startNotesMinigame;
+    window.addNote = (title) => { added.push(title); return true; };
+    window.startNotesMinigame = (...a) => notesArgs.push(a);
+    try {
+        reset();
+        handleObjectInteraction(invImg({ type: 'lanyard', id: 'l1', name: 'Filed panel', readable: true, readDisplay: 'gameDisplay',
+            addToNotes: true, storeIn: 'capture_log', text: 'Seen.' }));
+        assert.deepEqual(calls.filter(c => c[0] === 'gameDisplay').map(c => c[1]), ['Filed panel'], 'still shown');
+        assert.deepEqual(added, []);
+
+        reset();
+        handleObjectInteraction(invImg({ type: 'lanyard', id: 'l2', name: 'Panel', readable: true, readDisplay: 'gameDisplay', text: 'Seen.' }));
+        assert.deepEqual(added, ['Panel'], 'an unfiled one is still added');
+
+        added.length = 0;
+        reset();
+        handleObjectInteraction(roomSprite({ type: 'notice', id: 'n1', name: 'Filed notice', takeable: false, readable: true,
+            storeIn: 'capture_log', text: 'Wash your hands.' }));
+        assert.deepEqual(added, []);
+        handleObjectInteraction(roomSprite({ type: 'notice', id: 'n2', name: 'Notice', takeable: false, readable: true, text: 'Wash your hands.' }));
+        assert.deepEqual(added, ['Notice']);
+
+        reset();
+        handleObjectInteraction(invImg({ type: 'notes', id: 'nt1', name: 'Filed note', readable: true, storeIn: 'capture_log', text: 'x' }));
+        assert.equal(notesArgs.at(-1)?.[5], false, 'the notes page opens without adding to the Notepad');
+        handleObjectInteraction(invImg({ type: 'notes', id: 'nt2', name: 'Note', readable: true, text: 'x' }));
+        assert.notEqual(notesArgs.at(-1)?.[5], false);
+    } finally {
+        window.addNote = addNote;
+        window.startNotesMinigame = startNotes;
+    }
 });

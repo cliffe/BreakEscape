@@ -37,6 +37,17 @@
  *                                          // load, so a reload keeps it. A change applies at once, without a strike:
  *                                          // on → lit, dark → off, motion → lit only if someone is in the room.
  *   }
+ * Workstation indicators: every workstation (workstation-state.js isWorkstation) with a known owner
+ * gets a small `above` dot at its top-right corner, as a second emitter record beside the screen's
+ * own glow: steady blue while <id>_screen_locked, a larger warm-white breathing dot while
+ * <id>_owner_away (and not locked), nothing while the owner is at the desk. A room "emitters" entry
+ * on the object id with "indicators": [variant, ...] replaces the built-ins ([] turns them off) or
+ * gives any other object dots of its own; by object id only, never by texture prefix.
+ * Lock flash (OFFICE_LIFE_PLAN 12.2, slice 16): lightingSystem.flash(objectId, 'lock' | 'unlock', ms)
+ * shows one transient glow at the object's indicator point, held in a side map keyed by object id
+ * and drawn after the emitters (an emitter rebuild never drops it): `lock` a blue glow shrinking
+ * from radius 18 to the steady 10 px dot, `unlock` a warm-white radius-16 glow fading out, 500 ms.
+ * Under prefers-reduced-motion, one 300 ms step at the end size.
  * Objects with lockType "ransomware_display" glow red while globalVars.ransomware_deployed holds
  * (a room "emitters" variant on the object's id wins over that, e.g. a screen that has recovered).
  * Brownout: lightingSystem.dip({ level: 0.5, ms: 1600 }), the "lighting_dip" scenario action, or the
@@ -45,12 +56,20 @@
  * Torch on an NPC (scenario npc "behavior"): "torch": true, or { "condition": "globalVars.night", "color": "#fff0d8" }.
  * The NPC carries a beam the way they face, like the player's phone torch; it shows only in a dim
  * room (strength from the room's current ambient, npcTorchStrength), so it is invisible in a lit office.
+ * The beam starts at the NPC's right hand (npc-los.js torchHandOffset: about 10 px out from the body
+ * axis at row ~50 of the 80 px frame; near side facing east, far side facing west, viewer's left facing
+ * south, viewer's right facing north), with a faint pool at the feet. The aim is smoothed a quarter of
+ * the way per frame and the hand follows the smoothed aim, so turns don't jump. The NPC's line of sight
+ * and its drawn los cone start from the same hand point while the torch is held (los.origin, npc-los.js).
  * Disable for one player: ?lighting=off, or localStorage breakEscapeLighting=off.
  */
 
 import { TILE_SIZE, LIGHT_DEPTH, SPRITE_PADDING_BOTTOM_ATLAS, SPRITE_PADDING_BOTTOM_LEGACY } from '../utils/constants.js';
 import { evaluateGlobalCondition } from '../utils/conditional-text.js';
 import { spriteStyleLight } from './npc-sprite-style.js';
+import { hearingLevel } from './room-hearing.js';
+import { isWorkstation, ownerOf } from './workstation-state.js';
+import { npcTorchOrigin, stepTorchAim, TORCH_AIM_FRESH_MS } from './npc-los.js';
 
 const LIGHT_TEX = 'be_light_soft';
 const LIGHT_TEX_SIZE = 128;
@@ -85,6 +104,69 @@ const RESOLVE_MS = 250;
 // offsetY comes from the base entry (kiosk screens sit high). `ransom` keeps the glow
 // above the light map in lit rooms too, and tints the floor red (see the draw loop).
 const RANSOM_VARIANT = { condition: 'globalVars.ransomware_deployed', color: 0xff3b30, radius: 44, intensity: 0.8, effect: 'breathe', ransom: true, floorTint: 0.85 };
+// Workstation indicators (OFFICE_LIFE_PLAN 2.3): a small `above` dot at the screen's top-right
+// corner while the owner is away. Locked: steady blue, listed first so it wins. Open (owner away,
+// not locked): a larger warm-white dot that breathes. Colour is never the only cue: they differ
+// in size, and in motion unless reduced motion is on.
+const INDICATOR_LOCKED = { color: 0x3d8bff, radius: 10, intensity: 1, effect: null, above: true };
+const INDICATOR_OPEN = { color: 0xfff1c8, radius: 14, intensity: 1, effect: 'breathe', above: true };
+// Inset of the dot from the object's top-right corner, px.
+const INDICATOR_INSET = 5;
+// Lock flashes (slice 16): one per change of a screen's locked state (WCAG 2.3.1: one flash).
+const FLASH_KINDS = {
+  lock: { color: INDICATOR_LOCKED.color, from: 18, to: INDICATOR_LOCKED.radius, fade: false },
+  unlock: { color: INDICATOR_OPEN.color, from: 16, to: 16, fade: true },
+  // Slice 19: a desk phone's ring, amber, one per ring (every 3 s), drawn on the phone itself
+  ring: { color: 0xffb347, from: 18, to: 10, fade: true },
+};
+export const FLASH_MS = 500;
+export const FLASH_REDUCED_MS = 300;
+
+/**
+ * Pure: a flash's look at progress t (0..1): { color, radius, alpha }, or null once it is over.
+ * Under reduced motion: one step at the end size (a lock holds the dot's size; an unlock holds
+ * its glow at full strength) for the whole of its shorter time.
+ */
+export function flashShape(kind, t, reduced = false) {
+  const f = FLASH_KINDS[kind];
+  if (!f || !(t >= 0) || t >= 1) return null;
+  if (reduced) return { color: f.color, radius: f.to, alpha: 1 };
+  const e = smooth(t);
+  return { color: f.color, radius: f.from + (f.to - f.from) * e, alpha: f.fade ? 1 - e : 1 };
+}
+
+/**
+ * Built-in indicator variants for a workstation object: none unless it is a workstation with a
+ * known owner. Offsets put the dot at the object's top-right corner (from its display size).
+ */
+export function workstationIndicators(data, npcs, size = {}) {
+  if (!isWorkstation(data) || !ownerOf(data, npcs)) return [];
+  const w = size.width || 32, h = size.height || 32;
+  const offsetX = Math.round(w / 2 - INDICATOR_INSET);
+  const offsetY = -Math.round(h / 2 - INDICATOR_INSET);
+  return [
+    { ...INDICATOR_LOCKED, condition: `globalVars.${data.id}_screen_locked`, offsetX, offsetY },
+    { ...INDICATOR_OPEN, condition: `globalVars.${data.id}_owner_away`, offsetX, offsetY },
+  ];
+}
+
+/** NPCs for owner lookup: the live manager's, else the scenario's. */
+/**
+ * The texture key an object's emitter is built from: the base key while screen-states.js
+ * shows the locked look (`<key>_locked`, same screen, same glow), else the live key.
+ */
+export function emitterKey(obj) {
+  return obj?._screenBaseKey ?? obj?.texture?.key;
+}
+
+function knownNpcs() {
+  const mgr = window.npcManager;
+  const live = mgr?.npcs ? [...mgr.npcs.values()] : [];
+  if (live.length) return live;
+  const out = [];
+  for (const room of Object.values(window.gameScenario?.rooms || {})) for (const n of room?.npcs || []) out.push(n);
+  return out;
+}
 // Below this room level, glows draw above the light map so they bloom in the dark.
 const GLOW_ABOVE_LEVEL = 0.5;
 // A glow whose centre a character stands in front of fades to this.
@@ -272,6 +354,50 @@ function subtractRect(a, b) {
   return out;
 }
 
+// Behind-the-wall fade (planning_notes/behind_wall_fade/DESIGN.md 8.1): while a south room's back
+// wall is faded, its strip takes a blend of the north room's light. The north room's stamps are
+// recorded as they are drawn and replayed into this texture, which is then blended back.
+const STRIP_TEX = 'be_light_strip';
+const STRIP_HEIGHT = 64;
+const STAMP_OPT_KEYS = ['alpha', 'tint', 'angle', 'rotation', 'scale', 'scaleX', 'scaleY', 'originX', 'originY', 'blendMode', 'erase', 'skipBatch'];
+
+/**
+ * For each { roomId: S, weight, gaps }: S's strip { x: S.x, y: S.y, w: S.width, h: 64 } intersected with
+ * the rect of every other room N that has a map and lies north of S (N.position.y < S.position.y), minus
+ * [gx - 16, gx + 16) for each gx in gaps (an open doorway keeps S's light).
+ * Returns [{ south, north, x, y, w, h, weight }] in world pixels, non-empty pieces only.
+ */
+export function stripBlendSegments(weights, rooms) {
+  const out = [];
+  if (!Array.isArray(weights) || !rooms) return out;
+  for (const entry of weights) {
+    const S = rooms[entry?.roomId];
+    if (!S?.map || !S.position || !(entry.weight > 0)) continue;
+    const sx = S.position.x, sy = S.position.y, sw = S.map.widthInPixels;
+    for (const [nid, N] of Object.entries(rooms)) {
+      if (nid === entry.roomId || !N?.map || !N.position || !(N.position.y < sy)) continue;
+      const x0 = Math.max(sx, N.position.x), x1 = Math.min(sx + sw, N.position.x + N.map.widthInPixels);
+      const y0 = Math.max(sy, N.position.y), y1 = Math.min(sy + STRIP_HEIGHT, N.position.y + N.map.heightInPixels);
+      if (!(x1 > x0) || !(y1 > y0)) continue;
+      let pieces = [[x0, x1]];
+      for (const gx of entry.gaps || []) {
+        const next = [];
+        for (const [a, b] of pieces) {
+          const ga = gx - 16, gb = gx + 16;
+          if (gb <= a || ga >= b) { next.push([a, b]); continue; }
+          if (ga > a) next.push([a, ga]);
+          if (gb < b) next.push([gb, b]);
+        }
+        pieces = next;
+      }
+      for (const [a, b] of pieces) {
+        if (b > a) out.push({ south: entry.roomId, north: nid, x: a, y: y0, w: b - a, h: y1 - y0, weight: entry.weight });
+      }
+    }
+  }
+  return out;
+}
+
 function lightingDisabledByPlayer() {
   try {
     const param = new URLSearchParams(window.location.search).get('lighting');
@@ -289,6 +415,12 @@ export class LightingSystem {
     this.rooms = new Map();   // roomId -> lighting state
     this.subscribed = false;
     this.reducedMotion = prefersReducedMotion();
+    this.flashes = new Map();   // objectId -> { kind, ms, start, img } (slice 16 lock flashes)
+    this.stripCmds = [];        // recorded stamps of the north rooms and door spill (behind-wall strip blend)
+    this.stripCmdCount = 0;
+    this.stripNorth = new Set();
+    this.stripSegments = [];
+    this.stripDebug = { at: 0, segments: [] };
 
     this.createLightTexture();
     const cam = scene.cameras.main;
@@ -409,8 +541,18 @@ export class LightingSystem {
     const litAmbient = parseColor(cfg.ambient, parseColor(this.config.ambient, DEFAULT_LIT_AMBIENT));
     // Per-room emitter variants: { key: [variant, ...] }, key = object id or texture-key prefix.
     const emitterCfg = {};
+    // Indicator lists by object id: an entry's `indicators` replaces a workstation's built-in
+    // dots (an empty list turns them off) and gives any other object with that id its own.
+    const indicatorCfg = {};
     for (const [key, val] of Object.entries(cfg.emitters || {})) {
-      const list = (Array.isArray(val) ? val : [val]).map(normaliseVariant).filter(Boolean);
+      const raw = Array.isArray(val) ? val : [val];
+      const ind = raw.find(v => v && Array.isArray(v.indicators));
+      if (ind) indicatorCfg[key] = ind.indicators.map(normaliseVariant).filter(Boolean);
+      const list = raw.map(v => {
+        if (!v || !('indicators' in v)) return v;
+        const { indicators, ...rest } = v;
+        return Object.keys(rest).length ? rest : null;
+      }).map(normaliseVariant).filter(Boolean);
       if (list.length) emitterCfg[key] = list;
     }
     Object.assign(state, {
@@ -428,6 +570,7 @@ export class LightingSystem {
       // glow (1 at the default ambient or brighter, 0 at a very dark one).
       glowLitFade: Phaser.Math.Clamp((luma(litAmbient) - 0.45) / (luma(DEFAULT_LIT_AMBIENT) - 0.45), 0, 1),
       emitterCfg,
+      indicatorCfg,
       panels: cfg.panels === false ? [] : this.layoutPanels(room),
       extraLights: (cfg.lights || []).map(l => ({
         x: room.position.x + l.x * TILE_SIZE,
@@ -491,7 +634,9 @@ export class LightingSystem {
   /**
    * Emitters for a room's objects. Rebuilt when an object is added or removed or a
    * texture changes (spriteVariants swaps); variant conditions are re-resolved at most
-   * every RESOLVE_MS.
+   * every RESOLVE_MS. A workstation's locked-screen swap (screen-states.js) is not a
+   * change: its emitter is keyed by the base texture, so a lock or unlock does not rebuild
+   * the room's emitters and restart every glow and LED at a new phase.
    */
   refreshEmitters(state, time) {
     const room = window.rooms?.[state.roomId];
@@ -500,7 +645,7 @@ export class LightingSystem {
     const due = time - state.lastResolve >= RESOLVE_MS;
     if (!due && objs.length === state.emitterObjCount) return;
     if (due) state.lastResolve = time;
-    const sig = objs.map(o => o?.texture?.key || '').join('|');
+    const sig = objs.map(o => emitterKey(o) || '').join('|');
     if (sig !== state.objectSig) {
       state.objectSig = sig;
       state.emitterObjCount = objs.length;
@@ -531,27 +676,45 @@ export class LightingSystem {
   buildEmitters(state, objs) {
     state.emitters.forEach(e => { e.glow?.destroy(); e.leds?.forEach(l => l.img.destroy()); e.flames?.forEach(f => f.img.destroy()); });
     state.emitters = [];
+    let npcs = null;
     for (const obj of objs) {
-      const key = obj?.texture?.key;
+      const key = emitterKey(obj);
       if (!key) continue;
       const base = EMITTERS.find(d => d.re.test(key)) || null;
       const variants = this.variantsFor(state, obj, key);
       // Without an EMITTERS match, an object glows only through a variant that says how.
-      if (!base && !variants.some(v => v.color != null && v.radius != null)) continue;
-      const glow = this.scene.add.image(0, 0, LIGHT_TEX)
-        .setBlendMode(Phaser.BlendModes.ADD)
-        .setVisible(false);
-      // LEDs for the densest setting any state asks for (a room emitter can give a
-      // mission's own rack art `leds`); the current state's `leds` shows a share of them.
-      const ledsMax = Math.max(base?.leds || 0, ...variants.map(v => Number(v.leds) || 0));
-      state.emitters.push({
-        obj, key, base, variants, def: null, variantIdx: -2, glow,
-        phase: Math.random() * Math.PI * 2,
-        leds: ledsMax > 0 ? this.createLeds(obj, { leds: ledsMax }) : [],
-        ledsMax,
-        flames: this.createFlames([base, ...variants]),
-        glowK: 1, stampK: 1,
-      });
+      if (base || variants.some(v => v.color != null && v.radius != null)) {
+        const glow = this.scene.add.image(0, 0, LIGHT_TEX)
+          .setBlendMode(Phaser.BlendModes.ADD)
+          .setVisible(false);
+        // LEDs for the densest setting any state asks for (a room emitter can give a
+        // mission's own rack art `leds`); the current state's `leds` shows a share of them.
+        const ledsMax = Math.max(base?.leds || 0, ...variants.map(v => Number(v.leds) || 0));
+        state.emitters.push({
+          obj, key, base, variants, def: null, variantIdx: -2, glow,
+          phase: Math.random() * Math.PI * 2,
+          leds: ledsMax > 0 ? this.createLeds(obj, { leds: ledsMax }) : [],
+          ledsMax,
+          flames: this.createFlames([base, ...variants]),
+          glowK: 1, stampK: 1,
+        });
+      }
+      // Indicator dots (workstations, or a room entry's `indicators`): a second record on the
+      // same object, after the screen's so it draws on top. base null: it shows only while one
+      // of its variants holds, and the screen's own record and glow are untouched.
+      const id = obj.scenarioData?.id ?? obj.objectId;
+      let indicators = id ? state.indicatorCfg?.[id] : null;
+      if (!indicators && isWorkstation(obj.scenarioData)) {
+        indicators = workstationIndicators(obj.scenarioData, npcs || (npcs = knownNpcs()),
+          { width: obj.displayWidth, height: obj.displayHeight });
+      }
+      if (indicators?.length) {
+        state.emitters.push({
+          obj, key, base: null, variants: indicators, indicator: true, def: null, variantIdx: -2,
+          glow: this.scene.add.image(0, 0, LIGHT_TEX).setBlendMode(Phaser.BlendModes.ADD).setVisible(false),
+          phase: Math.random() * Math.PI * 2, leds: [], ledsMax: 0, flames: [], glowK: 1, stampK: 1,
+        });
+      }
     }
   }
 
@@ -704,10 +867,7 @@ export class LightingSystem {
 
   /** How loud a room's sounds are where the player is: own room 1, through a door 0.4, else 0. */
   hearing(roomId) {
-    const here = window.currentPlayerRoom;
-    if (!roomId || roomId === here) return 1;
-    const doors = window.rooms?.[here]?.doorSprites || [];
-    return doors.some(d => d.doorProperties?.connectedRoom === roomId) ? 0.4 : 0;
+    return hearingLevel(roomId);
   }
 
   /** A fluorescent tube's tink as it strikes, synthesised (no asset). */
@@ -915,11 +1075,14 @@ export class LightingSystem {
     // Every draw below goes into one batch (skipBatch) between beginDraw and endDraw.
     // Coordinates are world positions relative to the map's origin, scaled by RES.
     const blockOpts = { originX: 0, originY: 0, tint: 0xffffff, scaleX: 1, scaleY: 1, skipBatch: true };
+    // Where stamps go: the light map, or a tee that also records them (a north room's pass and door
+    // spill while a south room's strip is blended). Not called `target`: update() has one already.
+    let drawTarget = rt;
     const fillRect = (x, y, w, h, color) => {
       blockOpts.tint = color;
       blockOpts.scaleX = (w * RES) / BLOCK_SIZE;
       blockOpts.scaleY = (h * RES) / BLOCK_SIZE;
-      rt.stamp(BLOCK_TEX, null, x * RES, y * RES, blockOpts);
+      drawTarget.stamp(BLOCK_TEX, null, x * RES, y * RES, blockOpts);
     };
 
     rt.clear();
@@ -943,6 +1106,21 @@ export class LightingSystem {
       visible.push(state);
     }
 
+    // Behind-wall strip blend: which north rooms' stamps to record this redraw.
+    this.stripCmdCount = 0;
+    this.stripNorth.clear();
+    let segments = this.stripSegments;
+    segments.length = 0;
+    try {
+      const weights = window.behindWallFade?.lightWeights?.();
+      if (Array.isArray(weights) && weights.length) {
+        for (const seg of stripBlendSegments(weights, window.rooms)) {
+          const sOk = visible.some(v => v.roomId === seg.south), nOk = visible.some(v => v.roomId === seg.north);
+          if (sOk && nOk) { segments.push(seg); this.stripNorth.add(seg.north); }
+        }
+      }
+    } catch (e) { segments.length = 0; this.stripNorth.clear(); }
+
     const stampOpts = { blendMode: Phaser.BlendModes.ADD, skipBatch: true };
     const multOpts = { blendMode: Phaser.BlendModes.MULTIPLY, skipBatch: true, tint: 0xffffff, alpha: 1, scale: 1 };
     const stamp = (x, y, radius, color, alpha) => {
@@ -950,7 +1128,7 @@ export class LightingSystem {
       stampOpts.tint = color;
       stampOpts.alpha = Math.min(1, alpha);
       stampOpts.scale = (radius * RES) / (LIGHT_TEX_SIZE / 2);
-      rt.stamp(LIGHT_TEX, null, (x - ox) * RES, (y - oy) * RES, stampOpts);
+      drawTarget.stamp(LIGHT_TEX, null, (x - ox) * RES, (y - oy) * RES, stampOpts);
     };
 
     const player = window.player;
@@ -983,7 +1161,9 @@ export class LightingSystem {
       // screens and racks are on UPS and hold.
       const lv = state.level * dip;
       state.drawLevel = lv;
+      drawTarget = this.stripNorth.has(state.roomId) ? this.teeFor(state.roomId) : rt;
       const ambient = lerpColor(state.darkAmbient, state.litAmbient, lv);
+      state.drawAmbient = ambient;
       for (const r of this.fillAreas(state.roomId)) {
         fillRect(Math.round(r.x - ox), Math.round(r.y - oy), r.w, r.h, ambient);
       }
@@ -1006,7 +1186,7 @@ export class LightingSystem {
           const lx = left + l.dx, ly = top + l.dy;
           const lit = li < ledsShown && ledA > 0.01 && (still || ((time + l.offset) % l.period) / l.period < l.duty)
             && !this.hiddenByFigure(lx, ly, obj.depth, figures);
-          l.img.setPosition(lx, ly).setVisible(lit).setAlpha(ledA);
+          l.img.setPosition(lx, ly).setVisible(lit).setAlpha(ledA * (obj.behindWallK ?? 1));
         }
         const c = obj.getCenter ? obj.getCenter(centre) : obj;
         const x = c.x + (def.offsetX || 0), y = c.y + (def.offsetY || 0);
@@ -1045,16 +1225,18 @@ export class LightingSystem {
           ? this.figureOverlapsCircle(x, y, radius * 0.3, obj.depth, figures)
           : this.hiddenByFigure(x, y, obj.depth, figures);
         e.fade = (e.fade ?? 1) + ((covered ? GLOW_COVERED : 1) - (e.fade ?? 1)) * 0.35;
-        const fade = (def.ransom || def.above) ? 0.6 : glowFade;
+        // Indicator records (workstation dots) are small and must read across a lit room: full
+        // strength, where other `above` glows are held at 0.6.
+        const fade = e.indicator ? 1 : (def.ransom || def.above) ? 0.6 : glowFade;
         e.glow.setPosition(x, y).setDepth(above ? LIGHT_DEPTH + 1 : obj.depth + 0.01).setVisible(true)
-          .setAlpha(Math.min(1, def.intensity * k * e.glowK * fade * (above ? e.fade : GLOW_BOOST)));
+          .setAlpha(Math.min(1, def.intensity * k * e.glowK * fade * (above ? e.fade : GLOW_BOOST)) * (obj.behindWallK ?? 1));
         // Keep an `above` glow's hue in a lit room (reds stayed red, not pink): multiply
         // its colour into the map under it first. Ransom screens have their own tint.
         if (def.above && !def.ransom && def.hueKeep !== false && this.preserveHue !== false && state.level > 0.05) {
           multOpts.tint = lerpColor(0xffffff, lightColorFor(glowColor), HUE_KEEP_MIX);
           multOpts.alpha = Math.min(1, state.level * Math.min(1, def.intensity * k) * e.fade);
           multOpts.scale = (radius * HUE_KEEP_RADIUS * RES) / (LIGHT_TEX_SIZE / 2);
-          rt.stamp(LIGHT_TEX, null, (x - ox) * RES, (y - oy) * RES, multOpts);
+          drawTarget.stamp(LIGHT_TEX, null, (x - ox) * RES, (y - oy) * RES, multOpts);
         }
         // Flame tongues: small yellow-orange blooms rising across the fire's width
         const burning = def.effect === 'fire';
@@ -1066,7 +1248,7 @@ export class LightingSystem {
             .setTint(lerpColor(FIRE_YELLOW, def.color, tg.rise))
             .setScale(tr / (LIGHT_TEX_SIZE / 2))
             .setDepth(above ? LIGHT_DEPTH + 1 : obj.depth + 0.02)
-            .setAlpha(Math.min(1, def.intensity * 0.9 * tg.alpha * (above ? e.fade : GLOW_BOOST)))
+            .setAlpha(Math.min(1, def.intensity * 0.9 * tg.alpha * (above ? e.fade : GLOW_BOOST)) * (obj.behindWallK ?? 1))
             .setVisible(true);
         }
         // ADD can't colour a near-white light map, so in a lit room an emitter with
@@ -1077,15 +1259,18 @@ export class LightingSystem {
           multOpts.tint = def.ransom ? RANSOM_FLOOR_TINT : lerpColor(0xffffff, def.color, FLOOR_TINT_MIX);
           multOpts.alpha = Math.min(1, def.floorTint * state.level * (def.ransom ? 0.8 + 0.2 * k : 1));
           multOpts.scale = (radius * 1.2 * RES) / (LIGHT_TEX_SIZE / 2);
-          rt.stamp(LIGHT_TEX, null, (x - ox) * RES, (fy - oy) * RES, multOpts);
+          drawTarget.stamp(LIGHT_TEX, null, (x - ox) * RES, (fy - oy) * RES, multOpts);
         }
       }
-      if (state === here) this.stampTorch(rt, stamp, ox, oy, here, player);
-      this.stampNpcTorches(rt, stamp, ox, oy, state, ambient, time);
+      if (this.flashes.size) this.drawFlashes(state, time, drawTarget, multOpts, ox, oy);
+      if (state === here) this.stampTorch(drawTarget, stamp, ox, oy, here, player);
+      this.stampNpcTorches(drawTarget, stamp, ox, oy, state, ambient, time);
       this.stampNpcGlows(stamp, state);
     }
     // Spill goes on after every fill, since it is meant to cross the doorway.
-    for (const state of visible) this.stampDoorSpill(state, stamp, rt, ox, oy);
+    drawTarget = segments.length ? this.teeFor('__spill') : rt;
+    for (const state of visible) this.stampDoorSpill(state, stamp, drawTarget, ox, oy);
+    drawTarget = rt;
     // Phaser 3.60: a batch whose last stamp is a MULTIPLY one (an emitter's floorTint)
     // is lost at endDraw and the whole map comes out white (every room unlit). Ending
     // on an ADD stamp avoids it; a black ADD adds nothing.
@@ -1094,6 +1279,97 @@ export class LightingSystem {
     stampOpts.scale = 1;
     rt.stamp(BLOCK_TEX, null, 0, 0, stampOpts);
     rt.endDraw();
+    if (segments.length) this.drawStripBlend(segments, visible, ox, oy);
+    if (segments.length || this.stripDebug.segments.length) this.stripDebug = { at: time, segments: segments.map(g => ({ south: g.south, north: g.north, x: g.x, y: g.y, w: g.w, h: g.h, weight: g.weight, rect: g.rect || null })) };
+  }
+
+  /** A stamp target that draws to the light map and records the stamp for the strip batch. */
+  teeFor(roomId) {
+    const tees = this.tees || (this.tees = new Map());
+    let tee = tees.get(roomId);
+    if (!tee) {
+      tee = {
+        stamp: (key, frame, x, y, opts) => {
+          const res = this.lightMap.stamp(key, frame, x, y, opts);
+          const n = this.stripCmdCount++;
+          const cmd = this.stripCmds[n] || (this.stripCmds[n] = { roomId: null, key: null, frame: null, x: 0, y: 0, opts: {} });
+          cmd.roomId = roomId; cmd.key = key; cmd.frame = frame; cmd.x = x; cmd.y = y;
+          // Every key, so a pooled command last used for a cone doesn't keep its angle for a light stamp.
+          for (let i = 0; i < STAMP_OPT_KEYS.length; i++) cmd.opts[STAMP_OPT_KEYS[i]] = opts ? opts[STAMP_OPT_KEYS[i]] : undefined;
+          return res;
+        },
+      };
+      tees.set(roomId, tee);
+    }
+    return tee;
+  }
+
+  /** The strip texture, made on first use and resized with the light map. */
+  getStripTexture() {
+    const rt = this.lightMap, tm = this.scene.textures;
+    if (!this.stripTex) this.stripTex = tm.exists(STRIP_TEX) ? tm.get(STRIP_TEX) : tm.addDynamicTexture(STRIP_TEX, rt.width, rt.height);
+    if (this.stripTex.width !== rt.width || this.stripTex.height !== rt.height) this.stripTex.setSize(rt.width, rt.height);
+    return this.stripTex;
+  }
+
+  /**
+   * Draw each north room's light into the strip texture (its ambient under each segment, then its
+   * recorded stamps, then door spill), and blend it onto the light map at the segment's weight:
+   * w * L_N + (1 - w) * L_S. The second batch has no clear and holds NORMAL stamps only: the
+   * copy back uses the batch's last blend mode, so it must end NORMAL (a black ADD would add nothing).
+   */
+  drawStripBlend(segments, visible, ox, oy) {
+    const rt = this.lightMap;
+    const rw = Math.floor(rt.width), rh = Math.floor(rt.height);
+    const rects = [];
+    for (const g of segments) {
+      const x0 = Math.max(0, Math.round((g.x - ox) * RES)), x1 = Math.min(rw, Math.round((g.x + g.w - ox) * RES));
+      const y0 = Math.max(0, Math.round((g.y - oy) * RES)), y1 = Math.min(rh, Math.round((g.y + g.h - oy) * RES));
+      if (x1 <= x0 || y1 <= y0) { g.rect = null; continue; }
+      g.rect = [x0, y0, x1, y1];
+      rects.push(g);
+    }
+    if (!rects.length) return;
+    const strip = this.getStripTexture();
+    const fillOpts = this.stripFillOpts || (this.stripFillOpts = { originX: 0, originY: 0, tint: 0xffffff, scaleX: 1, scaleY: 1, skipBatch: true });
+    const addOpts = this.stripAddOpts || (this.stripAddOpts = { blendMode: Phaser.BlendModes.ADD, tint: 0x000000, alpha: 1, scale: 1, skipBatch: true });
+    const cmds = this.stripCmds, n = this.stripCmdCount;
+    strip.clear();
+    strip.beginDraw();
+    for (const state of visible) {
+      if (!this.stripNorth.has(state.roomId)) continue;
+      for (const g of rects) {
+        if (g.north !== state.roomId) continue;
+        fillOpts.tint = state.drawAmbient ?? 0xffffff;
+        fillOpts.scaleX = (g.rect[2] - g.rect[0]) / BLOCK_SIZE;
+        fillOpts.scaleY = (g.rect[3] - g.rect[1]) / BLOCK_SIZE;
+        strip.stamp(BLOCK_TEX, null, g.rect[0], g.rect[1], fillOpts);
+      }
+      for (let i = 0; i < n; i++) if (cmds[i].roomId === state.roomId) strip.stamp(cmds[i].key, cmds[i].frame, cmds[i].x, cmds[i].y, cmds[i].opts);
+    }
+    for (let i = 0; i < n; i++) if (cmds[i].roomId === '__spill') strip.stamp(cmds[i].key, cmds[i].frame, cmds[i].x, cmds[i].y, cmds[i].opts);
+    strip.stamp(BLOCK_TEX, null, 0, 0, addOpts);
+    strip.endDraw();
+
+    const cropOpts = this.stripCropOpts || (this.stripCropOpts = { originX: 0, originY: 0, alpha: 1, tint: 0xffffff, blendMode: Phaser.BlendModes.NORMAL, skipBatch: true });
+    rt.beginDraw();   // no clear: the light map keeps L_S outside the stamps. Every stamp here is NORMAL.
+    for (let i = 0; i < rects.length; i++) {
+      const g = rects[i], [x0, y0, x1, y1] = g.rect;
+      const name = 'seg' + i;
+      let frame;
+      if (!strip.has(name)) frame = strip.add(name, 0, x0, y0, x1 - x0, y1 - y0);
+      else { frame = strip.get(name); frame.setSize(x1 - x0, y1 - y0, x0, y0); }
+      // A window resize replaces the texture's WebGL handle; a frame made earlier keeps the deleted one.
+      frame.glTexture = strip.getWebGLTexture();
+      cropOpts.alpha = g.weight;
+      rt.stamp(STRIP_TEX, name, x0, y0, cropOpts);
+    }
+    rt.endDraw();
+  }
+
+  /** The last redraw's strip blend segments (world rect and the rounded, clipped light-map rect). */
+  stripBlendDebug() {
+    return JSON.parse(JSON.stringify(this.stripDebug || { at: 0, segments: [] }));
   }
 
   /**
@@ -1150,13 +1426,31 @@ export class LightingSystem {
       const beh = window.npcBehaviorManager?.getBehavior?.(npc.id);
       if (window.npcHostileSystem?.isNPCKO?.(npc.id)) continue;  // a guard on the floor drops his torch
       const target = FACING_ANGLES[beh?.direction] ?? 90;
-      const prev = angles.get(npc.id) ?? target;
-      const diff = ((target - prev + 540) % 360) - 180;
-      const angle = (prev + diff * 0.25 + 360) % 360;
+      // A beam not drawn for a while (lit room, another room) starts at the facing again
+      const now = Date.now();
+      const last = npc._torchAim;
+      const fresh = last && now - (last.at ?? 0) <= TORCH_AIM_FRESH_MS;
+      const angle = stepTorchAim(fresh ? angles.get(npc.id) ?? last.angle : NaN, target);
       angles.set(npc.id, angle);
+      // npc-los.js reads this, so sight from the torch starts where the beam does
+      npc._torchAim = { angle, at: now };
+      // The beam leaves the right hand (npc-los.js torchHandOffset); the angle is
+      // smoothed, and the hand follows it round the body, so turns don't jump.
+      const hand = npcTorchOrigin(npc, now) || { x: sp.x, y: fy - 4 };
       const color = parseColor(typeof torch === 'object' ? torch.color : null, 0xfff0d8);
-      this.stampBeam(rt, stamp, ox, oy, room, sp.x, fy - 4, angle, k * 0.85, color);
+      this.stampBeam(rt, stamp, ox, oy, room, hand.x, hand.y, angle, k * 0.85, color, sp.x, fy - 4);
     }
+  }
+
+  /**
+   * True when the NPC's torch is on now: behavior.torch set and its condition (if
+   * any) holding. npc-los.js asks this for conditional torches.
+   */
+  npcTorchHeld(npc) {
+    const torch = npc?.behavior?.torch;
+    if (!torch) return false;
+    if (typeof torch !== 'object' || !torch.condition) return true;
+    try { return !!evaluateGlobalCondition(torch.condition, window.gameState?.globalVariables || {}); } catch (err) { return false; }
   }
 
   /**
@@ -1183,8 +1477,11 @@ export class LightingSystem {
     }
   }
 
-  /** A torch: a faint pool at (px, py) and a beam along `angle`, cut short at the wall it points at. */
-  stampBeam(rt, stamp, ox, oy, room, px, py, angle, k, color) {
+  /**
+   * A torch: a beam from (px, py) along `angle`, cut short at the wall it points at, and a
+   * faint pool at (poolX, poolY), default the beam's start (NPCs: the pool is at their feet).
+   */
+  stampBeam(rt, stamp, ox, oy, room, px, py, angle, k, color, poolX = px, poolY = py) {
     const rad = Phaser.Math.DegToRad(angle);
     const dx = Math.cos(rad), dy = Math.sin(rad);
     let reach = Infinity;
@@ -1192,7 +1489,7 @@ export class LightingSystem {
     if (dx < -0.01) reach = Math.min(reach, (room.position.x - px) / dx);
     if (dy > 0.01) reach = Math.min(reach, (room.position.y + room.map.heightInPixels - py) / dy);
     if (dy < -0.01) reach = Math.min(reach, (room.position.y + TILE_SIZE - py) / dy);
-    stamp(px, py + 2, 30, color, 0.4 * k);
+    stamp(poolX, poolY + 2, 30, color, 0.4 * k);
     const opts = this.beamOpts || (this.beamOpts = { blendMode: Phaser.BlendModes.ADD, originX: 0, originY: 0.5, tint: 0xfff0d8, scaleX: 1.1, scaleY: 1.1, angle: 0, alpha: 1, skipBatch: true });
     opts.tint = color;
     opts.angle = angle;
@@ -1321,8 +1618,58 @@ export class LightingSystem {
       .some(d => d.doorProperties?.open && d.doorProperties.connectedRoom === toRoomId);
   }
 
+  /**
+   * One transient glow on a workstation's indicator point (slice 16): 'lock' or 'unlock'. A new
+   * flash on the same object replaces the old. Returns false for an unknown kind.
+   */
+  flash(objectId, kind, ms = FLASH_MS, at = null) {
+    if (!objectId || !FLASH_KINDS[kind]) return false;
+    const prev = this.flashes.get(objectId);
+    const img = prev?.img || this.scene.add.image(0, 0, LIGHT_TEX).setBlendMode(Phaser.BlendModes.ADD).setVisible(false);
+    const dur = this.reducedMotion ? FLASH_REDUCED_MS : (Number(ms) > 0 ? Number(ms) : FLASH_MS);
+    // at: { sprite, roomId } for an object with no indicator record (slice 19: a desk phone); drawn at its centre
+    this.flashes.set(objectId, { kind, ms: dur, start: null, img, at: at && at.sprite ? at : null });
+    return true;
+  }
+
+  /**
+   * Draw the flashes whose object has an indicator record in this room, at that record's point
+   * (the dot's offset from the object's centre), above the light map. The clock starts on the
+   * first draw, so a flash raised in a room off screen is not spent before it is seen; it ends
+   * after its time and its image is destroyed. Emitter records are read, never changed.
+   */
+  drawFlashes(state, time, rt, multOpts, ox, oy) {
+    const c = this.tmpFlashCentre || (this.tmpFlashCentre = new Phaser.Math.Vector2());
+    for (const [id, f] of this.flashes) {
+      const e = state.emitters.find(r => r.indicator && (r.obj?.scenarioData?.id ?? r.obj?.objectId) === id)
+        || (f.at && f.at.roomId === state.roomId ? { obj: f.at.sprite, variants: [] } : null);
+      if (!e) continue;
+      const obj = e.obj;
+      if (!obj?.active || !obj.visible) { f.img.setVisible(false); continue; }
+      if (f.start === null) f.start = time;
+      const shape = flashShape(f.kind, (time - f.start) / f.ms, this.reducedMotion);
+      if (!shape) { f.img.destroy(); this.flashes.delete(id); continue; }
+      const v = e.variants[0] || {};
+      const p = obj.getCenter ? obj.getCenter(c) : obj;
+      const x = p.x + (v.offsetX || 0), y = p.y + (v.offsetY || 0);
+      f.img.setTint(shape.color).setScale((shape.radius * 0.6) / (LIGHT_TEX_SIZE / 2))
+        .setPosition(x, y).setDepth(LIGHT_DEPTH + 2).setAlpha(shape.alpha * (obj.behindWallK ?? 1)).setVisible(true);
+      // Keep the hue in a lit room, as the indicator dots do
+      if (rt && multOpts && state.level > 0.05 && this.preserveHue !== false) {
+        multOpts.tint = lerpColor(0xffffff, lightColorFor(shape.color), HUE_KEEP_MIX);
+        multOpts.alpha = Math.min(1, state.level * shape.alpha);
+        multOpts.scale = (shape.radius * HUE_KEEP_RADIUS * RES) / (LIGHT_TEX_SIZE / 2);
+        rt.stamp(LIGHT_TEX, null, (x - ox) * RES, (y - oy) * RES, multOpts);
+      }
+    }
+  }
+
   destroy() {
+    for (const f of this.flashes?.values() || []) f.img?.destroy();
+    this.flashes?.clear();
     this.lightMap?.destroy();
+    try { const tm = this.scene?.textures; if (tm?.exists(STRIP_TEX)) tm.remove(STRIP_TEX); } catch (e) { /* scene gone */ }
+    this.stripTex = null;
     for (const state of this.rooms.values()) {
       state.emitters.forEach(e => { e.glow?.destroy(); e.leds?.forEach(l => l.img.destroy()); e.flames?.forEach(f => f.img.destroy()); });
     }

@@ -8,6 +8,7 @@
 # report.
 #
 #   BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/verify-run.rb [--tasks] [--log SESSION.jsonl] <game_id>
+#   BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/verify-run.rb <game_id> --access
 #
 # With --log (the session log), flags are split by where their value came from:
 # a <vmflag:REF> token has source "vm-step" (the value was produced by a solve
@@ -26,16 +27,117 @@
 # themselves, so a completed task is not evidence of play there. The record
 # holds only a status, so "completed once" is proved by tasks_completed and the
 # score; tools/playtest/count-task-posts.sh checks the request log.
+#
+# The access model section (docs/achitechture/ACCESS_MODEL_PLAN.md, step 6) prints what
+# the sign-in, card copy and file routes recorded: sessions, signedInPcs, serverClones,
+# copiedItems, loginFailures (a count per PC and username) and loginLockouts, and for
+# networks (ACCESS_MODEL_SLICE_9_3_PLAN.md, step 6) footholds, gainedFootholds, and remote
+# and foothold beside each session. The routes write these keys themselves, so no sync is
+# needed first. --access prints only that
+# section, for the check after each beat of a scripted run, and always exits 0.
+#
+# With it, a `habits` block (slice 9.1, ACCESS_MODEL_SLICE_9_1_PLAN.md step 6) of values only,
+# read from the game's saved scenario: one line per NPC with a habits object (its habits and
+# its screenHabit as saved) and one per owned workstation (its owner, its own lockChance or
+# locksScreenOnLeave, whether the server's claim check calls it "always locks", and whether
+# it shows a sticky note). It does not say which values a habit filled: the validator's
+# habits report does. It names who never locks, so it is not for a tester playing blind.
+# No passwords.
+require 'json'
+require_relative '../../lib/break_escape/access_identities'
 
 count_tasks_flag = !ARGV.delete('--tasks').nil?
+access_only = !ARGV.delete('--access').nil?
 log_path = nil
 if (i = ARGV.index('--log'))
   ARGV.delete_at(i)
   log_path = ARGV.delete_at(i) or abort 'usage: --log needs a session log path'
 end
-game_id = ARGV[0] or abort 'usage: verify-run.rb [--tasks] <game_id>'
+game_id = ARGV[0] or abort 'usage: verify-run.rb [--tasks] [--log SESSION.jsonl] [--access] <game_id>'
 g = BreakEscape::Game.find(game_id)
 ps = g.player_state || {}
+
+ACCESS_KEYS = %w[sessions signedInPcs serverClones copiedItems loginFailures loginLockouts footholds
+                 gainedFootholds].freeze
+
+# The access model keys, one line each. Sign-in details are never in player_state, so
+# nothing here is secret: NPC ids, PC ids, card ids, item ids and typed usernames.
+def access_section(ps)
+  hash = ->(v) { v.is_a?(Hash) ? v : {} }
+  list = ->(v) { v.is_a?(Array) ? v : [] }
+  sessions = hash.call(ps['sessions']).map do |pc, s|
+    s = {} unless s.is_a?(Hash)
+    remote = s['foothold'].is_a?(String) && !s['foothold'].empty? ? ", remote, foothold #{s['foothold']}" : ''
+    "#{pc} = #{s['id'] || '?'} (#{s['via'] || '?'}#{remote})"
+  end
+  footholds = hash.call(ps['footholds']).sort_by { |_, f| f.is_a?(Hash) ? f['seq'].to_i : 0 }.map do |id, f|
+    f = {} unless f.is_a?(Hash)
+    device = f['device'].is_a?(Hash) ? (f['device']['id'] || f['device']['type'] || '?') : '?'
+    "#{id} = #{f['via'] || '?'} #{f['source'] || '?'}, device #{device} (network #{f['network'] || '?'})"
+  end
+  clones = hash.call(ps['serverClones']).map do |card_id, rec|
+    rec = {} unless rec.is_a?(Hash)
+    src = rec['source'].is_a?(Hash) ? rec['source'].map { |k, v| "#{k} #{v}" }.join(', ') : '?'
+    "#{card_id} from #{src}#{rec['uidOnly'] ? ' (UID-only)' : ''}"
+  end
+  failures = hash.call(ps['loginFailures']).sort_by { |_, v| v.is_a?(Hash) ? v['seq'].to_i : 0 }.map do |key, v|
+    "#{key} #{v.is_a?(Hash) ? v['n'].to_i : v}"
+  end
+  rows = [
+    ['sessions', sessions],
+    ['signedInPcs', list.call(ps['signedInPcs']).map(&:to_s)],
+    ['serverClones', clones],
+    ['copiedItems', list.call(ps['copiedItems']).map(&:to_s)],
+    ['loginFailures', failures],
+    ['loginLockouts', list.call(ps['loginLockouts']).map(&:to_s)],
+    ['footholds', footholds],
+    ['gainedFootholds', list.call(ps['gainedFootholds']).map(&:to_s)]
+  ]
+  lines = ['access model']
+  rows.each do |name, items|
+    lines << "  #{name.ljust(15)} #{items.length}#{items.empty? ? '' : ": #{items.join('; ')}"}"
+  end
+  lines
+end
+
+# The habits block: values only, [] when no NPC in the saved scenario has a habits object.
+def habits_section(g)
+  data = g.scenario_data
+  return [] unless data.is_a?(Hash)
+
+  ai = BreakEscape::AccessIdentities
+  npcs = ai.room_npcs(data).map { |e| e[:npc] }.select { |n| n['habits'].is_a?(Hash) }
+  return [] if npcs.empty?
+
+  owners = ai.room_npcs(data).to_h { |e| [e[:npc]['id'], e[:npc]] }
+  lines = ['habits']
+  npcs.each do |npc|
+    values = npc['habits'].reject { |k, _| k == '_comment' }.map { |k, v| "#{k}=#{v}" }.join(' ')
+    habit = npc.key?('screenHabit') ? JSON.generate(npc['screenHabit']) : '-'
+    lines << "  npc #{npc['id'].to_s.ljust(14)} #{values}  screenHabit #{habit}"
+  end
+  ai.room_objects(data).each do |entry|
+    pc = entry[:object]
+    next unless ai.workstation?(pc)
+
+    owner_id = ai.owner_id(pc, data)
+    next unless owner_id
+
+    field = %w[lockChance locksScreenOnLeave].find { |f| pc.key?(f) }
+    own = field ? "#{field} #{pc[field]}" : 'no lock field'
+    always = g.respond_to?(:pc_always_locks?) ? g.pc_always_locks?(pc, owners[owner_id]) : ai.screen_always_locks?(pc, owners[owner_id])
+    postit = ai.login_pc?(pc) && g.respond_to?(:login_postit_for) ? !g.login_postit_for(pc).nil? : false
+    lines << "  pc  #{pc['id'].to_s.ljust(14)} owner #{owner_id}  #{own}  alwaysLocks #{always}  hasPostit #{postit}"
+  end
+  lines
+end
+
+if access_only
+  puts "game            #{g.id}  (mission #{g.mission_id})"
+  puts access_section(ps)
+  puts habits_section(g)
+  exit 0
+end
 
 inv     = (ps['inventory'] || []).map { |i| i.is_a?(Hash) ? (i['name'] || i['id']) : i }
 rooms   = ps['unlockedRooms'] || []
@@ -55,6 +157,12 @@ puts "inventory       #{inv.length}: #{inv.join(', ')}"
 puts "NPCs met        #{npcs.length}: #{npcs.join(', ')}"
 puts "flags submitted #{flags.length}: #{flags.join(', ')}"
 puts "globals set     #{globals.length}: #{globals.keys.sort.join(', ')}"
+if ACCESS_KEYS.any? { |k| ps[k].respond_to?(:empty?) && !ps[k].empty? }
+  puts access_section(ps)
+  puts habits_section(g)
+else
+  puts 'access model    nothing recorded (no sessions, sign-ins, card copies, copied files, failed sign-ins or footholds)'
+end
 
 tasks = (ps.dig('objectivesState', 'tasks') || {})
 completed_ids = tasks.select { |_, t| t.is_a?(Hash) && t['status'] == 'completed' }.keys

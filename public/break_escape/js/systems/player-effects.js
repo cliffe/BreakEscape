@@ -31,6 +31,9 @@ export function initializePlayerEffects(gameInstance, roomsRef) {
 // Function to create player bump effect when walking over items
 export function createPlayerBumpEffect() {
     if (!window.player || isPlayerBumping) return;
+    // Seated: the player sprite is a hidden physics driver showing a standing frame,
+    // so an overlay copied from it would flash the standing pose. Chairs don't hop.
+    if (window.player.isSeated) return;
     
     // Check cooldown to prevent double hopping
     const currentTime = Date.now();
@@ -184,6 +187,7 @@ export function createPlayerBumpEffect() {
 // Create player jump effect when spacebar is pressed
 export function createPlayerJump() {
     if (!window.player || isPlayerBumping) return;
+    if (window.player.isSeated) return; // seating.onJumpKey handles Space on a chair
     
     // Check cooldown to prevent rapid jumping
     const currentTime = Date.now();

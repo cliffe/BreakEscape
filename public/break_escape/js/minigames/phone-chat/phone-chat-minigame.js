@@ -13,7 +13,7 @@ import PhoneChatConversation from './phone-chat-conversation.js';
 import PhoneChatHistory from './phone-chat-history.js';
 import InkEngine from '../../systems/ink/ink-engine.js';
 import { attachPretext } from '../person-chat/person-chat-pretext.js';
-import { processGameActionTags } from '../helpers/chat-helpers.js';
+import { processGameActionTags, choiceAsksEnding, confirmEndingBeforeChoice } from '../helpers/chat-helpers.js';
 import { partitionSlowTags } from '../person-chat/person-chat-pending-reply.js';
 import { classifyPhoneLine, displayPhoneLine, phoneStepLines } from './phone-chat-speaker.js';
 import { choiceIndexFromKey } from './phone-chat-choices.js';
@@ -247,15 +247,7 @@ export class PhoneChatMinigame extends MinigameScene {
             const choiceButton = e.target.closest('.choice-button');
             if (choiceButton) {
                 const choiceIndex = parseInt(choiceButton.dataset.index);
-                // Play message sent sound
-                try {
-                    if (window.game && window.game.sound) {
-                        const sound = window.game.sound.get('message_sent') || window.game.sound.add('message_sent');
-                        sound.play({ volume: 0.7 });
-                    }
-                } catch (e) {
-                    // Sound not available, ignore
-                }
+                // The "message sent" sound plays in handleChoice, once the choice is taken
                 this.handleChoice(choiceIndex);
             }
         });
@@ -1012,6 +1004,37 @@ export class PhoneChatMinigame extends MinigameScene {
     }
 
     /**
+     * The end-of-mission check for a choice tagged #ending_check inside its brackets, asked
+     * before the choice is taken (chat-helpers.js confirmEndingBeforeChoice). Resolves true to
+     * take the choice; false on "Keep going" (nothing is taken, so ink does not move and the
+     * same choices stay on screen), while the question is already up, or when the phone closed
+     * or moved on meanwhile.
+     */
+    async _askEndingBeforeChoice(choiceIndex) {
+        if (this._endingAsking) return false;
+        const askedTags = this.conversation?.engine?.story?.currentChoices?.[choiceIndex]?.tags;
+        if (!choiceAsksEnding(askedTags)) return true;
+        const asking = this.conversation;
+        this._endingAsking = true;
+        let endNow = true;
+        try { endNow = await confirmEndingBeforeChoice(askedTags); }
+        finally { this._endingAsking = false; }
+        return !!endNow && this.conversation === asking && !!this.isConversationActive;
+    }
+
+    /** The "message sent" sound of a choice the player has taken. */
+    playMessageSent() {
+        try {
+            if (window.game && window.game.sound) {
+                const sound = window.game.sound.get('message_sent') || window.game.sound.add('message_sent');
+                sound.play({ volume: 0.7 });
+            }
+        } catch (e) {
+            // Sound not available, ignore
+        }
+    }
+
+    /**
      * Handle player choice selection
      * 
      * UPDATED: Now reads one line at a time similar to person-chat.
@@ -1039,7 +1062,13 @@ export class PhoneChatMinigame extends MinigameScene {
         // Without the "1." number label the button shows
         const choiceText = choiceButton.dataset.text ?? choiceButton.textContent;
 
+        // A choice tagged #ending_check inside its brackets asks before it is taken
+        if (this._askEndingBeforeChoice && !(await this._askEndingBeforeChoice(choiceIndex))) return;
+
         console.log(`👆 Player chose: ${choiceText}`);
+
+        // Message sent: only for a choice that is taken (not one "Keep going" left untaken)
+        this.playMessageSent?.();
 
         // Display player's choice as a message
         this.ui.addMessage('player', choiceText);

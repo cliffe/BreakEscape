@@ -51,13 +51,13 @@
     "hospital_desk1": {
       "id": 0,
       "w": 62,
-      "h": 48,
+      "h": 44,
       "gid": 103
     },
     "hospital_desk2": {
       "id": 1,
       "w": 62,
-      "h": 48,
+      "h": 44,
       "gid": 104
     },
     "hospital_conference_table": {
@@ -2261,13 +2261,13 @@
     "hospital_chair_north": {
       "id": 201,
       "w": 16,
-      "h": 26,
+      "h": 30,
       "gid": 316
     },
     "hospital_chair_south": {
       "id": 202,
       "w": 16,
-      "h": 32,
+      "h": 35,
       "gid": 317
     },
     "iv_stand1": {
@@ -2873,7 +2873,7 @@
     "hospital_chair_north2": {
       "id": 100,
       "w": 16,
-      "h": 26,
+      "h": 30,
       "gid": 901
     },
     "pigeonholes1": {
@@ -2969,7 +2969,7 @@
     "exec_desk1": {
       "id": 116,
       "w": 80,
-      "h": 46,
+      "h": 42,
       "gid": 917
     },
     "radio_charger1": {
@@ -5951,7 +5951,7 @@
     "m10_steel_chair1": {
       "id": 623,
       "w": 16,
-      "h": 26,
+      "h": 31,
       "gid": 1424
     },
     "m10_field_screen_curve1": {
@@ -6029,13 +6029,13 @@
     "aw_chair_south_slate1": {
       "id": 636,
       "w": 16,
-      "h": 32,
+      "h": 35,
       "gid": 1437
     },
     "aw_chair_north_slate1": {
       "id": 637,
       "w": 16,
-      "h": 26,
+      "h": 30,
       "gid": 1438
     },
     "aw_chair_w_slate1": {
@@ -6083,13 +6083,13 @@
     "aw_chair_south_charcoal1": {
       "id": 645,
       "w": 16,
-      "h": 32,
+      "h": 35,
       "gid": 1446
     },
     "aw_chair_north_charcoal1": {
       "id": 646,
       "w": 16,
-      "h": 26,
+      "h": 30,
       "gid": 1447
     },
     "aw_chair_w_charcoal1": {
@@ -6109,6 +6109,150 @@
       "w": 16,
       "h": 21,
       "gid": 1450
+    },
+    "lw_logo_sign1": {
+      "id": 650,
+      "w": 72,
+      "h": 19,
+      "gid": 1451
+    },
+    "lw_sign_briefing1": {
+      "id": 651,
+      "w": 39,
+      "h": 11,
+      "gid": 1452
+    },
+    "lw_sign_records1": {
+      "id": 652,
+      "w": 35,
+      "h": 11,
+      "gid": 1453
+    },
+    "lw_sign_admin1": {
+      "id": 653,
+      "w": 27,
+      "h": 11,
+      "gid": 1454
+    },
+    "lw_sash_window1": {
+      "id": 654,
+      "w": 40,
+      "h": 40,
+      "gid": 1455
+    },
+    "lw_baize_board1": {
+      "id": 655,
+      "w": 42,
+      "h": 31,
+      "gid": 1456
+    },
+    "lw_directory1": {
+      "id": 656,
+      "w": 40,
+      "h": 48,
+      "gid": 1457
+    },
+    "lw_evac_plan1": {
+      "id": 657,
+      "w": 32,
+      "h": 24,
+      "gid": 1458
+    },
+    "lw_exit_button1": {
+      "id": 658,
+      "w": 14,
+      "h": 22,
+      "gid": 1459
+    },
+    "lw_sign_post1": {
+      "id": 659,
+      "w": 43,
+      "h": 11,
+      "gid": 1460
+    },
+    "lw_sign_accounts1": {
+      "id": 660,
+      "w": 39,
+      "h": 11,
+      "gid": 1461
+    },
+    "lw_sign_records_office1": {
+      "id": 661,
+      "w": 63,
+      "h": 11,
+      "gid": 1462
+    },
+    "lw_sign_staff_only1": {
+      "id": 662,
+      "w": 47,
+      "h": 11,
+      "gid": 1463
+    },
+    "lw_sign_fire_door1": {
+      "id": 663,
+      "w": 83,
+      "h": 11,
+      "gid": 1464
+    },
+    "lw_sign_press_exit1": {
+      "id": 664,
+      "w": 59,
+      "h": 11,
+      "gid": 1465
+    },
+    "lw_sign_kitroom1": {
+      "id": 665,
+      "w": 39,
+      "h": 11,
+      "gid": 1466
+    },
+    "lw_pigeonholes3": {
+      "id": 666,
+      "w": 84,
+      "h": 27,
+      "gid": 1467
+    },
+    "lw_credenza1": {
+      "id": 667,
+      "w": 64,
+      "h": 36,
+      "gid": 1468
+    },
+    "lw_oval_table1": {
+      "id": 668,
+      "w": 80,
+      "h": 40,
+      "gid": 1469
+    },
+    "lw_ledger_shelves1": {
+      "id": 669,
+      "w": 48,
+      "h": 60,
+      "gid": 1470
+    },
+    "lw_time_clock1": {
+      "id": 670,
+      "w": 24,
+      "h": 44,
+      "gid": 1471
+    },
+    "lw_franking_machine1": {
+      "id": 671,
+      "w": 24,
+      "h": 19,
+      "gid": 1472
+    },
+    "lw_card_index1": {
+      "id": 672,
+      "w": 36,
+      "h": 29,
+      "gid": 1473
+    },
+    "lw_sign_store1": {
+      "id": 673,
+      "w": 27,
+      "h": 11,
+      "gid": 1474
     }
   }
 }

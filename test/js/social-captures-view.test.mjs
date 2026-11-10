@@ -18,6 +18,7 @@ for (const rel of [
     'minigames/landing-page-builder/landing-page-model.js',
     'minigames/landing-page-builder/landing-page-render.js',
     'minigames/landing-page-builder/landing-page-inspect.js',
+    'minigames/capture-log/capture-rows.js',
     'minigames/osint-browser/concept-card.js',
     'minigames/framework/base-minigame.js',
     'minigames/framework/social-overlay.js',
@@ -91,13 +92,32 @@ test('credential secret is masked unless revealSecret is true', () => {
 
     s = open({ se_captures: SEED() }, { captures: { revealSecret: true } });
     assert.equal(s.container.querySelector('.lpb-captures-secret').textContent, 'Spring2024!');
-    assert.match(s.container.querySelector('.lpb-captures-banner').textContent, /Simulated capture — authored for training/);
+    assert.match(s.container.querySelector('.lpb-captures-banner').textContent, /shown in full here and masked in the report/);
+});
+
+test('a credential with no stored secret is masked until the served reveal arrives', () => {
+    // A fresh capture carries no secret (the bootstrap strips it); the row masks until
+    // _applyCaptureSecrets fills it in from the /capture_secrets map.
+    const seed = { lord: { targetId: 'lord', roleLabel: 'Finance intern', address: 'intern@corp.example', kind: 'credential', at: 1 } };
+    const s = open({ se_captures: seed }, { captures: { revealSecret: true } });
+    assert.equal(s.container.querySelector('.lpb-captures-secret').textContent, '••••••••', 'masked before the reveal');
+    assert.doesNotMatch(s.container.textContent, /Sofia2026!/);
+    s._applyCaptureSecrets({ lord: 'Sofia2026!' });
+    assert.equal(s.container.querySelector('.lpb-captures-secret').textContent, 'Sofia2026!', 'revealed after the fetch');
+});
+
+test('a served secret is ignored when the scenario does not reveal', () => {
+    const seed = { lord: { targetId: 'lord', roleLabel: 'Finance intern', address: 'intern@corp.example', kind: 'credential', at: 1 } };
+    const s = open({ se_captures: seed }, {});
+    s._applyCaptureSecrets({ lord: 'Sofia2026!' });
+    assert.equal(s.container.querySelector('.lpb-captures-secret').textContent, '••••••••', 'reveal off: still masked');
+    assert.doesNotMatch(s.container.textContent, /Sofia2026!/);
 });
 
 test('foothold row shows host and note and no secret', () => {
     const s = open({ se_captures: SEED() }, { captures: { revealSecret: true } });
     const foot = rows(s)[1];
-    assert.equal(foot.querySelector('.lpb-captures-foothold').textContent, 'Foothold on WS-014 — macro document opened');
+    assert.equal(foot.querySelector('.lpb-captures-foothold').textContent, 'Foothold on WS-014: macro document opened');
     assert.equal(foot.querySelector('.lpb-captures-secret'), null);
 });
 

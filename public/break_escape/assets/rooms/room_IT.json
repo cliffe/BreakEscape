@@ -379,7 +379,7 @@
                  "visible":true,
                  "width":16,
                  "x":176.389642600257,
-                 "y":180.833516905109
+                 "y":178.833516905109
                 }, 
                 {
                  "gid":438,
@@ -3857,7 +3857,7 @@
                 {
                  "id":100,
                  "image":"..\/objects\/hospital_chair_north2.png",
-                 "imageheight":26,
+                 "imageheight":30,
                  "imagewidth":16
                 }, 
                 {
@@ -3953,7 +3953,7 @@
                 {
                  "id":116,
                  "image":"..\/objects\/exec_desk1.png",
-                 "imageheight":46,
+                 "imageheight":42,
                  "imagewidth":80
                 }, 
                 {

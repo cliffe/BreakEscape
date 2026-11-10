@@ -436,6 +436,62 @@ module BreakEscape
       assert_match(/not found/i, json_body["error"])
     end
 
+    # ─── Office chatter (OFFICE_LIFE_PLAN 11.3) ───────────────────────────────
+
+    def chatter_npc(id, chatter = nil)
+      npc = { "id" => id, "voice" => { "name" => "Charon", "style" => nil, "language" => nil } }
+      npc["chatter"] = chatter if chatter
+      npc
+    end
+
+    # A 500 (generation failed) after the mock proves the request passed the 403 gate.
+    def assert_passes_validation(npc_id, text)
+      with_env("GEMINI_API_KEY" => "dummy_key_for_test") do
+        mock_service = Minitest::Mock.new
+        mock_service.expect(:cache_key_for, "missing", [String, String, NilClass, NilClass])
+        mock_service.expect(:cache_path, Pathname.new("/nonexistent/missing.mp3"), [String, String])
+        mock_service.expect(:legacy_cached_path, nil, [String, String, NilClass, NilClass], scenario_name: String)
+        mock_service.expect(:generate, nil, [String, String, NilClass, NilClass], scenario_name: String, npc_id: String)
+        TtsService.stub(:new, mock_service) do
+          post tts_game_url(@game), params: { npc_id: npc_id, text: text }
+        end
+        assert_response :internal_server_error
+      end
+    end
+
+    test "tts accepts an NPC's own chatter pool line for that NPC" do
+      @game.scenario_data["rooms"]["lobby"]["npcs"] << chatter_npc("chatty", { "cooler" => ["Kettle's on, if you want one."] })
+      @game.save!
+      assert_passes_validation("chatty", "Kettle's on, if you want one.")
+    end
+
+    test "tts refuses an NPC's chatter line for another NPC" do
+      @game.scenario_data["rooms"]["lobby"]["npcs"] << chatter_npc("chatty", { "cooler" => { "lines" => ["Kettle's on, if you want one."] } })
+      @game.scenario_data["rooms"]["lobby"]["npcs"] << chatter_npc("quiet")
+      @game.save!
+      with_env("GEMINI_API_KEY" => "dummy_key_for_test") do
+        post tts_game_url(@game), params: { npc_id: "quiet", text: "Kettle's on, if you want one." }
+      end
+      assert_response :forbidden
+    end
+
+    test "tts accepts a scenario-level chatter line for any voiced NPC" do
+      @game.scenario_data["chatter"] = { "grumble" => ["Maybe later."] }
+      @game.scenario_data["rooms"]["lobby"]["npcs"] << chatter_npc("quiet")
+      @game.save!
+      assert_passes_validation("quiet", "Maybe later.")
+    end
+
+    test "tts refuses a shared chatter line when the scenario has no such pool" do
+      @game.scenario_data["chatter"] = false
+      @game.scenario_data["rooms"]["lobby"]["npcs"] << chatter_npc("quiet")
+      @game.save!
+      with_env("GEMINI_API_KEY" => "dummy_key_for_test") do
+        post tts_game_url(@game), params: { npc_id: "quiet", text: "Maybe later." }
+      end
+      assert_response :forbidden
+    end
+
     # ─── Co-speaker NPC (voice Hash, no storyPath, lines in another NPC's story) ─
     #
     # E.g. a director who only speaks inside an agent's briefing cutscene: the line is in

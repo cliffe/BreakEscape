@@ -1,0 +1,53 @@
+{
+ "zoom": 1,
+ "scrollX": -406.6802217120574,
+ "scrollY": -74,
+ "cam": [
+  0,
+  0,
+  1000,
+  700
+ ],
+ "canvas": [
+  0,
+  0,
+  1000,
+  700
+ ],
+ "player": {
+  "x": 93.3197782879426,
+  "y": 276,
+  "depth": 310.5,
+  "bodyBottom": 312,
+  "bodyCenterX": 93.3197782879426,
+  "w": 80,
+  "h": 80,
+  "ox": 0.5,
+  "oy": 0.5
+ },
+ "caps": 9,
+ "capDepths": [
+  308
+ ],
+ "capAlpha": [
+  1,
+  1,
+  1
+ ],
+ "layerDepths": [
+  [
+   "reception_walls_3",
+   320.2
+  ],
+  [
+   "reception_room_4",
+   320.4
+  ]
+ ],
+ "nLayerDepthsNearS": [],
+ "Spos": {
+  "x": 0,
+  "y": 256
+ },
+ "faded": true
+}

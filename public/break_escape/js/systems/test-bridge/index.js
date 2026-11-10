@@ -37,13 +37,14 @@ import {
 } from './input.js';
 import { reachX } from '../interaction-reach.js';
 import { wallClearFrom, sameRoomFrom } from '../interaction-walls.js';
-import { getState, scanNearby, activeMinigameSummary, detectBlockingUi, interactionMenuState, solveStandingPoint, engineInteractDistance, plainNearestEntity, roomContents, doorways } from './state.js';
+import { getState, scanNearby, activeMinigameSummary, detectBlockingUi, sessionOverlayShowing, sessionOverlayButtons, interactionMenuState, solveStandingPoint, engineInteractDistance, plainNearestEntity, roomContents, doorways } from './state.js';
 import {
-    waitUntil, waitForEvent, waitForMovementEnd, waitFrames,
+    waitUntil, waitForGlobal, waitForEvent, waitForMovementEnd, waitFrames,
     waitForMinigame, waitForMinigameClosed
 } from './wait.js';
 import { logAction, logNote, installEventCapture, drain, peek, clear, currentSeq, eventsSince } from './log.js';
 import { minigameBridge } from './minigames.js';
+import { accessBridge } from './access.js';
 // Imported directly rather than read off window: player.js exports this but
 // never assigns it globally. Used only by moveTo's documented off-screen
 // exception — see moveTo below.
@@ -1116,6 +1117,8 @@ const bridge = {
                 }
             }
         }
+        // The session overlay: only its own three buttons, never the other-session links
+        if (sessionOverlayShowing()) buttons = sessionOverlayButtons();
         if (!buttons.length) return fail('blocking-ui-has-no-buttons', { blocker });
 
         let target;
@@ -1335,6 +1338,11 @@ const bridge = {
      * Confirms like interact(): a minigame opened or an event fired. The
      * reply names what opened, and lists any other tray items that also
      * matched so an ambiguous substring is visible.
+     *
+     * An item with more than one action (a droppable one: "Drop here",
+     * "Examine") opens its menu, as a player's click does. The reply is then
+     * `{ ok: true, menu: { title, items } }` and the menu stays open: pick an
+     * entry with `inventoryAct(item, entry)` (or chooseInteractionMenu).
      */
     async openInventoryItem(item) {
         const blocked = blockedByMinigame();
@@ -1409,6 +1417,18 @@ const bridge = {
         ensureTargetRecorder();
         interactStartT = performance.now();
         clickElementDom(el);
+        // A menu item (inventory-menu.js) opens its menu in the click handler itself.
+        const menu = interactionMenuState();
+        if (menu) {
+            const title = (document.querySelector('#be-interaction-menu .be-im-title')?.textContent || '').trim();
+            const result = {
+                ok: true, item, matched, matchedBy: tier,
+                menu: { title, items: menu.items },
+                hint: 'This item has a menu. Pick an entry with inventoryAct(item, "Drop here" | "Examine" | index).'
+            };
+            logAction('openInventoryItem', { item }, result);
+            return result;
+        }
         const confirmed = await confirmEffect(sinceSeq);
         const entity = { kind: 'object', id: matched.id, name: matched.name };
         const result = confirmed.confirmed
@@ -1421,6 +1441,55 @@ const bridge = {
                         + '(briefing, debrief) blocks the tray; check brief for a dialogue first.'
                 }));
         logAction('openInventoryItem', { item }, result);
+        return result;
+    },
+
+    /**
+     * Pick one entry of a tray item's menu, as a player does: click the item
+     * (openInventoryItem), then the entry ("Drop here", "Examine", "Use", or a
+     * 0-based index). Confirms like interact(): "Drop here" fires
+     * item_dropped:<id>, "Examine" opens the examine view. A greyed entry
+     * ("Drop here" in a doorway or between rooms) fails with its reason.
+     * An item with no menu fails with `no-menu`: use openInventoryItem.
+     */
+    async inventoryAct(item, entry) {
+        if (window.isInteractionMenuOpen?.()) window.closeInteractionMenu?.();
+        const opened = await bridge.openInventoryItem(item);
+        if (!opened.ok) return opened;
+        if (!opened.menu) {
+            const result = fail('no-menu', { item, opened, hint: 'This item has one action; openInventoryItem already ran it.' });
+            logAction('inventoryAct', { item, entry }, result);
+            return result;
+        }
+        const buttons = Array.from(document.querySelectorAll('#be-interaction-menu .be-im-item'));
+        const label = (b) => (b.querySelector('.be-im-label')?.innerText || b.innerText || '').trim();
+        const needle = String(entry ?? '').trim().toLowerCase();
+        const btn = typeof entry === 'number' ? buttons[entry]
+            : (buttons.find(b => label(b).toLowerCase() === needle)
+                || buttons.find(b => label(b).toLowerCase().includes(needle)));
+        if (!btn) {
+            const result = fail(`no-menu-entry:${entry}`, { item, menu: opened.menu });
+            window.closeInteractionMenu?.();
+            logAction('inventoryAct', { item, entry }, result);
+            return result;
+        }
+        if (btn.getAttribute('aria-disabled') === 'true') {
+            const reason = (btn.querySelector('.be-im-detail')?.innerText || '').trim();
+            const result = fail('menu-entry-disabled', { item, entry: label(btn), reason });
+            window.closeInteractionMenu?.();
+            logAction('inventoryAct', { item, entry }, result);
+            return result;
+        }
+        const sinceSeq = currentSeq();
+        ensureTargetRecorder();
+        interactStartT = performance.now();
+        clickElementDom(btn);
+        const confirmed = await confirmEffect(sinceSeq);
+        const entity = { kind: 'object', id: opened.matched?.id, name: opened.matched?.name };
+        const result = confirmed.confirmed || confirmed.unrelatedOverlay
+            ? withConfirmation({ item, entry: label(btn), matched: opened.matched }, confirmed, entity)
+            : fail('no-effect-confirmed', { item, entry: label(btn), matched: opened.matched });
+        logAction('inventoryAct', { item, entry }, result);
         return result;
     },
 
@@ -1573,10 +1642,7 @@ const bridge = {
 
     /** Wait for a named global story variable to reach a value (or just be set). */
     waitForGlobal(name, expected = undefined, opts = {}) {
-        return waitUntil(() => {
-            const v = window.gameState?.globalVariables?.[name];
-            return expected === undefined ? (v !== undefined && v !== false && v !== null) : v === expected;
-        }, { label: `global:${name}`, ...opts });
+        return waitForGlobal(name, expected, opts);
     },
 
     /** Wait for an objectives task to reach completed. */
@@ -1619,6 +1685,68 @@ const bridge = {
     peekLog: peek,
     clearLog: clear,
     note: logNote,
+
+    // ── NPC needs clock (docs/achitechture/NPC_NEEDS_SYSTEM.md section 9) ───
+
+    /**
+     * Drives the needs clock only. It never moves an NPC or triggers a use: the
+     * NPC still walks, queues arrivals and dwells through the real engine, so
+     * step() needs real frames between calls (waitFrames / sleep) for walking
+     * NPCs to arrive. All JSON in and out.
+     */
+    needs: {
+        _sys() { return window.npcNeedsSystem || null; },
+        /** Reset all needs state and set the seed (jitter). */
+        setSeed(seed) {
+            const s = this._sys();
+            if (!s) return { ok: false, reason: 'no-needs-system' };
+            s.reset(seed);
+            return { ok: true, seed: s.seed, npcs: [...s.states.keys()].sort() };
+        },
+        /** true: the clock moves only through step(); false: back to game time. */
+        setManualClock(on) {
+            const s = this._sys();
+            if (!s) return { ok: false, reason: 'no-needs-system' };
+            s.manualClock = !!on;
+            s._lastElapsed = null; // re-baseline when handing the clock back
+            s._acc = 0;
+            return { ok: true, manualClock: s.manualClock };
+        },
+        /** Advance the needs clock by ms (whole 250 ms ticks). Manual clock only. */
+        step(ms) {
+            const s = this._sys();
+            if (!s) return { ok: false, reason: 'no-needs-system' };
+            if (!s.manualClock) return { ok: false, reason: 'not-manual-clock' };
+            const ticks = s.step(ms);
+            return { ok: true, ticks, clockMs: s.clockMs, tick: s.tickCount };
+        },
+        /** One NPC's state (mode, levels, job, home) or null when not registered. */
+        state(npcId) { return this._sys()?.getState(npcId) ?? null; },
+        /** Registered needs NPC ids, sorted. */
+        ids() { return this._sys() ? [...this._sys().states.keys()].sort() : []; },
+        /** The decision log, optionally only entries after tick `sinceTick`. */
+        log(sinceTick = 0) { return (this._sys()?.getLog() || []).filter(e => e.t > sinceTick); },
+        /** Set a need level (same path as an eventMapping `needs: {set}`). */
+        set(npcId, need, level) {
+            const s = this._sys();
+            if (!s) return { ok: false, reason: 'no-needs-system' };
+            return { ok: s.control(npcId, { set: { [need]: level } }) };
+        },
+        /** Need-bar debug overlay (npc-needs-debug.js): true / false, or null = the scenario's needsDebugOverlay flag. */
+        overlay(on) {
+            const d = window.npcNeedsDebug;
+            if (!d) return { ok: false, reason: 'no-needs-overlay' };
+            return { ok: true, enabled: d.setEnabled(on), panels: d.panels.size };
+        }
+    },
+
+    // ── Access model (docs/achitechture/ACCESS_MODEL_PLAN.md, step 6) ───────
+
+    /**
+     * Read-only: sessions(), workstation(pcId), savedCards(). See access.js.
+     * Compare with the server's record (tools/playtest/verify-run.rb --access).
+     */
+    access: accessBridge,
 
     // ── Minigames ───────────────────────────────────────────────────────────
 

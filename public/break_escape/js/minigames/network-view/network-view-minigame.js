@@ -1,0 +1,294 @@
+/**
+ * NETWORK VIEW (slice 9.3a, docs/achitechture/ACCESS_MODEL_SLICE_9_3_PLAN.md 4.3)
+ * ================================================================================
+ *
+ * What one foothold reaches, as GET /network answers it and nothing else: it never reads
+ * scenario data. Opened only by systems/network-links.js (window.startNetworkViewMinigame),
+ * never by an object type, an ink tag or an openMinigame mapping, so it has no entry in
+ * the minigame registry.
+ *
+ *   header        the link's name and its network ("Drop box: comms room, on Harbour office
+ *                 LAN"), the link item's observations, and an optional one-line message
+ *   a host row    host label, name and one action, decided in this order:
+ *                   1. "remote sign-in off" when the PC's policy blocks it (no control);
+ *                   2. Open, with the account's name, when a password session is held there
+ *                      (the server sends `session` only for one; a claim shows Sign in);
+ *                   3. Sign in otherwise
+ *   a share row   name and host, then Open (no access list) or a padlock with "Needs an
+ *                 account with access. It opens from that account's desktop."
+ *   another row   name and kind; Look shows its observations here
+ *
+ * Rows keep the server's order (sign-in hosts, then resources, each by id) and carry
+ * data-host-id / data-resource-id, with data-action (sign-in, open, observe) on the control
+ * that acts. Events: network_viewed (and :<networkId>) { footholdId, networkId, hostIds,
+ * hostList } each time the rows load; network_host_opened (and :<id>) { footholdId,
+ * hostId, kind } when a row's control is used.
+ *
+ * The way back (4.3, "Getting back"): the view records why it closed (`handover` before it
+ * opens a host or a share, `foothold_gone` when the refetch finds the foothold gone, else
+ * `close`) and reports it from cleanup through window.networkLinks.landed('view', reason).
+ * It never passes returnTo or suspended to the framework.
+ */
+
+import { MinigameScene } from '../framework/base-minigame.js';
+
+const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, ch => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+
+export const REMOTE_OFF_TEXT = 'remote sign-in off';
+export const SHARE_LOCKED_TEXT = "Needs an account with access. It opens from that account's desktop.";
+const KIND_LABELS = { file_share: 'File share', printer: 'Printer', pc: 'Computer' };
+const KIND_ICONS = {
+    pc: '/break_escape/assets/objects/pc_desktop.png',
+    file_share: '/break_escape/assets/objects/m09_folder1.png',
+    printer: '/break_escape/assets/icons/npc-print.png'
+};
+
+/**
+ * The action a host row offers (4.3), in the plan's order: 'off' | 'open' | 'sign-in'.
+ * Exported for tests.
+ */
+export function hostAction(row) {
+    if (row?.remoteSignIn === false) return 'off';
+    if (row?.session && row.session.via !== 'claim') return 'open';
+    return 'sign-in';
+}
+
+/** A share opened from the view, as the container minigame's lockable (4.5). */
+export function shareLockable(row, footholdId) {
+    const name = row?.host ? `${row.name} (\\\\${row.host}\\${row.name})` : (row?.name || row?.id);
+    return {
+        scenarioData: {
+            id: row?.id, type: 'network_share', name, locked: false, takeable: false,
+            observations: row?.host ? `A file share on ${row.host}.` : 'A file share.',
+            networkShare: { footholdId }
+        },
+        name: 'network_share',
+        objectId: `share_${row?.id}`,
+        sourceResourceId: row?.id
+    };
+}
+
+export class NetworkViewMinigame extends MinigameScene {
+    constructor(container, params) {
+        super(container, { ...params, cancelText: 'Close', showCancel: true });
+        this.footholdId = params?.footholdId || null;
+        this.message = params?.message || null;
+        this.view = null;
+        this.status = 'loading';
+        this.exitReason = 'close';
+        this.notice = null;
+    }
+
+    links() { return window.networkLinks || null; }
+
+    _emit(name, data, id) {
+        const d = window.eventDispatcher;
+        if (!d || typeof d.emit !== 'function') return;
+        try {
+            d.emit(name, data);
+            if (id) d.emit(`${name}:${id}`, data);
+        } catch (e) { console.warn(`[network-view] ${name} listeners threw`, e); }
+    }
+
+    init() {
+        super.init();
+        if (this.container?.classList) this.container.classList.add('network-view-minigame');
+        this.gameContainer.innerHTML = '<div class="network-view"><div class="network-view-loading">Connecting...</div></div>';
+        this.loaded = this.load();
+    }
+
+    /** GET /network for this foothold (through network-links.js), then the rows. */
+    async load() {
+        const links = this.links();
+        const answer = links?.view ? await links.view(this.footholdId) : { ok: false, reason: 'error' };
+        // Closed, or replaced by another screen, while the answer was on its way
+        if (this._reported || (window.MinigameFramework?.currentMinigame && window.MinigameFramework.currentMinigame !== this)) return answer;
+        if (!answer.ok && answer.reason === 'gone') {
+            // The foothold is no longer held: back to the world with "The link is gone."
+            this.status = 'gone';
+            this.exitReason = 'foothold_gone';
+            this.complete(false);
+            return answer;
+        }
+        if (!answer.ok) {
+            this.status = 'error';
+            this.gameContainer.innerHTML = '<div class="network-view"><div class="network-view-error">The link did not answer. Close this and try again.</div></div>';
+            return answer;
+        }
+        this.view = answer.view;
+        this.status = 'ready';
+        this.render();
+        const hostIds = this.rows().filter(r => r.kind === 'pc').map(r => r.id);
+        const networkId = this.view?.network?.id ?? null;
+        this._emit('network_viewed', { footholdId: this.footholdId, networkId, hostIds, hostList: hostIds.join(',') }, networkId);
+        return answer;
+    }
+
+    rows() {
+        return (Array.isArray(this.view?.hosts) ? this.view.hosts : []).filter(r => r && typeof r === 'object' && r.id);
+    }
+
+    /** The link item's own observations, shown in the header (13.4: a link item has no menu). */
+    linkObservations() {
+        const itemId = this.links()?.get?.(this.footholdId)?.itemId || `netlink_${this.footholdId}`;
+        const item = (window.inventory?.items || []).find(it => it?.scenarioData?.id === itemId);
+        return item?.scenarioData?.observations || '';
+    }
+
+    rowHtml(row) {
+        if (row.kind === 'pc') {
+            const action = hostAction(row);
+            let control;
+            if (action === 'off') {
+                control = `<span class="network-row-off">${REMOTE_OFF_TEXT}</span>`;
+            } else if (action === 'open') {
+                const who = row.session.displayName || row.session.username || 'session';
+                control = `<button type="button" class="minigame-button network-row-action" data-action="open">Open (${escapeHtml(who)})</button>`;
+            } else {
+                control = '<button type="button" class="minigame-button network-row-action" data-action="sign-in">Sign in</button>';
+            }
+            return `
+                <li class="network-row network-row-host" data-host-id="${escapeHtml(row.id)}" data-kind="pc">
+                    <img class="network-row-icon" src="${KIND_ICONS.pc}" alt="">
+                    <span class="network-row-label"><strong>${escapeHtml(row.host || row.id)}</strong>
+                        <span class="network-row-name">${escapeHtml(row.name || '')}</span></span>
+                    <span class="network-row-control">${control}</span>
+                </li>`;
+        }
+        const icon = KIND_ICONS[row.kind] || KIND_ICONS.file_share;
+        const kindLabel = KIND_LABELS[row.kind] || 'Device';
+        let control;
+        if (row.kind === 'file_share') {
+            control = row.open === false
+                ? `<span class="network-row-locked"><img class="network-row-padlock" src="/break_escape/assets/icons/padlock_32.png" alt="Locked"> ${SHARE_LOCKED_TEXT}</span>`
+                : '<button type="button" class="minigame-button network-row-action" data-action="open">Open</button>';
+        } else {
+            control = '<button type="button" class="minigame-button network-row-action" data-action="observe">Look</button>';
+        }
+        return `
+                <li class="network-row network-row-resource" data-resource-id="${escapeHtml(row.id)}" data-kind="${escapeHtml(row.kind || '')}">
+                    <img class="network-row-icon" src="${icon}" alt="">
+                    <span class="network-row-label"><strong>${escapeHtml(row.name || row.id)}</strong>
+                        <span class="network-row-name">${escapeHtml(kindLabel)}${row.host ? ` on ${escapeHtml(row.host)}` : ''}</span></span>
+                    <span class="network-row-control">${control}</span>
+                </li>`;
+    }
+
+    render() {
+        const v = this.view || {};
+        const title = v.network?.name ? `${v.name || 'Your link'}, on ${v.network.name}` : (v.name || 'Your link');
+        const obs = this.linkObservations();
+        const rows = this.rows();
+        this.gameContainer.innerHTML = `
+            <div class="network-view">
+                <div class="network-view-header">
+                    <h4 class="network-view-title">${escapeHtml(title)}</h4>
+                    ${obs ? `<p class="network-view-observations">${escapeHtml(obs)}</p>` : ''}
+                    ${this.message ? `<p class="network-view-message">${escapeHtml(this.message)}</p>` : ''}
+                </div>
+                <ul class="network-view-rows">
+                    ${rows.length ? rows.map(r => this.rowHtml(r)).join('') : '<li class="network-row-empty">Nothing answers on this network.</li>'}
+                </ul>
+                <div class="network-view-notice" aria-live="polite"></div>
+            </div>`;
+        this.gameContainer.querySelectorAll('[data-action]').forEach(btn => {
+            const li = btn.closest('[data-host-id], [data-resource-id]');
+            const id = li?.dataset.hostId || li?.dataset.resourceId;
+            const row = rows.find(r => r.id === id);
+            if (row) this.addEventListener(btn, 'click', (e) => { e.preventDefault?.(); this.act(row, btn.dataset.action); });
+        });
+    }
+
+    showNotice(text) {
+        this.notice = text;
+        const el = this.gameContainer?.querySelector('.network-view-notice');
+        if (el) el.textContent = text;
+    }
+
+    /** A row's control: sign in, open a held session or a share, or look at a resource. */
+    act(row, action) {
+        if (!this.gameState.isActive || this.status !== 'ready') return false;
+        const footholdId = this.footholdId;
+        this._emit('network_host_opened', { footholdId, hostId: row.id, kind: row.kind || null }, row.id);
+        if (action === 'observe') {
+            this.showNotice(row.observations || 'Nothing more to see from here.');
+            return true;
+        }
+        if (row.kind === 'pc') {
+            const start = action === 'open' ? window.openRemoteDesktop : window.openRemoteSignIn;
+            if (typeof start !== 'function') return false;
+            // The view hands over: the screen it opens replaces it, and the trip goes on
+            this.exitReason = 'handover';
+            if (action === 'open') start(row.id, footholdId);
+            else start(row, footholdId);
+            return this.handedOver();
+        }
+        if (row.kind === 'file_share' && row.open !== false && typeof window.startContainerMinigame === 'function') {
+            this.exitReason = 'handover';
+            window.startContainerMinigame(shareLockable(row, footholdId), null, false, true);
+            return this.handedOver();
+        }
+        return false;
+    }
+
+    /**
+     * The screen a row opens starts at once and replaces this view, which reports the
+     * handover from its cleanup. If nothing replaced it (no framework, a refused start),
+     * the view is still open and its own Close must end the trip: reason back to close
+     * (review R1 minor 1).
+     */
+    handedOver() {
+        if (window.MinigameFramework?.currentMinigame === this && !this._ending) {
+            this.exitReason = 'close';
+            return false;
+        }
+        return true;
+    }
+
+    cleanup() {
+        super.cleanup();
+        if (this._reported) return;
+        this._reported = true;
+        this.links()?.landed?.('view', this.exitReason || 'close', {});
+    }
+
+    getTestState() {
+        return {
+            ...super.getTestState(),
+            footholdId: this.footholdId,
+            status: this.status,
+            network: this.view?.network ? { id: this.view.network.id, name: this.view.network.name } : null,
+            message: this.message,
+            notice: this.notice,
+            rows: this.rows().map(r => (r.kind === 'pc'
+                ? { id: r.id, kind: 'pc', host: r.host || null, name: r.name || null, action: hostAction(r),
+                    session: r.session ? (r.session.displayName || r.session.username || null) : null,
+                    selector: `[data-host-id="${r.id}"] [data-action]` }
+                : { id: r.id, kind: r.kind || null, name: r.name || null, host: r.host || null,
+                    action: r.kind === 'file_share' ? (r.open === false ? 'locked' : 'open') : 'observe',
+                    selector: `[data-resource-id="${r.id}"] [data-action]` }))
+        };
+    }
+}
+
+/**
+ * Open the view for a held foothold (network-links.js looks this up on window). Starts no
+ * trip: network-links.js has one running already.
+ */
+export function startNetworkViewMinigame(footholdId, { message = null } = {}) {
+    const framework = window.MinigameFramework;
+    if (!framework) {
+        console.error('MinigameFramework not available for the network view');
+        return null;
+    }
+    if (!framework.mainGameScene && window.game) framework.init(window.game);
+    const name = window.networkLinks?.get?.(footholdId)?.name;
+    return framework.startMinigame('network-view', null, {
+        title: name || 'Network link',
+        footholdId,
+        message
+    });
+}
+
+if (typeof window !== 'undefined') window.startNetworkViewMinigame = startNetworkViewMinigame;

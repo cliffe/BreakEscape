@@ -26,6 +26,160 @@ export function createItemIdentifier(scenarioData) {
     return `${itemType}_${itemName}`;
 }
 
+// Hover label of an inventory item: its plain name. A droppable item no longer says
+// "(click to drop)": its click opens a menu that offers the drop (inventory-menu.js),
+// and a touch screen never showed the hover label anyway.
+export function inventoryHoverLabel(scenarioData) {
+    return scenarioData?.name;
+}
+
+// ---------------------------------------------------------------------------
+// The tray refresh (engine plan 5c)
+//
+// The tray is never rebuilt from state: window.inventory.items holds the slot
+// elements themselves, and many places read that array to answer "does the
+// player hold X". So nothing here removes an element or reorders the array.
+// refreshInventoryTray() walks the array and decorates the slots that exist:
+// a hidden class and a badge, from the rules registered with registerTrayRule.
+// ---------------------------------------------------------------------------
+
+export const TRAY_HIDDEN_CLASS = 'tray-hidden';
+const TRAY_BADGE_CLASS = 'tray-badge';
+const TRAY_FIELDS = ['hidden', 'holderId', 'badge'];
+
+const trayRules = [];
+// Identifiers held at the previous refresh; null until a tray's first refresh,
+// which only records what is held.
+let trayHeld = null;
+// Slot elements of items restored from the save (a reload, or a new game's start
+// items, which the server delivers as playerInventory): never an arrival.
+const trayRestored = new WeakSet();
+// What the last refresh decided for each element: { hidden, holderId, badge }.
+const trayDecided = new WeakMap();
+let trayWalking = false;
+let trayWalkAgain = false;
+// While a batch of server-made changes is applied (showServerItem,
+// syncInventoryFromServer) the refreshes the adds and removes ask for wait, and
+// the batch runs one at its end.
+let trayDeferred = 0;
+let trayDeferredAsked = false;
+
+function trayKey(item) {
+    return item?.scenarioData ? createItemIdentifier(item.scenarioData) : null;
+}
+
+// Every rule's answer for one item, merged: for each field the first rule that
+// sets it wins. A rule that throws is skipped, never the tray.
+function trayStateFor(item, items) {
+    const state = {};
+    for (const rule of trayRules) {
+        let out = null;
+        try { out = rule(item, items); } catch (err) {
+            console.error('[inventory] a tray rule failed:', err);
+        }
+        if (!out || typeof out !== 'object') continue;
+        for (const field of TRAY_FIELDS) {
+            if (out[field] !== undefined && state[field] === undefined) state[field] = out[field];
+        }
+    }
+    return state;
+}
+
+function drawTrayBadge(slot, count) {
+    let badge = slot.querySelector(`:scope > .${TRAY_BADGE_CLASS}`);
+    const n = Number(count) > 0 ? Math.floor(Number(count)) : 0;
+    if (!n) { badge?.remove(); return; }
+    if (!badge) {
+        badge = document.createElement('span');
+        badge.className = TRAY_BADGE_CLASS;
+        slot.appendChild(badge);
+    }
+    badge.textContent = String(n);
+}
+
+function holderName(items, holderId) {
+    const holder = items.find(it => it?.scenarioData?.id === holderId);
+    return holder?.scenarioData?.name || holderId;
+}
+
+/**
+ * Decorate the tray from the registered rules. Runs after every add, remove and
+ * restore; slice 9.3's server-made item functions call it at their end, and any
+ * module may call it when something a rule reads has changed. Per slot it sets
+ * the hidden class and the badge; every item keeps its element and its place in
+ * window.inventory.items. An item that arrives (an identifier not held at the
+ * previous refresh, not restored from the save) and is filed in a holder is
+ * announced as "Added to <holder name>: <item name>". Emits inventory_changed
+ * once when it has run.
+ */
+export function refreshInventoryTray() {
+    const items = window.inventory?.items;
+    if (!Array.isArray(items)) return;
+    if (trayDeferred > 0) { trayDeferredAsked = true; return; }
+    // A rule that calls the refresh while it runs gets one more walk, not a nested
+    // one (at most a few, so a rule that always asks cannot hang the page)
+    if (trayWalking) { trayWalkAgain = true; return; }
+    trayWalking = true;
+    const filedArrivals = [];
+    let walks = 0;
+    try {
+        do {
+            trayWalkAgain = false;
+            const before = trayHeld;
+            const now = new Set();
+            for (const item of items) {
+                if (!item) continue;
+                const key = trayKey(item);
+                if (key) now.add(key);
+                const state = trayStateFor(item, items);
+                trayDecided.set(item, state);
+                const slot = item.parentElement;
+                if (slot?.classList) {
+                    slot.classList.toggle(TRAY_HIDDEN_CLASS, state.hidden === true);
+                    drawTrayBadge(slot, state.badge);
+                }
+                if (before && key && !before.has(key) && !trayRestored.has(item) && state.holderId) {
+                    filedArrivals.push({ item, holderId: state.holderId });
+                }
+            }
+            trayHeld = now;
+        } while (trayWalkAgain && ++walks < 3);
+    } finally {
+        trayWalking = false;
+    }
+    for (const { item, holderId } of filedArrivals) {
+        const name = item.scenarioData?.name || item.scenarioData?.type || 'item';
+        window.gameAlert?.(`Added to ${holderName(items, holderId)}: ${name}`, 'info', '', 3000);
+    }
+    window.eventDispatcher?.emit('inventory_changed', { items });
+}
+
+/**
+ * Register a tray rule: fn(item, items) gets one entry of window.inventory.items
+ * and the whole array, and returns null or { hidden?, holderId?, badge? }.
+ * hidden hides the item's slot, holderId names the held item it is filed in,
+ * badge is a count drawn on the item's own slot (0 or absent draws none). Rules
+ * run in the order registered; for each field the first rule that sets it wins.
+ * Registering runs a refresh, so a module that loads after the restore files
+ * what is already held. Returns a function that removes the rule (and refreshes).
+ */
+export function registerTrayRule(fn) {
+    if (typeof fn !== 'function') throw new TypeError('registerTrayRule needs a function');
+    trayRules.push(fn);
+    refreshInventoryTray();
+    return () => {
+        const i = trayRules.indexOf(fn);
+        if (i === -1) return;
+        trayRules.splice(i, 1);
+        refreshInventoryTray();
+    };
+}
+
+// What the last refresh decided for one tray element: { hidden?, holderId?, badge? }
+export function trayStateOf(item) {
+    return { ...(trayDecided.get(item) || {}) };
+}
+
 // Initialize the inventory system
 export function initializeInventory() {
     console.log('Inventory system initialized');
@@ -35,6 +189,7 @@ export function initializeInventory() {
         items: [],
         container: null
     };
+    trayHeld = null; // a new tray: its first refresh only records what is held
     
     // Get the HTML inventory container
     const inventoryContainer = document.getElementById('inventory-container');
@@ -165,6 +320,7 @@ export function processInitialInventoryItems() {
                 addToInventory(inventoryItem);
             }
         });
+        refreshInventoryTray();
         return; // Don't process startItemsInInventory if we loaded from server
     }
     
@@ -215,6 +371,43 @@ export function processInitialInventoryItems() {
     } else {
         console.log('No startItemsInInventory defined in scenario');
     }
+    refreshInventoryTray();
+}
+
+// Image key of an item that has no world sprite (restored from the saved inventory
+// after a reload, or a starting item). A scenario object's "sprite" names its picture
+// and wins over the type, as it does when the room draws the object (rooms.js):
+// with the type alone a reload turned a "usb" with sprite "charging_cable" into a
+// missing usb.png.
+export function inventoryImageKey(itemData) {
+    const named = itemData?.sprite;
+    return (typeof named === 'string' && named) ? named : itemData?.type;
+}
+
+// Image key of an item going into the tray. The scenario's "sprite" names its picture
+// first (inventoryImageKey), as for a restored item; then the world sprite's texture.
+// A dropped item picked up while its own picture is still loading wears a stand-in
+// texture (Phaser's __DEFAULT or the neutral dropped_item, item-drop.js), which is
+// never the item's picture, so those fall through to the type.
+const STAND_IN_TEXTURES = new Set(['__DEFAULT', '__MISSING', 'dropped_item']);
+export function trayImageKey(sprite) {
+    const data = sprite?.scenarioData;
+    const named = data?.sprite;
+    if (typeof named === 'string' && named) return named;
+    const tex = sprite?.texture?.key;
+    if (tex && !STAND_IN_TEXTURES.has(tex)) return tex;
+    return data?.type || sprite?.name;
+}
+
+// A missing picture falls back once to the item type's own, so a wrong "sprite"
+// name cannot leave a broken image with its alt text spilling over the next slot.
+export function fallbackInventoryImage(itemImg, type) {
+    if (!type || itemImg._triedTypeImage) return false;
+    const typeSrc = `/break_escape/assets/objects/${type}.png`;
+    if (String(itemImg.src || '').endsWith(typeSrc)) return false;
+    itemImg._triedTypeImage = true;
+    itemImg.src = typeSrc;
+    return true;
 }
 
 function createInventorySprite(itemData) {
@@ -225,7 +418,7 @@ function createInventorySprite(itemData) {
             objectId: `inventory_${itemData.type}_${Date.now()}`,
             scenarioData: itemData,
             texture: {
-                key: itemData.type  // Use the type as the texture key for image lookup
+                key: inventoryImageKey(itemData)
             },
             // Copy critical properties for easy access
             keyPins: itemData.keyPins,  // Preserve keyPins for keys
@@ -450,16 +643,25 @@ export async function addToInventory(sprite) {
         // With no source NPC the server takes the first NPC copy holding the item in its
         // room order, which can be one the player has not met (m10 F3: "NPC not
         // encountered: nightshade_lock" on every reload once his payment was held).
+        // Nor for an item the server has already added itself (slice 9.3a: the link item
+        // a plant answers with, showServerItem).
         const gameId = window.breakEscapeConfig?.gameId;
-        if (gameId && !sprite._restoredFromSave) {
+        if (gameId && !sprite._restoredFromSave && !sprite._serverAdded) {
             try {
                 // Create item data with ID from scenario if available
                 const itemData = sprite.scenarioData;
 
+                // A file taken from a sign-in desktop (access model 5.1) names its PC and
+                // the player's choice, Copy or Move; the server checks the session there.
                 const addBody = JSON.stringify({
                     action_type: 'add',
                     item: itemData,
-                    source_npc_id: sprite.sourceNpcId || undefined
+                    source_npc_id: sprite.sourceNpcId || undefined,
+                    ...(sprite.sourcePcId ? { source_pc_id: sprite.sourcePcId, transfer: sprite.transfer || 'move' } : {}),
+                    // A file taken from a share opened in the network view (slice 9.3a, 4.5)
+                    // names the share; the server checks a foothold or session reaches it.
+                    ...(sprite.sourceResourceId && !sprite.sourcePcId
+                        ? { source_resource_id: sprite.sourceResourceId, transfer: sprite.transfer || 'move' } : {})
                 });
                 const response = await fetch(`/break_escape/games/${gameId}/inventory`, {
                     method: 'POST',
@@ -592,8 +794,9 @@ export async function addToInventory(sprite) {
         // Create inventory item
         const itemImg = document.createElement('img');
         itemImg.className = 'inventory-item';
-        itemImg.src = `/break_escape/assets/objects/${sprite.texture?.key || sprite.name || sprite.scenarioData?.type}.png`;
+        itemImg.src = `/break_escape/assets/objects/${trayImageKey(sprite)}.png`;
         itemImg.alt = sprite.scenarioData.name;
+        itemImg.addEventListener('error', () => fallbackInventoryImage(itemImg, sprite.scenarioData?.type));
         
         // Add item data
         itemImg.scenarioData = sprite.scenarioData;
@@ -644,14 +847,18 @@ export async function addToInventory(sprite) {
         itemImg.scenarioData.takeable = false;
         
         // Add click handler
-        itemImg.addEventListener('click', function() {
+        itemImg.addEventListener('click', function(e) {
             // A forced conversation (debrief, cutscene) can't be replaced from here.
             if (inventoryBlockedByForcedMinigame()) return;
+            // An item with more than one action (a droppable one) opens its menu;
+            // every other item keeps its one click (inventory-menu.js, loaded by
+            // interactions.js; reached through window like handleObjectInteraction).
+            if (window.openInventoryItemMenu?.(this, e?.clientX, e?.clientY)) return;
             if (window.handleObjectInteraction) {
                 window.handleObjectInteraction(this);
             }
         });
-        itemImg.addEventListener('mouseenter', () => setHudLabel(sprite.scenarioData.name));
+        itemImg.addEventListener('mouseenter', () => setHudLabel(inventoryHoverLabel(sprite.scenarioData)));
         itemImg.addEventListener('mouseleave', () => clearHudLabel());
 
         // Add to slot
@@ -659,26 +866,39 @@ export async function addToInventory(sprite) {
         
         // Add to inventory array
         window.inventory.items.push(itemImg);
-        
-        applyPickupAction(sprite);
+        if (sprite._restoredFromSave) trayRestored.add(itemImg);
+        // Decorate the tray (a rule may file this item in a held holder; then the
+        // refresh says "Added to <holder>" and the hidden slot gets no pulse)
+        refreshInventoryTray();
+
+        // An item the server put back or made itself (slice 9.3a: the link item, a device
+        // returned by an unplug) was not picked up: no onPickup, no item_picked_up.
+        if (!sprite._serverAdded) applyPickupAction(sprite);
 
         // Emit NPC event for item pickup
-        if (window.eventDispatcher) {
+        if (window.eventDispatcher && !sprite._serverAdded) {
             window.eventDispatcher.emit(`item_picked_up:${sprite.scenarioData.type}`, {
                 itemType: sprite.scenarioData.type,
                 itemName: sprite.scenarioData.name,
                 itemId: sprite.scenarioData.id || window.lockRef(sprite.scenarioData),
                 collectionGroup: sprite.scenarioData.collection_group || null,
-                roomId: window.currentPlayerRoom
+                roomId: window.currentPlayerRoom,
+                // From a sign-in desktop: which PC, and whether it was copied or moved
+                ...(sprite.sourcePcId ? { sourcePcId: sprite.sourcePcId, transfer: sprite.transfer || 'move' } : {}),
+                ...(sprite.sourceResourceId && !sprite.sourcePcId
+                    ? { sourceResourceId: sprite.sourceResourceId, transfer: sprite.transfer || 'move' } : {})
             });
         }
         
         // Apply pulse animation to the slot instead of showing notification
-        slot.classList.add('pulse');
-        // Remove the pulse class after the animation completes
-        setTimeout(() => {
-            slot.classList.remove('pulse');
-        }, 600);
+        // (not to a filed item's hidden slot: its arrival was a toast)
+        if (!slot.classList.contains(TRAY_HIDDEN_CLASS)) {
+            slot.classList.add('pulse');
+            // Remove the pulse class after the animation completes
+            setTimeout(() => {
+                slot.classList.remove('pulse');
+            }, 600);
+        }
         
         // If this is the Bluetooth scanner, automatically open the minigame after adding to inventory
         if (sprite.scenarioData.type === "bluetooth_scanner" && window.startBluetoothScannerMinigame) {
@@ -754,6 +974,8 @@ function addKeyToInventory(sprite) {
     
     // Update or create the key ring display
     updateKeyRingDisplay();
+    if (sprite._restoredFromSave && window.inventory.keyRing.itemImg) trayRestored.add(window.inventory.keyRing.itemImg);
+    refreshInventoryTray();
     
     // IMPORTANT: Reinitialize key-lock mappings now that we have a new key
     // This is critical for newly acquired keys (e.g., dropped by NPCs) to unlock doors
@@ -952,6 +1174,7 @@ export function removeFromInventory(item) {
             if (slot.matches(':hover')) clearHudLabel();
             slot.remove();
         }
+        refreshInventoryTray();
         
         // Hide bluetooth toggle if we dropped the bluetooth scanner
         if (item.scenarioData.type === "bluetooth_scanner") {
@@ -974,6 +1197,82 @@ export function removeFromInventory(item) {
         console.error('Error removing from inventory:', error);
         return false;
     }
+}
+
+// ---------------------------------------------------------------------------
+// Items the server has already added or removed (slice 9.3a, ACCESS_MODEL_SLICE_9_3_PLAN.md
+// 4.1 and 13.4). A network route answers with the whole inventory: the link item a
+// plant creates, the device it takes and the device an unplug gives back. These two
+// put the tray in line with that answer with no inventory request, and each ends with
+// one tray refresh, so a server-made item is filed (by its storeIn) and decorated like
+// any other.
+// ---------------------------------------------------------------------------
+
+function trayItemWithId(id) {
+    if (!id) return null;
+    return (window.inventory?.items || []).find(it => it?.scenarioData?.id === id) || null;
+}
+
+function deferTray(fn) {
+    trayDeferred++;
+    try {
+        return fn();
+    } finally {
+        trayDeferred--;
+        if (trayDeferred === 0) {
+            trayDeferredAsked = false;
+            refreshInventoryTray();
+        }
+    }
+}
+
+function addServerItem(itemData, { restored = false } = {}) {
+    if (!itemData || typeof itemData !== 'object') return false;
+    if (itemData.id && trayItemWithId(itemData.id)) return false;
+    const sprite = createInventorySprite({ ...itemData });
+    if (!sprite) return false;
+    sprite._serverAdded = true;
+    // A restored item (a reload's missing handle) is not an arrival: no "Added to" toast
+    if (restored) sprite._restoredFromSave = true;
+    // With no request in the way addToInventory runs to its end at once; its
+    // promise only carries the result.
+    addToInventory(sprite);
+    return !!trayItemWithId(itemData.id) || !itemData.id;
+}
+
+/**
+ * Show an item the server has already added (no request): the path a reload takes for
+ * the saved inventory, through createInventorySprite. `restored` marks it as part of a
+ * restore, so a filed item gets no "Added to" toast. Nothing happens when the tray
+ * already holds an item with that id. Ends with one tray refresh. Returns true when
+ * the item was added.
+ */
+export function showServerItem(itemData, { restored = false } = {}) {
+    return deferTray(() => addServerItem(itemData, { restored }));
+}
+
+/**
+ * Bring the tray in line with the server's inventory for the item ids passed: an id the
+ * list holds and the tray lacks is shown (showServerItem's path); an id the tray holds and
+ * the list lacks is removed. Items with other ids are left alone. Ends with one tray
+ * refresh. Returns { added: [ids], removed: [ids] }.
+ */
+export function syncInventoryFromServer(inventory, ids = []) {
+    const list = Array.isArray(inventory) ? inventory : [];
+    const wanted = [...new Set((Array.isArray(ids) ? ids : [ids]).filter(id => typeof id === 'string' && id))];
+    const result = { added: [], removed: [] };
+    deferTray(() => {
+        for (const id of wanted) {
+            const serverItem = list.find(it => it && typeof it === 'object' && it.id === id);
+            const trayItem = trayItemWithId(id);
+            if (serverItem && !trayItem) {
+                if (addServerItem(serverItem)) result.added.push(id);
+            } else if (!serverItem && trayItem) {
+                if (removeFromInventory(trayItem)) result.removed.push(id);
+            }
+        }
+    });
+    return result;
 }
 
 // Update phone badge with unread count
@@ -1020,4 +1319,7 @@ window.removeFromInventory = removeFromInventory;
 window.addNotepadToInventory = addNotepadToInventory;
 window.createItemIdentifier = createItemIdentifier;
 window.handleKeyRingInteraction = handleKeyRingInteraction;
-window.updatePhoneBadge = updatePhoneBadge; 
+window.updatePhoneBadge = updatePhoneBadge; window.refreshInventoryTray = refreshInventoryTray;
+window.registerTrayRule = registerTrayRule;
+window.showServerItem = showServerItem;
+window.syncInventoryFromServer = syncInventoryFromServer;

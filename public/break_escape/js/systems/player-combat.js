@@ -98,6 +98,7 @@ export class PlayerCombat {
   attack(toward = null) {
     if (attacksDisabled() || this.isBlocking || !window.player) return false;
     if (this.fightingPaused()) return false;
+    window.seating?.standUp(); // punching gets the player off a chair
 
     if (this.isPunching) {
       this.queuedPress = true;
@@ -191,6 +192,7 @@ export class PlayerCombat {
   startBlock() {
     if (attacksDisabled() || this.isBlocking || !window.player) return false;
     if (this.fightingPaused()) return false;
+    window.seating?.standUp(); // so does blocking
     this.isBlocking = true;
     this.queuedPress = false;
     window.cancelClickToMove?.();
@@ -471,8 +473,8 @@ export class PlayerCombat {
     let chairsHit = 0;
     if (window.chairs && window.chairs.length > 0) {
       window.chairs.forEach(chair => {
-        // Only kick swivel chairs with physics bodies
-        if (!chair.isSwivelChair || !chair.body) {
+        // Only kick swivel chairs with physics bodies, and not one someone sits on (seating.js)
+        if (!chair.isSwivelChair || !chair.body || chair.seatedBy) {
           return;
         }
 

@@ -3,6 +3,100 @@ import { writeGlobal } from './global-writer.js';
 import { grantFact, readyToastText, readyToastTitle } from './social-intel.js';
 
 /**
+ * Record a Social-Engineering/physical capture into se_captures (captures.js),
+ * first-capture-wins. Kept off the static import graph on purpose: apply-actions.js
+ * is copied by several node test harnesses that stub only its known imports, so the
+ * captures module is pulled in lazily the first time a capture is actually written.
+ *
+ * `input` names the target and the AUTHORED fiction (credential address/secret, or a
+ * foothold host/note) — never anything the player typed. The physical pentest lab
+ * builds this input by merging an NPC's own `usePayload` (the per-NPC credential that
+ * rides on `npc_used`) over a static template, so the object that was "used" never
+ * holds the secret; see NPC_NEEDS_SYSTEM.md §13.
+ */
+let _capturesPromise = null;
+function capturesModule() {
+    if (!_capturesPromise) _capturesPromise = import('./captures.js').catch(() => null);
+    return _capturesPromise;
+}
+
+export async function recordSECapture(input) {
+    const globals = (typeof window !== 'undefined') ? window.gameState?.globalVariables : null;
+    if (!globals) return false;
+    const mod = await capturesModule();
+    if (!mod) return false;
+    const { CAPTURES_KEY, makeCaptureEntry, mergeCapture, readCaptures } = mod;
+    const at = (input && Number.isFinite(input.at)) ? input.at : Date.now();
+    const entry = makeCaptureEntry({ ...input, at });
+    if (!entry) return false;
+    const base = readCaptures(globals);
+    const next = mergeCapture(base, entry);
+    if (next === base) return false; // already captured: first-capture-wins, no redundant write
+    writeGlobal(CAPTURES_KEY, next, { openChat: false });
+    if (typeof window !== 'undefined') window.stateSync?.sync?.();
+    console.log('[applyActions] add_capture:', entry.targetId, entry.kind);
+    return true;
+}
+
+if (typeof window !== 'undefined') window.recordSECapture = recordSECapture;
+
+/**
+ * Tell the server an item has left the inventory (POST /inventory, action_type remove).
+ * `usedOn` names the object the item was used on (its scenario id): the server then records
+ * a plant when that object takes the item (engine plan section 6, capture proofs). Awaits the
+ * answer and retries once on a network error or a 5xx; a refusal is logged and not retried.
+ * Resolves true when the server accepted the removal.
+ */
+export async function sendInventoryRemove(id, { usedOn = null, gameId = null } = {}) {
+    const gid = gameId || (typeof window !== 'undefined' ? window.breakEscapeConfig?.gameId : null);
+    if (!id || !gid) return false;
+    const body = { action_type: 'remove', item: { id } };
+    if (typeof usedOn === 'string' && usedOn) body.used_on = usedOn;
+    for (let attempt = 1; attempt <= 2; attempt++) {
+        try {
+            const resp = await fetch(`/break_escape/games/${gid}/inventory`, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                },
+                body: JSON.stringify(body)
+            });
+            if (resp?.ok !== false) return true;
+            if (resp.status >= 500 && attempt === 1) continue;
+            console.warn('[applyActions] the server refused an inventory remove:', id, resp.status);
+            return false;
+        } catch (err) {
+            if (attempt === 1) continue;
+            console.error('[applyActions] inventory remove sync failed:', id, err);
+            return false;
+        }
+    }
+    return false;
+}
+if (typeof window !== 'undefined') window.sendInventoryRemove = sendInventoryRemove;
+
+/**
+ * Card revocation (the left-card consequence, NPC_NEEDS_SYSTEM.md §3.3b).
+ *
+ * When the owner of a left-behind access card returns and finds it gone, the
+ * card is cancelled: neither the physical keycard nor any saved clone of the
+ * same `card_id` opens doors any more. The cancelled ids live in the global
+ * `revoked_card_ids` (an array, persisted and synced like any other global), so
+ * the state survives a reload. The RFID unlock path reads it through
+ * `window.isCardRevoked` (unlock-system.js `evaluateRfidCredential` and the
+ * cloner's tap/emulate paths), with no static import either way.
+ */
+export function isCardRevoked(cardId) {
+    if (cardId == null) return false;
+    const list = (typeof window !== 'undefined' && window.gameState?.globalVariables?.revoked_card_ids) || [];
+    return Array.isArray(list) && list.includes(cardId);
+}
+if (typeof window !== 'undefined') window.isCardRevoked = isCardRevoked;
+
+/**
  * Shared action executor for scenario-defined action descriptors.
  *
  * The same descriptor format is used by flag-station `flagRewards`,
@@ -19,8 +113,25 @@ import { grantFact, readyToastText, readyToastTitle } from './social-intel.js';
  *   unlock_object  { objectId }      — unlocks a world object (+ optional server persist)
  *   unlock_door    { room_id }       — adds room_id to gameState.unlockedRooms
  *   give_item      { item }          — adds an item sprite to the player inventory
- *   hint           { message, title? } — shows an informational alert to the player
+ *   remove_item    { item }          — removes a named item (type/id/name, or an
+ *                                      array of them) from inventory + the server copy
+ *   add_capture    { capture }       — records a credential/foothold into se_captures
+ *   set_costume    { costume }       — swaps the player sprite to scenario.disguises[costume]
+ *   clear_costume  {}                — restores the chosen avatar
+ *   hint           { message, title? }: shows an informational alert to the player, for a time set by its length
  *   lighting_dip   { level?, ms? }   — one slow brownout dip of the room lights
+ *
+ * Any action may carry a `condition` on the globals, in the syntax of timers and text
+ * variants plus `||` ("!globalVars.a && globalVars.b === true"). It is read when the
+ * action is reached, so an earlier action in the list can change the answer; an action
+ * whose condition does not hold is skipped. With it one click can say one thing per
+ * state (lab_physical_pentest's ledger shelves). The evaluation is strict
+ * (utils/global-condition.js evaluateActionCondition, the grammar the validator
+ * checks): a condition that is not a string, is empty or is not in the grammar does
+ * not hold, so a typing slip skips the action and never runs it by mistake. The same
+ * goes where the evaluator is not loaded. Only an absent key means "always". The
+ * client alone reads it: the server applies flag rewards and declared give_item grants
+ * whatever the condition says, so the validator refuses it on a flag reward.
  *
  * @param {Array}  actions            Array of action descriptor objects.
  * @param {Object} [opts]
@@ -28,10 +139,19 @@ import { grantFact, readyToastText, readyToastTitle } from './social-intel.js';
  *                                    'object_interact'). Defaults to 'scenario'.
  * @param {*}      [opts.gameId]      Game ID passed to ApiClient for server-side persists.
  */
-export function applyActions(actions, { source = 'scenario', gameId = null } = {}) {
-    if (!Array.isArray(actions) || actions.length === 0) return;
+// objectId: the scenario id of the object whose interaction runs these actions (its
+// triggerOnInteract, directly or through a confirm_action); remove_item sends it as used_on.
+export function applyActions(actions, { source = 'scenario', gameId = null, objectId = null } = {}) {
+    // The addToInventory promises started for give_item actions, in order, so a caller
+    // (the timer dispatcher) can retry a give lost to the network. Other callers ignore it.
+    const gives = [];
+    if (!Array.isArray(actions) || actions.length === 0) return gives;
 
     for (const action of actions) {
+        if (action && action.condition !== undefined) {
+            const holds = window.evaluateActionCondition;
+            if (typeof holds !== 'function' || holds(action.condition, window.gameState?.globalVariables || {}) !== true) continue;
+        }
         switch (action.type) {
 
             case 'set_global':
@@ -123,7 +243,14 @@ export function applyActions(actions, { source = 'scenario', gameId = null } = {
 
             case 'hint':
                 if (action.message) {
-                    window.gameAlert?.(action.message, 'info', action.title || 'Intelligence Received');
+                    // A hint is a sentence or two to read, so it lasts by length like the
+                    // refusal hints (utils/locked-hint.js hintToastMs: 300 ms a word, 6 to
+                    // 12 s). It used to last 5 s whatever its length, and a 21 word pointer
+                    // was gone before it could be read (lab_physical_pentest playtest N11).
+                    // Where the rule is not loaded the toast keeps its default duration.
+                    const hintMs = window.hintToastMs?.(action.message);
+                    if (Number.isFinite(hintMs)) window.gameAlert?.(action.message, 'info', action.title || 'Intelligence Received', hintMs);
+                    else window.gameAlert?.(action.message, 'info', action.title || 'Intelligence Received');
                     console.log('[applyActions] hint:', action.message);
                 }
                 break;
@@ -134,14 +261,96 @@ export function applyActions(actions, { source = 'scenario', gameId = null } = {
                         name: action.item.type,
                         objectId: `action_item_${action.item.name}_${Date.now()}`,
                         scenarioData: action.item,
-                        texture: { key: action.item.type },
+                        texture: { key: (typeof action.item.sprite === 'string' && action.item.sprite) || action.item.type },
                         keyPins: action.item.keyPins,
                         opens_lock: window.lockRef(action.item) || action.item.keyId,
                         setVisible: function() { return this; }
                     };
                     console.log('[applyActions] give_item:', action.item.name);
-                    window.addToInventory(itemSprite);
+                    gives.push(Promise.resolve(window.addToInventory(itemSprite)));
                 }
+                break;
+
+            // Remove a named item from the player inventory (and the server copy): the
+            // counterpart to give_item. `item` names the kit by type, id or name, or an
+            // array of any of those (first held match wins). Its intended use is inside a
+            // confirm_action's onConfirm, so a required-but-not-consumed item (an object
+            // with interactions.js `requiresItem` and NO `consumesItem`) is only taken once
+            // the player COMMITS to the dialog — cancelling keeps the kit (the engine consumes
+            // a `consumesItem` item when the confirm merely OPENS). No-op if the item isn't held.
+            // action: { type: 'remove_item', item: '<type|id|name>' | [ ... ] }
+            case 'remove_item': {
+                const wanted = Array.isArray(action.item) ? action.item : [action.item];
+                const held = (window.inventory?.items || []).find(it => {
+                    const d = it?.scenarioData || {};
+                    return wanted.includes(d.type) || wanted.includes(d.id) || wanted.includes(d.name);
+                });
+                if (!held) {
+                    console.log('[applyActions] remove_item: not held, no-op:', action.item);
+                    break;
+                }
+                try {
+                    window.removeFromInventory?.(held);
+                    const id = held?.scenarioData?.id;
+                    // From an object (its triggerOnInteract, or a confirm_action there) the
+                    // request names that object, so the server can record the plant.
+                    if (id) sendInventoryRemove(id, { usedOn: objectId, gameId });
+                    console.log('[applyActions] remove_item:', id || action.item);
+                } catch (err) {
+                    console.warn('[applyActions] remove_item failed:', err);
+                }
+                break;
+            }
+
+            // Cancel an access card: the physical keycard and any saved clone of this
+            // `card_id` stop opening RFID doors (left-card consequence, §3.3b). Intended
+            // for an object's `onOwnerNoticesMissing` list, fired by left-card-consequence.js
+            // when npc_left_item_gone:<owner> says the card was taken.
+            // action: { type: 'revoke_card', card_id: '<id>' | ['<id>', ...] }
+            case 'revoke_card': {
+                const ids = Array.isArray(action.card_id) ? action.card_id
+                          : (action.card_id != null ? [action.card_id] : []);
+                if (ids.length && window.gameState?.globalVariables) {
+                    const cur = window.gameState.globalVariables.revoked_card_ids;
+                    const next = Array.isArray(cur) ? cur.slice() : [];
+                    let changed = false;
+                    for (const id of ids) {
+                        if (id != null && !next.includes(id)) { next.push(id); changed = true; }
+                    }
+                    if (changed) {
+                        writeGlobal('revoked_card_ids', next, { emitAlways: true, openChat: false });
+                        if (typeof window !== 'undefined') window.stateSync?.sync?.();
+                    }
+                    ids.forEach(id => window.eventDispatcher?.emit?.('card_revoked', { cardId: id, source }));
+                    console.log('[applyActions] revoke_card:', ids.join(', '));
+                }
+                break;
+            }
+
+            case 'add_capture':
+                // Static-descriptor capture (timers, triggerOnInteract). An NPC-used capture that
+                // reads the per-NPC usePayload goes through window.recordSECapture from npc-manager.
+                if (action.capture && typeof action.capture === 'object') {
+                    recordSECapture(action.capture);
+                }
+                break;
+
+            // Costume swap (costume-actions.js, lazy so test harnesses need no extra file).
+            // action: { type: 'set_costume', costume: '<id>' }  or  { type: 'clear_costume' }
+            // The id is looked up in the scenario-level `disguises` map; the choice persists
+            // in the global pp_disguise and is re-applied on load.
+            case 'set_costume': {
+                const id = action.costume ?? action.id ?? action.value;
+                if (typeof id === 'string' && id) {
+                    import('./costume-actions.js').then(m => m.setCostume(id)).catch(e =>
+                        console.warn('[applyActions] set_costume failed:', e));
+                }
+                break;
+            }
+
+            case 'clear_costume':
+                import('./costume-actions.js').then(m => m.clearCostume()).catch(e =>
+                    console.warn('[applyActions] clear_costume failed:', e));
                 break;
 
             // Tint all sprites of a given texture key in a room — used for environmental hazard cues
@@ -192,7 +401,7 @@ export function applyActions(actions, { source = 'scenario', gameId = null } = {
                 const { text, onConfirm } = action;
                 window.gameConfirm(text).then(confirmed => {
                     if (confirmed && Array.isArray(onConfirm)) {
-                        applyActions(onConfirm, { source, gameId });
+                        applyActions(onConfirm, { source, gameId, objectId });
                     }
                 });
                 break;
@@ -212,6 +421,7 @@ export function applyActions(actions, { source = 'scenario', gameId = null } = {
                 console.warn('[applyActions] Unknown action type:', action.type, action);
         }
     }
+    return gives;
 }
 
 /**
@@ -320,3 +530,7 @@ export function showEndScreen(opts = {}) {
 
 // Expose for objectives-manager.js (module boundary)
 window.showEndScreen = showEndScreen;
+
+// Expose applyActions so dynamically-loaded helpers (action-menu.js,
+// left-card-consequence.js) run scenario action lists without a static import.
+if (typeof window !== 'undefined') window.applyActions = applyActions;

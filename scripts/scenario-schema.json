@@ -126,6 +126,135 @@
         }
       }
     },
+    "actionIcons": {
+      "type": "object",
+      "description": "NPC current-action icon (systems/npc-action-icons.js), merged over built-in defaults from existing art. Defaults are the 16x16 set assets/icons/npc-<name>.png (caffeine, thirst, hunger, rest, social, work, curiosity, post, printout, print, queue, file, blocked, noticed; fallback is the text '•'). Keys: for a use job the target object id, 'print' (a copier or printer, or a use whose onUse has revealOutput), the job's need, the target's first satisfies, the object type; for a carry job 'file' (a reveal slot carried to an onDeliver 'stow' target), the item's needsTag, then 'curiosity'; then 'fallback'. With no job, 'noticed' and 'blocked' (shown with showPressingNeeds or when listed here). Every scenario entry is tried before any default. Value: a texture ('icon:<name>' for assets/icons/<name>.png, or { sprite: '<object texture>' } for assets/objects/<name>.png, drawn at native size) or a short text glyph. Shown only for NPCs in the player's room while it is lit.",
+      "additionalProperties": {
+        "oneOf": [
+          { "type": "string", "minLength": 1 },
+          {
+            "type": "object",
+            "properties": {
+              "sprite": { "type": "string", "minLength": 1, "description": "Object texture key (assets/objects/<sprite>.png), drawn at native size" },
+              "text": { "type": "string", "description": "Text shown while the texture loads, or if it fails" }
+            },
+            "required": ["sprite"],
+            "additionalProperties": false
+          }
+        ]
+      }
+    },
+    "roomTone": { "type": "boolean", "description": "Room tone (OFFICE_LIFE_PLAN 12.6, slice 20; systems/office-room-tone.js, table js/data/room-tones.json). Default false. true: the ambient track plays the player's room's own ambientSound, else its profile bed (by exact room type or roomToneTypes), else an adjacent room's authored loop (an open door first), else nothing; beds crossfade and can turn back; a north or south doorway keeps the bed; a typing loop while seated NPCs work; seeded background spots; affordance startSound and outputSound play; the bed ducks under a heard line, call or conversation. Emits room_tone_started:<roomId> once per room." },
+    "roomToneTypes": { "type": "object", "additionalProperties": { "type": "string", "enum": ["office", "reception", "it", "quiet_office", "meeting", "kitchen", "server"] }, "description": "With roomTone: maps bespoke room types to a room tone profile, e.g. { \"room_lw_accounts\": \"office\" }. Wins over the table's exact-type match." },
+    "officePresets": { "type": "boolean", "description": "Office-life affordance presets (systems/office-presets.js, table js/data/office-presets.json, OFFICE_LIFE_PLAN 2.1). Default false. true: each declared object (has an id; not decor, takeable or locked; affordance not false) gets a needs affordance from its exact type or its officeType, under its own affordance fields, which win field by field. Presets never make a workstation and set no seat." },
+    "officeVisuals": { "type": "boolean", "description": "NPC office visuals (systems/npc-office-visuals.js, OFFICE_LIFE_PLAN 2.12): carried items shown in the carrier's hand, use sounds (affordance.useSound) heard by room and distance, the seated typing bob. Default true; false hides carried items again and turns the sounds and bob off." },
+    "npcWindupMs": { "type": "number", "minimum": 0, "description": "Pre-action tell: ms an NPC winds up (icon pulses, npc_action_windup:<id> fires) before leaving its post for a needs job. Default 700, 0 = off." },
+    "lockCues": { "type": "boolean", "description": "Lock-screen cues (systems/npc-office-visuals.js, OFFICE_LIFE_PLAN 12.2, slice 16) on every workstation with an owner: with lighting, a blue glow shrinking to the indicator dot on a lock and a warm-white wake flash on a return; without lighting, a padlock glyph over the screen for a second; a run-time chime for a lock or unlock by hand, heard only in the player's room (none for an auto-lock). Events workstation_screen_changed:<id> and workstation_lock_heard:<id>. Default true; independent of officeVisuals." },
+    "showPressingNeeds": { "type": "boolean", "description": "Pressing-need thought bubbles (systems/npc-action-icons.js, OFFICE_LIFE_PLAN 9.2). Default false. true: beside a needs NPC's head, a thought bubble shows its most pressing need that it is not acting on yet (at or below urgentAt; lowest level/urgentAt, ties by name), pulsing slowly below half urgentAt; it goes when a job for that need starts. Also turns on the no-job action icons 'noticed' (after npc_caught_at_post) and 'blocked' (urgent need, nothing permitted). Same room/dark rule as the action icons. Off by default because it telegraphs when someone is about to leave the desk." },
+    "ttsPregenerateChatter": { "type": "boolean", "description": "TTS batch (OFFICE_LIFE_PLAN 11.3): true lists every chatter line (NPC and scenario pools) under each voiced NPC, so tts:batch_generate pre-generates them. Default false: they are generated on first play and cached." },
+    "chatter": { "description": "NPC needs system, social pairing (OFFICE_LIFE_PLAN 2.4): chatter pools by topic name, each a list of one-line speech bubbles (at most 40 characters) or { lines, hush, overhearRadius }. Slice 15: every line is voiced (TTS, on first play) in the speaking NPC's voice, and no line may print a { } variable. The engine has no spoken lines of its own: a topic with no lines here or in an NPC's pool (the built-in names coffee, cooler, greet, grumble) is picture chat, a bubble holding an icon. false turns picture chat off too. An object's affordance.chatter names the pool its pairs use.", "oneOf": [ { "type": "boolean", "enum": [false] }, { "type": "object", "additionalProperties": { "oneOf": [ { "type": "array", "items": { "type": "string", "minLength": 1, "maxLength": 40 } }, { "type": "object", "properties": { "lines": { "type": "array", "items": { "type": "string", "minLength": 1, "maxLength": 40 } }, "hush": { "type": "boolean", "description": "Stop after the current line when the player comes within 96 px (gossip). Default false." }, "overhearRadius": { "type": "number", "minimum": 1, "description": "px for npc_chatted overheard (default 160)" }, "_comment": { "type": "string" } }, "required": ["lines"], "additionalProperties": false } ] } } ] },
+    "showNpcIntentBubbles": { "type": "boolean", "description": "Old name of showPressingNeeds, no longer read. The validator warns; rename it." },
+    "disguises": {
+      "type": "object",
+      "description": "Open map of player costumes for the set_costume / clear_costume actions (systems/costume-actions.js). Key = costume id; value = { sprite, talk? }. set_costume writes the persisted global pp_disguise = id; it is re-applied on reload.",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "sprite": { "type": "string", "description": "Character atlas key the avatar swaps to" },
+          "talk": { "type": "string", "description": "Optional dialogue portrait path" }
+        },
+        "required": ["sprite"]
+      }
+    },
+    "needsDebugOverlay": {
+      "type": "boolean",
+      "description": "Debug overlay (systems/npc-needs-debug.js): need-level bars and the current job above each needs NPC. Default false. Also toggled by window.__test.needs.overlay(true|false)."
+    },
+    "accountProfiles": {
+      "type": "object",
+      "description": "Access model (ACCESS_MODEL_PLAN.md 5.1): desktop contents that follow an account to any sign-in PC it may use. Each profile lists who it is for (roles and people) and its contents. Never sent in the bootstrap; served by GET /container against a sign-in session.",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "for": { "$ref": "#/definitions/accessList" },
+          "contents": { "type": "array", "items": { "$ref": "#/definitions/item" } },
+          "_comment": { "type": "string" }
+        },
+        "required": ["for"]
+      }
+    },
+    "policies": {
+      "type": "object",
+      "description": "Access model (ACCESS_MODEL_PLAN.md 5.5): named PC policies, referenced by an object's policy or by defaultPolicy. Not secret; sent in the bootstrap.",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "autoLockMin": { "type": ["number", "null"], "minimum": 0, "description": "Game minutes after the owner leaves before an open screen locks; 0 locks in the leave roll; null: no auto lock." },
+          "maxAttempts": { "type": ["integer", "null"], "minimum": 1, "description": "Server-counted failed sign-ins per PC and username before a lockout; null: no limit." },
+          "usb": { "type": "string", "enum": ["allowed", "blocked"] },
+          "social": { "type": "string", "enum": ["allowed", "blocked"] },
+          "remote": { "type": "string", "enum": ["allowed", "blocked"], "description": "Networks (ACCESS_MODEL_SLICE_9_3_PLAN.md 3.4): whether a sign-in PC under this policy takes a remote sign-in through a foothold. Absent means allowed; a blocked PC is still listed in the network view, marked remote sign-in off." },
+          "_comment": { "type": "string" }
+        }
+      }
+    },
+    "defaultPolicy": { "type": "string", "description": "Access model: the policy a PC with no policy of its own uses." },
+    "networks": {
+      "type": "object",
+      "description": "Networks (ACCESS_MODEL_SLICE_9_3_PLAN.md 3.1): network id to { name }. The name is what the player sees once they hold a foothold on it. Never sent in the bootstrap. downIf and wifi are reserved for slice 9.3b and refused by the validator.",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "downIf": { "type": "string", "description": "Reserved for slice 9.3b (outages)." },
+          "wifi": {
+            "type": "object",
+            "description": "Reserved for slice 9.3b (Wi-Fi).",
+            "properties": { "ssid": { "type": "string" }, "psk": { "type": "string" }, "_comment": { "type": "string" } }
+          },
+          "_comment": { "type": "string" }
+        },
+        "required": ["name"]
+      }
+    },
+    "networkLinks": {
+      "type": "array",
+      "description": "Reserved for slice 9.3b: pairs of network ids a link joins. Refused by the 9.3a validator.",
+      "items": { "type": "array", "items": { "type": "string" }, "minItems": 2, "maxItems": 2 }
+    },
+    "resources": {
+      "type": "object",
+      "description": "Resources registry (ACCESS_MODEL_SLICE_9_3_PLAN.md 3.4; slice 9.2 owns other fields on the same entries). Never sent in the bootstrap. A resource on a network is listed in a foothold's view; a file_share's contents are served by GET /container to a held foothold or session that its access list allows.",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "kind": { "type": "string", "description": "file_share, printer, or another kind." },
+          "name": { "type": "string" },
+          "host": { "type": "string", "description": "The machine it lives on, as a label." },
+          "network": { "type": "string", "description": "A networks key. A resource with no network is never listed." },
+          "access": { "$ref": "#/definitions/accessList" },
+          "contents": { "type": "array", "items": { "$ref": "#/definitions/item" }, "description": "file_share only: items, as in an account profile. Ids are global." },
+          "observations": { "type": "string", "description": "For a resource with no contents: the text shown when the player clicks its row." },
+          "_comment": { "type": "string" }
+        }
+      }
+    },
+    "roles": {
+      "type": "object",
+      "description": "Slice 9.1 (ACCESS_MODEL_SLICE_9_1_PLAN.md section 4): defaults by role name. awareness is the level an NPC with that role gets when it has none of its own (the first of its roles with one, the implicit staff last). Slice 9.2 adds its own keys. Never sent to the browser.",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "awareness": { "type": "string", "enum": ["low", "medium", "high"] },
+          "_comment": { "type": "string" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "npcNeedsSeed": {
+      "type": ["number", "string"],
+      "description": "Seed for the NPC needs system's per-NPC jitter RNG (systems/npc-needs.js). Default: the scenario name. Same seed and inputs give the same decision log."
+    },
     "startItemsInInventory": {
       "type": "array",
       "description": "Items that start in player inventory",
@@ -3534,6 +3663,16 @@
       "patternProperties": {"^_": {}},
       "additionalProperties": false
     },
+    "accessList": {
+      "type": "object",
+      "description": "Access model section 4: who passes. A card or sign-in passes if its identity's roles meet roles, or its NPC id is in people. Not secret.",
+      "properties": {
+        "roles": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "people": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "_comment": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
     "emitterVariant": {
       "type": "object",
       "properties": {
@@ -3550,7 +3689,8 @@
         "leds": { "type": "number", "minimum": 0, "maximum": 1, "description": "Rack-style blinking status LEDs on the object's face (density 0-1; 0 none). Lets a mission's own rack art blink like the stock racks" },
         "above": { "type": "boolean", "description": "Draw the glow above the light map in a lit room too (small indicators that must stay visible)" },
         "hueKeep": { "type": "boolean", "description": "above glows only: false turns off the multiply under the glow that keeps its hue in a lit room (default on)" },
-        "floorTint": { "type": "number", "minimum": 0, "maximum": 1, "description": "In a lit room, tint the floor in front of the object with its glow colour (0 = off)" }
+        "floorTint": { "type": "number", "minimum": 0, "maximum": 1, "description": "In a lit room, tint the floor in front of the object with its glow colour (0 = off)" },
+        "indicators": { "type": "array", "items": { "$ref": "#/definitions/emitterVariant" }, "description": "On an entry keyed by object id only: small indicator dots drawn as a second emitter beside the object's glow (first variant whose condition holds shows; none: no dot). Replaces a workstation's built-in owner-away dots; [] turns them off" }
       },
       "additionalProperties": false
     },
@@ -3824,7 +3964,23 @@
             "small_office_room2_1x1gu",
             "small_office_room3_1x1gu",
             "small_room_closet_east_connections_only_1x1gu",
-            "hall_1x2gu"
+            "hall_1x2gu",
+            "room_lw_reception",
+            "room_lw_hall",
+            "room_lw_office",
+            "room_lw_records",
+            "room_lw_briefing",
+            "room_lw_kitroom",
+            "room_lw_front_desk",
+            "room_lw_ceo",
+            "room_lw_records_office",
+            "room_lw_store",
+            "room_lw_accounts",
+            "room_lw_postroom",
+            "room_lw_comms",
+            "room_lw_riser",
+            "room_lw_kitchen",
+            "room_lw_archive"
           ]
         },
         "connections": {
@@ -3838,10 +3994,48 @@
           }
         },
         "locked": { "type": "boolean" },
+        "doors": {
+          "type": "array",
+          "description": "Per-door overrides for this room's doorways. Optional.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "connectedRoom": { "type": "string" },
+              "direction": { "type": "string", "enum": ["north", "south", "east", "west"] },
+              "gate": {
+                "type": "object",
+                "description": "Gate door (systems/door-gates.js): opens for the listed NPCs as they near, holds open for holdMs, then shuts and relocks. Put it on the door entry that leads into the locked room. The player cannot open it by clicking from outside; a credential satisfying the door's requires opens it for one holdMs window, and a player inside opens it to leave. North and south doors only: a gate on an east or west door is declined (validator warning). See README_scenario_design.md, 'Gate doors'.",
+                "properties": {
+                  "enabled": { "type": "boolean", "description": "false turns a configured gate off" },
+                  "openFor": {
+                    "oneOf": [
+                      { "type": "string" },
+                      { "type": "array", "items": { "type": "string" } }
+                    ],
+                    "description": "NPC id or ids whose approach opens the gate"
+                  },
+                  "openRadius": { "type": "number", "minimum": 0, "description": "Pixels from the door centre at which an openFor NPC opens it (default 56)" },
+                  "holdMs": { "type": "number", "minimum": 0, "description": "ms it stays open after the last NPC leaves (default 2500)" },
+                  "playerMayPassIf": { "type": "string", "description": "A global. While false, the open gate is solid for a player outside the secured room, and one within openRadius keeps it shut (or shuts it as soon as nobody is in the doorway)" },
+                  "sound": {
+                    "oneOf": [
+                      { "type": "string" },
+                      { "type": "boolean", "enum": [false] }
+                    ],
+                    "description": "The sound played when the gate opens. Left out: the door release (rfid_unlock) when the door has an RFID lock, else none. A sound key plays that sound (any audio key the game has loaded); false silences the gate. Heard from the doorway's two rooms, fading to nothing at 12 tiles"
+                  }
+                }
+              }
+            }
+          }
+        },
         "lockType": {
           "type": "string",
           "enum": ["key", "pin", "rfid", "password", "bluetooth", "biometric", "flag", "ransomware_display", "network_architecture", "alarm_panel"]
         },
+        "access": { "$ref": "#/definitions/accessList" },
+        "acceptsUIDOnly": { "type": "boolean", "description": "Access model 4.1: an rfid lock with access also opens to a UID-only (DESFire) copy. Default false." },
+        "network": { "type": "string", "description": "Networks 3.2: the default network (a networks key) for this room's objects; an object's own network wins. Never sent to the browser." },
         "biometricMatchThreshold": { "type": "number", "minimum": 0, "maximum": 1 },
         "requires": {
           "oneOf": [
@@ -3859,6 +4053,7 @@
           "enum": ["easy", "medium", "hard", "tutorial"]
         },
         "door_sign": { "type": "string" },
+        "needsPrivateTo": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "NPC needs system, room leash: only these NPCs' needs may use objects in this room or walk through it (someone's office). Other NPCs go round or wait. Scripts and route patrols ignore it." },
         "lighting": {
           "type": "object",
           "description": "Per-room lighting. 'motion': dark until the player or an NPC walks in. Rooms with people in them start lit unless startOn is false.",
@@ -3997,6 +4192,36 @@
           },
           "additionalProperties": true
         },
+        "role": {
+          "oneOf": [ { "type": "string", "minLength": 1 }, { "type": "array", "items": { "type": "string", "minLength": 1 } } ],
+          "description": "Access model section 3: this NPC's job role(s), free strings, read by access lists. Room NPCs only. Never sent to the browser."
+        },
+        "creds": {
+          "type": "object",
+          "description": "Access model section 3: this NPC's sign-in details. Room NPCs only. Never sent to the browser; the card is sent as rfidCard.",
+          "properties": {
+            "username": { "type": "string", "minLength": 1, "description": "Makes an account (a password is then required). Unique, compared trimmed and case-insensitively." },
+            "password": { "type": "string", "minLength": 1, "description": "The only place this account's password is authored." },
+            "card": { "type": "object", "description": "The card this NPC carries (replaces rfidCard): name, card_id, rfid_protocol and any protocol fields.", "additionalProperties": true },
+            "_comment": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
+        "staff": { "type": "boolean", "description": "Access model section 3: false drops the implicit staff role an NPC with creds has." },
+        "awareness": { "type": "string", "enum": ["low", "medium", "high"], "description": "Slice 9.1: this person's security awareness. A preset that fills habits the author leaves out (low: locksScreen never; medium: sometimes; high: always). Room NPCs only. Never sent to the browser." },
+        "habits": {
+          "type": "object",
+          "description": "Slice 9.1: habits set by name, which override the awareness preset. Room NPCs only. Never sent to the browser.",
+          "properties": {
+            "locksScreen": { "type": "string", "enum": ["never", "sometimes", "always"], "description": "Fills this NPC's screenHabit (lockChance 0, 0.5 or 1) when screenHabit is not authored. A PC's own lockChance or locksScreenOnLeave still wins." },
+            "writesDown": { "type": "boolean", "description": "true: the account's username and password are on a sticky note on the owner's own sign-in PC, read on its sign-in screen at the desk. Never set by a preset." },
+            "password": { "type": "string", "enum": ["strong", "guessable", "reused"], "description": "A claim the validator checks: guessable needs every piece of the password readable in the world and a pattern clue; reused needs another secret equal to it. No run-time effect. Never set by a preset." },
+            "passwordPattern": { "type": "string", "minLength": 1, "description": "The object that gives the pattern for a guessable password (a parameter of password, not a habit)." },
+            "_comment": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
+        "cloneable": { "type": "boolean", "description": "Access model 4.2: false stops the server recording a card copier copy of this NPC's card." },
         "spriteStyle": {
           "type": "object",
           "description": "Optional look laid over the NPC's world sprite (systems/npc-sprite-style.js), for holograms and ghosts such as m08's ATHENA. It holds through every animation and a knockout. alpha multiplies the engine's own alpha; glow is a postFX outline (WebGL) that, with light, also lights the room's light map round the NPC so dim rooms don't darken it; flicker is a rare flash-safe two-step dip, off under prefers-reduced-motion.",
@@ -4015,6 +4240,24 @@
             "_comment": { "type": "string" }
           },
           "additionalProperties": false
+        },
+        "seated": {
+          "description": "Sit this NPC on the nearest free chair within maxDistance px (default 40) of its spawn (systems/seating.js). Its atlas needs seated frames (pixellab_pipeline.py import --sit-from); without them it stays standing. It holds the chair, with no patrol, until a scripted move, hostility or a KO gets it up. On a swivel chair it turns to face a nearby player unless facePlayer is false; facing sets the swivel chair's starting direction.",
+          "oneOf": [
+            { "type": "boolean" },
+            {
+              "type": "object",
+              "properties": {
+                "maxDistance": { "type": "number", "minimum": 1 },
+                "facing": { "type": "string", "enum": ["south", "south-east", "east", "north-east", "north", "north-west", "west", "south-west"] },
+                "facePlayer": { "type": "boolean" },
+                "fetch": { "type": "boolean", "description": "Needs NPCs: false never fetches a chair to work on (default true)" },
+                "chair": { "type": "string", "description": "Only chairs matching this: an object id (or its suffix, e.g. exec_chair_back1_11) or a chair image name (exec_chair_back1)" },
+                "_comment": { "type": "string" }
+              },
+              "additionalProperties": false
+            }
+          ]
         },
         "spriteVisemes": { "type": "string", "description": "Optional lip-sync sheet (assets/characters/<key>_visemes.png, one row of mouth shapes) with a matching .json beside it naming each column. Falls back to spriteTalk when absent or unloadable." },
         "portraitVariants": {
@@ -4159,7 +4402,15 @@
                           "properties": {
                             "x": { "type": "number" },
                             "y": { "type": "number" },
-                            "dwellTime": { "type": "number", "minimum": 0 }
+                            "dwellTime": { "type": "number", "minimum": 0 },
+                            "action": {
+                              "type": "object",
+                              "description": "Run on arrival at this waypoint, before the dwell or the next leg. See README_scenario_design.md, 'Patrol Behaviour'.",
+                              "properties": {
+                                "unlockRoom": { "type": "string", "description": "Room id: the NPC unlocks it on the server as itself (needs an eventMapping with unlockDoor naming it), loads it, then carries on" },
+                                "useObject": { "type": "string", "description": "Scenario object id the NPC turns to face" }
+                              }
+                            }
                           }
                         }
                       }
@@ -4187,6 +4438,7 @@
             "angle": { "type": "number", "description": "Field-of-view width in degrees" },
             "visualize": { "type": "boolean", "description": "Draw the detection cone on screen" },
             "occlusion": { "type": "boolean", "description": "Default true: walls, closed doors and tall props (npc-sight-occlusion.js) block this NPC's view and clip the drawn cone. false = sees through everything (range and angle only)" },
+            "origin": { "type": "string", "enum": ["torch", "body"], "description": "Where sight starts (npc-los.js). \"torch\": range, angle, occlusion and the drawn cone all start at the NPC's right hand, where its torch beam starts (lighting.js), so the cone lies over the beam. \"body\": the sprite centre (range and angle) and the feet (occlusion, drawn cone). Default: \"torch\" while the NPC holds a torch (behavior.torch, its condition holding), otherwise \"body\"." },
             "challengeOnSight": {
               "description": "Opt-in (default off). When the player is in this NPC's room and inside his cone, emit an event (default player_spotted:<npcId>) once per sighting, at most once per cooldown. Map the event in eventMappings to a person-chat knot, setGlobal, bark or emitEvent. true = all defaults. See README_scenario_design.md, 'Guards who challenge on sight'.",
               "oneOf": [
@@ -4205,6 +4457,20 @@
                     "skipIfGlobal": {
                       "description": "Never while this global (or any of these globals) is truthy",
                       "oneOf": [ { "type": "string" }, { "type": "array", "items": { "type": "string" } } ]
+                    },
+                    "near": {
+                      "description": "Only while the player is within radius px (default 64) of a door into/out of room `door`, an object `object`, or room tile x,y of `room`. With rooms set, the player may be in any listed room (across a doorway from the NPC). The event payload gains targetId/targetType.",
+                      "type": "object",
+                      "properties": {
+                        "door": { "type": "string" },
+                        "object": { "type": "string" },
+                        "x": { "type": "number" },
+                        "y": { "type": "number" },
+                        "room": { "type": "string" },
+                        "radius": { "type": "number", "minimum": 1 },
+                        "_comment": { "type": "string" }
+                      },
+                      "additionalProperties": false
                     },
                     "_comment": { "type": "string" }
                   },
@@ -4348,6 +4614,118 @@
         "itemsHeld": {
           "type": "array",
           "items": { "$ref": "#/definitions/item" }
+        },
+        "needs": {
+          "type": "object",
+          "description": "NPC needs system (opt-in, systems/npc-needs.js): needs that decay over game time and send the NPC to an object whose affordance satisfies them, then back to needsHome. Key = need name, matched against affordance.satisfies. Must not be combined with behavior.patrol.enabled.",
+          "additionalProperties": {
+            "type": "object",
+            "required": ["decayPerMin", "urgentAt"],
+            "properties": {
+              "decayPerMin": { "type": "number", "exclusiveMinimum": 0, "maximum": 600, "description": "Level points lost per needs-clock minute" },
+              "urgentAt": { "type": "number", "minimum": 1, "maximum": 99, "description": "Level at or below which the need is urgent" },
+              "initial": { "type": "number", "minimum": 0, "maximum": 100, "description": "Level at start and after a reload (default 100); sets when the first beat happens" },
+              "weight": { "type": "number", "minimum": 0.1, "maximum": 10, "description": "Scales the need's score (default 1)" },
+              "maxUnmetMin": { "type": "number", "exclusiveMinimum": 0, "description": "Starvation guard: this long since last satisfied, the need wins outright (not while the need is parked)" },
+              "deferrable": { "type": "boolean", "description": "Slice 14 (OFFICE_LIFE_PLAN 10): default true, the need may be parked when every source is unacceptable (someone avoided there, a queue past maxQueue). false (a story need: a guard's rounds, delivering a report): the NPC goes anyway, showing the avoidance bubble; it still parks when no source exists at all. The validator warns on false for caffeine, thirst, hunger and rest." },
+              "jitterPct": { "type": "number", "minimum": 0, "maximum": 50, "description": "Seeded plus or minus spread on initial and each top-up" },
+              "_comment": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "interests": {
+          "type": "object",
+          "description": "NPC needs system: item tags this NPC is drawn to. Key = item needsTag. A number is the weight; an object adds noticeRooms. No level, no decay: it gives an option only while a matching reachable item exists.",
+          "additionalProperties": {
+            "oneOf": [
+              { "type": "number", "minimum": 0.1, "maximum": 10 },
+              {
+                "type": "object",
+                "properties": {
+                  "weight": { "type": "number", "minimum": 0.1, "maximum": 10 },
+                  "noticeRooms": { "type": "array", "items": { "type": "string" }, "description": "Room ids where the NPC notices items (default: the room of needsHome)" },
+                  "_comment": { "type": "string" }
+                },
+                "required": ["weight"],
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "needsHome": {
+          "description": "NPC needs system: where the NPC idles and returns. An object id (it stands at that object's approach cell) or a { room, x, y } tile. Default: spawn point.",
+          "oneOf": [
+            { "type": "string" },
+            {
+              "type": "object",
+              "required": ["room", "x", "y"],
+              "properties": { "room": { "type": "string" }, "x": { "type": "number" }, "y": { "type": "number" } },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "needsSpeed": { "type": "number", "minimum": 1, "description": "NPC needs system: walk speed (px/s) for needs moves. Default behavior.patrol.speed, else 80." },
+        "needsRooms": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "NPC needs system, room leash (allow list): the only rooms this NPC's needs may use objects in or walk through; its home room (needsHome's) is always allowed. Fixed per NPC. Scripts and route patrols ignore it." },
+        "needsAvoidRooms": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "NPC needs system, room leash (deny list): rooms this NPC's needs never use objects in or walk through, even as a short cut; it goes the long way or waits. The home room may not be listed. Fixed per NPC. Scripts and route patrols ignore it." },
+        "maxQueue": { "type": "integer", "minimum": 0, "description": "NPC needs system, balking (OFFICE_LIFE_PLAN 10, slice 14): refuse to join a queue that already holds this many; the NPC tries another source, else parks the need (reason queue). 0 never queues. Unset: no limit." },
+        "needsDeferMin": { "type": "number", "exclusiveMinimum": 0, "description": "NPC needs system, parked needs (OFFICE_LIFE_PLAN 10, slice 14): minutes (needs clock) a need with no acceptable source stays parked, level held at urgentAt + 1 and decay paused, before it is retried. A room loading or a door opening retries it sooner. Default 4." },
+        "needsCompany": {
+          "type": "object",
+          "description": "NPC needs system, social compatibility (OFFICE_LIFE_PLAN 7.3). Two NPCs chat at a shared object only if neither avoids the other and they share a group (or either has none). An avoidance is declared one way and acts BOTH ways: it also stops the two sharing a capacity-2 object (the second waits; npc_avoided:<npcId>). With no needsCompany anywhere, everyone pairs. Slice 14: an NPC that declares avoids (or an avoidRadius) also turns away from a source someone avoided (either way) is using, is queued for, or stands within avoidRadius tiles of (npc_turned_back, npc_need_parked).",
+          "properties": {
+            "avoidRadius": { "type": "number", "minimum": 0, "maximum": 10, "description": "Tiles from a source's approach cell within which someone avoided (either way) makes it unacceptable. Default 2 when avoids is declared, else 0. 0 restores slice 8's sharing-only rule." },
+            "groups": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "Group names. A group mismatch only stops chat; the two may still share an object in silence." },
+            "avoids": {
+              "type": "array",
+              "description": "Who this NPC will not chat or share with (mutual): an NPC id, 'group:<name>', '*' (everyone), or { npc: id or '*', requireGlobal } / { group, requireGlobal }, which applies only while the global(s) hold (a name, truthy; or { name: value }, all must match).",
+              "items": {
+                "oneOf": [
+                  { "type": "string", "minLength": 1 },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "npc": { "type": "string", "minLength": 1 },
+                      "group": { "type": "string", "minLength": 1 },
+                      "requireGlobal": { "oneOf": [ { "type": "string", "minLength": 1 }, { "type": "object" } ] },
+                      "_comment": { "type": "string" }
+                    },
+                    "oneOf": [ { "required": ["npc"] }, { "required": ["group"] } ],
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            },
+            "_comment": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
+        "chatter": { "type": "object", "description": "NPC needs system, social pairing: this NPC's own chatter lines by topic (cooler, coffee, grumble, ...); they add to the scenario's pool of that name when this NPC speaks. Voiced in this NPC's voice (slice 15), drawn from a seeded shuffle-bag (no repeat until every line has been said), at most one line per chatterCooldownMin.", "additionalProperties": { "oneOf": [ { "type": "array", "items": { "type": "string", "minLength": 1, "maxLength": 40 } }, { "type": "object", "properties": { "lines": { "type": "array", "items": { "type": "string", "minLength": 1, "maxLength": 40 } }, "hush": { "type": "boolean", "description": "Stop after the current line when the player comes within 96 px (gossip). Default false." }, "overhearRadius": { "type": "number", "minimum": 1, "description": "px for npc_chatted overheard (default 160)" }, "_comment": { "type": "string" } }, "required": ["lines"], "additionalProperties": false } ] } },
+        "chattiness": { "type": "number", "minimum": 0, "maximum": 1, "description": "Social pairing: the seeded chance this NPC says a line on its turn (default 1; 0 = listens only)." },
+        "swivel": { "type": "boolean", "description": "Idle swivel (OFFICE_LIFE_PLAN 12.7, slice 21): false stops this needs NPC turning its swivel chair to glance round or towards a colleague speaking nearby. Default on for needs NPCs; static seats never turn." },
+        "swivelChance": { "type": "number", "minimum": 0, "maximum": 1, "description": "Idle swivel: the seeded chance per 6 s slot of the needs clock that this NPC turns its chair one compass step and back (default 0.05)." },
+        "printHabit": { "type": "object", "additionalProperties": false, "description": "Print and forget (OFFICE_LIFE_PLAN 12.3, slice 17): this NPC owns what it prints (revealOutput hooks and needs.print commands). An owned print is reserved from other NPCs' interests; two seeded rolls per owned print decide forget, else a due time, from which the NPC fetches it to its needsHome object (an errand: it walks over, carries it back, sets it down, emits npc_print_fetched:<npcId>). Events: npc_print_uncollected:<npcId> (still on the tray after the producer's uncollectedAfterSeconds), npc_print_gone:<npcId> (taken before the fetch).", "properties": { "fetchAfterSeconds": { "type": "array", "items": { "type": "number", "minimum": 0, "maximum": 3600 }, "minItems": 2, "maxItems": 2, "description": "[min, max] seconds after the print before the fetch (default [20, 60])." }, "forgetChance": { "type": "number", "minimum": 0, "maximum": 1, "description": "Chance 0..1 that a print is never fetched (default 0)." }, "weight": { "type": "number", "minimum": 0.1, "maximum": 10, "description": "Score of the fetch, like an interest's weight (default 2): an urgent need can still win." }, "shareAfterSeconds": { "type": "number", "exclusiveMinimum": 0, "description": "Unset by default. After this long an unfetched print is no longer reserved, so interest NPCs (a tidy colleague) may take it." }, "_comment": { "type": "string" } } },
+        "screenHabit": { "type": "object", "additionalProperties": false, "description": "Lock-screen habit (systems/workstation-state.js, OFFICE_LIFE_PLAN 12.2, slice 16): how this person leaves the workstation they own. Applies only where the station sets neither lockChance nor locksScreenOnLeave (the object wins). A trip expected to last at most lockIfAwayOverSeconds stays open; a longer one, or one with no estimate, rolls lockChance (seeded, salt habit:<objectId>:<leaves>); the threshold alone means a long trip always locks. A locksScreen habit (slice 9.1) fills this when it is not authored; an authored screenHabit wins.", "properties": { "lockChance": { "type": "number", "minimum": 0, "maximum": 1, "description": "Chance 0..1 that a (long) trip locks the screen." }, "lockIfAwayOverSeconds": { "type": "number", "minimum": 0, "description": "Lock only when the trip is expected to last longer than this (npc_left_post expectedAwayMs)." }, "_comment": { "type": "string" } } },
+        "answersPhones": { "type": "boolean", "description": "Desk phones (OFFICE_LIFE_PLAN 12.5, slice 19): true lets this needs NPC answer a colleague's ringing desk phone in its own room. From the second ring, the nearest such NPC that is idle at its post and does not avoid the owner walks over (a real leave, standing at the phone) unless the owner gets back first (turn-back reason answered); if it rings out first, it turns back (rang_out)." },
+        "phoneCalls": { "type": "array", "description": "Desk phones (slice 19): ink knots in this NPC's own story, half a phone conversation each: every line is this NPC's own (no 'Name:' prefix), voiced one per bubble with listening gaps when the player is in earshot. Played once per game (sets heard_<knot>, declare it; emits npc_call_heard:<knot>); then calls use the NPC's chatter pool 'phone' (on its own phone) or 'phone_message' (answering someone else's), then the phone picture.", "items": { "type": "object", "properties": { "knot": { "type": "string", "minLength": 1 }, "requireGlobal": { "description": "Only while this global holds: a name (truthy) or { name: value }", "oneOf": [ { "type": "string" }, { "type": "object" } ] }, "_comment": { "type": "string" } }, "required": ["knot"], "additionalProperties": false } },
+        "chatterCooldownMin": { "type": "number", "minimum": 0, "description": "Voiced chatter (OFFICE_LIFE_PLAN 11.2): needs-clock minutes after a spoken chatter line before this NPC speaks another (default 5); in between it shows picture chat." },
+        "exchanges": { "type": "array", "description": "Scripted exchanges (OFFICE_LIFE_PLAN 11.4): ink knots in this NPC's story, played once per game when this NPC and the 'with' NPC chat (social pairing or queue chat) with the player in earshot. Lines are prefixed with the speaker's id or displayName; each is spoken in that speaker's voice. Sets global heard_<knot> (declare it) and emits npc_exchange_heard:<knot>.", "items": { "type": "object", "properties": { "with": { "type": "string", "minLength": 1, "description": "An NPC id or group:<name> (needsCompany.groups)" }, "knot": { "type": "string", "minLength": 1 }, "requireGlobal": { "description": "Only while this global holds: a name (truthy) or { name: value }", "oneOf": [ { "type": "string" }, { "type": "object" } ] }, "_comment": { "type": "string" } }, "required": ["with", "knot"], "additionalProperties": false } },
+        "usePayload": { "description": "NPC needs system: any JSON value, opaque to the engine and owned by the NPC. A clone rides on every npc_used event this NPC emits." },
+        "captureProof": { "type": "array", "minItems": 1, "description": "Capture proofs for this account holder (engine plan section 6): any one holding lets GET /capture_secrets serve the password. A scenario that declares any proof serves a password that opens a sign-in PC only once one holds.", "items": { "type": "object", "description": "One capture proof: { \"planted\": item, \"on\"?: object }, { \"dropped\": item } or { \"session\": pc } (engine plan section 6)", "properties": { "planted": { "type": "string" }, "on": { "type": "string" }, "dropped": { "type": "string" }, "session": { "type": "string" } }, "patternProperties": { "^_": {} }, "additionalProperties": false } },
+        "onUse": {
+          "type": "object",
+          "description": "NPC needs system: object id -> hook applied when THIS NPC completes a use of THAT object.",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "setGlobal": { "type": "string", "description": "Global set to true" },
+              "emitEvent": { "type": "string", "description": "Event name emitted with { npcId, objectId }" },
+              "revealOutput": { "oneOf": [ { "type": "string", "minLength": 1 }, { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } } ], "description": "Object id of a producer (a copier), or (slice 22, OFFICE_LIFE_PLAN 12.12) a list of them in preference order: the print goes to the first that is on (its affordance.offWhen does not hold) and has a free or recyclable slot, else the first that is on; with every one off nothing prints (log print_blocked, event npc_print_blocked:<npcId>, the NPC grumbles from the chatter pool grumble_printer_off or shows the blocked picture). Show its first free reveal slot (objects with outputOf naming it, in id order) and emit object_revealed:<slotId> { producerId, npcId }. Fires only for a need use (never a delivery to this object; setGlobal and emitEvent fire on any finished job). With a printHabit the print is owned (slice 17). No free slot: the oldest forgotten owned print of the producer is recycled; with none, a cosmetic copy nobody can take stands on the producer for its placeSeconds." },
+              "chance": { "type": "number", "minimum": 0, "maximum": 1, "description": "Slice 17: chance 0..1 that a need use prints (default 1), rolled at job start (seeded on the count of need uses of this object), so the printing icon shows only for a use that will print." },
+              "_comment": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
         }
       }
     },
@@ -4357,6 +4735,13 @@
       "properties": {
         "eventPattern": { "type": "string" },
         "condition": { "type": "string" },
+        "closeDoor": {
+          "oneOf": [
+            { "type": "string" },
+            { "type": "array", "items": { "type": "string" } }
+          ],
+          "description": "Room id or ids: shut the gate door(s) into that room now (systems/door-gates.js closeNow, forced). Warns if the door is not a gate."
+        },
         "onceOnly": { "type": "boolean" },
         "maxTriggers": { "type": "integer" },
         "cooldown": { "type": "integer" },
@@ -4475,7 +4860,26 @@
             "account": {"type": "string"}
           }
         },
+        "needs": {
+          "description": "NPC needs system: \"suspend\" stops the needs loop without moving, \"resume\" walks the NPC home and re-enables it, { set: { need: level } } sets levels, { print: producer } or { print: { producer, fetchAfterSeconds, forget } } prints as this NPC at once (slice 17: owned, with its printHabit; the command's fields win, forget true makes a print nobody fetches). Runs after patrolOverride in the same mapping.",
+          "oneOf": [
+            { "type": "string", "enum": ["suspend", "resume"] },
+            {
+              "type": "object",
+              "required": ["print"],
+              "properties": { "print": { "oneOf": [ { "type": "string", "minLength": 1 }, { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }, { "type": "object", "required": ["producer"], "properties": { "producer": { "oneOf": [ { "type": "string", "minLength": 1 }, { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } } ], "description": "A producer id or (slice 22) a list in preference order, as onUse revealOutput" }, "fetchAfterSeconds": { "type": "array", "items": { "type": "number", "minimum": 0, "maximum": 3600 }, "minItems": 2, "maxItems": 2 }, "forget": { "type": "boolean" }, "_comment": { "type": "string" } }, "additionalProperties": false } ] } },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": ["set"],
+              "properties": { "set": { "type": "object", "additionalProperties": { "type": "number", "minimum": 0, "maximum": 100 } } },
+              "additionalProperties": false
+            }
+          ]
+        },
         "setGlobal": { "type": "object" },
+        "addCapture": { "type": "object", "description": "Record a capture into se_captures (merged with the npc_used payload). proof: the capture proof shorthand, counted for the account whose username equals the address, or, with no address, for the NPC carrying the mapping (engine plan section 6).", "properties": { "targetId": { "type": "string" }, "proof": { "type": "object", "description": "One capture proof: { \"planted\": item, \"on\"?: object }, { \"dropped\": item } or { \"session\": pc } (engine plan section 6)", "properties": { "planted": { "type": "string" }, "on": { "type": "string" }, "dropped": { "type": "string" }, "session": { "type": "string" } }, "patternProperties": { "^_": {} }, "additionalProperties": false } } },
         "completeTask": {},
         "unlockTask": {},
         "unlockAim": {},
@@ -4617,7 +5021,7 @@
         },
         "lockType": {
           "type": "string",
-          "enum": ["key", "pin", "rfid", "password", "bluetooth", "biometric", "flag", "ransomware_display", "network_architecture", "alarm_panel"]
+          "enum": ["key", "pin", "rfid", "password", "bluetooth", "biometric", "flag", "ransomware_display", "network_architecture", "alarm_panel", "login"]
         },
         "requires": {
           "oneOf": [
@@ -4641,7 +5045,7 @@
         "showHint": { "type": "boolean" },
         "showKeyboard": { "type": "boolean" },
         "maxAttempts": { "type": "integer" },
-        "postitNote": { "type": "string" },
+        "postitNote": { "type": "string", "description": "A sticky note shown on the lock screen. On a sign-in PC a writesDown habit on the owner (slice 9.1) can supply one, served by GET /login_accounts; an authored note wins." },
         "showPostit": { "type": "boolean" },
         "hasFingerprint": { "type": "boolean" },
         "fingerprintOwner": { "type": "string" },
@@ -4748,9 +5152,11 @@
             "properties": {
               "type": {
                 "type": "string",
-                "enum": ["set_global", "emit_event", "complete_task", "unlock_task", "unlock_aim", "confirm_action", "unlock_object", "unlock_door", "give_item", "tint_objects", "show_end_screen", "lighting_dip", "grant_fact"]
+                "enum": ["set_global", "emit_event", "complete_task", "unlock_task", "unlock_aim", "confirm_action", "unlock_object", "unlock_door", "give_item", "tint_objects", "show_end_screen", "lighting_dip", "grant_fact", "add_capture", "set_costume", "clear_costume", "hint"]
               },
               "key": { "type": "string" },
+              "condition": { "type": "string", "minLength": 1, "description": "Any action: run it only while this holds, read when the action is reached. globalVars terms (globalVars.x, !globalVars.x, or a comparison with true, false, null, a number or a quoted string) joined by && and ||, no parentheses. Anything else never holds. Read by the client only: the server ignores it." },
+              "message": { "type": "string", "description": "hint: the toast text. Its heading is `title` (default 'Intelligence Received')." },
               "fact": { "type": "string", "description": "grant_fact: the social intel fact id (00 S15)" },
               "value": {},
               "event_name": { "type": "string" },
@@ -4785,8 +5191,99 @@
           "description": "triggerOnInteract only fires if the player carries a matching inventory item (matched by its type, id or name). A string, or an array of any of those. Models deploying carried kit on a target (e.g. clip a keylogger onto a PC).",
           "oneOf": [ { "type": "string" }, { "type": "array", "items": { "type": "string" } } ]
         },
-        "requiresItemHint": { "type": "string", "description": "Message shown when requiresItem is set but the player is not carrying the item." },
+        "requiresItemHint": { "type": "string", "description": "Message shown when requiresItem is set but the player is not carrying the item. The toast lasts 300 ms per word, at least 6 s and at most 12 s." },
+        "requiresItemHintVariants": {
+          "type": "array",
+          "description": "Optional runtime variants of requiresItemHint, resolved in order by condition against globalVars (first match wins; requiresItemHint is the fallback). Lets one object give a different hint per state.",
+          "items": {
+            "type": "object",
+            "required": ["condition", "value"],
+            "properties": {
+              "condition": { "type": "string" },
+              "value": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        },
         "consumesItem": { "type": "boolean", "description": "With requiresItem: remove the matched item from the inventory (and its server copy) after the triggerOnInteract actions fire, so the kit is 'left' on the target." },
+        "interactionWarning": {
+          "type": "object",
+          "description": "An author-defined 'are you sure?' shown BEFORE this object's normal interaction (systems/interactions.js). text and the button labels render as plain text, never HTML. Decline runs onDecline and stops; Proceed runs onProceed, then the object's normal interaction. Answered state persists across reload as a global iw_<id>_answered. Proceed is always permanent; a Decline is recorded (so the warning won't show again) only when once is truthy. With once:false a Decline re-shows the warning on the next interaction. Never opens over a chat or minigame (busy-guard).",
+          "required": ["text"],
+          "properties": {
+            "text": { "type": "string", "minLength": 1, "description": "The warning text, plain text (textContent), never HTML." },
+            "proceedLabel": { "type": "string", "description": "Confirm button caption (default 'Proceed')." },
+            "declineLabel": { "type": "string", "description": "Cancel button caption (default 'Cancel')." },
+            "onProceed": { "type": "array", "description": "Actions (the apply-actions.js vocabulary) run when the player proceeds, before the normal interaction.", "items": { "type": "object" } },
+            "onDecline": { "type": "array", "description": "Actions (the apply-actions.js vocabulary) run when the player declines; the normal interaction is blocked.", "items": { "type": "object" } },
+            "once": { "type": "boolean", "description": "Default true. true: the warning is answered-and-done after either choice. false: a Decline is not recorded, so the warning shows again next time the player interacts (Proceed is always permanent)." },
+            "_comment": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
+        "officeType": { "type": "string", "enum": ["desk_pc", "coffee", "kettle", "cooler", "fridge", "microwave", "sofa", "copier", "shredder", "filing", "post_tray", "desk_phone"], "description": "With officePresets: the affordance preset this object takes, by role instead of by type (wins over type). filing, post_tray and desk_phone are reached only this way." },
+        "affordance": {
+          "type": ["object", "boolean"],
+          "description": "NPC needs system: what an NPC can do at this object. Carries no content. false: no affordance, and no preset (officePresets).",
+          "properties": {
+            "satisfies": { "oneOf": [ { "type": "string" }, { "type": "array", "items": { "type": "string" } } ], "description": "Need name(s) a use tops up" },
+            "restores": { "type": "number", "minimum": 1, "maximum": 100, "description": "Points added on completion" },
+            "useSeconds": { "type": "number", "minimum": 0, "maximum": 600, "description": "Dwell at the object before the use completes (default 20)" },
+            "useFrom": { "type": "object", "properties": { "dx": { "type": "number" }, "dy": { "type": "number" } }, "required": ["dx", "dy"], "additionalProperties": false, "description": "Where the NPC stands, in tiles from the object's centre" },
+            "capacity": { "type": "integer", "minimum": 1, "description": "NPCs that can hold a job on it at once (default 1)" },
+            "accepts": { "type": "array", "items": { "type": "string" }, "description": "Carried items with these needsTag values can be used here" },
+            "private": { "type": "boolean", "description": "NPC needs system: only its owners' needs use it (satisfies); other NPCs may still deliver to it (accepts). Owners = owners, else screenOwner, else the NPC whose needsHome is this object. The player is unaffected." },
+            "owners": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "With private: the NPC ids allowed to use this object (default: screenOwner, else the NPC whose needsHome is this object)" },
+            "startSound": { "type": "string", "minLength": 1, "description": "Room tone (slice 20, only with roomTone): a sound key played at the NPC when its use of this object starts (the using phase), heard only in the player's room. Presets: coffee_machine (coffee), kettle_boil (kettle)." },
+            "outputSound": { "type": "string", "minLength": 1, "description": "Room tone (slice 20, only with roomTone): a sound key played at this producer when a print appears on one of its slots (or as a cosmetic copy), heard only in the player's room. Preset: copier_run (copier)." },
+            "useSound": { "type": "string", "minLength": 1, "description": "Sound key (a loaded effect such as drink_gulp, eat_snack, drawer_open, page_turn) played when an NPC's use of this object completes, only near the player: effects volume x 0.4, fading to silence at eight tiles, x1 in the player's room, x0.4 through a door, else silent (systems/npc-office-visuals.js). Emits npc_use_heard:<objectId> when audible." },
+            "onDeliver": { "type": "string", "enum": ["place", "stow"], "description": "What happens to a delivered reveal slot (an object with outputOf): 'place' (default) sets it down on this object; 'stow' files it away at once (a shredder, a filing cabinet). Plain items are always consumed." },
+            "placeAt": { "type": "object", "properties": { "dx": { "type": "number" }, "dy": { "type": "number" } }, "required": ["dx", "dy"], "additionalProperties": false, "description": "Where a delivered slot is set down, in tiles from this object's centre (default: halfway from the centre towards the approach cell)" },
+            "uncollectedAfterSeconds": { "type": "number", "minimum": 0, "maximum": 3600, "description": "On a producer (slice 17): an owned print still on its tray this long after printing emits npc_print_uncollected:<ownerId> { ownerId, slotId, producerId, ageMs, forgotten } once (default 60)." },
+            "placeSeconds": { "type": "number", "minimum": 0, "maximum": 3600, "description": "Needs-clock seconds a placed slot stays before the engine files it away (default 60; 0 = until a reload). On a producer: how long a cosmetic copy stays when no slot is free." },
+            "chatter": { "type": "string", "minLength": 1, "description": "NPC needs system, social pairing (OFFICE_LIFE_PLAN 2.4): the chatter pool two compatible NPCs using this object at once (capacity 2 or more), or the user and the first in its queue (slice 10), draw one-line speech bubbles from, turn about, while both are still using it. Built-in pools: coffee, cooler (the cooler preset sets it), greet; the scenario's chatter adds or replaces pools. Each line emits npc_chatted:<objectId>." },
+            "queue": { "type": ["object", "boolean"], "description": "false switches off a preset's queue. NPC needs system, queues (OFFICE_LIFE_PLAN 2.5, slice 10): when every free target for a need is taken, an NPC may wait in line here instead of at its desk. cells: places in order, in tiles from the approach cell; a cell that is not walkable is dropped, and a queuer skips a cell in a room forbidden to it. The front takes the machine when it frees; a queuer waiting longer than maxWaitSeconds goes home and skips this object for 60 s. With a chatter pool, the NPC using it chats with the first queuer (compatible pairs only). Emits npc_queued:<objectId>. The coffee preset queues two by default.", "properties": { "cells": { "type": "array", "minItems": 1, "items": { "type": "object", "properties": { "dx": { "type": "number" }, "dy": { "type": "number" } }, "required": ["dx", "dy"], "additionalProperties": false } }, "maxWaitSeconds": { "type": "number", "exclusiveMinimum": 0, "description": "Default 30" }, "_comment": { "type": "string" } }, "required": ["cells"], "additionalProperties": false },
+            "overhearRadius": { "type": "number", "minimum": 1, "description": "Social pairing: px within which (same room, clear line) the player overhears a chat line here (npc_chatted overheard, npc_overheard:<speakerId>). Default 160; overrides the pool's." },
+            "offWhen": { "oneOf": [ { "type": "string", "minLength": 1 }, { "type": "object", "minProperties": 1 } ], "description": "NPC needs system, slice 18a (OFFICE_LIFE_PLAN 12.4): while this global condition holds (the requireGlobal form: a name, truthy, or { name: value }, all must match) the object is no source. NPCs walking to it or queued for it turn back (npc_turned_back reason 'off'), grumble from the grumble_off pool (else grumble; else a picture of the need) and take the next source or park; one already using it finishes. Switching it back on (a real change of the global) retries parked needs. Switch it with set_global on a separate object (a wall socket), not on the machine." },
+            "magnet": { "type": "object", "description": "NPC needs system, slice 18b-i (OFFICE_LIFE_PLAN 12.4): food the player puts out. Put it on a droppable item the player holds (a fixed id, no needsTag); dropped anywhere (item-drop.js) it becomes a source where it lies and emits magnet_placed:<id> { roomId, x, y, how, reachable, servings } (magnet_unreachable:<id> when no NPC with a need it satisfies may enter the room). NPCs learn of it by sight (being in its room; npc_saw_magnet:<npcId>) or by word (announce); learning wakes that NPC's parked needs it satisfies. A need it satisfies counts while its level is at or below urgentAt + tempt (capped at 95), for known magnets only; an urgent need prefers a known magnet. A serving is taken as eating starts (magnet_serving:<id>), saved in the engine-owned global <id>_servings (declare it at the starting count); walkers turn back with reason 'gone' (grumble_gone pool) when it runs out or the player picks it up. The last serving eaten, it is removed (magnet_finished:<id>).", "properties": { "tempt": { "type": "number", "minimum": 0, "maximum": 95, "description": "Points above urgentAt at which a known magnet tempts. Default 30." }, "servings": { "type": "integer", "minimum": 1, "description": "Default 1. Must equal the declared <id>_servings global." }, "perPerson": { "type": "integer", "minimum": 1, "description": "Servings one NPC takes by temptation before it stops tempting them (an urgent need may still eat). Default 1." }, "announce": { "type": "string", "minLength": 1, "description": "Slice 18b-ii: word of mouth. The scenario-level chatter pool a knower announces it from. A knower (an NPC that saw it) back in its own room, away from the magnet's room, tells once per magnet: every NPC in that room within newsRadius tiles that does not know yet and is not avoided either way learns of it (npc_told:<id> { magnetId, fromId }; npc_announced:<speakerId> { magnetId, heard, line, picture }). The line ignores the bark cooldown and waits up to 30 s for the speech lock, then a 'news' picture (the first satisfies). No pool: the picture only. Nobody to tell: no announce at all. Lines are voiced and the player can drop the magnet anywhere, so keep them free of room names." }, "newsRadius": { "type": "number", "minimum": 0, "maximum": 50, "description": "Slice 18b-ii: tiles within which the announce is heard. Default 5." }, "_comment": { "type": "string" } }, "additionalProperties": false },
+            "seat": { "oneOf": [ { "type": "boolean", "enum": [false] }, { "type": "string", "enum": ["fetch", "stay", "stand"] } ], "description": "Seating while an NPC uses this object (systems/seating.js): 'fetch' (default) sits on a free chair at the spot or rolls a free swivel chair over from the same room; 'stay' sits only if a chair is already there; false or 'stand' always stands. NPCs whose atlas has no seated frames always stand." },
+            "_comment": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
+        "workstation": { "type": "boolean", "description": "Marks this object as a workstation whose screen locks/unlocks when its owner leaves (systems/workstation-state.js). Implied by locksScreenOnLeave or lockChance. Owner = screenOwner, else the NPC whose needsHome is this object's id." },
+        "locksScreenOnLeave": { "type": "boolean", "description": "Workstation: screen locks when the owner leaves (default true)." },
+        "lockChance": { "type": "number", "minimum": 0, "maximum": 1, "description": "Workstation: overrides locksScreenOnLeave; chance 0..1 that the screen locks on each leave, rolled from the needs system's seeded per-NPC RNG so a fixed seed is deterministic." },
+        "autoLockSeconds": { "type": "number", "exclusiveMinimum": 0, "description": "Workstation auto-lock (slice 16): an open screen whose owner is away locks after this many seconds idle, on the needs clock. The clock starts at the leave, restarts on workstation_accessed and while a minigame is open on the object, and stops when the owner returns. Fires workstation_screen_changed with how 'auto' (a flash or glyph, no chime)." },
+        "phoneOwner": { "type": "string", "minLength": 1, "description": "Desk phone (OFFICE_LIFE_PLAN 12.5, slice 19): the NPC (with needsHome in this room) whose phone this is. desk_phone_ring:<id> (a mapping's emitEvent or an object's emit_event) rings it; the owner idle at its desk answers without moving; away it misses the call (desk_phone_unanswered:<id>); an answersPhones colleague may walk over. Needs a standing affordance (officeType desk_phone with officePresets, or seat: stand written out), takeable false, within 1.5 tiles of the owner's post, and useFrom to the side of the owner's chair. Events: desk_phone_ringing, desk_phone_answered, desk_phone_unanswered, desk_phone_hung_up (reason player or unavailable)." },
+        "rings": { "type": "integer", "minimum": 1, "maximum": 20, "description": "Desk phone (slice 19): how many rings (one every 3 s of the needs clock) before it rings out. Default 4; it keeps ringing while a colleague is on the way." },
+        "screenOwner": { "type": "string", "description": "Workstation: NPC id of the owner when it is not the NPC whose needsHome is this object." },
+        "access": { "$ref": "#/definitions/accessList" },
+        "acceptsUIDOnly": { "type": "boolean", "description": "Access model 4.1: an rfid lock with access also opens to a UID-only (DESFire) copy. Default false." },
+        "loginPicker": { "oneOf": [ { "type": "string", "enum": ["accounts", "known"] }, { "type": "boolean", "enum": [false] } ], "description": "Access model 5.3: a sign-in PC's account tiles. accounts (default): every account its access admits; known: those the player has met; false: type the username." },
+        "policy": { "type": "string", "description": "Access model 5.5: the named policy (top-level policies) this PC follows." },
+        "network": { "type": "string", "description": "Networks 3.2: the network (a networks key) this object is on; overrides its room's network. Never sent to the browser." },
+        "host": { "type": "string", "description": "Networks 3.2: a sign-in PC's label on the network (HB-FIN-02). Default: its name. Not secret." },
+        "headless": { "type": "boolean", "description": "Networks 3.4: a sign-in object with no screen or keyboard (a door controller, a file server in a rack), signed in to only over the network through a foothold. A click shows its observations only. Unrelated to headless NPC records and headless browser runs." },
+        "networkJack": { "type": "boolean", "description": "Networks 3.3: this room object is a jack; a rogue device planted in it gives a foothold on its network. Takes no triggerOnInteract, requiresItem, lock or lockType." },
+        "jackConfirm": { "type": "string", "description": "Networks 3.3: the confirm text before a plant. Default: Plug <device name> into <jack name>?" },
+        "plantedSprite": { "type": "string", "description": "Networks 3.3: the jack's texture while a device is in it." },
+        "linkName": { "type": "string", "description": "Networks 4.1: the name of the link item the plant puts in the inventory. Default: <device name>: <jack name>." },
+        "linkStoreIn": { "type": "string", "description": "Networks 13.4: the holder the link item is filed in (storeIn)." },
+        "rogueDevice": { "type": "boolean", "description": "Networks 3.3: a takeable item with an id that can be planted in a jack. Not droppable." },
+        "wifiAp": { "description": "Reserved for slice 9.3b (Wi-Fi). Refused by the 9.3a validator." },
+        "portSecurity": { "description": "Reserved for slice 9.3b (port security). Refused by the 9.3a validator." },
+        "portSecurityMessage": { "type": "string", "description": "Reserved for slice 9.3b (port security). Refused by the 9.3a validator." },
+        "transfer": { "type": "string", "enum": ["copy", "move", "both"], "description": "Access model 5.1: what a takeable file on a sign-in desktop allows. Default both." },
+        "cloneable": { "type": "boolean", "description": "Access model 4.2: false stops the server recording a card copier copy of this keycard." },
+        "identity": { "type": "string", "description": "Access model section 3: for readability, the NPC id whose card this keycard is; the validator checks that NPC carries its card_id." },
+        "needsTag": { "type": "string", "description": "NPC needs system: one tag. NPCs with a matching interests entry are drawn to this item." },
+        "droppable": { "type": "boolean", "description": "true: clicking this item in the inventory drops it at the player's feet (systems/item-drop.js). Needs a unique id; usually paired with needsTag." },
+        "holds": { "type": "object", "description": "An inventory holder (engine plan section 6): captures true lists se_captures, items true files held items whose storeIn equals this item's id.", "properties": { "captures": { "type": "boolean" }, "items": { "type": "boolean" } }, "patternProperties": { "^_": {} }, "additionalProperties": false },
+        "storeIn": { "type": "string", "minLength": 1, "description": "The id of the holder item this item is filed in while both are held (engine plan section 6). An item with storeIn is never added to the Notepad." },
+        "leftBehindBy": { "type": "string", "minLength": 1, "description": "Left-behind item (NPC needs, OFFICE_LIFE_PLAN 2.10, slice 11): the id of the NPC (with needsHome) who sometimes leaves this item at its post. On each real leave a seeded roll under leftBehindChance shows it at its declared spot (object_revealed:<id> with leftBehindBy; npc_left_post gains leftBehind); on return the owner picks it up again (hidden, global false, no server call). Taken by the player, it is gone for good (npc_left_item_gone:<npcId> on the owner's return). Needs its own revealOnGlobal, which the engine owns; a reload files it away. A non-takeable readable notes* item must use readDisplay gameDisplay." },
+        "leftBehindChance": { "type": "number", "minimum": 0, "maximum": 1, "description": "With leftBehindBy: the chance (0-1) that the owner leaves this item at its post on each real leave. Rolled with the needs seed, so a day replays the same. Default 0 (never)." },
+        "outputOf": { "type": "string", "minLength": 1, "description": "Reveal slot (NPC needs, OFFICE_LIFE_PLAN 2.2 Part A): the object id of the producer (a copier) whose onUse revealOutput shows this object. Needs its own revealOnGlobal, which the engine owns (true on reveal, false when filed away; a reload files every revealed slot). A delivered slot is placed or stowed, never consumed. A non-takeable readable notes* slot must use readDisplay gameDisplay." },
         "revealOnGlobal": { "type": "string", "description": "This object stays hidden and non-interactive until the named global turns true, then appears (and persists across reload, since globals are restored before the room reveals). Models a planted device appearing in place — e.g. a keylogger that shows on the PC once planted." }
       }
     },

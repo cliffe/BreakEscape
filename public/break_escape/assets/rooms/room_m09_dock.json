@@ -71,15 +71,15 @@
          "name":"tables",
          "objects":[
                 {
-                 "gid":109,
-                 "height":41,
+                 "gid":114,
+                 "height":39,
                  "id":9,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":50,
-                 "x":232,
+                 "width":51,
+                 "x":231,
                  "y":102
                 }],
          "opacity":1,
@@ -179,7 +179,7 @@
                 }, 
                 {
                  "gid":316,
-                 "height":26,
+                 "height":30,
                  "id":13,
                  "name":"",
                  "rotation":0,
@@ -187,7 +187,7 @@
                  "visible":true,
                  "width":16,
                  "x":248,
-                 "y":128
+                 "y":132
                 }, 
                 {
                  "gid":1079,
@@ -619,13 +619,13 @@
                 {
                  "id":0,
                  "image":"..\/tables\/hospital_desk1.png",
-                 "imageheight":48,
+                 "imageheight":44,
                  "imagewidth":62
                 }, 
                 {
                  "id":1,
                  "image":"..\/tables\/hospital_desk2.png",
-                 "imageheight":48,
+                 "imageheight":44,
                  "imagewidth":62
                 }, 
                 {
@@ -1929,13 +1929,13 @@
                 {
                  "id":201,
                  "image":"..\/objects\/hospital_chair_north.png",
-                 "imageheight":26,
+                 "imageheight":30,
                  "imagewidth":16
                 }, 
                 {
                  "id":202,
                  "image":"..\/objects\/hospital_chair_south.png",
-                 "imageheight":32,
+                 "imageheight":35,
                  "imagewidth":16
                 }, 
                 {
@@ -3657,7 +3657,7 @@
                 {
                  "id":100,
                  "image":"..\/objects\/hospital_chair_north2.png",
-                 "imageheight":26,
+                 "imageheight":30,
                  "imagewidth":16
                 }, 
                 {
@@ -3754,7 +3754,7 @@
                 {
                  "id":116,
                  "image":"..\/objects\/exec_desk1.png",
-                 "imageheight":46,
+                 "imageheight":42,
                  "imagewidth":80
                 }, 
                 {

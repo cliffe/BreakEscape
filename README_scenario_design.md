@@ -125,6 +125,33 @@ The code in `validateDoorsByRoomOverlap()` (lines 3236-3323) shows that:
 2. If a door connects to a locked room, the door inherits the lock properties (lines 3296-3303)
 3. Doors that don't connect exactly two rooms are removed (lines 3281-3291)
 
+#### Gate doors (`doors[].gate`)
+
+A door entry in a room's `doors` array can carry a `gate`: it opens for listed NPCs as they near, holds open for a while, then shuts and relocks. Put it on the entry that leads **into** the locked room (the validator refuses one on the entry leading out of it): that entry's `connectedRoom` is the gate's secured room. The player can't open it by clicking from outside; they follow the NPC in (tailgating) when `playerMayPassIf` lets them, or present a credential that satisfies the door's `requires` (a saved clone on an `rfid_cloner` counts), which opens it for one `holdMs` window.
+
+```json
+"doors": [{ "connectedRoom": "secure_area", "direction": "north", "requires": "cm_records_badge",
+            "gate": { "openFor": ["len"], "openRadius": 56, "holdMs": 2500, "playerMayPassIf": "courier_ready" } }]
+```
+
+| Field | Default | Description |
+|-------|---------|-------------|
+| `openFor` | — | NPC ids (string or list) whose approach opens it |
+| `openRadius` | `56` | Pixels from the door centre at which an `openFor` NPC opens it |
+| `holdMs` | `2500` | How long it stays open after the last NPC leaves (the tailgate window) |
+| `playerMayPassIf` | none | A global. While it is false, the gate is solid for a player outside the secured room even while it stands open for the NPC, and a player within `openRadius` keeps it shut, even beside the NPC, or shuts it as soon as nobody is in the doorway |
+| `sound` | the door release for an RFID door | The sound played each time the gate opens, for an NPC or for a clone. Left out, a door with an RFID lock plays `rfid_unlock` (the same strike as every RFID lock) and any other door is silent; a sound key plays that sound (any audio key the game has loaded, not only the sound manager's own list; a key that is not loaded logs a warning and plays nothing); `false` silences the gate. Heard only from the doorway's two rooms: full volume within 3 tiles of the door, fading to nothing at 12 |
+
+A guard who has been moved out of `openRadius` (pushed by the player, say) walks back to the front of his door. Two limits follow from how he finds that door: give a guard one gate per pair of rooms, and make the gate the only shut door on that leg of his route. With two gates into one room he may be sent to the one he cannot reach, and a leg blocked by an ordinary locked door further on would walk him to the gate and hold it open while he stands there.
+
+**A held guard turns back.** While the player is barred the gate never opens for the NPC. A route NPC (`behavior.patrol.multiRoom` route) near the shut gate whose route leg needs him across it waits 5 s, then gives up that crossing: he glances at the player, carries on with his route from the next segment in the room he is in, and tries the door again on his next cycle. His patrol never stops, so the tailgate window comes back once the player moves off or meets `playerMayPassIf`. Only route NPCs turn back; any other NPC simply waits. A guard standing in the doorway is never shut in, even by `closeDoor`. Design the scenario so the player can do anything that needs the guard at the open door (such as watching him key a PIN) from just outside `openRadius`, measured from the player's feet.
+
+**Solid for a player it is not open to.** An open gate's door body still blocks a player outside the secured room unless the gate is open to them (`playerMayPassIf` true, or a clone window running). So a barred player who runs at the door while the NPC is in the doorway is stopped at the door, as at a shut one, and the gate shuts as soon as the NPC is clear. Walking into it (or clicking to walk through it) stops the walk and shows the same refusal as a click, at most once every 4 s, with `door_gate_denied`. The gate never closes on a player crossing a doorway it lets them through, and a body never switches on under the player: if their permission lapses on the doorstep (the clone window runs out, or the disguise comes off), they finish the crossing or step back first.
+
+**Leaving.** A player inside the secured room is never blocked by the open gate and never keeps it shut, with or without cover. A click on the shut gate from inside opens it for one `holdMs` window (`door_gate_exit_opened`); a click on the open gate does nothing (they walk out). Neither asks for a credential, refuses, credits a clone or emits `door_gate_player_opened` or `door_gate_opened`, so map nothing that must mean "the NPC is at the door" on the exit event.
+
+North and south doors only: a gate on an east or west door is declined (a console warning and a validator warning) and the door behaves as an ordinary locked door. A gate keeps a player out of a room; it does not keep a secret, because the room's data reaches the browser once the NPC's route has loaded it. Anything that must not be read early stays behind a server-checked lock inside the room. Events: `door_gate_opened`, `door_gate_closed`, `door_gate_denied` (a refused click, or a bump into the open gate), `door_gate_player_opened` (credential accepted), `door_gate_exit_opened` (a player inside opened it to leave), `door_gate_guard_turned_back` (`npcId`). An NPC mapping's `closeDoor` shuts one early. See `docs/achitechture/TAILGATE_REDESIGN.md`.
+
 #### Designing Solvable Scenarios with the Grid System
 
 The grid-based room layout system provides significant flexibility for scenario design:
@@ -353,6 +380,17 @@ The `type` field of each room must be one of the room keys registered in `public
 | `room_se_recon` | Recon room, lab_social_engineering (2×2 GU; copied from `room_zds_office`) — binder shelves, org-chart whiteboard, notice board, info screen under a RECON plate; two research desks with PCs (W), side table, small rack. Door E. Slots: `pc` (as-type, the top desk's `pc8`); conditional `notes` on the side table |
 | `room_se_ops` | Operations room, lab_social_engineering (2×2 GU; copied from `room_qdc_open`) — OPERATIONS plate, whiteboard, IT bench, comms cabinet, year planner, coffee station; two desk banks with PCs and a desk phone, photocopier. Door W. Slots: `pc` ×2 (as-type, `pc8` then `pc6`), `phone3` |
 | `room_se_blueteam` | Blue team room, lab_social_engineering (2×2 GU; copied from `room_aes_security`) — threat map, camera wall, SIEM board under a BLUE TEAM plate, rota; monitoring desk, side desk, tea station, DVR rack. Door S (SW); nothing below feet y 256. Slots (as-type): `security_monitor`, `siem_dashboard` |
+| `room_lw_reception` | Ledgerwell reception, lab_physical_pentest (copied from `room_reception`) |
+| `room_lw_hall` | Ledgerwell corridor, lab_physical_pentest (copied from `hall_1x2gu`) |
+| `room_lw_office` | Ledgerwell office, lab_physical_pentest (2×2 GU; same geometry and slots as `room_se_ops`) |
+| `room_lw_records` | Ledgerwell records / admin office, lab_physical_pentest (2×2 GU; copied from `room_lw_office`) — open plan with filing, binders and records signage in place of the ops decor |
+| `room_lw_briefing` | Ledgerwell kit and briefing room, lab_physical_pentest (2×2 GU; copied from `room_se_engagement`) — Ledgerwell carpet and signage, a kit bench |
+| `room_lw_kitroom` | Ledgerwell kit and briefing room on the new identity shell, lab_physical_pentest (2×2 GU; map rebuilt from `room_lw_briefing`) — oxblood carpet with a table mark, two walnut sideboards for the kit, a green baize board for the rules of engagement, hi-vis and lanyard on wall hooks, a locker bank; replaces `room_lw_briefing` in the lab |
+| `room_lw_front_desk` | Ledgerwell front desk on the new identity shell, lab_physical_pentest (10×10; map copied from `room_lw_reception`, which test_seating still uses) — oak floor with a green runner between the W and E doors, an old bank counter made of two walnut sideboards with the visitor book and a badge printer on top, staff directory board, CCTV, logo plate and a 1990s time clock on the back wall, waiting chairs, leaflet rack; replaces `room_lw_reception` in the lab |
+| `room_lw_ceo` | Ledgerwell executive office, lab_physical_pentest (copied from `room_zds_ceo`) |
+| `room_lw_records_office` | Ledgerwell records office, lab_physical_pentest (10×10; map copied from `room_lw_ceo`, which test_gate_tailgate still uses) — grey-green vinyl floor (no rug), a records counter, filing runs, ledger shelves and an archive shelf (the records cabinet) along the back and west walls, a key cabinet with the deeds key, a sign-out card index and a green safe, a central sorting table; same geometry and doors as `room_lw_ceo` so secure_area's gate and tailgate are unchanged |
+| `room_lw_store` | Ledgerwell store room, lab_physical_pentest (1×1 GU; copied from `small_room_storage_1x1gu`) |
+| `room_lw_riser` | Ledgerwell server riser, lab_physical_pentest (5×6 back-of-house shell, room_lw_concrete floor; copied from `room_lw_comms`) — the comms cupboard's inner, badge-controlled room, dressed as a server riser: a server rack and the core-switch rack reader, a wall patch panel, a UPS, an overhead cable tray, a cooling unit and a server-riser wall sign |
 | `room_aw_brightwell` | Brightwell Foods training room, awareness shells (2×2 GU; copied from `room_uni_seminar`) — green skirting and logo plate, window, year planner, quarter's bar chart; flip chart, long table with chairs, coffee station and water cooler. No doors drawn (the shells have no connections). Slots: `kiosk` (x 238, feet 140); host spot `{x: 5.5, y: 3.5}`, start `{x: 6, y: 6.2}` (`awareness/training_room.py`) |
 | `room_aw_tarrowby` | Tarrowby Logistics depot training room, awareness shells (2×2 GU; copied from `room_uni_seminar`) — steel-blue skirting and logo plate, yard window, shift rota board, route map, hi-vis on hooks; sheet vinyl, flip chart, long table, drinks vending, stacked chairs. Slots: `kiosk`; host spot and start as `room_aw_brightwell` |
 | `room_aw_quayholt` | Quayholt Insurance service-desk training room, awareness shells (2×2 GU; copied from `room_uni_seminar`) — purple skirting and logo plate, window, desk-queue screen, sign-in screen, LOCK poster; flip chart, long table, a spare service-desk position with PC and phone. Slots: `kiosk`; host spot and start as `room_aw_brightwell` |
@@ -510,7 +548,7 @@ This laptop object will be placed at the next available `pc` slot in the room te
 | Field | Required | Description |
 |-------|----------|-------------|
 | `type` | ✅ | Object type name. Controls default minigame, placement, and sprite (see above) |
-| `sprite` | optional | Override the sprite variant (e.g. `"pc3"` to force that specific sprite instead of random selection) |
+| `sprite` | optional | Override the sprite variant (e.g. `"pc3"` to force that specific sprite instead of random selection). On a workstation PC, `"pc_desktop"` is the base that has a locked-screen look (see "Workstation screens") |
 | `position` | optional | Override template placement. Use `{ "x": 12, "y": 8 }` for exact tile coordinates, or `"as-type:pc"` to use placement slots of a different type |
 | `name` | ✅ | Display name shown in UI |
 | `takeable` | ✅ | `true` = player can pick up; `false` = stays in room |
@@ -773,12 +811,181 @@ Control how observation text is displayed using `observationDisplay`:
 | `complete_task` | `taskId` | Marks an objective task complete |
 | `unlock_object` | `objectId` | Unlocks a world object |
 | `unlock_door` | `room_id` | Unlocks a door connection |
-| `give_item` | `item` | Adds an item to inventory |
+| `give_item` | `item` | Adds an item to inventory. Give the item its own `id` and it is a **declared grant** — the server allowlists the scenario's own `give_item` actions, so it needs **no** world object (see the note below). |
 | `confirm_action` | `text`, `onConfirm` | Shows confirmation dialog, executes nested actions on confirm |
 | `tint_objects` | `roomId`, `textureKey`, `color`, `pulse` | Tints all sprites of a type in a room |
 | `show_end_screen` | `title`, `body`, `buttonText`, `outcome` | Shows scenario end screen |
+| `hint` | `message`, `title` (optional) | Shows an information toast. It lasts by the length of `message`: 300 ms per word, at least 6 s and at most 12 s (20 words or fewer give 6 s, 40 or more give 12 s), so keep a hint under 40 words. Like every information toast it is held while a conversation or a full-screen panel is open and shown when that closes |
+
+#### Conditional actions: `condition`
+
+Any action, in any list the engine runs (`triggerOnInteract`, a timer's `actions`, `onConfirm`), may carry a `condition` on the global variables. The action runs only while the condition holds, and it is read when the action is reached, so an earlier action in the same list can change the answer. Use it to make one click say one thing per state:
+
+```json
+"triggerOnInteract": [
+  { "type": "hint", "condition": "globalVars.pin_read", "message": "You have already read the PIN from here." },
+  { "type": "hint", "condition": "!globalVars.pin_read && !globalVars.guard_at_door", "message": "Nobody is at the keypad yet." },
+  { "type": "emit_event", "event_name": "player_watched_reader" }
+]
+```
+
+- **Syntax.** Terms joined by `&&` and `||` (`||` binds looser), with no parentheses. A term is `globalVars.x`, `!globalVars.x`, or `globalVars.x` compared (`===`, `!==`, `>`, `<`, `>=`, `<=`) with `true`, `false`, `null`, a number or a quoted string.
+- **It is strict.** A condition that is not a string, is empty, or has a term outside that syntax (a negated comparison such as `!globalVars.x === true`, a bare name, parentheses) never holds, so the action never runs. The validator reports these as errors, and warns about a global that is not declared in `globalVariables`.
+- **The server does not read it.** Only the page evaluates the condition. A `give_item` is still a declared grant on the server whatever its condition says (the validator warns), and a flag reward is applied by the server as well as the page, so a `condition` on a `flagRewards` entry is a validator error. Never use a condition as the thing that protects access.
 
 **Note**: The deprecated `onInteract` field (object format) is still functional but will log warnings. Migrate to `triggerOnInteract` + `observationDisplay` for new scenarios.
+
+**Declared grants (the compatible way to `give_item`)**: a `give_item` whose `item` has an `id` (or `opens_lock`) is a *declared grant*. The server reads the scenario's own `give_item` actions as its allowlist, so the grant needs **no** world object — do **not** add a hidden `active:false`/`takeable:true` twin (the old pattern): the validator now errors on a twin that shares the grant's `id` ("a declared grant needs no world object"). Put a granted container's files in the grant's own `contents`; the server serves them from the held item, and a nested password archive unlocks against it. The `give_item` must sit on a path the engine actually runs — `timers[].actions`, an object's `triggerOnInteract` / `onInteract.actions`, esd-button actions, or a nested `confirm_action.onConfirm` — **not** under `eventMappings` (never run; the validator reports it) or `flagRewards` (server-delivered, named by `item_name`/`item_type` with no `item` hash). There is no trigger check: a declared grant can be claimed from the first second, so never grant a key or lock tool this way (the validator warns). `BreakEscape::DeclaredGrants` (`lib/break_escape/declared_grants.rb`) is the single definition the server, the validator (`check_give_item_collectible`) and the dungeon-graph generator share, so all three agree on what a grant is. Full design: `docs/achitechture/DECLARED_GRANTS_PLAN.md`. The ink `#give_item:<type>:<id>` tag is a separate path (an item out of the speaking NPC's `itemsHeld`) and is unaffected.
+
+#### Item plants: `requiresItem`
+
+`requiresItem` turns an object's `triggerOnInteract` into "deploy the kit you carried here": the actions fire only while the player holds the named item (a type, an id or a name, or an array of any of those). `consumesItem: true` then removes the item from the inventory, so it is left on the target. Without the item the actions do not fire and the player gets a refusal toast.
+
+| Field | Description |
+|-------|-------------|
+| `requiresItem` | The item the player must hold: a type, id or name, or an array of them |
+| `consumesItem` | `true` removes the held item when the actions fire |
+| `requiresItemHint` | The refusal text when the item is not held. Default: "You need the right kit in hand for this." |
+| `requiresItemHintVariants` | One refusal text per state: an array of `{ "condition": "globalVars...", "value": "..." }`, first match wins, then `requiresItemHint`, then the default. Same format and rules as `observationVariants` (`&&` only: no `\|\|`, no parentheses), so put the most specific condition first |
+
+```json
+{
+  "type": "pc", "id": "staff_pc", "name": "Chris's PC", "takeable": false,
+  "requiresItem": "kit_deviceA",
+  "consumesItem": true,
+  "requiresItemHint": "You need the hardware keylogger from your kit in hand to clip it inline here.",
+  "requiresItemHintVariants": [
+    { "condition": "globalVars.kp_creds_captured", "value": "Your keylogger caught Chris's password when he unlocked his screen." },
+    { "condition": "globalVars.kp_deviceA_set && globalVars.staff_pc_screen_locked", "value": "Chris's screen is locked. Your keylogger is in place behind it." },
+    { "condition": "globalVars.kp_deviceA_set", "value": "Your keylogger is clipped inline behind this PC." },
+    { "condition": "globalVars.staff_pc_screen_locked", "value": "Chris's screen is locked. That is what the keylogger is for." }
+  ],
+  "triggerOnInteract": [
+    { "type": "set_global", "key": "kp_deviceA_set", "value": true },
+    { "type": "hint", "title": "Keylogger planted", "message": "Clipped in. Now wait for Chris's coffee run." }
+  ]
+}
+```
+
+Things to know:
+
+- **Write a variant for every state after the plant.** With `consumesItem`, the item is gone once planted, so every later click is a refusal. Without variants the player is told "you need the keylogger" about a keylogger that is already in place.
+- **A click never shows `observations` on this object.** The refusal returns before the observation code. The info label at the bottom of the screen does show `observations` and `observationVariants` when the player stands near, so an object can carry both: variants for the label, hint variants for the click.
+- **The refusal toast lasts by its length**: 300 ms per word, at least 6 s and at most 12 s.
+- **An item plant cannot sit on a sign-in PC.** A `lockType: "login"` object answers a click with its own flow (owner present, session, sign-in screen) and returns before `triggerOnInteract` and `requiresItem` are read. So a scenario that chains a captured password into a sign-in puts the plant on a separate object beside the sign-in PC (the cable behind it, a dock, a desk hub), and keeps the capture on the PC's own event, for example `workstation_owner_returned:<pc>` with `data.wasLocked === true`. `lab_physical_pentest` plants on the PC object itself only because, by that lab's own rules of engagement, nothing ever signs in at Chris's PC.
+- **The validator** warns when `requiresItemHintVariants` is authored without `requiresItem` (none of those hints would ever show), and checks its conditions like the other variant lists.
+
+#### Networks: jacks, footholds, hosts and shares
+
+A scenario can put sign-in PCs and resources on networks. The player gets onto a network by planting a rogue device (a drop box) in a jack; that gives a **foothold**, and the foothold shows what the network exposes: sign-in hosts the player can try remotely, and resources such as file shares. Full design: `docs/achitechture/ACCESS_MODEL_SLICE_9_3_PLAN.md` (slice 9.3a). The server, the validator (`scripts/validate_network.rb`) and the dungeon graph read one set of rules, `BreakEscape::NetworkModel` (`lib/break_escape/network_model.rb`), so they agree.
+
+**Fields.**
+
+| Where | Field | Meaning |
+|-------|-------|---------|
+| Top level | `networks` | Network id to `{ "name": "..." }`. The name is what a foothold's view shows |
+| Top level | `resources` | Resource id to `{ kind, name, host, network, access, contents, observations }`. `contents` is for `kind: "file_share"` only; `observations` is the text of a resource with no contents |
+| Room | `network` | The default network for the room's objects |
+| Object | `network` | The object's own network; it wins over the room's. An object with neither is on no network |
+| Sign-in object | `host` | Its label on the network ("HB-FIN-02"). Default: its `name`. Not secret |
+| Sign-in object | `headless` | No screen or keyboard: signed in to only over the network |
+| Object | `networkJack` | This object is a jack. Optional `jackConfirm`, `plantedSprite`, `linkName`, `linkStoreIn`, `requiresItemHint` and `requiresItemHintVariants` |
+| Item | `rogueDevice` | A takeable item with an `id` that can be planted in a jack |
+| Policy | `remote` | `"allowed"` (the default) or `"blocked"`: whether a PC under the policy takes a remote sign-in |
+
+`networks`, `resources` and every `network` field never reach the browser: the server sends a network's name, and the names, hosts and contents of what it exposes, only from `GET /network` and `GET /container`, and only for a foothold or session the server holds.
+
+**The jack and the device.** A jack is any room object with `"networkJack": true` and a network (its own or its room's): a wall port, a patch panel, the back of a router. It takes no `triggerOnInteract`, no `requiresItem`, no lock and no `lockType`, because its click is the plant flow: the player confirms, the server takes the device out of the inventory, and a link item ("Drop box: comms room") arrives in its place. Clicking the link item opens the network view. Clicking the jack again offers to unplug, which gives the device back and ends every remote session that went through it. A rogue device may be defined anywhere an item can come from (a room object, a container, `startItemsInInventory`, an NPC's `itemsHeld`, a declared grant). It must have an `id`, be takeable and not be `droppable`, and nothing may require and consume it. In 9.3a a foothold reaches its own network and nothing else.
+
+**What a foothold shows.** The view lists every `lockType: "login"` object on the network, whatever room it is in and whether or not the player has opened that room, then every resource on the network, each group sorted by id. A host row offers **Sign in** (username and password typed; no account tiles), **Open** when a password session is held there, or "remote sign-in off" under a `remote: "blocked"` policy. An open share (no `access`) offers **Open**; a share with an access list shows a padlock. Any other resource shows its `observations`. The view never shows account names, access lists, policies or share contents.
+
+**Headless hosts.** `"headless": true` on a sign-in object means "no screen or keyboard, managed only over the network": a door controller, a file server in a rack, a printer's admin page. A click on it shows its `observations` and nothing else; the server refuses a sign-in there that names no foothold. A headless host has no owner, takes no claim and shows no account tiles. This field is unrelated to the headless NPC records of the social engine (`emailRecord`, `Game#headless_npc_records`) and to a headless browser run.
+
+**Shares.** A file share is the network counterpart of an account profile: contents gated by an access list rather than a lock. An open share opens from the network view for a foothold on its network, and from the desktop of any session on a PC on its network. A share with an access list opens only from a desktop: every share on the PC's network that admits the session's account is added after the profiles as a folder, `Ledger-Archive (\\HB-FS01\Ledger-Archive)`. Files are taken with the usual Open, Copy and Move dialog and `transfer` field, and locked folders inside a share work as they do in a profile. Resource ids and share item ids are global: the validator refuses one equal to the id or name of a room object, a profile item or another resource, and a sign-in object inside a share. The implicit `staff` role of every account holder counts in every access list a share or host uses, so a share for `staff` maps for every account.
+
+**Events.** `network_foothold_gained`, `network_device_planted`, `network_device_refused`, `network_device_unplugged`, `network_viewed` (with `hostList`, the host ids comma-joined; it fires on every open, so a mapping that should fire once says `onceOnly`), `network_host_opened`, `network_view_closed`, `network_share_opened`; each also as `<name>:<id>`. `pc_signed_in` and `pc_signed_out` gain `remote` and `footholdId`, and `pc_signin_failed` gains the reason `remote_blocked`. The client publishes `<jackId>_planted` for variants and `revealOnGlobal` (declare it in `globalVariables`); it is display state only. An objective that must not be skippable is an `unlock_object` task on the jack (met once a foothold has been gained there) or on the host (met by a remote sign-in as by a local one), not a task a mapping completes.
+
+**Two authoring rules.**
+
+- **A chain that must need the foothold** puts its payoff on a headless host, or in a room with no other way in. A PC in an open room can be signed in to at the keyboard, and a protected share maps on the desktop of any PC on its network that an admitted account can sign in at. The validator prints these under "Reachable without a foothold".
+- **Remote sign-in skips doors.** A PC in a locked room on a network with a jack outside that room can be signed in to through the foothold without opening the door. Acknowledge the route by writing `"remote": "allowed"` in the PC's policy, or close it with `"blocked"`; until then the validator warns ("Doors skipped").
+
+The validator also refuses the fields reserved for slice 9.3b (`networkLinks`, `downIf` and `wifi` on a network, `wifiAp` and `portSecurity` on an object, the `grant_foothold` action) with "needs slice 9.3b", and an account password in a network's or resource's `name`, `host` or `observations` (those strings go to every foothold's view). It prints each jack's reach (hosts then resources) and each network that has hosts or resources but no jack. The dungeon graph draws the device opening the jack, the jack reaching its network node, and the network exposing its hosts and open shares; a headless host has no edge from its room, and a protected share is reached from each admitted account's sign-in node.
+
+#### Inventory holders: `holds` and `storeIn`
+
+A **holder** is an inventory item that files other held items, so the tray does not fill up with findings and sessions. The capture log is the one built in (`"type": "capture_log"`, `minigames/capture-log/`); full design: `docs/achitechture/PHYSICAL_PENTEST_FEEDBACK_PLAN_ENGINE.md`, section 6. Fixture: `scenarios/test_capture_log`.
+
+```json
+"startItemsInInventory": [
+  { "type": "capture_log", "id": "capture_log", "name": "Capture log", "sprite": "laptop1", "takeable": true,
+    "holds": { "captures": true, "items": true },
+    "observations": "Your engagement device: every credential, session and finding you record." }
+]
+```
+
+The holder draws its `sprite`, which must be a picture in `assets/objects/` (the validator refuses one that is not). Use `laptop1` until the content plan supplies `capture_log.png`.
+
+```json
+{ "type": "give_item", "item": { "id": "cable_capture", "type": "text_file", "name": "Juice-jack capture",
+    "storeIn": "capture_log", "readable": true, "text": "..." } }
+```
+
+- `holds.captures`: the device lists the `se_captures` rows (role, address, host, the secret or the mask, the note).
+- `holds.items`: the device files every held item whose `storeIn` equals the holder's `id`. Nothing is filed by type. A `storeIn` naming a holder that is not held leaves the item in the tray, and it is filed as soon as the holder arrives; if the holder leaves, its items show in the tray again.
+- **Filing is a view, not a move.** A filed item is still an ordinary inventory item (every "does the player hold X" check is unchanged); only its tray slot is hidden. The player sees "Added to Capture log: <name>" when one arrives, and the holder's badge counts rows the player has not seen in the device yet.
+- The device lists **Sessions** (slice 9.3's link items, filed through the jack's `linkStoreIn`; the remote sessions through them; and filed items with `contents`, such as a hand-written remote session) and **Findings** (other filed items, readable texts). A row's click runs the item's own click, and the device comes back when that screen closes.
+- **Notepad or capture log, never both.** The Notepad keeps collecting texts the player reads; the capture log holds only what the player's own devices and captures produced. A readable `storeIn` item is never added to the Notepad when it is read (`addToNotes` on it is ignored, and the validator says so); the text file reader's own "Add to Notepad" button stays, so the player can still copy a finding by choice.
+- **A granted text ships in the bootstrap.** Findings are teaching text, so that is fine; a text that gives away a code belongs in the `contents` of a session-style item, which the server holds back. The validator warns when a `storeIn` text contains a PIN or password lock's code or an account password.
+- The validator also warns when a `storeIn` names no holder in the scenario, or sits on a room object that is not takeable (make it takeable, a grant or a gift).
+
+#### Capture proof: `captureProof`
+
+`GET /capture_secrets` serves a captured account's password when the saved `se_captures` holds a credential capture of that account. A browser can write `se_captures` itself, so an account whose password signs in somewhere names a **proof**: a fact the server records itself.
+
+```json
+{ "id": "hampshire", "creds": { "username": "c.hampshire", "password": "..." },
+  "captureProof": [ { "planted": "kit_deviceA", "on": "staff_pc" } ] }
+```
+
+| Proof | Holds when |
+|-------|------------|
+| `{ "planted": "<item>", "on": "<object>" }` (`on` optional) | The server saw the item leave the inventory at that object: a room object with an `id` and a `triggerOnInteract` list (the game consumes an item only there), whose `requiresItem` names the item and which consumes it (`consumesItem`, or a `remove_item` naming it in that list), in the start room or a room the player had unlocked. Or `on` names a network jack a foothold was gained from |
+| `{ "dropped": "<item>" }` | The server accepted a player drop of that item (it must be `droppable`) |
+| `{ "session": "<pc>" }` | Someone signed in at that sign-in PC, by password or by claiming the owner's open screen. It records the PC, not the account, so it is sound only where the PC admits just the proof's holder; the validator warns otherwise |
+
+- `captureProof` is a list on the account holder; **any one** proof holding is enough. Taking a planted device back does not undo its proof.
+- **Shorthand:** `"proof": { ... }` inside an NPC mapping's `addCapture` counts for the account whose username equals the capture's `address`, or, with no `address`, for the NPC carrying the mapping. A `proof` on an `add_capture` action is refused ("put it on the account holder as captureProof"), as is a shorthand that resolves to no account holder.
+- **When the rule is strict.** A scenario that declares any proof serves a password that opens something (a sign-in PC the account is admitted at, where a PC with no `access` admits every account; a password or PIN lock anywhere in the scenario whose `requires` is the password; or a share whose access list admits it) only once one of that account's proofs holds, and the validator makes a missing proof an error there. A scenario that declares none is served as before, and the validator warns on each account with a capture route and a password that opens something but no proof. A game keeps the scenario it was created with, so adding a proof changes only new games.
+- **Unique target ids.** Captures are first capture wins, so two routes writing the same `targetId` record only the first; the validator makes that an error. It finds every `add_capture` action and `addCapture` mapping by walking the whole scenario. A captured entry whose target id no route declares (a phish target, an `addCapture`, an `add_capture` or a `usePayload.targetId`) is never served, and the single landing-page secret answers only for a phish target (`social.phishTargets`, a list or a map of targets; every one is declared).
+- **Ask for the planted item by id.** The game plants the first held item whose type, id or name `requiresItem` names, so an object that asks by type (`"usb"`) can take a different device than the proof names. The validator warns when another item shares that type or name.
+- **`linkStoreIn`** on a jack files its link item in a holder; the validator warns when it names no holder item.
+
+### Workstation screens: the locked look (`pc_desktop` and `<key>_locked`)
+
+A workstation PC with an owner (the `workstation`, `screenOwner`, `locksScreenOnLeave`, `lockChance` and `autoLockMin` fields; see `docs/achitechture/NPC_NEEDS_SYSTEM.md` and `docs/achitechture/ACCESS_MODEL_PLAN.md` section 5.4) follows its screen state with no extra fields:
+
+- **Sounds.** With the office-life lock cues on (the default; `"lockCues": false` turns them off) the lock and unlock chime comes from those cues, and this swap is silent. With them off: when the owner leaves and the screen locks, or an auto lock fires, a lock sound plays; when the owner comes back to a locked screen, an unlock sound. Only while the player is in the PC's room, and never at boot, on a reload or on a knock-out. An owner who leaves the screen open makes no sound.
+- **The locked look.** The sprite swaps to a locked-screen picture when a texture named `<key>_locked` is loaded for the sprite's own texture key. Today one base has locked art: `pc_desktop` (a navy desktop PC, 36x24), whose locked look is `pc_desktop_locked` (a padlock on the screen). So to show the padlock, set `"sprite": "pc_desktop"` on the workstation. Any other PC base (`pc`, or the `pc6`, `pc8` or `pc11` a `type: "pc"` object takes from the room map) keeps its picture and still gets the sounds and the indicator dots. Locked art for another base is drawn with `scripts/room_gen/make_locked_screen.py <base> --rect ...` and preloaded under `<base>_locked` in `core/game.js`.
+- **The rule.** The padlock shows exactly when the owner is away, the screen is locked and the player holds no password session at that PC. A password session hides it until the player signs out, because a click there opens the desktop. A claimed session never hides it.
+- **Your own swap wins.** An object with `spriteVariants` is left alone, as is a PC with no owner.
+
+```json
+{ "type": "pc", "id": "staff_pc", "name": "Chris's PC", "sprite": "pc_desktop",
+  "workstation": true, "locksScreenOnLeave": true, "screenOwner": "hampshire" }
+```
+
+The owner's return carries what the screen was: `workstation_owner_returned:<id>` has `{ objectId, ownerId, wasLocked }`, where `wasLocked` is the screen's state just before the return cleared it. A mapping that should fire only when the owner had to unlock (an inline keylogger catching the unlock password) reads it as `data.wasLocked === true`:
+
+```json
+{ "eventPattern": "workstation_owner_returned:staff_pc",
+  "condition": "data.wasLocked === true && globalVars.kp_deviceA_set === true",
+  "onceOnly": true, "cooldown": 0,
+  "addCapture": { "targetId": "hampshire", "kind": "credential", "address": "c.hampshire", "host": "LW-RECEP-01" },
+  "setGlobal": { "kp_creds_captured": true } }
+```
+
+This event carries no `usePayload`, so write the capture's `address` and `host` in the mapping (neither is a secret; the server serves the password by matching the address to the NPC's `creds`). A once-only mapping is not spent while its condition is false, so returns before the plant do not use it up. For the capture to be certain, the PC must lock on every leave (`locksScreenOnLeave: true` and no `lockChance`).
 
 ### Container Objects
 
@@ -1033,6 +1240,7 @@ In-world characters with sprites that the player can walk up to and interact wit
 | `behavior.initiallyHidden` | `true` hides NPC at spawn — use `setVisible` in an event mapping to reveal them later |
 | `behavior.facePlayer` / `facePlayerDistance` | The NPC turns to face the player within `facePlayerDistance` pixels (default `true` and `96`); a patrolling NPC with `pauseForPlayer` also stops there |
 | `behavior.personalSpace` | `{ "enabled": true, "distance": 48, "backAwaySpeed": 30, "backAwayDistance": 5 }` — the NPC backs away when the player comes closer than `distance` pixels. Off unless `enabled` |
+| `seated` | `true` or `{ "maxDistance": 40, "chair": "exec_chair_back1", "facing": "west", "facePlayer": true, "fetch": true }`: the NPC sits on the nearest free chair within `maxDistance` px of its spawn (only chairs matching `chair`, an object id, id suffix or image name, when given), and holds it until a scripted move, hostility or a KO gets it up. On a swivel chair it turns to face a nearby player unless `facePlayer` is false. Needs NPCs sit at their PC without this field; `"fetch": false` stops them fetching a chair. Needs its atlas to have seated frames (`pixellab_pipeline.py import --sit-from`); without them it stands. See `docs/achitechture/SEATING.md` |
 
 #### Casting voices
 
@@ -1127,7 +1335,20 @@ The `behavior.patrol` object controls how the NPC moves around its room:
 | `pauseForPlayer` | `true` | Stop and face the player when they come close |
 | `changeDirectionInterval` | `5000` | ms between random patrol target changes (random-patrol fallback only) |
 
-For multi-room routes use `"multiRoom": true` with a `"route"` array instead of `"waypoints"`.
+For multi-room routes use `"multiRoom": true` with a `"route"` array instead of `"waypoints"`. Each route entry is `{ "room": "id", "waypoints": [...] }`; the NPC walks them in order and loops, and never walks into a room that isn't loaded yet. A route waypoint takes the same `dwellTime` and may also carry an `action`, run when the NPC arrives and before it dwells or moves on:
+
+```json
+"route": [
+  { "room": "hall", "waypoints": [{ "x": 2, "y": 3 }, { "x": 1, "y": 2, "dwellTime": 1500,
+      "action": { "unlockRoom": "secure_area", "useObject": "badge_reader" } }] },
+  { "room": "secure_area", "waypoints": [{ "x": 4, "y": 6 }] }
+]
+```
+
+| Action | Description |
+|--------|-------------|
+| `unlockRoom: "room_id"` | The NPC unlocks that room on the server as itself (it needs an `eventMapping` with `unlockDoor` naming the room), loads it, waits for the path grid to include it, then carries on. A refusal retries after 5 s; the route never moves into the unloaded room. Once the room is loaded the action is only a pause. The matching `unlockDoor` mapping is required, not optional: without it the server refuses and the NPC retries forever; the validator errors on a missing one, and the engine logs one console warning |
+| `useObject: "object_id"` | The NPC turns to face that object (a scenario object id, in any loaded room). It does not trigger the object's own behaviour. Combine with `unlockRoom` for a visible reader or keypad |
 
 #### Bark Notifications
 
@@ -1209,8 +1430,12 @@ Common event patterns:
 - `"conversation_closed:npc_id"` — fires when a conversation closes
 - `"attack_aborted"` / `"attack_launched"` — fires from launch-device
 - `"player_spotted:npc_id"` — fires when an NPC with `los.challengeOnSight` sees the player (see [Guards who challenge on sight](#guards-who-challenge-on-sight-loschallengeonsight))
+- `"npc_caught_at_post:npc_id"` — a needs NPC walking back to its `needsHome` object from a real trip (not own-desk work) finds the player within 1.5 tiles of its desk, or with a minigame open on it. Once per return; `data.objectId`, `data.playerDistance`, `data.inMinigame`. It can fire as the NPC sets off home from the far side of its room. Map it to a bark or a conversation with a `cooldown`. The engine does not close an open minigame. `npc_left_post` also carries `data.expectedAwayMs` (a lower-bound estimate of the absence) and `data.playerNearby`. See `docs/achitechture/NPC_NEEDS_SYSTEM.md` §5.3 and §7
+- `"npc_needs_leashed:npc_id"` — the room leash or a private object removed an option this NPC would otherwise have had (`data.need`, `data.skipped`, `data.chose`, null when nothing was left). Leash fields: `needsRooms` (allow list) and `needsAvoidRooms` (deny list) on the NPC, fixed per NPC; `needsPrivateTo: [npcIds]` on a room (someone's office: other NPCs' needs neither use it nor walk through it, and go the long way round); `affordance.private: true` (+ optional `owners`) on an object (only its owners use it; anyone may still deliver to it). Scripts and route patrols ignore the leash. The validator errors on a need the leash makes impossible and warns on targets reachable only through a forbidden room. See `NPC_NEEDS_SYSTEM.md` and `scenarios/test_needs_leash`
 
-A mapping `condition` is one or more terms joined with `&&` (no `||`, no parentheses): `value`, `name`, `data.<field>` or `globalVars.<name>`, compared with `===`, `!==`, `>`, `<`, `>=`, `<=`, negated with `!`, tested bare for truth, or `.includes('…')`. `data.` and `globalVars.` operands can be dotted paths into nested objects, such as `data.result.maxAttemptsReached === true` on a `minigame_completed` event; a missing link along the path reads as `undefined`, so the term is simply false.
+A mapping `condition` is one or more terms joined with `&&` (no `||`, no parentheses): `value`, `name`, `data.<field>` or `globalVars.<name>`, compared with `===`, `!==`, `>`, `<`, `>=`, `<=`, negated with `!`, tested bare for truth, or `.includes('…')` (on a string it tests for a substring; on a list, such as `data.endedPcIds`, it tests whether one whole id is in the list). `data.` and `globalVars.` operands can be dotted paths into nested objects, such as `data.result.maxAttemptsReached === true` on a `minigame_completed` event; a missing link along the path reads as `undefined`, so the term is simply false.
+
+**Mappings run in array order.** When several mappings on one NPC listen for the same event, they run top to bottom, and a global set by an earlier one (`setGlobal`) is already visible to the `condition` of a later one in the same dispatch. Put the mapping that records something first and the one that reacts to it second: `[{ "eventPattern": "npc_used:pc", "setGlobal": {"surfed": true} }, { "eventPattern": "npc_used:pc", "condition": "globalVars.surfed", "closeDoor": "vault" }]` closes the door; reverse the two and it doesn't.
 
 Event mapping actions (can be combined):
 
@@ -1233,6 +1458,7 @@ Event mapping actions (can be combined):
 | `unlockTask: "task_id"` | Unlock a locked task |
 | `unlockAim: "aim_id"` | Unlock a locked objective aim |
 | `unlockDoor: "room_id"` or `["id1","id2"]` | Unlock the door to that room on the server, as this NPC, so it survives a reload (like ink `#unlock_door`, but the NPC needn't have been met or list the room in `unlockable`: the mapping is the permission). Fires `door_unlocked_by_npc`. The validator errors on a room that doesn't exist |
+| `closeDoor: "room_id"` or `["id1","id2"]` | Shut the gate door(s) into that room now (see [Gate doors](#gate-doors-doorsgate)), and keep them shut for at least the gate's `holdMs`. Never shuts on a player crossing a doorway the gate lets them through. Warns in the console if the door isn't a gate |
 | `openMinigame: "mail_terminal"` or `{ "type": "exercise-station", "minigameData": { ... }, "name": "..." }` | Open a minigame from the starter registry (see [Opening a minigame from a scenario](#opening-a-minigame-from-a-scenario)). `type` is an object type from that table, `minigameData` is what an object of that type would carry. `onceOnly`, `maxTriggers`, `cooldown`, `condition` and `delayMs` apply as for any action. It opens a moment after the event, and waits behind any minigame that is open (a conversation closing, a scripted call). A `onceOnly` mapping is saved for a reload only once the minigame closes normally, so a reload mid-exercise lets it open again. Use it instead of `conversationMode`, not with it. An unknown type warns and opens nothing; the validator errors. |
 | `onceOnly: true` | Ensure mapping only fires once |
 | `delayMs: ms` | Run the whole mapping this long after the event instead of at once (e.g. `8000` on `room_entered:` so the player can look round before a scene opens). The checks run at the event (nothing is scheduled if the condition fails then) and again when the delay is up, so a `globalVars` term that has stopped holding cancels it. One delay per mapping is pending at a time; if a minigame or conversation is open when it is up, it waits for that to close. A pending delay is not saved, so a reload before it fires leaves the mapping to fire on the next event. Not for `lockpick_used_in_view` (the pick is stopped at once regardless). |
@@ -1242,6 +1468,8 @@ Event mapping actions (can be combined):
 A person NPC's `los` block sets his line of sight: `range` (pixels, default 200), `angle` (cone width in degrees, default 120, facing the way he walks or looks) and `visualize` (draw the cone). By default the cone is only used to decide whether he sees a lock being picked (`lockpick_used_in_view`). Add `challengeOnSight` and he also reacts when the player simply walks into his sight. It is off unless you add it, so no existing mission changes.
 
 Walls, closed doors and tall props block his view and clip the drawn cone (`npc-sight-occlusion.js`). Tall props are racks, shelving, bookcases, vending machines, lockers, filing and other tall cabinets (by sprite name, at least 50 px high, not hung on the back wall); give a scenario object `"blocksSight": true` or `false` to override. Sight is tested at floor level, feet to feet, so standing behind a rack hides the player and standing beside it doesn't. `"occlusion": false` in a `los` block makes that NPC see through everything, for a catch that must always fire (m02's Gary).
+
+**Torches.** `"torch": true` in an NPC's `behavior` (or `{ "condition": "globalVars.night", "color": "#fff0d8" }`) gives him a beam the way he faces, shown only in a dim room (`lighting.js`). The beam is about 51 degrees wide and plainly lit to about 100-120 px. It leaves his right hand: facing east the hand is on the near side, facing west on the far side, facing south on the viewer's left, facing north on the viewer's right. While he holds the torch his sight starts at that hand too (range, angle, walls and props, and the drawn cone), so with `los.angle` about 50 and `range` about 120 the beam shows the player what he can see and `visualize` can stay off (m07's Ray Hollis). `los.origin` overrides this: `"body"` keeps the old origin (sprite centre for range and angle, the feet for walls and the drawn cone) for a torch carrier, and `"torch"` uses the hand point on an NPC without one. A conditional torch only counts while its condition holds.
 
 ```json
 "los": {
@@ -1269,7 +1497,8 @@ Walls, closed doors and tall props block his view and clip the drawn cone (`npc-
 | `event` | `"player_spotted:<npcId>"` | Name of the event to emit. |
 | `rooms` | any | Only while the player is in one of these rooms. He must be in the player's room in any case, because the cone ignores walls. |
 | `requireGlobal` | none | Only while this global is truthy (`"alarm_raised"`), or while every global listed matches its value (`{ "alarm_level": 2 }`). |
-| `skipIfGlobal` | none | Never while this global (or any in a list) is truthy, e.g. once the player has shown a badge. |
+| `skipIfGlobal` | none | Never while this global is truthy, or while any global in a list is, e.g. once the player has shown a badge. |
+| `near` | none | Only when the player is also within `radius` px (default `64`) of a target: `{ "door": "vault" }` (a door into or out of that room), `{ "object": "<objectId>" }` or `{ "x": 5, "y": 3, "room": "lobby" }` (room tiles). He must still see the player. With `near`, `rooms` may list the room on the far side of a door. Set `event` to something distinct such as `player_in_view_near:<npcId>`; the event data adds `targetId` and `targetType` (`door`, `object` or `tile`). Nothing fires while the target's room isn't loaded. |
 
 How it fires: while the player is in his room and inside his cone, and the conditions hold, the event is emitted once, with `{ npcId, roomId, playerPosition, timestamp }`. It doesn't fire again until the player has left his sight and come back, and the cooldown has passed. Nothing is checked while a conversation or minigame is open, so the challenge conversation itself doesn't retrigger it. KO'd and hidden NPCs see nothing. With `"enabled": false` on the `los` block itself he sees his whole room. The cooldown and sighting state are per session; a reload starts them fresh, so use `onceOnly` on the mapping (saved across reloads) for a challenge that must happen only once.
 
@@ -1606,7 +1835,8 @@ The engine adds a second warning on top of the story's own. Before an ending fir
 
 | Trigger | Where it asks | "Keep going" does |
 |---|---|---|
-| ink tag `#ending_check` | When the tag is read | Skips the rest of that line's tags, so a `#set_global` after it never starts the debrief. The story carries on. |
+| ink tag `#ending_check` inside a choice's brackets, `+ [Walk me through it. #ending_check]` | When the player clicks the choice, before it is taken | Takes nothing: ink does not move and the same choices stay on screen. |
+| ink tag `#ending_check` after the brackets, or on a line | When the tag is read | Skips the rest of that line's tags, so a `#set_global` after it never starts the debrief. The story carries on. |
 | eventMapping option `"endingCheck": true` | Before that mapping runs (so before it opens the debrief) | Does not run the mapping; holds the ending the way the credits trigger does, so the objectives panel shows an **End the mission** button and the ending runs by itself once nothing optional is open. Works whatever the trigger, with no soft-lock. |
 | the credits music event (`credits` or `closingCard`) | Before the ending track and the conclude request | Holds the ending; the objectives panel shows an **End the mission** button, and the ending runs by itself once nothing optional is open. |
 | the last required task of a `missionConclusion` aim | Before the task is posted to the server | The task stays undone; the same held ending. |
@@ -1614,9 +1844,10 @@ The engine adds a second warning on top of the story's own. Before an ending fir
 Warn at the point of no return, before the debrief starts, because a debrief that plays once cannot be taken back. Use whichever route fits how the debrief opens:
 
 - **A player choice starts it** (the "bring me in" option in a hub): put `#ending_check` as the **first tag** on that choice, before its `#set_global` or `#complete_task`. "Keep going" skips the rest of the line, so the debrief never starts and the player is back in the hub. Watch for a soft-lock: if the same choice also sets the opening global with an ink `~` assignment, or the hub is gated on `not <global>`, move that `~` after the confirm (or gate the hub on a separate global), or "Keep going" cannot re-offer the choice.
+- **The debrief is the conversation itself** (a choice that diverts straight into the debrief's lines, as Ruth's "Walk me through it." does in `lab_physical_pentest`): put `#ending_check` **inside the choice's brackets**. The chat asks before the choice is taken, and "Keep going" leaves the player at the same choices. After the brackets the tag cannot stop this debrief: ink has already moved into it, and with no other tag on the line to skip the debrief carries on whatever the player answers. `dialoguelint.mjs` reports that placement (`ending-check-after-bracket`). If the NPC offers the choice in their own words instead ("There are loose ends; leave them?"), tag the player's agreeing choice `#ending_confirmed`: it records the optional objectives open now as agreed, so the credits and the conclusion aim do not ask about them.
 - **An eventMapping opens it** (on `conversation_closed`, `room_entered`, or a flag), with no player choice to tag: put `"endingCheck": true` on that mapping. The engine asks before the mapping runs. "End the mission now" opens the debrief; "Keep going" does not run the mapping and instead holds the ending — the objectives panel's **End the mission** button appears and the ending runs by itself once the last optional objective is settled. This works for any trigger, including a one-shot `global_variable_changed:<flag>`, because the held ending does not depend on the trigger firing again.
 
-The credits music event and the `missionConclusion` aim task are the safety net behind both. A player who chose **End the mission now** at a mapped point is never asked a second time at the credits (the agreed objectives are remembered). Missions with no mapped point fall back to the credits warning and its held-ending panel button. The dialog never appears when no optional objective is open, after "End the mission now" for the same objectives, or on a game that had already concluded when the page loaded.
+The credits music event and the `missionConclusion` aim task are the safety net behind both. A player who chose **End the mission now** at a mapped point is never asked a second time at the credits (the agreed objectives are remembered, and saved as the global `__ending_confirmed`, so a reload in between does not ask again; an objective that opens later is still asked about). Missions with no mapped point fall back to the credits warning and its held-ending panel button. The dialog never appears when no optional objective is open, after "End the mission now" for the same objectives, or on a game that had already concluded when the page loaded.
 
 `mission.json` `"endingCheck": false` turns the warning off, for a mission under time pressure that is not meant for a perfect score (sis01 and sis02). It also marks the game as `timed` in `Game#score_breakdown`. The validator warns when a mission with optional tasks that concludes through a `missionConclusion` aim has neither `#ending_check` in its ink nor an `"endingCheck": true` eventMapping, and has not opted out.
 
@@ -1974,6 +2205,7 @@ These are the mistakes that most often leave a mission unfinishable or silently 
 
 - **Timers need conditions.** The HUD clock ignores `cancelOnGlobal`, and a reload restarts any timer whose start global is true. Put `!globalVars.done && ...` as a `condition` on every timer and on its expiry action, and guard the arming mapping so it cannot re-arm after the win.
 - **Start finale clocks once the VM work is done.** Timers run on wall-clock time, VM time included.
+- **To show a toast from an event, use a timer with a `hint` action.** An event mapping has no toast action. Have the mapping set a global (`setGlobal`), start a timer on it (`startOnGlobal`, a short `delayMs`, no `showCountdown`) and give the timer a `hint` action. `lab_physical_pentest` does this for its pointers after each beat.
 - **Gate HaX timed messages near scripted conversations.** A timed message can open a phone chat over a conversation in progress.
 
 ### Ink
@@ -2540,7 +2772,18 @@ Gotchas:
 
 ### Locked-door hints (`lockedHint`)
 
-An opt-in line that tells the player where a key comes from. It works in any scenario, not only social ones. Put it on a locked room (it applies to every door into that room, and is what the lab does), on a door entry in a room's `doors[]` (read by `doors.js`, though no scenario uses door entries yet), or on a locked object with `"lockType": "key"`. The engine appends it to the alert a player gets when they try the lock with no key and no lockpick ("Requires key. <hint>"), and to the wrong-key alerts ("The selected key doesn't work with this lock. <hint>"). From the lab's Recon room:
+An opt-in line that tells the player how to get past a locked door, whatever its lock type. It works in any scenario, not only social ones. Put it on a locked room (it applies to every door into that room, and is what the lab does), on a door entry in a room's `doors[]` (read by `doors.js`, though no scenario uses door entries yet), or on a locked object. The engine appends it to the refusal the player gets, as a following sentence:
+
+- key lock: "Requires key. <hint>" (no key, no lockpick) and the wrong-key alerts ("The selected key doesn't work with this lock. <hint>");
+- RFID/badge lock: "Requires RFID keycard. <hint>", and the empty-cloner refusal; after a wrong card or clone at the reader, the hint appears as its own "Locked" toast;
+- PIN and password pads: after the pad closes on a failed attempt ("Failed to enter correct PIN. <hint>"); closing the pad without trying shows nothing;
+- biometric lock: the hint appears as its own "Locked" toast after each refused lift;
+- gate door (`door-gates.js`): "Access denied: this door only opens for authorised staff. <hint>", at the same moment `door_gate_denied` fires;
+- any other lock type that falls through to the generic "requires ... to unlock" line.
+
+A refusal that carries a hint stays up by the length of the whole line shown (the refusal sentence plus the hint): 300 ms per word, at least 6 s and at most 12 s. Keep the hint to about 30 words, so the line fits inside 12 s. A refusal with no hint keeps its usual short duration.
+
+Combination padlocks, cryptex and the Bluetooth/BLE locks keep their own wording and do not show the hint. From the lab's Recon room:
 
 ```json
 "recon_room": {
@@ -2553,7 +2796,8 @@ Gotchas:
 
 - **It took three layers to reach the toast.** The server's bootstrap filter keeps only listed room fields (`lockedHint` is now on that list in `app/models/break_escape/game.rb`), and `doors.js` copies it onto the door sprite. Node tests of the helper passed while the live door still said "Requires key" (lab rounds 5 and 6), so check a new door field in the browser, not only in a unit test.
 - **A player with a lockpick never sees it.** They are offered the pick instead.
-- **Key locks only.** The validator errors on an empty or non-string hint and warns when the hint sits on something unlocked or on another lock type, where it is never shown.
+- **Write it for the player who has just been refused.** It shows on every refusal, so name where to look or whom to ask, not the answer (no PIN, no card holder's name unless the player already knows it).
+- **The validator** (`scripts/validate_social/options.rb`) errors on an empty or non-string hint and warns when the hint sits on something unlocked, where it is never shown.
 
 ### Opening a minigame from a scenario
 

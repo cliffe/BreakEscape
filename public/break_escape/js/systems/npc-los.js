@@ -9,7 +9,119 @@
  * - Visualization (debug cone rendering)
  * 
  * Used to determine if an NPC can "see" the player or events like lockpicking.
+ *
+ * Where sight starts (los.origin):
+ *   "body"  - the old origin: range and angle from the sprite centre, walls and
+ *             props tested from the feet (physics body centre), the drawn cone
+ *             from the feet.
+ *   "torch" - everything (range, angle, occlusion, drawn cone) from the hand that
+ *             holds the torch, npcTorchOrigin() below; lighting.js starts the
+ *             beam from the same point, so the cone lies over the beam.
+ * Unset: "torch" while the NPC holds a torch (behavior.torch, its condition
+ * holding), otherwise "body".
  */
+
+/**
+ * The torch hand, in 80x80 atlas-frame pixels from the frame centre (40, 40); the
+ * feet are on row 69. Measured on ray_hollis and terry_mott idle and walk frames:
+ * the hands hang about 10 px either side of the body axis, level with row 50-52.
+ * The right hand is the one 90 degrees clockwise of the facing (screen y down), so
+ * facing east it is on the near side and a little lower, facing west on the far
+ * side, a little higher and behind the body, facing south on the viewer's left
+ * and facing north on the viewer's right. A torch is held a little forward.
+ */
+export const NPC_TORCH_HAND = {
+  side: 10,      // px from the body axis to the hand
+  height: 10.5,  // px below the frame centre, hand height (row ~50.5)
+  depth: 2,      // px lower when the hand is on the near side, higher on the far side
+  forward: 2.5,  // px the torch is held out along the facing
+  frame: 80      // the frame height these numbers are for; other sizes scale
+};
+
+/**
+ * Offset of the torch hand from the sprite centre for an aim angle (degrees,
+ * 0 east, 90 south). Continuous in the angle, so a beam whose angle is smoothed
+ * through a turn moves its start round the body with it instead of jumping.
+ * @param {number} angleDeg
+ * @param {number} [frameHeight=80] - the sprite's display height
+ * @returns {{dx:number, dy:number}}
+ */
+export function torchHandOffset(angleDeg, frameHeight = NPC_TORCH_HAND.frame) {
+  const h = NPC_TORCH_HAND;
+  const k = (Number.isFinite(frameHeight) && frameHeight > 0 ? frameHeight : h.frame) / h.frame;
+  const f = (angleDeg * Math.PI) / 180;
+  const r = f + Math.PI / 2;          // the right hand: 90 degrees clockwise of the facing
+  const dx = h.side * Math.cos(r) + h.forward * Math.cos(f);
+  const dy = h.height + h.depth * Math.sin(r) + h.forward * Math.sin(f);
+  return { dx: dx * k, dy: dy * k };
+}
+
+/**
+ * One frame of torch-aim smoothing: a quarter of the way to the target along the
+ * shorter arc (lighting.js, every frame). Degrees in, degrees 0-360 out.
+ */
+export function stepTorchAim(prev, target, rate = 0.25) {
+  if (!Number.isFinite(prev)) return ((target % 360) + 360) % 360;
+  const diff = ((target - prev + 540) % 360) - 180;
+  return (prev + diff * rate + 360) % 360;
+}
+
+/** How long a smoothed aim stored by lighting.js (npc._torchAim) stays good, ms. */
+export const TORCH_AIM_FRESH_MS = 500;
+
+/**
+ * True when the NPC holds a torch now: behavior.torch is set and, if it has a
+ * condition, the condition holds. Conditions are evaluated by the lighting system
+ * (window.lightingSystem.npcTorchHeld); without lighting a conditional torch
+ * counts as not held, the same as its beam, which never shows then either.
+ */
+export function npcTorchHeld(npc) {
+  const torch = npc?.behavior?.torch;
+  if (!torch) return false;
+  if (typeof torch === 'object' && torch.condition) {
+    const ls = (typeof window !== 'undefined') ? window.lightingSystem : null;
+    if (ls && typeof ls.npcTorchHeld === 'function') return !!ls.npcTorchHeld(npc);
+    return false;
+  }
+  return true;
+}
+
+/**
+ * World point of the NPC's torch hand: the sprite centre plus torchHandOffset at
+ * the beam's smoothed aim (npc._torchAim, stored by lighting.js each frame) or,
+ * with no fresh aim, the NPC's facing.
+ * @param {object} npc
+ * @param {number} [now=Date.now()]
+ * @returns {{x:number, y:number}|null}
+ */
+export function npcTorchOrigin(npc, now = Date.now()) {
+  const s = npc?._sprite || npc?.sprite;
+  let c = null;
+  if (s && typeof s.getCenter === 'function') c = s.getCenter();
+  else if (s && Number.isFinite(s.x) && Number.isFinite(s.y)) c = { x: s.x, y: s.y };
+  if (!c || !Number.isFinite(c.x) || !Number.isFinite(c.y)) return null;
+  const aim = npc._torchAim;
+  const angle = (aim && Number.isFinite(aim.angle) && now - (aim.at ?? 0) <= TORCH_AIM_FRESH_MS)
+    ? aim.angle : getNPCFacingDirection(npc);
+  const { dx, dy } = torchHandOffset(angle, s.displayHeight || NPC_TORCH_HAND.frame);
+  return { x: c.x + dx, y: c.y + dy };
+}
+
+/**
+ * Which origin an NPC's sight uses: "torch" or "body" (see the header).
+ * @param {object} npc
+ * @param {object} [losConfig]
+ */
+export function losOriginMode(npc, losConfig = npc?.los || {}) {
+  const o = losConfig?.origin;
+  if (o === 'torch' || o === 'body') return o;
+  return npcTorchHeld(npc) ? 'torch' : 'body';
+}
+
+/** The torch origin when the NPC's sight starts at its torch, else null (body origin). */
+export function losTorchOrigin(npc, losConfig) {
+  return losOriginMode(npc, losConfig) === 'torch' ? npcTorchOrigin(npc) : null;
+}
 
 /**
  * Check if target is within NPC's line of sight
@@ -33,8 +145,9 @@ export function isInLineOfSight(npc, target, losConfig = {}) {
 
   if (!enabled) return true; // If LOS disabled, always return true (can see everything)
   
-  // Get NPC position
-  const npcPos = getNPCPosition(npc);
+  // Get NPC position: the torch hand when sight starts there (los.origin)
+  const torchFrom = losTorchOrigin(npc, losConfig);
+  const npcPos = torchFrom || getNPCPosition(npc);
   if (!npcPos) return false;
   
   // Get target position
@@ -69,7 +182,7 @@ export function isInLineOfSight(npc, target, losConfig = {}) {
   // turns it off for one NPC.
   if (losConfig.occlusion !== false) {
     const occ = (typeof window !== 'undefined') ? window.npcSightOcclusion : null;
-    if (occ && typeof occ.isSightClear === 'function' && !occ.isSightClear(npc, target)) return false;
+    if (occ && typeof occ.isSightClear === 'function' && !occ.isSightClear(npc, target, torchFrom || undefined)) return false;
   }
   return true;
 }
@@ -313,11 +426,15 @@ export function drawLOSCone(scene, npc, losConfig = {}, color = 0x00ff00, alpha 
   
   // The cone sits on the floor at the NPC's feet (body centre), where sight is
   // tested (npc-sight-occlusion.js), so it stops at the foot of a wall or rack.
-  // No body yet: the sprite centre.
+  // No body yet: the sprite centre. Sight from the torch (los.origin): the hand,
+  // where the beam starts, so the cone lies over the beam.
   const feet = npc?._sprite?.body?.center || npc?.sprite?.body?.center;
-  const coneOrigin = (feet && Number.isFinite(feet.x) && Number.isFinite(feet.y))
-    ? { x: feet.x, y: feet.y }
-    : { x: npcPos.x, y: npcPos.y };
+  const torchFrom = losTorchOrigin(npc, losConfig);
+  const coneOrigin = torchFrom
+    ? torchFrom
+    : (feet && Number.isFinite(feet.x) && Number.isFinite(feet.y))
+      ? { x: feet.x, y: feet.y }
+      : { x: npcPos.x, y: npcPos.y };
 
   const npcFacingRad = Phaser.Math.DegToRad(npcFacing);
   const halfAngleRad = Phaser.Math.DegToRad(angle / 2);

@@ -2,20 +2,20 @@
 
 # test-tesseract-probes — Scenario Graph Reference
 
-Engine probes for the Tesseract Trials lab. Not a mission.
+Engine probes for the Keyholder Trials lab (folder lab_tesseract_trials). Not a mission. If your phone is compromised, use the fallback channel (probe text).
 
 ## Scenario Statistics
 
 | Metric | Value |
 |---|---|
-| Story aims | 1 |
-| Total tasks | 3 (0 optional) |
+| Story aims | 2 |
+| Total tasks | 4 (1 optional) |
 | VM flag challenges | 0 |
-| Physical locks | 3 |
+| Physical locks | 4 |
 | AND-gate convergences | 0 |
 | Rooms | 1 |
-| Puzzle graph nodes / edges | 4 / 3 |
-| Story graph nodes / edges | 1 / 0 |
+| Puzzle graph nodes / edges | 5 / 4 |
+| Story graph nodes / edges | 2 / 0 |
 
 ## Critical Path
 
@@ -72,13 +72,15 @@ flowchart TD
   lock_lockbox["Lockbox<br/>Password lock"]
   lock_relay_pc["Relay Terminal<br/>Password lock"]
   lock_pin_safe["PIN Safe<br/>PIN lock"]
+  lock_pigeonholes_locked["Locked Pigeonholes<br/>Password lock"]
   probe_room("Probe Room")
 
   probe_room --> lock_lockbox
   probe_room --> lock_relay_pc
   probe_room --> lock_pin_safe
+  probe_room --> lock_pigeonholes_locked
 
-  class lock_lockbox,lock_relay_pc,lock_pin_safe lock
+  class lock_lockbox,lock_relay_pc,lock_pin_safe,lock_pigeonholes_locked lock
   class probe_room room
   class node_start start
 ```
@@ -106,9 +108,10 @@ flowchart TD
   classDef start     fill:#003322,stroke:#00ffaa,color:#00ffaa
 
   aim_probe_aim{{"Run the probes"}}
+  aim_side_aim{{"Story-gated side aim"}}
 
 
-  class aim_probe_aim aim
+  class aim_probe_aim,aim_side_aim aim
 ```
 
 ## Story + Puzzle (Integrated)
@@ -139,19 +142,22 @@ flowchart TD
   lock_lockbox["Lockbox<br/>Password lock"]
   lock_relay_pc["Relay Terminal<br/>Password lock"]
   lock_pin_safe["PIN Safe<br/>PIN lock"]
+  lock_pigeonholes_locked["Locked Pigeonholes<br/>Password lock"]
   probe_room("Probe Room")
   aim_probe_aim{{"Run the probes"}}
+  aim_side_aim{{"Story-gated side aim"}}
 
   probe_room --> lock_lockbox
   probe_room --> lock_relay_pc
   probe_room --> lock_pin_safe
+  probe_room --> lock_pigeonholes_locked
   lock_relay_pc -.-> aim_probe_aim
   lock_lockbox -.-> aim_probe_aim
   lock_pin_safe -.-> aim_probe_aim
 
-  class lock_lockbox,lock_relay_pc,lock_pin_safe lock
+  class lock_lockbox,lock_relay_pc,lock_pin_safe,lock_pigeonholes_locked lock
   class probe_room room
-  class aim_probe_aim aim
+  class aim_probe_aim,aim_side_aim aim
   class node_start start
 ```
 
@@ -228,10 +234,15 @@ flowchart TD
   rc_byte_wall_13{"Byte Wall"}
   rc_loose_file_14{"Loose Text File"}
   rc_short_note_15{"Short Note"}
-  rc_npc_tom_16("Tom")
-  rc_lab_laptop_17{"Lab Laptop"}
-  rc_field_note_18{"Field Note 1"}
-  rc_npc_keyholder_19("Keyholder")
+  rc_pigeonholes_locked_16[["Locked Pigeonholes"]]
+  rc_locked_env_17{"Pigeonhole 4"}
+  rc_assess_note_18{"Assessment Note"}
+  rc_npc_tom_19("Tom")
+  rc_lab_laptop_20{"Lab Laptop"}
+  rc_field_note_21{"Field Note 1"}
+  rc_npc_keyholder_22("Keyholder")
+  rc_npc_hax_probe_23("HaX Probe")
+  rc_hax_note_24{"HaX Probe Note"}
 
   probe_room --> rc_pigeonholes_1
   rc_pigeonholes_1 --> rc_envelope_a_2
@@ -248,14 +259,19 @@ flowchart TD
   probe_room --> rc_byte_wall_13
   probe_room --> rc_loose_file_14
   probe_room --> rc_short_note_15
-  probe_room --> rc_npc_tom_16
-  rc_npc_tom_16 --> rc_lab_laptop_17
-  rc_npc_tom_16 --> rc_field_note_18
-  probe_room --> rc_npc_keyholder_19
+  probe_room --> rc_pigeonholes_locked_16
+  rc_pigeonholes_locked_16 --> rc_locked_env_17
+  probe_room --> rc_assess_note_18
+  probe_room --> rc_npc_tom_19
+  rc_npc_tom_19 --> rc_lab_laptop_20
+  rc_npc_tom_19 --> rc_field_note_21
+  probe_room --> rc_npc_keyholder_22
+  probe_room --> rc_npc_hax_probe_23
+  rc_npc_hax_probe_23 --> rc_hax_note_24
 
   class probe_room room
-  class rc_pigeonholes_1,rc_lockbox_4,rc_lab_pc_6,rc_relay_pc_9,rc_pin_safe_11 container
-  class rc_envelope_a_2,rc_envelope_b_3,rc_keyholder_device_5,rc_lab_account_7,rc_lab_readme_8,rc_relay_log_10,rc_safe_file_12,rc_byte_wall_13,rc_loose_file_14,rc_short_note_15,rc_lab_laptop_17,rc_field_note_18 item
-  class rc_npc_tom_16,rc_npc_keyholder_19 npc
+  class rc_pigeonholes_1,rc_lockbox_4,rc_lab_pc_6,rc_relay_pc_9,rc_pin_safe_11,rc_pigeonholes_locked_16 container
+  class rc_envelope_a_2,rc_envelope_b_3,rc_keyholder_device_5,rc_lab_account_7,rc_lab_readme_8,rc_relay_log_10,rc_safe_file_12,rc_byte_wall_13,rc_loose_file_14,rc_short_note_15,rc_locked_env_17,rc_assess_note_18,rc_lab_laptop_20,rc_field_note_21,rc_hax_note_24 item
+  class rc_npc_tom_19,rc_npc_keyholder_22,rc_npc_hax_probe_23 npc
   class node_start start
 ```

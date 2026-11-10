@@ -144,7 +144,7 @@
                 }, 
                 {
                  "gid":103,
-                 "height":48,
+                 "height":44,
                  "id":7,
                  "name":"",
                  "rotation":0,
@@ -227,7 +227,7 @@
                 }, 
                 {
                  "gid":317,
-                 "height":32,
+                 "height":35,
                  "id":13,
                  "name":"",
                  "rotation":0,
@@ -235,7 +235,7 @@
                  "visible":true,
                  "width":16,
                  "x":245,
-                 "y":118
+                 "y":121
                 }, 
                 {
                  "gid":896,
@@ -263,7 +263,7 @@
                 }, 
                 {
                  "gid":316,
-                 "height":26,
+                 "height":30,
                  "id":28,
                  "name":"",
                  "rotation":0,
@@ -271,11 +271,11 @@
                  "visible":true,
                  "width":16,
                  "x":168.4,
-                 "y":148
+                 "y":152
                 }, 
                 {
                  "gid":316,
-                 "height":26,
+                 "height":30,
                  "id":29,
                  "name":"",
                  "rotation":0,
@@ -283,12 +283,12 @@
                  "visible":true,
                  "width":16,
                  "x":168.4,
-                 "y":220
+                 "y":224
                 },
             
                 {
                  "gid":316,
-                 "height":26,
+                 "height":30,
                  "id":30,
                  "name":"",
                  "rotation":0,
@@ -296,11 +296,11 @@
                  "visible":true,
                  "width":16,
                  "x":51.4,
-                 "y":148
+                 "y":152
                 }, 
                 {
                  "gid":316,
-                 "height":26,
+                 "height":30,
                  "id":31,
                  "name":"",
                  "rotation":0,
@@ -308,11 +308,11 @@
                  "visible":true,
                  "width":16,
                  "x":88.84,
-                 "y":148
+                 "y":152
                 }, 
                 {
                  "gid":316,
-                 "height":26,
+                 "height":30,
                  "id":32,
                  "name":"",
                  "rotation":0,
@@ -320,11 +320,11 @@
                  "visible":true,
                  "width":16,
                  "x":129.4,
-                 "y":148
+                 "y":152
                 }, 
                 {
                  "gid":316,
-                 "height":26,
+                 "height":30,
                  "id":33,
                  "name":"",
                  "rotation":0,
@@ -332,11 +332,11 @@
                  "visible":true,
                  "width":16,
                  "x":51.4,
-                 "y":220
+                 "y":224
                 }, 
                 {
                  "gid":316,
-                 "height":26,
+                 "height":30,
                  "id":34,
                  "name":"",
                  "rotation":0,
@@ -344,11 +344,11 @@
                  "visible":true,
                  "width":16,
                  "x":88.84,
-                 "y":220
+                 "y":224
                 }, 
                 {
                  "gid":316,
-                 "height":26,
+                 "height":30,
                  "id":35,
                  "name":"",
                  "rotation":0,
@@ -356,11 +356,11 @@
                  "visible":true,
                  "width":16,
                  "x":129.4,
-                 "y":220
+                 "y":224
                 }, 
                 {
                  "gid":316,
-                 "height":26,
+                 "height":30,
                  "id":36,
                  "name":"",
                  "rotation":0,
@@ -368,11 +368,11 @@
                  "visible":true,
                  "width":16,
                  "x":51.4,
-                 "y":292
+                 "y":296
                 }, 
                 {
                  "gid":316,
-                 "height":26,
+                 "height":30,
                  "id":37,
                  "name":"",
                  "rotation":0,
@@ -380,11 +380,11 @@
                  "visible":true,
                  "width":16,
                  "x":88.84,
-                 "y":292
+                 "y":296
                 }, 
                 {
                  "gid":316,
-                 "height":26,
+                 "height":30,
                  "id":38,
                  "name":"",
                  "rotation":0,
@@ -392,11 +392,11 @@
                  "visible":true,
                  "width":16,
                  "x":129.4,
-                 "y":292
+                 "y":296
                 }, 
                 {
                  "gid":316,
-                 "height":26,
+                 "height":30,
                  "id":39,
                  "name":"",
                  "rotation":0,
@@ -404,7 +404,7 @@
                  "visible":true,
                  "width":16,
                  "x":168.4,
-                 "y":292
+                 "y":296
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -594,7 +594,7 @@
                  "visible":true,
                  "width":24,
                  "x":231.7,
-                 "y":121.2
+                 "y":125.2
                 }, 
                 {
                  "gid":183,
@@ -606,7 +606,7 @@
                  "visible":true,
                  "width":9,
                  "x":270.2,
-                 "y":111.6
+                 "y":115.6
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -676,13 +676,13 @@
                 {
                  "id":0,
                  "image":"..\/tables\/hospital_desk1.png",
-                 "imageheight":48,
+                 "imageheight":44,
                  "imagewidth":62
                 }, 
                 {
                  "id":1,
                  "image":"..\/tables\/hospital_desk2.png",
-                 "imageheight":48,
+                 "imageheight":44,
                  "imagewidth":62
                 }, 
                 {
@@ -1986,13 +1986,13 @@
                 {
                  "id":201,
                  "image":"..\/objects\/hospital_chair_north.png",
-                 "imageheight":26,
+                 "imageheight":30,
                  "imagewidth":16
                 }, 
                 {
                  "id":202,
                  "image":"..\/objects\/hospital_chair_south.png",
-                 "imageheight":32,
+                 "imageheight":35,
                  "imagewidth":16
                 }, 
                 {
@@ -3714,7 +3714,7 @@
                 {
                  "id":100,
                  "image":"..\/objects\/hospital_chair_north2.png",
-                 "imageheight":26,
+                 "imageheight":30,
                  "imagewidth":16
                 }, 
                 {
@@ -3811,7 +3811,7 @@
                 {
                  "id":116,
                  "image":"..\/objects\/exec_desk1.png",
-                 "imageheight":46,
+                 "imageheight":42,
                  "imagewidth":80
                 }, 
                 {

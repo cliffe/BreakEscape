@@ -40,6 +40,11 @@ class ScenarioTimerDispatcher {
     this._cancelledTimers = new Set();
     // ENG-02: event subscriptions for cleanup in destroy()
     this._eventSubs = [];
+    // Timers whose give_item is still settling (or gave up for this page after its
+    // retries): not fired yet, so a reload tries again, but update() leaves them alone.
+    this._inFlight = new Set();
+    // Pending give_item retry timeouts, cleared in destroy()
+    this._retryTimeouts = new Set();
 
     // Saved at the last sync (exportState): timers already fired or cancelled, and how
     // long each started startOnGlobal timer had been running.
@@ -173,9 +178,10 @@ class ScenarioTimerDispatcher {
    */
   update(currentTimeMs) {
     for (const timer of this.timers) {
-      // Skip if already fired or cancelled
+      // Skip if already fired or cancelled, or its give_item is still settling
       if (this.firedTimers.has(timer.id)) continue;
       if (this._cancelledTimers.has(timer.id)) continue;
+      if (this._inFlight.has(timer.id)) continue;
 
       // Determine elapsed time: per-timer for startOnGlobal timers, global otherwise
       let elapsedMs;
@@ -227,18 +233,68 @@ class ScenarioTimerDispatcher {
     }
 
     // Execute additional actions if present (tint_objects, show_end_screen, etc.)
+    let gives = [];
     if (Array.isArray(timer.actions) && timer.actions.length > 0) {
-      applyActions(timer.actions, { source: `timer:${timer.id}` });
+      gives = applyActions(timer.actions, { source: `timer:${timer.id}` }) || [];
     }
 
-    // Mark as fired
-    this.firedTimers.add(timer.id);
+    // A give_item reward is only done once the server has answered. Until then the
+    // timer is in flight, not fired: a page closed meanwhile re-fires it on reload.
+    if (gives.length > 0) {
+      const giveActions = timer.actions.filter(a => a?.type === 'give_item' && a.item);
+      this._inFlight.add(timer.id);
+      Promise.all(gives.map((p, i) => this._settleGive(timer, giveActions[i], p, 0)))
+        .then(results => {
+          if (results.every(Boolean)) {
+            this._inFlight.delete(timer.id);
+            this._markFired(timer);
+          } else {
+            // Gave up for this page: left unfired (and in flight, so it is not retried
+            // in a loop). exportState still lists it as started, so the next load
+            // re-fires it once the server is reachable again.
+            console.warn(`⚠️ Timer ${timer.id}: give_item still failing after retries; left unfired for the next load`);
+          }
+        });
+      return;
+    }
 
-    // Notify UI widget
+    this._markFired(timer);
+  }
+
+  /** Delays (ms) before each retry of a give_item lost to the network. */
+  static get GIVE_RETRY_DELAYS() { return [1000, 3000, 10000]; }
+
+  /**
+   * Resolve true once a give has settled (accepted, already held, refused or invalid):
+   * anything but a network/unexpected error. On an error, retry the give alone after
+   * 1 s, 3 s and 10 s; resolve false if the last retry fails too.
+   * @private
+   */
+  _settleGive(timer, giveAction, promise, attempt) {
+    return Promise.resolve(promise)
+      .catch(err => ({ ok: false, reason: 'error', message: err?.message }))
+      .then(result => {
+        if (result?.reason !== 'error') return true;
+        const delays = ScenarioTimerDispatcher.GIVE_RETRY_DELAYS;
+        if (!giveAction || attempt >= delays.length || this._destroyed) return false;
+        console.warn(`⚠️ Timer ${timer.id}: give_item failed (${result.message || 'error'}); retry ${attempt + 1} in ${delays[attempt]} ms`);
+        return new Promise(resolve => {
+          const handle = setTimeout(() => {
+            this._retryTimeouts.delete(handle);
+            const [retry] = applyActions([giveAction], { source: `timer:${timer.id}` }) || [];
+            resolve(this._settleGive(timer, giveAction, retry, attempt + 1));
+          }, delays[attempt]);
+          this._retryTimeouts.add(handle);
+        });
+      });
+  }
+
+  /** Mark a timer fired and tell the HUD. @private */
+  _markFired(timer) {
+    this.firedTimers.add(timer.id);
     if (window.scenarioTimerUI) {
       window.scenarioTimerUI.markFired(timer.id);
     }
-
     console.log(`✅ Timer ${timer.id} completed`);
   }
 
@@ -353,8 +409,11 @@ class ScenarioTimerDispatcher {
    * Cleanup: stop processing timers
    */
   destroy() {
+    this._destroyed = true;
     this._eventSubs.forEach(sub => window.eventDispatcher?.off(sub.event, sub.handler));
     this._eventSubs = [];
+    this._retryTimeouts.forEach(handle => clearTimeout(handle));
+    this._retryTimeouts.clear();
     console.log(`🗑️ ScenarioTimerDispatcher destroyed`);
   }
 }

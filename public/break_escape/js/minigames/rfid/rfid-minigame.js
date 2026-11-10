@@ -19,8 +19,9 @@ import { RFIDAnimations } from './rfid-animations.js';
 import { MIFAREAttackManager } from './rfid-attacks.js';
 import { detectProtocol } from './rfid-protocols.js';
 
-// A refused card stays on screen this long, or until the player taps the screen.
-export const DENIAL_HOLD_MS = 3000;
+// A refused card stays on screen this long, or until the player taps the screen (5 s, as
+// long as the shortest error toast: PHYSICAL_PENTEST_FEEDBACK_PLAN_ENGINE.md 7).
+export const DENIAL_HOLD_MS = 5000;
 
 export class RFIDMinigame extends MinigameScene {
     constructor(container, params) {
@@ -43,6 +44,8 @@ export class RFIDMinigame extends MinigameScene {
         this.availableCards = params.availableCards || []; // For unlock mode
         this.hasCloner = params.hasCloner || false; // For unlock mode
         this.cardToClone = params.cardToClone; // For clone mode
+        // Clone mode: where the card came from, { npc_id } or { object_id } (access model 4.2)
+        this.cloneSource = params.cloneSource || null;
         this.isLockingAttempt = this.requiredCardIds.length > 0; // True if trying to unlock a specific lock, false if just browsing
 
         // Components
@@ -103,6 +106,18 @@ export class RFIDMinigame extends MinigameScene {
 
         // Get card ID (standard: card_id, else the lock the card opens)
         const cardId = card.scenarioData?.card_id || window.lockRef(card.scenarioData);
+
+        // A cancelled card (left-card consequence, §3.3b) is refused at the reader even
+        // though its id still matches the lock.
+        if (this.isLockingAttempt && window.isCardRevoked?.(cardId)) {
+            if (window.playUISound) window.playUISound('reject');
+            this.animations.showTapFailure();
+            const name = card.scenarioData?.name || 'This card';
+            this._showDenial('Card cancelled', () => this.ui.showTapInterface(), 'revoked',
+                `${name} has been deactivated — the reader rejects it.`);
+            return;
+        }
+
         const isCorrect = !this.isLockingAttempt || this.requiredCardIds.includes(cardId);
 
         if (isCorrect) {
@@ -187,6 +202,26 @@ export class RFIDMinigame extends MinigameScene {
                 `Use the cloner at a door's card reader to emulate ${savedCard.name || 'this card'}.`, 'notice');
             return;
         }
+        // A cancelled card (left-card consequence, §3.3b): the clone no longer works,
+        // even though its id matches the lock. Refused at the reader.
+        if (this.isLockingAttempt && window.isCardRevoked?.(cardId)) {
+            if (window.playUISound) window.playUISound('reject');
+            this.animations.showEmulationFailure();
+            if (window.eventDispatcher) {
+                window.eventDispatcher.emit('card_emulated', {
+                    cardName: savedCard.name,
+                    cardId: cardId,
+                    protocol: savedCard.rfid_protocol || 'EM4100',
+                    success: false,
+                    revoked: true,
+                    timestamp: Date.now()
+                });
+            }
+            this._showDenial('Card cancelled', () => this.ui.showSavedCards(), 'revoked',
+                `The clone of ${savedCard.name || 'that card'} no longer works — the card has been deactivated.`);
+            return;
+        }
+
         const isCorrect = this.requiredCardIds.includes(cardId);
 
         // Check if UID-only emulation (MIFARE DESFire without master key)
@@ -294,6 +329,9 @@ export class RFIDMinigame extends MinigameScene {
         if (result.success) {
             this.ui.showSuccess(result.message);
 
+            // Tell the server, so the copy carries its owner's identity at access lists
+            this.recordCloneOnServer(cardData);
+
             // Emit event
             if (window.eventDispatcher) {
                 window.eventDispatcher.emit('card_cloned', {
@@ -319,6 +357,46 @@ export class RFIDMinigame extends MinigameScene {
                 this.ui.showCardDataScreen(cardData);
             }, 1500);
         }
+    }
+
+    /**
+     * After a successful save in clone mode, record the copy on the server
+     * (POST /clone_card) with the copy's source and the saved card_id. The server records
+     * only the source's own card, so this never widens what a copy can do. A save with
+     * no source (unlock mode, or a card with no card_id) calls nothing.
+     * @param {Object} cardData - The card just saved
+     * @returns {Promise|undefined} the request, when one is sent
+     */
+    recordCloneOnServer(cardData) {
+        if (this.mode !== 'clone') return undefined;
+        const source = this.cloneSource;
+        const cardId = cardData && cardData.card_id;
+        if (!source || !cardId) return undefined;
+        const body = source.npc_id ? { npc_id: source.npc_id }
+            : (source.object_id ? { object_id: source.object_id }
+                : (source.held_card ? { held_card: true } : null));
+        if (!body) return undefined;
+        const apiClient = window.ApiClient || window.APIClient;
+        if (!apiClient || typeof apiClient.cloneCard !== 'function') return undefined;
+        const record = Promise.resolve()
+            .then(() => apiClient.cloneCard(body, cardId))
+            .then(answer => {
+                console.log('💾 Card copy recorded on server:', answer && answer.recorded);
+                return answer;
+            })
+            .catch(error => {
+                console.warn('💾 Could not record card copy on server:', error && error.message);
+                return null;
+            });
+        // An access-list unlock waits for this (unlock-system.js requestRfidAccessUnlock),
+        // so a reader tapped straight after Save sees the recorded copy.
+        if (typeof window !== 'undefined') {
+            window.pendingCardCloneRecord = record;
+            record.then(() => {
+                if (window.pendingCardCloneRecord === record) window.pendingCardCloneRecord = null;
+            });
+        }
+        return record;
     }
 
     /**

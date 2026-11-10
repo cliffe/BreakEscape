@@ -326,7 +326,8 @@ the entity you asked for, reporting `mode: 'via-interaction-menu'`. Use
 | `doorways(roomId?)` | Every doorway out of a room from the engine's own door placement (`calculateDoorPositionsForRoom`), whether or not the door sprite still exists (opening a door removes it on both sides). Each has `gap` (where the feet must pass) and `sprite` (`present`, `open`, `locked`). |
 | `enterRoom(roomId, { timeoutMs?, maxAttempts? })` | Walk through the doorway into an adjacent room: opens a shut door, clicks a point square in front of the opening, then one past it. Works in both directions without a prior `room` call. Returns `trace[]` with the feet position after aligning and after crossing for each attempt; `door-locked` means solve the lock first; `wrong-door-opened` (with `engineTarget`) means the door click acted on a different door, so the lock now open is not this door's. The session's `enter` command calls this. The stand-point click is checked against neighbouring *doors* as well as objects and NPCs (`interactableNear`): in m02's office corridor the staff-room door's stand point is 32 px from the security-office door, and the engine gathers a shut door within 64 px of the player for any tap within a tile of it, so the click used to open the security door's lockpick instead and `enter` came back `did-not-cross` (October 2026). Such a stand point is now walked on the keyboard (`alignVia:"keyboard(avoids-click-trigger)"`). |
 | `interact(id, { approach?, timeoutMs? })` | Real click at the entity's world position, landing in the game's own pointerdown router. If out of range the game walks the player over (stopping ¾ tile short) and the bridge then clicks again. `mode` is `direct`, `approached-then-interacted` (or `...-then-menu` when the disambiguation menu was used), or `approach-click-acted` when the first (walking) click had already acted on something: that reply is the usual result, with `wrong-target-opened` and `engineTarget` if it was not the target. A minigame that opened during the walk with no recorded engine target is checked against the target: a door lock that names the target door counts as the click's own doing (a door's click zone calls its handler directly and the lock opens synchronously, so nothing is recorded), otherwise it is `ok:false, reason:"unrelated-minigame"` (a timed or forced call, or an earlier interaction's delayed open). A door's `inRange` and `distance` use the click-path measure (from the door's centre, range 64); `keyDistance` is the E-key measure from the half-tile-lower anchor on east/west doors. `still-out-of-range` reports the door range (64) for doors. Same-room rule: the game refuses any object or NPC that belongs to a different room from the one the player's feet are in (doors excepted, they join two rooms). A room's top two wall rows overlap the bottom of the room to the north and the player can walk there; `currentPlayerRoom` is then the north room, so the south room's objects underneath cannot be used from there. Entities report `otherRoom:true` (and `inRange:false`, `wallBetween:false`) when only the room rule stops them, and `interact` returns `ok:false, reason:"different-room"` instead of clicking; `moveToNear`, `solveStandingPoint` and the nudge step refuse stand points whose feet are in the wrong room.  The reply is `ok:false, mismatch:true, reason:"wrong-target-opened"` when the engine's own handler (object, NPC or door) was given a different target than the one asked for (`engineTarget` says which), on every confirmation path. A minigame whose title differs from the object's name is normal and stays `ok:true`. Whenever no handler record and no door lock proves the target (minigame, overlay or event), the reply carries `targetUnverified:true`. A DOM overlay counts as an effect (`via:"overlay"`) only for the workstation popups, or a `gameDisplay`/`gameConfirm` (notes, boards; the `game-confirm-overlay` backdrop or dialog) that the target's own handler raised: the bridge records those calls and accepts one made during the handler, or within 150 ms after it returns (a handler that returns a promise has its window end when the promise settles; door interactions show `gameAlert`, which is not covered, so a door click is never confirmed by an overlay). A message the game shows on a timer, and any other overlay, is `ok:false, reason:"unrelated-overlay"`. |
-| `openInventoryItem(item)` (alias `interactInventory`) | Click an item in the inventory tray (`<img class="inventory-item">`, whose handler routes to `handleObjectInteraction`), as a player's click does. `item` is matched by tier: 0-based tray index, item id (from `getState().inventory`), exact name, type (`"phone"`, `"workstation"`), then name substring. A tier with several hits fails `ambiguous-item` with the candidates; The slot is scrolled into view first; `item-off-screen` if it is still outside the viewport, `item-obscured` if another element covers the slot at its centre. Returns `matched`, `matchedBy`, `via` (`minigame`, `overlay` or `event`), `opened:{id,title}`, and the same target check as `interact` (the engine's recorded target must be this item). Notes are not tray items (Notepad); keys on a key ring are not separate items (open the ring). `blocking-ui` / `minigame-active` if something already owns the screen. Session commands: `openInventoryItem` and `inventory`. |
+| `openInventoryItem(item)` (alias `interactInventory`) | Click an item in the inventory tray (`<img class="inventory-item">`, whose handler routes to `handleObjectInteraction`), as a player's click does. `item` is matched by tier: 0-based tray index, item id (from `getState().inventory`), exact name, type (`"phone"`, `"workstation"`), then name substring. A tier with several hits fails `ambiguous-item` with the candidates; The slot is scrolled into view first; `item-off-screen` if it is still outside the viewport, `item-obscured` if another element covers the slot at its centre. Returns `matched`, `matchedBy`, `via` (`minigame`, `overlay` or `event`), `opened:{id,title}`, and the same target check as `interact` (the engine's recorded target must be this item). Notes are not tray items (Notepad); keys on a key ring are not separate items (open the ring). `blocking-ui` / `minigame-active` if something already owns the screen. An item with more than one action (a `droppable` one) opens its click menu instead, as a player's click does (`systems/inventory-menu.js`): the reply is `{ ok: true, menu: { title, items } }` with no `via`, and the menu stays open. Session commands: `openInventoryItem` and `inventory`. |
+| `inventoryAct(item, entry)` | Pick one entry of a tray item's menu: clicks the item, then the entry (`"Drop here"`, `"Examine"`, `"Use"`, exact label then substring, or a 0-based index). Confirms like `interact`: "Drop here" fires `item_dropped:<id>`, "Examine" opens `examine`. Fails `no-menu` for an item with one action (`openInventoryItem` has then already run it), `no-menu-entry:<entry>` with the menu, and `menu-entry-disabled` with its `reason` for a greyed "Drop here" (the player is in a doorway or between rooms). An open menu is closed first. Session command: `inventoryAct` (`{"cmd":"inventoryAct","item":"kit_usb","entry":"Drop here"}`). |
 | `setCyberChefInput(text, { recipe?, timeoutMs? })` | Set the in-game CyberChef's Input pane and return its Output (`{ ok, via, playerPath, input, output, outputChanged, recipe }`). The laptop must be open (`laptop-not-open` otherwise). Sends a real paste event to the editor (`playerPath:true`), reads the document back through the app (not the visible lines, so long input compares correctly), and falls back to a correctly encoded `#input=` hash and then `app.setInput` (both `playerPath:false`). `recipe` is CyberChef's pretty recipe (`"ROT13(true,true,false,13)"`); an unknown or unloaded recipe fails `recipe-not-applied`. The output is only read once it has changed from before the input. Why not a raw hash: CyberChef splits the fragment on `=` and reads `+` as a space, so a raw `#input=<base64>` loses its padding and mangles `+`; the decode fails and the input stays unchanged without an error. Pass the base64 through `encodeURIComponent`. CyberChef v10.19.4 is unmodified; this is not a game regression. Session commands: `cyberchef` and `cyberchefOutput` (`readCyberChefOutput()`). |
 | `interactNearest()` | Presses **E**; the game picks the target itself, weighted by facing direction. |
 | `walk(direction, ms?, { run? })` | Raw arrow-key movement. Secondary to click-to-move — use only when a scenario needs directional input (nudging out of a corner, testing collision). |
@@ -342,7 +343,7 @@ the entity you asked for, reporting `mode: 'via-interaction-menu'`. Use
 | Method | Resolves when |
 |---|---|
 | `waitUntil(predicate, { timeoutMs?, label? })` | predicate returns truthy, re-checked once per frame. Accepts a function or, for Playwright, a **source string** (functions can't cross the boundary). |
-| `waitForGlobal(name, expected?, opts?)` | a story variable is set (or equals `expected`) |
+| `waitForGlobal(name, expected?, opts?)` | a story variable is set (or equals `expected` exactly, `false` included). The reply's `value` is the global's own value when the wait ended, and `expected` is echoed. `alreadyMet: true` (with `elapsedMs: 0`) means the condition held when you asked, so no change was observed: to catch the next change ("start from a shut gate"), wait for the opposite value first, then for the one you want. A JSON command cannot send `undefined`: leave `expected` out to wait for "set". |
 | `waitForTask(taskId, opts?)` | an objectives task reaches `completed` |
 | `waitForEvent(name, opts?)` | the game emits that event on its dispatcher |
 | `waitForMovementEnd(opts?)` | the player's body is still for several consecutive frames, or (`ok:false, reason:"stuck"`) it has been "moving" for 800 ms without changing position, i.e. walking into a collider |
@@ -364,10 +365,41 @@ by wrapping `eventDispatcher.emit` transparently — it calls through to the ori
 and never alters arguments or return value, so instrumenting cannot change behaviour
 under test. High-frequency chatter is filtered out; objectives, tasks, aims,
 minigames, conversations, NPCs, items, doors, rooms, `global_variable_changed:*`,
-player, game and mission events are kept.
+player, game and mission events are kept, and the access model's sign-in (`pc_*`) and
+workstation (`workstation_*`) events.
 
 Drain this after a failure — it usually explains it where a state snapshot alone
 won't.
+
+---
+
+## Access model state (`window.__test.access`)
+
+Read-only, for the access model's scripted runs
+(`docs/achitechture/ACCESS_MODEL_PLAN.md`, "How the slice is tested"). Nothing here acts
+on the game; compare it with the server's record from
+`tools/playtest/verify-run.rb <game_id> --access`. Source: `systems/test-bridge/access.js`.
+
+| Call | Returns |
+|---|---|
+| `sessions()` | The sign-in sessions the client holds, `[{ pcId, npcId, username, displayName, via }]`, read from `window.pcSessions` (`systems/pc-sessions.js`, its `list()`). Password sessions are restored from the server on a reload. |
+| `workstation(pcId)` | `{ ok, id, workstation, owner, present, away, screenLocked, lockAt }` from `workstation-state.js`. `present` is the owner's presence (the env's `ownerPresent` once step 9 adds it, else "not away"); `away` is the owner's away record or null; `workstation` is false for an object the module does not treat as a workstation. `{ ok: false, reason }` when the module or object is missing. |
+| `savedCards()` | The card copier's `saved_cards` as card ids. This list is client-written and never decides identity: the server's copies are `serverClones` in `verify-run.rb --access`. |
+| `footholds()` | Networks (`docs/achitechture/ACCESS_MODEL_SLICE_9_3_PLAN.md`): the footholds the client holds, `[{ id, via, name, itemId, sourceId, network }]`, read from `window.networkLinks` (`systems/network-links.js`, its `list()`, else its `footholds`). Empty while the module does not exist. The server's record is `footholds` and `gainedFootholds` in `verify-run.rb --access`. |
+| `networkView(footholdId)` | The last `GET /network` entry the client fetched for that foothold, `{ id, via, name, network, hosts }`, or null (from `networkLinks.lastView(id)`, else its `views`). |
+
+```json
+{"cmd":"eval","fn":"() => window.__test.access.workstation('jake_pc')"}
+```
+
+**Driving the network screens.** While the network view is the active minigame, act on a
+row's control by its stable attributes: `data-host-id` on a host row, `data-resource-id` on
+a resource row, and `data-action` (`sign-in`, `open`, `observe`) on the control, for
+example `mg clickSelector '[data-host-id="lena_pc"] [data-action="sign-in"]'`. A jack's
+prompt ("Unplug it", "Leave it", or the plant confirm) is a `gameConfirm`, not a minigame,
+and `mg clickSelector` looks only inside a minigame, so answer it with the session's
+`dismiss` command on the button text: `{"cmd":"dismiss","label":"Unplug it"}`
+(`dismissBlockingUi`, which clicks the overlay button whose text contains the label).
 
 ---
 
@@ -891,6 +923,12 @@ reports the last overworld position (the player is standing still behind the ove
 The `controls` and `fields` arrays come from the base class; `noteName`,
 `noteContent`, `observationText`, `noteIndex` and `noteCount` come from the
 `NotesMinigame` override.
+
+`text` is the overlay's whole visible text, cut at 2000 characters. When it is cut the
+reply says so: `textTruncated: true` and `textLength` (the full length). For a note,
+read `noteContent` instead: it is the note's own text, kept whole up to 20,000
+characters (`noteContentTruncated` marks a cut there too). Check a long document's
+paragraphs against `noteContent`, never against `text`.
 
 ```json
 {

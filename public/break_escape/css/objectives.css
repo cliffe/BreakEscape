@@ -14,6 +14,12 @@
   z-index: 1300;
   overflow: hidden;
   transition: max-height 0.3s ease;
+  /* Header and list share the panel's height. The list used to carry its own
+     max-height (panel minus 40px), but a themed header is taller than 40px and the
+     list's padding came on top, so its last 19px sat under the panel's edge and the
+     final task could not be scrolled into view (lab playtest E9). */
+  display: flex;
+  flex-direction: column;
 }
 
 .objectives-panel.collapsed {
@@ -33,6 +39,7 @@
   border-bottom: 2px solid #444;
   cursor: pointer;
   user-select: none;
+  flex: 0 0 auto;
 }
 
 .objectives-header:hover {
@@ -101,8 +108,10 @@
   color: #fff;
 }
 
+/* No max-height of its own: it takes what the panel has left and scrolls inside it */
 .objectives-content {
-  max-height: calc(60vh - 40px);
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
   padding: 8px;
 }
@@ -115,8 +124,9 @@
   background: rgba(0, 0, 0, 0.3);
 }
 
+/* Bright enough to notice: the thumb is the only sign that the list goes on */
 .objectives-content::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.45);
 }
 
 .objectives-content::-webkit-scrollbar-thumb:hover {
@@ -335,9 +345,6 @@
   .objectives-panel {
     width: 240px;
     max-height: 42vh;
-  }
-  .objectives-content {
-    max-height: calc(42vh - 40px);
   }
 }
 

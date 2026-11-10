@@ -2,7 +2,6 @@
 // create separate module instances with separate rooms objects, causing state to diverge.
 import { initializeRooms, calculateWorldBounds, calculateRoomPositions, createRoom, revealRoom, updatePlayerRoom, rooms } from './rooms.js';
 import { createPlayer, updatePlayerMovement, movePlayerToPoint, facePlayerToward, startHoldWalk, stopHoldWalk, player } from './player.js';
-import { initializePathfinder } from './pathfinding.js';
 import { resumeSpawnFor } from './resume-spawn.js';
 import { initializeInventory, processInitialInventoryItems } from '../systems/inventory.js';
 import { checkObjectInteractions, setGameInstance, isObjectInInteractionRange } from '../systems/interactions.js';
@@ -39,9 +38,12 @@ import { ScenarioTimerUI } from '../ui/scenario-timer.js';  // [Phase 5] Countdo
 import { ScenarioTimerDispatcher } from '../ui/scenario-timer-dispatcher.js';  // [Phase 5] Timer event dispatcher
 import { GameClock } from '../systems/game-clock.js';  // Elapsed game time (resumes after a reload) and the in-game clock
 import { sightChallengeWatcher } from '../systems/npc-sight-challenge.js';  // Opt-in los.challengeOnSight guards
+import { doorGates } from '../systems/door-gates.js';  // Gate doors: open for listed NPCs, hold, relock (sets window.doorGates)
 import '../systems/npc-sight-occlusion.js';  // Walls, doors and tall props block NPC sight (sets window.npcSightOcclusion)
 import { CommandBoardRecorder } from '../minigames/command-board/command-board-timeline.js';  // Board entries stamped as they happen
 import { initLighting } from '../systems/lighting.js';
+import { installSeating } from '../systems/seating.js';  // Sitting on chairs (sets window.seating)
+import { installBehindWallFade } from '../systems/behind-wall-fade.js';  // Fades a south room's back wall while the player is behind it
 import { collectCharacterSprites, queueCharacterAtlases, ensureCharacterTexture } from '../systems/character-textures.js';
 import { mailScheduler } from '../systems/mail-scheduler.js';  // Mail jobs and mailState (social missions)
 import { installTimedEmails } from '../systems/mail-ink.js';  // Ink-driven plain email: contacts' timedEmails
@@ -50,6 +52,9 @@ import '../systems/mail-runner.js';  // Registers the ink-job runner on the mail
 import { notifyNewMail } from '../minigames/mail-client/mail-notification.js';  // HUD/bark for delivered mail (P1-F)
 import { watchReadinessGlobals } from '../systems/social-intel.js';  // needsGlobal readiness slots re-check on a global change
 import { chosenPlayerSprite, playerTalkPath } from '../utils/player-avatar.js';  // aw9: the chosen avatar wins, the portrait follows
+import { pcSessions } from '../systems/pc-sessions.js';  // Sign-in PC sessions (access model 5.3; sets window.pcSessions)
+import { networkLinks } from '../systems/network-links.js';  // Footholds and the jack (slice 9.3a; sets window.networkLinks)
+import { installPostitMarks } from '../systems/postit-marks.js';  // Sticky note picture on sign-in PCs (slice 9.1, 5.3)
 
 // Global variables that will be set by main.js
 let gameScenario;
@@ -79,6 +84,10 @@ function watchGameClockAnchors(clock) {
 export function preload() {
     // Show loading text
     document.getElementById('loading').style.display = 'block';
+
+    // Desk footprint data for maps that opt in to footprint collision boxes
+    // (deskBoxes = footprint; systems/desk-footprints.js, rooms.js applyTableBody)
+    this.load.json('tableSurfaces', 'table_surfaces.json');
 
     // Load tilemap files and regular tilesets first
     this.load.tilemapTiledJSON('room_reception', 'rooms/room_reception.json');
@@ -221,6 +230,24 @@ export function preload() {
     this.load.tilemapTiledJSON('room_se_recon', 'rooms/room_se_recon.json'); // lab_social_engineering recon room: two research desks, org chart, notice board (2x2 GU; from room_zds_office)
     this.load.tilemapTiledJSON('room_se_ops', 'rooms/room_se_ops.json'); // lab_social_engineering operations: desk banks with PCs and a phone (2x2 GU; from room_qdc_open)
     this.load.tilemapTiledJSON('room_se_blueteam', 'rooms/room_se_blueteam.json'); // lab_social_engineering blue team: camera wall, SIEM board, monitoring desk (2x2 GU; from room_aes_security)
+    // lab_physical_pentest: Ledgerwell Ltd site clones (bottle-green carpet; base maps stay untouched)
+    this.load.tilemapTiledJSON('room_lw_reception', 'rooms/room_lw_reception.json'); // from room_reception
+    this.load.tilemapTiledJSON('room_lw_hall', 'rooms/room_lw_hall.json'); // from hall_1x2gu
+    this.load.tilemapTiledJSON('room_lw_office', 'rooms/room_lw_office.json'); // from room_se_ops (same geometry and slots)
+    this.load.tilemapTiledJSON('room_lw_records', 'rooms/room_lw_records.json'); // lab_physical_pentest open-plan records/admin office (from room_lw_office; ops decor replaced with filing/binders/records signage)
+    this.load.tilemapTiledJSON('room_lw_briefing', 'rooms/room_lw_briefing.json'); // lab_physical_pentest kit & briefing room (from room_se_engagement; Ledgerwell carpet/signage, kit bench, Tarnside decor removed)
+    this.load.tilemapTiledJSON('room_lw_kitroom', 'rooms/room_lw_kitroom.json'); // lab_physical_pentest kit room, Ledgerwell identity (old partners' room: oxblood carpet, walnut sideboards, baize RoE board)
+    this.load.tilemapTiledJSON('room_lw_front_desk', 'rooms/room_lw_front_desk.json'); // lab_physical_pentest front desk, Ledgerwell identity (old bank counter of walnut sideboards, oak boards and green runner, staff directory, time clock; from room_lw_reception)
+    this.load.tilemapTiledJSON('room_lw_ceo', 'rooms/room_lw_ceo.json'); // from room_zds_ceo (m03 portrait, magazine cover and static filing cabinet removed)
+    this.load.tilemapTiledJSON('room_lw_records_office', 'rooms/room_lw_records_office.json'); // lab_physical_pentest records office (from room_lw_ceo; grey-green vinyl floor, exec decor replaced with filing runs, records counter, key cabinet, ledger shelves, sorting table)
+    this.load.tilemapTiledJSON('room_lw_store', 'rooms/room_lw_store.json'); // from small_room_storage_1x1gu
+    this.load.tilemapTiledJSON('room_lw_accounts', 'rooms/room_lw_accounts.json'); // lab_physical_pentest 20x10 accounts open plan (Ledgerwell oatmeal office shell, room_lw_tiles_20); replaces room_lw_records for open_plan
+    this.load.tilemapTiledJSON('room_test_desk_seating', 'rooms/room_test_desk_seating.json'); // test_desk_seating: desks with swivel/static chairs from the front, behind and side (seat-box experiments)
+    this.load.tilemapTiledJSON('room_lw_postroom', 'rooms/room_lw_postroom.json'); // lab_physical_pentest P1 post & print room (10x6 back-of-house shell, room_lw_concrete floor; from room_lw_hall geometry)
+    this.load.tilemapTiledJSON('room_lw_comms', 'rooms/room_lw_comms.json'); // lab_physical_pentest P3 comms cupboard (5x6 back-of-house shell, room_lw_concrete floor; from room_lw_store geometry)
+    this.load.tilemapTiledJSON('room_lw_riser', 'rooms/room_lw_riser.json'); // lab_physical_pentest P5 server riser (5x6 back-of-house shell, room_lw_concrete floor; copied from room_lw_comms, dressed as a server riser)
+    this.load.tilemapTiledJSON('room_lw_archive', 'rooms/room_lw_archive.json'); // lab_physical_pentest P4 deeds & archive room (10x6 back-of-house shell, room_lw_concrete floor; from room_lw_postroom geometry)
+    this.load.tilemapTiledJSON('room_lw_kitchen', 'rooms/room_lw_kitchen.json'); // lab_physical_pentest P2 staff kitchen (10x10 shell, room_lw_vinyl grey-green lino floor; from room_lw_kitroom geometry)
 
     // Load room images (now using smaller 32px scale images)
     this.load.image('room_reception', 'tiles/rooms/room1.png');
@@ -324,6 +351,14 @@ export function preload() {
     this.load.image('room_se_boardroom', 'tiles/rooms/room_se_boardroom.png'); // lab_social_engineering: Tarnside teal wall line, carpet with the meeting-table rug
     this.load.image('room_se_carpet', 'tiles/rooms/room_se_carpet.png'); // lab_social_engineering: Tarnside teal wall line, slate-blue carpet (recon, operations)
     this.load.image('room_se_charcoal', 'tiles/rooms/room_se_charcoal.png'); // lab_social_engineering: Tarnside teal wall line, charcoal carpet (blue team)
+    this.load.image('room_lw_carpet', 'tiles/rooms/room_lw_carpet.png'); // lab_physical_pentest: Ledgerwell brass wall line, bottle-green carpet
+    this.load.image('room_lw_exec', 'tiles/rooms/room_lw_exec.png'); // lab_physical_pentest: Ledgerwell bottle-green carpet with the executive rug
+    this.load.image('room_lw_boards', 'tiles/rooms/room_lw_boards.png'); // lab_physical_pentest identity shell: oak boards, green runner (front of house)
+    this.load.image('room_lw_tiles', 'tiles/rooms/room_lw_tiles.png'); // identity shell: oatmeal carpet tiles (offices)
+    this.load.image('room_lw_tiles_20', 'tiles/rooms/room_lw_tiles_20.png'); // identity shell: oatmeal carpet tiles, 20-wide (room_lw_accounts open plan)
+    this.load.image('room_lw_vinyl', 'tiles/rooms/room_lw_vinyl.png'); // identity shell: grey-green vinyl (records)
+    this.load.image('room_lw_concrete', 'tiles/rooms/room_lw_concrete.png'); // identity shell: painted concrete (back of house)
+    this.load.image('room_lw_oxblood', 'tiles/rooms/room_lw_oxblood.png'); // identity shell: oxblood carpet with the table mark (kit room)
     this.load.image('room14', 'tiles/rooms/room14.png');
     this.load.image('room19', 'tiles/rooms/room19.png');
     this.load.image('door_32', 'tiles/door_32.png');
@@ -364,6 +399,8 @@ export function preload() {
     // Load object sprites - keeping existing ones for backward compatibility
     this.load.image('pc', 'objects/pc1.png');
     this.load.image('key', 'objects/key.png');
+    // The neutral picture a dropped item shows while its own loads (item-drop.js)
+    this.load.image('dropped_item', 'objects/dropped_item.png');
     this.load.image('key-ring', 'objects/key-ring.png');
     this.load.image('notes', 'objects/notes1.png');
     this.load.image('checklist', 'objects/checklist.png');
@@ -391,6 +428,30 @@ export function preload() {
     this.load.image('aw_chair_w_charcoal1', 'objects/aw_chair_w_charcoal1.png');
     this.load.image('aw_logo_carrholme1', 'objects/aw_logo_carrholme1.png');
     this.load.image('aw_poster_report_carrholme1', 'objects/aw_poster_report_carrholme1.png');
+    this.load.image('lw_logo_sign1', 'objects/lw_logo_sign1.png');
+    this.load.image('lw_sign_briefing1', 'objects/lw_sign_briefing1.png');
+    this.load.image('lw_sign_records1', 'objects/lw_sign_records1.png');
+    this.load.image('lw_sign_admin1', 'objects/lw_sign_admin1.png');
+    this.load.image('lw_sash_window1', 'objects/lw_sash_window1.png');
+    this.load.image('lw_baize_board1', 'objects/lw_baize_board1.png');
+    this.load.image('lw_directory1', 'objects/lw_directory1.png');
+    this.load.image('lw_evac_plan1', 'objects/lw_evac_plan1.png');
+    this.load.image('lw_exit_button1', 'objects/lw_exit_button1.png');
+    this.load.image('lw_sign_post1', 'objects/lw_sign_post1.png');
+    this.load.image('lw_sign_accounts1', 'objects/lw_sign_accounts1.png');
+    this.load.image('lw_sign_records_office1', 'objects/lw_sign_records_office1.png');
+    this.load.image('lw_sign_staff_only1', 'objects/lw_sign_staff_only1.png');
+    this.load.image('lw_sign_fire_door1', 'objects/lw_sign_fire_door1.png');
+    this.load.image('lw_sign_press_exit1', 'objects/lw_sign_press_exit1.png');
+    this.load.image('lw_sign_kitroom1', 'objects/lw_sign_kitroom1.png');
+    this.load.image('lw_pigeonholes3', 'objects/lw_pigeonholes3.png');
+    this.load.image('lw_credenza1', 'objects/lw_credenza1.png');
+    this.load.image('lw_oval_table1', 'objects/lw_oval_table1.png');
+    this.load.image('lw_ledger_shelves1', 'objects/lw_ledger_shelves1.png');
+    this.load.image('lw_time_clock1', 'objects/lw_time_clock1.png');
+    this.load.image('lw_franking_machine1', 'objects/lw_franking_machine1.png');
+    this.load.image('lw_card_index1', 'objects/lw_card_index1.png');
+    this.load.image('lw_sign_store1', 'objects/lw_sign_store1.png');
     this.load.image('page-builder', 'objects/page-builder.png');
     this.load.image('report-workstation', 'objects/report-workstation.png');
     this.load.image('suitcase', 'objects/suitcase-1.png');
@@ -423,6 +484,12 @@ export function preload() {
     this.load.image('keycard-security', 'objects/keycard-security.png');
     this.load.image('keycard-maintenance', 'objects/keycard-maintenance.png');
     this.load.image('rfid_cloner', 'objects/rfid_cloner.png');
+    // lab_physical_pentest kit devices
+    this.load.image('icon_deviceA', 'objects/icon_deviceA.png');
+    this.load.image('lockpick_set', 'objects/lockpick_set.png');
+    this.load.image('charging_cable', 'objects/charging_cable.png');
+    this.load.image('qr_card', 'objects/qr_card.png');
+    this.load.image('icon_deviceB', 'objects/icon_deviceB.png');
     this.load.image('nfc-waves', 'icons/nfc-waves.png');
 
     // Load hospital object sprites (referenced by the objects tileset, tile ids 191-202)
@@ -796,6 +863,8 @@ export function preload() {
     this.load.image('monitor_stand1', 'objects/monitor_stand1.png');
     this.load.image('bedside_locker1', 'objects/bedside_locker1.png');
     this.load.image('coffee_station1', 'objects/coffee_station1.png');
+    this.load.image('wall_socket1', 'objects/wall_socket1.png');
+    this.load.image('cake1', 'objects/cake1.png');
     this.load.image('first_aid_cabinet1', 'objects/first_aid_cabinet1.png');
     this.load.image('instrument_trolley1', 'objects/instrument_trolley1.png');
     this.load.image('step_stool1', 'objects/step_stool1.png');
@@ -872,6 +941,7 @@ export function preload() {
     this.load.image('nurse_call_display1', 'objects/nurse_call_display1.png');
     this.load.image('filing_cabinet_steel1', 'objects/filing_cabinet_steel1.png');
     this.load.image('binder_shelves1', 'objects/binder_shelves1.png');
+    this.load.spritesheet('lw_deed_boxes', 'objects/lw_deed_boxes.png', { frameWidth: 38, frameHeight: 61 }); // lab_physical_pentest P4: bespoke japanned deed-box prop (38x61), so the deed-box scope entity reads as a distinct vault bank rather than a twin of the grey ledger shelves beside it. Single-frame NPC sprite sheet (createNPCSprite needs a spritesheet/atlas).
     this.load.image('kvm_cart1', 'objects/kvm_cart1.png');
     this.load.image('checkin_kiosk1', 'objects/checkin_kiosk1.png');
     this.load.image('drinks_vending1', 'objects/drinks_vending1.png');
@@ -969,6 +1039,10 @@ export function preload() {
     this.load.image('uni_sofa2', 'objects/uni_sofa2.png');
     this.load.image('uni_poster8', 'objects/uni_poster8.png');
     this.load.image('pc_ransomware', 'objects/pc_ransomware.png');
+    // The navy desktop PC and its locked screen (systems/screen-states.js shows `<key>_locked`
+    // while the owner is away with the screen locked). The key `pc` is pc1.png, different art.
+    this.load.image('pc_desktop', 'objects/pc_desktop.png');
+    this.load.image('pc_desktop_locked', 'objects/pc_desktop_locked.png');
     this.load.image('pc5_ransomware', 'objects/pc5_ransomware.png');
     this.load.image('kvm_cart_ransomware', 'objects/kvm_cart_ransomware.png');
     this.load.image('checkin_kiosk_ransomware', 'objects/checkin_kiosk_ransomware.png');
@@ -1602,6 +1676,12 @@ export async function create() {
         Object.assign(window.gameState.globalVariables, gameScenario.savedGlobalVariables);
         console.log('🌐 Merged saved global variables from server:', gameScenario.savedGlobalVariables);
     }
+    // Sign-in PC sessions and the PCs signed in to (access model 5.3): password
+    // sessions survive a reload, a claimed one ends (pc-sessions.js load).
+    pcSessions.load(gameScenario.sessions || {}, gameScenario.signedInPcs || []);
+    // Footholds and the jacks they were gained at (slice 9.3a, 4.1): publishes
+    // <jackId>_planted before any room loads; no request.
+    networkLinks.load(gameScenario.footholds || [], gameScenario.gainedFootholds || []);
     // A save never overrides an imported value.
     importedNames.forEach(name => {
         window.gameState.globalVariables[name] = gameScenario.globalVariables?.[name];
@@ -1767,10 +1847,26 @@ export async function create() {
 
     // Create player first like in original
     createPlayer(this);
+    installSeating(this);
+    installBehindWallFade(this);
 
     // Store player globally for access from other modules
     window.player = player;
-    
+
+    // Object action menu (action-menu.js): a tap on an object that offers more than one
+    // action shows the shared interaction-menu overlay listing them (e.g. a world keycard
+    // the player could clone or take with a cloner in hand). Loaded unconditionally — it
+    // applies to any scenario, not only office-life ones — and reached through window.
+    import('../systems/action-menu.js').catch(e => console.warn('⚠️ action menu failed to load:', e));
+
+    // A costume put on in an earlier session (global pp_disguise, restored above) is lost
+    // with the page: re-dress the avatar now the sprite exists. No-op without a costume.
+    if (window.gameState?.globalVariables?.pp_disguise) {
+        import('../systems/costume-actions.js')
+            .then(m => m.reapplyPersistedCostume())
+            .catch(e => console.warn('⚠️ Could not re-apply persisted costume:', e));
+    }
+
     // Register player in global character registry for speaker resolution
     if (window.characterRegistry && window.player) {
         const playerData = {
@@ -1880,15 +1976,46 @@ export async function create() {
                 }
                 // NPC needs (npc-needs.js): only NPCs with a needs/interests block are touched
                 import('../systems/item-drop.js').catch(e => console.error('❌ item-drop failed to load', e));
-                return import('../systems/npc-needs.js').then(needs => {
+                // Affordance presets (office-presets.js, slice 4): installed first, and its table
+                // fetched only when the scenario opts in, so the needs system sees preset objects
+                // from its first tick. A failed fetch leaves objects with their own fields.
+                const presetsReady = import('../systems/office-presets.js').then(op => {
+                    window.officePresets = op;
+                    if (op.presetsOn(window.gameScenario)) return op.loadOfficePresets();
+                    return null;
+                }).catch(e => console.warn('office presets failed to load', e));
+                return presetsReady.then(() => import('../systems/npc-needs.js')).then(needs => {
                     needs.installNpcNeeds();
                     console.log('✅ NPC needs system initialised');
+                    // Workstation screen lock/unlock follows npc_left_post / npc_returned_post
+                    const sceneRef = this;
+                    import('../systems/npc-action-icons.js').then(m => m.installNpcActionIcons(sceneRef)).catch(e => console.warn('npc action icons failed', e));
+                    import('../systems/npc-needs-debug.js').then(m => m.installNpcNeedsDebug(sceneRef)).catch(e => console.warn('npc needs debug overlay failed', e));
+                    import('../systems/npc-office-visuals.js').then(m => m.installNpcOfficeVisuals(sceneRef)).catch(e => console.warn('npc office visuals failed', e))
+                        // Room tone (slice 20): only with "roomTone": true; loads its table, then a bed at spawn
+                        .then(() => import('../systems/office-room-tone.js')).then(m => m.installOfficeRoomTone(sceneRef)).catch(e => console.warn('room tone failed', e));
+                    import('../systems/npc-world-bubbles.js').then(m => m.installNpcWorldBubbles(sceneRef)).catch(e => console.warn('npc speech bubbles failed', e));
+                    import('../systems/npc-needs-chatter.js').then(m => m.installNpcChatterVoice()).catch(e => console.warn('npc voiced chatter failed', e));
+                    // Left-card consequence (left-card-consequence.js, §3.3b): runs an object's
+                    // onOwnerNoticesMissing actions when the owner returns and finds a left-behind
+                    // item the player took (npc_left_item_gone:<owner>).
+                    import('../systems/left-card-consequence.js').then(m => m.installLeftCardConsequence()).catch(e => console.warn('left-card consequence failed', e));
+                    return import('../systems/workstation-state.js').then(ws => {
+                        const state = ws.installWorkstationState();
+                        // The locked-screen look and its sounds follow the workstation events
+                        return import('../systems/screen-states.js').then(m => { m.installScreenStates(); return state; })
+                            .catch(e => { console.warn('screen states failed', e); return state; });
+                    });
                 });
             })
             .catch(error => {
                 console.error('❌ Failed to initialize NPC Behavior Manager:', error);
             });
     }
+
+    // A sticky note picture on each sign-in PC whose screen shows a note (slice 9.1, 5.3);
+    // core/rooms.js syncs each room as its sprites are made.
+    installPostitMarks(this);
 
     // Initialize combat systems
     COMBAT_CONFIG.validate();
@@ -2029,9 +2156,6 @@ export async function create() {
     
     // Door interactions are now handled by the door sprites themselves
     
-    // Initialize pathfinder
-    initializePathfinder(this);
-    
     // Set up input handling. Right-click is the punch, so no browser menu
     // over the game. A second touch pointer lets a finger on the canvas keep
     // walking while another presses a HUD button.
@@ -2145,8 +2269,8 @@ export async function create() {
                             facePlayerToward(aimX(obj), obj.y); // the object's centre, as the E key faces it
                             if (window.getTutorialManager) window.getTutorialManager().notifyPlayerInteracted();
                             window.handleObjectInteraction(obj);
-                        } else if (obj.isSwivelChair) {
-                            // Chairs: move onto the clicked position (player sits/stands at the chair).
+                        } else if (obj.isSwivelChair && !window.seating?.isSeat(obj)) {
+                            // Swivel props (trolleys, carts): move onto the clicked position.
                             movePlayerToPoint(worldX, worldY);
                         } else {
                             // Object is out of range - walk until it's within reach.
@@ -2196,6 +2320,8 @@ export async function create() {
                                     }
                                 }
                                 movePlayerToPoint(target.x, target.y);
+                                // A chair: sit down on arrival (seating.js)
+                                if (window.seating?.isSeat(obj)) window.seating.queueSit(obj);
                             }
                         }
                         return; // Handled (either interact or move)
@@ -2268,6 +2394,8 @@ export async function create() {
     
     // Process initial inventory items
     processInitialInventoryItems();
+    // A held foothold whose link item is missing from the tray gets it back (slice 9.3a)
+    networkLinks.restoreHandles();
     
     // Initialize HUD with interaction mode toggle AFTER inventory is ready
     window.playerHUD = createPlayerHUD(this);
@@ -2366,8 +2494,9 @@ async function checkAndShowTutorial() {
     }
 }
 
-// Update function - main game loop
-export function update() {
+// Update function - main game loop. Phaser calls it with (time, delta); delta is the
+// loop's smoothed frame step, the same one the physics world moves bodies by.
+export function update(time, delta) {
     // Safety check: ensure player exists before running updates
     if (!window.player) {
         return;
@@ -2375,6 +2504,7 @@ export function update() {
     
     // Update player movement
     updatePlayerMovement();
+    window.seating?.afterPlayerMovement();
     
     // Update player room (check for room transitions)
     updatePlayerRoom();
@@ -2383,8 +2513,10 @@ export function update() {
     if (window.npcBehaviorManager) {
         window.npcBehaviorManager.update(this.time.now, this.time.delta);
     }
-    // NPC needs: fixed-step ticks off game elapsed time (paused on the VM)
-    window.npcNeedsSystem?.update();
+    // NPC needs: fixed-step ticks off the frame step the walks use (paused on the VM), so a
+    // slow frame rate slows decisions and walks together and a walk deadline cannot pass
+    // while the walker has hardly moved
+    window.npcNeedsSystem?.update(delta);
 
     // NPCs with los.challengeOnSight react when the player walks into their sight
     // (not while the player is on the VM: R13, vm-context-pause.js)
@@ -2392,10 +2524,17 @@ export function update() {
         sightChallengeWatcher.update(Date.now());
     }
 
+    // Gate doors open as their NPCs near them and shut after the hold window
+    doorGates.update(Date.now());
+
     // [Phase 5] Update scenario timers (fire timers and dispatch events)
     if (window.scenarioTimerDispatcher) {
         window.scenarioTimerDispatcher.update(Date.now());
     }
+
+    // Behind-the-wall fade: after every writer of room-object alpha, before lighting reads its factors.
+    // this.time.delta does not exist (Clock has no delta), so pass only this.time.now.
+    window.behindWallFade?.update(this.time.now);
 
     if (window.lightingSystem) {
         window.lightingSystem.update(this.time.now);
@@ -2537,13 +2676,15 @@ function gatherInteractablesNearClick(worldX, worldY) {
                 const data = obj.scenarioData || {};
                 const name = data.name || obj.name || 'Item';
                 const detail = resolveObjectField(data, 'observations', obj.observations || null);
-                // Chairs are kicked (jab); everything else uses the open-hand interact icon.
-                const icon = obj.isSwivelChair ? jabHandIcon() : openHandIcon();
+                // Swivel props that aren't seats are kicked (jab); chairs are sat on, and
+                // everything else uses the open-hand interact icon.
+                const seat = !!window.seating?.isSeat(obj);
+                const icon = obj.isSwivelChair && !seat ? jabHandIcon() : openHandIcon();
                 candidates.push({
-                    label: name,
+                    label: seat ? `Sit: ${name}` : name,
                     detail,
                     icon,
-                    isChair: !!obj.isSwivelChair,
+                    isChair: !!obj.isSwivelChair || seat,
                     onSelect: () => {
                         facePlayerToward(aimX(obj), obj.y); // the object's centre, as the E key faces it
                         if (window.getTutorialManager) window.getTutorialManager().notifyPlayerInteracted();

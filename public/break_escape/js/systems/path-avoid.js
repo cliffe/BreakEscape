@@ -155,3 +155,49 @@ export function crossesAvoidRect(x1, y1, x2, y2, rects, { halfWidth = 9, margin 
     }
     return false;
 }
+
+// ── Room leash (OFFICE_LIFE_PLAN 7.2, slice 2a) ─────────────────────────────
+
+/**
+ * A room's floor by the player's room rule (core/rooms.js updatePlayerRoom): the full width, from
+ * two tiles below the top (the wall rows) to the bottom edge. `room` is a window.rooms entry
+ * ({ position, map: { widthInPixels, heightInPixels } }). Null when the room has no map yet.
+ */
+export function roomFloorRect(room, tile = 32) {
+    if (!room?.map || !room.position) return null;
+    const left = room.position.x, top = room.position.y + tile * 2;
+    return { left, top, right: left + room.map.widthInPixels, bottom: room.position.y + room.map.heightInPixels };
+}
+
+/** Whether a world point lies on a floor rect (edges inclusive, as updatePlayerRoom tests it). */
+export function onFloor(rect, x, y) {
+    return !!rect && x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+}
+
+/**
+ * The inner ring of a floor: the outermost grid cells whose centres lie on the floor, corners
+ * included, blocked cells included. A path into the room must land on one of them: every step
+ * changes x and y by at most one, and EasyStar checks avoid points on the cell being entered (its
+ * no-corner-cutting test reads only the grid, so the corners must be in the ring). Returns
+ * [{cx, cy}], clamped to the grid.
+ */
+export function floorRingCells(rect, gridBounds) {
+    if (!rect || !gridBounds) return [];
+    const { minX, minY, cols, rows, step } = gridBounds;
+    // Cell c's centre is min + c*step + step/2; keep the centres in [left, right) x [top, bottom)
+    const lo = (v, m) => Math.ceil((v - m) / step - 0.5);
+    const hi = (v, m) => Math.ceil((v - m) / step - 0.5) - 1;
+    const x1 = Math.max(0, lo(rect.left, minX)), x2 = Math.min(cols - 1, hi(rect.right, minX));
+    const y1 = Math.max(0, lo(rect.top, minY)), y2 = Math.min(rows - 1, hi(rect.bottom, minY));
+    if (x1 > x2 || y1 > y2) return [];
+    const out = [];
+    for (let cx = x1; cx <= x2; cx++) {
+        out.push({ cx, cy: y1 });
+        if (y2 !== y1) out.push({ cx, cy: y2 });
+    }
+    for (let cy = y1 + 1; cy < y2; cy++) {
+        out.push({ cx: x1, cy });
+        if (x2 !== x1) out.push({ cx: x2, cy });
+    }
+    return out;
+}

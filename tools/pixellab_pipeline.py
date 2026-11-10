@@ -1901,6 +1901,7 @@ def cmd_import(args):
     if args.target in manifest:  # an already-imported key
         args.key = args.key or args.target
         args.idle_from = args.idle_from or manifest[args.target].get("idle_from")
+        args.sit_from = getattr(args, "sit_from", None) or manifest[args.target].get("sit_from")
         args.target = manifest[args.target]["character_id"]
     cid = resolve_character(args.target, args.workdir)
     api = PixelLab()
@@ -1955,6 +1956,10 @@ def cmd_import(args):
     canonicalise_animation_folders(root, character, api)
     if idle_char:
         take_idle_from_state(root, state_folder(export_dir, idle_cid, idle_char, api), idle_char, api)
+    if getattr(args, "sit_from", None):
+        sit_cid = resolve_character(args.sit_from, args.workdir)
+        sit_char = api.get(f"/characters/{sit_cid}")
+        take_sit_from_state(root, state_folder(export_dir, sit_cid, sit_char, api), sit_char)
     apply_overrides(key, root)
 
     return convert_and_record(args, key, cid, character, export_dir)
@@ -1994,6 +1999,25 @@ def take_idle_from_state(root, idle_root, idle_char, api):
     print(f"breathing-idle taken from state '{idle_char.get('state_name') or idle_char['id'][:8]}'")
 
 
+def take_sit_from_state(root, sit_root, sit_char):
+    """Add a one-frame 'sit' animation per direction from a seated state's rotations
+    (a "sitting in an invisible chair" state). systems/seating.js shows these frames on
+    chairs; atlases without them can't sit."""
+    rotations = sit_root / "rotations"
+    if not rotations.is_dir():
+        sys.exit(f"state {sit_char['id']} has no rotations folder")
+    dest = root / "animations" / "sit"
+    shutil.rmtree(dest, ignore_errors=True)
+    n = 0
+    for png in sorted(rotations.glob("*.png")):
+        (dest / png.stem).mkdir(parents=True, exist_ok=True)
+        shutil.copy(png, dest / png.stem / "frame_000.png")
+        n += 1
+    if n != 8:
+        sys.exit(f"seated state {sit_char['id'][:8]} has {n} rotations, expected 8")
+    print(f"sit frames taken from state '{sit_char.get('state_name') or sit_char['id'][:8]}'")
+
+
 def convert_and_record(args, key, cid, character, export_dir):
     from convert_pixellab_to_spritesheet import process_character
     assets = Path(args.assets_dir)
@@ -2014,6 +2038,8 @@ def convert_and_record(args, key, cid, character, export_dir):
                      "imported": datetime.now(timezone.utc).date().isoformat()}
     if getattr(args, "idle_from", None):
         manifest[key]["idle_from"] = resolve_character(args.idle_from, args.workdir)
+    if getattr(args, "sit_from", None):
+        manifest[key]["sit_from"] = resolve_character(args.sit_from, args.workdir)
     IMPORT_MANIFEST.write_text(json.dumps(dict(sorted(manifest.items())), indent=2) + "\n")
     print(f"recorded {key} -> {cid} in {IMPORT_MANIFEST.relative_to(REPO)}")
     if args.register:
@@ -2330,6 +2356,8 @@ def main():
     p.add_argument("--allow-incomplete", action="store_true", help="import even if standard animations are missing")
     p.add_argument("--idle-from", help="another state (id or URL) to take breathing-idle from, e.g. a "
                    "'hands in pockets' state; remembered in the manifest for later re-imports")
+    p.add_argument("--sit-from", help="a seated state (id or URL; 'sitting in an invisible chair') whose 8 "
+                   "rotations become the 'sit' frames used on chairs; remembered in the manifest")
     p.set_defaults(func=cmd_import)
 
     p.add_argument("--offline", action="store_true", help="reconvert the last download (after `fix`) without downloading")

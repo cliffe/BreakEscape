@@ -191,7 +191,7 @@
                 }, 
                 {
                  "gid":1424,
-                 "height":26,
+                 "height":31,
                  "id":21,
                  "name":"",
                  "rotation":0,
@@ -199,7 +199,7 @@
                  "visible":true,
                  "width":16,
                  "x":52,
-                 "y":222
+                 "y":227
                 }, 
                 {
                  "gid":1065,
@@ -305,7 +305,7 @@
                  "visible":true,
                  "width":37,
                  "x":38,
-                 "y":177.38
+                 "y":175.38
                 }, 
                 {
                  "gid":1067,
@@ -364,7 +364,7 @@
                  "visible":true,
                  "width":12,
                  "x":216,
-                 "y":173.38
+                 "y":172.38
                 }, 
                 {
                  "gid":1058,
@@ -490,13 +490,13 @@
                 {
                  "id":0,
                  "image":"..\/tables\/hospital_desk1.png",
-                 "imageheight":48,
+                 "imageheight":44,
                  "imagewidth":62
                 }, 
                 {
                  "id":1,
                  "image":"..\/tables\/hospital_desk2.png",
-                 "imageheight":48,
+                 "imageheight":44,
                  "imagewidth":62
                 }, 
                 {
@@ -1800,13 +1800,13 @@
                 {
                  "id":201,
                  "image":"..\/objects\/hospital_chair_north.png",
-                 "imageheight":26,
+                 "imageheight":30,
                  "imagewidth":16
                 }, 
                 {
                  "id":202,
                  "image":"..\/objects\/hospital_chair_south.png",
-                 "imageheight":32,
+                 "imageheight":35,
                  "imagewidth":16
                 }, 
                 {
@@ -3528,7 +3528,7 @@
                 {
                  "id":100,
                  "image":"..\/objects\/hospital_chair_north2.png",
-                 "imageheight":26,
+                 "imageheight":30,
                  "imagewidth":16
                 }, 
                 {
@@ -3625,7 +3625,7 @@
                 {
                  "id":116,
                  "image":"..\/objects\/exec_desk1.png",
-                 "imageheight":46,
+                 "imageheight":42,
                  "imagewidth":80
                 }, 
                 {
@@ -6657,7 +6657,7 @@
                 {
                  "id":623,
                  "image":"..\/objects\/m10_steel_chair1.png",
-                 "imageheight":26,
+                 "imageheight":31,
                  "imagewidth":16
                 }],
          "tilewidth":252

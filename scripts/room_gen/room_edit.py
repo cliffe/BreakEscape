@@ -18,6 +18,8 @@ CLI (one operation per call; object ids come from `list`):
   room_edit.py ROOM add LAYER NAME X Y       # append; prints the new id
   room_edit.py ROOM delete ID [ID ...]
   room_edit.py ROOM relayer ID LAYER         # move to another layer, appended last
+  room_edit.py ROOM set-map-prop NAME VALUE  # set a map property (e.g. deskBoxes footprint)
+                                             # in every file of the room (.json and .tmj)
   room_edit.py ROOM floor NAME               # point the room6-layout floor tileset at
                                              # tiles/rooms/NAME.png (e.g. room_hospital_carpet;
                                              # room6, room_hospital*, room_uni*, room_aw_*, room_zds*, room_qdc*, room_aes*, room_se* sheets)
@@ -101,6 +103,13 @@ def ref_tileset_for(name):
     raise KeyError(f"{name} is in no tileset in tilesets_ref.json")
 
 
+def _tsx_root(source):
+    for path in (ROOMS / source, ROOMS / Path(source).name):
+        if path.exists():
+            return ET.parse(path).getroot()
+    return None
+
+
 def _tsx_tiles(source):
     """Image tiles of an external tileset. Some .tmj files carry stale relative
     paths, so fall back to the file of that name in the rooms folder."""
@@ -110,6 +119,32 @@ def _tsx_tiles(source):
             return [{"id": int(t.get("id")), "image": t.find("image").get("source")}
                     for t in root.iter("tile") if t.find("image") is not None]
     return []
+
+
+def gid_span(ts):
+    """How many gids a tileset takes: max(tilecount, highest tile id + 1), as Tiled resolves
+    ids past the count (the `objects` reference tileset has tilecount 373 and ids up to 379).
+    External .tsx tilesets are read from the file; one with neither a count nor tiles takes 1."""
+    count = ts.get("tilecount") or 0
+    tiles = ts.get("tiles")
+    if "source" in ts and tiles is None:
+        root = _tsx_root(ts["source"])
+        if root is not None:
+            count = max(count, int(root.get("tilecount") or 0))
+            tiles = [{"id": int(t.get("id"))} for t in root.iter("tile")]
+    top = max((t["id"] for t in tiles or []), default=-1) + 1
+    return max(count, top, 1)
+
+
+def gid_clash(tilesets, new):
+    """The existing tileset whose gid range overlaps `new`'s, or None."""
+    lo, hi = new["firstgid"], new["firstgid"] + gid_span(new)
+    for ts in tilesets:
+        a = ts["firstgid"]
+        b = a + gid_span(ts)
+        if a < hi and lo < b:
+            return ts
+    return None
 
 
 def gid_map(m):
@@ -196,17 +231,46 @@ class Doc:
         return pat.search(self.text)
 
     def put_tileset(self, ts):
-        """Append ts, or replace the existing entry with the same firstgid."""
+        """Replace the entry with the same firstgid, or insert ts in firstgid order."""
         mt = self._tileset_block(ts["firstgid"])
         if mt:
             b = len(mt.group(1))
             self.text = self.text[:mt.start()] + _tiled_obj(ts, b) + self.text[mt.end():]
+            return
+        after = sorted(t["firstgid"] for t in self.m["tilesets"] if t["firstgid"] > ts["firstgid"])
+        nxt = self._tileset_block(after[0]) if after else None
+        if nxt:  # insert before the first tileset with a higher firstgid
+            b = len(nxt.group(1))
+            self.text = self.text[:nxt.start()] + _tiled_obj(ts, b) + ", \n" + self.text[nxt.start():]
             return
         tm = self.text.rfind('"tilesets":[\n')
         b = len(re.match(r" *", self.text[tm + len('"tilesets":[\n'):]).group(0))
         close = re.compile(r"(?m)^%s\}\]" % (" " * b)).search(self.text, tm)
         pos = close.start() + b + 1
         self.text = self.text[:pos] + ", \n" + _tiled_obj(ts, b) + self.text[pos:]
+
+    def set_top_level(self, key, value):
+        """Add or replace a top-level key, in Tiled's alphabetical key order. Top-level keys
+        sit at indent 1 in a Tiled-written file; arrays of objects are laid out as Tiled does."""
+        if isinstance(value, list) and value and isinstance(value[0], dict):
+            v = "[\n" + ", \n".join(_tiled_obj(e, 8) for e in value) + "]"
+        else:
+            v = json.dumps(value, ensure_ascii=False)
+        km = re.search(r'(?m)^ "%s":' % re.escape(key), self.text)
+        if km:
+            start = km.end() + len(re.match(r"\s*", self.text[km.end():]).group(0))
+            _, end = json.JSONDecoder().raw_decode(self.text, start)
+            self.text = self.text[:start] + v + self.text[end:]
+            return
+        keys = [mm for mm in re.finditer(r'(?m)^ "([^"]+)":', self.text)]
+        assert keys, f"{self.path.name}: no top-level keys at indent 1"
+        later = next((mm for mm in keys if mm.group(1) > key), None)
+        if later:
+            self.text = self.text[:later.start()] + f' "{key}":{v},\n' + self.text[later.start():]
+        else:  # last key: after the final value, before the closing brace
+            close = self.text.rstrip().rfind("}")
+            body = self.text[:close].rstrip()
+            self.text = body + f',\n "{key}":{v}\n' + self.text[close:]
 
     def set_next_id(self, n):
         self.text = re.sub(r'"nextobjectid": ?\d+',
@@ -252,7 +316,20 @@ class PyDoc:
             if t["firstgid"] == ts["firstgid"]:
                 tss[i] = ts
                 return
-        tss.append(ts)
+        i = next((i for i, t in enumerate(tss) if t["firstgid"] > ts["firstgid"]), len(tss))
+        tss.insert(i, ts)
+
+    def set_top_level(self, key, value):
+        """Add or replace a top-level key; a new key goes in alphabetical position when the
+        file's keys are in order (Tiled's), else last."""
+        if key in self.data:
+            self.data[key] = value
+            return
+        items = list(self.data.items())
+        keys = [k for k, _ in items]
+        i = next((i for i, k in enumerate(keys) if k > key), len(keys)) if keys == sorted(keys) else len(keys)
+        items.insert(i, (key, value))
+        self.data = dict(items)
 
     def set_next_id(self, n):
         self.data["nextobjectid"] = n
@@ -290,9 +367,35 @@ class Room:
             if existing and "source" in existing:
                 raise SystemExit(f"{d.path.name}: {name} is missing from external {existing['source']}; register it there")
             if not existing:
-                last = max(d.m["tilesets"], key=lambda t: t["firstgid"])
-                assert last["firstgid"] + (last.get("tilecount") or 100) <= ts["firstgid"], "firstgid clash"
+                clash = gid_clash(d.m["tilesets"], ts)
+                if clash:
+                    a = clash["firstgid"]
+                    raise SystemExit(
+                        f"{d.path.name}: firstgid clash: {ts.get('name')} needs gids {ts['firstgid']}-"
+                        f"{ts['firstgid'] + gid_span(ts) - 1}, but {clash.get('name') or clash.get('source')} "
+                        f"holds {a}-{a + gid_span(clash) - 1}")
             d.put_tileset(copy.deepcopy(ts))
+
+    def map_property(self, name, doc=0):
+        """A Tiled map property (array of {name, type, value}, or a plain object), or None."""
+        props = self.docs[doc].m.get("properties")
+        if isinstance(props, list):
+            return next((p.get("value") for p in props if p.get("name") == name), None)
+        if isinstance(props, dict):
+            return props.get(name)
+        return None
+
+    def set_map_prop(self, name, value, type_="string"):
+        """Set one map property in every file of the room. An existing properties array keeps
+        its other entries; a plain-object form is converted to Tiled's array form."""
+        for d in self.docs:
+            props = d.m.get("properties")
+            if isinstance(props, dict):
+                props = [{"name": k, "type": "string", "value": v} for k, v in props.items()]
+            props = [dict(p) for p in (props or []) if p.get("name") != name]
+            props.append({"name": name, "type": type_, "value": value})
+            props.sort(key=lambda p: p["name"])
+            d.set_top_level("properties", props)
 
     def move(self, oid, x=None, y=None):
         kv = {k: v for k, v in (("x", x), ("y", y)) if v is not None}
@@ -369,6 +472,8 @@ def main(argv):
         room.relayer(int(args[0]), args[1])
     elif op == "floor":
         room.floor(args[0])
+    elif op == "set-map-prop":
+        room.set_map_prop(args[0], args[1])
     else:
         sys.exit(f"unknown operation {op!r}\n{__doc__}")
     room.save()

@@ -179,7 +179,14 @@ def frame_offsets(character_data, canvas, feet_y):
     # feet line and centre. Take the median per frame size, so one odd strip (or a patched
     # frame) can't shift the whole character.
     samples = {}
-    for directions in anims.values():
+    # 'sit' frames (seated pose) don't share the standing feet line, so they never set it.
+    for anim_type, directions in anims.items():
+        if anim_type == 'sit':
+            for frames in directions.values():
+                for f in frames:
+                    with Image.open(f) as img:
+                        samples.setdefault(img.size, [])
+            continue
         for frames in directions.values():
             if not frames:
                 continue

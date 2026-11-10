@@ -3,7 +3,11 @@
  * optional objectives are still open, and let them end the mission now or keep going.
  *
  * Every ending trigger asks this one module (confirmEnding):
- *   - the ink tag `# ending_check` (minigames/helpers/chat-helpers.js), put first in the
+ *   - the ink tag `# ending_check` inside a choice's brackets (`+ [Walk me through it. #ending_check]`):
+ *     the chat asks before the choice is taken (chat-helpers.js confirmEndingBeforeChoice), and
+ *     "Keep going" leaves the story where it was, with the same choices on screen. This is the
+ *     placement for a debrief that is the conversation itself.
+ *   - the ink tag `# ending_check` after the brackets (chat-helpers.js), put first in the
  *     choice that starts the debrief. "Keep going" skips the rest of that line's tags, so a
  *     `# set_global:start_debrief_cutscene:true` after it never runs and the debrief does not
  *     start. This is the warning that comes in time for a one-shot debrief.
@@ -18,7 +22,8 @@
  *   - mission.json says "endingCheck": false (breakEscapeConfig.endingCheck === false);
  *   - the game had already concluded when the page loaded (a replayed ending);
  *   - the player already chose "End the mission now" for these objectives (a second trigger
- *     of the same ending, say the tag and then the credits, does not ask twice).
+ *     of the same ending, say the tag and then the credits, does not ask twice), or agreed in
+ *     dialogue (`# ending_confirmed`). Both are saved, so a reload does not ask again.
  *
  * "Keep going" from a late trigger (credits, aim) leaves the ending held: a button on the
  * objectives panel ends the mission, and it ends by itself once nothing optional is open.
@@ -68,7 +73,43 @@ export function endingCheckEnabled(config = win()?.breakEscapeConfig) {
     return true;
 }
 
-const confirmed = new Set();   // task ids the player has agreed to leave open
+const confirmed = new Set();   // task ids the player has agreed to leave open (this session)
+// ...and the same ids kept in the saved globals, so a reload between the agreement and the
+// credits does not ask again (PHYSICAL_PENTEST_FEEDBACK_PLAN_ENGINE.md 8b, review R2 n13).
+// Written by every "End the mission now", by a held ending that runs and by the ink tag
+// `# ending_confirmed`; a non-declared global, persisted with globalVariables like
+// `__ending_held` and never synced into ink.
+const CONFIRMED_GLOBAL = '__ending_confirmed';
+
+function savedConfirmed() {
+    const list = win()?.gameState?.globalVariables?.[CONFIRMED_GLOBAL];
+    return Array.isArray(list) ? list : [];
+}
+
+function isConfirmed(taskId) {
+    return confirmed.has(taskId) || savedConfirmed().includes(taskId);
+}
+
+/** Record that the player agreed to leave these task ids open, in memory and in the saved globals. */
+function confirmTasks(ids) {
+    ids.forEach((id) => confirmed.add(id));
+    const g = win()?.gameState?.globalVariables;
+    if (!g) return;
+    const all = new Set([...savedConfirmed(), ...ids]);
+    g[CONFIRMED_GLOBAL] = [...all];
+}
+
+/**
+ * The ink tag `# ending_confirmed`: the player has agreed in dialogue to leave the optional
+ * objectives that are open now (a debrief that asks in its own words). Later triggers of the
+ * ending (credits, a conclusion aim) do not ask about them; one that opens later is still
+ * asked about. Returns the ids recorded.
+ */
+export function confirmOpenObjectives(deps = {}) {
+    const ids = openOptionalObjectives(deps.manager).map((o) => o.taskId);
+    confirmTasks(ids);
+    return ids;
+}
 let showing = null;            // the open modal's promise, shared by a second asker
 let held = null;               // { proceed, reason } after "Keep going" from a late trigger
 let watching = false;
@@ -111,6 +152,8 @@ export function registerHoldRebuilder(reason, fn) {
 /** Test seam: forget decisions, any open modal, any held ending and the saved record. */
 export function _resetEndingCheck() {
     confirmed.clear();
+    const g = win()?.gameState?.globalVariables;
+    if (g) delete g[CONFIRMED_GLOBAL];
     held = null;
     watching = false;
     showing = null;
@@ -128,7 +171,12 @@ export function endingNeedsAnswer(deps = {}) {
     if (showing) return true;
     if (!endingCheckEnabled(deps.config)) return false;
     const open = openOptionalObjectives(deps.manager);
-    return open.length > 0 && !open.every((o) => confirmed.has(o.taskId));
+    return open.length > 0 && !open.every((o) => isConfirmed(o.taskId));
+}
+
+/** Whether the question is up now (another trigger raised it and it is not answered yet). */
+export function endingIsAsking() {
+    return showing !== null;
 }
 
 /**
@@ -155,7 +203,7 @@ export function confirmEnding(opts = {}, deps = {}) {
         openModal(open, (endNow) => {
             showing = null;
             if (endNow) {
-                open.forEach((o) => confirmed.add(o.taskId));
+                confirmTasks(open.map((o) => o.taskId));
                 writeHeldRecord(null);
             }
             console.log(`[ending-check] ${opts.reason || 'ending'}: ${endNow ? 'end now' : 'keep going'} (${open.length} open)`);
@@ -219,7 +267,7 @@ export function endHeldEnding() {
     held = null;
     writeHeldRecord(null);   // the hold is spent: a reload now must not restore it
     // The player asked to end it (or nothing optional is left): do not ask a second time.
-    openOptionalObjectives().forEach((o) => confirmed.add(o.taskId));
+    confirmTasks(openOptionalObjectives().map((o) => o.taskId));
     console.log(`[ending-check] ending the held ${reason} ending`);
     try {
         const out = proceed();
@@ -338,10 +386,12 @@ if (typeof window !== 'undefined') {
         hasHeld: hasHeldEnding,
         endHeld: endHeldEnding,
         needsAnswer: endingNeedsAnswer,
+        isAsking: endingIsAsking,
         openOptional: openOptionalObjectives,
         enabled: endingCheckEnabled,
         registerRebuilder: registerHoldRebuilder,
         restoreHeld: restoreHeldEnding,
+        confirmOpen: confirmOpenObjectives,
         heldRecord: () => heldRecord
     };
 }

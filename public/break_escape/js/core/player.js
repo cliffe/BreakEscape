@@ -54,6 +54,7 @@ let footstepSound = null;
 let footstepPlaying = false;
 
 function updateFootstepSound(isPlayerMoving) {
+    if (player?.isSeated) isPlayerMoving = false; // rolling on a chair: no footsteps
     try {
         if (!window.game || !window.game.sound) return;
         if (isPlayerMoving) {
@@ -176,8 +177,8 @@ export async function updatePlayerSprite(newSpriteKey) {
 
     player.setTexture(newSpriteKey, initialFrame);
     
-    // Recreate animations for the new sprite (now reads updated scenario)
-    createPlayerAnimations();
+    // Recreate animations for the new sprite
+    createPlayerAnimations(newSpriteKey);
     
     // Play appropriate animation
     const animKey = wasMoving ? `walk-${currentDirection}` : `idle-${currentDirection}`;
@@ -292,6 +293,11 @@ function setupKeyboardInput() {
         // Spacebar for jump
         if (key === ' ') {
             keyboardInput.space = true;
+            if (window.seating?.isSeated()) { // on a chair: sit -> stand on it -> jump off
+                if (!event.repeat) window.seating.onJumpKey();
+                event.preventDefault();
+                return;
+            }
             if (window.createPlayerJump) {
                 window.createPlayerJump();
             }
@@ -484,8 +490,10 @@ function updateAnimationSpeed(isRunning) {
     }
 }
 
-function createPlayerAnimations() {
-    const playerSprite = window.breakEscapeConfig?.playerSprite || window.gameScenario?.player?.spriteSheet || 'male_hacker_hood_v2';
+function createPlayerAnimations(spriteKey) {
+    // An explicit key (a costume swap) wins over the chosen avatar; otherwise its idle animation
+    // would be built from the chosen avatar's frames and put the old texture straight back.
+    const playerSprite = spriteKey || window.breakEscapeConfig?.playerSprite || window.gameScenario?.player?.spriteSheet || 'male_hacker_hood_v2';
     createAtlasPlayerAnimations(playerSprite);
 }
 
@@ -722,6 +730,7 @@ function drawPathDebug(fromX, fromY, smoothed, raw) {
 }
 
 export function movePlayerToPoint(x, y) {
+    window.seating?.onMoveIntent(); // a static chair: hop off first
     const worldBounds = gameRef.physics.world.bounds;
 
     // Ensure coordinates are within bounds
@@ -1018,6 +1027,7 @@ export function updatePlayerMovement() {
 
     // Handle keyboard movement (takes priority over mouse movement)
     if (isKeyboardMoving) {
+        window.seating?.onMoveIntent(); // a static chair: hop off first
         updatePlayerKeyboardMovement();
     } else {
         // Handle mouse-based movement (original behavior)

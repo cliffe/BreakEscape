@@ -13,6 +13,15 @@ require 'base64'
 require 'securerandom'
 require 'set'
 
+# Scenario and ink files are UTF-8: read them so whatever the shell's locale (LANG=C).
+Encoding.default_external = Encoding::UTF_8
+
+require_relative '../lib/break_escape/declared_grants'
+require_relative '../lib/break_escape/access_identities'
+require_relative '../lib/break_escape/network_model'
+require_relative '../lib/break_escape/npc_habits'
+require_relative '../lib/break_escape/npc_habits/clues'
+
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
@@ -25,7 +34,8 @@ LOCK_TYPE_LABELS = {
   'flag'               => 'Flag lock',
   'password'           => 'Password lock',
   'lockpick'           => 'Pick the lock',
-  'ransomware_display' => 'Ransomware terminal'
+  'ransomware_display' => 'Ransomware terminal',
+  'login'              => 'Sign-in'
 }.freeze
 
 SCENARIO_FILE = ARGV[0] or abort "Usage: ruby scripts/generate_dungeon_graph.rb <scenario.json.erb>"
@@ -247,6 +257,299 @@ rooms.each do |room_id, room|
       add_node(act_id, act_label, 'action')
       add_edge(npc_nid, act_id)
       $action_aim_links << { from: act_id, to: "aim_#{nid(action['unlocks_aim'])}" } if action['unlocks_aim']
+    end
+  end
+end
+
+# ---------------------------------------------------------------------------
+# Declared grants: give_item rewards whose item (and contents) sit in no room, e.g. a
+# timer's "Remote Session" opener (DECLARED_GRANTS_PLAN.md). Each gets a node, from the
+# room of the object that gives it or else the start room, labelled with its trigger
+# global, and its contents are walked so nested locks keep their lock nodes.
+# ---------------------------------------------------------------------------
+DECLARED_GRANTS = BreakEscape::DeclaredGrants.for(scenario)
+
+def grant_source_room(grant, scenario, start_room)
+  room_id = grant['path'][%r{\Arooms/([^/\[]+)}, 1]
+  room_id || start_room
+end
+
+def grant_trigger(grant, scenario)
+  m = grant['path'].match(/\Atimers\[(\d+)\]/)
+  return nil unless m
+
+  timer = (scenario['timers'] || [])[m[1].to_i] || {}
+  timer['startOnGlobal'] || timer['id']
+end
+
+DECLARED_GRANTS.each do |grant|
+  item     = grant['item']
+  raw_id   = BreakEscape::DeclaredGrants.identities(item).first
+  grant_id = "grant_#{nid(raw_id)}"
+  src_room = grant_source_room(grant, scenario, start_room)
+  add_node(grant_id, "#{item['name'] || raw_id}<br/>(granted)", 'item')
+  if src_room && rooms.key?(src_room)
+    add_node(src_room, room_label(src_room, rooms[src_room]), 'room')
+    add_edge(src_room, grant_id, dashed: true, label: grant_trigger(grant, scenario))
+  end
+  walk_objects(item['contents'], grant_id, rooms)
+end
+
+# ---------------------------------------------------------------------------
+# Access model identities (ACCESS_MODEL_PLAN.md, section 8 step 5). An NPC's card and an
+# NPC's sign-in are key nodes, from the room the NPC stands in, with an edge to every rfid
+# lock and sign-in PC the identity opens (BreakEscape::AccessIdentities, the server's
+# rules). A card_id several NPCs carry is one node naming every holder. Drawn only for
+# scenarios that use the access model, so other graphs are unchanged.
+# ---------------------------------------------------------------------------
+def access_lock_node(entry, rooms)
+  return "door_#{entry[:room]}" if entry[:kind] == 'door'
+
+  obj      = entry[:lock]
+  obj_id   = obj['id'] || nid((obj['name'] || obj['type']).to_s)
+  lock_id  = "lock_#{obj_id}"
+  unless $nodes.key?(lock_id)
+    obj_name = obj['name'] || obj_id.tr('_', ' ').split.map(&:capitalize).join(' ')
+    add_node(lock_id, "#{obj_name}<br/>#{LOCK_TYPE_LABELS[obj['lockType']] || 'Lock'}", 'lock')
+    add_node(entry[:room], room_label(entry[:room], rooms[entry[:room]]), 'room')
+    add_edge(entry[:room], lock_id)
+  end
+  lock_id
+end
+
+if BreakEscape::AccessIdentities.uses_access_model?(scenario)
+  reach = BreakEscape::AccessIdentities.reach(scenario)
+  holder_name = ->(npc) { npc['displayName'] || npc['id'].to_s }
+
+  reach[:cards].each do |card|
+    next if card[:opens].empty?
+
+    card_node = "card_#{nid(card[:card_id])}"
+    holders   = card[:holders].map { |h| holder_name.call(h[:npc]) }.uniq
+    add_node(card_node, "#{card[:card]['name'] || card[:card_id]}<br/>(#{holders.join(', ')})", 'key')
+    card[:holders].map { |h| h[:room] }.uniq.each do |room_id|
+      add_node(room_id, room_label(room_id, rooms[room_id]), 'room')
+      add_edge(room_id, card_node)
+    end
+    card[:opens].each { |lock| add_edge(card_node, access_lock_node(lock, rooms)) }
+  end
+
+  reach[:accounts].each do |account|
+    next if account[:opens].empty?
+
+    npc         = account[:npc]
+    signin_node = "signin_#{nid(npc['id'])}"
+    add_node(signin_node, "#{holder_name.call(npc)} sign-in<br/>(#{npc['creds']['username']})", 'key')
+    add_node(account[:room], room_label(account[:room], rooms[account[:room]]), 'room')
+    add_edge(account[:room], signin_node)
+    account[:opens].each { |pc| add_edge(signin_node, access_lock_node(pc, rooms)) }
+  end
+end
+
+# ---------------------------------------------------------------------------
+# NPC habits (ACCESS_MODEL_SLICE_9_1_PLAN.md, 7.3): how the player comes by an account's
+# password, or an open screen that needs none, as labelled edges. Read from the expanded
+# copy (BreakEscape::NpcHabits.expanded_copy, the server's ids and fills); every other node
+# and edge above reads the authored data. Drawn only for NPCs with a level or `habits`.
+# ---------------------------------------------------------------------------
+habits_copy, habits_report = BreakEscape::NpcHabits.expanded_copy(scenario)
+unless habits_report.empty?
+  ai_h = BreakEscape::AccessIdentities
+  cl_h = BreakEscape::NpcHabits::Clues
+  copy_npcs = ai_h.room_npcs(habits_copy).to_h { |e| [e[:npc]['id'], e] }
+  copy_pcs = ai_h.sign_in_pcs(habits_copy)
+  copy_policies = habits_copy['policies'].is_a?(Hash) ? habits_copy['policies'] : {}
+  habit_texts = nil
+  habit_homes = nil
+
+  signin_node_for = lambda do |entry|
+    npc  = entry[:npc]
+    node = "signin_#{nid(npc['id'])}"
+    unless $nodes.key?(node)
+      add_node(node, "#{npc['displayName'] || npc['id']} sign-in<br/>(#{npc['creds']['username']})", 'key')
+      add_node(entry[:room], room_label(entry[:room], rooms[entry[:room]]), 'room')
+      add_edge(entry[:room], node)
+    end
+    node
+  end
+  room_node_for = lambda do |room_id|
+    add_node(room_id, room_label(room_id, rooms[room_id] || {}), 'room')
+  end
+  # A clue's node: its object, hung from the innermost lock in front of it (a container's
+  # lock node) or from its room, so a clue behind the account it opens shows as a loop.
+  # A container lock the walk above did not draw (one in an NPC's itemsHeld, say) is
+  # added here, hung from the lock before it or the room, so the clue never floats.
+  container_lock_node_for = lambda do |lock_label, from|
+    drawn = "lock_#{lock_label}"
+    return drawn if $nodes.key?(drawn)
+
+    node = "lock_#{nid(lock_label)}"
+    unless $nodes.key?(node)
+      obj = cl_h.find_object(habits_copy, lock_label)
+      name = (obj && obj['name']) || lock_label.to_s.tr('_', ' ')
+      add_node(node, "#{name}<br/>#{LOCK_TYPE_LABELS[obj && obj['lockType']] || 'Lock'}", 'lock')
+      add_edge(from, node) if from
+    end
+    node
+  end
+  clue_node_for = lambda do |source|
+    node = "clue_#{nid(source[:path])}"
+    unless $nodes.key?(node)
+      add_node(node, source[:name] || source[:path].to_s.tr('_', ' '), 'item')
+      container_locks = source[:locks].to_a - [source[:room]]
+      if container_locks.any?
+        from = source[:room] ? room_node_for.call(source[:room]) : nil
+        container_locks.each { |lock| from = container_lock_node_for.call(lock, from) }
+        add_edge(from, node)
+      elsif source[:room]
+        add_edge(room_node_for.call(source[:room]), node)
+      end
+    end
+    node
+  end
+
+  habits_report.each do |item|
+    entry = copy_npcs[item[:id]]
+    next unless entry && ai_h.account?(entry[:npc])
+
+    npc = entry[:npc]
+    habits = item[:habits]
+    # writesDown: from the room of the owner's sign-in PC (not the PC: the account already
+    # has an edge to it, and an edge back would draw a loop).
+    if habits['writesDown'] == true
+      copy_pcs.each do |pc_entry|
+        pc = pc_entry[:object]
+        next unless ai_h.owner_id(pc, habits_copy) == npc['id']
+        next if (pc['postitNote'].is_a?(String) && !pc['postitNote'].strip.empty?) || pc['showPostit'] == false
+
+        add_edge(room_node_for.call(pc_entry[:room]), signin_node_for.call(entry), label: "sticky note at #{pc['id']}")
+      end
+    end
+    # locksScreen never or sometimes, where the server would allow a claim.
+    screen = item[:screen]
+    if screen && screen[:filled] && %w[never sometimes].include?(screen[:value]) && ai_h.needs_tracked?(npc)
+      screen[:pcs].select { |pc| pc[:applied] && pc[:login] }.each do |pc_info|
+        pc_entry = copy_pcs.find { |p| p[:object]['id'] == pc_info[:id] }
+        next unless pc_entry
+
+        pc = pc_entry[:object]
+        policy = copy_policies[(pc['policy'] || habits_copy['defaultPolicy']).to_s]
+        next if policy.is_a?(Hash) && policy['autoLockMin'].is_a?(Numeric) && policy['autoLockMin'].zero?
+        next unless ai_h.account_admitted?(pc, npc)
+        next if ai_h.screen_always_locks?(pc, npc)
+
+        label = screen[:value] == 'sometimes' ? 'unlocked screen (roll)' : 'unlocked screen'
+        add_edge(room_node_for.call(pc_entry[:room]), access_lock_node({ kind: 'login', lock: pc, room: pc_entry[:room] }, rooms),
+                 label: label)
+      end
+    end
+    next unless %w[reused guessable].include?(habits['password'])
+
+    habit_homes ||= cl_h.secret_homes(habits_copy)
+    habit_texts ||= cl_h.readable_texts(habits_copy, File.dirname(SCENARIO_FILE))
+    account_node = signin_node_for.call(entry)
+    if habits['password'] == 'reused'
+      cl_h.reuse_homes(npc, habits_copy, habit_homes).each do |home|
+        case home[:kind]
+        when :account
+          other = copy_npcs[home[:npc_id]]
+          add_edge(signin_node_for.call(other), account_node, label: "shared with #{home[:npc_id]}") if other
+        when :lock
+          door = home[:path] == "rooms/#{home[:object_id]}"
+          from = door ? "door_#{home[:object_id]}" : "lock_#{home[:object_id] || nid(home[:path])}"
+          add_node(from, home[:path].to_s, 'lock') unless $nodes.key?(from)
+          add_edge(from, account_node, label: 'same password')
+        else
+          from = "secret_#{nid(home[:path])}"
+          add_node(from, home[:kind] == :wifi ? 'Wi-Fi key' : 'Captured sign-in', 'key')
+          add_edge(from, account_node, label: 'same password')
+        end
+      end
+    else
+      backing = cl_h.backing(npc, habits_copy, habit_texts, habits['passwordPattern'])
+      next unless backing[:backed]
+
+      sources = backing[:pieces].flat_map { |p| p[:sources] }
+      clue = backing[:pattern]
+      sources << { path: clue[:path], locks: clue[:locks], room: clue[:room], name: clue[:name] } if clue && clue[:path]
+      sources.uniq { |s| s[:path] }.each { |s| add_edge(clue_node_for.call(s), account_node, label: 'clue') }
+    end
+  end
+end
+
+# ---------------------------------------------------------------------------
+# Networks (ACCESS_MODEL_SLICE_9_3_PLAN.md, section 7.3). A jack is a lock-like node that
+# the rogue device opens, from the jack's room, with an edge to its network's node. A
+# network node exposes each sign-in host and each resource on it (BreakEscape::NetworkModel,
+# hosts then resources, each by id). A headless host has no way in from its room: the
+# network edge and the accounts' sign-in edges are its only routes. A share with an access
+# list is reached from each admitted account's sign-in node (an account that signs in at an
+# object on the share's network); an open share from the network. Drawn only for scenarios
+# that define networks, so other graphs are unchanged.
+# ---------------------------------------------------------------------------
+NETWORKS = BreakEscape::NetworkModel.networks(scenario)
+if NETWORKS.any?
+  nm = BreakEscape::NetworkModel
+  ai = BreakEscape::AccessIdentities
+  net_node = ->(net_id) { add_node("net_#{nid(net_id)}", "#{NETWORKS[net_id]['name'] || net_id}<br/>Network", 'room') }
+  room_node = lambda do |room_id|
+    next nil unless room_id && rooms.key?(room_id)
+
+    add_node(room_id, room_label(room_id, rooms[room_id]), 'room')
+  end
+
+  # Rogue devices, from their home.
+  device_nodes = nm.rogue_device_definitions(scenario).map do |found|
+    item = found[:item]
+    node = add_node("device_#{nid(item['id'])}", "#{item['name'] || item['id']}<br/>(rogue device)", 'key')
+    room_id = found[:path][%r{\Arooms/([^/\[]+)}, 1]
+    from = case found[:home]
+           when 'start' then room_node.call(start_room)
+           when 'grant' then "grant_#{nid(BreakEscape::DeclaredGrants.identities(item).first)}"
+           else room_node.call(room_id)
+           end
+    add_edge(from, node) if from && $nodes.key?(from)
+    node
+  end
+
+  # Jacks: from their room and from each device; to their network.
+  nm.jacks(scenario).each do |entry|
+    jack = entry[:object]
+    jack_id = jack['id'] || nid(jack['name'] || 'jack')
+    node = add_node("jack_#{nid(jack_id)}", "#{jack['name'] || jack_id}<br/>Network jack", 'lock')
+    from = room_node.call(entry[:room_id])
+    add_edge(from, node) if from
+    device_nodes.each { |d| add_edge(d, node) }
+    add_edge(node, net_node.call(entry[:network])) if entry[:network] && NETWORKS.key?(entry[:network])
+  end
+
+  accounts = ai.room_npcs(scenario).select { |e| ai.account?(e[:npc]) }
+  NETWORKS.each_key do |net_id|
+    hosts = nm.sign_in_objects_on(net_id, scenario)
+    shares = nm.resources_on(net_id, scenario)
+    next if hosts.empty? && shares.empty?
+
+    network = net_node.call(net_id)
+    hosts.each do |entry|
+      lock = access_lock_node({ kind: 'login', lock: entry[:object], room: entry[:room_id] }, rooms)
+      # A headless host is reached only over the network: drop its room's edge.
+      $edges.reject! { |e| e[:to] == lock && e[:from] == entry[:room_id] } if nm.headless?(entry[:object])
+      add_edge(network, lock, label: 'exposes')
+    end
+    shares.each do |res_id, res|
+      kind = res['kind'].to_s.empty? ? 'resource' : res['kind'].tr('_', ' ')
+      node = add_node("resource_#{nid(res_id)}", "#{res['name'] || res_id}<br/>(#{kind})", 'container')
+      if res['access'].is_a?(Hash)
+        accounts.each do |a|
+          next unless ai.acl_admits?(res['access'], a[:npc])
+          next unless hosts.any? { |h| ai.account_admitted?(h[:object], a[:npc]) }
+
+          signin = "signin_#{nid(a[:npc]['id'])}"
+          add_edge(signin, node) if $nodes.key?(signin)
+        end
+      else
+        add_edge(network, node, label: 'exposes')
+      end
     end
   end
 end
@@ -1017,6 +1320,18 @@ rooms.each do |room_id, room|
     end
     walk_room_contents(npc['itemsHeld'], npc_id, rc_nodes, rc_edges, rc_edge_set)
   end
+end
+
+DECLARED_GRANTS.each do |grant|
+  item = grant['item']
+  $rc_counter += 1
+  raw_id  = BreakEscape::DeclaredGrants.identities(item).first
+  node_id = "rc_grant_#{nid(raw_id)}_#{$rc_counter}"
+  has_contents = item['contents'].is_a?(Array) && item['contents'].any?
+  rc_nodes[node_id] = { label: "#{item['name'] || raw_id}<br/>(granted)", klass: has_contents ? 'container' : 'item', optional: false }
+  src_room = grant_source_room(grant, scenario, start_room)
+  rc_edges << { from: src_room, to: node_id, dashed: true } if src_room && rc_nodes.key?(src_room)
+  walk_room_contents(item['contents'], node_id, rc_nodes, rc_edges, rc_edge_set) if has_contents
 end
 
 mermaid_contents = emit_mermaid_diagram(rc_nodes, rc_edges, start_node: start_room)

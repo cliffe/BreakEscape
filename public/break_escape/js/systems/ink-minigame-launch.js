@@ -22,6 +22,11 @@
  * NPC, title and options. A close that is not a normal exit (Esc on an aborting scene) leaves
  * the player in the world. A phone-chat opens it a moment after the tag is processed and
  * returns the same way. With no chat open the minigame opens at once and nothing returns.
+ *
+ * `# clone_keycard:<card_id>` (chat-helpers.js) takes the same timing through requestChatLaunch:
+ * the card reader opens once the line carrying the tag has been shown, not as the tag is
+ * processed, so that line is not lost behind the reader. It keeps its own return to the chat
+ * (window.pendingConversationReturn, rfid-minigame.js).
  */
 
 import { hasMinigameStarter, startRegisteredMinigame } from './minigame-registry.js';
@@ -80,6 +85,13 @@ export function isTriggerMinigameTag(tag) {
     return String(tag).split(':')[0].trim().toLowerCase() === TAG_NAME;
 }
 
+/** Tags whose minigame waits for its line to be shown: trigger_minigame and clone_keycard. */
+export const DEFERRED_LAUNCH_TAGS = [TAG_NAME, 'clone_keycard'];
+
+export function isDeferredLaunchTag(tag) {
+    return DEFERRED_LAUNCH_TAGS.includes(String(tag).split(':')[0].trim().toLowerCase());
+}
+
 /** The params a chat reopens with: its own, less the knot jump and the callbacks. */
 function chatReopenParams(chat) {
     const { startKnot, onComplete, returnTo, suspended, ...keep } = chat.params || {};
@@ -118,6 +130,27 @@ export function requestInkMinigame(param) {
     return { success: true, message: `🎮 Opening minigame: ${parsed.type}` };
 }
 
+/**
+ * Queue a launch that is not a registry type (the #clone_keycard read) with the same timing as
+ * the tag: in a person-chat it waits for flushInkMinigame, in a phone-chat it runs after
+ * PHONE_LAUNCH_DELAY_MS, and with no chat open (or another minigame open, as before) it runs
+ * now. `launch` opens the minigame and owns any return to the chat; it is not run if the chat
+ * closed first. Returns true when it ran now or was queued.
+ */
+export function requestChatLaunch(label, launch) {
+    const w = win();
+    const fw = w.MinigameFramework;
+    const open = fw?.currentMinigame && !fw.currentMinigame._ending ? fw.currentMinigame : null;
+    const chat = open && CHAT_SCENES.includes(open._sceneType) ? open : null;
+    if (fallbackTimer) { clearTimeout(fallbackTimer); fallbackTimer = null; }
+    pending = { type: label, launch, chat };
+    if (!chat) return launchPending();
+    if (chat._sceneType !== 'person-chat') {
+        fallbackTimer = setTimeout(() => { fallbackTimer = null; launchPending(); }, PHONE_LAUNCH_DELAY_MS);
+    }
+    return true;
+}
+
 /** Called by a person-chat when the line carrying the tag has been shown. */
 export function flushInkMinigame() {
     if (!pending) return false;
@@ -153,6 +186,15 @@ function launchPending() {
         console.log('[ink minigame] the conversation closed first; nothing opened');
         return false;
     }
+    if (typeof request.launch === 'function') {
+        try {
+            request.launch();
+        } catch (e) {
+            console.error(`[ink minigame] ${request.type} failed to open:`, e);
+            return false;
+        }
+        return true;
+    }
     const chat = request.chat;
     const returnTo = chat ? { sceneType: chat._sceneType, params: chatReopenParams(chat) } : null;
     try {
@@ -172,10 +214,12 @@ function launchPending() {
 if (typeof window !== 'undefined') {
     window.inkMinigameLaunch = {
         request: requestInkMinigame,
+        requestChatLaunch,
         flush: flushInkMinigame,
         launchFromChat: launchMinigameFromChat,
         dropPending: dropPendingInkMinigame,
         isTriggerTag: isTriggerMinigameTag,
+        isDeferredTag: isDeferredLaunchTag,
         hasPending: hasPendingInkMinigame
     };
 }

@@ -13,7 +13,7 @@ import { keypadTitle } from '../utils/lock-titles.js';
 import { resolveObjectField } from '../utils/conditional-text.js';
 import { socialOverlayParams } from '../minigames/framework/social-overlay.js';
 import { startInboxTriageMinigame } from './triage-starter.js';
-import { withLockedHint } from '../utils/locked-hint.js';
+import { withLockedHint, appendLockedHint, lockedHintDuration } from '../utils/locked-hint.js';
 import { rejectionAlert } from '../utils/flag-wording.js';
 import { startEpisodeRunner } from './episode-starter.js';
 import { writeGlobal } from './global-writer.js';
@@ -237,7 +237,7 @@ export function startKeySelectionMinigame(lockable, type, playerKeys, requiredKe
                 unlockTargetCallback(lockable, type, lockable.layer);
             }
         } else {
-            window.gameAlert(withLockedHint('None of your keys work with this lock.', lockable), 'error', 'Wrong Keys', 4000);
+            window.gameAlert(withLockedHint('None of your keys work with this lock.', lockable), 'error', 'Wrong Keys', lockedHintDuration(lockable, 4000, 'None of your keys work with this lock.'));
         }
         return;
     }
@@ -464,7 +464,7 @@ export function startKeySelectionMinigame(lockable, type, playerKeys, requiredKe
                 // Closed because the player was hit: no "wrong key" on top of it (F2).
                 // A door with a lockedHint adds where the key comes from; others are unchanged.
                 if (!window.minigameClosedByDamage?.()) {
-                    window.gameAlert(withLockedHint('The selected key doesn\'t work with this lock.', lockable), 'error', 'Wrong Key', 4000);
+                    window.gameAlert(withLockedHint('The selected key doesn\'t work with this lock.', lockable), 'error', 'Wrong Key', lockedHintDuration(lockable, 4000, 'The selected key doesn\'t work with this lock.'));
                 }
             }
         }
@@ -563,7 +563,7 @@ export function startPinMinigame(lockable, type, correctPin, callback) {
                 console.log('PIN MINIGAME FAILED');
                 // result.cancelled: the player just closed the pad -- say nothing
                 if (!result?.cancelled && !window.minigameClosedByDamage?.()) {
-                    window.gameAlert("Failed to enter correct PIN.", 'error', 'PIN Rejected', 3000);
+                    window.gameAlert(appendLockedHint("Failed to enter correct PIN.", lockable), 'error', 'PIN Rejected', lockedHintDuration(lockable, 3000, "Failed to enter correct PIN."));
                 }
                 callback(false, result);
             }
@@ -622,7 +622,13 @@ export function startPasswordMinigame(lockable, type, correctPassword, callback,
                 if (!window.minigameClosedByDamage?.()) {
                     // A flag lock says so: a mistyped flag is not "a password"
                     const rej = rejectionAlert(lockable, type, { message: "Failed to enter correct password.", title: 'Password Rejected' });
-                    window.gameAlert(rej.message, 'error', rej.title, 3000);
+                    // A cancel is the player's own act, not a refusal: a short info toast,
+                    // which the 5 s error floor (notifications.js) leaves alone
+                    if (result?.cancelled) {
+                        window.gameAlert(rej.message, 'info', rej.title, 3000);
+                    } else {
+                        window.gameAlert(appendLockedHint(rej.message, lockable), 'error', rej.title, lockedHintDuration(lockable, 3000, rej.message));
+                    }
                 }
                 callback(false, result);
             }

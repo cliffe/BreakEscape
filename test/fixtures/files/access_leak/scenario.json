@@ -1,0 +1,63 @@
+{
+  "scenario_brief": "Access leak scanner fixture",
+  "startRoom": "lobby",
+  "social": { "captures": { "revealSecret": true } },
+  "accountProfiles": {
+    "jake_files": {
+      "for": { "people": ["jake"] },
+      "contents": [
+        { "id": "jake_budget", "type": "text_file", "name": "Q3 budget forecast.xlsx", "takeable": true,
+          "text": "PROFILE-BUDGET-SECRET-TEXT" },
+        { "id": "jake_archive", "type": "safe", "name": "Old archive", "locked": true, "lockType": "password",
+          "requires": "zip-pass",
+          "contents": [
+            { "id": "jake_inner", "type": "text_file", "name": "Inner memo.txt", "text": "ARCHIVE-INNER-SECRET-TEXT" }
+          ] }
+      ]
+    }
+  },
+  "rooms": {
+    "lobby": {
+      "type": "room_office",
+      "connections": { "north": "finance" },
+      "objects": [
+        { "id": "lobby_note", "type": "notes", "name": "Sticky note", "readable": true, "takeable": true,
+          "text": "Dana's login, do not share: Daisy-Chain-77" },
+        { "id": "visitor_log", "type": "notes", "name": "Visitor log", "text": "Signed in: nobody today." }
+      ],
+      "npcs": [
+        { "id": "len", "displayName": "Len Okafor", "npcType": "person", "position": { "x": 2, "y": 2 },
+          "rfidCard": { "name": "Records badge", "card_id": "cm_records_badge", "rfid_protocol": "EM4100" } }
+      ]
+    },
+    "finance": {
+      "type": "room_office",
+      "connections": { "south": "lobby" },
+      "objects": [
+        { "id": "jake_pc", "type": "pc", "name": "Jake's PC", "locked": true, "lockType": "login",
+          "postitNote": "pw Biscuit2019 (temporary)",
+          "contents": [
+            { "id": "jake_local", "type": "text_file", "name": "Local notes on this PC.txt", "takeable": false,
+              "text": "PC-LOCAL-SECRET-TEXT" }
+          ] },
+        { "id": "finance_cabinet", "type": "safe", "name": "Cabinet", "locked": true, "lockType": "pin",
+          "requires": "4321",
+          "contents": [
+            { "id": "ledger", "type": "notes", "name": "Finance ledger", "text": "LOCKED-LEDGER-SECRET-TEXT" }
+          ] },
+        { "id": "shelf", "type": "safe", "name": "Open shelf",
+          "contents": [ { "id": "shelf_note", "type": "notes", "name": "Shelf note", "text": "Nothing to see." } ] }
+      ],
+      "npcs": [
+        { "id": "jake", "displayName": "Jake Brooks", "npcType": "person", "position": { "x": 3, "y": 3 },
+          "role": "finance",
+          "creds": { "username": "jbrooks", "password": "Biscuit2019" },
+          "needsHome": "jake_pc",
+          "usePayload": { "host": "LW-FIN-01" } },
+        { "id": "dana", "displayName": "Dana White", "npcType": "person", "position": { "x": 5, "y": 3 },
+          "role": ["finance", "it"],
+          "creds": { "username": "DWhite", "password": "Daisy-Chain-77" } }
+      ]
+    }
+  }
+}

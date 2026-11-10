@@ -50,6 +50,10 @@ module BreakEscape
       show?
     end
 
+    def capture_secrets?
+      show?
+    end
+
     def complete_task?
       show?
     end
@@ -71,6 +75,35 @@ module BreakEscape
     end
 
     def container?
+      show?
+    end
+
+    def login?
+      show?
+    end
+
+    def logout?
+      show?
+    end
+
+    def login_accounts?
+      show?
+    end
+
+    def clone_card?
+      show?
+    end
+
+    # Networks (slice 9.3a, section 5)
+    def network?
+      show?
+    end
+
+    def network_plant?
+      show?
+    end
+
+    def network_unplug?
       show?
     end
 

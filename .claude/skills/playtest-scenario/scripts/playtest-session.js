@@ -12,6 +12,8 @@
  *                            [--vw 1400] [--vh 1000]     (or env VW / VH)
  *                            [--storage-state FILE]      (signed-in browser state from tools/video/capture/login.mjs)
  *                            [--hacktivity-dir PATH] [--game-id ID]   (VM steps; or env HACKTIVITY_DIR)
+ *                            [--capture-responses FILE]  (one line per JSON response from the game server,
+ *                                                         for tools/playtest/access-leak-check.rb; see response-capture.js)
  *
  * Commands (one JSON object per line):
  *   {"cmd":"bootstrap","tutorial":"decline","resume":"new"}   (stops at an open briefing: briefingPending:true,
@@ -19,7 +21,10 @@
  *   {"cmd":"converse","id":"npc","choices":["^Yes"]}   (takes only named options; stops at an unnamed
  *                                            choice with ok:false stopped-at-choice; "explore":true takes
  *                                            unvisited options, "close":true closes at a stop)
- *   {"cmd":"openInventoryItem","item":"phone"}   (tray index | id | exact name | type | name substring)
+ *   {"cmd":"openInventoryItem","item":"phone"}   (tray index | id | exact name | type | name substring;
+ *                                            a droppable item opens its menu and replies menu:{title,items})
+ *   {"cmd":"inventoryAct","item":"kit_usb","entry":"Drop here"}   (click the item, then the menu entry:
+ *                                            "Drop here", "Examine", "Use" or an index)
  *   {"cmd":"inventory"}                      → the tray, in order
  *   {"cmd":"doorways"}                       → doorways of the current room (or {"room":"id"})
  *   {"cmd":"cyberchef","input":"text","recipe":"ROT13(true,true,false,13)"}  (laptop must be open)
@@ -70,6 +75,8 @@ const path = require('path');
 const { briefTasks } = require('./brief-tasks');
 const { createVmSteps } = require('./vm-steps');
 const { completeConfiguration } = require('./config-gate');
+const { nextBootstrapTarget, readBootstrapFacts, converseEnding } = require('./bootstrap-steps');
+const { createResponseCapture } = require('./response-capture');
 
 const args = process.argv.slice(2);
 const argv = {};
@@ -105,8 +112,9 @@ if (logPath) {
 }
 let seq = 0;
 function logLine(dir, obj) {
-  if (!logStream) return;
+  if (!logStream) return null;
   logStream.write(JSON.stringify({ seq: ++seq, t: new Date().toISOString(), dir, ...obj }) + '\n');
+  return seq;
 }
 
 function emit(obj) {
@@ -168,7 +176,11 @@ const vmSteps = createVmSteps({
   const pickDim = (a, e, d) => { const n = parseInt(a !== undefined && a !== true ? a : e, 10); return n > 0 ? n : d; };
   const VW = pickDim(argv.vw, process.env.VW, 1400);
   const VH = pickDim(argv.vh, process.env.VH, 1000);
+  // PLAYWRIGHT_CHROMIUM_EXECUTABLE: use a preinstalled Chromium when the
+  // project's Playwright expects a browser build that is not installed (cloud
+  // containers: /opt/pw-browsers/chromium).
   const browser = await chromium.launch({
+    ...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE } : {}),
     headless: argv.headless === true || argv.headless === 'true',
     args: [`--window-size=${VW},${VH}`]
   });
@@ -176,6 +188,17 @@ const vmSteps = createVmSteps({
   if (storageState && !fs.existsSync(storageState)) { emit({ ok: false, error: `missing --storage-state file: ${storageState}` }); await browser.close(); process.exit(1); }
   const context = await browser.newContext({ viewport: { width: VW, height: VH }, ignoreHTTPSErrors: true, ...(storageState ? { storageState } : {}) });
   const page = await context.newPage();
+
+  // --capture-responses FILE: every JSON response from the game server, one
+  // line each, tagged with the session log seq of the command that was running.
+  // Installed before the first navigation so the scenario bootstrap is in it.
+  let responseCapture = null;
+  if (typeof argv['capture-responses'] === 'string') {
+    responseCapture = createResponseCapture({ file: argv['capture-responses'], origin: new URL(argv.url).origin });
+    context.on('response', r => responseCapture.onResponse(r));
+  } else if (argv['capture-responses'] === true) {
+    emit({ ok: false, error: '--capture-responses needs a file path' }); await browser.close(); process.exit(1);
+  }
 
   // Toast capture. Installed before any page script runs, so it sees toasts
   // raised during load. Watches the whole document for added .notification
@@ -257,7 +280,7 @@ const vmSteps = createVmSteps({
   }
   const ready = await page.evaluate(() => window.__test.waitUntilReady({ timeoutMs: 60000 }));
   emit({ ok: true, event: 'session-open', ready, speed: argv.speed || 'fast', url: argv.url,
-         flagsConfigured: FLAGS.length, logPath, pid: process.pid });
+         flagsConfigured: FLAGS.length, logPath, capturePath: responseCapture ? responseCapture.file : null, pid: process.pid });
 
   const pause = (ms) => ms ? page.waitForTimeout(ms) : Promise.resolve();
 
@@ -346,6 +369,8 @@ const vmSteps = createVmSteps({
     let clear = 0;
     // A hub that offers the same menu again would otherwise loop on choice 1.
     const seenMenus = new Map();
+    let openingSince = 0;            // when a pending opening conversation was first seen
+    const waitNoted = new Set();     // each kind of wait is traced once
     const exitRe = /\b(bye|goodbye|leave|later|that's all|that's it|nothing|done|go|thanks)\b/i;
     // After a reload there is no player sprite until the "Continue?" title card (and the resume
     // overlay) are cleared, so a missing player is only fatal when no overlay is up to clear.
@@ -395,7 +420,30 @@ const vmSteps = createVmSteps({
         trace.push(`ending screen (${ended.kind}): left alone`);
         return { trace, settled: true, ended: true, endKind: ended.kind, endScreen: ended, state: await brief() };
       }
-      const mg = await page.evaluate(() => window.__test.getState().activeMinigame);
+      // One reading decides what to deal with: the session-resume overlay before any
+      // minigame under it, and "nothing open" only once the world has loaded and no
+      // opening conversation is still to come (bootstrap-steps.js).
+      // An unreadable page (a navigation in flight, the page reloading) is not a ready
+      // world: without worldReady:false two such ticks counted as "nothing open"
+      const facts = await page.evaluate(readBootstrapFacts).catch(() => ({ worldReady: false }));
+      if (facts.openingPending && facts.worldReady && !openingSince) openingSince = Date.now();
+      const target = nextBootstrapTarget({ ...facts, openingWaitedMs: openingSince ? Date.now() - openingSince : 0 });
+      if (target === 'wait-overlay' || target === 'wait-world' || target === 'wait-opening') {
+        clear = 0;
+        if (!waitNoted.has(target)) {
+          waitNoted.add(target);
+          trace.push({ 'wait-overlay': 'session overlay up, waiting for its buttons',
+                       'wait-world': 'waiting for the world to load (no current room yet)',
+                       'wait-opening': 'waiting for the opening conversation to start' }[target]);
+        }
+        await pause(settleMs);
+        continue;
+      }
+      if (target === 'clear' && facts.openingPending && !waitNoted.has('opening-gave-up')) {
+        waitNoted.add('opening-gave-up');
+        trace.push('an opening conversation is still pending after the wait; carrying on without it');
+      }
+      const mg = target === 'session-overlay' ? null : facts.mg;
       if (mg) {
         clear = 0;
         const d = await page.evaluate(() => window.__test.minigame.getState()?.dialogue);
@@ -706,6 +754,7 @@ const vmSteps = createVmSteps({
       const seen = new Set();
       const seenLines = new Set();
       let staleLines = 0;
+      let lastLine = null;
       let exhaustedBranches = false;
       let turns = 0;
       let endingAccepted = false;
@@ -730,13 +779,21 @@ const vmSteps = createVmSteps({
           return st && st.dialogue ? st.dialogue : null;
         });
         if (!d) break;
+        const dialogueKey = [d.speaker, d.text, d.awaitingChoice, d.canContinue, (d.choices || []).length].join('|');
         if (d.text) {
           const line = `${d.speaker || ''}: ${d.text}`.trim();
           // Hub conversations re-tell the same lines forever. Once nothing new
           // has been said for a while, the branches are spent — leave, rather
           // than burning the whole turn budget as Maya and Derek both did.
-          if (seenLines.has(line)) { staleLines += 1; } else { staleLines = 0; seenLines.add(line); }
-          transcript.push(line);
+          // The panel keeps showing the last line while choices are up and again when the
+          // conversation ends, and a continue can still be pending, so the same line is read
+          // on consecutive turns. The player sees it once: record it once. (A hub that
+          // really repeats a line has the player's choice echo between the two.)
+          if (line !== lastLine) {
+            if (seenLines.has(line)) { staleLines += 1; } else { staleLines = 0; seenLines.add(line); }
+            transcript.push(line);
+            lastLine = line;
+          }
           if (staleLines >= 8) { exhaustedBranches = true; break; }
         }
 
@@ -769,6 +826,20 @@ const vmSteps = createVmSteps({
         } else {
           break;
         }
+        // waitForDialogue resolves at once while the old line still shows a Continue
+        // button, so wait for the panel to actually change (or close) before reading
+        // again; otherwise the same line is read, and a turn spent, on every pass.
+        await page.evaluate((k) => new Promise(resolve => {
+          const t0 = Date.now();
+          const tick = () => {
+            const m = window.MinigameFramework && window.MinigameFramework.currentMinigame;
+            const st = m && window.__test.minigame.getState();
+            const dd = st && st.dialogue;
+            const now = dd ? [dd.speaker, dd.text, dd.awaitingChoice, dd.canContinue, (dd.choices || []).length].join('|') : 'closed';
+            if (now !== k || Date.now() - t0 > 3000) resolve(); else setTimeout(tick, 50);
+          };
+          tick();
+        }), dialogueKey).catch(() => {});
         await page.evaluate(() => window.__test.waitForDialogue({ timeoutMs: 15000 })).catch(() => {});
         await pause(speed.dialogue);
       }
@@ -776,8 +847,14 @@ const vmSteps = createVmSteps({
       // Always leave the main world usable, whatever happened above, except
       // when stopped at an unnamed choice: that conversation stays open for the
       // caller to answer (close:true closes it anyway).
-      const keepOpen = !!pendingChoice && c.close !== true;
-      const closed = keepOpen ? { leftOpen: true } : await page.evaluate(() => {
+      // A minigame the conversation itself opened (a clone read, a lock, a container)
+      // is left open too: closing it would throw away what the line just handed over.
+      const nowActiveId = await page.evaluate(() => window.__test.getState().activeMinigame?.id || null);
+      const ending = converseEnding({ pendingChoice: !!pendingChoice, closeAsked: c.close === true, activeMinigameId: nowActiveId });
+      const keepOpen = ending === 'leave-choice';
+      const openedMinigame = ending === 'leave-minigame' ? nowActiveId : null;
+      const closed = keepOpen ? { leftOpen: true } : openedMinigame ? { leftOpen: true, minigame: openedMinigame }
+        : await page.evaluate(() => {
         if (!window.MinigameFramework?.currentMinigame) return { alreadyClosed: true };
         return window.__test.minigame.close();
       });
@@ -795,6 +872,7 @@ const vmSteps = createVmSteps({
         // conversation still open and the world input-locked unless close:true).
         ok: !pendingChoice && !after.activeMinigame && !nothingHappened,
         stoppedAtChoice: pendingChoice || undefined,
+        openedMinigame: openedMinigame || undefined,
         turns,
         exhaustedBranches,
         endingAccepted: endingAccepted || undefined,
@@ -804,9 +882,13 @@ const vmSteps = createVmSteps({
         closed,
         inventory: after.inventory,
         reason: pendingChoice ? (keepOpen ? 'stopped-at-choice' : 'closed-at-choice')
+          : openedMinigame ? 'opened-minigame'
           : after.activeMinigame ? 'still-open-after-close'
           : (nothingHappened ? 'no-dialogue-appeared' : undefined),
-        hint: !keepOpen && pendingChoice
+        hint: openedMinigame
+          ? `The conversation opened the "${openedMinigame}" minigame and converse left it open (ok:false on purpose). `
+            + 'Drive it with {"cmd":"mg",...}; closing it returns to the conversation.'
+          : !keepOpen && pendingChoice
           ? 'Reached a choice nobody named and closed the conversation without answering it (close:true). Nothing was '
             + 'chosen. Run converse again with "choices":["<regex>"] to answer it, or "explore":true to let it pick.'
           : keepOpen
@@ -931,7 +1013,43 @@ const vmSteps = createVmSteps({
       };
     },
 
-    /** Everything interactable in a room, at any distance — for finding things. */
+    /**
+     * A real mouse click on a visible page control, found by its text (and optionally
+     * a CSS selector): {"cmd":"click","text":"Read"} or {"cmd":"click","selector":".x"}.
+     * For checks that must use the controls a player sees (a dialogue choice, a
+     * minigame's own buttons) and not the bridge's shortcuts. It clicks the centre of
+     * the smallest visible match with the mouse, and refuses a control that something
+     * else covers at that point, so a pass means a player could have clicked it.
+     */
+    click: async (c) => {
+      const target = await page.evaluate(({ text, selector }) => {
+        const pool = [...document.querySelectorAll(selector || 'button, [role="button"], a, [class*="choice"], [class*="menu-item"], [class*="-button"], [class*="-btn"]')];
+        const seen = (el) => {
+          const r = el.getBoundingClientRect();
+          return el.offsetParent !== null && r.width > 2 && r.height > 2 &&
+            r.bottom > 0 && r.right > 0 && r.top < innerHeight && r.left < innerWidth;
+        };
+        const visible = pool.filter(seen);
+        const matches = visible.filter(el => !text || el.textContent.replace(/\s+/g, ' ').includes(text));
+        if (!matches.length) {
+          return { found: false, have: visible.map(el => el.textContent.replace(/\s+/g, ' ').trim().slice(0, 40)).filter(Boolean).slice(0, 30) };
+        }
+        const area = (el) => { const r = el.getBoundingClientRect(); return r.width * r.height; };
+        const el = matches.sort((p, q) => area(p) - area(q))[0];
+        const r = el.getBoundingClientRect();
+        const x = Math.round(r.left + r.width / 2), y = Math.round(r.top + r.height / 2);
+        const top = document.elementFromPoint(x, y);
+        return { found: true, x, y, text: el.textContent.replace(/\s+/g, ' ').trim().slice(0, 80), classes: String(el.className || ''),
+                 covered: !(top && (top === el || el.contains(top) || top.contains(el))) };
+      }, { text: c.text || '', selector: c.selector || '' });
+      if (!target.found) return { ok: false, reason: 'no-visible-control', wanted: c.text || c.selector, have: target.have };
+      if (target.covered) return { ok: false, reason: 'control-covered', target };
+      await page.mouse.click(target.x, target.y);
+      await pause(speed.dialogue);
+      return { ok: true, clicked: target };
+    },
+
+    /** Everything interactable in a room, at any distance: for finding things. */
     room: async (c) => {
       return page.evaluate(id => window.__test.roomContents(id || null), c.id || null);
     },
@@ -959,6 +1077,17 @@ const vmSteps = createVmSteps({
      */
     openInventoryItem: async (c) => {
       const r = await page.evaluate(i => window.__test.openInventoryItem(i), c.item ?? c.id ?? c.name ?? c.type);
+      await pause(speed.step);
+      return r;
+    },
+
+    /**
+     * Pick an entry of a tray item's menu (a droppable item: "Drop here", "Examine"):
+     * {"cmd":"inventoryAct","item":"kit_deviceB","entry":"Drop here"} (see __test.inventoryAct).
+     */
+    inventoryAct: async (c) => {
+      const r = await page.evaluate(([i, e]) => window.__test.inventoryAct(i, e),
+        [c.item ?? c.id ?? c.name ?? c.type, c.entry ?? c.choose ?? null]);
       await pause(speed.step);
       return r;
     },
@@ -1053,13 +1182,14 @@ const vmSteps = createVmSteps({
     try { cmd = JSON.parse(text); }
     catch (e) { emit({ ok: false, error: 'bad-json', line: text.slice(0, 200) }); continue; }
 
-    logLine('in', { cmd: vmSteps.redact(cmd) });
+    const inSeq = logLine('in', { cmd: vmSteps.redact(cmd) });
     if (cmd.cmd === 'quit') { logLine('out', { event: 'quit', commands: seq, flagsUsed: flagUses.length }); break; }
+    if (responseCapture) responseCapture.startCommand(inSeq, typeof cmd.cmd === 'string' ? cmd.cmd : null);
     cmd = substituteFlags(cmd, cmd.cmd);
     try { cmd = await vmSteps.substituteVmFlags(cmd, cmd.cmd); }
-    catch (err) { emit({ ok: false, cmd: cmd.cmd, error: String(err && err.message || err), ...(err && err.hint ? { hint: err.hint } : {}) }); continue; }
+    catch (err) { emit({ ok: false, cmd: cmd.cmd, error: String(err && err.message || err), ...(err && err.hint ? { hint: err.hint } : {}) }); if (responseCapture) responseCapture.endCommand(); continue; }
     const handler = handlers[cmd.cmd];
-    if (!handler) { emit({ ok: false, error: `unknown-cmd:${cmd.cmd}` }); continue; }
+    if (!handler) { emit({ ok: false, error: `unknown-cmd:${cmd.cmd}` }); if (responseCapture) responseCapture.endCommand(); continue; }
 
     try {
       const result = await handler(cmd);
@@ -1067,9 +1197,11 @@ const vmSteps = createVmSteps({
     } catch (err) {
       emit({ ok: false, cmd: cmd.cmd, error: String(err && err.message || err), ...(err && err.reason ? { reason: err.reason } : {}), ...(err && err.hint ? { hint: err.hint } : {}) });
     }
+    if (responseCapture) responseCapture.endCommand();
   }
 
   vmSteps.shutdown();
+  if (responseCapture) await responseCapture.flush();
   await browser.close();
   emit({ ok: true, event: 'session-closed', commands: seq, flagsUsed: flagUses.length, logPath });
   process.exit(0);

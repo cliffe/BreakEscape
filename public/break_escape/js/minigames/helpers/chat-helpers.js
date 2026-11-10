@@ -12,6 +12,30 @@ import { getRoomDisplayName } from '../../utils/room-display-name.js';
 import { parsePortraitTag } from '../../utils/portrait-variants.js';
 import { hostileTurnMessage } from '../../systems/combat-input.js';
 
+/** Whether a choice's own tags (ink tags inside its brackets) include `ending_check`. */
+export function choiceAsksEnding(tags) {
+    return Array.isArray(tags) && tags.some((t) => String(t ?? '').split(':')[0].trim().toLowerCase() === 'ending_check');
+}
+
+/**
+ * The end-of-mission check for a choice, asked before the choice is taken (person chat and
+ * phone chat handleChoice). A choice tagged inside its brackets,
+ * `+ [Walk me through it. #ending_check]`, asks when optional objectives are open: "End the
+ * mission now" resolves true and the caller takes the choice as normal; "Keep going" resolves
+ * false and the caller takes nothing, so ink does not move and the same choices stay on
+ * screen. Resolves true at once when the choice has no such tag, nothing is open or the
+ * module is not loaded. Resolves false at once, asking nothing, while the question is already
+ * up for another trigger. A tag after the brackets keeps its old meaning (processGameActionTags).
+ */
+export async function confirmEndingBeforeChoice(tags, checker = (typeof window !== 'undefined' ? window.endingCheck : null)) {
+    if (!choiceAsksEnding(tags) || typeof checker?.confirm !== 'function') return true;
+    // The question is already up for another trigger (the credits, a mapped global): its
+    // answer is not this choice's, so take nothing; the player clicks the choice again
+    if (typeof checker.isAsking === 'function' && checker.isAsking()) return false;
+    if (typeof checker.needsAnswer === 'function' && !checker.needsAnswer()) return true;
+    return !!(await checker.confirm({ reason: 'choice' }));
+}
+
 /**
  * Process game action tags from Ink story
  * Tags format: # unlock_door:ceo, # give_item:keycard|CEO Keycard, etc.
@@ -388,27 +412,43 @@ export async function processGameActionTags(tags, ui, options = {}) {
                         };
                     }
 
-                    // Set pending conversation return (MINIMAL CONTEXT!)
+                    // The conversation to return to once the card read closes (MINIMAL CONTEXT!)
                     // Conversation state automatically managed by npcConversationStateManager
-                    window.pendingConversationReturn = {
+                    const cloneReturn = {
                         npcId: window.currentConversationNPCId,
                         type: window.currentConversationMinigameType || 'person-chat'
                     };
 
-                    // Start RFID minigame in clone mode
-                    if (window.startRFIDMinigame) {
-                        window.startRFIDMinigame(null, null, {
-                            mode: 'clone',
-                            cardToClone: cardData
-                        });
-
-                        result.success = true;
-                        result.message = `📡 Starting card clone: ${cardData.name}`;
-                        console.log('🔐 Started RFID clone minigame for:', cardData.name);
-                    } else {
+                    if (!window.startRFIDMinigame) {
                         result.message = '⚠️ RFID minigame not available';
                         console.warn('startRFIDMinigame not found');
+                        break;
                     }
+
+                    // Start RFID minigame in clone mode
+                    const openClone = () => {
+                        window.pendingConversationReturn = cloneReturn;
+                        window.startRFIDMinigame(null, null, {
+                            mode: 'clone',
+                            cardToClone: cardData,
+                            // The copy's source, so a saved copy is recorded on the server
+                            // as this NPC's card (access model 4.2)
+                            cloneSource: cloneNpcId ? { npc_id: cloneNpcId } : null
+                        });
+                        console.log('🔐 Started RFID clone minigame for:', cardData.name);
+                    };
+
+                    // In a chat the reader opens once the line carrying this tag has been
+                    // shown, as #trigger_minigame does (systems/ink-minigame-launch.js);
+                    // opening it now replaced the chat and lost that line.
+                    if (window.inkMinigameLaunch?.requestChatLaunch) {
+                        window.inkMinigameLaunch.requestChatLaunch('rfid-clone', openClone);
+                    } else {
+                        openClone();
+                    }
+
+                    result.success = true;
+                    result.message = `📡 Starting card clone: ${cardData.name}`;
                     break;
 
                 // ==========================================
@@ -451,6 +491,16 @@ export async function processGameActionTags(tags, ui, options = {}) {
                     result.message = '🏁 Ending check: keeping going, the rest of this line\'s tags are skipped';
                     results.push(result);
                     return results;
+                }
+
+                case 'ending_confirmed': {
+                    // # ending_confirmed: the player has agreed in the dialogue's own words to leave the
+                    // optional objectives open now (a debrief that offers the choice itself). The credits
+                    // and a conclusion aim then do not ask about them, after a reload too.
+                    const ids = window.endingCheck?.confirmOpen?.() || [];
+                    result.success = true;
+                    result.message = `🏁 Ending confirmed in dialogue (${ids.length} optional left open)`;
+                    break;
                 }
 
                 case 'skip_task':

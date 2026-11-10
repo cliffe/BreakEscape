@@ -1,0 +1,180 @@
+{
+  "scenario_id": "test_gate_tailgate",
+  "scenario_name": "Test: Gate door and tailgate",
+  "scenario_brief": "Throwaway engine test. A facilities worker walks rounds between an office and a staff-only room. Nothing to solve.",
+  "endGoal": "Enter the staff room.",
+  "version": "1.0",
+  "show_scenario_brief": "never",
+  "disableAttacks": true,
+  "creditsTheme": "cyber",
+  "startRoom": "office",
+
+  "lighting": { "enabled": true, "defaultMode": "on" },
+
+  "disguises": {},
+
+  "player": {
+    "id": "player",
+    "displayName": "Visitor",
+    "spriteSheet": "female_hacker_hood_v2",
+    "spriteTalk": "assets/characters/female_hacker_hood_talk.png",
+    "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 12 }
+  },
+
+  "globalVariables": {
+    "visitor_pass": false,
+    "staff_clone_held": false
+  },
+
+  "objectives": [
+    {
+      "aimId": "enter",
+      "title": "Reach the staff room",
+      "description": "Any way you like: follow the worker (with a visitor lanyard on) or open the door with a copy of the worker's badge.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        { "taskId": "enter_staff", "title": "Enter the staff room", "type": "enter_room", "targetRoom": "staff_room", "status": "active" }
+      ]
+    }
+  ],
+
+  "startItemsInInventory": [],
+
+  "rooms": {
+    "office": {
+      "type": "room_lw_records",
+      "door_sign": "Open-Plan Office",
+      "connections": { "north": "staff_room" },
+      "doors": [
+        { "connectedRoom": "staff_room", "direction": "north",
+          "requires": "test_staff_badge",
+          "gate": { "openFor": ["sam"], "openRadius": 56, "holdMs": 2500, "playerMayPassIf": "visitor_pass" } }
+      ],
+      "npcs": [
+        {
+          "id": "sam",
+          "displayName": "Sam Ellery",
+          "npcType": "person",
+          "position": { "x": 7, "y": 3 },
+          "spriteSheet": "male_security_guard_v2",
+          "spriteTalk": "assets/characters/len_talk.png",
+          "spriteVisemes": "assets/characters/male_security_guard_visemes.png",
+          "storyPath": "scenarios/test_gate_tailgate/ink/worker.json",
+          "currentKnot": "start",
+          "rfidCard": { "name": "Staff access badge", "card_id": "test_staff_badge", "rfid_protocol": "EM4100" },
+          "behavior": {
+            "patrol": {
+              "enabled": true,
+              "multiRoom": true,
+              "waypointMode": "sequential",
+              "pauseForPlayer": false,
+              "speed": 90,
+              "route": [
+                { "room": "office", "waypoints": [
+                  { "x": 4, "y": 4, "dwellTime": 6000 },
+                  { "x": 1, "y": 2, "action": { "unlockRoom": "staff_room", "useObject": "door_reader" } }
+                ] },
+                { "room": "staff_room", "waypoints": [
+                  { "x": 5, "y": 5 },
+                  { "x": 1, "y": 8 }
+                ] }
+              ]
+            }
+          },
+          "los": {
+            "enabled": true,
+            "range": 200,
+            "angle": 120,
+            "challengeOnSight": {
+              "event": "player_in_view_near:sam",
+              "near": { "door": "staff_room", "radius": 64 },
+              "skipIfGlobal": ["visitor_pass", "staff_clone_held"],
+              "cooldown": 8000,
+              "rooms": ["office", "staff_room"]
+            }
+          },
+          "eventMappings": [
+            { "eventPattern": "sam_never_fires", "unlockDoor": "staff_room" },
+            {
+              "eventPattern": "player_in_view_near:sam",
+              "conversationMode": "person-chat",
+              "targetKnot": "challenge",
+              "closeDoor": "staff_room",
+              "cooldown": 8000,
+              "bark": "Hold on, can I help you?"
+            },
+            {
+              "eventPattern": "card_cloned",
+              "onceOnly": true,
+              "setGlobal": { "staff_clone_held": true }
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "rfid_cloner",
+          "id": "kit_cloner",
+          "name": "RFID cloner",
+          "sprite": "rfid_cloner",
+          "position": { "x": 4, "y": 8 },
+          "takeable": true,
+          "interactable": true,
+          "active": true,
+          "saved_cards": [],
+          "observations": "A handheld RFID cloner. Read a staff badge up close (in conversation), save it, then present the clone at a card reader."
+        },
+        {
+          "type": "aes_hivis_hook",
+          "id": "visitor_lanyard",
+          "name": "Visitor lanyard",
+          "sprite": "aes_hivis_hook1",
+          "position": { "x": 1, "y": 8 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "triggerOnInteract": [
+            { "type": "set_global", "key": "visitor_pass", "value": true }
+          ],
+          "observations": "A visitor lanyard on a hook. Put it on and staff treat you as signed in. (One use: the trigger fires once per game.)"
+        },
+        {
+          "type": "hq_badge_reader",
+          "id": "door_reader",
+          "name": "Staff door reader",
+          "sprite": "hq_badge_reader1",
+          "position": { "x": 2, "y": 2 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "observations": "The badge reader on the staff-only door."
+        }
+      ]
+    },
+
+    "staff_room": {
+      "type": "room_lw_ceo",
+      "door_sign": "Staff Only",
+      "locked": true,
+      "lockType": "rfid",
+      "requires": "test_staff_badge",
+          "connections": { "south": "office" },
+      "npcs": [],
+      "objects": [
+        {
+          "type": "notes",
+          "id": "staff_notice",
+          "name": "Staff notice",
+          "position": { "x": 3, "y": 3 },
+          "takeable": false,
+          "readable": true,
+          "interactable": true,
+          "active": true,
+          "observations": "A staff notice board.",
+          "text": "STAFF ONLY\n\nYou made it in."
+        }
+      ]
+    }
+  }
+}

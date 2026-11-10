@@ -2,29 +2,109 @@
  * NPC PATHFINDING SYSTEM - EasyStar.js Integration
  * ================================================
  *
- * Manages pathfinding for all NPCs using EasyStar.js.
- * Each room has its own pathfinder grid based on wall collision data.
+ * Pathfinding for the player and every NPC using EasyStar.js.
  *
  * Key Concepts:
- * - One pathfinder per room (created when room is loaded)
- * - Patrol bounds: 2 tiles from room edges (walls are on edges)
- * - Paths converted from tile coordinates to world coordinates
- * - Random patrol targets selected from valid positions within bounds
+ * - One unified world grid (PATHFINDING_STEP px cells) spanning every loaded
+ *   room, built from all immovable/static physics bodies (rebuildWorldGrid)
+ * - Per-room data is only the patrol bounds (2 tiles in from the room edges)
+ * - Random patrol targets are walkable world-grid cells inside those bounds
  *
  * @module npc-pathfinding
  */
 
-import { TILE_SIZE, GRID_SIZE, PATHFINDING_STEP } from '../utils/constants.js';
+import { TILE_SIZE, PATHFINDING_STEP } from '../utils/constants.js';
 import { addDoorway } from './path-doorways.js';
-import { AVOID_CELL_COST, collectAvoidRects, avoidCells, crossesAvoidRect } from './path-avoid.js';
+import { AVOID_CELL_COST, collectAvoidRects, avoidCells, crossesAvoidRect, roomFloorRect, onFloor, floorRingCells } from './path-avoid.js';
 
 const PATROL_EDGE_OFFSET = 2; // Distance from room edge (2 tiles)
+
+/**
+ * Carve an opened east/west door's corridor into `grid` (bounds { minX, minY, cols, rows, step }).
+ *
+ * Each side of the doorway has a 1×1 tile (32×32 px = 4×4 grid cells at 8 px
+ * step). We span BOTH tiles (current room + adjacent room, one TILE_SIZE apart
+ * in the door direction) and clear only the middle 2 rows, leaving the top and
+ * bottom rows blocked to prevent corner clipping.
+ *
+ *   BBBBBBBB   ← top row stays blocked  (both tiles)
+ *   ........   ← cleared (walkable)
+ *   ........   ← cleared (walkable)
+ *   BBBBBBBB   ← bottom row stays blocked (both tiles)
+ *
+ * The range is clamped to the grid (a full world grid always contains it). Returns the cell range.
+ */
+export function carveSideDoorCorridor(grid, bounds, worldX, worldY, direction) {
+    const { minX, minY, cols, rows, step } = bounds;
+
+    const halfTile = TILE_SIZE / 2;
+    const top = worldY - halfTile;
+
+    // The adjacent room's tile is one TILE_SIZE away in the door direction.
+    // Extend the horizontal span to cover both tiles.
+    let spanLeft, spanWidth;
+    if (direction === 'east') {
+        // This tile is left of the wall; adjacent tile is to the right.
+        spanLeft  = worldX - halfTile;
+        spanWidth = TILE_SIZE * 2;
+    } else {
+        // west — this tile is right of the wall; adjacent tile is to the left.
+        spanLeft  = worldX - halfTile - TILE_SIZE;
+        spanWidth = TILE_SIZE * 2;
+    }
+
+    // Grid cell range covering both tiles (8 columns × 4 rows at 8 px step).
+    const cx1 = Math.max(0,        Math.floor((spanLeft               - minX) / step));
+    const cy1 = Math.max(0,        Math.floor((top                    - minY) / step));
+    const cx2 = Math.min(cols - 1, Math.floor((spanLeft + spanWidth - 1 - minX) / step));
+    const cy2 = Math.min(rows - 1, Math.floor((top  + TILE_SIZE    - 1 - minY) / step));
+
+    // Clear the middle rows (skip first and last row of the tile height).
+    for (let cy = cy1 + 1; cy <= cy2 - 1; cy++) {
+        for (let cx = cx1; cx <= cx2; cx++) grid[cy][cx] = 0;
+    }
+    // Ensure top and bottom rows stay blocked across both tiles.
+    for (let cx = cx1; cx <= cx2; cx++) grid[cy1][cx] = 1;
+    for (let cx = cx1; cx <= cx2; cx++) grid[cy2][cx] = 1;
+    return { cx1, cy1, cx2, cy2 };
+}
+
+/**
+ * Re-block the outermost cell on each side of the south edge of an opened N/S door in `grid`
+ * (see NPCPathfindingManager._applyNSDoorCornerBlocks). Returns the cells blocked.
+ */
+export function applyNSDoorCornerBlocks(grid, bounds, doorWorldX, doorWorldY) {
+    const { minX, minY, cols, rows, step } = bounds;
+
+    const doorW = TILE_SIZE * 2;
+    const doorH = TILE_SIZE;
+
+    const cx1 = Math.max(0,        Math.floor((doorWorldX          - minX) / step));
+    const cx2 = Math.min(cols - 1, Math.ceil( (doorWorldX + doorW  - minX) / step));
+    const cy2 = Math.min(rows - 1, Math.ceil( (doorWorldY + doorH  - minY) / step));
+
+    if (grid[cy2]) {
+        grid[cy2][cx1] = 1;
+        grid[cy2][cx2] = 1;
+    }
+    return { cx1, cx2, cy2 };
+}
 
 /**
  * Set window.pathfindingDebug = true in the browser console to enable
  * verbose per-check logging for player pathfinding.
  * Automatically respects the existing visualDebugMode toggle (backtick key).
  */
+/**
+ * A gate door that shows open (door-gates.js). Its body can stay on while it is open,
+ * solid for a player the gate does not let through, but the walk grid and its line of
+ * sight follow `open` alone, so a guard (and a click-to-walk path) sees an open door.
+ */
+function gateShowsOpen(body) {
+    const props = body?.gameObject?.doorProperties;
+    return !!props && !!props.gateKey && props.open === true;
+}
+
 function isDebug() {
     return !!window.pathfindingDebug;
 }
@@ -35,8 +115,6 @@ function isDebug() {
 export class NPCPathfindingManager {
     constructor(scene) {
         this.scene = scene;
-        this.pathfinders = new Map();  // Map<roomId, pathfinder>
-        this.grids = new Map();         // Map<roomId, grid>
         this.roomBounds = new Map();   // Map<roomId, {x, y, width, height, mapWidth, mapHeight}>
 
         // Unified world-level pathfinding grid (finer resolution, spans all rooms)
@@ -63,7 +141,7 @@ export class NPCPathfindingManager {
     }
 
     /**
-     * Initialize pathfinder for a room
+     * Register a room's patrol bounds and schedule a world-grid rebuild.
      * Called when room is loaded (from rooms.js)
      *
      * @param {string} roomId - Room identifier
@@ -92,19 +170,6 @@ export class NPCPathfindingManager {
             console.log(`   Map dimensions: ${mapWidth}x${mapHeight}`);
             console.log(`   WallsLayers count: ${roomData.wallsLayers ? roomData.wallsLayers.length : 0}`);
 
-            // Build grid from wall collision data
-            const grid = this.buildGridFromWalls(roomId, roomData, mapWidth, mapHeight);
-
-            // Create and configure pathfinder
-            const pathfinder = new EasyStar.js();
-            pathfinder.setGrid(grid);
-            pathfinder.setAcceptableTiles([0]);  // 0 = walkable, 1 = wall
-            pathfinder.enableDiagonals();
-
-            // Store pathfinder and grid for this room
-            this.pathfinders.set(roomId, pathfinder);
-            this.grids.set(roomId, grid);
-
             // Calculate patrol bounds (2 tiles from edges)
             const bounds = {
                 x: PATROL_EDGE_OFFSET,
@@ -122,15 +187,6 @@ export class NPCPathfindingManager {
             console.log(`✅ Pathfinding initialized for room ${roomId}`);
             console.log(`   Grid: ${mapWidth}x${mapHeight} tiles | Patrol bounds: (${bounds.x}, ${bounds.y}) to (${bounds.x + bounds.width}, ${bounds.y + bounds.height})`);
 
-            // NOTE: refreshGridFromPhysicsBodies() is intentionally NOT called here.
-            // buildGridFromWalls() already marks wall tiles + table objects correctly.
-            // The physics wall-strip bodies are thin 8px edges that straddle tile
-            // boundaries; converting them to tile ranges produces false positives that
-            // block walkable tiles.  hasPhysicsLineOfSight() handles exact geometry
-            // for LOS checks where it really matters.
-            // Call window.refreshPathfindingGrid() from the console if you want to
-            // overlay physics bodies onto the grid manually for debugging.
-
             // Rebuild the unified world grid AFTER a short delay so that all
             // delayedCall(0, ...) callbacks (table setSize/setOffset, wall immovable
             // assignment, etc.) have had a chance to fire first.  Without the delay
@@ -144,356 +200,43 @@ export class NPCPathfindingManager {
     }
 
     /**
-     * Build collision grid from wall layer data AND table objects
-     * 0 = walkable, 1 = wall/obstacle
-     *
-     * IMPORTANT: Walls are created as collision boxes based on wall tiles by createWallCollisionBoxes().
-     * This method marks the same tiles as obstacles in the pathfinding grid so NPCs avoid them.
-     * Table objects are also marked from the Tiled map.
-     *
-     * @private
-     */
-    buildGridFromWalls(roomId, roomData, mapWidth, mapHeight) {
-        const grid = Array(mapHeight).fill().map(() => Array(mapWidth).fill(0));
-
-        // PASS 1: Mark all wall tiles as impassable
-        // (Wall collision boxes are created from these same tiles in collision.js)
-        if (!roomData.wallsLayers || roomData.wallsLayers.length === 0) {
-            console.warn(`⚠️ No wall layers found for room ${roomId}, creating open grid`);
-        } else {
-            let wallTilesMarked = 0;
-            
-            // Mark all wall tiles from the tilemap
-            roomData.wallsLayers.forEach(wallLayer => {
-                try {
-                    // Get all non-empty tiles from the wall layer
-                    const allWallTiles = wallLayer.getTilesWithin(0, 0, mapWidth, mapHeight, { isNotEmpty: true });
-
-                    allWallTiles.forEach(tile => {
-                        // Mark ALL wall tiles as impassable (not just ones with collision properties)
-                        // because collision.js creates collision boxes for all wall tiles
-                        const tileX = tile.x;
-                        const tileY = tile.y;
-
-                        if (tileX >= 0 && tileX < mapWidth && tileY >= 0 && tileY < mapHeight) {
-                            grid[tileY][tileX] = 1; // Mark as impassable
-                            wallTilesMarked++;
-                        }
-                    });
-
-                    console.log(`✅ Processed wall layer with ${allWallTiles.length} tiles, marked ${wallTilesMarked} as impassable`);
-                } catch (error) {
-                    console.error(`❌ Error processing wall layer for room ${roomId}:`, error);
-                }
-            });
-            
-            if (wallTilesMarked > 0) {
-                console.log(`✅ Total wall tiles marked as obstacles: ${wallTilesMarked}`);
-            }
-        }
-
-        // NEW: Mark table objects as obstacles in pathfinding grid
-        if (roomData.map) {
-            // Get the tables object layer from the Phaser tilemap
-            const tablesLayer = roomData.map.getObjectLayer('tables');
-            
-            console.log(`🔍 Looking for tables object layer: ${tablesLayer ? 'Found' : 'Not found'}`);
-            
-            if (tablesLayer && tablesLayer.objects && tablesLayer.objects.length > 0) {
-                let tablesMarked = 0;
-                console.log(`📦 Processing ${tablesLayer.objects.length} table objects...`);
-                
-                tablesLayer.objects.forEach((tableObj, idx) => {
-                    try {
-                        // Convert world coordinates to tile coordinates
-                        const tableWorldX = tableObj.x;
-                        const tableWorldY = tableObj.y;
-                        const tableWidth = tableObj.width;
-                        const tableHeight = tableObj.height;
-
-                        console.log(`  Table ${idx}: (${tableWorldX}, ${tableWorldY}) size ${tableWidth}x${tableHeight}`);
-
-                        // Convert to tile coordinates
-                        const startTileX = Math.floor(tableWorldX / TILE_SIZE);
-                        const startTileY = Math.floor(tableWorldY / TILE_SIZE);
-                        const endTileX = Math.ceil((tableWorldX + tableWidth) / TILE_SIZE);
-                        const endTileY = Math.ceil((tableWorldY + tableHeight) / TILE_SIZE);
-
-                        console.log(`  -> Tiles: (${startTileX}, ${startTileY}) to (${endTileX}, ${endTileY})`);
-
-                        // Mark all tiles covered by table as impassable
-                        let tilesInTable = 0;
-                        for (let tileY = startTileY; tileY < endTileY; tileY++) {
-                            for (let tileX = startTileX; tileX < endTileX; tileX++) {
-                                if (tileX >= 0 && tileX < mapWidth && tileY >= 0 && tileY < mapHeight) {
-                                    grid[tileY][tileX] = 1; // Mark as impassable
-                                    tablesMarked++;
-                                    tilesInTable++;
-                                }
-                            }
-                        }
-                        console.log(`  -> Marked ${tilesInTable} grid cells`);
-                    } catch (error) {
-                        console.error(`❌ Error processing table object ${idx}:`, error);
-                    }
-                });
-
-                console.log(`✅ Marked ${tablesMarked} total grid cells as obstacles from ${tablesLayer.objects.length} tables`);
-            } else {
-                console.warn(`⚠️ Tables object layer not found or empty`);
-            }
-        } else {
-            console.warn(`⚠️ Room map not available for table processing`);
-        }
-
-        return grid;
-    }
-
-    /**
-     * Find a path from start to end position
-     * Positions should be world coordinates
+     * Random patrol target inside the room's patrol bounds (2 tiles in from
+     * each edge), on the unified world grid so the target is a cell every
+     * other route can reach. A random tile centre that lands on a blocked
+     * cell is moved to the nearest walkable cell within 2 cells (16px);
+     * otherwise another tile is tried.
      *
      * @param {string} roomId - Room identifier
-     * @param {number} startX - Start world X
-     * @param {number} startY - Start world Y
-     * @param {number} endX - End world X
-     * @param {number} endY - End world Y
-     * @param {Function} callback - Callback(path) where path is array of world {x, y} or null
-     */
-    findPath(roomId, startX, startY, endX, endY, callback) {
-        const pathfinder = this.pathfinders.get(roomId);
-        const bounds = this.roomBounds.get(roomId);
-
-        if (!pathfinder || !bounds) {
-            console.warn(`⚠️ No pathfinder for room ${roomId} - room may not be loaded`);
-            callback(null);
-            return;
-        }
-
-        // Validate that start and end positions are within reasonable range of room bounds
-        const roomWorldMinX = bounds.worldX;
-        const roomWorldMinY = bounds.worldY;
-        const roomWorldMaxX = bounds.worldX + (bounds.mapWidth * TILE_SIZE);
-        const roomWorldMaxY = bounds.worldY + (bounds.mapHeight * TILE_SIZE);
-
-        // Check if start position is in this room
-        if (startX < roomWorldMinX - TILE_SIZE || startX > roomWorldMaxX + TILE_SIZE ||
-            startY < roomWorldMinY - TILE_SIZE || startY > roomWorldMaxY + TILE_SIZE) {
-            console.warn(`⚠️ Start position (${startX}, ${startY}) is outside room ${roomId} bounds`);
-            callback(null);
-            return;
-        }
-
-        // Check if end position is in this room
-        if (endX < roomWorldMinX - TILE_SIZE || endX > roomWorldMaxX + TILE_SIZE ||
-            endY < roomWorldMinY - TILE_SIZE || endY > roomWorldMaxY + TILE_SIZE) {
-            console.warn(`⚠️ End position (${endX}, ${endY}) is outside room ${roomId} bounds`);
-            callback(null);
-            return;
-        }
-
-        // Convert world coordinates to tile coordinates
-        const startTileX = Math.floor((startX - bounds.worldX) / TILE_SIZE);
-        const startTileY = Math.floor((startY - bounds.worldY) / TILE_SIZE);
-        const endTileX = Math.floor((endX - bounds.worldX) / TILE_SIZE);
-        const endTileY = Math.floor((endY - bounds.worldY) / TILE_SIZE);
-
-        // Clamp to valid tile ranges (should already be valid but safety check)
-        const clampedStartX = Math.max(0, Math.min(bounds.mapWidth - 1, startTileX));
-        const clampedStartY = Math.max(0, Math.min(bounds.mapHeight - 1, startTileY));
-        const clampedEndX = Math.max(0, Math.min(bounds.mapWidth - 1, endTileX));
-        const clampedEndY = Math.max(0, Math.min(bounds.mapHeight - 1, endTileY));
-
-        // Warn if coordinates were clamped (indicates out of bounds request)
-        if (startTileX !== clampedStartX || startTileY !== clampedStartY) {
-            console.warn(`⚠️ Start position was clamped from (${startTileX}, ${startTileY}) to (${clampedStartX}, ${clampedStartY})`);
-        }
-        if (endTileX !== clampedEndX || endTileY !== clampedEndY) {
-            console.warn(`⚠️ End position was clamped from (${endTileX}, ${endTileY}) to (${clampedEndX}, ${clampedEndY})`);
-        }
-
-        // Find path
-        pathfinder.findPath(clampedStartX, clampedStartY, clampedEndX, clampedEndY, (tilePath) => {
-            if (tilePath && tilePath.length > 0) {
-                // Convert tile path to world path, ensuring all waypoints are within room bounds
-                const worldPath = tilePath.map(point => ({
-                    x: bounds.worldX + point.x * TILE_SIZE + TILE_SIZE / 2,
-                    y: bounds.worldY + point.y * TILE_SIZE + TILE_SIZE / 2
-                }));
-
-                // Validate all waypoints are within the room
-                const validPath = worldPath.every(wp => 
-                    wp.x >= roomWorldMinX && wp.x <= roomWorldMaxX &&
-                    wp.y >= roomWorldMinY && wp.y <= roomWorldMaxY
-                );
-
-                if (!validPath) {
-                    console.warn(`⚠️ Generated path contains waypoints outside room ${roomId} bounds`);
-                    callback(null);
-                    return;
-                }
-
-                callback(worldPath);
-            } else {
-                callback(null);
-            }
-        });
-
-        pathfinder.calculate();
-    }
-
-    /**
-     * Check if there's a clear line of sight between two points
-     * Uses Bresenham's line algorithm to check all tiles along the path
-     * Also checks adjacent tiles to account for NPC body width (20px ~= 0.6 tiles)
-     *
-     * @param {string} roomId - Room identifier
-     * @param {number} startX - Start world X
-     * @param {number} startY - Start world Y
-     * @param {number} endX - End world X
-     * @param {number} endY - End world Y
-     * @returns {boolean} - True if path is clear (all tiles walkable)
-     */
-    hasLineOfSight(roomId, startX, startY, endX, endY) {
-        const grid = this.grids.get(roomId);
-        const bounds = this.roomBounds.get(roomId);
-
-        if (!grid || !bounds) {
-            return false;
-        }
-
-        // Bounds check: ensure both points are within room (with tolerance)
-        const roomMinX = bounds.worldX;
-        const roomMinY = bounds.worldY;
-        const roomMaxX = bounds.worldX + (bounds.mapWidth * TILE_SIZE);
-        const roomMaxY = bounds.worldY + (bounds.mapHeight * TILE_SIZE);
-
-        if (startX < roomMinX || startX > roomMaxX || startY < roomMinY || startY > roomMaxY) {
-            return false; // Start position outside room
-        }
-        if (endX < roomMinX || endX > roomMaxX || endY < roomMinY || endY > roomMaxY) {
-            return false; // End position outside room
-        }
-
-        // Convert world coordinates to tile coordinates.
-        // Use Math.floor (consistent with buildGridFromWalls and findPath) so that
-        // positions near tile boundaries map to the same tile the grid uses.
-        const startTileX = Math.floor((startX - bounds.worldX) / TILE_SIZE);
-        const startTileY = Math.floor((startY - bounds.worldY) / TILE_SIZE);
-        const endTileX = Math.floor((endX - bounds.worldX) / TILE_SIZE);
-        const endTileY = Math.floor((endY - bounds.worldY) / TILE_SIZE);
-
-        // Helper function to check if a tile is walkable
-        const isTileWalkable = (tx, ty) => {
-            if (ty < 0 || ty >= grid.length || tx < 0 || tx >= grid[0].length) {
-                return false; // Out of bounds
-            }
-            return grid[ty][tx] === 0; // 0 = walkable
-        };
-
-        // Bresenham's line algorithm to check all tiles along the line
-        const dx = Math.abs(endTileX - startTileX);
-        const dy = Math.abs(endTileY - startTileY);
-        const sx = startTileX < endTileX ? 1 : -1;
-        const sy = startTileY < endTileY ? 1 : -1;
-        let err = dx - dy;
-
-        let x = startTileX;
-        let y = startTileY;
-
-        while (true) {
-            // Check if current tile and adjacent tiles are walkable
-            // NPCs are ~20px wide (0.6 tiles), so check the main tile plus one adjacent
-            if (!isTileWalkable(x, y)) {
-                return false; // Center tile blocked
-            }
-
-            // For diagonal movement, check that adjacent tiles are also clear
-            // This prevents NPCs from trying to squeeze through diagonal gaps
-            if (dx > 0 && dy > 0) { // Moving diagonally
-                // Check the perpendicular tiles to ensure enough clearance
-                if (!isTileWalkable(x + sx, y) || !isTileWalkable(x, y + sy)) {
-                    return false; // Diagonal squeeze - not enough clearance
-                }
-            }
-
-            // Reached end point
-            if (x === endTileX && y === endTileY) {
-                break;
-            }
-
-            const e2 = 2 * err;
-            if (e2 > -dy) {
-                err -= dy;
-                x += sx;
-            }
-            if (e2 < dx) {
-                err += dx;
-                y += sy;
-            }
-        }
-
-        return true; // Clear path
-    }
-
-    /**
-     * Get random valid position within patrol bounds
-     * Ensures position is walkable (not on a wall)
-     *
-     * @param {string} roomId - Room identifier
-     * @returns {Object|null} - {x, y} world position or null if no valid position found
+     * @returns {Object|null} - {x, y} world position (a walkable world-grid cell centre), or null
      */
     getRandomPatrolTarget(roomId) {
         const bounds = this.roomBounds.get(roomId);
-        const grid = this.grids.get(roomId);
 
-        if (!bounds || !grid) {
-            console.warn(`⚠️ No bounds/grid for room ${roomId}`);
-            console.warn(`   Bounds: ${bounds ? 'exists' : 'MISSING'} | Grid: ${grid ? `exists (${grid.length}x${grid[0]?.length})` : 'MISSING'}`);
-            console.warn(`   Available rooms with pathfinding: ${Array.from(this.roomBounds.keys()).join(', ')}`);
+        if (!bounds || !this.worldGrid) {
+            console.warn(`⚠️ No bounds/world grid for room ${roomId} (bounds: ${bounds ? 'ok' : 'MISSING'}, world grid: ${this.worldGrid ? 'ok' : 'not built yet'})`);
             return null;
         }
 
-        // Try up to 20 random positions
         const maxAttempts = 20;
         for (let attempt = 0; attempt < maxAttempts; attempt++) {
             const randTileX = bounds.x + Math.floor(Math.random() * bounds.width);
             const randTileY = bounds.y + Math.floor(Math.random() * bounds.height);
-
-            // Validate indices
-            if (randTileY < 0 || randTileY >= grid.length || randTileX < 0 || randTileX >= grid[0].length) {
+            if (randTileX < 0 || randTileX >= bounds.mapWidth || randTileY < 0 || randTileY >= bounds.mapHeight) {
                 continue;
             }
 
-            // Check if this tile is walkable
-            if (grid[randTileY] && grid[randTileY][randTileX] === 0) {
-                // Convert to world coordinates (center of tile)
-                const worldX = bounds.worldX + randTileX * TILE_SIZE + TILE_SIZE / 2;
-                const worldY = bounds.worldY + randTileY * TILE_SIZE + TILE_SIZE / 2;
-
-                console.log(`✅ Random patrol target for ${roomId}: (${randTileX}, ${randTileY}) → (${worldX}, ${worldY})`);
-                return { x: worldX, y: worldY };
+            const worldX = bounds.worldX + randTileX * TILE_SIZE + TILE_SIZE / 2;
+            const worldY = bounds.worldY + randTileY * TILE_SIZE + TILE_SIZE / 2;
+            const cell = this.findNearestWalkableWorldCell(worldX, worldY, 2);
+            if (cell) {
+                console.log(`✅ Random patrol target for ${roomId}: tile (${randTileX}, ${randTileY}) → (${cell.x}, ${cell.y})`);
+                return cell;
             }
         }
 
         console.warn(`⚠️ Could not find valid random position in ${roomId} after ${maxAttempts} attempts`);
         console.warn(`   Bounds: x=${bounds.x}, y=${bounds.y}, width=${bounds.width}, height=${bounds.height}`);
-        console.warn(`   Grid size: ${grid.length}x${grid[0]?.length}`);
         return null;
-    }
-
-    /**
-     * Get pathfinder for a room (for debugging)
-     */
-    getPathfinder(roomId) {
-        return this.pathfinders.get(roomId);
-    }
-
-    /**
-     * Get grid for a room (for debugging)
-     */
-    getGrid(roomId) {
-        return this.grids.get(roomId);
     }
 
     /**
@@ -504,7 +247,7 @@ export class NPCPathfindingManager {
     }
 
     /**
-     * Mark door tiles as walkable in the pathfinding grid
+     * Mark an opened door walkable on the world grid (and record the doorway)
      * Called when a door is unlocked/opened
      * 
      * @param {string} roomId - Room containing the door
@@ -513,7 +256,7 @@ export class NPCPathfindingManager {
      * @param {string} direction - Door direction (north/south/east/west)
      */
     markDoorWalkable(roomId, worldX, worldY, direction) {
-        // Record an N/S opening before the per-room grid check below: the far
+        // Record an N/S opening before the room-bounds check below: the far
         // room is often not loaded yet, but the doorway is open either way.
         // (openDoor also calls this for the far room with the direction
         // flipped but the same sprite position, which is the same N/S doorway.
@@ -523,11 +266,9 @@ export class NPCPathfindingManager {
             addDoorway(this.openDoorways, { x: worldX, y: worldY, direction });
         }
 
-        const grid = this.grids.get(roomId);
-        const pathfinder = this.pathfinders.get(roomId);
         const bounds = this.roomBounds.get(roomId);
 
-        if (!grid || !pathfinder || !bounds) {
+        if (!bounds) {
             console.warn(`⚠️ Cannot update door pathfinding - room ${roomId} not initialized`);
             return;
         }
@@ -536,41 +277,7 @@ export class NPCPathfindingManager {
         const tileX = Math.floor((worldX - bounds.worldX) / TILE_SIZE);
         const tileY = Math.floor((worldY - bounds.worldY) / TILE_SIZE);
 
-        // Mark door tiles as walkable (typically 2 tiles for a door)
-        const tilesToMark = [];
-        
-        switch (direction) {
-            case 'north':
-            case 'south':
-                // Horizontal door - 2 tiles wide
-                tilesToMark.push({ x: tileX, y: tileY });
-                tilesToMark.push({ x: tileX + 1, y: tileY });
-                break;
-            case 'east':
-            case 'west':
-                // Vertical door - 2 tiles high
-                tilesToMark.push({ x: tileX, y: tileY });
-                tilesToMark.push({ x: tileX, y: tileY + 1 });
-                break;
-        }
-
-        let markedCount = 0;
-        tilesToMark.forEach(tile => {
-            if (tile.y >= 0 && tile.y < grid.length && 
-                tile.x >= 0 && tile.x < grid[0].length) {
-                if (grid[tile.y][tile.x] === 1) {
-                    grid[tile.y][tile.x] = 0; // Mark as walkable
-                    markedCount++;
-                }
-            }
-        });
-
-        // Update the pathfinder with the new grid
-        pathfinder.setGrid(grid);
-
-        console.log(`✅ Marked ${markedCount} door tiles as walkable in ${roomId} at (${tileX}, ${tileY}) direction: ${direction}`);
-
-        // Unblock the corresponding cells in the world grid too
+        // Unblock the door's cells in the world grid
         const doorWorldX = bounds.worldX + tileX * TILE_SIZE;
         const doorWorldY = bounds.worldY + tileY * TILE_SIZE;
         const doorW = (direction === 'north' || direction === 'south') ? TILE_SIZE * 2 : TILE_SIZE;
@@ -598,17 +305,24 @@ export class NPCPathfindingManager {
     // =========================================================================
 
     /**
-     * (Re)build the unified world-level EasyStar grid from all physics bodies.
-     * Called automatically at the end of initializeRoomPathfinding().
+     * Build a world grid from the live physics bodies without touching the live one.
+     * Marks every enabled static body and every enabled immovable dynamic body (padded one
+     * cell sideways and 2 px up and down), skipping any body whose gameObject is in
+     * `exclude`, then applies the open side-door corridors and the N/S door corner blocks.
+     * Always the full world rectangle. Returns { grid, bounds } or null when the physics
+     * world has no bounds yet. Used by rebuildWorldGrid (no options), the walk audit and
+     * the seat stand-up grid (SEAT_BOX_PLAN.md slice 0).
+     *
+     * @param {{ exclude?: Iterable<object> }} [opts] game objects whose bodies are left out
      */
-    rebuildWorldGrid() {
+    buildWorldGrid({ exclude = null } = {}) {
         const scene = this.scene;
-        if (!scene?.physics?.world) return;
+        if (!scene?.physics?.world) return null;
 
         const wb = scene.physics.world.bounds;
         if (!wb || wb.width === 0 || wb.height === 0) {
-            console.warn('⚠️ rebuildWorldGrid: physics world bounds not set yet');
-            return;
+            console.warn('⚠️ buildWorldGrid: physics world bounds not set yet');
+            return null;
         }
 
         const step = PATHFINDING_STEP;
@@ -616,8 +330,11 @@ export class NPCPathfindingManager {
         const minY = wb.y;
         const cols = Math.ceil(wb.width  / step) + 2; // +2 safety margin
         const rows = Math.ceil(wb.height / step) + 2;
+        const bounds = { minX, minY, cols, rows, step };
 
         const grid = Array.from({ length: rows }, () => new Array(cols).fill(0));
+        const skip = exclude ? new Set(exclude) : null;
+        const left = body => (!!skip && !!body.gameObject && skip.has(body.gameObject)) || gateShowsOpen(body);
 
         // Mark every grid cell that substantially overlaps an immovable physics body.
         // Subtracting 1 before flooring the right/bottom edge prevents a body whose
@@ -641,17 +358,39 @@ export class NPCPathfindingManager {
 
         // Phaser static bodies (StaticGroups etc.)
         scene.physics.world.staticBodies.iterate(body => {
-            if (body.enable) markBlocked(body.left, body.top, body.right, body.bottom);
+            if (body.enable && !left(body)) markBlocked(body.left, body.top, body.right, body.bottom);
         });
 
         // Dynamic-but-immovable bodies: wall strips, locked doors, furniture
         scene.physics.world.bodies.iterate(body => {
-            if (body.enable && body.immovable) {
+            if (body.enable && body.immovable && !left(body)) {
                 markBlocked(body.left, body.top, body.right, body.bottom);
             }
         });
 
-        this.worldGridBounds = { minX, minY, cols, rows, step };
+        // Re-carve any east/west door corridors that were opened before this build.
+        for (const corridor of this.openSideDoorCorridors) {
+            carveSideDoorCorridor(grid, bounds, corridor.worldX, corridor.worldY, corridor.direction);
+        }
+
+        // Re-apply south-edge corner blocks for any opened N/S doors.
+        for (const door of this.openNSDoors) {
+            applyNSDoorCornerBlocks(grid, bounds, door.worldX, door.worldY);
+        }
+
+        return { grid, bounds };
+    }
+
+    /**
+     * (Re)build the unified world-level EasyStar grid from all physics bodies.
+     * Called automatically at the end of initializeRoomPathfinding().
+     */
+    rebuildWorldGrid() {
+        const built = this.buildWorldGrid();
+        if (!built) return;
+        const { grid, bounds } = built;
+
+        this.worldGridBounds = bounds;
         this.worldGrid = grid;
 
         const pf = new EasyStar.js();
@@ -666,17 +405,7 @@ export class NPCPathfindingManager {
         this.worldPathfinder = pf;
 
         const blocked = grid.reduce((n, row) => n + row.filter(v => v === 1).length, 0);
-        console.log(`✅ World grid rebuilt: ${cols}×${rows} @${step}px — ${blocked} blocked`);
-
-        // Re-carve any east/west door corridors that were opened before this rebuild.
-        for (const corridor of this.openSideDoorCorridors) {
-            this._carveSideDoorCorridor(corridor.worldX, corridor.worldY, corridor.direction);
-        }
-
-        // Re-apply south-edge corner blocks for any opened N/S doors.
-        for (const door of this.openNSDoors) {
-            this._applyNSDoorCornerBlocks(door.worldX, door.worldY);
-        }
+        console.log(`✅ World grid rebuilt: ${bounds.cols}×${bounds.rows} @${bounds.step}px — ${blocked} blocked, ${this.openSideDoorCorridors.length} side-door corridors, ${this.openNSDoors.length} N/S door corner blocks`);
     }
 
     /**
@@ -714,11 +443,55 @@ export class NPCPathfindingManager {
     }
 
     /**
+     * Temporarily mark grid cells occupied by the player and every active NPC
+     * body EXCEPT `exceptSprite` as avoided, so a walking NPC can re-plan a
+     * detour round whoever is in its way (npc-behavior.js local avoidance).
+     * Unlike _avoidNPCPositions (player routing) this also avoids the player's
+     * body and skips the walker's own sprite. skipCX/skipCY: never avoid the
+     * walker's own start cell.
+     */
+    _avoidDynamicPositions(exceptSprite, skipCX, skipCY) {
+        if (!this.worldPathfinder || !this.worldGridBounds) return;
+        const { minX, minY, cols, rows, step } = this.worldGridBounds;
+        const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+        const avoidBody = (body) => {
+            if (!body || !body.enable || body.immovable) return;
+            // One cell of clearance either side, as _avoidNPCPositions uses.
+            const cx1 = clamp(Math.floor((body.left   - minX) / step) - 1, 0, cols - 1);
+            const cy1 = clamp(Math.floor((body.top    - minY) / step) - 1, 0, rows - 1);
+            const cx2 = clamp(Math.floor((body.right  - minX - 1) / step) + 1, 0, cols - 1);
+            const cy2 = clamp(Math.floor((body.bottom - minY - 1) / step) + 1, 0, rows - 1);
+            for (let cy = cy1; cy <= cy2; cy++) {
+                for (let cx = cx1; cx <= cx2; cx++) {
+                    if (cx === skipCX && cy === skipCY) continue;
+                    if (this.worldGrid[cy]?.[cx] === 0) this.worldPathfinder.avoidAdditionalPoint(cx, cy);
+                }
+            }
+        };
+        // The player is a blocker too (a needs NPC routes round them).
+        const pb = window.player?.body;
+        if (pb && exceptSprite !== window.player) avoidBody(pb);
+        for (const roomId in (window.rooms || {})) {
+            const sprites = window.rooms[roomId]?.npcSprites;
+            if (!sprites) continue;
+            for (const sprite of sprites) {
+                if (sprite === exceptSprite) continue;
+                avoidBody(sprite.body);
+            }
+        }
+    }
+
+    /**
      * Find a path via the unified world grid (works across any rooms).
      * Callback receives an array of world {x,y} waypoints, or null on failure.
      * Pass avoidNPCs=true (player only) to route around active NPC bodies.
+     * opts.avoidRooms: room ids the path must not enter (the needs room leash, OFFICE_LIFE_PLAN
+     * 7.2). Each loaded one except the room whose floor holds the start gets its floor's inner
+     * ring avoided for this search only.
+     * opts.avoidDynamic = { exceptSprite }: route round the player and every other active NPC
+     * body (npc-behavior.js local detour); exceptSprite is the walking NPC's own sprite.
      */
-    findWorldPath(startX, startY, endX, endY, callback, avoidNPCs = false) {
+    findWorldPath(startX, startY, endX, endY, callback, avoidNPCs = false, opts = null) {
         if (!this.worldPathfinder || !this.worldGridBounds) {
             console.warn('⚠️ findWorldPath: world grid not ready');
             callback(null);
@@ -746,17 +519,47 @@ export class NPCPathfindingManager {
         }
 
         if (avoidNPCs) this._avoidNPCPositions(sx, sy);
+        const avoidDyn = opts?.avoidDynamic || null;
+        if (avoidDyn) this._avoidDynamicPositions(avoidDyn.exceptSprite, sx, sy);
         // Player paths also pay extra to cross "prefer to route around" objects
         // (path-avoid.js). calculate() runs every queued search to the end
         // before it returns, so the costs are cleared straight after it.
         const costed = avoidNPCs ? this._applyPreferAvoidCosts() : 0;
 
-        this.worldPathfinder.findPath(sx, sy, toCX(endX), toCY(endY), (tilePath) => {
-            if (avoidNPCs) this.worldPathfinder.stopAvoidingAllAdditionalPoints();
-            callback(tilePath?.length > 0 ? tilePath.map(p => toWorld(p.x, p.y)) : null);
-        });
-        this.worldPathfinder.calculate();
-        if (costed) this.worldPathfinder.removeAllAdditionalPointCosts();
+        // Room leash: calculate() runs every queued search to the end before it returns, so the
+        // rings are removed in the finally straight after it (never in the callback, which runs a
+        // tick later in async mode), cell by cell so the player's NPC-avoid set is kept.
+        const ringed = opts?.avoidRooms?.length ? this._avoidRoomRings(opts.avoidRooms, startX, startY) : null;
+        try {
+            this.worldPathfinder.findPath(sx, sy, toCX(endX), toCY(endY), (tilePath) => {
+                if (avoidNPCs || avoidDyn) this.worldPathfinder.stopAvoidingAllAdditionalPoints();
+                callback(tilePath?.length > 0 ? tilePath.map(p => toWorld(p.x, p.y)) : null);
+            });
+            this.worldPathfinder.calculate();
+        } finally {
+            if (ringed) for (const { cx, cy } of ringed) this.worldPathfinder.stopAvoidingAdditionalPoint(cx, cy);
+            if (costed) this.worldPathfinder.removeAllAdditionalPointCosts();
+        }
+    }
+
+    /**
+     * Avoid the inner floor ring of each loaded room in roomIds, except the room whose floor holds
+     * (x, y): an NPC left inside a forbidden room can walk out. Returns the cells avoided. No
+     * walkability filter and no cache: doors.js edits the grid in place when a door opens, and an
+     * avoid point on a blocked cell does nothing.
+     */
+    _avoidRoomRings(roomIds, x, y) {
+        const rooms = (typeof window !== 'undefined' && window.rooms) || {};
+        const out = [];
+        for (const id of roomIds) {
+            const rect = roomFloorRect(rooms[id], TILE_SIZE);
+            if (!rect || onFloor(rect, x, y)) continue;
+            for (const c of floorRingCells(rect, this.worldGridBounds)) {
+                this.worldPathfinder.avoidAdditionalPoint(c.cx, c.cy);
+                out.push(c);
+            }
+        }
+        return out;
     }
 
     /** Footprints of every "prefer to route around" object in the loaded rooms. */
@@ -946,6 +749,34 @@ export class NPCPathfindingManager {
      * the connected room (one TILE_SIZE away in the door direction).
      * The top and bottom rows of the combined span stay blocked to prevent corner clipping.
      */
+    /**
+     * Forget an opened doorway (a gate door shutting again, door-gates.js): drop it
+     * from openDoorways, openNSDoors and openSideDoorCorridors so the next
+     * rebuildWorldGrid() bakes the re-enabled door body back in and stops carving
+     * the gap. The caller rebuilds the grid.
+     *
+     * @param {number} worldX - Door sprite centre X (as given to markDoorWalkable)
+     * @param {number} worldY - Door sprite centre Y
+     * @param {string} direction - Door direction (either room's; N/S and E/W are matched by axis)
+     */
+    unmarkDoor(worldX, worldY, direction) {
+        const ns = direction === 'north' || direction === 'south';
+        // openDoorways holds canonical centres: for N/S the sprite centre; for E/W ±16px
+        this.openDoorways = this.openDoorways.filter(d => {
+            if (ns) return !(d.axis === 'y' && Math.abs(d.cx - worldX) < 2 && Math.abs(d.cy - worldY) < 2);
+            return !(d.axis === 'x' && Math.abs(d.cx - worldX) <= 18 && Math.abs(d.cy - worldY) < 2);
+        });
+        if (ns) {
+            // markDoorWalkable stored the top-left of the tile holding the centre, per room
+            this.openNSDoors = this.openNSDoors.filter(d =>
+                !(worldX - d.worldX >= 0 && worldX - d.worldX < TILE_SIZE &&
+                  worldY - d.worldY >= 0 && worldY - d.worldY < TILE_SIZE));
+        } else {
+            this.openSideDoorCorridors = this.openSideDoorCorridors.filter(c =>
+                !(Math.abs(c.worldX - worldX) < 2 && Math.abs(c.worldY - worldY) < 2));
+        }
+    }
+
     markSideDoorCorridor(worldX, worldY, direction) {
         addDoorway(this.openDoorways, { x: worldX, y: worldY, direction });
         // Store so rebuildWorldGrid() can reapply after future rebuilds.
@@ -969,40 +800,9 @@ export class NPCPathfindingManager {
      */
     _carveSideDoorCorridor(worldX, worldY, direction) {
         if (!this.worldGrid || !this.worldGridBounds) return;
-        const { minX, minY, cols, rows, step } = this.worldGridBounds;
-
-        const halfTile = TILE_SIZE / 2;
-        const top = worldY - halfTile;
-
-        // The adjacent room's tile is one TILE_SIZE away in the door direction.
-        // Extend the horizontal span to cover both tiles.
-        let spanLeft, spanWidth;
-        if (direction === 'east') {
-            // This tile is left of the wall; adjacent tile is to the right.
-            spanLeft  = worldX - halfTile;
-            spanWidth = TILE_SIZE * 2;
-        } else {
-            // west — this tile is right of the wall; adjacent tile is to the left.
-            spanLeft  = worldX - halfTile - TILE_SIZE;
-            spanWidth = TILE_SIZE * 2;
-        }
-
-        // Grid cell range covering both tiles (8 columns × 4 rows at 8 px step).
-        const cx1 = Math.max(0,        Math.floor((spanLeft               - minX) / step));
-        const cy1 = Math.max(0,        Math.floor((top                    - minY) / step));
-        const cx2 = Math.min(cols - 1, Math.floor((spanLeft + spanWidth - 1 - minX) / step));
-        const cy2 = Math.min(rows - 1, Math.floor((top  + TILE_SIZE    - 1 - minY) / step));
-
-        // Clear the middle rows (skip first and last row of the tile height).
-        for (let cy = cy1 + 1; cy <= cy2 - 1; cy++) {
-            for (let cx = cx1; cx <= cx2; cx++) this.worldGrid[cy][cx] = 0;
-        }
-        // Ensure top and bottom rows stay blocked across both tiles.
-        for (let cx = cx1; cx <= cx2; cx++) this.worldGrid[cy1][cx] = 1;
-        for (let cx = cx1; cx <= cx2; cx++) this.worldGrid[cy2][cx] = 1;
-
+        const c = carveSideDoorCorridor(this.worldGrid, this.worldGridBounds, worldX, worldY, direction);
         this.worldPathfinder?.setGrid(this.worldGrid);
-        console.log(`🚪 Side-door corridor carved at (${worldX.toFixed(0)},${worldY.toFixed(0)}) dir=${direction} — cells (${cx1},${cy1})→(${cx2},${cy2}), cleared rows ${cy1+1}–${cy2-1}`);
+        console.log(`🚪 Side-door corridor carved at (${worldX.toFixed(0)},${worldY.toFixed(0)}) dir=${direction} — cells (${c.cx1},${c.cy1})→(${c.cx2},${c.cy2}), cleared rows ${c.cy1+1}–${c.cy2-1}`);
     }
 
     /**
@@ -1020,21 +820,9 @@ export class NPCPathfindingManager {
      */
     _applyNSDoorCornerBlocks(doorWorldX, doorWorldY) {
         if (!this.worldGrid || !this.worldGridBounds) return;
-        const { minX, minY, cols, rows, step } = this.worldGridBounds;
-
-        const doorW = TILE_SIZE * 2;
-        const doorH = TILE_SIZE;
-
-        const cx1 = Math.max(0,        Math.floor((doorWorldX          - minX) / step));
-        const cx2 = Math.min(cols - 1, Math.ceil( (doorWorldX + doorW  - minX) / step));
-        const cy2 = Math.min(rows - 1, Math.ceil( (doorWorldY + doorH  - minY) / step));
-
-        if (this.worldGrid[cy2]) {
-            this.worldGrid[cy2][cx1] = 1;
-            this.worldGrid[cy2][cx2] = 1;
-        }
+        const c = applyNSDoorCornerBlocks(this.worldGrid, this.worldGridBounds, doorWorldX, doorWorldY);
         this.worldPathfinder?.setGrid(this.worldGrid);
-        console.log(`🚪 N/S door corner blocks applied at (${doorWorldX.toFixed(0)},${doorWorldY.toFixed(0)}) — blocked (${cx1},${cy2}) and (${cx2},${cy2})`);
+        console.log(`🚪 N/S door corner blocks applied at (${doorWorldX.toFixed(0)},${doorWorldY.toFixed(0)}) — blocked (${c.cx1},${c.cy2}) and (${c.cx2},${c.cy2})`);
     }
 
     markWorldCellsWalkable(worldX, worldY, width, height) {
@@ -1053,7 +841,7 @@ export class NPCPathfindingManager {
     /**
      * Physics LOS check that works across ALL loaded rooms.
      * Uses the same immovable-body sources as rebuildWorldGrid(), so walls AND
-     * furniture are both tested. Uses the same fat 3-ray sweep as hasPhysicsLineOfSight().
+     * furniture are both tested, with a fat 3-ray sweep (centre line plus ±bodyHalfWidth).
      */
     hasWorldPhysicsLineOfSight(x1, y1, x2, y2, bodyMargin = 2, bodyHalfWidth = 9) {
         const scene = this.scene;
@@ -1071,7 +859,7 @@ export class NPCPathfindingManager {
         ];
 
         const testBody = (body) => {
-            if (!body.enable) return false;
+            if (!body.enable || gateShowsOpen(body)) return false;
             const left   = body.left   - bodyMargin;
             const right  = body.right  + bodyMargin;
             const top    = body.top    - bodyMargin;
@@ -1176,101 +964,8 @@ export class NPCPathfindingManager {
     }
 
     /**
-     * Optional: bake actual physics bodies onto the per-room EasyStar tile grid.
-     * Not called automatically (see comment in initializeRoomPathfinding).
-     * Available for debugging via window.refreshPathfindingGrid().
-     *
-     * @param {string} roomId
-     * @returns {number} Number of newly-blocked tiles (0 if nothing to do)
-     */
-    refreshGridFromPhysicsBodies(roomId) {
-        const grid = this.grids.get(roomId);
-        const pathfinder = this.pathfinders.get(roomId);
-        const bounds = this.roomBounds.get(roomId);
-        const room = window.rooms?.[roomId];
-
-        if (!grid || !pathfinder || !bounds || !room?.wallCollisionBoxes?.length) {
-            return 0;
-        }
-
-        let marked = 0;
-        for (const box of room.wallCollisionBoxes) {
-            if (!box?.body) continue;
-
-            // Convert the physics AABB to tile ranges (any tile the body overlaps)
-            const tileX1 = Math.floor((box.body.left   - bounds.worldX) / TILE_SIZE);
-            const tileY1 = Math.floor((box.body.top    - bounds.worldY) / TILE_SIZE);
-            const tileX2 = Math.floor((box.body.right  - bounds.worldX) / TILE_SIZE);
-            const tileY2 = Math.floor((box.body.bottom - bounds.worldY) / TILE_SIZE);
-
-            for (let ty = tileY1; ty <= tileY2; ty++) {
-                for (let tx = tileX1; tx <= tileX2; tx++) {
-                    if (ty >= 0 && ty < grid.length && tx >= 0 && tx < grid[0].length) {
-                        if (grid[ty][tx] === 0) {
-                            grid[ty][tx] = 1; // block
-                            marked++;
-                        }
-                    }
-                }
-            }
-        }
-
-        if (marked > 0) {
-            pathfinder.setGrid(grid);
-            console.log(`✅ refreshGridFromPhysicsBodies [${roomId}]: marked ${marked} additional tiles from ${room.wallCollisionBoxes.length} physics bodies`);
-        }
-        return marked;
-    }
-
-    /**
-     * Draw a colour-coded tile overlay for the pathfinding grid.
-     *
-     * Red   = impassable (value 1)
-     * Green = walkable   (value 0, faint)
-     *
-     * @param {string}       roomId - Room to visualise
-     * @param {Phaser.Scene} scene  - Active Phaser scene (for graphics factory)
-     * @returns {Phaser.GameObjects.Graphics|null}
-     */
-    drawGridDebug(roomId, scene) {
-        const grid   = this.grids.get(roomId);
-        const bounds = this.roomBounds.get(roomId);
-        if (!grid || !bounds || !scene) {
-            console.warn(`⚠️ drawGridDebug: missing grid/bounds/scene for room "${roomId}"`);
-            return null;
-        }
-
-        this.clearGridDebug();
-
-        const g = scene.add.graphics();
-        g.setDepth(850); // Above game objects, below path overlay
-        this._gridDebugGraphics = g;
-
-        const rows = grid.length;
-        const cols = grid[0].length;
-
-        for (let ty = 0; ty < rows; ty++) {
-            for (let tx = 0; tx < cols; tx++) {
-                const wx = bounds.worldX + tx * TILE_SIZE;
-                const wy = bounds.worldY + ty * TILE_SIZE;
-                if (grid[ty][tx] === 1) {
-                    // Impassable — semi-transparent red
-                    g.fillStyle(0xff2222, 0.40);
-                    g.fillRect(wx + 1, wy + 1, TILE_SIZE - 2, TILE_SIZE - 2);
-                } else {
-                    // Walkable — very faint green
-                    g.fillStyle(0x22ff44, 0.10);
-                    g.fillRect(wx + 1, wy + 1, TILE_SIZE - 2, TILE_SIZE - 2);
-                }
-            }
-        }
-
-        console.log(`🗺️ Grid debug drawn for room "${roomId}": ${cols}×${rows} tiles`);
-        return g;
-    }
-
-    /**
-     * Remove the grid debug overlay created by drawGridDebug().
+     * Remove the legacy per-room grid overlay, if one is still on screen
+     * (window.hidePathfindingGrid calls this alongside clearWorldGridDebug).
      */
     clearGridDebug() {
         if (this._gridDebugGraphics) {
@@ -1279,241 +974,6 @@ export class NPCPathfindingManager {
         }
     }
 
-    /**
-     * Smooth a raw EasyStar path using greedy string-pulling.
-     *
-     * Scans from the end of the remaining path to find the furthest waypoint
-     * reachable by clear line-of-sight from the current position, then jumps
-     * there.  This collapses redundant tile-by-tile steps into direct segments,
-     * eliminating zigzagging and ensuring every kept waypoint is actually
-     * unobstructed from the previous one.
-     *
-     * @param {string} roomId  - Room identifier
-     * @param {number} startX  - World X of the starting position (usually current player pos)
-     * @param {number} startY  - World Y of the starting position
-     * @param {Array}  path    - Raw world-coordinate waypoint array from findPath()
-     * @returns {Array} Smoothed waypoint array (may equal path if already optimal)
-     */
-    smoothPath(roomId, startX, startY, path) {
-        if (!path || path.length <= 1) return path;
-
-        const smoothed = [];
-        let cx = startX;
-        let cy = startY;
-        let i = 0;
-
-        while (i < path.length) {
-            // Scan backwards from the end to find the farthest directly-visible waypoint
-            let farthest = i; // default: just step to the very next waypoint
-            for (let j = path.length - 1; j > i; j--) {
-                if (this.hasLineOfSight(roomId, cx, cy, path[j].x, path[j].y)) {
-                    farthest = j;
-                    break;
-                }
-            }
-
-            smoothed.push(path[farthest]);
-            cx = path[farthest].x;
-            cy = path[farthest].y;
-            i = farthest + 1;
-        }
-
-        return smoothed.length > 0 ? smoothed : path;
-    }
-
-    /**
-     * Find the nearest walkable tile to a world position using a spiral search.
-     * Useful when a click target lands inside an obstacle tile.
-     *
-     * @param {string} roomId - Room identifier
-     * @param {number} worldX - Desired world X
-     * @param {number} worldY - Desired world Y
-     * @param {number} [maxRadius=4] - Maximum tile radius to search
-     * @returns {{x: number, y: number}|null} - World coords of nearest walkable tile centre, or null
-     */
-    findNearestWalkableTile(roomId, worldX, worldY, maxRadius = 4) {
-        const grid = this.grids.get(roomId);
-        const bounds = this.roomBounds.get(roomId);
-        if (!grid || !bounds) return null;
-
-        const centerTileX = Math.floor((worldX - bounds.worldX) / TILE_SIZE);
-        const centerTileY = Math.floor((worldY - bounds.worldY) / TILE_SIZE);
-
-        // Already walkable — return center of that tile
-        if (centerTileY >= 0 && centerTileY < grid.length &&
-            centerTileX >= 0 && centerTileX < grid[0].length &&
-            grid[centerTileY][centerTileX] === 0) {
-            return {
-                x: bounds.worldX + centerTileX * TILE_SIZE + TILE_SIZE / 2,
-                y: bounds.worldY + centerTileY * TILE_SIZE + TILE_SIZE / 2
-            };
-        }
-
-        // Spiral outward, collecting ALL candidates within maxRadius, then return
-        // the one closest by Euclidean distance to the original world position.
-        // (The old code returned the first found in scan order, which could be a
-        // tile diagonally opposite to the actual nearest walkable tile.)
-        let best = null;
-        let bestDistSq = Infinity;
-
-        for (let r = 1; r <= maxRadius; r++) {
-            for (let dy = -r; dy <= r; dy++) {
-                for (let dx = -r; dx <= r; dx++) {
-                    // Only check the ring at radius r (not inner tiles already checked)
-                    if (Math.abs(dx) !== r && Math.abs(dy) !== r) continue;
-
-                    const tx = centerTileX + dx;
-                    const ty = centerTileY + dy;
-
-                    if (ty < 0 || ty >= grid.length || tx < 0 || tx >= grid[0].length) continue;
-                    if (grid[ty][tx] !== 0) continue;
-
-                    const cx = bounds.worldX + tx * TILE_SIZE + TILE_SIZE / 2;
-                    const cy = bounds.worldY + ty * TILE_SIZE + TILE_SIZE / 2;
-                    const ddx = cx - worldX;
-                    const ddy = cy - worldY;
-                    const distSq = ddx * ddx + ddy * ddy;
-                    if (distSq < bestDistSq) {
-                        bestDistSq = distSq;
-                        best = { x: cx, y: cy };
-                    }
-                }
-            }
-            // Early exit: once we've scanned the whole ring at r and found a candidate,
-            // any tile at r+1 will be farther away, so stop.
-            if (best !== null) break;
-        }
-
-        return best;
-    }
-
-    /**
-     * Check LOS against the actual Phaser physics bodies in room.wallCollisionBoxes.
-     *
-     * Performs a "fat segment" sweep: three parallel rays are tested — the centre
-     * line plus two offset by ±bodyHalfWidth perpendicular to the travel direction.
-     * This accurately represents whether the full width of the player's collision
-     * box can travel the segment without touching a wall body.
-     *
-     * Falls back to tile-grid LOS when no collision boxes are loaded yet.
-     *
-     * @param {string} roomId
-     * @param {number} x1           - start world X (player body centre)
-     * @param {number} y1           - start world Y
-     * @param {number} x2           - end world X
-     * @param {number} y2           - end world Y
-     * @param {number} [bodyMargin=2]      - extra clearance in px around each AABB (small — body width handles the rest)
-     * @param {number} [bodyHalfWidth=9]   - half the player collision box width (atlas body = 18px → 9px)
-     * @returns {boolean}
-     */
-    hasPhysicsLineOfSight(roomId, x1, y1, x2, y2, bodyMargin = 2, bodyHalfWidth = 9) {
-        const room = window.rooms?.[roomId];
-        if (!room || !room.wallCollisionBoxes || room.wallCollisionBoxes.length === 0) {
-            if (isDebug()) {
-                const reason = !room ? 'no room data' : 'no wallCollisionBoxes';
-                console.log(`🔍 physLOS (${x1.toFixed(0)},${y1.toFixed(0)})→(${x2.toFixed(0)},${y2.toFixed(0)}): falling back to tile grid (${reason})`);
-            }
-            return this.hasLineOfSight(roomId, x1, y1, x2, y2);
-        }
-
-        // Compute perpendicular unit vector to the travel direction.
-        // Used to offset the two side rays by ±bodyHalfWidth.
-        const dx = x2 - x1;
-        const dy = y2 - y1;
-        const len = Math.sqrt(dx * dx + dy * dy);
-        // perpendicular is (-dy, dx) normalised; if segment is zero-length use (1,0)
-        const px = len > 0.001 ? -dy / len : 1;
-        const py = len > 0.001 ?  dx / len : 0;
-
-        // Three parallel rays: centre, left edge, right edge
-        const rays = [
-            { ax: x1,                     ay: y1,                     bx: x2,                     by: y2 },
-            { ax: x1 + px * bodyHalfWidth, ay: y1 + py * bodyHalfWidth, bx: x2 + px * bodyHalfWidth, by: y2 + py * bodyHalfWidth },
-            { ax: x1 - px * bodyHalfWidth, ay: y1 - py * bodyHalfWidth, bx: x2 - px * bodyHalfWidth, by: y2 - py * bodyHalfWidth },
-        ];
-
-        const boxes = room.wallCollisionBoxes;
-        for (const box of boxes) {
-            if (!box?.body) continue;
-            const left   = box.body.left   - bodyMargin;
-            const right  = box.body.right  + bodyMargin;
-            const top    = box.body.top    - bodyMargin;
-            const bottom = box.body.bottom + bodyMargin;
-
-            for (const ray of rays) {
-                if (_segmentIntersectsAABB(ray.ax, ray.ay, ray.bx, ray.by, left, top, right, bottom)) {
-                    if (isDebug()) {
-                        console.log(`🧱 physLOS BLOCKED: box(${left.toFixed(0)},${top.toFixed(0)})→(${right.toFixed(0)},${bottom.toFixed(0)}) hit by ray (${ray.ax.toFixed(0)},${ray.ay.toFixed(0)})→(${ray.bx.toFixed(0)},${ray.by.toFixed(0)})`);
-                    }
-                    return false;
-                }
-            }
-        }
-
-        if (isDebug()) {
-            console.log(`✅ physLOS CLEAR (3-ray fat sweep, halfWidth=${bodyHalfWidth})`);
-        }
-
-        // Physics bodies are the authoritative source for what blocks the player.
-        // EasyStar still uses the tile grid for routing so paths avoid wall-face tiles
-        // and table objects correctly.
-        return true;
-    }
-
-    /**
-     * Like smoothPath but uses hasPhysicsLineOfSight for each segment test.
-     * Should be used for player movement where exact wall geometry matters.
-     *
-     * @param {string} roomId
-     * @param {number} startX - current player world X
-     * @param {number} startY - current player world Y
-     * @param {Array}  path   - raw world-coordinate waypoint array
-     * @returns {Array} smoothed waypoints
-     */
-    smoothPathForPlayer(roomId, startX, startY, path) {
-        if (!path || path.length <= 1) return path;
-
-        const debug = isDebug();
-        if (debug) {
-            console.group(`🗺️ smoothPathForPlayer: ${path.length} raw waypoints from (${startX.toFixed(0)},${startY.toFixed(0)})`);
-            console.log('Raw waypoints:', path.map((p, i) => `[${i}](${p.x.toFixed(0)},${p.y.toFixed(0)})`).join(' → '));
-        }
-
-        const smoothed = [];
-        let cx = startX;
-        let cy = startY;
-        let i = 0;
-        let step = 0;
-
-        while (i < path.length) {
-            let farthest = i;
-            for (let j = path.length - 1; j > i; j--) {
-                // Use world-aware LOS so cross-room segments are checked correctly
-                if (this.hasWorldPhysicsLineOfSight(cx, cy, path[j].x, path[j].y)) {
-                    farthest = j;
-                    break;
-                }
-            }
-            if (debug) {
-                const skipped = farthest - i;
-                const kept = path[farthest];
-                console.log(`  step ${step}: from (${cx.toFixed(0)},${cy.toFixed(0)}) → waypoint[${farthest}] (${kept.x.toFixed(0)},${kept.y.toFixed(0)})${skipped > 0 ? ` [skipped ${skipped}]` : ' [no skip]'}`);
-            }
-            smoothed.push(path[farthest]);
-            cx = path[farthest].x;
-            cy = path[farthest].y;
-            i = farthest + 1;
-            step++;
-        }
-
-        if (debug) {
-            console.log(`✅ Smoothed: ${path.length} → ${smoothed.length} waypoints`);
-            console.log('Smoothed waypoints:', smoothed.map((p, i) => `[${i}](${p.x.toFixed(0)},${p.y.toFixed(0)})`).join(' → '));
-            console.groupEnd();
-        }
-
-        return smoothed.length > 0 ? smoothed : path;
-    }
 }
 
 /**

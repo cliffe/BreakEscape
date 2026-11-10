@@ -399,7 +399,8 @@ html .game-display-dialog {
     position: relative;
 }
 
-.inventory-slot .phone-badge {
+.inventory-slot .phone-badge,
+.inventory-slot .tray-badge {
     display: block;
     position: absolute;
     top: -5px;
@@ -417,6 +418,12 @@ html .game-display-dialog {
     box-shadow: 0 2px 4px rgba(0,0,0,0.8);
     z-index: 10;
     border-radius: 0; /* Maintain pixel-art aesthetic */
+}
+
+/* A filed item's slot (systems/inventory.js refreshInventoryTray): hidden, but its
+   element stays in window.inventory.items so "does the player hold X" still finds it */
+.inventory-slot.tray-hidden {
+    display: none !important;
 }
 
 /* =====================================================

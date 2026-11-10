@@ -490,9 +490,12 @@ export class SightOcclusion {
         return segmentClear(grids, a.x, a.y, b.x, b.y);
     }
 
-    /** True when the NPC's view of the target (feet to feet) is not blocked. */
-    isSightClear(npc, target) {
-        return this.isClearBetween(npcGroundPoint(npc), targetGroundPoint(target));
+    /**
+     * True when the NPC's view of the target (feet to feet) is not blocked. `from`
+     * replaces the NPC's feet (npc-los.js passes the torch hand when sight starts there).
+     */
+    isSightClear(npc, target, from) {
+        return this.isClearBetween(from || npcGroundPoint(npc), targetGroundPoint(target));
     }
 
     /** Clipped ray lengths for a fan of angles (radians) from a floor point. */

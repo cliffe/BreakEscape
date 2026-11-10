@@ -698,7 +698,7 @@
      "visible": true,
      "width": 37,
      "x": 189.58,
-     "y": 115.38
+     "y": 113.38
     },
     {
      "gid": 366,
@@ -710,7 +710,7 @@
      "visible": true,
      "width": 32,
      "x": 223.28,
-     "y": 115.38
+     "y": 113.38
     },
     {
      "gid": 222,
@@ -746,7 +746,7 @@
      "visible": true,
      "width": 34,
      "x": 37.72,
-     "y": 114.6
+     "y": 112.6
     },
     {
      "gid": 371,
@@ -758,7 +758,7 @@
      "visible": true,
      "width": 31,
      "x": 64.18,
-     "y": 114.6
+     "y": 112.6
     },
     {
      "gid": 335,
@@ -794,7 +794,7 @@
      "visible": true,
      "width": 32,
      "x": 41.84,
-     "y": 167.38
+     "y": 165.38
     },
     {
      "gid": 368,
@@ -806,7 +806,7 @@
      "visible": true,
      "width": 34,
      "x": 70.48,
-     "y": 166.6
+     "y": 164.6
     },
     {
      "gid": 199,
@@ -830,7 +830,7 @@
      "visible": true,
      "width": 31,
      "x": 183.22,
-     "y": 166.6
+     "y": 164.6
     },
     {
      "gid": 366,
@@ -842,7 +842,7 @@
      "visible": true,
      "width": 32,
      "x": 212.36,
-     "y": 167.38
+     "y": 165.38
     },
     {
      "gid": 220,
@@ -937,13 +937,13 @@
     {
      "id": 0,
      "image": "../tables/hospital_desk1.png",
-     "imageheight": 48,
+     "imageheight": 44,
      "imagewidth": 62
     },
     {
      "id": 1,
      "image": "../tables/hospital_desk2.png",
-     "imageheight": 48,
+     "imageheight": 44,
      "imagewidth": 62
     },
     {
@@ -2226,13 +2226,13 @@
     {
      "id": 201,
      "image": "../objects/hospital_chair_north.png",
-     "imageheight": 26,
+     "imageheight": 30,
      "imagewidth": 16
     },
     {
      "id": 202,
      "image": "../objects/hospital_chair_south.png",
-     "imageheight": 32,
+     "imageheight": 35,
      "imagewidth": 16
     },
     {
@@ -3927,7 +3927,7 @@
     {
      "id": 100,
      "image": "../objects/hospital_chair_north2.png",
-     "imageheight": 26,
+     "imageheight": 30,
      "imagewidth": 16
     },
     {
@@ -4023,7 +4023,7 @@
     {
      "id": 116,
      "image": "../objects/exec_desk1.png",
-     "imageheight": 46,
+     "imageheight": 42,
      "imagewidth": 80
     },
     {

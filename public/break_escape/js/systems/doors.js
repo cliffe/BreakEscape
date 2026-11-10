@@ -15,7 +15,8 @@ import {
     GRID_UNIT_HEIGHT_PX,
     DOOR_INTERACTION_RANGE
 } from '../utils/constants.js';
-import { handleUnlock, notifyServerUnlock } from './unlock-system.js';
+import { handleUnlock, notifyServerUnlock, playerHoldsRfidCredentialFor } from './unlock-system.js';
+import { appendLockedHint, lockedHintDuration, doorRefusalTitle } from '../utils/locked-hint.js';
 import { isRepeatInteraction } from './interaction-repeat.js';
 import { waitForRoomReady } from './room-ready.js';
 
@@ -390,7 +391,7 @@ export function initializeDoors(gameInstance, roomsRef) {
 }
 
 // Function to create door sprites based on gameScenario connections
-export function createDoorSpritesForRoom(roomId, position) {
+export function createDoorSpritesForRoom(roomId, position, fullRoomData = null) {
     const gameScenario = window.gameScenario;
     const roomData = gameScenario.rooms[roomId];
     if (!roomData || !roomData.connections) {
@@ -524,6 +525,10 @@ export function createDoorSpritesForRoom(roomId, position) {
             locked: lockProps.locked !== undefined ? lockProps.locked : (connectedRoomData?.locked || false),
             lockType: lockProps.lockType || connectedRoomData?.lockType || null,
             requires: lockProps.requires || connectedRoomData?.requires || null,
+            // An rfid door's access list (roles and people) and whether a UID-only copy
+            // opens it (access model 4.1). Neither is secret; the server decides the list.
+            access: lockProps.access ?? connectedRoomData?.access ?? null,
+            acceptsUIDOnly: lockProps.acceptsUIDOnly ?? connectedRoomData?.acceptsUIDOnly ?? null,
             keyPins: keyPinsArray,  // Include keyPins from scenario (supports both cases)
             difficulty: lockProps.difficulty || connectedRoomData?.difficulty,  // Include difficulty from scenario
             isSideDoor: isSideDoor,  // Track if this is a side (E/W) door for animation purposes
@@ -553,6 +558,14 @@ export function createDoorSpritesForRoom(roomId, position) {
             difficulty: doorSprite.doorProperties.difficulty
         });
 
+        // Gate door (systems/door-gates.js): `gate` on the door definition. The bootstrap
+        // scenario drops `doors`, so read the full room data from /room/:id too. The far
+        // room's sprite joins the doorway's gate by position (register with null).
+        const fullDoorDefinition = fullRoomData?.doors?.find?.(d =>
+            d.connectedRoom === connectedRoom && d.direction === direction
+        );
+        const gateRaw = lockProps.gate || fullDoorDefinition?.gate || null;
+
         // Set up door info for transition detection
         doorSprite.doorInfo = {
             roomId: roomId,
@@ -571,9 +584,10 @@ export function createDoorSpritesForRoom(roomId, position) {
         }
         doorSprite.body.setImmovable(true);
 
-        // Add collision with player
+        // Add collision with player. On a gate that shows open but is solid for him, the
+        // bump answers like a refused click (handleGateBump)
         if (window.player && window.player.body) {
-            gameRef.physics.add.collider(window.player, doorSprite);
+            gameRef.physics.add.collider(window.player, doorSprite, () => handleGateBump(doorSprite));
         }
 
         // Set up interaction zone
@@ -584,8 +598,13 @@ export function createDoorSpritesForRoom(roomId, position) {
         doorSprite.interactionZone = zone;
         doorSprites.push(doorSprite);
 
-        // If door starts unlocked, mark it as walkable in pathfinding
-        if (!doorSprite.doorProperties.locked && window.pathfindingManager) {
+        // Register after the body exists: a sprite made while its doorway's gate is
+        // open (the far room loading mid-hold) must start with its body disabled
+        const isGate = !!window.doorGates?.register?.(doorSprite, gateRaw);
+
+        // If door starts unlocked, mark it as walkable in pathfinding (a gate starts shut;
+        // door-gates.js marks it when it opens)
+        if (!isGate && !doorSprite.doorProperties.locked && window.pathfindingManager) {
             window.pathfindingManager.markDoorWalkable(
                 roomId,
                 doorSprite.doorProperties.worldX,
@@ -630,6 +649,84 @@ async function handleDoorInteraction(doorSprite) {
     const props = doorSprite.doorProperties;
     console.log(`Interacting with door: ${props.roomId} -> ${props.connectedRoom}`);
 
+    // A gate door (door-gates.js). The player never reaches handleUnlock -> openDoor
+    // (which would destroy the sprite for good) by clicking. A gate is a CLIENT-SIDE
+    // access control: a bare click never opens it, even when the room has been
+    // server-unlocked (an NPC's cross-room route unlocks it only so the room can
+    // load — that must not grant the PLAYER passage). Detect the gate robustly, by
+    // doorProperties or by a registered group at the doorway position, so this holds
+    // even for a sprite that lost its `gate` field on a room reload.
+    const gateGroup = window.doorGates?.groups?.get?.(props.gateKey)
+        || window.doorGates?.groupAtPosition?.(props.worldX ?? doorSprite.x, props.worldY ?? doorSprite.y)
+        || null;
+    if (props.gate || gateGroup) {
+        // Both rooms' sprites of the doorway take the same click: answer once
+        if (gateGroup && isRepeatInteraction(gateGroup)) return;
+        // Asked once, before the credential test. A player inside the secured room gets
+        // 'exit' (the gate opens for him to leave) or 'leave' (it is open: he walks out):
+        // either ends the click, with no credential, request, toast or event. A player
+        // outside gets 'pass' or 'denied', used below once the credential is answered.
+        const outcome = window.doorGates?.clickOutcome?.(gateGroup, {
+            holdsCredential: false, connectedRoom: props.connectedRoom
+        }) || 'denied';
+        if (outcome === 'exit' || outcome === 'leave') return;
+        // Clone-as-entry: a held credential satisfying the locked room's `requires`
+        // (physical keycard or a clone saved on the rfid cloner) opens the gate — the
+        // taught alternative to tailgating. It behaves exactly like an ordinary
+        // RFID-locked door: the unlock request goes to the server, the server validates
+        // the credential and unlocks the room, and the client loads the room — reusing
+        // the rfid door path (notifyServerUnlock, then the roomDataCache/loadRoom load
+        // that openDoor runs) so window.rooms[connectedRoom] actually exists before the
+        // player walks through. The gate behaviour then layers on top: playerOpen holds
+        // the door open for one window (door_gate_player_opened), then it shuts and
+        // relocks. A bare playerOpen (the old path) toggled the doorway walkable into a
+        // room that was never loaded and never told the server, so the player could not
+        // enter and verify-run showed no progress.
+        const hintSource = gateHintSource(props, gateGroup);
+        const requires = props.requires || gateGroup?.requires || null;
+        if (playerHoldsRfidCredentialFor(requires)) {
+            const connectedRoom = props.connectedRoom;
+            let serverResponse;
+            try {
+                serverResponse = await notifyServerUnlock(doorSprite, 'door', 'rfid');
+            } catch (error) {
+                console.error('Clone-as-entry server unlock failed:', error);
+            }
+            if (!serverResponse || !serverResponse.success) {
+                window.gameAlert?.('Access denied', 'error', doorRefusalTitle(hintSource, 'Door'), lockedHintDuration(hintSource, 3000, 'Access denied'));
+                return;
+            }
+            // Cache the room the server returned and load it if it is not loaded yet
+            // (the same step openDoor runs via unlockDoor), so the room exists before
+            // the gate opens.
+            const roomData = serverResponse.roomData;
+            if (roomData && window.roomDataCache) {
+                window.roomDataCache.set(connectedRoom, roomData);
+            }
+            if (!window.rooms || !window.rooms[connectedRoom]) {
+                if (window.loadRoom) {
+                    try {
+                        await window.loadRoom(connectedRoom);
+                    } catch (err) {
+                        console.error(`Failed to load room ${connectedRoom}:`, err);
+                    }
+                }
+            }
+            // Open the gate for the player and hold it; the gate shuts and relocks later.
+            // The door release sounds from playerOpen (door-gates.js), once, for an RFID door
+            if (window.doorGates?.playerOpen?.(connectedRoom)) {
+                window.gameAlert?.('Access granted: cloned staff badge accepted.', 'success', 'Door', 3000);
+            }
+            return;
+        }
+        // The gate is open and the player may pass (staff holding it, hi-vis on): the
+        // way is clear, so there is nothing to refuse (playtest E2). The credential
+        // case is answered above (it goes through the server).
+        if (outcome === 'pass') return;
+        refuseAtGate(props, gateGroup);
+        return;
+    }
+
     // Check if locks are disabled for testing
     if (window.DISABLE_LOCKS) {
         console.log('LOCKS DISABLED FOR TESTING - Opening door directly');
@@ -642,6 +739,48 @@ async function handleDoorInteraction(doorSprite) {
     // The server will check its scenario data and validate accordingly
     console.log('Checking door access with server...');
     handleUnlock(doorSprite, 'door');
+}
+
+/**
+ * The hint and sign a gate's refusal shows. The hint lives on the locked room's side of
+ * the doorway; the group shares it. So does the sign, which titles a refusal ("Server
+ * Riser" in place of "Door").
+ */
+function gateHintSource(props, gateGroup) {
+    return { doorProperties: {
+        lockedHint: props.lockedHint || gateGroup?.lockedHint || null,
+        door_sign: gateGroup?.doorSign || (props.requires ? props.door_sign : null) || null
+    } };
+}
+
+/** A gate's refusal, for a refused click and for the bump: the toast and door_gate_denied. */
+function refuseAtGate(props, gateGroup) {
+    const hintSource = gateHintSource(props, gateGroup);
+    const denied = 'Access denied: this door only opens for authorised staff.';
+    window.gameAlert?.(appendLockedHint(denied, hintSource), 'error', doorRefusalTitle(hintSource, 'Door'), lockedHintDuration(hintSource, 3000, denied));
+    window.eventDispatcher?.emit?.('door_gate_denied', {
+        roomId: props.roomId, connectedRoom: props.connectedRoom, direction: props.direction
+    });
+}
+
+/**
+ * The bump: the player walked into a gate that shows open but is solid for him (open for
+ * a guard, and he is barred). Click-to-walk follows the path grid, which follows `open`,
+ * so a click into the room routes him through the gate: stop the walk, then answer as a
+ * refused click does, at most once every few seconds per gate (door-gates.js bumpDue).
+ * A bump on a shut gate stays silent, as at any shut door.
+ */
+export function handleGateBump(doorSprite, now = Date.now()) {
+    const props = doorSprite?.doorProperties;
+    const gates = window.doorGates;
+    const g = props?.gateKey ? gates?.groups?.get?.(props.gateKey) : null;
+    if (!g || !g.open || g.bodyOff) return false;
+    window.cancelClickToMove?.();
+    // A player carrying a credential this gate accepts is about to present it: no refusal.
+    if (g.requires && playerHoldsRfidCredentialFor(g.requires)) return false;
+    if (!gates.bumpDue?.(g, now)) return false;
+    refuseAtGate(props, g);
+    return true;
 }
 
 // Function to unlock a door (called after successful unlock)

@@ -84,6 +84,8 @@ function safeEvaluateCondition(conditionStr, eventData) {
     const includesMatch = expr.match(/^(value|data(?:\.\w+)+|globalVars(?:\.\w+)+)\.includes\(['"]([^'"]*)['"]\)$/);
     if (includesMatch) {
       const lhs = resolveLHS(includesMatch[1]);
+      // A list of ids (network_device_unplugged's endedPcIds) is tested by membership
+      if (Array.isArray(lhs)) return lhs.includes(includesMatch[2]);
       return !!(lhs && typeof lhs === 'string' && lhs.includes(includesMatch[2]));
     }
 
@@ -679,7 +681,36 @@ export default class NPCManager {
       if (framework.currentMinigame) {
         framework.endMinigame(false, null);
       }
-      setTimeout(() => this._openScriptedConversation(conv), conv.startDelayMs);
+      setTimeout(() => {
+        // Busy-guard. During the start delay the player may have opened a chat or
+        // minigame of their own — e.g. an auto NPC challenge (sight/LOS) was scheduled
+        // while the player was walking, then they tapped into a person-chat or a PC
+        // before it opened. Opening over it here would close their minigame and steal
+        // input. (Any minigame already open when this fired was closed just above, so a
+        // scripted beat still interrupts what was open at emit time; this only guards a
+        // minigame opened AFTER, during the delay.) An auto-challenge is DROPPED — it is
+        // stale and re-fires on the next sighting; a scripted conversation is DEFERRED
+        // to the queue so it is not lost.
+        if (window.MinigameFramework?.currentMinigame) {
+          this._scriptedCall = null;
+          if (conv.dropIfBusy) {
+            console.log(`📵 ${conv.sceneType} for ${conv.npcId} (${conv.label}) dropped: player is in a minigame (auto-challenge, re-fires on next sighting)`);
+            if (this._scriptedCallQueue.length) this._pumpScriptedCallQueue();
+            return;
+          }
+          console.log(`📵 ${conv.sceneType} for ${conv.npcId} (${conv.label}) deferred: player opened a minigame during the start delay`);
+          this._scriptedCallQueue.push(conv);
+          this._pumpScriptedCallQueue();
+          return;
+        }
+        this._openScriptedConversation(conv);
+      }, conv.startDelayMs);
+      return;
+    }
+    // Already busy or a queue exists. An auto-challenge (dropIfBusy) is stale behind an
+    // open/starting conversation, so drop it rather than stack it up; a scripted beat waits.
+    if (conv.dropIfBusy) {
+      console.log(`📵 ${conv.sceneType} for ${conv.npcId} (${conv.label}) dropped: ${this._scriptedCall?.npcId || 'another'}'s conversation is starting or open (auto-challenge)`);
       return;
     }
     console.log(`📵 ${conv.sceneType} for ${conv.npcId} (${conv.label}) waits: ${this._scriptedCall?.npcId || 'another'}'s conversation is starting or open`);
@@ -837,6 +868,7 @@ export default class NPCManager {
         unlockTask: mapping.unlockTask,      // taskId or [taskId] — unlock tasks directly
         unlockAim: mapping.unlockAim,        // aimId or [aimId] — unlock aims directly
         unlockDoor: mapping.unlockDoor,      // roomId or [roomId] — unlock doors on the server (persists)
+        closeDoor: mapping.closeDoor,        // roomId or [roomId] — shut a gate door now (door-gates.js)
         openMinigame:  mapping.openMinigame  || null,   // a minigame registry type, or { type, minigameData }
         emitEvent:     mapping.emitEvent     || null,   // event name to emit when mapping fires
         emitEventData: mapping.emitEventData || {},     // optional payload for that event
@@ -852,6 +884,7 @@ export default class NPCManager {
         setVisible:         mapping.setVisible          ?? undefined,
         patrolOverride:     mapping.patrolOverride      || null,
         needs:              mapping.needs               || null,
+        addCapture:         mapping.addCapture          || null,   // record a credential/foothold into se_captures (merges the npc_used payload)
         setPatrolSpeed:     mapping.setPatrolSpeed      ?? undefined,
         setDwellMultiplier: mapping.setDwellMultiplier  ?? undefined,
         navigateToPlayer:   mapping.navigateToPlayer    || false
@@ -1101,6 +1134,18 @@ export default class NPCManager {
       })();
     }
 
+    // Shut a gate door now (systems/door-gates.js): "closeDoor": "<room the door leads to>"
+    // (or a list). Forced, so it skips the "an NPC is still crossing" hold, but it never
+    // closes on a player crossing a doorway the gate lets them through. Ordinary doors are ignored (warning).
+    if (config.closeDoor) {
+      const rooms = Array.isArray(config.closeDoor) ? config.closeDoor : [config.closeDoor];
+      rooms.forEach(roomId => {
+        const ok = window.doorGates?.closeNow?.(roomId, { force: true });
+        if (ok === undefined) console.warn(`[event mapping] closeDoor: no gate door system loaded (${roomId})`);
+        else console.log(`🚪 Event closeDoor: ${roomId}`, ok ? 'closed' : 'not closed');
+      });
+    }
+
     // Emit a custom event if specified (enables event chaining from NPC mappings)
     if (config.emitEvent) {
       const payload = config.emitEventData || {};
@@ -1149,6 +1194,18 @@ export default class NPCManager {
     // After patrolOverride, so a mapping can move the NPC and then hand it back.
     if (config.needs && window.npcNeedsSystem) {
       window.npcNeedsSystem.control(npcId, config.needs);
+    }
+
+    // Record a capture into se_captures (NPC_NEEDS_SYSTEM.md §13). The static template
+    // (targetId, roleLabel, kind, note, ...) is overlaid with the NPC's own usePayload,
+    // which rides on an npc_used event as eventData.payload — so the credential comes from
+    // the NPC, never from the object that was used. window.recordSECapture is set by
+    // apply-actions.js at startup, so no extra static import is pulled into npc-manager.
+    if (config.addCapture && typeof window.recordSECapture === 'function') {
+      const cap = { ...config.addCapture };
+      const payload = eventData && eventData.payload;
+      if (payload && typeof payload === 'object') Object.assign(cap, payload);
+      window.recordSECapture(cap);
     }
 
     // [Phase 3] Handle NPC visibility toggle (delayed NPC appearance)
@@ -1316,10 +1373,19 @@ export default class NPCManager {
 
         const knotToUse = config.targetKnot || config.knot || npc.currentKnot;
         console.log(`⏳ Waiting 500ms before starting person-chat cutscene for ${npcId}`);
+        // An auto-challenge is an NPC NOTICING the player (an LOS / line-of-sight event:
+        // `player_in_view*`, `lockpick_used_in_view`, any `*_in_view`), not a story beat
+        // the player walked into. Those should never open over, or just after, a minigame
+        // the player is in — a stale "can I help you?" that steals input (the lab's Len on
+        // the walk back). They are dropped if the player is busy when they would open: the
+        // NPC re-challenges on the next sighting. Scripted story conversations keep deferring
+        // (queued, never lost — m10 R3 / F25).
+        const dropIfBusy = /_in_view/.test(eventPattern);
         this._queueScriptedConversation({
           npcId: npc.id,
           label: eventPattern,
           sceneType: 'person-chat',
+          dropIfBusy,
           startDelayMs: NPCManager.SCRIPTED_CALL_START_MS,
           beforeOpen: () => {
             console.log(`✅ Starting person-chat minigame for ${npcId}`);

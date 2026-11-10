@@ -21,6 +21,12 @@
       "optional": false
     },
     {
+      "id": "lock_pigeonholes_locked",
+      "label": "Locked Pigeonholes<br/>Password lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
       "id": "probe_room",
       "label": "Probe Room",
       "kind": "room",
@@ -41,6 +47,11 @@
     {
       "from": "probe_room",
       "to": "lock_pin_safe",
+      "soft": false
+    },
+    {
+      "from": "probe_room",
+      "to": "lock_pigeonholes_locked",
       "soft": false
     }
   ]

@@ -278,8 +278,8 @@ export function updateSwivelChairRotation() {
         // Update chair depth based on current position (for all chairs with wheels)
         updateSpriteDepth(chair, chair.elevation || 0);
         
-        // Only process rotation for swivel chairs
-        if (!chair.isSwivelChair) return;
+        // Only process rotation for swivel chairs; a sat-on chair turns with its sitter (seating.js)
+        if (!chair.isSwivelChair || chair.seatedBy) return;
         
         // Calculate movement speed
         const velocity = Math.sqrt(

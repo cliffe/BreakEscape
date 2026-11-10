@@ -29,3 +29,23 @@ BreakEscape.configure do |config|
   config.standalone_mode = true
   config.demo_user_handle = 'test_user'
 end
+
+# Access model tests (docs/achitechture/ACCESS_MODEL_PLAN.md, step 1). A test that
+# hand-writes scenario_data skips Game#generate_scenario_data (it returns at once
+# when scenario_data is set), so it would run without the access model loader.
+# Every access model test with a hand-written scenario builds its game here.
+module AccessGameHelper
+  def create_access_game(mission:, player:, scenario:, player_state: {})
+    game = BreakEscape::Game.new(
+      mission: mission,
+      player: player,
+      scenario_data: scenario.deep_dup,
+      player_state: player_state.deep_dup
+    )
+    game.prepare_scenario_data!
+    game.save!
+    game
+  end
+end
+
+ActiveSupport::TestCase.include(AccessGameHelper)

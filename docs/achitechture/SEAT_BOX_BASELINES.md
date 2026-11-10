@@ -1,0 +1,251 @@
+# Seat box slice 0 baselines (2026-11-06)
+
+Plan: `SEAT_BOX_PLAN.md` slice 0. Handover: `HANDOVER_SEATBOX_S0.md`. Both baselines are on today's
+landing rule and legacy desk boxes, so slice 1 and later slices can diff against them.
+
+Committed copies are in `tools/playtest/baselines/`:
+
+| File | What |
+|---|---|
+| `seatbox-s0-stand.json` | Stand audit result (header says `commit a185ce899`, `seatBox` unset, `deskBoxes` map) |
+| `seatbox-s0-stand-games.tsv` | Its 159 rows (name, game id, rooms, note); game ids are rows in the dev DB at 2026-11-06 |
+| `seatbox-s0-walk.json` | Walk record, `--desk-boxes legacy`, taken at `00f04d534` (written into the file) |
+| `seatbox-s0-walk-games.tsv` | Its four rows |
+
+## Stand audit
+
+Started 17:10 on 2026-11-06. The header names `a185ce899`, the HEAD when it started; the engine code
+under test is `2099537a0` (the `buildWorldGrid` split), and only tools changed after that. The scale-fix commits that landed during the run changed maps, not
+engine code (not checked file by file).
+
+Totals (the run's own summary lines):
+
+- 158 of 159 games finished. `timed_messages_example` timed out (60 s `waitForFunction`) and has no row.
+- 700 chairs audited, 25 skipped (an NPC's feet within 24 px of the castor), in 80 missions that have
+  swivel chairs (the other 78 rows have none).
+- 1400 stands (voluntary Space, Space and forced `standUp()` per chair): 1400 landed, **0 in a body,
+  224 across a desk**, 0 refused, 0 could not sit.
+- Every stand reports `via: legacy-compass`. The `legacy-fallback` and `legacy-none` branches never
+  ran. The across-desk count is 112 chairs, and voluntary and forced agree on each (112 + 112).
+- 63 of the 80 missions with chairs have at least one across-desk chair.
+
+### By chair type (chairs, not stands)
+
+| Texture | Chairs | Across a desk | Facing of those |
+|---|---|---|---|
+| `chair-white-2-rotate6` | 102 | 98 | all north-east |
+| `chair-exec-rotate1` | 13 | 13 | south |
+| `chair-grey-1-rotate1` | 12 | 1 | south |
+| every other texture (white-1 rotate2..8, white-2 rotate1/3/5/8, darkgray-1, grey-4, exec rotate2/5) | 573 | 0 | |
+
+So the bug is two chair sprites. `chair-white-2-rotate6` (north-east facing, the forward step crosses
+the desk) is 88 per cent of it; `chair-exec-rotate1` is every exec chair, in the CEO room and its
+copies. `chair-grey-1-rotate1` has one case.
+
+### Top offenders by mission (chairs across a desk of chairs audited)
+
+| Mission | Bad | Audited |
+|---|---|---|
+| lockpick_gauntlet | 5 | 34 |
+| biometric_breach | 4 | 19 |
+| ceo_exfil | 4 | 19 |
+| crypto1_captain_meow | 4 | 19 |
+| npc-hub-demo-ghost-protocol | 4 | 24 |
+| test_complex_multidirection | 4 | 19 |
+| test_needs_leash | 4 | 22 |
+| crypto2_rsa_asymmetric | 3 | 13 |
+| test-rfid-multiprotocol | 3 | 18 |
+| test_unlock_silence | 3 | 18 |
+| test_vertical_layout | 3 | 13 |
+| crypto3_aes_symmetric, crypto4_encoding_encryption, cybok_heist, lab_encoding_encryption | 2 | 7, 7, 7, 11 |
+
+The CEO room (`ceo`) is 2 of 2 in every mission that uses it. The office1 to office3 rooms in the
+biometric_breach family are 1 of 6 each. `test_desk_seating` (game 892): 6 chairs, 0 bad.
+
+Skipped chairs by mission (top): test-npc-patrol 3, test_seating 3, test_needs_leash 2,
+test_needs_sims 2, test-npc-face-player 2 (seated NPCs).
+
+Re-run (needs the `stand-games.tsv` rows to exist as games on the keyless :3001 server):
+
+    node tools/playtest/stand-audit.mjs tools/playtest/baselines/seatbox-s0-stand-games.tsv --out out.json
+
+About 30 s per game with chairs, 70 minutes for the lot. Slice 1 runs it under `__seatBox = false`
+(compare to this file) and with the new order. Fail on any new-order in-a-body or across-a-desk.
+
+## Walk audit
+
+Taken at `00f04d534`, `--desk-boxes legacy`, run twice, diffed with `--all-geometry`:
+**0 fails, 0 coverage problems, 34 rooms, 0 pockets, 0 blocked or opened cells between the two runs, 6
+listed** (check (d), a swivel's body overlapping a desk, all "already in before" so they are the
+baseline). Gates 1 (closed) in `lab_physical_pentest`, none elsewhere.
+
+| Game | Row | Rooms | Sample map |
+|---|---|---|---|
+| 892 | test_desk_seating | 1 | `room_test_desk_seating` |
+| 785 | lab_physical_pentest | 9 | `open_plan` = `room_lw_accounts` |
+| 790 | lab_tesseract_trials | 11 | `staff_office` = `room_uni_staff` |
+| 794 | m01_first_contact | 13 | `main_office_area` = `room_office`, `break_room` = `room_break` |
+
+The six listed (d) overlaps: `library_book_trolley1_23` against `library_study_carrels1_14`
+(lab_tesseract_trials/library); conference_room chairs `chair-white-1-rotate7_152` and
+`rotate6_154` against `desk1_91` and `desk1_94`; main_office_area chairs `chair-white-2-rotate1_155`,
+`rotate3_157` and `rotate6_158` against `desk1_94`, `desk1_93` and `desk1_92` (all m01).
+
+The plan's five sample rooms: `room_office`, `room_uni_staff` and `room_break` are covered.
+`room_office5` is used by no scenario at HEAD. `room_IT` is not used under that spelling; m01
+uses `room_it` (`it_room`), which is in the record, but the plan's room is not sampled as such.
+
+Re-run (twice, then diff; expect nothing between runs, and compare a later run to the committed file):
+
+    node tools/playtest/room-snapshot.mjs tools/playtest/baselines/seatbox-s0-walk-games.tsv snap.json --walk walk.json --desk-boxes legacy
+    node tools/playtest/walk-audit-diff.mjs tools/playtest/baselines/seatbox-s0-walk.json walk.json --all-geometry
+
+About 2.5 minutes per run. Maps changed since 00f04d534 (the scale-fix agent) will show as geometry
+differences, so rebaseline from the same commit as the code under test when comparing.
+
+## Known skips
+
+Two example scenarios misbehave under the all-rooms snapshot (`tools/playtest/room-snapshot.mjs`). The owner chose to leave them, so expect them in every run and don't treat them as regressions:
+
+- `timed_messages_example` never loads its rooms within the 60 s timeout.
+- `vm_free_mission` loads but records 0 sprites.
+
+## Not built
+
+The walk record's 2x screenshots with the cells drawn (check (g)) were never built. The diff tool lists
+pocket boxes in world pixels instead.
+
+## Slice 1 results (2026-11-06)
+
+Engine commit `4130d7555` (player half of the seat box stand-up order). Committed copy of the new-order
+stand audit: `tools/playtest/baselines/seatbox-s1-stand.json` (header says `commit eebd0ed77`, `seatBox`
+unset, `deskBoxes` map; the engine under test is `4130d7555` onward, and nothing under `js/` changed
+afterwards that touches seating).
+
+**Stand audit, new order**, same 159 rows as slice 0: 158 of 159 games finished (`timed_messages_example`
+timed out again, as in the baseline). 700 chairs audited, 25 skipped, 1400 stands: 1400 landed, **0 in a
+body, 0 across a desk, 0 refused**, 0 could not sit. Every stand reports `via: compass`. The slice 0
+baseline had 224 across a desk. Refused-chair list for the user: **empty** (0 refused).
+
+**Stand audit, legacy switch** (`--seat-box false`, top-offender rows only: `biometric_breach`,
+`ceo_exfil`, `lockpick_gauntlet`, `test_desk_seating`): 78 chairs, 156 stands, 156 landed, 0 in a body,
+**26 across a desk** (biometric_breach 8, ceo_exfil 8, lockpick_gauntlet 10, test_desk_seating 0; each
+chair counts twice, voluntary and forced, so 4 + 4 + 5 chairs, as in the slice 0 table). Every stand
+`via: legacy-compass`. The old code still reproduces its landings under the switch.
+
+**Walk audit** against `seatbox-s0-walk.json` (`--desk-boxes legacy`, `--all-geometry`): 34 rooms, 0 fails,
+0 coverage problems, **0 differences** (blocked +0, opened +0 and reachable cells equal in every room),
+the same 6 listed (d) overlaps as the baseline. The map files of the four rows are unchanged since
+`00f04d534`; the later commits touch only other scenarios and the lab's ink and scenario text (the games
+are stored rows, so the audit read the baseline's maps).
+
+**Lab regression**: `lab_physical_pentest` game 909, replay of 41 commands from game 685 with slice 1's
+code. `verify-run.rb`: 9 tasks completed, **score 100**. No "No path found" or "Failed to escape wall".
+`drain` showed 41 page errors, all "Failed to load resource ... 503", which are the keyless server's
+`/tts` refusals (`games_controller.rb:691`), not seating. The lab scenario was being edited by another
+agent during the run; the replay was unaffected.
+
+
+## Slice 3 results (2026-11-06)
+
+Commits 617891946 (overlap grouping, `test_desk_seating` PCs) and 53ed4fce4 (back-edge rule from the
+snapshot review). Scratch: `scratchpad/seatbox-s3/` in session c84d7b68.
+
+**Tests.** `table-item-overlap-grouping.test.mjs` 12/12, `table-group-variant-listeners.test.mjs`
+passing. Full node suite after the first commit 403/403; after the fix 404/405, the one failure
+`npc-needs-slots.test.mjs` "test_needs_sims ... copier pool" (expects 3 reveal slots; office-life
+slice 17's showcase commit 6e253b502 made it 5; not this slice). Rails 953 runs, 0 failures, 1 skip.
+Reopen check: the same 4 m09 phone-ink problems as slice 1.
+
+**Demo, `test_desk_seating`** (game 911, swapped from a `test_seating` row; depths read from the page):
+`desk_pc_on` (pc1 placeholder on desk1, F 140) depth 140.51, in desk1's group; `desk_pc_off`
+(position 17,4) depth 151.5 = bottom + 0.5, no table under it, console warning
+"[table group] desk_pc_off took the table_items (regular) placeholder pc1 but overlaps no table".
+
+**Snapshot diff** against `scale-fix/snap_after.json` (same game rows, `ts-build/games_all.tsv`, 159/161
+loaded as before; maps unchanged since that snapshot). Full run on the first commit, then the 29
+scenarios that changed again on the fix. After the fix: 0 moves, 1 flip, 80 depth-only changes, all
+from grouping:
+- `room_servers` `phone4` (a wall phone, Tiled table item over no table; 17 rooms in: biometric_breach,
+  ceo_exfil, crypto1-4, secgen_vm_lab, test_complex_multidirection, test_horizontal_layout,
+  test_ink_email, test_multiple_connections ×3, test-rfid, test-rfid-multiprotocol,
+  test-shredded-document, lockpick_gauntlet, m01 it_room): from the nearest desk's group to its own
+  back-wall depth (-696.48 -> -703.447 and the like). Expected (plan Q4).
+- Group re-indexing by 0.01 or 0.02 where a scenario object placed by `position` on open floor left a
+  desk group it had joined as nearest (`success_terminal` at 5,4 in `room_office`'s test_room for
+  test_simple_success, test_simple_vm_flag, test_npc_needs, test_finale_calls_credits, test_ink_email;
+  the same in test_dm_social, test_exercise_station, test_unlock_silence, test_seating, m04
+  operations_office's kettle). The leaving objects aren't in the snapshot (its sprites are Tiled
+  ids; the scenario object's depth is now its own bottom + 0.5). Expected.
+- `room_lw_records` (test_gate_tailgate): the first run moved six items resting on the desks' back
+  edges to their own depths, and a swivel chair then drew over `laptop7` (screenshot
+  `seatbox-s3/lwrec_crop.png`). Fixed by the back-edge rule; five items are back to their old depths,
+  and `office-misc-smallplant5` (4 px above `zds_desk1_36`) now joins that desk (256.51) instead of
+  the top-row desk's group (192.55) it had as nearest. The one flip: it now ties with `laptop7`
+  (256.51, the neighbouring desk's group) where they overlap by 3 px. Accepted as minor (a depth
+  tie between two desks' groups). Screenshot after: `seatbox-s3/lwrec2_crop.png`.
+- Noise, not this slice: `talk` icons (NPC timing) in m07, test-npc-patrol, test-npc-personal-space,
+  npc-patrol-lockpick.
+
+**Walk audit** against `seatbox-s0-walk.json` (`--desk-boxes legacy --all-geometry`): 34 rooms, 0 fails,
+0 coverage problems, the same 6 listed (d) overlaps as the baseline. Slice 3 changes no body.
+
+**Lab regression**: `lab_physical_pentest` game 913, replay of the 41 commands from game 685 (first
+commit's code; the fix only adds the back-edge branch, and no lab sprite changed depth in either
+snapshot run). `verify-run.rb`: 9 tasks, **score 100**; no "No path found" or "Failed to escape
+wall", no page errors. `cable_note` in open_plan at depth 247.5 = its own bottom + 0.5, out of the
+desk groups (the PCs on the desks stay grouped, 171.651 and 267.747).
+
+
+## Slice 5 results (2026-11-07)
+
+Commit `4b230732d` (the untested chairs). Scratch: `scratchpad/seatbox-s5/` in session c84d7b68.
+
+**Castor centres** (`scripts/room_gen/measure_castors.py`, bottom 6 opaque rows of each frame, mean over 8
+frames): darkgray-1 (20, 35.75), grey-1 (19.94, 36), grey-4 (19.62, 36), so grey-1 and grey-4 agree with
+office40's (20, 35) within 1 px (the method reads about 1 px low on the tested chair too). white-1 (16, 29),
+white-2 (16, 27.75), both inside the generic body (22 x 10.7 at (5, 21.3), centre y 26.7). exec (18.75,
+60.62), spread 5 px in x: the generic body (28 x 21.3 at (5, 42.7)) is centred 7 px above it.
+
+**Sweep** (`tools/playtest/seat-sweep.mjs`, game 927, a `test_desk_seating` row; desks on footprint
+boxes): 2 families x 4 blocks x 6 cases (front, behind and east end of `desk1` and `smalldesk1`) = 48
+rolls. The candidate block is set as the chair's body, centred on the castor.
+
+| Family, block | Castor in a footprint | Chair left in a desk box | Stood on the far side | Castor vs F (front) | vs back edge (behind) | vs end | Hip vs F, front desk1 |
+|---|---|---|---|---|---|---|---|
+| white32 18x6 / 18x8 / 18x10 | 0 | 0 | 0 | +3 / +4 / +5 | -3 / -4 / -5 | +9 | -15 / -14 / -13 |
+| **white32 own body** (picked) | 0 | 0 | 0 | +7 | -4 | +11 | **-11** (office40's figure) |
+| **exec 18x8** (picked; 18x6 and 18x10 the same but for 1 px) | 0 | 0 | 0 | +4 | -4 | +9 | -31 |
+| exec own body | 0 | **3 of 6** | **1** (east end of desk1, landed behind the desk) | +18 | -3 | +14 | -17 |
+
+Every landing via `compass`, walk-away 51-55 px. Picked: `SEAT_BLOCKS.white32` = its own body (plan Q0's
+preference), `SEAT_BLOCKS.exec` = 18 x 8 at (19, 61). Because a seated block smaller than the empty chair's
+body leaves the chair sunk (the old `keep` problem), the block is the exec chair's body too: rooms.js gives
+rotation-tile swivel chairs `bodyOfBlock(blockFor(sprite))` (white: the same numbers as the generic box;
+office chairs keep their STATIC_SWIVEL_PROPS body, equal to their block). `sitOn` is unchanged. Live after the
+commit (`sweep-exec-after.json`): the exec chair's own body gives the 18x8 row exactly.
+
+Contact sheets: `seatbox-s5/contact_exec.png`, `seatbox-s5/contact_white32.png` (18x8 and own body; rows
+desk1 then smalldesk1; columns front, behind, east end). Plan 8.2's exec risk is real: facing north at a desk's
+front, the 64 px back hides the sitter and the desk's front edge with either block (art, not the block). The
+only maps with a north-facing exec swivel are `room_hce_ceo` (two visitor chairs, m06 satoshi_office).
+
+**Stand audit** (`tools/playtest/baselines/seatbox-s5-stand.json`; swivel and, new in slice 5, static seats),
+same 159 rows: 158 finished (`timed_messages_example` timed out as before). Swivel: 702 seats, 1404 stands, **0
+in a body, 0 across a desk, 0 refused**, all `compass` (slice 1: 700 seats; +2 are the demo's new chairs).
+Static: 791 seats or places (20 textures: aw chairs 302, hospital 176, waiting 126, sofas and benches 75,
+studio 72, exec_chair_back1/black1 27, club 10, steel 3), 1582 stands, **0 in a body, 0 across a desk**.
+Skipped: 25 swivel, 9 static (seated NPCs). Refused-chair list for the user: **empty**. The 16 exec swivels
+(CEO rooms, m01 manager_office, m06 satoshi_office) all stood clear.
+
+**Walk audit** against `seatbox-s0-walk.json` (`--desk-boxes legacy --all-geometry`): 34 rooms, 0 fails, 0
+coverage problems, blocked +0 and opened +0 in every room (test_desk_seating's new chairs are a swivel pair
+the record leaves out and a bodiless static chair), the same 6 listed (d) overlaps.
+
+**Tests.** `seat-box.test.mjs` 14/14 (blocks per family, `bodyOfBlock`, castor inside each block, the rooms.js
+wiring), `seating.test.mjs` 33/33, full node suite 406/406 files, Rails 953 runs 0 failures 1 skip, reopen
+check the same 4 m09 phone-ink problems.
+
+**Lab regression**: `lab_physical_pentest` game 961, the 41 commands from game 685. `verify-run.rb`: 9 tasks,
+**score 100**; no "No path found" or "Failed to escape wall"; 41 page errors, all the keyless server's `/tts`
+503s. The lab has no white or exec swivel chairs.

@@ -427,7 +427,7 @@ export function performSend(scene, message) {
                 const cap = pageDef && isObject(pageDef.capture) ? pageDef.capture : null;
                 const note = cap && isStr(cap.note) ? cap.note : null;
                 if (note && typeof window !== 'undefined' && typeof window.addNote === 'function') {
-                    try { window.addNote(note); } catch (err) { console.error('capture note failed:', err); }
+                    try { window.addNote('Credential captured', note, false); } catch (err) { console.error('capture note failed:', err); }
                 }
                 // The credential capture itself (plans/linear-petting-forest.md, Stage 3). The
                 // address and secret are authored fiction on the page, never player input; the
