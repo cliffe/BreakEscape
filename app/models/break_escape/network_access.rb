@@ -346,6 +346,215 @@ module BreakEscape
       row
     end
 
+    # ==========================================
+    # Remote sign-in, headless hosts and shares (step 4; sections 4.4, 4.5 and 5)
+    # ==========================================
+
+    REMOTE_BLOCKED = 'Remote sign-in is turned off on this PC'.freeze
+
+    # Does the scenario define any network? Without one there are no footholds, no
+    # remote sign-in and nothing to map.
+    def network_scenario?
+      NetworkModel.networks(scenario_data).any?
+    end
+
+    # The network a sign-in object (or any room object) is on, read from the scenario's
+    # own definition and its room (3.2), or nil.
+    def object_network(obj)
+      info = obj.is_a?(Hash) ? network_room_object(obj['id']) : nil
+      info ? NetworkModel.network_of(info[:object], info[:room]) : nil
+    end
+
+    # "Host reachable through a foothold" (section 5): the foothold is held, the target
+    # is a sign-in object on a network, and that network is the foothold's.
+    def host_reachable_through?(foothold_id, pc)
+      foothold = foothold_id.present? ? network_footholds[foothold_id.to_s] : nil
+      return false unless foothold.is_a?(Hash) && NetworkModel.sign_in_object?(pc)
+
+      network = object_network(pc)
+      !network.nil? && network == foothold['network']
+    end
+
+    # The one place a desktop request is judged (4.4). With a foothold: it reaches the
+    # host, the host's policy allows remote sign-in and the session there is not a claim;
+    # the room is not consulted. Without: the PC is physically reachable and not headless;
+    # the network is not consulted.
+    def desktop_request_allowed?(info, foothold_id)
+      pc = info[:object]
+      if foothold_id.present?
+        session = access_sessions[pc['id'].to_s]
+        host_reachable_through?(foothold_id, pc) && !remote_blocked?(pc) &&
+          !(session.is_a?(Hash) && session['via'] == 'claim')
+      else
+        login_pc_reachable?(info) && !NetworkModel.headless?(pc)
+      end
+    end
+
+    # A desktop served at the keyboard (4.4): the player is sitting at it now, so the
+    # session no longer depends on a foothold and an unplug elsewhere does not end it.
+    def settle_session_at_keyboard!(pc_id)
+      session = access_sessions[pc_id.to_s]
+      return unless session.is_a?(Hash) && session.key?('foothold')
+
+      player_state['sessions'][pc_id.to_s] = session.except('foothold')
+      save!
+    end
+
+    # A share's access list (4.5): a missing list admits everyone. Game.acl_admits? reads a
+    # missing list as nobody, so it is not used for that case.
+    def resource_acl_admits?(resource, npc)
+      return true if resource['access'].nil?
+
+      self.class.acl_admits?(resource['access'], npc)
+    end
+
+    # The rule of 4.5, from server state only: some source the player holds reaches the
+    # resource, and the source is allowed. A source is a held foothold (allowed for a
+    # resource with no access list) or the PC of a session the player holds (allowed when
+    # the list admits the session's identity). A resource with no network is reached by
+    # nothing.
+    def resource_admits_player?(resource)
+      return false unless resource.is_a?(Hash)
+
+      network = resource['network']
+      return false unless NetworkModel.present_string?(network)
+      return true if resource['access'].nil? && network_footholds.values.any? { |f| f.is_a?(Hash) && f['network'] == network }
+
+      access_sessions.any? do |pc_id, session|
+        next false unless session.is_a?(Hash)
+
+        info = find_login_pc(pc_id)
+        npc = scenario_room_npc(session['id'])
+        info && npc && object_network(info[:object]) == network && resource_acl_admits?(resource, npc)
+      end
+    end
+
+    # The file shares a session at this PC maps on its desktop (4.5): every file_share on
+    # the PC's network whose access list admits the session's identity, as [[id, resource]].
+    # A PC on no network maps none.
+    def mapped_shares(pc, npc)
+      return [] unless pc.is_a?(Hash) && npc.is_a?(Hash)
+
+      network = object_network(pc)
+      return [] unless network
+
+      NetworkModel.resources_on(network, scenario_data).select do |_id, resource|
+        resource['kind'] == 'file_share' && resource_acl_admits?(resource, npc)
+      end
+    end
+
+    # The folder stub for each mapped share, appended to a desktop after the profiles.
+    def mapped_share_stubs(pc, npc)
+      mapped_shares(pc, npc).map do |id, resource|
+        name = resource['name'].presence || id
+        host = resource['host']
+        label = host.is_a?(String) && !host.empty? ? "#{name} (\\\\#{host}\\#{name})" : name
+        { 'id' => id, 'type' => 'network_share', 'name' => label, 'takeable' => false, 'locked' => false, 'hasContents' => true }
+      end
+    end
+
+    # Where a resource, or an item in one, sits (4.5): { object:, scope:, path:, room_id: nil }
+    # with the scope { type: 'resource', id: } for the record itself as well as for what is
+    # in it, never a nil scope. Called by login_scope_of after the rooms and profiles. The
+    # record is matched on its id only.
+    def resource_scope_of(target)
+      NetworkModel.resources(scenario_data).each do |resource_id, resource|
+        scope = { type: 'resource', id: resource_id }
+        return { object: resource, scope: scope, path: [], room_id: nil } if resource_id == target
+
+        Array(resource['contents']).each do |item|
+          found = locate_object_in(item, target, scope, [])
+          return found.merge(room_id: nil) if found
+        end
+      end
+      nil
+    end
+
+    # An item in a resource's contents, matched as find_scenario_object matches.
+    def find_resource_item(target_id)
+      NetworkModel.resources(scenario_data).each_value do |resource|
+        Array(resource['contents']).each do |item|
+          found = item.is_a?(Hash) && find_object_in_contents(item, target_id)
+          return found if found
+        end
+      end
+      nil
+    end
+
+    # A takeable item in a share mapped for the session at this PC (an add from a
+    # desktop): { object:, scope:, path: } or nil.
+    def find_mapped_share_item(pc, &match)
+      npc = session_identity(pc['id'])
+      return nil unless npc
+
+      mapped_shares(pc, npc).each do |resource_id, resource|
+        found = find_in_tree(resource['contents'], { type: 'resource', id: resource_id }, [], &match)
+        return found if found
+      end
+      nil
+    end
+
+    # Is a share mapped for the session at this PC (scope_admitted_by_session?)?
+    def share_mapped_at?(resource_id, pc_id)
+      info = find_login_pc(pc_id)
+      npc = session_identity(pc_id)
+      return false unless info && npc
+
+      mapped_shares(info[:object], npc).any? { |id, _resource| id == resource_id.to_s }
+    end
+
+    # POST /inventory add with source_resource_id, a share opened from the view (section
+    # 5): 1. the rule of 4.5, else the answer for an invented item; 2. the item is in the
+    # share; 3. every folder above it is unlocked; 4. it is takeable; 5. its transfer
+    # allows the choice. { error: } or { item:, location:, transfer: }.
+    def resource_item_for_add(resource_id, item_type, item_id, item_name, transfer)
+      unknown = { error: "Item not found in scenario: #{item_type}" }
+      resource = NetworkModel.resources(scenario_data)[resource_id.to_s]
+      return unknown unless resource && resource_admits_player?(resource)
+
+      scope = { type: 'resource', id: resource_id.to_s }
+      found = find_in_tree(resource['contents'], scope, []) { |obj| ItemIdentity.addressed_by?(obj, item_type, item_id, item_name) }
+      return unknown unless found
+
+      locked = found[:path].find { |container| container['locked'] && !object_unlocked?(container['id']) }
+      return { error: "Container not unlocked: #{locked['id']}" } if locked
+
+      file = found[:object]
+      return { error: "Item is not takeable: #{file['name']}" } unless file['takeable']
+
+      choice = transfer.presence || 'move'
+      return { error: "Invalid transfer: #{choice}" } unless %w[copy move].include?(choice)
+
+      allowed = file['transfer'].presence || 'both'
+      return { error: "This file can only be #{allowed == 'copy' ? 'copied' : 'moved'}" } unless allowed == 'both' || allowed == choice
+
+      { item: file, transfer: choice,
+        location: { type: 'resource', resource_id: resource_id.to_s, path: found[:path].map { |c| c['id'] } } }
+    end
+
+    # The accounts map of GET /capture_secrets (4.4): { targetId => address } for each
+    # credential capture whose address, normalised as usernames are, is a username the
+    # account-holder pass would answer (a key of account_capture_passwords). Whatever
+    # revealSecret says, and never from the landing-page or single-secret passes. It
+    # carries only the address the browser wrote, so it reveals no secret.
+    def account_capture_usernames
+      earned = player_state.dig('globalVariables', 'se_captures')
+      return {} unless earned.is_a?(Hash) && earned.any?
+
+      usernames = account_capture_passwords
+      return {} if usernames.empty?
+
+      earned.each_with_object({}) do |(target_id, entry), out|
+        next unless entry.is_a?(Hash)
+        next if entry['kind'] && entry['kind'] != 'credential'
+
+        address = entry['address']
+        next unless address.is_a?(String) && !address.strip.empty?
+
+        out[target_id] = address.strip if usernames.key?(self.class.normalise_username(address))
+      end
+    end
+
     private
 
     def network_object_in(list, object_id, path)

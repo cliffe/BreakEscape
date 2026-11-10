@@ -97,5 +97,39 @@ module BreakEscape
       end
       refute_includes held_ids, 'inbox_letter'
     end
+
+    test 'POST /inventory add of a share item from a share or a desktop with no session answers as an invented item does' do
+      build_network_game
+      [{ source_resource_id: 'scanned_inbox' }, { source_resource_id: 'ledger_archive' }, { source_pc_id: 'sam_pc' },
+       { source_pc_id: 'lena_pc' }].each do |source|
+        add_item('text_file', 'no_such_item_x1', 'Nothing', **source)
+        invented = answer_for('no_such_item_x1')
+        assert_equal 422, invented.first
+        [['inbox_letter', NS::INBOX_LETTER_NAME], ['ledger_handover', NS::HANDOVER_NAME]].each do |id, name|
+          add_item('text_file', id, name, **source)
+          assert_equal invented, answer_for(id), "add #{id} with #{source}"
+          refute_exposed("/inventory add #{id} with #{source}")
+        end
+      end
+      assert_equal [], held_ids
+    end
+
+    test 'a share item text is only ever in a /container answer' do
+      build_network_game
+      take_drop_box
+      plant('comms_port')
+      post game_path('login'), params: { pc_id: 'lena_pc', username: 'lfox', password: NS::LENA_PASSWORD, foothold: 'jack_comms_port' },
+                               as: :json
+      assert_response :success
+      texts = [NS::INBOX_LETTER_TEXT, NS::HANDOVER_TEXT, NS::YEAREND_REPORT_TEXT]
+      network_view
+      refute_exposed('/network', texts)
+      get game_path('scenario'), as: :json
+      refute_exposed('/scenario', texts)
+      container('lena_pc', foothold: 'jack_comms_port')
+      refute_exposed('the desktop', texts)
+      container('scanned_inbox')
+      assert_includes response.body, NS::INBOX_LETTER_TEXT
+    end
   end
 end

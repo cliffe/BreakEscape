@@ -1267,7 +1267,8 @@ module BreakEscape
           return found.merge(room_id: nil) if found
         end
       end
-      nil
+      # Resources (slice 9.3a, 4.5): the record and what is in it, both with the resource scope
+      resource_scope_of(target)
     end
 
     # The sign-in PC with this id (a room object, not inside a profile or another PC):
@@ -1312,6 +1313,9 @@ module BreakEscape
           npc = session_identity(pc_id)
           npc && self.class.acl_admits?(profile['for'], npc)
         end
+      when 'resource'
+        # Slice 9.3a, 4.5: a held foothold or session reaches it and is allowed
+        resource_admits_player?(NetworkModel.resources(scenario_data)[scope[:id].to_s])
       else
         false
       end
@@ -1329,6 +1333,9 @@ module BreakEscape
       when 'profile'
         profile = account_profiles[scope[:id]]
         profile ? self.class.acl_admits?(profile['for'], npc) : false
+      when 'resource'
+        # A share mapped on this PC's desktop (slice 9.3a, 4.5)
+        share_mapped_at?(scope[:id], pc_id)
       else
         false
       end
@@ -1367,7 +1374,8 @@ module BreakEscape
       admitted_profiles(npc).each do |_profile_id, profile|
         contents += Array(profile['contents']).select { |item| item.is_a?(Hash) }
       end
-      contents
+      # Then a folder for each share mapped for this session (slice 9.3a, 4.5)
+      contents + mapped_share_stubs(pc, npc)
     end
 
     # A takeable item the player adds from a sign-in desktop: searched in that PC's own
@@ -1380,7 +1388,8 @@ module BreakEscape
         found = find_in_tree(profile['contents'], { type: 'profile', id: profile_id }, [], &match)
         return found if found
       end
-      nil
+      # Then the shares mapped for this PC's session (slice 9.3a, 4.5)
+      find_mapped_share_item(pc, &match)
     end
 
     def effective_policy(pc)
@@ -1426,10 +1435,25 @@ module BreakEscape
     # POST /login with a username and password (section 6). Returns { status:, body: }.
     # A wrong password and an unknown username answer exactly alike, counted per PC and
     # normalised username; no letter-case hint.
-    def attempt_login!(pc_id, username, password)
+    #
+    # With foothold (slice 9.3a, section 5): the host must be reachable through that
+    # foothold and its policy must allow remote sign-in; the room is not consulted.
+    # Without: a headless host is refused as an unreachable PC is.
+    def attempt_login!(pc_id, username, password, foothold: nil)
       info = find_login_pc(pc_id)
       return { status: :not_found, body: { success: false, message: 'Sign-in PC not found' } } unless info
-      return { status: :forbidden, body: { success: false, message: 'PC not reachable' } } unless login_pc_reachable?(info)
+
+      unreachable = { status: :forbidden, body: { success: false, message: 'PC not reachable' } }
+      foothold = foothold.presence&.to_s
+      if foothold
+        return unreachable unless host_reachable_through?(foothold, info[:object])
+        if remote_blocked?(info[:object])
+          return { status: :unprocessable_entity,
+                   body: { success: false, message: NetworkAccess::REMOTE_BLOCKED, remoteBlocked: true } }
+        end
+      elsif NetworkModel.headless?(info[:object]) || !login_pc_reachable?(info)
+        return unreachable
+      end
 
       pc = info[:object]
       normalised = self.class.normalise_username(username)
@@ -1445,9 +1469,10 @@ module BreakEscape
         end
 
         login_failures.delete(key)
-        start_login_session!(pc['id'], npc, 'password')
+        start_login_session!(pc['id'], npc, 'password', foothold: foothold)
         save!
-        return { status: :ok, body: { success: true }.merge(login_session_answer(npc, 'password')) }
+        answer = login_session_answer(npc, 'password', pc_id: pc['id'], foothold: foothold)
+        return { status: :ok, body: { success: true }.merge(answer) }
       end
 
       record_login_failure!(pc, key, account: !npc.nil?)
@@ -1456,14 +1481,18 @@ module BreakEscape
     # POST /login with claim: "owner" (section 6, claim checks 1 to 7). Every refusal
     # answers "Sign in required"; the client then shows the sign-in screen. The
     # workstation globals the client sends are logged, not trusted.
-    def claim_login_session!(pc_id, globals = nil)
+    def claim_login_session!(pc_id, globals = nil, foothold: nil)
       refusal = lambda do |reason|
         Rails.logger.info "[BreakEscape] login claim refused at #{pc_id}: #{reason}"
         { status: :unprocessable_entity, body: { success: false, message: LOGIN_CLAIM_REFUSED } }
       end
 
+      # An unlocked screen is a physical thing (slice 9.3a, section 5)
+      return refusal.call('a claim through a foothold') if foothold.present?
+
       info = find_login_pc(pc_id)
       return refusal.call('no such sign-in PC') unless info
+      return refusal.call('a headless host') if NetworkModel.headless?(info[:object])
       return refusal.call('PC not reachable') unless login_pc_reachable?(info)
 
       pc = info[:object]
@@ -1529,7 +1558,7 @@ module BreakEscape
         npc = scenario_room_npc(session['id'])
         next unless npc && self.class.account_holder?(npc)
 
-        out[pc_id] = login_session_answer(npc, session['via'])
+        out[pc_id] = login_session_answer(npc, session['via'], pc_id: pc_id, foothold: session['foothold'])
       end
     end
 
@@ -1892,20 +1921,28 @@ module BreakEscape
       lockouts << key
     end
 
-    def start_login_session!(pc_id, npc, via)
+    def start_login_session!(pc_id, npc, via, foothold: nil)
       player_state['sessions'] = access_sessions
       player_state['sessions'][pc_id.to_s] = { 'id' => npc['id'], 'via' => via }
+      # A session opened over the network records its foothold (slice 9.3a, 4.1)
+      player_state['sessions'][pc_id.to_s]['foothold'] = foothold if foothold.present?
       player_state['signedInPcs'] = signed_in_pcs
       player_state['signedInPcs'] << pc_id.to_s unless player_state['signedInPcs'].include?(pc_id.to_s)
     end
 
-    def login_session_answer(npc, via)
-      {
+    # A remote session (slice 9.3a, 4.4) adds remote, footholdId and host, the PC's label,
+    # because its room may never have loaded. A local session's answer is unchanged.
+    def login_session_answer(npc, via, pc_id: nil, foothold: nil)
+      answer = {
         'npcId' => npc['id'],
         'username' => npc['creds']['username'],
         'displayName' => npc['displayName'] || npc['id'],
         'via' => via
       }
+      return answer unless foothold.present?
+
+      pc = find_login_pc(pc_id)&.dig(:object)
+      answer.merge('remote' => true, 'footholdId' => foothold, 'host' => pc ? host_label(pc) : pc_id.to_s)
     end
 
     # Each sign-in PC in a filtered room carries its account tiles (5.3), read from the
@@ -2276,6 +2313,10 @@ module BreakEscape
           return found if found
         end
       end
+      # A resource's items (slice 9.3a, 4.5); /unlock check 1 has already required a
+      # foothold or session that the share admits.
+      found = find_resource_item(target_id)
+      return found if found
       # Not in a room: a declared grant the player holds (a Remote Session opener and
       # its nested archive), which exists for the server only while it is held.
       held_grant_items.each do |grant_item|

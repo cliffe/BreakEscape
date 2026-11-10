@@ -516,17 +516,13 @@ module BreakEscape
     # GET /games/:id/container/:container_id
     # Returns container contents after unlock (lazy-loaded)
     #
-    # Wrapped in with_game_lock (see around_action above) even though this
-    # action never writes player_state — it only reads unlockedObjects and
-    # inventory. The lock is here purely as a read barrier: without it, this
-    # request could race a concurrent unlock/inventory write and serve a
-    # stale "not unlocked yet" response from before that write committed. The
-    # cost is that this request also blocks any concurrent writer for its own
-    # (brief, read-only) duration. This is a different situation from the
-    # other locked actions below — it's not a candidate for atomic per-path
-    # writes (there's nothing to write), it's a candidate to simply drop the
-    # lock and rely on the plain @game.reload already below if that
-    # write-blocking turns out to matter in practice.
+    # Wrapped in with_game_lock (see around_action above), and it MUST STAY LOCKED:
+    # this action writes player_state. A sign-in desktop served at the keyboard
+    # (no foothold parameter) clears its session's foothold (networks slice 9.3a,
+    # 4.4), and that write must not interleave with an unplug of the same foothold,
+    # which deletes the sessions it carried. The lock is also a read barrier: without
+    # it, this request could race a concurrent unlock or inventory write and serve a
+    # stale "not unlocked yet" response from before that write committed.
     def container
       authorize @game if defined?(Pundit)
 
@@ -542,6 +538,15 @@ module BreakEscape
       located = @game.login_scope_of(container_id)
       if located && BreakEscape::Game.login_pc?(located[:object])
         return render_login_desktop(container_id)
+      elsif located && located[:scope] && located[:scope][:type] == 'resource'
+        # A share, or a folder in one (networks slice 9.3a, 4.5): refused exactly as an
+        # invented id is, so a browser with no foothold or session cannot tell it exists.
+        return render_error("Container not found: #{container_id}", :not_found) unless @game.session_admits?(located[:scope])
+        unless @game.path_unlocked?(located[:path] + [located[:object]])
+          return render_error("Container not unlocked: #{container_id}", :forbidden)
+        end
+
+        return render json: { container_id: container_id, contents: filter_container_contents(located[:object]) }
       elsif located && located[:scope]
         unless @game.session_admits?(located[:scope]) && @game.path_unlocked?(located[:path] + [located[:object]])
           return render_error("Container not unlocked: #{container_id}", :forbidden)
@@ -1005,6 +1010,8 @@ module BreakEscape
           source_npc_id = (params[:source_npc_id] || params[:sourceNpcId]).presence&.to_s
           # An add from a sign-in desktop names its PC and Copy or Move (access model 5.1)
           source_pc_id = (params[:source_pc_id] || params[:sourcePcId]).presence&.to_s
+          # An add from a share opened in the network view names the share (slice 9.3a, section 5)
+          source_resource_id = (params[:source_resource_id] || params[:sourceResourceId]).presence&.to_s
           transfer = params[:transfer].presence&.to_s
           # A device planted in a jack is in no room and no home (slice 9.3a, 4.1)
           if @game.planted_device?(item.to_unsafe_h)
@@ -1017,11 +1024,12 @@ module BreakEscape
           # order, one the player may not have met (m10 F3: "NPC not encountered:
           # nightshade_lock"). A give that names its NPC still validates, so the
           # gift record for that NPC is kept.
-          if source_npc_id.blank? && source_pc_id.blank? && @game.inventory_includes?(item.to_unsafe_h)
+          if source_npc_id.blank? && source_pc_id.blank? && source_resource_id.blank? && @game.inventory_includes?(item.to_unsafe_h)
             Rails.logger.info "[BreakEscape] Item already in inventory, accepted without revalidation: #{item['type']} / #{item['name']}"
             return render json: { success: true, inventory: @game.player_state['inventory'] }
           end
-          validation_error = validate_item_collectible(item, source_npc_id, source_pc_id: source_pc_id, transfer: transfer)
+          validation_error = validate_item_collectible(item, source_npc_id, source_pc_id: source_pc_id, transfer: transfer,
+                                                                          source_resource_id: source_resource_id)
           if validation_error
             Rails.logger.warn "[BreakEscape] inventory validation failed: #{validation_error}"
             return render json: { success: false, message: validation_error },
@@ -1038,7 +1046,7 @@ module BreakEscape
             @game.record_npc_gift!(@collectible_location[:npc_id], item.to_unsafe_h)
           end
           # Copy: the file stays on the PC and in its profile (access model 5.1)
-          @game.record_copied_item!(@collectible_item['id']) if source_pc_id && @collectible_transfer == 'copy'
+          @game.record_copied_item!(@collectible_item['id']) if (source_pc_id || source_resource_id) && @collectible_transfer == 'copy'
           Rails.logger.info "[BreakEscape] Item added successfully. Current inventory size: #{@game.player_state['inventory']&.length}"
           render json: { success: true, inventory: @game.player_state['inventory'] }
 
@@ -1086,15 +1094,18 @@ module BreakEscape
       pc_id = params[:pc_id].to_s
       return render json: { success: false, message: 'Missing pc_id' }, status: :bad_request if pc_id.empty?
 
+      # A remote sign-in names the foothold it goes through (networks slice 9.3a, section 5)
+      foothold = params[:foothold].presence&.to_s
       result =
         if params.key?(:claim)
-          if params[:claim].to_s == 'owner'
+          # Every claim that carries a foothold is refused: an unlocked screen is physical
+          if params[:claim].to_s == 'owner' && foothold.nil?
             @game.claim_login_session!(pc_id, claim_globals)
           else
             { status: :unprocessable_entity, body: { success: false, message: BreakEscape::Game::LOGIN_CLAIM_REFUSED } }
           end
         else
-          @game.attempt_login!(pc_id, params[:username], params[:password])
+          @game.attempt_login!(pc_id, params[:username], params[:password], foothold: foothold)
         end
       render json: result[:body], status: result[:status]
     end
@@ -1119,7 +1130,10 @@ module BreakEscape
 
       info = @game.find_login_pc(params[:pc_id].to_s)
       return render_error("Sign-in PC not found: #{params[:pc_id]}", :not_found) unless info
-      return render_error("PC not reachable: #{params[:pc_id]}", :forbidden) unless @game.login_pc_reachable?(info)
+      # A headless host has no screen and no tiles (networks slice 9.3a, section 5)
+      unless @game.login_pc_reachable?(info) && !BreakEscape::NetworkModel.headless?(info[:object])
+        return render_error("PC not reachable: #{params[:pc_id]}", :forbidden)
+      end
 
       render json: { pc_id: info[:object]['id'], loginAccounts: @game.login_account_tiles(info[:object]) }
     end
@@ -1196,7 +1210,12 @@ module BreakEscape
     def capture_secrets
       authorize @game if defined?(Pundit)
 
-      render json: { secrets: @game.capture_secrets_for_client }
+      body = { secrets: @game.capture_secrets_for_client }
+      # The usernames on captures of account holders, for the remote sign-in screen's
+      # Captured sign-ins list (networks slice 9.3a, 4.4). That screen exists only in a
+      # scenario with networks, so a scenario without them gets the first slice's answer.
+      body[:accounts] = @game.account_capture_usernames if @game.network_scenario?
+      render json: body
     end
 
     # POST /games/:id/objectives/unlock
@@ -1862,6 +1881,10 @@ module BreakEscape
           return found if found
         end
       end
+      # Then a resource's items (networks slice 9.3a, 4.5); /unlock check 1 has already
+      # required a foothold or session the share admits.
+      found = @game.find_resource_item(object_id)
+      return found if found
       # Then a declared grant the player holds, as find_container_in_scenario.
       @game.held_grant_items.each do |grant_item|
         found = find_object_in_object(grant_item, object_id)
@@ -1903,18 +1926,26 @@ module BreakEscape
       unlocked_list.include?(container_data['id'])
     end
 
-    # GET /container for a sign-in PC (section 6): the PC is reachable and has a
-    # session; the answer is its own contents, then each profile admitted for the
-    # session's identity, through filter_container_contents.
+    # GET /container for a sign-in PC (section 6): a session is held (403 no_session),
+    # and the request is allowed for how the player is getting there (403 unreachable):
+    # through the foothold it names, or at the keyboard (networks slice 9.3a, 4.4, judged
+    # by Game#desktop_request_allowed?). The answer is its own contents, then each profile
+    # admitted for the session's identity, then the mapped shares, through
+    # filter_container_contents. Served at the keyboard, the session's foothold is cleared.
     def render_login_desktop(container_id)
       info = @game.find_login_pc(container_id)
-      unless info && @game.login_pc_reachable?(info)
-        return render_error("PC not reachable: #{container_id}", :forbidden)
-      end
+      return render json: { error: "PC not reachable: #{container_id}", reason: 'unreachable' }, status: :forbidden unless info
 
       pc = info[:object]
       npc = @game.session_identity(pc['id'])
-      return render_error("Not signed in: #{container_id}", :forbidden) unless npc
+      return render json: { error: "Not signed in: #{container_id}", reason: 'no_session' }, status: :forbidden unless npc
+
+      foothold = params[:foothold].presence&.to_s
+      unless @game.desktop_request_allowed?(info, foothold)
+        return render json: { error: "PC not reachable: #{container_id}", reason: 'unreachable' }, status: :forbidden
+      end
+
+      @game.settle_session_at_keyboard!(pc['id']) if foothold.nil?
 
       contents = filter_container_contents('contents' => @game.login_desktop_contents(pc, npc))
       render json: { container_id: container_id, contents: contents }
@@ -2010,7 +2041,7 @@ module BreakEscape
       copy
     end
 
-    def validate_item_collectible(item, source_npc_id = nil, source_pc_id: nil, transfer: nil)
+    def validate_item_collectible(item, source_npc_id = nil, source_pc_id: nil, transfer: nil, source_resource_id: nil)
       @collectible_location = nil
       @collectible_item = nil
       @collectible_transfer = nil
@@ -2023,6 +2054,18 @@ module BreakEscape
 
       # From a sign-in desktop: only that PC's session decides (access model, section 6)
       return validate_login_item_collectible(item_type, item_id, item_name, source_pc_id, transfer) if source_pc_id.present?
+
+      # From a share opened in the network view: only the rule of 4.5 decides (networks
+      # slice 9.3a, section 5); a refusal reads as an invented item
+      if source_resource_id.present?
+        found = @game.resource_item_for_add(source_resource_id, item_type, item_id, item_name, transfer)
+        return found[:error] if found[:error]
+
+        @collectible_location = found[:location]
+        @collectible_item = found[:item]
+        @collectible_transfer = found[:transfer]
+        return nil
+      end
 
       # Always allow core game items like notepad
       if ALWAYS_ALLOWED_ITEMS.include?(item_type)
@@ -2167,6 +2210,9 @@ module BreakEscape
       @collectible_location =
         if scope[:type] == 'login_pc'
           { type: 'login_pc', pc_id: pc['id'], path: path_ids }
+        elsif scope[:type] == 'resource'
+          # A share mapped on this desktop (networks slice 9.3a, 4.5)
+          { type: 'resource', resource_id: scope[:id], pc_id: pc['id'], path: path_ids }
         else
           { type: 'profile', profile_id: scope[:id], path: path_ids }
         end
