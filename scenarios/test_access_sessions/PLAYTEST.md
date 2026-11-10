@@ -43,7 +43,10 @@ and `lockAt`, and how its screen looks: `texture` (the sprite's texture key), `d
 `displayHeight` and `lockedLook` (the first three are null until the PC's room has loaded).
 `{"cmd":"eval","fn":"() => window.__test.access.screenTransitions()"}` lists every change of a
 screen's look, `[{ objectId, locked, sound, at }]`: the lock sound is `lockpick_set`, the unlock
-sound is `ui_confirm`, and every sound the screen module plays is in the list.
+sound is `ui_confirm`, and every sound the screen module plays is in the list. A lock or unlock
+that happens while you are in another room is recorded with `sound: null`: the look changes and
+nothing is played (seen in the H3 run of 2026-11-10), so expect a sound only for a screen in the
+room you are standing in.
 
 **Screen state checks (H3).** The lines marked **H3** in the beats below are the screen state
 checks of the lab follow-up. A full Run 1 or Run 2 makes them as it goes. A tester sent to do H3
@@ -245,7 +248,12 @@ follows Ian. This takes about two minutes. Do not click `ian_pc` and do not sign
    `texture` and display size as in step 1. Two `ian_pc` transitions in all.
 
 Stepping the manual clock in T6 moves every owner's clock; if Ian's room was loaded then (it is
-not on this route), count his transitions from the number noted in step 1.
+not on this route), count his transitions from the number noted in step 1. One large
+`needs.step` runs all its ticks in the same instant with no frames between, so an owner whose
+arrival was queued can return and leave again milliseconds apart (the H3 run saw Ian unlock and
+relock 28 ms apart during a 60 s step). That is a stepping artefact, not a fault. Where a step
+needs the owners to behave as in play, step in chunks of 5 s or less with a short real wait
+between them.
 
 ### 8. T7 Knocked out
 
