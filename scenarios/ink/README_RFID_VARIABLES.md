@@ -229,6 +229,8 @@ Use these tags to trigger RFID operations from Ink:
 
 Note: The actual implementation of these tags depends on your tag handler. These are suggested patterns.
 
+`# clone_keycard` opens the card reader once the line carrying the tag has been shown (the same timing as `# trigger_minigame`), and closing the reader returns to the conversation, which carries on after that line. A tag on its own line belongs to the next line of text, so that line is shown first and is not lost.
+
 ## Scenario JSON Format
 
 Define keycards in your scenario using the simplified `card_id` format:

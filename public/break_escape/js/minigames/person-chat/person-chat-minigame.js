@@ -1248,6 +1248,20 @@ export class PersonChatMinigame extends MinigameScene {
     }
 
     /**
+     * True when these tags queued a minigame that waits for its line to be shown
+     * (#trigger_minigame, #clone_keycard: systems/ink-minigame-launch.js). A tag that failed
+     * (no cloner, an unknown type) queued nothing, and the conversation carries on as usual.
+     * @param {Array<string>} tags
+     */
+    _inkLaunchWaiting(tags) {
+        const launcher = window.inkMinigameLaunch;
+        if (!launcher || !tags || tags.length === 0) return false;
+        const isDeferred = launcher.isDeferredTag || launcher.isTriggerTag;
+        if (!tags.some(t => isDeferred(t))) return false;
+        return typeof launcher.hasPending === 'function' ? launcher.hasPending() : true;
+    }
+
+    /**
      * Display accumulated dialogue by splitting into individual speaker blocks
      * @param {Object} result - Result with potentially multiple lines and tags
      */
@@ -1292,9 +1306,10 @@ export class PersonChatMinigame extends MinigameScene {
                 // If there IS text alongside the exit tag, fall through to display it.
                 // displayDialogueBlocksSequentially will detect the tag and close after showing the text.
 
-                // #trigger_minigame with no text of its own: open it now (with text, it opens
-                // once the blocks have been shown: displayDialogueBlocksSequentially)
-                if (!shouldExit && result.tags.some(t => window.inkMinigameLaunch?.isTriggerTag(t)) && (!result.text || !result.text.trim())) {
+                // #trigger_minigame or #clone_keycard with no text of its own: open it now
+                // (with text, it opens once the blocks have been shown:
+                // displayDialogueBlocksSequentially)
+                if (!shouldExit && this._inkLaunchWaiting(result.tags) && (!result.text || !result.text.trim())) {
                     if (this.inkEngine && this.inkEngine.story) {
                         npcConversationStateManager.saveNPCState(this.npcId, this.inkEngine.story);
                     }
@@ -1499,10 +1514,11 @@ export class PersonChatMinigame extends MinigameScene {
                 return;
             }
 
-            // #trigger_minigame: the line has been read, so open the minigame now. The chat is
-            // paused, not ended; a normal close of the minigame reopens it (ink-minigame-launch.js).
-            if (originalResult.tags && originalResult.tags.some(t => window.inkMinigameLaunch?.isTriggerTag(t))) {
-                console.log('🎮 trigger_minigame: all blocks shown, opening the minigame');
+            // #trigger_minigame or #clone_keycard: the line has been read, so open the minigame
+            // now. The chat is paused, not ended; a normal close of the minigame reopens it
+            // (ink-minigame-launch.js; the card reader through window.pendingConversationReturn).
+            if (this._inkLaunchWaiting(originalResult.tags)) {
+                console.log('🎮 trigger_minigame / clone_keycard: all blocks shown, opening the minigame');
                 if (this.inkEngine && this.inkEngine.story) {
                     npcConversationStateManager.saveNPCState(this.npcId, this.inkEngine.story);
                 }
@@ -1583,6 +1599,14 @@ export class PersonChatMinigame extends MinigameScene {
                     if (nextLine.tags && nextLine.tags.length > 0) {
                         await processGameActionTags(nextLine.tags, this.ui, this._tagOptions());
                     }
+                    // A #clone_keycard / #trigger_minigame written after the knot's last line:
+                    // every line has been shown, so open it now; the chat reopens at these choices
+                    if (this._inkLaunchWaiting(nextLine.tags)) {
+                        if (this.inkEngine && this.inkEngine.story) {
+                            npcConversationStateManager.saveNPCState(this.npcId, this.inkEngine.story);
+                        }
+                        if (window.inkMinigameLaunch.flush()) return;
+                    }
                     console.log(`📋 Back to choices: ${nextLine.choices.length} options available`);
                     this.ui.showChoices(nextLine.choices);
                 } else if (nextLine.hasEnded) {
@@ -1595,6 +1619,7 @@ export class PersonChatMinigame extends MinigameScene {
                     }
                     this.showConversationOverMessage('(Conversation ended - press ESC to close)');
                     console.log('🏁 Story has reached an end point');
+                    if (this._inkLaunchWaiting(nextLine.tags)) window.inkMinigameLaunch.flush();
                 }
             }
             return;

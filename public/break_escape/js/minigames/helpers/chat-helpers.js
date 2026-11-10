@@ -412,15 +412,22 @@ export async function processGameActionTags(tags, ui, options = {}) {
                         };
                     }
 
-                    // Set pending conversation return (MINIMAL CONTEXT!)
+                    // The conversation to return to once the card read closes (MINIMAL CONTEXT!)
                     // Conversation state automatically managed by npcConversationStateManager
-                    window.pendingConversationReturn = {
+                    const cloneReturn = {
                         npcId: window.currentConversationNPCId,
                         type: window.currentConversationMinigameType || 'person-chat'
                     };
 
+                    if (!window.startRFIDMinigame) {
+                        result.message = '⚠️ RFID minigame not available';
+                        console.warn('startRFIDMinigame not found');
+                        break;
+                    }
+
                     // Start RFID minigame in clone mode
-                    if (window.startRFIDMinigame) {
+                    const openClone = () => {
+                        window.pendingConversationReturn = cloneReturn;
                         window.startRFIDMinigame(null, null, {
                             mode: 'clone',
                             cardToClone: cardData,
@@ -428,14 +435,20 @@ export async function processGameActionTags(tags, ui, options = {}) {
                             // as this NPC's card (access model 4.2)
                             cloneSource: cloneNpcId ? { npc_id: cloneNpcId } : null
                         });
-
-                        result.success = true;
-                        result.message = `📡 Starting card clone: ${cardData.name}`;
                         console.log('🔐 Started RFID clone minigame for:', cardData.name);
+                    };
+
+                    // In a chat the reader opens once the line carrying this tag has been
+                    // shown, as #trigger_minigame does (systems/ink-minigame-launch.js);
+                    // opening it now replaced the chat and lost that line.
+                    if (window.inkMinigameLaunch?.requestChatLaunch) {
+                        window.inkMinigameLaunch.requestChatLaunch('rfid-clone', openClone);
                     } else {
-                        result.message = '⚠️ RFID minigame not available';
-                        console.warn('startRFIDMinigame not found');
+                        openClone();
                     }
+
+                    result.success = true;
+                    result.message = `📡 Starting card clone: ${cardData.name}`;
                     break;
 
                 // ==========================================

@@ -66,6 +66,7 @@ function harness() {
     o._deferReply = method('_deferReply', deps);
     o._flushPendingReply = method('_flushPendingReply', deps);
     o._dropPageHideHook = method('_dropPageHideHook', deps);
+    o._inkLaunchWaiting = method('_inkLaunchWaiting', deps);
     o.displayAccumulatedDialogue = method('displayAccumulatedDialogue', deps);
     return { o, win, applied, shown };
 }
