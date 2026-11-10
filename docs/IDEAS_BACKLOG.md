@@ -209,3 +209,8 @@ Do the first three before a second scenario uses an action `condition`.
 - **Dead caught check on arrival** (S). `npc-needs.js` arrival check is shadowed by the per-tick check; remove it and pin the `goto_target` restriction with a test.
 - **Late route answers in single-room and random patrols** (S). The same race fixed for routed patrols; same one-line guard.
 - **Both routes credited within 0.6 s shows neither route line** (S, lab_physical_pentest). Silent, not false; one "both counted" line would cover it. User's call.
+
+## Lab content pass: not scheduled (2026-11-10, docs/achitechture/PHYSICAL_PENTEST_FEEDBACK_PLAN_CONTENT.md)
+- **Per-line performance notes in voiced lines** (plan B10, question C4; M, engine). The TTS reads a starred stage direction aloud, so the lab's directions were removed and manner lives in each NPC's `voice.style`. If per-line notes are wanted: an ink tag (`# perform: wry`) that `InkLineWalker`, `TtsLineExtractor` and the client pass with the line, added to that line's `speech_metadata` style and to its cache key. Only if the user answers yes to C4.
+- **The physical pentest device pitch** (plan C3; `planning_notes/physical_pentest_devices/DEVICE_PITCH.md`, commit `e1eb7004f`). Not built in this pass; the drop box beat goes through the networks slice (9.3a). Route any device from the pitch through 9.3b.
+- **The captures view still says "Simulated capture, authored for training"** (S, engine). The page-builder captures view prints that line above the list in every scenario; the lab's own texts no longer call the test simulated. The capture log holder (engine plan section 6) is the natural place to drop it.
