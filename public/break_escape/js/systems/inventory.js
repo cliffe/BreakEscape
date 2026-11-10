@@ -33,6 +33,147 @@ export function inventoryHoverLabel(scenarioData) {
     return scenarioData?.name;
 }
 
+// ---------------------------------------------------------------------------
+// The tray refresh (engine plan 5c)
+//
+// The tray is never rebuilt from state: window.inventory.items holds the slot
+// elements themselves, and many places read that array to answer "does the
+// player hold X". So nothing here removes an element or reorders the array.
+// refreshInventoryTray() walks the array and decorates the slots that exist:
+// a hidden class and a badge, from the rules registered with registerTrayRule.
+// ---------------------------------------------------------------------------
+
+export const TRAY_HIDDEN_CLASS = 'tray-hidden';
+const TRAY_BADGE_CLASS = 'tray-badge';
+const TRAY_FIELDS = ['hidden', 'holderId', 'badge'];
+
+const trayRules = [];
+// Identifiers held at the previous refresh; null until a tray's first refresh,
+// which only records what is held.
+let trayHeld = null;
+// Slot elements of items restored from the save (a reload, or a new game's start
+// items, which the server delivers as playerInventory): never an arrival.
+const trayRestored = new WeakSet();
+// What the last refresh decided for each element: { hidden, holderId, badge }.
+const trayDecided = new WeakMap();
+let trayWalking = false;
+let trayWalkAgain = false;
+
+function trayKey(item) {
+    return item?.scenarioData ? createItemIdentifier(item.scenarioData) : null;
+}
+
+// Every rule's answer for one item, merged: for each field the first rule that
+// sets it wins. A rule that throws is skipped, never the tray.
+function trayStateFor(item, items) {
+    const state = {};
+    for (const rule of trayRules) {
+        let out = null;
+        try { out = rule(item, items); } catch (err) {
+            console.error('[inventory] a tray rule failed:', err);
+        }
+        if (!out || typeof out !== 'object') continue;
+        for (const field of TRAY_FIELDS) {
+            if (out[field] !== undefined && state[field] === undefined) state[field] = out[field];
+        }
+    }
+    return state;
+}
+
+function drawTrayBadge(slot, count) {
+    let badge = slot.querySelector(`:scope > .${TRAY_BADGE_CLASS}`);
+    const n = Number(count) > 0 ? Math.floor(Number(count)) : 0;
+    if (!n) { badge?.remove(); return; }
+    if (!badge) {
+        badge = document.createElement('span');
+        badge.className = TRAY_BADGE_CLASS;
+        slot.appendChild(badge);
+    }
+    badge.textContent = String(n);
+}
+
+function holderName(items, holderId) {
+    const holder = items.find(it => it?.scenarioData?.id === holderId);
+    return holder?.scenarioData?.name || holderId;
+}
+
+/**
+ * Decorate the tray from the registered rules. Runs after every add, remove and
+ * restore; slice 9.3's server-made item functions call it at their end, and any
+ * module may call it when something a rule reads has changed. Per slot it sets
+ * the hidden class and the badge; every item keeps its element and its place in
+ * window.inventory.items. An item that arrives (an identifier not held at the
+ * previous refresh, not restored from the save) and is filed in a holder is
+ * announced as "Added to <holder name>: <item name>". Emits inventory_changed
+ * once when it has run.
+ */
+export function refreshInventoryTray() {
+    const items = window.inventory?.items;
+    if (!Array.isArray(items)) return;
+    // A rule that calls the refresh while it runs gets one more walk, not a nested
+    // one (at most a few, so a rule that always asks cannot hang the page)
+    if (trayWalking) { trayWalkAgain = true; return; }
+    trayWalking = true;
+    const filedArrivals = [];
+    let walks = 0;
+    try {
+        do {
+            trayWalkAgain = false;
+            const before = trayHeld;
+            const now = new Set();
+            for (const item of items) {
+                if (!item) continue;
+                const key = trayKey(item);
+                if (key) now.add(key);
+                const state = trayStateFor(item, items);
+                trayDecided.set(item, state);
+                const slot = item.parentElement;
+                if (slot?.classList) {
+                    slot.classList.toggle(TRAY_HIDDEN_CLASS, state.hidden === true);
+                    drawTrayBadge(slot, state.badge);
+                }
+                if (before && key && !before.has(key) && !trayRestored.has(item) && state.holderId) {
+                    filedArrivals.push({ item, holderId: state.holderId });
+                }
+            }
+            trayHeld = now;
+        } while (trayWalkAgain && ++walks < 3);
+    } finally {
+        trayWalking = false;
+    }
+    for (const { item, holderId } of filedArrivals) {
+        const name = item.scenarioData?.name || item.scenarioData?.type || 'item';
+        window.gameAlert?.(`Added to ${holderName(items, holderId)}: ${name}`, 'info', '', 3000);
+    }
+    window.eventDispatcher?.emit('inventory_changed', { items });
+}
+
+/**
+ * Register a tray rule: fn(item, items) gets one entry of window.inventory.items
+ * and the whole array, and returns null or { hidden?, holderId?, badge? }.
+ * hidden hides the item's slot, holderId names the held item it is filed in,
+ * badge is a count drawn on the item's own slot (0 or absent draws none). Rules
+ * run in the order registered; for each field the first rule that sets it wins.
+ * Registering runs a refresh, so a module that loads after the restore files
+ * what is already held. Returns a function that removes the rule (and refreshes).
+ */
+export function registerTrayRule(fn) {
+    if (typeof fn !== 'function') throw new TypeError('registerTrayRule needs a function');
+    trayRules.push(fn);
+    refreshInventoryTray();
+    return () => {
+        const i = trayRules.indexOf(fn);
+        if (i === -1) return;
+        trayRules.splice(i, 1);
+        refreshInventoryTray();
+    };
+}
+
+// What the last refresh decided for one tray element: { hidden?, holderId?, badge? }
+export function trayStateOf(item) {
+    return { ...(trayDecided.get(item) || {}) };
+}
+
 // Initialize the inventory system
 export function initializeInventory() {
     console.log('Inventory system initialized');
@@ -42,6 +183,7 @@ export function initializeInventory() {
         items: [],
         container: null
     };
+    trayHeld = null; // a new tray: its first refresh only records what is held
     
     // Get the HTML inventory container
     const inventoryContainer = document.getElementById('inventory-container');
@@ -172,6 +314,7 @@ export function processInitialInventoryItems() {
                 addToInventory(inventoryItem);
             }
         });
+        refreshInventoryTray();
         return; // Don't process startItemsInInventory if we loaded from server
     }
     
@@ -222,6 +365,7 @@ export function processInitialInventoryItems() {
     } else {
         console.log('No startItemsInInventory defined in scenario');
     }
+    refreshInventoryTray();
 }
 
 // Image key of an item that has no world sprite (restored from the saved inventory
@@ -710,7 +854,11 @@ export async function addToInventory(sprite) {
         
         // Add to inventory array
         window.inventory.items.push(itemImg);
-        
+        if (sprite._restoredFromSave) trayRestored.add(itemImg);
+        // Decorate the tray (a rule may file this item in a held holder; then the
+        // refresh says "Added to <holder>" and the hidden slot gets no pulse)
+        refreshInventoryTray();
+
         applyPickupAction(sprite);
 
         // Emit NPC event for item pickup
@@ -727,11 +875,14 @@ export async function addToInventory(sprite) {
         }
         
         // Apply pulse animation to the slot instead of showing notification
-        slot.classList.add('pulse');
-        // Remove the pulse class after the animation completes
-        setTimeout(() => {
-            slot.classList.remove('pulse');
-        }, 600);
+        // (not to a filed item's hidden slot: its arrival was a toast)
+        if (!slot.classList.contains(TRAY_HIDDEN_CLASS)) {
+            slot.classList.add('pulse');
+            // Remove the pulse class after the animation completes
+            setTimeout(() => {
+                slot.classList.remove('pulse');
+            }, 600);
+        }
         
         // If this is the Bluetooth scanner, automatically open the minigame after adding to inventory
         if (sprite.scenarioData.type === "bluetooth_scanner" && window.startBluetoothScannerMinigame) {
@@ -807,6 +958,8 @@ function addKeyToInventory(sprite) {
     
     // Update or create the key ring display
     updateKeyRingDisplay();
+    if (sprite._restoredFromSave && window.inventory.keyRing.itemImg) trayRestored.add(window.inventory.keyRing.itemImg);
+    refreshInventoryTray();
     
     // IMPORTANT: Reinitialize key-lock mappings now that we have a new key
     // This is critical for newly acquired keys (e.g., dropped by NPCs) to unlock doors
@@ -1005,6 +1158,7 @@ export function removeFromInventory(item) {
             if (slot.matches(':hover')) clearHudLabel();
             slot.remove();
         }
+        refreshInventoryTray();
         
         // Hide bluetooth toggle if we dropped the bluetooth scanner
         if (item.scenarioData.type === "bluetooth_scanner") {
@@ -1073,4 +1227,5 @@ window.removeFromInventory = removeFromInventory;
 window.addNotepadToInventory = addNotepadToInventory;
 window.createItemIdentifier = createItemIdentifier;
 window.handleKeyRingInteraction = handleKeyRingInteraction;
-window.updatePhoneBadge = updatePhoneBadge; 
+window.updatePhoneBadge = updatePhoneBadge; window.refreshInventoryTray = refreshInventoryTray;
+window.registerTrayRule = registerTrayRule;
