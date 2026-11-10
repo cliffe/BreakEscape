@@ -481,3 +481,69 @@
         max-height: 40px;
     }
 }
+
+/* ── Sign-in desktop (access model 5.3): account bar, Copy / Move dialog ─────── */
+
+.desktop-account-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    margin: 0 0 10px 0;
+    font-size: 18px;
+    color: #ecf0f1;
+}
+
+.desktop-account-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.desktop-account-btn {
+    font-size: 12px;
+    padding: 6px 10px;
+}
+
+.desktop-transfer-dialog {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 5;
+    min-width: 260px;
+    max-width: 90%;
+    background: #c0c0c0;
+    border: 2px solid #fff;
+    border-right-color: #404040;
+    border-bottom-color: #404040;
+    box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.6);
+    color: #000;
+}
+
+.desktop-window-titlebar {
+    background: #000080;
+    color: #fff;
+    padding: 4px 8px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+}
+
+.desktop-window-body {
+    padding: 10px;
+}
+
+.desktop-window-body p {
+    margin: 0 0 10px 0;
+    font-size: 17px;
+}
+
+.desktop-window-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.desktop-transfer-btn {
+    font-size: 11px;
+    padding: 6px 8px;
+}

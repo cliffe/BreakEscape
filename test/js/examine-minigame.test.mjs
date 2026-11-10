@@ -34,9 +34,13 @@ const stubs = {
     './biometrics.js': dataUrl('export function collectFingerprint() { return null; } export function handleBiometricScan() {}'),
     './inventory.js': dataUrl(record('addToInventory') + ' export function createItemIdentifier(d) { return d?.id; }'),
     './ui-sounds.js': dataUrl('export function playUISound() {} export function playGameSound() {}'),
-    './apply-actions.js': dataUrl('export function applyActions() {}'),
+    './apply-actions.js': dataUrl("export function applyActions(a) { globalThis.__calls.push(['applyActions', a?.length]); }"),
     '../utils/conditional-text.js': dataUrl(readFileSync(join(js, 'utils/conditional-text.js'), 'utf8')),
     '../utils/flag-lock.js': dataUrl(readFileSync(join(js, 'utils/flag-lock.js'), 'utf8')),
+    // the real hint resolver and the real duration rule (the requiresItem refusal test below)
+    './requires-item-hint.js': dataUrl(readFileSync(join(js, 'systems/requires-item-hint.js'), 'utf8')
+        .replace("'../utils/conditional-text.js'", `'${dataUrl(readFileSync(join(js, 'utils/conditional-text.js'), 'utf8'))}'`)),
+    '../utils/locked-hint.js': dataUrl(readFileSync(join(js, 'utils/locked-hint.js'), 'utf8')),
     './npc-reach.js': dataUrl('export function npcReachDistSq() { return 0; }'),
     './examine.js': examineUrl,
     './combat-input.js': dataUrl(readFileSync(join(js, 'systems/combat-input.js'), 'utf8')),
@@ -48,6 +52,7 @@ const stubs = {
 };
 
 const started = [];
+const alerts = [];
 const framework = {
     registeredScenes: { examine: class {}, notes: class {}, 'phone-chat': class {}, 'text-file': class {} },
     currentMinigame: null,
@@ -58,7 +63,7 @@ globalThis.window = {
     inventory: { items: [] },
     player: { x: 0, y: 0, direction: 'down' },
     gameState: { globalVariables: {} },
-    gameAlert: (msg, type, title) => calls.push(['gameAlert', title]),
+    gameAlert: (...a) => { calls.push(['gameAlert', a[2]]); alerts.push(a); },
     gameDisplay: (msg, title) => calls.push(['gameDisplay', title]),
     addNote: () => true,
     startNotesMinigame: (s) => calls.push(['notes', s.scenarioData?.id]),
@@ -70,7 +75,7 @@ let src = readFileSync(join(js, 'systems/interactions.js'), 'utf8');
 for (const [spec, url] of Object.entries(stubs)) src = src.split(`'${spec}'`).join(`'${url}'`);
 const { handleObjectInteraction } = await import(dataUrl(src));
 
-function reset() { calls.length = 0; started.length = 0; framework.currentMinigame = null; window.inventory.items = []; }
+function reset() { calls.length = 0; started.length = 0; alerts.length = 0; framework.currentMinigame = null; window.inventory.items = []; }
 const roomSprite = (data) => ({ name: data.type, objectId: data.id, x: 0, y: 8, scenarioData: data,
     texture: { key: data.type }, frame: { name: '__BASE', cutWidth: 32, cutHeight: 24 } });
 const invImg = (data) => {
@@ -229,4 +234,33 @@ test('routing: a single key clicked in the inventory opens examine, not "Already
     assert.equal(started[0]?.[0], 'examine');
     assert.equal(started[0][1].observations, 'A brass key.');
     assert.equal(calls.some(c => c[0] === 'addToInventory'), false);
+});
+
+// Code review R1 m12: the requiresItem refusal branch really runs (not a source match).
+test('a requiresItem object clicked without the item: one toast with the variant text, for its by-length duration, and no actions', () => {
+    reset();
+    const words = (n) => Array.from({ length: n }, () => 'word').join(' ');
+    const pc = roomSprite({ id: 'staff_pc', type: 'pc', name: 'Staff PC', takeable: false,
+        requiresItem: 'keylogger', requiresItemHint: 'Collect the keylogger first.',
+        requiresItemHintVariants: [{ condition: 'globalVars.staff_pc_screen_locked', value: words(30) }],
+        triggerOnInteract: [{ type: 'set_global', key: 'planted', value: true }] });
+    window.gameState.globalVariables = { staff_pc_screen_locked: true };
+    try {
+        handleObjectInteraction(pc);
+        assert.deepEqual(alerts, [[words(30), 'info', '', 9000]]);
+        assert.equal(calls.some(c => c[0] === 'applyActions'), false);
+        // no variant holds: the base hint, at the minimum duration
+        window.gameState.globalVariables = {};
+        alerts.length = 0;
+        handleObjectInteraction(pc);
+        assert.deepEqual(alerts, [['Collect the keylogger first.', 'info', '', 6000]]);
+        // with the item in hand the actions fire and nothing is refused
+        alerts.length = 0;
+        window.inventory.items.push({ scenarioData: { id: 'kl_1', type: 'keylogger', name: 'Keylogger' } });
+        handleObjectInteraction(pc);
+        assert.deepEqual(alerts, []);
+        assert.deepEqual(calls.filter(c => c[0] === 'applyActions'), [['applyActions', 1]]);
+    } finally {
+        window.gameState.globalVariables = {};
+    }
 });

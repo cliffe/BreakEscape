@@ -26,6 +26,16 @@ export function createItemIdentifier(scenarioData) {
     return `${itemType}_${itemName}`;
 }
 
+// Hover label of an inventory item. A droppable item (item-drop.js) says how to drop
+// it, because clicking it in the inventory is the only way and nothing else says so.
+// One with triggerOnInteract keeps its plain name: a click fires its actions and never
+// reaches the drop (interactions.js).
+export function inventoryHoverLabel(scenarioData) {
+    const name = scenarioData?.name;
+    const drops = scenarioData?.droppable === true && !Array.isArray(scenarioData.triggerOnInteract);
+    return drops && name ? `${name} (click to drop)` : name;
+}
+
 // Initialize the inventory system
 export function initializeInventory() {
     console.log('Inventory system initialized');
@@ -217,6 +227,27 @@ export function processInitialInventoryItems() {
     }
 }
 
+// Image key of an item that has no world sprite (restored from the saved inventory
+// after a reload, or a starting item). A scenario object's "sprite" names its picture
+// and wins over the type, as it does when the room draws the object (rooms.js):
+// with the type alone a reload turned a "usb" with sprite "charging_cable" into a
+// missing usb.png.
+export function inventoryImageKey(itemData) {
+    const named = itemData?.sprite;
+    return (typeof named === 'string' && named) ? named : itemData?.type;
+}
+
+// A missing picture falls back once to the item type's own, so a wrong "sprite"
+// name cannot leave a broken image with its alt text spilling over the next slot.
+export function fallbackInventoryImage(itemImg, type) {
+    if (!type || itemImg._triedTypeImage) return false;
+    const typeSrc = `/break_escape/assets/objects/${type}.png`;
+    if (String(itemImg.src || '').endsWith(typeSrc)) return false;
+    itemImg._triedTypeImage = true;
+    itemImg.src = typeSrc;
+    return true;
+}
+
 function createInventorySprite(itemData) {
     try {
         // Create a pseudo-sprite object that can be used in inventory
@@ -225,7 +256,7 @@ function createInventorySprite(itemData) {
             objectId: `inventory_${itemData.type}_${Date.now()}`,
             scenarioData: itemData,
             texture: {
-                key: itemData.type  // Use the type as the texture key for image lookup
+                key: inventoryImageKey(itemData)
             },
             // Copy critical properties for easy access
             keyPins: itemData.keyPins,  // Preserve keyPins for keys
@@ -456,10 +487,13 @@ export async function addToInventory(sprite) {
                 // Create item data with ID from scenario if available
                 const itemData = sprite.scenarioData;
 
+                // A file taken from a sign-in desktop (access model 5.1) names its PC and
+                // the player's choice, Copy or Move; the server checks the session there.
                 const addBody = JSON.stringify({
                     action_type: 'add',
                     item: itemData,
-                    source_npc_id: sprite.sourceNpcId || undefined
+                    source_npc_id: sprite.sourceNpcId || undefined,
+                    ...(sprite.sourcePcId ? { source_pc_id: sprite.sourcePcId, transfer: sprite.transfer || 'move' } : {})
                 });
                 const response = await fetch(`/break_escape/games/${gameId}/inventory`, {
                     method: 'POST',
@@ -594,6 +628,7 @@ export async function addToInventory(sprite) {
         itemImg.className = 'inventory-item';
         itemImg.src = `/break_escape/assets/objects/${sprite.texture?.key || sprite.name || sprite.scenarioData?.type}.png`;
         itemImg.alt = sprite.scenarioData.name;
+        itemImg.addEventListener('error', () => fallbackInventoryImage(itemImg, sprite.scenarioData?.type));
         
         // Add item data
         itemImg.scenarioData = sprite.scenarioData;
@@ -651,7 +686,7 @@ export async function addToInventory(sprite) {
                 window.handleObjectInteraction(this);
             }
         });
-        itemImg.addEventListener('mouseenter', () => setHudLabel(sprite.scenarioData.name));
+        itemImg.addEventListener('mouseenter', () => setHudLabel(inventoryHoverLabel(sprite.scenarioData)));
         itemImg.addEventListener('mouseleave', () => clearHudLabel());
 
         // Add to slot
@@ -669,7 +704,9 @@ export async function addToInventory(sprite) {
                 itemName: sprite.scenarioData.name,
                 itemId: sprite.scenarioData.id || window.lockRef(sprite.scenarioData),
                 collectionGroup: sprite.scenarioData.collection_group || null,
-                roomId: window.currentPlayerRoom
+                roomId: window.currentPlayerRoom,
+                // From a sign-in desktop: which PC, and whether it was copied or moved
+                ...(sprite.sourcePcId ? { sourcePcId: sprite.sourcePcId, transfer: sprite.transfer || 'move' } : {})
             });
         }
         

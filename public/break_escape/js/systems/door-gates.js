@@ -14,6 +14,10 @@
  * - Never closes while the player overlaps the door's body (+4px), nor while an
  *   `openFor` NPC stands in the doorway, nor (after holdMs) while an `openFor`
  *   NPC's remaining path still crosses the doorway.
+ * - When the gate opens, each `openFor` NPC is told (gateOpened), so one waiting on
+ *   a path through it asks again at once. A routed guard who has been moved away
+ *   from the door (pushed by the player, or ending a leg out of reach) walks back
+ *   to it: npc-behavior.js asks approachPoint() when a route leg is unreachable.
  * - `playerMayPassIf` names a global. While it is false, a player who comes within
  *   `openRadius` of the open gate shuts it at once (unless they, or a guard, are
  *   already in the doorway, where shutting it would trap them), and it stays shut
@@ -52,6 +56,9 @@ export const DEFAULT_GATE_HOLD_MS = 2500;
 // skips the leg and carries on with his route, so his patrol never stops and he
 // tries the door again on his next cycle. See NPC_NEEDS_SYSTEM.md 12.3.
 export const GUARD_TURN_BACK_MS = 5000;
+// How far from the door's centre a guard is sent to stand when he has to walk
+// back to it (approachPoint): the tile in front of the doorway.
+const APPROACH_PX = 48;
 const TILE = 32;
 const OPPOSITE = { north: 'south', south: 'north', east: 'west', west: 'east' };
 
@@ -243,8 +250,46 @@ export class DoorGates {
             pm.rebuildWorldGrid?.();
         }
         console.log(`🚪 Gate opened: ${g.roomId} ↔ ${g.connectedRoom}`);
+        // A guard waiting on a path through this door asks again now, not at the end
+        // of his retry back-off (by which time the gate may have shut again).
+        const bm = W().npcBehaviorManager;
+        for (const id of g.cfg?.openFor || []) bm?.getBehavior?.(id)?.gateOpened?.();
         this._afterToggle(g, eventName);
         return true;
+    }
+
+    /**
+     * Where an `openFor` NPC should walk to get his own shut gate to open: the spot
+     * just in front of the doorway, on his side of it. npc-behavior.js asks when a
+     * route leg is unreachable. Returns null when no shut gate of his joins one of
+     * `roomIds` (when given), or when he is already inside the nearest one's radius
+     * (it opens for him without his moving, or he turns back: update()).
+     * @param {string} npcId
+     * @param {{x:number,y:number}} from - the NPC's feet
+     * @param {string[]} [roomIds] - only gates that join one of these rooms
+     * @returns {{x:number,y:number,roomId:string,connectedRoom:string}|null}
+     */
+    approachPoint(npcId, from, roomIds = null) {
+        if (!from || !Number.isFinite(from.x) || !Number.isFinite(from.y)) return null;
+        let best = null;
+        for (const g of this.groups.values()) {
+            if (!g.cfg || g.open || !g.cfg.openFor.includes(npcId)) continue;
+            if (Array.isArray(roomIds) && roomIds.length &&
+                !roomIds.includes(g.roomId) && !roomIds.includes(g.connectedRoom)) continue;
+            const d = Math.hypot(from.x - g.x, from.y - g.y);
+            if (!best || d < best.d) best = { g, d };
+        }
+        if (!best) return null;
+        const g = best.g;
+        const reach = Math.min(APPROACH_PX, Math.max(g.cfg.openRadius - 8, TILE / 2));
+        // Inside the radius the gate opens for him where he stands (update()), or he is
+        // turned back after GUARD_TURN_BACK_MS: a guard held at his badge reader does not
+        // walk up to the door.
+        if (best.d <= g.cfg.openRadius) return null;
+        const pt = g.isSideDoor
+            ? { x: g.x + (from.x >= g.x ? reach : -reach), y: g.y }
+            : { x: g.x, y: g.y + (from.y >= g.y ? reach : -reach) };
+        return { ...pt, roomId: g.roomId, connectedRoom: g.connectedRoom };
     }
 
     /**
@@ -272,6 +317,35 @@ export class DoorGates {
             any = true;
         }
         return any;
+    }
+
+    /**
+     * An open gate the player may walk through as things stand: the clone window is
+     * running, or the gate has no playerMayPassIf, or that global is set. doors.js
+     * asks before refusing a click, so a door that is letting the player in never
+     * says "Access denied" (playtest E2). An undisguised player gets the refusal even
+     * while the gate is open for a guard: it shuts as he comes near.
+     */
+    openToPlayer(g, now = Date.now()) {
+        if (!g?.open) return false;
+        if (now < (g.playerHoldUntil || 0)) return true;
+        const name = g.cfg?.playerMayPassIf;
+        return !name || !!W().gameState?.globalVariables?.[name];
+    }
+
+    /**
+     * What a player's click on a gate door comes to (doors.js handleDoorInteraction):
+     *   'granted' - he holds a credential the gate takes; it is opened for him now
+     *   'pass'    - the gate is open and he may walk through; nothing to say
+     *   'denied'  - refuse, with the door's hint
+     * The credential answers first, so a clone opens (and is credited) even while
+     * the gate happens to be open for a guard.
+     * @param {object|null} g - the gate group clicked, when known
+     * @param {{holdsCredential?: boolean, connectedRoom?: string, now?: number}} click
+     */
+    clickOutcome(g, { holdsCredential = false, connectedRoom = null, now = Date.now() } = {}) {
+        if (holdsCredential && this.playerOpen(connectedRoom, { now })) return 'granted';
+        return g && this.openToPlayer(g, now) ? 'pass' : 'denied';
     }
 
     close(g) {

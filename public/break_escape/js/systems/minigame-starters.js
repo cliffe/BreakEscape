@@ -237,7 +237,7 @@ export function startKeySelectionMinigame(lockable, type, playerKeys, requiredKe
                 unlockTargetCallback(lockable, type, lockable.layer);
             }
         } else {
-            window.gameAlert(withLockedHint('None of your keys work with this lock.', lockable), 'error', 'Wrong Keys', 4000);
+            window.gameAlert(withLockedHint('None of your keys work with this lock.', lockable), 'error', 'Wrong Keys', lockedHintDuration(lockable, 4000, 'None of your keys work with this lock.'));
         }
         return;
     }
@@ -464,7 +464,7 @@ export function startKeySelectionMinigame(lockable, type, playerKeys, requiredKe
                 // Closed because the player was hit: no "wrong key" on top of it (F2).
                 // A door with a lockedHint adds where the key comes from; others are unchanged.
                 if (!window.minigameClosedByDamage?.()) {
-                    window.gameAlert(withLockedHint('The selected key doesn\'t work with this lock.', lockable), 'error', 'Wrong Key', 4000);
+                    window.gameAlert(withLockedHint('The selected key doesn\'t work with this lock.', lockable), 'error', 'Wrong Key', lockedHintDuration(lockable, 4000, 'The selected key doesn\'t work with this lock.'));
                 }
             }
         }
@@ -563,7 +563,7 @@ export function startPinMinigame(lockable, type, correctPin, callback) {
                 console.log('PIN MINIGAME FAILED');
                 // result.cancelled: the player just closed the pad -- say nothing
                 if (!result?.cancelled && !window.minigameClosedByDamage?.()) {
-                    window.gameAlert(appendLockedHint("Failed to enter correct PIN.", lockable), 'error', 'PIN Rejected', lockedHintDuration(lockable, 3000));
+                    window.gameAlert(appendLockedHint("Failed to enter correct PIN.", lockable), 'error', 'PIN Rejected', lockedHintDuration(lockable, 3000, "Failed to enter correct PIN."));
                 }
                 callback(false, result);
             }
@@ -623,7 +623,7 @@ export function startPasswordMinigame(lockable, type, correctPassword, callback,
                     // A flag lock says so: a mistyped flag is not "a password"
                     const rej = rejectionAlert(lockable, type, { message: "Failed to enter correct password.", title: 'Password Rejected' });
                     const hinted = result?.cancelled ? rej.message : appendLockedHint(rej.message, lockable);
-                    window.gameAlert(hinted, 'error', rej.title, result?.cancelled ? 3000 : lockedHintDuration(lockable, 3000));
+                    window.gameAlert(hinted, 'error', rej.title, result?.cancelled ? 3000 : lockedHintDuration(lockable, 3000, rej.message));
                 }
                 callback(false, result);
             }

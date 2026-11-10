@@ -525,6 +525,10 @@ export function createDoorSpritesForRoom(roomId, position, fullRoomData = null) 
             locked: lockProps.locked !== undefined ? lockProps.locked : (connectedRoomData?.locked || false),
             lockType: lockProps.lockType || connectedRoomData?.lockType || null,
             requires: lockProps.requires || connectedRoomData?.requires || null,
+            // An rfid door's access list (roles and people) and whether a UID-only copy
+            // opens it (access model 4.1). Neither is secret; the server decides the list.
+            access: lockProps.access ?? connectedRoomData?.access ?? null,
+            acceptsUIDOnly: lockProps.acceptsUIDOnly ?? connectedRoomData?.acceptsUIDOnly ?? null,
             keyPins: keyPinsArray,  // Include keyPins from scenario (supports both cases)
             difficulty: lockProps.difficulty || connectedRoomData?.difficulty,  // Include difficulty from scenario
             isSideDoor: isSideDoor,  // Track if this is a side (E/W) door for animation purposes
@@ -710,9 +714,18 @@ async function handleDoorInteraction(doorSprite) {
             }
             return;
         }
+        // The gate is open and the player may pass (staff holding it, hi-vis on): the
+        // way is clear, so there is nothing to refuse (playtest E2). The credential
+        // case is answered above (it goes through the server), so clickOutcome is
+        // asked only for 'pass' or 'denied'.
+        const outcome = window.doorGates?.clickOutcome?.(gateGroup, {
+            holdsCredential: false, connectedRoom: props.connectedRoom
+        }) || 'denied';
+        if (outcome === 'pass') return;
         // The hint lives on the locked room's side of the doorway; the group shares it
         const hintSource = { doorProperties: { lockedHint: props.lockedHint || gateGroup?.lockedHint || null } };
-        window.gameAlert?.(appendLockedHint('Access denied: this door only opens for authorised staff.', hintSource), 'error', 'Door', lockedHintDuration(hintSource, 3000));
+        const denied = 'Access denied: this door only opens for authorised staff.';
+        window.gameAlert?.(appendLockedHint(denied, hintSource), 'error', 'Door', lockedHintDuration(hintSource, 3000, denied));
         window.eventDispatcher?.emit?.('door_gate_denied', {
             roomId: props.roomId, connectedRoom: props.connectedRoom, direction: props.direction
         });

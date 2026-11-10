@@ -78,6 +78,22 @@ module BreakEscape
       show?
     end
 
+    def login?
+      show?
+    end
+
+    def logout?
+      show?
+    end
+
+    def login_accounts?
+      show?
+    end
+
+    def clone_card?
+      show?
+    end
+
     def submit_flag?
       show?
     end

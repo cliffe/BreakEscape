@@ -1001,6 +1001,9 @@ async function loadRoomOnce(roomId) {
 
     createRoom(roomId, roomData, position);
 
+    // A PC whose owner is already away with the screen locked gets its locked look, silently
+    window.screenStates?.syncRoom(roomId);
+
     // Reveal (make visible) but do NOT mark as discovered
     // The room will only be marked as "discovered" when the player
     // actually enters it via door transition
@@ -1016,6 +1019,7 @@ export function initializeRooms(gameInstance) {
     currentRoom = '';
     currentPlayerRoom = '';
     window.currentPlayerRoom = '';
+    window.lastPlayerRoom = '';
     
     // Clear discovered rooms on scenario load
     // This ensures "first visit" detection works correctly for NPC events
@@ -3159,6 +3163,8 @@ export function updatePlayerRoom() {
 
     currentPlayerRoom = detectedRoom;
     window.currentPlayerRoom = detectedRoom;
+    // The last room the player stood in, kept while they are in a doorway or gap ('' above)
+    if (detectedRoom) window.lastPlayerRoom = detectedRoom;
 
     ensureAmbientListenersRegistered();
     recalculateAmbientVolume(detectedRoom);

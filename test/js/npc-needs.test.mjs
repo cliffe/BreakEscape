@@ -4,6 +4,7 @@
 // scenarios/test_npc_needs.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { NPCNeedsSystem, needTiming, NEEDS_TICK_MS, RETURN_YIELD_MS, createEngineWorld } from '../../public/break_escape/js/systems/npc-needs.js';
 
 import { makeWorld } from './fixtures/needs-stub-world.mjs';
@@ -231,6 +232,31 @@ test('needs clock pauses on the VM and clamps long frames', () => {
     assert.equal(sys.clockMs, 1000);
     vm = false; now += 500; sys.update();
     assert.equal(sys.clockMs, 1500);
+});
+
+test('given the frame step, the needs clock follows it and not wall time', () => {
+    // Below 5 fps Phaser holds the physics step near one normal frame while wall time runs on.
+    // The engine passes that step, so a walk deadline cannot pass while the walker crawls.
+    let now = 0, vm = false;
+    const w = makeWorld(office());
+    w.world.elapsedMs = () => now;
+    w.world.isVmActive = () => vm;
+    const sys = new NPCNeedsSystem(w.world, { seed: 1 });
+    w.attach(sys);
+    sys.registerAll();
+    sys.update(16);                       // the first frame only sets the baseline
+    assert.equal(sys.clockMs, 0);
+    for (let i = 0; i < 40; i++) { now += 450; sys.update(25); }   // 18 s of wall time, 1 s of steps
+    assert.equal(sys.clockMs, 1000);
+    now += 450; sys.update(60000);        // a frame step is clamped like an elapsed one
+    assert.equal(sys.clockMs, 2000);
+    vm = true; now += 450; sys.update(500);
+    assert.equal(sys.clockMs, 2000);
+    vm = false;
+    now += 500; sys.update(NaN);          // no usable step: elapsed time, as before
+    assert.equal(sys.clockMs, 2500);
+    now += 250; sys.update();
+    assert.equal(sys.clockMs, 2750);
 });
 
 test('an unreachable nearer target is skipped, a reachable farther one is chosen', () => {
@@ -509,6 +535,128 @@ test('work at another object still emits left then returned', () => {
     assert.ok(names.includes('npc_left_post:clerk'));
     assert.ok(names.includes('npc_returned_post:clerk'));
     assert.ok(names.indexOf('npc_left_post:clerk') < names.indexOf('npc_returned_post:clerk'));
+});
+
+test('a need for the own post that turns urgent while away: arriving for it is the return', () => {
+    // Work turns urgent during the coffee, so the walk home becomes a job at the own PC. The
+    // return is announced on arrival, not after the session there, and only once.
+    const cfg = office({ objects: [
+        { id: 'own_pc', x: 100, y: 68, affordance: { satisfies: 'work', restores: 60, useSeconds: 10 } }
+    ] });
+    cfg.objects = cfg.objects.filter(o => o.id !== 'clerk_pc');
+    cfg.npcs.clerk.rec.needsHome = 'own_pc';
+    cfg.npcs.clerk.rec.needs = {
+        caffeine: { decayPerMin: 60, urgentAt: 50, initial: 55, jitterPct: 0 },
+        work: { decayPerMin: 20, urgentAt: 40, initial: 45, jitterPct: 0 }
+    };
+    const w = makeWorld(cfg);
+    const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+    w.attach(sys);
+    slowWalks(w, sys);
+    sys.registerAll();
+    sys.step(90000);
+    const log = sys.getLog().filter(e => e.npc === 'clerk');
+    const at = (ev, target) => log.findIndex(e => e.ev === ev && (!target || e.target === target));
+    assert.ok(at('used', 'coffee_machine') >= 0, 'had the coffee');
+    const usingOwn = log.findIndex((e, i) => i > at('used', 'coffee_machine') && e.ev === 'using' && e.target === 'own_pc');
+    const usedOwn = log.findIndex((e, i) => i > usingOwn && e.ev === 'used' && e.target === 'own_pc');
+    const back = at('returned_post');
+    assert.ok(usingOwn > 0 && usedOwn > usingOwn, 'worked at the own PC on the way back');
+    assert.ok(back > at('used', 'coffee_machine') && back < usingOwn, 'returned on arrival, before the session');
+    assert.equal(log[back].t, log[usingOwn].t, 'in the same tick as the arrival');
+    assert.equal(log.filter(e => e.ev === 'returned_post').length, 1);
+    assert.equal(w.calls.emits.filter(e => e.name === 'npc_returned_post:clerk').length, 1);
+    assert.equal(sys.getState('clerk').atPost, true);
+});
+
+/** Walks that take two seconds (the stub's are instant), so a walk is still under way when
+ *  the next tick's choices are made. Returns a probe for the walk in progress. */
+function slowWalks(w, sys) {
+    let walk = null;
+    w.world.moveTo = (id, x, y) => { walk = { id, x, y, from: sys.tickCount, at: sys.tickCount + 8 }; };
+    w.world.cancelMove = () => { walk = null; };
+    sys.onTick(() => {
+        if (!walk || sys.tickCount < walk.at) return;
+        const m = walk; walk = null;
+        w.pos[m.id].x = m.x; w.pos[m.id].y = m.y;
+        sys.onArrived(m.id, 'needs');
+    });
+    return () => walk;
+}
+
+test('a delivery to the own post: arriving with the item is the return', () => {
+    // A carry job whose target is the own post object (a printout taken back to the desk)
+    // arrives the same way as a need for it. The return is announced on arrival, once, and
+    // not after the session at the desk.
+    const w = makeWorld(curiousCfg());
+    const sys = new NPCNeedsSystem(w.world, { seed: 3, manualClock: true });
+    w.attach(sys);
+    slowWalks(w, sys);
+    sys.registerAll();
+    sys.step(30000);
+    w.objs.push({ id: 'dropped_thing', x: 160, y: 160, roomId: 'office', pickable: true, needsTag: 'found_item' });
+    sys.step(60000);
+    const log = sys.getLog().filter(e => e.npc === 'finder');
+    const start = log.find(e => e.ev === 'job_start');
+    assert.equal(start?.target, 'finder_pc', 'the delivery is to the own PC');
+    const names = w.calls.emits.map(e => e.name);
+    assert.ok(names.includes('npc_left_post:finder'), 'it really left');
+    const picked = log.findIndex(e => e.ev === 'picked_up');
+    const using = log.findIndex(e => e.ev === 'using' && e.target === 'finder_pc');
+    const used = log.findIndex(e => e.ev === 'used' && e.target === 'finder_pc');
+    const back = log.findIndex(e => e.ev === 'returned_post');
+    assert.ok(picked >= 0 && using > picked && used > using, 'picked up, carried home, used there');
+    assert.ok(back > picked && back < using, 'returned on arrival, before the session');
+    assert.equal(log[back].t, log[using].t, 'in the same tick as the arrival');
+    assert.ok(log[used].t > log[back].t, 'the session comes after');
+    assert.equal(log.filter(e => e.ev === 'returned_post').length, 1);
+    assert.equal(w.calls.emits.filter(e => e.name === 'npc_returned_post:finder').length, 1);
+    assert.equal(sys.getState('finder').atPost, true);
+});
+
+test('a walk back that is a job for the own post checks for the player at the desk on every tick', () => {
+    // An ordinary walk home is checked each tick. This one is a job, and was checked only on
+    // the tick after the trip ended and on arrival: a player at the desk mid-walk who had
+    // stepped away by the arrival was not caught.
+    const cfg = office({ objects: [
+        { id: 'own_pc', x: 100, y: 68, affordance: { satisfies: 'work', restores: 60, useSeconds: 10 } }
+    ] });
+    cfg.objects = cfg.objects.filter(o => o.id !== 'clerk_pc');
+    cfg.npcs.clerk.rec.needsHome = 'own_pc';
+    cfg.npcs.clerk.rec.needs = {
+        caffeine: { decayPerMin: 60, urgentAt: 50, initial: 55, jitterPct: 0 },
+        work: { decayPerMin: 20, urgentAt: 40, initial: 45, jitterPct: 0 }
+    };
+    const w = makeWorld(cfg);
+    const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+    w.attach(sys);
+    const walking = slowWalks(w, sys);
+    // Near the desk only in the middle of the walk to the own PC: not on its first two ticks
+    // and not on its last two
+    const asked = [];
+    w.world.playerAtPost = () => {
+        const job = sys.getState('clerk').job;
+        const walk = walking();
+        const mid = !!(walk && job?.targetId === 'own_pc' && job.phase === 'goto_target'
+            && sys.tickCount >= walk.from + 3 && sys.tickCount <= walk.at - 2);
+        asked.push(mid);
+        return { distance: mid ? 10 : 500, inMinigame: false };
+    };
+    sys.registerAll();
+    sys.step(90000);
+    assert.ok(asked.some(Boolean), 'the player was at the desk during the walk back');
+    const caught = w.calls.emits.filter(e => e.name === 'npc_caught_at_post:clerk');
+    assert.equal(caught.length, 1, 'caught once');
+    assert.equal(caught[0].data.objectId, 'own_pc');
+    assert.equal(w.calls.emits.filter(e => e.name === 'npc_returned_post:clerk').length, 1);
+});
+
+test('game.js hands the frame step to the needs clock', () => {
+    // The needs clock follows Phaser's frame step only if the scene's update passes it on. A
+    // tidy-up of the signature would bring the wall clock back with every other test passing.
+    const src = readFileSync(new URL('../../public/break_escape/js/core/game.js', import.meta.url), 'utf8');
+    assert.match(src, /export function update\(time, delta\)/, 'the scene update takes (time, delta)');
+    assert.match(src, /npcNeedsSystem\?\.update\(delta\)/, 'and passes delta to the needs system');
 });
 
 // ── tick-cost hygiene (slice 1): office() logs are unchanged ────────────────────
@@ -955,4 +1103,85 @@ test('leash and private together: leashed lists only the room-removed targets; t
     assert.deepEqual(l.skipped, ['lounge_cooler']);
     assert.deepEqual(r.log.find(e => e.ev === 'private_skipped').skipped, ['ben_kettle']);
     assert.deepEqual(r.w.calls.emits.find(e => e.name === 'npc_needs_leashed:tom').data.skipped, ['lounge_cooler']);
+});
+
+// ── Access model step 9 (ACCESS_MODEL_PLAN.md 5.4): isAvailable and onTick ───────────────
+
+test('step 9: isAvailable is false with no sprite and for ko, hostile and hidden, true otherwise', () => {
+    const w = makeWorld(office());
+    const status = {};
+    w.world.npcStatus = (id) => status[id] || {};
+    const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+    w.attach(sys);
+    sys.registerAll();
+    assert.equal(sys.isAvailable('clerk'), true);
+    for (const k of ['ko', 'hostile', 'hidden']) {
+        status.clerk = { [k]: true };
+        assert.equal(sys.isAvailable('clerk'), false, k);
+    }
+    status.clerk = {};
+    delete w.pos.clerk;
+    assert.equal(sys.isAvailable('clerk'), false, 'no sprite');
+});
+
+test('step 9: with no sprite _tickNpc only decays (no blocked, no home); with a sprite it blocks exactly when isAvailable is false', () => {
+    const w = makeWorld(office());
+    const status = {};
+    w.world.npcStatus = (id) => status[id] || {};
+    const saved = w.pos.clerk;
+    delete w.pos.clerk;
+    const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+    w.attach(sys);
+    sys.registerAll();
+    const before = sys.getState('clerk').levels.caffeine;
+    sys.step(60000);
+    const s = sys.states.get('clerk');
+    assert.ok(sys.getState('clerk').levels.caffeine < before, 'decayed');
+    assert.equal(s.blocked, false);
+    assert.equal(s.home, null);
+    assert.ok(!sys.getLog().some(e => e.npc === 'clerk' && e.ev === 'blocked'));
+    // Sprite back, status ko: blocked once, then unblocked when available again
+    w.pos.clerk = saved;
+    status.clerk = { ko: true };
+    sys.step(1000);
+    assert.equal(s.blocked, true);
+    assert.ok(s.home, 'home resolved before the availability test');
+    assert.equal(sys.getLog().filter(e => e.npc === 'clerk' && e.ev === 'blocked').length, 1);
+    status.clerk = {};
+    sys.step(250);
+    assert.equal(s.blocked, false);
+    assert.ok(sys.getLog().some(e => e.npc === 'clerk' && e.ev === 'unblocked'));
+});
+
+test('step 9: an NPC with interests only is registered, so getState is not null for it', () => {
+    const w = makeWorld(office({ npcs: { finder: { pos: { x: 200, y: 100 }, rec: { id: 'finder', needsHome: 'clerk_pc', interests: { found_item: 3 } } } } }));
+    const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+    w.attach(sys);
+    sys.registerAll();
+    assert.notEqual(sys.getState('finder'), null);
+    assert.equal(sys.getState('visitor'), null);
+});
+
+test('step 9: onTick listeners run once at the end of each tick', () => {
+    const w = makeWorld(office());
+    const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+    w.attach(sys);
+    sys.registerAll();
+    const seen = [];
+    const off = sys.onTick((s) => seen.push({ clock: s.clockMs, tick: s.tickCount, logLen: s.getLog().length }));
+    sys.step(1000);
+    assert.equal(seen.length, 4);
+    assert.deepEqual(seen.map(x => x.tick), [1, 2, 3, 4]);
+    assert.equal(seen[3].clock, 1000);
+    // Called after the NPCs were processed: the log the listener saw includes this tick's entries
+    assert.equal(seen[seen.length - 1].logLen, sys.getLog().length);
+    off();
+    sys.step(500);
+    assert.equal(seen.length, 4, 'unsubscribed');
+    // A reset keeps the listeners (the test bridge's setSeed)
+    const again = [];
+    sys.onTick(() => again.push(1));
+    sys.reset(2);
+    sys.step(250);
+    assert.equal(again.length, 1);
 });

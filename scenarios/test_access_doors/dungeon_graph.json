@@ -1,0 +1,245 @@
+{
+  "scenario": "test_access_doors",
+  "start_room": "lobby",
+  "nodes": [
+    {
+      "id": "door_finance_office",
+      "label": "Finance office<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "finance_office",
+      "label": "Finance office",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_visitor_room",
+      "label": "Visitor room<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "visitor_room",
+      "label": "Visitor room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_server_room",
+      "label": "Server room<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "server_room",
+      "label": "Server room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_cctv_room",
+      "label": "CCTV<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "cctv_room",
+      "label": "CCTV",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_evidence_store",
+      "label": "Evidence store<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "evidence_store",
+      "label": "Evidence store",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_plant_room",
+      "label": "Plant room<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "plant_room",
+      "label": "Plant room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "lock_finance_cabinet",
+      "label": "Finance cabinet<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "card_fin_dana_01",
+      "label": "Dana Reyes's badge<br/>(Dana Reyes)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "finance_lobby",
+      "label": "Finance",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "card_it_ian_01",
+      "label": "Ian Shaw's badge<br/>(Ian Shaw)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "it_lobby",
+      "label": "IT",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "card_sec_priya_01",
+      "label": "Priya Nair's badge<br/>(Priya Nair)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "security_lobby",
+      "label": "Security",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "card_plant_shared_01",
+      "label": "Plant room card (Gary Whitlock)<br/>(Gary Whitlock, Imran Siddiqui)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "plant_lobby",
+      "label": "Plant",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "lobby",
+      "label": "Lobby",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_finance_office",
+      "to": "finance_office",
+      "soft": false
+    },
+    {
+      "from": "door_visitor_room",
+      "to": "visitor_room",
+      "soft": false
+    },
+    {
+      "from": "door_server_room",
+      "to": "server_room",
+      "soft": false
+    },
+    {
+      "from": "door_cctv_room",
+      "to": "cctv_room",
+      "soft": false
+    },
+    {
+      "from": "door_evidence_store",
+      "to": "evidence_store",
+      "soft": false
+    },
+    {
+      "from": "door_plant_room",
+      "to": "plant_room",
+      "soft": false
+    },
+    {
+      "from": "finance_office",
+      "to": "lock_finance_cabinet",
+      "soft": false
+    },
+    {
+      "from": "finance_lobby",
+      "to": "card_fin_dana_01",
+      "soft": false
+    },
+    {
+      "from": "card_fin_dana_01",
+      "to": "door_finance_office",
+      "soft": false
+    },
+    {
+      "from": "card_fin_dana_01",
+      "to": "lock_finance_cabinet",
+      "soft": false
+    },
+    {
+      "from": "it_lobby",
+      "to": "card_it_ian_01",
+      "soft": false
+    },
+    {
+      "from": "card_it_ian_01",
+      "to": "door_server_room",
+      "soft": false
+    },
+    {
+      "from": "security_lobby",
+      "to": "card_sec_priya_01",
+      "soft": false
+    },
+    {
+      "from": "card_sec_priya_01",
+      "to": "door_cctv_room",
+      "soft": false
+    },
+    {
+      "from": "card_sec_priya_01",
+      "to": "door_evidence_store",
+      "soft": false
+    },
+    {
+      "from": "plant_lobby",
+      "to": "card_plant_shared_01",
+      "soft": false
+    },
+    {
+      "from": "card_plant_shared_01",
+      "to": "door_plant_room",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "finance_lobby",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "it_lobby",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "security_lobby",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "plant_lobby",
+      "soft": false
+    }
+  ]
+}

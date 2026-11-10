@@ -8,6 +8,7 @@
 # report.
 #
 #   BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/verify-run.rb [--tasks] [--log SESSION.jsonl] <game_id>
+#   BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/verify-run.rb <game_id> --access
 #
 # With --log (the session log), flags are split by where their value came from:
 # a <vmflag:REF> token has source "vm-step" (the value was produced by a solve
@@ -26,16 +27,63 @@
 # themselves, so a completed task is not evidence of play there. The record
 # holds only a status, so "completed once" is proved by tasks_completed and the
 # score; tools/playtest/count-task-posts.sh checks the request log.
+#
+# The access model section (docs/achitechture/ACCESS_MODEL_PLAN.md, step 6) prints what
+# the sign-in, card copy and file routes recorded: sessions, signedInPcs, serverClones,
+# copiedItems, loginFailures (a count per PC and username) and loginLockouts. The routes
+# write these keys themselves, so no sync is needed first. --access prints only that
+# section, for the check after each beat of a scripted run, and always exits 0.
 
 count_tasks_flag = !ARGV.delete('--tasks').nil?
+access_only = !ARGV.delete('--access').nil?
 log_path = nil
 if (i = ARGV.index('--log'))
   ARGV.delete_at(i)
   log_path = ARGV.delete_at(i) or abort 'usage: --log needs a session log path'
 end
-game_id = ARGV[0] or abort 'usage: verify-run.rb [--tasks] <game_id>'
+game_id = ARGV[0] or abort 'usage: verify-run.rb [--tasks] [--log SESSION.jsonl] [--access] <game_id>'
 g = BreakEscape::Game.find(game_id)
 ps = g.player_state || {}
+
+ACCESS_KEYS = %w[sessions signedInPcs serverClones copiedItems loginFailures loginLockouts].freeze
+
+# The access model keys, one line each. Sign-in details are never in player_state, so
+# nothing here is secret: NPC ids, PC ids, card ids, item ids and typed usernames.
+def access_section(ps)
+  hash = ->(v) { v.is_a?(Hash) ? v : {} }
+  list = ->(v) { v.is_a?(Array) ? v : [] }
+  sessions = hash.call(ps['sessions']).map do |pc, s|
+    s = {} unless s.is_a?(Hash)
+    "#{pc} = #{s['id'] || '?'} (#{s['via'] || '?'})"
+  end
+  clones = hash.call(ps['serverClones']).map do |card_id, rec|
+    rec = {} unless rec.is_a?(Hash)
+    src = rec['source'].is_a?(Hash) ? rec['source'].map { |k, v| "#{k} #{v}" }.join(', ') : '?'
+    "#{card_id} from #{src}#{rec['uidOnly'] ? ' (UID-only)' : ''}"
+  end
+  failures = hash.call(ps['loginFailures']).sort_by { |_, v| v.is_a?(Hash) ? v['seq'].to_i : 0 }.map do |key, v|
+    "#{key} #{v.is_a?(Hash) ? v['n'].to_i : v}"
+  end
+  rows = [
+    ['sessions', sessions],
+    ['signedInPcs', list.call(ps['signedInPcs']).map(&:to_s)],
+    ['serverClones', clones],
+    ['copiedItems', list.call(ps['copiedItems']).map(&:to_s)],
+    ['loginFailures', failures],
+    ['loginLockouts', list.call(ps['loginLockouts']).map(&:to_s)]
+  ]
+  lines = ['access model']
+  rows.each do |name, items|
+    lines << "  #{name.ljust(14)} #{items.length}#{items.empty? ? '' : ": #{items.join('; ')}"}"
+  end
+  lines
+end
+
+if access_only
+  puts "game            #{g.id}  (mission #{g.mission_id})"
+  puts access_section(ps)
+  exit 0
+end
 
 inv     = (ps['inventory'] || []).map { |i| i.is_a?(Hash) ? (i['name'] || i['id']) : i }
 rooms   = ps['unlockedRooms'] || []
@@ -55,6 +103,11 @@ puts "inventory       #{inv.length}: #{inv.join(', ')}"
 puts "NPCs met        #{npcs.length}: #{npcs.join(', ')}"
 puts "flags submitted #{flags.length}: #{flags.join(', ')}"
 puts "globals set     #{globals.length}: #{globals.keys.sort.join(', ')}"
+if ACCESS_KEYS.any? { |k| ps[k].respond_to?(:empty?) && !ps[k].empty? }
+  puts access_section(ps)
+else
+  puts 'access model    nothing recorded (no sessions, sign-ins, card copies, copied files or failed sign-ins)'
+end
 
 tasks = (ps.dig('objectivesState', 'tasks') || {})
 completed_ids = tasks.select { |_, t| t.is_a?(Hash) && t['status'] == 'completed' }.keys

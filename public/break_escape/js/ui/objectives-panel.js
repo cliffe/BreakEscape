@@ -123,6 +123,9 @@ export class ObjectivesPanel {
     }
     
     let html = '';
+    // Aims that appear after the first render (a "New Objective") are scrolled into
+    // view below: a long list hid the new Debrief aim under the fold (lab playtest E9)
+    const newAimIds = ObjectivesPanel.newAimIds(aims, this.aimStatus);
     
     aims.forEach(aim => {
       const isCompleted = aim.status === 'completed';
@@ -206,6 +209,69 @@ export class ObjectivesPanel {
         + 'title="Some optional objectives are still open">End the mission</button></div>';
     }
     this.content.innerHTML = html;
+    if (newAimIds.length) this.revealAim(this.aimToReveal(newAimIds, aims));
+  }
+
+  /**
+   * Which aim to bring into view when new ones arrive. Normally the first new one.
+   * Aims that unlock together arrive in separate renders a moment apart (one per
+   * unlock), and revealing each in turn left the list on the last of them: in
+   * lab_physical_pentest the three core aims and the optional list unlock at once,
+   * and the player was shown the optional list with the core aims scrolled off the
+   * top. So within REVEAL_BURST_MS of a reveal, the aim revealed first is kept in
+   * view while it is still listed.
+   */
+  aimToReveal(newAimIds, aims, now = Date.now()) {
+    const last = this._lastReveal;
+    const listed = (id) => (aims || []).some(a => a.aimId === id);
+    if (last && now - last.at < ObjectivesPanel.REVEAL_BURST_MS && listed(last.id)) {
+      last.at = now;
+      return last.id;
+    }
+    this._lastReveal = { id: newAimIds[0], at: now };
+    return newAimIds[0];
+  }
+
+  /** Reveals this close together (ms) are one burst: the first-revealed aim stays in view. */
+  static REVEAL_BURST_MS = 1500;
+
+  /**
+   * Ids of aims not shown before. Empty on the first render (nothing has been shown
+   * yet, so nothing is new: a reload must not jump the list).
+   */
+  static newAimIds(aims, seenStatus) {
+    if (!seenStatus || Object.keys(seenStatus).length === 0) return [];
+    return (aims || []).filter(a => !(a.aimId in seenStatus)).map(a => a.aimId);
+  }
+
+  /**
+   * Where the list should scroll so a block is fully in view, moving as little as
+   * possible; a block taller than the view shows its top. All numbers in px, the
+   * block's top measured from the top of the list's content.
+   */
+  static scrollTopToReveal({ scrollTop, viewHeight, top, height }) {
+    if (height >= viewHeight || top < scrollTop) return Math.max(0, top);
+    if (top + height > scrollTop + viewHeight) return top + height - viewHeight;
+    return scrollTop;
+  }
+
+  /** Scroll the list (never the page) so an aim and its tasks can be seen. */
+  revealAim(aimId) {
+    const c = this.content;
+    const el = c?.querySelector?.(`[data-aim-id="${aimId}"]`);
+    if (!el || !el.getBoundingClientRect) return;
+    const box = el.getBoundingClientRect();
+    const view = c.getBoundingClientRect();
+    // The HUD is zoomed on large monitors (css/hud.css --hud-zoom, 1.5 at 1440p, 2 at
+    // 4K). Rectangles come back in zoomed, on-screen pixels; scrollTop and clientHeight
+    // are in the list's own. k converts one to the other, and is 1 without a zoom.
+    const k = c.offsetHeight && view.height ? view.height / c.offsetHeight : 1;
+    c.scrollTop = ObjectivesPanel.scrollTopToReveal({
+      scrollTop: c.scrollTop,
+      viewHeight: c.clientHeight,
+      top: (box.top - view.top) / k + c.scrollTop,
+      height: box.height / k
+    });
   }
   
   /**
@@ -240,7 +306,7 @@ export class ObjectivesPanel {
   }
   
   show() {
-    this.container.style.display = 'block';
+    this.container.style.display = '';   // back to the stylesheet's flex column
   }
   
   hide() {

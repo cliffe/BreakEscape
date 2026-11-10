@@ -34,6 +34,12 @@ BreakEscape::Engine.routes.draw do
       post 'unlock'       # Validate unlock attempt
       post 'inventory'    # Update inventory
 
+      # Access model: sign-in PCs and card copies (docs/achitechture/ACCESS_MODEL_PLAN.md section 6)
+      post 'login'           # Sign in at a sign-in PC (password, or claim the owner's open session)
+      post 'logout'          # End the session at a sign-in PC
+      get 'login_accounts'   # Account tiles for a sign-in PC's loginPicker
+      post 'clone_card'      # Record a card copy the card copier saved
+
       # Objectives system
       get 'objectives'                                      # Get current objective state
       get 'capture_secrets'   # SE: authored secret for each earned credential capture (stripped from the bootstrap)

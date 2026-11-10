@@ -1,9 +1,35 @@
 // Container Minigame
 import { MinigameScene } from '../framework/base-minigame.js';
-import { addToInventory, removeFromInventory } from '../../systems/inventory.js';
+import { addToInventory, removeFromInventory, inventoryImageKey } from '../../systems/inventory.js';
+import { containerImageUrl, containerImageHtml, takeStandIn } from './container-item-image.js';
 import { makeDraggable } from '../../utils/helpers.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { resolveObjectField } from '../../utils/conditional-text.js';
+
+const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, ch => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+
+/**
+ * The choices a takeable file on a sign-in desktop offers (access model 5.1): Open,
+ * Copy to inventory, Move to inventory, Cancel; only Open (and Cancel) once it is held.
+ * `"transfer": "copy" | "move" | "both"` (default both) restricts the two takes.
+ */
+export function transferChoices(item, held) {
+    if (held) return ['open', 'cancel'];
+    const transfer = ['copy', 'move', 'both'].includes(item?.transfer) ? item.transfer : 'both';
+    const out = ['open'];
+    if (transfer !== 'move') out.push('copy');
+    if (transfer !== 'copy') out.push('move');
+    out.push('cancel');
+    return out;
+}
+
+const TRANSFER_LABELS = {
+    open: 'Open',
+    copy: 'Copy to inventory',
+    move: 'Move to inventory',
+    cancel: 'Cancel'
+};
 
 export class ContainerMinigame extends MinigameScene {
     constructor(container, params) {
@@ -22,6 +48,27 @@ export class ContainerMinigame extends MinigameScene {
         
         // Auto-detect desktop mode for PC/tablet containers (not used in NPC mode)
         this.desktopMode = (this.mode !== 'npc') && (params.desktopMode || this.shouldUseDesktopMode());
+
+        // A sign-in PC's desktop (access model 5.3): its contents come from the session, and
+        // a folder opened from it (a locked archive) keeps the PC as the source of its files.
+        const data = this.containerItem?.scenarioData || {};
+        this.loginPcId = this.mode !== 'npc' && data.lockType === 'login' && data.id ? data.id : null;
+        this.sourcePcId = this.mode === 'npc' ? null
+            : (params.sourcePcId || this.containerItem?.sourcePcId || this.loginPcId || null);
+        if (this.loginPcId) this.desktopMode = true;
+        this._unregisterDesktop = null;
+        this.transferDialog = null;
+    }
+
+    /** The session this sign-in desktop shows (pc-sessions.js), or null. */
+    loginSession() {
+        return this.loginPcId ? (window.pcSessions?.get?.(this.loginPcId) || null) : null;
+    }
+
+    /** True when the player already holds this item (by id). */
+    isHeld(item) {
+        if (!item?.id) return false;
+        return (window.inventory?.items || []).some(i => i?.scenarioData?.id === item.id);
     }
         /**
      * Test bridge state (see MinigameScene.getTestState).
@@ -70,6 +117,10 @@ export class ContainerMinigame extends MinigameScene {
             mode: this.mode,
             npcId: this.npcId || null,
             containerName: this.containerItem?.scenarioData?.name || null,
+            // A sign-in desktop: the account shown, and the Copy / Move dialog when open
+            signedInAs: this.loginSession() ? { username: this.loginSession().username, displayName: this.loginSession().displayName } : null,
+            sourcePcId: this.sourcePcId || null,
+            transferDialog: this.transferDialog ? { item: this.transferDialog.item?.name || null, choices: this.transferDialog.choices.map(c => TRANSFER_LABELS[c]) } : null,
             items,
             // Still listed for reference; `items` is what you act on.
             contents: (this.contents || []).map(item => ({
@@ -87,22 +138,12 @@ export class ContainerMinigame extends MinigameScene {
     }
 
     getContainerImageUrl() {
-        const key = this.containerItem?.texture?.key;
-        if (!key) return null;
-        // Maps Phaser texture keys to their actual filenames (where key !== filename stem)
-        const KEY_TO_FILE = {
-            'safe':         'safe1',
-            'pc':           'pc1',
-            'notes':        'notes1',
-            'phone':        'phone1',
-            'suitcase':     'suitcase-1',
-            'photo':        'picture1',
-            'book':         'book1',
-            'fingerprint':  'fingerprint_small',
-            'spoofing_kit': 'office-misc-headphones',
-        };
-        const file = KEY_TO_FILE[key] || key;
-        return `/break_escape/assets/objects/${file}.png`;
+        return containerImageUrl(this.containerItem, inventoryImageKey);
+    }
+
+    /** The header picture; nothing when the container has none to show. */
+    containerImageHtml() {
+        return containerImageHtml(this.getContainerImageUrl(), this.containerItem?.scenarioData?.name);
     }
 
     shouldUseDesktopMode() {
@@ -165,9 +206,65 @@ export class ContainerMinigame extends MinigameScene {
         }
     }
 
+    /**
+     * Fetch a sign-in desktop for the current session. A 403 means the server holds no
+     * session here (a reset, or one ended elsewhere): pc-sessions.js drops its copy with
+     * no request, the desktop closes and the sign-in screen opens. Resolves null then.
+     */
+    async loadLoginDesktop() {
+        const gameId = window.gameId || window.breakEscapeConfig?.gameId;
+        const pcId = this.loginPcId;
+        try {
+            const response = await fetch(`/break_escape/games/${gameId}/container/${encodeURIComponent(pcId)}`, {
+                headers: { 'Accept': 'application/json' }
+            });
+            if (response.status === 403) {
+                window.pcSessions?.dropLocal?.(pcId);
+                this.complete(false);
+                const lockable = this.containerItem;
+                setTimeout(() => window.openLoginSignIn?.(lockable), 50);
+                return null;
+            }
+            if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            const data = await response.json();
+            if (window.pcSessions?.registerDesktop) {
+                this._unregisterDesktop = window.pcSessions.registerDesktop(pcId, (message) => this.closeForSessionEnd(message));
+            }
+            window.pcSessions?.desktopOpened?.(pcId);
+            return data.contents || [];
+        } catch (error) {
+            console.error('Failed to load the sign-in desktop:', error);
+            window.gameAlert?.('Could not load the desktop', 'error', 'Error', 3000);
+            this.complete(false);
+            return null;
+        }
+    }
+
+    /** The session ended while this desktop was open: close it with a one-line message. */
+    closeForSessionEnd(message) {
+        this._unregisterDesktop = null;
+        const name = this.containerItem?.scenarioData?.name || 'PC';
+        if (window.MinigameFramework?.currentMinigame === this) this.complete(false);
+        if (message) window.gameAlert?.(message, 'info', name, 3000);
+    }
+
+    cleanup() {
+        if (this._unregisterDesktop) {
+            this._unregisterDesktop();
+            this._unregisterDesktop = null;
+        }
+        if (typeof super.cleanup === 'function') super.cleanup();
+    }
+
     async init() {
         // Call parent init first
         super.init();
+
+        // A folder opened from a sign-in desktop shows the session's files too, so it closes
+        // with the same message when that session ends (owner back, auto lock, sign out).
+        if (!this.loginPcId && this.sourcePcId && this.mode !== 'npc' && window.pcSessions?.registerDesktop) {
+            this._unregisterDesktop = window.pcSessions.registerDesktop(this.sourcePcId, (message) => this.closeForSessionEnd(message));
+        }
 
         // Play drawer/container opening sound (not for PC/desktop containers)
         if (this.mode !== 'pc' && !this.desktopMode) {
@@ -206,7 +303,12 @@ export class ContainerMinigame extends MinigameScene {
         // This ensures we get the latest contents (with items already in inventory filtered out)
         // Even if contents were passed in params, reload from server to get accurate state
         const gameId = window.gameId || window.breakEscapeConfig?.gameId;
-        if (gameId && this.containerItem.scenarioData.locked === false) {
+        if (gameId && this.loginPcId) {
+            // A sign-in PC stays locked in room data: its session, not the lock, opens it.
+            const loaded = await this.loadLoginDesktop();
+            if (loaded === null) return;
+            this.contents = loaded;
+        } else if (gameId && this.containerItem.scenarioData.locked === false) {
             console.log('Reloading container contents from server to get latest state');
             this.contents = await this.loadContainerContents();
         } else if (this.params.contents && this.params.contents.length > 0) {
@@ -260,9 +362,7 @@ export class ContainerMinigame extends MinigameScene {
         this.gameContainer.innerHTML = `
             <div class="container-minigame">
                 <div class="container-image-section">
-                    <img src="${this.getContainerImageUrl()}"
-                         alt="${this.containerItem.scenarioData.name}"
-                         class="container-image">
+                    ${this.containerImageHtml()}
                     <div class="container-info">
                         <h4>${displayDashes(this.containerItem.scenarioData.name)}</h4>
                         <p>${displayDashes(this.headerObservations())}</p>
@@ -283,14 +383,27 @@ export class ContainerMinigame extends MinigameScene {
         `;
     }
     
+    /** The signed-in account with Switch user and Sign out, for a sign-in desktop's header. */
+    accountBarHtml() {
+        const session = this.loginSession();
+        if (!session) return '';
+        const name = session.displayName || session.username;
+        return `
+                    <div class="desktop-account-bar">
+                        <span class="desktop-account-name">Signed in as <strong>${escapeHtml(name)}</strong> (${escapeHtml(session.username)})</span>
+                        <span class="desktop-account-actions">
+                            <button type="button" class="minigame-button desktop-account-btn" id="desktop-switch-user">Switch user</button>
+                            <button type="button" class="minigame-button desktop-account-btn" id="desktop-sign-out">Sign out</button>
+                        </span>
+                    </div>`;
+    }
+
     createDesktopUI() {
         this.gameContainer.innerHTML = `
             <div class="container-image-section">
-                <img src="${this.getContainerImageUrl()}"
-                        alt="${this.containerItem.scenarioData.name}"
-                        class="container-image">
+                ${this.containerImageHtml()}
                 <div class="container-info">
-                    <h4>${displayDashes(this.containerItem.scenarioData.name)}</h4>
+                    <h4>${displayDashes(this.containerItem.scenarioData.name)}</h4>${this.accountBarHtml()}
                     <p>${displayDashes(this.headerObservations())}</p>
                 </div>
             </div>
@@ -359,8 +472,11 @@ export class ContainerMinigame extends MinigameScene {
             // Add click handler for all items (both takeable and interactive)
             itemImg.style.cursor = 'pointer';
             
-            // Check if this is an interactive item that should trigger a minigame
-            if (this.isInteractiveItem(item)) {
+            // A takeable file from a sign-in desktop offers Open / Copy / Move first
+            if (this.offersTransfer(item)) {
+                itemImg.addEventListener('click', () => this.showTransferDialog(item, itemImg));
+            } else if (this.isInteractiveItem(item)) {
+                // Check if this is an interactive item that should trigger a minigame
                 itemImg.addEventListener('click', () => this.handleInteractiveItem(item, itemImg));
             } else if (item.takeable) {
                 // Regular takeable items
@@ -408,8 +524,11 @@ export class ContainerMinigame extends MinigameScene {
             // Add click handler for all items (both takeable and interactive)
             icon.style.cursor = 'pointer';
             
-            // Check if this is an interactive item that should trigger a minigame
-            if (this.isInteractiveItem(item)) {
+            // A takeable file from a sign-in desktop offers Open / Copy / Move first
+            if (this.offersTransfer(item)) {
+                icon.addEventListener('click', () => this.showTransferDialog(item, iconImg));
+            } else if (this.isInteractiveItem(item)) {
+                // Check if this is an interactive item that should trigger a minigame
                 icon.addEventListener('click', () => this.handleInteractiveItem(item, iconImg));
             } else if (item.takeable) {
                 // Regular takeable items
@@ -439,6 +558,86 @@ export class ContainerMinigame extends MinigameScene {
         const addToNotebookBtn = document.getElementById('minigame-notebook-postit');
         if (addToNotebookBtn) {
             this.addEventListener(addToNotebookBtn, 'click', () => this.addPostitToNotebook());
+        }
+
+        // A sign-in desktop's Switch user and Sign out (through pc-sessions.js)
+        const switchBtn = this.gameContainer?.querySelector('#desktop-switch-user');
+        if (switchBtn) {
+            // The sign-in screen replaces this desktop; the session stays until another
+            // account signs in, and leaving the screen comes back here.
+            this.addEventListener(switchBtn, 'click', () => window.openLoginSignIn?.(this.containerItem, { switching: true }));
+        }
+        const signOutBtn = this.gameContainer?.querySelector('#desktop-sign-out');
+        if (signOutBtn) {
+            this.addEventListener(signOutBtn, 'click', () => window.pcSessions?.signOut?.(this.loginPcId));
+        }
+    }
+
+    /** A takeable item (not a locked folder) seen through a sign-in desktop's session. */
+    offersTransfer(item) {
+        return !!this.sourcePcId && this.mode !== 'npc' && item?.takeable === true && item.locked !== true;
+    }
+
+    /**
+     * The desktop-themed dialog for a takeable file on a sign-in desktop: Open, Copy to
+     * inventory, Move to inventory, Cancel (only Open once held; `transfer` restricts the
+     * takes). Shown in the PC's window chrome over the desktop.
+     */
+    showTransferDialog(item, element) {
+        this.closeTransferDialog();
+        const held = this.isHeld(item);
+        const choices = transferChoices(item, held);
+        const host = this.gameContainer.querySelector('.desktop-background') || this.gameContainer;
+        const dialog = document.createElement('div');
+        dialog.className = 'desktop-transfer-dialog';
+        dialog.setAttribute('role', 'dialog');
+        dialog.innerHTML = `
+            <div class="desktop-window-titlebar">
+                <span class="desktop-window-title">${escapeHtml(displayDashes(item.name || 'File'))}</span>
+            </div>
+            <div class="desktop-window-body">
+                <p>${held ? 'You already have this file.' : 'What do you want to do with this file?'}</p>
+                <div class="desktop-window-buttons">
+                    ${choices.map(c => `<button type="button" class="minigame-button desktop-transfer-btn" data-choice="${c}">${TRANSFER_LABELS[c]}</button>`).join('')}
+                </div>
+            </div>`;
+        host.appendChild(dialog);
+        this.transferDialog = { item, element, choices, el: dialog };
+        dialog.querySelectorAll('[data-choice]').forEach(btn => {
+            this.addEventListener(btn, 'click', (e) => {
+                e.stopPropagation();
+                this.chooseTransfer(btn.dataset.choice);
+            });
+        });
+    }
+
+    closeTransferDialog() {
+        if (this.transferDialog?.el?.parentElement) this.transferDialog.el.parentElement.removeChild(this.transferDialog.el);
+        this.transferDialog = null;
+    }
+
+    chooseTransfer(choice) {
+        const dialog = this.transferDialog;
+        if (!dialog || !dialog.choices.includes(choice)) return;
+        const { item, element } = dialog;
+        this.closeTransferDialog();
+        if (choice === 'cancel') return;
+        if (choice === 'open') { this.openFileInPlace(item); return; }
+        this.takeItem(item, element, choice);
+    }
+
+    /** Open a file without taking it: the viewer (or notes) for something with text. */
+    openFileInPlace(item) {
+        const text = resolveObjectField(item, 'text', null);
+        if (!text) {
+            const obs = resolveObjectField(item, 'observations', '') || 'Nothing to open.';
+            this.showMessage(displayDashes(obs), 'info');
+            return;
+        }
+        this.complete(false);
+        const viewItem = { ...item, takeable: false };
+        if (window.handleObjectInteraction) {
+            window.handleObjectInteraction({ scenarioData: viewItem, name: item.type, objectId: `temp_${Date.now()}` });
         }
     }
     
@@ -548,7 +747,8 @@ export class ContainerMinigame extends MinigameScene {
             const tempSprite = {
                 scenarioData: item,
                 name: item.type,
-                objectId: `temp_${Date.now()}`
+                objectId: `temp_${Date.now()}`,
+                sourcePcId: this.sourcePcId || undefined
             };
             
             // Delegate to main game's handler for viewing/reading items (notes, phone, files, etc.)
@@ -592,7 +792,8 @@ export class ContainerMinigame extends MinigameScene {
         const tempSprite = {
             scenarioData: item,
             name: item.type,
-            objectId: `temp_${Date.now()}`
+            objectId: `temp_${Date.now()}`,
+            sourcePcId: this.sourcePcId || undefined
         };
         
         // Delegate to main game's handler for viewing/reading items (notes, phone, files, etc.)
@@ -688,23 +889,23 @@ export class ContainerMinigame extends MinigameScene {
     // async because addToInventory is: `if (addToInventory(...))` tests a
     // Promise, which is always truthy, so this used to take the success branch
     // even when the server refused the item and removed the row anyway.
-    async takeItem(item, itemElement) {
+    // transfer: 'copy' or 'move' for a file from a sign-in desktop (access model 5.1).
+    async takeItem(item, itemElement, transfer = null) {
         console.log('Taking item from container:', item);
+        const fromSignIn = !!this.sourcePcId && this.mode !== 'npc';
+        const isCopy = fromSignIn && transfer === 'copy';
         
         // Create a temporary sprite-like object for the inventory system
-        const tempSprite = {
-            scenarioData: item,
-            name: item.type,
-            objectId: `temp_${Date.now()}`,
-            setVisible: function(visible) {
-                // Mock setVisible method for inventory compatibility
-                console.log(`Mock setVisible(${visible}) called on temp sprite`);
-            }
-        };
+        const tempSprite = takeStandIn(item, inventoryImageKey,
+            fromSignIn ? { sourcePcId: this.sourcePcId, transfer: transfer || 'move' } : {});
         
         // Add to inventory
         const addResult = await addToInventory(tempSprite);
-        if (addResult && addResult.ok) {
+        if (addResult && addResult.ok && isCopy) {
+            // A copy stays on the PC (and in its profile on every PC)
+            if (window.playUISound) window.playUISound('item');
+            this.showMessage(`Copied ${displayDashes(item.name)} to inventory`, 'success');
+        } else if (addResult && addResult.ok) {
             if (window.playUISound) window.playUISound('item');
             // Remove from container display
             itemElement.parentElement.remove();
@@ -734,7 +935,7 @@ export class ContainerMinigame extends MinigameScene {
             }
             
             // Show success message
-            this.showMessage(`Added ${displayDashes(item.name)} to inventory`, 'success');
+            this.showMessage(fromSignIn ? `Moved ${displayDashes(item.name)} to inventory` : `Added ${displayDashes(item.name)} to inventory`, 'success');
             
             // If container is now empty, update display
             if (this.contents.length === 0) {

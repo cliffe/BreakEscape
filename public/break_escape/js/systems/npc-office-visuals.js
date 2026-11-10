@@ -89,11 +89,12 @@ export function glyphSequence(locked) {
 /** Pure: which cue layers a screen change gets. */
 export function lockCuePlan({ how, locked }, { lighting = false } = {}) {
     if (how === 'late') return { flash: null, glyph: false, chime: null };
+    // A knock-out at the desk: the look changes, nobody pressed a key
     const visual = locked ? 'lock' : 'unlock';
     return {
         flash: lighting ? visual : null,
         glyph: !lighting,
-        chime: how === 'auto' ? null : (locked ? 'screen_lock' : 'screen_unlock'),
+        chime: how === 'auto' || how === 'ko' ? null : (locked ? 'screen_lock' : 'screen_unlock'),
     };
 }
 

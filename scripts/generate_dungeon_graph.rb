@@ -13,6 +13,7 @@ require 'base64'
 require 'securerandom'
 require 'set'
 require_relative '../lib/break_escape/declared_grants'
+require_relative '../lib/break_escape/access_identities'
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -26,7 +27,8 @@ LOCK_TYPE_LABELS = {
   'flag'               => 'Flag lock',
   'password'           => 'Password lock',
   'lockpick'           => 'Pick the lock',
-  'ransomware_display' => 'Ransomware terminal'
+  'ransomware_display' => 'Ransomware terminal',
+  'login'              => 'Sign-in'
 }.freeze
 
 SCENARIO_FILE = ARGV[0] or abort "Usage: ruby scripts/generate_dungeon_graph.rb <scenario.json.erb>"
@@ -284,6 +286,57 @@ DECLARED_GRANTS.each do |grant|
     add_edge(src_room, grant_id, dashed: true, label: grant_trigger(grant, scenario))
   end
   walk_objects(item['contents'], grant_id, rooms)
+end
+
+# ---------------------------------------------------------------------------
+# Access model identities (ACCESS_MODEL_PLAN.md, section 8 step 5). An NPC's card and an
+# NPC's sign-in are key nodes, from the room the NPC stands in, with an edge to every rfid
+# lock and sign-in PC the identity opens (BreakEscape::AccessIdentities, the server's
+# rules). A card_id several NPCs carry is one node naming every holder. Drawn only for
+# scenarios that use the access model, so other graphs are unchanged.
+# ---------------------------------------------------------------------------
+def access_lock_node(entry, rooms)
+  return "door_#{entry[:room]}" if entry[:kind] == 'door'
+
+  obj      = entry[:lock]
+  obj_id   = obj['id'] || nid((obj['name'] || obj['type']).to_s)
+  lock_id  = "lock_#{obj_id}"
+  unless $nodes.key?(lock_id)
+    obj_name = obj['name'] || obj_id.tr('_', ' ').split.map(&:capitalize).join(' ')
+    add_node(lock_id, "#{obj_name}<br/>#{LOCK_TYPE_LABELS[obj['lockType']] || 'Lock'}", 'lock')
+    add_node(entry[:room], room_label(entry[:room], rooms[entry[:room]]), 'room')
+    add_edge(entry[:room], lock_id)
+  end
+  lock_id
+end
+
+if BreakEscape::AccessIdentities.uses_access_model?(scenario)
+  reach = BreakEscape::AccessIdentities.reach(scenario)
+  holder_name = ->(npc) { npc['displayName'] || npc['id'].to_s }
+
+  reach[:cards].each do |card|
+    next if card[:opens].empty?
+
+    card_node = "card_#{nid(card[:card_id])}"
+    holders   = card[:holders].map { |h| holder_name.call(h[:npc]) }.uniq
+    add_node(card_node, "#{card[:card]['name'] || card[:card_id]}<br/>(#{holders.join(', ')})", 'key')
+    card[:holders].map { |h| h[:room] }.uniq.each do |room_id|
+      add_node(room_id, room_label(room_id, rooms[room_id]), 'room')
+      add_edge(room_id, card_node)
+    end
+    card[:opens].each { |lock| add_edge(card_node, access_lock_node(lock, rooms)) }
+  end
+
+  reach[:accounts].each do |account|
+    next if account[:opens].empty?
+
+    npc         = account[:npc]
+    signin_node = "signin_#{nid(npc['id'])}"
+    add_node(signin_node, "#{holder_name.call(npc)} sign-in<br/>(#{npc['creds']['username']})", 'key')
+    add_node(account[:room], room_label(account[:room], rooms[account[:room]]), 'room')
+    add_edge(account[:room], signin_node)
+    account[:opens].each { |pc| add_edge(signin_node, access_lock_node(pc, rooms)) }
+  end
 end
 
 # ---------------------------------------------------------------------------

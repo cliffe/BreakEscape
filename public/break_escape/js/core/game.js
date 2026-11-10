@@ -52,6 +52,7 @@ import '../systems/mail-runner.js';  // Registers the ink-job runner on the mail
 import { notifyNewMail } from '../minigames/mail-client/mail-notification.js';  // HUD/bark for delivered mail (P1-F)
 import { watchReadinessGlobals } from '../systems/social-intel.js';  // needsGlobal readiness slots re-check on a global change
 import { chosenPlayerSprite, playerTalkPath } from '../utils/player-avatar.js';  // aw9: the chosen avatar wins, the portrait follows
+import { pcSessions } from '../systems/pc-sessions.js';  // Sign-in PC sessions (access model 5.3; sets window.pcSessions)
 
 // Global variables that will be set by main.js
 let gameScenario;
@@ -1034,6 +1035,10 @@ export function preload() {
     this.load.image('uni_sofa2', 'objects/uni_sofa2.png');
     this.load.image('uni_poster8', 'objects/uni_poster8.png');
     this.load.image('pc_ransomware', 'objects/pc_ransomware.png');
+    // The navy desktop PC and its locked screen (systems/screen-states.js shows `<key>_locked`
+    // while the owner is away with the screen locked). The key `pc` is pc1.png, different art.
+    this.load.image('pc_desktop', 'objects/pc_desktop.png');
+    this.load.image('pc_desktop_locked', 'objects/pc_desktop_locked.png');
     this.load.image('pc5_ransomware', 'objects/pc5_ransomware.png');
     this.load.image('kvm_cart_ransomware', 'objects/kvm_cart_ransomware.png');
     this.load.image('checkin_kiosk_ransomware', 'objects/checkin_kiosk_ransomware.png');
@@ -1667,6 +1672,9 @@ export async function create() {
         Object.assign(window.gameState.globalVariables, gameScenario.savedGlobalVariables);
         console.log('🌐 Merged saved global variables from server:', gameScenario.savedGlobalVariables);
     }
+    // Sign-in PC sessions and the PCs signed in to (access model 5.3): password
+    // sessions survive a reload, a claimed one ends (pc-sessions.js load).
+    pcSessions.load(gameScenario.sessions || {}, gameScenario.signedInPcs || []);
     // A save never overrides an imported value.
     importedNames.forEach(name => {
         window.gameState.globalVariables[name] = gameScenario.globalVariables?.[name];
@@ -1985,7 +1993,12 @@ export async function create() {
                     // onOwnerNoticesMissing actions when the owner returns and finds a left-behind
                     // item the player took (npc_left_item_gone:<owner>).
                     import('../systems/left-card-consequence.js').then(m => m.installLeftCardConsequence()).catch(e => console.warn('left-card consequence failed', e));
-                    return import('../systems/workstation-state.js').then(ws => ws.installWorkstationState());
+                    return import('../systems/workstation-state.js').then(ws => {
+                        const state = ws.installWorkstationState();
+                        // The locked-screen look and its sounds follow the workstation events
+                        return import('../systems/screen-states.js').then(m => { m.installScreenStates(); return state; })
+                            .catch(e => { console.warn('screen states failed', e); return state; });
+                    });
                 });
             })
             .catch(error => {
@@ -2468,8 +2481,9 @@ async function checkAndShowTutorial() {
     }
 }
 
-// Update function - main game loop
-export function update() {
+// Update function - main game loop. Phaser calls it with (time, delta); delta is the
+// loop's smoothed frame step, the same one the physics world moves bodies by.
+export function update(time, delta) {
     // Safety check: ensure player exists before running updates
     if (!window.player) {
         return;
@@ -2486,8 +2500,10 @@ export function update() {
     if (window.npcBehaviorManager) {
         window.npcBehaviorManager.update(this.time.now, this.time.delta);
     }
-    // NPC needs: fixed-step ticks off game elapsed time (paused on the VM)
-    window.npcNeedsSystem?.update();
+    // NPC needs: fixed-step ticks off the frame step the walks use (paused on the VM), so a
+    // slow frame rate slows decisions and walks together and a walk deadline cannot pass
+    // while the walker has hardly moved
+    window.npcNeedsSystem?.update(delta);
 
     // NPCs with los.challengeOnSight react when the player walks into their sight
     // (not while the player is on the VM: R13, vm-context-pause.js)

@@ -241,7 +241,7 @@ test('deterministic for a seed, with Math.random throwing', () => {
     assert.equal(run(), run());
 });
 
-const GOLDEN_SIMS_DAY = '6a5f41a62178d8e4ca1e11d53c27a6d9d3cbc08c25ae110f01b88d289aae98f2';
+const GOLDEN_SIMS_DAY = 'a87a652c0b54abe9d8c237f6ba4b8cc097f193097a546267bbcf6b5b86b86948';
 test('the sims day (no offWhen anywhere) is byte-identical', () => {
     const { sys } = runSimsDay(NPCNeedsSystem, { minutes: 15 });
     assert.equal(createHash('sha256').update(JSON.stringify(sys.getLog())).digest('hex'), GOLDEN_SIMS_DAY);

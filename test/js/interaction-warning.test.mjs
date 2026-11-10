@@ -46,6 +46,8 @@ const stubs = {
   './combat-input.js': 'export function showPastTalkingToast(){}',
   './consumables.js': 'export function shouldConsumeOnInteract(){return false;} export function useConsumable(){}',
   './interaction-walls.js': 'export function interactionLineClear(){return true;}',
+  '../utils/locked-hint.js': 'export function hintToastMs(){ return 6000; }',
+  './requires-item-hint.js': 'export function requiresItemHint(data){ return (data && data.requiresItemHint) || ""; }',
   './interaction-reach.js': 'export function reachX(){return 0;} export function aimX(){return 0;}',
   './minigame-registry.js': 'export function hasMinigameStarter(){return false;} export function startRegisteredMinigame(){}',
 };

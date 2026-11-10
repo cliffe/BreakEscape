@@ -45,8 +45,10 @@ test('SE lab R4 F1/A1: door properties carry lockedHint from the door or connect
     // F1). It is wired exactly like the pad options above. unlock-system already reads it.
     const src = read('js/systems/doors.js');
     assert.match(src, /lockedHint: lockProps\.lockedHint \?\? connectedRoomData\?\.lockedHint \?\? null/);
+    // The key lock reads it through the shared helper (utils/locked-hint.js)
     const u = read('js/systems/unlock-system.js');
-    assert.match(u, /lockable\.doorProperties\?\.lockedHint/);
+    assert.match(u, /appendLockedHint\('Requires key', lockable\)/);
+    assert.match(read('js/utils/locked-hint.js'), /lockable\?\.doorProperties\?\.lockedHint/);
 });
 
 test('E10: unlock-system reads door options for password and PIN pads', () => {

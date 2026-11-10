@@ -37,6 +37,30 @@ export async function waitUntil(predicate, { timeoutMs = DEFAULT_TIMEOUT_MS, lab
 }
 
 /**
+ * Wait for a story global. With no `expected`, until it is set (not undefined, false
+ * or null); with one, until it equals it exactly, `false` included.
+ *
+ * The reply's `value` is the global's own value when the wait ended, not the
+ * predicate's "true": waiting for `expected: false` used to answer `value: true`,
+ * which read as "the global is true" (lab_physical_pentest playtests, finding E6).
+ * `alreadyMet` says the condition held at the first check, so no change was seen:
+ * a script that needs the next change must first wait for the opposite value.
+ */
+export async function waitForGlobal(name, expected = undefined, opts = {}) {
+    const read = () => window.gameState?.globalVariables?.[name];
+    const met = () => {
+        const v = read();
+        return expected === undefined ? (v !== undefined && v !== false && v !== null) : v === expected;
+    };
+    const alreadyMet = !!met();
+    const r = await waitUntil(met, { label: `global:${name}`, ...opts });
+    const out = { ...r, value: read() ?? null };
+    if (expected !== undefined) out.expected = expected;
+    if (r.ok) out.alreadyMet = alreadyMet;
+    return out;
+}
+
+/**
  * Wait for a named event on the game's own dispatcher (the same channel NPC
  * handlers, objectives and minigames use). Resolves { ok, event, data }.
  */

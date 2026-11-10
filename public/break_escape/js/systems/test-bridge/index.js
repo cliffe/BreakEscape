@@ -37,13 +37,14 @@ import {
 } from './input.js';
 import { reachX } from '../interaction-reach.js';
 import { wallClearFrom, sameRoomFrom } from '../interaction-walls.js';
-import { getState, scanNearby, activeMinigameSummary, detectBlockingUi, interactionMenuState, solveStandingPoint, engineInteractDistance, plainNearestEntity, roomContents, doorways } from './state.js';
+import { getState, scanNearby, activeMinigameSummary, detectBlockingUi, sessionOverlayShowing, sessionOverlayButtons, interactionMenuState, solveStandingPoint, engineInteractDistance, plainNearestEntity, roomContents, doorways } from './state.js';
 import {
-    waitUntil, waitForEvent, waitForMovementEnd, waitFrames,
+    waitUntil, waitForGlobal, waitForEvent, waitForMovementEnd, waitFrames,
     waitForMinigame, waitForMinigameClosed
 } from './wait.js';
 import { logAction, logNote, installEventCapture, drain, peek, clear, currentSeq, eventsSince } from './log.js';
 import { minigameBridge } from './minigames.js';
+import { accessBridge } from './access.js';
 // Imported directly rather than read off window: player.js exports this but
 // never assigns it globally. Used only by moveTo's documented off-screen
 // exception — see moveTo below.
@@ -1116,6 +1117,8 @@ const bridge = {
                 }
             }
         }
+        // The session overlay: only its own three buttons, never the other-session links
+        if (sessionOverlayShowing()) buttons = sessionOverlayButtons();
         if (!buttons.length) return fail('blocking-ui-has-no-buttons', { blocker });
 
         let target;
@@ -1573,10 +1576,7 @@ const bridge = {
 
     /** Wait for a named global story variable to reach a value (or just be set). */
     waitForGlobal(name, expected = undefined, opts = {}) {
-        return waitUntil(() => {
-            const v = window.gameState?.globalVariables?.[name];
-            return expected === undefined ? (v !== undefined && v !== false && v !== null) : v === expected;
-        }, { label: `global:${name}`, ...opts });
+        return waitForGlobal(name, expected, opts);
     },
 
     /** Wait for an objectives task to reach completed. */
@@ -1673,6 +1673,14 @@ const bridge = {
             return { ok: true, enabled: d.setEnabled(on), panels: d.panels.size };
         }
     },
+
+    // ── Access model (docs/achitechture/ACCESS_MODEL_PLAN.md, step 6) ───────
+
+    /**
+     * Read-only: sessions(), workstation(pcId), savedCards(). See access.js.
+     * Compare with the server's record (tools/playtest/verify-run.rb --access).
+     */
+    access: accessBridge,
 
     // ── Minigames ───────────────────────────────────────────────────────────
 

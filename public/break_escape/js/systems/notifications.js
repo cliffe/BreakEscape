@@ -139,9 +139,46 @@ export function showNotification(message, type = 'info', title = '', duration = 
     return renderNotification(message, type, title, duration);
 }
 
+/**
+ * The toast still on screen with the same message, type and title, or null. A toast that
+ * is on its way out (closing, or pulled back behind a panel) does not count.
+ */
+export function findShownDuplicate(container, message, type, title) {
+    const shown = container?.querySelectorAll ? [...container.querySelectorAll('.notification')] : [];
+    return shown.find((el) => el._toast && !el._toast.pulled && !el._toast.closing
+        && el._toast.message === message && el._toast.type === type && el._toast.title === title) || null;
+}
+
+// Start (or restart) a toast's countdown: the progress bar and the removal timer.
+function startCountdown(notification, duration) {
+    clearTimeout(notification._hideTimer);
+    const progress = notification.querySelector('.notification-progress');
+    if (progress?.style) {
+        progress.style.transition = 'none';
+        progress.style.width = '100%';
+        void progress.offsetWidth;   // restart the bar from full
+        progress.style.transition = `width ${duration}ms linear`;
+        setTimeout(() => { progress.style.width = '0%'; }, 10);
+    }
+    notification._hideTimer = setTimeout(() => removeNotification(notification), duration);
+}
+
 function renderNotification(message, type, title, duration, seen = false) {
     const notificationContainer = document.getElementById('notification-container');
-    
+
+    // The same toast raised again while it is still on screen (a refusal hint clicked
+    // three times) restarts its countdown instead of stacking a copy.
+    // (A timed toast and one that stays until closed are not the same toast.)
+    const same = findShownDuplicate(notificationContainer, message, type, title);
+    if (same && (duration > 0) === (same._toast.duration > 0)) {
+        same._toast.shownAt = Date.now();
+        if (duration > 0) {
+            same._toast.duration = duration;
+            startCountdown(same, duration);
+        }
+        return same;
+    }
+
     // Create notification element
     const notification = document.createElement('div');
     notification.className = `notification ${type}`;
@@ -169,21 +206,8 @@ function renderNotification(message, type, title, duration, seen = false) {
         notification.classList.add('show');
     }, 10);
     
-    // Add progress animation if duration is set
-    if (duration > 0) {
-        const progress = notification.querySelector('.notification-progress');
-        progress.style.transition = `width ${duration}ms linear`;
-        
-        // Start progress animation
-        setTimeout(() => {
-            progress.style.width = '0%';
-        }, 10);
-        
-        // Remove notification after duration
-        setTimeout(() => {
-            removeNotification(notification);
-        }, duration);
-    }
+    // Progress bar and removal after the duration, if one is set
+    if (duration > 0) startCountdown(notification, duration);
     
     // Add close button event listener
     const closeBtn = notification.querySelector('.notification-close');
@@ -196,6 +220,8 @@ function renderNotification(message, type, title, duration, seen = false) {
 
 // Remove a notification with animation
 export function removeNotification(notification) {
+    clearTimeout(notification._hideTimer);
+    if (notification._toast) notification._toast.closing = true;
     notification.classList.remove('show');
     
     // Remove from DOM after animation

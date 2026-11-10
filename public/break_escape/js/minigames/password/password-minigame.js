@@ -23,6 +23,83 @@ export function passwordFieldLabel(title) {
     return t && t !== 'Enter password' && t !== 'Password Entry' ? t : 'Password:';
 }
 
+// ── Sign-in mode (access model 5.3, step 8) ──────────────────────────────────
+// A sign-in PC's screen: account tiles (from the server, per the PC's loginPicker),
+// Other user (type a username), the password field and the PC's post-it. It has no
+// attempt limit of its own: it shows the server's answer and attemptsLeft, and stops
+// only when the server reports a lockout for the username typed. It shows no
+// letter-case hint (the server sends none for /login). Signs in through pc-sessions.js.
+
+const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, ch => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+
+/** Initials for a tile whose portrait and avatar both failed: "Sam Okafor" -> "SO". */
+export function tileInitials(name) {
+    const words = String(name || '').trim().split(/[\s._-]+/).filter(Boolean);
+    const letters = words.slice(0, 2).map(w => w[0].toUpperCase()).join('');
+    return letters || '?';
+}
+
+/** A square image of at least 256 pixels with even sides is a 2x2 talk sheet (person-chat's _isTalkSheet). */
+export function isTalkSheetSize(width, height) {
+    return width >= 256 && width === height && width % 2 === 0;
+}
+
+/** A portrait path from the server ("assets/characters/x_talk.png") as a URL. */
+export function portraitUrl(path) {
+    if (typeof path !== 'string' || !path) return null;
+    if (path.startsWith('/') || path.startsWith('http') || path.startsWith('data:')) return path;
+    return path.startsWith('assets/') ? `/break_escape/${path}` : `${ASSETS_PATH}/${path}`;
+}
+
+/**
+ * Draw a tile's picture into `el` as person-chat would: the portrait, else the avatar,
+ * else the display name's initials. A talk sheet shows only its top-left frame (closed
+ * mouth). `ImageCtor` is injectable for tests.
+ */
+export function applyTilePortrait(el, tile, ImageCtor = (typeof Image !== 'undefined' ? Image : null)) {
+    const sources = [tile?.portrait, tile?.avatar].map(portraitUrl).filter(Boolean);
+    const initials = () => {
+        el.style.backgroundImage = '';
+        el.dataset.frame = 'initials';
+        el.classList.add('signin-portrait-initials');
+        el.textContent = tileInitials(tile?.displayName || tile?.username);
+    };
+    const tryAt = (i) => {
+        if (i >= sources.length || !ImageCtor) { initials(); return; }
+        const src = sources[i];
+        const img = new ImageCtor();
+        img.onload = () => {
+            const w = img.naturalWidth || img.width;
+            const h = img.naturalHeight || img.height;
+            el.textContent = '';
+            el.style.backgroundImage = `url("${src}")`;
+            el.style.backgroundRepeat = 'no-repeat';
+            if (isTalkSheetSize(w, h)) {
+                el.style.backgroundSize = '200% 200%';
+                el.style.backgroundPosition = '0 0';
+                el.dataset.frame = 'talk-sheet';
+            } else {
+                el.style.backgroundSize = 'contain';
+                el.style.backgroundPosition = 'center';
+                el.dataset.frame = 'single';
+            }
+            el.dataset.src = src;
+        };
+        img.onerror = () => tryAt(i + 1);
+        img.src = src;
+    };
+    tryAt(0);
+}
+
+/** The line under the form after a refused sign-in: the server's message and attemptsLeft. */
+export function signInRefusalMessage(result) {
+    const message = (result?.message || 'Incorrect username or password').replace(/\.$/, '');
+    const left = result?.attemptsLeft;
+    if (result?.reason !== 'wrong' || !Number.isFinite(left)) return `${message}.`;
+    return `${message}. ${left} attempt${left === 1 ? '' : 's'} left.`;
+}
+
 export class PasswordMinigame extends MinigameScene {
     constructor(container, params) {
         super(container, params);
@@ -44,9 +121,41 @@ export class PasswordMinigame extends MinigameScene {
         
         // Store the correct password for validation
         this.correctPassword = params.password || '';
+
+        // Sign-in mode: { pcId, pcName, picker, tiles, current } (unlock-system openLoginSignIn)
+        this.signIn = params.signIn || null;
+        if (this.signIn) {
+            const picker = this.signIn.picker;
+            const tiles = picker === false ? [] : (Array.isArray(this.signIn.tiles) ? this.signIn.tiles : []);
+            this.signInState = {
+                tiles,
+                // null: no account chosen yet; '' with other: true: typing a username
+                selected: null,
+                other: picker === false,
+                message: ''
+            };
+        }
     }
         /** Test bridge state (see MinigameScene.getTestState). */
     getTestState() {
+        if (this.signIn) {
+            const st = this.signInState;
+            return {
+                ...super.getTestState(),
+                signIn: {
+                    pcId: this.signIn.pcId,
+                    picker: this.signIn.picker,
+                    tiles: st.tiles.map(t => ({ username: t.username, displayName: t.displayName })),
+                    selected: st.selected,
+                    otherUser: st.other,
+                    current: this.signIn.current ? { username: this.signIn.current.username, displayName: this.signIn.current.displayName } : null,
+                    message: st.message || null
+                },
+                // clickText('<display name>') or clickText('Other user') first; then the visible
+                // fields are [username, password] for Other user, [password] for a tile.
+                entryHint: 'clickText("<name>") then type(0, "<password>", { submit: true }); Other user: type(0, user) then type(1, pw, { submit: true })'
+            };
+        }
         return {
             ...super.getTestState(),
             attemptsText: (this.attemptsDisplay?.innerText || '').trim() || null,
@@ -60,6 +169,11 @@ export class PasswordMinigame extends MinigameScene {
     init() {
         // Call parent init to set up basic UI structure
         super.init();
+
+        if (this.signIn) {
+            this.initSignIn();
+            return;
+        }
         
         // Customize the header
         this.headerElement.innerHTML = `
@@ -429,7 +543,8 @@ export class PasswordMinigame extends MinigameScene {
         if (this.checkPending) return;
         this.checkPending = true;
         try {
-            await this._submitPasswordOnce();
+            if (this.signIn) await this._submitSignInOnce();
+            else await this._submitPasswordOnce();
         } finally {
             this.checkPending = false;
         }
@@ -601,7 +716,7 @@ export class PasswordMinigame extends MinigameScene {
     
     cancelPassword() {
         this.cleanup();
-        this.showFailure("Password entry cancelled.", true, 800);
+        this.showFailure(this.signIn ? "Sign-in cancelled." : "Password entry cancelled.", true, 800);
         
         this.gameResult = {
             success: false,
@@ -685,5 +800,214 @@ export class PasswordMinigame extends MinigameScene {
     cleanup() {
         // Call parent cleanup (handles event listeners)
         super.cleanup();
+    }
+
+    // ── Sign-in mode ─────────────────────────────────────────────────────────
+
+    initSignIn() {
+        const s = this.signIn;
+        const st = this.signInState;
+        this.headerElement.innerHTML = `<h3>${escapeHtml(displayDashes(`Sign in: ${s.pcName}`))}</h3>`;
+
+        const tileHtml = (tile, i) => `
+            <button type="button" class="signin-tile" data-tile-index="${i}" title="${escapeHtml(tile.displayName || tile.username)}">
+                <span class="signin-portrait"></span>
+                <span class="signin-name">${escapeHtml(tile.displayName || tile.username)}</span>
+                <span class="signin-username">${escapeHtml(tile.username)}</span>
+            </button>`;
+        const tiles = s.picker === false ? '' : `
+            <div class="signin-tiles" id="signin-tiles">
+                ${st.tiles.map(tileHtml).join('')}
+                <button type="button" class="signin-tile signin-other" data-tile-index="other" title="Other user">
+                    <span class="signin-portrait signin-portrait-initials">?</span>
+                    <span class="signin-name">Other user</span>
+                    <span class="signin-username">type a username</span>
+                </button>
+            </div>`;
+        const current = s.current
+            ? `<div class="signin-current">Signed in now: ${escapeHtml(s.current.displayName || s.current.username)} (${escapeHtml(s.current.username)})</div>`
+            : '';
+
+        this.gameContainer.innerHTML = `
+            <div class="password-minigame-area signin-mode">
+                <div class="monitor-bezel">
+                    <div class="monitor-screen signin-screen">
+                        <div class="signin-title">${escapeHtml(displayDashes(s.pcName))}</div>
+                        ${current}
+                        ${tiles}
+                        <div class="signin-form" id="signin-form">
+                            <div class="signin-selected" id="signin-selected"></div>
+                            <div class="signin-field-row" id="signin-username-row">
+                                <label for="signin-username">Username:</label>
+                                <input type="text" id="signin-username" class="password-field" placeholder="Username" maxlength="64" autocomplete="off" spellcheck="false">
+                            </div>
+                            <div class="signin-field-row" id="signin-password-row">
+                                <label for="password-field">Password:</label>
+                                <div class="password-field-wrapper">
+                                    <input type="password" id="password-field" class="password-field" placeholder="Password" maxlength="64" autocomplete="off">
+                                    <button type="button" class="toggle-password-btn" id="toggle-password">
+                                        <img class="icon-small" src="/break_escape/assets/icons/hidden.png" alt="Toggle password visibility">
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="hint-controls">
+                                <button type="button" class="submit-btn" id="submit-password">Sign in</button>
+                            </div>
+                        </div>
+                        <div class="signin-message" id="signin-message" aria-live="polite"></div>
+                    </div>
+                </div>
+                ${this.gameData.showPostit && this.gameData.postitNote ? `
+                    <div class="postit-note">${escapeHtml(this.gameData.postitNote)}</div>
+                ` : ''}
+            </div>
+        `;
+
+        this.usernameField = this.gameContainer.querySelector('#signin-username');
+        this.passwordField = this.gameContainer.querySelector('#password-field');
+        this.togglePasswordBtn = this.gameContainer.querySelector('#toggle-password');
+        this.submitBtn = this.gameContainer.querySelector('#submit-password');
+        this.signInMessageEl = this.gameContainer.querySelector('#signin-message');
+
+        this.gameContainer.querySelectorAll('.signin-tile[data-tile-index]').forEach(el => {
+            const idx = el.dataset.tileIndex;
+            if (idx !== 'other') {
+                applyTilePortrait(el.querySelector('.signin-portrait'), st.tiles[Number(idx)]);
+            }
+            this.addEventListener(el, 'click', () => this.selectSignInTile(idx));
+        });
+
+        if (this.gameData.showPostit && this.gameData.postitNote) {
+            const postit = this.gameContainer.querySelector('.postit-note');
+            if (postit) makeDraggable(postit);
+            if (this.controlsElement) {
+                const notebookBtn = document.createElement('button');
+                notebookBtn.className = 'minigame-button';
+                notebookBtn.id = 'minigame-notebook-postit';
+                notebookBtn.innerHTML = '<img src="/break_escape/assets/icons/notes.png" alt="Notepad" class="icon-small notepad-btn-icon"> Add to Notepad';
+                this.controlsElement.insertBefore(notebookBtn, this.controlsElement.firstChild);
+                this.addEventListener(notebookBtn, 'click', () => this.addPostitToNotebook());
+            }
+        }
+
+        const onKey = (event) => {
+            if (!this.gameState.isActive) return;
+            if (event.key === 'Escape') { event.preventDefault(); this.cancelPassword(); return; }
+            if (event.key !== 'Enter') return;
+            event.preventDefault();
+            if (event.target === this.usernameField && !this.passwordField.value) {
+                this.passwordField.focus();
+            } else {
+                this.submitPassword();
+            }
+        };
+        this.addEventListener(this.usernameField, 'keydown', onKey);
+        this.addEventListener(this.passwordField, 'keydown', onKey);
+        this.addEventListener(this.passwordField, 'input', (e) => { this.gameData.password = e.target.value; });
+        this.addEventListener(this.togglePasswordBtn, 'click', () => this.togglePasswordVisibility());
+        this.addEventListener(this.submitBtn, 'click', () => this.submitPassword());
+
+        this.renderSignInForm();
+    }
+
+    /** Choose a tile (its index) or 'other' (type a username). */
+    selectSignInTile(idx) {
+        const st = this.signInState;
+        if (idx === 'other') {
+            st.selected = null;
+            st.other = true;
+        } else {
+            const tile = st.tiles[Number(idx)];
+            if (!tile) return;
+            st.selected = tile.username;
+            st.other = false;
+        }
+        this.passwordField.value = '';
+        this.gameData.password = '';
+        this.setSignInMessage('');
+        this.renderSignInForm();
+    }
+
+    renderSignInForm() {
+        const st = this.signInState;
+        const chosen = st.other || st.selected !== null;
+        const show = (el, on) => { if (el) el.style.display = on ? '' : 'none'; };
+        show(this.gameContainer.querySelector('#signin-form'), chosen);
+        show(this.gameContainer.querySelector('#signin-username-row'), st.other);
+        const selectedEl = this.gameContainer.querySelector('#signin-selected');
+        const tile = st.tiles.find(t => t.username === st.selected);
+        if (selectedEl) {
+            selectedEl.textContent = tile ? `${tile.displayName || tile.username} (${tile.username})` : '';
+            show(selectedEl, !!tile);
+        }
+        this.gameContainer.querySelectorAll('.signin-tile').forEach(el => {
+            const idx = el.dataset.tileIndex;
+            const on = idx === 'other' ? (st.other && this.signIn.picker !== false) : (st.tiles[Number(idx)]?.username === st.selected && st.selected !== null);
+            el.classList.toggle('selected', !!on);
+        });
+        if (!chosen) {
+            this.setSignInMessage(st.message || 'Choose an account.');
+        }
+        const focus = st.other && !this.usernameField.value ? this.usernameField : this.passwordField;
+        if (chosen && focus && typeof focus.focus === 'function') focus.focus();
+    }
+
+    setSignInMessage(text, kind = 'info') {
+        this.signInState.message = text;
+        if (!this.signInMessageEl) return;
+        this.signInMessageEl.textContent = text;
+        this.signInMessageEl.dataset.kind = kind;
+    }
+
+    async _submitSignInOnce() {
+        if (!this.gameState.isActive) return;
+        const st = this.signInState;
+        const username = st.other ? (this.usernameField?.value || '').trim() : st.selected;
+        const password = this.passwordField?.value || '';
+        if (!username) { this.setSignInMessage(st.other ? 'Enter a username.' : 'Choose an account.', 'error'); return; }
+        if (!password) { this.setSignInMessage('Enter the password.', 'error'); return; }
+
+        const sessions = window.pcSessions;
+        if (!sessions?.signIn) {
+            this.setSignInMessage('Sign-in is not available.', 'error');
+            return;
+        }
+        this.setSignInMessage('Signing in...');
+        const result = await sessions.signIn(this.signIn.pcId, username, password);
+        if (result.ok) {
+            this.signInAccepted(result.session);
+            return;
+        }
+        if (result.reason === 'locked_out') {
+            this.signInLockedOut(result);
+            return;
+        }
+        if (result.error) {
+            this.setSignInMessage(result.status === 403 || result.status === 404 ? "This PC can't be reached." : 'Network error. Please try again.', 'error');
+            return;
+        }
+        if (window.playUISound) window.playUISound('reject');
+        this.setSignInMessage(signInRefusalMessage(result), 'error');
+        this.passwordField.value = '';
+        this.gameData.password = '';
+        this.passwordField.focus?.();
+    }
+
+    signInAccepted(session) {
+        this.cleanup();
+        if (window.playUISound) window.playUISound('confirm');
+        this.setSignInMessage(`Signed in as ${session?.displayName || session?.username}.`, 'success');
+        this.gameResult = { success: true, signIn: session };
+        this.showSuccess(escapeHtml(`Signed in as ${session?.displayName || session?.username}`), true, 800);
+    }
+
+    signInLockedOut(result) {
+        this.cleanup();
+        if (window.playUISound) window.playUISound('reject');
+        const message = signInRefusalMessage(result);
+        this.setSignInMessage(message, 'error');
+        this.gameResult = { success: false, reason: 'locked_out' };
+        window.gameAlert?.(message, 'error', 'Locked out', 4000);
+        this.showFailure(escapeHtml(message), true, 1500);
     }
 }

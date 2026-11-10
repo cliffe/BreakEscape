@@ -1,6 +1,7 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { renderNoteMarkdown } from '../../utils/note-markdown.js';
+import { cappedText, NOTE_LIMIT } from '../../utils/test-state-text.js';
 
 // Load fonts
 const fontLink1 = document.createElement('link');
@@ -49,7 +50,7 @@ export class NotesMinigame extends MinigameScene {
         return {
             ...super.getTestState(),
             noteName: this.item?.scenarioData?.name || null,
-            noteContent: String(this.noteContent || '').slice(0, 2000),
+            ...cappedText('noteContent', this.noteContent || '', NOTE_LIMIT),
             observationText: String(this.observationText || '').slice(0, 1000),
             noteIndex: this.currentNoteIndex,
             noteCount: (this.collectedNotes || []).length

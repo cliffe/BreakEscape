@@ -149,6 +149,50 @@ test('an undisguised player at the gate means it never opens for the guard, howe
     assert.ok(!events.some(e => e[0] === 'door_gate_opened'));
 });
 
+test('approachPoint: a guard inside his gate\'s radius waits where he stands', () => {
+    // lab_physical_pentest: radius 72, and Len's badge reader is about 62 px from the door.
+    // Kept out by a barred player, he waits at the reader; he used to walk to the door front.
+    const { gates } = setup({ openFor: ['guard'], openRadius: 72, holdMs: 2500, playerMayPassIf: 'disguised' });
+    assert.equal(gates.approachPoint('guard', { x: 100, y: 162 }), null, '62 px out, inside the radius');
+    assert.equal(gates.approachPoint('guard', { x: 100, y: 172 }), null, 'on the radius');
+    assert.deepEqual(gates.approachPoint('guard', { x: 100, y: 180 }),
+        { x: 100, y: 148, roomId: 'lobby', connectedRoom: 'vault' }, '80 px out: walks to 48 px, inside it');
+});
+
+test('approachPoint: the spot in front of a shut gate on the guard\'s side, only when he is out of reach', () => {
+    const { gates, guard } = setup();
+    // South of the door, pushed well away along the wall
+    assert.deepEqual(gates.approachPoint('guard', { x: 280, y: 148 }),
+        { x: 100, y: 148, roomId: 'lobby', connectedRoom: 'vault' });
+    // North of it (he ended a leg inside the far room, out of reach)
+    assert.deepEqual(gates.approachPoint('guard', { x: 60, y: -20 }),
+        { x: 100, y: 52, roomId: 'lobby', connectedRoom: 'vault' });
+    // Already in front of it: the gate opens without his moving
+    assert.equal(gates.approachPoint('guard', { x: 100, y: 150 }), null);
+    // Not his gate, or a gate that joins neither named room
+    assert.equal(gates.approachPoint('stranger', { x: 280, y: 148 }), null);
+    assert.equal(gates.approachPoint('guard', { x: 280, y: 148 }, ['cellar']), null);
+    assert.ok(gates.approachPoint('guard', { x: 280, y: 148 }, ['vault']));
+    // An open gate needs no approach
+    guard.x = 100; guard.y = 140;
+    gates.update(0);
+    assert.equal(gates.approachPoint('guard', { x: 280, y: 148 }), null);
+    // No position, no answer
+    assert.equal(new DoorGates().approachPoint('guard', null), null);
+});
+
+test('approachPoint stays inside a small radius, and works for a side door', () => {
+    const small = setup({ openFor: ['guard'], openRadius: 40, holdMs: 0 });
+    const p = small.gates.approachPoint('guard', { x: 100, y: 300 });
+    assert.equal(p.y, 132, 'radius 40: stands 32 px out, inside the radius');
+    const gates = new DoorGates();
+    const side = { x: 500, y: 500, active: true, body: { enable: true },
+        doorProperties: { roomId: 'east', connectedRoom: 'west', direction: 'west', worldX: 500, worldY: 500, isSideDoor: true } };
+    gates.register(side, { openFor: ['guard'] });
+    assert.deepEqual(gates.approachPoint('guard', { x: 700, y: 520 }),
+        { x: 548, y: 500, roomId: 'east', connectedRoom: 'west' });
+});
+
 test('a guard held at a barred gate turns back after GUARD_TURN_BACK_MS, once', () => {
     const { gates, a, guard, behaviour, events } = setup();
     guard.x = 100; guard.y = 140;                     // near, his leg crosses

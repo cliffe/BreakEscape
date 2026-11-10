@@ -1789,11 +1789,11 @@ class NPCBehavior {
         this.pathFollowingActive = false;
 
         const segmentAtRequest = currentSegmentIndex;
-        const targetAtRequest = this.patrolTarget;
         const { x: mrnx, y: mrny } = this.npcBodyPos();
         const mrSnapped = pathfindingManager.findNearestWalkableStartCell(mrnx, mrny)
                           || { x: mrnx, y: mrny };
         this._pathfindingInProgress = true;
+        const legTarget = this.patrolTarget;
         this._planMovePath(pathfindingManager,
             mrSnapped.x,
             mrSnapped.y,
@@ -1801,8 +1801,11 @@ class NPCBehavior {
             dest.y,
             (path) => {
                 this._pathfindingInProgress = false;
-                // Turned back at a gate (turnBackFromGate) while this request was in flight
-                if (this.patrolTarget !== targetAtRequest) return;
+                // The target changed while this answer was on its way (a goToAndStay move,
+                // or a turn back at a gate, turnBackFromGate): leave it alone, whether the
+                // answer is a path or none. A path taken here would be walked on top of
+                // the new move's own waypoint.
+                if (this.patrolTarget !== legTarget) return;
                 if (path && path.length > 0) {
                     this._pathRetryAfter = 0;
                     this.currentPath = path;
@@ -1817,6 +1820,10 @@ class NPCBehavior {
                 } else {
                     // Unreachable (a shut door, a body in the way): stay on this
                     // waypoint and retry after a back-off; never skip a room.
+                    // If a shut gate of his own is what stands in the way and he is
+                    // out of its reach, he walks back to it first (it opens as he
+                    // nears), or he would retry from where he stands for ever.
+                    if (this._approachRouteGate(pathfindingManager, [currentSegment.room])) return;
                     console.warn(`⚠️ [${this.npcId}] Waypoint (${nextWaypoint.x}, ${nextWaypoint.y}) in ${currentSegment.room} unreachable, retrying in 2s`);
                     this._pathRetryAfter = this.clockNow() + 2000;
                     this.currentPath = [];
@@ -1825,6 +1832,58 @@ class NPCBehavior {
                 }
             }
         );
+    }
+
+    /** A gate this NPC opens has just opened (door-gates.js): retry a failed route leg now. */
+    gateOpened() {
+        this._pathRetryAfter = 0;
+    }
+
+    /**
+     * A route leg was unreachable. If this NPC has a shut gate door of his own into
+     * one of `roomIds` and stands outside its reach, head for the spot in front of
+     * it (door-gates.js approachPoint) without taking the waypoint: the gate opens
+     * as he nears and the next choice finds the leg. This is what brings a guard
+     * back after the player has pushed him along a wall, away from his door, or
+     * when a leg ends just out of the gate's radius. Before this he retried the
+     * same unreachable path from where he stood, for good.
+     * @returns {boolean} true when he is now heading for (or planning a path to) the gate
+     */
+    _approachRouteGate(pfm, roomIds) {
+        const gates = window.doorGates;
+        if (typeof gates?.approachPoint !== 'function' || typeof pfm?.findWorldPath !== 'function') return false;
+        const { x, y } = this.npcBodyPos();
+        const spot = gates.approachPoint(this.npcId, { x, y }, roomIds);
+        if (!spot) return false;
+        const dest = pfm.findNearestWalkableWorldCell?.(spot.x, spot.y) || { x: spot.x, y: spot.y };
+        // Already as close as the floor allows: nothing to walk, so back off as before
+        if ((dest.x - x) ** 2 + (dest.y - y) ** 2 < 8 * 8) return false;
+        const from = pfm.findNearestWalkableStartCell?.(x, y) || { x, y };
+        // gateApproach marks the target for the tests and the console; nothing in the engine reads it
+        const target = { x: dest.x, y: dest.y, dwellTime: 0, routeAction: null, gateApproach: true };
+        this.patrolTarget = target;
+        this.currentPath = [];
+        this.pathIndex = 0;
+        this.patrolReachedTime = 0;
+        this.pathFollowingActive = false;
+        this._pathfindingInProgress = true;
+        console.log(`🚪 [${this.npcId}] Route leg blocked by a shut gate out of reach: walking back to it at (${dest.x.toFixed(0)}, ${dest.y.toFixed(0)})`);
+        this._planMovePath(pfm, from.x, from.y, dest.x, dest.y, (path) => {
+            this._pathfindingInProgress = false;
+            if (this.patrolTarget !== target) return;   // re-targeted meanwhile
+            if (path && path.length > 0) {
+                this._pathRetryAfter = 0;
+                this.currentPath = path;
+                this.pathIndex = 0;
+                this.pathFollowingActive = true;
+            } else {
+                this._pathRetryAfter = this.clockNow() + 2000;
+                this.currentPath = [];
+                this.patrolTarget = null;
+                this.pathFollowingActive = false;
+            }
+        });
+        return true;
     }
 
     _ensureRouteWallColliders() {

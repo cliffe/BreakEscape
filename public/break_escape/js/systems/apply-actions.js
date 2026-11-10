@@ -80,8 +80,20 @@ if (typeof window !== 'undefined') window.isCardRevoked = isCardRevoked;
  *   add_capture    { capture }       — records a credential/foothold into se_captures
  *   set_costume    { costume }       — swaps the player sprite to scenario.disguises[costume]
  *   clear_costume  {}                — restores the chosen avatar
- *   hint           { message, title? } — shows an informational alert to the player
+ *   hint           { message, title? }: shows an informational alert to the player, for a time set by its length
  *   lighting_dip   { level?, ms? }   — one slow brownout dip of the room lights
+ *
+ * Any action may carry a `condition` on the globals, in the syntax of timers and text
+ * variants plus `||` ("!globalVars.a && globalVars.b === true"). It is read when the
+ * action is reached, so an earlier action in the list can change the answer; an action
+ * whose condition does not hold is skipped. With it one click can say one thing per
+ * state (lab_physical_pentest's ledger shelves). The evaluation is strict
+ * (utils/global-condition.js evaluateActionCondition, the grammar the validator
+ * checks): a condition that is not a string, is empty or is not in the grammar does
+ * not hold, so a typing slip skips the action and never runs it by mistake. The same
+ * goes where the evaluator is not loaded. Only an absent key means "always". The
+ * client alone reads it: the server applies flag rewards and declared give_item grants
+ * whatever the condition says, so the validator refuses it on a flag reward.
  *
  * @param {Array}  actions            Array of action descriptor objects.
  * @param {Object} [opts]
@@ -96,6 +108,10 @@ export function applyActions(actions, { source = 'scenario', gameId = null } = {
     if (!Array.isArray(actions) || actions.length === 0) return gives;
 
     for (const action of actions) {
+        if (action && action.condition !== undefined) {
+            const holds = window.evaluateActionCondition;
+            if (typeof holds !== 'function' || holds(action.condition, window.gameState?.globalVariables || {}) !== true) continue;
+        }
         switch (action.type) {
 
             case 'set_global':
@@ -187,7 +203,14 @@ export function applyActions(actions, { source = 'scenario', gameId = null } = {
 
             case 'hint':
                 if (action.message) {
-                    window.gameAlert?.(action.message, 'info', action.title || 'Intelligence Received');
+                    // A hint is a sentence or two to read, so it lasts by length like the
+                    // refusal hints (utils/locked-hint.js hintToastMs: 300 ms a word, 6 to
+                    // 12 s). It used to last 5 s whatever its length, and a 21 word pointer
+                    // was gone before it could be read (lab_physical_pentest playtest N11).
+                    // Where the rule is not loaded the toast keeps its default duration.
+                    const hintMs = window.hintToastMs?.(action.message);
+                    if (Number.isFinite(hintMs)) window.gameAlert?.(action.message, 'info', action.title || 'Intelligence Received', hintMs);
+                    else window.gameAlert?.(action.message, 'info', action.title || 'Intelligence Received');
                     console.log('[applyActions] hint:', action.message);
                 }
                 break;
@@ -198,7 +221,7 @@ export function applyActions(actions, { source = 'scenario', gameId = null } = {
                         name: action.item.type,
                         objectId: `action_item_${action.item.name}_${Date.now()}`,
                         scenarioData: action.item,
-                        texture: { key: action.item.type },
+                        texture: { key: (typeof action.item.sprite === 'string' && action.item.sprite) || action.item.type },
                         keyPins: action.item.keyPins,
                         opens_lock: window.lockRef(action.item) || action.item.keyId,
                         setVisible: function() { return this; }

@@ -11,6 +11,8 @@ import { addToInventory, createItemIdentifier } from './inventory.js';
 import { playUISound, playGameSound } from './ui-sounds.js';
 import { applyActions } from './apply-actions.js';
 import { resolveObjectField } from '../utils/conditional-text.js';
+import { requiresItemHint } from './requires-item-hint.js';
+import { hintToastMs } from '../utils/locked-hint.js';
 import { isRemoteFlagLock, remoteFlagLockMessage } from '../utils/flag-lock.js';
 import { npcReachDistSq } from './npc-reach.js';
 import { shouldExamine, startExamine } from './examine.js';
@@ -874,6 +876,22 @@ export function handleObjectInteraction(sprite) {
     // through window and inert until it is installed.
     if (!sprite._beActionMenuBypass && window.maybeShowObjectActionMenu?.(sprite)) return;
 
+    // A sign-in PC (access model 5.3 and 5.4): the owner at the desk blocks it; else its
+    // desktop when pc-sessions.js holds a session for it; else the workstation answer, where
+    // only 'accessed' claims the owner's unlocked session and everything else opens the
+    // sign-in screen (window.interactLoginPc, unlock-system.js). It never runs the generic flow
+    // below (no triggerOnInteract, no unlock, no pickup); the room data marks it
+    // hasContents, so it is a container that only its session opens.
+    if (sprite.scenarioData.lockType === 'login') {
+        if (typeof window.interactLoginPc === 'function') {
+            playUISound('lock');
+            window.interactLoginPc(sprite);
+        } else {
+            handleUnlock(sprite, 'item');
+        }
+        return;
+    }
+
     // Workstation screen state (workstation-state.js): note whether an unattended workstation
     // was reached open or locked. Emits workstation_accessed / workstation_locked_attempt; the
     // normal interaction below still runs, so the scenario decides what the access yields.
@@ -900,8 +918,9 @@ export function handleObjectInteraction(sprite) {
                 return wanted.includes(d.type) || wanted.includes(d.id) || wanted.includes(d.name);
             });
             if (!held) {
-                const hint = sprite.scenarioData.requiresItemHint || 'You need the right kit in hand for this.';
-                window.gameAlert?.(hint, 'info', '', 3000);
+                // requiresItemHintVariants gives one hint per state (first match wins).
+                const hint = requiresItemHint(sprite.scenarioData);
+                window.gameAlert?.(hint, 'info', '', hintToastMs(hint));
                 return;
             }
             console.log('[Interaction] triggerOnInteract (requiresItem ok) firing for:', sprite.scenarioData.name || sprite.objectId);
@@ -980,7 +999,12 @@ export function handleObjectInteraction(sprite) {
             if (window.startRFIDMinigame) {
                 window.startRFIDMinigame(null, null, {
                     mode: 'clone',
-                    cardToClone: sprite.scenarioData
+                    cardToClone: sprite.scenarioData,
+                    // The copy's source, so a saved copy is recorded on the server as
+                    // this keycard's card (access model 4.2). A held keycard with no id (an
+                    // NPC's badge handed over) is named by the card_id it carries; the
+                    // server checks the inventory holds a keycard with that card_id.
+                    cloneSource: sprite.scenarioData.id ? { object_id: sprite.scenarioData.id } : { held_card: true }
                 });
             } else {
                 window.gameAlert('RFID minigame not available', 'error', 'Error', 3000);

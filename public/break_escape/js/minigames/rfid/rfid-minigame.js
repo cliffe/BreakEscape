@@ -43,6 +43,8 @@ export class RFIDMinigame extends MinigameScene {
         this.availableCards = params.availableCards || []; // For unlock mode
         this.hasCloner = params.hasCloner || false; // For unlock mode
         this.cardToClone = params.cardToClone; // For clone mode
+        // Clone mode: where the card came from, { npc_id } or { object_id } (access model 4.2)
+        this.cloneSource = params.cloneSource || null;
         this.isLockingAttempt = this.requiredCardIds.length > 0; // True if trying to unlock a specific lock, false if just browsing
 
         // Components
@@ -326,6 +328,9 @@ export class RFIDMinigame extends MinigameScene {
         if (result.success) {
             this.ui.showSuccess(result.message);
 
+            // Tell the server, so the copy carries its owner's identity at access lists
+            this.recordCloneOnServer(cardData);
+
             // Emit event
             if (window.eventDispatcher) {
                 window.eventDispatcher.emit('card_cloned', {
@@ -351,6 +356,46 @@ export class RFIDMinigame extends MinigameScene {
                 this.ui.showCardDataScreen(cardData);
             }, 1500);
         }
+    }
+
+    /**
+     * After a successful save in clone mode, record the copy on the server
+     * (POST /clone_card) with the copy's source and the saved card_id. The server records
+     * only the source's own card, so this never widens what a copy can do. A save with
+     * no source (unlock mode, or a card with no card_id) calls nothing.
+     * @param {Object} cardData - The card just saved
+     * @returns {Promise|undefined} the request, when one is sent
+     */
+    recordCloneOnServer(cardData) {
+        if (this.mode !== 'clone') return undefined;
+        const source = this.cloneSource;
+        const cardId = cardData && cardData.card_id;
+        if (!source || !cardId) return undefined;
+        const body = source.npc_id ? { npc_id: source.npc_id }
+            : (source.object_id ? { object_id: source.object_id }
+                : (source.held_card ? { held_card: true } : null));
+        if (!body) return undefined;
+        const apiClient = window.ApiClient || window.APIClient;
+        if (!apiClient || typeof apiClient.cloneCard !== 'function') return undefined;
+        const record = Promise.resolve()
+            .then(() => apiClient.cloneCard(body, cardId))
+            .then(answer => {
+                console.log('💾 Card copy recorded on server:', answer && answer.recorded);
+                return answer;
+            })
+            .catch(error => {
+                console.warn('💾 Could not record card copy on server:', error && error.message);
+                return null;
+            });
+        // An access-list unlock waits for this (unlock-system.js requestRfidAccessUnlock),
+        // so a reader tapped straight after Save sees the recorded copy.
+        if (typeof window !== 'undefined') {
+            window.pendingCardCloneRecord = record;
+            record.then(() => {
+                if (window.pendingCardCloneRecord === record) window.pendingCardCloneRecord = null;
+            });
+        }
+        return record;
     }
 
     /**

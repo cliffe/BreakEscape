@@ -342,7 +342,7 @@ the entity you asked for, reporting `mode: 'via-interaction-menu'`. Use
 | Method | Resolves when |
 |---|---|
 | `waitUntil(predicate, { timeoutMs?, label? })` | predicate returns truthy, re-checked once per frame. Accepts a function or, for Playwright, a **source string** (functions can't cross the boundary). |
-| `waitForGlobal(name, expected?, opts?)` | a story variable is set (or equals `expected`) |
+| `waitForGlobal(name, expected?, opts?)` | a story variable is set (or equals `expected` exactly, `false` included). The reply's `value` is the global's own value when the wait ended, and `expected` is echoed. `alreadyMet: true` (with `elapsedMs: 0`) means the condition held when you asked, so no change was observed: to catch the next change ("start from a shut gate"), wait for the opposite value first, then for the one you want. A JSON command cannot send `undefined`: leave `expected` out to wait for "set". |
 | `waitForTask(taskId, opts?)` | an objectives task reaches `completed` |
 | `waitForEvent(name, opts?)` | the game emits that event on its dispatcher |
 | `waitForMovementEnd(opts?)` | the player's body is still for several consecutive frames, or (`ok:false, reason:"stuck"`) it has been "moving" for 800 ms without changing position, i.e. walking into a collider |
@@ -364,10 +364,30 @@ by wrapping `eventDispatcher.emit` transparently — it calls through to the ori
 and never alters arguments or return value, so instrumenting cannot change behaviour
 under test. High-frequency chatter is filtered out; objectives, tasks, aims,
 minigames, conversations, NPCs, items, doors, rooms, `global_variable_changed:*`,
-player, game and mission events are kept.
+player, game and mission events are kept, and the access model's sign-in (`pc_*`) and
+workstation (`workstation_*`) events.
 
 Drain this after a failure — it usually explains it where a state snapshot alone
 won't.
+
+---
+
+## Access model state (`window.__test.access`)
+
+Read-only, for the access model's scripted runs
+(`docs/achitechture/ACCESS_MODEL_PLAN.md`, "How the slice is tested"). Nothing here acts
+on the game; compare it with the server's record from
+`tools/playtest/verify-run.rb <game_id> --access`. Source: `systems/test-bridge/access.js`.
+
+| Call | Returns |
+|---|---|
+| `sessions()` | The sign-in sessions the client holds, `[{ pcId, npcId, username, displayName, via }]`, read from `window.pcSessions` (`systems/pc-sessions.js`, its `list()`). Password sessions are restored from the server on a reload. |
+| `workstation(pcId)` | `{ ok, id, workstation, owner, present, away, screenLocked, lockAt }` from `workstation-state.js`. `present` is the owner's presence (the env's `ownerPresent` once step 9 adds it, else "not away"); `away` is the owner's away record or null; `workstation` is false for an object the module does not treat as a workstation. `{ ok: false, reason }` when the module or object is missing. |
+| `savedCards()` | The card copier's `saved_cards` as card ids. This list is client-written and never decides identity: the server's copies are `serverClones` in `verify-run.rb --access`. |
+
+```json
+{"cmd":"eval","fn":"() => window.__test.access.workstation('jake_pc')"}
+```
 
 ---
 
@@ -891,6 +911,12 @@ reports the last overworld position (the player is standing still behind the ove
 The `controls` and `fields` arrays come from the base class; `noteName`,
 `noteContent`, `observationText`, `noteIndex` and `noteCount` come from the
 `NotesMinigame` override.
+
+`text` is the overlay's whole visible text, cut at 2000 characters. When it is cut the
+reply says so: `textTruncated: true` and `textLength` (the full length). For a note,
+read `noteContent` instead: it is the note's own text, kept whole up to 20,000
+characters (`noteContentTruncated` marks a cut there too). Check a long document's
+paragraphs against `noteContent`, never against `text`.
 
 ```json
 {

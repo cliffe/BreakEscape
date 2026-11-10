@@ -13,7 +13,8 @@
  * node tests import it directly with a stub world (see createEngineWorld for the
  * live adapter).
  *
- * Determinism: every decision happens on a fixed 250 ms tick of the needs clock;
+ * Determinism: every decision happens on a fixed 250 ms tick of the needs clock, which the
+ * engine advances by the frame step its walks use (see update);
  * the only randomness is a per-NPC mulberry32 seeded from (seed, npcId), used for
  * jitterPct. Arrivals are queued and handled at the next tick.
  */
@@ -347,6 +348,8 @@ export class NPCNeedsSystem {
         this._callSeq = 0;
         // Read-outs for tests and live measurement; never feed a decision
         this.stats = { ticks: 0, selects: 0, objectScans: 0, pathSearches: 0, backoffs: 0 };
+        // End-of-tick listeners (onTick); kept across reset()
+        this._tickListeners = [];
     }
 
     // ── setup ──────────────────────────────────────────────────────────────
@@ -479,12 +482,21 @@ export class NPCNeedsSystem {
 
     // ── clock ──────────────────────────────────────────────────────────────
 
-    /** Live frame hook: advances the needs clock off game elapsed time. */
-    update() {
+    /**
+     * Live frame hook: advances the needs clock.
+     * @param {number} [frameMs] - the frame step the engine moves bodies by (Phaser's smoothed
+     *   loop delta). Given, the clock follows it, so decisions and walks share one timeline:
+     *   below 5 fps Phaser holds the physics step near one normal frame, and a clock on wall
+     *   time ran up to 40 times faster than the walks, so a walk's deadline passed with the
+     *   NPC a few steps from its post (the trip failed, the owner came straight back and the
+     *   target went on a 60 s cooldown). Not given (node tests, another host), the clock
+     *   follows game elapsed time as before.
+     */
+    update(frameMs) {
         if (this.manualClock) return;
         const now = this.world.elapsedMs();
         if (this._lastElapsed === null) { this._lastElapsed = now; return; }
-        const delta = now - this._lastElapsed;
+        const delta = Number.isFinite(frameMs) && frameMs >= 0 ? frameMs : now - this._lastElapsed;
         this._lastElapsed = now;
         if (this.world.isVmActive()) return;
         this._acc += clamp(delta, 0, MAX_FRAME_MS);
@@ -891,6 +903,13 @@ export class NPCNeedsSystem {
         if (typeof this.world.afterTick === 'function') {
             try { this.world.afterTick(this.clockMs); } catch (e) { if (typeof console !== 'undefined') console.error('[needs] afterTick error', e); }
         }
+        if (this._tickListeners?.length) {
+            for (const fn of [...this._tickListeners]) {
+                try { fn(this); } catch (e) {
+                    if (typeof console !== 'undefined') console.error('[needs] onTick listener error', e);
+                }
+            }
+        }
     }
 
     /**
@@ -917,6 +936,28 @@ export class NPCNeedsSystem {
             add(c.speakerId, until);
         }
         return out;
+    }
+
+    /**
+     * Run fn(system) at the end of every tick, after every NPC was processed (the workstation
+     * auto lock, ACCESS_MODEL_PLAN.md 5.4). Listeners survive reset(). Returns an unsubscribe.
+     */
+    onTick(fn) {
+        if (typeof fn !== 'function') return () => {};
+        if (!this._tickListeners) this._tickListeners = [];
+        this._tickListeners.push(fn);
+        return () => { this._tickListeners = this._tickListeners.filter(f => f !== fn); };
+    }
+
+    /**
+     * True when the NPC's sprite exists and it is not knocked out, hostile or hidden
+     * (ACCESS_MODEL_PLAN.md 5.4). _tickNpc blocks on it; the workstation layer's presence test
+     * uses it, so an owner removed from the scene, hidden, hostile or knocked out is not present.
+     */
+    isAvailable(npcId) {
+        if (!this.world.npcPos(npcId)) return false;
+        const status = this.world.npcStatus(npcId) || {};
+        return !(status.ko || status.hostile || status.hidden);
     }
 
     /** Drop the per-tick object list and reachability answers (something in the world changed). */
@@ -1093,8 +1134,7 @@ export class NPCNeedsSystem {
         if (this._magnets.size) this._sight(s, pos);
         if (!s.home || (s.home.provisional && this.tickCount >= (s.homeRetryAt || 0))) this._updateHome(s, pos);
 
-        const status = this.world.npcStatus(id) || {};
-        if (status.ko || status.hostile || status.hidden) {
+        if (!this.isAvailable(id)) {
             if (!s.blocked) {
                 if (s.job) this._abortJob(s, 'unavailable', { cancel: true });
                 s.mode = 'idle';
@@ -1143,6 +1183,9 @@ export class NPCNeedsSystem {
 
         // Coming back from a real leave: is the player at the desk? (once per return)
         if (s.mode === 'returning' && !s.atPost && !s.caughtEmitted) this._checkCaught(s, pos);
+        // The same on a walk back that is also a job for the own post (a need for it, or a
+        // delivery to it): that walk is the return, so the player is checked on every tick of it
+        if (s.mode === 'job' && s.job?.phase === 'goto_target' && !s.atPost && !s.caughtEmitted && this._targetsOwnPost(s)) this._checkCaught(s, pos);
 
         if (s.mode === 'returning' && arrived) {
             s.mode = 'idle';
@@ -1860,6 +1903,13 @@ export class NPCNeedsSystem {
         return !!(j && j.kind === 'use' && s.home?.objectId && j.targetId === s.home.objectId);
     }
 
+    /** True while the current job ends at the NPC's own needsHome object, whatever its kind
+     *  (a `use` of it, or a `carry` that delivers to it): arriving there is being back. */
+    _targetsOwnPost(s) {
+        const j = s.job;
+        return !!(j && s.home?.objectId && j.targetId === s.home.objectId);
+    }
+
     _leavePost(s) {
         const id = s.npcId;
         if (s.atPost && !this._atOwnPost(s)) {
@@ -2066,6 +2116,19 @@ export class NPCNeedsSystem {
             }
             const obj = this.world.getObject(job.targetId);
             if (obj) this.world.faceTo(id, obj.x, obj.y);
+            // A need for its own post object turned urgent on the walk home, so the walk became
+            // this job; or the job is a delivery to the own post (a printout taken back to the
+            // desk). Arriving for it is the return: say so now, or the post's owner sits
+            // through the whole session before anything hears that it is back (a workstation
+            // stayed locked, with its owner at it, for the length of the session). The test is
+            // the target, not the job's kind; _atOwnPost stays `use` only for the wind-up and
+            // stayPut decisions.
+            if (!s.atPost && this._targetsOwnPost(s)) {
+                if (!s.caughtEmitted) this._checkCaught(s, this.world.npcPos(id));
+                s.atPost = true;
+                this._log(id, 'returned_post');
+                this._emit(`npc_returned_post:${id}`, { npcId: id, ...this._playerProximity(id) });
+            }
             // A print errand completes on arrival, without `using` (no post stop, no chair fetch)
             if (job.errand) { this._completeJob(s); return; }
             // Slice 19: a colleague at a ringing desk phone picks up (the call chosen at the claim)

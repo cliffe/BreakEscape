@@ -141,6 +141,8 @@ A door entry in a room's `doors` array can carry a `gate`: it opens for listed N
 | `holdMs` | `2500` | How long it stays open after the last NPC leaves (the tailgate window) |
 | `playerMayPassIf` | none | A global. While it is false, a player who comes within `openRadius` of the gate shuts it and keeps it shut, even beside the NPC |
 
+A guard who has been moved out of `openRadius` (pushed by the player, say) walks back to the front of his door. Two limits follow from how he finds that door: give a guard one gate per pair of rooms, and make the gate the only shut door on that leg of his route. With two gates into one room he may be sent to the one he cannot reach, and a leg blocked by an ordinary locked door further on would walk him to the gate and hold it open while he stands there.
+
 **A held guard turns back.** While the player is barred the gate never opens for the NPC. A route NPC (`behavior.patrol.multiRoom` route) near the shut gate whose route leg needs him across it waits 5 s, then gives up that crossing: he glances at the player, carries on with his route from the next segment in the room he is in, and tries the door again on his next cycle. His patrol never stops, so the tailgate window comes back once the player moves off or meets `playerMayPassIf`. Only route NPCs turn back; any other NPC simply waits. A guard standing in the doorway is never shut in, even by `closeDoor`. Design the scenario so the player can do anything that needs the guard at the open door (such as watching him key a PIN) from just outside `openRadius`, measured from the player's feet.
 
 N/S doorways only; E/W gates are untested. Events: `door_gate_opened`, `door_gate_closed`, `door_gate_denied` (a bare click), `door_gate_player_opened` (credential accepted), `door_gate_guard_turned_back` (`npcId`). An NPC mapping's `closeDoor` shuts one early. See `docs/achitechture/TAILGATE_REDESIGN.md`.
@@ -541,7 +543,7 @@ This laptop object will be placed at the next available `pc` slot in the room te
 | Field | Required | Description |
 |-------|----------|-------------|
 | `type` | ✅ | Object type name. Controls default minigame, placement, and sprite (see above) |
-| `sprite` | optional | Override the sprite variant (e.g. `"pc3"` to force that specific sprite instead of random selection) |
+| `sprite` | optional | Override the sprite variant (e.g. `"pc3"` to force that specific sprite instead of random selection). On a workstation PC, `"pc_desktop"` is the base that has a locked-screen look (see "Workstation screens") |
 | `position` | optional | Override template placement. Use `{ "x": 12, "y": 8 }` for exact tile coordinates, or `"as-type:pc"` to use placement slots of a different type |
 | `name` | ✅ | Display name shown in UI |
 | `takeable` | ✅ | `true` = player can pick up; `false` = stays in room |
@@ -808,10 +810,91 @@ Control how observation text is displayed using `observationDisplay`:
 | `confirm_action` | `text`, `onConfirm` | Shows confirmation dialog, executes nested actions on confirm |
 | `tint_objects` | `roomId`, `textureKey`, `color`, `pulse` | Tints all sprites of a type in a room |
 | `show_end_screen` | `title`, `body`, `buttonText`, `outcome` | Shows scenario end screen |
+| `hint` | `message`, `title` (optional) | Shows an information toast. It lasts by the length of `message`: 300 ms per word, at least 6 s and at most 12 s (20 words or fewer give 6 s, 40 or more give 12 s), so keep a hint under 40 words. Like every information toast it is held while a conversation or a full-screen panel is open and shown when that closes |
+
+#### Conditional actions: `condition`
+
+Any action, in any list the engine runs (`triggerOnInteract`, a timer's `actions`, `onConfirm`), may carry a `condition` on the global variables. The action runs only while the condition holds, and it is read when the action is reached, so an earlier action in the same list can change the answer. Use it to make one click say one thing per state:
+
+```json
+"triggerOnInteract": [
+  { "type": "hint", "condition": "globalVars.pin_read", "message": "You have already read the PIN from here." },
+  { "type": "hint", "condition": "!globalVars.pin_read && !globalVars.guard_at_door", "message": "Nobody is at the keypad yet." },
+  { "type": "emit_event", "event_name": "player_watched_reader" }
+]
+```
+
+- **Syntax.** Terms joined by `&&` and `||` (`||` binds looser), with no parentheses. A term is `globalVars.x`, `!globalVars.x`, or `globalVars.x` compared (`===`, `!==`, `>`, `<`, `>=`, `<=`) with `true`, `false`, `null`, a number or a quoted string.
+- **It is strict.** A condition that is not a string, is empty, or has a term outside that syntax (a negated comparison such as `!globalVars.x === true`, a bare name, parentheses) never holds, so the action never runs. The validator reports these as errors, and warns about a global that is not declared in `globalVariables`.
+- **The server does not read it.** Only the page evaluates the condition. A `give_item` is still a declared grant on the server whatever its condition says (the validator warns), and a flag reward is applied by the server as well as the page, so a `condition` on a `flagRewards` entry is a validator error. Never use a condition as the thing that protects access.
 
 **Note**: The deprecated `onInteract` field (object format) is still functional but will log warnings. Migrate to `triggerOnInteract` + `observationDisplay` for new scenarios.
 
 **Declared grants (the compatible way to `give_item`)**: a `give_item` whose `item` has an `id` (or `opens_lock`) is a *declared grant*. The server reads the scenario's own `give_item` actions as its allowlist, so the grant needs **no** world object — do **not** add a hidden `active:false`/`takeable:true` twin (the old pattern): the validator now errors on a twin that shares the grant's `id` ("a declared grant needs no world object"). Put a granted container's files in the grant's own `contents`; the server serves them from the held item, and a nested password archive unlocks against it. The `give_item` must sit on a path the engine actually runs — `timers[].actions`, an object's `triggerOnInteract` / `onInteract.actions`, esd-button actions, or a nested `confirm_action.onConfirm` — **not** under `eventMappings` (never run; the validator reports it) or `flagRewards` (server-delivered, named by `item_name`/`item_type` with no `item` hash). There is no trigger check: a declared grant can be claimed from the first second, so never grant a key or lock tool this way (the validator warns). `BreakEscape::DeclaredGrants` (`lib/break_escape/declared_grants.rb`) is the single definition the server, the validator (`check_give_item_collectible`) and the dungeon-graph generator share, so all three agree on what a grant is. Full design: `docs/achitechture/DECLARED_GRANTS_PLAN.md`. The ink `#give_item:<type>:<id>` tag is a separate path (an item out of the speaking NPC's `itemsHeld`) and is unaffected.
+
+#### Item plants: `requiresItem`
+
+`requiresItem` turns an object's `triggerOnInteract` into "deploy the kit you carried here": the actions fire only while the player holds the named item (a type, an id or a name, or an array of any of those). `consumesItem: true` then removes the item from the inventory, so it is left on the target. Without the item the actions do not fire and the player gets a refusal toast.
+
+| Field | Description |
+|-------|-------------|
+| `requiresItem` | The item the player must hold: a type, id or name, or an array of them |
+| `consumesItem` | `true` removes the held item when the actions fire |
+| `requiresItemHint` | The refusal text when the item is not held. Default: "You need the right kit in hand for this." |
+| `requiresItemHintVariants` | One refusal text per state: an array of `{ "condition": "globalVars...", "value": "..." }`, first match wins, then `requiresItemHint`, then the default. Same format and rules as `observationVariants` (`&&` only: no `\|\|`, no parentheses), so put the most specific condition first |
+
+```json
+{
+  "type": "pc", "id": "staff_pc", "name": "Chris's PC", "takeable": false,
+  "requiresItem": "kit_deviceA",
+  "consumesItem": true,
+  "requiresItemHint": "You need the hardware keylogger from your kit in hand to clip it inline here.",
+  "requiresItemHintVariants": [
+    { "condition": "globalVars.kp_creds_captured", "value": "Your keylogger caught Chris's password when he unlocked his screen." },
+    { "condition": "globalVars.kp_deviceA_set && globalVars.staff_pc_screen_locked", "value": "Chris's screen is locked. Your keylogger is in place behind it." },
+    { "condition": "globalVars.kp_deviceA_set", "value": "Your keylogger is clipped inline behind this PC." },
+    { "condition": "globalVars.staff_pc_screen_locked", "value": "Chris's screen is locked. That is what the keylogger is for." }
+  ],
+  "triggerOnInteract": [
+    { "type": "set_global", "key": "kp_deviceA_set", "value": true },
+    { "type": "hint", "title": "Keylogger planted", "message": "Clipped in. Now wait for Chris's coffee run." }
+  ]
+}
+```
+
+Things to know:
+
+- **Write a variant for every state after the plant.** With `consumesItem`, the item is gone once planted, so every later click is a refusal. Without variants the player is told "you need the keylogger" about a keylogger that is already in place.
+- **A click never shows `observations` on this object.** The refusal returns before the observation code. The info label at the bottom of the screen does show `observations` and `observationVariants` when the player stands near, so an object can carry both: variants for the label, hint variants for the click.
+- **The refusal toast lasts by its length**: 300 ms per word, at least 6 s and at most 12 s.
+- **An item plant cannot sit on a sign-in PC.** A `lockType: "login"` object answers a click with its own flow (owner present, session, sign-in screen) and returns before `triggerOnInteract` and `requiresItem` are read. So a scenario that chains a captured password into a sign-in puts the plant on a separate object beside the sign-in PC (the cable behind it, a dock, a desk hub), and keeps the capture on the PC's own event, for example `workstation_owner_returned:<pc>` with `data.wasLocked === true`. `lab_physical_pentest` plants on the PC object itself only because, by that lab's own rules of engagement, nothing ever signs in at Chris's PC.
+- **The validator** warns when `requiresItemHintVariants` is authored without `requiresItem` (none of those hints would ever show), and checks its conditions like the other variant lists.
+
+### Workstation screens: the locked look (`pc_desktop` and `<key>_locked`)
+
+A workstation PC with an owner (the `workstation`, `screenOwner`, `locksScreenOnLeave`, `lockChance` and `autoLockMin` fields; see `docs/achitechture/NPC_NEEDS_SYSTEM.md` and `docs/achitechture/ACCESS_MODEL_PLAN.md` section 5.4) follows its screen state with no extra fields:
+
+- **Sounds.** With the office-life lock cues on (the default; `"lockCues": false` turns them off) the lock and unlock chime comes from those cues, and this swap is silent. With them off: when the owner leaves and the screen locks, or an auto lock fires, a lock sound plays; when the owner comes back to a locked screen, an unlock sound. Only while the player is in the PC's room, and never at boot, on a reload or on a knock-out. An owner who leaves the screen open makes no sound.
+- **The locked look.** The sprite swaps to a locked-screen picture when a texture named `<key>_locked` is loaded for the sprite's own texture key. Today one base has locked art: `pc_desktop` (a navy desktop PC, 36x24), whose locked look is `pc_desktop_locked` (a padlock on the screen). So to show the padlock, set `"sprite": "pc_desktop"` on the workstation. Any other PC base (`pc`, or the `pc6`, `pc8` or `pc11` a `type: "pc"` object takes from the room map) keeps its picture and still gets the sounds and the indicator dots. Locked art for another base is drawn with `scripts/room_gen/make_locked_screen.py <base> --rect ...` and preloaded under `<base>_locked` in `core/game.js`.
+- **The rule.** The padlock shows exactly when the owner is away, the screen is locked and the player holds no password session at that PC. A password session hides it until the player signs out, because a click there opens the desktop. A claimed session never hides it.
+- **Your own swap wins.** An object with `spriteVariants` is left alone, as is a PC with no owner.
+
+```json
+{ "type": "pc", "id": "staff_pc", "name": "Chris's PC", "sprite": "pc_desktop",
+  "workstation": true, "locksScreenOnLeave": true, "screenOwner": "hampshire" }
+```
+
+The owner's return carries what the screen was: `workstation_owner_returned:<id>` has `{ objectId, ownerId, wasLocked }`, where `wasLocked` is the screen's state just before the return cleared it. A mapping that should fire only when the owner had to unlock (an inline keylogger catching the unlock password) reads it as `data.wasLocked === true`:
+
+```json
+{ "eventPattern": "workstation_owner_returned:staff_pc",
+  "condition": "data.wasLocked === true && globalVars.kp_deviceA_set === true",
+  "onceOnly": true, "cooldown": 0,
+  "addCapture": { "targetId": "hampshire", "kind": "credential", "address": "c.hampshire", "host": "LW-RECEP-01" },
+  "setGlobal": { "kp_creds_captured": true } }
+```
+
+This event carries no `usePayload`, so write the capture's `address` and `host` in the mapping (neither is a secret; the server serves the password by matching the address to the NPC's `creds`). A once-only mapping is not spent while its condition is false, so returns before the plant do not use it up. For the capture to be certain, the PC must lock on every leave (`locksScreenOnLeave: true` and no `lockChance`).
 
 ### Container Objects
 
@@ -2029,6 +2112,7 @@ These are the mistakes that most often leave a mission unfinishable or silently 
 
 - **Timers need conditions.** The HUD clock ignores `cancelOnGlobal`, and a reload restarts any timer whose start global is true. Put `!globalVars.done && ...` as a `condition` on every timer and on its expiry action, and guard the arming mapping so it cannot re-arm after the win.
 - **Start finale clocks once the VM work is done.** Timers run on wall-clock time, VM time included.
+- **To show a toast from an event, use a timer with a `hint` action.** An event mapping has no toast action. Have the mapping set a global (`setGlobal`), start a timer on it (`startOnGlobal`, a short `delayMs`, no `showCountdown`) and give the timer a `hint` action. `lab_physical_pentest` does this for its pointers after each beat.
 - **Gate HaX timed messages near scripted conversations.** A timed message can open a phone chat over a conversation in progress.
 
 ### Ink
@@ -2603,6 +2687,8 @@ An opt-in line that tells the player how to get past a locked door, whatever its
 - biometric lock: the hint appears as its own "Locked" toast after each refused lift;
 - gate door (`door-gates.js`): "Access denied: this door only opens for authorised staff. <hint>", at the same moment `door_gate_denied` fires;
 - any other lock type that falls through to the generic "requires ... to unlock" line.
+
+A refusal that carries a hint stays up by the length of the whole line shown (the refusal sentence plus the hint): 300 ms per word, at least 6 s and at most 12 s. Keep the hint to about 30 words, so the line fits inside 12 s. A refusal with no hint keeps its usual short duration.
 
 Combination padlocks, cryptex and the Bluetooth/BLE locks keep their own wording and do not show the hint. From the lab's Recon room:
 

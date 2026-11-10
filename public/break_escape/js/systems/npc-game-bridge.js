@@ -272,7 +272,7 @@ export class NPCGameBridge {
         name: item.type,
         objectId: `npc_gift_${npcId}_${item.type}_${Date.now()}`,
         sourceNpcId: npcId, // lets the server look in this NPC's itemsHeld first
-        texture: { key: item.type }
+        texture: { key: (typeof item.sprite === 'string' && item.sprite) || item.type }
       };
 
       // Await addToInventory so server inventory is confirmed before removing from NPC.

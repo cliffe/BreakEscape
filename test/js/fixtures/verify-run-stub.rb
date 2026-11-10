@@ -1,5 +1,7 @@
 # Loaded with `ruby -r` before tools/playtest/verify-run.rb so it runs without Rails or a database.
 # STUB_FLAGS is a comma list of submitted flags; STUB_CREATED_AGO is seconds of play.
+# STUB_PLAYER_STATE is JSON merged into the player state (the access model keys, for example).
+require 'json'
 module BreakEscape
   class Game
     def self.find(id)
@@ -17,6 +19,7 @@ module BreakEscape
     def player_state
       { 'currentRoom' => 'r1', 'unlockedRooms' => %w[r1 r2], 'unlockedObjects' => [], 'inventory' => [],
         'submitted_flags' => ENV.fetch('STUB_FLAGS', '').split(','), 'globalVariables' => {}, 'encounteredNPCs' => [] }
+        .merge(JSON.parse(ENV.fetch('STUB_PLAYER_STATE', '{}')))
     end
   end
 end

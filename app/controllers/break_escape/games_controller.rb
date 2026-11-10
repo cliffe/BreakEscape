@@ -24,7 +24,8 @@ module BreakEscape
       policy.worker_src  :self, :blob
     end
 
-    before_action :set_game, only: [:show, :scenario, :scenario_map, :ink, :room, :container, :update_room, :unlock, :inventory, :objectives, :capture_secrets, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :tts, :reset, :new_session, :vm_panel, :vm_set_panel, :conclude_mission]
+    before_action :set_game, only: [:show, :scenario, :scenario_map, :ink, :room, :container, :update_room, :unlock, :inventory, :objectives, :capture_secrets, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :tts, :reset, :new_session, :vm_panel, :vm_set_panel, :conclude_mission,
+                                        :login, :logout, :login_accounts, :clone_card]
     # A host may also route the game page under its own address (Hacktivity: /hacktivities/:event_id/play/mission/:id,
     # inside a Game event's web app scope). The game must belong to that event: any other pair is a 404.
     before_action :require_game_in_host_event, only: [:show]
@@ -81,7 +82,11 @@ module BreakEscape
     # room is here for the same reason -- track_npc_encounters appends to
     # encounteredNPCs and saves, and npc_conversation tasks validate against
     # that list, so losing an entry rejects a legitimate completion.
-    around_action :with_game_lock, only: [:container, :update_room, :unlock, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :reset, :new_session, :inventory, :room]
+    #
+    # login, logout and clone_card write sessions, sign-in failures and card copies
+    # (access model, section 6), so they take the lock like unlock.
+    around_action :with_game_lock, only: [:container, :update_room, :unlock, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :reset, :new_session, :inventory, :room,
+                                          :login, :logout, :clone_card]
 
     # GET /games/new?mission_id=:id
     # Show VM set selection page for VM-required missions
@@ -370,6 +375,14 @@ module BreakEscape
 
         # Include current inventory from player_state for page reload recovery
         # This allows the client to restore inventory state on reload
+        # Sign-in sessions and the PCs signed in to (access model 5.3), so a password
+        # session survives a reload and pc-sessions.js can report the end of any claimed
+        # one. The server ends the claimed ones itself, here, so the end does not rest on
+        # the client's POST /logout.
+        filtered['sessions'] = @game.sessions_for_client
+        filtered['signedInPcs'] = @game.signed_in_pcs
+        @game.end_claimed_sessions!
+
         if @game.player_state['inventory'].present? && @game.player_state['inventory'].is_a?(Array)
           filtered['playerInventory'] = @game.player_state['inventory']
 
@@ -518,6 +531,20 @@ module BreakEscape
 
       container_id = params[:container_id]
       return render_error('Missing container_id parameter', :bad_request) unless container_id.present?
+
+      # Access model (section 6): a sign-in PC is opened by a session, never by
+      # unlockedObjects, and a folder under a sign-in PC or in a profile needs a session
+      # that admits it, with it and every container above it unlocked.
+      located = @game.login_scope_of(container_id)
+      if located && BreakEscape::Game.login_pc?(located[:object])
+        return render_login_desktop(container_id)
+      elsif located && located[:scope]
+        unless @game.session_admits?(located[:scope]) && @game.path_unlocked?(located[:path] + [located[:object]])
+          return render_error("Container not unlocked: #{container_id}", :forbidden)
+        end
+
+        return render json: { container_id: container_id, contents: filter_container_contents(located[:object]) }
+      end
 
       # Find container in scenario data
       container_data = find_container_in_scenario(container_id)
@@ -864,8 +891,10 @@ module BreakEscape
       target_id = params[:targetId]
       attempt = params[:attempt]
       method = params[:method]
+      # Every card id the client holds, for an rfid lock with an access list (4.1).
+      card_ids = params.key?(:card_ids) ? Array(params[:card_ids]).map(&:to_s) : nil
 
-      is_valid = @game.validate_unlock(target_type, target_id, attempt, method)
+      is_valid = @game.validate_unlock(target_type, target_id, attempt, method, card_ids: card_ids)
 
       unless is_valid
         body = { success: false, message: 'Invalid attempt' }
@@ -878,6 +907,10 @@ module BreakEscape
         # Right apart from letter case: the keypad says passwords are case-sensitive
         if method == 'password' && @game.password_case_mismatch?(target_type, target_id, attempt)
           body[:caseMismatch] = true
+        end
+        # A held card that would pass but for being a UID-only copy (access model 4.2)
+        if method == 'rfid' && card_ids && @game.uid_only_refusal?(target_type, target_id, card_ids)
+          body[:reason] = 'uid_only'
         end
         return render json: body, status: :unprocessable_entity
       end
@@ -966,17 +999,20 @@ module BreakEscape
         when 'add'
           # Validate item exists and is collectible
           source_npc_id = (params[:source_npc_id] || params[:sourceNpcId]).presence&.to_s
+          # An add from a sign-in desktop names its PC and Copy or Move (access model 5.1)
+          source_pc_id = (params[:source_pc_id] || params[:sourcePcId]).presence&.to_s
+          transfer = params[:transfer].presence&.to_s
           # Already held and no giver named: nothing to add, so nothing to validate.
           # A reload used to re-send every held item like this, and re-validating an
           # NPC gift with no source NPC took the first NPC copy holding it in room
           # order, one the player may not have met (m10 F3: "NPC not encountered:
           # nightshade_lock"). A give that names its NPC still validates, so the
           # gift record for that NPC is kept.
-          if source_npc_id.blank? && @game.inventory_includes?(item.to_unsafe_h)
+          if source_npc_id.blank? && source_pc_id.blank? && @game.inventory_includes?(item.to_unsafe_h)
             Rails.logger.info "[BreakEscape] Item already in inventory, accepted without revalidation: #{item['type']} / #{item['name']}"
             return render json: { success: true, inventory: @game.player_state['inventory'] }
           end
-          validation_error = validate_item_collectible(item, source_npc_id)
+          validation_error = validate_item_collectible(item, source_npc_id, source_pc_id: source_pc_id, transfer: transfer)
           if validation_error
             Rails.logger.warn "[BreakEscape] inventory validation failed: #{validation_error}"
             return render json: { success: false, message: validation_error },
@@ -992,6 +1028,8 @@ module BreakEscape
           if @collectible_location && @collectible_location[:type] == 'npc'
             @game.record_npc_gift!(@collectible_location[:npc_id], item.to_unsafe_h)
           end
+          # Copy: the file stays on the PC and in its profile (access model 5.1)
+          @game.record_copied_item!(@collectible_item['id']) if source_pc_id && @collectible_transfer == 'copy'
           Rails.logger.info "[BreakEscape] Item added successfully. Current inventory size: #{@game.player_state['inventory']&.length}"
           render json: { success: true, inventory: @game.player_state['inventory'] }
 
@@ -1022,6 +1060,74 @@ module BreakEscape
         render json: { success: false, message: "Inventory error: #{e.message}" },
                status: :internal_server_error
       end
+    end
+
+    # ==========================================
+    # Access model: sign-in, sessions and card copies (ACCESS_MODEL_PLAN.md section 6)
+    # ==========================================
+
+    # POST /games/:id/login
+    # Sign in at a sign-in PC with a username and password (pc_id, username, password),
+    # or claim the owner's unlocked session (pc_id, claim: "owner", and the workstation
+    # globals, which are only logged). The checks and answers are Game#attempt_login! and
+    # Game#claim_login_session!.
+    def login
+      authorize @game if defined?(Pundit)
+
+      pc_id = params[:pc_id].to_s
+      return render json: { success: false, message: 'Missing pc_id' }, status: :bad_request if pc_id.empty?
+
+      result =
+        if params.key?(:claim)
+          if params[:claim].to_s == 'owner'
+            @game.claim_login_session!(pc_id, claim_globals)
+          else
+            { status: :unprocessable_entity, body: { success: false, message: BreakEscape::Game::LOGIN_CLAIM_REFUSED } }
+          end
+        else
+          @game.attempt_login!(pc_id, params[:username], params[:password])
+        end
+      render json: result[:body], status: result[:status]
+    end
+
+    # POST /games/:id/logout
+    # End the session at a sign-in PC (pc_id). No checks.
+    def logout
+      authorize @game if defined?(Pundit)
+
+      pc_id = params[:pc_id].to_s
+      return render json: { success: false, message: 'Missing pc_id' }, status: :bad_request if pc_id.empty?
+
+      @game.logout_session!(pc_id)
+      render json: { success: true }
+    end
+
+    # GET /games/:id/login_accounts?pc_id=
+    # The account tiles for a reachable sign-in PC's loginPicker (5.3), refreshed each
+    # time the sign-in screen opens.
+    def login_accounts
+      authorize @game if defined?(Pundit)
+
+      info = @game.find_login_pc(params[:pc_id].to_s)
+      return render_error("Sign-in PC not found: #{params[:pc_id]}", :not_found) unless info
+      return render_error("PC not reachable: #{params[:pc_id]}", :forbidden) unless @game.login_pc_reachable?(info)
+
+      render json: { pc_id: info[:object]['id'], loginAccounts: @game.login_account_tiles(info[:object]) }
+    end
+
+    # POST /games/:id/clone_card
+    # Record a copy the card copier saved (npc_id or object_id, and card_id): only the
+    # source's own card, and only while an rfid_cloner is held (4.2).
+    def clone_card
+      authorize @game if defined?(Pundit)
+
+      result = @game.record_card_clone!(
+        card_id: params[:card_id].to_s,
+        npc_id: params[:npc_id].presence&.to_s,
+        object_id: params[:object_id].presence&.to_s,
+        held_card: ActiveModel::Type::Boolean.new.cast(params[:held_card]) == true
+      )
+      render json: result[:body], status: result[:status]
     end
 
     # ==========================================
@@ -1660,8 +1766,10 @@ module BreakEscape
         container = find_container_recursive(room_data['objects'], container_id)
         return container if container
 
-        # Search nested contents
+        # Search nested contents (never under a sign-in PC: see find_container_recursive)
         room_data['objects']&.each do |obj|
+          next if BreakEscape::Game.login_pc?(obj)
+
           container = search_nested_contents(obj['contents'], container_id)
           return container if container
         end
@@ -1675,6 +1783,11 @@ module BreakEscape
       return nil unless objects
 
       objects.each do |obj|
+        # A sign-in PC and everything under it are served only through the scope branch
+        # of the container action (a session decides), never here: a name shared with an
+        # unscoped object would otherwise reach them through unlockedObjects.
+        next if BreakEscape::Game.login_pc?(obj)
+
         # Check if this object matches
         if obj['id'] == container_id || (obj['name'] && obj['name'] == container_id)
           return obj if obj['contents'].present?
@@ -1693,6 +1806,14 @@ module BreakEscape
       @game.scenario_data['rooms'].each do |_room_id, room_data|
         (room_data['objects'] || []).each do |obj|
           found = find_object_in_object(obj, object_id)
+          return found if found
+        end
+      end
+      # Then account profiles (access model 5.1); callers check the session first
+      # (/unlock check 1, the container action's scope branch).
+      @game.account_profiles.each_value do |profile|
+        Array(profile['contents']).each do |item|
+          found = item.is_a?(Hash) && find_object_in_object(item, object_id)
           return found if found
         end
       end
@@ -1719,6 +1840,8 @@ module BreakEscape
       return nil unless contents
 
       contents.each do |item|
+        next if BreakEscape::Game.login_pc?(item)
+
         return item if (item['id'] == container_id || item['name'] == container_id) && item['contents'].present?
         nested = search_nested_contents(item['contents'], container_id)
         return nested if nested
@@ -1735,6 +1858,32 @@ module BreakEscape
       unlocked_list.include?(container_data['id'])
     end
 
+    # GET /container for a sign-in PC (section 6): the PC is reachable and has a
+    # session; the answer is its own contents, then each profile admitted for the
+    # session's identity, through filter_container_contents.
+    def render_login_desktop(container_id)
+      info = @game.find_login_pc(container_id)
+      unless info && @game.login_pc_reachable?(info)
+        return render_error("PC not reachable: #{container_id}", :forbidden)
+      end
+
+      pc = info[:object]
+      npc = @game.session_identity(pc['id'])
+      return render_error("Not signed in: #{container_id}", :forbidden) unless npc
+
+      contents = filter_container_contents('contents' => @game.login_desktop_contents(pc, npc))
+      render json: { container_id: container_id, contents: contents }
+    end
+
+    # The workstation globals a claim carries (<id>_screen_locked, <id>_owner_away),
+    # for the log only.
+    def claim_globals
+      raw = params[:globals]
+      return raw.to_unsafe_h if raw.respond_to?(:to_unsafe_h)
+
+      { 'screen_locked' => params[:screen_locked], 'owner_away' => params[:owner_away] }.compact
+    end
+
     def filter_container_contents(container_data)
       contents = container_data['contents']&.map do |item|
         item_copy = item.deep_dup
@@ -1747,7 +1896,11 @@ module BreakEscape
       Rails.logger.debug "[BreakEscape] Filtering container contents. Inventory has #{inventory.length} items"
       Rails.logger.debug "[BreakEscape] Container has #{contents.length} items before filtering"
 
+      # A file copied from a sign-in desktop stays listed while held (access model 5.1)
+      copied = @game.copied_item_ids
       filtered_contents = contents.reject do |item|
+        next false if item['id'].present? && copied.include?(item['id'].to_s)
+
         in_inventory = item_in_inventory?(item, inventory)
         if in_inventory
           Rails.logger.debug "[BreakEscape] Filtering out item: #{item['type']} / #{item['id']} / #{item['name']} (already in inventory)"
@@ -1810,15 +1963,19 @@ module BreakEscape
       copy
     end
 
-    def validate_item_collectible(item, source_npc_id = nil)
+    def validate_item_collectible(item, source_npc_id = nil, source_pc_id: nil, transfer: nil)
       @collectible_location = nil
       @collectible_item = nil
+      @collectible_transfer = nil
       item_type = item['type']
       # A key is addressed by the lock it opens; everything else by its id.
       item_id = BreakEscape::ItemIdentity.identity_candidates(item).first
       item_name = item['name']
 
       Rails.logger.info "[BreakEscape] validate_item_collectible: type=#{item_type}, id=#{item_id}, name=#{item_name}"
+
+      # From a sign-in desktop: only that PC's session decides (access model, section 6)
+      return validate_login_item_collectible(item_type, item_id, item_name, source_pc_id, transfer) if source_pc_id.present?
 
       # Always allow core game items like notepad
       if ALWAYS_ALLOWED_ITEMS.include?(item_type)
@@ -1928,6 +2085,47 @@ module BreakEscape
 
       Rails.logger.info "[BreakEscape] Item collection valid: #{item_type}"
       nil # No error
+    end
+
+    # An inventory add from a sign-in desktop (section 6, POST /inventory with
+    # source_pc_id): 1. the PC is a sign-in PC with a session; 2. the item is in its own
+    # contents or a profile; 3. that session admits the item's scope; 4. every container
+    # above it is unlocked; 5. it is takeable; 6. its transfer allows Copy or Move.
+    def validate_login_item_collectible(item_type, item_id, item_name, source_pc_id, transfer)
+      info = @game.find_login_pc(source_pc_id)
+      return "Not a sign-in PC: #{source_pc_id}" unless info
+
+      pc = info[:object]
+      return "Not signed in: #{source_pc_id}" unless @game.session_identity(pc['id'])
+
+      found = @game.find_login_item(pc) { |obj| BreakEscape::ItemIdentity.addressed_by?(obj, item_type, item_id, item_name) }
+      return "Item not found on this PC: #{item_type}" unless found
+
+      scope = found[:scope]
+      return "Not available to this session: #{item_type}" unless @game.scope_admitted_by_session?(scope, pc['id'])
+
+      locked = found[:path].find { |container| container['locked'] && !@game.object_unlocked?(container['id']) }
+      return "Container not unlocked: #{locked['id']}" if locked
+
+      file = found[:object]
+      return "Item is not takeable: #{file['name']}" unless file['takeable']
+
+      choice = transfer.presence || 'move'
+      return "Invalid transfer: #{choice}" unless %w[copy move].include?(choice)
+
+      allowed = file['transfer'].presence || 'both'
+      return "This file can only be #{allowed == 'copy' ? 'copied' : 'moved'}" unless allowed == 'both' || allowed == choice
+
+      path_ids = found[:path].map { |container| container['id'] }
+      @collectible_location =
+        if scope[:type] == 'login_pc'
+          { type: 'login_pc', pc_id: pc['id'], path: path_ids }
+        else
+          { type: 'profile', profile_id: scope[:id], path: path_ids }
+        end
+      @collectible_item = file
+      @collectible_transfer = choice
+      nil
     end
 
     # Has the player submitted a flag whose give_item reward on this station hands
@@ -2053,8 +2251,9 @@ module BreakEscape
             return { item: obj, location: { type: 'room', room_id: room_id } }
           end
 
-          # Search nested contents in room objects
-          obj['contents']&.each do |content|
+          # Search nested contents in room objects. A sign-in PC's contents are reached
+          # only through its session (source_pc_id above), never here.
+          (BreakEscape::Game.login_pc?(obj) ? nil : obj['contents'])&.each do |content|
             if matches.call(content)
               return { item: content, location: { type: 'container', container_id: obj['id'] || obj['name'] } }
             end

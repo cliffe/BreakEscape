@@ -189,7 +189,7 @@ lists each object that gained a preset (`ℹ️ Office preset: ...`), errors on 
 | Field | Meaning |
 |---|---|
 | `needsTag` (prov.) | One tag string. NPCs with a matching interest are drawn to it |
-| `droppable` (prov.) | `true`: clicking the item in the inventory drops it (section 6) |
+| `droppable` (prov.) | `true`: clicking the item in the inventory drops it (section 6). Its inventory hover label reads "`<name>` (click to drop)" |
 
 ### 3.3a Reveal slots (office life slice 7, `OFFICE_LIFE_PLAN.md` 2.2 Part A)
 
@@ -293,8 +293,12 @@ read; the validator warns on it.
   test-harness copy list needs it.
 - Module `public/break_escape/js/systems/item-drop.js` (exists): the drop action.
 - `core/game.js` imports both after the behaviour manager loads and calls
-  `window.npcNeedsSystem.update()` each frame after `npcBehaviorManager.update`.
+  `window.npcNeedsSystem.update(delta)` each frame after `npcBehaviorManager.update`.
 - `npc-lazy-loader.js` calls `npcNeedsSystem.register(id)` after each `registerNPC`.
+- `isAvailable(npcId)`: true when the sprite exists and the NPC is not knocked out, hostile or
+  hidden. `_tickNpc` blocks on it (decay only while there is no sprite), and the workstation
+  layer's presence test uses it (`ACCESS_MODEL_PLAN.md` 5.4). `onTick(fn)` runs `fn(system)` at the
+  end of every tick, after every NPC; listeners survive `reset()`. The workstation auto lock uses it.
 - Movement goes **only** through `goToAndStay(x, y, speed, {owner:'needs', yieldToPlayer})`.
   The needs system never writes velocities or waypoints, so collision, wall
   escape, stalls and depth sorting work as they do today.
@@ -379,8 +383,13 @@ flags `scriptSuspended`, `blocked`, `atPost`, the current `job`
 
 ### 5.1 Needs clock and decay
 
-- Each frame: `Δ = gameClock.elapsedMs() − last`; add `min(Δ, 1000)` to an
-  accumulator. Skip (no accumulation) while `isVmContextActive()`.
+- Each frame: `Δ` is the frame step the engine passes to `update(frameMs)` (Phaser's smoothed
+  loop delta, the step the physics world moves bodies by), or `gameClock.elapsedMs() − last`
+  when none is passed (node tests); add `min(Δ, 1000)` to an accumulator. Skip (no
+  accumulation) while `isVmContextActive()`. The frame step keeps decisions and walks on one
+  timeline: below 5 fps Phaser holds the physics step near one normal frame, and a clock on
+  wall time used to run far ahead of the walks, so a walk's deadline passed with the NPC a few
+  steps from its post.
 - Run one **tick** per 250 ms in the accumulator. All decisions happen in ticks.
 - Per tick, each need loses `decayPerMin × 250 / 60000`, except the need being
   serviced during its `using` dwell. Crossing `urgentAt` downward emits
@@ -474,6 +483,12 @@ carry: goto_item → pick up → goto_target → using(useSeconds) → complete 
   coffee station or beside their desk for 50 s+ and never sat back down. The walk itself ends
 within a tile of home, so seating looks for the post's chair from the home cell
 (`seating.js` `needsSeatRef`, `SEATING.md`).
+- **A job that ends at the own post is the return.** An NPC that has really left
+  (`atPost` false) and arrives at its `needsHome` object for a job there, either a need
+  for it that turned urgent on the walk home or a carry that delivers to it (a printout
+  taken back to the desk), emits `npc_returned_post:<npcId>` on that arrival, once, before
+  the session, and the session then ends without a second emit. On the walk to it
+  (`goto_target`) the caught check below runs every tick, as on an ordinary walk home.
 - **Failure:** deadline passed or no approach cell → `npc_job_failed:<npcId>`,
   cancel the move, drop any carried item at the NPC's feet, 60 s cooldown on that
   target for this NPC, go home.
@@ -702,6 +717,10 @@ during the walk home (exists). Player-facing behaviour:
   `window.currentPlayerRoom`, as an ordinary takeable world object (the player can
   pick it up again) with its scenario `id` and `needsTag`.
 - Emits `item_dropped:<itemId>` `{itemId, tag, roomId, x, y}`.
+- **Hover label (2026-11-10).** A droppable item with a `name` and no `triggerOnInteract` shows
+  "`<name>` (click to drop)" when the mouse is over it in the inventory (`inventoryHoverLabel`,
+  `systems/inventory.js`). A touch screen has no hover, so a task title or the item's own
+  `observations` should carry the instruction too.
 - **Persistence (synced 2026-11-05):** the drop is saved as a room object (`update_room` `add_object`, `sourceType: 'player_drop'`, accepted only for a held `droppable` item, stored from the server's held copy) and the inventory entry is removed, so the world item and the emptied slot survive a reload. A player pickup removes it as any pickup does; an NPC consuming it removes the room object too. Earlier text, now out of date: client-side only. `removeFromInventory` does not tell the
   server, so after a reload an uncollected dropped item is back in the inventory,
   and an item an NPC used is also back (the server never heard of either). The
@@ -766,6 +785,27 @@ events.
   NPC joins a queue (slice 10); `place` is 1 for the front. Queue chat lines are `npc_chatted:<objectId>`.
 - `npc_avoided:<npcId>` `{ npcId, avoidedId, objectId }` when `npcId` was refused a shared object
   because of an avoidance (either way); once per pair and object until the NPC next starts a job.
+
+**Workstation events** (`systems/workstation-state.js`, for an object with `workstation: true`
+and an owner; the screen rule is `ACCESS_MODEL_PLAN.md` 5.4):
+
+| Event | Payload |
+|---|---|
+| `workstation_owner_left:<objectId>` | `{objectId, ownerId, screenLocked, reason}` (`reason`: `needs`, or `ko` for a knock-out) |
+| `workstation_owner_returned:<objectId>` | `{objectId, ownerId, wasLocked}` |
+| `workstation_auto_locked:<objectId>` | `{objectId, ownerId}` |
+
+`wasLocked` (2026-11-10) is the screen's state just before the return cleared it, so a mapping can
+tell "came back and typed a password to unlock" from "came back to an open screen":
+`"condition": "data.wasLocked === true"`. A station whose room loaded after its owner left is
+rolled before the field is read, so it does not depend on whether anything asked first.
+`window.workstationState.isLocked(objectId)` answers "owner away and screen locked" without
+emitting anything. These three events also drive the locked-screen look and the lock and unlock
+sounds (`systems/screen-states.js`): a workstation whose sprite key has a `<key>_locked` texture
+(today `"sprite": "pc_desktop"`, locked look `pc_desktop_locked`) shows the padlock while its owner
+is away with the screen locked and the player holds no password session there; any other base
+keeps its picture and still gets the sounds. See `README_scenario_design.md`, "Workstation
+screens".
 
 A mapping for the catch, e.g. a bark or a conversation:
 
@@ -836,6 +876,12 @@ The decision log never contains payload contents (only `payloadPresent`).
   This closes the gap where the lab's `staff_pc_2` (open plan, unloaded after a reload
   into the briefing room) read "walked off without locking" while Melanie sat at it. A lone
   `*_owner_away` global with no partner is not touched.
+- A workstation found after its owner left (its room loaded late) is rolled when first asked
+  about (`isLocked`, a click, or the owner's return), and that roll writes the same two globals
+  (2026-11-10), so the dots and any text variant agree with the screen. An auto lock time already
+  past at that moment locks the screen at once, with no event and no sound.
+- The locked-screen look and its sounds (`systems/screen-states.js`) are silent on load: after a
+  reload every owner is at their post, so every screen shows its base picture and nothing plays.
 - The same two globals drive the workstation indicator dots in `lighting.js` (office life slice
   5, `OFFICE_LIFE_PLAN.md` 2.3): blue while locked, a breathing white dot while the owner is away
   and the screen open. Nothing is saved for them; after a reload they follow the reset globals.
@@ -935,6 +981,33 @@ from `staff_pc`. A use **before** the plant fails the condition and does **not**
 consume the `onceOnly` (count only increments on a fire, npc-manager.js), so the
 first post-plant login is the one that captures.
 
+**As built now (2026-11-10; the names and the trigger above are the first build's).** The
+receptionist is Chris Hampshire (`hampshire`) at Ledgerwell, and his sign-in details live in
+`creds`, which the server keeps out of room data. The capture no longer rides `npc_used:staff_pc`.
+`staff_pc` is a workstation that locks on every leave (`"locksScreenOnLeave": true`, sprite
+`pc_desktop`, so it shows the padlock), and Chris's mapping listens for his return to the locked
+screen:
+
+```jsonc
+{ "eventPattern": "workstation_owner_returned:staff_pc",
+  "condition": "data.wasLocked === true && globalVars.kp_deviceA_set === true",
+  "onceOnly": true, "cooldown": 0,
+  "addCapture": { "targetId": "hampshire", "kind": "credential",
+                  "address": "c.hampshire", "host": "LW-RECEP-01", "note": "..." },
+  "setGlobal": { "kp_creds_captured": true }, "bark": "Right, password again." }
+```
+
+The event carries no `usePayload`, so the address and host are written in the mapping; the server
+matches the address to his `creds` and serves the password through `/capture_secrets`. The plant is
+still `requiresItem` with `consumesItem` on `staff_pc`, now with `requiresItemHintVariants` giving
+one refusal hint per state (no kit, planted, planted and locked, captured), because every click
+after the plant is a refusal. Such a plant cannot sit on a `lockType: "login"` PC, which returns
+before `requiresItem` is read: a scenario that later signs in with the captured password puts the
+plant on a separate object (`README_scenario_design.md`, "Item plants"). Melanie Pierce at the next
+desk (`staff_pc_2`, a sign-in PC with `"locksScreenOnLeave": false`) is the open half of the
+contrast: her session is claimed while she is away, on `workstation_accessed:staff_pc_2`. Chris's
+`caffeine.initial` is 90 and hers 100, so he always leaves first.
+
 ### 12.2 Beat 2 — three dropped devices (one primitive, three payoffs)
 
 Three droppable kit items, each a real inventory item with a distinct `needsTag`:
@@ -955,6 +1028,14 @@ which is also her `needsHome`) and uses it. The use emits `npc_used:usb_target_p
 with the carried item's `tag`; three `onceOnly` mappings on Priya, each conditioned
 on `data.tag === "dev_…"`, select the one payoff. `kp_usb_dropped` (the `drop_usb`
 task) is set by `item_dropped:kit_*` mappings on Priya (loaded in `open_plan`).
+
+**As built now (2026-11-10).** The finder is Sofia Lord (`lord`), the BadUSB is `kit_deviceB`
+(tag `tag_deviceB`) and there is a fourth device, the charging cable (`dev_cable`). Only the
+BadUSB's drop completes `drop_usb` (one mapping on `item_dropped:kit_deviceB` in `open_plan`, which
+also sets `kp_usb_dropped`); the other devices still earn their own findings on use. Her interest
+covers the whole room and an interest has no notice distance, so the texts say "anywhere on the
+open-plan floor". She speaks when she picks the BadUSB up (`npc_picked_up:kit_deviceB`) and when
+she plugs it in.
 
 ### 12.3 Beat 3 — tailgating (hi-vis + parcel)
 
@@ -1001,6 +1082,31 @@ lower) against 56 px, so the player can watch from just outside the bar. The bad
 fallback works from about 85 px. Live, game 671: passive surf fired with the body 57 px from
 the gate; a camp at 46 px kept the gate shut for 122 s while Len turned back 7 times; with the
 hi-vis on, his next crossing opened beside the player and `tailgate_in` completed (score 100).
+
+**As built now (2026-11-10).** The scenario file is the reference; what changed from the text
+above:
+
+- **The credit needs the cover.** `tailgate_in` is a `manual` task. It completes, with
+  `kp_badge_tailgated`, on `room_entered:secure_area` while `len_at_door` and `courier_ready` are
+  both true, or, with `kp_records_cloned`, on `door_gate_player_opened`. An entry with no hi-vis
+  and no clone earns nothing, Len's challenge recurs (at most every 20 s, only while the gate is
+  open for him) and Ruth's debrief sends the player back out.
+- **`len_at_door`** is set and cleared with `"cooldown": 0` and reset to false on `game_loaded`,
+  because the global is saved while the gate is rebuilt shut.
+- **The PIN is read from the ledger shelves**, not from Len's sight event: a click on
+  `ledger_shelves` (about 100 px from the door, outside the gate's radius and his 64 px challenge
+  circle) emits `player_watched_reader`, credited while `len_at_door` is true and `courier_ready`
+  is false.
+- **The gate's `openRadius` is 72** (default 56), so Len, who ends his loop inside records about
+  62 px from the door, is always in reach of it.
+- **Guard recovery (door-gates.js, npc-behavior.js).** A guard held at his shut gate by a barred
+  player for `GUARD_TURN_BACK_MS` (5 s) turns back and tries again next cycle (12.3 above; there
+  is no priority open). When the gate does open it tells its guards (`gateOpened`), so a waiting
+  path request lands at once; and a routed guard whose next leg is unreachable walks to the spot
+  in front of his own shut gate (`approachPoint`). So a player standing at the door, or pushing
+  Len along the wall, cannot stop his patrol for good.
+- **A click on a gate door** is `granted` (a held clone), `pass` (open to the player: nothing
+  shown) or `denied` (the refusal with the door's hint) (`DoorGates.clickOutcome`).
 
 ### 12.4 Capture view
 

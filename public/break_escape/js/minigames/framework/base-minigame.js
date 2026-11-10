@@ -215,6 +215,7 @@ export class MinigameScene {
             value: el.type === 'password' ? '[hidden]' : String(el.value ?? '').slice(0, 120)
         }));
 
+        const fullText = (root.innerText || '').trim().replace(/\n{3,}/g, '\n\n');
         return {
             available: true,
             title: this.params?.title || null,
@@ -226,7 +227,11 @@ export class MinigameScene {
             isActive: !!this.gameState?.isActive,
             isComplete: this.gameState?.isActive === false,
             result: this.gameResult ?? null,
-            text: (root.innerText || '').trim().replace(/\n{3,}/g, '\n\n').slice(0, 2000),
+            // Cut at 2000 characters, and says so (textTruncated, textLength: the same
+            // rule as utils/test-state-text.js, written out here so this file gains no
+            // import). A notes overlay also carries the note's own text as noteContent.
+            text: fullText.slice(0, 2000),
+            ...(fullText.length > 2000 ? { textTruncated: true, textLength: fullText.length } : {}),
             controls,
             fields
         };
