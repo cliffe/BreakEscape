@@ -607,7 +607,8 @@ A workaround is only an opening if the player can see it coming. All of this use
   author document lists every pool name, when it is said and what it should say. A student must
   hear what they broke, so the validator warns, for each NPC with a `work` plan or a
   `social_media` need, for each cause that NPC can meet (the "can fail" rule of 9.1, read cause by
-  cause), when no pool that the order below would reach for that cause has a line; likewise for
+  cause), when neither the cause's own pool nor `work_fail` has a line (the fed-up pool does not
+  count: it is said only at `tell` 2); likewise for
   `usb_refused` on an NPC that can be refused a device, for each workaround's start pool, and for
   `login_aloud` on a `share_login`. The warning is skipped under `"chatter": false`.
 - **Which pool, on a failure.** The pool is chosen at the moment of the failure, from the `tell`
@@ -1220,7 +1221,7 @@ told the feed is done. Each scripted run checks the number of requests against a
 |---|---|---|---|---|
 | `POST /npc_frustration` (new, locked) | A; `run` from B; `check` in L | `reports`: a list of `{ npc_id, event, need, object_id, missing, rearmed }`, `event` being `fail`, `ease` or `check` | Per report. 1. NPC known. 2. `fail`: can fail; `ease` for `work`: no resource in the NPC's resolved list is unadmitted. 3. `fail`: a cause holds. 4. `fail` and `ease`: the pace floor for that NPC and need (a fail's floor read with its `rearmed` flag and causes). `check`: the object is a sign-in PC this NPC owns, under a policy with `maxAttempts` | One answer per report, in order. `fail`: level up by `perFail`, at most 100; then choose `run` (section 6), record the hand-over, its number and its time. `ease`: level down by `easePerSuccess`, at least 0; never a `run`. Both answer `{ npcId, level, previous, tell, settled, run }`. `check`: `{ npcId, lockedOut }`; a true answer records the PC in that NPC's `lockedOut` list (9.4), and nothing else is written. Check 1 or 2 fails: `{ npcId, refused: true }`. Check 3 fails: `{ npcId, stale: true }`. Check 4 fails: the current `{ level, tell, settled }` with `tooSoon: true`. A refused, stale or too-soon report writes nothing |
 | `POST /npc_workaround` (new, locked) | B, H | `npc_id`, `index`, `hand`, `heard`, `room_id`, `dropped` | 1. NPC known. 2. `hand` is that workaround's last spent hand-over and was spent as done: answer the same body again, recomposed, and write nothing. 3. Otherwise `hand` is handed over and not yet spent. 4. Unless `dropped`: at least the workaround's dwell since the hand-over. 5. `share_login` with `heard`: `room_id` is a room the `with` NPC can be in (its own, plus its `needsRooms`) and is open to the player (never locked, or `room_unlocked?`); otherwise it is taken as not heard | The hand-over is spent and recorded in `lastSpent`. `dropped`: nothing else; answer `{}`. Otherwise add `index` to `done` (lasting ones), set a declared `setGlobal` true, and by kind: `writes_down`: answer `{ pcId, hasPostit: true }`. `prop_door`: unlock the room and answer `{ roomId, roomData }` through `serve_opened_room` (below). `emit`: `{}`. `borrow_session`: `guestSessions[pc] = npcId`, clear `sessions[pc]`; `{}`. `share_login` heard: add the NPC to `sharedLogins` once, keep it in turn, answer `{ capture, line, note }`; not heard: `{}`. Check 3 fails: 403. Check 4 fails: 425, and the client sends it again after the dwell |
-| `POST /login` with `claim: "guest"` (changed, locked) | H | `pc_id`, `claim` | 1. PC reachable (first slice), not headless, and no foothold (9.3a). 2. No session is held at the PC. 3. `guestSessions[pcId]` names an NPC. 4. That NPC has an account. 5. The PC's `access` admits it. 6. The PC's policy is not `autoLockMin: 0`. 7. That NPC's saved `screenHabit` does not always lock (9.1's `screen_always_locks?` with no PC field) | Success: `sessions[pcId] = { id, via: "claim" }`, add to `signedInPcs`; the answer a claim gives today. Failure: "Sign in required" |
+| `POST /login` with `claim: "guest"` (changed, locked) | H | `pc_id`, `claim` | 1. PC reachable (first slice), not headless, and no foothold (9.3a). 2. No session is held at the PC. 3. `guestSessions[pcId]` names an NPC. 4. That NPC has an account. 5. The PC's `access` admits it. 6. The PC's policy is not `autoLockMin: 0`. 7. That NPC is not a careful guest: its saved `screenHabit` does not always lock by 9.1's `screen_always_locks?` with no PC field, where no habit at all always locks (6.4) | Success: `sessions[pcId] = { id, via: "claim" }`, add to `signedInPcs`; the answer a claim gives today. Failure: "Sign in required" |
 | `POST /login` with `claim: "owner"` (changed, locked) | L | as today | As today, plus: refused when `loginLockouts` holds the owner's username at that PC | As today; refusal "Sign in required" |
 | `GET /login_accounts` (changed by 9.1; extended here) | B | as today | As today. | `postitNote` when `login_postit_for(pc)` returns one, which now includes an owner whose `writes_down` is done; `no-store` |
 | `GET /capture_secrets` (changed) | H | as today | As today. | An account holder in `sharedLogins` counts as having a capture route whose proof holds (`account_capture_passwords`, `game.rb:965`; the engine plan's `proof` rule, section 15). The proof is the server's own record of a heard "done", as strong as that client claim (6.5) |
@@ -1473,8 +1474,9 @@ Warnings:
 - an NPC with a `work` plan or a `social_media` need with no mutter line for a cause it can meet
   (5.5): for each cause the "can fail" rule allows that NPC (its station off or `locked_out`, each
   unadmitted resource, each resource with a `downIf` or routes that can fail, a blocking `social`
-  policy), no pool the order of 5.5 would reach has a line in the scenario's `chatter` or the
-  NPC's own. Likewise `usb_refused` for an NPC that can be refused a device, each workaround's
+  policy), neither that cause's own pool (5.5) nor `work_fail` has a line in the scenario's
+  `chatter` or the NPC's own (`social_blocked` alone for social media; the fed-up pool does not
+  count). Likewise `usb_refused` for an NPC that can be refused a device, each workaround's
   start pool, and `login_aloud` for a `share_login`. The student would see only a picture. Not
   reported under `"chatter": false`;
 - a resource no NPC needs that also has no `contents` and no `host` (slice 9.3 authors resources
@@ -1678,14 +1680,15 @@ post each for Jake, Lena and Omar. `social.intelFacts` holds one ordinary fact (
 post) and the feed facts below. A "Friendface terminal" (`osint-workstation`, `siteIds:
 ["friendface"]`) stands in the lobby. Policies: `no_social` (`social: "blocked"`) and `lax`. Every
 `social_media` need is fast (`decayPerMin: 60`, `urgentAt: 40`, `initial: 50`: first urgent after
-about 10 seconds, then about once a minute).
+about 10 seconds, then about once a minute). The top-level `chatter` ships `social_blocked` ("Blocked. Of course.") with the
+work pools and `wk_borrow` of 11.1, so every cause here has a line.
 
 | Beat | Room and set-up | What should happen | Server record afterwards |
 |---|---|---|---|
 | F1 Posts and their facts are withheld | Lobby, before entering any room | Each profile shows its one authored post and nothing else | `feedRevealed` empty; the leak check reports that it checked every feed post and feed fact and found none in any response |
 | F2 The phone at the desk | `jake_room`: Jake Brooks, `jake_pc` under `no_social`, a phone, a feed of three posts | Jake uses his phone where he sits and never gets up; a click on his PC says he is using it; `npc_used_phone:jake` fires. With the terminal opened once before, a toast says he posted. The terminal now shows his first feed post above the authored one, and clicking it notes `jake_pet_name` with its text | `feedRevealed.jake.n` is 1 |
 | F3 The PC, where it is allowed | `lena_room`: Lena Fox, `lena_pc` under `lax` | She uses her PC for it (`npc_used:lena_pc` with need `social_media`, `met: true`); her first post appears | `feedRevealed.lena.n` is 1 |
-| F4 Blocked and no phone | `omar_room`: Omar Haddad, `"phone": false`, `omar_pc` under `no_social`, a `borrow_session` to the lobby `kiosk` (under `lax`, satisfies `social_media`) at 50 | His attempt fails with `social_blocked` and "Blocked. Of course."; at his second failure (default `perFail` 25) he says "I'll use the spare PC." and walks to the kiosk, uses it (met; his first post appears) and walks back. A click on the kiosk opens his desktop | `npcFrustration.omar`; `guestSessions.kiosk` is `omar`; `feedRevealed.omar.n` is 1 |
+| F4 Blocked and no phone | `omar_room`: Omar Haddad, `"phone": false`, `"screenHabit": { "lockChance": 0 }` (a borrower who leaves the kiosk open, 6.4), `omar_pc` under `no_social` with `"lockChance": 1`, a `borrow_session` to the lobby `kiosk` (a sign-in PC under `lax`, with an authored `affordance` that satisfies `social_media`) at 50 | His attempt fails with `social_blocked` and "Blocked. Of course."; at his second failure (default `perFail` 25) he says "I'll use the spare PC." and walks to the kiosk, uses it (met; his first post appears) and walks back. A click on the kiosk opens his desktop | `npcFrustration.omar`; `guestSessions.kiosk` is `omar`; `feedRevealed.omar.n` is 1 |
 | F5 The chain | Lobby: a poster ("IT reminder: your pet's name and a year is not a password") and `hot_desk`, a sign-in PC that admits Jake. Jake's second post gives the year | With both of Jake's facts noted, the password built from them signs in as Jake at the hot desk, and his desktop holds the beat's final note | `sessions.hot_desk` Jake by password |
 | F6 The feed runs out | Waited in real time, about three minutes | Jake posts his third post; the answer says the feed is done and no further `/feed_post` is sent for him | `feedRevealed.jake.n` stays 3; the request count for Jake is flat |
 | F7 Reload | After F2 to F4 | The terminal shows every revealed post at once, and a revealed fact that was noted before the reload still reads correctly on the intel board; unrevealed posts and facts are still in no response | Unchanged |
@@ -1793,7 +1796,12 @@ clears it; a game whose `player_state` lacks the key answers as an empty one.
 
 **A-4. Validator checks for A.**
 Files: `scripts/validate_access_work.rb`.
-Tests: the A errors, warnings and the work report line; a clean fixture.
+Tests: the A errors, warnings and the work report line, including the mutter warning (an NPC with
+an unadmitted resource and no `work_fail_no_access` or `work_fail` line is warned, even with a
+fed-up line; one whose
+`work_fail_file_share` pool is empty but `work_fail` has a line is not; nothing under `"chatter":
+false`) and the station warning (a sign-in `needsHome` with no authored `work` affordance); a clean
+fixture.
 
 **A-5. The needs core.**
 Files: `systems/npc-work.js` (new: `useVerdict`, `reachable`); `systems/npc-needs.js`
@@ -1925,19 +1933,25 @@ it opens, `tell` and "no warning", the dungeon graph's nodes); the runner's even
 **H-1. Server.**
 Files: `game.rb` (`complete_workaround!` for `borrow_session` and `share_login`, the guest claim
 beside `claim_login_session!`, `account_capture_passwords`, clearing `guestSessions`, `leavesOpen`
-from `AccessIdentities.screen_always_locks?` on the guest's saved `screenHabit`); `games_controller.rb` (`login` passing `claim: "guest"`). These edits come after
+from `AccessIdentities.screen_always_locks?` on the guest's saved `screenHabit`, no habit
+counting as careful, 6.4; the function itself as 9.1's section 5.2 defines it, if 9.1 is not
+built); `games_controller.rb` (`login` passing `claim: "guest"`). These edits come after
 engine E4's edits to `capture_secrets_for_client`, `account_capture_passwords` and
 `capture_route?` (section 13), and `sharedLogins` is read there as a proof that holds.
 Tests: repeating workarounds in turn, a heard `share_login` staying in turn and `sharedLogins`
 growing once; `borrow_session` done writes `guestSessions` and clears a held session at that PC;
 each guest claim refusal (no guest, a session held, no account, not admitted, `autoLockMin: 0`, a
-`locksScreen: always` guest where 9.1 is built); `share_login`: heard with a `room_id` that is the
+careful guest: one with no `screenHabit`, one with `lockChance` 1, and a `locksScreen: always` guest
+where 9.1 is built); `leavesOpen` is false in `run` for each careful guest and absent for a guest
+with `{ "lockChance": 0 }`, a `locksScreen: "never"` one where 9.1 is built, and one with a
+`lockIfAwayOverSeconds`; `share_login`: heard with a `room_id` that is the
 colleague's room and unlocked answers the capture, the line and the note; heard with another room,
 or with the colleague's room still locked, is taken as not heard; `player_state.currentRoom` is
 not read; `/capture_secrets` serves it only after a heard "done", with E4's proof rule in force;
 `guestSessions` empty after `GET /scenario`; the rest of the no-exposure test.
 
-**H-2. Validator.** The H errors and warnings. Tests: the fixtures.
+**H-2. Validator.** The H errors and warnings. Tests: the fixtures, including a borrower with no
+`screenHabit` (warned: it opens nothing) and one with `{ "lockChance": 0 }` (not warned).
 
 **H-3. Needs and runner.**
 Files: `systems/npc-needs.js` (`setBorrow`, `s.borrow` as the first candidate in `_useCandidate`,
@@ -2125,8 +2139,10 @@ files in the table at once.
 
 ## 14. Effects on existing scenarios
 
-No existing scenario declares `resources`, `roles`, `workNeeds`, `workarounds`, `feed`, `usbClass`,
-a workstation `downIf` or a `social_media` need, so none changes its behaviour. What each change
+No existing scenario declares `resources`, `roles`, `workNeeds`, `workarounds`, `feed`, `usbClass`
+or a `social_media` need, so no NPC has a `work` plan, no use is judged, and none changes its
+behaviour. (The only `offWhen`s are `test_needs_sims`' coffee machine and two copiers, none on a
+workstation.) What each change
 touches:
 
 | Change | Who sees it |
@@ -2134,7 +2150,7 @@ touches:
 | `npc_used` gains `met: true` on a met judged use | Only judged uses: an NPC with a `work` plan or a `social_media` need. No existing scenario has one, so every existing `npc_used` payload is unchanged |
 | The outage kick | Only an NPC with a `work` plan: none today |
 | The use verdict, the `failed` turn-back, the drain, visits | Only an NPC with a `work` plan: none today |
-| An `off` park reason for a judged need's own station, its grumble, and the door wake skipped for `off` and `failed` parks of judged needs | Only an NPC whose own workstation has an `affordance.offWhen` and who has a `work` plan or a `social_media` need: none today. `test_needs_sims`' switched-off coffee machine and copiers park and wake exactly as they do now |
+| An `off` park reason for a judged need's own station, its grumble and drain, and failure parks skipped by the general wake | Only an NPC whose own workstation has an `affordance.offWhen` and who has a `work` plan or a `social_media` need: none today. `test_needs_sims`' switched-off coffee machine and copiers park and wake exactly as they do now |
 | No desk but the NPC's own is a judged-need source except through a borrow; a dead own station always parks `off` | Only an NPC with a `work` plan or a `social_media` need: none today. `describe` gains `desk`, which no existing choice reads |
 | `_wakeParked` skips failure parks; the targeted wakes | Only failure parks, which only judged needs have: none today. Every existing park wakes from the same three callers as now |
 | `_grumble`'s options and the new `PICTURE_CHATTER` entries | Only a judged failure, a refused device or a workaround passes the options or uses the new topics; every existing grumble is called as now |
@@ -2181,7 +2197,7 @@ same.
 | Who builds the note | 9.1, in the expected order. If this slice is first, sub-slice B builds the same pieces from 9.1's section 5.3 and 9.1 adds the habit clause |
 | `roles` | Shared. 9.1 builds and reads `roles.<role>.awareness`, and deletes the whole top-level `roles` key from the bootstrap. This slice owns `workNeeds`, `frustration` and `workarounds` under the same key; its own deletion of `roles` is then already done, and it keeps the line only for the case where it lands first. Whichever lands first adds `roles` to the schema (with `additionalProperties` open) and the validator's top-level list; in the expected order that is 9.1. Both walk roles in `identity_roles(npc)` order, authored roles first and `staff` last. `roles.<role>.habits` does not exist |
 | The awareness warning on a post | It reads `NpcHabits.level_of(npc, scenario)` where 9.1 is built, so a level from a role counts; the authored string otherwise |
-| A guest and `locksScreen` | The server decides: `leavesOpen: false` in the `borrow_session` hand-over when the guest's saved `screenHabit` always locks by 9.1's `AccessIdentities.screen_always_locks?` with no PC field, so a `screenHabit` filled from `locksScreen: always` and an authored one count alike; the guest claim refuses on the same test. `sometimes`, and a habit with a `lockIfAwayOverSeconds`, count as leaving open, with no roll at a borrowed PC. The boolean is in the hand-over, not in the standing plan. No habit reaches the browser. 9.1's filled `screenHabit` decides how an owner leaves their own PCs, never a borrowed one, and this slice changes no habit mid-game |
+| A guest and `locksScreen` | **The guest rule: an NPC who is meant to leave a hot desk session open must say so.** A guest is careful when 9.1's `AccessIdentities.screen_always_locks?` with no PC field is true for it, and that includes a guest with **no `screenHabit` at all**, exactly as `decideLocked` locks for an owner with no habit (`workstation-state.js:129, 134`). A guest leaves the session open only with an authored `screenHabit` whose `lockChance` is below 1 (`{ "lockChance": 0 }` is the usual one) or one filled from `locksScreen: "never"` or `"sometimes"`; a habit with a `lockIfAwayOverSeconds` counts as leaving open, with no roll at a borrowed PC. The server sends `leavesOpen: false` in the `borrow_session` hand-over for a careful guest, its guest claim refuses on the same test (check 7, 9.1), and this slice's validator warns on the same test that the borrow opens nothing. The boolean is in the hand-over, not in the standing plan. No habit reaches the browser. 9.1's filled `screenHabit` decides how an owner leaves their own PCs, and the same habit decides how that person leaves a borrowed one; this slice changes no habit mid-game. 9.1's builder writes its section 14.2 row, its `screen_always_locks?` tests and any borrower in its own scenarios to this rule |
 | What `borrow_session` is | A guest session at an unowned sign-in PC. It never changes how an owner leaves their own PC, so it needs no per-leave override and no change to `pc_always_locks?` |
 | The claim check | 9.1 fixes `pc_always_locks?` to read the owner's `screenHabit` (its 5.2) before this slice. Sub-slice H's guest claim and L's owner claim rest on the fixed check |
 | Feed posts as password clues | The shape is `feed.posts[].text`. This slice adds feed post texts and feed fact texts to `NpcHabits::Clues.readable_texts` in step C-2 |
@@ -2250,7 +2266,7 @@ orchestrator adds the rows of section 13 there.
 | 3 | Reach | Composed on the server from 9.3; no topology and no resource `network` in the browser; "reachable" when the scenario has no `networks` |
 | 4 | The cut | USB policy first, on its own; then work, outages and frustration; then workarounds in two parts (note, door and event; then hot desk and shared login); then lockout as a cause; social media last |
 | 5 | A tampered browser | The residual in 9.3 is accepted, as it is for the engine's other client-reported hand-overs, and reduced by server-time pace floors, request ceilings, spent-once hand-overs, the server's own check of each cause, and the opened-room bound on a heard login |
-| 6 | Visible frustration, and a shared login that explains itself | Required, from existing art: the `blocked` icon by `tell`, the mutter pools by cause and kind with the fed-up tier, a start line for each workaround, the "Overheard" toast and evidence note |
+| 6 | Visible frustration, and a shared login that explains itself | Required, from existing art: the `blocked` icon by `tell`, the mutter pools by cause and kind with the fed-up tier and a picture of their own, a start line for each workaround, the "Overheard" toast and evidence note |
 | 7 | `roles` | 9.1 builds `roles.<role>.awareness`; this slice owns `workNeeds`, `frustration` and `workarounds` |
 | 12 | What room data says about resources | An NPC's `work` plan carries resource ids, `kind` and global names, never display names. Nothing in the browser needs a name, and it keeps the plan inside 9.3a's secrecy rule with no exception |
 | 13 | The USB policy's values | Three values with `usbClass` (`storage`, `hid`), and a refused NPC takes the stick to the next machine. One extra field, and two real lessons: storage blocking does not stop a keyboard-type device, and a refused stick travels to the machine nobody manages |
@@ -2259,6 +2275,9 @@ orchestrator adds the rows of section 13 there.
 | 17 | First real use | No existing scenario changes in this slice. The lab's lesson is physical and it already has edits queued from the content plan, 9.3a and 9.1 |
 | 18 | When an outage is caused | The NPC's `work` need drops to urgent at once (the outage kick, 5.6), so the student sees cause and effect within one use, not up to a need's whole period later |
 | 19 | Where 9.3b's contacts with this slice are built | In 9.3b: routes with globals, a station "not responding" in the network view, and the USB check on an implant (section 15). This slice builds nothing that needs 9.3b |
+| 22 | Where the mutter lines live | In the scenario's own pools, scenario-authored, as office life requires (it ships no spoken text). The slice ships a small default set in its feature scenarios (`test_access_work`, and `social_blocked` in `test_access_social`) for authors to copy, the author document lists every pool, and the validator warns when an NPC with a `work` plan or a `social_media` need has no line for a cause it can meet. The student must hear what they broke. Settled by the orchestrator, 2026-11-10 |
+| 23 | A guest at a hot desk with no screen habit | Careful: it signs out. An NPC meant to leave a hot desk session open must say so, with an authored `screenHabit` of `lockChance` 0 or 9.1's `locksScreen: "never"`. It is the owner rule of `decideLocked`, so one rule covers owners and guests; the feature scenarios' borrowers author it and the validator's expected output follows. Settled by the orchestrator, 2026-11-10 |
+| 24 | The pace floor after a cleared cause | A later fail is held to the park floor only when no ease and no re-arm (its cause cleared, for a cause the browser controls) lies between it and the last fail; otherwise to the use floor. A toggled outage counts every time, and the floors keep binding on causes the server owns. Taken by the orchestrator, 2026-11-10 |
 
 **Planner decisions** (the user can overrule any):
 
@@ -2306,9 +2325,16 @@ Suggestions considered and not taken, with the reason.
   name in a mutter would be a request to 9.3 to change its secrecy rule.
 - **A single toggling switch for an outage**, through a new `toggle_global` action. Two switch
   objects do the same with today's actions and leave `apply-actions.js` to its other editors.
-- **A longer first-fail floor**, tied to the need's decay from `initial`. The outage kick means an
-  honest NPC can fail within one use of being met, so such a floor would refuse honest play; the
-  floor is the use time, and "at once" is printed where it applies (9.3, section 10).
+- **A first-fail floor**, whether tied to the use time or to the need's decay from `initial`. The
+  outage kick and a station already off when the room loads mean an honest NPC can fail at its
+  first selection, so any such floor would refuse honest play; the first fail has no floor beyond
+  the NPC being known, and "at once" is printed where it applies (9.3, section 10).
+- **Engine default mutter lines** in `public/break_escape/js/data/`. It would reverse office life's
+  rule that the engine has no spoken text, and the lines would then be voiced for every scenario
+  whether the author wrote them or not. The lines are scenario-authored instead (decision 22).
+- **"No screen habit leaves a borrowed PC open"**, so borrowers need no field. It would make a
+  guest the one person whose silence means "open", against the owner rule every other screen
+  follows, and a borrow that opens something should be visible in the scenario file (decision 23).
 
 ## 18. Left out, and why
 
