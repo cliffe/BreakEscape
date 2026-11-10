@@ -1263,7 +1263,7 @@ is a separate decision (section 12).
 
 - `test/models/break_escape/lab_physical_pentest_secrets_test.rb` gains: no room or bootstrap answer
   names the network or a resource before the plant; `door_controller`'s pages are served only to a
-  session as `hampshire` opened through a foothold, and a sign-in there with his right password
+  session as `hampshire` opened through a foothold, and a sign-in there with her right password
   and no foothold is refused; the records resource has no contents.
 - The content plan's playtest steps for the console and the chain (its H5.3 and H5.4) are rewritten
   for the mechanism: plant, the view opens, `opt_dropbox_view` completes; with no capture the door
@@ -1462,11 +1462,12 @@ device an NPC uses), the leak scanner's rule for a Wi-Fi key (nowhere but an aut
 ## 13. Interfaces with other plans
 
 The build order is **9.3a, then 9.1, then 9.2**, with 9.3b after 9.3a at a time the user chooses.
-Both sibling plans were re-read in their current versions on 2026-11-10.
+Both sibling plans and the engine feedback plan were re-read in their committed versions on
+2026-11-10.
 
 ### 13.1 Slice 9.1 (awareness and habits)
 
-No disagreement.
+No disagreement: 9.1 gives the same build order and waits for 9.3a's edits to the files it shares.
 
 | Point | Settled as |
 |---|---|
@@ -1480,65 +1481,110 @@ No disagreement.
 
 ### 13.2 Slice 9.2 (work, frustration, workarounds, USB policy, social media)
 
-No disagreement. Its section 15 and this section say the same things.
+Its section 15 and this section say the same things, apart from the two lines of its own text
+listed at the end of this table.
 
 | Point | Settled as |
 |---|---|
-| `resources` | Shared. This slice owns `network`, `host`, `contents`, `observations`; 9.2 owns `object`, the work lists and, for NPC work, `downIf`. Both read `name`, `kind` and `access` the same way (no `access` means anyone who can reach it). Neither makes the other's fields required; both delete `resources` from the bootstrap. 9.3a adds the key to the schema and the validator's top-level list; 9.2 extends it |
-| Reach for NPC work | Composed on the server. 9.2's `compile_npc_plan!` calls `NetworkModel.reach_conditions(station_network, resource)` and ships the answer as `routes`; no network id, link or resource `network` reaches the browser. 9.3a's answer is in 4.2, 9.3b's in 12.2. In a scenario with no `networks` there are no `routes` and everything is reachable |
-| Resource names and `downIf` global names in an NPC's `work` plan | Shipped by 9.2, accepted here: ids and global names are not secret (section 6), and a resource's display name in the plan of an NPC who uses it says no more than that NPC's bark about it. This slice's no-exposure test and leak rule leave an NPC's `work` block out |
+| `resources` | Shared. This slice owns `network`, `host`, `contents`, `observations`; 9.2 owns `object`, the work lists and, for NPC work, `downIf`. Both read `name`, `kind` and `access` the same way (no `access` means anyone who can reach it; `resource_acl_admits?`, 4.5). Neither makes the other's fields required; both delete `resources` from the bootstrap. 9.3a adds the key to the schema and the validator's top-level list; 9.2 extends it |
+| Reach for NPC work | Composed on the server. 9.2's `compile_npc_plan!` calls `NetworkModel.reach_conditions(data, station_network, resource)` and ships the answer as `routes`; no network id, link or resource `network` reaches the browser. 9.3a's answer is in 4.2 (always `[[]]` or `[]`: until 9.3b is built a scenario cannot author a network `downIf`, which 9.3a's validator refuses), 9.3b's in 12.2. In a scenario with no `networks` there are no `routes` and everything is reachable |
+| What an NPC's `work` plan ships | Resource ids, kinds, `admitted`, `downIf` and global names, `object`, `routes`, `stationDownIf`: never a display name, `host`, `contents` or `observations`. That is inside this slice's rule (section 6), so the no-exposure test and the leak rule make no exception for it |
 | "A resource no NPC needs" | 9.2 does not report it for a resource with `contents` or a `host` |
-| A station that is down | 9.2 adds `downIf` on a workstation. It adds two lines here in its step A-3: a host that is down is listed "not responding" in `network_view`, and `desktop_request_allowed?` (the helper that judges a desktop request, 4.4) refuses it |
-| A hot desk | A guest session 9.2's `borrow_session` leaves at a hot desk is an ordinary session at a PC on a network, so its desktop carries mapped shares with no extra work. It is claimed at the screen: section 5 refuses every claim that carries a foothold |
-| A session can be displaced | When an NPC signs in at a PC, 9.2 ends any session the player holds there, a remote one included, with `pc_signed_out` reason `displaced`. This slice's client treats it like any other end: the remote desktop closes and the view's row goes back to **Sign in** |
+| A station that is down | 9.2 adds `downIf` on a workstation for NPC work. 9.3a has no outages for the player: a sign-in host whose own `downIf` is truthy is still listed and still takes a remote sign-in. Listing it "not responding" in `network_view` and refusing it in `desktop_request_allowed?` are 9.3b's, built with its outages (12.2) |
+| A hot desk | A guest session 9.2's `borrow_session` leaves at a hot desk is an ordinary session at a PC on a network, so its desktop carries mapped shares with no extra work. It is claimed at the screen: section 5 refuses every claim that carries a foothold, and a claimed session is not offered over the network (4.3) |
+| A session can be displaced | When an NPC signs in at a PC, 9.2 ends any session the player holds there, a remote one included, with `pc_signed_out` reason `displaced`. This slice's client treats it like any other end: an open remote desktop closes to the view, whose row goes back to **Sign in** (4.3) |
 | Lockout from the drop box | Remote and local attempts share one counter (4.4), so the player can lock a member of staff out of their own PC from the network, which under 9.2's sub-slice L stops their work and sends them to the hot desk. That is a chain, and both plans allow it. The validator's remote-only lockout warning (7.2) covers the soft lock |
-| USB policy and implants | 12.5: the check is at the use, on an item with `usbClass`, and lives in `POST /network/implant`; the slice that lands second adds it |
+| USB policy and implants | 12.5: the check is at the use, on an item with `usbClass`, in `POST /network/implant`, through `usb_refused?(pc, item)` beside `effective_policy`; whichever of 9.2's sub-slice U and 9.3b lands second adds it |
 | The feed | Its shape is `feed.posts[].text`. Where a feed is a source for a Wi-Fi key, the slice that lands last adds it to the key warning's sources (12.3) |
-| Server-set globals | 9.2 lets a workaround carry `setGlobal`, set by the server. That is the one case where a global is not client-written; this plan's statements about globals (section 2, 12.2) allow for it |
+| Server-set globals | The server already sets a task's `onComplete.setGlobal` when it completes the task (section 2). 9.2 adds a second case, a workaround's `setGlobal`. This plan's statements about globals (section 2, 3.5, 12.2) allow for both |
 | Outages | `downIf` means the same in both: the global truthy, by JavaScript's rule, means down. 9.2 owns what an outage does to NPCs; 9.3b what it does to the player's reach |
 | Validator layout | Each slice keeps its checks in its own file (`validate_network.rb`, 9.2's `validate_access_work.rb`) and touches `validate_scenario.rb` only for a `require`, a call and the known-field lists |
+| Shared client files | 9.2 does not edit `systems/inventory.js`. On `systems/interactions.js` (its `requiresItem` plant) and `systems/unlock-system.js` it comes after this slice (section 14) |
+
+Text in 9.2 to bring into line (it blocks neither plan): its section 5.1 and its row "Reach" with
+9.3a name `reach_conditions(station_network, resource)`; the function takes the scenario data
+first, `reach_conditions(data, station_network, resource)` (4.2).
 
 ### 13.3 The lab's content feedback plan
 
-Section 10. The one thing this plan asks of it: replace `dropbox_console`, `door_admin_page` and
-their three timers with the mapping in 10.2. Everything else in it stands, including the hot desk,
-the scope rule and every global and task id.
+Section 10. What this plan asks of it: replace `dropbox_console`, `door_admin_page` and their three
+timers with the mechanism in 10.2; name the records share "Client-Records"; and accept the
+objective change in 10.2 (`opt_netdrop` and `opt_door_admin` as `unlock_object` tasks the server
+checks, each setting its global through `onComplete.setGlobal`). Everything else in it stands,
+including the hot desk, the scope rule and every global and task id. Chris Hampshire is a woman
+in the lab as merged; this plan's text about her says so.
 
 ### 13.4 The engine feedback plan (`PHYSICAL_PENTEST_FEEDBACK_PLAN_ENGINE.md`)
 
-The capture log is being redesigned there to hold server-made link items and remote sessions. What
-this slice makes, stated so that design can rely on it:
+That plan's capture log (its stream E4) holds credentials, findings, filed link items and a list
+of remote sessions. What this slice makes, stated so that design can rely on it:
 
 1. **The link item** has exactly the shape in 4.1: `type: "network_link"`, a stable `id`
    (`netlink_<footholdId>`), `footholdId`, `sourceId`, `name`, `sprite`, `observations`,
-   `takeable: false`, no `contents`, no `hasContents`, no `droppable`. It is built by the server,
-   not copied from an authored item.
-2. **Filing.** The log files an item by a `storeIn` field. A link item carries `storeIn` when its
-   jack sets `linkStoreIn`, copied by the server at the plant. With no holder in the inventory the
-   item takes a tray slot, as that plan already says for any stored item.
+   `takeable: false`, no `contents`, no `hasContents`, no `droppable`, and `storeIn` only when its
+   jack sets `linkStoreIn`. It is built by the server, not copied from an authored item.
+2. **Filing: one rule in both plans.** An item is filed in the held holder whose `id` equals the
+   item's `storeIn`. An authored item gets `storeIn` from its author; a link item from its jack's
+   `linkStoreIn`, copied by the server at the plant. Nothing is filed by type. A link item with no
+   `storeIn`, or whose holder is not held, takes a tray slot. The engine plan forbids `storeIn` on
+   a client item with no authored copy (its `CLIENT_ITEM_FORBIDDEN_FIELDS`); a link item is made
+   by the server, so that rule does not touch it.
 3. **Arrival and removal.** It arrives in the `inventory` array of the plant's answer and in
    `playerInventory` on load, never through `addToInventory`'s request; it leaves when an answer's
-   inventory no longer holds it. `showServerItem` and `syncInventoryFromServer` (step 7) are the
-   two functions that do this, and they go through whatever "show in tray or store in holder" hook
-   `inventory.js` has at the time.
-4. **Opening.** A link item's own click is its opener: `handleObjectInteraction` on it calls
-   `window.networkLinks.open(footholdId)`. In the log it belongs with sessions, as an entry that
-   opens the network view in place of the container minigame; closing the view should return to
-   the log when it was opened from there (`open(footholdId, { returnTo })`).
-5. **The menu.** In the inventory click menu a `network_link` has one entry, "Open", so it acts on
-   a single click. Its `observations` are shown in the view's header, so no "Examine" is needed.
-6. **Remote sessions are not items.** A remote session is a server record. The log can list them
-   from `window.pcSessions.list()` (entries with `remote: true`, `footholdId`, `pcId`,
-   `displayName`) and open one with `window.networkLinks.openSession(pcId)`, which this slice
-   provides in step 7.
-7. **Captured sign-ins** reads `readCaptures` and the `/capture_secrets` answer. If that plan moves
-   the row renderer or narrows which entries `/capture_secrets` answers, the list follows: it shows
-   only targets in `accounts` whatever else changes.
+   inventory no longer holds it. `showServerItem` and `syncInventoryFromServer` (step 7) do this
+   and end by calling E3's `refreshInventoryTray()`, which files it.
+4. **Opening, and coming back.** A link item's own click calls
+   `window.networkLinks.open(footholdId)`. The log opens one with
+   `window.networkLinks.open(footholdId, { returnTo })` and a remote session with
+   `window.networkLinks.openSession(pcId, { returnTo })`. `returnTo` is a function taking
+   `{ reason }`, kept by `network-links.js` (never passed to `MinigameFramework`) and called once
+   when the player leaves the network screens, after the landing of 4.3, and only if no minigame is
+   open by then. The view closing because it handed over to a sign-in screen, a desktop or a share
+   does not call it. `network_view_closed` is emitted at the same moment, for mappings and tests.
+5. **The menu.** A `network_link` has no menu: one click opens its view, and its `observations`
+   are shown in the view's header (the engine plan's menu rule puts it in "no menu").
+6. **Remote sessions are not items.** A remote session is a server record. The log lists them from
+   `window.pcSessions.list()`: each entry carries `pcId`, `npcId`, `username`, `displayName`,
+   `via`, and from step 8 `remote`, `footholdId` and, for a remote session, `host` (4.4). The log
+   redraws on `pc_signed_in`, `pc_signed_out` and `network_device_unplugged` (3.5).
+7. **Captured sign-ins** reads `readCaptures` and the `/capture_secrets` answer. `accounts` is
+   composed from the keys of `account_capture_passwords` (4.4), so when E4 adds its capture proofs
+   to that method the list follows: it offers only accounts whose proof holds.
 8. **Findings.** A plant files nothing by itself. A scenario that wants a finding adds a capture
    from a mapping on `network_device_planted`, as the lab does.
+9. **Drops for 9.3b.** 9.3b's implant check reads E4's `droppedItems` (12.5) and adds no record of
+   its own.
 
 9.3a works with none of that plan built: link items sit in the tray, and the jack click needs only
-`window.gameConfirm`.
+`window.gameConfirm`. With E3 built, server-made items go through its tray refresh.
+
+### 13.5 To re-check after the main merge
+
+A large merge of the local main line into `main` is being made outside this branch
+(`docs/achitechture/physical_pentest_followup/MERGE_NOTE_2026-11-10.md`). It changes
+`systems/door-gates.js`, `systems/workstation-state.js` and `systems/npc-needs.js`, and the lab.
+This slice edits none of those three files, but it rests on these assumptions, which the builder
+re-checks against the merged `main` before streams S, C1, C2 and L start:
+
+- **Doors.** "Object reachable" and "PC reachable" mean the room is unlocked or never locked
+  (section 2, `login_pc_reachable?`); a gate's guard or its turn-back rule plays no part on the
+  server. The merge's gate rule (a held guard turns back; `clickOutcome` asked only for `pass` or
+  `denied`; a presented clone still goes through `notifyServerUnlock`) should leave that true.
+- **Workstations.** The "is using this PC" rule still blocks a click on the PC and not a remote
+  session (4.4); the merged `workstation-state.js` (lock sources from `screenHabit` and policy
+  `autoLockMin`, `decideLocked` with the policy as its seventh argument, `workstation_screen_changed`
+  with `how: "ko"`) must still give that answer. A claimed session still ends on the owner's
+  return through `end_claimed_sessions!`, and the view still shows **Sign in** for a claim.
+- **Validator.** The `headless` error reads `screenOwner` and an NPC's `needsHome` to find a
+  workstation with an owner (7.2); both fields must still mean that after the merge.
+- **Needs.** This slice changes nothing in `npc-needs.js` (section 11); the merge's `afterTick` and
+  `onTick` hooks need no change here.
+- **The lab.** `staff_pc_2` is a sign-in PC, passwords live in NPC `creds`, Chris Hampshire is a
+  woman, and the debrief gate changed. Section 10's recipe is by id; its ids (`network_port`,
+  `kit_dropbox`, `store_room`, `store_shelf`, `staff_pc_2`, `hampshire`, the globals and tasks)
+  are re-checked in the merged lab file before step 9.
+- **Line numbers.** Every `file:line` in this plan is from this branch's working tree and moves
+  with the merge; method names are the stable reference.
 
 ## 14. Build streams and shared files (9.3a)
 
