@@ -382,6 +382,12 @@ export class ContainerMinigame extends MinigameScene {
         // Call parent init first
         super.init();
 
+        // A container opening now means no reader is about to hand back to a network screen
+        // recorded earlier (a locked folder that opened after its PIN leaves one behind), so
+        // a later text file read from the world must not reopen it (slice 9.3a, 4.3)
+        const pending = window.pendingContainerReturn;
+        if (pending?.containerItem && isNetworkScreenContainer(pending.containerItem)) window.pendingContainerReturn = null;
+
         // A folder opened from a sign-in desktop shows the session's files too, so it closes
         // with the same message when that session ends (owner back, auto lock, sign out).
         if (!this.loginPcId && this.sourcePcId && this.mode !== 'npc' && window.pcSessions?.registerDesktop) {

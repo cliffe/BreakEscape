@@ -64,6 +64,15 @@ The leak check must say `VERDICT: no leaks found` after every beat. Compare the 
   answers `pi_cluster1` while the box is in it and `network_rack1` otherwise (the comms room must
   be loaded).
 - **Globals**: `comms_port_planted` and `bench_port_planted` follow the footholds held.
+- **A reload** is always followed by `{"cmd":"bootstrap","tutorial":"decline","resume":"resume"}`.
+  Without `"resume":"resume"` the bootstrap can answer the resume overlay with "New Session",
+  which discards the save.
+- **A PIN pad** (the locked folder, the vault, the finance door) takes digits with
+  `{"cmd":"mg","action":"pressKey","args":["2"]}` and then `"Enter"`.
+- **The remote sign-in screen** has the username as field 0 and the password as field 1:
+  `{"cmd":"mg","action":"type","args":[0,"<username>"]}`, then
+  `{"cmd":"mg","action":"type","args":[1,"<password>",{"submit":true}]}`. A mapped
+  share on a desktop is `[data-resource-id="<id>"]` (`mg clickSelector`).
 
 ## Run 0 (step 7): plant, unplug, plant again, reload
 
@@ -90,7 +99,7 @@ The leak check must say `VERDICT: no leaks found` after every beat. Compare the 
 8. Plant again (`Plug it in`): the link item is back; the toast does not repeat as a first
    foothold's view (the view opens by itself only the first time at a jack).
 9. Reload (`{"cmd":"sync"}`, then `{"cmd":"eval","fn":"() => { location.reload(); return true; }"}`,
-   about 15 s, then `{"cmd":"bootstrap","tutorial":"decline"}`). Check: the link item is in the
+   about 15 s, then `{"cmd":"bootstrap","tutorial":"decline","resume":"resume"}`). Check: the link item is in the
    inventory once, `footholds()` lists `jack_comms_port`, `comms_port_planted` is true before the
    comms room is entered, the port shows `pi_cluster1` once its room loads, and `p2_plant` is
    still complete.
