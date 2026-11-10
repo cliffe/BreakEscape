@@ -83,6 +83,11 @@ module ValidateAccessWork
 
   # ── sub-slice U: the USB policy ──────────────────────────────────────
 
+  def accepts_of(o)
+    a = o.is_a?(Hash) ? o['affordance'] : nil
+    a.is_a?(Hash) ? a['accepts'] : nil
+  end
+
   def usb_governed?(o) = workstation?(o) || (o['policy'].is_a?(String) && !o['policy'].empty?)
 
   def effective_policy_name(o, json_data)
@@ -113,7 +118,7 @@ module ValidateAccessWork
 
   # Items an object takes: by an NPC delivery (affordance.accepts tags) or the player's plant (requiresItem)
   def taken_items(o, items)
-    tags = Array(o.dig('affordance', 'accepts')).grep(String)
+    tags = Array(accepts_of(o)).grep(String)
     req = o['requiresItem']
     wanted = req.nil? ? [] : Array(req).grep(String)
     items.select do |it|
@@ -137,7 +142,7 @@ module ValidateAccessWork
       err(issues, "item '#{o['id'] || o['name']}' has usbClass '#{o['usbClass']}'; use storage or hid.") unless USB_CLASSES.include?(o['usbClass'])
     end
     items = entries.map { |e| e[:obj] }
-    takers = entries.map { |e| e[:obj] }.select { |o| o.dig('affordance', 'accepts') || o['requiresItem'] }
+    takers = entries.map { |e| e[:obj] }.select { |o| accepts_of(o) || o['requiresItem'] }
 
     # A blocking policy that governs only objects whose items have no usbClass does nothing there
     (json_data['policies'] || {}).each do |name, p|
@@ -177,7 +182,7 @@ module ValidateAccessWork
         devices = items.select { |it| it['needsTag'] == tag && USB_CLASSES.include?(it['usbClass']) }
         devices.any? do |it|
           takers.any? do |o|
-            Array(o.dig('affordance', 'accepts')).include?(tag) && usb_refused?(usb_policy_for(o, json_data), it['usbClass'])
+            Array(accepts_of(o)).include?(tag) && usb_refused?(usb_policy_for(o, json_data), it['usbClass'])
           end
         end
       end
