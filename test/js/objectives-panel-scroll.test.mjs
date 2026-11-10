@@ -88,6 +88,31 @@ test('render: with the HUD zoomed, rectangles in on-screen pixels still land the
     assert.equal(mid.content.scrollTop, 120, '600 + 80 - 560, not twice that');
 });
 
+test('aims that unlock together: the first one stays in view, not the last to arrive', () => {
+    // lab_physical_pentest playtest N6: after the kit was collected the panel showed
+    // the optional list, with the three core aims scrolled off the top.
+    const layout = { keylogger: { top: 150, height: 170 }, usb: { top: 320, height: 190 },
+        tailgate: { top: 510, height: 110 }, bonus: { top: 620, height: 500 }, debrief: { top: 1120, height: 63 } };
+    const panel = panelWith(layout);
+    panel.render([aim('authorise')]);
+    panel.render([aim('authorise', 'completed'), aim('keylogger')]);
+    assert.equal(panel.content.scrollTop, 0, 'the first core aim fits without scrolling');
+    panel.render([aim('authorise', 'completed'), aim('keylogger'), aim('usb')]);
+    panel.render([aim('authorise', 'completed'), aim('keylogger'), aim('usb'), aim('tailgate')]);
+    panel.render([aim('authorise', 'completed'), aim('keylogger'), aim('usb'), aim('tailgate'), aim('bonus')]);
+    assert.equal(panel.content.scrollTop, 0, 'still on the first of the burst, not down at the optional list');
+    // A later arrival, outside the burst, is revealed as before
+    panel._lastReveal.at -= 5000;
+    panel.render([aim('authorise', 'completed'), aim('keylogger'), aim('usb'), aim('tailgate'), aim('bonus'), aim('debrief')]);
+    assert.equal(panel.content.scrollTop, 1120 + 63 - 560);
+    // aimToReveal: the burst follows the clock, and an aim no longer listed is not kept
+    const p = panelWith({});
+    assert.equal(p.aimToReveal(['a'], [aim('a')], 1000), 'a');
+    assert.equal(p.aimToReveal(['b'], [aim('a'), aim('b')], 1000 + ObjectivesPanel.REVEAL_BURST_MS - 1), 'a');
+    assert.equal(p.aimToReveal(['c'], [aim('b'), aim('c')], 2600), 'c', 'the earlier aim has gone from the list');
+    assert.equal(p.aimToReveal(['d'], [aim('c'), aim('d')], 2600 + ObjectivesPanel.REVEAL_BURST_MS), 'd', 'outside the burst');
+});
+
 test('stylesheet: the list has no max-height of its own and shares the panel as a flex column', () => {
     const css = readFileSync(join(root, 'public/break_escape/css/objectives.css'), 'utf8');
     const rule = (sel) => { const m = new RegExp(`(?:^|\\n)${sel.replace('.', '\\.')} \\{([^}]*)\\}`).exec(css); return m ? m[1] : ''; };

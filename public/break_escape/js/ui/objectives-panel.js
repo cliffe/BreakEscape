@@ -209,13 +209,35 @@ export class ObjectivesPanel {
         + 'title="Some optional objectives are still open">End the mission</button></div>';
     }
     this.content.innerHTML = html;
-    if (newAimIds.length) this.revealAim(newAimIds[0]);
+    if (newAimIds.length) this.revealAim(this.aimToReveal(newAimIds, aims));
+  }
+
+  /**
+   * Which aim to bring into view when new ones arrive. Normally the first new one.
+   * Aims that unlock together arrive in separate renders a moment apart (one per
+   * unlock), and revealing each in turn left the list on the last of them: in
+   * lab_physical_pentest the three core aims and the optional list unlock at once,
+   * and the player was shown the optional list with the core aims scrolled off the
+   * top. So within REVEAL_BURST_MS of a reveal, the aim revealed first is kept in
+   * view while it is still listed.
+   */
+  aimToReveal(newAimIds, aims, now = Date.now()) {
+    const last = this._lastReveal;
+    const listed = (id) => (aims || []).some(a => a.aimId === id);
+    if (last && now - last.at < ObjectivesPanel.REVEAL_BURST_MS && listed(last.id)) {
+      last.at = now;
+      return last.id;
+    }
+    this._lastReveal = { id: newAimIds[0], at: now };
+    return newAimIds[0];
   }
 
   /**
    * Ids of aims not shown before. Empty on the first render (nothing has been shown
    * yet, so nothing is new: a reload must not jump the list).
    */
+  static REVEAL_BURST_MS = 1500;
+
   static newAimIds(aims, seenStatus) {
     if (!seenStatus || Object.keys(seenStatus).length === 0) return [];
     return (aims || []).filter(a => !(a.aimId in seenStatus)).map(a => a.aimId);

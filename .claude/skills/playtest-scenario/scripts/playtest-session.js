@@ -988,6 +988,42 @@ const vmSteps = createVmSteps({
     },
 
     /** Everything interactable in a room, at any distance — for finding things. */
+    /**
+     * A real mouse click on a visible page control, found by its text (and optionally
+     * a CSS selector): {"cmd":"click","text":"Read"} or {"cmd":"click","selector":".x"}.
+     * For checks that must use the controls a player sees (a dialogue choice, a
+     * minigame's own buttons) and not the bridge's shortcuts. It clicks the centre of
+     * the smallest visible match with the mouse, and refuses a control that something
+     * else covers at that point, so a pass means a player could have clicked it.
+     */
+    click: async (c) => {
+      const target = await page.evaluate(({ text, selector }) => {
+        const pool = [...document.querySelectorAll(selector || 'button, [role="button"], a, [class*="choice"], [class*="menu-item"], [class*="-button"], [class*="-btn"]')];
+        const seen = (el) => {
+          const r = el.getBoundingClientRect();
+          return el.offsetParent !== null && r.width > 2 && r.height > 2 &&
+            r.bottom > 0 && r.right > 0 && r.top < innerHeight && r.left < innerWidth;
+        };
+        const visible = pool.filter(seen);
+        const matches = visible.filter(el => !text || el.textContent.replace(/\s+/g, ' ').includes(text));
+        if (!matches.length) {
+          return { found: false, have: visible.map(el => el.textContent.replace(/\s+/g, ' ').trim().slice(0, 40)).filter(Boolean).slice(0, 30) };
+        }
+        const area = (el) => { const r = el.getBoundingClientRect(); return r.width * r.height; };
+        const el = matches.sort((p, q) => area(p) - area(q))[0];
+        const r = el.getBoundingClientRect();
+        const x = Math.round(r.left + r.width / 2), y = Math.round(r.top + r.height / 2);
+        const top = document.elementFromPoint(x, y);
+        return { found: true, x, y, text: el.textContent.replace(/\s+/g, ' ').trim().slice(0, 80), classes: String(el.className || ''),
+                 covered: !(top && (top === el || el.contains(top) || top.contains(el))) };
+      }, { text: c.text || '', selector: c.selector || '' });
+      if (!target.found) return { ok: false, reason: 'no-visible-control', wanted: c.text || c.selector, have: target.have };
+      if (target.covered) return { ok: false, reason: 'control-covered', target };
+      await page.mouse.click(target.x, target.y);
+      await pause(speed.dialogue);
+      return { ok: true, clicked: target };
+    },
+
     room: async (c) => {
       return page.evaluate(id => window.__test.roomContents(id || null), c.id || null);
     },
