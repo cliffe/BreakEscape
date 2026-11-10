@@ -67,7 +67,7 @@ Narrator: Ten past four in the morning. Every screen behind the desk is black, a
 
 Narrator: Bernie Nwosu is holding the front of this hospital together with a clipboard, a landline and a dying biro.
 
-Bernie Nwosu: *rattling it off* If it's the computers, I know. If it's your appointment, it's cancelled.
+Bernie Nwosu: If it's the computers, I know. If it's your appointment, it's cancelled. #delivery: rattling it off
 
 Bernie Nwosu: If it's the vending machine, that's been broken since March. And if you're press, there's a car park you can stand in.
 
@@ -142,7 +142,7 @@ Bernie Nwosu: So "I need Dr. Kim" isn't a sentence. It's the start of one.
 * [Every minute you spend on this, those generators are burning.]
     ~ bernie_influence -= 2
     # influence_decreased
-    Bernie Nwosu: *very evenly* I've counted every one of those minutes tonight. Don't you dare use them on me.
+    Bernie Nwosu: I've counted every one of those minutes tonight. Don't you dare use them on me. #delivery: very evenly
     Narrator: She holds your eye a second too long, then reaches for the paper log anyway.
     -> the_struck_entry
 
@@ -264,7 +264,7 @@ Bernie Nwosu: Back already. Go on, what's broken now?
 === cover_burned_entry ===
 Narrator: Bernie is holding the handset away from her ear.
 
-Bernie Nwosu: *into the phone* No. I signed them in myself. With my own hand, in my own book.
+Bernie Nwosu: No. I signed them in myself. With my own hand, in my own book. #delivery: into the phone, firmly
 
 Bernie Nwosu: Then whoever told you that is wrong, isn't -- hello?
 
@@ -416,7 +416,7 @@ Bernie Nwosu: Forget the money. This place has forgotten everybody in it.
 === observe_stranger ===
 ~ observed_stranger = true
 
-Bernie Nwosu: *lowering her voice* Now you mention it.
+Bernie Nwosu: Now you mention it. #delivery: lowering her voice
 
 Bernie Nwosu: There's a fella on night security. Plain suit, no uniform, no lanyard from us. Very polite. Very.
 
@@ -453,7 +453,7 @@ Bernie Nwosu: I'd never once clapped eyes on that man before this started.
 -> hub
 
 === reeves_confirmed ===
-Bernie Nwosu: *very still* Reeves.
+Bernie Nwosu: Reeves. #delivery: very still
 
 Bernie Nwosu: Six weeks ago there was a fire drill. Half two in the morning, nothing on the board. Estates were livid. They hadn't scheduled it.
 

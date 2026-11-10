@@ -137,7 +137,7 @@ Graham Reeves: I've held this post since the summer. I know this building better
 === cover_probe ===
 ~ cover_probed = true
 
-Graham Reeves: *nothing in his face moves* How very odd.
+Graham Reeves: How very odd. #delivery: perfectly composed, giving nothing away
 
 Graham Reeves: In fairness to control, they've no way of confirming anybody tonight. A phone call and a paper book, both only as good as whoever last touched them.
 
@@ -178,7 +178,7 @@ Graham Reeves: Good. Otherwise I'd have sat here another six hours being helpful
 -> confrontation_why
 
 === confrontation_the_call ===
-Graham Reeves: *a tilt of the head at the wall phone* You'll want to ask about the telephone.
+Graham Reeves: You'll want to ask about the telephone. #delivery: lightly, pointing something out
 
 Graham Reeves: I rang control from that phone and told them there was no consultant booked. That was all. Eleven words.
 

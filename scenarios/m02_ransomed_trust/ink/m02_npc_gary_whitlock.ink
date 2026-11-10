@@ -79,7 +79,7 @@ VAR password_hints_found = false
 
 Narrator: Two dead terminals, a cold mug with a skin on it, and a printed stack of his own emails squared up beside the keyboard.
 
-Gary Whitlock: *not turning round* If you're head office, the answer's still no. I can't "just restore from backup". The backup's the bit they encrypted.
+Gary Whitlock: If you're head office, the answer's still no. I can't "just restore from backup". The backup's the bit they encrypted. #delivery: not turning round
 
 Gary Whitlock: If you're the police, I've told your mate everything twice.
 
@@ -152,7 +152,7 @@ Gary Whitlock: Bit pathetic when you say it out loud.
 === open_professional ===
 ~ topic_vulnerability = true
 
-Gary Whitlock: *swivelling round* Finally. Someone who wants the technical version.
+Gary Whitlock: Finally. Someone who wants the technical version. #delivery: swinging round, suddenly interested
 
 Gary Whitlock: Backup server. ProFTPD -- the poisoned one, one point three point three c.
 
@@ -185,7 +185,7 @@ Gary Whitlock: That box holds every clinical backup we own. That's the whole dis
 === open_blame ===
 ~ gary_defensive = true
 
-Gary Whitlock: *very still* My estate.
+Gary Whitlock: My estate. #delivery: very still
 
 Gary Whitlock: I costed the fix in May. Eighty-five thousand pounds. I sent it seven times.
 
@@ -290,7 +290,7 @@ Gary Whitlock: Emma2018. Hospital1987. StCatherines. One of those three gets you
 #complete_task:talk_to_gary
 #give_item:keycard:server_room_keycard
 
-Gary Whitlock: *a pause, then he holds it out* Right. Take it.
+Gary Whitlock: Right. Take it. #delivery: after a pause, then decided
 
 Gary Whitlock: But that reader logs every swipe. When this is over, somebody will see my card in that room at four in the morning while I was sat in here.
 
@@ -341,7 +341,7 @@ Narrator: Gary looks at his own words on somebody else's paper.
 Gary Whitlock: Where'd you get that.
 
 * [Your filing cabinet. It's a good lock. Not a great one.]
-    Gary Whitlock: *almost laughs* No. It isn't.
+    Gary Whitlock: No. It isn't. #delivery: almost laughing
     -> email_reaction
 
 * [Does it matter? It exists, and it's in my hands now.]
@@ -545,7 +545,7 @@ Gary Whitlock: Nobody decides to be insecure. They just keep deciding something 
 === vuln_door ===
 ~ gary_influence += 8
 # influence_increased
-Gary Whitlock: *grimly satisfied* It does. Scan it, fingerprint the version, and there's a module that'll walk straight in.
+Gary Whitlock: It does. Scan it, fingerprint the version, and there's a module that'll walk straight in. #delivery: grimly satisfied
 Gary Whitlock: Fourteen years that hole's been there. Might as well get one useful night out of it.
 {vuln_reachable:
     ~ hub_quiet = true
@@ -595,7 +595,7 @@ Gary Whitlock: Best day of the year, and I spent twenty minutes of it on an emai
 + [Go home when this is done. Don't bring it with you.]
     ~ gary_influence += 10
     # influence_increased
-    Gary Whitlock: *after a moment* Yeah. Yeah, alright.
+    Gary Whitlock: Yeah. Yeah, alright. #delivery: after a moment
     ~ hub_quiet = true
     -> hub
 

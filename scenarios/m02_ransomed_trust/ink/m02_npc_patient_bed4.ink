@@ -123,7 +123,7 @@ Narrator: The ventilator alarm is going: a hard, repeating tone, with no relay t
 { patient_bed4_state == "critical":
     Narrator: He's past speaking now. His lips have gone dusky. His eyes find you and hold.
 - else:
-    Mr Pryce: *straining* ...the machine... it's...
+    Mr Pryce: ...the machine... it's... #delivery: straining
 }
 
 Narrator: The circuit has fallen out of sync. A manual resuscitation bag is clipped to the bed frame. Seal it, breathe for him by hand, and hold him until a nurse comes.

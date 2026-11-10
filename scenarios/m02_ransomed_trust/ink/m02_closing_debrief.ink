@@ -148,7 +148,7 @@ Agent 0x47 'Nightshade': Somebody manufactures these at scale, for people they t
 Agent 0x47 'Nightshade': I'll write it up properly. Short version: the people you're chasing have a supply chain.
 
 Agent 0x47 'Nightshade': That should worry you more than the one device.
-Agent HaX: *quietly* He's not wrong. He usually isn't.
+Agent HaX: He's not wrong. He usually isn't. #delivery: quietly
 -> debrief_hub
 
 === q_the_phone_call ===
@@ -172,7 +172,7 @@ Agent HaX: He removed the thing every one of your doors was actually running on.
     -> debrief_hub
 
 * {bernie_vouched} [It didn't work. A night receptionist put her own staff number against my name.]
-    Agent HaX: *and there's something almost like a laugh in it* Bernadette Nwosu.
+    Agent HaX: Bernadette Nwosu. #delivery: with something almost like a laugh in it
     Agent HaX: Eleven years on a reception desk, no clearance, no training, no idea who you were.
     Agent HaX: And she's the single reason ENTROPY's inside asset didn't run this to a conclusion.
     Agent HaX: Put her in the report by name. I'll make sure somebody senior enough to embarrass a hospital board reads it.
@@ -315,7 +315,7 @@ Agent HaX: Forty-five didn't. I'm not going to dress either of those numbers up 
     -> entropy_funding_discussion
 
 + [Two people died. Say their part properly.]
-    Agent HaX: *she doesn't reach for the file* They were alive when you walked in. Both of them.
+    Agent HaX: They were alive when you walked in. Both of them. #delivery: plainly, from memory
     Agent HaX: The review will say the attack only brought forward what was coming.
     Agent HaX: I've read that sentence a lot of times. It's never once done what it's meant to.
     -> ransom_paid_funding

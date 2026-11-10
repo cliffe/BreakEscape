@@ -48,7 +48,7 @@ VAR offline_keys_recovered = false
 === first_meeting ===
 Narrator: Six beds. A nurse working the far end with a clipboard, and Sister Doyle planted at bed two, eyes on the machine that is breathing for a woman.
 
-Sister Doyle: *without looking round* Are you meant to be on my ward?
+Sister Doyle: Are you meant to be on my ward? #delivery: without looking round
 
 Sister Doyle: I've had four people through here tonight who weren't, and every one of them wanted to tell me about the computers.
 
@@ -57,10 +57,11 @@ Sister Doyle: I've had four people through here tonight who weren't, and every o
     -> stakes
 
 * [What am I looking at? Talk me through the ward.]
+    Narrator: Sister Doyle looks round for the first time.
     ~ showed_empathy = true
     ~ influence += 2
     # influence_increased
-    Sister Doyle: *looks round for the first time* Two minutes. And I'm not leaving this bed while I do it.
+    Sister Doyle: Two minutes. And I'm not leaving this bed while I do it.
     -> ward_tour
 
 * [No. Tell me to go and I'll go.]
@@ -122,7 +123,7 @@ Sister Doyle: I've been good at this for twenty years. I'm not good enough to be
 * [Then let's give you your machines back.]
     ~ influence += 2
     # influence_increased
-    Sister Doyle: *eyes already back on bed two* Go on, then.
+    Sister Doyle: Go on, then. #delivery: distracted, eyes already back on bed two
     -> hub_intro
 
 * [Nobody could be. Nobody should have to be.]
@@ -292,7 +293,7 @@ Sister Doyle: But you looked at Mrs Hargreaves like she was a person. I've decid
     -> hub
 
 === lanyard_refused ===
-Sister Doyle: *not turning round* You want a hospital identity from me, an hour after we met, when security say you don't exist.
+Sister Doyle: You want a hospital identity from me, an hour after we met, when security say you don't exist. #delivery: not turning round
 
 Sister Doyle: I've six critical beds and no monitoring. I can't also be the one who decides who you are.
 

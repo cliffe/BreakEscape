@@ -128,7 +128,7 @@ Val Okonkwo: So. Who are you and who says you're allowed?
     #set_global:val_met:true
     ~ influence -= 20
     # influence_decreased
-    Val Okonkwo: *the smile goes* Right.
+    Val Okonkwo: Right. #delivery: the smile gone, flat
     Val Okonkwo: Then we've got a problem. "I'd rather not get into it" is a full sentence, and it means no.
     -> standoff
 
@@ -204,7 +204,7 @@ Val Okonkwo: Reception's paper log's been amended, and there's nothing on the sy
 + [Then we're doing this the hard way. (Fight her.)] #color:red
     ~ influence -= 40
     # influence_decreased
-    Val Okonkwo: *hand going to her radio* Don't.
+    Val Okonkwo: Don't. #delivery: sharply, reaching for her radio
     Val Okonkwo: Don't you dare. Not in here, not tonight--
     #hostile:security_guard_patrol
     #set_global:attacked_guard:true
@@ -282,7 +282,7 @@ Val Okonkwo: Go on. Quick.
 ~ cover_restored = true
 #set_global:cover_restored:true
 
-Val Okonkwo: *after a while* No. You don't.
+Val Okonkwo: No. You don't. #delivery: after a while
 
 Val Okonkwo: You've been polite, you've stopped when I asked, and you've spent your night running towards the fire.
 
@@ -544,7 +544,7 @@ Val Okonkwo: Been right for six months, which round here is basically a discipli
     Val Okonkwo: Reeves. Same as I told you. Not on my rota, never signs Bernie's book, and I've been told twice to drop it.
     -> reeves_questions
 }
-Val Okonkwo: *lowering her voice* Reeves.
+Val Okonkwo: Reeves. #delivery: lowering her voice
 
 Val Okonkwo: Been on nights since about July. Plain suit, no uniform, "night security supervisor".
 
@@ -561,7 +561,7 @@ Val Okonkwo: I've raised it twice. Twice I've been told it's "crisis protocol" b
     ~ asked_about_drill = true
     ~ influence += 10
     # influence_increased
-    Val Okonkwo: *stops dead* There was. A fire drill nobody had scheduled.
+    Val Okonkwo: There was. A fire drill nobody had scheduled. #delivery: stopping dead, suddenly serious
     Val Okonkwo: Six weeks ago, half two in the morning. Everybody goes the same way in a drill. Out.
     Val Okonkwo: Two men in high-vis, "facilities", went the other way. Up the north corridor, towards the comms relay and the server room.
     Val Okonkwo: Panel said fire, so I unlocked the north doors myself. Somebody rang down and said facilities had it in hand.
@@ -701,7 +701,7 @@ Val Okonkwo: Hang on. Server room's authorised IT personnel only. Badges or no b
     ~ influence -= 15
     # influence_decreased
     Val Okonkwo: Oi! I said authorised only!
-    Val Okonkwo: *to the radio* ...control, security office, I want that logging.
+    Val Okonkwo: ...control, security office, I want that logging. #delivery: into her radio
     #exit_conversation
     -> DONE
 
