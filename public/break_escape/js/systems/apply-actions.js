@@ -41,6 +41,44 @@ export async function recordSECapture(input) {
 if (typeof window !== 'undefined') window.recordSECapture = recordSECapture;
 
 /**
+ * Tell the server an item has left the inventory (POST /inventory, action_type remove).
+ * `usedOn` names the object the item was used on (its scenario id): the server then records
+ * a plant when that object takes the item (engine plan section 6, capture proofs). Awaits the
+ * answer and retries once on a network error or a 5xx; a refusal is logged and not retried.
+ * Resolves true when the server accepted the removal.
+ */
+export async function sendInventoryRemove(id, { usedOn = null, gameId = null } = {}) {
+    const gid = gameId || (typeof window !== 'undefined' ? window.breakEscapeConfig?.gameId : null);
+    if (!id || !gid) return false;
+    const body = { action_type: 'remove', item: { id } };
+    if (typeof usedOn === 'string' && usedOn) body.used_on = usedOn;
+    for (let attempt = 1; attempt <= 2; attempt++) {
+        try {
+            const resp = await fetch(`/break_escape/games/${gid}/inventory`, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                },
+                body: JSON.stringify(body)
+            });
+            if (resp?.ok !== false) return true;
+            if (resp.status >= 500 && attempt === 1) continue;
+            console.warn('[applyActions] the server refused an inventory remove:', id, resp.status);
+            return false;
+        } catch (err) {
+            if (attempt === 1) continue;
+            console.error('[applyActions] inventory remove sync failed:', id, err);
+            return false;
+        }
+    }
+    return false;
+}
+if (typeof window !== 'undefined') window.sendInventoryRemove = sendInventoryRemove;
+
+/**
  * Card revocation (the left-card consequence, NPC_NEEDS_SYSTEM.md §3.3b).
  *
  * When the owner of a left-behind access card returns and finds it gone, the
@@ -101,7 +139,9 @@ if (typeof window !== 'undefined') window.isCardRevoked = isCardRevoked;
  *                                    'object_interact'). Defaults to 'scenario'.
  * @param {*}      [opts.gameId]      Game ID passed to ApiClient for server-side persists.
  */
-export function applyActions(actions, { source = 'scenario', gameId = null } = {}) {
+// objectId: the scenario id of the object whose interaction runs these actions (its
+// triggerOnInteract, directly or through a confirm_action); remove_item sends it as used_on.
+export function applyActions(actions, { source = 'scenario', gameId = null, objectId = null } = {}) {
     // The addToInventory promises started for give_item actions, in order, so a caller
     // (the timer dispatcher) can retry a give lost to the network. Other callers ignore it.
     const gives = [];
@@ -252,19 +292,9 @@ export function applyActions(actions, { source = 'scenario', gameId = null } = {
                 try {
                     window.removeFromInventory?.(held);
                     const id = held?.scenarioData?.id;
-                    const gid = gameId || window.breakEscapeConfig?.gameId;
-                    if (id && gid) {
-                        fetch(`/break_escape/games/${gid}/inventory`, {
-                            method: 'POST',
-                            credentials: 'same-origin',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/json',
-                                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
-                            },
-                            body: JSON.stringify({ action_type: 'remove', item: { id } })
-                        }).catch(err => console.error('[applyActions] remove_item server sync failed:', err));
-                    }
+                    // From an object (its triggerOnInteract, or a confirm_action there) the
+                    // request names that object, so the server can record the plant.
+                    if (id) sendInventoryRemove(id, { usedOn: objectId, gameId });
                     console.log('[applyActions] remove_item:', id || action.item);
                 } catch (err) {
                     console.warn('[applyActions] remove_item failed:', err);
@@ -371,7 +401,7 @@ export function applyActions(actions, { source = 'scenario', gameId = null } = {
                 const { text, onConfirm } = action;
                 window.gameConfirm(text).then(confirmed => {
                     if (confirmed && Array.isArray(onConfirm)) {
-                        applyActions(onConfirm, { source, gameId });
+                        applyActions(onConfirm, { source, gameId, objectId });
                     }
                 });
                 break;

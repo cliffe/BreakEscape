@@ -978,24 +978,14 @@ export function handleObjectInteraction(sprite) {
                 return;
             }
             console.log('[Interaction] triggerOnInteract (requiresItem ok) firing for:', sprite.scenarioData.name || sprite.objectId);
-            applyActions(sprite.scenarioData.triggerOnInteract, { source: 'object_interact' });
+            applyActions(sprite.scenarioData.triggerOnInteract, { source: 'object_interact', objectId: sprite.scenarioData.id || null });
             if (sprite.scenarioData.consumesItem) {
                 try {
                     window.removeFromInventory?.(held);
                     const id = held?.scenarioData?.id;
-                    const gameId = window.breakEscapeConfig?.gameId;
-                    if (id && gameId) {
-                        fetch(`/break_escape/games/${gameId}/inventory`, {
-                            method: 'POST',
-                            credentials: 'same-origin',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/json',
-                                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
-                            },
-                            body: JSON.stringify({ action_type: 'remove', item: { id } })
-                        }).catch(err => console.error('[Interaction] Failed to sync consumed kit item:', err));
-                    }
+                    // used_on names this object, so the server records the plant (capture
+                    // proofs, engine plan section 6); awaited with one retry in apply-actions.js
+                    if (id) window.sendInventoryRemove?.(id, { usedOn: sprite.scenarioData.id || null });
                 } catch (err) {
                     console.warn('[Interaction] Could not consume kit item:', err);
                 }
@@ -1003,7 +993,7 @@ export function handleObjectInteraction(sprite) {
             return;
         }
         console.log('[Interaction] triggerOnInteract firing for:', sprite.scenarioData.name || sprite.objectId);
-        applyActions(sprite.scenarioData.triggerOnInteract, { source: 'object_interact' });
+        applyActions(sprite.scenarioData.triggerOnInteract, { source: 'object_interact', objectId: sprite.scenarioData.id || null });
         return;
     }
 

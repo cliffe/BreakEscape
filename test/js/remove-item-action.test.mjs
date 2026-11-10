@@ -111,3 +111,48 @@ test('confirm_action onConfirm with remove_item: cancel keeps the item, confirm 
     await new Promise(r => setTimeout(r, 0));
     assert.equal(window.inventory.items.length, 0, 'confirm removes the kit');
 });
+
+// Capture proofs (engine plan section 6): run from an object, remove_item names the object
+// as used_on so the server can record the plant; from a timer it names none.
+const lastBody = () => JSON.parse(fetchCalls[fetchCalls.length - 1].opts.body);
+
+test('remove_item from an object trigger sends used_on', () => {
+    fetchCalls.length = 0;
+    freshWindow([mkItem({ id: 'kit_dropbox' })]);
+    applyActions([{ type: 'remove_item', item: 'kit_dropbox' }], { source: 'object_interact', objectId: 'network_port' });
+    assert.equal(lastBody().used_on, 'network_port');
+});
+
+test('remove_item through a confirm_action passes the object on to onConfirm', async () => {
+    fetchCalls.length = 0;
+    freshWindow([mkItem({ id: 'kit_dropbox' })]);
+    window.gameConfirm = () => Promise.resolve(true);
+    applyActions([{ type: 'confirm_action', text: 'Plant it?', onConfirm: [{ type: 'remove_item', item: 'kit_dropbox' }] }],
+        { source: 'object_interact', objectId: 'network_port' });
+    await new Promise(r => setTimeout(r, 0));
+    assert.equal(lastBody().used_on, 'network_port');
+});
+
+test('remove_item from a timer sends no used_on', () => {
+    fetchCalls.length = 0;
+    freshWindow([mkItem({ id: 'kit_dropbox' })]);
+    applyActions([{ type: 'remove_item', item: 'kit_dropbox' }], { source: 'timer' });
+    assert.equal('used_on' in lastBody(), false);
+});
+
+test('the remove is retried once on a 5xx or a network error, and not on a refusal', async () => {
+    const { sendInventoryRemove } = await import(pathToFileURL(join(dir, 'systems', 'apply-actions.mjs')).href);
+    freshWindow([]);
+    let calls = 0;
+    globalThis.fetch = () => { calls++; return Promise.resolve({ ok: calls > 1, status: calls > 1 ? 200 : 503 }); };
+    assert.equal(await sendInventoryRemove('kit_x', { usedOn: 'desk' }), true);
+    assert.equal(calls, 2);
+    calls = 0;
+    globalThis.fetch = () => { calls++; return Promise.resolve({ ok: false, status: 422 }); };
+    assert.equal(await sendInventoryRemove('kit_x', { usedOn: 'desk' }), false);
+    assert.equal(calls, 1);
+    calls = 0;
+    globalThis.fetch = () => { calls++; return calls > 1 ? Promise.resolve({ ok: true }) : Promise.reject(new Error('offline')); };
+    assert.equal(await sendInventoryRemove('kit_x'), true);
+    assert.equal(calls, 2);
+});
