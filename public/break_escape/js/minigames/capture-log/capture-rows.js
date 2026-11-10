@@ -18,10 +18,10 @@ function el(tag, cls, text) {
     return node;
 }
 
-/** The note above a list of captures: simulated (reveal) or acknowledged only (awareness). */
+/** The note above a list of captures: shown in full (reveal) or acknowledged only (awareness). */
 export function captureBannerText(reveal) {
     return reveal
-        ? 'Simulated capture, authored for training. No real password is recorded or kept.'
+        ? 'Passwords and PINs this engagement has recorded, shown in full here and masked in the report.'
         : 'A sign-in was captured here. In a real attack this is the victim’s password; this exercise does not record it.';
 }
 

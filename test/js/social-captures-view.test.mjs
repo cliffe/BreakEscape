@@ -92,7 +92,7 @@ test('credential secret is masked unless revealSecret is true', () => {
 
     s = open({ se_captures: SEED() }, { captures: { revealSecret: true } });
     assert.equal(s.container.querySelector('.lpb-captures-secret').textContent, 'Spring2024!');
-    assert.match(s.container.querySelector('.lpb-captures-banner').textContent, /Simulated capture, authored for training/);
+    assert.match(s.container.querySelector('.lpb-captures-banner').textContent, /shown in full here and masked in the report/);
 });
 
 test('a credential with no stored secret is masked until the served reveal arrives', () => {
