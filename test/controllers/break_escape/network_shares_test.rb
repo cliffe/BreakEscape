@@ -210,6 +210,33 @@ module BreakEscape
       assert_equal invented, answer_for('no_such_item_x1')
     end
 
+    # Review R1, m7: a resource with no network is reached by nothing (3.4), however
+    # open its access list and whatever the player holds.
+    test 'a resource with no network is never reached or listed, with a foothold and a session held' do
+      data = NS.scenario
+      data['resources']['loose_share'] = {
+        'kind' => 'file_share', 'name' => 'Loose-Share', 'host' => 'NO-NET-01',
+        'contents' => [{ 'id' => 'loose_file', 'type' => 'text_file', 'name' => 'loose.txt', 'takeable' => true,
+                         'text' => 'LOOSE-FILE-TEXT-5520' }]
+      }
+      build_network_game({}, data)
+      plant_office
+      sign_in('sam_pc', 'sokafor', NS::SAM_PASSWORD)
+      assert_response :success
+      container('no_such_container_x1')
+      invented = answer_for('no_such_container_x1')
+      container('loose_share')
+      assert_equal invented, answer_for('loose_share')
+      container('loose_share', foothold: OFFICE)
+      assert_response :not_found
+      add_item('text_file', 'loose_file', 'loose.txt', source_resource_id: 'loose_share')
+      assert_response :unprocessable_entity
+      network_view
+      refute_includes response.body, 'loose_share'
+      refute_includes response.body, 'Loose-Share'
+      refute_includes container('sam_pc').to_json, 'loose_share', 'no desktop maps it'
+    end
+
     # Nothing forbids an author putting a sign-in object in a share yet (step 5's
     # validator will). It must not tell a browser with no source that the id exists, and
     # it is no desktop to one with a source.

@@ -31,6 +31,41 @@ module BreakEscape
       get game_path('capture_secrets'), as: :json
       assert_response :success
       refute_exposed('/capture_secrets')
+
+      # With captures present (review R1, m8): an empty se_captures cannot leak, so read
+      # the route again with entries written as a browser writes them. The password
+      # side of this (B1) is the skipped test below.
+      forge_captures
+      get game_path('capture_secrets'), as: :json
+      assert_response :success
+      assert response.parsed_body['secrets'].any?, 'the captures were read'
+      refute_exposed('/capture_secrets with captures')
+    end
+
+    # se_captures as any browser can write it through PUT /sync_state: a credential
+    # capture of Lena's username and one of the landing page's address, with no phish.
+    def forge_captures
+      captures = {
+        'lena' => { 'targetId' => 'lena', 'kind' => 'credential', 'address' => 'lfox', 'at' => 1 },
+        'portal' => { 'targetId' => 'portal', 'kind' => 'credential', 'address' => NS::LANDING_ADDRESS, 'at' => 2 }
+      }
+      put game_path('sync_state'), params: { globalVariables: { 'se_captures' => captures } }, as: :json
+      assert_response :success, response.body
+    end
+
+    # B1 (docs/achitechture/ACCESS_MODEL_SLICE_9_3A_SERVER_CODE_REVIEW_R1.md): the server
+    # trusts se_captures written through PUT /sync_state, so a forged entry earns the
+    # account holder's password from GET /capture_secrets. Predates slice 9.3a.
+    test 'B1: a se_captures entry forged through PUT /sync_state earns no password' do
+      skip 'B1 (review R1): GET /capture_secrets trusts se_captures from PUT /sync_state and serves ' \
+           "an account holder's password for a forged entry. Predates slice 9.3a; fixed by the engine " \
+           "plan's capture proofs (stream E4). Remove this skip when E4 lands."
+      build_network_game('unlockedRooms' => ALL_ROOMS.dup)
+      forge_captures
+      get game_path('capture_secrets'), as: :json
+      assert_response :success
+      NS::PASSWORDS.each { |password| refute_includes response.body, password, 'a forged capture earned a password' }
+      refute_includes response.body, NS::LANDING_SECRET, 'a forged capture earned the landing-page secret'
     end
 
     test 'GET /network with no foothold is empty, and with one names only its own network' do
