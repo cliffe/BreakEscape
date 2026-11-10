@@ -371,6 +371,20 @@ export class TextFileMinigame extends MinigameScene {
         // clear any stale container return state so a later independent notes session
         // doesn't wrongly navigate back to a container the user already exited.
         if (!window.pendingTextFileReturn) {
+            // A file read from a network screen (a remote desktop, a share opened from the
+            // network view, or a folder in either; slice 9.3a, 4.3) reopens that screen, so
+            // the player is never dropped into the world mid-chain
+            const back = window.pendingContainerReturn;
+            if (back?.containerItem && typeof window.isNetworkScreenContainer === 'function'
+                && window.isNetworkScreenContainer(back.containerItem)) {
+                window.pendingContainerReturn = null;
+                window.pendingPhoneReturn = null;
+                setTimeout(() => {
+                    if (window.MinigameFramework?.currentMinigame) return;
+                    window.startContainerMinigame?.(back.containerItem, null, !!back.isTakeable, true);
+                }, 50);
+                return;
+            }
             window.pendingContainerReturn = null;
             window.pendingPhoneReturn = null;
         }

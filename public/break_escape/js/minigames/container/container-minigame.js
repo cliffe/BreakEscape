@@ -24,6 +24,28 @@ export function transferChoices(item, held) {
     return out;
 }
 
+/**
+ * True when a container lockable is one of the network screens (slice 9.3a, 4.3): a
+ * remote desktop (scenarioData.remote), a share opened from the network view
+ * (scenarioData.networkShare, or a folder in one: sourceResourceId), a mapped share on a
+ * remote desktop, or a folder opened from a remote session's desktop. A reader opened from
+ * one of these reopens it when it closes (text-file-minigame.js cleanup).
+ */
+export function isNetworkScreenContainer(item) {
+    if (!item || typeof item !== 'object') return false;
+    const data = item.scenarioData || {};
+    if (data.remote && data.remote.footholdId) return true;
+    if (data.networkShare && data.networkShare.footholdId) return true;
+    if (item.sourceResourceId && !item.sourcePcId) return true;
+    if (item.parentLockable) return isNetworkScreenContainer(item.parentLockable);
+    const pcId = item.sourcePcId;
+    return !!(pcId && typeof window !== 'undefined' && window.pcSessions?.get?.(pcId)?.remote === true);
+}
+if (typeof window !== 'undefined') window.isNetworkScreenContainer = isNetworkScreenContainer;
+
+/** The folder picture for a share stub (it has no object sprite of its own). */
+const SHARE_ICON = '/break_escape/assets/objects/m09_folder1.png';
+
 const TRANSFER_LABELS = {
     open: 'Open',
     copy: 'Copy to inventory',
@@ -58,6 +80,18 @@ export class ContainerMinigame extends MinigameScene {
         if (this.loginPcId) this.desktopMode = true;
         this._unregisterDesktop = null;
         this.transferDialog = null;
+
+        // The network screens (slice 9.3a, 4.3 and 4.5). A remote desktop: its lockable
+        // carries remote: { footholdId }. A share opened from the view: networkShare, and
+        // what is taken from it (or from a folder in it) carries sourceResourceId. A mapped
+        // share on a desktop keeps the desktop's lockable (parentLockable) and reopens it.
+        this.remote = this.loginPcId && data.remote && data.remote.footholdId ? data.remote : null;
+        this.parentLockable = this.mode === 'npc' ? null : (this.containerItem?.parentLockable || null);
+        this.sourceResourceId = this.mode === 'npc' || this.sourcePcId ? null
+            : (params.sourceResourceId || this.containerItem?.sourceResourceId
+                || (data.networkShare && data.networkShare.footholdId ? data.id : null) || null);
+        // Why this screen closed, reported to networkLinks.landed from cleanup (4.3)
+        this.exitReason = 'close';
     }
 
     /** The session this sign-in desktop shows (pc-sessions.js), or null. */
@@ -182,6 +216,7 @@ export class ContainerMinigame extends MinigameScene {
             const response = await fetch(`/break_escape/games/${gameId}/container/${containerId}`, {
                 headers: { 'Accept': 'application/json' }
             });
+            this._loadStatus = response.status;
 
             if (!response.ok) {
                 if (response.status === 403) {
@@ -214,10 +249,22 @@ export class ContainerMinigame extends MinigameScene {
     async loadLoginDesktop() {
         const gameId = window.gameId || window.breakEscapeConfig?.gameId;
         const pcId = this.loginPcId;
+        // A remote desktop names its foothold on every fetch (slice 9.3a, 4.4)
+        const query = this.remote ? `?foothold=${encodeURIComponent(this.remote.footholdId)}` : '';
         try {
-            const response = await fetch(`/break_escape/games/${gameId}/container/${encodeURIComponent(pcId)}`, {
+            const response = await fetch(`/break_escape/games/${gameId}/container/${encodeURIComponent(pcId)}${query}`, {
                 headers: { 'Accept': 'application/json' }
             });
+            if (response.status === 403 && this.remote) {
+                // Back to the network view, never the physical sign-in screen (4.3): with
+                // no_session the client drops its copy; with unreachable it keeps it
+                let reason = 'no_session';
+                try { reason = (await response.json())?.reason === 'unreachable' ? 'unreachable' : 'no_session'; } catch (e) { /* no body */ }
+                if (reason === 'no_session') window.pcSessions?.dropLocal?.(pcId);
+                this.exitReason = reason;
+                this.complete(false);
+                return null;
+            }
             if (response.status === 403) {
                 window.pcSessions?.dropLocal?.(pcId);
                 this.complete(false);
@@ -227,8 +274,10 @@ export class ContainerMinigame extends MinigameScene {
             }
             if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             const data = await response.json();
+            // The answer carries the session: a keyboard fetch settles a remote one (4.4)
+            if (data.session) window.pcSessions?.settle?.(pcId, data.session);
             if (window.pcSessions?.registerDesktop) {
-                this._unregisterDesktop = window.pcSessions.registerDesktop(pcId, (message) => this.closeForSessionEnd(message));
+                this._unregisterDesktop = window.pcSessions.registerDesktop(pcId, (message, reason) => this.closeForSessionEnd(message, reason));
             }
             window.pcSessions?.desktopOpened?.(pcId);
             return data.contents || [];
@@ -241,8 +290,9 @@ export class ContainerMinigame extends MinigameScene {
     }
 
     /** The session ended while this desktop was open: close it with a one-line message. */
-    closeForSessionEnd(message) {
+    closeForSessionEnd(message, reason = null) {
         this._unregisterDesktop = null;
+        if (reason) this.exitReason = reason;
         const name = this.containerItem?.scenarioData?.name || 'PC';
         if (window.MinigameFramework?.currentMinigame === this) this.complete(false);
         if (message) window.gameAlert?.(message, 'info', name, 3000);
@@ -254,6 +304,78 @@ export class ContainerMinigame extends MinigameScene {
             this._unregisterDesktop = null;
         }
         if (typeof super.cleanup === 'function') super.cleanup();
+        this.reportNetworkExit();
+    }
+
+    /** The PC this screen works through (the desktop's own, or the session a folder came from). */
+    networkDetail() {
+        const pcId = this.loginPcId || this.sourcePcId || null;
+        const host = this.containerItem?.scenarioData?.host || window.pcSessions?.get?.(pcId)?.host || null;
+        return { pcId, host };
+    }
+
+    /**
+     * A network screen says why it closed (4.3, "Getting back"): exitReason is close unless
+     * the closing path set another (handover, switch, item, share, no_session, unreachable,
+     * or a session end: sign_out, link_dropped, displaced). A mapped share closed by its
+     * Close reopens the desktop it was opened from; a folder from a remote desktop reopens
+     * that desktop; every other network screen hands the pair to networkLinks.landed.
+     * Other containers report nothing.
+     */
+    reportNetworkExit() {
+        if (this._networkReported || this.mode === 'npc') return;
+        this._networkReported = true;
+        const reason = this.exitReason || 'close';
+        const links = window.networkLinks;
+        const minigameOpen = () => !!window.MinigameFramework?.currentMinigame
+            && window.MinigameFramework.currentMinigame !== this;
+        if (this.parentLockable) {
+            const parent = this.parentLockable;
+            if (reason === 'close') {
+                setTimeout(() => {
+                    if (!minigameOpen() && typeof window.startContainerMinigame === 'function') {
+                        window.startContainerMinigame(parent, null, false, true);
+                    }
+                }, 0);
+            } else if (isNetworkScreenContainer(parent)) {
+                links?.landed?.('desktop', reason, this.networkDetail());
+            }
+            return;
+        }
+        if (this.remote) {
+            links?.landed?.('desktop', reason, this.networkDetail());
+            return;
+        }
+        if (this.sourceResourceId) {
+            links?.landed?.('share', reason, {});
+            return;
+        }
+        const session = this.sourcePcId ? window.pcSessions?.get?.(this.sourcePcId) : null;
+        if (session?.remote === true) {
+            // A folder opened from a remote desktop: closed, the desktop again
+            if (reason === 'close' && typeof window.openRemoteDesktop === 'function') {
+                const pcId = this.sourcePcId;
+                setTimeout(() => { if (!minigameOpen()) window.openRemoteDesktop(pcId, session.footholdId); }, 0);
+                return;
+            }
+            links?.landed?.('desktop', reason, this.networkDetail());
+        }
+    }
+
+    /**
+     * A share's contents loaded (4.5): network_share_opened { resourceId, via, pcId }, via
+     * `foothold` for a share opened from the view and `session` for a mapped share.
+     */
+    shareOpened() {
+        const data = this.containerItem?.scenarioData || {};
+        if (data.type !== 'network_share' || !data.id || this._loadStatus !== 200) return;
+        const fromView = !!this.sourceResourceId;
+        const payload = { resourceId: data.id, via: fromView ? 'foothold' : 'session', pcId: fromView ? null : (this.sourcePcId || null) };
+        if (fromView) payload.footholdId = data.networkShare?.footholdId ?? null;
+        try {
+            window.eventDispatcher?.emit?.('network_share_opened', payload);
+            window.eventDispatcher?.emit?.(`network_share_opened:${data.id}`, payload);
+        } catch (e) { console.warn('network_share_opened listeners threw', e); }
     }
 
     async init() {
@@ -263,7 +385,7 @@ export class ContainerMinigame extends MinigameScene {
         // A folder opened from a sign-in desktop shows the session's files too, so it closes
         // with the same message when that session ends (owner back, auto lock, sign out).
         if (!this.loginPcId && this.sourcePcId && this.mode !== 'npc' && window.pcSessions?.registerDesktop) {
-            this._unregisterDesktop = window.pcSessions.registerDesktop(this.sourcePcId, (message) => this.closeForSessionEnd(message));
+            this._unregisterDesktop = window.pcSessions.registerDesktop(this.sourcePcId, (message, reason) => this.closeForSessionEnd(message, reason));
         }
 
         // Play drawer/container opening sound (not for PC/desktop containers)
@@ -311,6 +433,7 @@ export class ContainerMinigame extends MinigameScene {
         } else if (gameId && this.containerItem.scenarioData.locked === false) {
             console.log('Reloading container contents from server to get latest state');
             this.contents = await this.loadContainerContents();
+            this.shareOpened();
         } else if (this.params.contents && this.params.contents.length > 0) {
             // Only use passed contents if server loading isn't available (locked container or local game)
             console.log('Using passed contents (container locked or no server)');
@@ -388,7 +511,11 @@ export class ContainerMinigame extends MinigameScene {
         const session = this.loginSession();
         if (!session) return '';
         const name = session.displayName || session.username;
-        return `
+        const linkName = this.remote ? (window.networkLinks?.get?.(this.remote.footholdId)?.name || 'your link') : null;
+        const remoteLine = this.remote
+            ? `
+                    <div class="desktop-remote-line">Remote session through ${escapeHtml(displayDashes(linkName))}</div>` : '';
+        return `${remoteLine}
                     <div class="desktop-account-bar">
                         <span class="desktop-account-name">Signed in as <strong>${escapeHtml(name)}</strong> (${escapeHtml(session.username)})</span>
                         <span class="desktop-account-actions">
@@ -472,8 +599,12 @@ export class ContainerMinigame extends MinigameScene {
             // Add click handler for all items (both takeable and interactive)
             itemImg.style.cursor = 'pointer';
             
-            // A takeable file from a sign-in desktop offers Open / Copy / Move first
-            if (this.offersTransfer(item)) {
+            if (item.type === 'network_share') {
+                // A mapped share (4.5): its own folder, never the generic flow
+                if (!item.iconImage) itemImg.src = SHARE_ICON;
+                itemImg.addEventListener('click', () => this.openMappedShare(item));
+            } else if (this.offersTransfer(item)) {
+                // A takeable file from a sign-in desktop offers Open / Copy / Move first
                 itemImg.addEventListener('click', () => this.showTransferDialog(item, itemImg));
             } else if (this.isInteractiveItem(item)) {
                 // Check if this is an interactive item that should trigger a minigame
@@ -524,8 +655,14 @@ export class ContainerMinigame extends MinigameScene {
             // Add click handler for all items (both takeable and interactive)
             icon.style.cursor = 'pointer';
             
-            // A takeable file from a sign-in desktop offers Open / Copy / Move first
-            if (this.offersTransfer(item)) {
+            // A mapped share (4.5) opens as a folder fetched from the server, never through
+            // handleObjectInteraction or POST /unlock
+            if (item.type === 'network_share') {
+                if (!item.iconImage) iconImg.src = SHARE_ICON;
+                icon.dataset.resourceId = item.id || '';
+                icon.addEventListener('click', () => this.openMappedShare(item));
+            } else if (this.offersTransfer(item)) {
+                // A takeable file from a sign-in desktop offers Open / Copy / Move first
                 icon.addEventListener('click', () => this.showTransferDialog(item, iconImg));
             } else if (this.isInteractiveItem(item)) {
                 // Check if this is an interactive item that should trigger a minigame
@@ -565,7 +702,10 @@ export class ContainerMinigame extends MinigameScene {
         if (switchBtn) {
             // The sign-in screen replaces this desktop; the session stays until another
             // account signs in, and leaving the screen comes back here.
-            this.addEventListener(switchBtn, 'click', () => window.openLoginSignIn?.(this.containerItem, { switching: true }));
+            this.addEventListener(switchBtn, 'click', () => {
+                this.exitReason = 'switch';
+                window.openLoginSignIn?.(this.containerItem, { switching: true });
+            });
         }
         const signOutBtn = this.gameContainer?.querySelector('#desktop-sign-out');
         if (signOutBtn) {
@@ -575,7 +715,33 @@ export class ContainerMinigame extends MinigameScene {
 
     /** A takeable item (not a locked folder) seen through a sign-in desktop's session. */
     offersTransfer(item) {
-        return !!this.sourcePcId && this.mode !== 'npc' && item?.takeable === true && item.locked !== true;
+        return !!(this.sourcePcId || this.sourceResourceId) && this.mode !== 'npc' && item?.takeable === true && item.locked !== true;
+    }
+
+    /**
+     * Open a mapped share's stub (4.5): a folder whose contents come from
+     * GET /container/<resourceId>. It keeps this desktop's lockable and reopens it on Close.
+     */
+    openMappedShare(item) {
+        if (!item?.id) return;
+        const share = {
+            scenarioData: { ...item, locked: false },
+            name: 'network_share',
+            objectId: `share_${item.id}`,
+            sourcePcId: this.sourcePcId || undefined,
+            parentLockable: this.containerItem
+        };
+        this.exitReason = 'share';
+        this.complete(false);
+        if (typeof window.startContainerMinigame === 'function') window.startContainerMinigame(share, null, false, true);
+    }
+
+    /** What a stand-in for an item taken or read from here carries: the PC or the share it came from. */
+    sourceExtras() {
+        if (this.mode === 'npc') return {};
+        if (this.sourcePcId) return { sourcePcId: this.sourcePcId };
+        if (this.sourceResourceId) return { sourceResourceId: this.sourceResourceId };
+        return {};
     }
 
     /**
@@ -634,6 +800,11 @@ export class ContainerMinigame extends MinigameScene {
             this.showMessage(displayDashes(obs), 'info');
             return;
         }
+        // A network screen comes back when the reader closes (4.3)
+        if (isNetworkScreenContainer(this.containerItem)) {
+            window.pendingContainerReturn = { containerItem: this.containerItem, contents: this.contents, isTakeable: this.isTakeable, npcOptions: null };
+        }
+        this.exitReason = 'item';
         this.complete(false);
         const viewItem = { ...item, takeable: false };
         if (window.handleObjectInteraction) {
@@ -738,6 +909,7 @@ export class ContainerMinigame extends MinigameScene {
             };
             
             // Store the container state globally so we can return to it
+            this.exitReason = 'item';
             window.pendingContainerReturn = containerState;
             
             // Close the container minigame first
@@ -748,7 +920,7 @@ export class ContainerMinigame extends MinigameScene {
                 scenarioData: item,
                 name: item.type,
                 objectId: `temp_${Date.now()}`,
-                sourcePcId: this.sourcePcId || undefined
+                ...this.sourceExtras()
             };
             
             // Delegate to main game's handler for viewing/reading items (notes, phone, files, etc.)
@@ -783,6 +955,7 @@ export class ContainerMinigame extends MinigameScene {
         };
         
         // Store the container state globally so we can return to it
+        this.exitReason = 'item';
         window.pendingContainerReturn = containerState;
         
         // Close the container minigame first
@@ -793,7 +966,7 @@ export class ContainerMinigame extends MinigameScene {
             scenarioData: item,
             name: item.type,
             objectId: `temp_${Date.now()}`,
-            sourcePcId: this.sourcePcId || undefined
+            ...this.sourceExtras()
         };
         
         // Delegate to main game's handler for viewing/reading items (notes, phone, files, etc.)
@@ -892,12 +1065,14 @@ export class ContainerMinigame extends MinigameScene {
     // transfer: 'copy' or 'move' for a file from a sign-in desktop (access model 5.1).
     async takeItem(item, itemElement, transfer = null) {
         console.log('Taking item from container:', item);
-        const fromSignIn = !!this.sourcePcId && this.mode !== 'npc';
+        // From a sign-in desktop, a mapped share (sourcePcId) or a share opened from the
+        // network view (sourceResourceId, slice 9.3a 4.5)
+        const fromSignIn = !!(this.sourcePcId || this.sourceResourceId) && this.mode !== 'npc';
         const isCopy = fromSignIn && transfer === 'copy';
         
         // Create a temporary sprite-like object for the inventory system
         const tempSprite = takeStandIn(item, inventoryImageKey,
-            fromSignIn ? { sourcePcId: this.sourcePcId, transfer: transfer || 'move' } : {});
+            fromSignIn ? { ...this.sourceExtras(), transfer: transfer || 'move' } : {});
         
         // Add to inventory
         const addResult = await addToInventory(tempSprite);
