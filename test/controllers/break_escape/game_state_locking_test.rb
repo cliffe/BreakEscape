@@ -22,7 +22,8 @@ module BreakEscape
                                  'games_controller.rb').cleanpath
 
     # Mutations that go through the model rather than touching player_state
-    # directly. Each of these read-modify-writes the same column.
+    # directly. Each of these read-modify-writes the same column. Not listed:
+    # end_claimed_sessions!, which takes the row lock itself (with_lock reloads).
     STATE_WRITERS = %w[
       save!
       add_inventory_item!
@@ -40,6 +41,13 @@ module BreakEscape
       remove_npc_from_scene!
       update_npc_state!
       reset_player_state!
+      attempt_login!
+      claim_login_session!
+      logout_session!
+      record_card_clone!
+      plant_device!
+      unplug_device!
+      settle_session_at_keyboard!
     ].freeze
 
     # create builds a brand new record that nothing else can hold a reference
@@ -59,12 +67,31 @@ module BreakEscape
 
     # Public controller actions, in source order, with their bodies.
     def action_bodies
-      offsets = source.enum_for(:scan, /^    def ([a-z_][a-z_0-9]*)$/)
+      offsets = source.enum_for(:scan, /^    def ([a-z_][a-z_0-9?!]*)(?:\(|$)/)
                       .map { [Regexp.last_match.begin(0), Regexp.last_match(1)] }
       offsets.each_with_index.map do |(start, name), i|
         finish = offsets[i + 1]&.first || source.length
         [name, source[start...finish]]
       end
+    end
+
+    # The private helpers, by name, with their bodies.
+    def helper_bodies
+      private_at = source.index(/^    private$/) || source.length
+      action_bodies.select { |_name, body| source.index(body) > private_at }.to_h
+    end
+
+    # An action's body with the bodies of every private helper it calls, followed
+    # through helpers that call helpers. A write made in a helper (container's
+    # render_login_desktop settles a session) is the action's write.
+    def body_with_helpers(body, helpers = helper_bodies, seen = {})
+      helpers.each do |name, helper|
+        next if seen[name] || !body.match?(/(?<![\w.])#{Regexp.escape(name)}(?![\w?!])/)
+
+        seen[name] = true
+        body += body_with_helpers(helper, helpers, seen)
+      end
+      body
     end
 
     # sync_state takes the row lock itself (a narrow `Game.lock.select(...)`
@@ -77,12 +104,15 @@ module BreakEscape
       # Everything after the first private helper is a helper, not an action.
       private_at = source.index(/^    private$/) || source.length
       locked = locked_actions
+      helpers = helper_bodies
 
       unlocked_writers = action_bodies.filter_map do |name, body|
         next if EXEMPT_ACTIONS.include?(name)
         next if source.index(body) > private_at
         next if locked.include?(name)
         next if takes_own_lock?(body)
+
+        body = body_with_helpers(body, helpers)
 
         written = STATE_WRITERS.select { |w| body.include?("@game.#{w}") }
         written << 'player_state[...] =' if body =~ /@game\.player_state\[[^\]]+\]\s*=/
@@ -112,6 +142,27 @@ module BreakEscape
                         "#{action} reads and writes player_state; without the lock a concurrent " \
                         'task completion is lost, which is how game 1022 lost talk_to_gary.'
       end
+    end
+
+    # Networks slice 9.3a (section 5). container serves a sign-in desktop, and one
+    # served at the keyboard clears its session's foothold (settle_session_at_keyboard!,
+    # in a private helper); network_plant writes footholds, the inventory and the
+    # device's room; network_unplug writes footholds and the inventory and ends the
+    # sessions opened through the foothold. Unlocked, a keyboard fetch racing an unplug
+    # of the same foothold saves back either a session naming the gone foothold or a
+    # duplicated device.
+    test 'container, network_plant and network_unplug are locked' do
+      %w[container network_plant network_unplug].each do |action|
+        assert_includes locked_actions, action,
+                        "#{action} writes footholds, sessions or the inventory; without the lock a " \
+                        'concurrent plant, unplug or desktop fetch is lost.'
+      end
+    end
+
+    test 'a write in a private helper counts as its action writing' do
+      body = body_with_helpers(action_bodies.to_h.fetch('container'))
+      assert_includes body, '@game.settle_session_at_keyboard!',
+                      "container's desktop write is in render_login_desktop; the scan must follow helpers"
     end
   end
 end
