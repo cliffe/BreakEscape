@@ -1812,8 +1812,8 @@ commits with explicit paths, and never commits another's files.
 
 | Sub-slice | Stream | Steps | Files it owns | Starts |
 |---|---|---|---|---|
-| U | Needs core | U-1 | `systems/pc-policy.js`, `systems/npc-needs.js`, `systems/npc-world-bubbles.js`, their tests | At once |
-| U | Surfaces and authoring | U-2 | `systems/interactions.js`, the schema, `scripts/validate_access_work.rb`, `scripts/validate_scenario.rb`, their tests | The schema and validator at once; the plant when `pc-policy.js` is committed and engine E3 has committed `interactions.js` |
+| U | Needs core | U-1 | `systems/pc-policy.js`, `systems/npc-needs.js`, their tests | At once |
+| U | Surfaces and authoring | U-2 | `systems/interactions.js`, the schema, `scripts/validate_access_work.rb`, `scripts/validate_scenario.rb`, their tests | The schema and validator at once; the plant when `pc-policy.js` is committed and engine E3 and E4 have committed their `interactions.js` edits |
 | U | Scenario and documents | U-3, U-4 | `scenarios/test_access_work/`, this slice's section of `README_scenario_design.md` | After both |
 | A | Server | A-1 (resolver), A-2, A-3 | `lib/break_escape/access_work.rb`, `game.rb`, `games_controller.rb`, `config/routes.rb`, `test/models`, `test/controllers`, `test/unit/access_work_test.rb` | At once |
 | A | Validator | A-1 (schema, field lists), A-4 | `scripts/validate_scenario.rb`, `scripts/validate_access_work.rb`, the schema, `test/js/validator-access-work.test.mjs` | The schema at once; the checks when the resolver is committed |
@@ -1839,36 +1839,38 @@ Each stream is one builder with review rounds after it (`AGENTS.md`: at least tw
 Scripted runs are split from building: the scenario's builder writes the scenario and
 `PLAYTEST.md`, and a separate tester runs it.
 
-**Against the sibling plans.** The build order is 9.3a, then 9.1, then this slice, one slice at a
-time on the shared files. The engine plan's streams (E1 to E5, its section 10) are a separate
-build that may run at any time; on every file they share with this slice, **the engine streams
-come first**, and its inventory stream E3 is the first holder of `systems/inventory.js` and
-`systems/interactions.js`. A builder re-reads the file just before editing, edits only its own
+**Against the sibling plans.** The order on every shared file is fixed: **the engine plan's
+feedback streams first, then 9.3a, then 9.1, then this slice**, one at a time. The engine plan's
+streams (E1 to E5, its section 10) are a separate build; of them, E1's items 2 and 7, E3's
+inventory menu and dropped sprites (5a, 5b) and E5 are built, E1's item 3 (the body rule), E3's
+tray refresh and E4 are to build, E2 runs only on the user's word and E2b is held. 9.3a's server
+steps 2 to 4 are built. A builder re-reads the file just before editing, edits only its own
 block, never reformats, and commits with explicit paths. The files this slice shares, with the
 order on each:
 
 | File | Also edited by | Order |
 |---|---|---|
-| `app/models/break_escape/game.rb` | 9.3a S; 9.1 F and A; engine E3 (`add_item_to_room!`), E4 (`capture_secrets_for_client`, `account_capture_passwords`, `capture_route?`, a line in `add_item_to_room!` and in `attempt_login!`), E2b (`generate_scenario_data`, held) | 9.3a, then 9.1, then this slice; E3 and E4 before this slice. On the three capture methods, **E4 before H-1**: H-1 adds `sharedLogins` as a proof that holds in E4's rule. Different methods otherwise |
-| `app/controllers/break_escape/games_controller.rb`, `config/routes.rb` | 9.3a S; 9.1 A (`login_accounts`); engine E3 (`CLIENT_ITEM_FORBIDDEN_FIELDS`, `item_add_params`) | 9.3a, then E3, then 9.1, then this slice |
-| `scripts/validate_scenario.rb`, `scripts/scenario-schema.json` | 9.3a T; engine E1, E3, E4; 9.1 F and B | 9.3a T, then E1, E3, E4 one at a time, then 9.1, then this slice; each adds its own block |
+| `app/models/break_escape/game.rb` | 9.3a S (built in part: `NetworkAccess`, withholding, remote sign-in); 9.1 F and A; engine E3 (`add_item_to_room!`), E4 (`capture_secrets_for_client`, `account_capture_passwords`, `capture_route?`, a line in `add_item_to_room!` and in `attempt_login!`), E2b (`generate_scenario_data`, held) | Engine streams, then 9.3a, then 9.1, then this slice. On the three capture methods, **E4 before H-1**: H-1 adds `sharedLogins` as a proof that holds in E4's rule. Different methods otherwise |
+| `app/controllers/break_escape/games_controller.rb`, `config/routes.rb` | 9.3a S (its network routes); 9.1 A (`login_accounts`); engine E3 (`CLIENT_ITEM_FORBIDDEN_FIELDS`, `item_add_params`), E4 (the `remove` branch of `inventory`) | Engine streams, then 9.3a, then 9.1, then this slice |
+| `scripts/validate_scenario.rb`, `scripts/scenario-schema.json` | Engine E1, E3, E4; 9.3a T; 9.1 F, B and D | Engine streams one at a time, then 9.3a T, then 9.1, then this slice; each adds its own block |
+| `scripts/validate_npc_needs.rb` | Office life; 9.1 B (one keyword and one line in `check_lock_habits`) | 9.1, then this slice (C-2: `social_media` and the satisfies check) |
 | `scripts/generate_dungeon_graph.rb` | 9.3a T; 9.1 B and D | 9.3a, then 9.1, then this slice |
-| `systems/npc-world-bubbles.js` | Engine E2 (a rising icon helper) | **E2 before U-1**; U-1 edits the line-with-no-partner path only, if it needs one |
-| `systems/interactions.js` | Engine E3 (the first two branches for a held item, `examineHeldItem`, `inventoryMenuFor`); 9.3a C1 (the jack branch) | **E3 first** (it is the file's first holder), then 9.3a C1, then U-2, whose edit is the `requiresItem` branch, a later branch than both |
-| `systems/inventory.js` | Engine E3; 9.3a C1 or C2 | Not edited by this slice |
-| `systems/unlock-system.js` | Engine E1 (the RFID branch and refusal lines); 9.3a C2 (remote sign-in); 9.1 A (the desk branch of `openLoginSignIn`) | E1, then 9.3a, then 9.1, then H-4 (`interactLoginPc`'s claim kind only) |
+| `systems/npc-needs.js`, `systems/npc-needs-chatter.js` | Office life's own later slices | This slice edits `npc-needs.js` in the methods sections 5 to 8 name and does not edit `npc-needs-chatter.js`: a mutter is spoken through the existing `world.speak`. Re-read both before A-5, H-3 and C-3 |
+| `systems/interactions.js` | Engine E3 (built: the held-item menu through `inventory-menu.js`), E4 (the `consumesItem` block, the `objectId` on the two `triggerOnInteract` calls); 9.3a C1 (the jack and `network_link` branches) | Engine streams, then 9.3a C1, then U-2, whose edit is the `requiresItem` branch, a later branch than all of them |
+| `systems/action-menu.js`, `ui/interaction-menu.js`, `systems/inventory-menu.js`, `systems/item-drop.js`, `systems/table-drop.js`, `systems/inventory.js` | Engine E3; 9.3a C1 or C2 | Not edited by this slice. A device an NPC finds is dropped through `item-drop.js` (which snaps it to a table, `table-drop.js`) and picked up by the needs system as today |
+| `systems/unlock-system.js` | Engine E1 (built: the RFID door sound); 9.3a C2 (remote sign-in); 9.1 A (the desk branch of `openLoginSignIn`) | 9.3a, then 9.1, then H-4 (`interactLoginPc`'s claim kind only) |
 | `systems/pc-sessions.js`, `api-client.js` | 9.3a C1 and C2; 9.1 A | 9.3a, then 9.1, then this slice |
-| `core/game.js` | Engine E2 (two preload lines); 9.3a C1; 9.1 A | E2, 9.3a and 9.1 first; one or two lines each |
-| `systems/apply-actions.js` | Engine E3 (`set_costume`, `clear_costume`); 9.3b (its implant case) | Not edited by this slice: outage switches are two objects (11.1), not a new action |
-| `tools/playtest/lib/access_leak_scanner.rb`, `tools/playtest/verify-run.rb`, `tools/playtest/access-leak-check.rb` | 9.3a T; engine E4 (the scanner, and the device DOM in `access-leak-check.rb`); 9.1 E | 9.3a T, then E4, then 9.1 E, then this slice; own checks only |
-| `systems/test-bridge/access.js`, `docs/test-bridge.md`, the playtest harness | 9.3a T (`access.js`); engine E3 (inventory commands, `docs/test-bridge.md`, the harness) | 9.3a and E3 first; this slice adds its own functions to `access.js` and its own paragraph |
-| `README_scenario_design.md` | 9.3a T; engine E1, E3, E4, E5; 9.1 D and Docs | Each owns its own section; this slice adds "Work, frustration and workarounds" |
+| `core/game.js` | 9.3a C1; 9.1 A | 9.3a and 9.1 first; one or two lines each |
+| `systems/npc-office-visuals.js`, `systems/npc-world-bubbles.js` | Office life; engine E2 (one constant or function, only on the user's word) | Not edited by this slice: a mutter is a grumble, which both already draw |
+| `systems/apply-actions.js` | Engine E4 (the `objectId` option, `remove_item`'s `used_on`); 9.3b (its implant case) | Not edited by this slice: outage switches use `confirm_action` pairs (11.1), not a new action |
+| `tools/playtest/lib/access_leak_scanner.rb`, `tools/playtest/verify-run.rb`, `tools/playtest/access-leak-check.rb` | 9.3a T; engine E4 (the device DOM in `access-leak-check.rb`); 9.1 E | E4, then 9.3a T, then 9.1 E, then this slice; own checks only |
+| `systems/test-bridge/access.js`, `systems/test-bridge/index.js`, `docs/test-bridge.md`, the playtest harness | 9.3a T (`access.js`); engine E3 (built: `inventoryAct`, the harness, its paragraph) | E3 and 9.3a first; this slice adds its own functions to `access.js` and its own paragraph |
+| `README_scenario_design.md` | Engine E1, E3, E4, E5; 9.3a T; 9.1 D and Docs | Each owns its own section; this slice adds "Work, frustration and workarounds" |
 | The no-password test, `access_model_withholding_test.rb` | 9.1 | 9.1, then this slice |
 
-`systems/npc-needs.js`, `systems/workstation-state.js`, `systems/npc-work.js`, `pc-policy.js` and
-the osint browser are edited by this slice only. If any two builds run at the same time, no two
-builders hold one of the files in the table at once. The engine plan's own shared-files table
-does not yet list this slice; the orchestrator adds it there with the order above.
+`systems/workstation-state.js`, `systems/npc-work.js`, `pc-policy.js` and the osint browser are
+edited by this slice only. If any two builds run at the same time, no two builders hold one of the
+files in the table at once.
 
 ## 14. Effects on existing scenarios
 
