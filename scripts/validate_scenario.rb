@@ -6151,6 +6151,23 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
         err.call("'rooms/#{room_id}/doors[#{i}]' is a gate door into '#{door['connectedRoom']}' with an 'access' " \
                  'list; gate doors open from requires alone, so use requires (or drop the gate).')
       end
+
+      # North and south doors only (door-gates.js register() declines a side gate)
+      if %w[east west].include?(door['direction'].to_s)
+        warn.call("'rooms/#{room_id}/doors[#{i}]' has a gate on its #{door['direction']} door into " \
+                  "'#{door['connectedRoom']}'. Gates work on north and south doors only; this door will behave " \
+                  'as an ordinary locked door.')
+      end
+
+      # The gate's secured room is its entry's connectedRoom, so the entry must lead into
+      # the locked room of the pair
+      here_locked = room['locked'] == true
+      there_locked = target.is_a?(Hash) && target['locked'] == true
+      if here_locked && !there_locked
+        err.call("'rooms/#{room_id}/doors[#{i}]' puts a gate on the door out of locked room '#{room_id}' into " \
+                 "'#{door['connectedRoom']}'. Put the gate on the door that leads into the locked room " \
+                 "(a door entry in '#{door['connectedRoom']}' with connectedRoom '#{room_id}').")
+      end
     end
   end
 

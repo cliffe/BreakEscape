@@ -8,7 +8,7 @@ Before this existed the only user of these features was the full `lab_physical_p
 
 | Part | Config | Feature |
 |---|---|---|
-| Gate on the office's own `doors` entry | `gate: { openFor: ["sam"], openRadius: 56, holdMs: 2500, playerMayPassIf: "visitor_pass" }` (full room data only; bootstrap strips `doors`) | `systems/door-gates.js`: opens for Sam, holds, shuts, never traps |
+| Gate on the office's own `doors` entry | `gate: { openFor: ["sam"], openRadius: 56, holdMs: 2500, playerMayPassIf: "visitor_pass" }` (full room data only; bootstrap strips `doors`) | `systems/door-gates.js`: opens for Sam, holds, shuts, never traps; solid for a player with no lanyard even while open; a player inside leaves by a click or behind Sam |
 | Multi-room route | `patrol.multiRoom`, `waypointMode: "sequential"`, two segments, `dwellTime: 6000` on the first waypoint, `action: { unlockRoom, useObject }` on the door-side waypoint | `npc-behavior.js` `_runRouteAction`, route dwell |
 | Unlock permission | Sam's `{ "eventPattern": "sam_never_fires", "unlockDoor": "staff_room" }` mapping | Needed by `unlockRoom` (see "Findings") |
 | Sight challenge | `los.challengeOnSight` with `near: { door }`, `cooldown`, `skipIfGlobal` as a **list**; mapping with `closeDoor: "staff_room"` | `npc-sight-challenge.js` plus NPC `closeDoor` |
@@ -16,6 +16,8 @@ Before this existed the only user of these features was the full `lab_physical_p
 | Clone entry | `rfidCard` on Sam, `# clone_keycard:test_staff_badge` in `ink/worker.ink`, door `requires: test_staff_badge` | `doors.js` click path, `playerOpen`, `door_gate_player_opened` |
 
 Cycle: Sam dwells at (4,4) for 6 s, walks to (1,2) beside the door, unlocks and loads the staff room (first lap only), the gate opens as he nears, he walks the staff room and comes back; about 26 s a lap.
+
+Since the bar of 2026-11-10 (`PHYSICAL_PENTEST_FEEDBACK_PLAN_ENGINE.md` section 3), the objective can no longer be completed by a dash: a player with no lanyard who runs at the gate while Sam is in the doorway is stopped at the door and gets the refusal toast, and the gate shuts as soon as Sam is clear. Only the lanyard (the fair tailgate) and the clone get in.
 
 ## Reproduce
 

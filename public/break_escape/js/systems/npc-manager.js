@@ -1134,7 +1134,7 @@ export default class NPCManager {
 
     // Shut a gate door now (systems/door-gates.js): "closeDoor": "<room the door leads to>"
     // (or a list). Forced, so it skips the "an NPC is still crossing" hold, but it never
-    // closes on a player standing in the doorway. Ordinary doors are ignored (warning).
+    // closes on a player crossing a doorway the gate lets them through. Ordinary doors are ignored (warning).
     if (config.closeDoor) {
       const rooms = Array.isArray(config.closeDoor) ? config.closeDoor : [config.closeDoor];
       rooms.forEach(roomId => {

@@ -3992,7 +3992,7 @@
               "direction": { "type": "string", "enum": ["north", "south", "east", "west"] },
               "gate": {
                 "type": "object",
-                "description": "Gate door (systems/door-gates.js): opens for the listed NPCs as they near, holds open for holdMs, then shuts and relocks. The player cannot open it by clicking; a credential satisfying the door's requires opens it for one holdMs window. N/S doorways only. See README_scenario_design.md, 'Gate doors'.",
+                "description": "Gate door (systems/door-gates.js): opens for the listed NPCs as they near, holds open for holdMs, then shuts and relocks. Put it on the door entry that leads into the locked room. The player cannot open it by clicking from outside; a credential satisfying the door's requires opens it for one holdMs window, and a player inside opens it to leave. North and south doors only: a gate on an east or west door is declined (validator warning). See README_scenario_design.md, 'Gate doors'.",
                 "properties": {
                   "enabled": { "type": "boolean", "description": "false turns a configured gate off" },
                   "openFor": {
@@ -4004,7 +4004,7 @@
                   },
                   "openRadius": { "type": "number", "minimum": 0, "description": "Pixels from the door centre at which an openFor NPC opens it (default 56)" },
                   "holdMs": { "type": "number", "minimum": 0, "description": "ms it stays open after the last NPC leaves (default 2500)" },
-                  "playerMayPassIf": { "type": "string", "description": "A global. While false, a player who comes within openRadius of the open gate shuts it" },
+                  "playerMayPassIf": { "type": "string", "description": "A global. While false, the open gate is solid for a player outside the secured room, and one within openRadius keeps it shut (or shuts it as soon as nobody is in the doorway)" },
                   "sound": {
                     "oneOf": [
                       { "type": "string" },

@@ -68,8 +68,8 @@ test('opens when the guard nears, holds holdMs after he leaves, then shuts', () 
     assert.equal(a.body.enable, true);
     guard.x = 110; guard.y = 130;                     // 31px away
     gates.update(1000);
-    assert.equal(a.body.enable, false);
-    assert.equal(b.body.enable, false);
+    assert.equal(a.doorProperties.open, true);
+    assert.equal(b.doorProperties.open, true);
     assert.equal(a.doorProperties.open, true);
     assert.deepEqual(events.map(e => e[0]), ['door_gate_opened']);
     assert.ok(pmCalls.some(c => c[0] === 'mark' && c[1] === 'lobby' && c[4] === 'north'));
@@ -78,7 +78,7 @@ test('opens when the guard nears, holds holdMs after he leaves, then shuts', () 
     guard.y = 20;                                     // through, 80px away
     gates.update(1500);
     gates.update(3400);                               // 2400ms after he was last near
-    assert.equal(a.body.enable, false);
+    assert.equal(a.doorProperties.open, true);
     gates.update(3600);
     assert.equal(a.body.enable, true);
     assert.equal(b.doorProperties.open, false);
@@ -93,7 +93,7 @@ test('never shuts while the guard\'s remaining path crosses the doorway', () => 
     guard.y = 300;                                    // far, but his path still goes through
     behaviour.currentPath = [{ x: 100, y: 200 }, { x: 100, y: 100 }, { x: 100, y: 20 }];
     gates.update(10000);
-    assert.equal(a.body.enable, false);
+    assert.equal(a.doorProperties.open, true);
     behaviour.currentPath = [];
     gates.update(10100);
     assert.equal(a.body.enable, true);
@@ -117,10 +117,10 @@ test('undisguised player near the open gate shuts it at once and keeps it shut',
     const { gates, a, guard } = setup();
     guard.x = 100; guard.y = 140;
     gates.update(0);
-    assert.equal(a.body.enable, false);
+    assert.equal(a.doorProperties.open, true);
     window.player = { x: 100, y: 170 };               // 70px: outside 56
     gates.update(100);
-    assert.equal(a.body.enable, false);
+    assert.equal(a.doorProperties.open, true);
     window.player = { x: 100, y: 150 };               // 50px, not in the doorway
     gates.update(200);
     assert.equal(a.body.enable, true);
@@ -181,16 +181,30 @@ test('approachPoint: the spot in front of a shut gate on the guard\'s side, only
     assert.equal(new DoorGates().approachPoint('guard', null), null);
 });
 
-test('approachPoint stays inside a small radius, and works for a side door', () => {
+test('approachPoint stays inside a small radius', () => {
     const small = setup({ openFor: ['guard'], openRadius: 40, holdMs: 0 });
     const p = small.gates.approachPoint('guard', { x: 100, y: 300 });
     assert.equal(p.y, 132, 'radius 40: stands 32 px out, inside the radius');
+});
+
+test('a gate on a side door is declined with one warning and stays an ordinary door', () => {
     const gates = new DoorGates();
     const side = { x: 500, y: 500, active: true, body: { enable: true },
         doorProperties: { roomId: 'east', connectedRoom: 'west', direction: 'west', worldX: 500, worldY: 500, isSideDoor: true } };
-    gates.register(side, { openFor: ['guard'] });
-    assert.deepEqual(gates.approachPoint('guard', { x: 700, y: 520 }),
-        { x: 548, y: 500, roomId: 'east', connectedRoom: 'west' });
+    const warnings = [];
+    const realWarn = console.warn;
+    console.warn = (m) => warnings.push(String(m));
+    try {
+        assert.equal(gates.register(side, { openFor: ['guard'] }), false);
+    } finally { console.warn = realWarn; }
+    assert.equal(warnings.length, 1);
+    assert.match(warnings[0], /east -> west/);
+    assert.equal(gates.isGate(side), false);
+    assert.equal(side.doorProperties.gate, undefined);
+    assert.equal(gates.groups.size, 0);
+    assert.equal(gates.pending.size, 0, 'nor waits to join one');
+    assert.equal(gates.approachPoint('guard', { x: 700, y: 520 }), null);
+    assert.equal(side.body.enable, true);
 });
 
 test('a guard held at a barred gate turns back after GUARD_TURN_BACK_MS, once', () => {
@@ -245,7 +259,7 @@ test('the guard retries on his next cycle and crosses once the player has gone, 
     window.player = { x: 400, y: 400 };
     guard.x = 100; guard.y = 140; behaviour.wantsCross = true;
     gates.update(40000);
-    assert.equal(a.body.enable, false, 'opens for him');
+    assert.equal(a.doorProperties.open, true, 'opens for him');
     assert.equal(behaviour.turnBacks.length, 2);
     // Later cycle: the player is back but disguised: opens beside him
     guard.y = 20; gates.update(41000); gates.update(45000);
@@ -266,12 +280,13 @@ test('a guard mid-crossing (in the doorway) is not shut in when a barred player 
     guard.y = 100;                                    // in the doorway
     window.player = { x: 100, y: 150 };               // barred player arrives
     gates.update(100);
-    assert.equal(a.body.enable, false, 'stays open while he is in the doorway');
+    assert.equal(a.doorProperties.open, true, 'stays open while he is in the doorway');
+    assert.equal(a.body.enable, true, 'and solid for the barred player outside');
     assert.equal(gates.closeNow('vault', { force: true, now: 150 }), false, 'even a forced close waits for him');
-    assert.equal(a.body.enable, false);
+    assert.equal(a.doorProperties.open, true);
     guard.y = 40;                                     // through, out of the doorway
     gates.update(200);
-    assert.equal(a.body.enable, true, 'then the barred player shuts it');
+    assert.equal(a.doorProperties.open, false, 'then the barred player shuts it');
 });
 
 test('a guard only walking towards the gate does not hold it open for a barred player', () => {
@@ -280,7 +295,7 @@ test('a guard only walking towards the gate does not hold it open for a barred p
     const { gates, a, guard, behaviour } = setup();
     guard.x = 100; guard.y = 150;
     gates.update(0);
-    assert.equal(a.body.enable, false);
+    assert.equal(a.doorProperties.open, true);
     behaviour.currentPath = [{ x: 100, y: 140 }, { x: 100, y: 100 }, { x: 100, y: 20 }];
     window.player = { x: 120, y: 145 };
     gates.update(100);
@@ -300,6 +315,9 @@ test('disguised play is unchanged: the gate opens beside him at once and nobody 
 
 test('closeNow: forced close skips the crossing hold, keeps the doorway hold, stays shut a while', () => {
     const { gates, a, guard, behaviour } = setup();
+    // A permitted player, so the open gate's body is off and the doorway hold applies
+    // (a barred player pressed on a solid body holds nothing: door-gates-bar.test.mjs)
+    window.gameState.globalVariables.disguised = true;
     guard.x = 100; guard.y = 140;
     gates.update(0);
     behaviour.currentPath = [{ x: 100, y: 100 }];
@@ -317,15 +335,21 @@ test('closeNow: forced close skips the crossing hold, keeps the doorway hold, st
     assert.equal(gates.closeNow('nowhere'), false);
 });
 
-test('a sprite registered while the doorway is open is opened too', () => {
+test('a sprite registered while the doorway is open is opened too, and takes the body rule', () => {
     const { gates, guard } = setup();
     guard.x = 100; guard.y = 140;
     gates.update(0);
-    const late = { x: 100, y: 100, active: true, body: { enable: true },
-        doorProperties: { roomId: 'vault', connectedRoom: 'lobby', direction: 'south', worldX: 100, worldY: 100 } };
+    const mkLate = () => ({ x: 100, y: 100, active: true, body: { enable: false },
+        doorProperties: { roomId: 'vault', connectedRoom: 'lobby', direction: 'south', worldX: 100, worldY: 100 } });
+    const late = mkLate();
     gates.register(late, null);
-    assert.equal(late.body.enable, false);
     assert.equal(late.doorProperties.open, true);
+    assert.equal(late.body.enable, true, 'barred player outside: solid, not "off"');
+    window.gameState.globalVariables.disguised = true;
+    const late2 = mkLate();
+    late2.body.enable = true;
+    gates.register(late2, null);
+    assert.equal(late2.body.enable, false, 'a permitted player: off');
 });
 
 // ---- PathfindingManager.unmarkDoor ----
@@ -334,6 +358,26 @@ const pfSrc = readFileSync(join(js, 'systems/npc-pathfinding.js'), 'utf8')
     .replace("'./path-doorways.js'", `'${dataUrl(readFileSync(join(js, 'systems/path-doorways.js'), 'utf8'))}'`)
     .replace("'./path-avoid.js'", `'${dataUrl('export const AVOID_CELL_COST = 5; export const collectAvoidRects = () => []; export const avoidCells = () => []; export const crossesAvoidRect = () => false; export const roomFloorRect = () => null; export const onFloor = () => false; export const floorRingCells = () => [];')}'`);
 const { NPCPathfindingManager } = await import(dataUrl(pfSrc));
+
+test('the walk grid and its line of sight follow a gate\'s `open`, not its body', () => {
+    // The bar keeps an open gate's body on for a barred player; guards must still path through
+    const doorBody = { enable: true, immovable: true, left: 84, right: 116, top: 124, bottom: 132,
+        gameObject: { doorProperties: { gateKey: '13,13', open: false } } };
+    const scene = { time: { delayedCall() {} }, physics: { world: {
+        bounds: { x: 0, y: 0, width: 200, height: 200 },
+        staticBodies: { iterate() {} },
+        bodies: { iterate(fn) { fn(doorBody); } }
+    } } };
+    const pm = new NPCPathfindingManager(scene);
+    const blockedAt = (g) => g.grid[Math.floor(128 / g.bounds.step)][Math.floor(100 / g.bounds.step)];
+    assert.equal(blockedAt(pm.buildWorldGrid()), 1, 'shut gate: blocked');
+    assert.equal(pm.hasWorldPhysicsLineOfSight(100, 160, 100, 90), false);
+    doorBody.gameObject.doorProperties.open = true;
+    assert.equal(blockedAt(pm.buildWorldGrid()), 0, 'open gate with its body on: walkable');
+    assert.equal(pm.hasWorldPhysicsLineOfSight(100, 160, 100, 90), true);
+    delete doorBody.gameObject.doorProperties.gateKey;
+    assert.equal(blockedAt(pm.buildWorldGrid()), 1, 'an ordinary door body still blocks');
+});
 
 test('unmarkDoor forgets an N/S doorway in both rooms, and an E/W corridor', () => {
     const pm = new NPCPathfindingManager({ time: { delayedCall() {} } });

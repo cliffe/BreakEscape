@@ -95,6 +95,16 @@ export function applyNSDoorCornerBlocks(grid, bounds, doorWorldX, doorWorldY) {
  * verbose per-check logging for player pathfinding.
  * Automatically respects the existing visualDebugMode toggle (backtick key).
  */
+/**
+ * A gate door that shows open (door-gates.js). Its body can stay on while it is open,
+ * solid for a player the gate does not let through, but the walk grid and its line of
+ * sight follow `open` alone, so a guard (and a click-to-walk path) sees an open door.
+ */
+function gateShowsOpen(body) {
+    const props = body?.gameObject?.doorProperties;
+    return !!props && !!props.gateKey && props.open === true;
+}
+
 function isDebug() {
     return !!window.pathfindingDebug;
 }
@@ -324,7 +334,7 @@ export class NPCPathfindingManager {
 
         const grid = Array.from({ length: rows }, () => new Array(cols).fill(0));
         const skip = exclude ? new Set(exclude) : null;
-        const left = body => !!skip && !!body.gameObject && skip.has(body.gameObject);
+        const left = body => (!!skip && !!body.gameObject && skip.has(body.gameObject)) || gateShowsOpen(body);
 
         // Mark every grid cell that substantially overlaps an immovable physics body.
         // Subtracting 1 before flooring the right/bottom edge prevents a body whose
@@ -849,7 +859,7 @@ export class NPCPathfindingManager {
         ];
 
         const testBody = (body) => {
-            if (!body.enable) return false;
+            if (!body.enable || gateShowsOpen(body)) return false;
             const left   = body.left   - bodyMargin;
             const right  = body.right  + bodyMargin;
             const top    = body.top    - bodyMargin;
