@@ -25,13 +25,31 @@ export function appendLockedHint(base, lockable) {
     return hint ? `${String(base).replace(/[.\s]+$/, '')}. ${hint}` : base;
 }
 
-/** Toast duration for a refusal line: longer when it carries a hint to read. */
-export function lockedHintDuration(lockable, plainMs) {
-    return getLockedHint(lockable) ? 5500 : plainMs;
+// A toast that carries a hint lasts by length, so a sentence or two of teaching can be
+// read: 300 ms per word, at least 6 s and at most 12 s. One rule for every hint toast
+// (the locked hints here and the requiresItem hint, systems/requires-item-hint.js).
+export const HINT_MS_PER_WORD = 300;
+export const HINT_MIN_MS = 6000;
+export const HINT_MAX_MS = 12000;
+
+export function hintToastMs(text) {
+    const words = String(text ?? '').trim().split(/\s+/).filter(Boolean).length;
+    return Math.min(HINT_MAX_MS, Math.max(HINT_MIN_MS, words * HINT_MS_PER_WORD));
+}
+
+/**
+ * Toast duration for a refusal line: `plainMs` without a hint, by length with one.
+ * Pass the same `base` as appendLockedHint so its words are counted too; without it
+ * only the hint's words are.
+ */
+export function lockedHintDuration(lockable, plainMs, base = '') {
+    const hint = getLockedHint(lockable);
+    if (!hint) return plainMs;
+    return hintToastMs(base ? appendLockedHint(base, lockable) : hint);
 }
 
 /** Shows the hint alone, as a refusal toast (for locks whose own overlay already said no). */
 export function showLockedHintToast(lockable) {
     const hint = getLockedHint(lockable);
-    if (hint) window.gameAlert?.(hint, 'error', 'Locked', 5500);
+    if (hint) window.gameAlert?.(hint, 'error', 'Locked', hintToastMs(hint));
 }

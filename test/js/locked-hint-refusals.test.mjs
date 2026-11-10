@@ -16,7 +16,7 @@ const js = join(root, 'public/break_escape/js');
 const dir = mkdtempSync(join(tmpdir(), 'locked-hint-refusals-'));
 writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
 writeFileSync(join(dir, 'locked-hint.js'), readFileSync(join(js, 'utils/locked-hint.js'), 'utf8'));
-const { appendLockedHint, lockedHintDuration, showLockedHintToast } =
+const { appendLockedHint, lockedHintDuration, showLockedHintToast, hintToastMs } =
     await import(pathToFileURL(join(dir, 'locked-hint.js')));
 
 const HINT = 'Ruth has the spare badge.';
@@ -38,12 +38,12 @@ test('rfid refusal text carries the hint after a full stop; no hint leaves it un
 
 test('pin refusal text carries the hint; a longer toast is used', () => {
     assert.equal(appendLockedHint('Failed to enter correct PIN.', door()), `Failed to enter correct PIN. ${HINT}`);
-    assert.equal(lockedHintDuration(door(), 3000), 5500);
+    assert.equal(lockedHintDuration(door(), 3000), 6000);
     assert.equal(lockedHintDuration({}, 3000), 3000);
 });
 
 test('biometric/cloner refusal shows the hint as its own toast; nothing without a hint', () => {
-    assert.deepEqual(captureAlerts(() => showLockedHintToast(door())), [[HINT, 'error', 'Locked', 5500]]);
+    assert.deepEqual(captureAlerts(() => showLockedHintToast(door())), [[HINT, 'error', 'Locked', 6000]]);
     assert.deepEqual(captureAlerts(() => showLockedHintToast({})), []);
 });
 
@@ -80,11 +80,33 @@ test('key locks: wrong-key text keeps going through withLockedHint', () => {
 
 test('gate door refusal appends the hint, then emits door_gate_denied', () => {
     const d = src('systems/doors.js');
-    assert.match(d, /appendLockedHint\('Access denied: this door only opens for authorised staff\.', hintSource\), 'error', 'Door', lockedHintDuration\(hintSource, 3000\)\);\s*window\.eventDispatcher\?\.emit\?\.\('door_gate_denied'/);
+    assert.match(d, /const denied = 'Access denied: this door only opens for authorised staff\.';\s*window\.gameAlert\?\.\(appendLockedHint\(denied, hintSource\), 'error', 'Door', lockedHintDuration\(hintSource, 3000, denied\)\);\s*window\.eventDispatcher\?\.emit\?\.\('door_gate_denied'/);
     // either sprite of the doorway may take the click: the hint falls back to the gate group's
     assert.match(d, /props\.lockedHint \|\| gateGroup\?\.lockedHint/);
     assert.match(readFileSync(join(js, 'systems/door-gates.js'), 'utf8'), /g\.lockedHint = props\.lockedHint/);
     // the gate sprite carries the room's hint in doorProperties, which getLockedHint reads
     assert.match(d, /lockedHint: lockProps\.lockedHint \?\? connectedRoomData\?\.lockedHint \?\? null/);
     assert.match(appendLockedHint('Access denied: this door only opens for authorised staff.', { doorProperties: { lockedHint: HINT } }), new RegExp(HINT));
+});
+
+// Design review R3 M1: a hint toast lasts by length, so a long hint (the lab's tailgate
+// hint) can be read. One rule and one function, shared with the requiresItem hint.
+test('a hint toast lasts 300 ms per word, at least 6 s and at most 12 s, the base line counted', async () => {
+    const words = n => Array.from({ length: n }, () => 'word').join(' ');
+    const long = n => ({ doorProperties: { lockedHint: words(n) } });
+    assert.equal(hintToastMs(words(20)), 6000);
+    assert.equal(hintToastMs(words(30)), 9000);
+    assert.equal(hintToastMs(words(64)), 12000);
+    // no hint: the caller's plain duration, whatever the base
+    assert.equal(lockedHintDuration({}, 3000, 'Access denied.'), 3000);
+    // hint alone, and hint with the base line it is appended to
+    assert.equal(lockedHintDuration(long(25), 3000), 7500);
+    const base = 'Access denied: this door only opens for authorised staff.';
+    assert.equal(base.split(' ').length, 9);
+    assert.equal(lockedHintDuration(long(25), 3000, base), (9 + 25) * 300);
+    assert.equal(lockedHintDuration(long(55), 3000, base), 12000);
+    assert.deepEqual(captureAlerts(() => showLockedHintToast(long(30))), [[words(30), 'error', 'Locked', 9000]]);
+    // the requiresItem hint uses the same function
+    const req = readFileSync(join(js, 'systems/requires-item-hint.js'), 'utf8');
+    assert.match(req, /export \{ hintToastMs as requiresItemHintMs \} from '\.\.\/utils\/locked-hint\.js'/);
 });

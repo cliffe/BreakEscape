@@ -672,7 +672,8 @@ async function handleDoorInteraction(doorSprite) {
         }
         // The hint lives on the locked room's side of the doorway; the group shares it
         const hintSource = { doorProperties: { lockedHint: props.lockedHint || gateGroup?.lockedHint || null } };
-        window.gameAlert?.(appendLockedHint('Access denied: this door only opens for authorised staff.', hintSource), 'error', 'Door', lockedHintDuration(hintSource, 3000));
+        const denied = 'Access denied: this door only opens for authorised staff.';
+        window.gameAlert?.(appendLockedHint(denied, hintSource), 'error', 'Door', lockedHintDuration(hintSource, 3000, denied));
         window.eventDispatcher?.emit?.('door_gate_denied', {
             roomId: props.roomId, connectedRoom: props.connectedRoom, direction: props.direction
         });
