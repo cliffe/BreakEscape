@@ -976,7 +976,7 @@ sign-in screen.
 - **What the browser learns, and when.** That this owner is locked out at this PC, at the moment
   the owner comes back to the locked screen, which is the moment the game shows it anyway. The
   sign-in screen's answers do not change, and no list of locked-out accounts is ever sent. What it
-  does reveal, the question for the user in decision 14: the player who locked out a guessed
+  does reveal, which the user accepted in decision 14: the player who locked out a guessed
   username learns, when the owner returns, whether that username was the owner's.
 - **What it teaches.** A lockout policy is a denial of service anyone at the keyboard can cause.
   The game's lockout is per PC, so the owner can still sign in elsewhere, which is why they
@@ -2242,7 +2242,7 @@ commits with explicit paths, and never commits another's files.
 | H | Validator | H-2 | `scripts/validate_access_work.rb` | At once |
 | H | Needs and runner | H-3 | `systems/npc-needs.js`, `systems/npc-workarounds.js`, their tests | At once |
 | H | Workstation, sessions, tooling, scenario and documents | H-4, H-5 | `systems/workstation-state.js`, `systems/pc-sessions.js`, `systems/unlock-system.js`, `systems/test-bridge/access.js`, `tools/playtest/`, `scenarios/test_access_work/`, the documents | The three client files and tooling at once; the scenario after the others |
-| L | One builder | L-1, L-2 | `lib/break_escape/access_work.rb`, `game.rb`, `systems/npc-work.js`, `systems/npc-reports.js`, `systems/npc-needs.js`, `systems/workstation-state.js`, `README_scenario_design.md`, the scenario | After H's runs pass, and only on the user's yes (decision 14) |
+| L | One builder | L-1, L-2 | `lib/break_escape/access_work.rb`, `game.rb`, `systems/npc-work.js`, `systems/npc-reports.js`, `systems/npc-needs.js`, `systems/workstation-state.js`, `README_scenario_design.md`, the scenario | After H's runs pass (the user said yes to decision 14 on 2026-11-10) |
 | C | Server | C-1 | as A's | At once |
 | C | Validator | C-2 | `scripts/validate_access_work.rb`, `scripts/validate_npc_needs.rb`, the schema, `lib/break_escape/npc_habits/clues.rb` (two lines) | At once |
 | C | Needs core | C-3 | `systems/npc-needs.js`, `systems/npc-work.js`, `systems/npc-sight-challenge.js` | At once |
@@ -2446,7 +2446,7 @@ do not depend on it.
 
 | # | Question | Options | Recommendation |
 |---|---|---|---|
-| 14 | Lockout as a cause (sub-slice L) | Build it; or leave it out | **Build it.** It is the one chain started from a sign-in screen, the one cause the server verifies, and it teaches that a lockout policy is a denial of service anyone at the keyboard can cause. It needs the user's explicit yes because it tells the browser something about an account: when the owner returns to a locked screen at a PC where the player has caused a lockout, the player learns whether the username they locked out was the owner's. A modified browser can ask that at any time after the lockout, not only at the owner's return (9.3). The sign-in screen itself never says which usernames are real, no list of locked-out accounts is sent, and a browser that has caused no lockout never asks |
+| 14 | Lockout as a cause (sub-slice L) | Build it; or leave it out | **Build it (the user said yes, 2026-11-10).** It is the one chain started from a sign-in screen, the one cause the server verifies, and it teaches that a lockout policy is a denial of service anyone at the keyboard can cause. It needs the user's explicit yes because it tells the browser something about an account: when the owner returns to a locked screen at a PC where the player has caused a lockout, the player learns whether the username they locked out was the owner's. A modified browser can ask that at any time after the lockout, not only at the owner's return (9.3). The sign-in screen itself never says which usernames are real, no list of locked-out accounts is sent, and a browser that has caused no lockout never asks |
 
 ## 17. Declined
 
