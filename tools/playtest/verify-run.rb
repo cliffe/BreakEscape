@@ -58,7 +58,7 @@ g = BreakEscape::Game.find(game_id)
 ps = g.player_state || {}
 
 ACCESS_KEYS = %w[sessions signedInPcs serverClones copiedItems loginFailures loginLockouts footholds
-                 gainedFootholds].freeze
+                 gainedFootholds npcFrustration].freeze
 
 # The access model keys, one line each. Sign-in details are never in player_state, so
 # nothing here is secret: NPC ids, PC ids, card ids, item ids and typed usernames.
@@ -91,7 +91,12 @@ def access_section(ps)
     ['loginFailures', failures],
     ['loginLockouts', list.call(ps['loginLockouts']).map(&:to_s)],
     ['footholds', footholds],
-    ['gainedFootholds', list.call(ps['gainedFootholds']).map(&:to_s)]
+    ['gainedFootholds', list.call(ps['gainedFootholds']).map(&:to_s)],
+    # Slice 9.2 (ACCESS_MODEL_SLICE_9_2_PLAN.md 11): level, hand-overs and done workarounds per NPC
+    ['npcFrustration', hash.call(ps['npcFrustration']).sort.map do |id, e|
+      e = {} unless e.is_a?(Hash)
+      "#{id} level #{e['level'] || 0}, handed #{hash.call(e['handed']).size}, done #{list.call(e['done']).inspect}"
+    end]
   ]
   lines = ['access model']
   rows.each do |name, items|

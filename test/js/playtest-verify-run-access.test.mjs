@@ -46,7 +46,7 @@ test('--access prints only the access section, one line per key, and exits 0', (
   const lines = r.out.trim().split('\n');
   assert.match(lines[0], /^game\s+1\s+\(mission stub\)/);
   assert.equal(lines[1], 'access model');
-  assert.equal(lines.length, 10, r.out);
+  assert.equal(lines.length, 11, r.out);   // npcFrustration: slice 9.2
   assert.match(r.out, /sessions\s+2: jake_pc = jake \(password\); it_pc = dana \(claim\)/);
   assert.match(r.out, /signedInPcs\s+2: jake_pc; it_pc/);
   assert.match(r.out, /serverClones\s+2: 4F00A1C2 from npc jake; EXEC-DF-01 from object exec_badge \(UID-only\)/);
@@ -56,6 +56,7 @@ test('--access prints only the access section, one line per key, and exits 0', (
   assert.doesNotMatch(r.out, /VERDICT|unlocked rooms|inventory/, 'nothing but the access section');
   assert.match(r.out, /footholds\s+0\n/);
   assert.match(r.out, /gainedFootholds\s+0\n/);
+  assert.match(r.out, /npcFrustration\s+0/);
 });
 
 test('--access prints footholds, gainedFootholds, and remote and foothold beside a session', () => {

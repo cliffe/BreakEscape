@@ -66,3 +66,13 @@ test('jobLabel: " private" when only other owners\' private objects were passed 
     assert.equal(jobLabel({ mode: 'idle', clockMs: 0, privateNoted: { work: true } }, null), 'idle private');
     assert.equal(jobLabel({ mode: 'idle', clockMs: 0, privateNoted: { work: false } }, null), 'idle');
 });
+
+test('access slice 9.2: an F bar for frustration, last, only when given', async () => {
+    const { barLayout, FRUSTRATION_COLOUR } = await import('../../public/break_escape/js/systems/npc-needs-debug.js');
+    const needs = { work: { urgentAt: 50 }, caffeine: { urgentAt: 30 } };
+    assert.deepEqual(barLayout({ needs, levels: { work: 60, caffeine: 40 } }).map(r => r.letter), ['C', 'W']);
+    const rows = barLayout({ needs, levels: { work: 60, caffeine: 40 }, frustration: 40 });
+    assert.deepEqual(rows.map(r => r.letter), ['C', 'W', 'F']);
+    assert.equal(rows[2].colour, FRUSTRATION_COLOUR);
+    assert.equal(rows[2].fillW, Math.round(rows[2].w * 0.4));
+});

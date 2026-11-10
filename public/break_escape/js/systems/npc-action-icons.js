@@ -104,6 +104,8 @@ export function pickIconEntry(job, actionIcons = {}, target = null) {
     if (!job) return null;
     // Waiting in a queue (slice 10): the hourglass, whatever the machine (a scenario "queue" entry wins)
     if (job.phase === 'queued') return firstIcon(['queue'], actionIcons);
+    // Access slice 9.2 A (plan 5.5): a visit (a check, a workaround) shows the work picture
+    if (job.kind === 'visit') return firstIcon(['work'], actionIcons);
     const keys = (job.kind === 'carry' || job.itemId)
         ? [job.files ? 'file' : null, job.tag, 'curiosity']
         : (target ? [target.id, target.phone ? 'phone' : null, (job.prints || target.print) ? 'print' : null, job.need, target.satisfies, target.type]
@@ -118,6 +120,13 @@ export function pickIconEntry(job, actionIcons = {}, target = null) {
  */
 export function stateIconEntry(st, actionIcons = {}, optIn = false) {
     if (!st || st.job) return null;
+    // Access slice 9.2 A (plan 5.5): while the server's tell is 1 or 2 an NPC whose uses are judged
+    // shows `blocked` (pulsing at 2), whatever showPressingNeeds says: declaring work has opted in
+    const judged = !!(st.judged && (st.judged.work || st.judged.social_media));
+    if (!st.noticed && judged && st.tell >= 1) {
+        const e = firstIcon(['blocked'], actionIcons, { fallback: false });
+        return e ? { ...e, pulse: st.tell >= 2 } : null;
+    }
     const key = st.noticed ? 'noticed' : (st.blockedNeed ? 'blocked' : null);
     if (!key) return null;
     if (!optIn && !usable((actionIcons || {})[key])) return null;
@@ -152,7 +161,8 @@ export function thoughtBubble(st, actionIcons = {}, on = false) {
     if (typeof st.avoiding === 'string' && st.avoiding) return { kind: 'avoid', npcId: st.avoiding };
     const p = pressingBubble(st, actionIcons, on);
     if (p) return { kind: 'pressing', ...p };
-    const parked = Array.isArray(st.parked) ? st.parked.find(x => x && x.need && !(st.job && st.job.need === x.need)) : null;
+    // Access 9.2 (R5 n3): a reload's `held` park is silent, so it shows no bubble
+    const parked = Array.isArray(st.parked) ? st.parked.find(x => x && x.need && x.reason !== 'held' && !(st.job && st.job.need === x.need)) : null;
     if (!parked) return null;
     const entry = firstIcon([parked.need], actionIcons);
     return { kind: 'parked', need: parked.need, reason: parked.reason, badge: PARKED_BADGE[parked.reason] || 'closed',
@@ -522,7 +532,9 @@ export class NpcActionIcons {
             ic.box.setData('job', st.job?.targetId || '');
             ic.box.setData('key', entry.key);
             ic.box.setData('icon', ic.shown);
-            ic.box.setScale(winding ? 1 + 0.35 * Math.abs(Math.sin(Date.now() / 120)) : 1);
+            ic.box.setData('pulse', !!entry.pulse);
+            ic.box.setScale(winding ? 1 + 0.35 * Math.abs(Math.sin(Date.now() / 120))
+                : (entry.pulse && !reducedMotion() ? 1 + 0.12 * Math.abs(Math.sin(Date.now() / 400)) : 1));
         }
     }
 }

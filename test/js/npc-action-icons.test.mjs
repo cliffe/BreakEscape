@@ -36,3 +36,17 @@ test('targetInfo: cached by id after one room scan; dropped when the sprite is d
         delete globalThis.window;
     }
 });
+
+test('access slice 9.2: blocked by tell for a judged NPC with no job, pulsing at 2; work on a visit; no bubble for held', async () => {
+    const m = await import('../../public/break_escape/js/systems/npc-action-icons.js');
+    const judged = { work: true, social_media: false };
+    assert.equal(m.stateIconEntry({ job: null, tell: 0, judged }, {}, false), null);
+    const one = m.stateIconEntry({ job: null, tell: 1, judged }, {}, false);
+    assert.equal(one.key, 'blocked');
+    assert.equal(one.pulse, false);
+    assert.equal(m.stateIconEntry({ job: null, tell: 2, judged }, {}, false).pulse, true);
+    assert.equal(m.stateIconEntry({ job: null, tell: 2, judged: { work: false } }, {}, false), null, 'not judged, not opted in');
+    assert.equal(m.pickIconEntry({ kind: 'visit', phase: 'goto_target', need: null }, {}).key, 'work');
+    assert.equal(m.thoughtBubble({ parked: [{ need: 'work', reason: 'held' }] }, {}, true), null);
+    assert.equal(m.thoughtBubble({ parked: [{ need: 'work', reason: 'failed' }] }, {}, true).kind, 'parked');
+});

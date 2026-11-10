@@ -2085,8 +2085,10 @@ export class NPCNeedsSystem {
 
     /** The scenario response's npcFrustration, kept and applied as each NPC registers (5.4). */
     restoreFrustration(map) {
-        this._restored = map && typeof map === 'object' ? map : null;
+        this._restored = map && typeof map === 'object' ? { ...map } : null;
         this._restoredAt = typeof this.world.elapsedMs === 'function' ? this.world.elapsedMs() : 0;
+        // NPCs already registered (the start room) take theirs now; the rest as they register
+        for (const id of [...this.states.keys()].sort()) this._applyRestored(this.states.get(id));
     }
 
     _applyRestored(s) {

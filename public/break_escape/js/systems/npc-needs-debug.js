@@ -29,8 +29,10 @@ export function barColour(level, cfg = {}, unmetMs = 0) {
  * the panel's top-left. `needs` = { name: cfg }, `levels` = { name: 0-100 },
  * `lastSatisfiedAt` = { name: clockMs }.
  */
-export function barLayout({ needs = {}, levels = {}, lastSatisfiedAt = {}, clockMs = 0 } = {}, b = BAR) {
-    return Object.keys(needs).sort().map((name, i) => {
+export const FRUSTRATION_COLOUR = 0xc0392b;
+
+export function barLayout({ needs = {}, levels = {}, lastSatisfiedAt = {}, clockMs = 0, frustration = null } = {}, b = BAR) {
+    const rows = Object.keys(needs).sort().map((name, i) => {
         const level = Math.max(0, Math.min(100, Number(levels[name]) || 0));
         return {
             need: name,
@@ -43,6 +45,13 @@ export function barLayout({ needs = {}, levels = {}, lastSatisfiedAt = {}, clock
             colour: barColour(level, needs[name], clockMs - (lastSatisfiedAt[name] ?? clockMs))
         };
     });
+    // Access slice 9.2 A (plan 5.4): an F bar for the frustration the server holds, last
+    if (Number.isFinite(frustration)) {
+        const level = Math.max(0, Math.min(100, frustration));
+        rows.push({ need: 'frustration', letter: 'F', x: b.pad + b.letterW, y: b.pad + rows.length * (b.h + b.gap), w: b.w, h: b.h,
+            fillW: Math.round(b.w * level / 100), colour: FRUSTRATION_COLOUR });
+    }
+    return rows;
 }
 
 /**
@@ -161,7 +170,9 @@ export class NpcNeedsDebug {
             const fresh = !this.panels.has(id) || this.panels.get(id).sprite !== sprite;
             const p = this._panel(id, sprite);
             if (redraw || fresh) {
-                const rows = barLayout({ needs: s.needs, levels: s.levels, lastSatisfiedAt: s.lastSatisfiedAt, clockMs: sys.clockMs });
+                const judged = !!(s.needs.work && sys._judged?.(s, 'work')) || !!s.needs.social_media;
+                const rows = barLayout({ needs: s.needs, levels: s.levels, lastSatisfiedAt: s.lastSatisfiedAt, clockMs: sys.clockMs,
+                    frustration: judged || s.frustration > 0 ? s.frustration : null });
                 this._draw(p, rows, `${id}: ${jobLabel({ ...s, clockMs: sys.clockMs }, s.job)}`);
             }
             const vis = !!sprite.visible;

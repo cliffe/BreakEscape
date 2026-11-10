@@ -35,7 +35,7 @@ test('the bridge exposes the access block', () => {
   const src = readFileSync(join(js, 'systems/test-bridge/index.js'), 'utf8');
   assert.match(src, /import \{ accessBridge \} from '\.\/access\.js';/);
   assert.match(src, /\baccess: accessBridge,/);
-  assert.deepEqual(Object.keys(accessBridge).sort(), ['footholds', 'networkView', 'savedCards', 'screenTransitions', 'sessions', 'workstation']);
+  assert.deepEqual(Object.keys(accessBridge).sort(), ['footholds', 'networkView', 'reports', 'savedCards', 'screenTransitions', 'sessions', 'work', 'workstation']);
 });
 
 test('sessions() is empty without pc-sessions.js, and reads its list() or sessions map', () => {
@@ -182,4 +182,16 @@ test('the event log keeps network_* events (slice 9.3a step 8)', async () => {
   window.eventDispatcher.emit('some_noise', {});
   assert.deepEqual(log.peek().map(e => e.event), ['network_viewed', 'network_view_closed:jack_comms_port', 'npc_tick_chatter_x']);
   assert.equal(emitted.length, 4, 'every event still reaches the dispatcher');
+});
+
+test('slice 9.2: work(npcId) reads the plan and the needs state; reports() reads npc-reports.js', () => {
+  delete window.npcReports;
+  assert.deepEqual(accessBridge.reports(), { requests: 0, reports: 0, pending: 0, settled: [] });
+  window.npcReports = { requests: 2, sent: 3, pending: [{}], settled: new Set(['kai']) };
+  assert.deepEqual(accessBridge.reports(), { requests: 2, reports: 3, pending: 1, settled: ['kai'] });
+  window.npcManager = { getNPC: id => (id === 'dana' ? { id, work: { breakDrain: 10, needs: [] } } : null) };
+  window.npcNeedsSystem = { getState: id => (id === 'dana' ? { frustration: 20, tell: 1, settled: false, failed: null, parked: [] } : null) };
+  assert.deepEqual(accessBridge.work('dana'), { plan: { breakDrain: 10, needs: [] }, frustration: 20, tell: 1, settled: false, failed: null, parked: [] });
+  assert.equal(accessBridge.work('nobody'), null);
+  delete window.npcReports; delete window.npcManager; delete window.npcNeedsSystem;
 });

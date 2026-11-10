@@ -12,6 +12,8 @@
  *   savedCards()        the card copier's saved_cards ids (client-written; never decides identity)
  *   footholds()         the footholds systems/network-links.js holds (slice 9.3a)
  *   networkView(id)     the last network view network-links.js fetched for that foothold
+ *   work(npcId)         slice 9.2: the NPC's work plan (read only), frustration level and tell
+ *   reports()           slice 9.2: how many POST /npc_frustration requests and reports were sent
  *
  * All JSON in and out.
  */
@@ -22,6 +24,25 @@ import { findSprite } from '../screen-states.js';
 const json = (v) => (v === undefined ? null : JSON.parse(JSON.stringify(v)));
 
 export const accessBridge = {
+    /**
+     * Slice 9.2 (ACCESS_MODEL_SLICE_9_2_PLAN.md 11): `{ plan, frustration, tell, settled, failed,
+     * parked }` for a needs NPC, `plan` being the server's `work` on its record (null without one).
+     */
+    work(npcId) {
+        const rec = window.npcManager?.getNPC?.(npcId) || window.npcManager?.npcs?.get?.(npcId) || null;
+        const st = window.npcNeedsSystem?.getState?.(npcId) || null;
+        if (!rec && !st) return null;
+        return json({ plan: rec?.work || null, frustration: st?.frustration ?? null, tell: st?.tell ?? null,
+            settled: st?.settled ?? null, failed: st?.failed ?? null, parked: st?.parked ?? [] });
+    },
+
+    /** Slice 9.2: `{ requests, reports, pending, settled }` from systems/npc-reports.js. */
+    reports() {
+        const r = window.npcReports;
+        if (!r) return { requests: 0, reports: 0, pending: 0, settled: [] };
+        return { requests: r.requests, reports: r.sent, pending: r.pending.length, settled: [...r.settled].sort() };
+    },
+
     /**
      * The client's session list, `[{ pcId, npcId, username, displayName, via }]`. Read from
      * `window.pcSessions` (systems/pc-sessions.js, access model step 8): its `list()` when it

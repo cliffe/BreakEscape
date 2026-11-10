@@ -119,6 +119,12 @@ export class ApiClient {
     });
   }
 
+  // Slice 9.2 (ACCESS_MODEL_SLICE_9_2_PLAN.md 9.1): NPC failed and met uses,
+  // [{ npc_id, event, need, object_id, missing, rearmed }]. Answers { answers: [...] }.
+  static async npcFrustration(reports) {
+    return this.post('/npc_frustration', { reports });
+  }
+
   // Sign in at a sign-in PC (access model 5.3, 6). `fields` is { username, password }
   // (the claim of step 9 sends { claim: "owner", globals } instead). A remote sign-in
   // (slice 9.3a, 4.4) adds { foothold: <footholdId> }; the server then checks the host is
