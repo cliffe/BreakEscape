@@ -278,6 +278,30 @@ test('a move that starts while the leg\'s answer is on its way keeps its target:
     delete window.doorGates;
 });
 
+test('a late answer that is a path is dropped too: the move keeps its own path and waypoint', async () => {
+    // The same race with a path found for the old leg. Taking it would walk the old leg on
+    // top of the move and step the waypoint index past the move's single destination.
+    const { b } = setup({ bLoaded: true, bLocked: false });
+    let release = null;
+    b.pathfindingManager.findWorldPath = (sx, sy, ex, ey, cb) => { release = cb; };
+    b.config = await silently(() => b.parseConfig({ patrol: { enabled: true, multiRoom: true, route: ROUTE } }));
+    b.config.patrol.currentSegmentIndex = 1;
+    b.config.patrol.waypointIndex = 0;
+    await silently(() => b.chooseNewPatrolTarget(0));
+    assert.equal(typeof release, 'function', 'the leg request is in flight');
+    const moveTarget = { x: 500, y: 500, dwellTime: 0 };   // what a goToAndStay sets
+    b.patrolTarget = moveTarget;
+    b.currentPath = [];
+    b.pathFollowingActive = false;
+    const index = b.config.patrol.waypointIndex;
+    await silently(() => release([{ x: 1, y: 1 }]));
+    assert.deepEqual(b.currentPath, [], 'the old leg is not walked');
+    assert.equal(b.pathFollowingActive, false);
+    assert.equal(b.config.patrol.waypointIndex, index, 'the waypoint index is not stepped');
+    assert.equal(b.patrolTarget, moveTarget, 'the move keeps its target');
+    assert.equal(b._pathfindingInProgress, false, 'the request is still marked as answered');
+});
+
 test('with the real gate system: kept out at his reader he waits; pushed out of the radius he walks back', async () => {
     // The two halves (approachPoint and _approachRouteGate) run together here. Each was
     // tested against a stand-in for the other, which is how a guard standing inside his

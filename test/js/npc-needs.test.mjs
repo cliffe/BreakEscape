@@ -4,6 +4,7 @@
 // scenarios/test_npc_needs.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { NPCNeedsSystem, needTiming, NEEDS_TICK_MS, RETURN_YIELD_MS, createEngineWorld } from '../../public/break_escape/js/systems/npc-needs.js';
 
 import { makeWorld } from './fixtures/needs-stub-world.mjs';
@@ -551,17 +552,7 @@ test('a need for the own post that turns urgent while away: arriving for it is t
     const w = makeWorld(cfg);
     const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
     w.attach(sys);
-    // Walks take two seconds here (the stub's are instant), so the walk home is still under
-    // way when the next choice is made
-    let walk = null;
-    w.world.moveTo = (id, x, y) => { walk = { id, x, y, at: sys.tickCount + 8 }; };
-    w.world.cancelMove = () => { walk = null; };
-    sys.onTick(() => {
-        if (!walk || sys.tickCount < walk.at) return;
-        const m = walk; walk = null;
-        w.pos[m.id].x = m.x; w.pos[m.id].y = m.y;
-        sys.onArrived(m.id, 'needs');
-    });
+    slowWalks(w, sys);
     sys.registerAll();
     sys.step(90000);
     const log = sys.getLog().filter(e => e.npc === 'clerk');
@@ -576,6 +567,96 @@ test('a need for the own post that turns urgent while away: arriving for it is t
     assert.equal(log.filter(e => e.ev === 'returned_post').length, 1);
     assert.equal(w.calls.emits.filter(e => e.name === 'npc_returned_post:clerk').length, 1);
     assert.equal(sys.getState('clerk').atPost, true);
+});
+
+/** Walks that take two seconds (the stub's are instant), so a walk is still under way when
+ *  the next tick's choices are made. Returns a probe for the walk in progress. */
+function slowWalks(w, sys) {
+    let walk = null;
+    w.world.moveTo = (id, x, y) => { walk = { id, x, y, from: sys.tickCount, at: sys.tickCount + 8 }; };
+    w.world.cancelMove = () => { walk = null; };
+    sys.onTick(() => {
+        if (!walk || sys.tickCount < walk.at) return;
+        const m = walk; walk = null;
+        w.pos[m.id].x = m.x; w.pos[m.id].y = m.y;
+        sys.onArrived(m.id, 'needs');
+    });
+    return () => walk;
+}
+
+test('a delivery to the own post: arriving with the item is the return', () => {
+    // A carry job whose target is the own post object (a printout taken back to the desk)
+    // arrives the same way as a need for it. The return is announced on arrival, once, and
+    // not after the session at the desk.
+    const w = makeWorld(curiousCfg());
+    const sys = new NPCNeedsSystem(w.world, { seed: 3, manualClock: true });
+    w.attach(sys);
+    slowWalks(w, sys);
+    sys.registerAll();
+    sys.step(30000);
+    w.objs.push({ id: 'dropped_thing', x: 160, y: 160, roomId: 'office', pickable: true, needsTag: 'found_item' });
+    sys.step(60000);
+    const log = sys.getLog().filter(e => e.npc === 'finder');
+    const start = log.find(e => e.ev === 'job_start');
+    assert.equal(start?.target, 'finder_pc', 'the delivery is to the own PC');
+    const names = w.calls.emits.map(e => e.name);
+    assert.ok(names.includes('npc_left_post:finder'), 'it really left');
+    const picked = log.findIndex(e => e.ev === 'picked_up');
+    const using = log.findIndex(e => e.ev === 'using' && e.target === 'finder_pc');
+    const used = log.findIndex(e => e.ev === 'used' && e.target === 'finder_pc');
+    const back = log.findIndex(e => e.ev === 'returned_post');
+    assert.ok(picked >= 0 && using > picked && used > using, 'picked up, carried home, used there');
+    assert.ok(back > picked && back < using, 'returned on arrival, before the session');
+    assert.equal(log[back].t, log[using].t, 'in the same tick as the arrival');
+    assert.ok(log[used].t > log[back].t, 'the session comes after');
+    assert.equal(log.filter(e => e.ev === 'returned_post').length, 1);
+    assert.equal(w.calls.emits.filter(e => e.name === 'npc_returned_post:finder').length, 1);
+    assert.equal(sys.getState('finder').atPost, true);
+});
+
+test('a walk back that is a job for the own post checks for the player at the desk on every tick', () => {
+    // An ordinary walk home is checked each tick. This one is a job, and was checked only on
+    // the tick after the trip ended and on arrival: a player at the desk mid-walk who had
+    // stepped away by the arrival was not caught.
+    const cfg = office({ objects: [
+        { id: 'own_pc', x: 100, y: 68, affordance: { satisfies: 'work', restores: 60, useSeconds: 10 } }
+    ] });
+    cfg.objects = cfg.objects.filter(o => o.id !== 'clerk_pc');
+    cfg.npcs.clerk.rec.needsHome = 'own_pc';
+    cfg.npcs.clerk.rec.needs = {
+        caffeine: { decayPerMin: 60, urgentAt: 50, initial: 55, jitterPct: 0 },
+        work: { decayPerMin: 20, urgentAt: 40, initial: 45, jitterPct: 0 }
+    };
+    const w = makeWorld(cfg);
+    const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+    w.attach(sys);
+    const walking = slowWalks(w, sys);
+    // Near the desk only in the middle of the walk to the own PC: not on its first two ticks
+    // and not on its last two
+    const asked = [];
+    w.world.playerAtPost = () => {
+        const job = sys.getState('clerk').job;
+        const walk = walking();
+        const mid = !!(walk && job?.targetId === 'own_pc' && job.phase === 'goto_target'
+            && sys.tickCount >= walk.from + 3 && sys.tickCount <= walk.at - 2);
+        asked.push(mid);
+        return { distance: mid ? 10 : 500, inMinigame: false };
+    };
+    sys.registerAll();
+    sys.step(90000);
+    assert.ok(asked.some(Boolean), 'the player was at the desk during the walk back');
+    const caught = w.calls.emits.filter(e => e.name === 'npc_caught_at_post:clerk');
+    assert.equal(caught.length, 1, 'caught once');
+    assert.equal(caught[0].data.objectId, 'own_pc');
+    assert.equal(w.calls.emits.filter(e => e.name === 'npc_returned_post:clerk').length, 1);
+});
+
+test('game.js hands the frame step to the needs clock', () => {
+    // The needs clock follows Phaser's frame step only if the scene's update passes it on. A
+    // tidy-up of the signature would bring the wall clock back with every other test passing.
+    const src = readFileSync(new URL('../../public/break_escape/js/core/game.js', import.meta.url), 'utf8');
+    assert.match(src, /export function update\(time, delta\)/, 'the scene update takes (time, delta)');
+    assert.match(src, /npcNeedsSystem\?\.update\(delta\)/, 'and passes delta to the needs system');
 });
 
 // ── tick-cost hygiene (slice 1): office() logs are unchanged ────────────────────

@@ -1563,6 +1563,10 @@ class NPCBehavior {
             dest.y,
             (path) => {
                 this._pathfindingInProgress = false;
+                // A move that began while this answer was on its way (goToAndStay) owns
+                // the target now: leave it alone, whether the answer is a path or none.
+                // A path taken here would be walked on top of the move's own waypoint.
+                if (this.patrolTarget !== legTarget) return;
                 if (path && path.length > 0) {
                     this._pathRetryAfter = 0;
                     this.currentPath = path;
@@ -1580,9 +1584,6 @@ class NPCBehavior {
                     // If a shut gate of his own is what stands in the way and he is
                     // out of its reach, he walks back to it first (it opens as he
                     // nears), or he would retry from where he stands for ever.
-                    // A move that began while this answer was on its way (goToAndStay)
-                    // owns the target now: leave it alone.
-                    if (this.patrolTarget !== legTarget) return;
                     if (this._approachRouteGate(pathfindingManager, [currentSegment.room])) return;
                     console.warn(`⚠️ [${this.npcId}] Waypoint (${nextWaypoint.x}, ${nextWaypoint.y}) in ${currentSegment.room} unreachable, retrying in 2s`);
                     this._pathRetryAfter = this.clockNow() + 2000;

@@ -650,6 +650,9 @@ export class NPCNeedsSystem {
 
         // Coming back from a real leave: is the player at the desk? (once per return)
         if (s.mode === 'returning' && !s.atPost && !s.caughtEmitted) this._checkCaught(s, pos);
+        // The same on a walk back that is also a job for the own post (a need for it, or a
+        // delivery to it): that walk is the return, so the player is checked on every tick of it
+        if (s.mode === 'job' && s.job?.phase === 'goto_target' && !s.atPost && !s.caughtEmitted && this._targetsOwnPost(s)) this._checkCaught(s, pos);
 
         if (s.mode === 'returning' && arrived) {
             s.mode = 'idle';
@@ -899,6 +902,13 @@ export class NPCNeedsSystem {
         return !!(j && j.kind === 'use' && s.home?.objectId && j.targetId === s.home.objectId);
     }
 
+    /** True while the current job ends at the NPC's own needsHome object, whatever its kind
+     *  (a `use` of it, or a `carry` that delivers to it): arriving there is being back. */
+    _targetsOwnPost(s) {
+        const j = s.job;
+        return !!(j && s.home?.objectId && j.targetId === s.home.objectId);
+    }
+
     _leavePost(s) {
         const id = s.npcId;
         if (s.atPost && !this._atOwnPost(s)) {
@@ -1012,10 +1022,13 @@ export class NPCNeedsSystem {
             const obj = this.world.getObject(job.targetId);
             if (obj) this.world.faceTo(id, obj.x, obj.y);
             // A need for its own post object turned urgent on the walk home, so the walk became
-            // this job. Arriving for it is the return: say so now, or the post's owner sits
+            // this job; or the job is a delivery to the own post (a printout taken back to the
+            // desk). Arriving for it is the return: say so now, or the post's owner sits
             // through the whole session before anything hears that it is back (a workstation
-            // stayed locked, with its owner at it, for the length of the session).
-            if (!s.atPost && this._atOwnPost(s)) {
+            // stayed locked, with its owner at it, for the length of the session). The test is
+            // the target, not the job's kind; _atOwnPost stays `use` only for the wind-up and
+            // stayPut decisions.
+            if (!s.atPost && this._targetsOwnPost(s)) {
                 if (!s.caughtEmitted) this._checkCaught(s, this.world.npcPos(id));
                 s.atPost = true;
                 this._log(id, 'returned_post');
