@@ -812,7 +812,7 @@
      "type": "",
      "visible": true,
      "width": 36,
-     "x": 460,
+     "x": 443,
      "y": 72
     },
     {
@@ -824,7 +824,7 @@
      "type": "",
      "visible": true,
      "width": 84,
-     "x": 516,
+     "x": 482,
      "y": 58
     },
     {
@@ -1003,18 +1003,6 @@
      "visible": true,
      "width": 12,
      "x": 237,
-     "y": 231
-    },
-    {
-     "gid": 1249,
-     "height": 12,
-     "id": 65,
-     "name": "",
-     "rotation": 0,
-     "type": "",
-     "visible": true,
-     "width": 20,
-     "x": 200,
      "y": 231
     },
     {

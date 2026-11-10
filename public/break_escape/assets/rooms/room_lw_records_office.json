@@ -456,18 +456,6 @@
      "y": 246
     },
     {
-     "gid": 358,
-     "height": 21,
-     "id": 24,
-     "name": "",
-     "rotation": 0,
-     "type": "",
-     "visible": true,
-     "width": 12,
-     "x": 62,
-     "y": 224
-    },
-    {
      "gid": 1209,
      "height": 60,
      "id": 25,
@@ -560,7 +548,20 @@
    "draworder": "topdown",
    "id": 12,
    "name": "table_items",
-   "objects": [],
+   "objects": [
+    {
+     "gid": 358,
+     "height": 21,
+     "id": 24,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 12,
+     "x": 204,
+     "y": 196
+    }
+   ],
    "opacity": 1,
    "type": "objectgroup",
    "visible": true,
