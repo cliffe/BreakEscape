@@ -2,7 +2,7 @@
 
 Status: **design for review, 2026-11-10.** Nothing here is built. This plan replaces the sketch in
 section 9.2 of `ACCESS_MODEL_PLAN.md` (called "the first slice plan" below) and is checked against
-the code as it stands on `claude/break-escape-access-design-090sjx`. Where it differs from the
+the code as it stands on the access design branch. Where it differs from the
 sketch, section 2 says why and section 15 lists the change for the other slices.
 
 How to read it: section 3 gives the three sub-slices and their order. Sections 4 to 8 are the
@@ -477,7 +477,8 @@ an NPC with this need the candidates are, in order:
 3. any object whose `affordance.satisfies` lists `social_media` (a break room tablet), by the usual
    nearest-reachable rule;
 4. the NPC's **phone**, unless `"phone": false`;
-5. the NPC's own workstation even though its policy blocks social media: an attempt that fails.
+5. the NPC's own workstation even though its policy blocks social media or it is out of order: an
+   attempt that fails.
 
 With none of these the need has no option and the NPC holds still, as for any need. The validator
 errors on an NPC with the need, no phone and no workstation home, and
@@ -562,7 +563,7 @@ possible for that NPC and need:
 | Route | Sub-slice | Parameters | Checks, in order | Writes and answer |
 |---|---|---|---|---|
 | `POST /npc_frustration` (new, locked) | A | `npc_id`, `event` (`fail` or `ease`), `need`, `object_id`, `missing` | 1. NPC known. 2. For `fail`: can fail (above). 3. For `fail`: at least half the NPC's retry wait (`retryMin` x 30 seconds of server time) since its last counted fail. | `fail`: level up by `perFail`, at most 100; record the time. `ease`: level down by `easePerSuccess`, at least 0. Then choose `run` (section 6) and add its index to `handed`; an `emit` is marked done at once. Answer `{ level, previous, run }` (`run` null in sub-slice A, and whenever nothing is due). Check 2 fails: 422. Check 3 fails: nothing written, answer `{ level, previous: level, run: null, tooSoon: true }`. `need`, `object_id` and `missing` are logged, not trusted |
-| `POST /npc_workaround` (new, locked) | B | `npc_id`, `index`, `heard` | 1. NPC known. 2. `index` is in that NPC's `handed` list. | Add `index` to `done`. `borrow_session`: `guestSessions[pc] = npcId`; answer `{}`. `writes_down`: answer `{ pcId, postitNote, showPostit: true }`. `share_login`: with `heard`, add the NPC to `sharedLogins` and answer `{ capture }` (6.3); without it `{}`, and the index is taken off `done` so it comes round again. `prop_door`: `unlock_room!` and answer `{ roomId, roomData }` from `filtered_room_data`. Check 2 fails: 403 |
+| `POST /npc_workaround` (new, locked) | B | `npc_id`, `index`, `heard` | 1. NPC known. 2. `index` is in that NPC's `handed` list. | Add `index` to `done` (for a repeating workaround this records that it has happened at least once; it stays in turn). `borrow_session`: `guestSessions[pc] = npcId`; answer `{}`. `writes_down`: answer `{ pcId, postitNote, showPostit: true }`. `share_login`: with `heard`, add the NPC to `sharedLogins`, answer `{ capture }` (6.3) and take it out of turn, since the capture is made; without `heard`, answer `{}` and leave it in turn. `prop_door`: `unlock_room!` and answer `{ roomId, roomData }` from `filtered_room_data`. Check 2 fails: 403 |
 | `POST /login` with `claim: "guest"` (changed, locked) | B | `pc_id`, `claim` | 1. PC reachable (first slice). 2. No session is held at the PC. 3. `guestSessions[pcId]` names an NPC. 4. That NPC has an account. 5. The PC's `access` admits it. 6. The PC's policy is not `autoLockMin: 0`. | Success: `sessions[pcId] = { id, via: "claim" }`, add to `signedInPcs`; the answer a claim gives today. Failure: "Sign in required" |
 | `POST /feed_post` (new, locked) | C | `npc_id` | 1. NPC known. 2. The NPC has a `feed` with posts and a valid `social_media` need. 3. A post is left. 4. For a second or later post: at least half the need's period since that NPC's last one (the period is `min(100 - urgentAt, restores) / decayPerMin` minutes, the validator's P). | `feedRevealed[npcId] = { n, at }`; answer `{ index, post, site, person }`. Checks 3 or 4 fail: `{ post: null }` |
 | `GET /scenario` (changed) | A, B, C | as today | As today. | `filtered_scenario_for_bootstrap` also deletes `resources` and `roles`. The `scenario` action adds `npcFrustration` (per NPC: `level`, `pending`, the handed-over workarounds not yet done, as `run` descriptions, and `done`, likewise) and `feedPosts` (per NPC: `site`, `person` and the posts revealed so far). After answering it clears `guestSessions`, as it ends claimed sessions (`end_claimed_sessions!`, `game.rb:1495`), with the same row lock |
@@ -570,6 +571,11 @@ possible for that NPC and need:
 | `GET /capture_secrets` (changed) | B | as today | As today. | An account holder in `sharedLogins` counts as having a capture route (`account_capture_passwords`, `game.rb:957`) |
 
 No route is added for the USB policy (section 7).
+
+With decision 5 two things are added in sub-slice B: the `scenario` action also returns
+`lockedOutAccounts` (`[{ pcId, npcId }]`, for locked-out usernames that belong to an account), and
+the client keeps the same list from each `lockedOut` sign-in answer whose username matches an
+account tile, so the verdict can say `locked_out` for that person at that PC.
 
 **What these checks prove.** As with a claimed session in the first slice, the server cannot see an
 NPC use anything, so a report is a client claim honoured only where the scenario makes it
@@ -720,3 +726,422 @@ it down, at 75") with an edge to what it opens: the account's sign-in node for `
 `downIf` is a node with an edge to each workaround of each NPC it can frustrate. So a chain reads
 left to right: outage, person, workaround, the thing opened. Test:
 `test/js/dungeon-graph-workarounds.test.mjs` (new, beside `dungeon-graph-identities.test.mjs`).
+
+## 11. How the slice is tested
+
+The first slice's approach, unchanged in kind (its plan, section 8, "How the slice is tested"):
+
+1. **Unit tests in every step**: Rails tests for each route, for the plan the server attaches and
+   for what responses leave out (hand-written scenarios through `create_access_game`,
+   `test/test_helper.rb`); node tests (`bin/test-js`) for the verdict, the needs hooks, the
+   workstation layer, the feed and the browser merge.
+2. **Two feature scenarios** built for testing, not play, under the first slice's rules for
+   feature scenarios (folder with `mission.json` in `test_scenarios`, a lobby with one room per
+   beat, a sign at each beat that never holds a password, `npcNeedsSeed` set to the scenario name,
+   `npcWindupMs: 0`, `needsDebugOverlay: true`, one task per beat completed by the beat's own
+   event, `PLAYTEST.md` with the script and the server record expected after each beat).
+3. **A scripted run of each**, by the tier `AGENTS.md` gives scripted browser playtests, on the
+   keyless server on :3001 (never the server on :3000), headless, with `--capture-responses`, one
+   numbered step per beat, at least one reload per run, 10 to 15 minutes each, and two checks after
+   every beat: `verify-run.rb <game_id> --access` against the record `PLAYTEST.md` expects, and
+   `access-leak-check.rb` over the responses so far. A "stuck" from that tier counts only once a
+   run by the next tier up confirms it. These runs join the first slice's three as the access
+   model's regression suite: after any fix to access model code, the run that found the bug and
+   then every other suite run is repeated before the fix is committed.
+4. **Needs regression**: `tools/playtest/needs-baseline-capture.js` on `test_needs_sims`,
+   `test_npc_needs` and `test_needs_leash` before and after each sub-slice's needs changes,
+   compared with `needs-baseline-compare.js`. None of the three has resources, a `usbClass` item,
+   a policy or a `social_media` need, so the planned difference is **none**, apart from the added
+   `met: true` on `npc_used` (the compare tool's fixed field list does not include it).
+5. **A watch-it-happen run** at the end of sub-slices B and C, by the tier `AGENTS.md` gives
+   persona playtests: a player who is told only "cause trouble and see what the staff do", judging
+   whether each workaround is noticeable and understandable as it happens (did you see her get up,
+   did you see the note appear, did you understand why), with every "I did not notice" listed.
+   This is the check on the design aim that workarounds are openings the player can observe.
+
+**Tooling changes** (step A7, extended in B and C):
+
+- `tools/playtest/lib/access_leak_scanner.rb`: the secrets it reads from the game's scenario data
+  gain every feed post's text and every authored workaround. It reports a feed post in any response
+  before the server's `feedRevealed` count covers it; a workaround's `do` with its target in any
+  response while the server has not handed it over; and it allows a password in a PC's
+  `postitNote` only when that PC's owner has `writes_down` done. It still prints owners and ids,
+  never values.
+- `tools/playtest/verify-run.rb --access`: prints `npcFrustration` (level, handed, done per NPC),
+  `guestSessions`, `sharedLogins` and `feedRevealed` (counts).
+- `public/break_escape/js/systems/test-bridge/index.js`: `window.__test.needs.state(npcId)` already
+  returns `getState()`, which gains `frustration`, `failed`, `errands` (kinds and targets) and
+  `distracted`. `window.__test.access` gains `work(npcId)` (the plan, read only),
+  `guest(pcId)` and `feed()` (revealed post ids by NPC). Documented in `docs/test-bridge.md`.
+- Clock moves (`window.__test.needs.setManualClock`, `step`) are used only where a beat says so and
+  are marked "exercised, not earned". Every password typed is read from its in-game source first.
+
+### 11.1 `scenarios/test_access_work` (sub-slices A and B)
+
+Shared set-up. Policies: `managed` (`usb: "storage_blocked"`, `autoLockMin: 5`), `locked_down`
+(`usb: "blocked"`), `lax`. Resources: `email`; `finance_share` (`access` finance, `downIf:
+"finance_share_down"`); `printer` (`object: "office_printer"`, `downIf: "printer_jammed"`).
+`roles.staff.frustration` is `{ "perFail": 50, "retryMin": 0.5 }` so two failed uses reach 100 in
+about a minute. Every owner's `work` need is fast (`decayPerMin: 40`, `urgentAt: 50`, `initial:
+60`: urgent after about 15 seconds) and every PC's `useSeconds` is 5.
+
+| Beat | Room and set-up | What should happen | Server record afterwards |
+|---|---|---|---|
+| W1 Work that succeeds | `ok_room`: Amy Cole, role `staff` (email only), `amy_pc` | She works at her desk about every 15 seconds; `npc_used:amy_pc` carries `met: true`; no mutter | No `npcFrustration` entry for Amy |
+| W2 An outage | `share_room`: Dana Reyes, role `finance`; a breaker object whose click toggles `finance_share_down`; a coffee station | After the breaker is thrown her next use fails: a mutter, the blocked icon, `npc_use_failed:dana` naming `finance_share` as `down`, and she leaves for coffee sooner than before | `npcFrustration.dana.level` 50, then 100 |
+| W3 Recovery | Same room, breaker back | Her next use is met and the level eases by 10 for each met use | `level` 90, then 80 |
+| W4 The printer, and a chain | `print_room`: Omar Haddad needs `printer`; `office_printer` is in the open `copy_room` next door, with a lever that sets `printer_jammed`. `omar_pc` is a sign-in PC with `lockChance: 0`; his profile holds a note | His use fails, he walks to the printer (`npc_checked:office_printer`), and while he is there a click on his PC claims his session and shows the note | `sessions.omar_pc` a claim; `npcFrustration.omar.level` 50 |
+| W5 No access | `starter_room`: Kai Brennan, role `staff`, `workNeeds: ["+finance_share"]` | His work fails with `no_access` from his first use, with no player action | `npcFrustration.kai.level` rising from the start |
+| W6 A PC out of order | `cable_room`: Ian Shaw; `ian_pc` has `downIf: "ian_pc_unplugged"`; a wall socket object sets it | `npc_use_failed:ian` with `station: true`; the mutter comes from `station_fail` | `npcFrustration.ian.level` 50 |
+| W7 Storage refused, then the kiosk | `usb_room`: Lena Fox with interests in `dev_usb` and `dev_badusb`; `lena_pc` (her post, accepts both, under `managed`); `kiosk_pc` (accepts `dev_usb`, under `lax`). On the lobby table: `kit_usb` (`usbClass: "storage"`) and `kit_badusb` (`usbClass: "hid"`) | Drop the storage stick: she carries it to her PC, `npc_use_refused:lena_pc`, a mutter, then to the kiosk, `npc_used:kiosk_pc`. Drop the keyboard-type device: her PC takes it, `npc_used:lena_pc` | None (the beat's tasks complete from the two events) |
+| W8 Refused outright, and the player's own plant | `vault_room`: Priya Nair; `priya_pc` under `locked_down` is the only object that accepts her tag; `priya_dock`, a `requiresItem` object under `locked_down` | A dropped storage stick is refused, put down by her PC and left there. Clicking the dock while holding the stick shows "USB devices are disabled on this PC." and the stick stays in the inventory | None |
+
+Expected validator output: the "work never succeeds" warning for Kai. Scripted runs: W1 to W4 with
+the reload after W4 (the level is kept, the claim ends, Dana's outage global is as it was left);
+then W5 to W8.
+
+Sub-slice B adds rooms to the same scenario:
+
+| Beat | Room and set-up | What should happen | Server record afterwards |
+|---|---|---|---|
+| X1 The sticky note | `note_room`: Mei Lin, an account; `mei_pc`, a sign-in PC with `lockChance: 1`; resource `rota` with a switch; `workarounds: [{ "at": 50, "do": "writes_down" }]` | Before the outage the sign-in screen shows no note. One failed use later she writes at her desk, a yellow note appears on the monitor, and `npc_workaround:mei` fires with `started`, then `done`. When she next leaves, the sign-in screen shows the note and its password signs in | `npcFrustration.mei.done` is `[0]`; `sessions.mei_pc` Mei by password |
+| X2 The hot desk | `cable_room` again: Ian has `[{ "at": 50, "do": "borrow_session", "pc": "hot_desk" }]`; `hot_desk` is in the lobby, unowned, under `managed` | After the failure at his unplugged PC he walks to the hot desk and works there (met, so his level eases). A click while he sits there shows "Ian Shaw is using this PC". After he walks back a click opens his desktop. With the needs clock on manual, just past five game minutes it closes with "The screen locked" | `guestSessions.hot_desk` is `ian`; `sessions.hot_desk` a claim, then gone |
+| X3 The propped door | `store_lobby`: Tom Fletcher, role `facilities`, with a card; `store_room` behind an `rfid` door that admits `facilities`; `store_wedge` (a fire extinguisher) hidden on `store_door_propped`; a workaround at 50 | Tom walks to the door, it opens, the extinguisher appears and `door_propped:store_room` fires. The player walks in | `unlockedRooms` has `store_room`; `npcFrustration.tom.done` is `[0]` |
+| X4 Said out loud | `open_office`: Sam Okafor (an account) and Ruth Adeyemi at the far desk; `[{ "at": 50, "do": "share_login", "with": "ruth" }]`; a captures terminal; the scenario sets `social.captures.revealSecret` | With the player out of the room, Sam walks over and speaks; nothing is captured. On his next failed use, with the player beside Ruth's desk, the capture is added, `npc_overheard_login:sam` fires and the terminal shows his password, which then signs in as Sam at the hot desk | `sharedLogins` is empty after the first and `["sam"]` after the second |
+| X5 Reload | After X1 and X2, in the middle of X3: the game is reloaded while Tom is still walking to the door | Mei's note is still shown, the levels are kept, the hot desk shows the sign-in screen, and Tom, whose workaround was handed over and not done, sets off again and props the door | As before the reload, without the claim and with `guestSessions` empty; then X3's record |
+| X6 The lockout chain (decision 5) | `lock_room`: Jake Brooks; `jake_pc` under `strict` (`maxAttempts: 3`); a `borrow_session` to `hot_desk_2` at 50 | While Jake is at the coffee station the player types three wrong passwords on his tile. When he returns his next use fails with `locked_out`, he hot-desks, and his session there is claimed | `loginLockouts` holds Jake at `jake_pc`; `guestSessions.hot_desk_2` is `jake` |
+
+Scripted runs: X1, X2, then X3 with X5's reload inside it; then X4 and X6. Then the W runs and the first slice's three suite
+runs again.
+
+### 11.2 `scenarios/test_access_social` (sub-slice C)
+
+Shared set-up. `social.osint` has one `social` site, `friendface`, with a profile and one authored
+post each for Jake, Lena and Omar, and `social.intelFacts` for the facts below. A "Friendface
+terminal" (`osint-workstation`, `siteIds: ["friendface"]`) stands in the lobby. Policies:
+`no_social` (`social: "blocked"`) and `lax`. Every `social_media` need is fast (`decayPerMin: 30`,
+`urgentAt: 40`, `initial: 50`).
+
+| Beat | Room and set-up | What should happen | Server record afterwards |
+|---|---|---|---|
+| F1 Posts are withheld | Lobby, before entering any room | Each profile shows its one authored post and nothing else | `feedRevealed` empty; the leak check finds no feed post in any response |
+| F2 The phone at the desk | `jake_room`: Jake Brooks, `jake_pc` under `no_social`, a phone, a feed of three posts | Jake uses his phone where he sits and never gets up; a click on his PC says he is using it; `npc_used_phone:jake` fires. The terminal now shows his first feed post above the authored one, and clicking it notes `jake_pet_name` | `feedRevealed.jake.n` is 1 |
+| F3 The PC, where it is allowed | `lena_room`: Lena Fox, `lena_pc` under `lax` | She uses her PC for it (`npc_used:lena_pc` with need `social_media`, `met: true`); her first post appears | `feedRevealed.lena.n` is 1 |
+| F4 Blocked and no phone | `omar_room`: Omar Haddad, `"phone": false`, `omar_pc` under `no_social`, a `borrow_session` to the lobby `kiosk` (under `lax`) at 50 | His attempt fails with `social_blocked` and a mutter. He walks to the kiosk, uses it (met; his first post appears) and walks back. A click on the kiosk opens his desktop | `npcFrustration.omar`; `guestSessions.kiosk` is `omar`; `feedRevealed.omar.n` is 1 |
+| F5 The chain | Lobby: a poster ("IT reminder: your pet's name and a year is not a password") and `hot_desk`, a sign-in PC that admits Jake. Jake's second post gives the year | With both of Jake's facts noted, the password built from them signs in as Jake at the hot desk, and his desktop holds the beat's final note | `sessions.hot_desk` Jake by password |
+| F6 The feed runs out | Needs clock on manual | Stepped on, Jake posts his third post; later uses reveal nothing and nothing breaks | `feedRevealed.jake.n` stays 3 |
+| F7 Reload | After F2 to F4 | The terminal shows every revealed post at once; unrevealed posts are still in no response | Unchanged |
+| F8 A distracted guard (decision 7) | `gate_room`: a guard with `los.challengeOnSight`, a `social_media` need and a phone | While he is on his phone, walking through his view fires no `player_in_view_near:guard`; once he puts it away it does | None |
+
+The password in F5 is deduced from two posts and a poster, each read in the game first; the
+earned-secrets table records the three sources. Scripted runs: F1 to F4 and F7; then F5, F6 and F8.
+
+## 12. Build steps
+
+Each step lists its files and its tests, and is done when its tests, the node and Rails suites,
+the no-password test and every suite run built so far pass. Steps inside a sub-slice run in the
+streams of section 13.
+
+### Sub-slice A
+
+**A1. The resolver and the fields.**
+Files: `lib/break_escape/access_work.rb` (new); `scripts/scenario-schema.json`; the known-field
+lists in `scripts/validate_scenario.rb`.
+Work: resolve the work list, the frustration settings and "can fail" (section 10). Accept every
+field in section 4 (B and C fields too, so later sub-slices add checks, not names).
+Tests: `test/unit/access_work_test.rb` (new): role order with `staff` last; `+`, `-` and bare
+entries; an NPC with no role; frustration merged field by field; "can fail" for each cause and for
+none. The schema accepts a fixture using every field.
+
+**A2. Withholding and the plan.**
+Files: `app/models/break_escape/game.rb` (`compile_npc_plan!`, `WITHHELD_NPC_KEYS`,
+`filtered_scenario_for_bootstrap`, `ACCESS_STATE_DEFAULTS`).
+Tests (`test/models`): a room NPC's `work` holds the resolved list with `admitted` right for an
+admitted and a refused resource; `workNeeds`, `frustration`, `workarounds`, `feed` and `role` are
+gone from room data and from the room data of a door unlock; an NPC added by `update_room` is
+treated the same; `GET /scenario` has no `resources` or `roles`; the no-password test with the new
+fixture (9.2), over the routes that exist at this step.
+
+**A3. The frustration route.**
+Files: `config/routes.rb`; `games_controller.rb` (`npc_frustration`, the lock list, the `scenario`
+action's `npcFrustration`); `game.rb` (`report_npc_use!`, the level helpers).
+Tests (`test/controllers`): an unknown NPC, an NPC not yet met and an NPC that cannot fail are each
+refused; a fail raises the level by the resolved `perFail` and stops at 100; a second fail inside
+half the retry wait writes nothing and answers `tooSoon`; an ease lowers it and stops at 0; the
+answer never holds a workaround in this sub-slice; the level is in `GET /scenario`; a reset clears
+it; a game whose `player_state` lacks the key answers as an empty one.
+
+**A4. Validator checks for A.**
+Files: `scripts/validate_access_work.rb` (new), `scripts/validate_scenario.rb` (the call).
+Tests: `test/js/validator-access-work.test.mjs` with the fixtures for the A errors, warnings and
+the work report line; a clean fixture.
+
+**A5. The needs core.**
+Files: `public/break_escape/js/systems/npc-work.js` (new); `systems/npc-needs.js`
+(`_completeJob`: the verdict and the failed-use path; `_select`, `_anyUrgent`, `_blockedNeed`: the
+retry wait; `_tickNpc`: errands; `enqueueErrand`; the mutter in `_talking`; `getState`; the pools
+in `DEFAULT_CHATTER`; in `createEngineWorld`: `useVerdict`, `reportUse`, and `usbClass`, `policy`
+and `downIf` in `describe`).
+Tests (`test/js`): `npc-work.test.mjs` (new): the verdict for each failure, several at once, the
+`reaches` hook defaulting to true. `npc-needs-work.test.mjs` (new), on the stub world: a failed
+use restores nothing, drains the other needs, waits `retryMin` before the same need is selected
+again, emits `npc_used` with `met: false` and `npc_use_failed`, skips `revealOutput`, and reports
+once; a met use with frustration reports an ease; the mutter shows for its time and is seeded; a
+check errand walks to the object, emits `npc_checked` and `npc_errand_done`, emits no `npc_used`
+and leaves the post like any trip; an errand waits for a running job; a late server answer changes
+no decision. Every existing needs test passes unchanged, and the decision log of the
+`needs-sims-world` fixture is byte for byte what it was.
+
+**A6. The USB policy.**
+Files: `systems/pc-policy.js` (new); `systems/npc-needs.js` (`_completeJob`: refusal, the move to
+another target, the put-down and the memory); `systems/interactions.js` (the `requiresItem`
+branch).
+Tests: `pc-policy.test.mjs` (new): the table in section 7, and `effectivePolicy` with a PC's own
+policy, the default and neither. `npc-needs-usb-policy.test.mjs` (new): storage refused at a
+managed PC with no `npc_used`; then delivered to a permitted one; with none, put down and not
+picked up again; a `hid` item accepted under `storage_blocked` and refused under `blocked`; an
+item with no `usbClass` never refused. `usb-plant-refused.test.mjs` (new): the player's plant is
+refused with the right line, runs no action and keeps the item.
+
+**A7. Client surfaces and tooling.**
+Files: `api-client.js` (`npcFrustration`); `core/game.js` (hand `npcFrustration` from the scenario
+response to the needs system where `sessions` is handed to `pc-sessions.js`);
+`systems/npc-action-icons.js` (the `failed` state shows `blocked`); `systems/npc-needs-debug.js`
+(the `F` bar); the tooling in section 11.
+Tests: `npc-frustration-restore.test.mjs` (new): levels from the scenario response set
+`s.frustration` and the global. `npc-needs-debug.test.mjs`: the bar. The leak scanner's unit test
+and `playtest-verify-run-access.test.mjs` gain the new keys; `test-bridge-access.test.mjs` gains
+`work`.
+
+**A8. `test_access_work`, beats W1 to W8.** The scenario, its `PLAYTEST.md`, static checks
+(validator clean apart from the expected warning, dungeon graph regenerated, suites passing), the
+two scripted runs, the needs regression captures, then the first slice's three suite runs.
+
+### Sub-slice B
+
+**B1. Server.**
+Files: `game.rb` (choosing `run`, `complete_workaround!`, the guest claim beside
+`claim_login_session!`, `account_capture_passwords`, the sticky note fill in `filtered_room_data`,
+clearing `guestSessions`); `games_controller.rb` (`npc_workaround`, `login` passing `claim:
+"guest"`, the `scenario` action's `pending` and `done`); `config/routes.rb`.
+Tests: thresholds crossed one at a time and two at once; lasting before repeating; repeating ones
+in turn, and a heard `share_login` leaving the turn; `run` never repeats a lasting one that is
+done; "done" for an index never handed over is refused; each kind's answer; each guest claim
+refusal (no guest, a session held, no account, not admitted, `autoLockMin: 0`); the sticky note in
+room data only after "done"; `/capture_secrets` serving a shared login only after a heard "done"
+and only with `revealSecret`; `prop_door` putting the room in `unlockedRooms`; a reload answer
+with a pending workaround; `guestSessions` empty after `GET /scenario`; the rest of the
+no-password test.
+
+**B2. Validator and dungeon graph.** The B errors, warnings and report lines (section 10), and the
+graph nodes. Tests: the fixtures; `dungeon-graph-workarounds.test.mjs`.
+
+**B3. Needs hooks and the workaround runner.**
+Files: `systems/npc-workarounds.js` (new: takes `run` from each frustration answer and `pending`
+from a load, queues the errand, emits `npc_workaround`, calls "done", applies the answer: the
+sticky note fields and picture, the door, the capture, `setGlobal`); `systems/npc-needs.js`
+(`s.borrow` as the first candidate in `_useCandidate`, the `borrowed` flag, `npc_borrowed_session`,
+`userOf(objectId)`).
+Tests: `npc-workarounds.test.mjs` (new), with a stub API: each kind queues the right errand,
+emits `started` then `done`, and applies its answer; `share_login` reports `heard` from
+`playerHears`; a pending workaround from a load is queued once. `npc-needs-work.test.mjs`: a
+borrowed PC is chosen ahead of the home object for the failing need only, for one use.
+
+**B4. The workstation layer and sessions.**
+Files: `systems/workstation-state.js` (guest records, `userOf` in presence and `onInteract`, the
+guest leave and its auto lock); `systems/pc-sessions.js` (`claim(pcId, { as: "guest" })`);
+`systems/unlock-system.js` (`interactLoginPc` chooses the claim kind); `api-client.js`
+(`npcWorkaround`).
+Tests: `workstation-state.test.mjs`: a PC in use by a non-owner answers `attended`; a guest leave
+publishes the globals, emits `workstation_owner_left` with `reason: "guest"` and makes the next
+click `accessed`; `autoLockMin` locks it and emits `workstation_auto_locked`; the next person to
+sit down ends it; an env without `userOf` keeps today's answers. `pc-sessions.test.mjs`: a guest
+claim emits `pc_signed_in` with `via: "claim"` and ends on the auto lock and on a reload.
+`screen-states.test.mjs` passes unchanged.
+
+**B5. `test_access_work`, beats X1 to X5** (and X6 with decision 5: `locked_out` in the verdict,
+`pc-sessions.js` remembering a lockout the server reported, the "can fail" clause, and
+`lockedOutAccounts` in the scenario response). The scripted runs, the watch-it-happen run, the W
+runs and the first slice's suite.
+
+### Sub-slice C
+
+**C1. Server.**
+Files: `game.rb` (`reveal_feed_post!`, `feed_posts_for_client`, `hasFeed` in `compile_npc_plan!`,
+"can fail" for `social_media`); `games_controller.rb` (`feed_post`, the `scenario` action);
+`config/routes.rb`.
+Tests: posts come out in order, one per call; the pace check; nothing after the last; an NPC with
+no feed or no need gets nothing; `feed` is in no room response and `feedPosts` holds exactly the
+revealed ones; the no-password test's feed assertions.
+
+**C2. Validator.** The C errors and warnings, the `social_media` exemption in
+`validate_npc_needs.rb`, the posting schedule line. Tests: the fixtures.
+
+**C3. The need in the needs core.**
+Files: `systems/npc-needs.js` (the candidate order of 8.1; the `self` job in `_startJob`,
+`_advanceJob`, `_completeJob`, `_tickNpc`'s freeze and block paths and `getState`; the
+`social_media` verdict through `npc-work.js`; `distracted`); `systems/npc-sight-challenge.js` (with
+decision 7).
+Tests: `npc-needs-social-media.test.mjs` (new): each candidate in its order; a phone use at the
+post emits no `npc_left_post` and keeps `atPost`; one on the walk home resumes the walk; a blocked
+PC with no phone fails and raises frustration; a blocked PC with a phone never fails; a
+conversation freezes a phone use and a knock-out aborts it; `npc_used_phone` and no `npc_used`.
+The existing needs tests pass unchanged (the cooler's `social` need is untouched).
+
+**C4. The feed and the browser.**
+Files: `systems/social-feed.js` (new); `api-client.js` (`feedPost`); `core/game.js` (hand
+`feedPosts` over on load; install the feed listener on `npc_used` and `npc_used_phone`);
+`minigames/osint-browser/osint-browser-minigame.js` (`_socialView`);
+`systems/npc-action-icons.js` (`social_media`).
+Tests: `social-feed.test.mjs` (new): a met use asks once, a failed one does not; `npc_posted`;
+restore on load. `social-osint-browser.test.mjs`: revealed posts are listed first, newest at the
+top; clicking one grants its fact once; a profile with no revealed posts renders as today.
+
+**C5. `test_access_social`.** The scenario, its `PLAYTEST.md`, static checks, the two scripted
+runs, the watch-it-happen run, the needs regression captures and the whole suite.
+
+## 13. Parallel streams
+
+Inside each sub-slice the work splits into streams that own different files. The names that cross
+between streams (route names and answers, adapter methods, events, `getState` fields) are fixed by
+this plan, so the streams can start together. Each stream re-reads a shared file just before
+editing it, and none commits another's files.
+
+| Sub-slice | Stream | Steps | Files it owns |
+|---|---|---|---|
+| A | Server | A1 (resolver), A2, A3 | `lib/break_escape/access_work.rb`, `game.rb`, `games_controller.rb`, `config/routes.rb`, `test/models`, `test/controllers`, `test/unit/access_work_test.rb` |
+| A | Validator | A1 (schema, field lists), A4 | `scripts/validate_scenario.rb`, `scripts/validate_access_work.rb`, `scripts/scenario-schema.json`, `test/js/validator-access-work.test.mjs` |
+| A | Needs core | A5, A6 (the needs half) | `systems/npc-work.js`, `systems/npc-needs.js`, `systems/pc-policy.js` and their tests |
+| A | Surfaces and tooling | A6 (the player's plant), A7 | `api-client.js`, `core/game.js`, `systems/interactions.js`, `systems/npc-action-icons.js`, `systems/npc-needs-debug.js`, `systems/test-bridge/index.js`, `tools/playtest/`, `docs/test-bridge.md` |
+| A | Scenario | A8, after the four above | `scenarios/test_access_work/` |
+| B | Server | B1 | as A's |
+| B | Validator and graph | B2 | `scripts/validate_access_work.rb`, `scripts/generate_dungeon_graph.rb`, their tests |
+| B | Needs and runner | B3 | `systems/npc-needs.js`, `systems/npc-workarounds.js`, their tests |
+| B | Workstation and sessions | B4 | `systems/workstation-state.js`, `systems/pc-sessions.js`, `systems/unlock-system.js`, `api-client.js`, their tests |
+| B | Scenario | B5, after the four above | `scenarios/test_access_work/` |
+| C | Server | C1 | as A's |
+| C | Validator | C2 | `scripts/validate_access_work.rb`, `scripts/validate_npc_needs.rb`, the schema |
+| C | Needs core | C3 | `systems/npc-needs.js`, `systems/npc-work.js`, `systems/npc-sight-challenge.js` |
+| C | Feed and browser | C4 | `systems/social-feed.js`, `api-client.js`, `core/game.js`, `osint-browser-minigame.js`, `systems/npc-action-icons.js` |
+| C | Scenario | C5, after the four above | `scenarios/test_access_social/` |
+
+The validator stream needs the resolver from the server stream; the server stream writes it first
+(it is one small file with its own test) and the validator stream starts on the schema meanwhile.
+
+**Against slices 9.1 and 9.3.** If either is being built at the same time, the files all three
+touch are `game.rb` (`withhold_npc_secrets!`, `filtered_room_data`, the bootstrap filter),
+`scripts/validate_scenario.rb` (the field lists), `scripts/scenario-schema.json`,
+`systems/npc-needs.js` and `systems/workstation-state.js`. Build the slices one sub-slice at a
+time on those files: this slice's additions are separate methods and separate validator files, so
+the order does not matter, but two agents must not hold the same file at once.
+
+## 14. Effects on existing scenarios
+
+No existing scenario declares `resources`, `roles`, `workNeeds`, `workarounds`, `feed`, `usbClass`,
+a workstation `downIf` or a `social_media` need, so none changes its behaviour. What each change
+touches:
+
+| Change | Who sees it |
+|---|---|
+| `npc_used` gains `met` (and `missing` on a failure) | Every scenario with needs NPCs: an added field, `true` everywhere today. No mapping reads it |
+| The use verdict, the retry wait, the drain, errands | Only an NPC with a `work` plan or a PC with `downIf`: none today |
+| New mutter pools | Never chosen without a failed or refused use. A scenario with `"chatter": false` gets no mutters |
+| `usb` policy | `test_access_signin` and `test_access_sessions` set `usb: "allowed"`; `lab_physical_pentest` has no policies and its devices have no `usbClass`, so Sofia's finds and the keylogger plant are untouched |
+| `social` policy | The same two test scenarios set `"allowed"`; nobody has the need |
+| `social_media` need | `test_needs_sims` uses a need called `social` at the cooler; it is a different name and is untouched |
+| The browser lists feed posts first | Every scenario with a `social` site (`lab_social_engineering`, the `ca` episodes, two test scenarios): no feed, so the list is as today |
+| Room NPCs lose `workNeeds`, `frustration`, `feed` and gain `work`; the bootstrap loses `resources` and `roles` | Nobody authors them yet |
+| A workstation used by a non-owner reads as in use | Only where an NPC's work job targets a workstation it does not own. With `private` PCs (`test_needs_sims`) that never happens; in `test_npc_needs` and the lab each PC has one user. The needs regression captures confirm it |
+| Four new `player_state` keys | New games get empty ones; older saved games are read as empty |
+| `validate_npc_needs.rb` no longer errors on a `social_media` need with no satisfying object | No scenario has one |
+
+`lab_physical_pentest` is not edited by this slice. It teaches physical testing with unmanaged
+PCs, and giving its PCs a USB policy would change the lesson it has been playtested on.
+
+## 15. Interfaces with other slices
+
+**What this slice needs changed in the sketch of section 9** (first slice plan):
+
+| Sketch | This plan | Who is affected |
+|---|---|---|
+| A `social` need | The need is `social_media`; `social` stays the cooler's | 9.1, where it mentions the need |
+| `feed` as a list on the NPC, each post with `intel`, shown in a `social_feed` object or phone app | `feed: { site, person, posts }`; a post's fact key is `fact`, as in the browser; posts appear in the existing browser | 9.1 (`password: "guessable"` should count a feed post's `fact` as a source that points at the password) |
+| "distinct from `social.landingPages[].profiles[].posts`" | The path is `social.osint.sites[].profiles[].posts` | Wording only |
+| `usb: "blocked"` makes `accepts` ignore USB-tagged items | Items carry `usbClass`; the policy has three values; a refused NPC tries the next machine | None |
+| `borrow_session` picks another PC | It names one, an unowned sign-in PC, and leaves a guest session there | 9.1 (below), 9.3 (below) |
+| `prop_door` until a global or timer closes it | Open for the mission; needs a `prop` object | None |
+| `share_login` reveals an intel fact | It records a capture when heard; the password comes from `/capture_secrets` | None |
+| Frustration and workarounds in the needs system | The level and the list live on the server; the needs system reports uses | 9.1 and 9.3 should not expect `workarounds` in the browser |
+| "the PC's network reaches the resource's network; always true until networks exist" | Kept, as one hook: `reaches(stationId, resource)` in `npc-work.js`'s env, answering true | 9.3 supplies it |
+
+**With 9.1 (awareness and habits).**
+
+- **The sticky note fill.** 9.1's `writesDown` habit and this slice's `writes_down` workaround
+  both make the server fill a sign-in PC's `postitNote` from `creds`. One helper in `game.rb`,
+  `written_down?(npc)`, answers true for the habit or for a done workaround, and one fill in
+  `filtered_room_data` uses it. Whichever slice is built first writes both with its own half of
+  the test; the other adds its condition.
+- **`locksScreen`.** A guest leaves a borrowed session open unless the habit resolves to `always`
+  (6.1). This slice reads the resolved habit through whatever 9.1 exposes on the workstation env;
+  until then, always open. 9.1's fill of `lockChance` applies to owned PCs only and never to a
+  borrowed one.
+- **`roles`.** The top-level `roles.<role>` object is shared: this slice owns `workNeeds`,
+  `frustration` and `workarounds`; 9.1 may add `awareness` and `habits`. Whoever builds first adds
+  `roles` to the validator's top-level list and the schema with `additionalProperties` left open
+  for the other.
+- **`awareness`.** This slice's validator reads the authored `awareness` string for one warning
+  (a `high` NPC whose post carries a fact). It needs nothing built by 9.1.
+- **Withheld keys.** `WITHHELD_NPC_KEYS` already holds 9.1's `awareness` and `habits`; this slice
+  adds its three.
+- **`holdsDoors`** (9.1) and `prop_door` are independent: one is a gate door behaviour, the other
+  unlocks a room.
+
+**With 9.3 (networks).**
+
+- **Reach.** The verdict asks `reaches(stationId, resource)` for each resource. 9.3 replaces the
+  default with its network test, including a network's own `downIf`, and its failure reason is
+  `unreachable`. The server's "can fail" rule gains "the scenario has networks" in 9.3.
+- **`network` on a resource** is accepted by this slice's schema and carried to the browser in the
+  NPC's `work` plan, unread. This slice's validator does not resolve it; 9.3 adds the unresolved
+  reference error once `networks` exists.
+- **`resources` is withheld** from the bootstrap by this slice. If 9.3 lets the player's own reach
+  unlock a resource (`requiresReach`), it must ship what the player's side needs itself, as this
+  slice ships each NPC's plan.
+- **The hot desk** gains its full meaning with networks: a hot desk on a network that reaches the
+  resource lets the frustrated person work, and a claimed guest session there is a session on that
+  network. Nothing in 6.1 needs changing for it.
+- **Outages.** 9.3's "cut a network" is a `downIf` global, the same mechanism as 5.5.
+
+## 16. Decisions for the user
+
+Each has a recommendation; the plan above is written as if every recommendation is taken.
+
+| # | Decision | Options | Recommendation |
+|---|---|---|---|
+| 1 | Where frustration and workarounds live | (a) On the server, handed over when due. (b) In the browser, with the whole list shipped | **(a).** It keeps "what will this person do under pressure" out of the browser until it happens, as `withhold_npc_secrets!` already intends, and the level survives a reload. The cost is one small request per failed use |
+| 2 | The need's name | (a) `social_media`. (b) Keep `social` and rename the cooler's need in the presets and `test_needs_sims` | **(a).** No existing scenario or golden log changes |
+| 3 | The USB policy | (a) Three values with `usbClass` (`storage`, `hid`), and a refused NPC takes the stick to the next machine. (b) One `blocked` value that refuses every tagged item, and the NPC gives up | **(a).** It costs one extra field and teaches two real points: storage blocking does not stop a keyboard-type device, and people carry a refused stick to the machine nobody manages |
+| 4 | A propped door | (a) Stays open for the mission. (b) Build closable ordinary doors first | **(a).** Doors cannot close today; (b) is a door engine change of its own (backlog) |
+| 5 | Account lockout as a cause of failure | (a) Yes, in sub-slice B (beat X6): a member of staff locked out at their own PC cannot work there. (b) No | **(a).** It is the one chain the player starts with nothing but a sign-in screen: lock Jake out, he hot-desks, his session is left open. It teaches that a lockout policy can be turned on its owner. The cost: after a reload the server tells the browser which locked-out usernames belong to real accounts at that PC, which the sign-in screen itself never reveals |
+| 6 | Art | (a) Existing art only: `npc-blocked` for a failed use, `npc-social` for social media, `notes_postit1` for the note, `fire_extinguisher1` as the door prop, no phone pose. (b) New 16 px icons (a phone, a frustrated face) and a phone-in-hand pose | **(a) for the build**, then new icons one at a time once the behaviour is approved |
+| 7 | A member of staff on their phone is distracted | (a) `los.challengeOnSight` does not fire while the NPC is on the phone (beat F8). (b) No effect | **(a).** A small hook, and a second opening the player can watch for. It affects only an NPC with both a sight challenge and the need, which no scenario has today |
+| 8 | Order | A, then B, then C | **As listed.** B and C could swap; B first delivers the chains |
+| 9 | First real use | (a) No existing scenario changes in this slice; the first lab or mission to use it is chosen separately. (b) Fold it into `lab_physical_pentest` | **(a).** The lab's lesson is physical and it is mid-playtest |
+
+## 17. Left out, and why
+
+- **Doors that close again** after being propped: needs gate behaviour on ordinary doors.
+- **A helpdesk that clears a lockout** (also open from the first slice): with decision 5 a locked-out
+  member of staff stays locked out at that PC for the mission, which is what makes them hot-desk.
+- **A colleague signing in with a shared login**: `share_login` ends at the player's capture. An
+  NPC acting on another NPC's account needs NPC sign-ins as events, which belongs with logs.
+- **Logs** of failed uses and workarounds for investigator missions: the events are all emitted
+  (`npc_use_failed`, `npc_workaround`, `npc_borrowed_session`, `door_propped`, `usb_refused`,
+  `npc_use_refused`, `npc_posted`), ready for a log type later.
+- **The player as defender**, setting policy and watching frustration as a cost: the model supports
+  it, the mission type is in the backlog.
+- **Frustration that fades with time alone**: it falls only when work succeeds, so an outage the
+  player leaves in place keeps its effect.
+- **Posts on the player's own phone**, and a phone-in-hand pose: see decision 6.
+- **Reading the feed over someone's shoulder**, private messages and friend requests: the browser
+  shows public posts only.
