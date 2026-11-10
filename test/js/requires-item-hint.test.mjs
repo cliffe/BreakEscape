@@ -1,7 +1,7 @@
 // requiresItemHintVariants: an object with requiresItem gives one refusal hint per
 // state, resolved like observationVariants and textVariants (first match wins), with
-// requiresItemHint as the fallback and the engine default after that. The toast stays
-// 6 s, because a hint can carry a sentence of teaching.
+// requiresItemHint as the fallback and the engine default after that. The toast lasts
+// by length: 300 ms per word, at least 6 s and at most 12 s.
 // Run with: node --test test/js/requires-item-hint.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const js = join(dirname(fileURLToPath(import.meta.url)), '../../public/break_escape/js');
-const { requiresItemHint, REQUIRES_ITEM_HINT_MS, DEFAULT_REQUIRES_ITEM_HINT } =
+const { requiresItemHint, requiresItemHintMs, DEFAULT_REQUIRES_ITEM_HINT } =
     await import(join(js, 'systems/requires-item-hint.js'));
 
 const pc = {
@@ -53,9 +53,22 @@ test('the live globals are read when none are passed', () => {
     }
 });
 
-test('interactions.js shows the resolved hint for 6 s', () => {
-    assert.equal(REQUIRES_ITEM_HINT_MS, 6000);
+test('the toast lasts 300 ms per word, at least 6 s and at most 12 s', () => {
+    const words = n => Array.from({ length: n }, () => 'word').join(' ');
+    assert.equal(requiresItemHintMs(''), 6000);
+    assert.equal(requiresItemHintMs(undefined), 6000);
+    assert.equal(requiresItemHintMs(DEFAULT_REQUIRES_ITEM_HINT), 6000);
+    assert.equal(requiresItemHintMs(words(20)), 6000);
+    assert.equal(requiresItemHintMs(words(21)), 6300);
+    assert.equal(requiresItemHintMs(words(30)), 9000);
+    assert.equal(requiresItemHintMs(words(40)), 12000);
+    assert.equal(requiresItemHintMs(words(80)), 12000);
+    // runs of spaces and line breaks are not words
+    assert.equal(requiresItemHintMs(`  ${words(15)}  \n\n ${words(15)}  `), 9000);
+});
+
+test('interactions.js shows the resolved hint for its own duration', () => {
     const src = readFileSync(join(js, 'systems/interactions.js'), 'utf8');
-    assert.match(src, /window\.gameAlert\?\.\(requiresItemHint\(sprite\.scenarioData\), 'info', '', REQUIRES_ITEM_HINT_MS\)/);
+    assert.match(src, /const hint = requiresItemHint\(sprite\.scenarioData\);\s+window\.gameAlert\?\.\(hint, 'info', '', requiresItemHintMs\(hint\)\)/);
     assert.doesNotMatch(src, /scenarioData\.requiresItemHint\b/);
 });

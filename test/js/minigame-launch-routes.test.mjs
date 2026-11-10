@@ -48,6 +48,7 @@ const stubs = {
     './apply-actions.js': dataUrl('export function applyActions() {}'),
     '../utils/conditional-text.js': dataUrl(readFileSync(join(js, 'utils/conditional-text.js'), 'utf8')),
     '../utils/flag-lock.js': dataUrl(readFileSync(join(js, 'utils/flag-lock.js'), 'utf8')),
+    './requires-item-hint.js': dataUrl('export function requiresItemHint(d) { return d?.requiresItemHint; } export function requiresItemHintMs() { return 6000; }'),
     './npc-reach.js': dataUrl('export function npcReachDistSq() { return 0; }'),
     './examine.js': dataUrl('export function shouldExamine() { return false; } export function startExamine() {}'),
     './combat-input.js': dataUrl(readFileSync(join(js, 'systems/combat-input.js'), 'utf8')),
