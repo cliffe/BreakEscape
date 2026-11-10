@@ -365,9 +365,11 @@ where Amara Okoye's PC `amara_pc` is. She locks her screen every time she leaves
 2. The drop label. Two start items are droppable ("Parcel for Amara", "Dirty Mugs"). Read the
    hover labels:
    `{"cmd":"eval","fn":"() => [...document.querySelectorAll('.inventory-item')].map(img => { img.dispatchEvent(new MouseEvent('mouseenter')); const t = document.getElementById('hud-info-label')?.textContent; img.dispatchEvent(new MouseEvent('mouseleave')); return t; })"}`
-   They read "Parcel for Amara (click to drop)" and "Dirty Mugs (click to drop)". Items that are
-   not droppable keep their plain names. Do not drop anything yet: a dropped parcel changes what
-   Amara does.
+   They read "Parcel for Amara" and "Dirty Mugs": plain names, like every other item (the drop is
+   offered by the click menu, not the label). `{"cmd":"openInventoryItem","item":"parcel"}`
+   replies with `menu.items` "Drop here" and "Examine"; close it with
+   `{"cmd":"eval","fn":"() => window.closeInteractionMenu()"}`. Do not drop anything yet: a dropped parcel
+   changes what Amara does.
 3. Stay in `office`. Wait for
    `{"cmd":"waitFor","kind":"event","name":"workstation_owner_left:amara_pc","timeoutMs":240000}`
    (`cmd.sh` timeout 250; how long she takes to leave is UNCONFIRMED): `data.screenLocked` is true.

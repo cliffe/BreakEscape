@@ -25,7 +25,7 @@ A demo and live test of the NPC needs system (`public/break_escape/js/systems/np
 
 Six need types: caffeine, hunger, thirst, rest, social, work. The engine has no fixed list (a need is any name matched against an object's `affordance.satisfies`), so these six are the scenario's choice.
 
-The player starts with two droppable items: **Parcel for Amara** (`needsTag: post`) and **Dirty Mugs** (`needsTag: dirty_mugs`). Click one in the inventory to put it down.
+The player starts with two droppable items: **Parcel for Amara** (`needsTag: post`) and **Dirty Mugs** (`needsTag: dirty_mugs`). Click one in the inventory and choose "Drop here" to put it down ("Examine" shows it close up).
 
 ## How to watch it
 
@@ -593,7 +593,7 @@ node tests cover the share, the icon and the habit rolls.
 
 ### Slice 18b-i re-run: the cake (a droppable magnet) (2026-11-06, keyless :3001, headless)
 
-How to watch it: the cake is in your inventory. Click it there to put it down where you stand (the kitchen is a good bet; the
+How to watch it: the cake is in your inventory. Click it there and choose Drop here to put it down where you stand (the kitchen is a good bet; the
 kitchen is at x -320 to 0, the office from 0). Whoever is hungry (Tom, Sanjay, Amara) and sees it walks over: a need in the 30-point
 band above its urgent level is tempted. Two servings; the third person turns back with "Missed it." (or the hunger icon when
 somebody else is speaking). Pick the cake up again and everyone walking turns back; drop it again and they only learn of it by

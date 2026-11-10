@@ -1338,6 +1338,11 @@ const bridge = {
      * Confirms like interact(): a minigame opened or an event fired. The
      * reply names what opened, and lists any other tray items that also
      * matched so an ambiguous substring is visible.
+     *
+     * An item with more than one action (a droppable one: "Drop here",
+     * "Examine") opens its menu, as a player's click does. The reply is then
+     * `{ ok: true, menu: { title, items } }` and the menu stays open: pick an
+     * entry with `inventoryAct(item, entry)` (or chooseInteractionMenu).
      */
     async openInventoryItem(item) {
         const blocked = blockedByMinigame();
@@ -1412,6 +1417,18 @@ const bridge = {
         ensureTargetRecorder();
         interactStartT = performance.now();
         clickElementDom(el);
+        // A menu item (inventory-menu.js) opens its menu in the click handler itself.
+        const menu = interactionMenuState();
+        if (menu) {
+            const title = (document.querySelector('#be-interaction-menu .be-im-title')?.textContent || '').trim();
+            const result = {
+                ok: true, item, matched, matchedBy: tier,
+                menu: { title, items: menu.items },
+                hint: 'This item has a menu. Pick an entry with inventoryAct(item, "Drop here" | "Examine" | index).'
+            };
+            logAction('openInventoryItem', { item }, result);
+            return result;
+        }
         const confirmed = await confirmEffect(sinceSeq);
         const entity = { kind: 'object', id: matched.id, name: matched.name };
         const result = confirmed.confirmed
@@ -1424,6 +1441,55 @@ const bridge = {
                         + '(briefing, debrief) blocks the tray; check brief for a dialogue first.'
                 }));
         logAction('openInventoryItem', { item }, result);
+        return result;
+    },
+
+    /**
+     * Pick one entry of a tray item's menu, as a player does: click the item
+     * (openInventoryItem), then the entry ("Drop here", "Examine", "Use", or a
+     * 0-based index). Confirms like interact(): "Drop here" fires
+     * item_dropped:<id>, "Examine" opens the examine view. A greyed entry
+     * ("Drop here" in a doorway or between rooms) fails with its reason.
+     * An item with no menu fails with `no-menu`: use openInventoryItem.
+     */
+    async inventoryAct(item, entry) {
+        if (window.isInteractionMenuOpen?.()) window.closeInteractionMenu?.();
+        const opened = await bridge.openInventoryItem(item);
+        if (!opened.ok) return opened;
+        if (!opened.menu) {
+            const result = fail('no-menu', { item, opened, hint: 'This item has one action; openInventoryItem already ran it.' });
+            logAction('inventoryAct', { item, entry }, result);
+            return result;
+        }
+        const buttons = Array.from(document.querySelectorAll('#be-interaction-menu .be-im-item'));
+        const label = (b) => (b.querySelector('.be-im-label')?.innerText || b.innerText || '').trim();
+        const needle = String(entry ?? '').trim().toLowerCase();
+        const btn = typeof entry === 'number' ? buttons[entry]
+            : (buttons.find(b => label(b).toLowerCase() === needle)
+                || buttons.find(b => label(b).toLowerCase().includes(needle)));
+        if (!btn) {
+            const result = fail(`no-menu-entry:${entry}`, { item, menu: opened.menu });
+            window.closeInteractionMenu?.();
+            logAction('inventoryAct', { item, entry }, result);
+            return result;
+        }
+        if (btn.getAttribute('aria-disabled') === 'true') {
+            const reason = (btn.querySelector('.be-im-detail')?.innerText || '').trim();
+            const result = fail('menu-entry-disabled', { item, entry: label(btn), reason });
+            window.closeInteractionMenu?.();
+            logAction('inventoryAct', { item, entry }, result);
+            return result;
+        }
+        const sinceSeq = currentSeq();
+        ensureTargetRecorder();
+        interactStartT = performance.now();
+        clickElementDom(btn);
+        const confirmed = await confirmEffect(sinceSeq);
+        const entity = { kind: 'object', id: opened.matched?.id, name: opened.matched?.name };
+        const result = confirmed.confirmed || confirmed.unrelatedOverlay
+            ? withConfirmation({ item, entry: label(btn), matched: opened.matched }, confirmed, entity)
+            : fail('no-effect-confirmed', { item, entry: label(btn), matched: opened.matched });
+        logAction('inventoryAct', { item, entry }, result);
         return result;
     },
 

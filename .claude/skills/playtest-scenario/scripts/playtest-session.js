@@ -21,7 +21,10 @@
  *   {"cmd":"converse","id":"npc","choices":["^Yes"]}   (takes only named options; stops at an unnamed
  *                                            choice with ok:false stopped-at-choice; "explore":true takes
  *                                            unvisited options, "close":true closes at a stop)
- *   {"cmd":"openInventoryItem","item":"phone"}   (tray index | id | exact name | type | name substring)
+ *   {"cmd":"openInventoryItem","item":"phone"}   (tray index | id | exact name | type | name substring;
+ *                                            a droppable item opens its menu and replies menu:{title,items})
+ *   {"cmd":"inventoryAct","item":"kit_usb","entry":"Drop here"}   (click the item, then the menu entry:
+ *                                            "Drop here", "Examine", "Use" or an index)
  *   {"cmd":"inventory"}                      → the tray, in order
  *   {"cmd":"doorways"}                       → doorways of the current room (or {"room":"id"})
  *   {"cmd":"cyberchef","input":"text","recipe":"ROT13(true,true,false,13)"}  (laptop must be open)
@@ -1074,6 +1077,17 @@ const vmSteps = createVmSteps({
      */
     openInventoryItem: async (c) => {
       const r = await page.evaluate(i => window.__test.openInventoryItem(i), c.item ?? c.id ?? c.name ?? c.type);
+      await pause(speed.step);
+      return r;
+    },
+
+    /**
+     * Pick an entry of a tray item's menu (a droppable item: "Drop here", "Examine"):
+     * {"cmd":"inventoryAct","item":"kit_deviceB","entry":"Drop here"} (see __test.inventoryAct).
+     */
+    inventoryAct: async (c) => {
+      const r = await page.evaluate(([i, e]) => window.__test.inventoryAct(i, e),
+        [c.item ?? c.id ?? c.name ?? c.type, c.entry ?? c.choose ?? null]);
       await pause(speed.step);
       return r;
     },
