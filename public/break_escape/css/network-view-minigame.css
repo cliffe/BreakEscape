@@ -1,0 +1,167 @@
+/* The network view (slice 9.3a, ACCESS_MODEL_SLICE_9_3_PLAN.md 4.3), the remote line on a
+   remote desktop, and the remote sign-in screen's Captured sign-ins (4.4). */
+
+.network-view {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: #10161c;
+    border: 4px solid #444;
+    padding: 12px;
+    color: #e8eef2;
+    font-size: 18px;
+    min-height: 220px;
+}
+
+.network-view-header {
+    border-bottom: 2px solid #2d3a44;
+    padding-bottom: 8px;
+}
+
+.network-view-title {
+    margin: 0 0 4px 0;
+    font-size: 22px;
+    color: #9ee6ff;
+}
+
+.network-view-observations {
+    margin: 0;
+    color: #b8c4cc;
+}
+
+.network-view-message {
+    margin: 6px 0 0 0;
+    padding: 4px 8px;
+    background: #3a2a10;
+    border: 2px solid #8a6420;
+    color: #ffe0a0;
+}
+
+.network-view-rows {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.network-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 8px;
+    background: #18222b;
+    border: 2px solid #2d3a44;
+}
+
+.network-row-icon {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    image-rendering: pixelated;
+    flex: 0 0 auto;
+}
+
+.network-row-label {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.network-row-name {
+    color: #b8c4cc;
+    font-size: 16px;
+}
+
+.network-row-control {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.network-row-off,
+.network-row-locked {
+    color: #b8c4cc;
+    font-size: 16px;
+    font-style: italic;
+}
+
+.network-row-locked {
+    max-width: 260px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.network-row-padlock {
+    width: 20px;
+    height: 20px;
+    image-rendering: pixelated;
+}
+
+.network-row-empty,
+.network-view-loading,
+.network-view-error {
+    color: #b8c4cc;
+    padding: 8px;
+}
+
+.network-view-notice {
+    min-height: 22px;
+    color: #ffe680;
+}
+
+.network-view-notice:empty {
+    display: none;
+}
+
+/* A remote desktop's header (4.4) */
+.desktop-remote-line {
+    color: #9ee6ff;
+    font-size: 16px;
+    margin: 2px 0;
+}
+
+/* The remote sign-in screen (4.4) */
+.signin-remote {
+    font-size: 16px;
+    color: #9ee6ff;
+    text-shadow: 1px 1px 0 #000;
+    position: relative;
+    z-index: 2;
+}
+
+.signin-captured {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    padding: 6px 10px;
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    font-size: 16px;
+}
+
+.signin-captured-title {
+    width: 100%;
+    color: #ffe680;
+}
+
+.signin-captured-item {
+    background: #23313b;
+    color: #fff;
+    border: 2px solid #4b6070;
+    padding: 2px 8px;
+    font-family: inherit;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.signin-captured-empty {
+    color: #b8c4cc;
+}

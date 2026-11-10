@@ -175,6 +175,10 @@ import { NetworkSegmentationMapMinigame, startNetworkSegmentationMapMinigame } f
 import { BackupRecoveryMinigame } from './backup-recovery/backup-recovery-minigame.js';
 import { EsdPushbuttonMinigame } from './esd-pushbutton/esd-pushbutton-minigame.js';
 
+// The network view (slice 9.3a): opened only by systems/network-links.js, so it is a scene
+// and not a registry entry
+import { NetworkViewMinigame, startNetworkViewMinigame } from './network-view/network-view-minigame.js';
+
 // Register minigames
 MinigameFramework.registerScene('lockpicking', LockpickingMinigamePhaser); // Use Phaser version as default
 MinigameFramework.registerScene('lockpicking-phaser', LockpickingMinigamePhaser); // Keep explicit phaser name
@@ -233,6 +237,7 @@ MinigameFramework.registerScene('shredded-document', ShreddedDocumentMinigame);
 MinigameFramework.registerScene('cryptex', CryptexMinigame);
 MinigameFramework.registerScene('combination', CombinationMinigame);
 MinigameFramework.registerScene('examine', ExamineMinigame);
+MinigameFramework.registerScene('network-view', NetworkViewMinigame);
 
 // Make minigame functions available globally
 window.startNotesMinigame = startNotesMinigame;
@@ -253,3 +258,4 @@ window.startNetworkSegmentationMapMinigame = startNetworkSegmentationMapMinigame
 window.startSisConfigThresholdMinigame = startSisConfigThresholdMinigame;
 window.startNetworkArchitectureMinigame = startNetworkArchitectureMinigame;
 window.startForensicDataPlatformMinigame = startForensicDataPlatformMinigame;
+window.startNetworkViewMinigame = startNetworkViewMinigame;
