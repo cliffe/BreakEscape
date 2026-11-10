@@ -43,6 +43,10 @@
 #                             Owen names the reader when he hands over the
 #                             password
 #   briefcase, Patricia's cabinet: picks (by design)
+#   it_oncall_lockbox (server room) pin  Owen's badge number, #4430 on the badge
+#                             log (or ask Owen once in the server room).
+#                             Holds the portal admin login card; the VM's
+#                             handover note (flag 1) points here (2026-11-10)
 #   Naming: Patricia in person, Patricia by phone (patricia_phone), or HaX.
 #
 # THE ENDING (pass 5, A2): the fate stops the upload and unlocks the call-in
@@ -76,6 +80,15 @@
 
 # Narrative Content Variables
 server_room_password = "quantum2024"
+# VM integration (2026-11-10): the portal admin login, FIXED here and in the
+# SecGen XML (scenarios/break_escape/safetynet/m05_insider_trading.xml:
+# bludit known_username/known_password and the shared OS account). One login
+# for the portal and the box's shared admin account. The lockbox code is
+# Owen's badge number, #4430 on door_log_text.
+portal_admin_user = "portaladmin"
+portal_admin_password = "QdcPortal2024"
+oncall_lockbox_code = "4430"
+portal_login_card_text = "QDC RESEARCH PORTAL - ADMIN LOGIN\n(migration default. ROTATE ME.)\n\nUser: #{portal_admin_user}\nPassword: #{portal_admin_password}\n\nOn-call only. Back in the box when you're done.\n- O"
 password_hint_sticky = "Server room temp password (expires Friday): #{server_room_password}\n\n- O"
 # PASS 4 (whodunnit): the badge log. Read quickly it says Halloran; read
 # properly, Torres comes through the front door six minutes before her spare
@@ -468,7 +481,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
         },
         {
           "taskId": "submit_flag1",
-          "title": "Submit Flag 1: The login someone left lying about (recon)",
+          "title": "Submit Flag 1: The handover note someone left on the portal (recon)",
           "type": "submit_flags",
           "targetFlags": ["flag_station_evidence:qdc_research_server-flag1"],
           "targetCount": 1,
@@ -763,6 +776,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
 
     "mission_complete": false,
     "server_room_entered": false,
+    "portal_login_found": false,
     "named_before_portal": false,
     "owen_office_card_relayed": false,
     "door_log_held": false,
@@ -1061,7 +1075,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "onceOnly": true,
               "completeTask": "access_bludit_vm",
               "_comment": "Puzzle R1 (P3): no counts in the flag texts, and every flag ticks 'Get into the research portal' (completeTask returns early on a done task, objectives-manager.js:546), since the drop-site takes flags in any order.",
-              "sendTimedMessage": { "delay": 1500, "message": "Login flag in. An admin login, left lying about in a handover note. Somebody wanted that box easy to get into." }
+              "sendTimedMessage": { "delay": 1500, "message": "Recon flag in. A handover note on a web server, of all places. It says where the portal login lives. Go and get it." }
             },
             {
               "eventPattern": "global_variable_changed:flag2_submitted",
@@ -1729,6 +1743,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "readable": true,
               "text": <%= door_log_text.to_json %>,
               "observations": "A printout of every after-hours badge swipe for three weeks, pulled by Owen",
+              "puzzle_graph_unlocks": "it_oncall_lockbox",
               "onRead": { "setVariable": { "found_door_log": true } }
             },
             {
@@ -1837,8 +1852,8 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "type": "set_global",
               "key": "flag1_submitted",
               "value": true,
-              "label": "Admin login recovered from the handover note",
-              "description": "Flag 1: Leaked Bludit admin credentials found - recon complete"
+              "label": "Handover note recovered from the research portal",
+              "description": "Flag 1: IT handover note found on the portal, pointing to the admin login - recon complete"
             },
             {
               "type": "set_global",
@@ -1860,6 +1875,31 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "value": true,
               "label": "Architect's acquisition authorisation recovered",
               "description": "Flag 4: The Architect's acquisition authorisation recovered - root access confirmed"
+            }
+          ]
+        },
+        {
+          "_comment": "VM integration (2026-11-10): the game-to-VM hook (m01 pattern). The portal admin login is FIXED on both sides (SecGen m05 XML pins known_username/known_password and the shared OS account to <%= portal_admin_user %> / <%= portal_admin_password %>). The VM's handover note (flag 1) no longer carries the login: it says the login is on the card in this lockbox and that the code is Owen's badge number. #4430 is on the badge-reader log (Owen's own Sunday swipe); Owen also gives it if asked once the player has been in the server room.",
+          "type": "safe",
+          "id": "it_oncall_lockbox",
+          "name": "IT On-Call Lockbox",
+          "takeable": false,
+          "locked": true,
+          "lockType": "pin",
+          "requires": "<%= oncall_lockbox_code %>",
+          "observations": "A small key safe screwed to the rack frame, 'IT ON-CALL' on the lid in marker. Four-digit keypad.",
+          "contents": [
+            {
+              "type": "notes",
+              "id": "portal_login_card",
+              "name": "Research Portal Login Card",
+              "takeable": true,
+              "readable": true,
+              "text": <%= portal_login_card_text.to_json %>,
+              "observations": "A laminated card with the research portal's admin login, still on the migration default",
+              "onRead": { "setVariable": { "portal_login_found": true } },
+              "puzzle_graph_role": "key",
+              "puzzle_graph_unlocks": "vm_launcher_bludit"
             }
           ]
         }

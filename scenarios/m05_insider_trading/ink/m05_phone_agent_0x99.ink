@@ -63,6 +63,7 @@ VAR door_log_reasoned = false // Synced scenario global: the player has read the
 // PASS 5 (A2/A4/A6)
 VAR mission_complete = false // Synced scenario global: set by extract_go (the call-in); opens the debrief
 VAR server_room_entered = false
+VAR portal_login_found = false // Synced scenario global (2026-11-10): the portal login card has been read
 VAR server_badge_obtained = false
 VAR patricia_phone_available = false
 VAR door_log_held = false
@@ -1047,8 +1048,14 @@ See you at HQ.
     }
 - not server_room_entered:
     You've got the password. The server room is north of the server hallway.
+- not flag1_submitted and not portal_login_found:
+    You're on the research subnet. Map it, then find what IT left lying about on the portal.
+// VM integration (2026-11-10): the handover note points to the server
+// room's on-call lockbox; the code is Owen's badge number (#4430).
+- not portal_login_found:
+    The note says the portal login's in the on-call lockbox in the server room. The code's Owen's badge number. It's on his swipe log, or ask him.
 - not flag1_submitted:
-    You're on the research subnet. Map it, then find the login someone left lying about.
+    You've got the login card. You still want the handover note off the portal: map the subnet and find it.
 - not flag2_submitted:
     You've got the admin login. The portal's upload flaw needs you logged in, and you are.
 - not flag3_submitted:
