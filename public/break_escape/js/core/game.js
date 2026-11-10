@@ -397,6 +397,8 @@ export function preload() {
     // Load object sprites - keeping existing ones for backward compatibility
     this.load.image('pc', 'objects/pc1.png');
     this.load.image('key', 'objects/key.png');
+    // The neutral picture a dropped item shows while its own loads (item-drop.js)
+    this.load.image('dropped_item', 'objects/dropped_item.png');
     this.load.image('key-ring', 'objects/key-ring.png');
     this.load.image('notes', 'objects/notes1.png');
     this.load.image('checklist', 'objects/checklist.png');

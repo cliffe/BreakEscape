@@ -224,3 +224,59 @@ test('a magnet whose picture loads on demand snaps to the table by the loaded si
     assert.equal(w.added[0].data.position.y, top / 32);
     assert.ok(w.added[0].data.position.elevation > 0, 'raised on the table');
 });
+
+// ---- Code review R1 (engine feedback changes) ----
+
+// m3: the stand-in is loaded with the game, so a drop that loads its picture is never invisible
+test('the neutral stand-in is preloaded with the other object pictures', () => {
+    const game = readFileSync(join(js, 'core/game.js'), 'utf8');
+    assert.match(game, /this\.load\.image\('dropped_item', 'objects\/dropped_item\.png'\);/);
+});
+
+// m4: a room torn down while the picture loads puts the item back in the tray
+test('a drop whose sprite is torn down before its picture loads goes back in the tray, saved nothing', async () => {
+    const scene = fakeScene(['dropped_item'], ['slow_pic']);
+    const w = world(scene);
+    const back = [];
+    window.inventory = { items: [] };
+    window.addToInventory = (s) => { back.push(s); window.inventory.items.push({ scenarioData: s.scenarioData }); };
+    dropInventoryItem(trayEl({ id: 'slow', type: 'usb', name: 'Slow stick', sprite: 'slow_pic', droppable: true }));
+    const s = scene.sprites[0];
+    s.scene = undefined; s.active = false;          // Phaser's destroy()
+    const saved = await window.rooms.lab.objects.slow?._dropSync;
+    assert.equal(saved, false);
+    assert.equal(window.rooms.lab.objects.slow, undefined, 'the dead sprite is out of the room');
+    assert.equal(back.length, 1);
+    assert.equal(back[0]._restoredFromSave, true, 'no server add, no pickup actions again');
+    assert.equal(back[0].scenarioData.id, 'slow');
+    assert.equal(back[0].scenarioData.takeable, false);
+    assert.equal(back[0].texture.key, 'slow_pic');
+    assert.equal(w.added.length, 0);
+    assert.equal(w.fetches.length, 0);
+    assert.equal(w.emitted.length, 0);
+    delete window.addToInventory;
+});
+
+test('an item picked up and then torn down is not put in the tray twice', async () => {
+    const scene = fakeScene(['dropped_item'], ['slow_pic2']);
+    world(scene);
+    const back = [];
+    window.addToInventory = (s) => back.push(s);
+    dropInventoryItem(trayEl({ id: 'slow2', type: 'usb', sprite: 'slow_pic2', droppable: true }));
+    // picked up (addToInventory put it in the tray), then the room went
+    window.inventory = { items: [{ scenarioData: { id: 'slow2' } }] };
+    const s = scene.sprites[0];
+    s.active = false; s.scene = undefined;
+    const sync = window.rooms.lab.objects.slow2._dropSync;
+    assert.equal(await sync, false);
+    assert.deepEqual(back, []);
+    // picked up with the scene still there: left alone, as before
+    const scene2 = fakeScene(['dropped_item'], ['slow_pic3']);
+    world(scene2);
+    window.inventory = { items: [] };
+    dropInventoryItem(trayEl({ id: 'slow3', type: 'usb', sprite: 'slow_pic3', droppable: true }));
+    scene2.sprites[0].active = false;
+    assert.equal(await window.rooms.lab.objects.slow3._dropSync, false);
+    assert.deepEqual(back, []);
+    delete window.addToInventory;
+});

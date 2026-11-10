@@ -234,6 +234,21 @@ export function inventoryImageKey(itemData) {
     return (typeof named === 'string' && named) ? named : itemData?.type;
 }
 
+// Image key of an item going into the tray. The scenario's "sprite" names its picture
+// first (inventoryImageKey), as for a restored item; then the world sprite's texture.
+// A dropped item picked up while its own picture is still loading wears a stand-in
+// texture (Phaser's __DEFAULT or the neutral dropped_item, item-drop.js), which is
+// never the item's picture, so those fall through to the type.
+const STAND_IN_TEXTURES = new Set(['__DEFAULT', '__MISSING', 'dropped_item']);
+export function trayImageKey(sprite) {
+    const data = sprite?.scenarioData;
+    const named = data?.sprite;
+    if (typeof named === 'string' && named) return named;
+    const tex = sprite?.texture?.key;
+    if (tex && !STAND_IN_TEXTURES.has(tex)) return tex;
+    return data?.type || sprite?.name;
+}
+
 // A missing picture falls back once to the item type's own, so a wrong "sprite"
 // name cannot leave a broken image with its alt text spilling over the next slot.
 export function fallbackInventoryImage(itemImg, type) {
@@ -623,7 +638,7 @@ export async function addToInventory(sprite) {
         // Create inventory item
         const itemImg = document.createElement('img');
         itemImg.className = 'inventory-item';
-        itemImg.src = `/break_escape/assets/objects/${sprite.texture?.key || sprite.name || sprite.scenarioData?.type}.png`;
+        itemImg.src = `/break_escape/assets/objects/${trayImageKey(sprite)}.png`;
         itemImg.alt = sprite.scenarioData.name;
         itemImg.addEventListener('error', () => fallbackInventoryImage(itemImg, sprite.scenarioData?.type));
         

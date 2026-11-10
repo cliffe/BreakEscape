@@ -173,6 +173,30 @@ export async function persistDrop(w, roomId, room, obj, worldData, at, position)
     }
 }
 
+/**
+ * Put a drop that never landed back in the tray. The server still holds the item
+ * (nothing was saved), so the stand-in is marked _restoredFromSave: addToInventory
+ * then neither asks the server again nor re-runs its pickup actions, as for an item
+ * restored on a reload. An item already back in the tray (picked up before the
+ * sprite went) is not added twice. Returns true when it was put back.
+ */
+export function returnToTray(w, data) {
+    if (!data || typeof w?.addToInventory !== 'function') return false;
+    const held = (w.inventory?.items || []).some(it => it?.scenarioData && (
+        it.scenarioData === data || (data.id && it.scenarioData.id === data.id)));
+    if (held) return false;
+    const key = dropTextureKey(data);
+    w.addToInventory({
+        name: data.type,
+        objectId: `inventory_${data.id || data.type || 'item'}_${Date.now()}`,
+        scenarioData: { ...data, takeable: false },
+        texture: { key },
+        _restoredFromSave: true,
+        setVisible() { return this; }
+    });
+    return true;
+}
+
 export function dropInventoryItem(sprite) {
     const w = window;
     const scene = w.game;
@@ -260,9 +284,18 @@ export function dropInventoryItem(sprite) {
     } else {
         // Load the picture now, then place it. An item picked up again before then is
         // left alone: nothing is saved, so the server still holds it in the inventory.
+        // A sprite torn down before then (the room unloaded, the scene restarted) was
+        // not picked up, so the item would be in neither the tray nor the world for the
+        // rest of the session: it goes back in the tray (returnToTray).
         obj._dropSync = new Promise((resolve) => {
             ensureDropTexture(scene, textureKey, (key) => {
-                if (!obj.scene || obj.destroyed || obj.active === false) { resolve(false); return; }
+                if (!obj.scene || obj.destroyed) {
+                    if (room.objects?.[obj.objectId] === obj) delete room.objects[obj.objectId];
+                    returnToTray(w, data);
+                    resolve(false);
+                    return;
+                }
+                if (obj.active === false) { resolve(false); return; }
                 resolve(place(key));
             });
         });

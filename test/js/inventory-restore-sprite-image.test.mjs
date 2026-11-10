@@ -60,7 +60,7 @@ globalThis.document = {
     getElementById: id => (id === 'inventory-container' ? tray : null),
     createElement: el, querySelector: () => null, querySelectorAll: () => [],
 };
-const { processInitialInventoryItems, inventoryImageKey, fallbackInventoryImage } = await import(inventoryUrl);
+const { processInitialInventoryItems, inventoryImageKey, fallbackInventoryImage, trayImageKey, addToInventory } = await import(inventoryUrl);
 
 function reset(playerInventory) {
     tray.children.length = 0;
@@ -115,6 +115,30 @@ test('a picture that fails to load falls back once to the type image', async () 
     img.src = '/break_escape/assets/objects/still_missing.png';
     img.listeners.error.forEach(fn => fn());
     assert.equal(img.src.split('/').pop(), 'still_missing.png', 'no second fallback, so no error loop');
+});
+
+// Code review R1 m2 (engine feedback changes): a dropped item picked up while its own picture
+// is still loading wears a stand-in texture; the tray names the item's own picture instead.
+test('trayImageKey: the scenario sprite first, then a real texture, never a stand-in', () => {
+    const w = (key, data) => ({ name: data.type, texture: { key }, scenarioData: data });
+    assert.equal(trayImageKey(w('__DEFAULT', { type: 'usb', sprite: 'charging_cable' })), 'charging_cable');
+    assert.equal(trayImageKey(w('dropped_item', { type: 'usb', sprite: 'icon_deviceB' })), 'icon_deviceB');
+    assert.equal(trayImageKey(w('__DEFAULT', { type: 'm09_box_taped1', name: 'Parcel' })), 'm09_box_taped1');
+    assert.equal(trayImageKey(w('dropped_item', { type: 'cake', name: 'Cake' })), 'cake');
+    assert.equal(trayImageKey(w('safe1', { type: 'safe' })), 'safe1', 'a world texture with no sprite named is kept');
+    assert.equal(trayImageKey({ name: 'phone', scenarioData: { type: 'phone' } }), 'phone');
+});
+
+test('picked up while its picture loads: the tray shows the item\'s own picture', async () => {
+    reset([]);
+    window.inventory._initialItemsProcessed = true;
+    const world = { objectId: 'kit_deviceB', name: 'BadUSB', texture: { key: '__DEFAULT' }, setVisible() { return this; },
+        scenarioData: { type: 'usb', id: 'kit_deviceB', name: 'BadUSB', sprite: 'icon_deviceB', droppable: true, takeable: true } };
+    const r = await addToInventory(world);
+    assert.equal(r.ok, true);
+    assert.deepEqual(trayImages(), [['BadUSB', 'icon_deviceB.png']]);
+    const src = readFileSync(join(js, 'systems/inventory.js'), 'utf8');
+    assert.match(src, /itemImg\.src = `\/break_escape\/assets\/objects\/\$\{trayImageKey\(sprite\)\}\.png`;/);
 });
 
 test('no fallback when the missing picture is already the type image', () => {
