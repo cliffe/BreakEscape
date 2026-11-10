@@ -536,17 +536,23 @@ module BreakEscape
       # unlockedObjects, and a folder under a sign-in PC or in a profile needs a session
       # that admits it, with it and every container above it unlocked.
       located = @game.login_scope_of(container_id)
-      if located && BreakEscape::Game.login_pc?(located[:object])
-        return render_login_desktop(container_id)
-      elsif located && located[:scope] && located[:scope][:type] == 'resource'
+      if located && located[:scope] && located[:scope][:type] == 'resource'
         # A share, or a folder in one (networks slice 9.3a, 4.5): refused exactly as an
         # invented id is, so a browser with no foothold or session cannot tell it exists.
+        # Judged before the sign-in branch, so a sign-in object an author put in a share
+        # is refused as an invented id too, not as an unreachable PC.
         return render_error("Container not found: #{container_id}", :not_found) unless @game.session_admits?(located[:scope])
+        # Past that, such an object is still no desktop: only a room's sign-in PC is one
+        if BreakEscape::Game.login_pc?(located[:object])
+          return render json: { error: "PC not reachable: #{container_id}", reason: 'unreachable' }, status: :forbidden
+        end
         unless @game.path_unlocked?(located[:path] + [located[:object]])
           return render_error("Container not unlocked: #{container_id}", :forbidden)
         end
 
         return render json: { container_id: container_id, contents: filter_container_contents(located[:object]) }
+      elsif located && BreakEscape::Game.login_pc?(located[:object])
+        return render_login_desktop(container_id)
       elsif located && located[:scope]
         unless @game.session_admits?(located[:scope]) && @game.path_unlocked?(located[:path] + [located[:object]])
           return render_error("Container not unlocked: #{container_id}", :forbidden)

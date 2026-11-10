@@ -210,6 +210,29 @@ module BreakEscape
       assert_equal invented, answer_for('no_such_item_x1')
     end
 
+    # Nothing forbids an author putting a sign-in object in a share yet (step 5's
+    # validator will). It must not tell a browser with no source that the id exists, and
+    # it is no desktop to one with a source.
+    test 'a sign-in object inside a share answers as an invented id with no source, and is no desktop with one' do
+      data = NS.scenario
+      data['resources']['scanned_inbox']['contents'] << {
+        'id' => 'share_kiosk', 'type' => 'pc', 'name' => 'Share kiosk', 'locked' => true, 'lockType' => 'login',
+        'access' => { 'roles' => ['staff'] },
+        'contents' => [{ 'id' => 'share_kiosk_file', 'type' => 'text_file', 'name' => 'kiosk.txt', 'text' => 'SHARE-KIOSK-TEXT-4471' }]
+      }
+      build_network_game({}, data)
+      container('no_such_container_x1')
+      invented = answer_for('no_such_container_x1')
+      container('share_kiosk')
+      assert_equal invented, answer_for('share_kiosk')
+
+      plant_office
+      body = container('share_kiosk')
+      assert_response :forbidden
+      assert_equal 'unreachable', body['reason']
+      refute_includes response.body, 'SHARE-KIOSK-TEXT-4471'
+    end
+
     # ---- GET /capture_secrets accounts ------------------------------------------------
 
     def captures(entries, reveal: true)
