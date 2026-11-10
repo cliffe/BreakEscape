@@ -364,6 +364,11 @@ container minigame uses. It shows what `GET /network` answers for that foothold 
   "Needs an account with access. It opens from that account's desktop." (4.5);
 - a row for any other resource: name, kind icon, and its `observations` on click.
 
+**Order.** A network's rows list its sign-in hosts, then its resources, each sorted by id
+(`NetworkModel.sign_in_objects_on` and `resources_on`; jsonb does not keep authored key order).
+Mapped shares on a desktop, the validator's information lines, the dungeon graph and
+`network_viewed`'s `hostList` share this order.
+
 The view never shows account names, access lists, policies or contents. It refetches each time it
 is opened, including every time the player comes back to it. Rows carry stable attributes for
 tests and scripted runs: `data-host-id` on a host row, `data-resource-id` on a resource row, and
@@ -455,7 +460,10 @@ applies, including the engine feedback plan's capture proofs once they are built
 computed apart from `secrets`: whatever `revealSecret` says, and never from the landing-page or
 single-secret passes. It carries only the address the browser itself wrote, so it reveals no
 secret; when `revealSecret` is off it still lets the list fill the username, and `secrets` then
-fills no password. A landing-page capture (a portal password, with an
+fills no password. `accounts` is present only when the scenario defines `networks`; the client
+reads a missing `accounts` as `{}`. It is only as trustworthy as `se_captures`, which the client
+writes; that is fixed by the engine feedback plan's capture proofs (its stream E4), which must land
+before the lab adopts networks (10.4). A landing-page capture (a portal password, with an
 address that is no account) is never offered, so the list cannot waste an attempt on a pair that
 was never a sign-in. The list is a form filler: the gate is the server's password check (section 1).
 
@@ -500,8 +508,13 @@ sessions it carried, so no further test is needed there in 9.3a.
 **What the client knows of a session.** The sign-in answer and each `sessions` entry of
 `GET /scenario` (both built by `login_session_answer`) gain `remote` (true when the session has a
 `foothold`), `footholdId`, and for a remote session `host` (the PC's `host`, else its `name`).
-The PC's room may never have loaded, so the label comes with the session. `pcSessions.list()`
-entries carry the three fields, so a list of sessions (the capture log's, 13.4) can name a remote
+The PC's room may never have loaded, so the label comes with the session. Only a remote session's
+entry carries `remote: true`, `footholdId` and `host`; an entry without `remote` is local.
+`GET /network`'s session object always carries `remote`. A sign-in desktop answer from
+`GET /container` carries the session in the same shape, so a keyboard fetch that settles a remote
+session (4.4, it clears the `foothold`) tells the client at once. The step 8 client must send
+`foothold` on every remote refetch and take an unplug's `endedPcIds` as the truth.
+`pcSessions.list()` entries carry the three fields, so a list of sessions (the capture log's, 13.4) can name a remote
 host without room data. `host` is not secret (3.2), and it reaches only a browser that holds the
 session.
 
@@ -512,6 +525,12 @@ session.
 
 **The rule, written once** (`resource_admits_player?(resource)`): some **source** the player holds
 reaches the resource, and the source is allowed.
+
+**Matching.** A resource record is matched by its own id only, never its name; items inside a share
+match on id or name as profile items do. Step 5's validator refuses a resource id or content id
+equal to a room object's or profile item's id or name, and a `lockType: "login"` object in a
+resource's contents. `GET /container` answers a sign-in object inside a share as it answers an
+invented id.
 
 - A source is a held foothold, or the PC of a session the player holds.
 - It reaches the resource when it is on the resource's network (4.2).
@@ -616,10 +635,10 @@ post 'network/unplug',  to: 'games#network_unplug',  as: 'network_unplug'
 | `POST /login` with any `claim` | as today | A claim that carries a `foothold`, or that targets a headless host, is refused with "Sign in required": an unlocked screen is a physical thing. This covers `claim: "owner"` today and any claim another slice adds (9.2's `guest`) | As today |
 | `GET /login_accounts` (changed) | as today | As today, plus: a headless host answers 403 | As today |
 | `GET /container/:id` (changed, locked) | as today, plus optional `foothold` | **A sign-in object:** 1. A session is held (403 `reason: "no_session"`). 2. With `foothold`: host reachable through it, remote sign-in not blocked, and the session is not a claim. Without: physically reachable and not headless. Either failing: 403 `reason: "unreachable"`. **A resource, or an object inside one:** 1. `resource_admits_player?`; otherwise 404 "Container not found: <id>", the answer for an invented id. 2. `path_unlocked?` for the folders above it and itself (403, as for a locked folder in a profile). **Anything else:** as today | A sign-in object: its `contents`, the admitted profiles, then a folder stub for each mapped share (4.5): `{ id: <resourceId>, type: "network_share", name, takeable: false, locked: false, hasContents: true }`. Served without `foothold`, a session's `foothold` is cleared (4.4): this action now writes `player_state`, and the comment above it that calls it read-only and a candidate to drop the lock (`games_controller.rb:515-525`) is rewritten to say it writes and must stay locked. A resource: its `contents` through `filter_container_contents` |
-| `POST /inventory` add (changed, locked) | as today, plus `source_resource_id` | First, for every add: the item is not a planted device (4.1). With `source_pc_id`: as today, and the search also covers the shares mapped for that PC's session. With `source_resource_id` (a share opened from the view): 1. `resource_admits_player?`; otherwise 422 "Item not found in scenario: <type>", the answer for an invented item. 2. The item is in that resource's contents. 3. `path_unlocked?`. 4. Takeable. 5. Its `transfer` allows the choice. With neither: as today; the generic search does not walk `resources`. The "already held, no source named" shortcut (`games_controller.rb:1009`) also requires no `source_resource_id` | As today; a Copy records `copiedItems` for a `source_resource_id` add as for a `source_pc_id` one (`:1030`) |
+| `POST /inventory` add (changed, locked) | as today, plus `source_resource_id` | First, for every add: the item is not a planted device (4.1). An add of a device planted in a jack is refused with 422 "That device is already in use", checked before the already-held shortcut and every source when the add names an id or name, and again on the item the add resolves to. With `source_pc_id`: as today, and the search also covers the shares mapped for that PC's session. With `source_resource_id` (a share opened from the view): 1. `resource_admits_player?`; otherwise 422 "Item not found in scenario: <type>", the answer for an invented item. 2. The item is in that resource's contents. 3. `path_unlocked?`. 4. Takeable. 5. Its `transfer` allows the choice. With neither: as today; the generic search does not walk `resources`. The "already held, no source named" shortcut (`games_controller.rb:1009`) also requires no `source_resource_id` | As today; a Copy records `copiedItems` for a `source_resource_id` add as for a `source_pc_id` one (`:1030`) |
 | `POST /unlock` (changed, locked) | as today | Check 1 (the scope refusal) covers the `resource` scope through `session_admits?`, for the resource's own id as well as for what is inside it, and answers 422 `{ success: false, message: "Invalid attempt" }` with no `feedback`, `caseMismatch` or `reason`, the answer for an invented id | As today |
 | `POST /complete_task` (changed, locked) | as today | An `unlock_object` task whose target is a jack: its id is in `gainedFootholds` | As today |
-| `GET /capture_secrets` (changed) | as today | As today | The answer gains `accounts: { targetId: username }`, composed as 4.4 says (the account-holder test, whatever `revealSecret` says, never the fallback). `secrets` is unchanged |
+| `GET /capture_secrets` (changed) | as today | As today | In a scenario that defines `networks`, the answer gains `accounts: { targetId: username }`, composed as 4.4 says (the account-holder test, whatever `revealSecret` says, never the fallback); without `networks` there is no `accounts` key, and the client reads a missing one as `{}`. `secrets` is unchanged. `accounts` is only as trustworthy as `se_captures` until the engine plan's capture proofs (E4) land |
 | `GET /scenario` (changed) | as today | As today | `filtered_scenario_for_bootstrap` deletes `networks`, `networkLinks` and `resources`. The action adds `footholds` (client shape, no hosts) and `gainedFootholds`; each `sessions` entry gains `remote`, `footholdId` and, for a remote session, `host` (4.4) |
 | `GET /room/:id`, and the room data a door unlock returns (changed) | as today | As today | Section 6 |
 
@@ -708,7 +727,9 @@ Errors:
 - `contents` on a resource whose `kind` is not `file_share`;
 - a resource id, or the id of an item in a resource's contents, equal to the **id or the name** of
   a room object, a profile item or another resource (`login_scope_of` matches on both and searches
-  rooms first, so either would shadow the share);
+  rooms first, so either would shadow the share; a resource record itself is matched by its id
+  only, 4.5);
+- a `lockType: "login"` object in a resource's contents (a sign-in host inside a share);
 - a resource `access` naming a person that is no NPC (the existing ACL reference check, with
   `resources/<id>/access` added to its sources);
 - a policy `remote` that is neither `allowed` nor `blocked`;
@@ -741,7 +762,8 @@ Warnings:
 
 Information lines, printed with the identity reach the first slice prints:
 
-- **Network reach.** For each jack, its network and the sign-in hosts and resources listed on it.
+- **Network reach.** For each jack, its network and the sign-in hosts and resources listed on it,
+  hosts then resources, each sorted by id (the order of 4.3).
 - **Reachable without a foothold.** Each share with an access list that maps on the desktop of a
   PC the player can walk up to (not headless), with the accounts admitted; and each sign-in host
   that is not headless and not in a locked room. Roles are compared as the server compares them,
@@ -806,7 +828,7 @@ pass, and, for a step that changes client code (7 and 8), the phone reopen check
 (`node scripts/ink_runtime_check/reopencheck.mjs scripts/ink_runtime_check/missions.json`), as
 `AGENTS.md` requires of every engine change.
 
-### Step 1. Shared rules and state
+### Step 1. Shared rules and state (built)
 
 Files:
 - `lib/break_escape/network_model.rb` (new): `networks(data)`, `network_of(object, room)`,
@@ -824,12 +846,12 @@ Files:
   `remote: "blocked"` policy).
 
 Tests: `test/unit/network_model_test.rb` (new): membership from the object, from the room, and
-neither; the hosts and resources on a network in scenario order; a rogue device definition found
+neither; the hosts and resources on a network, each sorted by id; a rogue device definition found
 in each of the five homes; `reach_conditions` for a resource on the same network, on another, and
 with no network; ids stamped once, and a second run changes nothing; a scenario with no `networks`
 returns empty answers everywhere.
 
-### Step 2. Server withholding
+### Step 2. Server withholding (built)
 
 Before any scenario is authored with a network.
 
@@ -844,7 +866,7 @@ Tests: `test/models/break_escape/network_withholding_test.rb` (new) and the no-e
 (section 6) in `test/controllers/break_escape/network_no_exposure_test.rb` (new), over the routes
 that exist at this step; steps 3 and 4 add their routes' cases to it.
 
-### Step 3. Server: the jack, the device and the view
+### Step 3. Server: the jack, the device and the view (built)
 
 Files:
 - `config/routes.rb`: the three routes of section 5, each naming its action (`network`,
@@ -878,8 +900,8 @@ Tests (`test/controllers/break_escape/network_footholds_test.rb`, new; every sce
 - unplug: the device is in the inventory exactly once, the link item and foothold are gone,
   `gainedFootholds` keeps the jack, and a second plant answers `first: false`;
 - the link item has exactly the shape of 4.1, with `storeIn` only when the jack sets `linkStoreIn`;
-- the view: empty with no foothold; the foothold's network with its hosts and resources in scenario
-  order; nothing from the other network; a PC under a `remote: "blocked"` policy listed with
+- the view: empty with no foothold; the foothold's network with its hosts, then its resources,
+  each sorted by id (4.3); nothing from the other network; a PC under a `remote: "blocked"` policy listed with
   `remoteSignIn: false` and no `session` even when a session is held there; a claimed session's
   row with no `session`; a headless host with `headless: true`; no `access`, username or content
   string anywhere in the answer;
@@ -891,11 +913,13 @@ Tests (`test/controllers/break_escape/network_footholds_test.rb`, new; every sce
 - every route answers sensibly for a `player_state` that has neither new key (a game from before
   this slice).
 
-### Step 4. Server: remote sign-in, headless hosts, shares
+### Step 4. Server: remote sign-in, headless hosts, shares (built)
 
 Files:
 - `game.rb`: `attempt_login!` takes `foothold:` and runs section 5's checks, the headless refusal
-  included; `claim_login_session!` refuses a claim with a foothold or on a headless host;
+  included; `claim_login_session!` takes `foothold:` and refuses a claim with a foothold or on a
+  headless host (the controller passes the foothold in, and this is the only foothold check for a
+  claim);
   `start_login_session!` and `login_session_answer` carry `foothold`, `remote` and, for a remote
   session, `host` (4.4);
   `login_scope_of` walks `resources` and returns the `resource` scope for the record and for what
@@ -907,7 +931,8 @@ Files:
   `resource_admits_player?`, `resource_acl_admits?`, `mapped_shares(pc, npc)`,
   `end_sessions_through!(foothold_id)` (called by the unplug), `account_capture_usernames` (the
   `accounts` map of 4.4, from the keys of `account_capture_passwords`).
-- `games_controller.rb`: `login` passes `foothold`; `container` and `render_login_desktop` judge a
+- `games_controller.rb`: `login` passes `foothold` to both `attempt_login!` and
+  `claim_login_session!`; `container` and `render_login_desktop` judge a
   desktop request by its `foothold` parameter (4.4), answer the two 403 reasons, clear a session's
   `foothold` when served physically (and the comment above `container` is rewritten: the action
   now writes and must stay locked), refuse a foothold request for a claimed session with 403
@@ -948,7 +973,14 @@ Tests (`test/controllers/break_escape/network_remote_signin_test.rb` and
   reaches a share);
 - `/capture_secrets`: `accounts` holds an account capture's username and not a landing-page
   capture's address; with `revealSecret` off, `accounts` still holds it and `secrets` is empty;
-  the single-secret fallback never adds an entry to `accounts`;
+  the single-secret fallback never adds an entry to `accounts`; a scenario with no `networks` has
+  no `accounts` key;
+- session shape: only a remote session's entry carries `remote: true`, `footholdId` and `host`; a
+  sign-in desktop answer from `GET /container` carries the session in that shape; a sign-in object
+  inside a share answers `GET /container` as an invented id; a resource is found by its id and
+  not by its name;
+- an inventory add naming a device planted in a jack is refused with 422 "That device is already
+  in use", also when the add resolves to it by name;
 - the refusal bodies: a refused share id on `POST /unlock` and `POST /inventory` has the same
   status and body as an invented id on that route (compared field by field);
 - the first slice's `access_model_*` controller tests pass unchanged.
@@ -1295,7 +1327,9 @@ This step starts when all of these hold:
 1. Step 8's runs pass.
 2. The content plan's scenario stream has finished its edits to the lab file (its items B1 and B2
    wait for this step and add their content with it, or straight after it).
-3. Nobody else is editing `scenarios/lab_physical_pentest/scenario.json.erb` or
+3. The engine feedback plan's capture proofs (its stream E4) are built, so the **Captured
+   sign-ins** list (`accounts`, 4.4) rests on a server proof and not only on `se_captures`.
+4. Nobody else is editing `scenarios/lab_physical_pentest/scenario.json.erb` or
    `lab_physical_pentest_secrets_test.rb`. The lab file has one editor at a time; slice 9.1's lab
    step runs after this one.
 
