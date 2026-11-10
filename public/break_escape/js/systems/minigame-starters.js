@@ -622,8 +622,13 @@ export function startPasswordMinigame(lockable, type, correctPassword, callback,
                 if (!window.minigameClosedByDamage?.()) {
                     // A flag lock says so: a mistyped flag is not "a password"
                     const rej = rejectionAlert(lockable, type, { message: "Failed to enter correct password.", title: 'Password Rejected' });
-                    const hinted = result?.cancelled ? rej.message : appendLockedHint(rej.message, lockable);
-                    window.gameAlert(hinted, 'error', rej.title, result?.cancelled ? 3000 : lockedHintDuration(lockable, 3000, rej.message));
+                    // A cancel is the player's own act, not a refusal: a short info toast,
+                    // which the 5 s error floor (notifications.js) leaves alone
+                    if (result?.cancelled) {
+                        window.gameAlert(rej.message, 'info', rej.title, 3000);
+                    } else {
+                        window.gameAlert(appendLockedHint(rej.message, lockable), 'error', rej.title, lockedHintDuration(lockable, 3000, rej.message));
+                    }
                 }
                 callback(false, result);
             }

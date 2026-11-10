@@ -114,6 +114,20 @@ test('the door sign titles RFID and gate refusals only (review R2 n8)', () => {
     assert.match(read('systems/door-gates.js'), /g\.doorSign = props\.door_sign/);
 });
 
+// Code review R1 m10 (engine feedback changes): a cancelled password pad is the player's own
+// act, so it is a short info toast the floor leaves alone; a wrong password is still an error.
+test('a cancelled password pad is a 3 s info toast; a wrong password stays an error', () => {
+    const src = read('systems/minigame-starters.js');
+    const start = src.indexOf('export function startPasswordMinigame');
+    const block = src.slice(start, src.indexOf('export function', start + 10));
+    assert.match(block, /if \(result\?\.cancelled\) \{\s*window\.gameAlert\(rej\.message, 'info', rej\.title, 3000\);\s*\} else \{\s*window\.gameAlert\(appendLockedHint\(rej\.message, lockable\), 'error', rej\.title, lockedHintDuration\(lockable, 3000, rej\.message\)\);/);
+    assert.equal(T.toastDuration('info', 3000), 3000);
+    children.length = 0;
+    const c = T.gameAlert('Failed to enter correct password.', 'info', 'Password Rejected', 3000);
+    assert.equal(c._toast.duration, 3000);
+    for (const n of [...children]) { clearTimeout(n._hideTimer); }
+});
+
 test('the cloner\'s refusal panel holds 5 s', async () => {
     assert.match(read('minigames/rfid/rfid-minigame.js'), /export const DENIAL_HOLD_MS = 5000;/);
 });
