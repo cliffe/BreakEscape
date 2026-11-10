@@ -5,14 +5,21 @@ working tree of branch `claude/break-escape-access-design-090sjx`. Read-only: no
 edited and nothing was run against a server.
 
 **Counts: 1 blocker, 10 majors, 22 minors.** Sibling mismatches are listed separately in section 5
-(9 with slice 9.1, 12 with slice 9.2, 8 with the engine feedback plan); the ones that need a plan
-change are also counted above.
+(7 with slice 9.1, 12 with slice 9.2, 8 with the engine feedback plan, 9 with the lab's content
+feedback plan); the ones that need a change to this plan are also counted above.
+
+**The sibling plans moved during this review.** Slice 9.1 was rewritten at 11:28 and is read here
+in that version. Slice 9.2 was being rewritten when this review closed (200 lines of the new
+draft existed at 11:34); section 5.2 is against the complete draft of 11:18 and marks what the
+new opening already settles. `PHYSICAL_PENTEST_FEEDBACK_PLAN_CONTENT.md`, which the plan under
+review never names, holds the lab's own design for the drop box and is the most important of the
+four (M8, section 5.4).
 
 **Verdict: revise before build.** Steps 1 to 8 are sound in outline and the claims about existing
 code are almost all right (section 6 lists what was checked). The blocker is confined to step 9
 (implants). The majors are a handful of rules that will not behave as written (remote desktop
 paths, "no route", open shares, the planted device), one design gap against the user's chaining
-principle (networks never chain to networks), and the lab recipe, which today collides with three
+principle (networks never chain to networks), and the lab recipe, which today collides with four
 other plans and does not need the drop box for its payoff.
 
 References: `P:n` is a line of the plan under review. Code lines are from the working tree and
@@ -160,7 +167,7 @@ will move; method names are given with them.
 - **Fix.** Correct step 4: only `login_scope_of`, `find_scenario_object` and the controller's
   `find_object_in_scenario` walk `resources`, and each is reached only after the scope check.
   State that `login_scope_of` returns the resource record itself with the `resource` scope (a
-  sign-in PC is returned with no scope and guarded by a special case, `game.rb:1756`; a builder
+  sign-in PC is returned with no scope and guarded by a special case, `game.rb:1755`; a builder
   copying that pattern would leave the share open to `method: "unlocked"`). Answer 404 for every
   resource id while the player holds no foothold and no session. Add to the no-exposure test, with
   no foothold: `/unlock` (`method: "unlocked"` and a wrong PIN) on a resource id, on an unlocked
@@ -192,38 +199,49 @@ will move; method names are given with them.
 
 - **Evidence.** The proposed chain is plant, see, sign in remotely as `m.pierce`, find the mapped
   records share on her desktop (P:944-951). Shares map on any desktop "local or remote" (P:379).
-  Melanie never locks her screen (`scenario.json.erb:1166`, `locksScreenOnLeave: false`) and her
+  Melanie never locks her screen (`scenario.json.erb:1165`, `locksScreenOnLeave: false`) and her
   PC is in the open accounts room, so the player already claims her session by sitting down while
   she is at the coffee station, and that desktop carries the same records share. The box, the view
   and the captured password are all optional flavour on the way to the same folder.
 - **Fix (for the lab plan, but this plan should say it).** Put the payoff behind something only
-  the network gives: a sign-in PC or share host in a room the player cannot enter (the server
-  riser is the obvious one), admitted to an account whose password is captured elsewhere. Then
-  "captured password plus planted box" is the only route, and the open scans share is the cheap
-  first finding. Or map the records share only where the PC's network reaches it and put
-  Melanie's PC on a network that does not. Either way add a validator information line: "payoff
-  reachable without a foothold".
+  the network gives: a sign-in host in a room the player cannot enter, admitted to an account
+  whose password is captured elsewhere. The lab's content feedback plan already has exactly that
+  step, built by hand: the door controller admin page at LW-DOOR01, which "needs the drop box and
+  a captured password" and is gated today on two client globals because remote sign-in "is not
+  built" (content plan lines 163-164, 218-224). Make LW-DOOR01 a sign-in host on the office LAN
+  that admits Chris's account: the box and the keylogger capture are then both required, the
+  server checks the password, and the hand-built gate goes. Add a validator information line for
+  any share or host content that is "reachable without a foothold".
 
-### M8. The lab recipe collides with three other plans on the same four objects
+### M8. The lab recipe collides with four other plans, and contradicts the lab's own scope rule
 
-Each row is a direct contradiction that will produce conflicting edits to
-`scenarios/lab_physical_pentest/scenario.json.erb`.
+Section 10 never mentions `PHYSICAL_PENTEST_FEEDBACK_PLAN_CONTENT.md`, which is the plan that owns
+"the lab's story text, rules of engagement, Ruth's lines, objectives and debrief" (P:909-912) and
+which has already designed the drop box beat a different way. Each row is a direct contradiction
+that would produce conflicting edits to `scenarios/lab_physical_pentest/scenario.json.erb`.
 
-| Object | This plan | The other plan |
+| Subject | This plan | The other plan |
 |---|---|---|
-| `staff_pc_2` `access` (`scenario.json.erb:1172`) | Keep `{ people: ["pierce"] }` or widen to `{ roles: ["finance"] }`, and use "Chris's captured password answers 'This account can't sign in on this PC'" as a lesson (P:946-951) | Slice 9.1 part B item 1 removes the list so every staff account, Chris's included, signs in there (9.1 plan lines 880-887) |
-| `usb_target_pc` | Becomes a sign-in PC owned by Sofia, opened by an implant with no password (P:956-960) | Slice 9.1 part B item 2 makes it a sign-in PC whose point is a sticky note on a screen she always locks, and asks for a probe first that a sign-in PC with `affordance.accepts` still takes her deliveries (9.1 plan lines 888-896). This plan asserts the conversion with no probe |
-| The Remote Session item (`scenario.json.erb:291-318`) | Replaced by `grant_foothold`; the hand-written container goes (P:956-960) | The engine feedback plan keeps it as a `give_item` and adds `storeIn: "capture_log"` (engine plan lines 533-535, 617-618) |
-| `network_port_planted` | Deleted (P:924-926) | The engine feedback plan recommends it keeps a physical object, "the device you planted should be visible where you planted it" (engine plan lines 618-621). `plantedSprite` meets the intent, but the two plans tell a builder opposite things |
+| What the drop box shows | A real network view from `networks` and `resources` (P:933-943) | The content plan grants a hand-written inventory item, `dropbox_console`, from a timer on `kp_netdrop_planted`, because network reach is "not built", and says "nothing has to be added to the engine" (content plan lines 163, 166, 211-216) |
+| Reading the records share | A task "Reach the records share" on `network_share_opened:lw_records`, with the safe combination suggested as its content (P:948-954) | The content plan keeps client records out of scope as the lesson: the share's folder names may be listed, "reading it ... is a data breach of its own" (content plan lines 142, 205, 214). Opening the share as an objective teaches the opposite |
+| Where captured passwords sign in | Remotely at `staff_pc_2`, perhaps widening its `access` to `{ roles: ["finance"] }` (P:945-948) | The content plan adds an unowned `hot_desk_pc` admitting three named people and says "Melanie's PC keeps its claim-only list" (content plan lines 185-198, 248) |
+| The chained step | Remote sign-in, then the mapped share (P:944-951) | The door controller page, needing the box and Chris's password (content plan lines 218-224). This is the better chain (M7) and the plan under review does not know it exists |
+| The Remote Session item (`scenario.json.erb:291-318`) | Replaced by `grant_foothold`; the hand-written container goes (P:956-960) | The content plan keeps it and renames a file in it (content plan lines 71-73); the engine feedback plan keeps it and adds `storeIn: "capture_log"` (engine plan lines 533-535) |
+| `network_port_planted` | Deleted (P:924-926) | The content plan rewrites its text to point at the console (content plan line 250); the engine plan recommends it stays, "the device you planted should be visible where you planted it" (engine plan lines 618-621) |
+| `usb_target_pc` | Becomes a sign-in PC owned by Sofia (P:956-960) | The content plan gives it a second affordance and keeps it a plain PC (content plan lines 455-461); slice 9.1 asks for a probe before any sign-in PC is relied on to take an NPC's deliveries (9.1 plan, "What habits offer the lab's feedback pass") |
+| Globals and tasks | `network_viewed:office_lan`, `pc_signed_in:staff_pc_2` with `data.remote`, three new tasks (P:952-954) | The content plan adds `kp_dropbox_viewed`, `kp_signed_in`, `kp_door_admin` and the tasks `opt_dropbox_view` and `opt_door_admin`, read by Ruth's ink and the debrief (content plan lines 256-272, 291-308) |
+| When the lab file may be edited | Step 10, after step 8 (P:903-905) | Slice 9.1's lab step "never runs alongside another edit of that file" and follows the feedback pass (9.1 plan, section 12, "When"); the content plan's own build edits the same objects |
 
-Also: slice 9.2's decision 9 recommends no change to this lab in its slice because "it is
-mid-playtest", and 9.1 says the parent order (9.1, 9.2, 9.3) stands (9.1 plan line 968), against
-this plan's decision 1.
-
-- **Fix.** Section 10 should be reduced to what this slice needs from the lab (one network, the
-  jack, the device flag, Ruth's trigger) and a list of open content questions, and one owner (the
-  lab feedback plan) should be named for `staff_pc_2.access`, `usb_target_pc` and the Remote
-  Session item. Step 10 should not start until that plan has answered them.
+- **Fix.** Reduce section 10 to two parts. First, what this slice gives the lab with no content
+  decision: one network, the jack fields on `network_port`, `rogueDevice` on `kit_dropbox`, and
+  Ruth's trigger. Second, a mapping from the content plan's hand-built pieces to this slice's
+  fields, for that plan's owner to accept or refuse: `dropbox_console` becomes the link item and
+  the view; its three host notes become two service rows and one share whose contents are the
+  folder names only; LW-DOOR01 becomes a remote sign-in host; `kp_dropbox_viewed` is set by a
+  mapping on `network_viewed:office_lan`; `kp_door_admin` by `pc_signed_in` on the door host. The
+  records share's files stay out of reach or carry the content plan's out-of-scope cost. Step 10
+  starts only when the content plan has been revised to say which of the two designs it uses, and
+  the lab file has one editor at a time.
 
 ### M9. Build streams collide on `inventory.js`, and the cross-plan file lists are incomplete
 
@@ -234,7 +252,7 @@ this plan's decision 1.
   (`inventory.js:251`, `:171-173`, `:485`). So C1 has to add an export to `systems/inventory.js`,
   which the table gives to C2 (P:1137), and both streams start "at once" (P:1136-1137). The plan
   names only `password-minigame.js` as shared (P:1142).
-- **Across plans.** Section 12.3 lists `game.rb`, `validate_scenario.rb` and
+- **Across plans** (9.2 as its draft of 11:18 stood). Section 12.3 lists `game.rb`, `validate_scenario.rb` and
   `scenario-schema.json` as the files shared with 9.2 (P:1085-1088), and 12.2 claims no contact
   with 9.1 beyond three notes (P:1023-1032). The sibling plans' own stream tables also take:
   `games_controller.rb` and `config/routes.rb` (9.2 server stream; 9.1 stream A edits
@@ -365,14 +383,14 @@ this plan's decision 1.
 
 | # | Plan's recommendation | Judgement |
 |---|---|---|
-| 1 | Build before 9.1 and 9.2 | **Agree, as 9.3a only (M10).** It needs nothing from them. But 9.1 says the parent order stands and all three plans take the same files (M9), so the user is really choosing an order for four plans; put that choice to them as one question |
+| 1 | Build before 9.1 and 9.2 | **Agree, as 9.3a only (M10).** It needs nothing from them. The new opening of 9.2 expects 9.3, then 9.1, then 9.2; 9.1 still says the parent order stands. All of them and the two lab feedback plans take the same files (M9), so the user is really choosing one order for five plans; put that to them as one question |
 | 2 | Remote sign-in on by default | **Agree,** with one change: print "doors skipped" as a warning, not an information line, until the author acknowledges it on the PC (`"remote": "allowed"` written out, or a policy). A room default `network` otherwise opens every sign-in PC in the room without the author seeing it |
 | 3 | A protected share opens from a desktop only | **Agree.** One mechanic, and it is the lesson. Fix M3 first |
-| 4 | Build implants, last | **Disagree as designed (B1).** Either add a server precondition, or reduce an implant to a foothold with no session, or defer it to 9.3b. Its lab use also collides with 9.1 and the engine feedback plan (M8) |
+| 4 | Build implants, last | **Disagree as designed (B1).** Either add a server precondition, or reduce an implant to a foothold with no session, or defer it to 9.3b. Its lab use also collides with the two lab feedback plans (M8) |
 | 5 | The device can be unplugged | **Agree.** Fix M4, or the reasoning does not hold |
 | 6 | Wi-Fi needs no device and no range | **Agree,** and move Wi-Fi to 9.3b: the lab does not use it |
 | 7 | Reuse art now | **Agree for the jack and the box; not for the phone image** (minor 13) |
-| 8 | Full chain in the lab as optional objectives | **Agree in aim, not in the recipe.** As written the payoff needs no box (M7). The content belongs to the lab feedback plan (M8) |
+| 8 | Full chain in the lab as optional objectives | **Agree in aim, not in the recipe.** As written the payoff needs no box (M7) and opening the records share is what the lab's content plan forbids (M8). Offer the door controller chain instead |
 | 9 | Show a down network as "no route" | **Agree,** and keep rows for held sessions under it (M2). Note it is a name sent for a network the foothold does not reach, so section 6's rule needs the exception written in |
 | 10 | Accept resource names in NPC room data | **Agree.** A bark says as much. But the same answer must cover the `downIf` names this plan itself asks 9.2 to ship (minor 6) |
 
@@ -389,29 +407,46 @@ real control.
 
 ## 5. Mismatches with the sibling plans
 
-### 5.1 Slice 9.1 (`ACCESS_MODEL_SLICE_9_1_PLAN.md`)
+### 5.1 Slice 9.1 (`ACCESS_MODEL_SLICE_9_1_PLAN.md`, the version of 11:28)
 
-1. Wi-Fi key home: 9.1 expects `wifi_ap.psk` in `NpcHabits::Clues.secret_homes` (9.1 lines 486,
-   961); here it is `networks.<id>.wifi.psk` (P:125-128). Already noted at P:1027-1030.
-2. The "key appears nowhere" warning (P:540-541) re-implements what 9.1's
-   `Clues.readable_texts` collects. Whichever lands second should call the other.
-3. Build order: 9.1 says 9.1, 9.2, 9.3 stands (9.1 line 968); this plan says 9.3 first.
-4. `staff_pc_2.access`: removed by 9.1, relied on here (M8).
-5. `usb_target_pc`: sticky-note desk in 9.1, implant target here, and 9.1's probe is missing here
-   (M8).
-6. Chris's PC: 9.1 notes a sign-in PC answers a click before `requiresItem`, so the keylogger
-   plant must move to an object beside it (9.1 part B item 3). This plan gives `staff_pc` a
-   network and host "ready when the lab plan converts" it (P:936-938) without that note.
-7. The sticky note is served by `GET /login_accounts` in 9.1; the remote screen skips that route
-   (P:845-847). Consistent and realistic, but neither plan says a `writesDown` note is never
-   shown remotely; add the sentence to 12.2.
-8. Shared files not listed in 12.2: `games_controller.rb` (`login_accounts`),
-   `unlock-system.js`, `pc-sessions.js`, `api-client.js`, the leak scanner, `verify-run.rb`,
-   `generate_dungeon_graph.rb`, the lab and its secrets test (M9).
-9. 9.1 decision D3 leans on `maxAttempts` as the cost of a guess; remote attempts share that
-   budget here (P:339-341). 9.1's roll and guess warnings should count remote-only PCs (minor 21).
+That version has read this plan and says "No disagreement" (9.1 section 14.3). The Wi-Fi key's
+home is now agreed (`networks.<id>.wifi.psk`, with whichever lands second adding it to
+`NpcHabits::Clues.secret_homes`), so P:1027-1030 is out of date: it still says 9.1 expects
+`wifi_ap.psk`. What remains:
+
+1. **Build order.** 9.1 section 14.5 says the first slice plan's order stands (9.1, 9.2, 9.3);
+   this plan's decision 1 says 9.3 first.
+2. **The "key appears nowhere" warning** (P:540-541): 9.1 offers `Clues.readable_texts` and
+   `Clues.parts` so both slices agree on what the player can read. This plan does not take the
+   offer or say why not.
+3. **The lab file.** 9.1's lab step moves `locksScreenOnLeave` off `staff_pc` and `staff_pc_2`
+   onto their owners, edits `lab_physical_pentest_secrets_test.rb`, and must not run alongside
+   another edit. This plan's step 10 edits both (P:967-969) and names no order.
+4. **The probe.** 9.1 asks for a probe that a sign-in PC with `affordance.accepts` still takes
+   an NPC's deliveries. This plan converts `usb_target_pc` without it (P:956-960).
+5. **The sticky note.** 9.1 serves it only in `GET /login_accounts` for the owner's own
+   physically reachable PC; this plan's remote screen skips that route (P:845-847). The two
+   agree, but neither says in words that a written-down password is never shown on a remote
+   sign-in screen. Add the sentence to 12.2.
+6. **Shared files not listed in 12.2.** 9.1's stream A edits `games_controller.rb`
+   (`login_accounts`), `unlock-system.js`, `pc-sessions.js`, `api-client.js`, `core/game.js` and
+   `core/rooms.js`; its stream E the leak scanner and `verify-run.rb`; its stream B the validator
+   and the dungeon graph. 9.1's own 14.5 lists three shared files and this plan's 12.2 none (M9).
+7. **Room data on a sign-in PC.** 9.1 adds `hasPostit` in `attach_login_accounts!`; this plan
+   adds `host` and calls `attach_network_state!` from the same method (P:645-649). Different
+   keys, same few lines of `filtered_room_data`.
 
 ### 5.2 Slice 9.2 (`ACCESS_MODEL_SLICE_9_2_PLAN.md`)
+
+Against the complete draft of 11:18 (1147 lines), which is the one section 12.3 of this plan
+describes. The rewrite in progress at 11:34 already says, in its first 200 lines: the expected
+order is 9.3, then 9.1, then 9.2; reach for an NPC's work "is composed on the server" because
+9.3 "never sends networks to the browser"; and 9.3 owns `network`, `host`, `contents` and
+`observations` on a resource. That settles items 1 and 2 below in intent and makes P:1047-1058
+partly out of date. One new point from the rewrite: a workaround may carry `setGlobal`, "a
+declared global the server sets true". That contradicts section 2 here ("The server never sets a
+scenario global itself", P:53) once 9.2 is built, and it is the mechanism an outage would need to
+be more than client-written (4.6). Every item below must be rechecked when the rewrite is done.
 
 1. Reach: decided in the browser by `reaches(stationId, resource)` in 9.2 (9.2 line 191), on the
    server here. Noted at P:1047-1058.
@@ -467,6 +502,25 @@ real control.
    should use the shared renderer and the narrowed secrets (minor 7).
 8. Registration: that plan registers its minigame in `systems/minigame-registry.js`, this one in
    `minigames/index.js` (P:842-843). Both files exist; pick one convention.
+
+### 5.4 The lab's content feedback plan (`PHYSICAL_PENTEST_FEEDBACK_PLAN_CONTENT.md`)
+
+Not named anywhere in the plan under review. The table in M8 gives the contradictions; as a list:
+
+1. The drop box view is a hand-written granted item there and a real view here.
+2. That plan states network reach and remote sign-in are not built and gates its chain on two
+   client globals; this slice builds both.
+3. Client records on the share are out of scope there and an objective here.
+4. Captured passwords sign in at a new `hot_desk_pc` there and remotely at `staff_pc_2` here;
+   that plan keeps `staff_pc_2`'s list as it is.
+5. The chained payoff is the door controller page there and the records share here.
+6. The Remote Session item is kept there and replaced here.
+7. `network_port_planted` is kept and reworded there and deleted here.
+8. Different globals and task ids for the same beats (`kp_dropbox_viewed`, `opt_dropbox_view`
+   there; event mappings on `network_viewed` here).
+9. Hosts are named LW-FS01, LW-DOOR01 and LW-PRN02 there; this plan invents `lw_scans`,
+   `lw_records` and `lw_door_controller` with partly different meanings (a scans share that plan
+   does not have; a printer this one does not).
 
 ---
 
