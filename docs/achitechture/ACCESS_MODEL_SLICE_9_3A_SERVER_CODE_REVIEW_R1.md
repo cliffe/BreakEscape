@@ -59,15 +59,18 @@ foothold and no session. The refusal bodies for a share id on `GET /container`, 
   `test/support/network_model_scenario.rb` (no `screenOwner`, no `needsHome`, no NPC with tracked
   needs).
 - Failure: every claim in the fixture is refused with "Sign in required" for "no owner" before the
-  foothold or headless check matters. Deleting the foothold refusal in the controller
-  (`games_controller.rb:1102`) and in `claim_login_session!` (`game.rb:1493`), or the headless
-  refusal (`game.rb:1497`), leaves the suite green. A probe with an owner (Sam with tracked needs,
+  foothold or headless check matters. The controller check (`games_controller.rb:1102`) is the only
+  live foothold guard: the controller never passes `foothold` to `claim_login_session!`, so the
+  model's own refusal (`game.rb:1493`) is never reached from a request. Deleting the controller
+  check, or the headless refusal (`game.rb:1497`), leaves the suite green. A probe with an owner (Sam with tracked needs,
   `screenOwner: "sam"` on `sam_pc`, `locksScreenOnLeave: false`) shows the claim succeeds with no
   foothold, so the property is real and unguarded. A regression here hands a password-free desktop
   over the network, which is a secrecy property.
 - Fix: give the fixture one owned PC on `office_lan` (and an owned headless variant, or a scenario
   tweak in the test). Assert the claim succeeds with no foothold (the control), is refused with a
   foothold, and is refused on the headless host with its room open; assert no session is written.
+  Either pass `foothold:` from the controller into `claim_login_session!` (so the model guard is
+  the one that runs, and a unit test can reach it) or drop the unused keyword.
 
 ### M2. Nothing guards the lock on `container`, `network_plant` and `network_unplug`
 
