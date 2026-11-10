@@ -422,6 +422,7 @@ def check_unknown_fields(json_data)
     phoneId phoneTheme handle profile voiced callLabel unlockable externalVariables persistentVariables
     timedMessages timedConversation eventMappings itemsHeld puzzle_graph_actions
     needs interests needsHome needsSpeed needsRooms needsAvoidRooms needsCompany chatter chattiness usePayload onUse
+    captureProof
     maxQueue needsDeferMin exchanges chatterCooldownMin swivel swivelChance screenHabit printHabit
     answersPhones phoneCalls
     role creds staff cloneable
@@ -508,6 +509,7 @@ def check_unknown_fields(json_data)
     itemsHeld contents hasContents triggerOnInteract
     requiresItem requiresItemHint requiresItemHintVariants consumesItem revealOnGlobal outputOf leftBehindBy leftBehindChance
     minigameData interactionType
+    holds storeIn
     gateVar sealedMessage openableReadyMessage
     puzzle_graph_role puzzle_graph_aim puzzle_graph_unlocks
     puzzle_graph_and_with puzzle_graph_reveals puzzle_graph_optional puzzle_graph_note
@@ -2412,7 +2414,10 @@ def check_common_issues(json_data, valid_item_types = nil)
       t = item['type']
       exact_match = valid_item_types.include?(t)
       variant_match = !exact_match && valid_item_types.any? { |v| v.start_with?(t) }
-      unless exact_match || variant_match
+      # The capture log holder (engine plan section 6) is an engine type: until its own
+      # picture exists, an item of that type that names a sprite draws that sprite.
+      engine_type = t == 'capture_log' && item['sprite'].is_a?(String) && !item['sprite'].empty?
+      unless exact_match || variant_match || engine_type
         issues << "❌ INVALID: '#{item_path}' has type '#{t}' but no matching sprite found at assets/objects/#{t}.png (nor any #{t}*.png variant) — check the spelling or add the asset"
       end
     end
