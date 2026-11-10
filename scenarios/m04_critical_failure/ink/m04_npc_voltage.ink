@@ -87,7 +87,7 @@ EXTERNAL player_name()
     ~ voltage_quiet = false
 - else:
     // Phase 4 dialogue C1 (D5-22): not a fourth "Still here."
-    Voltage: *not looking up* You came back. Nothing you say next will be new.
+    Voltage: You came back. Nothing you say next will be new. #delivery: not looking up
 }
 
 // Pass 5 A1: backing off is now a stance, so the choice has to come back.
@@ -227,7 +227,7 @@ Voltage: We didn't make it fragile. We just stopped pretending it wasn't.
     -> voltage_states_the_number
 
 * [Someone wrote that speech for you.]
-    Voltage: *almost amused* I wrote it.
+    Voltage: I wrote it. #delivery: almost amused
     -> voltage_states_the_number
 
 === voltage_states_the_number ===
@@ -249,7 +249,7 @@ Voltage: You think I don't know it. I know it to one decimal place.
 
 * [Say their names, then.]
     Narrator: For the first time something moves behind his face. His eyes go to the laptop clock.
-    Voltage: *flat* I don't need their names to know the number.
+    Voltage: I don't need their names to know the number. #delivery: flat
     -> voltage_owns_it
 
 === voltage_owns_it ===
@@ -504,7 +504,7 @@ Narrator: The dock door bangs open onto the loading bay and the cold, and he's g
 {voltage_quiet:
     ~ voltage_quiet = false
 - else:
-    Voltage: *flat* {&Still counting?|You've got me. You haven't got him.}
+    Voltage: {&Still counting?|You've got me. You haven't got him.} #delivery: flat
 }
 
 + [Nothing you want to tell me?]
