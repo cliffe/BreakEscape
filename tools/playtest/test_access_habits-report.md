@@ -65,4 +65,44 @@ All six were in the script, none in the game:
 - Screenshots were taken by the script and looked at by the builder; they are kept out of the
   repo.
 - A persona-tier run and the first slice's scripted suite (`test_access_signin`,
-  `test_access_sessions`) were not rerun by the builder.
+  `test_access_sessions`) were not rerun by the builder (rerun after review round 1, below).
+
+## Rerun after code review round 1 (2026-11-10)
+
+Review finding m8. Run on a keyless server on :3009 with the session harness
+(`tools/playtest/session-start.sh`, headless Chromium), after the round 1 fixes (the scenario's
+never-typed passwords changed, nothing a run types). `verify-run.rb --access` and
+`access-leak-check.rb` after every beat; the leak check said `VERDICT: no leaks found` every time.
+
+| Run | Game | Beats | Result |
+|---|---|---|---|
+| `test_access_habits` run 2 | 114 | H6, H7, H8 with the reload | all pass |
+| `test_access_signin` Run A | 116 | S1 to S4, reload | all pass |
+| `test_access_signin` Run B | 117 | set-up, S5 to S8 | all pass |
+| `test_access_sessions` Run 1 | 118 | T1 to T5, T11 | all pass |
+| `test_access_sessions` Run 2 | 121 | T6, H3 Ian, T7, reload, T8 to T10 | all pass, see the note on sounds |
+
+- **H6**: the password worked out from the photo, the calendar and the IT notice signed in at
+  `mei_pc` through Other user at the first try; `mei_pc = mei (password)`, `loginFailures 0`.
+- **H7**: the locker opened with the note's code and the same code signed in at `tom_pc`;
+  `tom_locker` in `unlockedObjects`, `tom_pc = tom (password)`.
+- **H8**: by `away.leaves`, open (1, a claim, task done, gone when she returned), open (2),
+  locked (3), locked (4), with a lock cue and a `screen_lock` chime on 3 and 4 only. After the
+  reload her first leave was open again with `leaves` 1 and gave a claim.
+- **Signin and sessions**: every message, tile list, transfer choice, lockout sequence, session
+  line and task the two PLAYTEST files expect, including the restored desktop after each reload
+  and the claim ended on load. T4's H3 line marked UNCONFIRMED is now seen: after the password
+  sign-in `ian_pc`'s `lockedLook` is false and its newest transition is `locked: false`.
+
+**Note on sounds (not a fault).** `test_access_sessions/PLAYTEST.md` still expects
+`sound: "lockpick_set"` / `"ui_confirm"` in `screenTransitions()` for a lock heard in the room.
+Since office life's lock cues were installed, `screen-states.js` leaves the sound to them, so
+every transition now has `sound: null`; the cue log has the `screen_lock` / `screen_unlock`
+chime on a leave and a return, and no chime on T6's auto-lock (by design in
+`npc-office-visuals.js`). The sessions PLAYTEST's H3 lines need the same wording as this
+scenario's PLAYTEST.
+
+Harness notes: a reload must call `bootstrap` with `"resume": "resume"` when the run started
+with `"resume": "new"`, or the resume overlay's New Session makes a new game (it did once in
+the habits run; the run went back to game 114). Two `404 (Not Found)` console lines follow each
+reload in `test_access_sessions` (a static file; not looked into).
