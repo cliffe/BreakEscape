@@ -3963,7 +3963,14 @@
                   },
                   "openRadius": { "type": "number", "minimum": 0, "description": "Pixels from the door centre at which an openFor NPC opens it (default 56)" },
                   "holdMs": { "type": "number", "minimum": 0, "description": "ms it stays open after the last NPC leaves (default 2500)" },
-                  "playerMayPassIf": { "type": "string", "description": "A global. While false, a player who comes within openRadius of the open gate shuts it" }
+                  "playerMayPassIf": { "type": "string", "description": "A global. While false, a player who comes within openRadius of the open gate shuts it" },
+                  "sound": {
+                    "oneOf": [
+                      { "type": "string" },
+                      { "type": "boolean", "enum": [false] }
+                    ],
+                    "description": "The sound played when the gate opens. Left out: the door release (rfid_unlock) when the door has an RFID lock, else none. A sound key plays that sound; false silences the gate. Heard from the doorway's two rooms, fading to nothing at 12 tiles"
+                  }
                 }
               }
             }

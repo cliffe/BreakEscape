@@ -28,11 +28,18 @@ export function attachUISoundsToClass(className, soundType = 'click') {
     });
 }
 
+// The electric strike of a door that releases for a badge: every RFID lock that opens, and a
+// gate door with an RFID lock, whoever opens it (PHYSICAL_PENTEST_FEEDBACK_PLAN_ENGINE.md 2)
+export const DOOR_RELEASE_SOUND = 'rfid_unlock';
+export const DOOR_RELEASE_VOLUME = 0.9;
+
 /**
  * Play a UI sound
  * @param {string} soundType - Type: 'click', 'confirm', 'alert', 'reject', 'notification', 'interaction', etc.
+ * @param {{volume?: number, key?: string}} [opts] - 'door_release' only: the volume (default
+ *   DOOR_RELEASE_VOLUME) and another sound key in place of DOOR_RELEASE_SOUND
  */
-export function playUISound(soundType = 'click') {
+export function playUISound(soundType = 'click', opts = {}) {
     const soundManager = window.soundManager;
     if (!soundManager) {
         console.warn('Sound Manager not initialized');
@@ -72,6 +79,11 @@ export function playUISound(soundType = 'click') {
             break;
         case 'objective_complete':
             soundManager.play('ui_confirm');
+            break;
+        case 'door_release':
+            soundManager.play(opts?.key || DOOR_RELEASE_SOUND, {
+                volume: Number.isFinite(opts?.volume) ? opts.volume : DOOR_RELEASE_VOLUME
+            });
             break;
         default:
             // Try to play as-is

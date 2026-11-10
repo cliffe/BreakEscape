@@ -709,13 +709,8 @@ async function handleDoorInteraction(doorSprite) {
                 }
             }
             // Open the gate for the player and hold it; the gate shuts and relocks later.
+            // The door release sounds from playerOpen (door-gates.js), once, for an RFID door
             if (window.doorGates?.playerOpen?.(connectedRoom)) {
-                try {
-                    if (window.game && window.game.sound) {
-                        const s = window.game.sound.get('rfid_unlock') || window.game.sound.add('rfid_unlock');
-                        s.play({ volume: 0.9 });
-                    }
-                } catch (e) {}
                 window.gameAlert?.('Access granted: cloned staff badge accepted.', 'success', 'Door', 3000);
             }
             return;

@@ -761,14 +761,10 @@ export function handleUnlock(lockable, type) {
                 matchingKeycard: matchingKeycard?.scenarioData?.name
             });
 
+            // The electric strike alongside the door opening: the shared door sound
+            // (ui-sounds.js), the same one a gate door with an RFID lock plays
             const playRfidUnlockSound = () => {
-                // Play electric strike sound alongside door open
-                try {
-                    if (window.game && window.game.sound) {
-                        const s = window.game.sound.get('rfid_unlock') || window.game.sound.add('rfid_unlock');
-                        s.play({ volume: 0.9 });
-                    }
-                } catch (e) {}
+                try { playUISound('door_release'); } catch (e) {}
             };
 
             // The card copier's reader screen: tap a held card or emulate a saved one

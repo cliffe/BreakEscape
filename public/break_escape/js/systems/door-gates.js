@@ -43,6 +43,12 @@
  * toggled together. Events: door_gate_opened / door_gate_closed / door_gate_denied,
  * each with { roomId, connectedRoom, direction }.
  *
+ * Sound: a gate whose door has an RFID lock plays the door release (`rfid_unlock`, the
+ * same sound as any RFID lock) each time it opens, whoever it opens for, and when a
+ * clone is presented at a gate that is already open. Heard only from the doorway's two
+ * rooms, at gateSoundVolume of the player's distance. `"sound": "<key>"` in the gate
+ * config plays another key; `"sound": false` silences it. Nothing sounds on close.
+ *
  * N/S doors only are proven; E/W gates are untested.
  */
 
@@ -75,8 +81,38 @@ export function normaliseGate(raw) {
         openFor,
         openRadius: Number.isFinite(r) && r > 0 ? r : DEFAULT_GATE_RADIUS,
         holdMs: Number.isFinite(h) && h >= 0 ? h : DEFAULT_GATE_HOLD_MS,
-        playerMayPassIf: typeof raw.playerMayPassIf === 'string' && raw.playerMayPassIf ? raw.playerMayPassIf : null
+        playerMayPassIf: typeof raw.playerMayPassIf === 'string' && raw.playerMayPassIf ? raw.playerMayPassIf : null,
+        // The open sound: undefined plays the door release when the door has an RFID lock,
+        // a string plays that sound key, false silences the gate
+        sound: raw.sound === false ? false : (typeof raw.sound === 'string' && raw.sound ? raw.sound : undefined)
     };
+}
+
+// The door release a gate plays when it opens (section 2 of
+// PHYSICAL_PENTEST_FEEDBACK_PLAN_ENGINE.md): full volume near the door, falling linearly to
+// silence, so Len's every-15-seconds door is the tailgate cue beside it and quiet across the room.
+export const GATE_SOUND_NEAR_PX = 96;
+export const GATE_SOUND_FAR_PX = 384;
+export const GATE_SOUND_VOLUME = 0.9;
+
+/** Pure: the volume of a gate's open sound for a listener `distancePx` from the door centre. */
+export function gateSoundVolume(distancePx) {
+    const d = Number(distancePx);
+    if (!Number.isFinite(d)) return 0;
+    if (d <= GATE_SOUND_NEAR_PX) return GATE_SOUND_VOLUME;
+    if (d >= GATE_SOUND_FAR_PX) return 0;
+    return GATE_SOUND_VOLUME * (GATE_SOUND_FAR_PX - d) / (GATE_SOUND_FAR_PX - GATE_SOUND_NEAR_PX);
+}
+
+/**
+ * Pure: the sound key a gate plays on opening, or null. The gate's own `sound` wins (false is
+ * silent); otherwise the door release, only for a door with an RFID lock.
+ */
+export function gateSoundKey(g) {
+    const s = g?.cfg?.sound;
+    if (s === false) return null;
+    if (typeof s === 'string' && s) return s;
+    return g?.lockType === 'rfid' ? 'rfid_unlock' : null;
 }
 
 /**
@@ -147,6 +183,7 @@ export class DoorGates {
             g = {
                 key, cfg, sprites: new Set(), open: false, lastNpcNear: -Infinity, forcedUntil: 0,
                 guardBlockedSince: -1, playerHoldUntil: 0, requires: props.requires ?? null,
+                lockType: props.lockType ?? null,
                 x: props.worldX ?? sprite.x, y: props.worldY ?? sprite.y,
                 roomId: props.roomId, connectedRoom: props.connectedRoom, direction: props.direction,
                 isSideDoor: !!props.isSideDoor
@@ -158,6 +195,7 @@ export class DoorGates {
         // The locked room's credential (clone-as-entry). Any sprite of the doorway may
         // carry it (the far room's door derives `requires` from the connected room too).
         if (g.requires == null && props.requires != null) g.requires = props.requires;
+        if (g.lockType == null && props.lockType != null) g.lockType = props.lockType;
         // Likewise the locked room's lockedHint: only the sprite on the approach side of the
         // locked room carries it, but a click may land on either sprite of the doorway.
         if (!g.lockedHint && typeof props.lockedHint === 'string' && props.lockedHint) g.lockedHint = props.lockedHint;
@@ -237,6 +275,30 @@ export class DoorGates {
         });
     }
 
+    /**
+     * Play the gate's open sound (gateSoundKey) for a player standing in one of the doorway's
+     * two rooms, at gateSoundVolume of their distance from the door. Returns
+     * `{ key, volume }` when something was played, else null.
+     */
+    playOpenSound(g) {
+        const w = W();
+        const key = gateSoundKey(g);
+        if (!key) return null;
+        const room = w.currentPlayerRoom || w.lastPlayerRoom;
+        if (!room || (room !== g.roomId && room !== g.connectedRoom)) return null;
+        const p = w.player;
+        if (!p) return null;
+        const c = centreOf(p);
+        const volume = gateSoundVolume(Math.hypot(c.x - g.x, c.y - g.y));
+        if (volume <= 0) return null;
+        try {
+            if (typeof w.playUISound === 'function') w.playUISound('door_release', { key, volume });
+            else w.soundManager?.play?.(key, { volume });
+        } catch (e) { /* a sound never breaks a door */ }
+        g.lastSound = { key, volume, at: Date.now() };
+        return { key, volume };
+    }
+
     open(g, now = Date.now(), eventName = 'door_gate_opened') {
         if (g.open) return false;
         this._prune(g);
@@ -253,6 +315,7 @@ export class DoorGates {
             pm.rebuildWorldGrid?.();
         }
         console.log(`🚪 Gate opened: ${g.roomId} ↔ ${g.connectedRoom}`);
+        this.playOpenSound(g);
         // A guard waiting on a path through this door asks again now, not at the end
         // of his retry back-off (by which time the gate may have shut again).
         const bm = W().npcBehaviorManager;
@@ -315,8 +378,11 @@ export class DoorGates {
             this._prune(g);
             if (!g.cfg) continue;
             g.playerHoldUntil = now + Math.max(g.cfg.holdMs, 0);
-            if (g.open) this._afterToggle(g, 'door_gate_player_opened');   // already open (an NPC is passing)
-            else this.open(g, now, 'door_gate_player_opened');
+            if (g.open) {
+                // Already open (an NPC is passing): the reader still releases for the clone
+                this.playOpenSound(g);
+                this._afterToggle(g, 'door_gate_player_opened');
+            } else this.open(g, now, 'door_gate_player_opened');
             any = true;
         }
         return any;

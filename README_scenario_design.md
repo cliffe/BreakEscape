@@ -140,6 +140,7 @@ A door entry in a room's `doors` array can carry a `gate`: it opens for listed N
 | `openRadius` | `56` | Pixels from the door centre at which an `openFor` NPC opens it |
 | `holdMs` | `2500` | How long it stays open after the last NPC leaves (the tailgate window) |
 | `playerMayPassIf` | none | A global. While it is false, a player who comes within `openRadius` of the gate shuts it and keeps it shut, even beside the NPC |
+| `sound` | the door release for an RFID door | The sound played each time the gate opens, for an NPC or for a clone. Left out, a door with an RFID lock plays `rfid_unlock` (the same strike as every RFID lock) and any other door is silent; a sound key plays that sound; `false` silences the gate. Heard only from the doorway's two rooms: full volume within 3 tiles of the door, fading to nothing at 12 |
 
 A guard who has been moved out of `openRadius` (pushed by the player, say) walks back to the front of his door. Two limits follow from how he finds that door: give a guard one gate per pair of rooms, and make the gate the only shut door on that leg of his route. With two gates into one room he may be sent to the one he cannot reach, and a leg blocked by an ordinary locked door further on would walk him to the gate and hold it open while he stands there.
 
