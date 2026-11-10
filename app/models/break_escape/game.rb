@@ -1035,7 +1035,10 @@ module BreakEscape
         # Apply object additions
         if room_state['objects_added'].present?
           room['objects'] ||= []
-          room['objects'].concat(room_state['objects_added'])
+          # Copies, as for npcs_added below: the filters after this (planted devices,
+          # withheld fields, object states) edit room data in place, and these records
+          # belong to player_state, which a later save would persist.
+          room['objects'].concat(room_state['objects_added'].deep_dup)
         end
 
         # Apply object state changes
@@ -2549,7 +2552,10 @@ module BreakEscape
         # in there (access model 5.3).
         target_pc = find_login_pc(task['targetObject'])
         # A jack (slice 9.3a, 3.5): met once a foothold has ever been gained from it.
-        target_jack = find_jack(task['targetObject'])
+        # Judged on the object whatever its network, so a jack on a network the scenario
+        # does not define is never met through unlockedObjects instead (review R1, m5).
+        target_jack = network_room_object(task['targetObject'])
+        target_jack = nil unless target_jack && NetworkModel.jack?(target_jack[:object])
         if target_jack
           unless gained_footholds.include?(target_jack[:object]['id'].to_s)
             return { success: false, error: 'No device planted here' }

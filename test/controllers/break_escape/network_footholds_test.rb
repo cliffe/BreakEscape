@@ -23,6 +23,27 @@ module BreakEscape
       body
     end
 
+    # Room data is built from copies: hiding a planted device (or any later filter) must
+    # not edit the objects_added records that belong to player_state (review R1, m4).
+    test 'hiding a planted device in an added container leaves the stored objects_added entry whole' do
+      planted_with_box
+      @game.reload
+      crate = { 'id' => 'added_crate', 'type' => 'safe', 'name' => 'Added crate', 'locked' => true, 'lockType' => 'pin',
+                'requires' => '9182', 'contents' => [NS::DROP_BOX.dup] }
+      @game.player_state['room_states'] ||= {}
+      @game.player_state['room_states']['lobby'] ||= { 'objects_added' => [], 'objects_removed' => [], 'object_states' => {} }
+      @game.player_state['room_states']['lobby']['objects_added'] = [crate]
+      @game.save!
+      stored = crate.deep_dup
+
+      room = @game.filtered_room_data('lobby')
+      refute_includes room.to_json, '"kit_dropbox"'
+      refute_includes room.to_json, '9182'
+      assert_equal [stored], @game.player_state['room_states']['lobby']['objects_added']
+      @game.save!
+      assert_equal [stored], @game.reload.player_state['room_states']['lobby']['objects_added']
+    end
+
     def room_object_ids(room_id)
       get game_path("room/#{room_id}"), as: :json
       assert_response :success
@@ -339,6 +360,18 @@ module BreakEscape
       assert_equal true, response.parsed_body['success'], response.body
       unplug('comms_port')
       assert_equal 'completed', state.dig('objectivesState', 'tasks', 'plant_box', 'status')
+    end
+
+    # A malformed scenario (step 5 refuses it): the jack's network is not defined, so no
+    # device can be planted there, and the task must not complete through unlockedObjects.
+    test 'an unlock_object task on a jack whose network is undefined is never met by an unlock' do
+      data = NS.scenario
+      data['rooms']['comms_room']['network'] = 'ghost_lan'
+      build_network_game({ 'unlockedObjects' => ['comms_port'] }, data)
+      unlock_object('comms_port', 'unlocked')
+      post complete_task_game_url(@game, task_id: 'plant_box'), as: :json
+      assert_equal false, response.parsed_body['success'], response.body
+      assert_equal 'No device planted here', response.parsed_body['error']
     end
 
     test 'a reset with a device planted empties both keys and puts the device back in its room' do
