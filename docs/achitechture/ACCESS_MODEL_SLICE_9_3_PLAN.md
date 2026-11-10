@@ -69,19 +69,22 @@ exposes is sent to the browser before the player has a foothold on it.
 | Sign-in | `POST /login` checks "PC reachable" first: the PC's room is unlocked or never locked and nothing above the PC is still locked. Then the lockout, the password and the PC's `access` | `Game#attempt_login!`, `Game#login_pc_reachable?` |
 | Sessions | `player_state.sessions[pcId] = { id, via }`, `via` being `password` or `claim`. The desktop is served by `GET /container/:id`, which checks the PC is reachable and a session is held, then composes the PC's `contents` and the admitted `accountProfiles` | `games_controller.rb` `container`, `render_login_desktop`; `Game#login_desktop_contents` |
 | Scoped objects | `login_scope_of` finds an object by id or name, rooms first, and says whether it sits under a sign-in PC or in a profile. A sign-in PC itself is returned with no scope and guarded by a special case in `unlock_scope_refused?`. `session_admits?` asks only whether a session exists that admits the scope; it does not test whether the PC is reachable. Neither does the inventory add from a desktop | `game.rb`; `validate_login_item_collectible` |
-| Access lists | `Game.acl_admits?` answers false when the list is not a hash. Only `pc_admits_account?` reads a missing list as "everyone" | `game.rb` |
+| Access lists | `Game.acl_admits?` answers false when the list is not a hash. Only `pc_admits_account?` reads a missing list as "everyone". Every NPC with creds also has the implicit role `staff` unless it says `"staff": false`, so a list naming `staff` admits every account holder | `game.rb` (`Game.identity_roles`, `:1149-1157`; `Game.acl_admits?`, `:1160-1168`) |
 | The sign-in screen | `openLoginSignIn` first asks `GET /login_accounts` and, on a 403 or 404, shows "This PC can't be reached" and returns. The desktop's Switch user button and the desktop's 403 fallback both call it | `unlock-system.js`, `container-minigame.js` |
-| Captures | `se_captures` is written by the client and synced. `GET /capture_secrets` serves an account holder's password only for an entry whose `address` is that account's username, under `social.captures.revealSecret`. A landing-page capture's address is not an account username | `Game#capture_secrets_for_client` |
+| Captures | `se_captures` is written by the client and synced. `GET /capture_secrets` answers nothing at all unless `social.captures.revealSecret` is true; under it, it serves an account holder's password for an entry whose `address` is that account's username (the account-holder pass, `account_capture_passwords`), and a landing-page secret by address, with a single-secret fallback that counts landing pages only. A landing-page capture's address is not an account username | `Game#capture_secrets_for_client` (`game.rb:907-952`), `#account_capture_passwords` (`:957-969`) |
 | Remote session (lab) | A declared grant: a timer's `give_item` hands the player a `pc` item, "Remote Session: LW-FIN-07", whose text files are hand-written. Nothing in it is connected to an account, a PC or a share | `lib/break_escape/declared_grants.rb`, `Game#held_grant_items` |
 | Drop box (lab, as in this repository) | `network_port` is a `pc` object with `requiresItem: "kit_dropbox"` and a `confirm_action` that sets the global `kp_netdrop_planted`. The box stays in the inventory. A second object, `network_port_planted`, is revealed by the global. A mapping on Ruth adds a "foothold" capture and completes `opt_netdrop` | `scenarios/lab_physical_pentest/scenario.json.erb`, room `P3` |
 | Bootstrap | `filtered_scenario_for_bootstrap` deep-copies the whole scenario and deletes what must not ship. Rooms are reduced to a whitelist of fields. **Any new top-level key ships as authored unless this method deletes it** | `game.rb` |
-| Globals | Written by the client and merged by `PUT /sync_state` every 30 seconds and on page hide. Today the server never sets a scenario global itself (slice 9.2 plans one case where it does) | `Game#merge_global_variables!`, `state-sync.js` |
+| Globals | Written by the client and merged by `PUT /sync_state` every 30 seconds and on page hide. The server sets one kind itself: when it completes a task (`POST /complete_task`, after the task type's own check), `apply_task_set_globals!` writes the task's `onComplete.setGlobal` values for globals the scenario declares in `globalVariables`. A global set that way follows a check the server made. Slice 9.2 plans a second case | `Game#merge_global_variables!`, `state-sync.js`; `Game#complete_task!` (`game.rb:2462`), `#process_task_completion` and `#apply_task_set_globals!` (`:3736-3780`) |
 | Positions | The server cannot see where the player stands. "Reachable" on the server means "the room is unlocked or never locked" | main plan 4.2 |
 | Inventory | An add is validated and the server stores its own copy of the item. The add for a room item checks that the room is open and the item takeable; it does not ask whether the item was taken before. A remove is not checked. Room data hides a taken item through `objects_removed`, with "it is in the inventory" as the fallback | `games_controller.rb` `inventory`, `find_accessible_item`; `Game#apply_room_state_changes!` |
 | Inventory on the client | Items in `playerInventory` are restored on load without a request, through `createInventorySprite` (not exported) and a private `_restoredFromSave` flag | `systems/inventory.js` |
-| Prompts | `window.gameConfirm(text)` is OK or Cancel. There is no two-choice prompt | `systems/notifications.js` |
-| A click on an object | Order in `handleObjectInteraction`: a sign-in PC's own branch, then the workstation call, then `triggerOnInteract` with `requiresItem`, then drops, consumables and the generic flow | `systems/interactions.js` |
-| Minigame scenes | Registered with `MinigameFramework.registerScene` in `minigames/index.js`. `systems/minigame-registry.js` is a different table: object type to starter function | both files |
+| Prompts | `window.gameConfirm(message, confirmLabel, cancelLabel)` has two buttons whose labels the caller sets, and resolves true or false. Esc and the close cross answer false, the same as the second button, so a prompt can carry one action and "do nothing", never two actions | `systems/notifications.js:264-291` |
+| A click on an object | Order in `handleObjectInteraction`: a sign-in PC's own branch, then the workstation call, then `triggerOnInteract` with `requiresItem`, then drops, consumables and the generic flow | `systems/interactions.js` (sign-in branch `:794-801`) |
+| Minigame scenes | Registered with `MinigameFramework.registerScene` in `minigames/index.js`. `systems/minigame-registry.js` is a different table: object type to starter function. Each minigame's stylesheet is a `<link>` in the game page | both files; `app/views/break_escape/games/show.html.erb:25-62`, files in `public/break_escape/css/` |
+| Leaving a minigame | One minigame runs at a time: starting one ends the one that is open, without calling its own `complete` (`minigame-manager.js:57-80`). The framework's `returnTo` parameter reopens a parent only on a normal exit (`:280-287`, `:319-320`). The desktop's Close button, the frame's close cross and Esc all call `complete(false)` (`container-minigame.js:552-555`; `base-minigame.js:38-45`, `:73-80`). Opening a file or folder from a desktop stores `window.pendingContainerReturn`, closes the desktop and hands a stand-in sprite to `handleObjectInteraction` (`container-minigame.js:725-757`, `:772-802`); the notes reader then reopens the desktop (`returnToContainerAfterNotes`, `:1087`), but the text-file reader's cleanup clears the record (`text-file-minigame.js:368-378`), so a text file read from a desktop closes to the world. The sign-in screen's `onComplete` opens the desktop only when a session is held (`unlock-system.js:314-319`). `pc-sessions.js` closes an open desktop through the callback the desktop registered, with a message and no reason (`pc-sessions.js:328-339`) | the files named |
+| Refusals of an unknown id | `GET /container` answers 404 "Container not found" (`games_controller.rb:551`). `POST /unlock` answers 422 `{ success: false, message: "Invalid attempt" }` for an object it cannot find, as for a wrong attempt (`:897-913`; `Game#validate_unlock`, `game.rb:2097`). `POST /inventory` add answers 422 "Item not found in scenario: <type>" (`games_controller.rb:1010-1017`, `:2022-2025`) | `games_controller.rb` |
+| Authorisation and routes | Every action calls `authorize @game`; Pundit raises for an action whose policy method is missing, and `game_policy.rb` has one method per action (`container?`, `login?`, `capture_secrets?`, `:53-99`). In the routes' member block a nested path names its action with `to:` (`config/routes.rb:46-49`) | `app/policies/break_escape/game_policy.rb`, `config/routes.rb` |
 
 ## 3. Scenario fields (9.3a)
 
@@ -229,6 +232,7 @@ player opens one is in 4.5.
 | `network_device_unplugged` (jack id) | `{ jackId, footholdId, endedPcIds }` | The player took the device back |
 | `network_viewed` (network id) | `{ footholdId, networkId, hostIds, hostList }` | The view opened or refreshed and listed that network's hosts; `hostList` is the ids comma-joined for mapping conditions. It fires on every open, so a mapping that should fire once says `onceOnly` (which is saved across reloads) |
 | `network_host_opened` (host id) | `{ footholdId, hostId, kind }` | The player clicked a host row |
+| `network_view_closed` (foothold id) | `{ footholdId, reason }` | The player has left the network screens (4.3, "Getting back"): `reason` is `closed` (the player closed the last screen), `link_dropped` (an unplug) or `foothold_gone` (the foothold was not held when the view refetched) |
 | `network_share_opened` (resource id) | `{ resourceId, via, pcId }` | A share's contents loaded; `via` is `foothold` (from the view) or `session` (a mapped share on a desktop) |
 | `pc_signed_in`, `pc_signed_out` | gain `remote` (true when the sign-in went through a foothold) and `footholdId` | As in the main plan 5.3 |
 | `pc_signin_failed` | `reason` gains `remote_blocked` | A remote sign-in at a PC whose policy blocks it |
@@ -237,6 +241,13 @@ player opens one is in 4.5.
   `<jackId>_planted`, for `observationVariants`, hint variants and `revealOnGlobal`. A scenario that
   reads it declares it in `globalVariables`, as scenarios do for the workstation globals. It is
   display state only; the server never reads it.
+- An objective that must not be skippable is an `unlock_object` task on the jack or the host, not
+  a task completed by a mapping: the server completes it only after its own check
+  (`gainedFootholds` for a jack, `signedInPcs` for a sign-in host). A global that ink or a debrief
+  reads for the same step goes in that task's `onComplete.setGlobal`, which the server writes when
+  it completes the task (section 2, "Globals"), so the global follows the check rather than a
+  client event. A browser can still write any global through `PUT /sync_state`; the task, which
+  is what objectives and the score count, cannot be written that way. The lab does this (10.2).
 
 ## 4. Engine behaviour (9.3a)
 
@@ -259,10 +270,12 @@ room, and nothing may hand out a second one:
 - `plant_device!` removes the item from the inventory, keeps its copy in the foothold and, when the
   device was defined as a room object, adds its id to that room's `objects_removed`.
 - One helper, `planted_device?(item)`, is true when an item's identity matches any
-  `footholds.*.device`. `POST /inventory` add refuses such an item ("already in use"), and
+  `footholds.*.device`. `POST /inventory` add refuses such an item ("already in use"),
   `apply_room_state_changes!` hides it from room data, beside the existing "it is in the inventory"
-  rule. So a lost `objects_removed` write, or a hand-made add request, cannot bring the box back
-  while it is in the wall.
+  rule, and `filter_container_contents` drops it from a container's listing beside the items the
+  inventory holds (`games_controller.rb:1885-1911`), so a device whose home is a crate is not
+  shown in the crate while it is planted. So a lost `objects_removed` write, or a hand-made add
+  request, cannot bring the box back while it is in the wall, and no home offers a second box.
 - An unplug puts the same copy back in the inventory, once.
 
 **The link item.** A foothold is something the player holds, so the server puts a handle for it in
@@ -294,10 +307,12 @@ exact shape, which the capture log container can rely on (13.4):
 **Planting.** A click on a jack runs in `network-links.js`, from a branch in
 `handleObjectInteraction` placed after the sign-in PC branch:
 
-1. A device is planted here: `window.gameConfirm("Unplug <device name>?")`. OK unplugs; Cancel does
-   nothing. (The view is opened from the link item, so the jack needs only the one question and
-   the existing OK or Cancel prompt is enough.)
-2. No rogue device is held: the jack's resolved `requiresItemHint`, as an item plant refuses today.
+1. A device is planted here: `window.gameConfirm("Your <device name> is plugged in here. Open it
+   from your inventory.", "Unplug it", "Leave it")`. "Unplug it" unplugs; "Leave it", Esc and the
+   close cross do nothing. A player who clicked the box to use it is told where it is used from,
+   and nothing is lost by a misclick.
+2. No rogue device is held: the jack's resolved `requiresItemHint`, as an item plant refuses today;
+   for a jack that sets none, "You have nothing to plug into this port."
 3. Otherwise `window.gameConfirm` with `jackConfirm`. The device is taken only after the player
    confirms and the server accepts, so a cancel loses nothing (the lab could not use `consumesItem`
    for this reason: the engine consumes a required item as the confirm opens).
@@ -330,17 +345,77 @@ Clicking a link item opens a new minigame scene, `network-view`, in the desktop 
 container minigame uses. It shows what `GET /network` answers for that foothold and nothing else:
 
 - a header: the link's name and its network ("Drop box: comms room, on Harbour office LAN");
-- a row for each sign-in host: host label, name, and one action:
-  - **Sign in**, when no session is held there;
-  - **Open**, with the account's name, when any session is held at that PC, however it was started;
-  - "remote sign-in off", when the PC's policy blocks it;
+- a row for each sign-in host: host label, name, and one action, decided in this order:
+  1. "remote sign-in off", when the PC's policy blocks it, whatever sessions are held there (the
+     row offers nothing and carries no session);
+  2. **Open**, with the account's name, when a password session is held at that PC, local or
+     remote;
+  3. **Sign in** otherwise. A claimed session (the owner's unlocked screen, `via: "claim"`) is a
+     physical thing and is not offered over the network: its row shows **Sign in**, and a remote
+     sign-in there replaces it as a sign-in at the keyboard would;
 - a row for each file share: name and host, and either **Open** (no access list) or a padlock with
   "Needs an account with access. It opens from that account's desktop." (4.5);
 - a row for any other resource: name, kind icon, and its `observations` on click.
 
 The view never shows account names, access lists, policies or contents. It refetches each time it
-is opened and when the player returns to it from a sign-in screen, a desktop or a share. Closing a
-desktop or a share that was opened from the view returns to the view, not to the world.
+is opened, including every time the player comes back to it. Rows carry stable attributes for
+tests and scripted runs: `data-host-id` on a host row, `data-resource-id` on a resource row, and
+`data-action` (`sign-in`, `open`, `observe`) on the control that acts.
+
+#### Getting back
+
+A player who goes from the view to a sign-in screen, a desktop, a file and back must never be
+dropped into the world mid-chain. The framework's own `returnTo` cannot do this: it reopens a
+parent only on a normal exit, and every close the player makes is a failure exit (section 2,
+"Leaving a minigame"). So `network-links.js` owns the way back, and no network screen passes
+`returnTo` or `suspended` to `MinigameFramework`.
+
+- **The trip.** `network-links.js` keeps one record, the trip: the foothold id the player is
+  working through, whether the trip began at the view or at a session, and an optional
+  `returnTo`. It is started by `open(footholdId, { returnTo })` (the view) or
+  `openSession(pcId, { returnTo })` (a held remote session's desktop, opened directly). Both
+  replace any trip already running. `returnTo` is a function taking `{ reason }`; it belongs to
+  `network-links.js` and is never handed to the framework. It is called once, when the trip ends,
+  after the landing below, and only if no minigame is open by then. The capture log passes one
+  that reopens itself (13.4).
+- **Two calls run the table.** `resume(message)` reopens the trip's view, with an optional one-line
+  message, and refetches. `leave(reason)` ends the trip: it forgets the record, emits
+  `network_view_closed` with the reason, then calls `returnTo`. Both wait one tick and do nothing
+  if a minigame has opened in the meantime (a reader, the sign-in screen), so a screen that has
+  handed over to another is never covered by the view.
+- **Every network screen says why it closed.** The view, a remote desktop, a share opened from
+  the view and the remote sign-in screen each record an exit reason and, from their cleanup, call
+  `window.networkLinks.landed(screen, reason)`, which looks the pair up in the table. The reason
+  is `close` unless the path that closes the screen set another first: `handover` (the view
+  opened a host or a share), `switch` (Switch user), `item` (a file or folder handed to a reader,
+  the three paths in `container-minigame.js` that set `pendingContainerReturn` or call
+  `openFileInPlace`), `share` (a mapped share opened from a desktop), `no_session` or
+  `unreachable` (a 403 on the desktop fetch), and the session-end reasons `pc-sessions.js` passes
+  (`sign_out`, `link_dropped`, `displaced`). `pc-sessions.js` passes that reason as a second
+  argument to the desktop's registered close callback; today it passes only a message.
+
+| Leaving | Lands on |
+|---|---|
+| The view, by its Close, the close cross or Esc | The world: `leave("closed")` |
+| The view, handing over to a host or a share | The screen it opened |
+| The remote sign-in screen, closed with no session at that PC | The view (`resume`) |
+| The remote sign-in screen, signed in | The desktop |
+| Switch user on a remote desktop, left with no new sign-in | The desktop of the session still held |
+| A remote desktop, by its Close, the close cross or Esc | The view, when the trip began at the view; when it began at `openSession`, `leave("closed")` |
+| A file or folder opened from a remote desktop | The reader. When the reader closes, the desktop reopens: the notes reader already does this, and the text-file reader's cleanup, when the stored `pendingContainerReturn` is a network screen (its lockable has `remote`, or it is a share opened from the view), reopens it through `startContainerMinigame` instead of clearing the record |
+| A mapped share opened from a desktop, by its Close | The desktop it was opened from |
+| Sign out on a remote desktop | The view |
+| A 403 `no_session` on a remote desktop | The view, with "Your session on <host> has ended." The client drops its copy of the session |
+| A 403 `unreachable` on a remote desktop | The view, with "<host> can't be reached over this link." The client keeps its copy of the session; the server still holds it |
+| A session displaced by an NPC (slice 9.2) | The view, where the row is back to **Sign in** |
+| "The link dropped" (an unplug ends the session) | The world: `leave("link_dropped")` |
+| A share opened from the view, by its Close | The view |
+| A file opened from a share that was opened from the view | The reader, then the share, by the same text-file rule |
+| The view refetches and the foothold is no longer held | The world: `leave("foothold_gone")`, with "The link is gone." |
+
+The world is reached through `leave` only, so `network_view_closed` fires exactly once per trip,
+and never when the view hands over to a host or a share. Nothing else in this slice listens for a
+minigame's close.
 
 ### 4.4 Remote sign-in and the remote desktop
 
@@ -356,16 +431,23 @@ lockable with `remote` set behaves remotely:
 - the sign-in request carries the foothold;
 - the desktop's **Switch user** reopens the same remote screen over the desktop, and leaving it
   without a new sign-in returns to the desktop of the session still held;
-- a desktop fetch that answers 403 `no_session` closes the desktop and returns to the network
-  view; it never opens the physical sign-in screen;
+- a desktop fetch that answers 403 closes the desktop and returns to the network view, never to
+  the physical sign-in screen: with `no_session` the client drops its copy of the session; with
+  `unreachable` it keeps it (4.3, "Getting back");
 - the desktop request carries the foothold (below).
 
 **The screen.** No account tiles, whatever the PC's own picker says: tiles are something seen by
 standing at a screen. The username and password are typed. A small **Captured sign-ins** list under
 the fields offers the player's captures that are account passwords: choosing one fills the username
 and, when the server has served it, the password. To know which captures those are, the
-`GET /capture_secrets` answer gains a second map, `accounts: { targetId: username }`, holding only
-entries the account-holder pass answered. A landing-page capture (a portal password, with an
+`GET /capture_secrets` answer gains a second map, `accounts: { targetId: username }`. An entry is
+in it when its `address`, normalised as usernames are, is a username that the account-holder
+pass would answer (a key of `account_capture_passwords`, with whatever conditions that method
+applies, including the engine feedback plan's capture proofs once they are built). It is
+computed apart from `secrets`: whatever `revealSecret` says, and never from the landing-page or
+single-secret passes. It carries only the address the browser itself wrote, so it reveals no
+secret; when `revealSecret` is off it still lets the list fill the username, and `secrets` then
+fills no password. A landing-page capture (a portal password, with an
 address that is no account) is never offered, so the list cannot waste an attempt on a pair that
 was never a sign-in. The list is a form filler: the gate is the server's password check (section 1).
 
@@ -384,13 +466,19 @@ the keyboard.
 **One session per PC, as before.** A remote sign-in fills the same `sessions[pcId]` slot a local one
 would. The owner sitting at the desk does not block a remote session (the "is using this PC" rule
 is about the physical screen, and the server cannot see it); it still blocks a click on the PC
-itself.
+itself. So a player signed in at a PC at its keyboard who signs in there again from the view now
+holds a remote session in that one slot: unplugging the device ends it, and the PC then asks for
+a password at the keyboard too. That is accepted and tested (step 4). A claimed session is never
+served over the network: a desktop request that names a foothold for a PC whose session is
+`via: "claim"` answers 403 `unreachable` (the client keeps its copy of the claim, which still
+opens at the keyboard).
 
 **How a desktop request is judged.** The request says how the player is getting there, and the
 server judges it on that alone:
 
-- `GET /container/<pcId>?foothold=<id>`: the foothold is held and reaches the host, and the host's
-  policy allows remote sign-in. The room and its doors are not consulted.
+- `GET /container/<pcId>?foothold=<id>`: the foothold is held and reaches the host, the host's
+  policy allows remote sign-in, and the session there is not a claim. The room and its doors are
+  not consulted.
 - `GET /container/<pcId>` with no foothold: the PC is physically reachable (today's rule) and is
   not headless. The network is not consulted. When a session that has a `foothold` is served this
   way, the server clears the session's `foothold`: the player is now sitting at it, and unplugging
@@ -400,6 +488,14 @@ Every other route that uses a session (the scoped folders, the inventory add fro
 unlock inside a desktop) asks what it asks today: that a session exists which admits the object.
 A session exists only because the server checked a password or a claim, and an unplug deletes the
 sessions it carried, so no further test is needed there in 9.3a.
+
+**What the client knows of a session.** The sign-in answer and each `sessions` entry of
+`GET /scenario` (both built by `login_session_answer`) gain `remote` (true when the session has a
+`foothold`), `footholdId`, and for a remote session `host` (the PC's `host`, else its `name`).
+The PC's room may never have loaded, so the label comes with the session. `pcSessions.list()`
+entries carry the three fields, so a list of sessions (the capture log's, 13.4) can name a remote
+host without room data. `host` is not secret (3.2), and it reaches only a browser that holds the
+session.
 
 **Reload.** Password sessions, remote or not, survive a reload as they do today. Footholds and
 `gainedFootholds` are in the scenario response (section 6).
@@ -442,8 +538,11 @@ after the scope check. The generic inventory search (`find_accessible_item`) and
   it.)
 - `session_admits?` gains the `resource` case: `resource_admits_player?`.
 - **A refusal looks like an unknown id.** `GET /container`, `POST /unlock` and `POST /inventory`
-  answer a resource, or anything inside one, that the rule refuses exactly as they answer an id
-  that does not exist (404, the same body). A browser with no foothold and no session cannot tell
+  answer a resource, or anything inside one, that the rule refuses exactly as each answers an id
+  that does not exist on that route: `GET /container` 404 "Container not found: <id>";
+  `POST /unlock` 422 `{ success: false, message: "Invalid attempt" }` with no `feedback`,
+  `caseMismatch` or `reason`; `POST /inventory` add 422 "Item not found in scenario: <type>"
+  (section 2, "Refusals of an unknown id"). A browser with no foothold and no session cannot tell
   that a share exists.
 
 ### 4.6 Determinism

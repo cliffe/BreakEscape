@@ -1047,38 +1047,73 @@ Tests:
 
 ### Step 3. Validator
 
-Files: `scripts/validate_npc_habits.rb` (new: `check_npc_habits` and the habits report);
-`scripts/validate_scenario.rb` (the `require_relative` lines, the caller's expanded copy and
-report, the two extra arguments to `check_access_model`, the one call);
-`lib/break_escape/npc_habits/clues.rb` (new): `parts`, `readable_texts`, `secret_homes`,
+Files: `scripts/validate_npc_habits.rb` (new: the `ValidateNpcHabits` module of 7.2, `check` and
+`report_lines`); `scripts/validate_scenario.rb` (the `require_relative` lines and the two lines in
+`main` after the `check_access_model` call, 7.2 "Wiring"; `check_access_model` itself is not
+edited); `lib/break_escape/npc_habits/clues.rb` (new): `pieces`, `readable_texts`, `secret_homes`,
 `backing`.
 
 Tests:
-- `test/unit/npc_habits_clues_test.rb` (new): parts are letter runs of four or more and digit runs
-  of two or more; a letter part is found as a whole word without case, and not inside a longer
-  word; a digit part is found as a whole run and as the last two digits of a four-digit year, and
-  not inside a three-digit run; a part is found in an object's text, in a variant, in an intel
-  fact, in an osint post and in compiled ink; the password's own home, the account's own profile
-  and the contents of a PC only that account opens are not sources; each kind of secret home is
-  found, and another account's password is marked as shared. A Rails test reaches
-  `BreakEscape::NpcHabits::Clues` by name with no `require`.
+- `test/unit/npc_habits_clues_test.rb` (new). `pieces`: `Biscuit2019!` is a word, a number and a
+  symbol; `BiscuitRover2019!` splits the letters into `Biscuit` and `Rover`; `ITSupport` into `IT`
+  and `Support`; `Rex` is a word part; `Jo`, `Ab` and `cd` are fixed pieces; the `7` of `Biscuit7!`
+  is a fixed piece. Sources: a word part is found as a whole word without case, and not inside a
+  longer word; a number part is found as a whole run and (two digits) as the last two digits of a
+  four-digit year, and not inside a three-digit run; a fixed piece is found only in the pattern
+  clue's text, with its case, as a whole word or run, and not when the same letters appear
+  elsewhere in the scenario or in the clue in another case; a symbol is found only in the pattern
+  clue. A piece is found in an object's text, in a variant, in an intel fact, in an osint post and
+  in compiled ink; the password's own home, the account's own profile and the contents of a PC
+  only that account opens are not sources; a source in a locked room and one in a locked container
+  carry that lock's id. Each kind of secret home is found, and another account's password is marked
+  as shared. A Rails test reaches `BreakEscape::NpcHabits::Clues` by name with no `require`.
 - `test/js/validator-npc-habits.test.mjs` (new): one fixture for each error, warning and
-  suggestion in 7.2 for the three habits, and a clean fixture that raises none. For `guessable`:
-  one part of three sourced (not backed, the missing parts named by position); every part sourced
-  and no `passwordPattern` (not backed); every part sourced and a pattern clue that lacks the
-  password's symbol (not backed); every part sourced and a pattern clue with the symbol (backed,
-  and the report counts the capitals, symbols and parts); a common word only, with the digits
-  unsourced (not backed); a part sourced only from the account's own profile (not backed); a
-  password with no part (not backed). For `strong`: one part sourced draws nothing, every part
-  sourced draws the warning. For the screen: `sometimes` by name on a sign-in PC is a warning and
-  from the preset a suggestion; a plain workstation with a `wasLocked` mapping draws the warning
-  at `sometimes` and at `never`, and nothing at `always`; a plain workstation with no such mapping
-  draws nothing. A `never` owner with no valid `needs` or `interests` draws the "owner never
-  leaves" warning. A workstation with a `screenOwner` and no authored id draws its warning. The
-  habits report lists each NPC's habits with preset or by name and its effect lines, and a level
-  that came from a role names the role. No output line of any fixture holds a password or a part
-  of one (the test greps for them).
+  suggestion in 7.2, and a clean fixture that raises none. For `guessable`, each with a pattern
+  clue unless it says otherwise:
+  - one word part of three sourced (not backed, the others named by position and kind);
+  - **`Rex2019!` with nothing that holds the word `Rex`** (not backed: "piece 1 of 3, word: no
+    source");
+  - **`Rex2019!` with a readable photo whose caption is "Rex"** and a calendar showing 2019 (backed);
+  - **`BiscuitRover2019!` with `Biscuit` and `Rover` each a whole word in a readable text**
+    (backed; the report counts "2 capitals, 1 symbol, 4 pieces in order");
+  - `Jo1987!` with `1987` sourced and `Jo` only in an NPC's name elsewhere (not backed), and the
+    same with the clue saying "starts with Jo" (backed);
+  - every word and number part sourced and no `passwordPattern` (not backed); a pattern clue that
+    lacks the password's symbol (not backed); a pattern clue with it (backed, and the report counts
+    the capitals, symbols and pieces); a password ending in `.` with a clue that holds `.` only at
+    the end of a sentence (backed, and marked "common punctuation");
+  - a common word only, with the digits unsourced (not backed); a word part sourced only from the
+    account's own profile (not backed); a source behind a locked container (backed, and marked
+    "behind lock <id>"); a password made only of fixed pieces and symbols (not backed).
+
+  For `strong`: one word part sourced draws nothing, every word and number part sourced draws the
+  warning. For the screen, with no authored lock field unless it says so:
+  - `sometimes` by name on a sign-in PC draws exactly one warning, naming the habit, and nothing
+    from the first slice's roll warning;
+  - a preset `sometimes` (`medium`) on a sign-in PC draws one suggestion and no warning;
+  - an authored `lockChance` 0.5 on a sign-in PC draws the first slice's warning only, as today;
+  - a workstation under a policy with `autoLockMin: 0`, its owner `never` (filled `lockChance`
+    0), with a `workstation_locked_attempt` mapping, draws nothing;
+  - the same under a policy with `autoLockMin: 5` draws nothing;
+  - a plain workstation with a `data.wasLocked === true` mapping draws the warning at `sometimes`
+    and at `never` with no policy, and nothing at `always`; the same with a bare `data.wasLocked`
+    behaves the same;
+  - a `data.wasLocked === false` mapping, and a `workstation_accessed` mapping, draw the warning at
+    `always` and at `sometimes`, and nothing at `never`; under an `autoLockMin: 0` policy they draw
+    the warning at `never` too;
+  - a `workstation_owner_returned` mapping with no `wasLocked` in its condition, a bare
+    `workstation_owner_returned` with `data.objectId` in its condition, and a workstation with no
+    such mapping draw nothing.
+
+  A workstation with a `screenOwner` and no authored id, and one with no id owned through a
+  `needsHome` naming its stamped id, each draw the id warning and are listed with their fill in the
+  report. The habits report lists each NPC's habits with preset or by name and its effect lines,
+  shows "pattern clue at <path>" under `password` and no `passwordPattern` habit line, and a level
+  that came from a role names the role. No output line of any fixture holds a password or a word
+  or number part of one (the test greps for them).
 - `validator-access-model.test.mjs` passes unchanged.
+- A one-off run, recorded in the build log: the validator over every scenario with a workstation,
+  listing what the new screen state warnings raise (section 13).
 
 ### Step 4. Dungeon graph
 
@@ -1094,9 +1129,12 @@ clue, and an unbacked one draws none. `dungeon-graph-identities.test.mjs` passes
 
 ### Step 5. `holdsDoors`, whole
 
-Starts when steps 1 to 4 are committed **and** the engine plan's stream E1 is committed and meets
-the contract in 5.4. The builder reads E1's code and tests first. If E1 is not built, this step is
-not built, and beat H9 is left out of the feature scenario.
+Starts when steps 1 to 4, 6 and 7 are committed (step 5 adds lines to stream E's `verify-run.rb`
+block and beat H9 to stream S's scenario, so both come first) **and** the engine plan's stream E1
+has committed its item 3 (the bar, after its probe and the deletion of the soft bar) and meets the
+contract in 5.4. The builder reads E1's code and tests first, and confirms contract items 5 and 6
+on them. If E1's item 3 is not built, or does not meet the contract, this step is not built, beat
+H9 is left out of the feature scenario, and the other three habits stand as they are.
 
 Files:
 - `lib/break_escape/npc_habits.rb`: `holdsDoors` in `HABITS` and `PRESETS`; the gate fill in
@@ -1104,8 +1142,9 @@ Files:
 - `scripts/scenario-schema.json`: `habits.holdsDoors`, `gate.noHold`.
 - `scripts/validate_npc_habits.rb`: the two gate warnings; `scripts/generate_dungeon_graph.rb`:
   the gate label.
-- `public/break_escape/js/systems/door-gates.js`: `noHold`, `nearGuardIds`, `lastGuards`, the
-  clause in `openToPlayer` (5.4).
+- `public/break_escape/js/systems/door-gates.js`: the six places in 5.4 ("Who owns what").
+- `tools/playtest/verify-run.rb`: one line per gate with a `noHold` in the `habits` block (gate,
+  `openFor`, `noHold`), values only; and its case in `test/js/playtest-verify-run-access.test.mjs`.
 - One paragraph in the "Gate doors" section of `README_scenario_design.md`, after E1's rewrite of
   it.
 
@@ -1124,7 +1163,11 @@ Tests:
   in `lastGuards`, `openToPlayer` is false and `blocksPlayer` is true for a player outside the
   secured room and false for one inside it; **after that guard has left the radius, at every tick
   until `close` the gate is either shut or `blocksPlayer` is true for the outside player: it is
-  never open and passable**; after the gate has closed and opened for a guard who holds,
+  never open and passable**; **with the outside player within the radius, the gate is shut on
+  the first tick after that guard is neither near nor crossing (the skipped hold, contract item
+  6), and with the player outside the radius it stays open for `holdMs` as E1 leaves it**; with
+  `lastGuards` empty (an exit opening) `openToPlayer` answers as E1 left it; after the gate has
+  closed and opened for a guard who holds,
   `openToPlayer` is true; with a holding guard and a non-holding one both in `lastGuards`, it is
   true; a gate with no `noHold` answers as E1 left it; a gate with `playerMayPassIf` ignores
   `noHold`; a clone hold answers true on a `noHold` gate. E1's own gate tests pass unchanged.
@@ -1134,8 +1177,10 @@ unchanged by this step (they have `playerMayPassIf`), then beat H9.
 
 ### Step 6. Playtest tooling
 
-Slice 9.3a and the engine plan's capture stream edit the scanner before this step; add this
-slice's checks as their own block.
+Slice 9.3a's tooling stream edits the scanner library and `verify-run.rb` before this step, and
+the engine plan's capture stream (E4) adds its own block to `access-leak-check.rb` (it does not
+edit the library or `verify-run.rb`). Re-read each file and add this slice's checks as their own
+block.
 
 Files:
 - `tools/playtest/lib/access_leak_scanner.rb` and `tools/playtest/access-leak-check.rb`: the two
@@ -1145,8 +1190,9 @@ Files:
 - `tools/playtest/verify-run.rb`: the `--access` section gains a `habits` block of **values
   only**, read from the saved scenario and the game: one line per NPC that has a `habits` object
   (id and its values), one per owned workstation (id, owner, `lockChance` or `locksScreenOnLeave`
-  as saved, and `hasPostit` from `login_postit_for`), and from step 5 one per gate with a `noHold`.
-  It does not say which values a habit filled; the validator's report does (5.1). No passwords.
+  as saved, and `hasPostit` from `login_postit_for`). Step 5 later adds its gate lines to this
+  block; this step writes nothing about gates. It does not say which values a habit filled; the
+  validator's report does (5.1). No passwords.
 - `.claude/skills/playtest-scenario/SKILL.md`: one sentence in "Access model checks" on the two
   note exceptions, and that the `habits` block and the validator's habits report are not shown to
   a tester playing blind. (Skills are edited only with the orchestrator's say-so; the builder
@@ -1178,9 +1224,15 @@ finished.
 
 - `README_scenario_design.md`: a section "NPC awareness and habits" after "Workstation screens":
   the fields, the tables, "explicit wins", what the player sees (4.3), the pairing advice in 4.2,
-  how a `guessable` password is backed and what a pattern clue must say (order, capitals,
-  symbols), that a gate keeps a player out and not a secret, and how to read the validator's
-  habits report.
+  how a `guessable` password is backed and what a pattern clue must say (the order of the
+  pieces, which letters are capitals, every short piece written exactly as it appears in the
+  password, and every symbol written as the character itself in a sentence that says where it
+  goes, "end with !", not "end with an exclamation mark", because the validator matches
+  characters), that every character must come from something the player can read because sign-in
+  is exact and can lock the account, that a clue must not sit behind the account it opens (the
+  report's "behind lock" mark and the graph's "clue" edges show it), what a mapping on a screen
+  state needs from the PC's lock (7.2, "Screen state mappings"), that a gate keeps a player out and
+  not a secret, and how to read the validator's habits report.
 - `docs/achitechture/ACCESS_MODEL_PLAN.md` section 9.1: replaced by a pointer to this plan, by the
   orchestrator.
 - `docs/achitechture/ACCESS_MODEL_SLICE_9_1_BUILD_LOG.md` (new): what was built when, deviations,
@@ -1198,7 +1250,20 @@ with each beat in its own room, open from the start apart from the thing under t
 sign (`notes1`, `readable`, not takeable, named "Sign: <beat>") says what to do and what should
 happen; a sign never holds a password or a part of one. `npcNeedsSeed: "test_access_habits"`,
 `npcWindupMs: 0`, `needsDebugOverlay: true`. One task per beat, completed by an event mapping on
-the beat's own event.
+the beat's own event. The events are chosen so that no mapping waits for a screen state its PC
+cannot give (7.2, "Screen state mappings"), which keeps the validator free of warnings:
+
+| Beat | Task completed by |
+|---|---|
+| H1 | `pc_signed_in:dana_pc` with `data.via === 'claim'` |
+| H2 | `workstation_locked_attempt:ian_pc` (effective lock 1) |
+| H3 | `pc_signed_in:omar_pc` with `data.via === 'password'` |
+| H4 | `workstation_locked_attempt:priya_pc` (authored `lockChance` 1) |
+| H5 | `workstation_locked_attempt:kai_pc` (filled `lockChance` 0, but `instant_lock` makes the effective lock 1) |
+| H6 | `pc_signed_in:mei_pc` with `data.via === 'password'` |
+| H7 | `pc_signed_in:tom_pc` with `data.via === 'password'` |
+| H8 | `pc_signed_in:lena_pc` with `data.via === 'claim'` (needs no lock or open state from the validator's point of view; the recorded sequence guarantees an open leave) |
+| H9 | Two mappings on `door_gate_denied`, one with `data.roomId === 'store_b'` and one with `data.connectedRoom === 'store_b'`, each completing the task and making Sara bark |
 
 Every PC is a sign-in PC with `"sprite": "pc_desktop"` (so the padlock shows) and **no lock field
 of its own** unless the beat says so. Every desk owner has an account, starts at the desk, and has
@@ -1215,20 +1280,24 @@ Lena (H8), whose station takes 20 seconds so she leaves several times. One profi
 | H3 Careful, with a sticky note | `omar_room`: Omar Haddad, `"awareness": "high", "habits": { "writesDown": true }`, `omar_pc` | The note picture is on his monitor from the start (a screenshot is kept). While he sits there a click says he is using the PC. When he leaves, the padlock shows and the sign-in screen shows the note; `pc_signin_shown` carried `hasPostit: true`. The tester saves the note to the notebook, **which closes the sign-in screen**, clicks `omar_pc` again (a second `pc_signin_shown` and `/login_accounts`), and signs in with the username and password on the note | `sessions.omar_pc = { id: "omar", via: "password" }`; `omar_pc` hasPostit true |
 | H4 The PC's own field wins | `priya_room`: Priya Nair, `"awareness": "low"`, `priya_pc` with `"lockChance": 1` | Locked on every leave, no claim, no note | No session; `priya_pc` lockChance 1 |
 | H5 Policy beats habit | `kai_room`: Kai Brennan, `"awareness": "low"`, `kai_pc` under `instant_lock` with no lock field | Locked in the leave roll itself; a click opens the sign-in screen and offers no claim | No session; `kai_pc` lockChance 0 |
-| H6 Guessable password | `mei_room`: Mei Lin, `"awareness": "high", "habits": { "password": "guessable", "passwordPattern": "password_memo" }`, `mei_pc`. Her password is a pet's name, a year and a symbol. A framed photo on her desk (readable) gives the name, a calendar on the wall (readable) gives the year, and `password_memo`, a readable IT notice in the room, gives the rule: the order, which letter is a capital, and the symbol at the end | The password built from the photo, the calendar and the memo signs in at the first try | `sessions.mei_pc` Mei by password; no `loginFailures` entry for her |
+| H6 Guessable password | `mei_room`: Mei Lin, `"awareness": "high", "habits": { "password": "guessable", "passwordPattern": "password_memo" }`, `mei_pc`. Her password is three pieces: a pet's name of three or more letters with a capital first letter (a word part), a four-digit year (a number part) and one symbol. A framed photo on her desk (readable) has the name as a whole word in its caption, a calendar on the wall (readable) shows the year, and `password_memo`, a readable IT notice in the room, gives the rule: the order, that the first letter is a capital, and the symbol itself ("end with !"). No other character is in the password, so every one is accounted for | The password built from the photo, the calendar and the memo signs in at the first try | `sessions.mei_pc` Mei by password; no `loginFailures` entry for her |
 | H7 Reused password | `tom_room`: Tom Fletcher, `"awareness": "high", "habits": { "password": "reused" }`, `tom_pc`; his gym locker (`lockType: "password"`, the same password) and a note in the room with the locker's combination | The note opens the locker, and the same password signs in at `tom_pc` | Locker in `unlockedObjects`; `sessions.tom_pc` Tom by password |
 | H8 Sometimes locks | `lena_room`: Lena Fox, `"awareness": "medium"`, `lena_pc`; her station takes 20 s. The builder picks the PC's id (the roll's salt) so that her first three leaves hold at least one locked and one open, and records the sequence in `PLAYTEST.md` | On each of her first three leaves the screen is locked or open as recorded. An open leave gives a claim, a locked one the sign-in screen. After a reload the sequence starts again from the first entry | A claim at `lena_pc` on an open leave, gone when she returns; none after the reload until the next open leave |
-| H9 Holds doors, and does not (with step 5) | `gate_hall`, with `store_a` to its north and `store_b` to its south, each a locked room behind a gate door with no `playerMayPassIf` and `"holdMs": 6000`. Gary Whitlock (`"awareness": "low"`) walks a two-room route through the gate to `store_a`; Sara Quinn (`"awareness": "high"`) through the gate to `store_b`. Each route and its `unlockRoom` action are copied from `test_gate_tailgate`. Neither has needs (a route and needs do not combine). A mapping on `door_gate_denied` for `store_b` makes Sara bark | Gary's door lingers open after him: parked a few steps to one side, the player walks in behind him and `room_entered:store_a` fires. Sara's door: with her near, the player walks into it, is stopped, the refusal toast shows, `door_gate_denied` fires and she barks. **Starting towards the door one second after she has gone through, the player finds it shut or solid: at no sampled moment is it open and passable.** Twenty seconds of pushing never fires `room_entered:store_b`, and `door_gate_denied` fires no more than once every four seconds | `store_a` entered, `store_b` not; habits block: Sara's gate `noHold: ["sara"]`, Gary's gate none |
+| H9 Holds doors, and does not (with step 5) | `gate_hall`, with `store_a` to its north and `store_b` to its south, each a locked room behind a gate door with no `playerMayPassIf` and `"holdMs": 6000`. **Both gates sit on north and south doors** (the north door of `gate_hall` into `store_a`, the south door into `store_b`): the engine plan's bar is built for north and south gates only, and an east or west gate is declined with a validator warning. Each `gate` config goes on the door entry whose `connectedRoom` is the locked store room, which is how E1 finds the secured room. Gary Whitlock (`"awareness": "low"`) walks a two-room route through the gate to `store_a`; Sara Quinn (`"awareness": "high"`) through the gate to `store_b`. Each route and its `unlockRoom` action are copied from `test_gate_tailgate`. Neither has needs (a route and needs do not combine). Every mapping on a gate event has two entries, one on `data.roomId` and one on `data.connectedRoom` (section 2): the two `door_gate_denied` mappings for `store_b` complete the task and make Sara bark, and the scripted run's globals from `door_gate_opened` are set the same way for each store | Gary's door lingers open after him: parked a few steps to one side, the player walks in behind him and `room_entered:store_a` fires. Sara's door: with her near, the player walks into it, is stopped, the refusal toast shows, `door_gate_denied` fires and she barks. **Starting towards the door one second after she has gone through, the player finds it shut or solid: at no sampled moment is it open and passable. Once the player is within the radius, the gate is shut within one tick of Sara leaving the radius and the doorway** (it does not linger open but solid for `holdMs`). Twenty seconds of pushing never fires `room_entered:store_b`, and `door_gate_denied` fires no more than once every four seconds | `store_a` entered, `store_b` not; habits block: Sara's gate `noHold: ["sara"]`, Gary's gate none |
 
 Passwords have in-game sources of their own: Omar's is read from the sticky note, Mei's is built
 from the photo, the calendar and the memo, Tom's is read from the locker note. Dana's, Ian's,
 Priya's, Kai's and Lena's are never typed.
 
 **Expected validator output**, listed in `PLAYTEST.md`: no errors and no warnings. One suggestion:
-the roll on `lena_pc` (a preset `sometimes`). The habits report for the eight desk NPCs (ten with
-step 5), which is where H4's "the PC sets lockChance, habit not applied", H1's "level from role
-front_desk", Mei's two sourced parts and what her pattern clue covers, and Tom's "same password
-as" the locker and "written in full at" the locker note are checked.
+the roll on `lena_pc` (a preset `sometimes`, one line from `ValidateNpcHabits.check`; the first
+slice's roll warning does not fire, because no PC authors a chance between 0 and 1). No screen
+state mapping warning: H2's and H4's PCs resolve to 1, H5's resolves to 1 through `instant_lock`,
+and H1's, H3's, H6's to H8's tasks are on `pc_signed_in`. The habits report for the eight desk
+NPCs (ten with step 5), which is where H4's "the PC sets lockChance, habit not applied", H1's
+"level from role front_desk", Mei's word and number parts with their sources, her symbol "in the
+pattern clue" and "1 capital, 1 symbol, 3 pieces in order", "pattern clue at" the memo, and Tom's
+"same password as" the locker and "written in full at" the locker note are checked.
 
 **Static checks.** Validator as expected, ink compiles, `python3 scripts/check_door_alignment.py`,
 dungeon graph regenerated (and its new edges looked at once), node and Rails suites, both
@@ -1296,8 +1365,12 @@ it then stands, by object id, and the builder reads the file first.
    "never locks her screen") is reworded to name the habit on the NPC.
 5. **Run the validator and read the habits report.** It must show `lockChance 1` filled on the
    always-locking owner's PC and `lockChance 0` on the never-locking owner's, and no other fill.
-   It must raise no warning about a mapping that needs a lock: Chris's capture reads `wasLocked` on
-   a PC that resolves to 1. If any other object shows a fill, an owner has a second workstation the
+   It must raise no screen state mapping warning: Chris's capture needs a locked screen
+   (`data.wasLocked === true`) on a PC whose effective lock is 1. A mapping that needs an open
+   screen on Melanie's PC is clean at 0. If the earlier edits gave a PC a late lock policy or a
+   chance between 0 and 1, read the warning table in 7.2 before changing anything: a warning there
+   is a real finding for the feedback pass, not for this step. If any other object shows a fill,
+   an owner has a second workstation the
    swap did not intend: stop and look.
 6. **Update the lab's guard test.** `test/models/break_escape/lab_physical_pentest_secrets_test.rb`
    asserts today that `staff_pc` has `locksScreenOnLeave` exactly `true`, because Chris's keylogger
@@ -1357,7 +1430,8 @@ signing in with captured credentials is in scope.
   This is the one place a single word on an NPC changes a PC the author did not touch, and the
   habits report lists every PC it happened to.
 - **Gates** are untouched by steps 1 to 4. Gates with `playerMayPassIf` are untouched by step 5
-  too; what changes them is the engine plan's item 3, which that plan covers.
+  too; what changes them is the engine plan's item 3 (the hard bar on north and south gates, its
+  decision X1), which that plan covers.
 - **The sign-in screen** asks `/login_accounts` as it does now and reads one more key from the
   answer. A PC whose owner has no `writesDown` behaves as before.
 - **The note picture** is new on every sign-in PC with an authored, shown `postitNote`:
@@ -1368,9 +1442,15 @@ signing in with captured credentials is in scope.
 - **The loader's order changes** (ids are stamped before the access fields are expanded). Stamping
   reads nothing the normaliser writes, and the normaliser reads no object id, so the saved data is
   the same; step 1's loader tests and the first slice's loader tests hold it.
-- **A new validator warning can fire on existing scenarios**: an authored `lockChance` of 0 or
-  between 0 and 1 on a workstation with a mapping that needs a lock. Step 3 runs the validator over
-  every scenario with a workstation and records what it raises.
+- **A new validator warning can fire on existing scenarios**: a workstation whose effective lock
+  on a leave (7.2, "Screen state mappings": the policy's `autoLockMin: 0` first, then
+  `lockChance`, then `locksScreenOnLeave`) cannot give, or gives only on some leaves, the screen
+  state one of its mappings waits for. A policy with `autoLockMin: 0` resolves to 1, and one with
+  `autoLockMin` above 0 is a late lock that silences the warning for a mapping that needs a lock,
+  so `test_access_sessions`' `priya_pc` (`lockChance` 0 under `instant_lock`, a mapping on
+  `workstation_locked_attempt:priya_pc`) draws nothing. Any warning that does fire is a real
+  finding. Step 3 runs the validator over every scenario with a workstation and records what it
+  raises.
 - **Missions m01 to m10, the SIS games and the awareness course scenarios**: no change.
 
 ## 14. Interfaces with other plans
@@ -1427,8 +1507,8 @@ re-read on 2026-11-10. There is no open disagreement.
 
 | Item | Owner | Contact |
 |---|---|---|
-| 1. Lock and unlock sounds, the rising padlock icon | The engine plan. All of `screen-states.js` | This slice edits no file of item 1 and depends on none of it. Its scripted run checks that a transition and a sound were recorded, not which file played. The engine plan no longer adds a pulse for a screen left open (the indicator dot stays the cue) and holds its version stamp; nothing here relies on either |
-| 3. A gate is solid for a player it is not open to (stream E1, decision X1) | The engine plan: `update()`, the body rule and `blocksPlayer`, the removal of the guard priority, leaving and the exit click, the bump, east and west gates, and all `door-gates*.test.mjs` | Step 5 of this slice starts after E1 is committed and meets the contract in 5.4. It adds `noHold`, `nearGuardIds`, `lastGuards` and one clause in `openToPlayer`, and one test file in E1's set. E1's fixture changes to `test_gate_tailgate` come first; this slice's H9 uses two new gates of its own |
+| 1. Lock and unlock sounds, the rising padlock icon (stream E2, in build); the version stamp (stream E2b, held for the user's question 3, which is about how their server serves the JavaScript) | The engine plan. All of `screen-states.js` | This slice edits no file of item 1 and depends on none of it. Its scripted run checks that a transition and a sound were recorded, not which file played. A pulse for a screen left open was declined by the engine plan (the indicator dot stays the cue); nothing here relies on it. Overlaps: E2's two preload lines in `core/game.js` (beside stream A's one line) and E2b's `generate_scenario_data` in `game.rb` (beside F's `prepare_scenario_data!`), both in section 15 with the engine work first. If E2b is built, its `_digest` of the rendered scenario must be taken from the render, before `prepare_scenario_data!` writes this slice's fills, or every game would differ from a fresh render |
+| 3. A north or south gate is solid for a player it is not open to (stream E1, decision X1, settled in that plan) | The engine plan: `update()`, `closeNow()`, the body rule and `blocksPlayer`, `securedRoom`, the removal of the guard priority and of the forced-shut window, leaving and the exit click, the bump, which door directions may be gates (north and south only; an east or west gate is declined and warned on), and all `door-gates*.test.mjs` | Step 5 of this slice starts after E1's item 3 is committed and meets the contract in 5.4. It makes the six edits listed there and adds one test file to E1's set. A forced `closeDoor` no longer shuts a gate on its guard, so contract item 5 (`close(g)` the one end) still holds and nothing in step 5 depends on a forced shut. E1's fixture changes to `test_gate_tailgate` come first; this slice's H9 uses two new gates of its own, on north and south doors |
 | 6. The capture log | The engine plan | A saved sticky note goes through the existing "add to notebook" path. If the log changes where saved notes live or are returned, the leak scanner's saved-copy exception (section 6) follows the new home |
 | Lab content: which PCs are workstations, and their owners' leave rates | The feedback pass | Section 12 runs after it |
 
@@ -1437,8 +1517,10 @@ re-read on 2026-11-10. There is no open disagreement.
 1. 9.3a's streams, and the engine plan's streams, run first or alongside each other as those plans
    say.
 2. This slice's steps 0 to 4, 6 and 7 start when 9.3a has committed its edits to the files in
-   section 15. They do not wait for any engine plan stream.
-3. Step 5 starts when steps 1 to 4 and the engine plan's E1 are committed.
+   section 15. They wait for no engine plan stream, except that where an engine stream in build
+   (E1's items 2 and 7, E2) holds a file this slice also edits, that stream commits first and this
+   slice re-reads (section 15).
+3. Step 5 starts when steps 1 to 4, 6 and 7 and the engine plan's E1 item 3 are committed.
 4. Step 8 (the lab) comes after the feedback pass and 9.3's lab step.
 5. 9.2 is built after this slice.
 
@@ -1453,7 +1535,7 @@ Inside this slice:
 | B Authoring tools | 3, 4 | `scripts/validate_npc_habits.rb`, the wiring in `scripts/validate_scenario.rb`, `scripts/generate_dungeon_graph.rb`, `lib/break_escape/npc_habits/clues.rb`, `test/unit/npc_habits_clues_test.rb`, `test/js/validator-npc-habits.test.mjs`, `test/js/dungeon-graph-habits.test.mjs` | When F is committed |
 | E Playtest tooling | 6 | This slice's block in `tools/playtest/lib/access_leak_scanner.rb`, `access-leak-check.rb` and `verify-run.rb`, and their two test files | When F is committed. Its tests use fixture response files; its last check waits for A |
 | S Scenario | 7 | `scenarios/test_access_habits/`, `tools/playtest/test_access_habits-report.md` | After A, B and E |
-| D `holdsDoors` | 5 | The `holdsDoors` and gate lines of `npc_habits.rb`, `scenario-schema.json`, `validate_npc_habits.rb`, `generate_dungeon_graph.rb` and their tests; its lines in `door-gates.js`; `test/js/door-gates-no-hold.test.mjs`; one paragraph of `README_scenario_design.md`; beat H9 in `scenarios/test_access_habits/` | After F, A, B and S are committed **and** the engine plan's E1 is committed and meets 5.4's contract |
+| D `holdsDoors` | 5 | The `holdsDoors` and gate lines of `npc_habits.rb`, `scenario-schema.json`, `validate_npc_habits.rb`, `generate_dungeon_graph.rb` and their tests; the gate line of the `habits` block in `verify-run.rb` and its case in `playtest-verify-run-access.test.mjs`; its six places in `door-gates.js` (5.4); `test/js/door-gates-no-hold.test.mjs`; one paragraph of `README_scenario_design.md`; beat H9 in `scenarios/test_access_habits/` | After F, A, B, E and S are committed **and** the engine plan's E1 item 3 is committed and meets 5.4's contract |
 | L Lab | 8 | `scenarios/lab_physical_pentest/`, `lab_physical_pentest_secrets_test.rb` | After S, the feedback pass and 9.3's lab step |
 | Docs | 9 | `README_scenario_design.md` (the new section), the build log | Last |
 
