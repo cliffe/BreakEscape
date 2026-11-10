@@ -1,0 +1,496 @@
+{
+  "scenario_brief": "TEST: Access model slice 9.2, work and the USB policy\n\nA test floor for ACCESS_MODEL_SLICE_9_2_PLAN.md: the USB policy (U1 to U3). Each beat has a sign and its own room. Nothing to solve.",
+  "endGoal": "Test only: run the slice 9.2 beats.",
+  "startRoom": "lobby",
+  "startPosition": {
+    "x": 6,
+    "y": 6
+  },
+  "npcNeedsSeed": "test_access_work",
+  "npcWindupMs": 0,
+  "needsDebugOverlay": true,
+  "officePresets": true,
+  "chatter": {
+    "usb_refused": [
+      "USB's disabled. Typical.",
+      "Blocked again. Brilliant."
+    ]
+  },
+  "policies": {
+    "managed": {
+      "autoLockMin": 5,
+      "maxAttempts": null,
+      "usb": "storage_blocked",
+      "social": "allowed"
+    },
+    "locked_down": {
+      "autoLockMin": 5,
+      "maxAttempts": null,
+      "usb": "blocked",
+      "social": "allowed"
+    },
+    "lax": {
+      "autoLockMin": null,
+      "maxAttempts": null,
+      "usb": "allowed",
+      "social": "allowed"
+    },
+    "strict": {
+      "autoLockMin": 5,
+      "maxAttempts": 3,
+      "usb": "storage_blocked",
+      "social": "allowed"
+    }
+  },
+  "defaultPolicy": "managed",
+  "globalVariables": {
+    "u2_dock_planted": false
+  },
+  "objectives": [
+    {
+      "aimId": "usb_beats",
+      "title": "Run the USB policy beats",
+      "description": "Test only. Each task ticks when its beat's event fires.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "u1_refused",
+          "title": "U1: Lena's PC refuses the storage stick",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "u1_kiosk",
+          "title": "U1: Lena takes the stick to the kiosk",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "u1_hid",
+          "title": "U1: Lena's PC takes the keyboard-type device",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "u2_refused",
+          "title": "U2: Priya's PC refuses the stick and she puts it down",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "u2_dock",
+          "title": "U2: the dock refuses your stick",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "u3_tray",
+          "title": "U3: Kofi leaves the stick in the tray, no refusal",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "rooms": {
+    "lobby": {
+      "type": "room_reception",
+      "door_sign": "Lobby",
+      "connections": {
+        "north": "usb_room",
+        "east": "vault_room",
+        "south": "post_room"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_lobby",
+          "name": "Sign: Start here",
+          "position": {
+            "x": 4,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Slice 9.2 test floor. USB policy: Lena north (U1), Priya east (U2), Kofi south (U3).\nThe USB devices are on the floor here, one per beat, each named for its beat.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "usb",
+          "id": "kit_usb",
+          "name": "USB stick for Lena (storage)",
+          "sprite": "usb_bowl1",
+          "position": {
+            "x": 2,
+            "y": 5
+          },
+          "takeable": true,
+          "interactable": true,
+          "active": true,
+          "droppable": true,
+          "needsTag": "dev_usb",
+          "usbClass": "storage",
+          "observations": "A plain USB memory stick (storage)."
+        },
+        {
+          "type": "usb",
+          "id": "kit_badusb",
+          "name": "Keyboard-type USB device for Lena",
+          "sprite": "usb_bowl1",
+          "position": {
+            "x": 3,
+            "y": 5
+          },
+          "takeable": true,
+          "interactable": true,
+          "active": true,
+          "droppable": true,
+          "needsTag": "dev_badusb",
+          "usbClass": "hid",
+          "observations": "Looks like a memory stick, but it presents itself to a PC as a keyboard (hid)."
+        },
+        {
+          "type": "usb",
+          "id": "vault_usb",
+          "name": "USB stick for Priya (storage)",
+          "sprite": "usb_bowl1",
+          "position": {
+            "x": 4,
+            "y": 5
+          },
+          "takeable": true,
+          "interactable": true,
+          "active": true,
+          "droppable": true,
+          "needsTag": "vault_usb",
+          "usbClass": "storage",
+          "observations": "A plain USB memory stick (storage)."
+        },
+        {
+          "type": "usb",
+          "id": "vault_usb_2",
+          "name": "Spare USB stick for the dock (storage)",
+          "sprite": "usb_bowl1",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "takeable": true,
+          "interactable": true,
+          "active": true,
+          "droppable": true,
+          "needsTag": "vault_usb_spare",
+          "usbClass": "storage",
+          "observations": "A plain USB memory stick (storage)."
+        },
+        {
+          "type": "usb",
+          "id": "post_usb",
+          "name": "USB stick for Kofi (storage)",
+          "sprite": "usb_bowl1",
+          "position": {
+            "x": 6,
+            "y": 5
+          },
+          "takeable": true,
+          "interactable": true,
+          "active": true,
+          "droppable": true,
+          "needsTag": "post_usb",
+          "usbClass": "storage",
+          "observations": "A plain USB memory stick (storage)."
+        }
+      ],
+      "npcs": []
+    },
+    "usb_room": {
+      "type": "room_office",
+      "door_sign": "U1 Lena",
+      "connections": {
+        "south": "lobby"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_u1",
+          "name": "Sign: U1 Storage refused, then the kiosk",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "U1. Drop Lena's storage stick here (click it in your inventory, Drop here). Lena takes it to her PC, which refuses storage: she mutters and takes it to the kiosk, which takes it.\nThen drop the keyboard-type device: her PC takes it.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "pc",
+          "id": "lena_pc",
+          "name": "Lena's PC",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "policy": "managed",
+          "affordance": {
+            "accepts": [
+              "dev_usb",
+              "dev_badusb"
+            ],
+            "useSeconds": 5
+          },
+          "observations": "Lena's PC, under the managed policy: USB storage is disabled."
+        },
+        {
+          "type": "pc3",
+          "id": "kiosk_pc",
+          "name": "Kiosk PC",
+          "position": {
+            "x": 8,
+            "y": 6
+          },
+          "takeable": false,
+          "policy": "lax",
+          "affordance": {
+            "accepts": [
+              "dev_usb"
+            ],
+            "useSeconds": 5
+          },
+          "observations": "A kiosk PC that nobody manages. It takes anything."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "lena",
+          "displayName": "Lena Fox",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "female_office_worker_v2",
+          "spriteTalk": "assets/characters/female_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
+          "storyPath": "scenarios/test_access_work/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "lena_pc",
+          "interests": {
+            "dev_usb": {
+              "weight": 2
+            },
+            "dev_badusb": {
+              "weight": 2
+            }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_use_refused:lena_pc",
+              "onceOnly": true,
+              "completeTask": "u1_refused",
+              "condition": "data.usbClass === 'storage'"
+            },
+            {
+              "eventPattern": "npc_used:kiosk_pc",
+              "onceOnly": true,
+              "completeTask": "u1_kiosk",
+              "condition": "data.npcId === 'lena' && data.tag === 'dev_usb'"
+            },
+            {
+              "eventPattern": "npc_used:lena_pc",
+              "onceOnly": true,
+              "completeTask": "u1_hid",
+              "condition": "data.npcId === 'lena' && data.tag === 'dev_badusb'"
+            }
+          ]
+        }
+      ]
+    },
+    "vault_room": {
+      "type": "room_office",
+      "door_sign": "U2 Priya",
+      "connections": {
+        "west": "lobby"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_u2",
+          "name": "Sign: U2 Refused outright, and your own plant",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "U2. Drop Priya's storage stick here: Priya's PC refuses every USB device and nothing else takes it, so she puts it down by her PC.\nThen, holding the spare stick, click the USB dock: USB devices are disabled on this PC, and you keep the stick.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "pc",
+          "id": "priya_pc",
+          "name": "Priya's PC",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "policy": "locked_down",
+          "affordance": {
+            "accepts": [
+              "vault_usb"
+            ],
+            "useSeconds": 5
+          },
+          "observations": "Priya's PC, under the locked-down policy: every USB device is disabled."
+        },
+        {
+          "type": "usb_bowl1",
+          "id": "priya_dock",
+          "name": "USB dock",
+          "position": {
+            "x": 7,
+            "y": 3
+          },
+          "takeable": false,
+          "interactable": true,
+          "policy": "locked_down",
+          "requiresItem": "usb",
+          "requiresItemHint": "You need a USB device to plug in here.",
+          "triggerOnInteract": [
+            {
+              "type": "set_global",
+              "key": "u2_dock_planted",
+              "value": true
+            }
+          ],
+          "observations": "A USB dock wired to Priya's PC. Same policy as the PC."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "priya",
+          "displayName": "Priya Nair",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "female_scientist_v2",
+          "spriteTalk": "assets/characters/female_scientist_talk.png",
+          "spriteVisemes": "assets/characters/female_scientist_visemes.png",
+          "storyPath": "scenarios/test_access_work/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "priya_pc",
+          "interests": {
+            "vault_usb": {
+              "weight": 2
+            }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_use_refused:priya_pc",
+              "onceOnly": true,
+              "completeTask": "u2_refused"
+            },
+            {
+              "eventPattern": "usb_refused:priya_dock",
+              "onceOnly": true,
+              "completeTask": "u2_dock"
+            }
+          ]
+        }
+      ]
+    },
+    "post_room": {
+      "type": "room_office",
+      "door_sign": "U3 Kofi",
+      "connections": {
+        "north": "lobby"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_u3",
+          "name": "Sign: U3 A default policy does not reach a tray",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "U3. Drop Kofi's storage stick here: Kofi puts it in the lost property tray. No refusal and no mutter, although the floor's default policy blocks storage: a tray is not a PC.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "bin1",
+          "id": "lost_property_tray",
+          "name": "Lost property tray",
+          "position": {
+            "x": 6,
+            "y": 3
+          },
+          "takeable": false,
+          "affordance": {
+            "accepts": [
+              "post_usb"
+            ],
+            "useSeconds": 3
+          },
+          "observations": "A tray for lost property. Not a PC; no policy."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "kofi",
+          "displayName": "Kofi Mensah",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "male_office_worker_v2",
+          "spriteTalk": "assets/characters/male_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+          "storyPath": "scenarios/test_access_work/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "interests": {
+            "post_usb": {
+              "weight": 2
+            }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_used:lost_property_tray",
+              "onceOnly": true,
+              "completeTask": "u3_tray",
+              "condition": "data.npcId === 'kofi'"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

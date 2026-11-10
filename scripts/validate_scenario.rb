@@ -29,6 +29,7 @@ require_relative '../lib/break_escape/access_identities'
 require_relative '../lib/break_escape/npc_habits'
 require_relative '../lib/break_escape/npc_habits/clues'
 require_relative 'validate_npc_habits'
+require_relative 'validate_access_work'
 
 # Try to load json-schema gem, provide helpful error if missing
 begin
@@ -527,6 +528,7 @@ def check_unknown_fields(json_data)
     completesTask completesTaskOnOpen
     puzzle_graph_links hintOnlyFlags acceptsVmLabels
     affordance needsTag droppable officeType
+    usbClass
     workstation locksScreenOnLeave lockChance screenOwner screenLocked autoLockSeconds
     phoneOwner rings
     actions onOwnerNoticesMissing interactionWarning saved_cards rfid_protocol
@@ -6649,6 +6651,7 @@ def main
     common_issues += check_access_model(json_data, repo_root, File.dirname(erb_path))
     common_issues += check_network_model(json_data)
     common_issues += check_capture_log(json_data)
+    common_issues += ValidateAccessWork.check(json_data)
     common_issues += ValidateNpcHabits.check(json_data, expanded: habits_copy, report: habits_report,
                                                         scenario_dir: File.dirname(erb_path))
     common_issues += check_tooling_pass4c(json_data, repo_root)

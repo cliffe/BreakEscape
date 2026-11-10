@@ -50,6 +50,7 @@ const stubs = {
     '../utils/conditional-text.js': dataUrl(readFileSync(join(js, 'utils/conditional-text.js'), 'utf8')),
     '../utils/flag-lock.js': dataUrl(readFileSync(join(js, 'utils/flag-lock.js'), 'utf8')),
     './requires-item-hint.js': dataUrl('export function requiresItemHint(d) { return d?.requiresItemHint; }'),
+    './pc-policy.js': dataUrl(readFileSync(join(js, 'systems/pc-policy.js'), 'utf8')),
     '../utils/locked-hint.js': dataUrl(readFileSync(join(js, 'utils/locked-hint.js'), 'utf8')),
     './npc-reach.js': dataUrl('export function npcReachDistSq() { return 0; }'),
     './examine.js': dataUrl('export function shouldExamine() { return false; } export function startExamine() {}'),

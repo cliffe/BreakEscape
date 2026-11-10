@@ -987,6 +987,29 @@ The owner's return carries what the screen was: `workstation_owner_returned:<id>
 
 This event carries no `usePayload`, so write the capture's `address` and `host` in the mapping (neither is a secret; the server serves the password by matching the address to the NPC's `creds`). A once-only mapping is not spent while its condition is false, so returns before the plant do not use it up. For the capture to be certain, the PC must lock on every leave (`locksScreenOnLeave: true` and no `lockChance`).
 
+### Work, frustration and workarounds
+
+Access model slice 9.2 (`docs/achitechture/ACCESS_MODEL_SLICE_9_2_PLAN.md`): staff whose work depends on resources and on their own PC, who get visibly frustrated when it fails, and who route round the controls that stop them. `scenarios/test_access_work` is the feature scenario; copy its shapes.
+
+#### USB policy
+
+A policy (top-level `policies`, referenced by an object's `policy` or by `defaultPolicy`) may say `usb`:
+
+| `usb` | An item with `"usbClass": "storage"` | An item with `"usbClass": "hid"` |
+|---|---|---|
+| `"allowed"` or absent | accepted | accepted |
+| `"storage_blocked"` | refused | accepted |
+| `"blocked"` | refused | refused |
+
+- **`usbClass`** goes on the item: `"storage"` for a memory stick, `"hid"` for a device that presents itself as a keyboard. An item with no `usbClass` is never refused: a hardware keylogger between the keyboard and the PC is not a USB device the policy can see.
+- **What a policy governs.** Only an object that is a workstation by its own fields (`workstation: true`, `lockChance`, `locksScreenOnLeave` or `lockType: "login"`) or that names a `policy` itself. A `defaultPolicy` never reaches a lost property tray, a shredder or a printer.
+- **The two lessons.** A device control policy that blocks storage does not stop a device that presents as a keyboard (`storage_blocked` accepts `hid`). And people route round a refusal: an NPC whose own PC refuses a dropped stick takes it to the next object that accepts its tag and does not refuse it (a kiosk nobody manages). With nowhere else, they put it down where they stand and leave it; the player can pick it up again.
+- **What the player sees.** An NPC refused a device says a line from the `usb_refused` pool ("USB's disabled. Typical."), fires `npc_use_refused:<objectId>` with `{ npcId, objectId, itemId, tag, usbClass }`, and no `npc_used` fires, so nothing mapped to the use runs. The engine has no spoken text of its own: put the pool in the scenario's top-level `chatter` (any NPC may say it) or an NPC's own. Without a line the NPC shows the `blocked` picture, and the validator warns.
+- **The player's own plant.** A `requiresItem` object under a policy that refuses every matching held item shows "USB storage is disabled on this PC." (or "USB devices are disabled on this PC." under `blocked`), fires `usb_refused:<objectId>` with `{ objectId, itemId, usbClass }`, runs no action and consumes nothing. With several matching items the first one the policy accepts is used. A sign-in PC answers a click with its own flow, so **a plant at a sign-in PC goes on a separate object beside it (a dock, a USB hub) that names the same `policy`**.
+- **How strong it is.** Device payoffs are globals the browser sets, so the policy is as strong as the payoff it guards.
+
+The validator errors on an unknown `usb`, `social` or `usbClass` value, and warns when a blocking policy governs only objects whose items have no `usbClass` (it refuses nothing), when an object no policy governs takes a device the default policy would refuse (you may have meant a refusal), and when an NPC that can be refused a device has no `usb_refused` line.
+
 ### Container Objects
 
 Containers hold `contents` arrays of nested items. Every container with `contents` **must** declare `locked: true` or `locked: false`.

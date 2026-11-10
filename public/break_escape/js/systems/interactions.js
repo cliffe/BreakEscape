@@ -13,6 +13,7 @@ import { applyActions } from './apply-actions.js';
 import { resolveObjectField } from '../utils/conditional-text.js';
 import { requiresItemHint } from './requires-item-hint.js';
 import { hintToastMs } from '../utils/locked-hint.js';
+import { plantRefusal } from './pc-policy.js';
 import { isRemoteFlagLock, remoteFlagLockMessage } from '../utils/flag-lock.js';
 import { npcReachDistSq } from './npc-reach.js';
 import { shouldExamine, startExamine } from './examine.js';
@@ -967,10 +968,22 @@ export function handleObjectInteraction(sprite) {
         const req = sprite.scenarioData.requiresItem;
         if (req) {
             const wanted = Array.isArray(req) ? req : [req];
-            const held = (window.inventory?.items || []).find(it => {
+            const matching = (window.inventory?.items || []).filter(it => {
                 const d = it?.scenarioData || {};
                 return wanted.includes(d.type) || wanted.includes(d.id) || wanted.includes(d.name);
             });
+            // The USB policy (access slice 9.2 U, plan 7): the first matching item the object's
+            // policy accepts; refused only when every matching item is refused
+            const plant = plantRefusal(matching, sprite.scenarioData, window.gameScenario);
+            if (plant.refusal) {
+                const objectId = sprite.scenarioData.id || sprite.objectId || null;
+                window.gameAlert?.(plant.refusal, 'warning', '', hintToastMs(plant.refusal));
+                window.eventDispatcher?.emit(`usb_refused:${objectId}`, {
+                    objectId, itemId: plant.refusedItem?.scenarioData?.id || null, usbClass: plant.usbClass || null
+                });
+                return;
+            }
+            const held = plant.item;
             if (!held) {
                 // requiresItemHintVariants gives one hint per state (first match wins).
                 const hint = requiresItemHint(sprite.scenarioData);

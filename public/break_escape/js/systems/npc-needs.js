@@ -83,7 +83,9 @@ export const PICTURE_CHATTER = Object.freeze({
     news: Object.freeze(['social']),
     // Slice 19: a desk-phone call nobody hears (or with no lines left) shows the phone
     phone: Object.freeze(['phone']),
-    phone_message: Object.freeze(['phone'])
+    phone_message: Object.freeze(['phone']),
+    // Access slice 9.2 U (ACCESS_MODEL_SLICE_9_2_PLAN 7): a device the PC's USB policy refused
+    usb_refused: Object.freeze(['blocked'])
 });
 const PICTURE_DEFAULT = Object.freeze(['social']);
 // The needs that have an icon of their own (npc-action-icons.js NPC_ICON_NAMES; not imported, so
@@ -194,6 +196,17 @@ export function chatterPool(topic, scenarioChatter, npcChatter) {
         overhearRadius: base?.overhearRadius || own?.overhearRadius || null,
         pictures: scenarioChatter !== false
     };
+}
+
+/**
+ * The USB policy table (ACCESS_MODEL_SLICE_9_2_PLAN 7), copied from pc-policy.js usbRefused
+ * because this file imports nothing. `usb` is the target's effective value (null: not governed).
+ */
+export function usbRefusedBy(usb, usbClass) {
+    if (usbClass !== 'storage' && usbClass !== 'hid') return false;
+    if (usb === 'blocked') return true;
+    if (usb === 'storage_blocked') return usbClass === 'storage';
+    return false;
 }
 
 /** requireGlobal: a name (truthy) or { name: value } (all must match). Copied from npc-sight-challenge.js (review m10). */
@@ -418,6 +431,9 @@ export class NPCNeedsSystem {
             leashNoted: {},
             avoidNoted: {},
             privateNoted: {},
+            // Access slice 9.2 U: items a USB policy refused with nowhere else to take them (put
+            // down, and not picked up again by this NPC)
+            refused: new Set(),
             urgentFlag: {},
             mode: 'idle',
             prevMode: null,
@@ -1653,17 +1669,31 @@ export class NPCNeedsSystem {
      * One line from the `grumble` pool as a speech bubble (getState().talking), seeded by the
      * turn-back count. Overheard like a chat line (npc_overheard); no npc_chatted (it is no chat).
      */
-    _grumble(s, objectId, reason = 'avoid', chosen = null) {
+    _grumble(s, objectId, reason = 'avoid', chosen = null, opts = null) {
         // Slice 18a: the topic is chosen before _pickBark, by lines: grumble_<reason> when that pool
         // has lines, else grumble when it has (the lab's spoken grumbles), else grumble_<reason>'s
         // picture. _pickBark gives a picture, never null, for a topic with no lines, so it cannot be
         // tried and fallen back from. An off or gone picture is the need's own icon.
         const topic = chosen || this._grumbleTopic(s, reason);
         const need = s.job?.need;
-        const icons = reason !== 'avoid' && NEED_ICONS.includes(need) ? [need] : null;
-        const pick = this._pickBark(s, topic, { icons });
+        // Access 9.2: a caller's options ({ ignoreCooldown, icons }) win; icons: null is the topic's own picture
+        const icons = opts && 'icons' in opts ? opts.icons : (reason !== 'avoid' && NEED_ICONS.includes(need) ? [need] : null);
+        const pick = this._pickBark(s, topic, { icons, ignoreCooldown: !!opts?.ignoreCooldown });
         if (!pick) return;
         this._showSaying(s, pick, topic, objectId);
+    }
+
+    /**
+     * Access slice 9.2 (plan 5.5): one line from `topic` (a mutter) over one NPC, through the grumble
+     * path with the chatter cooldown ignored; the topic's own picture with no line. False for an
+     * NPC the system does not run.
+     */
+    mutter(npcId, topic) {
+        const s = this.states.get(npcId);
+        if (!s || typeof topic !== 'string' || !topic) return false;
+        this._log(npcId, 'mutter', { topic });
+        this._grumble(s, null, topic, topic, { ignoreCooldown: true, icons: null });
+        return true;
     }
 
     /** A one-off line or picture over one NPC (a grumble, an announce): bubble, voice, npc_overheard. */
@@ -1814,7 +1844,8 @@ export class NPCNeedsSystem {
         const rooms = it.noticeRooms || (s.home?.roomId ? [s.home.roomId] : (pos.roomId ? [pos.roomId] : []));
         const items = objects.filter(o => o.needsTag === tag && o.pickable && rooms.includes(o.roomId)
             && !this._itemClaimed(o.id, s.npcId) && !(s.cooldowns[o.id] > this.clockMs) && this._permitted(s, o, false)
-            && !this._reservedFrom(o.id, s.npcId));   // slice 17: someone else's printout
+            && !this._reservedFrom(o.id, s.npcId)   // slice 17: someone else's printout
+            && !s.refused?.has(o.id));   // access 9.2 U: a device refused with nowhere to take it
         const item = this._nearestReachable(s, items, pos);
         if (!item) return null;
         // Deliveries honour the room rules only: `private` limits uses, not drops (OQ26)
@@ -2098,6 +2129,7 @@ export class NPCNeedsSystem {
                 const item = this.world.getObject(job.itemId);
                 if (!item || !item.pickable) { this._itemGone(s); this._abortJob(s, 'item_gone', { cancel: true }); this._goHome(s); return; }
                 if (item.slot) job.slot = true;
+                if (typeof item.usbClass === 'string') job.usbClass = item.usbClass;   // access 9.2 U
             }
             if (!arrived) {
                 if (this.clockMs >= job.deadline) this._failJob(s, 'timeout');
@@ -2154,6 +2186,8 @@ export class NPCNeedsSystem {
         const n = job.need ? s.needs[job.need] : null;
         const obj = this.world.getObject(job.targetId);
         const aff = obj?.affordance || job.aff || {};
+        // Access slice 9.2 U (plan 7): the target's USB policy refuses the carried device's class
+        if (job.carrying && job.usbClass && usbRefusedBy(obj?.usbPolicy ?? null, job.usbClass)) { this._refuseUse(s); return; }
         if (n && s.temptBack[job.need]) delete s.temptBack[job.need];
         if (n) {
             let restores = asList(aff.satisfies).includes(job.need) ? Number(aff.restores) || 0 : 0;
@@ -2207,6 +2241,42 @@ export class NPCNeedsSystem {
         const stayPut = s.atPost && this._atOwnPost(s);
         s.job = null;
         this._clearBackoffs();   // a target or item may have come free; waiting NPCs do not know which
+        this._goHome(s, { stayPut });
+    }
+
+    /**
+     * Access slice 9.2 U (plan 7): the target refused the carried device. Nothing is consumed and
+     * no npc_used fires; npc_use_refused and a usb_refused mutter do. The job carries on to the
+     * nearest other free, reachable object that accepts the tag and does not refuse the class;
+     * with none, the NPC puts the device down where it stands, remembers it and goes home.
+     */
+    _refuseUse(s) {
+        const id = s.npcId;
+        const job = s.job;
+        this._log(id, 'use_refused', { tag: job.tag || undefined, target: job.targetId, item: job.itemId, usbClass: job.usbClass });
+        this._emit(`npc_use_refused:${job.targetId}`, { npcId: id, objectId: job.targetId, itemId: job.itemId, tag: job.tag, usbClass: job.usbClass });
+        this._grumble(s, job.targetId, 'usb_refused', 'usb_refused', { ignoreCooldown: true, icons: null });
+        (job.refusedBy || (job.refusedBy = [])).push(job.targetId);
+        const pos = this.world.npcPos(id);
+        const targets = this._objects().filter(o => o.affordance && asList(o.affordance.accepts).includes(job.tag)
+            && !job.refusedBy.includes(o.id) && !usbRefusedBy(o.usbPolicy ?? null, job.usbClass)
+            && this._free(s, o) && this._permitted(s, o, false));
+        const next = pos ? this._nearestReachable(s, targets, pos) : null;
+        if (next) {
+            job.targetId = next.id;
+            job.phase = 'goto_target';
+            job.useUntil = 0;
+            this._log(id, 'retarget', { target: next.id, item: job.itemId });
+            this._leavePost(s);
+            return;
+        }
+        this.world.dropHeld(id, job.itemId);
+        this._worldChanged();
+        s.refused.add(job.itemId);
+        this._log(id, 'put_down', { item: job.itemId });
+        const stayPut = s.atPost && this._targetsOwnPost(s);
+        s.job = null;
+        this._clearBackoffs();
         this._goHome(s, { stayPut });
     }
 
@@ -3312,6 +3382,10 @@ export function createEngineWorld() {
         if (typeof sd.phoneOwner === 'string' && sd.phoneOwner) { out.phoneOwner = sd.phoneOwner; if (sd.rings !== undefined) out.rings = sd.rings; }
         // Slice 18b-i: a hidden object (reveal global not true) is no use target
         if (sd.affordance && globalOf(sp)) out.revealOnGlobal = globalOf(sp);
+        // Access slice 9.2 U (plan 7): a device's class, and a target's effective USB policy
+        if (typeof sd.usbClass === 'string') out.usbClass = sd.usbClass;
+        const usbPolicy = W().pcPolicy?.usbPolicyFor?.(sd, W().gameScenario) ?? null;
+        if (usbPolicy) out.usbPolicy = usbPolicy;
         return out;
     };
     // A producer's reveal slots, by id, and the free test (loaded, not destroyed, active, global not
