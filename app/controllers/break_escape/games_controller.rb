@@ -1156,7 +1156,9 @@ module BreakEscape
       end
 
       answer = { pc_id: info[:object]['id'], loginAccounts: @game.login_account_tiles(info[:object]) }
-      note = @game.login_postit_for(info[:object])
+      # A written-down note is seen at the PC's own keyboard only: a request that names a
+      # foothold (a remote sign-in, slice 9.3a 4.4 and 13.1) never gets it
+      note = params[:foothold].present? ? nil : @game.login_postit_for(info[:object])
       answer[:postitNote] = note if note
       render json: answer
     end

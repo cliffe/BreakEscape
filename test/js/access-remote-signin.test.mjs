@@ -164,6 +164,20 @@ test('a remote lockable opens the sign-in screen with no /login_accounts request
     assert.equal(params.signIn.pcName, "Lena's PC (HB-FIN-02)");
 });
 
+test('the remote option keeps a keyboard lockable off /login_accounts: no tiles and no sticky note (9.1 m5)', async () => {
+    setup();
+    window.ApiClient.loginAccounts = async (pcId) => { calls.push(['loginAccounts', pcId]); return { loginAccounts: [{ username: 'lfox' }], postitNote: 'lfox / Ledger-Lena-9' }; };
+    const sprite = { scenarioData: { id: 'lena_pc', type: 'pc', name: "Lena's PC", lockType: 'login', locked: true, loginPicker: 'accounts', hasPostit: true } };
+    await openLoginSignIn(sprite, { switching: true, remote: { footholdId: 'jack_comms_port' } });
+    assert.equal(calls.filter(c => c[0] === 'loginAccounts').length, 0, 'the note is never asked for');
+    const [, params] = started[0];
+    assert.equal(params.showPostit, false);
+    assert.equal(params.postitNote, '');
+    assert.deepEqual(params.signIn.tiles, []);
+    assert.equal(params.signIn.remote.footholdId, 'jack_comms_port');
+    assert.equal(sprite.scenarioData.remote, undefined, 'the world sprite is not changed');
+});
+
 test('signed in remotely, the screen hands over to the remote desktop, whose fetch carries the foothold', async () => {
     setup();
     links.open('jack_comms_port');

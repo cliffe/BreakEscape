@@ -376,15 +376,21 @@ export function openLoginDesktop(lockable) {
  * shows no tiles and no post-it, whatever the PC's picker; it offers the Captured sign-ins;
  * the sign-in carries the foothold; and its close is reported to networkLinks.landed:
  * signed in, the remote desktop; otherwise the table decides (the desktop of a session
- * still held there, else the view).
+ * still held there, else the view). `remote` ({ footholdId }) asks for the same of a
+ * lockable that does not carry it: a remote screen never asks for or shows the sticky note
+ * GET /login_accounts serves at the keyboard (slice 9.1, 5.3).
  */
-export async function openLoginSignIn(lockable, { switching = false, reason = undefined } = {}) {
+export async function openLoginSignIn(lockable, { switching = false, reason = undefined, remote: remoteOpt = null } = {}) {
     const data = lockable?.scenarioData || {};
     const pcId = data.id;
     if (!pcId) return;
     const sessions = window.pcSessions;
-    const remote = data.remote && data.remote.footholdId ? data.remote : null;
-    if (remote) return openRemoteSignInScreen(lockable, { switching, reason });
+    const remote = data.remote && data.remote.footholdId ? data.remote
+        : (remoteOpt && remoteOpt.footholdId ? remoteOpt : null);
+    if (remote) {
+        const remoteLockableFor = data.remote ? lockable : { ...lockable, scenarioData: { ...data, remote: { footholdId: remote.footholdId } } };
+        return openRemoteSignInScreen(remoteLockableFor, { switching, reason });
+    }
     let tiles = Array.isArray(data.loginAccounts) ? data.loginAccounts : [];
     // The sticky note (slice 9.1, 5.3): a written-down password comes only in this
     // answer, at the desk, and is never written onto the object's data, so each open asks
@@ -459,7 +465,7 @@ async function openRemoteSignInScreen(lockable, { switching = false, reason = un
 
     const linkName = window.networkLinks?.get?.(footholdId)?.name || null;
     const hostLabel = data.host || data.name || pcId;
-    sessions?.screenShown?.(pcId, [], switching ? 'switch' : (reason || 'remote'));
+    sessions?.screenShown?.(pcId, [], switching ? 'switch' : (reason || 'remote'), false);
     // The current session, unless it is a claim: an unlocked screen is not offered over
     // the network (4.3), and a remote sign-in replaces it as a keyboard one would
     const held = sessions?.get?.(pcId) || null;

@@ -729,7 +729,8 @@ export class ContainerMinigame extends MinigameScene {
             // account signs in, and leaving the screen comes back here.
             this.addEventListener(switchBtn, 'click', () => {
                 this.exitReason = 'switch';
-                window.openLoginSignIn?.(this.containerItem, { switching: true });
+                // A remote desktop's Switch user is the remote screen: no tiles, no sticky note
+                window.openLoginSignIn?.(this.containerItem, this.remote ? { switching: true, remote: this.remote } : { switching: true });
             });
         }
         const signOutBtn = this.gameContainer?.querySelector('#desktop-sign-out');

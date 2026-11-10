@@ -160,5 +160,16 @@ module BreakEscape
       refute response.parsed_body.key?('postitNote')
       assert_nil @game.reload.filtered_room_data('office')['objects'].find { |o| o['id'] == 'omar_pc' }['hasPostit']
     end
+
+    test 'a request that names a foothold never gets the note (a remote sign-in, slice 9.3a)' do
+      build
+      get login_accounts_game_url(@game), params: { pc_id: 'omar_pc', foothold: 'jack_any' }
+      assert_response :success
+      assert_no_store
+      refute response.parsed_body.key?('postitNote')
+      refute_includes response.body, OMAR_PASSWORD
+      accounts('omar_pc')
+      assert_equal NOTE, response.parsed_body['postitNote'], 'at the keyboard it is still there'
+    end
   end
 end
