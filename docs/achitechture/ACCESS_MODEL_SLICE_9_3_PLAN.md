@@ -334,8 +334,10 @@ the dungeon graph agree (as `access_identities.rb` does for identities).
 - A **foothold reaches** its own network. A **PC reaches** its own network.
 - A PC or a foothold reaches a resource when the resource's `network` is that network.
 - Rights still come from access lists. Reach is the second gate, never a replacement for the first.
-- `NetworkModel.reach_conditions(station_network, resource)` is the function slice 9.2 calls to
-  compose an NPC's work plan (13.2). In 9.3a it answers `[[]]` (one route with no conditions) when
+- `NetworkModel.reach_conditions(data, station_network, resource)` is the function slice 9.2 calls
+  to compose an NPC's work plan (13.2). It takes the scenario data first, as every other function
+  in the module does, because 9.3b's answer needs the links and each network's `downIf`; 9.3a
+  does not read it. In 9.3a it answers `[[]]` (one route with no conditions) when
   the resource has no `network` or is on the station's network, and `[]` (no route) otherwise.
   9.3b extends the same answer with links and outages.
 
@@ -516,6 +518,13 @@ So:
 - **An open share** (no `access`) opens from the network view for a foothold on its network, and
   from the desktop of any session on a PC on its network, with or without a foothold. The lesson is
   the unauthenticated share.
+- **How a share opens on the client.** A share is never opened through `handleObjectInteraction`
+  or `POST /unlock`: left to that path, a click on an unlocked container would send
+  `method: "unlocked"`, which the server accepts for an admitted share and records in
+  `unlockedObjects` (`game.rb:2097-2106`, `games_controller.rb:934-949`). A share row in the view,
+  and a `network_share` stub on a desktop, each start the container minigame directly, which
+  fetches the contents from `GET /container/<resourceId>`. Everything taken from a share opened in
+  the view carries `sourceResourceId`; from a mapped share, the desktop's `sourcePcId`.
 - **A share with an access list** opens only from a desktop. When a desktop is composed for a
   session, local or remote, every `file_share` on the PC's network that the rule allows for that
   session is added after the profiles as a folder, "Ledger-Archive (\\HB-FS01\Ledger-Archive)".
@@ -567,7 +576,19 @@ item the server holds.
 Every route 9.3a adds or changes, with its checks in the order they run. A failed check stops the
 request. "Locked" means the route joins the `with_game_lock` list. Status codes follow the first
 slice's (404 for an unknown target, 403 for one that cannot be reached, 422 for a refusal the
-player caused).
+player caused), except where a refusal must look like an unknown id: then it is whatever that
+route answers for an invented id (4.5).
+
+The three new routes sit in the routes' member block with named actions, and each has a policy
+method that answers as `show?` does (`network?`, `network_plant?`, `network_unplug?` in
+`app/policies/break_escape/game_policy.rb`); without them `authorize @game` raises on every
+request:
+
+```ruby
+get  'network',         to: 'games#network',         as: 'network'
+post 'network/plant',   to: 'games#network_plant',   as: 'network_plant'
+post 'network/unplug',  to: 'games#network_unplug',  as: 'network_unplug'
+```
 
 **Shared checks.**
 
@@ -582,7 +603,7 @@ player caused).
 
 | Route | Parameters | Checks, in order | Writes and answer |
 |---|---|---|---|
-| `POST /network/plant` (new, locked) | `jack_id`, optional `device_id` | 1. The jack exists: a room object with `networkJack: true` and a network. 2. Object reachable. 3. A foothold `jack_<id>` exists already: answer it again with `already: true` and write nothing. 4. Rogue device held (the one named by `device_id`, else the first) | Check 4 fails: 422, `reason: "no_device"`. Success: the device leaves the inventory and its room (4.1); `footholds[jack_<id>]` is written with the device's copy; the jack id joins `gainedFootholds`; the link item joins the inventory. Answer `{ success, foothold, inventory, first }`: `foothold` in the client shape of section 6, `first` true when the jack was not yet in `gainedFootholds` |
+| `POST /network/plant` (new, locked) | `jack_id`, optional `device_id` | 1. The jack exists: a room object with `networkJack: true` and a network; otherwise 404 `{ success: false, error: "Jack not found" }`. 2. Object reachable; otherwise 403 `reason: "unreachable"`. 3. A foothold `jack_<id>` exists already: answer it again with `already: true` and write nothing. 4. Rogue device held: with `device_id`, that device must be held, with no fallback to another; without it, the first held in scenario order | Check 4 fails: 422, `reason: "no_device"`. Success: the device leaves the inventory and its room (4.1); `footholds[jack_<id>]` is written with the device's copy; the jack id joins `gainedFootholds`; the link item joins the inventory. Answer `{ success, foothold, inventory, first }`: `foothold` in the client shape of section 6, `first` true when the jack was not yet in `gainedFootholds` |
 | `POST /network/unplug` (new, locked) | `jack_id` | 1. Foothold `jack_<id>` exists. 2. Object reachable (the jack) | The foothold and the link item go; the device's copy returns to the inventory; every session whose `foothold` is this one is deleted. Answer `{ success, inventory, endedPcIds }` |
 | `GET /network` (new) | optional `foothold` | The game's own authorisation. An unknown foothold id answers 404 | `{ footholds: [...] }`: every held foothold (or the one named) with the view of section 6. A game with no footholds answers an empty list: nothing about any network |
 | `POST /login` (changed, locked) | as today, plus optional `foothold` | **Without `foothold`:** as today, with one check added first: the PC is not headless (403 "PC not reachable", the answer for an unreachable PC). **With it:** 1. Host reachable through that foothold; otherwise 403 "PC not reachable". 2. The host's policy does not set `remote: "blocked"`; otherwise 422 "Remote sign-in is turned off on this PC", `remoteBlocked: true`, whatever was typed, and no failure counted. 3 to 5. The first slice's checks 2 to 4 unchanged (lockout, username and password, `access`), on the same per-PC, per-username counters | Success: `sessions[pcId] = { id, via: "password", foothold }`, `signedInPcs`; the answer adds `remote: true` and `footholdId`. Refusals as today |

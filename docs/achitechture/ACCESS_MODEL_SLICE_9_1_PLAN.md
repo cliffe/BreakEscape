@@ -1545,23 +1545,27 @@ after every stream whose files it adds lines to. No other file is in two streams
 **Files other plans also edit.** One plan at a time holds each of these. A builder re-reads the
 file just before editing, edits only its own block, never reformats, and commits with explicit
 paths. The sequence follows the engine plan's "Files shared with the sibling plans" table and
-9.3's section 14, which this table agrees with.
+9.3's section 14 (streams S server, T tooling, C1 and C2 client). **Engine work in build now**
+(E2 for the lock screens and sounds, E1's items 2 and 7 for the RFID sound and refusal times, and
+E5) and the held E2b go first on every file it shares with this slice; those rows say so.
 
 | File | This slice's stream | Also edited by | Sequence |
 |---|---|---|---|
-| `app/models/break_escape/game.rb` | F, A | 9.3a's server stream (including `attach_login_accounts!`), engine E3 and E4, 9.2 | Different methods. 9.3a first, then this slice, then 9.2. The engine streams touch other methods |
-| `app/controllers/break_escape/games_controller.rb` | A (`login_accounts`) | 9.3a, engine E3, 9.2 | 9.3a first, then this slice, then 9.2 |
-| `systems/unlock-system.js` | A | Engine E1 (the RFID branch and refusal lines), 9.3a (the remote sign-in branch of `openLoginSignIn`), 9.2 | E1 first if it has started, then 9.3a, then this slice, then 9.2. Separate blocks |
-| `systems/pc-sessions.js`, `api-client.js`, `core/game.js` | A | 9.3a, 9.2; engine E2 (two preload lines in `core/game.js`) | 9.3a first; one or two lines each |
-| `core/rooms.js` | A (one call) | None named today | Re-read before editing |
-| `systems/door-gates.js`, `test/js/door-gates*.test.mjs` | D | Engine E1 owns both | E1 first, whole file. D after E1 commits |
-| `scripts/validate_scenario.rb`, `scripts/scenario-schema.json` | F, B, D | 9.3a's tooling stream, engine E1, E3 and E4, 9.2 | 9.3a first; engine streams one at a time in their own order; this slice adds its own blocks; then 9.2 |
-| `scripts/generate_dungeon_graph.rb` | B, D | 9.3a, 9.2 | 9.3a first, then this slice, then 9.2 |
-| `README_scenario_design.md` | D, Docs | 9.3a, engine E1, E3, E4 and E5, 9.2 | Each owns its own section. E1's rewrite of "Gate doors" comes before D's paragraph |
-| `tools/playtest/lib/access_leak_scanner.rb`, `access-leak-check.rb`, `verify-run.rb` | E | 9.3a's tooling stream, engine E4, 9.2 | 9.3a first, then E4, then this slice, then 9.2. Own checks only |
-| `docs/test-bridge.md` | Docs (one paragraph) | 9.3a, engine E3 | Own paragraph only |
+| `app/models/break_escape/game.rb` | F (`prepare_scenario_data!`, `npc_habit`, `written_down?`, `filtered_scenario_for_bootstrap`), A (`login_postit_for`, `attach_login_accounts!`) | 9.3 S (including `attach_login_accounts!`), engine E3 and E4 (`add_item_to_room!`, `capture_secrets_for_client` and nearby), **engine E2b** (`generate_scenario_data`, the caller of `prepare_scenario_data!` and the method beside it; held for the user's question 3), 9.2 | Different methods. E2b first if it is released from hold before F starts, and F re-reads `generate_scenario_data` and `prepare_scenario_data!`; otherwise F first and E2b re-reads. 9.3 S first, then this slice, then 9.2. The other engine streams touch other methods |
+| `app/controllers/break_escape/games_controller.rb` | A (`login_accounts`) | 9.3 S, engine E3 and E4, 9.2 | Different methods. 9.3 S first, then this slice, then 9.2 |
+| `systems/unlock-system.js` | A (the desk branch of `openLoginSignIn`) | **Engine E1** (the RFID branch and refusal lines, in build), 9.3 C2 (the remote sign-in branch of `openLoginSignIn`), 9.2 | E1 first, then 9.3 C2, then this slice, then 9.2. Separate blocks |
+| `core/game.js` | A (the `postit-marks.js` import and install) | **Engine E2** (two preload lines, in build), 9.3 C1, 9.2 | E2 first, then 9.3, then this slice. One or two lines each |
+| `systems/pc-sessions.js`, `api-client.js` | A | 9.3 C1 and C2, 9.2 | 9.3 first; one or two lines each |
+| `core/rooms.js` | A (one `syncRoom` call beside `screenStates.syncRoom`, `:863`) | None named today. Engine E2 draws its rising icon from `screen-states.js`, not from here | Re-read before editing |
+| `systems/door-gates.js`, `test/js/door-gates*.test.mjs` | D | Engine E1 owns both | E1's item 3 first, whole file. D after it commits. H9's gates on north and south doors |
+| `scripts/validate_scenario.rb`, `scripts/scenario-schema.json` | F, B, D | 9.3 T, engine E1, E3 and E4, 9.2 | Each stream appends its own block, never reformatting; whoever is second re-reads. Then 9.2 |
+| `scripts/generate_dungeon_graph.rb` | B, D | 9.3 T, 9.2 | 9.3 first, then this slice, then 9.2 |
+| `README_scenario_design.md` | D, Docs | 9.3 T, engine E1, E3, E4 and E5, 9.2 | Each owns its own section. E1's rewrite of "Gate doors" comes before D's paragraph |
+| `tools/playtest/lib/access_leak_scanner.rb`, `verify-run.rb` | E, D (one gate line in `verify-run.rb`) | 9.3 T, 9.2 | 9.3 T first, then this slice, then 9.2. Engine E4 does not edit these two |
+| `tools/playtest/access-leak-check.rb` | E | Engine E4 (the device's DOM walk), 9.2 | E4's block, after 9.3 T; then this slice; then 9.2 |
+| `docs/test-bridge.md` | Docs (one paragraph) | 9.3 T, engine E3 | Own paragraph only |
 | The no-password test, `access_model_withholding_test.rb` | F, A | 9.2 | 9.3a adds its own files and does not edit these. This slice, then 9.2 |
-| `scenarios/lab_physical_pentest/`, `lab_physical_pentest_secrets_test.rb` | L | The feedback pass, 9.3's lab step | The feedback pass, then 9.3's, then this slice's. One builder at a time |
+| `scenarios/lab_physical_pentest/`, `lab_physical_pentest_secrets_test.rb` | L | The feedback pass (the content plan's scenario stream, then the engine plan's lab wiring L); 9.3's lab step | The content plan, then the engine plan's L, then 9.3's, then this slice's. One builder at a time |
 
 Each stream is one builder with review rounds after it (AGENTS.md, "How a round works": at least
 two rounds, at most five). Builders commit with explicit paths, use a scratch folder of their own,
