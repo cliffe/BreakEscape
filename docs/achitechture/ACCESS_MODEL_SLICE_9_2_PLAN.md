@@ -276,8 +276,8 @@ failure belongs either to a **thing** or to the **person**.
   already treats it as no source, turns back an NPC walking to it (reason `off`), grumbles, tries
   the next source and else parks the need, and wakes the need when the object comes back on. For
   the needs this slice judges (5.2) it adds three things: the NPC's sources for that need are its
-  own station and nothing that is somebody's workstation (5.2, "Where a judged need is met"), so a
-  dead station cannot be quietly replaced by a colleague's desk; a judged need whose own station
+  own station and no other desk (5.2, "Where a judged need is met"), so a dead station cannot be
+  quietly replaced by a colleague's PC; a judged need whose own station
   is off always parks, with the reason `off` (today it would say `no_source`, or not park at all,
   section 2); and such a park counts as a failure for frustration (5.4) and says a line (5.5). A
   use already under way when the station goes off finishes, as office life rules (`:2078`), and
@@ -362,21 +362,28 @@ routes that arrive with the borrow (6.4).
 
 1. a PC borrowed for that need, while `s.borrow` is set (6.4);
 2. the NPC's own `needsHome` object;
-3. any object that satisfies the need and is **nobody's workstation**: not a workstation by
-   `isWorkstation`'s rule (`workstation-state.js:89-93`), so a break room tablet or a kiosk object
-   with an `affordance` and no `lockType`, `workstation`, `lockChance` or `locksScreenOnLeave`.
+3. any object that satisfies the need and is **not a desk**. A desk is an object that is a
+   workstation by `isWorkstation`'s rule (`workstation-state.js:89-93`: `workstation: true`, a
+   `locksScreenOnLeave`, a `lockChance`, or `lockType: "login"`), or one whose office preset is
+   `desk_pc` (`presetIdFor`, `office-presets.js:49-58`: a plain `pc`, `pc3`, `pc10`, `laptop` or
+   `workstation` in a scenario with `"officePresets": true`). So a break room tablet or a kiosk
+   object with an authored `affordance` is a source; a colleague's PC is not.
 
-Every other workstation, plain or sign-in, owned or not, private or not, is filtered out in the
-candidate list itself, beside `_isOff` in `_useCandidate`'s filter (`npc-needs.js:1407`) and in
+Every other desk, plain or sign-in, owned or not, private or not, is filtered out in the candidate
+list itself, beside `_isOff` in `_useCandidate`'s filter (`npc-needs.js:1407`) and in
 `_queueCandidate`'s (`:3092`), not through `_permitted`. So it never reaches `_giveUpReason`, and a
 colleague's `private` desk or a busy plain PC can neither silence a failure nor absorb it. For the
-filter the adapter's `describe` (`:3297-3316`) gains `workstation: true` for an object that is a
-workstation by that rule (the rule is copied into `npc-needs.js`, as `requiredGlobalsHold` is,
-because the file imports nothing). A stub world that never sets it keeps today's choices. An NPC
+filter the adapter's `describe` (`:3297-3316`) gains `desk: true`, computed in `createEngineWorld`
+from the object's scenario data with the `isWorkstation` rule (copied into `npc-needs.js`, as
+`requiredGlobalsHold` is, because the file imports nothing) and `window.officePresets.presetIdFor`
+(the module `core/game.js:1977-1978` installs, which `affordanceOf` already reads, `:3277-3282`).
+With presets off, a plain PC that satisfies `work` through its own authored affordance is a desk
+only when it is a workstation by its fields, so an author who means it as somebody's desk sets
+`"workstation": true` on it. A stub world that never sets `desk` keeps today's choices. An NPC
 whose uses are not judged (every NPC today, in `test_access_sessions`, `test_access_signin` and the
-lab among them) chooses as it does now. Without the filter an NPC whose own PC is off would walk to
-the nearest PC with a `work` affordance (a colleague's desk, or the hot desk with no sign-in and no
-session), which is neither the workaround nor what a person does.
+lab among them) chooses as it does now. Without the filter an NPC whose own PC is off would walk
+to the nearest PC with a `work` affordance (a colleague's desk, or the hot desk with no sign-in and
+no session), which is neither the workaround nor what a person does.
 
 **A dead station always parks.** `_giveUpReason` (`npc-needs.js:1541-1557`) gains one rule, placed
 before both of its null returns (`:1543`, every remaining source outside the leash or another
@@ -406,26 +413,53 @@ before it restores anything (`:2158-2164`). When the use is not met:
   (`:1627-1650`) gains one rule: a reason that parks and has no fallback parks the need itself
   (today `parks` only reaches `_park` through the fallback's `_select`). So the NPC logs
   `turned_back`, emits `npc_turned_back:<npcId>` with `reason: "failed"` and `missing`, says one
-  line (5.5), stands up and goes back to the desk, and the need parks for `needsDeferMin`. The
-  builder first proves that `_abortJob` (`:2425-2442`) from the `using` phase frees the station and
+  line (5.5), goes home through `_goHome`, and the need parks for `needsDeferMin`. At its own desk
+  the NPC stays where it is: `_goHome` within `HOME_EPS` only queues an arrival (`:2487-2489`), and
+  `npc_returned_post` fires only for an NPC that had left its post (`:1192-1197`), so no walk and no
+  false return happen. At a borrowed PC it walks back. The builder first proves that `_abortJob` (`:2425-2442`) from the `using` phase frees the station and
   leaves the NPC standing, as it does for an NPC knocked out mid-use.
 - The park records `wakeOn`, the globals that made it fail (each failing resource's `downIf` and
-  the truthy route globals). `onGlobalChanged` (`:551-566`) gains one clause: a parked need whose
-  `wakeOn` names the global, and for which none of them now holds, wakes as a switched-on object
-  wakes it. A `no_access` or `locked_out` failure has no `wakeOn` and waits out its park.
+  the truthy route globals), and `missing`. A failure that includes any cause with no global
+  (`no_access`, `locked_out`, or an `unreachable` whose routes carry no global, which with 9.3a is
+  every `unreachable`, since its routes are only `[]` or `[[]]`) has an empty `wakeOn`: it cannot
+  clear while that cause holds, so it waits out its park. How a `wakeOn` wakes is below.
 - Every other need of that NPC loses `breakDrain` points (not below 0). A person who cannot work
-  goes for coffee sooner, so an outage empties desks through the needs the NPC already has.
+  goes for coffee sooner, so an outage empties desks through the needs the NPC already has. A
+  counted `off` park (the NPC's own station dead) drains the same way, for the same reason.
 - The use is reported to the server (5.4).
 - A **check visit** is queued (5.3) for the first failure that is a resource which is `down` and
   has an `object`, once per outage: the needs state remembers the resource as checked until that
   need is next met, so the NPC walks to the printer once, not every few minutes.
 
 **What wakes a failure's park, and what does not.** A park with the reason `off` or `failed` on a
-judged need is not woken by a door opening or a room loading (`_wakeParked`, `:1583-1596`, skips
-it): a door does not mend a share or a PC. It wakes on its own global (above, and office life's
-rule for a switched-on object) or when its time is up. This keeps an honest NPC from failing again
-seconds after the last failure, which the server's pace floor would refuse (9.1). Every other park
-wakes as today.
+judged need (a **failure park**) wakes only when its own cause clears, or when its time is up. A
+door does not mend a share or a PC, and neither does someone else's coffee machine coming back on.
+`_park` stores `targetId`, `wakeOn` and `missing` on `s.parked[name]` beside its present fields, and
+the wakes are:
+
+- **`_wakeParked()` skips failure parks.** All three of its callers (a door opening, `:541-544`; a
+  room loading, `:990-992`; an `offWhen` object switched back on, `:561-565`) wake every other park
+  exactly as today, and none of them wakes a failure park. Its loop simply passes over a parked
+  need whose reason is `off` or `failed` on a judged need.
+- **A targeted wake for a resource.** `onGlobalChanged(name)` (`:551-566`) gains a first clause,
+  placed **before** the early return at `:552` (which returns when no `offWhen` object has been
+  seen, as in a scenario whose only outages are resource `downIf`s): for each NPC, each `failed`
+  park whose `wakeOn` names `name` and none of whose `wakeOn` globals now holds (`_globalHolds`) is
+  woken, on the pattern of `_wakeParkedFor` (`:1599-1606`): `until` brought forward to
+  `WAKE_BASE_MS` from now, `woken` set.
+- **A targeted wake for a station.** In the existing switched-on clause, the ids of the objects
+  that were off and are now on are collected; each `off` failure park whose `targetId` is one of
+  them is woken the same way, with one difference: its retry comes one use time of that station
+  after the switch-on (its `affordance.useSeconds`, never less than `WAKE_BASE_MS`), the PC starting
+  up again. The general `_wakeParked()` call after it stays, for every other park.
+- A woken failure park records `rearmed: true` on the need (5.4), so the next fail report says the
+  cause cleared in between.
+
+So an honest NPC never fails again within its park unless its cause cleared and came back, and a
+fail after a cleared cause always comes at least one use time after the last fail (a woken
+`failed` park retries and then uses the station for a full use before the verdict; a woken `off`
+park waits a use time first). The server's pace floor rests on both facts (9.1). Every park that
+is not a failure park wakes as today.
 
 **One failure, one count.** A failure counts once, as one park: a `failed` turn-back parks
 directly; an `off` park (the NPC's own station off) is one count; an `off` turn-back that finds
@@ -433,6 +467,13 @@ another source on the fallback is no failure at all (the NPC worked elsewhere). 
 counts a failure on `npc_need_parked:<npcId>` for a judged need with the reason `off` or `failed`,
 and on nothing else. The park event gains `missing` for `failed`, and for `off` it carries the
 station as `targetId`.
+
+**Where the `off` park says its line.** A select-time park says nothing today (`_select`,
+`:1384`). For a counted `off` park, `_select` calls `_grumble` right after `_park`, with the topic
+from `_grumbleTopic` (5.5) and the station as the object, but only when `_select` was not called
+from a turn-back's fallback (`exclude` is null): an `off` turn-back has already grumbled in
+`_turnBack` (`:1635-1639`), and one line per failure is the rule. The decision log's `parked`
+entry gains `grumble:` with the topic, as `turned_back` has it.
 
 ### 5.3 Visits
 
@@ -477,7 +518,11 @@ until each one is due, and it makes the level survive a reload without any clien
 - **Reporting.** On each counted failure (5.2: a park of a judged need with the reason `off` or
   `failed`) the adapter calls `world.reportUse(npcId, { event: "fail", need, objectId, missing })`,
   where an `off` park reports `missing: [{ id: <stationId>, why: "off" }]`, and after a met judged
-  use with frustration above 0, `{ event: "ease", need, objectId }`. A small client module, `systems/npc-reports.js` (new),
+  use with frustration above 0, `{ event: "ease", need, objectId }`. A fail report carries
+  `rearmed: true` when, since that NPC's last counted failure of that need, its park was woken by
+  its own cause clearing (5.2) or a met use of the need came in between; the needs state keeps the
+  mark per need (`s.rearm[need]`) and clears it when the next fail is reported. It tells the
+  server that this failure belongs to a new outage, not the old one (the floor in 9.1). A small client module, `systems/npc-reports.js` (new),
   queues reports and sends them together, at most one `POST /npc_frustration` every two seconds,
   at most 20 reports in one request (section 9.1). A failed use at a borrowed PC is not reported:
   it is the same episode as the failure that sent the NPC there (6.4).
@@ -537,40 +582,65 @@ A workaround is only an opening if the player can see it coming. All of this use
   and she gives up" looks different from "just started", and it works with `"chatter": false`.
 - **The mutter is a grumble.** One line on each counted failure or refused use, and one when a
   workaround starts. It is office life's grumble, not a new state: `_grumble(s, objectId, reason,
-  topic)` with the topic chosen below, which sets `s.saying` through `_showSaying`, so
+  topic, opts)` with the topic chosen below, which sets `s.saying` through `_showSaying`, so
   `getState().talking` returns it with `partnerId: null`, `_buildSpeakers` lists the speaker for
   seated colleagues to look round at, and the bubble renderer draws it as it draws any grumble.
-  `_pickBark` gives the line when the NPC is off its chatter cooldown and the speech lock is free,
-  and otherwise the topic's picture (the need's own icon for `off` and `failed`, as for office
-  life's `off`). A failure's grumble passes `ignoreCooldown: true`, so the cause is said in words
-  whenever the speech lock allows. The workaround runner reaches it through one public method,
-  `NPCNeedsSystem.mutter(npcId, topic)`, which calls the same two. A scenario's `chatter` replaces
-  a pool by name as it does now; the line comes from the seeded bag; every pool line is at most 40
-  characters, held by the validator's existing pool check. **A grumble is voiced** where the NPC
-  has a voice and the player is in the room (`npc-needs-chatter.js`, `say`), so a mutter line that
-  ships in a scenario with voiced NPCs is a line to voice (the `tts-audio` skill), and is silent
-  (bubble only) until it has a clip. Under `"chatter": false` there is no line and no picture; the
-  icon still shows.
+  `_grumble` gains an options argument, `{ ignoreCooldown, icons }`, passed to `_pickBark`
+  (`:1721`). A failure's grumble passes `ignoreCooldown: true`, so the cause is said in words
+  whenever the speech lock allows, and it does **not** pass the need's own icon (today's `:1663`
+  rule for `off` and `gone`): its picture is the topic's own, so a dead PC and a jammed printer
+  look different even with no line (the pictures are below). `_turnBack` and the `off` park (5.2)
+  call it this way for a judged need; every other grumble is unchanged. The workaround runner
+  reaches it through one public method, `NPCNeedsSystem.mutter(npcId, topic)`, which calls the
+  same two with `ignoreCooldown: true`. **A grumble is voiced** where the NPC has a voice and the
+  player is in the room (`npc-needs-chatter.js`, `say`, `:237`), so a mutter line in a scenario
+  with voiced NPCs is a line to voice (the `tts-audio` skill), and is silent (bubble only) until
+  it has a clip. Under `"chatter": false` there is no line and no picture; the icon still shows.
+- **Where the lines live: in the scenario.** Office life ships no spoken text, by design (section
+  2), and this slice keeps that rule: every mutter line is authored in the scenario, in its
+  top-level `chatter` (said by any NPC, which suits lines that name a kind of thing and no person)
+  or in an NPC's own `chatter`. `chatterPool` **adds** the NPC's pool to the scenario's; nothing
+  replaces a pool. Each line comes from the NPC's seeded bag and is held to the validator's
+  existing pool check (40 characters, one line, no `{ }`). The slice ships a small default set in
+  its feature scenarios, which an author copies: `test_access_work` carries every pool below
+  except `social_blocked` (11.1), and `test_access_social` carries `social_blocked` (11.2). The
+  author document lists every pool name, when it is said and what it should say. A student must
+  hear what they broke, so the validator warns, for each NPC with a `work` plan or a
+  `social_media` need, for each cause that NPC can meet (the "can fail" rule of 9.1, read cause by
+  cause), when no pool that the order below would reach for that cause has a line; likewise for
+  `usb_refused` on an NPC that can be refused a device, for each workaround's start pool, and for
+  `login_aloud` on a `share_login`. The warning is skipped under `"chatter": false`.
 - **Which pool, on a failure.** The pool is chosen at the moment of the failure, from the `tell`
   the NPC holds then (the answer to the previous report), and the line is held for its time; the
-  answer that arrives afterwards changes the icon, never the line already said. In order:
-  1. `tell` 2: `work_fail_fed_up` ("That's it. I've had enough.", "I am not waiting any longer.");
+  answer that arrives afterwards changes the icon, never the line already said. `_grumbleTopic`
+  (`:1686-1692`) gains this order for a judged need, so the decision log's `grumble:` names the
+  pool that spoke. It takes the first pool in the order that has a line:
+  1. `tell` 2: `work_fail_fed_up` (for example "That's it. I've had enough.");
   2. otherwise the cause's own pool: the NPC's own station off, or `locked_out`, `station_fail`
-     ("This PC is useless.");
-     `social_blocked` ("Blocked. Of course."); a `no_access` failure `work_fail_no_access` ("Still
-     no access. Nobody listens."); a resource that is down or unreachable `work_fail_<kind>` by the
-     first missing resource's `kind`: `work_fail_file_share` ("Share's down again."),
-     `work_fail_email` ("Email's not sending."), `work_fail_printer` ("Printer's jammed again.");
-  3. `work_fail` ("Why is nothing working?") for a kind with no pool of its own.
+     ("This PC is useless."); `social_blocked` ("Blocked. Of course."); a `no_access` failure
+     `work_fail_no_access` ("Still no access. Nobody listens."); a resource that is down or
+     unreachable `work_fail_<kind>` by the first missing resource's `kind`:
+     `work_fail_file_share` ("Share's down again."), `work_fail_email` ("Email's not sending."),
+     `work_fail_printer` ("Printer's jammed again.");
+  3. `work_fail` ("Why is nothing working?").
 
-  So a student hears the thing they broke named, and hears the tone change before the person acts.
-  A refused USB device says `usb_refused` ("USB's disabled. Typical."), whatever the `tell`.
+  With no line anywhere in the order, the topic is the cause's own pool (step 2), for its picture.
+  `PICTURE_CHATTER` (`:70-87`) gains an entry per new pool from icons that exist (section 2):
+  `station_fail`, `work_fail_no_access`, `work_fail_fed_up`, `social_blocked` and `usb_refused`
+  show `blocked`; `work_fail_file_share` shows `file`; `work_fail_printer` shows `print`;
+  `work_fail_email` and `work_fail` show `work`; `wk_writes_down`, `wk_prop_door`, `wk_borrow`
+  and `wk_share_login` show `work`; `login_aloud` shows `social`. A `work_fail_<kind>` with no
+  entry of its own falls back to `work_fail`'s picture. So a student hears the thing they broke
+  named, or at least sees its picture, and hears the tone change before the person acts. A refused
+  USB device says `usb_refused` ("USB's disabled. Typical."), whatever the `tell`. The quoted
+  lines are the feature scenarios' defaults, not engine text.
 - **Which pool, when a workaround starts.** Each workaround says a line from its own pool as the
   hand-over starts its visit, so the act is tied to the outage in words: `wk_writes_down` ("I'll
   never remember this one."), `wk_prop_door` ("I'm not badging in every time."), `wk_borrow`
   ("I'll use the spare PC."), `wk_share_login` ("I'll get someone to run it."), and none for `emit`.
   The line's timing depends on the answer's arrival; its choice stays seeded. On arrival at the
-  colleague, `share_login` says its spoken line from `login_aloud` (6.5).
+  colleague, `share_login` says its spoken line from `login_aloud` (6.5). These pools are
+  scenario-authored as well, with the same defaults in `test_access_work`.
 - **The action icon for a visit.** While a workaround visit runs, the action icon slot shows
   the existing `npc-work` picture, so a person walking somewhere for a reason looks different from
   one wandering for coffee.
@@ -599,17 +669,26 @@ noticed"), so the gap is closed by one client rule:
 - when one of them turns on, or is on when the NPC registers, the NPC's `work` level is lowered to
   `urgentAt` (never raised), once per change. A `work` need already parked for a failure is left
   parked: the NPC already knows;
-- the NPC therefore tries to work at the next selection: within about one use time when idle, or
-  as soon as a running job (a coffee, a chat) ends.
+- the NPC therefore tries to work at the next selection. `_select` runs only for an NPC that is
+  idle or returning (`_tickNpc`, `:1128-1240`): not during a job, not while frozen in a
+  conversation with the player (`inChatWith`), not on a desk-phone call (`s.call`). A pair chat
+  between NPCs is not a job of its own (`_talking`, `:2684-2702`); it runs over a shared use or
+  queue at a chatter object, so it is part of that job, and an NPC whose use ends mid-chat goes
+  home when the chat ends (`:2827`). So the kick takes effect within about one use time for an NPC
+  at its desk, and otherwise as soon as its current job, with any chat over it, is done and it is
+  idle again.
 
 It is what a person at a desk does when the share drops: they notice the next time they press
 save. It is driven by the player's own act, so the decision log stays a function of the seed and
 the player's actions. `social_media` gets the same rule for its station's `offWhen` only; a
 `social: "blocked"` policy is not an event and has no kick.
 
-**Clearing it.** A resource coming back up wakes the parks it caused (`wakeOn`, 5.2); a station or
-printer switched back on wakes the parks office life already wakes (section 2). The NPC then
-tries at once, and a met use eases frustration.
+**Clearing it.** A resource coming back up wakes the `failed` parks it caused (`wakeOn`, 5.2); a
+station switched back on wakes its owner's `off` park after one use time (5.2); a printer or any
+other object switched back on wakes the parks office life already wakes (section 2). The NPC then
+tries, and a met use eases frustration. A check visit is once per outage (5.2): an outage thrown,
+cleared and thrown again with no met use in between is the same outage to the NPC, so it gives no
+second check visit. That is intended; a re-armed beat waits for one met use between (W4).
 
 ## 6. Workarounds (sub-slices B, H and L)
 
@@ -719,9 +798,11 @@ next load.
 
 - **Authoring.** `pc` names a sign-in PC that has no owner, is not `private`, is not `headless`
   (9.3a: a PC with no screen cannot be sat at), admits the NPC's account, is not under a policy
-  with `autoLockMin: 0`, and satisfies the need (an `affordance`, or an office preset, whose
-  `satisfies` lists `work`, or `social_media` for an NPC who borrows for that; without it the use
-  would restore nothing). The validator errors on each. The NPC must have an account.
+  with `autoLockMin: 0`, and satisfies the need through an authored `affordance` whose
+  `satisfies` lists `work` (or `social_media` for an NPC who borrows for that); a sign-in PC never
+  takes an office preset (section 2), and without the affordance the use would restore nothing.
+  The validator errors on each. The NPC must have an account, and it leaves the hot desk open
+  only with a `screenHabit` that says so (below).
 - **One mechanism.** A borrow is an ordinary use job chosen by the selector, not a visit. The
   runner calls `NPCNeedsSystem.setBorrow(npcId, run)`, which sets `s.borrow = { index, hand, pc,
   need, routes, startBy }` for the need that failed and unparks it (`_unpark`), so the NPC
@@ -766,13 +847,23 @@ next load.
   `workstation_owner_left:<pcId>` fires with `{ objectId, ownerId: <npcId>, screenLocked: false,
   reason: "guest" }`. The locked-screen look and the indicator dot follow those events as now.
   `s.borrow` is cleared; a later hand-over sets it again.
-- **A careful guest.** Where slice 9.1 is built and the NPC's saved `screenHabit` always locks
-  (`AccessIdentities.screen_always_locks?` with no PC field: a `screenHabit` filled from
-  `locksScreen: always`, or an authored one with `lockChance` 1 and no `lockIfAwayOverSeconds`),
-  the server sends `leavesOpen: false` in `run`: the NPC works at the hot desk and signs out, no
-  guest record is made, and the server's guest claim refuses on the same test. `sometimes`, and a
-  habit with a `lockIfAwayOverSeconds`, count as leaving open, with no roll at a borrowed PC (9.1's
-  14.2). No habit reaches the browser. The validator warns that such a workaround opens nothing.
+- **A careful guest, and the guest rule.** A borrower leaves the hot desk signed in only when it
+  is meant to, and an NPC who is meant to leave a hot desk session open must say so. The rule is
+  the owner rule of `decideLocked` (`workstation-state.js:129, 134`: no habit locks), applied to the
+  guest with no PC field: a guest is **careful** when 9.1's `AccessIdentities.screen_always_locks?`
+  with no PC field is true for it, which includes **no `screenHabit` at all**, a habit with no
+  numeric `lockChance`, an authored `lockChance` of 1, and one filled from `locksScreen: always`.
+  A guest **leaves the session open** only with an authored `screenHabit` whose `lockChance` is
+  below 1, typically `{ "lockChance": 0 }`, or one filled from 9.1's `locksScreen: "never"` (or
+  `sometimes`); a habit with a `lockIfAwayOverSeconds` counts as leaving open too, with no roll at
+  a borrowed PC. For a careful guest the server sends `leavesOpen: false` in `run`: the NPC works
+  at the hot desk and signs out, no guest record is made, and the server's guest claim refuses on
+  the same test (its check 7, 9.1). The validator warns, on the same test, that such a workaround
+  opens nothing. No habit reaches the browser. Where 9.1 is not built, sub-slice H builds
+  `screen_always_locks?` as 9.1's section 5.2 defines it, and 9.1 then keeps it. The feature
+  scenarios author the habit on every borrower (Ian, Dana and Jake in 11.1, Omar in 11.2), with a
+  `lockChance` on each one's own PC where the beat needs that PC to lock, because the object's
+  field wins over the habit.
 - **The claim.** With a guest record and nobody at the PC, `onInteract` returns `accessed`, and
   `interactLoginPc` (`unlock-system.js`) claims through `pc-sessions.js` with `claim: "guest"`.
   The server's checks are in section 9.1. The desktop is the guest's: the PC's own contents and every
@@ -939,8 +1030,8 @@ an NPC with this need the candidates are, in order:
 1. a PC borrowed for it (6.4), when one is in force;
 2. the NPC's own `needsHome` object, when it is a workstation whose policy allows social media and
    which is not off (`affordance.offWhen`);
-3. any object whose `affordance.satisfies` lists `social_media` (a break room tablet), by the usual
-   nearest-reachable rule;
+3. any object whose `affordance.satisfies` lists `social_media` and that is not a desk (5.2: a
+   break room tablet), by the usual nearest-reachable rule;
 4. the NPC's **phone**, unless `"phone": false`;
 5. the NPC's own workstation even though its policy blocks social media: an attempt that fails. A
    workstation that is off is no source at all, as for work, and its park counts as a failure
@@ -1068,28 +1159,57 @@ Globals are written by the browser, so for those three causes this is consistenc
 not protection; `no_access`, `social_blocked` and `locked_out` are the server's own facts.
 
 **Pace floors.** All in server time and all at 0.9 of the honest client's shortest interval; the
-tenth is slack for clock rounding and for the two second batch window (which is why the validator
-asks for a `needsDeferMin` of at least 0.5 on an NPC with a `work` plan). The needs clock follows frame time, which never runs faster than server time.
+tenth is slack for clock rounding, and the two second batch window is taken off where an interval
+is short enough for it to matter. The validator asks for a `needsDeferMin` of at least 0.5 on an
+NPC with a `work` plan, so the park floor's tenth (3 seconds or more) covers the batch window too.
+The needs clock follows frame time, which never runs faster than server time in play; the test
+bridge's manual clock (`setManualClock` and `step`, section 2) can, so a run never steps the needs
+clock while an outage holds (11, point 4).
+
+Two intervals are used. The **park floor** is `0.9 x needsDeferMin x 60` seconds, `needsDeferMin`
+read from the NPC as authored, default 4. The **use floor** is `0.9 x u - 2` seconds, not below 0,
+where `u` is the use time of the station the report names (its `affordance.useSeconds`, else its
+preset's, from `access_work.rb`, section 10).
 
 - **The first fail** for an NPC and need has no floor beyond the NPC being known (`metAt`, written
   by `track_npc_encounters` for an NPC with a `work` plan or a feed, 9.4): with the outage kick
-  (5.6) and a station that is off, an honest NPC fails at its first selection.
-- **A later fail** is counted at most once per 0.9 of the park (`0.9 x needsDeferMin x 60`
-  seconds, `needsDeferMin` read from the NPC as authored, default 4). A failure's park is woken
-  early only by its own cause clearing, never by a door (5.2), and a cleared cause means the next
-  use is met, so an honest client never fails twice inside one park.
-- **An ease** is counted at most once per 0.9 of the station's use time: met uses are spaced by
-  the need's period, which can be shorter than the park, so tying eases to the park would lose
-  honest eases.
+  (5.6) and a station that is off, an honest NPC fails at its first selection, which can be the
+  moment its room loads.
+- **A later fail** is held to the park floor after the last accepted fail for that NPC and need,
+  unless one of two things lies between them, in which case it is held only to the use floor
+  after the later of that fail and that ease:
+  1. **an accepted ease** for that NPC and need: the NPC worked, so this failure is a new episode;
+  2. **`rearmed: true`** on the report (5.4: the park was woken by its cause clearing, or a met use
+     came between), when **every** cause the report lists is one the browser controls: `down`,
+     `off`, or an `unreachable` whose need's `routes` carry a global. A cause the server owns
+     (`no_access`, `social_blocked`, `locked_out`, or an `unreachable` with no route global)
+     cannot clear, so a report that lists one keeps the park floor whatever it says.
+
+  This is what an honest client does. Inside one park a failure park is woken only by its own
+  cause clearing (5.2), never by a door, a room or another object, and a failure with a cause the
+  server owns has no `wakeOn` and is never woken. A woken park always costs at least one use time
+  before the next failure can be judged (a full use for `failed`, the start-up wait for `off`,
+  5.2), and a met use takes a use time too. So a player who throws an outage, clears it, waits for
+  the NPC and throws it again (W4's re-arm), or throws, clears and throws again before the NPC has
+  worked, gets every failure counted, and a borrowed PC's met use (an ease) lets the next failure
+  at a locked-out owner's own PC count (L1).
+- **An ease** is counted at most once per use floor after the last accepted ease for that NPC and
+  need: met uses are spaced by the need's period, which can be shorter than the park, so tying
+  eases to the park would lose honest eases. An ease for `work` from an NPC with a resource it is
+  not admitted to is refused (answered `refused`, nothing written): that NPC's work is never met
+  anywhere (5.2), so such an ease is never an honest report, and refusing it keeps the park floor
+  binding on the one NPC whose failures come with no player action (W5).
 - Fails and eases are floored per NPC **and per need**, so an NPC failing at both work and social
   media loses neither report. The price is stated, not hidden: such an NPC can be walked up at up
   to twice the rate of one need (9.3).
 - **A "done"** is accepted no sooner than the workaround's dwell after its hand-over.
 - **A post** is served no sooner than 0.9 of the need's period (8.3) after that NPC's last one.
 
-Every case where an honest client could meet a floor is designed out above: a failed borrowed use
-is not reported (6.4), an ease floor follows the use time, and the batch window is inside the
-slack.
+Every case where an honest client could meet a floor is designed out above: a toggled outage is a
+new episode (point 2), a met use between two failures is an ease (point 1), a failed borrowed use
+is not reported (6.4), the ease and use floors follow the use time less the batch window, and the
+park floor's slack covers the batch window. A run that steps the needs clock by hand is not an
+honest client in this sense; `PLAYTEST.md` says so (11.1).
 
 **Ceilings.** A request carries at most 20 reports; more is a 422. The client sends at most one
 report request every two seconds, sends no fail for a settled NPC, and stops asking for posts when
@@ -1098,7 +1218,7 @@ told the feed is done. Each scripted run checks the number of requests against a
 
 | Route | Sub-slice | Parameters | Checks, in order | Writes and answer |
 |---|---|---|---|---|
-| `POST /npc_frustration` (new, locked) | A; `run` from B; `check` in L | `reports`: a list of `{ npc_id, event, need, object_id, missing }`, `event` being `fail`, `ease` or `check` | Per report. 1. NPC known. 2. `fail`: can fail. 3. `fail`: a cause holds. 4. `fail` and `ease`: the pace floor for that NPC and need. `check`: the object is a sign-in PC this NPC owns, under a policy with `maxAttempts` | One answer per report, in order. `fail`: level up by `perFail`, at most 100; then choose `run` (section 6), record the hand-over, its number and its time. `ease`: level down by `easePerSuccess`, at least 0; never a `run`. Both answer `{ npcId, level, previous, tell, settled, run }`. `check`: `{ npcId, lockedOut }`; a true answer records the PC in that NPC's `lockedOut` list (9.4), and nothing else is written. Check 1 or 2 fails: `{ npcId, refused: true }`. Check 3 fails: `{ npcId, stale: true }`. Check 4 fails: the current `{ level, tell, settled }` with `tooSoon: true`. A refused, stale or too-soon report writes nothing |
+| `POST /npc_frustration` (new, locked) | A; `run` from B; `check` in L | `reports`: a list of `{ npc_id, event, need, object_id, missing, rearmed }`, `event` being `fail`, `ease` or `check` | Per report. 1. NPC known. 2. `fail`: can fail; `ease` for `work`: no resource in the NPC's resolved list is unadmitted. 3. `fail`: a cause holds. 4. `fail` and `ease`: the pace floor for that NPC and need (a fail's floor read with its `rearmed` flag and causes). `check`: the object is a sign-in PC this NPC owns, under a policy with `maxAttempts` | One answer per report, in order. `fail`: level up by `perFail`, at most 100; then choose `run` (section 6), record the hand-over, its number and its time. `ease`: level down by `easePerSuccess`, at least 0; never a `run`. Both answer `{ npcId, level, previous, tell, settled, run }`. `check`: `{ npcId, lockedOut }`; a true answer records the PC in that NPC's `lockedOut` list (9.4), and nothing else is written. Check 1 or 2 fails: `{ npcId, refused: true }`. Check 3 fails: `{ npcId, stale: true }`. Check 4 fails: the current `{ level, tell, settled }` with `tooSoon: true`. A refused, stale or too-soon report writes nothing |
 | `POST /npc_workaround` (new, locked) | B, H | `npc_id`, `index`, `hand`, `heard`, `room_id`, `dropped` | 1. NPC known. 2. `hand` is that workaround's last spent hand-over and was spent as done: answer the same body again, recomposed, and write nothing. 3. Otherwise `hand` is handed over and not yet spent. 4. Unless `dropped`: at least the workaround's dwell since the hand-over. 5. `share_login` with `heard`: `room_id` is a room the `with` NPC can be in (its own, plus its `needsRooms`) and is open to the player (never locked, or `room_unlocked?`); otherwise it is taken as not heard | The hand-over is spent and recorded in `lastSpent`. `dropped`: nothing else; answer `{}`. Otherwise add `index` to `done` (lasting ones), set a declared `setGlobal` true, and by kind: `writes_down`: answer `{ pcId, hasPostit: true }`. `prop_door`: unlock the room and answer `{ roomId, roomData }` through `serve_opened_room` (below). `emit`: `{}`. `borrow_session`: `guestSessions[pc] = npcId`, clear `sessions[pc]`; `{}`. `share_login` heard: add the NPC to `sharedLogins` once, keep it in turn, answer `{ capture, line, note }`; not heard: `{}`. Check 3 fails: 403. Check 4 fails: 425, and the client sends it again after the dwell |
 | `POST /login` with `claim: "guest"` (changed, locked) | H | `pc_id`, `claim` | 1. PC reachable (first slice), not headless, and no foothold (9.3a). 2. No session is held at the PC. 3. `guestSessions[pcId]` names an NPC. 4. That NPC has an account. 5. The PC's `access` admits it. 6. The PC's policy is not `autoLockMin: 0`. 7. That NPC's saved `screenHabit` does not always lock (9.1's `screen_always_locks?` with no PC field) | Success: `sessions[pcId] = { id, via: "claim" }`, add to `signedInPcs`; the answer a claim gives today. Failure: "Sign in required" |
 | `POST /login` with `claim: "owner"` (changed, locked) | L | as today | As today, plus: refused when `loginLockouts` holds the owner's username at that PC | As today; refusal "Sign in required" |
@@ -1150,7 +1270,8 @@ Where the code goes:
 
 - `compile_npc_plan!(npc)` (new) runs in the NPC loop of `filter_requires_and_contents_recursive`
   (`game.rb:4027-4030`) just before `withhold_npc_secrets!`, because it needs `role`, which that
-  method deletes. NPCs added by `update_room` are merged before the filter runs, so they are
+  method deletes. It attaches `work` only when the NPC's resolved work list is not empty (5.2,
+  "judged"). NPCs added by `update_room` are merged before the filter runs, so they are
   covered. In a scenario with `networks` it calls 9.3's `NetworkModel.reach_conditions` here for
   `routes`, and 9.3a's `resource_acl_admits?` for `admitted`.
 - `WITHHELD_NPC_KEYS` (`game.rb:4048`) gains `workNeeds`, `frustration` and `feed`. `workarounds`
@@ -1200,13 +1321,22 @@ in server time.
 A browser that has been modified can, for any NPC whose room has loaded, with no outage caused in
 play and without the player standing anywhere in particular:
 
-- set the outage global itself and report failures at the pace floors, so reach a workaround after
-  `(ceil(at / perFail) - 1) x 0.9 x needsDeferMin x 60` seconds of server time from the first
-  counted fail, which can itself come as soon as the room loads; plus the workaround's dwell. When
-  `at` is at or below `perFail` that is **at once**: the workaround is handed over on the first
-  report. With the defaults (`perFail` 25, `needsDeferMin` 4) a workaround at 50 is about 216
-  seconds away, and with the feature scenario's `needsDeferMin` of 0.5, about 27. Floors are per need, so for an NPC with
-  two needs that can fail the figure is about halved;
+- set the outage global itself and report failures marked `rearmed` (or alternate them with
+  eases) at the use floor, so reach a workaround after `(ceil(at / perFail) - 1) x (0.9 x u - 2)`
+  seconds of server time from the first counted fail, `u` being the station's use time, which can
+  itself come as soon as the room loads; plus the workaround's dwell. When `at` is at or below
+  `perFail` that is **at once**: the workaround is handed over on the first report. With the
+  defaults (`perFail` 25, a desk preset's 10 second use) a workaround at 50 is about 7 seconds
+  away, and with the feature scenario's (`perFail` 20, 5 second uses) about 5. For an outage the
+  browser controls, the floors measure pacing only: the browser writes that global and could
+  clear and set it at will. For a cause the server owns they bind harder: an NPC whose only cause
+  is `no_access` is held to the park floor, `(ceil(at / perFail) - 1) x 0.9 x needsDeferMin x 60`
+  seconds (about 216 with the defaults), because its eases are refused; a `locked_out` or
+  `social_blocked` NPC can be walked up by alternating claimed eases and fails, each pair at least
+  two use floors apart, gaining `perFail - easePerSuccess` per pair (nothing when
+  `easePerSuccess` is at least `perFail`), and only after the player has really locked the owner
+  out or the policy really blocks. Floors are per need, so for an NPC with two needs that can fail
+  every figure is about halved;
 - then read a `writes_down` password from `/login_accounts`;
 - open a `prop_door` room;
 - claim a guest session at a hot desk;
@@ -1337,12 +1467,24 @@ Warnings:
   already checks an `offWhen`);
 - an NPC with a `work` plan whose `needsDeferMin` is under 0.5 (the park is the retry wait, and the
   server's pace floor needs that much slack, 9.1);
+- an NPC with a `work` plan whose `needsHome` object satisfies no `work` (a sign-in PC takes no
+  office preset, so it needs an authored `affordance`): the NPC has no station, so its work goes
+  to any non-workstation source or nowhere, and a dead or locked PC never counts;
+- an NPC with a `work` plan or a `social_media` need with no mutter line for a cause it can meet
+  (5.5): for each cause the "can fail" rule allows that NPC (its station off or `locked_out`, each
+  unadmitted resource, each resource with a `downIf` or routes that can fail, a blocking `social`
+  policy), no pool the order of 5.5 would reach has a line in the scenario's `chatter` or the
+  NPC's own. Likewise `usb_refused` for an NPC that can be refused a device, each workaround's
+  start pool, and `login_aloud` for a `share_login`. The student would see only a picture. Not
+  reported under `"chatter": false`;
 - a resource no NPC needs that also has no `contents` and no `host` (slice 9.3 authors resources
   that exist only for the player; those have one or the other and are not reported);
 - `prop_door` by an NPC whose own card and role do not open that door;
 - `writes_down` where the home PC authors a `postitNote` or sets `showPostit: false`;
-- `borrow_session` by an NPC whose `screenHabit` always locks (authored, or filled from 9.1's
-  `locksScreen: always`, read on the expanded copy where 9.1 is built): it opens nothing;
+- `borrow_session` by a careful guest (6.4: `screen_always_locks?` with no PC field is true for
+  the NPC, read on the expanded copy where 9.1 is built), which includes an NPC with **no**
+  `screenHabit`: it opens nothing. The warning says to author `"screenHabit": { "lockChance": 0 }`
+  or `locksScreen: "never"` on a borrower meant to leave the session open;
 - `lockChance` or `locksScreenOnLeave` on a PC named by `borrow_session` (a guest ignores them);
 - a post with a `fact` on an NPC whose awareness level is `high`, unless `"deliberate": true`;
 - a `usb` policy other than `allowed` that governs only objects accepting tags whose items have no
@@ -1362,10 +1504,11 @@ Report lines, in the style of the needs timing report:
   (`n = ceil(at / perFail)`); whether the player sees a warning first ("tell 1, tell 2, then the
   workaround", or "no warning"); the **honest time** an outage takes to bring it, in real seconds:
   about one use time to the first failure (the outage kick, 5.6), plus
-  `(n - 1) x (needsDeferMin x 60 + useSeconds)`; and the earliest a modified browser can reach it,
-  `(n - 1) x 0.9 x needsDeferMin x 60` seconds after the first counted fail, printed
-  "at once" when `n` is 1 and halved where the NPC has two needs that can fail (9.3). `prop_door`
-  adds "stays open for the mission";
+  `(n - 1) x (needsDeferMin x 60 + useSeconds)`; and the earliest a modified browser can reach it
+  after the first counted fail: `(n - 1) x (0.9 x useSeconds - 2)` seconds (not below 0) when any
+  cause the NPC can meet is one the browser controls, else `(n - 1) x 0.9 x needsDeferMin x 60`,
+  printed "at once" when `n` is 1 and halved where the NPC has two needs that can fail (9.3).
+  `prop_door` adds "stays open for the mission";
 - per NPC with a feed: the minute each post is expected.
 
 Tests: `test/js/validator-access-work.test.mjs` (new, in the pattern of
@@ -1415,7 +1558,10 @@ The first slice's approach, unchanged in kind (its plan, section 8, "How the sli
    beat that needs a frustration level or a post is never reached by stepping the needs clock: the
    server would refuse the reports. The feature scenarios use short parks and fast needs so
    each such beat takes one to four minutes of waiting. The needs clock is stepped only for the
-   auto lock (a client rule), and such moves are marked "exercised, not earned".
+   auto lock (a client rule), and such moves are marked "exercised, not earned". It is never
+   stepped while an outage holds or a failure park is running: a stepped clock outruns server time
+   (section 2), the NPC's next failure comes sooner than the server's floor allows, and the report
+   is refused as `tooSoon`. `PLAYTEST.md` says this at the top of its script.
 5. **Needs regression**: `tools/playtest/needs-baseline-capture.js` on `test_needs_sims`,
    `test_npc_needs` and `test_needs_leash` before and after each sub-slice's needs changes,
    compared with `needs-baseline-compare.js`. None of the three has resources, a `usbClass` item,
@@ -1457,11 +1603,17 @@ tooling stream (section 13):
 
 ### 11.1 `scenarios/test_access_work` (sub-slices U, A, B, H and L)
 
-Shared set-up. Policies: `managed` (`usb: "storage_blocked"`, `autoLockMin: 5`), `locked_down`
+Shared set-up. `"officePresets": true` (the coffee station and the plain PC in W6 take their
+presets). Policies: `managed` (`usb: "storage_blocked"`, `autoLockMin: 5`), `locked_down`
 (`usb: "blocked"`), `lax`, `strict` (`maxAttempts: 3`); `defaultPolicy: "managed"`. Resources:
 `email`; `finance_share` (`access` finance, `downIf: "finance_share_down"`); `printer` (`object:
-"office_printer"`, `downIf: "printer_jammed"`). `roles.staff.frustration` is `{ "perFail": 20 }`,
-every desk owner has `"needsDeferMin": 0.5` (a failure's park is 30 seconds), and every workaround in the beats is at 50 unless the beat says otherwise, so a
+"office_printer"`, `downIf: "printer_jammed"`). Roles: `roles.staff` is `{ "workNeeds": ["email"],
+"frustration": { "perFail": 20 } }` and `roles.finance` is `{ "workNeeds": ["finance_share"] }`, and
+every desk owner has the role `staff` (finance staff `["finance", "staff"]`), so every desk owner
+has a `work` plan and its uses are judged. No NPC in the scenario has a `needsRooms` leash. Every
+PC an NPC works at, sign-in or plain, authors `"affordance": { "satisfies": "work", "useSeconds":
+5 }` (a sign-in PC takes no office preset), and the hot desks author the same. Every desk owner
+has `"needsDeferMin": 0.5` (a failure's park is 30 seconds), and every workaround in the beats is at 50 unless the beat says otherwise, so a
 student sees the warning build before the act: the first failure gives `tell` 1 (level 20), the
 second `tell` 2 and the pulse (level 40), and the third, about 70 seconds after the outage, brings
 the workaround with its start line (level 60). Every owner's `work` need is fast
@@ -1472,33 +1624,48 @@ global is false, "Switch it back on" while it is true), the safe toggle the lab'
 (section 2). Two plain conditional actions on one object would flip twice, because conditions are
 tested one action at a time.
 
+**The mutter lines.** The scenario's top-level `chatter` ships the default mutter set of 5.5, one
+or two lines per pool, every line under 40 characters and naming no person: `work_fail_fed_up`,
+`station_fail`, `work_fail_no_access`, `work_fail_file_share`, `work_fail_email`,
+`work_fail_printer`, `work_fail`, `usb_refused`, `wk_writes_down`, `wk_prop_door`, `wk_borrow`,
+`wk_share_login` and `login_aloud`, with the lines quoted in 5.5 and 6.5. This is the set an author
+copies. Every beat's "the mutter" below is one of these lines, and the validator's mutter warning
+(section 10) finds a line for every cause every NPC here can meet.
+
+**The borrowers.** Every NPC with a `borrow_session` (Ian, Dana, Jake) authors `"screenHabit": {
+"lockChance": 0 }`, so each leaves the hot desk signed in (6.4), and each one's own PC carries
+`"lockChance": 1`, which wins over the habit there.
+
 | Beat | Room and set-up | What should happen | Server record afterwards |
 |---|---|---|---|
 | U1 Storage refused, then the kiosk | `usb_room`: Lena Fox with interests in `dev_usb` and `dev_badusb`; `lena_pc` (her post, accepts both, under `managed`); `kiosk_pc` (accepts `dev_usb`, under `lax`). On the lobby table: `kit_usb` (`usbClass: "storage"`) and `kit_badusb` (`usbClass: "hid"`) | Drop the storage stick: she carries it to her PC, `npc_use_refused:lena_pc`, a mutter, then to the kiosk, `npc_used:kiosk_pc`. Drop the keyboard-type device: her PC takes it, `npc_used:lena_pc` | None (the beat's tasks complete from the two events) |
 | U2 Refused outright, and the player's own plant | `vault_room`: Priya Nair; `priya_pc` under `locked_down` is the only object that accepts her tag; `priya_dock`, a `requiresItem` object that names `locked_down` | A dropped storage stick is refused, put down by her PC and left there. Clicking the dock while holding the stick shows "USB devices are disabled on this PC." and the stick stays in the inventory | None |
 | U3 A default policy does not reach a tray | `post_room`: Kofi Mensah with an interest in `dev_usb`; `lost_property_tray`, not a workstation and with no `policy`, accepts the tag | He carries a dropped stick to the tray and leaves it there with no refusal and no mutter, although the scenario's default policy blocks storage | None |
-| W1 Work that succeeds | `ok_room`: Amy Cole, role `staff` (email only), `amy_pc` | She works at her desk about every 15 seconds; `npc_used:amy_pc` carries `met: true`; no mutter, no icon | No `npcFrustration` entry for Amy |
-| W2 An outage you can read | `share_room`: Dana Reyes, role `finance`, `frustration: { perFail: 34 }`, no workarounds; the breaker switches for `finance_share_down`; a coffee station | Within one use of the breaker being thrown she fails: the mutter names the share ("Share's down again."), `npc_use_failed:dana` names `finance_share` as `down`, and the blocked icon stays over her between failures. After the second failure the icon pulses (`tell` 2). On her third failure her mutter comes from the fed-up pool. Her `npc_use_failed` events are followed by a coffee `npc_used` sooner than her outage-free schedule gives (asserted by event order, not by time) | `npcFrustration.dana.level` 34, 68, then 100 |
+| W1 Work that succeeds | `ok_room`: Amy Cole, role `staff` (so `workNeeds: ["email"]`, email only, from the shared set-up), `amy_pc` | She works at her desk about every 15 seconds; `npc_used:amy_pc` carries `met: true`; no mutter, no icon | No `npcFrustration` entry for Amy |
+| W2 An outage you can read | `share_room`: Dana Reyes, roles `["finance", "staff"]`, `frustration: { perFail: 34 }`, no workarounds; the breaker switches for `finance_share_down`; a coffee station | Within one use of the breaker being thrown she fails: the mutter names the share ("Share's down again."), `npc_use_failed:dana` names `finance_share` as `down`, and the blocked icon stays over her between failures. After the second failure the icon pulses (`tell` 2). On her third failure her mutter comes from the fed-up pool. Her `npc_use_failed` events are followed by a coffee `npc_used` sooner than her outage-free schedule gives (asserted by event order, not by time) | `npcFrustration.dana.level` 34, 68, then 100 |
 | W3 Recovery | Same room, breaker reset | Her next use is met, the level eases by 10 for each met use, and the icon goes when it reaches 0 | `level` 90, then 80 |
-| W4 The printer, and a chain | `print_room`: Omar Haddad needs `printer`; `office_printer` is in the open `copy_room` next door, with a lever that sets `printer_jammed`. `omar_pc` is a sign-in PC with `lockChance: 0`; his profile holds a note with the code for `copy_cupboard`, a PIN-locked cupboard in the copy room | His use fails and he walks to the printer once (`npc_checked:office_printer`); on his later failures he stays put. While he is away a click on his PC claims his session, the note gives the code, and the code opens the cupboard. The `PLAYTEST.md` script says how to re-arm the beat if the claim window is missed: reset the lever, wait for one met use, throw it again (a new outage, so a new check visit) | `sessions.omar_pc` a claim; the cupboard in `unlockedObjects`; `npcFrustration.omar.level` 20 |
+| W4 The printer, and a chain | `print_room`: Omar Haddad needs `printer`; `office_printer` is in the open `copy_room` next door, with a lever that sets `printer_jammed`. `omar_pc` is a sign-in PC with `lockChance: 0`; his profile holds a note with the code for `copy_cupboard`, a PIN-locked cupboard in the copy room | His use fails and he walks to the printer once (`npc_checked:office_printer`); on his later failures he stays put. While he is away a click on his PC claims his session, the note gives the code, and the code opens the cupboard. The `PLAYTEST.md` script says how to re-arm the beat if the claim window is missed: reset the lever, wait for one met use, throw it again (a new outage, so a new check visit). The re-armed failure is counted although it comes well inside 30 seconds of the last one (the met use between is an ease, 9.1) | `sessions.omar_pc` a claim; the cupboard in `unlockedObjects`; `npcFrustration.omar.level` 20 (after a re-arm: 20, 10, 30) |
 | W5 No access, and silence | `starter_room`: Kai Brennan, role `staff`, `workNeeds: ["+finance_share"]` | His work fails with `no_access` from his first use, with no player action. After the level reaches 100 the answer says `settled` and no further report is sent for him | `npcFrustration.kai.level` 100; the request count stops rising |
-| W6 A PC out of order | `cable_room`: Ian Shaw; `ian_pc` has `"affordance": { "offWhen": "ian_pc_unplugged" }`; the wall socket switch sets and clears it | He does not sit down at a dead PC: within one selection `npc_need_parked:ian` fires with `need: "work"`, `reason: "off"` and `targetId: "ian_pc"`, the mutter comes from `station_fail`, and no `npc_use_failed` fires. A door opened elsewhere does not wake his park; plugging the PC back in does, and his next use is met | `npcFrustration.ian.level` 20, then 10 |
+| W6 A PC out of order | `cable_room`: Ian Shaw, role `staff` (so a `work` plan, email), no leash; `ian_pc`, a sign-in PC, has `"affordance": { "satisfies": "work", "useSeconds": 5, "offWhen": "ian_pc_unplugged" }`; the wall socket switch sets and clears it. Also in `cable_room`: `pat_pc`, a sign-in PC owned through `"screenOwner": "temp_user"` (the plain account holder of H2) and marked `"private": true` in its authored `work` affordance, and `spare_pc`, a plain PC (`type: "pc"`, no `lockType`, the `desk_pc` preset's non-private `work` source) that nobody owns. Every PC Ian could reach is a desk (5.2), so the candidate filter, not the layout, is what keeps him off them | He does not sit down at a dead PC, and he does not walk to `pat_pc` or `spare_pc`: within one selection `npc_need_parked:ian` fires with `need: "work"`, `reason: "off"` and `targetId: "ian_pc"`, the mutter comes from `station_fail`, and no `npc_use_failed` fires. A door opened elsewhere does not wake his park; plugging the PC back in does (after one use time), and his next use is met | `npcFrustration.ian.level` 20, then 10 |
 | W7 The outage bites at once | `slow_room`: Nia Patel, role `staff`, a slow work need (`decayPerMin: 1`, `urgentAt: 50`, `initial: 100`: left alone, first urgent after 50 minutes), the switches for `printer_jammed` and `workNeeds: ["+printer"]` | The player watches her work once (the room's sign says to wait for it), then jams the printer. Within about one use time she tries to work, fails and mutters about the printer, without waiting for her need to run down | `npcFrustration.nia.level` 20 |
 | X1 The sticky note, and a second link | `note_room`: Mei Lin, an account; `mei_pc`, a sign-in PC with `lockChance: 1`; resource `rota` with a switch; `workarounds: [{ "at": 50, "do": "writes_down" }]`; her profile holds the door code for `records_nook` | Before the outage the sign-in screen shows no note. After the outage she fails three times: the icon appears after the first and pulses after the second. At the third she says "I'll never remember this one.", writes at her desk, a yellow note appears on the monitor, and `npc_workaround:mei` fires with `started`, then `done`. When she next leaves, the sign-in screen shows "<username> / <password>", it signs in, her desktop gives the door code, and the code opens the nook | `npcFrustration.mei.done` is `[0]`; `sessions.mei_pc` Mei by password; `unlockedRooms` has `records_nook` |
 | X2 The propped door | `store_lobby`: Tom Fletcher, role `facilities`, with a card; `store_room` behind an `rfid` door that admits `facilities`, with Una Walsh inside; `store_wedge` (a fire extinguisher) hidden on `store_door_propped`; a workaround at 50 | Tom walks to the door, it opens, the extinguisher appears and `door_propped:store_room` fires. The player walks in | `unlockedRooms` has `store_room`; `encounteredNPCs` has `una`; the global is true on the server; `npcFrustration.tom.done` is `[0]` |
 | X3 An event, with no warning by design | `ok_room`: Amy gains a second resource with a switch, `frustration: { perFail: 50 }` and `[{ "at": 50, "do": "emit", "event": "amy_gave_up", "noWarning": true }]`, mapped to a task | One failed use completes the task, with no `tell` 1 or 2 before it; the validator's report says "no warning" for it | `npcFrustration.amy.done` is `[0]` |
 | X4 Reload in the middle | During X2: as `npc_workaround:tom` fires with `phase: "started"`, the run sets the needs clock to manual, so Tom stops where he is, then reloads; later, again just after the door opens | After the first reload Tom, whose workaround was handed over and not spent, sets off again and props the door. After the second, the door is open and the extinguisher is shown | As X2 |
-| H1 The hot desk, and a second link | `cable_room` again: Ian has `[{ "at": 50, "do": "borrow_session", "pc": "hot_desk" }]`; `hot_desk` is in the lobby, unowned, satisfies `work`, under `managed`; Ian's profile holds a note with the PIN of `comms_cabinet` in the lobby | At his third failure at his unplugged PC he says "I'll use the spare PC.", gets up at once, walks to the hot desk and works there (met, so his level eases). A click while he sits there shows "Ian Shaw is using this PC". After he walks back a click opens his desktop, and the note's PIN opens the cabinet. The run then plugs his PC back in and, once his next use is met, steps the needs clock just past five game minutes: the desktop closes with "The screen locked" (exercised, not earned) | `guestSessions.hot_desk` is `ian`; `sessions.hot_desk` a claim, then gone; the cabinet in `unlockedObjects` |
+| H1 The hot desk, and a second link | `cable_room` again: Ian has `[{ "at": 50, "do": "borrow_session", "pc": "hot_desk" }]` and the borrowers' `screenHabit` (shared set-up); `hot_desk` is a sign-in PC in the lobby, unowned, with an authored `affordance` that satisfies `work`, under `managed`; Ian's profile holds a note with the PIN of `comms_cabinet` in the lobby | At his third failure at his unplugged PC he says "I'll use the spare PC.", gets up at once, walks to the hot desk and works there (met, so his level eases). A click while he sits there shows "Ian Shaw is using this PC". After he walks back a click opens his desktop, and the note's PIN opens the cabinet. The run then plugs his PC back in and, once his next use is met, steps the needs clock just past five game minutes: the desktop closes with "The screen locked" (exercised, not earned) | `guestSessions.hot_desk` is `ian`; `sessions.hot_desk` a claim, then gone; the cabinet in `unlockedObjects` |
 | H2 Signed in when he arrives | The H run's own source: a readable note in an unlocked lobby drawer (a clue item, not a beat sign) gives the password of `temp_user`, an account the hot desk admits. The player signs in at `hot_desk` as that account and leaves the desktop open. Then Ian's PC is unplugged again | When Ian sits down the desktop closes with "Ian Shaw has signed in at this PC" and `pc_signed_out` fires with `reason: "displaced"`. After he leaves, a click opens Ian's desktop, not the temporary account's | `sessions.hot_desk` `temp_user` by password, then absent, then a claim for Ian |
-| H3 The hot desk does not help | `share_room`: Dana gains a `borrow_session` to `hot_desk` at 50; the breaker is thrown | She walks to the hot desk, her use fails there too (`npc_borrowed_session:hot_desk` with `met: false`), and she still leaves a session that can be claimed | `guestSessions.hot_desk` is `dana`; her level still rising |
+| H3 The hot desk does not help | `share_room`: Dana gains a `borrow_session` to `hot_desk` at 50 and the borrowers' `screenHabit`; the breaker is thrown | She walks to the hot desk, her use fails there too (`npc_borrowed_session:hot_desk` with `met: false`), and she still leaves a session that can be claimed | `guestSessions.hot_desk` is `dana`; her level still rising |
 | H4 Said out loud | `open_office`: Sam Okafor (an account) and Ruth Adeyemi at the far desk; `[{ "at": 50, "do": "share_login", "with": "ruth" }]` | With the player out of the room, Sam walks over and speaks; nothing is noted. On his next failed use, with the player beside Ruth's desk, a toast reads "Overheard: Sam Okafor" with his login, an evidence note is added, and `npc_overheard_login:sam` fires. The noted password then signs in as Sam at the hot desk | `sharedLogins` is empty after the first and `["sam"]` after the second |
 | H5 Reload | After H1 and H4 | The hot desk shows the sign-in screen, the levels are kept, the evidence note is still in the notebook | `guestSessions` empty; `sharedLogins` kept |
-| L1 The lockout chain | `lock_room`: Jake Brooks; `jake_pc` under `strict`, `lockChance: 1`; a `borrow_session` to `hot_desk_2` at 50 | While Jake is at the coffee station the player types three wrong passwords on his tile. When he returns to his locked screen his next use fails with `locked_out`, he hot-desks, and his session there is claimed. A second owner in the room whose screen never locks is locked out the same way and carries on working | `loginLockouts` holds Jake at `jake_pc`; `guestSessions.hot_desk_2` is `jake` |
+| L1 The lockout chain | `lock_room`: Jake Brooks, role `staff`, the borrowers' `screenHabit`; `jake_pc` under `strict`, `lockChance: 1`; a `borrow_session` to `hot_desk_2` (as `hot_desk`) at 50 | While Jake is at the coffee station the player types three wrong passwords on his tile. When he returns to his locked screen his next use fails with `locked_out`, he hot-desks, and his session there is claimed. A second owner in the room whose screen never locks is locked out the same way and carries on working | `loginLockouts` holds Jake at `jake_pc`; `guestSessions.hot_desk_2` is `jake` |
 
 `temp_user` is a plain account holder with no NPC behaviour (an NPC record in a closed side room
 with `creds` and no needs), so H2 needs nothing from another run.
 
-Expected validator output: the "work never succeeds" warning for Kai, and nothing else. Scripted
+Expected validator output: the "work never succeeds" warning for Kai, and nothing else. In
+particular no "opens nothing" warning for Ian, Dana or Jake (each authors a habit that leaves the
+hot desk open), no mutter warning (the shared pools cover every cause), and no "satisfies no
+`work`" warning (every station authors its affordance). Scripted
 runs, each with its own new game: U1 to U3; W1 to W4 with a reload after W4 (the level is kept,
 the claim ends, the outage global is as it was left); W5 to W7; X1 to X4; H1 to H3; H4 and H5;
 L1. Request budgets: no beat may send more than one report request every two seconds, and W5's
@@ -1545,7 +1712,8 @@ mutters as grumbles, the `self` job) and
 **U-1. Policy module, needs refusal and the mutter.**
 Files: `systems/pc-policy.js` (new, with `window.pcPolicy`); `systems/npc-needs.js`
 (`_completeJob`: refusal, the move to another target, the put-down and the memory; `mutter(npcId,
-topic)` over the existing grumble path (`_pickBark`, `_showSaying`) and the `usb_refused` pool;
+topic)` over the existing grumble path (`_pickBark`, `_showSaying`, with `_grumble`'s
+`ignoreCooldown` option), and a `PICTURE_CHATTER` entry for `usb_refused` (`blocked`);
 `usbClass`, and `usbPolicy` through `window.pcPolicy`, in `describe`). The world bubbles already
 draw a line with no partner (a grumble), so `npc-world-bubbles.js` is not edited.
 Tests: `pc-policy.test.mjs` (new): the table in section 7; `effectivePolicy` with a PC's own
@@ -1571,8 +1739,9 @@ engine and cannot load in node (section 2); the branch itself is checked in the 
 refused with the right line, no action, the item kept; a non-governed object under a blocking
 default is not refused. `validator-access-work.test.mjs` (new): the USB fixtures.
 
-**U-3. `test_access_work`, beats U1 to U3**: the scenario, `PLAYTEST.md`, static checks, the
-scripted run, the needs regression captures.
+**U-3. `test_access_work`, beats U1 to U3**: the scenario (with its `usb_refused` pool in the
+top-level `chatter`, 11.1), `PLAYTEST.md`, static checks, the scripted run, the needs regression
+captures.
 
 **U-4. Documents**: the "USB policy" section of `README_scenario_design.md` (the three values, the
 two lessons, a plant at a sign-in PC goes on a dock beside it).
@@ -1607,10 +1776,16 @@ action's `npcFrustration`; `metAt` in `track_npc_encounters`); `game.rb` (`repor
 level, `tell`, `settled`, cause and pace helpers).
 Tests (`test/controllers`): an unknown NPC, an NPC not yet met and an NPC that cannot fail are each
 refused; a fail whose cause does not hold on the server answers `stale` and writes nothing, and is
-accepted once the server's copy of the global is true; a first fail sooner than 0.9 of the use
-time after `metAt` answers `tooSoon`; a fail raises the level by the resolved `perFail` and stops
-at 100; a second fail for the same need inside the floor answers `tooSoon`, and one for the NPC's
-other need is counted; an ease is floored at the use time, stops at 0 and never returns `run`;
+accepted once the server's copy of the global is true; a first fail at once after `metAt` is
+accepted (a station already off when the NPC's room loads, W6); a fail raises the level by the
+resolved `perFail` and stops at 100; a second fail for the same need inside the park floor answers
+`tooSoon`, and one for the NPC's other need is counted; **W4's re-arm**: a `down` fail, an ease a
+use time later and a second `down` fail a use time after that, all inside the park floor, are all
+accepted (levels 20, 10, 30); a second `down` fail marked `rearmed` a use time after the first,
+with no ease, is accepted, and one sooner than the use floor answers `tooSoon`; a `rearmed` fail
+that lists `no_access` (alone or beside `down`), or `locked_out`, keeps the park floor; an ease for
+`work` from an NPC with an unadmitted resource is refused and lifts nothing; an ease is floored at
+the use floor, stops at 0 and never returns `run`;
 `tell` is 0, 1 and 2 at the right levels for an NPC with workarounds, with none, and with one whose
 `at` is at or below `perFail` (straight from 0 to the workaround);
 `settled` at 100; 21 reports in one request are refused; the level is in `GET /scenario`; a reset
@@ -1624,32 +1799,48 @@ Tests: the A errors, warnings and the work report line; a clean fixture.
 Files: `systems/npc-work.js` (new: `useVerdict`, `reachable`); `systems/npc-needs.js`
 (`_completeJob`: the verdict and `_turnBack(s, 'failed')`; `TURN_BACK`: the `failed` row;
 `_turnBack`: a reason that parks with no fallback parks the need; `_park`: `wakeOn` and `missing`
-on the event; `onGlobalChanged`: the `wakeOn` clause; `_wakeParked`: skips `off` and `failed`
-parks of judged needs; `_giveUpReason`: `off` for a judged need whose own station is off;
-`_useCandidate`: an unowned sign-in PC is no source for an NPC with a `work` plan or a
-`social_media` need, except through a borrow;
+on the event, and `targetId`, `wakeOn` and `missing` on `s.parked[name]`; `onGlobalChanged`:
+the targeted `wakeOn` wake before the early return at `:552`, and the targeted wake of an `off`
+failure park whose station came back on, after one use time; `_wakeParked`: skips failure parks
+(5.2) for all three of its callers; the `rearm` mark per need; `_giveUpReason`: `off` for a judged
+need whose own station is off, before both null returns; `_useCandidate` and `_queueCandidate`:
+no desk but the NPC's own is a source for a judged need, except through a borrow; `_select`: the
+`off` park's grumble when not called from a turn-back, and the counted `off` park's drain;
+`_grumble`: the `{ ignoreCooldown, icons }` options; `_grumbleTopic`: the judged-need pool order;
+`PICTURE_CHATTER`: the new pools' pictures;
 `_tickNpc`: visits and the outage kick; `enqueueVisit` and `npc_visit_dropped`; `_claims` skipping
 visits; the pools and their order through `_grumble`; `mutter`; `applyFrustration`;
 `restoreFrustration`, applied in `register`; `getState`; in `createEngineWorld`: `useVerdict`,
-`reportUse`).
+`reportUse`, and `desk` in `describe`).
 Tests (`test/js`): `npc-work.test.mjs` (new): the verdict for each failure and several at once; a
 need with no `routes` is reachable, `[]` is not, `[[]]` is, a route with no truthy global is.
 `npc-needs-work.test.mjs` (new), on the stub world: **the probe first**, that `_abortJob` from
 the `using` phase frees the station and leaves the NPC standing; a failed use restores nothing,
 emits no `npc_used`, emits `npc_use_failed` and `npc_turned_back` with `reason: "failed"`, grumbles,
 skips `revealOutput`, drains the other needs, parks the need for `needsDeferMin` (no pressing
-bubble, not selected), and reports once; the park wakes when its `downIf` global clears and not
-when a door opens, and a `no_access` park waits out its time; a station switched off while the NPC
-sits at the desk gives one `off` park with the station as `targetId`, one report and a
-`station_fail` grumble, and is woken by the station coming back on; an `off` turn-back that finds
-another source counts nothing; an unowned sign-in PC with a `work` affordance is never chosen for
-`work`; a coffee machine switched off still parks with `no_source` exactly as today; a met judged use with frustration reports an ease and a met coffee use does not, and a
+bubble, not selected), and reports once; **on one fixture**, the park wakes when its `downIf`
+global clears (in a world where no `offWhen` object has ever been seen), does not wake when a door
+opens, a room loads or an unrelated coffee machine comes back on, and a `no_access` park, or a park
+whose failure lists `no_access` beside a `down` that clears, waits out its time; a station switched
+off while the NPC sits at the desk gives one `off` park with the station as `targetId`, one report,
+one `station_fail` grumble and the drain, is not woken by a door, and is woken by the station
+coming back on, retrying one use time later; a station switched off during a use lets that use
+finish and judges it on its resources; **the dead PC parks whatever is in reach**: own PC off, a
+colleague's `private` PC and a busy plain PC (a desk by its preset) in reach, no leash, gives
+exactly one `off` park, with no wait on the busy PC and no `private_skipped` silence; an `off`
+turn-back that finds a non-desk source (a tablet) counts nothing and grumbles once; an unowned
+sign-in PC and a free plain PC, each with a `work` affordance, are never chosen for a judged
+`work`, and are chosen as today for an NPC with no plan; a fail after a wake or a met use carries
+`rearmed`, and one after a timer expiry does not; a coffee machine switched off still parks with
+`no_source` and wakes exactly as today; a met judged use with frustration reports an ease and a met coffee use does not, and a
 coffee or carry use's `npc_used` payload has no `met`; the outage kick: a need at 90 drops to
 `urgentAt` when its `downIf` global, or its station's `offWhen`, turns on, once per change, and the
 NPC fails within one use time; a global already on at `register` kicks too; a need already parked
 for a failure is not kicked; the pool is chosen from the `tell` held at the
 failure (fed-up at 2, the cause's own pool below it, `work_fail_<kind>` falling back to
-`work_fail`); a check
+`work_fail`), each as a line when the scenario's pool has one (with the chatter cooldown not yet
+run out) and as that pool's own picture when none does, and the decision log's `grumble:` names
+it; a check
 visit walks to the object once per outage, emits `npc_checked` and `npc_visit_done`, emits no
 `npc_used`, claims nothing and leaves the post like any trip; a visit waits for a running job; a
 late answer changes no decision; a level handed over before the NPC is registered is applied when
@@ -1659,7 +1850,8 @@ for byte what it was.
 
 **A-6. Client surfaces and tooling.**
 Files: `systems/npc-reports.js` (new: the queue, one request every two seconds, `settled`, the
-forced sync on a plan global's change, the `stale` resend, answers to `applyFrustration`);
+forced sync on a plan global's change, the `stale` resend, `rearmed` passed through from the needs
+state, answers to `applyFrustration`);
 `api-client.js` (`npcFrustration`); `core/game.js` (install the reporter; hand `npcFrustration` to
 `restoreFrustration`); `systems/npc-action-icons.js` (the `blocked` icon by `tell` and its pulse;
 `npc-work` during a visit); `systems/npc-needs-debug.js` (the `F` bar); the tooling in section 11.
@@ -1670,12 +1862,17 @@ sync and one resend. `npc-action-icons` and `npc-needs-debug` tests: the
 icon at each `tell`, the bar. The leak scanner's unit test, `playtest-verify-run-access.test.mjs`
 and `test-bridge-access.test.mjs` gain the new keys.
 
-**A-7. `test_access_work`, beats W1 to W7.** The scenario's new rooms, `PLAYTEST.md`, static
+**A-7. `test_access_work`, beats W1 to W7.** The scenario's new rooms, its shared set-up (roles,
+the stations' affordances, the default mutter pools of 5.5 in its top-level `chatter`),
+`PLAYTEST.md` (with the rule that the needs clock is never stepped while an outage holds), static
 checks, the scripted runs, the watch-it-happen run, the needs regression captures, then U's run
 and the first slice's three suite runs.
 
 **A-8. Documents**: "Work, frustration and workarounds" in `README_scenario_design.md` (resources,
-work needs, outages and the kick, what the student sees, the timing report);
+work needs, outages and the kick, what the student sees, the timing report, that a sign-in PC
+needs an authored `work` affordance, and the mutter pools: every pool name, when it is said, what
+it should say, the default lines to copy from `test_access_work`, and that the engine says
+nothing of its own);
 `docs/achitechture/NPC_NEEDS_SYSTEM.md` (the judged use, the `failed` turn-back, the park as the
 retry wait, visits, the kick, mutters as grumbles); `docs/test-bridge.md` (`work`, `reports`, the new `getState` fields).
 
@@ -1938,8 +2135,10 @@ touches:
 | The outage kick | Only an NPC with a `work` plan: none today |
 | The use verdict, the `failed` turn-back, the drain, visits | Only an NPC with a `work` plan: none today |
 | An `off` park reason for a judged need's own station, its grumble, and the door wake skipped for `off` and `failed` parks of judged needs | Only an NPC whose own workstation has an `affordance.offWhen` and who has a `work` plan or a `social_media` need: none today. `test_needs_sims`' switched-off coffee machine and copiers park and wake exactly as they do now |
-| An unowned sign-in PC is no judged-need source except through a borrow | Only an NPC with a `work` plan or a `social_media` need: none today |
-| Mutters and the new pools | Never chosen without a failed or refused use. A scenario with `"chatter": false` gets no mutters and still gets the icon |
+| No desk but the NPC's own is a judged-need source except through a borrow; a dead own station always parks `off` | Only an NPC with a `work` plan or a `social_media` need: none today. `describe` gains `desk`, which no existing choice reads |
+| `_wakeParked` skips failure parks; the targeted wakes | Only failure parks, which only judged needs have: none today. Every existing park wakes from the same three callers as now |
+| `_grumble`'s options and the new `PICTURE_CHATTER` entries | Only a judged failure, a refused device or a workaround passes the options or uses the new topics; every existing grumble is called as now |
+| Mutters and the new pools | Never chosen without a failed or refused use. Lines are scenario-authored, so no existing scenario gains a line. A scenario with `"chatter": false` gets no mutters and still gets the icon |
 | `usb` policy | `test_access_signin` and `test_access_sessions` set `usb: "allowed"`; `lab_physical_pentest` has no policies and its devices have no `usbClass`, so Sofia's finds and the keylogger plant are untouched |
 | `social` policy | The same two test scenarios set `"allowed"`; nobody has the need |
 | `social_media` need | `test_needs_sims` uses a need called `social` at the cooler; it is a different name and is untouched |
