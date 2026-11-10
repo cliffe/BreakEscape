@@ -25,6 +25,7 @@ for (const rel of [
     'minigames/landing-page-builder/landing-page-model.js',
     'minigames/landing-page-builder/landing-page-render.js',
     'minigames/landing-page-builder/landing-page-inspect.js',
+    'minigames/capture-log/capture-rows.js',
     'minigames/osint-browser/concept-card.js',
     'minigames/framework/base-minigame.js',
     'minigames/framework/social-overlay.js',

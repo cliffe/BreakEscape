@@ -38,7 +38,8 @@ import {
     scorePage, guardDomain, applyScore, setBuilt, buildRecord, linkInfoFor, pageString, fieldLabel, FIELD_LABELS, CHOICE_KEYS, TELL_IDS
 } from './landing-page-model.js';
 import { buildSuspectPage } from './landing-page-inspect.js';
-import { captureList, displaySecret, capturesReveal, maskSecret } from '../../systems/captures.js';
+import { captureList, capturesReveal } from '../../systems/captures.js';
+import { buildCaptureRow, captureBannerText, applyCaptureSecrets, loadCaptureSecrets } from '../capture-log/capture-rows.js';
 
 export const PAGES_KEY = 'se_landing_pages';
 export const DRAFTS_KEY = 'se_landing_drafts';
@@ -443,10 +444,7 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
         const head = h('header', { class: 'lpb-head' },
             h('h2', { class: 'lpb-title', text: 'Captures' }),
             h('div', { class: 'lpb-head-buttons' }, close));
-        const banner = h('p', { class: 'lpb-captures-banner', role: 'note',
-            text: reveal
-                ? 'Simulated capture — authored for training. No real password is recorded or kept.'
-                : 'A sign-in was captured here. In a real attack this is the victim\u2019s password; this exercise does not record it.' });
+        const banner = h('p', { class: 'lpb-captures-banner', role: 'note', text: captureBannerText(reveal) });
         const list = h('ul', { class: 'lpb-captures-list', 'aria-label': 'Captures' });
         if (!entries.length) {
             list.appendChild(h('li', { class: 'lpb-captures-empty', text: 'No captures yet.' }));
@@ -461,20 +459,11 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
         if (reveal && this._secretRows.length) this._loadCaptureSecrets();
     }
 
+    // The row markup and the secrets loader live in capture-log/capture-rows.js, shared with the
+    // capture log device (engine plan section 6).
     _captureRow(entry) {
-        const row = h('li', { class: 'lpb-captures-row', 'data-kind': entry.kind || 'credential' });
-        row.appendChild(h('div', { class: 'lpb-captures-role', text: entry.roleLabel || 'Unknown role' }));
-        if (entry.address) row.appendChild(h('div', { class: 'lpb-captures-address', text: entry.address }));
-        if (entry.kind === 'foothold') {
-            const where = entry.host || 'unknown host';
-            row.appendChild(h('div', { class: 'lpb-captures-foothold',
-                text: entry.note ? `Foothold on ${where} \u2014 ${entry.note}` : `Foothold on ${where}` }));
-        } else {
-            const secret = displaySecret(entry, this.social, this._capturedSecrets);
-            const node = h('div', { class: 'lpb-captures-secret', text: secret == null ? maskSecret() : secret });
-            row.appendChild(node);
-            if (capturesReveal(this.social)) this._secretRows.push({ targetId: entry.targetId, node });
-        }
+        const { row, secretNode } = buildCaptureRow(entry, this.social, this._capturedSecrets);
+        if (secretNode) this._secretRows.push({ targetId: entry.targetId, node: secretNode });
         return row;
     }
 
@@ -482,27 +471,13 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
     _applyCaptureSecrets(secrets) {
         if (!secrets || typeof secrets !== 'object') return;
         this._capturedSecrets = secrets;
-        for (const { targetId, node } of (this._secretRows || [])) {
-            const s = secrets[targetId];
-            if (typeof s === 'string' && s) node.textContent = s;
-        }
+        applyCaptureSecrets(this._secretRows, secrets);
     }
 
-    /**
-     * Fetch the authored secret for each earned credential capture and reveal it. The secret is
-     * stripped from the scenario bootstrap, so the server serves it from GET /capture_secrets only
-     * once its own se_captures record shows the capture landed. A just-landed capture is synced
-     * first so the server holds it; on any failure the rows keep their mask.
-     */
+    /** Fetch the authored secret for each earned credential capture and reveal it (capture-rows.js). */
     async _loadCaptureSecrets() {
-        try { await window.stateSync?.syncConfirmed?.(); } catch { /* best effort: ask anyway */ }
-        try {
-            const { ApiClient } = await import('../../api-client.js');
-            const resp = await ApiClient.get('/capture_secrets');
-            if (resp && resp.secrets) this._applyCaptureSecrets(resp.secrets);
-        } catch (err) {
-            console.warn('[captures] could not load capture secrets', err?.message || err);
-        }
+        const secrets = await loadCaptureSecrets();
+        if (secrets) this._applyCaptureSecrets(secrets);
     }
 
     _buildShell() {

@@ -116,6 +116,8 @@ import { EpisodeRunnerMinigame } from './episode-runner/episode-runner-minigame.
 import { ConsequenceSandboxMinigame } from './episode-runner/consequence-sandbox.js';
 import { PretextPrepMinigame } from './pretext-prep/pretext-prep-minigame.js';
 import { LandingPageBuilderMinigame } from './landing-page-builder/landing-page-builder-minigame.js';
+// The capture log device (engine plan section 6): registers its scene, its starter and its tray rule.
+import './capture-log/capture-log-minigame.js';
 import { SortDrillMinigame } from './sort-drill/sort-drill-minigame.js';
 import { ConcernFormMinigame } from './concern-form/concern-form-minigame.js';
 import { PrivacyPanelMinigame } from './privacy-panel/privacy-panel-minigame.js';
