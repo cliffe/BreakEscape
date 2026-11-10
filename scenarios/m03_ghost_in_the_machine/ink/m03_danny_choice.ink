@@ -86,7 +86,7 @@ Danny Foster: You'd do that. For me.
 
 === expose ===
 #speaker:danny_foster
-Danny Foster: *quietly* You're not wrong. That's the worst of it. You're not wrong.
+Danny Foster: You're not wrong. That's the worst of it. You're not wrong. #delivery: quietly
 + [I'm logging it all -- recon, emails, the raise. Cooperating helps you. Nothing erases it.]
     Danny Foster: Then I'll cooperate. For what it's worth. Just... in whatever you write, say I didn't know at the start. Please.
     -> expose_done
