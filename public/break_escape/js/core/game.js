@@ -53,6 +53,7 @@ import { notifyNewMail } from '../minigames/mail-client/mail-notification.js';  
 import { watchReadinessGlobals } from '../systems/social-intel.js';  // needsGlobal readiness slots re-check on a global change
 import { chosenPlayerSprite, playerTalkPath } from '../utils/player-avatar.js';  // aw9: the chosen avatar wins, the portrait follows
 import { pcSessions } from '../systems/pc-sessions.js';  // Sign-in PC sessions (access model 5.3; sets window.pcSessions)
+import { networkLinks } from '../systems/network-links.js';  // Footholds and the jack (slice 9.3a; sets window.networkLinks)
 
 // Global variables that will be set by main.js
 let gameScenario;
@@ -1677,6 +1678,9 @@ export async function create() {
     // Sign-in PC sessions and the PCs signed in to (access model 5.3): password
     // sessions survive a reload, a claimed one ends (pc-sessions.js load).
     pcSessions.load(gameScenario.sessions || {}, gameScenario.signedInPcs || []);
+    // Footholds and the jacks they were gained at (slice 9.3a, 4.1): publishes
+    // <jackId>_planted before any room loads; no request.
+    networkLinks.load(gameScenario.footholds || [], gameScenario.gainedFootholds || []);
     // A save never overrides an imported value.
     importedNames.forEach(name => {
         window.gameState.globalVariables[name] = gameScenario.globalVariables?.[name];
@@ -2385,6 +2389,8 @@ export async function create() {
     
     // Process initial inventory items
     processInitialInventoryItems();
+    // A held foothold whose link item is missing from the tray gets it back (slice 9.3a)
+    networkLinks.restoreHandles();
     
     // Initialize HUD with interaction mode toggle AFTER inventory is ready
     window.playerHUD = createPlayerHUD(this);

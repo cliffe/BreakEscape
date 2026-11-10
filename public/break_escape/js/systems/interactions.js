@@ -932,6 +932,20 @@ export function handleObjectInteraction(sprite) {
         return;
     }
 
+    // A network jack (slice 9.3a, 4.1): its click is the plant flow in network-links.js
+    // (plant, or unplug a device already in it). It never runs the generic flow below.
+    if (sprite.scenarioData.networkJack === true) {
+        window.networkLinks?.interactJack?.(sprite);
+        return;
+    }
+
+    // A network link item in the tray (slice 9.3a, 4.1): its own click opens the network
+    // view for its foothold. It has no menu, no contents and is never dropped.
+    if (sprite.scenarioData.type === 'network_link') {
+        if (sprite.scenarioData.footholdId) window.networkLinks?.open?.(sprite.scenarioData.footholdId);
+        return;
+    }
+
     // Workstation screen state (workstation-state.js): note whether an unattended workstation
     // was reached open or locked. Emits workstation_accessed / workstation_locked_attempt; the
     // normal interaction below still runs, so the scenario decides what the access yields.

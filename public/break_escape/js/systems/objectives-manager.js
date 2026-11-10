@@ -248,8 +248,11 @@ export class ObjectivesManager {
           // Auto-complete if the target object was already unlocked in a prior session
           // A sign-in PC is "unlocked" once the player has signed in there (access model
           // 5.3): the server's signedInPcs, restored into pc-sessions.js on load.
+          // A jack is "unlocked" once a foothold has ever been gained there (slice 9.3a,
+          // 3.5): the server's gainedFootholds, restored into network-links.js on load.
           if (window.gameState?.unlockedObjects?.includes(task.targetObject) ||
-              window.pcSessions?.wasSignedIn?.(task.targetObject)) {
+              window.pcSessions?.wasSignedIn?.(task.targetObject) ||
+              window.networkLinks?.wasGained?.(task.targetObject)) {
             console.log(`📋 Reconciled ${task.taskId}: object already unlocked`);
             this.completeTask(task.taskId);
           }
@@ -313,6 +316,12 @@ export class ObjectivesManager {
     // pc-sessions.js also emits pc_signed_in:<pcId>; listening to the bare name counts once.
     this.eventDispatcher.on('pc_signed_in', (data) => {
       if (data?.pcId) this.handleObjectUnlock(data.pcId, data.pcId, data.pcId);
+    });
+
+    // A foothold gained at a jack meets an unlock_object task on that jack (slice 9.3a, 3.5).
+    // network-links.js also emits it as network_foothold_gained:<jackId>; the bare name counts once.
+    this.eventDispatcher.on('network_foothold_gained', (data) => {
+      if (data?.sourceId) this.handleObjectUnlock(data.sourceId, data.sourceId, data.sourceId);
     });
 
     // Room entry
