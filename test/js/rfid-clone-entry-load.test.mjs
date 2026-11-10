@@ -37,7 +37,7 @@ const stubs = {
         export function handleUnlock(...a) { globalThis.__calls.handleUnlock.push(a); }
     `),
     '../utils/locked-hint.js': dataUrl(
-        'export const appendLockedHint = (s) => s; export const lockedHintDuration = () => 3000;'),
+        'export const appendLockedHint = (s) => s; export const lockedHintDuration = () => 3000; export const doorRefusalTitle = (l, f) => f;'),
     './interaction-repeat.js': dataUrl('export function isRepeatInteraction() { return false; }'),
     './room-ready.js': dataUrl('export async function waitForRoomReady() { return { ready: true }; }')
 };
