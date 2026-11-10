@@ -3,15 +3,22 @@
 Status: **design for review, 2026-11-10.** Nothing here is built. This plan replaces the sketch in
 section 9.2 of `ACCESS_MODEL_PLAN.md` (called "the first slice plan" below) and is checked against
 the code on the access design branch and against the sibling plans
-`ACCESS_MODEL_SLICE_9_1_PLAN.md` (awareness and habits) and `ACCESS_MODEL_SLICE_9_3_PLAN.md`
-(networks) as they stand on the same day. The expected build order is 9.3, then 9.1, then this
-slice; section 15 says what changes if the order differs.
+`ACCESS_MODEL_SLICE_9_1_PLAN.md` (awareness and habits), `ACCESS_MODEL_SLICE_9_3_PLAN.md`
+(networks, in two parts: 9.3a, build-ready, and 9.3b, an ordered design) and
+`PHYSICAL_PENTEST_FEEDBACK_PLAN_ENGINE.md` (called "the engine plan" below) as they stand on the
+same day. The build order is **9.3a, then 9.1, then this slice**; 9.3b comes after 9.3a at a time
+the user chooses, and is expected after this slice. Section 15 says what changes if the order
+differs.
 
 How to read it: section 3 gives the six sub-slices and their order. Sections 4 to 8 are the
 design. Section 9 lists every server route with its checks, what the browser receives, what a
 tampered browser can still get, and what a saved game holds. Section 10 is the validator, schema
 and dungeon graph. Sections 11 to 13 are the tests, the build steps and the parallel streams.
-Section 16 lists the decisions.
+Section 15 gives the interfaces with the sibling plans and section 16 the decisions.
+
+The game is a puzzle-solving simulation in which behaviours chain together. Everything below is
+judged by one test: can a student **cause** something, **see** a person react, **understand** what
+the reaction gave them, and **use** it for the next step?
 
 ## 1. Why
 
@@ -62,7 +69,16 @@ Facts this plan builds on, each checked on 2026-11-10.
 | `/capture_secrets` serves an account holder's password only when that NPC has a capture route (a `usePayload`, or an `eventMappings[].addCapture`), against `se_captures`, a global the browser writes | `game.rb:907-976` |
 | A door unlock unlocks the room, composes its room data and records its NPCs as encountered (`track_npc_encounters`) before it answers | `games_controller.rb:918-930` |
 | The server sets a task's declared `setGlobal` into `player_state.globalVariables` itself | `apply_task_set_globals!`, `game.rb:3755-3777` |
-| `player_state.currentRoom` is the room the browser last reported in a state sync | `games_controller.rb:1581-1588` |
+| `player_state.currentRoom` is **not** a usable record of where the player is. The server accepts a reported room only if it is the start room or unlocked (`games_controller.rb:1581-1588`), but the browser always reports `window.currentRoom?.name` (`state-sync.js:198`), and `window.currentRoom` is set once, to `null` (`main.js:58`), and never again. The live room is `window.currentPlayerRoom` (`core/rooms.js:3101`). So the server's value stays the start room it was given (`game.rb:4091`). This plan never reads it | as listed |
+| A state sync runs every 30 seconds (`state-sync.js:126`) and on demand through `window.stateSync.sync()` (`state-sync.js:411`) | as listed |
+| `Game#room_unlocked?(room_id)` is "in `unlockedRooms` or the start room" | `game.rb:116-118` |
+| The needs adapter already answers whether a global holds: `world.globalHolds(cond)` | `npc-needs.js:1690` |
+| `npc-needs.js` imports nothing; `interactions.js` imports the engine (`core/rooms.js`, `unlock-system.js` and others), so node tests cannot load it | `npc-needs.js` (no `import` line), `interactions.js:2-20` |
+| A `requiresItem` check takes the first held item that matches (`find`) | `interactions.js:827-830` |
+| Action conditions are tested one action at a time, in order, so "set true if false, then set false if true" flips twice | `apply-actions.js:91-94` |
+| `npc_used` for a carry is asserted whole, with `deepEqual` | `test/js/npc-needs.test.mjs:130` |
+| `Game.acl_admits?` answers false for a missing list | `game.rb:1160-1161` |
+| A capture route today is a `usePayload` or an `eventMappings[].addCapture` (`Game.capture_route?`); `account_capture_passwords` serves an account holder's password against `se_captures` | `game.rb:957-976` |
 | `window.unlockDoor(doorSprite, roomData)` opens a door (`doors.js:703, 723`), `NPCGameBridge` finds every door sprite to a room (`npc-game-bridge.js:113, 183`), and an opened door never closes again | as listed |
 | The social media browser is the `osint-browser` minigame. Its data is `social.osint.sites[]`; a site of `type: "social"` has `profiles[]`, each `{ person, name, showIf, posts, blocks }`. A post is a block: with an `id` it is a button, and clicking it grants the post's `fact` through `grantFact`, which refuses an id that `social.intelFacts` does not hold, writes `se_intel_<id>` and adds an evidence note with the fact's text | `minigames/osint-browser/osint-model.js:57-68`, `osint-browser-minigame.js:378-397, 567-593, 648-690`, `systems/social-intel.js:184-217` |
 | The browser is opened from an object of type `osint-workstation`, limited to `minigameData.siteIds` and started at `minigameData.start` | `systems/minigame-starters.js:1185-1203` |
@@ -98,6 +114,17 @@ Facts this plan builds on, each checked on 2026-11-10.
 - "The PC's network reaches the resource's network": slice 9.3 never sends networks to the
   browser, so reach for an NPC's work is composed on the server.
 
+**Faults found in the engine while checking this plan.** Outside this slice; logged for the user,
+not repaired here.
+
+1. **The state sync never reports the player's room.** `state-sync.js:198` reads
+   `window.currentRoom`, which is always `null` (`main.js:58`); the live value is
+   `window.currentPlayerRoom` (`core/rooms.js:3101`). So `player_state.currentRoom` is the start
+   room for the whole game, and the server's "Cannot enter locked room" check
+   (`games_controller.rb:1583-1586`) never runs. Repairing it switches that refusal on for every
+   mission, which is an engine change with its own risk and its own regression runs, so it is not
+   done inside this slice, and nothing here depends on it (6.5).
+
 ## 3. Sub-slices
 
 Six sub-slices, in this order. Each ends playable and tested and has its own steps in section 12.
@@ -116,7 +143,11 @@ needs module with A. A comes before B because workarounds stand on the verdict a
 A is worth playing on its own: failed uses empty desks and send owners walking to broken things,
 which already opens sessions. B is split from H because H changes the workstation and session
 layers and B does not. L waits until the hot desk works, because the hot desk is what a locked-out
-person does. C stands on A and, for one beat, on H; it is last. None of the six needs networks.
+person does. L is the user's decision (16, decision 14), and being last but one it holds nothing
+up: C does not depend on it. C stands on A and, for one beat, on H; it is last. None of the six
+needs networks, and none needs anything of 9.3b: what this slice and 9.3b share (routes with
+globals in them, a station "not responding" in the network view, the USB check on an implant)
+is built by 9.3b (section 15).
 
 ## 4. Scenario fields
 
@@ -177,10 +208,10 @@ All new fields in one place. The sections after this say what each does.
 
 | Field | On | Sub-slice | Meaning |
 |---|---|---|---|
-| `resources.<id>` | top level | A | `name` (shown in events and the debug overlay), `kind` (a free label), `access` (an access list as in the first slice; absent: everyone), `downIf` (a global name; the resource is down while it is truthy), `object` (a room object the resource is tied to). Slice 9.3 owns `network`, `host`, `contents` and `observations` on the same entries; this slice neither reads nor requires them |
+| `resources.<id>` | top level | A | `name` (a display name: 9.3a shows it in the network view; this slice never sends it to the browser), `kind` (a free label; it picks the mutter pool, 5.5), `access` (an access list as in the first slice; absent: everyone), `downIf` (a global name; the resource is down while it is truthy), `object` (a room object the resource is tied to). Slice 9.3 owns `network`, `host`, `contents` and `observations` on the same entries; this slice reads `network` on the server only, through 9.3's `NetworkModel`, and requires none of them |
 | `roles.<role>` | top level | A, B | Defaults for NPCs with that role. This slice owns `workNeeds` (A), `frustration` (A) and `workarounds` (B). Slice 9.1 owns `awareness` beside them. Never a grant: rights stay in access lists |
 | `workNeeds` | room NPC | A | A list of resource ids. `"x"` or `"+x"` adds, `"-x"` removes, applied to the union of the NPC's roles' lists (roles in authored order, `staff` last) |
-| `frustration` | room NPC, role | A | `perFail` (default 25, 1 to 100), `easePerSuccess` (default 10, 0 to 100), `retryMin` (default 1, 0.25 to 10, game minutes before a failed need is tried again), `breakDrain` (default 10, 0 to 50, points taken off every other need on a failure) |
+| `frustration` | room NPC, role | A | `perFail` (default 25, 1 to 100), `easePerSuccess` (default 10, 0 to 100), `retryMin` (default 1, 0.5 to 10, game minutes before a failed need is tried again; a game minute is 60 seconds of the needs clock), `breakDrain` (default 10, 0 to 50, points taken off every other need on a failure) |
 | `workarounds` | room NPC, role | B, H | A list of `{ at, do, ... }` (section 6). The NPC's own list replaces the role's; it is not merged. Any entry may carry `setGlobal`, a declared global the server sets true when the workaround is done |
 | `downIf` | workstation object | A | The PC does no work while the global is truthy |
 | `usbClass` | item | U | `storage` or `hid`. Only items with it are subject to a `usb` policy |
@@ -228,27 +259,42 @@ for a scenario without these fields stays byte for byte the same.
 plan and attaches it to the NPC in room data as `work`:
 
 ```jsonc
-"work": { "retryMin": 1, "breakDrain": 10,
-          "needs": [ { "id": "finance_share", "name": "Finance share", "kind": "file_share",
-                       "admitted": true, "downIf": "finance_share_down",
-                       "routes": [ ["server_net_down"], ["backup_link_down", "server_net_down"] ] },
-                     { "id": "printer_2f", "name": "Second floor printer", "kind": "printer",
+"work": { "retryMin": 1, "breakDrain": 10, "stationDownIf": "jake_pc_unplugged",
+          "needs": [ { "id": "finance_share", "kind": "file_share",
+                       "admitted": true, "downIf": "finance_share_down", "routes": [ [] ] },
+                     { "id": "printer_2f", "kind": "printer",
                        "admitted": true, "downIf": "printer_jammed", "object": "office_printer" } ] }
 ```
 
-It holds the server's answer to "is this person admitted", not the role or the access list. NPC
-records are built with `Object.assign` (`npc-manager.js` `registerNPC`), so `work` arrives on the
-record the adapter reads.
+It holds the server's answer to "is this person admitted", not the role or the access list, and it
+holds **ids, kinds and global names, never a display name**. That keeps it inside slice 9.3a's
+rule (its section 6): ids and global names are not secret, display names are. Nothing in the
+browser needs a name: `missing` carries ids, mutters come from pools chosen by `kind` (5.5), the
+icon is `blocked`, and the debug overlay prints ids. `stationDownIf` is the home workstation's
+`downIf`, sent so the outage kick (5.6) can watch it. NPC records are built with `Object.assign`
+(`npc-manager.js` `registerNPC`), so `work` arrives on the record the adapter reads.
+
+**Admitted.** The server decides with 9.3a's `resource_acl_admits?(resource, npc)` (9.3's 4.5), in
+which a missing list admits everyone. `Game.acl_admits?` is not used: it answers false for a
+missing list (`game.rb:1160-1161`).
 
 **Reach is composed on the server.** No network id, link or resource `network` is ever in the plan.
-Where slice 9.3 is built and the scenario has `networks`, each need gains `routes`: the answer of
-9.3's `NetworkModel.reach_conditions(station_network, resource)` for the NPC's home workstation, a
-list of routes, each a list of the `downIf` global names along it. The browser's test is one pure
+Where the scenario has `networks`, each need gains `routes`: the answer of 9.3's
+`NetworkModel.reach_conditions(station_network, resource)` for the NPC's home workstation, a list
+of routes, each a list of the `downIf` global names along it. The browser's test is one pure
 function in `npc-work.js`, `reachable(need, globals)`: a need with no `routes` key is reachable; an
 empty list of routes is never reachable; otherwise it is reachable when some route has no truthy
-global. Where 9.3 is not built, or the scenario has no `networks`, the server sends no `routes` and
-every resource is reachable. A use at a PC that is neither the NPC's home nor a borrowed PC is
-judged with the home station's routes; a borrowed PC's routes arrive with the borrow (6.4).
+global. With 9.3a only two answers occur (its 4.2): `[[]]`, one route with no conditions, when the
+resource has no `network` or is on the station's network, and `[]`, no route, otherwise. Routes
+that carry globals arrive only with 9.3b's links and outages (its 12.1 and 12.2); the browser's
+function already reads them, so nothing here changes then. With no `networks` in the scenario the
+server sends no `routes` and every resource is reachable. A use at a PC that is neither the NPC's
+home nor a borrowed PC is judged with the home station's routes; a borrowed PC's routes arrive with
+the borrow (6.4).
+
+**A met use.** `npc_used` gains `met` only for a judged use (`work` and `social_media`). A carry, a
+coffee or any other use keeps today's payload exactly, so the whole-payload assertion in
+`test/js/npc-needs.test.mjs:130` holds unchanged.
 
 ### 5.2 A failed use
 
@@ -264,8 +310,8 @@ is not met:
   to a colleague's PC to try there, and shows no pressing-need bubble for it.
 - `onUse` hooks still apply, except `revealOutput` (nothing was produced).
 - `npc_used:<objectId>` still fires, with two added fields: `met: false` and `missing` (a list of
-  `{ id, why }`; the station is `{ id: <objectId>, why: "station_down" }`). A met use carries
-  `met: true`. Existing mappings are unaffected unless they choose to read the field.
+  `{ id, why }`; the station is `{ id: <objectId>, why: "station_down" }`). A met judged use
+  carries `met: true`. Existing mappings are unaffected unless they choose to read the field.
 - `npc_use_failed:<npcId>` fires with `{ npcId, objectId, need, missing, station }`, where
   `station` is true when a station failure is among them.
 - The decision log gains `use_failed` (`need`, `target`, `missing` as ids).
@@ -305,8 +351,9 @@ handed over by the server (section 6).
   `npc_used`. It emits `npc_errand_done:<npcId>` with `{ npcId, kind, at, data }` and logs
   `errand_done`. A check errand also emits `npc_checked:<objectId>`.
 - A place that is not loaded or not reachable is retried once a second. A check errand is dropped
-  after 60 seconds of the needs clock. A workaround errand is dropped after 120 and reported as
-  dropped (section 6), so it cannot block the queue.
+  after 60 seconds of the needs clock. A workaround errand is dropped after 120, so it cannot block
+  the queue; the needs system then emits `npc_errand_dropped:<npcId>` with `{ npcId, kind, at,
+  data }`, which the workaround runner hears and reports as dropped (section 6).
 - `reset()` clears the queue. After a reload the server sends undone workarounds again (section 9.4).
 
 ### 5.4 Frustration lives on the server
@@ -319,13 +366,22 @@ until each one is due, and it makes the level survive a reload without any clien
   "fail", need, objectId, missing })`, and after a met judged use with frustration above 0,
   `{ event: "ease", need, objectId }`. A small client module, `systems/npc-reports.js` (new),
   queues reports and sends them together, at most one `POST /npc_frustration` every two seconds,
-  at most 20 reports in one request (section 9.1).
-- **The answer**, per report: `{ npcId, level, previous, tell, settled, run }`. At the next tick the
+  at most 20 reports in one request (section 9.1). A failed use at a borrowed PC is not reported:
+  it is the same episode as the failure that sent the NPC there (6.4).
+- **Keeping the server's copy current.** When a global named anywhere in a loaded NPC's `work`
+  plan (a `downIf`, a route global, `stationDownIf`) changes, `npc-reports.js` awaits one
+  `window.stateSync.sync()` (`state-sync.js:411`) before it sends its next batch. Globals otherwise
+  reach the server only every 30 seconds (`state-sync.js:126`), so without this the first report
+  of nearly every outage would be stale.
+- **The answer**, per report: `{ npcId, level, previous, tell, settled, run }`. The reporter hands
+  each batch of answers to `NPCNeedsSystem.applyFrustration(answers)`. At the next tick the
   needs system stores the level (`s.frustration`, in `getState()` and the debug overlay as an `F`
   bar), sets the global `<npcId>_frustration` to the number (so text variants can say "she looks
   close to giving up" on `globalVars.dana_frustration >= 50`), and emits
   `npc_frustration_changed:<npcId>` with `{ npcId, level, previous, tell }`. `run`, when present,
-  is a workaround to perform (section 6); it is null throughout sub-slice A.
+  is a workaround to perform (section 6); it is null throughout sub-slice A. When an answer
+  carries `run`, `applyFrustration` emits `npc_workaround_due:<npcId>` with it, and the workaround
+  runner (section 6) starts it from that event.
 - **Stopping.** `settled: true` means another failure can change nothing: the level is 100,
   nothing is handed over and waiting, and no repeating workaround is in force. The client then
   sends no more fail reports for that NPC until it has sent an ease. An NPC with a resource it is
@@ -333,14 +389,15 @@ until each one is due, and it makes the level survive a reload without any clien
 - **Stale reports.** The server compares each reported cause with its own view (section 9.1). Its copy of a
   global can be a few seconds behind the browser's. A report none of whose causes holds on the
   server is answered `{ stale: true }` with nothing written; the client runs a state sync and
-  sends the report once more.
-- **Reload.** The scenario response carries `npcFrustration`. `core/game.js` hands it to the needs
-  system where it hands `sessions` to `pc-sessions.js` (`core/game.js:1663`). No needs state exists
-  at that point, so the system keeps the map and applies each NPC's entry in `register`, when the
-  NPC's room loads: the level, the global, `tell`, and (from sub-slice B) the pending workarounds.
+  sends the report once more. With the forced sync above this is rare.
+- **Reload.** The scenario response carries `npcFrustration`. `core/game.js` hands it to
+  `NPCNeedsSystem.restoreFrustration(map)` where it hands `sessions` to `pc-sessions.js`
+  (`core/game.js:1663`). No needs state exists at that point, so the system keeps the map and
+  applies each NPC's entry in `register`, when the NPC's room loads: the level, the global, `tell`,
+  and (from sub-slice B) the pending workarounds, emitted as `npc_workaround_due:<npcId>`.
 - **Determinism.** In sub-slice A nothing in the needs decision depends on an answer (the retry
-  wait and the drain are applied at once from the plan), so the decision log stays a function of
-  the seed and the player's actions. From sub-slice B an answer starts an errand, so when a
+  wait, the drain and the outage kick of 5.6 are applied at once, from the plan and the globals),
+  so the decision log stays a function of the seed and the player's actions. From sub-slice B an answer starts an errand, so when a
   workaround begins depends on how soon the answer arrives; needs tests for B onward assert the
   order of events, never tick numbers. In node tests the stub answers at once.
 - A lost request loses one step of frustration and nothing else: the next report carries on from
@@ -350,26 +407,49 @@ until each one is due, and it makes the level survive a reload without any clien
 
 A workaround is only an opening if the player can see it coming. All of this uses existing art.
 
-- **`tell`**, sent with every answer and on a reload, is 0, 1 or 2. It is 0 at level 0; 1 once any
-  failure has been counted; 2 when one more failure would bring a workaround into force, or one is
-  already in force (for an NPC with no workarounds, at level 67 or above). It says "getting
-  closer" without sending a threshold or naming a workaround.
+- **`tell`**, sent with every answer and on a reload, is 0, 1 or 2. It is 0 at level 0. It is 2
+  when a workaround is in force, or when one more failure (the level plus `perFail`) would bring a
+  workaround into force, or, for an NPC with no workaround still to come, would bring the level to
+  100. Otherwise it is 1. It says "getting closer" without sending a threshold or naming a
+  workaround. A workaround whose `at` is at or below `perFail` comes on the first failure, from
+  tell 0, with no warning before it; the validator reports such a workaround as "no warning"
+  (section 10), so an author uses it on purpose or lowers `perFail` so the player sees tell 1 and
+  then tell 2 first.
 - **The icon.** For 4 seconds of the needs clock after a failed use `getState().failed` is
   `{ need, missing }`. While `tell` is 1 or 2 the action icon slot shows the existing `blocked`
   icon whenever the NPC has no job; at `tell` 2 it pulses, with the slow pulse the pressing-need
   bubble already has (off under reduced motion). This does not wait for `showPressingNeeds`: a
   scenario that declares resources has opted in. The icon stays up between failures, so "one more
   and she gives up" looks different from "just started", and it works with `"chatter": false`.
-- **The mutter.** One line in a world bubble on each failed or refused use. A mutter is a state of
-  its own (`s.mutter = { line, topic, until }`), returned by `getState().talking` with
-  `partnerId: null` when the NPC is not in a pair chat, so the bubble renderer draws it as it
-  draws a chat line. Built-in pools beside `coffee`, `cooler` and `greet` (`DEFAULT_CHATTER`,
-  `npc-needs.js:51`): `work_fail` ("Share's down again.", "Why is nothing working?"),
-  `work_fail_fed_up` ("That's it. I've had enough.", "I am not waiting any longer."), used when
-  `tell` is 2, `station_fail`, `usb_refused`, `social_blocked` and `share_login`. A scenario's
-  `chatter` replaces a pool by name as it does now; the line is chosen with the seeded `roll`;
-  every pool line is at most 40 characters, held by the validator's existing pool check. Bubbles
-  are text only, so nothing here is voiced.
+- **The mutter.** One line in a world bubble on each failed or refused use, and one when a
+  workaround starts. A mutter is a state of its own (`s.mutter = { line, topic, until }`), set
+  through `NPCNeedsSystem.mutter(npcId, topic)` and returned by `getState().talking` with
+  `partnerId: null` when the NPC is not in a pair chat, so the bubble renderer draws it as it draws
+  a chat line. A scenario's `chatter` replaces a pool by name as it does now; the line is chosen
+  with the seeded `roll`; every pool line is at most 40 characters, held by the validator's
+  existing pool check. Bubbles are text only, so nothing here is voiced.
+- **Which pool, on a failure.** The pool is chosen at the moment of the failure, from the `tell`
+  the NPC holds then (the answer to the previous report), and the line is held for its time; the
+  answer that arrives afterwards changes the icon, never the line already said. In order:
+  1. `tell` 2: `work_fail_fed_up` ("That's it. I've had enough.", "I am not waiting any longer.");
+  2. otherwise the cause's own pool: a station failure `station_fail` ("This PC is useless.");
+     `social_blocked` ("Blocked. Of course."); a `no_access` failure `work_fail_no_access` ("Still
+     no access. Nobody listens."); a resource that is down or unreachable `work_fail_<kind>` by the
+     first missing resource's `kind`: `work_fail_file_share` ("Share's down again."),
+     `work_fail_email` ("Email's not sending."), `work_fail_printer` ("Printer's jammed again.");
+  3. `work_fail` ("Why is nothing working?") for a kind with no pool of its own.
+
+  So a student hears the thing they broke named, and hears the tone change before the person acts.
+  A refused USB device says `usb_refused` ("USB's disabled. Typical."), whatever the `tell`.
+- **Which pool, when a workaround starts.** Each workaround says a line from its own pool as the
+  hand-over starts its errand, so the act is tied to the outage in words: `wk_writes_down` ("I'll
+  never remember this one."), `wk_prop_door` ("I'm not badging in every time."), `wk_borrow`
+  ("I'll use the spare PC."), `wk_share_login` ("I'll get someone to run it."), and none for `emit`.
+  The line's timing depends on the answer's arrival; its choice stays seeded. On arrival at the
+  colleague, `share_login` says its spoken line from `login_aloud` (6.5).
+- **The action icon for an errand.** While a workaround errand runs, the action icon slot shows
+  the existing `npc-work` picture, so a person walking somewhere for a reason looks different from
+  one wandering for coffee.
 
 ### 5.6 Outages
 
@@ -380,6 +460,26 @@ fails, the people who depend on it leave their desks more often, walk to the bro
 at it, and grow visibly frustrated. Clearing the global ends it; each met use then eases
 frustration. The global is written by the browser, so an outage is pacing and display, not
 protection (section 9.3).
+
+**The outage bites at once.** A use is judged only when it completes, and a use starts only when
+the need is at or below `urgentAt` (`npc-needs.js:788-803`). Left alone, a person who has just
+worked sits at the desk until the need next turns urgent: with a desk preset's `restores: 60`
+(`office-presets.json:4`) and a work need of `decayPerMin: 6, urgentAt: 50`, that is about eight
+minutes before the first sign that anything is wrong. The lesson is causal ("I broke it, she
+noticed"), so the gap is closed by one client rule:
+
+- each tick, the needs system checks, for each registered NPC with a `work` plan, the globals that
+  plan names (each need's `downIf` and route globals, and `stationDownIf`) through
+  `world.globalHolds(name)` (`npc-needs.js:1690`);
+- when one of them turns truthy, or is truthy when the NPC registers, the NPC's `work` level is
+  lowered to `urgentAt` (never raised) and its retry wait for `work` is cleared, once per change;
+- the NPC therefore tries to work at the next selection: within about one use time when idle, or
+  as soon as a running job (a coffee, a chat) ends.
+
+It is what a person at a desk does when the share drops: they notice the next time they press
+save. It is driven by the player's own act, so the decision log stays a function of the seed and
+the player's actions. `social_media` gets the same rule for its station's `downIf` only; a
+`social: "blocked"` policy is not an event and has no kick.
 
 ## 6. Workarounds (sub-slices B, H and L)
 
