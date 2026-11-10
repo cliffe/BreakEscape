@@ -297,11 +297,15 @@ needs core is the verdict.
 
 **Judged** has one meaning throughout this plan: a use for the need `work` (the need name the
 office presets already give desk PCs) by an NPC that has a `work` plan, or a use for the need
-`social_media` (section 8) by any NPC. An NPC has a `work` plan when its resolved work list is not
-empty; `compile_npc_plan!` (section 9.2) omits `work` from an NPC whose list is empty, so that NPC's
-`work` uses are not judged and behave exactly as today. (Most staff get a plan from a role default
-such as `roles.staff.workNeeds: ["email"]`; an author who wants an NPC's dead PC or lockout to
-count gives it at least one resource.) No other need, and no other NPC's `work`, is judged. When a
+`social_media` (section 8) by any NPC. An NPC has a `work` plan when it has a `work` need in its
+`needs` block **and** its resolved work list is not empty; `compile_npc_plan!` (section 9.2) omits
+`work` from every other NPC, so that NPC's `work` uses (if any) are not judged and behave exactly as
+today. (Most staff get a list from a role default such as `roles.staff.workNeeds: ["email"]`, which
+reaches every NPC with that role; only those with a `work` need get a plan. An account holder with
+no needs, such as a desk's absent owner, has no plan, no `metAt` and no validator warning about
+work. An author who wants an NPC's dead PC or lockout to count gives it a `work` need and at least
+one resource.) No other need, and no other NPC's `work`, is judged. Every rule and warning in this
+plan that names "an NPC with a `work` plan" means this. When a
 judged use completes, every failure is collected (for `work`):
 
 1. **The station.** Sub-slice L's `locked_out` (6.6). A station that is out of order is not
@@ -312,8 +316,9 @@ judged use completes, every failure is collected (for `work`):
    - its `downIf` global is truthy: `down`;
    - the station cannot reach it: `unreachable` (below).
 
-No failures: the use is **met** and everything happens as today. An NPC with no resolved resources
-has no plan and is never judged, so every existing scenario behaves as it does now.
+No failures: the use is **met** and everything happens as today. An NPC with no `work` need or no
+resolved resources has no plan and is never judged, so every existing scenario behaves as it does
+now.
 
 The verdict is a pure function in a new module, `public/break_escape/js/systems/npc-work.js`
 (`useVerdict(plan, need, station, globals)`, no imports, so node tests load it directly).
@@ -361,7 +366,10 @@ routes that arrive with the borrow (6.4).
 **Where a judged need is met.** For a judged need the candidates are exactly:
 
 1. a PC borrowed for that need, while `s.borrow` is set (6.4);
-2. the NPC's own `needsHome` object;
+2. the NPC's own `needsHome` object (its **own station**: throughout this plan "own" means the
+   object the NPC's `needsHome` names, and only that. A PC an NPC owns through `screenOwner` while
+   its `needsHome` is a coordinate or another object is a desk like any other here, so the
+   validator warns about such an NPC, section 10, and the author makes that PC its `needsHome`);
 3. any object that satisfies the need and is **not a desk**. A desk is an object that is a
    workstation by `isWorkstation`'s rule (`workstation-state.js:89-93`: `workstation: true`, a
    `locksScreenOnLeave`, a `lockChance`, or `lockType: "login"`), or one whose office preset is
@@ -389,7 +397,10 @@ no session), which is neither the workaround nor what a person does.
 before both of its null returns (`:1543`, every remaining source outside the leash or another
 owner's `private` object; `:1555`, one of them busy): for a judged need whose own `needsHome`
 object satisfies the need and is off, it returns `{ reason: "off", targetId: <that object's id> }`.
-So whatever else is in the room or in reach, an NPC whose own station is dead parks at once with
+The rule reads the station's id from the NPC record's `needsHome` string and the object through
+`world.getObject`, never from `s.home`, which is provisional for a start-room NPC until its room's
+objects are registered (`_updateHome`, `:2450-2458`). For `social_media` the rule applies only to an
+NPC with `"phone": false`: one with a phone uses it instead (8.1). So whatever else is in the room or in reach, an NPC whose own station is dead parks at once with
 the reason `off`, and that park is counted (below). When a non-workstation source is free and
 reachable the NPC uses it instead and `_giveUpReason` is never reached: the NPC worked elsewhere,
 which is no failure.
@@ -437,16 +448,20 @@ door does not mend a share or a PC, and neither does someone else's coffee machi
 `_park` stores `targetId`, `wakeOn` and `missing` on `s.parked[name]` beside its present fields, and
 the wakes are:
 
-- **`_wakeParked()` skips failure parks.** All three of its callers (a door opening, `:541-544`; a
-  room loading, `:990-992`; an `offWhen` object switched back on, `:561-565`) wake every other park
-  exactly as today, and none of them wakes a failure park. Its loop simply passes over a parked
-  need whose reason is `off` or `failed` on a judged need.
+- **`_wakeParked()` skips failure parks and holds.** All three of its callers (a door opening,
+  `:541-544`; a room loading, `:990-992`; an `offWhen` object switched back on, `:561-565`) wake
+  every other park exactly as today, and none of them wakes a failure park or a reload's `held`
+  park (5.4, "Reload"). Its loop simply passes over a parked need whose reason is `off`, `failed` or
+  `held` on a judged need.
 - **A targeted wake for a resource.** `onGlobalChanged(name)` (`:551-566`) gains a first clause,
   placed **before** the early return at `:552` (which returns when no `offWhen` object has been
   seen, as in a scenario whose only outages are resource `downIf`s): for each NPC, each `failed`
-  park whose `wakeOn` names `name` and none of whose `wakeOn` globals now holds (`_globalHolds`) is
-  woken, on the pattern of `_wakeParkedFor` (`:1599-1606`): `until` brought forward to
-  `WAKE_BASE_MS` from now, `woken` set.
+  park whose `wakeOn` names `name` and whose recorded causes would all pass now is woken, on the
+  pattern of `_wakeParkedFor` (`:1599-1606`): `until` brought forward to `WAKE_BASE_MS` from now,
+  `woken` set. "Would pass" is tested on the plan, cause by cause: a `down` resource's `downIf`
+  no longer holds (`_globalHolds`), and an `unreachable` resource is `reachable(need, globals)`
+  (`npc-work.js`), so a need with routes `[[a], [b]]` wakes when either route clears, not only when
+  every global it ever named is off.
 - **A targeted wake for a station.** In the existing switched-on clause, the ids of the objects
   that were off and are now on are collected; each `off` failure park whose `targetId` is one of
   them is woken the same way, with one difference: its retry comes one use time of that station
@@ -455,10 +470,12 @@ the wakes are:
 - A woken failure park records `rearmed: true` on the need (5.4), so the next fail report says the
   cause cleared in between.
 
-So an honest NPC never fails again within its park unless its cause cleared and came back, and a
-fail after a cleared cause always comes at least one use time after the last fail (a woken
-`failed` park retries and then uses the station for a full use before the verdict; a woken `off`
-park waits a use time first). The server's pace floor rests on both facts (9.1). Every park that
+So an honest NPC never fails again within its park unless its cause cleared and came back, or a
+met use came between, and a fail after a cleared cause or a met use always comes at least one use
+time after the last fail (a woken `failed` park retries and then uses the station for a full use
+before the verdict; a woken `off` park waits a use time first; a met use takes a use time, and a
+station switched off during it parks `off` only as it ends). The server's pace floor rests on
+these facts (9.1). Every park that
 is not a failure park wakes as today.
 
 **One failure, one count.** A failure counts once, as one park: a `failed` turn-back parks
