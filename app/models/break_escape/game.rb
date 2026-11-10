@@ -6,6 +6,7 @@ module BreakEscape
     include ScoreBreakdown
     include NetworkAccess
     include CaptureProofs
+    include NpcFrustration
 
     # Associations
     belongs_to :player, polymorphic: true

@@ -155,7 +155,7 @@ class AccessWorkTest < ActiveSupport::TestCase
     d['rooms']['office']['objects'][0]['policy'] = 'no_social'
     assert_equal [{ 'id' => 'dana_pc', 'why' => 'social_blocked' }], AW.owned_causes(d, social, 'social_media')
     assert_equal [{ 'id' => 'dana_pc', 'why' => 'locked_out' }],
-                 AW.owned_causes(scenario, npc, 'work', { 'dana_pc' => { 'dreyes' => true } })
+                 AW.owned_causes(scenario, npc, 'work', ['dana_pc|dreyes'])
   end
 
   test 'belongs to the NPC' do

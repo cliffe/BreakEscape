@@ -25,7 +25,8 @@ module BreakEscape
     end
 
     before_action :set_game, only: [:show, :scenario, :scenario_map, :ink, :room, :container, :update_room, :unlock, :inventory, :objectives, :capture_secrets, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :tts, :reset, :new_session, :vm_panel, :vm_set_panel, :conclude_mission,
-                                        :login, :logout, :login_accounts, :clone_card, :network, :network_plant, :network_unplug]
+                                        :login, :logout, :login_accounts, :clone_card, :network, :network_plant, :network_unplug,
+                                        :npc_frustration]
     # A host may also route the game page under its own address (Hacktivity: /hacktivities/:event_id/play/mission/:id,
     # inside a Game event's web app scope). The game must belong to that event: any other pair is a 404.
     before_action :require_game_in_host_event, only: [:show]
@@ -87,7 +88,8 @@ module BreakEscape
     # (access model, section 6), so they take the lock like unlock. network_plant and
     # network_unplug write footholds, the inventory and sessions (slice 9.3a, section 5).
     around_action :with_game_lock, only: [:container, :update_room, :unlock, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :reset, :new_session, :inventory, :room,
-                                          :login, :logout, :clone_card, :network_plant, :network_unplug]
+                                          :login, :logout, :clone_card, :network_plant, :network_unplug,
+                                          :npc_frustration]
 
     # GET /games/new?mission_id=:id
     # Show VM set selection page for VM-required missions
@@ -385,6 +387,8 @@ module BreakEscape
         # Footholds held and every jack one was gained from (slice 9.3a, section 6)
         filtered['footholds'] = @game.footholds_for_client
         filtered['gainedFootholds'] = @game.gained_footholds
+        # Frustration per NPC (slice 9.2, 5.4): level, tell, settled and each need's hold
+        filtered['npcFrustration'] = @game.npc_frustration_for_client
         @game.end_claimed_sessions!
 
         if @game.player_state['inventory'].present? && @game.player_state['inventory'].is_a?(Array)
@@ -1178,6 +1182,17 @@ module BreakEscape
       render json: result[:body], status: result[:status]
     end
 
+    # POST /games/:id/npc_frustration (slice 9.2, ACCESS_MODEL_SLICE_9_2_PLAN.md 9.1):
+    # { reports: [{ npc_id, event, need, object_id, missing, rearmed }] }, one answer each
+    def npc_frustration
+      authorize @game if defined?(Pundit)
+
+      raw = params[:reports]
+      reports = raw.is_a?(Array) ? raw.map { |r| r.respond_to?(:to_unsafe_h) ? r.to_unsafe_h : r } : raw
+      result = @game.report_npc_uses!(reports)
+      render json: result[:body], status: result[:status]
+    end
+
     # ==========================================
     # Objectives System
     # ==========================================
@@ -1839,6 +1854,7 @@ module BreakEscape
         end
 
         @game.player_state['encounteredNPCs'] = (@game.player_state['encounteredNPCs'] + new_npcs).uniq
+        @game.note_npcs_met!(new_npcs)   # slice 9.2: metAt for an NPC that can fail
         @game.save!
 
         total_encountered = @game.player_state['encounteredNPCs'].length

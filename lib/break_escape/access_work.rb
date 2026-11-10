@@ -25,8 +25,6 @@ module BreakEscape
     WORKAROUND_KINDS = %w[writes_down prop_door emit borrow_session share_login].freeze
     PRESETS_FILE = File.expand_path('../../public/break_escape/js/data/office-presets.json', __dir__)
     FAIL_CAUSES = %w[down unreachable no_access off locked_out social_blocked].freeze
-    # The causes no event in play can clear (plan 9.1, gate 2)
-    OWNED_CAUSES = %w[no_access unreachable_never social_blocked locked_out].freeze
 
     # ── scenario reads ──────────────────────────────────────────────────
 
@@ -325,14 +323,13 @@ module BreakEscape
       out
     end
 
-    # Sub-slice L: whether loginLockouts holds the NPC's username at its station
+    # Sub-slice L: whether loginLockouts (a list of "pcId|username" keys) holds the NPC's
+    # username at its station
     def locked_out_at?(npc, st, lockouts)
-      return false unless lockouts.is_a?(Hash) && AccessIdentities.account?(npc)
+      return false unless lockouts.is_a?(Array) && AccessIdentities.account?(npc)
 
-      user = AccessIdentities.normalise_username(npc.dig('creds', 'username'))
-      entry = lockouts[st['id']]
-      list = entry.is_a?(Hash) ? entry.keys : Array(entry)
-      list.map { |u| AccessIdentities.normalise_username(u) }.include?(user)
+      key = "#{st['id']}|#{AccessIdentities.normalise_username(npc.dig('creds', 'username'))}"
+      lockouts.include?(key)
     end
 
     # The pace floors (plan 9.1), in seconds of server time

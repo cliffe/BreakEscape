@@ -94,6 +94,11 @@ module BreakEscape
       show?
     end
 
+    # Slice 9.2 (ACCESS_MODEL_SLICE_9_2_PLAN.md 9.1): failed and met uses an NPC reports
+    def npc_frustration?
+      show?
+    end
+
     # Networks (slice 9.3a, section 5)
     def network?
       show?
