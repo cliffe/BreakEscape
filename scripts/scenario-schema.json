@@ -5086,7 +5086,20 @@
           "description": "triggerOnInteract only fires if the player carries a matching inventory item (matched by its type, id or name). A string, or an array of any of those. Models deploying carried kit on a target (e.g. clip a keylogger onto a PC).",
           "oneOf": [ { "type": "string" }, { "type": "array", "items": { "type": "string" } } ]
         },
-        "requiresItemHint": { "type": "string", "description": "Message shown when requiresItem is set but the player is not carrying the item." },
+        "requiresItemHint": { "type": "string", "description": "Message shown when requiresItem is set but the player is not carrying the item. Shown for 6 seconds." },
+        "requiresItemHintVariants": {
+          "type": "array",
+          "description": "Optional runtime variants of requiresItemHint, resolved in order by condition against globalVars (first match wins; requiresItemHint is the fallback). Lets one object give a different hint per state.",
+          "items": {
+            "type": "object",
+            "required": ["condition", "value"],
+            "properties": {
+              "condition": { "type": "string" },
+              "value": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        },
         "consumesItem": { "type": "boolean", "description": "With requiresItem: remove the matched item from the inventory (and its server copy) after the triggerOnInteract actions fire, so the kit is 'left' on the target." },
         "officeType": { "type": "string", "enum": ["desk_pc", "coffee", "cooler", "fridge", "microwave", "sofa", "copier", "shredder", "filing", "post_tray", "desk_phone"], "description": "With officePresets: the affordance preset this object takes, by role instead of by type (wins over type). filing, post_tray and desk_phone are reached only this way." },
         "affordance": {

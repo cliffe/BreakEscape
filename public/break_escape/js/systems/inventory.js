@@ -27,6 +27,13 @@ export function createItemIdentifier(scenarioData) {
 }
 
 // Initialize the inventory system
+// Hover label of an inventory item. A droppable item (item-drop.js) says how to drop
+// it, because clicking it in the inventory is the only way and nothing else says so.
+export function inventoryHoverLabel(scenarioData) {
+    const name = scenarioData?.name;
+    return scenarioData?.droppable === true && name ? `${name} (click to drop)` : name;
+}
+
 export function initializeInventory() {
     console.log('Inventory system initialized');
     
@@ -654,7 +661,7 @@ export async function addToInventory(sprite) {
                 window.handleObjectInteraction(this);
             }
         });
-        itemImg.addEventListener('mouseenter', () => setHudLabel(sprite.scenarioData.name));
+        itemImg.addEventListener('mouseenter', () => setHudLabel(inventoryHoverLabel(sprite.scenarioData)));
         itemImg.addEventListener('mouseleave', () => clearHudLabel());
 
         // Add to slot

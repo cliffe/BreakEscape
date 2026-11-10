@@ -37,9 +37,9 @@ export const accessBridge = {
 
     /**
      * One workstation as workstation-state.js sees it: `{ ok, id, workstation, owner, present,
-     * away, screenLocked, lockAt, texture, size, lockedLook }`. `texture` is the live sprite's
-     * texture key and `size` its display size `{ w, h }`, which a swap must not change (both
-     * null while its room is not loaded) and `lockedLook` whether screen-states.js has it
+     * away, screenLocked, lockAt, texture, displayWidth, displayHeight, lockedLook }`. `texture`
+     * is the live sprite's texture key, and `displayWidth` and `displayHeight` its display size,
+     * which a swap must not change (all three null while its room is not loaded) and `lockedLook` whether screen-states.js has it
      * showing the locked screen. `present` uses the env's `ownerPresent` when the module
      * has one (step 9), else today's rule (not away). `away` is the owner's away record
      * (`{ away, leaves, ... }`) or null. `workstation` is false for an object the module does
@@ -67,7 +67,8 @@ export const accessBridge = {
             screenLocked: data.screenLocked === undefined ? null : !!data.screenLocked,
             lockAt: data.lockAt ?? rec?.lockAt ?? null,
             texture: sprite?.texture?.key ?? null,
-            size: sprite ? { w: sprite.displayWidth ?? null, h: sprite.displayHeight ?? null } : null,
+            displayWidth: sprite?.displayWidth ?? null,
+            displayHeight: sprite?.displayHeight ?? null,
             lockedLook: !!sprite?._screenLocked
         };
     },

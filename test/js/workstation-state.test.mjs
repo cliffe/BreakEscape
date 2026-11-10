@@ -469,3 +469,21 @@ test('workstation_owner_returned carries wasLocked: true from a locked screen, f
     r2.ws.onReturned('ann');
     assert.deepEqual(r2.emitted, [['workstation_owner_returned:pc_a', { objectId: 'pc_a', ownerId: 'ann', wasLocked: true }]]);
 });
+
+test('wasLocked does not depend on anything asking first: a station found after the leave is rolled on the return', () => {
+    const objects = [];
+    const r = rig9(objects, { npcs: liveNpcs() });
+    r.ws.onLeft('ann');
+    const a = { id: 'pc_a', workstation: true };
+    objects.push(a);
+    r.emitted.length = 0;
+    r.ws.onReturned('ann');
+    assert.deepEqual(r.emitted, [['workstation_owner_returned:pc_a', { objectId: 'pc_a', ownerId: 'ann', wasLocked: true }]]);
+    assert.equal(a.screenLocked, false);
+    // A station found while its owner is at the desk (never away) is not rolled
+    const b = { id: 'pc_b', workstation: true };
+    objects.push(b);
+    r.emitted.length = 0;
+    r.ws.onReturned('bob');
+    assert.deepEqual(r.emitted, [['workstation_owner_returned:pc_b', { objectId: 'pc_b', ownerId: 'bob', wasLocked: false }]]);
+});

@@ -11,6 +11,7 @@ import { addToInventory, createItemIdentifier } from './inventory.js';
 import { playUISound, playGameSound } from './ui-sounds.js';
 import { applyActions } from './apply-actions.js';
 import { resolveObjectField } from '../utils/conditional-text.js';
+import { requiresItemHint, REQUIRES_ITEM_HINT_MS } from './requires-item-hint.js';
 import { isRemoteFlagLock, remoteFlagLockMessage } from '../utils/flag-lock.js';
 import { npcReachDistSq } from './npc-reach.js';
 import { shouldExamine, startExamine } from './examine.js';
@@ -828,8 +829,8 @@ export function handleObjectInteraction(sprite) {
                 return wanted.includes(d.type) || wanted.includes(d.id) || wanted.includes(d.name);
             });
             if (!held) {
-                const hint = sprite.scenarioData.requiresItemHint || 'You need the right kit in hand for this.';
-                window.gameAlert?.(hint, 'info', '', 3000);
+                // requiresItemHintVariants gives one hint per state (first match wins).
+                window.gameAlert?.(requiresItemHint(sprite.scenarioData), 'info', '', REQUIRES_ITEM_HINT_MS);
                 return;
             }
             console.log('[Interaction] triggerOnInteract (requiresItem ok) firing for:', sprite.scenarioData.name || sprite.objectId);

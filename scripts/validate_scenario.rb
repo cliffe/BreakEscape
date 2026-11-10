@@ -499,7 +499,7 @@ def check_unknown_fields(json_data)
     hacktivityMode vm acceptsVms flags flagRewards
     mode onAbort onLaunch abortConfirmText launchConfirmText
     itemsHeld contents hasContents triggerOnInteract
-    requiresItem requiresItemHint consumesItem revealOnGlobal outputOf
+    requiresItem requiresItemHint requiresItemHintVariants consumesItem revealOnGlobal outputOf
     minigameData interactionType
     gateVar sealedMessage openableReadyMessage
     puzzle_graph_role puzzle_graph_aim puzzle_graph_unlocks
@@ -5618,7 +5618,7 @@ def check_engine_limits(json_data)
         end
       end
 
-      %w[observationVariants spriteVariants textVariants].each do |vk|
+      %w[observationVariants spriteVariants textVariants requiresItemHintVariants].each do |vk|
         Array(node[vk]).each_with_index do |v, i|
           next unless v.is_a?(Hash)
           if (bad = unsupported_condition_syntax(v['condition'], allow_includes: false))
@@ -5651,7 +5651,7 @@ end
 # Any other condition with '||' gets a softer warning naming its path.
 def check_or_in_global_conditions(json_data)
   issues = []
-  checked_elsewhere = /(\A|\/)(eventMappings|timers|observationVariants|spriteVariants|textVariants)(\[|\/|\z)/
+  checked_elsewhere = /(\A|\/)(eventMappings|timers|observationVariants|spriteVariants|textVariants|requiresItemHintVariants)(\[|\/|\z)/
   walk = nil
   walk = lambda do |node, path, ctx|
     case node

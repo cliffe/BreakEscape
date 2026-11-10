@@ -326,3 +326,58 @@ test('a keycard opening an access lock through its holder is not reported as ope
     lobby(sc).objects.push({ id: 'len_copy', type: 'keycard', name: "Len's spare", card_id: 'LEN-01' });
     assertHas(lockCredentialIssues(sc), "credential 'LEN-01', but no rfid lock 'requires' it");
 });
+
+// requiresItemHintVariants (physical pentest follow-up, 3.4): a known object field with the
+// { condition, value } shape of the other variant lists, read by the &&-only evaluator.
+function validatorIssues(fn, scenario) {
+    const script = `require ${JSON.stringify(join(root, 'scripts/validate_scenario.rb'))}
+      puts JSON.generate(${fn}(JSON.parse(STDIN.read)))`;
+    const r = spawnSync('ruby', ['-e', script], {
+        input: JSON.stringify(scenario), encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' }
+    });
+    assert.equal(r.status, 0, r.stderr);
+    return JSON.parse(r.stdout.trim().split('\n').pop());
+}
+function schemaErrors(scenario) {
+    const script = `require ${JSON.stringify(join(root, 'scripts/validate_scenario.rb'))}
+      puts JSON.generate(validate_json(JSON.parse(STDIN.read), ${JSON.stringify(join(root, 'scripts/scenario-schema.json'))}))`;
+    const r = spawnSync('ruby', ['-e', script], {
+        input: JSON.stringify(scenario), encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' }
+    });
+    assert.equal(r.status, 0, r.stderr);
+    return JSON.parse(r.stdout.trim().split('\n').pop());
+}
+function withHintVariants(variants) {
+    const sc = clean();
+    lobby(sc).objects.push({
+        id: 'plain_pc', type: 'pc', name: 'Plain PC', takeable: false,
+        requiresItem: 'keylogger', requiresItemHint: 'Collect the keylogger first.',
+        requiresItemHintVariants: variants,
+        triggerOnInteract: [{ type: 'set_global', key: 'planted', value: true }]
+    });
+    return sc;
+}
+
+test('requiresItemHintVariants is a known object field with the variant shape', { skip }, () => {
+    const sc = withHintVariants([
+        { condition: 'globalVars.planted && globalVars.plain_pc_screen_locked', value: 'Planted, screen locked.' },
+        { condition: 'globalVars.planted', value: 'Planted.' }
+    ]);
+    assert.ok(!has(validatorIssues('check_unknown_fields', sc), 'requiresItemHintVariants'));
+    assert.ok(!has(validatorIssues('check_engine_limits', sc), 'requiresItemHintVariants'));
+    assert.ok(!has(schemaErrors(sc), 'requiresItemHintVariants'));
+    // the schema refuses a variant with no value, and one with a stray key
+    assertHas(schemaErrors(withHintVariants([{ condition: 'globalVars.planted' }])), 'requiresItemHintVariants');
+    assertHas(schemaErrors(withHintVariants([{ condition: 'globalVars.planted', value: 'x', text: 'y' }])), 'requiresItemHintVariants');
+});
+
+test("a requiresItemHintVariants condition with '||' or parentheses is an error, reported once", { skip }, () => {
+    const sc = withHintVariants([
+        { condition: 'globalVars.planted || globalVars.captured', value: 'Either.' },
+        { condition: '(globalVars.planted)', value: 'Brackets.' }
+    ]);
+    const out = validatorIssues('check_engine_limits', sc);
+    assertHas(errors(out), "requiresItemHintVariants[0]' condition \"globalVars.planted || globalVars.captured\" uses '||'");
+    assertHas(errors(out), "requiresItemHintVariants[1]' condition \"(globalVars.planted)\" uses parentheses");
+    assert.equal(out.filter(s => s.includes('requiresItemHintVariants[0]')).length, 1, out.join('\n'));
+});

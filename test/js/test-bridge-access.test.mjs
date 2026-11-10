@@ -15,6 +15,7 @@ writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
 mkdirSync(join(dir, 'systems/test-bridge'), { recursive: true });
 writeFileSync(join(dir, 'systems/test-bridge/access.js'), readFileSync(join(js, 'systems/test-bridge/access.js'), 'utf8'));
 writeFileSync(join(dir, 'systems/workstation-state.js'), readFileSync(join(js, 'systems/workstation-state.js'), 'utf8'));
+writeFileSync(join(dir, 'systems/screen-states.js'), readFileSync(join(js, 'systems/screen-states.js'), 'utf8'));
 
 globalThis.window = {};
 const { accessBridge } = await import(pathToFileURL(join(dir, 'systems/test-bridge/access.js')));
@@ -34,7 +35,7 @@ test('the bridge exposes the access block', () => {
   const src = readFileSync(join(js, 'systems/test-bridge/index.js'), 'utf8');
   assert.match(src, /import \{ accessBridge \} from '\.\/access\.js';/);
   assert.match(src, /\baccess: accessBridge,/);
-  assert.deepEqual(Object.keys(accessBridge).sort(), ['savedCards', 'sessions', 'workstation']);
+  assert.deepEqual(Object.keys(accessBridge).sort(), ['savedCards', 'screenTransitions', 'sessions', 'workstation']);
 });
 
 test('sessions() is empty without pc-sessions.js, and reads its list() or sessions map', () => {
@@ -53,7 +54,7 @@ test('workstation() reports owner, presence, the away record and the screen', ()
   const { ws } = installWorkstations([pc, { id: 'lamp' }], [{ id: 'jake', needsHome: 'jake_pc' }]);
   let r = accessBridge.workstation('jake_pc');
   assert.deepEqual(r, { ok: true, id: 'jake_pc', workstation: true, owner: 'jake', present: true,
-                        away: null, screenLocked: null, lockAt: null });
+                        away: null, screenLocked: null, lockAt: null, texture: null, displayWidth: null, displayHeight: null, lockedLook: false });
 
   ws.onLeft('jake'); // roll 0.9 >= 0.5: left open
   r = accessBridge.workstation('jake_pc');
@@ -100,4 +101,30 @@ test('savedCards() lists the copier\'s card ids', () => {
     { scenarioData: { type: 'rfid_cloner', saved_cards: [{ card_id: '4F00A1C2', name: 'x' }, { key_id: 'legacy' }, {}] } }
   ];
   assert.deepEqual(accessBridge.savedCards(), ['4F00A1C2', 'legacy', null]);
+});
+
+test('workstation() reports the live sprite\'s texture, display size and locked look; screenTransitions() copies the module\'s record', () => {
+  const pc = { id: 'jake_pc', workstation: true };
+  installWorkstations([pc], [{ id: 'jake', needsHome: 'jake_pc' }]);
+  const sprite = { scenarioData: pc, texture: { key: 'pc_desktop' }, displayWidth: 36, displayHeight: 24 };
+  window.rooms = { office: { objects: { o1: sprite } } };
+  let r = accessBridge.workstation('jake_pc');
+  assert.equal(r.texture, 'pc_desktop');
+  assert.deepEqual([r.displayWidth, r.displayHeight], [36, 24]);
+  assert.equal(r.lockedLook, false);
+  sprite.texture = { key: 'pc_desktop_locked' }; sprite._screenLocked = true;
+  r = accessBridge.workstation('jake_pc');
+  assert.equal(r.texture, 'pc_desktop_locked');
+  assert.equal(r.lockedLook, true);
+  assert.deepEqual([r.displayWidth, r.displayHeight], [36, 24]);
+
+  delete window.screenStates;
+  assert.deepEqual(accessBridge.screenTransitions(), []);
+  const transitions = [{ objectId: 'jake_pc', locked: true, sound: 'lockpick_set', at: 5 }];
+  window.screenStates = { transitions };
+  const out = accessBridge.screenTransitions();
+  assert.deepEqual(out, transitions);
+  out[0].locked = false;
+  assert.equal(transitions[0].locked, true);
+  delete window.rooms; delete window.screenStates;
 });
