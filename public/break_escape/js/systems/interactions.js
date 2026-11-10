@@ -1853,9 +1853,12 @@ export function handleObjectInteraction(sprite) {
     // notebook page. A copy is still saved to notes unless "addToNotes": false (use that
     // for flavour, or for live displays whose text changes with textVariants).
     let readInPlace = false;
+    // An item filed in a holder (storeIn, the capture log: engine plan section 6) is in the
+    // holder, never also in the Notepad, whatever addToNotes says.
+    const filedInHolder = typeof data.storeIn === 'string' && data.storeIn.trim() !== '';
     if (data.readable && resolvedText && data.readDisplay === 'gameDisplay') {
         readInPlace = true;
-        if (data.addToNotes !== false && window.addNote) {
+        if (data.addToNotes !== false && !filedInHolder && window.addNote) {
             const addedNote = window.addNote(data.name, resolvedText, data.important || false);
             if (addedNote) {
                 window.gameAlert(`Added "${data.name}" to your notes.`, 'info', 'Note Added', 3000);
@@ -1903,14 +1906,16 @@ export function handleObjectInteraction(sprite) {
                 addToInventory(sprite); // Register with server (UI slot skipped in inventory.js)
             }
             if (window.startNotesMinigame) {
-                window.startNotesMinigame(sprite, resolvedText, resolvedObservations);
+                // A filed item opens the same page but is not added to the Notepad.
+                if (filedInHolder) window.startNotesMinigame(sprite, resolvedText, resolvedObservations, null, false, false);
+                else window.startNotesMinigame(sprite, resolvedText, resolvedObservations);
                 return;
             }
         }
 
         // Add readable text as a note (fallback for non-notes readable objects)
-        // Skip notepad items since they're handled specially
-        if (resolvedText.trim().length > 0 && data.type !== 'notepad') {
+        // Skip notepad items since they're handled specially, and items filed in a holder
+        if (resolvedText.trim().length > 0 && data.type !== 'notepad' && !filedInHolder) {
             const addedNote = window.addNote(data.name, resolvedText, data.important || false);
             if (addedNote) {
                 window.gameAlert(`Added "${data.name}" to your notes.`, 'info', 'Note Added', 3000);

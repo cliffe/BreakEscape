@@ -269,6 +269,9 @@ export class CaptureLogMinigame extends MinigameScene {
         button.appendChild(text);
         this.addEventListener(button, 'click', (e) => {
             e.preventDefault?.(); e.stopPropagation?.();
+            // A listener armed by an earlier row (a refused unlock that opened nothing) is
+            // dropped, so only the click that arms one is returned from.
+            disarmReturn();
             onClick();
         });
         li.appendChild(button);

@@ -42,6 +42,7 @@ copy('minigames/framework/base-minigame.js');
 copy('minigames/capture-log/capture-log-model.js');
 copy('minigames/capture-log/capture-rows.js');
 copy('minigames/capture-log/capture-log-minigame.js');
+copy('systems/pc-sessions.js');
 put('api-client.js', 'export const ApiClient = { get: (...a) => window.__api.get(...a) };');
 put('systems/minigame-registry.js', `
 export const starters = {};
@@ -88,6 +89,8 @@ const { MinigameScene } = await import(url('minigames/framework/base-minigame.js
 const registry = await import(url('systems/minigame-registry.js'));
 const log = await import(url('minigames/capture-log/capture-log-minigame.js'));
 const rows = await import(url('minigames/capture-log/capture-rows.js'));
+// The real PcSessions class (M2); the module also sets window.pcSessions, which reset() clears.
+const { PcSessions } = await import(url('systems/pc-sessions.js'));
 const { addToInventory, removeFromInventory, initializeInventory, processInitialInventoryItems, trayStateOf, refreshInventoryTray } = inv;
 
 // A reader: any minigame the device's rows open (a text file, a desktop).
@@ -394,4 +397,62 @@ test('capture-rows: loadCaptureSecrets awaits the sync before the request, and r
     assert.deepEqual(order, ['synced', '/capture_secrets']);
     const failed = await rows.loadCaptureSecrets({ stateSync: null, ApiClient: { get: async () => { throw new Error('500'); } } });
     assert.equal(failed, null);
+});
+
+// Code review R1 M2: the remote session rows from the real pcSessions, fed the server's own
+// answer shapes (login_session_answer: remote, footholdId, host only on a remote session).
+test('M2: a remote sign-in and a reload through the real PcSessions list the session under its link', async () => {
+    const serverAnswer = { success: true, npcId: 'lena', username: 'lfox', displayName: 'Lena Fox', via: 'password',
+        remote: true, footholdId: 'fh1', host: 'HB-FIN-02' };
+    try {
+        reset();
+        window.ApiClient = { login: async (_pcId, body) => (body.foothold ? serverAnswer : { ...serverAnswer, remote: undefined }) };
+        window.pcSessions = new PcSessions();
+        window.networkLinks = { open: () => {}, openSession: () => {} };
+        await add(HOLDER); await add(LINK);
+        await openDevice();
+        assert.deepEqual(keysIn('sessions'), ['item:netlink_fh1']);
+        const signedIn = await window.pcSessions.signIn('lena_pc', 'lfox', 'pw', { foothold: 'fh1' });
+        assert.equal(signedIn.ok, true);
+        await settle();
+        assert.deepEqual(keysIn('sessions'), ['item:netlink_fh1', 'session:lena_pc:fh1'], 'pc_signed_in redraws the device');
+        assert.match(device().root.textContent, /HB-FIN-02/);
+        assert.match(device().root.textContent, /Remote session through Drop box link/);
+
+        // A reload: the scenario response's sessions (session_for_client), one remote, one local.
+        reset();
+        window.pcSessions = new PcSessions();
+        window.pcSessions.load({
+            lena_pc: { npcId: 'lena', username: 'lfox', displayName: 'Lena Fox', via: 'password', remote: true, footholdId: 'fh1', host: 'HB-FIN-02' },
+            sam_pc: { npcId: 'sam', username: 'sam', displayName: 'Sam', via: 'password' }
+        }, ['lena_pc', 'sam_pc']);
+        window.networkLinks = { open: () => {}, openSession: () => {} };
+        await add(HOLDER); await add(LINK);
+        await openDevice();
+        assert.deepEqual(keysIn('sessions'), ['item:netlink_fh1', 'session:lena_pc:fh1'], 'the local session is not listed');
+
+        // A keyboard fetch settles the session local (the server cleared its foothold): the row goes.
+        window.pcSessions.settle('lena_pc', { npcId: 'lena', via: 'password' });
+        device().redraw();
+        assert.deepEqual(keysIn('sessions'), ['item:netlink_fh1']);
+    } finally {
+        delete window.ApiClient;
+    }
+});
+
+// Code review R1 m10: a listener armed by a refused click is dropped by the next row click.
+test('m10: a link row clicked after a refused unlock does not leave the return listener armed', async () => {
+    reset();
+    window.handleObjectInteraction = () => {}; // refused: opens nothing
+    window.networkLinks = { open: () => { MF.startMinigame('reader', null, {}); }, openSession: () => {} };
+    await add(HOLDER); await add(SESSION_ITEM); await add(LINK);
+    await openDevice();
+    click('item:records_remote_session');
+    assert.ok(log.returnArmed(), 'the refused click armed it');
+    click('item:netlink_fh1');
+    assert.equal(log.returnArmed(), false, 'the link click dropped it');
+    assert.ok(!device(), 'the network screen displaced the device');
+    MF.currentMinigame.complete(true);
+    await settle();
+    assert.equal(device(), null, 'an ending minigame does not reopen the device through the stale listener');
 });

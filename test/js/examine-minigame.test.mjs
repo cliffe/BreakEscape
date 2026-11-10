@@ -323,3 +323,42 @@ test('a droppable held item clicked through the chain (not the tray) still drops
     // and its menu, exported from interactions.js, is the drop menu
     assert.deepEqual(inventoryMenuFor(held, { dropBlocked: null }).map(e => e.label), ['Drop here', 'Examine']);
 });
+
+// Capture log code review R1 m2: an item filed in a holder (storeIn) is never also added to the
+// Notepad, in either readable branch that adds a note, whatever addToNotes says.
+test('a storeIn item read in place or as a note is not added to the Notepad', () => {
+    const added = [];
+    const notesArgs = [];
+    const addNote = window.addNote;
+    const startNotes = window.startNotesMinigame;
+    window.addNote = (title) => { added.push(title); return true; };
+    window.startNotesMinigame = (...a) => notesArgs.push(a);
+    try {
+        reset();
+        handleObjectInteraction(invImg({ type: 'lanyard', id: 'l1', name: 'Filed panel', readable: true, readDisplay: 'gameDisplay',
+            addToNotes: true, storeIn: 'capture_log', text: 'Seen.' }));
+        assert.deepEqual(calls.filter(c => c[0] === 'gameDisplay').map(c => c[1]), ['Filed panel'], 'still shown');
+        assert.deepEqual(added, []);
+
+        reset();
+        handleObjectInteraction(invImg({ type: 'lanyard', id: 'l2', name: 'Panel', readable: true, readDisplay: 'gameDisplay', text: 'Seen.' }));
+        assert.deepEqual(added, ['Panel'], 'an unfiled one is still added');
+
+        added.length = 0;
+        reset();
+        handleObjectInteraction(roomSprite({ type: 'notice', id: 'n1', name: 'Filed notice', takeable: false, readable: true,
+            storeIn: 'capture_log', text: 'Wash your hands.' }));
+        assert.deepEqual(added, []);
+        handleObjectInteraction(roomSprite({ type: 'notice', id: 'n2', name: 'Notice', takeable: false, readable: true, text: 'Wash your hands.' }));
+        assert.deepEqual(added, ['Notice']);
+
+        reset();
+        handleObjectInteraction(invImg({ type: 'notes', id: 'nt1', name: 'Filed note', readable: true, storeIn: 'capture_log', text: 'x' }));
+        assert.equal(notesArgs.at(-1)?.[5], false, 'the notes page opens without adding to the Notepad');
+        handleObjectInteraction(invImg({ type: 'notes', id: 'nt2', name: 'Note', readable: true, text: 'x' }));
+        assert.notEqual(notesArgs.at(-1)?.[5], false);
+    } finally {
+        window.addNote = addNote;
+        window.startNotesMinigame = startNotes;
+    }
+});
