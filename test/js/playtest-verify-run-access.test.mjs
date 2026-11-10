@@ -134,3 +134,26 @@ test('the habits block is absent for a game without habits', () => {
   assert.equal(r.status, 0, r.out);
   assert.doesNotMatch(r.out, /\nhabits\n/);
 });
+
+// Slice 9.1 step 5: one line per gate with a noHold, values only.
+test('--access prints a line per gate with a noHold, and none for a gate without', () => {
+  const sc = structuredClone(HABITS_SCENARIO);
+  sc.rooms.office.npcs.push({ id: 'sara', habits: { locksScreen: 'always', holdsDoors: false } },
+    { id: 'gary', habits: { locksScreen: 'never', holdsDoors: true } });
+  sc.rooms.office.doors = [
+    { connectedRoom: 'store_a', direction: 'north', gate: { openFor: ['gary'] } },
+    { connectedRoom: 'store_b', direction: 'south', gate: { openFor: ['sara', 'gary'], noHold: ['sara'] } }
+  ];
+  const r = verify(['1', '--access'], ACCESS_STATE, { STUB_SCENARIO: JSON.stringify(sc) });
+  assert.equal(r.status, 0, r.out);
+  assert.match(r.out, /npc sara\s+locksScreen=always holdsDoors=false/);
+  assert.match(r.out, /gate rooms\/office\/doors\/1 \(into store_b\)\s+openFor sara,gary\s+noHold sara/);
+  assert.doesNotMatch(r.out, /gate rooms\/office\/doors\/0/);
+});
+
+test('a gate with an authored noHold prints its line even when no NPC has a habits object', () => {
+  const sc = { rooms: { office: { objects: [], npcs: [{ id: 'sara' }],
+    doors: [{ connectedRoom: 'store_b', direction: 'south', gate: { openFor: 'sara', noHold: ['sara'] } }] } } };
+  const r = verify(['1', '--access'], ACCESS_STATE, { STUB_SCENARIO: JSON.stringify(sc) });
+  assert.match(r.out, /\nhabits\n\s+gate rooms\/office\/doors\/0 \(into store_b\)\s+openFor sara\s+noHold sara/);
+});

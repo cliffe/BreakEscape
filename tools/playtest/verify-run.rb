@@ -40,7 +40,8 @@
 # read from the game's saved scenario: one line per NPC with a habits object (its habits and
 # its screenHabit as saved) and one per owned workstation (its owner, its own lockChance or
 # locksScreenOnLeave, whether the server's claim check calls it "always locks", and whether
-# it shows a sticky note). It does not say which values a habit filled: the validator's
+# it shows a sticky note), and one per gate door with a noHold (step 5: the door, its openFor
+# and its noHold as saved). It does not say which values a habit filled: the validator's
 # habits report does. It names who never locks, so it is not for a tester playing blind.
 # No passwords.
 require 'json'
@@ -100,14 +101,28 @@ def access_section(ps)
   lines
 end
 
-# The habits block: values only, [] when no NPC in the saved scenario has a habits object.
+# Every gate door with a noHold in the saved scenario: [path, gate].
+def no_hold_gates(data)
+  rooms = data['rooms'].is_a?(Hash) ? data['rooms'] : {}
+  rooms.flat_map do |room_id, room|
+    doors = room.is_a?(Hash) && room['doors'].is_a?(Array) ? room['doors'] : []
+    doors.each_with_index.filter_map do |door, i|
+      gate = door.is_a?(Hash) ? door['gate'] : nil
+      ["rooms/#{room_id}/doors/#{i} (into #{door['connectedRoom']})", gate] if gate.is_a?(Hash) && gate['noHold'].is_a?(Array)
+    end
+  end
+end
+
+# The habits block: values only, [] when no NPC in the saved scenario has a habits object
+# and no gate has a noHold.
 def habits_section(g)
   data = g.scenario_data
   return [] unless data.is_a?(Hash)
 
   ai = BreakEscape::AccessIdentities
   npcs = ai.room_npcs(data).map { |e| e[:npc] }.select { |n| n['habits'].is_a?(Hash) }
-  return [] if npcs.empty?
+  gates = no_hold_gates(data)
+  return [] if npcs.empty? && gates.empty?
 
   owners = ai.room_npcs(data).to_h { |e| [e[:npc]['id'], e[:npc]] }
   lines = ['habits']
@@ -128,6 +143,10 @@ def habits_section(g)
     always = g.respond_to?(:pc_always_locks?) ? g.pc_always_locks?(pc, owners[owner_id]) : ai.screen_always_locks?(pc, owners[owner_id])
     postit = ai.login_pc?(pc) && g.respond_to?(:login_postit_for) ? !g.login_postit_for(pc).nil? : false
     lines << "  pc  #{pc['id'].to_s.ljust(14)} owner #{owner_id}  #{own}  alwaysLocks #{always}  hasPostit #{postit}"
+  end
+  gates.each do |path, gate|
+    open_for = gate['openFor'].is_a?(Array) ? gate['openFor'] : [gate['openFor']].compact
+    lines << "  gate #{path}  openFor #{open_for.join(',')}  noHold #{gate['noHold'].join(',')}"
   end
   lines
 end
