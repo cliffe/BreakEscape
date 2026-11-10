@@ -596,9 +596,8 @@ Warnings:
 - a `file_share` with an access list that no sign-in object on its network can map (no desktop can
   ever show it), that no account is admitted to, or whose admitted accounts can sign in at no
   object on its network;
-- two sign-in objects, or a sign-in object and a resource row, with the same `host` label and
-  different meanings is fine (a server hosts several shares); two **sign-in objects** with the same
-  `host` is a warning;
+- two sign-in objects with the same `host` label (several resources on one host are fine: a
+  server hosts several shares);
 - a host that can be signed in to only remotely (headless, or in a room the dungeon graph shows no
   way into) under a policy with `maxAttempts`: a lockout lasts the mission and there is no keyboard
   to fall back on.
@@ -747,6 +746,7 @@ Files:
   `find_scenario_object` walks `resources` after the profiles; `login_desktop_contents` appends the
   share stubs; `find_login_item` also searches the shares mapped for that PC's session.
 - `network_access.rb`: `host_reachable_through?(foothold_id, pc)`, `remote_blocked?(pc)`,
+  `desktop_request_allowed?(pc, foothold_id)` (the one place a desktop request is judged, 4.4),
   `resource_admits_player?`, `resource_acl_admits?`, `mapped_shares(pc, npc)`,
   `end_sessions_through!(foothold_id)` (called by the unplug), `account_capture_usernames`.
 - `games_controller.rb`: `login` passes `foothold`; `container` and `render_login_desktop` judge a
@@ -835,7 +835,9 @@ Files, under `public/break_escape/js/`:
   `sourceResourceId`. All of this slice's edits to `inventory.js` are in this step, by one builder.
 - `systems/network-links.js` (new, `window.networkLinks`): the foothold list, filled from the
   server's answers and from the scenario response on load; `interactJack(sprite)`,
-  `open(footholdId)`, `view(footholdId)`; the tray changes through the two functions above; the
+  `open(footholdId, { returnTo })`, `openSession(pcId)` (open a held remote session's desktop
+  through its foothold; used by the view and offered to the capture log, 13.4), `view(footholdId)`;
+  the tray changes through the two functions above; the
   jack's `plantedSprite`; `<jackId>_planted`; the events of 3.5; opening the view on a plant whose
   answer says `first`. It is to networks what `pc-sessions.js` is to sessions: the only place the
   client asks.
@@ -847,8 +849,9 @@ Files, under `public/break_escape/js/`:
 - `systems/objectives-manager.js`: `network_foothold_gained` meets an `unlock_object` task on its
   source; the load-time reconcile also reads `gainedFootholds`.
 
-Until step 8 lands, `open(footholdId)` shows a one-line toast naming the network; step 8 replaces
-that with the view.
+Until step 8 lands, `open` and `openSession` show a one-line toast naming the network; step 8
+supplies the view and the remote desktop they call, with no further edit to `network-links.js`
+(they look the two starters up on `window` when called).
 
 Client tests (`test/js/`):
 - `network-links.test.mjs` (new): a jack click with no device shows the resolved hint and sends
@@ -1297,7 +1300,7 @@ this slice makes, stated so that design can rely on it:
 6. **Remote sessions are not items.** A remote session is a server record. The log can list them
    from `window.pcSessions.list()` (entries with `remote: true`, `footholdId`, `pcId`,
    `displayName`) and open one with `window.networkLinks.openSession(pcId)`, which this slice
-   provides in step 8.
+   provides in step 7.
 7. **Captured sign-ins** reads `readCaptures` and the `/capture_secrets` answer. If that plan moves
    the row renderer or narrows which entries `/capture_secrets` answers, the list follows: it shows
    only targets in `accounts` whatever else changes.
