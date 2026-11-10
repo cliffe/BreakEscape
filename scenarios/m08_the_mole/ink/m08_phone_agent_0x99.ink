@@ -10,6 +10,7 @@ VAR player_name = "Agent 0x00"
 VAR found_gitlist_vuln = false
 VAR found_leaked_creds = false
 VAR found_architect_comms = false
+VAR found_drop_seal = false // VM integration 2026-11-10: read the Director's full Portland intercept (the drop's seal)
 VAR found_access_logs = false
 VAR badge_cloned = false
 VAR mole_identified = false // Synced scenario global: set by Netherton's audit check, the flag-4 fallbacks, or hax_read_right here
@@ -168,13 +169,20 @@ So I'm going to be very professional tonight. Bear with me.
     Read the history, not just the files. Git keeps what people meant to throw away.
     Whoever's account it is, they committed something they shouldn't have. Git secrets guide's yours if you want it.
     -> hub
+// VM integration (2026-11-10): the account's home holds ENTROPY's dead drop,
+// sealed. The seal is on the Director's full copy of the Portland intercept,
+// in his safe. Once it has been read, HaX says to use it.
 + { found_leaked_creds and not found_architect_comms } [I've got credentials. Now what?]
     Log in properly with them. Whoever committed those thought no one would ever read that far.
-    Get into the account and let's find out whose it is.
+    {found_drop_seal:
+        If what you find in there is sealed, you've already got the seal. The intercept's routing trailer. Use it.
+    - else:
+        If what you find in there is sealed, the Director's had the key for nine days. The full Portland intercept, in his safe.
+    }
     -> hub
 + { found_architect_comms and not found_access_logs } [The mail's real. How do I make it stick?]
-    You need root. A user shell shows you the mail file. Root shows you the logs, and logs put an account at a terminal.
-    There's a sudo rule on that box begging to be abused. Take it.
+    You need root. A user shell shows you the drop. Root shows you the logs, and logs put an account at a terminal.
+    Not from their account, it hasn't got any. The web service you first landed as has a sudo rule begging to be abused. Go back to your foothold and take it.
     -> hub
 // Puzzle chains R1 browser (P1): retires once the player has been inside;
 // every other step topic goes at its own step.
