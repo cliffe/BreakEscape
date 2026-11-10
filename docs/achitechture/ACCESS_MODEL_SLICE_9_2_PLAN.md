@@ -1,14 +1,18 @@
 # Access model slice 9.2: work, frustration, workarounds, USB policy and social media
 
-Status: **design for review, 2026-11-10.** Nothing here is built. This plan replaces the sketch in
-section 9.2 of `ACCESS_MODEL_PLAN.md` (called "the first slice plan" below) and is checked against
-the code on the access design branch and against the sibling plans
-`ACCESS_MODEL_SLICE_9_1_PLAN.md` (awareness and habits), `ACCESS_MODEL_SLICE_9_3_PLAN.md`
-(networks, in two parts: 9.3a, build-ready, and 9.3b, an ordered design) and
-`PHYSICAL_PENTEST_FEEDBACK_PLAN_ENGINE.md` (called "the engine plan" below) as they stand on the
-same day. The build order is **9.3a, then 9.1, then this slice**; 9.3b comes after 9.3a at a time
-the user chooses, and is expected after this slice. Section 15 says what changes if the order
-differs.
+Status: **design, 2026-11-10.** Nothing here is built. This plan replaces the sketch in section
+9.2 of `ACCESS_MODEL_PLAN.md` (called "the first slice plan" below) and is checked against the code
+at commit `5122a9c92` (the access design branch, which holds the merge of `main`) and against the
+sibling plans `ACCESS_MODEL_SLICE_9_1_PLAN.md` (awareness and habits),
+`ACCESS_MODEL_SLICE_9_3_PLAN.md` (networks, in two parts: 9.3a, whose server steps are built, and
+9.3b, an ordered design) and `PHYSICAL_PENTEST_FEEDBACK_PLAN_ENGINE.md` (called "the engine plan"
+below). On every shared file the order is **the engine plan's feedback streams first, then 9.3a,
+then 9.1, then this slice**; 9.3b comes after 9.3a at a time the user chooses, and is expected
+after this slice. Section 15 says what changes if the order differs.
+
+This slice stands on office life (`OFFICE_LIFE_PLAN`, built on `main`): its switched-off objects
+(`offWhen`), turn-backs, parked needs and grumbles are how an NPC already fails, waits and
+complains, and this plan adds to them rather than beside them (5.1).
 
 How to read it: section 3 gives the six sub-slices and their order. Sections 4 to 8 are the
 design. Section 9 lists every server route with its checks, what the browser receives, what a
@@ -717,10 +721,12 @@ next load.
   `workstation_owner_left:<pcId>` fires with `{ objectId, ownerId: <npcId>, screenLocked: false,
   reason: "guest" }`. The locked-screen look and the indicator dot follow those events as now.
   `s.borrow` is cleared; a later hand-over sets it again.
-- **A careful guest.** Where slice 9.1 is built and the NPC's `locksScreen` habit is `always`
-  (`Game#npc_habit(npc, "locksScreen")`), the server sends `leavesOpen: false` in `run`: the NPC
-  works at the hot desk and signs out, no guest record is made, and the server's guest claim
-  refuses on the same test. `sometimes` counts as leaving open, with no roll at a borrowed PC (9.1's
+- **A careful guest.** Where slice 9.1 is built and the NPC's saved `screenHabit` always locks
+  (`AccessIdentities.screen_always_locks?` with no PC field: a `screenHabit` filled from
+  `locksScreen: always`, or an authored one with `lockChance` 1 and no `lockIfAwayOverSeconds`),
+  the server sends `leavesOpen: false` in `run`: the NPC works at the hot desk and signs out, no
+  guest record is made, and the server's guest claim refuses on the same test. `sometimes`, and a
+  habit with a `lockIfAwayOverSeconds`, count as leaving open, with no roll at a borrowed PC (9.1's
   14.2). No habit reaches the browser. The validator warns that such a workaround opens nothing.
 - **The claim.** With a guest record and nobody at the PC, `onInteract` returns `accessed`, and
   `interactLoginPc` (`unlock-system.js`) claims through `pc-sessions.js` with `claim: "guest"`.
@@ -1049,7 +1055,7 @@ told the feed is done. Each scripted run checks the number of requests against a
 |---|---|---|---|---|
 | `POST /npc_frustration` (new, locked) | A; `run` from B; `check` in L | `reports`: a list of `{ npc_id, event, need, object_id, missing }`, `event` being `fail`, `ease` or `check` | Per report. 1. NPC known. 2. `fail`: can fail. 3. `fail`: a cause holds. 4. `fail` and `ease`: the pace floor for that NPC and need. `check`: the object is a sign-in PC this NPC owns, under a policy with `maxAttempts` | One answer per report, in order. `fail`: level up by `perFail`, at most 100; then choose `run` (section 6), record the hand-over, its number and its time. `ease`: level down by `easePerSuccess`, at least 0; never a `run`. Both answer `{ npcId, level, previous, tell, settled, run }`. `check`: `{ npcId, lockedOut }`; a true answer records the PC in that NPC's `lockedOut` list (9.4), and nothing else is written. Check 1 or 2 fails: `{ npcId, refused: true }`. Check 3 fails: `{ npcId, stale: true }`. Check 4 fails: the current `{ level, tell, settled }` with `tooSoon: true`. A refused, stale or too-soon report writes nothing |
 | `POST /npc_workaround` (new, locked) | B, H | `npc_id`, `index`, `hand`, `heard`, `room_id`, `dropped` | 1. NPC known. 2. `hand` is that workaround's last spent hand-over and was spent as done: answer the same body again, recomposed, and write nothing. 3. Otherwise `hand` is handed over and not yet spent. 4. Unless `dropped`: at least the workaround's dwell since the hand-over. 5. `share_login` with `heard`: `room_id` is a room the `with` NPC can be in (its own, plus its `needsRooms`) and is open to the player (never locked, or `room_unlocked?`); otherwise it is taken as not heard | The hand-over is spent and recorded in `lastSpent`. `dropped`: nothing else; answer `{}`. Otherwise add `index` to `done` (lasting ones), set a declared `setGlobal` true, and by kind: `writes_down`: answer `{ pcId, hasPostit: true }`. `prop_door`: unlock the room and answer `{ roomId, roomData }` through `serve_opened_room` (below). `emit`: `{}`. `borrow_session`: `guestSessions[pc] = npcId`, clear `sessions[pc]`; `{}`. `share_login` heard: add the NPC to `sharedLogins` once, keep it in turn, answer `{ capture, line, note }`; not heard: `{}`. Check 3 fails: 403. Check 4 fails: 425, and the client sends it again after the dwell |
-| `POST /login` with `claim: "guest"` (changed, locked) | H | `pc_id`, `claim` | 1. PC reachable (first slice). 2. No session is held at the PC. 3. `guestSessions[pcId]` names an NPC. 4. That NPC has an account. 5. The PC's `access` admits it. 6. The PC's policy is not `autoLockMin: 0`. 7. Where 9.1 is built: that NPC's `locksScreen` is not `always` | Success: `sessions[pcId] = { id, via: "claim" }`, add to `signedInPcs`; the answer a claim gives today. Failure: "Sign in required" |
+| `POST /login` with `claim: "guest"` (changed, locked) | H | `pc_id`, `claim` | 1. PC reachable (first slice), not headless, and no foothold (9.3a). 2. No session is held at the PC. 3. `guestSessions[pcId]` names an NPC. 4. That NPC has an account. 5. The PC's `access` admits it. 6. The PC's policy is not `autoLockMin: 0`. 7. That NPC's saved `screenHabit` does not always lock (9.1's `screen_always_locks?` with no PC field) | Success: `sessions[pcId] = { id, via: "claim" }`, add to `signedInPcs`; the answer a claim gives today. Failure: "Sign in required" |
 | `POST /login` with `claim: "owner"` (changed, locked) | L | as today | As today, plus: refused when `loginLockouts` holds the owner's username at that PC | As today; refusal "Sign in required" |
 | `GET /login_accounts` (changed by 9.1; extended here) | B | as today | As today. | `postitNote` when `login_postit_for(pc)` returns one, which now includes an owner whose `writes_down` is done; `no-store` |
 | `GET /capture_secrets` (changed) | H | as today | As today. | An account holder in `sharedLogins` counts as having a capture route whose proof holds (`account_capture_passwords`, `game.rb:965`; the engine plan's `proof` rule, section 15). The proof is the server's own record of a heard "done", as strong as that client claim (6.5) |
@@ -1227,12 +1233,12 @@ call it, as both call `BreakEscape::DeclaredGrants`, so the server and the valid
 apart. Like 9.1's library it is plain Ruby with no Rails methods. It walks roles with 9.1's
 `identity_roles(npc)` order (9.1's 14.2).
 
-**Files.** `scripts/validate_scenario.rb`: the known-field lists (`:391-419`, `:487-512`) gain
+**Files.** `scripts/validate_scenario.rb`: the known-field lists (`:391-424`, `:490-519`) gain
 `resources` and `roles` (each is added only if a sibling slice has not added it already); NPC
-`workNeeds`, `frustration`, `workarounds`, `phone`, `socialUse`, `feed`; item `usbClass` and
-`downIf`. The checks go in a new `scripts/validate_access_work.rb` (`require_relative`, as
+`workNeeds`, `frustration`, `workarounds`, `phone`, `socialUse`, `feed`; item `usbClass`. A broken
+PC is office life's `affordance.offWhen`, already known. The checks go in a new `scripts/validate_access_work.rb` (`require_relative`, as
 `validate_npc_needs.rb` is). `scripts/validate_npc_needs.rb` skips `social_media` in its "no
-object satisfies it" error (`:481-483`) and applies its pool line check to the new pools.
+object satisfies it" error (`:1236`) and applies its pool line check to the new pools.
 `scripts/scenario-schema.json` gains the same fields, inserted as text (the file must not be
 re-serialised), with `usb` gaining `storage_blocked`; under `roles.<role>` this slice adds its
 three properties and leaves `additionalProperties` open for 9.1's `awareness`.
@@ -1282,13 +1288,16 @@ Warnings:
   rooms, and is heard only in one the player has opened;
 - what a workaround opens (a `prop_door` room, a `writes_down` or `share_login` account's PCs, a
   `borrow_session` PC) holds a flag station or a VM launcher (section 9.3);
-- a `downIf` global that `globalVariables` does not declare;
+- a resource `downIf` global that `globalVariables` does not declare (office life's validator
+  already checks an `offWhen`);
+- an NPC with a `work` plan whose `needsDeferMin` is under 0.5 (the park is the retry wait, and the
+  server's pace floor needs that much slack, 9.1);
 - a resource no NPC needs that also has no `contents` and no `host` (slice 9.3 authors resources
   that exist only for the player; those have one or the other and are not reported);
 - `prop_door` by an NPC whose own card and role do not open that door;
 - `writes_down` where the home PC authors a `postitNote` or sets `showPostit: false`;
-- `borrow_session` by an NPC whose `locksScreen` is `always` (where 9.1 is built): it opens
-  nothing;
+- `borrow_session` by an NPC whose `screenHabit` always locks (authored, or filled from 9.1's
+  `locksScreen: always`, read on the expanded copy where 9.1 is built): it opens nothing;
 - `lockChance` or `locksScreenOnLeave` on a PC named by `borrow_session` (a guest ignores them);
 - a post with a `fact` on an NPC whose awareness level is `high`, unless `"deliberate": true`;
 - a `usb` policy other than `allowed` that governs only objects accepting tags whose items have no
@@ -1327,8 +1336,8 @@ before 9.1, 9.1 adds the lines when it lands.
 
 **Dungeon graph.** `scripts/generate_dungeon_graph.rb`: each workaround is a node ("Jake: writes
 it down, at 75") with an edge to what it opens: the account's sign-in node for `writes_down` and
-`share_login`, the PC for `borrow_session`, the door for `prop_door`. A resource or workstation
-`downIf` is a node with an edge to each workaround of each NPC it can frustrate. So a chain reads
+`share_login`, the PC for `borrow_session`, the door for `prop_door`. A resource `downIf`, and a
+workstation's `affordance.offWhen`, is a node with an edge to each workaround of each NPC it can frustrate. So a chain reads
 left to right: outage, person, workaround, the thing opened. Test:
 `test/js/dungeon-graph-workarounds.test.mjs` (new, beside `dungeon-graph-identities.test.mjs`).
 
@@ -1674,7 +1683,7 @@ it opens, `tell` and "no warning", the dungeon graph's nodes); the runner's even
 **H-1. Server.**
 Files: `game.rb` (`complete_workaround!` for `borrow_session` and `share_login`, the guest claim
 beside `claim_login_session!`, `account_capture_passwords`, clearing `guestSessions`, `leavesOpen`
-from `npc_habit`); `games_controller.rb` (`login` passing `claim: "guest"`). These edits come after
+from `AccessIdentities.screen_always_locks?` on the guest's saved `screenHabit`); `games_controller.rb` (`login` passing `claim: "guest"`). These edits come after
 engine E4's edits to `capture_secrets_for_client`, `account_capture_passwords` and
 `capture_route?` (section 13), and `sharedLogins` is read there as a proof that holds.
 Tests: repeating workarounds in turn, a heard `share_login` staying in turn and `sharedLogins`
@@ -1916,7 +1925,7 @@ been playtested on.
 | `writes_down` turns on `writesDown` | It makes 9.1's `written_down?` true for that person; the note is served as 9.1 serves it |
 | `prop_door` until a global or timer closes it | Open for the mission; needs a `prop` object |
 | `share_login` reveals an intel fact | The player hears the login, with a toast, an evidence note and a capture |
-| Frustration and workarounds in the needs system | The level and the list live on the server; the needs system reports uses |
+| Frustration and workarounds in the needs system | The level and the list live on the server; the needs system reports failures, which are office life's parks and one new turn-back reason |
 | "the PC's network reaches the resource's network; always true until networks exist" | The server composes `routes` into each NPC's plan; with no `routes` a resource is reachable |
 
 **With 9.1 (awareness and habits).** Each point has one answer, and 9.1's section 14.2 says the
@@ -1928,8 +1937,9 @@ same.
 | Who builds the note | 9.1, in the expected order. If this slice is first, sub-slice B builds the same pieces from 9.1's section 5.3 and 9.1 adds the habit clause |
 | `roles` | Shared. 9.1 builds and reads `roles.<role>.awareness`, and deletes the whole top-level `roles` key from the bootstrap. This slice owns `workNeeds`, `frustration` and `workarounds` under the same key; its own deletion of `roles` is then already done, and it keeps the line only for the case where it lands first. Whichever lands first adds `roles` to the schema (with `additionalProperties` open) and the validator's top-level list; in the expected order that is 9.1. Both walk roles in `identity_roles(npc)` order, authored roles first and `staff` last. `roles.<role>.habits` does not exist |
 | The awareness warning on a post | It reads `NpcHabits.level_of(npc, scenario)` where 9.1 is built, so a level from a role counts; the authored string otherwise |
-| A guest and `locksScreen` | The server decides: `leavesOpen: false` in the `borrow_session` hand-over when `npc_habit(npc, "locksScreen")` is `always`, and the guest claim refuses on the same test; `sometimes` counts as leaving open, with no roll at a borrowed PC. The boolean is in the hand-over, not in the standing plan. No habit reaches the browser. 9.1's fill of `lockChance` applies to owned PCs and never to a borrowed one, and this slice changes no habit mid-game |
+| A guest and `locksScreen` | The server decides: `leavesOpen: false` in the `borrow_session` hand-over when the guest's saved `screenHabit` always locks by 9.1's `AccessIdentities.screen_always_locks?` with no PC field, so a `screenHabit` filled from `locksScreen: always` and an authored one count alike; the guest claim refuses on the same test. `sometimes`, and a habit with a `lockIfAwayOverSeconds`, count as leaving open, with no roll at a borrowed PC. The boolean is in the hand-over, not in the standing plan. No habit reaches the browser. 9.1's filled `screenHabit` decides how an owner leaves their own PCs, never a borrowed one, and this slice changes no habit mid-game |
 | What `borrow_session` is | A guest session at an unowned sign-in PC. It never changes how an owner leaves their own PC, so it needs no per-leave override and no change to `pc_always_locks?` |
+| The claim check | 9.1 fixes `pc_always_locks?` to read the owner's `screenHabit` (its 5.2) before this slice. Sub-slice H's guest claim and L's owner claim rest on the fixed check |
 | Feed posts as password clues | The shape is `feed.posts[].text`. This slice adds feed post texts and feed fact texts to `NpcHabits::Clues.readable_texts` in step C-2 |
 | Build order | 9.3a, then 9.1, then this slice; 9.1 states the same |
 | A remote sign-in and the note | 9.3a's remote screen never calls `/login_accounts`, so a note written by a `writes_down` workaround is never shown remotely; the password it gives signs in remotely as it does at the desk |
@@ -1949,7 +1959,7 @@ builds.
 | Sessions at a hot desk | A guest session is an ordinary session at a PC, claimed at the screen, so its desktop carries 9.3a's mapped shares with no extra work. 9.3a refuses any claim that carries a foothold or targets a headless host, so this slice's `guest` claim needs no change there, and this slice's validator refuses a headless borrow PC |
 | A session displaced | An NPC signing in at a PC ends any session the player holds there, a 9.3a remote session included, with `pc_signed_out` reason `displaced`; 9.3a's client treats it as any other end. Because 9.3a lets a remote sign-in start while someone sits there, the displacement runs again on `npc_borrowed_session` (6.4) |
 | Lockout from the drop box | Remote and local attempts share one counter (9.3's 4.4), so a lockout caused from the drop box stops the owner's work under sub-slice L as one caused at the keyboard. A lockout answer from a remote `POST /login` counts as "seen" for the `check` rule (6.6) |
-| A station that is down | 9.3a has no outages for the player and no "not responding" row. This slice changes nothing in 9.3's view or `desktop_request_allowed?` (this plan's section 9.1) |
+| A station that is down | For NPC work, office life's `affordance.offWhen` on the workstation (5.1); this slice adds no `downIf` on objects. 9.3a has no outages for the player and no "not responding" row. This slice changes nothing in 9.3's view or `desktop_request_allowed?` (this plan's section 9.1) |
 | Server-set globals | A workaround's `setGlobal` is the one global the server sets itself; 9.3 allows for it (its 13.2) |
 | Validator layout | Each slice keeps its checks in its own file (`validate_network.rb`, `validate_access_work.rb`) and touches `validate_scenario.rb` only for a `require`, a call and the known-field lists |
 | `requiresReach` | Not used by either slice |
@@ -1961,36 +1971,29 @@ Everything this slice and 9.3b share is built by 9.3b, so nothing here waits for
 | Topic | Built by 9.3b |
 |---|---|
 | Routes with globals in them | `reach_conditions` returns the `downIf` globals of every network on each route (its 12.1, 12.2); this slice's `reachable` already reads them, and its kick (5.6) and forced sync (5.4) already watch every route global. No change here |
-| A station that is down, seen from the network | A sign-in host whose own `downIf` is truthy listed "not responding" in `network_view`, and `desktop_request_allowed?` refusing it. 9.3b owns outages for the player (its 12.2), so it adds both lines when it adds "no route" |
-| The USB check on an implant | `POST /network/implant` refuses a device whose `usbClass` the PC's policy refuses (its 12.5), through a Ruby `usb_refused?` beside `effective_policy` (`game.rb:1373`) that reads this slice's table; with a validator warning for a `grant_foothold` whose PC refuses its device. The refusal is at the use, never at the drop. If the user schedules 9.3b before this slice, U-2 adds it |
+| A station that is down, seen from the network | A sign-in host whose `affordance.offWhen` holds listed "not responding" in `network_view`, and `desktop_request_allowed?` refusing it. 9.3b owns outages for the player (its 12.2), so it adds both lines when it adds "no route" |
+| The USB check on an implant | `POST /network/implant` refuses a device whose `usbClass` the PC's policy refuses (its 12.5), through a Ruby `usb_refused?` beside `effective_policy` (`game.rb:1397`) that reads this slice's table; with a validator warning for a `grant_foothold` whose PC refuses its device. The refusal is at the use, never at the drop. If the user schedules 9.3b before this slice, U-2 adds it |
 | Feed posts as a place a Wi-Fi key can be learned | 9.3b's "the key appears nowhere" warning reads `Clues.readable_texts`, to which this slice adds feed texts (C-2) |
-| Outages | `downIf` means the same in both: the global truthy, by JavaScript's rule, means down. This slice owns what an outage does to NPCs; 9.3b what it does to the player's reach |
+| Outages | A `downIf` (on a network or a resource) means the same in both: the global truthy, by JavaScript's rule, means down. An object's outage is office life's `affordance.offWhen` in both. This slice owns what an outage does to NPCs; 9.3b what it does to the player's reach |
 
 **With the engine plan (`PHYSICAL_PENTEST_FEEDBACK_PLAN_ENGINE.md`).**
 
 | Topic | Settled as |
 |---|---|
-| Shared files | Section 13: the engine streams come first on every shared file; E3 is the first holder of `inventory.js` and `interactions.js`; E2 before U-1 on the bubble renderer; E4 before H-1 on the three capture methods |
+| Shared files | Section 13: the engine streams come first on every shared file; E3 and E4 before U-2 in `interactions.js`; E4 before H-1 on the three capture methods. This slice edits neither the bubble renderer nor `npc-office-visuals.js` |
 | A heard login is a capture | `share_login` records its capture through `window.recordSECapture`, so it lands in `se_captures` and is a row in the capture log's Credentials section (its section 6) with no further work, beside the evidence note |
 | `sharedLogins` and the proof rule | E4 serves an account's captured password only when the capture route's `proof` holds (its section 6). An account holder in `sharedLogins` is a route whose proof holds: the server's own record of a heard "done". It is as strong as that client claim (6.5), the same strength as E4's `planted` and `dropped` proofs (the server's record, not sight of the act). H-1 adds this as one case in E4's check, after E4 |
 | Server-made items | This slice makes no inventory item. The note mark, the guest session and the feed are not items, so E4's holder rules are untouched |
-| `apply-actions.js` | Not edited by this slice (11.1); E3 and 9.3b hold it |
+| `apply-actions.js` | Not edited by this slice (11.1); E4 and 9.3b hold it |
+| A plant that removes the item | The lab's drop box removes its item with a `remove_item` action and no `consumesItem` (E4 records a plant from `remove_item`). Sub-slice U's player-plant check sits in the `requiresItem` branch before any action runs, so it governs both shapes |
 
-**For the siblings' own text.** Settled above; the wording in the sibling plans needs bringing into
-line, and none of it blocks this plan:
-
-1. 9.3's 13.2, row "A station that is down", has this slice adding two lines to `network_view` and
-   `desktop_request_allowed?` in A-3. Those lines need 9.3b's outages and belong with 9.3b (above).
-2. 9.3's 13.2, row "Resource names and `downIf` global names", and its decision 11 say this slice
-   ships resource names and that 9.3's no-exposure test leaves an NPC's `work` block out. This
-   slice ships no display name, so no exception is needed.
-3. 9.3's 14 lists this slice as an editor of `systems/inventory.js`. It is not.
-4. The engine plan's shared-files table does not list this slice (section 13 gives the rows).
-
-Settled and already matching: 9.1 gives the build order as 9.3a, 9.1, 9.2, and names the guest
-boolean `leavesOpen`, sent in the hand-over (its 14.2); 9.3 writes the feed as
-`feed.posts[].text`, puts the USB refusal at the use, not the drop (its 12.5), and names
-`displaced` as a way a remote session ends (its 13.2).
+**For the siblings' own text.** Settled above; the sibling plans say the same: 9.1 gives the
+order (engine streams, 9.3a, 9.1, this slice), names the guest boolean `leavesOpen`, sent in the
+hand-over, and fixes the claim check for `screenHabit` (its 5.2 and 14.2); 9.3 writes the feed as
+`feed.posts[].text`, puts the USB refusal at the use, not the drop (its 12.5), names `displaced` as
+a way a remote session ends (its 13.2), and leaves "not responding" and the station outage to
+9.3b. The engine plan's shared-files table lists this slice only as "9.2 re-reads every file"; the
+orchestrator adds the rows of section 13 there.
 
 ## 16. Decisions
 
@@ -2021,6 +2024,8 @@ boolean `leavesOpen`, sent in the hand-over (its 14.2); 9.3 writes the feed as
 | 9 | Where frustration and workarounds live | On the server, handed over when due. It keeps "what will this person do under pressure" out of the browser until it happens, and the level survives a reload. The cost is a batched report request, at most one every two seconds while something is failing, and none once an NPC is settled |
 | 10 | The need's name | `social_media`. No existing scenario or stored needs capture changes |
 | 11 | A propped door | Stays open for the mission. Doors cannot close today; closable ordinary doors are a door engine change of its own |
+| 20 | How a failed use is built | On office life's failure path: a broken PC or printer is its `affordance.offWhen`, the wait before retrying is its park (`needsDeferMin`), the line is its grumble, and a failure that belongs to the person (no access, a share that is down) is one new turn-back reason, `failed`, that parks. No second failure path, no retry field of this slice's own and no mutter state | One way for an NPC to fail, wait and complain, which office life already tests and the player already reads |
+| 21 | Walks with no need | Called visits, so they are never confused with office life's print errands | The word "errand" already names a carry job in the needs system |
 
 **For the user.** One question. The plan is written as if the recommendation is taken, and the
 sub-slice it governs is last but one in the build order, so it holds nothing up: U, A, B, H and C
