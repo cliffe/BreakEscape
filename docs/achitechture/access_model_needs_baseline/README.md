@@ -49,3 +49,30 @@ and deleted afterwards.
 per workstation, not by tick numbers: the clock is stepped in real time, and walking times move
 with machine load (the before and after captures of the three scenarios each ran three browsers
 at once).
+
+## What the capture cannot show: the manual clock
+
+The capture runs the whole measured span on the manual clock, by design: that is what makes the
+decision log repeat for a seed. Two things follow.
+
+- **It does not exercise the engine's own clock.** In live play the needs clock advances by the
+  frame step that `core/game.js` passes to `npcNeedsSystem.update(delta)`, the same step the
+  physics world moves bodies by. Under the manual clock `update` returns at once, so a capture
+  says nothing about that path, and a change to it (or a regression in it) leaves every capture
+  the same. That path is covered by node tests instead (`test/js/npc-needs.test.mjs`: the clock
+  follows the frame step given to it, and `game.js` passes the step on).
+- **Its walks are still raced against wall time.** The tool steps one 250 ms tick per 250 ms of
+  real time while the walks run on the browser's frames. On a loaded or slow machine a walk's
+  20 s deadline can pass with the NPC part of the way there: the trip fails and is retried, and
+  the events after it shift. Live play no longer behaves this way (decisions slow with the
+  walks); the tool does. This is the run-to-run variance `COMPARISON.md` records, and it is why
+  captures are compared by the order of events per NPC and per workstation, not by tick, and why
+  a difference in one capture should be confirmed with a second run on a quiet machine before it
+  is read as a change in behaviour.
+
+The recorded files also predate later engine work on the needs system (for example, an owner who
+arrives at his own post for a job there, a need for it or a delivery to it, is now announced as
+returned on arrival, not after the session: in `test_needs_sims` Amara's `npc_returned_post`, when
+she brings the printout or the parcel to her PC, comes before `npc_used:amara_pc`, and her PC
+unlocks as she sits down). A fresh capture is the baseline for a new comparison; the files here are
+the record of step 9.
