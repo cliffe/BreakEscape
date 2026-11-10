@@ -193,11 +193,52 @@
           "maxAttempts": { "type": ["integer", "null"], "minimum": 1, "description": "Server-counted failed sign-ins per PC and username before a lockout; null: no limit." },
           "usb": { "type": "string", "enum": ["allowed", "blocked"] },
           "social": { "type": "string", "enum": ["allowed", "blocked"] },
+          "remote": { "type": "string", "enum": ["allowed", "blocked"], "description": "Networks (ACCESS_MODEL_SLICE_9_3_PLAN.md 3.4): whether a sign-in PC under this policy takes a remote sign-in through a foothold. Absent means allowed; a blocked PC is still listed in the network view, marked remote sign-in off." },
           "_comment": { "type": "string" }
         }
       }
     },
     "defaultPolicy": { "type": "string", "description": "Access model: the policy a PC with no policy of its own uses." },
+    "networks": {
+      "type": "object",
+      "description": "Networks (ACCESS_MODEL_SLICE_9_3_PLAN.md 3.1): network id to { name }. The name is what the player sees once they hold a foothold on it. Never sent in the bootstrap. downIf and wifi are reserved for slice 9.3b and refused by the validator.",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "downIf": { "type": "string", "description": "Reserved for slice 9.3b (outages)." },
+          "wifi": {
+            "type": "object",
+            "description": "Reserved for slice 9.3b (Wi-Fi).",
+            "properties": { "ssid": { "type": "string" }, "psk": { "type": "string" }, "_comment": { "type": "string" } }
+          },
+          "_comment": { "type": "string" }
+        },
+        "required": ["name"]
+      }
+    },
+    "networkLinks": {
+      "type": "array",
+      "description": "Reserved for slice 9.3b: pairs of network ids a link joins. Refused by the 9.3a validator.",
+      "items": { "type": "array", "items": { "type": "string" }, "minItems": 2, "maxItems": 2 }
+    },
+    "resources": {
+      "type": "object",
+      "description": "Resources registry (ACCESS_MODEL_SLICE_9_3_PLAN.md 3.4; slice 9.2 owns other fields on the same entries). Never sent in the bootstrap. A resource on a network is listed in a foothold's view; a file_share's contents are served by GET /container to a held foothold or session that its access list allows.",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "kind": { "type": "string", "description": "file_share, printer, or another kind." },
+          "name": { "type": "string" },
+          "host": { "type": "string", "description": "The machine it lives on, as a label." },
+          "network": { "type": "string", "description": "A networks key. A resource with no network is never listed." },
+          "access": { "$ref": "#/definitions/accessList" },
+          "contents": { "type": "array", "items": { "$ref": "#/definitions/item" }, "description": "file_share only: items, as in an account profile. Ids are global." },
+          "observations": { "type": "string", "description": "For a resource with no contents: the text shown when the player clicks its row." },
+          "_comment": { "type": "string" }
+        }
+      }
+    },
     "npcNeedsSeed": {
       "type": ["number", "string"],
       "description": "Seed for the NPC needs system's per-NPC jitter RNG (systems/npc-needs.js). Default: the scenario name. Same seed and inputs give the same decision log."
@@ -3982,6 +4023,7 @@
         },
         "access": { "$ref": "#/definitions/accessList" },
         "acceptsUIDOnly": { "type": "boolean", "description": "Access model 4.1: an rfid lock with access also opens to a UID-only (DESFire) copy. Default false." },
+        "network": { "type": "string", "description": "Networks 3.2: the default network (a networks key) for this room's objects; an object's own network wins. Never sent to the browser." },
         "biometricMatchThreshold": { "type": "number", "minimum": 0, "maximum": 1 },
         "requires": {
           "oneOf": [
@@ -5193,6 +5235,18 @@
         "acceptsUIDOnly": { "type": "boolean", "description": "Access model 4.1: an rfid lock with access also opens to a UID-only (DESFire) copy. Default false." },
         "loginPicker": { "oneOf": [ { "type": "string", "enum": ["accounts", "known"] }, { "type": "boolean", "enum": [false] } ], "description": "Access model 5.3: a sign-in PC's account tiles. accounts (default): every account its access admits; known: those the player has met; false: type the username." },
         "policy": { "type": "string", "description": "Access model 5.5: the named policy (top-level policies) this PC follows." },
+        "network": { "type": "string", "description": "Networks 3.2: the network (a networks key) this object is on; overrides its room's network. Never sent to the browser." },
+        "host": { "type": "string", "description": "Networks 3.2: a sign-in PC's label on the network (HB-FIN-02). Default: its name. Not secret." },
+        "headless": { "type": "boolean", "description": "Networks 3.4: a sign-in object with no screen or keyboard (a door controller, a file server in a rack), signed in to only over the network through a foothold. A click shows its observations only. Unrelated to headless NPC records and headless browser runs." },
+        "networkJack": { "type": "boolean", "description": "Networks 3.3: this room object is a jack; a rogue device planted in it gives a foothold on its network. Takes no triggerOnInteract, requiresItem, lock or lockType." },
+        "jackConfirm": { "type": "string", "description": "Networks 3.3: the confirm text before a plant. Default: Plug <device name> into <jack name>?" },
+        "plantedSprite": { "type": "string", "description": "Networks 3.3: the jack's texture while a device is in it." },
+        "linkName": { "type": "string", "description": "Networks 4.1: the name of the link item the plant puts in the inventory. Default: <device name>: <jack name>." },
+        "linkStoreIn": { "type": "string", "description": "Networks 13.4: the holder the link item is filed in (storeIn)." },
+        "rogueDevice": { "type": "boolean", "description": "Networks 3.3: a takeable item with an id that can be planted in a jack. Not droppable." },
+        "wifiAp": { "description": "Reserved for slice 9.3b (Wi-Fi). Refused by the 9.3a validator." },
+        "portSecurity": { "description": "Reserved for slice 9.3b (port security). Refused by the 9.3a validator." },
+        "portSecurityMessage": { "type": "string", "description": "Reserved for slice 9.3b (port security). Refused by the 9.3a validator." },
         "transfer": { "type": "string", "enum": ["copy", "move", "both"], "description": "Access model 5.1: what a takeable file on a sign-in desktop allows. Default both." },
         "cloneable": { "type": "boolean", "description": "Access model 4.2: false stops the server recording a card copier copy of this keycard." },
         "identity": { "type": "string", "description": "Access model section 3: for readability, the NPC id whose card this keycard is; the validator checks that NPC carries its card_id." },

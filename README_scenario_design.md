@@ -871,6 +871,43 @@ Things to know:
 - **An item plant cannot sit on a sign-in PC.** A `lockType: "login"` object answers a click with its own flow (owner present, session, sign-in screen) and returns before `triggerOnInteract` and `requiresItem` are read. So a scenario that chains a captured password into a sign-in puts the plant on a separate object beside the sign-in PC (the cable behind it, a dock, a desk hub), and keeps the capture on the PC's own event, for example `workstation_owner_returned:<pc>` with `data.wasLocked === true`. `lab_physical_pentest` plants on the PC object itself only because, by that lab's own rules of engagement, nothing ever signs in at Chris's PC.
 - **The validator** warns when `requiresItemHintVariants` is authored without `requiresItem` (none of those hints would ever show), and checks its conditions like the other variant lists.
 
+#### Networks: jacks, footholds, hosts and shares
+
+A scenario can put sign-in PCs and resources on networks. The player gets onto a network by planting a rogue device (a drop box) in a jack; that gives a **foothold**, and the foothold shows what the network exposes: sign-in hosts the player can try remotely, and resources such as file shares. Full design: `docs/achitechture/ACCESS_MODEL_SLICE_9_3_PLAN.md` (slice 9.3a). The server, the validator (`scripts/validate_network.rb`) and the dungeon graph read one set of rules, `BreakEscape::NetworkModel` (`lib/break_escape/network_model.rb`), so they agree.
+
+**Fields.**
+
+| Where | Field | Meaning |
+|-------|-------|---------|
+| Top level | `networks` | Network id to `{ "name": "..." }`. The name is what a foothold's view shows |
+| Top level | `resources` | Resource id to `{ kind, name, host, network, access, contents, observations }`. `contents` is for `kind: "file_share"` only; `observations` is the text of a resource with no contents |
+| Room | `network` | The default network for the room's objects |
+| Object | `network` | The object's own network; it wins over the room's. An object with neither is on no network |
+| Sign-in object | `host` | Its label on the network ("HB-FIN-02"). Default: its `name`. Not secret |
+| Sign-in object | `headless` | No screen or keyboard: signed in to only over the network |
+| Object | `networkJack` | This object is a jack. Optional `jackConfirm`, `plantedSprite`, `linkName`, `linkStoreIn`, `requiresItemHint` and `requiresItemHintVariants` |
+| Item | `rogueDevice` | A takeable item with an `id` that can be planted in a jack |
+| Policy | `remote` | `"allowed"` (the default) or `"blocked"`: whether a PC under the policy takes a remote sign-in |
+
+`networks`, `resources` and every `network` field never reach the browser: the server sends a network's name, and the names, hosts and contents of what it exposes, only from `GET /network` and `GET /container`, and only for a foothold or session the server holds.
+
+**The jack and the device.** A jack is any room object with `"networkJack": true` and a network (its own or its room's): a wall port, a patch panel, the back of a router. It takes no `triggerOnInteract`, no `requiresItem`, no lock and no `lockType`, because its click is the plant flow: the player confirms, the server takes the device out of the inventory, and a link item ("Drop box: comms room") arrives in its place. Clicking the link item opens the network view. Clicking the jack again offers to unplug, which gives the device back and ends every remote session that went through it. A rogue device may be defined anywhere an item can come from (a room object, a container, `startItemsInInventory`, an NPC's `itemsHeld`, a declared grant). It must have an `id`, be takeable and not be `droppable`, and nothing may require and consume it. In 9.3a a foothold reaches its own network and nothing else.
+
+**What a foothold shows.** The view lists every `lockType: "login"` object on the network, whatever room it is in and whether or not the player has opened that room, then every resource on the network, each group sorted by id. A host row offers **Sign in** (username and password typed; no account tiles), **Open** when a password session is held there, or "remote sign-in off" under a `remote: "blocked"` policy. An open share (no `access`) offers **Open**; a share with an access list shows a padlock. Any other resource shows its `observations`. The view never shows account names, access lists, policies or share contents.
+
+**Headless hosts.** `"headless": true` on a sign-in object means "no screen or keyboard, managed only over the network": a door controller, a file server in a rack, a printer's admin page. A click on it shows its `observations` and nothing else; the server refuses a sign-in there that names no foothold. A headless host has no owner, takes no claim and shows no account tiles. This field is unrelated to the headless NPC records of the social engine (`emailRecord`, `Game#headless_npc_records`) and to a headless browser run.
+
+**Shares.** A file share is the network counterpart of an account profile: contents gated by an access list rather than a lock. An open share opens from the network view for a foothold on its network, and from the desktop of any session on a PC on its network. A share with an access list opens only from a desktop: every share on the PC's network that admits the session's account is added after the profiles as a folder, `Ledger-Archive (\\HB-FS01\Ledger-Archive)`. Files are taken with the usual Open, Copy and Move dialog and `transfer` field, and locked folders inside a share work as they do in a profile. Resource ids and share item ids are global: the validator refuses one equal to the id or name of a room object, a profile item or another resource, and a sign-in object inside a share. The implicit `staff` role of every account holder counts in every access list a share or host uses, so a share for `staff` maps for every account.
+
+**Events.** `network_foothold_gained`, `network_device_planted`, `network_device_refused`, `network_device_unplugged`, `network_viewed` (with `hostList`, the host ids comma-joined; it fires on every open, so a mapping that should fire once says `onceOnly`), `network_host_opened`, `network_view_closed`, `network_share_opened`; each also as `<name>:<id>`. `pc_signed_in` and `pc_signed_out` gain `remote` and `footholdId`, and `pc_signin_failed` gains the reason `remote_blocked`. The client publishes `<jackId>_planted` for variants and `revealOnGlobal` (declare it in `globalVariables`); it is display state only. An objective that must not be skippable is an `unlock_object` task on the jack (met once a foothold has been gained there) or on the host (met by a remote sign-in as by a local one), not a task a mapping completes.
+
+**Two authoring rules.**
+
+- **A chain that must need the foothold** puts its payoff on a headless host, or in a room with no other way in. A PC in an open room can be signed in to at the keyboard, and a protected share maps on the desktop of any PC on its network that an admitted account can sign in at. The validator prints these under "Reachable without a foothold".
+- **Remote sign-in skips doors.** A PC in a locked room on a network with a jack outside that room can be signed in to through the foothold without opening the door. Acknowledge the route by writing `"remote": "allowed"` in the PC's policy, or close it with `"blocked"`; until then the validator warns ("Doors skipped").
+
+The validator also refuses the fields reserved for slice 9.3b (`networkLinks`, `downIf` and `wifi` on a network, `wifiAp` and `portSecurity` on an object, the `grant_foothold` action) with "needs slice 9.3b", and an account password in a network's or resource's `name`, `host` or `observations` (those strings go to every foothold's view). It prints each jack's reach (hosts then resources) and each network that has hosts or resources but no jack. The dungeon graph draws the device opening the jack, the jack reaching its network node, and the network exposing its hosts and open shares; a headless host has no edge from its room, and a protected share is reached from each admitted account's sign-in node.
+
 ### Workstation screens: the locked look (`pc_desktop` and `<key>_locked`)
 
 A workstation PC with an owner (the `workstation`, `screenOwner`, `locksScreenOnLeave`, `lockChance` and `autoLockMin` fields; see `docs/achitechture/NPC_NEEDS_SYSTEM.md` and `docs/achitechture/ACCESS_MODEL_PLAN.md` section 5.4) follows its screen state with no extra fields:

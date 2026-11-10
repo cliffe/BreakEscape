@@ -17,6 +17,7 @@ require 'base64'
 require 'open3'
 require_relative 'validate_social'
 require_relative 'validate_npc_needs'
+require_relative 'validate_network'
 require_relative '../lib/break_escape/declared_grants'
 require_relative '../lib/break_escape/access_identities'
 
@@ -395,6 +396,7 @@ def check_unknown_fields(json_data)
     importGlobals exportGlobals social npcNeedsSeed disguises actionIcons officeVisuals npcWindupMs showPressingNeeds showNpcIntentBubbles needsDebugOverlay officePresets chatter lockCues roomTone roomToneTypes
     ttsPregenerateChatter
     accountProfiles policies defaultPolicy
+    networks networkLinks resources
   ]
 
   # Check top-level unknown fields
@@ -409,6 +411,7 @@ def check_unknown_fields(json_data)
     type door_sign connections locked lockType requires keyPins lockedHint difficulty
     ambientSound ambientVolume objects npcs _comment dimensions biometricMatchThreshold lighting
     chatBackground doors needsPrivateTo access acceptsUIDOnly
+    network
   ]
 
   # Known NPC fields
@@ -515,6 +518,8 @@ def check_unknown_fields(json_data)
     phoneOwner rings
     actions onOwnerNoticesMissing interactionWarning saved_cards rfid_protocol
     access acceptsUIDOnly loginPicker policy transfer cloneable identity
+    network host headless networkJack jackConfirm plantedSprite linkName linkStoreIn rogueDevice
+    wifiAp portSecurity portSecurityMessage
     _comment
   ]
 
@@ -6597,6 +6602,7 @@ def main
     common_issues += check_unheard_room_triggers(json_data, repo_root)
     common_issues += ValidateNpcNeeds.check(json_data)
     common_issues += check_access_model(json_data, repo_root, File.dirname(erb_path))
+    common_issues += check_network_model(json_data)
     common_issues += check_tooling_pass4c(json_data, repo_root)
     common_issues += check_carry_over(json_data, repo_root, File.basename(File.dirname(erb_path)),
                                       File.dirname(File.dirname(erb_path)), carry_imports, own_globals)

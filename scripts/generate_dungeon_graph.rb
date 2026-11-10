@@ -14,6 +14,7 @@ require 'securerandom'
 require 'set'
 require_relative '../lib/break_escape/declared_grants'
 require_relative '../lib/break_escape/access_identities'
+require_relative '../lib/break_escape/network_model'
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -336,6 +337,83 @@ if BreakEscape::AccessIdentities.uses_access_model?(scenario)
     add_node(account[:room], room_label(account[:room], rooms[account[:room]]), 'room')
     add_edge(account[:room], signin_node)
     account[:opens].each { |pc| add_edge(signin_node, access_lock_node(pc, rooms)) }
+  end
+end
+
+# ---------------------------------------------------------------------------
+# Networks (ACCESS_MODEL_SLICE_9_3_PLAN.md, section 7.3). A jack is a lock-like node that
+# the rogue device opens, from the jack's room, with an edge to its network's node. A
+# network node exposes each sign-in host and each resource on it (BreakEscape::NetworkModel,
+# hosts then resources, each by id). A headless host has no way in from its room: the
+# network edge and the accounts' sign-in edges are its only routes. A share with an access
+# list is reached from each admitted account's sign-in node (an account that signs in at an
+# object on the share's network); an open share from the network. Drawn only for scenarios
+# that define networks, so other graphs are unchanged.
+# ---------------------------------------------------------------------------
+NETWORKS = BreakEscape::NetworkModel.networks(scenario)
+if NETWORKS.any?
+  nm = BreakEscape::NetworkModel
+  ai = BreakEscape::AccessIdentities
+  net_node = ->(net_id) { add_node("net_#{nid(net_id)}", "#{NETWORKS[net_id]['name'] || net_id}<br/>Network", 'room') }
+  room_node = lambda do |room_id|
+    next nil unless room_id && rooms.key?(room_id)
+
+    add_node(room_id, room_label(room_id, rooms[room_id]), 'room')
+  end
+
+  # Rogue devices, from their home.
+  device_nodes = nm.rogue_device_definitions(scenario).map do |found|
+    item = found[:item]
+    node = add_node("device_#{nid(item['id'])}", "#{item['name'] || item['id']}<br/>(rogue device)", 'key')
+    room_id = found[:path][%r{\Arooms/([^/\[]+)}, 1]
+    from = case found[:home]
+           when 'start' then room_node.call(start_room)
+           when 'grant' then "grant_#{nid(BreakEscape::DeclaredGrants.identities(item).first)}"
+           else room_node.call(room_id)
+           end
+    add_edge(from, node) if from && $nodes.key?(from)
+    node
+  end
+
+  # Jacks: from their room and from each device; to their network.
+  nm.jacks(scenario).each do |entry|
+    jack = entry[:object]
+    jack_id = jack['id'] || nid(jack['name'] || 'jack')
+    node = add_node("jack_#{nid(jack_id)}", "#{jack['name'] || jack_id}<br/>Network jack", 'lock')
+    from = room_node.call(entry[:room_id])
+    add_edge(from, node) if from
+    device_nodes.each { |d| add_edge(d, node) }
+    add_edge(node, net_node.call(entry[:network])) if entry[:network] && NETWORKS.key?(entry[:network])
+  end
+
+  accounts = ai.room_npcs(scenario).select { |e| ai.account?(e[:npc]) }
+  NETWORKS.each_key do |net_id|
+    hosts = nm.sign_in_objects_on(net_id, scenario)
+    shares = nm.resources_on(net_id, scenario)
+    next if hosts.empty? && shares.empty?
+
+    network = net_node.call(net_id)
+    hosts.each do |entry|
+      lock = access_lock_node({ kind: 'login', lock: entry[:object], room: entry[:room_id] }, rooms)
+      # A headless host is reached only over the network: drop its room's edge.
+      $edges.reject! { |e| e[:to] == lock && e[:from] == entry[:room_id] } if nm.headless?(entry[:object])
+      add_edge(network, lock, label: 'exposes')
+    end
+    shares.each do |res_id, res|
+      kind = res['kind'].to_s.empty? ? 'resource' : res['kind'].tr('_', ' ')
+      node = add_node("resource_#{nid(res_id)}", "#{res['name'] || res_id}<br/>(#{kind})", 'container')
+      if res['access'].is_a?(Hash)
+        accounts.each do |a|
+          next unless ai.acl_admits?(res['access'], a[:npc])
+          next unless hosts.any? { |h| ai.account_admitted?(h[:object], a[:npc]) }
+
+          signin = "signin_#{nid(a[:npc]['id'])}"
+          add_edge(signin, node) if $nodes.key?(signin)
+        end
+      else
+        add_edge(network, node, label: 'exposes')
+      end
+    end
   end
 end
 
