@@ -776,6 +776,8 @@ export function handleGateBump(doorSprite, now = Date.now()) {
     const g = props?.gateKey ? gates?.groups?.get?.(props.gateKey) : null;
     if (!g || !g.open || g.bodyOff) return false;
     window.cancelClickToMove?.();
+    // A player carrying a credential this gate accepts is about to present it: no refusal.
+    if (g.requires && playerHoldsRfidCredentialFor(g.requires)) return false;
     if (!gates.bumpDue?.(g, now)) return false;
     refuseAtGate(props, g);
     return true;

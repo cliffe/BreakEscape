@@ -442,4 +442,20 @@ test('the bump: on an open gate that blocks him, cancel the walk and refuse at m
     delete window.cancelClickToMove;
 });
 
+test('the bump: a player holding a credential the gate accepts is not refused', () => {
+    const s = clickSetup({ player: PRESSED, room: 'lobby' });
+    window.cancelClickToMove = () => {};
+    s.gates.open(s.g, 1000);
+    s.events.length = 0;
+    globalThis.__hasCredential = true;
+    try {
+        assert.equal(handleGateBump(s.a, 1000), false, 'no refusal for a clone holder');
+        assert.deepEqual(s.alerts, []);
+        assert.deepEqual(names(s.events), []);
+    } finally {
+        globalThis.__hasCredential = false;
+        delete window.cancelClickToMove;
+    }
+});
+
 test.after(() => { console.log = quiet.log; console.warn = quiet.warn; });
