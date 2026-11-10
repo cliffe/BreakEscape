@@ -123,6 +123,9 @@ export class ObjectivesPanel {
     }
     
     let html = '';
+    // Aims that appear after the first render (a "New Objective") are scrolled into
+    // view below: a long list hid the new Debrief aim under the fold (lab playtest E9)
+    const newAimIds = ObjectivesPanel.newAimIds(aims, this.aimStatus);
     
     aims.forEach(aim => {
       const isCompleted = aim.status === 'completed';
@@ -206,6 +209,42 @@ export class ObjectivesPanel {
         + 'title="Some optional objectives are still open">End the mission</button></div>';
     }
     this.content.innerHTML = html;
+    if (newAimIds.length) this.revealAim(newAimIds[0]);
+  }
+
+  /**
+   * Ids of aims not shown before. Empty on the first render (nothing has been shown
+   * yet, so nothing is new: a reload must not jump the list).
+   */
+  static newAimIds(aims, seenStatus) {
+    if (!seenStatus || Object.keys(seenStatus).length === 0) return [];
+    return (aims || []).filter(a => !(a.aimId in seenStatus)).map(a => a.aimId);
+  }
+
+  /**
+   * Where the list should scroll so a block is fully in view, moving as little as
+   * possible; a block taller than the view shows its top. All numbers in px, the
+   * block's top measured from the top of the list's content.
+   */
+  static scrollTopToReveal({ scrollTop, viewHeight, top, height }) {
+    if (height >= viewHeight || top < scrollTop) return Math.max(0, top);
+    if (top + height > scrollTop + viewHeight) return top + height - viewHeight;
+    return scrollTop;
+  }
+
+  /** Scroll the list (never the page) so an aim and its tasks can be seen. */
+  revealAim(aimId) {
+    const c = this.content;
+    const el = c?.querySelector?.(`[data-aim-id="${aimId}"]`);
+    if (!el || !el.getBoundingClientRect) return;
+    const box = el.getBoundingClientRect();
+    const view = c.getBoundingClientRect();
+    c.scrollTop = ObjectivesPanel.scrollTopToReveal({
+      scrollTop: c.scrollTop,
+      viewHeight: c.clientHeight,
+      top: box.top - view.top + c.scrollTop,
+      height: box.height
+    });
   }
   
   /**
@@ -240,7 +279,7 @@ export class ObjectivesPanel {
   }
   
   show() {
-    this.container.style.display = 'block';
+    this.container.style.display = '';   // back to the stylesheet's flex column
   }
   
   hide() {
