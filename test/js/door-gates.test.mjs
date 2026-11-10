@@ -10,7 +10,7 @@ import { dirname, join } from 'node:path';
 const js = join(dirname(fileURLToPath(import.meta.url)), '../../public/break_escape/js');
 const dataUrl = (src) => 'data:text/javascript;base64,' + Buffer.from(src).toString('base64');
 globalThis.window = {};
-const { DoorGates, normaliseGate, GUARD_PRIORITY_MS } = await import(dataUrl(readFileSync(join(js, 'systems/door-gates.js'), 'utf8')));
+const { DoorGates, normaliseGate, GUARD_PRIORITY_MS, GUARD_PASS_MS } = await import(dataUrl(readFileSync(join(js, 'systems/door-gates.js'), 'utf8')));
 
 // A N/S doorway at (100, 100) between lobby (south) and vault (north)
 function setup(gate = { openFor: ['guard'], openRadius: 56, holdMs: 2500, playerMayPassIf: 'disguised' }) {
@@ -146,6 +146,87 @@ test('a barred (undisguised) player never traps the openFor guard: the gate open
     gates.update(1000 + GUARD_PRIORITY_MS);
     assert.equal(a.body.enable, false, 'grace elapsed: opens for the guard despite the barred player');
     assert.deepEqual(events.map(e => e[0]), ['door_gate_opened']);
+});
+
+test('a priority open is held long enough for the guard to ask for his path, and tells him at once', () => {
+    // Regression: lab_physical_pentest game 60. The priority open was shut again on
+    // the next tick by the same barred player, the guard's 2 s retry missed the
+    // pulse, and he stood at the reader for as long as the player stood there.
+    const { gates, a, guard, behaviour, events } = setup();
+    let told = 0;
+    behaviour.gateOpened = () => { told++; };
+    guard.x = 100; guard.y = 140;
+    window.player = { x: 100, y: 150 };               // barred, and stays
+    gates.update(1000);
+    const openedAt = 1000 + GUARD_PRIORITY_MS;
+    gates.update(openedAt);
+    assert.equal(a.body.enable, false, 'opened by priority');
+    assert.equal(told, 1, 'the openFor guard is told the gate opened');
+    gates.update(openedAt + 16);
+    assert.equal(a.body.enable, false, 'not shut on the very next tick');
+    gates.update(openedAt + GUARD_PASS_MS - 1);
+    assert.equal(a.body.enable, false, 'held through the pass window');
+    // He asked for his path and is crossing: stays open as before
+    behaviour.currentPath = [{ x: 100, y: 100 }];
+    gates.update(openedAt + GUARD_PASS_MS + 500);
+    assert.equal(a.body.enable, false, 'a guard mid-crossing keeps it open');
+    assert.deepEqual(events.map(e => e[0]), ['door_gate_opened']);
+});
+
+test('after the pass window a barred player shuts the gate again if the guard is not crossing', () => {
+    const { gates, a, guard } = setup();
+    guard.x = 100; guard.y = 140;
+    window.player = { x: 100, y: 150 };
+    gates.update(1000);
+    gates.update(1000 + GUARD_PRIORITY_MS);
+    assert.equal(a.body.enable, false);
+    gates.update(1000 + GUARD_PRIORITY_MS + GUARD_PASS_MS);
+    assert.equal(a.body.enable, true, 'the anti-tailgate rule is back once the window ends');
+});
+
+test('a forced close ends the pass window', () => {
+    const { gates, a, guard } = setup();
+    guard.x = 100; guard.y = 140;
+    window.player = { x: 100, y: 150 };
+    gates.update(1000);
+    gates.update(1000 + GUARD_PRIORITY_MS);
+    assert.equal(gates.closeNow('vault', { force: true, now: 1000 + GUARD_PRIORITY_MS + 10 }), true);
+    assert.equal(a.body.enable, true);
+    assert.equal(gates.state('vault')[0].open, false);
+});
+
+test('approachPoint: the spot in front of a shut gate on the guard\'s side, only when he is out of reach', () => {
+    const { gates, guard } = setup();
+    // South of the door, pushed well away along the wall
+    assert.deepEqual(gates.approachPoint('guard', { x: 280, y: 148 }),
+        { x: 100, y: 148, roomId: 'lobby', connectedRoom: 'vault' });
+    // North of it (he ended a leg inside the far room, out of reach)
+    assert.deepEqual(gates.approachPoint('guard', { x: 60, y: -20 }),
+        { x: 100, y: 52, roomId: 'lobby', connectedRoom: 'vault' });
+    // Already in front of it: the gate opens without his moving
+    assert.equal(gates.approachPoint('guard', { x: 100, y: 150 }), null);
+    // Not his gate, or a gate that joins neither named room
+    assert.equal(gates.approachPoint('stranger', { x: 280, y: 148 }), null);
+    assert.equal(gates.approachPoint('guard', { x: 280, y: 148 }, ['cellar']), null);
+    assert.ok(gates.approachPoint('guard', { x: 280, y: 148 }, ['vault']));
+    // An open gate needs no approach
+    guard.x = 100; guard.y = 140;
+    gates.update(0);
+    assert.equal(gates.approachPoint('guard', { x: 280, y: 148 }), null);
+    // No position, no answer
+    assert.equal(new DoorGates().approachPoint('guard', null), null);
+});
+
+test('approachPoint stays inside a small radius, and works for a side door', () => {
+    const small = setup({ openFor: ['guard'], openRadius: 40, holdMs: 0 });
+    const p = small.gates.approachPoint('guard', { x: 100, y: 300 });
+    assert.equal(p.y, 132, 'radius 40: stands 32 px out, inside the radius');
+    const gates = new DoorGates();
+    const side = { x: 500, y: 500, active: true, body: { enable: true },
+        doorProperties: { roomId: 'east', connectedRoom: 'west', direction: 'west', worldX: 500, worldY: 500, isSideDoor: true } };
+    gates.register(side, { openFor: ['guard'] });
+    assert.deepEqual(gates.approachPoint('guard', { x: 700, y: 520 }),
+        { x: 548, y: 500, roomId: 'east', connectedRoom: 'west' });
 });
 
 test('the grace timer resets when the guard leaves, so it is per-visit not cumulative', () => {

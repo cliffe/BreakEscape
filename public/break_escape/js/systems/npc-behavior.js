@@ -1576,6 +1576,10 @@ class NPCBehavior {
                 } else {
                     // Unreachable (a shut door, a body in the way): stay on this
                     // waypoint and retry after a back-off; never skip a room.
+                    // If a shut gate of his own is what stands in the way and he is
+                    // out of its reach, he walks back to it first (it opens as he
+                    // nears), or he would retry from where he stands for ever.
+                    if (this._approachRouteGate(pathfindingManager, [currentSegment.room])) return;
                     console.warn(`⚠️ [${this.npcId}] Waypoint (${nextWaypoint.x}, ${nextWaypoint.y}) in ${currentSegment.room} unreachable, retrying in 2s`);
                     this._pathRetryAfter = this.clockNow() + 2000;
                     this.currentPath = [];
@@ -1584,6 +1588,57 @@ class NPCBehavior {
                 }
             }
         );
+    }
+
+    /** A gate this NPC opens has just opened (door-gates.js): retry a failed route leg now. */
+    gateOpened() {
+        this._pathRetryAfter = 0;
+    }
+
+    /**
+     * A route leg was unreachable. If this NPC has a shut gate door of his own into
+     * one of `roomIds` and stands outside its reach, head for the spot in front of
+     * it (door-gates.js approachPoint) without taking the waypoint: the gate opens
+     * as he nears and the next choice finds the leg. This is what brings a guard
+     * back after the player has pushed him along a wall, away from his door, or
+     * when a leg ends just out of the gate's radius. Before this he retried the
+     * same unreachable path from where he stood, for good.
+     * @returns {boolean} true when he is now heading for (or planning a path to) the gate
+     */
+    _approachRouteGate(pfm, roomIds) {
+        const gates = window.doorGates;
+        if (typeof gates?.approachPoint !== 'function' || typeof pfm?.findWorldPath !== 'function') return false;
+        const { x, y } = this.npcBodyPos();
+        const spot = gates.approachPoint(this.npcId, { x, y }, roomIds);
+        if (!spot) return false;
+        const dest = pfm.findNearestWalkableWorldCell?.(spot.x, spot.y) || { x: spot.x, y: spot.y };
+        // Already as close as the floor allows: nothing to walk, so back off as before
+        if ((dest.x - x) ** 2 + (dest.y - y) ** 2 < 8 * 8) return false;
+        const from = pfm.findNearestWalkableStartCell?.(x, y) || { x, y };
+        const target = { x: dest.x, y: dest.y, dwellTime: 0, routeAction: null, gateApproach: true };
+        this.patrolTarget = target;
+        this.currentPath = [];
+        this.pathIndex = 0;
+        this.patrolReachedTime = 0;
+        this.pathFollowingActive = false;
+        this._pathfindingInProgress = true;
+        console.log(`🚪 [${this.npcId}] Route leg blocked by a shut gate out of reach: walking back to it at (${dest.x.toFixed(0)}, ${dest.y.toFixed(0)})`);
+        this._planMovePath(pfm, from.x, from.y, dest.x, dest.y, (path) => {
+            this._pathfindingInProgress = false;
+            if (this.patrolTarget !== target) return;   // re-targeted meanwhile
+            if (path && path.length > 0) {
+                this._pathRetryAfter = 0;
+                this.currentPath = path;
+                this.pathIndex = 0;
+                this.pathFollowingActive = true;
+            } else {
+                this._pathRetryAfter = this.clockNow() + 2000;
+                this.currentPath = [];
+                this.patrolTarget = null;
+                this.pathFollowingActive = false;
+            }
+        });
+        return true;
     }
 
     _ensureRouteWallColliders() {

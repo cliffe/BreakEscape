@@ -13,6 +13,13 @@
  * - Stays open while one is, and for `holdMs` after the last one leaves.
  * - Never closes while the player overlaps the door's body (+4px), nor while an
  *   `openFor` NPC's remaining path still crosses the doorway.
+ * - A guard never loses his own door. When the gate opens, each `openFor` NPC is
+ *   told (gateOpened), so one waiting on a path through it asks again at once.
+ *   An open forced by the guard's priority over a barred player is held for
+ *   GUARD_PASS_MS so that path request lands. And a routed guard who has been
+ *   moved away from the door (pushed by the player, or ending a leg out of
+ *   reach) walks back to it: npc-behavior.js asks approachPoint() when a route
+ *   leg is unreachable.
  * - `playerMayPassIf` names a global. While it is false, a player who comes within
  *   `openRadius` of the open gate shuts it at once (unless already in the doorway,
  *   where shutting it would trap them), and it stays shut while they are there.
@@ -48,6 +55,14 @@ export const DEFAULT_GATE_HOLD_MS = 2500;
 // cloned badge), not by trapping the guard. Longer than a couple of hold
 // windows, so ordinary disguised play (never barred) never waits on it.
 export const GUARD_PRIORITY_MS = 5000;
+// How long a gate opened by that priority stays open whatever the player does,
+// so the guard's next path request finds the doorway. Without it the barred
+// player shut the gate again on the very next tick, the guard's 2 s retry
+// missed the pulse, and he stood at the reader for as long as the player did.
+export const GUARD_PASS_MS = 1500;
+// How far from the door's centre a guard is sent to stand when he has to walk
+// back to it (approachPoint): the tile in front of the doorway.
+const APPROACH_PX = 48;
 const TILE = 32;
 const OPPOSITE = { north: 'south', south: 'north', east: 'west', west: 'east' };
 
@@ -135,7 +150,7 @@ export class DoorGates {
             if (!cfg) return false;
             g = {
                 key, cfg, sprites: new Set(), open: false, lastNpcNear: -Infinity, forcedUntil: 0,
-                npcBlockedSince: -1, playerHoldUntil: 0, requires: props.requires ?? null,
+                npcBlockedSince: -1, playerHoldUntil: 0, guardPassUntil: 0, requires: props.requires ?? null,
                 x: props.worldX ?? sprite.x, y: props.worldY ?? sprite.y,
                 roomId: props.roomId, connectedRoom: props.connectedRoom, direction: props.direction,
                 isSideDoor: !!props.isSideDoor
@@ -239,8 +254,43 @@ export class DoorGates {
             pm.rebuildWorldGrid?.();
         }
         console.log(`🚪 Gate opened: ${g.roomId} ↔ ${g.connectedRoom}`);
+        // A guard waiting on a path through this door asks again now, not at the end
+        // of his retry back-off (by which time the gate may have shut again).
+        const bm = W().npcBehaviorManager;
+        for (const id of g.cfg?.openFor || []) bm?.getBehavior?.(id)?.gateOpened?.();
         this._afterToggle(g, eventName);
         return true;
+    }
+
+    /**
+     * Where an `openFor` NPC should walk to get his own shut gate to open: the spot
+     * just in front of the doorway, on his side of it. npc-behavior.js asks when a
+     * route leg is unreachable. Returns null when no shut gate of his joins one of
+     * `roomIds` (when given), or when he is already inside the nearest one's radius
+     * (it will open for him without his moving: update() and GUARD_PRIORITY_MS).
+     * @param {string} npcId
+     * @param {{x:number,y:number}} from - the NPC's feet
+     * @param {string[]} [roomIds] - only gates that join one of these rooms
+     * @returns {{x:number,y:number,roomId:string,connectedRoom:string}|null}
+     */
+    approachPoint(npcId, from, roomIds = null) {
+        if (!from || !Number.isFinite(from.x) || !Number.isFinite(from.y)) return null;
+        let best = null;
+        for (const g of this.groups.values()) {
+            if (!g.cfg || g.open || !g.cfg.openFor.includes(npcId)) continue;
+            if (Array.isArray(roomIds) && roomIds.length &&
+                !roomIds.includes(g.roomId) && !roomIds.includes(g.connectedRoom)) continue;
+            const d = Math.hypot(from.x - g.x, from.y - g.y);
+            if (!best || d < best.d) best = { g, d };
+        }
+        if (!best) return null;
+        const g = best.g;
+        const reach = Math.min(APPROACH_PX, Math.max(g.cfg.openRadius - 8, TILE / 2));
+        if (best.d <= reach + 8) return null;
+        const pt = g.isSideDoor
+            ? { x: g.x + (from.x >= g.x ? reach : -reach), y: g.y }
+            : { x: g.x, y: g.y + (from.y >= g.y ? reach : -reach) };
+        return { ...pt, roomId: g.roomId, connectedRoom: g.connectedRoom };
     }
 
     /**
@@ -289,6 +339,7 @@ export class DoorGates {
         this._prune(g);
         g.open = false;
         g.npcBlockedSince = -1;
+        g.guardPassUntil = 0;
         for (const s of g.sprites) this._applySprite(s, false);
         const pm = W().pathfindingManager;
         if (pm) {
@@ -395,6 +446,7 @@ export class DoorGates {
                     else if (now - g.npcBlockedSince >= GUARD_PRIORITY_MS) {
                         this.open(g, now);
                         g.npcBlockedSince = -1;
+                        g.guardPassUntil = now + GUARD_PASS_MS;
                     }
                 } else {
                     g.npcBlockedSince = -1;
@@ -406,6 +458,8 @@ export class DoorGates {
             // A guard mid-crossing keeps it open even past a barred player — shutting
             // now would wall him into the doorway and strand his patrol.
             if (this.npcCrossing(g)) { g.npcBlockedSince = -1; continue; }
+            // Opened by the guard's priority: give his path request time to land
+            if (barred && now < (g.guardPassUntil || 0)) continue;
             if (barred) { this.close(g); continue; } // undisguised player: shut at once
             if (npcNear) continue;
             if (now - g.lastNpcNear < g.cfg.holdMs) continue;
