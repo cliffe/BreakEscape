@@ -263,3 +263,23 @@ test('crowded-hub: m01 handler hub (support_hub in m01_phone_agent0x99.ink) is t
   assert.ok((hub.match(/^\+ /gm) || []).length > 10, 'support_hub still declares more than 10 choices');
   assert.equal(only(lintInk(src, { channel: 'phone' }), 'crowded-hub').length, 0);
 });
+
+test('inline-direction: a stage cue in a voiced line warns; emphasis, choices, the player, narration and phone inks do not', () => {
+  const ink = [
+    '=== s ===',
+    'Gary: *sighs* Fine.',                       // 2: warns
+    'Gary: I *never* said that.',                // 3: emphasis between two words
+    'You: *shrugs* Whatever.',                   // 4: the player is not voiced
+    'Narrator: *a door slams*',                  // 5: narration
+    '* [*quietly* ask about the badge]',         // 6: a choice
+    '+ [Ask] -> s',                              // 7
+    'Unprefixed host line. *pause*',             // 8: warns (the host speaks it)
+    'Gary: Said as the player. #speaker:player *x*', // 9: a tag, and the player's line
+    'Gary: Fine. #delivery: quietly',            // 10: the note is in its tag
+    'Gary: Fine *laughs*.',                      // 11: warns (no word after it, so not emphasis)
+  ].join('\n') + '\n';
+  const f = only(lintInk(ink), 'inline-direction');
+  assert.deepEqual(f.map(x => x.line), [2, 8, 11]);
+  assert.match(f[0].note, /#delivery: sighs/);
+  assert.equal(only(lintInk(ink, { channel: 'phone' }), 'inline-direction').length, 0);
+});

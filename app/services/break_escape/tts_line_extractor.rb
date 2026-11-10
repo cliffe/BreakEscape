@@ -23,7 +23,8 @@ module BreakEscape
   # can request, read by tts:wasted) always includes them, so their clips are
   # never reported as unrequested.
   class TtsLineExtractor
-    Entry = Struct.new(:npc_id, :text, :voice, :source, :path, :key, keyword_init: true)
+    # delivery: the line's `#delivery:` note (person-chat lines only), or nil.
+    Entry = Struct.new(:npc_id, :text, :voice, :source, :path, :key, :delivery, keyword_init: true)
     Note = Struct.new(:source, :path, :text, :reason, keyword_init: true)
 
     BACKGROUND_LINE = /\ABackground\s*\[\s*([^\]]+)\s*\]\s*(?::\s*(.*))?\z/im
@@ -254,6 +255,38 @@ module BreakEscape
       end
     end
 
+    # True when some host story has a line the client voices as npc_id with this
+    # text and this `#delivery:` note: how the endpoint accepts a note the client
+    # sends (the note becomes part of the voice prompt, so only notes written in
+    # the scenario's ink are accepted). Voiced phone calls carry no note.
+    def delivered_by?(npc_id, text, delivery)
+      wanted = self.class.normalize(text)
+      note = self.class.normalize(delivery)
+      return false if wanted.empty? || note.empty?
+
+      delivered_lines.include?("#{npc_id}|#{wanted}|#{note}")
+    end
+
+    # "npc_id|normalised text|normalised note" for every line with a delivery note.
+    def delivered_lines
+      @delivered_lines ||= begin
+        set = Set.new
+        each_host_line do |host, _path, line, npc_id, text|
+          note = line_delivery(host, line)
+          set << "#{npc_id}|#{self.class.normalize(text)}|#{self.class.normalize(note)}" if note
+        end
+        set
+      end
+    end
+
+    # The `#delivery:` note person-chat sends for a line (TtsService.delivery_from_tags).
+    # Voiced phone calls don't send one (phone-call-voice.js), so their lines have none.
+    def line_delivery(host_id, line)
+      return nil if characters.dig(host_id, 'npcType') == 'phone'
+
+      TtsService.delivery_from_tags(line.tags)
+    end
+
     # True when some host story has a line the client voices as npc_id with
     # this text: how the endpoint accepts a co-speaker's line from another
     # NPC's story (Vance in HaX's debrief, HaX in Netherton's). Matching is on
@@ -286,6 +319,7 @@ module BreakEscape
       return cached[:extractor] if cached && cached[:stamp] == stamp
 
       extractor.spoken_lines
+      extractor.delivered_lines
       endpoint_cache[scenario_name] = { stamp: stamp, extractor: extractor }
       extractor
     end
@@ -315,7 +349,8 @@ module BreakEscape
       seen = {}
 
       each_host_line do |host_id, ink_path, line, npc_id, text|
-        add_entry(seen, npc_id, text, host_id, "#{File.basename(ink_path)}:#{line.path}")
+        add_entry(seen, npc_id, text, host_id, "#{File.basename(ink_path)}:#{line.path}",
+                  line_delivery(host_id, line))
       end
 
       each_pretext_outcome_line do |npc_id, text, path|
@@ -407,18 +442,19 @@ module BreakEscape
       end
     end
 
-    def add_entry(seen, npc_id, text, source, path)
+    def add_entry(seen, npc_id, text, source, path, delivery = nil)
       voice = voices[npc_id]
       unless voice
         @notes << Note.new(source: source, path: path, text: text, reason: "no voice config for #{npc_id}; the endpoint can't voice it")
         return
       end
 
-      key = @tts_service.cache_key_for(text, voice['name'], voice['style'], voice['language'])
+      key = @tts_service.cache_key_for(text, voice['name'], voice['style'], voice['language'], delivery)
       return if seen[key]
 
       seen[key] = true
-      @entries << Entry.new(npc_id: npc_id, text: text, voice: voice, source: source, path: path, key: key)
+      @entries << Entry.new(npc_id: npc_id, text: text, voice: voice, source: source, path: path, key: key,
+                            delivery: delivery)
     end
 
     def speaker_id_for(prefix, host_id)

@@ -60,7 +60,7 @@ Use the `Narrator:` inline prefix for stage directions. These display as italici
 ```ink
 === derek_office ===
 Narrator: The room is dark. Files are scattered across the desk.
-Maya Chen: *glances at door* Is it safe to talk?
+Maya Chen: Is it safe to talk? #delivery: glancing at the door, low
 ```
 
 For narration associated with a specific character portrait, use `Narrator[character_id]:`:
@@ -80,50 +80,53 @@ Narrator[player]: You join them. Nobody looks at you twice.
 
 **Making a background.** Backgrounds are 400×400 pixel art (older ones are 320×320). Paint a 1024×1024 concept (Gemini), keep it as `assets/backgrounds/<name>_nonpixelart.png`, then convert it with `python3 tools/pixelate_background.py <concept> <out_dir> "pixel art, <scene>"` (PixelLab pixflux, init strength 500 by default; try 600 if signs or labels must stay legible). The person-chat canvas is 16:9: with nobody in frame it shows almost the full width but only the middle ~55% of the height (the top and bottom ~22% are always cut off), and with a portrait on screen it draws at the portrait's pixel scale, showing only about the central 57% × 32%. Keep anything the scene needs (signs, a door, a key object) in the middle band.
 
-### Emotes vs. Narration: describe actions with the Narrator, keep flavour on dialogue
+### Voiced lines hold only spoken words: delivery goes in a `#delivery:` tag
 
-Two related rules — a real bug in the m01 Derek confrontation taught us why they matter (emote lines that began with `*` compiled into phantom player-choice buttons and dead-ended the surrender branch):
+Every NPC line is voiced by text-to-speech, and the voice gets exactly the words on the line. An inline stage direction such as `*quietly*` or `*after a while*` is not speech, and the voice may act it, read it or do something odd with it; it also shows on screen. So (user decision, 2026-11-10):
 
-**1. A line that describes what is *happening* is a `Narrator:` line.** Physical actions, scene changes, and plot beats ("Derek sets down the launch device", "SAFETYNET backup arrives and restrains him") are narration — not a character's dialogue. Prefix them `Narrator:`.
+**1. A line that describes what is *happening* is a `Narrator:` line.** Physical actions, scene changes and plot beats ("Derek sets down the launch device", "SAFETYNET backup arrives and restrains him") are narration, not a character's dialogue.
 
-**2. Inter-line flavour must be an emote *attached to a spoken line* — never standalone.** Small vocal / emotional / gesture cues (`*sighs*`, `*laughs*`, `*quietly*`, `*glances at the door*`) are delivery signals to the Gemini TTS for how the line is spoken. They must ride along with actual dialogue on the same character-prefixed line. **An emote with no dialogue is wrong** — for example, `Derek: *smiles*` on its own is not OK.
+**2. How a line is spoken goes in a `#delivery:` tag on that line.** The note is sent to the voice as a performance note for that line only, and the player never sees it.
 
-❌ **WRONG** — standalone emote, and (worse) it starts the line with `*`, so the compiler parses it as a player choice:
 ```ink
-Derek Lawson: *smiles*
+Derek Lawson: You really don't understand what we're building. #delivery: smiling, patient
+# delivery: after a long pause, quietly
+Maya Chen: I suppose it doesn't matter now.
+```
+
+- Write it at the end of the line, or on its own line directly above (ink attaches a tag line to the line after it). If a line has two, the last wins.
+- Keep it short and about the voice: pace, volume, mood, a laugh or sigh in the voice (`quietly, almost to herself`, `flatly`, `with a tired laugh`, `slowly, choosing each word`). Things the character *does* are narration, or cut.
+- A note changes that line's audio, so adding, changing or removing one regenerates the clip. Untagged lines keep their existing clips.
+- Person-chat lines only, for now: a voiced phone call (`voiced: true`) doesn't send the note yet, so put nothing there you rely on.
+- No `{variables}` in a note, for the same reason as in voiced lines.
+
+❌ **WRONG**: an inline cue, and a line starting with `*`, which the compiler parses as a player choice:
+```ink
+Derek Lawson: *smiles* You really don't understand what we're building.
 *laughs*
 ```
 
-✅ **RIGHT** — emote fused with the character's spoken line:
+✅ **RIGHT**:
 ```ink
-Derek Lawson: *smiles* You really don't understand what we're building.
-Derek Lawson: *laughs* You think I'd sell out the only people who understand the truth?
-```
-
-✅ **RIGHT** — a described action becomes a Narrator beat, with the dialogue on its own line:
-```ink
+Derek Lawson: You really don't understand what we're building. #delivery: smiling
 Narrator: Derek sets down the launch device.
 Derek Lawson: Take it. Stop the launch. I won't resist.
 ```
 
-**Why this matters mechanically:** any line beginning with `*` is parsed as a `*` choice. A prefix-less emote line (`*laughs*`) therefore becomes a phantom choice button and can silently dead-end the branch — often surfacing only as an "apparent loose end" compiler warning. **Always lead the line with the speaker prefix (`Derek Lawson: *laughs* …`) or `Narrator:`** so the `*` sits *inside* the line, never at its start.
+`scripts/ink_runtime_check/dialoguelint.mjs` warns (`inline-direction`) on an asterisk cue in a voiced person-chat line. It skips emphasis between two words (`I *never* said that`), choices, the player's lines and narration.
 
-Rule of thumb: if it describes *what happens*, it's `Narrator:`; if it colours *how a line is spoken*, it's an inline `*emote*` on that character's dialogue — and it always carries dialogue with it.
+#### Don't turn every cue into narration: each `Narrator:` line costs the player a click
 
-#### Don't convert every emote — each `Narrator:` line costs the player a click
+Every `Narrator:` beat becomes its own dialogue block the player must advance past, so converting every gaze and gesture makes conversations feel like wading.
 
-The split above is about *category*, not volume. Every `Narrator:` beat becomes its own dialogue block the player must advance past, so mechanically converting every gaze and gesture makes conversations feel like wading.
-
-Apply the rule with judgement:
-
-| Keep inline (delivery cues the TTS can act on) | Promote to `Narrator:` (events in the scene) |
+| `#delivery:` note (how the voice says it) | `Narrator:` line (an event in the scene) |
 |---|---|
-| `*quietly*`, `*flatly*`, `*sharply*`, `*very evenly*` | Handing something over, reaching for a radio |
-| `*sighs*`, `*snorts*`, `*tired laugh*`, `*almost laughs*` | Crossing the room, stepping between the player and a door |
-| `*pause*`, `*slowly*`, `*breath*` (pacing for the TTS) | Looking up for the first time — where it marks the scene turning |
-| `*not looking up*`, `*without turning round*` (manner of delivery) | Having to look away because they're overcome |
+| `quietly`, `flatly`, `sharply`, `very evenly` | Handing something over, reaching for a radio |
+| `with a sigh`, `with a tired laugh`, `almost laughing` | Crossing the room, stepping between the player and a door |
+| `after a pause`, `slowly` (pacing) | Looking up for the first time, where it marks the scene turning |
+| `not looking up`, `without turning round` (manner of delivery) | Having to look away because they're overcome |
 
-The test: **would losing this line cost the scene a beat, or just a bit of colour?** Beats get their own Narrator line. Colour rides along with the dialogue, where it also does useful work steering the voice.
+The test: **would losing this line cost the scene a beat, or just a bit of colour?** Beats get their own Narrator line. Colour goes in the `#delivery:` note, or is cut if the words already carry it.
 
 ### Dialogue must be supported by the scenario
 
@@ -162,6 +165,8 @@ No `# speaker:` tags required.
 | `# speaker:npc` | Attribute the following tag-less line to the main NPC |
 | `# speaker:player` | Attribute the following tag-less line to the player |
 | `# speaker:npc:character_id` | Attribute to a specific character by ID |
+
+For how a line is *spoken* (not who speaks it), use `# delivery:` (see "Voiced lines hold only spoken words" above).
 
 **When you might use them:**
 
@@ -900,7 +905,7 @@ VAR talked_before = false
 
 These came up in more than one mission during the pass-4 dialogue reviews and playtests (October 2026). Most are caught by `node scripts/ink_runtime_check/dialoguelint.mjs scenarios/<mission>/` (rule name in brackets); the rest are for the reviewer. `README_scenario_design.md` ("Common bugs and how to avoid them") has the scenario-file side.
 
-**0. A line that starts with a stage cue becomes a choice** (`emote-as-choice`, error). In ink a line beginning `*` is a choice, so `*leans in* Fine.` on its own line is not an emote. It hides behind a speaker prefix (`Ghost: *leans in* Fine.` is safe) and appears when the prefix is stripped, as happened in m02's phone ink. Put the cue mid-line (`Fine. *leans in*`) or cut it.
+**0. A line that starts with a stage cue becomes a choice** (`emote-as-choice`, error). In ink a line beginning `*` is a choice, so `*leans in* Fine.` on its own line is not an emote. It hides behind a speaker prefix (`Ghost: *leans in* Fine.` is safe) and appears when the prefix is stripped, as happened in m02's phone ink. Move it to a `#delivery:` tag if it says how the line is spoken, make it a `Narrator:` line if it is an action, or cut it (see "Voiced lines hold only spoken words").
 
 **0b. Reopened chats resume at the hub, not at `start`.** The engine reopens a person-chat at the knot the player left (usually the hub). Lines placed in `start` only play on a first meeting or after a page reload. Put "something changed since last time" reactions in the hub's re-entry line, keyed on a variable. Ink variables survive a page reload (the engine saves `npcInkVariables`); visit counts and the story position don't.
 
@@ -1325,7 +1330,7 @@ Navigation in normal mode:
 
 If you need section headers, use plain text without asterisks.
 
-**This is the most common cause of the emote bug** (see *§Emotes vs. Narration*): a flavour cue written as `*laughs*` on its own line is parsed as a choice. Lead every emote line with a speaker or `Narrator:` prefix so the `*` never sits at the start of the line.
+**This is the most common cause of the emote bug**: a flavour cue written as `*laughs*` on its own line is parsed as a choice. Voiced lines carry no inline cues now; put the note in a `#delivery:` tag (see *§Voiced lines hold only spoken words*).
 
 ### Characters that change what ink compiles
 
@@ -1334,7 +1339,7 @@ Ink treats several characters as syntax. Inside dialogue they either vanish or r
 | In dialogue | What ink does with it | Fix |
 |---|---|---|
 | `//` | Starts a comment. **Everything after it on the line is silently discarded.** Bites hardest on URLs and file paths. | Rephrase, or split the URL |
-| `*` at line start | Parses as a choice. A standalone `*sighs*` becomes a phantom choice button that can dead-end the branch | Attach the emote to a spoken line, or use `Narrator:` |
+| `*` at line start | Parses as a choice. A standalone `*sighs*` becomes a phantom choice button that can dead-end the branch | A `#delivery:` tag on the spoken line, or `Narrator:` |
 | Unpaired `*` | Renders the asterisk to the player | Close the emote |
 | `**bold**` | Not supported; renders literally | Capitals or plain wording |
 | `->` | Reads as a divert | Use an en dash or "to" |

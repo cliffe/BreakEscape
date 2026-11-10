@@ -21,6 +21,7 @@ import { processGameActionTags, determineSpeaker as determineSpeakerFromTags, ch
 import { splitReplyTags, partitionSlowTags } from './person-chat-pending-reply.js';
 import npcConversationStateManager from '../../systems/npc-conversation-state.js';
 import TTSManager from '../../systems/tts-manager.js';
+import { deliveryFromTags } from '../../systems/tts-delivery.js';
 import { rememberNpcLine, getRememberedNpcLine, reopenContextLine, refreshHubAfterMidKnotReopen } from './person-chat-reopen.js';
 import { startEventConversation } from './person-chat-event-start.js';
 import { personChatBackgroundFor } from './person-chat-background.js';
@@ -1705,10 +1706,13 @@ export class PersonChatMinigame extends MinigameScene {
                 : (block.speaker && block.speaker !== 'player' && !isOwnNpcByName && parsedSpeaker?.voice
                     ? block.speaker
                     : this.npcId);
+            // The line's #delivery: note goes to the voice, never on screen. One ink line
+            // per continue(), so the result's tags are this line's (TtsLineExtractor agrees).
+            const delivery = deliveryFromTags(originalResult?.tags);
             // Voice starts when the session-resume overlay closes, not under it
             await whenSessionOverlayClosed();
             if (!this.ttsManager) return;
-            const audioDuration = await this.ttsManager.play(ttsSpeakerId, ttsText);
+            const audioDuration = await this.ttsManager.play(ttsSpeakerId, ttsText, { delivery });
             // Audio length + buffer; null (no key, fetch or load failure) uses the estimate
             advanceDelay = advanceDelayMs(line, audioDuration);
 
@@ -1724,7 +1728,7 @@ export class PersonChatMinigame extends MinigameScene {
                     && this.characters[nextParsed.speaker].displayName !== this.npc?.displayName
                     ? nextParsed.speaker
                     : this.npcId;
-                this.ttsManager.preload(nextSpeakerId, nextTtsText);
+                this.ttsManager.preload(nextSpeakerId, nextTtsText, { delivery });
             }
         }
 

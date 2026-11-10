@@ -907,7 +907,104 @@ module BreakEscape
       FileUtils.rm_rf(tmp_dir) if tmp_dir
     end
 
+    # ─── Delivery notes (#delivery: on an ink line) ───────────────────────────
+
+    DELIVERY_STORY = "test/fixtures/files/ink_line_walker/delivery_fixture.json".freeze
+    KEVIN_VOICE = { "name" => "Puck", "style" => "Nervous IT admin.", "language" => "en-GB" }.freeze
+    QUIET_LINE = "I suppose it doesn't matter now.".freeze
+    QUIET_NOTE = "quietly, almost to herself".freeze
+
+    def use_delivery_scenario
+      @game.scenario_data["rooms"]["lobby"]["npcs"] = [
+        { "id" => "kevin_park", "displayName" => "Kevin Park", "npcType" => "person",
+          "voice" => KEVIN_VOICE, "storyPath" => DELIVERY_STORY }
+      ]
+      @game.save!
+    end
+
+    def post_line(params, calls)
+      with_env("GEMINI_API_KEY" => "dummy_key_for_test") do
+        stub_generate_returning(nil, calls) { post tts_game_url(@game), params: params }
+      end
+    end
+
+    test "tts generates a tagged line with its delivery note" do
+      use_delivery_scenario
+      calls = []
+      post_line({ npc_id: "kevin_park", text: QUIET_LINE, delivery: QUIET_NOTE }, calls)
+
+      assert_response :internal_server_error # the stub returns no clip
+      assert_equal 1, calls.size
+      assert_equal QUIET_NOTE, calls.first[:kwargs][:delivery]
+      assert_equal [QUIET_LINE, "Puck", "Nervous IT admin.", "en-GB"], calls.first[:args]
+    end
+
+    test "tts requests without a note are unchanged: no delivery reaches generate" do
+      use_delivery_scenario
+      calls = []
+      post_line({ npc_id: "kevin_park", text: QUIET_LINE }, calls)
+      assert_equal 1, calls.size
+      refute calls.first[:kwargs].key?(:delivery)
+    end
+
+    test "tts refuses a note the ink doesn't give that line" do
+      use_delivery_scenario
+      calls = []
+      post_line({ npc_id: "kevin_park", text: QUIET_LINE, delivery: "shouting with rage" }, calls)
+      assert_response :forbidden
+      assert_match(/delivery note/i, json_body["error"])
+      post_line({ npc_id: "kevin_park", text: "An untagged line.", delivery: QUIET_NOTE }, calls)
+      assert_response :forbidden
+      assert_empty calls
+    end
+
+    test "tts refuses an over-long note" do
+      use_delivery_scenario
+      calls = []
+      post_line({ npc_id: "kevin_park", text: QUIET_LINE, delivery: "x" * 201 }, calls)
+      assert_response :bad_request
+      assert_empty calls
+    end
+
+    test "tts serves a tagged line's own clip, not the untagged one" do
+      use_delivery_scenario
+      write_clip(TtsService.cache_key(QUIET_LINE, *KEVIN_VOICE.values, QUIET_NOTE))
+
+      service = TtsService.new
+      service.define_singleton_method(:generate) { |*_a, **_k| flunk "generated a line that already had a clip" }
+      TtsService.stub(:new, service) do
+        post tts_game_url(@game), params: { npc_id: "kevin_park", text: QUIET_LINE, delivery: QUIET_NOTE }
+      end
+      assert_response :success
+    end
+
+    test "tts generates a tagged line rather than serve its untagged clip when it can" do
+      use_delivery_scenario
+      write_clip(TtsService.cache_key(QUIET_LINE, *KEVIN_VOICE.values))
+      calls = []
+      post_line({ npc_id: "kevin_park", text: QUIET_LINE, delivery: QUIET_NOTE }, calls)
+      assert_equal 1, calls.size
+    end
+
+    test "tts on a keyless server falls back to the untagged clip for a tagged line" do
+      use_delivery_scenario
+      write_clip(TtsService.cache_key(QUIET_LINE, *KEVIN_VOICE.values))
+      with_env("GEMINI_API_KEY" => nil) do
+        post_with_generate_forbidden_params(npc_id: "kevin_park", text: QUIET_LINE, delivery: QUIET_NOTE)
+      end
+      assert_response :success
+    end
+
     private
+
+    def post_with_generate_forbidden_params(params)
+      service = TtsService.new
+      service.define_singleton_method(:enabled?) { false }
+      service.define_singleton_method(:generate) { |*_args, **_kw| flunk "generated without a key" }
+      TtsService.stub(:new, service) do
+        post tts_game_url(@game), params: params
+      end
+    end
 
     FAKE_MP3 = ("\xFF\xFB\x90\x00" + ("\x00" * 128)).b.freeze
 

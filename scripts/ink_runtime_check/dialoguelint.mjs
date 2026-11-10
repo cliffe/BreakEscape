@@ -219,6 +219,11 @@ export function lintInk(text, { channel = 'person', names = [], file = '' } = {}
 //                       Agent and Netherton).
 //   stage-cue-in-info   (check) an *asterisk cue* on a line that carries a number (m07 Park, Mercer).
 //   stage-cue-density   (warn) more asterisk cues per spoken line than m01 uses (about 1 in 37).
+//   inline-direction    (warn, person-chat) an *asterisk cue* in a voiced line. Voiced lines hold only
+//                       spoken words (user, 2026-11-10): a performance note goes in the line's
+//                       #delivery: tag, which the voice reads and the player never sees. Skips the
+//                       player's lines, narration, choices, and emphasis between two words ("I *never*
+//                       said"). Voiced phone calls don't send #delivery: yet, so phone inks are not checked.
 //   crowded-hub         (check) a knot whose choice block offers more than 10 choices at once (sticky,
 //                       once-only and conditional all count). Passes when every conditional choice is
 //                       retired by a "not ..." guard and the unconditional ones sit last, which is how
@@ -230,6 +235,15 @@ const NUMBER_WORD = /\b(?:\d[\d,.:]*|one|two|three|four|five|six|seven|eight|nin
 const ACTION_CHOICE = /^(?:\(|\s*(?:attack|tackle|brace|continue|back off|move on|run|fight|punch|grab|hit|knock|close|hang up|listen|end|go\b|get out|slip|sneak|walk away|\.\.\.))/i;
 const HUB_MAX = 10;
 const CUE_RE = /\*[^*\s][^*]{0,60}\*/g;
+// "I *never* said": a cue with a word (or comma) just before it and a lowercase word just after
+// is emphasis, not a stage direction.
+function isEmphasis(line, index, cue) {
+  const before = line.slice(0, index).replace(/ $/, '').slice(-1);
+  const after = line.slice(index + cue.length).replace(/^ /, '').slice(0, 1);
+  return /[A-Za-z0-9,]/.test(before) && /[a-z0-9]/.test(after);
+}
+const PLAYER_LINE = /^(?:You|Player)$/i;
+const PLAYER_TAG = /#\s*(?:speaker\s*:\s*player|player)\b/i;
 
 function braceDelta(s) {
   const t = s.replace(/(^|\s)\/\/.*$/, '');
@@ -564,9 +578,18 @@ export function structureFindings(text, { channel = 'person', names = [] } = {})
     if (L.kind !== 'text' || !L.printable) continue;
     if (L.speaker === 'Narrator') continue;
     spoken++;
-    const found = L.t.replace(/(^|\s)\/\/.*$/, '').match(CUE_RE) || [];
+    const code = L.t.replace(/(^|\s)\/\/.*$/, '');
+    const found = code.match(CUE_RE) || [];
     if (!found.length) continue;
     cues += found.length;
+    if (channel !== 'phone' && !PLAYER_LINE.test(L.speaker || '') && !PLAYER_TAG.test(code)) {
+      const said = code.replace(/(?<!\\)#.*$/, '');
+      const direction = [...said.matchAll(CUE_RE)].find(m => !isEmphasis(said, m.index, m[0]));
+      if (direction) {
+        F.push({ level: 'warn', rule: 'inline-direction', line: L.n, text: L.body,
+          note: `voiced lines hold only spoken words: move ${direction[0]} to a tag on the line (#delivery: ${direction[0].slice(1, -1).trim()}) if it tells the voice how to speak, else cut it` });
+      }
+    }
     // The speaker prefix ("Agent 0x47 'Nightshade':") and agent handles in the text ("Agent 0x00") are names,
     // not figures. The prefix regex above misses a quoted codename, so strip it here too.
     const rest = L.body.replace(CUE_RE, ' ')

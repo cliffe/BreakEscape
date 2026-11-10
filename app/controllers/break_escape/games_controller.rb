@@ -632,6 +632,17 @@ module BreakEscape
       return render_error('Missing npc_id or text', :bad_request) unless npc_id.present? && text.present?
       return render_error('Text too long', :bad_request) if text.length > 1000
 
+      # The line's #delivery: note, if it has one (person-chat sends it). It goes
+      # into the voice prompt, so it must be a note the scenario's ink gives this line.
+      delivery = TtsService.clean_delivery(params[:delivery])
+      if delivery
+        return render_error('Delivery note too long', :bad_request) if delivery.length > TtsService::MAX_DELIVERY_LENGTH
+        unless delivered_in_scenario?(npc_id, text, delivery)
+          Rails.logger.warn "[TTS] Delivery note not found for #{npc_id}: #{text.truncate(60)} [#{delivery.truncate(40)}]"
+          return render_error('Delivery note not found for this line', :forbidden)
+        end
+      end
+
       # Find NPC in scenario
       npc = find_npc_in_scenario(npc_id)
       return render_error("NPC not found: #{npc_id}", :not_found) unless npc
@@ -698,23 +709,31 @@ module BreakEscape
       # A clip on the current model, else one from the previous model (missions
       # not yet regenerated), else generate. Old clips are served before
       # generating so an un-migrated mission plays as it did, with no delay.
+      # A line with a delivery note has its own clip (the note is in its key).
+      # Previous-model clips never had notes, so for a tagged line they, and the
+      # untagged clip, are only a stand-in on a server that can't generate.
       tts_service = TtsService.new
-      current_clip = tts_service.cache_path(
-        tts_service.cache_key_for(text, voice_config['name'], voice_config['style'], voice_config['language']),
-        scenario_name
-      )
+      key_args = [text, voice_config['name'], voice_config['style'], voice_config['language']]
+      current_clip = tts_service.cache_path(tts_service.cache_key_for(*key_args, *[delivery].compact), scenario_name)
       mp3_path = current_clip if File.exist?(current_clip)
-      mp3_path ||= legacy_tts_clip(tts_service, text, [voice_config, snapshot_voice], scenario_name)
+      if delivery && !mp3_path && !tts_service.enabled?
+        plain_clip = tts_service.cache_path(tts_service.cache_key_for(*key_args), scenario_name)
+        mp3_path = plain_clip if File.exist?(plain_clip)
+      end
+      unless mp3_path || (delivery && tts_service.enabled?)
+        mp3_path = legacy_tts_clip(tts_service, text, [voice_config, snapshot_voice], scenario_name)
+      end
       return send_file(mp3_path, type: 'audio/mpeg', disposition: 'inline') if mp3_path
 
       begin
+        generate_options = { scenario_name: scenario_name, npc_id: npc_id }
+        generate_options[:delivery] = delivery if delivery
         mp3_path = tts_service.generate(
           text,
           voice_config['name'],
           voice_config['style'],
           voice_config['language'],
-          scenario_name: scenario_name,
-          npc_id: npc_id
+          **generate_options
         )
       rescue TtsService::QuotaExhaustedError => e
         # Out of quota is a temporary condition, not a server fault. 429 tells the
@@ -2555,6 +2574,18 @@ module BreakEscape
       TtsLineExtractor.cached(scenario_name, @game.scenario_data).spoken_by?(npc_id, text)
     rescue StandardError => e
       Rails.logger.warn "[TTS] Co-speaker check failed for #{npc_id}: #{e.class}: #{e.message}"
+      false
+    end
+
+    # True when some voiced line in this scenario's ink is spoken as npc_id with
+    # this text and this #delivery: note (TtsLineExtractor#delivered_by?).
+    def delivered_in_scenario?(npc_id, text, delivery)
+      scenario_name = @game.mission&.name
+      return false unless scenario_name
+
+      TtsLineExtractor.cached(scenario_name, @game.scenario_data).delivered_by?(npc_id, text, delivery)
+    rescue StandardError => e
+      Rails.logger.warn "[TTS] Delivery check failed for #{npc_id}: #{e.class}: #{e.message}"
       false
     end
 

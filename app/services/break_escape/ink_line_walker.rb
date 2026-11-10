@@ -302,7 +302,13 @@ module BreakEscape
       state[:partial] = nil
       state[:tags] = []
       state[:last_lines] = nil
-      return if raw.empty?
+      if raw.empty?
+        # The client (InkEngine#continue) keeps an empty line's tags for the
+        # next line it shows. Only a #delivery: note is carried here, so the
+        # speaker of every existing line is read exactly as before.
+        state[:tags] = tags.select { |t| TtsService.delivery_tag?(t) }
+        return
+      end
 
       if state.delete(:glue_next)
         # Glue at the end of this line pulls the next line onto it.
