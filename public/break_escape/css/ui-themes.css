@@ -1231,6 +1231,14 @@
   background: var(--ui-surface-raised);
 }
 
+/* A greyed entry (the inventory menu's "Drop here" in a doorway) never lights up */
+[data-ui-theme] #be-interaction-menu .be-im-item.be-im-disabled:hover,
+[data-ui-theme] #be-interaction-menu .be-im-item.be-im-disabled:focus,
+[data-ui-theme] #be-interaction-menu .be-im-item.be-im-disabled:active {
+  background: transparent;
+  border-color: transparent;
+}
+
 /* --- Workstation pop-ups (crypto, lab) and the VM console: window chrome --- */
 [data-ui-theme] #laptop-popup .laptop-screen,
 [data-ui-theme] #lab-popup .laptop-screen,

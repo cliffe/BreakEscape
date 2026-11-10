@@ -21,6 +21,11 @@ import { shouldConsumeOnInteract, useConsumable } from './consumables.js';
 import { interactionLineClear } from './interaction-walls.js';
 import { reachX, aimX } from './interaction-reach.js';
 import { hasMinigameStarter, startRegisteredMinigame } from './minigame-registry.js';
+// The inventory click menu (feedback plan, section 5) decides with the same two tests as
+// the chain's first two branches for a held item, imported from one place.
+import { hasTriggerOnInteract, isDroppableInventoryItem, dropInventoryItem, inventoryMenuFor } from './inventory-menu.js';
+
+export { inventoryMenuFor };
 
 let gameRef = null;
 
@@ -784,6 +789,41 @@ export function maybeInteractionWarning(sprite) {
     return true;
 }
 
+/**
+ * The observations and text an interaction shows for an object, after their
+ * variants. handleObjectInteraction resolves them here before its display
+ * branches, and examineHeldItem uses the same function, so "Examine" in the
+ * inventory menu shows what a click on the item showed before the menu existed.
+ */
+export function examineTextFor(sprite) {
+    const data = sprite?.scenarioData || {};
+    return {
+        observations: resolveObjectField(data, 'observations', sprite?.observations || null),
+        text: resolveObjectField(data, 'text', null)
+    };
+}
+
+/**
+ * "Examine" in the inventory click menu (inventory-menu.js): the examine view
+ * of a held item, with the chain's own text. Without the examine scene (it is
+ * always registered in the game) the observation is shown as the chain's last
+ * step shows it. Returns true when something was shown.
+ */
+export function examineHeldItem(sprite) {
+    if (!sprite?.scenarioData) return false;
+    const { observations, text } = examineTextFor(sprite);
+    if (startExamine(sprite, { observations, text })) return true;
+    const data = sprite.scenarioData;
+    const name = data.name || sprite.name || '';
+    const message = observations ? `${name} Observations: ${observations}\n` : name;
+    if (data.observationDisplay === 'gameDisplay' && window.gameDisplay) {
+        window.gameDisplay(message, data.name);
+    } else {
+        window.gameAlert?.(message, 'info', data.name, 5000);
+    }
+    return true;
+}
+
 export function handleObjectInteraction(sprite) {
     console.log('OBJECT INTERACTION', {
         name: sprite.name,
@@ -902,7 +942,7 @@ export function handleObjectInteraction(sprite) {
 
     // triggerOnInteract: fire scenario-defined actions immediately on interaction,
     // with no minigame or flag entry required. Defined at the object's top level in the scenario.
-    if (Array.isArray(sprite.scenarioData.triggerOnInteract)) {
+    if (hasTriggerOnInteract(sprite.scenarioData)) {
         // requiresItem: gate the trigger on the player carrying a named piece of kit
         // (a type, id or name, or an array of any of those). Lets a scenario make an
         // interaction a real "deploy the item you carried here" action — e.g. clip a
@@ -954,9 +994,11 @@ export function handleObjectInteraction(sprite) {
     }
 
     // Droppable inventory items (item-drop.js) go down at the player's feet as a
-    // world object an interested NPC can collect (npc-needs.js).
-    if (window.isDroppableInventoryItem?.(sprite, window.inventory?.items)) {
-        window.dropInventoryItem(sprite);
+    // world object an interested NPC can collect (npc-needs.js). A tray click on one
+    // opens its menu instead (inventory-menu.js) and never gets here; this branch is
+    // for every other caller, such as the test bridge.
+    if (isDroppableInventoryItem(sprite, window.inventory?.items)) {
+        dropInventoryItem(sprite);
         return;
     }
 
@@ -1661,8 +1703,7 @@ export function handleObjectInteraction(sprite) {
         return;
     }
 
-    const resolvedObservations = resolveObjectField(data, 'observations', sprite.observations || null);
-    const resolvedText = resolveObjectField(data, 'text', null);
+    const { observations: resolvedObservations, text: resolvedText } = examineTextFor(sprite);
 
     let message = `${data.name || sprite.name} `;
     if (resolvedObservations) {
@@ -2179,6 +2220,7 @@ export function isObjectInInteractionRange(sprite) {
 // Export for global access
 window.checkObjectInteractions = checkObjectInteractions;
 window.handleObjectInteraction = handleObjectInteraction;
+window.examineHeldItem = examineHeldItem;
 window.handleContainerInteraction = handleContainerInteraction;
 window.tryInteractWithNearest = tryInteractWithNearest;
 window.tryInteractWithNPC = tryInteractWithNPC;

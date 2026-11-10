@@ -1,6 +1,7 @@
-// The inventory hover label of a droppable item reads "<name> (click to drop)", so
-// the player can find out how to drop it by looking at it. Every other item keeps
-// its plain name.
+// The inventory hover label is the item's plain name, droppable or not. It used to
+// read "<name> (click to drop)"; since the feedback plan's section 5 a droppable
+// item's click opens a menu that says "Drop here" (inventory-menu.js), and a touch
+// screen never showed the hover label.
 // Run with: node --test test/js/inventory-drop-label.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -35,29 +36,18 @@ writeFileSync(join(dir, 'inventory.mjs'), code);
 globalThis.window = globalThis.window || {};
 const { inventoryHoverLabel } = await import(pathToFileURL(join(dir, 'inventory.mjs')).href);
 
-test('a droppable item says how to drop it', () => {
-    assert.equal(inventoryHoverLabel({ id: 'usb_1', name: 'BadUSB', droppable: true }), 'BadUSB (click to drop)');
+test('a droppable item shows its plain name: the menu offers the drop', () => {
+    assert.equal(inventoryHoverLabel({ id: 'usb_1', name: 'BadUSB', droppable: true }), 'BadUSB');
+    assert.equal(inventoryHoverLabel({ name: 'Beacon', droppable: true, triggerOnInteract: [] }), 'Beacon');
 });
 
 test('any other item keeps its plain name', () => {
     assert.equal(inventoryHoverLabel({ name: 'Lockpick' }), 'Lockpick');
     assert.equal(inventoryHoverLabel({ name: 'Lockpick', droppable: false }), 'Lockpick');
-    // Only a real boolean true makes an item droppable (item-drop.js).
     assert.equal(inventoryHoverLabel({ name: 'Mug', droppable: 'true' }), 'Mug');
 });
 
-// Code review R1 m6: interactions.js fires triggerOnInteract and returns before the drop.
-test('a droppable item with triggerOnInteract keeps its plain name: a click fires its actions and never drops it', () => {
-    assert.equal(inventoryHoverLabel({ name: 'Beacon', droppable: true, triggerOnInteract: [] }), 'Beacon');
-    assert.equal(inventoryHoverLabel({ name: 'Beacon', droppable: true, triggerOnInteract: [{ type: 'set_global', key: 'x', value: true }] }), 'Beacon');
-    // The order the label relies on: the triggerOnInteract block (which always returns) comes before the drop
-    const inter = readFileSync(join(js, 'systems/interactions.js'), 'utf8');
-    const trig = inter.indexOf('if (Array.isArray(sprite.scenarioData.triggerOnInteract)) {');
-    const drop = inter.indexOf('window.isDroppableInventoryItem?.(sprite, window.inventory?.items)');
-    assert.ok(trig > 0 && drop > trig);
-});
-
-test('a droppable item with no name gets no half label', () => {
+test('an item with no name gets no half label', () => {
     assert.equal(inventoryHoverLabel({ droppable: true }), undefined);
     assert.equal(inventoryHoverLabel(undefined), undefined);
 });

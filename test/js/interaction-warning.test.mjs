@@ -50,6 +50,7 @@ const stubs = {
   './requires-item-hint.js': 'export function requiresItemHint(data){ return (data && data.requiresItemHint) || ""; }',
   './interaction-reach.js': 'export function reachX(){return 0;} export function aimX(){return 0;}',
   './minigame-registry.js': 'export function hasMinigameStarter(){return false;} export function startRegisteredMinigame(){}',
+  './inventory-menu.js': 'export function hasTriggerOnInteract(d){return Array.isArray(d && d.triggerOnInteract);} export function isDroppableInventoryItem(){return false;} export function dropInventoryItem(){} export function inventoryMenuFor(){return null;}',
 };
 let interactionsSrc = readFileSync(join(js, 'systems/interactions.js'), 'utf8');
 for (const [spec, body] of Object.entries(stubs)) {

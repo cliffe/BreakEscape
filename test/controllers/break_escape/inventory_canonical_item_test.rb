@@ -84,6 +84,25 @@ module BreakEscape
       assert_response :unprocessable_entity
     end
 
+    # Feedback plan, section 5: authored behaviour a client could otherwise invent.
+    test 'a notepad sent with droppable, needsTag, wearable, holds or storeIn is stored without them, and cannot be dropped' do
+      game = create_game
+      add(game, { 'type' => 'notepad', 'id' => 'my_notepad', 'name' => 'Notepad', 'droppable' => true,
+                  'needsTag' => 'post', 'wearable' => { 'global' => 'x' }, 'holds' => { 'types' => ['usb'] },
+                  'storeIn' => 'capture_log' })
+      assert_response :success, response.body
+
+      stored = game.reload.player_state['inventory'].find { |i| i['type'] == 'notepad' }
+      %w[droppable needsTag wearable holds storeIn].each { |f| refute stored.key?(f), "#{f} was stored" }
+
+      post update_room_game_url(game), params: {
+        roomId: 'lobby', actionType: 'add_object', sourceType: 'player_drop',
+        data: { id: 'my_notepad', type: 'notepad', name: 'Notepad', x: 10, y: 10 }
+      }, as: :json
+      added = game.reload.player_state.dig('room_states', 'lobby', 'objects_added') || []
+      assert_empty added, 'a forged droppable is not dropped'
+    end
+
     # ---- allowed: real keys, lockpicks and containers still work ---------------
 
     test 'a real key matched by opens_lock opens its lock, keeping its pins' do

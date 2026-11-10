@@ -15,6 +15,7 @@ import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { inventoryMenuUrl } from './fixtures/inventory-menu-url.mjs';
 
 for (const k of ['log', 'info', 'warn', 'debug']) console[k] = () => {};
 
@@ -56,7 +57,8 @@ const stubs = {
     './consumables.js': dataUrl(readFileSync(join(js, 'systems/consumables.js'), 'utf8')),
     './interaction-walls.js': dataUrl(readFileSync(join(js, 'systems/interaction-walls.js'), 'utf8')),
     './interaction-reach.js': dataUrl(readFileSync(join(js, 'systems/interaction-reach.js'), 'utf8')),
-    './minigame-registry.js': pathToFileURL(join(dir, 'minigame-registry.mjs')).href
+    './minigame-registry.js': pathToFileURL(join(dir, 'minigame-registry.mjs')).href,
+    './inventory-menu.js': inventoryMenuUrl
 };
 let src = readFileSync(join(js, 'systems/interactions.js'), 'utf8');
 for (const [spec, url] of Object.entries(stubs)) src = src.split(`'${spec}'`).join(`'${url}'`);

@@ -26,14 +26,11 @@ export function createItemIdentifier(scenarioData) {
     return `${itemType}_${itemName}`;
 }
 
-// Hover label of an inventory item. A droppable item (item-drop.js) says how to drop
-// it, because clicking it in the inventory is the only way and nothing else says so.
-// One with triggerOnInteract keeps its plain name: a click fires its actions and never
-// reaches the drop (interactions.js).
+// Hover label of an inventory item: its plain name. A droppable item no longer says
+// "(click to drop)": its click opens a menu that offers the drop (inventory-menu.js),
+// and a touch screen never showed the hover label anyway.
 export function inventoryHoverLabel(scenarioData) {
-    const name = scenarioData?.name;
-    const drops = scenarioData?.droppable === true && !Array.isArray(scenarioData.triggerOnInteract);
-    return drops && name ? `${name} (click to drop)` : name;
+    return scenarioData?.name;
 }
 
 // Initialize the inventory system
@@ -679,9 +676,13 @@ export async function addToInventory(sprite) {
         itemImg.scenarioData.takeable = false;
         
         // Add click handler
-        itemImg.addEventListener('click', function() {
+        itemImg.addEventListener('click', function(e) {
             // A forced conversation (debrief, cutscene) can't be replaced from here.
             if (inventoryBlockedByForcedMinigame()) return;
+            // An item with more than one action (a droppable one) opens its menu;
+            // every other item keeps its one click (inventory-menu.js, loaded by
+            // interactions.js; reached through window like handleObjectInteraction).
+            if (window.openInventoryItemMenu?.(this, e?.clientX, e?.clientY)) return;
             if (window.handleObjectInteraction) {
                 window.handleObjectInteraction(this);
             }

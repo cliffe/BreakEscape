@@ -8,6 +8,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
 import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { inventoryMenuUrl } from './fixtures/inventory-menu-url.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const js = join(here, '../../public/break_escape/js');
@@ -48,7 +49,9 @@ const stubs = {
     './interaction-walls.js': dataUrl(readFileSync(join(js, 'systems/interaction-walls.js'), 'utf8')),
     './interaction-reach.js': dataUrl(readFileSync(join(js, 'systems/interaction-reach.js'), 'utf8')),
     // the starter registry: none of these cases opens a registered minigame
-    './minigame-registry.js': dataUrl('export const hasMinigameStarter = () => false; export const startRegisteredMinigame = () => false;')
+    './minigame-registry.js': dataUrl('export const hasMinigameStarter = () => false; export const startRegisteredMinigame = () => false;'),
+    // the real inventory click menu and drop test (the chain's first two branches use them)
+    './inventory-menu.js': inventoryMenuUrl
 };
 
 const started = [];
@@ -73,7 +76,7 @@ globalThis.window = {
 
 let src = readFileSync(join(js, 'systems/interactions.js'), 'utf8');
 for (const [spec, url] of Object.entries(stubs)) src = src.split(`'${spec}'`).join(`'${url}'`);
-const { handleObjectInteraction } = await import(dataUrl(src));
+const { handleObjectInteraction, examineHeldItem, examineTextFor, inventoryMenuFor } = await import(dataUrl(src));
 
 function reset() { calls.length = 0; started.length = 0; alerts.length = 0; framework.currentMinigame = null; window.inventory.items = []; }
 const roomSprite = (data) => ({ name: data.type, objectId: data.id, x: 0, y: 8, scenarioData: data,
@@ -263,4 +266,60 @@ test('a requiresItem object clicked without the item: one toast with the variant
     } finally {
         window.gameState.globalVariables = {};
     }
+});
+
+// Feedback plan, section 5: "Examine" in the inventory click menu shows what a click on
+// the item showed before the menu (the chain's own text, through examineTextFor).
+test('examineHeldItem: a droppable device opens the examine view with the text a plain click gives', () => {
+    const device = { type: 'usb', id: 'kit_deviceB', name: 'BadUSB', sprite: 'icon_deviceB',
+        observations: 'A USB stick that types.', observationVariants: [{ condition: 'globalVars.seen', value: 'Seen before.' }] };
+
+    // Before the menu: the same item without droppable, clicked
+    reset();
+    handleObjectInteraction(invImg(device));
+    const viaClick = started[0];
+    assert.equal(viaClick?.[0], 'examine');
+
+    reset();
+    const held = invImg({ ...device, droppable: true });
+    assert.equal(examineHeldItem(held), true);
+    assert.equal(started[0]?.[0], 'examine');
+    assert.deepEqual(started[0][1], viaClick[1]);
+    assert.equal(started[0][1].observations, 'A USB stick that types.');
+
+    // Variants resolve the same way
+    window.gameState.globalVariables = { seen: true };
+    try {
+        assert.equal(examineTextFor(held).observations, 'Seen before.');
+        reset();
+        examineHeldItem(invImg({ ...device, droppable: true }));
+        assert.equal(started[0][1].observations, 'Seen before.');
+    } finally {
+        window.gameState.globalVariables = {};
+    }
+});
+
+test('examineHeldItem: without the examine view, the observation is shown as the chain shows it', () => {
+    reset();
+    const scenes = framework.registeredScenes;
+    framework.registeredScenes = {};
+    try {
+        assert.equal(examineHeldItem(invImg({ type: 'usb', id: 'u', name: 'BadUSB', droppable: true, observations: 'Types.' })), true);
+        assert.deepEqual(started, []);
+        assert.equal(alerts.length, 1);
+        assert.match(alerts[0][0], /Observations: Types\./);
+    } finally {
+        framework.registeredScenes = scenes;
+    }
+    assert.equal(examineHeldItem(null), false);
+});
+
+test('a droppable held item clicked through the chain (not the tray) still drops, never examines', () => {
+    reset();
+    const held = invImg({ type: 'usb', id: 'kit_usb', name: 'Storage stick', droppable: true, observations: 'x' });
+    // The chain's drop branch runs dropInventoryItem; with no scene it logs and returns.
+    handleObjectInteraction(held);
+    assert.deepEqual(started, []);
+    // and its menu, exported from interactions.js, is the drop menu
+    assert.deepEqual(inventoryMenuFor(held, { dropBlocked: null }).map(e => e.label), ['Drop here', 'Examine']);
 });

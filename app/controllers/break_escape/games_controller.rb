@@ -2011,9 +2011,14 @@ module BreakEscape
     # first three and scenarioData, the lockpick and PIN-cracker checks read type
     # and scenarioData.type, the flag-station lookup reads flags. A client-built
     # item (notepad, decor cup) has no scenario copy, so these are removed.
+    # The last five are authored behaviour a client must not invent: a forged
+    # droppable would pass the player_drop check (Game#add_item_to_room!), a
+    # forged needsTag would feed an NPC need, and wearable, holds and storeIn are
+    # the planned wearable item and holder fields (feedback plan, sections 4 and 6).
     CLIENT_ITEM_FORBIDDEN_FIELDS = %w[
       opens_lock key_id keyId scenarioData requires lockType locked
       contents itemsHeld flags flagRewards keyPins saved_cards
+      droppable needsTag wearable holds storeIn
     ].freeze
 
     # What the inventory stores for an add that validate_item_collectible passed.

@@ -136,7 +136,7 @@ function loginBranch() {
     assert.ok(start > 0, 'sign-in branch found');
     // It runs before the workstation call and the generic triggerOnInteract flow
     assert.ok(start < src.indexOf('window.workstationState.onInteract(sprite.scenarioData.id)'));
-    assert.ok(start < src.indexOf('if (Array.isArray(sprite.scenarioData.triggerOnInteract))'));
+    assert.ok(start < src.indexOf('if (hasTriggerOnInteract(sprite.scenarioData))'));
     let depth = 0, i = src.indexOf('{', start);
     const open = i;
     for (; i < src.length; i++) {

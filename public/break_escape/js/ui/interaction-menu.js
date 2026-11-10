@@ -77,6 +77,14 @@ function injectStyles() {
         #be-interaction-menu .be-im-item:active {
             background: rgba(77, 166, 255, 0.32);
         }
+        #be-interaction-menu .be-im-item.be-im-disabled,
+        #be-interaction-menu .be-im-item.be-im-disabled:hover,
+        #be-interaction-menu .be-im-item.be-im-disabled:active {
+            background: transparent;
+            border-color: transparent;
+            cursor: default;
+            opacity: 0.55;
+        }
         #be-interaction-menu .be-im-icon {
             flex: 0 0 auto;
             width: 64px;
@@ -117,24 +125,44 @@ export function closeInteractionMenu() {
         overlayEl.remove();
         overlayEl = null;
         menuEl = null;
+        numberKeyHandlers = null;
         document.removeEventListener('keydown', onKeyDown, true);
     }
 }
+
+// Number keys pick an entry in a menu opened with { numberKeys: true } (null otherwise).
+let numberKeyHandlers = null;
 
 function onKeyDown(e) {
     if (e.key === 'Escape') {
         e.preventDefault();
         e.stopPropagation();
         closeInteractionMenu();
+        return;
+    }
+    if (numberKeyHandlers && /^[1-9]$/.test(e.key)) {
+        const pick = numberKeyHandlers[Number(e.key) - 1];
+        if (pick) {
+            e.preventDefault();
+            e.stopPropagation();
+            pick(e);
+        }
     }
 }
 
 /**
- * @param {Array<{label:string, detail?:string, icon?:{src:string, frame?:number, cols?:number, cell?:number}, onSelect:Function}>} candidates
+ * The menu, for a tap near several things (core/game.js), a choice of actions on one
+ * world object (systems/action-menu.js) or the actions on one held item (the inventory
+ * click menu, systems/inventory-menu.js). A disabled entry is shown greyed with its
+ * `detail` as the reason, and choosing it does nothing. Esc or a tap outside closes it.
+ *
+ * @param {Array<{label:string, detail?:string, disabled?:boolean, icon?:{src:string, frame?:number, cols?:number, cell?:number}, onSelect:Function}>} candidates
  * @param {number} clientX - viewport X of the tap (event.clientX)
  * @param {number} clientY - viewport Y of the tap (event.clientY)
+ * @param {string} [titleText] - the heading (default "Interact with…"; the item's name for a held item)
+ * @param {{numberKeys?: boolean}} [opts] - numberKeys: keys 1 to 9 pick an entry
  */
-export function showInteractionMenu(candidates, clientX, clientY, titleText) {
+export function showInteractionMenu(candidates, clientX, clientY, titleText, { numberKeys = false } = {}) {
     if (!candidates || candidates.length === 0) return;
     injectStyles();
     closeInteractionMenu(); // never stack two menus
@@ -148,13 +176,16 @@ export function showInteractionMenu(candidates, clientX, clientY, titleText) {
 
     const title = document.createElement('div');
     title.className = 'be-im-title';
-    title.textContent = titleText || 'Interact with…';
+    title.textContent = displayDashes(titleText || 'Interact with…');
     menuEl.appendChild(title);
+
+    const handlers = [];
 
     candidates.forEach(c => {
         const btn = document.createElement('button');
-        btn.className = 'be-im-item';
+        btn.className = c.disabled ? 'be-im-item be-im-disabled' : 'be-im-item';
         btn.setAttribute('role', 'menuitem');
+        if (c.disabled) btn.setAttribute('aria-disabled', 'true');
         btn.type = 'button';
 
         // Icon: a plain image, or one frame cropped from a sprite sheet, scaled up
@@ -200,6 +231,7 @@ export function showInteractionMenu(candidates, clientX, clientY, titleText) {
         const choose = (e) => {
             e.preventDefault();
             e.stopPropagation();
+            if (c.disabled) return; // greyed: its reason is on the button, the menu stays
             closeInteractionMenu();
             try {
                 c.onSelect();
@@ -210,7 +242,9 @@ export function showInteractionMenu(candidates, clientX, clientY, titleText) {
         // pointerup fires reliably on both touch and mouse without the 300ms delay
         btn.addEventListener('click', choose);
         menuEl.appendChild(btn);
+        handlers.push(choose);
     });
+    numberKeyHandlers = numberKeys ? handlers : null;
 
     // Dismiss when the backdrop (anything outside the menu box) is tapped.
     overlayEl.addEventListener('pointerdown', (e) => {
