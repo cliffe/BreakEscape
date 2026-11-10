@@ -34,10 +34,10 @@ with the record each beat expects below.
 
 ## Harness notes for this scenario
 
-- **Copying a card in conversation.** `converse` closes the card copier screen when the clone tag
-  opens it, so the copy is lost. Instead: `{"cmd":"converse","id":"<npc>"}` with no choices (it
-  stops at the hub, `stopped-at-choice`), then `{"cmd":"mg","action":"chooseIndex","args":[1]}` for
-  "Can I scan your badge/card with this card copier?". Wait about 5 s for the read, then click Save:
+- **Copying a card in conversation.** `{"cmd":"converse","id":"<npc>","choices":["Can I scan"]}`.
+  The clone tag opens the card copier once its line has been shown, and `converse` leaves it open
+  (`ok:false`, `openedMinigame: "rfid"`, on purpose; checked 2026-11-10 after the clone-timing
+  change). Wait about 5 s for the read, then click Save:
   `{"cmd":"eval","fn":"() => { const b = Array.from(document.querySelectorAll('.rfid-minigame-container button')).find(x => x.innerText.trim().startsWith('Save')); if (!b) return null; b.click(); return b.innerText; }"}`
   (the button reads "Save" for an EM4100 card and "Save UID" for Priya's DESFire card). The chat
   comes back after the copier closes; leave it with `{"cmd":"converse","choices":["let you get on"]}`.

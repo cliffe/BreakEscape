@@ -20,6 +20,7 @@ browser only from `GET /network` and `GET /container`, and the leak check proves
 - **Step 8 (the view, remote sign-in and shares)**: Runs A, B and C over P1 to P12, then the first
   slice's three suite runs. P1, P3 to P9, P11 and P12 need step 8; their tasks complete on events
   step 8 emits (`network_share_opened`, `network_viewed`, `remote` on the sign-in events).
+  Results of the step 8 runs after the round 1 code review: `reports/2026-11-10_step8_runs.md`.
 
 ## Setup (each run)
 
@@ -156,8 +157,9 @@ From the view, `HB-FIN-02` (the finance door still locked). No tiles. Sam's righ
 password from the letter opens her desktop, its header naming her and "Remote session through
 Drop box: comms room", with the finance share mapped. Open the finance share and read the
 handover note: closing the reader shows the finance share again, and closing the share shows
-Lena's desktop. Open the locked folder in the share with the PIN from the note; closing the folder
-shows the share again. Task `p5_remote_signin` completes. No close on the way drops the player
+Lena's desktop. Click the locked folder and close the PIN pad without a PIN: the share shows again
+(4.3, a lock left without opening anything). Open the locked folder with the PIN from the note;
+closing the folder shows the share again. Task `p5_remote_signin` completes. No close on the way drops the player
 into the world: only closing the view does.
 
 Server: `sessions.lena_pc = { id: "lena", via: "password", foothold: "jack_comms_port" }`;
