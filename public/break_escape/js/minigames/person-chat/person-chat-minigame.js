@@ -1728,7 +1728,9 @@ export class PersonChatMinigame extends MinigameScene {
                     && this.characters[nextParsed.speaker].displayName !== this.npc?.displayName
                     ? nextParsed.speaker
                     : this.npcId;
-                this.ttsManager.preload(nextSpeakerId, nextTtsText, { delivery });
+                // No note: the next line's tags aren't known here, and this line's note is not
+                // its note (a wrong note would miss the later play()'s preload entry).
+                this.ttsManager.preload(nextSpeakerId, nextTtsText, { delivery: null });
             }
         }
 

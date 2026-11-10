@@ -19,7 +19,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const js = join(here, '../../public/break_escape/js');
 const read = rel => readFileSync(join(js, rel), 'utf8');
 
-const { deliveryFromTags, isDeliveryTag } = await import(pathToFileURL(join(js, 'systems/tts-delivery.js')).href);
+const { deliveryFromTags } = await import(pathToFileURL(join(js, 'systems/tts-delivery.js')).href);
 
 const dir = mkdtempSync(join(tmpdir(), 'tts-delivery-'));
 writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
@@ -35,8 +35,14 @@ test('deliveryFromTags matches the server (TtsService.delivery_from_tags)', () =
     assert.equal(deliveryFromTags([' Delivery:quietly,   almost to herself ']), 'quietly, almost to herself');
     assert.equal(deliveryFromTags(['delivery: warm', 'delivery: dry']), 'dry');
     assert.equal(deliveryFromTags(['delivery: warm', 'delivery:   ']), 'warm');
-    assert.equal(isDeliveryTag('delivery: x'), true);
-    assert.equal(isDeliveryTag('deliverynote: x'), false);
+    // review R1 m3: nothing left after normalising, or over 200 characters, is no note
+    assert.equal(deliveryFromTags(['delivery: ...']), null);
+    assert.equal(deliveryFromTags(['delivery: \u2026']), null);
+    assert.equal(deliveryFromTags(['delivery: \u0442\u0438\u0445\u043e']), null);
+    assert.equal(deliveryFromTags(['delivery: ' + 'x'.repeat(201)]), null);
+    assert.equal(deliveryFromTags(['delivery: ' + 'x'.repeat(200)]), 'x'.repeat(200));
+    // review R1 m4: Unicode spaces collapse as on the server
+    assert.equal(deliveryFromTags(['delivery: quietly,\u00A0almost\u2009to herself']), 'quietly, almost to herself');
 });
 
 test('getTTS sends delivery only when the line has a note', async () => {
@@ -61,7 +67,8 @@ test('person-chat sends the line\'s note; the manager keys tagged preloads apart
     assert.match(chat, /import \{ deliveryFromTags \} from '\.\.\/\.\.\/systems\/tts-delivery\.js';/);
     assert.match(chat, /const delivery = deliveryFromTags\(originalResult\?\.tags\);/);
     assert.match(chat, /this\.ttsManager\.play\(ttsSpeakerId, ttsText, \{ delivery \}\)/);
-    assert.match(chat, /this\.ttsManager\.preload\(nextSpeakerId, nextTtsText, \{ delivery \}\)/);
+    // review R1 m2: the next line is preloaded without this line's note
+    assert.match(chat, /this\.ttsManager\.preload\(nextSpeakerId, nextTtsText, \{ delivery: null \}\)/);
 
     const mgr = read('systems/tts-manager.js');
     assert.match(mgr, /async play\(npcId, text, \{ delivery = null \} = \{\}\)/);

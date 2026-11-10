@@ -104,6 +104,17 @@ module BreakEscape
       @lines = nil
     end
 
+    # Note on carried #delivery: tags. The client (InkEngine#continue) keeps the
+    # tags of lines with no text for the next line it shows, and inkjs carries
+    # them across logic and diverts. The walker carries a #delivery: note:
+    #  - from a tag on its own line to the next line in the same container;
+    #  - across a plain divert (`#delivery: x` then `-> knot`) to the first line
+    #    of the knot or stitch it names, when that line comes before any choice,
+    #    divert or end there. The line is then listed twice: as reached from the
+    #    divert (with the note) and as reached any other way (with its own tags).
+    # Glued lines and lines printing game state stay unresolved either way, so a
+    # note on one is not read here (dialoguelint warns: delivery-unread).
+
     # Spoken lines in story order (duplicates kept).
     # @return [Array<Line>]
     def lines
@@ -139,8 +150,55 @@ module BreakEscape
 
     def walk_story
       @lines = []
+      @first_lines = {}   # ink path of a container => range of its first line in @lines, or nil
+      @awaiting = []      # ink paths of containers whose first line is not yet known
+      @divert_notes = []  # [target ink path, [delivery tags]] for a note carried across a divert
       root = @ink['root']
       walk(root, 'root') if root.is_a?(Array)
+      apply_divert_notes
+    end
+
+    # Lists the first line of each divert target again with the note carried to it.
+    def apply_divert_notes
+      inserts = Hash.new { |h, k| h[k] = [] }
+      @divert_notes.uniq.each do |target, notes|
+        range = @first_lines[target]
+        next unless range
+
+        range.each do |i|
+          line = @lines[i]
+          tags = notes + line.tags
+          next if TtsService.delivery_from_tags(tags) == TtsService.delivery_from_tags(line.tags)
+
+          copy = line.dup
+          copy.tags = tags
+          inserts[range.end] << copy unless inserts[range.end].any? { |c| c.raw == copy.raw && c.tags == tags }
+        end
+      end
+      inserts.keys.sort.reverse_each { |at| @lines.insert(at, *inserts[at]) }
+    end
+
+    # Control leaves (a choice, divert, tunnel, end): containers still waiting
+    # for their first line have none a carried note could land on.
+    def first_line_unknown!
+      @awaiting.each { |p| @first_lines[p] = nil unless @first_lines.key?(p) }
+      @awaiting.clear
+    end
+
+    # A plain divert's target as an absolute ink path, or nil. Relative paths
+    # count from the divert: the first ".^" is its container, each more one up.
+    def divert_target(target, path)
+      return nil unless target.is_a?(String) && !target.empty?
+      return target unless target.start_with?('.')
+
+      parts = ink_path(path).split('.')
+      steps = target.split('.')[1..] || []
+      first = true
+      while steps.first == '^'
+        steps.shift
+        first ? first = false : parts.pop
+      end
+      (parts + steps).join('.')
     end
 
     # Walks one container. Returns true when it ended with text that had no
@@ -149,6 +207,8 @@ module BreakEscape
       state = { buf: [], partial: nil, tags: [], in_ev: false, in_str: false, in_tag: false, ev_parts: [] }
       last_index = container.length - 1
       skip_to = 0
+      own = ink_path(path)
+      @awaiting << own unless @first_lines.key?(own)
 
       container.each_with_index do |item, i|
         next if i < skip_to
@@ -176,6 +236,14 @@ module BreakEscape
           if item.key?('->') && !text_of(state).empty?
             state[:partial] ||= 'divert mid-line'
           end
+          if item.keys == ['->'] && text_of(state).empty? && state[:tags].any?
+            # `#delivery: x` on its own line, then `-> knot`: inkjs gives the note
+            # to the knot's first line (apply_divert_notes)
+            notes = state[:tags].select { |t| TtsService.delivery_tag?(t) }
+            target = divert_target(item['->'], path)
+            @divert_notes << [target, notes] if target && notes.any?
+          end
+          first_line_unknown! if (item.keys & %w[-> ->t-> f() x() *]).any?
         when Array
           # Inside "str"…"/str" is choice-label text, which nobody voices.
           next if state[:in_str]
@@ -203,6 +271,7 @@ module BreakEscape
         end
       end
 
+      @awaiting.delete(own)
       tail = text_of(state)
       return false if tail.empty?
 
@@ -253,6 +322,11 @@ module BreakEscape
         return
       end
       return if state[:in_str]
+
+      if %w[end done].include?(item) && !state[:in_ev]
+        first_line_unknown!
+        return
+      end
 
       if item == "\n"
         flush(state, path)
@@ -317,12 +391,14 @@ module BreakEscape
 
       if partial
         @unresolved << Unresolved.new(path: path, text: raw, reason: partial)
+        first_line_unknown!
         return
       end
 
       variants = expand(buf)
       if variants.nil?
         @unresolved << Unresolved.new(path: path, text: raw, reason: "expands to more than #{MAX_VARIANTS} variants")
+        first_line_unknown!
         return
       end
 
@@ -332,12 +408,17 @@ module BreakEscape
         @lines << Line.new(prefix: prefix, text: text, raw: variant, tags: tags, path: path)
       end
       state[:last_lines] = start...@lines.length
+      @awaiting.each { |p| @first_lines[p] = state[:last_lines] unless @first_lines.key?(p) }
+      @awaiting.clear
     end
 
     def retract_last_line(state, path)
       range = state[:last_lines]
       return unless range
 
+      # Glued: that line is no longer a container's first line (and its slots in
+      # @lines will be reused)
+      @first_lines.each_key { |p| @first_lines[p] = nil if @first_lines[p] == range }
       @lines.slice!(range).each do |line|
         @unresolved << Unresolved.new(path: path, text: line.raw, reason: 'glue')
       end

@@ -84,9 +84,20 @@ module BreakEscape
       tag.to_s.match?(DELIVERY_TAG)
     end
 
-    # Whitespace collapsed and trimmed; nil when empty.
+    # Whitespace the note cleaner collapses: ASCII whitespace plus the Unicode
+    # spaces (a no-break space is easy to type on a Mac). tts-delivery.js uses
+    # the same set, so both sides send and read the same note.
+    DELIVERY_SPACE = /[\s\u0085\u00A0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000\uFEFF]+/
+
+    # Whitespace collapsed and trimmed. nil (no note) when it is empty, when it
+    # has no letter or digit left after normalising (`...`, `…`, a note in
+    # non-ASCII script: it would key as untagged), or when it is longer than
+    # MAX_DELIVERY_LENGTH. The client (deliveryFromTags) applies the same rules.
     def self.clean_delivery(note)
-      note.to_s.gsub(/\s+/, " ").strip.presence
+      note = note.to_s.gsub(DELIVERY_SPACE, " ").strip
+      return nil if note.length > MAX_DELIVERY_LENGTH || normalize_text(note).empty?
+
+      note
     end
 
     # Cache key for already-normalised text (see normalize_text). The model is
@@ -95,7 +106,7 @@ module BreakEscape
     # always had; it is normalised like the text ("Quietly." and "quietly" share).
     def self.cache_key_for_normalized(normalized, voice_name, style_prompt = nil, language_code = nil, delivery = nil)
       base = "#{normalized}|#{voice_name}|#{style_prompt}|#{language_code}|#{GEMINI_TTS_MODEL}"
-      note = normalize_text(delivery)
+      note = normalize_text(clean_delivery(delivery))
       base += "|delivery:#{note}" unless note.empty?
       Digest::MD5.hexdigest(base)
     end

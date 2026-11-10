@@ -4,6 +4,7 @@ require 'tmpdir'
 require 'json'
 require 'base64'
 require 'minitest/mock'
+require 'open3'
 
 module BreakEscape
   # Per-line delivery notes (`#delivery: quietly, almost to herself`): the note
@@ -96,6 +97,23 @@ module BreakEscape
       refute TtsService.delivery_tag?('deliverynote: x')
     end
 
+    test "a note with nothing the key keeps, or over the limit, counts as no note (review R1 m3)" do
+      %w[... … ¿? ...!].each { |n| assert_nil TtsService.delivery_from_tags(["delivery: #{n}"]), n }
+      assert_nil TtsService.delivery_from_tags(['delivery: тихо']) # all non-ASCII: normalises to nothing
+      assert_nil TtsService.clean_delivery('x' * (TtsService::MAX_DELIVERY_LENGTH + 1))
+      assert_equal 'x' * TtsService::MAX_DELIVERY_LENGTH, TtsService.clean_delivery('x' * TtsService::MAX_DELIVERY_LENGTH)
+      assert_equal 'warm', TtsService.delivery_from_tags(['delivery: warm', 'delivery: …'])
+      # so it can never key a note-coloured take as the untagged clip
+      assert_equal SAMPLE_KEY, TtsService.cache_key(*SAMPLE, '…')
+    end
+
+    test "Unicode spaces collapse like ASCII ones, on both sides (review R1 m4)" do
+      nbsp = "quietly,\u00A0almost\u2009to herself"
+      assert_equal 'quietly, almost to herself', TtsService.clean_delivery(nbsp)
+      assert_equal 'quietly, almost to herself', TtsService.delivery_from_tags(["delivery: #{nbsp}"])
+      assert_equal TtsService.cache_key(*SAMPLE, 'quietly, almost to herself'), TtsService.cache_key(*SAMPLE, nbsp)
+    end
+
     # ─── Prompt ────────────────────────────────────────────────────────────
 
     test "the note joins the style for that line only, and the text is unchanged" do
@@ -170,6 +188,57 @@ module BreakEscape
       assert_equal 'dry', by_text['Two notes, the last wins.']
     end
 
+    # ─── Parity with the client (review R1 M2) ─────────────────────────────
+
+    PARITY_FIXTURES = %w[delivery_parity_edge delivery_parity_edge2 delivery_parity_diverts].freeze
+
+    # For each fixture: every line inkjs shows (played as InkEngine#continue plays it,
+    # every choice path) with the note the client sends, against InkLineWalker. A line
+    # the walker reads must carry the client's note; a note the walker gives a line must
+    # be one the client sends with it. Lines the walker leaves unresolved (glue, game
+    # state) are voiced untagged by the endpoint, and dialoguelint warns about them.
+    test "the walker gives each line the note inkjs gives it (tag above a divert, glue, counters)" do
+      skip 'node not available' unless system('node --version', out: File::NULL, err: File::NULL)
+
+      PARITY_FIXTURES.each do |name|
+        json = BreakEscape::Engine.root.join("test/fixtures/files/ink_line_walker/#{name}.json").to_s
+        out, err, status = Open3.capture3('node', BreakEscape::Engine.root.join('test/support/ink_delivery_lines.mjs').to_s, json)
+        assert status.success?, "#{name}: #{err}"
+        client = JSON.parse(out).to_set
+
+        walker = InkLineWalker.from_file(json)
+        server = walker.lines.to_set { |l| [l.raw, TtsService.delivery_from_tags(l.tags)] }
+        read = walker.lines.to_set(&:raw)
+        unread = walker.unresolved.map(&:text)
+
+        client.each do |text, note|
+          if read.include?(text)
+            assert_includes server, [text, note], "#{name}: the walker misses the client's note for #{text.inspect}"
+          else
+            assert(unread.any? { |u| text.include?(u) }, "#{name}: #{text.inspect} is neither read nor unresolved")
+          end
+        end
+        server.each do |text, note|
+          next unless note
+
+          assert_includes client, [text, note], "#{name}: the walker gives #{text.inspect} a note the client never sends"
+        end
+      end
+    end
+
+    test "a note above a divert lands on the target's first line, which is also listed untagged" do
+      json = BreakEscape::Engine.root.join('test/fixtures/files/ink_line_walker/delivery_parity_diverts.json').to_s
+      notes = InkLineWalker.from_file(json).lines.group_by(&:raw)
+                           .transform_values { |ls| ls.map { |l| TtsService.delivery_from_tags(l.tags) } }
+      assert_equal [nil, 'wary'], notes['Kevin Park: The shared line.']
+      assert_equal [nil], notes['Kevin Park: After the shared line.']
+      assert_equal [nil, 'to the stitch'], notes['Kevin Park: Second stitch.']
+      assert_equal [nil], notes['Kevin Park: First stitch.']
+      assert_equal [nil], notes['Kevin Park: Picked.'] # dropped before a choice, as inkjs drops it
+      assert_equal [nil, 'past the logic'], notes['Kevin Park: After a little logic.']
+      assert_equal ['own'], notes['Kevin Park: My own note.'] # its own tag wins over the carried one
+    end
+
     test "the walker carries a delivery tag over an empty line, as the client does, and nothing else" do
       ink = { 'inkVersion' => 21, 'root' => [
         '#', '^delivery: softly', '/#', '#', '^speaker:player', '/#', "\n",
@@ -212,6 +281,13 @@ module BreakEscape
       refute by_text.key?("I'll take it from here.")
 
       assert_includes extractor.keys, quiet.key
+      # The ink's own note comes back, whatever spelling of it the client sent
+      assert_equal 'quietly, almost to herself',
+                   extractor.delivery_for('kevin_park', "I suppose it doesn't matter now.", 'Quietly, almost to herself.')
+      assert_equal 'quietly, almost to herself',
+                   extractor.delivery_for('kevin_park', "I suppose it doesn't matter now.",
+                                          "quietly almost to herself \uFF53\uFF48\uFF4F\uFF55\uFF54 \u{1F600}")
+      assert_nil extractor.delivery_for('kevin_park', "I suppose it doesn't matter now.", 'shouting')
       assert extractor.delivered_by?('kevin_park', "I suppose it doesn't matter now.", 'Quietly, almost to herself.')
       refute extractor.delivered_by?('kevin_park', "I suppose it doesn't matter now.", 'shouting')
       refute extractor.delivered_by?('kevin_park', 'An untagged line.', 'quietly')

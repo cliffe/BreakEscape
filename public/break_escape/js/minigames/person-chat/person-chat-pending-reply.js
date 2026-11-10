@@ -14,7 +14,8 @@ const PRESENTATION_OR_NAVIGATION = new Set([
     'trigger_minigame',           // opens a minigame once the line is shown (ink-minigame-launch.js); never on a close
     'give_npc_inventory_items',   // open minigames: never mid-teardown
     'clone_keycard',
-    'speaker', 'player', 'npc'    // who is talking
+    'speaker', 'player', 'npc',   // who is talking
+    'delivery'                    // the line's voice note (tts-delivery.js): no state
 ]);
 
 export function tagAction(tag) {

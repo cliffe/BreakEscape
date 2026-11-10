@@ -301,9 +301,15 @@ module BreakEscape
     end
 
     # Lines carrying a #delivery: note (InkLineWalker reads the tags as the
-    # client does), so their keyed-with-the-note clips count as expected.
+    # client does), so their keyed-with-the-note clips count as expected. Read
+    # with the scenario's globalVariables, as TtsLineExtractor (the batch) reads
+    # them, and with the ink's own defaults, so a line printing a variable keeps
+    # the clip for either value (the set may be bigger, never smaller).
     def add_delivery_notes(file)
-      InkLineWalker.from_file(file.to_s).lines.each do |line|
+      globals = @scenario_data.is_a?(Hash) ? @scenario_data['globalVariables'] : nil
+      walkers = [InkLineWalker.from_file(file.to_s)]
+      walkers << InkLineWalker.from_file(file.to_s, variables: globals) if globals.is_a?(Hash) && globals.any?
+      walkers.flat_map(&:lines).each do |line|
         note = TtsService.delivery_from_tags(line.tags)
         next unless note
 
