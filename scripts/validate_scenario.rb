@@ -29,6 +29,7 @@ require_relative '../lib/break_escape/access_identities'
 require_relative '../lib/break_escape/npc_habits'
 require_relative '../lib/break_escape/npc_habits/clues'
 require_relative 'validate_npc_habits'
+require_relative '../lib/break_escape/access_work'
 require_relative 'validate_access_work'
 
 # Try to load json-schema gem, provide helpful error if missing

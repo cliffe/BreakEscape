@@ -1234,6 +1234,13 @@ module ValidateNpcNeeds
       next unless decay.is_a?(Numeric) && decay > 0 && urgent.is_a?(Numeric) && initial.is_a?(Numeric)
 
       targets = objs.select { |o| o.data['affordance'].is_a?(Hash) && list(o.data['affordance']['satisfies']).include?(name) }
+      # Access slice 9.2 (ACCESS_MODEL_SLICE_9_2_PLAN.md 5.2): a judged need never uses another
+      # NPC's desk, so those are not its targets
+      if defined?(BreakEscape::AccessWork) && BreakEscape::AccessWork.judged?(json, npc, name)
+        targets = targets.reject { |o| o.id != npc['needsHome'] && BreakEscape::AccessWork.desk?(json, o.data) }
+      end
+      # social_media is met by a phone (sub-slice C), so no object need satisfy it
+      next if targets.empty? && name == 'social_media'
       if targets.empty?
         issues << "❌ ERROR: #{where} need '#{name}' has no object whose affordance.satisfies it; the NPC could never act on it."
         next
