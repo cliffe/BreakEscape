@@ -51,23 +51,24 @@ Design principles this plan keeps to (the user's):
 
 ## 2. What the code has today
 
-Every line here was checked against the code. **Line numbers are as of commit `da60a5937`**, on a
+Every line here was checked against the code. **Line numbers are as of commit `5122a9c92`**, on a
 branch that holds the merge of `main` (`d9b910ac0`, which brought office life's lock habits and
-lock cues, the owner's gate rule and the rebuilt lab). Other builds are expected to land before
+lock cues, the owner's gate rule and the rebuilt lab), slice 9.3a's server steps 2 to 4, and the
+engine plan's RFID door sound and inventory menu. Other builds are expected to land before
 this one and will move them, so a builder finds each place again by its method name.
 
-**Withholding is already in place.** `withhold_npc_secrets!` (`app/models/break_escape/game.rb:3973`)
+**Withholding is already in place.** `withhold_npc_secrets!` (`app/models/break_escape/game.rb:4037`)
 deletes `creds`, `awareness`, `habits`, `role` and `workarounds` from every room NPC in room data
-(`WITHHELD_NPC_KEYS`, `:3971`). The bootstrap ships no room NPCs
-(`filtered_scenario_for_bootstrap`, `:825`), but it ships every other top-level key as authored
+(`WITHHELD_NPC_KEYS`, `:4035`). The bootstrap ships no room NPCs
+(`filtered_scenario_for_bootstrap`, `:827`), but it ships every other top-level key as authored
 unless that method deletes it. Nothing reads `awareness` or `habits` yet: the validator's known NPC
 fields (`scripts/validate_scenario.rb:415-424`) and the schema's NPC definition
 (`scripts/scenario-schema.json`, beside `creds`) do not list them. An NPC's `screenHabit` is not
 withheld: it reaches the browser in room data, because the client decides the lock from it.
 
-**The loader.** `prepare_scenario_data!` (`game.rb:800`) runs `normalise_access_model!` (`:4032`)
-and then `stamp_scenario_object_ids!` (`:4058`), once, in `before_create`
-(`generate_scenario_data`, `:3993`), and the result is saved with the game. Tests reach it through
+**The loader.** `prepare_scenario_data!` (`game.rb:802`) runs `normalise_access_model!` (`:4096`)
+and then `stamp_scenario_object_ids!` (`:4122`), once, in `before_create`
+(`generate_scenario_data`, `:4057`), and the result is saved with the game. Tests reach it through
 `create_access_game` (`test/test_helper.rb`). Both steps are idempotent. A reset keeps
 `scenario_data`.
 
@@ -87,7 +88,7 @@ gives an NPC's authored roles followed by the implicit `staff` (`:60-66`).
 `lockChance` or `lockType: "login"` (`isWorkstation`,
 `public/break_escape/js/systems/workstation-state.js:89-93`); `autoLockSeconds` does not make one.
 Its owner is `screenOwner`, else the NPC whose `needsHome` is its id (`ownerOf`, `:96-102`; on the
-server `login_pc_owner`, `game.rb:1400`, which reads stamped ids).
+server `login_pc_owner`, `game.rb:1421`, which reads stamped ids).
 
 On each leave `decideLocked` (`:119-140`) settles the screen in this order:
 
@@ -114,16 +115,17 @@ life validator already know `screenHabit` and `autoLockSeconds`
 (`scripts/validate_npc_needs.rb:496-570`, whose `habit_leaves_open?` at `:511-517` is the Ruby form
 of step 4 above).
 
-**The server's claim check has a gap.** `claim_login_session!` (`game.rb:1449`) refuses a claim at
-a PC that "always locks" (`pc_always_locks?`, `:1409-1414`) and, separately, under a policy with
-`autoLockMin: 0` (`:1470-1471`). `pc_always_locks?` reads only the object's `lockChance` and
+**The server's claim check has a gap.** `claim_login_session!` (`game.rb:1486`) refuses a claim at
+a PC that "always locks" (`pc_always_locks?`, `:1430-1435`, asked at `:1509`) and, separately,
+under a policy with `autoLockMin: 0` (`:1511-1512`). It also refuses any claim through a 9.3a
+foothold and any claim at a headless host. `pc_always_locks?` reads only the object's `lockChance` and
 `locksScreenOnLeave`; nothing on the server reads `screenHabit`. A sign-in PC with neither field
 whose owner has a `screenHabit` that leaves it open is "always locks" to the server, so the client
 shows an open screen and offers the claim, and the server refuses it. This slice fixes that in
 step 1 (5.2), because the habit it builds fills `screenHabit`.
 
 Ids are stamped onto room objects that lack one as `"#{room_id}_#{obj['type']}_#{i}"`, and onto
-their contents as `<parent id>_content_<i>` (`stamp_scenario_object_ids!`, `game.rb:4058`, and
+their contents as `<parent id>_content_<i>` (`stamp_scenario_object_ids!`, `game.rb:4122`, and
 `stamp_contents_ids!`), mirrored in the client (`core/rooms.js`).
 
 **The locked look, and the lock cues.** `systems/screen-states.js` draws a `<key>_locked` texture
@@ -154,49 +156,51 @@ the three desks ever shows the look. The engine plan owns the cues (its item 1).
 **Sticky notes.** A sign-in screen shows the PC object's own `postitNote` unless the object sets
 `showPostit: false` (`openLoginSignIn`, `systems/unlock-system.js:274-327`, at `:317-318`). The
 screen refreshes its account tiles from `GET /login_accounts` every time it opens (`:279-290`;
-`games_controller.rb:1108-1116`, which checks the PC is reachable and answers with `pc_id`).
+`games_controller.rb:1128-1139`, which checks the PC is reachable and not headless, and answers
+with `pc_id`).
 Whenever a note shows, the screen has an "add to notebook" button
 (`minigames/password/password-minigame.js:187-192`, `:424-428`, `addPostitToNotebook` at `:728`).
 Pressing it starts the notes minigame, which ends the sign-in screen
 (`minigames/framework/minigame-manager.js:61-69`); nothing reopens it. A saved note is synced into
-`player_state['notes']` (`games_controller.rb:1703-1705`; only the client ever writes notes) and
-sent back as `savedNotes` on every later `GET /scenario` (`:307-309`). The sync's own answer holds
+`player_state['notes']` (`games_controller.rb:1703-1708`; only the client ever writes notes) and
+sent back as `savedNotes` on every later `GET /scenario` (`:307-310`). The sync's own answer holds
 no notes. Authored `postitNote`s also sit on password locks in shipped missions (m01 to m04,
 sis01). The `notes_postit1` picture (9 by 9 px) is preloaded (`core/game.js:1334`).
 
 **Sign-in is exact.** The server compares a typed password with `creds.password` exactly, case
-included (`attempt_login!`, `game.rb:1419-1443`), and under a policy with `maxAttempts` a username
+included (`attempt_login!`, `game.rb:1444-1481`), and under a policy with `maxAttempts` a username
 is locked out at that PC for the rest of the game. So a password the player is meant to work out
 has to be wholly derivable from what they can read: one character they have to guess turns the
 puzzle into guessing, and can cost them the account.
 
 **Gates.** A gate door is `rooms.<id>.doors[].gate` with `openFor` (a list, or one string),
-`openRadius`, `holdMs` and `playerMayPassIf` (`normaliseGate`, `systems/door-gates.js:68-80`, which
-keeps those four keys). It reaches the client in room data (`doors.js:567`; the bootstrap drops
-`doors`). The gate opens when an `openFor` NPC is within the radius (`_npcNear`, `:454-462`, a
-boolean) and stays open for `holdMs` after the last one leaves it (`update`, `:503-528`): that hold
-is the tailgate window. `open(g)` (`:240-262`) starts an open period and `close(g)` (`:354-367`)
-ends it; `playerOpen()` starts its period through `open()`, or re-announces one already open
-(`:307-327`). `door_gate_opened` and `door_gate_closed` carry the group's `roomId` and
-`connectedRoom` (`_afterToggle`, `:232-238`), which are those of whichever door sprite registered
-first; `door_gate_denied` carries those of the sprite clicked (`doors.js:733`). Either way a
+`openRadius`, `holdMs`, `playerMayPassIf` and `sound` (`normaliseGate`,
+`systems/door-gates.js:74-89`, which keeps those five keys; `sound` is the door release a gate
+with an RFID lock plays when it opens, `playOpenSound`, `:283`). It reaches the client in room data
+(`doors.js:567`; the bootstrap drops `doors`). The gate opens when an `openFor` NPC is within the
+radius (`_npcNear`, `:520-528`, a boolean) and stays open for `holdMs` after the last one leaves it
+(`update`, `:569-595`): that hold is the tailgate window. `open(g)` (`:302-325`) starts an open
+period and `close(g)` (`:420-433`) ends it; `playerOpen()` starts its period through `open()`, or
+plays the release and re-announces one already open (`:370-389`). `door_gate_opened` and
+`door_gate_closed` carry the group's `roomId` and `connectedRoom` (`_afterToggle`, `:270-276`), which are those of whichever door sprite registered
+first; `door_gate_denied` carries those of the sprite clicked (`doors.js:728-730`). Either way a
 mapping that means "this gate" needs one entry per field, because an `eventMappings` condition
 has no `||` (the lab learned this, `scenarios/lab_physical_pentest/IMPROVEMENT_LOOP_LOG.md:304`).
-`openToPlayer(g)` (`:332-337`) is the one question "may the player walk through this open gate
+`openToPlayer(g)` (`:398-403`) is the one question "may the player walk through this open gate
 now": a clone hold first, then `playerMayPassIf`. A click asks it through `clickOutcome`
-(`:349-352`) only for `pass` or `denied` (`doors.js:719-735`); a click with a clone goes to the
-server first (`notifyServerUnlock`, `doors.js:661-714`) and then to `playerOpen()`.
+(`:415-418`) only for `pass` or `denied` (`doors.js:718-732`); a click with a clone goes to the
+server first (`notifyServerUnlock`, `doors.js:687`) and then to `playerOpen()` (`doors.js:713`).
 
 **The owner's gate rule.** A player within the radius of a gate whose `playerMayPassIf` global is
-false is **barred** (`_playerBarred`, `:465-474`). A shut gate stays shut while a barred player is
+false is **barred** (`_playerBarred`, `:531-539`). A shut gate stays shut while a barred player is
 there, even beside its guard; a guard held at it for `GUARD_TURN_BACK_MS` (5 s) turns back, resumes
-his route on his own side and tries again next cycle (`_holdGuards`, `:437-452`, which calls his
+his route on his own side and tries again next cycle (`_holdGuards`, `:503-518`, which calls his
 behaviour's `turnBackFromGate` and emits `door_gate_guard_turned_back` with his `npcId`). An open
 gate shuts at once when a barred player comes within the radius, skipping `holdMs`, but only after
 two checks that keep it open: the player overlapping the door's body, or a guard in the doorway
-(`update`, `:520-523`). Those two checks are the remaining way past a careful gate: a player who
+(`update`, `:586-589`). Those two checks are the remaining way past a careful gate: a player who
 dashes into the doorway while it is open keeps it open and walks through. A forced shut
-(`closeNow`, `:482-500`, the scenario action `closeDoor`) keeps a gate shut for at least `holdMs` or
+(`closeNow`, `:548-566`, the scenario action `closeDoor`) keeps a gate shut for at least `holdMs` or
 3 s (`forcedUntil`). The engine plan's door work (its item 3) adds the body rule that closes the
 dash: a north or south gate whose open doorway is not open to the player is solid for them, and a
 walk into it is refused with `door_gate_denied`. That plan is being rewritten around this rule;
@@ -209,7 +213,7 @@ then on. Every gate in a scenario today has `playerMayPassIf` (`lab_physical_pen
 door (`scenarios/test_gate_tailgate/scenario.json.erb`).
 
 **Social engineering blocks** (`social.characters`, `social.pretextNpcs`, `social.phishTargets`)
-ship in the bootstrap as authored, apart from capture secrets (`game.rb:895-901`). In every scenario
+ship in the bootstrap as authored, apart from capture secrets (`game.rb:897-903`). In every scenario
 that has them the targets are phone or email characters with no room NPC. Awareness lives on room
 NPCs so that it can be withheld, so no scenario today could use an awareness default for a social
 engineering block. `social.characters` entries carry a `role` key of their own, and `social`
@@ -481,7 +485,7 @@ No object is written. A filled `screenHabit` reaches the browser in room data on
 authored one does, and the client's leave roll uses it unchanged: the roll's salt is
 `habit:<pcId>:<leaves>`, seeded per NPC.
 
-**The server reads the habit too (the claim check).** Today `pc_always_locks?` (`game.rb:1409-1414`)
+**The server reads the habit too (the claim check).** Today `pc_always_locks?` (`game.rb:1430-1435`)
 reads only the PC's two fields, so a sign-in PC whose owner's `screenHabit` leaves it open is
 refused a claim while the client shows it open (section 2). Step 1 fixes it before anything fills
 a habit:
@@ -611,24 +615,24 @@ So the builder of the door work knows `update()` will gain one line. Step 5 star
 is committed **and** the merged code meets this contract:
 
 1. `openToPlayer(g, now)` is the only question the gate asks to decide whether the player may walk
-   through it while it is open. (On `main` a click asks it, `doors.js:719-735`; the body rule will
+   through it while it is open. (On `main` a click asks it, `doors.js:718-732`; the body rule will
    ask it for a walk.)
 2. While it answers no, a player outside the secured room cannot cross, by waiting or by dashing
    (in the engine plan's terms the exported predicate `blocksPlayer(g, { playerRoom, now })` is
    true and the door's own body stays solid for the player), so `room_entered` for the secured
    room means a permitted entry. **Unmet on `main`:** an open gate stays open while the player
-   overlaps its body or a guard is in the doorway (`update`, `door-gates.js:520-522`), and the
+   overlaps its body or a guard is in the doorway (`update`, `door-gates.js:586-588`), and the
    barred test comes after both, so a dash keeps it open. The body rule closes this.
 3. A refused walk into the door emits `door_gate_denied` (in the engine plan, at most once every
-   4 s per gate), as a refused click does (`doors.js:733`).
-4. A clone hold answers yes first. True on `main` (`openToPlayer`, `:334`).
+   4 s per gate), as a refused click does (`doors.js:728-730`).
+4. A clone hold answers yes first. True on `main` (`openToPlayer`, `:400`).
 5. `close(g)` is the one place a gate's open period ends, and `open(g)` the one place it starts.
-   True on `main`: `playerOpen()` starts its period through `open()` (`:323-324`), and a forced shut
-   goes through `close()` (`closeNow`, `:482-500`). The step 5 builder confirms the same of the
+   True on `main`: `playerOpen()` starts its period through `open()` (`:381-385`), and a forced shut
+   goes through `close()` (`closeNow`, `:548-566`). The step 5 builder confirms the same of the
    engine plan's exit opening before writing anything.
 6. A barred player keeps a shut gate shut, the guard turning back after `GUARD_TURN_BACK_MS`
-   (`update`, `:512-518`; `_holdGuards`, `:437-452`), and a barred player within the radius shuts
-   an open gate on the first tick nobody is in the doorway, skipping the `holdMs` wait (`:523`).
+   (`update`, `:578-585`; `_holdGuards`, `:503-518`), and a barred player within the radius shuts
+   an open gate on the first tick nobody is in the doorway, skipping the `holdMs` wait (`:589`).
    True on `main` for `playerMayPassIf`; step 5 reaches it for `noHold` through its clause in
    `_playerBarred`, so the door work must keep both branches reading `_playerBarred`.
 
@@ -1172,8 +1176,8 @@ Tests:
 
 Files:
 - `app/models/break_escape/game.rb`: `login_postit_for(pc)` (public); `hasPostit` in
-  `attach_login_accounts!`. Slice 9.3a edits the same short method first (it skips hosts with no
-  screen); re-read it before editing.
+  `attach_login_accounts!`, which 9.3a's step 4 already made skip a headless host
+  (`game.rb:1952-1962`); the note goes inside the same `if`, so a headless host never gets one.
 - `app/controllers/break_escape/games_controller.rb`: `login_accounts` adds `postitNote` and the
   `no-store` header.
 - `public/break_escape/js/systems/unlock-system.js`: `openLoginSignIn` (5.3), the desk branch only.
@@ -1347,7 +1351,7 @@ Tests:
 - `test/js/validator-npc-habits.test.mjs` and `dungeon-graph-habits.test.mjs` (extended): the two
   gate warnings; the gate label.
 - `test/js/door-gates-no-hold.test.mjs` (new; the engine plan's door work owns the other
-  `door-gates*.test.mjs` files, today `door-gates.test.mjs` and `door-gates-player-open.test.mjs`,
+  `door-gates*.test.mjs` files, today `door-gates.test.mjs`, `door-gates-player-open.test.mjs` and `door-gates-sound.test.mjs`,
   and this one is added to that set by this step). On that work's stub world, calling its pure
   functions:
   - `normaliseGate` keeps `noHold`; `open` sets `lastGuards` to the guards near on that tick, ticks
@@ -1733,7 +1737,7 @@ re-read on 2026-11-10. There is no open disagreement.
 | Item | Owner | Contact |
 |---|---|---|
 | 1. Lock screens and lock sounds: any change to the lock cues (stream E2, only on the user's word), and the version stamp (stream E2b, held for the user's question about how their server serves the JavaScript) | The picture is `screen-states.js`, done on `main`. The cues are office life's `npc-office-visuals.js`, which E2 may change by one constant or function | This slice edits neither file and depends on no change to either. Its runs check that a transition was recorded (`screenTransitions()`) and a cue was recorded (`npcOfficeVisuals.cueLog`), not which sound played. The indicator dot stays the cue for a screen left open. Overlap: E2b's `generate_scenario_data` in `game.rb` (beside F's `prepare_scenario_data!`, section 15, engine work first). If E2b is built, its `_digest` of the rendered scenario must be taken from the render, before `prepare_scenario_data!` writes this slice's fills, or every game would differ from a fresh render |
-| 2. One sound for the RFID door (stream E1, in build) | The engine plan: `door-gates.js` (`open()` and `playerOpen()` play the sound; `register()` copies `lockType`), `doors.js` (the clone path's inline sound goes) | Touches `register()`, `open()` and `playerOpen()` in `door-gates.js`, which step 5 also edits (`open()`). Step 5 comes after it and re-reads |
+| 2. One sound for the RFID door (stream E1, built) | The engine plan: `door-gates.js` (`normaliseGate` keeps `sound`, `register()` copies `lockType`, `open()` and `playerOpen()` call `playOpenSound`), `doors.js` (the clone path plays no sound of its own) | Already in the lines section 2 cites. Step 5 edits `open()` beside the sound call and re-reads |
 | 3. A north or south gate is solid for a player it is not open to (stream E1, decision X1, being rewritten around the owner's turn-back rule) | The engine plan: the body rule and `blocksPlayer`, `securedRoom`, the bump and its refusal, the exit opening, which door directions may be gates (north and south only; an east or west gate is declined and warned on), and all `door-gates*.test.mjs`. The owner's turn-back (`GUARD_TURN_BACK_MS`, `_holdGuards`, `turnBackFromGate`) and the barred-player branches of `update()` stay | Step 5 of this slice starts after item 3 is committed and meets the contract in 5.4 (item 2 of which is unmet on `main`). It makes the seven edits listed there, including one clause in `_playerBarred`, so the door work keeps both branches of `update()` reading `_playerBarred`. It adds one test file to that set. A forced `closeDoor` goes through `close(g)`, so contract item 5 holds whatever the door work does with `forcedUntil`. The door work's fixture changes to `test_gate_tailgate` come first; this slice's H9 uses two new gates of its own, on north and south doors |
 | 6. The capture log | The engine plan | A saved sticky note goes through the existing "add to notebook" path. If the log changes where saved notes live or are returned, the leak scanner's saved-copy exception (section 6) follows the new home |
 | Lab content: which PCs are workstations, and their owners' leave rates | The feedback pass | Section 12 runs after it |
@@ -1741,9 +1745,10 @@ re-read on 2026-11-10. There is no open disagreement.
 ### 14.5 Order
 
 1. The engine plan's streams that hold a file this slice also edits commit first (section 15).
-   Of these, E1's item 7 and E5 are built; E1's item 2 and E3 are in build; E2 runs only on the
-   user's word and E2b is held.
-2. 9.3a's streams commit their edits to the files in section 15.
+   Of these, E1's items 2 and 7, E3's 5a and 5b, and E5 are built; E3's tray refresh and E4 are to
+   build; E2 runs only on the user's word and E2b is held.
+2. 9.3a's streams commit their edits to the files in section 15. Its server steps 2 to 4 are
+   committed; its client streams are not.
 3. This slice's steps 0 to 4, 6 and 7 then start. Step 1 begins with the claim check fix (5.2).
 4. Step 5 starts when steps 1 to 4, 6 and 7 and the engine plan's E1 item 3 (the body rule) are
    committed, and the contract in 5.4 holds.
@@ -1778,12 +1783,12 @@ then 9.2.** The sequence follows the engine plan's "Files shared with the siblin
 |---|---|---|---|
 | `app/models/break_escape/game.rb` | F (`pc_always_locks?`, `claim_login_session!`'s one call, `prepare_scenario_data!`, `npc_habit`, `written_down?`, `filtered_scenario_for_bootstrap`), A (`login_postit_for`, `attach_login_accounts!`) | Engine E3 (`add_item_to_room!`) and E4 (`capture_secrets_for_client` and nearby), **engine E2b** (`generate_scenario_data`, the caller of `prepare_scenario_data!`; held), 9.3 S (including `attach_login_accounts!`), 9.2 | Different methods. Engine streams first; E2b first if it is released before F starts, and F re-reads `generate_scenario_data` and `prepare_scenario_data!`, otherwise F first and E2b re-reads. Then 9.3 S, this slice, 9.2 |
 | `lib/break_escape/access_identities.rb` | F (`screen_always_locks?`) | 9.3 T (if it adds to the identity rules), 9.2 | 9.3 first, then this slice, then 9.2. A new function each; never reformat |
-| `app/controllers/break_escape/games_controller.rb` | A (`login_accounts`) | Engine E3 (`CLIENT_ITEM_FORBIDDEN_FIELDS`) and E4 (the `remove` branch of `inventory`), 9.3 S, 9.2 | Different methods. Engine streams first, then 9.3 S, then this slice, then 9.2 |
-| `systems/unlock-system.js` | A (the desk branch of `openLoginSignIn`) | **Engine E1** (the RFID helper, item 2, in build), 9.3 C2 (the remote sign-in branch of `openLoginSignIn`), 9.2 | E1 first, then 9.3 C2, then this slice, then 9.2. Separate blocks |
+| `app/controllers/break_escape/games_controller.rb` | A (`login_accounts`, which 9.3a step 4 already made refuse a headless host) | Engine E3 (`CLIENT_ITEM_FORBIDDEN_FIELDS`) and E4 (the `remove` branch of `inventory`), 9.3 S, 9.2 | Different methods. Engine streams first, then 9.3 S, then this slice, then 9.2 |
+| `systems/unlock-system.js` | A (the desk branch of `openLoginSignIn`) | Engine E1 (the RFID helper, item 2, built), 9.3 C2 (the remote sign-in branch of `openLoginSignIn`), 9.2 | 9.3 C2 first, then this slice, then 9.2. Separate blocks |
 | `core/game.js` | A (the `postit-marks.js` import and install) | 9.3 C1, 9.2 | 9.3 first, then this slice. One or two lines each. No engine stream edits it |
 | `systems/pc-sessions.js`, `api-client.js` | A | 9.3 C1 and C2, 9.2 | 9.3 first; one or two lines each |
 | `core/rooms.js` | A (one `syncRoom` call beside `screenStates.syncRoom`, `:1005`) | None named today | Re-read before editing |
-| `systems/door-gates.js`, `test/js/door-gates*.test.mjs` | D | Engine E1 owns both: item 2 (`register()` copies `lockType`; `open()` and `playerOpen()` play the door sound) and item 3 (the body rule) | E1's items 2 and 3 first, whole file. D after both commit. H9's gates on north and south doors |
+| `systems/door-gates.js`, `test/js/door-gates*.test.mjs` | D | Engine E1 owns both: item 2 (the door sound, built, with `door-gates-sound.test.mjs`) and item 3 (the body rule, to build) | E1's item 3 first, whole file. D after it commits. H9's gates on north and south doors |
 | `systems/npc-office-visuals.js` | None: steps 0 and 7 read `cueLog` only | Office life; engine E2, one constant or function, only on the user's word | If E2 changes the cue, this slice's runs still read `cueLog` and name no sound |
 | `systems/doors.js`, `systems/interactions.js`, `systems/action-menu.js`, `ui/interaction-menu.js`, `systems/item-drop.js`, `systems/table-drop.js`, `systems/inventory.js` | None | Engine E1 and E3, 9.3 C1, 9.2 | This slice edits none of them. Listed so a builder knows the click order in `interactions.js` and the RFID clone path in `doors.js` may have moved when steps 2 and 5 are built |
 | `scripts/validate_scenario.rb`, `scripts/scenario-schema.json` | F, B, D | Engine E1, E3 and E4, 9.3 T, 9.2 | Each stream appends its own block, never reformatting; whoever is second re-reads. Engine first, then 9.3 T, then this slice, then 9.2. B's three lines in `main` sit around the `ValidateNpcNeeds.check` and `check_access_model` calls |
