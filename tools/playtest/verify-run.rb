@@ -35,6 +35,16 @@
 # and foothold beside each session. The routes write these keys themselves, so no sync is
 # needed first. --access prints only that
 # section, for the check after each beat of a scripted run, and always exits 0.
+#
+# With it, a `habits` block (slice 9.1, ACCESS_MODEL_SLICE_9_1_PLAN.md step 6) of values only,
+# read from the game's saved scenario: one line per NPC with a habits object (its habits and
+# its screenHabit as saved) and one per owned workstation (its owner, its own lockChance or
+# locksScreenOnLeave, whether the server's claim check calls it "always locks", and whether
+# it shows a sticky note). It does not say which values a habit filled: the validator's
+# habits report does. It names who never locks, so it is not for a tester playing blind.
+# No passwords.
+require 'json'
+require_relative '../../lib/break_escape/access_identities'
 
 count_tasks_flag = !ARGV.delete('--tasks').nil?
 access_only = !ARGV.delete('--access').nil?
@@ -90,9 +100,42 @@ def access_section(ps)
   lines
 end
 
+# The habits block: values only, [] when no NPC in the saved scenario has a habits object.
+def habits_section(g)
+  data = g.scenario_data
+  return [] unless data.is_a?(Hash)
+
+  ai = BreakEscape::AccessIdentities
+  npcs = ai.room_npcs(data).map { |e| e[:npc] }.select { |n| n['habits'].is_a?(Hash) }
+  return [] if npcs.empty?
+
+  owners = ai.room_npcs(data).to_h { |e| [e[:npc]['id'], e[:npc]] }
+  lines = ['habits']
+  npcs.each do |npc|
+    values = npc['habits'].reject { |k, _| k == '_comment' }.map { |k, v| "#{k}=#{v}" }.join(' ')
+    habit = npc.key?('screenHabit') ? JSON.generate(npc['screenHabit']) : '-'
+    lines << "  npc #{npc['id'].to_s.ljust(14)} #{values}  screenHabit #{habit}"
+  end
+  ai.room_objects(data).each do |entry|
+    pc = entry[:object]
+    next unless ai.workstation?(pc)
+
+    owner_id = ai.owner_id(pc, data)
+    next unless owner_id
+
+    field = %w[lockChance locksScreenOnLeave].find { |f| pc.key?(f) }
+    own = field ? "#{field} #{pc[field]}" : 'no lock field'
+    always = g.respond_to?(:pc_always_locks?) ? g.pc_always_locks?(pc, owners[owner_id]) : ai.screen_always_locks?(pc, owners[owner_id])
+    postit = ai.login_pc?(pc) && g.respond_to?(:login_postit_for) ? !g.login_postit_for(pc).nil? : false
+    lines << "  pc  #{pc['id'].to_s.ljust(14)} owner #{owner_id}  #{own}  alwaysLocks #{always}  hasPostit #{postit}"
+  end
+  lines
+end
+
 if access_only
   puts "game            #{g.id}  (mission #{g.mission_id})"
   puts access_section(ps)
+  puts habits_section(g)
   exit 0
 end
 
@@ -116,6 +159,7 @@ puts "flags submitted #{flags.length}: #{flags.join(', ')}"
 puts "globals set     #{globals.length}: #{globals.keys.sort.join(', ')}"
 if ACCESS_KEYS.any? { |k| ps[k].respond_to?(:empty?) && !ps[k].empty? }
   puts access_section(ps)
+  puts habits_section(g)
 else
   puts 'access model    nothing recorded (no sessions, sign-ins, card copies, copied files, failed sign-ins or footholds)'
 end

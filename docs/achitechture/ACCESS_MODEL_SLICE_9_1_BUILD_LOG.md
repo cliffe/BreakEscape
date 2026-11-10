@@ -132,3 +132,27 @@ authored lock fields are a later idea. A "clue" node is the clue object, hung fr
 the innermost locked container it sits in, else from its room, so a clue behind the account it
 opens shows as a loop. A "same password" edge from a capture or Wi-Fi key starts at a small key
 node of its own.
+
+## Step 6. Playtest tooling (2026-11-10)
+
+Built: the scanner takes `game:` (`AccessLeakScanner.new(scenario_data, game: game)`) and adds
+the note exception (`$.postitNote` of a `GET /login_accounts` answer whose own `pc_id` names a
+PC whose owner the game says `written_down?`), the saved-copy exception (`savedNotes` after an
+earlier `/login_accounts` line carried the value, across files in order) and the
+`withheld_key` finding (an NPC record with creds, role, awareness, habits or workarounds, by key
+and NPC id; the top-level `social` subtree is skipped). `access-leak-check.rb` hands it the game.
+`verify-run.rb` prints a `habits` block of values after the access section; its stub gains
+`STUB_SCENARIO` and `STUB_POSTIT`.
+
+Notes:
+
+- The scanner's existing fixture test now also expects one `withheld_key` finding: the planted
+  `creds` on Jake in `responses.jsonl` line 4 is exactly what the new rule reports.
+- Without a game the note exception never applies (a `/login_accounts` note is then reported).
+- The sentence for `.claude/skills/playtest-scenario/SKILL.md` ("Access model checks") was not
+  written in: skills are edited with the orchestrator's say-so. Proposed text: "From slice 9.1
+  the leak check allows a password in two places only: at `postitNote` of a `/login_accounts`
+  answer for a writesDown owner's own PC, and in `savedNotes` once such an answer has carried
+  it; it also reports any NPC record carrying creds, role, awareness, habits or workarounds.
+  The `habits` block of `verify-run.rb --access` and the validator's habits report name who
+  never locks and whose password is on a note, so neither is shown to a tester playing blind."

@@ -11,9 +11,9 @@ import { spawnSync } from 'node:child_process';
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..', '..');
 
-function verify(args, playerState = {}) {
+function verify(args, playerState = {}, env = {}) {
   const r = spawnSync('ruby', ['-r', join(here, 'fixtures', 'verify-run-stub.rb'), join(root, 'tools/playtest/verify-run.rb'), ...args],
-    { env: { ...process.env, STUB_FLAGS: '', STUB_PLAYER_STATE: JSON.stringify(playerState) }, encoding: 'utf8' });
+    { env: { ...process.env, STUB_FLAGS: '', STUB_PLAYER_STATE: JSON.stringify(playerState), ...env }, encoding: 'utf8' });
   return { status: r.status, out: r.stdout + r.stderr };
 }
 
@@ -94,4 +94,43 @@ test('the full report says so in one line when nothing is recorded', () => {
   assert.equal(r.status, 0, r.out);
   assert.match(r.out, /access model\s+nothing recorded/);
   assert.doesNotMatch(r.out, /signedInPcs/);
+});
+
+// Slice 9.1 step 6: the habits block, values only, from the saved scenario.
+const HABITS_SCENARIO = {
+  rooms: {
+    office: {
+      objects: [
+        { id: 'dana_pc', type: 'pc', lockType: 'login' },
+        { id: 'priya_pc', type: 'pc', lockType: 'login', lockChance: 1 },
+        { id: 'omar_pc', type: 'pc', lockType: 'login' },
+        { id: 'plain', type: 'notes' }
+      ],
+      npcs: [
+        { id: 'dana', needsHome: 'dana_pc', habits: { locksScreen: 'never' }, screenHabit: { lockChance: 0 },
+          creds: { username: 'dreyes', password: 'Dana-Secret-PW' } },
+        { id: 'priya', needsHome: 'priya_pc', habits: { locksScreen: 'never' }, screenHabit: { lockChance: 0 } },
+        { id: 'omar', needsHome: 'omar_pc', habits: { locksScreen: 'always', writesDown: true }, screenHabit: { lockChance: 1 } }
+      ]
+    }
+  }
+};
+
+test('--access prints the habits block of values for a game with expanded habits', () => {
+  const r = verify(['1', '--access'], ACCESS_STATE, { STUB_SCENARIO: JSON.stringify(HABITS_SCENARIO), STUB_POSTIT: 'omar_pc' });
+  assert.equal(r.status, 0, r.out);
+  assert.match(r.out, /\nhabits\n/);
+  assert.match(r.out, /npc dana\s+locksScreen=never\s+screenHabit \{"lockChance":0\}/);
+  assert.match(r.out, /npc omar\s+locksScreen=always writesDown=true\s+screenHabit \{"lockChance":1\}/);
+  assert.match(r.out, /pc\s+dana_pc\s+owner dana\s+no lock field\s+alwaysLocks false\s+hasPostit false/);
+  assert.match(r.out, /pc\s+priya_pc\s+owner priya\s+lockChance 1\s+alwaysLocks true\s+hasPostit false/);
+  assert.match(r.out, /pc\s+omar_pc\s+owner omar\s+no lock field\s+alwaysLocks true\s+hasPostit true/);
+  assert.doesNotMatch(r.out, /plain/);
+  assert.doesNotMatch(r.out, /Dana-Secret-PW|dreyes/, 'no sign-in details');
+});
+
+test('the habits block is absent for a game without habits', () => {
+  const r = verify(['1', '--access'], ACCESS_STATE, { STUB_SCENARIO: JSON.stringify({ rooms: { office: { objects: [{ id: 'pc', lockType: 'login' }], npcs: [{ id: 'a', needsHome: 'pc' }] } } }) });
+  assert.equal(r.status, 0, r.out);
+  assert.doesNotMatch(r.out, /\nhabits\n/);
 });

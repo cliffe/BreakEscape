@@ -46,13 +46,25 @@ require 'uri'
 # page the tester read (the capture log device, a captures terminal), labelled by its "label".
 # It is checked for passwords like a /capture_secrets answer, since that is all such a page shows.
 #
+# Slice 9.1 (ACCESS_MODEL_SLICE_9_1_PLAN.md, section 6) adds two exceptions and one finding:
+#
+# - the note: a GET /login_accounts answer may hold a password at $.postitNote and nowhere
+#   else in its body, when the PC its own pc_id names has an owner the game says
+#   written_down? (so the scanner is handed the game, not only its scenario data). The
+#   exception covers that password value in that answer, whoever else shares it;
+# - the saved copy: the same value inside savedNotes, only after an earlier response line
+#   (in any file given, in the order given) was a /login_accounts answer that carried it;
+# - withheld keys: any NPC record (a hash with an npcType key, or an element of an array
+#   under a key named npcs) with a creds, role, awareness, habits or workarounds key.
+#   social.characters entries and the social.awareness block are not NPC records.
+#
 # A finding names the rule, the route, the response line and the secret's owner (an NPC or
 # item id), never the value. Every output line is checked against the secret values before it
 # is returned, so blind runs can use it too.
 #
 # Usage (see tools/playtest/access-leak-check.rb):
 #
-#   scanner = AccessLeakScanner.new(scenario_data)
+#   scanner = AccessLeakScanner.new(scenario_data, game: game)   # game: optional (the note exception)
 #   findings = scanner.scan(lines)   # lines: [[source_label, line_no, parsed_hash], ...]
 #   scanner.report_lines(findings)
 class AccessLeakScanner
@@ -74,13 +86,18 @@ class AccessLeakScanner
 
   Finding = Struct.new(:rule, :owner, :route, :source, :line, :cmd_seq, :json_path, keyword_init: true)
 
+  # Keys an NPC record never takes to the browser (Game::WITHHELD_NPC_KEYS).
+  WITHHELD_KEYS = %w[creds role awareness habits workarounds].freeze
+
   attr_reader :passwords, :items
 
   # served_npcs: when given, the NPC ids whose password the server would serve from
   # GET /capture_secrets now (its capture proofs applied); nil keeps the scenario-only rule.
-  def initialize(scenario_data, served_npcs: nil)
+  def initialize(scenario_data, served_npcs: nil, game: nil)
     @data = scenario_data.is_a?(Hash) ? scenario_data : {}
     @served_npcs = served_npcs&.map(&:to_s)&.to_set
+    @game = game
+    @noted = Set.new # passwords a /login_accounts answer has carried as its note, so far
     @passwords = {}          # password => [npc_id, ...]
     @capture_npcs = Set.new  # npc ids the capture_secrets exception covers
     @items = {}              # item_id => { strings:, scope:, profile:, pc:, ancestors:, locked_ancestors: }
@@ -132,6 +149,7 @@ class AccessLeakScanner
                                 cmd_seq: row['cmdSeq'], json_path: json_path)
       end
       scan_passwords(body, ctx, add)
+      scan_withheld_keys(body, add)
       scan_login_content(body, ctx, legit, add)
       scan_locked_content(body, add)
       scan_share_content(body, ctx, legit, add)
@@ -161,7 +179,8 @@ class AccessLeakScanner
     'profile_content' => 'profile content outside a sign-in PC container response',
     'locked_content' => 'locked container content in a response that marks it locked',
     'share_content' => 'file share content outside a container response for that share',
-    'network_string' => 'a network or resource name, host or observations outside the network routes'
+    'network_string' => 'a network or resource name, host or observations outside the network routes',
+    'withheld_key' => 'a withheld key (creds, role, awareness, habits, workarounds) on an NPC record'
   }.freeze
 
   private
@@ -389,7 +408,8 @@ class AccessLeakScanner
       capture_secrets: path.end_with?('/capture_secrets'),
       network: path.end_with?('/network') || path.include?('/network/'),
       any_container: path.include?('/container/'),
-      scenario: method == 'GET' && path.end_with?('/scenario')
+      scenario: method == 'GET' && path.end_with?('/scenario'),
+      login_accounts: method == 'GET' && path.end_with?('/login_accounts')
     }
   end
 
@@ -407,16 +427,61 @@ class AccessLeakScanner
   def scan_passwords(body, ctx, add)
     return if @passwords.empty?
 
+    note = ctx[:login_accounts] ? served_note_password(body) : nil
     each_string(body) do |str, json_path, holder|
       @passwords.each do |password, owners|
         next unless contains_password?(str, password)
         next if deliberate_clue?(password, str, holder)
+        next if note == password && json_path == '$.postitNote'
+        next if @noted.include?(password) && json_path.include?('.savedNotes[')
 
         owners.each do |npc_id|
           next if ctx[:capture_secrets] && @capture_npcs.include?(npc_id) && (@served_npcs.nil? || @served_npcs.include?(npc_id))
 
           add.call('password', "npc:#{npc_id}", safe_path(json_path))
         end
+      end
+    end
+  end
+
+  # The password a /login_accounts answer may carry as its note (slice 9.1, 5.3): its own
+  # pc_id names a sign-in PC whose owner the game says written_down?. Recorded, so a later
+  # savedNotes copy of it is allowed. nil without a game.
+  def served_note_password(body)
+    return nil unless @game && body.is_a?(Hash) && body['postitNote'].is_a?(String)
+
+    pc = @game.find_login_pc(body['pc_id'].to_s)&.dig(:object)
+    owner = pc && @game.login_pc_owner(pc)
+    return nil unless owner && @game.written_down?(owner)
+
+    password = owner.dig('creds', 'password')
+    return nil unless password.is_a?(String) && contains_password?(body['postitNote'], password)
+
+    @noted << password
+    password
+  end
+
+  # NPC records holding a key the server withholds: by key and NPC id, never the value.
+  def scan_withheld_keys(body, add)
+    walk_records(body, '$', false) do |record, json_path|
+      WITHHELD_KEYS.each do |key|
+        next unless record.key?(key)
+
+        add.call('withheld_key', "npc:#{record['id']}/#{key}", safe_path("#{json_path}.#{key}"))
+      end
+    end
+  end
+
+  def walk_records(node, path, under_npcs, &block)
+    case node
+    when Array
+      node.each_with_index { |v, i| walk_records(v, "#{path}[#{i}]", under_npcs, &block) }
+    when Hash
+      yield node, path if node.key?('npcType') || under_npcs
+      node.each do |k, v|
+        next if k == 'social' && path == '$' # social.characters and social.awareness are not NPC records
+
+        walk_records(v, "#{path}.#{k}", k == 'npcs' && v.is_a?(Array), &block)
       end
     end
   end

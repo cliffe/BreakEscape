@@ -37,6 +37,7 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
     findings = AccessLeakScanner.new(scenario).scan(fixture_lines)
     assert_equal [
       [4, 'password', 'npc:jake'],
+      [4, 'withheld_key', 'npc:jake/creds'],
       [6, 'password', 'npc:dana'],
       [7, 'signin_content', 'item:jake_local'],
       [8, 'profile_content', 'item:jake_budget'],
@@ -270,7 +271,8 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
     assert_includes out, '2 NPC password(s)'
     assert_match(/^password\s+2 /, out)
     assert_match(/^locked_content\s+1 /, out)
-    assert_includes out, 'VERDICT: 5 finding(s)'
+    assert_match(/^withheld_key\s+1 /, out)
+    assert_includes out, 'VERDICT: 6 finding(s)'
     ([JAKE_PASSWORD, DANA_PASSWORD] + SECRET_TEXTS).each { |s| refute_includes out, s }
 
     Dir.mktmpdir do |dir|
@@ -280,6 +282,90 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
       assert_equal 0, status, out
       assert_includes out, 'VERDICT: no leaks found.'
     end
+  end
+
+  # ---- Slice 9.1 (ACCESS_MODEL_SLICE_9_1_PLAN.md, section 6): the note, the saved copy and
+  # the withheld keys.
+
+  OMAR_PASSWORD = 'Omar-Note-PW-7731'.freeze
+  NOTE = "ohaddad / #{OMAR_PASSWORD}".freeze
+  LOGIN = '/break_escape/games/1/login_accounts?pc_id=omar_pc'.freeze
+
+  def habits_scenario
+    {
+      'startRoom' => 'office',
+      'rooms' => { 'office' => {
+        'type' => 'room_office', 'connections' => {},
+        'objects' => [{ 'id' => 'omar_pc', 'type' => 'pc', 'name' => "Omar's PC", 'locked' => true, 'lockType' => 'login' },
+                      { 'id' => 'hot_desk', 'type' => 'pc', 'name' => 'Hot desk', 'locked' => true, 'lockType' => 'login' }],
+        'npcs' => [
+          { 'id' => 'omar', 'npcType' => 'person', 'needsHome' => 'omar_pc', 'habits' => { 'writesDown' => true },
+            'creds' => { 'username' => 'ohaddad', 'password' => OMAR_PASSWORD } },
+          { 'id' => 'twin', 'npcType' => 'person', 'creds' => { 'username' => 'twin', 'password' => OMAR_PASSWORD } }
+        ]
+      } }
+    }
+  end
+
+  def habits_game
+    create_access_game(mission: break_escape_missions(:ceo_exfil), player: break_escape_demo_users(:test_user),
+                       scenario: habits_scenario, player_state: { 'unlockedRooms' => ['office'] })
+  end
+
+  def rows(*bodies)
+    bodies.each_with_index.map do |(path, body), i|
+      ['r.jsonl', i + 1, { 'method' => 'GET', 'path' => path, 'status' => 200, 'cmdSeq' => i, 'body' => body }]
+    end
+  end
+
+  def note_answer(pc_id = 'omar_pc', extra = {})
+    [LOGIN.sub('omar_pc', pc_id), { 'pc_id' => pc_id, 'loginAccounts' => [], 'postitNote' => NOTE }.merge(extra)]
+  end
+
+  test "a note at $.postitNote of the owner's own /login_accounts answer is allowed, for every NPC sharing it" do
+    game = habits_game
+    scanner = AccessLeakScanner.new(game.scenario_data, game: game)
+    assert_empty scanner.scan(rows(note_answer))
+  end
+
+  test 'the password elsewhere in that body, in another PC answer, in room data or with no game is reported' do
+    game = habits_game
+    findings = AccessLeakScanner.new(game.scenario_data, game: game).scan(rows(note_answer('omar_pc', 'extra' => NOTE)))
+    assert_equal [[1, 'password', 'npc:omar'], [1, 'password', 'npc:twin']], summary(findings)
+    assert_equal '$.extra', findings.first.json_path
+
+    findings = AccessLeakScanner.new(game.scenario_data, game: game).scan(rows(note_answer('hot_desk')))
+    assert_equal %w[npc:omar npc:twin], findings.map(&:owner)
+
+    room = ['/break_escape/games/1/room/office', { 'room' => { 'objects' => [{ 'id' => 'omar_pc', 'note' => NOTE }] } }]
+    assert_equal 2, AccessLeakScanner.new(game.scenario_data, game: game).scan(rows(room)).length
+
+    assert_equal 2, AccessLeakScanner.new(game.scenario_data).scan(rows(note_answer)).length, 'no game, no exception'
+  end
+
+  test 'savedNotes holds the note only after a /login_accounts line carried it, across files in order' do
+    game = habits_game
+    saved = ['/break_escape/games/1/scenario', { 'savedNotes' => [{ 'id' => 'n1', 'text' => NOTE }] }]
+    assert_empty AccessLeakScanner.new(game.scenario_data, game: game).scan(rows(note_answer, saved))
+
+    two_files = [['a.jsonl', 1, rows(note_answer).first[2]], ['b.jsonl', 1, rows(saved).first[2]]]
+    assert_empty AccessLeakScanner.new(game.scenario_data, game: game).scan(two_files)
+
+    findings = AccessLeakScanner.new(game.scenario_data, game: game).scan(rows(saved))
+    assert_equal %w[npc:omar npc:twin], findings.map(&:owner)
+  end
+
+  test 'an NPC record with a withheld key is reported by key and NPC id; social characters and awareness are not' do
+    body = {
+      'room' => { 'npcs' => [{ 'id' => 'omar', 'habits' => { 'writesDown' => true } }] },
+      'stray' => { 'id' => 'len', 'npcType' => 'person', 'role' => 'guard' },
+      'social' => { 'characters' => { 'jo' => { 'role' => 'manager' } }, 'awareness' => { 'episodes' => [] } }
+    }
+    findings = scan(body, data: habits_scenario)
+    assert_equal [[1, 'withheld_key', 'npc:omar/habits'], [1, 'withheld_key', 'npc:len/role']], summary(findings)
+    lines = AccessLeakScanner.new(habits_scenario).report_lines(findings)
+    lines.each { |line| refute_includes line, 'writesDown' }
+    lines.each { |line| refute_includes line, 'guard' }
   end
 
   private
