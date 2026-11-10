@@ -10,6 +10,8 @@ import { initializeModals } from './ui/modals.js';
 
 // Import character registry system
 import './systems/character-registry.js';
+// Publishes the strict evaluator for a scenario action's `condition` (apply-actions.js).
+import './utils/global-condition.js';
 
 // Import minigame framework
 import './minigames/index.js';

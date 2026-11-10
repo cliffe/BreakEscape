@@ -810,6 +810,22 @@ Control how observation text is displayed using `observationDisplay`:
 | `show_end_screen` | `title`, `body`, `buttonText`, `outcome` | Shows scenario end screen |
 | `hint` | `message`, `title` (optional) | Shows an information toast. It lasts by the length of `message`: 300 ms per word, at least 6 s and at most 12 s (20 words or fewer give 6 s, 40 or more give 12 s), so keep a hint under 40 words. Like every information toast it is held while a conversation or a full-screen panel is open and shown when that closes |
 
+#### Conditional actions: `condition`
+
+Any action, in any list the engine runs (`triggerOnInteract`, a timer's `actions`, `onConfirm`), may carry a `condition` on the global variables. The action runs only while the condition holds, and it is read when the action is reached, so an earlier action in the same list can change the answer. Use it to make one click say one thing per state:
+
+```json
+"triggerOnInteract": [
+  { "type": "hint", "condition": "globalVars.pin_read", "message": "You have already read the PIN from here." },
+  { "type": "hint", "condition": "!globalVars.pin_read && !globalVars.guard_at_door", "message": "Nobody is at the keypad yet." },
+  { "type": "emit_event", "event_name": "player_watched_reader" }
+]
+```
+
+- **Syntax.** Terms joined by `&&` and `||` (`||` binds looser), with no parentheses. A term is `globalVars.x`, `!globalVars.x`, or `globalVars.x` compared (`===`, `!==`, `>`, `<`, `>=`, `<=`) with `true`, `false`, `null`, a number or a quoted string.
+- **It is strict.** A condition that is not a string, is empty, or has a term outside that syntax (a negated comparison such as `!globalVars.x === true`, a bare name, parentheses) never holds, so the action never runs. The validator reports these as errors, and warns about a global that is not declared in `globalVariables`.
+- **The server does not read it.** Only the page evaluates the condition. A `give_item` is still a declared grant on the server whatever its condition says (the validator warns), and a flag reward is applied by the server as well as the page, so a `condition` on a `flagRewards` entry is a validator error. Never use a condition as the thing that protects access.
+
 **Note**: The deprecated `onInteract` field (object format) is still functional but will log warnings. Migrate to `triggerOnInteract` + `observationDisplay` for new scenarios.
 
 #### Item plants: `requiresItem`

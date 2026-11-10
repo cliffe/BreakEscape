@@ -5052,6 +5052,7 @@
                 "enum": ["set_global", "emit_event", "complete_task", "unlock_task", "unlock_aim", "confirm_action", "unlock_object", "unlock_door", "hint", "give_item", "tint_objects", "show_end_screen", "lighting_dip", "grant_fact", "add_capture", "set_costume", "clear_costume"]
               },
               "key": { "type": "string" },
+              "condition": { "type": "string", "minLength": 1, "description": "Any action: run it only while this holds, read when the action is reached. globalVars terms (globalVars.x, !globalVars.x, or a comparison with true, false, null, a number or a quoted string) joined by && and ||, no parentheses. Anything else never holds. Read by the client only: the server ignores it." },
               "message": { "type": "string", "description": "hint: the toast text. Its heading is `title` (default 'Intelligence Received')." },
               "fact": { "type": "string", "description": "grant_fact: the social intel fact id (00 S15)" },
               "value": {},

@@ -5646,6 +5646,85 @@ def check_engine_limits(json_data)
   walk.call(json_data.reject { |k, _| k == 'objectives' }, '', nil)
 
   issues.concat(check_or_in_global_conditions(json_data))
+  issues.concat(check_action_conditions(json_data))
+  issues
+end
+
+# A scenario action's `condition` (apply-actions.js). The client reads it strictly
+# (utils/global-condition.js parseActionCondition): anything outside the grammar below
+# does not hold, so the action is silently never run. This is the same grammar, term
+# by term, so what passes here is what the engine evaluates.
+ACTION_CONDITION_NAME = /\A(!\s*)*globalVars\.\w+\z/
+ACTION_CONDITION_COMPARE = /\AglobalVars\.\w+\s*(===|!==|>=|<=|>|<)\s*(true|false|null|-?\d+(?:\.\d+)?|'[^'"]*'|"[^'"]*")\z/
+ACTION_LIST_KEYS = %w[actions triggerOnInteract onConfirm completionActions flagRewards].freeze
+
+# nil when the condition is in the grammar, else what is wrong with it.
+def action_condition_problem(condition)
+  return "is not a string (#{condition.inspect})" unless condition.is_a?(String)
+  return 'is empty' if condition.strip.empty?
+  condition.split('||', -1).each do |alt|
+    return "has an empty term (a stray '&&' or '||')" if alt.strip.empty?
+    alt.split('&&', -1).each do |term|
+      t = term.strip
+      return "has an empty term (a stray '&&' or '||')" if t.empty?
+      next if t.match?(ACTION_CONDITION_NAME) || t.match?(ACTION_CONDITION_COMPARE)
+      return "has a term the engine cannot read: \"#{t}\""
+    end
+  end
+  nil
+end
+
+# Every action list the engine runs through applyActions: timers[].actions,
+# triggerOnInteract, onInteract.actions, confirm_action onConfirm, the ESD minigame's
+# completionActions and conditionalActions[].actions, and flagRewards. An entry of a
+# conditionalActions list is not an action (its own `condition` belongs to the
+# minigame), so only the entries of the keys above are read.
+def check_action_conditions(json_data)
+  issues = []
+  declared = (json_data['globalVariables'] || {}).keys
+  walk = nil
+  walk = lambda do |node, path|
+    case node
+    when Array
+      node.each_with_index { |v, i| walk.call(v, "#{path}[#{i}]") }
+    when Hash
+      node.each do |k, v|
+        child = path.empty? ? k.to_s : "#{path}/#{k}"
+        if ACTION_LIST_KEYS.include?(k) && v.is_a?(Array)
+          v.each_with_index do |action, i|
+            next unless action.is_a?(Hash) && action.key?('condition') && action.key?('type')
+            where = "'#{child}[#{i}]' (#{action['type']})"
+            cond = action['condition']
+            if k == 'flagRewards'
+              issues << "❌ INVALID: #{where} is a flag reward with a 'condition'. The server applies flag rewards " \
+                        "and does not read an action's condition, so the reward would be skipped on the page and " \
+                        "granted on the server. Remove the condition; gate the reward by which flag earns it."
+              next
+            end
+            if (problem = action_condition_problem(cond))
+              issues << "❌ INVALID: #{where} condition #{problem}. An action's condition is joined by '&&' and '||' " \
+                        "(no parentheses) from terms of the form globalVars.x, !globalVars.x, or globalVars.x " \
+                        "===, !==, >, <, >=, <= true, false, null, a number or a quoted string. The engine " \
+                        "(global-condition.js parseActionCondition) treats anything else as not holding, so this " \
+                        "action never runs."
+              next
+            end
+            cond.scan(/globalVars\.(\w+)/).flatten.uniq.each do |gv|
+              next if declared.include?(gv)
+              issues << "⚠️ WARNING: #{where} condition uses globalVars.#{gv}, which is not in globalVariables. " \
+                        "Declare it, or the condition reads a name nothing is known to set."
+            end
+            if action['type'] == 'give_item'
+              issues << "⚠️ WARNING: #{where} is a give_item with a 'condition'. The server does not read the condition: " \
+                        "the item is a declared grant whatever it says, and only the page skips it."
+            end
+          end
+        end
+        walk.call(v, child)
+      end
+    end
+  end
+  walk.call(json_data, '')
   issues
 end
 
@@ -5699,6 +5778,8 @@ def check_or_in_global_conditions(json_data)
         child_ctx = :torch if k == 'torch' && ctx.nil?
         child_ctx = :chat_background if k == 'chatBackground' && ctx.nil?
         child_ctx = :or_ok if %w[timeline statusRows portraitVariants].include?(k) && ctx.nil?
+        # An action's condition: '||' is supported, and check_action_conditions reads the syntax
+        child_ctx = :js if ACTION_LIST_KEYS.include?(k)
         walk.call(v, path.empty? ? k.to_s : "#{path}/#{k}", child_ctx)
       end
     end

@@ -7,6 +7,7 @@
 //   before it could be read).
 // - any action may carry a `condition` on the globals; one that does not hold is skipped, and
 //   it is read when the action is reached (lab_physical_pentest T4: one toast per outcome).
+//   It is read strictly: a malformed or non-string condition never runs the action.
 // Run with: node test/js/apply-actions-hint-give.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -80,8 +81,9 @@ test('hint: without the rule the toast keeps its default duration', async () => 
 });
 
 test('an action with a condition runs only while it holds, read when the action is reached', async () => {
-    const { evaluateGlobalCondition } = await import(dataUrl(readFileSync(join(js, 'utils/conditional-text.js'), 'utf8')));
-    assert.equal(window.evaluateGlobalCondition, evaluateGlobalCondition, 'conditional-text.js publishes the evaluator for apply-actions');
+    const { evaluateActionCondition } = await import(dataUrl(readFileSync(join(js, 'utils/global-condition.js'), 'utf8')));
+    assert.equal(window.evaluateActionCondition, evaluateActionCondition, 'global-condition.js publishes the strict evaluator for apply-actions');
+    assert.match(readFileSync(join(js, 'main.js'), 'utf8'), /^import '\.\/utils\/global-condition\.js';$/m, 'main.js loads it wherever actions run');
     const alerts = [];
     window.gameAlert = (...a) => alerts.push(a[0]);
     const emitted = [];
@@ -113,13 +115,55 @@ test('an action with a condition runs only while it holds, read when the action 
     alerts.length = 0;
     await quietly(() => applyActions([...shelves].reverse()));
     assert.deepEqual(alerts, ['already read']);
-    // No condition, an empty one, or no evaluator loaded: the action runs, as before
+    // Only an absent key means "always". An empty condition, and a condition with no
+    // evaluator loaded, do not hold: the action is skipped
     alerts.length = 0;
     window.gameState.globalVariables = {};
     await quietly(() => applyActions([{ type: 'hint', message: 'a' }, { type: 'hint', condition: '  ', message: 'b' }]));
-    delete window.evaluateGlobalCondition;
-    await quietly(() => applyActions([{ type: 'hint', condition: 'globalVars.never', message: 'c' }]));
-    window.evaluateGlobalCondition = evaluateGlobalCondition;
-    assert.deepEqual(alerts, ['a', 'b', 'c']);
+    delete window.evaluateActionCondition;
+    await quietly(() => applyActions([{ type: 'hint', condition: '!globalVars.never', message: 'c' }, { type: 'hint', message: 'd' }]));
+    window.evaluateActionCondition = evaluateActionCondition;
+    assert.deepEqual(alerts, ['a', 'd']);
     window.eventDispatcher.emit = () => {};
+});
+
+test('an action condition is read strictly: a malformed or non-string one never runs the action', async () => {
+    const { evaluateActionCondition, parseActionCondition } = await import(dataUrl(readFileSync(join(js, 'utils/global-condition.js'), 'utf8')));
+    window.evaluateActionCondition = evaluateActionCondition;
+    const alerts = [];
+    window.gameAlert = (...a) => alerts.push(a[0]);
+    const shown = async (condition, globals) => {
+        alerts.length = 0;
+        window.gameState.globalVariables = { ...globals };
+        await quietly(() => applyActions([{ type: 'hint', condition, message: 'x' }]));
+        return alerts.length === 1;
+    };
+    // Not a string: never, whatever its truthiness
+    for (const bad of [false, true, null, 0, 1, {}, [], ['globalVars.a']]) {
+        assert.equal(await shown(bad, { a: true }), false, `condition ${JSON.stringify(bad)}`);
+    }
+    // A negation with a space is a negation (the older evaluator read it as always true)
+    assert.equal(await shown('! globalVars.x', { x: true }), false);
+    assert.equal(await shown('! globalVars.x', {}), true);
+    assert.equal(await shown('!!globalVars.x', { x: 1 }), true);
+    // || is an or (the older evaluator read the first name only), binding looser than &&
+    assert.equal(await shown('globalVars.a || globalVars.b', { b: true }), true);
+    assert.equal(await shown('globalVars.a || globalVars.b', {}), false);
+    assert.equal(await shown('globalVars.a && globalVars.c || globalVars.b', { a: true }), false);
+    assert.equal(await shown('globalVars.a && globalVars.c || globalVars.b', { a: true, c: true }), true);
+    // Comparisons with a literal
+    assert.equal(await shown('globalVars.n >= 3 && globalVars.s === "on"', { n: 3, s: 'on' }), true);
+    assert.equal(await shown("globalVars.n < 3 || globalVars.s !== 'on'", { n: 3, s: 'on' }), false);
+    assert.equal(await shown('globalVars.flag !== true', {}), true);
+    // Outside the grammar: never, in every state (each of these ran the action, or read
+    // something else, under the older evaluator)
+    const malformed = ['!globalVars.x === true', 'globalVars.x == true', 'globalVars.x === maybe', 'x', 'vars.x',
+        '(globalVars.x)', 'globalVars.x &&', '|| globalVars.x', 'globalVars.x & globalVars.y', 'globalVars.x === true === true',
+        'data.x === true', 'globalVars.', 'not globalVars.x', 'globalVars.x.includes("a")'];
+    for (const condition of malformed) {
+        assert.equal(parseActionCondition(condition), null, condition);
+        for (const globals of [{}, { x: true, y: true }, { x: false }]) {
+            assert.equal(await shown(condition, globals), false, `${condition} with ${JSON.stringify(globals)}`);
+        }
+    }
 });
