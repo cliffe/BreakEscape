@@ -39,7 +39,18 @@ signed in now; the sessions open now are the `sessions` line.
 (they should match the server's `sessions` line), and
 `{"cmd":"eval","fn":"() => window.__test.access.workstation('dana_pc')"}` shows a PC as the
 workstation rule sees it: `owner`, `present`, `away` (`{ away, leaves }` or null), `screenLocked`
-and `lockAt`.
+and `lockAt`, and how its screen looks: `texture` (the sprite's texture key), `displayWidth`,
+`displayHeight` and `lockedLook` (the first three are null until the PC's room has loaded).
+`{"cmd":"eval","fn":"() => window.__test.access.screenTransitions()"}` lists every change of a
+screen's look, `[{ objectId, locked, sound, at }]`: the lock sound is `lockpick_set`, the unlock
+sound is `ui_confirm`, and every sound the screen module plays is in the list.
+
+**Screen state checks (H3).** The lines marked **H3** in the beats below are the screen state
+checks of the lab follow-up. A full Run 1 or Run 2 makes them as it goes. A tester sent to do H3
+alone follows the section "H3: screen states in the other scenarios" near the end, which is a
+shorter route through the same checks. In this scenario no PC has locked screen art (the sprites
+are ordinary office PCs), so a PC's `texture` and display size never change: only `lockedLook`,
+the transitions and the sounds follow the state.
 
 ## How the owners behave
 
@@ -107,6 +118,8 @@ Server record afterwards: no session.
    the coffee machine. Expect her desktop: "Signed in as Dana Reyes (dreyes)", "Staff notice.txt"
    and "Q3 forecast.txt". In `drain`: `workstation_owner_left:dana_pc` (`screenLocked` false),
    `workstation_accessed:dana_pc`, and `pc_signed_in` with `via: "claim"`.
+   **H3:** `screenTransitions()` has no `dana_pc` entry (her screen stayed open, so nothing
+   changed and nothing sounded), and `workstation('dana_pc')` has `lockedLook` false.
 2. `take` "Q3 forecast.txt" and Copy it: it stays listed and joins the inventory. Task
    `t2_claim_and_copy` complete (a copy of the forecast from `dana_pc` during the first claim
    there). Leave the desktop open.
@@ -119,7 +132,8 @@ Server record afterwards: `sessions 1: dana_pc = dana (claim)`; `signedInPcs` ha
 1. Wait for `npc_returned_post:dana` (about 45 s at the machine, then the walk). The open desktop
    closes with the toast "Dana Reyes is back at the desk". `drain`: `workstation_owner_returned:dana_pc`
    and `pc_signed_out` with `reason: "owner_returned"`. Task `t3_owner_returns` complete (only for
-   the end of the first claim at `dana_pc`).
+   the end of the first claim at `dana_pc`). **H3:** still no `dana_pc` entry in
+   `screenTransitions()`.
 2. `interact` `dana_pc`: "Dana Reyes is using this PC." again (`t1` does not complete again: the
    PC has been signed in at).
 
@@ -130,12 +144,20 @@ Server record afterwards: `sessions` without `dana_pc`; `signedInPcs` still has 
 Room: `ian_room`, PC `ian_pc` (owner Ian Shaw, `lockChance: 1`).
 
 1. Go to `ian_room` (back through the lobby). Read `sign_t4`. Read "Note: my sign-in" in
-   `ian_drawer` (Ian's username and password) while Ian is still at his desk.
-2. `moveToNear` `ian_pc`. Wait for `npc_left_post:ian`. `drain`, `interact` `ian_pc`: the sign-in
+   `ian_drawer` (Ian's username and password) while Ian is still at his desk. **H3:** note
+   `workstation('ian_pc')`: its `texture`, `displayWidth` and `displayHeight`, and `lockedLook`
+   false.
+2. `moveToNear` `ian_pc`. Wait for `npc_left_post:ian`. **H3:** before any click,
+   `screenTransitions()` has one `ian_pc` entry, `locked: true` with `sound: "lockpick_set"`, and
+   `workstation('ian_pc')` has `lockedLook` true with the same `texture` and display size as in
+   step 1. `drain`, `interact` `ian_pc`: the sign-in
    screen. `drain`: `workstation_locked_attempt:ian_pc` and `pc_signin_shown` with
    `reason: "locked"`; no `pc_signed_in`.
 3. Choose Ian's tile and submit the password from the note: his desktop. Task `t4_lock_chance_1`
-   complete.
+   complete. **H3 (UNCONFIRMED in the running game, expected from the rule):** a password session
+   hides the locked look, silently: `lockedLook` is now false and the newest `ian_pc` transition
+   is `locked: false` with `sound: null`. From here on `ian_pc` shows no locked look in this game,
+   so Ian's leave and return with sounds are checked in Run 2 (step "H3 Ian"), not here.
 4. Leave the desktop open and wait for `npc_returned_post:ian`: the desktop stays open and
    `window.__test.access.sessions()` still has `ian_pc` (a password session is not ended by the
    owner's return). Close it, `toasts`, `interact` `ian_pc`: "Ian Shaw is using this PC."
@@ -186,6 +208,8 @@ Room: `omar_room` (north of `dana_room`), PC `omar_pc` (owner Omar Haddad, `lock
 
 1. Go to `omar_room` through `dana_room`. Read `sign_t6`. `moveToNear` `omar_pc`. Wait for
    `npc_left_post:omar`, then `interact` `omar_pc`: his desktop by a claim. Leave it open.
+   **H3:** `screenTransitions()` has no `omar_pc` entry yet (he left his screen open), and note
+   `workstation('omar_pc')`: `texture`, display size, `lockedLook` false.
    `window.__test.access.workstation('omar_pc')` shows `lockAt` (the needs clock at his leave plus
    300000 ms).
 2. Manual clock (exercised, not earned): `{"cmd":"eval","fn":"() => window.__test.needs.setManualClock(true)"}`,
@@ -194,17 +218,40 @@ Room: `omar_room` (north of `dana_room`), PC `omar_pc` (owner Omar Haddad, `lock
 3. `toasts`, `drain`, then `{"cmd":"eval","fn":"() => window.__test.needs.step(60000)"}`: the desktop
    closes with the toast "The screen locked". `drain`: `workstation_auto_locked:omar_pc` and
    `pc_signed_out` with `reason: "auto_locked"`. Task `t6_auto_lock_5` complete.
+   **H3:** `screenTransitions()` now has exactly one `omar_pc` entry, `locked: true` with
+   `sound: "lockpick_set"` (you are in his room); `lockedLook` is true; `texture` and the display
+   size are unchanged.
 4. `interact` `omar_pc`: the sign-in screen (`pc_signin_shown` with `reason: "locked"`). Close it.
 5. Hand the clock back: `{"cmd":"eval","fn":"() => window.__test.needs.setManualClock(false)"}`.
 
 Server record afterwards: `sessions` had `omar_pc = omar (claim)` after step 1 and has no
 `omar_pc` after step 3; `signedInPcs` has `omar_pc`.
 
+### H3 Ian: leave and return before any sign-in
+
+Room: `ian_room`, on the way to `kai_room`. Run 2 never signs in at `ian_pc`, so its screen
+follows Ian. This takes about two minutes. Do not click `ian_pc` and do not sign in.
+
+1. Enter `ian_room` from the lobby. At once note `workstation('ian_pc')`: `texture`, `displayWidth`,
+   `displayHeight`, `lockedLook` false. Note how many entries `screenTransitions()` has for
+   `ian_pc` (none).
+2. Wait for `workstation_owner_left:ian_pc`
+   (`{"cmd":"waitFor","kind":"event","name":"workstation_owner_left:ian_pc","timeoutMs":90000}`,
+   `cmd.sh` timeout 100): `data.screenLocked` is true. Then: one new `ian_pc` transition,
+   `locked: true`, `sound: "lockpick_set"`; `lockedLook` true; `texture` and display size as in
+   step 1.
+3. Wait for `workstation_owner_returned:ian_pc` (same form, about 50 s): `data.wasLocked` is true.
+   Then: one more `ian_pc` transition, `locked: false`, `sound: "ui_confirm"`; `lockedLook` false;
+   `texture` and display size as in step 1. Two `ian_pc` transitions in all.
+
+Stepping the manual clock in T6 moves every owner's clock; if Ian's room was loaded then (it is
+not on this route), count his transitions from the number noted in step 1.
+
 ### 8. T7 Knocked out
 
 Room: `kai_room` (east of `ian_room`), PC `kai_pc` (owner Kai Brennan, `lockChance: 0`).
 
-1. Go to `kai_room` through the lobby and `ian_room`. Read `sign_t7`. `drain`, then
+1. Go on to `kai_room`. Read `sign_t7`. `drain`, then
    `{"cmd":"debugKO","id":"kai"}` while Kai is at his desk (exercised, not earned).
 2. `drain`: `workstation_owner_left:kai_pc` with `reason: "ko"` and `screenLocked` false.
 3. `moveToNear` `kai_pc`, `interact`: Kai's desktop by a claim. Task `t7_knocked_out` complete.
@@ -255,11 +302,76 @@ Room: `hot_desk_room`, PC `hot_desk` (no owner, no policy).
 1. Read `sign_t10`. `drain`, `moveToNear` `hot_desk`, `interact`: the sign-in screen, no claim, no
    `workstation_*` event. `window.__test.access.workstation('hot_desk')` shows `owner: null`, so
    no desk light shows on it (`lighting.js` lights only an owned workstation's desk). Task `t10_unowned` complete. Close it.
+   **H3:** `hot_desk` is unchanged: `lockedLook` false, and `screenTransitions()` has no
+   `hot_desk` entry at any point in the run.
 
 Server record afterwards: no session.
 
 At the end of Run 2: `sync`, the full `verify-run.rb <game_id>`, the leak check over the whole
 file, `quit`. Tasks `t6` to `t10` complete; `t1` to `t5` and `t11` stay open (Run 1).
+
+## H3: screen states in the other scenarios
+
+The H3 run of the lab follow-up: two short games, one here and one on `test_needs_sims`. It checks
+that the lock and unlock sounds and the `lockedLook` flag follow every owned workstation, that no
+other scenario's art changed, and that the drop label shows. Use the setup at the top of this file
+(a new game each, its own scratch folder), mark each numbered check PASS or FAIL, and end each game
+with `sync`, the full `verify-run.rb <game_id>`, the leak check and `session-stop.sh`. Send one
+command at a time; `waitFor` on a global takes `"expected"`.
+
+Helper, used throughout (replace the id):
+`{"cmd":"eval","fn":"() => ({ pc: window.__test.access.workstation('ian_pc'), transitions: window.__test.access.screenTransitions() })"}`
+
+### H3a. `test_access_sessions` (new game, about 8 minutes)
+
+Do not sign in with a password anywhere in this game: a password session hides the locked look at
+that PC from then on.
+
+1. **Ian (`ian_room`, east of the lobby).** Go there first and do "H3 Ian" above, steps 1 to 3.
+2. **Dana (`dana_room`, north of the lobby).** Do beat 1 (T1) step 2, beat 2 (T2) step 1 and beat
+   3 (T3) step 1 with their **H3** lines: the claim works, and there is never a `dana_pc`
+   transition. The file copy in T2 step 2 is not needed.
+3. **Omar (`omar_room`, north of `dana_room`).** Do beat 7 (T6) steps 1 to 5 with their **H3**
+   lines: no transition on his leave, exactly one (`locked: true`, `lockpick_set`) when the auto
+   lock fires.
+4. **Hot desk (`hot_desk_room`, west of the lobby).** Do beat 11 (T10) with its **H3** line.
+5. Last, read `screenTransitions()` once more. It holds only `ian_pc` and `omar_pc` entries
+   (Priya's room was never loaded; if you passed through it, a `priya_pc` locked entry on her
+   leave is correct and is not a failure). No entry has a sound other than `lockpick_set`,
+   `ui_confirm` or null.
+
+Tasks `t1`, `t3`, `t6` and `t10` complete; that is expected and is not what this run checks.
+
+### H3b. `test_needs_sims` (new game, about 4 minutes)
+
+```bash
+PLAYTEST_PORT=3001 BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/new-game.rb test_needs_sims
+```
+
+Start the session as in the setup, then
+`{"cmd":"bootstrap","tutorial":"decline","resume":"new","autoBrief":true}`. You start in `office`,
+where Amara Okoye's PC `amara_pc` is. She locks her screen every time she leaves.
+
+1. At once: `workstation('amara_pc')`: note `texture`, `displayWidth`, `displayHeight`;
+   `lockedLook` false. `screenTransitions()` is empty.
+2. The drop label. Two start items are droppable ("Parcel for Amara", "Dirty Mugs"). Read the
+   hover labels:
+   `{"cmd":"eval","fn":"() => [...document.querySelectorAll('.inventory-item')].map(img => { img.dispatchEvent(new MouseEvent('mouseenter')); const t = document.getElementById('hud-info-label')?.textContent; img.dispatchEvent(new MouseEvent('mouseleave')); return t; })"}`
+   They read "Parcel for Amara (click to drop)" and "Dirty Mugs (click to drop)". Items that are
+   not droppable keep their plain names. Do not drop anything yet: a dropped parcel changes what
+   Amara does.
+3. Stay in `office`. Wait for
+   `{"cmd":"waitFor","kind":"event","name":"workstation_owner_left:amara_pc","timeoutMs":240000}`
+   (`cmd.sh` timeout 250; how long she takes to leave is UNCONFIRMED): `data.screenLocked` is true.
+   Then one `amara_pc` transition, `locked: true`, `sound: "lockpick_set"`; `lockedLook` true;
+   `texture` and display size exactly as in step 1.
+4. If she returns within two minutes (`workstation_owner_returned:amara_pc`, `wasLocked` true): a
+   second `amara_pc` transition, `locked: false`, `sound: "ui_confirm"`, and the same `texture`
+   and size. If she does not, say so and stop there; step 3 is the required check.
+
+If the other owners in the room (`sanjay_pc`, `tom_pc`) leave during the run, their transitions
+follow the same rule (a locked entry with the lock sound when the screen locks, none when it stays
+open). Record them; they are not failures.
 
 ## Why each task completes only from its own beat
 
