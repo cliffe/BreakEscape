@@ -514,9 +514,7 @@ export function handleUnlock(lockable, type) {
                 // Opt-in hint: a scenario may author `lockedHint` on the door/room to tell the
                 // player where the key comes from (SE lab F17). Doors without it keep the plain
                 // "Requires key" line unchanged, so shipped missions behave exactly as before.
-                const lockedHint = lockable.lockedHint || lockable.doorProperties?.lockedHint ||
-                                   lockable.scenarioData?.lockedHint || lockable.properties?.lockedHint || '';
-                window.gameAlert(lockedHint ? `Requires key. ${lockedHint}` : `Requires key`, 'error', 'Locked', lockedHint ? 5500 : 4000);
+                window.gameAlert(appendLockedHint('Requires key', lockable), 'error', 'Locked', lockedHintDuration(lockable, 4000, 'Requires key'));
             }
             break;
 
@@ -832,11 +830,11 @@ export function handleUnlock(lockable, type) {
                         window.gameAlert('Card accepted', 'success', 'Access Granted', 3000);
                     } else if (outcome === 'uid_only') {
                         playUISound('reject');
-                        window.gameAlert(appendLockedHint('Reader requires full authentication', lockable), 'error', 'Access Denied', lockedHintDuration(lockable, 4000));
+                        window.gameAlert(appendLockedHint('Reader requires full authentication', lockable), 'error', 'Access Denied', lockedHintDuration(lockable, 4000, 'Reader requires full authentication'));
                         emitDoorUnlockFailed('uid_only');
                     } else if (outcome === 'denied') {
                         playUISound('reject');
-                        window.gameAlert(appendLockedHint('Access denied', lockable), 'error', 'Access Denied', lockedHintDuration(lockable, 4000));
+                        window.gameAlert(appendLockedHint('Access denied', lockable), 'error', 'Access Denied', lockedHintDuration(lockable, 4000, 'Access denied'));
                         emitDoorUnlockFailed('wrong_card');
                     } else {
                         window.gameAlert('Failed to verify access', 'error', 'Error', 3000);
@@ -848,7 +846,7 @@ export function handleUnlock(lockable, type) {
             // screen (m07 U9)
             else if (hasCloner && keycards.length === 0 && savedCards.length === 0) {
                 console.log('RFID CLONER EMPTY: no keycards, no saved cards');
-                window.gameAlert(appendLockedHint('Access denied. No keycard, and nothing saved on the cloner.', lockable), 'error', 'Access Denied', lockedHintDuration(lockable, 4000));
+                window.gameAlert(appendLockedHint('Access denied. No keycard, and nothing saved on the cloner.', lockable), 'error', 'Access Denied', lockedHintDuration(lockable, 4000, 'Access denied. No keycard, and nothing saved on the cloner.'));
                 emitDoorUnlockFailed('no_card');
             }
             // If player has RFID cloner, open minigame to emulate or read cards
@@ -858,13 +856,13 @@ export function handleUnlock(lockable, type) {
             // No valid keycard and no cloner
             else {
                 console.log('NO RFID CARDS OR CLONER AVAILABLE');
-                window.gameAlert(appendLockedHint('Requires RFID keycard', lockable), 'error', 'Access Denied', lockedHintDuration(lockable, 4000));
+                window.gameAlert(appendLockedHint('Requires RFID keycard', lockable), 'error', 'Access Denied', lockedHintDuration(lockable, 4000, 'Requires RFID keycard'));
                 emitDoorUnlockFailed('no_card');
             }
             break;
 
         default:
-            window.gameAlert(appendLockedHint(`This ${type} requires ${lockRequirements.lockType} to unlock.`, lockable), 'info', 'Locked', lockedHintDuration(lockable, 4000));
+            window.gameAlert(appendLockedHint(`This ${type} requires ${lockRequirements.lockType} to unlock.`, lockable), 'info', 'Locked', lockedHintDuration(lockable, 4000, `This ${type} requires ${lockRequirements.lockType} to unlock.`));
             break;
     }
 }
