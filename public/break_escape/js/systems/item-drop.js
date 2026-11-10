@@ -20,8 +20,17 @@
  * (inventory.js -> RoomStateSync.removeItemFromRoom); an NPC consuming it does
  * the same (npc-needs.js consumeHeld).
  *
+ * Picture: the item's own, chosen as the tray and a reload choose it (its
+ * `sprite`, else its `type`; inventory.js inventoryImageKey, rooms.js). The picture
+ * is resolved before the drop is placed, because its size decides where it sits
+ * (table-drop.js snaps by sprite size). One that is not loaded yet is loaded on
+ * demand: the neutral `dropped_item` picture stands in at the feet while it loads,
+ * and the placement, the save and the item_dropped event wait for it. Only a
+ * missing file keeps the neutral picture, never a key.
+ *
  * Reached as window.dropInventoryItem (interactions.js); game.js imports it
- * dynamically. Its one static import, table-drop.js, has none of its own.
+ * dynamically. Its one static import, table-drop.js, has none of its own, so it
+ * can be tested in node.
  */
 
 import { snapToTable, spriteRect, savedPosition, placedDepth, tableUnder, edgeCell, TABLE_DEPTH_STEP } from './table-drop.js';
@@ -55,6 +64,59 @@ function roomObstacles(room, except) {
 
 const isMagnet = data => !!(data?.affordance && typeof data.affordance.magnet === 'object' && data.affordance.magnet);
 
+/** The neutral picture of a dropped item whose own picture file is missing. */
+export const DROPPED_ITEM_TEXTURE = 'dropped_item';
+
+/**
+ * The picture a dropped item shows: its `sprite`, else its `type`. The same rule
+ * as inventory.js inventoryImageKey and the room builder (rooms.js), so the
+ * tray, the floor and a reload agree.
+ */
+export function dropTextureKey(data) {
+    const named = data?.sprite;
+    if (typeof named === 'string' && named) return named;
+    return (typeof data?.type === 'string' && data.type) ? data.type : DROPPED_ITEM_TEXTURE;
+}
+
+/**
+ * Make sure `key` is a loaded texture, then call apply(textureKey) once: at once
+ * when it is loaded, after an on-demand load of objects/<key>.png otherwise (the
+ * pattern of rooms.js for a variant picture), and with DROPPED_ITEM_TEXTURE
+ * (loaded the same way) when that file is missing. Returns 'ready' when apply ran
+ * at once, 'loading' otherwise.
+ */
+export function ensureDropTexture(scene, key, apply) {
+    const textures = scene?.textures;
+    const load = scene?.load;
+    if (textures?.exists(key)) { apply(key); return 'ready'; }
+    if (!load) { apply(DROPPED_ITEM_TEXTURE); return 'ready'; }
+    let done = false;
+    const loadOne = (k, onOk, onFail) => {
+        const onError = (file) => {
+            if (file?.key !== k) return;
+            load.off('loaderror', onError);
+            load.off(`filecomplete-image-${k}`, onComplete);
+            onFail?.();
+        };
+        const onComplete = () => {
+            load.off('loaderror', onError);
+            onOk();
+        };
+        load.on('loaderror', onError);
+        load.once(`filecomplete-image-${k}`, onComplete);
+        load.image(k, `objects/${k}.png`);
+        load.start();
+    };
+    const finish = (k) => { if (!done) { done = true; apply(k); } };
+    const fallback = () => {
+        if (textures?.exists(DROPPED_ITEM_TEXTURE)) { finish(DROPPED_ITEM_TEXTURE); return; }
+        loadOne(DROPPED_ITEM_TEXTURE, () => finish(DROPPED_ITEM_TEXTURE), () => finish('__DEFAULT'));
+    };
+    if (key === DROPPED_ITEM_TEXTURE) { fallback(); return 'loading'; }
+    loadOne(key, () => finish(key), fallback);
+    return 'loading';
+}
+
 /** True when a clicked inventory element should be dropped rather than used. */
 export function isDroppableInventoryItem(sprite, inventoryItems) {
     if (!sprite?.scenarioData || sprite.scenarioData.droppable !== true) return false;
@@ -73,7 +135,7 @@ export function dropPoint(playerFeet, pathfindingManager) {
  * Resolves true when both succeeded. Never throws; a failed sync leaves the
  * local drop in place and the server still holding the item in the inventory.
  */
-export async function persistDrop(w, roomId, room, obj, worldData, texture, at, position) {
+export async function persistDrop(w, roomId, room, obj, worldData, at, position) {
     const gameId = w.breakEscapeConfig?.gameId;
     if (!gameId || !w.RoomStateSync || !worldData.id) return false;
     try {
@@ -81,7 +143,8 @@ export async function persistDrop(w, roomId, room, obj, worldData, texture, at, 
             id: worldData.id,
             type: worldData.type,
             name: worldData.name,
-            texture,
+            // No texture: the saved drop is drawn from the item's own sprite or type on a
+            // reload (rooms.js), and the server keeps no client texture (game.rb).
             x: at.x,
             y: at.y,
             // Room-relative tile position of the top-left (and elevation on a table):
@@ -122,35 +185,22 @@ export function dropInventoryItem(sprite) {
     }
     const data = { ...(sprite.scenarioData || {}) };
     const feet = { x: player.body?.center?.x ?? player.x, y: player.body?.center?.y ?? player.y };
-    let at = dropPoint(feet, w.pathfindingManager);
+    const at0 = dropPoint(feet, w.pathfindingManager);
 
-    let texture = data.texture || sprite.texture?.key || data.type || 'key';
-    if (!scene.textures.exists(texture)) texture = scene.textures.exists(data.type) ? data.type : 'key';
+    // The item's own picture (see dropTextureKey). The tray element is a DOM <img>
+    // with no texture, and its `type` (for a device, "usb") is often no picture at all.
+    const textureKey = dropTextureKey(data);
+    const loaded = scene.textures.exists(textureKey);
+    const firstTexture = loaded ? textureKey
+        : (scene.textures.exists(DROPPED_ITEM_TEXTURE) ? DROPPED_ITEM_TEXTURE : '__DEFAULT');
 
     if (!w.removeFromInventory?.(sprite)) {
         console.warn('[drop] item was not in the inventory');
         return null;
     }
 
-    const obj = scene.add.sprite(at.x, at.y, texture);
+    const obj = scene.add.sprite(at0.x, at0.y, firstTexture);
     obj.setOrigin(0.5, 0.5);
-    const size = { w: obj.displayWidth || TILE, h: obj.displayHeight || TILE };
-    // Slice 23: a magnet beside a table goes on the table top
-    let snap = null;
-    if (isMagnet(data)) {
-        const tables = roomTables(room, scene.cache?.json?.get?.('tableSurfaces'));
-        const pm = w.pathfindingManager;
-        const nw = pm?.findNearestWalkableWorldCell ? (x, y, r) => pm.findNearestWalkableWorldCell(x, y, r) : null;
-        // Only a table someone can stand at (eaters use it from its edge)
-        const usable = nw ? (t => !!edgeCell({ x: feet.x, y: t.y }, t, tables, nw)) : null;
-        snap = snapToTable(feet, tables, size, roomObstacles(room, obj), usable);
-    }
-    // Whole-pixel top-left, so the saved position reloads to the same place
-    const left = snap ? snap.left : Math.round(at.x - size.w / 2);
-    const top = snap ? snap.top : Math.round(at.y - size.h / 2);
-    const elevation = snap ? snap.elevation : 0;
-    obj.setPosition(left + size.w / 2, top + size.h / 2);
-    at = { x: obj.x, y: obj.y };
     const worldData = { ...data, takeable: true, active: true, visible: true, interactable: true };
     obj.scenarioData = worldData;
     obj.objectId = data.id || `dropped_${data.type || 'item'}_${Date.now()}`;
@@ -159,10 +209,9 @@ export function dropInventoryItem(sprite) {
     obj.takeable = true;
     obj.interactable = true;
     obj.roomId = roomId;
-    obj.texture = { key: texture, _phaserTexture: obj.texture };
     obj.setInteractive({ useHandCursor: true });
-    obj.elevation = elevation;
-    obj.setDepth(placedDepth(top, size.h, elevation, room.position?.y ?? 0));
+    obj.elevation = 0;
+    obj.setDepth(at0.y + (obj.displayHeight || TILE) / 2 + 0.5);
     room.objects = room.objects || {};
     room.objects[obj.objectId] = obj;
 
@@ -170,15 +219,55 @@ export function dropInventoryItem(sprite) {
         itemId: obj.objectId,
         tag: typeof worldData.needsTag === 'string' ? worldData.needsTag : null,
         roomId,
-        x: Math.round(at.x),
-        y: Math.round(at.y),
-        onTable: snap ? snap.tableId : null
+        x: Math.round(at0.x),
+        y: Math.round(at0.y),
+        onTable: null
     };
-    const position = room.position ? savedPosition(left, top, room.position, elevation) : undefined;
-    obj._dropSync = persistDrop(w, roomId, room, obj, worldData, texture, at, position);
-    w.eventDispatcher?.emit(`item_dropped:${obj.objectId}`, payload);
+
+    // Place, save and announce the drop once its own picture is on, since the table snap
+    // and the saved top-left go by the sprite's size. At once for a loaded picture.
+    const place = (key) => {
+        if (key !== firstTexture) obj.setTexture(key);
+        const size = { w: obj.displayWidth || TILE, h: obj.displayHeight || TILE };
+        // Slice 23: a magnet beside a table goes on the table top
+        let snap = null;
+        if (isMagnet(data)) {
+            const tables = roomTables(room, scene.cache?.json?.get?.('tableSurfaces'));
+            const pm = w.pathfindingManager;
+            const nw = pm?.findNearestWalkableWorldCell ? (x, y, r) => pm.findNearestWalkableWorldCell(x, y, r) : null;
+            // Only a table someone can stand at (eaters use it from its edge)
+            const usable = nw ? (t => !!edgeCell({ x: feet.x, y: t.y }, t, tables, nw)) : null;
+            snap = snapToTable(feet, tables, size, roomObstacles(room, obj), usable);
+        }
+        // Whole-pixel top-left, so the saved position reloads to the same place
+        const left = snap ? snap.left : Math.round(at0.x - size.w / 2);
+        const top = snap ? snap.top : Math.round(at0.y - size.h / 2);
+        const elevation = snap ? snap.elevation : 0;
+        obj.setPosition(left + size.w / 2, top + size.h / 2);
+        const at = { x: obj.x, y: obj.y };
+        obj.elevation = elevation;
+        obj.setDepth(placedDepth(top, size.h, elevation, room.position?.y ?? 0));
+        Object.assign(payload, { x: Math.round(at.x), y: Math.round(at.y), onTable: snap ? snap.tableId : null });
+        const position = room.position ? savedPosition(left, top, room.position, elevation) : undefined;
+        const sync = persistDrop(w, roomId, room, obj, worldData, at, position);
+        w.eventDispatcher?.emit(`item_dropped:${obj.objectId}`, payload);
+        console.log('[drop] dropped', payload);
+        return sync;
+    };
+
+    if (loaded) {
+        obj._dropSync = place(textureKey);
+    } else {
+        // Load the picture now, then place it. An item picked up again before then is
+        // left alone: nothing is saved, so the server still holds it in the inventory.
+        obj._dropSync = new Promise((resolve) => {
+            ensureDropTexture(scene, textureKey, (key) => {
+                if (!obj.scene || obj.destroyed || obj.active === false) { resolve(false); return; }
+                resolve(place(key));
+            });
+        });
+    }
     w.gameAlert?.(`Dropped ${obj.name}`, 'info', '', 1500);
-    console.log('[drop] dropped', payload);
     return payload;
 }
 

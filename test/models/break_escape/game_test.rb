@@ -180,6 +180,33 @@ module BreakEscape
       refute @game.add_item_to_room!('lab', sent, meta)
     end
 
+    # Feedback plan, section 5: a dropped item is drawn from its own sprite or type on a
+    # reload, so neither drop path keeps a client texture (the live drop once sent "key").
+    test "neither the player drop nor the NPC drop stores a client texture" do
+      device = { 'type' => 'usb', 'name' => 'BadUSB', 'id' => 'kit_deviceB', 'sprite' => 'icon_deviceB',
+                 'takeable' => true, 'droppable' => true }
+      held = { 'type' => 'launch-device', 'name' => 'Launch Device', 'id' => 'entropy_launch_device' }
+      @game.scenario_data = {
+        'startRoom' => 'lab',
+        'rooms' => { 'lab' => { 'objects' => [], 'npcs' => [{ 'id' => 'derek', 'itemsHeld' => [held] }] } }
+      }
+      @game.player_state['unlockedRooms'] = ['lab']
+      @game.player_state['inventory'] = [device.dup]
+
+      assert @game.add_item_to_room!('lab', { 'id' => 'kit_deviceB', 'type' => 'usb', 'name' => 'BadUSB',
+                                              'texture' => 'key', 'x' => 1, 'y' => 2 },
+                                     { 'source_type' => 'player_drop' })
+      assert @game.add_item_to_room!('lab', { 'id' => 'entropy_launch_device', 'type' => 'launch-device',
+                                              'name' => 'Launch Device', 'texture' => 'key', 'x' => 3, 'y' => 4 },
+                                     { 'npc_id' => 'derek' })
+
+      added = @game.player_state['room_states']['lab']['objects_added']
+      assert_equal %w[entropy_launch_device kit_deviceB], added.map { |o| o['id'] }.sort
+      added.each { |o| refute o.key?('texture'), "#{o['id']} kept a client texture" }
+      dropped = added.find { |o| o['id'] == 'kit_deviceB' }
+      assert_equal 'icon_deviceB', dropped['sprite'], 'the drop keeps the sprite a reload draws it from'
+    end
+
     test "should unlock room" do
       @game.unlock_room!('office')
       assert @game.room_unlocked?('office')

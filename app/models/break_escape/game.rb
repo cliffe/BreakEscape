@@ -417,8 +417,9 @@ module BreakEscape
         # The persisted object keeps the held item's ORIGINAL scenario id (flag-station
         # ownership, collect tasks and lock matching all key on it); the client's
         # generated drop id is only used when the scenario item has none.
-        item = held_item.deep_dup.merge(
-          item.slice('x', 'y', 'position', 'texture')
+        # No client texture: a reload draws the object from its sprite or type (rooms.js).
+        item = held_item.deep_dup.except('texture').merge(
+          item.slice('x', 'y', 'position')
         ).merge('id' => held_item['id'].presence || item['id']).merge('takeable' => true, 'interactable' => true, 'active' => true, 'visible' => true)
       end
 
@@ -435,8 +436,9 @@ module BreakEscape
           Rails.logger.warn "[BreakEscape] player_drop rejected: #{item['id'].inspect} is not a held droppable item"
           return false
         end
-        item = held_data.deep_dup.merge(
-          item.slice('x', 'y', 'position', 'texture')
+        # No client texture: a reload draws the object from its sprite or type (rooms.js).
+        item = held_data.deep_dup.except('texture').merge(
+          item.slice('x', 'y', 'position')
         ).merge('takeable' => true, 'interactable' => true, 'active' => true, 'visible' => true)
         # The same id may sit in objects_removed (a scenario object the player once
         # picked up). Keep it there so the scenario copy stays filtered; the added
