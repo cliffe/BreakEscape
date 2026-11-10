@@ -5,6 +5,7 @@ module BreakEscape
     include CarryOver
     include ScoreBreakdown
     include NetworkAccess
+    include CaptureProofs
 
     # Associations
     belongs_to :player, polymorphic: true
@@ -444,6 +445,9 @@ module BreakEscape
         # picked up). Keep it there so the scenario copy stays filtered; the added
         # copy below is the one that appears.
         player_state['room_states'][room_id]['objects_added'].reject! { |obj| obj['id'] == item['id'] }
+        # The dropped proof (section 6) and slice 9.3b's implant check read this list.
+        player_state['droppedItems'] ||= []
+        player_state['droppedItems'] << item['id'] unless player_state['droppedItems'].include?(item['id'])
       end
 
       # Generate unique ID if not provided
@@ -943,17 +947,23 @@ module BreakEscape
       # Account holders with a capture route (access model 5.6), by normalised username.
       # A scenario with no landing-page secret still gets this pass.
       by_username = account_capture_passwords
+      # An entry whose target id no capture route declares cannot have been earned (engine
+      # plan section 6), so it is skipped, and the single-secret fallback answers only for a
+      # declared one.
+      declared = declared_capture_target_ids
+      phish_targets = CaptureModel.phish_target_ids(scenario_data).to_set
 
       out = {}
       earned.each do |target_id, entry|
         next unless entry.is_a?(Hash)
         next if entry['kind'] && entry['kind'] != 'credential'
+        next unless declared.include?(target_id.to_s)
 
         address = entry['address']
         secret = by_address[address]
         secret ||= by_username[self.class.normalise_username(address)] if address.is_a?(String)
-        # The single-secret fallback counts landing-page captures only.
-        secret ||= only_secret if secret_count == 1
+        # The single-secret fallback counts landing-page captures only: a phish target's.
+        secret ||= only_secret if secret_count == 1 && phish_targets.include?(target_id.to_s)
         out[target_id] = secret if secret
       end
       out
@@ -961,7 +971,9 @@ module BreakEscape
 
     # { normalised username => password } for each room NPC with an account and a
     # capture route: an eventMappings[].addCapture on that NPC, or a usePayload (which
-    # the loader fills from creds). No other account's password is ever served.
+    # the loader fills from creds). No other account's password is ever served. In a
+    # scenario that declares capture proofs, an account whose password opens something
+    # is left out until one of its proofs holds (CaptureProofs#account_capture_served?).
     def account_capture_passwords
       out = {}
       self.class.scenario_room_npcs(scenario_data).each do |npc|
@@ -970,6 +982,9 @@ module BreakEscape
         password = npc['creds']['password']
         next unless password.is_a?(String) && !password.empty?
         next unless self.class.capture_route?(npc)
+        # Capture proofs (engine plan section 6): both readers of this map, the account pass
+        # of capture_secrets_for_client and NetworkAccess#account_capture_usernames, inherit it.
+        next unless account_capture_served?(npc)
 
         out[self.class.normalise_username(npc['creds']['username'])] = password
       end
@@ -1143,7 +1158,10 @@ module BreakEscape
       'sessions' => {}, 'signedInPcs' => [], 'loginFailures' => {}, 'loginLockouts' => [],
       'copiedItems' => [], 'serverClones' => {},
       # Networks (slice 9.3a, NetworkAccess): footholds held now, and every jack one was gained from
-      'footholds' => {}, 'gainedFootholds' => []
+      'footholds' => {}, 'gainedFootholds' => [],
+      # Capture proofs (engine plan section 6): devices the server saw planted at a named
+      # object, and items it accepted as player drops. Grow-only.
+      'plantedItems' => [], 'droppedItems' => []
     }.freeze
 
     # loginFailures and loginLockouts keep at most this many entries for usernames that

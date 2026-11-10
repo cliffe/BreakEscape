@@ -18,7 +18,8 @@ module BreakEscape
           'landingPages' => [
             { 'id' => 'payroll_login',
               'capture' => { 'address' => 's.lord@ledgerwell.example', 'secret' => SECRET, 'note' => 'captured' } }
-          ]
+          ],
+          'phishTargets' => [{ 'id' => 'lord', 'address' => 's.lord@ledgerwell.example' }]
         }
       }
     end

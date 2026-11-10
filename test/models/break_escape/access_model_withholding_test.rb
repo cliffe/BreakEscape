@@ -150,6 +150,7 @@ module BreakEscape
       scenario['social']['landingPages'] = [
         { 'id' => 'portal', 'capture' => { 'address' => 's.lord@example', 'secret' => 'Landing!1' } }
       ]
+      scenario['social']['phishTargets'] = [{ 'id' => 'other' }]
       game = build(scenario: scenario, player_state: earned(
         'jake' => { 'targetId' => 'jake', 'kind' => 'credential', 'address' => 'jbrooks', 'at' => 1 },
         'other' => { 'targetId' => 'other', 'kind' => 'credential', 'address' => 'nobody', 'at' => 2 }

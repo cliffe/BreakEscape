@@ -33,8 +33,10 @@ module BreakEscape
       refute_exposed('/capture_secrets')
 
       # With captures present (review R1, m8): an empty se_captures cannot leak, so read
-      # the route again with entries written as a browser writes them. The password
-      # side of this (B1) is the skipped test below.
+      # the route again with entries written as a browser writes them, in a scenario that
+      # declares Lena's target id and no capture proof, so her entry is served. The
+      # password side of this (B1) is the test below.
+      build_network_game({ 'unlockedRooms' => ALL_ROOMS.dup }, lena_declared_scenario)
       forge_captures
       get game_path('capture_secrets'), as: :json
       assert_response :success
@@ -53,19 +55,47 @@ module BreakEscape
       assert_response :success, response.body
     end
 
+    # The fixture with Lena's capture route declaring her target id, so an entry keyed
+    # 'lena' is one the scenario could have written. With proof: her capture proof, a
+    # session on her own PC (which admits only finance).
+    def lena_declared_scenario(proof: false)
+      scenario = NS.scenario
+      lena = scenario['rooms']['lobby']['npcs'].find { |npc| npc['id'] == 'lena' }
+      lena['usePayload']['targetId'] = 'lena'
+      lena['captureProof'] = [{ 'session' => 'lena_pc' }] if proof
+      scenario
+    end
+
     # B1 (docs/achitechture/ACCESS_MODEL_SLICE_9_3A_SERVER_CODE_REVIEW_R1.md): the server
-    # trusts se_captures written through PUT /sync_state, so a forged entry earns the
-    # account holder's password from GET /capture_secrets. Predates slice 9.3a.
+    # trusted se_captures written through PUT /sync_state, so a forged entry earned the
+    # account holder's password from GET /capture_secrets. Fixed by the engine plan's
+    # capture proofs (section 6, stream E4): an entry whose target id no capture route
+    # declares is skipped, and in a scenario that declares proofs an account's password
+    # is served only once one of its proofs holds.
     test 'B1: a se_captures entry forged through PUT /sync_state earns no password' do
-      skip 'B1 (review R1): GET /capture_secrets trusts se_captures from PUT /sync_state and serves ' \
-           "an account holder's password for a forged entry. Predates slice 9.3a; fixed by the engine " \
-           "plan's capture proofs (stream E4). Remove this skip when E4 lands."
       build_network_game('unlockedRooms' => ALL_ROOMS.dup)
       forge_captures
       get game_path('capture_secrets'), as: :json
       assert_response :success
       NS::PASSWORDS.each { |password| refute_includes response.body, password, 'a forged capture earned a password' }
       refute_includes response.body, NS::LANDING_SECRET, 'a forged capture earned the landing-page secret'
+    end
+
+    test 'B1: with a declared target id and a capture proof, a forged entry earns nothing until the proof holds' do
+      build_network_game({ 'unlockedRooms' => ALL_ROOMS.dup }, lena_declared_scenario(proof: true))
+      forge_captures
+      get game_path('capture_secrets'), as: :json
+      assert_response :success
+      NS::PASSWORDS.each { |password| refute_includes response.body, password, 'a forged capture earned a password' }
+      assert_equal({}, response.parsed_body['accounts'], 'an account with no proof holding is not offered')
+
+      # The proof: a session on Lena's PC, made through the real sign-in.
+      body = sign_in('lena_pc', 'lfox', NS::LENA_PASSWORD)
+      assert_equal true, body['success'], body.inspect
+      get game_path('capture_secrets'), as: :json
+      assert_equal NS::LENA_PASSWORD, response.parsed_body['secrets']['lena']
+      assert_equal({ 'lena' => 'lfox' }, response.parsed_body['accounts'])
+      refute_includes response.body, NS::LANDING_SECRET
     end
 
     test 'GET /network with no foothold is empty, and with one names only its own network' do

@@ -1064,6 +1064,10 @@ module BreakEscape
           render json: { success: true, inventory: @game.player_state['inventory'] }
 
         when 'remove'
+          # A plant (engine plan section 6): the client names the object the device was used
+          # on, and the server records it when that object takes the item, before removing.
+          used_on = params[:used_on] || params[:usedOn]
+          @game.record_planted_item!(item['id'], used_on) if used_on.present?
           @game.remove_inventory_item!(item['id'])
           render json: { success: true, inventory: @game.player_state['inventory'] }
 

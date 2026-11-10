@@ -20,7 +20,10 @@ module BreakEscape
         'rooms' => { 'start' => { 'type' => 'room_office', 'connections' => {} } },
         'social' => {
           'captures' => { 'revealSecret' => reveal },
-          'landingPages' => [PAGE.deep_dup]
+          'landingPages' => [PAGE.deep_dup],
+          # The phish target the captures below are keyed by: a target id declared nowhere
+          # is never served (engine plan section 6).
+          'phishTargets' => [{ 'id' => 'lord', 'address' => 's.lord@ledgerwell.example' }]
         }
       }
     end
@@ -88,6 +91,17 @@ module BreakEscape
       } } }
       game = build_game(scenario_data, earned)
       assert_equal({ 'lord' => 'Sofia2026!' }, game.capture_secrets_for_client)
+    end
+
+    test 'capture_secrets_for_client skips an entry whose target id no capture route declares' do
+      # A browser can write any se_captures entry through PUT /sync_state; one keyed by a target
+      # id the scenario never declares cannot have been earned, by address or by the fallback.
+      earned = { 'globalVariables' => { 'se_captures' => {
+        'forged' => { 'targetId' => 'forged', 'kind' => 'credential', 'address' => 's.lord@ledgerwell.example', 'at' => 1 },
+        'stray' => { 'targetId' => 'stray', 'kind' => 'credential', 'address' => 'other@ledgerwell.example', 'at' => 2 }
+      } } }
+      game = build_game(scenario_data, earned)
+      assert_equal({}, game.capture_secrets_for_client)
     end
   end
 end

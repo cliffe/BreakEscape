@@ -262,9 +262,17 @@ module BreakEscape
 
     # ---- GET /capture_secrets accounts ------------------------------------------------
 
+    def lena_npc(scenario)
+      scenario['rooms']['lobby']['npcs'].find { |npc| npc['id'] == 'lena' }
+    end
+
     def captures(entries, reveal: true)
       scenario = NS.scenario
       scenario['social']['captures']['revealSecret'] = reveal
+      # The target ids the entries below use, declared as a scenario declares them: a target id
+      # declared nowhere is never served (engine plan section 6).
+      lena_npc(scenario)['usePayload']['targetId'] = 'lena'
+      scenario['social']['phishTargets'] = [{ 'id' => 'portal' }, { 'id' => 'stray' }]
       build_network_game({ 'globalVariables' => { 'se_captures' => entries } }, scenario)
       get game_path('capture_secrets'), as: :json
       assert_response :success
