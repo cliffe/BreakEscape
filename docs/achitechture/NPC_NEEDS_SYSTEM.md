@@ -450,6 +450,12 @@ carry: goto_item → pick up → goto_target → using(useSeconds) → complete 
   coffee station or beside their desk for 50 s+ and never sat back down. The walk itself ends
 within a tile of home, so seating looks for the post's chair from the home cell
 (`seating.js` `needsSeatRef`, `SEATING.md`).
+- **A job that ends at the own post is the return.** An NPC that has really left
+  (`atPost` false) and arrives at its `needsHome` object for a job there, either a need
+  for it that turned urgent on the walk home or a carry that delivers to it (a printout
+  taken back to the desk), emits `npc_returned_post:<npcId>` on that arrival, once, before
+  the session, and the session then ends without a second emit. On the walk to it
+  (`goto_target`) the caught check below runs every tick, as on an ordinary walk home.
 - **Failure:** deadline passed or no approach cell → `npc_job_failed:<npcId>`,
   cancel the move, drop any carried item at the NPC's feet, 60 s cooldown on that
   target for this NPC, go home.

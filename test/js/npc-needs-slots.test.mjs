@@ -18,12 +18,19 @@ const TICKS_PER_MIN = 240;
 
 // sha256 of JSON.stringify(getLog()) for runSimsDay({ minutes: 15 }), recorded at 4bff74a0b, before
 // slice 7 touched npc-needs.js. The parcel and both mug carries end in consume, as before.
-const GOLDEN_SIMS_DAY = '6a5f41a62178d8e4ca1e11d53c27a6d9d3cbc08c25ae110f01b88d289aae98f2';
+// Re-recorded once since, for one moved entry out of 231: Amara's returned_post, when she
+// brings the parcel to her own PC, is logged at tick 453 as she arrives, ahead of the "using"
+// entry, and no longer at tick 494 after the session (a delivery to the own post is the
+// return). Every other entry is as recorded at 4bff74a0b.
+const GOLDEN_SIMS_DAY = 'a87a652c0b54abe9d8c237f6ba4b8cc097f193097a546267bbcf6b5b86b86948';
 
 test('a plain item is consumed and the sims-day log is byte-identical to before slice 7', () => {
     const { sys, w } = runSimsDay(NPCNeedsSystem, { minutes: 15 });
     const digest = createHash('sha256').update(JSON.stringify(sys.getLog())).digest('hex');
     assert.equal(digest, GOLDEN_SIMS_DAY);
+    const amara = sys.getLog().filter(e => e.npc === 'amara');
+    const used = amara.findIndex(e => e.ev === 'used' && e.item === 'parcel');
+    assert.deepEqual(amara.slice(used - 2, used).map(e => [e.ev, e.t]), [['returned_post', 453], ['using', 453]]);
     assert.deepEqual(w.calls.consumed.map(c => c.itemId), ['office_mugs', 'parcel', 'player_mugs']);
     assert.ok(!sys.getLog().some(e => e.outcome), 'plain items log no outcome field');
 });
