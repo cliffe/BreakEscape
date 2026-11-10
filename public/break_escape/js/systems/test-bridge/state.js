@@ -87,6 +87,40 @@ function currentRoomId() {
 }
 
 
+/** The Resume / Restart / New Session overlay is up (games/show.html.erb). */
+export function sessionOverlayShowing() {
+    return window.breakEscapeSessionOverlayShowing === true;
+}
+
+/**
+ * The overlay's own three buttons, as elements. Never the "Load session #N" links or
+ * Prev/Next under them: those lead to other games. With a long OTHER SESSIONS list the
+ * centre of the canvas falls on that list, and the hit-test below then reported only
+ * the links (bootstrap: 'the resume overlay has no "resume" button').
+ */
+export function sessionOverlayButtons() {
+    return ['session-resume-btn', 'session-restart-btn', 'session-new-btn']
+        .map(id => document.getElementById(id))
+        .filter(el => el && el.getBoundingClientRect().width > 0);
+}
+
+/** blockingUi entry for the session overlay, or null when it is not up. */
+export function sessionOverlayUi() {
+    if (!sessionOverlayShowing()) return null;
+    const panel = document.getElementById('session-resume-overlay');
+    if (!panel) return null;
+    return {
+        blocking: true,
+        tag: panel.tagName,
+        id: 'session-resume-overlay',
+        classes: String(panel.className || '').slice(0, 120),
+        text: (panel.innerText || 'RESUME SESSION?').trim().slice(0, 500),
+        buttons: sessionOverlayButtons().map((el, i) => ({ index: i, id: el.id || null, label: (el.innerText || '').trim().slice(0, 100) })),
+        hint: 'The session overlay covers the whole page, a minigame included; the world loads underneath and timed dialogue waits. '
+            + 'Choose with __test.dismissBlockingUi("Resume") (or "Restart" / "New Session"); Enter also resumes.'
+    };
+}
+
 /**
  * Detect DOM UI sitting on top of the canvas and eating pointer input.
  *
@@ -100,6 +134,8 @@ function currentRoomId() {
  * added.
  */
 export function detectBlockingUi() {
+    const sessionOverlay = sessionOverlayUi();
+    if (sessionOverlay) return sessionOverlay;
     const canvas = getCanvas();
     if (!canvas || !document.elementsFromPoint) return null;
 
@@ -725,7 +761,10 @@ export function getState({ radius, limit } = {}) {
         activeMinigame: mg,
         // DOM UI on top of the canvas (tutorial prompt, modals). While this is
         // non-null, main-world pointer actions cannot reach the game.
-        blockingUi: mg ? null : detectBlockingUi(),
+        // The session-resume overlay covers everything, a minigame included (the
+        // world loads under it and an opening briefing can open there, paused), so
+        // it is reported even while a minigame is active.
+        blockingUi: (mg && !sessionOverlayShowing()) ? null : detectBlockingUi(),
         // Non-null once the end-of-mission credits overlay is up. Treat it as
         // "stop playing", never as something to wait out or dismiss -- and
         // confirm the actual outcome against the server's game record.

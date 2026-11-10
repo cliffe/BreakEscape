@@ -72,6 +72,7 @@ const path = require('path');
 const { briefTasks } = require('./brief-tasks');
 const { createVmSteps } = require('./vm-steps');
 const { completeConfiguration } = require('./config-gate');
+const { nextBootstrapTarget, readBootstrapFacts } = require('./bootstrap-steps');
 const { createResponseCapture } = require('./response-capture');
 
 const args = process.argv.slice(2);
@@ -365,6 +366,8 @@ const vmSteps = createVmSteps({
     let clear = 0;
     // A hub that offers the same menu again would otherwise loop on choice 1.
     const seenMenus = new Map();
+    let openingSince = 0;            // when a pending opening conversation was first seen
+    const waitNoted = new Set();     // each kind of wait is traced once
     const exitRe = /\b(bye|goodbye|leave|later|that's all|that's it|nothing|done|go|thanks)\b/i;
     // After a reload there is no player sprite until the "Continue?" title card (and the resume
     // overlay) are cleared, so a missing player is only fatal when no overlay is up to clear.
@@ -414,7 +417,28 @@ const vmSteps = createVmSteps({
         trace.push(`ending screen (${ended.kind}): left alone`);
         return { trace, settled: true, ended: true, endKind: ended.kind, endScreen: ended, state: await brief() };
       }
-      const mg = await page.evaluate(() => window.__test.getState().activeMinigame);
+      // One reading decides what to deal with: the session-resume overlay before any
+      // minigame under it, and "nothing open" only once the world has loaded and no
+      // opening conversation is still to come (bootstrap-steps.js).
+      const facts = await page.evaluate(readBootstrapFacts).catch(() => ({}));
+      if (facts.openingPending && facts.worldReady && !openingSince) openingSince = Date.now();
+      const target = nextBootstrapTarget({ ...facts, openingWaitedMs: openingSince ? Date.now() - openingSince : 0 });
+      if (target === 'wait-overlay' || target === 'wait-world' || target === 'wait-opening') {
+        clear = 0;
+        if (!waitNoted.has(target)) {
+          waitNoted.add(target);
+          trace.push({ 'wait-overlay': 'session overlay up, waiting for its buttons',
+                       'wait-world': 'waiting for the world to load (no current room yet)',
+                       'wait-opening': 'waiting for the opening conversation to start' }[target]);
+        }
+        await pause(settleMs);
+        continue;
+      }
+      if (target === 'clear' && facts.openingPending && !waitNoted.has('opening-gave-up')) {
+        waitNoted.add('opening-gave-up');
+        trace.push('an opening conversation is still pending after the wait; carrying on without it');
+      }
+      const mg = target === 'session-overlay' ? null : facts.mg;
       if (mg) {
         clear = 0;
         const d = await page.evaluate(() => window.__test.minigame.getState()?.dialogue);

@@ -37,7 +37,7 @@ import {
 } from './input.js';
 import { reachX } from '../interaction-reach.js';
 import { wallClearFrom, sameRoomFrom } from '../interaction-walls.js';
-import { getState, scanNearby, activeMinigameSummary, detectBlockingUi, interactionMenuState, solveStandingPoint, engineInteractDistance, plainNearestEntity, roomContents, doorways } from './state.js';
+import { getState, scanNearby, activeMinigameSummary, detectBlockingUi, sessionOverlayShowing, sessionOverlayButtons, interactionMenuState, solveStandingPoint, engineInteractDistance, plainNearestEntity, roomContents, doorways } from './state.js';
 import {
     waitUntil, waitForEvent, waitForMovementEnd, waitFrames,
     waitForMinigame, waitForMinigameClosed
@@ -1117,6 +1117,8 @@ const bridge = {
                 }
             }
         }
+        // The session overlay: only its own three buttons, never the other-session links
+        if (sessionOverlayShowing()) buttons = sessionOverlayButtons();
         if (!buttons.length) return fail('blocking-ui-has-no-buttons', { blocker });
 
         let target;
