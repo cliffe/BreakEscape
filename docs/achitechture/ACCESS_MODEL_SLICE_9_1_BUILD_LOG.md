@@ -179,3 +179,94 @@ Deviations:
 Scripted runs (builder's own Playwright script, :3001): see
 `tools/playtest/test_access_habits-report.md`. Every beat passed once three script mistakes were
 corrected; the leak check was clean after every beat.
+
+## Step 5. `holdsDoors` (2026-11-10, parked part way: handover)
+
+Branch `build/9-1-step5-holds-doors`, from `f86912dd4`. Parked at the user's request.
+
+**Contract 5.4 checked against the code first:** all six clauses are met by the committed door
+work (`openToPlayer` is the one question for click and body, `blocksPlayer` follows it,
+`handleGateBump` emits `door_gate_denied` at most once per `BUMP_INTERVAL_MS`, a clone hold
+answers first, `open()`/`close()` are the only start and end of an open period (exit opening and
+`closeNow` go through them), and both branches of `update()` read `_playerBarred`). No change to
+the door work was needed.
+
+### Built and tested
+
+- Client (`door-gates.js`): `normaliseGate` keeps `noHold`; `nearGuardIds(g)`; `lastGuards` set
+  in `open()` before the body rule, added to per open tick in `update()`, cleared in `close()`;
+  one clause each in `_playerBarred` and `openToPlayer`. The careful-set rule is one small public
+  helper, `careful(g)`, which both clauses call (an eighth place, beyond the plan's seven).
+  `test/js/door-gates-no-hold.test.mjs` (8 tests, every case in the plan's list) passes; the
+  other door-gates test files pass unchanged.
+- Library: `holdsDoors` in `HABITS` and `PRESETS` (low, medium true; high false); `expand!` fills
+  `gate.noHold` (no `playerMayPassIf`, no authored `noHold`, `enabled: false` skipped, string
+  `openFor` read as one id); each NPC report item gains `:doors`. Unit tests extended (28 runs);
+  a loader test shows the saved game and `filtered_room_data` carry `noHold` and no habits.
+- Schema: `habits.holdsDoors`, `gate.noHold`, presets text. Validator: the two step 5 warnings and
+  report lines per gate; tests in `validator-npc-habits.test.mjs` (38 + schema test pass).
+- Dungeon graph: the secured room's door label gains "gate: held by ...; not held by ...".
+- `verify-run.rb --access`: one `gate` line per gate with a `noHold`; two tests added.
+- `README_scenario_design.md`: `noHold` row and a "Careful guards" paragraph in Gate doors.
+- Validator fix (own commit, can be dropped): `check_lock_credentials` counted only typed items as
+  declaring a card id, so a gate whose `requires` is its guard's card drew "nothing can open it"
+  (also in `test_gate_tailgate`). A room NPC's card now declares its id. Test in
+  `door-gates-validator.test.mjs`.
+- Beat H9 in `test_access_habits` (WIP commit): `gate_hall` east of `kai_room`, `store_a` north
+  and `store_b` south, gates `holdMs` 6000 and `openRadius` 80, Gary (low) and Sara (high, own
+  sprite `female_security_guard_v2`), globals `h9_a_opened`, `h9_b_opened`,
+  `h9_sara_turned_back`, task `h9_holds_doors` completed (on Rowan) by `door_gate_denied` for
+  `store_b` once all three globals are set; Sara barks on each denial (cooldown 4 s). Validator:
+  no errors, no warnings, one suggestion (Lena), as before. Door alignment clean.
+
+**Browser run of H9** (own keyless server on :3031, game 133, started in `gate_hall` with
+`--carry-npc rowan`): Gary's gate opened with the player 71 px from it and the player walked in
+behind him (`room_entered:store_a`). Within Sara's radius the gate never opened and she turned
+back after 5 s (`door_gate_guard_turned_back` sara). Parked outside it opened for her; walking in
+after her, at every 16 ms sample the gate was shut or solid (0 passable of 145), and it shut on
+the first sample with the player inside the radius (no lingering). A refused click gave the
+toast, `door_gate_denied`, Sara's bark and the task. Twenty seconds of pushing: gate never open,
+no `room_entered:store_b`, no denial (a bump on a shut gate is silent, as the door work rules).
+`verify-run`: Sara's gate `noHold sara`, Gary's none; leak check clean. Note: `store_b` is in
+`unlockedRooms` because Sara's route unlocks it on the server; the player never entered it.
+
+**H1 to H8 rerun** (game 134, one game for both runs, reload after H3): H1, H2, H3, the reload,
+H4, H5, H6 and H7 all pass with a clean leak check after each beat. Stopped at the start of H8.
+
+### Half done
+
+- H8 rerun not done; `PLAYTEST.md` has no H9 section, its header still says H1 to H8 and its
+  expected validator output does not mention the H9 report lines; `tools/playtest/test_access_habits-report.md`
+  has no entry for these runs.
+- Full `bin/rails test` and `bin/test-js -j 3` were not run at the end. The last full Rails run
+  (after the preset change, before the loader test fix) had 1 failure, since fixed; the targeted
+  files all pass.
+
+### Not started
+
+- A `test_gate_tailgate` browser run (plan: show its gates unchanged). The node tests cover
+  `playerMayPassIf` ignoring `noHold`.
+- The playtest skill sentence (skills need the orchestrator's say-so). Proposed: "From slice 9.1
+  step 5, `verify-run.rb --access` prints a `gate` line for each gate with a `noHold`; like the
+  rest of the habits block it is not for a tester playing blind."
+
+### Known problems found (door work and route engine, not changed here)
+
+1. A guard sent to `approachPoint` with the default radius can stop with his body centre exactly
+   56 px from the door (reach `openRadius - 8`, body 8 px further), just outside the radius, and
+   stand there with no target while the player is near his waypoint. Seen with Gary at radius 56;
+   H9 uses radius 80 and waypoint (1,2) to avoid it.
+2. With Sara's door waypoint at (1,7), directly above the door, her `unlockRoom` action never ran
+   (`store_b` never loaded) and she stood with no target. Back at (2,8) it works. Not diagnosed.
+3. Port :3017 was taken by another agent's server (`slice-9-2` worktree) when this builder
+   started; its first game (129) was opened once there. Games 129 to 132 are scratch.
+
+### Next steps
+
+1. Finish the H8 rerun on a new game (`new-game.rb test_access_habits`), reload inside H8.
+2. Add H9 to `PLAYTEST.md` (set-up, the spots used: beside Gary's door feet (98,72); within
+   Sara's radius feet (40,232); parked outside feet (160,285)), update its header and expected
+   validator lines (gary and sara report lines), and add the runs to the report file.
+3. Run `bin/rails test` and `bin/test-js -j 3` and record the counts; squash or retitle the WIP
+   commit.
+4. Optionally the `test_gate_tailgate` run; pass the two known problems to the door work's owner.
