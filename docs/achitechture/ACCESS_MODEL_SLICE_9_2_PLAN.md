@@ -281,8 +281,8 @@ failure belongs either to a **thing** or to the **person**.
   is off always parks, with the reason `off` (today it would say `no_source`, or not park at all,
   section 2); and such a park counts as a failure for frustration (5.4) and says a line (5.5). A
   use already under way when the station goes off finishes, as office life rules (`:2078`), and
-  is judged on its resources; the outage kick (5.6) then brings the `off` park at the next
-  selection.
+  is judged on its resources; the outage kick (5.6), applied as that use ends, then brings the
+  `off` park at the next selection.
 - **A failure that belongs to the person.** The NPC reaches a working PC and sits down, but their
   work needs something that is not there: a file share they are not admitted to, a share that is
   down, one their PC cannot reach, or (sub-slice L) an account locked out at that PC. No object is
@@ -306,7 +306,7 @@ judged use completes, every failure is collected (for `work`):
 
 1. **The station.** Sub-slice L's `locked_out` (6.6). A station that is out of order is not
    judged here: one that was off was never chosen, and one switched off during the use finishes
-   it (office life's rule) and the next selection parks `off` (below).
+   it (office life's rule), after which the outage kick (5.6) brings the `off` park (below).
 2. **Each resource in the NPC's resolved work list**, in order:
    - its `access` does not admit the NPC: `no_access` (fixed for the whole mission);
    - its `downIf` global is truthy: `down`;
@@ -669,7 +669,9 @@ noticed"), so the gap is closed by one client rule:
   through `world.globalHolds(cond)` (`npc-needs.js:3604`);
 - when one of them turns on, or is on when the NPC registers, the NPC's `work` level is lowered to
   `urgentAt` (never raised), once per change. A `work` need already parked for a failure is left
-  parked: the NPC already knows;
+  parked: the NPC already knows. A change that comes while the NPC is using a station for that
+  need is applied when the use ends, after its restore, so a use that finishes on a station just
+  switched off is followed at once by the `off` park;
 - the NPC therefore tries to work at the next selection. `_select` runs only for an NPC that is
   idle or returning (`_tickNpc`, `:1128-1240`): not during a job, not while frozen in a
   conversation with the player (`inChatWith`), not on a desk-phone call (`s.call`). A pair chat
@@ -1385,7 +1387,7 @@ What a load does:
 | Thing | After a reload |
 |---|---|
 | Frustration level and `tell` | Kept: `npcFrustration` in the scenario response; applied when the NPC's room loads and its needs state is made (5.4) |
-| Need levels, parked needs, visit queues, `s.borrow`, the "checked" and "refused" memories | Reset, as all needs state is today. Needs restart at `initial`, so the outage kick (5.6) is what brings an NPC back to a failing desk at once after a reload |
+| Need levels, parked needs, visit queues, `s.borrow`, the "checked" and "refused" memories, the `rearm` marks | Reset, as all needs state is today. Needs restart at `initial`, so the outage kick (5.6) is what brings an NPC back to a failing desk at once after a reload |
 | An owner's `locked_out` flag | Kept: `lockedOut` in `npcFrustration`, applied when the owner's room loads |
 | A workaround handed over and not spent | Sent again as `pending`; the runner starts it again when the NPC is registered |
 | A pending borrow | Set again, with its 60 second start limit from the load. Needs restart at `initial`, so the borrow starts only if the need is urgent: when the outage that caused it still holds, the kick (5.6) makes `work` urgent at once and the NPC goes; otherwise (a lockout, which has no global) the borrow lapses, is dropped, and comes round after the next failure |
