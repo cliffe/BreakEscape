@@ -60,7 +60,7 @@ if (typeof window !== 'undefined') window.recordSECapture = recordSECapture;
  *   add_capture    { capture }       — records a credential/foothold into se_captures
  *   set_costume    { costume }       — swaps the player sprite to scenario.disguises[costume]
  *   clear_costume  {}                — restores the chosen avatar
- *   hint           { message, title? } — shows an informational alert to the player, for a time set by its length
+ *   hint           { message, title? }: shows an informational alert to the player, for a time set by its length
  *   lighting_dip   { level?, ms? }   — one slow brownout dip of the room lights
  *
  * @param {Array}  actions            Array of action descriptor objects.
