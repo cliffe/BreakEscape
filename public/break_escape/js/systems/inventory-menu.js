@@ -99,20 +99,50 @@ export function inventoryMenuFor(sprite, ctx = {}) {
     return entries;
 }
 
+/** The top centre of a tray item, for a menu opened with no pointer; undefined when it has no box. */
+export function slotPoint(el) {
+    const r = typeof el?.getBoundingClientRect === 'function' ? el.getBoundingClientRect() : null;
+    if (!r || !(r.width > 0 || r.height > 0)) return { x: undefined, y: undefined };
+    return { x: r.left + r.width / 2, y: r.top };
+}
+
 /**
  * The tray click: open the item's menu if it has one. Returns true when a menu
  * opened (the caller does nothing else), false when the caller should run the
  * click as before (handleObjectInteraction).
+ *
+ * Busy guard, as action-menu.js maybeShowObjectActionMenu has: never over a
+ * minigame or chat, or over an already-open menu. An item with a menu then
+ * does nothing (returns true): "Examine" would end the running minigame, and
+ * the menu's number keys would take the chat's own. The tray is covered in
+ * both states today, so this guards a script call or an uncovered tray.
+ *
+ * "Drop here" is checked again when it is chosen: the menu takes no movement
+ * keys, so the player can walk into a doorway while it is up. A drop that is
+ * no longer allowed shows its reason instead.
  */
 export function openInventoryItemMenu(el, clientX, clientY, deps = {}) {
     const w = deps.window ?? (typeof window !== 'undefined' ? window : {});
     const entries = inventoryMenuFor(el, deps.ctx || {});
     if (!entries) return false;
+    if (w.MinigameFramework?.currentMinigame || w.isInteractionMenuOpen?.()) return true;
+    const blockedNow = deps.dropBlockedReason ?? (() => dropBlockedReason(w));
     const actions = {
         use: () => w.handleObjectInteraction?.(el),
-        drop: () => (deps.dropInventoryItem ?? dropInventoryItem)(el),
+        drop: () => {
+            const reason = blockedNow();
+            if (reason) {
+                w.gameAlert?.(reason, 'warning', 'Drop here', 3000);
+                return;
+            }
+            (deps.dropInventoryItem ?? dropInventoryItem)(el);
+        },
         examine: () => w.examineHeldItem?.(el)
     };
+    // A click with no pointer position (el.click(), a key on the focused item) reports
+    // 0,0: place the menu over the item's slot instead of in the corner
+    let x = clientX, y = clientY;
+    if (!x && !y) ({ x, y } = slotPoint(el));
     // The game's own menu overlay (ui/interaction-menu.js), titled with the item's name,
     // with keys 1 to 9 picking an entry
     const show = deps.showInteractionMenu ?? showInteractionMenu;
@@ -121,7 +151,7 @@ export function openInventoryItemMenu(el, clientX, clientY, deps = {}) {
         detail: e.disabled ? e.reason : undefined,
         disabled: !!e.disabled,
         onSelect: () => actions[e.id]?.()
-    })), clientX, clientY, el.scenarioData?.name || el.alt || 'Item', { numberKeys: true });
+    })), x, y, el.scenarioData?.name || el.alt || 'Item', { numberKeys: true });
     return true;
 }
 

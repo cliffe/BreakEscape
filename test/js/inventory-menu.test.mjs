@@ -17,7 +17,7 @@ const dom = new JSDOM('<!doctype html><html><head></head><body></body></html>');
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 const {
-    inventoryMenuFor, openInventoryItemMenu, dropBlockedReason, hasTriggerOnInteract
+    inventoryMenuFor, openInventoryItemMenu, dropBlockedReason, hasTriggerOnInteract, slotPoint
 } = await import(pathToFileURL(join(js, 'systems/inventory-menu.js')).href);
 const { showInteractionMenu, isInteractionMenuOpen, closeInteractionMenu } = await import(pathToFileURL(join(js, 'ui/interaction-menu.js')).href);
 
@@ -143,6 +143,7 @@ test('the tray click maps the entries onto drop, examine and use', () => {
         ctx: { inventoryItems: items, dropBlocked: null },
         window: { handleObjectInteraction: (s) => calls.push(['use', s]), examineHeldItem: (s) => calls.push(['examine', s]) },
         dropInventoryItem: (s) => calls.push(['drop', s]),
+        dropBlockedReason: () => null,
         showInteractionMenu: (entries, x, y, title, opts) => { shown = { title, entries, x, y, opts }; }
     });
     assert.equal(opened, true);
@@ -207,4 +208,110 @@ test('the disambiguation menu keeps its heading and takes no number keys', async
     document.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: '1', bubbles: true }));
     assert.deepEqual(picked, []);
     closeInteractionMenu();
+});
+
+// ---- Code review R1 (engine feedback changes) ----
+
+// m1: the tray menu has the busy guard of action-menu.js maybeShowObjectActionMenu
+test('no menu over a minigame or an open menu: the click is taken and nothing opens', () => {
+    const el = held({ id: 'busy1', name: 'Box', droppable: true });
+    const calls = [];
+    const deps = (w) => ({
+        ctx: { inventoryItems: items, dropBlocked: null },
+        window: { ...w, handleObjectInteraction: () => calls.push('click') },
+        showInteractionMenu: () => calls.push('menu')
+    });
+    assert.equal(openInventoryItemMenu(el, 5, 5, deps({ MinigameFramework: { currentMinigame: {} } })), true);
+    assert.equal(openInventoryItemMenu(el, 5, 5, deps({ isInteractionMenuOpen: () => true })), true);
+    assert.deepEqual(calls, [], 'no menu, and the click does not fall through to the item');
+    assert.equal(openInventoryItemMenu(el, 5, 5, deps({ MinigameFramework: { currentMinigame: null }, isInteractionMenuOpen: () => false })), true);
+    assert.deepEqual(calls, ['menu']);
+    // the same guard as action-menu.js
+    const am = readFileSync(join(js, 'systems/action-menu.js'), 'utf8');
+    assert.match(am, /window\.MinigameFramework && window\.MinigameFramework\.currentMinigame/);
+    assert.match(am, /window\.isInteractionMenuOpen && window\.isInteractionMenuOpen\(\)/);
+});
+
+// m8: "Drop here" is checked again when it is chosen
+test('"Drop here" checks the doorway again when chosen, and shows the reason instead of dropping', () => {
+    const el = held({ id: 'walker', name: 'Parcel', droppable: true });
+    const dropped = [];
+    const alerts = [];
+    let reason = null;
+    let shown;
+    openInventoryItemMenu(el, 5, 5, {
+        ctx: { inventoryItems: items, dropBlocked: null },
+        window: { gameAlert: (...a) => alerts.push(a) },
+        dropBlockedReason: () => reason,
+        dropInventoryItem: (s) => dropped.push(s),
+        showInteractionMenu: (entries) => { shown = entries; }
+    });
+    const drop = shown.find(e => e.label === 'Drop here');
+    assert.equal(drop.disabled, false, 'usable when the menu opened');
+    reason = 'You are in a doorway. Step into the room first.';   // walked into a doorway
+    drop.onSelect();
+    assert.deepEqual(dropped, []);
+    assert.deepEqual(alerts, [['You are in a doorway. Step into the room first.', 'warning', 'Drop here', 3000]]);
+    reason = null;                                                 // stepped back in
+    drop.onSelect();
+    assert.deepEqual(dropped, [el]);
+});
+
+test('by default the re-check reads the live window: between rooms at click time blocks the drop', () => {
+    const el = held({ id: 'walker2', name: 'Parcel', droppable: true });
+    const dropped = [];
+    const w = { currentPlayerRoom: 'office', rooms: { office: { doorSprites: [] } }, player: { x: 10, y: 10 }, gameAlert() {} };
+    let shown;
+    openInventoryItemMenu(el, 5, 5, {
+        ctx: { inventoryItems: items, dropBlocked: null }, window: w,
+        dropInventoryItem: (s) => dropped.push(s),
+        showInteractionMenu: (entries) => { shown = entries; }
+    });
+    w.currentPlayerRoom = null;
+    shown[0].onSelect();
+    assert.deepEqual(dropped, []);
+    w.currentPlayerRoom = 'office';
+    shown[0].onSelect();
+    assert.deepEqual(dropped, [el]);
+});
+
+// m9: placement with no pointer, number hints and focus
+test('a click with no pointer position places the menu over the item\'s slot', () => {
+    const el = held({ id: 'nopointer', name: 'Parcel', droppable: true });
+    el.getBoundingClientRect = () => ({ left: 300, top: 500, width: 40, height: 40 });
+    let at;
+    const deps = { ctx: { inventoryItems: items, dropBlocked: null }, window: {},
+        showInteractionMenu: (entries, x, y) => { at = [x, y]; } };
+    openInventoryItemMenu(el, 0, 0, deps);
+    assert.deepEqual(at, [320, 500]);
+    openInventoryItemMenu(el, undefined, undefined, deps);
+    assert.deepEqual(at, [320, 500]);
+    openInventoryItemMenu(el, 12, 34, deps);
+    assert.deepEqual(at, [12, 34], 'a real pointer position is kept');
+    assert.deepEqual(slotPoint({}), { x: undefined, y: undefined });
+    assert.deepEqual(slotPoint({ getBoundingClientRect: () => ({ left: 0, top: 0, width: 0, height: 0 }) }), { x: undefined, y: undefined });
+});
+
+test('a number-key menu shows each entry\'s key and focuses its first usable entry', () => {
+    showInteractionMenu([
+        { label: 'Drop here', detail: 'You are in a doorway.', disabled: true, onSelect() {} },
+        { label: 'Examine', onSelect() {} }
+    ], 50, 50, 'BadUSB', { numberKeys: true });
+    const buttons = [...document.querySelectorAll('.be-im-item')];
+    assert.deepEqual(buttons.map(b => b.querySelector('.be-im-key')?.textContent), ['1.', '2.']);
+    assert.deepEqual(buttons.map(b => b.querySelector('.be-im-label').textContent), ['Drop here', 'Examine'], 'the label itself is unchanged');
+    assert.equal(document.activeElement, buttons[1], 'focus on Examine, the first usable entry');
+    closeInteractionMenu();
+
+    // no number keys: no key hints, focus left alone
+    showInteractionMenu([{ label: 'Memo', onSelect() {} }, { label: 'Guard', onSelect() {} }], 0, 0);
+    assert.equal(document.querySelector('.be-im-key'), null);
+    assert.notEqual(document.activeElement?.className, 'be-im-item');
+    closeInteractionMenu();
+});
+
+test('a 0,0 position is no position: the menu is not pinned to the top-left corner', () => {
+    const src = readFileSync(join(js, 'ui/interaction-menu.js'), 'utf8');
+    const at = src.indexOf('if (clientX === 0 && clientY === 0) { clientX = undefined; clientY = undefined; }');
+    assert.ok(at > 0 && at < src.indexOf('let x = (clientX ?? window.innerWidth / 2)'), 'cleared before the fallback is read');
 });

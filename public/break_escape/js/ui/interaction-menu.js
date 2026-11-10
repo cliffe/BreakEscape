@@ -92,6 +92,11 @@ function injectStyles() {
             image-rendering: pixelated;
             background-repeat: no-repeat;
         }
+        #be-interaction-menu .be-im-key {
+            flex: 0 0 auto;
+            font-size: 16px;
+            color: #4da6ff;
+        }
         #be-interaction-menu .be-im-text {
             flex: 1 1 auto;
             min-width: 0;
@@ -180,6 +185,7 @@ export function showInteractionMenu(candidates, clientX, clientY, titleText, { n
     menuEl.appendChild(title);
 
     const handlers = [];
+    let firstEnabled = null;
 
     candidates.forEach(c => {
         const btn = document.createElement('button');
@@ -209,6 +215,16 @@ export function showInteractionMenu(candidates, clientX, clientY, titleText, { n
                 icon.style.backgroundPosition = '0 0';
             }
             btn.appendChild(icon);
+        }
+
+        // The key that picks it (keys 1 to 9), shown before the label as the chat choices show theirs
+        const index = handlers.length;
+        if (numberKeys && index < 9) {
+            const keyHint = document.createElement('span');
+            keyHint.className = 'be-im-key';
+            keyHint.setAttribute('aria-hidden', 'true');
+            keyHint.textContent = `${index + 1}.`;
+            btn.appendChild(keyHint);
         }
 
         const text = document.createElement('span');
@@ -243,6 +259,7 @@ export function showInteractionMenu(candidates, clientX, clientY, titleText, { n
         btn.addEventListener('click', choose);
         menuEl.appendChild(btn);
         handlers.push(choose);
+        if (!c.disabled && !firstEnabled) firstEnabled = btn;
     });
     numberKeyHandlers = numberKeys ? handlers : null;
 
@@ -259,8 +276,17 @@ export function showInteractionMenu(candidates, clientX, clientY, titleText, { n
     document.body.appendChild(overlayEl);
     document.addEventListener('keydown', onKeyDown, true);
 
+    // A keyboard menu (numberKeys) takes the focus on its first usable entry, so Tab,
+    // Enter and Space reach it as well as the number keys
+    if (numberKeys && firstEnabled) {
+        try { firstEnabled.focus({ preventScroll: true }); } catch (e) { firstEnabled.focus?.(); }
+    }
+
     // Position near the tap, then clamp inside the viewport. Bias the menu
     // upward/leftward of the finger so it isn't hidden under the player's thumb.
+    // A click with no pointer (el.click(), a key on a focused element) reports 0,0:
+    // that is no position, so the menu goes to the middle rather than the corner.
+    if (clientX === 0 && clientY === 0) { clientX = undefined; clientY = undefined; }
     const margin = 8;
     const rect = menuEl.getBoundingClientRect();
     let x = (clientX ?? window.innerWidth / 2) - rect.width / 2;
