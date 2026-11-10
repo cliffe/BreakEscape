@@ -5,6 +5,8 @@
 //   (utils/locked-hint.js hintToastMs: 300 ms a word, 6 to 12 s). It used to last 5 s
 //   whatever its length (lab_physical_pentest playtest N11: a 21 word pointer was gone
 //   before it could be read).
+// - any action may carry a `condition` on the globals; one that does not hold is skipped, and
+//   it is read when the action is reached (lab_physical_pentest T4: one toast per outcome).
 // Run with: node test/js/apply-actions-hint-give.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -75,4 +77,49 @@ test('hint: without the rule the toast keeps its default duration', async () => 
     await quietly(() => applyActions([{ type: 'hint', title: 'T', message: 'Some text here.' }]));
     assert.deepEqual(alerts, [['Some text here.', 'info', 'T']]);
     window.hintToastMs = saved;
+});
+
+test('an action with a condition runs only while it holds, read when the action is reached', async () => {
+    const { evaluateGlobalCondition } = await import(dataUrl(readFileSync(join(js, 'utils/conditional-text.js'), 'utf8')));
+    assert.equal(window.evaluateGlobalCondition, evaluateGlobalCondition, 'conditional-text.js publishes the evaluator for apply-actions');
+    const alerts = [];
+    window.gameAlert = (...a) => alerts.push(a[0]);
+    const emitted = [];
+    window.eventDispatcher.emit = (n) => {
+        emitted.push(n);
+        if (n === 'looked') window.gameState.globalVariables.read = true;   // what a mapping would do
+    };
+    const shelves = [
+        { type: 'hint', condition: 'globalVars.read', message: 'already read' },
+        { type: 'hint', condition: '!globalVars.read && globalVars.vest', message: 'not in the vest' },
+        { type: 'hint', condition: '!globalVars.read && !globalVars.vest && !globalVars.at_door', message: 'nobody at the door' },
+        { type: 'emit_event', event_name: 'looked', condition: 'globalVars.at_door && !globalVars.vest' }
+    ];
+    const click = async (globals) => {
+        alerts.length = 0; emitted.length = 0;
+        window.gameState.globalVariables = { ...globals };
+        await quietly(() => applyActions(shelves));
+        return { alerts: [...alerts], emitted: [...emitted] };
+    };
+    assert.deepEqual(await click({}), { alerts: ['nobody at the door'], emitted: [] });
+    assert.deepEqual(await click({ vest: true, at_door: true }), { alerts: ['not in the vest'], emitted: [] });
+    // The read itself: no toast from the click (the capture's own toast says it), though the
+    // event has set the global by the time the list ends
+    assert.deepEqual(await click({ at_door: true }), { alerts: [], emitted: ['looked'] });
+    assert.equal(window.gameState.globalVariables.read, true);
+    assert.deepEqual(await click({ read: true, at_door: true }), { alerts: ['already read'], emitted: ['looked'] });
+    // Order matters: a later action sees what an earlier one changed
+    window.gameState.globalVariables = { at_door: true };
+    alerts.length = 0;
+    await quietly(() => applyActions([...shelves].reverse()));
+    assert.deepEqual(alerts, ['already read']);
+    // No condition, an empty one, or no evaluator loaded: the action runs, as before
+    alerts.length = 0;
+    window.gameState.globalVariables = {};
+    await quietly(() => applyActions([{ type: 'hint', message: 'a' }, { type: 'hint', condition: '  ', message: 'b' }]));
+    delete window.evaluateGlobalCondition;
+    await quietly(() => applyActions([{ type: 'hint', condition: 'globalVars.never', message: 'c' }]));
+    window.evaluateGlobalCondition = evaluateGlobalCondition;
+    assert.deepEqual(alerts, ['a', 'b', 'c']);
+    window.eventDispatcher.emit = () => {};
 });

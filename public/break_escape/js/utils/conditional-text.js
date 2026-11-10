@@ -79,6 +79,11 @@ export function evaluateGlobalCondition(condition, globalVars = {}) {
     return evaluateSingleCondition(condition, globalVars);
 }
 
+// apply-actions.js reads the evaluator from here for an action's `condition`. It is not
+// imported there: that file is copied by many node test harnesses that stub only its
+// known imports (see the note at its top).
+if (typeof window !== 'undefined') window.evaluateGlobalCondition = evaluateGlobalCondition;
+
 export function resolveConditionalText(baseValue, variants, globalVars = {}) {
     if (!Array.isArray(variants) || variants.length === 0) {
         return baseValue;

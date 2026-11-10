@@ -63,6 +63,13 @@ if (typeof window !== 'undefined') window.recordSECapture = recordSECapture;
  *   hint           { message, title? }: shows an informational alert to the player, for a time set by its length
  *   lighting_dip   { level?, ms? }   — one slow brownout dip of the room lights
  *
+ * Any action may carry a `condition` on the globals, in the syntax of timers and text
+ * variants ("!globalVars.a && globalVars.b === true"). It is read when the action is
+ * reached, so an earlier action in the list can change the answer; an action whose
+ * condition does not hold is skipped. With it one click can say one thing per state
+ * (lab_physical_pentest's ledger shelves). Where the evaluator
+ * (utils/conditional-text.js) is not loaded the action runs, as it did before.
+ *
  * @param {Array}  actions            Array of action descriptor objects.
  * @param {Object} [opts]
  * @param {string} [opts.source]      Label attached to emitted events (e.g. 'flag_reward',
@@ -76,6 +83,10 @@ export function applyActions(actions, { source = 'scenario', gameId = null } = {
     if (!Array.isArray(actions) || actions.length === 0) return gives;
 
     for (const action of actions) {
+        if (typeof action?.condition === 'string' && action.condition.trim()) {
+            const holds = window.evaluateGlobalCondition;
+            if (typeof holds === 'function' && !holds(action.condition, window.gameState?.globalVariables || {})) continue;
+        }
         switch (action.type) {
 
             case 'set_global':
