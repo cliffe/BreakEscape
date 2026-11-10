@@ -1077,6 +1077,9 @@ module BreakEscape
         room['objects'].reject! { |obj| item_in_inventory?(obj, player_state['inventory']) }
       end
 
+      # A device planted in a jack is in no room (slice 9.3a, 4.1)
+      hide_planted_devices!(room)
+
       # Filter out takeable notes whose content the player has already collected.
       # Only filter takeable notes (non-takeable notes, e.g. fixed signs, always appear).
       # Match on name+text together because note titles are not guaranteed unique.
@@ -1279,10 +1282,7 @@ module BreakEscape
     # "PC reachable" (section 6): its room is unlocked or never locked, and nothing it
     # sits in is still locked.
     def login_pc_reachable?(info)
-      return false unless info && info[:room_id]
-
-      room = room_data(info[:room_id])
-      room.is_a?(Hash) && (!room['locked'] || room_unlocked?(info[:room_id])) && path_unlocked?(info[:path])
+      object_reachable?(info)
     end
 
     def access_sessions
@@ -2498,7 +2498,13 @@ module BreakEscape
         # A sign-in PC is never unlocked: the task is met once the player has signed
         # in there (access model 5.3).
         target_pc = find_login_pc(task['targetObject'])
-        if target_pc
+        # A jack (slice 9.3a, 3.5): met once a foothold has ever been gained from it.
+        target_jack = find_jack(task['targetObject'])
+        if target_jack
+          unless gained_footholds.include?(target_jack[:object]['id'].to_s)
+            return { success: false, error: 'No device planted here' }
+          end
+        elsif target_pc
           unless signed_in_pcs.include?(target_pc[:object]['id'])
             return { success: false, error: 'Not signed in to this PC' }
           end

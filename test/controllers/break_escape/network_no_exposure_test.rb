@@ -33,6 +33,21 @@ module BreakEscape
       refute_exposed('/capture_secrets')
     end
 
+    test 'GET /network with no foothold is empty, and with one names only its own network' do
+      build_network_game
+      assert_equal({ 'footholds' => [] }, network_view)
+      refute_exposed('/network with no foothold')
+
+      take_drop_box
+      plant('comms_port')
+      assert_response :success
+      network_view
+      ([NS::OFFICE_NAME] + NS::OFFICE_RESOURCE_STRINGS).each { |text| assert_includes response.body, text }
+      refute_exposed('/network on office_lan', [NS::WORKSHOP_NAME] + NS::WORKSHOP_RESOURCE_STRINGS + NS::SHARE_ITEM_STRINGS)
+      get game_path('scenario'), as: :json
+      refute_exposed('/scenario with a foothold', NS::OFFICE_RESOURCE_STRINGS + NS::WORKSHOP_RESOURCE_STRINGS + NS::SHARE_ITEM_STRINGS)
+    end
+
     test 'a door unlock carries no exposed string in its room data' do
       build_network_game
       post game_path('unlock'), params: { targetType: 'door', targetId: 'finance_office', attempt: '4455', method: 'pin' }, as: :json

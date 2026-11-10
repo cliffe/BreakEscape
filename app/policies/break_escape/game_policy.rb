@@ -94,6 +94,19 @@ module BreakEscape
       show?
     end
 
+    # Networks (slice 9.3a, section 5)
+    def network?
+      show?
+    end
+
+    def network_plant?
+      show?
+    end
+
+    def network_unplug?
+      show?
+    end
+
     def submit_flag?
       show?
     end

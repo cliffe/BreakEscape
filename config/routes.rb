@@ -40,6 +40,11 @@ BreakEscape::Engine.routes.draw do
       get 'login_accounts'   # Account tiles for a sign-in PC's loginPicker
       post 'clone_card'      # Record a card copy the card copier saved
 
+      # Networks (docs/achitechture/ACCESS_MODEL_SLICE_9_3_PLAN.md section 5)
+      get  'network',         to: 'games#network',         as: 'network'          # The view for each held foothold
+      post 'network/plant',   to: 'games#network_plant',   as: 'network_plant'    # Plant a rogue device in a jack
+      post 'network/unplug',  to: 'games#network_unplug',  as: 'network_unplug'   # Take it back
+
       # Objectives system
       get 'objectives'                                      # Get current objective state
       get 'capture_secrets'   # SE: authored secret for each earned credential capture (stripped from the bootstrap)

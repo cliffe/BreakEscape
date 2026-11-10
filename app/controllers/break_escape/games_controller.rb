@@ -25,7 +25,7 @@ module BreakEscape
     end
 
     before_action :set_game, only: [:show, :scenario, :scenario_map, :ink, :room, :container, :update_room, :unlock, :inventory, :objectives, :capture_secrets, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :tts, :reset, :new_session, :vm_panel, :vm_set_panel, :conclude_mission,
-                                        :login, :logout, :login_accounts, :clone_card]
+                                        :login, :logout, :login_accounts, :clone_card, :network, :network_plant, :network_unplug]
     # A host may also route the game page under its own address (Hacktivity: /hacktivities/:event_id/play/mission/:id,
     # inside a Game event's web app scope). The game must belong to that event: any other pair is a 404.
     before_action :require_game_in_host_event, only: [:show]
@@ -84,9 +84,10 @@ module BreakEscape
     # that list, so losing an entry rejects a legitimate completion.
     #
     # login, logout and clone_card write sessions, sign-in failures and card copies
-    # (access model, section 6), so they take the lock like unlock.
+    # (access model, section 6), so they take the lock like unlock. network_plant and
+    # network_unplug write footholds, the inventory and sessions (slice 9.3a, section 5).
     around_action :with_game_lock, only: [:container, :update_room, :unlock, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :reset, :new_session, :inventory, :room,
-                                          :login, :logout, :clone_card]
+                                          :login, :logout, :clone_card, :network_plant, :network_unplug]
 
     # GET /games/new?mission_id=:id
     # Show VM set selection page for VM-required missions
@@ -381,6 +382,9 @@ module BreakEscape
         # the client's POST /logout.
         filtered['sessions'] = @game.sessions_for_client
         filtered['signedInPcs'] = @game.signed_in_pcs
+        # Footholds held and every jack one was gained from (slice 9.3a, section 6)
+        filtered['footholds'] = @game.footholds_for_client
+        filtered['gainedFootholds'] = @game.gained_footholds
         @game.end_claimed_sessions!
 
         if @game.player_state['inventory'].present? && @game.player_state['inventory'].is_a?(Array)
@@ -1002,6 +1006,11 @@ module BreakEscape
           # An add from a sign-in desktop names its PC and Copy or Move (access model 5.1)
           source_pc_id = (params[:source_pc_id] || params[:sourcePcId]).presence&.to_s
           transfer = params[:transfer].presence&.to_s
+          # A device planted in a jack is in no room and no home (slice 9.3a, 4.1)
+          if @game.planted_device?(item.to_unsafe_h)
+            return render json: { success: false, message: BreakEscape::NetworkAccess::DEVICE_IN_USE },
+                         status: :unprocessable_entity
+          end
           # Already held and no giver named: nothing to add, so nothing to validate.
           # A reload used to re-send every held item like this, and re-validating an
           # NPC gift with no source NPC took the first NPC copy holding it in room
@@ -1140,6 +1149,42 @@ module BreakEscape
       authorize @game if defined?(Pundit)
 
       render json: @game.objectives_state
+    end
+
+    # ==========================================
+    # Networks (docs/achitechture/ACCESS_MODEL_SLICE_9_3_PLAN.md, section 5). The checks
+    # and answers are in Game's NetworkAccess concern.
+    # ==========================================
+
+    # GET /games/:id/network?foothold=
+    # The network view for every held foothold, or the one named.
+    def network
+      authorize @game if defined?(Pundit)
+
+      result = @game.network_view(params[:foothold].presence&.to_s)
+      render json: result[:body], status: result[:status]
+    end
+
+    # POST /games/:id/network/plant (jack_id, optional device_id)
+    def network_plant
+      authorize @game if defined?(Pundit)
+
+      jack_id = params[:jack_id].to_s
+      return render json: { success: false, error: 'Missing jack_id' }, status: :bad_request if jack_id.empty?
+
+      result = @game.plant_device!(jack_id, params[:device_id].presence&.to_s)
+      render json: result[:body], status: result[:status]
+    end
+
+    # POST /games/:id/network/unplug (jack_id)
+    def network_unplug
+      authorize @game if defined?(Pundit)
+
+      jack_id = params[:jack_id].to_s
+      return render json: { success: false, error: 'Missing jack_id' }, status: :bad_request if jack_id.empty?
+
+      result = @game.unplug_device!(jack_id)
+      render json: result[:body], status: result[:status]
     end
 
     # GET /games/:id/capture_secrets
@@ -1899,6 +1944,8 @@ module BreakEscape
       # A file copied from a sign-in desktop stays listed while held (access model 5.1)
       copied = @game.copied_item_ids
       filtered_contents = contents.reject do |item|
+        # A device planted in a jack is not in its crate (slice 9.3a, 4.1)
+        next true if @game.planted_device?(item)
         next false if item['id'].present? && copied.include?(item['id'].to_s)
 
         in_inventory = item_in_inventory?(item, inventory)
