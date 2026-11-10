@@ -256,6 +256,9 @@ class AccessLeakScanner
     (list.is_a?(Array) ? list : []).each do |item|
       next unless item.is_a?(Hash)
 
+      # A file in a share that holds a password holds it on purpose, as a note in a room
+      # does (the feature scenario's letter and handover note, slice 9.3a step 8)
+      note_clues(item)
       strings = CONTENT_FIELDS.filter_map { |f| item[f].strip if usable.call(item[f]) }.uniq
       label = item['id'] ? item['id'].to_s : "#{resource_id}/unnamed-#{@share_items.length + 1}"
       @share_items[label] = { strings: strings, resource: resource_id, ancestors: ancestors.dup } if strings.any?
