@@ -60,6 +60,14 @@ lore_fragment_2 = "Q4 2024 EXPLOIT CATALOGUE (internal)\n\nPremium tier:\n- ProF
 
 lore_fragment_3_encoded = architect_directive_double
 
+# VM HOOK (2026-11-10): the VM's flag-3 price board is a Caesar shift by
+# price_board_shift (SecGen caesar_shift encoder, shift_key pinned to the SAME value in
+# SecGen scenarios/break_escape/safetynet/m03_ghost_in_the_machine.xml). Sable moved it off
+# ROT13; the number is in her unsent email (exec office PC -> Base64), the one that also
+# carries the safe code. The runbook and HaX point at her mail. A 25-key shift can also be
+# brute-forced, which the lab sheet teaches as the fallback. Change both sides together.
+price_board_shift = 7
+
 # P3-2: the VM's flag-3 price list (SecGen only, in SECGEN_PROPOSED_m03_ghost_in_the_machine.xml)
 # is the PUBLIC version of the catalogue: the same tiers, prices and healthcare-premium note,
 # but no buyer names, no SOLD ledger and no reserved stock. Those live only in the wall-safe
@@ -988,7 +996,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "eventPattern": "objective_task_completed:submit_http_flag",
               "onceOnly": true,
               "setGlobal": { "flag_http_submitted": true },
-              "sendTimedMessage": { "delay": 2000, "message": "Price list's in. Read the healthcare tier and you'll see why we're here." }
+              "sendTimedMessage": { "delay": 2000, "message": "Price list's in, unlocked with Sterling's own shift. Read the healthcare tier and you'll see why we're here." }
             },
             {
               "_comment": "P3-3: a text that opens the revelation call when clicked (m02 A7 pattern), so the drop-site isn't closed under the player. revelation_heard is still set at the end of the call, so the all-flags text still waits for it.",
@@ -1486,7 +1494,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "name": "Training Lab Runbook",
               "takeable": true,
               "readable": true,
-              "text": "STUDENT RUNBOOK -- TRAINING LAB\n\n1. nmap the lab network from the server room terminal. Everything you need answers a scan.\n2. The FTP box runs ProFTPD 1.3.3c, the trojaned 2010 build. Anonymous login works; nothing that matters lives in the anonymous folder.\n3. The web host serves the price list. It is only encoded, not encrypted.\n4. The legacy build runs distcc. Do not run exploits against it without sign-off.\n\nInstructor note: the legacy box is not a toy. Leave it alone."
+              "text": "STUDENT RUNBOOK -- TRAINING LAB\n\n1. nmap the lab network from the server room terminal. Everything you need answers a scan.\n2. The FTP box runs ProFTPD 1.3.3c, the trojaned 2010 build. Anonymous login works; nothing that matters lives in the anonymous folder.\n3. The web host serves the price list. It used to be plain ROT13; Sable has put it on her own shift and mails the number to clients. Still only a letter shift, not real encryption.\n4. The legacy build runs distcc. Do not run exploits against it without sign-off.\n\nInstructor note: the legacy box is not a toy. Leave it alone."
             }
           ]
         },
@@ -1548,7 +1556,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "takeable": true,
           "puzzle_graph_role": "tool",
           "puzzle_graph_note": "Decoding tool — take it, then paste the whiteboard, Sterling's draft, the client roster and the desk drive to reveal the intel",
-          "observations": "A laptop left open on CyberChef. Take it, then paste anything encoded you find — ROT13, Base64, hex, and layered combinations all decode here. Encoding is not encryption; there is no key to find."
+          "observations": "A laptop left open on CyberChef. Take it, then paste anything encoded you find — ROT13, Base64, hex, and layered combinations all decode here. ROT13 is only a letter shift of 13; the same operation takes any amount, so a different shift needs only its number."
         },
         {
           "type": "flag-station",
@@ -1602,8 +1610,8 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "name": "Zero Day Price List",
               "takeable": true,
               "readable": true,
-              "text": "ZERO DAY SYNDICATE // Q4 PRICE LIST\nDecoded from the lab's web box. Encoding is not encryption -- there was no key to break.\n\nLINE ITEM                          PRICE\nFile-transfer source backdoor      25,000\n  + healthcare sector premium      +40%\nTarget selection consultation      on request\n\nThe premium is the point: they charge more to aim it at a hospital.",
-              "observations": "The price board off the web box, decoded. The healthcare premium is why we are here -- they charge extra to point it at a hospital.",
+              "text": "ZERO DAY SYNDICATE // Q4 PRICE LIST\nDecoded from the lab's web box with Sable's own shift, the number out of her own mail. A shift is not real encryption: twenty-five possible keys, and she posted hers.\n\nLINE ITEM                          PRICE\nFile-transfer source backdoor      25,000\n  + healthcare sector premium      +40%\nTarget selection consultation      on request\n\nThe premium is the point: they charge more to aim it at a hospital.",
+              "observations": "The price board off the web box, decoded with the shift from Sterling's mail. The healthcare premium is why we are here -- they charge extra to point it at a hospital.",
               "puzzle_graph_role": "reward"
             },
             {
@@ -1785,7 +1793,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "name": "Unsent email to the night team (raw source)",
               "takeable": true,
               "readable": true,
-              "text": "<%= base64_encode('To: night team. From: Sable.\nCatalogue safe re-coded to 5829 -- memorise it, do not write it on the board again.\nObsidian Q4 pricing goes out Friday: ProFTPD-class $25k, Struts $18k, healthcare +40% as ever.\nArchitect wants the Phase 2 list same day. -V') %>",
+              "text": "<%= base64_encode("To: night team. From: Sable.\nCatalogue safe re-coded to #{catalogue_safe_code} -- memorise it, do not write it on the board again.\nObsidian Q4 pricing goes out Friday: ProFTPD-class $25k, Struts $18k, healthcare +40% as ever.\nThe web price board is off ROT13 -- any student could read it. Every letter now moves on #{price_board_shift} places. Clients get the number from me, nobody else.\nArchitect wants the Phase 2 list same day. -V") %>",
               "observations": "An unsent email to the night team, shown as raw message source. Her mail client saved it before it was ever sent: one unbroken block of upper and lower case letters, digits, + and /. Not a word of English in it.",
               "onRead": { "setVariable": { "draft_seen": true } },
               "puzzle_graph_role": "clue",
