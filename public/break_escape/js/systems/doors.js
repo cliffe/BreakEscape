@@ -671,7 +671,7 @@ async function handleDoorInteraction(doorSprite) {
             return;
         }
         // The gate is open and the player may pass (staff holding it, hi-vis on): the
-        // click walks him through, so there is nothing to refuse
+        // way is clear, so there is nothing to refuse (playtest E2)
         if (gateGroup && window.doorGates?.openToPlayer?.(gateGroup)) return;
         // The hint lives on the locked room's side of the doorway; the group shares it
         const hintSource = { doorProperties: { lockedHint: props.lockedHint || gateGroup?.lockedHint || null } };
