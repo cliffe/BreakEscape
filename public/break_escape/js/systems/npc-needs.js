@@ -13,7 +13,8 @@
  * node tests import it directly with a stub world (see createEngineWorld for the
  * live adapter).
  *
- * Determinism: every decision happens on a fixed 250 ms tick of the needs clock;
+ * Determinism: every decision happens on a fixed 250 ms tick of the needs clock, which the
+ * engine advances by the frame step its walks use (see update);
  * the only randomness is a per-NPC mulberry32 seeded from (seed, npcId), used for
  * jitterPct. Arrivals are queued and handled at the next tick.
  */
@@ -302,12 +303,21 @@ export class NPCNeedsSystem {
 
     // ── clock ──────────────────────────────────────────────────────────────
 
-    /** Live frame hook: advances the needs clock off game elapsed time. */
-    update() {
+    /**
+     * Live frame hook: advances the needs clock.
+     * @param {number} [frameMs] - the frame step the engine moves bodies by (Phaser's smoothed
+     *   loop delta). Given, the clock follows it, so decisions and walks share one timeline:
+     *   below 5 fps Phaser holds the physics step near one normal frame, and a clock on wall
+     *   time ran up to 40 times faster than the walks, so a walk's deadline passed with the
+     *   NPC a few steps from its post (the trip failed, the owner came straight back and the
+     *   target went on a 60 s cooldown). Not given (node tests, another host), the clock
+     *   follows game elapsed time as before.
+     */
+    update(frameMs) {
         if (this.manualClock) return;
         const now = this.world.elapsedMs();
         if (this._lastElapsed === null) { this._lastElapsed = now; return; }
-        const delta = now - this._lastElapsed;
+        const delta = Number.isFinite(frameMs) && frameMs >= 0 ? frameMs : now - this._lastElapsed;
         this._lastElapsed = now;
         if (this.world.isVmActive()) return;
         this._acc += clamp(delta, 0, MAX_FRAME_MS);
@@ -1001,6 +1011,16 @@ export class NPCNeedsSystem {
             }
             const obj = this.world.getObject(job.targetId);
             if (obj) this.world.faceTo(id, obj.x, obj.y);
+            // A need for its own post object turned urgent on the walk home, so the walk became
+            // this job. Arriving for it is the return: say so now, or the post's owner sits
+            // through the whole session before anything hears that it is back (a workstation
+            // stayed locked, with its owner at it, for the length of the session).
+            if (!s.atPost && this._atOwnPost(s)) {
+                if (!s.caughtEmitted) this._checkCaught(s, this.world.npcPos(id));
+                s.atPost = true;
+                this._log(id, 'returned_post');
+                this._emit(`npc_returned_post:${id}`, { npcId: id, ...this._playerProximity(id) });
+            }
             job.phase = 'using';
             const secs = Number(obj?.affordance?.useSeconds);
             job.useUntil = this.clockMs + (Number.isFinite(secs) ? clamp(secs, 0, 600) : 20) * 1000;

@@ -2453,8 +2453,9 @@ async function checkAndShowTutorial() {
     }
 }
 
-// Update function - main game loop
-export function update() {
+// Update function - main game loop. Phaser calls it with (time, delta); delta is the
+// loop's smoothed frame step, the same one the physics world moves bodies by.
+export function update(time, delta) {
     // Safety check: ensure player exists before running updates
     if (!window.player) {
         return;
@@ -2471,8 +2472,10 @@ export function update() {
     if (window.npcBehaviorManager) {
         window.npcBehaviorManager.update(this.time.now, this.time.delta);
     }
-    // NPC needs: fixed-step ticks off game elapsed time (paused on the VM)
-    window.npcNeedsSystem?.update();
+    // NPC needs: fixed-step ticks off the frame step the walks use (paused on the VM), so a
+    // slow frame rate slows decisions and walks together and a walk deadline cannot pass
+    // while the walker has hardly moved
+    window.npcNeedsSystem?.update(delta);
 
     // NPCs with los.challengeOnSight react when the player walks into their sight
     // (not while the player is on the VM: R13, vm-context-pause.js)

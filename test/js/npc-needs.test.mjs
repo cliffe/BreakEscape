@@ -233,6 +233,31 @@ test('needs clock pauses on the VM and clamps long frames', () => {
     assert.equal(sys.clockMs, 1500);
 });
 
+test('given the frame step, the needs clock follows it and not wall time', () => {
+    // Below 5 fps Phaser holds the physics step near one normal frame while wall time runs on.
+    // The engine passes that step, so a walk deadline cannot pass while the walker crawls.
+    let now = 0, vm = false;
+    const w = makeWorld(office());
+    w.world.elapsedMs = () => now;
+    w.world.isVmActive = () => vm;
+    const sys = new NPCNeedsSystem(w.world, { seed: 1 });
+    w.attach(sys);
+    sys.registerAll();
+    sys.update(16);                       // the first frame only sets the baseline
+    assert.equal(sys.clockMs, 0);
+    for (let i = 0; i < 40; i++) { now += 450; sys.update(25); }   // 18 s of wall time, 1 s of steps
+    assert.equal(sys.clockMs, 1000);
+    now += 450; sys.update(60000);        // a frame step is clamped like an elapsed one
+    assert.equal(sys.clockMs, 2000);
+    vm = true; now += 450; sys.update(500);
+    assert.equal(sys.clockMs, 2000);
+    vm = false;
+    now += 500; sys.update(NaN);          // no usable step: elapsed time, as before
+    assert.equal(sys.clockMs, 2500);
+    now += 250; sys.update();
+    assert.equal(sys.clockMs, 2750);
+});
+
 test('an unreachable nearer target is skipped, a reachable farther one is chosen', () => {
     const cfg = office({ objects: [
         { id: 'far_machine', x: 500, y: 300, affordance: { satisfies: 'caffeine', restores: 70, useSeconds: 5 } },
@@ -509,6 +534,48 @@ test('work at another object still emits left then returned', () => {
     assert.ok(names.includes('npc_left_post:clerk'));
     assert.ok(names.includes('npc_returned_post:clerk'));
     assert.ok(names.indexOf('npc_left_post:clerk') < names.indexOf('npc_returned_post:clerk'));
+});
+
+test('a need for the own post that turns urgent while away: arriving for it is the return', () => {
+    // Work turns urgent during the coffee, so the walk home becomes a job at the own PC. The
+    // return is announced on arrival, not after the session there, and only once.
+    const cfg = office({ objects: [
+        { id: 'own_pc', x: 100, y: 68, affordance: { satisfies: 'work', restores: 60, useSeconds: 10 } }
+    ] });
+    cfg.objects = cfg.objects.filter(o => o.id !== 'clerk_pc');
+    cfg.npcs.clerk.rec.needsHome = 'own_pc';
+    cfg.npcs.clerk.rec.needs = {
+        caffeine: { decayPerMin: 60, urgentAt: 50, initial: 55, jitterPct: 0 },
+        work: { decayPerMin: 20, urgentAt: 40, initial: 45, jitterPct: 0 }
+    };
+    const w = makeWorld(cfg);
+    const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+    w.attach(sys);
+    // Walks take two seconds here (the stub's are instant), so the walk home is still under
+    // way when the next choice is made
+    let walk = null;
+    w.world.moveTo = (id, x, y) => { walk = { id, x, y, at: sys.tickCount + 8 }; };
+    w.world.cancelMove = () => { walk = null; };
+    sys.onTick(() => {
+        if (!walk || sys.tickCount < walk.at) return;
+        const m = walk; walk = null;
+        w.pos[m.id].x = m.x; w.pos[m.id].y = m.y;
+        sys.onArrived(m.id, 'needs');
+    });
+    sys.registerAll();
+    sys.step(90000);
+    const log = sys.getLog().filter(e => e.npc === 'clerk');
+    const at = (ev, target) => log.findIndex(e => e.ev === ev && (!target || e.target === target));
+    assert.ok(at('used', 'coffee_machine') >= 0, 'had the coffee');
+    const usingOwn = log.findIndex((e, i) => i > at('used', 'coffee_machine') && e.ev === 'using' && e.target === 'own_pc');
+    const usedOwn = log.findIndex((e, i) => i > usingOwn && e.ev === 'used' && e.target === 'own_pc');
+    const back = at('returned_post');
+    assert.ok(usingOwn > 0 && usedOwn > usingOwn, 'worked at the own PC on the way back');
+    assert.ok(back > at('used', 'coffee_machine') && back < usingOwn, 'returned on arrival, before the session');
+    assert.equal(log[back].t, log[usingOwn].t, 'in the same tick as the arrival');
+    assert.equal(log.filter(e => e.ev === 'returned_post').length, 1);
+    assert.equal(w.calls.emits.filter(e => e.name === 'npc_returned_post:clerk').length, 1);
+    assert.equal(sys.getState('clerk').atPost, true);
 });
 
 // ── tick-cost hygiene (slice 1): office() logs are unchanged ────────────────────

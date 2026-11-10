@@ -260,7 +260,7 @@ read; the validator warns on it.
   test-harness copy list needs it.
 - Module `public/break_escape/js/systems/item-drop.js` (exists): the drop action.
 - `core/game.js` imports both after the behaviour manager loads and calls
-  `window.npcNeedsSystem.update()` each frame after `npcBehaviorManager.update`.
+  `window.npcNeedsSystem.update(delta)` each frame after `npcBehaviorManager.update`.
 - `npc-lazy-loader.js` calls `npcNeedsSystem.register(id)` after each `registerNPC`.
 - `isAvailable(npcId)`: true when the sprite exists and the NPC is not knocked out, hostile or
   hidden. `_tickNpc` blocks on it (decay only while there is no sprite), and the workstation
@@ -350,8 +350,13 @@ flags `scriptSuspended`, `blocked`, `atPost`, the current `job`
 
 ### 5.1 Needs clock and decay
 
-- Each frame: `Δ = gameClock.elapsedMs() − last`; add `min(Δ, 1000)` to an
-  accumulator. Skip (no accumulation) while `isVmContextActive()`.
+- Each frame: `Δ` is the frame step the engine passes to `update(frameMs)` (Phaser's smoothed
+  loop delta, the step the physics world moves bodies by), or `gameClock.elapsedMs() − last`
+  when none is passed (node tests); add `min(Δ, 1000)` to an accumulator. Skip (no
+  accumulation) while `isVmContextActive()`. The frame step keeps decisions and walks on one
+  timeline: below 5 fps Phaser holds the physics step near one normal frame, and a clock on
+  wall time used to run far ahead of the walks, so a walk's deadline passed with the NPC a few
+  steps from its post.
 - Run one **tick** per 250 ms in the accumulator. All decisions happen in ticks.
 - Per tick, each need loses `decayPerMin × 250 / 60000`, except the need being
   serviced during its `using` dwell. Crossing `urgentAt` downward emits
