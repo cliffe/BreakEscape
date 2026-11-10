@@ -1019,8 +1019,11 @@ module BreakEscape
           # An add from a share opened in the network view names the share (slice 9.3a, section 5)
           source_resource_id = (params[:source_resource_id] || params[:sourceResourceId]).presence&.to_s
           transfer = params[:transfer].presence&.to_s
-          # A device planted in a jack is in no room and no home (slice 9.3a, 4.1)
-          if @game.planted_device?(item.to_unsafe_h)
+          # A device planted in a jack is in no room and no home (slice 9.3a, 4.1). Checked
+          # here only for an add that names an id or a name: identity matches a bare type
+          # against any item of that type. The item the add resolves to is checked below.
+          client_item = item.to_unsafe_h
+          if (client_item['id'].present? || client_item['name'].present?) && @game.planted_device?(client_item)
             return render json: { success: false, message: BreakEscape::NetworkAccess::DEVICE_IN_USE },
                          status: :unprocessable_entity
           end
@@ -1039,6 +1042,10 @@ module BreakEscape
           if validation_error
             Rails.logger.warn "[BreakEscape] inventory validation failed: #{validation_error}"
             return render json: { success: false, message: validation_error },
+                         status: :unprocessable_entity
+          end
+          if @collectible_item.is_a?(Hash) && @game.planted_device?(@collectible_item)
+            return render json: { success: false, message: BreakEscape::NetworkAccess::DEVICE_IN_USE },
                          status: :unprocessable_entity
           end
 

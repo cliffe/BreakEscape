@@ -67,6 +67,35 @@ module BreakEscape
       end
     end
 
+    # Review R1, m6: an add naming only a type matched any planted device of that type.
+    test 'an add naming only a type is not refused as the planted device unless it resolves to it' do
+      data = NS.scenario
+      data['rooms']['lobby']['objects'] << { 'id' => 'lobby_terminal', 'type' => 'pc', 'name' => 'Lobby terminal',
+                                             'takeable' => true }
+      build_network_game({}, data)
+      take_drop_box
+      plant('comms_port')
+      assert_response :success
+
+      body = add_item('pc', nil, nil)
+      refute_equal NetworkAccess::DEVICE_IN_USE, body['message'], body.inspect
+      body = add_item('pc', 'lobby_terminal', 'Lobby terminal')
+      assert_equal true, body['success'], body.inspect
+      body = add_item('pc', 'kit_dropbox', nil)
+      assert_equal NetworkAccess::DEVICE_IN_USE, body['message']
+    end
+
+    # The client hash's own identity does not match the device (another id), but the
+    # start item the add resolves to by name is the device: the second check refuses it.
+    test 'an add whose client hash misses the device but resolves to it is refused' do
+      build_network_game({}, NS.with_device_home('start'))
+      plant('comms_port')
+      assert_response :success
+      body = add_item('pc', 'not_the_box', NS::DROP_BOX['name'])
+      assert_equal({ 'success' => false, 'message' => NetworkAccess::DEVICE_IN_USE }, body)
+      refute_includes held_ids, 'kit_dropbox'
+    end
+
     # ---- plant ------------------------------------------------------------------------
 
     test 'a plant moves the device out and the link item in, records both keys and answers first' do
