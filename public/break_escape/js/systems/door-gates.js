@@ -10,6 +10,11 @@
  *               "gate": { "openFor": ["guard"], "openRadius": 56, "holdMs": 2500,
  *                         "playerMayPassIf": "disguised" } }]
  *
+ * `noHold` (written by the server's loader from the guards' holdsDoors habit, slice 9.1
+ * step 5; never with playerMayPassIf) lists the careful guards: a gate is careful while
+ * every guard that counts is in it (those it opened for, lastGuards, while open; those
+ * near, while shut). A careful gate bars the player as a false playerMayPassIf does.
+ *
  * North and south doors only. register() declines a gate on an east or west door with
  * one console warning, and the door stays an ordinary locked door (a side doorway is two
  * sprites a tile apart, so the far one would never join the gate). The validator warns.
@@ -108,6 +113,8 @@ export function normaliseGate(raw) {
         openRadius: Number.isFinite(r) && r > 0 ? r : DEFAULT_GATE_RADIUS,
         holdMs: Number.isFinite(h) && h >= 0 ? h : DEFAULT_GATE_HOLD_MS,
         playerMayPassIf: typeof raw.playerMayPassIf === 'string' && raw.playerMayPassIf ? raw.playerMayPassIf : null,
+        // The guards who do not hold the door for the player (holdsDoors false)
+        noHold: Array.isArray(raw.noHold) ? raw.noHold.filter(s => typeof s === 'string') : [],
         // The open sound: undefined plays the door release when the door has an RFID lock,
         // a string plays that sound key, false silences the gate
         sound: raw.sound === false ? false : (typeof raw.sound === 'string' && raw.sound ? raw.sound : undefined)
@@ -231,6 +238,9 @@ export class DoorGates {
             g = {
                 key, cfg, sprites: new Set(), open: false, lastNpcNear: -Infinity, forcedUntil: 0,
                 guardBlockedSince: -1, playerHoldUntil: 0, exitHoldUntil: 0, lastBumpAt: -Infinity,
+                // The guards this open period belongs to (noHold): set by open(), added to
+                // each tick while open, cleared by close()
+                lastGuards: new Set(),
                 // A new gate is shut, so its bodies are on
                 bodyOff: false,
                 requires: props.requires ?? null,
@@ -412,6 +422,8 @@ export class DoorGates {
         g.open = true;
         g.openedAt = now;
         g.guardBlockedSince = -1;
+        // Before the body rule below reads it: who this open period belongs to
+        g.lastGuards = new Set(this.nearGuardIds(g));
         for (const s of g.sprites) this._applySprite(s, true);
         // The body rule before it returns: solid at once for a player it does not let through
         this._applyBodies(g, now);
@@ -509,7 +521,8 @@ export class DoorGates {
         if (now < (g.playerHoldUntil || 0)) return true;
         const name = g.cfg?.playerMayPassIf;
         if (name) return !!W().gameState?.globalVariables?.[name];
-        return true;
+        // A careful guard's open period (noHold) is not open to the player
+        return !this.careful(g);
     }
 
     /**
@@ -565,6 +578,7 @@ export class DoorGates {
         if (!g.open) return false;
         this._prune(g);
         g.open = false;
+        g.lastGuards = new Set();
         for (const s of g.sprites) this._applySprite(s, false);
         this._applyBodies(g, now);
         const pm = W().pathfindingManager;
@@ -682,6 +696,31 @@ export class DoorGates {
         return false;
     }
 
+    /** The ids of the openFor NPCs within openRadius (_npcNear says only whether there is one). */
+    nearGuardIds(g) {
+        const ids = [];
+        for (const id of g.cfg?.openFor || []) {
+            const s = npcSprite(id);
+            if (!s || s.visible === false) continue;
+            const c = centreOf(s);
+            if (Math.hypot(c.x - g.x, c.y - g.y) <= g.cfg.openRadius) ids.push(id);
+        }
+        return ids;
+    }
+
+    /**
+     * A careful gate (noHold, slice 9.1 step 5): no playerMayPassIf, a non-empty noHold,
+     * and every guard that counts is in it: lastGuards while open, the guards near while
+     * shut. One guard who holds doors among them is enough for not careful, and with
+     * nobody counting (an exit opening, a clone with no guard near) it is not careful.
+     */
+    careful(g) {
+        const cfg = g?.cfg;
+        if (!cfg || cfg.playerMayPassIf || !cfg.noHold?.length) return false;
+        const guards = g.open ? [...(g.lastGuards || [])] : this.nearGuardIds(g);
+        return guards.length > 0 && guards.every(id => cfg.noHold.includes(id));
+    }
+
     /**
      * Whether the player's presence keeps this gate shut, turns its guard back, and shuts
      * it at once while open. update() asks once per gate per tick and both branches read
@@ -698,6 +737,8 @@ export class DoorGates {
         // Undisguised: the gate's playerMayPassIf global is false
         const name = g.cfg.playerMayPassIf;
         if (name && !W().gameState?.globalVariables?.[name]) return true;
+        // A careful guard (noHold): she will not open with him at her shoulder
+        if (this.careful(g)) return true;
         return false;
     }
 
@@ -737,6 +778,7 @@ export class DoorGates {
             if (!g.sprites.size || !g.cfg) continue;
             const npcNear = this._npcNear(g);
             if (npcNear) g.lastNpcNear = now;
+            if (g.open) for (const id of this.nearGuardIds(g)) g.lastGuards.add(id);
             // Once per tick; both branches below read this one value
             const barred = this._playerBarred(g);
             this._applyBodies(g, now);
