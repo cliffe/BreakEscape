@@ -533,8 +533,9 @@ module BreakEscape
     end
 
     # The accounts map of GET /capture_secrets (4.4): { targetId => address } for each
-    # credential capture whose address, normalised as usernames are, is a username the
-    # account-holder pass would answer (a key of account_capture_passwords). Whatever
+    # credential capture under a declared target id whose address, normalised as usernames
+    # are, is a username the account-holder pass would answer (a key of
+    # account_capture_passwords). Whatever
     # revealSecret says, and never from the landing-page or single-secret passes. It
     # carries only the address the browser wrote, so it reveals no secret.
     def account_capture_usernames
@@ -544,9 +545,13 @@ module BreakEscape
       usernames = account_capture_passwords
       return {} if usernames.empty?
 
+      # As in capture_secrets_for_client, an entry whose target id no capture route declares
+      # cannot have been earned (engine plan section 6), so it is skipped here too.
+      declared = declared_capture_target_ids
       earned.each_with_object({}) do |(target_id, entry), out|
         next unless entry.is_a?(Hash)
         next if entry['kind'] && entry['kind'] != 'credential'
+        next unless declared.include?(target_id.to_s)
 
         address = entry['address']
         next unless address.is_a?(String) && !address.strip.empty?

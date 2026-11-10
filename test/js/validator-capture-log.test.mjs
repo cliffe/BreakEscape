@@ -132,7 +132,7 @@ test('each proof names something that exists and that the server records', { ski
     const cases = [
         [{ planted: 'no_item' }, 'which is no item in the scenario'],
         [{ planted: 'kit_logger', on: 'no_object' }, 'which is no room object'],
-        [{ planted: 'kit_logger', on: 'chris_pc' }, 'needs a room object with an id whose requiresItem names the item'],
+        [{ planted: 'kit_logger', on: 'chris_pc' }, 'needs a room object with an id and a triggerOnInteract list, whose requiresItem names the item'],
         [{ dropped: 'kit_logger' }, 'which is not droppable'],
         [{ dropped: 'ghost' }, 'which is no item in the scenario'],
         [{ session: 'chris_desk' }, 'which is no sign-in PC'],
@@ -176,4 +176,76 @@ test('storeIn: no holder, not takeable, addToNotes ignored, a code in the text',
     const list = issues(sc);
     assertHas(warnings(list), 'contains a lock code or an account password');
     assertNot(list, PASSWORD);
+});
+
+// ---- Code review R1 -------------------------------------------------------------------------
+
+test('M1: a password that is the code of a password or PIN lock opens something, wherever the lock sits', { skip }, () => {
+    const opal = (sc) => {
+        // A capture route and a sign-in PC that admits someone else: nothing but the lock opens.
+        sc.rooms.office.objects.push({ id: 'opal_pc', type: 'pc', name: 'PC', lockType: 'login', locked: true, access: { people: ['chris'] } });
+        sc.rooms.office.npcs.push({ id: 'opal', npcType: 'person', creds: { username: 'o.s', password: 'Opal-Pass-406' },
+            eventMappings: [{ eventPattern: 'w', addCapture: cap('opal', { address: 'o.s' }) }] });
+        return sc;
+    };
+    assertNot(issues(opal(clean())), 'opal');
+
+    const locks = [
+        sc => sc.rooms.office.objects.push({ id: 'drawer', type: 'safe', name: 'Drawer', locked: true, lockType: 'password', requires: 'Opal-Pass-406' }),
+        sc => sc.rooms.office.objects.push({ id: 'box', type: 'safe', name: 'Box', contents: [
+            { id: 'tin', type: 'safe', name: 'Tin', locked: true, lockType: 'pin', requires: 'Opal-Pass-406' }] }),
+        sc => sc.timers[0].actions.push({ type: 'give_item', item: { id: 'lap', type: 'laptop', name: 'Laptop', locked: true,
+            lockType: 'password', requires: 'Opal-Pass-406' } })
+    ];
+    for (const lock of locks) {
+        const sc = opal(clean());
+        lock(sc);
+        const list = issues(sc);
+        assertHas(errors(list), 'opal (');
+        assertHas(errors(list), 'opens a sign-in PC or a lock');
+        assertNot(list, 'Opal-Pass-406');
+    }
+});
+
+test('m6: a jack whose linkStoreIn names no holder item is warned about', { skip }, () => {
+    const sc = clean();
+    sc.rooms.office.objects.push({ id: 'jack', type: 'pc', name: 'Jack', networkJack: true, linkStoreIn: 'captur_log' });
+    assertHas(warnings(issues(sc)), 'linkStoreIn "captur_log" names no holder item');
+    sc.rooms.office.objects.at(-1).linkStoreIn = 'capture_log';
+    assertNot(issues(sc), 'linkStoreIn');
+    sc.rooms.office.objects.at(-1).linkStoreIn = '';
+    assertHas(errors(issues(sc)), 'linkStoreIn is the id of a holder item');
+});
+
+test('m7: a planted proof on a consumesItem object with no triggerOnInteract is an error', { skip }, () => {
+    const sc = clean();
+    delete obj(sc, 'chris_desk').triggerOnInteract;
+    assertHas(errors(issues(sc)), 'needs a room object with an id and a triggerOnInteract list');
+});
+
+test('m8: a planted proof whose object asks by type, shared with another item, is warned about', { skip }, () => {
+    let sc = clean();
+    obj(sc, 'chris_desk').requiresItem = 'usb';
+    // kit_qr is a usb too
+    assertHas(warnings(issues(sc)), 'asks for its item by type or name (usb), which kit_qr also match');
+
+    sc = clean();
+    obj(sc, 'chris_desk').requiresItem = 'Keylogger';
+    assertNot(issues(sc), 'asks for its item by type or name');
+});
+
+test('m5: a capture_log holder must name a sprite that exists', { skip }, () => {
+    const script = `require ${JSON.stringify(join(root, 'scripts/validate_scenario.rb'))}
+      types = load_valid_item_types(${JSON.stringify(root)})
+      puts JSON.generate(check_common_issues(JSON.parse(STDIN.read), types))`;
+    const run = (sprite) => {
+        const sc = clean();
+        sc.startItemsInInventory[0].sprite = sprite;
+        const r = spawnSync('ruby', ['-e', script], { input: JSON.stringify(sc), encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' } });
+        assert.equal(r.status, 0, r.stderr);
+        return JSON.parse(r.stdout.trim().split('\n').pop()).filter(s => s.includes("type 'capture_log'"));
+    };
+    assert.deepEqual(run('laptop1'), []);
+    assert.equal(run('capture_log').length, 1, 'the missing picture is refused');
+    assert.equal(run('no_such_picture').length, 1);
 });

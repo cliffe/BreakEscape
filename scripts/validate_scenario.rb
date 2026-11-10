@@ -2429,8 +2429,10 @@ def check_common_issues(json_data, valid_item_types = nil)
       exact_match = valid_item_types.include?(t)
       variant_match = !exact_match && valid_item_types.any? { |v| v.start_with?(t) }
       # The capture log holder (engine plan section 6) is an engine type: until its own
-      # picture exists, an item of that type that names a sprite draws that sprite.
-      engine_type = t == 'capture_log' && item['sprite'].is_a?(String) && !item['sprite'].empty?
+      # picture exists, an item of that type that names a sprite draws that sprite, so the
+      # sprite must be a picture in assets/objects/ (laptop1 until the content plan supplies
+      # capture_log.png).
+      engine_type = t == 'capture_log' && item['sprite'].is_a?(String) && valid_item_types.include?(item['sprite'])
       unless exact_match || variant_match || engine_type
         issues << "❌ INVALID: '#{item_path}' has type '#{t}' but no matching sprite found at assets/objects/#{t}.png (nor any #{t}*.png variant) — check the spelling or add the asset"
       end

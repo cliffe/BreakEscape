@@ -72,6 +72,49 @@ module BreakEscape
       assert_equal CP::PASSWORDS['opal'], secrets['opal']
     end
 
+    # M1 (code review R1): a password that is also the code of a password or PIN lock opens
+    # something, wherever the lock sits.
+    {
+      'a password-locked drawer in the room' => lambda do |sc, pw|
+        sc['rooms']['office']['objects'] << { 'id' => 'opal_drawer', 'type' => 'safe', 'name' => 'Drawer',
+                                              'locked' => true, 'lockType' => 'password', 'requires' => pw }
+      end,
+      'a PIN lock nested in a container' => lambda do |sc, pw|
+        sc['rooms']['office']['objects'] << { 'id' => 'cabinet', 'type' => 'safe', 'name' => 'Cabinet', 'contents' => [
+          { 'id' => 'tin', 'type' => 'safe', 'name' => 'Tin', 'locked' => true, 'lockType' => 'pin', 'requires' => pw }
+        ] }
+      end,
+      'a password-locked door' => lambda do |sc, pw|
+        sc['rooms']['vault'].merge!('lockType' => 'password', 'requires' => pw)
+      end,
+      'a granted item' => lambda do |sc, pw|
+        sc['timers'] = [{ 'id' => 'g', 'afterMs' => 1000, 'actions' => [{ 'type' => 'give_item', 'item' => {
+          'id' => 'laptop', 'type' => 'laptop', 'name' => 'Laptop', 'locked' => true, 'lockType' => 'password', 'requires' => pw
+        } }] }]
+      end
+    }.each do |where, add_lock|
+      test "a forged capture of an account whose password is the code of #{where} is not served without a proof" do
+        scenario = CP.scenario
+        # Opal's sign-in PC admits someone else, so only the lock makes her password open something.
+        scenario['rooms']['office']['objects'] << CP.login_pc('opal_pc', 'chris')
+        add_lock.call(scenario, CP::PASSWORDS['opal'])
+        build_game(scenario)
+        assert CaptureModel.password_opens_lock?(CP.npc('opal'), @game.scenario_data)
+        forge('opal')
+        refute secrets.key?('opal'), "opal's password was served on a forged capture"
+        refute_includes response.body, CP::PASSWORDS['opal']
+      end
+    end
+
+    test 'a password lock with a different code leaves an account that opens nothing served' do
+      scenario = CP.scenario
+      scenario['rooms']['office']['objects'] << { 'id' => 'drawer', 'type' => 'safe', 'name' => 'Drawer',
+                                                  'locked' => true, 'lockType' => 'password', 'requires' => 'Other-Code-1' }
+      build_game(scenario)
+      forge('opal')
+      assert_equal CP::PASSWORDS['opal'], secrets['opal']
+    end
+
     test 'planted: a room pickup then a consumesItem remove with used_on, holding after the device is taken back' do
       build_game
       forge('chris')
@@ -178,6 +221,44 @@ module BreakEscape
       assert_equal({ 'phished' => 'Land-Secret-1' }, secrets)
     end
 
+    # m4 (code review R1): phishTargets as a map, and a page with no capture block.
+    test 'phishTargets as a map is read as the mail bridge reads it, and every target is declared' do
+      data = { 'social' => { 'phishTargets' => { 'a' => { 'id' => 'tgt_a' }, 'b' => { 'id' => 'tgt_b', 'foothold' => {} } },
+                             'landingPages' => [{ 'id' => 'portal' }] } }
+      assert_equal %w[tgt_a tgt_b], CaptureModel.phish_target_ids(data)
+      assert_includes CaptureModel.declared_target_ids(data), 'tgt_a'
+      data['social']['phishTargets'] = [{ 'id' => 'tgt_c' }, 'junk', { 'id' => '' }]
+      assert_equal %w[tgt_c], CaptureModel.phish_target_ids(data)
+    end
+
+    test 'a phish credential under a page with no capture block is answered by the account pass' do
+      scenario = CP.scenario
+      scenario['social']['landingPages'] = [{ 'id' => 'portal' }]
+      scenario['social']['phishTargets'] = { 'opal_target' => { 'id' => 'opal_target', 'address' => CP::USERNAMES['opal'] } }
+      build_game(scenario)
+      put game_path('sync_state'), params: { globalVariables: { 'se_captures' => {
+        'opal_target' => { 'targetId' => 'opal_target', 'kind' => 'credential', 'address' => CP::USERNAMES['opal'], 'at' => 1 }
+      } } }, as: :json
+      assert_equal({ 'opal_target' => CP::PASSWORDS['opal'] }, secrets)
+    end
+
+    # m7 (code review R1): the client consumes an item only inside triggerOnInteract.
+    test 'a consumesItem object with no triggerOnInteract takes no plant' do
+      item = { 'id' => 'kit_logger', 'type' => 'usb' }
+      refute CaptureModel.object_takes_item?({ 'id' => 'd', 'requiresItem' => 'kit_logger', 'consumesItem' => true }, item)
+      assert CaptureModel.object_takes_item?({ 'id' => 'd', 'requiresItem' => 'kit_logger', 'consumesItem' => true,
+                                               'triggerOnInteract' => [] }, item)
+
+      scenario = CP.scenario
+      scenario['rooms']['office']['objects'] << { 'id' => 'bare_desk', 'type' => 'pc', 'name' => 'Bare desk',
+                                                  'requiresItem' => 'kit_logger', 'consumesItem' => true }
+      build_game(scenario)
+      take('kit_logger', 'usb', 'Inline keylogger')
+      assert_response :success, response.body
+      remove('kit_logger', 'bare_desk')
+      assert_equal [], planted
+    end
+
     test 'a stored grant contents are in neither the bootstrap nor the inventory answer' do
       scenario = CP.scenario
       scenario['timers'] = [{ 'id' => 'grant', 'afterMs' => 1000, 'actions' => [{ 'type' => 'give_item', 'item' => {
@@ -233,6 +314,24 @@ module BreakEscape
       get game_path('capture_secrets'), as: :json
       assert_equal({ 'lena' => NetworkModelScenario::LENA_PASSWORD }, response.parsed_body['secrets'])
       assert_equal({ 'lena' => 'lfox' }, response.parsed_body['accounts'])
+    end
+
+    # m1 (code review R1, probe P1): accounts skips an undeclared target id, as secrets does.
+    test 'in a network scenario, accounts skips a target id no capture route declares' do
+      scenario = NetworkModelScenario.scenario
+      scenario['rooms']['lobby']['npcs'].find { |n| n['id'] == 'lena' }['usePayload']['targetId'] = 'lena'
+      build_network_game({}, scenario)
+      put game_path('sync_state'), params: { globalVariables: { 'se_captures' => {
+        'zzz_undeclared' => { 'targetId' => 'zzz_undeclared', 'kind' => 'credential', 'address' => 'lfox', 'at' => 1 }
+      } } }, as: :json
+      assert_response :success
+      get game_path('capture_secrets'), as: :json
+      assert_equal({}, response.parsed_body['secrets'])
+      assert_equal({}, response.parsed_body['accounts'])
+
+      network_forge
+      get game_path('capture_secrets'), as: :json
+      assert_equal({ 'lena' => 'lfox' }, response.parsed_body['accounts'], 'a declared id still answers')
     end
   end
 end

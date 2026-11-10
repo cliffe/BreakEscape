@@ -60,7 +60,7 @@ module CaptureProofScenario
             { 'id' => 'decoy_desk', 'type' => 'pc', 'name' => 'Decoy desk', 'requiresItem' => 'kit_logger',
               'triggerOnInteract' => [{ 'type' => 'set_global', 'key' => 'decoy', 'value' => true }] },
             { 'id' => 'named_desk', 'type' => 'pc', 'name' => 'chris_desk_by_name', 'requiresItem' => 'kit_logger',
-              'consumesItem' => true },
+              'consumesItem' => true, 'triggerOnInteract' => [] },
             login_pc('chris_pc', 'chris'),
             login_pc('mel_pc', 'mel', 'screenOwner' => 'mel', 'locksScreenOnLeave' => false),
             login_pc('sofia_pc', 'sofia'),
@@ -90,7 +90,8 @@ module CaptureProofScenario
           'type' => 'room_office', 'connections' => { 'south' => 'office' },
           'locked' => true, 'lockType' => 'key', 'requires' => 'vault_key',
           'objects' => [
-            { 'id' => 'vault_desk', 'type' => 'pc', 'name' => 'Vault desk', 'requiresItem' => 'kit_logger', 'consumesItem' => true }
+            { 'id' => 'vault_desk', 'type' => 'pc', 'name' => 'Vault desk', 'requiresItem' => 'kit_logger', 'consumesItem' => true,
+              'triggerOnInteract' => [] }
           ]
         }
       }

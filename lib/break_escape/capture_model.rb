@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'set'
+
 module BreakEscape
   # Capture routes and capture proofs (docs/achitechture/PHYSICAL_PENTEST_FEEDBACK_PLAN_ENGINE.md,
   # section 6), read from the authored scenario.
@@ -72,22 +74,19 @@ module BreakEscape
       (ids + phish_target_ids(data)).uniq
     end
 
-    # The phish targets a landing-page capture (or a foothold) may be recorded for: the only
-    # target ids the single-secret fallback answers for.
+    # Every phish target id: a link kit can land on any of them, and the mail bridge records a
+    # credential for the target (with its own address when the page carries no capture) or a
+    # foothold for one that carries one. phishTargets is a list, or a map whose values are the
+    # targets (each still named by its own id), as mail-bridge.js resolveTarget reads it. The
+    # single-secret fallback answers only for these, and only when one landing page carries a
+    # secret.
     def phish_target_ids(data)
-      ids = []
       social = data.is_a?(Hash) ? data['social'] : nil
-      if social.is_a?(Hash)
-        pages = social['landingPages'].is_a?(Array) ? social['landingPages'] : []
-        page_capture = pages.any? { |page| page.is_a?(Hash) && page['capture'].is_a?(Hash) }
-        targets = social['phishTargets'].is_a?(Array) ? social['phishTargets'] : []
-        targets.each do |target|
-          next unless target.is_a?(Hash) && present_string?(target['id'])
+      return [] unless social.is_a?(Hash)
 
-          ids << target['id'] if page_capture || target['foothold'].is_a?(Hash)
-        end
-      end
-      ids.uniq
+      list = social['phishTargets']
+      targets = list.is_a?(Hash) ? list.values : Array(list)
+      targets.filter_map { |target| target['id'] if target.is_a?(Hash) && present_string?(target['id']) }.uniq
     end
 
     def room_npc_list(data)
@@ -142,6 +141,39 @@ module BreakEscape
       each_capture_writer(data).any? { |capture, kind, _path, _owner| kind == :mapping && capture.key?('proof') }
     end
 
+    LOCK_CODE_TYPES = %w[password pin].freeze
+
+    # Every code of a password or PIN lock anywhere in the scenario (rooms, doors, objects and
+    # their contents at any depth, NPC items, granted items, timers), as strings.
+    def lock_codes(data)
+      out = Set.new
+      walk = lambda do |node|
+        case node
+        when Hash
+          req = node['requires']
+          if LOCK_CODE_TYPES.include?(node['lockType']) && (req.is_a?(String) || req.is_a?(Integer))
+            code = req.to_s
+            out << code unless code.strip.empty?
+          end
+          node.each_value { |value| walk.call(value) }
+        when Array
+          node.each { |value| walk.call(value) }
+        end
+      end
+      walk.call(data)
+      out
+    end
+
+    # Whether this account holder's password is also the code of a password or PIN lock, so a
+    # served password opens that lock. codes: lock_codes(data), passed in when checking many
+    # accounts.
+    def password_opens_lock?(npc, data, codes = nil)
+      password = npc.is_a?(Hash) && npc['creds'].is_a?(Hash) ? npc['creds']['password'] : nil
+      return false unless present_string?(password)
+
+      (codes || lock_codes(data)).include?(password)
+    end
+
     # The proof's kind ('planted', 'dropped' or 'session') or nil for a malformed proof.
     def proof_kind(proof)
       return nil unless proof.is_a?(Hash)
@@ -167,9 +199,9 @@ module BreakEscape
       end
     end
 
-    # Whether a room object takes this item when used: its requiresItem names the item (by id,
-    # type or name, as interactions.js matches) and it consumes it (consumesItem, or a
-    # remove_item naming it in its triggerOnInteract).
+    # Whether a room object takes this item when used: it has a triggerOnInteract list, its
+    # requiresItem names the item (by id, type or name, as interactions.js matches) and it
+    # consumes it (consumesItem, or a remove_item naming it in that list).
     def object_takes_item?(obj, item)
       return false unless obj.is_a?(Hash) && item.is_a?(Hash)
 
@@ -178,6 +210,10 @@ module BreakEscape
 
       wanted = Array(obj['requiresItem']).map(&:to_s)
       return false if (wanted & names).empty?
+
+      # The client consumes an item only inside its triggerOnInteract branch
+      # (interactions.js, hasTriggerOnInteract: an array), so consumesItem counts only there.
+      return false unless obj['triggerOnInteract'].is_a?(Array)
 
       obj['consumesItem'] == true || removes_item?(obj['triggerOnInteract'], names)
     end

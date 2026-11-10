@@ -918,11 +918,13 @@ A **holder** is an inventory item that files other held items, so the tray does 
 
 ```json
 "startItemsInInventory": [
-  { "type": "capture_log", "id": "capture_log", "name": "Capture log", "sprite": "capture_log", "takeable": true,
+  { "type": "capture_log", "id": "capture_log", "name": "Capture log", "sprite": "laptop1", "takeable": true,
     "holds": { "captures": true, "items": true },
     "observations": "Your engagement device: every credential, session and finding you record." }
 ]
 ```
+
+The holder draws its `sprite`, which must be a picture in `assets/objects/` (the validator refuses one that is not). Use `laptop1` until the content plan supplies `capture_log.png`.
 
 ```json
 { "type": "give_item", "item": { "id": "cable_capture", "type": "text_file", "name": "Juice-jack capture",
@@ -933,7 +935,7 @@ A **holder** is an inventory item that files other held items, so the tray does 
 - `holds.items`: the device files every held item whose `storeIn` equals the holder's `id`. Nothing is filed by type. A `storeIn` naming a holder that is not held leaves the item in the tray, and it is filed as soon as the holder arrives; if the holder leaves, its items show in the tray again.
 - **Filing is a view, not a move.** A filed item is still an ordinary inventory item (every "does the player hold X" check is unchanged); only its tray slot is hidden. The player sees "Added to Capture log: <name>" when one arrives, and the holder's badge counts rows the player has not seen in the device yet.
 - The device lists **Sessions** (slice 9.3's link items, filed through the jack's `linkStoreIn`; the remote sessions through them; and filed items with `contents`, such as a hand-written remote session) and **Findings** (other filed items, readable texts). A row's click runs the item's own click, and the device comes back when that screen closes.
-- **Notepad or capture log, never both.** The Notepad keeps collecting texts the player reads; the capture log holds only what the player's own devices and captures produced. `addToNotes` on a `storeIn` item is meant to be ignored, and the validator says so.
+- **Notepad or capture log, never both.** The Notepad keeps collecting texts the player reads; the capture log holds only what the player's own devices and captures produced. A readable `storeIn` item is never added to the Notepad when it is read (`addToNotes` on it is ignored, and the validator says so); the text file reader's own "Add to Notepad" button stays, so the player can still copy a finding by choice.
 - **A granted text ships in the bootstrap.** Findings are teaching text, so that is fine; a text that gives away a code belongs in the `contents` of a session-style item, which the server holds back. The validator warns when a `storeIn` text contains a PIN or password lock's code or an account password.
 - The validator also warns when a `storeIn` names no holder in the scenario, or sits on a room object that is not takeable (make it takeable, a grant or a gift).
 
@@ -948,14 +950,16 @@ A **holder** is an inventory item that files other held items, so the tray does 
 
 | Proof | Holds when |
 |-------|------------|
-| `{ "planted": "<item>", "on": "<object>" }` (`on` optional) | The server saw the item leave the inventory at that object: a room object with an `id` whose `requiresItem` names the item and which consumes it (`consumesItem`, or a `remove_item` naming it in its `triggerOnInteract`), in the start room or a room the player had unlocked. Or `on` names a network jack a foothold was gained from |
+| `{ "planted": "<item>", "on": "<object>" }` (`on` optional) | The server saw the item leave the inventory at that object: a room object with an `id` and a `triggerOnInteract` list (the game consumes an item only there), whose `requiresItem` names the item and which consumes it (`consumesItem`, or a `remove_item` naming it in that list), in the start room or a room the player had unlocked. Or `on` names a network jack a foothold was gained from |
 | `{ "dropped": "<item>" }` | The server accepted a player drop of that item (it must be `droppable`) |
 | `{ "session": "<pc>" }` | Someone signed in at that sign-in PC, by password or by claiming the owner's open screen. It records the PC, not the account, so it is sound only where the PC admits just the proof's holder; the validator warns otherwise |
 
 - `captureProof` is a list on the account holder; **any one** proof holding is enough. Taking a planted device back does not undo its proof.
 - **Shorthand:** `"proof": { ... }` inside an NPC mapping's `addCapture` counts for the account whose username equals the capture's `address`, or, with no `address`, for the NPC carrying the mapping. A `proof` on an `add_capture` action is refused ("put it on the account holder as captureProof"), as is a shorthand that resolves to no account holder.
-- **When the rule is strict.** A scenario that declares any proof serves a password that opens something (a sign-in PC the account is admitted at, where a PC with no `access` admits every account; or a share whose access list admits it) only once one of that account's proofs holds, and the validator makes a missing proof an error there. A scenario that declares none is served as before, and the validator warns on each account with a capture route and a password that opens something but no proof. A game keeps the scenario it was created with, so adding a proof changes only new games.
-- **Unique target ids.** Captures are first capture wins, so two routes writing the same `targetId` record only the first; the validator makes that an error. It finds every `add_capture` action and `addCapture` mapping by walking the whole scenario. A captured entry whose target id no route declares (a phish target, an `addCapture`, an `add_capture` or a `usePayload.targetId`) is never served, and the single landing-page secret answers only for a phish target.
+- **When the rule is strict.** A scenario that declares any proof serves a password that opens something (a sign-in PC the account is admitted at, where a PC with no `access` admits every account; a password or PIN lock anywhere in the scenario whose `requires` is the password; or a share whose access list admits it) only once one of that account's proofs holds, and the validator makes a missing proof an error there. A scenario that declares none is served as before, and the validator warns on each account with a capture route and a password that opens something but no proof. A game keeps the scenario it was created with, so adding a proof changes only new games.
+- **Unique target ids.** Captures are first capture wins, so two routes writing the same `targetId` record only the first; the validator makes that an error. It finds every `add_capture` action and `addCapture` mapping by walking the whole scenario. A captured entry whose target id no route declares (a phish target, an `addCapture`, an `add_capture` or a `usePayload.targetId`) is never served, and the single landing-page secret answers only for a phish target (`social.phishTargets`, a list or a map of targets; every one is declared).
+- **Ask for the planted item by id.** The game plants the first held item whose type, id or name `requiresItem` names, so an object that asks by type (`"usb"`) can take a different device than the proof names. The validator warns when another item shares that type or name.
+- **`linkStoreIn`** on a jack files its link item in a holder; the validator warns when it names no holder item.
 
 ### Workstation screens: the locked look (`pc_desktop` and `<key>_locked`)
 

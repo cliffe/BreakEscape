@@ -14,6 +14,12 @@
 # like a /capture_secrets answer. A password passes there, and in /capture_secrets, only for an
 # account the server would serve now (its capture proofs applied, engine plan section 6).
 #
+# "Now" is when this check runs, not when the response was taken. Proofs only grow, so a
+# /capture_secrets answer that served a password before its proof held (the bug this exception
+# must not hide) passes once the proof holds later. A single check at the end of a run cannot see
+# that order: run the check after every beat, over the responses so far (as the playtest-scenario
+# skill says), so each capture answer is judged against the proofs that held at that beat.
+#
 # Exit status: 0 when nothing leaked, 1 on any finding, 2 on a usage error.
 require_relative 'lib/access_leak_scanner'
 
@@ -63,6 +69,9 @@ AccessLeakScanner::RULE_TEXT.each do |rule, text|
   puts "#{rule.ljust(16)} #{(by_rule[rule] || []).length}  (#{text})"
 end
 scanner.report_lines(findings).each { |line| puts line }
+if lines.any? { |_label, _no, row| row.is_a?(Hash) && (row.key?('dom') || row['path'].to_s.split('?').first.to_s.end_with?('/capture_secrets')) }
+  puts 'note             capture answers judged against the proofs held now: run this after every beat to see order'
+end
 puts
 if findings.empty?
   puts 'VERDICT: no leaks found.'

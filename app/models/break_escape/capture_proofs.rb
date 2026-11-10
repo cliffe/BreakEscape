@@ -70,9 +70,13 @@ module BreakEscape
     # Whether an account's password opens something: the account is admitted at a sign-in PC
     # (a room object login_pc? accepts; a PC with no access list admits every account), or, in a
     # scenario with networks, at a share whose access list admits it. A share with no access
-    # list is reached by a foothold alone, so the password adds nothing there.
+    # list is reached by a foothold alone, so the password adds nothing there. Also when the
+    # password is the code of a password or PIN lock anywhere in the scenario
+    # (CaptureModel.password_opens_lock?, which the validator shares).
     def account_password_opens_something?(npc)
-      pcs = AccessIdentities.room_objects(scenario_data).map { |entry| entry[:object] }.select { |obj| self.class.login_pc?(obj) }
+      return true if CaptureModel.password_opens_lock?(npc, scenario_data)
+
+      pcs =AccessIdentities.room_objects(scenario_data).map { |entry| entry[:object] }.select { |obj| self.class.login_pc?(obj) }
       return true if pcs.any? { |pc| pc_admits_account?(pc, npc) }
       return false unless network_scenario?
 

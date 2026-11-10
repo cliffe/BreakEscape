@@ -59,7 +59,12 @@ def check_capture_log(json_data)
   pc_admits = lambda do |pc, npc|
     pc['access'].nil? || ai.acl_admits?(pc['access'], npc)
   end
+  lock_codes = cm.lock_codes(json_data)
+  # The server's rule (CaptureProofs#account_password_opens_something?): a sign-in PC that
+  # admits the account, a password or PIN lock whose code is the password, or an access-listed
+  # share that admits it.
   opens_something = lambda do |npc|
+    return true if cm.password_opens_lock?(npc, json_data, lock_codes)
     return true if login_pcs.any? { |pc| pc_admits.call(pc, npc) }
     return false unless networks
 
@@ -95,10 +100,24 @@ def check_capture_log(json_data)
         obj = e[:object]
         obj['id'].is_a?(String) && !obj['id'].empty? && (on.nil? || obj['id'] == on) && cm.object_takes_item?(obj, item)
       end
+      takers.each do |e|
+        obj = e[:object]
+        wanted = Array(obj['requiresItem']).map(&:to_s)
+        next if wanted.include?(item_id)
+
+        shared = item_defs.reject { |id, other| id == item_id || !other.is_a?(Hash) }.select do |_id, other|
+          %w[type name].any? { |k| other[k].is_a?(String) && wanted.include?(other[k]) }
+        end
+        next if shared.empty?
+
+        warn.call("#{where}: \"#{obj['id']}\" asks for its item by type or name (#{wanted.join(', ')}), which " \
+                  "#{shared.keys.first(3).join(', ')} also match: the player may plant one of those instead, and " \
+                  "this proof names \"#{item_id}\". Name the item by id in requiresItem")
+      end
       if takers.empty?
-        err.call("#{where}: planted \"#{item_id}\"#{on ? " on \"#{on}\"" : ''} needs a room object with an id whose " \
-                 'requiresItem names the item and which consumes it (consumesItem, or a remove_item naming it), or a ' \
-                 'network jack: the server records a plant only there')
+        err.call("#{where}: planted \"#{item_id}\"#{on ? " on \"#{on}\"" : ''} needs a room object with an id and a " \
+                 'triggerOnInteract list, whose requiresItem names the item and which consumes it (consumesItem, or a ' \
+                 'remove_item naming it), or a network jack: the server records a plant only there')
       end
     when 'dropped'
       item_id = proof['dropped'].to_s
@@ -153,9 +172,9 @@ def check_capture_log(json_data)
 
     if strict
       err.call("#{npc['id']} (#{entry[:path]}): this scenario declares capture proofs and #{npc['id']}'s password " \
-               "opens a sign-in PC, so #{npc['id']} needs captureProof: with none the password is never served")
+               "opens a sign-in PC or a lock, so #{npc['id']} needs captureProof: with none the password is never served")
     else
-      warn.call("#{npc['id']} (#{entry[:path]}): a capture route and a password that opens a sign-in PC, with no " \
+      warn.call("#{npc['id']} (#{entry[:path]}): a capture route and a password that opens a sign-in PC or a lock, with no " \
                 'captureProof: a forged capture is served the password. Add a proof (engine plan section 6)')
     end
   end
@@ -178,12 +197,30 @@ def check_capture_log(json_data)
     if how == :room && item['takeable'] != true
       warn.call("#{path}: an item with storeIn is filed only once held: make it takeable, a grant or a gift")
     end
-    warn.call("#{path}: addToNotes is ignored on an item with storeIn (it is filed in the holder, not the Notepad)") if item.key?('addToNotes')
+    if item.key?('addToNotes')
+      warn.call("#{path}: addToNotes is ignored on an item with storeIn (it is filed in the holder, not added to the Notepad)")
+    end
     text = [item['text'], item['observations']].select { |t| t.is_a?(String) }.join("\n")
     hit = secrets.find { |s| text.include?(s) }
     if hit
       warn.call("#{path}: this storeIn text contains a lock code or an account password, and a granted text ships " \
                 'in the bootstrap: put it in the contents of a session-style item, which the server holds back')
+    end
+  end
+
+  # ---- A jack's linkStoreIn: the server copies it into the link item's storeIn ----
+  objects.each do |e|
+    obj = e[:object]
+    next unless nm.jack?(obj) && obj.key?('linkStoreIn')
+
+    where = "#{e[:path]}/linkStoreIn"
+    link_store_in = obj['linkStoreIn']
+    unless link_store_in.is_a?(String) && !link_store_in.empty?
+      err.call("#{where}: linkStoreIn is the id of a holder item (one with holds)")
+      next
+    end
+    unless holder_ids.include?(link_store_in)
+      warn.call("#{where}: linkStoreIn \"#{link_store_in}\" names no holder item (an item with holds) in this scenario, so the link item stays in the tray")
     end
   end
 
