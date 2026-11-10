@@ -178,7 +178,7 @@ export function applyActions(actions, { source = 'scenario', gameId = null } = {
                         name: action.item.type,
                         objectId: `action_item_${action.item.name}_${Date.now()}`,
                         scenarioData: action.item,
-                        texture: { key: action.item.type },
+                        texture: { key: (typeof action.item.sprite === 'string' && action.item.sprite) || action.item.type },
                         keyPins: action.item.keyPins,
                         opens_lock: window.lockRef(action.item) || action.item.keyId,
                         setVisible: function() { return this; }

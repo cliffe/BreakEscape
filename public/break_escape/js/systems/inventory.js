@@ -227,6 +227,27 @@ export function processInitialInventoryItems() {
     }
 }
 
+// Image key of an item that has no world sprite (restored from the saved inventory
+// after a reload, or a starting item). A scenario object's "sprite" names its picture
+// and wins over the type, as it does when the room draws the object (rooms.js):
+// with the type alone a reload turned a "usb" with sprite "charging_cable" into a
+// missing usb.png.
+export function inventoryImageKey(itemData) {
+    const named = itemData?.sprite;
+    return (typeof named === 'string' && named) ? named : itemData?.type;
+}
+
+// A missing picture falls back once to the item type's own, so a wrong "sprite"
+// name cannot leave a broken image with its alt text spilling over the next slot.
+export function fallbackInventoryImage(itemImg, type) {
+    if (!type || itemImg._triedTypeImage) return false;
+    const typeSrc = `/break_escape/assets/objects/${type}.png`;
+    if (String(itemImg.src || '').endsWith(typeSrc)) return false;
+    itemImg._triedTypeImage = true;
+    itemImg.src = typeSrc;
+    return true;
+}
+
 function createInventorySprite(itemData) {
     try {
         // Create a pseudo-sprite object that can be used in inventory
@@ -235,7 +256,7 @@ function createInventorySprite(itemData) {
             objectId: `inventory_${itemData.type}_${Date.now()}`,
             scenarioData: itemData,
             texture: {
-                key: itemData.type  // Use the type as the texture key for image lookup
+                key: inventoryImageKey(itemData)
             },
             // Copy critical properties for easy access
             keyPins: itemData.keyPins,  // Preserve keyPins for keys
@@ -607,6 +628,7 @@ export async function addToInventory(sprite) {
         itemImg.className = 'inventory-item';
         itemImg.src = `/break_escape/assets/objects/${sprite.texture?.key || sprite.name || sprite.scenarioData?.type}.png`;
         itemImg.alt = sprite.scenarioData.name;
+        itemImg.addEventListener('error', () => fallbackInventoryImage(itemImg, sprite.scenarioData?.type));
         
         // Add item data
         itemImg.scenarioData = sprite.scenarioData;
