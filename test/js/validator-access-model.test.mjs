@@ -381,3 +381,13 @@ test("a requiresItemHintVariants condition with '||' or parentheses is an error,
     assertHas(errors(out), "requiresItemHintVariants[1]' condition \"(globalVars.planted)\" uses parentheses");
     assert.equal(out.filter(s => s.includes('requiresItemHintVariants[0]')).length, 1, out.join('\n'));
 });
+
+// apply-actions.js runs a `hint` action from triggerOnInteract; the schema's action list has it.
+test('a hint action in triggerOnInteract passes the schema, and an unknown action type does not', { skip }, () => {
+    const sc = withHintVariants([]);
+    const pc = lobby(sc).objects.find(o => o.id === 'plain_pc');
+    pc.triggerOnInteract.push({ type: 'hint', title: 'Planted', message: 'Clipped in behind the PC.' });
+    assert.ok(!has(schemaErrors(sc), 'triggerOnInteract'), schemaErrors(sc).join('\n'));
+    pc.triggerOnInteract.push({ type: 'no_such_action' });
+    assertHas(schemaErrors(sc), 'triggerOnInteract');
+});
