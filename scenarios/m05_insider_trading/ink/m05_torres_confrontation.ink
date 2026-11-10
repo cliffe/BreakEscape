@@ -334,7 +334,7 @@ David Torres: Elena's trial. If I'm in a cell, nobody pays for it.
 David Torres: She dies. Sofia and Miguel watch it happen.
 
 + [Tell me everything about ENTROPY before they get here, and we pay for Elena.]
-    David Torres: And the court? *a beat* No. You can't promise that.
+    David Torres: And the court? No. You can't promise that. #delivery: a beat after the question
     David Torres: Everything, then. Whatever you need.
     ~ elena_treatment_funded = true
     -> arrest_cooperation
