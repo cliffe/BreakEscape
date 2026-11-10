@@ -12,6 +12,10 @@ require 'json'
 require 'base64'
 require 'securerandom'
 require 'set'
+
+# Scenario and ink files are UTF-8: read them so whatever the shell's locale (LANG=C).
+Encoding.default_external = Encoding::UTF_8
+
 require_relative '../lib/break_escape/declared_grants'
 require_relative '../lib/break_escape/access_identities'
 require_relative '../lib/break_escape/network_model'
@@ -373,13 +377,30 @@ unless habits_report.empty?
   end
   # A clue's node: its object, hung from the innermost lock in front of it (a container's
   # lock node) or from its room, so a clue behind the account it opens shows as a loop.
+  # A container lock the walk above did not draw (one in an NPC's itemsHeld, say) is
+  # added here, hung from the lock before it or the room, so the clue never floats.
+  container_lock_node_for = lambda do |lock_label, from|
+    drawn = "lock_#{lock_label}"
+    return drawn if $nodes.key?(drawn)
+
+    node = "lock_#{nid(lock_label)}"
+    unless $nodes.key?(node)
+      obj = cl_h.find_object(habits_copy, lock_label)
+      name = (obj && obj['name']) || lock_label.to_s.tr('_', ' ')
+      add_node(node, "#{name}<br/>#{LOCK_TYPE_LABELS[obj && obj['lockType']] || 'Lock'}", 'lock')
+      add_edge(from, node) if from
+    end
+    node
+  end
   clue_node_for = lambda do |source|
     node = "clue_#{nid(source[:path])}"
     unless $nodes.key?(node)
       add_node(node, source[:name] || source[:path].to_s.tr('_', ' '), 'item')
       container_locks = source[:locks].to_a - [source[:room]]
       if container_locks.any?
-        add_edge("lock_#{container_locks.last}", node) if $nodes.key?("lock_#{container_locks.last}")
+        from = source[:room] ? room_node_for.call(source[:room]) : nil
+        container_locks.each { |lock| from = container_lock_node_for.call(lock, from) }
+        add_edge(from, node)
       elsif source[:room]
         add_edge(room_node_for.call(source[:room]), node)
       end

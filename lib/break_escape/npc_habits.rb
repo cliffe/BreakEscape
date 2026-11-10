@@ -143,6 +143,9 @@ module BreakEscape
       end
       report
     rescue StandardError
+      # Never raise (the plan's expand! row). An error part way through the writes leaves
+      # the NPCs before it expanded and the rest as authored: still a playable game, and
+      # the report lists only the NPCs that were written.
       report
     end
 

@@ -29,12 +29,15 @@ class NpcHabitsCluesTest < ActiveSupport::TestCase
     refute CL.word_in?('Rex', 'Rexford')
   end
 
-  test 'a number part is a whole run, or two digits as the end of a four-digit year' do
+  test 'a number part is a whole run, or two digits as the end of a year' do
     assert CL.number_in?('2019', 'May 2019')
     refute CL.number_in?('201', 'May 2019')
     assert CL.number_in?('26', 'Spring 2026')
+    assert CL.number_in?('19', 'since 1919')
     refute CL.number_in?('26', 'Room 126')
     assert CL.number_in?('26', 'age 26')
+    refute CL.number_in?('19', 'keypad code 4419'), 'a four-digit run that is no year'
+    refute CL.number_in?('19', 'call x2219')
   end
 
   test 'a fixed piece only in the clue text, with its case, as a whole word or run' do
@@ -141,5 +144,113 @@ class NpcHabitsCluesTest < ActiveSupport::TestCase
     mei = scenario['rooms']['office']['npcs'][0]
     reused = CL.reuse_homes(mei, scenario, homes)
     assert_equal [[:lock, 'locker'], [:account, 'sam']], reused.map { |h| [h[:kind], h[:path] == 'locker' ? 'locker' : h[:npc_id]] }
+  end
+
+  # Compiled ink in the shape inklecate writes: a knot "hub", a variable "hub_quiet" set and
+  # read, a "speaker" tag in both forms, a divert, a string assigned to an unprinted VAR and
+  # a temp, and only "Morning, I'm Mei." and the choice "Ask about the dog" printed.
+  def ink_fixture
+    {
+      'inkVersion' => 21,
+      'root' => [
+        [['done', { '#n' => 'g-0' }], nil],
+        'done',
+        {
+          'start' => ['#', '^speaker:npc', '/#', '^Morning, I\'m Mei.', "\n",
+                      'ev', true, '/ev', { 'VAR=' => 'hub_quiet', 're' => true },
+                      'ev', 'str', '^Pepper', '/str', '/ev', { 'VAR=' => 'asked_about_pepper', 're' => true },
+                      'ev', 'str', '^Biscuit', '/str', { 'temp=' => 'other' }, '/ev',
+                      { '#' => 'Visit' }, { '->' => 'hub' }, nil],
+          'hub' => [['ev', { 'VAR?' => 'hub_quiet' }, '/ev', 'visit', 'nop', "\n",
+                     'ev', 'str', '^Ask about the dog', '/str', '/ev', { '*' => '.^.c-0', 'flg' => 4 },
+                     { 'c-0' => ["\n", { '->' => 'pepper_story' }, nil] }], nil],
+          'pepper_story' => ['^Fine.', 'done', nil],
+          'global decl' => ['ev', 'str', '^Speaker', '/str', { 'VAR=' => 'quiet_name' }, '/ev', 'end', nil]
+        }
+      ],
+      'listDefs' => {}
+    }
+  end
+
+  test 'compiled ink: only text the player sees, never knots, variables, diverts or tags' do
+    Dir.mktmpdir do |dir|
+      Dir.mkdir(File.join(dir, 'ink'))
+      File.write(File.join(dir, 'ink', 'mei.json'), JSON.generate(ink_fixture))
+      text = text_at(CL.readable_texts({}, dir), 'ink/mei.json')[:text]
+      assert CL.word_in?('Morning', text)
+      assert CL.word_in?('Ask', text), 'choice text is read'
+      %w[Hub Quiet Speaker Pepper Biscuit Visit Done Story].each do |word|
+        refute CL.word_in?(word, text), "#{word} is not text the player sees"
+      end
+
+      # An unprinted VAR and a knot named for the dog do not source the password's word.
+      data = { 'rooms' => { 'office' => {
+        'objects' => [{ 'id' => 'memo', 'type' => 'notes', 'text' => 'pet name, the year 1998, then !' }],
+        'npcs' => [{ 'id' => 'mei', 'creds' => { 'username' => 'mei', 'password' => 'Pepper1998!' } }]
+      } } }
+      b = CL.backing(data['rooms']['office']['npcs'][0], data, CL.readable_texts(data, dir), 'memo')
+      refute b[:backed]
+      assert_empty b[:pieces][0][:sources]
+    end
+  end
+
+  test 'compiled ink of test_access_habits: its knots, variables and tags are not read' do
+    dir = File.expand_path('../../scenarios/test_access_habits', __dir__)
+    texts = CL.readable_texts({}, dir).select { |t| t[:path].start_with?('ink/') }
+    refute_empty texts
+    texts.each do |t|
+      %w[Hub Quiet Speaker].each { |word| refute CL.word_in?(word, t[:text]), "#{word} in #{t[:path]}" }
+    end
+    assert(texts.any? { |t| t[:text].include?('Anything else?') })
+  end
+
+  test 'compiled ink is read as UTF-8 whatever the locale, and a broken file is named' do
+    Dir.mktmpdir do |dir|
+      Dir.mkdir(File.join(dir, 'ink'))
+      File.binwrite(File.join(dir, 'ink', 'cafe.json'),
+                    "\xEF\xBB\xBF".b + JSON.generate({ 'root' => ['^We met at the café, Pickle and me.', 'done'] }).b)
+      File.write(File.join(dir, 'ink', 'broken.json'), '{"root": [')
+      previous = Encoding.default_external
+      failures = []
+      begin
+        silence_warnings { Encoding.default_external = Encoding::US_ASCII }
+        texts = CL.readable_texts({}, dir, ink_failures: failures)
+      ensure
+        silence_warnings { Encoding.default_external = previous }
+      end
+      assert_includes text_at(texts, 'ink/cafe.json')[:text], 'Pickle'
+      assert_nil text_at(texts, 'ink/broken.json')
+      assert_equal ['ink/broken.json'], failures.map { |f| f[:path] }
+    end
+  end
+
+  test 'social: strings in an array count only under a readable key' do
+    data = { 'social' => { 'intelFacts' => {
+      'photo' => { 'unlocks' => ['pepper_photo'], 'requiredFactors' => %w[pepper], 'label' => 'Photo' },
+      'caption' => { 'text' => ['Pepper at the park'] }
+    } } }
+    texts = CL.readable_texts(data)
+    refute CL.word_in?('Pepper', text_at(texts, 'social/intelFacts/photo')[:text])
+    assert CL.word_in?('Pepper', text_at(texts, 'social/intelFacts/caption')[:text])
+  end
+
+  test 'backing: a word found only in another case is flagged' do
+    data = { 'rooms' => { 'office' => {
+      'objects' => [{ 'id' => 'photo', 'type' => 'notes', 'text' => 'Pepper on the beach' },
+                    { 'id' => 'memo', 'type' => 'notes', 'text' => 'pet name, the year 1998, then !' },
+                    { 'id' => 'card', 'type' => 'notes', 'text' => 'Since 1998' }],
+      'npcs' => [{ 'id' => 'mei', 'creds' => { 'username' => 'mei', 'password' => 'pepper1998!' } }]
+    } } }
+    mei = data['rooms']['office']['npcs'][0]
+    b = CL.backing(mei, data, CL.readable_texts(data), 'memo')
+    assert b[:backed], b[:reasons].inspect
+    assert b[:pieces][0][:case_differs]
+    refute b[:pieces][1][:case_differs]
+    assert_equal 1, b[:case_changes]
+
+    mei['creds']['password'] = 'Pepper1998!'
+    b = CL.backing(mei, data, CL.readable_texts(data), 'memo')
+    refute b[:pieces][0][:case_differs]
+    assert_equal 0, b[:case_changes]
   end
 end

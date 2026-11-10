@@ -13,7 +13,7 @@ module BreakEscape
     module Clues
       module_function
 
-      COMMON_PUNCTUATION = %w[. , - ' : ; /].freeze
+      COMMON_PUNCTUATION = %w[. , - ' : ; / ! ?].freeze
       TEXT_FIELDS = %w[name text observations postitNote].freeze
       # Under social: the keys whose string values a player reads.
       SOCIAL_TEXT_KEYS = %w[text body subject label value title note fact caption].freeze
@@ -43,12 +43,18 @@ module BreakEscape
         text.is_a?(String) && text.match?(/(?<!\p{L})#{Regexp.escape(word)}(?!\p{L})/i)
       end
 
-      # A number part as a whole run of digits, or (two digits) the end of a four-digit year.
+      # A word part as a whole word with its own case.
+      def word_exact_in?(word, text)
+        text.is_a?(String) && text.match?(/(?<!\p{L})#{Regexp.escape(word)}(?!\p{L})/)
+      end
+
+      # A number part as a whole run of digits, or (two digits) the last two digits of a year
+      # from 1900 to 2099 (not any four-digit run: a keypad code or an extension is no year).
       def number_in?(number, text)
         return false unless text.is_a?(String)
         return true if text.match?(/(?<!\p{Nd})#{Regexp.escape(number)}(?!\p{Nd})/)
 
-        number.length == 2 && text.match?(/(?<!\p{Nd})\p{Nd}{2}#{Regexp.escape(number)}(?!\p{Nd})/)
+        number.length == 2 && text.match?(/(?<!\p{Nd})(?:19|20)#{Regexp.escape(number)}(?!\p{Nd})/)
       end
 
       # A fixed piece in the clue's own text, with its case, as a whole word or run.
@@ -68,8 +74,9 @@ module BreakEscape
 
       # Every text the player can read: [{ text:, path:, object_id:, scope:, locks: [], room:, name: }].
       # scope is nil, { profile: id } or { pc: id }; locks are the ids of the locked room
-      # and the locked containers in front of it.
-      def readable_texts(scenario, scenario_dir = nil)
+      # and the locked containers in front of it. An ink file that cannot be read is added
+      # to ink_failures ({ path:, error: }) when that array is given.
+      def readable_texts(scenario, scenario_dir = nil, ink_failures: nil)
         out = []
         return out unless scenario.is_a?(Hash)
 
@@ -95,7 +102,7 @@ module BreakEscape
           walk_objects(profile['contents'], "accountProfiles/#{profile_id}/contents", [], { profile: profile_id.to_s }, out)
         end
         social_texts(scenario['social'], out)
-        ink_texts(scenario_dir, out)
+        ink_texts(scenario_dir, out, ink_failures)
         out
       end
 
@@ -165,40 +172,89 @@ module BreakEscape
         end
       end
 
-      def collect_strings(node, strings)
+      # The strings under a readable key (SOCIAL_TEXT_KEYS), in a hash or in an array under
+      # one; strings under any other key (ids, unlocks, requiredFactors, tags) are not read.
+      def collect_strings(node, strings, readable = false)
         case node
         when Hash
           node.each do |key, value|
             if value.is_a?(String)
               strings << value if SOCIAL_TEXT_KEYS.include?(key.to_s)
             else
-              collect_strings(value, strings)
+              collect_strings(value, strings, SOCIAL_TEXT_KEYS.include?(key.to_s))
             end
           end
         when Array
-          node.each { |v| v.is_a?(String) ? strings << v : collect_strings(v, strings) }
+          node.each do |v|
+            if v.is_a?(String)
+              strings << v if readable
+            else
+              collect_strings(v, strings, readable)
+            end
+          end
         end
       end
 
-      # The strings of the scenario's compiled ink (scenario_dir/ink/*.json).
-      def ink_texts(scenario_dir, out)
+      # The text the player sees in the scenario's compiled ink (scenario_dir/ink/*.json):
+      # output text and choice text, never knot names, variables, divert targets, tags or
+      # control words. Read as UTF-8 whatever the locale; a file that cannot be read or
+      # parsed is added to `failures` (when given) instead of being skipped silently.
+      def ink_texts(scenario_dir, out, failures = nil)
         return unless scenario_dir.is_a?(String) && File.directory?(File.join(scenario_dir, 'ink'))
 
         Dir.glob(File.join(scenario_dir, 'ink', '*.json')).sort.each do |file|
+          path = "ink/#{File.basename(file)}"
           strings = []
           begin
-            gather = lambda do |node|
-              case node
-              when String then strings << node.sub(/\A\^/, '')
-              when Array then node.each { |n| gather.call(n) }
-              when Hash then node.each_value { |v| gather.call(v) }
-              end
-            end
-            gather.call(JSON.parse(File.read(file)))
-          rescue StandardError
+            ink_visible(JSON.parse(File.read(file, encoding: 'bom|utf-8')), strings)
+          rescue StandardError => e
+            failures << { path: path, error: e.class.name } if failures
             next
           end
-          out << { text: strings.join("\n"), path: "ink/#{File.basename(file)}", object_id: nil, scope: nil, locks: [] }
+          out << { text: strings.join("\n"), path: path, object_id: nil, scope: nil, locks: [] }
+        end
+      end
+
+      # Compiled ink: a container is an array whose last element may be a hash of named
+      # sub-containers (knots, stitches, gathers) plus "#f" and "#n". Text the player sees
+      # is a "^" string outside a tag ("#" to "/#"); a "^" string between "str" and "/str"
+      # is choice text, unless it is assigned to a variable ({"VAR=": } or {"temp=": }
+      # straight after "/str"). Every hash value other than a sub-container (divert targets,
+      # variable names, choice points, tags in the old {"#": } form) and the whole
+      # "global decl" container are skipped.
+      def ink_visible(node, strings)
+        case node
+        when Array
+          in_tag = false
+          in_str = false
+          pending = []
+          node.each_with_index do |item, i|
+            case item
+            when '#' then in_tag = true
+            when '/#' then in_tag = false
+            when 'str'
+              in_str = true
+              pending = []
+            when '/str'
+              in_str = false
+              after = node[i + 1]
+              after = node[i + 2] if after == '/ev'
+              assigned = after.is_a?(Hash) && (after.key?('VAR=') || after.key?('temp='))
+              strings.concat(pending) unless assigned || in_tag
+              pending = []
+            when String
+              next unless item.start_with?('^') && !in_tag
+
+              text = item.delete_prefix('^')
+              in_str ? pending << text : strings << text
+            when Array, Hash
+              ink_visible(item, strings)
+            end
+          end
+        when Hash
+          node.each do |key, value|
+            ink_visible(value, strings) if value.is_a?(Array) && key != 'global decl'
+          end
         end
       end
 
@@ -309,13 +365,13 @@ module BreakEscape
       end
 
       # Is a guessable password backed (7.2, tests 1 to 3)? Returns
-      #   { backed:, pieces: [{ index:, kind:, sources: [{ path:, locks: }], clue: bool }],
-      #     pattern: { id:, path:, readable:, whole:, found: }, capitals:, symbols:, total:,
+      #   { backed:, pieces: [{ index:, kind:, sources: [{ path:, locks: }], clue: bool, case_differs: bool }],
+      #     pattern: { id:, path:, readable:, whole:, found: }, capitals:, symbols:, case_changes:, total:,
       #     outside: bool, written: [paths], reasons: [strings] }
       # Never holds the password or text from it.
       def backing(npc, scenario, texts, pattern_id = nil)
         password = npc.is_a?(Hash) && npc['creds'].is_a?(Hash) ? npc['creds']['password'] : nil
-        result = { backed: false, pieces: [], pattern: nil, capitals: 0, symbols: 0, total: 0, outside: false,
+        result = { backed: false, pieces: [], pattern: nil, capitals: 0, symbols: 0, case_changes: 0, total: 0, outside: false,
                    written: [], reasons: [] }
         return result unless password.is_a?(String) && !password.empty?
 
@@ -334,13 +390,18 @@ module BreakEscape
         result[:capitals] = capitals(password)
         result[:symbols] = list.count { |p| p[:kind] == :symbol }
         list.each_with_index do |piece, i|
-          entry = { index: i + 1, kind: piece[:kind], sources: [], clue: false,
+          entry = { index: i + 1, kind: piece[:kind], sources: [], clue: false, case_differs: false,
                     common: piece[:kind] == :symbol && COMMON_PUNCTUATION.include?(piece[:text]) }
           case piece[:kind]
           when :word, :number
             matcher = piece[:kind] == :word ? method(:word_in?) : method(:number_in?)
+            exact = false
+            matched = false
             eligible.each do |t|
               next unless matcher.call(piece[:text], t[:text])
+
+              matched = true
+              exact ||= piece[:kind] == :number || word_exact_in?(piece[:text], t[:text])
 
               if t[:object_id] && t[:object_id] == pattern_id
                 entry[:clue] = true
@@ -348,6 +409,9 @@ module BreakEscape
                 entry[:sources] << { path: t[:path], locks: t[:locks], room: t[:room], name: t[:name] }
               end
             end
+            # Words match without case; when no text holds the word in the password's own
+            # case, the player cannot know it unless the pattern clue states it.
+            entry[:case_differs] = matched && !exact
           when :fixed
             entry[:clue] = !clue_whole && fixed_in?(piece[:text], clue_text)
           when :symbol
@@ -357,6 +421,7 @@ module BreakEscape
           result[:pieces] << entry
         end
 
+        result[:case_changes] = result[:pieces].count { |p| p[:case_differs] }
         result[:outside] = result[:pieces].any? { |p| %i[word number].include?(p[:kind]) && p[:sources].any? }
         unsourced = result[:pieces].reject { |p| p[:sources].any? || p[:clue] }
         result[:reasons] << 'no pattern clue (habits.passwordPattern)' unless pattern_id

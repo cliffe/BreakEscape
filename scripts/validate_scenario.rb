@@ -11,6 +11,11 @@
 require 'erb'
 require 'json'
 require 'optparse'
+
+# Scenario, ink and schema files are UTF-8. Read them so whatever the shell's locale: under
+# LANG=C (US-ASCII) the ERB render, the ink compile and the clue texts would otherwise fail
+# or drop files.
+Encoding.default_external = Encoding::UTF_8
 require 'pathname'
 require 'set'
 require 'base64'
@@ -892,8 +897,6 @@ def headless_npc_records(json_data)
   end
 end
 
-# Every NPC record: each room's npcs, in room order, then the headless records.
-# Returns [[npc, path], ...]. With no `social` key, exactly the room NPCs.
 # { npc id => screenHabit } for every room NPC with one in the expanded copy (slice 9.1):
 # authored and filled alike, for ValidateNpcNeeds.check's screen_habits: keyword.
 def npc_screen_habits(expanded)
@@ -903,6 +906,8 @@ def npc_screen_habits(expanded)
   end
 end
 
+# Every NPC record: each room's npcs, in room order, then the headless records.
+# Returns [[npc, path], ...]. With no `social` key, exactly the room NPCs.
 def scenario_npc_records(json_data)
   records = []
   json_data['rooms']&.each do |room_id, room|

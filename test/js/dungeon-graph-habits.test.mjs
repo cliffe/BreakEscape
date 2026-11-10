@@ -98,3 +98,18 @@ test('a scenario with no habits draws none of these edges', () => {
         assert.equal(labelled(g, label).length, 0, label);
     }
 });
+
+test('guessable: a clue behind a container lock the walk did not draw hangs from that lock, added from the room', () => {
+    const npc = person('mei', { needsHome: 'mei_pc', habits: { password: 'guessable', passwordPattern: 'memo' } });
+    npc.creds.password = 'Rex2019!';
+    const keeper = { id: 'rowan', displayName: 'Rowan', npcType: 'person',
+        itemsHeld: [{ id: 'tin', type: 'safe', name: 'Biscuit tin', locked: true, lockType: 'key', requires: 'tin_key',
+            contents: [{ id: 'photo', type: 'notes', name: 'Photo', text: 'Rex on the beach' }] }] };
+    const g = graph(scenario({ office: room([loginPc('mei_pc'),
+        { id: 'calendar', type: 'notes', name: 'Calendar', text: 'May 2019' },
+        { id: 'memo', type: 'notes', name: 'Memo', text: 'Pet name with a capital, then the year, end with !' }], [npc, keeper]) }));
+    assert.ok(g.nodes.lock_tin, JSON.stringify(Object.keys(g.nodes)));
+    assert.ok(edge(g, 'office', 'lock_tin'), JSON.stringify(g.edges));
+    assert.ok(edge(g, 'lock_tin', 'clue_photo'));
+    assert.ok(edge(g, 'clue_photo', 'signin_mei', 'clue'));
+});

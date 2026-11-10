@@ -30,9 +30,10 @@ module ValidateNpcHabits
     return issues unless json_data.is_a?(Hash)
 
     check_records(json_data, issues)
-    check_values(json_data, issues)
+    check_values(json_data, expanded, issues)
     texts = nil
     homes = nil
+    ink_failures = []
     by_id = report.to_h { |item| [item[:id], item] }
     expanded_npcs = AI.room_npcs(expanded).to_h { |e| [e[:npc]['id'], e[:npc]] }
 
@@ -44,10 +45,13 @@ module ValidateNpcHabits
       check_locks_screen(item, issues)
       check_writes_down(npc, item, expanded, issues) if habits.key?('writesDown')
       if habits.key?('password') || habits.key?('passwordPattern')
-        texts ||= CL.readable_texts(expanded, scenario_dir)
+        texts ||= CL.readable_texts(expanded, scenario_dir, ink_failures: ink_failures)
         homes ||= CL.secret_homes(expanded)
         check_password(npc, item, expanded, texts, homes, issues)
       end
+    end
+    ink_failures.each do |f|
+      warn(issues, "#{f[:path]} could not be read as ink JSON (#{f[:error]}): its text is not counted as a clue source.")
     end
     check_mappings(json_data, expanded, by_id, issues)
     check_ids(json_data, expanded, issues)
@@ -72,7 +76,7 @@ module ValidateNpcHabits
     end
   end
 
-  def check_values(json_data, issues)
+  def check_values(json_data, expanded, issues)
     roles = json_data['roles']
     if json_data.key?('roles')
       if roles.is_a?(Hash)
@@ -117,7 +121,7 @@ module ValidateNpcHabits
       end
       pattern = habits['passwordPattern']
       if NH.valid_parameter?('passwordPattern', pattern) && CL.find_object(json_data, pattern).nil? &&
-         CL.find_object(NH.expanded_copy(json_data).first, pattern).nil?
+         CL.find_object(expanded, pattern).nil?
         err(issues, "#{who} habits.passwordPattern '#{pattern}' names no object in the scenario.")
       end
     end
@@ -468,6 +472,7 @@ module ValidateNpcHabits
                 else 'no source'
                 end
         where += ' (common punctuation: check the clue states it)' if p[:common]
+        where += ' (case differs from its source: the pattern clue must state it)' if p[:case_differs]
         out << "piece #{p[:index]} of #{b[:total]}, #{p[:kind]}: #{where}"
       end
       if pattern
@@ -476,8 +481,9 @@ module ValidateNpcHabits
         path += " (behind lock #{clue[:locks].join(', ')})" if clue && clue[:locks]&.any?
         out << "pattern clue at #{path}"
       end
-      out << "the pattern clue must cover: #{count(b[:capitals], 'capital')}, #{count(b[:symbols], 'symbol')}, " \
-             "#{count(b[:total], 'piece')} in order"
+      cover = [count(b[:capitals], 'capital'), count(b[:symbols], 'symbol')]
+      cover << count(b[:case_changes], 'case change') if b[:case_changes].positive?
+      out << "the pattern clue must cover: #{cover.join(', ')}, #{count(b[:total], 'piece')} in order"
     when 'reused'
       reused = CL.reuse_homes(npc, expanded, homes)
       out << 'no other secret equals it' if reused.empty?
