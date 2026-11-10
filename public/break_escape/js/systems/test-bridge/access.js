@@ -10,6 +10,8 @@
  *   screenTransitions() the screen look changes systems/screen-states.js recorded (last 50),
  *                       `[{ objectId, locked, sound, at }]`; every sound it plays is in there
  *   savedCards()        the card copier's saved_cards ids (client-written; never decides identity)
+ *   footholds()         the footholds systems/network-links.js holds (slice 9.3a)
+ *   networkView(id)     the last network view network-links.js fetched for that foothold
  *
  * All JSON in and out.
  */
@@ -87,5 +89,38 @@ export const accessBridge = {
         return saved.map(card => card?.card_id
             || (typeof window.lockRef === 'function' ? window.lockRef(card) : null)
             || null);
+    },
+
+    /**
+     * The footholds the client holds, `[{ id, via, name, itemId, sourceId, network }]` (the
+     * shape GET /scenario and POST /network/plant answer, ACCESS_MODEL_SLICE_9_3_PLAN.md
+     * section 6). Read from `window.networkLinks` (systems/network-links.js, step 7): its
+     * `list()` when it has one, else its `footholds` (a Map or an object keyed by foothold
+     * id, or an array). Empty while the module does not exist.
+     */
+    footholds() {
+        const mod = window.networkLinks;
+        if (!mod) return [];
+        if (typeof mod.list === 'function') return json(mod.list()) || [];
+        const held = mod.footholds;
+        if (Array.isArray(held)) return json(held);
+        const entries = held instanceof Map ? [...held.entries()]
+            : (held && typeof held === 'object' ? Object.entries(held) : []);
+        return entries.map(([id, f]) => ({ id, ...json(f) }));
+    },
+
+    /**
+     * The last GET /network answer network-links.js fetched for a foothold: its entry
+     * `{ id, via, name, network, hosts }`, or null when none was fetched. Read from
+     * `window.networkLinks`: its `lastView(footholdId)` when it has one, else its `views`
+     * (a Map or an object keyed by foothold id).
+     */
+    networkView(footholdId) {
+        const mod = window.networkLinks;
+        if (!mod) return null;
+        if (typeof mod.lastView === 'function') return json(mod.lastView(footholdId)) ?? null;
+        const views = mod.views;
+        if (views instanceof Map) return json(views.get(footholdId)) ?? null;
+        return views && typeof views === 'object' ? (json(views[footholdId]) ?? null) : null;
     }
 };

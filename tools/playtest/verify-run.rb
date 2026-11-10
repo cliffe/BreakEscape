@@ -30,8 +30,10 @@
 #
 # The access model section (docs/achitechture/ACCESS_MODEL_PLAN.md, step 6) prints what
 # the sign-in, card copy and file routes recorded: sessions, signedInPcs, serverClones,
-# copiedItems, loginFailures (a count per PC and username) and loginLockouts. The routes
-# write these keys themselves, so no sync is needed first. --access prints only that
+# copiedItems, loginFailures (a count per PC and username) and loginLockouts, and for
+# networks (ACCESS_MODEL_SLICE_9_3_PLAN.md, step 6) footholds, gainedFootholds, and remote
+# and foothold beside each session. The routes write these keys themselves, so no sync is
+# needed first. --access prints only that
 # section, for the check after each beat of a scripted run, and always exits 0.
 
 count_tasks_flag = !ARGV.delete('--tasks').nil?
@@ -45,7 +47,8 @@ game_id = ARGV[0] or abort 'usage: verify-run.rb [--tasks] [--log SESSION.jsonl]
 g = BreakEscape::Game.find(game_id)
 ps = g.player_state || {}
 
-ACCESS_KEYS = %w[sessions signedInPcs serverClones copiedItems loginFailures loginLockouts].freeze
+ACCESS_KEYS = %w[sessions signedInPcs serverClones copiedItems loginFailures loginLockouts footholds
+                 gainedFootholds].freeze
 
 # The access model keys, one line each. Sign-in details are never in player_state, so
 # nothing here is secret: NPC ids, PC ids, card ids, item ids and typed usernames.
@@ -54,7 +57,13 @@ def access_section(ps)
   list = ->(v) { v.is_a?(Array) ? v : [] }
   sessions = hash.call(ps['sessions']).map do |pc, s|
     s = {} unless s.is_a?(Hash)
-    "#{pc} = #{s['id'] || '?'} (#{s['via'] || '?'})"
+    remote = s['foothold'].is_a?(String) && !s['foothold'].empty? ? ", remote, foothold #{s['foothold']}" : ''
+    "#{pc} = #{s['id'] || '?'} (#{s['via'] || '?'}#{remote})"
+  end
+  footholds = hash.call(ps['footholds']).sort_by { |_, f| f.is_a?(Hash) ? f['seq'].to_i : 0 }.map do |id, f|
+    f = {} unless f.is_a?(Hash)
+    device = f['device'].is_a?(Hash) ? (f['device']['id'] || f['device']['type'] || '?') : '?'
+    "#{id} = #{f['via'] || '?'} #{f['source'] || '?'}, device #{device} (network #{f['network'] || '?'})"
   end
   clones = hash.call(ps['serverClones']).map do |card_id, rec|
     rec = {} unless rec.is_a?(Hash)
@@ -70,11 +79,13 @@ def access_section(ps)
     ['serverClones', clones],
     ['copiedItems', list.call(ps['copiedItems']).map(&:to_s)],
     ['loginFailures', failures],
-    ['loginLockouts', list.call(ps['loginLockouts']).map(&:to_s)]
+    ['loginLockouts', list.call(ps['loginLockouts']).map(&:to_s)],
+    ['footholds', footholds],
+    ['gainedFootholds', list.call(ps['gainedFootholds']).map(&:to_s)]
   ]
   lines = ['access model']
   rows.each do |name, items|
-    lines << "  #{name.ljust(14)} #{items.length}#{items.empty? ? '' : ": #{items.join('; ')}"}"
+    lines << "  #{name.ljust(15)} #{items.length}#{items.empty? ? '' : ": #{items.join('; ')}"}"
   end
   lines
 end
@@ -106,7 +117,7 @@ puts "globals set     #{globals.length}: #{globals.keys.sort.join(', ')}"
 if ACCESS_KEYS.any? { |k| ps[k].respond_to?(:empty?) && !ps[k].empty? }
   puts access_section(ps)
 else
-  puts 'access model    nothing recorded (no sessions, sign-ins, card copies, copied files or failed sign-ins)'
+  puts 'access model    nothing recorded (no sessions, sign-ins, card copies, copied files, failed sign-ins or footholds)'
 end
 
 tasks = (ps.dig('objectivesState', 'tasks') || {})

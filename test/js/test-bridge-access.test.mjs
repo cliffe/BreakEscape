@@ -35,7 +35,7 @@ test('the bridge exposes the access block', () => {
   const src = readFileSync(join(js, 'systems/test-bridge/index.js'), 'utf8');
   assert.match(src, /import \{ accessBridge \} from '\.\/access\.js';/);
   assert.match(src, /\baccess: accessBridge,/);
-  assert.deepEqual(Object.keys(accessBridge).sort(), ['savedCards', 'screenTransitions', 'sessions', 'workstation']);
+  assert.deepEqual(Object.keys(accessBridge).sort(), ['footholds', 'networkView', 'savedCards', 'screenTransitions', 'sessions', 'workstation']);
 });
 
 test('sessions() is empty without pc-sessions.js, and reads its list() or sessions map', () => {
@@ -127,4 +127,43 @@ test('workstation() reports the live sprite\'s texture, display size and locked 
   out[0].locked = false;
   assert.equal(transitions[0].locked, true);
   delete window.rooms; delete window.screenStates;
+});
+
+// Networks (ACCESS_MODEL_SLICE_9_3_PLAN.md, step 6): the client's footholds and last views.
+test('footholds() is empty without network-links.js, and reads its list() or footholds', () => {
+  delete window.networkLinks;
+  assert.deepEqual(accessBridge.footholds(), []);
+  const f = { via: 'jack', name: 'Drop box: comms room', itemId: 'netlink_jack_comms_port', sourceId: 'comms_port',
+              network: { id: 'office_lan', name: 'Harbour office LAN' } };
+  window.networkLinks = { list: () => [{ id: 'jack_comms_port', ...f }] };
+  assert.deepEqual(accessBridge.footholds(), [{ id: 'jack_comms_port', ...f }]);
+  window.networkLinks = { footholds: new Map([['jack_comms_port', f]]) };
+  assert.deepEqual(accessBridge.footholds(), [{ id: 'jack_comms_port', ...f }]);
+  window.networkLinks = { footholds: { jack_comms_port: f } };
+  assert.deepEqual(accessBridge.footholds(), [{ id: 'jack_comms_port', ...f }]);
+  const held = [{ id: 'jack_comms_port', ...f }];
+  window.networkLinks = { footholds: held };
+  const out = accessBridge.footholds();
+  out[0].name = 'changed';
+  assert.equal(held[0].name, 'Drop box: comms room', 'the returned list is a copy');
+  delete window.networkLinks;
+});
+
+test('networkView() returns the last view fetched for a foothold, or null', () => {
+  delete window.networkLinks;
+  assert.equal(accessBridge.networkView('jack_comms_port'), null);
+  const view = { id: 'jack_comms_port', via: 'jack', name: 'Drop box', network: { id: 'office_lan', name: 'LAN' },
+                 hosts: [{ id: 'lena_pc', kind: 'pc', name: "Lena's PC", host: 'HB-FIN-02', remoteSignIn: true }] };
+  window.networkLinks = { lastView: id => (id === 'jack_comms_port' ? view : undefined) };
+  assert.deepEqual(accessBridge.networkView('jack_comms_port'), view);
+  assert.equal(accessBridge.networkView('jack_other'), null);
+  window.networkLinks = { views: new Map([['jack_comms_port', view]]) };
+  assert.deepEqual(accessBridge.networkView('jack_comms_port'), view);
+  window.networkLinks = { views: { jack_comms_port: view } };
+  const out = accessBridge.networkView('jack_comms_port');
+  assert.deepEqual(out, view);
+  out.hosts[0].name = 'changed';
+  assert.equal(view.hosts[0].name, "Lena's PC", 'the returned view is a copy');
+  assert.equal(accessBridge.networkView('jack_other'), null);
+  delete window.networkLinks;
 });

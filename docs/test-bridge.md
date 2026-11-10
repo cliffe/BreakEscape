@@ -385,10 +385,21 @@ on the game; compare it with the server's record from
 | `sessions()` | The sign-in sessions the client holds, `[{ pcId, npcId, username, displayName, via }]`, read from `window.pcSessions` (`systems/pc-sessions.js`, its `list()`). Password sessions are restored from the server on a reload. |
 | `workstation(pcId)` | `{ ok, id, workstation, owner, present, away, screenLocked, lockAt }` from `workstation-state.js`. `present` is the owner's presence (the env's `ownerPresent` once step 9 adds it, else "not away"); `away` is the owner's away record or null; `workstation` is false for an object the module does not treat as a workstation. `{ ok: false, reason }` when the module or object is missing. |
 | `savedCards()` | The card copier's `saved_cards` as card ids. This list is client-written and never decides identity: the server's copies are `serverClones` in `verify-run.rb --access`. |
+| `footholds()` | Networks (`docs/achitechture/ACCESS_MODEL_SLICE_9_3_PLAN.md`): the footholds the client holds, `[{ id, via, name, itemId, sourceId, network }]`, read from `window.networkLinks` (`systems/network-links.js`, its `list()`, else its `footholds`). Empty while the module does not exist. The server's record is `footholds` and `gainedFootholds` in `verify-run.rb --access`. |
+| `networkView(footholdId)` | The last `GET /network` entry the client fetched for that foothold, `{ id, via, name, network, hosts }`, or null (from `networkLinks.lastView(id)`, else its `views`). |
 
 ```json
 {"cmd":"eval","fn":"() => window.__test.access.workstation('jake_pc')"}
 ```
+
+**Driving the network screens.** While the network view is the active minigame, act on a
+row's control by its stable attributes: `data-host-id` on a host row, `data-resource-id` on
+a resource row, and `data-action` (`sign-in`, `open`, `observe`) on the control, for
+example `mg clickSelector '[data-host-id="lena_pc"] [data-action="sign-in"]'`. A jack's
+prompt ("Unplug it", "Leave it", or the plant confirm) is a `gameConfirm`, not a minigame,
+and `mg clickSelector` looks only inside a minigame, so answer it with the session's
+`dismiss` command on the button text: `{"cmd":"dismiss","label":"Unplug it"}`
+(`dismissBlockingUi`, which clicks the overlay button whose text contains the label).
 
 ---
 

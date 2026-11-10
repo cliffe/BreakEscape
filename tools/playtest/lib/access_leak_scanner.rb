@@ -25,6 +25,21 @@ require 'uri'
 # - the content of a locked container in a response that still marks that container
 #   locked: true.
 #
+# Networks (docs/achitechture/ACCESS_MODEL_SLICE_9_3_PLAN.md, step 6) add secrets: every
+# network name; every resource name, host and observations; the names and texts of the
+# items under resources (file share contents). It reports:
+#
+# - a share item's content anywhere but a GET /container/:id answer for that resource or a
+#   folder in it (once served that way, the item may follow into the inventory);
+# - a network or resource string in any response other than GET /network, a /network/*
+#   answer, a /container answer, or the footholds block of GET /scenario. There is no
+#   exception for an NPC's work plan.
+#
+# Matching of these network strings: a string of six or more characters is matched as a
+# substring; a shorter one only as a whole JSON string value; one under three characters is
+# ignored; and a string that also appears somewhere public (a room, door sign, object or NPC
+# name, or any other text room data ships as authored) is not a secret and is skipped.
+#
 # A finding names the rule, the route, the response line and the secret's owner (an NPC or
 # item id), never the value. Every output line is checked against the secret values before it
 # is returned, so blind runs can use it too.
@@ -43,6 +58,13 @@ class AccessLeakScanner
   MIN_CONTENT_LENGTH = 6
   # A password shorter than this is matched as a whole token, not as a substring.
   MIN_SUBSTRING_PASSWORD = 6
+  # Network strings (network and resource names, hosts, observations, share item content):
+  # this long or longer is matched as a substring, shorter only as a whole JSON string value.
+  MIN_SUBSTRING_NETWORK = 6
+  # Network strings shorter than this are not checked at all.
+  MIN_NETWORK_STRING = 3
+  # Room data keys the server withholds: their strings are not public.
+  WITHHELD_ROOM_KEYS = %w[network linkName linkStoreIn creds].freeze
 
   Finding = Struct.new(:rule, :owner, :route, :source, :line, :cmd_seq, :json_path, keyword_init: true)
 
@@ -57,8 +79,11 @@ class AccessLeakScanner
     @clue_holders = Hash.new { |h, k| h[k] = Set.new } # password => item ids holding it on purpose
     @clue_texts = Hash.new { |h, k| h[k] = Set.new }   # password => authored strings holding it
     @login_pcs = Set.new
+    @network_strings = {}    # string => [owner, ...] (network:<id>, resource:<id>)
+    @share_items = {}        # item_id => { strings:, resource:, ancestors: }
     collect_passwords
     collect_items
+    collect_network_secrets
     @items.each_value { |info| info[:strings] = info[:strings].reject { |s| @public_strings.include?(s) } }
     @items.delete_if { |_, info| info[:strings].empty? }
   end
@@ -67,7 +92,9 @@ class AccessLeakScanner
     {
       passwords: @passwords.values.flatten.uniq.length,
       login_items: @items.count { |_, i| i[:scope] },
-      locked_items: @items.count { |_, i| i[:locked_ancestors].any? }
+      locked_items: @items.count { |_, i| i[:locked_ancestors].any? },
+      network_strings: @network_strings.length,
+      share_items: @share_items.length
     }
   end
 
@@ -95,6 +122,8 @@ class AccessLeakScanner
       scan_passwords(body, ctx, add)
       scan_login_content(body, ctx, legit, add)
       scan_locked_content(body, add)
+      scan_share_content(body, ctx, legit, add)
+      scan_network_strings(body, ctx, add)
     end
     findings
   end
@@ -118,13 +147,16 @@ class AccessLeakScanner
     'password' => 'an NPC password in a response',
     'signin_content' => 'sign-in PC content outside its own container response',
     'profile_content' => 'profile content outside a sign-in PC container response',
-    'locked_content' => 'locked container content in a response that marks it locked'
+    'locked_content' => 'locked container content in a response that marks it locked',
+    'share_content' => 'file share content outside a container response for that share',
+    'network_string' => 'a network or resource name, host or observations outside the network routes'
   }.freeze
 
   private
 
   def secret_values
-    @secret_values ||= (@passwords.keys + @items.values.flat_map { |i| i[:strings] }).uniq.sort_by { |v| -v.length }
+    @secret_values ||= (@passwords.keys + @items.values.flat_map { |i| i[:strings] } + @network_strings.keys +
+                        @share_items.values.flat_map { |i| i[:strings] }).uniq.sort_by { |v| -v.length }
   end
 
   # ---- catalogue ---------------------------------------------------------------------------
@@ -163,6 +195,63 @@ class AccessLeakScanner
     end
     # Starting items and other top-level objects are public.
     walk_list(@data['startItemsInInventory'], base_ctx)
+  end
+
+  # Networks: the strings a foothold's view shows and the content of file shares (step 6).
+  def collect_network_secrets
+    public_strings = room_data_strings
+    usable = ->(v) { v.is_a?(String) && v.strip.length >= MIN_NETWORK_STRING && !public_strings.include?(v.strip) }
+    networks = @data['networks'].is_a?(Hash) ? @data['networks'] : {}
+    networks.each do |net_id, net|
+      next unless net.is_a?(Hash) && usable.call(net['name'])
+
+      (@network_strings[net['name'].strip] ||= []) << "network:#{net_id}"
+    end
+    resources = @data['resources'].is_a?(Hash) ? @data['resources'] : {}
+    resources.each do |res_id, res|
+      next unless res.is_a?(Hash)
+
+      %w[name host observations].each do |field|
+        next unless usable.call(res[field])
+
+        owners = (@network_strings[res[field].strip] ||= [])
+        owners << "resource:#{res_id}" unless owners.include?("resource:#{res_id}")
+      end
+      walk_share(res['contents'], res_id.to_s, [], usable)
+    end
+  end
+
+  def walk_share(list, resource_id, ancestors, usable)
+    (list.is_a?(Array) ? list : []).each do |item|
+      next unless item.is_a?(Hash)
+
+      strings = CONTENT_FIELDS.filter_map { |f| item[f].strip if usable.call(item[f]) }.uniq
+      label = item['id'] ? item['id'].to_s : "#{resource_id}/unnamed-#{@share_items.length + 1}"
+      @share_items[label] = { strings: strings, resource: resource_id, ancestors: ancestors.dup } if strings.any?
+      walk_share(item['contents'], resource_id, item['id'] ? ancestors + [item['id'].to_s] : ancestors, usable)
+    end
+  end
+
+  # Every string room data ships as authored: rooms, door signs, objects and NPCs, except the
+  # keys the server withholds, sign-in PC desktops and the contents of locked containers.
+  def room_data_strings
+    out = Set.new
+    walk = lambda do |node|
+      case node
+      when String then out << node.strip
+      when Array then node.each { |v| walk.call(v) }
+      when Hash
+        hidden = BreakEscape::Game.login_pc?(node) || node['locked'] == true
+        node.each do |k, v|
+          next if WITHHELD_ROOM_KEYS.include?(k)
+          next if k == 'contents' && hidden
+
+          walk.call(v)
+        end
+      end
+    end
+    walk.call(@data['rooms']) if @data['rooms'].is_a?(Hash)
+    out
   end
 
   def base_ctx
@@ -280,7 +369,10 @@ class AccessLeakScanner
       route: "#{method} #{path}",
       container: container,
       unlock: method == 'POST' && path.end_with?('/unlock'),
-      capture_secrets: path.end_with?('/capture_secrets')
+      capture_secrets: path.end_with?('/capture_secrets'),
+      network: path.end_with?('/network') || path.include?('/network/'),
+      any_container: path.include?('/container/'),
+      scenario: method == 'GET' && path.end_with?('/scenario')
     }
   end
 
@@ -376,6 +468,52 @@ class AccessLeakScanner
         break
       end
     end
+  end
+
+  # A share item's content outside a GET /container answer for its resource or a folder in it.
+  # Once served that way, the item may follow (an inventory answer after a Copy or a Move).
+  def scan_share_content(body, ctx, legit, add)
+    return if @share_items.empty?
+
+    hits = Hash.new { |h, k| h[k] = [] }
+    each_string(body) do |str, json_path|
+      @share_items.each do |item_id, info|
+        hits[item_id] << json_path if info[:strings].any? { |secret| network_match?(str, secret) }
+      end
+    end
+    hits.each do |item_id, paths|
+      info = @share_items[item_id]
+      allowed = ctx[:container] && ([info[:resource]] + info[:ancestors]).include?(ctx[:container])
+      if allowed || folder_unlock_answer?(info, ctx, paths)
+        legit << "share:#{item_id}"
+        next
+      end
+      next if legit.include?("share:#{item_id}")
+
+      add.call('share_content', "item:#{item_id}", safe_path(paths.first))
+    end
+  end
+
+  # A network or resource string outside GET /network, /network/*, /container and the
+  # footholds block of /scenario.
+  def scan_network_strings(body, ctx, add)
+    return if @network_strings.empty?
+    return if ctx[:network] || ctx[:any_container]
+
+    each_string(body) do |str, json_path|
+      next if ctx[:scenario] && json_path.start_with?('$.footholds')
+
+      @network_strings.each do |secret, owners|
+        next unless network_match?(str, secret)
+
+        owners.each { |owner| add.call('network_string', owner, safe_path(json_path)) }
+      end
+    end
+  end
+
+  def network_match?(str, secret)
+    s = str.strip
+    s == secret || (secret.length >= MIN_SUBSTRING_NETWORK && s.include?(secret))
   end
 
   def collect_locked_marks(node, marked)

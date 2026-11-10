@@ -140,6 +140,92 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
     assert_empty scan({ 'label' => 'Mail' }, data: data)
   end
 
+  # Networks (ACCESS_MODEL_SLICE_9_3_PLAN.md, step 6): a network, a protected share with a
+  # folder, and a short-named printer. The door sign "Comms Room" is also a resource host.
+  def network_scenario
+    data = scenario
+    data['networks'] = { 'office_lan' => { 'name' => 'Harbour office LAN' } }
+    data['resources'] = {
+      'ledger_archive' => {
+        'kind' => 'file_share', 'name' => 'Ledger-Archive', 'host' => 'HB-FS01', 'network' => 'office_lan',
+        'access' => { 'roles' => ['finance'] },
+        'contents' => [
+          { 'id' => 'ledger_2024', 'type' => 'text_file', 'name' => 'ledger_2024.xlsx', 'text' => 'SHARE-LEDGER-SECRET-TEXT' },
+          { 'id' => 'audit_dir', 'type' => 'folder', 'name' => 'Audit folder', 'locked' => true,
+            'contents' => [{ 'id' => 'audit_memo', 'type' => 'text_file', 'name' => 'audit_memo.txt',
+                             'text' => 'SHARE-AUDIT-SECRET-TEXT' }] }
+        ]
+      },
+      'pq' => { 'kind' => 'printer', 'name' => 'PrnQ', 'host' => 'Comms Room', 'network' => 'office_lan',
+                'observations' => 'A print queue anyone on the LAN can read.' }
+    }
+    data['rooms'].values.first['door_sign'] = 'Comms Room'
+    data
+  end
+
+  def scan_net(body, path: ROOM, method: 'GET', before: [])
+    scan(body, path: path, method: method, data: network_scenario, before: before)
+  end
+
+  test 'a network name planted in room data is reported, the same name in a /network answer is not' do
+    planted = { 'room' => { 'objects' => [{ 'id' => 'sign', 'text' => 'Welcome to the Harbour office LAN' }] } }
+    assert_equal [[1, 'network_string', 'network:office_lan']], summary(scan_net(planted))
+    view = { 'footholds' => [{ 'id' => 'jack_x', 'network' => { 'id' => 'office_lan', 'name' => 'Harbour office LAN' },
+                               'hosts' => [{ 'id' => 'ledger_archive', 'name' => 'Ledger-Archive', 'host' => 'HB-FS01' }] }] }
+    assert_empty scan_net(view, path: '/break_escape/games/1/network')
+    assert_empty scan_net(view, path: '/break_escape/games/1/network/plant', method: 'POST')
+    # The bootstrap may name the network only in its footholds block.
+    assert_empty scan_net(view, path: '/break_escape/games/1/scenario')
+    assert_equal [[1, 'network_string', 'network:office_lan']],
+                 summary(scan_net({ 'globals' => { 'x' => 'Harbour office LAN' } }, path: '/break_escape/games/1/scenario'))
+    # A desktop's share stub is a /container answer.
+    stub = { 'contents' => [{ 'id' => 'ledger_archive', 'name' => 'Ledger-Archive (\\\\HB-FS01\\Ledger-Archive)' }] }
+    assert_empty scan_net(stub, path: '/break_escape/games/1/container/jake_pc')
+    # A resource's host and observations are secrets too, and there is no exception for NPC work.
+    work = { 'npcs' => [{ 'id' => 'jake', 'work' => { 'note' => 'Saving to HB-FS01 now' } }] }
+    assert_equal [[1, 'network_string', 'resource:ledger_archive']], summary(scan_net(work))
+    obs = { 'text' => 'A print queue anyone on the LAN can read.' }
+    assert_equal [[1, 'network_string', 'resource:pq']], summary(scan_net(obs))
+  end
+
+  test 'a five-letter resource name is reported only as a whole value' do
+    assert_equal [[1, 'network_string', 'resource:pq']], summary(scan_net({ 'label' => 'PrnQ' }))
+    assert_empty scan_net({ 'label' => 'Send to PrnQ later' })
+  end
+
+  test 'a network string that is also a door sign is skipped' do
+    assert_empty scan_net({ 'room' => { 'door_sign' => 'Comms Room' } })
+  end
+
+  test 'a share item is allowed only in a container answer for its share or a folder in it' do
+    file = { 'id' => 'ledger_2024', 'name' => 'ledger_2024.xlsx', 'text' => 'SHARE-LEDGER-SECRET-TEXT' }
+    assert_equal [[1, 'share_content', 'item:ledger_2024']], summary(scan_net({ 'room' => { 'objects' => [file] } }))
+    assert_empty scan_net({ 'contents' => [file] }, path: '/break_escape/games/1/container/ledger_archive')
+    assert_equal [[1, 'share_content', 'item:ledger_2024']],
+                 summary(scan_net({ 'contents' => [file] }, path: '/break_escape/games/1/container/jake_pc'))
+    memo = { 'id' => 'audit_memo', 'text' => 'SHARE-AUDIT-SECRET-TEXT' }
+    assert_empty scan_net({ 'contents' => [memo] }, path: '/break_escape/games/1/container/audit_dir')
+    assert_empty scan_net({ 'success' => true, 'contents' => [memo] }, path: '/break_escape/games/1/unlock', method: 'POST')
+    # Even the /network view may not carry a share's content.
+    assert_equal [[1, 'share_content', 'item:ledger_2024']],
+                 summary(scan_net({ 'footholds' => [{ 'hosts' => [file] }] }, path: '/break_escape/games/1/network'))
+    # Once served by its share, a copied file may travel with the inventory.
+    served = { 'method' => 'GET', 'path' => '/break_escape/games/1/container/ledger_archive', 'body' => { 'contents' => [file] } }
+    assert_empty scan_net({ 'inventory' => [file] }, path: '/break_escape/games/1/inventory', method: 'POST', before: [served])
+  end
+
+  test 'no network finding line holds a value' do
+    scanner = AccessLeakScanner.new(network_scenario)
+    rows = [{ 'method' => 'GET', 'path' => ROOM, 'cmdSeq' => 1,
+              'body' => { 'Harbour office LAN' => 'HB-FS01', 'x' => 'PrnQ', 'f' => 'SHARE-LEDGER-SECRET-TEXT' } }]
+    findings = scanner.scan(rows.each_with_index.map { |row, i| ['r.jsonl', i + 1, row] })
+    out = scanner.report_lines(findings).join("\n")
+    assert_equal %w[share_content item:ledger_2024 network_string resource:ledger_archive network_string resource:pq],
+                 findings.flat_map { |f| [f.rule, f.owner] }
+    ['Harbour office LAN', 'HB-FS01', 'PrnQ', 'SHARE-LEDGER-SECRET-TEXT', 'Ledger-Archive'].each { |s| refute_includes out, s }
+    assert_equal 3, scanner.counts[:share_items]
+  end
+
   test 'no output line holds a secret value' do
     scanner = AccessLeakScanner.new(scenario)
     findings = scanner.scan(fixture_lines)
