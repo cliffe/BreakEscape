@@ -71,7 +71,7 @@ Facts this plan builds on, each checked on 2026-11-10.
 | The server sets a task's declared `setGlobal` into `player_state.globalVariables` itself | `apply_task_set_globals!`, `game.rb:3755-3777` |
 | `player_state.currentRoom` is **not** a usable record of where the player is. The server accepts a reported room only if it is the start room or unlocked (`games_controller.rb:1581-1588`), but the browser always reports `window.currentRoom?.name` (`state-sync.js:198`), and `window.currentRoom` is set once, to `null` (`main.js:58`), and never again. The live room is `window.currentPlayerRoom` (`core/rooms.js:3101`). So the server's value stays the start room it was given (`game.rb:4091`). This plan never reads it | as listed |
 | A state sync runs every 30 seconds (`state-sync.js:126`) and on demand through `window.stateSync.sync()` (`state-sync.js:411`) | as listed |
-| `Game#room_unlocked?(room_id)` is "in `unlockedRooms` or the start room" | `game.rb:116-118` |
+| `Game#room_unlocked?(room_id)` is "in `unlockedRooms` or the start room"; a room counts as open to the player when it is never locked or `room_unlocked?` holds, as `login_pc_reachable?` tests | `game.rb:116-118, 1272` |
 | The needs adapter already answers whether a global holds: `world.globalHolds(cond)` | `npc-needs.js:1690` |
 | `npc-needs.js` imports nothing; `interactions.js` imports the engine (`core/rooms.js`, `unlock-system.js` and others), so node tests cannot load it | `npc-needs.js` (no `import` line), `interactions.js:2-20` |
 | A `requiresItem` check takes the first held item that matches (`find`) | `interactions.js:827-830` |
@@ -132,7 +132,7 @@ Six sub-slices, in this order. Each ends playable and tested and has its own ste
 | Sub-slice | Contents | Feature scenario beats |
 |---|---|---|
 | **U. The USB policy** (first) | The `usb` policy field, `usbClass` on items, a refused NPC and a refused plant. No route, no saved state, no frustration | `test_access_work` U1 to U3 |
-| **A. Work, outages and frustration** | Resources, work needs by role, the use verdict, failed uses and the retry wait, the check errand, frustration held on the server and shown on the NPC | W1 to W6 |
+| **A. Work, outages and frustration** | Resources, work needs by role, the use verdict, failed uses and the retry wait, the check errand, the outage kick, frustration held on the server and shown on the NPC | W1 to W7 |
 | **B. Workarounds, part one** | The server hands workarounds over as thresholds are crossed. `writes_down`, `prop_door`, `emit`. The dungeon graph. No session work | X1 to X4 |
 | **H. Workarounds, part two: the hot desk and the shared login** | `borrow_session` with guest sessions; `share_login` | H1 to H5 |
 | **L. Lockout as a cause** | A member of staff locked out at their own PC cannot work there | L1 |
@@ -661,9 +661,9 @@ next load.
 - **What the server checks.** The server cannot see where the player stands, and its own
   `player_state.currentRoom` is never updated by the browser (section 2, faults found). So "heard"
   is a client claim, bounded as `GET /login_accounts` is: it counts only when `room_id` is a room
-  the `with` NPC can be in (its own room, plus its `needsRooms` leash when it has one) and the
-  player has opened that room (`Game#room_unlocked?`, `game.rb:116-118`). Otherwise it is taken as
-  not heard. The bound is "a room the player has opened where the share can happen"; it is not
+  the `with` NPC can be in (its own room, plus its `needsRooms` leash when it has one) and that room
+  is open to the player: never locked, or unlocked (`Game#room_unlocked?`, `game.rb:116-118`), the
+  test `login_pc_reachable?` makes for a room (`game.rb:1272`). Otherwise it is taken as not heard. The bound is "a room the player has opened where the share can happen"; it is not
   proof that the player was there.
 - **A heard answer explains itself.** The server answers `{ capture, line, note }`. `line` is the
   sentence the player overheard, composed on the server from `creds`: "It's jbrooks. Password's
@@ -900,7 +900,7 @@ period, computed in `access_work.rb` as `min(restores, 100 - urgentAt) / decayPe
 minutes, with the need's own `urgentAt` and `decayPerMin` and the smallest `restores` among the
 NPC's options (`socialUse`, default 60, for the phone and its PC, and each object whose
 `affordance.satisfies` lists `social_media`). A larger `restores` only lengthens the real period,
-so the floor never refuses an honest post; the floor is 0.9 of this period (9.1).
+so the floor never refuses an honest post; the floor is 0.9 of this period (section 9.1).
 
 ## 9. Server
 
@@ -962,7 +962,7 @@ told the feed is done. Each scripted run checks the number of requests against a
 | Route | Sub-slice | Parameters | Checks, in order | Writes and answer |
 |---|---|---|---|---|
 | `POST /npc_frustration` (new, locked) | A; `run` from B; `check` in L | `reports`: a list of `{ npc_id, event, need, object_id, missing }`, `event` being `fail`, `ease` or `check` | Per report. 1. NPC known. 2. `fail`: can fail. 3. `fail`: a cause holds. 4. `fail` and `ease`: the pace floor for that NPC and need. `check`: the object is a sign-in PC this NPC owns, under a policy with `maxAttempts` | One answer per report, in order. `fail`: level up by `perFail`, at most 100; then choose `run` (section 6), record the hand-over, its number and its time. `ease`: level down by `easePerSuccess`, at least 0; never a `run`. Both answer `{ npcId, level, previous, tell, settled, run }`. `check`: `{ npcId, lockedOut }`; a true answer records the PC in that NPC's `lockedOut` list (9.4), and nothing else is written. Check 1 or 2 fails: `{ npcId, refused: true }`. Check 3 fails: `{ npcId, stale: true }`. Check 4 fails: the current `{ level, tell, settled }` with `tooSoon: true`. A refused, stale or too-soon report writes nothing |
-| `POST /npc_workaround` (new, locked) | B, H | `npc_id`, `index`, `hand`, `heard`, `room_id`, `dropped` | 1. NPC known. 2. `hand` is that workaround's last spent hand-over and was spent as done: answer the same body again, recomposed, and write nothing. 3. Otherwise `hand` is handed over and not yet spent. 4. Unless `dropped`: at least the workaround's dwell since the hand-over. 5. `share_login` with `heard`: `room_id` is a room the `with` NPC can be in (its own, plus its `needsRooms`) and `room_unlocked?(room_id)`; otherwise it is taken as not heard | The hand-over is spent and recorded in `lastSpent`. `dropped`: nothing else; answer `{}`. Otherwise add `index` to `done` (lasting ones), set a declared `setGlobal` true, and by kind: `writes_down`: answer `{ pcId, hasPostit: true }`. `prop_door`: unlock the room and answer `{ roomId, roomData }` through `serve_opened_room` (below). `emit`: `{}`. `borrow_session`: `guestSessions[pc] = npcId`, clear `sessions[pc]`; `{}`. `share_login` heard: add the NPC to `sharedLogins` once, keep it in turn, answer `{ capture, line, note }`; not heard: `{}`. Check 3 fails: 403. Check 4 fails: 425, and the client sends it again after the dwell |
+| `POST /npc_workaround` (new, locked) | B, H | `npc_id`, `index`, `hand`, `heard`, `room_id`, `dropped` | 1. NPC known. 2. `hand` is that workaround's last spent hand-over and was spent as done: answer the same body again, recomposed, and write nothing. 3. Otherwise `hand` is handed over and not yet spent. 4. Unless `dropped`: at least the workaround's dwell since the hand-over. 5. `share_login` with `heard`: `room_id` is a room the `with` NPC can be in (its own, plus its `needsRooms`) and is open to the player (never locked, or `room_unlocked?`); otherwise it is taken as not heard | The hand-over is spent and recorded in `lastSpent`. `dropped`: nothing else; answer `{}`. Otherwise add `index` to `done` (lasting ones), set a declared `setGlobal` true, and by kind: `writes_down`: answer `{ pcId, hasPostit: true }`. `prop_door`: unlock the room and answer `{ roomId, roomData }` through `serve_opened_room` (below). `emit`: `{}`. `borrow_session`: `guestSessions[pc] = npcId`, clear `sessions[pc]`; `{}`. `share_login` heard: add the NPC to `sharedLogins` once, keep it in turn, answer `{ capture, line, note }`; not heard: `{}`. Check 3 fails: 403. Check 4 fails: 425, and the client sends it again after the dwell |
 | `POST /login` with `claim: "guest"` (changed, locked) | H | `pc_id`, `claim` | 1. PC reachable (first slice). 2. No session is held at the PC. 3. `guestSessions[pcId]` names an NPC. 4. That NPC has an account. 5. The PC's `access` admits it. 6. The PC's policy is not `autoLockMin: 0`. 7. Where 9.1 is built: that NPC's `locksScreen` is not `always` | Success: `sessions[pcId] = { id, via: "claim" }`, add to `signedInPcs`; the answer a claim gives today. Failure: "Sign in required" |
 | `POST /login` with `claim: "owner"` (changed, locked) | L | as today | As today, plus: refused when `loginLockouts` holds the owner's username at that PC | As today; refusal "Sign in required" |
 | `GET /login_accounts` (changed by 9.1; extended here) | B | as today | As today. | `postitNote` when `login_postit_for(pc)` returns one, which now includes an owner whose `writes_down` is done; `no-store` |
@@ -1895,11 +1895,18 @@ boolean `leavesOpen`, sent in the hand-over (its 14.2); 9.3 writes the feed as
 |---|---|---|
 | 1 | Where a written-down password is served | Slice 9.1's channel: `hasPostit` in room data, the text only from `GET /login_accounts`, `written_down?(npc)` deciding, the workaround answering `{ pcId, hasPostit: true }` |
 | 2 | Feed secrecy | A feed post and the fact it carries are withheld together until the post is served; the leak scanner checks both and is tested to fail |
-| 3 | Reach | Composed on the server from 9.3; no topology and no resource `network` in the browser; "reachable" until 9.3 is built |
+| 3 | Reach | Composed on the server from 9.3; no topology and no resource `network` in the browser; "reachable" when the scenario has no `networks` |
 | 4 | The cut | USB policy first, on its own; then work, outages and frustration; then workarounds in two parts (note, door and event; then hot desk and shared login); then lockout as a cause; social media last |
-| 5 | A tampered browser | The residual in 9.3 is accepted, as it is for the engine's other client-reported hand-overs, and reduced by server-time pace floors per NPC and need, request ceilings, spent-once hand-overs, the server's own check of each cause, and the room check on a heard login |
-| 6 | Visible frustration, and a shared login that explains itself | Required, from existing art: the `blocked` icon by `tell`, the two tiers of mutter, the "Overheard" toast and evidence note |
+| 5 | A tampered browser | The residual in 9.3 is accepted, as it is for the engine's other client-reported hand-overs, and reduced by server-time pace floors, request ceilings, spent-once hand-overs, the server's own check of each cause, and the opened-room bound on a heard login |
+| 6 | Visible frustration, and a shared login that explains itself | Required, from existing art: the `blocked` icon by `tell`, the mutter pools by cause and kind with the fed-up tier, a start line for each workaround, the "Overheard" toast and evidence note |
 | 7 | `roles` | 9.1 builds `roles.<role>.awareness`; this slice owns `workNeeds`, `frustration` and `workarounds` |
+| 12 | What room data says about resources | An NPC's `work` plan carries resource ids, `kind` and global names, never display names. Nothing in the browser needs a name, and it keeps the plan inside 9.3a's secrecy rule with no exception |
+| 13 | The USB policy's values | Three values with `usbClass` (`storage`, `hid`), and a refused NPC takes the stick to the next machine. One extra field, and two real lessons: storage blocking does not stop a keyboard-type device, and a refused stick travels to the machine nobody manages |
+| 15 | Art | Existing art only for the build (`npc-blocked`, `npc-social`, `npc-work`, `notes_postit1`, `fire_extinguisher1`, no phone pose). New 16 px icons or a phone-in-hand pose cost money and are proposed to the user one at a time once the behaviour is approved |
+| 16 | A member of staff on their phone is distracted | `los.challengeOnSight` does not fire while on the phone (beat F8). Opt-in per guard, last step of C, and the validator says the guard can be walked past every period of the need |
+| 17 | First real use | No existing scenario changes in this slice. The lab's lesson is physical and it already has edits queued from the content plan, 9.3a and 9.1 |
+| 18 | When an outage is caused | The NPC's `work` need drops to urgent at once (the outage kick, 5.6), so the student sees cause and effect within one use, not up to a need's whole period later |
+| 19 | Where 9.3b's contacts with this slice are built | In 9.3b: routes with globals, a station "not responding" in the network view, and the USB check on an implant (section 15). This slice builds nothing that needs 9.3b |
 
 **Planner decisions** (the user can overrule any):
 
@@ -1910,16 +1917,13 @@ boolean `leavesOpen`, sent in the hand-over (its 14.2); 9.3 writes the feed as
 | 10 | The need's name | `social_media`. No existing scenario or stored needs capture changes |
 | 11 | A propped door | Stays open for the mission. Doors cannot close today; closable ordinary doors are a door engine change of its own |
 
-**For the user**, each with a recommendation; the plan is written as if each is taken:
+**For the user.** One question. The plan is written as if the recommendation is taken, and the
+sub-slice it governs is last but one in the build order, so it holds nothing up: U, A, B, H and C
+do not depend on it.
 
 | # | Question | Options | Recommendation |
 |---|---|---|---|
-| 12 | Resource names and `downIf` global names in an NPC's room data | Ship them; or ship opaque labels | **Ship.** They say no more than a mutter does, and 9.3 recommends the same in its decision 10 |
-| 13 | The USB policy's values | Three values with `usbClass` (`storage`, `hid`), and a refused NPC takes the stick to the next machine; or one `blocked` value and the NPC gives up | **Three.** One extra field, and two real lessons: storage blocking does not stop a keyboard-type device, and a refused stick travels to the machine nobody manages |
-| 14 | Lockout as a cause (sub-slice L) | Build it; or leave it out | **Build it.** It is the one chain started from a sign-in screen and the one cause the server verifies. It needs the user's explicit yes because it tells the browser that a particular owner is locked out, at the moment that owner returns to their locked screen; the sign-in screen itself never says which usernames are real |
-| 15 | Art | Existing art only (`npc-blocked`, `npc-social`, `notes_postit1`, `fire_extinguisher1`, no phone pose); or new 16 px icons and a phone-in-hand pose | **Existing art for the build**, then new icons one at a time once the behaviour is approved |
-| 16 | A member of staff on their phone is distracted | `los.challengeOnSight` does not fire while on the phone (beat F8); or no effect | **Distracted.** A small hook and a second opening to watch for; the validator says such a guard can be walked past every period |
-| 17 | First real use | No existing scenario changes in this slice; or fold it into `lab_physical_pentest` | **No change.** The lab's lesson is physical and it already has edits queued from 9.1 and 9.3 |
+| 14 | Lockout as a cause (sub-slice L) | Build it; or leave it out | **Build it.** It is the one chain started from a sign-in screen, the one cause the server verifies, and it teaches that a lockout policy is a denial of service anyone at the keyboard can cause. It needs the user's explicit yes because it tells the browser something about an account: when the owner returns to a locked screen at a PC where the player has caused a lockout, the player learns whether the username they locked out was the owner's. A modified browser can ask that at any time after the lockout, not only at the owner's return (9.3). The sign-in screen itself never says which usernames are real, no list of locked-out accounts is sent, and a browser that has caused no lockout never asks |
 
 ## 17. Declined
 
@@ -1939,6 +1943,18 @@ Suggestions considered and not taken, with the reason.
   forbids.
 - **`roles.<role>.habits`.** 9.1 does not take the key; a role sets a level and an exception is
   written on the person.
+- **Repairing the state sync's room field inside this slice**, so the server could check where the
+  player stood when a login was heard. It would switch on the "Cannot enter locked room" refusal
+  for every mission, an engine change with its own risk; it is logged as a fault (section 2) and
+  the heard check is bounded by opened rooms instead (6.5).
+- **Resource display names in the `work` plan**, for mutters that name the share. Mutters come
+  from pools chosen by `kind`, which names the kind of thing that broke without a display name; a
+  name in a mutter would be a request to 9.3 to change its secrecy rule.
+- **A single toggling switch for an outage**, through a new `toggle_global` action. Two switch
+  objects do the same with today's actions and leave `apply-actions.js` to its other editors.
+- **A longer first-fail floor**, tied to the need's decay from `initial`. The outage kick means an
+  honest NPC can fail within one use of being met, so such a floor would refuse honest play; the
+  floor is the use time, and "at once" is printed where it applies (9.3, section 10).
 
 ## 18. Left out, and why
 
@@ -1954,6 +1970,10 @@ Suggestions considered and not taken, with the reason.
   it, the mission type is in the backlog.
 - **Frustration that fades with time alone**: it falls only when work succeeds, so an outage the
   player leaves in place keeps its effect.
-- **A phone-in-hand pose, and posts on the player's own phone**: see decision 15.
+- **A phone-in-hand pose, and posts on the player's own phone**: see decision 15. Until a pose
+  exists, the default toast on a post ("<name> posted on <site name>") is what makes a phone post
+  visible, and it stays even once art comes.
+- **Anything of 9.3b's** (routes with globals, a station "not responding" to the drop box, the
+  implant check): built by 9.3b (section 15).
 - **Reading the feed over someone's shoulder**, private messages and friend requests: the browser
   shows public posts only.

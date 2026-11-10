@@ -234,7 +234,7 @@ overrule any):
 | A `guessable` password | The player types what they worked out at the sign-in screen. No guessing helper. The validator accepts the habit only when every character of the password is accounted for: each word and number in it has a source the player can read, and each short piece and symbol is stated in a named pattern clue (7.2). | Sign-in is exact and can lock an account out, so the player must be able to work out the whole password, not most of it. It is a puzzle, not a guess. |
 | `writesDown`, `password` and the presets | Both are explicit only. No preset sets either. | `writesDown` hands over a permanent password, and one word on an NPC should not open a free route past a capture the author built. `password` changes nothing at run time, so a preset value would be a claim about a password the author already wrote, and a standing suggestion on every desk. |
 | The lab | The lab swaps its hand-set screen fields for habits in this slice, with no change to play. The step comes after the lab's feedback pass and after 9.3's lab step, and is written as a recipe (section 12). | The user's copy of the lab is ahead of this branch, and both of those edit the same file first. |
-| `holdsDoors` | Built as the last part of this slice (step 5), whole, after the engine plan's gate work (its stream E1, its decision X1: a gate is a hard bar for a player it is not open to). Until step 5 nothing about `holdsDoors` is in the library, the schema or the presets. | With a hard bar a careful guard's door cannot be walked through by waiting, so the habit is something a puzzle can stand on. Without it the habit would be accepted and do nothing. |
+| `holdsDoors` | Built as the last part of this slice (step 5), whole, after the engine plan's gate work (its stream E1, its decision X1, settled there: a north or south gate is a hard bar for a player it is not open to; east and west doors cannot be gates). Until step 5 nothing about `holdsDoors` is in the library, the schema or the presets. | With a hard bar a careful guard's door cannot be walked through by waiting, so the habit is something a puzzle can stand on. Without it the habit would be accepted and do nothing. |
 | The browser never reads a habit | Where slice 9.2 needs to know whether a guest locks a borrowed PC, the server decides and sends `leavesOpen` in the hand-over. | Section 14.2. |
 
 Planner decisions (the user can overrule any):
@@ -511,8 +511,8 @@ keeps the PC behind a lock the server checks (a key, a PIN, a badge reader).
 Everything in this section is built in step 5 and nowhere earlier. Until then the engine knows no
 `holdsDoors` habit and writes no `noHold`.
 
-**Who owns what.** The engine plan's item 3 (its stream E1, recorded there as decision X1, an
-orchestrator decision the user can overrule in that plan) owns how a gate bars the player, and the
+**Who owns what.** The engine plan's item 3 (its stream E1, settled there as decision X1, for gates on
+north and south doors only) owns how a gate bars the player, and the
 whole of `systems/door-gates.js` until it is committed. This slice owns one decision in that file,
 who `openToPlayer` says yes to, and makes it in six places, all after E1 commits:
 
@@ -1606,8 +1606,9 @@ user's:
 
 | | Question | Where it is recorded | Effect here |
 |---|---|---|---|
-| 1 | The hard bar at gate doors | The engine plan, as its decision X1 (an orchestrator decision under the user's latitude, which the user can overrule there). Not asked again here | If it stands and E1 is built to 5.4's contract, step 5 is built. If the user overrules it, `holdsDoors` waits for a hard bar |
-| 2 | The preset values in 4.2 | Here | Two habits, three levels. Recommended: accept, and tune after the lab and the first mission have used them |
+| 1 | The hard bar at gate doors | Settled in the engine plan as its decision X1 (north and south gates only). Not asked again here; listed so a reader of this plan knows where it lives | E1 built to 5.4's contract means step 5 is built. If the user ever reverses X1, `holdsDoors` waits for a hard bar |
+| 2 | How `locksScreen` relates to the owner `screenHabit` that the merge into `main` brings | Here, section 2 "To re-check after the main merge", first row | Both describe how one person leaves one screen. Recommended: once the merged code is read, the expansion fills whichever field the merged `decideLocked` reads for an owner, and an authored `screenHabit` counts as an explicit field that the habit never overrides. Streams F, B and L wait for the answer |
+| 3 | The preset values in 4.2 | Here | Two habits, three levels. Recommended: accept, and tune after the lab and the first mission have used them |
 
 Recorded, not asked: the field name `awareness` is kept although the word also names the awareness
 course; the code is named for habits (section 2).

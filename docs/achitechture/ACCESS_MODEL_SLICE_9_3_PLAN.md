@@ -691,7 +691,12 @@ Errors:
 - a jack with no network of its own or from its room;
 - `networkJack` on a sign-in object, on an object with `triggerOnInteract`, `requiresItem`,
   `locked` or a `lockType`, or on an object inside a container or a profile;
-- `rogueDevice` on an item with no `id`, or that is not takeable;
+- `rogueDevice` on an item with no `id`, or that is not takeable, or that is `droppable` (a player
+  drop writes the item into the room and leaves it in the server's inventory,
+  `Game#add_item_to_room!`, `game.rb:427-443`, so it could be in a room and in a jack at once);
+- a `rogueDevice` item named by an object that has both `requiresItem` and `consumesItem` (the
+  device would be used up and the jack could never be reached);
+- `networkJack` on a takeable object;
 - `headless` on an object that is not `lockType: "login"`, or that has no network, or that is a
   workstation with an owner (`screenOwner`, or an NPC's `needsHome`);
 - `contents` on a resource whose `kind` is not `file_share`;
@@ -720,6 +725,8 @@ Warnings:
   object on its network;
 - two sign-in objects with the same `host` label (several resources on one host are fine: a
   server hosts several shares);
+- a sign-in host whose `contents` (or a folder in them) hold a physical item, such as a key, a
+  keycard or a lockpick: over the network it would be taken down the wire;
 - a host that can be signed in to only remotely (headless, or in a room the dungeon graph shows no
   way into) under a policy with `maxAttempts`: a lockout lasts the mission and there is no keyboard
   to fall back on.
@@ -729,8 +736,10 @@ Information lines, printed with the identity reach the first slice prints:
 - **Network reach.** For each jack, its network and the sign-in hosts and resources listed on it.
 - **Reachable without a foothold.** Each share with an access list that maps on the desktop of a
   PC the player can walk up to (not headless), with the accounts admitted; and each sign-in host
-  that is not headless and not in a locked room. If a chain is meant to need the foothold, its
-  payoff should not be on this list.
+  that is not headless and not in a locked room. Roles are compared as the server compares them,
+  so the implicit `staff` role of every account holder counts (`Game.identity_roles`): a share
+  for `finance` maps on a `staff` PC in an open room for any finance account. If a chain is meant
+  to need the foothold, its payoff should not be on this list.
 - A network with hosts or resources and no jack (it may exist only for 9.2's NPC work).
 
 Tests: `test/js/validator-network-model.test.mjs` (new, in the pattern of
@@ -759,9 +768,13 @@ an edge from each admitted account and none from the network alone.
 - **A scenario that adopts networks later** (the lab, section 10) changes only games created after
   the edit: a game in progress keeps its snapshot.
 - **Reload.** `footholds`, `gainedFootholds` and every password session are kept. The link items
-  are ordinary inventory entries and come back in `playerInventory`. `jackPlanted` in room data
-  restores the jack's look and `<jackId>_planted`, which `network-links.js` republishes on load
-  (the server's answer wins over the saved global).
+  are ordinary inventory entries and come back in `playerInventory`. On load, before any room
+  loads, `network-links.js` sets `<jackId>_planted` from the scenario response: true for the
+  source of every held foothold, false for every other id in `gainedFootholds`. So a saved global
+  left true by an unplug whose sync was lost is corrected at once, and variants and
+  `revealOnGlobal` in other rooms never show a box that is not there. `jackPlanted` in room data
+  then restores the jack's own look when its room loads. The server's answer always wins over
+  the saved global.
 - **Reset.** Neither new key is preserved, the inventory is rebuilt from the start items and
   `room_states` is cleared, so a planted device is back where the scenario put it and there is no
   link item.
@@ -781,15 +794,17 @@ assigns to scripted regression runs and to persona runs. All browser runs use th
 
 A step is done when its unit tests, the node suite (`bin/test-js`), the Rails suite
 (`bin/rails test`), the no-password test, the no-exposure test and every suite run built so far
-pass.
+pass, and, for a step that changes client code (7 and 8), the phone reopen check
+(`node scripts/ink_runtime_check/reopencheck.mjs scripts/ink_runtime_check/missions.json`), as
+`AGENTS.md` requires of every engine change.
 
 ### Step 1. Shared rules and state
 
 Files:
 - `lib/break_escape/network_model.rb` (new): `networks(data)`, `network_of(object, room)`,
   `jacks(data)`, `sign_in_objects_on(network_id, data)`, `resources_on(network_id, data)`,
-  `rogue_device_definitions(data)` (every home in 3.3), and `reach_conditions(station_network,
-  resource)` (4.2). Plain Ruby, no ActiveSupport.
+  `rogue_device_definitions(data)` (every home in 3.3), and `reach_conditions(data,
+  station_network, resource)` (4.2). Plain Ruby, no ActiveSupport.
 - `app/models/break_escape/network_access.rb` (new): a concern included in `Game`, as `CarryOver`
   and `ScoreBreakdown` are. All of this slice's model code lives here, so `game.rb` takes only
   small hooks.
@@ -824,11 +839,15 @@ that exist at this step; steps 3 and 4 add their routes' cases to it.
 ### Step 3. Server: the jack, the device and the view
 
 Files:
-- `config/routes.rb`: `post 'network/plant'`, `post 'network/unplug'`, `get 'network'`.
+- `config/routes.rb`: the three routes of section 5, each naming its action (`network`,
+  `network_plant`, `network_unplug`).
+- `app/policies/break_escape/game_policy.rb`: `network?`, `network_plant?` and
+  `network_unplug?`, each answering as `show?` does.
 - `games_controller.rb`: the three actions (thin: each calls one concern method and renders its
   `{ status:, body: }`, as `login` does); all three join the `set_game` list, and the two that
   write join the `with_game_lock` list; the `scenario` action adds `footholds` and
-  `gainedFootholds`; the inventory add refuses a planted device.
+  `gainedFootholds`; the inventory add refuses a planted device; `filter_container_contents` drops
+  a planted device (4.1).
 - `network_access.rb`: `object_reachable?`, `held_rogue_device`, `planted_device?`,
   `plant_device!`, `unplug_device!`, `link_item_for`, `footholds_for_client`, `network_view`.
 - `game.rb`: `apply_room_state_changes!` hides a planted device; `complete_task!` reads
@@ -839,8 +858,12 @@ Tests (`test/controllers/break_escape/network_footholds_test.rb`, new; every sce
 - plant: success moves the device out and the link item in, records both keys and answers
   `first: true`; a second plant answers `already: true` and writes nothing; no device, a forged
   `rogueDevice` field on some other inventory entry, an unreachable jack and an unknown jack are
-  each refused with the right status and leave the state alone; a device defined in each of the
-  five homes plants;
+  each refused with the status of section 5 (422 `no_device`, 422 `no_device`, 403 `unreachable`,
+  404) and leave the state alone; a `device_id` naming a device that is not held is refused with
+  `no_device` although another is held; an unplug at a jack with no foothold is 422
+  `not_planted`; a device defined in each of the five homes plants, and for each home, while it
+  is planted, that home does not offer it again (its room's data, its container's
+  `GET /container` listing, the NPC's held items, the grant);
 - one device: after a plant the device is not in its room's data, with `objects_removed` written
   and also with that write removed by hand; an inventory add for it is refused; with the same
   device, a plant at a second jack is refused with `no_device`;
@@ -849,8 +872,11 @@ Tests (`test/controllers/break_escape/network_footholds_test.rb`, new; every sce
 - the link item has exactly the shape of 4.1, with `storeIn` only when the jack sets `linkStoreIn`;
 - the view: empty with no foothold; the foothold's network with its hosts and resources in scenario
   order; nothing from the other network; a PC under a `remote: "blocked"` policy listed with
-  `remoteSignIn: false`; a headless host with `headless: true`; no `access`, username or content
+  `remoteSignIn: false` and no `session` even when a session is held there; a claimed session's
+  row with no `session`; a headless host with `headless: true`; no `access`, username or content
   string anywhere in the answer;
+- every new action with an unauthorised player answers as the existing actions do (the policy
+  methods exist);
 - an `unlock_object` task on a jack completes after the plant, stays complete after an unplug, and
   does not complete before;
 - reset with a device planted: both keys empty, no link item, the device back in its room's data;
@@ -862,7 +888,8 @@ Tests (`test/controllers/break_escape/network_footholds_test.rb`, new; every sce
 Files:
 - `game.rb`: `attempt_login!` takes `foothold:` and runs section 5's checks, the headless refusal
   included; `claim_login_session!` refuses a claim with a foothold or on a headless host;
-  `start_login_session!` and `login_session_answer` carry `foothold` and `remote`;
+  `start_login_session!` and `login_session_answer` carry `foothold`, `remote` and, for a remote
+  session, `host` (4.4);
   `login_scope_of` walks `resources` and returns the `resource` scope for the record and for what
   is in it; `session_admits?` and `scope_admitted_by_session?` gain the `resource` case;
   `find_scenario_object` walks `resources` after the profiles; `login_desktop_contents` appends the
@@ -870,13 +897,17 @@ Files:
 - `network_access.rb`: `host_reachable_through?(foothold_id, pc)`, `remote_blocked?(pc)`,
   `desktop_request_allowed?(pc, foothold_id)` (the one place a desktop request is judged, 4.4),
   `resource_admits_player?`, `resource_acl_admits?`, `mapped_shares(pc, npc)`,
-  `end_sessions_through!(foothold_id)` (called by the unplug), `account_capture_usernames`.
+  `end_sessions_through!(foothold_id)` (called by the unplug), `account_capture_usernames` (the
+  `accounts` map of 4.4, from the keys of `account_capture_passwords`).
 - `games_controller.rb`: `login` passes `foothold`; `container` and `render_login_desktop` judge a
   desktop request by its `foothold` parameter (4.4), answer the two 403 reasons, clear a session's
-  `foothold` when served physically, and serve a resource through the scope branch with a 404 on
-  refusal; `login_accounts` refuses a headless host; the inventory add takes
-  `source_resource_id`; `find_object_in_scenario` walks `resources`; `capture_secrets` adds
-  `accounts`. `find_accessible_item` and `find_container_in_scenario` are **not** changed.
+  `foothold` when served physically (and the comment above `container` is rewritten: the action
+  now writes and must stay locked), refuse a foothold request for a claimed session with 403
+  `unreachable`, and serve a resource through the scope branch with the unknown-id 404 on
+  refusal; `unlock` and the inventory add answer a refused resource with their own unknown-id
+  422 (4.5); `login_accounts` refuses a headless host; the inventory add takes
+  `source_resource_id`, and the "already held" shortcut and the Copy record treat it as they treat
+  `source_pc_id`; `find_object_in_scenario` walks `resources`; `capture_secrets` adds `accounts`. `find_accessible_item` and `find_container_in_scenario` are **not** changed.
 
 Tests (`test/controllers/break_escape/network_remote_signin_test.rb` and
 `network_shares_test.rb`, new):
@@ -894,7 +925,11 @@ Tests (`test/controllers/break_escape/network_remote_signin_test.rb` and
   `foothold` is served and the one without is 403; with the room unlocked both are served, and the
   one without clears the session's `foothold`; after an unplug a session that still had its
   `foothold` is gone (403 `no_session`) and one that was cleared survives; a local session at a PC
-  in an open room is unaffected throughout;
+  in an open room is unaffected throughout; a remote sign-in at a PC where the player already
+  holds a local session replaces it, and an unplug then ends it; a foothold request for a claimed
+  session is 403 `unreachable` and the claim is kept; a physical desktop request that clears a
+  `foothold`, run against a concurrent unplug of the same foothold, leaves either the session
+  without its `foothold` or no session, never a session that still names the gone foothold;
 - shares, the rule of 4.5: an open share opens from the view with a foothold; it opens from a local
   desktop with **no** foothold; it is refused with neither; a protected share is a stub on an
   admitted account's desktop, local or remote, and not on another's, and not when the PC has no
@@ -904,7 +939,10 @@ Tests (`test/controllers/break_escape/network_remote_signin_test.rb` and
   share item's id, with a foothold held, is still refused (only `source_resource_id` or a desktop
   reaches a share);
 - `/capture_secrets`: `accounts` holds an account capture's username and not a landing-page
-  capture's address;
+  capture's address; with `revealSecret` off, `accounts` still holds it and `secrets` is empty;
+  the single-secret fallback never adds an entry to `accounts`;
+- the refusal bodies: a refused share id on `POST /unlock` and `POST /inventory` has the same
+  status and body as an invented id on that route (compared field by field);
 - the first slice's `access_model_*` controller tests pass unchanged.
 
 ### Step 5. Validator, schema, dungeon graph and author docs
