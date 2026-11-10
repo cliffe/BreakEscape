@@ -673,6 +673,12 @@ async function handleDoorInteraction(doorSprite) {
         // relocks. A bare playerOpen (the old path) toggled the doorway walkable into a
         // room that was never loaded and never told the server, so the player could not
         // enter and verify-run showed no progress.
+        // The hint lives on the locked room's side of the doorway; the group shares it.
+        // So does the sign, which titles a refusal ("Server Riser" in place of "Door")
+        const hintSource = { doorProperties: {
+            lockedHint: props.lockedHint || gateGroup?.lockedHint || null,
+            door_sign: gateGroup?.doorSign || (props.requires ? props.door_sign : null) || null
+        } };
         const requires = props.requires || gateGroup?.requires || null;
         if (playerHoldsRfidCredentialFor(requires)) {
             const connectedRoom = props.connectedRoom;
@@ -683,7 +689,7 @@ async function handleDoorInteraction(doorSprite) {
                 console.error('Clone-as-entry server unlock failed:', error);
             }
             if (!serverResponse || !serverResponse.success) {
-                window.gameAlert?.('Access denied', 'error', 'Door', 3000);
+                window.gameAlert?.('Access denied', 'error', doorRefusalTitle(hintSource, 'Door'), lockedHintDuration(hintSource, 3000, 'Access denied'));
                 return;
             }
             // Cache the room the server returned and load it if it is not loaded yet
@@ -722,12 +728,6 @@ async function handleDoorInteraction(doorSprite) {
             holdsCredential: false, connectedRoom: props.connectedRoom
         }) || 'denied';
         if (outcome === 'pass') return;
-        // The hint lives on the locked room's side of the doorway; the group shares it
-        // So does the sign, which titles the toast ("Records Office" in place of "Door")
-        const hintSource = { doorProperties: {
-            lockedHint: props.lockedHint || gateGroup?.lockedHint || null,
-            door_sign: gateGroup?.doorSign || (props.requires ? props.door_sign : null) || null
-        } };
         const denied = 'Access denied: this door only opens for authorised staff.';
         window.gameAlert?.(appendLockedHint(denied, hintSource), 'error', doorRefusalTitle(hintSource, 'Door'), lockedHintDuration(hintSource, 3000, denied));
         window.eventDispatcher?.emit?.('door_gate_denied', {

@@ -8,7 +8,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
 
 for (const k of ['log', 'info', 'warn', 'debug', 'error']) console[k] = () => {};
@@ -36,8 +36,8 @@ const stubs = {
         }
         export function handleUnlock(...a) { globalThis.__calls.handleUnlock.push(a); }
     `),
-    '../utils/locked-hint.js': dataUrl(
-        'export const appendLockedHint = (s) => s; export const lockedHintDuration = () => 3000; export const doorRefusalTitle = (l, f) => f;'),
+    // The real module (no imports of its own): the refusal titles come from it
+    '../utils/locked-hint.js': pathToFileURL(join(js, 'utils/locked-hint.js')).href,
     './interaction-repeat.js': dataUrl('export function isRepeatInteraction() { return false; }'),
     './room-ready.js': dataUrl('export async function waitForRoomReady() { return { ready: true }; }')
 };
@@ -64,7 +64,7 @@ function setup({ roomLoaded = false } = {}) {
         playerOpen: (roomId) => { playerOpen.push(roomId); return true; }
     };
     window.game = { sound: { get: () => null, add: () => ({ play() {} }) } };
-    window.gameAlert = (msg, type, title) => alerts.push({ msg, type, title });
+    window.gameAlert = (msg, type, title, ms) => alerts.push({ msg, type, title, ms });
     window.eventDispatcher = { emit() {} };
     const doorSprite = {
         x: 100, y: 100,
@@ -117,6 +117,20 @@ test('server refuses: nothing loads and the gate stays shut', async () => {
     assert.equal(window.__loaded, null, 'no room loads on a refusal');
     assert.deepEqual(playerOpen, [], 'the gate does not open on a refusal');
     assert.ok(alerts.some(a => a.type === 'error'), 'access denied toast shown');
+});
+
+test('server refuses: the toast is titled with the door sign (the riser refusal)', async () => {
+    globalThis.__hasCredential = true;
+    globalThis.__serverResponse = { success: false };
+    const { doorSprite, alerts } = setup({ roomLoaded: false });
+    doorSprite.doorProperties.door_sign = 'Server Riser: Authorised Staff Only';
+
+    await handleDoorInteraction(doorSprite);
+
+    const err = alerts.find(a => a.type === 'error');
+    assert.equal(err?.msg, 'Access denied');
+    assert.equal(err?.title, 'Server Riser', 'the sign titles the refusal, not "Door"');
+    assert.ok(err?.ms >= 5000, 'the refusal stays at least 5 s');
 });
 
 test('no credential: the gate is denied, server untouched', async () => {
