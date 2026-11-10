@@ -273,6 +273,8 @@ Dr. Irina Volkova: So what does the FCA want to see? Our customer checks are com
     Dr. Irina Volkova: My own audit wordlist. Every crypto firm on earth picks from the same twenty words and bolts a year on the end.
 
     Dr. Irina Volkova: Sixty-one per cent of our staff accounts fell to that list last time I ran it. Management's response was to stop me running it.
+
+    Dr. Irina Volkova: The service accounts on the backend are worse. They don't even get the year.
     -> hub
 - else:
     ~ asked_passwords = true

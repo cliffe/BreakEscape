@@ -969,7 +969,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "id": "relayed_password_dictionary",
               "name": "Password Dictionary List (relayed copy)",
               "takeable": true,
-              "text": "HASHCHAIN INTERNAL — CREDENTIAL AUDIT WORDLIST\n(copy pulled from Dr. Volkova's workstation by SAFETYNET)\n\nbitcoin\nethereum\nsatoshi\nblockchain\nledger\nmonero\nhodl\nmoonshot\nprivatekey\ncoldstorage\n\nAppend: 2023 / 2024 / 2025 / 123 / !",
+              "text": "HASHCHAIN INTERNAL — CREDENTIAL AUDIT WORDLIST\n(copy pulled from Dr. Volkova's workstation by SAFETYNET)\n\nbitcoin\nethereum\nsatoshi\nblockchain\nledger\nmonero\nhodl\nmoonshot\nprivatekey\ncoldstorage\n\nDoor passphrases: a word above plus 2023 / 2024 / 2025 / 123 / !\nService accounts on the backend: the bare words above, no suffix.",
               "observations": "Volkova's audit wordlist, pulled off her workstation by SAFETYNET"
             },
             {
@@ -1119,7 +1119,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "onceOnly": true,
               "setGlobal": { "recon_guide_offered": true, "druid_guide_offered": true, "cracking_guide_offered": true },
               "completeTask": "access_hackme_vm",
-              "sendTimedMessage": { "delay": 1800, "message": "You're on the backend. A data-analytics service is listening that shouldn't be: that's your way in. Four accounts across their estate. Map first. I've recon, Druid and cracking guides." }
+              "sendTimedMessage": { "delay": 1800, "message": "You're on the backend. A data-analytics service is listening that shouldn't be: that's your way in. Four service accounts hold what we want, and one operator login runs the box. Map first. I've recon, Druid and cracking guides." }
             },
             {
               "_comment": "PASS 2: used to read the passphrase out ('bitcoin2025') the moment the checklist was picked up, which made the puzzle a pickup. Now HaX points at the second half of the clue.",
@@ -1888,8 +1888,8 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "id": "m06_password_dictionary",
               "name": "Password Dictionary List",
               "takeable": true,
-              "text": "HASHCHAIN INTERNAL — CREDENTIAL AUDIT WORDLIST\n\nCompiled by Dr. I. Volkova for internal password strength testing.\n\nbitcoin\nethereum\nsatoshi\nblockchain\nledger\nmonero\nhodl\nmoonshot\nprivatekey\ncoldstorage\n\nAppend: 2023 / 2024 / 2025 / 123 / !\n\nNote: 61% of staff accounts fell to this list in the last audit.\nManagement's response was to stop running the audit.",
-              "observations": "Irina's own audit wordlist: the words and years staff here pick for door passphrases",
+              "text": "HASHCHAIN INTERNAL — CREDENTIAL AUDIT WORDLIST\n\nCompiled by Dr. I. Volkova for internal password strength testing.\n\nbitcoin\nethereum\nsatoshi\nblockchain\nledger\nmonero\nhodl\nmoonshot\nprivatekey\ncoldstorage\n\nDoor passphrases: a word above plus 2023 / 2024 / 2025 / 123 / !\nService accounts on the backend: the bare words above, no suffix.\n\nNote: 61% of staff accounts fell to this list in the last audit.\nManagement's response was to stop running the audit.",
+              "observations": "Irina's own audit wordlist: the words staff here pick, with the years they bolt on for door passphrases. The backend service accounts use the bare words. Short enough to type out by hand.",
               "puzzle_graph_role": "tool",
               "puzzle_graph_unlocks": "server_room"
             },
@@ -2044,7 +2044,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "name": "Door Controller Export",
               "takeable": true,
               "readable": true,
-              "text": "hc-findb-01 :: door_controllers.csv (export)\n\ncontroller,door,auth,secret,set_by\nDC-01,server room,passphrase,(convention),IT\nDC-02,data centre,pin,3110,CEO\nDC-03,executive wing,rfid,executive_badge,CEO\nDC-04,CTO office,rfid,cto_badge,CTO\n\n# DC-02 note (CEO): 31/10. The day the whitepaper went out.\n# DC-03 note (ops): spare executive badge signed out to the CTO for the reader install. Never returned.",
+              "text": "hcfindb :: door_controllers.csv (export)\n\ncontroller,door,auth,secret,set_by\nDC-01,server room,passphrase,(convention),IT\nDC-02,data centre,pin,3110,CEO\nDC-03,executive wing,rfid,executive_badge,CEO\nDC-04,CTO office,rfid,cto_badge,CTO\n\n# DC-02 note (CEO): 31/10. The day the whitepaper went out.\n# DC-03 note (ops): spare executive badge signed out to the CTO for the reader install. Never returned.",
               "observations": "The door controllers run off the financial database's service account. The data centre code is on the second line.",
               "puzzle_graph_role": "key",
               "puzzle_graph_unlocks": "data_center"
@@ -2055,7 +2055,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "name": "Cold Storage Recovery Keys",
               "takeable": true,
               "readable": true,
-              "text": "hc-vault-01 :: cold_storage/recovery.keys\n\nRecovery material for every cold slot HashChain holds.\n\nslot 2207   [key material]\nslot 3815   [key material]\nslot <%= fund_slot %>   [key material]\nslot 5093   [key material]\nslot 6120   [key material]\nslot 7302   [key material]\nslot 8846   [key material]\n\nWhoever holds these can move a cold wallet's coins before its owner can.",
+              "text": "hcvault :: cold_storage/full_access_flag\n\nRecovery material for every cold slot HashChain holds.\n\nslot 2207   [key material]\nslot 3815   [key material]\nslot <%= fund_slot %>   [key material]\nslot 5093   [key material]\nslot 6120   [key material]\nslot 7302   [key material]\nslot 8846   [key material]\n\nWhoever holds these can move a cold wallet's coins before its owner can.",
               "observations": "With these you can move the Architect's Fund into a wallet SAFETYNET holds tonight. Without them, the only choice left is to watch where it goes."
             }
           ]
@@ -2067,7 +2067,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "_comment": "Pass-4 dialogue playtest: auto-placed 23 px south of the flag station, so interacting from the north opened the station. Room dressing (room_hce_servers): it now has its own notes slot at the far end of the ops bench, 32 px+ from the station.",
           "takeable": true,
           "readable": true,
-          "text": "HASHCHAIN — RACK B INVENTORY\n\nB-01  hc-auth-01      (staff authentication)\nB-02  hc-trade-01     (matching engine)\nB-03  hc-ledger-01    (internal ledger — RESTRICTED)\nB-04  hc-findb-01     (financial database — RESTRICTED)\nB-05  hc-vault-01     (cold storage keys — RESTRICTED)\nB-06  hc-mixer-01     (privacy conversion service)\nB-07  hc-analytics-01 (Apache Druid dashboards — console on the backend LAN, no auth, \"temporary\")\n\nNote from ops: the auth and ledger service accounts share a password.\nThe financial database account also drives the door controllers.\nThe analytics box (B-07) was stood up for a board demo and never locked down — it talks to the whole backend.\nRaised as a risk in March. Closed as 'accepted'.",
+          "text": "HASHCHAIN — RACK B INVENTORY\n\nB-01  hcauth          (staff authentication — service account)\nB-02  hc-trade-01     (matching engine)\nB-03  hcledger        (internal ledger — RESTRICTED — service account)\nB-04  hcfindb         (financial database — RESTRICTED — service account)\nB-05  hcvault         (cold storage keys — RESTRICTED — service account)\nB-06  hc-mixer-01     (privacy conversion service)\nB-07  hc-analytics-01 (Apache Druid dashboards — console on the backend LAN, no auth, \"temporary\")\n\nOperator login for the backend: hcops.\n\nNote from ops: the auth and ledger service accounts share a password.\nThe financial database account also drives the door controllers.\nThe analytics box (B-07) was stood up for a board demo and never locked down — it talks to the whole backend.\nRaised as a risk in March. Closed as 'accepted'.",
           "observations": "Rack inventory. An analytics box sits on the backend with no login, two service accounts share a password, and the financial database's account runs the doors.",
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "credential_reuse_available"
@@ -2207,7 +2207,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "name": "Cold Storage Procedure",
           "takeable": true,
           "readable": true,
-          "text": "HASHCHAIN EXCHANGE - COLD STORAGE PROCEDURE (OPS)\n\nTotal cold holdings: $44.3M USD equivalent\n\nRecovery keys for every cold wallet live on ONE account: the vault\naccount on the backend (hc-vault-01). Nowhere else. Not on paper.\n\nAnyone who can read that account can move a cold wallet's coins\nbefore its owner can. Guard it accordingly.\n\n(It has the same kind of password as everything else here.)",
+          "text": "HASHCHAIN EXCHANGE - COLD STORAGE PROCEDURE (OPS)\n\nTotal cold holdings: $44.3M USD equivalent\n\nRecovery keys for every cold wallet live on ONE account: the vault\naccount on the backend (hcvault). Nowhere else. Not on paper.\n\nAnyone who can read that account can move a cold wallet's coins\nbefore its owner can. Guard it accordingly.\n\n(Its password is long and random. The operator login can still read it.)",
           "observations": "The recovery keys aren't in this room. They're on the vault account on the backend.",
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "asset_choice_available"
