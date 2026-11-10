@@ -16,6 +16,9 @@
 import { getProtocolInfo, detectProtocol, getReadProfile } from './rfid-protocols.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 
+/** Shown under "No keycards in inventory" on the Read screen. */
+export const NO_KEYCARDS_HINT = 'The cloner reads a badge at close range: one you hold, or one someone is carrying.';
+
 export class RFIDUIRenderer {
     constructor(minigame) {
         this.minigame = minigame;
@@ -190,6 +193,14 @@ export class RFIDUIRenderer {
             noCards.className = 'flipper-info-dim';
             noCards.textContent = 'No keycards in inventory';
             cardList.appendChild(noCards);
+
+            // Where a card comes from (lab playtest E11: the empty list gave no lead).
+            // True of every scenario and names no one: a read happens on a keycard the
+            // player holds or, in conversation, on a badge someone carries.
+            const how = document.createElement('div');
+            how.className = 'flipper-info-dim';
+            how.textContent = NO_KEYCARDS_HINT;
+            cardList.appendChild(how);
         } else {
             availableCards.forEach(card => {
                 const cardItem = document.createElement('div');
