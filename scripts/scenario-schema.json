@@ -235,6 +235,8 @@
           "access": { "$ref": "#/definitions/accessList" },
           "contents": { "type": "array", "items": { "$ref": "#/definitions/item" }, "description": "file_share only: items, as in an account profile. Ids are global." },
           "observations": { "type": "string", "description": "For a resource with no contents: the text shown when the player clicks its row." },
+          "downIf": { "type": "string", "description": "Slice 9.2: a global name; the resource is down while it is truthy." },
+          "object": { "type": "string", "description": "Slice 9.2: a room object the resource is tied to (a check visit walks there)." },
           "_comment": { "type": "string" }
         }
       }
@@ -246,6 +248,9 @@
         "type": "object",
         "properties": {
           "awareness": { "type": "string", "enum": ["low", "medium", "high"] },
+          "workNeeds": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "Slice 9.2: resource ids staff with this role need for their work." },
+          "frustration": { "type": "object", "additionalProperties": false, "properties": { "perFail": { "type": "number", "minimum": 1, "maximum": 100 }, "easePerSuccess": { "type": "number", "minimum": 0, "maximum": 100 }, "breakDrain": { "type": "number", "minimum": 0, "maximum": 50 }, "_comment": { "type": "string" } } },
+          "workarounds": { "type": "array", "items": { "type": "object", "required": ["at", "do"], "properties": { "at": { "type": "number", "minimum": 1, "maximum": 100 }, "do": { "type": "string", "enum": ["writes_down", "prop_door", "emit", "borrow_session", "share_login"] }, "pc": { "type": "string" }, "with": { "type": "string" }, "door": { "type": "string" }, "prop": { "type": "string" }, "event": { "type": "string" }, "setGlobal": { "type": "string" }, "noWarning": { "type": "boolean" }, "_comment": { "type": "string" } } } },
           "_comment": { "type": "string" }
         },
         "additionalProperties": true
@@ -4670,6 +4675,12 @@
         "needsAvoidRooms": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "NPC needs system, room leash (deny list): rooms this NPC's needs never use objects in or walk through, even as a short cut; it goes the long way or waits. The home room may not be listed. Fixed per NPC. Scripts and route patrols ignore it." },
         "maxQueue": { "type": "integer", "minimum": 0, "description": "NPC needs system, balking (OFFICE_LIFE_PLAN 10, slice 14): refuse to join a queue that already holds this many; the NPC tries another source, else parks the need (reason queue). 0 never queues. Unset: no limit." },
         "needsDeferMin": { "type": "number", "exclusiveMinimum": 0, "description": "NPC needs system, parked needs (OFFICE_LIFE_PLAN 10, slice 14): minutes (needs clock) a need with no acceptable source stays parked, level held at urgentAt + 1 and decay paused, before it is retried. A room loading or a door opening retries it sooner. Default 4." },
+        "workNeeds": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "Slice 9.2 (ACCESS_MODEL_SLICE_9_2_PLAN.md 4): changes to the role defaults' resources: \"x\" or \"+x\" adds, \"-x\" removes. Room NPCs only; never sent to the browser." },
+        "frustration": { "type": "object", "additionalProperties": false, "properties": { "perFail": { "type": "number", "minimum": 1, "maximum": 100 }, "easePerSuccess": { "type": "number", "minimum": 0, "maximum": 100 }, "breakDrain": { "type": "number", "minimum": 0, "maximum": 50 }, "_comment": { "type": "string" } }, "description": "Slice 9.2: perFail (default 25), easePerSuccess (default 10), breakDrain (default 10); overrides the role defaults field by field. Room NPCs only; never sent to the browser." },
+        "workarounds": { "type": "array", "items": { "type": "object", "required": ["at", "do"], "properties": { "at": { "type": "number", "minimum": 1, "maximum": 100 }, "do": { "type": "string", "enum": ["writes_down", "prop_door", "emit", "borrow_session", "share_login"] }, "pc": { "type": "string" }, "with": { "type": "string" }, "door": { "type": "string" }, "prop": { "type": "string" }, "event": { "type": "string" }, "setGlobal": { "type": "string" }, "noWarning": { "type": "boolean" }, "_comment": { "type": "string" } } }, "description": "Slice 9.2 (section 6): what this person does as frustration rises. Replaces the role's list. Room NPCs only; never sent to the browser." },
+        "phone": { "type": "boolean", "description": "Slice 9.2 (section 8): false: the NPC has no phone. Default true for an NPC with a social_media need." },
+        "socialUse": { "type": "object", "properties": { "restores": { "type": "number" }, "useSeconds": { "type": "number", "minimum": 0 }, "_comment": { "type": "string" } }, "description": "Slice 9.2: a social media use (defaults 60 and 20)." },
+        "feed": { "type": "object", "properties": { "site": { "type": "string" }, "person": { "type": "string" }, "posts": { "type": "array", "items": { "type": "object" } }, "_comment": { "type": "string" } }, "description": "Slice 9.2 (section 8): posts revealed one at a time into the social media browser. Room NPCs only; withheld until each is revealed." },
         "needsCompany": {
           "type": "object",
           "description": "NPC needs system, social compatibility (OFFICE_LIFE_PLAN 7.3). Two NPCs chat at a shared object only if neither avoids the other and they share a group (or either has none). An avoidance is declared one way and acts BOTH ways: it also stops the two sharing a capacity-2 object (the second waits; npc_avoided:<npcId>). With no needsCompany anywhere, everyone pairs. Slice 14: an NPC that declares avoids (or an avoidRadius) also turns away from a source someone avoided (either way) is using, is queued for, or stands within avoidRadius tiles of (npc_turned_back, npc_need_parked).",

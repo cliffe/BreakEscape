@@ -437,6 +437,7 @@ def check_unknown_fields(json_data)
     answersPhones phoneCalls
     role creds staff cloneable
     awareness habits
+    workNeeds frustration workarounds phone socialUse feed
     observations disableClose los rfidCard chatBackground spriteStyle gender portraitVariants _comment
   ]
 
