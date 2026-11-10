@@ -247,15 +247,7 @@ export class PhoneChatMinigame extends MinigameScene {
             const choiceButton = e.target.closest('.choice-button');
             if (choiceButton) {
                 const choiceIndex = parseInt(choiceButton.dataset.index);
-                // Play message sent sound
-                try {
-                    if (window.game && window.game.sound) {
-                        const sound = window.game.sound.get('message_sent') || window.game.sound.add('message_sent');
-                        sound.play({ volume: 0.7 });
-                    }
-                } catch (e) {
-                    // Sound not available, ignore
-                }
+                // The "message sent" sound plays in handleChoice, once the choice is taken
                 this.handleChoice(choiceIndex);
             }
         });
@@ -1030,6 +1022,18 @@ export class PhoneChatMinigame extends MinigameScene {
         return !!endNow && this.conversation === asking && !!this.isConversationActive;
     }
 
+    /** The "message sent" sound of a choice the player has taken. */
+    playMessageSent() {
+        try {
+            if (window.game && window.game.sound) {
+                const sound = window.game.sound.get('message_sent') || window.game.sound.add('message_sent');
+                sound.play({ volume: 0.7 });
+            }
+        } catch (e) {
+            // Sound not available, ignore
+        }
+    }
+
     /**
      * Handle player choice selection
      * 
@@ -1062,6 +1066,9 @@ export class PhoneChatMinigame extends MinigameScene {
         if (this._askEndingBeforeChoice && !(await this._askEndingBeforeChoice(choiceIndex))) return;
 
         console.log(`👆 Player chose: ${choiceText}`);
+
+        // Message sent: only for a choice that is taken (not one "Keep going" left untaken)
+        this.playMessageSent?.();
 
         // Display player's choice as a message
         this.ui.addMessage('player', choiceText);

@@ -24,10 +24,14 @@ export function choiceAsksEnding(tags) {
  * mission now" resolves true and the caller takes the choice as normal; "Keep going" resolves
  * false and the caller takes nothing, so ink does not move and the same choices stay on
  * screen. Resolves true at once when the choice has no such tag, nothing is open or the
- * module is not loaded. A tag after the brackets keeps its old meaning (processGameActionTags).
+ * module is not loaded. Resolves false at once, asking nothing, while the question is already
+ * up for another trigger. A tag after the brackets keeps its old meaning (processGameActionTags).
  */
 export async function confirmEndingBeforeChoice(tags, checker = (typeof window !== 'undefined' ? window.endingCheck : null)) {
     if (!choiceAsksEnding(tags) || typeof checker?.confirm !== 'function') return true;
+    // The question is already up for another trigger (the credits, a mapped global): its
+    // answer is not this choice's, so take nothing; the player clicks the choice again
+    if (typeof checker.isAsking === 'function' && checker.isAsking()) return false;
     if (typeof checker.needsAnswer === 'function' && !checker.needsAnswer()) return true;
     return !!(await checker.confirm({ reason: 'choice' }));
 }

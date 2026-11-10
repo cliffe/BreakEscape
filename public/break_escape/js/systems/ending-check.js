@@ -174,6 +174,11 @@ export function endingNeedsAnswer(deps = {}) {
     return open.length > 0 && !open.every((o) => isConfirmed(o.taskId));
 }
 
+/** Whether the question is up now (another trigger raised it and it is not answered yet). */
+export function endingIsAsking() {
+    return showing !== null;
+}
+
 /**
  * Ask the player, if the warning applies. Resolves true to go ahead with the ending,
  * false to keep playing. Resolves true at once when there is nothing to warn about.
@@ -381,6 +386,7 @@ if (typeof window !== 'undefined') {
         hasHeld: hasHeldEnding,
         endHeld: endHeldEnding,
         needsAnswer: endingNeedsAnswer,
+        isAsking: endingIsAsking,
         openOptional: openOptionalObjectives,
         enabled: endingCheckEnabled,
         registerRebuilder: registerHoldRebuilder,

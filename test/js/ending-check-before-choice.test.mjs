@@ -177,6 +177,52 @@ test('phone chat: asks before showing the player line or calling makeChoice', as
     assert.equal(await p, true, 'End the mission now: taken');
 });
 
+// ---- Code review R1 (engine feedback changes) ----
+
+// m6: a question already up for another trigger does not decide the choice
+test('a choice clicked while the credits\' question is up takes nothing, whatever that answer', async () => {
+    fresh();
+    window.objectivesManager = manager(['opt_a']);
+    const credits = E.confirmEnding({ reason: 'credits' });
+    await tick();
+    assert.equal(window.endingCheck.isAsking(), true);
+    const chat = personChat(tagged);
+    chat.handleChoice(0);
+    await tick();
+    clickButton('ending-check-end');      // ends the mission for the credits
+    assert.equal(await credits, true);
+    await tick(); await tick();
+    assert.deepEqual(chat.taken, [], 'the choice is not taken on the credits\' answer');
+    assert.equal(window.endingCheck.isAsking(), false);
+    // The phone's gate as well
+    fresh();
+    window.objectivesManager = manager(['opt_a']);
+    const credits2 = E.confirmEnding({ reason: 'credits' });
+    await tick();
+    assert.equal(await H.confirmEndingBeforeChoice(['ending_check']), false, 'nothing asked, nothing taken');
+    clickButton('ending-check-keep');
+    assert.equal(await credits2, false);
+    // Once the first question is answered, clicking the choice again asks as normal
+    const again = H.confirmEndingBeforeChoice(['ending_check']);
+    await tick();
+    assert.ok(document.getElementById(E.ENDING_CHECK_ID));
+    clickButton('ending-check-end');
+    assert.equal(await again, true);
+});
+
+// m7: the phone's "message sent" sound is for a choice that is taken
+test('phone chat: "message sent" plays after the ending check, not on the click', () => {
+    const src = readFileSync(join(js, 'minigames/phone-chat/phone-chat-minigame.js'), 'utf8');
+    const click = src.slice(src.indexOf("this.addEventListener(this.ui.elements.choicesContainer, 'click'"));
+    assert.doesNotMatch(click.slice(0, click.indexOf('this.handleChoice(choiceIndex);')), /message_sent/);
+    const body = src.slice(src.indexOf('    async handleChoice(choiceIndex) {'));
+    const ask = body.indexOf('await this._askEndingBeforeChoice(choiceIndex)');
+    const sound = body.indexOf('this.playMessageSent?.();');
+    assert.ok(ask > 0 && sound > ask, 'after the ending check');
+    assert.ok(sound < body.indexOf("this.ui.addMessage('player', choiceText)"), 'beside the player line');
+    assert.equal(src.split("sound.get('message_sent')").length - 1, 1, 'one place plays it');
+});
+
 // ---- saved across a reload ----
 
 test('End the mission now (any trigger) is saved: after a simulated reload the credits do not ask again', async () => {
