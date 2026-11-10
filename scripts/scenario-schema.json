@@ -3969,7 +3969,7 @@
                       { "type": "string" },
                       { "type": "boolean", "enum": [false] }
                     ],
-                    "description": "The sound played when the gate opens. Left out: the door release (rfid_unlock) when the door has an RFID lock, else none. A sound key plays that sound; false silences the gate. Heard from the doorway's two rooms, fading to nothing at 12 tiles"
+                    "description": "The sound played when the gate opens. Left out: the door release (rfid_unlock) when the door has an RFID lock, else none. A sound key plays that sound (any audio key the game has loaded); false silences the gate. Heard from the doorway's two rooms, fading to nothing at 12 tiles"
                   }
                 }
               }

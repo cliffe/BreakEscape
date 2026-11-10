@@ -34,6 +34,24 @@ export const DOOR_RELEASE_SOUND = 'rfid_unlock';
 export const DOOR_RELEASE_VOLUME = 0.9;
 
 /**
+ * Play an audio key the sound manager does not list, straight from the scene's
+ * sound system, when the game has it loaded. Honours the manager's on/off switch
+ * and master volume. Returns true when it played.
+ */
+export function playLoadedAudio(key, volume, soundManager = window.soundManager) {
+    if (soundManager && soundManager.enabled === false) return false;
+    const scene = window.game;
+    const sound = scene?.sound;
+    if (!sound || !scene.cache?.audio?.exists?.(key)) {
+        console.warn(`Sound not found: ${key}`);
+        return false;
+    }
+    const s = sound.get?.(key) || sound.add(key);
+    s.play({ volume: volume * (soundManager?.masterVolume ?? 1) });
+    return true;
+}
+
+/**
  * Play a UI sound
  * @param {string} soundType - Type: 'click', 'confirm', 'alert', 'reject', 'notification', 'interaction', etc.
  * @param {{volume?: number, key?: string}} [opts] - 'door_release' only: the volume (default
@@ -80,11 +98,15 @@ export function playUISound(soundType = 'click', opts = {}) {
         case 'objective_complete':
             soundManager.play('ui_confirm');
             break;
-        case 'door_release':
-            soundManager.play(opts?.key || DOOR_RELEASE_SOUND, {
-                volume: Number.isFinite(opts?.volume) ? opts.volume : DOOR_RELEASE_VOLUME
-            });
+        case 'door_release': {
+            const key = opts?.key || DOOR_RELEASE_SOUND;
+            const volume = Number.isFinite(opts?.volume) ? opts.volume : DOOR_RELEASE_VOLUME;
+            // A gate's own "sound" can name any loaded audio key, not only the sound
+            // manager's fixed list (sound-manager.js), as the old inline play could
+            if (soundManager.sounds && !soundManager.sounds[key]) playLoadedAudio(key, volume, soundManager);
+            else soundManager.play(key, { volume });
             break;
+        }
         default:
             // Try to play as-is
             soundManager.play(soundType);

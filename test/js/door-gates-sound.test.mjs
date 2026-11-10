@@ -156,6 +156,42 @@ test('playUISound door_release plays rfid_unlock at 0.9 by default, through soun
     assert.deepEqual(played, [['rfid_unlock', { volume: 0.9 }], ['rfid_unlock', { volume: 0.3 }]]);
 });
 
+// Code review R1 m5 (engine feedback changes): a gate's own "sound" key plays any audio the
+// game has loaded, not only the names in the sound manager's fixed list
+test('a gate sound key outside the sound manager\'s list plays from the scene\'s loaded audio', () => {
+    const managed = [];
+    const scenePlays = [];
+    const added = [];
+    const loaded = new Set(['door_knock']);
+    window.soundManager = { enabled: true, masterVolume: 0.5, sounds: { rfid_unlock: {} }, play: (k, o) => managed.push([k, o]) };
+    window.game = {
+        cache: { audio: { exists: (k) => loaded.has(k) } },
+        sound: {
+            get: () => null,
+            add: (k) => { added.push(k); return { play: (o) => scenePlays.push([k, o]) }; }
+        }
+    };
+    playUISound('door_release', { key: 'door_knock', volume: 0.8 });
+    assert.deepEqual(scenePlays, [['door_knock', { volume: 0.4 }]], 'at the master volume');
+    assert.deepEqual(managed, []);
+    // a listed key still goes through the manager
+    playUISound('door_release', { key: 'rfid_unlock', volume: 0.6 });
+    assert.deepEqual(managed, [['rfid_unlock', { volume: 0.6 }]]);
+    // an audio key that is not loaded plays nothing (and throws nothing)
+    playUISound('door_release', { key: 'no_such_sound' });
+    assert.equal(scenePlays.length, 1);
+    // sound off: nothing from the scene either
+    window.soundManager.enabled = false;
+    playUISound('door_release', { key: 'door_knock' });
+    assert.equal(scenePlays.length, 1);
+    delete window.game;
+    // the schema and the README say so
+    const schema = readFileSync(join(js, '../../../scripts/scenario-schema.json'), 'utf8');
+    assert.match(schema, /A sound key plays that sound \(any audio key the game has loaded\)/);
+    const readme = readFileSync(join(js, '../../../README_scenario_design.md'), 'utf8');
+    assert.match(readme, /a sound key plays that sound \(any audio key the game has loaded/);
+});
+
 test('unlock-system.js: the three RFID success paths call the shared helper; no direct game.sound use is left', () => {
     const src = readFileSync(join(js, 'systems/unlock-system.js'), 'utf8');
     assert.equal(src.split('playRfidUnlockSound();').length - 1, 3);
