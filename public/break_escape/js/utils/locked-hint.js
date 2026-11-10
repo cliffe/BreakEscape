@@ -62,17 +62,17 @@ export function lockedHintDuration(lockable, plainMs, base) {
 }
 
 // The first part of a door sign, before a separator: "Records Office — Authorised Access
-// Only" titles its refusal "Records Office". A dash or slash with spaces round it, a colon,
-// or a full stop after a word of three or more letters ("Dr. I. Volkova" is kept whole).
-const SIGN_SEPARATOR = /\s+(?:[—–]+|-{1,2})\s+|\s+\/\s+|:\s+|(?<=[A-Za-z]{3})\.\s+/;
-const SIGN_TITLE_MAX = 40;
+// Only" titles its refusal "Records Office". A separator is a dash with spaces round it, a
+// colon, a comma, or a full stop after a word of three or more letters (so "Dr. I. Volkova"
+// is not cut at "Dr"). A title still longer than SIGN_TITLE_MAX after the cut is not used.
+const SIGN_SEPARATOR = /\s+(?:[—–]+|-{1,2})\s+|:\s*|,\s*|(?<=[A-Za-z]{3})\.(?:\s+|$)/;
+export const SIGN_TITLE_MAX = 28;
 
-/** Pure: a door sign cut to a toast title, or '' for no usable sign. */
+/** Pure: a door sign cut to a toast title, or '' when there is none or it is too long. */
 export function signTitle(sign) {
     if (typeof sign !== 'string') return '';
-    let t = sign.split(SIGN_SEPARATOR)[0].trim().replace(/[.,;:\s]+$/, '');
-    if (t.length > SIGN_TITLE_MAX) t = t.slice(0, SIGN_TITLE_MAX).replace(/\s+\S*$/, '');
-    return t;
+    const t = sign.split(SIGN_SEPARATOR)[0].trim();
+    return t.length > SIGN_TITLE_MAX ? '' : t;
 }
 
 /**

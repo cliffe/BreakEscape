@@ -76,14 +76,20 @@ test('signTitle cuts a sign at its first separator and keeps short signs and abb
     assert.equal(signTitle('Admin Office - Authorized Personnel Only'), 'Admin Office');
     assert.equal(signTitle('Director -- M. Sorensen'), 'Director');
     assert.equal(signTitle('Computing: Staff Only'), 'Computing');
-    assert.equal(signTitle('BATTERY HALL 2 / INVERTER ROOM — PPE REQUIRED'), 'BATTERY HALL 2');
     assert.equal(signTitle('Engineering Workshop. Authorised Access Only'), 'Engineering Workshop');
-    assert.equal(signTitle('Dr. I. Volkova, CTO'), 'Dr. I. Volkova, CTO');
+    assert.equal(signTitle('Dr. I. Volkova, CTO'), 'Dr. I. Volkova');
     assert.equal(signTitle('Open-Plan Office'), 'Open-Plan Office');
     assert.equal(signTitle('Kit & Briefing'), 'Kit & Briefing');
-    assert.ok(signTitle('A very long sign with no separator anywhere in it at all, honestly').length <= 40);
     assert.equal(signTitle(''), '');
     assert.equal(signTitle(null), '');
+});
+
+test('a sign still over 28 characters after the cut keeps the old title', () => {
+    assert.equal(signTitle('BATTERY HALL 2 / INVERTER ROOM — PPE REQUIRED'), '');
+    assert.equal(signTitle('A very long sign with no separator anywhere in it'), '');
+    assert.equal(signTitle('Twenty-eight characters long'), 'Twenty-eight characters long');
+    assert.equal(doorRefusalTitle({ doorProperties: { door_sign: 'A very long sign with no separator anywhere' } }, 'Access Denied'), 'Access Denied');
+    assert.equal(doorRefusalTitle({ doorProperties: { door_sign: 'Records Office — Authorised Access Only' } }, 'Door'), 'Records Office');
 });
 
 test('doorRefusalTitle: the sign of a door, else the fallback', () => {
