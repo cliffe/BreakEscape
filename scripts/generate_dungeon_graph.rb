@@ -477,6 +477,28 @@ unless habits_report.empty?
   end
 end
 
+# holdsDoors (ACCESS_MODEL_SLICE_9_1_PLAN.md 7.3, step 5): a gate with a noHold (filled by the
+# loader, or authored) gets no node of its own; its secured room's door node says who holds
+# it for the player and who does not.
+(habits_copy['rooms'] || {}).each_value do |room|
+  next unless room.is_a?(Hash) && room['doors'].is_a?(Array)
+
+  room['doors'].each do |door|
+    gate = door.is_a?(Hash) ? door['gate'] : nil
+    next unless gate.is_a?(Hash) && gate['noHold'].is_a?(Array) && gate['noHold'].any?
+
+    node = $nodes["door_#{door['connectedRoom']}"]
+    next unless node
+
+    open_for = gate['openFor'].is_a?(Array) ? gate['openFor'] : [gate['openFor']].compact
+    holders = open_for - gate['noHold']
+    parts = []
+    parts << "held by #{holders.join(', ')}" if holders.any?
+    parts << "not held by #{gate['noHold'].join(', ')}"
+    node[:label] = "#{node[:label]}<br/>gate: #{parts.join('; ')}"
+  end
+end
+
 # ---------------------------------------------------------------------------
 # Networks (ACCESS_MODEL_SLICE_9_3_PLAN.md, section 7.3). A jack is a lock-like node that
 # the rogue device opens, from the jack's room, with an edge to its network's node. A
