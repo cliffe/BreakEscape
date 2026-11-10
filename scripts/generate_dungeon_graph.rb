@@ -15,6 +15,8 @@ require 'set'
 require_relative '../lib/break_escape/declared_grants'
 require_relative '../lib/break_escape/access_identities'
 require_relative '../lib/break_escape/network_model'
+require_relative '../lib/break_escape/npc_habits'
+require_relative '../lib/break_escape/npc_habits/clues'
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -337,6 +339,120 @@ if BreakEscape::AccessIdentities.uses_access_model?(scenario)
     add_node(account[:room], room_label(account[:room], rooms[account[:room]]), 'room')
     add_edge(account[:room], signin_node)
     account[:opens].each { |pc| add_edge(signin_node, access_lock_node(pc, rooms)) }
+  end
+end
+
+# ---------------------------------------------------------------------------
+# NPC habits (ACCESS_MODEL_SLICE_9_1_PLAN.md, 7.3): how the player comes by an account's
+# password, or an open screen that needs none, as labelled edges. Read from the expanded
+# copy (BreakEscape::NpcHabits.expanded_copy, the server's ids and fills); every other node
+# and edge above reads the authored data. Drawn only for NPCs with a level or `habits`.
+# ---------------------------------------------------------------------------
+habits_copy, habits_report = BreakEscape::NpcHabits.expanded_copy(scenario)
+unless habits_report.empty?
+  ai_h = BreakEscape::AccessIdentities
+  cl_h = BreakEscape::NpcHabits::Clues
+  copy_npcs = ai_h.room_npcs(habits_copy).to_h { |e| [e[:npc]['id'], e] }
+  copy_pcs = ai_h.sign_in_pcs(habits_copy)
+  copy_policies = habits_copy['policies'].is_a?(Hash) ? habits_copy['policies'] : {}
+  habit_texts = nil
+  habit_homes = nil
+
+  signin_node_for = lambda do |entry|
+    npc  = entry[:npc]
+    node = "signin_#{nid(npc['id'])}"
+    unless $nodes.key?(node)
+      add_node(node, "#{npc['displayName'] || npc['id']} sign-in<br/>(#{npc['creds']['username']})", 'key')
+      add_node(entry[:room], room_label(entry[:room], rooms[entry[:room]]), 'room')
+      add_edge(entry[:room], node)
+    end
+    node
+  end
+  room_node_for = lambda do |room_id|
+    add_node(room_id, room_label(room_id, rooms[room_id] || {}), 'room')
+  end
+  # A clue's node: its object, hung from the innermost lock in front of it (a container's
+  # lock node) or from its room, so a clue behind the account it opens shows as a loop.
+  clue_node_for = lambda do |source|
+    node = "clue_#{nid(source[:path])}"
+    unless $nodes.key?(node)
+      add_node(node, source[:name] || source[:path].to_s.tr('_', ' '), 'item')
+      container_locks = source[:locks].to_a - [source[:room]]
+      if container_locks.any?
+        add_edge("lock_#{container_locks.last}", node) if $nodes.key?("lock_#{container_locks.last}")
+      elsif source[:room]
+        add_edge(room_node_for.call(source[:room]), node)
+      end
+    end
+    node
+  end
+
+  habits_report.each do |item|
+    entry = copy_npcs[item[:id]]
+    next unless entry && ai_h.account?(entry[:npc])
+
+    npc = entry[:npc]
+    habits = item[:habits]
+    # writesDown: from the room of the owner's sign-in PC (not the PC: the account already
+    # has an edge to it, and an edge back would draw a loop).
+    if habits['writesDown'] == true
+      copy_pcs.each do |pc_entry|
+        pc = pc_entry[:object]
+        next unless ai_h.owner_id(pc, habits_copy) == npc['id']
+        next if (pc['postitNote'].is_a?(String) && !pc['postitNote'].strip.empty?) || pc['showPostit'] == false
+
+        add_edge(room_node_for.call(pc_entry[:room]), signin_node_for.call(entry), label: "sticky note at #{pc['id']}")
+      end
+    end
+    # locksScreen never or sometimes, where the server would allow a claim.
+    screen = item[:screen]
+    if screen && screen[:filled] && %w[never sometimes].include?(screen[:value]) && ai_h.needs_tracked?(npc)
+      screen[:pcs].select { |pc| pc[:applied] && pc[:login] }.each do |pc_info|
+        pc_entry = copy_pcs.find { |p| p[:object]['id'] == pc_info[:id] }
+        next unless pc_entry
+
+        pc = pc_entry[:object]
+        policy = copy_policies[(pc['policy'] || habits_copy['defaultPolicy']).to_s]
+        next if policy.is_a?(Hash) && policy['autoLockMin'].is_a?(Numeric) && policy['autoLockMin'].zero?
+        next unless ai_h.account_admitted?(pc, npc)
+        next if ai_h.screen_always_locks?(pc, npc)
+
+        label = screen[:value] == 'sometimes' ? 'unlocked screen (roll)' : 'unlocked screen'
+        add_edge(room_node_for.call(pc_entry[:room]), access_lock_node({ kind: 'login', lock: pc, room: pc_entry[:room] }, rooms),
+                 label: label)
+      end
+    end
+    next unless %w[reused guessable].include?(habits['password'])
+
+    habit_homes ||= cl_h.secret_homes(habits_copy)
+    habit_texts ||= cl_h.readable_texts(habits_copy, File.dirname(SCENARIO_FILE))
+    account_node = signin_node_for.call(entry)
+    if habits['password'] == 'reused'
+      cl_h.reuse_homes(npc, habits_copy, habit_homes).each do |home|
+        case home[:kind]
+        when :account
+          other = copy_npcs[home[:npc_id]]
+          add_edge(signin_node_for.call(other), account_node, label: "shared with #{home[:npc_id]}") if other
+        when :lock
+          door = home[:path] == "rooms/#{home[:object_id]}"
+          from = door ? "door_#{home[:object_id]}" : "lock_#{home[:object_id] || nid(home[:path])}"
+          add_node(from, home[:path].to_s, 'lock') unless $nodes.key?(from)
+          add_edge(from, account_node, label: 'same password')
+        else
+          from = "secret_#{nid(home[:path])}"
+          add_node(from, home[:kind] == :wifi ? 'Wi-Fi key' : 'Captured sign-in', 'key')
+          add_edge(from, account_node, label: 'same password')
+        end
+      end
+    else
+      backing = cl_h.backing(npc, habits_copy, habit_texts, habits['passwordPattern'])
+      next unless backing[:backed]
+
+      sources = backing[:pieces].flat_map { |p| p[:sources] }
+      clue = backing[:pattern]
+      sources << { path: clue[:path], locks: clue[:locks], room: clue[:room], name: clue[:name] } if clue && clue[:path]
+      sources.uniq { |s| s[:path] }.each { |s| add_edge(clue_node_for.call(s), account_node, label: 'clue') }
+    end
   end
 end
 

@@ -120,3 +120,15 @@ One-off run: the validator (`--skip-ink --no-graph`) over all 170 scenarios. The
 'workstation_accessed:tom_pc' fires on some leaves only" (Tom's PC authors `lockChance` 0.5 and
 the mapping is a print trigger on an open screen). It is a real finding for that fixture's
 owner and is accurate; nothing in this slice changes it. No scenario has a habits report.
+
+## Step 4. Dungeon graph (2026-11-10)
+
+Built: the habits block in `scripts/generate_dungeon_graph.rb`, after the identity edges, read
+from `NpcHabits.expanded_copy`. Review R4-m7 is settled the first way: the "unlocked screen"
+edge is drawn only where the owner has a `locksScreen` habit whose fill applies at that PC (no
+lock field of its own), so a PC whose authored `lockChance` 0 or authored `screenHabit` makes
+it claimable gets no edge, and `dungeon-graph-identities.test.mjs` is unchanged. Edges for
+authored lock fields are a later idea. A "clue" node is the clue object, hung from the lock of
+the innermost locked container it sits in, else from its room, so a clue behind the account it
+opens shows as a loop. A "same password" edge from a capture or Wi-Fi key starts at a small key
+node of its own.
