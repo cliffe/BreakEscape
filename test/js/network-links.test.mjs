@@ -385,11 +385,20 @@ test('landing: the remote sign-in screen, signed in, hands over to the desktop',
 
 test('landing: Switch user left with no new sign-in returns to the desktop of the session still held', async () => {
     await tripFromView();
-    window.pcSessions = { has: (id) => id === 'lena_pc', get: () => null };
+    window.pcSessions = { has: (id) => id === 'lena_pc', get: (id) => (id === 'lena_pc' ? { pcId: id, via: 'password' } : null) };
     assert.equal(links.landed('signin', 'close', { pcId: 'lena_pc' }).landing, 'desktop');
     await settle();
     assert.deepEqual(desktops, [{ pcId: 'lena_pc', footholdId: 'jack_comms_port' }]);
     assert.deepEqual(views, []);
+});
+
+test('landing: the remote sign-in screen closed at a PC with only a claimed session returns to the view', async () => {
+    await tripFromView();
+    window.pcSessions = { has: () => true, get: (id) => ({ pcId: id, via: 'claim' }) };
+    assert.equal(links.landed('signin', 'close', { pcId: 'lena_pc' }).landing, 'view');
+    await settle();
+    assert.deepEqual(desktops, []);
+    assert.equal(views.length, 1);
 });
 
 test('landing: a remote desktop closed returns to the view when the trip began at the view', async () => {

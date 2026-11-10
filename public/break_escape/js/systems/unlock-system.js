@@ -185,6 +185,11 @@ export function isLoginPc(lockable, type = 'item') {
 /** Open a sign-in PC: its desktop when the client holds a session there, else the sign-in screen. */
 export function openLoginPc(lockable) {
     const pcId = lockable?.scenarioData?.id;
+    // A host with no screen (slice 9.3a, 3.4) is signed in to only over the network
+    if (isHeadlessHost(lockable)) {
+        showHeadlessObservations(lockable);
+        return;
+    }
     if (pcId && window.pcSessions?.has(pcId)) {
         openLoginDesktop(lockable);
     } else {
@@ -192,20 +197,116 @@ export function openLoginPc(lockable) {
     }
 }
 
+// ── Remote sign-in (slice 9.3a, ACCESS_MODEL_SLICE_9_3_PLAN.md 4.3 and 4.4) ──────
+// A host row of the network view becomes a "remote lockable": the same shape a sign-in PC
+// sprite has, with scenarioData.remote = { footholdId }. openLoginSignIn and the desktop
+// (container-minigame.js) read `remote` and behave remotely: no GET /login_accounts and
+// no tiles, the foothold on the sign-in and on every desktop fetch, and every close
+// reported to window.networkLinks.landed, which owns the way back (4.3, "Getting back").
+
+/** True for a sign-in object with no screen of its own (`headless: true`) seen at its room. */
+export function isHeadlessHost(lockable) {
+    const data = lockable?.scenarioData;
+    return data?.lockType === 'login' && data.headless === true && !data.remote;
+}
+
+/** A click on a headless host shows its observations and nothing else (3.4). */
+async function showHeadlessObservations(lockable) {
+    const data = lockable?.scenarioData || {};
+    let obs = data.observations || '';
+    try {
+        const { resolveObjectField } = await import('../utils/conditional-text.js');
+        obs = resolveObjectField(data, 'observations', '') || '';
+    } catch (e) { /* unresolved base observations */ }
+    window.gameAlert?.(obs || 'It has no screen or keyboard.', 'info', data.name || 'Device', 4000);
+}
+
+/**
+ * The lockable for a host row of the network view (4.4): `row` is a GET /network host
+ * entry ({ id, name, host, sprite, ... }) or anything with an id, name and host.
+ */
+export function remoteLockable(row, footholdId) {
+    const sprite = row?.sprite || 'pc_desktop';
+    return {
+        scenarioData: {
+            id: row?.id, name: row?.name || row?.host || row?.id, host: row?.host || null,
+            type: 'pc', sprite, lockType: 'login', locked: true, loginPicker: false,
+            remote: { footholdId }
+        },
+        name: sprite,
+        texture: { key: sprite },
+        objectId: `remote_${row?.id}`
+    };
+}
+
+/** The host row for pcId from the last view fetched for this foothold, else what the session knows. */
+function remoteRowFor(pcId, footholdId) {
+    const view = window.networkLinks?.lastView?.(footholdId);
+    const row = (view?.hosts || []).find(h => h?.id === pcId);
+    if (row) return row;
+    const s = window.pcSessions?.get?.(pcId);
+    return { id: pcId, name: s?.host || pcId, host: s?.host || null };
+}
+
+/** The remote sign-in screen for a host row of the view (4.4). */
+export function openRemoteSignIn(hostRow, footholdId) {
+    return openLoginSignIn(remoteLockable(hostRow, footholdId));
+}
+
+/**
+ * A held remote session's desktop, through its foothold (network-links.js calls this from
+ * the view and from openSession; it starts no trip of its own).
+ */
+export function openRemoteDesktop(pcId, footholdId) {
+    openLoginDesktop(remoteLockable(remoteRowFor(pcId, footholdId), footholdId));
+}
+
+/**
+ * The remote screen's Captured sign-ins (4.4): the player's captures whose target the
+ * server lists in `accounts` of GET /capture_secrets (a missing map is {}), with the
+ * password only when `secrets` has it. A form filler; the server checks the password.
+ */
+async function remoteCapturedSignIns() {
+    let captures = {};
+    try {
+        const { readCaptures } = await import('./captures.js');
+        captures = readCaptures(window.gameState?.globalVariables);
+    } catch (e) { return []; }
+    if (!captures || Object.keys(captures).length === 0) return [];
+    const api = window.ApiClient || window.APIClient;
+    let answer = null;
+    try {
+        try { await window.stateSync?.syncConfirmed?.(); } catch (e) { /* ask anyway */ }
+        answer = api?.get ? await api.get('/capture_secrets') : null;
+    } catch (e) {
+        console.warn('Could not load the captured sign-ins', e);
+        return [];
+    }
+    const accounts = answer && typeof answer.accounts === 'object' && answer.accounts ? answer.accounts : {};
+    const secrets = answer && typeof answer.secrets === 'object' && answer.secrets ? answer.secrets : {};
+    const list = window.capturedSignIns;
+    return typeof list === 'function' ? list(captures, accounts, secrets) : [];
+}
+
 /**
  * A click on a sign-in PC (access model 5.4, "The interaction at a sign-in PC"):
+ *   0. a headless host (slice 9.3a): its observations, and stop;
  *   1. owned and the owner present: "<owner> is using this PC", then the PC's resolved
  *      observations, and stop (no workstation event; pc_in_use for task mappings);
  *   2. a session held here: the desktop;
  *   3. workstationState.onInteract: 'accessed' claims the owner's session through
  *      pc-sessions.js (the desktop on success, the sign-in screen on a refusal); anything
  *      else ('locked', 'signin', 'attended' from a race with step 1, null) the sign-in screen.
- * Resolves to what it did: 'in_use' | 'desktop' | 'claimed' | 'claim_refused' | 'signin'.
+ * Resolves to what it did: 'headless' | 'in_use' | 'desktop' | 'claimed' | 'claim_refused' | 'signin'.
  */
 export async function interactLoginPc(lockable) {
     const data = lockable?.scenarioData || {};
     const pcId = data.id;
     if (!pcId) return 'none';
+    if (isHeadlessHost(lockable)) {
+        await showHeadlessObservations(lockable);
+        return 'headless';
+    }
     const ws = window.workstationState;
     const sessions = window.pcSessions;
     const { ownerId, present } = ws?.presence ? ws.presence(pcId) : { ownerId: null, present: null };
@@ -270,12 +371,20 @@ export function openLoginDesktop(lockable) {
  * player explores). `switching`: opened from the desktop's Switch user, so leaving it
  * without a new sign-in returns to the desktop of the session that is still there.
  * The screen has no attempt limit of its own; the server counts failures.
+ *
+ * A remote lockable (scenarioData.remote, slice 9.3a 4.4) skips GET /login_accounts and
+ * shows no tiles and no post-it, whatever the PC's picker; it offers the Captured sign-ins;
+ * the sign-in carries the foothold; and its close is reported to networkLinks.landed:
+ * signed in, the remote desktop; otherwise the table decides (the desktop of a session
+ * still held there, else the view).
  */
 export async function openLoginSignIn(lockable, { switching = false, reason = undefined } = {}) {
     const data = lockable?.scenarioData || {};
     const pcId = data.id;
     if (!pcId) return;
     const sessions = window.pcSessions;
+    const remote = data.remote && data.remote.footholdId ? data.remote : null;
+    if (remote) return openRemoteSignInScreen(lockable, { switching, reason });
     let tiles = Array.isArray(data.loginAccounts) ? data.loginAccounts : [];
     // The sticky note (slice 9.1, 5.3): a written-down password comes only in this
     // answer, at the desk, and is never written onto the object's data, so each open asks
@@ -329,6 +438,58 @@ export async function openLoginSignIn(lockable, { switching = false, reason = un
             if ((success && signedIn) || (switching && signedIn)) {
                 openLoginDesktop(lockable);
             }
+        }
+    });
+}
+
+/** The remote half of openLoginSignIn (4.4): no tiles, the foothold, and the way back (4.3). */
+async function openRemoteSignInScreen(lockable, { switching = false, reason = undefined } = {}) {
+    const data = lockable.scenarioData;
+    const pcId = data.id;
+    const footholdId = data.remote.footholdId;
+    const sessions = window.pcSessions;
+    const captured = await remoteCapturedSignIns();
+
+    const framework = window.MinigameFramework;
+    if (!framework) {
+        console.error('MinigameFramework not available for the sign-in screen');
+        return;
+    }
+    if (!framework.mainGameScene && window.game) framework.init(window.game);
+
+    const linkName = window.networkLinks?.get?.(footholdId)?.name || null;
+    const hostLabel = data.host || data.name || pcId;
+    sessions?.screenShown?.(pcId, [], switching ? 'switch' : (reason || 'remote'));
+    // The current session, unless it is a claim: an unlocked screen is not offered over
+    // the network (4.3), and a remote sign-in replaces it as a keyboard one would
+    const held = sessions?.get?.(pcId) || null;
+    framework.startMinigame('password', null, {
+        title: data.name || 'Sign in',
+        lockable,
+        type: 'item',
+        signIn: {
+            pcId,
+            pcName: data.host && data.name && data.host !== data.name ? `${data.name} (${data.host})` : hostLabel,
+            picker: false,
+            tiles: [],
+            current: held && held.via !== 'claim' ? held : null,
+            remote: { footholdId, linkName },
+            captured
+        },
+        postitNote: '',
+        showPostit: false,
+        requiresKeyboardInput: true,
+        onComplete: (success) => {
+            const signedIn = !!sessions?.has?.(pcId) && sessions.get(pcId)?.via !== 'claim';
+            const links = window.networkLinks;
+            if (success && signedIn) {
+                links?.landed?.('signin', 'handover', { pcId, host: hostLabel });
+                openLoginDesktop(lockable);
+                return;
+            }
+            const landing = links?.landed?.('signin', 'close', { pcId, host: hostLabel });
+            // No trip running (a screen opened outside the network screens): as at the keyboard
+            if ((!landing || landing.landing === 'none') && switching && signedIn) openLoginDesktop(lockable);
         }
     });
 }
@@ -1082,4 +1243,7 @@ window.unlockTarget = unlockTarget;
 window.openLoginPc = openLoginPc;
 window.interactLoginPc = interactLoginPc;
 window.openLoginSignIn = openLoginSignIn;
+// The network screens (slice 9.3a): network-links.js looks openRemoteDesktop up on window
+window.openRemoteSignIn = openRemoteSignIn;
+window.openRemoteDesktop = openRemoteDesktop;
 

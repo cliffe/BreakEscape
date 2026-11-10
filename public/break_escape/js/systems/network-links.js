@@ -450,7 +450,9 @@ export class NetworkLinks {
     }
 
     _sessionAt(pcId) {
-        return !!(pcId && win().pcSessions?.has?.(pcId));
+        // A claimed session is a physical thing and never served over the network (4.3)
+        const s = pcId ? win().pcSessions?.get?.(pcId) : null;
+        return !!(s && s.via !== 'claim');
     }
 
     _hostOf(detail = {}) {

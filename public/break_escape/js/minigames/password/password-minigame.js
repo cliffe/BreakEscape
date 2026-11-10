@@ -100,6 +100,30 @@ export function signInRefusalMessage(result) {
     return `${message}. ${left} attempt${left === 1 ? '' : 's'} left.`;
 }
 
+/**
+ * The remote sign-in screen's Captured sign-ins (slice 9.3a, 4.4): the player's captures
+ * (`se_captures`, as captures.js readCaptures returns it) whose target is in `accounts` of
+ * GET /capture_secrets ({ targetId: username }), oldest first. Each fills the username;
+ * the password only when `secrets` ({ targetId: secret }) has it. A landing-page capture
+ * that is no account is never in `accounts`, so it is never offered.
+ */
+export function capturedSignIns(captures, accounts, secrets) {
+    const map = captures && typeof captures === 'object' && !Array.isArray(captures) ? captures : {};
+    const acc = accounts && typeof accounts === 'object' ? accounts : {};
+    const sec = secrets && typeof secrets === 'object' ? secrets : {};
+    return Object.values(map)
+        .filter(e => e && typeof e === 'object' && typeof e.targetId === 'string' && e.kind !== 'foothold')
+        .filter(e => typeof acc[e.targetId] === 'string' && acc[e.targetId])
+        .sort((a, b) => (a.at || 0) - (b.at || 0) || String(a.targetId).localeCompare(String(b.targetId)))
+        .map(e => ({
+            targetId: e.targetId,
+            label: e.roleLabel || e.address || e.targetId,
+            username: acc[e.targetId],
+            password: typeof sec[e.targetId] === 'string' && sec[e.targetId] ? sec[e.targetId] : null
+        }));
+}
+if (typeof window !== 'undefined') window.capturedSignIns = capturedSignIns;
+
 export class PasswordMinigame extends MinigameScene {
     constructor(container, params) {
         super(container, params);
@@ -122,7 +146,8 @@ export class PasswordMinigame extends MinigameScene {
         // Store the correct password for validation
         this.correctPassword = params.password || '';
 
-        // Sign-in mode: { pcId, pcName, picker, tiles, current } (unlock-system openLoginSignIn)
+        // Sign-in mode: { pcId, pcName, picker, tiles, current } (unlock-system openLoginSignIn);
+        // a remote screen (slice 9.3a, 4.4) adds remote: { footholdId, linkName } and captured
         this.signIn = params.signIn || null;
         if (this.signIn) {
             const picker = this.signIn.picker;
@@ -149,7 +174,12 @@ export class PasswordMinigame extends MinigameScene {
                     selected: st.selected,
                     otherUser: st.other,
                     current: this.signIn.current ? { username: this.signIn.current.username, displayName: this.signIn.current.displayName } : null,
-                    message: st.message || null
+                    message: st.message || null,
+                    // A remote screen: its foothold and the captured sign-ins offered (no passwords)
+                    ...(this.signIn.remote ? {
+                        remote: { footholdId: this.signIn.remote.footholdId ?? null },
+                        captured: (this.signIn.captured || []).map(c => ({ targetId: c.targetId, label: c.label, username: c.username, fillsPassword: !!c.password }))
+                    } : {})
                 },
                 // clickText('<display name>') or clickText('Other user') first; then the visible
                 // fields are [username, password] for Other user, [password] for a tile.
@@ -827,12 +857,24 @@ export class PasswordMinigame extends MinigameScene {
         const current = s.current
             ? `<div class="signin-current">Signed in now: ${escapeHtml(s.current.displayName || s.current.username)} (${escapeHtml(s.current.username)})</div>`
             : '';
+        const remoteLine = s.remote
+            ? `<div class="signin-remote">Remote sign-in${s.remote.linkName ? ` through ${escapeHtml(displayDashes(s.remote.linkName))}` : ''}</div>`
+            : '';
+        const captured = Array.isArray(s.captured) ? s.captured : [];
+        const capturedHtml = s.remote ? `
+                        <div class="signin-captured" id="signin-captured">
+                            <div class="signin-captured-title">Captured sign-ins</div>
+                            ${captured.length ? captured.map((c, i) => `
+                            <button type="button" class="signin-captured-item" data-capture-index="${i}" data-target-id="${escapeHtml(c.targetId)}">${escapeHtml(c.label)} (${escapeHtml(c.username)})</button>`).join('')
+                                : '<div class="signin-captured-empty">None yet.</div>'}
+                        </div>` : '';
 
         this.gameContainer.innerHTML = `
             <div class="password-minigame-area signin-mode">
                 <div class="monitor-bezel">
                     <div class="monitor-screen signin-screen">
                         <div class="signin-title">${escapeHtml(displayDashes(s.pcName))}</div>
+                        ${remoteLine}
                         ${current}
                         ${tiles}
                         <div class="signin-form" id="signin-form">
@@ -853,7 +895,7 @@ export class PasswordMinigame extends MinigameScene {
                             <div class="hint-controls">
                                 <button type="button" class="submit-btn" id="submit-password">Sign in</button>
                             </div>
-                        </div>
+                        </div>${capturedHtml}
                         <div class="signin-message" id="signin-message" aria-live="polite"></div>
                     </div>
                 </div>
@@ -875,6 +917,9 @@ export class PasswordMinigame extends MinigameScene {
                 applyTilePortrait(el.querySelector('.signin-portrait'), st.tiles[Number(idx)]);
             }
             this.addEventListener(el, 'click', () => this.selectSignInTile(idx));
+        });
+        this.gameContainer.querySelectorAll('.signin-captured-item[data-capture-index]').forEach(el => {
+            this.addEventListener(el, 'click', () => this.fillCapturedSignIn(Number(el.dataset.captureIndex)));
         });
 
         if (this.gameData.showPostit && this.gameData.postitNote) {
@@ -952,6 +997,25 @@ export class PasswordMinigame extends MinigameScene {
         if (chosen && focus && typeof focus.focus === 'function') focus.focus();
     }
 
+    /**
+     * Fill the form from a captured sign-in: the username always, the password only when
+     * the server served it. The server's password check is the gate (4.4).
+     */
+    fillCapturedSignIn(index) {
+        const c = (this.signIn?.captured || [])[index];
+        if (!c || !this.gameState.isActive) return false;
+        const st = this.signInState;
+        st.other = true;
+        st.selected = null;
+        if (this.usernameField) this.usernameField.value = c.username;
+        if (this.passwordField) this.passwordField.value = c.password || '';
+        this.gameData.password = c.password || '';
+        this.setSignInMessage('');
+        this.renderSignInForm();
+        this.passwordField?.focus?.();
+        return true;
+    }
+
     setSignInMessage(text, kind = 'info') {
         this.signInState.message = text;
         if (!this.signInMessageEl) return;
@@ -973,7 +1037,10 @@ export class PasswordMinigame extends MinigameScene {
             return;
         }
         this.setSignInMessage('Signing in...');
-        const result = await sessions.signIn(this.signIn.pcId, username, password);
+        const foothold = this.signIn.remote?.footholdId || null;
+        const result = foothold
+            ? await sessions.signIn(this.signIn.pcId, username, password, { foothold })
+            : await sessions.signIn(this.signIn.pcId, username, password);
         if (result.ok) {
             this.signInAccepted(result.session);
             return;
