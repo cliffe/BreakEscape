@@ -1897,9 +1897,12 @@ def check_lock_credentials(json_data)
   end
 
   # A key/RFID lock with no matching credential item. This is a soft-lock
-  # unless the door is meant to be opened another way (e.g. lockpicked).
+  # unless the door is meant to be opened another way (e.g. lockpicked). A card a room
+  # NPC carries (creds.card or rfidCard) declares its card_id too: the identity reach
+  # line already says that card opens the lock, and a gate's guard is the usual case.
   declared = { 'key' => Set.new, 'rfid' => Set.new }
   key_items.each { |_name, credential, lt| declared[lt] << credential }
+  declared['rfid'].merge(ai.cards(json_data).keys.map(&:to_s))
   %w[key rfid].each do |lock_kind|
     credential_requires[lock_kind].each do |req|
       next if declared[lock_kind].include?(req)

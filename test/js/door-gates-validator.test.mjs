@@ -60,3 +60,23 @@ test('a gate on the entry that leads out of the locked room is an error', { skip
     const out = issues(scenario({ gateOn: 'vault' }));
     assert.ok(out.some(s => s.startsWith('❌') && s.includes("puts a gate on the door out of locked room 'vault'")), out.join('\n'));
 });
+
+function credentialIssues(scenario) {
+    const script = `require ${JSON.stringify(join(root, 'scripts/validate_scenario.rb'))}
+      puts JSON.generate(check_lock_credentials(JSON.parse(STDIN.read)))`;
+    const r = spawnSync('ruby', ['-e', script], {
+        input: JSON.stringify(scenario), encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' }
+    });
+    assert.equal(r.status, 0, r.stderr);
+    return JSON.parse(r.stdout.trim().split('\n').pop());
+}
+
+test('a gate whose requires is a card its guard carries draws no "nothing can open it" warning', { skip }, () => {
+    const warning = "but no item declares card_id (or opens_lock) 'SAM-1'";
+    let out = credentialIssues(scenario());
+    assert.ok(!has(out, warning), out.join('\n'));
+    const sc = scenario();
+    delete sc.rooms.office.npcs[0].rfidCard;
+    out = credentialIssues(sc);
+    assert.ok(has(out, warning), `still raised when nobody carries it:\n${out.join('\n')}`);
+});
