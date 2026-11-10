@@ -871,10 +871,12 @@ export async function addToInventory(sprite) {
         // refresh says "Added to <holder>" and the hidden slot gets no pulse)
         refreshInventoryTray();
 
-        applyPickupAction(sprite);
+        // An item the server put back or made itself (slice 9.3a: the link item, a device
+        // returned by an unplug) was not picked up: no onPickup, no item_picked_up.
+        if (!sprite._serverAdded) applyPickupAction(sprite);
 
         // Emit NPC event for item pickup
-        if (window.eventDispatcher) {
+        if (window.eventDispatcher && !sprite._serverAdded) {
             window.eventDispatcher.emit(`item_picked_up:${sprite.scenarioData.type}`, {
                 itemType: sprite.scenarioData.type,
                 itemName: sprite.scenarioData.name,

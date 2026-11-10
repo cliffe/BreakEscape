@@ -100,6 +100,16 @@ test('showServerItem adds the item with no inventory request and one tray refres
     assert.equal(refreshes(), before + 1, 'exactly one refresh');
     assert.equal(held(link.id).scenarioData.type, 'network_link');
     assert.ok(held(link.id).src.endsWith('/drop_box1.png'), 'the planted device\'s own sprite');
+    assert.equal(events.filter(e => e.name.startsWith('item_picked_up') && e.name !== 'item_picked_up:notepad').length, 0, 'not a pickup');
+});
+
+test('a device given back by the server runs no onPickup and emits no item_picked_up', async () => {
+    await reset();
+    window.gameState.globalVariables.box_taken = false;
+    showServerItem({ ...box, onPickup: { setVariable: { box_taken: true } } });
+    assert.ok(held('kit_dropbox'));
+    assert.equal(window.gameState.globalVariables.box_taken, false);
+    assert.equal(events.filter(e => e.name.startsWith('item_picked_up') && e.name !== 'item_picked_up:notepad').length, 0);
 });
 
 test('showServerItem leaves an item the tray already holds alone', async () => {
