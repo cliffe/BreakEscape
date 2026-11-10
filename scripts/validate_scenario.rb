@@ -21,6 +21,9 @@ require_relative 'validate_network'
 require_relative 'validate_capture_log'
 require_relative '../lib/break_escape/declared_grants'
 require_relative '../lib/break_escape/access_identities'
+require_relative '../lib/break_escape/npc_habits'
+require_relative '../lib/break_escape/npc_habits/clues'
+require_relative 'validate_npc_habits'
 
 # Try to load json-schema gem, provide helpful error if missing
 begin
@@ -891,6 +894,15 @@ end
 
 # Every NPC record: each room's npcs, in room order, then the headless records.
 # Returns [[npc, path], ...]. With no `social` key, exactly the room NPCs.
+# { npc id => screenHabit } for every room NPC with one in the expanded copy (slice 9.1):
+# authored and filled alike, for ValidateNpcNeeds.check's screen_habits: keyword.
+def npc_screen_habits(expanded)
+  BreakEscape::AccessIdentities.room_npcs(expanded).each_with_object({}) do |entry, out|
+    npc = entry[:npc]
+    out[npc['id']] = npc['screenHabit'] if npc.key?('screenHabit') && npc['id']
+  end
+end
+
 def scenario_npc_records(json_data)
   records = []
   json_data['rooms']&.each do |room_id, room|
@@ -6625,10 +6637,13 @@ def main
     common_issues += check_vm_flags_load_bearing(json_data)
     common_issues += check_recurring_bugs(json_data, repo_root)
     common_issues += check_unheard_room_triggers(json_data, repo_root)
-    common_issues += ValidateNpcNeeds.check(json_data)
+    habits_copy, habits_report = BreakEscape::NpcHabits.expanded_copy(json_data)
+    common_issues += ValidateNpcNeeds.check(json_data, screen_habits: npc_screen_habits(habits_copy))
     common_issues += check_access_model(json_data, repo_root, File.dirname(erb_path))
     common_issues += check_network_model(json_data)
     common_issues += check_capture_log(json_data)
+    common_issues += ValidateNpcHabits.check(json_data, expanded: habits_copy, report: habits_report,
+                                                        scenario_dir: File.dirname(erb_path))
     common_issues += check_tooling_pass4c(json_data, repo_root)
     common_issues += check_carry_over(json_data, repo_root, File.basename(File.dirname(erb_path)),
                                       File.dirname(File.dirname(erb_path)), carry_imports, own_globals)
@@ -6678,6 +6693,14 @@ def main
       common_issues.each_with_index do |issue, index|
         puts "#{index + 1}. #{issue}"
       end
+      puts
+    end
+
+    # The habits report (slice 9.1, 7.2): who never locks and whose password is on a note
+    habits_lines = ValidateNpcHabits.report_lines(json_data, expanded: habits_copy, report: habits_report,
+                                                             scenario_dir: File.dirname(erb_path))
+    unless habits_lines.empty?
+      habits_lines.each { |line| puts line }
       puts
     end
 

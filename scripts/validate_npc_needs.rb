@@ -13,7 +13,9 @@ module ValidateNpcNeeds
 
   Obj = Struct.new(:id, :room, :data, :x, :y, keyword_init: true)
 
-  def self.check(json)
+  # screen_habits: { npc id => screenHabit } from the habits expansion (slice 9.1), read by
+  # the autoLockSeconds rule before the authored field. Default {}: today's output.
+  def self.check(json, screen_habits: {})
     return [] unless json.is_a?(Hash) && json['rooms'].is_a?(Hash)
 
     objs = []
@@ -49,7 +51,7 @@ module ValidateNpcNeeds
     check_queues(json, npcs, objs, issues)
     npcs.each { |room_id, npc| check_npc(json, npc, room_id, objs, issues, npcs) }
     check_swivel(npcs, issues)
-    check_lock_habits(json, npcs, objs, issues)
+    check_lock_habits(json, npcs, objs, issues, screen_habits)
     check_off_when(json, npcs, objs, issues)
     check_print_habits(json, npcs, objs, issues)
     check_magnets(json, npcs, objs, issues)
@@ -516,7 +518,7 @@ module ValidateNpcNeeds
     habit['lockChance'].is_a?(Numeric) && habit['lockChance'] < 1
   end
 
-  def self.check_lock_habits(json, npcs, objs, issues)
+  def self.check_lock_habits(json, npcs, objs, issues, screen_habits = {})
     if json.key?('lockCues') && ![true, false].include?(json['lockCues'])
       issues << "❌ ERROR: lockCues must be true or false (default true)."
     end
@@ -560,7 +562,7 @@ module ValidateNpcNeeds
         next
       end
       owner_id = station_owner(d, npcs)
-      habit = npcs.find { |_, n| n['id'] == owner_id }&.last&.dig('screenHabit')
+      habit = screen_habits.key?(owner_id) ? screen_habits[owner_id] : npcs.find { |_, n| n['id'] == owner_id }&.last&.dig('screenHabit')
       always = d['lockChance'].is_a?(Numeric) ? d['lockChance'] >= 1 : (d.key?('locksScreenOnLeave') ? d['locksScreenOnLeave'] != false : !habit_leaves_open?(habit))
       if always
         issues << "⚠️ WARNING: #{where} never applies: the screen always locks when its owner leaves (locksScreenOnLeave, lockChance 1 or no habit that leaves it open), and auto-lock only locks an open screen."

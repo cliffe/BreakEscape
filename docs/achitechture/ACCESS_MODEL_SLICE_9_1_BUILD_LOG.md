@@ -83,3 +83,40 @@ separate tester's job, section 15).
 
 Node suite: 455 of 456 files passed; `fingerprint-generator.test.mjs` failed once under
 `-j 6` load and passes alone (unrelated to this step).
+
+## Step 3. Validator (2026-11-10)
+
+Built: `scripts/validate_npc_habits.rb` (`ValidateNpcHabits.check` and `report_lines`),
+`lib/break_escape/npc_habits/clues.rb` (`pieces`, `readable_texts`, `secret_homes`, `backing`,
+plus `reuse_homes` and `parts_all_sourced?`), the wiring in `validate_scenario.rb` (the three
+`require_relative` lines, the `expanded_copy` line before `ValidateNpcNeeds.check`, its new
+keyword, the `ValidateNpcHabits.check` line after `check_access_model`, and the report printed
+after the issue list) and the `screen_habits:` keyword in `validate_npc_needs.rb`.
+`check_access_model` is not edited.
+
+Notes and choices:
+
+- The office life keyword's fixture is a plain workstation (`workstation: true`), as review
+  R4-m5 says: `ValidateNpcNeeds.workstation?` does not count a sign-in PC, and an
+  `autoLockSeconds` on a sign-in PC without `workstation: true` draws office life's "not a
+  workstation: it never locks" warning before the line this slice changes. That warning is
+  false (the client idles such a PC out) and is for office life's owner, not this slice.
+- `main` passes `npc_screen_habits(copy)`: every room NPC's `screenHabit` in the expanded copy,
+  authored and filled alike, so the one changed line reads the same value as before for an
+  authored habit.
+- A profile is the account's own when its `for.people` names the account or it admits no other
+  account; a sign-in PC's contents are the account's own when the PC admits only that account.
+- Readable text: object `name`, `text`, `observations`, `postitNote` and the same fields in any
+  `*Variants` array; NPC `itemsHeld`; `startItemsInInventory`; profile contents;
+  `social.intelFacts`, `social.osint.sites` and `social.mailClient.seededMessages` (strings
+  under text, body, subject, label, value, title, note, fact, caption); the compiled ink under
+  the scenario's `ink/`.
+- The sprite suggestion is raised for a workstation where the habit's fill applies, not where
+  the PC's own field wins.
+- The Wi-Fi key is in `secret_homes` (`networks.<id>.wifi.psk`) whenever a scenario has one.
+
+One-off run: the validator (`--skip-ink --no-graph`) over all 170 scenarios. The only new
+`habits:` line on an existing scenario is in `test_needs_sims`: "the mapping on
+'workstation_accessed:tom_pc' fires on some leaves only" (Tom's PC authors `lockChance` 0.5 and
+the mapping is a print trigger on an open screen). It is a real finding for that fixture's
+owner and is accurate; nothing in this slice changes it. No scenario has a habits report.
