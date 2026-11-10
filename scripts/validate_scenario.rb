@@ -18,6 +18,7 @@ require 'open3'
 require_relative 'validate_social'
 require_relative 'validate_npc_needs'
 require_relative 'validate_network'
+require_relative 'validate_capture_log'
 require_relative '../lib/break_escape/declared_grants'
 require_relative '../lib/break_escape/access_identities'
 
@@ -6620,6 +6621,7 @@ def main
     common_issues += ValidateNpcNeeds.check(json_data)
     common_issues += check_access_model(json_data, repo_root, File.dirname(erb_path))
     common_issues += check_network_model(json_data)
+    common_issues += check_capture_log(json_data)
     common_issues += check_tooling_pass4c(json_data, repo_root)
     common_issues += check_carry_over(json_data, repo_root, File.basename(File.dirname(erb_path)),
                                       File.dirname(File.dirname(erb_path)), carry_imports, own_globals)
