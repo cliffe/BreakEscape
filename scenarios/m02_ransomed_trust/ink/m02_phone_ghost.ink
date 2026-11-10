@@ -57,7 +57,7 @@ Through the budget meetings. Through the patch that never happened. Through a ma
 And I want you to sit with the word "drill" for a moment, because a drill is a thing somebody has to authorise.
 
 * [Somebody let you in.]
-    Somebody agreed with me. That's not the same thing, and I'd thank you to keep the distinction.
+    Somebody agreed with me. *unhurried* That's not the same thing, and I'd thank you to keep the distinction.
     You'll work it out. It will take you most of the night and you will be furious when you do.
     -> ghost_introduction
 
@@ -155,7 +155,7 @@ I've watched it happen before. The figures are consistent enough to be boring.
     -> ransom_demand
 
 + [You've built a whole philosophy out of being underpaid and ignored.]
-    That's the first thing you've said that was beneath you.
+    That's the first thing you've said that was beneath you. *cooler now*
     Go and read what I've left on that server. Then say it again, if you still want to.
     -> ransom_demand
 
@@ -271,7 +271,7 @@ I'd assumed that would go in a skip with everything else they never inventory.
 
 + [Your man left it. He didn't get to use it.]
     No. He didn't.
-    That's the first thing you've told me tonight that I didn't already know.
+    That's the first thing you've told me tonight that I didn't already know. *something shifts*
     -> cracker_out
 
 + [It's a nice piece of kit. I'll be keeping it.]
@@ -332,12 +332,12 @@ And not one person in that room will say out loud why.
 That is what it took. Six months of him asking politely, and one night of me.
 
 + [People died tonight. Say that part.]
-    I know. I know which, I know their ages, and I'm not going to perform being sorry for you.
+    I know. *no change in tone* I know which, I know their ages, and I'm not going to perform being sorry for you.
     This hospital has had a mortality figure every week of its existence. This is the first week anyone outside it will read one.
     -> ghost_final_statement
 
 + [You've just taught forty other boards that paying works.]
-    Now that's the actual objection, and you're the first to make it.
+    Now that's the actual objection, and you're the first to make it. *the first real interest all night*
     You may even be right. I've a column for it.
     -> ghost_final_statement
 
@@ -406,7 +406,7 @@ I'd quite like the trial. It's the only room left where somebody has to sit and 
 
 + [You're not the last of these I'll take apart.]
     No. I should think not.
-    Whoever you meet next won't have my manners. Try not to miss them.
+    Whoever you meet next won't have my manners. *almost warm* Try not to miss them.
     -> ghost_disconnects
 
 === ghost_disconnects ===

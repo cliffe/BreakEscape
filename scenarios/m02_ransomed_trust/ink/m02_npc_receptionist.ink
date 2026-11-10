@@ -264,6 +264,8 @@ Bernie Nwosu: Back already. Go on, what's broken now?
 === cover_burned_entry ===
 Narrator: Bernie is holding the handset away from her ear.
 
+Narrator: She puts the handset back to her ear.
+
 Bernie Nwosu: No. I signed them in myself. With my own hand, in my own book. #delivery: into the phone, firmly
 
 Bernie Nwosu: Then whoever told you that is wrong, isn't -- hello?

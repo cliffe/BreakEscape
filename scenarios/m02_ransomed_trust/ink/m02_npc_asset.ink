@@ -178,7 +178,9 @@ Graham Reeves: Good. Otherwise I'd have sat here another six hours being helpful
 -> confrontation_why
 
 === confrontation_the_call ===
-Graham Reeves: You'll want to ask about the telephone. #delivery: lightly, pointing something out
+Narrator: He tilts his head at the wall phone.
+
+Graham Reeves: You'll want to ask about the telephone. #delivery: lightly
 
 Graham Reeves: I rang control from that phone and told them there was no consultant booked. That was all. Eleven words.
 

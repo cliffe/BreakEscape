@@ -89,7 +89,7 @@ Elena Rodriguez: If you're not one of his, you're law. Either way, let me finish
     -> back
 
 + [SAFETYNET. Hands where I can see them.]
-    Elena Rodriguez: There. Now what? You've got as little time as I have, and you're spending it on me. #delivery: unimpressed, hands raised
+    Elena Rodriguez: There. Now what? You've got as little time as I have, and you're spending it on me. #delivery: unimpressed, dry
     -> back
 
 + [You're Elena Rodriguez. Critical Mass.]

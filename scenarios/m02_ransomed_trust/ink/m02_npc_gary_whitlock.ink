@@ -79,7 +79,7 @@ VAR password_hints_found = false
 
 Narrator: Two dead terminals, a cold mug with a skin on it, and a printed stack of his own emails squared up beside the keyboard.
 
-Gary Whitlock: If you're head office, the answer's still no. I can't "just restore from backup". The backup's the bit they encrypted. #delivery: not turning round
+Gary Whitlock: If you're head office, the answer's still no. I can't "just restore from backup". The backup's the bit they encrypted. #delivery: offhand, half his attention on the screen
 
 Gary Whitlock: If you're the police, I've told your mate everything twice.
 

@@ -87,7 +87,7 @@ EXTERNAL player_name()
     ~ voltage_quiet = false
 - else:
     // Phase 4 dialogue C1 (D5-22): not a fourth "Still here."
-    Voltage: You came back. Nothing you say next will be new. #delivery: not looking up
+    Voltage: You came back. Nothing you say next will be new. #delivery: flat, uninterested
 }
 
 // Pass 5 A1: backing off is now a stance, so the choice has to come back.

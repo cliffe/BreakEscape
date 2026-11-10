@@ -48,7 +48,7 @@ VAR offline_keys_recovered = false
 === first_meeting ===
 Narrator: Six beds. A nurse working the far end with a clipboard, and Sister Doyle planted at bed two, eyes on the machine that is breathing for a woman.
 
-Sister Doyle: Are you meant to be on my ward? #delivery: without looking round
+Sister Doyle: Are you meant to be on my ward? #delivery: brisk, attention on the patient
 
 Sister Doyle: I've had four people through here tonight who weren't, and every one of them wanted to tell me about the computers.
 
@@ -293,7 +293,7 @@ Sister Doyle: But you looked at Mrs Hargreaves like she was a person. I've decid
     -> hub
 
 === lanyard_refused ===
-Sister Doyle: You want a hospital identity from me, an hour after we met, when security say you don't exist. #delivery: not turning round
+Sister Doyle: You want a hospital identity from me, an hour after we met, when security say you don't exist. #delivery: flat, attention elsewhere
 
 Sister Doyle: I've six critical beds and no monitoring. I can't also be the one who decides who you are.
 

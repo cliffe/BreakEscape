@@ -46,7 +46,7 @@ VAR irina_ko = false
         - else:
             ~ irina_news = 1
         }
-        Dani Okonkwo: You're the regulator? Is this about Irina? I don't know anything. Honestly. #delivery: nervous, glancing at her desk before the denial
+        Dani Okonkwo: You're the regulator? Is this about Irina? I don't know anything. Honestly. #delivery: nervous, a hitch before the denial
     - else:
         Dani Okonkwo: You're the regulator, yeah? FCA?
 

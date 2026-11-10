@@ -204,7 +204,7 @@ Val Okonkwo: Reception's paper log's been amended, and there's nothing on the sy
 + [Then we're doing this the hard way. (Fight her.)] #color:red
     ~ influence -= 40
     # influence_decreased
-    Val Okonkwo: Don't. #delivery: sharply, reaching for her radio
+    Val Okonkwo: Don't. #delivery: sharply, a warning
     Val Okonkwo: Don't you dare. Not in here, not tonight--
     #hostile:security_guard_patrol
     #set_global:attacked_guard:true
