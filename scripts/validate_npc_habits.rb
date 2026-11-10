@@ -43,6 +43,7 @@ module ValidateNpcHabits
 
       habits = item[:habits]
       check_locks_screen(item, issues)
+      check_holds_doors(item, issues)
       check_writes_down(npc, item, expanded, issues) if habits.key?('writesDown')
       if habits.key?('password') || habits.key?('passwordPattern')
         texts ||= CL.readable_texts(expanded, scenario_dir, ink_failures: ink_failures)
@@ -56,6 +57,7 @@ module ValidateNpcHabits
     check_mappings(json_data, expanded, by_id, issues)
     check_ids(json_data, expanded, issues)
     check_sprites(report, expanded, issues)
+    check_gate_no_hold(json_data, issues)
     issues
   end
 
@@ -155,6 +157,43 @@ module ValidateNpcHabits
       else
         suggest(issues, "#{who} locks sign-in PC '#{pc[:id]}' 'sometimes' from the medium preset, so a session there " \
                         'rests on a seeded roll. Set locksScreen by name if a puzzle needs it.')
+      end
+    end
+  end
+
+  # holdsDoors false by name that does nothing (step 5): no gate opens for the NPC, or every
+  # gate that does has playerMayPassIf or an authored noHold.
+  def check_holds_doors(item, issues)
+    doors = item[:doors]
+    return unless doors && doors[:value] == false && item[:sources]['holdsDoors'] == :explicit
+
+    who = "NPC '#{item[:id]}'"
+    if doors[:reason] == :no_gate
+      warn(issues, "#{who} has holdsDoors false but no gate opens for it (gate.openFor): the habit does nothing.")
+    elsif doors[:gates].none? { |gate| gate[:applied] }
+      warn(issues, "#{who} has holdsDoors false but every gate that opens for it " \
+                   "(#{doors[:gates].map { |gate| gate[:path] }.join(', ')}) sets playerMayPassIf or its own noHold, " \
+                   'which wins: the habit does nothing.')
+    end
+  end
+
+  # An authored gate.noHold naming an id that is not in that gate's openFor.
+  def check_gate_no_hold(json_data, issues)
+    rooms = json_data['rooms']
+    return unless rooms.is_a?(Hash)
+
+    rooms.each do |room_id, room|
+      next unless room.is_a?(Hash) && room['doors'].is_a?(Array)
+
+      room['doors'].each_with_index do |door, i|
+        gate = door.is_a?(Hash) ? door['gate'] : nil
+        next unless gate.is_a?(Hash) && gate['noHold'].is_a?(Array)
+
+        open_for = gate['openFor'].is_a?(Array) ? gate['openFor'] : [gate['openFor']]
+        (gate['noHold'] - open_for).each do |id|
+          warn(issues, "rooms/#{room_id}/doors/#{i} gate.noHold names '#{id}', who is not in its openFor: " \
+                       'the gate never opens for them, so the entry does nothing.')
+        end
       end
     end
   end
@@ -412,6 +451,7 @@ module ValidateNpcHabits
         effects = case name
                   when 'locksScreen' then screen_effects(item[:screen])
                   when 'writesDown' then note_effects(npc, expanded, value)
+                  when 'holdsDoors' then door_effects(item[:doors])
                   when 'password'
                     texts ||= CL.readable_texts(expanded, scenario_dir)
                     homes ||= CL.secret_homes(expanded)
@@ -440,6 +480,20 @@ module ValidateNpcHabits
       out << "#{pc[:id]}: the PC sets #{pc[:field]}, habit not applied there"
     end
     out
+  end
+
+  def door_effects(doors)
+    return [] unless doors
+    return ['no effect: no gate opens for it'] if doors[:reason] == :no_gate
+
+    doors[:gates].map do |gate|
+      into = gate[:connected_room] ? " (into #{gate[:connected_room]})" : ''
+      case gate[:reason]
+      when :player_may_pass_if then "#{gate[:path]}#{into}: the gate sets playerMayPassIf, habit not applied there"
+      when :authored_no_hold then "#{gate[:path]}#{into}: the gate sets noHold, habit not applied there"
+      else gate[:no_hold] ? "gate.noHold at #{gate[:path]}#{into}" : "holds the gate at #{gate[:path]}#{into}"
+      end
+    end
   end
 
   def note_effects(npc, expanded, value)

@@ -1,7 +1,8 @@
 require 'test_helper'
 
 # Slice 9.1 step 1 (ACCESS_MODEL_SLICE_9_1_PLAN.md, sections 4, 5.1 and 5.2): the habits
-# library, its presets, levels and the locksScreen fill.
+# library, its presets, levels and the locksScreen fill. Step 5 (5.4): holdsDoors and the
+# gate fill.
 class NpcHabitsTest < ActiveSupport::TestCase
   NH = BreakEscape::NpcHabits
 
@@ -23,9 +24,9 @@ class NpcHabitsTest < ActiveSupport::TestCase
   end
 
   test 'each preset gives the table in 4.2, and writesDown and password are never set by a level' do
-    { 'low' => 'never', 'medium' => 'sometimes', 'high' => 'always' }.each do |level, value|
+    { 'low' => ['never', true], 'medium' => ['sometimes', true], 'high' => ['always', false] }.each do |level, (lock, hold)|
       habits = NH.expanded(npc('awareness' => level), {})
-      assert_equal({ 'locksScreen' => value }, habits, level)
+      assert_equal({ 'locksScreen' => lock, 'holdsDoors' => hold }, habits, level)
     end
     NH::PRESETS.each_value do |preset|
       refute preset.key?('writesDown')
@@ -36,10 +37,10 @@ class NpcHabitsTest < ActiveSupport::TestCase
 
   test 'a habit by name replaces the preset and leaves the rest; habits with no level give only those keys' do
     habits = NH.expanded(npc('awareness' => 'high', 'habits' => { 'locksScreen' => 'never', 'writesDown' => true }), {})
-    assert_equal({ 'locksScreen' => 'never', 'writesDown' => true }, habits)
+    assert_equal({ 'locksScreen' => 'never', 'holdsDoors' => false, 'writesDown' => true }, habits)
 
-    habits = NH.expanded(npc('awareness' => 'high', 'habits' => { 'writesDown' => true }), {})
-    assert_equal({ 'locksScreen' => 'always', 'writesDown' => true }, habits)
+    habits = NH.expanded(npc('awareness' => 'high', 'habits' => { 'writesDown' => true, 'holdsDoors' => true }), {})
+    assert_equal({ 'locksScreen' => 'always', 'holdsDoors' => true, 'writesDown' => true }, habits)
 
     assert_equal({ 'password' => 'reused' }, NH.expanded(npc('habits' => { 'password' => 'reused' }), {}))
     assert_nil NH.expanded(npc, {}), 'no level and no habits: nil'
@@ -70,18 +71,17 @@ class NpcHabitsTest < ActiveSupport::TestCase
     assert_nil NH.expanded(bare, roles), 'no level, no habits'
   end
 
-  test 'an unknown level, habit or value is dropped; holdsDoors is unknown at this step' do
+  test 'an unknown level, habit or value is dropped' do
     assert_nil NH.level_of(npc('awareness' => 'paranoid'), {})
-    habits = NH.expanded(npc('habits' => { 'locksScreen' => 'often', 'holdsDoors' => false, 'phishable' => true,
+    habits = NH.expanded(npc('habits' => { 'locksScreen' => 'often', 'holdsDoors' => 'no', 'phishable' => true,
                                            'writesDown' => 'yes', 'password' => 'guessable' }), {})
     assert_equal({ 'password' => 'guessable' }, habits)
-    refute NH::HABITS.key?('holdsDoors')
   end
 
   test 'sources marks each habit by name or preset; parameters are not listed' do
     subject = npc('awareness' => 'high',
                   'habits' => { 'writesDown' => true, 'password' => 'guessable', 'passwordPattern' => 'memo' })
-    assert_equal({ 'locksScreen' => :preset, 'writesDown' => :explicit, 'password' => :explicit },
+    assert_equal({ 'locksScreen' => :preset, 'holdsDoors' => :preset, 'writesDown' => :explicit, 'password' => :explicit },
                  NH.sources(subject, {}))
   end
 
@@ -192,7 +192,7 @@ class NpcHabitsTest < ActiveSupport::TestCase
                           npc('id' => 'mia', 'habits' => { 'password' => 'reused', 'locksScreen' => 'often' })])
     NH.expand!(data)
     npcs = data['rooms']['office']['npcs']
-    assert_equal({ 'locksScreen' => 'sometimes', 'writesDown' => true }, npcs[0]['habits'])
+    assert_equal({ 'locksScreen' => 'sometimes', 'holdsDoors' => true, 'writesDown' => true }, npcs[0]['habits'])
     assert_equal({ 'password' => 'reused' }, npcs[1]['habits'])
   end
 
@@ -259,5 +259,87 @@ class NpcHabitsTest < ActiveSupport::TestCase
     before = deep(data)
     assert_equal [], NH.expand!(data)
     assert_equal before, data
+  end
+  # ---- holdsDoors (step 5) --------------------------------------------------------
+
+  # A hall with a gate north into store (openFor the given ids) and the NPCs given.
+  def gate_scenario(npcs, gate, extra_doors = [])
+    { 'startRoom' => 'hall',
+      'rooms' => {
+        'hall' => { 'type' => 'room_office', 'connections' => { 'north' => 'store' }, 'npcs' => npcs,
+                    'doors' => [{ 'connectedRoom' => 'store', 'direction' => 'north', 'gate' => gate }] + extra_doors },
+        'store' => { 'type' => 'room_office', 'connections' => { 'south' => 'hall' }, 'locked' => true }
+      } }
+  end
+
+  def guard(id, attrs = {})
+    { 'id' => id, 'npcType' => 'person', 'creds' => { 'card' => { 'card_id' => "#{id}-1" } } }.merge(attrs)
+  end
+
+  test 'noHold lists the openFor NPCs whose holdsDoors is false, by preset or by name' do
+    data = gate_scenario([guard('sara', 'awareness' => 'high'), guard('gary', 'awareness' => 'low'),
+                          guard('una', 'awareness' => 'low', 'habits' => { 'holdsDoors' => false })],
+                         { 'openFor' => %w[sara gary una] })
+    report = NH.expand!(data)
+    assert_equal %w[sara una], data['rooms']['hall']['doors'][0]['gate']['noHold']
+    doors = report_for(report, 'sara')[:doors]
+    assert_equal false, doors[:value]
+    assert_equal [{ path: 'rooms/hall/doors/0', room: 'hall', connected_room: 'store', applied: true, no_hold: true, reason: nil }],
+                 doors[:gates]
+    refute report_for(report, 'gary')[:doors][:gates][0][:no_hold]
+  end
+
+  test 'an openFor string is read as one id' do
+    data = gate_scenario([guard('sara', 'awareness' => 'high')], { 'openFor' => 'sara' })
+    NH.expand!(data)
+    assert_equal ['sara'], data['rooms']['hall']['doors'][0]['gate']['noHold']
+  end
+
+  test 'a gate with playerMayPassIf or an authored noHold is left alone and reported' do
+    data = gate_scenario([guard('sara', 'awareness' => 'high')], { 'openFor' => ['sara'], 'playerMayPassIf' => 'disguised' })
+    report = NH.expand!(data)
+    refute data['rooms']['hall']['doors'][0]['gate'].key?('noHold')
+    assert_equal :player_may_pass_if, report_for(report, 'sara')[:doors][:gates][0][:reason]
+
+    data = gate_scenario([guard('sara', 'awareness' => 'high')], { 'openFor' => ['sara'], 'noHold' => [] })
+    report = NH.expand!(data)
+    assert_equal [], data['rooms']['hall']['doors'][0]['gate']['noHold']
+    assert_equal :authored_no_hold, report_for(report, 'sara')[:doors][:gates][0][:reason]
+  end
+
+  test 'a gate whose guards all hold, or have no level, gets no noHold' do
+    data = gate_scenario([guard('gary', 'awareness' => 'medium'), { 'id' => 'cleaner', 'npcType' => 'person' }],
+                         { 'openFor' => %w[gary cleaner] })
+    NH.expand!(data)
+    refute data['rooms']['hall']['doors'][0]['gate'].key?('noHold')
+  end
+
+  test 'an NPC that no gate opens for is reported with no gate' do
+    data = gate_scenario([guard('sara', 'awareness' => 'high')], { 'openFor' => ['gary'] })
+    report = NH.expand!(data)
+    assert_equal :no_gate, report_for(report, 'sara')[:doors][:reason]
+    refute data['rooms']['hall']['doors'][0]['gate'].key?('noHold')
+  end
+
+  test 'doors an object and gate a string are skipped with no exception' do
+    data = gate_scenario([guard('sara', 'awareness' => 'high')], { 'openFor' => ['sara'] })
+    data['rooms']['hall']['doors'] = { 'north' => { 'gate' => { 'openFor' => ['sara'] } } }
+    before = deep(data['rooms']['hall']['doors'])
+    assert_nothing_raised { NH.expand!(data) }
+    assert_equal before, data['rooms']['hall']['doors']
+
+    data = gate_scenario([guard('sara', 'awareness' => 'high')], 'sara')
+    assert_nothing_raised { NH.expand!(data) }
+    assert_equal 'sara', data['rooms']['hall']['doors'][0]['gate']
+    assert_equal false, data['rooms']['hall']['npcs'][0]['habits']['holdsDoors'], 'the NPC part still runs'
+  end
+
+  test 'a second expand! with gates changes nothing' do
+    data = gate_scenario([guard('sara', 'awareness' => 'high'), guard('gary', 'awareness' => 'low')],
+                         { 'openFor' => %w[sara gary] })
+    NH.expand!(data)
+    once = deep(data)
+    NH.expand!(data)
+    assert_equal once, data
   end
 end

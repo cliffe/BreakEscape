@@ -91,13 +91,14 @@ test('awareness or habits on an NPC record that is not a room NPC', () => {
 
 test('an unknown level, habit or value, and a roles level', () => {
     const out = run(scenario({
-        npcs: [person('dana', { awareness: 'paranoid', habits: { phishable: true, locksScreen: 'often', holdsDoors: false } })],
+        npcs: [person('dana', { awareness: 'paranoid', habits: { phishable: true, locksScreen: 'often', holdsDoors: 'no' } })],
         extra: { roles: { staff: { awareness: 'max' } } }
     }));
     const e = errors(out.habits);
     assertHas(e, "awareness 'paranoid'");
     assertHas(e, "unknown habit 'phishable'");
-    assertHas(e, "unknown habit 'holdsDoors'");
+    assertHas(e, "habit 'holdsDoors' has value \"no\"");
+    assertLacks(e, "unknown habit 'holdsDoors'");
     assertHas(e, "habit 'locksScreen' has value \"often\"");
     assertHas(e, "roles.staff.awareness 'max'");
 });
@@ -411,4 +412,84 @@ test('the report: preset and by name, the level from a role, pattern clue line a
     assertHas(out.lines, 'password guessable (by name)');
     assertHas(out.lines, 'pattern clue at password_memo');
     assert.ok(!out.lines.some(l => /^\s*- passwordPattern/.test(l)), out.lines.join('\n'));
+});
+
+// ── holdsDoors (step 5) ───────────────────────────────────────────────────────
+
+// A hall with a north gate into store_a and a south gate into store_b.
+function gateScenario({ npcs, gateA = { openFor: ['gary'] }, gateB = { openFor: ['sara'] } }) {
+    return {
+        startRoom: 'hall',
+        rooms: {
+            hall: {
+                type: 'room_office', connections: { north: 'store_a', south: 'store_b' }, npcs,
+                doors: [{ connectedRoom: 'store_a', direction: 'north', gate: gateA },
+                    { connectedRoom: 'store_b', direction: 'south', gate: gateB }]
+            },
+            store_a: { type: 'room_office', connections: { south: 'hall' }, locked: true },
+            store_b: { type: 'room_office', connections: { north: 'hall' }, locked: true }
+        }
+    };
+}
+const guard = (id, extra = {}) => ({ id, displayName: id, npcType: 'person', ...extra });
+
+test('holdsDoors from presets: no warning, and the report names the gates', () => {
+    const out = run(gateScenario({ npcs: [guard('gary', { awareness: 'low' }), guard('sara', { awareness: 'high' })] }));
+    assert.deepEqual(out.habits, []);
+    assertHas(out.lines, 'holdsDoors false (preset)');
+    assertHas(out.lines, 'gate.noHold at rooms/hall/doors/1 (into store_b)');
+    assertHas(out.lines, 'holdsDoors true (preset)');
+    assertHas(out.lines, 'holds the gate at rooms/hall/doors/0 (into store_a)');
+});
+
+test('holdsDoors false by name on an NPC no gate opens for', () => {
+    const out = run(gateScenario({ npcs: [guard('una', { habits: { holdsDoors: false } })] }));
+    assertHas(warnings(out.habits), "NPC 'una' has holdsDoors false but no gate opens for it");
+    assertHas(out.lines, 'no effect: no gate opens for it');
+    // A preset that does nothing draws no warning
+    const quiet = run(gateScenario({ npcs: [guard('una', { awareness: 'high' })] }));
+    assert.deepEqual(quiet.habits, []);
+});
+
+test('holdsDoors false by name whose every gate has playerMayPassIf or an authored noHold', () => {
+    const out = run(gateScenario({
+        npcs: [guard('sara', { habits: { holdsDoors: false } })],
+        gateA: { openFor: ['sara'], playerMayPassIf: 'disguised' },
+        gateB: { openFor: ['sara'], noHold: [] }
+    }));
+    assertHas(warnings(out.habits), "NPC 'sara' has holdsDoors false but every gate that opens for it (rooms/hall/doors/0, rooms/hall/doors/1)");
+    assertHas(out.lines, 'rooms/hall/doors/0 (into store_a): the gate sets playerMayPassIf, habit not applied there');
+    assertHas(out.lines, 'rooms/hall/doors/1 (into store_b): the gate sets noHold, habit not applied there');
+    // One gate where it applies: no warning
+    const one = run(gateScenario({
+        npcs: [guard('sara', { habits: { holdsDoors: false } })],
+        gateA: { openFor: ['sara'], playerMayPassIf: 'disguised' },
+        gateB: { openFor: 'sara' }
+    }));
+    assertLacks(warnings(one.habits), 'holdsDoors false');
+});
+
+test('an authored gate.noHold naming an id not in its openFor', () => {
+    const out = run(gateScenario({ npcs: [guard('sara')], gateB: { openFor: ['sara'], noHold: ['sara', 'len'] } }));
+    assertHas(warnings(out.habits), "rooms/hall/doors/1 gate.noHold names 'len', who is not in its openFor");
+    assertLacks(warnings(out.habits), "names 'sara'");
+});
+
+function schemaErrors(scenario) {
+    const script = `require ${JSON.stringify(join(root, 'scripts/validate_scenario.rb'))}
+      puts JSON.generate(validate_json(JSON.parse(STDIN.read), ${JSON.stringify(join(root, 'scripts/scenario-schema.json'))}))`;
+    const r = spawnSync('ruby', ['-e', script], {
+        input: JSON.stringify(scenario), encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' }
+    });
+    assert.equal(r.status, 0, r.stderr);
+    return JSON.parse(r.stdout.trim().split('\n').pop());
+}
+
+test('the schema takes habits.holdsDoors (a boolean) and gate.noHold (a list of ids)', () => {
+    const ok = gateScenario({ npcs: [guard('sara', { habits: { holdsDoors: false } })], gateB: { openFor: ['sara'], noHold: ['sara'] } });
+    assert.deepEqual(schemaErrors(ok).filter(e => /holdsDoors|noHold/.test(e)), []);
+    const bad = gateScenario({ npcs: [guard('sara', { habits: { holdsDoors: 'no' } })], gateB: { openFor: ['sara'], noHold: 'sara' } });
+    const errs = schemaErrors(bad);
+    assert.ok(errs.some(e => e.includes('holdsDoors')), errs.join('\n'));
+    assert.ok(errs.some(e => e.includes('noHold')), errs.join('\n'));
 });
