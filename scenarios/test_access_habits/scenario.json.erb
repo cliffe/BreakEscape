@@ -1,6 +1,6 @@
 {
-  "scenario_brief": "TEST: Access model awareness and habits\n\nA test floor for NPC awareness and habits (ACCESS_MODEL_SLICE_9_1_PLAN.md, section 11). Eight beats, each with a sign. Dana (north, H1) never locks; Ian (east, H2) always locks; Omar (beyond Dana, H3) locks but keeps his password on a note; Priya (south, H4) and Kai (beyond Ian, H5) would never lock but the PC or its policy does; Mei (beyond Priya, H6) has a password you can work out; Tom (beyond Lena, H7) reuses his locker code; Lena (west, H8) sometimes locks.",
-  "endGoal": "Test only: run the eight habits beats.",
+  "scenario_brief": "TEST: Access model awareness and habits\n\nA test floor for NPC awareness and habits (ACCESS_MODEL_SLICE_9_1_PLAN.md, section 11). Nine beats, each with a sign. Dana (north, H1) never locks; Ian (east, H2) always locks; Omar (beyond Dana, H3) locks but keeps his password on a note; Priya (south, H4) and Kai (beyond Ian, H5) would never lock but the PC or its policy does; Mei (beyond Priya, H6) has a password you can work out; Tom (beyond Lena, H7) reuses his locker code; Lena (west, H8) sometimes locks. Beyond Kai, the gate hall (H9): Gary holds his door into store A for you; Sara will not open hers into store B with you near.",
+  "endGoal": "Test only: run the nine habits beats.",
   "startRoom": "lobby",
   "startPosition": {
     "x": 7,
@@ -24,7 +24,10 @@
     }
   },
   "globalVariables": {
-    "h3_note_seen": false
+    "h3_note_seen": false,
+    "h9_a_opened": false,
+    "h9_b_opened": false,
+    "h9_sara_turned_back": false
   },
   "accountProfiles": {
     "staff_desktop": {
@@ -101,6 +104,12 @@
           "title": "H8: use Lena's screen on a leave she leaves it open",
           "type": "custom",
           "status": "active"
+        },
+        {
+          "taskId": "h9_holds_doors",
+          "title": "H9: follow Gary into store A; Sara's door into store B stops you",
+          "type": "custom",
+          "status": "active"
         }
       ]
     }
@@ -128,7 +137,7 @@
           "readable": true,
           "readDisplay": "gameDisplay",
           "addToNotes": false,
-          "text": "Eight beats, a sign at each. Dana north (H1), Ian east (H2), Priya south (H4), Lena west (H8).\nOmar is beyond Dana (H3), Kai beyond Ian (H5), Mei beyond Priya (H6) and Tom beyond Lena (H7). Nobody here will tell you how careful they are: watch.",
+          "text": "Nine beats, a sign at each. Dana north (H1), Ian east (H2), Priya south (H4), Lena west (H8).\nOmar is beyond Dana (H3), Kai beyond Ian (H5), Mei beyond Priya (H6) and Tom beyond Lena (H7). The gate hall is beyond Kai (H9). Nobody here will tell you how careful they are: watch.",
           "observations": "A sign on a stand."
         }
       ],
@@ -203,6 +212,16 @@
               "onceOnly": true,
               "completeTask": "h8_sometimes",
               "condition": "data.via === 'claim'"
+            },
+            {
+              "eventPattern": "door_gate_denied",
+              "condition": "data.roomId === 'store_b' && globalVars.h9_a_opened && globalVars.h9_sara_turned_back && globalVars.h9_b_opened",
+              "completeTask": "h9_holds_doors"
+            },
+            {
+              "eventPattern": "door_gate_denied",
+              "condition": "data.connectedRoom === 'store_b' && globalVars.h9_a_opened && globalVars.h9_sara_turned_back && globalVars.h9_b_opened",
+              "completeTask": "h9_holds_doors"
             }
           ]
         }
@@ -599,7 +618,8 @@
       "type": "room_office",
       "door_sign": "Kai",
       "connections": {
-        "west": "ian_room"
+        "west": "ian_room",
+        "east": "gate_hall"
       },
       "objects": [
         {
@@ -1066,6 +1086,299 @@
           "habits": {
             "password": "reused"
           }
+        }
+      ]
+    },
+    "gate_hall": {
+      "type": "room_office",
+      "door_sign": "Gate hall",
+      "connections": {
+        "west": "kai_room",
+        "north": "store_a",
+        "south": "store_b"
+      },
+      "doors": [
+        {
+          "connectedRoom": "store_a",
+          "direction": "north",
+          "gate": {
+            "openFor": [
+              "gary"
+            ],
+            "openRadius": 80,
+            "holdMs": 6000
+          }
+        },
+        {
+          "connectedRoom": "store_b",
+          "direction": "south",
+          "gate": {
+            "openFor": [
+              "sara"
+            ],
+            "openRadius": 80,
+            "holdMs": 6000
+          }
+        }
+      ],
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_h9",
+          "name": "Sign: H9 Holds doors, and does not",
+          "position": {
+            "x": 4,
+            "y": 4
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "H9. Gary and Sara badge through the gates here: Gary north into store A, Sara south into store B.\nStand beside Gary's door and walk in behind him. Then try Sara's: wait close by and she will not open it; stand well back and she goes through, but the door will not let you follow.",
+          "observations": "A sign on a stand."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "gary",
+          "displayName": "Gary Whitlock",
+          "npcType": "person",
+          "position": {
+            "x": 7,
+            "y": 3
+          },
+          "spriteSheet": "male_security_guard_v2",
+          "spriteTalk": "assets/characters/len_talk.png",
+          "spriteVisemes": "assets/characters/male_security_guard_visemes.png",
+          "storyPath": "scenarios/test_access_habits/ink/owner.json",
+          "currentKnot": "start",
+          "awareness": "low",
+          "behavior": {
+            "patrol": {
+              "enabled": true,
+              "multiRoom": true,
+              "waypointMode": "sequential",
+              "pauseForPlayer": false,
+              "speed": 90,
+              "route": [
+                {
+                  "room": "gate_hall",
+                  "waypoints": [
+                    {
+                      "x": 7,
+                      "y": 3,
+                      "dwellTime": 6000
+                    },
+                    {
+                      "x": 1,
+                      "y": 2,
+                      "action": {
+                        "unlockRoom": "store_a"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "room": "store_a",
+                  "waypoints": [
+                    {
+                      "x": 5,
+                      "y": 5
+                    },
+                    {
+                      "x": 2,
+                      "y": 8
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "gary_never_fires",
+              "unlockDoor": "store_a"
+            },
+            {
+              "eventPattern": "door_gate_opened",
+              "condition": "data.roomId === 'store_a'",
+              "setGlobal": {
+                "h9_a_opened": true
+              }
+            },
+            {
+              "eventPattern": "door_gate_opened",
+              "condition": "data.connectedRoom === 'store_a'",
+              "setGlobal": {
+                "h9_a_opened": true
+              }
+            }
+          ],
+          "creds": {
+            "card": {
+              "name": "Store A badge",
+              "card_id": "store_a_badge",
+              "rfid_protocol": "EM4100"
+            }
+          }
+        },
+        {
+          "id": "sara",
+          "displayName": "Sara Quinn",
+          "npcType": "person",
+          "position": {
+            "x": 7,
+            "y": 6
+          },
+          "spriteSheet": "female_security_guard_v2",
+          "spriteTalk": "assets/characters/female_security_guard_talk.png",
+          "spriteVisemes": "assets/characters/female_security_guard_visemes.png",
+          "storyPath": "scenarios/test_access_habits/ink/owner.json",
+          "currentKnot": "start",
+          "awareness": "high",
+          "behavior": {
+            "patrol": {
+              "enabled": true,
+              "multiRoom": true,
+              "waypointMode": "sequential",
+              "pauseForPlayer": false,
+              "speed": 90,
+              "route": [
+                {
+                  "room": "gate_hall",
+                  "waypoints": [
+                    {
+                      "x": 7,
+                      "y": 6,
+                      "dwellTime": 6000
+                    },
+                    {
+                      "x": 2,
+                      "y": 8,
+                      "action": {
+                        "unlockRoom": "store_b"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "room": "store_b",
+                  "waypoints": [
+                    {
+                      "x": 5,
+                      "y": 4
+                    },
+                    {
+                      "x": 2,
+                      "y": 2
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "sara_never_fires",
+              "unlockDoor": "store_b"
+            },
+            {
+              "eventPattern": "door_gate_opened",
+              "condition": "data.roomId === 'store_b'",
+              "setGlobal": {
+                "h9_b_opened": true
+              }
+            },
+            {
+              "eventPattern": "door_gate_opened",
+              "condition": "data.connectedRoom === 'store_b'",
+              "setGlobal": {
+                "h9_b_opened": true
+              }
+            },
+            {
+              "eventPattern": "door_gate_guard_turned_back",
+              "condition": "data.npcId === 'sara'",
+              "setGlobal": {
+                "h9_sara_turned_back": true
+              }
+            },
+            {
+              "eventPattern": "door_gate_denied",
+              "condition": "data.roomId === 'store_b'",
+              "cooldown": 4000,
+              "bark": "Not with you behind me. Ask at reception."
+            },
+            {
+              "eventPattern": "door_gate_denied",
+              "condition": "data.connectedRoom === 'store_b'",
+              "cooldown": 4000,
+              "bark": "Not with you behind me. Ask at reception."
+            }
+          ],
+          "creds": {
+            "card": {
+              "name": "Store B badge",
+              "card_id": "store_b_badge",
+              "rfid_protocol": "EM4100"
+            }
+          }
+        }
+      ]
+    },
+    "store_a": {
+      "type": "room_office",
+      "door_sign": "Store A",
+      "locked": true,
+      "lockType": "rfid",
+      "requires": "store_a_badge",
+      "connections": {
+        "south": "gate_hall"
+      },
+      "npcs": [],
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_store_a",
+          "name": "Sign: Store A",
+          "position": {
+            "x": 4,
+            "y": 4
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Store A. You followed Gary in: his gate opened beside you and stayed open after him.",
+          "observations": "A sign on a stand."
+        }
+      ]
+    },
+    "store_b": {
+      "type": "room_office",
+      "door_sign": "Store B",
+      "locked": true,
+      "lockType": "rfid",
+      "requires": "store_b_badge",
+      "connections": {
+        "north": "gate_hall"
+      },
+      "npcs": [],
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_store_b",
+          "name": "Sign: Store B",
+          "position": {
+            "x": 4,
+            "y": 4
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Store B. You should not be able to read this in the H9 run: Sara's gate never lets you through.",
+          "observations": "A sign on a stand."
         }
       ]
     }
