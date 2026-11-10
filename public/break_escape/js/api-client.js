@@ -120,11 +120,38 @@ export class ApiClient {
   }
 
   // Sign in at a sign-in PC (access model 5.3, 6). `fields` is { username, password }
-  // (the claim of step 9 sends { claim: "owner", globals } instead). Answers
-  // { success, npcId, username, displayName, via }; a refusal throws with err.status
-  // (422) and err.body { message, attemptsLeft, lockedOut?, notPermitted? }.
+  // (the claim of step 9 sends { claim: "owner", globals } instead). A remote sign-in
+  // (slice 9.3a, 4.4) adds { foothold: <footholdId> }; the server then checks the host is
+  // reachable through that foothold instead of at the keyboard. Answers
+  // { success, npcId, username, displayName, via } (a remote one adds remote, footholdId
+  // and host); a refusal throws with err.status (422) and err.body { message,
+  // attemptsLeft, lockedOut?, notPermitted?, remoteBlocked? }.
   static async login(pcId, fields = {}) {
-    return this.post('/login', { ...fields, pc_id: pcId });
+    const { foothold, ...rest } = fields || {};
+    return this.post('/login', { ...rest, ...(foothold ? { foothold } : {}), pc_id: pcId });
+  }
+
+  // Networks (slice 9.3a, ACCESS_MODEL_SLICE_9_3_PLAN.md section 5). Only
+  // systems/network-links.js calls these three.
+  //
+  // Plant a rogue device in a jack. Answers { success, foothold, inventory, first }
+  // (or { success, already: true, ... } when a device is in that jack already); a
+  // refusal throws with err.status (404 no jack, 403 reason "unreachable", 422 reason
+  // "no_device") and err.body.
+  static async networkPlant(jackId, deviceId = null) {
+    return this.post('/network/plant', { jack_id: jackId, ...(deviceId ? { device_id: deviceId } : {}) });
+  }
+
+  // Take the device back out of a jack. Answers { success, inventory, endedPcIds }; a
+  // refusal throws (422 reason "not_planted", 403 reason "unreachable", 404).
+  static async networkUnplug(jackId) {
+    return this.post('/network/unplug', { jack_id: jackId });
+  }
+
+  // What a foothold reaches: { footholds: [{ id, via, name, network, hosts }] }, every
+  // held foothold, or only `footholdId` when given (404 when it is not held).
+  static async network(footholdId = null) {
+    return this.get(footholdId ? `/network?foothold=${encodeURIComponent(footholdId)}` : '/network');
   }
 
   // End the session at a sign-in PC. Answers { success: true }.

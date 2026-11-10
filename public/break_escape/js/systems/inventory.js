@@ -58,6 +58,11 @@ const trayRestored = new WeakSet();
 const trayDecided = new WeakMap();
 let trayWalking = false;
 let trayWalkAgain = false;
+// While a batch of server-made changes is applied (showServerItem,
+// syncInventoryFromServer) the refreshes the adds and removes ask for wait, and
+// the batch runs one at its end.
+let trayDeferred = 0;
+let trayDeferredAsked = false;
 
 function trayKey(item) {
     return item?.scenarioData ? createItemIdentifier(item.scenarioData) : null;
@@ -110,6 +115,7 @@ function holderName(items, holderId) {
 export function refreshInventoryTray() {
     const items = window.inventory?.items;
     if (!Array.isArray(items)) return;
+    if (trayDeferred > 0) { trayDeferredAsked = true; return; }
     // A rule that calls the refresh while it runs gets one more walk, not a nested
     // one (at most a few, so a rule that always asks cannot hang the page)
     if (trayWalking) { trayWalkAgain = true; return; }
@@ -637,8 +643,10 @@ export async function addToInventory(sprite) {
         // With no source NPC the server takes the first NPC copy holding the item in its
         // room order, which can be one the player has not met (m10 F3: "NPC not
         // encountered: nightshade_lock" on every reload once his payment was held).
+        // Nor for an item the server has already added itself (slice 9.3a: the link item
+        // a plant answers with, showServerItem).
         const gameId = window.breakEscapeConfig?.gameId;
-        if (gameId && !sprite._restoredFromSave) {
+        if (gameId && !sprite._restoredFromSave && !sprite._serverAdded) {
             try {
                 // Create item data with ID from scenario if available
                 const itemData = sprite.scenarioData;
@@ -649,7 +657,11 @@ export async function addToInventory(sprite) {
                     action_type: 'add',
                     item: itemData,
                     source_npc_id: sprite.sourceNpcId || undefined,
-                    ...(sprite.sourcePcId ? { source_pc_id: sprite.sourcePcId, transfer: sprite.transfer || 'move' } : {})
+                    ...(sprite.sourcePcId ? { source_pc_id: sprite.sourcePcId, transfer: sprite.transfer || 'move' } : {}),
+                    // A file taken from a share opened in the network view (slice 9.3a, 4.5)
+                    // names the share; the server checks a foothold or session reaches it.
+                    ...(sprite.sourceResourceId && !sprite.sourcePcId
+                        ? { source_resource_id: sprite.sourceResourceId, transfer: sprite.transfer || 'move' } : {})
                 });
                 const response = await fetch(`/break_escape/games/${gameId}/inventory`, {
                     method: 'POST',
@@ -870,7 +882,9 @@ export async function addToInventory(sprite) {
                 collectionGroup: sprite.scenarioData.collection_group || null,
                 roomId: window.currentPlayerRoom,
                 // From a sign-in desktop: which PC, and whether it was copied or moved
-                ...(sprite.sourcePcId ? { sourcePcId: sprite.sourcePcId, transfer: sprite.transfer || 'move' } : {})
+                ...(sprite.sourcePcId ? { sourcePcId: sprite.sourcePcId, transfer: sprite.transfer || 'move' } : {}),
+                ...(sprite.sourceResourceId && !sprite.sourcePcId
+                    ? { sourceResourceId: sprite.sourceResourceId, transfer: sprite.transfer || 'move' } : {})
             });
         }
         
@@ -1183,6 +1197,82 @@ export function removeFromInventory(item) {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Items the server has already added or removed (slice 9.3a, ACCESS_MODEL_SLICE_9_3_PLAN.md
+// 4.1 and 13.4). A network route answers with the whole inventory: the link item a
+// plant creates, the device it takes and the device an unplug gives back. These two
+// put the tray in line with that answer with no inventory request, and each ends with
+// one tray refresh, so a server-made item is filed (by its storeIn) and decorated like
+// any other.
+// ---------------------------------------------------------------------------
+
+function trayItemWithId(id) {
+    if (!id) return null;
+    return (window.inventory?.items || []).find(it => it?.scenarioData?.id === id) || null;
+}
+
+function deferTray(fn) {
+    trayDeferred++;
+    try {
+        return fn();
+    } finally {
+        trayDeferred--;
+        if (trayDeferred === 0) {
+            trayDeferredAsked = false;
+            refreshInventoryTray();
+        }
+    }
+}
+
+function addServerItem(itemData, { restored = false } = {}) {
+    if (!itemData || typeof itemData !== 'object') return false;
+    if (itemData.id && trayItemWithId(itemData.id)) return false;
+    const sprite = createInventorySprite({ ...itemData });
+    if (!sprite) return false;
+    sprite._serverAdded = true;
+    // A restored item (a reload's missing handle) is not an arrival: no "Added to" toast
+    if (restored) sprite._restoredFromSave = true;
+    // With no request in the way addToInventory runs to its end at once; its
+    // promise only carries the result.
+    addToInventory(sprite);
+    return !!trayItemWithId(itemData.id) || !itemData.id;
+}
+
+/**
+ * Show an item the server has already added (no request): the path a reload takes for
+ * the saved inventory, through createInventorySprite. `restored` marks it as part of a
+ * restore, so a filed item gets no "Added to" toast. Nothing happens when the tray
+ * already holds an item with that id. Ends with one tray refresh. Returns true when
+ * the item was added.
+ */
+export function showServerItem(itemData, { restored = false } = {}) {
+    return deferTray(() => addServerItem(itemData, { restored }));
+}
+
+/**
+ * Bring the tray in line with the server's inventory for the item ids passed: an id the
+ * list holds and the tray lacks is shown (showServerItem's path); an id the tray holds and
+ * the list lacks is removed. Items with other ids are left alone. Ends with one tray
+ * refresh. Returns { added: [ids], removed: [ids] }.
+ */
+export function syncInventoryFromServer(inventory, ids = []) {
+    const list = Array.isArray(inventory) ? inventory : [];
+    const wanted = [...new Set((Array.isArray(ids) ? ids : [ids]).filter(id => typeof id === 'string' && id))];
+    const result = { added: [], removed: [] };
+    deferTray(() => {
+        for (const id of wanted) {
+            const serverItem = list.find(it => it && typeof it === 'object' && it.id === id);
+            const trayItem = trayItemWithId(id);
+            if (serverItem && !trayItem) {
+                if (addServerItem(serverItem)) result.added.push(id);
+            } else if (!serverItem && trayItem) {
+                if (removeFromInventory(trayItem)) result.removed.push(id);
+            }
+        }
+    });
+    return result;
+}
+
 // Update phone badge with unread count
 export function updatePhoneBadge(phoneId) {
     if (!window.npcManager) return;
@@ -1229,3 +1319,5 @@ window.createItemIdentifier = createItemIdentifier;
 window.handleKeyRingInteraction = handleKeyRingInteraction;
 window.updatePhoneBadge = updatePhoneBadge; window.refreshInventoryTray = refreshInventoryTray;
 window.registerTrayRule = registerTrayRule;
+window.showServerItem = showServerItem;
+window.syncInventoryFromServer = syncInventoryFromServer;
