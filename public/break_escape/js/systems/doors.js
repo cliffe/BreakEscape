@@ -662,18 +662,65 @@ async function handleDoorInteraction(doorSprite) {
         // Both rooms' sprites of the doorway take the same click: answer once
         if (gateGroup && isRepeatInteraction(gateGroup)) return;
         // Clone-as-entry: a held credential satisfying the locked room's `requires`
-        // (physical keycard or a clone saved on the rfid cloner) opens the gate for
-        // one hold window — the taught alternative to tailgating.
+        // (physical keycard or a clone saved on the rfid cloner) opens the gate — the
+        // taught alternative to tailgating. It behaves exactly like an ordinary
+        // RFID-locked door: the unlock request goes to the server, the server validates
+        // the credential and unlocks the room, and the client loads the room — reusing
+        // the rfid door path (notifyServerUnlock, then the roomDataCache/loadRoom load
+        // that openDoor runs) so window.rooms[connectedRoom] actually exists before the
+        // player walks through. The gate behaviour then layers on top: playerOpen holds
+        // the door open for one window (door_gate_player_opened), then it shuts and
+        // relocks. A bare playerOpen (the old path) toggled the doorway walkable into a
+        // room that was never loaded and never told the server, so the player could not
+        // enter and verify-run showed no progress.
         const requires = props.requires || gateGroup?.requires || null;
-        const outcome = window.doorGates?.clickOutcome?.(gateGroup, {
-            holdsCredential: playerHoldsRfidCredentialFor(requires), connectedRoom: props.connectedRoom
-        }) || 'denied';
-        if (outcome === 'granted') {
-            window.gameAlert?.('Access granted: cloned staff badge accepted.', 'success', 'Door', 3000);
+        if (playerHoldsRfidCredentialFor(requires)) {
+            const connectedRoom = props.connectedRoom;
+            let serverResponse;
+            try {
+                serverResponse = await notifyServerUnlock(doorSprite, 'door', 'rfid');
+            } catch (error) {
+                console.error('Clone-as-entry server unlock failed:', error);
+            }
+            if (!serverResponse || !serverResponse.success) {
+                window.gameAlert?.('Access denied', 'error', 'Door', 3000);
+                return;
+            }
+            // Cache the room the server returned and load it if it is not loaded yet
+            // (the same step openDoor runs via unlockDoor), so the room exists before
+            // the gate opens.
+            const roomData = serverResponse.roomData;
+            if (roomData && window.roomDataCache) {
+                window.roomDataCache.set(connectedRoom, roomData);
+            }
+            if (!window.rooms || !window.rooms[connectedRoom]) {
+                if (window.loadRoom) {
+                    try {
+                        await window.loadRoom(connectedRoom);
+                    } catch (err) {
+                        console.error(`Failed to load room ${connectedRoom}:`, err);
+                    }
+                }
+            }
+            // Open the gate for the player and hold it; the gate shuts and relocks later.
+            if (window.doorGates?.playerOpen?.(connectedRoom)) {
+                try {
+                    if (window.game && window.game.sound) {
+                        const s = window.game.sound.get('rfid_unlock') || window.game.sound.add('rfid_unlock');
+                        s.play({ volume: 0.9 });
+                    }
+                } catch (e) {}
+                window.gameAlert?.('Access granted: cloned staff badge accepted.', 'success', 'Door', 3000);
+            }
             return;
         }
         // The gate is open and the player may pass (staff holding it, hi-vis on): the
-        // way is clear, so there is nothing to refuse (playtest E2)
+        // way is clear, so there is nothing to refuse (playtest E2). The credential
+        // case is answered above (it goes through the server), so clickOutcome is
+        // asked only for 'pass' or 'denied'.
+        const outcome = window.doorGates?.clickOutcome?.(gateGroup, {
+            holdsCredential: false, connectedRoom: props.connectedRoom
+        }) || 'denied';
         if (outcome === 'pass') return;
         // The hint lives on the locked room's side of the doorway; the group shares it
         const hintSource = { doorProperties: { lockedHint: props.lockedHint || gateGroup?.lockedHint || null } };

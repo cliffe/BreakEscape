@@ -709,18 +709,98 @@ function startPretextCall(callId, { npcId = null, channel, app = null } = {}) {
 // A judged contact inside a phone-chat list (a DM gatekeeper) reaches the pretext card from there
 if (typeof window !== 'undefined') window.startPretextCall = startPretextCall;
 
+// interactionWarning: an author-defined "are you sure?" that any scenario object may
+// carry. It is shown BEFORE the object's normal interaction.
+//
+//   "interactionWarning": {
+//     "text": "...",            // author text, rendered as plain text (never HTML)
+//     "proceedLabel": "...",    // confirm button caption (default "Proceed")
+//     "declineLabel": "...",    // cancel button caption (default "Cancel")
+//     "onProceed": [actions],   // run on Proceed, then the normal interaction runs
+//     "onDecline": [actions],   // run on Decline; the normal interaction is blocked
+//     "once": true|false        // default true
+//   }
+//
+// Flow: Decline runs onDecline and stops. Proceed runs onProceed, then the object's
+// normal interaction (e.g. opening the readable note).
+//
+// "Already answered" rule (persisted, survives reload): Proceed is ALWAYS permanent —
+// once the player proceeds the warning never shows again (so onProceed's add_capture /
+// set_global never double-fire, and the note just opens on later visits). A Decline is
+// recorded only when `once` is truthy (the default); with `once: false` a Decline is NOT
+// recorded, so the warning shows again next time the player interacts — a "you can still
+// change your mind" object. The flag is a global, `iw_<id>_answered`, kept with the rest
+// of globalVariables and restored on reload (the same mechanism as re-entry guards like
+// briefing_played); no state-sync closed-key set is involved.
+function interactionWarningKey(sprite) {
+    const d = sprite?.scenarioData || {};
+    const id = d.id || sprite?.objectId || d.name || 'object';
+    return 'iw_' + String(id).replace(/[^A-Za-z0-9_]/g, '_') + '_answered';
+}
+
+function interactionWarningAnswered(sprite) {
+    const g = window.gameState?.globalVariables;
+    return !!(g && g[interactionWarningKey(sprite)]);
+}
+
+function recordInteractionWarningAnswered(sprite) {
+    const key = interactionWarningKey(sprite);
+    if (!window.gameState) window.gameState = {};
+    if (!window.gameState.globalVariables) window.gameState.globalVariables = {};
+    window.gameState.globalVariables[key] = true;
+    // Let NPC ink see the change and push it to the server, as other one-shot guards do.
+    try { window.npcConversationStateManager?.broadcastGlobalVariableChange?.(key, true, null); } catch (e) { /* best effort */ }
+    try { window.stateSync?.sync?.(); } catch (e) { /* best effort */ }
+}
+
+// Returns true when the warning intercepted this interaction (the caller must then return
+// without running the object's normal interaction). Returns false to let it run.
+export function maybeInteractionWarning(sprite) {
+    const w = sprite?.scenarioData?.interactionWarning;
+    if (!w || typeof w !== 'object') return false;
+    // Already answered (persisted): the warning is spent — let the normal interaction run.
+    if (interactionWarningAnswered(sprite)) return false;
+    // Busy-guard (commit 1dd843566): never open over a chat or minigame the player is in.
+    // Drop the interaction rather than barge over the open minigame and steal its input.
+    if (window.MinigameFramework?.currentMinigame) return true;
+    if (!window.gameConfirm) return false; // no dialog available: don't block the object
+
+    const text = typeof w.text === 'string' ? w.text : '';
+    const proceedLabel = typeof w.proceedLabel === 'string' && w.proceedLabel ? w.proceedLabel : 'Proceed';
+    const declineLabel = typeof w.declineLabel === 'string' && w.declineLabel ? w.declineLabel : 'Cancel';
+    const once = w.once !== false; // default true
+
+    window.gameConfirm(text, proceedLabel, declineLabel, { plainText: true }).then(proceed => {
+        if (proceed) {
+            recordInteractionWarningAnswered(sprite); // Proceed is always permanent
+            if (Array.isArray(w.onProceed)) applyActions(w.onProceed, { source: 'interaction_warning' });
+            // Re-run the normal interaction; the gate is now skipped (answered).
+            handleObjectInteraction(sprite);
+        } else {
+            if (once) recordInteractionWarningAnswered(sprite); // Decline recorded only when once is truthy
+            if (Array.isArray(w.onDecline)) applyActions(w.onDecline, { source: 'interaction_warning' });
+        }
+    });
+    return true;
+}
+
 export function handleObjectInteraction(sprite) {
     console.log('OBJECT INTERACTION', {
-        name: sprite.name, 
+        name: sprite.name,
         id: sprite.objectId,
         scenarioData: sprite.scenarioData
     });
-    
+
     if (!sprite) {
         console.warn('Invalid sprite');
         return;
     }
-    
+
+    // interactionWarning gate: show the author's "are you sure?" before anything else,
+    // including the object_interacted event below. Returns true when it has taken over
+    // this interaction (warning shown, or dropped because the player is busy).
+    if (maybeInteractionWarning(sprite)) return;
+
     // Emit object interaction event (for NPCs to react)
     if (window.eventDispatcher && sprite.scenarioData) {
         window.eventDispatcher.emit('object_interacted', {
@@ -787,6 +867,14 @@ export function handleObjectInteraction(sprite) {
         console.warn('Invalid sprite or missing scenario data');
         return;
     }
+
+    // Action menu (action-menu.js): when an object offers more than one action right
+    // now (a world keycard the player could clone or take with a cloner in hand; an
+    // author-declared `actions` list), show the shared interaction-menu overlay listing
+    // the actions instead of acting. Busy-guarded; bypassed on re-entry from the menu's
+    // own "Take it" action (sprite._beActionMenuBypass). Loaded dynamically, so reached
+    // through window and inert until it is installed.
+    if (!sprite._beActionMenuBypass && window.maybeShowObjectActionMenu?.(sprite)) return;
 
     // A sign-in PC (access model 5.3 and 5.4): the owner at the desk blocks it; else its
     // desktop when pc-sessions.js holds a session for it; else the workstation answer, where

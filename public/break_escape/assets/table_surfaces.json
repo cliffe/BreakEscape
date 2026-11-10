@@ -1,0 +1,189 @@
+{
+ "version": 1,
+ "about": "Desk floor footprints for collision boxes (docs/achitechture/SEAT_BOX_PLAN.md section 2). Used only in maps with the Tiled map property deskBoxes = footprint. legacyBox: keep today's box on purpose (not desks). pending: surface-like textures awaiting a hand value (Q3); they keep today's box until then.",
+ "sprites": {
+  "aes_trestle1": {
+   "foot": 19,
+   "source": "measured"
+  },
+  "aes_trestle2": {
+   "foot": 18,
+   "source": "measured"
+  },
+  "desk1": {
+   "foot": 16,
+   "source": "experiment"
+  },
+  "desk2": {
+   "foot": 16,
+   "source": "measured"
+  },
+  "desk3": {
+   "foot": 16,
+   "source": "measured"
+  },
+  "display_table1": {
+   "foot": 16,
+   "source": "measured"
+  },
+  "exec_desk1": {
+   "foot": 18,
+   "source": "measured"
+  },
+  "hospital_conference_table": {
+   "foot": 30,
+   "x": [
+    1,
+    125
+   ],
+   "source": "measured"
+  },
+  "hospital_desk1": {
+   "foot": 18,
+   "floor": 47,
+   "x": [
+    1,
+    61
+   ],
+   "source": "measured"
+  },
+  "hospital_desk2": {
+   "foot": 18,
+   "floor": 47,
+   "x": [
+    1,
+    61
+   ],
+   "source": "measured"
+  },
+  "hq_interview_table1": {
+   "foot": 18,
+   "source": "measured"
+  },
+  "lecture_ledge1": {
+   "foot": 7,
+   "source": "measured"
+  },
+  "lecture_ledge2": {
+   "foot": 7,
+   "source": "measured"
+  },
+  "lw_credenza1": {
+   "foot": 8,
+   "source": "measured"
+  },
+  "m10_steel_bench1": {
+   "foot": 17,
+   "source": "measured"
+  },
+  "plan_chest2": {
+   "foot": 14,
+   "source": "measured"
+  },
+  "pnw_master_desk1": {
+   "foot": 16,
+   "source": "measured"
+  },
+  "reception_table1": {
+   "foot": 23,
+   "floor": 46,
+   "source": "measured"
+  },
+  "smalldesk1": {
+   "foot": 27,
+   "source": "experiment"
+  },
+  "smalldesk2": {
+   "foot": 27,
+   "source": "measured"
+  },
+  "zds_conference_table1": {
+   "foot": 30,
+   "x": [
+    1,
+    125
+   ],
+   "source": "measured"
+  },
+  "zds_desk1": {
+   "foot": 16,
+   "source": "experiment"
+  },
+  "zds_desk3": {
+   "foot": 16,
+   "source": "measured"
+  }
+ },
+ "legacyBox": [
+  "aes_bms_bypass1",
+  "aes_inverter1",
+  "aes_inverter2",
+  "aes_switchgear1",
+  "batrack",
+  "bed1",
+  "bed3",
+  "bed6",
+  "bookcase",
+  "cnc_mill2",
+  "component_drawers1",
+  "curtain-divider",
+  "dishwasher1",
+  "laser_cutter2",
+  "leather_sofa1",
+  "m09_hatch_counter1",
+  "m09_hatch_counter2",
+  "m10_kit_crate1",
+  "network_rack1",
+  "photocopier1",
+  "printer_3d2",
+  "qdc_espresso1",
+  "server_rack1",
+  "servers",
+  "servers3",
+  "undercounter_fridge1"
+ ],
+ "pending": [
+  "aes_console1",
+  "aes_security_desk1",
+  "aes_tool_trolley1",
+  "credenza1",
+  "desk-ceo1",
+  "desk-ceo2",
+  "display_case3",
+  "electronics_bench2",
+  "exec_desk_mahogany1",
+  "foosball_table2",
+  "freshers_stall2",
+  "glass_coffee_table1",
+  "hce_console_table1",
+  "hce_reception_desk1",
+  "hce_trading_station1",
+  "hq_console1",
+  "it_workbench1",
+  "it_workbench2",
+  "kitchen_counter_sink1",
+  "lectern1",
+  "lw_oval_table1",
+  "m09_box_trolley1",
+  "m10_console_controls1",
+  "m10_key_console1",
+  "m10_steel_stand1",
+  "marble_desk1",
+  "pnw_console1",
+  "pnw_console1_p2",
+  "pnw_console1_p4",
+  "pnw_console1_p6",
+  "pnw_console2",
+  "pnw_console2_p1",
+  "pnw_console2_p5",
+  "pnw_desk_return1",
+  "qdc_cctv_desk1",
+  "qdc_kitchenette1",
+  "qdc_kitchenette2",
+  "qdc_lab_desk1",
+  "qdc_optical_bench1",
+  "reception_counter1",
+  "sideboard1",
+  "study_carrels1"
+ ]
+}

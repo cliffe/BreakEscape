@@ -8,7 +8,8 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import {
     DEFAULT_ICONS, NPC_ICON_NAMES, pickIcon, pickIconEntry, stateIconEntry, pressingBubble, isPrinter,
-    firstIcon, NpcActionIcons, bubblePosition, bubbleDots, BUBBLE_GAP_X
+    firstIcon, NpcActionIcons, bubblePosition, bubbleDots, BUBBLE_GAP_X,
+    thoughtBubble, headCrop, PARKED_BADGE, PARKED_ALPHA, PARKED_TINT
 } from '../../public/break_escape/js/systems/npc-action-icons.js';
 import { NPCNeedsSystem, NEEDS_TICK_MS, NOTICED_MS } from '../../public/break_escape/js/systems/npc-needs.js';
 import { makeWorld } from './fixtures/needs-stub-world.mjs';
@@ -18,7 +19,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 // ── defaults and lookup ──────────────────────────────────────────────────
 
 test('defaults: every npc-* icon by name; fallback stays the text dot', () => {
-    assert.equal(NPC_ICON_NAMES.length, 14);
+    assert.equal(NPC_ICON_NAMES.length, 16);   // slice 14 added avoid and closed
     for (const n of NPC_ICON_NAMES) assert.equal(DEFAULT_ICONS[n], `icon:npc-${n}`, n);
     assert.equal(DEFAULT_ICONS.fallback, '•');
     assert.equal(pickIcon({ kind: 'use', need: 'hunger' }, {}, { id: 'fridge', satisfies: 'hunger' }), 'icon:npc-hunger');
@@ -214,7 +215,10 @@ function rig({ scenario, state }) {
             setData(k, v) { o.data[k] = v; return o; },
             clear() { o.calls = []; return o; }, fillStyle() { return o; }, lineStyle() { return o; },
             fillRoundedRect(...a) { o.calls.push(['rrect', ...a]); return o; }, strokeRoundedRect() { return o; },
-            fillCircle(...a) { o.calls.push(['dot', ...a]); return o; }, strokeCircle() { return o; } };
+            fillCircle(...a) { o.calls.push(['dot', ...a]); return o; }, strokeCircle() { return o; },
+            // slice 14: dimming, the face crop and the badge cross
+            setAlpha(a) { o.alpha = a; return o; }, setTint(t) { o.tint = t; return o; }, clearTint() { o.tint = null; return o; },
+            setCrop(...c) { o.crop = c; return o; }, lineBetween(...a) { o.calls.push(['line', ...a]); return o; } };
         objs.push(o);
         return o;
     };
@@ -223,11 +227,22 @@ function rig({ scenario, state }) {
             rectangle: () => mk('bg'), text: () => mk('text'), image: () => mk('img'), graphics: () => mk('g'),
             container: (x, y, kids) => { const c = mk('box'); c.kids = kids; c.scene = scene; return c; }
         },
-        textures: { exists: () => true },
+        textures: {
+            exists: () => true,
+            // slice 14: a 10x30 frame whose opaque part is a 6-wide head (rows 2-10), a 4-wide neck
+            // (rows 11-12) and 10-wide shoulders below
+            get: () => ({ has: () => true, get: () => ({ realWidth: 10, realHeight: 30 }) }),
+            getPixelAlpha: (x, y) => {
+                if (y < 2) return 0;
+                if (y <= 10) return x >= 2 && x <= 7 ? 255 : 0;
+                if (y <= 12) return x >= 3 && x <= 6 ? 255 : 0;
+                return 255;
+            }
+        },
         load: { image() {}, once() {}, isLoading: () => true, start() {} }
     };
     const sprite = { x: 200, y: 163, scaleY: 1, active: true, visible: true, destroyed: false, scene,
-        texture: { key: 'none' }, frame: null, getTopCenter() { return { x: this.x, y: this.y - 40 }; } };
+        texture: { key: 'walk_atlas' }, frame: { name: 'f0' }, getTopCenter() { return { x: this.x, y: this.y - 40 }; } };
     globalThis.window = {
         gameScenario: scenario, currentPlayerRoom: 'office', rooms: {},
         npcNeedsSystem: { states: new Map([['tom', {}]]), getState: () => state },
@@ -275,6 +290,67 @@ test('update: the bubble hands over to the action icon when a job for that need 
         icons.update();
         assert.equal(icons.bubbles.get('tom').box.visible, false);
         assert.equal(icons.icons.get('tom').box.data.key, 'thirst');
+    } finally { delete globalThis.window; }
+});
+
+// ── slice 14: avoidance and parked bubbles (OFFICE_LIFE_PLAN 10.3) ─────────
+
+test('thoughtBubble: avoidance first, then the pressing need, then a parked need; nothing with the opt-in off', () => {
+    const parked = [{ need: 'caffeine', reason: 'no_source', remainingMs: 1000 }];
+    assert.equal(thoughtBubble({ avoiding: 'marek', parked }, {}, false), null);
+    assert.deepEqual(thoughtBubble({ avoiding: 'marek', pressing: { need: 'thirst', ratio: 0.3 }, parked }, {}, true), { kind: 'avoid', npcId: 'marek' });
+    assert.equal(thoughtBubble({ avoiding: null, pressing: { need: 'thirst', ratio: 0.3 }, parked }, {}, true).kind, 'pressing');
+    const b = thoughtBubble({ avoiding: null, pressing: null, parked }, {}, true);
+    assert.deepEqual([b.kind, b.need, b.badge, b.value], ['parked', 'caffeine', 'closed', 'icon:npc-caffeine']);
+    assert.equal(thoughtBubble({ parked: [{ need: 'caffeine', reason: 'queue' }] }, {}, true).badge, 'queue');
+    assert.equal(thoughtBubble({ parked: [{ need: 'caffeine', reason: 'avoid' }] }, {}, true).badge, 'avoid');
+    assert.deepEqual(PARKED_BADGE, { no_source: 'closed', queue: 'queue', avoid: 'avoid' });
+});
+
+test('headCrop: from the top opaque row to the neck, before the shoulders widen', () => {
+    // male_telecom_v2's south idle frame, opaque widths per row from its top (measured 2026-11-06)
+    const widths = [6, 8, 10, 12, 12, 12, 12, 12, 14, 14, 14, 12, 12, 10, 10, 12, 16, 18, 20, 20, 22, 22];
+    const rows = [null, null, ...widths.map(w => [40 - Math.floor(w / 2), 40 - Math.floor(w / 2) + w - 1])];
+    const c = headCrop(rows);
+    assert.deepEqual([c.y, c.h], [2, 15], 'rows 0-14 of the figure: the head to the chin');
+    assert.equal(c.w, 14);
+    assert.equal(headCrop([null, null]), null);
+});
+
+test('update: the avoidance bubble shows the face crop (native size) and the storm cloud; a parked need is greyed with its badge', () => {
+    const state = { job: null, avoiding: 'marek', parked: [{ need: 'caffeine', reason: 'queue' }] };
+    try {
+        rig({ scenario: { showPressingNeeds: true }, state });
+        const icons = new NpcActionIcons();
+        icons.update();
+        const bb = icons.bubbles.get('tom');
+        assert.equal(bb.box.data.kind, 'avoid');
+        assert.equal(bb.box.data.avoiding, 'marek');
+        assert.equal(bb.face.visible, true);
+        assert.equal(bb.face.key, 'walk_atlas');
+        assert.deepEqual(bb.face.crop, [2, 2, 6, 11], 'head rows 2-12 (to the neck), columns 2-7');
+        assert.equal(bb.face.scale, 1, 'never scaled');
+        assert.equal(bb.img.key, 'icon:npc-avoid');
+        state.avoiding = null;
+        icons.update();
+        assert.equal(bb.box.data.kind, 'parked');
+        assert.equal(bb.box.data.badge, 'queue');
+        assert.equal(bb.face.visible, false);
+        assert.equal(bb.img.key, 'icon:npc-caffeine');
+        assert.equal(bb.img.alpha, PARKED_ALPHA);
+        assert.equal(bb.img.tint, PARKED_TINT);
+        assert.equal(bb.badge.key, 'icon:npc-queue');
+        assert.equal(bb.cross.calls.filter(c => c[0] === 'line').length, 2, 'a red cross over the queue badge');
+        state.parked = [{ need: 'caffeine', reason: 'no_source' }];
+        icons.update();
+        assert.equal(bb.badge.key, 'icon:npc-closed');
+        assert.equal(bb.cross.visible, false);
+        state.parked = [];
+        state.pressing = { need: 'thirst', ratio: 0.3 };
+        icons.update();
+        assert.equal(bb.box.data.kind, 'pressing');
+        assert.equal(bb.img.alpha, 1, 'undimmed again');
+        assert.equal(bb.badge.visible, false);
     } finally { delete globalThis.window; }
 });
 

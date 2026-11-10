@@ -79,6 +79,9 @@ import { NPCPathfindingManager } from '../systems/npc-pathfinding.js';
 import NPCSpriteManager from '../systems/npc-sprites.js';
 import { resolveObjectField } from '../utils/conditional-text.js';
 import { drinkableCupName, isObjectConsumed } from '../systems/consumables.js';
+import { deskBoxModeFor, tableBodyBox } from '../systems/desk-footprints.js';
+import { blockFor, bodyOfBlock } from '../systems/seat-box.js';
+import { chooseAmbient } from '../systems/ambient-choice.js';
 
 // True when the saved inventory (restored on reload) holds this room-map item
 function heldInSavedInventory(id) {
@@ -719,6 +722,145 @@ function registerSpriteVariantListeners(sprite, scenarioObj, roomId) {
             }
         });
     }
+}
+
+/**
+ * Put a scenario object into a table group: the group's item list, the room's objects, and
+ * its spriteVariants listeners. Ungrouped scenario objects get their listeners where they are
+ * stored (setDepthAndStore callers); grouped ones used to be pushed straight into the group and
+ * never got them, so a grouped object kept its first texture until a reload (m02's ward
+ * terminal). Depth is still set by the caller and the final group pass; a swap changes only the
+ * texture, not the depth or the group order.
+ */
+function addScenarioItemToTableGroup(group, sprite, type, scenarioObj, roomId) {
+    sprite.elevation = 0;
+    group.items.push({ sprite, type });
+    rooms[roomId].objects[sprite.objectId] = sprite;
+    registerSpriteVariantListeners(sprite, scenarioObj, roomId);
+}
+
+/** How far above a table's top edge an item's bottom may sit and still count as on its back edge. */
+const TABLE_BACK_EDGE_PX = 4;
+
+/**
+ * The table an item belongs with. Among tables whose sprite rectangle overlaps the item's, the
+ * southmost; with none, a table whose top edge is under the item's bottom (within
+ * TABLE_BACK_EDGE_PX). Otherwise null when overlapOnly is set, or the nearest table by centre
+ * distance (the old fallback).
+ */
+function findClosestTable(itemSprite, tableObjects, { overlapOnly = false } = {}) {
+    const itemLeft   = itemSprite.x;
+    const itemRight  = itemSprite.x + itemSprite.width;
+    const itemTop    = itemSprite.y;
+    const itemBottom = itemSprite.y + itemSprite.height;
+
+    const overlappingTables = tableObjects.filter(table => {
+        const tableLeft   = table.sprite.x;
+        const tableRight  = table.sprite.x + table.sprite.width;
+        const tableTop    = table.sprite.y;
+        const tableBottom = table.sprite.y + table.sprite.height;
+
+        return itemLeft < tableRight && itemRight > tableLeft &&
+               itemTop  < tableBottom && itemBottom > tableTop;
+    });
+
+    if (overlappingTables.length > 0) {
+        let southmostTable = overlappingTables[0];
+        for (const table of overlappingTables) {
+            if (table.sprite.y > southmostTable.sprite.y) {
+                southmostTable = table;
+            }
+        }
+        console.log(`Found overlapping table for item ${itemSprite.name} (${overlappingTables.length} overlap(s), using southmost)`);
+        return southmostTable;
+    }
+
+    // Resting on a back edge: an item whose bottom is on, or up to TABLE_BACK_EDGE_PX above, a
+    // table's top edge, across its width, sits on that table's back edge (room_lw_records'
+    // laptops and plants). It counts as on that table, the nearest such edge first, so a swivel
+    // chair behind the desk doesn't draw over it.
+    let backEdgeTable = null, backEdgeGap = Infinity;
+    for (const table of tableObjects) {
+        const tableLeft  = table.sprite.x;
+        const tableRight = table.sprite.x + table.sprite.width;
+        const gap = table.sprite.y - itemBottom;
+        if (itemLeft < tableRight && itemRight > tableLeft && gap >= 0 && gap <= TABLE_BACK_EDGE_PX && gap < backEdgeGap) {
+            backEdgeTable = table;
+            backEdgeGap = gap;
+        }
+    }
+    if (backEdgeTable) {
+        console.log(`Found table under the back of item ${itemSprite.name} (gap ${backEdgeGap} px)`);
+        return backEdgeTable;
+    }
+
+    if (overlapOnly) return null;
+
+    let closestTable = null;
+    let closestDistance = Infinity;
+    tableObjects.forEach(table => {
+        const itemCenterX  = itemSprite.x + itemSprite.width  / 2;
+        const itemCenterY  = itemSprite.y + itemSprite.height / 2;
+        const tableCenterX = table.sprite.x + table.sprite.width  / 2;
+        const tableCenterY = table.sprite.y + table.sprite.height / 2;
+        const distance = Math.sqrt(
+            Math.pow(itemCenterX - tableCenterX, 2) +
+            Math.pow(itemCenterY - tableCenterY, 2)
+        );
+        if (distance < closestDistance) {
+            closestDistance = distance;
+            closestTable = table;
+        }
+    });
+
+    console.log(`Found closest table for item ${itemSprite.name} at distance ${closestDistance}`);
+    return closestTable;
+}
+
+/** The table group of the table an item overlaps, or null (seat box slice 3: overlap only). */
+function overlappingTableGroup(sprite, tableObjects, tableGroups) {
+    if (!tableObjects || tableObjects.length === 0) return null;
+    const table = findClosestTable(sprite, tableObjects, { overlapOnly: true });
+    return table ? (tableGroups.find(g => g.table === table) || null) : null;
+}
+
+/**
+ * A scenario object that took a Tiled placeholder. A match from table_items or
+ * conditional_table_items joins a table group only if its final sprite rectangle (after any
+ * explicit position) overlaps a table; otherwise it is stored at its own depth like any
+ * ungrouped object, with a warning naming it (seat box slice 3; the lab's cable_note, moved off
+ * the desks, used to join the nearest desk's group and draw with it). Returns the group or null.
+ */
+function placeMatchedScenarioItem({ sprite, isTableItem, sourceLayer, placeholder, scenarioObj,
+                                    tableObjects, tableGroups, position, roomId }) {
+    const group = isTableItem ? overlappingTableGroup(sprite, tableObjects, tableGroups) : null;
+    if (group) {
+        sprite.setDepth(group.baseDepth + (group.items.length + 1) * 0.01);
+        addScenarioItemToTableGroup(group, sprite, sourceLayer, scenarioObj, roomId);
+        return group;
+    }
+    if (isTableItem) {
+        console.warn(`[table group] ${scenarioObj.id || scenarioObj.type} took the ${sourceLayer} placeholder ${placeholder} but overlaps no table: stored at its own depth`);
+    }
+    setDepthAndStore(sprite, position, roomId, false, scenarioObj);
+    registerSpriteVariantListeners(sprite, scenarioObj, roomId);
+    return null;
+}
+
+/**
+ * An unreserved Tiled table_items object (processObject has already given it its own depth).
+ * It joins the table it overlaps; with no overlap it is stored as an ordinary item at that depth
+ * (seat box slice 3, plan Q4; it used to join the nearest table's group). Returns the group or null.
+ */
+function placeUnreservedTableItem(result, tableObjects, tableGroups, roomId) {
+    const group = overlappingTableGroup(result.sprite, tableObjects, tableGroups);
+    if (group) {
+        group.items.push(result);
+        return group;
+    }
+    rooms[roomId].objects[result.sprite.objectId] = result.sprite;
+    console.log(`[table group] unreserved table item ${result.sprite.name} overlaps no table: stored at its own depth`);
+    return null;
 }
 
 // ===== END: ITEM POOL MANAGEMENT (PHASE 2 IMPROVEMENTS) =====
@@ -1752,6 +1894,18 @@ export function calculateRoomPositions(gameInstance) {
     return positions;
 }
 
+// The collision box of a table (Tiled `tables` layer or a scenario-made table). `mode` is the
+// room's deskBoxes: 'footprint' uses the desk's floor footprint from table_surfaces.json when
+// the texture has an entry; anything else keeps today's box (bottom quarter, inset 10 px).
+// Call on a static body inside the delayedCall(0) that follows physics.add.existing.
+export function applyTableBody(sprite, mode) {
+    const data = gameRef?.cache?.json?.get?.('tableSurfaces');
+    const box = tableBodyBox(sprite, mode, data);
+    sprite.body.setSize(box.w, box.h);
+    sprite.body.setOffset(box.x, box.y);
+    return box;
+}
+
 export function createRoom(roomId, roomData, position) {
     try {
         // Check if room already exists - prevent recreating
@@ -1819,6 +1973,10 @@ export function createRoom(roomId, roomData, position) {
         // Initialize room data structure first
         rooms[roomId] = {
             map,
+            // Desk collision boxes: 'footprint' only when the map opts in with the Tiled map
+            // property deskBoxes = footprint (SEAT_BOX_PLAN.md slice 2); window.__deskBoxes
+            // overrides it for the walk audit. Read by applyTableBody.
+            deskBoxes: deskBoxModeFor(map, typeof window !== 'undefined' ? window.__deskBoxes : undefined),
             layers: {},
             wallsLayers: [],
             objects: {},
@@ -2126,15 +2284,8 @@ export function createRoom(roomId, roomData, position) {
                         gameRef.time.delayedCall(0, () => {
                             if (tableSprite.body) {
                                 tableSprite.body.immovable = true;
-                                const tw = tableSprite.width;
-                                const th = tableSprite.height;
-                                const collisionWidth  = tw - 20;          // 10 px inset on each side
-                                const collisionHeight = th / 4;           // bottom quarter
-                                const offsetX = 10;
-                                const offsetY = th - collisionHeight;     // position at bottom quarter
-                                tableSprite.body.setSize(collisionWidth, collisionHeight);
-                                tableSprite.body.setOffset(offsetX, offsetY);
-                                console.log(`Set dynamic table "${textureKey}" collision box: ${collisionWidth}x${collisionHeight} at offset (${offsetX}, ${offsetY})`);
+                                const box = applyTableBody(tableSprite, rooms[roomId]?.deskBoxes);
+                                console.log(`Set dynamic table "${textureKey}" collision box (${box.kind}): ${box.w}x${box.h} at offset (${box.x}, ${box.y})`);
                                 const player = window.player;
                                 if (player && player.body) {
                                     gameRef.physics.add.collider(player, tableSprite);
@@ -2221,9 +2372,7 @@ export function createRoom(roomId, roomData, position) {
                             // else: fromTableLayer && no explicit coords → keep Tiled position
 
                             // Depth will be recalculated by the final tableGroups pass
-                            sprite.elevation = 0;
-                            group.items.push({ sprite, type: 'scenario_table_item' });
-                            rooms[roomId].objects[sprite.objectId] = sprite;
+                            addScenarioItemToTableGroup(group, sprite, 'scenario_table_item', tableItemObj, roomId);
                         }
                     });
 
@@ -2296,29 +2445,10 @@ export function createRoom(roomId, roomData, position) {
                     if (scenarioObj.position?.x !== undefined) sprite.x = Math.round(position.x + scenarioObj.position.x * TILE_SIZE);
                     if (scenarioObj.position?.y !== undefined) sprite.y = Math.round(position.y + scenarioObj.position.y * TILE_SIZE);
 
-                    // If it's a table item, find the closest table and group it
-                    if (isTableItem && tableObjects.length > 0) {
-                        const closestTable = findClosestTable(sprite, tableObjects);
-                        if (closestTable) {
-                            const group = tableGroups.find(g => g.table === closestTable);
-                            if (group) {
-                                // Table items don't need elevation - they're grouped with the table
-                                const itemDepth = group.baseDepth + (group.items.length + 1) * 0.01;
-                                sprite.setDepth(itemDepth);
-                                
-                                // No elevation for table items
-                                sprite.elevation = 0;
-                                group.items.push({ sprite, type: sourceLayer });
-                                
-                                // Store table items in objects collection so interaction system can find them
-                                rooms[roomId].objects[sprite.objectId] = sprite;
-                            }
-                        }
-                    } else {
-                        // Set depth and store for non-table items
-                        setDepthAndStore(sprite, position, roomId, false, scenarioObj);
-                        registerSpriteVariantListeners(sprite, scenarioObj, roomId);
-                    }
+                    // A table-layer match joins the table it overlaps; anything else (or a
+                    // table-layer match moved off every table) is stored at its own depth
+                    placeMatchedScenarioItem({ sprite, isTableItem, sourceLayer, placeholder: imageName,
+                        scenarioObj, tableObjects, tableGroups, position, roomId });
 
                 } else {
                     // No matching item found, create at random position (existing fallback behavior)
@@ -2388,20 +2518,9 @@ export function createRoom(roomId, roomData, position) {
                 // Use processObject to create sprite with all properties
                 const result = processObject(tiledItem, position, roomId, 'table_item', map);
                 if (result && result.sprite) {
-                    // Find the closest table to group this item with
-                    if (tableObjects.length > 0) {
-                        const closestTable = findClosestTable(result.sprite, tableObjects);
-                        if (closestTable) {
-                            const group = tableGroups.find(g => g.table === closestTable);
-                            if (group) {
-                                group.items.push(result);
-                                console.log(`Added unreserved table item ${imageName} to table group`);
-                            }
-                        }
-                    } else {
-                        // No tables, just store it as a regular item
-                        rooms[roomId].objects[result.sprite.objectId] = result.sprite;
-                        console.log(`Added unreserved table item ${imageName} to room objects (no tables to group with)`);
+                    // Joins the table it overlaps; otherwise stored at processObject's depth
+                    if (placeUnreservedTableItem(result, tableObjects, tableGroups, roomId)) {
+                        console.log(`Added unreserved table item ${imageName} to table group`);
                     }
                 }
             });
@@ -2423,6 +2542,9 @@ export function createRoom(roomId, roomData, position) {
                     console.log(`Final depth: table item ${item.sprite.name} to depth ${itemDepth} (position ${index + 1} of ${group.items.length})`);
                 });
                 
+                // The behind-wall fade (systems/behind-wall-fade.js) fades a table's items with it
+                group.table.sprite._tableItems = new Set(group.items.map(item => item.sprite));
+
                 // Store all group items in room objects
                 group.items.forEach(item => {
                     rooms[roomId].objects[item.sprite.objectId] = item.sprite;
@@ -2557,6 +2679,10 @@ export function createRoom(roomId, roomData, position) {
                                 sprite.y += staticSwivel.offsetY || 0;
                                 sprite.swivelBody = staticSwivel.body || null;
                             }
+                            // A seat family's measured block is its body (SEAT_BOX_PLAN.md Q0,
+                            // section 5): the exec chairs' 18 x 8 on the castor base; white
+                            // chairs' block equals the generic box below.
+                            if (!staticSwivel) sprite.swivelBody = bodyOfBlock(blockFor(sprite));
                         }
 
                         // Calculate elevation for chairs (same as other objects)
@@ -2636,18 +2762,11 @@ export function createRoom(roomId, roomData, position) {
                                 // Use direct property assignment (fallback method)
                                 sprite.body.immovable = true;
                                 
-                                // Set custom collision box - bottom quarter of height, inset 10px from sides
-                                const tableWidth = sprite.width;
-                                const tableHeight = sprite.height;
-                                const collisionWidth = tableWidth - 20; // 10px inset on each side
-                                const collisionHeight = tableHeight / 4; // Bottom quarter
-                                const offsetX = 10; // 10px inset from left
-                                const offsetY = tableHeight - collisionHeight; // Bottom quarter
-                                
-                                sprite.body.setSize(collisionWidth, collisionHeight);
-                                sprite.body.setOffset(offsetX, offsetY);
-                                
-                                console.log(`Set table ${imageName} collision box: ${collisionWidth}x${collisionHeight} at offset (${offsetX}, ${offsetY})`);
+                                // Collision box: today's bottom quarter inset 10 px, or the desk's
+                                // floor footprint when the map has opted in (applyTableBody)
+                                const box = applyTableBody(sprite, rooms[roomId]?.deskBoxes);
+
+                                console.log(`Set table ${imageName} collision box (${box.kind}): ${box.w}x${box.h} at offset (${box.x}, ${box.y})`);
                                 
                                 // Add collision with player
                                 const player = window.player;
@@ -2807,61 +2926,6 @@ export function createRoom(roomId, roomData, position) {
             return null;
         }
         
-        // Helper function to find the closest table to an item
-        function findClosestTable(itemSprite, tableObjects) {
-            const itemLeft   = itemSprite.x;
-            const itemRight  = itemSprite.x + itemSprite.width;
-            const itemTop    = itemSprite.y;
-            const itemBottom = itemSprite.y + itemSprite.height;
-
-            // Collect all tables whose bounding box overlaps the item
-            const overlappingTables = tableObjects.filter(table => {
-                const tableLeft   = table.sprite.x;
-                const tableRight  = table.sprite.x + table.sprite.width;
-                const tableTop    = table.sprite.y;
-                const tableBottom = table.sprite.y + table.sprite.height;
-
-                return itemLeft < tableRight && itemRight > tableLeft &&
-                       itemTop  < tableBottom && itemBottom > tableTop;
-            });
-
-            if (overlappingTables.length > 0) {
-                // Among overlapping tables pick the southmost (highest Y value)
-                let southmostTable = overlappingTables[0];
-                for (const table of overlappingTables) {
-                    if (table.sprite.y > southmostTable.sprite.y) {
-                        southmostTable = table;
-                    }
-                }
-                console.log(`Found overlapping table for item ${itemSprite.name} (${overlappingTables.length} overlap(s), using southmost)`);
-                return southmostTable;
-            }
-
-            // Fallback: no overlap — return the closest table by center distance
-            let closestTable = null;
-            let closestDistance = Infinity;
-
-            tableObjects.forEach(table => {
-                const itemCenterX  = itemSprite.x + itemSprite.width  / 2;
-                const itemCenterY  = itemSprite.y + itemSprite.height / 2;
-                const tableCenterX = table.sprite.x + table.sprite.width  / 2;
-                const tableCenterY = table.sprite.y + table.sprite.height / 2;
-
-                const distance = Math.sqrt(
-                    Math.pow(itemCenterX - tableCenterX, 2) +
-                    Math.pow(itemCenterY - tableCenterY, 2)
-                );
-
-                if (distance < closestDistance) {
-                    closestDistance = distance;
-                    closestTable = table;
-                }
-            });
-
-            console.log(`Found closest table for item ${itemSprite.name} at distance ${closestDistance}`);
-            return closestTable;
-        }
-
         // Declared here (not after the Object Layer 1 block) so collision rectangles can use it
         const room = rooms[roomId];
 
@@ -3159,46 +3223,48 @@ function ensureAmbientListenersRegistered() {
     });
 }
 
+// The choice of key and level is the pure systems/ambient-choice.js (slice 20). Without
+// roomTone it gives exactly the old rooms-order loop; with it, the four-step bed order.
 function recalculateAmbientVolume(playerRoom) {
     const sm = window.soundManager;
     if (!sm || !window.gameScenario?.rooms) return;
+    const roomTone = window.gameScenario.roomTone === true;
 
-    for (const [roomId, roomData] of Object.entries(window.gameScenario.rooms)) {
-        const ambientSound = roomData.ambientSound;
-        if (!ambientSound) continue;
-
-        if (playerRoom === roomId) {
-            sm.fadeAmbientTo(ambientSound, roomData.ambientVolume ?? 1.0);
-            return;
-        }
-
-        // Check if playerRoom is directly adjacent via any door
-        let isAdjacent = false;
-        let isDoorOpen = false;
+    // Is roomId directly adjacent to the player's room via any door, and is one open?
+    const link = (roomId) => {
+        let adjacent = false, open = false;
         for (const room of Object.values(rooms)) {
             if (!room.doorSprites) continue;
             for (const door of room.doorSprites) {
                 const props = door.doorProperties;
                 if (!props) continue;
-                const connects =
-                    (props.roomId === playerRoom && props.connectedRoom === roomId) ||
-                    (props.roomId === roomId && props.connectedRoom === playerRoom);
-                if (connects) {
-                    isAdjacent = true;
-                    if (props.open) isDoorOpen = true;
+                if ((props.roomId === playerRoom && props.connectedRoom === roomId) ||
+                    (props.roomId === roomId && props.connectedRoom === playerRoom)) {
+                    adjacent = true;
+                    if (props.open) open = true;
                 }
             }
         }
-
-        if (isAdjacent) {
-            sm.fadeAmbientTo(ambientSound, isDoorOpen ? 0.125 : 0.01);
-            return;
-        }
-    }
-
-    // Not in or adjacent to any ambient room — stop
-    if (sm.currentAmbient) sm.fadeAmbientTo(sm.currentAmbient, 0);
+        return { adjacent, open };
+    };
+    const choice = chooseAmbient({
+        rooms: Object.entries(window.gameScenario.rooms), playerRoom, link, roomTone,
+        profileFor: (id) => window.officeRoomTone?.profileFor?.(id) || null,
+        isLoaded: (key) => !!sm.sounds?.[key]
+    });
+    if (roomTone) window.ambientChoice = { room: playerRoom, ...choice };
+    if (choice.keep) return; // a north or south doorway: the bed carries on
+    const opts = roomTone ? { crossfade: true } : undefined;
+    if (choice.key) { sm.fadeAmbientTo(choice.key, choice.level, 400, opts); return; }
+    // Not in or adjacent to any ambient room (or no bed) — fade out
+    if (sm.currentAmbient) sm.fadeAmbientTo(sm.currentAmbient, 0, 400, opts);
 }
+
+/** Recalculate the ambient loop for the player's current room (room tone at spawn, slice 20). */
+export function refreshAmbient() {
+    recalculateAmbientVolume(currentPlayerRoom || null);
+}
+if (typeof window !== 'undefined') window.refreshAmbient = refreshAmbient;
 
 
 // Door collisions are now handled by sprite-based system

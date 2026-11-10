@@ -14,3 +14,13 @@ Oh, hi. Sorry, I'm in the middle of something.
     # speaker:npc
     Thanks.
     -> hub
+
+// Slice 15 (OFFICE_LIFE_PLAN 11.4): a scripted exchange, played once by the needs system when
+// Sanjay and Rosa chat and the player is in earshot. Never reached from the player's conversation.
+=== exchange_rosa_rota ===
+Sanjay: Have you seen the new kitchen rota?
+Rosa: I wrote it. Is something wrong with it?
+Sanjay: I'm on fridge duty two weeks running.
+Rosa: Ah. Swap with Tom, he owes you one.
+Sanjay: Fair enough. I'll ask him.
+-> DONE

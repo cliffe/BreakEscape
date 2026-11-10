@@ -3,7 +3,8 @@
 // never teleports, backs off on an unreachable leg instead of skipping a room, never
 // heads into an unloaded room, runs a waypoint's unlockRoom action (unlock + load,
 // wait, then on), retries a failed action after 5 s, and defaults pauseForPlayer
-// to false. Locked route rooms are not pre-loaded.
+// to false. Locked route rooms are not pre-loaded. A guard held at a shut gate
+// turns back (turnBackFromGate) to his own room's loop and retries next cycle.
 // Run with: node test/js/npc-route-multiroom.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -407,4 +408,60 @@ test('useObject together with unlockRoom on an already loaded room: faces, no un
     assert.deepEqual(loads, []);
     assert.equal(b._routeWait, null);
     assert.equal(b._pendingRouteAction, null);
+});
+
+test('turnBackFromGate: a guard held at a shut gate resumes his own room\'s loop, then retries the crossing next cycle', async () => {
+    const GATE = { roomId: 'a', connectedRoom: 'b', direction: 'north', x: 112, y: 320 };
+    let failB = true;
+    const { b, requests } = setup({ bLoaded: true, bLocked: false, pathOk: (x, y) => !(failB && y < 320) });
+    b.config = await silently(() => b.parseConfig({ patrol: { enabled: true, multiRoom: true, route: ROUTE } }));
+    let faced = 0;
+    b.facePlayer = () => { faced++; };
+    window.player = { x: 120, y: 360 };
+    const arrive = () => { b._pendingRouteAction = b.patrolTarget?.routeAction || null; b.currentPath = []; };
+    assert.equal(b.wantsToCrossGate(GATE), false, 'in his own room\'s segment: not crossing');
+    await silently(() => b.chooseNewPatrolTarget(0)); arrive();      // a wp0
+    await silently(() => b.chooseNewPatrolTarget(0)); arrive();      // a wp1 (action: b loaded, a pause)
+    assert.equal(b.wantsToCrossGate(GATE), false, 'at the door, dwelling/acting: not yet');
+    await silently(() => b.chooseNewPatrolTarget(0));                // action
+    await silently(() => b.chooseNewPatrolTarget(0));                // transition to b: the leg fails (gate shut)
+    assert.equal(b.config.patrol.currentSegmentIndex, 1);
+    assert.equal(b.patrolTarget, null);
+    assert.equal(b.wantsToCrossGate(GATE), true);
+    assert.equal(b.wantsToCrossGate({ roomId: 'x', connectedRoom: 'b' }), false, 'another gate');
+    // Before the fix he retried this leg every 2 s for ever; now he turns back
+    assert.equal(await silently(() => b.turnBackFromGate(GATE)), true);
+    assert.equal(b.config.patrol.currentSegmentIndex, 0);
+    assert.equal(b.config.patrol.waypointIndex, 0);
+    assert.equal(faced, 1, 'glances at the player');
+    assert.ok(b._pathRetryAfter > 0, 'a beat before he walks off');
+    assert.equal(b.wantsToCrossGate(GATE), false);
+    assert.equal(await silently(() => b.turnBackFromGate(GATE)), false, 'only once');
+    const n = requests.length;
+    await silently(() => b.chooseNewPatrolTarget(0)); arrive();      // resumes: a wp0
+    assert.deepEqual(requests[n], { x: 64, y: 384 });
+    await silently(() => b.chooseNewPatrolTarget(0)); arrive();      // a wp1
+    await silently(() => b.chooseNewPatrolTarget(0));                // action
+    failB = false;                                                   // the player has gone: gate opens
+    await silently(() => b.chooseNewPatrolTarget(0));                // next cycle: crosses into b
+    assert.equal(b.config.patrol.currentSegmentIndex, 1);
+    assert.deepEqual(requests.at(-1), { x: 128, y: 192 });
+    assert.ok(b.currentPath.length > 0, 'walking into b');
+});
+
+test('turnBackFromGate from the far side: a guard in b held on his way back resumes b\'s loop', async () => {
+    const GATE = { roomId: 'a', connectedRoom: 'b' };
+    const { b } = setup({ bLoaded: true, bLocked: false });
+    b.config = await silently(() => b.parseConfig({ patrol: { enabled: true, multiRoom: true, route: ROUTE } }));
+    b.facePlayer = () => {};
+    b.roomId = 'b';
+    b.config.patrol.currentSegmentIndex = 0;                         // heading back to a
+    b.config.patrol.waypointIndex = 0;
+    assert.equal(b.wantsToCrossGate(GATE), true);
+    assert.equal(await silently(() => b.turnBackFromGate(GATE)), true);
+    assert.equal(b.config.patrol.currentSegmentIndex, 1);
+    assert.equal(b.config.patrol.waypointIndex, 0);
+    b.config.patrol.enabled = false;
+    b.config.patrol.currentSegmentIndex = 0;
+    assert.equal(b.wantsToCrossGate(GATE), false, 'patrol off: never');
 });

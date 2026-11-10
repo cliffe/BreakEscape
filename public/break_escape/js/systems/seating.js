@@ -28,6 +28,8 @@
  * standing, the feet (the body collider's centre) go on the seat point.
  */
 
+import { walkBoxClear, pathClear, chairRect, localStandGrid, nearestCell, floodStandCells, sweepBlock } from './seat-box.js';
+
 export const COMPASS = ['south', 'south-east', 'east', 'north-east', 'north', 'north-west', 'west', 'south-west'];
 const REAR = new Set(['north', 'north-east', 'north-west']);
 
@@ -212,8 +214,9 @@ const STATIC_SEATS = {
     aw_studio_chair_n1: { facing: 'north', seat: [16, 10] },
     m10_steel_chair1: { facing: 'south', seat: [8, 13] },
     // side-view sling chairs in receptions: left-1 faces west, right-1 east
-    'chair-waiting-left-1': { facing: 'west', seat: [24, 23] },
-    'chair-waiting-right-1': { facing: 'east', seat: [10, 23] },
+    // seat 19 rows down (was 23: the sitter's feet went through the floor; SEATED_SCALE_AUDIT.md)
+    'chair-waiting-left-1': { facing: 'west', seat: [24, 19] },
+    'chair-waiting-right-1': { facing: 'east', seat: [10, 19] },
     aw_studio_chair_s1: { facing: 'south', seat: [16, 11] },
     // armchairs
     sofa1: { facing: 'south', seat: [26, 41] },
@@ -421,6 +424,15 @@ function moveFeetTo(sprite, x, y) {
 }
 const moveDriverFeetTo = moveFeetTo;
 
+/**
+ * Collision box the driver takes on a swivel chair, centred on the chair body's centre
+ * (the castor base under the seat): the chair's own body (SEAT_BOX_PLAN.md Q0; for the
+ * office chairs that is seat-box.js SEAT_BLOCKS.office40, 18 x 8).
+ */
+export function seatedBlock(chairBody) {
+    return { w: chairBody.width, h: chairBody.height };
+}
+
 function sitOn(chair, seat, pose) {
     const player = window.player;
     const scene = chair.scene;
@@ -448,7 +460,7 @@ function sitOn(chair, seat, pose) {
     if (seat.kind === 'swivel' && chair.body) {
         // The driver's body takes over the chair's footprint; the chair follows it.
         footOffset = { x: chair.body.offset.x + chair.body.width / 2, y: chair.body.offset.y + chair.body.height / 2 };
-        const bw = chair.body.width, bh = chair.body.height;
+        const { w: bw, h: bh } = seatedBlock(chair.body);
         const cx = savedBody.ox + savedBody.w / 2, cy = savedBody.oy + savedBody.h / 2;
         chair.body.setVelocity(0, 0);
         chairBodyWasEnabled = chair.body.enable;
@@ -522,7 +534,18 @@ export function standUp(spot = null) {
         placeBody(chair, chair.x, chair.y);
         chair.body.setVelocity(0, 0);
     }
-    spot = spot || landingSpot(chair, seat, facing, approach);
+    // The player is already off the chair (state cleared, proxy gone, body restored), so a
+    // throw while choosing the spot must not leave them invisible and "seated": land on the
+    // approach point and finish (SEAT_BOX_PLAN.md 1.3, R3 M1).
+    if (!spot) {
+        try {
+            spot = landingSpot(chair, seat, facing, approach);
+        } catch (e) {
+            console.error('🪑 standUp: landing spot failed, back to where the player sat down', e);
+            spot = approach;
+            noteStand({ via: 'error-approach', x: approach?.x, y: approach?.y, forced: true });
+        }
+    }
     if (spot) moveDriverFeetTo(player, spot.x, spot.y);
 
     player.isSeated = false;
@@ -535,25 +558,117 @@ export function standUp(spot = null) {
 }
 
 /** Where the player lands getting off: beside a swivel chair, back where they came from for a static one. */
-function landingSpot(chair, seat, facing, approach) {
-    return seat.kind === 'swivel' ? standSpot(chair, facing) : approach;
+function landingSpot(chair, seat, facing, approach, forced = true) {
+    if (seat.kind !== 'swivel') return approach;
+    const spot = window.__seatBox === false ? legacyStandSpot(chair, facing)
+        : playerStandSpot(chair, facing, { approach, forced });
+    noteStand(spot ? { via: spot.via, x: spot.x, y: spot.y, forced }
+        : { via: window.__seatBox === false ? 'legacy-none' : (forced ? 'none' : 'refused'), forced });
+    return spot;
 }
 
-/** A walkable spot next to a swivel chair, in front of it first. */
-function standSpot(chair, facing) {
-    const pfm = window.pathfindingManager;
+/** Max distance from the castor base for a voluntary stand to take the approach point (R2 m4). */
+export const VOLUNTARY_APPROACH_PX = 32;
+
+/**
+ * The stand-up order (SEAT_BOX_PLAN.md 1.3). Pure, so each branch can be tested with fakes.
+ * `facing` is the player's facing at stand time (state.facing, the way they last rolled; R3 M3).
+ * `io` gives:
+ *   cellNear(x, y, r)    nearest walkable cell of the local stand grid within r cells, or null
+ *   boxClear(x, y)       an 18x10 walking box with its feet at (x, y) overlaps no solid body and
+ *                        not the chair just left
+ *   lineClear(x, y)      the line from the chair's castor base to (x, y) crosses no solid body
+ *   flood(maxCells)      walkable cells reachable from the chair's cell through walkable cells,
+ *                        within maxCells steps, nearest first (never across a desk)
+ * Order: 1 the compass candidates (forward, sides, back diagonals, back, forward diagonals
+ * last); 2 the flood fill, 4 cells; 3 the approach point (a voluntary stand only when it is
+ * within 32 px and line clear); then a voluntary jump-off returns null (stay seated), and a
+ * forced stand takes the flood fill to 8 cells (box only), then the approach point unchecked.
+ * Never an unchecked cell picked by direction.
+ */
+export function pickStandSpot({ cx, cy, facing, reach, approach = null, forced = true }, io) {
+    const start = Math.max(0, COMPASS.indexOf(facing));
+    // Forward, the sides, back, and the forward diagonals last: a chair tucked in faces its
+    // desk, and a forward diagonal steps round the desk's corner to its far side.
+    for (const step of [0, 2, -2, 3, -3, 4, 1, -1]) {
+        const a = forwardRad(COMPASS[(start + step + 8) % 8]);
+        const x = cx + Math.cos(a) * reach, y = cy + Math.sin(a) * reach;
+        const cell = io.cellNear(x, y, 1);
+        if (cell && Math.hypot(cell.x - x, cell.y - y) < 12 && io.boxClear(cell.x, cell.y) && io.lineClear(cell.x, cell.y)) {
+            return { x: cell.x, y: cell.y, via: 'compass' };
+        }
+    }
+    for (const c of io.flood(4)) {
+        if (io.boxClear(c.x, c.y) && io.lineClear(c.x, c.y)) return { x: c.x, y: c.y, via: 'flood' };
+    }
+    if (approach && io.boxClear(approach.x, approach.y)
+        && (forced || (Math.hypot(approach.x - cx, approach.y - cy) <= VOLUNTARY_APPROACH_PX && io.lineClear(approach.x, approach.y)))) {
+        return { x: approach.x, y: approach.y, via: 'approach' };
+    }
+    if (!forced) return null;
+    for (const c of io.flood(8)) {
+        if (io.boxClear(c.x, c.y)) return { x: c.x, y: c.y, via: 'forced-flood' };
+    }
+    return approach ? { x: approach.x, y: approach.y, via: 'forced-approach' } : null;
+}
+
+/** Castor base and stand reach of a swivel chair. */
+function castorOf(chair) {
     const b = chair.body;
     const foot = b ? bodyFeet(chair) : { x: chair.x + chair.width / 2, y: chair.y + chair.height };
-    const cx = foot.x, cy = foot.y;
-    const reach = (b ? Math.max(b.width, b.height) / 2 : 10) + 14; // clear of the chair body
+    return { cx: foot.x, cy: foot.y, reach: (b ? Math.max(b.width, b.height) / 2 : 10) + 14 }; // clear of the chair body
+}
+
+/** Record the last player stand for the stand audit (window.seating.lastStand). */
+function noteStand(rec) {
+    if (window.seating && typeof window.seating === 'object') window.seating.lastStand = rec;
+}
+
+/**
+ * A walkable spot next to a swivel chair, in front of it first: the stand-up code before the
+ * seat box plan. NPCs still use it (their stand-up changes in slice 6), and the player does
+ * under `window.__seatBox === false` (test-only, for the stand audit's side by side). It can
+ * land on or across a desk; there is no box or line check.
+ */
+function legacyStandSpot(chair, facing) {
+    const pfm = window.pathfindingManager;
+    const { cx, cy, reach } = castorOf(chair);
     const start = COMPASS.indexOf(facing);
     for (const step of [0, 1, -1, 2, -2, 3, -3, 4]) {
         const a = forwardRad(COMPASS[(start + step + 8) % 8]);
         const x = cx + Math.cos(a) * reach, y = cy + Math.sin(a) * reach;
         const cell = pfm?.findNearestWalkableWorldCell?.(x, y, 1);
-        if (cell && Math.hypot(cell.x - x, cell.y - y) < 12) return { x: cell.x, y: cell.y };
+        if (cell && Math.hypot(cell.x - x, cell.y - y) < 12) return { x: cell.x, y: cell.y, via: 'legacy-compass' };
     }
-    return pfm?.findNearestWalkableWorldCell?.(cx, cy + reach, 3) || null;
+    const fb = pfm?.findNearestWalkableWorldCell?.(cx, cy + reach, 3);
+    return fb ? { x: fb.x, y: fb.y, via: 'legacy-fallback' } : null;
+}
+
+/**
+ * The player's landing spot off a swivel chair: the order in SEAT_BOX_PLAN.md 1.3 over a local
+ * stand grid built from the live bodies without the chair and the player, so cells only they
+ * block (or a chair an NPC baked into the world grid) are free. `facing` is state.facing at
+ * stand time. Returns { x, y, via } or null (voluntary, nothing clear: stay seated).
+ */
+function playerStandSpot(chair, facing, { approach = null, forced = true } = {}) {
+    const player = window.player;
+    const scene = chair.scene || window.pathfindingManager?.scene;
+    const { cx, cy, reach } = castorOf(chair);
+    const rect = chairRect(chair);
+    const built = localStandGrid(window.pathfindingManager, { exclude: [chair, player] });
+    const ignore = [chair, player];
+    return pickStandSpot({ cx, cy, facing, reach, approach, forced }, {
+        cellNear: (x, y, r) => nearestCell(built, x, y, r),
+        boxClear: (x, y) => walkBoxClear(scene, x, y, { ignore, extra: rect ? [rect] : [] }),
+        lineClear: (x, y) => pathClear(scene, { x: cx, y: cy }, { x, y }, { ignore }),
+        flood: n => floodStandCells(built, cx, cy, n)
+    });
+}
+
+/** NPC stand-up beside a swivel chair: unchanged until slice 6. */
+function standSpot(chair, facing) {
+    const s = legacyStandSpot(chair, facing);
+    return s ? { x: s.x, y: s.y } : null;
 }
 
 /**
@@ -581,8 +696,19 @@ const JUMP_HEIGHT = 14;
 function jumpOff() {
     const player = window.player;
     const { chair, seat, facing, approach, sprite } = state;
-    // Work out the landing spot with the chair's own body back in place.
-    const spot = landingSpot(chair, seat, facing, approach);
+    // A voluntary stand: with nowhere clear the player stays seated, with a line, and can roll
+    // somewhere else (SEAT_BOX_PLAN.md 1.3 step 4). `__seatBox === false` (test-only) keeps the
+    // old code, which never refuses.
+    const legacy = window.__seatBox === false;
+    let spot;
+    try {
+        spot = landingSpot(chair, seat, facing, approach, legacy);
+    } catch (e) {
+        console.error('🪑 jumpOff: landing spot failed; standing up instead', e);
+        standUp();
+        return;
+    }
+    if (!spot && !legacy) { window.gameAlert?.('No room to stand up here.', 'info', 'Seat', 2500); return; }
     if (!spot) { standUp(); return; }
     state.jumping = true;
     updateBreath(state, sprite, false);
@@ -712,7 +838,8 @@ export function place() {
         if (!r) { o.setVisible(false); return; }
         if (o.texture.key !== chair.texture.key) o.setTexture(chair.texture.key);
         o.setPosition(chair.x, chair.y).setCrop(r[0], r[1], r[2], r[3])
-            .setDepth(chair.depth + 2 * SEAT_DEPTH_STEP).setVisible(chair.visible);
+            .setDepth(chair.depth + 2 * SEAT_DEPTH_STEP).setVisible(chair.visible)
+            .setAlpha(chair.alpha); // match the chair when the behind-wall fade has dimmed it
     });
     updateBreath(state, sprite, state.pose === 'sit');
 }
@@ -783,43 +910,149 @@ export function compassToward(dx, dy) {
     return COMPASS[((Math.round((90 - a) / 45) % 8) + 8) % 8];
 }
 
-// ---- fidget: a seated NPC on a swivel chair rolls a few pixels now and again, sideways
-// or back from where it faces (never forward, into the desk), then settles.
+// ---- idle motion (OFFICE_LIFE_PLAN 12.7, slice 21). The roll: a seated NPC on a swivel chair
+// rolls a few pixels, mostly along x on screen and never towards the desk, holds 1 to 2 s and
+// rolls back to where it sat down. Cosmetic: Math.random, no event, outside the decision log.
+// The swivel: now and then a seated needs NPC turns its chair one compass step and back, on a
+// seeded roll per 6 s slot of the needs clock; it turns towards a colleague speaking nearby.
 const FIDGET_MIN_MS = 4000, FIDGET_MAX_MS = 11000, FIDGET_ROLL_MS = 700;
-const FIDGET_SIDE = 3, FIDGET_BACK = 2;
+const FIDGET_HOLD_MIN_MS = 1000, FIDGET_HOLD_MAX_MS = 2000;
+const FIDGET_X = 3, FIDGET_X_AWAY = 2;
 
-/** A roll offset for a chair facing `facing`: up to 3px sideways and 2px back. */
+/**
+ * A roll offset for a chair facing `facing`, in screen pixels: `x` within 3 px and `y` within
+ * 1 px, never towards the desk. Where the facing has an east or west part, `x` goes only away
+ * from the desk, up to 2 px; where it has a north or south part, so does `y`. Never zero.
+ */
 export function fidgetOffset(facing, rand = Math.random) {
-    if (rand() < 0.3) return { x: 0, y: 0 }; // back to where it sat down
     const a = forwardRad(facing); // forward, as tuckIn
     const fx = Math.cos(a), fy = Math.sin(a);
-    const side = Math.round((rand() * 2 - 1) * FIDGET_SIDE);
-    const back = Math.round(rand() * FIDGET_BACK);
-    return { x: Math.round(-fy * side - fx * back), y: Math.round(fx * side - fy * back) };
+    const awayX = Math.abs(fx) > 0.1 ? -Math.sign(fx) : 0;
+    const awayY = Math.abs(fy) > 0.1 ? -Math.sign(fy) : 0;
+    const span = awayX ? FIDGET_X_AWAY : FIDGET_X;
+    const mag = 1 + Math.min(Math.floor(rand() * span), span - 1);
+    const x = (awayX || (rand() < 0.5 ? -1 : 1)) * mag;
+    const r = rand();
+    const y = awayY ? (r < 0.5 ? 0 : awayY) : (r < 1 / 3 ? -1 : r < 2 / 3 ? 0 : 1);
+    return { x, y: y || 0 };
 }
 
-/** Move a seated NPC's swivel chair along its current roll; `hold` starts no new roll. */
-function fidgetChair(st, sprite, hold) {
+/** A fresh roll state: waiting at the spot the NPC sat down. */
+export function newFidget(now, rand = Math.random) {
+    return { phase: 'wait', from: { x: 0, y: 0 }, to: { x: 0, y: 0 }, cur: { x: 0, y: 0 }, start: now,
+             until: now + FIDGET_MIN_MS + rand() * (FIDGET_MAX_MS - FIDGET_MIN_MS) };
+}
+
+/**
+ * Advance a roll to `now` and return its offset: wait, roll out (700 ms), hold 1 to 2 s, roll back,
+ * wait 4 to 11 s. `held` starts no roll and brings a roll that is out straight back.
+ */
+export function fidgetStep(fd, now, { held = false, facing = 'south', rand = Math.random } = {}) {
+    const ease = () => {
+        const t = Math.min(1, (now - fd.start) / FIDGET_ROLL_MS);
+        const e = 0.5 - Math.cos(t * Math.PI) / 2;
+        fd.cur = { x: fd.from.x + (fd.to.x - fd.from.x) * e, y: fd.from.y + (fd.to.y - fd.from.y) * e };
+        return t >= 1;
+    };
+    const back = () => { fd.phase = 'back'; fd.from = { ...fd.cur }; fd.to = { x: 0, y: 0 }; fd.start = now; };
+    if (fd.phase === 'wait') {
+        if (!held && now >= fd.until) {
+            fd.phase = 'out'; fd.from = { ...fd.cur }; fd.to = fidgetOffset(facing, rand); fd.start = now;
+        }
+    } else if (fd.phase === 'hold' && (held || now >= fd.until)) {
+        back();
+    } else if (fd.phase === 'out' && held) {
+        back();
+    }
+    if (fd.phase === 'out' && ease()) {
+        fd.phase = 'hold';
+        fd.until = now + FIDGET_HOLD_MIN_MS + rand() * (FIDGET_HOLD_MAX_MS - FIDGET_HOLD_MIN_MS);
+    } else if (fd.phase === 'back' && ease()) {
+        fd.phase = 'wait'; fd.cur = { x: 0, y: 0 };
+        fd.until = now + FIDGET_MIN_MS + rand() * (FIDGET_MAX_MS - FIDGET_MIN_MS);
+    }
+    return fd.cur;
+}
+
+/** Move a seated NPC's swivel chair along its current roll; `held` starts none and rolls back. */
+function fidgetChair(st, sprite, held) {
     const chair = st.chair;
     if (st.seat.kind !== 'swivel' || !chair.body) return;
     const now = sprite.scene?.time?.now ?? performance.now();
-    const wait = () => now + FIDGET_MIN_MS + Math.random() * (FIDGET_MAX_MS - FIDGET_MIN_MS);
-    const fd = st.fidget || (st.fidget = { home: { x: chair.x, y: chair.y }, from: { x: 0, y: 0 },
-                                           to: { x: 0, y: 0 }, cur: { x: 0, y: 0 }, start: 0, next: wait() });
-    if (now >= fd.next && !hold) {
-        fd.from = { ...fd.cur };
-        fd.to = fidgetOffset(st.homeFacing);
-        fd.start = now;
-        fd.next = wait();
+    if (!st.fidget) st.fidget = { ...newFidget(now), home: { x: chair.x, y: chair.y } };
+    const fd = st.fidget;
+    const cur = fidgetStep(fd, now, { held, facing: st.homeFacing });
+    let ox = cur.x, oy = cur.y;
+    // Clamp a roll so the seated block can't push into a desk, at the front or the sides
+    // (slideChairFootTo sets the position directly; SEAT_BOX_PLAN.md section 6 item 6)
+    const mag = Math.hypot(ox, oy);
+    if (mag > 0 && chair.scene) {
+        const rect = chairRect(chair);
+        rect.x += fd.home.x - chair.x; rect.y += fd.home.y - chair.y; // the block at the home spot
+        // Ignore the chair and the NPC riding it: the seated sprite's own body overlaps the
+        // seated block, so without this the sweep reads distance 0 and the roll never moves.
+        const d = sweepBlock(chair.scene, rect, ox / mag, oy / mag, { ignore: [chair, sprite] });
+        if (d < mag) { ox = (ox / mag) * d; oy = (oy / mag) * d; }
     }
-    const t = Math.min(1, (now - fd.start) / FIDGET_ROLL_MS);
-    const e = 0.5 - Math.cos(t * Math.PI) / 2;
-    fd.cur = { x: fd.from.x + (fd.to.x - fd.from.x) * e, y: fd.from.y + (fd.to.y - fd.from.y) * e };
-    const x = Math.round(fd.home.x + fd.cur.x), y = Math.round(fd.home.y + fd.cur.y);
+    const x = Math.round(fd.home.x + ox), y = Math.round(fd.home.y + oy);
     if (chair.x !== x || chair.y !== y) {
         chair.x = x; chair.y = y;
         placeBody(chair, x, y);
     }
+}
+
+export const SWIVEL_SLOT_MS = 6000;
+export const SWIVEL_CHANCE = 0.05;
+export const LISTEN_RADIUS = 128; // px, four tiles
+
+/** True while a needs NPC is typing: a `work` use in its `using` phase (the typing bob's rule). */
+export function isTyping(ns) {
+    const job = ns?.job;
+    // Slice 19: on a desk-phone call the hands are off the keyboard
+    return !!(ns && !ns.call && ns.mode === 'job' && job && job.kind === 'use' && job.need === 'work' && job.phase === 'using');
+}
+
+/** Pure: the roll and the swivel are held on a call, paired at a chatter object, saying a line, typing or chatting with the player. */
+export function idleMotionHeld({ call = false, paired = false, talking = false, typing = false, chatting = false } = {}) {
+    return !!(call || paired || talking || typing || chatting);
+}
+
+/**
+ * Pure: the facing of an idle swivel at `clockMs` (needs clock). Each 6 s slot, the seeded
+ * `roll('swivel:' + slot)` below `chance` turns the chair one compass step (left or right, and a
+ * hold of 2 to 4 s, both from the same roll), snapped to `valid`, then back to `homeFacing`.
+ * Never while typing. The same seed gives the same facing at the same clock.
+ */
+export function swivelFacing({ state, clockMs, homeFacing, valid = COMPASS, roll, chance = SWIVEL_CHANCE }) {
+    if (isTyping(state) || typeof roll !== 'function' || !COMPASS.includes(homeFacing)) return homeFacing;
+    const clock = Number(clockMs) || 0;
+    const slot = Math.floor(clock / SWIVEL_SLOT_MS);
+    const r = roll(`swivel:${slot}`);
+    if (!(r < chance)) return homeFacing;
+    const u = r / chance; // uniform in [0, 1)
+    const hold = 2000 + Math.floor(((u * 2) % 1) * 2000);
+    if (clock - slot * SWIVEL_SLOT_MS >= hold) return homeFacing;
+    const i = COMPASS.indexOf(homeFacing);
+    return snapFacing(COMPASS[(i + (u < 0.5 ? 1 : 7)) % 8], valid);
+}
+
+/** Pure: the nearest colleague speaking in the same room within `radius`, or null. */
+export function listenTarget({ npcId, roomId, x, y, speakers, clockMs, radius = LISTEN_RADIUS }) {
+    let best = null, bestD = Infinity;
+    for (const sp of speakers || []) {
+        if (!sp || sp.npcId === npcId || sp.roomId !== roomId || !(sp.until > clockMs)) continue;
+        const d = Math.hypot(sp.x - x, sp.y - y);
+        if (d <= radius && d < bestD) { best = sp; bestD = d; }
+    }
+    return best;
+}
+
+/** Swivel on for this NPC: not `swivel: false`, not `"officeVisuals": false`, no `los.enabled` (LOS reads the facing). */
+export function swivelEnabled(rec, scenario) {
+    if (scenario?.officeVisuals === false) return false;
+    if (rec?.swivel === false) return false;
+    if (rec?.los?.enabled) return false;
+    return true;
 }
 
 /** Sit an NPC (its behaviour object) on a chair. Returns true when seated. */
@@ -864,6 +1097,7 @@ export function unseatNPC(behavior) {
     const sprite = behavior.sprite;
     const { chair, seat, facing, saved, standAt, needsStop, place: placeIdx } = st;
     endBreath(st, sprite);
+    if (typeof window !== 'undefined') window.officeTypists?.delete(behavior.npcId);
     behavior._seat = null;
     behavior._seatTried = true; // don't sit straight back down
     releasePlace(chair, seat, placeIdx);
@@ -875,7 +1109,7 @@ export function unseatNPC(behavior) {
         const spot = standAt || (seat.kind === 'swivel' ? standSpot(chair, facing) : frontSpot(chair, facing, placeFoot(chair, seat, placeIdx)));
         if (spot) moveFeetTo(sprite, spot.x, spot.y);
     }
-    if (needsStop) tuckIn(chair, seat, facing); // clear of the spot they come back to
+    if (needsStop) tuckIn(chair, seat, st.homeFacing); // tuck along the home facing, clear of the work spot
     behavior.direction = COMPASS_TO_PLAYER[facing];
     behavior.playAnimation?.('idle', behavior.direction);
     window.eventDispatcher?.emit?.('npc_stood', { npcId: behavior.npcId, objectId: chair.objectId });
@@ -988,7 +1222,7 @@ function prefersReducedMotion() {
  * `"officeVisuals": false`.
  */
 export function typingBob(ns, clockMs, { reduced = false, off = false } = {}) {
-    if (reduced || off || !ns || ns.mode !== 'job') return 0;
+    if (reduced || off || !ns || ns.mode !== 'job' || ns.call) return 0;   // slice 19: not on a call
     const job = ns.job;
     if (!job || job.kind !== 'use' || job.need !== 'work' || job.phase !== 'using') return 0;
     return Math.floor((Number(clockMs) || 0) / TYPING_BOB_MS) % 2;
@@ -1050,6 +1284,28 @@ function otherPosts(npcId) {
 }
 
 const TUCK_PX = 12;
+const CONTACT_SWEEP_PX = 24; // a slid or fetched chair tucks to a desk only when the desk is this close
+
+/**
+ * Tuck a just-placed swivel chair up to its desk's contact line (SEAT_BOX_PLAN.md section 6,
+ * items 2 and 3). From where the chair was pulled out to, sweep its seated block along
+ * `faceCompass` (the way its sitter faces, toward the desk) and slide it that far, but only
+ * when a solid body is within CONTACT_SWEEP_PX; otherwise the chair stays where it was pulled
+ * out to. In a footprint-boxed map this gives castor F + 4 in front and the footprint's back
+ * edge − 4 behind; against today's bottom-quarter box it still lands the front castor at F + 4.
+ */
+export function sweepChairToContact(chair, faceCompass) {
+    // __seatBoxNpc === false keeps the interim "chair a tile out" look, for the before/after audit only
+    if (typeof window !== 'undefined' && window.__seatBoxNpc === false) return;
+    if (!chair?.body || !chair.scene) return;
+    const a = forwardRad(faceCompass);
+    const dx = Math.cos(a), dy = Math.sin(a);
+    const d = sweepBlock(chair.scene, chairRect(chair), dx, dy, { ignore: [chair] });
+    if (d > 0 && d <= CONTACT_SWEEP_PX) {
+        const f = bodyFeet(chair);
+        slideChairFootTo(chair, f.x + dx * d, f.y + dy * d);
+    }
+}
 
 /** Slide a swivel chair so its foot is at (x, y) (pulling it out to sit, tucking it in on leaving). */
 function slideChairFootTo(chair, x, y) {
@@ -1092,22 +1348,46 @@ function updateNeedsSeat(behavior, ns, playerPos) {
             return false;
         }
         sprite.body.setVelocity(0, 0);
-        // Swivel: face the work, or the player while they talk
-        const chatting = window.npcNeedsSystem?.world?.inChatWith?.(behavior.npcId);
+        // Swivel: face the work, the player while they talk, a colleague speaking nearby, or now
+        // and then a glance round (slice 21); the roll and the swivel wait while the NPC is busy
+        const sys = window.npcNeedsSystem;
+        const chatting = sys?.world?.inChatWith?.(behavior.npcId);
+        const held = idleMotionHeld({ call: !!ns.call, paired: !!sys?._chatPartner?.(behavior.npcId),
+            talking: !!sys?._talking?.(behavior.npcId), typing: isTyping(ns), chatting: !!chatting });
         if (st.seat.kind === 'swivel') {
-            let want = st.homeFacing;
+            let want = st.homeFacing, reason = null;
             if (chatting && playerPos) {
                 const p = bodyFeet(sprite);
                 want = compassToward(playerPos.x - p.x, playerPos.y - p.y);
+            } else if (!held && sys && swivelEnabled(window.npcManager?.getNPC?.(behavior.npcId), window.gameScenario)) {
+                const p = sys.world?.npcPos?.(behavior.npcId) || bodyFeet(sprite); // body centre, as the speakers list
+                const sp = listenTarget({ npcId: behavior.npcId, roomId: behavior.roomId, x: p.x, y: p.y,
+                    speakers: sys.speakers, clockMs: sys.clockMs });
+                if (sp) {
+                    want = compassToward(sp.x - p.x, sp.y - p.y);
+                    reason = 'listen';
+                } else {
+                    const chance = Number(window.npcManager?.getNPC?.(behavior.npcId)?.swivelChance);
+                    want = swivelFacing({ state: ns, clockMs: sys.clockMs, homeFacing: st.homeFacing, valid: st.seat.valid,
+                        roll: salt => sys.roll(behavior.npcId, salt),
+                        chance: Number.isFinite(chance) ? chance : SWIVEL_CHANCE });
+                    reason = 'idle';
+                }
             }
             want = snapFacing(want, st.seat.valid);
             if (want !== st.facing) {
                 st.facing = want;
                 setChairFacing(st.chair, want, st.seat);
                 behavior.direction = COMPASS_TO_PLAYER[want];
+                if (reason && want !== st.homeFacing) {
+                    window.eventDispatcher?.emit?.(`npc_swivelled:${behavior.npcId}`, { npcId: behavior.npcId, facing: want, reason });
+                }
             }
         }
-        fidgetChair(st, sprite, !!chatting);
+        fidgetChair(st, sprite, held);
+        // Slice 20: seated typists per NPC (room tone counts the player's room); updated in this loop
+        const typists = window.officeTypists || (window.officeTypists = new Map());
+        if (isTyping(ns)) typists.set(behavior.npcId, behavior.roomId); else typists.delete(behavior.npcId);
         window.updateSpriteDepth?.(st.chair, st.chair.elevation || 0);
         const bob = typingBob(ns, window.npcNeedsSystem?.clockMs,
             { reduced: prefersReducedMotion(), off: window.gameScenario?.officeVisuals === false });
@@ -1138,7 +1418,10 @@ function updateNeedsSeat(behavior, ns, playerPos) {
     const near = chairsNear(behavior.roomId, feet.x, feet.y, NEAR_CHAIR)
         .find(c => free(c) && (c.seat.kind === 'swivel' || staticFacesToward(c.seat, feet, toward)));
     if (near) {
-        if (near.seat.kind === 'swivel') slideChairFootTo(near.obj, feet.x, feet.y); // pull it out
+        if (near.seat.kind === 'swivel') {
+            slideChairFootTo(near.obj, feet.x, feet.y); // pull it out to the work cell
+            sweepChairToContact(near.obj, snapFacing(compassToward(toward.x - feet.x, toward.y - feet.y), near.seat.valid)); // then tuck to the desk front
+        }
         return seatNPC(behavior, near.obj, { toward, facePlayer: false, needsStop: stop.key });
     }
     if (pref !== 'fetch') return false;
@@ -1149,12 +1432,20 @@ function updateNeedsSeat(behavior, ns, playerPos) {
     return true;
 }
 
-/** Push a swivel chair in toward where its sitter faced, clear of the spot they work from. */
-function tuckIn(chair, seat, facing) {
+/**
+ * Push a swivel chair in toward where its sitter faced, clear of the spot they work from.
+ * Move min(TUCK_PX, sweep distance) along `facing` (the NPC's home facing), so a chair tucked
+ * against a footprint-boxed desk can't be driven into it (slideChairFootTo sets the position
+ * directly and physics never pushes back; SEAT_BOX_PLAN.md section 6 item 4).
+ */
+export function tuckIn(chair, seat, facing) {
     if (seat?.kind !== 'swivel' || !chair.body || chair.seatedBy) return;
     const a = forwardRad(facing);
+    const dx = Math.cos(a), dy = Math.sin(a);
+    const d = chair.scene ? sweepBlock(chair.scene, chairRect(chair), dx, dy, { ignore: [chair] }) : Infinity;
+    const dist = Math.min(TUCK_PX, d);
     const f = bodyFeet(chair);
-    slideChairFootTo(chair, f.x + Math.cos(a) * TUCK_PX, f.y + Math.sin(a) * TUCK_PX);
+    slideChairFootTo(chair, f.x + dx * dist, f.y + dy * dist);
 }
 
 /** Walk to a swivel chair, roll it back to `spot`, sit on it. */
@@ -1221,6 +1512,8 @@ function advanceFetch(behavior, ns, stop) {
     if (seat?.kind === 'swivel' && !arrived) setChairFacing(f.chair, snapFacing(dirC, seat.valid), seat);
     window.updateSpriteDepth?.(f.chair, f.chair.elevation || 0);
     if (!arrived) return false;
+    // Tuck the fetched chair to the desk's contact line before seating (section 6 item 3)
+    if (seat?.kind === 'swivel') sweepChairToContact(f.chair, snapFacing(compassToward(f.toward.x - feet.x, f.toward.y - feet.y), seat.valid));
     return endFetch(behavior, true);
 }
 

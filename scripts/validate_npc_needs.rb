@@ -35,16 +35,558 @@ module ValidateNpcNeeds
     objs = expand_presets(json, objs, issues)
     droppables = objs.select { |o| o.data['droppable'] == true }
     droppables.each do |o|
-      issues << "⚠️ WARNING: item '#{o.id || o.data['name']}' is droppable without a needsTag — dropping it will not attract any NPC." unless o.data['needsTag'].is_a?(String)
+      magnet = o.data['affordance'].is_a?(Hash) && o.data['affordance']['magnet'].is_a?(Hash)
+      issues << "⚠️ WARNING: item '#{o.id || o.data['name']}' is droppable without a needsTag — dropping it will not attract any NPC." unless o.data['needsTag'].is_a?(String) || magnet
       issues << "❌ ERROR: droppable item '#{o.data['name']}' has no id; the drop is saved by id, so give it a unique one." if o.id.to_s.empty?
     end
 
     check_private(json, npcs, objs, issues)
     check_visuals(json, objs, issues)
     check_slots(json, objs, issues)
+    check_left_behind(json, npcs, objs, issues)
     check_social(json, npcs, objs, issues)
+    check_exchanges(json, npcs, issues)
+    check_queues(json, npcs, objs, issues)
     npcs.each { |room_id, npc| check_npc(json, npc, room_id, objs, issues, npcs) }
+    check_swivel(npcs, issues)
+    check_lock_habits(json, npcs, objs, issues)
+    check_off_when(json, npcs, objs, issues)
+    check_print_habits(json, npcs, objs, issues)
+    check_magnets(json, npcs, objs, issues)
+    check_phones(json, npcs, objs, issues)
+    check_room_tone(json, objs, issues)
     issues
+  end
+
+  # ── room tone (slice 20, OFFICE_LIFE_PLAN 12.6) ─────────────────────────────
+  # roomTone a boolean; roomToneTypes values are profiles in js/data/room-tones.json; with roomTone,
+  # at least one room resolves to a profile; profile sounds not loaded are info (no bed until a file
+  # is approved); an authored ambientSound not loaded is a warning in every scenario (without
+  # roomTone it fades the current loop out; with it, it is skipped as no bed).
+  ROOM_TONES_FILE = File.expand_path('../public/break_escape/js/data/room-tones.json', __dir__)
+
+  def self.room_tone_table
+    @room_tone_table ||= File.file?(ROOM_TONES_FILE) ? JSON.parse(File.read(ROOM_TONES_FILE)) : {}
+  end
+
+  def self.room_tone_profile(json, type, table = room_tone_table)
+    return nil unless type.is_a?(String)
+
+    map = json['roomToneTypes']
+    return (table.dig('profiles', map[type]) ? map[type] : nil) if map.is_a?(Hash) && map[type].is_a?(String)
+
+    table.dig('types', type)
+  end
+
+  def self.check_room_tone(json, objs, issues)
+    rooms = json['rooms']
+    rooms.each do |room_id, room|
+      next unless room.is_a?(Hash) && room['ambientSound'].is_a?(String) && !loaded_sounds.empty?
+      next if loaded_sounds.include?(room['ambientSound'])
+
+      issues << "⚠️ WARNING: room '#{room_id}' ambientSound '#{room['ambientSound']}' is not a sound the game loads (sound-manager.js): without roomTone it fades the ambient loop out (from this room and from rooms next to it that reach it first); with roomTone it counts as no bed."
+    end
+    issues << '❌ ERROR: roomTone must be true or false.' if json.key?('roomTone') && ![true, false].include?(json['roomTone'])
+    table = room_tone_table
+    map = json['roomToneTypes']
+    if json.key?('roomToneTypes')
+      if map.is_a?(Hash)
+        types = rooms.values.select { |r| r.is_a?(Hash) }.map { |r| r['type'] }
+        map.each do |type, prof|
+          issues << "❌ ERROR: roomToneTypes '#{type}' maps to '#{prof}', which is not a room tone profile (#{(table['profiles'] || {}).keys.join(', ')})." unless prof.is_a?(String) && table.dig('profiles', prof)
+          issues << "⚠️ WARNING: roomToneTypes maps '#{type}', but no room has that type." unless types.include?(type)
+        end
+      else
+        issues << '❌ ERROR: roomToneTypes must be an object of room type to profile.'
+      end
+      issues << '⚠️ WARNING: roomToneTypes is set but roomTone is not true; it is ignored.' unless json['roomTone'] == true
+    end
+    return unless json['roomTone'] == true
+
+    used = rooms.each_with_object({}) do |(room_id, room), h|
+      prof = room.is_a?(Hash) ? room_tone_profile(json, room['type'], table) : nil
+      (h[prof] ||= []) << room_id if prof
+    end
+    issues << '⚠️ WARNING: roomTone is true but no room resolves to a room tone profile (by exact type or roomToneTypes); only authored ambientSound loops play.' if used.empty?
+    used.each do |prof, ids|
+      p = table.dig('profiles', prof) || {}
+      keys = ([p['bed']] + Array(p['spots']) + (p['typing'] ? ['typing_loop'] : [])).compact
+      missing = keys.reject { |k| loaded_sounds.empty? || loaded_sounds.include?(k) }
+      next if missing.empty?
+
+      issues << "ℹ️ Room tone: profile '#{prof}' (#{ids.join(', ')}) needs #{missing.join(', ')}, not loaded yet; that layer stays silent."
+    end
+  end
+
+  # ── desk phones (slice 19, OFFICE_LIFE_PLAN 12.5) ──────────────────────────
+  # A phone is a declared object with phoneOwner: the owner is an NPC with a needsHome object in the
+  # phone's room; the phone sits within 1.5 tiles of the owner's post (the owner answers without
+  # moving) and has a standing affordance (a colleague answering never takes the owner's chair), is
+  # not takeable, and its own approach cell (useFrom) is to the side of the owner's chair spot.
+  # phoneCalls knots are the NPC's own lines (no speaker prefix, which the engine refuses), voiced,
+  # with heard_<knot> declared. Scenario-level 'phone' lines are said by every NPC: no names.
+  PHONE_REACH_TILES = 1.5
+  NEAR_CHAIR_TILES = 36.0 / 32
+
+  def self.phone_cell(obj)
+    uf = obj.data['affordance'].is_a?(Hash) ? obj.data['affordance']['useFrom'] : nil
+    dx = uf.is_a?(Hash) && uf['dx'].is_a?(Numeric) ? uf['dx'] : 0
+    dy = uf.is_a?(Hash) && uf['dy'].is_a?(Numeric) ? uf['dy'] : 0
+    [obj.x + dx, obj.y + dy]
+  end
+
+  def self.positioned?(obj)
+    obj.data['position'].is_a?(Hash) && obj.data['position']['x'].is_a?(Numeric) && obj.data['position']['y'].is_a?(Numeric)
+  end
+
+  def self.check_phones(json, npcs, objs, issues)
+    by_id = npcs.to_h { |r, n| [n['id'], [r, n]] }
+    phones = objs.select { |o| o.data.key?('phoneOwner') }
+    globals = json['globalVariables'].is_a?(Hash) ? json['globalVariables'] : {}
+    phones.each do |ph|
+      where = "desk phone '#{ph.id}'"
+      owner_id = ph.data['phoneOwner']
+      if ph.id.to_s.empty?
+        issues << "❌ ERROR: a desk phone (phoneOwner '#{owner_id}') has no id; desk_phone_ring:<id> rings it by id."
+        next
+      end
+      if ph.data['takeable'] == true
+        issues << "❌ ERROR: #{where} is takeable; a desk phone stays on the desk (\"takeable\": false)."
+      end
+      if ph.data.key?('rings') && !(ph.data['rings'].is_a?(Integer) && ph.data['rings'].between?(1, 20))
+        issues << "❌ ERROR: #{where} rings must be a whole number from 1 to 20 (default 4)."
+      end
+      aff = ph.data['affordance']
+      if !aff.is_a?(Hash)
+        issues << "❌ ERROR: #{where} has no affordance: give it officeType 'desk_phone' (with \"officePresets\": true) or write out { \"useSeconds\": 0, \"capacity\": 1, \"seat\": \"stand\" }."
+      elsif aff['seat'] != 'stand'
+        issues << "❌ ERROR: #{where} affordance does not stand (seat '#{aff['seat']}'); a colleague answering it would sit in the owner's chair. Set \"seat\": \"stand\"."
+      end
+      unless owner_id.is_a?(String) && by_id[owner_id]
+        issues << "❌ ERROR: #{where} phoneOwner '#{owner_id}' is not an NPC in this scenario."
+        next
+      end
+      _r, owner = by_id[owner_id]
+      home_id = owner['needsHome']
+      home = home_id.is_a?(String) ? objs.find { |o| o.id == home_id } : nil
+      unless home && home.room == ph.room
+        issues << "❌ ERROR: #{where}: its owner '#{owner_id}' needs a needsHome object in room '#{ph.room}' (the owner answers from its post)."
+        next
+      end
+      uf = ph.data['affordance'].is_a?(Hash) ? ph.data['affordance']['useFrom'] : nil
+      unless uf.is_a?(Hash)
+        issues << "⚠️ WARNING: #{where} has no affordance useFrom: a colleague answering walks to the nearest free cell, usually #{owner_id}'s chair spot. Point useFrom to the side of the desk."
+        next
+      end
+      next unless positioned?(ph) && positioned?(home)
+
+      hx, hy = phone_cell(home)
+      d = Math.hypot(ph.x - hx, ph.y - hy)
+      if d > PHONE_REACH_TILES + 1e-6
+        issues << "❌ ERROR: #{where} is #{d.round(2)} tiles from #{owner_id}'s post '#{home_id}'; put it within #{PHONE_REACH_TILES} tiles so the owner can answer without moving."
+      end
+      px, py = phone_cell(ph)
+      if Math.hypot(px - hx, py - hy) <= NEAR_CHAIR_TILES
+        issues << "⚠️ WARNING: #{where}: a colleague answering would stand on #{owner_id}'s chair spot; give the phone an affordance useFrom to the side."
+      end
+    end
+
+    # The answerers and the call knots
+    npcs.each do |room_id, n|
+      where = "NPC '#{n['id']}'"
+      if n.key?('answersPhones') && ![true, false].include?(n['answersPhones'])
+        issues << "❌ ERROR: #{where} answersPhones must be true or false."
+      elsif n['answersPhones'] == true && phones.none? { |ph| ph.room == room_id && ph.data['phoneOwner'] != n['id'] }
+        issues << "⚠️ WARNING: #{where} answersPhones, but no colleague's desk phone is in room '#{room_id}'."
+      end
+      next unless n.key?('phoneCalls')
+
+      unless n['phoneCalls'].is_a?(Array)
+        issues << "❌ ERROR: #{where} phoneCalls must be a list of { knot, requireGlobal }."
+        next
+      end
+      if phones.none? { |ph| ph.data['phoneOwner'] == n['id'] } && n['answersPhones'] != true
+        issues << "⚠️ WARNING: #{where} has phoneCalls but owns no desk phone and does not answer others' (answersPhones)."
+      end
+      issues << "⚠️ WARNING: #{where} has phoneCalls but no voice; the call shows as bubbles only." unless n['voice'].is_a?(Hash)
+      n['phoneCalls'].each do |e|
+        unless e.is_a?(Hash) && e['knot'].is_a?(String) && !e['knot'].empty?
+          issues << "❌ ERROR: #{where} phoneCalls: each entry needs a 'knot'."
+          next
+        end
+        k = e['knot']
+        rg = e['requireGlobal']
+        issues << "⚠️ WARNING: #{where} phoneCalls '#{k}' requireGlobal '#{rg}' is not declared in globalVariables." if rg.is_a?(String) && !globals.key?(rg)
+        issues << "⚠️ WARNING: #{where} phoneCalls '#{k}': declare heard_#{k} (false) in globalVariables; it is set when the call has been heard." unless globals.key?("heard_#{k}")
+        texts = n['storyPath'] ? ink_knot_texts(n['storyPath'], k) : nil
+        if texts.nil?
+          issues << "❌ ERROR: #{where} phoneCalls: knot '#{k}' is not in #{n['storyPath'] || 'a story (no storyPath)'}."
+          next
+        end
+        issues << "❌ ERROR: #{where} phoneCalls: knot '#{k}' has no lines." if texts.empty?
+        texts.each do |t|
+          if /\A([^:\n]+?):\s+(\S.*)\z/m.match?(t)
+            issues << "❌ ERROR: #{where} phoneCalls: knot '#{k}' line #{t.inspect} reads as a speaker prefix; a call is the NPC's own half only (the engine refuses the knot)."
+          end
+          issues << "❌ ERROR: #{where} phoneCalls: knot '#{k}' line #{t.inspect} has a { } variable; spoken lines must not print variables." if t.match?(/[{}]/)
+        end
+      end
+    end
+
+    sc = json['chatter']
+    return unless sc.is_a?(Hash)
+
+    names = npcs.flat_map { |_r, n| [n['displayName'], n['displayName'].to_s.split.first].compact }.reject(&:empty?).uniq
+    %w[phone phone_message].each do |topic|
+      pool_lines(sc[topic]).each do |line|
+        next unless line.is_a?(String)
+
+        hit = names.find { |nm| line.match?(/\b#{Regexp.escape(nm)}\b/i) }
+        issues << "⚠️ WARNING: scenario chatter '#{topic}' line #{line.inspect} names #{hit}; scenario-level lines are said by every NPC, so put it on that NPC's own pool." if hit
+      end
+    end
+  end
+
+  # Slice 18b-i (OFFICE_LIFE_PLAN 12.4): a magnet is a droppable held item carrying
+  # affordance.magnet, dropped anywhere (item-drop.js). It needs a fixed id (the servings global and
+  # the decision log are keyed on it) and no needsTag (an interested NPC would carry it off); the
+  # engine-owned <id>_servings global is declared at the starting count; tempt, servings and
+  # perPerson are numbers in range; satisfies names a need some NPC has. A magnet as a room object
+  # (the declared spot) is not built yet.
+  def self.check_magnets(json, npcs, objs, issues)
+    globals = json['globalVariables'].is_a?(Hash) ? json['globalVariables'] : {}
+    have = npcs.flat_map { |_, n| n['needs'].is_a?(Hash) ? n['needs'].keys : [] }.uniq
+    objs.each do |o|
+      aff = o.data['affordance']
+      next unless aff.is_a?(Hash) && aff.key?('magnet')
+
+      m = aff['magnet']
+      label = o.id || o.data['name'] || o.data['type']
+      unless m.is_a?(Hash)
+        issues << "❌ ERROR: item '#{label}' affordance.magnet must be an object ({ tempt, servings, perPerson })."
+        next
+      end
+      unless o.data['droppable'] == true && o.room.nil?
+        issues << "⚠️ WARNING: '#{label}' has affordance.magnet but is not a droppable item the player holds; only a dropped magnet is built (slice 18b-i), so it draws nobody."
+      end
+      issues << "❌ ERROR: magnet item '#{label}' has no id; its servings global and the decision log are keyed on the item's id, so give it a fixed one." if o.id.to_s.empty?
+      issues << "❌ ERROR: magnet item '#{label}' has a needsTag; an NPC with that interest would pick it up and carry it off. Remove it." if o.data.key?('needsTag')
+      { 'tempt' => [0, 95], 'servings' => [1, 1000], 'perPerson' => [1, 1000] }.each do |k, (lo, hi)|
+        next unless m.key?(k)
+
+        v = m[k]
+        issues << "❌ ERROR: magnet '#{label}' magnet.#{k} must be a number from #{lo} to #{hi} (got #{v.inspect})." unless v.is_a?(Numeric) && v >= lo && v <= hi
+      end
+      servings = m['servings'].is_a?(Numeric) ? m['servings'].floor : 1
+      unless o.id.to_s.empty?
+        key = "#{o.id}_servings"
+        if !globals.key?(key)
+          issues << "❌ ERROR: magnet '#{o.id}' needs '#{key}' declared in globalVariables at #{servings} (the engine saves the servings left there, so a reload keeps a half-eaten one)."
+        elsif globals[key] != servings
+          issues << "❌ ERROR: magnet '#{o.id}' globalVariables '#{key}' is #{globals[key].inspect}; declare it at the starting count, #{servings}."
+        end
+      end
+      Array(aff['satisfies']).each do |need|
+        next if have.include?(need)
+
+        issues << "⚠️ WARNING: magnet '#{label}' satisfies '#{need}', which no NPC has; nobody will come for that."
+      end
+      check_magnet_news(json, label, m, issues)
+    end
+  end
+
+  # Slice 18b-ii: word of mouth. announce names a scenario-level chatter pool with lines (the pool's
+  # own lines are checked with every scenario pool: 40 characters, no { }); newsRadius is in tiles,
+  # 0-50. A dropped magnet can be anywhere, so a line naming one of the scenario's rooms is flagged.
+  def self.check_magnet_news(json, label, m, issues)
+    if m.key?('newsRadius')
+      v = m['newsRadius']
+      issues << "❌ ERROR: magnet '#{label}' magnet.newsRadius must be a number of tiles from 0 to 50 (got #{v.inspect})." unless v.is_a?(Numeric) && v >= 0 && v <= 50
+    end
+    return unless m.key?('announce')
+
+    a = m['announce']
+    unless a.is_a?(String) && !a.empty?
+      issues << "❌ ERROR: magnet '#{label}' magnet.announce must name a scenario chatter pool (got #{a.inspect})."
+      return
+    end
+    sc = json['chatter'].is_a?(Hash) ? json['chatter'] : {}
+    lines = pool_lines(sc[a]).select { |l| l.is_a?(String) }
+    if lines.empty?
+      issues << "❌ ERROR: magnet '#{label}' magnet.announce '#{a}' names no scenario-level chatter pool with lines; add \"chatter\": { \"#{a}\": [...] } (announce lines are voiced for any NPC, so they live at scenario level)."
+      return
+    end
+    rooms = json['rooms'].is_a?(Hash) ? json['rooms'] : {}
+    words = rooms.flat_map do |rid, r|
+      [rid, r.is_a?(Hash) ? r['door_sign'] : nil, r.is_a?(Hash) && r['type'].is_a?(String) ? r['type'].sub(/^room_/, '') : nil]
+    end.compact.map { |w| w.to_s.downcase.tr('_', ' ').strip }.reject { |w| w.length < 3 }.uniq
+    lines.each do |line|
+      hit = words.find { |w| line.downcase.match?(/\b#{Regexp.escape(w)}\b/) }
+      next unless hit
+
+      issues << "⚠️ WARNING: magnet '#{label}' announce line #{line.inspect} names '#{hit}'; the player can drop it in any room, so the line may name the wrong one."
+    end
+  end
+
+  # Slice 17 (OFFICE_LIFE_PLAN 12.3): print and forget. A hook's chance (0-1); printHabit's shape
+  # and bounds; a mapping's needs.print command; affordance.uncollectedAfterSeconds. An owner (a
+  # printHabit or a print command) needs a needsHome object, where the errand takes the print; a
+  # habit with nothing that prints for it does nothing; a producer in a room the owner may not
+  # reach is never fetched from. Per producer, slots against printing NPCs (forgotten prints hold
+  # slots until a reload or a recycle).
+  PRINT_HABIT_KEYS = %w[fetchAfterSeconds forgetChance weight shareAfterSeconds _comment].freeze
+
+  def self.fetch_range_ok?(v)
+    v.is_a?(Array) && v.length == 2 && v.all? { |x| x.is_a?(Numeric) && x >= 0 && x <= 3600 } && v[0] <= v[1]
+  end
+
+  def self.check_print_habits(json, npcs, objs, issues)
+    by_id = objs.select(&:id).group_by(&:id)
+    printers = Hash.new { |h, k| h[k] = [] }
+    objs.each do |o|
+      v = o.data.dig('affordance', 'uncollectedAfterSeconds')
+      next if v.nil? || (v.is_a?(Numeric) && v >= 0 && v <= 3600)
+
+      issues << "❌ ERROR: object '#{o.id}' affordance.uncollectedAfterSeconds must be seconds from 0 to 3600 (default 60)."
+    end
+    npcs.each do |npc_room, npc|
+      where = "NPC '#{npc['id']}'"
+      hooks = npc['onUse'].is_a?(Hash) ? npc['onUse'] : {}
+      hooked = []
+      hooks.each do |oid, hook|
+        next unless hook.is_a?(Hash)
+
+        if hook.key?('chance') && !(hook['chance'].is_a?(Numeric) && hook['chance'] >= 0 && hook['chance'] <= 1)
+          issues << "❌ ERROR: #{where} onUse '#{oid}' chance must be a number from 0 to 1 (default 1)."
+        end
+        issues << "⚠️ WARNING: #{where} onUse '#{oid}' sets chance without revealOutput; chance applies to prints only." if hook.key?('chance') && !hook.key?('revealOutput')
+        # Slice 22: revealOutput is a producer id or a list of them in preference order
+        hooked.concat(printer_list(hook['revealOutput'])) if hook.key?('revealOutput')
+      end
+      commanded = []
+      Array(npc['eventMappings']).each do |m|
+        next unless m.is_a?(Hash) && m['needs'].is_a?(Hash) && m['needs'].key?('print')
+
+        cmd = m['needs']['print']
+        spec = cmd.is_a?(String) || cmd.is_a?(Array) ? { 'producer' => cmd } : cmd
+        prods = spec.is_a?(Hash) ? printer_list(spec['producer']) : []
+        unless spec.is_a?(Hash) && (spec['producer'].is_a?(String) || spec['producer'].is_a?(Array)) && !prods.empty? && prods.length == Array(spec['producer']).length
+          issues << "❌ ERROR: #{where} mapping '#{m['eventPattern']}' needs.print must be a producer id, a list of producer ids, or { producer, fetchAfterSeconds, forget }."
+          next
+        end
+        issues << "⚠️ WARNING: #{where} mapping '#{m['eventPattern']}' needs.print lists a producer twice; the second is never used." if prods.uniq.length < prods.length
+        prods.uniq.each do |prod|
+          if by_id.key?(prod)
+            commanded << prod
+            issues << "⚠️ WARNING: #{where} mapping '#{m['eventPattern']}' prints to '#{prod}', but no object has outputOf '#{prod}'; every print is only a cosmetic copy." if objs.none? { |o| o.data['outputOf'] == prod }
+          else
+            issues << "❌ ERROR: #{where} mapping '#{m['eventPattern']}' needs.print producer '#{prod}' is not an object id in this scenario."
+          end
+        end
+        if spec.key?('fetchAfterSeconds') && !fetch_range_ok?(spec['fetchAfterSeconds'])
+          issues << "❌ ERROR: #{where} mapping '#{m['eventPattern']}' needs.print fetchAfterSeconds must be [min, max] seconds, 0 <= min <= max <= 3600."
+        end
+        issues << "❌ ERROR: #{where} mapping '#{m['eventPattern']}' needs.print forget must be true or false." if spec.key?('forget') && ![true, false].include?(spec['forget'])
+      end
+      habit = npc['printHabit']
+      unless habit.nil?
+        if habit.is_a?(Hash)
+          (habit.keys - PRINT_HABIT_KEYS).each { |k| issues << "⚠️ WARNING: #{where} printHabit has unknown key '#{k}'." }
+          if habit.key?('fetchAfterSeconds') && !fetch_range_ok?(habit['fetchAfterSeconds'])
+            issues << "❌ ERROR: #{where} printHabit.fetchAfterSeconds must be [min, max] seconds, 0 <= min <= max <= 3600 (default [20, 60])."
+          end
+          issues << "❌ ERROR: #{where} printHabit.forgetChance must be a number from 0 to 1 (default 0)." if habit.key?('forgetChance') && !(habit['forgetChance'].is_a?(Numeric) && habit['forgetChance'] >= 0 && habit['forgetChance'] <= 1)
+          issues << "❌ ERROR: #{where} printHabit.weight must be 0.1 to 10 (default 2)." if habit.key?('weight') && !(habit['weight'].is_a?(Numeric) && habit['weight'] >= 0.1 && habit['weight'] <= 10)
+          issues << "❌ ERROR: #{where} printHabit.shareAfterSeconds must be seconds > 0 (unset: a forgotten print stays reserved)." if habit.key?('shareAfterSeconds') && !(habit['shareAfterSeconds'].is_a?(Numeric) && habit['shareAfterSeconds'].positive?)
+        else
+          issues << "❌ ERROR: #{where} printHabit must be an object."
+        end
+        if hooked.empty? && commanded.empty?
+          issues << "⚠️ WARNING: #{where} has a printHabit but no revealOutput hook and no mapping print command; nothing prints as it, so the habit does nothing."
+        end
+      end
+      owner_prods = (habit.nil? ? [] : hooked) + commanded
+      owner_prods.uniq.each { |prod| printers[prod] << npc['id'] }
+      hooked.uniq.each { |prod| printers[prod] << npc['id'] unless printers[prod].include?(npc['id']) }
+      next if owner_prods.empty?
+
+      home = npc['needsHome']
+      home_obj = home.is_a?(String) ? by_id[home]&.first : nil
+      unless home_obj
+        issues << "❌ ERROR: #{where} owns its prints (printHabit or a print command) but has no needsHome object; the fetch errand takes the print to its needsHome object and has nowhere to go."
+        next
+      end
+      home_room = home_obj.room || npc_room
+      reach = leash_reach(json, npc, home_room)
+      owner_prods.uniq.each do |prod|
+        p_obj = by_id[prod]&.first
+        next if p_obj.nil? || p_obj.room.nil? || reach.include?(p_obj.room)
+
+        issues << "⚠️ WARNING: #{where} prints to '#{prod}' in room '#{p_obj.room}', which its home room '#{home_room}' does not join through rooms it may enter (its leash, or a needsPrivateTo room); its prints there are never fetched."
+      end
+    end
+    printers.each do |prod, ids|
+      slots = objs.count { |o| o.data['outputOf'] == prod }
+      issues << "ℹ️ Printing NPCs for '#{prod}': #{ids.length} (#{ids.sort.join(', ')}) for #{slots} slot(s); a forgotten print holds its slot until a reload, or until a print finds the pool full and recycles it (an empty pool prints only cosmetic copies)."
+    end
+  end
+
+  # Slice 18a (OFFICE_LIFE_PLAN 12.4): affordance.offWhen (the requireGlobal form) takes a source
+  # out while it holds. Each name it reads must be a declared global (error); something should set
+  # it (warning; ink is not read). A hint action with no title shows "Intelligence Received", a spy
+  # title, so in a scenario with needs NPCs or officePresets it warns.
+  def self.check_off_when(json, npcs, objs, issues)
+    globals = json['globalVariables'].is_a?(Hash) ? json['globalVariables'] : {}
+    objs.each do |o|
+      aff = o.data['affordance']
+      next unless aff.is_a?(Hash) && aff.key?('offWhen')
+
+      cond = aff['offWhen']
+      names = if cond.is_a?(String) && !cond.empty? then [cond]
+              elsif cond.is_a?(Hash) && !cond.empty? then cond.keys
+              end
+      unless names
+        issues << "❌ ERROR: object '#{o.id}' affordance.offWhen must be a global name or { name: value } (the requireGlobal form)."
+        next
+      end
+      names.each do |name|
+        unless globals.key?(name)
+          issues << "❌ ERROR: object '#{o.id}' affordance offWhen '#{name}' is not declared in globalVariables."
+          next
+        end
+        next if global_set_somewhere?(json, name)
+
+        issues << "⚠️ WARNING: object '#{o.id}' affordance offWhen '#{name}': nothing in the scenario sets it (a set_global action or a mapping's setGlobal; ink is not checked), so the source is never switched off."
+      end
+    end
+    needs_scenario = json['officePresets'] == true || npcs.any? { |_, n| n['needs'].is_a?(Hash) || n['interests'].is_a?(Hash) }
+    return unless needs_scenario
+
+    untitled_hints(json, nil).each do |owner|
+      issues << "⚠️ WARNING: #{owner || 'scenario'} has a hint action with no title; it shows under \"Intelligence Received\", a spy title. Give it a neutral title (e.g. the object's name)."
+    end
+  end
+
+  def self.global_set_somewhere?(json, name)
+    case json
+    when Hash
+      return true if json['type'] == 'set_global' && json['key'] == name
+      return true if json['setGlobal'].is_a?(Hash) && json['setGlobal'].key?(name)
+
+      json.any? { |k, v| k != 'globalVariables' && global_set_somewhere?(v, name) }
+    when Array then json.any? { |v| global_set_somewhere?(v, name) }
+    else false
+    end
+  end
+
+  # Owners ("object 'x'", "NPC 'y'") of every { type: 'hint' } action without a title
+  def self.untitled_hints(v, owner, out = [])
+    case v
+    when Hash
+      if v['id'].is_a?(String) && (v.key?('npcType') || v.key?('type'))
+        owner = v.key?('npcType') ? "NPC '#{v['id']}'" : "object '#{v['id']}'"
+      end
+      out << owner if v['type'] == 'hint' && v.key?('message') && !v.key?('title')
+      v.each { |k, x| untitled_hints(x, owner, out) unless k == '_comment' }
+    when Array then v.each { |x| untitled_hints(x, owner, out) }
+    end
+    out
+  end
+
+  # Slice 16 (OFFICE_LIFE_PLAN 12.2): the owner's screenHabit and the machine's autoLockSeconds.
+  # The same rules as systems/workstation-state.js: an object's own lockChance or
+  # locksScreenOnLeave wins over the habit; auto-lock only ever locks an open screen.
+  LOCK_FIELDS = %w[lockChance locksScreenOnLeave].freeze
+
+  def self.workstation?(data)
+    data['workstation'] == true || LOCK_FIELDS.any? { |f| data.key?(f) }
+  end
+
+  def self.station_owner(data, npcs)
+    return data['screenOwner'] if data['screenOwner'].is_a?(String) && !data['screenOwner'].empty?
+
+    npcs.find { |_, n| n['needsHome'] == data['id'] }&.last&.dig('id')
+  end
+
+  # Does this habit ever leave the screen open on a leave?
+  def self.habit_leaves_open?(habit)
+    return false unless habit.is_a?(Hash)
+    return true if habit['lockIfAwayOverSeconds'].is_a?(Numeric)
+
+    habit['lockChance'].is_a?(Numeric) && habit['lockChance'] < 1
+  end
+
+  def self.check_lock_habits(json, npcs, objs, issues)
+    if json.key?('lockCues') && ![true, false].include?(json['lockCues'])
+      issues << "❌ ERROR: lockCues must be true or false (default true)."
+    end
+    stations = objs.select { |o| o.data.is_a?(Hash) && o.data['id'].is_a?(String) && workstation?(o.data) }
+    npcs.each do |_, npc|
+      next unless npc.key?('screenHabit')
+
+      where = "NPC '#{npc['id']}' screenHabit"
+      h = npc['screenHabit']
+      unless h.is_a?(Hash)
+        issues << "❌ ERROR: #{where} must be an object { lockChance, lockIfAwayOverSeconds }."
+        next
+      end
+      (h.keys - %w[lockChance lockIfAwayOverSeconds _comment]).each do |k|
+        issues << "⚠️ WARNING: #{where} has unknown field '#{k}' (lockChance, lockIfAwayOverSeconds)."
+      end
+      if h.key?('lockChance') && !(h['lockChance'].is_a?(Numeric) && h['lockChance'] >= 0 && h['lockChance'] <= 1)
+        issues << "❌ ERROR: #{where}.lockChance must be a number from 0 to 1."
+      end
+      if h.key?('lockIfAwayOverSeconds') && !(h['lockIfAwayOverSeconds'].is_a?(Numeric) && h['lockIfAwayOverSeconds'] >= 0)
+        issues << "❌ ERROR: #{where}.lockIfAwayOverSeconds must be a number of seconds, 0 or more."
+      end
+      own = stations.select { |o| station_owner(o.data, npcs) == npc['id'] }
+      if own.empty?
+        issues << "⚠️ WARNING: #{where} but the NPC owns no workstation (needsHome or screenOwner on an object with workstation: true): nothing to lock."
+      elsif own.all? { |o| LOCK_FIELDS.any? { |f| o.data.key?(f) } }
+        issues << "⚠️ WARNING: #{where} never applies: every station it owns (#{own.map(&:id).join(', ')}) sets lockChance or locksScreenOnLeave, and the object wins. Remove the object's field to use the habit."
+      end
+    end
+    objs.each do |o|
+      d = o.data
+      next unless d.is_a?(Hash) && d.key?('autoLockSeconds')
+
+      where = "object '#{o.id}' autoLockSeconds"
+      unless d['autoLockSeconds'].is_a?(Numeric) && d['autoLockSeconds'] > 0
+        issues << "❌ ERROR: #{where} must be a number of seconds above 0."
+        next
+      end
+      unless workstation?(d)
+        issues << "⚠️ WARNING: #{where} is set on an object that is not a workstation (workstation: true): it never locks."
+        next
+      end
+      owner_id = station_owner(d, npcs)
+      habit = npcs.find { |_, n| n['id'] == owner_id }&.last&.dig('screenHabit')
+      always = d['lockChance'].is_a?(Numeric) ? d['lockChance'] >= 1 : (d.key?('locksScreenOnLeave') ? d['locksScreenOnLeave'] != false : !habit_leaves_open?(habit))
+      if always
+        issues << "⚠️ WARNING: #{where} never applies: the screen always locks when its owner leaves (locksScreenOnLeave, lockChance 1 or no habit that leaves it open), and auto-lock only locks an open screen."
+      end
+    end
+  end
+
+  # Slice 21 (OFFICE_LIFE_PLAN 12.7): the idle swivel turns needs NPCs' swivel chairs. `swivel` on
+  # an NPC with no needs does nothing; LOS cones read the facing the swivel sets.
+  def self.check_swivel(npcs, issues)
+    npcs.each do |_, npc|
+      where = "NPC '#{npc['id']}'"
+      needs_npc = npc['needs'].is_a?(Hash) || npc['interests'].is_a?(Hash)
+      if (npc.key?('swivel') || npc.key?('swivelChance')) && !needs_npc
+        issues << "⚠️ WARNING: #{where} sets swivel/swivelChance but has no needs; only needs NPCs swivel, so it does nothing."
+      end
+      if npc.key?('swivel') && ![true, false].include?(npc['swivel'])
+        issues << "❌ ERROR: #{where} swivel must be true or false."
+      end
+      if npc.key?('swivelChance') && !(npc['swivelChance'].is_a?(Numeric) && npc['swivelChance'] >= 0 && npc['swivelChance'] <= 1)
+        issues << "❌ ERROR: #{where} swivelChance must be a number from 0 to 1 (default 0.05)."
+      end
+      if needs_npc && npc.dig('los', 'enabled') == true && npc['swivel'] != false
+        issues << "⚠️ WARNING: #{where} is a needs NPC with los.enabled; the idle swivel would turn its sight cone, so it never swivels. Set swivel: false to say so."
+      end
+    end
   end
 
   # ── affordance presets (OFFICE_LIFE_PLAN 2.1, slice 4) ───────────────────
@@ -116,7 +658,9 @@ module ValidateNpcNeeds
   # global (warning). Info: an NPC whose every object for some need is shared with someone it
   # avoids (either way, unconditionally) can only use it when they are not there.
 
-  BUILTIN_CHATTER = %w[coffee cooler greet].freeze
+  BUILTIN_CHATTER = %w[coffee cooler greet grumble].freeze
+  # Slice 14: needs the validator warns about when declared deferrable: false (environmental)
+  ENVIRONMENTAL_NEEDS = %w[caffeine thirst hunger rest].freeze
   CHAT_LINE_MAX = 40
 
   def self.pool_lines(pool)
@@ -143,6 +687,9 @@ module ValidateNpcNeeds
           issues << "❌ ERROR: #{where} chatter '#{topic}' line #{line.inspect} has a line break; a bubble is one line."
         elsif line.length > CHAT_LINE_MAX
           issues << "❌ ERROR: #{where} chatter '#{topic}' line #{line.inspect} is #{line.length} characters; a bubble holds at most #{CHAT_LINE_MAX}."
+        elsif line.match?(/[{}]/)
+          # Slice 15: chatter is voiced; the TTS speaks the text as written (tts-audio rule 2)
+          issues << "❌ ERROR: #{where} chatter '#{topic}' line #{line.inspect} has a { } variable; spoken lines must not print variables."
         end
       end
     end
@@ -154,6 +701,173 @@ module ValidateNpcNeeds
     return true if who == '*' || who == other['id']
 
     who.start_with?('group:') && groups_of.call(other).include?(who.sub('group:', ''))
+  end
+
+  # ── queues at shared machines (OFFICE_LIFE_PLAN 2.5, slice 10) ─────────
+  # affordance.queue: { cells: [{dx, dy}], maxWaitSeconds }, offsets in tiles from the approach
+  # cell (useFrom, else the object's own tile). The engine drops a cell that is not walkable and
+  # skips one in a room forbidden to the queuer; this flags what can be seen without the map: a
+  # malformed cell, a cell beside a wall with a door (it may sit in the doorway), and a cell
+  # outside the room in a neighbour forbidden to an NPC that needs the machine (review m8).
+
+  GAME_JS = File.expand_path('../public/break_escape/js/core/game.js', __dir__)
+
+  def self.room_tiles(type)
+    @room_tiles ||= {}
+    return @room_tiles[type] if @room_tiles.key?(type)
+
+    @tilemaps ||= File.exist?(GAME_JS) ? File.read(GAME_JS).scan(/tilemapTiledJSON\('([^']+)',\s*'rooms\/([^']+)'\)/).to_h : {}
+    file = @tilemaps[type]
+    path = file && File.expand_path("../public/break_escape/assets/rooms/#{file}", __dir__)
+    tj = path && File.exist?(path) ? (JSON.parse(File.read(path)) rescue nil) : nil
+    @room_tiles[type] = tj && tj['width'] ? [tj['width'].to_i, tj['height'].to_i] : nil
+  end
+
+  def self.check_queues(json, npcs, objs, issues)
+    objs.each do |o|
+      aff = o.data['affordance']
+      next unless aff.is_a?(Hash) && aff.key?('queue')
+
+      q = aff['queue']
+      next if q == false   # switches a preset's queue off
+
+      where = "object '#{o.id}' affordance.queue"
+      cells = q.is_a?(Hash) ? q['cells'] : nil
+      unless cells.is_a?(Array) && !cells.empty? && cells.all? { |c| c.is_a?(Hash) && c['dx'].is_a?(Numeric) && c['dy'].is_a?(Numeric) }
+        issues << "❌ ERROR: #{where} needs cells: a non-empty list of { dx, dy } tile offsets from the approach cell."
+        next
+      end
+      w = q['maxWaitSeconds']
+      issues << "⚠️ WARNING: #{where}.maxWaitSeconds must be a positive number of seconds (default 30)." if q.key?('maxWaitSeconds') && !(w.is_a?(Numeric) && w.positive?)
+      satisfies = list(aff['satisfies'])
+      issues << "⚠️ WARNING: #{where} is on an object that satisfies no need; nobody will queue there." if satisfies.empty?
+      room = json.dig('rooms', o.room)
+      dims = room.is_a?(Hash) ? room_tiles(room['type']) : nil
+      next if dims.nil? || o.room.nil?
+
+      uf = aff['useFrom'].is_a?(Hash) ? aff['useFrom'] : {}
+      bx = o.x.floor + uf['dx'].to_i
+      by = o.y.floor + uf['dy'].to_i
+      conns = room['connections'].is_a?(Hash) ? room['connections'] : {}
+      needers = npcs.select { |_r, n| n['needs'].is_a?(Hash) && (n['needs'].keys & satisfies).any? }
+      cells.each_with_index do |c, i|
+        cx = bx + c['dx'].round
+        cy = by + c['dy'].round
+        side = if cx.negative? then 'west' elsif cx >= dims[0] then 'east' elsif cy.negative? then 'north' elsif cy >= dims[1] then 'south' end
+        if side
+          nbr = Array(conns[side]).first
+          issues << "⚠️ WARNING: #{where} cell #{i + 1} (tile #{cx},#{cy}) lies outside room '#{o.room}'#{nbr ? " in '#{nbr}'" : ''}; it may sit in a doorway or a wall, and the engine drops a cell that is not walkable."
+          next unless nbr.is_a?(String)
+
+          needers.each do |hr, n|
+            rule = leash_rule(json, n, nbr, n['needsHome'].is_a?(Hash) ? n['needsHome']['room'] : hr)
+            issues << "⚠️ WARNING: #{where} cell #{i + 1} is in room '#{nbr}', #{rule} for NPC '#{n['id']}', who needs this machine; that NPC skips the cell (and waits at its post if no cell is left)." if rule
+          end
+        else
+          near = conns.keys.select do |dir|
+            (dir == 'west' && cx <= 1) || (dir == 'east' && cx >= dims[0] - 2) || (dir == 'north' && cy <= 2) || (dir == 'south' && cy >= dims[1] - 2)
+          end
+          issues << "⚠️ WARNING: #{where} cell #{i + 1} (tile #{cx},#{cy}) is within a tile of the #{near.join('/')} wall, which has a door; if it lands in the doorway a queuer blocks it." if near.any?
+        end
+      end
+    end
+  end
+
+  def self.spoken_topic?(json, npcs, topic)
+    sc = json['chatter']
+    return true if sc.is_a?(Hash) && pool_lines(sc[topic]).any?
+
+    npcs.any? { |_r, n| n['chatter'].is_a?(Hash) && pool_lines(n['chatter'][topic]).any? }
+  end
+
+  # ── scripted exchanges (slice 15, OFFICE_LIFE_PLAN 11.4) ───────────────────
+  # exchanges: [{ with, knot, requireGlobal }]. The knot must be in the NPC's compiled story; every
+  # speaker it names ("Name: line", by id or displayName) must be an NPC in the scenario (error) with
+  # a voice (warning), and should be the owner or the `with` NPC (the engine plays only the pair's
+  # lines). No { } in the knot's text (rule 2). heard_<knot> is set when it ends: declare it.
+  REPO_ROOT = File.expand_path('..', __dir__)
+
+  def self.ink_knot_texts(story_path, knot)
+    path = File.join(REPO_ROOT, story_path.to_s)
+    return nil unless File.exist?(path)
+
+    root = JSON.parse(File.read(path).sub(/\A\uFEFF/, ''))['root']
+    named = root.is_a?(Array) ? root.last : nil
+    return nil unless named.is_a?(Hash) && named[knot].is_a?(Array)
+
+    out = []
+    walk = lambda do |node|
+      case node
+      when String then out << node[1..].strip if node.start_with?('^') && !node[1..].strip.empty?
+      when Array then node.each { |c| walk.call(c) }
+      when Hash then node.each { |k, v| walk.call(v) unless k == '#f' }
+      end
+    end
+    walk.call(named[knot])
+    out
+  rescue JSON::ParserError
+    nil
+  end
+
+  def self.check_exchanges(json, npcs, issues)
+    by_name = {}
+    npcs.each do |_r, n|
+      by_name[n['id'].to_s.downcase] = n if n['id']
+      by_name[n['displayName'].to_s.downcase] = n if n['displayName']
+    end
+    ids = npcs.map { |_r, n| n['id'] }
+    groups = npcs.flat_map { |_r, n| Array(n.is_a?(Hash) ? n.dig('needsCompany', 'groups') : nil) }.uniq
+    globals = json['globalVariables'].is_a?(Hash) ? json['globalVariables'] : {}
+    npcs.each do |_r, n|
+      next unless n.key?('exchanges')
+
+      where = "NPC '#{n['id']}' exchanges"
+      unless n['exchanges'].is_a?(Array)
+        issues << "❌ ERROR: #{where} must be a list of { with, knot, requireGlobal }."
+        next
+      end
+      n['exchanges'].each do |e|
+        unless e.is_a?(Hash) && e['knot'].is_a?(String) && e['with'].is_a?(String)
+          issues << "❌ ERROR: #{where}: each entry needs a 'with' (an NPC id or group:<name>) and a 'knot'."
+          next
+        end
+        w = e['with']
+        if w.start_with?('group:')
+          issues << "⚠️ WARNING: #{where} '#{e['knot']}' with '#{w}': no NPC declares that group." unless groups.include?(w[6..])
+        elsif !ids.include?(w)
+          issues << "❌ ERROR: #{where} '#{e['knot']}' with '#{w}' is not an NPC in this scenario."
+        end
+        rg = e['requireGlobal']
+        if rg.is_a?(String) && !globals.key?(rg)
+          issues << "⚠️ WARNING: #{where} '#{e['knot']}' requireGlobal '#{rg}' is not declared in globalVariables."
+        end
+        unless globals.key?("heard_#{e['knot']}")
+          issues << "⚠️ WARNING: #{where} '#{e['knot']}': declare heard_#{e['knot']} (false) in globalVariables; it is set when the exchange has been heard."
+        end
+        texts = n['storyPath'] ? ink_knot_texts(n['storyPath'], e['knot']) : nil
+        if texts.nil?
+          issues << "❌ ERROR: #{where}: knot '#{e['knot']}' is not in #{n['storyPath'] || 'a story (no storyPath)'}."
+          next
+        end
+        issues << "❌ ERROR: #{where}: knot '#{e['knot']}' has no lines." if texts.empty?
+        texts.each do |t|
+          m = /\A([^:\n]+?):\s+(\S.*)\z/m.match(t)
+          speaker = m ? by_name[m[1].strip.downcase] : n
+          speaker = n if m && m[1].strip.downcase == 'npc'
+          if m && speaker.nil?
+            issues << "❌ ERROR: #{where}: knot '#{e['knot']}' line #{t.inspect} names '#{m[1].strip}', who is not an NPC in this scenario."
+            next
+          end
+          unless speaker['voice'].is_a?(Hash)
+            issues << "⚠️ WARNING: #{where}: knot '#{e['knot']}' speaker '#{speaker['id']}' has no voice; the line shows as a bubble only."
+          end
+          if !w.start_with?('group:') && ![n['id'], w].include?(speaker['id'])
+            issues << "⚠️ WARNING: #{where}: knot '#{e['knot']}' line #{t.inspect} is spoken by '#{speaker['id']}', not by the pair; the engine will not play it."
+          end
+          issues << "❌ ERROR: #{where}: knot '#{e['knot']}' line #{t.inspect} has a { } variable; spoken lines must not print variables." if t.match?(/[{}]/)
+        end
+      end
+    end
   end
 
   def self.check_social(json, npcs, objs, issues)
@@ -173,7 +887,11 @@ module ValidateNpcNeeds
 
       topic = aff['chatter']
       issues << "⚠️ WARNING: object '#{o.id}' affordance.chatter '#{topic}' is not a chatter pool (#{pools.uniq.sort.join(', ')}); nobody will speak there." unless pools.include?(topic)
-      issues << "⚠️ WARNING: object '#{o.id}' affordance.chatter needs capacity 2 or more; one NPC at a time never chats." if (aff['capacity'] || 1).to_i < 2
+      if pools.include?(topic) && sc != false && !spoken_topic?(json, npcs, topic)
+        # Slice 15: the engine has no spoken lines; a built-in topic is picture chat only
+        issues << "⚠️ WARNING: object '#{o.id}' affordance.chatter '#{topic}' has no lines in the scenario's or any NPC's chatter; its pairs show picture chat only (built-in pools are not spoken)."
+      end
+      issues << "⚠️ WARNING: object '#{o.id}' affordance.chatter needs capacity 2 or more, or a queue; one NPC at a time never chats." if (aff['capacity'] || 1).to_i < 2 && !aff['queue'].is_a?(Hash)
     end
 
     ids = npcs.map { |_r, n| n['id'] }
@@ -188,6 +906,9 @@ module ValidateNpcNeeds
       unless nc.is_a?(Hash)
         issues << "❌ ERROR: #{where} must be an object { groups, avoids }."
         next
+      end
+      if nc.key?('avoidRadius') && !(nc['avoidRadius'].is_a?(Numeric) && nc['avoidRadius'] >= 0 && nc['avoidRadius'] <= 10)
+        issues << "❌ ERROR: #{where} avoidRadius must be a number of tiles from 0 to 10 (default 2 with avoids; 0 is slice 8's sharing-only rule)."
       end
       Array(nc['avoids']).each do |e|
         who = e.is_a?(Hash) ? (e['npc'] || (e['group'] && "group:#{e['group']}")) : e
@@ -271,10 +992,14 @@ module ValidateNpcNeeds
           issues << "⚠️ WARNING: needsTag item '#{o.id}' (#{o.data['type']}, #{size[0]}x#{size[1]}) is over #{HELD_MAX_PX} px on a side; an NPC carries it in hand at native size, so it will look like carrying furniture."
         end
       end
-      snd = o.data.dig('affordance', 'useSound') if o.data['affordance'].is_a?(Hash)
-      next unless snd.is_a?(String) && !loaded_sounds.empty? && !loaded_sounds.include?(snd)
+      next unless o.data['affordance'].is_a?(Hash)
 
-      issues << "⚠️ WARNING: object '#{o.id}' affordance.useSound '#{snd}' is not a sound the game loads (sound-manager.js); it will not play."
+      %w[useSound startSound outputSound].each do |field|
+        snd = o.data['affordance'][field]
+        next unless snd.is_a?(String) && !loaded_sounds.empty? && !loaded_sounds.include?(snd)
+
+        issues << "⚠️ WARNING: object '#{o.id}' affordance.#{field} '#{snd}' is not a sound the game loads (sound-manager.js); it will not play."
+      end
     end
     if json.key?('showNpcIntentBubbles')
       issues << "⚠️ WARNING: showNpcIntentBubbles was renamed to showPressingNeeds (OFFICE_LIFE_PLAN 9.2); the old name is ignored."
@@ -397,6 +1122,11 @@ module ValidateNpcNeeds
     v.is_a?(Array) ? v : (v.nil? ? [] : [v])
   end
 
+  # Slice 22: revealOutput or a print command's producer as a list of non-empty id strings.
+  def self.printer_list(v)
+    (v.is_a?(Array) ? v : [v]).select { |x| x.is_a?(String) && !x.empty? }
+  end
+
   def self.check_npc(json, npc, npc_room, objs, issues, npcs = [])
     nid = npc['id']
     needs = npc['needs']
@@ -406,6 +1136,13 @@ module ValidateNpcNeeds
     where = "NPC '#{nid}'"
     patrol = npc.dig('behavior', 'patrol', 'enabled') == true
     issues << "❌ ERROR: #{where} declares needs/interests and behavior.patrol.enabled: true; a needs NPC must not patrol (the needs loop owns its movement)." if patrol
+    # Slice 14: balking and parked needs
+    if npc.key?('maxQueue') && !(npc['maxQueue'].is_a?(Integer) && npc['maxQueue'] >= 0)
+      issues << "❌ ERROR: #{where} maxQueue must be a whole number >= 0 (0 never queues; unset is no limit)."
+    end
+    if npc.key?('needsDeferMin') && !(npc['needsDeferMin'].is_a?(Numeric) && npc['needsDeferMin'].positive? && npc['needsDeferMin'] <= 120)
+      issues << "❌ ERROR: #{where} needsDeferMin must be minutes > 0 and <= 120 (default 4)."
+    end
 
     by_id = objs.select(&:id).group_by(&:id)
     home = npc['needsHome']
@@ -448,13 +1185,22 @@ module ValidateNpcNeeds
 
     (npc['onUse'].is_a?(Hash) ? npc['onUse'] : {}).each do |oid, hook|
       issues << "❌ ERROR: #{where} onUse names '#{oid}', which is not an object id in this scenario." unless by_id.key?(oid)
-      prod = hook.is_a?(Hash) ? hook['revealOutput'] : nil
-      next if prod.nil?
+      raw = hook.is_a?(Hash) ? hook['revealOutput'] : nil
+      next if raw.nil?
 
-      if !prod.is_a?(String) || !by_id.key?(prod)
-        issues << "❌ ERROR: #{where} onUse '#{oid}' revealOutput names '#{prod}', which is not an object id in this scenario."
-      elsif objs.none? { |o| o.data['outputOf'] == prod }
-        issues << "⚠️ WARNING: #{where} onUse '#{oid}' revealOutput names '#{prod}', but no object has outputOf '#{prod}'; every print shows only a cosmetic copy."
+      # Slice 22: a producer id or a list of them, in preference order
+      prods = raw.is_a?(Array) ? raw : [raw]
+      if raw.is_a?(Array) && raw.empty?
+        issues << "❌ ERROR: #{where} onUse '#{oid}' revealOutput is an empty list; name one producer or more."
+        next
+      end
+      issues << "⚠️ WARNING: #{where} onUse '#{oid}' revealOutput lists a producer twice; the second is never used." if prods.uniq.length < prods.length
+      prods.uniq.each do |prod|
+        if !prod.is_a?(String) || !by_id.key?(prod)
+          issues << "❌ ERROR: #{where} onUse '#{oid}' revealOutput names '#{prod}', which is not an object id in this scenario."
+        elsif objs.none? { |o| o.data['outputOf'] == prod }
+          issues << "⚠️ WARNING: #{where} onUse '#{oid}' revealOutput names '#{prod}', but no object has outputOf '#{prod}'; every print shows only a cosmetic copy."
+        end
       end
     end
     has_on_use = npc['onUse'].is_a?(Hash) && !npc['onUse'].empty?
@@ -475,6 +1221,13 @@ module ValidateNpcNeeds
       end
       if n.key?('jitterPct') && !(n['jitterPct'].is_a?(Numeric) && n['jitterPct'] >= 0 && n['jitterPct'] <= 50)
         issues << "❌ ERROR: #{where} need '#{name}' jitterPct must be 0 to 50."
+      end
+      if n.key?('deferrable')
+        if n['deferrable'] != true && n['deferrable'] != false
+          issues << "❌ ERROR: #{where} need '#{name}' deferrable must be true or false."
+        elsif n['deferrable'] == false && ENVIRONMENTAL_NEEDS.include?(name)
+          issues << "⚠️ WARNING: #{where} need '#{name}' is deferrable: false; the NPC will walk past anyone it avoids and join any queue for it. That is meant for story needs (rounds, a delivery), rarely for #{name}."
+        end
       end
       next unless decay.is_a?(Numeric) && decay > 0 && urgent.is_a?(Numeric) && initial.is_a?(Numeric)
 
@@ -600,6 +1353,59 @@ module ValidateNpcNeeds
       next unless (list(aff['accepts']) & slot_tags).empty?
 
       issues << "⚠️ WARNING: object '#{o.id}' sets affordance.onDeliver, but no slot's needsTag is in its accepts; onDeliver only affects reveal slots (plain items are always consumed)."
+    end
+  end
+
+  # ── left-behind items (OFFICE_LIFE_PLAN 2.10, slice 11) ─────────────────
+  # A declared item with leftBehindBy "<npcId>" is a slot by Part A's definition: the engine shows
+  # it at the owner's post on a real leave (seeded roll under leftBehindChance) and stows it on
+  # return, through its own revealOnGlobal. Same global and read-in-place rules as a reveal slot.
+  def self.check_left_behind(json, npcs, objs, issues)
+    by_npc = npcs.to_h { |room_id, n| [n['id'], [room_id, n]] }
+    by_id = objs.group_by(&:id)
+    objs.each do |o|
+      d = o.data
+      if d.key?('leftBehindChance') && !d.key?('leftBehindBy')
+        issues << "⚠️ WARNING: object '#{o.id || d['name']}' sets leftBehindChance without leftBehindBy; nothing rolls it."
+      end
+      next unless d.key?('leftBehindBy')
+
+      label = "left-behind item '#{o.id || d['name']}'"
+      issues << "❌ ERROR: #{label} has no id; left-behind items are shown and stowed by id." if o.id.to_s.empty?
+      issues << "❌ ERROR: #{label} has both outputOf and leftBehindBy; a slot belongs to a producer or an owner, not both." if d.key?('outputOf')
+      owner = by_npc[d['leftBehindBy']]
+      if owner.nil?
+        issues << "❌ ERROR: #{label} leftBehindBy names '#{d['leftBehindBy']}', which is not an NPC id in this scenario."
+      elsif owner[1]['needsHome'].nil?
+        issues << "❌ ERROR: #{label} leftBehindBy '#{d['leftBehindBy']}' has no needsHome; only a leave from a post can leave something behind."
+      else
+        home = owner[1]['needsHome']
+        home_room = home.is_a?(Hash) ? home['room'] : by_id[home]&.first&.room
+        if home_room && o.room && o.room != home_room
+          issues << "⚠️ WARNING: #{label} is in room '#{o.room}', but its owner's post is in '#{home_room}'; it shows wherever it is declared, so put it at the post."
+        end
+      end
+      c = d['leftBehindChance']
+      if c.nil?
+        issues << "⚠️ WARNING: #{label} has no leftBehindChance; the default is 0, so it is never left."
+      elsif !c.is_a?(Numeric) || c.negative? || c > 1
+        issues << "❌ ERROR: #{label} leftBehindChance must be a number from 0 to 1."
+      end
+      g = d['revealOnGlobal']
+      unless g.is_a?(String) && !g.empty?
+        issues << "❌ ERROR: #{label} has leftBehindBy but no revealOnGlobal; the engine shows and stows it through its own global."
+        next
+      end
+      others = objs.reject { |x| x.equal?(o) }.select { |x| x.data['revealOnGlobal'] == g }
+      issues << "❌ ERROR: #{label} revealOnGlobal '#{g}' is shared with #{others.map(&:id).inspect}; each left-behind item needs its own global." unless others.empty?
+      if global_used_elsewhere?(json, g)
+        issues << "❌ ERROR: #{label} revealOnGlobal '#{g}' is used elsewhere in the scenario; the engine owns it (true when left, false when collected), so no condition or mapping may read or set it."
+      end
+      if d['readable'] == true && d['type'].to_s.start_with?('notes') && d['takeable'] != true && d['readDisplay'] != 'gameDisplay'
+        issues << "❌ ERROR: #{label} is a non-takeable readable #{d['type']} without readDisplay \"gameDisplay\"; the notes minigame removes what it opens. Add \"readDisplay\": \"gameDisplay\" or make it takeable (one beat)."
+      end
+      beat = d['takeable'] == true ? 'takeable: one beat, gone for good once taken' : 'not takeable: repeats on later leaves'
+      issues << "ℹ️ Left-behind item '#{o.id}' (#{d['leftBehindBy']}, chance #{c.inspect}): #{beat}."
     end
   end
 

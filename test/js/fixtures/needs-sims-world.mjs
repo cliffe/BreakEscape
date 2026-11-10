@@ -49,14 +49,14 @@ function objects() {
         { id: 'tom_pc', roomId: 'office', x: 88, y: 166, affordance: { satisfies: 'work', restores: 60, useSeconds: 10, private: true } },
         { id: 'sanjay_pc', roomId: 'office', x: 92.5, y: 122.5, affordance: { satisfies: 'work', restores: 60, useSeconds: 10, private: true } },
         { id: 'grace_laptop', roomId: 'office', x: 45.5, y: 175 },
-        { id: 'office_coffee', roomId: 'office', x: 269, y: 276.5, affordance: { satisfies: 'caffeine', restores: 70, useSeconds: 12, useFrom: { dx: -1, dy: 0 } } },
+        { id: 'office_coffee', roomId: 'office', x: 269, y: 276.5, affordance: { satisfies: 'caffeine', restores: 70, useSeconds: 12, useFrom: { dx: -1, dy: 0 }, queue: { cells: [{ dx: -1, dy: 0 }, { dx: -2, dy: 0 }] }, chatter: 'coffee' } },
         { id: 'office_mugs', roomId: 'office', x: 135.5, y: 231, needsTag: 'dirty_mugs' },
         { id: 'activity_board', roomId: 'office', x: 230, y: 39 },
         // kitchen (loads when the west door opens)
         { id: 'fridge', room: 'kitchen', x: -270, y: 94.5, affordance: { satisfies: 'hunger', restores: 80, useSeconds: 15, useFrom: { dx: 0, dy: 1 } } },
         { id: 'microwave', room: 'kitchen', x: -149, y: 105, affordance: { satisfies: 'hunger', restores: 60, useSeconds: 10 } },
-        { id: 'kitchen_coffee', room: 'kitchen', x: -211, y: 276.5, affordance: { satisfies: 'caffeine', restores: 70, useSeconds: 12, useFrom: { dx: 0, dy: -1 } } },
-        { id: 'water_cooler', room: 'kitchen', x: -276, y: 247.5, affordance: { satisfies: ['thirst', 'social'], restores: 70, useSeconds: 15, capacity: 2 } },
+        { id: 'kitchen_coffee', room: 'kitchen', x: -211, y: 276.5, affordance: { satisfies: 'caffeine', restores: 70, useSeconds: 12, useFrom: { dx: 0, dy: -1 }, queue: { cells: [{ dx: 1, dy: -1 }, { dx: 2, dy: -1 }] } } },
+        { id: 'water_cooler', room: 'kitchen', x: -276, y: 247.5, affordance: { satisfies: ['thirst', 'social'], restores: 70, useSeconds: 15, capacity: 2, useFrom: { dx: 0, dy: 1 } } },
         { id: 'washing_up_tray', room: 'kitchen', x: -214, y: 103.5, affordance: { accepts: ['dirty_mugs'], useSeconds: 5 } },
         // lounge (loads when the east door opens)
         { id: 'rosa_laptop', room: 'lounge', x: 494, y: 133.5 },
@@ -76,17 +76,17 @@ export const PRESET_OBJECTS = {
     tom_pc: { type: 'pc', affordance: { private: true } },
     sanjay_pc: { type: 'pc', affordance: { private: true } },
     grace_laptop: { type: 'laptop', affordance: false },                           // no affordance today
-    office_coffee: { type: 'coffee_station1', affordance: { useFrom: { dx: -1, dy: 0 } } },
+    office_coffee: { type: 'coffee_station1', affordance: { useFrom: { dx: -1, dy: 0 }, queue: { cells: [{ dx: -1, dy: 0 }, { dx: -2, dy: 0 }] }, chatter: 'coffee' } },   // queue and chatter: slice 10
     office_mugs: { type: 'dirty_mugs1' },
     activity_board: { type: 'chalkboard' },
     fridge: { type: 'qdc_fridge1' },
     microwave: { type: 'microwave1' },
-    kitchen_coffee: { type: 'coffee_station1', affordance: { useFrom: { dx: 0, dy: -1 } } },
+    kitchen_coffee: { type: 'coffee_station1', affordance: { useFrom: { dx: 0, dy: -1 }, queue: { cells: [{ dx: 1, dy: -1 }, { dx: 2, dy: -1 }] } } },
     water_cooler: { type: 'water_cooler1' },
     washing_up_tray: { type: 'mugs_tray1', affordance: { accepts: ['dirty_mugs'], useSeconds: 5 } },  // no preset
     rosa_laptop: { type: 'laptop', affordance: false },
     lounge_sofa: { type: 'leather_sofa1' },
-    lounge_kettle: { type: 'kettle1', affordance: { useFrom: { dx: 1, dy: 0 } } }
+    lounge_kettle: { type: 'kettle1', affordance: { useFrom: { dx: 1, dy: 0 }, queue: false } }   // no queue by the door (slice 10)
 };
 
 const START = (room, tx, ty) => ({ x: tx * TILE + 16 + (room === 'kitchen' ? -320 : room === 'lounge' ? 320 : 0), y: ty * TILE + 16 });
@@ -170,8 +170,15 @@ export function simsApproachCell(o) {
  * With `{ reachable }` the world answers reachability through that function (default: all
  * reachable, but counted, so select back-off engages as it does live).
  */
-export function makeSimsWorld({ reachable = () => true, presets = null } = {}) {
-    let objs = objects();
+export function makeSimsWorld({ reachable = () => true, presets = null, queues = false } = {}) {
+    // queues (slice 10): the showcase's coffee queues. Off by default, so every golden day from
+    // earlier slices stays the day it was (no queue: a second coffee drinker waits at its desk).
+    const noQueue = a => {
+        if (queues || !a || typeof a !== 'object') return a;
+        const { queue, ...rest } = a;
+        return presets ? { ...rest, queue: false } : rest;
+    };
+    let objs = objects().map(o => (o.affordance ? { ...o, affordance: noQueue(o.affordance) } : o));
     // presets: { resolve(object) -> affordance }: the preset copy of the showcase. Objects carry
     // their type and overrides only, and list/get hand the needs system the resolved affordance,
     // as the live adapter's describe does.
@@ -179,7 +186,9 @@ export function makeSimsWorld({ reachable = () => true, presets = null } = {}) {
         objs = objs.map(o => {
             const { affordance, ...rest } = o;
             const p = PRESET_OBJECTS[o.id];
-            return p ? { ...rest, ...p } : rest;
+            if (!p) return rest;
+            return p.affordance && typeof p.affordance === 'object' ? { ...rest, ...p, affordance: noQueue(p.affordance) }
+                : (queues || p.affordance === false || !/coffee|kettle/.test(p.type) ? { ...rest, ...p } : { ...rest, ...p, affordance: { queue: false } });
         });
     }
     const cfg = { npcs: npcs(), objects: objs };
@@ -236,13 +245,17 @@ export function runSimsDay(NPCNeedsSystem, { minutes = 6, opts = {}, reachable, 
  * with the live adapter's rules. Positions are the scenario's tiles; live cells differ a little.
  * Extra handles: w.slots (by id), w.take(id) (the player takes a slot), w.globals.
  */
-export function addCopierBeat(w, { cfgNpcs = w.cfgNpcs, accepts = ['post', 'printout'], onDeliver } = {}) {
+export function addCopierBeat(w, { cfgNpcs = w.cfgNpcs, accepts = ['post', 'printout'], onDeliver, extraSlots = false, uncollectedAfterSeconds } = {}) {
     const calls = w.calls;
     Object.assign(calls, { placed: [], stowed: [], revealed: [], cosmetics: [], cosmeticsRemoved: [] });
     const copier = { id: 'office_copier', roomId: 'office', x: 157, y: 89, affordance: { useSeconds: 8, capacity: 1, useFrom: { dx: 0, dy: 1 } } };
+    if (uncollectedAfterSeconds !== undefined) copier.affordance.uncollectedAfterSeconds = uncollectedAfterSeconds;
     w.objs.push(copier);
     const slots = {};
-    for (const [id, takeable] of [['copier_out_a', true], ['copier_out_b', false], ['copier_out_c', false]]) {
+    // extraSlots (slice 17): the showcase's d and e, read in place
+    const ids = [['copier_out_a', true], ['copier_out_b', false], ['copier_out_c', false]];
+    if (extraSlots) ids.push(['copier_out_d', false], ['copier_out_e', false]);
+    for (const [id, takeable] of ids) {
         const o = { id, roomId: 'office', x: 157, y: 75, needsTag: 'printout', slot: true, pickable: false, outputOf: 'office_copier', global: `${id}_shown`, takeable, home: { roomId: 'office', x: 157, y: 75 } };
         slots[id] = o;
         w.objs.push(o);
@@ -281,11 +294,15 @@ export function addCopierBeat(w, { cfgNpcs = w.cfgNpcs, accepts = ['post', 'prin
     };
     world.stowHeld = (npcId, itemId) => (held.has(itemId) ? stow(slots[itemId]) : false);
     world.stowSlot = itemId => stow(slots[itemId]);
-    world.revealOutput = (producerId, npcId) => {
-        const list = Object.values(slots).filter(o => o.outputOf === producerId).sort((a, b) => (a.id < b.id ? -1 : 1));
-        const free = list.find(o => o.roomId && !o.taken && g[o.global] !== true && !o.placed && !held.has(o.id));
+    const firstFree = producerId => Object.values(slots).filter(o => o.outputOf === producerId).sort((a, b) => (a.id < b.id ? -1 : 1))
+        .find(o => o.roomId && !o.taken && g[o.global] !== true && !o.placed && !held.has(o.id)) || null;
+    // Slice 17: the full-pool check and the owner stamp, as the live adapter
+    world.freeSlotOf = producerId => firstFree(producerId)?.id || null;
+    world.setPrintedBy = (id, npcId) => { if (slots[id]) slots[id].printedBy = npcId || null; };
+    world.revealOutput = (producerId, npcId, opts = null) => {
+        const free = firstFree(producerId);
         if (free) {
-            g[free.global] = true; free.pickable = true;
+            g[free.global] = true; free.pickable = true; free.printedBy = opts?.printedBy || null;
             calls.revealed.push({ producerId, npcId, slotId: free.id });
             return { slotId: free.id };
         }
@@ -300,5 +317,53 @@ export function addCopierBeat(w, { cfgNpcs = w.cfgNpcs, accepts = ['post', 'prin
     w.slots = slots;
     w.globals = g;
     w.take = (id) => { const o = slots[id]; o.taken = true; o.roomId = null; o.pickable = false; };
+    return w;
+}
+
+/**
+ * Slice 11 (left-behind items, OFFICE_LIFE_PLAN 2.10): Tom's ID badge on his desk, as the
+ * showcase declares it (leftBehindBy "tom", leftBehindChance 0.7, own revealOnGlobal), and the
+ * world's left-behind methods with the live adapter's rules (leftBehindItems, revealLeftBehind;
+ * stowSlot and stowRevealedSlots chain to any copier beat already added). Extra handles:
+ * w.badge, w.takeLeft(id) (the player takes it), w.globals, calls.leftShown / calls.leftStowed.
+ */
+export function addLeftBehind(w, { chance = 0.7, id = 'tom_badge', owner = 'tom', takeable = true } = {}) {
+    const calls = w.calls;
+    calls.leftShown = calls.leftShown || [];
+    calls.leftStowed = calls.leftStowed || [];
+    const g = calls.globals;
+    const item = { id, roomId: 'office', x: 104, y: 150, pickable: false, slot: true, leftBehindBy: owner, leftBehindChance: chance, global: `${id}_left`, takeable, home: { roomId: 'office', x: 104, y: 150 } };
+    w.objs.push(item);
+    const items = { [id]: item };
+    const stow = (o) => {
+        if (!o || o.taken) return false;
+        o.roomId = o.home.roomId; o.x = o.home.x; o.y = o.home.y; o.pickable = false;
+        g[o.global] = false;
+        calls.leftStowed.push(o.id);
+        return true;
+    };
+    const world = w.world;
+    world.leftBehindItems = npcId => Object.values(items)
+        .filter(o => o.leftBehindBy === npcId && o.roomId && !o.taken && g[o.global] !== true)
+        .sort((a, b) => (a.id < b.id ? -1 : 1))
+        .map(o => ({ id: o.id, chance: o.leftBehindChance }));
+    world.revealLeftBehind = (itemId, npcId) => {
+        const o = items[itemId];
+        if (!o || o.taken || !o.roomId) return false;
+        g[o.global] = true; o.pickable = true;
+        calls.leftShown.push({ npcId, itemId });
+        world.emit(`object_revealed:${itemId}`, { npcId, objectId: itemId, leftBehindBy: npcId });
+        return true;
+    };
+    const baseStow = world.stowSlot, baseOnSight = world.stowRevealedSlots;
+    world.stowSlot = itemId => (items[itemId] ? stow(items[itemId]) : (baseStow ? baseStow(itemId) : false));
+    world.stowRevealedSlots = roomIds => [
+        ...(baseOnSight ? baseOnSight(roomIds) : []),
+        ...Object.values(items).filter(o => roomIds.includes(o.roomId) && g[o.global] === true && !o.taken).filter(o => stow(o)).map(o => o.id)
+    ];
+    w.leftItems = items;
+    w.badge = item;
+    w.globals = g;
+    w.takeLeft = (itemId) => { const o = items[itemId]; o.taken = true; o.roomId = null; o.pickable = false; };
     return w;
 }

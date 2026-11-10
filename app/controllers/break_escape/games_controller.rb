@@ -645,6 +645,7 @@ module BreakEscape
         # in this scenario voices as this NPC.
         valid = InkTextValidator.validate(ink_json_path.to_s, text) ||
                 ScenarioBarkValidator.validate(npc, text) ||
+                shared_chatter_line?(npc, text) ||
                 spoken_as_npc_in_scenario?(npc_id, text)
 
         unless valid
@@ -656,7 +657,8 @@ module BreakEscape
         # either scenario barks (eventMappings / timedMessages), or it is a co-speaker whose
         # lines live in another NPC's Ink story (e.g. a director speaking inside a briefing
         # cutscene). The text must be a line that story voices as this NPC.
-        unless ScenarioBarkValidator.validate(npc, text) || spoken_as_npc_in_scenario?(npc_id, text)
+        unless ScenarioBarkValidator.validate(npc, text) || shared_chatter_line?(npc, text) ||
+               spoken_as_npc_in_scenario?(npc_id, text)
           Rails.logger.warn "[TTS] Bark text validation failed for NPC #{npc_id}: #{text.truncate(60)}"
           return render_error('Text not found in NPC barks or scenario stories', :forbidden)
         end
@@ -2408,6 +2410,12 @@ module BreakEscape
       end
 
       nil
+    end
+
+    # A line of the scenario's shared chatter pools (scenario['chatter']), which
+    # any NPC with a voice may speak (office life, OFFICE_LIFE_PLAN 11.3).
+    def shared_chatter_line?(npc, text)
+      npc['voice'].is_a?(Hash) && ScenarioBarkValidator.validate_shared(@game.scenario_data, text)
     end
 
     # True when one of this game's ink stories has a line the client voices as

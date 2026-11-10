@@ -43,6 +43,7 @@ import '../systems/npc-sight-occlusion.js';  // Walls, doors and tall props bloc
 import { CommandBoardRecorder } from '../minigames/command-board/command-board-timeline.js';  // Board entries stamped as they happen
 import { initLighting } from '../systems/lighting.js';
 import { installSeating } from '../systems/seating.js';  // Sitting on chairs (sets window.seating)
+import { installBehindWallFade } from '../systems/behind-wall-fade.js';  // Fades a south room's back wall while the player is behind it
 import { collectCharacterSprites, queueCharacterAtlases, ensureCharacterTexture } from '../systems/character-textures.js';
 import { mailScheduler } from '../systems/mail-scheduler.js';  // Mail jobs and mailState (social missions)
 import { installTimedEmails } from '../systems/mail-ink.js';  // Ink-driven plain email: contacts' timedEmails
@@ -81,6 +82,10 @@ function watchGameClockAnchors(clock) {
 export function preload() {
     // Show loading text
     document.getElementById('loading').style.display = 'block';
+
+    // Desk footprint data for maps that opt in to footprint collision boxes
+    // (deskBoxes = footprint; systems/desk-footprints.js, rooms.js applyTableBody)
+    this.load.json('tableSurfaces', 'table_surfaces.json');
 
     // Load tilemap files and regular tilesets first
     this.load.tilemapTiledJSON('room_reception', 'rooms/room_reception.json');
@@ -232,10 +237,15 @@ export function preload() {
     this.load.tilemapTiledJSON('room_lw_kitroom', 'rooms/room_lw_kitroom.json'); // lab_physical_pentest kit room, Ledgerwell identity (old partners' room: oxblood carpet, walnut sideboards, baize RoE board)
     this.load.tilemapTiledJSON('room_lw_front_desk', 'rooms/room_lw_front_desk.json'); // lab_physical_pentest front desk, Ledgerwell identity (old bank counter of walnut sideboards, oak boards and green runner, staff directory, time clock; from room_lw_reception)
     this.load.tilemapTiledJSON('room_lw_ceo', 'rooms/room_lw_ceo.json'); // from room_zds_ceo (m03 portrait, magazine cover and static filing cabinet removed)
+    this.load.tilemapTiledJSON('room_lw_records_office', 'rooms/room_lw_records_office.json'); // lab_physical_pentest records office (from room_lw_ceo; grey-green vinyl floor, exec decor replaced with filing runs, records counter, key cabinet, ledger shelves, sorting table)
     this.load.tilemapTiledJSON('room_lw_store', 'rooms/room_lw_store.json'); // from small_room_storage_1x1gu
     this.load.tilemapTiledJSON('room_lw_accounts', 'rooms/room_lw_accounts.json'); // lab_physical_pentest 20x10 accounts open plan (Ledgerwell oatmeal office shell, room_lw_tiles_20); replaces room_lw_records for open_plan
+    this.load.tilemapTiledJSON('room_test_desk_seating', 'rooms/room_test_desk_seating.json'); // test_desk_seating: desks with swivel/static chairs from the front, behind and side (seat-box experiments)
     this.load.tilemapTiledJSON('room_lw_postroom', 'rooms/room_lw_postroom.json'); // lab_physical_pentest P1 post & print room (10x6 back-of-house shell, room_lw_concrete floor; from room_lw_hall geometry)
     this.load.tilemapTiledJSON('room_lw_comms', 'rooms/room_lw_comms.json'); // lab_physical_pentest P3 comms cupboard (5x6 back-of-house shell, room_lw_concrete floor; from room_lw_store geometry)
+    this.load.tilemapTiledJSON('room_lw_riser', 'rooms/room_lw_riser.json'); // lab_physical_pentest P5 server riser (5x6 back-of-house shell, room_lw_concrete floor; copied from room_lw_comms, dressed as a server riser)
+    this.load.tilemapTiledJSON('room_lw_archive', 'rooms/room_lw_archive.json'); // lab_physical_pentest P4 deeds & archive room (10x6 back-of-house shell, room_lw_concrete floor; from room_lw_postroom geometry)
+    this.load.tilemapTiledJSON('room_lw_kitchen', 'rooms/room_lw_kitchen.json'); // lab_physical_pentest P2 staff kitchen (10x10 shell, room_lw_vinyl grey-green lino floor; from room_lw_kitroom geometry)
 
     // Load room images (now using smaller 32px scale images)
     this.load.image('room_reception', 'tiles/rooms/room1.png');
@@ -437,6 +447,7 @@ export function preload() {
     this.load.image('lw_time_clock1', 'objects/lw_time_clock1.png');
     this.load.image('lw_franking_machine1', 'objects/lw_franking_machine1.png');
     this.load.image('lw_card_index1', 'objects/lw_card_index1.png');
+    this.load.image('lw_sign_store1', 'objects/lw_sign_store1.png');
     this.load.image('page-builder', 'objects/page-builder.png');
     this.load.image('report-workstation', 'objects/report-workstation.png');
     this.load.image('suitcase', 'objects/suitcase-1.png');
@@ -848,6 +859,8 @@ export function preload() {
     this.load.image('monitor_stand1', 'objects/monitor_stand1.png');
     this.load.image('bedside_locker1', 'objects/bedside_locker1.png');
     this.load.image('coffee_station1', 'objects/coffee_station1.png');
+    this.load.image('wall_socket1', 'objects/wall_socket1.png');
+    this.load.image('cake1', 'objects/cake1.png');
     this.load.image('first_aid_cabinet1', 'objects/first_aid_cabinet1.png');
     this.load.image('instrument_trolley1', 'objects/instrument_trolley1.png');
     this.load.image('step_stool1', 'objects/step_stool1.png');
@@ -924,6 +937,7 @@ export function preload() {
     this.load.image('nurse_call_display1', 'objects/nurse_call_display1.png');
     this.load.image('filing_cabinet_steel1', 'objects/filing_cabinet_steel1.png');
     this.load.image('binder_shelves1', 'objects/binder_shelves1.png');
+    this.load.spritesheet('lw_deed_boxes', 'objects/lw_deed_boxes.png', { frameWidth: 38, frameHeight: 61 }); // lab_physical_pentest P4: bespoke japanned deed-box prop (38x61), so the deed-box scope entity reads as a distinct vault bank rather than a twin of the grey ledger shelves beside it. Single-frame NPC sprite sheet (createNPCSprite needs a spritesheet/atlas).
     this.load.image('kvm_cart1', 'objects/kvm_cart1.png');
     this.load.image('checkin_kiosk1', 'objects/checkin_kiosk1.png');
     this.load.image('drinks_vending1', 'objects/drinks_vending1.png');
@@ -1827,9 +1841,16 @@ export async function create() {
     // Create player first like in original
     createPlayer(this);
     installSeating(this);
+    installBehindWallFade(this);
 
     // Store player globally for access from other modules
     window.player = player;
+
+    // Object action menu (action-menu.js): a tap on an object that offers more than one
+    // action shows the shared interaction-menu overlay listing them (e.g. a world keycard
+    // the player could clone or take with a cloner in hand). Loaded unconditionally — it
+    // applies to any scenario, not only office-life ones — and reached through window.
+    import('../systems/action-menu.js').catch(e => console.warn('⚠️ action menu failed to load:', e));
 
     // A costume put on in an earlier session (global pp_disguise, restored above) is lost
     // with the page: re-dress the avatar now the sprite exists. No-op without a costume.
@@ -1963,8 +1984,15 @@ export async function create() {
                     const sceneRef = this;
                     import('../systems/npc-action-icons.js').then(m => m.installNpcActionIcons(sceneRef)).catch(e => console.warn('npc action icons failed', e));
                     import('../systems/npc-needs-debug.js').then(m => m.installNpcNeedsDebug(sceneRef)).catch(e => console.warn('npc needs debug overlay failed', e));
-                    import('../systems/npc-office-visuals.js').then(m => m.installNpcOfficeVisuals(sceneRef)).catch(e => console.warn('npc office visuals failed', e));
+                    import('../systems/npc-office-visuals.js').then(m => m.installNpcOfficeVisuals(sceneRef)).catch(e => console.warn('npc office visuals failed', e))
+                        // Room tone (slice 20): only with "roomTone": true; loads its table, then a bed at spawn
+                        .then(() => import('../systems/office-room-tone.js')).then(m => m.installOfficeRoomTone(sceneRef)).catch(e => console.warn('room tone failed', e));
                     import('../systems/npc-world-bubbles.js').then(m => m.installNpcWorldBubbles(sceneRef)).catch(e => console.warn('npc speech bubbles failed', e));
+                    import('../systems/npc-needs-chatter.js').then(m => m.installNpcChatterVoice()).catch(e => console.warn('npc voiced chatter failed', e));
+                    // Left-card consequence (left-card-consequence.js, §3.3b): runs an object's
+                    // onOwnerNoticesMissing actions when the owner returns and finds a left-behind
+                    // item the player took (npc_left_item_gone:<owner>).
+                    import('../systems/left-card-consequence.js').then(m => m.installLeftCardConsequence()).catch(e => console.warn('left-card consequence failed', e));
                     return import('../systems/workstation-state.js').then(ws => {
                         const state = ws.installWorkstationState();
                         // The locked-screen look and its sounds follow the workstation events
@@ -2490,6 +2518,10 @@ export function update(time, delta) {
     if (window.scenarioTimerDispatcher) {
         window.scenarioTimerDispatcher.update(Date.now());
     }
+
+    // Behind-the-wall fade: after every writer of room-object alpha, before lighting reads its factors.
+    // this.time.delta does not exist (Clock has no delta), so pass only this.time.now.
+    window.behindWallFade?.update(this.time.now);
 
     if (window.lightingSystem) {
         window.lightingSystem.update(this.time.now);

@@ -4,14 +4,14 @@
 
 TEST: Needs (Sims-style office day)
 
-A demo of the NPC needs system. Nothing to solve. Five staff get thirsty, hungry, tired and bored, want coffee and want to work, and walk to whatever fixes it before going back to their own desks. Open the kitchen door (west) and the lounge door (east) once so they can get there. The lounge is Rosa's room: only she and Grace use it, and each PC is used only by its owner. Read the deadline memo in the office and Tom and Amara both want a coffee at once; whoever misses the office station walks to the kitchen, not to Rosa's kettle. Drop the parcel or the dirty mugs from your inventory and watch someone deal with them. The whiteboard by the office's back wall shows the last thing anyone used. Icons over heads say what each person is doing, a thought bubble beside a head shows the need they will act on next, a carried parcel or mug shows in their hands, desk workers type, and you hear a drink or a snack when you are near enough.
+A demo of the NPC needs system. Nothing to solve. Five staff get thirsty, hungry, tired and bored, want coffee and want to work, and walk to whatever fixes it before going back to their own desks. Open the kitchen door (west) and the lounge door (east) once so they can get there. The lounge is Rosa's room: only she and Grace use it, and each PC is used only by its owner. Read the deadline memo in the office and Tom and Amara both want a coffee at once; whoever misses the office station walks to the kitchen, not to Rosa's kettle (with the kitchen still shut, they wait in line at the office station instead). Read the Activity Board before opening the kitchen and Amara and Tom want a coffee, Marek queues behind Tom, and whoever is pouring chats with the first in line, unless that is Marek. Drop the parcel or the dirty mugs from your inventory and watch someone deal with them. The whiteboard by the office's back wall shows the last thing anyone used. Icons over heads say what each person is doing, a thought bubble beside a head shows the need they will act on next, a carried parcel or mug shows in their hands, desk workers type, and you hear a drink or a snack when you are near enough.
 
 ## Scenario Statistics
 
 | Metric | Value |
 |---|---|
 | Story aims | 1 |
-| Total tasks | 16 (0 optional) |
+| Total tasks | 38 (0 optional) |
 | VM flag challenges | 0 |
 | Physical locks | 0 |
 | AND-gate convergences | 0 |
@@ -214,64 +214,90 @@ flowchart TD
   lounge("Lounge")
   rc_amara_pc_1{"Amara's PC"}
   rc_tom_pc_2{"Tom's PC"}
-  rc_sanjay_pc_3{"Sanjay's PC"}
-  rc_grace_laptop_4{"Grace's Laptop"}
-  rc_office_coffee_5{"Office Coffee Station"}
-  rc_office_mugs_6{"Abandoned Mugs"}
-  rc_activity_board_7{"Activity Board"}
-  rc_office_copier_8{"Photocopier"}
-  rc_copier_out_a_9{"Printout"}
-  rc_copier_out_b_10{"Printout"}
-  rc_copier_out_c_11{"Printout"}
-  rc_deadline_memo_12{"Deadline Memo"}
-  rc_kitchen_rota_13{"Kitchen Rota"}
-  rc_npc_amara_okoye_14("Amara Okoye")
-  rc_npc_tom_fletcher_15("Tom Fletcher")
-  rc_npc_grace_lindqvist_16("Grace Lindqvist")
-  rc_npc_sanjay_mehta_17("Sanjay Mehta")
-  rc_npc_marek_nowak_18("Marek Nowak")
-  rc_fridge_19{"Fridge"}
-  rc_microwave_20{"Microwave"}
-  rc_kitchen_coffee_21{"Kitchen Coffee Station"}
-  rc_water_cooler_22{"Water Cooler"}
-  rc_washing_up_tray_23{"Washing-up Tray"}
-  rc_rosa_laptop_24{"Rosa's Laptop"}
-  rc_lounge_sofa_25{"Lounge Sofa"}
-  rc_lounge_kettle_26{"Rosa's Kettle"}
-  rc_npc_rosa_delgado_27("Rosa Delgado")
+  rc_tom_badge_3{"Tom's ID badge"}
+  rc_tom_phone_4{"Tom's desk phone"}
+  rc_spare_phone_5{"Spare desk phone"}
+  rc_sanjay_pc_6{"Sanjay's PC"}
+  rc_grace_laptop_7{"Grace's Laptop"}
+  rc_office_coffee_8{"Office Coffee Station"}
+  rc_office_coffee_socket_9{"Wall socket"}
+  rc_office_mugs_10{"Abandoned Mugs"}
+  rc_activity_board_11{"Activity Board"}
+  rc_office_copier_12{"Photocopier"}
+  rc_office_copier_socket_13{"Wall socket"}
+  rc_copier_out_a_14{"Printout"}
+  rc_copier_out_b_15{"Printout"}
+  rc_copier_out_c_16{"Printout"}
+  rc_copier_out_d_17{"Printout"}
+  rc_copier_out_e_18{"Printout"}
+  rc_print_queue_note_19{"Print Queue"}
+  rc_deadline_memo_20{"Deadline Memo"}
+  rc_kitchen_rota_21{"Kitchen Rota"}
+  rc_coffee_notice_22{"Coffee Notice"}
+  rc_npc_amara_okoye_23("Amara Okoye")
+  rc_npc_tom_fletcher_24("Tom Fletcher")
+  rc_npc_grace_lindqvist_25("Grace Lindqvist")
+  rc_npc_sanjay_mehta_26("Sanjay Mehta")
+  rc_npc_marek_nowak_27("Marek Nowak")
+  rc_fridge_28{"Fridge"}
+  rc_microwave_29{"Microwave"}
+  rc_kitchen_coffee_30{"Kitchen Coffee Station"}
+  rc_water_cooler_31{"Water Cooler"}
+  rc_washing_up_tray_32{"Washing-up Tray"}
+  rc_kitchen_copier_33{"Kitchen Copier"}
+  rc_kitchen_copier_socket_34{"Wall socket"}
+  rc_kitchen_out_a_35{"Printout"}
+  rc_kitchen_out_b_36{"Printout"}
+  rc_rosa_laptop_37{"Rosa's Laptop"}
+  rc_lounge_sofa_38{"Lounge Sofa"}
+  rc_lounge_kettle_39{"Rosa's Kettle"}
+  rc_npc_rosa_delgado_40("Rosa Delgado")
 
   office --> kitchen
   office --> lounge
   office --> rc_amara_pc_1
   office --> rc_tom_pc_2
-  office --> rc_sanjay_pc_3
-  office --> rc_grace_laptop_4
-  office --> rc_office_coffee_5
-  office --> rc_office_mugs_6
-  office --> rc_activity_board_7
-  office --> rc_office_copier_8
-  office --> rc_copier_out_a_9
-  office --> rc_copier_out_b_10
-  office --> rc_copier_out_c_11
-  office --> rc_deadline_memo_12
-  office --> rc_kitchen_rota_13
-  office --> rc_npc_amara_okoye_14
-  office --> rc_npc_tom_fletcher_15
-  office --> rc_npc_grace_lindqvist_16
-  office --> rc_npc_sanjay_mehta_17
-  office --> rc_npc_marek_nowak_18
-  kitchen --> rc_fridge_19
-  kitchen --> rc_microwave_20
-  kitchen --> rc_kitchen_coffee_21
-  kitchen --> rc_water_cooler_22
-  kitchen --> rc_washing_up_tray_23
-  lounge --> rc_rosa_laptop_24
-  lounge --> rc_lounge_sofa_25
-  lounge --> rc_lounge_kettle_26
-  lounge --> rc_npc_rosa_delgado_27
+  office --> rc_tom_badge_3
+  office --> rc_tom_phone_4
+  office --> rc_spare_phone_5
+  office --> rc_sanjay_pc_6
+  office --> rc_grace_laptop_7
+  office --> rc_office_coffee_8
+  office --> rc_office_coffee_socket_9
+  office --> rc_office_mugs_10
+  office --> rc_activity_board_11
+  office --> rc_office_copier_12
+  office --> rc_office_copier_socket_13
+  office --> rc_copier_out_a_14
+  office --> rc_copier_out_b_15
+  office --> rc_copier_out_c_16
+  office --> rc_copier_out_d_17
+  office --> rc_copier_out_e_18
+  office --> rc_print_queue_note_19
+  office --> rc_deadline_memo_20
+  office --> rc_kitchen_rota_21
+  office --> rc_coffee_notice_22
+  office --> rc_npc_amara_okoye_23
+  office --> rc_npc_tom_fletcher_24
+  office --> rc_npc_grace_lindqvist_25
+  office --> rc_npc_sanjay_mehta_26
+  office --> rc_npc_marek_nowak_27
+  kitchen --> rc_fridge_28
+  kitchen --> rc_microwave_29
+  kitchen --> rc_kitchen_coffee_30
+  kitchen --> rc_water_cooler_31
+  kitchen --> rc_washing_up_tray_32
+  kitchen --> rc_kitchen_copier_33
+  kitchen --> rc_kitchen_copier_socket_34
+  kitchen --> rc_kitchen_out_a_35
+  kitchen --> rc_kitchen_out_b_36
+  lounge --> rc_rosa_laptop_37
+  lounge --> rc_lounge_sofa_38
+  lounge --> rc_lounge_kettle_39
+  lounge --> rc_npc_rosa_delgado_40
 
   class office,kitchen,lounge room
-  class rc_amara_pc_1,rc_tom_pc_2,rc_sanjay_pc_3,rc_grace_laptop_4,rc_office_coffee_5,rc_office_mugs_6,rc_activity_board_7,rc_office_copier_8,rc_copier_out_a_9,rc_copier_out_b_10,rc_copier_out_c_11,rc_deadline_memo_12,rc_kitchen_rota_13,rc_fridge_19,rc_microwave_20,rc_kitchen_coffee_21,rc_water_cooler_22,rc_washing_up_tray_23,rc_rosa_laptop_24,rc_lounge_sofa_25,rc_lounge_kettle_26 item
-  class rc_npc_amara_okoye_14,rc_npc_tom_fletcher_15,rc_npc_grace_lindqvist_16,rc_npc_sanjay_mehta_17,rc_npc_marek_nowak_18,rc_npc_rosa_delgado_27 npc
+  class rc_amara_pc_1,rc_tom_pc_2,rc_tom_badge_3,rc_tom_phone_4,rc_spare_phone_5,rc_sanjay_pc_6,rc_grace_laptop_7,rc_office_coffee_8,rc_office_coffee_socket_9,rc_office_mugs_10,rc_activity_board_11,rc_office_copier_12,rc_office_copier_socket_13,rc_copier_out_a_14,rc_copier_out_b_15,rc_copier_out_c_16,rc_copier_out_d_17,rc_copier_out_e_18,rc_print_queue_note_19,rc_deadline_memo_20,rc_kitchen_rota_21,rc_coffee_notice_22,rc_fridge_28,rc_microwave_29,rc_kitchen_coffee_30,rc_water_cooler_31,rc_washing_up_tray_32,rc_kitchen_copier_33,rc_kitchen_copier_socket_34,rc_kitchen_out_a_35,rc_kitchen_out_b_36,rc_rosa_laptop_37,rc_lounge_sofa_38,rc_lounge_kettle_39 item
+  class rc_npc_amara_okoye_23,rc_npc_tom_fletcher_24,rc_npc_grace_lindqvist_25,rc_npc_sanjay_mehta_26,rc_npc_marek_nowak_27,rc_npc_rosa_delgado_40 npc
   class node_start start
 ```

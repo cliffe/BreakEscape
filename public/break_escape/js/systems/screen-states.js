@@ -21,7 +21,9 @@
  *   pc_signed_in, pc_signed_out     -> apply(pcId, { audible: false })
  *   a room's sprites are made       -> syncRoom(roomId), silent (core/rooms.js)
  *
- * A sound plays only on a real change of look, from one of the three workstation events, for a
+ * Sounds: where the office-life lock cues are installed (window.npcOfficeVisuals, scenario
+ * `lockCues` not false) they chime the lock and unlock, and this module is silent. Otherwise
+ * a sound plays only on a real change of look, from one of the three workstation events, for a
  * PC in the room the player is in (the last room they were in while they stand in a doorway
  * or a gap between rooms). So nothing flashes or sounds at boot or on a reload: the
  * install pass and every syncRoom are silent, and after a load every owner is at their post.
@@ -95,7 +97,11 @@ export class ScreenStates {
 
         let sound = null;
         // currentPlayerRoom is '' in a doorway or gap (core/rooms.js); the last room still hears it
-        if (audible && roomId === (w.currentPlayerRoom || w.lastPlayerRoom)) {
+        // With the office-life lock cues installed (npc-office-visuals.js, on
+        // workstation_screen_changed) the chime for a lock or an unlock is theirs: this
+        // module changes the picture only, so one key press never sounds twice.
+        const cuesOwnSound = !!w.npcOfficeVisuals && w.gameScenario?.lockCues !== false;
+        if (audible && !cuesOwnSound && roomId === (w.currentPlayerRoom || w.lastPlayerRoom)) {
             sound = locked ? LOCK_SOUND : UNLOCK_SOUND;
             w.soundManager?.play?.(sound);
         }

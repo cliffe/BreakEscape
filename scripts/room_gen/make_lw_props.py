@@ -310,6 +310,7 @@ def main():
     plate("BRIEFING", "lw_sign_briefing1")
     plate("RECORDS", "lw_sign_records1")
     plate("ADMIN", "lw_sign_admin1")
+    plate("STORE", "lw_sign_store1")
 
 
 if __name__ == "__main__":

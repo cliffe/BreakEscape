@@ -166,6 +166,10 @@ test('doors.js asks openToPlayer before the gate refusal toast and the door_gate
     assert.ok(ask > 0 && refuse > ask, 'the open-gate check comes before the refusal');
     assert.ok(granted > 0 && granted < ask, 'the clone entry still answers first');
     // The three outcomes come from one tested function, called with the clicked group
-    assert.match(d, /const outcome = window\.doorGates\?\.clickOutcome\?\.\(gateGroup, \{\s*holdsCredential: playerHoldsRfidCredentialFor\(requires\), connectedRoom: props\.connectedRoom\s*\}\) \|\| 'denied';/);
-    assert.match(d, /if \(outcome === 'granted'\) \{\s*window\.gameAlert\?\.\('Access granted: cloned staff badge accepted\.'/);
+    // The credential click goes through the server first (notifyServerUnlock, room load,
+    // then playerOpen), so clickOutcome is asked for 'pass' or 'denied' only
+    const server = d.indexOf("serverResponse = await notifyServerUnlock(doorSprite, 'door', 'rfid');");
+    assert.ok(server > 0 && server < granted, 'a presented clone is checked by the server before the gate opens');
+    assert.match(d, /if \(playerHoldsRfidCredentialFor\(requires\)\) \{/);
+    assert.match(d, /const outcome = window\.doorGates\?\.clickOutcome\?\.\(gateGroup, \{\s*holdsCredential: false, connectedRoom: props\.connectedRoom\s*\}\) \|\| 'denied';/);
 });

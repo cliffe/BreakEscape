@@ -83,6 +83,7 @@ function setup() {
     m.npcs.set('victoria', { id: 'victoria', npcType: 'person', displayName: 'Victoria Sterling', currentKnot: 'start' });
     m.npcs.set('marcus', { id: 'marcus', npcType: 'person', displayName: 'Marcus', currentKnot: 'start' });
     m.npcs.set('ghost', { id: 'ghost', npcType: 'phone', displayName: 'Ghost', phoneId: 'player_phone', currentKnot: 'start' });
+    m.npcs.set('len', { id: 'len', npcType: 'person', displayName: 'Len Okafor', currentKnot: 'start' });
     const runDue = () => {
         const due = timers.filter(t => t.live);
         due.forEach(t => { t.live = false; t.cb(); });
@@ -98,6 +99,11 @@ function setup() {
 
 const fire = (m, npcId, mode, knot) => m._handleEventMapping(npcId, 'game_loaded',
     { conversationMode: mode, targetKnot: knot, once: true, cooldown: 0, handlerIndex: knot }, {});
+
+// An auto-challenge: an NPC noticing the player (an LOS `*_in_view` event), not a story
+// beat. These drop rather than barge over / open after a player-opened minigame.
+const fireIV = (m, npcId, knot) => m._handleEventMapping(npcId, `player_in_view_near:${npcId}`,
+    { conversationMode: 'person-chat', targetKnot: knot, once: true, cooldown: 0, handlerIndex: knot }, {});
 
 function timed(m, npcId, knot, extra = {}) {
     m.scheduleTimedConversation({ npcId, targetKnot: knot, delay: 0, ...extra });
@@ -258,6 +264,58 @@ test('a scripted conversation after the last one closed goes as a single one (no
         assert.equal(t.fw.currentMinigame, null, 'closes the open minigame, as before');
         t.runDue();
         assert.deepEqual(t.fw.opened, ['person-chat:victoria', 'phone-chat:agent_0x99']);
+    } finally { t.restore(); }
+});
+
+// ── Busy-guard: an auto NPC challenge must not open over / after a player minigame ──
+// A sight/LOS challenge (`*_in_view`) is scheduled 500 ms out. If the player opens a chat
+// or minigame of their own in that window (or one is already open/starting), the challenge
+// is a stale "can I help you?" that would steal input — so it is DROPPED, not opened.
+// Len on the walk back (lab_physical_pentest) was this. Scripted story beats still defer.
+
+test('auto-challenge dropped: a minigame the player opens during the start delay is not barged', () => {
+    const t = setup();
+    try {
+        fireIV(t.m, 'len', 'tailgate_warning');   // player was walking, nothing open
+        assert.equal(t.fw.currentMinigame, null, 'nothing closed at emit');
+        assert.deepEqual(t.timers.filter(x => x.live).map(x => x.ms), [500], 'open scheduled 500 ms out');
+        t.fw.startMinigame('notes', null, { npcId: 'player_pc' });  // player taps into something
+        t.runDue();                                 // the 500 ms timer fires
+        assert.equal(t.fw.currentMinigame.type, 'notes', "player's minigame left open");
+        assert.deepEqual(t.fw.opened, ['notes:player_pc'], 'the challenge never opened');
+        assert.deepEqual(t.fw.displaced, [], 'nothing displaced');
+        assert.equal(t.m._scriptedCallQueue.length, 0, 'not queued either — dropped');
+    } finally { t.restore(); }
+});
+
+test('auto-challenge dropped: a conversation already open/starting is not queued behind', () => {
+    const t = setup();
+    try {
+        fire(t.m, 'victoria', 'person-chat', 'a');  // a scripted scene starts
+        t.runDue();
+        assert.deepEqual(t.fw.opened, ['person-chat:victoria']);
+        fireIV(t.m, 'len', 'tailgate_warning');     // challenge arrives while it is open
+        assert.equal(t.m._scriptedCallQueue.length, 0, 'dropped, not queued');
+        t.fw.close();
+        t.runAll();
+        assert.deepEqual(t.fw.opened, ['person-chat:victoria'], 'the challenge did not open afterwards');
+    } finally { t.restore(); }
+});
+
+test('scripted beat still DEFERS (not dropped) when the player opens a minigame during the delay', () => {
+    const t = setup();
+    try {
+        fire(t.m, 'victoria', 'person-chat', 'confront');  // a non-_in_view story beat
+        assert.deepEqual(t.timers.filter(x => x.live).map(x => x.ms), [500]);
+        t.fw.startMinigame('notes', null, { npcId: 'player_pc' });
+        t.runDue();
+        assert.equal(t.fw.currentMinigame.type, 'notes', "player's minigame left open");
+        assert.deepEqual(t.fw.opened, ['notes:player_pc'], 'the beat did not open over it');
+        assert.equal(t.m._scriptedCallQueue.length, 1, 'deferred, not lost');
+        t.fw.close();
+        t.runAll();
+        assert.deepEqual(t.fw.opened, ['notes:player_pc', 'person-chat:victoria'], 'the beat opens once free');
+        assert.deepEqual(t.fw.displaced, []);
     } finally { t.restore(); }
 });
 

@@ -1,0 +1,21 @@
+{
+  "_comment": "Room tone profiles (OFFICE_LIFE_PLAN 12.6, slice 20). Read by systems/office-room-tone.js (fetched at install) and scripts/validate_npc_needs.rb. Only a scenario with \"roomTone\": true uses them. A room's exact type picks its profile (types); a scenario maps bespoke types with roomToneTypes. bed: the loop played in that room (at level x the ambient volume) when the room authors no ambientSound of its own; null for a quiet room. typing: the typing loop plays while seated NPCs in the room work. spots: one-shots the background scheduler may play (copier_run only in a room with a copier, distant_phone never in a room with a desk phone). Profile beds never bleed into a neighbouring room.",
+  "types": {
+    "room_office": "office",
+    "room_reception": "reception",
+    "room_it": "it",
+    "room_ceo": "quiet_office",
+    "room_meeting": "meeting",
+    "room_break": "kitchen",
+    "room_servers": "server"
+  },
+  "profiles": {
+    "office":       { "bed": "office_ambient", "level": 1.0, "typing": true, "spots": ["copier_run", "distant_phone"] },
+    "reception":    { "bed": "office_ambient", "level": 0.6, "typing": false, "spots": ["distant_phone"] },
+    "it":           { "bed": "office_ambient", "level": 0.8, "typing": true, "spots": [] },
+    "quiet_office": { "bed": "office_ambient", "level": 0.35, "typing": false, "spots": [] },
+    "meeting":      { "bed": null, "typing": false, "spots": [] },
+    "kitchen":      { "bed": "kitchen_tone", "level": 1.0, "typing": false, "spots": [] },
+    "server":       { "bed": "server_room_ventilation", "level": 0.6, "typing": false, "spots": [] }
+  }
+}

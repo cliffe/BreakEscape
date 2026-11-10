@@ -21,7 +21,7 @@ A demo and live test of the NPC needs system (`public/break_escape/js/systems/np
 | Grace Lindqvist | female_blowse_v2 | grace_laptop | rest 12/40/64, thirst 15/40/79 | `dirty_mugs`, weight 3, office + kitchen |
 | Sanjay Mehta | male_nerd_v2 | sanjay_pc | work 15/50/65, hunger 8/40/64, social 12/40/76 | none |
 | Rosa Delgado | female_scientist_v2 | rosa_laptop (lounge) | social 15/40/70, caffeine 15/40/85, rest 10/40/75 | none |
-| Marek Nowak (slice 8) | male_telecom_v2 | spot office (6,8) | thirst 2/30/95 (sent by the Kitchen Rota); `needsCompany: { avoids: ["*"] }` | none |
+| Marek Nowak (slice 8) | male_telecom_v2 | spot office (3,8) (was (6,8), beside the coffee station, until slice 10 put the queue there) | thirst 2/30/95 (sent by the Kitchen Rota), caffeine 1/30/95 (slice 10: sent when Tom joins the coffee queue); `needsCompany: { avoids: ["*"] }` | none |
 
 Six need types: caffeine, hunger, thirst, rest, social, work. The engine has no fixed list (a need is any name matched against an object's `affordance.satisfies`), so these six are the scenario's choice.
 
@@ -306,6 +306,454 @@ half a body). The second NPC's beside-cell is one tile from the first's approach
 bodies push each other. Cosmetic; left for slice 10, which places queue cells. The second showcase
 pairing (game 667) was sent with `npcNeedsSystem.control(..., { set: { social: 10 } })`, the same
 call the mapping makes, so the player could wait in the kitchen.
+
+### Slice 10 re-run: queues at the coffee station (2026-11-06, keyless :3001, headless, load 12-19)
+
+**Annotated example.** Read the **Activity Board** before opening the kitchen. Its mappings set
+Amara's and Tom's caffeine to 10 (and Sanjay's social, as in slice 8). Amara (first by id) takes the
+office coffee station; Tom has no free machine (the kitchen isn't loaded), so he joins the queue,
+whose cells run left along the bottom row (`affordance.queue.cells` `(-1,0), (-2,0)` from the
+approach cell). `npc_queued:office_coffee` (place 1) ticks **A queue forms**, and Marek's mapping on
+that event (`data.npcId === 'tom'`) sends him to queue behind Tom, place 2. Both show the hourglass.
+Amara, pouring, and Tom, first in line, trade lines from the `coffee` pool (**Chat in the coffee
+queue** ticks on `npc_chatted:office_coffee`). When Amara leaves, Tom pours and Marek moves up; Marek
+avoids everyone, so the two say nothing. Sanjay meanwhile waits at his desk with the `social`
+thought bubble, because the cooler is in the shut kitchen. With the kitchen open, Tom walks to the
+kitchen station instead (a free machine always beats a queue), so the queue needs the kitchen shut
+or both stations busy. Rosa's kettle has `"queue": false` (the preset's cells would sit in the
+lounge doorway).
+
+Games 675, 676 and 679 (session logs `tools/playtest/s10-sims-675-session.jsonl`, `-676-`, `-679-`).
+Screenshots in `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/3c2d3b5d-38a4-49b2-b79e-4c3ee8f76ed6/scratchpad/s10/` (`s10-contact-sheet.png` has nearest-neighbour crops of the five
+frames below; captions checked against each frame).
+
+| Check | Result | Evidence |
+|---|---|---|
+| A queue of two or more, queue icon | PASS | game 675: Board read, Amara `using`, Tom `queued` place 1, Marek place 2, both with icon `queue` (`q3-speech-amara-2-675.png`; Tom's hourglass is under Amara's bubble in that frame; the state read at that moment lists `queue` for both) |
+| Compatible queue chatter | PASS | game 675: `npc_chatted:office_coffee` Tom to Amara "Is there any milk left?", Amara "Busy morning?", Tom "Strong one today?" (`q3-speech-amara-2-675.png`, `q3-speech-tom-3-675.png`) |
+| The second in line says nothing | PASS | game 675: no `npc_chatted` with Marek while Tom was first |
+| Incompatible pair in the queue | PASS | game 675: Tom pouring, Marek first for 12 s, no line; game 679 (needs set through the bridge): Marek pouring, Tom first, no bubble, events `npc_queued` only, then Amara queued behind Tom and chatted with him once he poured (`incompat-clean2-679.png`) |
+| Advancing | PASS | game 675: Amara `used`, Tom `queue_front` then `using` within 0.5 s, Marek moved up a cell |
+| Sanjay waits at his desk (social thought bubble) | PASS | game 675, kitchen shut: Sanjay idle at his PC with the `social` bubble in the same frames as the queue (`q3-speech-*-675.png`) |
+| Cooler pair on separate cells | PASS | game 676 (needs set through the bridge): Sanjay at the cooler's `useFrom 0,1` cell, Rosa one tile to his right, 31 px apart, facing; "That printer jammed again.", "Any plans for lunch?" (`cooler2-speech-*-676.png`). Before slice 10 the pair stood about two tiles north and half overlapping: the behaviour layer stopped a needs walk a tile short |
+| Errors | PASS | no page errors; 0 "No path found", 0 "Failed to escape wall" |
+
+Notes: in an earlier game 676 attempt Rosa stood still beside the kitchen tables for 18 s and her
+cooler job timed out; the player stood in the walkway at the time. A second try with the player
+out of the way worked. The interact command sometimes reads the Deadline Memo when aimed at the
+Activity Board (they are close); its mappings also send Amara and Tom for coffee, so the queue forms
+either way, and Marek follows Tom's `npc_queued` either way; only Sanjay's social follows the Board alone.
+
+### Slice 11 re-run: something left on an empty desk (2026-11-06, keyless :3001, headless, load 2-9)
+
+**Annotated example.** Tom's ID badge (`tom_badge`, `id_badge` sprite) is declared on the open
+desk top between his laptop and keyboard, hidden, with `"leftBehindBy": "tom"`,
+`"leftBehindChance": 0.7` and its own `"revealOnGlobal": "tom_badge_left"`. Each time Tom really
+leaves his desk (a coffee or a meal; working at his own PC doesn't count), a seeded roll keyed on
+his leave count decides whether he forgets it. With this scenario's seed, leaves 1, 2 and 4 leave it
+and leave 3 doesn't. It appears on the desk as he walks off (**Spot something left on an empty desk**
+ticks on `object_revealed:tom_badge`) and vanishes when he sits back down: he has pocketed it. If
+you take it while he is away, it is yours for good; when he gets back he says "Has anyone seen my
+badge? I'm sure I left it here." (`npc_left_item_gone:tom`) and never leaves it again. A reload while
+it is on the desk files it away. `npc_left_post` now also carries `leftBehind` and an
+`expectedAwayMs` that counts the coffee queue.
+
+Games 683 (placement checks) and 684 (session log
+`/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/3c2d3b5d-38a4-49b2-b79e-4c3ee8f76ed6/scratchpad/s11/sess684.jsonl`). Screenshots in
+`/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/3c2d3b5d-38a4-49b2-b79e-4c3ee8f76ed6/scratchpad/s11/`; `s11-contact-sheet.png` has nearest-neighbour crops of the eight frames
+below, captions checked against each frame. Tom's leaves were started by setting his caffeine
+through the bridge.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Left on the desk while Tom is away | PASS | game 684, leave 1: `left_behind` `{item: tom_badge, leave: 1}`, global true, badge visible and interactable, chair empty (`a1-away-684.png`) |
+| Collected on return | PASS | game 684: `returned_post` then `stowed` `reason: collected`, badge hidden, global false (`a1-back-684.png`) |
+| Left again on a later leave | PASS | leave 2 (Tom queued behind Amara): shown again (`b2-before-reload-684.png`) |
+| Reload with it showing: not shown | PASS | reload during leave 2: `global_variable_changed:tom_badge_left` true to false at load (stowed on sight), badge hidden (`c-after-reload-684.png`) |
+| Taken by the player: one beat | PASS | after the reload, leave 1 showed it (`d1-away-684.png`); the player took it (`d1-taken-684.png`, badge in the inventory bar); on return `left_item_gone`, `npc_left_item_gone:tom` and the bark (`d1-back-bark-684.png`) |
+| Taken, then reload: stays gone | PASS | after a second reload the badge is in the inventory, not in the office's objects; Tom's next leave logs no `left_behind` (`e-reload-taken-684.png`) |
+| Objective | PASS | `see_left_behind` completed |
+| Queue-aware `expectedAwayMs` | PASS | game 684: Amara at the machine 15.7 s, Tom first in line 28.2 s, Marek second 39.0 s (12 s dwell per place) |
+| Errors | PASS | no page errors in the drains |
+
+Placement note: declared desk items share their desk's depth (205.5 here), so at first the badge
+drew behind Tom's pen pot and speaker. The engine now lifts a left-behind item just above its
+owner's `needsHome` object while it shows.
+
+### Slice 14 re-run: avoidance at a distance, balking and parked needs (2026-11-06, keyless :3001, headless, load 2-7)
+
+**Annotated example.** Read the **Coffee Notice** (`coffee_notice`, a `notes1` object, auto-placed):
+its mapping sends Marek to the office coffee, and a mapping on `npc_left_post:marek` sends Sanjay
+(caffeine) after him. Sanjay declares `needsCompany: { "avoids": ["marek"] }`, `needsDeferMin: 2` and
+`maxQueue: 1`. Marek declares `avoidRadius: 0` so his slice 10 queue beat is unchanged. Sanjay queues
+behind Marek's claim, sees Marek within 2 tiles of the station, turns back with the grumble "Maybe the
+kitchen's quieter." (`chatter.grumble`, heard by the player as `npc_overheard`), shows Marek's face
+beside a storm cloud for 4 s, then tries the kitchen. With the kitchen shut he parks (`no_source`, a
+greyed cup with a closed-door badge). Opening the kitchen door wakes him (and anyone else parked) a
+second later, 0.5 s apart per NPC. The **See someone turn back** task completes on
+`npc_turned_back:sanjay`. A story need (`deferrable: false`) ignores all of this and goes anyway.
+
+Games 689 (parked, release), 690 (face bubble, fallback) and 691 (queue badge, story need). Session
+logs `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/3c2d3b5d-38a4-49b2-b79e-4c3ee8f76ed6/scratchpad/s14/sess689.jsonl`, `sess690.jsonl` and `sess691.jsonl`. Screenshots in `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/3c2d3b5d-38a4-49b2-b79e-4c3ee8f76ed6/scratchpad/s14/`;
+`s14-contact-sheet.png` has nearest-neighbour crops of seven frames, captions checked against each
+frame (the sheet is for viewing only). The face frame was caught by freezing the needs clock
+(`npcNeedsSystem.manualClock = true`) while the bubble kind was `avoid`, then unfreezing.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Turn-back near an avoided NPC | PASS | game 689: Marek left at clock 9250, Sanjay queued behind his claim, left at 10000, `turned_back` at 10750 `reason avoid`, `avoided marek`; game 690 log `t 119 turned_back` |
+| Grumble heard | PASS | game 689: `npc_overheard`, topic grumble, 58 px, "Maybe the kitchen's quieter." |
+| Face bubble (face crop plus storm cloud) | PASS | game 690: Marek's face and the cloud over Sanjay (`c-face-sanjay-690-crop.png`, contact sheet 2) |
+| Parked, kitchen shut | PASS | game 689: `npc_need_parked` `no_source`, greyed cup with closed-door badge (`b2-parked-closed-689-crop.png`) |
+| Parked badges together | PASS | game 689: Sanjay storm cloud (`avoid`), Grace greyed rest and Tom greyed hunger with the closed door (`c1-parked-badges-689-crop.png`) |
+| Door release | PASS | game 689: kitchen door at clock 180750; Grace woken 181750, Sanjay 182250, Tom 182750 (`d1-released-689.png`) |
+| Fallback to the kitchen | PASS | game 690: kitchen opened, Sanjay `unparked` `woken`, `job_start` `kitchen_coffee`, seen crossing the doorway (`e-fallback-690.png`) |
+| `maxQueue` queue badge | PASS | game 691 (Sanjay's `avoids` emptied live to isolate it): Tom and Amara at the coffee, Sanjay's caffeine set to 5, parked `queue`, greyed cup with a red cross (`g-queue-badge-691-crop.png`) |
+| `deferrable: false` goes anyway | PASS | game 691: flag cleared live, Marek in the queue, Sanjay's caffeine set: `queued` place 2 (past `maxQueue` 1), no `turned_back`, `using` at the station with the face bubble up (`h-nondeferrable-691-crop.png`, `h2-nondeferrable-arrives-691-crop.png`) |
+| A `needs: {set}` mapping on a parked need | PASS (fixed) | found in game 689 (a set while parked held the level at 10 with a pressing bubble); now unparks first, log `unparked` `reason set` |
+| Errors | PASS | no page errors in the session logs |
+
+Notes: the chain of mappings makes live checks racy (Marek's slice 10 queue mapping can send him back
+to the coffee, and Sanjay follows), so games 690 and 691 started each check by setting needs through
+the bridge from an in-page poll. In frame 4 of the contact sheet Sanjay's bubble shows the work icon,
+not coffee: his work need was the most pressing at that moment. The debug overlay text in the
+screenshots (`sanjay: goto_target kitchen_coffee`) is the engine's own, not part of the game UI.
+
+### Slice 15 re-run: voiced chatter and scripted exchanges (2026-11-06, keyless :3001, headless, load 2-14)
+
+What was added: each NPC has small `cooler` and `grumble` pools (lines are voiceable; the engine has
+no built-in lines any more, so a topic with nothing to say shows a picture in a speech bubble).
+Two scripted exchanges, each heard once per game:
+
+- `exchange_rosa_rota` (knot in `sanjay.ink`, `exchanges: [{ with: rosa }]` on Sanjay): five lines
+  about the kitchen rota, played when Sanjay and Rosa meet at the water cooler with the player in
+  earshot. Completes the task `hear_rota_exchange` (mapping on `npc_exchange_heard`).
+- `exchange_tom_parcel` (knot in `amara.ink`, with Tom, `requireGlobal: amara_opened_parcel`): plays
+  once Amara has opened the dropped parcel. Task `hear_parcel_exchange`. Not driven live this round.
+
+Globals `heard_exchange_rosa_rota` and `heard_exchange_tom_parcel` make them play once (they survive
+a reload). Marek's voice is now Orus (he shared Tom's).
+
+How to watch it: open the kitchen and lounge doors, read the **Activity Board**, then stand within
+160 px of the cooler with a clear line. Sanjay and Rosa trade five bubbles; a lit room is required
+(`playerHears` now needs light). `window.npcChatterVoice.log` lists every line spoken, and on the
+keyless server each line makes a `POST /break_escape/games/<id>/tts` that returns 503.
+
+`s15-contact-sheet.png` (scratchpad, viewing only) has nearest-neighbour crops of eight frames,
+captions checked against each frame. Each bubble was caught by freezing the needs clock from an
+`npc_chatted` listener (`npcNeedsSystem.manualClock = true`), then unfreezing.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Exchange heard once with bubbles for each speaker | PASS | game 694: five `npc_chatted` events `exchange_rosa_rota:0` to `:4` alternating sanjay and rosa (clock 82000 to 101500, 4.5 to 5 s apart), `npc_overheard` on each, then `npc_exchange_heard:exchange_rosa_rota`; log `exchange_started`/`exchange_heard` |
+| Global and task | PASS | game 694: `heard_exchange_rosa_rota` true, `hear_rota_exchange` completed |
+| Same pair next meeting: bark, then picture | PASS | game 694: Rosa "Friday drinks again?", then Sanjay's `thirst` picture (no text, no `/tts`) |
+| Reload does not replay | PASS | game 694 after reload (`resume`): global still true, no `exchange_started`, Rosa's bark "Friday drinks again?" only |
+| `/tts` requests match the log | PASS | game 694: 8 requests before the reload, one per spoken line in order (six from the first meeting, then rosa and grace at the second, each with the stripped text), none for pictures, every one 503; one after the reload, "Friday drinks again?" by rosa |
+| A bark before the exchange | NOTE | game 694: Sanjay's first cooler line was a bark ("Did you get any lunch?") because the player was 216 px away; the exchange began when the player came within range, as designed |
+| Errors | PASS | no page errors in the session logs |
+
+Notes: the first bubble frames of the exchange were caught late (the poll lagged one line) and were
+retaken by clearing `heard_exchange_rosa_rota` live and replaying the exchange; that is a test aid,
+not a game feature. `test_needs_leash` game 698 and the lab game 788 are in the plan's section 11
+Built line.
+
+### Slice 21 re-run: idle chair roll, rare swivel and looking round (2026-11-06, keyless :3001, headless, load 13-20)
+
+What was added: seated staff on swivel chairs roll a pixel or two, mostly along x and never towards
+the desk, hold 1 to 2 s and roll back. About once in two minutes each one turns the chair one compass
+step and back (a seeded roll per 6 s slot of the needs clock). When a colleague in the same room
+within four tiles is speaking (a chat line, picture or grumble), the seated staff turn towards them for
+the line's length. None of it happens while typing, on a call, paired at a chatter object, saying a
+line or chatting with the player. Every office chair here is a Tiled swivel (`chair-white-*-rotate`),
+checked live in game 896.
+
+How to watch it: read the **Coffee Notice**. Marek goes for a coffee, Sanjay sets off too, sees Marek
+and turns back with a grumble ("Maybe the kitchen's quieter."); Amara, Tom and Grace, if seated and not
+typing, turn their chairs towards him. Task `see_look_round` (mapping `npc_swivelled:*` with
+`reason === 'listen'`).
+
+Strips (scratchpad `s21/`, viewing only; crops are nearest-neighbour 3x from the full frames beside
+them, which were checked whole): `roll-marek-strip-897.png` (at rest, rolled 1,-1 px, back),
+`idle-grace-strip-897.png` (turned south from south-east, back), `listen-amara-strip-897.png` (turned
+west towards Sanjay's grumble, back to north-east when the line ended); full frame
+`listen-amara-2turned-897.png` shows the grumble bubble and the turn together. The swivel and listen
+frames were caught by freezing the needs clock from an `npc_swivelled` listener, then unfreezing.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Roll mostly along x, never towards the desk | PASS | game 897: 433 rolls sampled at their hold (all five seated staff); `|dx|` 1 to 2, `|dy|` at most 1, `|dx| >= |dy|` in all 433; the first 17 checked by hand all roll away from the desk for their facing |
+| Out and back | PASS | game 897: every roll returned to 0,0 (`roll-marek-strip-897.png`) |
+| Rare idle swivel, one step and back | PASS | game 897: 31 idle turns in about 650 s of needs clock across five seated staff (about 5.7% of slots), each one compass step from home; Grace south-east to south and back (`idle-grace-strip-897.png`) |
+| Looking round at a speaker | PASS | game 896 (Coffee Notice) and game 897 (Marek's caffeine set through the bridge, the same chain): `npc_turned_back` sanjay, then `listen` turns by Amara (west), Tom and Grace in the same tick; Tom followed Sanjay as he walked (north, then north-west); speakers list `[sanjay]` until the line's end; back to home after it (`listen-amara-strip-897.png`) |
+| Held while busy | PASS | Tom typing (`work:using`) sat still in the two game 896 samples taken while he typed; node tests cover a call, a pairing, a line and the player chat |
+| Objective | PASS | game 897: `see_look_round` completed (verify-run) |
+| Errors | PASS | only keyless-server TTS 503s in the drains |
+
+Notes: in game 897 a second Coffee Notice read did not send Marek (the mapping had already fired), so
+the listen beat was replayed by setting his caffeine through the bridge, which is what the notice
+does. `test_needs_leash` game 899 and the lab game 900 are in the plan's 12.7 Built line.
+
+### Slice 16 re-run: lock-screen habits and cues (2026-11-06, keyless :3001, headless)
+
+How to watch it: Amara locks only for a longer trip (`screenHabit.lockIfAwayOverSeconds` 20: the office coffee stays open, a kitchen run
+or a queue place locks); Sanjay never locks on leaving (`lockChance` 0) but his PC locks itself 20 s after he goes (`autoLockSeconds`);
+Tom's object `lockChance` 0.5 still wins over any habit. Each lock plays a flash at the screen indicator (lighting on) or a padlock glyph
+(lighting off) and a soft two-note chime in the same room; each return plays the wake flash and the rising chime. Tasks `hear_screen_lock`
+(Amara), `see_auto_lock` (Sanjay) and `use_open_screen` (use Sanjay's PC while he is away and it is still open).
+
+Evidence is in the session scratchpad `s16/`: strips `strip-lit-amara-904.png` (white dot, lock flash, steady blue dot, wake flash),
+`strip-lit-sanjay-auto-904.png`, `strip-nolight-amara-906.png` (open then closed padlock on the lock, closed then open on the return,
+bodies aligned), chime log `playlog-904-a.json`, kitchen log `playlog-912-kitchen.json`, tasks `verify-912.txt`.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Habit splits by trip length | PASS | game 904: Amara's office coffee `expectedAwayMs` 15696, 15367, 15368 (stayed open, white dot); kitchen run with the office machine taken 21819 (locked, chime heard at 0.104); game 906: queued at the office coffee, 27696 (locked, `hear_screen_lock` completed) |
+| Lock and wake cue, lighting on | PASS | game 904: lock flash about 180 ms after the leave, steady blue dot, wake flash about 150 ms after the return, then no dot (`strip-lit-amara-904.png`) |
+| Lock and wake cue, lighting off | PASS | game 906 (`localStorage.breakEscapeLighting = 'off'`): padlock glyph open then closed on the lock, closed then open on the return, shown for 1 s (`strip-nolight-amara-906.png`) |
+| Auto-lock | PASS | game 904: Sanjay's PC locked 20 s after his leave (`strip-lit-sanjay-auto-904.png`); game 906: leave at 141750, lock at 161750, glyph shown, no chime (`cueLog`); `see_auto_lock` completed |
+| Chime heard in the office | PASS | game 904 `playlog-904-a.json`: every lock and unlock played on channel `chime`, hearing 1, volumes 0.077 to 0.104; the auto-lock has no entry |
+| Examine view holds the auto-lock | PASS | game 912 (after f84c777de): Sanjay left at needs clock 258500, the examine view opened on his open PC at 261250 and stayed open for 48 s; no `auto` event at 278500 (20 s after the leave) or at any later tick; he returned at 296750. The same check on game 904, before the fix, locked under the open view |
+| Objective `use_open_screen` | PASS | game 912: `completed` at 21:47:03Z in `verify-run.rb --tasks` (the loaded scenario still says `active`; that is not live state) |
+| Chime not heard from the kitchen | PASS | game 912, player in the `kitchen`: Tom then Amara sent for coffee; `screen_lock` and `screen_unlock` for both PCs logged with `hearing` 0, `volume` 0, `played` false, and no `workstation_lock_heard` event (`playlog-912-kitchen.json`) |
+| Tom's object roll still decides | PASS | game 904: locked on one leave, open on others |
+| Errors | PASS | only keyless-server TTS 503s in the drains |
+
+Notes: lock after the examine view closes (20 s later) was not seen in game 912 because Sanjay had already returned and the auto-lock
+does not run after a return; the idle restart on close is covered by the `workstation-state` tests. Sanjay's trips only start when a
+source is reachable: with the kitchen unloaded his hunger and social needs park with `no_source`, so open the kitchen door first. A
+standing player in the doorway blocks the NPCs' route (jobs time out), so stand clear of it.
+
+### Slice 18a re-run: coffee off (2026-11-06, keyless :3001, headless)
+
+How to watch it: open the kitchen door, stand by the office coffee station and click the wall socket on the wall beside it
+(`office_coffee_socket`) while someone is on the way to the machine. The hint "The coffee machine is switched off at the wall." shows
+under the title "Wall socket". Anyone walking to the machine or queued for it turns back with a `grumble_off` line ("Who switched the
+coffee off?") or, on bark cooldown, a picture of their need (a coffee cup), and goes to the kitchen machine; anyone already pouring
+finishes. The switch is one-way. With the kitchen shut, the need parks (`no_source`) instead. Task `see_coffee_off`.
+
+Evidence is in the session scratchpad `s18a/`: `walker-a1-walking-918.png` (Tom on his way to the office machine),
+`walker-b-turnback-grumble-918.png` (the bubble, the hint toast and Tom's new target `kitchen_coffee`), `walker-c-to-kitchen-918.png`,
+`near-turnback-918.png` (a second turn-back: the coffee-cup picture), `using-finishes-b-hint-918.png`, logs `beat-walker-tom-918.json`,
+`beat-using-finishes-tom-918.json`, session `sess918.jsonl`, tasks `verify-918.txt`.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Socket click switches the machine off | PASS | game 918: a real pointer click on the socket in reach; `office_coffee_off` true; alert "The coffee machine is switched off at the wall." titled "Wall socket" |
+| A walker turns back with `off` | PASS | `95 tom job_start caffeine office_coffee`, `104 tom turned_back caffeine office_coffee reason off grumble grumble_off`, `npc_turned_back:tom` with `reason: 'off'` |
+| Spoken `grumble_off` line | PASS | "Who switched the coffee off?" (`talking.topic` `grumble_off`); the TTS request is the 503 in the drain (keyless server) |
+| Fallback to the kitchen | PASS | `104 tom job_start caffeine kitchen_coffee`, `187 tom used caffeine kitchen_coffee` (`npc_used:kitchen_coffee`) |
+| Picture grumble shows the need | PASS | second turn-back, Tom on bark cooldown: picture `caffeine` with topic `grumble_off` (`near-turnback-918.png`); he queued at the kitchen machine and used it |
+| One already pouring finishes | PASS | the click landed after Tom started `using` the office machine: he finished there (`beat-using-finishes-tom-918.json`) |
+| Switching back on wakes | PASS | the global set false through `applyActions` `set_global`: `switched_on` logged once per real change (3 changes, 3 lines) |
+| Objective | PASS | `see_coffee_off` completed at 22:15:21Z (`verify-918.txt`); `see_turned_back` not ticked by the `off` turn-back |
+| Errors | PASS | only the keyless-server TTS 503 |
+
+Notes: the playtest bridge's `interact('office_coffee_socket')` reported "approached-then-interacted, confirmed" while the player was
+out of reach (it took an unrelated `npc_arrived` event as the confirmation); a click from feet about (272, 244) is in reach. A queue at
+the office machine does not form while the kitchen machine is free (a free source wins over a queue), so the queuer turn-back is
+covered by the node test.
+
+### Slice 17 re-run: print and forget, and the print-job lever (2026-11-06, keyless :3001, headless)
+
+How to watch it: Tom now prints at his PC (`onUse.tom_pc.revealOutput` with `chance` 0.4) and owns what he prints
+(`printHabit`: fetch 30 to 120 s later, or forget about half of them). His printouts are his: Amara's printout interest leaves them
+on the tray. Two levers do not wait for chance. **Read the Print Queue note** (on the desk south of the copier): a job prints as Tom
+at once and he never fetches it; it is still on the tray two and a half minutes later (task `see_uncollected`). **Use Tom's open
+screen** while he is away: a print job goes to the copier, due 5 to 10 s later, so he usually comes back by way of the copier,
+picks the printout up, carries it to his desk and puts it down (task `send_print_job`). Stay at his desk or in his PC's examine
+view and he catches you on the way back. A fetch is one more leave, so Tom's screen window opens more often. The pool has five
+slots now (`copier_out_d` and `e` read in place); when it is full, a print recycles the oldest forgotten slot, read-in-place ones
+first, so the takeable `copier_out_a` is the last to go. Sanjay has no `printHabit`, so Amara still delivers his prints
+(`see_printout`).
+
+Evidence is in the session scratchpad `s17/`: `note-read-923.png`, `tray-forgotten-2min-923.png` (the forgotten printout on the
+tray 126 s after the print, Tom idle at his desk), `tray-uncollected-923.png`, `pcleave-a-tray-errand-start-924.png`,
+`pcleave-b-in-hand-924.png` (Tom carrying it back, the player at his desk, his caught bark), `pcleave-c-on-desk-924.png`,
+`pcstay-*-923.png` (the same in the examine view), logs `pcstay-923.json`, `pcleave-924.json`, `pcstay2-924.json`, sessions
+`sess923.jsonl`, `sess924.jsonl`, tasks `verify-923.txt`, `verify-923-print.txt`.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Note lever prints a forgotten job | PASS | game 923: `object_interacted` Print Queue at needs clock 65000, `object_revealed:copier_out_a` by tom, `print_reserved` forgotten, no errand |
+| Still there two minutes later, no reload | PASS | `tray-forgotten-2min-923.png` at 191250; `copier_out_a_shown` true and visible at 215000 |
+| `npc_print_uncollected:tom` once | PASS | at 215000: `{ slotId: copier_out_a, ageMs: 150000, forgotten: true }`; `see_uncollected` completed 22:40:10Z |
+| Reserved from Amara | PASS | Amara carried Sanjay's `copier_out_b` (unowned) to her desk while `copier_out_a` lay reserved |
+| Lever from Tom's open PC | PASS | `workstation_accessed:tom_pc` at 94000 (923), 20000 and 97500 (924), each `object_revealed` for tom in the same tick |
+| Errand from idle | PASS | game 923: back at 97500, due 100016, `npc_left_post` at 101000 with `expectedAwayMs` 2072 (no PC dwell), picked up 102250, placed 103750 |
+| Errand from returning | PASS | game 924: due at 25132 while Tom was still on his coffee trip; caught once at 31250 on the walk, picked up 34000, placed 35500, `npc_returned_post` only at 35750 |
+| No `using` phase, the way back is the return | PASS | `npc_used:tom_pc` with `need: null` and `npc_print_fetched:tom` `{ viaCommand: true }` in the placing tick, `npc_returned_post:tom` 250 ms later (all three runs); `send_print_job` completed 22:38:18Z |
+| Caught in the examine view | PASS after a fix | game 923: caught on the leg back, but `inMinigame: false` (fired on distance); `playerAtPost` now also matches the examine view's string `itemId` (da3a984db); game 924: `inMinigame: true` |
+| Printout on tray, in hand, on desk | PASS | `pcleave-a-tray-errand-start-924.png`, `pcleave-b-in-hand-924.png`, `pcleave-c-on-desk-924.png` |
+| Work mappings ignore the errand | PASS | Amara's `npc_used:tom_pc` mappings now need `data.need === "work"` |
+
+Notes: interacting with the note through the bridge's `interact` failed out of reach (33 px against 26); a real pointer click from
+feet about (157, 196) works. Tom's natural hook prints (chance 0.4, one work use in about 7.5 minutes) were not waited for live; the
+node tests cover the share, the icon and the habit rolls.
+
+### Slice 18b-i re-run: the cake (a droppable magnet) (2026-11-06, keyless :3001, headless)
+
+How to watch it: the cake is in your inventory. Click it there to put it down where you stand (the kitchen is a good bet; the
+kitchen is at x -320 to 0, the office from 0). Whoever is hungry (Tom, Sanjay, Amara) and sees it walks over: a need in the 30-point
+band above its urgent level is tempted. Two servings; the third person turns back with "Missed it." (or the hunger icon when
+somebody else is speaking). Pick the cake up again and everyone walking turns back; drop it again and they only learn of it by
+seeing it. A cake dropped where nobody may go (here, with the kitchen denied by a run-time leash) raises `magnet_unreachable`.
+One cake per game: each beat below is its own game. Evidence is in the session scratchpad `s18b1/` (frames `*-<game>.png`, logs
+`sess<game>.jsonl`).
+
+| Check | Result | Evidence |
+|---|---|---|
+| Kitchen drop, kitchen staff eat (office coffee off) | PASS | game 930: `magnet_placed` room kitchen, reachable amara, sanjay, tom, servings 2; Amara and Tom came for the kitchen coffee, saw it (`npc_saw_magnet:amara` 58000, `:tom` 65250), tempted jobs, Tom `using` 13 s with the player beside him (`k1-kitchen-eating-930.png`), `serving_taken` 1 then 0, both `npc_used:cake`, `magnet_finished:cake` and the cake removed |
+| Three hungry, two servings: "Missed it." | PASS | game 938 (Tom's and Sanjay's chatter held quiet and Sanjay's `avoids` emptied, see the notes): Tom and Sanjay eat, Amara `npc_turned_back` reason `gone` (`m2a-quiet-missed-it-938.png`, the "Missed it." bubble); unstaged games 931 and 933: same, her bubble is the hunger icon (`m2b-missed-it-933.png`) |
+| Eaters' stance | PASS | games 933 and 938: two eat, one each side of the cake (Tom west, Sanjay east), the third turns back; nobody stacks on a cell (`m1b-eaters-933.png`); capacity 3 stays |
+| Drop in a doorway | PASS, with a note | game 939: cake at (44, 84), 28 px inside the office's west door (gap y 73 to 87); the eaters stood at (73, 62) and (50, 53), north of the gap, and Tom turned back; nobody was blocked (`d1-doorway-eaters-939.png`). A player who clicks the door there picks the cake up instead (`item_picked_up:cake1` at 16750; `d2-player-through-939.png`, the cake in the tray); a forced NPC through-trip was not staged (games 940, 941: Tom parked on the switched-off coffee) |
+| Pickup mid-walk by a real pointer click | PASS after a fix | game 948: `clickAt` on the cake gives the "Interact with" menu (the coffee station is in reach too), the Cake entry is a real DOM click: `item_picked_up:cake1`, log `magnet_gone` `left: 2`, then three `npc_turned_back` reason `gone` (`g1-walkers-windup-and-pick-menu-946.png`, the three in windup; `g3-gone-turnback-3-948.png`) |
+| Re-drop after the pickup | PASS | game 948: `magnet_placed.servings` 2, all five `npc_saw_magnet` again by sight, two ate, the third turned back |
+| Reload mid-meal | PASS | game 949: `cake_servings` 1 before (`h0-before-reload-mid-meal-949.png`), `sync` and `location.reload()`, bootstrap resume: the cake is back in the office, the first `serving_taken` after the load says `left: 0` (so 1 was restored), the second walker turned back `gone`, `magnet_finished` |
+| Unreachable drop | PASS | game 950: kitchen drop with `leash.deny kitchen` set on amara, tom and sanjay: `magnet_placed` `reachable: []`, `magnet_unreachable:cake`, Grace saw it (no hunger or social need), nobody started a cake job in 25 s, no `leashed`, `private_skipped` or `parked` lines, 2 servings kept (`u-unreachable-drop-950.png`, `u2-after-25s-950.png`) |
+
+Notes:
+
+- **Fixed in this run (2643c23f3).** A pickup during an NPC's windup (the second or two before they leave their desk) failed the job
+  silently with `no_approach` and a 60 s cooldown on the cake, so there was no `gone` turn-back and a re-drop tempted nobody
+  (game 947). The windup end now turns back with `gone` first; node test `npc-magnet` 16. Game 948 is the re-run.
+- "Missed it." is a spoken line, so it obeys the one-line speech lock: when an eater's cake chatter ("This is really good.") is on
+  at the moment the third person turns back, the grumble is the hunger icon instead (games 931, 933). The task `see_missed_it`
+  counts the turn-back, not the words.
+- Sanjay avoids Marek (`needsCompany.avoids`, radius 2 tiles): when Marek stands within two tiles of the cake he does not come, and
+  the tempted look is quiet (games 932, 934, 936 and the diagnostic in game 937: `_avoidedAt` gave `marek`). That is the existing
+  avoidance, not a magnet fault.
+- The cake comes back from a reload about 13 px south-east of where it was dropped ((252, 252) to (265, 266) in game 949): the
+  persisted room-relative tile position loses the sub-tile offset. The drop feature's own behaviour, not the magnet's.
+- Staging used: levels set to 60 inside the band so all three are tempted at once; the pickup beat nudges the player 8 px south
+  after the drop (the cake lands 33 px away and reach is 32).
+
+### Slice 18b-ii: word of mouth about the cake (2026-11-07, keyless :3001, headless)
+
+How to watch it: drop the cake in the kitchen and go back to the office. Whoever sees it there (often Grace, taking the dirty mugs
+to the kitchen sink) tells the people within five tiles of them as soon as they are back in the office, from the room-free
+`news_cake` pool, and the hungry ones get up. Avoidance blocks the telling both ways, so Marek (who avoids everyone) is never told
+and never tells; Sanjay and Marek never tell each other. A knower with nobody near says nothing and tells whoever comes close
+later; each knower announces a cake once. Evidence is in the session scratchpad `s18b2/` (frames `*-<game>.png`, logs
+`sess<game>.jsonl`, driver `w1.py`/`w3.py`).
+
+| Check | Result | Evidence |
+|---|---|---|
+| The announce bubble in the office, the TTS request | PASS | game 955: Grace `magnet_seen` in the kitchen (tick 69, after the mugs), back through the office door at tick 120: `npc_announced:grace` "Cake! It's somebody's birthday." heard by sanjay and tom (`b1-announce-955.png`); `npcChatterVoice.log` spoken, and the one keyless 503 in the drain is that request; task `hear_cake_news` completed |
+| The people who get up | PASS | game 955: `npc_told:sanjay` and `npc_told:tom` from grace, both tempted `job_start` cake on the same tick, walking to the kitchen 3 s later (`c1-getting-up-955.png`); both ate, `magnet_finished:cake` at tick 208 |
+| Avoidance blocks it | PASS | game 955, distances at the announce frame: Marek 130 px (inside five tiles), `_avoids` true, never told; Amara beyond the radius, not told |
+| Range from the door | PASS, with a note | game 954: Grace announced on entering the office, heard only by Sanjay; Tom at his desk was just beyond 160 px from the doorway and learned later by sight at the kitchen coffee (`b1-announce-954.png`, `c1-getting-up-954.png`) |
+
+Notes:
+
+- **Fixed in this run (e4a035212).** A told knower working at its own desk (a `using` job at its needsHome object) could never pass
+  the word on (game 954: Sanjay, back at his PC). It now tells from its desk too; node test `npc-news` "a knower working at its
+  own desk tells".
+- Neither run told all three hungry people, so "Missed it." did not come from word of mouth here; 18b-i's games 931, 933 and 938
+  show it by sight.
+
+### Slice 19: desk-phone calls (2026-11-07, keyless :3001, headless)
+
+Games 963 (owner call, lighting on), 964 (the rest, lighting on), 965 (`?lighting=off` set through localStorage), 966 (hang-up and the open
+door). Voiced call lines give `/tts` 503s on the keyless server (the log still records `spoken: true`). Evidence in the session scratchpad
+`s19/`.
+
+| Beat | Result | Evidence |
+|---|---|---|
+| Owner answers, five voiced lines | PASS | Game 963: ring, pick-up 2.25 s later, `call_supplier` lines voiced, `npc_call_heard:call_supplier`, `desk_phone_ring_heard` volume 0.528, colleagues turn (`npc_swivelled` reason `listen`) |
+| Amber ring flash with lighting | PASS | Game 964: `lightingSystem.flashes` holds `tom_phone` kind `ring`, alpha 0.94 at 150 ms; canvas snapshot `b1-flash-crop-964.png` shows the amber glow on the phone |
+| Phone glyph without lighting | PASS | Game 965: cueLog `flash: null, glyph: true`; glyph alpha 0.64 to 0.93 on the 200 and 600 ms frames; `b3-glyph-crop1-965.png` shows the dark backing and phone1 over the phone |
+| Silence from the kitchen | PASS under the phone's-room-only build | Game 964: `playLog` hearing 0, volume 0, played false, no `desk_phone_ring_heard`. Since 7dfc15b06 an open door gives 0.4 (next row) |
+| Ring through an open door | PASS | Game 966, player in the kitchen after `enter` (door open): hearing 0.4, volume 0.087 at 174 px, `desk_phone_ring_heard` emitted. A synthetic closed door sprite in the kitchen's list: hearing 0, volume 0, no event (the engine cannot re-shut a door, so the shut case is also covered by the node test `openDoorHearing`) |
+| Colleague answers, Tom's chair empty | PASS | Game 964: Tom left for coffee (`npc_left_post:tom` 364000), ring 1 at 365000, ring 2 at 368000, `npc_left_post:amara` 368750 (expectedAwayMs 31411), `desk_phone_answered` answeredBy amara 370500 (knot `call_take_message`), `npc_call_heard:call_take_message` 399500, tasks `hear_tom_call` and `see_amara_answer` complete; frames `c0..c2-amara-on-phone-964.png`. She stands at about (132, 157), beside the phone, not at Tom's chair |
+| Owner arrives first | PASS | Game 964 with Tom's and Amara's `needsSpeed` lowered to 30 and 25 for the beat: ring 2 at 488750 sends Amara, Tom is back at 490750, `npc_turned_back:amara` reason `answered` and `desk_phone_answered` answeredBy tom at 491000, no grumble; frames `d0`, `d1-tom-answers-964.png`. Tom walked about 120 px along y 149 and back while on the call at that slowed speed; not reproduced at normal speed (see below) |
+| Ring-out while Amara is in a chat | PASS | Game 964: chat opened with Amara on her way (`mode: frozen`), rings 1 to 4 at 1247000 to 1256000, `npc_turned_back:amara` reason `rang_out` and one `desk_phone_unanswered` at 1259000, no `desk_phone_answered`, no call lines; she went on to her own coffee need after the chat. Frames `e0-chat-open`, `e1-after-ringout` |
+| Player chat ends the call | PASS | Game 966: chat with Tom during line 1: `desk_phone_hung_up` reason `player`, no `npc_call_heard`, the knot replayed on the next call (it stays unplayed). The `cancelled` log entry needs a clip in flight, which the keyless server never leaves; the node test covers it |
+| Regressions | PASS | `test_needs_leash` game 967 (leashed 0 samples on Maya's floor, unleashed 6); `lab_physical_pentest` game 968, `verify-run.rb`: score 100, 9/9 tasks, creds 63.3 s, USB 9.5 s |
+
+Open observation: in the slowed owner-first run Tom's sprite moved east and back while `call` was set (the call is meant to hold him
+still). It came with the speed override and a `returned_post` before the chair, so it may be the seating approach (the desk-seating work
+in the tree is another agent's); it was not seen in games 963 or 966.
+
+### Slice 22: printer power (2026-11-07, keyless :3001, headless)
+
+Game 973. Tom's hook and both levers list `["office_copier", "kitchen_copier"]`; each copier has a one-way wall socket. The errand
+runs were started with the lever's own command (`control('tom', { print: { producer: [both], fetchAfterSeconds: [3, 3] } })`) with
+Tom idle at his desk; the socket clicks were real pointer clicks (the office one through the pick-one menu, as Amara stood beside
+it). Evidence in the session scratchpad `s22/`.
+
+| Beat | Result | Evidence |
+|---|---|---|
+| Copier on: print and errand to the office copier | PASS | `copier_out_a` revealed, `npc_left_post:tom` expectedAwayMs 2307, `npc_print_fetched` producerId `office_copier`, away 3.25 s of needs clock; frames `a-copier-on-1-tray` to `4-back-973.png` |
+| Office copier switched off at the wall | PASS | `global_variable_changed:office_copier_off`, hint "The photocopier is switched off at the wall." titled "Wall socket"; `off-1-socket-hint-973.png` |
+| Print goes to the kitchen copier; Tom walks there and back | PASS | `object_revealed:kitchen_out_a` (log `skipped: ["office_copier"]`), expectedAwayMs 4482, picked up and placed on his desk, `npc_print_fetched` producerId `kitchen_copier`, away 10.25 s; task `keep_tom_away` complete; frames `b-copier-off-1-tray`, `2-walking`, `3-in-hand`, `4-back-973.png` |
+| His screen | as his habit says | `workstation_owner_left:tom_pc` screenLocked false on both errands (`tom_pc` lockChance 0.5, a roll per leave, not by away time) |
+| Both off: nothing prints, Tom grumbles | PASS | Kitchen socket clicked (hint "The kitchen copier is switched off at the wall."); Tom's ninth work use (seeded rolls 0.552, 0.892, ... 0.371 at use 9) gave `npc_print_blocked:tom` producers both, no printing icon while using, "Is anything switched on today?" (`grumble_printer_off`, overheard at 24 px); task `see_printer_grumble` complete; `c-1-blocked-grumble-973.png`. Sanjay's string hook gave `npc_print_blocked:sanjay` too |
+| Regressions | PASS | `test_needs_leash` game 974 (leashed 0 samples on Maya's floor, unleashed 6); `lab_physical_pentest` game 975, `verify-run.rb`: score 100, 9/9 tasks, creds 64.6 s, USB 11.2 s |
+
+### Slice 23: the cake lands on a table (2026-11-07, keyless :3001, headless)
+
+How to see it: carry the cake into the kitchen, stand in front of either south table (the two nearest the coffee station) and
+drop it. It goes onto the table top above you, and the people who come for it stand along the table's front edge. Dropped in open
+floor it stays on the floor, as before. Evidence in the session scratchpad `s23/` (frames `*-<game>.png`, logs `sess<game>.jsonl`).
+
+| Check | Result | Evidence |
+|---|---|---|
+| Drop beside the kitchen table lands on it | PASS | games 979, 982, 985: feet (-145, 221), `item_dropped:cake` `onTable: kitchen_smalldesk1_171`, cake top-left (-153, 148), depth 200.725 over the table's 200.5, elevation 25.05 (`k0-kitchen-drop-on-table-979.png`, `r0-before-reload-on-table-982.png`) |
+| An eater at the edge, eating frame | PASS | game 979, unstaged: Sanjay walked from his desk to the front of the table and ate there, `serving_taken` 1 then `npc_used:cake` (`k1-kitchen-eating-at-table-979.png`) |
+| Capacity 3 around the table | PASS, staged | game 985 (servings set to 3, all three hungry at 60 and told): destinations (-172, 212), (-140, 212), (-108, 212) along the front edge; Amara and Tom ate in front of it, Sanjay from the waiting chair at its east end; nobody stacked or stood on the table (`e3-eaters-at-table-985.png`) |
+| Reload keeps it on the table | PASS after two fixes | game 982 (NPCs kept full for the beat): after `sync` and a page reload the cake is at the same top-left (-153, 148), depth 200.725, elevation 25.05, centre origin (`r1-after-reload-on-table-982.png`) |
+| Pickup from the table by a real pointer click | PASS after a fix | game 982: the player walked up to the table front (feet (-139, 215), facing up), `isObjectInInteractionRange` true, `clickAt` on the cake gave `item_picked_up:cake1` and log `magnet_gone` `left: 2`; the cake in the inventory (`p2-after-pickup-from-table-982.png`) |
+| Open-floor drop stays on the floor, no reload drift | PASS | game 982: feet (-123, 255), 55 px from the nearest table: `onTable: null`, top-left (-136, 239), depth 266.5; after a reload the same top-left and depth (`f1-open-floor-drop-982.png`, `f2-floor-after-reload-982.png`). Before slice 23 a reload moved a drop about 13 px south-east |
+| Regressions | leash PASS; lab see note | `test_needs_leash` game 987 (leashed 0 samples on Maya's floor in 29 s, unleashed 6 in 22 s); `lab_physical_pentest` game 989 score 100, 9/9 tasks, creds 65 s, USB 13 s; game 988 score 40 (tailgate step failed). Both after seat box slice 7 moved the accounts PCs |
+
+Notes:
+
+- **Fixed in this run.** Game 978: the cake snapped to the kitchen's north-east table, whose only free edge was behind it (the
+  strip by the sofas), and Sanjay's job "arrived" from his own desk; a table nobody can stand at is now skipped, and eaters never
+  stand behind a table (ff5fd7a41). Game 980: the server keeps only `position.x` and `.y` of a drop, so a reloaded cake drew
+  under the table; the needs system now re-raises a magnet on a table when it registers it (fdbc431a1). Game 981: after a reload
+  the cake (origin 0) was 38 px from the player in front of the table, out of reach; it takes the drop's centre origin again
+  (6cfc8e18e).
+- Each game takes one cake, and the headless clock runs fast, so hungry staff finished it within a minute in games 979 to 981
+  before the reload beat; game 982 kept Tom, Sanjay and Amara at hunger and social 100 during the reload and pickup beats.
+- The third eater's destination is not always where they stop: in games 984 (a floor drop) and 985 Tom stopped beside Amara, 50
+  px short of his cell, as in slice 18b-i. Movement, not the table.
+- Game 984 was a floor drop by mistake (the player moved 64 px from the table before dropping); its three eaters stood round the
+  cake on the floor.
+
+### Slice 20: room tone (2026-11-07, keyless :3001, headless)
+
+How to see it: `test_needs_sims` sets `"roomTone": true`. Walk between the office and the kitchen and the bed changes (air handling,
+fridge hum); desk workers type; a copier or a kettle starts up when you are in the room. Headless audio is inaudible, so every row is
+read from the sound manager's volumes (sampled every 50 to 100 ms) and the `officeRoomTone.log` / `npcOfficeVisuals.playLog`
+entries. A listen on a machine with audio is still needed. Evidence in the session scratchpad `s20/`.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Bed at spawn | PASS | games 995, 996: `table` then `started` (office, `office_ambient`, step 2) 0.4 s later; bed playing at 0.5 (`state-996.json`) |
+| Crossfade by walking, no gap | PASS | game 996, `enter` office to kitchen to office: two `fadeAmbientTo(..., 400, { crossfade: true })`, 113 samples, none with both beds at 0 (`walk-996.json`) |
+| Turn-back inside 400 ms | PASS | game 996, real arrow keys: left across the door, back after 100 ms; crossings 326 ms apart; at the turn the office bed was 0.146 and the kitchen bed 0.354 (sum 0.5), then the office bed settled at 0.5 and the kitchen bed stopped; no gap (`turnback2-996-60.json`) |
+| Typing with 1, 2 and 3 workers | PASS | game 996, work set to 0 for Tom, Amara, Sanjay: settled `typing_loop` volumes 0.2, 0.3 and 0.375 (levels 0.4, 0.6, 0.75 times the music setting 0.5); back down to 0.3, 0.2 and 0 as they finish (`typing-996.json`) |
+| Duck under a heard line | PASS | game 996: a heard bark ducked the bed 0.5 to 0.25 for the line's 3 s and restored it (`duck-bark-996.json`; the bark was injected through `_speak` with `overheard`, not a chatter pool line); a real ringing desk phone ducked for each of its two lines, typing ducked with it (0.2 to 0.1) (`duck-call-996.json`) |
+| Duck under person-chat | PASS | game 996: opening Tom's conversation ducked the bed to 0.25 for as long as the minigame was open, and it returned to 0.5 once it closed (`duck-chat-996.json`) |
+| `outputSound` | PASS | game 996: Tom's print command with nobody at the copier played `copier_run` at volume 0.21 (channel `tone`, `output: true`, `producerId` set) (`sfx-996.json`) |
+| `startSound` | PASS | game 996: Amara's coffee started `coffee_machine` at 0.114; a lounge kettle use (Grace and Rosa set thirsty) played `kettle_boil` at 0.297 with the player in the lounge (`sfx-all-996.json`, `kettle-996.json`) |
+| Own room only | PASS | game 996, player in the lounge: Tom's `coffee_machine` start in the office logged hearing 0, volume 0, not played |
+| Spot | PASS | game 996: a background `copier_run` (spot, slot 32) in the office at volume 0.12 |
+| Reload | PASS | game 996 after `location.reload()` and bootstrap: `table` then `started`, office bed playing at 0.5 at spawn (`state-996.json`) |
+| Loop seams | SEE NOTE | decoded with ffmpeg (`seams.txt`): `office_ambient` 24.0 s, seam step 0.029 against an in-file maximum 0.031; `kitchen_tone` 10.4 s, 0.078 against 0.051; `typing_loop` 5.0 s, quiet at both ends (RMS 0.0002 and 0.0005); `server_room_ventilation.mp3` 9.9 s, 0.003 (inside the file's range). The two beds sit at the top of their own step range, so each wrap may tick faintly |
+| sis01 without `roomTone` | PASS | game 999 (start in `major_incident_room`, rooms unlocked): the ventilation bleed fades in as before; entering `it_security_office` (its loop key `hospital_ambient` is not loaded) fades the current loop 0.063 to 0 over about 400 ms where it used to cut; `ward_7` stays silent; going back up fades the bleed in as before (`sis-999-it_security_office.json`, `sis-999-major_incident_room_it_security_office_ward_7_it_security_office.json`) |
+| Regressions | leash PASS; lab PASS | `test_needs_leash` game 1000 (leashed 0 samples on Maya's floor in 28 s, unleashed 6 in 22 s); `lab_physical_pentest` game 1001 score 100, 9/9 tasks, creds 63 s, USB foothold 12 s, tailgate passed first time (`lab1001.out`, `verify1001.txt`) |
+
+Notes:
+
+- **Open, for the user.** The shipped `fadeAmbientTo` path starts a new ambient loop near full volume and fades it down (Phaser's
+  `play({ loop: true })` puts back the configured volume after the `setVolume(0)`). Slice 20 fixed this on its own paths only
+  (83f3b58e9) and left the shipped path as it is.
+- Turning back needed real input: moving the body with `body.reset` does not change the player's room, so the proof holds the arrow
+  keys and reverses them when `currentPlayerRoom` changes.
+- The first run of the typing check missed the effect because a worker types for under ten seconds; sampling every 100 ms found it.
 
 ## Engine findings
 

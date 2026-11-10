@@ -148,21 +148,25 @@ function unreachableWorld() {
     return w;
 }
 
-test('step 4: a free but unreachable target is path-checked at most once a second', () => {
+test('step 4: a free but unreachable target parks the need (slice 14: no_source), so no search until it is retried', () => {
+    // Before slice 14 the NPC re-searched once a second (back-off) or every tick (legacy) for as
+    // long as the target stayed unreachable. Now the first search finds nothing and the need parks.
     const w = unreachableWorld();
     const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
     w.attach(sys);
     sys.registerAll();
     sys.step(60000);
-    assert.ok(w.searches <= 61, `searches in 60 s: ${w.searches}`);
-    assert.ok(w.searches >= 59, `still re-checks every second: ${w.searches}`);
+    assert.equal(w.searches, 1, `searches in 60 s: ${w.searches}`);
+    assert.deepEqual(sys.getLog().filter(e => e.ev === 'parked').map(e => e.reason), ['no_source']);
     assert.equal(w.calls.moves.length, 0);
+    sys.step(4 * 60000);
+    assert.equal(w.searches, 2, 'retried once when the 4 min timer ran out, and parked again');
     const legacyW = unreachableWorld();
     const legacy = new NPCNeedsSystem(legacyW.world, { seed: 1, manualClock: true, ...LEGACY });
     legacyW.attach(legacy);
     legacy.registerAll();
     legacy.step(60000);
-    assert.equal(legacyW.searches, 240, 'without back-off: every tick');
+    assert.equal(legacyW.searches, 1, 'without back-off: parked after the first search too');
 });
 
 test('step 4: an NPC waiting on a claimed target does no search and keeps the 250 ms check', () => {

@@ -400,5 +400,23 @@ test('validator: test_needs_sims has no errors and lists its copier pool', { ski
     const r = spawnSync('ruby', [join(root, 'scripts/validate_scenario.rb'), join(root, 'scenarios/test_needs_sims/scenario.json.erb')], { encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' } });
     const out = r.stdout + r.stderr;
     assert.ok(!/❌ ERROR/.test(out), out.split('\n').filter(l => l.includes('ERROR')).join('\n'));
-    assert.ok(out.includes("Reveal slots for 'office_copier': 3 (1 takeable"));
+    assert.ok(out.includes("Reveal slots for 'office_copier': 5 (1 takeable"));
+});
+
+test('adapter: a cosmetic copy registers as a fade companion of its producer and leaves with removeCosmetic', () => {
+    const { win } = fakeWindow();
+    win.game = { add: { sprite: (x, y, tex) => ({ x, y, texKey: tex, texture: { key: tex }, setOrigin() { return this; }, setDepth() { return this; }, destroy() { this.destroyed = true; } }) } };
+    withWindow(win, () => {
+        const w = createEngineWorld();
+        for (let i = 0; i < 3; i++) w.revealOutput('office_copier', 'sanjay');
+        const r = w.revealOutput('office_copier', 'sanjay');
+        assert.ok(r.cosmetic, 'pool exhausted: a cosmetic copy');
+        const prod = win.rooms.office.objects.office_copier;
+        assert.equal(prod._fadeCompanions.size, 1);
+        const [copy] = [...prod._fadeCompanions];
+        assert.equal(copy._fadeOwner, prod);
+        w.removeCosmetic(r.cosmetic);
+        assert.equal(prod._fadeCompanions.size, 0);
+        assert.equal(copy.destroyed, true);
+    });
 });

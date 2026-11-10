@@ -261,11 +261,30 @@ export function gameDisplay(message, title = '') {
 }
 
 // Show an in-game confirmation modal. Returns a Promise that resolves true (confirm) or false (cancel).
-export function gameConfirm(message, confirmLabel = 'Confirm', cancelLabel = 'Cancel') {
+// options.plainText: render the message and both button labels as plain text (textContent), never
+// HTML, with newlines preserved. Use it for author-written scenario text (e.g. an object's
+// interactionWarning) so the content can never be interpreted as markup.
+export function gameConfirm(message, confirmLabel = 'Confirm', cancelLabel = 'Cancel', options = {}) {
     return new Promise(resolve => {
+        const plainText = options && options.plainText === true;
         const overlay = document.createElement('div');
         overlay.className = 'game-confirm-overlay';
-        overlay.innerHTML = `
+        if (plainText) {
+            overlay.innerHTML = `
+            <div class="game-confirm-dialog">
+                <button class="game-modal-close" aria-label="Cancel">&times;</button>
+                <div class="game-confirm-message" style="white-space: pre-wrap;"></div>
+                <div class="game-confirm-buttons">
+                    <button class="game-confirm-btn game-confirm-ok"></button>
+                    <button class="game-confirm-btn game-confirm-cancel"></button>
+                </div>
+            </div>`;
+            // Author text in, plain text out: textContent, never innerHTML.
+            overlay.querySelector('.game-confirm-message').textContent = displayDashes(message);
+            overlay.querySelector('.game-confirm-ok').textContent = confirmLabel;
+            overlay.querySelector('.game-confirm-cancel').textContent = cancelLabel;
+        } else {
+            overlay.innerHTML = `
             <div class="game-confirm-dialog">
                 <button class="game-modal-close" aria-label="Cancel">&times;</button>
                 <div class="game-confirm-message">${displayDashes(message).replace(/\n/g, '<br>')}</div>
@@ -274,6 +293,7 @@ export function gameConfirm(message, confirmLabel = 'Confirm', cancelLabel = 'Ca
                     <button class="game-confirm-btn game-confirm-cancel">${cancelLabel}</button>
                 </div>
             </div>`;
+        }
 
         // Esc and the X both cancel (resolve false), same as the Cancel button.
         const unregister = registerModal(() => finish(false));

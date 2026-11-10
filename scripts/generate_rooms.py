@@ -534,8 +534,30 @@ def export_json_with_tiled(tmj_path: Path, json_path: Path) -> bool:
     return True
 
 
+# Rooms built here that use desk footprint collision boxes (the Tiled map property
+# deskBoxes = footprint; docs/achitechture/SEAT_BOX_PLAN.md slice 2). Opt-in per map, never a
+# global flip: add a room here when it is new, or when its walk audit has passed. Rooms edited
+# by hand use `room_edit.py ROOM set-map-prop deskBoxes footprint` instead.
+DESK_BOX_FOOTPRINT_ROOMS: set = set()
+
+
+def with_map_property(room: dict, name: str, value: str) -> dict:
+    """The map with one string map property set, in Tiled's array form and key order."""
+    props = [p for p in room.get("properties", []) if p.get("name") != name]
+    props.append({"name": name, "type": "string", "value": value})
+    props.sort(key=lambda p: p["name"])
+    out = {k: v for k, v in room.items() if k != "properties"}
+    keys = list(out)
+    i = next((i for i, k in enumerate(keys) if k > "properties"), len(keys))
+    items = list(out.items())
+    items.insert(i, ("properties", props))
+    return dict(items)
+
+
 def write_room(room: dict, stem: str):
     """Write .tmj, then export game-ready .json with Tiled --embed-tilesets."""
+    if stem in DESK_BOX_FOOTPRINT_ROOMS:
+        room = with_map_property(room, "deskBoxes", "footprint")
     tmj_path = ROOMS_DIR / f"{stem}.tmj"
     json_path = ROOMS_DIR / f"{stem}.json"
 
@@ -1123,6 +1145,7 @@ WALL_MOUNTED_EXTRAS = {
     "lw_sign_kitroom",
     "lw_pigeonholes",
     "lw_time_clock",
+    "lw_sign_store",
 }
 
 
@@ -3991,8 +4014,8 @@ def room_hce_ceo():
     r.solid("leather_sofa1", 36.0, 214.0)
     r.table("glass_coffee_table1", 42.0, 250.0, kind="objects")
     # visitor chairs facing the desk, either side of Satoshi (x 144-176 clear) (cycle 2, CEO-2)
-    r.item("chair-exec-rotate5", 102.0, 200.0)
-    r.item("chair-exec-rotate5", 182.0, 200.0)
+    r.item("chair-exec-rotate3", 102.0, 200.0)   # side-on, facing east to the desk (rotate3 = E)
+    r.item("chair-exec-rotate7", 182.0, 200.0)   # side-on, facing west (rotate7 = W)
     r.solid("floor_globe1", 196.0, 254.0)
     side = r.table("smalldesk1", 228.0, 180.0)
     r.on(side, "notes3", 0.25, 0.30, layer="conditional_table_items")

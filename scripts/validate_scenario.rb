@@ -392,7 +392,8 @@ def check_unknown_fields(json_data)
     scenario_id scenario_name scenario_brief endGoal version startRoom startPosition resumeSpawn titleScreenName
     show_scenario_brief disableAttacks creditsTheme creditsOverlay gameClock flags music startItemsInInventory globalVariables
     player objectives rooms npcs phoneNPCs narrator timers _comment mutuallyExclusiveGlobals lighting
-    importGlobals exportGlobals social npcNeedsSeed disguises actionIcons officeVisuals npcWindupMs showPressingNeeds showNpcIntentBubbles needsDebugOverlay officePresets chatter
+    importGlobals exportGlobals social npcNeedsSeed disguises actionIcons officeVisuals npcWindupMs showPressingNeeds showNpcIntentBubbles needsDebugOverlay officePresets chatter lockCues roomTone roomToneTypes
+    ttsPregenerateChatter
     accountProfiles policies defaultPolicy
   ]
 
@@ -417,6 +418,8 @@ def check_unknown_fields(json_data)
     phoneId phoneTheme handle profile voiced callLabel unlockable externalVariables persistentVariables
     timedMessages timedConversation eventMappings itemsHeld puzzle_graph_actions
     needs interests needsHome needsSpeed needsRooms needsAvoidRooms needsCompany chatter chattiness usePayload onUse
+    maxQueue needsDeferMin exchanges chatterCooldownMin swivel swivelChance screenHabit printHabit
+    answersPhones phoneCalls
     role creds staff cloneable
     observations disableClose los rfidCard chatBackground spriteStyle gender portraitVariants _comment
   ]
@@ -499,7 +502,7 @@ def check_unknown_fields(json_data)
     hacktivityMode vm acceptsVms flags flagRewards
     mode onAbort onLaunch abortConfirmText launchConfirmText
     itemsHeld contents hasContents triggerOnInteract
-    requiresItem requiresItemHint requiresItemHintVariants consumesItem revealOnGlobal outputOf
+    requiresItem requiresItemHint requiresItemHintVariants consumesItem revealOnGlobal outputOf leftBehindBy leftBehindChance
     minigameData interactionType
     gateVar sealedMessage openableReadyMessage
     puzzle_graph_role puzzle_graph_aim puzzle_graph_unlocks
@@ -508,7 +511,9 @@ def check_unknown_fields(json_data)
     completesTask completesTaskOnOpen
     puzzle_graph_links hintOnlyFlags acceptsVmLabels
     affordance needsTag droppable officeType
-    workstation locksScreenOnLeave lockChance screenOwner screenLocked
+    workstation locksScreenOnLeave lockChance screenOwner screenLocked autoLockSeconds
+    phoneOwner rings
+    actions onOwnerNoticesMissing interactionWarning saved_cards rfid_protocol
     access acceptsUIDOnly loginPicker policy transfer cloneable identity
     _comment
   ]
@@ -2261,6 +2266,73 @@ def check_give_item_collectible(json_data)
     end
   end
   json_data.each { |k, v| walk.call(v, k) unless %w[startItemsInInventory].include?(k) }
+  issues
+end
+
+# interactionWarning (systems/interactions.js): an author-defined "are you sure?" any
+# object may carry, shown before the object's normal interaction. Validate its shape
+# wherever it appears (walk the whole document, so nested contents/itemsHeld are covered).
+def check_interaction_warnings(json_data)
+  issues = []
+  # The apply-actions.js action vocabulary (its case labels) plus the extra names the
+  # triggerOnInteract schema enum accepts. Unknown types are a soft warning, not an error.
+  known_actions = %w[
+    set_global grant_fact emit_event complete_task unlock_task unlock_aim
+    unlock_object unlock_door give_item remove_item add_capture set_costume
+    clear_costume tint_objects lighting_dip confirm_action show_end_screen hint
+    revoke_card
+  ]
+  check_actions = lambda do |acts, p|
+    unless acts.is_a?(Array)
+      issues << "❌ INVALID: '#{p}' must be an array of actions."
+      return
+    end
+    acts.each_with_index do |a, i|
+      if !a.is_a?(Hash)
+        issues << "❌ INVALID: '#{p}[#{i}]' must be an action object."
+      elsif !a['type'].is_a?(String) || a['type'].empty?
+        issues << "❌ INVALID: '#{p}[#{i}]' needs a string 'type'."
+      elsif !known_actions.include?(a['type'])
+        issues << "⚠️ WARNING: '#{p}[#{i}]' has unknown action type '#{a['type']}'. " \
+                  "Known types: #{known_actions.join(', ')}."
+      end
+    end
+  end
+  walk = nil
+  walk = lambda do |node, path|
+    case node
+    when Hash
+      if node.key?('interactionWarning')
+        w = node['interactionWarning']
+        wp = "#{path}/interactionWarning"
+        if !w.is_a?(Hash)
+          issues << "❌ INVALID: '#{wp}' must be an object { text, proceedLabel, declineLabel, onProceed, onDecline, once }."
+        else
+          if !w['text'].is_a?(String) || w['text'].strip.empty?
+            issues << "❌ INVALID: '#{wp}/text' is required and must be a non-empty string."
+          end
+          ['proceedLabel', 'declineLabel'].each do |lk|
+            if w.key?(lk) && !w[lk].is_a?(String)
+              issues << "❌ INVALID: '#{wp}/#{lk}' must be a string."
+            end
+          end
+          if w.key?('once') && ![true, false].include?(w['once'])
+            issues << "❌ INVALID: '#{wp}/once' must be a boolean."
+          end
+          check_actions.call(w['onProceed'], "#{wp}/onProceed") if w.key?('onProceed')
+          check_actions.call(w['onDecline'], "#{wp}/onDecline") if w.key?('onDecline')
+          extra = w.keys - %w[text proceedLabel declineLabel onProceed onDecline once _comment]
+          unless extra.empty?
+            issues << "⚠️ WARNING: '#{wp}' has unrecognised key(s): #{extra.join(', ')}."
+          end
+        end
+      end
+      node.each { |k, v| walk.call(v, path.empty? ? k.to_s : "#{path}/#{k}") }
+    when Array
+      node.each_with_index { |v, i| walk.call(v, "#{path}[#{i}]") }
+    end
+  end
+  walk.call(json_data, '')
   issues
 end
 
@@ -5221,6 +5293,34 @@ GEOM_GU_W_PX     = 160  # GRID_UNIT_WIDTH_TILES(5)  * TILE_SIZE
 GEOM_GU_H_PX     = 128  # GRID_UNIT_HEIGHT_TILES(4) * TILE_SIZE
 GEOM_VISUAL_TOP  = 2    # VISUAL_TOP_TILES
 
+# A Tiled map property, read the way desk-footprints.js mapProperty reads it: Tiled's
+# array of {name, type, value}, or a plain object; nil when absent.
+def tiled_map_property(map_json, name)
+  props = map_json.is_a?(Hash) ? map_json['properties'] : nil
+  case props
+  when Array then props.find { |p| p.is_a?(Hash) && p['name'] == name }&.fetch('value', nil)
+  when Hash then props[name]
+  end
+end
+
+# Desk collision boxes per map (SEAT_BOX_PLAN.md slice 2): which of the scenario's room maps
+# have opted in to footprint boxes (map property deskBoxes = footprint) and which are legacy.
+# Returns { footprint: [types], legacy: [types] }; types whose map can't be found are skipped.
+def desk_box_maps(json_data, repo_root)
+  type_map = geom_type_to_tilemap(repo_root)
+  out = { footprint: [], legacy: [] }
+  types = (json_data['rooms'] || {}).values.map { |r| r.is_a?(Hash) ? r['type'] : nil }.compact.uniq.sort
+  types.each do |type|
+    file = type_map[type]
+    path = file && File.join(repo_root, 'public/break_escape/assets/rooms', file)
+    next unless path && File.exist?(path)
+    map = JSON.parse(File.read(path)) rescue nil
+    next unless map
+    (tiled_map_property(map, 'deskBoxes') == 'footprint' ? out[:footprint] : out[:legacy]) << type
+  end
+  out
+end
+
 # Build the room-type -> tilemap-file map from the engine's loader.
 def geom_type_to_tilemap(repo_root)
   game_js = File.join(repo_root, 'public/break_escape/js/core/game.js')
@@ -6490,6 +6590,7 @@ def main
     common_issues += check_pin_locks(json_data)
     common_issues += check_npc_patrol_and_catch_locks(json_data, repo_root)
     common_issues += check_give_item_collectible(json_data)
+    common_issues += check_interaction_warnings(json_data)
     common_issues += check_engine_limits(json_data)
     common_issues += check_vm_flags_load_bearing(json_data)
     common_issues += check_recurring_bugs(json_data, repo_root)
@@ -6582,6 +6683,16 @@ def main
     if options[:strict_social] && json_data.key?('social') && ValidateSocial.errors(social_issues).any?
       puts "✗ --strict-social: #{ValidateSocial.errors(social_issues).length} social lint error(s)"
       exit 1
+    end
+
+    # Info: desk collision boxes per map (footprint maps opt in with a Tiled map property)
+    desk_maps = desk_box_maps(json_data, File.expand_path('..', __dir__))
+    if desk_maps[:legacy].any? || desk_maps[:footprint].any?
+      puts "ℹ Desk boxes: legacy in #{desk_maps[:legacy].length} map(s)" \
+           "#{desk_maps[:legacy].any? ? " (#{desk_maps[:legacy].join(', ')})" : ''}; " \
+           "footprint in #{desk_maps[:footprint].length}" \
+           "#{desk_maps[:footprint].any? ? " (#{desk_maps[:footprint].join(', ')})" : ''}"
+      puts
     end
 
     # Exit with success (warnings don't cause failure)

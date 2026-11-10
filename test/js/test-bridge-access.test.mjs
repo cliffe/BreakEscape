@@ -59,13 +59,13 @@ test('workstation() reports owner, presence, the away record and the screen', ()
   ws.onLeft('jake'); // roll 0.9 >= 0.5: left open
   r = accessBridge.workstation('jake_pc');
   assert.equal(r.present, false);
-  assert.deepEqual(r.away, { away: true, leaves: 1 });
+  assert.deepEqual(r.away, { away: true, leaves: 1, leftAt: 0, expectedAwayMs: null });
   assert.equal(r.screenLocked, false);
 
   ws.onReturned('jake');
   r = accessBridge.workstation('jake_pc');
   assert.equal(r.present, true);
-  assert.deepEqual(r.away, { away: false, leaves: 1 });
+  assert.deepEqual(r.away, { away: false, leaves: 1, leftAt: 0, expectedAwayMs: null });
 
   r = accessBridge.workstation('lamp');
   assert.equal(r.workstation, false);

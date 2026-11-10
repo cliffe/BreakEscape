@@ -14,3 +14,23 @@ Morning. I'm at my desk, apart from the coffee runs.
     # speaker:npc
     Cheers.
     -> hub
+
+// Slice 15 (OFFICE_LIFE_PLAN 11.4): a scripted exchange, played once by the needs system when
+// Tom and Amara chat (the coffee queue) after she has opened the parcel, with the player in
+// earshot. Never reached from the player's conversation.
+=== exchange_tom_parcel ===
+Tom: Was that parcel on the floor for you?
+Amara: It was. New headsets for the team.
+Tom: Any chance of one before Friday?
+Amara: Get in the queue, Tom.
+-> DONE
+
+// Slice 19 (OFFICE_LIFE_PLAN 12.5): half a call, Amara's side only, played once when she answers
+// Tom's phone while he is out, with the player in earshot. Never reached from a conversation.
+=== call_take_message ===
+Tom's phone, Amara speaking.
+He's just stepped out. Can I help?
+Right, let me grab a pen.
+Tuesday, the big boxes. Got it.
+I'll leave a note on his desk. Bye.
+-> DONE

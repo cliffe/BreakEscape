@@ -94,6 +94,20 @@ module BreakEscape
       assert_equal 3, e.voices.size
     end
 
+    test "expected set keeps NPC and scenario chatter clips (OFFICE_LIFE_PLAN 11.3)" do
+      e = expected
+      assert e.include_key?(key("Quiet night again.", GUARD)), "the NPC's own chatter pool"
+      assert e.include_key?(key("Not with him there.", GUARD)), "a scenario-level chatter pool line"
+    end
+
+    test "dry run does not report a chatter clip as an orphan" do
+      own = put("#{SCENARIO}/#{key("Quiet night again.", GUARD)}.mp3")
+      shared = put("#{SCENARIO}/#{key("Not with him there.", GUARD)}.mp3")
+      r = pruner.run.scenarios.find { |s| s.name == SCENARIO }
+      assert_empty r.orphans
+      assert_equal %i[matched matched], r.files.select { |f| [own.to_s, shared.to_s].include?(f.path) }.map(&:status)
+    end
+
     test "static expansion of ink source" do
       lines = TtsExpectedLines.ink_source_candidates(<<~INK)
         VAR x = false

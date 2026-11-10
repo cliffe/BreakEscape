@@ -167,3 +167,43 @@ test('an action condition is read strictly: a malformed or non-string one never 
         }
     }
 });
+
+// A carried disguise (lab_physical_pentest kit_hivis_vest): two confirm_actions with opposite
+// conditions on one item make an on/off toggle. confirm_action does not block the list, so
+// both conditions are read at the click and the confirmed action cannot trip the other.
+test('two confirms with opposite conditions toggle: one prompt per click, even after it is confirmed', async () => {
+    const { evaluateActionCondition } = await import(dataUrl(readFileSync(join(js, 'utils/global-condition.js'), 'utf8')));
+    window.evaluateActionCondition = evaluateActionCondition;
+    const prompts = [];
+    let settle;
+    window.gameConfirm = (text) => { prompts.push(text); return new Promise((resolve) => { settle = resolve; }); };
+    const hints = [];
+    window.gameAlert = (message) => hints.push(message);
+    const toggle = [
+        { type: 'confirm_action', condition: '!globalVars.worn', text: 'Put it on?',
+          onConfirm: [{ type: 'set_global', key: 'worn', value: true }] },
+        { type: 'confirm_action', condition: 'globalVars.worn', text: 'Take it off?',
+          onConfirm: [{ type: 'set_global', key: 'worn', value: false }] }
+    ];
+    // This harness stubs global-writer.js, so the test writes the global the confirmed
+    // set_global would: what is under test is which prompts the click opens.
+    const g = window.gameState.globalVariables;
+    const click = async (answer) => {
+        prompts.length = 0;
+        await quietly(async () => {
+            applyActions(toggle);
+            const asked = prompts[0];
+            if (answer) g.worn = asked === 'Put it on?';
+            settle(answer);
+            await new Promise(r => setTimeout(r, 0));
+        });
+        return [...prompts];
+    };
+    delete g.worn;
+    assert.deepEqual(await click(true), ['Put it on?']);
+    assert.deepEqual(await click(false), ['Take it off?'], 'a cancel leaves it on');
+    assert.deepEqual(await click(true), ['Take it off?']);
+    assert.deepEqual(await click(true), ['Put it on?'], 'and round again');
+    delete g.worn;
+    delete window.gameConfirm; delete window.gameAlert;
+});

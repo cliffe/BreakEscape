@@ -1,5 +1,5 @@
 {
-  "scenario_brief": "TEST: Needs (Sims-style office day)\n\nA demo of the NPC needs system. Nothing to solve. Five staff get thirsty, hungry, tired and bored, want coffee and want to work, and walk to whatever fixes it before going back to their own desks. Open the kitchen door (west) and the lounge door (east) once so they can get there. The lounge is Rosa's room: only she and Grace use it, and each PC is used only by its owner. Read the deadline memo in the office and Tom and Amara both want a coffee at once; whoever misses the office station walks to the kitchen, not to Rosa's kettle. Drop the parcel or the dirty mugs from your inventory and watch someone deal with them. The whiteboard by the office's back wall shows the last thing anyone used. Icons over heads say what each person is doing, a thought bubble beside a head shows the need they will act on next, a carried parcel or mug shows in their hands, desk workers type, and you hear a drink or a snack when you are near enough.",
+  "scenario_brief": "TEST: Needs (Sims-style office day)\n\nA demo of the NPC needs system. Nothing to solve. Five staff get thirsty, hungry, tired and bored, want coffee and want to work, and walk to whatever fixes it before going back to their own desks. Open the kitchen door (west) and the lounge door (east) once so they can get there. The lounge is Rosa's room: only she and Grace use it, and each PC is used only by its owner. Read the deadline memo in the office and Tom and Amara both want a coffee at once; whoever misses the office station walks to the kitchen, not to Rosa's kettle (with the kitchen still shut, they wait in line at the office station instead). Read the Activity Board before opening the kitchen and Amara and Tom want a coffee, Marek queues behind Tom, and whoever is pouring chats with the first in line, unless that is Marek. Drop the parcel or the dirty mugs from your inventory and watch someone deal with them. The whiteboard by the office's back wall shows the last thing anyone used. Icons over heads say what each person is doing, a thought bubble beside a head shows the need they will act on next, a carried parcel or mug shows in their hands, desk workers type, and you hear a drink or a snack when you are near enough.",
   "endGoal": "Demo only: watch the staff.",
   "startRoom": "office",
   "startPosition": { "x": 5, "y": 6 },
@@ -8,10 +8,18 @@
   "showPressingNeeds": true,
   "needsDebugOverlay": true,
   "officePresets": true,
+  "roomTone": true,
   "lighting": { "enabled": true, "defaultMode": "on" },
 
   "chatter": {
-    "cooler": ["Did you see the car park email?", "Friday drinks again?", "How was the weekend?", "Is it raining again?", "Train was late again.", "Any plans for lunch?", "Not bad, you?", "That printer jammed again."]
+    "coffee": ["Go on, after you.", "Is there any milk left?", "This machine takes forever.", "Strong one today?", "Who keeps taking the mugs?", "Busy morning?"],
+    "cooler": ["Did you see the car park email?", "Friday drinks again?", "How was the weekend?", "Is it raining again?", "Train was late again.", "Any plans for lunch?", "Not bad, you?", "That printer jammed again."],
+    "grumble": ["Not with him there.", "I'll come back later.", "Maybe the kitchen's quieter."],
+    "grumble_off": ["Who switched the coffee off?", "It's off. Typical.", "No coffee here, then."],
+    "grumble_gone": ["Missed it."],
+    "grumble_printer_off": ["Printer's off. Brilliant.", "Is anything switched on today?", "Fine, I'll print it later."],
+    "cake": ["Who brought cake in?", "Go on, just a small slice.", "Whose birthday is it?", "This is really good."],
+    "news_cake": ["Someone's brought a cake in!", "There's cake going, if you're quick.", "Cake! It's somebody's birthday."]
   },
 
   "actionIcons": {
@@ -26,7 +34,20 @@
     "mugs_dropped": false,
     "copier_out_a_shown": false,
     "copier_out_b_shown": false,
-    "copier_out_c_shown": false
+    "copier_out_c_shown": false,
+    "copier_out_d_shown": false,
+    "copier_out_e_shown": false,
+    "tom_badge_left": false,
+    "heard_exchange_rosa_rota": false,
+    "heard_exchange_tom_parcel": false,
+    "heard_call_supplier": false,
+    "heard_call_take_message": false,
+    "office_coffee_off": false,
+    "office_copier_off": false,
+    "kitchen_copier_off": false,
+    "kitchen_out_a_shown": false,
+    "kitchen_out_b_shown": false,
+    "cake_servings": 2
   },
 
   "startItemsInInventory": [
@@ -47,6 +68,19 @@
       "droppable": true,
       "needsTag": "dirty_mugs",
       "observations": "Two mugs that need washing. Click them in your inventory to leave them on the floor."
+    },
+    {
+      "type": "cake1",
+      "id": "cake",
+      "name": "Cake",
+      "takeable": true,
+      "droppable": true,
+      "observations": "A cake for the office. Click it in your inventory to put it down where people will see it; the kitchen is a good bet.",
+      "affordance": {
+        "satisfies": ["hunger", "social"], "restores": 40, "useSeconds": 12, "capacity": 3, "chatter": "cake", "useSound": "eat_snack",
+        "magnet": { "tempt": 30, "servings": 2, "perPerson": 1, "announce": "news_cake", "newsRadius": 5 }
+      },
+      "_comment": "Slices 18b-i and 18b-ii magnet: two servings for three hungry people (Tom, Sanjay, Amara all start inside the tempt band, 40 + 30), so whoever is third turns back with 'Missed it.'. People learn of it by seeing it (being in its room) or by word: whoever has seen it tells the people within five tiles of them when back in their own room, from the room-free news_cake pool (the cake can go down anywhere). Avoidance blocks the telling both ways, so Marek (avoids everyone) is never told and tells nobody."
     }
   ],
 
@@ -72,8 +106,30 @@
         { "taskId": "spot_open_screen", "title": "Spot an unlocked, unattended screen (a breathing white dot; a steady blue dot means locked)", "type": "custom", "status": "active" },
         { "taskId": "hear_snack", "title": "Hear someone eat in the kitchen (the fridge and microwave take their settings and sound from their type)", "type": "custom", "status": "active" },
         { "taskId": "see_chat", "title": "Two people chat at the water cooler (read the Activity Board and Sanjay and Rosa both want a chat)", "type": "custom", "status": "active" },
-        { "taskId": "see_outcast", "title": "Nobody chats with the contractor: read the Kitchen Rota and Marek heads for the cooler; Sanjay waits at his desk until Marek has gone", "type": "custom", "status": "active" },
-        { "taskId": "see_printout", "title": "A printout is delivered to a desk (Sanjay prints at his PC; Amara takes it from the copier tray to her desk, where it is filed a minute later)", "type": "custom", "status": "active" }
+        { "taskId": "see_outcast", "title": "Nobody chats with the contractor: read the Kitchen Rota and Marek heads for the cooler; Sanjay stays at his desk (a greyed bubble with a storm cloud) until Marek has gone", "type": "custom", "status": "active" },
+        { "taskId": "see_queue", "title": "A queue forms at the coffee machine (read the Activity Board before opening the kitchen: Amara and Tom want a coffee, and Marek joins the line behind Tom)", "type": "custom", "status": "active" },
+        { "taskId": "see_queue_chat", "title": "Chat in the coffee queue (nobody chats with Marek, even in the queue)", "type": "custom", "status": "active" },
+        { "taskId": "see_printout", "title": "A printout is delivered to a desk (Sanjay prints at his PC; Amara takes it from the copier tray to her desk, where it is filed a minute later)", "type": "custom", "status": "active" },
+        { "taskId": "see_turned_back", "title": "Someone turns back rather than stand near a person they avoid (with the kitchen shut, read the Coffee Notice: Marek goes for a coffee, Sanjay sets off too, sees Marek and turns back; open the kitchen and he goes there instead)", "type": "custom", "status": "active" },
+        { "taskId": "see_left_behind", "title": "Spot something left on an empty desk (Tom often forgets his ID badge when he gets up, and pockets it when he sits down again)", "type": "custom", "status": "active" },
+        { "taskId": "hear_rota_exchange", "title": "Overhear Sanjay and Rosa talk about the kitchen rota (read the Activity Board, open the lounge door and stay near the water cooler; they say it once)", "type": "custom", "status": "active" },
+        { "taskId": "hear_parcel_exchange", "title": "Overhear Tom and Amara talk about the parcel (after Amara has opened it, read the Activity Board and stand by the coffee queue)", "type": "custom", "status": "active" },
+        { "taskId": "see_look_round", "title": "See someone look round at a conversation (read the Coffee Notice: when Sanjay turns back from the coffee and grumbles, the staff at their desks nearby turn their chairs towards him)", "type": "custom", "status": "active" },
+        { "taskId": "hear_screen_lock", "title": "Hear a screen lock as its owner walks off (stay in the office: Amara leaves her screen open for a quick trip, but locks it with a soft chime before a longer one, such as the kitchen run after you read the Deadline Memo)", "type": "custom", "status": "active" },
+        { "taskId": "see_auto_lock", "title": "Watch a screen lock itself (Sanjay never locks his PC, but it locks on its own 20 seconds after he walks off)", "type": "custom", "status": "active" },
+        { "taskId": "use_open_screen", "title": "Use Sanjay's screen while he is away (using it keeps it awake)", "type": "custom", "status": "active" },
+        { "taskId": "see_uncollected", "title": "See a printout sit uncollected on a copier (Tom prints now and then and forgets about half his prints; read the Print Queue note to send one he never collects, and wait two and a half minutes)", "type": "custom", "status": "active" },
+        { "taskId": "send_print_job", "title": "Send a print job from Tom's open screen and watch him fetch it (when he leaves his PC unlocked, use it: a few seconds after he is back he walks to the copier, carries the printout to his desk and puts it down)", "type": "custom", "status": "active" },
+        { "taskId": "keep_tom_away", "title": "Switch the office copier off and keep Tom away from his desk longer (open the kitchen door first, then switch the copier off at the wall socket beside it: Tom's next print goes to the kitchen copier, and he walks there to fetch it)", "type": "custom", "status": "active" },
+        { "taskId": "see_printer_grumble", "title": "Switch both copiers off and see Tom grumble when his print has nowhere to go (the kitchen copier has its own socket; both stay off once switched)", "type": "custom", "status": "active" },
+        { "taskId": "see_coffee_off", "title": "Switch the office coffee off at the wall socket beside it and watch someone go to the kitchen instead (open the kitchen door first; it stays off once switched)", "type": "custom", "status": "active" },
+        { "taskId": "see_cake_eaten", "title": "Put the cake out and watch it go (click it in your inventory to set it down; people who see it and fancy a slice get up for it, two slices only)", "type": "custom", "status": "active" },
+        { "taskId": "see_missed_it", "title": "See someone miss the cake (three hungry people, two slices: whoever arrives last turns back)", "type": "custom", "status": "active" },
+        { "taskId": "hear_cake_news", "title": "Watch the word get round (put the cake down in the kitchen and stay in the office: whoever sees it there tells the people near their desk when they get back, and the hungry ones get up; Marek keeps to himself, so nobody tells him and he tells nobody)", "type": "custom", "status": "active" },
+        { "taskId": "hear_tom_call", "title": "Overhear Tom on the phone (use the spare desk phone to ring his extension while he is at his desk, and stay close enough to hear his side of the call)", "type": "custom", "status": "active" },
+        { "taskId": "see_amara_answer", "title": "Ring Tom while he is out and see who answers (when he has gone for a coffee, ring him from the spare phone: Amara gets up and takes a message)", "type": "custom", "status": "active" },
+        { "taskId": "see_call_missed", "title": "Let a call ring out (ring Tom while he is away and Amara is busy, or while you are talking to him)", "type": "custom", "status": "active" },
+        { "taskId": "hear_office", "title": "Hear the office at work (each room has its own quiet bed: air handling in the office, a fridge hum in the kitchen, near silence in the lounge; keyboards while people type, the copier when it prints, the kettle and coffee machine when someone makes a drink)", "type": "custom", "status": "active" }
       ]
     }
   ],
@@ -91,10 +147,11 @@
           "takeable": false,
           "locked": false,
           "observations": "Amara's desk PC.",
-          "_comment": "officePresets: type pc gives the desk_pc preset (work, restores 60, 10 s). Only what differs is written here. workstation: Amara locks it every time she leaves (locksScreenOnLeave defaults to true), shown by a steady blue dot at the screen's corner.",
+          "_comment": "officePresets: type pc gives the desk_pc preset (work, restores 60, 10 s). Only what differs is written here. workstation: true with no lock field, so Amara's own screenHabit decides (slice 16): she locks it only for a trip she expects to take over 20 s. Locked: a steady blue dot at the screen's corner; open and away: a breathing white one.",
           "workstation": true,
           "observationVariants": [
-            { "condition": "globalVars.amara_pc_screen_locked", "value": "Amara's desk PC. She locked it before she walked off." }
+            { "condition": "globalVars.amara_pc_screen_locked", "value": "Amara's desk PC. She locked it before she walked off." },
+            { "condition": "globalVars.amara_pc_owner_away", "value": "Amara's desk PC. She has only stepped away, and left it unlocked." }
           ],
           "affordance": { "accepts": ["post", "printout"], "private": true }
         },
@@ -114,15 +171,55 @@
           "affordance": { "private": true }
         },
         {
+          "type": "id_badge",
+          "id": "tom_badge",
+          "name": "Tom's ID badge",
+          "position": { "x": 1.75, "y": 5.25 },
+          "takeable": true,
+          "observations": "Tom's staff ID on a lanyard. He has left it on his desk again.",
+          "leftBehindBy": "tom",
+          "leftBehindChance": 0.7,
+          "revealOnGlobal": "tom_badge_left",
+          "_comment": "Slice 11 left-behind item: on each real leave a seeded roll under 0.7 shows it on Tom's desk; when he is back at his desk he pockets it (hidden again, no server call). Takeable, so a single beat: once the player takes it, it is gone for good and Tom notices on his return (npc_left_item_gone:tom). A reload while it shows files it away."
+        },
+        {
+          "type": "phone1",
+          "id": "tom_phone",
+          "name": "Tom's desk phone",
+          "officeType": "desk_phone",
+          "phoneOwner": "tom",
+          "takeable": false,
+          "position": { "x": 2.8, "y": 5.3, "elevation": 24 },
+          "affordance": { "useFrom": { "dx": 1, "dy": 0.5 } },
+          "observations": "Tom's desk phone. His extension is on a sticker on the handset.",
+          "_comment": "Slice 19 (OFFICE_LIFE_PLAN 12.5): rings on desk_phone_ring:tom_phone (the spare phone). Tom at his desk answers without getting up; away, it rings four times and stops unless Amara is on her way. The desk_phone preset makes whoever answers it stand; useFrom puts a colleague beside the desk, not on Tom's chair spot."
+        },
+        {
+          "type": "phone2",
+          "id": "spare_phone",
+          "name": "Spare desk phone",
+          "takeable": false,
+          "position": { "x": 6.9, "y": 5.2, "elevation": 24 },
+          "observations": "A spare desk phone on an empty desk. The internal extensions are on a card beside it.",
+          "triggerOnInteract": [
+            { "type": "emit_event", "event_name": "desk_phone_ring:tom_phone" },
+            { "type": "hint", "title": "Desk phone", "message": "You dial Tom's extension." }
+          ],
+          "_comment": "Slice 19: the lever. Using it rings Tom's phone (a ring while it rings or during a call is ignored)."
+        },
+        {
           "type": "pc",
           "id": "sanjay_pc",
           "name": "Sanjay's PC",
           "takeable": false,
           "locked": false,
           "observations": "Sanjay's desk PC.",
+          "_comment": "Slice 16: Sanjay's habit is never to lock (screenHabit.lockChance 0); the machine's policy locks it after 20 s idle with him away (autoLockSeconds; the plan's 30 s rarely showed, since his coffee, microwave and cooler trips take 19 to 27 s). Using it restarts the idle clock.",
           "workstation": true,
+          "autoLockSeconds": 20,
           "observationVariants": [
-            { "condition": "globalVars.sanjay_pc_screen_locked", "value": "Sanjay's desk PC. He locked it before he walked off." }
+            { "condition": "globalVars.sanjay_pc_screen_locked", "value": "Sanjay's desk PC. It has gone to its lock screen." },
+            { "condition": "globalVars.sanjay_pc_owner_away", "value": "Sanjay's desk PC. He has left it unlocked; it will lock itself if nobody touches it." }
           ],
           "affordance": { "private": true }
         },
@@ -141,9 +238,21 @@
           "name": "Office Coffee Station",
           "position": { "x": 8, "y": 8 },
           "takeable": false,
-          "observations": "The office coffee station. One person at a time.",
-          "_comment": "The coffee preset stands the NPC below the machine (useFrom 0,1); this one's own useFrom wins.",
-          "affordance": { "useFrom": { "dx": -1, "dy": 0 } }
+          "observations": "The office coffee station. One person at a time; anyone else waits in line.",
+          "_comment": "The coffee preset stands the NPC below the machine (useFrom 0,1) and queues two a row below; this one's own useFrom and queue win. Slice 10: the queue runs left along the bottom row (the row below is the wall; up and left put the line on the way back to the desks, where people walking home ran into it), and the coffee pool gives the user and the first in line something to say. Slice 18a: offWhen office_coffee_off (set by the wall socket): while it holds the machine is no source; anyone walking to it or queued for it turns back with a grumble_off line and goes to the kitchen (or parks while the kitchen is shut); anyone pouring finishes.",
+          "affordance": { "useFrom": { "dx": -1, "dy": 0 }, "queue": { "cells": [{ "dx": -1, "dy": 0 }, { "dx": -2, "dy": 0 }] }, "chatter": "coffee", "offWhen": "office_coffee_off" }
+        },
+        {
+          "type": "wall_socket1",
+          "id": "office_coffee_socket",
+          "name": "Wall socket",
+          "position": { "x": 9.05, "y": 7.3 },
+          "takeable": false,
+          "_comment": "Slice 18a: the coffee machine's switch is its own object, so clicking the machine still shows its observations. One-way (set_global has no toggle). The hint is worded as a state, so it reads well on every click, and carries a neutral title (without one it shows under 'Intelligence Received').",
+          "triggerOnInteract": [
+            { "type": "set_global", "key": "office_coffee_off", "value": true },
+            { "type": "hint", "title": "Wall socket", "message": "The coffee machine is switched off at the wall." }
+          ]
         },
         {
           "type": "dirty_mugs1",
@@ -189,8 +298,21 @@
           "name": "Photocopier",
           "position": { "x": 4.4, "y": 2 },
           "takeable": false,
-          "observations": "The office photocopier. Sanjay's desk PC prints to it.",
-          "_comment": "Slice 7 producer: sanjay_pc's onUse revealOutput shows its first free slot (copier_out_a, then b, then c). The copier preset (photocopier1) gives it an affordance; nobody satisfies a need here."
+          "observations": "The office photocopier. Sanjay's and Tom's desk PCs print to it.",
+          "affordance": { "uncollectedAfterSeconds": 150, "offWhen": "office_copier_off" },
+          "_comment": "Slice 7 producer: sanjay_pc's and tom_pc's onUse revealOutput show its first free slot (copier_out_a, then b to e). Slice 17: uncollectedAfterSeconds 150 is above Tom's fetchAfterSeconds range (30 to 120), so npc_print_uncollected:tom marks a print that is really forgotten. The copier preset (photocopier1) gives the rest of its affordance; nobody satisfies a need here. Slice 22: offWhen office_copier_off (set by office_copier_socket): while it holds Tom's prints go to the kitchen copier (his hook lists both) and Sanjay's (a string hook) print nothing; a print already on the tray stays."
+        },
+        {
+          "type": "wall_socket1",
+          "id": "office_copier_socket",
+          "name": "Wall socket",
+          "position": { "x": 5.6, "y": 1.75 },
+          "takeable": false,
+          "_comment": "Slice 22: the copier's switch, as the coffee machine's (slice 18a): one-way, a state-worded hint with a neutral title.",
+          "triggerOnInteract": [
+            { "type": "set_global", "key": "office_copier_off", "value": true },
+            { "type": "hint", "title": "Wall socket", "message": "The photocopier is switched off at the wall." }
+          ]
         },
         {
           "type": "notes1",
@@ -240,6 +362,48 @@
         },
         {
           "type": "notes1",
+          "id": "copier_out_d",
+          "name": "Printout",
+          "position": { "x": 4.65, "y": 2.9 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "PRINTOUT\n\nHoliday request. Tom Fletcher, two weeks in August. Approved: (blank).",
+          "observations": "A printout on the copier tray.",
+          "outputOf": "office_copier",
+          "revealOnGlobal": "copier_out_d_shown",
+          "needsTag": "printout",
+          "_comment": "Slice 17: d and e widen the pool. Read in place, so they cycle."
+        },
+        {
+          "type": "notes1",
+          "id": "copier_out_e",
+          "name": "Printout",
+          "position": { "x": 4.65, "y": 2.9 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "PRINTOUT\n\nHoliday request, second copy. Tom Fletcher, two weeks in August.",
+          "observations": "A printout on the copier tray.",
+          "outputOf": "office_copier",
+          "revealOnGlobal": "copier_out_e_shown",
+          "needsTag": "printout"
+        },
+        {
+          "type": "notes1",
+          "id": "print_queue_note",
+          "name": "Print Queue",
+          "takeable": false,
+          "readable": true,
+          "addToNotes": false,
+          "text": "PRINT QUEUE\n\nOne job held for Tom Fletcher. Released when read.",
+          "observations": "A note about the copier's print queue. Reading it releases a job Tom sent and then forgot about.",
+          "_comment": "Slice 17 lever: a mapping on Tom prints as him at once, with forget true, so the printout waits on the tray and npc_print_uncollected:tom follows after 150 s. cooldown 60000, not onceOnly: onceOnly is saved to the server, while a reload files the forgotten print."
+        },
+        {
+          "type": "notes1",
           "id": "deadline_memo",
           "name": "Deadline Memo",
           "takeable": false,
@@ -257,6 +421,17 @@
           "addToNotes": false,
           "text": "KITCHEN ROTA\n\nThis week: Sanjay.\n\nContractors: the water cooler is in the kitchen.",
           "observations": "The kitchen rota. Reading it reminds Marek that he is parched; as he heads for the cooler, Sanjay decides he fancies a chat too."
+        },
+        {
+          "type": "notes1",
+          "id": "coffee_notice",
+          "name": "Coffee Notice",
+          "takeable": false,
+          "readable": true,
+          "addToNotes": false,
+          "text": "FRESH BEANS\n\nNew beans in the office machine. Help yourselves.",
+          "observations": "A notice about the coffee. Reading it sends Marek to the office machine, and Sanjay fancies one too.",
+          "_comment": "Slice 14 (OFFICE_LIFE_PLAN 10): Marek's caffeine is set low on reading it; Sanjay's follows npc_left_post:marek to office_coffee. Sanjay queues behind Marek's claim, then turns back when Marek comes within two tiles (avoidRadius), grumbles, and with the kitchen shut parks with the closed-door badge."
         }
       ],
       "npcs": [
@@ -269,14 +444,20 @@
           "spriteTalk": "assets/characters/female_office_worker_talk.png",
           "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
           "storyPath": "scenarios/test_needs_sims/ink/amara.json",
+          "chatter": { "cooler": ["Lovely and cold, this.", "Is it Friday yet?"], "grumble": ["Never mind, I'll go later."], "phone_message": ["He's not at his desk just now.", "Can I take a message?", "I'll tell him you rang."] },
+          "exchanges": [{ "with": "tom", "knot": "exchange_tom_parcel", "requireGlobal": "amara_opened_parcel" }],
+          "answersPhones": true,
+          "phoneCalls": [{ "knot": "call_take_message" }],
           "currentKnot": "start",
           "voice": { "name": "Aoede", "style": "Office administrator, thirties, British Nigerian, London accent. Warm and quick.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
           "needsHome": "amara_pc",
+          "screenHabit": { "lockIfAwayOverSeconds": 20 },
           "needsSpeed": 90,
           "needs": {
             "caffeine": { "decayPerMin": 20, "urgentAt": 40, "initial": 58 },
-            "work": { "decayPerMin": 10, "urgentAt": 50, "initial": 72 }
+            "work": { "decayPerMin": 10, "urgentAt": 50, "initial": 72 },
+            "hunger": { "decayPerMin": 1, "urgentAt": 40, "initial": 65 }
           },
           "interests": { "post": { "weight": 3, "noticeRooms": ["office"] }, "printout": { "weight": 2, "noticeRooms": ["office"] } },
           "usePayload": { "who": "amara" },
@@ -292,6 +473,9 @@
             { "eventPattern": "npc_used:water_cooler", "cooldown": 0, "setGlobal": { "last_activity": "water_cooler" } },
             { "eventPattern": "npc_used:water_cooler", "onceOnly": true, "cooldown": 0, "completeTask": "see_drink" },
             { "eventPattern": "npc_chatted:water_cooler", "onceOnly": true, "cooldown": 0, "completeTask": "see_chat" },
+            { "eventPattern": "npc_queued:office_coffee", "onceOnly": true, "cooldown": 0, "completeTask": "see_queue" },
+            { "eventPattern": "npc_chatted:office_coffee", "onceOnly": true, "cooldown": 0, "completeTask": "see_queue_chat" },
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Activity Board'", "cooldown": 30000, "needs": { "set": { "caffeine": 10 } } },
             { "eventPattern": "npc_avoided:sanjay", "condition": "data.avoidedId === \"marek\"", "onceOnly": true, "cooldown": 0, "completeTask": "see_outcast" },
             { "eventPattern": "npc_used:lounge_sofa", "cooldown": 0, "setGlobal": { "last_activity": "sofa" } },
             { "eventPattern": "npc_used:lounge_sofa", "onceOnly": true, "cooldown": 0, "completeTask": "see_rest" },
@@ -303,8 +487,8 @@
             { "eventPattern": "npc_used:amara_pc", "condition": "data.tag === \"printout\"", "onceOnly": true, "cooldown": 0, "completeTask": "see_printout" },
             { "eventPattern": "npc_used:amara_pc", "condition": "data.need === \"work\"", "cooldown": 0, "setGlobal": { "last_activity": "desk_work" } },
             { "eventPattern": "npc_used:amara_pc", "condition": "data.need === \"work\"", "onceOnly": true, "cooldown": 0, "completeTask": "see_work" },
-            { "eventPattern": "npc_used:tom_pc", "cooldown": 0, "setGlobal": { "last_activity": "desk_work" } },
-            { "eventPattern": "npc_used:tom_pc", "onceOnly": true, "cooldown": 0, "completeTask": "see_work" },
+            { "eventPattern": "npc_used:tom_pc", "condition": "data.need === \"work\"", "cooldown": 0, "setGlobal": { "last_activity": "desk_work" } },
+            { "eventPattern": "npc_used:tom_pc", "condition": "data.need === \"work\"", "onceOnly": true, "cooldown": 0, "completeTask": "see_work" },
             { "eventPattern": "npc_used:sanjay_pc", "cooldown": 0, "setGlobal": { "last_activity": "desk_work" } },
             { "eventPattern": "npc_used:sanjay_pc", "onceOnly": true, "cooldown": 0, "completeTask": "see_work" },
             { "eventPattern": "npc_returned_post:amara", "onceOnly": true, "cooldown": 0, "completeTask": "see_back_at_desk" },
@@ -314,7 +498,21 @@
             { "eventPattern": "object_interacted", "condition": "data.objectName === 'Deadline Memo'", "cooldown": 30000, "needs": { "set": { "caffeine": 20 } } },
             { "eventPattern": "npc_use_heard:*", "condition": "data.key === 'drink_gulp'", "onceOnly": true, "cooldown": 0, "completeTask": "hear_drink" },
             { "eventPattern": "npc_use_heard:*", "condition": "data.key === 'eat_snack'", "onceOnly": true, "cooldown": 0, "completeTask": "hear_snack" },
+            { "eventPattern": "room_tone_started:*", "onceOnly": true, "cooldown": 0, "completeTask": "hear_office" },
             { "eventPattern": "item_dropped:parcel", "onceOnly": true, "cooldown": 0, "setGlobal": { "parcel_dropped": true } },
+            { "eventPattern": "npc_exchange_heard:exchange_tom_parcel", "onceOnly": true, "cooldown": 0, "completeTask": "hear_parcel_exchange" },
+            { "eventPattern": "npc_swivelled:*", "condition": "data.reason === 'listen'", "onceOnly": true, "cooldown": 0, "completeTask": "see_look_round" },
+            { "eventPattern": "npc_turned_back:*", "condition": "data.reason === 'off'", "onceOnly": true, "cooldown": 0, "completeTask": "see_coffee_off" },
+            { "eventPattern": "npc_used:kitchen_coffee", "condition": "globalVars.office_coffee_off", "onceOnly": true, "cooldown": 0, "completeTask": "see_coffee_off" },
+            { "eventPattern": "magnet_finished:cake", "onceOnly": true, "cooldown": 0, "completeTask": "see_cake_eaten" },
+            { "eventPattern": "npc_turned_back:*", "condition": "data.reason === 'gone'", "onceOnly": true, "cooldown": 0, "completeTask": "see_missed_it" },
+            { "eventPattern": "npc_told:*", "onceOnly": true, "cooldown": 0, "completeTask": "hear_cake_news" },
+            { "eventPattern": "npc_call_heard:call_supplier", "onceOnly": true, "cooldown": 0, "completeTask": "hear_tom_call" },
+            { "eventPattern": "desk_phone_answered:tom_phone", "condition": "data.answeredBy === 'amara'", "onceOnly": true, "cooldown": 0, "completeTask": "see_amara_answer" },
+            { "eventPattern": "desk_phone_unanswered:tom_phone", "onceOnly": true, "cooldown": 0, "completeTask": "see_call_missed" },
+            { "eventPattern": "workstation_lock_heard:amara_pc", "condition": "data.how === 'leave'", "onceOnly": true, "cooldown": 0, "completeTask": "hear_screen_lock" },
+            { "eventPattern": "workstation_screen_changed:sanjay_pc", "condition": "data.how === 'auto'", "onceOnly": true, "cooldown": 0, "completeTask": "see_auto_lock" },
+            { "eventPattern": "workstation_accessed:sanjay_pc", "onceOnly": true, "cooldown": 0, "completeTask": "use_open_screen" },
             { "eventPattern": "item_dropped:player_mugs", "onceOnly": true, "cooldown": 0, "setGlobal": { "mugs_dropped": true } }
           ]
         },
@@ -327,6 +525,8 @@
           "spriteTalk": "assets/characters/male_office_worker_talk.png",
           "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
           "storyPath": "scenarios/test_needs_sims/ink/tom.json",
+          "chatter": { "cooler": ["Anyone watching the match tonight?", "I'm starving already."], "grumble": ["Oh, forget it."], "phone": ["Hello, Tom speaking.", "Can I call you back later?", "Yes, that's fine. Bye."] },
+          "phoneCalls": [{ "knot": "call_supplier" }],
           "currentKnot": "start",
           "voice": { "name": "Charon", "style": "Sales assistant, late twenties, white British, Yorkshire accent. Cheerful and easily distracted.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
@@ -337,10 +537,20 @@
             "hunger": { "decayPerMin": 10, "urgentAt": 40, "initial": 65 },
             "work": { "decayPerMin": 8, "urgentAt": 50, "initial": 80 }
           },
-          "onUse": { "fridge": { "setGlobal": "tom_had_lunch" } },
+          "onUse": { "fridge": { "setGlobal": "tom_had_lunch" }, "tom_pc": { "revealOutput": ["office_copier", "kitchen_copier"], "chance": 0.4, "_comment": "Slice 22: the office copier first; while it is off, the kitchen copier; both off, nothing prints and he grumbles (grumble_printer_off)." } },
+          "printHabit": { "fetchAfterSeconds": [30, 120], "forgetChance": 0.5, "_comment": "Slice 17: about four in ten of his work uses print; he fetches a print 30 to 120 s later, or forgets it (half of them). His prints are his: Amara's printout interest leaves them alone." },
           "eventMappings": [
+            { "eventPattern": "workstation_accessed:tom_pc", "cooldown": 60000, "needs": { "print": { "producer": ["office_copier", "kitchen_copier"], "fetchAfterSeconds": [5, 10], "forget": false } } },
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Print Queue'", "cooldown": 60000, "needs": { "print": { "producer": ["office_copier", "kitchen_copier"], "forget": true } } },
+            { "eventPattern": "npc_print_uncollected:tom", "onceOnly": true, "cooldown": 0, "completeTask": "see_uncollected" },
+            { "eventPattern": "npc_print_fetched:tom", "condition": "data.viaCommand === true", "onceOnly": true, "cooldown": 0, "completeTask": "send_print_job" },
+            { "eventPattern": "npc_print_fetched:tom", "condition": "data.producerId === 'kitchen_copier'", "onceOnly": true, "cooldown": 0, "completeTask": "keep_tom_away" },
+            { "eventPattern": "npc_print_blocked:tom", "onceOnly": true, "cooldown": 0, "completeTask": "see_printer_grumble" },
             { "eventPattern": "workstation_owner_left:tom_pc", "condition": "data.screenLocked === false", "onceOnly": true, "cooldown": 0, "completeTask": "spot_open_screen" },
             { "eventPattern": "npc_caught_at_post:tom", "cooldown": 30000, "bark": "Er, that's my desk. Can I help you?", "completeTask": "see_caught" },
+            { "eventPattern": "object_revealed:tom_badge", "onceOnly": true, "cooldown": 0, "completeTask": "see_left_behind" },
+            { "eventPattern": "npc_left_item_gone:tom", "onceOnly": true, "cooldown": 0, "bark": "Has anyone seen my badge? I'm sure I left it here." },
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Activity Board'", "cooldown": 30000, "needs": { "set": { "caffeine": 10 } } },
             { "eventPattern": "object_interacted", "condition": "data.objectName === 'Deadline Memo'", "cooldown": 30000, "needs": { "set": { "caffeine": 20 } } }
           ]
         },
@@ -353,6 +563,7 @@
           "spriteTalk": "assets/characters/female_blowse_talk.png",
           "spriteVisemes": "assets/characters/female_blowse_visemes.png",
           "storyPath": "scenarios/test_needs_sims/ink/grace.json",
+          "chatter": { "cooler": ["Who left the window open?", "You should drink more water."], "grumble": ["I'll try again later."] },
           "currentKnot": "start",
           "voice": { "name": "Kore", "style": "Office manager, early sixties, Swedish-born, decades in the UK. Kind and brisk.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
@@ -373,19 +584,30 @@
           "spriteTalk": "assets/characters/male_nerd_talk.png",
           "spriteVisemes": "assets/characters/male_nerd_visemes.png",
           "storyPath": "scenarios/test_needs_sims/ink/sanjay.json",
+          "chatter": { "cooler": ["Long morning, this.", "Did you get any lunch?"], "grumble": ["I'll skip it for now."] },
+          "exchanges": [{ "with": "rosa", "knot": "exchange_rosa_rota" }],
           "currentKnot": "start",
           "voice": { "name": "Puck", "style": "Developer, mid twenties, British Indian, Leicester accent. Polite and a little shy.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
           "needsHome": "sanjay_pc",
+          "screenHabit": { "lockChance": 0 },
           "needsSpeed": 85,
           "onUse": { "sanjay_pc": { "revealOutput": "office_copier" } },
           "needs": {
             "work": { "decayPerMin": 15, "urgentAt": 50, "initial": 65 },
             "hunger": { "decayPerMin": 8, "urgentAt": 40, "initial": 64 },
-            "social": { "decayPerMin": 12, "urgentAt": 40, "initial": 76 }
+            "social": { "decayPerMin": 12, "urgentAt": 40, "initial": 76 },
+            "caffeine": { "decayPerMin": 1, "urgentAt": 30, "initial": 95 }
           },
+          "_comment": "Slice 14: avoids Marek (avoidRadius 2 by default): he turns back from a source Marek is using, queued for or standing near, and parks the need (2 min) if nothing else will do. The caffeine need is slow on purpose: it only fires through the Coffee Notice beat.",
+          "needsCompany": { "avoids": ["marek"] },
+          "needsDeferMin": 2,
+          "maxQueue": 1,
           "eventMappings": [
             { "eventPattern": "object_interacted", "condition": "data.objectName === 'Activity Board'", "cooldown": 30000, "needs": { "set": { "social": 10 } } },
+            { "eventPattern": "npc_left_post:marek", "condition": "data.targetId === 'office_coffee'", "cooldown": 30000, "needs": { "set": { "caffeine": 10 } } },
+            { "eventPattern": "npc_turned_back:sanjay", "condition": "data.reason === 'avoid'", "onceOnly": true, "cooldown": 0, "completeTask": "see_turned_back" },
+            { "eventPattern": "npc_exchange_heard:exchange_rosa_rota", "onceOnly": true, "cooldown": 0, "completeTask": "hear_rota_exchange" },
             { "eventPattern": "npc_left_post:marek", "condition": "data.targetId === 'water_cooler'", "cooldown": 30000, "needs": { "set": { "social": 10 } } }
           ]
         },
@@ -393,23 +615,27 @@
           "id": "marek",
           "displayName": "Marek Nowak",
           "npcType": "person",
-          "position": { "x": 6, "y": 8 },
+          "position": { "x": 3, "y": 8 },
           "spriteSheet": "male_telecom_v2",
           "spriteTalk": "assets/characters/male_telecom_talk.png",
           "spriteVisemes": "assets/characters/male_telecom_visemes.png",
           "storyPath": "scenarios/test_needs_sims/ink/marek.json",
+          "chatter": { "cooler": ["Cold enough today."], "grumble": ["Fine. Later, then."] },
           "currentKnot": "start",
-          "voice": { "name": "Charon", "style": "Telecoms contractor, fifties, Polish-born, years in the UK. Gruff but not unfriendly.", "language": "en-GB" },
+          "voice": { "name": "Orus", "style": "Telecoms contractor, fifties, Polish-born, years in the UK. Gruff but not unfriendly.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
-          "_comment": "Slice 8 (OFFICE_LIFE_PLAN 7.3): the outcast. avoids '*' acts both ways: nobody shares the cooler with him or chats with him. His thirst is slow so he goes only when the Kitchen Rota is read (or after about half an hour).",
-          "needsHome": { "room": "office", "x": 6, "y": 8 },
+          "_comment": "Slice 8 (OFFICE_LIFE_PLAN 7.3): the outcast. avoids '*' acts both ways: nobody shares the cooler with him or chats with him. His post is the bottom-left corner (moved from beside the coffee station in slice 10, where it stood in the queue). His thirst is slow so he goes only when the Kitchen Rota is read (or after about half an hour). Slice 10: a slow caffeine need too; when Tom joins the coffee queue Marek wants one, so he queues behind Tom, in silence.",
+          "needsHome": { "room": "office", "x": 3, "y": 8 },
           "needsSpeed": 80,
-          "needsCompany": { "avoids": ["*"] },
+          "needsCompany": { "avoids": ["*"], "avoidRadius": 0 },
           "needs": {
-            "thirst": { "decayPerMin": 2, "urgentAt": 30, "initial": 95 }
+            "thirst": { "decayPerMin": 2, "urgentAt": 30, "initial": 95 },
+            "caffeine": { "decayPerMin": 1, "urgentAt": 30, "initial": 95 }
           },
           "eventMappings": [
-            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Kitchen Rota'", "cooldown": 30000, "needs": { "set": { "thirst": 10 } } }
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Kitchen Rota'", "cooldown": 30000, "needs": { "set": { "thirst": 10 } } },
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Coffee Notice'", "cooldown": 30000, "needs": { "set": { "caffeine": 10 } } },
+            { "eventPattern": "npc_queued:office_coffee", "condition": "data.npcId === 'tom'", "cooldown": 30000, "needs": { "set": { "caffeine": 10 } } }
           ]
         }
       ]
@@ -444,7 +670,8 @@
           "position": { "x": 3, "y": 8 },
           "takeable": false,
           "observations": "The kitchen's coffee station.",
-          "affordance": { "useFrom": { "dx": 0, "dy": -1 } }
+          "_comment": "Slice 10: the preset's queue would run a row below, into the wall, and past the water cooler; this one runs up and right, clear of the cooler.",
+          "affordance": { "useFrom": { "dx": 0, "dy": -1 }, "queue": { "cells": [{ "dx": 1, "dy": -1 }, { "dx": 2, "dy": -1 }] } }
         },
         {
           "type": "water_cooler1",
@@ -462,6 +689,59 @@
           "takeable": false,
           "observations": "A tray for dirty mugs. Somebody will wash them. Eventually.",
           "affordance": { "accepts": ["dirty_mugs"], "useSeconds": 5 }
+        },
+        {
+          "type": "photocopier1",
+          "id": "kitchen_copier",
+          "name": "Kitchen Copier",
+          "position": { "x": 7.9, "y": 7.3 },
+          "takeable": false,
+          "observations": "An old photocopier pushed into the kitchen corner. Tom's PC prints here when the office one is off.",
+          "affordance": { "uncollectedAfterSeconds": 150, "offWhen": "kitchen_copier_off" },
+          "_comment": "Slice 22: Tom's second printer (his hook lists office_copier first). In the south-east corner, square to the east wall and clear of the door; the copier preset stands him below it. offWhen kitchen_copier_off, set by kitchen_copier_socket: with both copiers off his prints are blocked."
+        },
+        {
+          "type": "wall_socket1",
+          "id": "kitchen_copier_socket",
+          "name": "Wall socket",
+          "position": { "x": 9.05, "y": 6.4 },
+          "takeable": false,
+          "_comment": "Slice 22: the kitchen copier's switch, one-way like the others.",
+          "triggerOnInteract": [
+            { "type": "set_global", "key": "kitchen_copier_off", "value": true },
+            { "type": "hint", "title": "Wall socket", "message": "The kitchen copier is switched off at the wall." }
+          ]
+        },
+        {
+          "type": "notes1",
+          "id": "kitchen_out_a",
+          "name": "Printout",
+          "position": { "x": 8.15, "y": 8.2 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "PRINTOUT\n\nTom's expenses claim. Train fares, one sandwich.",
+          "observations": "A printout on the kitchen copier tray.",
+          "outputOf": "kitchen_copier",
+          "revealOnGlobal": "kitchen_out_a_shown",
+          "needsTag": "printout",
+          "_comment": "Slice 22: reads in place, so it cycles."
+        },
+        {
+          "type": "notes1",
+          "id": "kitchen_out_b",
+          "name": "Printout",
+          "position": { "x": 8.15, "y": 8.2 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "PRINTOUT\n\nTom's sales figures for the week, with a coffee ring on the corner.",
+          "observations": "A printout on the kitchen copier tray.",
+          "outputOf": "kitchen_copier",
+          "revealOnGlobal": "kitchen_out_b_shown",
+          "needsTag": "printout"
         }
       ]
     },
@@ -495,7 +775,8 @@
           "position": { "x": 1, "y": 3 },
           "takeable": false,
           "observations": "Rosa's own kettle, by the lounge door. Nearer to most desks than the kitchen, but nobody else touches it.",
-          "affordance": { "useFrom": { "dx": 1, "dy": 0 } }
+          "_comment": "queue false: the coffee preset would queue two by the lounge door (the validator warns that a queuer could stand in the doorway); Rosa and Grace rarely want it at once.",
+          "affordance": { "useFrom": { "dx": 1, "dy": 0 }, "queue": false }
         }
       ],
       "npcs": [
@@ -508,6 +789,7 @@
           "spriteTalk": "assets/characters/female_scientist_talk.png",
           "spriteVisemes": "assets/characters/female_scientist_visemes.png",
           "storyPath": "scenarios/test_needs_sims/ink/rosa.json",
+          "chatter": { "cooler": ["How's your week going?", "Lunch in the park, anyone?"], "grumble": ["It can wait."] },
           "currentKnot": "start",
           "voice": { "name": "Leda", "style": "Team lead, forties, Spanish-born, years in the UK. Relaxed and friendly.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },

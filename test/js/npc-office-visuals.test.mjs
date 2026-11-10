@@ -9,7 +9,8 @@ import { dirname, join } from 'node:path';
 import { pickIcon, pickIconEntry, resolveIcon, DEFAULT_ICONS, NpcActionIcons, backingSize, ICON_TEXT_PX } from '../../public/break_escape/js/systems/npc-action-icons.js';
 import {
     useVolume, SoundLimiter, handOffset, heldPlacement, iconShown, roomIsDark, officeVisualsOn,
-    NpcOfficeVisuals, USE_SOUND_SCALE, firstOpaqueRow, iconAnchor, frameHeadRow, ICON_HEAD_GAP
+    NpcOfficeVisuals, USE_SOUND_SCALE, firstOpaqueRow, iconAnchor, frameHeadRow, ICON_HEAD_GAP,
+    lockCuesOn, lockCuePlan, ownRoomHearing, openDoorHearing, glyphLeft, glyphSequence, LOCK_GLYPHS, CHIME_SCALE, installNpcOfficeVisuals
 } from '../../public/break_escape/js/systems/npc-office-visuals.js';
 import { hearingLevel } from '../../public/break_escape/js/systems/room-hearing.js';
 
@@ -330,9 +331,249 @@ test('officeVisualsOn: on unless the scenario says false', () => {
     assert.equal(officeVisualsOn({ officeVisuals: false }), false);
 });
 
-// ── validator ────────────────────────────────────────────────────────────
+// ── lock cues (slice 16, OFFICE_LIFE_PLAN 12.2) ──────────────────────────
 
 const ruby = spawnSync('ruby', ['--version']);
+
+function fakeAudioContext(log) {
+    const node = () => ({ connect: (n) => n || node(), gain: { value: 1, setValueAtTime() {}, linearRampToValueAtTime() {}, exponentialRampToValueAtTime() {} } });
+    return {
+        currentTime: 0, destination: {},
+        createGain: () => node(),
+        createOscillator: () => { const o = { ...node(), type: '', frequency: { setValueAtTime: (hz) => log.push(hz) }, start() {}, stop() {} }; return o; }
+    };
+}
+
+function cueWorld({ playerRoom = 'office', lighting = null, scenario = {}, texturesLoaded = true } = {}) {
+    const notes = [], emitted = [], made = [], timers = [], flashes = [];
+    const go = (kind) => { const g = { kind, x: 0, y: 0, visible: true, destroyed: false, scene: {} };
+        for (const m of ['setOrigin', 'setDepth', 'setText']) g[m] = () => g;
+        g.setTexture = (k) => { g.texture = k; return g; };
+        g.setPosition = (x, y) => { g.x = x; g.y = y; return g; };
+        g.setVisible = (v) => { g.visible = v; return g; };
+        g.setSize = (w, h) => { g.w = w; g.h = h; return g; };
+        g.destroy = () => { g.destroyed = true; g.scene = null; };
+        made.push(g); return g; };
+    const scene = {
+        sound: { mute: false, play: () => {}, context: fakeAudioContext(notes) },
+        cache: { audio: { exists: () => false } },   // the chimes have no file
+        add: { rectangle: () => go('bg'), image: () => go('img'), text: () => go('text'), container: (x, y, kids) => { const c = go('box'); c.x = x; c.y = y; c.kids = kids; return c; } },
+        textures: { exists: () => texturesLoaded },
+        time: { delayedCall: (ms, fn) => { const t = { ms, fn, remove() {} }; timers.push(t); return t; } }
+    };
+    const pc = { x: 100, y: 100, scenarioData: { id: 'amara_pc' }, getCenter: () => ({ x: 100, y: 100 }), getTopCenter: () => ({ x: 100, y: 84 }) };
+    globalThis.window = {
+        currentPlayerRoom: playerRoom, player: { x: 100, y: 160 },
+        gameScenario: scenario,
+        rooms: { office: { objects: { amara_pc: pc }, doorSprites: [{ doorProperties: { connectedRoom: 'kitchen' } }] }, kitchen: { objects: {}, doorSprites: [{ doorProperties: { connectedRoom: 'office' } }] } },
+        lightingSystem: lighting ? { flash: (id, kind) => { flashes.push([id, kind]); return true; } } : null,
+        soundManager: { enabled: true, masterVolume: 1, volumeSettings: { effects: 1 } },
+        eventDispatcher: { emit: (name, data) => emitted.push({ name, data }) }
+    };
+    return { v: new NpcOfficeVisuals(scene), notes, emitted, made, timers, flashes };
+}
+
+test('lockCuePlan: flash with lighting, glyph without; chime on leave and return only; late shows nothing', () => {
+    assert.deepEqual(lockCuePlan({ how: 'leave', locked: true }, { lighting: true }), { flash: 'lock', glyph: false, chime: 'screen_lock' });
+    assert.deepEqual(lockCuePlan({ how: 'return', locked: false }, { lighting: false }), { flash: null, glyph: true, chime: 'screen_unlock' });
+    assert.deepEqual(lockCuePlan({ how: 'auto', locked: true }, { lighting: true }), { flash: 'lock', glyph: false, chime: null });
+    assert.deepEqual(lockCuePlan({ how: 'late', locked: true }, { lighting: false }), { flash: null, glyph: false, chime: null });
+    assert.equal(lockCuesOn({}), true);
+    assert.equal(lockCuesOn({ lockCues: false }), false);
+});
+
+test('ownRoomOnly: 0 through a door and for a missing room id; playAt logs it', () => {
+    assert.equal(ownRoomHearing('office', 'office'), 1);
+    assert.equal(ownRoomHearing('kitchen', 'office'), 0);
+    assert.equal(ownRoomHearing(undefined, 'office'), 0);
+    assert.equal(hearingLevel(undefined, 'office', {}), 1, 'the plain hearing level trusts a missing room id');
+    try {
+        const { v } = cueWorld({ playerRoom: 'office' });
+        const synth = () => true;
+        assert.equal(v.playAt('screen_lock', 100, 100, 'kitchen', {}, { ownRoomOnly: true, channel: 'chime', synth }), 0, 'through a door');
+        assert.equal(v.playLog.at(-1).hearing, 0);
+        assert.equal(v.playAt('screen_lock', 100, 100, undefined, {}, { ownRoomOnly: true, channel: 'chime', synth }), 0, 'no room id');
+        assert.ok(v.playAt('screen_lock', 100, 100, 'office', {}, { ownRoomOnly: true, channel: 'chime', synth }) > 0);
+    } finally { delete globalThis.window; }
+});
+
+test('openDoorHearing (the desk-phone ring): own room 1, through an open door 0.4, shut or not adjacent or unknown 0', () => {
+    const conn = { west: 'kitchen', east: ['lounge'] };
+    const shutRooms = { office: { doorSprites: [{ active: true, doorProperties: { connectedRoom: 'kitchen', open: false } }] }, kitchen: { doorSprites: [] } };
+    const openRooms = { office: { doorSprites: [] }, kitchen: { doorSprites: [] } };
+    const flagged = { office: { doorSprites: [{ active: true, doorProperties: { connectedRoom: 'kitchen', open: true } }] } };
+    const otherSide = { office: { doorSprites: [] }, kitchen: { doorSprites: [{ active: true, doorProperties: { connectedRoom: 'office', open: false } }] } };
+    assert.equal(openDoorHearing('office', 'office', shutRooms, conn), 1);
+    assert.equal(openDoorHearing('kitchen', 'office', shutRooms, conn), 0, 'door shut');
+    assert.equal(openDoorHearing('kitchen', 'office', openRooms, conn), 0.4, 'opened door: no sprite');
+    assert.equal(openDoorHearing('kitchen', 'office', flagged, conn), 0.4, 'sprite flagged open');
+    assert.equal(openDoorHearing('kitchen', 'office', otherSide, conn), 0, 'shut from the other side');
+    assert.equal(openDoorHearing('lounge', 'office', openRooms, conn), 0.4, 'array connections');
+    assert.equal(openDoorHearing('store', 'office', openRooms, conn), 0, 'not adjacent');
+    assert.equal(openDoorHearing(undefined, 'office', openRooms, conn), 0);
+    assert.equal(openDoorHearing('kitchen', undefined, openRooms, conn), 0);
+});
+
+test('openDoorOnly in playAt: the ring plays at the reduced level through an open door, silent through a shut one', () => {
+    try {
+        const { v } = cueWorld({ playerRoom: 'office', scenario: { rooms: { office: { connections: { west: 'kitchen' } } } } });
+        const opts = { openDoorOnly: true, channel: 'ring', scale: 0.8 };
+        window.player = { x: 100, y: 100 };
+        const own = v.playAt('desk_phone_ring', 100, 100, 'office', {}, opts);   // sound.cache says no file, so read the log
+        assert.equal(v.playLog.at(-1).hearing, 1);
+        assert.equal(v.playLog.at(-1).volume, 0.8);
+        v.playAt('desk_phone_ring', 100, 100, 'kitchen', {}, opts);
+        assert.equal(v.playLog.at(-1).hearing, 0, 'door shut');
+        assert.equal(v.playLog.at(-1).volume, 0);
+        window.rooms.office.doorSprites = []; window.rooms.kitchen.doorSprites = [];
+        v.playAt('desk_phone_ring', 100, 100, 'kitchen', {}, opts);
+        assert.equal(v.playLog.at(-1).hearing, 0.4, 'door open');
+        assert.equal(v.playLog.at(-1).volume, 0.32, '0.4 of the in-room level at the same distance');
+        void own;
+    } finally { delete globalThis.window; }
+});
+
+test('limiter channels: a use sound and a chime in the same second both play', () => {
+    try {
+        const { v } = cueWorld();
+        v.scene.cache.audio.exists = () => true;
+        assert.ok(v.playAt('drink_gulp', 100, 100, 'office') > 0);
+        assert.ok(v.playAt('screen_lock', 100, 100, 'office', {}, { ownRoomOnly: true, channel: 'chime', synth: () => true }) > 0);
+        assert.equal(v.playAt('eat_snack', 100, 100, 'office'), 0, 'the use channel still limits itself');
+        assert.equal(v.playLog.at(-1).reason, 'rate');
+    } finally { delete globalThis.window; }
+});
+
+test('a lock on leave without lighting: padlock glyph (open then closed, bodies aligned), chime played and heard', () => {
+    try {
+        const { v, notes, emitted, made, timers, flashes } = cueWorld();
+        v.onScreenChanged({ objectId: 'amara_pc', ownerId: 'amara', locked: true, how: 'leave' });
+        assert.equal(flashes.length, 0);
+        const img = made.find(g => g.kind === 'img');
+        assert.equal(img.texture, LOCK_GLYPHS.open.key, 'starts open');
+        const openLeft = img.x;
+        timers.find(t => t.ms === 300).fn();
+        assert.equal(img.texture, LOCK_GLYPHS.closed.key, 'then closes');
+        // the body (15 px) sits at the same place in both icons
+        assert.equal(openLeft + LOCK_GLYPHS.open.bodyX0, img.x + LOCK_GLYPHS.closed.bodyX0);
+        assert.equal(glyphLeft('closed'), -7);
+        assert.equal(glyphLeft('open'), -15);
+        assert.deepEqual(glyphSequence(false), ['closed', 'open']);
+        const box = made.find(g => g.kind === 'box');
+        assert.equal(box.y, 82, 'just above the screen');
+        timers.find(t => t.ms === 1000).fn();
+        assert.equal(box.destroyed, true, 'gone after a second');
+        // the chime: synthesised, falling notes, own channel, played (approved)
+        assert.deepEqual(notes, [880, 587.33]);
+        const log = v.playLog.at(-1);
+        assert.equal(log.key, 'screen_lock');
+        assert.equal(log.played, true);
+        assert.equal(log.channel, 'chime');
+        assert.ok(!('reason' in log));
+        assert.ok(Math.abs(log.volume - Math.round(USE_SOUND_SCALE * CHIME_SCALE * (1 - 60 / 256) * 1000) / 1000) < 1e-9);
+        const heard = emitted.find(e => e.name === 'workstation_lock_heard:amara_pc');
+        assert.equal(heard.data.locked, true);
+        assert.equal(heard.data.how, 'leave');
+        assert.ok(heard.data.volume > 0);
+        assert.equal(v.cueLog.at(-1).glyph, true);
+    } finally { delete globalThis.window; }
+});
+
+test('with lighting: the flash and no glyph; the return chime rises; an auto-lock flashes with no chime', () => {
+    try {
+        const { v, notes, made, flashes, emitted } = cueWorld({ lighting: true });
+        v.onScreenChanged({ objectId: 'amara_pc', ownerId: 'amara', locked: false, how: 'return' });
+        assert.deepEqual(flashes, [['amara_pc', 'unlock']]);
+        assert.equal(made.length, 0, 'no glyph with lighting');
+        assert.deepEqual(notes, [587.33, 880]);
+        v.onScreenChanged({ objectId: 'amara_pc', ownerId: 'amara', locked: true, how: 'auto' });
+        assert.deepEqual(flashes[1], ['amara_pc', 'lock']);
+        assert.equal(notes.length, 2, 'no chime for an auto-lock');
+        assert.equal(emitted.filter(e => e.name.startsWith('workstation_lock_heard')).length, 1);
+    } finally { delete globalThis.window; }
+});
+
+test('from the kitchen the chime is not heard (logged at 0, no event); a late decision shows nothing', () => {
+    try {
+        const { v, notes, emitted, made } = cueWorld({ playerRoom: 'kitchen' });
+        v.onScreenChanged({ objectId: 'amara_pc', ownerId: 'amara', locked: true, how: 'leave' });
+        assert.equal(notes.length, 0);
+        assert.equal(v.playLog.at(-1).volume, 0);
+        assert.equal(v.playLog.at(-1).hearing, 0);
+        assert.equal(emitted.length, 0);
+        const n = made.length;
+        v.onScreenChanged({ objectId: 'amara_pc', ownerId: 'amara', locked: true, how: 'late' });
+        assert.equal(made.length, n);
+        assert.equal(v.playLog.length, 1);
+    } finally { delete globalThis.window; }
+});
+
+test('lockCues: false shows nothing; officeVisuals: false with lockCues on still cues and installs', () => {
+    try {
+        let w = cueWorld({ scenario: { lockCues: false } });
+        w.v.onScreenChanged({ objectId: 'amara_pc', ownerId: 'amara', locked: true, how: 'leave' });
+        assert.equal(w.made.length, 0);
+        assert.equal(w.v.playLog.length, 0);
+        w = cueWorld({ scenario: { officeVisuals: false } });
+        w.v.onScreenChanged({ objectId: 'amara_pc', ownerId: 'amara', locked: true, how: 'leave' });
+        assert.ok(w.made.length > 0, 'glyph shown');
+        assert.equal(w.v.playLog.at(-1).played, true);
+        delete globalThis.window.npcOfficeVisuals;
+        assert.ok(installNpcOfficeVisuals(null), 'installs under lockCues alone');
+        globalThis.window.gameScenario = { officeVisuals: false, lockCues: false };
+        delete globalThis.window.npcOfficeVisuals;
+        assert.equal(installNpcOfficeVisuals(null), null, 'both off: not installed');
+    } finally { delete globalThis.window; }
+});
+
+test('glyph text stand-ins until the icons have loaded', () => {
+    try {
+        const { v, made } = cueWorld({ texturesLoaded: false });
+        v.onScreenChanged({ objectId: 'amara_pc', ownerId: 'amara', locked: false, how: 'return' });
+        assert.equal(made.find(g => g.kind === 'img').visible, false);
+        assert.equal(made.find(g => g.kind === 'text').visible, true);
+    } finally { delete globalThis.window; }
+});
+
+test('validator (slice 16): screenHabit bounds, nothing to lock, shadowed habit; autoLockSeconds on a non-workstation or a station that always locks', { skip: ruby.status !== 0 && 'ruby not found' }, () => {
+    const scenario = { lockCues: 'yes', rooms: { office: { objects: [
+        { id: 'pc_amara', type: 'pc1', workstation: true },
+        { id: 'pc_tom', type: 'pc1', lockChance: 0.5 },
+        { id: 'pc_san', type: 'pc1', workstation: true, autoLockSeconds: 30 },
+        { id: 'pc_def', type: 'pc1', workstation: true, autoLockSeconds: 30 },
+        { id: 'pc_on', type: 'pc1', locksScreenOnLeave: true, autoLockSeconds: 30 },
+        { id: 'lamp', type: 'lamp1', autoLockSeconds: 10 },
+        { id: 'pc_bad', type: 'pc1', workstation: true, autoLockSeconds: -1 }
+    ], npcs: [
+        { id: 'amara', needsHome: 'pc_amara', screenHabit: { lockIfAwayOverSeconds: 20 } },
+        { id: 'tom', needsHome: 'pc_tom', screenHabit: { lockChance: 0 } },
+        { id: 'san', needsHome: 'pc_san', screenHabit: { lockChance: 0 } },
+        { id: 'def', needsHome: 'pc_def' },
+        { id: 'loner', screenHabit: { lockChance: 2, lockIfAwayOverSeconds: 'x', colour: 1 } }
+    ] } } };
+    const script = `require ${JSON.stringify(join(root, 'scripts/validate_npc_needs.rb'))}
+      puts JSON.generate(ValidateNpcNeeds.check(JSON.parse(STDIN.read)))`;
+    const r = spawnSync('ruby', ['-e', script], { input: JSON.stringify(scenario), encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' } });
+    assert.equal(r.status, 0, r.stderr);
+    const issues = JSON.parse(r.stdout.trim().split('\n').pop()).filter(s => /screenHabit|autoLockSeconds|lockCues/.test(s));
+    const has = f => issues.some(s => s.includes(f));
+    assert.ok(has('ERROR: lockCues must be true or false'));
+    assert.ok(!has("NPC 'amara'"), 'a habit on a plain workstation is fine');
+    assert.ok(has("WARNING: NPC 'tom' screenHabit never applies"));
+    assert.ok(!has("NPC 'san'"));
+    assert.ok(has("ERROR: NPC 'loner' screenHabit.lockChance"));
+    assert.ok(has("ERROR: NPC 'loner' screenHabit.lockIfAwayOverSeconds"));
+    assert.ok(has("WARNING: NPC 'loner' screenHabit has unknown field 'colour'"));
+    assert.ok(has("WARNING: NPC 'loner' screenHabit but the NPC owns no workstation"));
+    assert.ok(!has("'pc_san' autoLockSeconds"), 'the habit leaves it open');
+    assert.ok(has("WARNING: object 'pc_def' autoLockSeconds never applies"), 'no habit: always locks');
+    assert.ok(has("WARNING: object 'pc_on' autoLockSeconds never applies"));
+    assert.ok(has("WARNING: object 'lamp' autoLockSeconds is set on an object that is not a workstation"));
+    assert.ok(has("ERROR: object 'pc_bad' autoLockSeconds must be"));
+});
+
+// ── validator ────────────────────────────────────────────────────────────
+
 test('validator: oversized held item, unloaded useSound and a missing icon texture are warnings', { skip: ruby.status !== 0 && 'ruby not found' }, () => {
     const scenario = {
         actionIcons: { a: 'icon:no_such_icon', b: { sprite: 'coffee_cups1' }, c: 'C' },
@@ -355,4 +596,26 @@ test('validator: oversized held item, unloaded useSound and a missing icon textu
     assert.ok(!has("'cooler2'"));
     assert.ok(has("actionIcons 'a'"));
     assert.ok(!has("actionIcons 'b'") && !has("actionIcons 'c'"));
+});
+
+test('validator (slice 21): swivel on an NPC with no needs and los.enabled on a needs NPC are warnings; a bad swivelChance is an error', { skip: ruby.status !== 0 && 'ruby not found' }, () => {
+    const needs = { work: { decayPerMin: 1, urgentAt: 20 } };
+    const scenario = { rooms: { office: { objects: [{ id: 'desk_pc', type: 'pc1' }], npcs: [
+        { id: 'guard', swivel: false },
+        { id: 'watcher', needs, needsHome: 'desk_pc', los: { enabled: true } },
+        { id: 'quiet_watcher', needs, needsHome: 'desk_pc', los: { enabled: true }, swivel: false },
+        { id: 'jumpy', needs, needsHome: 'desk_pc', swivelChance: 2 },
+        { id: 'ok', needs, needsHome: 'desk_pc', swivelChance: 0.1 }
+    ] } } };
+    const script = `require ${JSON.stringify(join(root, 'scripts/validate_npc_needs.rb'))}
+      puts JSON.generate(ValidateNpcNeeds.check(JSON.parse(STDIN.read)))`;
+    const r = spawnSync('ruby', ['-e', script], { input: JSON.stringify(scenario), encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' } });
+    assert.equal(r.status, 0, r.stderr);
+    const issues = JSON.parse(r.stdout.trim().split('\n').pop()).filter(s => /swivel|los\.enabled/.test(s));
+    const has = f => issues.some(s => s.includes(f));
+    assert.ok(has("WARNING: NPC 'guard' sets swivel"));
+    assert.ok(has("WARNING: NPC 'watcher' is a needs NPC with los.enabled"));
+    assert.ok(!has("'quiet_watcher'"));
+    assert.ok(has("ERROR: NPC 'jumpy' swivelChance"));
+    assert.ok(!has("'ok'"));
 });

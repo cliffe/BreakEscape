@@ -51,13 +51,13 @@
     "hospital_desk1": {
       "id": 0,
       "w": 62,
-      "h": 48,
+      "h": 44,
       "gid": 103
     },
     "hospital_desk2": {
       "id": 1,
       "w": 62,
-      "h": 48,
+      "h": 44,
       "gid": 104
     },
     "hospital_conference_table": {
@@ -2261,13 +2261,13 @@
     "hospital_chair_north": {
       "id": 201,
       "w": 16,
-      "h": 26,
+      "h": 30,
       "gid": 316
     },
     "hospital_chair_south": {
       "id": 202,
       "w": 16,
-      "h": 32,
+      "h": 35,
       "gid": 317
     },
     "iv_stand1": {
@@ -2873,7 +2873,7 @@
     "hospital_chair_north2": {
       "id": 100,
       "w": 16,
-      "h": 26,
+      "h": 30,
       "gid": 901
     },
     "pigeonholes1": {
@@ -2969,7 +2969,7 @@
     "exec_desk1": {
       "id": 116,
       "w": 80,
-      "h": 46,
+      "h": 42,
       "gid": 917
     },
     "radio_charger1": {
@@ -5951,7 +5951,7 @@
     "m10_steel_chair1": {
       "id": 623,
       "w": 16,
-      "h": 26,
+      "h": 31,
       "gid": 1424
     },
     "m10_field_screen_curve1": {
@@ -6029,13 +6029,13 @@
     "aw_chair_south_slate1": {
       "id": 636,
       "w": 16,
-      "h": 32,
+      "h": 35,
       "gid": 1437
     },
     "aw_chair_north_slate1": {
       "id": 637,
       "w": 16,
-      "h": 26,
+      "h": 30,
       "gid": 1438
     },
     "aw_chair_w_slate1": {
@@ -6083,13 +6083,13 @@
     "aw_chair_south_charcoal1": {
       "id": 645,
       "w": 16,
-      "h": 32,
+      "h": 35,
       "gid": 1446
     },
     "aw_chair_north_charcoal1": {
       "id": 646,
       "w": 16,
-      "h": 26,
+      "h": 30,
       "gid": 1447
     },
     "aw_chair_w_charcoal1": {
@@ -6247,6 +6247,12 @@
       "w": 36,
       "h": 29,
       "gid": 1473
+    },
+    "lw_sign_store1": {
+      "id": 673,
+      "w": 27,
+      "h": 11,
+      "gid": 1474
     }
   }
 }

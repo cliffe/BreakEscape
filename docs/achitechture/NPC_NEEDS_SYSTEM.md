@@ -97,6 +97,7 @@ Rules that hold throughout:
 | `weight` (prov.) | 0.1–10 | 1 | Scales the need's score |
 | `maxUnmetMin` (prov.) | >0 | none | Starvation guard: this long since last satisfied → wins outright |
 | `jitterPct` (prov.) | 0–50 | 0 | Seeded ± spread on `initial` and each top-up |
+| `deferrable` (slice 14) | bool | true | `false` marks a story need: it ignores the avoid and queue checks (5.8) and goes to the nearest source anyway. Validator warns when set on caffeine, thirst, hunger or rest |
 
 Levels are clamped to 0–100; 100 = fully satisfied.
 
@@ -233,6 +234,35 @@ error). The slot starts hidden (the usual `revealOnGlobal` rule) and is shown by
 - `core/rooms.js` exports `showRevealedObject` and `hideRevealedObject` and puts both on `window`
   (the adapter reaches them there, so `npc-needs.js` has no static import of `rooms.js`).
 
+### 3.3b Left-behind items (office life slice 11, `OFFICE_LIFE_PLAN.md` 2.10)
+
+A **left-behind item** is a declared object at an NPC's post with `leftBehindBy: "<npcId>"`, a
+`leftBehindChance` (0-1, default 0) and its own engine-owned `revealOnGlobal`. It is a slot by
+3.3a's definition (same global rule, same read-in-place rule, same stow on sight).
+
+```jsonc
+{ "id": "tom_badge", "type": "id_badge", "name": "Tom's ID badge", "takeable": true,
+  "position": { "x": 1.75, "y": 5.25 }, "leftBehindBy": "tom", "leftBehindChance": 0.7,
+  "revealOnGlobal": "tom_badge_left" }
+```
+
+- **On a real leave** (2.11's rules: own-desk work is not a leave), `s.leaveCount` goes up by one
+  and each of the owner's free items (loaded, not taken, not already showing) rolls
+  `roll(npcId, "left:<leaveCount>:<itemId>") < leftBehindChance`. A hit shows it at its declared spot
+  by a direct `showRevealedObject` call, sets its global, lifts its depth just above the owner's
+  `needsHome` object when that is within two tiles (desk dressing shares the desk's depth), emits
+  `object_revealed:<itemId>` `{npcId, objectId, leftBehindBy}`, and logs `left_behind`
+  `{item, leave}`. `npc_left_post` gains `leftBehind: [ids]` when something was left.
+- **On return** (`npc_returned_post`), the owner collects each item it left: hidden, global
+  false, declared depth back, no server call; logged `stowed` with `reason: "collected"`. A later
+  leave can show it again.
+- **Taken by the player:** gone for good (server-side removal, as any takeable item). On return the
+  owner logs `left_item_gone` and emits `npc_left_item_gone:<npcId>` `{npcId, itemId,
+  playerNearby, playerDistance}` once; the item is never offered again.
+- **Reload:** the needs state resets (`leaveCount` 0); an item that was showing is filed on sight.
+- **Determinism:** a world without `leftBehindItems` (or a scenario with no such items) rolls
+  nothing and logs nothing, so existing decision logs are byte-identical.
+
 ### 3.4 eventMapping field
 
 `"needs"` (prov.): `"suspend"` | `"resume"` | `{ "set": { "<need>": level } }`.
@@ -243,6 +273,9 @@ Runs after `patrolOverride` in the same mapping.
 `npcNeedsSeed` (prov.): number or string. Default: the scenario name.
 
 `needsDebugOverlay`: boolean, default false. Turns on the need-bar debug overlay (section 4.1).
+
+`ttsPregenerateChatter`: boolean, default false. Lets `TtsLineExtractor` list chatter lines for batch
+voice generation (5.6a).
 
 `officePresets`: boolean, default false. Affordance presets by object type (section 3.2).
 
@@ -528,9 +561,10 @@ during the walk home (exists). Player-facing behaviour:
 - **Timing.** A line shows for 2.5 s + 50 ms a character, at most 4 s, then a 0.5 s gap, on the
   needs clock. A line starts only if it ends before the first of the two uses does, so a 15 s
   overlap gives three or four lines and a short one gives one. Dwell times never stretch.
-- **Pools.** Built-in `coffee`, `cooler`, `greet` (office small talk). The scenario's `chatter`
-  replaces a pool by name; `"chatter": false` turns the built-ins off. An NPC's own `chatter` lines
-  for that topic add to the pool when it speaks. A pool is a list or `{ lines, hush, overhearRadius }`.
+- **Pools.** Since slice 15 there are no built-in lines (5.6a): a scenario's `chatter` pools
+  (`coffee`, `cooler`, `greet`, `grumble`) and an NPC's own `chatter` lines for that topic make up
+  what an NPC can say, and with none it shows picture chat. `"chatter": false` turns chat off
+  entirely. A pool is a list or `{ lines, hush, overhearRadius }`.
   `chattiness` (0..1, default 1) is the seeded chance an NPC speaks on its turn. Lines are at most
   40 characters, one line (validator error).
 - **Ends** when either NPC is frozen in a conversation, finishes, or is interrupted; the other
@@ -555,6 +589,125 @@ during the walk home (exists). Player-facing behaviour:
   and `chatPartner`. Chat lines are events only; they are not written to the decision log. The
   decision log gains `avoided` (`avoided`, `target`).
 - Nothing is saved; only loaded NPCs chat.
+
+### 5.6a Voiced chatter, scripted exchanges and picture chat (office life slice 15, `OFFICE_LIFE_PLAN.md` section 11)
+
+- **Where lines live.** Barks are strings in a scenario `chatter` pool or an NPC's `chatter`; they are
+  voiced by the speaker's TTS voice on first play and cached like any bark. The server accepts them
+  (`ScenarioBarkValidator.bark_texts`, `validate_shared`; `/tts` and `TtsExpectedLines`), so the pruner
+  and `tts:wasted` never count a chatter clip as unrequested. `ttsPregenerateChatter: true` (scenario)
+  makes `TtsLineExtractor` batch-generate them too. Lines are plain text: `{ }` is a validator error.
+- **Bag.** An NPC draws from a seeded shuffle-bag per NPC and topic over the pool it speaks (shared
+  plus own lines). It refills when empty and a refill never starts with the line just said. Bags are
+  in memory only (not saved).
+- **Cooldown.** After a spoken line the NPC stays quiet for `chatterCooldownMin` needs-clock minutes
+  (NPC field, default 5). Pictures never start or wait for it.
+- **Speech lock.** One global lock (`_speechUntil`, across rooms): bark and exchange turns wait for
+  it; a turn that waits past the overlap ends the chat as before.
+- **Picture chat.** With no line to say (empty pool, bag spent, cooldown running, lock busy) the
+  speaker shows a speech bubble holding an icon, 2.5 s (`PICTURE_CHATTER`): coffee: caffeine, social,
+  work; cooler: thirst, social, work; greet: social; grumble: avoid. `npc_chatted` fires with
+  `line: null, picture`.
+- **Exchanges.** NPC field `exchanges: [{ with: "<npcId>" | "group:<name>", knot, requireGlobal }]`
+  (the lower id's list is read first). A `knot` is an ink knot on the owner's story whose lines are
+  prefixed `Name:` for the other speaker. When a compatible pair meets and the player hears them
+  (same room, lit, in range, clear line, checked every turn, so walking up mid-meeting works), the
+  first unheard exchange for the pair plays instead of a bark. Every speaker named in the knot must
+  be one of the pair, or it is not played. It runs on a separate `inkjs` story (the player's
+  conversation state is untouched), one line per bubble (`exchangeLineMs`, at most 6 s), each in its
+  speaker's voice through `systems/npc-needs-chatter.js` (`window.npcChatterVoice`; plays only in the
+  player's room, volume falls with distance, muted when barks are muted, `log` records every line).
+  The pair's overlap is extended by the knot, capped at 60 s. At the end the global `heard_<knot>` is
+  set (saved, so once per game survives a reload) and `npc_exchange_heard:<knot>` fires. A meeting
+  interrupted mid-exchange leaves it unplayed. Afterwards the same meeting carries on with barks,
+  then pictures.
+- **Order.** Each turn: unheard exchange (with audience), then a bark (if lines, off cooldown, lock
+  free), then a picture. `_grumble` (5.8) uses the same bag, cooldown and lock, and shows `avoid`
+  otherwise.
+- **Dark rooms.** `playerHears` now needs the NPC's room lit (`roomLevel >= 0.5`), so `overheard`,
+  `npc_overheard` (slice 8 and 14) and exchanges do not fire in a dark room.
+- **Decision log.** `exchange_started` (`knot`, `with`) and `exchange_heard` (`knot`).
+- **Not saved:** bags, cooldowns, the lock. Saved: `heard_<knot>`.
+
+### 5.7 Queues at shared machines (office life slice 10, `OFFICE_LIFE_PLAN.md` 2.5, 7.3)
+
+- **Authoring.** `affordance.queue: { cells: [{dx, dy}, ...], maxWaitSeconds }`: places in line, in
+  tiles from the approach cell. The `coffee` preset (coffee stations, kettles) queues two at
+  `(-1,1), (-2,1)`; `"queue": false` switches a preset queue off. No queue: the old behaviour (a
+  second NPC waits at its post).
+- **Choice.** A queue is an option only when the need has no free, permitted, reachable target: a
+  free machine in another room still wins (the showcase's long way to the kitchen is unchanged).
+  The nearest claimed machine with a queue place for this NPC is chosen; the job starts in phase
+  `queued`, logs `queued` `{target, place}` and emits `npc_queued:<objectId>`
+  `{npcId, objectId, need, place, playerNearby, playerDistance}`.
+- **Order and places.** Claim order (a system-wide sequence; ticks run in NPC id order, so it is
+  deterministic). Each queuer takes the first cell that is in a room it may enter (leash,
+  `needsPrivateTo`) and that nobody ahead of it holds; with none left it waits at its post instead.
+  Live cells snap exactly to a walkable 8 px cell (`findNearestWalkableWorldCell` radius 0); a cell
+  on furniture is dropped. Queued jobs do not count as claims; while a queue exists only its front
+  may take a freed place, so nobody jumps the line.
+- **Advancing and leaving.** The front takes the machine as soon as `_free` allows (log
+  `queue_front`); the rest step up. A queuer leaves (log `queue_left` with a reason, then walks
+  home) when its need is met some other way (`need_met`), after `maxWaitSeconds` (default 30,
+  counted from joining, paused while frozen in a conversation; `max_wait`, and that machine is
+  skipped for 60 s), or when no permitted cell is left (`no_queue_cell`). A queuer that cannot reach
+  its cell by the move deadline fails the job (`timeout`) as any job does.
+- **Queue chatter.** The NPC using a machine with a `chatter` pool pairs with the first queuer once it
+  stands in its cell within 1.5 tiles (48 px) of the approach cell, with 5.6's turn-taking, timing,
+  overhearing and hush; the line must end before the user's use does. Only compatible pairs (7.3):
+  an avoided or group-mismatched front queues in silence, and the second in line never chats.
+- **Icon.** While queued the action icon is `queue` (`icon:npc-queue`, an hourglass) whatever the
+  machine; a scenario `actionIcons.queue` entry overrides it. The pressing-need bubble does not show
+  the need being queued for.
+- **Arrival (slice 10 fix, shared `npc-behavior.js`).** Needs moves to a use, queue or pair cell pass
+  `arriveWithin: 6` to `goToAndStay`, so the NPC walks on to the cell instead of stopping up to a
+  tile short (the old 1-tile guard, which put cooler pairs two tiles north of the cooler and half
+  overlapping). The 1-tile stop still applies after 1.5 s held inside the tile (cell occupied).
+  Walks home are unchanged. The cooler preset now stands its users in front (`useFrom 0,1`): the
+  cooler sprite has no body, so its own cell was walkable and an exact arrival stood on it.
+- **`expectedAwayMs` (slice 11).** For a queued job, `npc_left_post`'s estimate adds
+  `ceil(place / capacity) × useSeconds` to the walk and the dwell (place 1 is first in line).
+- **Validator.** Malformed `cells` (error); `maxWaitSeconds` not positive, a queue on an object that
+  satisfies nothing, a cell within a tile of a wall that has a door, a cell outside the room
+  (warnings; plus one per NPC that needs the machine and may not enter the neighbour room). A
+  capacity-1 chatter object with a queue no longer draws the "needs capacity 2" warning.
+
+### 5.8 Avoidance at a distance, balking and parked needs (office life slice 14, `OFFICE_LIFE_PLAN.md` section 10)
+
+- **Fields.** `needsCompany.avoidRadius` (tiles, 0 to 10; default 2 only for an NPC that declares
+  `avoids`, otherwise 0, which keeps the slice 8 rule), `maxQueue` and `needsDeferMin` (minutes, default
+  4) on the NPC record, `deferrable` on a need (3.1). `maxQueue` is the number already in a line at
+  which this NPC will not join; no value means no limit.
+- **Unacceptable targets (selector).** A source is skipped when an NPC this NPC avoids (the relation
+  holds both ways, and any NPC counts, needs or not) is using it, queued for it, or stands in the same
+  room within `avoidRadius` tiles of its approach cell; or when joining its queue would break
+  `maxQueue`. The NPC's own `needsHome` object is exempt. The next acceptable source is tried. A story
+  need (`deferrable: false`) skips both checks.
+- **Re-check.** While committed (`goto_target` or `queued`) the NPC re-checks each needs tick and
+  acts only when who is there has changed. It turns back at most once per need episode (first turn-back
+  until the need is met), so the fallback or a retry never turns back twice.
+- **Turn-back.** Logs `turned_back` `{need, target, reason, avoided}`, emits
+  `npc_turned_back:<npcId>` `{npcId, need, targetId, reason, avoidedId?}` (`reason` `avoid` or `queue`),
+  grumbles (a speech bubble from the `grumble` pool, `npc_overheard` only, no chattiness roll), aborts
+  the job and falls back through the selector with the abandoned source left out of that one choice.
+  After the grumble the thought bubble shows the avoided person's face beside a storm cloud for 4 s.
+- **Parking.** When nothing acceptable is left the need parks: its level holds at `urgentAt + 1` (decay
+  paused, so no starvation), the NPC goes about other needs or returns to its post, and the bubble is
+  a greyed need icon (alpha 0.5) with a badge: `closed` (a door, `no_source`), `queue` (red cross) or
+  the storm cloud (`avoid`). Log `parked` `{need, reason, avoided?, target?}`, event
+  `npc_need_parked:<npcId>` `{npcId, need, reason, targetId, avoidedId?, untilMs}` with `reason`
+  `no_source`, `avoid` or `queue`. Busy sources (claimed, cooling down) still mean wait, not park, and a
+  leash that leaves nothing permitted keeps the slice 2a `blocked` behaviour.
+- **Release.** After `needsDeferMin` (timer), or sooner when a room loads or a door opens
+  (`door_opened`, woken). The level is set to `urgentAt` and the need is selected at once; the unmet
+  clock shifts by the time parked. Wakes are staggered by id order: 1 s, then 0.5 s per further parked
+  NPC. A `needs: {set}` mapping on a parked need unparks it first. Log `unparked` `{need, reason}`
+  (`timer`, `woken`, `set`).
+- **State.** `getState(id).parked` lists `{need, reason}`; `.avoiding` holds the avoided id while the
+  face bubble shows. A thought bubble picks avoid, then pressing, then parked.
+- **Compatibility.** Nothing changes for scenarios with no `needsCompany`, no `maxQueue` and sources
+  that are always loaded. The sims-day golden log is byte-identical. `no_source` parking reaches every
+  needs NPC (the lab regression, game 693, showed no `parked` or `turned_back` entries).
 
 ## 6. General drop action (exists)
 
@@ -588,13 +741,14 @@ events.
 | Event | Payload |
 |---|---|
 | `npc_need_urgent:<npcId>` | `{npcId, need, level}` |
-| `npc_left_post:<npcId>` | `{npcId, need, targetId, expectedAwayMs, playerNearby, playerDistance}` (`need` null for an interest job) |
+| `npc_left_post:<npcId>` | `{npcId, need, targetId, expectedAwayMs, playerNearby, playerDistance}` (`need` null for an interest job; `expectedAwayMs` includes the queue wait, 5.7; `leftBehind: [itemIds]` when something was left, 3.3b) |
 | `npc_returned_post:<npcId>` | `{npcId, playerNearby, playerDistance}` |
 | `npc_caught_at_post:<npcId>` | `{npcId, objectId, playerDistance, inMinigame}` (5.3) |
 | `npc_picked_up:<itemId>` | `{npcId, itemId, tag}` |
 | `npc_used:<objectId>` | `{npcId, objectId, need, itemId, tag, payload, playerNearby}` |
 | `npc_job_failed:<npcId>` | `{npcId, need, targetId, reason}` (`timeout`, `no_approach`); `{npcId, need, targetId, itemId, reason: "item_gone"}` when the player took the item an NPC was fetching (slice 7) |
-| `object_revealed:<slotId>` | `{producerId, npcId, objectId}` (a reveal slot shown by `revealOutput`, 3.3a) |
+| `object_revealed:<slotId>` | `{producerId, npcId, objectId}` (a reveal slot shown by `revealOutput`, 3.3a); `{npcId, objectId, leftBehindBy}` for a left-behind item (3.3b) |
+| `npc_left_item_gone:<npcId>` | `{npcId, itemId, playerNearby, playerDistance}` (back at the post, the item it left was taken, 3.3b) |
 | `npc_placed:<itemId>` | `{npcId, itemId, targetId, roomId}` (a delivered slot set down, 3.3a) |
 | `item_dropped:<itemId>` | `{itemId, tag, roomId, x, y}` (drop action) |
 | `npc_arrived:<npcId>` | existing, now plus `owner` (`'needs'` or undefined) |
@@ -621,6 +775,14 @@ events.
   playerDistance }` for each chat line (slice 8). `overheard`: the player within `overhearRadius`
   (default 160 px; set on the object's affordance or the pool) in the same room with a clear line.
 - `npc_overheard:<speakerId>` with the same payload, only when `overheard` is true.
+- Slice 15: `npc_chatted` also carries `picture` (an icon name, with `line: null`) for picture chat
+  and `exchange` (the knot) for an exchange line. `npc_exchange_heard:<knot>` `{ knot, ownerId, npcIds,
+  objectId }` fires when an exchange finishes, once per game (global `heard_<knot>`).
+- `npc_turned_back:<npcId>` `{ npcId, need, targetId, reason, avoidedId?, playerNearby, playerDistance }`
+  when an NPC gives up a source it was walking to or queued for (5.8).
+- `npc_need_parked:<npcId>` `{ npcId, need, reason, targetId, avoidedId?, untilMs }` when a need parks (5.8).
+- `npc_queued:<objectId>` `{ npcId, objectId, need, place, playerNearby, playerDistance }` when an
+  NPC joins a queue (slice 10); `place` is 1 for the front. Queue chat lines are `npc_chatted:<objectId>`.
 - `npc_avoided:<npcId>` `{ npcId, avoidedId, objectId }` when `npcId` was refused a shared object
   because of an avoidance (either way); once per pair and object until the NPC next starts a job.
 
@@ -701,8 +863,9 @@ The decision log never contains payload contents (only `payloadPresent`).
 ## 10. Reload
 
 - Need levels reset to `initial` (same seeded jitter). No state sync.
-- Reveal slots revealed before the reload are filed on sight (3.3a): hidden, global false. Placed
-  positions are client only and are not restored.
+- Reveal slots and left-behind items showing before the reload are filed on sight (3.3a, 3.3b):
+  hidden, global false. Placed positions are client only and are not restored. `leaveCount`
+  restarts at 0, so the left-behind rolls replay from the first leave.
 - Dropped items: see section 6.
 - Globals set by `onUse` and by scenario mappings persist as usual.
 - Workstation globals (`<id>_owner_away`, `<id>_screen_locked`, `workstation-state.js`)
@@ -743,6 +906,13 @@ item `affordance needsTag droppable`; eventMapping `needs`; top level `npcNeedsS
   `revealOutput` producer with no slots; an info line per producer with its takeable beats.
   `validate_scenario.rb` skips its pinned-proximity warning for a slot and its producer, or two
   slots of one producer (they share the tray on purpose).
+- **Left-behind items (slice 11):** errors for `leftBehindBy` naming no NPC or an NPC without
+  `needsHome`, `leftBehindChance` not a number from 0 to 1, no `revealOnGlobal`, a shared or
+  used-elsewhere global, both `outputOf` and `leftBehindBy`, and a non-takeable readable `notes*`
+  item without `readDisplay: "gameDisplay"`; warnings for no `leftBehindChance` (never left),
+  `leftBehindChance` without `leftBehindBy`, and an item in a room other than its owner's post;
+  an info line per item saying whether it is a single beat (takeable) or repeats. Schema:
+  `leftBehindBy`, `leftBehindChance`.
 - **Errors:** bounds; a need with no object anywhere that `satisfies` it; an
   interest tag with no object that `accepts` it, or no item with that `needsTag`;
   `needsHome`/`onUse` naming a missing object; `needs`/`interests` together with
@@ -889,17 +1059,29 @@ skipped once `courier_ready` or `records_clone_held` is set) emits `player_in_vi
 which challenges the player at the door, or records the PIN capture when he is at the
 keypad. The scenario file is the reference for the exact mappings.
 
-**Guard-priority at the gate (door-gates.js, 2026-11-06).** The records door is a gate
-(`openFor:["len"]`, `playerMayPassIf:"courier_ready"`); `_playerBarred` keeps it shut for an
-undisguised player within `openRadius`, which is also the PIN-surf posture. A shut gate is a
-wall in the pathfinding grid, so a barred gate used to trap Len on either side: his route leg
-had no path, he retried forever (the stuck-watch only runs while path-following), his patrol
-stopped for good and `len_at_door` never re-fired. door-gates now frees a near `openFor` guard
-after `GUARD_PRIORITY_MS` (5 s) regardless of the barred player, and never shuts a gate on a
-guard mid-crossing, so Len's patrol always cycles and the tailgate window returns within one
-cycle. The player is still kept from *claiming* an undisguised crossing by the credit path
-(the `tailgate_in` enter_room task and the `kp_badge_tailgated` debrief flag), not by trapping
-the guard.
+**Len turns back at a barred gate (door-gates.js + npc-behavior.js, 2026-11-06).** The
+records door is a gate (`openFor:["len"]`, `playerMayPassIf:"courier_ready"`). `_playerBarred`
+keeps it shut, with no guard override, while an undisguised player's body centre is within
+`openRadius` (56 px): staff don't badge through with a stranger at their shoulder. A shut gate
+is a wall in the pathfinding grid, so a barred crossing used to trap Len on either side (his
+route leg retried every 2 s for ever, his patrol stopped and `len_at_door` never re-fired).
+Now, when a near `openFor` guard whose route leg wants him across the gate
+(`NPCBehavior.wantsToCrossGate`: his route segment is in the gate's other room) has been held
+for `GUARD_TURN_BACK_MS` (5 s), door-gates calls `turnBackFromGate`: he glances at the player,
+resumes his route at the next segment in the room he stands in (Len inside records walks his
+records loop again; Len on the floor walks back to his dwell point), and tries the door on his
+next cycle. Event `door_gate_guard_turned_back` (`npcId`). A guard who only dwells beside the
+gate is never timed. A guard physically in the doorway is never shut in, by the barred close or
+by a forced `closeDoor`; a path merely planned through the door no longer holds it open past a
+barred player. (Commit 1e6e6dbba's earlier fix opened the gate for him after 5 s instead, which
+let an undisguised camper follow him in; replaced in 7721dcf50.)
+
+The PIN surf is unaffected: it needs the gate open (`len_at_door`) and the player within 64 px
+of the door by sprite centre, in Len's view; the bar measures the body centre (about 31 px
+lower) against 56 px, so the player can watch from just outside the bar. The badge-reader
+fallback works from about 85 px. Live, game 671: passive surf fired with the body 57 px from
+the gate; a camp at 46 px kept the gate shut for 122 s while Len turned back 7 times; with the
+hi-vis on, his next crossing opened beside the player and `tailgate_in` completed (score 100).
 
 **As built now (2026-11-10).** The scenario file is the reference; what changed from the text
 above:
@@ -917,11 +1099,12 @@ above:
   is false.
 - **The gate's `openRadius` is 72** (default 56), so Len, who ends his loop inside records about
   62 px from the door, is always in reach of it.
-- **Guard recovery (door-gates.js, npc-behavior.js).** A priority open over a barred player is
-  held for `GUARD_PASS_MS` (1.5 s) and the gate tells its guards it has opened, so the guard's
-  path request lands; and a routed guard whose next leg is unreachable walks to the spot in front
-  of his own shut gate (`approachPoint`). Before this a player standing at the door, or pushing
-  Len along the wall, could stop his patrol for good.
+- **Guard recovery (door-gates.js, npc-behavior.js).** A guard held at his shut gate by a barred
+  player for `GUARD_TURN_BACK_MS` (5 s) turns back and tries again next cycle (12.3 above; there
+  is no priority open). When the gate does open it tells its guards (`gateOpened`), so a waiting
+  path request lands at once; and a routed guard whose next leg is unreachable walks to the spot
+  in front of his own shut gate (`approachPoint`). So a player standing at the door, or pushing
+  Len along the wall, cannot stop his patrol for good.
 - **A click on a gate door** is `granted` (a held clone), `pass` (open to the player: nothing
   shown) or `denied` (the refusal with the door's hint) (`DoorGates.clickOutcome`).
 
