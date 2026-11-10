@@ -272,7 +272,7 @@ test('step 9: the workstation events reach the claim through the dispatcher', as
     window.eventDispatcher.on = (pattern, cb) => { handlers[pattern] = cb; };
     s.listen();
     s.listen();   // idempotent
-    assert.deepEqual(Object.keys(handlers).sort(), ['workstation_auto_locked:*', 'workstation_owner_returned:*']);
+    assert.deepEqual(Object.keys(handlers).sort(), ['network_device_unplugged', 'workstation_auto_locked:*', 'workstation_owner_returned:*']);
     await s.claim('dana_pc');
     events.length = 0;
     handlers['workstation_owner_returned:*']({ objectId: 'dana_pc', ownerId: 'dana' });
@@ -351,4 +351,93 @@ test('a claim granted after the screen auto locked ends at once with auto_locked
     assert.equal(t.has('dana_pc'), true);
     delete window.gameState;
     delete window.workstationState;
+});
+
+// ---------------------------------------------------------------- slice 9.3a step 8 (4.4)
+
+const remoteAnswer = (pcId, fields) => {
+    if (fields.password !== 'right-lena') {
+        throw Object.assign(new Error('refused'), { status: 422, body: { success: false, message: 'Incorrect username or password', attemptsLeft: 4 } });
+    }
+    return { success: true, npcId: 'lena', username: 'lfox', displayName: 'Lena Fox', via: 'password',
+        ...(fields.foothold ? { remote: true, footholdId: fields.foothold, host: 'HB-FIN-02' } : {}) };
+};
+
+test('9.3a: a remote sign-in sends the foothold and emits pc_signed_in with remote: true', async () => {
+    const s = setup({ answer: remoteAnswer });
+    const r = await s.signIn('lena_pc', 'lfox', 'right-lena', { foothold: 'jack_comms_port' });
+    assert.equal(r.ok, true);
+    assert.deepEqual(calls[0], ['login', 'lena_pc', { username: 'lfox', password: 'right-lena', foothold: 'jack_comms_port' }]);
+    const [signedIn] = named('pc_signed_in');
+    assert.equal(signedIn.remote, true);
+    assert.equal(signedIn.footholdId, 'jack_comms_port');
+    assert.deepEqual(s.get('lena_pc'), { pcId: 'lena_pc', npcId: 'lena', username: 'lfox', displayName: 'Lena Fox', via: 'password',
+        remote: true, footholdId: 'jack_comms_port', host: 'HB-FIN-02' });
+    assert.deepEqual(s.list().map(e => [e.pcId, e.remote, e.host]), [['lena_pc', true, 'HB-FIN-02']]);
+    s.desktopOpened('lena_pc');
+    assert.equal(named('pc_desktop_opened')[0].remote, true);
+});
+
+test('9.3a: a local sign-in carries no remote fields, and a keyboard desktop answer settles a remote session', async () => {
+    const s = setup({ answer: remoteAnswer });
+    await s.signIn('lena_pc', 'lfox', 'right-lena');
+    assert.equal(calls[0][2].foothold, undefined, 'no foothold sent');
+    assert.equal(named('pc_signed_in')[0].remote, undefined);
+    assert.equal(s.get('lena_pc').remote, undefined);
+    await s.signIn('lena_pc', 'lfox', 'right-lena', { foothold: 'jack_comms_port' });
+    assert.equal(s.get('lena_pc').remote, true);
+    assert.equal(s.settle('lena_pc', { npcId: 'lena', username: 'lfox', via: 'password' }), true);
+    assert.equal(s.get('lena_pc').remote, undefined, 'the server cleared the foothold');
+    events.length = 0;
+    s.desktopOpened('lena_pc');
+    assert.equal(named('pc_desktop_opened')[0].remote, undefined);
+});
+
+test('9.3a: a 422 remoteBlocked emits pc_signin_failed with reason remote_blocked', async () => {
+    const s = setup({ answer: () => { throw Object.assign(new Error('off'), { status: 422, body: { success: false, message: 'Remote sign-in is turned off on this PC', remoteBlocked: true } }); } });
+    const r = await s.signIn('kiosk_pc', 'sokafor', 'whatever', { foothold: 'jack_comms_port' });
+    assert.equal(r.ok, false);
+    assert.equal(r.reason, 'remote_blocked');
+    assert.equal(r.message, 'Remote sign-in is turned off on this PC');
+    assert.deepEqual(named('pc_signin_failed'), [{ pcId: 'kiosk_pc', reason: 'remote_blocked', attemptsLeft: null }]);
+    assert.equal(s.has('kiosk_pc'), false);
+});
+
+test('9.3a: an unplug ends exactly the sessions named in endedPcIds, closing their desktops with the reason', async () => {
+    const s = setup({ answer: remoteAnswer });
+    const handlers = {};
+    window.eventDispatcher.on = (pattern, cb) => { handlers[pattern] = cb; };
+    await s.signIn('lena_pc', 'lfox', 'right-lena', { foothold: 'jack_comms_port' });
+    await s.signIn('door_box', 'lfox', 'right-lena', { foothold: 'jack_comms_port' });
+    await s.signIn('sam_pc', 'lfox', 'right-lena');
+    const closed = [];
+    s.registerDesktop('door_box', (message, reason) => closed.push([message, reason]));
+    events.length = 0; calls.length = 0;
+    handlers['network_device_unplugged']({ jackId: 'comms_port', footholdId: 'jack_comms_port', endedPcIds: ['door_box', 'not_held'] });
+    assert.deepEqual(s.list().map(e => e.pcId).sort(), ['lena_pc', 'sam_pc']);
+    assert.deepEqual(named('pc_signed_out'), [{ pcId: 'door_box', npcId: 'lena', reason: 'link_dropped', remote: true, footholdId: 'jack_comms_port' }]);
+    assert.deepEqual(closed, [['The link dropped', 'link_dropped']]);
+    assert.equal(calls.length, 0, 'no request: the server already ended them');
+    delete window.eventDispatcher.on;
+});
+
+test('9.3a: the desktop close callback receives the reason (sign_out, no_session)', async () => {
+    const s = setup();
+    await s.signIn('hot_desk', 'sokafor', 'right-sam');
+    const closed = [];
+    s.registerDesktop('hot_desk', (message, reason) => closed.push([message, reason]));
+    await s.signOut('hot_desk');
+    await s.signIn('hot_desk', 'sokafor', 'right-sam');
+    s.registerDesktop('hot_desk', (message, reason) => closed.push([message, reason]));
+    s.dropLocal('hot_desk', { message: 'gone' });
+    assert.deepEqual(closed, [['Signed out', 'sign_out'], ['gone', 'no_session']]);
+});
+
+test('9.3a: on load a remote session keeps remote, footholdId and host', () => {
+    const s = setup();
+    s.load({ lena_pc: { npcId: 'lena', username: 'lfox', displayName: 'Lena Fox', via: 'password', remote: true, footholdId: 'jack_comms_port', host: 'HB-FIN-02' },
+        sam_pc: { npcId: 'sam', username: 'sokafor', displayName: 'Sam Okafor', via: 'password' } }, ['lena_pc', 'sam_pc']);
+    assert.equal(s.get('lena_pc').host, 'HB-FIN-02');
+    assert.equal(s.get('lena_pc').footholdId, 'jack_comms_port');
+    assert.equal(s.get('sam_pc').remote, undefined);
 });

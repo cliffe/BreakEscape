@@ -5,15 +5,28 @@
  * The only place the client signs in to or out of a sign-in PC (`lockType: "login"`),
  * and the only source of the sign-in events. It keeps:
  *
- *   sessions   pcId -> { npcId, username, displayName, via, restored }, filled from the
- *              server's answers (POST /login, and the scenario response on load);
+ *   sessions   pcId -> { npcId, username, displayName, via, restored, remote, footholdId,
+ *              host }, filled from the server's answers (POST /login, the scenario
+ *              response on load, and a sign-in desktop's answer from GET /container);
  *   signedIn   every sign-in PC the player has ever signed in to (the server's
  *              signedInPcs, used by unlock_object tasks);
- *   desktops   pcId -> close(message) for a desktop that is open now, so a session that
- *              ends closes it with a one-line message.
+ *   desktops   pcId -> close(message, reason) for a desktop that is open now, so a session
+ *              that ends closes it with a one-line message; reason is why (sign_out,
+ *              no_session, link_dropped, displaced, owner_returned, auto_locked), which a
+ *              network screen hands to networkLinks.landed (slice 9.3a, 4.3).
+ *
+ * Remote sessions (slice 9.3a, ACCESS_MODEL_SLICE_9_3_PLAN.md 4.4). A sign-in through a
+ * foothold (signIn(pcId, username, password, { foothold })) is held in the same slot as a
+ * local one; it carries remote: true, footholdId and host (the PC's label, since its room
+ * may never have loaded). The sign-in events carry remote and footholdId. A keyboard fetch
+ * of the desktop settles a remote session (the server clears its foothold), and the answer's
+ * session tells settle() so. network_device_unplugged ends exactly the sessions named in its
+ * endedPcIds (pc_signed_out reason link_dropped; an open desktop closes with "The link
+ * dropped"). A refusal because the PC's policy blocks remote sign-in (422 remoteBlocked)
+ * emits pc_signin_failed with reason remote_blocked.
  *
  * Events (each also as `<name>:<pcId>`):
- *   pc_signed_in       { pcId, npcId, username, via, previousNpcId, firstAtPc }
+ *   pc_signed_in       { pcId, npcId, username, via, previousNpcId, firstAtPc, remote, footholdId }
  *                      a sign-in (or the second half of a switch). previousNpcId is the account
  *                      signed in at this PC just before (a switch), else null; firstAtPc is true
  *                      when the player had never signed in at this PC before (signedIn).
@@ -23,12 +36,14 @@
  *                      auto_locked (a claimed session ended by the owner's return or the
  *                      screen's auto lock; these two also carry firstAtPc, true when the ended
  *                      session was the first sign-in at this PC)
- *   pc_signin_failed   { pcId, reason, attemptsLeft }  reason: wrong | not_permitted | locked_out
+ *   pc_signin_failed   { pcId, reason, attemptsLeft }  reason: wrong | not_permitted | locked_out |
+ *                                                      remote_blocked
  *   pc_signin_shown    { pcId, usernames, usernameList, reason? } the sign-in screen opened with
  *                      these tiles; reason (when the caller knows it) is why: signin (no owner,
  *                      or an owner not present with no away record), locked (the owner is
  *                      away and the screen locked), attended, claim_refused, switch or direct
- *   pc_desktop_opened  { pcId, npcId, via, restored }  a desktop loaded for a session; restored is
+ *   pc_desktop_opened  { pcId, npcId, via, restored, remote, footholdId }
+ *                                                      a desktop loaded for a session; restored is
  *                                                      true for a session kept from before a reload
  *   pc_in_use          { pcId, ownerId, signedInBefore } a click found the owner at the desk;
  *                      signedInBefore is true when the player had signed in at this PC before
@@ -49,6 +64,7 @@
 
 export const SIGNED_OUT_MESSAGE = 'Signed out';
 export const SCREEN_LOCKED_MESSAGE = 'The screen locked';
+export const LINK_DROPPED_MESSAGE = 'The link dropped';
 export const backAtDeskMessage = (name) => `${name || 'The owner'} is back at the desk`;
 
 function apiClient() {
@@ -56,7 +72,16 @@ function apiClient() {
 }
 
 function publicSession(pcId, s) {
-    return { pcId, npcId: s.npcId ?? null, username: s.username ?? null, displayName: s.displayName ?? null, via: s.via ?? null };
+    const out = { pcId, npcId: s.npcId ?? null, username: s.username ?? null, displayName: s.displayName ?? null, via: s.via ?? null };
+    // Only a remote session carries remote, footholdId and host, as on the server (4.4)
+    if (s.remote === true) Object.assign(out, { remote: true, footholdId: s.footholdId ?? null, host: s.host ?? null });
+    return out;
+}
+
+/** The remote fields of a server session entry (4.4): only a remote one carries them. */
+function remoteFields(s) {
+    if (!s || s.remote !== true) return { remote: false, footholdId: null, host: null };
+    return { remote: true, footholdId: s.footholdId ?? null, host: s.host ?? null };
 }
 
 export class PcSessions {
@@ -78,6 +103,7 @@ export class PcSessions {
         this._listening = dispatcher;
         dispatcher.on('workstation_owner_returned:*', (d) => { if (d?.objectId) this.ownerReturned(d.objectId); });
         dispatcher.on('workstation_auto_locked:*', (d) => { if (d?.objectId) this.screenAutoLocked(d.objectId); });
+        dispatcher.on('network_device_unplugged', (d) => this.linkDropped(d?.endedPcIds));
         return true;
     }
 
@@ -117,7 +143,8 @@ export class PcSessions {
                 username: s.username ?? null,
                 displayName: s.displayName ?? null,
                 via: s.via || 'password',
-                restored: true
+                restored: true,
+                ...remoteFields(s)
             });
             this.signedIn.add(pcId);
         }
@@ -140,7 +167,10 @@ export class PcSessions {
         return s ? publicSession(pcId, s) : null;
     }
 
-    /** Every session, as [{ pcId, npcId, username, displayName, via }]. */
+    /**
+     * Every session, as [{ pcId, npcId, username, displayName, via }]; a remote one also
+     * carries remote: true, footholdId and host (the capture log names a remote host from it).
+     */
     list() {
         return [...this.sessions.entries()].map(([pcId, s]) => publicSession(pcId, s));
     }
@@ -151,23 +181,26 @@ export class PcSessions {
     signedInPcs() { return [...this.signedIn]; }
 
     /**
-     * Sign in with a username and password. Resolves to
+     * Sign in with a username and password; with { foothold } a remote sign-in through that
+     * foothold (slice 9.3a, 4.4). Resolves to
      *   { ok: true, session }
-     *   { ok: false, reason: 'wrong' | 'not_permitted' | 'locked_out', message, attemptsLeft }
+     *   { ok: false, reason: 'wrong' | 'not_permitted' | 'locked_out' | 'remote_blocked', message, attemptsLeft }
      *   { ok: false, reason: 'error', error: true, status, message }   (no answer, or not reachable)
      * The current session at this PC (if any) stays until the new account's password is
      * accepted; then pc_signed_out fires for the old account and pc_signed_in for the new.
      */
-    async signIn(pcId, username, password) {
+    async signIn(pcId, username, password, { foothold = null } = {}) {
+        this.listen();
         const api = apiClient();
         if (!api?.login) return { ok: false, reason: 'error', error: true, status: null, message: 'Sign-in is not available' };
         let body;
         try {
-            body = await api.login(pcId, { username, password });
+            body = await api.login(pcId, foothold ? { username, password, foothold } : { username, password });
         } catch (err) {
             const b = err?.body || {};
             if (err?.status === 422) {
-                const reason = b.lockedOut ? 'locked_out' : (b.notPermitted ? 'not_permitted' : 'wrong');
+                const reason = b.remoteBlocked ? 'remote_blocked'
+                    : (b.lockedOut ? 'locked_out' : (b.notPermitted ? 'not_permitted' : 'wrong'));
                 const attemptsLeft = Number.isFinite(b.attemptsLeft) ? b.attemptsLeft : null;
                 this._emit('pc_signin_failed', { pcId, reason, attemptsLeft });
                 return {
@@ -176,7 +209,8 @@ export class PcSessions {
                     message: b.message || 'Incorrect username or password',
                     attemptsLeft,
                     lockedOut: reason === 'locked_out',
-                    notPermitted: reason === 'not_permitted'
+                    notPermitted: reason === 'not_permitted',
+                    remoteBlocked: reason === 'remote_blocked'
                 };
             }
             return {
@@ -187,7 +221,10 @@ export class PcSessions {
         if (!body || body.success === false || !body.npcId) {
             return { ok: false, reason: 'error', error: true, status: null, message: body?.message || 'Sign-in failed' };
         }
-        const session = { npcId: body.npcId, username: body.username ?? null, displayName: body.displayName ?? null, via: body.via || 'password' };
+        const session = {
+            npcId: body.npcId, username: body.username ?? null, displayName: body.displayName ?? null, via: body.via || 'password',
+            ...remoteFields(body)
+        };
         this._replace(pcId, session);
         return { ok: true, session: publicSession(pcId, session) };
     }
@@ -269,7 +306,7 @@ export class PcSessions {
             try { await api.logout(pcId); } catch (e) { console.warn('[pc-sessions] logout of a claimed session failed', e); }
         }
         this._emit('pc_signed_out', { pcId, npcId: previous.npcId ?? null, reason, firstAtPc: !!previous.firstAtPc });
-        this._closeDesktop(pcId, message);
+        this._closeDesktop(pcId, message, reason);
         return true;
     }
 
@@ -283,13 +320,13 @@ export class PcSessions {
         const firstAtPc = !this.signedIn.has(pcId);
         if (previous) {
             this.sessions.delete(pcId);
-            this._emit('pc_signed_out', { pcId, npcId: previous.npcId ?? null, reason: 'switch' });
+            this._emit('pc_signed_out', { pcId, npcId: previous.npcId ?? null, reason: 'switch', ...this._remoteOf(previous) });
         }
-        this.sessions.set(pcId, { ...session, restored: false, firstAtPc });
+        this.sessions.set(pcId, { remote: false, footholdId: null, host: null, ...session, restored: false, firstAtPc });
         this.signedIn.add(pcId);
         this._emit('pc_signed_in', {
             pcId, npcId: session.npcId, username: session.username, via: session.via,
-            previousNpcId: previous?.npcId ?? null, firstAtPc
+            previousNpcId: previous?.npcId ?? null, firstAtPc, ...this._remoteOf(session)
         });
     }
 
@@ -305,8 +342,8 @@ export class PcSessions {
         if (api?.logout) {
             try { await api.logout(pcId); } catch (e) { console.warn('[pc-sessions] logout failed', e); }
         }
-        this._emit('pc_signed_out', { pcId, npcId: previous.npcId ?? null, reason: 'sign_out' });
-        this._closeDesktop(pcId, message);
+        this._emit('pc_signed_out', { pcId, npcId: previous.npcId ?? null, reason: 'sign_out', ...this._remoteOf(previous) });
+        this._closeDesktop(pcId, message, 'sign_out');
         return true;
     }
 
@@ -318,23 +355,59 @@ export class PcSessions {
         const previous = this.sessions.get(pcId);
         if (!previous) return false;
         this.sessions.delete(pcId);
-        this._emit('pc_signed_out', { pcId, npcId: previous.npcId ?? null, reason: 'no_session' });
-        if (message) this._closeDesktop(pcId, message);
+        this._emit('pc_signed_out', { pcId, npcId: previous.npcId ?? null, reason: 'no_session', ...this._remoteOf(previous) });
+        if (message) this._closeDesktop(pcId, message, 'no_session');
         else this.desktops.delete(pcId);
         return true;
     }
 
-    /** A desktop for pcId is open; `close(message)` shuts it. Returns the unregister function. */
+    /**
+     * network_device_unplugged: the server ended exactly the sessions in endedPcIds (they
+     * went through the unplugged foothold). Each is dropped with no request, emits
+     * pc_signed_out reason link_dropped, and an open desktop closes with "The link dropped".
+     * Returns the pcIds dropped.
+     */
+    linkDropped(endedPcIds = []) {
+        const dropped = [];
+        for (const pcId of (Array.isArray(endedPcIds) ? endedPcIds : [])) {
+            const previous = this.sessions.get(pcId);
+            if (!previous) continue;
+            this.sessions.delete(pcId);
+            dropped.push(pcId);
+            this._emit('pc_signed_out', { pcId, npcId: previous.npcId ?? null, reason: 'link_dropped', ...this._remoteOf(previous) });
+            this._closeDesktop(pcId, LINK_DROPPED_MESSAGE, 'link_dropped');
+        }
+        return dropped;
+    }
+
+    /**
+     * A sign-in desktop's answer from GET /container carries the session in the scenario
+     * response's shape (4.4). A keyboard fetch clears a remote session's foothold on the
+     * server, so the answer has no remote: the local copy follows. No event.
+     */
+    settle(pcId, session) {
+        const s = this.sessions.get(pcId);
+        if (!s || !session || typeof session !== 'object') return false;
+        Object.assign(s, remoteFields(session));
+        return true;
+    }
+
+    /** The event fields of a remote session ({ remote: true, footholdId }); nothing for a local one. */
+    _remoteOf(s) {
+        return s?.remote === true ? { remote: true, footholdId: s.footholdId ?? null } : {};
+    }
+
+    /** A desktop for pcId is open; `close(message, reason)` shuts it. Returns the unregister function. */
     registerDesktop(pcId, close) {
         this.desktops.set(pcId, close);
         return () => { if (this.desktops.get(pcId) === close) this.desktops.delete(pcId); };
     }
 
-    _closeDesktop(pcId, message) {
+    _closeDesktop(pcId, message, reason = null) {
         const close = this.desktops.get(pcId);
         if (!close) return;
         this.desktops.delete(pcId);
-        try { close(message); } catch (e) { console.warn('[pc-sessions] closing the desktop failed', e); }
+        try { close(message, reason); } catch (e) { console.warn('[pc-sessions] closing the desktop failed', e); }
     }
 
     /**
@@ -355,7 +428,7 @@ export class PcSessions {
     desktopOpened(pcId) {
         const s = this.sessions.get(pcId);
         if (!s) return;
-        this._emit('pc_desktop_opened', { pcId, npcId: s.npcId ?? null, via: s.via ?? null, restored: !!s.restored });
+        this._emit('pc_desktop_opened', { pcId, npcId: s.npcId ?? null, via: s.via ?? null, restored: !!s.restored, ...this._remoteOf(s) });
     }
 }
 
