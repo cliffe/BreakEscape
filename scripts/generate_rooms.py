@@ -1145,6 +1145,7 @@ WALL_MOUNTED_EXTRAS = {
     "lw_sign_kitroom",
     "lw_pigeonholes",
     "lw_time_clock",
+    "lw_sign_store",
 }
 
 
