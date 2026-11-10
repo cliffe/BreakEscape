@@ -735,7 +735,9 @@ Warnings:
   keycard or a lockpick: over the network it would be taken down the wire;
 - a host that can be signed in to only remotely (headless, or in a room the dungeon graph shows no
   way into) under a policy with `maxAttempts`: a lockout lasts the mission and there is no keyboard
-  to fall back on.
+  to fall back on;
+- an authored `actions` list on a jack or a sign-in host: the object action menu
+  (`systems/action-menu.js`) runs before either branch and would show first.
 
 Information lines, printed with the identity reach the first slice prints:
 
@@ -1613,25 +1615,29 @@ does not edit `inventory.js`.
 
 **Files other plans also edit.** One plan at a time holds each of these; a builder re-reads the
 file just before editing, edits only its own block, never reformats, and commits with explicit
-paths. With the build order 9.3a, 9.1, 9.2, this slice's edits come first among the slices. The
-engine feedback streams (E1 to E5 in that plan) are a separate build that runs at the same time;
-the last column gives the sequence against them, and that plan's shared-files table gives the
-same order.
+paths. The order is fixed: **the engine feedback streams first, then 9.3a, then 9.1, then 9.2.**
+The engine streams (E1 to E5 in that plan) are a separate build: E1's items 2 and 7, E3's
+inventory menu and dropped sprites (5a, 5b) and E5 are built; E1's item 3, E3's tray refresh (5c)
+and E4 are to build; E2 changes office life's lock cue only on the user's word, and E2b is held.
+This slice's streams S (steps 1 to 4) are built. The last column gives the sequence, and the engine
+plan's shared-files table gives the same order.
 
 | File | Also edited by | Sequence |
 |---|---|---|
-| `systems/inventory.js` | Engine E3 (the tray refresh, the menu) | **E3 first.** C1 starts on the file after E3's commit and adds its two exports, each ending with `refreshInventoryTray()`. E4 does not edit the file. 9.1 and 9.2 do not edit it |
-| `systems/interactions.js` | Engine E3 (the first two branches for a held item, `examineHeldItem`, `inventoryMenuFor`), E4 (the `consumesItem` block), 9.2 (the `requiresItem` plant) | **E3 first.** After E3's commit, C1 (two branches after the sign-in PC branch) and E4 in either order; the blocks do not overlap. 9.2 after C1 |
-| `systems/unlock-system.js` | Engine E1 (the RFID branch and refusal lines), 9.1 stream A, 9.2 stream H-4 | E1 first; then C2; then 9.1, then 9.2. Separate blocks |
-| `systems/door-gates.js`, `systems/doors.js` | Engine E1, 9.1 stream D | Not edited by this slice |
-| `systems/pc-sessions.js`, `api-client.js`, `core/game.js` | 9.1 stream A, 9.2; `core/game.js` also engine E2 (two preload lines) | This slice first among the slices; E2's lines in either order. E4 reads `pc-sessions.js` and `network-links.js` and edits neither |
+| `systems/inventory.js` | Engine E3 (its menu and hover label are in; the tray refresh, 5c, is to build) | **E3 first.** C1 starts on the file after E3's tray refresh commits and adds its two exports, each ending with `refreshInventoryTray()`. E4 does not edit the file. 9.1 and 9.2 do not edit it |
+| `systems/interactions.js` | Engine E3 (built: the held-item menu through `inventory-menu.js`), E4 (the `consumesItem` block, the `objectId` on the two `triggerOnInteract` calls), 9.2 (the `requiresItem` plant) | E3's edits are in. C1 (two branches after the sign-in PC branch) and E4 in either order; the blocks do not overlap. 9.2 after C1. The `interactionWarning` and the object action menu run before the sign-in branch: a jack or a network host with an authored `actions` list would show that menu first, so the validator (step 5) warns on `actions` on either |
+| `systems/unlock-system.js` | Engine E1 (built: the RFID door sound and refusal lines), 9.1 stream A, 9.2 stream H-4 | C2, then 9.1, then 9.2. Separate blocks |
+| `systems/door-gates.js`, `systems/doors.js` | Engine E1 (item 2 built; item 3, the body rule, to build), 9.1 stream D | Not edited by this slice |
+| `systems/action-menu.js`, `ui/interaction-menu.js`, `systems/inventory-menu.js`, `systems/item-drop.js`, `systems/table-drop.js` | Engine E3 (built) | Not edited by this slice. A `network_link` is not droppable and has no menu (13.4), so it never reaches `item-drop.js` or `table-drop.js`; an unplugged device returns to the inventory, never to a table |
+| `systems/npc-office-visuals.js`, `systems/npc-needs.js`, `systems/npc-needs-chatter.js`, `systems/workstation-state.js` | Office life; engine E2 (one constant in `npc-office-visuals.js`, on the user's word); 9.2 (`npc-needs.js`, `workstation-state.js`) | Not edited by this slice |
+| `systems/pc-sessions.js`, `api-client.js`, `core/game.js` | 9.1 stream A, 9.2 | This slice first among the slices. E4 reads `pc-sessions.js` and `network-links.js` and edits neither |
 | `minigames/index.js` | Engine E4 (the capture log's registration line) | One registration line each, either order |
 | `app/views/break_escape/games/show.html.erb` | Engine E2b (the resume overlay, held) | Different lines, either order |
 | `minigames/password/password-minigame.js`, `minigames/container/container-minigame.js`, `minigames/text-file/text-file-minigame.js` | None named today | C2 |
-| `systems/apply-actions.js` | Engine E3 (the costume cases) | Not edited by 9.3a. 9.3b's implants add one case, after E3 |
+| `systems/apply-actions.js` | Engine E4 (the `objectId` option, `remove_item`'s `used_on`, `confirm_action` passing its options) | Not edited by 9.3a. 9.3b's implants add one case, after E4 |
 | `systems/minigame-registry.js` | Engine E4 | Not edited by this slice: the view is a scene, not a registry entry |
-| `app/models/break_escape/game.rb` | Engine E3 (`add_item_to_room!`, the `texture` key), E4 (`capture_secrets_for_client`, `account_capture_passwords`, new `capture_proofs_for` and `record_planted_item!`, the `droppedItems` line in `add_item_to_room!`, two keys in `ACCESS_STATE_DEFAULTS`), E2b (`generate_scenario_data`), 9.1, 9.2 | Different methods; this slice first among the slices. `ACCESS_STATE_DEFAULTS` gets keys from S (`footholds`, `gainedFootholds`) and E4 (`plantedItems`, `droppedItems`): whoever is second re-reads. S edits neither `add_item_to_room!` nor `capture_secrets_for_client` nor `account_capture_passwords`: `accounts` is composed in the concern from the keys of `account_capture_passwords` and added in the controller action. Neither engine stream edits `attempt_login!` |
-| `games_controller.rb` | Engine E3 (`CLIENT_ITEM_FORBIDDEN_FIELDS`, `item_add_params`), E4 (the `remove` branch of `inventory`), 9.1 (`login_accounts`), 9.2 (routes, `claim: "guest"` in `login`) | Different methods or branches; no order beyond re-reading. S edits the `add` branch of `inventory`, not `remove`. Its `login` edit refuses every claim that carries a foothold, so 9.2's new claim needs no change here |
+| `app/models/break_escape/game.rb` | Engine E3 (built: `add_item_to_room!`, the `texture` key), E4 (`capture_secrets_for_client`, `account_capture_passwords`, new `capture_proofs_for` and `record_planted_item!`, the `droppedItems` line in `add_item_to_room!`, two keys in `ACCESS_STATE_DEFAULTS`), E2b (`generate_scenario_data`), 9.1, 9.2 | Different methods; this slice first among the slices. `ACCESS_STATE_DEFAULTS` gets keys from S (`footholds`, `gainedFootholds`) and E4 (`plantedItems`, `droppedItems`): whoever is second re-reads. S edits neither `add_item_to_room!` nor `capture_secrets_for_client` nor `account_capture_passwords`: `accounts` is composed in the concern from the keys of `account_capture_passwords` and added in the controller action. Neither engine stream edits `attempt_login!` |
+| `games_controller.rb` | Engine E3 (built: `CLIENT_ITEM_FORBIDDEN_FIELDS`, `item_add_params`), E4 (the `remove` branch of `inventory`), 9.1 (`login_accounts`), 9.2 (routes, `claim: "guest"` in `login`) | Different methods or branches; no order beyond re-reading. S edits the `add` branch of `inventory`, not `remove`. Its `login` edit refuses every claim that carries a foothold, so 9.2's new claim needs no change here |
 | `config/routes.rb`, `app/policies/break_escape/game_policy.rb` | 9.2 (its routes) | This slice first; each adds its own lines |
 | `scripts/validate_scenario.rb`, `scripts/scenario-schema.json`, `README_scenario_design.md` | Engine E1, E3, E4, E5 (README only); 9.1; 9.2 | Each appends its own block or section. Where an engine stream and T are ready at the same time, the engine stream edits first and T re-reads |
 | `scripts/generate_dungeon_graph.rb` | 9.1 stream B, 9.2 | This slice first |
