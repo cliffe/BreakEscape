@@ -382,16 +382,17 @@ parent only on a normal exit, and every close the player makes is a failure exit
   that reopens itself (13.4).
 - **Two calls run the table.** `resume(message)` reopens the trip's view, with an optional one-line
   message, and refetches. `leave(reason)` ends the trip: it forgets the record, emits
-  `network_view_closed` with the reason, then calls `returnTo`. Both wait one tick and do nothing
-  if a minigame has opened in the meantime (a reader, the sign-in screen), so a screen that has
-  handed over to another is never covered by the view.
+  `network_view_closed` with the reason, then calls `returnTo`. Both wait one tick. `resume` then
+  does nothing if a minigame has opened in the meantime (a reader, the sign-in screen), so a
+  screen that has handed over to another is never covered by the view; `leave` always ends the
+  trip, and skips only the `returnTo` call when a minigame is open.
 - **Every network screen says why it closed.** The view, a remote desktop, a share opened from
   the view and the remote sign-in screen each record an exit reason and, from their cleanup, call
   `window.networkLinks.landed(screen, reason)`, which looks the pair up in the table. The reason
   is `close` unless the path that closes the screen set another first: `handover` (the view
-  opened a host or a share), `switch` (Switch user), `item` (a file or folder handed to a reader,
-  the three paths in `container-minigame.js` that set `pendingContainerReturn` or call
-  `openFileInPlace`), `share` (a mapped share opened from a desktop), `no_session` or
+  opened a host or a share), `switch` (Switch user), `item` (a file or folder handed to a reader:
+  every path in `container-minigame.js` that sets `pendingContainerReturn`, `:741`, `:786` and
+  `:859`, and `openFileInPlace`, `:637`), `share` (a mapped share opened from a desktop), `no_session` or
   `unreachable` (a 403 on the desktop fetch), and the session-end reasons `pc-sessions.js` passes
   (`sign_out`, `link_dropped`, `displaced`). `pc-sessions.js` passes that reason as a second
   argument to the desktop's registered close callback; today it passes only a message.
@@ -405,7 +406,7 @@ parent only on a normal exit, and every close the player makes is a failure exit
 | Switch user on a remote desktop, left with no new sign-in | The desktop of the session still held |
 | A remote desktop, by its Close, the close cross or Esc | The view, when the trip began at the view; when it began at `openSession`, `leave("closed")` |
 | A file or folder opened from a remote desktop | The reader. When the reader closes, the desktop reopens: the notes reader already does this, and the text-file reader's cleanup, when the stored `pendingContainerReturn` is a network screen (its lockable has `remote`, or it is a share opened from the view), reopens it through `startContainerMinigame` instead of clearing the record |
-| A mapped share opened from a desktop, by its Close | The desktop it was opened from |
+| A mapped share opened from a desktop, by its Close | The desktop it was opened from: the share's container minigame keeps the desktop's lockable and reopens it, at a keyboard desktop as well as a remote one |
 | Sign out on a remote desktop | The view |
 | A 403 `no_session` on a remote desktop | The view, with "Your session on <host> has ended." The client drops its copy of the session |
 | A 403 `unreachable` on a remote desktop | The view, with "<host> can't be reached over this link." The client keeps its copy of the session; the server still holds it |
@@ -972,7 +973,8 @@ Files:
   room data ships as authored) is not a secret and is skipped. New rules: a share item's content
   anywhere but a `GET /container` answer for that resource or a folder in it; a network or resource
   string in any response other than `GET /network`, a `/network/*` answer, a `/container` answer,
-  the `footholds` block of `/scenario`, or an NPC's `work` block once slice 9.2 exists (13.2). As
+  or the `footholds` block of `/scenario`, with no exception for an NPC's `work` plan (slice 9.2
+  ships no display name there, 13.2). As
   now, a finding names the rule, the route and the owner, never the value.
 - `tools/playtest/verify-run.rb`: the `--access` section also prints `footholds`,
   `gainedFootholds`, and `remote` and `foothold` beside each session.
@@ -1309,6 +1311,7 @@ change below is inert until a scenario opts in.
 | `GET /capture_secrets` gains `accounts` | An added key; `secrets` is unchanged and existing readers ignore the new one |
 | Two new branches in `handleObjectInteraction`, two exports in `inventory.js`, a remote mode in the sign-in screen | Reached only by the new fields and parameters |
 | Policy `remote` | Absent means allowed, and nothing can sign in remotely without a network |
+| The text-file reader's cleanup reopens a network screen; `pc-sessions.js` passes a reason to a desktop's close callback; `filter_container_contents` drops a planted device | Only a network screen is reopened, so a text file read from any other container still closes to the world; an existing desktop ignores the extra argument; no footholds, so nothing is dropped |
 | Validator | `check_network_model` returns at once when the scenario has none of the new fields |
 
 No existing route gains a new refusal for an existing scenario. Scenarios to rerun because shared
@@ -1592,39 +1595,46 @@ Streams by file ownership inside this slice:
 
 | Stream | Steps | Owns | Starts |
 |---|---|---|---|
-| S, server | 1, 2, 3, 4 | `lib/break_escape/network_model.rb`, `app/models/break_escape/network_access.rb`, the hooks in `game.rb`, `games_controller.rb`, `config/routes.rb`, `test/unit/network_model_test.rb`, `test/models/**/network_*`, `test/controllers/**/network_*`, `test/support/network_model_scenario.rb` | At once |
-| T, tooling and authoring | 5, 6 | `scripts/validate_network.rb`, the hooks in `scripts/validate_scenario.rb`, `scripts/scenario-schema.json`, `scripts/generate_dungeon_graph.rb`, `README_scenario_design.md`, `tools/playtest/**`, `systems/test-bridge/access.js`, `docs/test-bridge.md`, the playtest skill's paragraph, and their tests | When step 1's `network_model.rb` is committed (the validator requires it) |
-| C1, client footholds | 7 (client files) | `systems/network-links.js`, `api-client.js`, `systems/inventory.js`, `systems/interactions.js`, `core/game.js`, `systems/objectives-manager.js`, and their tests | At once, against the route shapes in sections 5 and 6 (node tests stub the API); browser checks when step 3 is in |
-| C2, client view and remote sign-in | 8 | `minigames/network-view/**`, `minigames/index.js`, `systems/unlock-system.js`, `systems/pc-sessions.js`, `minigames/container/container-minigame.js`, `minigames/password/password-minigame.js`, and their tests | The view at once, against section 6's answer; the rest when C1's `network-links.js` and step 4 are committed |
-| F, feature scenario | 7 (scenario), then the runs of 7 and 8 | `scenarios/test_access_networks/**` | When stream T's validator is committed |
+| S, server | 1, 2, 3, 4 | `lib/break_escape/network_model.rb`, `app/models/break_escape/network_access.rb`, the hooks in `game.rb`, `games_controller.rb`, `config/routes.rb`, `app/policies/break_escape/game_policy.rb`, `test/unit/network_model_test.rb`, `test/models/**/network_*`, `test/controllers/**/network_*`, `test/support/network_model_scenario.rb` | At once |
+| T, tooling and authoring | 5, 6 | `scripts/validate_network.rb`, the hooks in `scripts/validate_scenario.rb`, `scripts/scenario-schema.json`, `scripts/generate_dungeon_graph.rb`, `README_scenario_design.md`, `tools/playtest/lib/access_leak_scanner.rb`, `tools/playtest/verify-run.rb`, `systems/test-bridge/access.js`, its paragraphs in `docs/test-bridge.md`, the playtest skill's paragraph, and their tests | When step 1's `network_model.rb` is committed (the validator requires it) |
+| C1, client footholds | 7 (client files) | `systems/network-links.js`, `api-client.js`, `systems/inventory.js`, `systems/interactions.js`, `core/game.js`, `systems/objectives-manager.js`, and their tests | `network-links.js`, `api-client.js`, `core/game.js` and `objectives-manager.js` at once, against the route shapes in sections 5 and 6 (node tests stub the API); `inventory.js` and `interactions.js` when the engine feedback plan's E3 has committed its edits to them; browser checks when step 3 is in |
+| C2, client view and remote sign-in | 8 | `minigames/network-view/**`, `public/break_escape/css/network-view-minigame.css`, its `<link>` in `app/views/break_escape/games/show.html.erb`, `minigames/index.js`, `systems/unlock-system.js`, `systems/pc-sessions.js`, `minigames/container/container-minigame.js`, `minigames/password/password-minigame.js`, `minigames/text-file/text-file-minigame.js` (its `cleanup` only), and their tests | The view's rows at once, against section 6's answer; sign-in, the desktop, shares and the landings when C1's `network-links.js` (with the trip of 4.3) and step 4 are committed |
+| F, feature scenario | 7 (scenario), then the runs of 7 and 8 | `scenarios/test_access_networks/**` | When step 2 (the withholding) and stream T's validator are both committed |
 | L, lab | 9 | `scenarios/lab_physical_pentest/**`, `lab_physical_pentest_secrets_test.rb` | Section 10.4 |
 
 Inside this slice no file is in two streams. `inventory.js` belongs to C1 alone, including the one
-parameter step 8's shares need, which is why step 7 adds it.
+parameter step 8's shares need (`source_resource_id` on an add), which is why step 7 adds it; C2
+does not edit `inventory.js`.
 
 **Files other plans also edit.** One plan at a time holds each of these; a builder re-reads the
 file just before editing, edits only its own block, never reformats, and commits with explicit
 paths. With the build order 9.3a, 9.1, 9.2, this slice's edits come first among the slices. The
-engine feedback streams (E1 to E4 in that plan) are a separate build that may run at the same
-time; the last column gives the sequence against them.
+engine feedback streams (E1 to E5 in that plan) are a separate build that runs at the same time;
+the last column gives the sequence against them, and that plan's shared-files table gives the
+same order.
 
 | File | Also edited by | Sequence |
 |---|---|---|
-| `systems/inventory.js` | Engine E3 (the click menu, the tray hook), 9.2 | E3 first if it has started: C1 then adds its two exports on top of E3's tray hook. If E3 has not started, C1 goes first and E3 re-reads |
-| `systems/interactions.js` | Engine E3, 9.2 (the `requiresItem` plant) | The same rule as `inventory.js`. C1's edit is two branches after the sign-in branch |
-| `systems/unlock-system.js` | Engine E1, 9.1 stream A, 9.2 stream H-4 | E1 first if it has started; then C2; then 9.1 and 9.2 |
+| `systems/inventory.js` | Engine E3 (the tray refresh, the menu) | **E3 first.** C1 starts on the file after E3's commit and adds its two exports, each ending with `refreshInventoryTray()`. E4 does not edit the file. 9.1 and 9.2 do not edit it |
+| `systems/interactions.js` | Engine E3 (the first two branches for a held item, `examineHeldItem`, `inventoryMenuFor`), E4 (the `consumesItem` block), 9.2 (the `requiresItem` plant) | **E3 first.** After E3's commit, C1 (two branches after the sign-in PC branch) and E4 in either order; the blocks do not overlap. 9.2 after C1 |
+| `systems/unlock-system.js` | Engine E1 (the RFID branch and refusal lines), 9.1 stream A, 9.2 stream H-4 | E1 first; then C2; then 9.1, then 9.2. Separate blocks |
 | `systems/door-gates.js`, `systems/doors.js` | Engine E1, 9.1 stream D | Not edited by this slice |
-| `systems/pc-sessions.js`, `api-client.js`, `core/game.js` | 9.1 stream A, 9.2 | This slice first |
-| `minigames/password/password-minigame.js`, `minigames/container/container-minigame.js` | None named today | C2 |
-| `systems/apply-actions.js`, `systems/minigame-registry.js` | Engine E4 | Not edited by 9.3a (9.3b's implants add one case to `apply-actions.js`, after E4) |
-| `app/models/break_escape/game.rb` | Engine E3 (`add_item_to_room!`), E4 (`capture_secrets_for_client`), 9.1, 9.2 | Different methods. This slice does not edit either engine method: `accounts` is composed in the concern and added in the controller action |
-| `games_controller.rb`, `config/routes.rb` | 9.1 (`login_accounts`), 9.2 (routes, `claim: "guest"` in `login`) | This slice first. Its `login` edit refuses every claim that carries a foothold, so 9.2's new claim needs no change here |
-| `scripts/validate_scenario.rb`, `scripts/scenario-schema.json`, `README_scenario_design.md` | Engine E1, E3, E4, E5; 9.1; 9.2 | Each adds its own block. If engine streams run at the same time, E3 edits first, as that plan says, then stream T |
+| `systems/pc-sessions.js`, `api-client.js`, `core/game.js` | 9.1 stream A, 9.2; `core/game.js` also engine E2 (two preload lines) | This slice first among the slices; E2's lines in either order. E4 reads `pc-sessions.js` and `network-links.js` and edits neither |
+| `minigames/index.js` | Engine E4 (the capture log's registration line) | One registration line each, either order |
+| `app/views/break_escape/games/show.html.erb` | Engine E2b (the resume overlay, held) | Different lines, either order |
+| `minigames/password/password-minigame.js`, `minigames/container/container-minigame.js`, `minigames/text-file/text-file-minigame.js` | None named today | C2 |
+| `systems/apply-actions.js` | Engine E3 (the costume cases) | Not edited by 9.3a. 9.3b's implants add one case, after E3 |
+| `systems/minigame-registry.js` | Engine E4 | Not edited by this slice: the view is a scene, not a registry entry |
+| `app/models/break_escape/game.rb` | Engine E3 (`add_item_to_room!`, the `texture` key), E4 (`capture_secrets_for_client`, `account_capture_passwords`, new `capture_proofs_for` and `record_planted_item!`, the `droppedItems` line in `add_item_to_room!`, two keys in `ACCESS_STATE_DEFAULTS`), E2b (`generate_scenario_data`), 9.1, 9.2 | Different methods; this slice first among the slices. `ACCESS_STATE_DEFAULTS` gets keys from S (`footholds`, `gainedFootholds`) and E4 (`plantedItems`, `droppedItems`): whoever is second re-reads. S edits neither `add_item_to_room!` nor `capture_secrets_for_client` nor `account_capture_passwords`: `accounts` is composed in the concern from the keys of `account_capture_passwords` and added in the controller action. Neither engine stream edits `attempt_login!` |
+| `games_controller.rb` | Engine E3 (`CLIENT_ITEM_FORBIDDEN_FIELDS`, `item_add_params`), E4 (the `remove` branch of `inventory`), 9.1 (`login_accounts`), 9.2 (routes, `claim: "guest"` in `login`) | Different methods or branches; no order beyond re-reading. S edits the `add` branch of `inventory`, not `remove`. Its `login` edit refuses every claim that carries a foothold, so 9.2's new claim needs no change here |
+| `config/routes.rb`, `app/policies/break_escape/game_policy.rb` | 9.2 (its routes) | This slice first; each adds its own lines |
+| `scripts/validate_scenario.rb`, `scripts/scenario-schema.json`, `README_scenario_design.md` | Engine E1, E3, E4, E5 (README only); 9.1; 9.2 | Each appends its own block or section. Where an engine stream and T are ready at the same time, the engine stream edits first and T re-reads |
 | `scripts/generate_dungeon_graph.rb` | 9.1 stream B, 9.2 | This slice first |
-| `tools/playtest/lib/access_leak_scanner.rb`, `tools/playtest/verify-run.rb`, `tools/playtest/access-leak-check.rb` | Engine E4, 9.1 stream E, 9.2 | Engine E4's edit is to `access-leak-check.rb` only; stream T edits the two library files. Then 9.1, then 9.2 |
-| `systems/test-bridge/access.js`, `docs/test-bridge.md`, the playtest harness | Engine E3 (`docs/test-bridge.md`, the harness), 9.2 | Stream T adds only the `access` block and its paragraph; E3 owns the rest |
+| `tools/playtest/lib/access_leak_scanner.rb`, `tools/playtest/verify-run.rb` | 9.1 stream E, 9.2 | T first, then 9.1 E, then 9.2. The engine plan does not edit them |
+| `tools/playtest/access-leak-check.rb` | Engine E4 (the device's DOM walk), 9.1 stream E, 9.2 | Not edited by this slice. E4's block after T has committed its library changes; then 9.1 E |
+| `systems/test-bridge/access.js`, `docs/test-bridge.md`, the playtest harness | Engine E3 (the inventory commands, the harness and their paragraph), 9.2 | T adds only the `access` block and its paragraphs; different files of the bridge, own paragraph only |
 | The no-password test, `access_model_withholding_test.rb` | 9.1, 9.2 | This slice adds its own test files and does not edit these |
-| `scenarios/lab_physical_pentest/**`, `lab_physical_pentest_secrets_test.rb` | The content plan, the engine plan's lab wiring, 9.1's lab step | Section 10.4: content plan, then this slice, then 9.1 |
+| `scenarios/lab_physical_pentest/**`, `lab_physical_pentest_secrets_test.rb` | The content plan's scenario stream, the engine plan's lab wiring (L), 9.1's lab step | One builder at a time: the content plan, then the engine plan's L, then this slice's step 9 (which adds `linkStoreIn` once L has put the holder in), then 9.1's |
 
 Review and playtests follow `AGENTS.md`: adversarial review rounds of this plan before any build,
 an implementation review after each stream, and the scripted runs listed in the steps.
@@ -1646,8 +1656,12 @@ recommendation, and the plan is written as if it is taken.
 | 8 | Can the player take a planted device back? | Yes. An unplug ends the sessions that still depend on it, prevents a soft lock with one box and two jacks, and "collect your kit" is good practice to teach | Recommended |
 | 9 | Hosts with no screen (`headless`) | Include in 9.3a. It is one field, it is what makes a chain need the foothold, and the lab's payoff rests on it | Recommended |
 | 10 | Does the view open by itself after the first plant at a jack? | Yes. The user asked to see what is exposed; a new tray icon alone is easy to miss | Recommended |
-| 11 | Resource names in an NPC's `work` plan (slice 9.2) | Accept. A name and a global name are not what this slice protects; hosts, contents and access lists stay behind a foothold or session | Recommended |
+| 11 | What an NPC's `work` plan (slice 9.2) may carry | Ids, kinds and global names only, never a display name, `host`, `contents` or `observations`, so this slice's no-exposure test and leak rule need no exception for it (13.2) | Decided (agreed with slice 9.2) |
 | 12 | Wi-Fi with no device and no range; a down network shown as "no route" with rows kept for held sessions (both 9.3b) | As written in 12.2 and 12.3 | Recommended, to be confirmed when 9.3b is planned in full |
+| 13 | The field name `headless` | Kept. It is a field on a room object and reads naturally for a device with no screen; the README section says it is unrelated to the social engine's headless NPC records and to headless browser runs (step 5). `networkOnly` was considered: renaming now would change steps already in build | Recommended |
+| 14 | Getting back from the network screens | `network-links.js` owns the way back through a trip and one landing table (4.3); the framework's `returnTo` is not used, and a caller that wants to show itself again passes a `returnTo` function to `open` or `openSession` | Recommended |
+| 15 | The lab's network objectives | `opt_netdrop` and `opt_door_admin` become `unlock_object` tasks the server checks, each setting its global through `onComplete.setGlobal` (10.2), so the step and the global Ruth reads follow a server check. `opt_dropbox_view` stays a mapping | Recommended, for the content plan's owner to accept |
+| 16 | How a link item is filed in a holder | By `storeIn`, copied by the server from the jack's `linkStoreIn`: the one rule the engine feedback plan also uses for authored items (13.4). Nothing is filed by type | Decided (agreed with the engine feedback plan) |
 
 ## 16. Left out, on purpose
 
@@ -1673,9 +1687,10 @@ Suggestions considered and not taken, each with its reason.
 - **A server pause after repeated wrong Wi-Fi keys.** It needs a counter, a clock and a new saved
   key for an attack only a scripted client makes, against a key the author chooses. The validator
   warns about a short key instead, and 12.3 states the strength.
-- **A two-choice prompt (Open or Unplug) on a planted jack.** No such component exists and the
-  inventory menu that could host it belongs to another plan that may not be built yet. The jack
-  asks one OK or Cancel question (unplug); the view opens from the link item.
+- **An Open or Unplug choice on a planted jack.** `gameConfirm`'s two buttons take any labels, but
+  Esc and the close cross answer as the second button, so one prompt cannot offer two actions and
+  a way out. The jack offers "Unplug it" and "Leave it" and says the box is opened from the
+  inventory, where the link item is (4.1).
 - **A `first` flag on `network_viewed`.** A flag kept per page would be true again after every
   reload, and a saved one needs a write from a read route. `onceOnly` on the mapping already does
   the job and is saved; the plant's answer carries its own `first` from `gainedFootholds`.

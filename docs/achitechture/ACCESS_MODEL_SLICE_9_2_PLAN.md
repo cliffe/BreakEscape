@@ -280,7 +280,7 @@ missing list (`game.rb:1160-1161`).
 
 **Reach is composed on the server.** No network id, link or resource `network` is ever in the plan.
 Where the scenario has `networks`, each need gains `routes`: the answer of 9.3's
-`NetworkModel.reach_conditions(station_network, resource)` for the NPC's home workstation, a list
+`NetworkModel.reach_conditions(data, station_network, resource)` for the NPC's home workstation, a list
 of routes, each a list of the `downIf` global names along it. The browser's test is one pure
 function in `npc-work.js`, `reachable(need, globals)`: a need with no `routes` key is reachable; an
 empty list of routes is never reachable; otherwise it is reachable when some route has no truthy
@@ -1836,7 +1836,7 @@ builds.
 
 | Topic | Settled as |
 |---|---|
-| Reach | Taken from the server, as 9.3 asks (its 13.2). `compile_npc_plan!` adds `routes` per need from `NetworkModel.reach_conditions(station_network, resource)`; the browser's `reachable(need, globals)` reads only that. With 9.3a the answer is `[[]]` or `[]` (its 4.2). No network id, link or resource `network` reaches the browser from this slice. In a scenario with no `networks` there are no `routes` and everything is reachable. The failure reason is `unreachable` |
+| Reach | Taken from the server, as 9.3 asks (its 13.2). `compile_npc_plan!` adds `routes` per need from `NetworkModel.reach_conditions(data, station_network, resource)`; the browser's `reachable(need, globals)` reads only that. With 9.3a the answer is `[[]]` or `[]` (its 4.2). No network id, link or resource `network` reaches the browser from this slice. In a scenario with no `networks` there are no `routes` and everything is reachable. The failure reason is `unreachable` |
 | Admitted | `resource_acl_admits?(resource, npc)` (9.3's 4.5): a missing list admits everyone, as both plans read `access` |
 | `resources` | Shared. 9.3 owns `network`, `host`, `contents`, `observations`; this slice owns `object`, the work lists and, for NPC work, `downIf`; both read `name`, `kind` and `access` the same way. Neither makes the other's fields required; both delete `resources` from the bootstrap. 9.3a adds the key to the schema and the validator's top-level list; this slice extends it |
 | The `work` plan and 9.3a's secrecy rule | The plan ships ids, kinds and global names and **no display name** (5.1, decision 12), which is inside 9.3a's rule (its section 6). So 9.3a's no-exposure test and leak rule need no exception for an NPC's `work` block |
