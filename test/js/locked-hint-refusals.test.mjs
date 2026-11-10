@@ -39,7 +39,8 @@ test('rfid refusal text carries the hint after a full stop; no hint leaves it un
 test('pin refusal text carries the hint; a longer toast is used', () => {
     assert.equal(appendLockedHint('Failed to enter correct PIN.', door()), `Failed to enter correct PIN. ${HINT}`);
     assert.equal(lockedHintDuration(door(), 3000, 'Failed to enter correct PIN.'), 6000);
-    assert.equal(lockedHintDuration({}, 3000, 'Failed to enter correct PIN.'), 3000);
+    // No hint: the refusal still lasts at least 5 s (feedback plan 7)
+    assert.equal(lockedHintDuration({}, 3000, 'Failed to enter correct PIN.'), 5000);
 });
 
 test('biometric/cloner refusal shows the hint as its own toast; nothing without a hint', () => {
@@ -82,7 +83,7 @@ test('key locks: wrong-key text keeps going through withLockedHint', () => {
 
 test('gate door refusal appends the hint, then emits door_gate_denied', () => {
     const d = src('systems/doors.js');
-    assert.match(d, /const denied = 'Access denied: this door only opens for authorised staff\.';\s*window\.gameAlert\?\.\(appendLockedHint\(denied, hintSource\), 'error', 'Door', lockedHintDuration\(hintSource, 3000, denied\)\);\s*window\.eventDispatcher\?\.emit\?\.\('door_gate_denied'/);
+    assert.match(d, /const denied = 'Access denied: this door only opens for authorised staff\.';\s*window\.gameAlert\?\.\(appendLockedHint\(denied, hintSource\), 'error', doorRefusalTitle\(hintSource, 'Door'\), lockedHintDuration\(hintSource, 3000, denied\)\);\s*window\.eventDispatcher\?\.emit\?\.\('door_gate_denied'/);
     // either sprite of the doorway may take the click: the hint falls back to the gate group's
     assert.match(d, /props\.lockedHint \|\| gateGroup\?\.lockedHint/);
     assert.match(readFileSync(join(js, 'systems/door-gates.js'), 'utf8'), /g\.lockedHint = props\.lockedHint/);
@@ -99,8 +100,11 @@ test('a hint toast lasts 300 ms per word, at least 6 s and at most 12 s, the bas
     assert.equal(hintToastMs(words(20)), 6000);
     assert.equal(hintToastMs(words(30)), 9000);
     assert.equal(hintToastMs(words(64)), 12000);
-    // no hint: the caller's plain duration, whatever the base
-    assert.equal(lockedHintDuration({}, 3000, 'Access denied.'), 3000);
+    // no hint: by the length of the line, from 5 s (feedback plan 7), the caller's time if longer
+    assert.equal(lockedHintDuration({}, 3000, 'Access denied.'), 5000);
+    assert.equal(lockedHintDuration({}, 8000, 'Access denied.'), 8000);
+    assert.equal(lockedHintDuration({}, 3000, words(30)), 9000);
+    assert.equal(lockedHintDuration({}, 3000, words(64)), 12000);
     // the whole line is counted: the base it is appended to and the hint
     const base = 'Access denied: this door only opens for authorised staff.';
     assert.equal(base.split(' ').length, 9);
@@ -125,7 +129,7 @@ test('every lockedHintDuration call passes its base line; no fixed duration is l
             assert.ok(args.length >= 3 && args.slice(2).join(',').trim(), `${f}: lockedHintDuration(${m[1]}) has no base line`);
         }
     }
-    assert.equal(calls, 11, 'the callers this test knows: 6 in unlock-system, 4 in minigame-starters, 1 in doors');
+    assert.equal(calls, 14, 'the callers this test knows: 9 in unlock-system (3 server refusals, feedback plan 7), 4 in minigame-starters, 1 in doors');
     assert.doesNotMatch(src('systems/unlock-system.js'), /\b5500\b/);
     // every line that shows a hint takes its duration from the helper
     for (const f of files) {
@@ -137,5 +141,5 @@ test('every lockedHintDuration call passes its base line; no fixed duration is l
     const long = { doorProperties: { lockedHint: Array.from({ length: 25 }, () => 'word').join(' ') } };
     assert.equal(lockedHintDuration(long, 4000, 'Requires key'), 27 * 300);
     assert.equal(lockedHintDuration(long, 4000, 'The selected key doesn\'t work with this lock.'), 33 * 300);
-    assert.equal(lockedHintDuration({}, 4000, 'Requires key'), 4000);
+    assert.equal(lockedHintDuration({}, 4000, 'Requires key'), 5000);
 });

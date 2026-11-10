@@ -161,6 +161,9 @@ export class DoorGates {
         // Likewise the locked room's lockedHint: only the sprite on the approach side of the
         // locked room carries it, but a click may land on either sprite of the doorway.
         if (!g.lockedHint && typeof props.lockedHint === 'string' && props.lockedHint) g.lockedHint = props.lockedHint;
+        // And the locked room's door sign (a sprite's door_sign is the room it leads into),
+        // which titles the refusal toast: taken from the sprite that carries the lock
+        if (!g.doorSign && props.requires != null && typeof props.door_sign === 'string' && props.door_sign) g.doorSign = props.door_sign;
         g.sprites.add(sprite);
         props.gate = g.cfg;
         props.gateKey = key;

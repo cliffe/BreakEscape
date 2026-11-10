@@ -43,15 +43,45 @@ export function hintToastMs(text) {
 // imports (see the note at its top).
 if (typeof window !== 'undefined') window.hintToastMs = hintToastMs;
 
+// A lock refusal with no hint is still read before it goes (PHYSICAL_PENTEST_FEEDBACK_PLAN_ENGINE.md
+// 7: "Server Riser access denied" was gone too soon): the same by-length rule, from 5 s.
+export const REFUSAL_MIN_MS = 5000;
+
 /**
- * Toast duration for a refusal line: `plainMs` without a hint; with one, by the length
- * of the whole line shown (`base`, the same text given to appendLockedHint or
- * withLockedHint, plus the hint).
+ * Toast duration for a lock refusal, hint or not: by the length of the whole line shown
+ * (`base`, the same text given to appendLockedHint or withLockedHint, plus the hint when
+ * there is one), 300 ms a word, at least 6 s with a hint and 5 s without, at most 12 s.
+ * `plainMs`, the caller's own time, is kept when it is longer.
  */
 export function lockedHintDuration(lockable, plainMs, base) {
     const hint = getLockedHint(lockable);
-    if (!hint) return plainMs;
-    return hintToastMs(`${base ?? ''} ${hint}`);
+    const plain = Number.isFinite(Number(plainMs)) ? Number(plainMs) : 0;
+    if (hint) return Math.max(plain, hintToastMs(`${base ?? ''} ${hint}`));
+    const words = String(base ?? '').trim().split(/\s+/).filter(Boolean).length;
+    return Math.max(plain, Math.min(HINT_MAX_MS, Math.max(REFUSAL_MIN_MS, words * HINT_MS_PER_WORD)));
+}
+
+// The first part of a door sign, before a separator: "Records Office — Authorised Access
+// Only" titles its refusal "Records Office". A dash or slash with spaces round it, a colon,
+// or a full stop after a word of three or more letters ("Dr. I. Volkova" is kept whole).
+const SIGN_SEPARATOR = /\s+(?:[—–]+|-{1,2})\s+|\s+\/\s+|:\s+|(?<=[A-Za-z]{3})\.\s+/;
+const SIGN_TITLE_MAX = 40;
+
+/** Pure: a door sign cut to a toast title, or '' for no usable sign. */
+export function signTitle(sign) {
+    if (typeof sign !== 'string') return '';
+    let t = sign.split(SIGN_SEPARATOR)[0].trim().replace(/[.,;:\s]+$/, '');
+    if (t.length > SIGN_TITLE_MAX) t = t.slice(0, SIGN_TITLE_MAX).replace(/\s+\S*$/, '');
+    return t;
+}
+
+/**
+ * The title of a door's refusal toast: the door's sign when it has one ("Server Riser"), in
+ * place of a generic title such as "Access Denied". Anything that is not a door with a sign
+ * keeps `fallback`. Used by RFID and gate refusals only (review R2 n8).
+ */
+export function doorRefusalTitle(lockable, fallback) {
+    return signTitle(lockable?.doorProperties?.door_sign) || fallback;
 }
 
 /** Shows the hint alone, as a refusal toast (for locks whose own overlay already said no). */

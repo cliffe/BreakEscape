@@ -51,7 +51,7 @@ test('the same message, type and title while still on screen: one toast, and the
 test('a different message, type or title is its own toast', async () => {
     T.gameAlert(HINT, 'info', '', 300);
     T.gameAlert('Requires key', 'info', '', 300);
-    T.gameAlert(HINT, 'error', '', 300);
+    T.gameAlert(HINT, 'warning', '', 300);   // not 'error': a timed error lasts at least 5 s
     T.gameAlert(HINT, 'info', 'Locked', 300);
     assert.equal(children.length, 4);
     await wait(700);

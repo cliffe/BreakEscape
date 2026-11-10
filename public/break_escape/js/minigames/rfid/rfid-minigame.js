@@ -19,8 +19,9 @@ import { RFIDAnimations } from './rfid-animations.js';
 import { MIFAREAttackManager } from './rfid-attacks.js';
 import { detectProtocol } from './rfid-protocols.js';
 
-// A refused card stays on screen this long, or until the player taps the screen.
-export const DENIAL_HOLD_MS = 3000;
+// A refused card stays on screen this long, or until the player taps the screen (5 s, as
+// long as the shortest error toast: PHYSICAL_PENTEST_FEEDBACK_PLAN_ENGINE.md 7).
+export const DENIAL_HOLD_MS = 5000;
 
 export class RFIDMinigame extends MinigameScene {
     constructor(container, params) {

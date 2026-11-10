@@ -14,7 +14,7 @@ import { rooms } from '../core/rooms.js';
 import { unlockDoor } from './doors.js';
 import { startLockpickingMinigame, startKeySelectionMinigame, startPinMinigame, startPasswordMinigame, startRansomwareDisplayMinigame, startBackupRecoveryMinigame, startInfusionPumpMinigame } from './minigame-starters.js';
 import { playUISound } from './ui-sounds.js';
-import { appendLockedHint, lockedHintDuration, showLockedHintToast } from '../utils/locked-hint.js';
+import { appendLockedHint, lockedHintDuration, showLockedHintToast, doorRefusalTitle } from '../utils/locked-hint.js';
 import { startFingerprintReader } from '../minigames/biometrics/fingerprint-reader-minigame.js';
 import { catchLockpickInView } from './lockpick-catch.js';
 
@@ -356,7 +356,7 @@ export function handleUnlock(lockable, type) {
             if (serverResponse && serverResponse.success) {
                 unlockTarget(lockable, type, lockable.layer, serverResponse);
             } else {
-                window.gameAlert('Access denied', 'error', 'Error', 3000);
+                window.gameAlert('Access denied', 'error', 'Error', lockedHintDuration(lockable, 3000, 'Access denied'));
             }
         }).catch(error => {
             console.error('Server verification failed:', error);
@@ -377,7 +377,7 @@ export function handleUnlock(lockable, type) {
             if (serverResponse && serverResponse.success) {
                 unlockTarget(lockable, type, lockable.layer, serverResponse);
             } else {
-                window.gameAlert('Access denied', 'error', 'Error', 3000);
+                window.gameAlert('Access denied', 'error', 'Error', lockedHintDuration(lockable, 3000, 'Access denied'));
             }
         }).catch(error => {
             console.error('Server verification failed:', error);
@@ -813,7 +813,7 @@ export function handleUnlock(lockable, type) {
                     window.gameAlert(`Door opened with ${cardName}`, 'success', 'Access Granted', 3000);
                 }).catch(error => {
                     console.error('RFID unlock failed:', error);
-                    window.gameAlert('Access denied', 'error', 'Error', 3000);
+                    window.gameAlert('Access denied', 'error', doorRefusalTitle(lockable, 'Error'), lockedHintDuration(lockable, 3000, 'Access denied'));
                 });
             }
             // STEP 1b: a saved copy matches `requires` - the reader, where the minigame
@@ -836,11 +836,11 @@ export function handleUnlock(lockable, type) {
                         window.gameAlert('Card accepted', 'success', 'Access Granted', 3000);
                     } else if (outcome === 'uid_only') {
                         playUISound('reject');
-                        window.gameAlert(appendLockedHint('Reader requires full authentication', lockable), 'error', 'Access Denied', lockedHintDuration(lockable, 4000, 'Reader requires full authentication'));
+                        window.gameAlert(appendLockedHint('Reader requires full authentication', lockable), 'error', doorRefusalTitle(lockable, 'Access Denied'), lockedHintDuration(lockable, 4000, 'Reader requires full authentication'));
                         emitDoorUnlockFailed('uid_only');
                     } else if (outcome === 'denied') {
                         playUISound('reject');
-                        window.gameAlert(appendLockedHint('Access denied', lockable), 'error', 'Access Denied', lockedHintDuration(lockable, 4000, 'Access denied'));
+                        window.gameAlert(appendLockedHint('Access denied', lockable), 'error', doorRefusalTitle(lockable, 'Access Denied'), lockedHintDuration(lockable, 4000, 'Access denied'));
                         emitDoorUnlockFailed('wrong_card');
                     } else {
                         window.gameAlert('Failed to verify access', 'error', 'Error', 3000);
@@ -852,7 +852,7 @@ export function handleUnlock(lockable, type) {
             // screen (m07 U9)
             else if (hasCloner && keycards.length === 0 && savedCards.length === 0) {
                 console.log('RFID CLONER EMPTY: no keycards, no saved cards');
-                window.gameAlert(appendLockedHint('Access denied. No keycard, and nothing saved on the cloner.', lockable), 'error', 'Access Denied', lockedHintDuration(lockable, 4000, 'Access denied. No keycard, and nothing saved on the cloner.'));
+                window.gameAlert(appendLockedHint('Access denied. No keycard, and nothing saved on the cloner.', lockable), 'error', doorRefusalTitle(lockable, 'Access Denied'), lockedHintDuration(lockable, 4000, 'Access denied. No keycard, and nothing saved on the cloner.'));
                 emitDoorUnlockFailed('no_card');
             }
             // If player has RFID cloner, open minigame to emulate or read cards
@@ -862,7 +862,7 @@ export function handleUnlock(lockable, type) {
             // No valid keycard and no cloner
             else {
                 console.log('NO RFID CARDS OR CLONER AVAILABLE');
-                window.gameAlert(appendLockedHint('Requires RFID keycard', lockable), 'error', 'Access Denied', lockedHintDuration(lockable, 4000, 'Requires RFID keycard'));
+                window.gameAlert(appendLockedHint('Requires RFID keycard', lockable), 'error', doorRefusalTitle(lockable, 'Access Denied'), lockedHintDuration(lockable, 4000, 'Requires RFID keycard'));
                 emitDoorUnlockFailed('no_card');
             }
             break;

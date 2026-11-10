@@ -16,7 +16,7 @@ import {
     DOOR_INTERACTION_RANGE
 } from '../utils/constants.js';
 import { handleUnlock, notifyServerUnlock, playerHoldsRfidCredentialFor } from './unlock-system.js';
-import { appendLockedHint, lockedHintDuration } from '../utils/locked-hint.js';
+import { appendLockedHint, lockedHintDuration, doorRefusalTitle } from '../utils/locked-hint.js';
 import { isRepeatInteraction } from './interaction-repeat.js';
 import { waitForRoomReady } from './room-ready.js';
 
@@ -723,9 +723,13 @@ async function handleDoorInteraction(doorSprite) {
         }) || 'denied';
         if (outcome === 'pass') return;
         // The hint lives on the locked room's side of the doorway; the group shares it
-        const hintSource = { doorProperties: { lockedHint: props.lockedHint || gateGroup?.lockedHint || null } };
+        // So does the sign, which titles the toast ("Records Office" in place of "Door")
+        const hintSource = { doorProperties: {
+            lockedHint: props.lockedHint || gateGroup?.lockedHint || null,
+            door_sign: gateGroup?.doorSign || (props.requires ? props.door_sign : null) || null
+        } };
         const denied = 'Access denied: this door only opens for authorised staff.';
-        window.gameAlert?.(appendLockedHint(denied, hintSource), 'error', 'Door', lockedHintDuration(hintSource, 3000, denied));
+        window.gameAlert?.(appendLockedHint(denied, hintSource), 'error', doorRefusalTitle(hintSource, 'Door'), lockedHintDuration(hintSource, 3000, denied));
         window.eventDispatcher?.emit?.('door_gate_denied', {
             roomId: props.roomId, connectedRoom: props.connectedRoom, direction: props.direction
         });

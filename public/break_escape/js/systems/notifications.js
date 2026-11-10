@@ -126,8 +126,20 @@ export function holdRecentNotifications(now = Date.now()) {
 }
 if (typeof window !== 'undefined') window.holdRecentNotifications = holdRecentNotifications;
 
+// An error never flashes: a timed error toast lasts at least this long, whatever its caller
+// asked (PHYSICAL_PENTEST_FEEDBACK_PLAN_ENGINE.md 7; the riser refusal read as gone too soon).
+// A duration of 0 (stay until closed) and longer times are kept; other types are unchanged.
+export const ERROR_TOAST_MIN_MS = 5000;
+
+export function toastDuration(type, duration) {
+    const d = Number(duration);
+    if (type === 'error' && Number.isFinite(d) && d > 0 && d < ERROR_TOAST_MIN_MS) return ERROR_TOAST_MIN_MS;
+    return duration;
+}
+
 // Show a notification instead of using alert()
 export function showNotification(message, type = 'info', title = '', duration = 5000) {
+    duration = toastDuration(type, duration);
     if (shouldHoldNotification(type, fullScreenPanelOpen() || panelExpected())) {
         // The same toast raised twice while a panel is open (two code paths announcing one
         // event) shows once
