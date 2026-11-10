@@ -73,7 +73,7 @@ function cleanFoothold(f) {
     if (!f || typeof f !== 'object' || typeof f.id !== 'string' || !f.id) return null;
     const network = f.network && typeof f.network === 'object'
         ? { id: f.network.id ?? null, name: f.network.name ?? null } : { id: null, name: null };
-    return {
+    const out = {
         id: f.id,
         via: f.via ?? 'jack',
         name: f.name ?? null,
@@ -81,6 +81,12 @@ function cleanFoothold(f) {
         sourceId: f.sourceId ?? null,
         network
     };
+    // The bootstrap also carries the link item's look (none is secret), so restoreHandles
+    // rebuilds the real item (review R1 minor 2)
+    for (const key of ['sprite', 'observations', 'storeIn']) {
+        if (typeof f[key] === 'string' && f[key]) out[key] = f[key];
+    }
+    return out;
 }
 
 // The landing table of 4.3: screen -> reason -> what happens. `resume` reopens the view
@@ -168,7 +174,8 @@ export class NetworkLinks {
 
     /**
      * After the saved inventory is restored: a held foothold whose link item is missing
-     * from the tray gets it back (a client that lost only its handle, 4.1). No request.
+     * from the tray gets it back (a client that lost only its handle, 4.1), with the sprite,
+     * observations and storeIn the bootstrap foothold carries. No request.
      */
     restoreHandles() {
         const show = win().showServerItem;
@@ -179,8 +186,10 @@ export class NetworkLinks {
             const item = {
                 id: f.itemId, type: 'network_link', name: f.name || 'Network link',
                 takeable: false, footholdId: f.id, sourceId: f.sourceId,
-                observations: 'Open it to see what it reaches.'
+                observations: f.observations || 'Open it to see what it reaches.'
             };
+            if (f.sprite) item.sprite = f.sprite;
+            if (f.storeIn) item.storeIn = f.storeIn;
             if (show(item, { restored: true })) shown++;
         }
         return shown;

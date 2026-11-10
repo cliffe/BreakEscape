@@ -178,7 +178,8 @@ export class PasswordMinigame extends MinigameScene {
                     // A remote screen: its foothold and the captured sign-ins offered (no passwords)
                     ...(this.signIn.remote ? {
                         remote: { footholdId: this.signIn.remote.footholdId ?? null },
-                        captured: (this.signIn.captured || []).map(c => ({ targetId: c.targetId, label: c.label, username: c.username, fillsPassword: !!c.password }))
+                        captured: (this.signIn.captured || []).map(c => ({ targetId: c.targetId, label: c.label, username: c.username, fillsPassword: !!c.password })),
+                        capturedLoading: !!this.signIn.capturedLoading
                     } : {})
                 },
                 // clickText('<display name>') or clickText('Other user') first; then the visible
@@ -860,14 +861,8 @@ export class PasswordMinigame extends MinigameScene {
         const remoteLine = s.remote
             ? `<div class="signin-remote">Remote sign-in${s.remote.linkName ? ` through ${escapeHtml(displayDashes(s.remote.linkName))}` : ''}</div>`
             : '';
-        const captured = Array.isArray(s.captured) ? s.captured : [];
         const capturedHtml = s.remote ? `
-                        <div class="signin-captured" id="signin-captured">
-                            <div class="signin-captured-title">Captured sign-ins</div>
-                            ${captured.length ? captured.map((c, i) => `
-                            <button type="button" class="signin-captured-item" data-capture-index="${i}" data-target-id="${escapeHtml(c.targetId)}">${escapeHtml(c.label)} (${escapeHtml(c.username)})</button>`).join('')
-                                : '<div class="signin-captured-empty">None yet.</div>'}
-                        </div>` : '';
+                        <div class="signin-captured" id="signin-captured">${this.capturedListHtml()}</div>` : '';
 
         this.gameContainer.innerHTML = `
             <div class="password-minigame-area signin-mode">
@@ -918,9 +913,7 @@ export class PasswordMinigame extends MinigameScene {
             }
             this.addEventListener(el, 'click', () => this.selectSignInTile(idx));
         });
-        this.gameContainer.querySelectorAll('.signin-captured-item[data-capture-index]').forEach(el => {
-            this.addEventListener(el, 'click', () => this.fillCapturedSignIn(Number(el.dataset.captureIndex)));
-        });
+        this.bindCapturedSignIns();
 
         if (this.gameData.showPostit && this.gameData.postitNote) {
             const postit = this.gameContainer.querySelector('.postit-note');
@@ -995,6 +988,39 @@ export class PasswordMinigame extends MinigameScene {
         }
         const focus = st.other && !this.usernameField.value ? this.usernameField : this.passwordField;
         if (chosen && focus && typeof focus.focus === 'function') focus.focus();
+    }
+
+    /** The Captured sign-ins block's inner markup (a remote screen, 4.4). */
+    capturedListHtml() {
+        const s = this.signIn || {};
+        const captured = Array.isArray(s.captured) ? s.captured : [];
+        const body = captured.length
+            ? captured.map((c, i) => `
+                            <button type="button" class="signin-captured-item" data-capture-index="${i}" data-target-id="${escapeHtml(c.targetId)}">${escapeHtml(c.label)} (${escapeHtml(c.username)})</button>`).join('')
+            : (s.capturedLoading ? '<div class="signin-captured-empty">Checking...</div>' : '<div class="signin-captured-empty">None yet.</div>');
+        return `
+                            <div class="signin-captured-title">Captured sign-ins</div>${body}`;
+    }
+
+    bindCapturedSignIns() {
+        this.gameContainer?.querySelectorAll('.signin-captured-item[data-capture-index]').forEach(el => {
+            this.addEventListener(el, 'click', () => this.fillCapturedSignIn(Number(el.dataset.captureIndex)));
+        });
+    }
+
+    /**
+     * The Captured sign-ins arrive after the screen has opened (GET /capture_secrets), so
+     * the view or desktop that opened it is replaced at once (review R1 minor 1).
+     */
+    setCapturedSignIns(list) {
+        if (!this.signIn?.remote) return false;
+        this.signIn.captured = Array.isArray(list) ? list : [];
+        this.signIn.capturedLoading = false;
+        const block = this.gameContainer?.querySelector('#signin-captured');
+        if (!block) return false;
+        block.innerHTML = this.capturedListHtml();
+        this.bindCapturedSignIns();
+        return true;
     }
 
     /**

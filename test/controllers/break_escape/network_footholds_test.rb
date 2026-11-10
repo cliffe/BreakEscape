@@ -362,9 +362,16 @@ module BreakEscape
       get game_path('scenario'), as: :json
       assert_response :success
       body = response.parsed_body
+      link = body['playerInventory'].find { |item| item['id'] == 'netlink_jack_comms_port' }
+      assert link, 'the link item is in the saved inventory'
+      # The link item's sprite, observations and storeIn ride along, so a client that lost
+      # the item rebuilds the real one (review R1 minor 2)
       assert_equal [{ 'id' => 'jack_comms_port', 'via' => 'jack', 'name' => 'Drop box: comms room',
                       'itemId' => 'netlink_jack_comms_port', 'sourceId' => 'comms_port',
-                      'network' => { 'id' => 'office_lan', 'name' => NS::OFFICE_NAME } }], body['footholds']
+                      'network' => { 'id' => 'office_lan', 'name' => NS::OFFICE_NAME } }
+                     .merge(link.slice('sprite', 'observations', 'storeIn'))], body['footholds']
+      assert link['sprite'].present?
+      assert_match(/\AYour .+ on .+\. Open it to see what it reaches\.\z/, body['footholds'][0]['observations'])
       assert_equal ['comms_port'], body['gainedFootholds']
       %w[networks resources networkLinks].each { |key| refute body.key?(key) }
       (NS::OFFICE_RESOURCE_STRINGS + NS::SHARE_ITEM_STRINGS + [NS::WORKSHOP_NAME]).each { |text| refute_includes response.body, text }

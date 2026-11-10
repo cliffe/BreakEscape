@@ -454,8 +454,10 @@ async function openRemoteSignInScreen(lockable, { switching = false, reason = un
     const pcId = data.id;
     const footholdId = data.remote.footholdId;
     const sessions = window.pcSessions;
-    const captured = await remoteCapturedSignIns();
 
+    // The screen starts at once, replacing the view or desktop that opened it, and its
+    // Captured sign-ins fill in when /capture_secrets answers (review R1 minor 1): no wait
+    // with the opener still on screen, and no request before the screen exists.
     const framework = window.MinigameFramework;
     if (!framework) {
         console.error('MinigameFramework not available for the sign-in screen');
@@ -469,7 +471,7 @@ async function openRemoteSignInScreen(lockable, { switching = false, reason = un
     // The current session, unless it is a claim: an unlocked screen is not offered over
     // the network (4.3), and a remote sign-in replaces it as a keyboard one would
     const held = sessions?.get?.(pcId) || null;
-    framework.startMinigame('password', null, {
+    const scene = framework.startMinigame('password', null, {
         title: data.name || 'Sign in',
         lockable,
         type: 'item',
@@ -480,7 +482,8 @@ async function openRemoteSignInScreen(lockable, { switching = false, reason = un
             tiles: [],
             current: held && held.via !== 'claim' ? held : null,
             remote: { footholdId, linkName },
-            captured
+            captured: [],
+            capturedLoading: true
         },
         postitNote: '',
         showPostit: false,
@@ -498,6 +501,10 @@ async function openRemoteSignInScreen(lockable, { switching = false, reason = un
             if ((!landing || landing.landing === 'none') && switching && signedIn) openLoginDesktop(lockable);
         }
     });
+    const captured = await remoteCapturedSignIns();
+    if (scene && framework.currentMinigame === scene && typeof scene.setCapturedSignIns === 'function') {
+        scene.setCapturedSignIns(captured);
+    }
 }
 
 export function handleUnlock(lockable, type) {

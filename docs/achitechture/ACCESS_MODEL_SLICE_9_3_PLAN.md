@@ -349,9 +349,12 @@ the dungeon graph agree (as `access_identities.rb` does for identities).
 ### 4.3 The network view
 
 Clicking a link item opens a new minigame scene, `network-view`, in the desktop window chrome the
-container minigame uses. It shows what `GET /network` answers for that foothold and nothing else:
+container minigame uses. It shows what `GET /network` answers for that foothold, and the link
+item's own `observations` from the tray, and nothing else:
 
-- a header: the link's name and its network ("Drop box: comms room, on Harbour office LAN");
+- a header: the link's name and its network ("Drop box: comms room, on Harbour office LAN"),
+  then the link item's `observations`, read from the item in the tray (the server wrote them on
+  the link item; `GET /network` does not carry them, and the view shows no line without the item);
 - a row for each sign-in host: host label, name, and one action, decided in this order:
   1. "remote sign-in off", when the PC's policy blocks it, whatever sessions are held there (the
      row offers nothing and carries no session);
@@ -424,6 +427,7 @@ parent only on a normal exit, and every close the player makes is a failure exit
 | "The link dropped" (an unplug ends the session) | The world: `leave("link_dropped")` |
 | A share opened from the view, by its Close | The view |
 | A file opened from a share that was opened from the view | The reader, then the share, by the same text-file rule |
+| A lock or other screen opened from a network screen (a PIN pad, a password, a key or a lockpick on a locked folder, a key alert, a lockout, a phone, a workstation, a `minigameId` item), left without opening anything | The screen it was opened from. `handleInteractiveItem` arms one return (`armNetworkReturn` in `container-minigame.js`, as the capture log's `armReturn`): a minigame ending without success with none open a tick later reopens the screen and clears `pendingContainerReturn`; one ending with success waits for the folder it unlocks (a container opening spends the return) and reopens the screen if nothing has opened 2.5 s later; a hand-over that opened nothing (the key alert) reopens it at once |
 | The view refetches and the foothold is no longer held | The world: `leave("foothold_gone")`, with "The link is gone." |
 
 The world is reached through `leave` only, so `network_view_closed` fires exactly once per trip,
@@ -658,7 +662,7 @@ protected: it ships in room data, 3.2.)
 
 | Path | Sent | Withheld |
 |---|---|---|
-| Bootstrap, `GET /scenario` | `policies` (with `remote`), as today. `footholds`: `[{ id, via, name, itemId, sourceId, network: { id, name } }]` for footholds held. `gainedFootholds` | `networks`, `networkLinks` and `resources` are deleted, so no network name, resource name, resource `host` or share content ships |
+| Bootstrap, `GET /scenario` | `policies` (with `remote`), as today. `footholds`: `[{ id, via, name, itemId, sourceId, network: { id, name }, sprite, observations, storeIn? }]` for footholds held (the last three are the link item's own, so `restoreHandles` rebuilds the real item for a client that lost it; `storeIn` only when the jack sets `linkStoreIn`). `gainedFootholds` | `networks`, `networkLinks` and `resources` are deleted, so no network name, resource name, resource `host` or share content ships |
 | Room data (`filtered_room_data`) | On a jack: `networkJack`, `jackConfirm`, `plantedSprite`, the hint fields, and `jackPlanted` (true when the server holds a foothold there). On a sign-in object: `host` and `headless` | `network` on every object and on the room; `linkName` and `linkStoreIn` (they arrive on the link item). A headless host gets no `loginAccounts` |
 | `POST /network/plant` | The foothold in the bootstrap's shape, `first`, and the inventory with the link item | Hosts. The view is a separate request |
 | `GET /network` | Per foothold: `{ id, via, name, network: { id, name }, hosts: [...] }`. A sign-in host: `{ id, kind: "pc", name, host, sprite, headless, remoteSignIn, session }`, `session` being `{ username, displayName, via, remote }` for a password session held at that PC, and absent for a claimed session and whenever `remoteSignIn` is false (4.3). A resource: `{ id, kind, name, host, open, observations? }` (`observations` only for a resource with no contents) | Every other network, entirely. Account names and tiles, `access` lists, policies' other fields, share contents |
@@ -1614,7 +1618,8 @@ of remote sessions. What this slice makes, stated so that design can rely on it:
    open by then. The view closing because it handed over to a sign-in screen, a desktop or a share
    does not call it. `network_view_closed` is emitted at the same moment, for mappings and tests.
 5. **The menu.** A `network_link` has no menu: one click opens its view, and its `observations`
-   are shown in the view's header (the engine plan's menu rule puts it in "no menu").
+   are shown in the view's header, read from the item in the tray, not from `GET /network` (4.3;
+   the engine plan's menu rule puts it in "no menu").
 6. **Remote sessions are not items.** A remote session is a server record. The log lists them from
    `window.pcSessions.list()`: each entry carries `pcId`, `npcId`, `username`, `displayName`,
    `via`, and from step 8 `remote`, `footholdId` and, for a remote session, `host` (4.4). The log

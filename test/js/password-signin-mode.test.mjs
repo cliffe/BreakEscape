@@ -294,6 +294,22 @@ test('9.3a: with no captures the list says so', () => {
     assert.match(q('#signin-captured').textContent, /None yet/);
 });
 
+test('9.3a: the captured list fills in after the screen has opened (review R1 minor 1)', () => {
+    const mg = openRemote([]);
+    mg.signIn.capturedLoading = true;
+    mg.setCapturedSignIns([]);
+    assert.match(q('#signin-captured').textContent, /None yet/);
+    mg.signIn.capturedLoading = true;
+    q('#signin-captured').innerHTML = mg.capturedListHtml();
+    assert.match(q('#signin-captured').textContent, /Checking/);
+    mg.setCapturedSignIns(capturedSignIns(CAPTURES, { lena: 'lfox' }, { lena: 'Ledger-Lena-9' }));
+    const items = [...document.querySelectorAll('.signin-captured-item')];
+    assert.deepEqual(items.map(b => b.textContent), ['Finance (Lena) (lfox)']);
+    items[0].click();
+    assert.equal(q('#password-field').value, 'Ledger-Lena-9');
+    assert.equal(mg.getTestState().signIn.capturedLoading, false);
+});
+
 test('9.3a: a remote sign-in sends the foothold through pc-sessions', async () => {
     nextResult = { ok: false, reason: 'remote_blocked', message: 'Remote sign-in is turned off on this PC', attemptsLeft: null };
     const mg = openRemote([]);

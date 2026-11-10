@@ -283,9 +283,14 @@ module BreakEscape
       network_footholds.sort_by { |_id, foothold| foothold.is_a?(Hash) ? foothold['seq'].to_i : 0 }.map(&:first)
     end
 
-    # Every held foothold for GET /scenario: no hosts (section 6).
+    # Every held foothold for GET /scenario: no hosts (section 6). Each also carries its link
+    # item's sprite, observations and, when set, storeIn (none is secret), so a client that
+    # lost the link item rebuilds the real one (restoreHandles, network-links.js).
     def footholds_for_client
-      held_foothold_ids.map { |id| foothold_for_client(id) }
+      held_foothold_ids.map do |id|
+        link = link_item_for(id)
+        foothold_for_client(id).merge(link.slice('sprite', 'observations', 'storeIn'))
+      end
     end
 
     # GET /network (sections 4.3, 5 and 6). Returns { status:, body: }.

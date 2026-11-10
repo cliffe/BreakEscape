@@ -59,6 +59,79 @@ export function networkScreenKind(item) {
     return pcId && typeof window !== 'undefined' && window.pcSessions?.get?.(pcId)?.remote === true ? 'desktop' : null;
 }
 
+/**
+ * The way back from a hand-over to something that is neither a reader nor a container
+ * (slice 9.3a, 4.3): a lock screen (a PIN pad, a password, a key or a lockpick), a key
+ * alert, a lockout, a phone or a workstation opened from a network screen. Such a screen
+ * reports `item` (no landing) and nothing else would bring the player back, so the network
+ * screen arms one return, like the capture log's armReturn. It is spent when:
+ *   - a container opens (init: a locked folder that opened after its lock, or the screen
+ *     itself reopened by a reader), with nothing to do;
+ *   - a minigame ends without success and, one tick later, none is open: the network screen
+ *     reopens (a cancelled PIN pad, a lockout, a closed phone);
+ *   - a minigame ends with success and nothing has opened NETWORK_RETURN_GRACE_MS later
+ *     (an unlock opens its folder after a server answer and a short delay; a workstation
+ *     closed with success opens nothing): the network screen reopens;
+ *   - the hand-over opened nothing at all (a key-locked folder without the key: an alert):
+ *     the screen reopens one tick later.
+ * A minigame that ends while another is open (a key pad handing over to a lockpick) leaves
+ * it armed. Reopening clears pendingContainerReturn when it is still this hand-over's.
+ */
+export const NETWORK_RETURN_GRACE_MS = 2500;
+let networkReturn = null; // { handler, dispatcher, state, timer }
+
+export function disarmNetworkReturn() {
+    if (!networkReturn) return;
+    const { handler, dispatcher, timer } = networkReturn;
+    networkReturn = null;
+    if (timer) clearTimeout(timer);
+    dispatcher?.off?.('minigame_completed', handler);
+    dispatcher?.off?.('minigame_failed', handler);
+}
+
+export function networkReturnArmed() {
+    return !!networkReturn;
+}
+
+function reopenNetworkScreen(state) {
+    disarmNetworkReturn();
+    if (window.pendingContainerReturn === state) window.pendingContainerReturn = null;
+    if (window.MinigameFramework?.currentMinigame) return false;
+    if (typeof window.startContainerMinigame !== 'function') return false;
+    window.startContainerMinigame(state.containerItem, null, !!state.isTakeable, true);
+    return true;
+}
+
+/** Check the armed return after `ms`: reopen the network screen if nothing is open by then. */
+function scheduleNetworkReturnCheck(ms) {
+    const mine = networkReturn;
+    if (!mine) return;
+    if (mine.timer) clearTimeout(mine.timer);
+    mine.timer = setTimeout(() => {
+        if (networkReturn !== mine) return;
+        mine.timer = null;
+        if (window.MinigameFramework?.currentMinigame) return; // stays armed
+        if (typeof window.isInteractionMenuOpen === 'function' && window.isInteractionMenuOpen()) return;
+        reopenNetworkScreen(mine.state);
+    }, ms);
+}
+
+/** Arm the one return for a hand-over from a network screen (state: its pendingContainerReturn). */
+export function armNetworkReturn(state) {
+    disarmNetworkReturn();
+    if (!state?.containerItem) return;
+    const dispatcher = window.eventDispatcher;
+    const handler = (data) => {
+        if (!networkReturn || networkReturn.handler !== handler) return;
+        scheduleNetworkReturnCheck(data?.success === true ? NETWORK_RETURN_GRACE_MS : 0);
+    };
+    networkReturn = { handler, dispatcher, state, timer: null };
+    if (dispatcher && typeof dispatcher.on === 'function') {
+        dispatcher.on('minigame_completed', handler);
+        dispatcher.on('minigame_failed', handler);
+    }
+}
+
 /** The folder picture for a share stub (it has no object sprite of its own). */
 const SHARE_ICON = '/break_escape/assets/objects/m09_folder1.png';
 
@@ -406,6 +479,7 @@ export class ContainerMinigame extends MinigameScene {
         // a later text file read from the world must not reopen it (slice 9.3a, 4.3)
         const pending = window.pendingContainerReturn;
         if (pending?.containerItem && isNetworkScreenContainer(pending.containerItem)) window.pendingContainerReturn = null;
+        disarmNetworkReturn();
 
         // A folder opened from a sign-in desktop shows the session's files too, so it closes
         // with the same message when that session ends (owner back, auto lock, sign out).
@@ -729,8 +803,11 @@ export class ContainerMinigame extends MinigameScene {
             // account signs in, and leaving the screen comes back here.
             this.addEventListener(switchBtn, 'click', () => {
                 this.exitReason = 'switch';
-                // A remote desktop's Switch user is the remote screen: no tiles, no sticky note
+                // A remote desktop's Switch user is the remote screen: no tiles, no sticky note.
+                // It starts at once and replaces this desktop; if it did not, this desktop is
+                // still open and its own Close must land as a close (review R1 minor 1)
                 window.openLoginSignIn?.(this.containerItem, this.remote ? { switching: true, remote: this.remote } : { switching: true });
+                if (this.remote && window.MinigameFramework?.currentMinigame === this && !this._ending) this.exitReason = 'close';
             });
         }
         const signOutBtn = this.gameContainer?.querySelector('#desktop-sign-out');
@@ -936,6 +1013,8 @@ export class ContainerMinigame extends MinigameScene {
                 isTakeable: this.isTakeable,
                 itemToTake: item,  // Store the item to take after minigame
                 itemElement: itemElement,
+                // Where the note came from (a PC or a share), so the server's add finds it
+                sourceExtras: this.sourceExtras(),
                 // Preserve NPC context if in NPC mode
                 npcOptions: this.mode === 'npc' ? {
                     mode: this.mode,
@@ -997,6 +1076,13 @@ export class ContainerMinigame extends MinigameScene {
         
         // Close the container minigame first
         this.complete(false);
+
+        // From a network screen, a hand-over to anything but the text-file reader (which
+        // reopens the screen itself) comes back here when it ends without opening a
+        // container: a cancelled PIN pad, a key alert, a lockout, a phone (4.3)
+        const armReturn = this.mode !== 'npc' && item.type !== 'text_file'
+            && isNetworkScreenContainer(this.containerItem);
+        if (armReturn) armNetworkReturn(containerState);
         
         // Create a temporary sprite-like object for the main game handler
         const tempSprite = {
@@ -1013,6 +1099,8 @@ export class ContainerMinigame extends MinigameScene {
             console.error('handleObjectInteraction not available');
             window.gameAlert('Could not handle item interaction', 'error', 'Error', 3000);
         }
+        // Nothing opened (a key-locked folder without the key shows an alert): back at once
+        if (armReturn) scheduleNetworkReturnCheck(0);
     }
     
     addPostitToNotebook() {
@@ -1318,6 +1406,7 @@ export function returnToContainerAfterNotes() {
                     scenarioData: containerState.itemToTake,
                     name: containerState.itemToTake.type,
                     objectId: `temp_${Date.now()}`,
+                    ...(containerState.sourceExtras || {}),
                     setVisible: function() {}
                 };
                 window.addToInventory(tempSprite);
@@ -1351,7 +1440,9 @@ export function returnToContainerAfterNotes() {
             containerState.containerItem,
             null, // Don't pass contents - let it reload from server
             containerState.isTakeable,
-            null, // desktopMode - let it auto-detect or use npcOptions
+            // A network screen keeps its desktop layout (a share from the view has no PC
+            // sprite to auto-detect it from); others auto-detect or use npcOptions
+            isNetworkScreenContainer(containerState.containerItem) ? true : null,
             containerState.npcOptions // Restore NPC context if it was saved
         );
     } else {

@@ -110,8 +110,9 @@ function setup({ hosts = HOSTS, gone = false } = {}) {
     };
     Object.defineProperty(window, 'gameScenario', { configurable: true, get() { scenarioReads++; return {}; } });
     window.MinigameFramework = framework();
-    window.openRemoteSignIn = (row, footholdId) => signIns.push([row.id, footholdId]);
-    window.openRemoteDesktop = (pcId, footholdId) => desktops.push([pcId, footholdId]);
+    // As the real ones do, each starts its screen at once, replacing the view
+    window.openRemoteSignIn = (row, footholdId) => { signIns.push([row.id, footholdId]); window.MinigameFramework.startMinigame('password', null, {}); };
+    window.openRemoteDesktop = (pcId, footholdId) => { desktops.push([pcId, footholdId]); window.MinigameFramework.startMinigame('container', null, {}); };
     window.startContainerMinigame = (item, contents, takeable, desktop) => window.MinigameFramework.startMinigame('container', null, { containerItem: item, desktop });
     links = new NetworkLinks();
     window.networkLinks = links;
@@ -175,8 +176,7 @@ test('Sign in hands over to the remote sign-in screen: network_host_opened, no n
     assert.deepEqual(signIns, [['door_box', 'jack_comms_port']]);
     assert.deepEqual(named('network_host_opened'), [{ footholdId: 'jack_comms_port', hostId: 'door_box', kind: 'pc' }]);
     assert.equal(named('network_host_opened:door_box').length, 1);
-    // The sign-in screen replaces the view
-    window.MinigameFramework.startMinigame('password', null, {});
+    assert.equal(view()._sceneType, 'password', 'the sign-in screen replaced the view at once');
     await settle();
     assert.equal(named('network_view_closed').length, 0, 'a handover never closes the trip');
     assert.ok(links.trip, 'the trip goes on');
@@ -186,9 +186,24 @@ test('Open on a held session opens its desktop through the foothold', async () =
     setup();
     links.open('jack_comms_port');
     await settle();
+    const opener = view();
     row('data-host-id', 'lena_pc').querySelector('[data-action]').click();
     assert.deepEqual(desktops, [['lena_pc', 'jack_comms_port']]);
-    assert.equal(view().exitReason, 'handover');
+    assert.equal(opener.exitReason, 'handover');
+    assert.equal(view()._sceneType, 'container', 'the desktop replaced the view at once');
+});
+
+test('a row whose screen does not start leaves the view open, and its Close then ends the trip (review R1 minor 1)', async () => {
+    setup();
+    window.openRemoteDesktop = (pcId, footholdId) => { desktops.push([pcId, footholdId]); };
+    links.open('jack_comms_port');
+    await settle();
+    row('data-host-id', 'lena_pc').querySelector('[data-action]').click();
+    assert.equal(view()._sceneType, 'network-view');
+    assert.equal(view().exitReason, 'close');
+    document.querySelector('#minigame-cancel').click();
+    await settle();
+    assert.deepEqual(named('network_view_closed'), [{ footholdId: 'jack_comms_port', reason: 'closed' }]);
 });
 
 test('an open share opens in the container minigame directly, carrying sourceResourceId', async () => {

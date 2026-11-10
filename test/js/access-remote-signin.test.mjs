@@ -164,6 +164,35 @@ test('a remote lockable opens the sign-in screen with no /login_accounts request
     assert.equal(params.signIn.pcName, "Lena's PC (HB-FIN-02)");
 });
 
+test('the remote screen starts before /capture_secrets answers, and its Captured sign-ins fill in after (review R1 minor 1)', async () => {
+    setup();
+    window.gameState.globalVariables.se_captures = { lena: { targetId: 'lena', kind: 'password', roleLabel: 'Lena Fox', at: 1 } };
+    window.capturedSignIns = (captures, accounts) => Object.values(captures)
+        .filter(e => accounts[e.targetId]).map(e => ({ targetId: e.targetId, label: e.roleLabel, username: accounts[e.targetId], password: null }));
+    let answerSecrets;
+    window.ApiClient.get = (path) => { calls.push(['get', path]); return new Promise(r => { answerSecrets = r; }); };
+    const scene = { _sceneType: 'password', cleanup() {}, filled: null, setCapturedSignIns(list) { this.filled = list; } };
+    const start = window.MinigameFramework.startMinigame.bind(window.MinigameFramework);
+    window.MinigameFramework.startMinigame = (type, c, params) => {
+        const m = start(type, c, params);
+        if (type !== 'password') return m;
+        Object.assign(scene, { params });
+        window.MinigameFramework.currentMinigame = scene;
+        return scene;
+    };
+    const opening = openRemoteSignIn(LENA_ROW, 'jack_comms_port');
+    assert.equal(current(), scene, 'the screen is open before any answer');
+    assert.deepEqual(scene.params.signIn.captured, []);
+    assert.equal(scene.params.signIn.capturedLoading, true);
+    await settle();
+    assert.equal(scene.filled, null, 'nothing filled before the answer');
+    assert.deepEqual(calls.filter(c => c[0] === 'get'), [['get', '/capture_secrets']]);
+    answerSecrets({ accounts: { lena: 'lfox' }, secrets: {} });
+    await opening;
+    assert.deepEqual(scene.filled, [{ targetId: 'lena', label: 'Lena Fox', username: 'lfox', password: null }]);
+    delete window.capturedSignIns;
+});
+
 test('the remote option keeps a keyboard lockable off /login_accounts: no tiles and no sticky note (9.1 m5)', async () => {
     setup();
     window.ApiClient.loginAccounts = async (pcId) => { calls.push(['loginAccounts', pcId]); return { loginAccounts: [{ username: 'lfox' }], postitNote: 'lfox / Ledger-Lena-9' }; };

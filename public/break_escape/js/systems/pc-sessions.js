@@ -41,7 +41,8 @@
  *   pc_signin_shown    { pcId, usernames, usernameList, reason? } the sign-in screen opened with
  *                      these tiles; reason (when the caller knows it) is why: signin (no owner,
  *                      or an owner not present with no away record), locked (the owner is
- *                      away and the screen locked), attended, claim_refused, switch or direct
+ *                      away and the screen locked), attended, claim_refused, switch, direct
+ *                      or remote (the remote sign-in screen, opened over a network link)
  *   pc_desktop_opened  { pcId, npcId, via, restored, remote, footholdId }
  *                                                      a desktop loaded for a session; restored is
  *                                                      true for a session kept from before a reload

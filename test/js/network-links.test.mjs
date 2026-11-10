@@ -293,6 +293,18 @@ test('on load: a missing link item is shown again with no request; one already h
     assert.deepEqual(calls, []);
 });
 
+test('on load: the rebuilt link item takes the sprite, observations and storeIn the bootstrap carries (review R1 minor 2)', async () => {
+    await reset();
+    const observations = 'Your Network drop box on Spare wall port. Open it to see what it reaches.';
+    links.load([{ ...foothold, sprite: 'drop_box', observations, storeIn: 'capture_log' }], ['comms_port']);
+    assert.equal(links.restoreHandles(), 1);
+    const data = held(linkItem.id)[0].scenarioData;
+    assert.equal(data.sprite, 'drop_box');
+    assert.equal(data.observations, observations);
+    assert.equal(data.storeIn, 'capture_log');
+    assert.equal(links._deviceName(links.get('jack_comms_port')), 'Network drop box', 'the jack names the device again');
+});
+
 test('a room\'s jacks take their look when the room is made', async () => {
     await reset();
     links.load([foothold], ['comms_port', 'bench_port']);

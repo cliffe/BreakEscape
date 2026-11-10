@@ -222,14 +222,28 @@ export class NetworkViewMinigame extends MinigameScene {
             this.exitReason = 'handover';
             if (action === 'open') start(row.id, footholdId);
             else start(row, footholdId);
-            return true;
+            return this.handedOver();
         }
         if (row.kind === 'file_share' && row.open !== false && typeof window.startContainerMinigame === 'function') {
             this.exitReason = 'handover';
             window.startContainerMinigame(shareLockable(row, footholdId), null, false, true);
-            return true;
+            return this.handedOver();
         }
         return false;
+    }
+
+    /**
+     * The screen a row opens starts at once and replaces this view, which reports the
+     * handover from its cleanup. If nothing replaced it (no framework, a refused start),
+     * the view is still open and its own Close must end the trip: reason back to close
+     * (review R1 minor 1).
+     */
+    handedOver() {
+        if (window.MinigameFramework?.currentMinigame === this && !this._ending) {
+            this.exitReason = 'close';
+            return false;
+        }
+        return true;
     }
 
     cleanup() {

@@ -34,7 +34,8 @@ put('systems/inventory.js',
     'export function removeFromInventory() {}\n' +
     'export function inventoryImageKey(d) { return (typeof d?.sprite === "string" && d.sprite) || d?.type; }\n');
 for (const rel of ['minigames/container/container-item-image.js', 'minigames/framework/base-minigame.js',
-    'minigames/container/container-minigame.js', 'systems/pc-sessions.js']) copy(rel);
+    'minigames/container/container-minigame.js', 'systems/pc-sessions.js',
+    'minigames/framework/minigame-manager.js']) copy(rel);
 // The text-file reader with its own imports cut to what cleanup needs
 put('minigames/text-file/text-file-minigame.js', readFileSync(join(js, 'minigames/text-file/text-file-minigame.js'), 'utf8'));
 
@@ -42,7 +43,8 @@ const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true 
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 const imp = (rel) => import(pathToFileURL(join(dir, rel)));
-const { ContainerMinigame, isNetworkScreenContainer, networkScreenKind } = await imp('minigames/container/container-minigame.js');
+const { ContainerMinigame, isNetworkScreenContainer, networkScreenKind, networkReturnArmed, disarmNetworkReturn,
+    returnToContainerAfterNotes } = await imp('minigames/container/container-minigame.js');
 const { adds } = await imp('systems/inventory.js');
 const { PcSessions } = await imp('systems/pc-sessions.js');
 let TextFileMinigame = null;
@@ -68,11 +70,17 @@ let fetches, events, interactions, unlocks, landings, started, sessions;
 function setup() {
     fetches = []; events = []; interactions = []; unlocks = []; landings = []; started = []; adds.length = 0;
     document.body.innerHTML = '';
+    disarmNetworkReturn();
     window.pendingContainerReturn = null;
     window.pendingTextFileReturn = null;
     window.breakEscapeConfig = { gameId: 9 };
     window.inventory = { items: [] };
-    window.eventDispatcher = { emit: (n, d) => events.push([n, d]), on: () => {} };
+    const listeners = new Map();
+    window.eventDispatcher = {
+        emit: (n, d) => { events.push([n, d]); [...(listeners.get(n) || [])].forEach(fn => fn(d)); },
+        on: (n, fn) => { if (!listeners.has(n)) listeners.set(n, new Set()); listeners.get(n).add(fn); },
+        off: (n, fn) => listeners.get(n)?.delete(fn)
+    };
     window.gameAlert = () => {};
     window.playUISound = () => {};
     window.ApiClient = {
@@ -253,4 +261,157 @@ test('a folder below a share from the view is a share screen; an ordinary nested
     assert.equal(networkScreenKind({ scenarioData: { id: 'f' }, sourceResourceId: 'scanned_inbox', parentLockable: share }), 'share');
     assert.equal(networkScreenKind({ scenarioData: { id: 'f' }, sourcePcId: 'sam_pc' }), null);
     assert.equal(isNetworkScreenContainer({ scenarioData: { id: 'f' } }), false);
+});
+
+// A stand-in lock screen (the PIN pad): it ends as base-minigame's complete() does, emitting
+// minigame_completed or minigame_failed before the framework ends it.
+function openPinPad() {
+    return window.MinigameFramework.startMinigame('pin', null, { title: 'PIN' });
+}
+function endPinPad(success) {
+    window.eventDispatcher.emit(success ? 'minigame_completed' : 'minigame_failed', { minigameName: 'PinMinigame', success });
+    window.MinigameFramework.endMinigame(success, null);
+}
+
+test('a cancelled PIN pad on a folder in a mapped share returns to the share, with no stale return (review R1 M1)', async () => {
+    setup();
+    await openRemote();
+    icon('Ledger-Archive').click();
+    await settle();
+    const share = current().containerItem;
+    window.handleObjectInteraction = (sprite) => { interactions.push(sprite); openPinPad(); };
+    current().handleInteractiveItem(YEAR_END, null);
+    assert.equal(current()._sceneType, 'pin', 'the PIN pad is open');
+    assert.equal(networkReturnArmed(), true);
+    await settle();
+    assert.equal(current()._sceneType, 'pin', 'the pad is not covered while open');
+    endPinPad(false);
+    await settle();
+    assert.equal(current()?.containerItem, share, 'back in the share');
+    assert.equal(window.pendingContainerReturn, null, 'the return is spent');
+    assert.equal(networkReturnArmed(), false);
+});
+
+test('a cancelled PIN pad on a folder in a share from the view returns to that share; a world text file afterwards closes to the world', async (t) => {
+    setup();
+    window.startContainerMinigame(viewShare(), null, false, true);
+    await settle();
+    window.handleObjectInteraction = (sprite) => { interactions.push(sprite); openPinPad(); };
+    current().handleInteractiveItem({ ...YEAR_END }, null);
+    assert.deepEqual(landings.at(-1), ['share', 'item', {}], 'the share handed over');
+    endPinPad(false);
+    await settle();
+    assert.equal(current()?.containerItem?.scenarioData?.id, 'scanned_inbox', 'back in the share');
+    assert.equal(current().desktopMode, true, 'in its desktop layout');
+    assert.equal(window.pendingContainerReturn, null);
+    if (!TextFileMinigame) { t.skip('text-file minigame did not load here'); return; }
+    window.MinigameFramework.endMinigame(false, null);
+    await settle();
+    window.MinigameFramework.startMinigame('text-file', null, { fileName: 'memo.txt', fileContent: 'A memo in a room.' });
+    window.MinigameFramework.endMinigame(false, null);
+    await new Promise(r => setTimeout(r, 80));
+    assert.equal(current(), null, 'the world text file closes to the world');
+});
+
+test('a key-locked folder without the key (an alert, no minigame) returns to the remote desktop at once', async () => {
+    setup();
+    await openRemote();
+    const desktop = current().containerItem;
+    window.handleObjectInteraction = (sprite) => { interactions.push(sprite); /* the "Requires key" alert only */ };
+    current().handleInteractiveItem({ id: 'hr_folder', type: 'safe', name: 'HR', locked: true, lockType: 'key' }, null);
+    assert.equal(current(), null);
+    await settle();
+    assert.equal(current()?.containerItem, desktop, 'back on the desktop');
+    assert.equal(window.pendingContainerReturn, null);
+    assert.equal(networkReturnArmed(), false);
+});
+
+test('a PIN pad that unlocks its folder hands over to the folder, not back to the share', async () => {
+    setup();
+    await openRemote();
+    icon('Ledger-Archive').click();
+    await settle();
+    const share = current().containerItem;
+    window.handleObjectInteraction = (sprite) => { interactions.push(sprite); openPinPad(); };
+    current().handleInteractiveItem(YEAR_END, null);
+    const stand = interactions.at(-1);
+    endPinPad(true);
+    await settle();
+    assert.equal(current(), null, 'nothing is reopened while the unlock opens its folder');
+    assert.equal(networkReturnArmed(), true);
+    window.startContainerMinigame({ ...stand, scenarioData: { ...YEAR_END, locked: false } }, null, false, true);
+    await settle();
+    assert.equal(networkReturnArmed(), false, 'the folder opening spends the return');
+    assert.equal(current().containerItem.scenarioData.id, 'ledger_yearend');
+    document.querySelector('#minigame-cancel').click();
+    await settle();
+    assert.equal(current().containerItem, share, 'and its Close is back in the share');
+});
+
+test('a hand-over from an ordinary container arms no return', async () => {
+    setup();
+    window.startContainerMinigame({ scenarioData: { id: 'cabinet', name: 'Cabinet', type: 'safe', locked: false } }, null, false, false);
+    await settle();
+    window.handleObjectInteraction = (sprite) => { interactions.push(sprite); openPinPad(); };
+    current().handleInteractiveItem({ ...YEAR_END }, null);
+    assert.equal(networkReturnArmed(), false);
+    endPinPad(false);
+    await settle();
+    assert.equal(current(), null, 'the world, as before');
+});
+
+test('a note read from a share from the view is added with its share; the share comes back in its desktop layout (review R1 minor 4)', async () => {
+    setup();
+    window.startContainerMinigame(viewShare(), null, false, true);
+    await settle();
+    const memo = { id: 'memo', type: 'notes', name: 'Memo', readable: true, text: 'A memo.' };
+    current().handleInteractiveItem(memo, null);
+    assert.equal(window.pendingContainerReturn.sourceExtras.sourceResourceId, 'scanned_inbox');
+    window.addToInventory = (sprite) => adds.push(sprite);
+    window.expectPanelWithin = () => {};
+    returnToContainerAfterNotes();
+    await settle();
+    assert.equal(adds.at(-1).sourceResourceId, 'scanned_inbox');
+    assert.equal(current()?.containerItem?.scenarioData?.id, 'scanned_inbox');
+    assert.equal(current().desktopMode, true);
+});
+
+// The jsdom mock above ends a minigame as minigame-manager.js does today; this one drives a
+// trip through the real manager (and base-minigame's complete()), so the two cannot drift
+// apart unnoticed (review R1 minor 5).
+test('through the real minigame manager: desktop, share, a cancelled PIN pad, back to the share, its Close back to the desktop', async () => {
+    setup();
+    const { MinigameFramework: MF } = await imp('minigames/framework/minigame-manager.js');
+    const { MinigameScene } = await imp('minigames/framework/base-minigame.js');
+    class PinPad extends MinigameScene {}
+    MF.registeredScenes = {};
+    MF.registerScene = MF.registerScene || function (t, C) { this.registeredScenes[t] = C; };
+    MF.registeredScenes.container = ContainerMinigame;
+    MF.registeredScenes.pin = PinPad;
+    MF.currentMinigame = null;
+    MF.mainGameScene = {};
+    window.resumeKeyboardInput = () => {};
+    window.pauseKeyboardInput = () => {};
+    window.MinigameFramework = MF;
+    try {
+        await openRemote();
+        const desktop = current().containerItem;
+        icon('Ledger-Archive').click();
+        await settle();
+        const share = current().containerItem;
+        assert.equal(share.scenarioData.id, 'ledger_archive');
+        window.handleObjectInteraction = (sprite) => { interactions.push(sprite); MF.startMinigame('pin', null, { title: 'PIN' }); };
+        current().handleInteractiveItem(YEAR_END, null);
+        assert.ok(current() instanceof PinPad);
+        current().complete(false); // the pad's Close
+        await settle();
+        assert.equal(current()?.containerItem, share, 'back in the share');
+        assert.equal(window.pendingContainerReturn, null);
+        current().complete(false); // the share's Close
+        await settle();
+        assert.equal(current()?.containerItem?.scenarioData?.id, desktop.scenarioData.id, 'back on the desktop');
+        assert.equal(named('minigame_failed').length, 4, 'desktop, share, pad and share each ended once');
+    } finally {
+        if (MF.currentMinigame) MF.endMinigame(false, null);
+    }
 });
