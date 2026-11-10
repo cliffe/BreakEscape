@@ -4,6 +4,7 @@ module BreakEscape
 
     include CarryOver
     include ScoreBreakdown
+    include NetworkAccess
 
     # Associations
     belongs_to :player, polymorphic: true
@@ -1122,7 +1123,9 @@ module BreakEscape
     # preserved_keys, so a reset drops them all and initialize_player_state refills them.
     ACCESS_STATE_DEFAULTS = {
       'sessions' => {}, 'signedInPcs' => [], 'loginFailures' => {}, 'loginLockouts' => [],
-      'copiedItems' => [], 'serverClones' => {}
+      'copiedItems' => [], 'serverClones' => {},
+      # Networks (slice 9.3a, NetworkAccess): footholds held now, and every jack one was gained from
+      'footholds' => {}, 'gainedFootholds' => []
     }.freeze
 
     # loginFailures and loginLockouts keep at most this many entries for usernames that
@@ -4059,6 +4062,9 @@ module BreakEscape
           stamp_contents_ids!(obj)
         end
       end
+
+      # Resources' contents (slice 9.3a): `<resourceId>_content_<n>`.
+      stamp_resource_content_ids!
 
       # Account profiles (access model 5.1): `<profile>_content_<n>`, nested as above.
       profiles = scenario_data['accountProfiles']
