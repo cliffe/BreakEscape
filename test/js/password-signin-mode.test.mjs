@@ -31,7 +31,7 @@ const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true 
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 const {
-    PasswordMinigame, applyTilePortrait, isTalkSheetSize, tileInitials, portraitUrl, signInRefusalMessage
+    PasswordMinigame, applyTilePortrait, isTalkSheetSize, tileInitials, portraitUrl, signInRefusalMessage, capturedSignIns
 } = await import(pathToFileURL(join(dir, 'minigames/password/password-minigame.js')));
 
 const TILES = [
@@ -175,7 +175,7 @@ function fakeImage(sizes) {
         get src() { return this._src; }
     };
 }
-const settle = () => new Promise(r => setTimeout(r, 5));
+const settle = () => new Promise(r => setTimeout(r, 25));
 
 test('the talk-sheet rule and portrait URLs', () => {
     assert.equal(isTalkSheetSize(256, 256), true);
@@ -232,4 +232,74 @@ test('the refusal line', () => {
     assert.equal(signInRefusalMessage(wrong(null)), 'Incorrect username or password.');
     assert.equal(signInRefusalMessage({ reason: 'locked_out', message: 'This account is locked on this PC', attemptsLeft: 0 }),
         'This account is locked on this PC.');
+});
+
+// ---------------------------------------------------------------- slice 9.3a step 8 (4.4)
+
+const CAPTURES = {
+    lena: { targetId: 'lena', kind: 'credential', address: 'lfox', roleLabel: 'Finance (Lena)', at: 2 },
+    portal: { targetId: 'portal', kind: 'credential', address: 'someone@example.test', roleLabel: 'Staff portal', at: 1 },
+    ian: { targetId: 'ian', kind: 'credential', address: 'ishaw', at: 3 },
+    dev: { targetId: 'dev', kind: 'foothold', at: 4 }
+};
+
+function openRemote(captured = []) {
+    ended = []; signIns = []; alerts = [];
+    document.body.innerHTML = '<div id="mg"></div>';
+    window.MinigameFramework = { currentMinigame: null, endMinigame: (success, result) => ended.push([success, result]) };
+    window.pcSessions = {
+        signIn: async (...a) => { signIns.push(a); return typeof nextResult === 'function' ? nextResult() : nextResult; }
+    };
+    const mg = new PasswordMinigame(document.getElementById('mg'), {
+        title: "Lena's PC", type: 'item',
+        signIn: { pcId: 'lena_pc', pcName: "Lena's PC (HB-FIN-02)", picker: false, tiles: [], current: null,
+            remote: { footholdId: 'jack_comms_port', linkName: 'Drop box: comms room' }, captured },
+        postitNote: '', showPostit: false
+    });
+    window.MinigameFramework.currentMinigame = mg;
+    mg.init();
+    mg.start();
+    return mg;
+}
+
+test('9.3a: the captured list shows only targets in accounts; the password only when secrets has it', () => {
+    const list = capturedSignIns(CAPTURES, { lena: 'lfox', ian: 'ishaw', dev: 'x' }, { lena: 'Ledger-Lena-9' });
+    assert.deepEqual(list, [
+        { targetId: 'lena', label: 'Finance (Lena)', username: 'lfox', password: 'Ledger-Lena-9' },
+        { targetId: 'ian', label: 'ishaw', username: 'ishaw', password: null }
+    ], 'a landing-page capture and a foothold are never offered');
+    assert.deepEqual(capturedSignIns({}, { lena: 'lfox' }, {}), [], 'empty with no captures');
+    assert.deepEqual(capturedSignIns(CAPTURES, undefined, undefined), [], 'a missing accounts map is {}');
+});
+
+test('9.3a: the remote screen has no tiles, says how it is reached, and a capture fills the form', () => {
+    const mg = openRemote(capturedSignIns(CAPTURES, { lena: 'lfox', ian: 'ishaw' }, { lena: 'Ledger-Lena-9' }));
+    assert.equal(document.querySelectorAll('.signin-tile').length, 0);
+    assert.match(q('.signin-remote').textContent, /Remote sign-in through Drop box: comms room/);
+    const items = [...document.querySelectorAll('.signin-captured-item')];
+    assert.deepEqual(items.map(b => b.textContent), ['Finance (Lena) (lfox)', 'ishaw (ishaw)']);
+    items[1].click();
+    assert.equal(q('#signin-username').value, 'ishaw', 'the username always');
+    assert.equal(q('#password-field').value, '', 'no password the server has not served');
+    items[0].click();
+    assert.equal(q('#signin-username').value, 'lfox');
+    assert.equal(q('#password-field').value, 'Ledger-Lena-9');
+    assert.deepEqual(mg.getTestState().signIn.captured.map(c => [c.username, c.fillsPassword]), [['lfox', true], ['ishaw', false]]);
+    assert.equal(JSON.stringify(mg.getTestState()).includes('Ledger-Lena-9'), false, 'the test state carries no password');
+});
+
+test('9.3a: with no captures the list says so', () => {
+    openRemote([]);
+    assert.equal(document.querySelectorAll('.signin-captured-item').length, 0);
+    assert.match(q('#signin-captured').textContent, /None yet/);
+});
+
+test('9.3a: a remote sign-in sends the foothold through pc-sessions', async () => {
+    nextResult = { ok: false, reason: 'remote_blocked', message: 'Remote sign-in is turned off on this PC', attemptsLeft: null };
+    const mg = openRemote([]);
+    q('#signin-username').value = 'lfox';
+    q('#password-field').value = 'Ledger-Lena-9';
+    await mg.submitPassword();
+    assert.deepEqual(signIns, [['lena_pc', 'lfox', 'Ledger-Lena-9', { foothold: 'jack_comms_port' }]]);
+    assert.equal(messageText(), 'Remote sign-in is turned off on this PC.');
 });

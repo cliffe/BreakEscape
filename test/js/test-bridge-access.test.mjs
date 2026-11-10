@@ -167,3 +167,19 @@ test('networkView() returns the last view fetched for a foothold, or null', () =
   assert.equal(accessBridge.networkView('jack_other'), null);
   delete window.networkLinks;
 });
+
+test('the event log keeps network_* events (slice 9.3a step 8)', async () => {
+  writeFileSync(join(dir, 'systems/test-bridge/wait.js'), 'export function safeJson(v) { return JSON.parse(JSON.stringify(v ?? null)); }\n');
+  writeFileSync(join(dir, 'systems/test-bridge/log.js'), readFileSync(join(js, 'systems/test-bridge/log.js'), 'utf8'));
+  globalThis.performance ??= { now: () => 0 };
+  const emitted = [];
+  window.eventDispatcher = { emit: (n, d) => emitted.push(n) };
+  const log = await import(pathToFileURL(join(dir, 'systems/test-bridge/log.js')));
+  assert.equal(log.installEventCapture(), true);
+  window.eventDispatcher.emit('network_viewed', { networkId: 'office_lan' });
+  window.eventDispatcher.emit('network_view_closed:jack_comms_port', { reason: 'closed' });
+  window.eventDispatcher.emit('npc_tick_chatter_x', {});
+  window.eventDispatcher.emit('some_noise', {});
+  assert.deepEqual(log.peek().map(e => e.event), ['network_viewed', 'network_view_closed:jack_comms_port', 'npc_tick_chatter_x']);
+  assert.equal(emitted.length, 4, 'every event still reaches the dispatcher');
+});
