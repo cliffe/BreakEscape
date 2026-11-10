@@ -1023,7 +1023,7 @@ const vmSteps = createVmSteps({
       return { ok: true, clicked: target };
     },
 
-    /** Everything interactable in a room, at any distance — for finding things. */
+    /** Everything interactable in a room, at any distance: for finding things. */
     room: async (c) => {
       return page.evaluate(id => window.__test.roomContents(id || null), c.id || null);
     },
