@@ -154,9 +154,11 @@ Server: `copiedItems` has `inbox_letter`.
 From the view, `HB-FIN-02` (the finance door still locked). No tiles. Sam's right password:
 "This account can't sign in on this PC". A wrong password for Lena: 4 attempts left. Lena's
 password from the letter opens her desktop, its header naming her and "Remote session through
-Drop box: comms room", with the finance share mapped. Read the handover note (back on Lena's
-desktop when the reader closes); open the locked folder with the PIN from the note. Task
-`p5_remote_signin` completes.
+Drop box: comms room", with the finance share mapped. Open the finance share and read the
+handover note: closing the reader shows the finance share again, and closing the share shows
+Lena's desktop. Open the locked folder in the share with the PIN from the note; closing the folder
+shows the share again. Task `p5_remote_signin` completes. No close on the way drops the player
+into the world: only closing the view does.
 
 Server: `sessions.lena_pc = { id: "lena", via: "password", foothold: "jack_comms_port" }`;
 `signedInPcs` has `lena_pc`; `finance_office` still locked; no failure entry for Lena (her sign-in

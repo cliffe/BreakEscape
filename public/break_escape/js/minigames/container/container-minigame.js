@@ -43,6 +43,22 @@ export function isNetworkScreenContainer(item) {
 }
 if (typeof window !== 'undefined') window.isNetworkScreenContainer = isNetworkScreenContainer;
 
+/**
+ * Which network screen a container is, for networkLinks.landed (4.3): 'desktop' for a remote
+ * desktop or anything opened below one, 'share' for a share opened from the view or anything
+ * opened below it, null for any other container.
+ */
+export function networkScreenKind(item) {
+    if (!item || typeof item !== 'object') return null;
+    const data = item.scenarioData || {};
+    if (data.remote && data.remote.footholdId) return 'desktop';
+    if (data.networkShare && data.networkShare.footholdId) return 'share';
+    if (item.parentLockable) return networkScreenKind(item.parentLockable);
+    if (item.sourceResourceId && !item.sourcePcId) return 'share';
+    const pcId = item.sourcePcId;
+    return pcId && typeof window !== 'undefined' && window.pcSessions?.get?.(pcId)?.remote === true ? 'desktop' : null;
+}
+
 /** The folder picture for a share stub (it has no object sprite of its own). */
 const SHARE_ICON = '/break_escape/assets/objects/m09_folder1.png';
 
@@ -317,9 +333,11 @@ export class ContainerMinigame extends MinigameScene {
     /**
      * A network screen says why it closed (4.3, "Getting back"): exitReason is close unless
      * the closing path set another (handover, switch, item, share, no_session, unreachable,
-     * or a session end: sign_out, link_dropped, displaced). A mapped share closed by its
-     * Close reopens the desktop it was opened from; a folder from a remote desktop reopens
-     * that desktop; every other network screen hands the pair to networkLinks.landed.
+     * or a session end: sign_out, link_dropped, displaced). A container opened from another
+     * (a mapped share, or a folder opened below a network screen: parentLockable) reopens
+     * that container when closed by its Close; a folder from a remote desktop with no parent
+     * recorded reopens that desktop; every other network screen hands the pair to
+     * networkLinks.landed.
      * Other containers report nothing.
      */
     reportNetworkExit() {
@@ -337,8 +355,9 @@ export class ContainerMinigame extends MinigameScene {
                         window.startContainerMinigame(parent, null, false, true);
                     }
                 }, 0);
-            } else if (isNetworkScreenContainer(parent)) {
-                links?.landed?.('desktop', reason, this.networkDetail());
+            } else {
+                const kind = networkScreenKind(parent);
+                if (kind) links?.landed?.(kind, reason, kind === 'desktop' ? this.networkDetail() : {});
             }
             return;
         }
@@ -742,6 +761,17 @@ export class ContainerMinigame extends MinigameScene {
         if (typeof window.startContainerMinigame === 'function') window.startContainerMinigame(share, null, false, true);
     }
 
+    /**
+     * What a stand-in for an item opened from here (a reader, a locked folder) carries: its
+     * source, and below a network screen this container as its parent, so a folder that opens
+     * from it reopens it on Close (4.3; the plan's round 3 review, R3-M1).
+     */
+    childExtras() {
+        const extras = this.sourceExtras();
+        if (this.mode !== 'npc' && isNetworkScreenContainer(this.containerItem)) extras.parentLockable = this.containerItem;
+        return extras;
+    }
+
     /** What a stand-in for an item taken or read from here carries: the PC or the share it came from. */
     sourceExtras() {
         if (this.mode === 'npc') return {};
@@ -926,7 +956,7 @@ export class ContainerMinigame extends MinigameScene {
                 scenarioData: item,
                 name: item.type,
                 objectId: `temp_${Date.now()}`,
-                ...this.sourceExtras()
+                ...this.childExtras()
             };
             
             // Delegate to main game's handler for viewing/reading items (notes, phone, files, etc.)
@@ -972,7 +1002,7 @@ export class ContainerMinigame extends MinigameScene {
             scenarioData: item,
             name: item.type,
             objectId: `temp_${Date.now()}`,
-            ...this.sourceExtras()
+            ...this.childExtras()
         };
         
         // Delegate to main game's handler for viewing/reading items (notes, phone, files, etc.)
