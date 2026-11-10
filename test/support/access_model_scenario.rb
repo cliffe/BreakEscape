@@ -65,7 +65,9 @@ module AccessModelScenario
               'position' => { 'x' => 3, 'y' => 3 },
               'role' => 'finance',
               'creds' => { 'username' => 'jbrooks', 'password' => JAKE_PASSWORD, 'card' => JAKE_CARD.dup },
-              'awareness' => 'low', 'habits' => { 'writesDown' => false }, 'workarounds' => ['shared_drive'],
+              # high (slice 9.1): its locksScreen always fills screenHabit lockChance 1, which
+              # leaves every claim as it was before habits had an effect.
+              'awareness' => 'high', 'habits' => { 'writesDown' => false }, 'workarounds' => ['shared_drive'],
               'needsHome' => 'jake_pc',
               'usePayload' => { 'host' => 'LW-FIN-01' },
               'eventMappings' => [

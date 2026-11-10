@@ -398,6 +398,7 @@ def check_unknown_fields(json_data)
     ttsPregenerateChatter
     accountProfiles policies defaultPolicy
     networks networkLinks resources
+    roles
   ]
 
   # Check top-level unknown fields
@@ -426,6 +427,7 @@ def check_unknown_fields(json_data)
     maxQueue needsDeferMin exchanges chatterCooldownMin swivel swivelChance screenHabit printHabit
     answersPhones phoneCalls
     role creds staff cloneable
+    awareness habits
     observations disableClose los rfidCard chatBackground spriteStyle gender portraitVariants _comment
   ]
 

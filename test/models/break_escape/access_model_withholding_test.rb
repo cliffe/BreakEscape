@@ -27,6 +27,46 @@ module BreakEscape
       AccessModelScenario::PASSWORDS.each { |pw| refute_includes room.to_json, pw }
     end
 
+    # Slice 9.1 step 1: awareness, habits and the top-level roles never reach the browser;
+    # the filled screenHabit does, and no PC gains a lock field.
+    def habits_scenario
+      data = AccessModelScenario.scenario
+      data['roles'] = { 'finance' => { 'awareness' => 'low' }, 'staff' => { 'awareness' => 'medium' } }
+      dana = data['rooms']['finance']['npcs'].find { |n| n['id'] == 'dana' }
+      dana['habits'] = { 'password' => 'strong' }
+      jake = data['rooms']['finance']['npcs'].find { |n| n['id'] == 'jake' }
+      jake['awareness'] = 'low'
+      data
+    end
+
+    test 'awareness and habits are in no room data (a door unlock uses the same filter) or added NPC; no roles in the bootstrap' do
+      game = build(scenario: habits_scenario)
+      stored = game.scenario_data['rooms']['finance']['npcs']
+      assert stored.all? { |n| n.key?('habits') }, 'the saved data keeps the expanded habits'
+
+      room = game.filtered_room_data('finance')
+      room['npcs'].each do |npc|
+        refute npc.key?('awareness'), npc['id']
+        refute npc.key?('habits'), npc['id']
+      end
+      jake = room['npcs'].find { |n| n['id'] == 'jake' }
+      assert_equal({ 'lockChance' => 0 }, jake['screenHabit'], 'the filled screenHabit reaches the browser')
+      room['objects'].each do |obj|
+        refute obj.key?('lockChance'), obj['id']
+        refute obj.key?('locksScreenOnLeave'), obj['id']
+      end
+
+      assert game.move_npc_to_room!('jake', 'finance', 'lobby')
+      moved = game.filtered_room_data('lobby')['npcs'].find { |n| n['id'] == 'jake' }
+      refute moved.key?('awareness')
+      refute moved.key?('habits')
+
+      filtered = game.filtered_scenario_for_bootstrap
+      refute filtered.key?('roles')
+      refute_includes filtered.to_json, '"awareness"'
+      refute_includes filtered.to_json, '"habits"'
+    end
+
     test 'an account holder keeps usePayload address and host but not its secret, nor any addCapture secret' do
       scenario = AccessModelScenario.scenario
       jake = scenario['rooms']['finance']['npcs'].find { |n| n['id'] == 'jake' }

@@ -799,15 +799,17 @@ module BreakEscape
     end
 
     # Run the access model loader, then stamp object ids (ACCESS_MODEL_PLAN.md,
-    # step 1). generate_scenario_data calls it once at creation; a test that
-    # hand-writes scenario_data calls it through create_access_game, because
-    # generate_scenario_data returns at once when scenario_data is already set.
-    # Both steps are idempotent.
+    # step 1), then expand NPC awareness and habits (slice 9.1, 5.2), last so it sees
+    # the ids the server's own owner lookup sees. generate_scenario_data calls it once
+    # at creation; a test that hand-writes scenario_data calls it through
+    # create_access_game, because generate_scenario_data returns at once when
+    # scenario_data is already set. All three steps are idempotent.
     def prepare_scenario_data!
       return unless scenario_data.is_a?(Hash)
 
       normalise_access_model!
       stamp_scenario_object_ids!
+      BreakEscape::NpcHabits.expand!(scenario_data)
     end
 
     # An NPC has an account when creds.username is a non-empty string (section 3).
@@ -892,6 +894,10 @@ module BreakEscape
       # sign-in session, never in the bootstrap. policies and defaultPolicy hold no
       # secrets and ship as authored (5.5).
       filtered.delete('accountProfiles')
+
+      # The top-level roles (slice 9.1, 5.2; slice 9.2 adds its own keys): default
+      # awareness levels by role. Nothing in the browser reads it.
+      filtered.delete('roles')
 
       # Networks (slice 9.3a, section 6): a network's name and what it exposes reach the
       # browser only through GET /network and GET /container, for a foothold or session
@@ -1446,13 +1452,23 @@ module BreakEscape
       self.class.scenario_room_npcs(scenario_data).find { |npc| npc['needsHome'] == pc['id'] }
     end
 
-    # A screen that locks on every leave: lockChance 1, or no lockChance and
-    # locksScreenOnLeave not false (the default locks, workstation-state.js decideLocked).
-    def pc_always_locks?(pc)
-      chance = pc['lockChance']
-      return chance >= 1 if chance.is_a?(Numeric)
+    # A screen that locks on every leave, in decideLocked's order without the policy: the
+    # PC's lockChance, else its locksScreenOnLeave, else the owner's screenHabit, authored or
+    # filled by a locksScreen habit (slice 9.1, 5.2).
+    def pc_always_locks?(pc, owner = login_pc_owner(pc))
+      BreakEscape::AccessIdentities.screen_always_locks?(pc, owner)
+    end
 
-      pc['locksScreenOnLeave'] != false
+    # A habit from the saved, expanded scenario data (slice 9.1, 5.2), or nil. Every server
+    # read of a habit goes through here.
+    def npc_habit(npc, name)
+      habits = npc.is_a?(Hash) ? npc['habits'] : nil
+      habits.is_a?(Hash) ? habits[name] : nil
+    end
+
+    # Is this person's password on a note (slice 9.1, 5.3)? Slice 9.2 adds its workaround.
+    def written_down?(npc)
+      npc_habit(npc, 'writesDown') == true
     end
 
     # POST /login with a username and password (section 6). Returns { status:, body: }.
@@ -1527,7 +1543,7 @@ module BreakEscape
       return refusal.call('owner not tracked by the needs system') unless self.class.needs_tracked?(owner)
       return refusal.call('owner has no account') unless self.class.account_holder?(owner)
       return refusal.call('access list does not admit the owner') unless pc_admits_account?(pc, owner)
-      return refusal.call('the screen always locks') if pc_always_locks?(pc)
+      return refusal.call('the screen always locks') if pc_always_locks?(pc, owner)
 
       auto_lock = effective_policy(pc)['autoLockMin']
       return refusal.call('policy autoLockMin is 0') if auto_lock.is_a?(Numeric) && auto_lock.zero?

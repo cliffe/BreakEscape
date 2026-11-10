@@ -136,6 +136,26 @@ module BreakEscape
       out
     end
 
+    # Does every leave lock this screen? decideLocked's order (workstation-state.js) without
+    # the policy: the PC's numeric lockChance, else its locksScreenOnLeave key, else the
+    # owner's screenHabit (slice 9.1, 5.2). A habit that is not an object, or no habit, locks;
+    # a habit with a numeric lockIfAwayOverSeconds can leave it open on a short trip; else the
+    # habit's numeric lockChance must be 1 or more; a habit with neither locks. The rule of
+    # ValidateNpcNeeds.habit_leaves_open?, negated, wherever the PC sets no field.
+    def screen_always_locks?(pc, owner)
+      pc = {} unless pc.is_a?(Hash)
+      chance = pc['lockChance']
+      return chance >= 1 if chance.is_a?(Numeric)
+      return pc['locksScreenOnLeave'] != false if pc.key?('locksScreenOnLeave')
+
+      habit = owner.is_a?(Hash) ? owner['screenHabit'] : nil
+      return true unless habit.is_a?(Hash)
+      return false if habit['lockIfAwayOverSeconds'].is_a?(Numeric)
+      return habit['lockChance'] >= 1 if habit['lockChance'].is_a?(Numeric)
+
+      true
+    end
+
     def sign_in_pcs(scenario)
       room_objects(scenario).select { |entry| login_pc?(entry[:object]) }
     end
