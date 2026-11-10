@@ -139,7 +139,11 @@ A door entry in a room's `doors` array can carry a `gate`: it opens for listed N
 | `openFor` | — | NPC ids (string or list) whose approach opens it |
 | `openRadius` | `56` | Pixels from the door centre at which an `openFor` NPC opens it |
 | `holdMs` | `2500` | How long it stays open after the last NPC leaves (the tailgate window) |
-| `playerMayPassIf` | none | A global. While it is false, a player who comes within `openRadius` of the open gate shuts it |
+| `playerMayPassIf` | none | A global. While it is false, a player who comes within `openRadius` of the open gate shuts it, until the guard has been kept out for 5 s (see below) |
+
+`playerMayPassIf` is not a lock. A guard kept out of his own door for 5 s is let through anyway, and the door then stays open long enough for a player standing there to follow. Credit entry on the same global as well (as `lab_physical_pentest` does with `courier_ready`), and add a challenge with `closeDoor` if the guard should react.
+
+A guard who is kept out waits where he stands if he is inside `openRadius`, and walks back to the front of his door if he has been moved out of it (pushed by the player, say). Two limits follow from how he finds that door: give a guard one gate per pair of rooms, and make the gate the only shut door on that leg of his route. With two gates into one room he may be sent to the one he cannot reach, and a leg blocked by an ordinary locked door further on would walk him to the gate and hold it open while he stands there.
 
 N/S doorways only; E/W gates are untested. Events: `door_gate_opened`, `door_gate_closed`, `door_gate_denied` (a bare click), `door_gate_player_opened` (credential accepted). An NPC mapping's `closeDoor` shuts one early. See `docs/achitechture/TAILGATE_REDESIGN.md`.
 

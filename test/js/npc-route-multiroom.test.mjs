@@ -256,6 +256,61 @@ test('no gate to walk to, a gate he already stands at, or no path to it: back of
     assert.equal(r.b._pathfindingInProgress, false);
 });
 
+test('a move that starts while the leg\'s answer is on its way keeps its target: no walk to the gate', async () => {
+    // The leg's own callback did not check that the leg was still wanted. A goToAndStay begun
+    // in the tick between the request and a "no path" answer had its target overwritten by the
+    // walk to the gate, and then "arrived" at the gate for a destination it never reached.
+    const { b } = setup({ bLoaded: true, bLocked: false });
+    let release = null;
+    b.pathfindingManager.findWorldPath = (sx, sy, ex, ey, cb) => { release = cb; };
+    let asked = 0;
+    window.doorGates = { approachPoint: () => { asked++; return { x: 100, y: 368, roomId: 'a', connectedRoom: 'b' }; } };
+    b.config = await silently(() => b.parseConfig({ patrol: { enabled: true, multiRoom: true, route: ROUTE } }));
+    b.config.patrol.currentSegmentIndex = 1;
+    b.config.patrol.waypointIndex = 0;
+    await silently(() => b.chooseNewPatrolTarget(0));
+    assert.equal(typeof release, 'function', 'the leg request is in flight');
+    const moveTarget = { x: 500, y: 500, dwellTime: 0 };   // what a goToAndStay sets
+    b.patrolTarget = moveTarget;
+    await silently(() => release(null));
+    assert.equal(asked, 0, 'the gate is not asked for');
+    assert.equal(b.patrolTarget, moveTarget, 'the move keeps its target');
+    delete window.doorGates;
+});
+
+test('with the real gate system: kept out at his reader he waits; pushed out of the radius he walks back', async () => {
+    // The two halves (approachPoint and _approachRouteGate) run together here. Each was
+    // tested against a stand-in for the other, which is how a guard standing inside his
+    // gate's radius came to be sent to the door front.
+    const { DoorGates } = await import('data:text/javascript;base64,' + Buffer.from(readFileSync(join(js, 'systems/door-gates.js'), 'utf8')).toString('base64'));
+    const run = async (feet) => {
+        const { b, requests } = setup({ bLoaded: true, bLocked: false,
+            pathOk: (x, y) => x === 100 && y === 368 });         // only the door front can be reached
+        b.npcBodyPos = () => feet;
+        const gates = new DoorGates();
+        gates.register({ x: 100, y: 320, active: true, body: { enable: true },
+            doorProperties: { roomId: 'a', connectedRoom: 'b', direction: 'north', worldX: 100, worldY: 320, open: false } },
+            { openFor: ['guard'], openRadius: 72, holdMs: 2500, playerMayPassIf: 'disguised' });
+        window.doorGates = gates;
+        b.config = await silently(() => b.parseConfig({ patrol: { enabled: true, multiRoom: true, route: ROUTE } }));
+        b.config.patrol.currentSegmentIndex = 1;
+        b.config.patrol.waypointIndex = 0;
+        await silently(() => b.chooseNewPatrolTarget(0));
+        delete window.doorGates;
+        return { b, requests };
+    };
+    // 62 px from the door, at his reader: inside the radius, so he backs off and waits there
+    let r = await run({ x: 100, y: 382 });
+    assert.equal(r.requests.length, 1, 'only the leg was asked for');
+    assert.equal(r.b.patrolTarget, null);
+    assert.ok(r.b._pathRetryAfter > 0);
+    // Pushed 170 px along the wall: out of reach, so he walks to the door front on his side
+    r = await run({ x: 270, y: 382 });
+    assert.deepEqual(r.requests.at(-1), { x: 100, y: 368 });
+    assert.equal(r.b.patrolTarget.gateApproach, true);
+    assert.equal(r.b.pathFollowingActive, true);
+});
+
 test('transition into an unloaded room waits', async () => {
     const { b } = setup({ bLoaded: false });
     b.config = await silently(() => b.parseConfig({ patrol: { enabled: true, multiRoom: true, route: ROUTE } }));

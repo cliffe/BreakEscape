@@ -1555,6 +1555,7 @@ class NPCBehavior {
         const mrSnapped = pathfindingManager.findNearestWalkableStartCell(mrnx, mrny)
                           || { x: mrnx, y: mrny };
         this._pathfindingInProgress = true;
+        const legTarget = this.patrolTarget;
         this._planMovePath(pathfindingManager,
             mrSnapped.x,
             mrSnapped.y,
@@ -1579,6 +1580,9 @@ class NPCBehavior {
                     // If a shut gate of his own is what stands in the way and he is
                     // out of its reach, he walks back to it first (it opens as he
                     // nears), or he would retry from where he stands for ever.
+                    // A move that began while this answer was on its way (goToAndStay)
+                    // owns the target now: leave it alone.
+                    if (this.patrolTarget !== legTarget) return;
                     if (this._approachRouteGate(pathfindingManager, [currentSegment.room])) return;
                     console.warn(`⚠️ [${this.npcId}] Waypoint (${nextWaypoint.x}, ${nextWaypoint.y}) in ${currentSegment.room} unreachable, retrying in 2s`);
                     this._pathRetryAfter = this.clockNow() + 2000;
@@ -1615,6 +1619,7 @@ class NPCBehavior {
         // Already as close as the floor allows: nothing to walk, so back off as before
         if ((dest.x - x) ** 2 + (dest.y - y) ** 2 < 8 * 8) return false;
         const from = pfm.findNearestWalkableStartCell?.(x, y) || { x, y };
+        // gateApproach marks the target for the tests and the console; nothing in the engine reads it
         const target = { x: dest.x, y: dest.y, dwellTime: 0, routeAction: null, gateApproach: true };
         this.patrolTarget = target;
         this.currentPath = [];

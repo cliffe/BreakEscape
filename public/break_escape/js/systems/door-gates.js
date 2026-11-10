@@ -22,7 +22,10 @@
  *   leg is unreachable.
  * - `playerMayPassIf` names a global. While it is false, a player who comes within
  *   `openRadius` of the open gate shuts it at once (unless already in the doorway,
- *   where shutting it would trap them), and it stays shut while they are there.
+ *   where shutting it would trap them), and it stays shut while they are there,
+ *   until the guard's priority (GUARD_PRIORITY_MS) opens it for him. So it is a
+ *   soft bar, not a lock: a barred player who waits at the door is let in behind
+ *   the guard. A scenario credits entry on the same global, not on the entry alone.
  * - A bare player click never opens a gate: doors.js handleDoorInteraction routes a
  *   gate click here and emits door_gate_denied. This holds regardless of the
  *   underlying room's server lock state (an NPC route may have server-unlocked the
@@ -286,7 +289,9 @@ export class DoorGates {
         if (!best) return null;
         const g = best.g;
         const reach = Math.min(APPROACH_PX, Math.max(g.cfg.openRadius - 8, TILE / 2));
-        if (best.d <= reach + 8) return null;
+        // Inside the radius the gate opens for him where he stands (update(), GUARD_PRIORITY_MS),
+        // so he waits there: a guard held at his badge reader does not walk up to the door.
+        if (best.d <= g.cfg.openRadius) return null;
         const pt = g.isSideDoor
             ? { x: g.x + (from.x >= g.x ? reach : -reach), y: g.y }
             : { x: g.x, y: g.y + (from.y >= g.y ? reach : -reach) };

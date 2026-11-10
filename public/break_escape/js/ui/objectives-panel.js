@@ -232,12 +232,13 @@ export class ObjectivesPanel {
     return newAimIds[0];
   }
 
+  /** Reveals this close together (ms) are one burst: the first-revealed aim stays in view. */
+  static REVEAL_BURST_MS = 1500;
+
   /**
    * Ids of aims not shown before. Empty on the first render (nothing has been shown
    * yet, so nothing is new: a reload must not jump the list).
    */
-  static REVEAL_BURST_MS = 1500;
-
   static newAimIds(aims, seenStatus) {
     if (!seenStatus || Object.keys(seenStatus).length === 0) return [];
     return (aims || []).filter(a => !(a.aimId in seenStatus)).map(a => a.aimId);

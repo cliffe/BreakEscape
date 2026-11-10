@@ -150,9 +150,12 @@ test('clickOutcome: a held credential is granted and opens the gate; an open pas
     assert.equal(s.gates.clickOutcome(g, { holdsCredential: true, connectedRoom: 'vault', now: 1000 }), 'granted');
     assert.equal(s.a.doorProperties.open, true);
     // A credential for a door that is no gate grants nothing; an unknown group is denied
+    const realWarn = console.warn;
     console.warn = () => {};
-    assert.equal(s.gates.clickOutcome(null, { holdsCredential: true, connectedRoom: 'cellar' }), 'denied');
-    assert.equal(s.gates.clickOutcome(null, {}), 'denied');
+    try {
+        assert.equal(s.gates.clickOutcome(null, { holdsCredential: true, connectedRoom: 'cellar' }), 'denied');
+        assert.equal(s.gates.clickOutcome(null, {}), 'denied');
+    } finally { console.warn = realWarn; }
 });
 
 test('doors.js asks openToPlayer before the gate refusal toast and the door_gate_denied event', () => {

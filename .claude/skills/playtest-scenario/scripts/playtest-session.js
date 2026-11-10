@@ -987,7 +987,6 @@ const vmSteps = createVmSteps({
       };
     },
 
-    /** Everything interactable in a room, at any distance — for finding things. */
     /**
      * A real mouse click on a visible page control, found by its text (and optionally
      * a CSS selector): {"cmd":"click","text":"Read"} or {"cmd":"click","selector":".x"}.
@@ -1024,6 +1023,7 @@ const vmSteps = createVmSteps({
       return { ok: true, clicked: target };
     },
 
+    /** Everything interactable in a room, at any distance — for finding things. */
     room: async (c) => {
       return page.evaluate(id => window.__test.roomContents(id || null), c.id || null);
     },

@@ -193,6 +193,26 @@ test('a forced close ends the pass window', () => {
     assert.equal(gates.closeNow('vault', { force: true, now: 1000 + GUARD_PRIORITY_MS + 10 }), true);
     assert.equal(a.body.enable, true);
     assert.equal(gates.state('vault')[0].open, false);
+    // Opened again inside the old window, with the player still barred: the window is
+    // gone, so the next update shuts it (open() directly: closeNow keeps the ordinary
+    // route shut for a while)
+    const t = 1000 + GUARD_PRIORITY_MS + 20;
+    assert.ok(t < 1000 + GUARD_PRIORITY_MS + GUARD_PASS_MS);
+    gates.open(gates.groupsFor('vault')[0], t);
+    assert.equal(a.body.enable, false);
+    guard.x = 300; guard.y = 300;                     // he has stepped back; nothing but the old window would hold it
+    gates.update(t + 1);
+    assert.equal(a.body.enable, true, 'a barred player shuts it: no pass window is left');
+});
+
+test('approachPoint: a guard inside his gate\'s radius waits where he stands', () => {
+    // lab_physical_pentest: radius 72, and Len's badge reader is about 62 px from the door.
+    // Kept out by a barred player, he waits at the reader; he used to walk to the door front.
+    const { gates } = setup({ openFor: ['guard'], openRadius: 72, holdMs: 2500, playerMayPassIf: 'disguised' });
+    assert.equal(gates.approachPoint('guard', { x: 100, y: 162 }), null, '62 px out, inside the radius');
+    assert.equal(gates.approachPoint('guard', { x: 100, y: 172 }), null, 'on the radius');
+    assert.deepEqual(gates.approachPoint('guard', { x: 100, y: 180 }),
+        { x: 100, y: 148, roomId: 'lobby', connectedRoom: 'vault' }, '80 px out: walks to 48 px, inside it');
 });
 
 test('approachPoint: the spot in front of a shut gate on the guard\'s side, only when he is out of reach', () => {
