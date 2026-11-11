@@ -1,0 +1,14 @@
+{
+  "key": "0be4eea8e0a2a7336112651f2573bd1b",
+  "npc": "receptionist",
+  "text": "Now you mention it.",
+  "delivery": "lowering her voice",
+  "voice": "Despina",
+  "style": "Night reception coordinator, eleven years on this desk. South London / Multicultural London English accent throughout -- warm, quick, dry. Unflappable on the surface, running on fumes underneath.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T17:45:46Z"
+}

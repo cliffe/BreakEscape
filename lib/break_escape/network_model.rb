@@ -57,6 +57,19 @@ module BreakEscape
       item.is_a?(Hash) && item['rogueDevice'] == true
     end
 
+    # A resource holds something only when its contents are a non-empty list; nil, a
+    # missing key and [] all mean none. The view shows the observations of a resource
+    # with no contents.
+    def resource_contents?(resource)
+      resource.is_a?(Hash) && resource['contents'].is_a?(Array) && !resource['contents'].empty?
+    end
+
+    # A file share with no contents is listed only (4.5): the view shows its row with Look
+    # and its observations, no desktop maps it, and nothing can be opened or taken from it.
+    def listed_only_share?(resource)
+      resource.is_a?(Hash) && resource['kind'] == 'file_share' && !resource_contents?(resource)
+    end
+
     # [{ object:, room:, room_id:, path:, network: }] for every room object, in scenario
     # order, recursing into containers' contents. Nothing under a sign-in object is listed:
     # a sign-in PC's contents are its desktop, not objects in the room. NPCs' items are

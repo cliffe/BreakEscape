@@ -51,15 +51,15 @@ The objectives system uses three Ink tags:
 
 === explain_objectives_detail ===
 + [Tell me about complete_task]
-    NPC: **complete_task:task_id** marks a task as completed. The ObjectivesManager will update the UI and sync with the server.
+    NPC: complete_task:task_id marks a task as completed. The ObjectivesManager will update the UI and sync with the server.
     -> explain_objectives_detail
     
 + [Tell me about unlock_task]
-    NPC: **unlock_task:task_id** unlocks a locked task so it becomes active and visible.
+    NPC: unlock_task:task_id unlocks a locked task so it becomes active and visible.
     -> explain_objectives_detail
     
 + [Tell me about unlock_aim]
-    NPC: **unlock_aim:aim_id** unlocks an entire aim (objective group) that was previously locked.
+    NPC: unlock_aim:aim_id unlocks an entire aim (objective group) that was previously locked.
     -> explain_objectives_detail
 
 + [That's enough info, thanks]
@@ -92,8 +92,6 @@ You've done great! Once Bob helps you finish, come back for the final debrief.
 // This knot is triggered automatically when the secret_mission aim is completed
 // via eventMappings: "objective_aim_completed:secret_mission" -> "final_debrief"
 
-NPC: *Alice looks up as you approach*
-Narrator: Alice gives you a knowing smile.
 Bob: You did it! The secret mission is complete.
 NPC: I just received confirmation from headquarters.
 #complete_task:final_debrief

@@ -1,0 +1,14 @@
+{
+  "key": "634605d2ef4841eac7af35a9d76ab22d",
+  "npc": "security_guard_patrol",
+  "text": "No. You don't.",
+  "delivery": "after a while",
+  "voice": "Leda",
+  "style": "Hospital security officer on nights. Consistent Liverpool / Scouse accent throughout. Warm and quick with a joke until the moment she isn't -- then completely immovable. Not stupid, not a jobsworth, genuinely believes the corridor is her responsibility.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T17:46:25Z"
+}

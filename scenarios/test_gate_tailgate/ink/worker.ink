@@ -8,7 +8,7 @@ VAR looked = false
 === start ===
 { met: -> hub }
 ~ met = true
-Sam Ellery: Afternoon. Sam, facilities. *glances up from a clipboard* Something I can help with?
+Sam Ellery: Afternoon. Sam, facilities. Something I can help with? #delivery: looking up from a clipboard, friendly
 -> hub
 
 === hub ===
@@ -21,7 +21,7 @@ Sam Ellery: Afternoon. Sam, facilities. *glances up from a clipboard* Something 
     ~ looked = true
     Sam Ellery: This old thing? Only gets me through the staff door. Go on, then.
     # clone_keycard:test_staff_badge
-    Sam Ellery: *holds it out* Had it years.
+    Sam Ellery: Had it years. #delivery: offhand, holding it out
     -> hub
 + { looked } [Can I take another look at that badge?]
     Sam Ellery: Help yourself.
@@ -37,6 +37,6 @@ Sam Ellery: Afternoon. Sam, facilities. *glances up from a clipboard* Something 
     -> hub
 
 === challenge ===
-Sam Ellery: Hold on, that door is staff only. *steps across the doorway* Back this way, please.
+Sam Ellery: Hold on, that door is staff only. Back this way, please. #delivery: stepping into the doorway, firm but polite
 #exit_conversation
 -> hub

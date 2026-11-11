@@ -34,7 +34,7 @@ const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true 
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 const imp = (rel) => import(pathToFileURL(join(dir, rel)));
-const { NetworkViewMinigame, hostAction, shareLockable, REMOTE_OFF_TEXT, SHARE_LOCKED_TEXT } =
+const { NetworkViewMinigame, hostAction, resourceAction, shareLockable, REMOTE_OFF_TEXT, SHARE_LOCKED_TEXT } =
     await imp('minigames/network-view/network-view-minigame.js');
 const { NetworkLinks } = await imp('systems/network-links.js');
 
@@ -229,6 +229,36 @@ test('Look shows a resource\'s observations in the view and keeps it open', asyn
     row('data-resource-id', 'print_queue').querySelector('[data-action]').click();
     assert.equal(document.querySelector('.network-view-notice').textContent, 'Three payslips wait.');
     assert.equal(view()._sceneType, 'network-view');
+});
+
+// The server marks a share with no contents (missing or []) `listed`: it is looked at,
+// never opened.
+test('a share with no contents offers Look, shows its observations and opens nothing', async () => {
+    const records = { id: 'records', kind: 'file_share', name: 'Client-Records', host: 'LW-FS01', open: true,
+        listed: true, observations: 'Top folders: one per client.' };
+    setup({ hosts: [...HOSTS, records] });
+    links.open('jack_comms_port');
+    await settle();
+    const control = row('data-resource-id', 'records').querySelector('[data-action]');
+    assert.equal(control.dataset.action, 'observe');
+    assert.match(control.textContent, /Look/);
+    assert.equal(view().getTestState().rows.find(r => r.id === 'records').action, 'observe');
+    const before = started.length;
+    control.click();
+    await settle();
+    assert.equal(document.querySelector('.network-view-notice').textContent, 'Top folders: one per client.');
+    assert.equal(started.length, before, 'no container is started');
+    assert.equal(view()._sceneType, 'network-view');
+});
+
+test('resourceAction: a share opens or is locked unless the server marks it listed; other kinds are looked at', () => {
+    assert.equal(resourceAction({ kind: 'file_share', open: true }), 'open');
+    assert.equal(resourceAction({ kind: 'file_share', open: false }), 'locked');
+    assert.equal(resourceAction({ kind: 'file_share', open: false, listed: true }), 'observe');
+    assert.equal(resourceAction({ kind: 'file_share', open: true, listed: true }), 'observe', 'listed with no observations');
+    assert.equal(resourceAction({ kind: 'file_share', open: true, observations: 'x' }), 'open',
+        'observations alone never turn a share into a Look row');
+    assert.equal(resourceAction({ kind: 'printer', open: true }), 'observe');
 });
 
 test('the view\'s own Close ends the trip: network_view_closed once, reason closed', async () => {

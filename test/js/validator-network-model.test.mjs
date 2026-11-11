@@ -192,6 +192,18 @@ test('headless on a non-sign-in object, with no network, or on an owned workstat
     assertHas(errors(issues(sc)), "headless host 'lena_pc' is a workstation with an owner");
 });
 
+// Lab networks review R2 n3: a contents that is present but not a list reads as none.
+test('a file share whose contents is not a list warns that it is treated as listed only', { skip }, () => {
+    for (const contents of [{ id: 'x' }, 'ledger.xlsx', null]) {
+        const sc = clean();
+        sc.resources.scanned_inbox.contents = contents;
+        assertHas(warnings(issues(sc)), "'resources/scanned_inbox' contents is ");
+        assertHas(warnings(issues(sc)), 'treated as listed only');
+    }
+    const sc = clean();
+    assert.ok(!has(warnings(issues(sc)), 'not a list'), 'a list raises nothing');
+});
+
 test('contents on a resource that is not a file share is an error', { skip }, () => {
     const sc = clean();
     sc.resources.print_queue.contents = [{ id: 'job1', type: 'text_file', name: 'job1' }];
@@ -295,6 +307,20 @@ test('a protected share nobody can map warns, for each of the three reasons', { 
     obj(sc, 'store', 'door_box').access = { roles: ['finance'] };
     obj(sc, 'finance_office', 'lena_pc').access = { roles: ['finance'] };
     assertHas(warnings(issues(sc)), "share 'ledger_archive' admits 'ian', but none of them can sign in at an object on its network");
+});
+
+test('a protected share with no contents warns that the list does nothing, and gets no map lines', { skip }, () => {
+    for (const contents of [undefined, []]) {
+        const sc = clean();
+        if (contents) sc.resources.ledger_archive.contents = contents;
+        else delete sc.resources.ledger_archive.contents;
+        sc.resources.ledger_archive.observations = 'Folders by year.';
+        const list = issues(sc);
+        assertHas(warnings(list), "share 'ledger_archive' has an access list and no contents: no desktop maps it");
+        assertNot(warnings(list), "share 'ledger_archive' has an access list but");
+        assertNot(infos(list), "share 'ledger_archive' maps on");
+    }
+    assertNot(warnings(issues(clean())), 'has an access list and no contents');
 });
 
 test('the implicit staff role counts in a share\'s access list', { skip }, () => {

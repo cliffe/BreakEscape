@@ -1,0 +1,14 @@
+{
+  "key": "51a25ed69409ef5ac719c40e4b287809",
+  "npc": "maya_chen",
+  "text": "Finally. I've been waiting for weeks.",
+  "delivery": "with a long exhale, relieved",
+  "voice": "Leda",
+  "style": "Content analyst in her late twenties. Speak with a consistent Chinese-American (California) accent throughout — do not shift to any other accent. Soft, mid-to-high pitch; quiet, hesitant pace. Nervous and concerned.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T18:31:03Z"
+}

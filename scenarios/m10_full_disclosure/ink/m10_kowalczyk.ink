@@ -250,7 +250,7 @@ Narrator: For a moment she has nothing to say.
 {m09_completed:
     Agent HaX: "The long way is over." I said that the morning you handed it over.
 }
-Agent 0x5E 'Lantern': Well. *almost laughs* It was a good cracker.
+Agent 0x5E 'Lantern': Well. It was a good cracker. #delivery: flat on the first word, then almost laughing, rueful
 // m09 A1: what the player said to her about it on the apron.
 {
 - m09_kowalczyk_reply == "warm":

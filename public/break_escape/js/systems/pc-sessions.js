@@ -66,6 +66,18 @@
 export const SIGNED_OUT_MESSAGE = 'Signed out';
 export const SCREEN_LOCKED_MESSAGE = 'The screen locked';
 export const LINK_DROPPED_MESSAGE = 'The link dropped';
+
+/**
+ * The toast an unplug shows for sessions it ended with no desktop open (on-screen text,
+ * never voiced): "Unplugged. Your session on LW-DOOR01 ended." Host labels joined with
+ * commas and "and"; null for none.
+ */
+export function unplugEndedMessage(hosts = []) {
+    const list = (Array.isArray(hosts) ? hosts : []).filter(h => typeof h === 'string' && h);
+    if (!list.length) return null;
+    const names = list.length === 1 ? list[0] : `${list.slice(0, -1).join(', ')} and ${list[list.length - 1]}`;
+    return `Unplugged. Your session${list.length === 1 ? '' : 's'} on ${names} ended.`;
+}
 export const backAtDeskMessage = (name) => `${name || 'The owner'} is back at the desk`;
 
 function apiClient() {
@@ -366,17 +378,28 @@ export class PcSessions {
      * network_device_unplugged: the server ended exactly the sessions in endedPcIds (they
      * went through the unplugged foothold). Each is dropped with no request, emits
      * pc_signed_out reason link_dropped, and an open desktop closes with "The link dropped".
-     * Returns the pcIds dropped.
+     * The sessions whose desktop was not open (the usual case: the unplug happens at the jack)
+     * get one toast naming their hosts. Returns the pcIds dropped.
      */
     linkDropped(endedPcIds = []) {
         const dropped = [];
+        const unseen = [];
         for (const pcId of (Array.isArray(endedPcIds) ? endedPcIds : [])) {
             const previous = this.sessions.get(pcId);
             if (!previous) continue;
             this.sessions.delete(pcId);
             dropped.push(pcId);
+            // The host label the server sent; never the internal PC id
+            if (!this.desktops.has(pcId)) unseen.push(previous.host || 'a remote PC');
             this._emit('pc_signed_out', { pcId, npcId: previous.npcId ?? null, reason: 'link_dropped', ...this._remoteOf(previous) });
             this._closeDesktop(pcId, LINK_DROPPED_MESSAGE, 'link_dropped');
+        }
+        const message = unplugEndedMessage(unseen);
+        if (message) {
+            try {
+                // Host labels are author text: plain text, never markup
+                if (typeof window !== 'undefined') window.gameAlert?.(message, 'info', '', 5000, { plainText: true });
+            } catch (e) { /* no notification layer */ }
         }
         return dropped;
     }
