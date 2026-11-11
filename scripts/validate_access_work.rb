@@ -16,8 +16,12 @@ module ValidateAccessWork
 
   module_function
 
-  def err(issues, msg) = issues << "❌ ERROR: work: #{msg}"
-  def warn(issues, msg) = issues << "⚠️ WARNING: work: #{msg}"
+  def err(issues, msg)
+    issues << "❌ ERROR: work: #{msg}"
+  end
+  def warn(issues, msg)
+    issues << "⚠️ WARNING: work: #{msg}"
+  end
 
   def check(json_data)
     issues = []
@@ -68,7 +72,9 @@ module ValidateAccessWork
       (o['workstation'] == true || o.key?('locksScreenOnLeave') || o.key?('lockChance') || o['lockType'] == 'login')
   end
 
-  def chatter_off?(json_data) = json_data['chatter'] == false
+  def chatter_off?(json_data)
+    json_data['chatter'] == false
+  end
 
   # Whether pool `topic` has a line for this NPC: the scenario's pool plus the NPC's own.
   def pool_has_line?(json_data, npc, topic)
@@ -88,7 +94,9 @@ module ValidateAccessWork
     a.is_a?(Hash) ? a['accepts'] : nil
   end
 
-  def usb_governed?(o) = workstation?(o) || (o['policy'].is_a?(String) && !o['policy'].empty?)
+  def usb_governed?(o)
+    workstation?(o) || (o['policy'].is_a?(String) && !o['policy'].empty?)
+  end
 
   def effective_policy_name(o, json_data)
     name = o['policy'].is_a?(String) && !o['policy'].empty? ? o['policy'] : json_data['defaultPolicy']

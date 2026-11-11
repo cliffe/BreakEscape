@@ -28,7 +28,9 @@ module BreakEscape
 
     # ── scenario reads ──────────────────────────────────────────────────
 
-    def resources(data) = NetworkModel.resources(data)
+    def resources(data)
+      NetworkModel.resources(data)
+    end
 
     def roles_block(data)
       r = data.is_a?(Hash) ? data['roles'] : nil
@@ -50,7 +52,9 @@ module BreakEscape
       end
     end
 
-    def object(data, id) = (id.is_a?(String) ? object_index(data)[id]&.dig(:obj) : nil)
+    def object(data, id)
+      (id.is_a?(String) ? object_index(data)[id]&.dig(:obj) : nil)
+    end
 
     # ── work list, frustration, workarounds ─────────────────────────────
 
@@ -105,12 +109,18 @@ module BreakEscape
       role ? roles.dig(role, 'workarounds').select { |w| w.is_a?(Hash) } : []
     end
 
-    def need?(npc, name) = npc.is_a?(Hash) && npc['needs'].is_a?(Hash) && npc['needs'][name].is_a?(Hash)
+    def need?(npc, name)
+      npc.is_a?(Hash) && npc['needs'].is_a?(Hash) && npc['needs'][name].is_a?(Hash)
+    end
 
     # A `work` plan: a work need and a non-empty resolved list (plan 5.2, "judged")
-    def work_plan?(data, npc) = need?(npc, 'work') && !work_list(data, npc).empty?
+    def work_plan?(data, npc)
+      need?(npc, 'work') && !work_list(data, npc).empty?
+    end
 
-    def phone?(npc) = npc.is_a?(Hash) && npc['phone'] != false
+    def phone?(npc)
+      npc.is_a?(Hash) && npc['phone'] != false
+    end
 
     # Judged: work with a plan, or social_media
     def judged?(data, npc, need)
@@ -132,7 +142,9 @@ module BreakEscape
       @preset_table ||= File.file?(PRESETS_FILE) ? (JSON.parse(File.read(PRESETS_FILE))['presets'] || {}) : {}
     end
 
-    def presets_on?(data) = data.is_a?(Hash) && data['officePresets'] == true
+    def presets_on?(data)
+      data.is_a?(Hash) && data['officePresets'] == true
+    end
 
     # office-presets.js presetIdFor, ignoring the scenario switch
     def preset_id(obj)
@@ -155,7 +167,9 @@ module BreakEscape
       (preset_table.dig(pid, 'affordance') || {}).merge(own || {})
     end
 
-    def satisfies?(data, obj, need) = Array(affordance(data, obj)&.dig('satisfies')).include?(need)
+    def satisfies?(data, obj, need)
+      Array(affordance(data, obj)&.dig('satisfies')).include?(need)
+    end
 
     # The needs system's use time: authored, else the preset's, else 20 seconds
     def use_seconds(data, obj)
@@ -217,7 +231,9 @@ module BreakEscape
       AccessIdentities.acl_admits?(resource['access'], npc)
     end
 
-    def present_string?(v) = v.is_a?(String) && !v.strip.empty?
+    def present_string?(v)
+      v.is_a?(String) && !v.strip.empty?
+    end
 
     # Routes from the NPC's home station to a resource, or nil in a scenario with no networks
     def routes(data, npc, resource)
@@ -251,7 +267,9 @@ module BreakEscape
 
     # ── can fail, belongs to, owned causes ──────────────────────────────
 
-    def off_when?(data, obj) = !obj.nil? && !affordance(data, obj)&.dig('offWhen').nil? && affordance(data, obj)['offWhen'] != false && affordance(data, obj)['offWhen'] != ''
+    def off_when?(data, obj)
+      !obj.nil? && !affordance(data, obj)&.dig('offWhen').nil? && affordance(data, obj)['offWhen'] != false && affordance(data, obj)['offWhen'] != ''
+    end
 
     def policy_of(data, obj)
       name = obj.is_a?(Hash) && present_string?(obj['policy']) ? obj['policy'] : data['defaultPolicy']
@@ -333,7 +351,11 @@ module BreakEscape
     end
 
     # The pace floors (plan 9.1), in seconds of server time
-    def park_floor(npc) = (0.9 * defer_min(npc) * 60) - 3
-    def use_floor(data, npc, need) = [(0.9 * shortest_use_seconds(data, npc, need)) - 3, 0].max
+    def park_floor(npc)
+      (0.9 * defer_min(npc) * 60) - 3
+    end
+    def use_floor(data, npc, need)
+      [(0.9 * shortest_use_seconds(data, npc, need)) - 3, 0].max
+    end
   end
 end

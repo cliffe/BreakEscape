@@ -34,7 +34,9 @@ module BreakEscape
       entry
     end
 
-    def server_now = Time.current.to_f
+    def server_now
+      Time.current.to_f
+    end
 
     # Called when a room's NPCs are first encountered (track_npc_encounters): the moment each
     # NPC that can fail, or has a feed, became known (plan 9.4; R5 n2). Only anchors the first fail.
@@ -152,7 +154,9 @@ module BreakEscape
       answer(npc_id, npc, entry, previous)
     end
 
-    def owned_causes(npc, need) = AccessWork.owned_causes(scenario_data, npc, need, login_lockouts)
+    def owned_causes(npc, need)
+      AccessWork.owned_causes(scenario_data, npc, need, login_lockouts)
+    end
 
     # A later fail is held to the park floor after the last accepted fail, or to the use floor
     # when a gate lies between: an accepted ease since that fail; `rearmed` with no cause the
@@ -188,7 +192,9 @@ module BreakEscape
       end
     end
 
-    def truthy_global?(value) = !(value.nil? || value == false || value == 0 || value == '')
+    def truthy_global?(value)
+      !(value.nil? || value == false || value == 0 || value == '')
+    end
 
     def frustration_cause_holds?(npc, need, cause)
       id = cause['id']

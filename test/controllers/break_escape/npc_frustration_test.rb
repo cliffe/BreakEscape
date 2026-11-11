@@ -39,12 +39,20 @@ module BreakEscape
       r
     end
 
-    def ease_r(npc, object_id, need: 'work') = { npc_id: npc, event: 'ease', need: need, object_id: object_id }
+    def ease_r(npc, object_id, need: 'work')
+      { npc_id: npc, event: 'ease', need: need, object_id: object_id }
+    end
 
-    def dana_down = fail_r('dana', 'finance_share', 'down', 'dana_pc')
-    def omar_down(**kw) = fail_r('omar', 'printer', 'down', 'omar_pc', **kw)
+    def dana_down
+      fail_r('dana', 'finance_share', 'down', 'dana_pc')
+    end
+    def omar_down(**kw)
+      fail_r('omar', 'printer', 'down', 'omar_pc', **kw)
+    end
 
-    def level(npc) = @game.reload.player_state.dig('npcFrustration', npc, 'level')
+    def level(npc)
+      @game.reload.player_state.dig('npcFrustration', npc, 'level')
+    end
 
     test 'an unknown NPC, an NPC not yet met and an NPC that cannot fail are refused' do
       build(globals: { 'finance_share_down' => true }, player_state: { 'encounteredNPCs' => %w[kai amy] })
