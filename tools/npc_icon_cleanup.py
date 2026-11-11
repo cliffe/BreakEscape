@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Hand clean-up of the 16 PixelLab NPC need/action icons (16x16).
+"""Hand clean-up of the 18 PixelLab NPC need/action icons (16x16).
 
 The user picked these icons from PixelLab candidates (commit 8064c229c; avoid
 and closed in d7825e5f0, set per icon with 'pick'). The
@@ -472,6 +472,59 @@ ICONS['closed'] = dict(
         '................',
     ])
 
+# workaround: a red arrow hopping a striped barrier (access slice 9.2, an NPC
+# performing a workaround; user pick, commit f373df648). The shape and fill are
+# kept; the outline was 20 near-black shades (#00101b to #361018), all set to
+# the shared outline. One pixel added: (5,10), outline over the arrow's tail,
+# which had none. No pixel moved.
+ICONS['workaround'] = dict(
+    pick='f373df648',
+    pal={},
+    grid=[
+        '................',
+        '...........OO...',
+        '........OOO==O..',
+        '.......O======O.',
+        '......O==OO==O..',
+        '......O=O.O=O...',
+        '.OOOOOO=OOOOOOO.',
+        '.O====O=O=====O.',
+        '.O====O=O=====O.',
+        '.OOOOOO=OOOOOOO.',
+        '..O=OOO=O..O=O..',
+        '..O=O==O...O=O..',
+        '..O=OOO....O=O..',
+        '..O=O......O=O..',
+        '..OOO......OOO..',
+        '................',
+    ])
+
+# barrier: the plain striped barrier (access slice 9.2, a use that failed:
+# the station refused it, a resource down or out of reach; user pick, commit
+# f373df648). As workaround: the near-black outline shades set to the shared
+# outline, fill kept.
+ICONS['barrier'] = dict(
+    pick='f373df648',
+    pal={},
+    grid=[
+        '................',
+        '................',
+        '................',
+        '................',
+        '................',
+        '.OOOOOOOOOOOOOO.',
+        '.O============O.',
+        '.O============O.',
+        '.O============O.',
+        '.OOOOOOOOOOOOOO.',
+        '..O=O......O=O..',
+        '..O=O......O=O..',
+        '.O==O......O==O.',
+        '.OOOO......OOOO.',
+        '................',
+        '................',
+    ])
+
 # Single-pixel touch-ups applied after the grid, (x, y): colour. Used for
 # dark specks the generator left just inside the new outline of icons whose
 # fill is otherwise kept.
@@ -485,7 +538,8 @@ FIXES = {
 }
 
 ORDER = ['caffeine', 'thirst', 'hunger', 'rest', 'social', 'work', 'curiosity',
-         'post', 'printout', 'print', 'queue', 'file', 'blocked', 'noticed', 'avoid', 'closed']
+         'post', 'printout', 'print', 'queue', 'file', 'blocked', 'noticed', 'avoid', 'closed',
+         'workaround', 'barrier']
 
 
 def hex_rgba(h):
