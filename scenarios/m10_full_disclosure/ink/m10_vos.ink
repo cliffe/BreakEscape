@@ -63,7 +63,7 @@ Pieter Vos: I don't do philosophy. I do delivery dates.
     ~ vos_outcome = "stood_aside"
     // Alignment R12-m3: the unlock rides the reply's first line.
     #unlock_door:core
-    Pieter Vos: Who told you that. No. Don't. The door is open. #delivery: after a pause
+    Pieter Vos: Who told you that. No. Don't. The door is open. #delivery: after a pause, rattled
     Pieter Vos: The order goes with me, and so do I. I'm leaving.
     // Regression fix pass n-4: the trace's cost, said at the pick.
     {head_start_killed == "trace":

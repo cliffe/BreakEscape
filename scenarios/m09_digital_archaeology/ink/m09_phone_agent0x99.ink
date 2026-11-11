@@ -675,7 +675,7 @@ He'll call it full disclosure.
 That's my other line. Withheld. Stay on, and don't say a word.
 ...Yes.
 I know it's you.
-Nobody's called me that since the course. It's HaX. It has been for seven years. #delivery: a beat's pause, then firmer
+Nobody's called me that since the course. It's HaX. It has been for seven years. #delivery: a beat's pause after the first sentence, then firmer
 ...I'll bring them.
 He kept his voice down. He always did.
 He called me Ninety-nine. He says the door will open for you by name. He says take your time getting there.
