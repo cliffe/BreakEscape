@@ -624,3 +624,8 @@ After `3cc153d62`, under the lock: Rails 1425 runs, 0 failures, 1 skip; JS 485 f
 ### Leftover games
 
 1196 (unused), 1197, 1198 to 1200, 1201.
+
+### Suites
+
+After `698fc32f0`, under the lock: Rails 1425 runs, 0 failures, 1 skip; JS 485 files passed, 0 failed.
+Sub-slice B is ready for review.
