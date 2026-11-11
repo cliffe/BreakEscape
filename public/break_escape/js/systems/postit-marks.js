@@ -118,7 +118,9 @@ export class PostitMarks {
      * The note's text is never in it.
      */
     label(objectId, text) {
-        if (!text || !objectId || !this.marks.has(objectId)) return text;
+        // A non-string observation (an author's object or number) is passed through unchanged
+        // rather than throwing every frame (review 9.2 B R2 n5)
+        if (typeof text !== 'string' || !text || !objectId || !this.marks.has(objectId)) return text;
         // After a sentence, a sentence; after a name, a bracket
         return /[.!?]\s*$/.test(text) ? `${text.trimEnd()} ${POSTIT_SENTENCE}` : `${text} (${POSTIT_LABEL})`;
     }
