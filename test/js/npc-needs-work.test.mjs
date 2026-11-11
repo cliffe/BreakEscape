@@ -635,3 +635,130 @@ test('R3 m1: a reload\'s station causes stay solid; no failWhy seeds nothing; a 
     d.sys.registerAll();
     assert.deepEqual(d.sys.states.get('dana').failCause, {});
 });
+
+// ── Access 9.2 H-3 (plan 6.4): the borrow ──
+
+const HOT = () => ({ id: 'hot_desk', x: 400, y: 68, desk: true, affordance: { satisfies: 'work', restores: 60, useSeconds: 5 } });
+const RUN = (extra = {}) => ({ index: 1, hand: 1, do: 'borrow_session', pc: 'hot_desk', need: 'work', dwell: 2, ...extra });
+
+function failOnce(sys, evs) {
+    assert.ok(stepUntil(sys, () => evs('npc_need_parked:dana').length > 0, 30000));
+}
+
+test('H-3: a borrowed PC is chosen ahead of the home object for the failing need only, at once', () => {
+    const { sys, evs, log } = workWorld({ objects: [...baseObjects(), HOT()], globals: { dana_pc_off: true }, chatter: CHATTER });
+    sys.registerAll();
+    failOnce(sys, evs);
+    assert.equal(sys.getState('dana').parked[0].reason, 'off');
+    assert.equal(sys.setBorrow('dana', RUN()), true);
+    assert.equal(sys.setBorrow('dana', RUN()), true, 'a copy is harmless');
+    sys.step(250);
+    const st = sys.getState('dana');
+    assert.deepEqual(st.parked, [], 'unparked without waiting out the retry');
+    assert.equal(st.job?.targetId, 'hot_desk');
+    assert.equal(sys.states.get('dana').job.borrowed, true);
+    assert.deepEqual(st.borrow, { index: 1, hand: 1, pcId: 'hot_desk', need: 'work', leavesOpen: true, started: true });
+    // the caffeine need never takes the hot desk
+    assert.ok(log('job_start').every(e => e.target !== 'hot_desk' || e.need === 'work'));
+});
+
+test('H-3: sitting down emits npc_sat_at and makes the borrower the PC\'s user; a met use eases and leaves the session', () => {
+    const { sys, evs, reports } = workWorld({ objects: [...baseObjects(), HOT()], globals: { dana_pc_off: true }, chatter: CHATTER });
+    sys.registerAll();
+    failOnce(sys, evs);
+    sys.setBorrow('dana', RUN());
+    assert.ok(stepUntil(sys, () => evs('npc_sat_at:hot_desk').length > 0, 30000));
+    assert.deepEqual(evs('npc_sat_at:hot_desk')[0].data, { npcId: 'dana', objectId: 'hot_desk' });
+    assert.equal(sys.userOf('hot_desk'), 'dana');
+    assert.equal(sys.userOf('dana_pc'), null);
+    assert.ok(stepUntil(sys, () => evs('npc_borrow_done:dana').length > 0, 10000));
+    assert.deepEqual(evs('npc_borrowed_session:hot_desk')[0].data, { npcId: 'dana', objectId: 'hot_desk', met: true });
+    assert.deepEqual(evs('npc_borrow_done:dana')[0].data, { npcId: 'dana', objectId: 'hot_desk', met: true, leftOpen: true, index: 1, hand: 1 });
+    assert.equal(evs('npc_used:hot_desk')[0].data.met, true);
+    assert.equal(sys.getState('dana').borrow, null);
+    assert.equal(sys.userOf('hot_desk'), null);
+    assert.equal(reports.filter(r => r.event === 'fail').length, 1, 'only the off station counted');
+});
+
+test('H-3: a failed borrowed use still emits npc_borrowed_session (met false) before its turn-back, and sends no report', () => {
+    const { sys, evs, reports, w } = workWorld({ objects: [...baseObjects(), HOT()], globals: { share_down: true }, chatter: CHATTER });
+    sys.registerAll();
+    assert.ok(stepUntil(sys, () => evs('npc_use_failed:dana').length > 0, 30000));
+    const fails = reports.filter(r => r.event === 'fail').length;
+    sys.setBorrow('dana', RUN());
+    assert.ok(stepUntil(sys, () => evs('npc_borrow_done:dana').length > 0, 30000));
+    const names = w.calls.emits.map(e => e.name);
+    const at = names.lastIndexOf('npc_borrowed_session:hot_desk');
+    assert.ok(at >= 0 && at < names.lastIndexOf('npc_turned_back:dana'), 'said before the failed turn-back');
+    assert.equal(evs('npc_borrowed_session:hot_desk')[0].data.met, false);
+    assert.equal(evs('npc_use_failed:dana').length, 2);
+    sys.step(1000);
+    assert.equal(reports.filter(r => r.event === 'fail').length, fails, 'the borrowed failure is not reported');
+});
+
+test('H-3: leavesOpen false emits no npc_borrowed_session; npc_borrow_done says leftOpen false', () => {
+    const { sys, evs } = workWorld({ objects: [...baseObjects(), HOT()], globals: { dana_pc_off: true }, chatter: CHATTER });
+    sys.registerAll();
+    failOnce(sys, evs);
+    sys.setBorrow('dana', RUN({ leavesOpen: false }));
+    assert.ok(stepUntil(sys, () => evs('npc_borrow_done:dana').length > 0, 30000));
+    assert.equal(evs('npc_borrowed_session:').length, 0);
+    assert.equal(evs('npc_borrow_done:dana')[0].data.leftOpen, false);
+});
+
+test('H-3: a borrowed PC that is not there is waited for, with no park; dropped 60 s after the hand-over', () => {
+    const { sys, evs, log } = workWorld({ globals: { dana_pc_off: true }, chatter: CHATTER });
+    sys.registerAll();
+    failOnce(sys, evs);
+    const parks = evs('npc_need_parked:dana').length;
+    sys.setBorrow('dana', RUN());
+    sys.step(59000);
+    assert.equal(evs('npc_need_parked:dana').length, parks, 'waiting is not a park');
+    assert.equal(evs('npc_borrow_dropped:dana').length, 0);
+    assert.ok(!log('job_start').some(e => e.target === 'hot_desk'));
+    sys.step(1500);
+    assert.deepEqual(evs('npc_borrow_dropped:dana')[0].data, { npcId: 'dana', index: 1, hand: 1, pcId: 'hot_desk' });
+    assert.equal(sys.getState('dana').borrow, null);
+});
+
+test('H-3: a busy borrowed PC is waited for, then sat at once free', () => {
+    const npcs = { dana: { pos: { x: 100, y: 100 }, rec: dana() },
+                   kim: { pos: { x: 400, y: 100 }, rec: { id: 'kim', needs: { work: { decayPerMin: 40, urgentAt: 50, initial: 50, jitterPct: 0 } } } } };
+    const objects = [...baseObjects(), { ...HOT(), affordance: { satisfies: 'work', restores: 60, useSeconds: 20 } }];
+    const { sys, evs } = workWorld({ npcs, objects, globals: { dana_pc_off: true }, chatter: CHATTER });
+    sys.registerAll();
+    assert.ok(stepUntil(sys, () => sys.getState('kim').job?.phase === 'using' && sys.getState('kim').job?.targetId === 'hot_desk', 30000));
+    sys.setBorrow('dana', RUN());
+    sys.step(500);
+    assert.notEqual(sys.getState('dana').job?.targetId, 'hot_desk');
+    assert.ok(stepUntil(sys, () => evs('npc_sat_at:hot_desk').length > 0, 50000));
+    assert.equal(evs('npc_borrow_dropped:dana').length, 0);
+});
+
+test('H-3: the verdict at a borrowed PC runs with the run\'s routes', async () => {
+    const { planWithRoutes } = await import('../../public/break_escape/js/systems/npc-needs.js');
+    const plan = { needs: [{ id: 'a', routes: [['x']] }, { id: 'b' }] };
+    assert.deepEqual(planWithRoutes(plan, { a: [['y']] }).needs, [{ id: 'a', routes: [['y']] }, { id: 'b' }]);
+    assert.equal(planWithRoutes(plan, null), plan);
+    const { sys, evs, w } = workWorld({ objects: [...baseObjects(), HOT()], globals: { dana_pc_off: true }, chatter: CHATTER });
+    const seen = [];
+    const inner = w.world.useVerdict;
+    w.world.useVerdict = (id, need, obj, routes) => { seen.push([obj?.id, routes]); return inner(id, need, obj); };
+    sys.registerAll();
+    failOnce(sys, evs);
+    sys.setBorrow('dana', RUN({ routes: { finance_share: [['vpn_down']] } }));
+    assert.ok(stepUntil(sys, () => evs('npc_borrow_done:dana').length > 0, 30000));
+    assert.deepEqual(seen.at(-1), ['hot_desk', { finance_share: [['vpn_down']] }]);
+});
+
+test('H-3: a visit to an NPC stands beside them and is not that PC\'s user', () => {
+    const npcs = { dana: { pos: { x: 100, y: 100 }, rec: dana() }, omar: { pos: { x: 400, y: 100 }, rec: { id: 'omar' } } };
+    const { sys, w, evs } = workWorld({ npcs });
+    w.world.cellBeside = id => (id === 'omar' ? { x: 432, y: 100 } : null);
+    sys.registerAll();
+    sys.enqueueVisit('dana', { kind: 'workaround', at: { npcId: 'omar' }, useSeconds: 6 });
+    assert.ok(stepUntil(sys, () => sys.getState('dana').visiting && sys.getState('dana').job?.phase === 'using', 30000));
+    assert.equal(sys.userOf('omar'), null);
+    assert.ok(w.calls.moves.some(m => m.id === 'dana' && m.x === 432));
+    assert.ok(stepUntil(sys, () => evs('npc_visit_done:dana').length > 0, 10000));
+});

@@ -38,7 +38,20 @@
  * sets off again, so it says its start line again. `level` in the emit payload is the client's
  * mirror of the frustration, not the server's figure; a mapping must not rely on it.
  *
- * Nothing here is secret: a run names ids, a kind and a dwell; no password passes through.
+ * Sub-slice H (plan 6.4, 6.5). `borrow_session` calls `NPCNeedsSystem.setBorrow(npcId, run)`, so
+ * the NPC's next use of the failing need is at the borrowed PC; `npc_borrow_done` posts "done",
+ * `npc_borrow_dropped` posts it dropped, and an answer with `guest: true` emits
+ * `npc_guest_left:<pcId>` with { npcId, objectId }, which the workstation layer records as the
+ * PC's guest. `share_login` is a visit to the colleague (`with`): on arrival the NPC says a
+ * `login_aloud` line, and every HEAR_TICK_MS of the dwell the runner asks whether the player
+ * hears (`NPCNeedsSystem.playerHears`); the first tick that hears notes the player's room. "Done"
+ * carries `heard` and that `room_id`. A heard answer { capture, line, note, displayName } shows a
+ * toast titled "Overheard: <displayName>", adds the evidence note, records the capture through
+ * `window.recordSECapture` and emits `npc_overheard_login:<npcId>`; an unheard one ({}) does
+ * nothing.
+ *
+ * A run names ids, a kind and a dwell; no password is in it. The one answer that carries a
+ * password is a heard share's, which the server sends only for a heard "done" in an opened room.
  */
 
 export const START_POOLS = Object.freeze({
@@ -47,9 +60,11 @@ export const START_POOLS = Object.freeze({
 export const RETRY_MS = 2000;
 export const RETRY_MAX_MS = 30000;
 export const STUCK_ATTEMPTS = 5;
-// The kinds performed by a visit. Sub-slice H adds borrow_session and share_login here; until
-// then they are given back as dropped (START_POOLS already names their lines)
-const VISIT_KINDS = new Set(['writes_down', 'prop_door']);
+// The kinds performed by a visit; borrow_session is a use job (NPCNeedsSystem.setBorrow, 6.4)
+const VISIT_KINDS = new Set(['writes_down', 'prop_door', 'share_login']);
+export const SHARE_DWELL_S = 6;      // plan 6.5: the walk to the colleague, 6 seconds there
+export const HEAR_TICK_MS = 250;     // how often a share's dwell asks whether the player hears
+export const ALOUD_POOL = 'login_aloud';
 
 /** The wait before resend number `attempts` (1, 2, ...): 2 s, 4 s, 8 s, 16 s, then 30 s. */
 export function retryDelay(attempts) {
@@ -99,13 +114,25 @@ export class NpcWorkarounds {
             this._send(key, false);
             return true;
         }
+        if (run.do === 'borrow_session') {
+            const set = typeof run.pc === 'string' && run.pc && this._needs()?.setBorrow?.(npcId, run);
+            if (!set) this._send(key, true);
+            else started();
+            return true;
+        }
         if (VISIT_KINDS.has(run.do)) {
-            const at = run.do === 'writes_down' ? this._home(npcId) : run.prop;
+            const share = run.do === 'share_login';
+            const at = run.do === 'writes_down' ? { objectId: this._home(npcId) }
+                : share ? { npcId: run.with } : { objectId: run.prop };
+            const target = share ? at.npcId : at.objectId;
             // Review R3 n1: the dwell left sets the visit's length, so 0 gives a near-zero visit
             // (not the default VISIT_DWELL_S); only a run with no dwell takes the default
             const dwell = typeof run.dwell === 'number' && Number.isFinite(run.dwell) ? Math.max(0, run.dwell) : undefined;
-            const queued = typeof at === 'string' && at && this._needs()?.enqueueVisit?.(npcId, {
-                kind: 'workaround', at: { objectId: at }, useSeconds: dwell,
+            if (share) job.heard = false;
+            const queued = typeof target === 'string' && target && this._needs()?.enqueueVisit?.(npcId, {
+                // A share always stands its whole dwell beside the colleague, so a reload's resent run
+                // (whose dwell left may be 0) still gives the player a chance to hear it (6.5)
+                kind: 'workaround', at, useSeconds: share ? Math.max(SHARE_DWELL_S, dwell || 0) : dwell,
                 data: { workaround: { index: run.index, hand: run.hand, do: run.do } }
             });
             // The line and `started` only for a visit that will happen (review 9.2 B R1 m5)
@@ -134,7 +161,53 @@ export class NpcWorkarounds {
     /** `npc_visit_done:<npcId>`: the visit was performed. */
     visitDone(data) {
         const key = this._jobFor(data);
+        if (!key) return;
+        const job = this.active.get(key);
+        if (job.run.do === 'share_login') { this._listen(job); job.listening = false; }
+        this._send(key, false);
+    }
+
+    /** `npc_visit_arrived:<npcId>`: a share's NPC is beside the colleague: the line, then listen. */
+    visitArrived(data) {
+        const key = this._jobFor(data);
+        const job = key ? this.active.get(key) : null;
+        if (!job || job.run.do !== 'share_login' || job.listening !== undefined) return;
+        this._needs()?.mutter?.(job.npcId, ALOUD_POOL);
+        job.listening = true;
+        const tick = () => {
+            if (!job.listening || this.active.get(key) !== job || job.state !== 'running') return;
+            this._listen(job);
+            this._timer(tick, HEAR_TICK_MS);
+        };
+        tick();
+    }
+
+    /** One hearing test: the first that hears notes the player's room (6.5). */
+    _listen(job) {
+        if (job.heard) return;
+        if (!this._needs()?.playerHears?.(job.npcId)) return;
+        const room = this.deps.playerRoom?.();
+        job.heard = true;
+        job.roomId = typeof room === 'string' && room ? room : null;
+    }
+
+    /** `npc_borrow_done:<npcId>`: the borrower left the borrowed PC. */
+    borrowDone(data) {
+        const key = this._borrowKey(data);
         if (key) this._send(key, false);
+    }
+
+    /** `npc_borrow_dropped:<npcId>`: the borrow never started in time. */
+    borrowDropped(data) {
+        const key = this._borrowKey(data);
+        if (key) this._send(key, true);
+    }
+
+    _borrowKey(data) {
+        if (typeof data?.npcId !== 'string' || !Number.isInteger(data.index) || !Number.isInteger(data.hand)) return null;
+        const key = keyOf(data.npcId, data);
+        const job = this.active.get(key);
+        return job && job.state === 'running' && job.run.do === 'borrow_session' ? key : null;
     }
 
     /** `npc_visit_dropped:<npcId>`: the visit was never made, or was cut short. */
@@ -152,7 +225,13 @@ export class NpcWorkarounds {
         this.requests++;
         let answer;
         try {
-            answer = await this.deps.send({ npc_id: job.npcId, index: job.run.index, hand: job.run.hand, dropped: !!dropped });
+            const body = { npc_id: job.npcId, index: job.run.index, hand: job.run.hand, dropped: !!dropped };
+            // 6.5: a share says whether the player heard, and the room of the first tick that did
+            if (job.run.do === 'share_login' && !dropped) {
+                body.heard = !!job.heard;
+                if (job.heard && job.roomId) body.room_id = job.roomId;
+            }
+            answer = await this.deps.send(body);
         } catch (err) {
             const status = err?.status;
             if (status === 403) { this._end(key, 'refused'); return; }
@@ -200,7 +279,20 @@ export class NpcWorkarounds {
             this.deps.openDoor?.(body.roomId, body.roomData || null);
         }
         if (typeof body.setGlobal === 'string' && body.setGlobal) this.deps.setGlobal?.(body.setGlobal, true);
+        // 6.4: the borrower left the session open; the workstation layer records the guest now
+        if (run.do === 'borrow_session' && body.guest === true && typeof body.pcId === 'string') {
+            this._emit(`npc_guest_left:${body.pcId}`, { npcId, objectId: body.pcId });
+        }
+        // 6.5: a heard share explains itself
+        const heard = run.do === 'share_login' && body.capture && typeof body.capture === 'object';
+        if (heard) {
+            const who = typeof body.displayName === 'string' && body.displayName ? body.displayName : npcId;
+            if (typeof body.line === 'string') this.deps.toast?.(body.line, `Overheard: ${who}`);
+            if (typeof body.note === 'string' && body.note) this.deps.addNote?.(`Overheard: ${who}`, body.note);
+            this.deps.recordCapture?.(body.capture);
+        }
         this._emit(`npc_workaround:${npcId}`, { npcId, index: run.index, do: run.do, phase: 'done' });
+        if (heard) this._emit(`npc_overheard_login:${npcId}`, { npcId, with: run.with || null });
         if (typeof body.roomId === 'string') this._emit(`door_propped:${body.roomId}`, { roomId: body.roomId, npcId });
     }
 
@@ -312,13 +404,20 @@ export function installNpcWorkarounds(api) {
             try { w.unlockDoor(sp, null); } catch (e) { console.warn('propped door failed to open', e); return false; }
             return true;
         },
-        npcRecord: id => w.npcManager?.npcs?.get?.(id) || null
+        npcRecord: id => w.npcManager?.npcs?.get?.(id) || null,
+        playerRoom: () => w.currentPlayerRoom || null,
+        toast: (line, title) => (typeof w.gameAlert === 'function' ? w.gameAlert(line, 'info', title, 8000) : null),
+        addNote: (title, text) => (typeof w.addNote === 'function' ? w.addNote(title, text, true) : null),
+        recordCapture: capture => (typeof w.recordSECapture === 'function' ? w.recordSECapture(capture) : null)
     });
     w.npcWorkarounds = runner;
     const on = (name, fn) => w.eventDispatcher?.on?.(name, fn);
     on('npc_workaround_due:*', data => runner.due(data));
     on('npc_visit_done:*', data => runner.visitDone(data));
     on('npc_visit_dropped:*', data => runner.visitDropped(data));
+    on('npc_visit_arrived:*', data => runner.visitArrived(data));
+    on('npc_borrow_done:*', data => runner.borrowDone(data));
+    on('npc_borrow_dropped:*', data => runner.borrowDropped(data));
     return runner;
 }
 
