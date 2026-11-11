@@ -78,6 +78,14 @@ require 'uri'
 # allowed inside savedNotes, and inside the se_captures global only under revealSecret. The note exception
 # above follows a done writes_down through the game's written_down?.
 #
+# Slice 9.2 sub-slice L (ACCESS_MODEL_SLICE_9_2_PLAN.md 6.6 and 9.2): no list of locked-out
+# accounts ever reaches the browser. It reports (rule `lockout_list`) a `loginLockouts` or
+# `loginFailures` key in any response, and a `lockedOut` list anywhere but GET /scenario's
+# `$.npcFrustration.<npcId>.lockedOut`. With the game given it also reports (rule
+# `lockout_unrecorded`) a PC in that list, or a `lockedOut: true` in a POST /npc_frustration
+# answer, for an NPC whose saved npcFrustration record does not hold it: the browser learns of a
+# lockout only through the server's own `check` record.
+#
 # A finding names the rule, the route, the response line and the secret's owner (an NPC or
 # item id), never the value. Every output line is checked against the secret values before it
 # is returned, so blind runs can use it too.
@@ -147,7 +155,8 @@ class AccessLeakScanner
       locked_items: @items.count { |_, i| i[:locked_ancestors].any? },
       network_strings: @network_strings.length,
       share_items: @share_items.length,
-      workarounds: @workarounds.length
+      workarounds: @workarounds.length,
+      lockout_records: lockout_records.values.sum(&:length)
     }
   end
 
@@ -182,6 +191,7 @@ class AccessLeakScanner
       scan_share_content(body, ctx, legit, add)
       scan_network_strings(body, ctx, add)
       scan_workarounds(body, ctx, add)
+      scan_lockouts(body, ctx, add)
     end
     findings
   end
@@ -209,7 +219,9 @@ class AccessLeakScanner
     'share_content' => 'file share content outside a container response for that share',
     'network_string' => 'a network or resource name, host or observations outside the network routes',
     'withheld_key' => 'a withheld key (creds, role, awareness, habits, workarounds) on an NPC record',
-    'workaround' => 'a workaround (its kind beside its target) outside a hand-over'
+    'workaround' => 'a workaround (its kind beside its target) outside a hand-over',
+    'lockout_list' => 'a list of sign-in lockouts or failures, or a lockedOut list outside GET /scenario npcFrustration',
+    'lockout_unrecorded' => 'a lockout the server\'s check did not record'
   }.freeze
 
   private
@@ -485,7 +497,8 @@ class AccessLeakScanner
       any_container: path.include?('/container/'),
       scenario: method == 'GET' && path.end_with?('/scenario'),
       login_accounts: method == 'GET' && path.end_with?('/login_accounts'),
-      npc_workaround: method == 'POST' && path.end_with?('/npc_workaround')
+      npc_workaround: method == 'POST' && path.end_with?('/npc_workaround'),
+      npc_frustration: method == 'POST' && path.end_with?('/npc_frustration')
     }
   end
 
@@ -609,6 +622,48 @@ class AccessLeakScanner
     when Hash
       yield node, path
       node.each { |k, v| walk_hashes(v, "#{path}.#{k}", &block) }
+    end
+  end
+
+  # Sub-slice L: the game's own check records, npcId => [pcId] (empty without a game)
+  def lockout_records
+    @lockout_records ||= begin
+      store = @game.respond_to?(:player_state) && @game.player_state.is_a?(Hash) ? @game.player_state['npcFrustration'] : nil
+      (store.is_a?(Hash) ? store : {}).each_with_object({}) do |(id, e), out|
+        list = e.is_a?(Hash) && e['lockedOut'].is_a?(Array) ? e['lockedOut'].map(&:to_s) : []
+        out[id.to_s] = list unless list.empty?
+      end
+    end
+  end
+
+  LOCKOUT_LIST_KEYS = %w[loginLockouts loginFailures].freeze
+  CLIENT_LOCKED_OUT_PATH = /\A\$\.npcFrustration\.([^.\[]+)\.lockedOut\z/.freeze
+
+  # Sub-slice L (6.6, 9.2): no lockout list, and no lockout the server's check did not record
+  def scan_lockouts(body, ctx, add)
+    walk_hashes(body, '$') do |hash, json_path|
+      LOCKOUT_LIST_KEYS.each do |key|
+        add.call('lockout_list', key, safe_path("#{json_path}.#{key}")) if hash.key?(key)
+      end
+      next unless hash.key?('lockedOut')
+
+      value = hash['lockedOut']
+      path = "#{json_path}.lockedOut"
+      if value.is_a?(Array)
+        m = ctx[:scenario] ? CLIENT_LOCKED_OUT_PATH.match(path) : nil
+        unless m
+          add.call('lockout_list', 'lockedOut', safe_path(path))
+          next
+        end
+        next unless @game
+
+        value.each do |pc|
+          add.call('lockout_unrecorded', "npc:#{m[1]}/#{pc}", safe_path(path)) unless Array(lockout_records[m[1]]).include?(pc.to_s)
+        end
+      elsif value == true && ctx[:npc_frustration] && @game
+        npc = hash['npcId'].to_s
+        add.call('lockout_unrecorded', "npc:#{npc}", safe_path(path)) if Array(lockout_records[npc]).empty?
+      end
     end
   end
 

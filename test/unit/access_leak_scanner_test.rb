@@ -551,4 +551,44 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
     refute_empty AccessLeakScanner.new(game.scenario_data, game: game).scan(post_rows(saved)), 'savedNotes before any heard answer'
   end
 
+  # ── slice 9.2 sub-slice L: lockouts (plan 6.6, 9.2) ─────────────────
+
+  LOCKOUT_FRUSTRATION = '/break_escape/games/1/npc_frustration'.freeze
+  LOCKOUT_SCENARIO = '/break_escape/games/1/scenario'.freeze
+
+  def lockout_game(recorded)
+    create_access_game(mission: break_escape_missions(:ceo_exfil), player: break_escape_demo_users(:test_user),
+                       scenario: share_scenario,
+                       player_state: { 'unlockedRooms' => ['open_office'], 'loginLockouts' => ['sam_pc|sokafor'],
+                                       'npcFrustration' => recorded ? { 'sam' => { 'level' => 0, 'lockedOut' => ['sam_pc'] } } : {} })
+  end
+
+  test 'L: a recorded lockout may reach the browser in a check answer and GET /scenario npcFrustration' do
+    game = lockout_game(true)
+    scanner = AccessLeakScanner.new(game.scenario_data, game: game)
+    assert_equal 1, scanner.counts[:lockout_records]
+    assert_empty scanner.scan(post_rows(['POST', LOCKOUT_FRUSTRATION, { 'answers' => [{ 'npcId' => 'sam', 'lockedOut' => true }] }],
+                                        ['GET', LOCKOUT_SCENARIO, { 'npcFrustration' => { 'sam' => { 'level' => 0, 'lockedOut' => ['sam_pc'] } } }]))
+  end
+
+  test 'L: an unrecorded lockout, a lockout list or a lockedOut list elsewhere is reported' do
+    game = lockout_game(false)
+    findings = AccessLeakScanner.new(game.scenario_data, game: game).scan(
+      post_rows(['POST', LOCKOUT_FRUSTRATION, { 'answers' => [{ 'npcId' => 'sam', 'lockedOut' => true }, { 'npcId' => 'ruth', 'lockedOut' => false }] }],
+                ['GET', LOCKOUT_SCENARIO, { 'npcFrustration' => { 'sam' => { 'lockedOut' => ['sam_pc'] } }, 'loginLockouts' => ['sam_pc|sokafor'] }],
+                ['GET', '/break_escape/games/1/room/open_office', { 'npcs' => [{ 'id' => 'sam', 'lockedOut' => ['sam_pc'] }], 'state' => { 'loginFailures' => {} } }])
+    )
+    got = findings.map { |f| [f.rule, f.owner, f.line] }.sort
+    assert_equal [['lockout_list', 'lockedOut', 3], ['lockout_list', 'loginFailures', 3], ['lockout_list', 'loginLockouts', 2],
+                  ['lockout_unrecorded', 'npc:sam', 1], ['lockout_unrecorded', 'npc:sam/sam_pc', 2]], got
+    refute(AccessLeakScanner.new(game.scenario_data, game: game).report_lines(findings).any? { |l| l.include?('sokafor') })
+  end
+
+  test 'L: a sign-in answer saying lockedOut true is not a lockout record' do
+    game = lockout_game(false)
+    assert_empty AccessLeakScanner.new(game.scenario_data, game: game).scan(
+      post_rows(['POST', '/break_escape/games/1/login', { 'success' => false, 'lockedOut' => true, 'attemptsLeft' => 0 }])
+    )
+  end
+
 end

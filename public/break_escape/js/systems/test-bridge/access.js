@@ -12,8 +12,12 @@
  *   savedCards()        the card copier's saved_cards ids (client-written; never decides identity)
  *   footholds()         the footholds systems/network-links.js holds (slice 9.3a)
  *   networkView(id)     the last network view network-links.js fetched for that foothold
- *   work(npcId)         slice 9.2: the NPC's work plan (read only), frustration level and tell
- *   reports()           slice 9.2: how many POST /npc_frustration requests and reports were sent
+ *   work(npcId)         slice 9.2: the NPC's work plan (read only), frustration level and tell;
+ *                       sub-slice L adds lockedOut (stations a check found it locked out at) and
+ *                       lockCheck (checks in flight)
+ *   reports()           slice 9.2: how many POST /npc_frustration requests and reports were sent;
+ *                       sub-slice L adds checks (how many were queued) and lockoutSeen (the PCs
+ *                       where a sign-in answered locked_out in this page)
  *   guest(pcId)         slice 9.2 H: the guest a borrower left at a hot desk ({ npcId, lockAt }),
  *                       who is using the PC now, and the NPC's pending borrow, if any
  *
@@ -35,7 +39,8 @@ export const accessBridge = {
         const st = window.npcNeedsSystem?.getState?.(npcId) || null;
         if (!rec && !st) return null;
         return json({ plan: rec?.work || null, frustration: st?.frustration ?? null, tell: st?.tell ?? null,
-            settled: st?.settled ?? null, failed: st?.failed ?? null, parked: st?.parked ?? [] });
+            settled: st?.settled ?? null, failed: st?.failed ?? null, parked: st?.parked ?? [],
+            lockedOut: st?.lockedOut ?? [], lockCheck: st?.lockCheck ?? [] });
     },
 
     /**
@@ -62,8 +67,9 @@ export const accessBridge = {
     /** Slice 9.2: `{ requests, reports, pending, settled }` from systems/npc-reports.js. */
     reports() {
         const r = window.npcReports;
-        if (!r) return { requests: 0, reports: 0, pending: 0, settled: [] };
-        return { requests: r.requests, reports: r.sent, pending: r.pending.length, settled: [...r.settled].sort() };
+        if (!r) return { requests: 0, reports: 0, pending: 0, settled: [], checks: 0, lockoutSeen: [] };
+        return { requests: r.requests, reports: r.sent, pending: r.pending.length, settled: [...r.settled].sort(),
+            checks: r.checks || 0, lockoutSeen: [...(r.lockoutSeen || [])].sort() };
     },
 
     /**
