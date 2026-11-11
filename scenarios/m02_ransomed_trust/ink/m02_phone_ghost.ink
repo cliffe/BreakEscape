@@ -614,7 +614,7 @@ Good.
 
 We'll be watching.
 
-> GHOST PROTOCOL: CLOSED
+Narrator: The video window cuts to black. One line of text holds on the screen: Ghost protocol, closed.
 
 #exit_conversation
 -> DONE
@@ -630,7 +630,7 @@ When your agency comes for us -- and I know they're coming -- I hope it's you le
 
 You'll understand why we did this. Even if you never agree.
 
-> GHOST PROTOCOL: CLOSED
+Narrator: The video window cuts to black. One line of text holds on the screen: Ghost protocol, closed.
 
 #exit_conversation
 -> DONE
@@ -656,7 +656,7 @@ Back at the console. So you've decided.
 // accept it from mid_mission_contact until a restore is chosen.
 + [I still don't know.]
     Then it stays open until you choose a restore. This device reaches me if you change your mind.
-    > GHOST PROTOCOL: CLOSED
+    Narrator: The video window cuts to black. One line of text holds on the screen: Ghost protocol, closed.
     #exit_conversation
     -> DONE
 
@@ -667,7 +667,7 @@ The offer stands until you touch that console again. I'm not running a sale.
 
 The evidence has been sat in the conference room since March. It can wait a few more minutes.
 
-> GHOST PROTOCOL: CLOSED
+Narrator: The video window cuts to black. One line of text holds on the screen: Ghost protocol, closed.
 
 #exit_conversation
 -> DONE
