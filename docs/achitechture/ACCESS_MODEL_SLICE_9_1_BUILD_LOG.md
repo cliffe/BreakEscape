@@ -180,7 +180,7 @@ Scripted runs (builder's own Playwright script, :3001): see
 `tools/playtest/test_access_habits-report.md`. Every beat passed once three script mistakes were
 corrected; the leak check was clean after every beat.
 
-## Step 5. `holdsDoors` (2026-11-10, parked part way: handover)
+## Step 5. `holdsDoors` (2026-11-10, parked; finished 2026-11-11)
 
 Branch `build/9-1-step5-holds-doors`, from `f86912dd4`. Parked at the user's request.
 
@@ -233,40 +233,69 @@ no `room_entered:store_b`, no denial (a bump on a shut gate is silent, as the do
 **H1 to H8 rerun** (game 134, one game for both runs, reload after H3): H1, H2, H3, the reload,
 H4, H5, H6 and H7 all pass with a clean leak check after each beat. Stopped at the start of H8.
 
-### Half done
+### Finished (2026-11-11)
 
-- H8 rerun not done; `PLAYTEST.md` has no H9 section, its header still says H1 to H8 and its
-  expected validator output does not mention the H9 report lines; `tools/playtest/test_access_habits-report.md`
-  has no entry for these runs.
-- Full `bin/rails test` and `bin/test-js -j 3` were not run at the end. The last full Rails run
-  (after the preset change, before the loader test fix) had 1 failure, since fixed; the targeted
-  files all pass.
+Resumed on a new host: the games below are on a different database from games 129 to 134 above.
+Keyless server on :3012. Details in `tools/playtest/test_access_habits-report.md`.
 
-### Not started
+- **H8 rerun** (game 1165, started in `lena_room` with Rowan carried in): open (1, a claim, task
+  done, gone on her return), open (2), locked (3, padlock, cue and chime, sign-in screen); after
+  the reload leave 1 open again with a claim. Leak check clean.
+- **H9** (game 1173): every check of the first run passed again on the final code. `PLAYTEST.md`
+  now has Run 3 (H9) with its spots, its header says H1 to H9, and the expected validator lines
+  include Gary's and Sara's report lines and Store B's graph label.
+- **`test_gate_tailgate`** (games 1174, 1175, 1177): unchanged by step 5 (its gate has
+  `playerMayPassIf`, so no `noHold`). No pass, lanyard and clone routes as in its README; the
+  README's "NOT RECHECKED" row (a player waiting at the door without a lanyard) is now seen: the
+  gate never opened in about 61 s, Sam turned back six times. Not seen in this run: the gate
+  shutting after the clone window, and Sam's sight challenge.
+- **Validator change** (`8de585565`) kept: the tailgate scenario no longer draws the
+  "no item declares card_id" warning, and nothing else changed.
+- The WIP commit `b07634550` keeps its title (no rebase in a shared tree); H9 is final as of this
+  step.
 
-- A `test_gate_tailgate` browser run (plan: show its gates unchanged). The node tests cover
-  `playerMayPassIf` ignoring `noHold`.
-- The playtest skill sentence (skills need the orchestrator's say-so). Proposed: "From slice 9.1
-  step 5, `verify-run.rb --access` prints a `gate` line for each gate with a `noHold`; like the
-  rest of the habits block it is not for a tester playing blind."
+### The two door and route problems: fixed in the engine
 
-### Known problems found (door work and route engine, not changed here)
+1. **A guard sent back to his door stopped on the radius edge** (commit `4181df1c7`). Cause:
+   `approachPoint` put the spot `openRadius - 8` from the door centre; a walker stops within 8 px
+   of the end of his path and the spot is snapped to an 8 px cell centre, so he could end up to
+   about 14 px further out. At radius 56 that is just outside, and `_approachRouteGate` then finds
+   nothing left to walk (the spot is under 8 px away), so he retried for ever with no target.
+   Seen live on game 1168 (Gary, radius 56, unlock waypoint (2,4)): he stood 56.1 to 57.9 px out.
+   Fix: the spot is 16 px inside the radius (`APPROACH_MARGIN_PX`; still at most 48 px out, at
+   least half a tile). Test: `door-gates.test.mjs` checks, for radii 40 to 120 and four
+   directions, that the snapped spot plus the 8 px stop is inside the radius; three expectations
+   moved with the margin.
+2. **A route action lost when its leg was cut short** (commit `66f2136d4`). The handover's "door
+   waypoint directly above the door" was not about the door: a chair stands on the cell that
+   Sara's waypoint (1,7) snaps to (the world grid counts the chair's cell as walkable, its body
+   blocks her). She stopped about 20 px short; the stall re-target (or the stuck recovery) chose
+   again, but the waypoint had been counted as taken when its path was found, so its
+   `unlockRoom` was skipped and she waited at the unloaded `store_b` for good. Seen live on
+   game 1167. Fix in `npc-behavior.js`: when a leg to a waypoint whose `unlockRoom` room is not
+   loaded yet is cut short (stuck recovery or the stall re-target in
+   `chooseWaypointTargetMultiRoom`), within 1.5 tiles of the spot counts as the arrival and the
+   action runs; further off, the waypoint is put back so the leg is walked again. Once the room
+   is loaded the old skip stands (the action is only a pause then). Tests: four in
+   `npc-stuck-detector.test.mjs`, three in `npc-route-multiroom.test.mjs`.
 
-1. A guard sent to `approachPoint` with the default radius can stop with his body centre exactly
-   56 px from the door (reach `openRadius - 8`, body 8 px further), just outside the radius, and
-   stand there with no target while the player is near his waypoint. Seen with Gary at radius 56;
-   H9 uses radius 80 and waypoint (1,2) to avoid it.
-2. With Sara's door waypoint at (1,7), directly above the door, her `unlockRoom` action never ran
-   (`store_b` never loaded) and she stood with no target. Back at (2,8) it works. Not diagnosed.
-3. Port :3017 was taken by another agent's server (`slice-9-2` worktree) when this builder
-   started; its first game (129) was opened once there. Games 129 to 132 are scratch.
+   Live proof (game 1172, the H9 scenario with Gary at radius 56 and waypoint (2,4), and Sara's
+   waypoint at (1,7)): Sara logged "Wedged 19px from a route waypoint with an action: arrived",
+   unlocked and loaded `store_b` and lapped through it; Gary went through his gate on every lap
+   watched, with no stand-off (three in game 1172, four in game 1170 with fix 1 alone). H9 itself keeps radius 80 and the waypoints (1,2) and (2,8):
+   they suit the beat's spots and are no longer a workaround.
 
-### Next steps
+### Tests
 
-1. Finish the H8 rerun on a new game (`new-game.rb test_access_habits`), reload inside H8.
-2. Add H9 to `PLAYTEST.md` (set-up, the spots used: beside Gary's door feet (98,72); within
-   Sara's radius feet (40,232); parked outside feet (160,285)), update its header and expected
-   validator lines (gary and sara report lines), and add the runs to the report file.
-3. Run `bin/rails test` and `bin/test-js -j 3` and record the counts; squash or retitle the WIP
-   commit.
-4. Optionally the `test_gate_tailgate` run; pass the two known problems to the door work's owner.
+After merging `8dafe1863` (the habits validator on Ruby 2.7.8), on the project's Ruby 2.7.8,
+under the shared lock: `bin/rails test` 1306 runs, 9564 assertions, 0 failures, 0 errors,
+1 skip; `bin/test-js -j 3` 475 files passed, 0 failed. Validator on `test_access_habits`: no
+errors, no warnings.
+
+### Open
+
+- The playtest skill sentence still needs the user's say-so: "From slice 9.1 step 5,
+  `verify-run.rb --access` prints a `gate` line for each gate with a `noHold`; like the rest of
+  the habits block it is not for a tester playing blind."
+- The world grid treats a chair's cell as walkable while its body blocks an NPC (the cause of
+  problem 2). Not changed here; the route fix makes it harmless for route actions.
