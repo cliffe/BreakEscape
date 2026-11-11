@@ -328,6 +328,8 @@ test('a visit waits for a running job; a late answer changes no decision; a leve
     assert.equal(a.sys.getState('dana').job.kind, 'use', 'not interrupted');
     assert.ok(stepUntil(a.sys, () => a.sys.getState('dana').job?.kind === 'visit', 10000));
 
+    // The late answer here is tell 1, which leaves the pool as it was. A tell 2 answer does change
+    // the grumble topic (work_fail_fed_up, plan 5.5), by design, so it is not used here.
     const runLog = late => {
         const { sys } = workWorld({ globals: { share_down: true } });
         sys.registerAll();

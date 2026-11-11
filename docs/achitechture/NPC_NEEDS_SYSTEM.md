@@ -730,7 +730,8 @@ Author-facing rules are in `README_scenario_design.md`, "Work, frustration and w
   wakes such a park only when its recorded causes would now pass (`reachable` for an `unreachable`
   one); a door, a room load or another object coming back on does not (`_wakeParked` skips failure
   and `held` parks). A `no_access` park always waits out its time. The other needs drain by the
-  plan's `breakDrain`.
+  plan's `breakDrain` (10 when the NPC has no plan, as for a `social_media` need; never more than
+  50). A failure park (`failed`, `off`) shows the `closed` badge, as `no_source` does.
 - **The `off` park.** `_giveUpReason` answers `off` for a judged need whose own station (its
   `needsHome`) is off, before the null returns, so the NPC never sits at a dead PC and never walks to a
   colleague's desk: a judged need takes no desk but its own (`_useCandidate`, `_queueCandidate`). The

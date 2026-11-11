@@ -526,7 +526,8 @@ a carry job the selector chooses; the two share no state, and a visit job is fla
 - A place that is not loaded or not reachable is retried once a second. A check visit is dropped
   after 60 seconds of the needs clock. A workaround visit is dropped after 120, so it cannot block
   the queue; the needs system then emits `npc_visit_dropped:<npcId>` with `{ npcId, kind, at,
-  data }`, which the workaround runner hears and reports as dropped (section 6).
+  data }`, which the workaround runner hears and reports as dropped (section 6). A dropped check
+  visit emits it too; nothing listens for a check's, and a scenario may map it.
 - `reset()` clears the queue. After a reload the server sends undone workarounds again (section 9.4).
 
 ### 5.4 Frustration lives on the server
@@ -1194,7 +1195,9 @@ report passes. It means "the NPC's room has loaded", not "the player is near".
 that NPC and need:
 
 - `work`: a resource in the NPC's resolved list is not admitted or has a `downIf`; or the NPC's
-  home PC, or a PC one of its `borrow_session` workarounds names, has an `affordance.offWhen`; or
+  home PC, or a PC a handed-over `borrow_session` names (sub-slice H; in A no borrow is handed
+  over, so a borrow PC counts for nothing and a report naming one is answered as for any other
+  PC), has an `affordance.offWhen`; or
   (sub-slice L)
   the home PC is under a policy with `maxAttempts`; or a need's `routes` (9.3) are empty or carry
   a global.
@@ -1207,9 +1210,9 @@ scenario, never from the report:
 - a `down`, `unreachable` or `no_access` cause names a resource in the NPC's resolved work list
   (for `no_access`, one it is not admitted to);
 - an `off`, `locked_out` or `social_blocked` cause names the NPC's own station (its `needsHome`
-  object, 5.2) or a PC one of its `borrow_session` workarounds names;
+  object, 5.2) or a PC a handed-over `borrow_session` names;
 - `object_id`, on a fail or an ease, is one of the NPC's **places** for that need: its own station,
-  a PC one of its `borrow_session` workarounds names, or an object that satisfies the need and is
+  a PC a handed-over `borrow_session` names, or an object that satisfies the need and is
   not a desk (5.2, by the same rule, which `access_work.rb` applies from the object's fields and
   the office presets); or null for a `social_media` ease from the phone.
 
@@ -1337,7 +1340,7 @@ No route is added for the USB policy (section 7).
 | `resources`, `roles` | Never as authored. Each NPC's own plan, as `work`: resource ids and kinds, `admitted`, `downIf` names, `object`, `routes` (lists of `downIf` global names), `breakDrain` | Every resource display name (`name`), access lists on resources, role defaults, who has which role, every network id and link, a resource's `network`, `host`, `contents` and `observations` |
 | `workNeeds`, `frustration` | No | Deleted from every room NPC |
 | `workarounds` | One at a time, as `run`, when the server decides it is due; again in `npcFrustration` on a load | The list, the thresholds, and every workaround not yet due |
-| Frustration | The level and `tell`, in each answer and on a load | `perFail` and `easePerSuccess` |
+| Frustration | The level and `tell`, in each answer and on a load | `perFail` and `easePerSuccess` are not sent as fields; they can be inferred from the level steps (`level - previous`), which W3's mapping needs |
 | A written-down password | Only in a `GET /login_accounts` answer for the owner's own reachable PC, after the workaround is done (9.1's channel), and afterwards in the player's own saved notes if they press "add to notebook" | Before that. Never in room data, the bootstrap, a `/npc_workaround` answer or a door unlock |
 | A shared login | In the `/npc_workaround` answer to a heard `share_login` (`line`, `note`, and the username in `capture`), then in the player's saved notes; from `/capture_secrets` once the capture is recorded and `revealSecret` is on | Before that; and always, when the player did not hear |
 | A lockout of an owner | `lockedOut` in the answer to a `check` report, sent when the owner returns to the locked screen | A list of locked-out accounts is never sent; sign-in answers are unchanged |
@@ -1431,8 +1434,10 @@ play and without the player standing anywhere in particular:
   use floor (each fail needs an accepted ease since the last fail, and eases are themselves a use
   floor apart), gaining `perFail - easePerSuccess` per pair (nothing when `easePerSuccess` is at
   least `perFail`), and only after the player has really locked the owner out or the policy
-  really blocks. Floors are per need, so for an NPC with two needs that can fail every figure is
-  about halved;
+  really blocks. An NPC with a cause the server owns whose station also has an `offWhen` takes two
+  counted fails per park floor (R5 n1: an `off` fail, then an owned-cause fail held only to the use
+  floor, then `off` again at the park floor), so its park-floor figure is halved. Floors are per
+  need, so for an NPC with two needs that can fail every figure is about halved;
 - then read a `writes_down` password from `/login_accounts`;
 - open a `prop_door` room;
 - claim a guest session at a hot desk;
