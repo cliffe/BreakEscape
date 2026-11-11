@@ -23,6 +23,11 @@
  *                                       listener can tell "came back and typed a password" from
  *                                       "came back to an open screen"
  *
+ * Lockout (access slice 9.2 L, ACCESS_MODEL_SLICE_9_2_PLAN.md 6.6). `env.lockedOut(ownerId, objId)`
+ * (optional; the live env asks the needs system) names an owner the server found locked out at
+ * that PC. Such an owner's screen locks on every leave, whatever lockChance or habit says: a person
+ * who cannot sign in cannot leave a session open. The server refuses the owner claim there too.
+ *
  * Guests (access slice 9.2 H, ACCESS_MODEL_SLICE_9_2_PLAN.md 6.4). An NPC that borrowed an
  * unowned hot desk and left it signed in is that PC's guest, recorded on `npc_guest_left:<pcId>`
  * (the workaround runner, when the server's answer arrives). The guest's leave is a leave with the
@@ -175,6 +180,7 @@ export class WorkstationState {
      * @param {Object} env - { objects() -> scenarioData[], npcs() -> npc[], on(pattern, cb),
      *                         emit(name, data), setGlobal(k, v), roll(npcId, salt) }, and
      *                         optionally ownerPresent(id), ownerTracked(id), policyFor(data),
+     *                         lockedOut(ownerId, objId),
      *                         clockMs() (or clock()) -> needs-clock ms, onTick(fn),
      *                         inMinigame(objectId) -> bool (the live env has all of them)
      */
@@ -217,6 +223,10 @@ export class WorkstationState {
 
     _policy(data) {
         return typeof this.env.policyFor === 'function' ? (this.env.policyFor(data) || null) : null;
+    }
+
+    _lockedOut(ownerId, objectId) {
+        return typeof this.env.lockedOut === 'function' ? !!this.env.lockedOut(ownerId, objectId) : false;
     }
 
     _tracked(npcId) {
@@ -307,6 +317,10 @@ export class WorkstationState {
         const policy = this._policy(data);
         const habit = habitOf(ownerId, this.env.npcs());
         data.screenLocked = decideLocked(data, ownerId, rec.leaves, this.env.roll, habit, rec.expectedAwayMs ?? null, policy);
+        // Access 9.2 L (6.6): an owner the server found locked out here cannot leave a session
+        // open, so the screen locks on every leave, whatever its lockChance or habit (the roll
+        // above still runs, so the seeded sequence of other screens does not shift)
+        if (!data.screenLocked && this._lockedOut(ownerId, data.id)) data.screenLocked = true;
         delete data.lockAt;
         this.pendingLocks.delete(data.id);
         const left = Number.isFinite(rec.leftAt) ? rec.leftAt : this.leftAt.get(ownerId);
@@ -573,6 +587,8 @@ export function installWorkstationState() {
         ownerTracked: (id) => !!needs()?.getState?.(id),
         // 9.2 H (6.4): the NPC whose current job is using the object (not a visit)
         userOf: (objectId) => needs()?.userOf?.(objectId) || null,
+        // 9.2 L (6.6): the server's check found this owner locked out at this PC
+        lockedOut: (ownerId, objectId) => !!needs()?.isLockedOut?.(ownerId, objectId),
         ownerPresent: (id) => {
             const sys = needs();
             const st = sys?.getState?.(id);

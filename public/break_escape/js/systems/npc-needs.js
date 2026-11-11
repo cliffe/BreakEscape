@@ -133,6 +133,9 @@ export const VISIT_DWELL_S = 8;
 export const VISIT_DROP_MS = Object.freeze({ check: 60000, workaround: 120000 });
 // Access 9.2 H (plan 6.4): a borrow not started this long (needs clock) after the hand-over is dropped
 export const BORROW_START_MS = 60000;
+// Access 9.2 L (6.6): how long a use at its own station waits for a lockout check in flight (the
+// queue sends at most one request every two seconds; a lost one is sent again once)
+export const LOCK_CHECK_WAIT_MS = 30000;
 /** Slice 18b-i (OFFICE_LIFE_PLAN 12.4): temptation's default band above urgentAt, in points. */
 export const MAGNET_TEMPT = 30;
 /** Slice 18b-ii: magnet.newsRadius default (tiles), and how long an announce waits for the speech lock. */
@@ -475,6 +478,10 @@ export class NPCNeedsSystem {
             frustration: 0, tell: 0, settled: false,
             rearm: {}, failSent: {}, checked: new Set(), visits: [], borrow: null, failedShow: null, failCause: {},
             kickSeen: {}, kickPending: new Set(),
+            // Access slice 9.2 L (6.6): stations where the server's check found this owner locked
+            // out (its uses there fail with locked_out), and checks sent and not yet answered
+            // (pcId -> needs clock ms sent; the first use there waits for the answer)
+            lockedOut: new Set(), lockCheck: {},
             urgentFlag: {},
             mode: 'idle',
             prevMode: null,
@@ -531,7 +538,7 @@ export class NPCNeedsSystem {
         // test path, and a missed owed ease or hold costs one report at most
         const mirror = new Map(ids.map(id => {
             const s = this.states.get(id);
-            return [id, { frustration: s.frustration, tell: s.tell, settled: s.settled }];
+            return [id, { frustration: s.frustration, tell: s.tell, settled: s.settled, lockedOut: [...s.lockedOut] }];
         }));
         this.states.clear();
         this._chats.clear();
@@ -555,7 +562,7 @@ export class NPCNeedsSystem {
             this.register(id);
             const m = mirror.get(id);
             const s = this.states.get(id);
-            if (m && s) { s.frustration = m.frustration; s.tell = m.tell; s.settled = m.settled; }
+            if (m && s) { s.frustration = m.frustration; s.tell = m.tell; s.settled = m.settled; m.lockedOut.forEach(pc => s.lockedOut.add(pc)); }
         }
     }
 
@@ -2263,10 +2270,41 @@ export class NPCNeedsSystem {
         (this._answers || (this._answers = [])).push(...answers.filter(a => a && typeof a.npcId === 'string'));
     }
 
+    /**
+     * Access 9.2 L (6.6): the report queue sent a `check` for this owner at its own station (on a
+     * locked return). Until the answer is applied the first use there holds its verdict, so a
+     * slow answer never lets one use through as met. False for any PC but the NPC's station.
+     */
+    lockCheckSent(npcId, pcId) {
+        const s = this.states.get(npcId);
+        if (!s || typeof pcId !== 'string' || pcId !== this._stationId(s)) return false;
+        s.lockCheck[pcId] = this.clockMs;
+        this._log(npcId, 'lock_check', { target: pcId });
+        return true;
+    }
+
+    /** Access 9.2 L (6.6): whether the server's check found this owner locked out at this PC. */
+    isLockedOut(npcId, pcId) {
+        return !!this.states.get(npcId)?.lockedOut.has(pcId);
+    }
+
+    _applyLockCheck(s, a) {
+        const pc = typeof a.forObject === 'string' ? a.forObject : null;
+        if (!pc) return;
+        delete s.lockCheck[pc];
+        if (a.lockedOut !== true || pc !== this._stationId(s) || s.lockedOut.has(pc)) return;
+        s.lockedOut.add(pc);
+        this._log(s.npcId, 'locked_out', { target: pc });
+        this._emit(`npc_locked_out:${s.npcId}`, { npcId: s.npcId, objectId: pc });
+    }
+
     _applyAnswers() {
         const list = this._answers;
         this._answers = [];
         for (const a of list) {
+            // Access 9.2 L (6.6): a check's answer (the report queue sends one for every check,
+            // refused or lost as lockedOut false) only sets or clears the station flag
+            if (a.forEvent === 'check') { const cs = this.states.get(a.npcId); if (cs) this._applyLockCheck(cs, a); continue; }
             if (a.refused || a.stale) continue;
             const s = this.states.get(a.npcId);
             if (!s) { (this._pendingLevels || (this._pendingLevels = new Map())).set(a.npcId, a); continue; }
@@ -2366,6 +2404,12 @@ export class NPCNeedsSystem {
             delete this._restored[s.npcId];
             this._restoreFrustration(s, e);
             this._seedFailCause(s, e.failWhy);
+            // Access 9.2 L (6.6, 9.4): the stations a check found this owner locked out at, so it
+            // does not sit back down and work until its next locked return
+            const station = this._stationId(s);
+            for (const pc of Array.isArray(e.lockedOut) ? e.lockedOut : []) {
+                if (pc === station && !s.lockedOut.has(pc)) { s.lockedOut.add(pc); this._log(s.npcId, 'locked_out', { target: pc, restored: true }); }
+            }
         }
         const pending = this._pendingLevels?.get(s.npcId);
         if (pending) {
@@ -2878,10 +2922,26 @@ export class NPCNeedsSystem {
         if (job.kind === 'visit') { this._completeVisit(s); return; }
         // Access slice 9.2 A (plan 5.2): a judged use is checked before anything is restored
         const judged = job.kind === 'use' && job.need && this._judged(s, job.need);
+        // Access 9.2 L (6.6): at its own station, a use waits at the desk for a check in flight
+        const atStation = judged && !job.borrowed && job.targetId === this._stationId(s);
+        if (atStation && s.lockCheck[job.targetId] !== undefined) {
+            if (this.clockMs - s.lockCheck[job.targetId] < LOCK_CHECK_WAIT_MS) {
+                if (!job.lockHeld) { job.lockHeld = true; this._log(id, 'use_held', { target: job.targetId }); }
+                return;
+            }
+            delete s.lockCheck[job.targetId];
+            this._log(id, 'lock_check_lapsed', { target: job.targetId });
+        }
         let v = { met: true };
         if (judged && typeof this.world.useVerdict === 'function') {
             // Access 9.2 H (6.4): at a borrowed PC the verdict runs with that PC's routes
             v = (job.borrowed ? this.world.useVerdict(id, job.need, obj, job.borrow?.routes || null) : this.world.useVerdict(id, job.need, obj)) || { met: true };
+        }
+        // Access 9.2 L (6.6): a station failure, first in the list (5.2); work only (a lockout at a
+        // social_media station is left to sub-slice C), and never at a borrowed PC (per PC)
+        if (atStation && job.need === 'work' && s.lockedOut.has(job.targetId)) {
+            const rest = (Array.isArray(v.missing) ? v.missing : []).filter(c => c && c.why !== 'locked_out');
+            v = { met: false, missing: [{ id: job.targetId, why: 'locked_out' }, ...rest], station: true };
         }
         // Access 9.2 H (6.4): the borrower signed in before finding out, so a session is left either
         // way; said before anything else (before a failed verdict's turn-back)
@@ -4077,6 +4137,8 @@ export class NPCNeedsSystem {
             causeCleared: this._causeCleared(s),
             // Access 9.2 H (6.4): a borrow handed over and not yet done
             borrow: s.borrow ? { index: s.borrow.index, hand: s.borrow.hand, pcId: s.borrow.pcId, need: s.borrow.need, leavesOpen: s.borrow.leavesOpen, started: s.borrow.started } : null,
+            // Access 9.2 L (6.6): stations the owner is locked out at, and checks in flight
+            lockedOut: [...s.lockedOut].sort(), lockCheck: Object.keys(s.lockCheck).sort(),
             clockMs: this.clockMs, tick: this.tickCount
         };
     }
@@ -4460,6 +4522,7 @@ export function createEngineWorld() {
             const rec = W().npcManager?.getNPC?.(npcId) || W().npcManager?.npcs?.get?.(npcId) || null;
             if (!rules || !rec) return { met: true, missing: [] };
             const stationId = typeof rec.needsHome === 'string' ? rec.needsHome : null;
+            // lockedOut stays false here: the needs core adds a lockout from its own flag (9.2 L, 6.6)
             const station = obj && obj.id === stationId ? { id: obj.id, lockedOut: false, socialBlocked: false } : null;
             return rules.useVerdict(planWithRoutes(rec.work, routes), need, station, W().gameState?.globalVariables || {});
         },

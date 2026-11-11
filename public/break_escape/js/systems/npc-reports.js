@@ -11,6 +11,14 @@
  *   station's offWhen changes, one state sync is awaited before the next batch, so the server's
  *   copy of the global is current when it checks the cause.
  * - A report answered `stale` triggers one state sync and is sent once more.
+ * - Sub-slice L (6.6): a `check` report asks whether an owner is locked out at its own station.
+ *   It is sent only on `workstation_owner_returned:<pcId>` with `wasLocked`, at a PC under a
+ *   policy with maxAttempts where this browser has had a lockout answer from POST /login
+ *   (`pc_signin_failed` with reason locked_out, at the keyboard or remote), for an owner with a
+ *   work plan whose station that PC is and who is not already flagged there. So a mission with
+ *   no lockout sends no check at all. Every check gets an answer for the needs system (refused
+ *   or lost: lockedOut false, after one resend of a lost request), which ends the hold on the
+ *   owner's first use there.
  *
  * Imports only npc-work.js (pure), which also sets window.npcWork for the needs adapter.
  */
@@ -36,6 +44,32 @@ export class NpcReports {
         this.sent = 0;
         this.seq = 0;
         this.lastEase = new Map();   // npcId -> seq of the last queued ease (R1 m6)
+        this.lockoutSeen = new Set(); // PCs where this browser had a lockout answer (9.2 L)
+        this.checks = 0;
+    }
+
+    /** Sub-slice L: POST /login answered locked_out at this PC (pc_signin_failed). */
+    noteLockout(pcId) {
+        if (typeof pcId === 'string' && pcId) this.lockoutSeen.add(pcId);
+    }
+
+    /**
+     * Sub-slice L (6.6): workstation_owner_returned:<pcId> { objectId, ownerId, wasLocked }. Sends a
+     * check when shouldCheckLockout says so and the needs system takes the hold (deps.markCheck).
+     */
+    onOwnerReturned(data) {
+        const pcId = data?.objectId;
+        const ownerId = data?.ownerId;
+        const d = this.deps;
+        if (!shouldCheckLockout({
+            wasLocked: data?.wasLocked, seen: this.lockoutSeen.has(pcId), pcId,
+            policy: typeof d.policyFor === 'function' ? d.policyFor(pcId) : null,
+            owner: typeof d.ownerRecord === 'function' ? d.ownerRecord(ownerId) : null,
+            flagged: typeof d.flagged === 'function' ? !!d.flagged(ownerId, pcId) : false
+        })) return false;
+        if (typeof d.markCheck === 'function' && d.markCheck(ownerId, pcId) === false) return false;
+        this.checks++;
+        return this.queue(ownerId, { event: 'check', objectId: pcId });
     }
 
     _now() { return typeof this.deps.now === 'function' ? this.deps.now() : Date.now(); }
@@ -46,6 +80,12 @@ export class NpcReports {
         if (report.event === 'fail' && this.settled.has(npcId)) return false;
         const seq = ++this.seq;
         if (report.event === 'ease') { this.settled.delete(npcId); this.lastEase.set(npcId, seq); }
+        if (report.event === 'check') {
+            if (typeof report.objectId !== 'string' || !report.objectId) return false;
+            this.pending.push({ npc_id: npcId, event: 'check', object_id: report.objectId, _seq: seq });
+            this._schedule();
+            return true;
+        }
         const r = { npc_id: npcId, event: report.event, need: report.need, object_id: report.objectId ?? null, _seq: seq };
         if (report.event === 'fail') r.missing = (report.missing || []).map(c => ({ id: c.id, why: c.why }));
         if (report.rearmed) r.rearmed = true;
@@ -91,12 +131,17 @@ export class NpcReports {
             this.requests++;
             this.sent += batch.length;
             let answers = [];
+            let lost = false;
             try {
                 const res = await this.deps.send(batch.map(({ _resent, _seq, ...r }) => r));
                 answers = Array.isArray(res?.answers) ? res.answers : [];
             } catch (e) {
                 answers = [];   // a lost request loses one step of frustration and nothing else
+                lost = true;
             }
+            // Sub-slice L: a check in a lost request is sent once more before it counts as no
+            const lostChecks = lost ? batch.filter(r => r.event === 'check' && !r._resent) : [];
+            if (lostChecks.length) this.pending.unshift(...lostChecks.map(r => ({ ...r, _resent: true })));
             const resend = [];
             answers.forEach((a, i) => {
                 if (!a) return;
@@ -110,13 +155,33 @@ export class NpcReports {
             answers.forEach((a, i) => {
                 if (a && typeof a === 'object' && batch[i]) { a.forEvent = batch[i].event; a.forNeed = batch[i].need; }
             });
-            const usable = answers.filter(a => a && !a.refused && !a.stale);
+            // Sub-slice L: every check gets one answer for the needs system, true only when the
+            // server said so (a refused, missing or malformed answer is no lockout)
+            const checkAnswers = [];
+            batch.forEach((r, i) => {
+                if (r.event !== 'check' || lostChecks.includes(r)) return;
+                checkAnswers.push({ npcId: r.npc_id, forEvent: 'check', forObject: r.object_id, lockedOut: answers[i]?.lockedOut === true && answers[i]?.npcId === r.npc_id });
+            });
+            const usable = answers.filter((a, i) => a && !a.refused && !a.stale && batch[i]?.event !== 'check').concat(checkAnswers);
             if (usable.length) this.deps.apply?.(usable);
         } finally {
             this.sending = false;
             this._schedule();
         }
     }
+}
+
+/**
+ * Sub-slice L (6.6): whether an owner's locked return calls for a check. All must hold: the screen
+ * was locked; this browser saw a lockout answer at that PC; the PC's policy sets a positive
+ * maxAttempts; the owner has a work plan and that PC is its station (needsHome); and it is not
+ * already flagged there (a restored or earlier true answer stands for the mission).
+ */
+export function shouldCheckLockout({ wasLocked, seen, pcId, policy, owner, flagged }) {
+    if (!wasLocked || !seen || flagged || typeof pcId !== 'string' || !pcId) return false;
+    const max = policy && typeof policy === 'object' ? policy.maxAttempts : null;
+    if (!(typeof max === 'number' && Number.isFinite(max) && max > 0)) return false;
+    return !!owner && !!owner.work && Array.isArray(owner.work.needs) && owner.work.needs.length > 0 && owner.needsHome === pcId;
 }
 
 /** The globals a loaded NPC's work plan or home station's offWhen names. */
@@ -143,9 +208,31 @@ export function installNpcReports(api) {
         send: batch => (typeof api.npcFrustration === 'function' ? api.npcFrustration(batch) : api.post('/npc_frustration', { reports: batch })),
         sync: () => w.stateSync?.sync?.(),
         apply: answers => w.npcNeedsSystem?.applyFrustration?.(answers),
-        watched: name => watchedGlobal(name, w)
+        watched: name => watchedGlobal(name, w),
+        // Sub-slice L (6.6)
+        policyFor: pcId => {
+            const sc = w.gameScenario || {};
+            // the loaded room's object (as the workstation layer reads it), else the scenario's
+            let obj = null;
+            for (const room of Object.values(w.rooms || {})) {
+                obj = Object.values(room?.objects || {}).find(sp => sp?.scenarioData?.id === pcId)?.scenarioData || null;
+                if (obj) break;
+            }
+            for (const room of obj ? [] : Object.values(sc.rooms || {})) {
+                obj = (room?.objects || []).find(o => o && o.id === pcId) || null;
+                if (obj) break;
+            }
+            const name = obj?.policy || sc.defaultPolicy;
+            const p = name && sc.policies && typeof sc.policies === 'object' ? sc.policies[name] : null;
+            return p && typeof p === 'object' ? p : null;
+        },
+        ownerRecord: id => w.npcManager?.getNPC?.(id) || w.npcManager?.npcs?.get?.(id) || null,
+        flagged: (id, pcId) => !!w.npcNeedsSystem?.isLockedOut?.(id, pcId),
+        markCheck: (id, pcId) => !!w.npcNeedsSystem?.lockCheckSent?.(id, pcId)
     });
     w.npcReports = reports;
+    w.eventDispatcher?.on?.('pc_signin_failed', data => { if (data?.reason === 'locked_out') reports.noteLockout(data.pcId); });
+    w.eventDispatcher?.on?.('workstation_owner_returned:*', data => reports.onOwnerReturned(data));
     w.eventDispatcher?.on?.('global_variable_changed:*', (data, name) => {
         const key = typeof name === 'string' && name.startsWith('global_variable_changed:') ? name.slice('global_variable_changed:'.length) : data?.name;
         reports.onGlobalChanged(key);
