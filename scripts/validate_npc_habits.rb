@@ -21,9 +21,15 @@ module ValidateNpcHabits
 
   module_function
 
-  def err(issues, msg) = issues << "❌ ERROR: habits: #{msg}"
-  def warn(issues, msg) = issues << "⚠️ WARNING: habits: #{msg}"
-  def suggest(issues, msg) = issues << "💡 SUGGESTION: habits: #{msg}"
+  def err(issues, msg)
+    issues << "❌ ERROR: habits: #{msg}"
+  end
+  def warn(issues, msg)
+    issues << "⚠️ WARNING: habits: #{msg}"
+  end
+  def suggest(issues, msg)
+    issues << "💡 SUGGESTION: habits: #{msg}"
+  end
 
   def check(json_data, expanded:, report:, scenario_dir: nil)
     issues = []

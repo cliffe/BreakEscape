@@ -1,3 +1,7 @@
+# Resume note: access model work resumed (2026-11-11)
+
+Branch `claude/break-escape-access-design-090sjx` (= main at ffdc7e585). Parked branches restored with `git am -3` on the handover's bases, main merged in, one worktree each: `.claude/worktrees/p-voice-direction-tag`, `p-stage-directions-m02-m07`, `p-9-1-step5-holds-doors`, `p-9-2-u-a` (branches `build/<name>`). Builders on each (opus55); full Rails/JS suites run under a shared `flock` because the test DB is shared. Order: voice tag, then stage directions, then 9.1 step 5 and 9.2 U/A (each 2 to 5 review rounds), then 9.3a step 9 with 9.1 step 8, then 9.2 B, H, L, C. User questions: form https://claude.ai/artifact/PanecaCQBMChKnqsDGa98a (answers in its `answers` collection).
+
 # Resume note: access model, lab follow-up and voice delivery tag (parked 2026-11-10)
 
 Handover `docs/handover/2026-11-10_ACCESS_MODEL_HANDOVER.md`: what is on main, four parked build branches saved as patches in `docs/handover/2026-11-10_parked_branches/` (voice delivery tag, m02 to m07 stage directions, 9.1 step 5 holdsDoors, 9.2 U and A), what is not started, and the user's open questions.
