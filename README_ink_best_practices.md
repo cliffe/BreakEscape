@@ -95,7 +95,12 @@ Maya Chen: I suppose it doesn't matter now.
 ```
 
 - Write it at the end of the line, or on its own line directly above (ink attaches a tag line to the line after it). If a line has two, the last wins.
-- The line-above form only works when the spoken line comes next in the same knot, or straight after a plain `-> knot` divert as that knot's first line. Above a choice, at the end of a knot, or above `-> END`, the note attaches to nothing.
+- The line-above form works in these cases only:
+  - the spoken line comes next in the same knot (logic lines in between are fine);
+  - a plain `-> knot` divert or a `-> knot ->` tunnel comes next, and that knot's first line is a spoken line. The server follows a knot that opens with another divert or tunnel, and a knot with only stitches into its first stitch. In a tunnel, the note goes on the tunnel's first line and never on the line after the tunnel returns;
+  - the line that follows is a one-line conditional with no else (`{flag: Gary: Yes.}`): the note goes on that line, or on the line after it when the condition is false.
+
+  Everywhere else the line plays untagged: above a choice, at the end of a knot, above `-> END`, into a tunnel or knot that starts with a choice, and onto or into a multi-line conditional (`{flag:` on its own line) or a conditional divert (`{flag: -> knot}`). dialoguelint warns (`delivery-unread`) for each of these. When in doubt, put the note at the end of the spoken line itself.
 - The server has to find the note in the ink to use it. It cannot on a glued line (`<>`, on the line or the line before it) or on a line that prints a variable or expression (`{count}`, `{name()}`), so those lines play untagged. Put the note on a plain spoken line.
 - Keep the note under 200 characters, in plain ASCII words, with no `{braces}`. A longer note, or one with no letter or digit (`...`), is dropped and the line plays untagged.
 - Keep it short and about the voice: pace, volume, mood, a laugh or sigh in the voice (`quietly, almost to herself`, `flatly`, `with a tired laugh`, `slowly, choosing each word`). Things the character *does* are narration, or cut.

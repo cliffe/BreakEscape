@@ -190,7 +190,16 @@ module BreakEscape
 
     # ─── Parity with the client (review R1 M2) ─────────────────────────────
 
-    PARITY_FIXTURES = %w[delivery_parity_edge delivery_parity_edge2 delivery_parity_diverts].freeze
+    # Fixture name => the variable settings to play it under (each a list of name=value).
+    # delivery_parity_shapes (review R2 m1): a tunnel, a knot with only stitches, a divert
+    # chain and a conditional first line; its flags are played both ways, since a note
+    # carried past a line that may print nothing lands on whichever line shows.
+    PARITY_FIXTURES = {
+      'delivery_parity_edge' => [[]],
+      'delivery_parity_edge2' => [[]],
+      'delivery_parity_diverts' => [[]],
+      'delivery_parity_shapes' => [[], %w[flag=true flag_on=false]]
+    }.freeze
 
     # For each fixture: every line inkjs shows (played as InkEngine#continue plays it,
     # every choice path) with the note the client sends, against InkLineWalker. A line
@@ -200,11 +209,14 @@ module BreakEscape
     test "the walker gives each line the note inkjs gives it (tag above a divert, glue, counters)" do
       skip 'node not available' unless system('node --version', out: File::NULL, err: File::NULL)
 
-      PARITY_FIXTURES.each do |name|
+      PARITY_FIXTURES.each do |name, settings|
         json = BreakEscape::Engine.root.join("test/fixtures/files/ink_line_walker/#{name}.json").to_s
-        out, err, status = Open3.capture3('node', BreakEscape::Engine.root.join('test/support/ink_delivery_lines.mjs').to_s, json)
-        assert status.success?, "#{name}: #{err}"
-        client = JSON.parse(out).to_set
+        client = Set.new
+        settings.each do |vars|
+          out, err, status = Open3.capture3('node', BreakEscape::Engine.root.join('test/support/ink_delivery_lines.mjs').to_s, json, *vars)
+          assert status.success?, "#{name} #{vars.inspect}: #{err}"
+          client.merge(JSON.parse(out))
+        end
 
         walker = InkLineWalker.from_file(json)
         server = walker.lines.to_set { |l| [l.raw, TtsService.delivery_from_tags(l.tags)] }
@@ -224,6 +236,32 @@ module BreakEscape
           assert_includes client, [text, note], "#{name}: the walker gives #{text.inspect} a note the client never sends"
         end
       end
+    end
+
+    test "a carried note follows a tunnel, a stitch-only knot, a divert chain and a conditional first line (review R2 m1)" do
+      json = BreakEscape::Engine.root.join('test/fixtures/files/ink_line_walker/delivery_parity_shapes.json').to_s
+      notes = InkLineWalker.from_file(json).lines.group_by(&:raw)
+                           .transform_values { |ls| ls.map { |l| TtsService.delivery_from_tags(l.tags) }.sort_by(&:to_s) }
+      assert_equal [nil, 'via tunnel'].sort_by(&:to_s), notes['Kevin Park: In the tunnel.']
+      assert_equal [nil], notes['Kevin Park: Back from tunnel.'] # never the line after the tunnel returns
+      assert_equal [nil, 'into stitched'].sort_by(&:to_s), notes['Kevin Park: Stitch one line.']
+      assert_equal [nil, 'chained'].sort_by(&:to_s), notes['Kevin Park: End of chain.']
+      assert_equal [nil, 'chain then stitch'].sort_by(&:to_s), notes['Kevin Park: Stitch two first line.']
+      assert_equal [nil, 'past false cond'].sort_by(&:to_s), notes['Kevin Park: Only if flag.']
+      assert_equal [nil, 'past false cond'].sort_by(&:to_s), notes['Kevin Park: Always here.']
+      assert_equal ['over a false line'], notes['Kevin Park: Hidden line.']
+      assert_equal [nil, 'over a false line'].sort_by(&:to_s), notes['Kevin Park: Shown line.']
+    end
+
+    test "a note before a tunnel or an external call is never carried past it" do
+      tunnel = { 'inkVersion' => 21, 'root' => [
+        '#', '^delivery: softly', '/#', { '->t->' => 'nowhere' }, '^After.', "\n", 'done'
+      ] }
+      assert_equal [], InkLineWalker.new(tunnel).lines.first.tags
+      external = { 'inkVersion' => 21, 'root' => [
+        '#', '^delivery: softly', '/#', { 'x()' => 'beep', 'exArgs' => 0 }, '^After.', "\n", 'done'
+      ] }
+      assert_equal [], InkLineWalker.new(external).lines.first.tags
     end
 
     test "a note above a divert lands on the target's first line, which is also listed untagged" do

@@ -361,6 +361,63 @@ test('delivery-unread: a note on a glued line, a line printing a variable, or wi
   assert.equal(only(lintInk(DELIVERY_INK, { channel: 'phone' }), 'delivery-unread').length, 0);
 });
 
+// Review R2 m1: the server follows a note into a tunnel, a knot with only stitches, a divert chain
+// and past a one-line conditional (delivery_parity_shapes.ink), so those stay quiet; it cannot
+// follow one into a multi-line conditional or a conditional divert, or keep one past a tunnel that
+// leads to a choice, so those warn.
+const SHAPES_INK = readFileSync(new URL('../fixtures/files/ink_line_walker/delivery_parity_shapes.ink', import.meta.url), 'utf8');
+const UNFOLLOWED_INK = [
+  'VAR flag = false',                             // 1
+  '=== hub ===',                                  // 2
+  '#delivery: into a block',                      // 3: warns (-> blockcond opens with a multi-line conditional)
+  '-> blockcond',                                 // 4
+  '=== more ===',                                 // 5
+  '#delivery: tunnel to a choice',                // 6: warns (not kept past the tunnel)
+  '-> tunchoice ->',                              // 7
+  'Kevin Park: After the tunnel.',                // 8
+  '#delivery: over a block',                      // 9: warns (a line inside the block plays untagged)
+  '{flag:',                                       // 10
+  '  Kevin Park: Inside.',                        // 11
+  '}',                                            // 12
+  'Kevin Park: After the block.',                 // 13
+  '#delivery: into a conditional divert',         // 14: warns
+  '-> conddiv',                                   // 15
+  '=== blockcond ===',                            // 16
+  '{flag:',                                       // 17
+  '  Kevin Park: Only if flag.',                  // 18
+  '}',                                            // 19
+  'Kevin Park: Always.',                          // 20
+  '-> END',                                       // 21
+  '=== tunchoice ===',                            // 22
+  '+ [Pick]',                                     // 23
+  '  ->->',                                       // 24
+  '=== conddiv ===',                              // 25
+  '{flag: -> blockcond}',                         // 26
+  'Kevin Park: Past it.',                         // 27
+  '-> END',                                       // 28
+  '=== stitches ===',                             // 29
+  '= one',                                        // 30
+  'Kevin Park: Stitch.',                          // 31
+  '-> END',                                       // 32
+].join('\n') + '\n';
+
+test('delivery-unread: quiet for the shapes the server follows, warns for the ones it cannot (review R2 m1)', () => {
+  assert.deepEqual(only(lintInk(SHAPES_INK), 'delivery-unread'), []);
+  const f = only(lintInk(UNFOLLOWED_INK), 'delivery-unread');
+  assert.deepEqual(f.map(x => x.line), [3, 6, 9, 14]);
+  assert.match(f[0].note, /-> blockcond opens with a multi-line conditional \(line 17\)/);
+  assert.match(f[1].note, /-> tunchoice -> leads to a choice, and the note is not kept for the line after the tunnel returns/);
+  assert.match(f[2].note, /a line inside it plays untagged/);
+  assert.match(f[3].note, /-> conddiv opens with a conditional divert \(line 26\)/);
+});
+
+test('delivery-unread: a note diverted to a knot the server cannot read says so', () => {
+  const ink = ['=== a ===', '#delivery: lost', '-> b', '=== b ===', '~ temp x = 1', '=== c ===', 'Kevin Park: C.', '-> END'].join('\n') + '\n';
+  const f = only(lintInk(ink), 'delivery-unread');
+  assert.deepEqual(f.map(x => x.line), [2]);
+  assert.match(f[0].note, /the server cannot follow -> b to a spoken line/);
+});
+
 test('delivery-note: a note over 200 characters, with braces, or with no letter or digit', () => {
   const ink = [
     '=== s ===',

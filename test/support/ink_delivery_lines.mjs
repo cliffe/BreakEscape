@@ -6,7 +6,9 @@
 //
 // Used by the Ruby parity test (tts_delivery_test.rb) to check that InkLineWalker gives
 // each line the note the client sends (review R1 M2).
-// Run with: node test/support/ink_delivery_lines.mjs <story.json>
+// Run with: node test/support/ink_delivery_lines.mjs <story.json> [name=value ...]
+// Each name=value (value read as JSON) sets an ink variable before play, so a fixture's
+// conditional lines can be played both ways.
 import { readFileSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -18,6 +20,10 @@ const { deliveryFromTags } = await import(pathToFileURL(join(REPO, 'public/break
 
 const json = readFileSync(process.argv[2], 'utf8').replace(/^﻿/, '');
 const story = new inkjs.Story(json);
+for (const pair of process.argv.slice(3)) {
+    const at = pair.indexOf('=');
+    story.variablesState[pair.slice(0, at)] = JSON.parse(pair.slice(at + 1));
+}
 const found = new Map();
 const seen = new Set();
 const MAX_DEPTH = 12;
