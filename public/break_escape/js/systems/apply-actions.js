@@ -118,8 +118,8 @@ if (typeof window !== 'undefined') window.isCardRevoked = isCardRevoked;
  *   add_capture    { capture }       — records a credential/foothold into se_captures
  *   set_costume    { costume }       — swaps the player sprite to scenario.disguises[costume]
  *   clear_costume  {}                — restores the chosen avatar
- *   wear           { itemId }        — puts a held wearable item on (wearables.js)
- *   take_off       { itemId? }       — takes the worn item off
+ *   wear           { itemId }:       puts a held wearable item on (wearables.js)
+ *   take_off       { itemId? }:      takes the worn item off
  *   hint           { message, title? }: shows an informational alert to the player, for a time set by its length
  *   lighting_dip   { level?, ms? }   — one slow brownout dip of the room lights
  *
