@@ -72,9 +72,10 @@ require 'uri'
 # npcFrustration. A password in a
 # /npc_workaround answer is reported by the password rule, with one exception (sub-slice H,
 # plan 6.5): a heard share_login answer `{ capture, line, note, displayName }` may hold the
-# sharer's own password at $.line, $.note and $.capture.note, when that NPC authors a
-# share_login and the game (it must be given) lists it in sharedLogins. After such an answer
-# the same value is allowed inside savedNotes and the se_captures global. The note exception
+# sharer's own password at $.line and $.note, when that NPC authors a share_login and the game
+# (it must be given) lists it in sharedLogins; at $.capture.note too only where the scenario's
+# social.captures.revealSecret is on (review R1 m3). After such an answer the same value is
+# allowed inside savedNotes, and inside the se_captures global only under revealSecret. The note exception
 # above follows a done writes_down through the game's written_down?.
 #
 # A finding names the rule, the route, the response line and the secret's owner (an NPC or
@@ -511,8 +512,8 @@ class AccessLeakScanner
         next if share_clue?(password, str, holder, ctx, json_path, legit)
         next if note == password && json_path == '$.postitNote'
         next if @noted.include?(password) && json_path.include?('.savedNotes[')
-        next if shared == password && SHARE_PATHS.include?(json_path)
-        next if @shared.include?(password) && json_path.include?('.se_captures')
+        next if shared == password && share_path?(json_path)
+        next if reveal_secret? && @shared.include?(password) && json_path.include?('.se_captures')
 
         owners.each do |npc_id|
           next if ctx[:capture_secrets] && @capture_npcs.include?(npc_id) && (@served_npcs.nil? || @served_npcs.include?(npc_id))
@@ -540,7 +541,19 @@ class AccessLeakScanner
     password
   end
 
-  SHARE_PATHS = %w[$.line $.note $.capture.note].freeze
+  SHARE_PATHS = %w[$.line $.note].freeze
+
+  # The capture's note (stored in the se_captures global, so in every sync and reload) holds the
+  # password only where social.captures.revealSecret is on (review R1 m3)
+  def share_path?(json_path)
+    SHARE_PATHS.include?(json_path) || (json_path == '$.capture.note' && reveal_secret?)
+  end
+
+  def reveal_secret?
+    @data.dig('social', 'captures', 'revealSecret') == true
+  rescue TypeError
+    false
+  end
 
   # The password a heard share_login answer may carry (sub-slice H, plan 6.5): the capture's
   # targetId is an NPC that authors a share_login, the game lists it in sharedLogins, and the

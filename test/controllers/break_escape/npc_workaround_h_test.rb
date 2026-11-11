@@ -380,5 +380,170 @@ module BreakEscape
       assert_empty state['sharedLogins']
       assert_empty state['guestSessions']
     end
+
+    # ── review round 1 ─────────────────────────────────────────────────
+
+    def logout(pc = 'hot_desk')
+      post logout_game_url(@game), params: { pc_id: pc }, as: :json
+      response
+    end
+
+    def sign_in(pc, username, password)
+      post login_game_url(@game), params: { pc_id: pc, username: username, password: password }, as: :json
+      response
+    end
+
+    test 'R1 M1: signing out of a claimed guest session ends it; the next claim is refused' do
+      build
+      borrow_done!
+      assert_equal 200, claim.status
+      assert_equal 200, logout.status
+      assert_empty state['guestSessions'], 'the sign-out ends the guest session'
+      assert_equal 422, claim.status, 'the next click is the sign-in screen'
+    end
+
+    test 'R1 M1: a password sign-in at the hot desk ends the guest session there' do
+      build
+      borrow_done!
+      assert_equal 'ian', state['guestSessions']['hot_desk']
+      assert_equal 200, sign_in('hot_desk', 'temp', AccessWorkScenario::PASSWORDS[5]).status
+      assert_empty state['guestSessions'], 'one screen holds one session'
+      assert_equal 200, logout.status
+      assert_equal 422, claim.status, 'signed out of the password session: no guest to claim'
+    end
+
+    test 'R1 M1: a displaced session\'s late /logout leaves the new guest record alone' do
+      build(player_state: { 'sessions' => { 'hot_desk' => { 'id' => 'temp_user', 'via' => 'password' } } })
+      borrow_done!
+      assert_equal 200, logout.status, 'the displacement\'s /logout lands after the done'
+      assert_equal({ 'hot_desk' => 'ian' }, state['guestSessions'])
+      assert_equal 200, claim.status
+    end
+
+    test 'R1 m1: the server times a guest session out from the done and the PC\'s autoLockMin' do
+      build
+      t = Time.current
+      borrow_done!(t)
+      # managed (the default policy) has autoLockMin 5; the done landed at t + 60
+      assert_equal 200, travel_to(t + 60 + 300 + 2) { claim }.status, 'inside the lock time and its 3 s allowance'
+      build
+      borrow_done!(t)
+      assert_equal 422, travel_to(t + 60 + 300 + 4) { claim }.status, 'past the lock time'
+      assert_nil state['sessions']['hot_desk']
+      # a policy with no autoLockMin never locks a guest, on the client or here
+      data = scenario
+      data['policies']['open'] = { 'usb' => 'allowed' }
+      data['rooms']['office']['objects'].find { |o| o['id'] == 'hot_desk' }['policy'] = 'open'
+      build(data: data)
+      borrow_done!(t)
+      assert_equal 200, travel_to(t + 3600) { claim }.status
+    end
+
+    test 'R1 n2: a resent done for an earlier hand-over does not overwrite a later guest record' do
+      build
+      t = Time.current
+      run = fails('ian', 2, t).last['run']
+      @game.reload
+      @game.player_state['guestSessions'] = { 'hot_desk' => 'rosa' }
+      @game.player_state['guestSessionsAt'] = { 'hot_desk' => (t + 50).to_f }
+      @game.player_state['sessions'] = { 'hot_desk' => { 'id' => 'rosa', 'via' => 'claim' } }
+      @game.save!
+      assert_equal 200, done('ian', run, t + 60).status
+      assert_equal({ 'hot_desk' => 'rosa' }, state['guestSessions'])
+      assert_equal 'rosa', state['sessions']['hot_desk']['id'], 'the later sitter\'s session is not ended'
+    end
+
+    test 'R1 m3: the capture\'s note holds the password only where revealSecret is on' do
+      data = scenario
+      data['social']['captures'] = { 'revealSecret' => false }
+      build(data: data)
+      t = Time.current
+      run = fails('sam', 2, t).last['run']
+      body = done('sam', run, t + 40, heard: true, room_id: 'office').parsed_body
+      refute_includes body['capture']['note'], SAM_PASSWORD
+      assert_includes body['capture']['note'], 'sokafor'
+      assert_includes body['note'], SAM_PASSWORD, 'the player\'s own note keeps it'
+      assert_includes body['line'], SAM_PASSWORD
+      build
+      run = fails('sam', 2, t).last['run']
+      body = done('sam', run, t + 40, heard: true, room_id: 'office').parsed_body
+      assert_includes body['capture']['note'], SAM_PASSWORD, 'revealSecret on'
+    end
+
+    test 'R1 m4: a share is not heard unless the player has met the colleague' do
+      build(player_state: { 'encounteredNPCs' => %w[dana kai ian amy omar temp_user sam vic visitor] })
+      t = Time.current
+      run = fails('sam', 2, t).last['run']
+      assert_equal({}, done('sam', run, t + 40, heard: true, room_id: 'office').parsed_body)
+      assert_empty state['sharedLogins']
+    end
+
+    test 'R1 m2: /capture_secrets lists a heard share under accounts in a scenario with networks' do
+      data = scenario
+      data['networks'] = { 'corp' => { 'name' => 'Corp LAN' } }
+      build(data: data)
+      assert @game.network_scenario?
+      t = Time.current
+      run = fails('sam', 2, t).last['run']
+      body = done('sam', run, t + 40, heard: true, room_id: 'office').parsed_body
+      @game.reload
+      @game.player_state['globalVariables']['se_captures'] = { 'sam' => body['capture'].slice('kind', 'address', 'note') }
+      @game.save!
+      get capture_secrets_game_url(@game), as: :json
+      assert_equal({ 'sam' => 'sokafor' }, response.parsed_body['accounts'])
+      assert_equal({ 'sam' => SAM_PASSWORD }, response.parsed_body['secrets'])
+    end
+
+    test 'R1 m5: a guest claim through a foothold or at a headless host is refused' do
+      build
+      borrow_done!
+      post login_game_url(@game), params: { pc_id: 'hot_desk', claim: 'guest', foothold: 'jack_1' }, as: :json
+      assert_equal 422, response.status, 'a foothold'
+      assert_nil state['sessions']['hot_desk']
+      data = scenario
+      data['rooms']['office']['objects'].find { |o| o['id'] == 'hot_desk' }['headless'] = true
+      build(data: data, player_state: { 'guestSessions' => { 'hot_desk' => 'ian' } })
+      assert_equal 422, claim.status, 'a headless host'
+      assert_nil state['sessions']['hot_desk']
+    end
+
+    test 'R1 m5: a dropped borrow writes no guest record and leaves a held session alone' do
+      build(player_state: { 'sessions' => { 'hot_desk' => { 'id' => 'temp_user', 'via' => 'password' } } })
+      t = Time.current
+      run = fails('ian', 2, t).last['run']
+      res = done('ian', run, t + 30, dropped: true)
+      assert_equal({ 'dropped' => true }, res.parsed_body)
+      assert_empty state['guestSessions']
+      assert_equal 'temp_user', state['sessions']['hot_desk']['id']
+    end
+
+    test 'R1 m5: a borrowed PC is a place only for the need it satisfies' do
+      build
+      borrow_done!
+      ian = npc_in(@game.reload.scenario_data, 'ian')
+      assert_equal ['hot_desk'], @game.handed_borrow_pcs(ian, 'work')
+      assert_empty @game.handed_borrow_pcs(ian, 'social_media'), 'the hot desk satisfies work only'
+    end
+
+    test 'R1 m5: no exposure on any route after a heard share, with se_captures synced' do
+      data = scenario
+      data['social']['captures'] = { 'revealSecret' => false }
+      build(data: data)
+      t = Time.current
+      run = fails('sam', 2, t).last['run']
+      refute_includes fails('sam', 1, t + 25).to_json, SAM_PASSWORD, 'the /npc_frustration answers'
+      body = done('sam', run, t + 40, heard: true, room_id: 'office').parsed_body
+      put sync_state_game_url(@game), params: { globalVariables: { 'se_captures' => { 'sam' => body['capture'].slice('kind', 'address', 'note') } } }, as: :json
+      refute_includes travel_to(t + 60) { report(fail_r('sam')) }.to_json, SAM_PASSWORD, 'a later /npc_frustration answer'
+      get scenario_game_url(@game), as: :json
+      assert_response :success
+      refute_includes response.body, SAM_PASSWORD, 'GET /scenario, its pending and the synced se_captures'
+      get room_game_url(@game, room_id: 'office'), as: :json
+      refute_includes response.body, SAM_PASSWORD
+      get login_accounts_game_url(@game, pc_id: 'sam_pc'), as: :json
+      refute_includes response.body, SAM_PASSWORD
+      get capture_secrets_game_url(@game), as: :json
+      refute_includes response.body, SAM_PASSWORD, 'revealSecret off'
+    end
   end
 end

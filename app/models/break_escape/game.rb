@@ -931,6 +931,14 @@ module BreakEscape
       filtered
     end
 
+    # social.captures.revealSecret is true: the only switch under which a captured secret is
+    # served (GET /capture_secrets) or stored in a capture's note (a heard share, sub-slice H)
+    def reveal_capture_secret?
+      social = scenario_data['social']
+      captures_cfg = social.is_a?(Hash) ? social['captures'] : nil
+      captures_cfg.is_a?(Hash) && captures_cfg['revealSecret'] == true
+    end
+
     # { target_id => secret } for every SE credential capture the server's own persisted
     # se_captures record shows was earned, with the secret read from the authored
     # (unfiltered) scenario_data. Empty unless social.captures.revealSecret is true, so an
@@ -939,11 +947,9 @@ module BreakEscape
     # and is synced to the server), not a bare request claim: a fresh game, whose persisted
     # se_captures is empty, gets nothing.
     def capture_secrets_for_client
-      social = scenario_data['social']
-      return {} unless social.is_a?(Hash)
+      return {} unless reveal_capture_secret?
 
-      captures_cfg = social['captures']
-      return {} unless captures_cfg.is_a?(Hash) && captures_cfg['revealSecret'] == true
+      social = scenario_data['social']
 
       earned = player_state.dig('globalVariables', 'se_captures')
       return {} unless earned.is_a?(Hash) && earned.any?
@@ -973,8 +979,6 @@ module BreakEscape
       # plan section 6), so it is skipped, and the single-secret fallback answers only for a
       # declared one.
       declared = declared_capture_target_ids
-      # A heard share (sub-slice H) declares its sharer as a capture target
-      declared |= Array(player_state['sharedLogins']).select { |id| id.is_a?(String) }
       phish_targets = CaptureModel.phish_target_ids(scenario_data).to_set
 
       out = {}
@@ -1195,7 +1199,9 @@ module BreakEscape
       'npcFrustration' => {},
       # Slice 9.2 sub-slice H (9.4): who last left a borrowed session at each PC, and the
       # accounts the player heard shared out loud
-      'guestSessions' => {}, 'sharedLogins' => []
+      'guestSessions' => {}, 'sharedLogins' => [],
+      # Review R1 m1: the server time each guest record was written, for the server's own lock
+      'guestSessionsAt' => {}
     }.freeze
 
     # loginFailures and loginLockouts keep at most this many entries for usernames that
@@ -1635,6 +1641,8 @@ module BreakEscape
       auto_lock = effective_policy(pc)['autoLockMin']
       return refusal.call('policy autoLockMin is 0') if auto_lock.is_a?(Numeric) && auto_lock.zero?
       return refusal.call('a careful guest') if careful_guest?(guest)
+      # Review R1 m1: the server times the guest session out itself, from the "done"
+      return refusal.call('the guest session has timed out') if guest_session_timed_out?(pc)
 
       start_login_session!(pc['id'], guest, 'claim')
       save!
@@ -1647,7 +1655,13 @@ module BreakEscape
       info = find_login_pc(pc_id)
       key = info ? info[:object]['id'].to_s : pc_id.to_s
       player_state['sessions'] = access_sessions
-      player_state['sessions'].delete(key)
+      ended = player_state['sessions'].delete(key)
+      # Signing out of a claimed guest session ends it (review R1 M1), so the next click is the
+      # sign-in screen. Only the guest's own claim: a displaced session's /logout can land after
+      # the borrow's "done" has recorded a new guest, and that record must stay.
+      if ended.is_a?(Hash) && ended['via'] == 'claim' && guest_sessions[key] == ended['id']
+        end_guest_session_at!(key)
+      end
       save!
     end
 
@@ -2055,6 +2069,9 @@ module BreakEscape
     end
 
     def start_login_session!(pc_id, npc, via, foothold: nil)
+      # A password (or remote) sign-in at a PC ends a guest session there (review R1 M1): one
+      # screen holds one session. A claim is the guest's own session, or an owner's at an owned PC.
+      end_guest_session_at!(pc_id) unless via == 'claim'
       player_state['sessions'] = access_sessions
       player_state['sessions'][pc_id.to_s] = { 'id' => npc['id'], 'via' => via }
       # A session opened over the network records its foothold (slice 9.3a, 4.1)

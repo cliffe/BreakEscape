@@ -497,9 +497,11 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
     }
   end
 
-  def share_game(shared)
+  def share_game(shared, reveal: true)
+    data = share_scenario
+    data['social'] = { 'captures' => { 'revealSecret' => true } } if reveal
     create_access_game(mission: break_escape_missions(:ceo_exfil), player: break_escape_demo_users(:test_user),
-                       scenario: share_scenario, player_state: { 'unlockedRooms' => ['open_office'], 'sharedLogins' => shared })
+                       scenario: data, player_state: { 'unlockedRooms' => ['open_office'], 'sharedLogins' => shared })
   end
 
   def heard_answer(extra = {})
@@ -521,6 +523,18 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
              { 'savedNotes' => [{ 'id' => 'n1', 'text' => heard_answer['note'] }],
                'globalVariables' => { 'se_captures' => [heard_answer['capture']] } }]
     assert_empty AccessLeakScanner.new(game.scenario_data, game: game).scan(post_rows(['POST', SHARE, heard_answer], saved))
+  end
+
+  test 'R1 m3: without revealSecret the capture note and se_captures may not hold the shared password' do
+    game = share_game(['sam'], reveal: false)
+    findings = AccessLeakScanner.new(game.scenario_data, game: game).scan(post_rows(['POST', SHARE, heard_answer]))
+    assert_equal ['$.capture.note'], findings.map(&:json_path).uniq
+    plain = heard_answer
+    plain['capture'] = plain['capture'].merge('note' => 'Sam told Ruth his login out loud: sokafor')
+    synced = ['PUT', '/break_escape/games/1/sync_state', { 'globalVariables' => { 'se_captures' => [heard_answer['capture']] } }]
+    saved = ['GET', '/break_escape/games/1/scenario', { 'savedNotes' => [{ 'id' => 'n1', 'text' => heard_answer['note'] }] }]
+    findings = AccessLeakScanner.new(game.scenario_data, game: game).scan(post_rows(['POST', SHARE, plain], saved, synced))
+    assert_equal [3], findings.map(&:line).uniq, 'the notes keep it; a synced se_captures copy is reported'
   end
 
   test 'the share exception needs the game, sharedLogins, the POST route and the allowed paths' do

@@ -187,10 +187,10 @@ module BreakEscape
       heard_now = false
       case w['do']
       when 'borrow_session'
-        record_borrow_done!(npc, w)
+        record_borrow_done!(npc, w, handed['time'].to_f)
       when 'share_login'
         # 5. heard counts only in a room the colleague can be in that the player has opened
-        heard_now = heard && share_heard_in?(w, room_id)
+        heard_now = heard && share_heard_in?(w, room_id) && colleague_encountered?(w)
         if heard_now
           shared = shared_logins
           shared << npc_id unless shared.include?(npc_id)
@@ -222,8 +222,40 @@ module BreakEscape
         next unless player_state['guestSessions'].is_a?(Hash) && player_state['guestSessions'].any?
 
         player_state['guestSessions'] = {}
+        player_state['guestSessionsAt'] = {}
         save!
       end
+    end
+
+    # player_state.guestSessionsAt: { pcId => server time of the "done" that wrote the guest
+    # record }, beside guestSessions so that map keeps plan 9.4's { pcId => npcId } shape
+    def guest_sessions_at
+      player_state['guestSessionsAt'] = {} unless player_state['guestSessionsAt'].is_a?(Hash)
+      player_state['guestSessionsAt']
+    end
+
+    # The player's own sign-out, or a password (or remote) sign-in at the PC, ends the guest
+    # session there (review R1 M1; plan 6.4 lists no sign-out end event, this fills that gap)
+    def end_guest_session_at!(pc_id)
+      key = pc_id.to_s
+      return unless player_state['guestSessions'].is_a?(Hash) && player_state['guestSessions'].key?(key)
+
+      guest_sessions.delete(key)
+      guest_sessions_at.delete(key)
+    end
+
+    # Whether the guest session at the PC has passed its auto lock on the server's own clock
+    # (review R1 m1): the done time plus the PC's policy autoLockMin (its policy, else
+    # defaultPolicy), with the usual 3 s allowance in the client's favour. A policy with no
+    # autoLockMin never locks a guest on the client, so it never times out here either.
+    def guest_session_timed_out?(pc)
+      min = effective_policy(pc)['autoLockMin']
+      return false unless min.is_a?(Numeric) && min.positive?
+
+      at = guest_sessions_at[pc['id'].to_s]
+      return false unless at.is_a?(Numeric)
+
+      server_now - at.to_f > (min * 60) + 3
     end
 
     # A careful guest (6.4): 9.1's screen_always_locks? with no PC field, on the saved (expanded)
@@ -249,7 +281,8 @@ module BreakEscape
         pc = AccessWork.object(scenario_data, w['pc'])
         next nil if need && !AccessWork.satisfies?(scenario_data, pc, need)
 
-        w['pc']
+        # by id, as the client names the PC it used (review R1 n1)
+        (find_login_pc(w['pc'])&.dig(:object) || {})['id'] || w['pc']
       end.uniq
     end
 
@@ -301,15 +334,30 @@ module BreakEscape
 
     # "done" for a borrow (6.4): the NPC signed in there and left. A guest record for one that
     # leaves the session open; a session the player held there is ended either way (one screen,
-    # one session), so a click then reaches the guest's, not the player's old one.
-    def record_borrow_done!(npc, w)
-      pc_id = w['pc']
+    # one session), so a click then reaches the guest's, not the player's old one. The PC is
+    # stored by its id (review R1 n1), as the claim looks it up. A guest record written after
+    # this hand-over was made belongs to a later sitter (a lost "done" resent late, R1 n2), so
+    # this one then changes nothing.
+    def record_borrow_done!(npc, w, handed_at)
+      pc_id = (find_login_pc(w['pc'])&.dig(:object) || {})['id'] || w['pc']
+      pc_id = pc_id.to_s
+      later = guest_sessions_at[pc_id]
+      return if later.is_a?(Numeric) && later.to_f > handed_at
+
       player_state['sessions'] = access_sessions.except(pc_id)
       if careful_guest?(npc)
         guest_sessions.delete(pc_id)
+        guest_sessions_at.delete(pc_id)
       else
         guest_sessions[pc_id] = npc['id']
+        guest_sessions_at[pc_id] = server_now
       end
+    end
+
+    # Review R1 m4: a share counts as heard only once the player has met the colleague, as an
+    # honest client always has (the visit needs the colleague's sprite, so its room has loaded)
+    def colleague_encountered?(w)
+      Array(player_state['encounteredNPCs']).include?(w['with'])
     end
 
     # Check 5 (9.1): `room_id` is a room the `with` NPC can be in (its own room, plus its
@@ -375,7 +423,11 @@ module BreakEscape
       colleague = scenario_room_npc(w['with'])
       other = colleague && (colleague['displayName'] || colleague['id'])
       note = "#{name} told #{other} their login out loud: #{username} / #{password}"
-      { 'capture' => { 'targetId' => npc['id'], 'kind' => 'credential', 'address' => username, 'note' => note },
+      # The capture is stored in the se_captures global, which every sync and reload carries, so
+      # its note holds the password only where social.captures.revealSecret is on (review R1 m3);
+      # otherwise the password is in the player's own notes (`note`) and the toast (`line`) alone
+      capture_note = reveal_capture_secret? ? note : "#{name} told #{other} their login out loud: #{username}"
+      { 'capture' => { 'targetId' => npc['id'], 'kind' => 'credential', 'address' => username, 'note' => capture_note },
         'line' => "It's #{username}. Password's #{password}.", 'note' => note, 'displayName' => name }
     end
 
