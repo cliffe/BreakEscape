@@ -471,7 +471,7 @@ export class NPCNeedsSystem {
             // re-arm mark per need, resources already checked this outage, queued visits, the
             // shown failure, and the outage kick's last-seen conditions and pending needs
             frustration: 0, tell: 0, settled: false,
-            rearm: {}, failSent: {}, checked: new Set(), visits: [], failedShow: null,
+            rearm: {}, failSent: {}, checked: new Set(), visits: [], failedShow: null, failCause: {},
             kickSeen: {}, kickPending: new Set(),
             urgentFlag: {},
             mode: 'idle',
@@ -1987,6 +1987,8 @@ export class NPCNeedsSystem {
     _countFailure(s, need, missing, objectId) {
         const id = s.npcId;
         s.failedShow = { need, missing: (missing || []).map(c => ({ ...c })), until: this.clockMs + FAIL_SHOW_MS };
+        // q17 (2026-11-11): the causes of the last counted failure of each need, for causeCleared
+        s.failCause[need] = (missing || []).map(c => ({ ...c }));
         const drain = Number(this._plan(s)?.breakDrain);
         const d = Number.isFinite(drain) ? clamp(drain, 0, 50) : 10;
         for (const other of Object.keys(s.needs)) {
@@ -2010,6 +2012,28 @@ export class NPCNeedsSystem {
             this.enqueueVisit(id, { kind: 'check', at: { objectId: r.object }, data: { resourceId: r.id } });
             break;
         }
+    }
+
+    /**
+     * q17 (user decision 2026-11-11): whether what frustrated the NPC has cleared: a failure has
+     * been counted (or a judged use met) for at least one need, and for each such need the causes
+     * of its last counted failure would all pass now, or a judged use of it has been met since.
+     * The frustration icon then fades while the mood lingers (npc-action-icons.js). After a reload
+     * nothing is recorded, so the icon stays solid until the NPC's next failure or met use.
+     */
+    _causeCleared(s) {
+        const needs = Object.keys(s.failCause || {});
+        if (!needs.length) return false;
+        const rules = this.world.workRules;
+        if (!rules?.causesClear) return false;
+        const plan = this._plan(s);
+        // A switched-off station (`off`) has cleared once its offWhen no longer holds
+        const offClear = c => { const rec = this._offSeen.get(c.id); return !!rec && !this._globalHolds(rec.cond); };
+        return needs.every(n => {
+            const list = s.failCause[n] || [];
+            const off = list.filter(c => c.why === 'off');
+            return off.every(offClear) && rules.causesClear(plan, list.filter(c => c.why !== 'off'), g => this._globalValue(g));
+        });
     }
 
     /** A failed park whose wakeOn names `name` and whose causes would all pass now retries soon (5.2). */
@@ -2760,6 +2784,7 @@ export class NPCNeedsSystem {
         // Access 9.2 A (5.4): a met judged use eases frustration, re-arms the need and ends the outage's check
         if (judged) {
             s.rearm[job.need] = true;
+            s.failCause[job.need] = [];   // met: nothing holds for this need now
             if (job.need === 'work') s.checked.clear();
             if ((s.frustration > 0 || s.failSent[job.need]) && typeof this.world.reportUse === 'function') {
                 this.world.reportUse(id, { event: 'ease', need: job.need, objectId: job.targetId });
@@ -3903,6 +3928,7 @@ export class NPCNeedsSystem {
             visits: s.visits.map(v => ({ kind: v.kind, at: { ...v.at } })),
             visiting: s.job?.kind === 'visit' ? { kind: s.job.visit?.kind || null, at: { ...(s.job.visit?.at || {}) } } : null,
             judged: { work: this._judged(s, 'work'), social_media: this._judged(s, 'social_media') },
+            causeCleared: this._causeCleared(s),
             clockMs: this.clockMs, tick: this.tickCount
         };
     }

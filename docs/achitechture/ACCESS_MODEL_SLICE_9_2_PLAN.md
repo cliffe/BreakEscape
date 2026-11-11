@@ -617,6 +617,13 @@ A workaround is only an opening if the player can see it coming. All of this use
   bubble already has (off under reduced motion). This does not wait for `showPressingNeeds`: a
   scenario that declares resources has opted in. The icon stays up between failures, so "one more
   and she gives up" looks different from "just started", and it works with `"chatter": false`.
+  When the cause clears (user decision q17, 2026-11-11), the icon fades instead of staying solid:
+  `getState().causeCleared` is true once, for every need with a counted failure, the causes of
+  its last failure would all pass now (a resource back up, a route open, a station's `offWhen` no
+  longer holding) or a judged use of it has been met since. The same `blocked` art is then drawn
+  at alpha 0.6 (tell 2) or 0.4 (tell 1), with no pulse, and goes when the tell falls to 0. A new
+  failure makes it solid again. After a reload nothing is recorded, so the icon stays solid until
+  the NPC's next failure or met use.
 - **The mutter is a grumble.** One line on each counted failure or refused use, and one when a
   workaround starts. It is office life's grumble, not a new state: `_grumble(s, objectId, reason,
   topic, opts)` with the topic chosen below, which sets `s.saying` through `_showSaying`, so

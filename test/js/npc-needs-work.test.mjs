@@ -539,3 +539,30 @@ test('R2 m5: a check visit cut short by its walk deadline is dropped, and frees 
     assert.ok(!s.checked.has('printer'), 'the next failure queues the check again');
 });
 
+
+test('q17: causeCleared once the outage of the last counted failure is over; false again at the next failure', () => {
+    const { sys, set, log } = workWorld({ globals: { share_down: true } });
+    sys.registerAll();
+    assert.equal(sys.getState('dana').causeCleared, false, 'nothing counted yet');
+    assert.ok(stepUntil(sys, () => log('failure_counted').length > 0, 30000));
+    assert.equal(sys.getState('dana').causeCleared, false, 'the share is still down');
+    set('share_down', false);
+    assert.equal(sys.getState('dana').causeCleared, true);
+    set('share_down', true);
+    assert.equal(sys.getState('dana').causeCleared, false, 'down again: the recorded cause holds');
+});
+
+test('q17: a switched-off station clears when its offWhen no longer holds', () => {
+    const { sys, set, log } = workWorld();
+    sys.registerAll();
+    sys.step(250);
+    const s = sys.states.get('dana');
+    s.home = { ...s.home, objectId: null, provisional: true };
+    s.homeRetryAt = Infinity;
+    set('dana_pc_off', true);
+    s.levels.work = 40;
+    assert.ok(stepUntil(sys, () => log('failure_counted').length > 0, 20000));
+    assert.equal(sys.getState('dana').causeCleared, false);
+    set('dana_pc_off', false);
+    assert.equal(sys.getState('dana').causeCleared, true);
+});

@@ -50,3 +50,19 @@ test('access slice 9.2: blocked by tell for a judged NPC with no job, pulsing at
     assert.equal(m.thoughtBubble({ parked: [{ need: 'work', reason: 'held' }] }, {}, true), null);
     assert.equal(m.thoughtBubble({ parked: [{ need: 'work', reason: 'failed' }] }, {}, true).kind, 'parked');
 });
+
+test('q17: once the cause has cleared the frustration icon fades, with no pulse, and goes at tell 0', async () => {
+    const m = await import('../../public/break_escape/js/systems/npc-action-icons.js');
+    const judged = { work: true, social_media: false };
+    const two = m.stateIconEntry({ job: null, tell: 2, judged, causeCleared: true }, {}, false);
+    assert.equal(two.key, 'blocked', 'the same art');
+    assert.equal(two.fading, true);
+    assert.equal(two.pulse, false);
+    assert.equal(two.alpha, m.FADED_ALPHA[2]);
+    const one = m.stateIconEntry({ job: null, tell: 1, judged, causeCleared: true }, {}, false);
+    assert.ok(one.alpha < two.alpha, 'fainter as the mood eases');
+    assert.equal(m.stateIconEntry({ job: null, tell: 0, judged, causeCleared: true }, {}, false), null, 'gone once frustration settles');
+    const held = m.stateIconEntry({ job: null, tell: 2, judged, causeCleared: false }, {}, false);
+    assert.equal(held.fading, undefined, 'solid while the cause holds');
+    assert.equal(held.pulse, true);
+});
