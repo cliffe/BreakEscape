@@ -171,3 +171,71 @@ Parked at the user's request mid-way through A-7. Branch `build/9-2-u-a`, base `
   `.game-confirm-ok`.
 - The test mission row was missing from the dev database; it was recreated as row 243 from
   `mission.json` (no `db:seed`). Leftover games: 1166, 1169, 1171, 1176.
+
+## Sub-slice A, finished (2026-11-11)
+
+### Done
+
+- **A-4** `scripts/validate_access_work.rb` gains `check_work` and `report_lines`, wired into
+  `validate_scenario.rb` (the work report prints after the habits report). Errors: a `workNeeds`
+  entry (roles and NPCs) or a resource `object` that resolves to nothing, a frustration field out of
+  range, a global ending in `_frustration`, `workNeeds`/`frustration`/`workarounds`/`feed` on a
+  record that is not a room NPC. Warnings: not admitted (Kai's "work never succeeds"), never
+  reachable, undeclared `downIf`, `needsDeferMin` under 0.5 (work plan, or social media with no
+  phone), no station that satisfies `work` (naming a `screenOwner` PC), the mutter warning per
+  cause, a resource nobody needs with no `contents` or `host`, and the two workaround timing
+  warnings ("no warning" unless `noWarning`, more than five minutes of outage). Report: a `Work`
+  line per NPC with a plan and a `Workaround` line per workaround (opens, n, tell or no warning,
+  honest seconds, earliest by the park floor for an unadmitted NPC, else the use floor; "at once"
+  at n = 1; halved for two needs that can fail). 10 new tests in
+  `test/js/validator-access-work.test.mjs`. Resource `access` people were already checked by the
+  network validator (9.3a), so not repeated.
+- **Addition to the plan (orchestrator's decision):** a warning when a work plan's station
+  satisfies `work` but its affordance has no `restores`. A missing value makes each use restore
+  0, so the owner works back to back; it broke `test_access_work`'s W1 and W7 until the stations
+  authored `"restores": 10`.
+- **Expected validator output** on `test_access_work`: U3's tray, Kai's "work never succeeds",
+  and the `intranet` resource "in no NPC's work list" (it is X3's, sub-slice B; the warning goes
+  when Ellis lands). `PLAYTEST.md` says so. The three needs scenarios and the lab raise no new line.
+- **A-8** `README_scenario_design.md` ("Resources and work needs", "Outages, failed uses and the
+  kick", "What the student sees" with the full pool table, "The validator and the work report",
+  before the USB part); `NPC_NEEDS_SYSTEM.md` section 5.9 and the new events in section 7;
+  `docs/test-bridge.md` (`work`, `reports`, the new `getState` fields).
+- **Needs regression captures**: `docs/achitechture/access_model_needs_baseline/slice_9_2/`
+  (before on the base's browser code, after on A). `test_npc_needs` and `test_needs_leash`: 0
+  subjects differ. `test_needs_sims`: decision logs identical; 6 timing-only event/global/probe
+  differences, inside the run-to-run variance step 9 measured. Verdict in its `COMPARISON.md`.
+- **W2's coffee, observed** (game 1185): breaker thrown with Dana's caffeine at 69; three counted
+  failures (levels 34, 68 at needs-clock 76 s, 100 at 112 s; three reports, then settled), a
+  fourth at 147 s (not sent) drained caffeine to 22, and she used `dana_coffee` straight after, against
+  about 10 minutes on her outage-free schedule. Earlier runs reset the breaker after about 90 s,
+  three failures, caffeine still above its `urgentAt` 30. `PLAYTEST.md`'s W2 row says to wait
+  about 150 s to see it.
+- **Shared-file edits checked against `main`** (none of the three has moved on `main`): the
+  `failed` row in `npc-coffee-off`'s turn-back table is right (`failed` has `mindChanged: false`);
+  `validate_npc_needs.rb`'s desk filter for judged needs matches the engine rule (5.2) and keeps the
+  NPC's own `needsHome`; `WITHHELD_WORK_NPC_KEYS` beside `WITHHELD_NPC_KEYS` (which already holds
+  `workarounds` from the first slice) merges cleanly with 9.1.
+- **Merge repair**: the main merge left the `pc-policy.js` stub inside the
+  `requires-item-hint.js` entry of `examine-minigame.test.mjs` and
+  `network-links-routing.test.mjs` (a syntax error); moved after it.
+
+### Watch-it-happen run (game 1184, a persona told only "cause trouble and see what the staff do")
+
+Visited W2 (Dana), W4 (Omar), W6 (Ian), W7 (Nia). Noticed: Dana's share line and the blocked icon,
+her going towards the coffee station; Omar walking to the printer; the icon over Ian and Nia.
+**Did not notice**: any line from Ian or Omar; any "I give up" moment (the fed-up line); Dana
+drinking; anything gained (the W4 claim and code were missed, the PC wanted a sign-in); what the
+needs bars mean. **Confusing**: the icon stays minutes after the outage is cleared (by design it
+follows frustration, which eases 10 per met use, not the outage); W4's and W7's levers both drive
+`printer_jammed`, so the second clears the jam the first threw; the wall socket sits under a
+chair; the beat signs and task names give the outcome away; the debug overlay labels show
+(`needsDebugOverlay` is on in feature scenarios). Questions for the user are in the report back.
+
+### Suites
+
+Full suites under the lock after the last code change: Rails 1340 runs, 0 failures, 1 skip; JS 480 files passed, 0 failed.
+
+### Leftover games
+
+1178 to 1185 (captures, persona, W2), plus 1166, 1169, 1171, 1176. None deleted.
