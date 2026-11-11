@@ -762,3 +762,33 @@ test('H-3: a visit to an NPC stands beside them and is not that PC\'s user', () 
     assert.ok(w.calls.moves.some(m => m.id === 'dana' && m.x === 432));
     assert.ok(stepUntil(sys, () => evs('npc_visit_done:dana').length > 0, 10000));
 });
+
+// ── Access 9.2 H review R1 m2: a borrow replaced or reset is reported dropped ──
+
+test('R1 m2: a borrow replaced before it starts is reported dropped; one being used is not replaced', () => {
+    const { sys, evs } = workWorld({ globals: { dana_pc_off: true }, chatter: CHATTER });
+    sys.registerAll();
+    failOnce(sys, evs);
+    assert.equal(sys.setBorrow('dana', RUN()), true);
+    assert.equal(sys.setBorrow('dana', RUN({ index: 2, hand: 3 })), true);
+    assert.deepEqual(evs('npc_borrow_dropped:dana').map(e => e.data), [{ npcId: 'dana', index: 1, hand: 1, pcId: 'hot_desk' }]);
+    assert.deepEqual([sys.getState('dana').borrow.index, sys.getState('dana').borrow.hand], [2, 3]);
+
+    const b = workWorld({ objects: [...baseObjects(), HOT()], globals: { dana_pc_off: true }, chatter: CHATTER });
+    b.sys.registerAll();
+    failOnce(b.sys, b.evs);
+    b.sys.setBorrow('dana', RUN());
+    assert.ok(stepUntil(b.sys, () => b.evs('npc_sat_at:hot_desk').length > 0, 30000));
+    assert.equal(b.sys.setBorrow('dana', RUN({ index: 2, hand: 3 })), false, 'refused while the borrow is in use');
+    assert.equal(b.evs('npc_borrow_dropped:dana').length, 0);
+    assert.equal(b.sys.getState('dana').borrow.hand, 1);
+});
+
+test('R1 m2: reset() reports every held borrow dropped', () => {
+    const { sys, evs } = workWorld({ globals: { dana_pc_off: true }, chatter: CHATTER });
+    sys.registerAll();
+    failOnce(sys, evs);
+    sys.setBorrow('dana', RUN());
+    sys.reset();
+    assert.deepEqual(evs('npc_borrow_dropped:dana').map(e => e.data), [{ npcId: 'dana', index: 1, hand: 1, pcId: 'hot_desk' }]);
+});

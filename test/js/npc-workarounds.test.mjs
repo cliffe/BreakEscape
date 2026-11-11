@@ -6,7 +6,9 @@
 // emit fires its event and then confirms. The needs side runs on fixtures/needs-work-world.mjs.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { NpcWorkarounds, openProppedDoor, START_POOLS, installNpcWorkarounds, retryDelay, RETRY_MAX_MS } from '../../public/break_escape/js/systems/npc-workarounds.js';
+import { NpcWorkarounds, openProppedDoor, START_POOLS, installNpcWorkarounds, retryDelay, RETRY_MAX_MS, escapeNoteText } from '../../public/break_escape/js/systems/npc-workarounds.js';
+import { renderNoteMarkdown } from '../../public/break_escape/js/utils/note-markdown.js';
+import { displayDashes } from '../../public/break_escape/js/utils/display-dashes.js';
 import { workWorld, baseObjects, dana } from './fixtures/needs-work-world.mjs';
 
 function stub({ answers = {}, failures = [] } = {}) {
@@ -707,7 +709,7 @@ function hStub(answers, { hears = () => false, room = 'open_office' } = {}) {
     s.needs.playerHears = id => hears(id);
     Object.assign(s.runner.deps, {
         playerRoom: () => room,
-        toast: (line, title) => s.calls.toasts.push([title, line]),
+        toast: (line, title, opts) => { s.calls.toasts.push([title, line]); s.calls.toastOpts = (s.calls.toastOpts || []).concat([opts]); },
         addNote: (title, text) => s.calls.notes.push([title, text]),
         recordCapture: c => s.calls.captures.push(c)
     });
@@ -748,9 +750,8 @@ test('H-3 borrow_session: a careful guest\'s answer records no guest; npc_borrow
 
 test('H-3 share_login: a visit beside the colleague, the line on arrival, heard with the room of the first tick that heard', async () => {
     let ticks = 0;
-    const rooms = ['open_office', 'corridor'];
     const { runner, calls } = hStub({ sam: SAM_HEARD }, { hears: () => ++ticks >= 3 });
-    runner.deps.playerRoom = () => rooms.shift();
+    runner.deps.playerRoom = () => (ticks < 3 ? 'open_office' : (ticks === 3 ? 'open_office' : 'corridor'));
     runner.due({ npcId: 'sam', run: { ...SAM_RUN, dwell: 0 } });
     assert.deepEqual(calls.mutters, [['sam', 'wk_share_login']]);
     const [, v] = calls.visits[0];
@@ -763,7 +764,7 @@ test('H-3 share_login: a visit beside the colleague, the line on arrival, heard 
     await flush();
     assert.deepEqual(calls.sends, [{ npc_id: 'sam', index: 0, hand: 2, dropped: false, heard: true, room_id: 'open_office' }]);
     assert.deepEqual(calls.toasts, [['Overheard: Sam Okafor', SAM_HEARD.line]]);
-    assert.deepEqual(calls.notes, [['Overheard: Sam Okafor', SAM_HEARD.note]]);
+    assert.deepEqual(calls.notes, [['Overheard: Sam Okafor', escapeNoteText(SAM_HEARD.note)]]);
     assert.deepEqual(calls.captures, [SAM_HEARD.capture]);
     assert.equal(calls.emits.filter(e => e.name === 'npc_overheard_login:sam').length, 1);
 });
@@ -805,4 +806,68 @@ test('H-3 share_login on the needs system: the visit stands beside the colleague
     assert.deepEqual(evs('npc_visit_arrived:dana')[0].data.at, { npcId: 'ruth' });
     assert.equal(sys.playerHears('dana'), true);
     assert.equal(sys.playerHears('ruth'), false);
+});
+
+// ── Access 9.2 H review round 1 ──
+
+// What the notes page shows for a note's text: its renderer, then the HTML read back as text
+function shownNote(text) {
+    const html = renderNoteMarkdown(displayDashes(text));
+    return html.replace(/<[^>]+>/g, '')
+        .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&amp;/g, '&');
+}
+
+test('R1 M1: the overheard toast is plain text with no dash display, and the note keeps the password exactly', async () => {
+    const passwords = ['*Kestrel*!', '*Kestrel*9', 'R&D<2024>', 'Spring--24', '`tick`-**x**', 'a\\-b|c#_d', '-- x --'];
+    for (const pw of passwords) {
+        const heard = { ...SAM_HEARD, line: `It's sokafor. Password's ${pw}.`, note: `Sam Okafor told Ruth Adeyemi their login out loud: sokafor / ${pw}` };
+        const { runner, calls } = hStub({ sam: heard }, { hears: () => true });
+        runner.due({ npcId: 'sam', run: SAM_RUN });
+        runner.visitArrived(visitDone('sam', SAM_RUN));
+        runner.visitDone(visitDone('sam', SAM_RUN));
+        await flush();
+        assert.deepEqual(calls.toasts, [['Overheard: Sam Okafor', heard.line]], pw);
+        assert.deepEqual(calls.toastOpts, [{ plainText: true, verbatim: true }], pw);
+        assert.equal(calls.notes.length, 1, pw);
+        assert.equal(shownNote(calls.notes[0][1]), heard.note, `the notebook shows ${pw} exactly`);
+    }
+    assert.notEqual(shownNote('x / *Kestrel*!'), 'x / *Kestrel*!', 'unescaped, the renderer would change it');
+    assert.notEqual(shownNote('x / Spring--24'), 'x / Spring--24', 'and the dash display would');
+});
+
+test('R1 M1: the window toast dep passes the options on to gameAlert', () => {
+    const alerts = [];
+    const prev = globalThis.window;
+    globalThis.window = { gameAlert: (...a) => alerts.push(a) };
+    try {
+        const runner = installNpcWorkarounds({});
+        runner.deps.toast('line', 'Overheard: X', { plainText: true, verbatim: true });
+        runner.deps.toast('other', 'T');
+        assert.deepEqual(alerts, [['line', 'info', 'Overheard: X', 8000, { plainText: true, verbatim: true }],
+            ['other', 'info', 'T', 8000, { plainText: true }]]);
+    } finally {
+        globalThis.window = prev;
+    }
+});
+
+test('R1 M2: a hearing tick in a doorway does not count; the next in-room tick does', async () => {
+    const rooms = ['', '', 'open_office'];
+    const { runner, calls } = hStub({ sam: SAM_HEARD }, { hears: () => true });
+    runner.deps.playerRoom = () => (rooms.length ? rooms.shift() : 'open_office');
+    runner.due({ npcId: 'sam', run: SAM_RUN });
+    runner.visitArrived(visitDone('sam', SAM_RUN));
+    runTimers(calls, 4);
+    runner.visitDone(visitDone('sam', SAM_RUN));
+    await flush();
+    assert.deepEqual(calls.sends, [{ npc_id: 'sam', index: 0, hand: 2, dropped: false, heard: true, room_id: 'open_office' }]);
+});
+
+test('R1 M2: heard only from doorways is not heard', async () => {
+    const { runner, calls } = hStub({ sam: {} }, { hears: () => true, room: '' });
+    runner.due({ npcId: 'sam', run: SAM_RUN });
+    runner.visitArrived(visitDone('sam', SAM_RUN));
+    runTimers(calls, 4);
+    runner.visitDone(visitDone('sam', SAM_RUN));
+    await flush();
+    assert.deepEqual(calls.sends, [{ npc_id: 'sam', index: 0, hand: 2, dropped: false, heard: false }]);
 });

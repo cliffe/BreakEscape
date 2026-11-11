@@ -569,3 +569,25 @@ test('H-4: a remote session started while the NPC sat there is displaced again o
     assert.deepEqual(named('pc_signed_out').map(d => [d.reason, d.remote]), [['displaced', true]]);
     delete window.eventDispatcher.on;
 });
+
+// Review R1 m4: an NPC sat down at the hot desk while the guest claim was in flight
+test('R1 m4: a guest claim granted after someone sat down at the PC ends at once, displaced', async () => {
+    const s = setup({ answer: GUEST_ANSWER });
+    window.npcManager = { getNPC: id => ({ rosa: { displayName: 'Rosa Lane' } }[id]) };
+    window.workstationState = { presence: () => ({ ownerId: null, present: null, userId: 'rosa', guestId: null }) };
+    try {
+        const r = await s.claim('hot_desk', { as: 'guest' });
+        assert.equal(r.ok, false);
+        assert.equal(r.reason, 'displaced');
+        assert.equal(r.message, 'Rosa Lane has signed in at this PC');
+        assert.equal(s.has('hot_desk'), false);
+        assert.deepEqual(calls.map(c => c[0]), ['login', 'logout']);
+        assert.deepEqual(named('pc_signed_out').map(d => d.reason), ['displaced']);
+        // nobody at the PC: the claim stands
+        window.workstationState = { presence: () => ({ ownerId: null, present: null, userId: null, guestId: 'ian' }) };
+        assert.equal((await s.claim('hot_desk', { as: 'guest' })).ok, true);
+    } finally {
+        delete window.workstationState;
+        delete window.npcManager;
+    }
+});

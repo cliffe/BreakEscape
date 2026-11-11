@@ -320,7 +320,10 @@ export async function interactLoginPc(lockable) {
             const { resolveObjectField } = await import('../utils/conditional-text.js');
             obs = resolveObjectField(data, 'observations', '') || '';
         } catch (e) { /* unresolved base observations */ }
-        const message = obs ? `${name} is using this PC.\n${obs}` : `${name} is using this PC.`;
+        // Review R1 m8: the user's name is author text, so it is escaped; the observations may
+        // hold intended markup and go in as before
+        const safeName = String(name).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        const message = obs ? `${safeName} is using this PC.\n${obs}` : `${safeName} is using this PC.`;
         window.gameAlert?.(message, 'info', data.name || 'PC', 4000);
         sessions?.inUseShown?.(pcId, userAt);
         return 'in_use';
@@ -340,6 +343,11 @@ export async function interactLoginPc(lockable) {
         if (r?.ok) {
             openLoginDesktop(lockable);
             return 'claimed';
+        }
+        if (r?.reason === 'displaced') {
+            // An NPC sat down while the claim was answered (review R1 m4): its name is author text
+            window.gameAlert?.(r.message, 'info', data.name || 'PC', 4000, { plainText: true });
+            return 'in_use';
         }
         if (r?.reason === 'owner_returned') {
             // The owner sat back down while the claim was answered: as step 1, no screen

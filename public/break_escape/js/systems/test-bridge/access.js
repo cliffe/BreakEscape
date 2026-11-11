@@ -47,6 +47,8 @@ export const accessBridge = {
     guest(pcId) {
         const ws = window.workstationState;
         if (!ws) return { ok: false, reason: 'no-workstation-state' };
+        // guestOf first applies a guest auto lock whose time has passed (review R1 n4)
+        if (typeof ws.guestOf === 'function') ws.guestOf(pcId);
         const g = ws.guests instanceof Map ? ws.guests.get(pcId) : null;
         const s = window.pcSessions?.sessions?.get?.(pcId) || null;
         return json({

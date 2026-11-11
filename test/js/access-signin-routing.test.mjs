@@ -265,3 +265,55 @@ test('step 9: locked, signin, attended (a race) and null all open the sign-in sc
         assert.equal(desktops.length, 0, String(answer));
     }
 });
+
+// ── Access 9.2 H review R1 m6, m8 and m4: the hot desk's user and guest branches ──
+
+test('R1 m6: a borrower using an unowned PC gives "<name> is using this PC" and in_use, with the name escaped', async () => {
+    reset();
+    const asked = [];
+    window.workstationState = {
+        presence: () => ({ ownerId: null, present: null, userId: 'rosa', guestId: null }),
+        onInteract: (id) => { asked.push(id); return 'accessed'; }
+    };
+    const inUse = [];
+    window.pcSessions.inUseShown = (pcId, id) => inUse.push([pcId, id]);
+    window.npcManager = { getNPC: () => ({ displayName: 'Rosa <b>Lane</b>' }) };
+    try {
+        assert.equal(await interactLoginPc(pc()), 'in_use');
+        const alert = calls.find(c => c[0] === 'alert');
+        assert.equal(alert[1], 'Rosa &lt;b&gt;Lane&lt;/b&gt; is using this PC.');
+        assert.deepEqual(asked, []);
+        assert.deepEqual(inUse, [['hot_desk', 'rosa']]);
+        assert.equal(desktops.length, 0);
+    } finally {
+        delete window.npcManager;
+    }
+});
+
+test('R1 m6: accessed with a guest sends a guest claim; without one, an owner claim', async () => {
+    for (const [guestId, expected] of [['ian', { as: 'guest' }], [null, undefined]]) {
+        reset();
+        window.workstationState = {
+            presence: () => ({ ownerId: guestId ? null : 'dana', present: false, userId: null, guestId }),
+            onInteract: () => 'accessed',
+            guestOf: () => guestId
+        };
+        const claims = [];
+        window.pcSessions.claim = async (pcId, opts) => { claims.push([pcId, opts]); return { ok: true }; };
+        assert.equal(await interactLoginPc(pc()), 'claimed', String(guestId));
+        assert.deepEqual(claims, [['hot_desk', expected]], String(guestId));
+    }
+});
+
+test('R1 m4: a claim answered "displaced" shows the plain text message and opens no screen', async () => {
+    reset();
+    window.workstationState = { presence: () => ({ ownerId: null, present: null }), onInteract: () => 'accessed', guestOf: () => 'ian' };
+    window.pcSessions.claim = async () => ({ ok: false, reason: 'displaced', message: 'Rosa Lane has signed in at this PC' });
+    assert.equal(await interactLoginPc(pc()), 'in_use');
+    await settle();
+    const alert = calls.find(c => c[0] === 'alert');
+    assert.equal(alert[1], 'Rosa Lane has signed in at this PC');
+    assert.deepEqual(alert[5], { plainText: true });
+    assert.equal(desktops.length, 0);
+    assert.equal(started.length, 0);
+});

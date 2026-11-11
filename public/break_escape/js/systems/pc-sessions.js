@@ -272,6 +272,8 @@ export class PcSessions {
      *                                    then: pc_signed_in, then pc_signed_out owner_returned)
      *   { ok: false, reason: 'auto_locked', message }  (granted, but the screen auto locked by
      *                                    then: pc_signed_in, then pc_signed_out auto_locked)
+     *   { ok: false, reason: 'displaced', message }  (granted, but an NPC sat down there by
+     *                                    then: pc_signed_in, then pc_signed_out displaced)
      *   { ok: false, reason: 'error', error: true, status, message }
      */
     async claim(pcId, { as = 'owner' } = {}) {
@@ -302,11 +304,23 @@ export class PcSessions {
         // fired before there was a session to end, so end it now, as that event would have.
         const ws = typeof window !== 'undefined' ? window.workstationState : null;
         let present = false;
-        try { present = !guest && !!(ws?.presence && ws.presence(pcId)?.present); } catch (e) { present = false; }
+        let userId = null;
+        try {
+            const p = ws?.presence ? ws.presence(pcId) : null;
+            present = !guest && !!p?.present;
+            userId = typeof p?.userId === 'string' && p.userId ? p.userId : null;
+        } catch (e) { present = false; userId = null; }
         if (present) {
             const message = backAtDeskMessage(session.displayName);
             await this._endClaim(pcId, 'owner_returned', message);
             return { ok: false, reason: 'owner_returned', message };
+        }
+        // Review R1 m4: anybody else sat down at the PC while the claim was in flight. Its npc_sat_at
+        // found no session to end, so end this one now, as that event would have.
+        if (userId) {
+            const name = (typeof window !== 'undefined' && window.npcManager?.getNPC?.(userId)?.displayName) || userId;
+            await this.displaced(pcId, name);
+            return { ok: false, reason: 'displaced', message: displacedMessage(name) };
         }
         // Likewise the auto lock: workstation_auto_locked fires once, at lockAt, and found no
         // session if it fell while the claim was in flight. The workstation layer has set the

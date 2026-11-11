@@ -791,3 +791,30 @@ test('H-4: a guest is never recorded at an owned PC; an env without userOf keeps
     assert.equal(old.ws.onInteract('pc_a'), 'attended');
     assert.equal(old.ws.presence('pc_a').userId, null);
 });
+
+test('R1 M1: the player\'s sign-out at the hot desk ends the guest session; the next click is the sign-in screen', () => {
+    const { ws, globals, handlers } = hotRig({ autoLockMin: null });
+    handlers['npc_guest_left:*']({ npcId: 'ian', objectId: 'hot_desk' });
+    handlers['pc_signed_in']({ pcId: 'hot_desk', npcId: 'ian', via: 'claim' });
+    assert.equal(ws.guestOf('hot_desk'), 'ian', 'claiming the guest session keeps the record');
+    handlers['pc_signed_out']({ pcId: 'pc_a', reason: 'sign_out' });
+    assert.equal(ws.guestOf('hot_desk'), 'ian', 'another PC');
+    handlers['pc_signed_out']({ pcId: 'hot_desk', npcId: 'ian', reason: 'sign_out' });
+    assert.equal(ws.guestOf('hot_desk'), null);
+    assert.equal(globals.hot_desk_owner_away, false);
+    assert.equal(ws.onInteract('hot_desk'), 'signin');
+});
+
+test('R1 M1: a password sign-in at the hot desk ends the guest session there', () => {
+    const { ws, handlers } = hotRig({ autoLockMin: null });
+    handlers['npc_guest_left:*']({ npcId: 'ian', objectId: 'hot_desk' });
+    handlers['pc_signed_in']({ pcId: 'hot_desk', npcId: 'temp_user', via: 'password' });
+    assert.equal(ws.guestOf('hot_desk'), null);
+});
+
+test('R1 M1: a displacement before the new guest is recorded keeps that guest', () => {
+    const { ws, handlers } = hotRig({ autoLockMin: null });
+    handlers['pc_signed_out']({ pcId: 'hot_desk', npcId: 'temp_user', reason: 'displaced' });
+    handlers['npc_guest_left:*']({ npcId: 'ian', objectId: 'hot_desk' });
+    assert.equal(ws.guestOf('hot_desk'), 'ian');
+});

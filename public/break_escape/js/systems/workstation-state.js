@@ -32,7 +32,8 @@
  * ends with `workstation_auto_locked:<pcId>` { objectId, ownerId: <npcId>, guest: true }. A click
  * with a guest and nobody at the PC answers 'accessed' (the claim is a guest claim, `guestOf`).
  * The next NPC to sit there (`npc_sat_at:<pcId>`) ends it with no workstation_owner_returned,
- * and a reload starts with none. `env.userOf(objectId)` (optional) names the NPC using the object
+ * the player's own sign-out there (`pc_signed_out`) or a sign-in that is not a claim
+ * (`pc_signed_in`) ends it too (review R1 M1), and a reload starts with none. `env.userOf(objectId)` (optional) names the NPC using the object
  * now; a click while anybody uses it answers 'attended', and presence() carries it as userId.
  *
  * `isLocked(objId)` answers "is this screen locked right now?" (owner away and screen locked)
@@ -196,6 +197,10 @@ export class WorkstationState {
         this.env.on('npc_ko:*', (d) => this.onKnockedOut(d?.npcId));
         this.env.on('npc_guest_left:*', (d) => this.onGuestLeft(d?.objectId, d?.npcId));
         this.env.on('npc_sat_at:*', (d) => this.onSatAt(d?.objectId, d?.npcId));
+        // Review R1 M1: the player's own sign-out at a PC, or a sign-in there that is not a
+        // claim, ends the guest session there, as the server does
+        this.env.on('pc_signed_out', (d) => this.onSignedOut(d?.pcId));
+        this.env.on('pc_signed_in', (d) => { if (d?.via !== 'claim') this.onSignedOut(d?.pcId); });
         if (typeof this.env.onTick === 'function') this.env.onTick(() => this.checkAutoLocks());
         this.resetGlobals();
         return this;
@@ -265,6 +270,18 @@ export class WorkstationState {
     /** npc_sat_at:<pcId>: whoever sits down ends a guest session there; no owner_returned. */
     onSatAt(pcId, npcId) {
         if (!this.guests.has(pcId)) return false;
+        this.guests.delete(pcId);
+        this._publishGuest(pcId, false, false);
+        return true;
+    }
+
+    /**
+     * pc_signed_out (any reason) at pcId, or a password or remote pc_signed_in there: the guest
+     * record goes, so the next click is the sign-in screen (review R1 M1). A displacement's
+     * pc_signed_out comes before the new borrower's npc_guest_left, so that guest is kept.
+     */
+    onSignedOut(pcId) {
+        if (typeof pcId !== 'string' || !this.guests.has(pcId)) return false;
         this.guests.delete(pcId);
         this._publishGuest(pcId, false, false);
         return true;

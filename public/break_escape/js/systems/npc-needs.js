@@ -523,6 +523,8 @@ export class NPCNeedsSystem {
             for (const v of Array.isArray(s.visits) ? s.visits : []) if (v?.kind === 'workaround') wk.push(v);
             if (s.job) this._abortJob(s, 'reset', { cancel: true });
             for (const v of wk) this._emit(`npc_visit_dropped:${id}`, { npcId: id, kind: v.kind, at: { ...v.at }, data: v.data, reason: 'reset' });
+            // A held borrow too (review R1 m2)
+            if (s.borrow) this._dropBorrow(s, 'reset');
         }
         // The server still holds each NPC's frustration: the mirror survives a reset (R1 m3).
         // failSent marks and a reload's held parks do not (review R2 n2): reset() is a debug and
@@ -1607,8 +1609,13 @@ export class NPCNeedsSystem {
         if (!s || !run || typeof run.pc !== 'string' || !run.pc) return false;
         if (!Number.isInteger(run.index) || !Number.isInteger(run.hand)) return false;
         if (s.borrow && s.borrow.index === run.index && s.borrow.hand === run.hand) return true;
+        // Review R1 m2: a borrow already being used is not replaced (the new one is refused, so
+        // the runner gives it back as dropped); one not started yet is reported dropped first,
+        // so its hand-over is freed instead of waiting for an event that never comes
+        if (s.borrow && s.job && s.job.borrow === s.borrow) return false;
         const need = typeof run.need === 'string' && s.needs[run.need] ? run.need : 'work';
         if (!s.needs[need]) return false;
+        if (s.borrow) this._dropBorrow(s, 'replaced');
         const routes = run.routes && typeof run.routes === 'object' && !Array.isArray(run.routes) ? run.routes : null;
         s.borrow = { index: run.index, hand: run.hand, pcId: run.pc, need, routes, leavesOpen: run.leavesOpen !== false,
             startBy: this.clockMs + BORROW_START_MS, started: false };
@@ -1632,8 +1639,14 @@ export class NPCNeedsSystem {
     _tickBorrow(s) {
         const b = s.borrow;
         if (!b || this.clockMs < b.startBy || (s.job && s.job.borrow === b)) return;
+        this._dropBorrow(s);
+    }
+
+    _dropBorrow(s, reason = null) {
+        const b = s.borrow;
+        if (!b) return;
         s.borrow = null;
-        this._log(s.npcId, 'borrow_dropped', { target: b.pcId });
+        this._log(s.npcId, 'borrow_dropped', reason ? { target: b.pcId, reason } : { target: b.pcId });
         this._emit(`npc_borrow_dropped:${s.npcId}`, { npcId: s.npcId, index: b.index, hand: b.hand, pcId: b.pcId });
     }
 
@@ -2834,7 +2847,9 @@ export class NPCNeedsSystem {
                 this._log(id, 'visiting', { kind: job.visit?.kind, target: job.targetId });
                 // Access 9.2 H (6.5): the runner says a share's line on arrival and listens from then
                 const v = job.visit || {};
-                this._emit(`npc_visit_arrived:${id}`, { npcId: id, kind: v.kind, at: { ...(v.at || {}) }, data: v.data ?? null });
+                // world.emit, not _emit: an arrival changes no world state, so it clears no NPC's
+                // select back-off (review R1 n1)
+                this.world.emit(`npc_visit_arrived:${id}`, { npcId: id, kind: v.kind, at: { ...(v.at || {}) }, data: v.data ?? null });
                 return;
             }
             const secs = Number(obj?.affordance?.useSeconds);

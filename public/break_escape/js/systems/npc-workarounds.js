@@ -73,6 +73,18 @@ export function retryDelay(attempts) {
 
 const keyOf = (npcId, run) => `${npcId}:${run.index}:${run.hand}`;
 
+/**
+ * Plain text for a notebook page (review R1 M1): the notes page renders a markdown subset
+ * (utils/note-markdown.js, after utils/display-dashes.js), so each of its escapable characters
+ * is given a backslash and the page shows the text exactly as given. HTML needs nothing here:
+ * the renderer escapes every character first. Kept beside its one user rather than imported, so
+ * the runner's test harness copies need no new file; the test checks it against the renderer.
+ */
+const NOTE_ESCAPABLE = /[\\|*`#_-]/g;
+export function escapeNoteText(text) {
+    return String(text).replace(NOTE_ESCAPABLE, ch => `\\${ch}`);
+}
+
 export class NpcWorkarounds {
     /**
      * @param {Object} deps - { send(body) -> Promise<answer> (throws with err.status), needs() ->
@@ -182,13 +194,18 @@ export class NpcWorkarounds {
         tick();
     }
 
-    /** One hearing test: the first that hears notes the player's room (6.5). */
+    /**
+     * One hearing test: the first that hears in a room notes that room (6.5). A tick in a doorway
+     * (currentPlayerRoom is '' there) does not count, so a later in-room tick can (review R1 M2):
+     * the server takes a heard share with no room as not heard.
+     */
     _listen(job) {
         if (job.heard) return;
-        if (!this._needs()?.playerHears?.(job.npcId)) return;
         const room = this.deps.playerRoom?.();
+        if (typeof room !== 'string' || !room) return;
+        if (!this._needs()?.playerHears?.(job.npcId)) return;
         job.heard = true;
-        job.roomId = typeof room === 'string' && room ? room : null;
+        job.roomId = room;
     }
 
     /** `npc_borrow_done:<npcId>`: the borrower left the borrowed PC. */
@@ -287,8 +304,11 @@ export class NpcWorkarounds {
         const heard = run.do === 'share_login' && body.capture && typeof body.capture === 'object';
         if (heard) {
             const who = typeof body.displayName === 'string' && body.displayName ? body.displayName : npcId;
-            if (typeof body.line === 'string') this.deps.toast?.(body.line, `Overheard: ${who}`);
-            if (typeof body.note === 'string' && body.note) this.deps.addNote?.(`Overheard: ${who}`, body.note);
+            // Review R1 M1: the line holds a password the player must type exactly, so it goes in
+            // as plain text with no dash display; the note is plain text too, escaped for the
+            // notebook's markdown so `*`, backticks and `--` in it are kept as they are
+            if (typeof body.line === 'string') this.deps.toast?.(body.line, `Overheard: ${who}`, { plainText: true, verbatim: true });
+            if (typeof body.note === 'string' && body.note) this.deps.addNote?.(`Overheard: ${who}`, escapeNoteText(body.note));
             this.deps.recordCapture?.(body.capture);
         }
         this._emit(`npc_workaround:${npcId}`, { npcId, index: run.index, do: run.do, phase: 'done' });
@@ -406,7 +426,7 @@ export function installNpcWorkarounds(api) {
         },
         npcRecord: id => w.npcManager?.npcs?.get?.(id) || null,
         playerRoom: () => w.currentPlayerRoom || null,
-        toast: (line, title) => (typeof w.gameAlert === 'function' ? w.gameAlert(line, 'info', title, 8000) : null),
+        toast: (line, title, opts) => (typeof w.gameAlert === 'function' ? w.gameAlert(line, 'info', title, 8000, opts || { plainText: true }) : null),
         addNote: (title, text) => (typeof w.addNote === 'function' ? w.addNote(title, text, true) : null),
         recordCapture: capture => (typeof w.recordSECapture === 'function' ? w.recordSECapture(capture) : null)
     });
