@@ -16,21 +16,29 @@ module BreakEscape
     #
     # A request matches a line when both have the same TtsService.match_form
     # (ASCII case, punctuation, spacing and invisible characters aside, the
-    # same letters and digits). Candidates, in order:
-    #   1. whole lines as the client shows them (InkLineWalker#lines);
-    #   2. each ^text fragment on its own;
-    #   3. lines the walker could not place (glue, a divert mid-line) as their
+    # same letters and digits). Candidates:
+    #   1. whole lines as the walker places them (InkLineWalker#lines), unless
+    #      placed: false (the story is a host the TtsLineExtractor already
+    #      reads, so only what it cannot place is wanted here);
+    #   2. lines the walker could not place (glue, a divert mid-line) as their
     #      own text, if they print no value;
-    #   4. pieces of a glued line (`<>`) joined: 2 to MAX_GLUED pieces in a row
+    #   3. pieces of a glued line (`<>`) joined: 2 to MAX_GLUED pieces in a row
     #      from the same container, each joined with a space, none printing a
     #      value;
-    #   5. lines whose only printed values are player_name(): the ink's text
+    #   4. lines whose only printed values are player_name(): the ink's text
     #      with the game's player name (player_names, as the server holds it)
     #      put in.
     # A line that prints any other value (a number, game state, a string
     # variable changed in play, an unknown variable, another external
-    # function) is never voiced: voiced lines print no variables, and a slot
-    # filled from the request would voice the request's text.
+    # function) is never voiced, nor any piece of it: voiced lines print no
+    # variables, and a slot filled from the request would voice the
+    # request's text.
+    #
+    # Who may voice a line: with narrator_only, only Narrator: lines; with
+    # voiced_as (a callable from the line's raw ink text to the text the
+    # client voices it with as this NPC, or nil when the client voices it as
+    # someone else), only that NPC's lines. A line's speaker prefix is never
+    # voiced: a request with or without it is served the text after it.
     #
     # Each story's candidates are indexed once (by match form), so a request
     # costs one hash lookup however long the story is.
@@ -39,17 +47,32 @@ module BreakEscape
     # @param text [String] Requested text (may or may not include "Speaker: " prefix)
     # @param player_names [Array<String>] what a player_name() slot may hold
     # @param narrator_only [Boolean] only lines with a Narrator: prefix
+    # @param voiced_as [#call, nil] raw line => voiced text for this NPC, or nil
+    # @param placed [Boolean] include the lines the walker places
     # @return [String, nil] the story's text for the line, or nil
-    def self.canonical(ink_json_path, text, player_names: [TtsService::PLAYER_NAME_DEFAULT], narrator_only: false)
-      return nil unless File.exist?(ink_json_path)
-
+    def self.canonical(ink_json_path, text, player_names: [TtsService::PLAYER_NAME_DEFAULT], narrator_only: false,
+                       voiced_as: nil, placed: true)
       wanted = TtsService.match_form(text)
       return nil if wanted.blank?
 
       walker = InkLineWalker.cached_for_file(ink_json_path)
-      index_for(ink_json_path.to_s, walker, Array(player_names), narrator_only)[wanted]
-    rescue JSON::ParserError => e
-      Rails.logger.warn "[TTS] Unreadable ink JSON #{ink_json_path}: #{e.message}"
+      Array(index_for(ink_json_path.to_s, walker, Array(player_names), placed)[wanted]).each do |raw|
+        prefix, rest = InkLineWalker.split_prefix(raw)
+        voiced =
+          if narrator_only
+            prefix&.match?(NARRATOR_PREFIX) ? rest : nil
+          elsif voiced_as
+            voiced_as.call(raw)
+          else
+            prefix ? rest : raw
+          end
+        return voiced if voiced.present?
+      end
+      nil
+    rescue JSON::ParserError, Errno::ENOENT, Errno::EISDIR => e
+      # A missing story, or one replaced or half written by a recompile
+      # between two reads: no line, so the request is refused, not a 500.
+      Rails.logger.warn "[TTS] Unreadable ink JSON #{ink_json_path}: #{e.class}: #{e.message}"
       nil
     end
 
@@ -59,16 +82,16 @@ module BreakEscape
     end
 
     MAX_GLUED = 4
-    # A line the client voices as the narrator (person-chat parseDialogueLine)
-    NARRATOR_LINE = /\ANarrator\s*(\[[^\]]*\])?\s*:/i.freeze
+    # The prefix of a line the client voices as the narrator (InkLineWalker.split_prefix)
+    NARRATOR_PREFIX = /\ANarrator(\[|\z)/i.freeze
 
-    # { match form => the story's text } for one story, built on first use and
-    # kept while the walker (cached per file, by mtime and size) is the same.
-    def self.index_for(path, walker, player_names, narrator_only)
+    # { match form => [raw ink text, ...] } for one story, built on first use
+    # and kept while the walker (cached per file, by mtime and size) is the same.
+    def self.index_for(path, walker, player_names, placed)
       entry = index_cache[path]
       entry = index_cache[path] = { walker: walker, indexes: Concurrent::Map.new } unless entry && entry[:walker].equal?(walker)
-      entry[:indexes].compute_if_absent([player_names, narrator_only]) do
-        build_index(walker, player_names, narrator_only).freeze
+      entry[:indexes].compute_if_absent([player_names, placed]) do
+        build_index(walker, player_names, placed).each_value(&:freeze).freeze
       end
     end
 
@@ -76,14 +99,10 @@ module BreakEscape
       @index_cache ||= Concurrent::Map.new
     end
 
-    def self.build_index(walker, player_names, narrator_only)
+    def self.build_index(walker, player_names, placed)
       index = {}
-      keep = ->(raw) { !narrator_only || raw.to_s.strip.match?(NARRATOR_LINE) }
-      walker.lines.each { |line| add_line(index, line.raw) if keep.call(line.raw) }
-      walker.fragments.each { |fragment| add_line(index, fragment) if keep.call(fragment) }
+      walker.lines.each { |line| add_line(index, line.raw) } if placed
       walker.unresolved.each do |u|
-        next unless keep.call(u.text)
-
         slots = Array(u.slots)
         if slots.empty?
           # A line still holding a `{...}` placeholder is not text the client shows
@@ -94,23 +113,24 @@ module BreakEscape
           end
         end
       end
-      glued_runs(walker.unresolved).each { |joined| add_line(index, joined) if keep.call(joined) }
+      glued_runs(walker.unresolved).each { |joined| add_line(index, joined) }
       index
     end
 
-    # The line itself, the line without its speaker prefix, or (if the client
-    # stripped an internal "phrase: " too) without a second prefix, each under
-    # its match form, as the story has it. The first candidate wins a form.
+    # The whole line and the line without its speaker prefix, each a form a
+    # request may arrive in.
+    def self.match_forms(raw)
+      _prefix, rest = InkLineWalker.split_prefix(raw)
+      [TtsService.match_form(raw.to_s.strip), TtsService.match_form(rest)].compact.uniq
+    end
+
     def self.add_line(index, ink_text)
-      candidate = ink_text.to_s.strip
-      # Ink stores "^Sarah: Hello" but client may send just "Hello"
-      dialog_only = candidate.sub(/\A[^:]+:\s*/, "")
-      # A dialog line like "...manage the response: contain the attack" may be sent by the
-      # client as just "contain the attack" if client-side colon-splitting misfired.
-      dialog_after_colon = dialog_only.sub(/\A[^:]+:\s*/, "")
-      [candidate, dialog_only, dialog_after_colon].each do |variant|
-        form = TtsService.match_form(variant)
-        index[form] ||= variant if form.present?
+      raw = ink_text.to_s.strip
+      match_forms(raw).each do |form|
+        next if form.empty?
+
+        list = (index[form] ||= [])
+        list << raw unless list.include?(raw)
       end
     end
 
@@ -131,6 +151,6 @@ module BreakEscape
       end
       runs
     end
-    private_class_method :index_for, :index_cache, :build_index, :add_line, :glued_runs
+    private_class_method :index_for, :index_cache, :build_index, :match_forms, :add_line, :glued_runs
   end
 end

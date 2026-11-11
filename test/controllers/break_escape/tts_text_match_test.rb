@@ -70,7 +70,9 @@ module BreakEscape
               "npcs" => [
                 { "id" => "kevin_park", "displayName" => "Kevin Park", "npcType" => "person",
                   "voice" => KEVIN, "storyPath" => STORY },
+                # A voiced call (phone-call-voice.js): the client speaks its call's lines
                 { "id" => "agent_0x99", "displayName" => "Agent HaX", "npcType" => "phone",
+                  "voiced" => true, "currentKnot" => "call",
                   "voice" => { "name" => "Aoede", "style" => "Secure line.", "language" => "en-GB" },
                   "storyPath" => PHONE_STORY },
                 { "id" => "nurse", "displayName" => "Nurse",
@@ -197,7 +199,7 @@ module BreakEscape
     test "case folds only for ASCII letters: Unicode case folds of lookalikes are refused" do
       assert_refused "kevin_park", LINE.sub("server", "ſerver")             # long s, folds to s
       # The Kelvin sign is canonically K (NFC), not a case fold: the ink's line is voiced
-      assert_voices "kevin_park", "\u212Aevin Park: #{LINE}", "Kevin Park: #{LINE}"
+      assert_voices "kevin_park", "\u212Aevin Park: #{LINE}", LINE
       assert_refused "kevin_park", "\u212Aevin Park: #{LINE.sub('server', 'ſerver')}"
       assert_refused "kevin_park", "On the line, Agent.".sub("A", "\u{1D400}") # mathematical bold A
       assert_refused "kevin_park", "Meet me at the CAFÉ at noon."           # non-ASCII capital: exact only
@@ -221,7 +223,35 @@ module BreakEscape
     test "case, punctuation and spacing differences voice the ink's own line" do
       assert_voices "kevin_park", "the SERVER room is down the hall", LINE
       assert_voices "kevin_park", "  The server  room is down the hall!! ", LINE
-      assert_voices "kevin_park", "Kevin Park: #{LINE}", "Kevin Park: #{LINE}"
+    end
+
+    # ─── An NPC voices only its own lines, never a speaker prefix ─────────────
+
+    test "a request with the speaker's own prefix voices the line without it" do
+      assert_voices "kevin_park", "Kevin Park: #{LINE}", LINE
+      assert_voices "narrator", "Narrator: The lights hum overhead.", "The lights hum overhead."
+      assert_voices "kevin_park", "Kevin Park: The first half and the glued half.", "The first half and the glued half."
+    end
+
+    test "an NPC never voices the narrator's lines in its own story" do
+      assert_refused "kevin_park", "The lights hum overhead."
+      assert_refused "kevin_park", "Narrator: The lights hum overhead."
+      assert_refused "kevin_park", "The phone buzzes for Agent."
+    end
+
+    test "an NPC never voices another speaker's line or another speaker's prefix" do
+      assert_refused "agent_0x99", LINE
+      assert_refused "agent_0x99", "Kevin Park: #{LINE}"
+      assert_refused "kevin_park", "Agent HaX: #{LINE}"
+      assert_refused "kevin_park", "Don't hang up."
+      assert_refused "nurse", LINE
+    end
+
+    test "pieces of a line that prints a value are never voiced alone" do
+      assert_refused "kevin_park", "Ask"
+      assert_refused "kevin_park", "at the front desk."
+      assert_refused "kevin_park", "You found"
+      assert_refused "kevin_park", "What can I help you with?"
     end
 
     test "a decomposed (NFD) request for a line with an accent voices the ink's composed line" do
@@ -332,7 +362,7 @@ module BreakEscape
     test "property: lookalike mutations of real requests never give two voiced texts one key" do
       requests = ["The server room is down the hall.", "I suppose it doesn't matter now.",
                   "On the line, Agent.", "The first half and the glued half.", "Meet me at the café at noon.",
-                  "What can I help you with?", "The lights hum overhead.", "Kevin Park: #{LINE}"]
+                  "The lights hum overhead.", "Kevin Park: #{LINE}"]
       story = Engine.root.join(STORY).to_s
       base = requests.map { |r| InkTextValidator.canonical(story, r) }
       assert base.all?, "every base request is a line"

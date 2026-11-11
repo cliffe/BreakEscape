@@ -4,20 +4,28 @@ module BreakEscape
   # served without limit and does not count.
   #
   # LIMIT is sized so normal play never reaches it. Every clip the endpoint can
-  # generate is a line of the game's own scenario (InkTextValidator and friends
-  # never voice request text), so one game can ask for at most about as many
-  # clips as its scenario has lines: 1,195 for the largest (m10), 1,048 for m02,
-  # under 610 for the rest. 1,500 an hour covers the whole of the largest
-  # mission in one hour with room for retries after failed generations.
+  # generate is a line of the game's own scenario, voiced only by its own
+  # speaker (TtsLineResolver), so one game can ask for at most the scenario's
+  # reachable clips: the batch's lines, the untagged form of each tagged line,
+  # barks, chatter, Narrator: lines of every story and lines the walker can't
+  # place. That is 1,274 for the largest (m10), 1,145 for m02, under 640 for
+  # the rest (2026-11-11). 1,500 an hour covers the whole of the largest
+  # mission in one hour with room for retries after failed generations. A
+  # clip once generated is cached for every game, so across all games a
+  # mission costs at most its reachable clips once per voice.
   #
   # Counts are held per server process (one Rails process per worker), so with
   # several workers a game's real cap is LIMIT times the number of workers.
   class TtsGenerationLimit
     LIMIT = 1_500
     WINDOW = 3_600 # seconds
+    # How often (seconds) an allowed call drops the stamps of games idle for a
+    # whole WINDOW, so memory follows the games active in the last hour
+    PRUNE_EVERY = 60
 
     @lock = Mutex.new
     @stamps = {}
+    @pruned_at = nil
 
     class << self
       # Records a generation for game_id and returns true, or returns false
@@ -29,7 +37,7 @@ module BreakEscape
 
           stamps << now
           @stamps[game_id] = stamps
-          prune(now) if @stamps.size > 10_000
+          prune(now) if @pruned_at.nil? || now - @pruned_at >= PRUNE_EVERY
           true
         end
       end
@@ -44,7 +52,15 @@ module BreakEscape
 
       # Tests only
       def reset!
-        @lock.synchronize { @stamps = {} }
+        @lock.synchronize do
+          @stamps = {}
+          @pruned_at = nil
+        end
+      end
+
+      # Tests only: games with stamps held
+      def tracked_games
+        @lock.synchronize { @stamps.size }
       end
 
       private
@@ -56,6 +72,7 @@ module BreakEscape
       end
 
       def prune(now)
+        @pruned_at = now
         @stamps.delete_if { |_id, stamps| stamps.empty? || stamps.last <= now - WINDOW }
       end
 

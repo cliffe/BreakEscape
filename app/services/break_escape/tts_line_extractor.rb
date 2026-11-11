@@ -48,6 +48,20 @@ module BreakEscape
       JSON.parse(erb.result(Mission::ScenarioBinding.new({}).get_binding))
     end
 
+    # Names of the scenario's carried-over globals: those resolved at game
+    # creation (importedGlobals) and those it declares (importGlobals), so the
+    # batch and the endpoint agree.
+    def self.imported_names(scenario_data)
+      names = Set.new
+      record = scenario_data['importedGlobals']
+      names.merge(record.keys.map(&:to_s)) if record.is_a?(Hash)
+      Array(scenario_data['importGlobals']).each do |entry|
+        name = CarryOver.import_name(entry)
+        names << name if name
+      end
+      names
+    end
+
     def self.normalize(text)
       text.to_s.downcase.gsub(/[^\w\s]/, '').strip.gsub(/\s+/, ' ')
     end
@@ -58,7 +72,13 @@ module BreakEscape
       @scenario_data = scenario_data
       @tts_service = tts_service
       @voices = Mission.voice_configs_from(scenario_data)
-      @variables = scenario_data['globalVariables'] || {}
+      # Carried-over globals hold what the client wrote in an earlier mission,
+      # so they are player text: never a constant a voiced line is read with.
+      # They are left out of the variables and treated as changed in play
+      # (dynamic_variables), so a line printing one stays unresolved and is
+      # never voiced (neither with the player's value nor the ink's default).
+      @imported = self.class.imported_names(scenario_data)
+      @variables = (scenario_data['globalVariables'] || {}).reject { |name, _| @imported.include?(name.to_s) }
       @notes = []
       @entries = nil
     end
@@ -206,9 +226,18 @@ module BreakEscape
       end
     end
 
+    # [npc_id, text] the client voices a line of host_id's story as, for raw ink
+    # text the walker could not place (glue, a divert mid-line, player_name()),
+    # or nil. Same rules as resolve, with no tags and no notes recorded.
+    def voiced_as(raw, host_id)
+      prefix, text = InkLineWalker.split_prefix(raw)
+      line = InkLineWalker::Line.new(prefix: prefix, text: text, raw: raw.to_s.strip, tags: [], path: nil)
+      resolve(line, host_id, notes: false)
+    end
+
     # Which speaker the client asks for, and the text it sends, for one walker line.
     # Returns [npc_id, text], or nil when the line is not voiced (player, background).
-    def resolve(line, host_id)
+    def resolve(line, host_id, notes: true)
       raw = line.raw
       return nil if raw.match?(BACKGROUND_LINE)
 
@@ -223,7 +252,7 @@ module BreakEscape
           speaker = 'narrator'
           narrator = true
           text = line.text
-        else
+        elsif notes
           @notes << Note.new(source: host_id, path: line.path, text: raw,
                              reason: "Narrator[#{character}] names no character; the client voices it unprefixed")
         end
@@ -466,7 +495,7 @@ module BreakEscape
     # voiced with a starting value that play replaces.
     def dynamic_variables
       @dynamic_variables ||= begin
-        names = Set.new
+        names = Set.new(@imported)
         story_paths = characters.values.map { |c| c['storyPath'] }.compact.uniq
         story_paths.each do |story|
           path = resolve_ink_path(story)

@@ -24,5 +24,17 @@ module BreakEscape
       # Largest scenario line count (m10_full_disclosure, 1,195 batch lines)
       assert_operator TtsGenerationLimit::LIMIT, :>=, 1_195
     end
+
+    test "a game idle for a whole window is dropped by a later call, on a clock not on size" do
+      assert TtsGenerationLimit.allow?(1, now: 0.0)
+      assert TtsGenerationLimit.allow?(2, now: 30.0)
+      assert_equal 2, TtsGenerationLimit.tracked_games
+      assert TtsGenerationLimit.allow?(3, now: TtsGenerationLimit::WINDOW + 1.0)
+      assert_equal 2, TtsGenerationLimit.tracked_games, "game 1 dropped, game 2 still in its window"
+      assert TtsGenerationLimit.allow?(3, now: TtsGenerationLimit::WINDOW + 10.0)
+      assert_equal 2, TtsGenerationLimit.tracked_games, "no prune within PRUNE_EVERY"
+      assert TtsGenerationLimit.allow?(3, now: TtsGenerationLimit::WINDOW + 30.0 + TtsGenerationLimit::PRUNE_EVERY)
+      assert_equal 1, TtsGenerationLimit.tracked_games
+    end
   end
 end

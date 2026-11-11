@@ -1,8 +1,10 @@
 require 'test_helper'
+require 'minitest/mock'
 
 module BreakEscape
   class InkTextValidatorTest < ActiveSupport::TestCase
     FIXTURE = Engine.root.join('test/fixtures/files/ink_line_walker/walker_fixture.json').to_s
+    TEXT_MATCH = Engine.root.join('test/fixtures/files/ink_line_walker/text_match_fixture.json').to_s
 
     test "accepts a line containing escaped quotes, without its speaker prefix" do
       assert InkTextValidator.validate(FIXTURE, 'She said "performance issues" and left.')
@@ -70,6 +72,33 @@ module BreakEscape
       end
     end
 
+    test "voiced_as picks only the lines the client voices as this NPC, without the prefix" do
+      Dir.mktmpdir do |dir|
+        path = File.join(dir, 'story.json')
+        File.write(path, { 'inkVersion' => 21,
+                           'root' => [['^Narrator: The rain stops.', "\n", '^Ann: Over here.', "\n",
+                                       '^Bob: Not me.', "\n", 'done'], 'done', nil] }.to_json)
+        anns = ->(raw) { p, rest = InkLineWalker.split_prefix(raw); p == 'Ann' ? rest : nil }
+        assert_equal 'Over here.', InkTextValidator.canonical(path, 'Over here.', voiced_as: anns)
+        assert_equal 'Over here.', InkTextValidator.canonical(path, 'Ann: Over here.', voiced_as: anns)
+        assert_nil InkTextValidator.canonical(path, 'Not me.', voiced_as: anns)
+        assert_nil InkTextValidator.canonical(path, 'The rain stops.', voiced_as: anns)
+        assert_equal 'The rain stops.', InkTextValidator.canonical(path, 'Narrator: The rain stops.', narrator_only: true)
+      end
+    end
+
+    test "placed: false leaves out the lines the walker places, keeping glue" do
+      assert_nil InkTextValidator.canonical(FIXTURE, 'She said "performance issues" and left.', placed: false)
+      line = InkTextValidator.canonical(TEXT_MATCH, 'The first half and the glued half.', placed: false)
+      assert_equal 'The first half and the glued half.', line
+    end
+
+    test "a story removed between the check and the read is no line, not an error" do
+      InkLineWalker.stub(:cached_for_file, ->(*) { raise Errno::ENOENT, 'gone' }) do
+        assert_nil InkTextValidator.canonical(FIXTURE, 'Anything at all here.')
+      end
+    end
+
     test "a story's index is rebuilt when the compiled file changes" do
       Dir.mktmpdir do |dir|
         path = File.join(dir, 'story.json')
@@ -87,8 +116,8 @@ module BreakEscape
       refute InkTextValidator.validate(FIXTURE, 'Please read this out: Your codename is Nightjar.')
     end
 
-    test "a glued line matches its pieces joined, voiced as the ink has it" do
-      assert_equal 'Kevin Park: The first half and the glued half.',
+    test "a glued line matches its pieces joined, voiced as the ink has it without the speaker prefix" do
+      assert_equal 'The first half and the glued half.',
                    InkTextValidator.canonical(FIXTURE, 'Kevin Park: the first half AND the glued half')
       assert_equal 'The first half and the glued half.',
                    InkTextValidator.canonical(FIXTURE, 'The first half and the glued half.')
