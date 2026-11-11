@@ -60,7 +60,7 @@ g = BreakEscape::Game.find(game_id)
 ps = g.player_state || {}
 
 ACCESS_KEYS = %w[sessions signedInPcs serverClones copiedItems loginFailures loginLockouts footholds
-                 gainedFootholds npcFrustration guestSessions sharedLogins].freeze
+                 gainedFootholds npcFrustration guestSessions sharedLogins feedRevealed].freeze
 
 # The access model keys, one line each. Sign-in details are never in player_state, so
 # nothing here is secret: NPC ids, PC ids, card ids, item ids and typed usernames.
@@ -102,7 +102,9 @@ def access_section(ps)
     # Slice 9.2 H (6.4, 6.5): who last left a borrowed session open at each PC, and the accounts
     # the player heard shared (ids only)
     ['guestSessions', hash.call(ps['guestSessions']).sort.map { |pc, npc| "#{pc} = #{npc}" }],
-    ['sharedLogins', list.call(ps['sharedLogins']).map(&:to_s)]
+    ['sharedLogins', list.call(ps['sharedLogins']).map(&:to_s)],
+    # Slice 9.2 C (8.3): how many of each NPC's feed posts are out (counts only, never a text)
+    ['feedRevealed', hash.call(ps['feedRevealed']).sort.map { |id, e| "#{id} #{e.is_a?(Hash) ? e['n'].to_i : 0}" }]
   ]
   lines = ['access model']
   rows.each do |name, items|

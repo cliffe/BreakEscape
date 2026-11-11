@@ -108,6 +108,10 @@ class AccessLeakScanner
 
   # Keys an NPC record never takes to the browser (Game::WITHHELD_NPC_KEYS).
   WITHHELD_KEYS = %w[creds role awareness habits workarounds].freeze
+  # Slice 9.2 (9.2): the NPC keys the server withholds beside them (Game::WITHHELD_WORK_NPC_KEYS)
+  WITHHELD_WORK_KEYS = %w[workNeeds frustration feed].freeze
+  # Feed texts shorter than this are not searched for (the validator warns about them, 9.2)
+  MIN_FEED_TEXT = 12
 
   attr_reader :passwords, :items
 
@@ -132,10 +136,16 @@ class AccessLeakScanner
     # password on purpose, exempt only where that item's content may be (scan_passwords)
     @share_clues = Hash.new { |h, k| h[k] = [] }
     @workarounds = [] # { npc:, index:, do:, target: [key, value] }
+    # Sub-slice C: feed posts and feed facts, by text; served once a /feed_post answer (or a
+    # GET /scenario feedPosts block the server's feedRevealed count covers) has carried them
+    @feed_texts = {}          # text => { owner:, post: npc|post_id, fact: id or nil }
+    @feed_fact_ids = Set.new
+    @feed_served = Set.new    # "npc|post_id" and "fact:<id>"
     collect_passwords
     collect_items
     collect_network_secrets
     collect_workarounds
+    collect_feeds
     @items.each_value { |info| info[:strings] = info[:strings].reject { |s| @public_strings.include?(s) } }
     @items.delete_if { |_, info| info[:strings].empty? }
   end
@@ -147,7 +157,9 @@ class AccessLeakScanner
       locked_items: @items.count { |_, i| i[:locked_ancestors].any? },
       network_strings: @network_strings.length,
       share_items: @share_items.length,
-      workarounds: @workarounds.length
+      workarounds: @workarounds.length,
+      feed_posts: @feed_texts.values.count { |f| f[:kind] == :post },
+      feed_facts: @feed_fact_ids.length
     }
   end
 
@@ -182,6 +194,8 @@ class AccessLeakScanner
       scan_share_content(body, ctx, legit, add)
       scan_network_strings(body, ctx, add)
       scan_workarounds(body, ctx, add)
+      note_feed_served(body, ctx)
+      scan_feed(body, add)
     end
     findings
   end
@@ -208,15 +222,17 @@ class AccessLeakScanner
     'locked_content' => 'locked container content in a response that marks it locked',
     'share_content' => 'file share content outside a container response for that share',
     'network_string' => 'a network or resource name, host or observations outside the network routes',
-    'withheld_key' => 'a withheld key (creds, role, awareness, habits, workarounds) on an NPC record',
-    'workaround' => 'a workaround (its kind beside its target) outside a hand-over'
+    'withheld_key' => 'a withheld key (creds, role, awareness, habits, workarounds, workNeeds, frustration, feed) on an NPC record',
+    'workaround' => 'a workaround (its kind beside its target) outside a hand-over',
+    'feed_text' => "a feed post's or feed fact's whole text before the server served it",
+    'feed_fact_key' => 'an object keyed by a feed fact id with a text key before its post was served'
   }.freeze
 
   private
 
   def secret_values
     @secret_values ||= (@passwords.keys + @items.values.flat_map { |i| i[:strings] } + @network_strings.keys +
-                        @share_items.values.flat_map { |i| i[:strings] }).uniq.sort_by { |v| -v.length }
+                        @share_items.values.flat_map { |i| i[:strings] } + @feed_texts.keys).uniq.sort_by { |v| -v.length }
   end
 
   # ---- catalogue ---------------------------------------------------------------------------
@@ -603,6 +619,87 @@ class AccessLeakScanner
     end
   end
 
+  # ---- sub-slice C: feeds (plan 9.2 and 11) ---------------------------------------------
+
+  def collect_feeds
+    facts = @data.dig('social', 'intelFacts')
+    facts = {} unless facts.is_a?(Hash)
+    each_room_npc do |npc|
+      feed = npc['feed']
+      next unless feed.is_a?(Hash) && feed['posts'].is_a?(Array)
+
+      feed['posts'].each do |post|
+        next unless post.is_a?(Hash) && post['id'].is_a?(String)
+
+        key = "#{npc['id']}|#{post['id']}"
+        fid = post['fact'].is_a?(String) && facts[post['fact']].is_a?(Hash) ? post['fact'] : nil
+        text = post['text']
+        @feed_texts[text] = { kind: :post, owner: "feed:#{key}", served: [key] } if text.is_a?(String) && text.length >= MIN_FEED_TEXT
+        next unless fid
+
+        @feed_fact_ids << fid
+        ftext = facts[fid]['text']
+        next unless ftext.is_a?(String) && ftext.length >= MIN_FEED_TEXT
+
+        (@feed_texts[ftext] ||= { kind: :fact, owner: "fact:#{fid}", served: [] })[:served] << "fact:#{fid}"
+      end
+    end
+  end
+
+  # A /feed_post answer serves its post and fact; a GET /scenario feedPosts entry does too, when
+  # the game's own feedRevealed count covers it (a load after the answer was captured elsewhere)
+  def note_feed_served(body, ctx)
+    return if @feed_texts.empty? && @feed_fact_ids.empty?
+    return unless body.is_a?(Hash)
+
+    if ctx[:route].end_with?('/feed_post') && body['post'].is_a?(Hash)
+      serve_feed(body['npcId'], body['post'], body['fact'])
+    elsif ctx[:scenario] && body['feedPosts'].is_a?(Hash)
+      revealed = @game&.player_state.is_a?(Hash) ? @game.player_state['feedRevealed'] : nil
+      body['feedPosts'].each do |npc_id, f|
+        n = revealed.is_a?(Hash) && revealed[npc_id].is_a?(Hash) ? revealed[npc_id]['n'].to_i : nil
+        Array(f.is_a?(Hash) ? f['posts'] : nil).each do |item|
+          next unless item.is_a?(Hash) && item['post'].is_a?(Hash)
+          next if n && item['index'].to_i >= n
+
+          serve_feed(npc_id, item['post'], item['fact'])
+        end
+      end
+    end
+  end
+
+  def serve_feed(npc_id, post, fact)
+    @feed_served << "#{npc_id}|#{post['id']}" if post['id'].is_a?(String)
+    @feed_served << "fact:#{fact['id']}" if fact.is_a?(Hash) && fact['id'].is_a?(String) && fact['id'] == post['fact']
+  end
+
+  def feed_served?(entry)
+    entry[:served].any? { |k| @feed_served.include?(k) }
+  end
+
+  def scan_feed(body, add)
+    return if @feed_texts.empty? && @feed_fact_ids.empty?
+
+    each_string(body) do |str, json_path, _owner|
+      @feed_texts.each do |text, entry|
+        next unless str.include?(text)
+        next if feed_served?(entry)
+
+        add.call('feed_text', entry[:owner], safe_path(json_path))
+      end
+    end
+    return if @feed_fact_ids.empty?
+
+    walk_hashes(body, '$') do |hash, json_path|
+      hash.each do |k, v|
+        next unless @feed_fact_ids.include?(k) && v.is_a?(Hash) && v.key?('text')
+        next if @feed_served.include?("fact:#{k}")
+
+        add.call('feed_fact_key', "fact:#{k}", safe_path("#{json_path}.#{k}"))
+      end
+    end
+  end
+
   def walk_hashes(node, path, &block)
     case node
     when Array then node.each_with_index { |v, i| walk_hashes(v, "#{path}[#{i}]", &block) }
@@ -615,7 +712,7 @@ class AccessLeakScanner
   # NPC records holding a key the server withholds: by key and NPC id, never the value.
   def scan_withheld_keys(body, add)
     walk_records(body, '$', false) do |record, json_path|
-      WITHHELD_KEYS.each do |key|
+      (WITHHELD_KEYS + WITHHELD_WORK_KEYS).each do |key|
         next unless record.key?(key)
 
         add.call('withheld_key', "npc:#{record['id']}/#{key}", safe_path("#{json_path}.#{key}"))
