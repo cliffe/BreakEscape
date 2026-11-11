@@ -304,6 +304,37 @@ module BreakEscape
       { 'breakDrain' => frustration(data, npc)['breakDrain'], 'needs' => needs }
     end
 
+    # ── the USB policy (sub-slice U, plan 7), as pc-policy.js decides it ─
+
+    USB_VALUES = %w[allowed storage_blocked blocked].freeze
+    USB_CLASSES = %w[storage hid].freeze
+
+    # Governed: a workstation by its own fields (isWorkstation), or an object naming a policy
+    def usb_governed?(obj)
+      return false unless obj.is_a?(Hash)
+
+      (obj['id'].is_a?(String) && !obj['id'].empty? &&
+        (obj['workstation'] == true || obj.key?('locksScreenOnLeave') || obj.key?('lockChance') || obj['lockType'] == 'login')) ||
+        present_string?(obj['policy'])
+    end
+
+    # The object's effective usb value ('allowed' when its policy says nothing), nil when not governed
+    def usb_policy_for(data, obj)
+      return nil unless usb_governed?(obj)
+
+      v = policy_of(data, obj)&.dig('usb')
+      USB_VALUES.include?(v) ? v : 'allowed'
+    end
+
+    # Whether the object's policy refuses a held item (its usbClass); an item with no class never is
+    def plant_refused?(data, obj, item)
+      usb = usb_policy_for(data, obj)
+      cls = item.is_a?(Hash) ? item['usbClass'] : nil
+      return false unless usb && USB_CLASSES.include?(cls)
+
+      usb == 'blocked' || (usb == 'storage_blocked' && cls == 'storage')
+    end
+
     # ── can fail, belongs to, owned causes ──────────────────────────────
 
     def off_when?(data, obj)
@@ -311,6 +342,8 @@ module BreakEscape
     end
 
     def policy_of(data, obj)
+      return nil unless data.is_a?(Hash)
+
       name = obj.is_a?(Hash) && present_string?(obj['policy']) ? obj['policy'] : data['defaultPolicy']
       p = present_string?(name) && data['policies'].is_a?(Hash) ? data['policies'][name] : nil
       p.is_a?(Hash) ? p : nil

@@ -156,6 +156,32 @@ module BreakEscape
       assert_equal [], planted
     end
 
+    test 'planted: a plant the PC\'s USB policy refuses is never recorded, whatever the client sends (9.2 U)' do
+      data = CP.scenario
+      data['policies'] = { 'managed' => { 'usb' => 'storage_blocked' }, 'locked' => { 'usb' => 'blocked' } }
+      data['defaultPolicy'] = 'managed'
+      objs = data['rooms']['office']['objects']
+      objs.find { |o| o['id'] == 'kit_logger' }['usbClass'] = 'storage'
+      objs.find { |o| o['id'] == 'chris_desk' }['workstation'] = true
+      build_game(data)
+      take('kit_logger', 'usb', 'Inline keylogger')
+      assert_response :success, response.body
+      remove('kit_logger', 'chris_desk')
+      assert_equal [], planted, 'storage on a storage_blocked workstation'
+
+      # A hid device on the same PC is accepted; on a PC whose policy blocks every USB, refused
+      data['rooms']['office']['objects'].find { |o| o['id'] == 'kit_logger' }['usbClass'] = 'hid'
+      build_game(data)
+      take('kit_logger', 'usb', 'Inline keylogger')
+      remove('kit_logger', 'chris_desk')
+      assert_equal [{ 'item' => 'kit_logger', 'on' => 'chris_desk' }], planted
+      data['rooms']['office']['objects'].find { |o| o['id'] == 'chris_desk' }['policy'] = 'locked'
+      build_game(data)
+      take('kit_logger', 'usb', 'Inline keylogger')
+      remove('kit_logger', 'chris_desk')
+      assert_equal [], planted, 'hid on a blocked PC'
+    end
+
     test 'dropped: an accepted player_drop holds, a refused drop records nothing' do
       build_game
       forge('sofia')

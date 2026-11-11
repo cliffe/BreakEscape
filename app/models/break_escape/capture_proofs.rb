@@ -15,7 +15,8 @@ module BreakEscape
 
     # Records a plant when the inventory remove names the object it was used on. Appends
     # { item, on } to plantedItems only if the item is held, the object (a room object with that
-    # id) requires and consumes the item, and its room is the start room or unlocked. Called
+    # id) requires and consumes the item, its USB policy does not refuse it (sub-slice U), and its
+    # room is the start room or unlocked. Called
     # before the removal; the removal happens either way. Returns true when recorded.
     def record_planted_item!(item_id, used_on)
       item_id = item_id.to_s
@@ -32,6 +33,9 @@ module BreakEscape
       found = planted_target_object(used_on)
       return false unless found
       return false unless CaptureModel.object_takes_item?(found[:object], held_data)
+      # Slice 9.2 sub-slice U: a plant the object's USB policy refuses is never recorded, whatever
+      # the browser decided (review R1, client reviewer's server item 1)
+      return false if AccessWork.plant_refused?(scenario_data, found[:object], held_data)
       return false unless room_unlocked?(found[:room_id])
 
       list = (player_state['plantedItems'] ||= [])
