@@ -22,7 +22,7 @@ VAR hub_quiet = false
 === challenge ===
 ~ coyote_challenges += 1
 {coyote_challenges == 1:
-    Cody Old Coyote: Hold on, sis, I'll call you back. *to you* Hey. Building's closed. Who let you in?
+    Cody Old Coyote: Hold on, sis, I'll call you back. Hey. Building's closed. Who let you in? #delivery: first sentence into the phone, then sharper, to a stranger
 - else:
     {
     - coyote_cover == "auditor":

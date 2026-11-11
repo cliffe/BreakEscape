@@ -491,7 +491,7 @@ You get all of it from now on.
     He wrote that I'd cover for you.
     Tonight you covered for me.
 }
-Don't be kind about it. *beat* Thank you. Once.
+Don't be kind about it. Thank you. Once. #delivery: a beat's pause before the thanks
 -> back_to_work
 
 = said_afterwards
@@ -503,7 +503,7 @@ Don't be kind about it. *beat* Thank you. Once.
     He wrote that I'd cover for you.
     Tonight you covered for me.
 }
-...That's mine. You don't get to use it on me. *beat* Thank you.
+...That's mine. You don't get to use it on me. Thank you. #delivery: a beat's pause before the thanks
 -> back_to_work
 
 // Beat 3.3 step 5 (milestone M-05).
@@ -675,7 +675,7 @@ He'll call it full disclosure.
 That's my other line. Withheld. Stay on, and don't say a word.
 ...Yes.
 I know it's you.
-Nobody's called me that since the course. *beat* It's HaX. It has been for seven years.
+Nobody's called me that since the course. It's HaX. It has been for seven years. #delivery: a beat's pause, then firmer
 ...I'll bring them.
 He kept his voice down. He always did.
 He called me Ninety-nine. He says the door will open for you by name. He says take your time getting there.
