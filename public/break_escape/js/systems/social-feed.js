@@ -32,6 +32,18 @@ export function cleanPost(raw) {
     return out;
 }
 
+/**
+ * Plain text for the notebook (as npc-workarounds.js escapeNoteText, sub-slice H R1 M1): the notes
+ * page renders a markdown subset after the dash display, so each of its escapable characters gets
+ * a backslash and the page shows a feed fact's text exactly as written. HTML needs nothing: the
+ * renderer escapes it first. Kept here rather than imported, so the test harness copies of this
+ * module need no new file; social-feed.test.mjs checks it against the real renderer.
+ */
+const NOTE_ESCAPABLE = /[\\|*`#_-]/g;
+export function escapeNoteText(text) {
+    return String(text).replace(NOTE_ESCAPABLE, (ch) => `\\${ch}`);
+}
+
 /** A fact entry with string fields only (text, label, subject) and a provides list of strings. */
 export function cleanFact(raw) {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
@@ -100,7 +112,13 @@ export class SocialFeed {
         const fact = item.fact;
         if (fact && isStr(fact.id) && fact.id === post.fact) {
             const entry = cleanFact(fact.entry);
-            if (entry) this.deps.mergeFact?.(fact.id, entry);
+            // The evidence note's text, escaped once at storage (grantFact reads noteText first),
+            // so authored or hostile markup shows as written and notebook search still finds it
+            if (entry) {
+                if (typeof entry.text === 'string') entry.noteText = escapeNoteText(entry.text);
+                else delete entry.noteText;
+                this.deps.mergeFact?.(fact.id, entry);
+            }
         }
         const index = Number.isInteger(item.index) ? item.index : list.length;
         list.push({ index, post, site: item.site, person: item.person });
@@ -146,7 +164,7 @@ export function liveDeps(api, w) {
             sc.social.intelFacts[id] = entry;
         },
         emit: (name, data) => w.eventDispatcher?.emit?.(name, data),
-        toast: (message, title) => (typeof w.gameAlert === 'function' ? w.gameAlert(message, 'info', title, 5000, { plainText: true }) : null),
+        toast: (message, title) => (typeof w.gameAlert === 'function' ? w.gameAlert(message, 'info', title, 5000, { plainText: true, verbatim: true }) : null),
         siteVisited(siteId) {
             const raw = w.gameState?.globalVariables?.[OSINT_STATE_KEY];
             return Array.isArray(raw?.visited) && raw.visited.includes(siteId);

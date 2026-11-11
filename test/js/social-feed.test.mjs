@@ -3,9 +3,13 @@
 // toast rule, restore on load, and the install's listeners against a stub window.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { SocialFeed, cleanPost, cleanFact, installSocialFeed, liveDeps } from '../../public/break_escape/js/systems/social-feed.js';
+import { SocialFeed, cleanPost, cleanFact, installSocialFeed, liveDeps, escapeNoteText } from '../../public/break_escape/js/systems/social-feed.js';
+import { renderNoteMarkdown } from '../../public/break_escape/js/utils/note-markdown.js';
+import { displayDashes } from '../../public/break_escape/js/utils/display-dashes.js';
 
 const FACT = { id: 'jake_pet_name', entry: { label: 'Pet', subject: 'jake', text: 'Jake Brooks has a dog called Biscuit.' } };
+// What the feed stores for FACT: the entry and its notebook text (no escapable characters in it)
+const STORED = { ...FACT.entry, noteText: FACT.entry.text };
 const answer = (index, id, extra = {}) => ({ npcId: 'jake', index, site: 'friendface', person: 'jake', done: false, post: { id, text: `post ${id}` }, fact: null, ...extra });
 
 function harness({ answers = [], visited = true, toasts = true, hasFeed = true } = {}) {
@@ -69,7 +73,7 @@ test('the fact entry is in intelFacts before npc_posted fires', async () => {
     const emit = log.find((e) => e[0] === 'emit');
     assert.equal(emit[1], 'npc_posted:jake');
     assert.deepEqual(emit[2], { npcId: 'jake', postId: 'p1', index: 0, site: 'friendface', person: 'jake' });
-    assert.deepEqual(emit[3][FACT.id], FACT.entry, 'merged before the event');
+    assert.deepEqual(emit[3][FACT.id], STORED, 'merged before the event');
     assert.ok(log.findIndex((e) => e[0] === 'fact') < log.findIndex((e) => e[0] === 'emit'));
 });
 
@@ -99,7 +103,7 @@ test('restore on load: every revealed post and its fact, no event, no toast; don
     ] } });
     assert.deepEqual(feed.revealed(), { jake: ['p1', 'p2'] });
     assert.deepEqual(feed.postsFor('friendface', 'jake').map((p) => p.id), ['p2', 'p1'], 'newest first');
-    assert.deepEqual(facts[FACT.id], FACT.entry);
+    assert.deepEqual(facts[FACT.id], STORED);
     assert.equal(log.filter((e) => e[0] === 'emit' || e[0] === 'toast').length, 0);
     assert.equal(feed.onUse('jake'), null, 'done');
     feed.restore({ jake: { site: 'friendface', person: 'jake', posts: [{ index: 0, post: { id: 'p1', text: 'one' } }] } });
@@ -142,7 +146,7 @@ test('installSocialFeed: listens on npc_used (met social_media only) and npc_use
         await new Promise((r) => setTimeout(r, 0));
         assert.deepEqual(sent, ['jake', 'jake']);
         assert.equal(alerts.length >= 1, true);
-        assert.deepEqual(alerts[0][4], { plainText: true });
+        assert.deepEqual(alerts[0][4], { plainText: true, verbatim: true });
         assert.equal(alerts[0][0], 'Jake <i>B</i> posted on <b>Friendface</b>', 'the raw names, drawn as text by plainText');
         assert.equal(installSocialFeed(api, null), feed, 'installed once');
     } finally { delete globalThis.window; }
@@ -166,4 +170,52 @@ test('core/game.js installs the feed statically, right after the scenario is loa
     const install = src.indexOf('installSocialFeed(ApiClient, gameScenario?.feedPosts');
     assert.ok(at > 0 && install > at && install - at < 400, 'installed in the same block as the scenario load');
     assert.doesNotMatch(src.slice(at, install), /await|\.then\(|setTimeout/);
+});
+
+// ── Hostile text in the notebook (the 9.2 C live proof; H's R1 M1 approach) ──
+
+// What the notes page shows for a note's text: its renderer, then the HTML read back as text
+function shownNote(text) {
+    const html = renderNoteMarkdown(displayDashes(text));
+    return html.replace(/<[^>]+>/g, '')
+        .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&amp;/g, '&');
+}
+const HOSTILE = ['<b>Biscuit</b> & <img src=x onerror=alert(1)>', '**Biscuit** _1998_ `x`', '# Heading | a | b',
+    'Spring--24 -- x', 'a\\-b\\*c', '- list item', 'tab\there\u0007bell'];
+
+test('escapeNoteText: the notes page shows each hostile text exactly, with no markup of its own', () => {
+    for (const t of HOSTILE) {
+        assert.equal(shownNote(escapeNoteText(t)), t, t);
+        assert.ok(!/<(b|strong|em|code|h\d|li|img)\b/.test(renderNoteMarkdown(displayDashes(escapeNoteText(t)))), `no element for ${t}`);
+    }
+});
+
+test('a feed fact is stored with its text unchanged and its notebook text escaped', () => {
+    const { feed, facts } = harness();
+    const text = '**Biscuit** <i>1998</i> -- yes';
+    feed.apply('jake', answer(0, 'p1', { post: { id: 'p1', text: 'x', fact: FACT.id }, fact: { id: FACT.id, entry: { ...FACT.entry, text, noteText: 'forged' } } }));
+    assert.equal(facts[FACT.id].text, text, 'the text the browser and board show is unchanged');
+    assert.equal(facts[FACT.id].noteText, escapeNoteText(text), 'noteText is always the feed\'s own, never the answer\'s');
+    assert.equal(shownNote(facts[FACT.id].noteText), text);
+});
+
+test('grantFact writes a feed fact\'s noteText to the notebook, and an ordinary fact\'s text as before', async () => {
+    const notes = [];
+    globalThis.window = {
+        gameState: { globalVariables: {} },
+        gameScenario: { social: { intelFacts: { plain: { subject: 'company', text: 'Plain *fact*.' } } } },
+        addNote: (title, text) => notes.push([title, text])
+    };
+    try {
+        const { grantFact } = await import('../../public/break_escape/js/systems/social-intel.js');
+        const deps = liveDeps({}, window);
+        const text = '**Biscuit** <b>1998</b>';
+        const feed = new SocialFeed({ ...deps, hasFeed: () => true, toast: () => {}, siteVisited: () => false });
+        feed.apply('jake', answer(0, 'p1', { post: { id: 'p1', text: 'x', fact: FACT.id }, fact: { id: FACT.id, entry: { ...FACT.entry, text } } }));
+        assert.equal(grantFact(FACT.id).granted, true);
+        assert.equal(grantFact('plain').granted, true);
+        assert.equal(notes[0][1], escapeNoteText(text));
+        assert.equal(shownNote(notes[0][1]), text);
+        assert.equal(notes[1][1], 'Plain *fact*.', 'an ordinary fact keeps its authored text');
+    } finally { delete globalThis.window; }
 });

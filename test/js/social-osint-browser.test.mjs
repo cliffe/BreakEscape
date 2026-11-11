@@ -553,7 +553,7 @@ test('9.2 C: clicking a feed post grants its fact once, with its text in the evi
     setGlobals();
     const feed = feedFor();
     feed.apply('pierce', feedAnswer(0, 'feed_pierce_1', 'Mittens knocked my coffee over again.', PET));
-    assert.deepEqual(window.gameScenario.social.intelFacts.pierce_pet, PET.entry, 'merged before it is listed');
+    assert.deepEqual(window.gameScenario.social.intelFacts.pierce_pet, { ...PET.entry, noteText: PET.entry.text }, 'merged before it is listed, with its escaped notebook text');
     const s = open({ start: 'social.pierce', feed });
     assert.equal(pick(s, 'feed_pierce_1').last.outcome, 'noted');
     assert.equal(window.gameState.globalVariables.se_intel_pierce_pet, true);
