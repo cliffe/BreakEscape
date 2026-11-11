@@ -15,7 +15,7 @@ after any object), the `self` job (`_startSelfJob`, `_completeSelfJob`, `npc_use
 `job.socialDesk`, `_deadStation` for a desk station, `isDistracted` and `getState().distracted`;
 `seating.js` keeping a phone user seated; `npc-sight-challenge.js` skipping a distracted NPC;
 the `social` action icon for `social_media`. Neither scenario has a `social_media` need, a feed,
-a policy or a `los.challengeOnSight` NPC (the cooler's `social` need is a different need), so the
+a policy or a `los.challengeOnSight` NPC, so the
 planned difference is **none**.
 
 | Scenario | Result |
