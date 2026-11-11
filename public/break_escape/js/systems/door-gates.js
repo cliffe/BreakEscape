@@ -96,6 +96,11 @@ export const BUMP_INTERVAL_MS = 4000;
 // How far from the door's centre a guard is sent to stand when he has to walk
 // back to it (approachPoint): the tile in front of the doorway.
 const APPROACH_PX = 48;
+// How far inside the radius that spot is. A walker stops within 8 px of the end of
+// his path (npc-behavior.js) and the spot is snapped to the centre of an 8 px grid
+// cell (up to about 6 px off), so a spot only 8 px inside could leave him standing on
+// the radius edge, just out of it, with nothing left to walk (seen at radius 56).
+const APPROACH_MARGIN_PX = 16;
 const TILE = 32;
 const OPPOSITE = { north: 'south', south: 'north', east: 'west', west: 'east' };
 
@@ -467,7 +472,7 @@ export class DoorGates {
         }
         if (!best) return null;
         const g = best.g;
-        const reach = Math.min(APPROACH_PX, Math.max(g.cfg.openRadius - 8, TILE / 2));
+        const reach = Math.min(APPROACH_PX, Math.max(g.cfg.openRadius - APPROACH_MARGIN_PX, TILE / 2));
         // Inside the radius the gate opens for him where he stands (update()), or he is
         // turned back after GUARD_TURN_BACK_MS: a guard held at his badge reader does not
         // walk up to the door.
