@@ -48,7 +48,7 @@ Glued lines longer than 4 pieces, lines printing a value through a sequence or c
 
 ## Not done, for the user
 
-- Skill and doc wording (not edited, skills need the user's say-so): `tts-audio` could say "the server matches the text by `TtsService.match_form` and voices the scenario's own line"; `docs/agents/TTS_38_MIGRATION.md` line 11 (the fragment gap, "ignore for now") is now closed.
+- (Done before merge, user approval q24: both edits below are applied; see "Round 4 review outcomes".) Skill and doc wording: `tts-audio` could say "the server matches the text by `TtsService.match_form` and voices the scenario's own line"; `docs/agents/TTS_38_MIGRATION.md` line 11 (the fragment gap, "ignore for now") is now closed.
 - Decision to confirm: the earlier "keep the 10-character fragment looseness" user decision is replaced by the template rule above.
 
 ## Round 1 fixes
@@ -183,6 +183,21 @@ Ghost's scene fired through its real mapping (`object_interacted` with `objectTy
 ### Build log corrections
 
 Round 1 said the seven `player_name()` lines were all still voiced and listed them as open. They are text lines of a phone contact with no voiced call, never sent to `/tts` by the game and refused by design since round 2; both places are corrected above.
+
+## Round 4 review outcomes
+
+Review: `TTS_TEXT_MATCH_FIX_CODE_REVIEW_R4.md` (approve; no blockers, no majors).
+
+| # | Outcome |
+|---|---------|
+| 1 Minor, 14 unheard lab_tesseract_trials lines | Accepted, ink unchanged. `intro`, `waiting` and `who_reply` are reachable on paper from Ghost's video call, so their 14 lines are batch rows and accepted for Ghost. Reasons: the lines are the scenario's own text, keyed correctly; the cost is 14 clips once per voice in a lab scenario, with nothing refused or mis-keyed; a general stop rule would refuse lines person-chat really voices; and rewriting the trial's ink to dodge the walk is a content change for this branch to avoid. |
+| 2 Minor, video-call note untested | Fixed: `tts_delivery_test.rb` "a phone contact's video-call lines keep their note, and only a tagged line's key has one" (tagged line keeps its note and keyed with it, untagged line has none and the plain key, narration keeps its note, the same knot as a voiced phone call has no note). It fails if `line_delivery`'s person-chat branch is removed or the old `!phone` rule comes back (both checked). The independent reachable walk in the mission test was not added. |
+| 3 Nit, client `callStartKnots` | Fixed (one line): the client leaves out a `voiced: true` timedConversation that is a video call, as the server does. |
+| 4 Nit, unknown-mode guard | Left: no scenario uses a timedConversation mode or `#transition_to_person_chat`; the guard needs more than a one-line change. |
+| 5 Nit, status banners voiced | Left: a content question for the voice pass (tag as narrator, or accept). |
+| 6 Nit, knot in both kinds of call | Left: no scenario has both kinds of call on one contact; the review says no fix is needed now. |
+
+Also done on merge, with the user's approval (q24): the `tts-audio` skill now says the server matches by `TtsService.match_form` and voices the scenario's own line, and how a video call is voiced; `docs/agents/TTS_38_MIGRATION.md` line 11 marks the fragment gap closed.
 
 ## Handover
 
