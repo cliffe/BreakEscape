@@ -16,10 +16,10 @@
  *                   3. Sign in otherwise
  *   a share row   name and host, then Open (no access list) or a padlock with "Needs an
  *                 account with access. It opens from that account's desktop."
- *   another row   name and kind; Look shows its observations here. A share with no contents
- *                 is one of these: the server sends observations only for a resource with no
- *                 contents (3.4), and such a share has nothing to open (lab_physical_pentest's
- *                 records share, listed by its folder names and never opened)
+ *   another row   name and kind; Look shows its observations here. A share the server marks
+ *                 `listed` (no contents, or an empty list) is one of these: it has nothing to
+ *                 open and is mapped on no desktop. The server sends observations only for a
+ *                 resource with no contents (3.4)
  *
  * Rows keep the server's order (sign-in hosts, then resources, each by id) and carry
  * data-host-id / data-resource-id, with data-action (sign-in, open, observe) on the control
@@ -59,11 +59,11 @@ export function hostAction(row) {
 
 /**
  * The action a resource row offers: 'open' | 'locked' for a share with contents, 'observe'
- * for any other resource and for a share the server sent observations for (it does so only
- * when the share has no contents). Exported for tests.
+ * for any other resource and for a share the server marks `listed` (one with no contents).
+ * Exported for tests.
  */
 export function resourceAction(row) {
-    if (row?.kind === 'file_share' && !row.observations) return row.open === false ? 'locked' : 'open';
+    if (row?.kind === 'file_share' && row.listed !== true) return row.open === false ? 'locked' : 'open';
     return 'observe';
 }
 

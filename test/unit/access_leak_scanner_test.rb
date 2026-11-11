@@ -207,7 +207,9 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
   end
 
   # An item opened by POST /unlock comes back with its contents, as GET /container would
-  # send them (the lab's BadUSB remote session names its file server's host).
+  # send them (the lab's BadUSB remote session names its file server's host). The exemption
+  # covers every network string there, as on /container: authored container text is the
+  # author's choice, reviewed with the scenario, not a server leak.
   test 'a host named in the contents of an /unlock answer is not reported, elsewhere in it is' do
     unlock = '/break_escape/games/1/unlock'
     opened = { 'success' => true, 'hasContents' => true,
@@ -216,6 +218,10 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
     stray = { 'success' => true, 'message' => 'Opened on HB-FS01' }
     assert_equal [[1, 'network_string', 'resource:ledger_archive']], summary(scan_net(stray, path: unlock, method: 'POST'))
     assert_equal [[1, 'network_string', 'resource:ledger_archive']], summary(scan_net(opened, path: ROOM))
+    # Not only hosts: a network name or a resource's observations in those contents pass too.
+    named = { 'success' => true, 'contents' => [{ 'id' => 'note', 'text' => 'On the Harbour office LAN since May.' }] }
+    assert_empty scan_net(named, path: unlock, method: 'POST')
+    assert_equal [[1, 'network_string', 'network:office_lan']], summary(scan_net(named, path: ROOM))
   end
 
   test 'a five-letter resource name is reported only as a whole value' do

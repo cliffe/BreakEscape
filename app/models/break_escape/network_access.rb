@@ -347,7 +347,9 @@ module BreakEscape
     def resource_row(resource_id, resource)
       row = { 'id' => resource_id, 'kind' => resource['kind'], 'name' => resource['name'], 'host' => resource['host'],
               'open' => resource['access'].nil? }
-      row['observations'] = resource['observations'] if resource['contents'].nil? && resource['observations'].present?
+      # The client keys on 'listed', never on whether observations came with the row
+      row['listed'] = true if NetworkModel.listed_only_share?(resource)
+      row['observations'] = resource['observations'] if !NetworkModel.resource_contents?(resource) && resource['observations'].present?
       row
     end
 
@@ -420,6 +422,8 @@ module BreakEscape
     # nothing.
     def resource_admits_player?(resource)
       return false unless resource.is_a?(Hash)
+      # A listed-only share has nothing to serve, so GET /container answers "not found"
+      return false if NetworkModel.listed_only_share?(resource)
 
       network = resource['network']
       return false unless NetworkModel.present_string?(network)
@@ -436,8 +440,8 @@ module BreakEscape
 
     # The file shares a session at this PC maps on its desktop (4.5): every file_share on
     # the PC's network whose access list admits the session's identity, as [[id, resource]].
-    # A PC on no network maps none. A share with no contents is listed only: the view shows
-    # its observations (resource_row) and no desktop maps it as an empty folder.
+    # A PC on no network maps none. A listed-only share (NetworkModel.listed_only_share?,
+    # no contents or an empty list) is never mapped: the view shows its observations.
     def mapped_shares(pc, npc)
       return [] unless pc.is_a?(Hash) && npc.is_a?(Hash)
 
@@ -445,7 +449,8 @@ module BreakEscape
       return [] unless network
 
       NetworkModel.resources_on(network, scenario_data).select do |_id, resource|
-        resource['kind'] == 'file_share' && resource['contents'].is_a?(Array) && resource_acl_admits?(resource, npc)
+        resource['kind'] == 'file_share' && !NetworkModel.listed_only_share?(resource) &&
+          resource_acl_admits?(resource, npc)
       end
     end
 

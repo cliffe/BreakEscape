@@ -231,11 +231,11 @@ test('Look shows a resource\'s observations in the view and keeps it open', asyn
     assert.equal(view()._sceneType, 'network-view');
 });
 
-// The server sends observations only for a resource with no contents (3.4). A share with no
-// contents (the lab's records share) is listed and looked at, never opened.
+// The server marks a share with no contents (missing or []) `listed`: it is looked at,
+// never opened.
 test('a share with no contents offers Look, shows its observations and opens nothing', async () => {
     const records = { id: 'records', kind: 'file_share', name: 'Client-Records', host: 'LW-FS01', open: true,
-        observations: 'Top folders: one per client.' };
+        listed: true, observations: 'Top folders: one per client.' };
     setup({ hosts: [...HOSTS, records] });
     links.open('jack_comms_port');
     await settle();
@@ -251,10 +251,13 @@ test('a share with no contents offers Look, shows its observations and opens not
     assert.equal(view()._sceneType, 'network-view');
 });
 
-test('resourceAction: a share with contents opens or is locked; anything with observations is looked at', () => {
+test('resourceAction: a share opens or is locked unless the server marks it listed; other kinds are looked at', () => {
     assert.equal(resourceAction({ kind: 'file_share', open: true }), 'open');
     assert.equal(resourceAction({ kind: 'file_share', open: false }), 'locked');
-    assert.equal(resourceAction({ kind: 'file_share', open: false, observations: 'x' }), 'observe');
+    assert.equal(resourceAction({ kind: 'file_share', open: false, listed: true }), 'observe');
+    assert.equal(resourceAction({ kind: 'file_share', open: true, listed: true }), 'observe', 'listed with no observations');
+    assert.equal(resourceAction({ kind: 'file_share', open: true, observations: 'x' }), 'open',
+        'observations alone never turn a share into a Look row');
     assert.equal(resourceAction({ kind: 'printer', open: true }), 'observe');
 });
 

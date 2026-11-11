@@ -298,9 +298,18 @@ def check_network_model(json_data)
               'the route, or "blocked" to close it.')
   end
 
+  # A listed-only share (no contents) is mapped on no desktop, so an access list on it does nothing.
+  resources.each do |res_id, res|
+    next unless nm.listed_only_share?(res) && res['access'].is_a?(Hash)
+
+    warn.call("share '#{res_id}' has an access list and no contents: no desktop maps it, and every foothold " \
+              'on its network sees its observations. Give it contents, or drop the list.')
+  end
+
   # Shares nobody can map.
   resources.each do |res_id, res|
     next unless res['kind'] == 'file_share' && res['access'].is_a?(Hash)
+    next if nm.listed_only_share?(res)
 
     net = res['network']
     on_net = net.is_a?(String) ? hosts.select { |h| h[:network] == net } : []
@@ -388,6 +397,7 @@ def check_network_model(json_data)
   resources.keys.sort.each do |res_id|
     res = resources[res_id]
     next unless res['kind'] == 'file_share' && res['access'].is_a?(Hash) && res['network'].is_a?(String)
+    next if nm.listed_only_share?(res)
 
     pcs = nm.sign_in_objects_on(res['network'], json_data).reject { |h| nm.headless?(h[:object]) }
     pairs = pcs.filter_map do |h|

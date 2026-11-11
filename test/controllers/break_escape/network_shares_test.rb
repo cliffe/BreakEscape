@@ -56,16 +56,33 @@ module BreakEscape
       assert_equal ['scanned_inbox'], stubs.map { |c| c['id'] }
     end
 
-    # lab_physical_pentest's records share: listed by its folder names and never opened. With
-    # no contents the view row carries its observations, and no desktop maps it as a folder.
-    test 'a share with no contents is listed with its observations and mapped on no desktop' do
+    # A listed-only share (NetworkModel.listed_only_share?): contents missing or [] are the
+    # same. The row says listed and carries any observations, no desktop maps it, and
+    # GET /container answers it as an invented id.
+    test 'a share with no contents, or an empty list, is listed, looked at and mapped on no desktop' do
       data = NS.scenario
       data['resources']['listed_only'] = { 'kind' => 'file_share', 'name' => 'Listed-Only', 'host' => NS::FS_HOST,
                                            'network' => 'office_lan', 'observations' => 'Top folders: one per client.' }
+      data['resources']['listed_empty'] = { 'kind' => 'file_share', 'name' => 'Listed-Empty', 'host' => NS::FS_HOST,
+                                            'network' => 'office_lan', 'contents' => [],
+                                            'observations' => 'An empty folder tree.' }
+      data['resources']['listed_bare'] = { 'kind' => 'file_share', 'name' => 'Listed-Bare', 'host' => NS::FS_HOST,
+                                           'network' => 'office_lan' }
       build_network_game({}, data)
       plant_office
-      row = network_view(OFFICE)['footholds'].first['hosts'].find { |h| h['id'] == 'listed_only' }
-      assert_equal 'Top folders: one per client.', row['observations']
+      rows = network_view(OFFICE)['footholds'].first['hosts'].index_by { |h| h['id'] }
+      assert_equal 'Top folders: one per client.', rows['listed_only']['observations']
+      assert_equal 'An empty folder tree.', rows['listed_empty']['observations']
+      assert_nil rows['listed_bare']['observations']
+      %w[listed_only listed_empty listed_bare].each { |id| assert_equal true, rows[id]['listed'], id }
+      assert_nil rows['scanned_inbox']['listed'], 'a share with contents is not listed-only'
+      assert_nil rows['scanned_inbox']['observations']
+
+      %w[listed_only listed_empty listed_bare].each do |id|
+        container(id, foothold: OFFICE)
+        assert_response :not_found, id
+      end
+
       sign_in('sam_pc', 'sokafor', NS::SAM_PASSWORD)
       assert_response :success
       stubs = container('sam_pc')['contents'].select { |c| c['type'] == 'network_share' }

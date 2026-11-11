@@ -297,6 +297,20 @@ test('a protected share nobody can map warns, for each of the three reasons', { 
     assertHas(warnings(issues(sc)), "share 'ledger_archive' admits 'ian', but none of them can sign in at an object on its network");
 });
 
+test('a protected share with no contents warns that the list does nothing, and gets no map lines', { skip }, () => {
+    for (const contents of [undefined, []]) {
+        const sc = clean();
+        if (contents) sc.resources.ledger_archive.contents = contents;
+        else delete sc.resources.ledger_archive.contents;
+        sc.resources.ledger_archive.observations = 'Folders by year.';
+        const list = issues(sc);
+        assertHas(warnings(list), "share 'ledger_archive' has an access list and no contents: no desktop maps it");
+        assertNot(warnings(list), "share 'ledger_archive' has an access list but");
+        assertNot(infos(list), "share 'ledger_archive' maps on");
+    }
+    assertNot(warnings(issues(clean())), 'has an access list and no contents');
+});
+
 test('the implicit staff role counts in a share\'s access list', { skip }, () => {
     const sc = clean();
     sc.resources.ledger_archive.access = { roles: ['staff'] };

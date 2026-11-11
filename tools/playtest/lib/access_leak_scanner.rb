@@ -38,7 +38,10 @@ require 'uri'
 #   Anywhere else it is reported as a password, like any other;
 # - a network or resource string in any response other than GET /network, a /network/*
 #   answer, a /container answer, the contents of an /unlock answer, or the footholds block
-#   of GET /scenario. There is no exception for an NPC's work plan.
+#   of GET /scenario. There is no exception for an NPC's work plan. The /container and
+#   /unlock exemptions cover every network string (network name, resource name, host,
+#   observations), not only hosts: both serve a container's authored contents, which the
+#   server releases only by its own rules, so what that text names is a scenario choice.
 #
 # Matching of these network strings: a string of six or more characters is matched as a
 # substring; a shorter one only as a whole JSON string value; one under three characters is
@@ -622,8 +625,9 @@ class AccessLeakScanner
 
   # A network or resource string outside GET /network, /network/*, /container, the
   # contents of an /unlock answer (the server's other way of serving a container's contents,
-  # as GET /container would: a remote session item that names its host, slice 9.1 step 8)
-  # and the footholds block of /scenario.
+  # as GET /container would, for example a held grant item whose file names a share's host)
+  # and the footholds block of /scenario. Both container exemptions cover every network
+  # string, by design (see the header).
   def scan_network_strings(body, ctx, add)
     return if @network_strings.empty?
     return if ctx[:network] || ctx[:any_container]
