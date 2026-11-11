@@ -302,9 +302,7 @@ module BreakEscape
           filtered['submittedFlags'] = @game.player_state['submitted_flags']
         end
 
-        # The worn item (Wearables) and the worn globals the server owns: a game made before
-        # its scenario gained a wearable gets the read-only list here, before any sync.
-        @game.save! if @game.refresh_wearable_globals!
+        # The worn item (Wearables), so the tray frame comes back after a reload
         filtered['wornItem'] = @game.worn_record if @game.worn_record
 
         # Include saved global variables so the client can restore them on session resume.

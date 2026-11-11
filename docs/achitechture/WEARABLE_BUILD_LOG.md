@@ -64,8 +64,9 @@ The item needs an `id`. Its tray click toggles it (Put on / Take off). A droppab
   `pp_disguise` = the costume. Worn false: clears the record, the global false, `pp_disguise` "".
   It answers with the record and the globals it wrote; 422 for an item not held or not wearable.
 - The worn globals are server-owned: `player_state['wearableGlobals']` (every wearable's global,
-  set when the game is created and refreshed on each bootstrap) are read-only to `sync_state`,
-  as imported globals are. A client cannot set `courier_ready` by a sync.
+  set when the game is created; a game made before this build works it out on its first sync,
+  inside the sync's row lock) are read-only to `sync_state`, as imported globals are. A client
+  cannot set `courier_ready` by a sync.
 - An item leaving the server inventory (`remove_inventory_item!`, a network plant) clears the worn
   record and its global.
 - The bootstrap sends `wornItem` so the tray frame comes back after a reload.

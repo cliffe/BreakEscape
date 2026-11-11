@@ -18,17 +18,25 @@ module BreakEscape
       rec.is_a?(Hash) && rec['itemId'].present? ? rec : nil
     end
 
+    # The worn globals, read-only to sync_state. A game made before this field existed has no
+    # list: it is worked out from the scenario now (sync_state loads the row without
+    # scenario_data, so that is read on its own) and kept in player_state, which the caller's
+    # save stores.
     def worn_global_names
-      names = player_state.is_a?(Hash) ? player_state['wearableGlobals'] : nil
-      names.is_a?(Array) ? names.grep(String) : []
+      return [] unless player_state.is_a?(Hash)
+
+      names = player_state['wearableGlobals']
+      return names.grep(String) if names.is_a?(Array)
+
+      data = has_attribute?(:scenario_data) ? scenario_data : self.class.where(id: id).pick(:scenario_data)
+      player_state['wearableGlobals'] = BreakEscape::WearableModel.worn_globals(data)
     end
 
     # Record the scenario's worn globals in player_state. Returns true when the list changed
-    # (the caller saves). Called when the game is created and on each bootstrap, so a game made
-    # before a scenario gained a wearable is covered from its next page load.
+    # (the caller saves). Called when the game is created.
     def refresh_wearable_globals!
       names = BreakEscape::WearableModel.worn_globals(scenario_data)
-      return false if worn_global_names == names && (names.any? || player_state.key?('wearableGlobals'))
+      return false if player_state['wearableGlobals'] == names
 
       player_state['wearableGlobals'] = names
       true

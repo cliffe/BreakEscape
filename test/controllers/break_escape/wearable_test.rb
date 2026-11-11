@@ -206,12 +206,13 @@ module BreakEscape
       assert_equal true, body.dig('savedGlobalVariables', 'vest_on')
     end
 
-    test 'the bootstrap records the worn globals for a game that has none yet' do
+    test 'a game made before wearables gets its worn globals on its first sync' do
       @game.player_state.delete('wearableGlobals')
       @game.save!
-      get path('scenario'), as: :json
+      put path('sync_state'), params: { globalVariables: { 'vest_on' => true } }, as: :json
       assert_response :success
       assert_equal %w[coat_on fake_on vest_on], @game.reload.player_state['wearableGlobals']
+      assert_not_equal true, globals['vest_on']
     end
 
     test 'wear without an item id is a bad request' do
