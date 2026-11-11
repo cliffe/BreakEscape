@@ -429,7 +429,9 @@ module BreakEscape
       end
       st = station(data, npc)
       out << { 'id' => st['id'], 'why' => 'social_blocked' } if need == 'social_media' && st && social_blocked?(data, npc)
-      out << { 'id' => st['id'], 'why' => 'locked_out' } if st && locked_out_at?(npc, st, lockouts)
+      # Sub-slice L review R1 m2: work only, as on the client (a lockout at a social_media
+      # station is left to sub-slice C), so a social ease at the station is not refused
+      out << { 'id' => st['id'], 'why' => 'locked_out' } if need == 'work' && st && locked_out_at?(npc, st, lockouts)
       out
     end
 

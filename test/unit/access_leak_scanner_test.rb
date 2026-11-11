@@ -579,8 +579,9 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
                 ['GET', '/break_escape/games/1/room/open_office', { 'npcs' => [{ 'id' => 'sam', 'lockedOut' => ['sam_pc'] }], 'state' => { 'loginFailures' => {} } }])
     )
     got = findings.map { |f| [f.rule, f.owner, f.line] }.sort
-    assert_equal [['lockout_list', 'lockedOut', 3], ['lockout_list', 'loginFailures', 3], ['lockout_list', 'loginLockouts', 2],
-                  ['lockout_unrecorded', 'npc:sam', 1], ['lockout_unrecorded', 'npc:sam/sam_pc', 2]], got
+    # (the list's own value is also a lockout key string, review R1 m4)
+    assert_equal [['lockout_list', 'lockedOut', 3], ['lockout_list', 'lockout_key', 2], ['lockout_list', 'loginFailures', 3],
+                  ['lockout_list', 'loginLockouts', 2], ['lockout_unrecorded', 'npc:sam', 1], ['lockout_unrecorded', 'npc:sam/sam_pc', 2]], got
     refute(AccessLeakScanner.new(game.scenario_data, game: game).report_lines(findings).any? { |l| l.include?('sokafor') })
   end
 
@@ -589,6 +590,49 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
     assert_empty AccessLeakScanner.new(game.scenario_data, game: game).scan(
       post_rows(['POST', '/break_escape/games/1/login', { 'success' => false, 'lockedOut' => true, 'attemptsLeft' => 0 }])
     )
+  end
+
+  # ── sub-slice L review round 1 (M1, m4) ─────────────────────────────
+
+  test 'L R1 m4: a lockedOut flag outside a check or sign-in answer is reported' do
+    game = lockout_game(true)
+    findings = AccessLeakScanner.new(game.scenario_data, game: game).scan(
+      post_rows(['GET', '/break_escape/games/1/room/open_office', { 'npcs' => [{ 'id' => 'sam', 'lockedOut' => true }] }],
+                ['GET', LOCKOUT_SCENARIO, { 'npcFrustration' => { 'sam' => { 'lockedOut' => ['sam_pc'] } }, 'npcs' => [{ 'id' => 'ruth', 'lockedOut' => false }] }],
+                ['POST', LOCKOUT_FRUSTRATION, { 'answers' => [{ 'npcId' => 'sam', 'lockedOut' => true }] }],
+                ['POST', '/break_escape/games/1/login', { 'success' => false, 'lockedOut' => true }])
+    )
+    assert_equal [['lockout_list', 'lockedOut', 1], ['lockout_list', 'lockedOut', 2]], findings.map { |f| [f.rule, f.owner, f.line] }.sort
+  end
+
+  test 'L R1 m4: a lockout or failure key string is reported under any key, with no username in the report' do
+    game = lockout_game(true)
+    game.player_state['loginFailures'] = { 'ruth_pc|guessed' => { 'n' => 1, 'seq' => 1 } }
+    scanner = AccessLeakScanner.new(game.scenario_data, game: game)
+    findings = scanner.scan(
+      post_rows(['PUT', '/break_escape/games/1/sync_state', { 'globals' => { 'last_try' => 'sam_pc|sokafor' } }],
+                ['GET', LOCKOUT_SCENARIO, { 'log' => ['tried ruth_pc|guessed at 10:02'] }],
+                ['GET', LOCKOUT_SCENARIO, { 'note' => 'sam_pc and sokafor, apart, are not a key' }])
+    )
+    assert_equal [['lockout_list', 'lockout_key', 1], ['lockout_list', 'lockout_key', 2]], findings.map { |f| [f.rule, f.owner, f.line] }.sort
+    refute(scanner.report_lines(findings).any? { |l| l.include?('sokafor') || l.include?('guessed') })
+  end
+
+  test 'L R1 M1: GET /scenario may list the locked-out PCs at $.lockoutPcs, by id only' do
+    game = lockout_game(false)
+    ok = AccessLeakScanner.new(game.scenario_data, game: game).scan(post_rows(['GET', LOCKOUT_SCENARIO, { 'lockoutPcs' => ['sam_pc'] }]))
+    assert_empty ok
+    findings = AccessLeakScanner.new(game.scenario_data, game: game).scan(
+      post_rows(['GET', LOCKOUT_SCENARIO, { 'lockoutPcs' => ['sam_pc', 'sokafor', 'ruth_pc'] }],
+                ['GET', '/break_escape/games/1/room/open_office', { 'lockoutPcs' => ['sam_pc'] }],
+                ['GET', LOCKOUT_SCENARIO, { 'state' => { 'lockoutPcs' => ['sam_pc'] } }])
+    )
+    # one finding per rule and owner on a line (the first bad entry, the guessed username)
+    assert_equal [['lockout_list', 'lockoutPcs', 1, '$.lockoutPcs[1]'], ['lockout_list', 'lockoutPcs', 2, '$.lockoutPcs'], ['lockout_list', 'lockoutPcs', 3, '$.state.lockoutPcs']],
+                 findings.map { |f| [f.rule, f.owner, f.line, f.json_path] }.sort
+    # without the game, a key-shaped entry is still reported
+    bare = AccessLeakScanner.new(game.scenario_data).scan(post_rows(['GET', LOCKOUT_SCENARIO, { 'lockoutPcs' => ['sam_pc', 'sam_pc|sokafor'] }]))
+    assert_equal ['$.lockoutPcs[1]'], bare.map(&:json_path)
   end
 
 end

@@ -67,7 +67,7 @@ puts "secrets checked  #{counts[:passwords]} NPC password(s), #{counts[:login_it
      "#{counts[:lockout_records]} recorded lockout(s)"
 by_rule = findings.group_by(&:rule)
 AccessLeakScanner::RULE_TEXT.each do |rule, text|
-  puts "#{rule.ljust(16)} #{(by_rule[rule] || []).length}  (#{text})"
+  puts "#{rule.ljust(20)} #{(by_rule[rule] || []).length}  (#{text})"
 end
 scanner.report_lines(findings).each { |line| puts line }
 if lines.any? { |_label, _no, row| row.is_a?(Hash) && (row.key?('dom') || row['path'].to_s.split('?').first.to_s.end_with?('/capture_secrets')) }

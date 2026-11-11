@@ -243,5 +243,106 @@ module BreakEscape
       assert_equal 20, report(locked_fail).first['level']
       assert_equal true, sign_in('jake_pc', 'jbrooks', JAKE_PASSWORD).parsed_body['lockedOut'], 'even the right password is refused'
     end
+
+    # ── review round 1 ─────────────────────────────────────────────────
+
+    def guest_claim(pc)
+      post login_game_url(@game), params: { pc_id: pc, claim: 'guest' }, as: :json
+      response
+    end
+
+    # The hot desk under strict too, so Jake can be locked out there as well as at his own PC
+    def strict_hot_desk
+      data = scenario
+      data['rooms']['office']['objects'].find { |o| o['id'] == 'hot_desk' }['policy'] = 'strict'
+      data
+    end
+
+    test 'R1 m1: a guest locked out at the borrowed PC leaves no claimable session there' do
+      build(data: strict_hot_desk, player_state: { 'loginLockouts' => ['hot_desk|jbrooks', 'jake_pc|jbrooks'] })
+      report(check)
+      t = Time.current
+      travel_to(t) { report(locked_fail) }
+      run = travel_to(t + 25) { report(locked_fail).first['run'] }
+      assert_equal 'borrow_session', run['do']
+      travel_to(t + 60) { post npc_workaround_game_url(@game), params: { npc_id: 'jake', index: run['index'], hand: run['hand'] }, as: :json }
+      assert_equal 200, response.status
+      assert_nil state.dig('guestSessions', 'hot_desk'), 'Jake cannot have signed in at the hot desk'
+      assert_equal 422, travel_to(t + 61) { guest_claim('hot_desk') }.status
+    end
+
+    test 'R1 m1: the guest claim is refused while the guest is locked out at that PC, whatever the record says' do
+      build(data: strict_hot_desk, player_state: { 'guestSessions' => { 'hot_desk' => 'jake' } })
+      @game.player_state['guestSessionsAt'] = { 'hot_desk' => @game.server_now }
+      @game.save!
+      @game.player_state['loginLockouts'] = ['hot_desk|jbrooks']
+      @game.save!
+      res = guest_claim('hot_desk')
+      assert_equal 422, res.status
+      assert_nil state.dig('sessions', 'hot_desk')
+      @game.reload
+      @game.player_state['loginLockouts'] = []
+      @game.save!
+      assert_equal 200, guest_claim('hot_desk').status, 'granted once no lockout holds'
+    end
+
+    test 'R1 m2: a recorded lockout is a work cause only; a social_media ease at the station is answered and its fail refused' do
+      data = scenario
+      jake_pc = data['rooms']['office']['objects'].find { |o| o['id'] == 'jake_pc' }
+      jake_pc['affordance'] = { 'satisfies' => %w[work social_media], 'useSeconds' => 5, 'offWhen' => 'jake_pc_off' }
+      data['globalVariables']['jake_pc_off'] = false
+      npc_in(data, 'jake')['needs']['social_media'] = { 'decayPerMin' => 4, 'urgentAt' => 40 }
+      npc_in(data, 'jake')['phone'] = false # social media at the desk only, so it can fail there
+      build(data: data, player_state: { 'loginLockouts' => ['jake_pc|jbrooks'] })
+      report(check)
+      t = Time.current
+      assert_equal 20, travel_to(t) { report(locked_fail).first['level'] }
+      social_fail = { npc_id: 'jake', event: 'fail', need: 'social_media', object_id: 'jake_pc', missing: [{ id: 'jake_pc', why: 'locked_out' }] }
+      assert_equal({ 'npcId' => 'jake', 'refused' => true }, travel_to(t + 30) { report(social_fail).first }, 'locked_out is no social_media cause')
+      ease = travel_to(t + 31) { report({ npc_id: 'jake', event: 'ease', need: 'social_media', object_id: 'jake_pc' }).first }
+      refute ease['refused'], 'a social ease at the station is not refused'
+      assert ease['level'] < 20
+    end
+
+    test 'R1 m3: a check is refused for an owner with no work plan' do
+      data = scenario
+      data['rooms']['office']['objects'] << AccessWorkScenario.pc('nell_pc', 'policy' => 'strict', 'lockChance' => 1)
+      data['rooms']['office']['npcs'] << AccessWorkScenario.staff('nell', 'nnash', 'Nightjar-Nell-8',
+                                                                  'needs' => { 'hunger' => { 'decayPerMin' => 4, 'urgentAt' => 40 } })
+      build(data: data, player_state: { 'loginLockouts' => ['nell_pc|nnash'] })
+      @game.player_state['encounteredNPCs'] << 'nell'
+      @game.save!
+      assert_equal [{ 'npcId' => 'nell', 'refused' => true }], report(check('nell', 'nell_pc'))
+      assert_empty state['npcFrustration'].to_h, 'nothing recorded'
+    end
+
+    test 'R1 n3: a record that outlives its lockout is no cause' do
+      build(player_state: { 'npcFrustration' => { 'jake' => { 'level' => 20, 'lockedOut' => ['jake_pc'] } } })
+      assert_equal({ 'npcId' => 'jake', 'refused' => true }, report(locked_fail).first)
+      refute report({ npc_id: 'jake', event: 'ease', need: 'work', object_id: 'jake_pc' }).first['refused'], 'the station ease is accepted'
+    end
+
+    test 'R1 n4: GET /scenario sends only the station from a stored lockedOut list' do
+      build(player_state: { 'loginLockouts' => ['jake_pc|jbrooks'],
+                            'npcFrustration' => { 'jake' => { 'level' => 0, 'lockedOut' => ['jake_pc', 'leo_pc', 7] } } })
+      get scenario_game_url(@game), as: :json
+      assert_equal ['jake_pc'], response.parsed_body.dig('npcFrustration', 'jake', 'lockedOut')
+    end
+
+    test 'R1 M1: GET /scenario lists the sign-in PCs with a lockout, by id only, and nothing more' do
+      build
+      get scenario_game_url(@game), as: :json
+      assert_equal [], response.parsed_body['lockoutPcs'], 'no lockout: an empty list'
+      lock_out!('jake_pc', 'guessed_name')
+      lock_out!('jake_pc', 'jbrooks')
+      lock_out!('leo_pc', 'another_guess')
+      @game.reload
+      @game.player_state['loginLockouts'] << 'no_such_pc|someone'
+      @game.save!
+      get scenario_game_url(@game), as: :json
+      assert_equal %w[jake_pc leo_pc], response.parsed_body['lockoutPcs']
+      %w[guessed_name jbrooks another_guess someone no_such_pc].each { |s| refute_includes response.body, s }
+      assert_empty state['npcFrustration'].to_h, 'GET /scenario writes no record'
+    end
   end
 end

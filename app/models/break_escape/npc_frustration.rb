@@ -112,7 +112,9 @@ module BreakEscape
             hold[need] = left.ceil(1) if left.positive?
           end
           block = { 'level' => e['level'], 'tell' => frustration_tell(npc, e), 'settled' => frustration_settled?(npc, e),
-                    'pending' => pending_runs(npc, e), 'done' => done_list(npc, e), 'lockedOut' => e['lockedOut'] }
+                    'pending' => pending_runs(npc, e), 'done' => done_list(npc, e),
+                    # Review R1 n4: the station only, as the client reads it
+                    'lockedOut' => e['lockedOut'] & [AccessWork.station(scenario_data, npc)&.dig('id')].compact }
           block['hold'] = hold unless hold.empty?
           # Review R3 m1: the whys of each need's last counted failure (what the client reported),
           # so the frustration icon can fade after a reload once the cause has cleared (q17)
@@ -345,7 +347,8 @@ module BreakEscape
       return if later.is_a?(Numeric) && later.to_f > handed_at
 
       player_state['sessions'] = access_sessions.except(pc_id)
-      if careful_guest?(npc)
+      # Sub-slice L review R1 m1: a borrower locked out at this PC cannot have signed in there
+      if careful_guest?(npc) || account_locked_out_at?(pc_id, npc)
         guest_sessions.delete(pc_id)
         guest_sessions_at.delete(pc_id)
       else
@@ -564,7 +567,7 @@ module BreakEscape
       # 2. can fail, and every cause and object_id belong to the NPC
       return refused unless AccessWork.can_fail?(scenario_data, npc, need)
       return refused if missing.empty? || missing.any? { |c| !AccessWork.cause_belongs?(scenario_data, npc, need, c) }
-      return refused if missing.any? { |c| RECORDED_WHYS.include?(c['why']) && !lockout_recorded?(npc) }
+      return refused if missing.any? { |c| RECORDED_WHYS.include?(c['why']) && (need != 'work' || !lockout_recorded?(npc)) }
       return refused unless object_id && frustration_places(npc, need).include?(object_id)
 
       # 3. a cause holds on the server
@@ -633,6 +636,8 @@ module BreakEscape
       refused = { 'npcId' => npc_id, 'refused' => true }
       st = AccessWork.station(scenario_data, npc)
       return refused unless st && object_id == st['id'] && AccessWork.lockout_station?(scenario_data, npc)
+      # Review R1 m3: only an owner with a work plan, as the honest client asks (shouldCheckLockout)
+      return refused unless AccessWork.work_plan?(scenario_data, npc)
 
       room = AccessWork.object_index(scenario_data)[st['id']]&.dig(:room_id)
       return refused unless room && room_unlocked?(room)

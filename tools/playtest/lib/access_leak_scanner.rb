@@ -85,6 +85,11 @@ require 'uri'
 # `lockout_unrecorded`) a PC in that list, or a `lockedOut: true` in a POST /npc_frustration
 # answer, for an NPC whose saved npcFrustration record does not hold it: the browser learns of a
 # lockout only through the server's own `check` record.
+# Review R1 m4 widened `lockout_list` to a boolean `lockedOut` outside POST /npc_frustration and
+# POST /login, and (with the game given) any string holding one of the game's loginLockouts or
+# loginFailures keys ("pcId|username"), whatever key it sits under. R1 M1 allows one more field:
+# GET /scenario's `$.lockoutPcs`, the sign-in PCs where the player caused a lockout, PC ids only;
+# a `lockoutPcs` anywhere else, or an entry in it that is not such a PC, is reported.
 #
 # A finding names the rule, the route, the response line and the secret's owner (an NPC or
 # item id), never the value. Every output line is checked against the secret values before it
@@ -220,7 +225,8 @@ class AccessLeakScanner
     'network_string' => 'a network or resource name, host or observations outside the network routes',
     'withheld_key' => 'a withheld key (creds, role, awareness, habits, workarounds) on an NPC record',
     'workaround' => 'a workaround (its kind beside its target) outside a hand-over',
-    'lockout_list' => 'a list of sign-in lockouts or failures, or a lockedOut list outside GET /scenario npcFrustration',
+    'lockout_list' => 'a list of sign-in lockouts or failures, a lockout key, a lockedOut list outside GET /scenario ' \
+                      'npcFrustration, a lockedOut flag outside a check or sign-in answer, or a lockoutPcs entry that is not a locked-out PC',
     'lockout_unrecorded' => 'a lockout the server\'s check did not record'
   }.freeze
 
@@ -498,7 +504,8 @@ class AccessLeakScanner
       scenario: method == 'GET' && path.end_with?('/scenario'),
       login_accounts: method == 'GET' && path.end_with?('/login_accounts'),
       npc_workaround: method == 'POST' && path.end_with?('/npc_workaround'),
-      npc_frustration: method == 'POST' && path.end_with?('/npc_frustration')
+      npc_frustration: method == 'POST' && path.end_with?('/npc_frustration'),
+      login: method == 'POST' && path.end_with?('/login')
     }
   end
 
@@ -638,6 +645,25 @@ class AccessLeakScanner
 
   LOCKOUT_LIST_KEYS = %w[loginLockouts loginFailures].freeze
   CLIENT_LOCKED_OUT_PATH = /\A\$\.npcFrustration\.([^.\[]+)\.lockedOut\z/.freeze
+  CLIENT_LOCKOUT_PCS_PATH = '$.lockoutPcs'.freeze
+
+  # Review R1 m4: the game's loginLockouts and loginFailures keys ("pcId|username"), empty without a game
+  def lockout_key_strings
+    @lockout_key_strings ||= begin
+      ps = @game.respond_to?(:player_state) && @game.player_state.is_a?(Hash) ? @game.player_state : {}
+      list = ps['loginLockouts'].is_a?(Array) ? ps['loginLockouts'] : []
+      fails = ps['loginFailures'].is_a?(Hash) ? ps['loginFailures'].keys : []
+      (list + fails).select { |k| k.is_a?(String) && k.include?('|') }.uniq
+    end
+  end
+
+  # Review R1 M1: the PCs of the game's loginLockouts keys, which GET /scenario may list
+  def lockout_pc_ids
+    @lockout_pc_ids ||= begin
+      ps = @game.respond_to?(:player_state) && @game.player_state.is_a?(Hash) ? @game.player_state : {}
+      (ps['loginLockouts'].is_a?(Array) ? ps['loginLockouts'] : []).filter_map { |k| k.is_a?(String) && k.include?('|') ? k.split('|', 2).first : nil }.to_set
+    end
+  end
 
   # Sub-slice L (6.6, 9.2): no lockout list, and no lockout the server's check did not record
   def scan_lockouts(body, ctx, add)
@@ -645,6 +671,7 @@ class AccessLeakScanner
       LOCKOUT_LIST_KEYS.each do |key|
         add.call('lockout_list', key, safe_path("#{json_path}.#{key}")) if hash.key?(key)
       end
+      scan_lockout_pcs(hash, json_path, ctx, add) if hash.key?('lockoutPcs')
       next unless hash.key?('lockedOut')
 
       value = hash['lockedOut']
@@ -660,10 +687,34 @@ class AccessLeakScanner
         value.each do |pc|
           add.call('lockout_unrecorded', "npc:#{m[1]}/#{pc}", safe_path(path)) unless Array(lockout_records[m[1]]).include?(pc.to_s)
         end
+      elsif [true, false].include?(value) && !ctx[:npc_frustration] && !ctx[:login]
+        # Review R1 m4: a lockout answer belongs to a check answer or a sign-in answer only
+        add.call('lockout_list', 'lockedOut', safe_path(path))
       elsif value == true && ctx[:npc_frustration] && @game
         npc = hash['npcId'].to_s
         add.call('lockout_unrecorded', "npc:#{npc}", safe_path(path)) if Array(lockout_records[npc]).empty?
       end
+    end
+    # Review R1 m4: a lockout or failure key under any key name (a global, a log payload)
+    keys = lockout_key_strings
+    return if keys.empty?
+
+    each_string(body) do |str, json_path, _owner|
+      add.call('lockout_list', 'lockout_key', safe_path(json_path)) if keys.any? { |k| str.include?(k) }
+    end
+  end
+
+  # Review R1 M1: GET /scenario's top-level lockoutPcs, PC ids where the game holds a lockout
+  def scan_lockout_pcs(hash, json_path, ctx, add)
+    path = "#{json_path}.lockoutPcs"
+    value = hash['lockoutPcs']
+    unless ctx[:scenario] && path == CLIENT_LOCKOUT_PCS_PATH && value.is_a?(Array)
+      add.call('lockout_list', 'lockoutPcs', safe_path(path))
+      return
+    end
+    value.each_with_index do |pc, i|
+      bad = !pc.is_a?(String) || pc.include?('|') || (@game && !lockout_pc_ids.include?(pc))
+      add.call('lockout_list', 'lockoutPcs', safe_path("#{path}[#{i}]")) if bad
     end
   end
 

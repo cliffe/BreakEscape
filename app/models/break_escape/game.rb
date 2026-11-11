@@ -1601,8 +1601,7 @@ module BreakEscape
       return refusal.call('the screen always locks') if pc_always_locks?(pc, owner)
       # Slice 9.2 sub-slice L (6.6, plan 9.1): a person who cannot sign in at this PC cannot
       # leave a session open there, whatever the client says about the screen
-      owner_key = "#{pc['id']}|#{self.class.normalise_username(owner['creds']['username'])}"
-      return refusal.call('the owner is locked out at this PC') if Array(player_state['loginLockouts']).include?(owner_key)
+      return refusal.call('the owner is locked out at this PC') if account_locked_out_at?(pc['id'], owner)
 
       auto_lock = effective_policy(pc)['autoLockMin']
       return refusal.call('policy autoLockMin is 0') if auto_lock.is_a?(Numeric) && auto_lock.zero?
@@ -1611,6 +1610,27 @@ module BreakEscape
       start_login_session!(pc['id'], owner, 'claim')
       save!
       { status: :ok, body: { success: true }.merge(login_session_answer(owner, 'claim')) }
+    end
+
+    # Slice 9.2 sub-slice L (6.6): whether loginLockouts holds this NPC's normalised username at
+    # this PC, the key attempt_login! builds. Read only (login_lockouts would write a default).
+    def account_locked_out_at?(pc_id, npc)
+      creds = npc.is_a?(Hash) ? npc['creds'] : nil
+      return false unless creds.is_a?(Hash) && creds['username'].present?
+
+      Array(player_state['loginLockouts']).include?("#{pc_id}|#{self.class.normalise_username(creds['username'])}")
+    end
+
+    # Sub-slice L review R1 M1 (orchestrator decision): the sign-in PCs where the server holds a
+    # lockout, for GET /scenario. PC ids only, never a username: the player caused and was shown
+    # each one, so a reload can seed the client's "lockout seen" mark (6.6) without telling the
+    # browser anything new. Reads loginLockouts without writing a default.
+    def lockout_pcs_for_client
+      list = player_state['loginLockouts']
+      return [] unless list.is_a?(Array)
+
+      list.filter_map { |k| k.is_a?(String) && k.include?('|') ? k.split('|', 2).first : nil }
+          .uniq.select { |pc| find_login_pc(pc) }
     end
 
     # POST /login with claim: "guest" (slice 9.2 sub-slice H, plan 9.1): the session an NPC left
@@ -1645,6 +1665,8 @@ module BreakEscape
       auto_lock = effective_policy(pc)['autoLockMin']
       return refusal.call('policy autoLockMin is 0') if auto_lock.is_a?(Numeric) && auto_lock.zero?
       return refusal.call('a careful guest') if careful_guest?(guest)
+      # Sub-slice L review R1 m1 (6.6): a guest who cannot sign in here left no session open
+      return refusal.call('the guest is locked out at this PC') if account_locked_out_at?(pc['id'], guest)
       # Review R1 m1: the server times the guest session out itself, from the "done"
       return refusal.call('the guest session has timed out') if guest_session_timed_out?(pc)
 
