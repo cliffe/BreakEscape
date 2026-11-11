@@ -1,0 +1,72 @@
+From 41ccdf1ae75cbb16a03d8513bf4c0d5cfc0a5095 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 10 Nov 2026 17:16:55 +0000
+Subject: [PATCH 3/8] Dungeon graph: a noHold gate's door says who holds it and
+ who does not (slice 9.1 step 5)
+
+---
+ scripts/generate_dungeon_graph.rb     | 22 ++++++++++++++++++++++
+ test/js/dungeon-graph-habits.test.mjs | 17 +++++++++++++++++
+ 2 files changed, 39 insertions(+)
+
+diff --git a/scripts/generate_dungeon_graph.rb b/scripts/generate_dungeon_graph.rb
+index 16dffbf60..657b4b14b 100644
+--- a/scripts/generate_dungeon_graph.rb
++++ b/scripts/generate_dungeon_graph.rb
+@@ -477,6 +477,28 @@ unless habits_report.empty?
+   end
+ end
+ 
++# holdsDoors (ACCESS_MODEL_SLICE_9_1_PLAN.md 7.3, step 5): a gate with a noHold (filled by the
++# loader, or authored) gets no node of its own; its secured room's door node says who holds
++# it for the player and who does not.
++(habits_copy['rooms'] || {}).each_value do |room|
++  next unless room.is_a?(Hash) && room['doors'].is_a?(Array)
++
++  room['doors'].each do |door|
++    gate = door.is_a?(Hash) ? door['gate'] : nil
++    next unless gate.is_a?(Hash) && gate['noHold'].is_a?(Array) && gate['noHold'].any?
++
++    node = $nodes["door_#{door['connectedRoom']}"]
++    next unless node
++
++    open_for = gate['openFor'].is_a?(Array) ? gate['openFor'] : [gate['openFor']].compact
++    holders = open_for - gate['noHold']
++    parts = []
++    parts << "held by #{holders.join(', ')}" if holders.any?
++    parts << "not held by #{gate['noHold'].join(', ')}"
++    node[:label] = "#{node[:label]}<br/>gate: #{parts.join('; ')}"
++  end
++end
++
+ # ---------------------------------------------------------------------------
+ # Networks (ACCESS_MODEL_SLICE_9_3_PLAN.md, section 7.3). A jack is a lock-like node that
+ # the rogue device opens, from the jack's room, with an edge to its network's node. A
+diff --git a/test/js/dungeon-graph-habits.test.mjs b/test/js/dungeon-graph-habits.test.mjs
+index fb4f9fd92..2fb359bcc 100644
+--- a/test/js/dungeon-graph-habits.test.mjs
++++ b/test/js/dungeon-graph-habits.test.mjs
+@@ -113,3 +113,20 @@ test('guessable: a clue behind a container lock the walk did not draw hangs from
+     assert.ok(edge(g, 'lock_tin', 'clue_photo'));
+     assert.ok(edge(g, 'clue_photo', 'signin_mei', 'clue'));
+ });
++
++test('holdsDoors: a gate with noHold gets no new node; its door label says who holds it and who does not', () => {
++    const guard = (id, extra = {}) => ({ id, displayName: id, npcType: 'person', ...extra });
++    const g = graph(scenario({
++        hall: {
++            type: 'room_office', connections: { north: 'store_a', south: 'store_b' }, objects: [],
++            npcs: [guard('gary', { awareness: 'low' }), guard('sara', { awareness: 'high' }), guard('len', { awareness: 'low' })],
++            doors: [{ connectedRoom: 'store_a', direction: 'north', gate: { openFor: ['gary'] } },
++                { connectedRoom: 'store_b', direction: 'south', gate: { openFor: ['sara', 'len'] } }]
++        },
++        store_a: { type: 'room_office', connections: { south: 'hall' }, locked: true, lockType: 'rfid', objects: [], npcs: [] },
++        store_b: { type: 'room_office', connections: { north: 'hall' }, locked: true, lockType: 'rfid', objects: [], npcs: [] }
++    }));
++    assert.ok(g.nodes.door_store_b.label.endsWith('<br/>gate: held by len; not held by sara'), g.nodes.door_store_b.label);
++    assert.ok(!g.nodes.door_store_a.label.includes('gate:'), 'every guard holds: no label');
++    assert.ok(!Object.keys(g.nodes).some(id => /gate/.test(id) && !/andgate/.test(id)), Object.keys(g.nodes).join(','));
++});
+-- 
+2.43.0
+
