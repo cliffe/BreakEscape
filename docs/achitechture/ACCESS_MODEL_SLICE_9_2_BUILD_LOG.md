@@ -501,3 +501,79 @@ Branch `build/9-2-b`, from `main` with U and A merged.
 - In `npc_workaround_test.rb` the fails are spaced 25 s apart (the park floor at
   `needsDeferMin` 0.5 is 24 s). A threshold reached while an earlier lasting one waits is
   handed over at that same fail (the "two at once" case), which a first draft of a test missed.
+
+## Sub-slice B: workarounds, part two (2026-11-11): the X beats and their run; handover
+
+### Done
+
+- **The X beats** (`285484e1e`, `4eb1b02eb`). `scenarios/test_access_work` gains Hall D, west of
+  Hall C: `note_room` (X1, Mei Lin; `mei_pc` with `lockChance: 1`; resource `rota` with
+  `rota_switch`; `writes_down` at 50; a `thirst` need and an authored `mei_boiler`, so she leaves
+  her desk now and then; profile `mei_files` with `Nook.txt`), `records_nook` (PIN, its code on her
+  desktop), `store_lobby` (X2 and X4, Tom Fletcher, roles `facilities` and `staff`, a card;
+  resource `stores` with `stores_switch`; `store_wedge`, a fire extinguisher beside the stores door,
+  hidden on `store_door_propped`), `store_room` (rfid, `access.roles: ["facilities"]`, Una Walsh
+  inside) and `event_room` (X3, Ellis Ward, `+intranet`, `perFail: 50`, `emit` `ellis_gave_up`
+  with `noWarning`). Signs in every room; aim `workaround_beats` with five tasks (`x1_wrote_down`,
+  `x1_nook`, `x2_started`, `x2_propped`, `x3_gave_up`); X4 has no task of its own (its proof is
+  the server record and the events). The `wk_` pools were already in the top-level `chatter`.
+  Mei's break need is `thirst` at a boiler with an authored affordance, not caffeine: a second
+  coffee station gave Dana and Mei each a cross-room target warning, and a water cooler preset
+  brings a `cooler` chatter pool with no lines. The switches are named apart from their
+  resources ("Rota switch", not "Rota system switch") and the intranet resource is "Staff
+  intranet", so the leak scanner's `network_string` rule has nothing to find.
+- **Validator**: no errors; six warnings, all listed in `PLAYTEST.md` (Dana's two mappings,
+  `pat_pc` twice, the finance share's network, U3's tray, Kai). The intranet "in no NPC's work
+  list" warning is gone.
+- **The probe** (an NPC walks to a prop hidden on `revealOnGlobal`): proved in the browser, no
+  engine change. Tom's visit targeted the hidden `store_wedge` and finished 5 s later; only then
+  was it shown.
+- **Browser run** (port 3015): games 1191 (X2, X3, X1), 1194 (X4, both reloads), 1195 (W2, W3,
+  W7). All pass; leak check clean in all three; request counts in budget. Report:
+  `scenarios/test_access_work/reports/2026-11-11_run_x.md`; `PLAYTEST.md` has the X section and
+  the request budget (`3cc153d62`).
+- **Validator on the other scenarios**: the three needs scenarios, the other five access ones,
+  `lab_physical_pentest` and m01 to m10 (`--skip-ink --no-graph`) against a snapshot of `main`:
+  no new error or warning. (The snapshot lacked some assets, so a few checks were skipped on the
+  main side; the warnings that showed up only on the branch come from `check_door_alignment.py`,
+  which is the same file on both.)
+
+### Findings for review
+
+1. After a reload a propped door's sprite is shut (unlocked, it opens with no lock), as every
+   door is after a reload. The plan's X4 says "the door is open". If an open-looking propped door
+   after a load is wanted, the client needs the door from the `done` list (today `{ index, do,
+   setGlobal }`) and to open those sprites on load; not done here.
+2. A workaround's start line goes through `NPCNeedsSystem.mutter`, which emits no event, so a
+   scripted run cannot assert it. A `npc_mutter` event (or a bridge read of the last line) would
+   let the next run check it.
+3. X3's tell goes from 0 to 2 in one step at the failure that brings the workaround, as plan 5.5
+   defines `tell`; the X3 row's "no `tell` 1 or 2 before it" holds.
+
+### Handover: open, in order
+
+1. **B-5 documents**: README "Work, frustration and workarounds" (each kind, what it opens,
+   `tell` and "no warning", the graph nodes); the runner's events (`npc_workaround:<id>` with
+   `started`, `done`, `dropped`, `ended`; `door_propped:<roomId>`; `npc_workaround_due` gains
+   `level` and `restored`) in `NPC_NEEDS_SYSTEM.md`; `docs/test-bridge.md` only if a helper is
+   added (none was).
+2. **Needs regression captures** (plan 11 point 5): `tools/playtest/needs-baseline-capture.js` on
+   `test_needs_sims`, `test_npc_needs`, `test_needs_leash`, compared with
+   `needs-baseline-compare.js`; planned difference none.
+3. **The watch-it-happen run** (plan 11 point 6) on X1 to X3, by the persona tier.
+4. Decide finding 1 above with the orchestrator; then full suites again and report for review.
+
+### Suites
+
+After `3cc153d62`, under the lock: Rails 1425 runs, 0 failures, 1 skip; JS 485 files passed, 0 failed.
+
+### Gotchas
+
+- `cmd.sh` gives up after 60 s and prints TIMEOUT, but the harness still answers later and the
+  next `cmd.sh` call prints that late reply. Pass a third argument (seconds) for long `waitFor`s.
+- After a reload the player starts in the lobby; walk back to the beat's room before its NPC is
+  simulated (a pending hand-over starts when that NPC registers).
+- Navigate for a reload with `setTimeout(() => location.href = '/break_escape/games/<id>?skip_resume=1', 50)`
+  inside `eval`, wait a few seconds, then `bootstrap`; reinstall any `eval` listener afterwards.
+- PIN doors take `{"cmd":"lock","code":"...."}`; `mg type` finds no field on the keypad.
+- Leftover games on the shared dev database: 1191, 1194, 1195.
