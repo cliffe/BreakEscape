@@ -34,6 +34,7 @@ module ValidateAccessWork
     check_usb(json_data, issues)
     check_work(json_data, issues)
     check_workarounds(json_data, issues)
+    check_social(json_data, issues)
     issues
   end
 
@@ -792,6 +793,7 @@ module ValidateAccessWork
 
     resources = AW.resources(json_data)
     lines = []
+    feed_report_lines(json_data, lines)
     room_npcs(json_data).each do |e|
       npc = e[:npc]
       next unless AW.work_plan?(json_data, npc)
@@ -818,7 +820,7 @@ module ValidateAccessWork
     end
     return [] if lines.empty?
 
-    ['Work report (access slice 9.2):'] + lines
+    ['Work report (access slice 9.2):'] + lines.sort_by.with_index { |l, i| [l.start_with?('ℹ️ Feed') ? 1 : 0, i] }
   end
 
   def workaround_opens(npc, w)
@@ -873,4 +875,266 @@ module ValidateAccessWork
       "#{t[:n]} failed use(s) at perFail #{t[:per].round}; #{warning}; about #{t[:honest].round} s of outage; " \
       "earliest by a modified browser #{earliest} after the first counted fail."
   end
+
+  # ── sub-slice C: social media feeds (plan 8 and 10) ──────────────────
+
+  SOCIAL_BLOCKED_POOL = 'social_blocked'
+  SHORT_TEXT = 12
+  # Keys never sent to the browser on a room NPC (game.rb WITHHELD_NPC_KEYS and
+  # WITHHELD_WORK_NPC_KEYS); top-level blocks the bootstrap deletes
+  WITHHELD_NPC_KEYS = %w[creds awareness habits role workarounds workNeeds frustration feed].freeze
+  WITHHELD_TOP_KEYS = %w[flags accountProfiles roles resources networks].freeze
+
+  def osint_sites(json_data)
+    social = json_data['social'].is_a?(Hash) ? json_data['social'] : {}
+    osint = social['osint'].is_a?(Hash) ? social['osint'] : {}
+    Array(osint['sites']).select { |site| site.is_a?(Hash) }
+  end
+
+  # Every block or post id in social.osint (page blocks, profile posts and blocks, list items)
+  def osint_block_ids(json_data)
+    ids = []
+    walk = lambda do |v|
+      case v
+      when Hash
+        ids << v['id'] if v['id'].is_a?(String) && (v.key?('text') || v.key?('fact') || v.key?('kind'))
+        v.each_value { |x| walk.call(x) }
+      when Array then v.each { |x| walk.call(x) }
+      end
+    end
+    osint_sites(json_data).each { |site| walk.call(site['pages']); walk.call(site['profiles']); walk.call(site['blocks']); walk.call(site['fields']) }
+    ids
+  end
+
+  # Every place a fact is named outside a feed: a `fact` key anywhere (blocks, document fields,
+  # tool results, a grant_fact action, a mail highlight) and a call grant's `intel` list.
+  # [[fact, path]]
+  def fact_mentions(json_data)
+    out = []
+    walk = lambda do |v, path|
+      case v
+      when Hash
+        v.each do |k, x|
+          next if k == 'feed' && path.match?(%r{\Arooms/[^/]+/npcs\[\d+\]\z})
+          next if k == 'intelFacts' && path == 'social'
+
+          out << [x, "#{path}/#{k}"] if k == 'fact' && x.is_a?(String)
+          Array(x['intel']).each { |f| out << [f, "#{path}/#{k}/intel"] if f.is_a?(String) } if k == 'grants' && x.is_a?(Hash)
+          walk.call(x, path.empty? ? k.to_s : "#{path}/#{k}")
+        end
+      when Array then v.each_with_index { |x, i| walk.call(x, "#{path}[#{i}]") }
+      end
+    end
+    walk.call(json_data, '')
+    out
+  end
+
+  # Every string that ships to the browser, approximately: the scenario less the keys the server
+  # withholds, the feeds and the feed facts' entries. For the "occurs inside another string" warning.
+  def shipped_strings(json_data, feed_facts)
+    out = []
+    walk = lambda do |v, path, npc_level|
+      case v
+      when String then out << v
+      when Hash
+        v.each do |k, x|
+          next if path.empty? && WITHHELD_TOP_KEYS.include?(k)
+          next if npc_level && WITHHELD_NPC_KEYS.include?(k)
+          next if path == 'social/intelFacts' && feed_facts.include?(k)
+
+          child = path.empty? ? k.to_s : "#{path}/#{k}"
+          walk.call(x, child, false)
+        end
+      when Array
+        v.each_with_index { |x, i| walk.call(x, "#{path}[#{i}]", path.match?(%r{\Arooms/[^/]+/npcs\z})) }
+      end
+    end
+    walk.call(json_data, '', false)
+    out
+  end
+
+  def awareness_level(json_data, npc)
+    if defined?(BreakEscape::NpcHabits) && BreakEscape::NpcHabits.respond_to?(:level_of)
+      [BreakEscape::NpcHabits.level_of(npc, json_data), true]
+    else
+      [npc['awareness'], false]
+    end
+  end
+
+  def passwords(json_data)
+    room_npcs(json_data).filter_map do |e|
+      pw = e[:npc].dig('creds', 'password')
+      [e[:npc]['id'], pw] if pw.is_a?(String) && pw.length >= 4
+    end
+  end
+
+  # Every chatter pool's lines (the scenario's and each NPC's own): [[text, path]]
+  def chatter_lines(json_data)
+    out = []
+    pools = [[json_data['chatter'], 'chatter']]
+    room_npcs(json_data).each { |e| pools << [e[:npc]['chatter'], "#{e[:npc]['id']}.chatter"] }
+    pools.each do |c, path|
+      next unless c.is_a?(Hash)
+
+      c.each do |topic, v|
+        v = v['lines'] if v.is_a?(Hash)
+        Array(v).each { |l| out << [l, "#{path}.#{topic}"] if l.is_a?(String) }
+      end
+    end
+    out
+  end
+
+  def check_social(json_data, issues)
+    sites = osint_sites(json_data).to_h { |site| [site['id'], site] }
+    facts = json_data.dig('social', 'intelFacts')
+    facts = {} unless facts.is_a?(Hash)
+    feed_facts = AW.feed_facts(json_data)
+    block_ids = osint_block_ids(json_data)
+    seen_posts = {}
+    pws = passwords(json_data)
+    shipped = nil
+    fed = []
+
+    room_npcs(json_data).each do |e|
+      npc = e[:npc]
+      nid = npc['id']
+      check_social_need(json_data, npc, issues)
+      feed = npc['feed']
+      next if feed.nil?
+
+      unless feed.is_a?(Hash) && feed['posts'].is_a?(Array)
+        err(issues, "#{nid}.feed must be an object with a posts list (feed.posts[]), not a bare list.")
+        next
+      end
+      site = sites[feed['site']]
+      if !site
+        err(issues, "#{nid}.feed.site '#{feed['site']}' names no social.osint site.")
+      elsif site['type'] != 'social'
+        err(issues, "#{nid}.feed.site '#{feed['site']}' is a #{site['type'] || 'typeless'} site; a feed needs a social site.")
+      elsif !Array(site['profiles']).any? { |pr| pr.is_a?(Hash) && pr['person'] == feed['person'] }
+        err(issues, "#{nid}.feed.person '#{feed['person']}' is no profile on '#{feed['site']}': its posts would show nowhere.")
+      end
+      unless AW.need?(npc, 'social_media')
+        warn(issues, "#{nid} has a feed but no social_media need: it never posts.")
+      end
+      fed << npc if AW.feeds?(npc)
+      level, from_habits = awareness_level(json_data, npc)
+      feed['posts'].each_with_index do |post, i|
+        tag = "#{nid}.feed.posts[#{i}]"
+        unless post.is_a?(Hash) && AW.present_string?(post['id'])
+          err(issues, "#{tag} needs an id: a post without one is never served or clickable.")
+          next
+        end
+        pid = post['id']
+        if seen_posts.key?(pid)
+          err(issues, "#{tag} id '#{pid}' is also #{seen_posts[pid]}'s feed post id.")
+        elsif block_ids.include?(pid)
+          err(issues, "#{tag} id '#{pid}' is also a post or block id in social.osint.")
+        end
+        seen_posts[pid] ||= nid
+        texts = [[post['text'], "#{tag}.text"]]
+        if post.key?('fact')
+          fid = post['fact']
+          if !AW.present_string?(fid) || !facts[fid].is_a?(Hash)
+            err(issues, "#{tag}.fact '#{fid}' names no social.intelFacts entry.")
+          else
+            texts << [facts[fid]['text'], "social.intelFacts.#{fid}.text"]
+            if level == 'high' && post['deliberate'] != true
+              note = from_habits ? '' : ' (read from the authored awareness string; slice 9.1 is not loaded here)'
+              warn(issues, "#{tag} carries the fact '#{fid}' but #{nid}'s awareness is high#{note}: a careful person " \
+                           'would not post it. Mark the post "deliberate": true if that is meant.')
+            end
+          end
+        end
+        texts.each do |text, where|
+          next unless text.is_a?(String)
+
+          pws.each do |owner, pw|
+            err(issues, "#{where} contains #{owner}'s password: feed text ships once its post is out.") if text.include?(pw)
+          end
+          if text.strip.length < SHORT_TEXT
+            warn(issues, "#{where} is under #{SHORT_TEXT} characters: the leak checks match whole texts and cannot protect it.")
+          else
+            shipped ||= shipped_strings(json_data, feed_facts)
+            if shipped.any? { |str| str.include?(text) }
+              warn(issues, "#{where} occurs inside another string that ships from the start: the leak checks cannot protect it.")
+            end
+          end
+        end
+      end
+    end
+
+    # A feed fact may be granted only by its feed post (plan 8.3)
+    unless feed_facts.empty?
+      fact_mentions(json_data).each do |fid, path|
+        next unless feed_facts.include?(fid)
+
+        err(issues, "the feed fact '#{fid}' is also named at #{path}: that grant would need its text in the browser from the start. " \
+                    'Name a feed fact only in its post (a readiness slot or phishing factor holding the id is fine).')
+      end
+    end
+
+    chatter_lines(json_data).each do |line, path|
+      pws.each do |owner, pw|
+        err(issues, "#{path} contains #{owner}'s password: a chatter line ships with the scenario.") if line.include?(pw)
+      end
+    end
+  end
+
+  def check_social_need(json_data, npc, issues)
+    return unless AW.need?(npc, 'social_media')
+
+    nid = npc['id']
+    st = AW.station(json_data, npc)
+    desk = st && AW.desk?(json_data, st)
+    unless AW.phone?(npc)
+      if !desk && AW.places(json_data, npc, 'social_media').empty?
+        err(issues, "#{nid} has a social_media need, \"phone\": false, no workstation for a home and no object whose " \
+                    'affordance.satisfies social_media: the need has no source at all.')
+      end
+      if desk && AW.social_blocked?(json_data, npc) && !chatter_off?(json_data) && !pool_has_line?(json_data, npc, SOCIAL_BLOCKED_POOL)
+        warn(issues, "#{nid} can fail social media at '#{st['id']}' (its policy blocks it), but no #{SOCIAL_BLOCKED_POOL} line " \
+                     "is in the scenario's chatter or the NPC's own: the student sees only a picture.")
+      end
+      if desk && AW.off_when?(json_data, st) && !AW.work_plan?(json_data, npc) && !chatter_off?(json_data) &&
+         !pool_has_line?(json_data, npc, STATION_POOL) && !pool_has_line?(json_data, npc, FALLBACK_POOL)
+        warn(issues, "#{nid} can fail social media with its station going off, but no #{STATION_POOL} or #{FALLBACK_POOL} line " \
+                     "is in the scenario's chatter or the NPC's own: the student sees only a picture.")
+      end
+    end
+    cos = npc.dig('los', 'challengeOnSight')
+    if AW.phone?(npc) && cos && !(cos.is_a?(Hash) && cos['enabled'] == false)
+      period = AW.post_period_seconds(json_data, npc)
+      every = period ? " (about every #{period.round} s)" : ''
+      warn(issues, "#{nid} challenges on sight and has a social_media need and a phone: while on the phone it does not look, " \
+                   "so it can be walked past once every period of the need#{every}.")
+    end
+  end
+
+  # Per NPC with a feed: when each post is expected (plan 10), from the need's timing
+  def feed_report_lines(json_data, lines)
+    room_npcs(json_data).each do |e|
+      npc = e[:npc]
+      next unless AW.feeds?(npc)
+
+      n = npc['needs']['social_media']
+      decay = n['decayPerMin'].is_a?(Numeric) && n['decayPerMin'].positive? ? n['decayPerMin'].to_f : nil
+      urgent = n['urgentAt'].is_a?(Numeric) ? n['urgentAt'].to_f : nil
+      posts = AW.feed_posts(npc)
+      unless decay && urgent
+        lines << "ℹ️ Feed #{npc['id']}: #{posts.size} posts, but its social_media need has no valid decayPerMin and urgentAt: it never posts."
+        next
+      end
+      initial = n['initial'].is_a?(Numeric) ? n['initial'].to_f.clamp(0, 100) : 100.0
+      first = [initial - urgent, 0].max / decay * 60
+      period = AW.post_period_seconds(json_data, npc)
+      use = AW.shortest_use_seconds(json_data, npc, 'social_media')
+      times = posts.each_index.map { |i| first + use + (i * (period + use)) }
+      at = times.map { |t| format('%d:%02d', (t / 60).floor, (t % 60).round) }.join(', ')
+      lines << "ℹ️ Feed #{npc['id']} (#{npc['feed']['site']}, #{npc['feed']['person']}): #{posts.size} posts; first urgent at " \
+               "#{first.round} s, then about every #{(period + use).round} s; posts expected at about #{at} (needs clock, " \
+               "after the room loads). Server floor #{AW.post_floor(json_data, npc).round} s between posts."
+    end
+  end
+
 end

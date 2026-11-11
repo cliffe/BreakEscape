@@ -92,6 +92,10 @@ module BreakEscape
             next unless npc.is_a?(Hash)
 
             walk_objects(npc['itemsHeld'], "rooms/#{room_id}/npcs[#{i}]/itemsHeld", room_locks, nil, out, room_id.to_s)
+            # Slice 9.2 C (plan 10): each feed post's text is a clue source (its fact's text is read with intelFacts)
+            Array(npc.dig('feed', 'posts')).each_with_index do |post, j|
+              out << { text: post['text'], path: "rooms/#{room_id}/npcs[#{i}]/feed/posts[#{j}]", object_id: nil, scope: nil, locks: [] } if post.is_a?(Hash) && post['text'].is_a?(String) && !post['text'].empty?
+            end
           end
         end
         walk_objects(scenario['startItemsInInventory'], 'startItemsInInventory', [], nil, out)

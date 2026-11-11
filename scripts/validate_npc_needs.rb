@@ -1245,6 +1245,11 @@ module ValidateNpcNeeds
       if BreakEscape::AccessWork.judged?(json, npc, name)
         targets = targets.reject { |o| o.id != npc['needsHome'] && BreakEscape::AccessWork.desk?(json, o.data) }
       end
+      # Sub-slice C (plan 8.1): the own workstation is a social_media source whatever its affordance
+      if name == 'social_media' && BreakEscape::AccessWork.social_station?(json, npc, name)
+        own = objs.find { |o| o.id == npc['needsHome'] }
+        targets |= [own] if own
+      end
       # social_media is met by a phone (sub-slice C), so no object need satisfy it; an NPC with
       # "phone": false still needs one (plan 10, review R1 m6)
       next if targets.empty? && name == 'social_media' && npc['phone'] != false

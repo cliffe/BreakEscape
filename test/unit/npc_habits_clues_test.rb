@@ -253,4 +253,25 @@ class NpcHabitsCluesTest < ActiveSupport::TestCase
     refute b[:pieces][0][:case_differs]
     assert_equal 0, b[:case_changes]
   end
+
+  test 'slice 9.2 C: a feed post and its feed fact are clue sources, so a password built from them is backed' do
+    data = {
+      'social' => { 'intelFacts' => { 'jake_year' => { 'label' => 'Year', 'text' => 'Jake Brooks married in 1998.' } } },
+      'rooms' => { 'office' => {
+        'objects' => [{ 'id' => 'poster', 'type' => 'notes', 'text' => "IT reminder: your pet's name and a year, capital and a !, is not a password" }],
+        'npcs' => [{ 'id' => 'jake', 'creds' => { 'username' => 'jbrooks', 'password' => 'Biscuit1998!' },
+                     'feed' => { 'site' => 'friendface', 'person' => 'jake', 'posts' => [
+                       { 'id' => 'p1', 'text' => 'Biscuit turns 5 today! Best boy.' },
+                       { 'id' => 'p2', 'text' => 'Twenty years married, still laughing.', 'fact' => 'jake_year' }
+                     ] } }]
+      } }
+    }
+    texts = CL.readable_texts(data)
+    assert texts.any? { |t| t[:path] == 'rooms/office/npcs[0]/feed/posts[0]' }
+    b = CL.backing(data['rooms']['office']['npcs'][0], data, texts, 'poster')
+    assert b[:backed], b[:reasons].inspect
+    assert_equal ['rooms/office/npcs[0]/feed/posts[0]'], b[:pieces][0][:sources].map { |src| src[:path] }
+    assert_equal ['social/intelFacts/jake_year'], b[:pieces][1][:sources].map { |src| src[:path] }
+  end
+
 end

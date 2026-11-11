@@ -401,6 +401,7 @@
             "title": {"type": "string"},
             "pinHints": {"type": "boolean", "description": "Show a visible 'Pin' affordance on each not-yet-noted selectable block, so it is clear a block can be clicked to add it to notes. Default off (unchanged). Set true for learners unfamiliar with the browse-and-pin pattern"},
             "pinLabel": {"type": "string", "description": "The word on the pin affordance when pinHints is on; default 'Pin'"},
+            "postToasts": {"type": "boolean", "description": "Slice 9.2 C (section 8.3): a toast \"<name> posted on <site>\" when an NPC's feed post comes out on a site the player has opened. Default true; false turns it off"},
             "sites": {"type": "array", "items": {"$ref": "#/definitions/socialOsintSite"}},
             "tools": {"type": "array", "items": {"$ref": "#/definitions/socialOsintTool"}}
           },
