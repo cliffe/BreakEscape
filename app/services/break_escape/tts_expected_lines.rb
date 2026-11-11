@@ -285,7 +285,7 @@ module BreakEscape
       Hash(data["globalVariables"]).each do |k, v|
         values[k] << v.to_s if v.is_a?(String) || v.is_a?(Numeric)
       end
-      values["player_name"].concat(["Agent", "Agent Zero", "Agent 0x00"])
+      values["player_name"].concat(TtsService::PLAYER_NAME_VALUES)
       values.transform_values { |v| v.uniq.first(8) }
     end
 

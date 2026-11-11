@@ -12,19 +12,22 @@ module BreakEscape
     # Scenario-level chatter pools (scenario['chatter']) can be spoken by any NPC
     # with a voice: validate_shared checks those.
     #
-    # Comparison is normalised (lowercase, strip punctuation, collapse whitespace)
-    # to be resilient to minor punctuation differences between the scenario JSON
-    # and what the client actually renders/sends.
+    # Comparison is on TtsService.match_form (case, punctuation, spacing and
+    # invisible characters aside, the same letters and digits), to be resilient
+    # to minor punctuation differences between the scenario JSON and what the
+    # client renders. canonical returns the scenario's own text, which is what
+    # the endpoint voices and keys.
     #
     # @param npc  [Hash]   NPC data hash from the loaded scenario
     # @param text [String] Text the client is requesting TTS for
+    # @return [String, nil] the bark as the scenario has it
+    def self.canonical(npc, text)
+      first_match(bark_texts(npc), text)
+    end
+
     # @return [Boolean]
     def self.validate(npc, text)
-      return false if text.blank?
-
-      normalized_request = normalize(text)
-
-      bark_texts(npc).any? { |bark_text| normalize(bark_text) == normalized_request }
+      !canonical(npc, text).nil?
     end
 
     # Collect every possible bark string from a scenario NPC definition.
@@ -54,10 +57,14 @@ module BreakEscape
     # @param text [String]
     # @return [Boolean]
     def self.validate_shared(scenario, text)
-      return false if text.blank? || !scenario.is_a?(Hash)
+      !canonical_shared(scenario, text).nil?
+    end
 
-      normalized_request = normalize(text)
-      chatter_texts(scenario["chatter"]).any? { |line| normalize(line) == normalized_request }
+    # The scenario chatter line text asks for, as the scenario has it, or nil.
+    def self.canonical_shared(scenario, text)
+      return nil unless scenario.is_a?(Hash)
+
+      first_match(chatter_texts(scenario["chatter"]), text)
     end
 
     # Every line of a chatter config: { topic => [lines] | { "lines" => [lines], ... } }.
@@ -72,8 +79,14 @@ module BreakEscape
       end
     end
 
-    private_class_method def self.normalize(text)
-      text.to_s.downcase.gsub(/[^\w\s]/, "").strip.gsub(/\s+/, " ")
+    private_class_method def self.first_match(candidates, text)
+      wanted = TtsService.match_form(text)
+      return nil if wanted.blank?
+
+      candidates.each do |candidate|
+        return candidate.strip if candidate.is_a?(String) && TtsService.match_form(candidate) == wanted
+      end
+      nil
     end
   end
 end

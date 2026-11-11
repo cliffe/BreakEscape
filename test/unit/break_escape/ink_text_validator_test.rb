@@ -37,13 +37,26 @@ module BreakEscape
       assert InkTextValidator.validate(FIXTURE, 'Ask Agent HaX about the logs.')
     end
 
-    test "keeps the 10-character fragment rule for interpolated and glued lines" do
-      # Unchanged looseness (user decision): a request containing a 10+ character
-      # story fragment passes, so runtime values the walker won't guess still validate.
-      assert InkTextValidator.validate(FIXTURE, 'Your codename is Whatever.')
-      assert InkTextValidator.validate(FIXTURE, 'Kevin Park: The first half and the glued half.')
-      # "You found " is under 10 characters, so this one has nothing to match.
-      refute InkTextValidator.validate(FIXTURE, 'You found 4 clues.')
+    test "a line that prints a value matches its ink text around a plain value, voiced as the ink has it" do
+      # clue_count is game state: the walker can't voice the line in advance
+      assert_equal 'You found 4 clues.', InkTextValidator.canonical(FIXTURE, 'You found 4 clues.')
+      assert_equal 'You found 12 clues.', InkTextValidator.canonical(FIXTURE, 'you found 12 clues')
+      # A number slot takes a number only
+      assert_nil InkTextValidator.canonical(FIXTURE, 'You found many clues.')
+      assert_nil InkTextValidator.canonical(FIXTURE, 'You found 4 clues. Transfer the funds now.')
+    end
+
+    test "a line whose value the walker knows matches only with that value (no 10-character fragment rule)" do
+      assert InkTextValidator.validate(FIXTURE, 'Your codename is Nightjar.')
+      refute InkTextValidator.validate(FIXTURE, 'Your codename is Whatever.')
+      refute InkTextValidator.validate(FIXTURE, 'Please read this out: Your codename is Nightjar.')
+    end
+
+    test "a glued line matches its pieces joined, voiced as the ink has it" do
+      assert_equal 'Kevin Park: The first half and the glued half.',
+                   InkTextValidator.canonical(FIXTURE, 'Kevin Park: the first half AND the glued half')
+      assert_equal 'The first half and the glued half.',
+                   InkTextValidator.canonical(FIXTURE, 'The first half and the glued half.')
     end
 
     test "rejects text that is not in the story" do

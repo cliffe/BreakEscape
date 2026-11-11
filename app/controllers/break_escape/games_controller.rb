@@ -637,6 +637,7 @@ module BreakEscape
       text = params[:text]
 
       return render_error('Missing npc_id or text', :bad_request) unless npc_id.present? && text.present?
+      return render_error('Text must be a string', :bad_request) unless text.is_a?(String) && npc_id.is_a?(String)
       return render_error('Text too long', :bad_request) if text.length > 1000
 
       # Find NPC in scenario
@@ -647,10 +648,20 @@ module BreakEscape
       voice_config = npc['voice'].is_a?(Hash) ? npc['voice'] : npc['ttsVoice']
       return render_error("No voice configured for NPC: #{npc_id}", :bad_request) unless voice_config
 
-      # Validate text exists in the NPC's content (anti-abuse)
-      # Narrator lines are sourced from another NPC's ink story (already server-side trusted)
+      # The request only chooses a line of the scenario (anti-abuse). `line` is that
+      # line's own text, and it alone is voiced, keyed, recorded and looked up from
+      # here on: the request's text never reaches the voice or the cache key, so
+      # characters the key ignores (lookalike letters, zero-width or bidi marks)
+      # can't add words to a clip or replace the clip every player hears.
+      # Matching rule: TtsService.match_form.
+      line = nil
       if npc['skipTextValidation']
-        Rails.logger.debug "[TTS] Skipping text validation for #{npc_id} (skipTextValidation=true)"
+        # The narrator: its lines are in the scenario's stories, spoken as the narrator
+        line = spoken_as_npc_in_scenario(npc_id, text) || line_in_scenario_stories(text)
+        unless line
+          Rails.logger.warn "[TTS] Narrator text not in any scenario story for #{npc_id}: #{text.truncate(60)}"
+          return render_error('Text not found in scenario stories', :forbidden)
+        end
       elsif npc['storyPath']
         # Full Ink story — validate against compiled JSON first, then fall back to
         # scenario-defined barks (eventMappings / timedMessages).  NPCs can have both
@@ -665,12 +676,12 @@ module BreakEscape
         # A co-speaker's line can live in another NPC's story (Vance in HaX's
         # debrief, HaX in Netherton's), so also accept a line that some story
         # in this scenario voices as this NPC.
-        valid = InkTextValidator.validate(ink_json_path.to_s, text) ||
-                ScenarioBarkValidator.validate(npc, text) ||
-                shared_chatter_line?(npc, text) ||
-                spoken_as_npc_in_scenario?(npc_id, text)
+        line = InkTextValidator.canonical(ink_json_path.to_s, text) ||
+               ScenarioBarkValidator.canonical(npc, text) ||
+               shared_chatter_line(npc, text) ||
+               spoken_as_npc_in_scenario(npc_id, text)
 
-        unless valid
+        unless line
           Rails.logger.warn "[TTS] Text validation failed for NPC #{npc_id}: #{text.truncate(60)}"
           return render_error('Text not found in NPC story or barks', :forbidden)
         end
@@ -679,22 +690,24 @@ module BreakEscape
         # either scenario barks (eventMappings / timedMessages), or it is a co-speaker whose
         # lines live in another NPC's Ink story (e.g. a director speaking inside a briefing
         # cutscene). The text must be a line that story voices as this NPC.
-        unless ScenarioBarkValidator.validate(npc, text) || shared_chatter_line?(npc, text) ||
-               spoken_as_npc_in_scenario?(npc_id, text)
+        line = ScenarioBarkValidator.canonical(npc, text) || shared_chatter_line(npc, text) ||
+               spoken_as_npc_in_scenario(npc_id, text)
+        unless line
           Rails.logger.warn "[TTS] Bark text validation failed for NPC #{npc_id}: #{text.truncate(60)}"
           return render_error('Text not found in NPC barks or scenario stories', :forbidden)
         end
       elsif npc['voice'].is_a?(String)
-        # Room object with a fixed voice message — validate directly
-        normalized_request = text.downcase.gsub(/[^\w\s]/, '').strip.gsub(/\s+/, ' ')
-        normalized_stored  = npc['voice'].downcase.gsub(/[^\w\s]/, '').strip.gsub(/\s+/, ' ')
-        unless normalized_request == normalized_stored
+        # Room object with a fixed voice message
+        wanted = TtsService.match_form(text)
+        unless wanted.present? && wanted == TtsService.match_form(npc['voice'])
           Rails.logger.warn "[TTS] Text validation failed for room object #{npc_id}: #{text.truncate(60)}"
           return render_error('Text not found in object', :forbidden)
         end
+        line = npc['voice'].strip
       else
         return render_error('Cannot validate text for this object', :bad_request)
       end
+      text = line
 
       # The line's #delivery: note (person-chat sends one when the line's tags carry
       # it). The client's note only chooses: the note keyed, voiced and recorded is
@@ -2595,22 +2608,39 @@ module BreakEscape
 
     # A line of the scenario's shared chatter pools (scenario['chatter']), which
     # any NPC with a voice may speak (office life, OFFICE_LIFE_PLAN 11.3).
-    def shared_chatter_line?(npc, text)
-      npc['voice'].is_a?(Hash) && ScenarioBarkValidator.validate_shared(@game.scenario_data, text)
+    def shared_chatter_line(npc, text)
+      return nil unless npc['voice'].is_a?(Hash)
+
+      ScenarioBarkValidator.canonical_shared(@game.scenario_data, text)
     end
 
-    # True when one of this game's ink stories has a line the client voices as
-    # npc_id with this text (speaker resolved by prefix, displayName or
+    # The narrator's line in any of this game's ink stories, as the story has it.
+    def line_in_scenario_stories(text)
+      story_paths = []
+      @game.scenario_data['rooms']&.each_value do |room|
+        room['npcs']&.each { |n| story_paths << n['storyPath'] }
+      end
+      Array(@game.scenario_data['npcs']).each { |n| story_paths << n['storyPath'] if n.is_a?(Hash) }
+      story_paths.compact.uniq.each do |story|
+        path = resolve_and_compile_ink(story)
+        found = path && InkTextValidator.canonical(path.to_s, text)
+        return found if found
+      end
+      nil
+    end
+
+    # The line, as the story has it, that one of this game's ink stories voices
+    # as npc_id with this text, or nil (speaker resolved by prefix, displayName or
     # #speaker tag, as person-chat does). Never arbitrary text: the line must
     # be in the scenario's ink and attributed to that speaker.
-    def spoken_as_npc_in_scenario?(npc_id, text)
+    def spoken_as_npc_in_scenario(npc_id, text)
       scenario_name = @game.mission&.name
-      return false unless scenario_name
+      return nil unless scenario_name
 
-      TtsLineExtractor.cached(scenario_name, @game.scenario_data).spoken_by?(npc_id, text)
+      TtsLineExtractor.cached(scenario_name, @game.scenario_data).spoken_line(npc_id, text)
     rescue StandardError => e
       Rails.logger.warn "[TTS] Co-speaker check failed for #{npc_id}: #{e.class}: #{e.message}"
-      false
+      nil
     end
 
     # The #delivery: note the scenario's ink gives the line npc_id speaks as text,

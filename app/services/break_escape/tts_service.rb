@@ -55,6 +55,36 @@ module BreakEscape
       text.to_s.downcase.gsub(/[^\w\s]/, "").strip.gsub(/\s+/, " ")
     end
 
+    # What the client's player_name() ink function can print (person-chat and
+    # phone-chat bind it to gameState.playerName, else "Agent"). The endpoint
+    # accepts only these in a line that prints it; the cache pruner expects them.
+    PLAYER_NAME_VALUES = ["Agent", "Agent Zero", "Agent 0x00"].freeze
+
+    # How the endpoint compares a requested `text` with the scenario's own lines
+    # (InkTextValidator, ScenarioBarkValidator, TtsLineExtractor#spoken_line).
+    # Unicode NFC, lowercase, every run of whitespace (any script's spaces) one
+    # space, then only letters, combining marks, digits and "_" of any script
+    # kept. Punctuation, symbols and invisible characters (zero-width, bidi
+    # controls, BOM) drop out; lookalike letters from another script (Cyrillic,
+    # Greek, fullwidth, small capitals) and stray combining marks stay, so a
+    # request carrying them matches no line. normalize_text, the key's rule,
+    # drops every non-ASCII character and would let them through.
+    # A match only chooses a line: the endpoint voices and keys the line's own
+    # text, never the request. nil for a string that is not valid Unicode.
+    def self.match_form(text)
+      return nil unless text.is_a?(String)
+
+      utf8 = text.encoding == Encoding::UTF_8 ? text : text.dup.force_encoding(Encoding::UTF_8)
+      return nil unless utf8.valid_encoding?
+
+      utf8.unicode_normalize(:nfc).downcase
+          .gsub(/[\p{Z}\s]+/, " ")
+          .gsub(/[^\p{L}\p{M}\p{N}_ ]/, "")
+          .gsub(/ +/, " ").strip
+    rescue ArgumentError, Encoding::CompatibilityError
+      nil
+    end
+
     # The text sent to the voice. 3.8 reads a hyphen between letters aloud
     # ("payroll hyphen notices", lab_social_engineering's Dev), so it becomes a
     # space; the key is still made from the line as written, which normalising

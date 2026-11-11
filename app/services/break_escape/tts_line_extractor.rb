@@ -293,13 +293,20 @@ module BreakEscape
     # the whole line as the client sends it, so only text that is in the
     # scenario's ink for that speaker is accepted.
     def spoken_by?(npc_id, text)
-      wanted = self.class.normalize(text)
-      return false if wanted.empty?
-
-      spoken_lines.include?("#{npc_id}|#{wanted}")
+      !spoken_line(npc_id, text).nil?
     end
 
-    # "npc_id|normalised text" for every voiced line of every host story.
+    # The line's own text (as the batch voices it) for a request that has its
+    # TtsService.match_form, or nil. The endpoint voices and keys this text.
+    def spoken_line(npc_id, text)
+      wanted = TtsService.match_form(text)
+      return nil if wanted.blank?
+
+      spoken_lines["#{npc_id}|#{wanted}"]
+    end
+
+    # { "npc_id|match form" => the line's text } for every voiced line of every
+    # host story (the first line wins where two share a match form).
     def spoken_lines
       index_host_lines unless @spoken_lines
       @spoken_lines
@@ -358,15 +365,15 @@ module BreakEscape
 
     # spoken_lines and delivered_lines in one walk of the stories.
     def index_host_lines
-      spoken = Set.new
+      spoken = {}
       delivered = {}
       each_host_line do |host, _path, line, npc_id, text|
         norm = self.class.normalize(text)
-        spoken << "#{npc_id}|#{norm}"
+        spoken["#{npc_id}|#{TtsService.match_form(text)}"] ||= text
         note = line_delivery(host, line)
         delivered["#{npc_id}|#{norm}|#{self.class.normalize(note)}"] ||= note if note
       end
-      each_pretext_outcome_line { |npc_id, text, _path| spoken << "#{npc_id}|#{self.class.normalize(text)}" }
+      each_pretext_outcome_line { |npc_id, text, _path| spoken["#{npc_id}|#{TtsService.match_form(text)}"] ||= text }
       @spoken_lines = spoken
       @delivered_lines = delivered
     end

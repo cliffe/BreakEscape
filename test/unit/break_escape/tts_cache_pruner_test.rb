@@ -229,13 +229,15 @@ module BreakEscape
 
     # ─── Sidecars ─────────────────────────────────────────────────────────────
 
-    test "a sidecar whose exact text the server still accepts keeps the file" do
-      # Not reproduced by the expected set, but /tts would accept it (contains a stored fragment)
+    test "a sidecar whose text merely contains a story line is an orphan" do
+      # /tts once accepted any text holding a 10-character story fragment and keyed
+      # the clip on it. It now voices and keys only the story's own line, so no
+      # request reaches this key again.
       text = "Oh. Halt. Who goes there?"
       k = key(text, GUARD)
       refute expected.include_key?(k)
-      kept = put("#{SCENARIO}/#{k}.mp3")
-      File.write(kept.sub_ext(".json"), { text: text, voice: GUARD[0], style: GUARD[1], language: GUARD[2] }.to_json)
+      stale = put("#{SCENARIO}/#{k}.mp3")
+      File.write(stale.sub_ext(".json"), { text: text, voice: GUARD[0], style: GUARD[1], language: GUARD[2] }.to_json)
 
       # Same text in a voice the scenario no longer uses: certain orphan
       old_voice = ["Charon", "Old style.", "en-GB"]
@@ -244,7 +246,7 @@ module BreakEscape
       File.write(gone.sub_ext(".json"), { text: text, voice: old_voice[0], style: old_voice[1], language: old_voice[2] }.to_json)
 
       r = pruner.run.scenarios.first
-      assert_equal :kept, r.files.find { |f| f.key == k }.status
+      assert_equal :orphan_certain, r.files.find { |f| f.key == k }.status
       assert_equal :orphan_certain, r.files.find { |f| f.key == ok }.status
     end
 
