@@ -38,7 +38,7 @@ The narrator's text must now be a narrator line of the scenario (round 1 narrowe
 
 ## Lines that no longer voice
 
-Glued lines longer than 4 pieces, lines printing a value through a sequence or conditional, and string-variable lines whose value is not plain ASCII. None of these is in m01 to m10: the affected unresolved lines are in demo and hub inks (`netherton_hub`, `chen_hub`, `haxolottle_hub`, `instructor`) and test scenarios. m02 and m03 Agent HaX phone lines with `player_name()` still match.
+Glued lines longer than 4 pieces, lines printing a value through a sequence or conditional, and string-variable lines whose value is not plain ASCII. None of these is in m01 to m10: the affected unresolved lines are in demo and hub inks (`netherton_hub`, `chen_hub`, `haxolottle_hub`, `instructor`) and test scenarios. m02 and m03 Agent HaX phone lines with `player_name()` still matched at this round; round 2 refuses them by design (see the round 1 correction below).
 
 ## Tests
 
@@ -77,7 +77,7 @@ Following the user's standing rule that voiced lines never print variables:
 
 ### What this changes for real content
 
-Every compiled story of m01 to m10 and lab_physical_pentest, every line the walker can't place: no line is newly refused. The only lines that print a value are seven `player_name()` lines, all still voiced (with "Agent"): `m02_phone_agent0x99.ink:102` and `:204`, `m03_phone_agent0x99.ink:99`, `:153`, `:177`, `:467` and `:493`. They already break the no-printed-variables rule (for the user to decide whether to reword them). No mission prints a number or string variable in a voiced line, and no glue run is broken. This is now a test (`tts_mission_lines_test.rb`), which also answers review finding 7.
+Every compiled story of m01 to m10 and lab_physical_pentest, every line the walker can't place: no line is newly refused. The only lines that print a value are seven `player_name()` lines: `m02_phone_agent0x99.ink:102` and `:204`, `m03_phone_agent0x99.ink:99`, `:153`, `:177`, `:467` and `:493`. (Corrected in round 4: they are text lines of a phone contact with no voiced call, which the game never sends to `/tts`, since a text thread voices only `voice:` messages. Round 2 refuses them by design, and no audio is lost. The earlier wording here said they were all still voiced.) No mission prints a number or string variable in a voiced line, and no glue run is broken. This is now a test (`tts_mission_lines_test.rb`), which also answers review finding 7.
 
 A line whose speaker prefix is a string variable (`{npc_name}: What can I help you with?`, the test-only `generic-npc` ink) is still voiced from its fragment after the variable, the text the client sends once it strips the prefix. That text is the ink's, with no variable in it.
 
@@ -107,7 +107,7 @@ A line whose speaker prefix is a string variable (`{npc_name}: What can I help y
 
 ### Not done, for the user
 
-- The seven `player_name()` lines above print a variable in a voiced line. They play with "Agent" today; rewording them would remove the last printed value in the missions.
+- (Withdrawn in round 4.) The seven `player_name()` lines above are phone text, never voiced, and refused since round 2, so there is nothing to decide.
 - The rate limit is per server process, so with several workers the real cap is 1,500 times the worker count. A shared store would need the host's cache (the test environment uses a null store) or a new column, so it was left in process.
 
 ## Round 2 fixes
@@ -150,9 +150,43 @@ Review: `TTS_TEXT_MATCH_FIX_CODE_REVIEW_R2.md` (no blockers, no majors). Commit 
 | 6 Nit, `Errno::ENOENT` race | Fixed: rescued, 403. |
 | 7 Nit, glue siblings | Not changed, as in round 1: no mission story has a glue run. |
 
+## Round 4: video calls (live proof regression)
+
+Found by the live browser proof (keyless server, games 1211 to 1213): in m02, Ghost's video calls (`on_recovery_console`, `on_console_again`) got 403 for every Ghost line. Ghost is `npcType: "phone"`, and `TtsLineExtractor.voiced_call?` counted only `voiced: true` phone-chat mappings, so Ghost was not a host and `TtsLineResolver#own_story_line` treated it as a text contact that may voice only `voice:` messages. Main voiced these lines.
+
+### Which client paths voice lines (read in the client)
+
+- `npc-manager.js`: an eventMapping with `conversationMode: "video-call"` opens person-chat with `videoCall: true` for any npcType; a timedConversation with `videoCall: true` or that mode does the same (`scheduleTimedConversation`). Person-chat voices every NPC line it shows, narration as the narrator, with the line's `#delivery:` note, whatever `voiced` says, and follows every divert (no home-knot stop).
+- `phone-chat` mappings and timed conversations voice only with `voiced: true`, only in the call's knots, no narration (unchanged).
+- `person-chat` mappings open only for `npcType: "person"`, already hosts. The other person-chat openers (sprite interaction, the resume after an RFID or container tag) are for person NPCs or the conversation already open. `#transition_to_person_chat` is used by no scenario.
+
+### What changed
+
+- `TtsLineExtractor.voiced_call?` is now a voiced phone call (`voiced_phone_call?`, the old rule) or a video call (`video_call_mapping?`, `video_call_timed?`). Pretext outcome lines still need a voiced phone call.
+- A phone host's lines come from its phone call knots (`call_knots`, read as the phone reads them) and its video call knots (`video_call_knots`, every knot reachable from each video call's target, read as person-chat reads them: narration as the narrator, `#delivery:` kept). The shared walk is `reachable_knots`.
+- The batch gains these lines: m02 38 rows (Ghost 37, narrator 1), lab_tesseract_trials 47, chat_minigame_demo 7. None has a committed clip yet; a `tts-audio` top-up would generate them. No other key changes.
+
+### Tests
+
+- `tts_mission_lines_test.rb`: a new test builds every voiced conversation from the scenario's own mappings (not the extractor's host list): person-chat over a person NPC's story, video calls from their knots, voiced phone calls up to the home knot. It sends every line as the client does and requires the same text back, counts person-chat, video-call and phone-call rows (each must be above zero), and fails on a conversationMode it does not know. On the unfixed extractor it fails with every m02 Ghost video-call line refused.
+- `ink_line_walker_test.rb`: a video-call mapping on a phone contact is voiced as person-chat voices it (narration included, a lookalike refused); a video call has no home-knot stop; timedConversation video calls count, and a voiced phone-chat timed call is still a phone call.
+
+### Live proof (keyless, :3017, game 1220)
+
+Ghost's scene fired through its real mapping (`object_interacted` with `objectType: "backup_recovery"` and the manifest global, as in the proof), then the second ask on the next console use. Every request answered 503 (accepted, no key): 30 Ghost lines and 1 narrator line across both calls. Crafted requests as Ghost got 403: the real line with a Cyrillic word appended, free text, and a misspelt line; the exact line got 503. Evidence: `tts-proof/m02-r4-session.jsonl` and `tts-proof/server-3017-r4.log` in the session scratch directory.
+
+### Merge and suites
+
+- Merged `main` (90 commits) into the branch; no conflicts (`games_controller.rb` merged cleanly).
+- Full suites under the shared lock after the merge: Rails 1,541 runs, 0 failures, 0 errors, 1 skip; JS 486 of 486 files passed.
+
+### Build log corrections
+
+Round 1 said the seven `player_name()` lines were all still voiced and listed them as open. They are text lines of a phone contact with no voiced call, never sent to `/tts` by the game and refused by design since round 2; both places are corrected above.
+
 ## Handover
 
-- State: round 2 fixes done and committed; full suites green (counts above).
+- State: round 4 fix done and committed; full suites green (counts in round 4).
 - The real ceiling on paid generation per game: a game can only make the endpoint generate its own scenario's reachable clips, each once (a generated clip is cached for every game). With round 2 that set is the batch's lines, the untagged form of each tagged line, barks, chatter, `Narrator:` lines of every story and lines the walker can't place: 1,274 clips for m10, 1,145 for m02, under 640 for each other mission (lab_physical_pentest 269). Before round 2, m02 reached 1,553 (non-call phone stories and prefixed and cross-speaker variants), past the limit. Per game and per hour the cap is `LIMIT` 1,500 misses per server process, so with several workers 1,500 times the worker count, and a restart or a new game gives a new budget; but since every reachable clip is generated once and then served from the cache, the real ceiling for a mission across all games is its reachable set once per voice (plus retries after failed generations, which the per-game limit bounds).
-- Open: glue siblings (nit 7); a shared store for the limiter; the seven `player_name()` lines (round 1, for the user).
+- Open: glue siblings (nit 7); a shared store for the limiter. (The seven `player_name()` lines were listed here; they are non-call phone text, never requested by the game and refused by design, so they are not open.)
 - Files: `app/services/break_escape/tts_line_resolver.rb` (new), `ink_text_validator.rb`, `tts_line_extractor.rb`, `tts_generation_limit.rb`, `games_controller.rb`, tests listed above.
