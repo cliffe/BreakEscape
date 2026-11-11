@@ -1,6 +1,7 @@
 # Resume note: access model work resumed (2026-11-11)
 
 Branch `claude/break-escape-access-design-090sjx` (= main at ffdc7e585). Parked branches restored with `git am -3` on the handover's bases, main merged in, one worktree each: `.claude/worktrees/p-voice-direction-tag`, `p-stage-directions-m02-m07`, `p-9-1-step5-holds-doors`, `p-9-2-u-a` (branches `build/<name>`). Builders on each (opus55); full Rails/JS suites run under a shared `flock` because the test DB is shared. Order: voice tag, then stage directions, then 9.1 step 5 and 9.2 U/A (each 2 to 5 review rounds), then 9.3a step 9 with 9.1 step 8, then 9.2 B, H, L, C. User questions: form https://claude.ai/artifact/PanecaCQBMChKnqsDGa98a (answers in its `answers` collection).
+Merged 2026-11-11: voice delivery tag (5 review rounds, R5 major fixed and checked by the orchestrator), then stage directions m02 to m07 (voicing the 72 lines still needs the user's cost approval). Running: 9.1 step 5 (R4 fixes, R5 last), 9.2 U and A (R2). Fix on main 8dafe1863: habits validator parses on Ruby 2.7.8.
 
 # Resume note: access model, lab follow-up and voice delivery tag (parked 2026-11-10)
 
