@@ -40,15 +40,15 @@ EXTERNAL operational_stress_level()     // LOCAL - How stressed the current situ
 
 {
     - npc_location() == "handler_station":
-        Haxolottle: Agent {player_name()}! Good to see you. What's up?
+        Haxolottle: Agent! Good to see you. What's up? #delivery: swinging round from the monitors, pleased
     - npc_location() == "briefing_room":
         Haxolottle: Okay, let's review the handler support plan for this operation. #delivery: settling in, businesslike
     - npc_location() == "comms_active":
-        Haxolottle: Reading you clearly, {player_name()}. How can I help?
+        Haxolottle: Reading you clearly, Agent. How can I help? #delivery: over secure comms, calm and focused
     - npc_location() == "safehouse":
         Haxolottle: Hey. Safe to talk here. What do you need? #delivery: relaxed
     - else:
-        Haxolottle: {player_name()}! What brings you by?
+        Haxolottle: Hey! What brings you by?
 }
 
 -> mission_hub
@@ -137,7 +137,7 @@ EXTERNAL operational_stress_level()     // LOCAL - How stressed the current situ
 + [That's all for now]
     {
         - npc_haxolottle_influence >= 70:
-            Haxolottle: Alright, {player_name()}. Always good talking with you. Take care of yourself.
+            Haxolottle: Alright, Agent. Always good talking with you. Take care of yourself. #delivery: genuine warmth
         - npc_haxolottle_influence >= 40:
             Haxolottle: Sounds good. Let me know if you need anything. Really, anytime.
         - else:
@@ -216,7 +216,7 @@ Haxolottle: Tell me the situation. What's the immediate threat?
 + [Equipment failure in critical situation]
     Narrator: Haxolottle opens a second channel to Dr. Chen.
     Haxolottle: Chen, I need you. Equipment failure, active operation. #delivery: urgent
-    Haxolottle: Agent {player_name()}, Chen is on comms now. Walk them through the problem.
+    Haxolottle: Okay, Agent, Chen is on comms now. Walk them through the problem.
     -> equipment_crisis_support
 
 === crisis_solution_planning ===
@@ -265,7 +265,7 @@ Haxolottle: Route to waypoint Bravo. #delivery: clear, precise
 
 Haxolottle: I've got eyes on security feeds. I'll guide you around patrol patterns.
 
-Haxolottle: {player_name()}—you've got this. I'm with you every step. Move now.
+Haxolottle: Agent, you've got this. I'm with you every step. Move now. #delivery: firm but caring
 
 #emergency_extraction_active
 -> DONE
@@ -402,7 +402,7 @@ Haxolottle: Okay. Either my feeds are compromised or ENTROPY changed something r
 Haxolottle: Recommend trusting your eyes over my monitors. Proceed with extreme caution. I'm investigating the discrepancy.
 
 {npc_haxolottle_influence >= 50:
-    Haxolottle: And {player_name()}? Be careful. If my intel is wrong, you're more exposed than we thought.
+    Haxolottle: And Agent? Be careful. If my intel is wrong, you're more exposed than we thought. #delivery: concerned
     ~ npc_haxolottle_influence += 5
 #influence_gained:5
 }
@@ -534,7 +534,7 @@ Haxolottle: Before we do the formal debrief—are you actually okay? Not the pro
 
 + [Downplay it professionally]
     Narrator: Haxolottle sees straight through it.
-    Haxolottle: Agent {player_name()}. I watched that mission. It was rough. Don't minimize it.
+    Haxolottle: Agent. I watched that mission. It was rough. Don't minimise it.
     Haxolottle: Acknowledging difficulty isn't weakness. It's accurate assessment.
     -> rough_mission_debrief
 
@@ -552,11 +552,11 @@ Haxolottle: Before we do the formal debrief—are you actually okay? Not the pro
 Haxolottle: Debrief complete. After-action report will go to Netherton and operational archives. #delivery: wrapping up, businesslike
 
 {mission_phase():
-    Haxolottle: Mission status: {total_missions_completed + 1} operations completed successfully.
+    Haxolottle: Mission status: another operation completed successfully.
     ~ total_missions_completed += 1
 }
 
-Haxolottle: You did good work, {player_name()}. Really.
+Haxolottle: You did good work, Agent. Really.
 
 #debrief_complete
 -> mission_hub

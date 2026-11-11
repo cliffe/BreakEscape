@@ -39,11 +39,11 @@ EXTERNAL equipment_status()             // LOCAL - Status of player's equipment 
 
 {
     - npc_location() == "lab":
-        Dr. Chen: {player_name()}! Perfect timing. Come check this out!
+        Dr. Chen: Perfect timing! Come check this out! #delivery: turning from the workbench, bright
     - npc_location() == "equipment_room":
         Dr. Chen: Oh hey! Here for gear? I just finished calibrating some new equipment.
     - npc_location() == "briefing_room":
-        Dr. Chen: Agent {player_name()}. Let's talk about the tech side of this operation.
+        Dr. Chen: Agent. Let's talk about the tech side of this operation. #delivery: businesslike, pointing out the displays
     - npc_location() == "field_support":
         Dr. Chen: Reading you loud and clear. What do you need? #delivery: over a comms link, quick and clear
     - else:

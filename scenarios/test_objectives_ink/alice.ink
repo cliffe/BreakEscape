@@ -92,8 +92,6 @@ You've done great! Once Bob helps you finish, come back for the final debrief.
 // This knot is triggered automatically when the secret_mission aim is completed
 // via eventMappings: "objective_aim_completed:secret_mission" -> "final_debrief"
 
-Narrator: Alice looks up as you approach.
-Narrator: Alice gives you a knowing smile.
 Bob: You did it! The secret mission is complete.
 NPC: I just received confirmation from headquarters.
 #complete_task:final_debrief

@@ -84,11 +84,11 @@ EXTERNAL current_mission_id()           // LOCAL - Current mission identifier
 
 {
     - total_missions_completed == 1:
-        Netherton: Agent {player_name()}. I have a few minutes available. Is there something you wish to discuss?
+        Netherton: Agent. I have a few minutes available. Is there something you wish to discuss?
     - npc_netherton_influence >= 60:
         Netherton: Agent. Your performance has been noted. What can I address for you today?
     - else:
-        Netherton: Agent {player_name()}. You have questions?
+        Netherton: Agent. You have questions?
 }
 
 + {not npc_netherton_discussed_handbook} [Ask about the Field Operations Handbook]
@@ -401,11 +401,11 @@ Netherton: Specific areas for development will be addressed in formal performanc
 
 {
     - npc_netherton_influence >= 70:
-        Netherton: Agent {player_name()}. Your continued excellent performance has been noted. What do you wish to discuss?
+        Netherton: Agent. Your continued excellent performance has been noted. What do you wish to discuss?
     - npc_netherton_influence >= 60:
         Netherton: Agent. I have time for a brief discussion.
     - else:
-        Netherton: Agent {player_name()}. What requires attention?
+        Netherton: Agent. What requires attention?
 }
 
 + {not npc_netherton_discussed_difficult_decisions} [Ask about making difficult command decisions]
@@ -705,7 +705,6 @@ Netherton: Do I miss field work? #delivery: setting formality aside
     ~ npc_netherton_influence += 20
 #influence_gained:20
     ~ npc_netherton_personal_moments += 1
-    Narrator: You stay silent, giving him space.
     -> field_nostalgia
 
 * [Say you'd miss it in his position]
@@ -789,11 +788,11 @@ Netherton: But that's the price of command. Acceptable trade for the impact I ca
 
 {
     - npc_netherton_influence >= 80:
-        Netherton: Agent {player_name()}. Your continued excellence is appreciated. What's on your mind?
+        Netherton: Agent. Your continued excellence is appreciated. What's on your mind? #delivery: almost warm
     - npc_netherton_influence >= 70:
         Netherton: Agent. I have time for a substantive discussion.
     - else:
-        Netherton: Agent {player_name()}. What do you need?
+        Netherton: Agent. What do you need?
 }
 
 + {not npc_netherton_discussed_weight_of_command and npc_netherton_influence >= 75} [Ask about the weight of command]
@@ -863,9 +862,7 @@ Netherton: Because agents in the field depend on command making sound choices. M
 
 Netherton: You carry it by remembering it's not about you. It's about the mission. About protecting the people under your command. About the larger purpose.
 
-Narrator: Netherton puts his glasses back on.
-
-Netherton: And some days that's enough. Other days you just carry it anyway.
+Netherton: And some days that's enough. Other days you just carry it anyway. #delivery: composed again, formal
 
 ~ npc_netherton_influence += 40
 #influence_gained:40
@@ -945,7 +942,6 @@ Netherton: I remember all eleven names. All their final missions. All the choice
     ~ npc_netherton_influence += 25
 #influence_gained:25
     ~ npc_netherton_personal_moments += 1
-    Narrator: You stay silent, out of respect.
     -> losses_silence
 
 === losses_they_chose ===
@@ -986,9 +982,7 @@ Netherton: I know. And I carry that. For all eleven.
 
 Netherton: So yes. I blame myself. Whether or not the blame is rational. It's mine to carry.
 
-Narrator: Netherton puts his glasses back on.
-
-Netherton: Thank you for asking directly. Few people do.
+Netherton: Thank you for asking directly. Few people do. #delivery: formal again, composed
 
 ~ npc_netherton_influence += 50
 #influence_gained:50
@@ -1084,15 +1078,11 @@ Netherton: Then I accept that I made a choice that harmed someone. That I priori
 
 Netherton: And I question whether that math is ever truly justified. Whether there was an alternative I failed to see. Whether I'm rationalizing harm.
 
-Narrator: Netherton takes off his glasses.
-
-Netherton: I don't have a clean answer. I make the choices. I live with the consequences. I try to minimize harm while completing necessary missions.
+Netherton: I don't have a clean answer. I make the choices. I live with the consequences. I try to minimize harm while completing necessary missions. #delivery: taking a moment, tired
 
 Netherton: Some days that feels like enough. Other days it feels like self-serving rationalization for moral compromise.
 
-Narrator: Netherton puts his glasses back on.
-
-Netherton: The uncertainty is... probably healthy. The moment I become comfortable with moral compromise is the moment I should resign.
+Netherton: The uncertainty is... probably healthy. The moment I become comfortable with moral compromise is the moment I should resign. #delivery: back to formal
 
 ~ npc_netherton_influence += 40
 #influence_gained:40
@@ -1180,9 +1170,7 @@ Netherton: I never achieved that balance. Perhaps never tried hard enough. The w
 ~ npc_netherton_personal_moments += 2
 ~ npc_netherton_shared_vulnerability = true
 
-Narrator: Netherton takes off his glasses, unusually vulnerable.
-
-Netherton: Some days. Yes.
+Netherton: Some days. Yes. #delivery: unusually vulnerable
 
 Netherton: I wonder what life would have been like if I'd left after ten years. Taken civilian work. Built a normal life. Had a family.
 
@@ -1194,9 +1182,7 @@ Netherton: And I'm effective at it. Better than most. If I'd left, would my repl
 
 Netherton: So... regrets? Yes. But I'd likely make the same choices again. The work needed doing. I was capable. That felt like enough.
 
-Narrator: Netherton puts his glasses back on.
-
-Netherton: Feels like enough. Most days.
+Netherton: Feels like enough. Most days. #delivery: composing himself, formal again
 
 ~ npc_netherton_influence += 50
 #influence_gained:50
@@ -1212,9 +1198,9 @@ Netherton: Ask me again in twenty years when I retire. Maybe then I'll know. #de
 
 Netherton: Right now, in the middle of it, the answer has to be yes. Because if it's not worth it, then I've wasted my life and damaged myself for nothing.
 
-Netherton: But objectively? #delivery: then a long pause after the question
+Netherton: But objectively? #delivery: measured
 
-Netherton: We've prevented significant attacks. Saved lives. Protected critical systems. That has measurable value.
+Netherton: We've prevented significant attacks. Saved lives. Protected critical systems. That has measurable value. #delivery: after a long pause
 
 Netherton: My personal happiness has... less clear value. The math suggests the trade was justified.
 
@@ -1234,10 +1220,9 @@ Netherton: Though I sometimes suspect I only believe that because accepting the 
 
 {
     - npc_netherton_influence >= 90:
-        Narrator: For once, Netherton uses your first name.
-        Netherton: {player_name()}. We should talk.
+        Netherton: We should talk. #delivery: unusually warm, informal, dropping the formality
     - npc_netherton_influence >= 80:
-        Netherton: Agent {player_name()}. I value your perspective. What's on your mind?
+        Netherton: Agent. I value your perspective. What's on your mind?
     - else:
         Netherton: Agent. I have time.
 }
@@ -1613,7 +1598,7 @@ Netherton: The fact that you understand that—that protocols are tools, not rep
 
 {
     - npc_netherton_influence >= 70:
-        Netherton: Acceptable performance continues, Agent {player_name()}. Dismissed.
+        Netherton: Acceptable performance continues, Agent. Dismissed.
     - npc_netherton_influence >= 55:
         Netherton: Carry on, Agent.
     - else:
@@ -1639,7 +1624,7 @@ Netherton: The fact that you understand that—that protocols are tools, not rep
 
 {
     - npc_netherton_influence >= 85:
-        Netherton: Agent {player_name()}. Your service is valued. Genuinely.
+        Netherton: Agent. Your service is valued. Genuinely. #delivery: rare warmth
     - npc_netherton_influence >= 75:
         Netherton: Excellent work continues. Carry on, Agent.
     - else:
@@ -1652,8 +1637,7 @@ Netherton: The fact that you understand that—that protocols are tools, not rep
 
 {
     - npc_netherton_influence >= 95:
-        Narrator: Netherton uses your first name.
-        Netherton: {player_name()}. It's been an honor working with you. Until next time.
+        Netherton: It's been an honour working with you. Until next time. #delivery: warm, for once without the formality
     - npc_netherton_influence >= 85:
         Netherton: Thank you for your time, Agent. And for your service.
     - else:

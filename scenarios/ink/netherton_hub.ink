@@ -39,7 +39,7 @@ EXTERNAL mission_phase()                // LOCAL - Phase of current mission ("pr
 
 {
     - npc_location() == "office":
-        Netherton: Agent {player_name()}. What do you need?
+        Netherton: Agent. What do you need? #delivery: curt, waving you to the chair
     - npc_location() == "briefing_room":
         Netherton: Agent. We have matters to discuss. #delivery: formal, measured
     - npc_location() == "field":
@@ -47,7 +47,7 @@ EXTERNAL mission_phase()                // LOCAL - Phase of current mission ("pr
     - npc_location() == "safehouse":
         Netherton: We're clear to talk here. What's on your mind? #delivery: quiet, private
     - else:
-        Netherton: Agent {player_name()}. What requires my attention?
+        Netherton: Agent. What requires my attention?
 }
 
 -> mission_hub
@@ -111,7 +111,7 @@ EXTERNAL mission_phase()                // LOCAL - Phase of current mission ("pr
 + [That will be all, Director]
     {
         - npc_netherton_influence >= 80:
-            Netherton: Very well, Agent {player_name()}. Continue your excellent work.
+            Netherton: Very well, Agent. Continue your excellent work. #delivery: almost warm
         - npc_netherton_influence >= 60:
             Netherton: Dismissed. Maintain your current performance level.
         - else:
@@ -221,7 +221,7 @@ Netherton: Questions?
 + [I'm ready to proceed]
     Narrator: Netherton hands you the mission packet.
     Netherton: Excellent. Review the details. Brief with Dr. Chen for equipment. Haxolottle will coordinate deployment. #delivery: crisp, businesslike
-    Netherton: Agent {player_name()}—execute this cleanly. We're counting on you.
+    Netherton: Agent, execute this cleanly. We're counting on you. #delivery: direct, holding your gaze
     #mission_briefing_complete
     -> mission_hub
 
@@ -320,7 +320,7 @@ Narrator: Netherton brings up a classified display.
 
 Netherton: Current threat level: Elevated. ENTROPY has increased activity across three operational theaters.
 
-Netherton: CYBER-PHYSICAL division is running {total_missions_completed + 15} active operations. Your work is part of that larger campaign.
+Netherton: CYBER-PHYSICAL division is running dozens of active operations. Your work is part of that larger campaign.
 
 Netherton: We're making progress. But ENTROPY adapts. The fight continues.
 
@@ -329,7 +329,7 @@ Netherton: We're making progress. But ENTROPY adapts. The fight continues.
     -> mission_hub
 
 + [Ask how the division is performing]
-    Netherton: We meet operational objectives consistently. Success rate is {85 + (npc_netherton_influence / 10)} percent over the past quarter.
+    Netherton: We meet operational objectives consistently. Success rate is close to ninety percent over the past quarter.
     Netherton: Acceptable, but there's room for improvement. Every failed operation represents unmitigated risk.
     -> mission_hub
 

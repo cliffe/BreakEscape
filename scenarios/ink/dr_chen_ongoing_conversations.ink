@@ -85,11 +85,11 @@ EXTERNAL current_mission_id()           // LOCAL - Current mission identifier
 
 {
     - total_missions_completed == 1:
-        Dr. Chen: Agent {player_name()}! Great timing. Just finished calibrating the new sensor array. What can I help you with today?
+        Dr. Chen: Great timing, Agent! Just finished calibrating the new sensor array. What can I help you with today?
     - npc_chen_influence >= 60:
         Dr. Chen: Oh hey! Got a minute? I've been dying to show someone this new encryption bypass I developed.
     - else:
-        Dr. Chen: Agent {player_name()}. Need tech support? Equipment upgrades? I'm all ears.
+        Dr. Chen: Hey, Agent. Need tech support? Equipment upgrades? I'm all ears.
 }
 
 + {not npc_chen_discussed_tech_philosophy} [Ask about their approach to technology]
@@ -485,11 +485,11 @@ Dr. Chen: I might have a focus problem. But all of it's important! How do you pr
 
 {
     - npc_chen_influence >= 70:
-        Dr. Chen: {player_name()}! Perfect timing. I just had a breakthrough on that encryption problem we discussed. Want to hear about it?
+        Dr. Chen: Perfect timing! I just had a breakthrough on that encryption problem we discussed. Want to hear about it?
     - npc_chen_influence >= 60:
         Dr. Chen: Hey! Got some time? I could use a field agent's perspective on something.
     - else:
-        Dr. Chen: Agent {player_name()}. What can I help with today?
+        Dr. Chen: Hi, Agent. What can I help with today?
 }
 
 + {not npc_chen_discussed_experimental_tech} [Ask about experimental technology]
@@ -908,11 +908,11 @@ Dr. Chen: If you ever think I've built something that crosses ethical lines, tel
 
 {
     - npc_chen_influence >= 85:
-        Dr. Chen: {player_name()}! I've been waiting for you. Got something amazing to show you.
+        Dr. Chen: There you are! I've been waiting for you. Got something amazing to show you. #delivery: genuine excitement
     - npc_chen_influence >= 75:
         Dr. Chen: Hey! Perfect timing. Want to brainstorm something together?
     - else:
-        Dr. Chen: Agent {player_name()}. What brings you by?
+        Dr. Chen: Hello, Agent. What brings you by?
 }
 
 + {not npc_chen_discussed_dream_projects and npc_chen_influence >= 80} [Ask about their dream projects]
@@ -1316,11 +1316,11 @@ Dr. Chen: Arrogance in security research gets people hurt. Stay humble. Stay tho
 
 {
     - npc_chen_influence >= 95:
-        Dr. Chen: {player_name()}! I was just thinking about you. Want to see what we've accomplished together?
+        Dr. Chen: Oh, hey! I was just thinking about you. Want to see what we've accomplished together? #delivery: lighting up
     - npc_chen_influence >= 85:
         Dr. Chen: Hey partner! Got time to collaborate on something?
     - else:
-        Dr. Chen: {player_name()}. What's up?
+        Dr. Chen: Hey. What's up?
 }
 
 + {not npc_chen_discussed_future_vision and npc_chen_influence >= 90} [Ask about their vision for the future]
@@ -1727,7 +1727,7 @@ Dr. Chen: Peaceful. After years of fighting cyber threats. Just... peace.
 
 {
     - npc_chen_influence >= 85:
-        Dr. Chen: Always energizing talking with you, {player_name()}. Let's do this again soon!
+        Dr. Chen: Always energising talking with you. Let's do this again soon!
     - npc_chen_influence >= 75:
         Dr. Chen: Great conversation. Stay safe out there, okay?
     - else:
@@ -1767,7 +1767,7 @@ Dr. Chen: Peaceful. After years of fighting cyber threats. Just... peace.
 
 {
     - npc_chen_influence >= 75:
-        Dr. Chen: Always a pleasure, {player_name()}. Let's collaborate again soon!
+        Dr. Chen: Always a pleasure, Agent. Let's collaborate again soon!
     - npc_chen_influence >= 60:
         Dr. Chen: Thanks for the chat. Stay safe out there.
     - else:

@@ -37,7 +37,6 @@ Sam Ellery: Afternoon. Sam, facilities. Something I can help with? #delivery: lo
     -> hub
 
 === challenge ===
-Narrator: Sam steps across the doorway.
-Sam Ellery: Hold on, that door is staff only. Back this way, please. #delivery: firm but polite
+Sam Ellery: Hold on, that door is staff only. Back this way, please. #delivery: stepping into the doorway, firm but polite
 #exit_conversation
 -> hub
