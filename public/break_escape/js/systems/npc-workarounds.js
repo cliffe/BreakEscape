@@ -122,6 +122,8 @@ export class NpcWorkarounds {
 
         if (run.do === 'emit') {
             started();
+            // q21: no visit shows it, so the needs system shows the workaround icon for a moment
+            this._needs()?.showWorkaround?.(npcId);
             if (typeof run.event === 'string' && run.event) this._emit(run.event, { npcId, level: job.level });
             this._send(key, false);
             return true;

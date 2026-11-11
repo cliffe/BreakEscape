@@ -1030,7 +1030,7 @@ An outage is a global: a resource's `downIf`, or a station's `affordance.offWhen
 
 #### What the student sees
 
-- **The icon.** While `tell` is 1 or 2 and the NPC has no job, its action icon shows `blocked`; at `tell` 2 it pulses. It works with `"chatter": false`.
+- **The icon.** Just after a failed work use (a counted failure: 4 seconds, once the failure's line has gone) the NPC's action icon shows `barrier`, a plain striped barrier; a check visit to the down resource waits until it has shown. If the outage is fixed meanwhile, the barrier ends and the check visit is dropped. While `tell` is 1 or 2 and the NPC has no job, it shows `blocked`; at `tell` 2 it pulses. While it does a workaround (walking to write the note or prop the door, asking a colleague, using a borrowed PC, and for 4 seconds after an `emit`, a workaround visit or a borrowed PC's use) it shows `workaround`, an arrow hopping the barrier. A refusal or no-access mutter with no line (`station_fail`, `work_fail_no_access`, `work_fail_fed_up`, `social_blocked`, `usb_refused`) shows the barrier as its picture; a down printer, share or email shows its own (`print`, `file`, `work`). A workaround's start line shows the workaround picture. A USB refusal gets the picture only, not the 4 second icon. All of it works with `"chatter": false`.
 - **The mutter.** One line on each counted failure, chosen at the moment of failure from the first pool with a line in this order: at `tell` 2, `work_fail_fed_up`; otherwise the cause's own pool; then `work_fail`. With no line anywhere the NPC shows the pool's picture instead. A grumble is voiced where the NPC has a voice, so mutter lines are lines to voice.
 - **The engine says nothing of its own.** Every line lives in the scenario's top-level `chatter` (any NPC may say it, so name a kind of thing and no person) or an NPC's own `chatter`; the NPC's pool adds to the scenario's. Lines follow the chatter rules (under 40 characters, one line, no `{ }`).
 
@@ -1735,7 +1735,25 @@ A call the player must finish: it opens by itself, can't be closed, and if somet
 
 #### Voiced phone calls
 
-Phone texts are silent. A call can be spoken instead: add `"voiced": true` to the mapping that opens it (`conversationMode: "phone-chat"`) or to the contact's `timedConversation`, next to `disableClose` and `resume`. It is off unless set.
+Phone texts are silent. A call can be spoken instead. There are three places to say so, and all are off unless set:
+
+| Where | Form | What it voices |
+|---|---|---|
+| An event mapping | `"voiced": true` on a mapping with `conversationMode: "phone-chat"`, next to `disableClose` and `resume` | the call that mapping opens: its `targetKnot` and what it reaches |
+| A timed conversation | `"voiced": true` on the contact's `timedConversation` (not a `videoCall` one, which is person-chat and always voiced) | the timed call's `targetKnot` and what it reaches |
+| The contact | `"voiced": true` on the phone NPC itself | a call the player places through a pretext card (`pretext-card.js` `callLaunch`, a desk phone in `lab_social_engineering`): it opens on the contact's home knot, so the home knot counts as a call knot |
+
+```json
+{ "id": "dev_service_desk", "displayName": "Dev", "npcType": "phone",
+  "voiced": true, "callLabel": "Ledgerwell service desk",
+  "voice": { "name": "...", "style": "...", "language": "en-GB" } }
+```
+
+The contact-level key only voices calls that go through `callLaunch`. Opening the same contact from the player's phone contact list is a silent text thread, because the phone app passes no `voiced` param. Use it for a contact who is only ever phoned, never texted.
+
+**The call screen.** A voiced call (`params.voiced`, outside the `terminal` theme) draws a call screen in place of the message thread (`phone-call-ui.js`): an "ON CALL" bar with the running time, the contact's portrait large with a speaking indicator, subtitles for the current line (the previous one dimmed), the reply choices, and a red end-call button in place of the back arrow (hidden on a forced `disableClose` call). The caption under the caller's name is the call's own `callLabel` (on the mapping or `timedConversation`), else the contact's `callLabel`, else "Voice call". Write it as the phone would show it: "SAFETYNET secure line", "Unknown number", "Ledgerwell service desk". Every line still goes into the thread's history, so the notepad and a later open of the thread outside a call show it as messages.
+
+**Write a call as a call, a text as a text.** The player sees a call screen and hears a voice, or reads a silent thread. Ink that says "you picked up", "get off her line", "Are you safe?" / "Please be quick" or "Your handset rings" needs a voiced form; a contact configured as plain phone-chat with call wording reads as a text thread that claims to be a phone call. Short typed messages, links, "sent you" and emoji belong in a text thread, not a voiced call.
 
 - Each line the contact speaks plays through TTS as it appears in the thread, as in person-chat, and the next line waits until it has finished. Clicking the thread skips the line playing.
 - A line prefixed with another character's display name (`Director Netherton: Put her on.`) is spoken in that character's `voice`, with their `voice.fx`. A character with no `voice` is read in the contact's voice. Player lines (`You: …`, `#speaker:player`) and narration are not spoken.

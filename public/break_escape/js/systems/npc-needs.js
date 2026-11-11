@@ -88,21 +88,24 @@ export const PICTURE_CHATTER = Object.freeze({
     // Slice 19: a desk-phone call nobody hears (or with no lines left) shows the phone
     phone: Object.freeze(['phone']),
     phone_message: Object.freeze(['phone']),
-    // Access slice 9.2 U (ACCESS_MODEL_SLICE_9_2_PLAN 7): a device the PC's USB policy refused
-    usb_refused: Object.freeze(['blocked']),
+    // Access slice 9.2 U (ACCESS_MODEL_SLICE_9_2_PLAN 7): a device the PC's USB policy refused.
+    // User decision q27: a refused or failed use shows the barrier (was blocked, which keeps its
+    // office-life meaning: nothing permitted reachable)
+    usb_refused: Object.freeze(['barrier']),
     // Access slice 9.2 A (plan 5.5): the failure mutters and the workaround start lines
-    station_fail: Object.freeze(['blocked']),
-    work_fail_no_access: Object.freeze(['blocked']),
-    work_fail_fed_up: Object.freeze(['blocked']),
-    social_blocked: Object.freeze(['blocked']),
+    station_fail: Object.freeze(['barrier']),
+    work_fail_no_access: Object.freeze(['barrier']),
+    work_fail_fed_up: Object.freeze(['barrier']),
+    social_blocked: Object.freeze(['barrier']),
     work_fail_file_share: Object.freeze(['file']),
     work_fail_printer: Object.freeze(['print']),
     work_fail_email: Object.freeze(['work']),
     work_fail: Object.freeze(['work']),
-    wk_writes_down: Object.freeze(['work']),
-    wk_prop_door: Object.freeze(['work']),
-    wk_borrow: Object.freeze(['work']),
-    wk_share_login: Object.freeze(['work']),
+    // User decision q21: a workaround's start line shows the workaround icon (was work)
+    wk_writes_down: Object.freeze(['workaround']),
+    wk_prop_door: Object.freeze(['workaround']),
+    wk_borrow: Object.freeze(['workaround']),
+    wk_share_login: Object.freeze(['workaround']),
     login_aloud: Object.freeze(['social'])
 });
 const PICTURE_DEFAULT = Object.freeze(['social']);
@@ -131,7 +134,8 @@ export const TURN_BACK = Object.freeze({
  * whose place cannot be reached is kept (check visit, workaround visit).
  */
 export const JUDGED_NEEDS = Object.freeze(['work', 'social_media']);
-export const FAIL_SHOW_MS = 4000;
+export const FAIL_SHOW_MS = 4000;          // after the failure's grumble, if one is showing
+export const WORKAROUND_SHOW_MS = 4000;    // an emit workaround's icon (it has no visit to show it)
 export const FAILURE_PARKS = Object.freeze(['off', 'failed', 'held']);
 export const VISIT_DWELL_S = 8;
 export const VISIT_DROP_MS = Object.freeze({ check: 60000, workaround: 120000 });
@@ -477,7 +481,7 @@ export class NPCNeedsSystem {
             // re-arm mark per need, resources already checked this outage, queued visits, the
             // shown failure, and the outage kick's last-seen conditions and pending needs
             frustration: 0, tell: 0, settled: false,
-            rearm: {}, failSent: {}, checked: new Set(), visits: [], borrow: null, failedShow: null, failCause: {},
+            rearm: {}, failSent: {}, checked: new Set(), visits: [], borrow: null, failedShow: null, workaroundShow: null, failCause: {},
             kickSeen: {}, kickPending: new Set(),
             urgentFlag: {},
             mode: 'idle',
@@ -1228,6 +1232,11 @@ export class NPCNeedsSystem {
         const id = s.npcId;
         this._decay(s);
         if (s.borrow) this._tickBorrow(s);
+        // Review R2 m1: an outage fixed while the barrier shows ends it, as q17 fades the frustration icon
+        if (s.failedShow && s.failedShow.missing.length && this._causesPass(s, s.failedShow.missing)) {
+            s.failedShow = null;
+            this._log(id, 'failed_cleared');
+        }
 
         const pos = this.world.npcPos(id);
         if (!pos) return; // sprite not loaded: decay only
@@ -1893,6 +1902,30 @@ export class NPCNeedsSystem {
     }
 
     /**
+     * Access slice 9.2 (user decision q21): the workaround icon with no job (getState().workaround)
+     * for WORKAROUND_SHOW_MS after any line showing now. The runner calls it for an `emit`, which
+     * has no visit; a workaround visit calls it when done, since the start line (shown from the
+     * hand-over) can hide the action icon for a short visit's whole length. False for an NPC the
+     * system does not run. Review R2 m2: an emit landing while the NPC has a job shows nothing,
+     * since the job shows its own icon and a new job clears this one; it is not saved for later.
+     */
+    showWorkaround(npcId) {
+        const s = this.states.get(npcId);
+        if (!s) return false;
+        if (s.job) { this._log(npcId, 'workaround_skipped', { job: s.job.kind }); return true; }
+        this._showWorkaround(s);
+        return true;
+    }
+
+    /** The workaround icon for WORKAROUND_SHOW_MS after any line (also as a visit or borrow ends). */
+    _showWorkaround(s) {
+        const npcId = s.npcId;
+        const said = s.saying && s.saying.until > this.clockMs ? s.saying.until - this.clockMs : 0;
+        s.workaroundShow = { until: this.clockMs + said + WORKAROUND_SHOW_MS };
+        this._log(npcId, 'workaround_shown');
+    }
+
+    /**
      * Access slice 9.2 (plan 5.5): one line from `topic` (a mutter) over one NPC, through the grumble
      * path with the chatter cooldown ignored; the topic's own picture with no line. False for an
      * NPC the system does not run.
@@ -2072,7 +2105,10 @@ export class NPCNeedsSystem {
      */
     _countFailure(s, need, missing, objectId) {
         const id = s.npcId;
-        s.failedShow = { need, missing: (missing || []).map(c => ({ ...c })), until: this.clockMs + FAIL_SHOW_MS };
+        // User decision q27: counted from the end of the failure's grumble, which hides the action
+        // icon while it shows, so the barrier icon is seen after the line (as avoidShow is)
+        const said = s.saying && s.saying.until > this.clockMs ? s.saying.until - this.clockMs : 0;
+        s.failedShow = { need, missing: (missing || []).map(c => ({ ...c })), until: this.clockMs + said + FAIL_SHOW_MS };
         // q17 (2026-11-11): the causes of the last counted failure of each need, for causeCleared
         s.failCause[need] = (missing || []).map(c => ({ ...c }));
         const drain = Number(this._plan(s)?.breakDrain);
@@ -2110,16 +2146,18 @@ export class NPCNeedsSystem {
     _causeCleared(s) {
         const needs = Object.keys(s.failCause || {});
         if (!needs.length) return false;
+        if (!this.world.workRules?.causesClear) return false;
+        return needs.every(n => this._causesPass(s, s.failCause[n] || []));
+    }
+
+    /** Whether every cause in `list` would pass now (causesClear, plus a switched-off station). */
+    _causesPass(s, list) {
         const rules = this.world.workRules;
         if (!rules?.causesClear) return false;
-        const plan = this._plan(s);
         // A switched-off station (`off`) has cleared once its offWhen no longer holds
         const offClear = c => { const rec = this._offSeen.get(c.id); return !!rec && !this._globalHolds(rec.cond); };
-        return needs.every(n => {
-            const list = s.failCause[n] || [];
-            const off = list.filter(c => c.why === 'off');
-            return off.every(offClear) && rules.causesClear(plan, list.filter(c => c.why !== 'off'), g => this._globalValue(g));
-        });
+        const off = list.filter(c => c.why === 'off');
+        return off.every(offClear) && rules.causesClear(this._plan(s), list.filter(c => c.why !== 'off'), g => this._globalValue(g));
     }
 
     /** A failed park whose wakeOn names `name` and whose causes would all pass now retries soon (5.2). */
@@ -2233,12 +2271,22 @@ export class NPCNeedsSystem {
     _startVisit(s) {
         const v = s.visits[0];
         const limit = VISIT_DROP_MS[v.kind === 'check' ? 'check' : 'workaround'];
-        if (this.clockMs - v.queuedAt >= limit) {
+        // Review R2 m1: nobody walks off to check a resource that works again; the resource is
+        // freed, so a later failure on it queues a check afresh
+        const cleared = v.kind === 'check' && v.data?.resourceId && this._causesPass(s, [{ id: v.data.resourceId, why: 'down' }]);
+        if (cleared || this.clockMs - v.queuedAt >= limit) {
             s.visits.shift();
-            this._log(s.npcId, 'visit_dropped', { kind: v.kind, target: v.at.objectId || v.at.npcId });
-            this._emit(`npc_visit_dropped:${s.npcId}`, { npcId: s.npcId, kind: v.kind, at: { ...v.at }, data: v.data });
+            if (cleared) s.checked.delete(v.data.resourceId);
+            this._log(s.npcId, 'visit_dropped', { kind: v.kind, target: v.at.objectId || v.at.npcId, reason: cleared ? 'cleared' : undefined });
+            this._emit(`npc_visit_dropped:${s.npcId}`, { npcId: s.npcId, kind: v.kind, at: { ...v.at }, data: v.data, ...(cleared ? { reason: 'cleared' } : {}) });
             return false;
         }
+        // Review R1 M1: a check visit waits out the barrier or workaround icon (a job's icon would
+        // hide it), and nothing else starts meanwhile: the line, the icon, then off to check.
+        // Not guarded by _judged (review R2 n2): only _countFailure queues a check, from a judged
+        // use, and the hold lasts only while an icon shows, so a check some future caller queues
+        // for an office-life NPC would wait at most WORKAROUND_SHOW_MS, which is harmless
+        if (v.kind === 'check' && this._iconShowing(s)) return true;
         if (this.clockMs - v.triedAt < 1000) return false;
         v.triedAt = this.clockMs;
         const place = this._visitPlace(s, v);
@@ -2248,12 +2296,19 @@ export class NPCNeedsSystem {
         return true;
     }
 
+    /** The barrier (failedShow) or workaround (workaroundShow) icon is still in its time. */
+    _iconShowing(s) {
+        return !!((s.failedShow && this.clockMs < s.failedShow.until) || (s.workaroundShow && this.clockMs < s.workaroundShow.until));
+    }
+
     _completeVisit(s) {
         const id = s.npcId;
         const v = s.job.visit;
         this._log(id, 'visit_done', { kind: v.kind, target: v.at.objectId || v.at.npcId });
         this._emit(`npc_visit_done:${id}`, { npcId: id, kind: v.kind, at: { ...v.at }, data: v.data });
         if (v.kind === 'check' && v.at.objectId) this._emit(`npc_checked:${v.at.objectId}`, { npcId: id, objectId: v.at.objectId, data: v.data });
+        // q21: the start line can cover a short visit's whole icon, so it stays a moment after
+        if (v.kind === 'workaround') this._showWorkaround(s);
         const stayPut = s.atPost && this._targetsOwnPost(s);
         s.job = null;
         this._goHome(s, { stayPut });
@@ -2533,6 +2588,10 @@ export class NPCNeedsSystem {
 
     _startJob(s, pick) {
         const id = s.npcId;
+        // Review R1 m4, R2 m2: a job shows its own icon, so neither an emit's workaround icon nor
+        // the barrier comes back after it (failCause stays: q17's fade needs it)
+        s.workaroundShow = null;
+        s.failedShow = null;
         s.job = {
             need: pick.need, kind: pick.kind, targetId: pick.targetId,
             itemId: pick.itemId || null, tag: pick.tag || null,
@@ -3002,6 +3061,8 @@ export class NPCNeedsSystem {
         this._log(id, 'borrow_done', { target: job.targetId, met, leftOpen: b.leavesOpen });
         if (b.leavesOpen) this._emit(`npc_borrowed_session:${job.targetId}`, { npcId: id, objectId: job.targetId, met });
         this._emit(`npc_borrow_done:${id}`, { npcId: id, objectId: job.targetId, met, leftOpen: b.leavesOpen, index: b.index, hand: b.hand });
+        // Review R1 m1: as a workaround visit, the start line can hide a short borrowed use's icon
+        this._showWorkaround(s);
     }
 
     /**
@@ -4058,7 +4119,8 @@ export class NPCNeedsSystem {
         for (const k of Object.keys(s.levels)) levels[k] = round2(s.levels[k]);
         return {
             npcId, mode: s.mode, levels, atPost: s.atPost, scriptSuspended: s.scriptSuspended,
-            job: s.job ? { windingUp: !!s.job.windupUntil, need: s.job.need, kind: s.job.kind, phase: s.job.phase, targetId: s.job.targetId, itemId: s.job.itemId, carrying: s.job.carrying, tag: s.job.tag || null, leashed: !!s.job.leashed, privateSkipped: !!s.job.privateSkipped, prints: !!s.job.prints, errand: !!s.job.errand, files: !!(s.job.stowAt && s.job.slot), phone: !!s.job.phone, queuePlace: s.job.phase === 'queued' ? this._queuers(s.job.targetId).indexOf(s) + 1 : null } : null,
+            // workaround (q21): a workaround visit, or the use of a PC borrowed by a workaround
+            job: s.job ? { workaround: !!(s.job.borrowed || (s.job.kind === 'visit' && s.job.visit?.kind === 'workaround')), windingUp: !!s.job.windupUntil, need: s.job.need, kind: s.job.kind, phase: s.job.phase, targetId: s.job.targetId, itemId: s.job.itemId, carrying: s.job.carrying, tag: s.job.tag || null, leashed: !!s.job.leashed, privateSkipped: !!s.job.privateSkipped, prints: !!s.job.prints, errand: !!s.job.errand, files: !!(s.job.stowAt && s.job.slot), phone: !!s.job.phone, queuePlace: s.job.phase === 'queued' ? this._queuers(s.job.targetId).indexOf(s) + 1 : null } : null,
             pressing: this._pressing(s),
             talking: this._talking(npcId),
             chatPartner: this._chatPartner(npcId),
@@ -4075,6 +4137,8 @@ export class NPCNeedsSystem {
             // counted (for FAIL_SHOW_MS), queued visits, and whether a visit is running
             frustration: s.frustration, tell: s.tell, settled: s.settled,
             failed: s.failedShow && this.clockMs < s.failedShow.until ? { need: s.failedShow.need, missing: s.failedShow.missing.map(c => ({ ...c })) } : null,
+            // q21: an emit workaround just done (showWorkaround), for WORKAROUND_SHOW_MS
+            workaround: !!(s.workaroundShow && this.clockMs < s.workaroundShow.until),
             visits: s.visits.map(v => ({ kind: v.kind, at: { ...v.at } })),
             visiting: s.job?.kind === 'visit' ? { kind: s.job.visit?.kind || null, at: { ...(s.job.visit?.at || {}) } } : null,
             judged: { work: this._judged(s, 'work'), social_media: this._judged(s, 'social_media') },
