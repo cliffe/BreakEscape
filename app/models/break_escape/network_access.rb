@@ -200,6 +200,8 @@ module BreakEscape
       player_state['gainedFootholds'] = gained_footholds
       player_state['gainedFootholds'] << jack_id if first
       player_state['inventory'] << link_item_for(foothold_id)
+      # A worn device planted in a jack comes off (Wearables)
+      release_worn_unless_held!
       save!
 
       { status: :ok, body: { success: true, foothold: foothold_for_client(foothold_id), inventory: player_state['inventory'],

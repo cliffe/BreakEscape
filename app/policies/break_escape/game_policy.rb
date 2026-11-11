@@ -104,6 +104,11 @@ module BreakEscape
       show?
     end
 
+    # Wearable items (docs/achitechture/WEARABLE_BUILD_LOG.md)
+    def wear?
+      show?
+    end
+
     # Networks (slice 9.3a, section 5)
     def network?
       show?

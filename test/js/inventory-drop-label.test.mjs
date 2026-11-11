@@ -47,6 +47,15 @@ test('any other item keeps its plain name', () => {
     assert.equal(inventoryHoverLabel({ name: 'Mug', droppable: 'true' }), 'Mug');
 });
 
+// Review R2, client 4: the hover label of the worn item says so
+test('the worn wearable\'s hover label says "(worn)"', () => {
+    globalThis.window.wearables = { isWorn: (d) => d?.id === 'vest' };
+    try {
+        assert.equal(inventoryHoverLabel({ id: 'vest', name: 'Hi-vis vest' }), 'Hi-vis vest (worn)');
+        assert.equal(inventoryHoverLabel({ id: 'coat', name: 'Lab coat' }), 'Lab coat');
+    } finally { delete globalThis.window.wearables; }
+});
+
 test('an item with no name gets no half label', () => {
     assert.equal(inventoryHoverLabel({ droppable: true }), undefined);
     assert.equal(inventoryHoverLabel(undefined), undefined);

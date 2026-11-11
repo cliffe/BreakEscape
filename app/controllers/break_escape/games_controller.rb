@@ -26,7 +26,7 @@ module BreakEscape
 
     before_action :set_game, only: [:show, :scenario, :scenario_map, :ink, :room, :container, :update_room, :unlock, :inventory, :objectives, :capture_secrets, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :tts, :reset, :new_session, :vm_panel, :vm_set_panel, :conclude_mission,
                                         :login, :logout, :login_accounts, :clone_card, :network, :network_plant, :network_unplug,
-                                        :npc_frustration, :npc_workaround]
+                                        :npc_frustration, :npc_workaround, :wear]
     # A host may also route the game page under its own address (Hacktivity: /hacktivities/:event_id/play/mission/:id,
     # inside a Game event's web app scope). The game must belong to that event: any other pair is a 404.
     before_action :require_game_in_host_event, only: [:show]
@@ -92,7 +92,7 @@ module BreakEscape
     # network_unplug write footholds, the inventory and sessions (slice 9.3a, section 5).
     around_action :with_game_lock, only: [:container, :update_room, :unlock, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :reset, :new_session, :inventory, :room,
                                           :login, :logout, :clone_card, :network_plant, :network_unplug,
-                                          :npc_frustration, :npc_workaround]
+                                          :npc_frustration, :npc_workaround, :wear]
 
     # GET /games/new?mission_id=:id
     # Show VM set selection page for VM-required missions
@@ -301,6 +301,9 @@ module BreakEscape
         if @game.player_state['submitted_flags'].present?
           filtered['submittedFlags'] = @game.player_state['submitted_flags']
         end
+
+        # The worn item (Wearables), so the tray frame comes back after a reload
+        filtered['wornItem'] = @game.worn_record if @game.worn_record
 
         # Include saved global variables so the client can restore them on session resume.
         # These are merged over the scenario defaults in game.js, allowing flags like
@@ -1246,6 +1249,23 @@ module BreakEscape
       render json: result[:body], status: result[:status]
     end
 
+    # POST /games/:id/wear (item_id, worn) -- put a held wearable item on or take it off
+    # (docs/achitechture/WEARABLE_BUILD_LOG.md). The server checks the item is held and
+    # wearable, keeps one item worn at a time and writes the worn global itself; sync_state
+    # cannot. worn defaults to true; worn false with no item_id takes off whatever is worn.
+    def wear
+      authorize @game if defined?(Pundit)
+
+      worn = params.key?(:worn) ? ActiveModel::Type::Boolean.new.cast(params[:worn]) : true
+      item_id = params[:item_id].presence&.to_s
+      if worn && item_id.nil?
+        return render json: { success: false, message: 'Missing item_id' }, status: :bad_request
+      end
+
+      result = @game.wear!(item_id, worn)
+      render json: result[:body], status: result[:status]
+    end
+
     # POST /games/:id/network/unplug (jack_id)
     def network_unplug
       authorize @game if defined?(Pundit)
@@ -2097,8 +2117,9 @@ module BreakEscape
     # item (notepad, decor cup) has no scenario copy, so these are removed.
     # The last five are authored behaviour a client must not invent: a forged
     # droppable would pass the player_drop check (Game#add_item_to_room!), a
-    # forged needsTag would feed an NPC need, and wearable, holds and storeIn are
-    # the planned wearable item and holder fields (feedback plan, sections 4 and 6).
+    # forged needsTag would feed an NPC need, a forged wearable would let POST wear
+    # put on a costume the scenario never offered (Wearables), and holds and storeIn
+    # are the holder fields (feedback plan, section 6).
     CLIENT_ITEM_FORBIDDEN_FIELDS = %w[
       opens_lock key_id keyId scenarioData requires lockType locked
       contents itemsHeld flags flagRewards keyPins saved_cards

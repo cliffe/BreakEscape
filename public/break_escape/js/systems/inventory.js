@@ -28,9 +28,10 @@ export function createItemIdentifier(scenarioData) {
 
 // Hover label of an inventory item: its plain name. A droppable item no longer says
 // "(click to drop)": its click opens a menu that offers the drop (inventory-menu.js),
-// and a touch screen never showed the hover label anyway.
+// and a touch screen never showed the hover label anyway. A worn wearable adds "(worn)".
 export function inventoryHoverLabel(scenarioData) {
-    return scenarioData?.name;
+    const worn = globalThis.window?.wearables?.isWorn?.(scenarioData) === true;
+    return worn && scenarioData?.name ? `${scenarioData.name} (worn)` : scenarioData?.name;
 }
 
 // ---------------------------------------------------------------------------
@@ -137,6 +138,8 @@ export function refreshInventoryTray() {
                 if (slot?.classList) {
                     slot.classList.toggle(TRAY_HIDDEN_CLASS, state.hidden === true);
                     drawTrayBadge(slot, state.badge);
+                    // The worn frame and "(worn)" label of a worn wearable (wearables.js)
+                    window.wearables?.decorateSlot?.(item);
                 }
                 if (before && key && !before.has(key) && !trayRestored.has(item) && state.holderId) {
                     filedArrivals.push({ item, holderId: state.holderId });
@@ -1165,6 +1168,8 @@ export function removeFromInventory(item) {
         
         // Remove from array
         window.inventory.items.splice(itemIndex, 1);
+        // A worn item that leaves the inventory comes off (wearables.js)
+        try { window.wearables?.onItemLeft?.(item); } catch (e) { console.warn('[inventory] wearable take-off failed:', e); }
         
         // Remove the entire slot from DOM. A slot removed under the cursor (a
         // consumable used from the inventory) never gets mouseleave, so clear

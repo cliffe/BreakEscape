@@ -5,12 +5,14 @@
  * (interactions.js). An item with more than one thing to do instead opens a
  * small menu over the tray:
  *
+ *   droppable wearable                 "Put on" or "Take off", "Drop here", "Examine"
  *   droppable, no triggerOnInteract    "Drop here", "Examine"
  *   droppable with triggerOnInteract   "Use" (useLabel overrides the word), "Drop here", "Examine"
  *   everything else                    no menu: the click does what it did before
  *
- * A carried item with triggerOnInteract that is not droppable (the lab's hi-vis vest,
- * which toggles the disguise in content) has no menu: its click is its trigger.
+ * A wearable that is not droppable (the lab's hi-vis vest) has no menu: its click puts it
+ * on or takes it off (wearables.js). A worn wearable under unseenOnly is not dropped while
+ * someone in the room is watching.
  *
  * The two tests that decide this are the tests the interaction chain itself
  * makes for a held item, in the same order: hasTriggerOnInteract (its first
@@ -91,7 +93,13 @@ export function inventoryMenuFor(sprite, ctx = {}) {
         ? { id: 'drop', label: 'Drop here', disabled: true, reason: blocked }
         : { id: 'drop', label: 'Drop here' };
     const entries = [];
-    if (hasTriggerOnInteract(data)) {
+    // A wearable's first entry puts it on or takes it off (wearables.js); "Use" maps to the
+    // click, which interactions.js routes to the wearable before any triggerOnInteract
+    const ctxWindow = ctx.window ?? (typeof window !== 'undefined' ? window : {});
+    const wearLabel = ctxWindow.wearables?.menuLabel?.(data, ctxWindow);
+    if (wearLabel) {
+        entries.push({ id: 'use', label: wearLabel });
+    } else if (hasTriggerOnInteract(data)) {
         const useLabel = typeof data.useLabel === 'string' && data.useLabel.trim() ? data.useLabel.trim() : 'Use';
         entries.push({ id: 'use', label: useLabel });
     }
@@ -130,9 +138,11 @@ export function openInventoryItemMenu(el, clientX, clientY, deps = {}) {
     const actions = {
         use: () => w.handleObjectInteraction?.(el),
         drop: () => {
-            const reason = blockedNow();
+            // A worn item under unseenOnly is not dropped in front of anyone (wearables.js)
+            const reason = blockedNow() || (w.wearables?.isWorn?.(el, w) ? w.wearables.changeRefusal?.(el.scenarioData, 'drop', w) : null);
             if (reason) {
-                w.gameAlert?.(reason, 'warning', 'Drop here', 3000);
+                // The reason can name watchers (author text): plain text, never markup
+                w.gameAlert?.(reason, 'warning', 'Drop here', 3000, { plainText: true });
                 return;
             }
             (deps.dropInventoryItem ?? dropInventoryItem)(el);

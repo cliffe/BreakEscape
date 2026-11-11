@@ -168,7 +168,8 @@ test('an action condition is read strictly: a malformed or non-string one never 
     }
 });
 
-// A carried disguise (lab_physical_pentest kit_hivis_vest): two confirm_actions with opposite
+// A toggle made of two confirm_actions with opposite conditions (the pattern lab_physical_pentest's
+// kit_hivis_vest used before it became a wearable item): two confirm_actions with opposite
 // conditions on one item make an on/off toggle. confirm_action does not block the list, so
 // both conditions are read at the click and the confirmed action cannot trip the other.
 test('two confirms with opposite conditions toggle: one prompt per click, even after it is confirmed', async () => {
