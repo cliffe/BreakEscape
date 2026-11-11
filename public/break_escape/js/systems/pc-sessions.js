@@ -60,6 +60,16 @@
  * pc_signed_out and closes an open desktop with "<owner> is back at the desk" or "The screen
  * locked". A password session is ended by none of these.
  *
+ * Guest claims and displacement (slice 9.2 H, ACCESS_MODEL_SLICE_9_2_PLAN.md 6.4).
+ * claim(pcId, { as: 'guest' }) claims the session a borrowing NPC left open at a hot desk
+ * (POST /login with claim "guest"); it ends as a claim does, on the auto lock and on a reload,
+ * never on an owner's return. One screen holds one session: when an NPC sits down at a PC
+ * (npc_sat_at:<pcId>), and again when it leaves a borrowed session there
+ * (npc_borrowed_session:<pcId>, for a remote sign-in started while it sat), displaced(pcId, name)
+ * ends whatever session the player holds there (password, claim, guest claim or remote): POST
+ * /logout, pc_signed_out with reason displaced, and an open desktop closes with
+ * "<name> has signed in at this PC".
+ *
  * Exposed as window.pcSessions; window.__test.access.sessions() reads list().
  */
 
@@ -79,6 +89,13 @@ export function unplugEndedMessage(hosts = []) {
     return `Unplugged. Your session${list.length === 1 ? '' : 's'} on ${names} ended.`;
 }
 export const backAtDeskMessage = (name) => `${name || 'The owner'} is back at the desk`;
+export const displacedMessage = (name) => `${name || 'Someone'} has signed in at this PC`;
+
+function npcName(npcId) {
+    const w = typeof window !== 'undefined' ? window : {};
+    const rec = w.npcManager?.getNPC?.(npcId) || w.npcManager?.npcs?.get?.(npcId) || null;
+    return rec?.displayName || npcId || null;
+}
 
 function apiClient() {
     return (typeof window !== 'undefined' && (window.ApiClient || window.APIClient)) || null;
@@ -117,6 +134,10 @@ export class PcSessions {
         dispatcher.on('workstation_owner_returned:*', (d) => { if (d?.objectId) this.ownerReturned(d.objectId); });
         dispatcher.on('workstation_auto_locked:*', (d) => { if (d?.objectId) this.screenAutoLocked(d.objectId); });
         dispatcher.on('network_device_unplugged', (d) => this.linkDropped(d?.endedPcIds));
+        // 9.2 H (6.4): an NPC sitting down, or leaving a borrowed session, ends the player's there
+        const sat = (d) => { if (d?.objectId) this.displaced(d.objectId, npcName(d.npcId)); };
+        dispatcher.on('npc_sat_at:*', sat);
+        dispatcher.on('npc_borrowed_session:*', sat);
         return true;
     }
 
@@ -253,8 +274,9 @@ export class PcSessions {
      *                                    then: pc_signed_in, then pc_signed_out auto_locked)
      *   { ok: false, reason: 'error', error: true, status, message }
      */
-    async claim(pcId) {
+    async claim(pcId, { as = 'owner' } = {}) {
         this.listen();
+        const guest = as === 'guest';
         const api = apiClient();
         if (!api?.login) return { ok: false, reason: 'error', error: true, status: null, message: 'Sign-in is not available' };
         const g = (typeof window !== 'undefined' && window.gameState?.globalVariables) || {};
@@ -264,7 +286,7 @@ export class PcSessions {
         };
         let body;
         try {
-            body = await api.login(pcId, { claim: 'owner', globals });
+            body = await api.login(pcId, { claim: guest ? 'guest' : 'owner', globals });
         } catch (err) {
             const b = err?.body || {};
             if (err?.status === 422) return { ok: false, reason: 'refused', message: b.message || 'Sign in required' };
@@ -274,12 +296,13 @@ export class PcSessions {
             return { ok: false, reason: 'refused', message: body?.message || 'Sign in required' };
         }
         const session = { npcId: body.npcId, username: body.username ?? null, displayName: body.displayName ?? null, via: 'claim' };
+        if (guest) session.guest = true;
         this._replace(pcId, session);
         // The owner came back while the claim was in flight: workstation_owner_returned
         // fired before there was a session to end, so end it now, as that event would have.
         const ws = typeof window !== 'undefined' ? window.workstationState : null;
         let present = false;
-        try { present = !!(ws?.presence && ws.presence(pcId)?.present); } catch (e) { present = false; }
+        try { present = !guest && !!(ws?.presence && ws.presence(pcId)?.present); } catch (e) { present = false; }
         if (present) {
             const message = backAtDeskMessage(session.displayName);
             await this._endClaim(pcId, 'owner_returned', message);
@@ -296,10 +319,10 @@ export class PcSessions {
         return { ok: true, session: publicSession(pcId, session) };
     }
 
-    /** workstation_owner_returned:<pcId>: a claimed session there ends. */
+    /** workstation_owner_returned:<pcId>: a claimed session there ends (never a guest's, 6.4). */
     async ownerReturned(pcId) {
         const s = this.sessions.get(pcId);
-        if (!s || s.via !== 'claim') return false;
+        if (!s || s.via !== 'claim' || s.guest) return false;
         return this._endClaim(pcId, 'owner_returned', backAtDeskMessage(s.displayName));
     }
 
@@ -320,6 +343,25 @@ export class PcSessions {
         }
         this._emit('pc_signed_out', { pcId, npcId: previous.npcId ?? null, reason, firstAtPc: !!previous.firstAtPc });
         this._closeDesktop(pcId, message, reason);
+        return true;
+    }
+
+    /**
+     * 9.2 H (6.4): an NPC signed in at pcId, so the player's session there (of any kind) ends:
+     * POST /logout, pc_signed_out with reason displaced, and an open desktop closes with
+     * "<name> has signed in at this PC". Resolves false when the player held none there.
+     */
+    async displaced(pcId, name) {
+        const previous = this.sessions.get(pcId);
+        if (!previous) return false;
+        this.sessions.delete(pcId);
+        const message = displacedMessage(name);
+        this._closeDesktop(pcId, message, 'displaced');
+        this._emit('pc_signed_out', { pcId, npcId: previous.npcId ?? null, reason: 'displaced', ...this._remoteOf(previous) });
+        const api = apiClient();
+        if (api?.logout) {
+            try { await api.logout(pcId); } catch (e) { console.warn('[pc-sessions] logout of a displaced session failed', e); }
+        }
         return true;
     }
 

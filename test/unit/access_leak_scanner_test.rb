@@ -476,4 +476,65 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
     assert_empty scan({ 'do' => 'writes_down', 'index' => 0, 'hand' => 1 }), 'a run has no at'
   end
 
+
+  # ---- Slice 9.2 sub-slice H (plan 6.5): the heard share
+
+  SAM_PASSWORD = 'Sam-Share-PW-4417'.freeze
+  SHARE = '/break_escape/games/1/npc_workaround'.freeze
+
+  def share_scenario
+    {
+      'startRoom' => 'open_office',
+      'rooms' => { 'open_office' => {
+        'type' => 'room_office', 'connections' => {},
+        'npcs' => [
+          { 'id' => 'sam', 'npcType' => 'person', 'creds' => { 'username' => 'sokafor', 'password' => SAM_PASSWORD },
+            'workarounds' => [{ 'at' => 50, 'do' => 'share_login', 'with' => 'ruth' }] },
+          { 'id' => 'ruth', 'npcType' => 'person' },
+          { 'id' => 'kim', 'npcType' => 'person', 'creds' => { 'username' => 'kim', 'password' => SAM_PASSWORD } }
+        ]
+      } }
+    }
+  end
+
+  def share_game(shared)
+    create_access_game(mission: break_escape_missions(:ceo_exfil), player: break_escape_demo_users(:test_user),
+                       scenario: share_scenario, player_state: { 'unlockedRooms' => ['open_office'], 'sharedLogins' => shared })
+  end
+
+  def heard_answer(extra = {})
+    { 'capture' => { 'targetId' => 'sam', 'kind' => 'credential', 'address' => 'sokafor',
+                     'note' => "Sam told Ruth his login out loud: sokafor / #{SAM_PASSWORD}" },
+      'line' => "It's sokafor. Password's #{SAM_PASSWORD}.",
+      'note' => "Sam told Ruth his login out loud: sokafor / #{SAM_PASSWORD}", 'displayName' => 'Sam' }.merge(extra)
+  end
+
+  def post_rows(*bodies)
+    bodies.each_with_index.map do |(method, path, body), i|
+      ['r.jsonl', i + 1, { 'method' => method, 'path' => path, 'status' => 200, 'cmdSeq' => i, 'body' => body }]
+    end
+  end
+
+  test 'a heard share_login answer may hold the sharer\'s password at line, note and capture.note, then in savedNotes and se_captures' do
+    game = share_game(['sam'])
+    saved = ['GET', '/break_escape/games/1/scenario',
+             { 'savedNotes' => [{ 'id' => 'n1', 'text' => heard_answer['note'] }],
+               'globalVariables' => { 'se_captures' => [heard_answer['capture']] } }]
+    assert_empty AccessLeakScanner.new(game.scenario_data, game: game).scan(post_rows(['POST', SHARE, heard_answer], saved))
+  end
+
+  test 'the share exception needs the game, sharedLogins, the POST route and the allowed paths' do
+    findings = AccessLeakScanner.new(share_game([]).scenario_data, game: share_game([])).scan(post_rows(['POST', SHARE, heard_answer]))
+    assert_equal %w[npc:sam npc:kim], findings.map(&:owner).uniq, 'not in sharedLogins'
+
+    game = share_game(['sam'])
+    assert_equal 2, AccessLeakScanner.new(game.scenario_data).scan(post_rows(['POST', SHARE, heard_answer])).map(&:owner).uniq.length, 'no game'
+    findings = AccessLeakScanner.new(game.scenario_data, game: game).scan(post_rows(['POST', SHARE, heard_answer('extra' => SAM_PASSWORD)]))
+    assert_equal ['$.extra'], findings.map(&:json_path).uniq
+    findings = AccessLeakScanner.new(game.scenario_data, game: game).scan(post_rows(['POST', '/break_escape/games/1/npc_frustration', heard_answer]))
+    refute_empty findings, 'another route'
+    saved = ['GET', '/break_escape/games/1/scenario', { 'savedNotes' => [{ 'id' => 'n1', 'text' => heard_answer['note'] }] }]
+    refute_empty AccessLeakScanner.new(game.scenario_data, game: game).scan(post_rows(saved)), 'savedNotes before any heard answer'
+  end
+
 end

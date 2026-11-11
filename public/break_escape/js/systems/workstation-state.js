@@ -23,6 +23,18 @@
  *                                       listener can tell "came back and typed a password" from
  *                                       "came back to an open screen"
  *
+ * Guests (access slice 9.2 H, ACCESS_MODEL_SLICE_9_2_PLAN.md 6.4). An NPC that borrowed an
+ * unowned hot desk and left it signed in is that PC's guest, recorded on `npc_guest_left:<pcId>`
+ * (the workaround runner, when the server's answer arrives). The guest's leave is a leave with the
+ * screen open: `<pcId>_owner_away` true and `<pcId>_screen_locked` false, and
+ * `workstation_owner_left:<pcId>` with { objectId, ownerId: <npcId>, screenLocked: false,
+ * reason: 'guest' }; a policy's autoLockMin above 0 sets lockAt, and at lockAt the guest session
+ * ends with `workstation_auto_locked:<pcId>` { objectId, ownerId: <npcId>, guest: true }. A click
+ * with a guest and nobody at the PC answers 'accessed' (the claim is a guest claim, `guestOf`).
+ * The next NPC to sit there (`npc_sat_at:<pcId>`) ends it with no workstation_owner_returned,
+ * and a reload starts with none. `env.userOf(objectId)` (optional) names the NPC using the object
+ * now; a click while anybody uses it answers 'attended', and presence() carries it as userId.
+ *
  * `isLocked(objId)` answers "is this screen locked right now?" (owner away and screen locked)
  * without emitting anything; systems/screen-states.js draws the locked look from it.
  *
@@ -171,6 +183,7 @@ export class WorkstationState {
         this.leftAt = new Map(); // ownerId -> needs clock ms of the current leave (auto lock)
         this.pendingLocks = new Map(); // objectId -> data, open screens with a policy lockAt
         this.idle = new Map(); // objectId -> needs-clock ms the idle clock started (open, owner away)
+        this.guests = new Map(); // pcId -> { npcId, lockAt? }: a borrower left the session open (9.2 H)
     }
 
     _changed(data, ownerId, locked, how) {
@@ -181,6 +194,8 @@ export class WorkstationState {
         this.env.on('npc_left_post:*', (d) => this.onLeft(d?.npcId, d));
         this.env.on('npc_returned_post:*', (d) => this.onReturned(d?.npcId));
         this.env.on('npc_ko:*', (d) => this.onKnockedOut(d?.npcId));
+        this.env.on('npc_guest_left:*', (d) => this.onGuestLeft(d?.objectId, d?.npcId));
+        this.env.on('npc_sat_at:*', (d) => this.onSatAt(d?.objectId, d?.npcId));
         if (typeof this.env.onTick === 'function') this.env.onTick(() => this.checkAutoLocks());
         this.resetGlobals();
         return this;
@@ -203,13 +218,67 @@ export class WorkstationState {
         return typeof this.env.ownerTracked === 'function' ? !!this.env.ownerTracked(npcId) : true;
     }
 
-    /** The owner and whether they are present (env.ownerPresent; null without it). */
+    /**
+     * The owner and whether they are present (env.ownerPresent; null without it); userId, the
+     * NPC using the PC now (env.userOf; null without it), and guestId, a recorded guest.
+     */
     presence(objectId) {
         const data = this._find(objectId);
-        if (!data) return { ownerId: null, present: null };
+        if (!data) return { ownerId: null, present: null, userId: null, guestId: null };
         const ownerId = ownerOf(data, this.env.npcs());
         const present = ownerId && typeof this.env.ownerPresent === 'function' ? !!this.env.ownerPresent(ownerId) : null;
-        return { ownerId, present };
+        return { ownerId, present, userId: this._userOf(objectId), guestId: this.guestOf(objectId) };
+    }
+
+    _userOf(objectId) {
+        if (typeof this.env.userOf !== 'function') return null;
+        const id = this.env.userOf(objectId);
+        return typeof id === 'string' && id ? id : null;
+    }
+
+    /** The guest whose session is open at pcId now, else null (6.4). */
+    guestOf(pcId) {
+        const g = this.guests.get(pcId);
+        if (!g) return null;
+        this._checkGuestLock(pcId);
+        return this.guests.get(pcId)?.npcId || null;
+    }
+
+    _publishGuest(pcId, away, locked) {
+        this.env.setGlobal(`${pcId}_screen_locked`, !!locked);
+        this.env.setGlobal(`${pcId}_owner_away`, !!away);
+    }
+
+    /** npc_guest_left:<pcId>: the borrower left the session open; a leave with the screen open. */
+    onGuestLeft(pcId, npcId) {
+        const data = this._find(pcId);
+        if (!data || typeof npcId !== 'string' || !npcId || ownerOf(data, this.env.npcs())) return false;
+        const rec = { npcId };
+        const min = this._policy(data)?.autoLockMin;
+        if (typeof min === 'number' && Number.isFinite(min) && min > 0) rec.lockAt = this._clock() + min * 60000;
+        this.guests.set(pcId, rec);
+        this._publishGuest(pcId, true, false);
+        this.env.emit(`workstation_owner_left:${pcId}`, { objectId: pcId, ownerId: npcId, screenLocked: false, reason: 'guest' });
+        return true;
+    }
+
+    /** npc_sat_at:<pcId>: whoever sits down ends a guest session there; no owner_returned. */
+    onSatAt(pcId, npcId) {
+        if (!this.guests.has(pcId)) return false;
+        this.guests.delete(pcId);
+        this._publishGuest(pcId, false, false);
+        return true;
+    }
+
+    _checkGuestLock(pcId) {
+        const g = this.guests.get(pcId);
+        if (!g || g.lockAt === undefined || this._clock() < g.lockAt) return false;
+        this.guests.delete(pcId);
+        this._publishGuest(pcId, true, true);
+        const data = this._find(pcId) || { id: pcId };
+        this.env.emit(`workstation_auto_locked:${pcId}`, { objectId: pcId, ownerId: g.npcId, guest: true });
+        this._changed(data, g.npcId, true, 'auto');
+        return true;
     }
 
     /**
@@ -297,6 +366,7 @@ export class WorkstationState {
 
     /** The end-of-tick check: every open screen with a lockAt. */
     checkAutoLocks() {
+        for (const pcId of [...this.guests.keys()]) this._checkGuestLock(pcId);
         if (!this.pendingLocks.size) return;
         for (const data of [...this.pendingLocks.values()]) this._checkAutoLock(data);
     }
@@ -428,8 +498,16 @@ export class WorkstationState {
     onInteract(objectId) {
         const data = this._find(objectId);
         if (!data) return null;
+        // 9.2 H (6.4): anybody using the PC now is present, owner or not
+        if (this._userOf(objectId)) return 'attended';
         const ownerId = ownerOf(data, this.env.npcs());
-        if (!ownerId) return 'signin';
+        if (!ownerId) {
+            const guestId = this.guestOf(objectId);
+            if (!guestId) return 'signin';
+            this.env.setGlobal(`${objectId}_accessed`, true);
+            this.env.emit(`workstation_accessed:${objectId}`, { objectId, ownerId: guestId, guest: true });
+            return 'accessed';
+        }
         const presenceKnown = typeof this.env.ownerPresent === 'function';
         if (presenceKnown && this.env.ownerPresent(ownerId)) return 'attended';
         const rec = this.away.get(ownerId);
@@ -476,6 +554,8 @@ export function installWorkstationState() {
         objects, npcs,
         // Presence (5.4): tracked by the needs system, at its post, and available
         ownerTracked: (id) => !!needs()?.getState?.(id),
+        // 9.2 H (6.4): the NPC whose current job is using the object (not a visit)
+        userOf: (objectId) => needs()?.userOf?.(objectId) || null,
         ownerPresent: (id) => {
             const sys = needs();
             const st = sys?.getState?.(id);

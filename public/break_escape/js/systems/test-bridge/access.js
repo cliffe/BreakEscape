@@ -14,6 +14,8 @@
  *   networkView(id)     the last network view network-links.js fetched for that foothold
  *   work(npcId)         slice 9.2: the NPC's work plan (read only), frustration level and tell
  *   reports()           slice 9.2: how many POST /npc_frustration requests and reports were sent
+ *   guest(pcId)         slice 9.2 H: the guest a borrower left at a hot desk ({ npcId, lockAt }),
+ *                       who is using the PC now, and the NPC's pending borrow, if any
  *
  * All JSON in and out.
  */
@@ -34,6 +36,25 @@ export const accessBridge = {
         if (!rec && !st) return null;
         return json({ plan: rec?.work || null, frustration: st?.frustration ?? null, tell: st?.tell ?? null,
             settled: st?.settled ?? null, failed: st?.failed ?? null, parked: st?.parked ?? [] });
+    },
+
+    /**
+     * Slice 9.2 H (ACCESS_MODEL_SLICE_9_2_PLAN.md 6.4): `{ ok, pcId, guest, userId, session }`.
+     * `guest` is workstation-state.js's guest record at that PC (`{ npcId, lockAt }`, lockAt in
+     * needs-clock ms or null) or null; `userId` the NPC using the PC now; `session` the session
+     * the player holds there (pc-sessions.js), with `guest: true` for a guest claim.
+     */
+    guest(pcId) {
+        const ws = window.workstationState;
+        if (!ws) return { ok: false, reason: 'no-workstation-state' };
+        const g = ws.guests instanceof Map ? ws.guests.get(pcId) : null;
+        const s = window.pcSessions?.sessions?.get?.(pcId) || null;
+        return json({
+            ok: true, pcId,
+            guest: g ? { npcId: g.npcId, lockAt: g.lockAt ?? null } : null,
+            userId: window.npcNeedsSystem?.userOf?.(pcId) || null,
+            session: s ? { npcId: s.npcId ?? null, via: s.via ?? null, guest: !!s.guest } : null
+        });
     },
 
     /** Slice 9.2: `{ requests, reports, pending, settled }` from systems/npc-reports.js. */
