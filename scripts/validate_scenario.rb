@@ -1898,12 +1898,17 @@ def check_lock_credentials(json_data)
 
   # A key/RFID lock with no matching credential item. This is a soft-lock
   # unless the door is meant to be opened another way (e.g. lockpicked). A card a room
-  # NPC carries (creds.card or rfidCard) declares its card_id too, but only when the
-  # scenario can turn it into a way through: an rfid_cloner exists anywhere (an object,
-  # a start item or an NPC's item), or a gate into the locked room opens for a holder
-  # and the player can follow: the gate sets playerMayPassIf, or a holder it opens for
-  # holds doors (is not in the gate's noHold once habits are expanded, plan 5.4). A gate
-  # whose only holders are careful guards cannot be tailgated, so it is no way in.
+  # NPC carries (creds.card or rfidCard) declares its card_id too when an rfid_cloner
+  # exists anywhere (an object, a start item or an NPC's item). Without a cloner, each
+  # locked room that requires the card is decided on its own: the player gets in only
+  # through a gate into that room that he can follow someone through. A gate opens for
+  # any room NPC in its openFor, carrying the card or not, as door-gates.js opens for them
+  # (an id with no NPC behind it never comes near). It is a way in when it opens for
+  # someone and sets playerMayPassIf, or when an NPC it opens for holds doors, that is, is
+  # not in the gate's noHold once habits are expanded (plan 5.4). A gate that opens only
+  # for careful guards cannot be tailgated. This is a warning heuristic, not a proof of
+  # solvability: whether a cloner is itself reachable, and whether a guard ever walks the
+  # gate, are not checked.
   declared = { 'key' => Set.new, 'rfid' => Set.new }
   key_items.each { |_name, credential, lt| declared[lt] << credential }
   has_cloner = false
@@ -1916,50 +1921,74 @@ def check_lock_credentials(json_data)
     end
   end
   find_cloner.call(json_data)
+  rooms = json_data['rooms'].is_a?(Hash) ? json_data['rooms'] : {}
   rooms_requiring = lambda do |card_id|
-    rooms = json_data['rooms'].is_a?(Hash) ? json_data['rooms'] : {}
     rooms.select do |_id, r|
       r.is_a?(Hash) && r['lockType'] == 'rfid' && Array(r['requires']).map(&:to_s).include?(card_id)
     end.keys
   end
-  gates = if json_data['rooms'].is_a?(Hash)
-            BreakEscape::NpcHabits.gate_entries(BreakEscape::NpcHabits.expanded_copy(json_data).first)
-          else
-            []
-          end
-  npc_only_cards = Set.new
-  careful_only_cards = {}
-  ai.cards(json_data).each do |card_id, info|
-    holder_ids = info[:holders].map { |h| h[:npc]['id'] }.compact
-    locked_rooms = rooms_requiring.call(card_id)
-    holder_gates = gates.select { |g| locked_rooms.include?(g[:connected_room]) && (g[:open_for] & holder_ids).any? }
-    passable = holder_gates.any? do |g|
-      pass_if = g[:gate]['playerMayPassIf']
-      no_hold = Array(g[:gate]['noHold']).map(&:to_s)
-      (pass_if.is_a?(String) && !pass_if.empty?) || ((g[:open_for] & holder_ids) - no_hold).any?
-    end
-    if has_cloner || passable
+  gates = rooms.empty? ? [] : BreakEscape::NpcHabits.gate_entries(BreakEscape::NpcHabits.expanded_copy(json_data).first)
+  # The NPCs a gate can open for: an openFor id with no NPC behind it never comes near
+  room_npc_ids = rooms.values.flat_map { |r| r.is_a?(Hash) && r['npcs'].is_a?(Array) ? r['npcs'] : [] }
+                      .map { |n| n.is_a?(Hash) ? n['id'] : nil }.grep(String).to_set
+  # :open (a way in), :careful (opens only for careful guards) or nil (opens for nobody)
+  gate_state = lambda do |g|
+    guards = g[:open_for].select { |id| room_npc_ids.include?(id) }
+    return nil if guards.empty?
+
+    pass_if = g[:gate]['playerMayPassIf']
+    return :open if pass_if.is_a?(String) && !pass_if.empty?
+
+    (guards - BreakEscape::NpcHabits.gate_no_hold(g[:gate])).any? ? :open : :careful
+  end
+  # card_id => { careful: [room ids], npc_only: [room ids] }, for the rooms the player cannot enter
+  npc_card_gaps = {}
+  ai.cards(json_data).each_key do |card_id|
+    next if declared['rfid'].include?(card_id)
+
+    if has_cloner
       declared['rfid'] << card_id
-    elsif holder_gates.any?
-      careful_only_cards[card_id] = holder_gates.map { |g| g[:connected_room] }.uniq
+      next
+    end
+
+    locked_rooms = rooms_requiring.call(card_id)
+    gap = { careful: [], npc_only: [] }
+    if locked_rooms.empty?
+      # Only non-room locks require it: no gate leads to them
+      gap[:npc_only] << nil
     else
-      npc_only_cards << card_id
+      locked_rooms.each do |room_id|
+        states = gates.select { |g| g[:connected_room] == room_id }.map { |g| gate_state.call(g) }
+        next if states.include?(:open)
+
+        gap[states.include?(:careful) ? :careful : :npc_only] << room_id
+      end
+    end
+    if gap.values.all?(&:empty?)
+      declared['rfid'] << card_id
+    else
+      npc_card_gaps[card_id] = gap
     end
   end
+  quote = ->(ids) { ids.map { |r| "'#{r}'" }.join(', ') }
   %w[key rfid].each do |lock_kind|
     credential_requires[lock_kind].each do |req|
       next if declared[lock_kind].include?(req)
-      if lock_kind == 'rfid' && careful_only_cards.key?(req.to_s)
-        rooms = careful_only_cards[req.to_s].map { |r| "'#{r}'" }.join(', ')
-        issues << "⚠️ WARNING: a lock requires rfid '#{req}', and only careful guards (holdsDoors false) open " \
-                  "the gate into #{rooms}; nothing else gives the card, so the player cannot get in. Add a " \
-                  "cloner, a keycard item, a guard who holds doors, playerMayPassIf on the gate or another door."
-        next
-      end
-      if lock_kind == 'rfid' && npc_only_cards.include?(req.to_s)
-        issues << "⚠️ WARNING: a lock requires rfid '#{req}', and only an NPC carries that card. There is no " \
-                  "rfid_cloner in the scenario and no gate into the locked room opens for the holder, so the " \
-                  "player cannot use it. Add a cloner, a keycard item or a gate, or the door is a soft-lock."
+
+      gap = lock_kind == 'rfid' ? npc_card_gaps[req.to_s] : nil
+      if gap
+        unless gap[:careful].empty?
+          issues << "⚠️ WARNING: a lock requires rfid '#{req}', which only an NPC carries, and every gate into " \
+                    "#{quote.call(gap[:careful])} opens only for careful guards (holdsDoors false), who do not hold " \
+                    "it for the player. Unless another way in exists, the player is likely stuck there. Add a " \
+                    "cloner, a keycard item, a guard who holds doors, playerMayPassIf on the gate or another door."
+        end
+        unless gap[:npc_only].empty?
+          where = gap[:npc_only].compact.empty? ? 'the locked room' : quote.call(gap[:npc_only].compact)
+          issues << "⚠️ WARNING: a lock requires rfid '#{req}', and only an NPC carries that card. There is no " \
+                    "rfid_cloner in the scenario and no gate into #{where} opens for an NPC, so the player " \
+                    "cannot use it. Add a cloner, a keycard item or a gate, or the door is a soft-lock."
+        end
         next
       end
       field = lock_kind == 'rfid' ? "card_id (or opens_lock)" : 'opens_lock'

@@ -188,7 +188,8 @@ module ValidateNpcHabits
     end
   end
 
-  # An authored gate.noHold naming an id that is not in that gate's openFor.
+  # An authored gate.noHold naming an id that is not in that gate's openFor, or a noHold
+  # that is not a list (the client ignores it, NpcHabits.gate_no_hold).
   def check_gate_no_hold(json_data, issues)
     rooms = json_data['rooms']
     return unless rooms.is_a?(Hash)
@@ -198,7 +199,13 @@ module ValidateNpcHabits
 
       room['doors'].each_with_index do |door, i|
         gate = door.is_a?(Hash) ? door['gate'] : nil
-        next unless gate.is_a?(Hash) && gate['noHold'].is_a?(Array)
+        next unless gate.is_a?(Hash) && gate.key?('noHold')
+
+        unless gate['noHold'].is_a?(Array)
+          warn(issues, "rooms/#{room_id}/doors/#{i} gate.noHold is not a list: the client ignores it, so every " \
+                       'guard holds the door. Write it as a list of NPC ids.')
+          next
+        end
 
         if gate['playerMayPassIf'].is_a?(String) && !gate['playerMayPassIf'].empty? && gate['noHold'].any?
           warn(issues, "rooms/#{room_id}/doors/#{i} sets both gate.noHold and playerMayPassIf: the client follows " \

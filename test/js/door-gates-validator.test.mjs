@@ -122,7 +122,7 @@ test('a gate that opens for someone other than the holder does not declare the c
 
 // Review R2 major 1: a careful guard's gate (holdsDoors false, so in the gate's noHold) cannot
 // be tailgated, so it is no way in for the card he carries.
-const carefulOnly = 'only careful guards (holdsDoors false) open the gate into';
+const carefulOnly = 'opens only for careful guards (holdsDoors false)';
 
 test('a gate whose only holder is a careful guard is reported as a soft-lock', { skip }, () => {
     const out = credentialIssues(scenario({ passIf: null, awareness: 'high' }));
@@ -150,4 +150,79 @@ test('a careless guard, playerMayPassIf, a cloner or a second holder who holds d
         const out = credentialIssues(sc);
         assert.ok(!has(out, "'SAM-1'"), out.join('\n'));
     }
+});
+
+// Review R3 major 1: each locked room is decided on its own, so a gate into one room the
+// player can follow someone through does not clear a careful-only gate into another room
+// behind the same card.
+const badge = () => ({ name: 'Badge', card_id: 'SAM-1', rfid_protocol: 'EM4100' });
+function twoRooms() {
+    const sc = scenario({ passIf: null, awareness: 'high' });
+    sc.rooms.office.connections = { north: ['vault', 'vault2'] };
+    sc.rooms.vault2 = { type: 'room_office', connections: { south: 'office' }, locked: true, lockType: 'rfid', requires: 'SAM-1' };
+    return sc;
+}
+
+test('a gate a careless holder opens into one room does not clear a careful-only gate into another', { skip }, () => {
+    const sc = twoRooms();
+    sc.rooms.office.npcs.push({ id: 'gary', npcType: 'person', awareness: 'low', rfidCard: badge() });
+    sc.rooms.office.doors = [
+        { connectedRoom: 'vault', direction: 'north', gate: { openFor: ['gary'] } },
+        { connectedRoom: 'vault2', direction: 'north', gate: { openFor: ['sam'] } }];
+    let out = credentialIssues(sc);
+    assert.ok(out.some(s => s.startsWith('⚠️') && s.includes(carefulOnly) && s.includes("'vault2'") && !s.includes("'vault'")),
+        out.join('\n'));
+    // mirror: vault2 also has a gate Gary opens
+    sc.rooms.office.doors.push({ connectedRoom: 'vault2', direction: 'north', gate: { openFor: ['gary'] } });
+    out = credentialIssues(sc);
+    assert.ok(!has(out, "'SAM-1'"), out.join('\n'));
+});
+
+test('an authored noHold on one gate of two is decided for its own room', { skip }, () => {
+    const sc = twoRooms();
+    delete sc.rooms.office.npcs[0].awareness;
+    sc.rooms.office.doors = [
+        { connectedRoom: 'vault', direction: 'north', gate: { openFor: ['sam'] } },
+        { connectedRoom: 'vault2', direction: 'north', gate: { openFor: ['sam'], noHold: ['sam'] } }];
+    let out = credentialIssues(sc);
+    assert.ok(out.some(s => s.includes(carefulOnly) && s.includes("'vault2'") && !s.includes("'vault'")), out.join('\n'));
+    // mirror: vault2 also has a gate Sam holds
+    sc.rooms.office.doors.push({ connectedRoom: 'vault2', direction: 'north', gate: { openFor: ['sam'] } });
+    out = credentialIssues(sc);
+    assert.ok(!has(out, "'SAM-1'"), out.join('\n'));
+});
+
+test('one room with no gate and another careful-only gets both warnings, each naming its room', { skip }, () => {
+    const sc = twoRooms();
+    sc.rooms.office.doors = [{ connectedRoom: 'vault', direction: 'north', gate: { openFor: ['sam'] } }];
+    const out = credentialIssues(sc);
+    assert.ok(out.some(s => s.includes(carefulOnly) && s.includes("'vault'")), out.join('\n'));
+    assert.ok(out.some(s => s.includes(npcOnly) && s.includes("'vault2'")), out.join('\n'));
+});
+
+// Review R3 minor 1: the client opens a gate for any openFor NPC, card or not
+test('a careless guard in openFor who has no card makes the gate a way in', { skip }, () => {
+    const sc = scenario({ passIf: null, awareness: 'high' });
+    sc.rooms.office.npcs.push({ id: 'gary', npcType: 'person', awareness: 'low' });
+    sc.rooms.office.doors[0].gate.openFor = ['sam', 'gary'];
+    assert.ok(!has(credentialIssues(sc), "'SAM-1'"));
+    // the holder need not be in openFor at all
+    sc.rooms.office.doors[0].gate.openFor = ['gary'];
+    assert.ok(!has(credentialIssues(sc), "'SAM-1'"));
+    // a careful non-holder is no way in
+    sc.rooms.office.npcs[1].awareness = 'high';
+    assert.ok(has(credentialIssues(sc), carefulOnly));
+});
+
+test('an openFor id with no NPC behind it does not count', { skip }, () => {
+    const sc = scenario({ passIf: null, awareness: 'high' });
+    sc.rooms.office.doors[0].gate.openFor = ['sam', 'ghost'];
+    assert.ok(has(credentialIssues(sc), carefulOnly));
+});
+
+// Review R3 nit 1: a noHold that is not a list is read as the client reads it, as none
+test('a string noHold is ignored, so the gate holds doors', { skip }, () => {
+    const sc = scenario({ passIf: null });
+    sc.rooms.office.doors[0].gate.noHold = 'sam';
+    assert.ok(!has(credentialIssues(sc), "'SAM-1'"));
 });

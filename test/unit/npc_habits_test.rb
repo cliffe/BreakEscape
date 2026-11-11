@@ -342,4 +342,19 @@ class NpcHabitsTest < ActiveSupport::TestCase
     NH.expand!(data)
     assert_equal once, data
   end
+
+  # Review R3 nit 1: one reading of noHold, the client's (door-gates.js normaliseGate)
+  test 'gate_no_hold reads a list of strings and nothing else' do
+    assert_equal %w[sara gary], NH.gate_no_hold('noHold' => ['sara', 3, 'gary'])
+    assert_equal [], NH.gate_no_hold('noHold' => 'sara')
+    assert_equal [], NH.gate_no_hold({})
+    assert_equal [], NH.gate_no_hold(nil)
+  end
+
+  test 'a string noHold is not reported as listing the guard' do
+    data = gate_scenario([guard('sara', 'awareness' => 'high')], { 'openFor' => ['sara'], 'noHold' => 'sara' })
+    gate = report_for(NH.expand!(data), 'sara')[:doors][:gates][0]
+    assert_equal :authored_no_hold, gate[:reason]
+    assert_equal false, gate[:no_hold]
+  end
 end

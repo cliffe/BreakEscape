@@ -475,6 +475,13 @@ test('an authored gate.noHold naming an id not in its openFor', () => {
     assertLacks(warnings(out.habits), "names 'sara'");
 });
 
+// Review R3 nit 1: the client ignores a noHold that is not a list, so the validator says so
+test('an authored gate.noHold that is not a list is a warning', () => {
+    const out = run(gateScenario({ npcs: [guard('sara')], gateB: { openFor: ['sara'], noHold: 'sara' } }));
+    assertHas(warnings(out.habits), 'rooms/hall/doors/1 gate.noHold is not a list: the client ignores it');
+    assertLacks(warnings(out.habits), "names 's");
+});
+
 // Review R1 minor 5 and nit 4
 test('a preset holdsDoors on an NPC no gate opens for is left out of the report; by name it stays', () => {
     const preset = run(gateScenario({ npcs: [guard('una', { awareness: 'low' })] }));

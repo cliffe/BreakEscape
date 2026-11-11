@@ -235,6 +235,14 @@ module BreakEscape
       gate[:open_for].select { |id| holds[id] == false }.uniq
     end
 
+    # A gate's noHold as the client reads it (door-gates.js normaliseGate): the strings of a
+    # list, and nothing for any other value (a string noHold is ignored, so the gate holds
+    # doors). Every server-side reader uses this one reading.
+    def gate_no_hold(gate_cfg)
+      list = gate_cfg.is_a?(Hash) ? gate_cfg['noHold'] : nil
+      list.is_a?(Array) ? list.grep(String) : []
+    end
+
     # The report's doors entry for one NPC: each gate that opens for it, and whether it is
     # in that gate's noHold or why the habit was not applied there.
     def doors_entry(npc_id, value, gates, fills)
@@ -243,7 +251,7 @@ module BreakEscape
         fill = fills[gate[:path]]
         reason = fill.is_a?(Symbol) ? fill : nil
         # In the gate's noHold: the one written for the habit, or an authored one
-        listed = if reason == :authored_no_hold then Array(gate[:gate]['noHold']).include?(npc_id)
+        listed = if reason == :authored_no_hold then gate_no_hold(gate[:gate]).include?(npc_id)
                  else fill.is_a?(Array) && fill.include?(npc_id)
                  end
         { path: gate[:path], room: gate[:room], connected_room: gate[:connected_room],
