@@ -603,3 +603,21 @@ test('R2 M1 (server): a hand-over offered again in a later answer starts once', 
     assert.equal(calls.visits.length, 1);
     assert.equal(calls.mutters.length, 1);
 });
+
+test('R2 n2: after a 425 a lost request starts its backoff again at 2 s; R2 n1: a stuck job is warned once', async () => {
+    const { runner, calls } = stub({ failures: [{ status: 500 }, { status: 425, body: { retryAfter: 3 } }, { status: 500 },
+        { status: 500 }, { status: 500 }, { status: 500 }, { status: 500 }] });
+    const warned = [];
+    const waits = [];
+    const prev = console.warn;
+    console.warn = m => warned.push(m);
+    try {
+        runner.due({ npcId: 'ellis', run: ELLIS_RUN, level: 50 });
+        for (let i = 0; i < 7; i++) { await flush(); const t = calls.timers.shift(); waits.push(t?.ms); t?.fn(); }
+        await flush();
+    } finally { console.warn = prev; }
+    assert.deepEqual(calls.timers.length, 0);
+    assert.equal(calls.sends.length, 8);
+    assert.deepEqual(waits, [2000, 3000, 2000, 4000, 8000, 16000, 30000]);
+    assert.equal(warned.length, 1, 'once, at the fifth attempt after the 425');
+});

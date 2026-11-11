@@ -21,7 +21,10 @@
  * A failed request is resent for as long as the page lives, with a backoff from RETRY_MS doubling
  * to RETRY_MAX_MS (the server answers a spent hand-over again with the same body, and holds an
  * unspent one as handed, so giving up would lose the workaround for the session); a 425 (the
- * dwell has not passed in server time) is resent after the time left; only a 403 ends it. A
+ * dwell has not passed in server time) is resent after the time left, and the backoff starts again
+ * after it; only a 403 ends it. A job still resending after STUCK_ATTEMPTS is warned once in the
+ * console. The server also offers an unspent hand-over again in later fail answers, so a lost
+ * answer to POST /npc_frustration does not strand it; `due` starts each (npcId, index, hand) once. A
  * reload loses nothing either way: the server sends the unspent hand-over again as `pending`.
  * An answer of { dropped: true } to a "done" (the hand was already spent as dropped) is applied
  * as a drop, never as an emit's {}. On a
@@ -42,6 +45,7 @@ export const START_POOLS = Object.freeze({
 });
 export const RETRY_MS = 2000;
 export const RETRY_MAX_MS = 30000;
+export const STUCK_ATTEMPTS = 5;
 // The kinds performed by a visit. Sub-slice H adds borrow_session and share_login here; until
 // then they are given back as dropped (START_POOLS already names their lines)
 const VISIT_KINDS = new Set(['writes_down', 'prop_door']);
@@ -149,6 +153,13 @@ export class NpcWorkarounds {
             if (status === 403) { this._end(key, 'refused'); return; }
             // 425: the server's dwell has not passed yet (retryAfter is the time left); anything
             // else was lost on the way: resent with a growing wait, never given up (review R1 M1)
+            // Review R2 n2: a 425 is an answer, not a loss, so the backoff starts again after one
+            if (status === 425) job.attempts = 0;
+            // Review R2 n1: a job still resending after STUCK_ATTEMPTS losses is said once in the
+            // console, so a stuck hand-over shows in a playtest log (a 400, 404 or 422 never clears)
+            if (job.attempts === STUCK_ATTEMPTS) {
+                try { console.warn(`npc-workarounds: hand-over ${key} still unanswered after ${job.attempts} attempts (last status ${status ?? 'none'})`); } catch (e) { /* no console */ }
+            }
             const wait = status === 425
                 ? Math.min(RETRY_MAX_MS, Math.max(RETRY_MS, (Number(err?.body?.retryAfter) || Number(job.run.dwell) || 0) * 1000))
                 : retryDelay(job.attempts);
