@@ -118,3 +118,56 @@ Parked at the user's request mid-way through A-7. Branch `build/9-2-u-a`, base `
    `verify-run --access` and `access-leak-check.rb`; write the W section of `PLAYTEST.md` and a
    run report in `scenarios/test_access_work/reports/`; re-run U; the needs regression captures.
 4. A-8 documents, then commit and report.
+
+## Sub-slice A, resumed (2026-11-11): A-7 finished; handover
+
+### Done
+
+- **A-7 browser runs W1 to W7 pass** (games 1166, 1171, 1176 on port 3013); report
+  `scenarios/test_access_work/reports/2026-11-11_run_w.md`; `PLAYTEST.md` has the W section.
+  Leak check clean on 1171 and 1176.
+- **W3's task.** Cause confirmed: `safeEvaluateCondition` read an unquoted right-hand side as a
+  literal string, so `data.level < data.previous` compared a number with the string
+  "data.previous". Chosen: support a `data.`/`globalVars.` operand on the right (an unquoted
+  `value`/`name`/bare word stays a literal string, as before; no scenario had one on the right).
+  Why: the plan's W3 is "the level eases", and the event carries `previous` for exactly that; a
+  literal such as `data.level === 90` would tie the task to W2's `perFail`. Tests in
+  `npc-condition-dotted-paths.test.mjs`; README's mapping-condition paragraph and the validator's
+  message say so.
+- **Ruby 2.7.** The A code used one-line method definitions (Ruby 3); rewritten in
+  `npc_frustration.rb`, `access_work.rb`, `npc_frustration_test.rb`, `validate_access_work.rb`.
+  The A Rails tests (42 runs) pass on 2.7.8.
+- **Settled over a reload** (found in the run): the report queue now takes `settled` from GET
+  /scenario on load (`NpcReports.restore`, called in `core/game.js`); test in
+  `npc-reports.test.mjs`; live proof in game 1166 (0 requests over a failed use after reload).
+- **Scenario fixes**: `w4_cupboard` is an `unlock_object` task (`completesTaskOnOpen` is read only
+  for a ransomware display); breaker renamed "Share breaker" (its old name contained the resource
+  name, a leak-check finding); every W work station authors `"restores": 10`. Deviation from plan
+  11.1, which gives the station affordance without `restores`: with none a use restores 0, so an
+  owner works back to back, W1's "about every 15 seconds" cannot hold and W7's kick (which needs
+  her resting above `urgentAt`) cannot show.
+- Main merged (validate_npc_habits.rb on 2.7.8).
+
+### Open, in order
+
+1. **A-4** validator checks (plan A-4 and section 10), including the Kai "work never succeeds"
+   warning; fixtures in `test/js/validator-access-work.test.mjs`. Consider also warning on a work
+   station with no `restores` (not in the plan; it caught this scenario).
+2. **A-8** documents (plan A-8).
+3. **Needs regression captures** (plan 11 point 5) on `test_needs_sims`, `test_npc_needs`,
+   `test_needs_leash`, and the watch-it-happen run (11 point 6).
+4. **Full suites under the lock**; not run since A-3. Then check the shared-file edits listed in
+   the handover (npc-coffee-off's `failed` row, `validate_npc_needs.rb`, the separate withheld-keys
+   constant).
+5. W2's coffee-sooner assertion was not observed in two runs; U's run not repeated since A.
+
+### Gotchas
+
+- Host Ruby is 2.7.8 (no endless defs, no hash shorthand); `ruby -c` new files.
+- The playtest session tag comes from the URL's last number: never pass `?skip_resume=1` to
+  `session-start.sh`. To reload, set `location.href` to the game URL with `?skip_resume=1`; a
+  plain reload shows the resume overlay and `bootstrap` picks "New Session" (a new game).
+- `interact` on a `confirm_action` object may report the close button as the confirmation; click
+  `.game-confirm-ok`.
+- The test mission row was missing from the dev database; it was recreated as row 243 from
+  `mission.json` (no `db:seed`). Leftover games: 1166, 1169, 1171, 1176.
