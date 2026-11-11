@@ -1,7 +1,7 @@
-# test_access_work: scripted playtest (slice 9.2, U1 to U3 and W1 to W7)
+# test_access_work: scripted playtest (slice 9.2, U1 to U3, W1 to W7 and X1 to X4)
 
 The scripted runs for access model slice 9.2 (`docs/achitechture/ACCESS_MODEL_SLICE_9_2_PLAN.md`,
-section 11.1 and the build steps of sub-slices U and A). One room per beat, each with a sign.
+section 11.1 and the build steps of sub-slices U, A and B). One room per beat, each with a sign.
 The scenario is for testing, not play. After every beat check what is on screen, what the server
 recorded and what reached the browser.
 
@@ -42,12 +42,24 @@ Every beat ticks a task in the one aim; `window.__test.getState().objectives` li
 ## Expected validator output
 
 `LANG=C.UTF-8 ruby scripts/validate_scenario.rb scenarios/test_access_work/scenario.json.erb --no-graph`:
-no errors. Among the `work:` lines, one warning for U3's `lost_property_tray`, which takes a storage
-stick and is governed by no policy although the default blocks storage: that is the beat's point
-(plan 7, "Which objects a usb policy governs"). From sub-slice A, also the "work never succeeds"
-warning for Kai (W5), and, until sub-slice B adds X3's Ellis, the warning that the `intranet`
-resource is in no NPC's work list. After the issues the validator prints the work report: one
-`Work` line per NPC with a work plan (each resource admitted or not and what takes it down).
+no errors and these six warnings, each expected:
+
+1. Dana has two `onceOnly` mappings on `npc_frustration_changed:dana` that can pass together
+   (`w2_fed_up` and `w3_eased`): they tick different tasks, so firing together is intended.
+2. `pat_pc` is owned by `temp_user`, who has no needs, so the owner never leaves (H2's plain
+   account holder; nothing in W6 claims that PC).
+3. `temp_user` owns `pat_pc` but stands in `temp_office` (the same record, by design).
+4. The `finance_share` access list has no sign-in object on its network to map it (no beat browses
+   the share).
+5. U3's `lost_property_tray` takes a storage stick and is governed by no policy although the default
+   blocks storage: that is the beat's point (plan 7, "Which objects a usb policy governs").
+6. "Work never succeeds" for Kai (W5).
+
+X3's Ellis puts the `intranet` resource in a work list, so the "in no NPC's work list" warning of
+sub-slice A is gone. After the issues the validator prints the work report: one `Work` line per
+NPC with a work plan, and one `Workaround` line per workaround (Mei's `writes_down` and Tom's
+`prop_door`: three failed uses, tell 1, tell 2, about 75 s of outage; Ellis's `emit`: one failed
+use, "no warning", about 5 s).
 
 ## Run U: U1 to U3 (one new game, about 5 minutes)
 
@@ -87,6 +99,28 @@ Request budget: never more than one `/npc_frustration` request every two seconds
 flat after `settled`. Run W types one code, W4's, read from Omar's desktop. Last run:
 `reports/2026-11-11_run_w.md`.
 
+## Run X: X1 to X4 (two new games, about 12 minutes and 5 minutes)
+
+Hall D is west of Hall C: X1 Mei north, X2 and X4 Tom south, X3 Ellis west. Each outage is a
+switch in the beat's room (a `confirm_action`, as in run W). Game one: X2, X3, X1. Game two: X4
+alone. Hear the events with a listener on `npc_workaround:*`, `door_propped:*`,
+`npc_use_failed:*` and `npc_frustration_changed:*` installed through `eval` after each load.
+
+| Beat | Do | Expect | Events and tasks | Server record afterwards |
+|---|---|---|---|---|
+| X2 | Enter `store_lobby`. Check the fire extinguisher `store_wedge` is not in `nearby`. Switch the stores system off. Wait about 90 s. Walk into `store_room` | Tom fails three times, about 35 s apart: tell 1, tell 2, then at the third he says "I'm not badging in every time.", walks to the extinguisher by the stores door and stands there 4 s. The extinguisher appears and the door opens; Una is inside | `npc_use_failed:tom` (`stores`, `down`) x3; `npc_workaround:tom` `started` (with the third fail), `npc_visit_done:tom` at `store_wedge`, `global_variable_changed:store_door_propped`, `npc_workaround:tom` `done`, `door_propped:store_room`. Tasks `x2_started`, `x2_propped` | `unlockedRooms` has `store_room`; `encounteredNPCs` has `una`; `store_door_propped` true; `tom` level 60 (rising to 100 as the outage holds), done `[0]` |
+| X3 | Enter `event_room`. Switch the intranet off. Wait about 20 s | One failed use; at that same failure (tell goes from 0 straight to 2, because the workaround is then in force) the event fires and the task ticks. No icon or pulse comes before it | `npc_use_failed:ellis` (`intranet`, `down`), `npc_frustration_changed:ellis` 50, `npc_workaround:ellis` `started`, `ellis_gave_up` with `{ npcId, level: 50 }`, `npc_workaround:ellis` `done`. Task `x3_gave_up` | `ellis` level 50, done `[0]` |
+| X1 | Enter `note_room`. Check `mei_pc` has no `hasPostit` and `postitMarks` has no mark. Switch the rota system off. Wait about 80 s. Then wait for Mei to leave her desk (the global `mei_pc_owner_away` true; her thirst takes her to the boiler every few minutes; in the last run she left about 3 minutes after her first trip). Click her PC, read the note on the sign-in screen, sign in as Mei with it, open `Nook.txt`, and type its code on the `records_nook` door | Tell 1, tell 2, then at the third failure "I'll never remember this one.", she sits writing for 6 s and a yellow note appears on her monitor. While she is away the sign-in screen shows her username and password on the note; her desktop holds `Nook.txt`; its code opens the nook | `npc_workaround:mei` `started`, `npc_visit_done:mei` at `mei_pc`, `npc_workaround:mei` `done`; `postitMarks` has `mei_pc`; `pc_signed_in`. Tasks `x1_wrote_down`, `x1_nook` | `mei` done `[0]`; `sessions.mei_pc` Mei by password; `unlockedRooms` has `records_nook` |
+| X4 | Game two. Enter `store_lobby` and install a listener that, on `npc_workaround:tom` with `phase: "started"`, calls `window.__test.needs.setManualClock(true)`. Switch the stores system off and wait for the third failure. Reload (navigate to `/break_escape/games/<id>?skip_resume=1`, then `bootstrap`; never a query string on the `session-start.sh` URL) and walk back to `store_lobby`. Then reload again and walk back | Before the first reload Tom has stopped on his way (`visiting` the wedge) and the server holds the hand-over unspent. After it, as soon as `store_lobby` loads, Tom sets off again (`npc_workaround_due:tom` with `restored: true`) and props the door. After the second reload the extinguisher is shown at once and the stores door is unlocked: its sprite is shut, as every door is after a reload, and opens with no lock | First reload: `npc_workaround:tom` `started`, then `done` and `door_propped:store_room`. Second: no `npc_workaround` event; `store_door_propped` true from load | Before the first reload: `tom` handed 1, done `[]`. After: as X2, and only one `POST /npc_workaround` in the game |
+
+Request budget (counted from the captured responses): `/npc_frustration`, at most one request
+every two seconds overall, and per NPC one per counted failure until it is settled (Mei and Tom 5
+each to reach 100, Ellis 2); `/npc_workaround`, exactly one per done workaround (3 in game one, 1
+in game two, none for the hand-over that the first X4 reload interrupted). Every answer 200. Last
+run: `reports/2026-11-11_run_x.md`.
+
 ## Earned secrets
 
 Run U types no secret. Run W types the W4 cupboard code, read from `Cupboard.txt` on Omar's desktop after a claim.
+Run X types two secrets, each read in the game first: Mei's password from the sticky note on her
+sign-in screen (after her `writes_down`), and the records nook code from `Nook.txt` on her desktop.
