@@ -143,7 +143,7 @@ Not from you. You don't get to ask me about hospitals.
 === hook_lands ===
 ~ ghost_sale = "stopped"
 ~ ghost_call_done = true
-No. *pause* I'd rather not leave on that.
+No. I'd rather not leave on that. #delivery: a pause after the no
 My share stays where it is. A clean exit, for once.
 -> ghost_close_und
 
