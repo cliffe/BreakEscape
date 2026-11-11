@@ -350,7 +350,7 @@ curiosity, post, printout, print, queue, file, blocked, noticed, avoid, closed, 
 barrier), referenced by name only; the fallback stays the text `•`. `workaround` and `barrier`
 belong to access slice 9.2 (user decisions q21, q27): `workaround` while an NPC does a workaround
 (`getState().job.workaround`, a workaround visit or a borrowed PC's use, or `getState().workaround`
-for 4 s after an `emit`), `barrier` for 4 s after a counted failure's line has gone
+for 4 s after an `emit` or a done workaround visit, counted from the end of any line showing), `barrier` for 4 s after a counted failure's line has gone
 (`getState().failed`). With no job the order is `noticed` (when it shows), `workaround`,
 `barrier`, the frustration `blocked` (pulsing, or faded once the cause clears, q17), then the
 leashed `blocked`. Tests: `test/js/npc-workaround-barrier-icons.test.mjs`. Art clean-up (one

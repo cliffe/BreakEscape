@@ -697,7 +697,9 @@ A workaround is only an opening if the player can see it coming. All of this use
   2026-11-11), so a person working round an outage looks different from one wandering for coffee
   or checking a printer (a check visit keeps `npc-work`). An `emit` has no visit: the runner calls
   `NPCNeedsSystem.showWorkaround(npcId)`, which shows the same icon for 4 s
-  (`getState().workaround`). With no job the order is `noticed` (when it shows), `workaround`,
+  (`getState().workaround`), counted from the end of any line showing. A workaround visit calls it
+  as well when it is done: the start line is shown from the hand-over and can hide the action
+  icon for the whole of a short visit (Tom's 4 s at the wedge in the first live run). With no job the order is `noticed` (when it shows), `workaround`,
   `barrier`, the frustration `blocked`, the leashed `blocked`.
 
 ### 5.6 Outages

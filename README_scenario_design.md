@@ -1030,7 +1030,7 @@ An outage is a global: a resource's `downIf`, or a station's `affordance.offWhen
 
 #### What the student sees
 
-- **The icon.** While `tell` is 1 or 2 and the NPC has no job, its action icon shows `blocked`; at `tell` 2 it pulses. It works with `"chatter": false`.
+- **The icon.** Just after a failed use (4 seconds, once the failure's line has gone) the NPC's action icon shows `barrier`, a plain striped barrier. While `tell` is 1 or 2 and the NPC has no job, it shows `blocked`; at `tell` 2 it pulses. While it does a workaround (walking to write the note or prop the door, asking a colleague, using a borrowed PC, and for a moment after an `emit`) it shows `workaround`, an arrow hopping the barrier. A failure mutter with no line shows the barrier as its picture, and a workaround's start line the workaround picture. All of it works with `"chatter": false`.
 - **The mutter.** One line on each counted failure, chosen at the moment of failure from the first pool with a line in this order: at `tell` 2, `work_fail_fed_up`; otherwise the cause's own pool; then `work_fail`. With no line anywhere the NPC shows the pool's picture instead. A grumble is voiced where the NPC has a voice, so mutter lines are lines to voice.
 - **The engine says nothing of its own.** Every line lives in the scenario's top-level `chatter` (any NPC may say it, so name a kind of thing and no person) or an NPC's own `chatter`; the NPC's pool adds to the scenario's. Lines follow the chatter rules (under 40 characters, one line, no `{ }`).
 
