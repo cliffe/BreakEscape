@@ -1898,14 +1898,48 @@ def check_lock_credentials(json_data)
 
   # A key/RFID lock with no matching credential item. This is a soft-lock
   # unless the door is meant to be opened another way (e.g. lockpicked). A card a room
-  # NPC carries (creds.card or rfidCard) declares its card_id too: the identity reach
-  # line already says that card opens the lock, and a gate's guard is the usual case.
+  # NPC carries (creds.card or rfidCard) declares its card_id too, but only when the
+  # scenario can turn it into a way through: an rfid_cloner exists anywhere (an object,
+  # a start item or an NPC's item), or a gate into the locked room opens for a holder.
   declared = { 'key' => Set.new, 'rfid' => Set.new }
   key_items.each { |_name, credential, lt| declared[lt] << credential }
-  declared['rfid'].merge(ai.cards(json_data).keys.map(&:to_s))
+  has_cloner = false
+  find_cloner = lambda do |node|
+    case node
+    when Array then node.each { |n| find_cloner.call(n) }
+    when Hash
+      has_cloner ||= node['type'] == 'rfid_cloner'
+      node.each_value { |v| find_cloner.call(v) } unless has_cloner
+    end
+  end
+  find_cloner.call(json_data)
+  rooms_requiring = lambda do |card_id|
+    rooms = json_data['rooms'].is_a?(Hash) ? json_data['rooms'] : {}
+    rooms.select do |_id, r|
+      r.is_a?(Hash) && r['lockType'] == 'rfid' && Array(r['requires']).map(&:to_s).include?(card_id)
+    end.keys
+  end
+  gates = json_data['rooms'].is_a?(Hash) ? BreakEscape::NpcHabits.gate_entries(json_data) : []
+  npc_only_cards = Set.new
+  ai.cards(json_data).each do |card_id, info|
+    holder_ids = info[:holders].map { |h| h[:npc]['id'] }.compact
+    locked_rooms = rooms_requiring.call(card_id)
+    gated = gates.any? { |g| locked_rooms.include?(g[:connected_room]) && (g[:open_for] & holder_ids).any? }
+    if has_cloner || gated
+      declared['rfid'] << card_id
+    else
+      npc_only_cards << card_id
+    end
+  end
   %w[key rfid].each do |lock_kind|
     credential_requires[lock_kind].each do |req|
       next if declared[lock_kind].include?(req)
+      if lock_kind == 'rfid' && npc_only_cards.include?(req.to_s)
+        issues << "⚠️ WARNING: a lock requires rfid '#{req}', and only an NPC carries that card. There is no " \
+                  "rfid_cloner in the scenario and no gate into the locked room opens for the holder, so the " \
+                  "player cannot use it. Add a cloner, a keycard item or a gate, or the door is a soft-lock."
+        next
+      end
       field = lock_kind == 'rfid' ? "card_id (or opens_lock)" : 'opens_lock'
       issues << "⚠️ WARNING: a lock requires #{lock_kind} '#{req}', but no item declares #{field} '#{req}'. " \
                 "Unless that door is meant to be lockpicked only, nothing in the scenario can open it."
@@ -6327,7 +6361,7 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
                         rescue JSON::ParserError
                           File.read(compiled)
                         end
-                      end
+      end
       source_text = File.exist?(source) ? File.read(source) : nil
       text = compiled_text || source_text
       next unless text

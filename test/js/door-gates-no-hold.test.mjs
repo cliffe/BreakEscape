@@ -230,3 +230,86 @@ test('the door work\'s answers stand: an exit opening, a holder, a mixed pair, n
     assert.equal(s.gates.openToPlayer(s.g, 200), true);
     assert.equal(s.gates.blocksPlayer(s.g, { playerRoom: 'lobby', now: 200 }), false);
 });
+
+// Review R1 minor 2: the end of a clone window on a careful gate.
+const IN_DOORWAY = { x: 100, y: 128 };  // overlaps the door body (y 124 to 132)
+const HOLD = 2500;
+
+function cloneBesideSara() {
+    // Shut with Sara by the door and the player near; he clones: open() takes Sara as
+    // the guard this period belongs to, then she walks off
+    const s = setup({ player: NEAR });
+    s.put('sara', BY_DOOR);
+    s.gates.update(0);
+    assert.equal(s.g.open, false, 'barred: shut');
+    s.gates.playerOpen('store', { now: 100 });
+    assert.equal(s.g.open, true);
+    assert.deepEqual(lastGuards(s.g), ['sara']);
+    s.put('sara', AWAY);
+    s.gates.update(200);
+    assert.equal(s.gates.openToPlayer(s.g, 200), true, 'open to him during the window');
+    assert.equal(s.g.bodyOff, true);
+    return s;
+}
+
+test('clone window ends on a careful gate with the player near: shuts on that tick', () => {
+    const s = cloneBesideSara();
+    s.gates.update(100 + HOLD - 1);
+    assert.equal(s.g.open, true, 'held open through the window');
+    s.gates.update(100 + HOLD);
+    assert.equal(s.g.open, false, 'shut at once when the window ends');
+    assert.equal(s.g.bodyOff, false, 'and solid');
+});
+
+test('clone window ends with the player in the doorway: stays open, body off until he steps off', () => {
+    const s = cloneBesideSara();
+    stand(IN_DOORWAY);
+    s.gates.update(100 + HOLD);
+    assert.equal(s.gates.openToPlayer(s.g, 100 + HOLD), false, 'the window is over and the period is careful');
+    assert.equal(s.g.open, true, 'never shut on a player crossing');
+    assert.equal(s.g.bodyOff, true, 'the body is not switched on under him');
+    s.gates.update(100 + HOLD + 500);
+    assert.equal(s.g.open, true);
+    assert.equal(s.g.bodyOff, true);
+    stand(NEAR);
+    s.gates.update(100 + HOLD + 600);
+    assert.equal(s.g.bodyOff, false, 'on once he has stepped back off');
+    assert.equal(s.g.open, false, 'and shut on that tick');
+});
+
+test('clone window ends with nobody in lastGuards: not careful, the gate lingers as any gate', () => {
+    const s = setup({ player: NEAR });
+    // Gary is out of the radius but his path crosses the doorway, which keeps a gate open
+    s.put('gary', AWAY);
+    s.gates.playerOpen('store', { now: 100 });
+    assert.deepEqual(lastGuards(s.g), [], 'nobody near at the click');
+    s.behaviours.gary.currentPath = [{ x: 100, y: 200 }, { x: 100, y: 60 }];
+    s.behaviours.gary.pathIndex = 1;
+    s.gates.update(100 + HOLD);
+    assert.equal(s.g.open, true, 'not shut at once: the player is not barred');
+    assert.equal(s.gates._playerBarred(s.g), false);
+    assert.equal(s.gates.openToPlayer(s.g, 100 + HOLD), true);
+    assert.equal(s.g.bodyOff, true);
+    s.behaviours.gary.currentPath = [];
+    s.gates.update(100 + HOLD + 100);
+    assert.equal(s.g.open, false, 'shuts by the usual rule once nothing holds it');
+});
+
+test('Sara opens, it closes, then Gary opens with the player near: open to the player', () => {
+    const s = setup();
+    s.put('sara', BY_DOOR);
+    s.gates.update(0);
+    assert.equal(s.gates.openToPlayer(s.g, 0), false, 'her period is careful');
+    s.put('sara', AWAY);
+    s.gates.update(100);
+    s.gates.update(100 + HOLD);
+    assert.equal(s.g.open, false, 'closed after holdMs');
+    assert.deepEqual(lastGuards(s.g), []);
+    stand(NEAR);
+    s.put('gary', BY_DOOR);
+    s.gates.update(100 + HOLD + 100);
+    assert.equal(s.g.open, true, 'Gary holds doors: opens beside the player');
+    assert.deepEqual(lastGuards(s.g), ['gary']);
+    assert.equal(s.gates.openToPlayer(s.g, 100 + HOLD + 100), true);
+    assert.equal(s.gates.blocksPlayer(s.g, { playerRoom: 'lobby', now: 100 + HOLD + 100 }), false);
+});

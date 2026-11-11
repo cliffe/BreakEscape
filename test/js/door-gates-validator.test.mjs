@@ -80,3 +80,36 @@ test('a gate whose requires is a card its guard carries draws no "nothing can op
     out = credentialIssues(sc);
     assert.ok(has(out, warning), `still raised when nobody carries it:\n${out.join('\n')}`);
 });
+
+// Review R1 minor 1: an NPC's card counts as declared only when the player can use it.
+function noGateScenario() {
+    const sc = scenario();
+    delete sc.rooms.office.doors;
+    return sc;
+}
+const npcOnly = "and only an NPC carries that card";
+
+test('an NPC card with no cloner and no gate is still reported as a soft-lock', { skip }, () => {
+    const out = credentialIssues(noGateScenario());
+    assert.ok(out.some(s => s.startsWith('⚠️') && s.includes("rfid 'SAM-1'") && s.includes(npcOnly)), out.join('\n'));
+});
+
+test('an rfid_cloner anywhere makes an NPC card a declared credential', { skip }, () => {
+    const asObject = noGateScenario();
+    asObject.rooms.office.objects = [{ type: 'rfid_cloner', name: 'Cloner', takeable: true }];
+    const asStartItem = noGateScenario();
+    asStartItem.startItemsInInventory = [{ type: 'rfid_cloner', name: 'Cloner' }];
+    const asHeld = noGateScenario();
+    asHeld.rooms.office.npcs.push({ id: 'ruth', npcType: 'person', itemsHeld: [{ type: 'rfid_cloner', name: 'Cloner' }] });
+    for (const sc of [asObject, asStartItem, asHeld]) {
+        const out = credentialIssues(sc);
+        assert.ok(!has(out, "'SAM-1'"), out.join('\n'));
+    }
+});
+
+test('a gate that opens for someone other than the holder does not declare the card', { skip }, () => {
+    const sc = scenario();
+    sc.rooms.office.doors[0].gate.openFor = ['gary'];
+    const out = credentialIssues(sc);
+    assert.ok(has(out, npcOnly), out.join('\n'));
+});
