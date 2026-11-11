@@ -317,7 +317,10 @@ module ValidateAccessWork
 
     # A resource no NPC needs, with no contents and no host, exists for nobody
     resources.each do |rid, r|
-      next if needed.include?(rid) || r.key?('contents') || AW.present_string?(r['host'])
+      # A 9.3a resource reached through a foothold (a network) or shown by its row
+      # (observations) is used by the player (review R1 m3)
+      next if needed.include?(rid) || r.key?('contents') || AW.present_string?(r['host']) ||
+              AW.present_string?(r['network']) || AW.present_string?(r['observations'])
 
       warn(issues, "resource '#{rid}' is in no NPC's work list and has no contents and no host: nothing uses it.")
     end
@@ -478,20 +481,38 @@ module ValidateAccessWork
     use = st ? AW.use_seconds(json_data, st) : AW::NEEDS_DEFAULT_USE_SECONDS
     defer = AW.defer_min(npc)
     honest = use + ((n - 1) * ((defer * 60) + use))
-    unadmitted = AW.work_list(json_data, npc).any? { |rid| resources[rid] && !AW.admitted?(resources[rid], npc) }
-    earliest = if unadmitted
-                 (n - 1) * ((0.9 * defer * 60) - 3)
-               else
-                 (n - 1) * [(0.9 * AW.shortest_use_seconds(json_data, npc, 'work')) - 3, 0].max
-               end
+    pace = earliest_pace(json_data, npc, st)
+    earliest = (n - 1) * pace[:seconds]
     earliest /= 2.0 if AW.can_fail?(json_data, npc, 'work') && AW.can_fail?(json_data, npc, 'social_media')
-    { n: n, per: per, at: at, honest: honest, earliest: [earliest, 0].max, warned: at > per }
+    { n: n, per: per, at: at, honest: honest, earliest: [earliest, 0].max, warned: at > per, note: pace[:note] }
+  end
+
+  # The gap a modified browser can hold between counted fails (plan 9.1 and 9.3; review R1 m1, m2):
+  # - with a cause the server owns (not admitted, a [] route), `rearmed` is ignored, so the use
+  #   floor needs an accepted ease between fails. Not admitted refuses every ease; a [] route
+  #   refuses an ease at the station (R5 n5), so only a non-desk place lets the NPC ease. With no
+  #   ease the gap is the park floor, halved when the station has an offWhen (R5 n1: an off fail
+  #   and an owned-cause fail alternate, each held only to the use floor after the other).
+  # - with an owned cause and a non-desk place: the use floor, only by alternating eases and fails.
+  # - otherwise every cause can clear in play: the use floor.
+  def earliest_pace(json_data, npc, st)
+    use = [(0.9 * AW.shortest_use_seconds(json_data, npc, 'work')) - 3, 0].max
+    owned = AW.owned_causes(json_data, npc, 'work', [])
+    return { seconds: use, note: nil } if owned.empty?
+
+    unadmitted = owned.any? { |c| c['why'] == 'no_access' }
+    elsewhere = !unadmitted && AW.places(json_data, npc, 'work').any? { |id| st.nil? || id != st['id'] }
+    return { seconds: use, note: 'only by alternating eases and fails' } if elsewhere
+
+    park = (0.9 * AW.defer_min(npc) * 60) - 3
+    park /= 2.0 if AW.off_when?(json_data, st)
+    { seconds: park, note: nil }
   end
 
   def workaround_line(json_data, npc, w, idx, resources)
     t = workaround_timing(json_data, npc, w, resources)
     warning = t[:warned] ? 'tell 1, tell 2, then the workaround' : 'no warning'
-    earliest = t[:n] == 1 ? 'at once' : "#{t[:earliest].round} s"
+    earliest = t[:n] == 1 ? 'at once' : "#{t[:earliest].round} s#{t[:note] ? " (#{t[:note]})" : ''}"
     "ℹ️ Workaround #{npc['id']}[#{idx}] #{w['do']} at #{t[:at]}: opens #{workaround_opens(npc, w)}; " \
       "#{t[:n]} failed use(s) at perFail #{t[:per].round}; #{warning}; about #{t[:honest].round} s of outage; " \
       "earliest by a modified browser #{earliest} after the first counted fail."

@@ -108,3 +108,13 @@ test('interest: accepting objects all forbidden is an error; noticeRooms naming 
     assert.ok(has(i, "interest 'post' is impossible under its room leash"), i.join('\n'));
     assert.ok(has(i, "noticeRooms names room 'lounge', which its leash forbids"));
 });
+
+// Access slice 9.2 review R1 m6: a social_media need with "phone": false and no object that
+// satisfies it is still an error; with a phone (sub-slice C) it is not
+test('social_media: no object satisfies it, an error only with "phone": false', { skip }, () => {
+    const social = { social_media: { decayPerMin: 4, urgentAt: 40 } };
+    const withPhone = check(office({ npc: { needs: social } }));
+    assert.ok(!has(withPhone, "need 'social_media' has no object"), withPhone.join('\n'));
+    const noPhone = check(office({ npc: { needs: social, phone: false } }));
+    assert.ok(has(noPhone, "need 'social_media' has no object"), noPhone.join('\n'));
+});

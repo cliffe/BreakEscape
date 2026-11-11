@@ -270,3 +270,35 @@ test('Work: the report lines (resources, honest time, earliest by the park floor
     assertHas(run(s, 'report_lines'), 'earliest by a modified browser at once');
     assert.deepEqual(run({ rooms: {} }, 'report_lines'), []);
 });
+
+test('Work: earliest by a modified browser (review R1 m1, m2): halved park floor, [] route, alternating eases', { skip }, () => {
+    // m1: kai is not admitted and his station has an offWhen, so an off fail and an owned-cause
+    // fail alternate: half the park floor, 2 x 24 / 2 = 24
+    const s = withKai(workClean());
+    s.rooms.office.npcs[1].workarounds = [{ at: 50, do: 'writes_down' }];
+    s.rooms.office.objects[1].affordance.offWhen = 'kai_pc_off';
+    s.globalVariables.kai_pc_off = false;
+    assertHas(run(s, 'report_lines'), 'earliest by a modified browser 24 s after');
+
+    // m2: email on a network with no route (a [] route) is owned; no ease place but the station:
+    // the park floor, 2 x 24 = 48
+    const n = workClean();
+    n.networks = { corp: { name: 'Corp' } };
+    n.resources.email.network = 'corp';
+    n.rooms.office.objects[0].affordance = { satisfies: 'work', useSeconds: 5, restores: 10 };
+    n.rooms.office.npcs[0].workarounds = [{ at: 50, do: 'emit', event: 'dana_gave_up' }];
+    assertHas(run(n, 'report_lines'), 'earliest by a modified browser 48 s after');
+    // with a non-desk place to ease at: the use floor, only by alternating eases and fails
+    n.rooms.office.objects.push({ id: 'kiosk', type: 'info_kiosk_x', name: 'Kiosk', affordance: { satisfies: 'work', useSeconds: 5 } });
+    assertHas(run(n, 'report_lines'), 'earliest by a modified browser 3 s (only by alternating eases and fails)');
+});
+
+test('Work: a resource with only a network or observations is not called unused (review R1 m3)', { skip }, () => {
+    const s = workClean();
+    s.networks = { corp: { name: 'Corp' } };
+    s.resources.notes = { name: 'Notes', kind: 'file_share', network: 'corp' };
+    s.resources.board = { name: 'Board', kind: 'intranet', observations: 'A notice board.' };
+    const list = issues(s);
+    assert.ok(!has(list, "resource 'notes'"), list.join('\n'));
+    assert.ok(!has(list, "resource 'board'"), list.join('\n'));
+});

@@ -7,6 +7,7 @@
 # timing report (T1 = minutes to the first beat, P = minutes between top-ups).
 # A scenario with no NPC `needs`/`interests` and no `droppable` item gets no output.
 require 'json'
+require_relative '../lib/break_escape/access_work' unless defined?(BreakEscape::AccessWork)
 
 module ValidateNpcNeeds
   T1_WARN_MIN = 5.0
@@ -1236,11 +1237,12 @@ module ValidateNpcNeeds
       targets = objs.select { |o| o.data['affordance'].is_a?(Hash) && list(o.data['affordance']['satisfies']).include?(name) }
       # Access slice 9.2 (ACCESS_MODEL_SLICE_9_2_PLAN.md 5.2): a judged need never uses another
       # NPC's desk, so those are not its targets
-      if defined?(BreakEscape::AccessWork) && BreakEscape::AccessWork.judged?(json, npc, name)
+      if BreakEscape::AccessWork.judged?(json, npc, name)
         targets = targets.reject { |o| o.id != npc['needsHome'] && BreakEscape::AccessWork.desk?(json, o.data) }
       end
-      # social_media is met by a phone (sub-slice C), so no object need satisfy it
-      next if targets.empty? && name == 'social_media'
+      # social_media is met by a phone (sub-slice C), so no object need satisfy it; an NPC with
+      # "phone": false still needs one (plan 10, review R1 m6)
+      next if targets.empty? && name == 'social_media' && npc['phone'] != false
       if targets.empty?
         issues << "❌ ERROR: #{where} need '#{name}' has no object whose affordance.satisfies it; the NPC could never act on it."
         next
