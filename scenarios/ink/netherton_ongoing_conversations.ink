@@ -112,7 +112,7 @@ EXTERNAL current_mission_id()           // LOCAL - Current mission identifier
 #influence_gained:5
 ~ npc_netherton_serious_conversations += 1
 
-Netherton: The Field Operations Handbook. *adjusts glasses slightly*
+Netherton: The Field Operations Handbook. #delivery: precise, a little pedantic
 
 Netherton: I co-wrote the original edition twenty years ago. I've personally overseen every revision since. Edition 7, Revision 23, 847 pages across 23 sections.
 
@@ -141,9 +141,7 @@ Netherton: Agents often mock the handbook. The contradictions, the excessive det
 ~ npc_netherton_influence += 15
 #influence_gained:15
 
-Netherton: *brief pause, something that might be surprise*
-
-Netherton: Few agents take the handbook seriously until they've been in the field long enough to understand why it exists.
+Netherton: Few agents take the handbook seriously until they've been in the field long enough to understand why it exists. #delivery: after a brief pause, something like surprise
 
 Netherton: The fact that you're already engaging with it thoughtfully... that speaks well of your judgment.
 
@@ -179,9 +177,7 @@ Netherton: Focus on sections 8 through 12 for field operations. Sections 14 thro
 
 Netherton: Your handler will guide you on relevant sections for specific situations. No one memorizes the entire handbook.
 
-<> *slight pause*
-
-Netherton: Though I've come close. Not by choice.
+Netherton: Though I've come close. Not by choice. #delivery: after a slight pause
 
 ~ npc_netherton_influence += 5
 #influence_gained:5
@@ -197,7 +193,7 @@ Netherton: Though I've come close. Not by choice.
 #influence_gained:8
 ~ npc_netherton_serious_conversations += 1
 
-Netherton: Leadership principles. *straightens papers on desk*
+Netherton: Leadership principles. #delivery: brisk, tidying up as he talks
 
 Netherton: I've held command positions for over two decades. Military intelligence, civilian agencies, and now SAFETYNET.
 
@@ -224,17 +220,13 @@ Netherton: The core principle remains constant: leadership is responsibility. Yo
 ~ npc_netherton_influence += 15
 #influence_gained:15
 
-Netherton: *considers the question carefully*
+Netherton: You don't "handle" it. You carry it. Every decision, every mission, every agent deployed—the weight accumulates. #delivery: considering the question carefully
 
-Netherton: You don't "handle" it. You carry it. Every decision, every mission, every agent deployed—the weight accumulates.
-
-Netherton: I've sent agents into situations where they were hurt. I've made calls that cost missions. I've lost... *brief pause* ...I've had agents not return.
+Netherton: I've sent agents into situations where they were hurt. I've made calls that cost missions. I've lost... I've had agents not return. #delivery: a brief pause mid-line
 
 Netherton: The weight never lessens. You simply become stronger at carrying it. Or you break. Those are the options in command.
 
-<> *looks directly at you*
-
-Netherton: That you're asking this question suggests you may be suited for leadership yourself. Eventually.
+Netherton: That you're asking this question suggests you may be suited for leadership yourself. Eventually. #delivery: direct, steady
 
 ~ npc_netherton_influence += 20
 #influence_gained:20
@@ -251,9 +243,7 @@ Netherton: Some call me rigid. Perhaps. But structure keeps agents alive. Discip
 
 Netherton: I demand excellence because the work demands it. Lives depend on our precision. I will not lower standards to make agents more comfortable.
 
-<> *slight softening*
-
-Netherton: But I do not demand perfection. I demand learning. Mistakes are acceptable if they result in growth. Repeated mistakes indicate insufficient attention.
+Netherton: But I do not demand perfection. I demand learning. Mistakes are acceptable if they result in growth. Repeated mistakes indicate insufficient attention. #delivery: softening slightly
 
 ~ npc_netherton_influence += 8
 #influence_gained:8
@@ -303,9 +293,7 @@ Netherton: Small teams, minimal oversight, operating in legal territory that did
 
 Netherton: Every page added represents a lesson learned. Often painfully.
 
-<> *rare hint of warmth*
-
-Netherton: But we were building something important. Creating capabilities that would become essential. That purpose drove us through the chaos.
+Netherton: But we were building something important. Creating capabilities that would become essential. That purpose drove us through the chaos. #delivery: with a rare hint of warmth
 
 Netherton: We still carry that founding mission. Even though the organization has grown, even though operations are more structured—the core purpose remains.
 
@@ -341,7 +329,7 @@ Netherton: Which is why we require agents of your caliber.
 #influence_gained:10
 ~ npc_netherton_serious_conversations += 1
 
-Netherton: What I expect from agents. *interlaces fingers, formal posture*
+Netherton: What I expect from agents. #delivery: formal
 
 Netherton: First: Competence. Master your technical skills. Maintain physical readiness. Develop field craft. Excellence is not optional.
 
@@ -374,13 +362,9 @@ Netherton: Fourth: Growth. Learn from every operation. Improve continuously. Sta
 ~ npc_netherton_influence += 20
 #influence_gained:20
 
-Netherton: *direct eye contact*
+Netherton: Commitment is noted. Performance will determine whether that commitment is genuine. #delivery: direct, steady
 
-Netherton: Commitment is noted. Performance will determine whether that commitment is genuine.
-
-<> *slight pause*
-
-Netherton: Based on your record thus far, I believe you have the capacity to meet these standards. Whether you will is your choice.
+Netherton: Based on your record thus far, I believe you have the capacity to meet these standards. Whether you will is your choice. #delivery: after a slight pause
 
 Netherton: I expect to see continued progress. Maintain this trajectory.
 
@@ -402,7 +386,7 @@ Netherton: I expect to see continued progress. Maintain this trajectory.
         Netherton: You are adequate. Adequate is insufficient for SAFETYNET's needs. Improvement is required.
 }
 
-Netherton: Specific areas for development will be addressed in formal performance reviews. But overall... *brief pause* ...you show promise.
+Netherton: Specific areas for development will be addressed in formal performance reviews. But overall... you show promise. #delivery: a brief pause mid-line
 
 ~ npc_netherton_influence += 12
 #influence_gained:12
@@ -445,15 +429,13 @@ Netherton: Specific areas for development will be addressed in formal performanc
 #influence_gained:15
 ~ npc_netherton_serious_conversations += 1
 
-Netherton: Difficult command decisions. *removes glasses, cleans them methodically*
+Netherton: Difficult command decisions. #delivery: slow, methodical
 
 Netherton: Every operation presents choices where all options have negative consequences. You select the least worst option and accept the cost.
 
 Netherton: The Berlin Crisis. Two years ago. Agent captured, ENTROPY preparing exposure. Every extraction option carried unacceptable risks.
 
-<> *rare vulnerability*
-
-Netherton: I authorized an extraction that cost us intelligence assets, burned operations across Europe, and required protocol violations I cannot discuss.
+Netherton: I authorized an extraction that cost us intelligence assets, burned operations across Europe, and required protocol violations I cannot discuss. #delivery: unusually vulnerable
 
 Netherton: But I brought our agent home alive. The mission failed. The agent lived. I chose the agent.
 
@@ -482,15 +464,11 @@ Netherton: But I brought our agent home alive. The mission failed. The agent liv
 #influence_gained:25
 ~ professional_reputation += 3
 
-Netherton: *looks at you with something approaching approval*
-
-Netherton: Many agents claim they would prioritize personnel over missions. Few actually do when the stakes are real.
+Netherton: Many agents claim they would prioritize personnel over missions. Few actually do when the stakes are real. #delivery: with something close to approval
 
 Netherton: That you understand the value of that choice... that suggests you have the right priorities for command.
 
-<> *formal again*
-
-Netherton: Remember that conviction when you face similar decisions. Because you will. Leadership guarantees it.
+Netherton: Remember that conviction when you face similar decisions. Because you will. Leadership guarantees it. #delivery: formal again
 
 ~ npc_netherton_influence += 20
 #influence_gained:20
@@ -507,9 +485,7 @@ Netherton: You review the decision. Analyze alternatives. Identify what you coul
 
 Netherton: Then you accept that you made the best call available with the information you had. And you carry the weight of the consequences.
 
-<> *quiet*
-
-Netherton: The agent I extracted wrote me a letter. Thanked me for the choice. Said they understood the cost and were grateful I paid it.
+Netherton: The agent I extracted wrote me a letter. Thanked me for the choice. Said they understood the cost and were grateful I paid it. #delivery: quietly
 
 Netherton: I keep that letter in my desk. Read it when I doubt whether the choice was correct.
 
@@ -534,7 +510,7 @@ Netherton: Agent development is central to SAFETYNET's effectiveness. You are al
 
 Netherton: I review every agent's performance quarterly. Identify strengths to leverage. Weaknesses to address. Growth trajectories to accelerate.
 
-Netherton: Your development has been... *consults memory* ...notably consistent. Steady improvement across technical and operational metrics.
+Netherton: Your development has been... notably consistent. Steady improvement across technical and operational metrics. #delivery: recalling it
 
 * [Ask for specific feedback]
     ~ npc_netherton_influence += 18
@@ -567,9 +543,7 @@ Netherton: Your development has been... *consults memory* ...notably consistent.
 
         Netherton: Leadership potential is evident. Begin considering command responsibilities. How you would manage teams. How you would make resource allocation decisions.
 
-        <> *rare warmth*
-
-        Netherton: You're on track to become one of SAFETYNET's premier agents. Maintain this trajectory.
+        Netherton: You're on track to become one of SAFETYNET's premier agents. Maintain this trajectory. #delivery: with rare warmth
 
         ~ npc_netherton_influence += 25
 #influence_gained:25
@@ -607,9 +581,7 @@ Netherton: I design training scenarios that are unreasonably difficult. Multi-va
 
 Netherton: Because that describes actual field conditions. If you can perform under training stress, you can perform under operational stress.
 
-<> *slight pause*
-
-Netherton: Some agents resent my methods. Call me harsh. But those agents are alive because the training prepared them for reality.
+Netherton: Some agents resent my methods. Call me harsh. But those agents are alive because the training prepared them for reality. #delivery: after a slight pause
 
 Netherton: Your survival is worth more than your comfort.
 
@@ -627,9 +599,7 @@ Netherton: Your survival is worth more than your comfort.
 #influence_gained:12
 ~ npc_netherton_serious_conversations += 1
 
-Netherton: *visible distaste*
-
-Netherton: SAFETYNET politics. Inter-divisional competition. Budget battles. Turf wars over jurisdiction and authority.
+Netherton: SAFETYNET politics. Inter-divisional competition. Budget battles. Turf wars over jurisdiction and authority. #delivery: with visible distaste
 
 Netherton: I despise organizational politics. But ignoring politics is professional suicide. So I engage. Minimally. Strategically.
 
@@ -676,9 +646,7 @@ Netherton: I shut it down. Made enemies. The operation succeeded. Results matter
 #influence_gained:25
 ~ professional_reputation += 3
 
-Netherton: *approving look*
-
-Netherton: Intelligent question. Most agents don't think about organizational dynamics until it damages their careers.
+Netherton: Intelligent question. Most agents don't think about organizational dynamics until it damages their careers. #delivery: approving
 
 Netherton: First: Focus on operational excellence. Political capital derives from competence. Be undeniably good at your work.
 
@@ -688,9 +656,7 @@ Netherton: Third: Document everything. Politics involves selective memory and bl
 
 Netherton: Fourth: Understand that I handle divisional politics. Your role is executing missions. If political issues affect your operations, inform me immediately.
 
-<> *rare personal advice*
-
-Netherton: You show leadership potential. As you advance, politics becomes unavoidable. Learn the skills now. But never let politics compromise operational integrity.
+Netherton: You show leadership potential. As you advance, politics becomes unavoidable. Learn the skills now. But never let politics compromise operational integrity. #delivery: unusually personal
 
 ~ npc_netherton_influence += 30
 #influence_gained:30
@@ -702,23 +668,17 @@ Netherton: You show leadership potential. As you advance, politics becomes unavo
 #influence_gained:18
 ~ npc_netherton_personal_moments += 1
 
-Netherton: *brief surprise at the empathy*
-
-Netherton: It is... exhausting. Yes.
+Netherton: It is... exhausting. Yes. #delivery: briefly surprised by the empathy
 
 Netherton: I became a director to build an excellent division. To develop agents. To counter ENTROPY effectively. That's meaningful work.
 
 Netherton: Instead, I spend hours in budget meetings. Defending resource allocations. Justifying operational decisions to people who've never been in the field.
 
-<> *quiet frustration*
-
-Netherton: But if I don't fight those battles, my division loses resources. Which means fewer agents. Worse equipment. Failed missions.
+Netherton: But if I don't fight those battles, my division loses resources. Which means fewer agents. Worse equipment. Failed missions. #delivery: with quiet frustration
 
 Netherton: So I attend the meetings. I play the political games. I do what's necessary.
 
-<> *looks at you directly*
-
-Netherton: Thank you for recognizing the burden. Few do.
+Netherton: Thank you for recognizing the burden. Few do. #delivery: direct, steady
 
 ~ npc_netherton_influence += 25
 #influence_gained:25
@@ -735,19 +695,17 @@ Netherton: Thank you for recognizing the burden. Few do.
 #influence_gained:15
 ~ npc_netherton_serious_conversations += 1
 
-Netherton: *long pause, considering the question*
-
-Netherton: I spent fifteen years in the field. Intelligence operations. Technical infiltration. Asset recruitment. I was... effective.
+Netherton: I spent fifteen years in the field. Intelligence operations. Technical infiltration. Asset recruitment. I was... effective. #delivery: after a long pause, considering
 
 Netherton: Transitioned to command because SAFETYNET needed leadership. Because I could build systems better than I could execute missions.
 
-Netherton: Do I miss field work? *removes glasses, sets them aside*
+Netherton: Do I miss field work? #delivery: setting formality aside
 
 * [Wait for him to continue]
     ~ npc_netherton_influence += 20
 #influence_gained:20
     ~ npc_netherton_personal_moments += 1
-    You: *remain silent, giving him space*
+    Narrator: You stay silent, giving him space.
     -> field_nostalgia
 
 * [Say you'd miss it in his position]
@@ -768,17 +726,13 @@ Netherton: Do I miss field work? *removes glasses, sets them aside*
 #influence_gained:25
 ~ npc_netherton_personal_moments += 1
 
-Netherton: *appreciates the silence*
-
-Netherton: Yes. I miss it. The clarity of field operations. Clear objectives. Direct action. Immediate feedback on decisions.
+Netherton: Yes. I miss it. The clarity of field operations. Clear objectives. Direct action. Immediate feedback on decisions. #delivery: appreciating the silence
 
 Netherton: Command is ambiguous. Decisions have cascading consequences months later. Success is measured in systems and statistics rather than completed missions.
 
 Netherton: I miss the simplicity of being responsible only for my own performance. Not carrying the weight of everyone under my command.
 
-<> *rare vulnerability*
-
-Netherton: But I'm better suited to command. I can build systems that enable dozens of agents to be more effective than I ever was alone.
+Netherton: But I'm better suited to command. I can build systems that enable dozens of agents to be more effective than I ever was alone. #delivery: unusually vulnerable
 
 Netherton: So I carry the weight. Because it's where I can do the most good.
 
@@ -808,23 +762,17 @@ Netherton: The uncertainty is... challenging.
 #influence_gained:25
 ~ npc_netherton_personal_moments += 1
 
-Netherton: *considers carefully*
-
-Netherton: The focus. In the field, the mission is everything. All your attention, all your capability, directed at a single objective.
+Netherton: The focus. In the field, the mission is everything. All your attention, all your capability, directed at a single objective. #delivery: considering carefully
 
 Netherton: Command requires divided attention. Operations, politics, personnel, logistics, strategy—everything simultaneously.
 
 Netherton: I miss the purity of field work. One problem. Apply all your skills. Solve it. Move to the next.
 
-<> *quiet*
-
-Netherton: And I miss the camaraderie. Field teams develop deep trust. Command is isolated. Leadership requires distance.
+Netherton: And I miss the camaraderie. Field teams develop deep trust. Command is isolated. Leadership requires distance. #delivery: quietly
 
 Netherton: I have subordinates. Colleagues. Not... friends. Not anymore.
 
-<> *formal again*
-
-Netherton: But that's the price of command. Acceptable trade for the impact I can have at this level.
+Netherton: But that's the price of command. Acceptable trade for the impact I can have at this level. #delivery: formal again
 
 ~ npc_netherton_influence += 35
 #influence_gained:35
@@ -841,7 +789,7 @@ Netherton: But that's the price of command. Acceptable trade for the impact I ca
 
 {
     - npc_netherton_influence >= 80:
-        Netherton: Agent {player_name()}. *almost warmth* Your continued excellence is appreciated. What's on your mind?
+        Netherton: Agent {player_name()}. Your continued excellence is appreciated. What's on your mind?
     - npc_netherton_influence >= 70:
         Netherton: Agent. I have time for a substantive discussion.
     - else:
@@ -869,7 +817,7 @@ Netherton: But that's the price of command. Acceptable trade for the impact I ca
 #influence_gained:20
 ~ npc_netherton_serious_conversations += 1
 
-Netherton: The weight of command. *sets down whatever he was working on*
+Netherton: The weight of command. #delivery: giving you his full attention
 
 Netherton: I'm responsible for 47 active agents in CYBER-PHYSICAL division. Each one a high-capability individual. Each one in constant danger.
 
@@ -903,13 +851,11 @@ Netherton: I review casualty statistics. I write letters to families—classifie
 ~ npc_netherton_personal_moments += 1
 ~ npc_netherton_shared_vulnerability = true
 
-Netherton: *long pause*
-
-Netherton: Some days I don't. Some days the weight is too much. I stay late in this office. Stare at mission reports. Question every decision.
+Netherton: Some days I don't. Some days the weight is too much. I stay late in this office. Stare at mission reports. Question every decision. #delivery: after a long pause
 
 Netherton: I keep a file. Every agent lost under my command. Their final mission reports. Their personnel files. Sometimes I read through it. Remind myself of the stakes.
 
-Netherton: *removes glasses, rare sign of fatigue*
+Narrator: Netherton takes off his glasses, a rare sign of fatigue.
 
 Netherton: Then I close the file. Review current operations. Make the next decision. Authorize the next mission.
 
@@ -917,7 +863,7 @@ Netherton: Because agents in the field depend on command making sound choices. M
 
 Netherton: You carry it by remembering it's not about you. It's about the mission. About protecting the people under your command. About the larger purpose.
 
-<> *puts glasses back on, formal again*
+Narrator: Netherton puts his glasses back on.
 
 Netherton: And some days that's enough. Other days you just carry it anyway.
 
@@ -931,17 +877,13 @@ Netherton: And some days that's enough. Other days you just carry it anyway.
 #influence_gained:28
 ~ professional_reputation += 3
 
-Netherton: *approving look*
-
-Netherton: The fact that you're contemplating command responsibility before pursuing it—that indicates proper respect for what leadership entails.
+Netherton: The fact that you're contemplating command responsibility before pursuing it—that indicates proper respect for what leadership entails. #delivery: approving
 
 Netherton: Too many agents seek promotion for status. For authority. They don't understand they're volunteering for a burden.
 
 Netherton: You understand. Which suggests you might be suited for it. Eventually.
 
-<> *rare directness*
-
-Netherton: When the time comes, if you choose command, I'll support your advancement. You have the judgment. The integrity. The capacity to carry the weight.
+Netherton: When the time comes, if you choose command, I'll support your advancement. You have the judgment. The integrity. The capacity to carry the weight. #delivery: unusually direct
 
 Netherton: But don't rush it. Develop your capabilities fully. Command will still be there when you're ready.
 
@@ -954,9 +896,7 @@ Netherton: But don't rush it. Develop your capabilities fully. Command will stil
 ~ npc_netherton_influence += 25
 #influence_gained:25
 
-Netherton: *slight discomfort at the compliment*
-
-Netherton: It's not strength. It's duty. The role requires it. So I do it.
+Netherton: It's not strength. It's duty. The role requires it. So I do it. #delivery: slightly uncomfortable with the compliment
 
 Netherton: But... thank you. Leadership can be isolating. Acknowledgment is... appreciated.
 
@@ -976,11 +916,9 @@ Netherton: But... thank you. Leadership can be isolating. Acknowledgment is... a
 ~ npc_netherton_serious_conversations += 1
 ~ npc_netherton_personal_moments += 1
 
-Netherton: *very long pause, considering whether to discuss this*
+Netherton: I've lost eleven agents in my time as division director. Eleven people under my command who didn't come home. #delivery: after a very long pause, deciding whether to say it
 
-Netherton: I've lost eleven agents in my time as division director. Eleven people under my command who didn't come home.
-
-Netherton: Each one... *removes glasses* ...each one is permanent. Every name. Every mission. Every decision point where maybe I could have chosen differently.
+Netherton: Each one... each one is permanent. Every name. Every mission. Every decision point where maybe I could have chosen differently. #delivery: halting, heavy
 
 Netherton: Agent Karim. Moscow operation. Intelligence failure led to ambush. She held position long enough for her team to extract. Died buying them time.
 
@@ -988,9 +926,7 @@ Netherton: Agent Torres. Infrastructure infiltration. Equipment malfunction. Fel
 
 Netherton: Agent Wu. Deep cover in ENTROPY cell. Cover was compromised. We never recovered the body.
 
-<> *quiet*
-
-Netherton: I remember all eleven names. All their final missions. All the choices I made that put them in those situations.
+Netherton: I remember all eleven names. All their final missions. All the choices I made that put them in those situations. #delivery: quietly
 
 * [Say they knew the risks]
     ~ npc_netherton_influence += 15
@@ -1009,7 +945,7 @@ Netherton: I remember all eleven names. All their final missions. All the choice
     ~ npc_netherton_influence += 25
 #influence_gained:25
     ~ npc_netherton_personal_moments += 1
-    You: *silent respect*
+    Narrator: You stay silent, out of respect.
     -> losses_silence
 
 === losses_they_chose ===
@@ -1020,9 +956,7 @@ Netherton: They did. You're correct. Every agent volunteers. Every agent underst
 
 Netherton: That truth doesn't diminish my responsibility. I authorized the missions. I accepted the risk on their behalf.
 
-Netherton: Their choice to serve doesn't absolve my duty to bring them home. When I fail that duty...
-
-<> *trails off*
+Netherton: Their choice to serve doesn't absolve my duty to bring them home. When I fail that duty... #delivery: trailing off
 
 Netherton: Yes. They chose this. But I chose to send them. Both things are true.
 
@@ -1036,7 +970,7 @@ Netherton: Yes. They chose this. But I chose to send them. Both things are true.
 ~ npc_netherton_personal_moments += 2
 ~ npc_netherton_shared_vulnerability = true
 
-Netherton: *removes glasses, sets them aside carefully*
+Narrator: Netherton takes off his glasses and sets them carefully aside.
 
 Netherton: Yes. Every one.
 
@@ -1046,15 +980,13 @@ Netherton: Sometimes the conclusion is that nothing could have prevented it. Ope
 
 Netherton: That analysis is... not comforting. Even when the loss was unavoidable, the responsibility remains.
 
-<> *long pause*
-
-Netherton: Agent Karim's family received a letter saying she died in a training accident. Classified operations. They can't know she died a hero. Can't know the three agents she saved.
+Netherton: Agent Karim's family received a letter saying she died in a training accident. Classified operations. They can't know she died a hero. Can't know the three agents she saved. #delivery: after a long pause
 
 Netherton: I know. And I carry that. For all eleven.
 
 Netherton: So yes. I blame myself. Whether or not the blame is rational. It's mine to carry.
 
-<> *puts glasses back on*
+Narrator: Netherton puts his glasses back on.
 
 Netherton: Thank you for asking directly. Few people do.
 
@@ -1069,9 +1001,7 @@ Netherton: Thank you for asking directly. Few people do.
 #influence_gained:35
 ~ npc_netherton_personal_moments += 2
 
-Netherton: *appreciates the silence*
-
-Netherton: The memorial wall in headquarters lists 127 names. SAFETYNET agents lost in the line of duty. Public version has cover identities. Real names are classified.
+Netherton: The memorial wall in headquarters lists 127 names. SAFETYNET agents lost in the line of duty. Public version has cover identities. Real names are classified. #delivery: appreciating the silence
 
 Netherton: Eleven of those names are agents I commanded. I visit that wall monthly. Stand there. Remember.
 
@@ -1079,9 +1009,7 @@ Netherton: Some directors avoid the wall. Too painful. Too much accumulated loss
 
 Netherton: I believe remembering is the minimum duty we owe them. They gave everything for the mission. We remember. We honor. We continue the work.
 
-<> *direct look*
-
-Netherton: And we try to ensure their sacrifice wasn't wasted. That SAFETYNET remains worth dying for.
+Netherton: And we try to ensure their sacrifice wasn't wasted. That SAFETYNET remains worth dying for. #delivery: direct, steady
 
 ~ npc_netherton_influence += 40
 #influence_gained:40
@@ -1098,7 +1026,7 @@ Netherton: And we try to ensure their sacrifice wasn't wasted. That SAFETYNET re
 #influence_gained:22
 ~ npc_netherton_serious_conversations += 1
 
-Netherton: Ethical boundaries in our work. *steeples fingers*
+Netherton: Ethical boundaries in our work. #delivery: measured
 
 Netherton: We operate in legal and moral gray areas. Unauthorized system access. Information theft. Manipulation. Sometimes violence.
 
@@ -1129,9 +1057,7 @@ Netherton: I've made choices I regret. Authorized operations that were legally j
 ~ npc_netherton_influence += 30
 #influence_gained:30
 
-Netherton: *considers very carefully*
-
-Netherton: Torture. Absolutely prohibited. We do not torture. Even when the intelligence would save lives. Even when the target is ENTROPY leadership. No torture.
+Netherton: Torture. Absolutely prohibited. We do not torture. Even when the intelligence would save lives. Even when the target is ENTROPY leadership. No torture. #delivery: considering very carefully
 
 Netherton: Deliberate civilian casualties. We accept collateral damage when unavoidable. We never target civilians deliberately. Mission success never justifies civilian deaths.
 
@@ -1139,9 +1065,7 @@ Netherton: Illegal orders. I've refused orders from oversight I believed were un
 
 Netherton: Personal gain. We serve the mission. Not ourselves. The moment we use operational authority for personal benefit, we become what we fight.
 
-<> *firm*
-
-Netherton: Those are my lines. I enforce them absolutely. Agents who cross those boundaries are removed. No exceptions. No second chances.
+Netherton: Those are my lines. I enforce them absolutely. Agents who cross those boundaries are removed. No exceptions. No second chances. #delivery: firm
 
 ~ npc_netherton_influence += 35
 #influence_gained:35
@@ -1152,9 +1076,7 @@ Netherton: Those are my lines. I enforce them absolutely. Agents who cross those
 #influence_gained:30
 ~ npc_netherton_personal_moments += 1
 
-Netherton: *long pause*
-
-Netherton: Poorly. I handle them poorly.
+Netherton: Poorly. I handle them poorly. #delivery: after a long pause
 
 Netherton: I document the decision. File the justification. Ensure oversight reviews it. Follow the process designed to prevent abuse.
 
@@ -1162,13 +1084,13 @@ Netherton: Then I accept that I made a choice that harmed someone. That I priori
 
 Netherton: And I question whether that math is ever truly justified. Whether there was an alternative I failed to see. Whether I'm rationalizing harm.
 
-<> *removes glasses*
+Narrator: Netherton takes off his glasses.
 
 Netherton: I don't have a clean answer. I make the choices. I live with the consequences. I try to minimize harm while completing necessary missions.
 
 Netherton: Some days that feels like enough. Other days it feels like self-serving rationalization for moral compromise.
 
-<> *puts glasses back on*
+Narrator: Netherton puts his glasses back on.
 
 Netherton: The uncertainty is... probably healthy. The moment I become comfortable with moral compromise is the moment I should resign.
 
@@ -1182,9 +1104,7 @@ Netherton: The uncertainty is... probably healthy. The moment I become comfortab
 ~ npc_netherton_influence += 20
 #influence_gained:20
 
-Netherton: *slight frown*
-
-Netherton: Be careful with that logic. Every authoritarian system justifies its excesses with "protecting the people."
+Netherton: Be careful with that logic. Every authoritarian system justifies its excesses with "protecting the people." #delivery: slightly disapproving
 
 Netherton: Yes, our work saves lives. Yes, infrastructure protection matters. Yes, ENTROPY represents a genuine threat.
 
@@ -1209,7 +1129,7 @@ Netherton: The work is worth doing. That doesn't mean anything we do in service 
 ~ npc_netherton_serious_conversations += 1
 ~ npc_netherton_personal_moments += 1
 
-Netherton: The personal cost of this work. *looks out window*
+Netherton: The personal cost of this work. #delivery: distant, far away
 
 Netherton: I've been with SAFETYNET for twenty-three years. Intelligence agencies before that. My entire adult life in classified operations.
 
@@ -1242,9 +1162,7 @@ Netherton: Few friends outside the agency. Civilian friendships are... difficult
 #influence_gained:25
 ~ npc_netherton_personal_moments += 1
 
-Netherton: *slight acknowledgment*
-
-Netherton: It is. But it was my choice. I understood the trade when I made it.
+Netherton: It is. But it was my choice. I understood the trade when I made it. #delivery: grudging acknowledgement
 
 Netherton: Every agent faces similar choices. Career versus relationships. Mission versus personal life. The work demands priority.
 
@@ -1262,7 +1180,7 @@ Netherton: I never achieved that balance. Perhaps never tried hard enough. The w
 ~ npc_netherton_personal_moments += 2
 ~ npc_netherton_shared_vulnerability = true
 
-Netherton: *removes glasses, rare vulnerability*
+Narrator: Netherton takes off his glasses, unusually vulnerable.
 
 Netherton: Some days. Yes.
 
@@ -1270,15 +1188,13 @@ Netherton: I wonder what life would have been like if I'd left after ten years. 
 
 Netherton: I see agents like you—talented, capable, whole career ahead—and I think about warning you. Telling you to get out before the work consumes everything else.
 
-<> *quiet*
-
-Netherton: But then I remember what we accomplish. Infrastructure protected. ENTROPY cells disrupted. Attacks prevented. Lives saved. The work matters.
+Netherton: But then I remember what we accomplish. Infrastructure protected. ENTROPY cells disrupted. Attacks prevented. Lives saved. The work matters. #delivery: quietly
 
 Netherton: And I'm effective at it. Better than most. If I'd left, would my replacement have done it as well? Would agents under their command have been as well supported?
 
 Netherton: So... regrets? Yes. But I'd likely make the same choices again. The work needed doing. I was capable. That felt like enough.
 
-<> *puts glasses back on*
+Narrator: Netherton puts his glasses back on.
 
 Netherton: Feels like enough. Most days.
 
@@ -1292,21 +1208,17 @@ Netherton: Feels like enough. Most days.
 ~ npc_netherton_influence += 28
 #influence_gained:28
 
-Netherton: *considers carefully*
-
-Netherton: Ask me again in twenty years when I retire. Maybe then I'll know.
+Netherton: Ask me again in twenty years when I retire. Maybe then I'll know. #delivery: considering carefully
 
 Netherton: Right now, in the middle of it, the answer has to be yes. Because if it's not worth it, then I've wasted my life and damaged myself for nothing.
 
-Netherton: But objectively? *long pause*
+Netherton: But objectively? #delivery: then a long pause after the question
 
 Netherton: We've prevented significant attacks. Saved lives. Protected critical systems. That has measurable value.
 
 Netherton: My personal happiness has... less clear value. The math suggests the trade was justified.
 
-<> *slightly bitter*
-
-Netherton: Though I sometimes suspect I only believe that because accepting the alternative would be unbearable.
+Netherton: Though I sometimes suspect I only believe that because accepting the alternative would be unbearable. #delivery: slightly bitter
 
 ~ npc_netherton_influence += 32
 #influence_gained:32
@@ -1322,7 +1234,8 @@ Netherton: Though I sometimes suspect I only believe that because accepting the 
 
 {
     - npc_netherton_influence >= 90:
-        Netherton: {player_name()}. *uses first name, extremely rare* We should talk.
+        Narrator: For once, Netherton uses your first name.
+        Netherton: {player_name()}. We should talk.
     - npc_netherton_influence >= 80:
         Netherton: Agent {player_name()}. I value your perspective. What's on your mind?
     - else:
@@ -1351,7 +1264,7 @@ Netherton: Though I sometimes suspect I only believe that because accepting the 
 ~ npc_netherton_serious_conversations += 1
 ~ npc_netherton_personal_moments += 1
 
-Netherton: My legacy. *slight surprise at the question*
+Netherton: My legacy. #delivery: slightly surprised by the question
 
 Netherton: I've built CYBER-PHYSICAL division from fourteen agents to forty-seven. Developed training programs copied by other divisions. Written operational protocols that became SAFETYNET standard.
 
@@ -1384,17 +1297,13 @@ Netherton: The agents I've developed—that's legacy. People like you. Capable o
 #influence_gained:45
 ~ npc_netherton_personal_moments += 2
 
-Netherton: *rare visible emotion*
-
-Netherton: I... thank you. That means more than you might realize.
+Netherton: I... thank you. That means more than you might realize. #delivery: with rare visible emotion
 
 Netherton: This work is isolating. Leadership creates distance. I often wonder if I'm making meaningful difference or just pushing papers and attending meetings.
 
 Netherton: But agents I've developed have gone on to lead divisions. Run successful operations. Build their own teams. That ripple effect—training agents who train agents—
 
-<> *quiet*
-
-Netherton: If that's my legacy, I can accept it. The work continues beyond me. Better because of the foundation we built.
+Netherton: If that's my legacy, I can accept it. The work continues beyond me. Better because of the foundation we built. #delivery: quietly
 
 ~ npc_netherton_influence += 50
 #influence_gained:50
@@ -1407,17 +1316,13 @@ Netherton: If that's my legacy, I can accept it. The work continues beyond me. B
 #influence_gained:40
 ~ npc_netherton_personal_moments += 2
 
-Netherton: *long pause, genuinely considering*
-
-Netherton: I want agents who served under me to remember that I demanded excellence but supported their development. That I was hard but fair. That I cared about their welfare even when I couldn't show it.
+Netherton: I want agents who served under me to remember that I demanded excellence but supported their development. That I was hard but fair. That I cared about their welfare even when I couldn't show it. #delivery: after a long pause, genuinely considering
 
 Netherton: I want SAFETYNET to remain an organization worth serving. Where ethical boundaries are maintained. Where agents are valued. Where the mission matters.
 
-Netherton: And... *rare vulnerability* ...I want to have mattered. To have made choices that protected people. To have used my capabilities for something meaningful.
+Netherton: And... I want to have mattered. To have made choices that protected people. To have used my capabilities for something meaningful. #delivery: unusually vulnerable
 
-<> *formal again*
-
-Netherton: Probably too much to hope for. But that's what I want.
+Netherton: Probably too much to hope for. But that's what I want. #delivery: formal again
 
 ~ npc_netherton_influence += 45
 #influence_gained:45
@@ -1429,9 +1334,7 @@ Netherton: Probably too much to hope for. But that's what I want.
 ~ npc_netherton_influence += 35
 #influence_gained:35
 
-Netherton: *considers*
-
-Netherton: It shouldn't. Professional accomplishment should be its own reward. The work should matter more than how I'm remembered.
+Netherton: It shouldn't. Professional accomplishment should be its own reward. The work should matter more than how I'm remembered. #delivery: considering
 
 Netherton: But yes. It matters. I'm human enough to want my life's work to have meant something. To be remembered as having contributed.
 
@@ -1452,17 +1355,13 @@ Netherton: Perhaps that's vanity. But it's honest vanity.
 ~ npc_netherton_serious_conversations += 1
 ~ npc_netherton_personal_moments += 2
 
-Netherton: *direct look, evaluating*
-
-Netherton: Do I trust you? Yes.
+Netherton: Do I trust you? Yes. #delivery: direct, evaluating
 
 Netherton: I trust your technical capabilities. Your judgment under pressure. Your integrity. Your commitment to the mission.
 
 Netherton: I trust you to execute operations I authorize. To make sound decisions in the field. To prioritize agent safety and mission success appropriately.
 
-<> *pause*
-
-Netherton: And... *rare admission* ...I trust you with information I don't share with most agents. You've earned that.
+Netherton: And... I trust you with information I don't share with most agents. You've earned that. #delivery: after a pause, a rare admission
 
 * [Ask what earned that trust]
     ~ npc_netherton_influence += 40
@@ -1497,9 +1396,7 @@ Netherton: You ask meaningful questions. You challenge assumptions respectfully.
 
 Netherton: You prioritize agent welfare. I've reviewed your mission reports. You take risks to protect team members. That shows proper values.
 
-<> *rare warmth*
-
-Netherton: And you've engaged with me as a person, not just as authority. Asked about the weight of command. The personal cost. Shown genuine interest in understanding leadership.
+Netherton: And you've engaged with me as a person, not just as authority. Asked about the weight of command. The personal cost. Shown genuine interest in understanding leadership. #delivery: with rare warmth
 
 Netherton: That combination—competence, ethics, thoughtfulness, humanity—that earns trust.
 
@@ -1515,23 +1412,17 @@ Netherton: That combination—competence, ethics, thoughtfulness, humanity—tha
 ~ npc_netherton_personal_moments += 4
 ~ npc_netherton_earned_personal_trust = true
 
-Netherton: *visible emotion, rare for him*
-
-Netherton: That's... *pauses, composing himself*
+Netherton: That's... #delivery: visibly emotional, rare for him, pausing to compose himself
 
 Netherton: Trust flows downward easily in hierarchies. Authority demands it. But trust flowing upward—agents trusting command—that must be earned.
 
 Netherton: The fact that you trust me completely, that you'd say so directly—
 
-<> *quiet*
-
-Netherton: Thank you. Genuinely. That means more than most commendations I've received.
+Netherton: Thank you. Genuinely. That means more than most commendations I've received. #delivery: quietly
 
 Netherton: I will continue to earn that trust. To make decisions worthy of it. To command in ways that honor it.
 
-<> *direct look*
-
-Netherton: You're becoming the kind of agent I hoped to develop. The kind SAFETYNET needs. I'm... proud. Of your development.
+Netherton: You're becoming the kind of agent I hoped to develop. The kind SAFETYNET needs. I'm... proud. Of your development. #delivery: direct, steady
 
 ~ npc_netherton_influence += 70
 #influence_gained:70
@@ -1549,7 +1440,7 @@ Netherton: You're becoming the kind of agent I hoped to develop. The kind SAFETY
 #influence_gained:40
 ~ npc_netherton_serious_conversations += 1
 
-Netherton: My honest assessment. *sets aside work, gives full attention*
+Netherton: My honest assessment. #delivery: giving you his full attention
 
 {
     - npc_netherton_influence >= 95:
@@ -1559,9 +1450,7 @@ Netherton: My honest assessment. *sets aside work, gives full attention*
 
         Netherton: You demonstrate leadership qualities that suggest you'll eventually command your own division. When that time comes, I'll recommend you without reservation.
 
-        <> *rare genuine warmth*
-
-        Netherton: More than that—you've reminded me why this work matters. Why developing agents is worthwhile. You represent what SAFETYNET should be.
+        Netherton: More than that—you've reminded me why this work matters. Why developing agents is worthwhile. You represent what SAFETYNET should be. #delivery: with rare, genuine warmth
 
         Netherton: I'm honored to have commanded you. Genuinely.
 
@@ -1576,9 +1465,7 @@ Netherton: My honest assessment. *sets aside work, gives full attention*
 
         Netherton: I have no substantial criticisms. Minor areas for growth, but overall—you exceed expectations consistently.
 
-        <> *approving*
-
-        Netherton: Continue this trajectory and you'll have a distinguished career. I'm confident in that assessment.
+        Netherton: Continue this trajectory and you'll have a distinguished career. I'm confident in that assessment. #delivery: approving
 
         ~ npc_netherton_influence += 45
 #influence_gained:45
@@ -1622,11 +1509,11 @@ Netherton: My honest assessment. *sets aside work, gives full attention*
 ~ npc_netherton_serious_conversations += 1
 ~ npc_netherton_personal_moments += 3
 
-Netherton: Life beyond protocols. *removes glasses, rare informal gesture*
+Netherton: Life beyond protocols. #delivery: informal, unusually so
 
 Netherton: The handbook defines my professional life. Protocols structure every decision. Regulations govern every action.
 
-Netherton: But protocols don't cover everything. The handbook doesn't address... *searches for words* ...the human elements.
+Netherton: But protocols don't cover everything. The handbook doesn't address... the human elements. #delivery: searching for words
 
 Netherton: How to maintain humanity while executing inhumane operations. How to care for agents while sending them into danger. How to balance mission success against personal cost.
 
@@ -1656,21 +1543,17 @@ Netherton: How to maintain humanity while executing inhumane operations. How to 
 ~ npc_netherton_personal_moments += 4
 ~ npc_netherton_shared_vulnerability = true
 
-Netherton: *long pause, genuine vulnerability*
-
-Netherton: Conscience. Imperfect, uncertain conscience.
+Netherton: Conscience. Imperfect, uncertain conscience. #delivery: after a long pause, genuinely vulnerable
 
 Netherton: I make choices I believe are right. I prioritize agent welfare when I can. I refuse operations I find morally unacceptable.
 
 Netherton: But I don't have a system for it. No protocol. Just... judgment. Developed over decades. Sometimes wrong.
 
-<> *quiet*
-
-Netherton: I think about the agents I've commanded. What I would want if I were in their position. How I'd want to be led.
+Netherton: I think about the agents I've commanded. What I would want if I were in their position. How I'd want to be led. #delivery: quietly
 
 Netherton: I remember why I joined this work. To protect people. To serve something meaningful. When I'm uncertain, I return to that purpose.
 
-Netherton: And sometimes... *rare admission* ...I ask myself what agents like you would think. Whether decisions I'm considering would earn or lose your trust.
+Netherton: And sometimes... I ask myself what agents like you would think. Whether decisions I'm considering would earn or lose your trust. #delivery: a rare admission
 
 Netherton: That's not in the handbook. But it's what guides me when protocols aren't enough.
 
@@ -1685,9 +1568,7 @@ Netherton: That's not in the handbook. But it's what guides me when protocols ar
 #influence_gained:50
 ~ npc_netherton_personal_moments += 4
 
-Netherton: *slight bitter smile*
-
-Netherton: Very little. Work consumed most of what could have been life.
+Netherton: Very little. Work consumed most of what could have been life. #delivery: with a slight, bitter smile
 
 Netherton: I read. History, mostly. Biography. Philosophy. Trying to understand how others have grappled with moral complexity and impossible choices.
 
@@ -1695,15 +1576,11 @@ Netherton: I run. Early mornings. Helps clear my head. Provides structure beyond
 
 Netherton: I have an apartment I rarely see. No hobbies worth mentioning. Few friends. The work is... most of what I am.
 
-<> *pause*
-
-Netherton: I don't recommend that path. I ended up here through decades of choices, each one seeming reasonable at the time. Accumulated into isolation.
+Netherton: I don't recommend that path. I ended up here through decades of choices, each one seeming reasonable at the time. Accumulated into isolation. #delivery: after a pause
 
 Netherton: Maintain balance better than I did. Have life outside the agency. Don't let the work consume everything.
 
-<> *rare direct advice*
-
-Netherton: You're talented enough that the work will demand everything if you allow it. Don't. Preserve some part of yourself the agency doesn't own.
+Netherton: You're talented enough that the work will demand everything if you allow it. Don't. Preserve some part of yourself the agency doesn't own. #delivery: unusually direct, advising
 
 ~ npc_netherton_influence += 55
 #influence_gained:55
@@ -1714,7 +1591,7 @@ Netherton: You're talented enough that the work will demand everything if you al
 ~ npc_netherton_influence += 45
 #influence_gained:45
 
-Netherton: Precisely. *approving*
+Netherton: Precisely. #delivery: approving
 
 Netherton: The handbook provides framework. Guidelines. Accumulated wisdom. But it can't make decisions for you.
 
@@ -1762,7 +1639,7 @@ Netherton: The fact that you understand that—that protocols are tools, not rep
 
 {
     - npc_netherton_influence >= 85:
-        Netherton: Agent {player_name()}. *rare warmth* Your service is valued. Genuinely.
+        Netherton: Agent {player_name()}. Your service is valued. Genuinely.
     - npc_netherton_influence >= 75:
         Netherton: Excellent work continues. Carry on, Agent.
     - else:
@@ -1775,7 +1652,8 @@ Netherton: The fact that you understand that—that protocols are tools, not rep
 
 {
     - npc_netherton_influence >= 95:
-        Netherton: {player_name()}. *uses first name* It's been an honor working with you. Until next time.
+        Narrator: Netherton uses your first name.
+        Netherton: {player_name()}. It's been an honor working with you. Until next time.
     - npc_netherton_influence >= 85:
         Netherton: Thank you for your time, Agent. And for your service.
     - else:

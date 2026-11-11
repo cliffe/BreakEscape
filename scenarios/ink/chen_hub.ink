@@ -39,13 +39,13 @@ EXTERNAL equipment_status()             // LOCAL - Status of player's equipment 
 
 {
     - npc_location() == "lab":
-        Dr. Chen: {player_name()}! *looks up from workbench* Perfect timing. Come check this out!
+        Dr. Chen: {player_name()}! Perfect timing. Come check this out!
     - npc_location() == "equipment_room":
         Dr. Chen: Oh hey! Here for gear? I just finished calibrating some new equipment.
     - npc_location() == "briefing_room":
-        Dr. Chen: Agent {player_name()}. *gestures to technical displays* Let's talk about the tech side of this operation.
+        Dr. Chen: Agent {player_name()}. Let's talk about the tech side of this operation.
     - npc_location() == "field_support":
-        Dr. Chen: *over comms* Reading you loud and clear. What do you need?
+        Dr. Chen: Reading you loud and clear. What do you need? #delivery: over a comms link, quick and clear
     - else:
         Dr. Chen: Hey! What brings you by?
 }
@@ -64,7 +64,7 @@ EXTERNAL equipment_status()             // LOCAL - Status of player's equipment 
 
 // PERSONAL FRIENDSHIP OPTION (always available if topics exist)
 + {has_available_personal_topics() and mission_phase() != "active"} [How are you doing, Dr. Chen?]
-    Dr. Chen: Oh! *surprised by personal question*
+    Dr. Chen: Oh! #delivery: surprised
     {
         - npc_chen_influence >= 70:
             Dr. Chen: You know, I really appreciate when people ask that. Want to chat for a bit?
@@ -75,7 +75,7 @@ EXTERNAL equipment_status()             // LOCAL - Status of player's equipment 
 
 // EQUIPMENT AND TECHNICAL SUPPORT (high priority when damaged or needs upgrade)
 + {equipment_status() == "damaged"} [My equipment took damage in the field]
-    Dr. Chen: *immediately concerned* Let me see it. What happened?
+    Dr. Chen: Let me see it. What happened? #delivery: immediately concerned
     -> equipment_repair_discussion
 
 + {equipment_status() == "needs_upgrade"} [Request equipment upgrades for upcoming mission]
@@ -83,7 +83,7 @@ EXTERNAL equipment_status()             // LOCAL - Status of player's equipment 
     -> equipment_upgrade_menu
 
 + {mission_phase() == "active" and npc_location() == "field_support"} [I need technical support in the field]
-    Dr. Chen: *alert* Okay, talk to me. What's the technical problem?
+    Dr. Chen: Okay, talk to me. What's the technical problem? #delivery: alert, quick
     -> field_technical_support
 
 // MISSION-SPECIFIC TECHNICAL DISCUSSIONS
@@ -96,16 +96,16 @@ EXTERNAL equipment_status()             // LOCAL - Status of player's equipment 
     -> mission_ghost_tech_debrief
 
 + {current_mission_id() == "data_sanctuary"} [What tech is protecting the Data Sanctuary?]
-    Dr. Chen: *pulls up schematics* The sanctuary has multi-layered security. Let me explain the architecture.
+    Dr. Chen: The sanctuary has multi-layered security. Let me explain the architecture. #delivery: brisk, getting into it
     -> mission_sanctuary_tech_overview
 
 // GENERAL TECHNICAL TOPICS
 + {mission_phase() == "downtime"} [Ask about experimental technology]
-    Dr. Chen: *eyes light up* Oh! You want to hear about the experimental stuff? Because I have some REALLY cool projects going.
+    Dr. Chen: Oh! You want to hear about the experimental stuff? Because I have some REALLY cool projects going. #delivery: lighting up, delighted
     -> experimental_tech_discussion
 
 + {mission_phase() == "downtime" and npc_chen_influence >= 50} [Offer to help test experimental equipment]
-    Dr. Chen: *excited* You'd volunteer for field testing? That would be incredibly helpful!
+    Dr. Chen: You'd volunteer for field testing? That would be incredibly helpful! #delivery: excited
     -> volunteer_field_testing
 
 + {npc_chen_influence >= 60} [Ask for technical training]
@@ -121,7 +121,7 @@ EXTERNAL equipment_status()             // LOCAL - Status of player's equipment 
 + [That's all for now, Chen]
     {
         - npc_chen_influence >= 80:
-            Dr. Chen: Sounds good! *warm smile* Always great talking with you. Stay safe out there!
+            Dr. Chen: Sounds good! Always great talking with you. Stay safe out there! #delivery: warmly
         - npc_chen_influence >= 50:
             Dr. Chen: Alright! Let me know if you need anything. Seriously, anytime.
         - else:
@@ -204,13 +204,14 @@ EXTERNAL equipment_status()             // LOCAL - Status of player's equipment 
 // ===========================================
 
 === equipment_repair_discussion ===
-Dr. Chen: *examines the damaged equipment* Okay, let me see... *muttering technical analysis*
+Narrator: Dr. Chen examines the damaged equipment.
+Dr. Chen: Okay, let me see... #delivery: muttering, half distracted
 
 Dr. Chen: This is fixable, but it'll take some time. What happened out there?
 
 + [Explain the damage honestly]
     You explain how the equipment was damaged during the operation.
-    Dr. Chen: *nods* Okay, that's actually really useful feedback. I can improve the durability in the next version.
+    Dr. Chen: Okay, that's actually really useful feedback. I can improve the durability in the next version. #delivery: agreeing, pleased
     Dr. Chen: Give me about two hours. I'll have this repaired and reinforced.
     ~ npc_chen_influence += 5
 #influence_gained:5
@@ -225,14 +226,14 @@ Dr. Chen: This is fixable, but it'll take some time. What happened out there?
     -> mission_hub
 
 + [Blame the equipment design]
-    Dr. Chen: *slight frown* Okay... I mean, there's always room for improvement. But the equipment is rated for standard field conditions.
+    Dr. Chen: Okay... I mean, there's always room for improvement. But the equipment is rated for standard field conditions. #delivery: a little defensive
     Dr. Chen: I'll repair it. And I'll review the design specs. But be more careful with the gear, alright?
     ~ npc_chen_influence -= 3
 #influence_lost:3
     -> mission_hub
 
 === equipment_upgrade_menu ===
-Dr. Chen: *brings up equipment catalog on holographic display*
+Narrator: Dr. Chen brings up the equipment catalogue on a holographic display.
 
 Dr. Chen: Alright, so here's what's available for your access level:
 
@@ -243,55 +244,55 @@ Dr. Chen: Physical security tools—advanced lockpicks, biometric spoofing, RFID
 What interests you?
 
 + [Network infiltration upgrade]
-    Dr. Chen: Good choice. *pulls equipment* This has the latest decryption algorithms. Should shave minutes off your infiltration time.
+    Dr. Chen: Good choice. This has the latest decryption algorithms. Should shave minutes off your infiltration time. #delivery: pleased, busy fetching it
     Dr. Chen: I'll add it to your loadout. Don't lose this one—it's expensive!
     #equipment_upgraded_network
     ~ professional_reputation += 1
     -> mission_hub
 
 + [Surveillance countermeasures]
-    Dr. Chen: Smart. Staying undetected is half the job. *configures equipment*
+    Dr. Chen: Smart. Staying undetected is half the job. #delivery: busy setting it up
     Dr. Chen: This should make you nearly invisible to standard monitoring systems. Field test it and let me know how it performs.
     #equipment_upgraded_surveillance
     ~ professional_reputation += 1
     -> mission_hub
 
 + [Physical security tools]
-    Dr. Chen: The classics, updated. *hands over toolkit*
+    Narrator: Dr. Chen hands over the toolkit.
+    Dr. Chen: The classics, updated. #delivery: proud
     Dr. Chen: New biometric spoofer uses quantum randomization—way harder to detect than the old version.
     #equipment_upgraded_physical
     ~ professional_reputation += 1
     -> mission_hub
 
 + [Ask what they recommend]
-    Dr. Chen: *considers your mission profile*
     {
         - current_mission_id() == "ghost_in_machine":
-            Dr. Chen: For Ghost Protocol? Definitely the network package. You'll be dealing with sophisticated digital security.
+            Dr. Chen: For Ghost Protocol? Definitely the network package. You'll be dealing with sophisticated digital security. #delivery: thoughtfully
         - else:
-            Dr. Chen: Based on your recent missions... I'd say surveillance countermeasures. You're running a lot of infiltration ops.
+            Dr. Chen: Based on your recent missions... I'd say surveillance countermeasures. You're running a lot of infiltration ops. #delivery: thoughtfully
     }
     Dr. Chen: But it's your call. You know what you need in the field.
     -> equipment_upgrade_menu
 
 === field_technical_support ===
-Dr. Chen: *focused* Okay, I'm pulling up your equipment telemetry. What's the technical issue?
+Dr. Chen: Okay, I'm pulling up your equipment telemetry. What's the technical issue? #delivery: focused
 
 + [System won't connect to target network]
-    Dr. Chen: *checking diagnostics* Hmm, they might be using non-standard protocols. Try cycling through alt-frequencies. Settings menu, third tab.
+    Dr. Chen: Hmm, they might be using non-standard protocols. Try cycling through alt-frequencies. Settings menu, third tab. #delivery: checking as they talk
     Dr. Chen: If that doesn't work, there might be active jamming. I can try remote boost, but it'll make you more detectable.
     -> field_support_followup
 
 + [Encryption is taking too long]
-    Dr. Chen: Yeah, they upgraded their security. Um... *rapid thinking* ...okay, try the quantum bypass. It's experimental but it should work.
+    Dr. Chen: Yeah, they upgraded their security. Um... okay, try the quantum bypass. It's experimental but it should work. #delivery: thinking fast
     Dr. Chen: Quantum menu, enable fast-mode. Warning: it generates a lot of heat. Don't run it for more than five minutes.
     ~ npc_chen_influence += 5
 #influence_gained:5
     -> field_support_followup
 
 + [Equipment is malfunctioning]
-    Dr. Chen: *concerned* Malfunctioning how? Be specific.
-    Dr. Chen: Actually, I'm seeing some anomalous readings on my end. Let me try a remote reset... *working*
+    Dr. Chen: Malfunctioning how? Be specific. #delivery: concerned
+    Dr. Chen: Actually, I'm seeing some anomalous readings on my end. Let me try a remote reset... #delivery: working as they talk
     Dr. Chen: There. Try now. That should stabilize it.
     -> field_support_followup
 
@@ -299,20 +300,20 @@ Dr. Chen: *focused* Okay, I'm pulling up your equipment telemetry. What's the te
 Dr. Chen: Did that help? Are you good to continue?
 
 + [Yes, that fixed it. Thanks!]
-    Dr. Chen: *relieved* Oh good! Okay, I'll keep monitoring. Call if anything else goes wrong.
+    Dr. Chen: Oh good! Okay, I'll keep monitoring. Call if anything else goes wrong. #delivery: relieved
     ~ npc_chen_influence += 8
 #influence_gained:8
     -> mission_hub
 
 + [Still having issues]
-    Dr. Chen: *more concerned* Okay, this might be a hardware problem. Can you safely abort and extract?
+    Dr. Chen: Okay, this might be a hardware problem. Can you safely abort and extract? #delivery: more concerned
     Dr. Chen: I don't want you stuck in there with malfunctioning equipment. Your safety is more important than the mission.
     ~ npc_chen_influence += 10
 #influence_gained:10
     -> mission_hub
 
 === mission_ghost_equipment_briefing ===
-Dr. Chen: *pulls up equipment display with visible excitement*
+Narrator: Dr. Chen pulls up the equipment display, visibly excited.
 
 Dr. Chen: Okay! So for Ghost Protocol, I've prepared some specialized gear. This is actually really cool tech.
 
@@ -323,18 +324,18 @@ Dr. Chen: Second—enhanced data exfiltration tools. Faster extraction, better c
 Dr. Chen: Third—and this is experimental—quantum-encrypted comms. Even if they intercept your transmissions to Haxolottle, they can't decrypt them.
 
 + [Ask how the network camouflage works]
-    Dr. Chen: *launches into technical explanation* ...so basically, it analyzes local traffic patterns and generates fake activity that matches the statistical profile...
+    Dr. Chen: ...so basically, it analyzes local traffic patterns and generates fake activity that matches the statistical profile... #delivery: launching into it, enthusiastic
     -> ghost_equipment_details
 
 + [Ask about the risks of experimental tech]
-    Dr. Chen: *appreciates the question* Good thinking. The quantum comms are 95% reliable in testing. If they fail, you default to standard encrypted comms.
+    Dr. Chen: Good thinking. The quantum comms are 95% reliable in testing. If they fail, you default to standard encrypted comms. #delivery: pleased by the question
     Dr. Chen: I've built in fallbacks. Worst case, you lose some capability but not all capability.
     ~ npc_chen_influence += 5
 #influence_gained:5
     -> ghost_equipment_details
 
 + [Express confidence in the tech]
-    Dr. Chen: *grins* I'm glad you trust my work! I've tested this extensively. You'll be well-equipped.
+    Dr. Chen: I'm glad you trust my work! I've tested this extensively. You'll be well-equipped. #delivery: grinning
     ~ npc_chen_influence += 8
 #influence_gained:8
     -> ghost_equipment_details
@@ -343,12 +344,12 @@ Dr. Chen: Third—and this is experimental—quantum-encrypted comms. Even if th
 Dr. Chen: Any other questions about the gear? Or are you ready for me to configure your loadout?
 
 + [More questions about technical specs]
-    Dr. Chen: *happily explains more details*
+    Narrator: Dr. Chen happily explains more of the details.
     -> ghost_equipment_details
 
 + [I'm ready. Configure my loadout.]
     Dr. Chen: Perfect! Give me twenty minutes. I'll have everything calibrated to your biometrics.
-    Dr. Chen: *genuine* And hey... be careful out there, okay? I built good equipment, but you're the one taking the risks.
+    Dr. Chen: And hey... be careful out there, okay? I built good equipment, but you're the one taking the risks. #delivery: sincere
     {npc_chen_influence >= 60:
         Dr. Chen: Come back safe. The tech works better when the operator survives.
         ~ npc_chen_influence += 5
@@ -358,10 +359,10 @@ Dr. Chen: Any other questions about the gear? Or are you ready for me to configu
     -> mission_hub
 
 === mission_ghost_tech_debrief ===
-Dr. Chen: *eager for feedback* Okay, tell me everything! How did the equipment perform?
+Dr. Chen: Okay, tell me everything! How did the equipment perform? #delivery: eager
 
 + [Everything worked perfectly]
-    Dr. Chen: *extremely pleased* Yes! That's what I want to hear! The camouflage held up? No detection issues?
+    Dr. Chen: Yes! That's what I want to hear! The camouflage held up? No detection issues? #delivery: extremely pleased
     Dr. Chen: This is great data. I can certify this tech for wider deployment now.
     ~ npc_chen_influence += 10
 #influence_gained:10
@@ -369,7 +370,7 @@ Dr. Chen: *eager for feedback* Okay, tell me everything! How did the equipment p
     -> mission_hub
 
 + [Mostly good, but had some issues with X]
-    Dr. Chen: *immediately taking notes* Okay, tell me specifics. What were the exact conditions when the issue occurred?
+    Dr. Chen: Okay, tell me specifics. What were the exact conditions when the issue occurred? #delivery: attentive, taking notes
     You provide detailed feedback.
     Dr. Chen: Perfect. This is exactly the field data I need. I can iterate on the design and fix that problem.
     Dr. Chen: Thank you for the thorough report. Seriously. This makes my job so much easier.
@@ -379,9 +380,9 @@ Dr. Chen: *eager for feedback* Okay, tell me everything! How did the equipment p
     -> mission_hub
 
 + [Honestly, it saved my life]
-    Dr. Chen: *becomes emotional* It... really? Tell me what happened.
+    Dr. Chen: It... really? Tell me what happened. #delivery: becoming emotional
     You explain how the equipment got you out of a dangerous situation.
-    Dr. Chen: *voice cracks slightly* That's... that's why I do this. Building tech that keeps agents safe.
+    Dr. Chen: That's... that's why I do this. Building tech that keeps agents safe. #delivery: voice cracking slightly
     Dr. Chen: I'm really glad you're okay. And thank you for the feedback. I'll keep improving it.
     ~ npc_chen_influence += 20
 #influence_gained:20
@@ -389,16 +390,16 @@ Dr. Chen: *eager for feedback* Okay, tell me everything! How did the equipment p
     -> mission_hub
 
 === mission_sanctuary_tech_overview ===
-Dr. Chen: *brings up Data Sanctuary schematics*
+Narrator: Dr. Chen brings up the Data Sanctuary schematics.
 
 Dr. Chen: The sanctuary has probably the most sophisticated security architecture SAFETYNET has ever built. Multi-layered, redundant, paranoid design.
 
 Dr. Chen: Physical layer: Biometric access, man-traps, Faraday shielding. Digital layer: Air-gapped systems, quantum encryption, intrusion detection AI.
 
-Dr. Chen: If ENTROPY tries to breach this, they'll need nation-state level capabilities. Which... *worried* ...they might have.
+Dr. Chen: If ENTROPY tries to breach this, they'll need nation-state level capabilities. Which... they might have. #delivery: worried on the last words
 
 + [Ask if the defenses are enough]
-    Dr. Chen: *honest* Should be. But ENTROPY has surprised us before. That's why we're adding additional measures.
+    Dr. Chen: Should be. But ENTROPY has surprised us before. That's why we're adding additional measures. #delivery: honestly
     Dr. Chen: And why agents like you are on standby. Tech is great, but humans adapt in ways systems can't.
     -> mission_hub
 
@@ -408,14 +409,14 @@ Dr. Chen: If ENTROPY tries to breach this, they'll need nation-state level capab
     -> mission_hub
 
 + [Express concern about ENTROPY's capabilities]
-    Dr. Chen: *sighs* Yeah, me too. They're getting better. Faster. More sophisticated.
+    Dr. Chen: Yeah, me too. They're getting better. Faster. More sophisticated. #delivery: with a sigh
     Dr. Chen: That's why I work late. Every improvement I make might be the difference between holding the line and catastrophic breach.
     ~ npc_chen_influence += 5
 #influence_gained:5
     -> mission_hub
 
 === experimental_tech_discussion ===
-Dr. Chen: *absolute enthusiasm* Oh! Okay, so I'm working on some really exciting stuff right now!
+Dr. Chen: Oh! Okay, so I'm working on some really exciting stuff right now! #delivery: bursting with enthusiasm
 
 Dr. Chen: Project Mirage—adaptive network camouflage that learns from each deployment. Gets better over time.
 
@@ -435,7 +436,7 @@ Which interests you?
     -> experimental_fortress_details
 
 + [All of it sounds amazing]
-    Dr. Chen: *huge grin* Right?! This is why I love this job. Every project is pushing boundaries!
+    Dr. Chen: Right?! This is why I love this job. Every project is pushing boundaries! #delivery: grinning widely
     ~ npc_chen_influence += 10
 #influence_gained:10
     -> mission_hub
@@ -474,14 +475,14 @@ Dr. Chen: It's mathematically beautiful and operationally critical.
 -> experimental_tech_discussion
 
 === volunteer_field_testing ===
-Dr. Chen: *lights up* You'd really volunteer? Most agents avoid experimental gear!
+Dr. Chen: You'd really volunteer? Most agents avoid experimental gear! #delivery: lighting up
 
 Dr. Chen: I need field testing data. Lab conditions can't replicate real operational stress.
 
 Dr. Chen: I promise to build in safety margins. Fallback systems. Kill switches. Your safety comes first.
 
 + [I trust your work. I'll test it.]
-    Dr. Chen: *emotional* That trust means everything. Seriously.
+    Dr. Chen: That trust means everything. Seriously. #delivery: emotional
     Dr. Chen: I'll prepare test equipment for your next mission. Thorough briefing beforehand. Real-time monitoring during deployment.
     Dr. Chen: We're partners in this. Thank you.
     ~ npc_chen_influence += 20
@@ -517,7 +518,7 @@ Dr. Chen: What interests you? Network security? Hardware hacking? Cryptography? 
     -> mission_hub
 
 + [Cryptography]
-    Dr. Chen: *very excited* My specialty! I can teach you encryption theory, code-breaking techniques, quantum cryptography basics...
+    Dr. Chen: My specialty! I can teach you encryption theory, code-breaking techniques, quantum cryptography basics... #delivery: very excited
     ~ professional_reputation += 2
     ~ npc_chen_influence += 5
 #influence_gained:5
@@ -525,7 +526,7 @@ Dr. Chen: What interests you? Network security? Hardware hacking? Cryptography? 
     -> mission_hub
 
 + [Just make me better at my job]
-    Dr. Chen: *grins* I can do that. Let me design a custom training program based on your recent missions.
+    Dr. Chen: I can do that. Let me design a custom training program based on your recent missions. #delivery: grinning
     Dr. Chen: I'll mix practical skills with theoretical knowledge. Make you a more effective operator.
     ~ professional_reputation += 3
     -> mission_hub

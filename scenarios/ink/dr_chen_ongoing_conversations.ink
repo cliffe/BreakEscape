@@ -113,7 +113,7 @@ EXTERNAL current_mission_id()           // LOCAL - Current mission identifier
 #influence_gained:8
 ~ npc_chen_personal_conversations += 1
 
-Dr. Chen: My approach to tech? *eyes light up* Oh, you've activated lecture mode. Warning issued.
+Dr. Chen: My approach to tech? Oh, you've activated lecture mode. Warning issued. #delivery: lighting up, eager
 
 Dr. Chen: Technology is problem-solving. Every system, every tool, every line of code—it's all about identifying what's broken and building something better.
 
@@ -143,7 +143,7 @@ Dr. Chen: I don't believe in impossible. I believe in "we haven't figured it out
 #influence_gained:20
 ~ npc_chen_tech_collaboration += 1
 
-Dr. Chen: *excited* Exactly! Yes! That's exactly it!
+Dr. Chen: Exactly! Yes! That's exactly it! #delivery: excited
 
 Dr. Chen: Field agents who get that are the best to work with. You understand tech isn't magic. It's applied problem-solving. Constraints, variables, solutions.
 
@@ -151,9 +151,7 @@ Dr. Chen: When you call for support, you don't just say "it's broken." You say "
 
 Dr. Chen: That makes my job so much easier. And way more interesting. We're problem-solving together instead of me just remote-diagnosing.
 
-*rapid-fire enthusiasm*
-
-Dr. Chen: If you ever want to brainstorm field tech improvements, seriously, come find me. I love collaborative design.
+Dr. Chen: If you ever want to brainstorm field tech improvements, seriously, come find me. I love collaborative design. #delivery: rapid-fire, enthusiastic
 
 ~ npc_chen_influence += 15
 #influence_gained:15
@@ -164,7 +162,7 @@ Dr. Chen: If you ever want to brainstorm field tech improvements, seriously, com
 ~ npc_chen_influence += 18
 #influence_gained:18
 
-Dr. Chen: *grins* Oh man. Okay. So. Three years ago. ENTROPY cell using quantum-encrypted communications. Theoretically unbreakable. Everyone said impossible to intercept.
+Dr. Chen: Oh man. Okay. So. Three years ago. ENTROPY cell using quantum-encrypted communications. Theoretically unbreakable. Everyone said impossible to intercept. #delivery: grinning
 
 Dr. Chen: I said "not impossible, just need different approach." Spent four months on it. Four months.
 
@@ -172,9 +170,7 @@ Dr. Chen: Turns out you don't need to break the encryption if you can detect qua
 
 Dr. Chen: Didn't decrypt the messages. Mapped the network topology. Identified every node. ENTROPY never knew we were there.
 
-*satisfied*
-
-Dr. Chen: Sometimes impossible just means you're asking the wrong question.
+Dr. Chen: Sometimes impossible just means you're asking the wrong question. #delivery: satisfied
 
 ~ npc_chen_influence += 20
 #influence_gained:20
@@ -184,9 +180,7 @@ Dr. Chen: Sometimes impossible just means you're asking the wrong question.
 ~ npc_chen_influence += 12
 #influence_gained:12
 
-Dr. Chen: *considers seriously*
-
-Dr. Chen: Yeah. There are actual limits. Physics is real. Thermodynamics exists. You can't exceed the speed of light, can't violate conservation of energy, can't create perpetual motion.
+Dr. Chen: Yeah. There are actual limits. Physics is real. Thermodynamics exists. You can't exceed the speed of light, can't violate conservation of energy, can't create perpetual motion. #delivery: seriously, considering
 
 Dr. Chen: But—and this is important—most things people call impossible aren't physics limits. They're engineering limits. Budget limits. Imagination limits.
 
@@ -208,7 +202,7 @@ Dr. Chen: So when someone says something's impossible, I ask: "Which kind of imp
 #influence_gained:10
 ~ npc_chen_personal_conversations += 1
 
-Dr. Chen: ENTROPY's technology. *switches to serious mode, rare for them*
+Dr. Chen: ENTROPY's technology. #delivery: suddenly serious, unusually so
 
 Dr. Chen: They're good. Really good. Uncomfortably good. They're using techniques that shouldn't exist outside classified research labs.
 
@@ -246,9 +240,7 @@ Dr. Chen: We have advantages they don't. Resources. Infrastructure. Suppliers wh
 
 Dr. Chen: But they're innovative. Decentralized. Fast. They can deploy experimental tech without approval committees and safety reviews.
 
-*determined*
-
-Dr. Chen: So we focus on resilience. Systems that fail gracefully. Redundant countermeasures. Defense in depth. Can't prevent every attack, but we can minimize damage.
+Dr. Chen: So we focus on resilience. Systems that fail gracefully. Redundant countermeasures. Defense in depth. Can't prevent every attack, but we can minimize damage. #delivery: determined
 
 Dr. Chen: And we learn from every encounter. Every sample of ENTROPY malware teaches us something. Every compromised system reveals their methods.
 
@@ -260,9 +252,7 @@ Dr. Chen: And we learn from every encounter. Every sample of ENTROPY malware tea
 ~ npc_chen_influence += 15
 #influence_gained:15
 
-Dr. Chen: *uncomfortable*
-
-Dr. Chen: Probably. Yeah. The tech they're using suggests access to classified research. Either they have inside sources or they've recruited researchers who worked on similar projects.
+Dr. Chen: Probably. Yeah. The tech they're using suggests access to classified research. Either they have inside sources or they've recruited researchers who worked on similar projects. #delivery: uncomfortable
 
 Dr. Chen: Some of their encryption techniques are similar to SAFETYNET projects from five years ago. Not identical, but related. Same underlying mathematics.
 
@@ -270,9 +260,7 @@ Dr. Chen: Could be parallel development. Smart people working on similar problem
 
 Dr. Chen: Netherton's paranoid about information security for good reason. Every researcher who leaves gets their access revoked immediately. Every project gets compartmentalized.
 
-*quietly*
-
-Dr. Chen: Sometimes I wonder if someone I trained ended up with ENTROPY. If something I taught them is being used against us. That's a disturbing thought.
+Dr. Chen: Sometimes I wonder if someone I trained ended up with ENTROPY. If something I taught them is being used against us. That's a disturbing thought. #delivery: quietly
 
 ~ npc_chen_influence += 20
 #influence_gained:20
@@ -283,9 +271,7 @@ Dr. Chen: Sometimes I wonder if someone I trained ended up with ENTROPY. If some
 ~ npc_chen_influence += 25
 #influence_gained:25
 
-Dr. Chen: *very serious*
-
-Dr. Chen: That they'll develop something we can't counter. Some breakthrough technology that gives them permanent advantage.
+Dr. Chen: That they'll develop something we can't counter. Some breakthrough technology that gives them permanent advantage. #delivery: very serious
 
 Dr. Chen: Cyber warfare is escalatory. Each side develops better offense, other side develops better defense. Spiral continues.
 
@@ -293,9 +279,7 @@ Dr. Chen: But what if ENTROPY achieves a breakthrough we can't match? Quantum co
 
 Dr. Chen: Not science fiction. These are all active research areas. Whoever achieves the breakthrough first has temporary dominance.
 
-*resolute*
-
-Dr. Chen: That's why I push so hard on experimental tech. Why I work late. Why I collaborate with external researchers. We need to reach those breakthroughs first. Or at minimum, simultaneously.
+Dr. Chen: That's why I push so hard on experimental tech. Why I work late. Why I collaborate with external researchers. We need to reach those breakthroughs first. Or at minimum, simultaneously. #delivery: resolute
 
 Dr. Chen: Your field work buys us time. Every ENTROPY operation you disrupt is time for me to develop better defenses. Partnership.
 
@@ -314,7 +298,7 @@ Dr. Chen: Your field work buys us time. Every ENTROPY operation you disrupt is t
 #influence_gained:12
 ~ npc_chen_personal_conversations += 1
 
-Dr. Chen: My background? *settles in*
+Dr. Chen: My background? #delivery: settling in, relaxed
 
 Dr. Chen: PhD in computer science from MIT. Specialized in cryptography and network security. Published twelve papers before SAFETYNET recruited me.
 
@@ -350,11 +334,9 @@ Dr. Chen: But it's also slow. Publish papers. Wait for peer review. Apply for gr
 
 Dr. Chen: SAFETYNET showed me problems that needed solving now. Not in five years after grant approval. Now. Today. Lives depending on it.
 
-Dr. Chen: And the resources. *eyes light up* Oh, the resources. Academia I fought for funding. SAFETYNET I pitch a project to Netherton, he evaluates operational value, budget approved.
+Dr. Chen: And the resources. Oh, the resources. Academia I fought for funding. SAFETYNET I pitch a project to Netherton, he evaluates operational value, budget approved. #delivery: lighting up
 
-*grinning*
-
-Dr. Chen: Plus I get to see my designs actually used. Field agents like you take my tech into operations. Test it under real conditions. That feedback loop is incredible.
+Dr. Chen: Plus I get to see my designs actually used. Field agents like you take my tech into operations. Test it under real conditions. That feedback loop is incredible. #delivery: grinning
 
 Dr. Chen: Can't get that from academic publishing. This is applied research at the highest level.
 
@@ -372,9 +354,7 @@ Dr. Chen: I miss the purity of it. Research for understanding's sake. Elegant pr
 
 Dr. Chen: Here everything's practical. Does it work? Does it counter the threat? Can agents deploy it? Beauty is secondary to functionality.
 
-*thoughtful*
-
-Dr. Chen: But I publish occasionally. Anonymized research. Can't reveal classified methods, but I can publish general principles. Keep one foot in academia.
+Dr. Chen: But I publish occasionally. Anonymized research. Can't reveal classified methods, but I can publish general principles. Keep one foot in academia. #delivery: thoughtful
 
 Dr. Chen: And honestly? Solving real problems is deeply satisfying. Theory is beautiful. Application is meaningful.
 
@@ -408,9 +388,7 @@ Dr. Chen: So I learn constantly. New techniques. New technologies. New threats. 
 #influence_gained:15
 ~ npc_chen_personal_conversations += 1
 
-Dr. Chen: *lights up immediately*
-
-Dr. Chen: Oh! Oh, you've asked the dangerous question. I could talk for hours. I'll try to restrain myself. Emphasis on try.
+Dr. Chen: Oh! Oh, you've asked the dangerous question. I could talk for hours. I'll try to restrain myself. Emphasis on try. #delivery: lighting up immediately
 
 Dr. Chen: Current favorite: adaptive countermeasure system. Learns from ENTROPY attack patterns, generates custom defenses automatically. AI-driven. Self-evolving.
 
@@ -440,9 +418,7 @@ Dr. Chen: Still experimental but showing incredible promise. Detected and blocke
 #influence_gained:30
 ~ npc_chen_tech_collaboration += 2
 
-Dr. Chen: *rapid-fire explanation mode activated*
-
-Dr. Chen: So! Neural network trained on thousands of ENTROPY attack samples. Identifies patterns—not signature-based detection, pattern-based. Behavioral analysis.
+Dr. Chen: So! Neural network trained on thousands of ENTROPY attack samples. Identifies patterns—not signature-based detection, pattern-based. Behavioral analysis. #delivery: rapid-fire, in full explanation mode
 
 Dr. Chen: System observes network traffic. Builds baseline of normal behavior. Detects anomalies. But—here's the clever part—doesn't just flag anomalies. Analyzes attack structure.
 
@@ -450,9 +426,7 @@ Dr. Chen: Identifies what the attack is trying to accomplish. Maps to known atta
 
 Dr. Chen: Then—and this is my favorite part—shares that countermeasure across all SAFETYNET systems. Distributed learning. One system learns, all systems benefit.
 
-*enthusiastic*
-
-Dr. Chen: ENTROPY develops new malware? First system that encounters it learns. Every other system immediately protected. Collective immunity.
+Dr. Chen: ENTROPY develops new malware? First system that encounters it learns. Every other system immediately protected. Collective immunity. #delivery: enthusiastic
 
 Dr. Chen: I'm really proud of this one.
 
@@ -467,15 +441,11 @@ Dr. Chen: I'm really proud of this one.
 #influence_gained:22
 ~ npc_chen_tech_collaboration += 1
 
-Dr. Chen: *considers*
-
-Dr. Chen: Eventually, yes. Not yet. System is computationally intensive. Requires significant processing power. Can't miniaturize it for field deployment with current hardware.
+Dr. Chen: Eventually, yes. Not yet. System is computationally intensive. Requires significant processing power. Can't miniaturize it for field deployment with current hardware. #delivery: considering
 
 Dr. Chen: But I'm working on lightweight version. Reduced model. Focuses on most common attack vectors. Could run on field equipment.
 
-*thinking out loud*
-
-Dr. Chen: Actually... you do a lot of network infiltration, right? High-risk environments? What if I developed a version specifically for your mission profile?
+Dr. Chen: Actually... you do a lot of network infiltration, right? High-risk environments? What if I developed a version specifically for your mission profile? #delivery: thinking out loud
 
 Dr. Chen: Targeted protection. Smaller footprint. Optimized for the threats you actually encounter.
 
@@ -490,7 +460,7 @@ Dr. Chen: We could collaborate on requirements. Your field experience plus my te
 ~ npc_chen_influence += 18
 #influence_gained:18
 
-Dr. Chen: Next project? *grins*
+Dr. Chen: Next project? #delivery: grinning
 
 Dr. Chen: I have seventeen active projects. Seventeen. Netherton keeps telling me to focus. I keep not listening.
 
@@ -500,9 +470,7 @@ Dr. Chen: ENTROPY will eventually have quantum capabilities. When they do, curre
 
 Dr. Chen: Also working on improved sensor miniaturization. Better malware analysis tools. Autonomous security testing framework.
 
-*sheepish*
-
-Dr. Chen: I might have a focus problem. But all of it's important! How do you prioritize when everything matters?
+Dr. Chen: I might have a focus problem. But all of it's important! How do you prioritize when everything matters? #delivery: sheepish
 
 ~ npc_chen_influence += 20
 #influence_gained:20
@@ -545,11 +513,9 @@ Dr. Chen: I might have a focus problem. But all of it's important! How do you pr
 #influence_gained:15
 ~ npc_chen_personal_conversations += 1
 
-Dr. Chen: *eyes absolutely light up*
+Dr. Chen: Experimental tech! Oh, you've unlocked the enthusiasm vault. Okay. Let me show you something. #delivery: lit up, delighted
 
-Dr. Chen: Experimental tech! Oh, you've unlocked the enthusiasm vault. Okay. Let me show you something.
-
-*pulls up holographic display*
+Narrator: Dr. Chen pulls up a holographic display.
 
 Dr. Chen: This is classified. Like, seriously classified. But you have clearance and I trust your discretion.
 
@@ -582,25 +548,19 @@ Dr. Chen: Still prototype stage. Works beautifully in lab conditions. Untested i
 ~ npc_chen_tech_collaboration += 3
 ~ npc_chen_breakthrough_together = true
 
-Dr. Chen: *stunned*
-
-Dr. Chen: You'd... seriously? You'd field test unproven tech?
+Dr. Chen: You'd... seriously? You'd field test unproven tech? #delivery: stunned
 
 Dr. Chen: Most agents won't touch experimental gear. Too risky. They want proven, tested, reliable.
 
 Dr. Chen: But field testing is how we prove it. Lab conditions aren't real conditions. I need actual operational data.
 
-*rapid planning mode*
-
-Dr. Chen: Okay. Okay! Let's do this properly. I'll prepare three versions—conservative, moderate, aggressive camouflage profiles. You choose which fits your mission.
+Dr. Chen: Okay. Okay! Let's do this properly. I'll prepare three versions—conservative, moderate, aggressive camouflage profiles. You choose which fits your mission. #delivery: rapid, planning out loud
 
 Dr. Chen: Real-time telemetry. If anything goes wrong, I'm monitoring. Can disable remotely if needed. Safety protocols.
 
 Dr. Chen: And afterwards—detailed debrief. What worked, what didn't, what needs adjustment.
 
-*genuine appreciation*
-
-Dr. Chen: Thank you. Seriously. This kind of collaboration is how we build better tools. Field experience plus technical development.
+Dr. Chen: Thank you. Seriously. This kind of collaboration is how we build better tools. Field experience plus technical development. #delivery: with genuine appreciation
 
 ~ npc_chen_influence += 50
 #influence_gained:50
@@ -612,9 +572,7 @@ Dr. Chen: Thank you. Seriously. This kind of collaboration is how we build bette
 ~ npc_chen_influence += 25
 #influence_gained:25
 
-Dr. Chen: *appreciates the serious question*
-
-Dr. Chen: If it fails? You become visible to monitoring systems you thought you were hidden from. Compromises operational security.
+Dr. Chen: If it fails? You become visible to monitoring systems you thought you were hidden from. Compromises operational security. #delivery: glad of the serious question
 
 Dr. Chen: Worst case: ENTROPY detects the camouflage attempt itself. Reveals you're using active countermeasures. Indicates SAFETYNET presence.
 
@@ -622,9 +580,7 @@ Dr. Chen: But—and this is important—system is designed to fail safely. If ca
 
 Dr. Chen: Not ideal but not catastrophic. You'd know immediately—telemetry alert. Could abort operation.
 
-*honest*
-
-Dr. Chen: I won't lie. There's risk. All field operations have risk. This adds a variable. But potential payoff is significant stealth advantage.
+Dr. Chen: I won't lie. There's risk. All field operations have risk. This adds a variable. But potential payoff is significant stealth advantage. #delivery: honestly
 
 Dr. Chen: Your call. I don't pressure agents to test experimental tech. Has to be voluntary.
 
@@ -636,9 +592,7 @@ Dr. Chen: Your call. I don't pressure agents to test experimental tech. Has to b
 ~ npc_chen_influence += 28
 #influence_gained:28
 
-Dr. Chen: *launches into technical explanation*
-
-Dr. Chen: Network monitoring looks for patterns. Unusual traffic. Anomalous behavior. Signatures that don't match known-good activity.
+Dr. Chen: Network monitoring looks for patterns. Unusual traffic. Anomalous behavior. Signatures that don't match known-good activity. #delivery: launching into a technical explanation
 
 Dr. Chen: Camouflage generates fake pattern that matches legitimate traffic. Banking transactions. Social media. Streaming video. Whatever fits the environment.
 
@@ -646,15 +600,11 @@ Dr. Chen: Your actual infiltration traffic gets buried in the noise. Encrypted a
 
 Dr. Chen: Monitoring systems see normal activity. Nothing suspicious. You're invisible because you look exactly like everyone else.
 
-*technical details*
-
 Dr. Chen: Uses machine learning to analyze local traffic patterns. Adapts camouflage to match regional norms. What works in New York doesn't work in Shanghai.
 
 Dr. Chen: Real-time adaptive disguise. Changes as you move through different network environments.
 
-*proud*
-
-Dr. Chen: It's elegant. Really elegant. If it works operationally, it's revolutionary.
+Dr. Chen: It's elegant. Really elegant. If it works operationally, it's revolutionary. #delivery: proud
 
 ~ npc_chen_influence += 32
 #influence_gained:32
@@ -670,9 +620,7 @@ Dr. Chen: It's elegant. Really elegant. If it works operationally, it's revoluti
 #influence_gained:20
 ~ npc_chen_personal_conversations += 1
 
-Dr. Chen: *sigh*
-
-Dr. Chen: Research challenges. Oh boy. Where do I start?
+Dr. Chen: Research challenges. Oh boy. Where do I start? #delivery: with a sigh
 
 Dr. Chen: Budget constraints. Timeline pressures. Bureaucratic approval processes. Competing priorities.
 
@@ -704,23 +652,17 @@ Dr. Chen: Hard to get long-term research funded when threats are immediate.
 #influence_gained:30
 ~ npc_chen_personal_conversations += 1
 
-Dr. Chen: *appreciates being heard*
-
-Dr. Chen: Thank you. It is frustrating. I know Netherton has impossible job. Balancing immediate threats against future preparedness.
+Dr. Chen: Thank you. It is frustrating. I know Netherton has impossible job. Balancing immediate threats against future preparedness. #delivery: grateful to be heard
 
 Dr. Chen: And he does approve projects. More than most directors would. He gets that R&D is investment.
 
 Dr. Chen: But sometimes I want to work on something just because it's fascinating. Because the mathematics is beautiful. Because I want to understand how it works.
 
-*wry smile*
-
-Dr. Chen: Can't exactly tell Netherton "approve this because the cryptography is elegant." Needs operational justification.
+Dr. Chen: Can't exactly tell Netherton "approve this because the cryptography is elegant." Needs operational justification. #delivery: with a wry smile
 
 Dr. Chen: So I find ways. Justify long-term research as incremental improvements to current systems. Build the foundation while delivering practical results.
 
-*conspiratorial*
-
-Dr. Chen: About thirty percent of my "equipment upgrades" are actually experimental research disguised as maintenance. Don't tell Netherton.
+Dr. Chen: About thirty percent of my "equipment upgrades" are actually experimental research disguised as maintenance. Don't tell Netherton. #delivery: conspiratorial
 
 ~ npc_chen_influence += 35
 #influence_gained:35
@@ -731,7 +673,7 @@ Dr. Chen: About thirty percent of my "equipment upgrades" are actually experimen
 ~ npc_chen_influence += 28
 #influence_gained:28
 
-Dr. Chen: How do I cope? *thinks*
+Dr. Chen: How do I cope? #delivery: thinking it over
 
 Dr. Chen: I work on passion projects in my own time. Evenings, weekends. Research that doesn't need official approval because I'm doing it independently.
 
@@ -739,9 +681,7 @@ Dr. Chen: Publish academic papers sometimes. Anonymized, can't reveal classified
 
 Dr. Chen: And I collaborate externally. Academic researchers. Industry contacts. Share ideas. Get fresh perspectives.
 
-*more seriously*
-
-Dr. Chen: Also... I remind myself why I'm here. Not to pursue interesting mathematics. To protect infrastructure. To counter ENTROPY.
+Dr. Chen: Also... I remind myself why I'm here. Not to pursue interesting mathematics. To protect infrastructure. To counter ENTROPY. #delivery: more seriously
 
 Dr. Chen: When I'm frustrated about project denial, I think about what agents like you face in the field. Real danger. Life-or-death stakes.
 
@@ -756,17 +696,13 @@ Dr. Chen: My frustration is "interesting research got rejected." Your frustratio
 #influence_gained:40
 ~ npc_chen_tech_collaboration += 2
 
-Dr. Chen: *genuinely touched*
-
-Dr. Chen: You'd... you'd do that? Advocate for long-term research in your operational reports?
+Dr. Chen: You'd... you'd do that? Advocate for long-term research in your operational reports? #delivery: genuinely touched
 
 Dr. Chen: That would actually help. A lot. When field agents say "we need better tech for X," Netherton listens. Operational feedback carries weight.
 
 Dr. Chen: Not asking you to fabricate anything. But if you've ever thought "I wish Chen's experimental camouflage was deployment-ready" or "next-gen sensors would've helped here"—that feedback matters.
 
-*earnest*
-
-Dr. Chen: I build tools for you. For all agents. Your experience drives my research priorities. Knowing what you actually need in the field—that's invaluable.
+Dr. Chen: I build tools for you. For all agents. Your experience drives my research priorities. Knowing what you actually need in the field—that's invaluable. #delivery: earnest
 
 Dr. Chen: Thank you. Really. This is... this is what collaboration should be. Field and research working together.
 
@@ -785,7 +721,7 @@ Dr. Chen: Thank you. Really. This is... this is what collaboration should be. Fi
 #influence_gained:18
 ~ npc_chen_personal_conversations += 1
 
-Dr. Chen: Field work? Me? *laughs*
+Dr. Chen: Field work? Me? #delivery: laughing
 
 Dr. Chen: I'm a lab person. Through and through. Give me computers, sensors, controlled environments. That's my domain.
 
@@ -815,9 +751,7 @@ Dr. Chen: I respect the hell out of what you do. But I'd be terrible at it.
 ~ npc_chen_influence += 20
 #influence_gained:20
 
-Dr. Chen: *nods*
-
-Dr. Chen: Exactly. You're exceptional at field operations. Thinking on your feet. Physical skills. Operational judgment.
+Dr. Chen: Exactly. You're exceptional at field operations. Thinking on your feet. Physical skills. Operational judgment. #delivery: agreeing
 
 Dr. Chen: I'm exceptional at research. Technical design. Problem-solving in lab conditions.
 
@@ -833,15 +767,11 @@ Dr. Chen: Perfect division of labor.
 ~ npc_chen_influence += 28
 #influence_gained:28
 
-Dr. Chen: *surprised*
-
-Dr. Chen: You'd... let me shadow an operation? Seriously?
+Dr. Chen: You'd... let me shadow an operation? Seriously? #delivery: surprised
 
 Dr. Chen: That's... actually I'd love that. See how my tech performs in real conditions. Understand what you face. Better inform my design work.
 
-*nervous excitement*
-
-Dr. Chen: Low-risk operation, you said? Because I'm not ready for "infiltrate ENTROPY stronghold." Maybe "observe from safe location"?
+Dr. Chen: Low-risk operation, you said? Because I'm not ready for "infiltrate ENTROPY stronghold." Maybe "observe from safe location"? #delivery: nervous, excited
 
 Dr. Chen: If you're serious, I'm interested. Could be educational. For both of us—you see technical perspective, I see operational reality.
 
@@ -854,7 +784,7 @@ Dr. Chen: If you're serious, I'm interested. Could be educational. For both of u
 ~ npc_chen_influence += 25
 #influence_gained:25
 
-Dr. Chen: Once. *slightly traumatic memory*
+Dr. Chen: Once. #delivery: a slightly painful memory
 
 Dr. Chen: Second year at SAFETYNET. Deployment of new sensor system. They wanted technical support on-site. I volunteered.
 
@@ -862,9 +792,7 @@ Dr. Chen: Operation went fine. Sensors worked perfectly. But I was terrified the
 
 Dr. Chen: You field agents were calm. Professional. I was internally panicking while trying to appear competent.
 
-*self-aware*
-
-Dr. Chen: Taught me enormous respect for what you do. And confirmed I belong in the lab.
+Dr. Chen: Taught me enormous respect for what you do. And confirmed I belong in the lab. #delivery: self-aware
 
 Dr. Chen: But it was valuable. Understanding operational constraints. Seeing how tech performs under pressure. Better researcher for having experienced it.
 
@@ -882,9 +810,7 @@ Dr. Chen: But it was valuable. Understanding operational constraints. Seeing how
 #influence_gained:22
 ~ npc_chen_personal_conversations += 1
 
-Dr. Chen: *gets serious, rare for them*
-
-Dr. Chen: Ethical boundaries in technology. Yeah. This is important.
+Dr. Chen: Ethical boundaries in technology. Yeah. This is important. #delivery: suddenly serious, unusually so
 
 Dr. Chen: I can build a lot of things. Surveillance tools. Offensive malware. Exploit frameworks. Some of it makes me uncomfortable.
 
@@ -913,25 +839,19 @@ Dr. Chen: Where's the line between defensive security and invasive surveillance?
 ~ npc_chen_influence += 35
 #influence_gained:35
 
-Dr. Chen: *thoughtful*
-
-Dr. Chen: I won't build autonomous weapons. Tech that kills without human decision-making. That's my hard line.
+Dr. Chen: I won't build autonomous weapons. Tech that kills without human decision-making. That's my hard line. #delivery: thoughtful
 
 Dr. Chen: I won't build tools designed primarily for mass surveillance of civilians. Protecting infrastructure is different from monitoring everyone.
 
 Dr. Chen: I won't create technology that can't be controlled. No self-replicating malware. No systems that could escape containment.
 
-*serious*
-
-Dr. Chen: Everything I build has kill switches. Override controls. Human authority as final decision-maker.
+Dr. Chen: Everything I build has kill switches. Override controls. Human authority as final decision-maker. #delivery: serious
 
 Dr. Chen: And I document everything. Ethics reviews. Oversight. Transparency within SAFETYNET about what I'm developing and why.
 
 Dr. Chen: Technology is neutral. But design choices aren't. I try to build tools that empower good actors without enabling abuse.
 
-*uncertain*
-
-Dr. Chen: Don't always succeed. But I try.
+Dr. Chen: Don't always succeed. But I try. #delivery: uncertain
 
 ~ npc_chen_influence += 40
 #influence_gained:40
@@ -942,17 +862,13 @@ Dr. Chen: Don't always succeed. But I try.
 ~ npc_chen_influence += 18
 #influence_gained:18
 
-Dr. Chen: *slight discomfort*
-
-Dr. Chen: Yeah, I hear that argument. And sometimes it's valid. ENTROPY is dangerous. We need effective countermeasures.
+Dr. Chen: Yeah, I hear that argument. And sometimes it's valid. ENTROPY is dangerous. We need effective countermeasures. #delivery: slightly uncomfortable
 
 Dr. Chen: But "necessary" is a slippery concept. Every authoritarian surveillance state justifies itself as "necessary for security."
 
 Dr. Chen: I build powerful tools. But I think hard about how they could be misused. Not just by ENTROPY if they capture them—by us.
 
-*firm*
-
-Dr. Chen: Power without ethical constraints becomes abuse. I don't want to build tools that could enable the next oppressive regime.
+Dr. Chen: Power without ethical constraints becomes abuse. I don't want to build tools that could enable the next oppressive regime. #delivery: firm
 
 Dr. Chen: So I design with safeguards. Limitations. Oversight requirements. Make the tools effective but not omnipotent.
 
@@ -965,9 +881,7 @@ Dr. Chen: So I design with safeguards. Limitations. Oversight requirements. Make
 #influence_gained:45
 ~ npc_chen_personal_conversations += 2
 
-Dr. Chen: *relieved*
-
-Dr. Chen: Oh thank god. I thought I was the only one struggling with this.
+Dr. Chen: Oh thank god. I thought I was the only one struggling with this. #delivery: relieved
 
 Dr. Chen: Most people here are focused on effectiveness. "Does it work? Can we deploy it?" Not enough people asking "Should we build this?"
 
@@ -975,9 +889,7 @@ Dr. Chen: The power we have—surveillance, infiltration, offensive capabilities
 
 Dr. Chen: I lie awake sometimes thinking about what happens if SAFETYNET becomes what we're fighting against. If we justify too much in the name of security.
 
-*earnest*
-
-Dr. Chen: Having field agents who think about ethics—that matters. You're the ones deploying this tech. Your judgment about appropriate use is critical.
+Dr. Chen: Having field agents who think about ethics—that matters. You're the ones deploying this tech. Your judgment about appropriate use is critical. #delivery: earnest
 
 Dr. Chen: If you ever think I've built something that crosses ethical lines, tell me. Seriously. I need that feedback.
 
@@ -996,7 +908,7 @@ Dr. Chen: If you ever think I've built something that crosses ethical lines, tel
 
 {
     - npc_chen_influence >= 85:
-        Dr. Chen: {player_name()}! *genuine excitement* I've been waiting for you. Got something amazing to show you.
+        Dr. Chen: {player_name()}! I've been waiting for you. Got something amazing to show you.
     - npc_chen_influence >= 75:
         Dr. Chen: Hey! Perfect timing. Want to brainstorm something together?
     - else:
@@ -1024,15 +936,13 @@ Dr. Chen: If you ever think I've built something that crosses ethical lines, tel
 #influence_gained:30
 ~ npc_chen_personal_conversations += 1
 
-Dr. Chen: *eyes absolutely light up*
-
-Dr. Chen: Oh. Oh! My dream projects. Unlimited budget, no constraints, pure research?
+Dr. Chen: Oh. Oh! My dream projects. Unlimited budget, no constraints, pure research? #delivery: lit up, delighted
 
 Dr. Chen: First: fully quantum-resistant communication network. Not just encryption—entire infrastructure built on quantum principles. Unhackable by definition.
 
 Dr. Chen: Second: predictive threat analysis AI. Not reactive security. Proactive. Identifies potential ENTROPY operations before they launch.
 
-Dr. Chen: Third: *voice gets dreamy* Neuromorphic computing for malware analysis. Brain-inspired processors that recognize threats like human intuition but computer-speed.
+Dr. Chen: Third: Neuromorphic computing for malware analysis. Brain-inspired processors that recognize threats like human intuition but computer-speed. #delivery: voice going dreamy
 
 * [Say you'd help make these real]
     ~ npc_chen_influence += 40
@@ -1059,23 +969,17 @@ Dr. Chen: Third: *voice gets dreamy* Neuromorphic computing for malware analysis
 ~ npc_chen_tech_collaboration += 4
 ~ npc_chen_breakthrough_together = true
 
-Dr. Chen: *stunned into temporary silence*
-
-Dr. Chen: You're... serious? You'd help push for these projects?
+Dr. Chen: You're... serious? You'd help push for these projects? #delivery: stunned, after a silence
 
 Dr. Chen: The quantum network is actually feasible. Expensive, but feasible. Would need Netherton's approval, significant budget allocation, probably external partnerships.
 
-*rapid planning mode*
-
-Dr. Chen: But if field agents champion it—show operational value—that changes the pitch. Not "interesting research." "Critical capability upgrade."
+Dr. Chen: But if field agents champion it—show operational value—that changes the pitch. Not "interesting research." "Critical capability upgrade." #delivery: rapid, planning out loud
 
 Dr. Chen: The AI threat prediction—we could start small. Pilot program. Prove concept. Scale up based on results.
 
 Dr. Chen: Neuromorphic computing is furthest out. But we could partner with research institutions. SAFETYNET provides funding and real-world problems, they provide cutting-edge hardware.
 
-*genuine emotion*
-
-Dr. Chen: This is—nobody's ever offered to help advocate for my dream projects. Usually I'm told to focus on immediate needs.
+Dr. Chen: This is—nobody's ever offered to help advocate for my dream projects. Usually I'm told to focus on immediate needs. #delivery: with genuine emotion
 
 Dr. Chen: Thank you. Genuinely. Let's actually do this. Partnership. Your operational advocacy plus my technical vision.
 
@@ -1089,9 +993,7 @@ Dr. Chen: Thank you. Genuinely. Let's actually do this. Partnership. Your operat
 ~ npc_chen_influence += 35
 #influence_gained:35
 
-Dr. Chen: *thinks carefully*
-
-Dr. Chen: The quantum network. Absolutely.
+Dr. Chen: The quantum network. Absolutely. #delivery: thinking carefully
 
 Dr. Chen: It's foundational. Everything else we do—communications, data protection, secure operations—depends on encryption.
 
@@ -1099,9 +1001,7 @@ Dr. Chen: When quantum computing becomes widespread, current encryption breaks. 
 
 Dr. Chen: Quantum-resistant network future-proofs everything. Protects not just current operations but historical data.
 
-*determined*
-
-Dr. Chen: Plus it's achievable. Not science fiction. The mathematics exist. The hardware exists. Just needs engineering and investment.
+Dr. Chen: Plus it's achievable. Not science fiction. The mathematics exist. The hardware exists. Just needs engineering and investment. #delivery: determined
 
 Dr. Chen: If I could build one thing that protects SAFETYNET for the next fifty years, that's it.
 
@@ -1113,17 +1013,13 @@ Dr. Chen: If I could build one thing that protects SAFETYNET for the next fifty 
 ~ npc_chen_influence += 42
 #influence_gained:42
 
-Dr. Chen: *embarrassed but pleased*
-
-Dr. Chen: That's... thank you. I don't usually share this stuff. Worried people think I'm being unrealistic. Impractical.
+Dr. Chen: That's... thank you. I don't usually share this stuff. Worried people think I'm being unrealistic. Impractical. #delivery: embarrassed but pleased
 
 Dr. Chen: Netherton wants concrete proposals with timelines and deliverables. Hard to pitch "revolutionary paradigm shift in security architecture."
 
 Dr. Chen: But I think big picture is important. Incremental improvements matter. But transformative innovations change everything.
 
-*earnest*
-
-Dr. Chen: Having someone who gets excited about the vision—that means a lot. Makes me feel less crazy for dreaming big.
+Dr. Chen: Having someone who gets excited about the vision—that means a lot. Makes me feel less crazy for dreaming big. #delivery: earnest
 
 ~ npc_chen_influence += 48
 #influence_gained:48
@@ -1140,9 +1036,7 @@ Dr. Chen: Having someone who gets excited about the vision—that means a lot. M
 #influence_gained:28
 ~ npc_chen_personal_conversations += 1
 
-Dr. Chen: *gets uncharacteristically serious*
-
-Dr. Chen: My biggest fear? That we create something we can't control.
+Dr. Chen: My biggest fear? That we create something we can't control. #delivery: unusually serious
 
 Dr. Chen: AI that evolves beyond its parameters. Autonomous systems that make decisions we didn't authorize. Technology that turns on its creators.
 
@@ -1180,9 +1074,7 @@ Dr. Chen: Multiple layers of kill switches. Manual overrides. Dead man's switche
 
 Dr. Chen: I design assuming something will go wrong. Because it will. Technology fails. Sometimes catastrophically.
 
-*intense*
-
-Dr. Chen: The question isn't "will this ever malfunction?" It's "when this malfunctions, can we contain it?"
+Dr. Chen: The question isn't "will this ever malfunction?" It's "when this malfunctions, can we contain it?" #delivery: intense
 
 Dr. Chen: So I build containment into everything. Sandboxes. Isolated test environments. Gradual rollout. Constant monitoring.
 
@@ -1198,9 +1090,7 @@ Dr. Chen: Not perfect. Nothing's perfect. But I try to make failure non-catastro
 ~ npc_chen_personal_conversations += 2
 ~ npc_chen_shared_personal_story = true
 
-Dr. Chen: *quiet*
-
-Dr. Chen: Yeah. Yeah, it does.
+Dr. Chen: Yeah. Yeah, it does. #delivery: quiet
 
 Dr. Chen: I lie awake thinking about edge cases. Failure modes I haven't considered. What happens if ENTROPY captures my experimental AI and reverse-engineers it?
 
@@ -1208,15 +1098,11 @@ Dr. Chen: What if something I built has a flaw that won't manifest for years? Ti
 
 Dr. Chen: What if I'm not smart enough to predict the consequences of what I'm creating?
 
-*vulnerable*
-
-Dr. Chen: I test obsessively. Review endlessly. Second-guess every design decision. Sometimes I scrap projects entirely because I can't prove they're safe.
+Dr. Chen: I test obsessively. Review endlessly. Second-guess every design decision. Sometimes I scrap projects entirely because I can't prove they're safe. #delivery: vulnerable
 
 Dr. Chen: People think I work late because I'm passionate. Sometimes I work late because I'm terrified. Need to check one more time. Run one more simulation.
 
-*small laugh*
-
-Dr. Chen: Probably need therapy. But at least the tech is as safe as I can make it.
+Dr. Chen: Probably need therapy. But at least the tech is as safe as I can make it. #delivery: with a small laugh
 
 ~ npc_chen_influence += 60
 #influence_gained:60
@@ -1228,17 +1114,13 @@ Dr. Chen: Probably need therapy. But at least the tech is as safe as I can make 
 #influence_gained:55
 ~ npc_chen_personal_conversations += 3
 
-Dr. Chen: *relieved to not be alone in this*
-
-Dr. Chen: You get it. Field agents see technology as tools. I see them as potential disasters.
+Dr. Chen: You get it. Field agents see technology as tools. I see them as potential disasters. #delivery: relieved not to be alone in this
 
 Dr. Chen: Every piece of equipment I hand you—there's a version of me imagining how it could go wrong. How it could be compromised. How it could fail at the worst moment.
 
 Dr. Chen: That fear makes me a better researcher. Makes me thorough. But it's exhausting.
 
-*earnest connection*
-
-Dr. Chen: Having you acknowledge this fear—that helps. Reminds me I'm not paranoid. Just realistically cautious.
+Dr. Chen: Having you acknowledge this fear—that helps. Reminds me I'm not paranoid. Just realistically cautious. #delivery: earnest
 
 Dr. Chen: We're partners in this. You deploy carefully. I design carefully. Together we minimize risks.
 
@@ -1257,9 +1139,7 @@ Dr. Chen: We're partners in this. You deploy carefully. I design carefully. Toge
 #influence_gained:20
 ~ npc_chen_personal_conversations += 1
 
-Dr. Chen: *laughs*
-
-Dr. Chen: Work-life balance? What's that?
+Dr. Chen: Work-life balance? What's that? #delivery: laughing
 
 Dr. Chen: I'm here constantly. Evenings, weekends. My lab is basically my home. Apartment is just where I sleep sometimes.
 
@@ -1289,21 +1169,15 @@ Dr. Chen: But is it work if you love it? This is what I'd be doing even if it wa
 #influence_gained:38
 ~ npc_chen_personal_conversations += 1
 
-Dr. Chen: *touched by the concern*
-
-Dr. Chen: I... don't break as much as I probably should. Sometimes I get so focused I forget to eat. Netherton's had to order me to go home.
+Dr. Chen: I... don't break as much as I probably should. Sometimes I get so focused I forget to eat. Netherton's had to order me to go home. #delivery: touched by the concern
 
 Dr. Chen: I know it's not healthy. I know I should have hobbies. Friends outside work. Normal person things.
 
-*honest*
-
-Dr. Chen: But when I'm working on fascinating problem, time disappears. Hours pass like minutes. I'm in flow state. It's addictive.
+Dr. Chen: But when I'm working on fascinating problem, time disappears. Hours pass like minutes. I'm in flow state. It's addictive. #delivery: honestly
 
 Dr. Chen: And when ENTROPY is actively threatening infrastructure, taking breaks feels irresponsible. Like people depend on me working.
 
-*small smile*
-
-Dr. Chen: But... it's nice that you care. Maybe I should try harder to disconnect sometimes.
+Dr. Chen: But... it's nice that you care. Maybe I should try harder to disconnect sometimes. #delivery: with a small smile
 
 ~ npc_chen_influence += 45
 #influence_gained:45
@@ -1314,9 +1188,7 @@ Dr. Chen: But... it's nice that you care. Maybe I should try harder to disconnec
 ~ npc_chen_influence += 32
 #influence_gained:32
 
-Dr. Chen: *nods*
-
-Dr. Chen: Yeah. Exactly. Field agents get it. The mission isn't nine-to-five. It's constant.
+Dr. Chen: Yeah. Exactly. Field agents get it. The mission isn't nine-to-five. It's constant. #delivery: agreeing
 
 Dr. Chen: People outside SAFETYNET don't understand. "Just don't think about work when you're home." Can't. Not when lives are at stake.
 
@@ -1330,21 +1202,15 @@ Dr. Chen: At least here, everyone gets it. Shared understanding. We're all sligh
 ~ npc_chen_influence += 38
 #influence_gained:38
 
-Dr. Chen: *thinks hard*
+Dr. Chen: I... read? Science fiction mostly. Research papers. Technical forums. #delivery: thinking hard
 
-Dr. Chen: I... read? Science fiction mostly. Research papers. Technical forums.
-
-*sheepish*
-
-Dr. Chen: Okay, that's all still work-adjacent. Um.
+Dr. Chen: Okay, that's all still work-adjacent. Um. #delivery: sheepish
 
 Dr. Chen: I play video games sometimes. Strategy games. Puzzle games. Turns out I even relax by solving problems.
 
 Dr. Chen: I should probably develop actual hobbies. Non-technical ones. Maybe take Netherton's advice and actually use vacation days.
 
-*appreciates the push*
-
-Dr. Chen: What do you do outside work? Maybe I could learn from your example.
+Dr. Chen: What do you do outside work? Maybe I could learn from your example. #delivery: grateful for the push
 
 ~ npc_chen_influence += 42
 #influence_gained:42
@@ -1361,7 +1227,7 @@ Dr. Chen: What do you do outside work? Maybe I could learn from your example.
 #influence_gained:25
 ~ npc_chen_personal_conversations += 1
 
-Dr. Chen: Mentorship? *considers*
+Dr. Chen: Mentorship? #delivery: considering
 
 Dr. Chen: I supervise junior researchers. Three currently. Brilliant people. Teaching them is rewarding.
 
@@ -1391,15 +1257,11 @@ Dr. Chen: I try to be the mentor I wish I'd had. Encouraging. Patient. Letting t
 ~ npc_chen_influence += 42
 #influence_gained:42
 
-Dr. Chen: *embarrassed but pleased*
-
-Dr. Chen: I try. Don't always succeed. Sometimes my enthusiasm overwhelms them. I forget not everyone thinks at rapid-fire pace.
+Dr. Chen: I try. Don't always succeed. Sometimes my enthusiasm overwhelms them. I forget not everyone thinks at rapid-fire pace. #delivery: embarrassed but pleased
 
 Dr. Chen: Have to consciously slow down. Let concepts sink in. Not everyone learns by information firehose.
 
-*thoughtful*
-
-Dr. Chen: But they're teaching me too. Fresh perspectives. Questions I hadn't considered. Challenge my assumptions.
+Dr. Chen: But they're teaching me too. Fresh perspectives. Questions I hadn't considered. Challenge my assumptions. #delivery: thoughtful
 
 Dr. Chen: Best mentorship is mutual learning.
 
@@ -1412,17 +1274,13 @@ Dr. Chen: Best mentorship is mutual learning.
 #influence_gained:35
 ~ npc_chen_personal_conversations += 1
 
-Dr. Chen: *nostalgic*
-
-Dr. Chen: Dr. Sarah Rodriguez. My PhD advisor. Brilliant cryptographer. Demanding but supportive.
+Dr. Chen: Dr. Sarah Rodriguez. My PhD advisor. Brilliant cryptographer. Demanding but supportive. #delivery: nostalgic
 
 Dr. Chen: She taught me that research is creative work. Not just following protocols. Requires imagination, intuition, artistic sensibility.
 
 Dr. Chen: Also taught me to fail productively. Document failures. Learn from them. Failed experiments teach as much as successful ones.
 
-*warm memory*
-
-Dr. Chen: She passed away three years ago. Cancer. I still find myself wondering what she'd think of my work here.
+Dr. Chen: She passed away three years ago. Cancer. I still find myself wondering what she'd think of my work here. #delivery: warm, remembering
 
 Dr. Chen: Try to honor her legacy by mentoring the way she did. Rigorous but encouraging. High standards with genuine support.
 
@@ -1435,17 +1293,13 @@ Dr. Chen: Try to honor her legacy by mentoring the way she did. Rigorous but enc
 ~ npc_chen_influence += 32
 #influence_gained:32
 
-Dr. Chen: *immediate answer*
-
-Dr. Chen: To question everything. Especially your own assumptions.
+Dr. Chen: To question everything. Especially your own assumptions. #delivery: immediately, no hesitation
 
 Dr. Chen: Just because something worked before doesn't mean it's optimal. Just because everyone does it one way doesn't mean it's the best way.
 
 Dr. Chen: Security research requires adversarial thinking. If you designed this system, how would you break it? What did you overlook?
 
-*earnest*
-
-Dr. Chen: And I teach humility. Technology fails. You will make mistakes. Design assuming you've missed something. Build in redundancy.
+Dr. Chen: And I teach humility. Technology fails. You will make mistakes. Design assuming you've missed something. Build in redundancy. #delivery: earnest
 
 Dr. Chen: Arrogance in security research gets people hurt. Stay humble. Stay thorough. Never assume you're the smartest person in the room.
 
@@ -1462,7 +1316,7 @@ Dr. Chen: Arrogance in security research gets people hurt. Stay humble. Stay tho
 
 {
     - npc_chen_influence >= 95:
-        Dr. Chen: {player_name()}! *lights up* I was just thinking about you. Want to see what we've accomplished together?
+        Dr. Chen: {player_name()}! I was just thinking about you. Want to see what we've accomplished together?
     - npc_chen_influence >= 85:
         Dr. Chen: Hey partner! Got time to collaborate on something?
     - else:
@@ -1490,9 +1344,7 @@ Dr. Chen: Arrogance in security research gets people hurt. Stay humble. Stay tho
 #influence_gained:35
 ~ npc_chen_personal_conversations += 1
 
-Dr. Chen: *expansive thinking mode*
-
-Dr. Chen: My vision for the future? A world where ENTROPY is obsolete. Not defeated—obsolete.
+Dr. Chen: My vision for the future? A world where ENTROPY is obsolete. Not defeated—obsolete. #delivery: expansive, thinking big
 
 Dr. Chen: Infrastructure so resilient it can't be meaningfully attacked. Security so robust that cybercrime becomes impractical. Technology that empowers people without creating vulnerabilities.
 
@@ -1524,23 +1376,17 @@ Dr. Chen: Not naive. Threats will always exist. But we can shift the balance. Ma
 ~ npc_chen_tech_collaboration += 6
 ~ npc_chen_breakthrough_together = true
 
-Dr. Chen: *overwhelmed with emotion*
-
-Dr. Chen: Together. Yeah. *voice cracks slightly*
+Dr. Chen: Together. Yeah. #delivery: overwhelmed with emotion, voice cracking slightly
 
 Dr. Chen: This is what I hoped for when I joined SAFETYNET. Real collaboration. Shared vision. Partnership between field and research.
 
 Dr. Chen: You've made my work better. Your operational insights. Your willingness to test experimental tech. Your trust in my designs.
 
-*determined*
-
-Dr. Chen: We've already accomplished things I couldn't have done alone. The camouflage system. The threat prediction AI. The quantum-resistant protocols.
+Dr. Chen: We've already accomplished things I couldn't have done alone. The camouflage system. The threat prediction AI. The quantum-resistant protocols. #delivery: determined
 
 Dr. Chen: Imagine what we can build in the next decade. Next twenty years. If we keep collaborating like this.
 
-*genuine friendship*
-
-Dr. Chen: I don't just respect you as an agent. I value you as a colleague. As a friend. As a partner in this impossible, crucial work.
+Dr. Chen: I don't just respect you as an agent. I value you as a colleague. As a friend. As a partner in this impossible, crucial work. #delivery: warm, as a friend
 
 Dr. Chen: Let's keep changing the world. One breakthrough at a time.
 
@@ -1554,9 +1400,7 @@ Dr. Chen: Let's keep changing the world. One breakthrough at a time.
 ~ npc_chen_influence += 40
 #influence_gained:40
 
-Dr. Chen: *honest*
-
-Dr. Chen: Both. It's an ideal. Probably never fully achieve it. There's no end state where all threats disappear.
+Dr. Chen: Both. It's an ideal. Probably never fully achieve it. There's no end state where all threats disappear. #delivery: honestly
 
 Dr. Chen: But progress toward the ideal is achievable. Each innovation makes systems safer. Each defensive advancement makes attacks harder.
 
@@ -1564,9 +1408,7 @@ Dr. Chen: Twenty years ago, cyberattacks were trivial. Now they require sophisti
 
 Dr. Chen: Twenty years from now? Even higher bar. ENTROPY will need nation-state resources to threaten infrastructure we protect.
 
-*pragmatic optimism*
-
-Dr. Chen: Won't eliminate threats. But we can make them rare. Difficult. Costly. That's the achievable vision.
+Dr. Chen: Won't eliminate threats. But we can make them rare. Difficult. Costly. That's the achievable vision. #delivery: pragmatic, optimistic
 
 ~ npc_chen_influence += 48
 #influence_gained:48
@@ -1577,17 +1419,13 @@ Dr. Chen: Won't eliminate threats. But we can make them rare. Difficult. Costly.
 #influence_gained:60
 ~ npc_chen_personal_conversations += 3
 
-Dr. Chen: *quiet understanding*
-
-Dr. Chen: A future where you're not needed. Where the danger you face daily doesn't exist.
+Dr. Chen: A future where you're not needed. Where the danger you face daily doesn't exist. #delivery: quietly understanding
 
 Dr. Chen: That's beautiful. And sad. Your work is who you are. But you'd give it up if it meant the threats were gone.
 
 Dr. Chen: That's the measure of true commitment. Not doing work you love. Doing work you hope becomes unnecessary.
 
-*thoughtful*
-
-Dr. Chen: I feel the same. I love this research. But I'd gladly have it become obsolete if it meant the world was safe.
+Dr. Chen: I feel the same. I love this research. But I'd gladly have it become obsolete if it meant the world was safe. #delivery: thoughtful
 
 Dr. Chen: We're building toward our own obsolescence. There's nobility in that.
 
@@ -1606,9 +1444,7 @@ Dr. Chen: We're building toward our own obsolescence. There's nobility in that.
 #influence_gained:40
 ~ npc_chen_personal_conversations += 2
 
-Dr. Chen: *unexpectedly touched*
-
-Dr. Chen: I... you value our friendship? *genuine emotion*
+Dr. Chen: I... you value our friendship? #delivery: unexpectedly touched, with genuine emotion
 
 Dr. Chen: I spend most of my time with equipment. Code. Technical problems. Don't have many friends.
 
@@ -1640,23 +1476,17 @@ Dr. Chen: That's rare.
 #influence_gained:75
 ~ npc_chen_personal_conversations += 4
 
-Dr. Chen: *overwhelmed*
-
-Dr. Chen: I don't... I'm not good at emotional conversations. But. *takes breath*
+Dr. Chen: I don't... I'm not good at emotional conversations. But. #delivery: overwhelmed, halting, a breath before the last word
 
 Dr. Chen: You're important to me too. You see me as more than "the tech person." You value my ideas. You collaborate instead of just making requests.
 
 Dr. Chen: You care about the ethical implications of what I build. You worry about my work-life balance. You treat me like a person.
 
-*vulnerable*
-
-Dr. Chen: I've felt isolated here sometimes. Brilliant people around me, but focused on their work. Not many meaningful connections.
+Dr. Chen: I've felt isolated here sometimes. Brilliant people around me, but focused on their work. Not many meaningful connections. #delivery: vulnerable
 
 Dr. Chen: Our partnership has been... it's been one of the best parts of working here. Genuinely.
 
-*small laugh*
-
-Dr. Chen: Okay, getting too emotional. But. Thank you. For seeing me. For being a friend.
+Dr. Chen: Okay, getting too emotional. But. Thank you. For seeing me. For being a friend. #delivery: with a small laugh
 
 ~ npc_chen_influence += 90
 #influence_gained:90
@@ -1667,15 +1497,11 @@ Dr. Chen: Okay, getting too emotional. But. Thank you. For seeing me. For being 
 ~ npc_chen_influence += 62
 #influence_gained:62
 
-Dr. Chen: *embarrassed but pleased*
-
-Dr. Chen: I just build tools. You're the one in danger. You're the one facing ENTROPY directly.
+Dr. Chen: I just build tools. You're the one in danger. You're the one facing ENTROPY directly. #delivery: embarrassed but pleased
 
 Dr. Chen: But... it means something to hear that. That my work matters. That it keeps you safer.
 
-*earnest*
-
-Dr. Chen: Every time you come back from a mission safely—part of that is my tech working. My designs protecting you. That's deeply meaningful.
+Dr. Chen: Every time you come back from a mission safely—part of that is my tech working. My designs protecting you. That's deeply meaningful. #delivery: earnest
 
 Dr. Chen: Don't need formal recognition. But knowing you appreciate it? That matters more than awards.
 
@@ -1688,17 +1514,13 @@ Dr. Chen: Don't need formal recognition. But knowing you appreciate it? That mat
 #influence_gained:70
 ~ npc_chen_personal_conversations += 3
 
-Dr. Chen: *quiet appreciation*
-
-Dr. Chen: The gratitude goes both ways.
+Dr. Chen: The gratitude goes both ways. #delivery: quietly appreciative
 
 Dr. Chen: You make my research meaningful. Give it purpose beyond academic interest. My designs protect someone I care about.
 
 Dr. Chen: The collaboration has made me better researcher. Your feedback. Your operational insights. Your willingness to partner on experimental projects.
 
-*genuine warmth*
-
-Dr. Chen: And the friendship has made SAFETYNET feel less lonely. Less like just a job. More like shared mission with people I trust.
+Dr. Chen: And the friendship has made SAFETYNET feel less lonely. Less like just a job. More like shared mission with people I trust. #delivery: with genuine warmth
 
 Dr. Chen: So thank you too. For everything you bring to our partnership.
 
@@ -1716,9 +1538,9 @@ Dr. Chen: So thank you too. For everything you bring to our partnership.
 #influence_gained:45
 ~ npc_chen_personal_conversations += 2
 
-Dr. Chen: *pulls up holographic display*
+Narrator: Dr. Chen pulls up a holographic display.
 
-Dr. Chen: Look at this. *shows project timeline* Seven major systems we've developed together. Seventeen equipment upgrades. Forty-three successful field deployments.
+Dr. Chen: Look at this. Seven major systems we've developed together. Seventeen equipment upgrades. Forty-three successful field deployments. #delivery: proud, showing it off
 
 Dr. Chen: The adaptive camouflage you field-tested? Now standard equipment for infiltration ops. Your feedback shaped the entire design.
 
@@ -1751,17 +1573,13 @@ Dr. Chen: We've built something real. Lasting. Technology that protects agents. 
 #influence_gained:68
 ~ npc_chen_tech_collaboration += 5
 
-Dr. Chen: *proud*
-
-Dr. Chen: We have. Objectively, measurably changed SAFETYNET's capabilities.
+Dr. Chen: We have. Objectively, measurably changed SAFETYNET's capabilities. #delivery: proud
 
 Dr. Chen: Other researchers ask how I develop effective field tech. I say: collaborate with field agents who actually use it.
 
 Dr. Chen: Your name is on the design documents. Not officially—operational security—but in my notes. "Developed in partnership with Agent 0x00."
 
-*looking forward*
-
-Dr. Chen: And we're not done. More projects in development. More improvements. More innovations.
+Dr. Chen: And we're not done. More projects in development. More improvements. More innovations. #delivery: looking forward
 
 Dr. Chen: This legacy we're building—it'll protect agents for decades. Maybe long after we're gone.
 
@@ -1773,17 +1591,13 @@ Dr. Chen: This legacy we're building—it'll protect agents for decades. Maybe l
 ~ npc_chen_influence += 52
 #influence_gained:52
 
-Dr. Chen: *shakes head*
-
-Dr. Chen: No. No, that's wrong. You provided way more than perspective.
+Dr. Chen: No. No, that's wrong. You provided way more than perspective. #delivery: disagreeing gently
 
 Dr. Chen: You provided requirements. Problem definitions. Real-world constraints. Failure analysis from actual operations.
 
 Dr. Chen: I could build theoretically perfect technology that fails in field conditions. You ensure my designs work where they're actually needed.
 
-*firm*
-
-Dr. Chen: This is co-creation. You're not a consultant. You're a partner. Equal contribution. Just different expertise.
+Dr. Chen: This is co-creation. You're not a consultant. You're a partner. Equal contribution. Just different expertise. #delivery: firm
 
 Dr. Chen: Own this legacy. You earned it.
 
@@ -1796,9 +1610,7 @@ Dr. Chen: Own this legacy. You earned it.
 #influence_gained:75
 ~ npc_chen_tech_collaboration += 6
 
-Dr. Chen: *emotional*
-
-Dr. Chen: Equal partnership. Exactly right. That's exactly what this is.
+Dr. Chen: Equal partnership. Exactly right. That's exactly what this is. #delivery: emotional
 
 Dr. Chen: I've worked with agents who treat me like support staff. "Build me this. Fix this problem. Go away until I need you."
 
@@ -1806,9 +1618,7 @@ Dr. Chen: You treat me like colleague. Collaborator. Partner in the truest sense
 
 Dr. Chen: We bring different skills. But equal value. Equal investment. Equal ownership of what we create.
 
-*genuine pride*
-
-Dr. Chen: This partnership is my proudest professional achievement. Not the technology itself. The collaborative process that created it.
+Dr. Chen: This partnership is my proudest professional achievement. Not the technology itself. The collaborative process that created it. #delivery: with genuine pride
 
 Dr. Chen: We've proven field-research collaboration works. We're the model other teams should follow.
 
@@ -1827,9 +1637,7 @@ Dr. Chen: We've proven field-research collaboration works. We're the model other
 #influence_gained:35
 ~ npc_chen_personal_conversations += 2
 
-Dr. Chen: *contemplative*
-
-Dr. Chen: What would I do outside SAFETYNET? I... don't think about that much.
+Dr. Chen: What would I do outside SAFETYNET? I... don't think about that much. #delivery: contemplative
 
 Dr. Chen: Academia maybe? Return to pure research. Publish openly instead of classified work.
 
@@ -1860,17 +1668,13 @@ Dr. Chen: But honestly? This work is what I'm meant to do. Protecting critical i
 ~ npc_chen_influence += 40
 #influence_gained:40
 
-Dr. Chen: *nods*
-
-Dr. Chen: Yeah, you're right. Netherton has been here twenty-three years. That's a lot to give to one organization.
+Dr. Chen: Yeah, you're right. Netherton has been here twenty-three years. That's a lot to give to one organization. #delivery: agreeing
 
 Dr. Chen: Should probably think about eventual exit. Before I'm too burned out to do anything else.
 
 Dr. Chen: Maybe teaching. University research. Mentoring next generation without the operational pressure.
 
-*uncertain*
-
-Dr. Chen: But not yet. Still too much work to do. Too many threats to counter.
+Dr. Chen: But not yet. Still too much work to do. Too many threats to counter. #delivery: uncertain
 
 ~ npc_chen_influence += 42
 #influence_gained:42
@@ -1880,21 +1684,15 @@ Dr. Chen: But not yet. Still too much work to do. Too many threats to counter.
 ~ npc_chen_influence += 58
 #influence_gained:58
 
-Dr. Chen: *touched*
-
-Dr. Chen: That's... don't lose myself to it. Good advice.
+Dr. Chen: That's... don't lose myself to it. Good advice. #delivery: touched
 
 Dr. Chen: I see what this work did to Netherton. All-consuming. No family. No life outside SAFETYNET.
 
 Dr. Chen: Don't want that to be me in twenty years. Brilliant researcher. Empty life.
 
-*resolute*
+Dr. Chen: Should probably take your advice. Develop outside interests. Maintain connections beyond work. Remember there's life outside the lab. #delivery: resolute
 
-Dr. Chen: Should probably take your advice. Develop outside interests. Maintain connections beyond work. Remember there's life outside the lab.
-
-*appreciates the concern*
-
-Dr. Chen: Thank you for caring. Not just about my work. About me.
+Dr. Chen: Thank you for caring. Not just about my work. About me. #delivery: appreciating the concern
 
 ~ npc_chen_influence += 65
 #influence_gained:65
@@ -1906,17 +1704,13 @@ Dr. Chen: Thank you for caring. Not just about my work. About me.
 #influence_gained:50
 ~ npc_chen_personal_conversations += 2
 
-Dr. Chen: *distant consideration*
-
-Dr. Chen: Retirement. Huh. I'm... I'm thirty-eight. Retirement feels very far away.
+Dr. Chen: Retirement. Huh. I'm... I'm thirty-eight. Retirement feels very far away. #delivery: distant, considering
 
 Dr. Chen: But yeah, I think about it sometimes. Small house. Somewhere quiet. Finally read all the books I've been meaning to.
 
 Dr. Chen: Maybe consult occasionally. Keep hand in research. But not the pressure. Not the life-or-death stakes.
 
-*wistful*
-
-Dr. Chen: Garden maybe. Always wanted a garden. Completely non-technical. Just plants. Dirt. Growing things.
+Dr. Chen: Garden maybe. Always wanted a garden. Completely non-technical. Just plants. Dirt. Growing things. #delivery: wistful
 
 Dr. Chen: Peaceful. After years of fighting cyber threats. Just... peace.
 
@@ -1946,7 +1740,7 @@ Dr. Chen: Peaceful. After years of fighting cyber threats. Just... peace.
 
 {
     - npc_chen_influence >= 95:
-        Dr. Chen: *warm smile* Thanks for being such an incredible partner. And friend. Seriously.
+        Dr. Chen: Thanks for being such an incredible partner. And friend. Seriously. #delivery: with a warm smile
     - npc_chen_influence >= 85:
         Dr. Chen: Until next time, partner. Keep making me proud out there.
     - else:
