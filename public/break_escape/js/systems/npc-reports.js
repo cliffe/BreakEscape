@@ -19,6 +19,11 @@
  *   no lockout sends no check at all. Every check gets an answer for the needs system (refused
  *   or lost: lockedOut false, after one resend of a lost request), which ends the hold on the
  *   owner's first use there.
+ *   The mark survives a reload: GET /scenario's `lockoutPcs` (the sign-in PCs where the player
+ *   caused a lockout, ids only) seeds it at install (review R1 M1). A check the server answers
+ *   `lockedOut: false` clears the mark, unless a new lockout answer came at that PC after the
+ *   check was queued (R1 m1), so a lockout of some other username costs one check, not one per
+ *   return.
  *
  * Imports only npc-work.js (pure), which also sets window.npcWork for the needs adapter.
  */
@@ -45,12 +50,21 @@ export class NpcReports {
         this.seq = 0;
         this.lastEase = new Map();   // npcId -> seq of the last queued ease (R1 m6)
         this.lockoutSeen = new Set(); // PCs where this browser had a lockout answer (9.2 L)
+        this.lockoutCount = new Map(); // pcId -> lockout answers noted there (R1 m1)
         this.checks = 0;
     }
 
     /** Sub-slice L: POST /login answered locked_out at this PC (pc_signin_failed). */
     noteLockout(pcId) {
-        if (typeof pcId === 'string' && pcId) this.lockoutSeen.add(pcId);
+        if (typeof pcId !== 'string' || !pcId) return;
+        this.lockoutSeen.add(pcId);
+        this.lockoutCount.set(pcId, (this.lockoutCount.get(pcId) || 0) + 1);
+    }
+
+    /** Review R1 M1: GET /scenario's lockoutPcs, the PCs where the server holds a lockout. */
+    seedLockouts(list) {
+        if (!Array.isArray(list)) return;
+        for (const pc of list) this.noteLockout(pc);
     }
 
     /**
@@ -69,7 +83,7 @@ export class NpcReports {
         })) return false;
         if (typeof d.markCheck === 'function' && d.markCheck(ownerId, pcId) === false) return false;
         this.checks++;
-        return this.queue(ownerId, { event: 'check', objectId: pcId });
+        return this.queue(ownerId, { event: 'check', objectId: pcId, mark: this.lockoutCount.get(pcId) || 0 });
     }
 
     _now() { return typeof this.deps.now === 'function' ? this.deps.now() : Date.now(); }
@@ -82,7 +96,7 @@ export class NpcReports {
         if (report.event === 'ease') { this.settled.delete(npcId); this.lastEase.set(npcId, seq); }
         if (report.event === 'check') {
             if (typeof report.objectId !== 'string' || !report.objectId) return false;
-            this.pending.push({ npc_id: npcId, event: 'check', object_id: report.objectId, _seq: seq });
+            this.pending.push({ npc_id: npcId, event: 'check', object_id: report.objectId, _seq: seq, _mark: report.mark ?? null });
             this._schedule();
             return true;
         }
@@ -133,7 +147,7 @@ export class NpcReports {
             let answers = [];
             let lost = false;
             try {
-                const res = await this.deps.send(batch.map(({ _resent, _seq, ...r }) => r));
+                const res = await this.deps.send(batch.map(({ _resent, _seq, _mark, ...r }) => r));
                 answers = Array.isArray(res?.answers) ? res.answers : [];
             } catch (e) {
                 answers = [];   // a lost request loses one step of frustration and nothing else
@@ -160,6 +174,11 @@ export class NpcReports {
             const checkAnswers = [];
             batch.forEach((r, i) => {
                 if (r.event !== 'check' || lostChecks.includes(r)) return;
+                // Review R1 m1: the server said no, and no lockout answer came at that PC since
+                // the check was queued, so the mark goes (a refused or lost answer keeps it)
+                const a = answers[i];
+                if (a && a.npcId === r.npc_id && a.lockedOut === false && !a.refused
+                    && r._mark !== null && (this.lockoutCount.get(r.object_id) || 0) === r._mark) this.lockoutSeen.delete(r.object_id);
                 checkAnswers.push({ npcId: r.npc_id, forEvent: 'check', forObject: r.object_id, lockedOut: answers[i]?.lockedOut === true && answers[i]?.npcId === r.npc_id });
             });
             const usable = answers.filter((a, i) => a && !a.refused && !a.stale && batch[i]?.event !== 'check').concat(checkAnswers);
@@ -209,7 +228,9 @@ export function installNpcReports(api) {
         sync: () => w.stateSync?.sync?.(),
         apply: answers => w.npcNeedsSystem?.applyFrustration?.(answers),
         watched: name => watchedGlobal(name, w),
-        // Sub-slice L (6.6)
+        // Sub-slice L (6.6). Review R1 n2: the third copy of "the object's own policy, else
+        // defaultPolicy" (pc-policy.js effectivePolicy, workstation-state.js policyFor); it reads
+        // the loaded room's sprite first, which pc-policy.js does not. Change all three together.
         policyFor: pcId => {
             const sc = w.gameScenario || {};
             // the loaded room's object (as the workstation layer reads it), else the scenario's
@@ -231,6 +252,8 @@ export function installNpcReports(api) {
         markCheck: (id, pcId) => !!w.npcNeedsSystem?.lockCheckSent?.(id, pcId)
     });
     w.npcReports = reports;
+    // Review R1 M1: the lockouts the player caused before a reload
+    reports.seedLockouts(w.gameScenario?.lockoutPcs);
     w.eventDispatcher?.on?.('pc_signin_failed', data => { if (data?.reason === 'locked_out') reports.noteLockout(data.pcId); });
     w.eventDispatcher?.on?.('workstation_owner_returned:*', data => reports.onOwnerReturned(data));
     w.eventDispatcher?.on?.('global_variable_changed:*', (data, name) => {

@@ -2304,6 +2304,8 @@ export class NPCNeedsSystem {
         for (const a of list) {
             // Access 9.2 L (6.6): a check's answer (the report queue sends one for every check,
             // refused or lost as lockedOut false) only sets or clears the station flag
+            // (Review R1 n4: with no state the answer is dropped, unlike a level; the return that
+            // sent the check needed a live state, and a reload restores the server's record)
             if (a.forEvent === 'check') { const cs = this.states.get(a.npcId); if (cs) this._applyLockCheck(cs, a); continue; }
             if (a.refused || a.stale) continue;
             const s = this.states.get(a.npcId);
@@ -2929,8 +2931,17 @@ export class NPCNeedsSystem {
                 if (!job.lockHeld) { job.lockHeld = true; this._log(id, 'use_held', { target: job.targetId }); }
                 return;
             }
-            delete s.lockCheck[job.targetId];
+            // Review R1 n1 (6.6: a slow answer never lets one use through as met): a lapse is not
+            // judged. The use is skipped (nothing restored, no npc_used, no report) and the check
+            // stays in flight with its wait started again, so the next use there waits for the
+            // answer too; the NPC never freezes, and only an answer ends the wait
+            s.lockCheck[job.targetId] = this.clockMs;
             this._log(id, 'lock_check_lapsed', { target: job.targetId });
+            const stayPut = s.atPost && this._atOwnPost(s);
+            s.job = null;
+            this._clearBackoffs();
+            this._goHome(s, { stayPut });
+            return;
         }
         let v = { met: true };
         if (judged && typeof this.world.useVerdict === 'function') {

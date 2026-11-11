@@ -990,13 +990,18 @@ sign-in screen.
   with `wasLocked: true`, at a PC under a policy with `maxAttempts`, the client sends a `check`
   report for that owner and PC (section 9.1), but **only for a PC where this browser has had a
   lockout answer from `POST /login`** (at the keyboard or, with 9.3a, through the drop box), or
-  where the scenario response's `npcFrustration` already lists the owner as locked out there. In
+  where the scenario response's `npcFrustration` already lists the owner as locked out there, or
+  where its `lockoutPcs` lists the PC (the sign-in PCs where the player caused a lockout, ids only,
+  so a reload keeps the mark; a check the server answers no clears it until a new lockout answer
+  comes at that PC). In
   any other case a check could only answer no, so none is sent, and a mission with no lockout
   sends no check at all. The server answers `lockedOut: true` when `loginLockouts` holds the
   owner's username at that PC, and records it (`lockedOut` in 9.4), so a reload can restore it.
 - **The first use waits for the answer.** The owner's first use after the return holds its verdict
   until the check is answered (the use's dwell is longer than one request in practice; if not, the
-  use waits at the desk), so a slow answer never lets one use through as met.
+  use waits at the desk), so a slow answer never lets one use through as met. After 30 s of needs
+  clock with no answer the use is skipped, not judged (nothing restored, no `npc_used`, no
+  report), and the next use there waits again; only an answer ends the wait.
 - **While locked out**, that NPC's uses of that PC fail with `locked_out` (a station failure), the
   mutter comes from `station_fail`, and frustration rises as for any failure. Whenever the owner
   leaves that PC the screen locks, whatever its `lockChance`, and the server refuses an owner claim
@@ -1302,8 +1307,10 @@ PC and a phone use take `socialUse.useSeconds` (default 20, 8.1). `access_work.r
      report lists. The server works these out itself, from the scenario and its own state: a
      resource in the NPC's resolved list that it is not admitted to (`no_access`) or whose
      `routes` are `[]` (an `unreachable` with no global to clear); for `social_media`, its own
-     station under a policy that blocks it (`social_blocked`); for either need, a `loginLockouts`
-     entry for the NPC's account at its own station (`locked_out`). None of these can clear in
+     station under a policy that blocks it (`social_blocked`); for `work` only, a `loginLockouts`
+     entry for the NPC's account at its own station (`locked_out`), and only once a `check` has
+     recorded it in the NPC's `lockedOut` list (sub-slice L; with no record a lockout is no owned
+     cause). None of these can clear in
      play, so leaving one out of a report gains nothing. Only an outage the browser controls
      (`down`, `off`, or an `unreachable` whose routes carry a global) can be re-armed.
 
@@ -1377,7 +1384,7 @@ No route is added for the USB policy (section 7).
 | Frustration | The level and `tell`, in each answer and on a load | `perFail` and `easePerSuccess` are not sent as fields; they can be inferred from the level steps (`level - previous`), which W3's mapping needs |
 | A written-down password | Only in a `GET /login_accounts` answer for the owner's own reachable PC, after the workaround is done (9.1's channel), and afterwards in the player's own saved notes if they press "add to notebook" | Before that. Never in room data, the bootstrap, a `/npc_workaround` answer or a door unlock |
 | A shared login | In the `/npc_workaround` answer to a heard `share_login` (`line`, `note`, and the username in `capture`), then in the player's saved notes; from `/capture_secrets` once the capture is recorded and `revealSecret` is on | Before that; and always, when the player did not hear |
-| A lockout of an owner | `lockedOut` in the answer to a `check` report, sent when the owner returns to the locked screen | A list of locked-out accounts is never sent; sign-in answers are unchanged |
+| A lockout of an owner | `lockedOut` in the answer to a `check` report, sent when the owner returns to the locked screen; `GET /scenario`'s `lockoutPcs`, the ids of the sign-in PCs where the player caused a lockout (sub-slice L review R1 M1: the player was shown each one) | A list of locked-out accounts or usernames is never sent; sign-in answers are unchanged |
 | `feed` posts | Posts revealed so far, one per answer and all on a load; `hasFeed: true` on the NPC; `done` once the last is out | Every post not yet revealed, and how many there are |
 | Feed facts | The entry of each revealed post's fact, with the post; afterwards in the evidence note the player's own click adds | The entry of every unrevealed post's fact. Its id may appear in a readiness slot; its text never |
 | `policies` | As today (the bootstrap ships them); `usb` and `social` are not secret | Nothing |
@@ -1481,9 +1488,10 @@ play and without the player standing anywhere in particular:
 - ask `/feed_post` for every post and its fact at the post floor, with the NPC never touching a
   phone or a PC, whatever the `social` policy (the route checks only "NPC known", the feed and the
   floor);
-- send a `check` for any owner at any time, not only at the owner's return: after three wrong
-  passwords for a guessed username at a PC, that answers whether the username is the owner's
-  (decision 14);
+- send a `check` for any owner with a work plan at any time, not only at the owner's return: after
+  three wrong passwords for a guessed username at a PC, that answers whether the username is the
+  owner's (decision 14); an owner claim at that PC's open screen answers the same question by
+  another route (refused while the owner is locked out there), for any owner, work plan or not;
 - set `se_intel_<id>` itself, which satisfies a readiness slot or a phishing factor that names a
   feed fact, without ever having the fact's text.
 

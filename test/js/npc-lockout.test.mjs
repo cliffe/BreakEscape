@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { NpcReports, shouldCheckLockout, installNpcReports } from '../../public/break_escape/js/systems/npc-reports.js';
 import { LOCK_CHECK_WAIT_MS } from '../../public/break_escape/js/systems/npc-needs.js';
 import { WorkstationState } from '../../public/break_escape/js/systems/workstation-state.js';
-import { workWorld, baseObjects } from './fixtures/needs-work-world.mjs';
+import { workWorld, baseObjects, dana } from './fixtures/needs-work-world.mjs';
 
 const STRICT = { autoLockMin: 5, maxAttempts: 3 };
 const OWNER = { id: 'dana', needsHome: 'dana_pc', work: { needs: [{ id: 'email', kind: 'email', admitted: true }] } };
@@ -219,7 +219,7 @@ test('the first use after a check waits at the desk for the answer: true fails i
     }
 });
 
-test('a hold whose answer never comes lapses after LOCK_CHECK_WAIT_MS and the use is judged as before', () => {
+test('a hold whose answer never comes lapses after LOCK_CHECK_WAIT_MS: the use is skipped, never met, and the next one waits again (R1 n1)', () => {
     const { sys, evs, log } = lockWorld();
     sys.registerAll();
     assert.ok(stepUntil(sys, () => sys.getState('dana').job?.phase === 'using', 30000));
@@ -228,7 +228,17 @@ test('a hold whose answer never comes lapses after LOCK_CHECK_WAIT_MS and the us
     assert.equal(evs('npc_used:dana_pc').length, 0);
     sys.step(2000);
     assert.equal(log('lock_check_lapsed').length, 1);
+    assert.equal(evs('npc_used:dana_pc').length, 0, 'a lapse is not judged: no use goes through as met');
+    assert.equal(evs('npc_use_failed:dana').length, 0, 'nor as failed');
+    assert.deepEqual(sys.getState('dana').lockCheck, ['dana_pc'], 'the check is still in flight');
+    // the next use waits for the answer as well, and lapses again with no verdict
+    assert.ok(stepUntil(sys, () => log('lock_check_lapsed').length === 2, 120000), 'retried and lapsed again');
+    assert.equal(evs('npc_used:dana_pc').length, 0);
+    // the answer ends the wait
+    sys.applyFrustration(checkAnswer(false));
+    assert.ok(stepUntil(sys, () => evs('npc_used:dana_pc').length > 0, 60000));
     assert.equal(evs('npc_used:dana_pc')[0].data.met, true);
+    assert.equal(log('lock_check_lapsed').length, 2);
 });
 
 test('a check is taken only for the NPC\'s own station; an answer for another PC flags nothing', () => {
@@ -283,4 +293,146 @@ test('a flagged owner\'s screen locks on every leave whatever its lockChance; an
     const ws2 = new WorkstationState({ ...env, objects: () => [c], lockedOut: undefined }).install();
     ws2.onLeft('ann');
     assert.equal(c.screenLocked, false);
+});
+
+// ── review round 1 ─────────────────────────────────────────────────────
+
+test('R1 m1: a false answer clears the mark, so the next locked return sends no check; a new lockout answer marks it again', async () => {
+    const h = harness({ answerFor: r => ({ npcId: r.npc_id, lockedOut: false }) });
+    h.r.noteLockout('dana_pc');
+    assert.equal(h.r.onOwnerReturned(RETURN), true);
+    await h.advance(0);
+    assert.equal(h.r.lockoutSeen.has('dana_pc'), false, 'the server said no');
+    assert.equal(h.r.onOwnerReturned(RETURN), false, 'no second check');
+    h.r.noteLockout('dana_pc');
+    assert.equal(h.r.onOwnerReturned(RETURN), true, 'a new lockout answer at that PC');
+    assert.deepEqual(h.sent.flat().map(r => r.event), ['check'], 'the second check is queued, not yet sent');
+    for (const batch of h.sent) for (const r of batch) assert.equal(r._mark, undefined, 'the mark is never sent');
+});
+
+test('R1 m1: a refused or lost answer keeps the mark, and so does a lockout noted while the check was in flight', async () => {
+    const refused = harness({ answerFor: r => ({ npcId: r.npc_id, refused: true }) });
+    refused.r.noteLockout('dana_pc');
+    refused.r.onOwnerReturned(RETURN);
+    await refused.advance(0);
+    assert.equal(refused.r.lockoutSeen.has('dana_pc'), true);
+
+    const lost = harness({ send: async () => { throw new Error('offline'); } });
+    lost.r.noteLockout('dana_pc');
+    lost.r.onOwnerReturned(RETURN);
+    await lost.advance(0);
+    await lost.advance(2000);
+    assert.equal(lost.applied.length, 1, 'answered as no for the needs system');
+    assert.equal(lost.r.lockoutSeen.has('dana_pc'), true, 'the server never said no');
+
+    let release;
+    const late = harness({ send: batch => new Promise(res => { release = () => res({ answers: batch.map(r => ({ npcId: r.npc_id, lockedOut: false })) }); }) });
+    late.r.noteLockout('dana_pc');
+    late.r.onOwnerReturned(RETURN);
+    const flushing = late.advance(0);
+    await new Promise(res => setImmediate(res));
+    late.r.noteLockout('dana_pc');   // another lockout answer before the server's no arrives
+    release();
+    await flushing;
+    assert.equal(late.r.lockoutSeen.has('dana_pc'), true);
+});
+
+test('R1 m1: markCheck refusing the hold queues nothing', async () => {
+    const h = harness();
+    h.r.deps.markCheck = () => false;
+    h.r.noteLockout('dana_pc');
+    assert.equal(h.r.onOwnerReturned(RETURN), false);
+    await h.advance(5000);
+    assert.equal(h.sent.length, 0);
+    assert.equal(h.r.checks, 0);
+});
+
+test('R1 M1: installNpcReports seeds the mark from GET /scenario lockoutPcs, so a locked return after a reload checks', async () => {
+    const listeners = {};
+    const prev = globalThis.window;
+    const marks = [];
+    globalThis.window = {
+        eventDispatcher: { on: (name, fn) => { listeners[name] = fn; } },
+        gameScenario: { defaultPolicy: 'strict', policies: { strict: STRICT }, rooms: { office: { objects: [{ id: 'dana_pc' }] } }, lockoutPcs: ['dana_pc', 7, ''] },
+        npcManager: { getNPC: id => (id === 'dana' ? OWNER : null) },
+        npcNeedsSystem: { isLockedOut: () => false, lockCheckSent: (id, pc) => { marks.push([id, pc]); return true; }, applyFrustration: () => {} }
+    };
+    try {
+        const reports = installNpcReports({ post: async () => ({ answers: [{ npcId: 'dana', lockedOut: true }] }) });
+        assert.deepEqual([...reports.lockoutSeen], ['dana_pc'], 'ids only; anything else is ignored');
+        listeners['workstation_owner_returned:*'](RETURN);
+        assert.deepEqual(marks, [['dana', 'dana_pc']]);
+    } finally {
+        globalThis.window = prev;
+    }
+});
+
+test('R1 n1: a true answer that comes after a lapse still flags the owner', () => {
+    const { sys, evs } = lockWorld();
+    sys.registerAll();
+    assert.ok(stepUntil(sys, () => sys.getState('dana').job?.phase === 'using', 30000));
+    sys.lockCheckSent('dana', 'dana_pc');
+    sys.step(LOCK_CHECK_WAIT_MS + 1000);
+    sys.applyFrustration(checkAnswer(true));
+    sys.step(250);
+    assert.equal(sys.isLockedOut('dana', 'dana_pc'), true);
+    assert.deepEqual(sys.getState('dana').lockCheck, []);
+    assert.ok(stepUntil(sys, () => evs('npc_use_failed:dana').length > 0, 60000));
+    assert.equal(evs('npc_used:dana_pc').length, 0, 'no use was met at any point');
+});
+
+test('R1 m2: the three layers on one dispatcher, in the live order: leave, locked return, check, held use, then the failure', async () => {
+    const rec = dana({ needs: { work: { decayPerMin: 40, urgentAt: 50, initial: 60, jitterPct: 0 },
+                                caffeine: { decayPerMin: 40, urgentAt: 10, initial: 12, jitterPct: 0 } } });
+    const world = workWorld({ npcs: { dana: { pos: { x: 100, y: 100 }, rec } }, chatter: CHATTER });
+    const { w, sys, evs, log } = world;
+    // one dispatcher: every emit reaches the listeners at once, as eventDispatcher does
+    const listeners = [];
+    const on = (pattern, fn) => listeners.push({ pattern, fn });
+    const order = [];
+    const emit = w.world.emit;
+    w.world.emit = (name, data) => {
+        emit(name, data);
+        if (/^(npc_left_post|npc_returned_post|workstation_owner_returned|npc_used|npc_use_failed):/.test(name)) order.push(name);
+        for (const l of listeners) {
+            const hit = l.pattern.endsWith(':*') ? name.startsWith(l.pattern.slice(0, -1)) : name === l.pattern;
+            if (hit) l.fn(data, name);
+        }
+    };
+    const pc = { id: 'dana_pc', workstation: true, lockChance: 1, policy: 'strict' };
+    const ws = new WorkstationState({
+        objects: () => [pc], npcs: () => [rec], on, emit: (n, d) => w.world.emit(n, d), setGlobal: () => {},
+        roll: () => 0.5, clockMs: () => sys.clockMs, lockedOut: (o, p) => sys.isLockedOut(o, p)
+    }).install();
+    assert.ok(ws);
+    let release = null;
+    const sent = [];
+    const reports = new NpcReports({
+        now: () => sys.clockMs,
+        setTimer: (fn) => { Promise.resolve().then(fn); return 1; },
+        send: batch => new Promise(res => { sent.push(batch); release = () => res({ answers: batch.map(r => ({ npcId: r.npc_id, lockedOut: true })) }); }),
+        apply: a => sys.applyFrustration(a),
+        policyFor: () => STRICT,
+        ownerRecord: id => (id === 'dana' ? rec : null),
+        flagged: (id, p) => sys.isLockedOut(id, p),
+        markCheck: (id, p) => sys.lockCheckSent(id, p)
+    });
+    on('workstation_owner_returned:*', d => reports.onOwnerReturned(d));
+    sys.registerAll();
+    reports.noteLockout('dana_pc');   // the player's third wrong password while she is away
+    assert.ok(stepUntil(sys, () => order.includes('workstation_owner_returned:dana_pc'), 120000), 'she leaves and comes back');
+    assert.equal(pc.screenLocked, false, 'opened on her return');
+    assert.ok(order.indexOf('npc_left_post:dana') < order.indexOf('workstation_owner_returned:dana_pc'));
+    assert.equal(reports.checks, 1, 'the locked return sent one check');
+    assert.deepEqual(sys.getState('dana').lockCheck, ['dana_pc'], 'the hold was taken in the same task as the return');
+    const usedBefore = evs('npc_used:dana_pc').length;
+    assert.ok(stepUntil(sys, () => log('use_held').length > 0, 60000), 'her first use there waits');
+    assert.equal(evs('npc_used:dana_pc').length, usedBefore, 'no use met while the check is in flight');
+    await new Promise(res => setImmediate(res));
+    assert.equal(sent.length, 1);
+    release();
+    await new Promise(res => setImmediate(res));
+    assert.ok(stepUntil(sys, () => evs('npc_use_failed:dana').length > 0, 30000));
+    assert.equal(evs('npc_use_failed:dana')[0].data.missing[0].why, 'locked_out');
+    assert.equal(evs('npc_used:dana_pc').length, usedBefore, 'the held use was never met');
 });
