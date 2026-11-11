@@ -27,7 +27,7 @@ The user wants the best possible story and gameplay across m02–m08. Two stages
 - Player choices are the player's own spoken words in first person, distinct in intent, and they matter (`README_ink_best_practices.md`).
 - No AI tells: no "it's not X, it's Y", no inflated framing, no stock vocabulary (delve, crucial, pivotal, landscape, testament…), no tidy summarising last lines, no rule-of-three padding. UK English.
 - Phone inks: drop the contact's own `Name:` prefix on their lines (the phone strips a matching prefix anyway, and m01's phone ink has none); keep a prefix only when someone else speaks (`Narrator:`, a relayed quote). Person-chat inks keep `Name:` prefixes: they pick the portrait and the TTS voice. A `You:` line in a phone chat now renders as the player's bubble (U3).
-- `Narrator:` lines in phone inks render as narration (centred, italic, no prefix) once the engine change lands; use them sparingly. Asterisk stage directions (`*a beat*`) show on screen as written: keep them to m01's density and never inside numbers or key information.
+- `Narrator:` lines in phone inks render as narration (centred, italic, no prefix) once the engine change lands; use them sparingly. No stage directions in voiced lines (user, 2026-11-10): a voiced line holds only spoken words. A cue inside a spoken line becomes a `#delivery: <acting note>` tag on that line; a line that is entirely a scene direction is said by the `Narrator:`. Text-only phone chats may keep their on-screen cues.
 - No `You: …` echo lines after a choice; fold the words into the choice bracket (m01 convention). Only a genuinely non-verbal choice (`[Say nothing.]`) may be followed by a `You:` line.
 
 ## Hard rules for edits

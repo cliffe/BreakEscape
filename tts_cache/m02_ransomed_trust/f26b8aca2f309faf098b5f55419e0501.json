@@ -1,0 +1,14 @@
+{
+  "key": "f26b8aca2f309faf098b5f55419e0501",
+  "npc": "patient_bed5",
+  "text": "You'll be the one they've brought in about the computers.",
+  "delivery": "looking up from her book, mildly",
+  "voice": "Autonoe",
+  "style": "Retired schoolteacher, seventy-one, post-operative and fully alert. British-Chinese, raised in Edinburgh -- a clear, precise Scottish accent. Calm, observant, quietly furious on behalf of the sicker patients around her. Speaks in complete sentences because she has always spoken in complete sentences.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T17:45:23Z"
+}
