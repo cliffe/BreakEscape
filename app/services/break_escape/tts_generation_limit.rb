@@ -1,7 +1,7 @@
 module BreakEscape
-  # Caps how many voice clips one game may have generated (paid TTS calls) in
-  # a rolling window. Only generation counts: a clip already in the cache is
-  # served without limit.
+  # Caps how many cache misses (each a paid TTS generation on a server with a
+  # key) one game may cause in a rolling window. A clip already in the cache is
+  # served without limit and does not count.
   #
   # LIMIT is sized so normal play never reaches it. Every clip the endpoint can
   # generate is a line of the game's own scenario (InkTextValidator and friends

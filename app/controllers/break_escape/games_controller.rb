@@ -745,8 +745,10 @@ module BreakEscape
       mp3_path ||= stand_in.call unless delivery && tts_service.enabled?
       return send_file(mp3_path, type: 'audio/mpeg', disposition: 'inline') if mp3_path
 
-      # A cap on paid generations per game (cache hits above are not counted)
-      if tts_service.enabled? && !TtsGenerationLimit.allow?(@game.id)
+      # A cap on cache misses (paid generations) per game; cache hits above are
+      # not counted. A server without a key counts its misses too: it answers
+      # them with no audio either way.
+      unless TtsGenerationLimit.allow?(@game.id)
         Rails.logger.warn "[TTS] Generation limit reached for game #{@game.id} (#{npc_id})"
         fallback = delivery && stand_in.call
         return send_file(fallback, type: 'audio/mpeg', disposition: 'inline') if fallback
