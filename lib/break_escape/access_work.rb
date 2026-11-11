@@ -442,6 +442,9 @@ module BreakEscape
     def park_floor(npc)
       (0.9 * defer_min(npc) * 60) - 3
     end
+    # `u` is the shortest use over AccessWork.places, which leaves out a handed-over hot desk
+    # (sub-slice H) on purpose: the floor is then stricter, not looser, and honest eases are
+    # spaced by the need's period, so nothing honest is refused (review R1 n3)
     def use_floor(data, npc, need)
       [(0.9 * shortest_use_seconds(data, npc, need)) - 3, 0].max
     end
