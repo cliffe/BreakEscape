@@ -1749,14 +1749,14 @@ boardroom_pin = "0417"
               "eventPattern": "global_variable_changed:patient_bed4_state",
               "condition": "value === 'distressed' && !globalVars.patient_bed4_ko",
               "onceOnly": true,
-              "bark": "*gasping* Nurse... the machine...",
+              "bark": "Nurse... the machine...",
               "barkDelay": 0
             },
             {
               "eventPattern": "global_variable_changed:patient_bed4_state",
               "condition": "value === 'attended' && !globalVars.patient_bed4_ko",
               "onceOnly": true,
-              "bark": "*ragged* ...ta.",
+              "bark": "...ta.",
               "barkDelay": 0
             }
           ]
@@ -1793,14 +1793,14 @@ boardroom_pin = "0417"
               "eventPattern": "global_variable_changed:patient_bed2_state",
               "condition": "value === 'distressed' && !globalVars.patient_bed2_ko",
               "onceOnly": true,
-              "bark": "*fainter now* ...it's harder... to see the numbers, love.",
+              "bark": "...it's harder... to see the numbers, love.",
               "barkDelay": 1500
             },
             {
               "eventPattern": "global_variable_changed:ward_recovering",
               "condition": "value === true && !globalVars.patient_bed2_ko",
               "onceOnly": true,
-              "bark": "*a shaky breath* ...there's me screen. There it is.",
+              "bark": "...there's me screen. There it is.",
               "barkDelay": 2500
             }
           ]

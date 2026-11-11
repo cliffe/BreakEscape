@@ -30,6 +30,9 @@ Answers to the access model form (https://claude.ai/artifact/PanecaCQBMChKnqsDGa
 - q27 Workaround icon: candidate 56 (an arrow over a striped barrier), now `assets/icons/npc-workaround.png`. Also use the barrier without the arrow as the "getting blocked" action icon, and similar: `npc-barrier.png` (candidate 7, the same barrier drawn plainly; removing 56's arrow would need a redraw). Wiring waits for 9.2 H to merge (shared files).
 - q28 The seven m02/m03 phone lines: keep the player's name; build/phone-names dropped (the lines are phone text, never voiced).
 - q29 Voice m02 Ghost's 38 video-call lines after the TTS fix merge (lab_tesseract_trials and chat_minigame_demo not voiced).
+- q30 Frustration icon: keep the no-entry sign (npc-barrier stays "this attempt failed").
+- q31 Agent HaX's new canonical voice style (origin commit 1fd322e67) re-keys about 525 m01 to m03 clips: leave for a separate session. Until then m02 shows 308 and m03 205 HaX clips unrequested, with the same lines missing.
+- q32 9.3b plan: all 8 recommended answers accepted (ACCESS_MODEL_SLICE_9_3B_PLAN.md section 13): K and O after 9.2 L and C land; W, P and I in parallel; lab port security later; ids wifi_<net>, implant_<pc>; outages keep sessions; port security refuse-only; 8-path cap; Wi-Fi and implant footholds permanent; sign-out ends onward sessions.
 
 ## Carried out
 
