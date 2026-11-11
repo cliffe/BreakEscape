@@ -180,7 +180,7 @@ module BreakEscape
         end
 
         entries.each do |entry|
-          generate_audio_for_line(entry.text, entry.voice, scenario_name, entry.npc_id)
+          generate_audio_for_line(entry.text, entry.voice, scenario_name, entry.npc_id, entry.delivery)
         end
 
         log_info ""
@@ -190,21 +190,21 @@ module BreakEscape
       end
     end
 
-    def generate_audio_for_line(text, voice_config, scenario_name, npc_id)
+    def generate_audio_for_line(text, voice_config, scenario_name, npc_id, delivery = nil)
       voice_name = voice_config['name']
       style_prompt = voice_config['style']
       language_code = voice_config['language']
 
       # Check if already cached — no API call needed.
       # Use the service's own cache_path so the path logic is defined in one place.
-      cache_key = @tts_service.cache_key_for(text, voice_name, style_prompt, language_code)
+      cache_key = @tts_service.cache_key_for(text, voice_name, style_prompt, language_code, delivery)
       mp3_path = @tts_service.cache_path(cache_key, scenario_name)
 
       if File.exist?(mp3_path)
         # Backfill provenance for audio cached before sidecars existed
         unless File.exist?(@tts_service.sidecar_path(mp3_path))
           @tts_service.write_sidecar(mp3_path, text, voice_name, style_prompt, language_code, scenario_name,
-                                     source: "batch", npc_id: npc_id)
+                                     source: "batch", npc_id: npc_id, delivery: delivery)
         end
         @stats[:cache_hits] += 1
         @consecutive_failures = 0  # Reset on cache hit
@@ -222,7 +222,8 @@ module BreakEscape
       begin
         attempt += 1
         @stats[:requests_made] += 1
-        result = @tts_service.generate(text, voice_name, style_prompt, language_code, scenario_name: scenario_name, npc_id: npc_id)
+        result = @tts_service.generate(text, voice_name, style_prompt, language_code, scenario_name: scenario_name,
+                                                                                      npc_id: npc_id, delivery: delivery)
 
         if result
           @stats[:audio_generated] += 1

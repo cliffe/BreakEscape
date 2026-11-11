@@ -58,6 +58,7 @@ module BreakEscape
       @ink_json_files = []
       @ink_source_files = []
       @variable_lines = 0
+      @delivered = Set.new      # [normalised text, normalised delivery note]
       @walk_status = runtime_walk ? :pending : :skipped
       @keys = nil
     end
@@ -70,6 +71,7 @@ module BreakEscape
       @known_values = known_variable_values(@scenario_data)
       @ink_source_files.each { |f| add_ink_source(f) }
       @ink_json_files.each { |f| add_compiled_fragments(f) }
+      @ink_json_files.each { |f| add_delivery_notes(f) }
       run_runtime_walk if @runtime_walk
       self
     end
@@ -83,6 +85,12 @@ module BreakEscape
             h[TtsService.cache_key_for_normalized(norm, v.name, v.style, v.language)] = [norm, v]
             # Clips from the previous model are still served as a fallback
             h[TtsService.legacy_cache_key_for_normalized(norm, v.name, v.style, v.language)] ||= [norm, v]
+          end
+        end
+        # A line with a #delivery: note is keyed with it too (current model only)
+        @delivered.each do |norm, note|
+          @voices.each do |v|
+            h[TtsService.cache_key_for_normalized(norm, v.name, v.style, v.language, note)] ||= [norm, v]
           end
         end
         h
@@ -290,6 +298,31 @@ module BreakEscape
         end
         add_text(text, "json:#{File.basename(file)}") unless text.strip.empty?
       end
+    end
+
+    # Lines carrying a #delivery: note (InkLineWalker reads the tags as the
+    # client does), so their keyed-with-the-note clips count as expected. Read
+    # with the scenario's globalVariables, as TtsLineExtractor (the batch) reads
+    # them, and with the ink's own defaults, so a line printing a variable keeps
+    # the clip for either value (the set may be bigger, never smaller).
+    def add_delivery_notes(file)
+      globals = @scenario_data.is_a?(Hash) ? @scenario_data['globalVariables'] : nil
+      walkers = [InkLineWalker.from_file(file.to_s)]
+      walkers << InkLineWalker.from_file(file.to_s, variables: globals) if globals.is_a?(Hash) && globals.any?
+      walkers.flat_map(&:lines).each do |line|
+        note = TtsService.delivery_from_tags(line.tags)
+        next unless note
+
+        self.class.text_variants(line.raw).each do |variant|
+          norm = TtsService.normalize_text(variant)
+          next if norm.empty?
+
+          @delivered << [norm, TtsService.normalize_text(note)]
+          @keys = nil
+        end
+      end
+    rescue StandardError => e
+      @warnings << "could not read delivery notes in #{relative(file)}: #{e.message}"
     end
 
     def run_runtime_walk

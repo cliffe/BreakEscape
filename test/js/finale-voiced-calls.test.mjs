@@ -255,8 +255,10 @@ test('wiring: lines redrawn on a reopen are not voiced; close stops and teardown
     assert.equal((mgSrc.match(/_speakCallLine\(/g) || []).length, 3, 'one definition, the typeout call and the preloaded opening');
     // The one redraw that is voiced: a voiced contact's first call, whose opening the phone preloaded
     assert.match(mgSrc, /if \(onlyPreloaded && npc\.voiced === true && isVoicedCall\(this\.params\) && !this\._pretext\?\.resuming\) \{\n\s+this\._speakPreloadedOpening\(conversationHistory\);/);
-    // Same request as person-chat: TTSManager.play → ApiClient.getTTS(npc_id, text) → POST /tts
-    assert.match(read('systems/tts-manager.js'), /blob = await ApiClient\.getTTS\(npcId, text\);/);
+    // Same request as person-chat: TTSManager.play → ApiClient.getTTS(npc_id, text) → POST /tts.
+    // A call sends no #delivery: note (delivery stays null), as TtsLineExtractor expects.
+    assert.match(read('systems/tts-manager.js'), /blob = await ApiClient\.getTTS\(npcId, text, delivery\);/);
+    assert.match(read('minigames/phone-chat/phone-call-voice.js'), /duration = await this\.tts\.play\(speakerId, text\);/);
 });
 
 // ---- F20: a voiced call voices only its own knots, up to the contact's home knot ----

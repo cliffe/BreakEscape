@@ -190,8 +190,12 @@ export class ApiClient {
    * @param {string} text - Dialogue text to synthesize
    * @returns {Promise<Blob|null>} Audio blob or null on failure
    */
-  static async getTTS(npcId, text) {
+  static async getTTS(npcId, text, delivery = null) {
     try {
+      // delivery: the line's #delivery: note (tts-delivery.js), sent only when there is one,
+      // so an untagged line's request is unchanged
+      const body = { npc_id: npcId, text: text };
+      if (delivery) body.delivery = delivery;
       const response = await fetch(`${getApiBase()}/tts`, {
         method: 'POST',
         credentials: 'same-origin',
@@ -199,7 +203,7 @@ export class ApiClient {
           'Content-Type': 'application/json',
           'X-CSRF-Token': getCsrfToken()
         },
-        body: JSON.stringify({ npc_id: npcId, text: text })
+        body: JSON.stringify(body)
       });
 
       if (!response.ok) {

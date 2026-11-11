@@ -31,6 +31,11 @@ module BreakEscape
     # A trailing dict carrying any of these is a control object, not sub-containers.
     CONTROL_KEYS = %w[-> f() ->t-> x() VAR= temp= * ^-> VAR? CNT? #].freeze
 
+    # Stands for a #delivery: tag the walker cannot read without running the story
+    # (`#delivery: {mood}`). inkjs sends what it prints, which the server cannot
+    # match, so it reads as no note and drops every note before it (review R4 M1).
+    DYNAMIC_DELIVERY = 'delivery: {}'.freeze
+
     # Most lines one ink line may expand to (branches of sequences and inline
     # conditionals multiply). A line that would expand further is logged instead.
     MAX_VARIANTS = 16
@@ -104,6 +109,33 @@ module BreakEscape
       @lines = nil
     end
 
+    # Note on carried #delivery: tags. The client (InkEngine#continue) keeps the
+    # tags of lines with no text for the next line it shows, and inkjs carries
+    # them across logic and diverts. The walker carries a #delivery: note:
+    #  - from a tag on its own line to the next line in the same container;
+    #  - across a plain divert (`#delivery: x` then `-> knot`) or into a tunnel
+    #    (`-> knot ->`) to the first line of the knot or stitch it names, when
+    #    that line comes before any choice or end there. A knot that opens with a
+    #    plain divert or a tunnel (a divert chain, or a knot with only stitches,
+    #    which ink diverts to its first stitch) is followed. The line is then listed twice:
+    #    as reached from the divert (with the note) and as reached any other way
+    #    (with its own tags);
+    #  - past a line that may print nothing (`{flag: A}` with no else), to that
+    #    line and also to the line after it, since inkjs gives the note to
+    #    whichever of them shows. Both are listed with and without the note.
+    # A note is never carried past a tunnel's return or an external function
+    # call: it lands in the tunnel or on nothing. A tunnel's return (`->->`)
+    # ends its first-line search as `-> END` does. A note above a thread
+    # (`<- knot`) goes to the thread's first line only.
+    # Where the client would join the carried note to another #delivery: note on
+    # the way (a redirecting knot's own note, or one on a line that may print
+    # nothing), the walker drops the carried note rather than guess which wins.
+    # A #delivery: tag that prints a value (`#delivery: {mood}`) is read as no
+    # note that also drops every note before it, carried or on the line, so the
+    # line it lands on is listed untagged (dialoguelint warns: delivery-note).
+    # Glued lines and lines printing game state stay unresolved either way, so a
+    # note on one is not read here (dialoguelint warns: delivery-unread).
+
     # Spoken lines in story order (duplicates kept).
     # @return [Array<Line>]
     def lines
@@ -139,8 +171,115 @@ module BreakEscape
 
     def walk_story
       @lines = []
+      @first_lines = {}   # ink path of a container => ranges in @lines of its possible first lines, or nil
+      @awaiting = []      # ink paths of containers whose first line is not yet known
+      @also_next = []     # containers whose first line may print nothing, so the next line may be first
+      @redirects = {}     # ink path of a container that opens with a plain divert => that divert's target
+      @divert_notes = []  # [target ink path, [delivery tags]] for a note carried across a divert
+      @states = []        # [ink path, walk state] of each container being walked, outermost first
       root = @ink['root']
       walk(root, 'root') if root.is_a?(Array)
+      apply_divert_notes
+    end
+
+    # Lists the first line of each divert target again with the note carried to it.
+    def apply_divert_notes
+      inserts = Hash.new { |h, k| h[k] = [] }
+      @divert_notes.uniq.each do |target, notes|
+        ranges = resolved_first_lines(target)
+        next unless ranges
+
+        ranges.each do |range|
+          range.each do |i|
+            line = @lines[i]
+            tags = after_dynamic(notes + line.tags)
+            next if TtsService.delivery_from_tags(tags) == TtsService.delivery_from_tags(line.tags)
+
+            copy = line.dup
+            copy.tags = tags
+            inserts[range.end] << copy unless inserts[range.end].any? { |c| c.raw == copy.raw && c.tags == tags }
+          end
+        end
+      end
+      inserts.keys.sort.reverse_each { |at| @lines.insert(at, *inserts[at]) }
+    end
+
+    # A container's possible first lines, following a container that opens with
+    # a plain divert to that divert's target (a chain, or a stitch-only knot).
+    def resolved_first_lines(target)
+      seen = Set.new
+      while target && seen.add?(target)
+        ranges = @first_lines[target]
+        return ranges if ranges
+
+        target = @redirects[target]
+      end
+      nil
+    end
+
+    # Control leaves (a choice, divert, tunnel, end): containers still waiting
+    # for their first line have none a carried note could land on.
+    def first_line_unknown!
+      @awaiting.each { |p| @first_lines[p] = nil unless @first_lines.key?(p) }
+      @awaiting.clear
+      @also_next.clear
+    end
+
+    # A plain divert or tunnel reached before any line: each container still
+    # waiting for its first line, and entered with no condition on the way here
+    # (only numbered sub-containers between it and this one), opens with it.
+    def note_redirect(own, target)
+      return unless target
+
+      @awaiting.each do |p|
+        next if @first_lines.key?(p) || @redirects.key?(p)
+        # A #delivery: note of its own on the way: inkjs joins it to the carried
+        # one, so the carried note is dropped here (review R3 M2)
+        next if pending_note_within?(p)
+
+        rest = if p == own then ''
+               elsif p.empty? then own
+               elsif own.start_with?("#{p}.") then own[(p.length + 1)..]
+               end
+        next unless rest && rest.split('.').all? { |seg| seg.match?(/\A\d+\z/) }
+
+        @redirects[p] = target
+      end
+    end
+
+    # Whether a container at or inside ink path p, still being walked, holds a
+    # #delivery: tag not yet given to a line.
+    def pending_note_within?(p)
+      @states.any? do |path, state|
+        next false unless p.empty? || path == p || path.start_with?("#{p}.")
+
+        Array(state[:tags]).any? { |t| TtsService.delivery_tag?(t) } || Array(state[:maybe_tags]).any?
+      end
+    end
+
+    # Tags as inkjs reads them past a dynamic #delivery: tag: every #delivery:
+    # tag before the last DYNAMIC_DELIVERY is dropped.
+    def after_dynamic(tags)
+      at = tags.rindex(DYNAMIC_DELIVERY)
+      return tags unless at
+
+      tags.each_with_index.reject { |t, i| i < at && TtsService.delivery_tag?(t) }.map(&:first)
+    end
+
+    # A plain divert's target as an absolute ink path, or nil. Relative paths
+    # count from the divert: the first ".^" is its container, each more one up.
+    def divert_target(target, path)
+      return nil unless target.is_a?(String) && !target.empty?
+      return target unless target.start_with?('.')
+
+      parts = ink_path(path).split('.')
+      steps = target.split('.')[1..] || []
+      first = true
+      while steps.first == '^'
+        steps.shift
+        first ? first = false : parts.pop
+      end
+      (parts + steps).join('.')
     end
 
     # Walks one container. Returns true when it ended with text that had no
@@ -149,6 +288,9 @@ module BreakEscape
       state = { buf: [], partial: nil, tags: [], in_ev: false, in_str: false, in_tag: false, ev_parts: [] }
       last_index = container.length - 1
       skip_to = 0
+      own = ink_path(path)
+      @awaiting << own unless @first_lines.key?(own)
+      @states << [own, state]
 
       container.each_with_index do |item, i|
         next if i < skip_to
@@ -157,6 +299,11 @@ module BreakEscape
         when String
           handle_string(item, state, path)
         when Hash
+          if state[:in_tag]
+            # `#delivery: {mood}`: a value printed into the tag
+            mark_tag_dynamic(state)
+            next
+          end
           if state[:in_ev]
             state[:ev_parts] << item
             next
@@ -176,7 +323,33 @@ module BreakEscape
           if item.key?('->') && !text_of(state).empty?
             state[:partial] ||= 'divert mid-line'
           end
+          plain = item.keys == ['->'] || item.keys == ['->t->']
+          # `<- knot` compiles to "thread" then a plain divert
+          thread = plain && i.positive? && container[i - 1] == 'thread'
+          if plain && text_of(state).empty?
+            target = divert_target(item['->'] || item['->t->'], path)
+            # `#delivery: x` on its own line, then `-> knot`, `-> knot ->` or
+            # `<- knot`: inkjs gives the note to the knot's first line (apply_divert_notes)
+            notes = state[:tags].select { |t| TtsService.delivery_tag?(t) }
+            @divert_notes << [target, notes] if target && notes.any?
+            # A thread does not redirect: the flow carries on after it
+            note_redirect(own, target) unless thread
+          end
+          if item.key?('->t->') || item.key?('x()') || thread
+            # The note went into the tunnel or thread (or nowhere): never to the line after it
+            state[:tags] = state[:tags].reject { |t| TtsService.delivery_tag?(t) }
+          end
+          if (item.keys & %w[-> ->t-> f() x() *]).any?
+            state[:maybe_tags] = nil
+            first_line_unknown!
+          end
         when Array
+          if state[:in_tag]
+            # `#delivery: {flag: a|b}` or `{~a|b}`: a conditional or sequence printed
+            # into the tag, never into the spoken line (review R5 M1)
+            mark_tag_dynamic(state)
+            next
+          end
           # Inside "str"…"/str" is choice-label text, which nobody voices.
           next if state[:in_str]
 
@@ -199,10 +372,13 @@ module BreakEscape
           dangling = walk(item, "#{path}[#{i}]")
           state[:partial] ||= 'continues after an inline conditional or sequence' if dangling
         when Numeric, TrueClass, FalseClass
-          state[:ev_parts] << item if state[:in_ev]
+          mark_tag_dynamic(state) if state[:in_tag]
+          state[:ev_parts] << item if state[:in_ev] && !state[:in_tag]
         end
       end
 
+      @awaiting.delete(own)
+      @states.pop
       tail = text_of(state)
       return false if tail.empty?
 
@@ -211,19 +387,40 @@ module BreakEscape
       true
     end
 
+    # The tag being read prints a value. tag_head keeps the static text before
+    # the first printed value, which tells whether the tag's name is printed.
+    def mark_tag_dynamic(state)
+      state[:tag_dynamic] = true
+      state[:tag_head] ||= state[:tag_buf].dup
+    end
+
     def handle_string(item, state, path)
       if item == '#'
         state[:in_tag] = true
         state[:tag_buf] = +''
+        state[:tag_dynamic] = false
+        state[:tag_head] = nil
         return
       end
       if item == '/#'
         state[:in_tag] = false
-        state[:tags] << state[:tag_buf].strip
+        tag = state[:tag_buf].strip
+        # A tag whose name is printed (`#{t}`, t = "delivery: shout") may be a
+        # #delivery: tag too, so it drops the notes before it as well (review R5 m1)
+        if state[:tag_dynamic] && (TtsService.delivery_tag?(tag) || !state[:tag_head].include?(':'))
+          state[:tags] = after_dynamic(state[:tags] + [DYNAMIC_DELIVERY])
+        else
+          state[:tags] << tag
+        end
         return
       end
       if state[:in_tag]
-        state[:tag_buf] << item[1..] if item.start_with?('^')
+        if item.start_with?('^')
+          state[:tag_buf] << item[1..]
+        else
+          # ev, out, /ev, str: the tag prints a value
+          mark_tag_dynamic(state)
+        end
         return
       end
 
@@ -253,6 +450,13 @@ module BreakEscape
         return
       end
       return if state[:in_str]
+
+      # A tunnel return ends the search for a first line as an end does (review R3 M1)
+      if %w[end done ->-> ~ret].include?(item) && !state[:in_ev]
+        state[:maybe_tags] = nil
+        first_line_unknown!
+        return
+      end
 
       if item == "\n"
         flush(state, path)
@@ -302,36 +506,76 @@ module BreakEscape
       state[:partial] = nil
       state[:tags] = []
       state[:last_lines] = nil
-      return if raw.empty?
+      if raw.empty?
+        # The client (InkEngine#continue) keeps an empty line's tags for the
+        # next line it shows. Only a #delivery: note is carried here, so the
+        # speaker of every existing line is read exactly as before.
+        state[:tags] = tags.select { |t| TtsService.delivery_tag?(t) }
+        return
+      end
 
       if state.delete(:glue_next)
         # Glue at the end of this line pulls the next line onto it.
         state[:partial] = 'glue'
       end
 
+      maybe = state.delete(:maybe_tags)
       if partial
         @unresolved << Unresolved.new(path: path, text: raw, reason: partial)
+        first_line_unknown!
         return
       end
 
       variants = expand(buf)
       if variants.nil?
         @unresolved << Unresolved.new(path: path, text: raw, reason: "expands to more than #{MAX_VARIANTS} variants")
+        first_line_unknown!
         return
       end
+      # `{flag: A}` with no else prints nothing when flag is false, and inkjs then
+      # hands this line's tags to the next line it shows
+      may_be_empty = variants.include?('')
+      variants = variants.reject(&:empty?)
 
       start = @lines.length
       variants.each do |variant|
         prefix, text = self.class.split_prefix(variant)
         @lines << Line.new(prefix: prefix, text: text, raw: variant, tags: tags, path: path)
+        next unless maybe && TtsService.delivery_from_tags(after_dynamic(maybe + tags)) != TtsService.delivery_from_tags(tags)
+
+        # Shown after a line that may have printed nothing: also as it plays with that line's note
+        @lines << Line.new(prefix: prefix, text: text, raw: variant, tags: after_dynamic(maybe + tags), path: path)
       end
-      state[:last_lines] = start...@lines.length
+      range = start...@lines.length
+      state[:last_lines] = range
+      newly = @awaiting.reject { |p| @first_lines.key?(p) }
+      newly.each { |p| @first_lines[p] = [range] }
+      @also_next.each { |p| @first_lines[p] << range if @first_lines[p] && !@first_lines[p].include?(range) }
+      @awaiting.clear
+      if may_be_empty
+        state[:maybe_tags] = after_dynamic(Array(maybe) + tags).select { |t| TtsService.delivery_tag?(t) }
+        state[:maybe_tags] = nil if state[:maybe_tags].empty?
+        # A carried note reaching the next line would meet this line's own note in
+        # inkjs, so only an untagged line passes the first-line role on (review R3 M2)
+        @also_next = state[:maybe_tags] ? [] : (@also_next + newly).uniq
+      else
+        @also_next = []
+      end
     end
 
     def retract_last_line(state, path)
       range = state[:last_lines]
       return unless range
 
+      # Glued: that line is no longer a container's first line (and its slots in
+      # @lines will be reused)
+      @first_lines.each_key do |p|
+        next unless @first_lines[p]
+
+        @first_lines[p] = @first_lines[p] - [range]
+        @first_lines[p] = nil if @first_lines[p].empty?
+      end
+      @also_next.clear
       @lines.slice!(range).each do |line|
         @unresolved << Unresolved.new(path: path, text: line.raw, reason: 'glue')
       end
@@ -479,7 +723,8 @@ module BreakEscape
         variants = variants.flat_map { |v| options.map { |o| v + o } }
         return nil if variants.length > MAX_VARIANTS
       end
-      variants.map { |v| v.gsub(/[ \t]+/, ' ').strip }.reject(&:empty?).uniq
+      # Empty variants are kept: the caller needs to know a line may print nothing
+      variants.map { |v| v.gsub(/[ \t]+/, ' ').strip }.uniq
     end
 
     # Ink's own output cleanup: collapse runs of inline whitespace, trim.

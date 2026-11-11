@@ -64,6 +64,7 @@ export async function processGameActionTags(tags, ui, options = {}) {
         return action !== 'player' && 
                action !== 'npc' && 
                action !== 'speaker' &&
+               action !== 'delivery' && // a voice note for the line (tts-delivery.js)
                !tag.includes('speaker:');
     });
     
@@ -800,6 +801,7 @@ export function getActionTags(tags) {
         return action !== 'player' && 
                action !== 'npc' && 
                action !== 'speaker' &&
+               action !== 'delivery' &&
                !action.startsWith('speaker:');
     });
 }
