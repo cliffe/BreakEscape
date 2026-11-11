@@ -1768,8 +1768,7 @@ class NPCBehavior {
         const cut = this.patrolTarget;
         if (cut?.routeAction && this.currentPath.length > 0 && this.pathIndex < this.currentPath.length) {
             const { x: cx, y: cy } = this.npcBodyPos();
-            this.sprite?.body?.setVelocity?.(0, 0);
-            this.isMoving = false;
+            this._haltForRoute();
             if (this._arriveForRouteAction(cut, cx, cy, time)) return;
             this._keepRouteLeg(cut);
         }

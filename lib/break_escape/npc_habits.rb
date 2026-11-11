@@ -242,8 +242,12 @@ module BreakEscape
       list = mine.map do |gate|
         fill = fills[gate[:path]]
         reason = fill.is_a?(Symbol) ? fill : nil
+        # In the gate's noHold: the one written for the habit, or an authored one
+        listed = if reason == :authored_no_hold then Array(gate[:gate]['noHold']).include?(npc_id)
+                 else fill.is_a?(Array) && fill.include?(npc_id)
+                 end
         { path: gate[:path], room: gate[:room], connected_room: gate[:connected_room],
-          applied: reason.nil?, no_hold: fill.is_a?(Array) && fill.include?(npc_id), reason: reason }
+          applied: reason.nil?, no_hold: listed, reason: reason }
       end
       { value: value, gates: list, reason: list.empty? ? :no_gate : nil }
     end

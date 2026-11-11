@@ -333,7 +333,8 @@ export class DoorGates {
             key: g.key, open: g.open, x: g.x, y: g.y, roomId: g.roomId, connectedRoom: g.connectedRoom,
             direction: g.direction, sprites: g.sprites.size, forcedUntil: g.forcedUntil,
             playerHoldUntil: g.playerHoldUntil || 0, requires: g.requires ?? null,
-            securedRoom: g.securedRoom ?? null, exitHoldUntil: g.exitHoldUntil || 0, bodyOff: !!g.bodyOff
+            securedRoom: g.securedRoom ?? null, exitHoldUntil: g.exitHoldUntil || 0, bodyOff: !!g.bodyOff,
+            lastGuards: [...(g.lastGuards || [])], careful: this.careful(g)
         }));
     }
 
@@ -691,17 +692,12 @@ export class DoorGates {
         }
     }
 
+    /** Whether any openFor NPC is within openRadius (one distance rule: nearGuardIds). */
     _npcNear(g) {
-        for (const id of g.cfg.openFor) {
-            const s = npcSprite(id);
-            if (!s || s.visible === false) continue;
-            const c = centreOf(s);
-            if (Math.hypot(c.x - g.x, c.y - g.y) <= g.cfg.openRadius) return true;
-        }
-        return false;
+        return this.nearGuardIds(g).length > 0;
     }
 
-    /** The ids of the openFor NPCs within openRadius (_npcNear says only whether there is one). */
+    /** The ids of the openFor NPCs within openRadius. */
     nearGuardIds(g) {
         const ids = [];
         for (const id of g.cfg?.openFor || []) {

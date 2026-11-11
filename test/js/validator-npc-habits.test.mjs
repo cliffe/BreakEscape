@@ -475,6 +475,32 @@ test('an authored gate.noHold naming an id not in its openFor', () => {
     assertLacks(warnings(out.habits), "names 'sara'");
 });
 
+// Review R1 minor 5 and nit 4
+test('a preset holdsDoors on an NPC no gate opens for is left out of the report; by name it stays', () => {
+    const preset = run(gateScenario({ npcs: [guard('una', { awareness: 'low' })] }));
+    assertLacks(preset.lines, 'holdsDoors');
+    assertLacks(preset.lines, 'no effect: no gate opens for it');
+    const named = run(gateScenario({ npcs: [guard('una', { habits: { holdsDoors: true } })] }));
+    assertHas(named.lines, 'holdsDoors true (by name)');
+    assertHas(named.lines, 'no effect: no gate opens for it');
+});
+
+test('holdsDoors false by name already listed in every authored noHold says so', () => {
+    const out = run(gateScenario({
+        npcs: [guard('sara', { habits: { holdsDoors: false } })],
+        gateB: { openFor: ['sara'], noHold: ['sara'] }
+    }));
+    assertHas(warnings(out.habits), "NPC 'sara' has holdsDoors false and is already listed in the authored noHold of every gate");
+    assertLacks(warnings(out.habits), 'which wins: the habit does nothing');
+});
+
+test('an authored gate.noHold on a gate with playerMayPassIf is a warning', () => {
+    const out = run(gateScenario({ npcs: [guard('sara')], gateB: { openFor: ['sara'], noHold: ['sara'], playerMayPassIf: 'disguised' } }));
+    assertHas(warnings(out.habits), 'rooms/hall/doors/1 sets both gate.noHold and playerMayPassIf');
+    const plain = run(gateScenario({ npcs: [guard('sara')], gateB: { openFor: ['sara'], noHold: ['sara'] } }));
+    assertLacks(warnings(plain.habits), 'sets both gate.noHold');
+});
+
 function schemaErrors(scenario) {
     const script = `require ${JSON.stringify(join(root, 'scripts/validate_scenario.rb'))}
       puts JSON.generate(validate_json(JSON.parse(STDIN.read), ${JSON.stringify(join(root, 'scripts/scenario-schema.json'))}))`;

@@ -187,7 +187,7 @@ test('approachPoint stays inside a small radius', () => {
     assert.equal(p.y, 124, 'radius 40: stands 24 px out, 16 px inside the radius');
 });
 
-test('approachPoint: stopping short of the spot still leaves the guard inside the radius', () => {
+test('approachPoint: on open floor, stopping short of the spot still leaves the guard inside the radius', () => {
     // test_access_habits H9 at radius 56: the spot was 48 px out; a walker stops within
     // 8 px of his path's end and the spot snaps to an 8 px cell centre, so Gary stood
     // 56 to 58 px from the door, just out of reach, with nothing left to walk.

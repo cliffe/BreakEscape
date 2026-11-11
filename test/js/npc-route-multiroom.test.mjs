@@ -503,6 +503,16 @@ test('an action leg cut short far from its spot is walked again, not skipped', a
     assert.deepEqual(b.patrolTarget.routeAction, { unlockRoom: 'b' });
 });
 
+test('a cut-short action leg idles the walk animation when it stops the NPC (review R1 nit 1)', async () => {
+    const { b } = await cutShortAtActionLeg({ x: 106, y: 352 });
+    const anims = [];
+    b.playAnimation = (name) => anims.push(name);
+    b.isMoving = true;
+    await silently(() => b.chooseNewPatrolTarget(1000));
+    assert.equal(b.isMoving, false);
+    assert.equal(anims[0], 'idle');
+});
+
 test('once its room is loaded, a cut-short action leg is skipped as before', async () => {
     const { b, unlocks, requests } = await cutShortAtActionLeg({ x: 106, y: 352 });
     window.rooms.b = { position: { x: 0, y: 0 } };

@@ -313,3 +313,17 @@ test('Sara opens, it closes, then Gary opens with the player near: open to the p
     assert.equal(s.gates.openToPlayer(s.g, 100 + HOLD + 100), true);
     assert.equal(s.gates.blocksPlayer(s.g, { playerRoom: 'lobby', now: 100 + HOLD + 100 }), false);
 });
+
+test('state() reports lastGuards and careful (review R1 nit 2)', () => {
+    const s = setup();
+    s.put('sara', BY_DOOR);
+    s.gates.update(0);
+    let st = s.gates.state('store')[0];
+    assert.deepEqual(st.lastGuards, ['sara']);
+    assert.equal(st.careful, true);
+    s.put('gary', BY_DOOR);
+    s.gates.update(100);
+    st = s.gates.state('store')[0];
+    assert.deepEqual([...st.lastGuards].sort(), ['gary', 'sara']);
+    assert.equal(st.careful, false);
+});
