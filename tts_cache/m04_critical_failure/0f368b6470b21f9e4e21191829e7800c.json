@@ -1,0 +1,13 @@
+{
+  "key": "0f368b6470b21f9e4e21191829e7800c",
+  "npc": "narrator",
+  "text": "You let her talk and drift closer while she does, until the cloner on your hip is a hand's width from the card on her belt.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-05",
+  "recorded_at": "2026-11-05T16:01:29Z"
+}

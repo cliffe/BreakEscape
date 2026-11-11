@@ -1,0 +1,13 @@
+{
+  "key": "41d37d4afbcd53628e2d980748b190c2",
+  "npc": "narrator",
+  "text": "A young trader watches six price charts at once, placing the occasional order without appearing to look at it.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:04:08Z"
+}

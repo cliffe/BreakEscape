@@ -1,0 +1,13 @@
+{
+  "key": "38d5552e17de0e9df1f50b8549d255e1",
+  "npc": "narrator",
+  "text": "SAFETYNET headquarters, Thursday, nine o'clock. HaX has your report up on the screen.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:40:47Z"
+}

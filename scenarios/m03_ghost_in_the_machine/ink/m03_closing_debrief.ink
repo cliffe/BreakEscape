@@ -43,6 +43,8 @@ VAR transaction_log_read = false
 // Pass 2 dialogue round 2 (D2-1): the player put "target selection" to Sterling's face.
 VAR named_target_selection = false
 VAR defended_danny = false // Synced scenario global: the player spoke up for Danny's survey to Sterling
+// Story pass (flag 2): synced; Danny named the other survey sites on the FTP build.
+VAR danny_named_sites = false
 
 // Root divert. When a conversation has ended (-> DONE), the engine restores only
 // its variables on the next talk and continues from the root (npc-conversation-
@@ -289,6 +291,12 @@ Agent HaX: Until last night the Architect was a rumour. Now it's a signature on 
 #speaker:agent_0x99
 // D3-4: trimmed, so the run-up to Danny is shorter.
 Agent HaX: The Phase 2 target list goes out unsigned. Substations get hardened, hospitals get assessed, and we'll be standing where they meant to strike.
+// Story pass (flag 2): the FTP note's "before every healthcare job", paid off.
+{ danny_named_sites:
+    Agent HaX: And the nine hospitals Foster gave you, the ones on St. Catherine's build. All patched before breakfast. Zero Day's next healthcare job has nowhere to land.
+- else:
+    Agent HaX: Their FTP note said "before every healthcare job". Somewhere on that survey of two hundred and fourteen is the next one, still on St. Catherine's build. We're checking them one at a time.
+}
 -> danny_discussion
 
 === danny_discussion ===

@@ -1,0 +1,13 @@
+{
+  "key": "31e2dbc07cc881bdf046d59aa193ca8b",
+  "npc": "security_guard",
+  "text": "A visit? I've an audit on my list, not a visit.",
+  "voice": "Schedar",
+  "style": "Site security guard on the early shift, mid-fifties. Speak with a consistent West Country (Bristol) accent throughout -- do not shift to any other accent. Low, even pitch; unhurried pace. Polite and a little grumpy about the hour, then firmly by-the-book once pushed.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:42:20Z"
+}

@@ -1066,6 +1066,13 @@ Tampered client, from the page (`window.ApiClient`), all refused by the server:
   block, so that answer is empty after the heard share too; the heard share's capture proof itself
   (`account_capture_passwords`) is covered by `npc_workaround_h_test.rb`.
 
+Known, not fixed (review R3 n2): a handed borrow has no age limit on the server
+(`npc_frustration.rb`, `handed_borrow_pcs`; only the dwell is checked). With "last done wins", a
+tampered client that holds two handed borrows for one PC can choose which NPC becomes the guest,
+and when the server's guest timeout starts, by timing its "done" posts. It reaches only outcomes
+honest play can reach (each borrow was handed by the server), and a wall-time bound would bring
+back the needs-clock problem of R2 server m1.
+
 `access-leak-check.rb`: 1221 (119 responses), 1222 (117), 1223 (86): `VERDICT: no leaks found` each.
 
 ### W1 to W4 with Hall C loaded (game 1223)
@@ -1218,6 +1225,110 @@ Rails 1604 runs, 0 failures, 0 errors, 1 skip; JS 491 of 491 files passed.
 
 Commits this round: `dd04e6934` (server), `94112e9ed` (client), `e73e8d8bf` (n3 comment), the
 merge of `main`, and this log.
+
+## H review round 2 outcomes (2026-11-11)
+
+Reviews: `ACCESS_MODEL_SLICE_9_2_H_CODE_REVIEW_R2_SERVER.md` (0 blockers, 1 major, 2 minors, 4
+nits) and `ACCESS_MODEL_SLICE_9_2_H_CODE_REVIEW_R2_CLIENT.md` (0 blockers, 0 majors, 3 minors, 8
+nits). Each fix below was checked by reverting it in turn: its test fails with the fix taken out.
+
+### Server review
+
+| Finding | Outcome |
+|---|---|
+| M1 the R1 n2 guard keeps the wrong guest when two borrowers queue | **Fixed: the last "done" wins.** The guard is gone. The server sees the "done" posts in the order the NPCs leave, which is the order the client records guests in (on each answer), so the server can check this rule itself; a sit order sent by the client would be a client claim the server cannot verify. The lost-answer case (R1 n2) stays right another way: a resent "done" is answered from `lastSpent` and writes nothing, and a borrow's answer now says `guest: true` only while the server's guest record at that PC is still this NPC's (`borrow_body`). So a resend after a later borrower's "done", after a sign-out, or after a refused timed-out claim answers `guest: false` and the client does not record it. A lost request (never reached the server) and resent late is recorded last on both sides, so the two still agree. Tests: Dana handed, Ian handed, Ian's done, Dana's done: `guestSessions.hot_desk` is `dana` and the claim answers `npcId: dana`; Ian's resend then answers `guest: false` (fails on `25f5cf239`); a resend after the guest's sign-out answers `guest: false`. The old n2 test, which planted the queue's shape by hand, is replaced |
+| m1 the server's wall-time timeout against the client's needs-clock lock | **Fixed on the client** (the smaller fix that covers every pause). VM time and a hidden tab can stop the needs clock for any length of time, so no fixed server allowance covers the honest cases. Instead a refused guest claim is taken as the lock: `workstationState.guestClaimRefused(pcId)` drops the guest record, publishes `<pc>_screen_locked` and emits `workstation_auto_locked` as the client's own lock does, so the player sees a locked screen and later clicks send no claim. The server's timeout stays as it is (a bound for a tampered client). Tests: `workstation-state.test.mjs` (a refusal at 2 needs-clock minutes locks), `access-signin-routing.test.mjs` (a refused guest claim calls it, a refused owner claim does not). Also closes client n8 |
+| m2 tests that pass with the code removed | **Fixed.** n1: a fixture whose borrow names the hot desk by its `name`; `guestSessions`, `handed_borrow_pcs`, the answer's `pcId` and the claim all use the id (fails if `borrow_pc_id` returns the raw name). `unless via == 'claim'`: the guest claim test asserts the guest record is still there after a granted claim (fails without the `unless`). The `logout_session!` guard: see n1 |
+| n1 the unreachable guard in `logout_session!` | **Kept, commented as defensive**; the late-logout test's comment now says the "done" already removed the displaced session |
+| n2 the answer's raw `pcId` | **Fixed**: the resolved id (`borrow_pc_id`), tested with the name fixture |
+| n3 a refused, timed-out record stays | **Fixed**: the refusal deletes `guestSessions[pc]` and `guestSessionsAt[pc]` under the `/login` lock; asserted in the timeout test |
+| n4 a granted guest claim is never timed out | **Not changed**: as the review says, it matches an owner claim and gains nothing the claim did not |
+
+### Client review
+
+| Finding | Outcome |
+|---|---|
+| m1 (R1 m1) `login_aloud` outside the listening window | **Deferred to `docs/IDEAS_BACKLOG.md`** ("Access 9.2 H: deferred review items"): it needs a timing rule and a playtest, not a review fix |
+| m2 (R1 m3) a borrow cut short after sitting down | **Deferred to the backlog**: choosing whether a half-used borrow counts as done is a design choice with its own events |
+| m3 notebook search misses an escaped username or password | **Fixed**: `noteMatches` / `noteSearchText` in `utils/note-markdown.js` search the text with the renderer's escapes removed; `notes-minigame.js` uses it. Test: an escaped overheard note is found by `s_okafor`, `Spring-24` and `SPRING-24*#` |
+| n1 verbatim toast collapses spaces | **Fixed**: a verbatim message gets `white-space: pre-wrap`; asserted in `toast-verbatim.test.mjs` |
+| n2 no hold-queue test for a verbatim toast | **Backlog**: the held queue and its release are not exported; the code path was read and keeps the option |
+| n3 a guest recorded during a slow `/logout` | **Comment** in `workstation-state.js` `onSignedOut`, and a backlog entry |
+| n4 two owner alerts render a name as HTML | **Fixed**: `owner_returned` and `auto_locked` pass `{ plainText: true }`; routing test |
+| n5 an old unescaped note and a re-hearing give two notes | **Not changed**: dev games from before this build only |
+| n6 (R1 n3) the caffeine test cannot fail | **Backlog** |
+| n7 deferred items only in the build log | **Fixed**: client R1 m1, m3, m5, n3 and this round's deferrals are in the backlog |
+| n8 a refused guest claim keeps the guest record | **Fixed** with server m1 above |
+
+### Browser check (games 1243 and 1245, port 3018)
+
+Keyless server on :3018, started by hand, stopped by PID afterwards; headless Chromium, a script
+through `window.__test` (start room Hall C, the socket in `cable_room` switched off, then Rosa's
+breaker, both through their real confirm prompts). The same result in both games:
+
+- Rosa borrowed the hot desk twice (hands 1 and 2). After each leave, the client's guest record
+  was `rosa`, the "done" answered `{ pcId: hot_desk, guest: true }`, and the click at the hot desk
+  sent a guest claim that the server granted with `npcId: rosa`. The second sit displaced the
+  first claimed session (`pc_signed_out` `displaced`, one `/logout`) before her second "done".
+  Server and client agreed on the guest at every claim.
+- **The queue itself did not happen in the browser.** Ian was handed his borrow at 66 s and set
+  off for the hot desk (`goto_target`); about 18 s later his job had ended without his sitting
+  down, and he was not sent again, so his borrow was posted dropped at its 60 s start window
+  (126 s), while the hot desk was free from 105 s. His next hand (2) had not started when the run
+  ended. This is next to client R1 m3 / R2 m2 (a borrow whose job ends is not restarted; the
+  borrow is read through `s.job.borrow` only), now seen before sitting rather than after; the
+  player stood by Rosa's breaker in Hall C, which may have blocked his walk. Not fixed in this
+  round; added to the backlog entry for R2 m2. The two-borrower queue is covered by the server
+  test (Dana and Ian) and by the client recording on each answer.
+
+Leftover games: 1231, 1237, 1238 (setup attempts), 1243, 1245; shared dev database.
+
+### Merge and suites after review round 2
+
+`main` merged into `build/9-2-h` (`fee1166a3`), no conflicts. After the merge, under the lock:
+Rails 1606 runs, 0 failures, 0 errors, 1 skip; JS 491 of 491 files passed.
+
+Commits this round: `e9320f7e8` (server), `3c22cb90e` (client), `ac6623414` (log and backlog),
+`fee1166a3` (merge of `main`), and this note.
+
+## H review round 3 outcomes (2026-11-11)
+
+Review: `ACCESS_MODEL_SLICE_9_2_H_CODE_REVIEW_R3.md` (0 blockers, 0 majors, 2 minors, 3 nits).
+Each fix was checked by running its new tests against the code before the fix: they fail there.
+
+| Finding | Outcome |
+|---|---|
+| m1 a transport error on a guest claim locks a live guest session | **Fixed** (`unlock-system.js`): `guestClaimRefused` runs only on `reason: 'refused'` (a 422). A 5xx, 403 or network failure keeps the guest record, shows the sign-in screen as before and an alert with the error's message (plain text). Test: routing "a guest claim that fails on the transport" (`locked` stays empty) |
+| m2 the fail cooldown on a borrowed PC equals the start window | **Fixed** (`npc-needs.js` `_failJob`): a failed job at a borrowed PC sets a 5 s cooldown (`BORROW_FAIL_COOLDOWN_MS`), not 60 s, so the borrower tries again inside the window and `startBy` stays the only bound. Tests in `npc-needs-work.test.mjs`: a borrow whose blocked walk times out at 20 s sits before `startBy`; after a failed walk, a PC taken by a second borrower is waited for and sat at once that one leaves. The backlog entry no longer files the dropped Ian borrow under client R2 m2 |
+| n1 the refusal drops whichever guest is recorded | **Fixed**: `guestClaimRefused(pcId, npcId)` keeps a record that is no longer the claimed guest's; the routing call passes the claimed `guestId`. Tests: workstation-state (Rosa recorded while Ian's claim was answered is kept), routing (the claimed guest is passed) |
+| n2 a handed borrow has no server age limit | **Recorded, not fixed**: in the tampered-client notes under "Browser run H" |
+| n3 the `record_borrow_done!` comment | **Fixed**: it names the late-resent request (R1 n2) as the exception |
+| Orchestrator: `hall_c_drawer` sprite | **Fixed**: `filing_cabinet1` has no sprite; it is `filing_cabinet` now. The validator shows no failure lines (one warning, about `pat_pc`, as before) |
+
+### Browser check (game 1252, port 3018)
+
+Keyless server on :3018, started by hand, stopped by PID afterwards; the R2 script with the socket
+and the breaker switched one after the other (so the two hand-overs land close), then the player
+sent to `slow_room`, away from Ian's way from `cable_room` to the hot desk, until the second
+borrower left. Game 1251 started in the lobby by mistake and did nothing (left over).
+
+- **The queue happened.** Ian was handed his borrow at 64 s and set off; Rosa was handed hers at
+  81 s and sat at the hot desk at 86 s. Ian's walk ended without his sitting (the desk was taken),
+  and about 6 s later he set off again while Rosa was still on her way out; he sat at 97 s, after
+  her "done" at 91 s, and his "done" came at 102 s, inside his window (124 s). No borrow was dropped.
+- Both "done" answers said `{ pcId: hot_desk, guest: true }`, Rosa's first, then Ian's. The
+  client's guest record before the claim was `ian`, the guest claim was granted with `npcId: ian`
+  (`ishaw`, `via: "claim"`), and the desktop that opened was Ian's: the last sitter's.
+
+Leftover games: 1251, 1252; shared dev database.
+
+### Merge and suites after review round 3
+
+`main` merged into `build/9-2-h` (`4a4f97f37`), no conflicts. After the merge, under the lock:
+Rails 1606 runs, 0 failures, 0 errors, 1 skip; JS 491 of 491 files passed.
+
+Commits this round: `62a1fc990` (m1, n1), `076acc1d6` (m2), `71960ca23` (n3, drawer sprite),
+`4a4f97f37` (merge of `main`), and this note with the backlog change.
 
 ## L: lockout as a cause (2026-11-11)
 

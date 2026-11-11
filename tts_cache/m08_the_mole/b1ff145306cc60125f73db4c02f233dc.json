@@ -1,0 +1,13 @@
+{
+  "key": "b1ff145306cc60125f73db4c02f233dc",
+  "npc": "director_netherton",
+  "text": "Two of ours are dead at the sites the team could not reach. They are dead because someone in this building told the enemy where the gaps would be.",
+  "voice": "Charon",
+  "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. His own briefing was turned into a weapon; he does not raise his voice and he does not soften anything, and under the control is a cold fury that this came from inside his house.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T20:44:47Z"
+}

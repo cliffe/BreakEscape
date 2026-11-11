@@ -1,0 +1,13 @@
+{
+  "key": "321534ca7095a66a4dfe4d0ab22da636",
+  "npc": "narrator",
+  "text": "Then you roll him onto his side, press your jacket to the cut, and call HaX. An ambulance and the police arrive together, and nobody asks who rang. He comes round in hospital, under guard.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:36:19Z"
+}

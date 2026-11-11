@@ -35,6 +35,7 @@ VAR told_about_david = false   // scenario design R1 (m6): the news about David,
 VAR card_handed = false       // playtest round: local, hides the office ask once the card is given
 VAR fate_noted = false        // Phase 4 dialogue C1 (D5-8): his reaction to Torres' fate, once
 VAR office_rule_heard = false // Round 3 (2026-10-17): he has said an office spare needs Patricia's say-so, once
+VAR lockbox_code_given = false // VM integration (2026-11-10): he has given the on-call lockbox code, once
 
 // Synced from scenario globals
 VAR player_name = "Agent 0x00"
@@ -51,6 +52,8 @@ VAR torres_suspected = false
 VAR found_door_log = false
 VAR it_notice_read = false
 VAR final_choice = "" // Synced scenario global: Torres' fate; set by m05_torres_confrontation and HaX's post-KO call. Read for his reaction (D5-8)
+VAR server_room_entered = false // Synced scenario global: the player has been in the server room
+VAR portal_login_found = false // Synced scenario global (2026-11-10): the portal login card in the on-call lockbox has been read
 VAR owen_refused_password = false // Synced scenario global (pass 5 puzzle R1, P6): Owen has been asked for the server-room password and wanted a reason; set by Owen. Patricia's sign-off waits for it
 
 
@@ -168,6 +171,12 @@ Owen Gallagher: I thought it was remote work at first. It's too tidy for that. S
 // server room can be asked about before the player has seen its door.
 + {asked_access and not (server_door_seen or it_notice_read) and not server_password_obtained and not password_handed} [What about the server room?]
     -> request_password
+
+// VM integration (2026-11-10): the portal login is on a card in the server
+// room's on-call lockbox; its code is his badge number (#4430, also on the
+// badge log). A second, social route to the code for players without the log.
++ {server_room_entered and not portal_login_found and not lockbox_code_given} [The on-call lockbox in the server room. What's the code?]
+    -> lockbox_code
 
 + {torres_suspected and not office_card_obtained and not card_handed} [I need into David Torres' office.]
     -> request_office_card
@@ -345,6 +354,13 @@ Narrator: He peels the sticky note off the edge of his monitor and hands it over
 // the insider before anyone suspects him.
 Owen Gallagher: Past the server room is the key vault. Fingerprint reader. Two thumbs enrolled, Ruth Halloran's and David's, and nobody else's. Don't ask me how you'd get in there.
 Owen Gallagher: Board bought it because you can't write a thumb on a sticky note. Course, you can't change one either, once it's out.
+-> hub
+
+=== lockbox_code ===
+#speaker:owen_gallagher
+~ lockbox_code_given = true
+Owen Gallagher: It's my badge number. Four four three zero.
+Owen Gallagher: I know. It's on every swipe log I print. It's on the list, right under rotating that portal login.
 -> hub
 
 // PASS 4 (whodunnit). The give tag sits on the first line; the local flag

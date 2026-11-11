@@ -1,0 +1,13 @@
+{
+  "key": "08b50a7f47771ad762be1f1d81fbc2c9",
+  "npc": "narrator",
+  "text": "A man in his early forties leans on the front of an executive desk. The Bitcoin whitepaper hangs framed behind him, level with his own head.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:22:02Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "ef2f5046a5cc32563b1f50ee13af8585",
+  "npc": "checkpoint_guard",
+  "text": "I don't know who you are, and now I'm not going to take your word for it. Go back out to the lobby and come in properly.",
+  "voice": "Alnilam",
+  "style": "Contract security guard in his forties on a long shift. Speak with a consistent South London accent throughout — do not shift to any other accent. Low, flat pitch; slow, procedural pace. Unimpressed; goes by his list and nothing else.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:52:49Z"
+}

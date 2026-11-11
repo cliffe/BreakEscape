@@ -1,0 +1,13 @@
+{
+  "key": "b34e5dcb9f1766ca439b73e1c610527f",
+  "npc": "operative_static",
+  "text": "Voltage. Company.",
+  "voice": "Umbriel",
+  "style": "ENTROPY operative and Voltage's last line of defence, early thirties. Speak with a consistent Polish-accented English throughout, ten years in Britain -- do not shift to any other accent. Deep, low pitch; slow pace, very few words. Terse, loyal and immovable.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:17:30Z"
+}

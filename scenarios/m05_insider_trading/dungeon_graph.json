@@ -105,6 +105,18 @@
       "optional": false
     },
     {
+      "id": "server_hallway_badge_log",
+      "label": "Server Hallway Badge Log",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "lock_it_oncall_lockbox",
+      "label": "It Oncall Lockbox",
+      "kind": "lock",
+      "optional": false
+    },
+    {
       "id": "server_password_sticky_note",
       "label": "Server Password Sticky Note",
       "kind": "item",
@@ -114,6 +126,18 @@
       "id": "bludit_cms_server_terminal",
       "label": "Bludit CMS Server Terminal",
       "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "research_portal_login_card",
+      "label": "Research Portal Login Card",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "lock_vm_launcher_bludit",
+      "label": "Vm Launcher Bludit",
+      "kind": "lock",
       "optional": false
     },
     {
@@ -172,7 +196,7 @@
     },
     {
       "id": "vmch_submit_flag1",
-      "label": "Submit Flag 1: The login someone left lying about (recon)",
+      "label": "Submit Flag 1: The handover note someone left on the portal (recon)",
       "kind": "vm",
       "optional": false
     },
@@ -305,6 +329,16 @@
     },
     {
       "from": "npc_owen_gallagher",
+      "to": "server_hallway_badge_log",
+      "soft": false
+    },
+    {
+      "from": "server_hallway_badge_log",
+      "to": "lock_it_oncall_lockbox",
+      "soft": false
+    },
+    {
+      "from": "npc_owen_gallagher",
       "to": "server_password_sticky_note",
       "soft": false
     },
@@ -316,6 +350,21 @@
     {
       "from": "server_room",
       "to": "bludit_cms_server_terminal",
+      "soft": false
+    },
+    {
+      "from": "server_room",
+      "to": "lock_it_oncall_lockbox",
+      "soft": false
+    },
+    {
+      "from": "lock_it_oncall_lockbox",
+      "to": "research_portal_login_card",
+      "soft": false
+    },
+    {
+      "from": "research_portal_login_card",
+      "to": "lock_vm_launcher_bludit",
       "soft": false
     },
     {
@@ -412,6 +461,11 @@
       "from": "vmfl_submit_flag3",
       "to": "vmch_submit_flag4",
       "soft": true
+    },
+    {
+      "from": "lock_vm_launcher_bludit",
+      "to": "bludit_cms_server_terminal",
+      "soft": false
     },
     {
       "from": "bludit_cms_server_terminal",

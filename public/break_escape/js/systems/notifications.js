@@ -228,6 +228,8 @@ function renderNotification(message, type, title, duration, seen = false, option
         // Author text in, plain text out: textContent, never innerHTML.
         if (title) notification.querySelector('.notification-title').textContent = displayDashes(title);
         setPlainLines(notification.querySelector('.notification-message'), verbatim ? message : displayDashes(message));
+        // review R2 n1: a password's doubled, leading or trailing spaces are kept on screen
+        if (verbatim) notification.querySelector('.notification-message').style.whiteSpace = 'pre-wrap';
     }
     notification._toast = { message, type, title, duration, shownAt: Date.now(), seen, plainText, verbatim };
     

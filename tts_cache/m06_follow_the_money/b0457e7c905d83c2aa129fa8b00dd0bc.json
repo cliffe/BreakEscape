@@ -1,0 +1,13 @@
+{
+  "key": "b0457e7c905d83c2aa129fa8b00dd0bc",
+  "npc": "irina_volkova",
+  "text": "Unless you are looking for something that isn't on a checklist.",
+  "voice": "Kore",
+  "style": "Brilliant academic cryptographer, mid-thirties, Moscow-educated and ten years in British academia, guarded and precise. Speak with a consistent light Russian accent in fluent English throughout — do not shift to any other accent. Low-to-mid pitch; measured pace. Dry and tightly controlled.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:54:47Z"
+}

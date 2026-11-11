@@ -1,0 +1,13 @@
+{
+  "key": "7522cd116caaaaa78b0859d74b1aa14b",
+  "npc": "voltage",
+  "text": "And Static's still in this room. I'd decide quickly.",
+  "voice": "Alnilam",
+  "style": "Critical Mass field lieutenant, a former grid engineer in his mid-forties. Speak with a consistent South African English (Johannesburg) accent throughout -- do not shift to any other accent. Low, flat pitch; slow, clipped pace. Detached and contemptuous, barely looking up from his laptop; nothing anyone says is new to him.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:14:35Z"
+}

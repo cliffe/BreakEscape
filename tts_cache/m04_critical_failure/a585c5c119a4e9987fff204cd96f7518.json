@@ -1,0 +1,13 @@
+{
+  "key": "a585c5c119a4e9987fff204cd96f7518",
+  "npc": "operative_static",
+  "text": "Then we'd better be quick.",
+  "voice": "Umbriel",
+  "style": "ENTROPY operative and Voltage's last line of defence, early thirties. Speak with a consistent Polish-accented English throughout, ten years in Britain -- do not shift to any other accent. Deep, low pitch; slow pace, very few words. Terse, loyal and immovable.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:17:51Z"
+}

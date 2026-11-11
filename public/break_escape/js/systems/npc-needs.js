@@ -23,6 +23,10 @@ export const NEEDS_TICK_MS = 250;
 const MAX_FRAME_MS = 1000;
 const LOG_CAP = 2000;
 const FAIL_COOLDOWN_MS = 60000;
+// Access 9.2 H review R3 m2: a failed walk to a borrowed PC. FAIL_COOLDOWN_MS equals the borrow's
+// start window, so it would always drop the borrow; a short wait lets the borrower try again
+// inside the window, and startBy stays the only bound
+const BORROW_FAIL_COOLDOWN_MS = 5000;
 const HOME_EPS = 12;
 const HOME_RETRY_TICKS = 4;   // provisional needsHome re-lookup: once a second
 const SELECT_BACKOFF_TICKS = 4; // a selection that path-searched and found nothing retries after 1 s
@@ -3096,7 +3100,7 @@ export class NPCNeedsSystem {
 
     _failJob(s, reason) {
         const job = s.job;
-        if (job) s.cooldowns[job.phase === 'goto_item' ? job.itemId : job.targetId] = this.clockMs + FAIL_COOLDOWN_MS;
+        if (job) s.cooldowns[job.phase === 'goto_item' ? job.itemId : job.targetId] = this.clockMs + (job.borrowed ? BORROW_FAIL_COOLDOWN_MS : FAIL_COOLDOWN_MS);
         this._emit(`npc_job_failed:${s.npcId}`, { npcId: s.npcId, need: job?.need, targetId: job?.targetId, reason });
         this._abortJob(s, reason, { cancel: true, failed: true });
         this._goHome(s);

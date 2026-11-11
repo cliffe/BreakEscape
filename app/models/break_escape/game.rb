@@ -1668,7 +1668,13 @@ module BreakEscape
       # Sub-slice L review R1 m1 (6.6): a guest who cannot sign in here left no session open
       return refusal.call('the guest is locked out at this PC') if account_locked_out_at?(pc['id'], guest)
       # Review R1 m1: the server times the guest session out itself, from the "done"
-      return refusal.call('the guest session has timed out') if guest_session_timed_out?(pc)
+      # Review R2 n3: the timed-out record goes too, so verify-run and a later "done" read no
+      # stale guest (POST /login runs under the game lock)
+      if guest_session_timed_out?(pc)
+        end_guest_session_at!(pc['id'])
+        save!
+        return refusal.call('the guest session has timed out')
+      end
 
       start_login_session!(pc['id'], guest, 'claim')
       save!
@@ -1684,7 +1690,9 @@ module BreakEscape
       ended = player_state['sessions'].delete(key)
       # Signing out of a claimed guest session ends it (review R1 M1), so the next click is the
       # sign-in screen. Only the guest's own claim: a displaced session's /logout can land after
-      # the borrow's "done" has recorded a new guest, and that record must stay.
+      # the borrow's "done" has recorded a new guest, and that record must stay. That case is
+      # already safe because the "done" deletes the displaced session, so `ended` is nil; the
+      # guest id check is defensive only (review R2 n1).
       if ended.is_a?(Hash) && ended['via'] == 'claim' && guest_sessions[key] == ended['id']
         end_guest_session_at!(key)
       end
