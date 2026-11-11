@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: Access model social media feeds",
+  "description": "Test of access model slice 9.2 sub-slice C: the social_media need, the phone, a PC that allows or blocks social media, the hot desk borrowed for it, and the feed (posts the server reveals one per met use, with their facts withheld until then). Nothing to solve.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 15,
+  "test_type": "access_model",
+  "test_objective": "Prove the social_media need and the feed: a phone use at the desk, a use at an allowed PC, a blocked PC that fails and ends in a borrowed kiosk, a password built from two revealed posts and a poster, a feed that runs out, a reload, and a guard who does not challenge while on his phone"
+}

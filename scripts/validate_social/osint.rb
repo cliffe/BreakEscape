@@ -184,6 +184,24 @@ module ValidateSocial
       out
     end
 
+    # Access slice 9.2 C (plan 8.3): a room NPC's feed post with a fact is that fact's granting
+    # element, as an OSINT post is, so the fact's `source` names the feed post's id.
+    def self.feed_elements(ctx)
+      rooms = ctx.json['rooms'].is_a?(Hash) ? ctx.json['rooms'] : {}
+      rooms.flat_map do |rid, room|
+        npcs = room.is_a?(Hash) && room['npcs'].is_a?(Array) ? room['npcs'] : []
+        npcs.each_with_index.flat_map do |npc, i|
+          feed = npc.is_a?(Hash) ? npc['feed'] : nil
+          posts = feed.is_a?(Hash) && feed['posts'].is_a?(Array) ? feed['posts'] : []
+          posts.each_with_index.filter_map do |p, j|
+            next unless p.is_a?(Hash) && p['fact'].is_a?(String) && p['id'].is_a?(String)
+
+            { id: p['id'], fact: p['fact'], where: "rooms.#{rid}.npcs[#{i}].feed.posts[#{j}][#{p['id']}]" }
+          end
+        end
+      end
+    end
+
     # Yields [id, path] for every block, post, result and metadata field, with or without a fact:
     # a fact's `source` names one of them, so the ids share one namespace.
     def self.element_ids(node, path, key = nil, &blk)
@@ -304,6 +322,7 @@ module ValidateSocial
       actions = action_grants(ctx)
       by_fact = Hash.new { |h, k| h[k] = [] }
       elements(osint).each { |e| by_fact[e[:fact]] << e }
+      feed_elements(ctx).each { |e| by_fact[e[:fact]] << e }
 
       Mail.facts(ctx).each do |fid, f|
         els = by_fact[fid]

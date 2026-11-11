@@ -183,3 +183,36 @@ test('social: the needs validator counts the own workstation as a social_media s
     const r2 = spawnSync('ruby', ['-e', script], { input: JSON.stringify(s), encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' } });
     assertHas(JSON.parse(r2.stdout.trim().split('\n').pop()), "need 'social_media' has no object");
 });
+
+test('social: the needs timing line takes socialUse restores at the own PC (default 60)', { skip }, () => {
+    const s = clean();
+    const script = `require ${JSON.stringify(join(root, 'scripts/validate_scenario.rb'))}
+      puts JSON.generate(ValidateNpcNeeds.check(JSON.parse(STDIN.read)))`;
+    const need = (sc) => {
+        const r = spawnSync('ruby', ['-e', script], { input: JSON.stringify(sc), encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' } });
+        assert.equal(r.status, 0, r.stderr);
+        return JSON.parse(r.stdout.trim().split('\n').pop()).find(l => l.includes('NPC needs jake.social_media'));
+    };
+    assert.match(need(s), /P = 1\.0 min between uses \(via 'jake_pc', restores 60\)/);
+    jake(s).socialUse = { restores: 30 };
+    assert.match(need(s), /P = 0\.5 min between uses \(via 'jake_pc', restores 30\)/);
+});
+
+test('social: a feed post is its fact\'s granting element in the OSINT lint; its source names the post', { skip }, () => {
+    const lint = (sc) => {
+        const script = `require ${JSON.stringify(join(root, 'scripts/validate_social.rb'))}
+          puts JSON.generate(ValidateSocial.check(JSON.parse(STDIN.read), repo_root: ${JSON.stringify(root)}))`;
+        const r = spawnSync('ruby', ['-e', script], { input: JSON.stringify(sc), encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' } });
+        assert.equal(r.status, 0, r.stderr);
+        return JSON.parse(r.stdout.trim().split('\n').pop());
+    };
+    const s = clean();
+    s.globalVariables = { se_osint_state: {}, se_intel_jake_office: false, se_intel_jake_pet_name: false };
+    s.social.intelFacts.jake_office.source = 'jake_authored';
+    s.social.intelFacts.jake_pet_name.source = 'jake_post_1';
+    assertLacks(lint(s), 'jake_pet_name');
+    s.social.intelFacts.jake_pet_name.source = 'jake_post_2';
+    assertHas(lint(s), "fact 'jake_pet_name' source \"jake_post_2\" must equal the id of the element that grants it ('jake_post_1')");
+    jake(s).feed.posts[0].fact = null;
+    assertHas(lint(s), "fact 'jake_pet_name' is granted by nothing");
+});

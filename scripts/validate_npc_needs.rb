@@ -1272,7 +1272,12 @@ module ValidateNpcNeeds
         end
       end
       nearest = targets.find { |o| o.room == home_room } || targets.first
-      restores = nearest.data['affordance']['restores'].to_f
+      restores = nearest.data['affordance'].is_a?(Hash) ? nearest.data['affordance']['restores'].to_f : 0.0
+      # Sub-slice C (plan 8.1): a social_media use at the own PC restores socialUse's amount
+      if name == 'social_media' && nearest.id == npc['needsHome'] && BreakEscape::AccessWork.social_station?(json, npc, name)
+        su = npc['socialUse'].is_a?(Hash) ? npc['socialUse']['restores'] : nil
+        restores = su.is_a?(Numeric) ? su.to_f : BreakEscape::AccessWork::SOCIAL_RESTORES.to_f
+      end
       t1 = [(initial - urgent) / decay.to_f, 0].max
       p_min = ([100, urgent + restores].min - urgent) / decay.to_f
       issues << "ℹ️ NPC needs #{nid}.#{name}: T1 = #{t1.round(2)} min to first use, P = #{p_min.round(2)} min between uses (via '#{nearest.id}', restores #{restores.round})."
