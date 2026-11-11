@@ -4,7 +4,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { SocialFeed, cleanPost, cleanFact, installSocialFeed, liveDeps, escapeNoteText } from '../../public/break_escape/js/systems/social-feed.js';
-import { renderNoteMarkdown } from '../../public/break_escape/js/utils/note-markdown.js';
+import { renderNoteMarkdown, noteMatches } from '../../public/break_escape/js/utils/note-markdown.js';
 import { displayDashes } from '../../public/break_escape/js/utils/display-dashes.js';
 
 const FACT = { id: 'jake_pet_name', entry: { label: 'Pet', subject: 'jake', text: 'Jake Brooks has a dog called Biscuit.' } };
@@ -218,4 +218,11 @@ test('grantFact writes a feed fact\'s noteText to the notebook, and an ordinary 
         assert.equal(shownNote(notes[0][1]), text);
         assert.equal(notes[1][1], 'Plain *fact*.', 'an ordinary fact keeps its authored text');
     } finally { delete globalThis.window; }
+});
+
+test('notebook search finds an escaped feed fact by the text as written', () => {
+    for (const t of HOSTILE) {
+        const note = { title: 'Evidence: a colleague', text: escapeNoteText(`Lena runs. ${t}`) };
+        assert.equal(noteMatches(note, t.slice(0, 12)), true, t);
+    }
 });
