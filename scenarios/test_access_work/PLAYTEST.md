@@ -95,6 +95,11 @@ C run west from the lobby.
 | W6 | Enter `cable_room` (hall C, north). Switch the socket off. Open a door elsewhere. Switch it back on | He parks at his desk with "This PC is useless.", never walks to another PC; the door does not wake him; one use time after the socket comes back he works, met | `npc_need_parked:ian` (`off`, `ian_pc`), no `npc_use_failed`; `w6_off`, `w6_back` | `ian.level` 20, then 10 |
 | W7 | Enter `slow_room` (hall C, south). Wait for Nia's first use and for her to rest. Jam the printer with the lever here (the slow room's own printer, `printer_w7`, global `printer_w7_jammed`, so W4's lever and this one never clear each other) | Within about one use time she works, fails and names the printer | `npc_need_urgent:nia` at once, `npc_use_failed:nia`; `w7_failed` | `nia.level` 20 |
 
+A W run that loads Hall C (the H wing) also loads Rosa, whose own breaker sets the same
+`finance_share_down` as W2's: she fails beside Dana, borrows the hot desk and ticks `h3_failed_there`.
+Dana's levels, lines, tasks and her three reports are unchanged by it (checked in game 1223); count
+Dana's requests alone.
+
 Request budget: never more than one `/npc_frustration` request every two seconds; W5's count stays
 flat after `settled`. Run W types one code, W4's, read from Omar's desktop. Last run:
 `reports/2026-11-11_run_w.md`.
