@@ -137,6 +137,8 @@ export function refreshInventoryTray() {
                 if (slot?.classList) {
                     slot.classList.toggle(TRAY_HIDDEN_CLASS, state.hidden === true);
                     drawTrayBadge(slot, state.badge);
+                    // The worn frame and "(worn)" label of a worn wearable (wearables.js)
+                    window.wearables?.decorateSlot?.(item);
                 }
                 if (before && key && !before.has(key) && !trayRestored.has(item) && state.holderId) {
                     filedArrivals.push({ item, holderId: state.holderId });
@@ -1165,6 +1167,8 @@ export function removeFromInventory(item) {
         
         // Remove from array
         window.inventory.items.splice(itemIndex, 1);
+        // A worn item that leaves the inventory comes off (wearables.js)
+        try { window.wearables?.onItemLeft?.(item); } catch (e) { console.warn('[inventory] wearable take-off failed:', e); }
         
         // Remove the entire slot from DOM. A slot removed under the cursor (a
         // consumable used from the inventory) never gets mouseleave, so clear

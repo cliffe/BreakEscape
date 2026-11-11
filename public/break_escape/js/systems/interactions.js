@@ -955,6 +955,14 @@ export function handleObjectInteraction(sprite) {
         catch (e) { console.warn('[Interaction] workstationState.onInteract failed:', e); }
     }
 
+    // A held wearable (wearables.js): its click puts it on or takes it off. A droppable one
+    // gets here from its tray menu's "Put on" / "Take off".
+    if (sprite.scenarioData.wearable && window.wearables?.wearableSpec?.(sprite.scenarioData)
+        && (window.inventory?.items || []).includes(sprite)) {
+        window.wearables.toggle(sprite);
+        return;
+    }
+
     // triggerOnInteract: fire scenario-defined actions immediately on interaction,
     // with no minigame or flag entry required. Defined at the object's top level in the scenario.
     if (hasTriggerOnInteract(sprite.scenarioData)) {

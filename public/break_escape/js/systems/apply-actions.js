@@ -118,6 +118,8 @@ if (typeof window !== 'undefined') window.isCardRevoked = isCardRevoked;
  *   add_capture    { capture }       — records a credential/foothold into se_captures
  *   set_costume    { costume }       — swaps the player sprite to scenario.disguises[costume]
  *   clear_costume  {}                — restores the chosen avatar
+ *   wear           { itemId }        — puts a held wearable item on (wearables.js)
+ *   take_off       { itemId? }       — takes the worn item off
  *   hint           { message, title? }: shows an informational alert to the player, for a time set by its length
  *   lighting_dip   { level?, ms? }   — one slow brownout dip of the room lights
  *
@@ -347,6 +349,22 @@ export function applyActions(actions, { source = 'scenario', gameId = null, obje
                 }
                 break;
             }
+
+            // Wearable items (wearables.js, reached through window): put a held wearable on, or
+            // take the worn one off. No confirm (the action is the author's choice); unseenOnly
+            // still applies. A wear right after a give_item in the same list waits for the give.
+            // action: { type: 'wear', itemId }  or  { type: 'take_off', itemId? }
+            case 'wear': {
+                const pending = gives.slice();
+                Promise.all(pending).then(() => window.wearables?.putOn?.(action.itemId, { waitMs: 3000 }))
+                    .catch(e => console.warn('[applyActions] wear failed:', e));
+                break;
+            }
+
+            case 'take_off':
+                Promise.resolve(window.wearables?.takeOff?.(action.itemId || null))
+                    .catch(e => console.warn('[applyActions] take_off failed:', e));
+                break;
 
             case 'clear_costume':
                 import('./costume-actions.js').then(m => m.clearCostume()).catch(e =>
