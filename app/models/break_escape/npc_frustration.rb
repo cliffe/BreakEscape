@@ -341,7 +341,8 @@ module BreakEscape
     # leaves the session open; a session the player held there is ended either way (one screen,
     # one session), so a click then reaches the guest's, not the player's old one. The last
     # "done" to arrive wins (review R2 M1): two borrowers queued at one hot desk report in the
-    # order they left, which is the order the client records them in. A "done" that is resent
+    # order they left, which is the order the client records them in, except a request that
+    # never reached the server and is resent late (accepted, review R1 n2). A "done" that is resent
     # after a later borrower's (its answer was lost) is answered from lastSpent and writes
     # nothing; workaround_body then answers guest: false, so the client keeps the later one too.
     def record_borrow_done!(npc, w)
