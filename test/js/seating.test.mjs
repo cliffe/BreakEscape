@@ -380,12 +380,27 @@ async function standRig({ castor, facing, approach, statics = [] }) {
         gameAlert: m => alerts.push(m) });
     const rig = {
         chair, player, scene, pm, alerts, feet, statics,
-        sit() { assert.equal(seating.trySit(chair), true); assert.equal(seating.isSeated(), true); },
+        /** Physics frames with no collisions: afterPlayerMovement, move each enabled body by its velocity (the chair's drag 100), place. */
+        run(n = 120) {
+            for (let i = 0; i < n; i++) {
+                seating.afterPlayerMovement();
+                for (const go of [player, chair]) {
+                    const b = go.body;
+                    if (!b.enable) continue;
+                    go.x += b.velocity.x / 60; go.y += b.velocity.y / 60;
+                    if (go === chair) for (const k of ['x', 'y']) { const v = b.velocity[k]; b.velocity[k] = Math.sign(v) * Math.max(0, Math.abs(v) - 100 / 60); }
+                    b.updateFromGameObject();
+                }
+                seating.place();
+            }
+        },
+        sit() { assert.equal(seating.trySit(chair), true); assert.equal(seating.isSeated(), true); rig.run(); assert.equal(seating.isMounting(), false, 'on the seat'); },
         /** Roll: move the driver's feet by (dx, dy) facing `dir` (a player direction), then place(). */
         roll(dx, dy, dir) { const f = feet(); player.direction = dir; putFeet(f.x + dx, f.y + dy); seating.place(); },
-        jump() { seating.onJumpKey(); seating.onJumpKey(); },
+        jump() { seating.onJumpKey(); seating.onJumpKey(); rig.run(); },
+        stand() { seating.standUp(); rig.run(); },
         last() { return window.seating.lastStand; },
-        restore() { if (seating.isSeated()) seating.standUp(); for (const [k, v] of Object.entries(saved)) window[k] = v; }
+        restore() { if (seating.isSeated()) seating.standUp(); rig.run(); for (const [k, v] of Object.entries(saved)) window[k] = v; }
     };
     return rig;
 }
@@ -416,7 +431,7 @@ test('named cases on desk1 (R1 B1): behind, in front, each end; voluntary and fo
             const rig = await standRig({ ...c, statics: [DESK1()] });
             try {
                 rig.sit();
-                if (kind === 'voluntary') rig.jump(); else seating.standUp();
+                if (kind === 'voluntary') rig.jump(); else rig.stand();
                 assert.equal(seating.isSeated(), false, `${c.name} ${kind}: stood`);
                 const f = assertCleanLanding(rig, c.castor, `${c.name} ${kind}`);
                 assert.ok(c.ok(f), `${c.name} ${kind}: near side, landed ${f.x},${f.y}`);
@@ -499,7 +514,7 @@ test('cramped (wall 12 px north of a chair behind desk1) and boxed in (voluntary
             assert.equal(seating.isSeated(), true, 'voluntary: stays seated');
             assert.equal(rig.last().via, 'refused');
             assert.deepEqual(rig.alerts, ['No room to stand up here.']);
-            seating.standUp();
+            rig.stand();
             assert.equal(seating.isSeated(), false);
             assert.equal(rig.last().via, 'forced-approach');
             assert.deepEqual(rig.feet(), { x: 87, y: 240 });
@@ -537,7 +552,7 @@ test('standUp survives a throw (R3 M1): body restored, visible, not seated, on t
         assert.equal(rig.player.visible, false);
         window.pathfindingManager = { buildWorldGrid() { throw new Error('grid builder failed'); } };
         console.error = () => {};
-        seating.standUp();
+        rig.stand();
         assert.equal(seating.isSeated(), false);
         assert.equal(rig.player.isSeated, false);
         assert.equal(rig.player.visible, true);
@@ -552,6 +567,127 @@ test('standUp survives a throw (R3 M1): body restored, visible, not seated, on t
         assert.equal(seating.isSeated(), false);
         assert.equal(rig.player.visible, true);
     } finally { console.error = err; rig.restore(); }
+});
+
+// ── physics sit and stand (2026-11-11): no teleport on or off, the collider always on ──────
+
+/** Feet per frame while `fn` runs frames one at a time: the largest move between two frames. */
+function maxStep(rig, frames) {
+    let prev = rig.feet(), worst = 0;
+    for (let i = 0; i < frames; i++) {
+        rig.run(1);
+        const f = rig.feet();
+        worst = Math.max(worst, Math.hypot(f.x - prev.x, f.y - prev.y));
+        prev = f;
+    }
+    return worst;
+}
+
+test('getting on a swivel chair: the player walks onto it with the seated block, collider on, then sits', async () => {
+    const castor = { x: 87, y: 260 };
+    const rig = await standRig({ castor, facing: 'south', approach: { x: 87, y: 232 }, statics: [] });
+    try {
+        assert.equal(seating.trySit(rig.chair), true);
+        assert.equal(seating.isMounting(), true, 'walking on, not there yet');
+        assert.equal(rig.player.visible, true, 'the player is seen walking on');
+        assert.deepEqual([rig.player.body.width, rig.player.body.height], [18, 8], 'the seated block from the start');
+        assert.equal(rig.player.body.checkCollision.none, false, 'collider on');
+        assert.equal(rig.chair.body.enable, false, 'the chair body is off while the driver takes its place');
+        const worst = maxStep(rig, 60);
+        assert.ok(worst <= 90 / 60 + 2.01, `no frame moves more than a walking step plus the 2 px arrival (${worst.toFixed(2)})`);
+        assert.equal(seating.isMounting(), false);
+        assert.equal(rig.player.isSeated, true);
+        assert.equal(rig.player.visible, false);
+        assert.deepEqual(rig.feet(), castor, 'feet on the castor');
+    } finally { rig.restore(); }
+});
+
+test('getting off a swivel chair: the walking body comes back in place, the player steps off and the chair rolls back', async () => {
+    const castor = { x: 87, y: 260 };
+    const rig = await standRig({ castor, facing: 'south', approach: { x: 87, y: 232 }, statics: [DESK1()] });
+    try {
+        rig.sit();
+        const before = rig.feet();
+        seating.standUp();
+        assert.deepEqual(rig.feet(), before, 'no jump on standing: the feet stay put that frame');
+        assert.deepEqual([rig.player.body.width, rig.player.body.height], [18, 10]);
+        assert.equal(rig.player.visible, true);
+        const spot = rig.last();
+        const vx = rig.chair.body.velocity.x, vy = rig.chair.body.velocity.y;
+        assert.ok(vx * (spot.x - before.x) + vy * (spot.y - before.y) < 0, 'the chair is pushed away from where the player steps');
+        const chair0 = { x: rig.chair.x, y: rig.chair.y };
+        const worst = maxStep(rig, 90);
+        assert.ok(worst <= 90 / 60 + 2.01, `a walk, not a hop (${worst.toFixed(2)})`);
+        assert.deepEqual(rig.feet(), { x: spot.x, y: spot.y }, 'on the landing spot');
+        const rolled = Math.hypot(rig.chair.x - chair0.x, rig.chair.y - chair0.y);
+        assert.ok(rolled > 10 && rolled < 40, `the chair rolled back a short way (${rolled.toFixed(1)} px)`);
+    } finally { rig.restore(); }
+});
+
+test('the jump off a chair moves the body at walking pace or less, with the pose sprite on an arc', async () => {
+    const castor = { x: 87, y: 260 };
+    const rig = await standRig({ castor, facing: 'south', approach: { x: 87, y: 232 }, statics: [DESK1()] });
+    try {
+        rig.sit();
+        seating.onJumpKey(); // stand on the seat
+        seating.onJumpKey(); // jump
+        assert.equal(seating.isSeated(), false);
+        assert.equal(rig.player.visible, false, 'the pose sprite shows the jump');
+        assert.equal(seating.trySit(rig.chair), true, 'a sit mid-jump is swallowed');
+        assert.equal(seating.isSeated(), false);
+        const worst = maxStep(rig, 40);
+        assert.ok(worst <= 3.01, `the body walks the jump (${worst.toFixed(2)} px/frame)`);
+        assert.equal(rig.player.visible, true, 'landed');
+        const spot = rig.last();
+        assert.deepEqual(rig.feet(), { x: spot.x, y: spot.y });
+    } finally { rig.restore(); }
+});
+
+test('a swivel chair out of reach (blocked on the way): no sit, the walking body and the chair body come back', async () => {
+    const rig = await standRig({ castor: { x: 87, y: 260 }, facing: 'south', approach: { x: 87, y: 220 }, statics: [] });
+    try {
+        seating.trySit(rig.chair);
+        // physics stops the player dead (a desk corner in the way): frames with no movement
+        for (let i = 0; i < 10; i++) { seating.afterPlayerMovement(); rig.player.body.setVelocity(0, 0); seating.place(); }
+        assert.equal(seating.isSeated(), false, 'gave up');
+        assert.deepEqual(rig.alerts, ["Can't reach that seat from here."]);
+        assert.deepEqual([rig.player.body.width, rig.player.body.height], [18, 10]);
+        assert.equal(rig.chair.body.enable, true);
+        assert.equal(rig.chair.seatedBy, undefined, 'the chair is free again');
+        assert.deepEqual(rig.feet(), { x: 87, y: 220 }, 'no teleport onto the chair');
+    } finally { rig.restore(); }
+});
+
+test('rolling on a swivel chair: the chair keeps the driver\'s sub-pixel position (no rounding shimmer)', async () => {
+    const rig = await standRig({ castor: { x: 87, y: 260 }, facing: 'south', approach: { x: 87, y: 232 }, statics: [] });
+    try {
+        rig.sit();
+        rig.roll(0.4, 0.3, 'down');
+        assert.equal(rig.chair.x + 20, rig.feet().x);
+        assert.equal(rig.chair.y + 35, rig.feet().y);
+    } finally { rig.restore(); }
+});
+
+test('a static seat: walk to its foot, a smaller collider stays on while seated, a move walks off with no step', async () => {
+    const rig = await standRig({ castor: { x: 200, y: 300 }, facing: 'south', approach: { x: 87, y: 232 }, statics: [] });
+    const chair = { scene: rig.scene, texture: { key: 'hospital_chair_south' }, x: 79, y: 230, width: 16, height: 24,
+        depth: 1, active: true, visible: true, objectId: 'rig_static' };
+    try {
+        assert.equal(seating.trySit(chair), true);
+        assert.equal(seating.isMounting(), true);
+        rig.run();
+        assert.equal(seating.isMounting(), false);
+        assert.equal(rig.player.isSeated, true);
+        assert.deepEqual(rig.feet(), { x: 87, y: 252 }, 'feet at the seat foot (chair bottom - 2)');
+        assert.equal(rig.player.body.checkCollision.none, false, 'collider on while seated');
+        assert.deepEqual([rig.player.body.width, rig.player.body.height], [seating.STATIC_SEATED_BLOCK.w, seating.STATIC_SEATED_BLOCK.h]);
+        const at = rig.feet();
+        seating.onMoveIntent();
+        assert.equal(seating.isSeated(), false);
+        assert.deepEqual([rig.player.body.width, rig.player.body.height], [18, 10]);
+        rig.run(10);
+        assert.deepEqual(rig.feet(), at, 'no auto step: the move itself walks the player off');
+    } finally { rig.restore(); }
 });
 
 // ── slice 21 (OFFICE_LIFE_PLAN 12.7): the chair roll mostly along x, out and back, and a rare swivel ──

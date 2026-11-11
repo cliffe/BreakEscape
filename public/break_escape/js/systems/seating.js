@@ -358,14 +358,32 @@ function releasePlace(chair, seat, place = 0) {
 
 // ---------------------------------------------------------------- player state
 
+// The player's sit and stand are driven by physics, never by a jump of the body (user,
+// 2026-11-11: hopping off could land through a wall; the last stretch to and from the seat
+// was a teleport):
+//  - getting on, the collider shrinks to the seated block and the player walks onto the seat
+//    at walking pace, walls and furniture still in play (the swivel chair's own body is off);
+//  - seated, the collider stays on: a swivel chair's driver has the chair's block, a static
+//    seat's a small block where physics stopped it against the seat;
+//  - getting off, the walking collider comes back where the seated one was, the player steps
+//    to the landing spot (pickStandSpot) at walking pace and a swivel chair rolls back the other
+//    way; the player and that chair don't collide until they no longer overlap.
+
 // { chair, seat, facing, pose, sprite, overlays[], approach, footOffset, savedBody,
-//   chairBodyWasEnabled, jumping }
+//   chairBodyWasEnabled, phase ('mount' while walking onto the seat, then 'seated'), mount, place }
 let state = null;
+// The step off a chair, once state is cleared: { target, frames, still, last, arrived, proxy,
+// lift, off, jumpFrames }. proxy is set for a jump (the pose sprite carries on, on an arc).
+let stepOff = null;
+// Player/chair pairs whose collider is off until their bodies stop overlapping: [{ a, b }]
+let ghosts = [];
 
 export function isSeated() { return !!state; }
+/** True while the player is walking onto a seat (isSeated() is already true). */
+export function isMounting() { return state?.phase === 'mount'; }
 export function currentSeat() { return state?.chair || null; }
 export function currentPose() { return state?.pose || null; }
-export function canRoll() { return state?.seat.kind === 'swivel'; }
+export function canRoll() { return state?.phase === 'seated' && state.seat.kind === 'swivel'; }
 
 /** Whether the player's avatar has seated frames (otherwise it stands on chairs). */
 export function canPlayerSit() {
@@ -377,9 +395,10 @@ export function canPlayerSit() {
 export function trySit(chair) {
     const seat = seatSpec(chair);
     if (!seat || !window.player?.body) return false;
-    if (state?.jumping) return true;
+    if (stepOff?.proxy) return true; // mid-jump
     if (state?.chair === chair) { standUp(); return true; }
     if (state) standUp();
+    endStep();
     if (!freePlaces(chair, seat).length) return true; // taken: nothing happens
     sitOn(chair, seat, canPlayerSit() ? 'sit' : 'stand');
     return true;
@@ -422,7 +441,6 @@ function moveFeetTo(sprite, x, y) {
     const f = bodyFeet(sprite);
     placeBody(sprite, sprite.x + (x - f.x), sprite.y + (y - f.y));
 }
-const moveDriverFeetTo = moveFeetTo;
 
 /**
  * Collision box the driver takes on a swivel chair, centred on the chair body's centre
@@ -433,9 +451,25 @@ export function seatedBlock(chairBody) {
     return { w: chairBody.width, h: chairBody.height };
 }
 
+/** The driver's collider on a static seat: smaller than the 18 x 10 walking box. */
+export const STATIC_SEATED_BLOCK = { w: 12, h: 6 };
+
+const WALK_SPEED = 150;          // px/s, utils/constants.js MOVEMENT_SPEED (not imported: test harness copies)
+const MOUNT_SPEED = WALK_SPEED * 0.6;
+const STEP_SPEED = WALK_SPEED * 0.6;
+const ARRIVE_PX = 2;             // this close to the seat or the landing spot counts as there (the rest is placed)
+const STUCK_FRAMES = 6;          // frames without 0.25 px of progress: blocked
+const MOUNT_MAX_FRAMES = 90;     // 1.5 s at 60 fps
+const STEP_MAX_FRAMES = 60;
+const SWIVEL_REACH_PX = 6;       // blocked this close to a swivel chair's castor: sit (the block was the chair's)
+const STATIC_REACH_PX = 28;      // blocked this close to a static seat's foot: sit (stopped by the seat itself)
+const CHAIR_PUSH = 70;           // px/s given to a swivel chair pushed back on standing; its drag (100) stops it in ~24 px
+const JUMP_FRAMES = 19;          // ~320 ms at 60 fps
+const JUMP_HEIGHT = 14;
+const FRAME_S = 1 / 60;
+
 function sitOn(chair, seat, pose) {
     const player = window.player;
-    const scene = chair.scene;
     window.cancelClickToMove?.();
     player.body.setVelocity(0, 0);
 
@@ -455,29 +489,82 @@ function sitOn(chair, seat, pose) {
         ox: player.body.offset.x, oy: player.body.offset.y,
         none: player.body.checkCollision.none
     };
-    let footOffset;
+    let footOffset, block;
     let chairBodyWasEnabled = false;
     if (seat.kind === 'swivel' && chair.body) {
-        // The driver's body takes over the chair's footprint; the chair follows it.
+        // The driver's body takes over the chair's footprint; the chair follows it once seated.
         footOffset = { x: chair.body.offset.x + chair.body.width / 2, y: chair.body.offset.y + chair.body.height / 2 };
-        const { w: bw, h: bh } = seatedBlock(chair.body);
-        const cx = savedBody.ox + savedBody.w / 2, cy = savedBody.oy + savedBody.h / 2;
+        block = seatedBlock(chair.body);
         chair.body.setVelocity(0, 0);
         chairBodyWasEnabled = chair.body.enable;
         chair.body.enable = false;
-        player.body.setSize(bw, bh, false);
-        player.body.setOffset(cx - bw / 2, cy - bh / 2);
-        moveDriverFeetTo(player, chair.x + footOffset.x, chair.y + footOffset.y);
     } else {
-        // Static: no collisions while on it; the driver sits at the chair's foot.
+        // Static: the driver walks to the seat's foot; the seat's own body (a sofa's) stops it short.
         const pf = placeFoot(chair, seat, placeIdx);
         footOffset = { x: pf.x - chair.x, y: chair.height - 2 };
-        player.body.checkCollision.none = true;
-        moveDriverFeetTo(player, chair.x + footOffset.x, chair.y + footOffset.y);
+        block = STATIC_SEATED_BLOCK;
     }
+    // Shrink round the same feet point, so nothing moves
+    const cx = savedBody.ox + savedBody.w / 2, cy = savedBody.oy + savedBody.h / 2;
+    player.body.setSize(block.w, block.h, false);
+    player.body.setOffset(cx - block.w / 2, cy - block.h / 2);
 
-    const sprite = scene.add.sprite(0, 0, player.texture.key).setOrigin(0, 0);
-    const overlays = [0, 1].map(() => scene.add.image(0, 0, chair.texture.key).setOrigin(0, 0).setVisible(false));
+    state = { chair, seat, facing, pose, sprite: null, overlays: [], approach, footOffset, savedBody,
+              chairBodyWasEnabled, phase: 'mount', mount: { frames: 0, still: 0, last: Infinity },
+              shownAnim: null, place: placeIdx };
+    advanceMount();
+    return true;
+}
+
+function mountTarget() {
+    const { chair, footOffset } = state;
+    return { x: chair.x + footOffset.x, y: chair.y + footOffset.y };
+}
+
+/** Walk the driver onto the seat; sit on arrival, or when blocked close enough. */
+function advanceMount() {
+    const player = window.player;
+    const m = state.mount;
+    const swivel = state.seat.kind === 'swivel';
+    const t = mountTarget();
+    const f = playerFeet(player);
+    const dx = t.x - f.x, dy = t.y - f.y, d = Math.hypot(dx, dy);
+    if (d <= ARRIVE_PX) {
+        moveFeetTo(player, t.x, t.y);
+        finishSit();
+        return;
+    }
+    m.still = (m.last - d < 0.25) ? m.still + 1 : 0;
+    m.last = d;
+    m.frames++;
+    if (m.still >= STUCK_FRAMES || m.frames > MOUNT_MAX_FRAMES) {
+        if (d <= (swivel ? SWIVEL_REACH_PX : STATIC_REACH_PX)) {
+            // A swivel driver goes the last few px onto the chair's own spot (the chair stood
+            // there); a static one sits where the seat stopped it, the pose drawn on the seat.
+            if (swivel) moveFeetTo(player, t.x, t.y);
+            finishSit();
+        } else {
+            cancelMount();
+            window.gameAlert?.("Can't reach that seat from here.", 'info', 'Seat', 2500);
+        }
+        return;
+    }
+    const v = Math.min(MOUNT_SPEED, d / FRAME_S);
+    player.body.setVelocity(dx / d * v, dy / d * v);
+    playWalk(player, dx, dy);
+    window.updatePlayerDepth?.(player.x, player.y);
+}
+
+/** On the seat: the pose sprite takes over from the (hidden) driver. */
+function finishSit() {
+    const player = window.player;
+    const { chair, seat, facing, pose } = state;
+    const scene = chair.scene;
+    player.body.setVelocity(0, 0);
+    window.cancelClickToMove?.(); // a click made while walking on doesn't drive the seat
+    if (seat.kind === 'swivel') setChairFacing(chair, facing, seat);
+    state.sprite = scene.add.sprite(0, 0, player.texture.key).setOrigin(0, 0);
+    state.overlays = [0, 1].map(() => scene.add.image(0, 0, chair.texture.key).setOrigin(0, 0).setVisible(false));
 
     player.setVisible(false);
     player.anims.stop();
@@ -485,13 +572,54 @@ function sitOn(chair, seat, pose) {
     player.isSeated = true;
     player.direction = COMPASS_TO_PLAYER[facing];
     player.lastDirection = player.direction;
-
-    state = { chair, seat, facing, pose, sprite, overlays, approach, footOffset, savedBody,
-              chairBodyWasEnabled, jumping: false, shownAnim: null, place: placeIdx };
+    state.phase = 'seated';
+    state.mount = null;
     applyPose();
     place();
     window.eventDispatcher?.emit?.(pose === 'sit' ? 'player_sat' : 'player_stood_on_chair',
         { objectId: chair.objectId, facing });
+}
+
+/** Give up walking onto the seat: the walking body back, the chair as it was. */
+function cancelMount() {
+    const player = window.player;
+    const { chair, seat, savedBody, chairBodyWasEnabled, place: placeIdx } = state;
+    state = null;
+    releasePlace(chair, seat, placeIdx);
+    restoreBody(player, savedBody);
+    if (seat.kind === 'swivel' && chair.body) {
+        chair.body.enable = chairBodyWasEnabled;
+        placeBody(chair, chair.x, chair.y);
+        chair.body.setVelocity(0, 0);
+    }
+    player.isMoving = false;
+    playIdle(player);
+}
+
+function restoreBody(player, savedBody) {
+    player.body.setVelocity(0, 0);
+    player.body.setSize(savedBody.w, savedBody.h, false);
+    player.body.setOffset(savedBody.ox, savedBody.oy);
+    player.body.checkCollision.none = savedBody.none;
+}
+
+/** The walk animation for a move by (dx, dy), as player.js picks it (flipped where there's no native left). */
+function playWalk(player, dx, dy) {
+    let dir = COMPASS_TO_PLAYER[compassToward(dx, dy)];
+    const mgr = player.anims?.animationManager;
+    let flip = false;
+    if (dir.includes('left') && mgr && !mgr.exists(`walk-${dir}`)) { dir = dir.replace('left', 'right'); flip = true; }
+    player.direction = dir;
+    player.setFlipX?.(flip);
+    const key = `walk-${dir}`;
+    if (mgr?.exists(key) && player.anims.currentAnim?.key !== key) player.anims.play(key, true);
+    player.isMoving = true;
+    player.lastDirection = dir;
+}
+
+function playIdle(player) {
+    const key = `idle-${player.direction || 'down'}`;
+    if (player.anims?.animationManager?.exists(key)) player.anims.play(key, true);
 }
 
 /** Show the current pose on the proxy sprite. */
@@ -513,30 +641,28 @@ function applyPose() {
     }
 }
 
-/** Get off the chair: stand beside it (or at `spot`). */
-export function standUp(spot = null) {
+/**
+ * Get off the chair: the walking body comes back where the seated one was, then the player
+ * steps to the landing spot (or `spot`) with physics, and a swivel chair rolls back.
+ * opts.step false: no step (a move key or a click on a static seat walks the player off
+ * itself; a knockout stays put). opts.jump: the pose sprite carries on along an arc.
+ */
+export function standUp(spot = null, opts = {}) {
     if (!state) return false;
+    if (state.phase === 'mount') { cancelMount(); return true; }
+    const { step = true, jump = null } = opts;
     const player = window.player;
     const { chair, seat, sprite, overlays, savedBody, approach, chairBodyWasEnabled, facing, place: placeIdx } = state;
     endBreath(state, sprite);
     state = null;
-    sprite.destroy();
+    if (!jump) sprite.destroy();
     overlays.forEach(o => o.destroy());
     releasePlace(chair, seat, placeIdx);
+    restoreBody(player, savedBody);
 
-    player.body.setVelocity(0, 0);
-    player.body.setSize(savedBody.w, savedBody.h, false);
-    player.body.setOffset(savedBody.ox, savedBody.oy);
-    player.body.checkCollision.none = savedBody.none;
-
-    if (seat.kind === 'swivel' && chair.body) {
-        chair.body.enable = chairBodyWasEnabled;
-        placeBody(chair, chair.x, chair.y);
-        chair.body.setVelocity(0, 0);
-    }
-    // The player is already off the chair (state cleared, proxy gone, body restored), so a
-    // throw while choosing the spot must not leave them invisible and "seated": land on the
-    // approach point and finish (SEAT_BOX_PLAN.md 1.3, R3 M1).
+    // The player is already off the chair (state cleared, body restored), so a throw while
+    // choosing the spot must not leave them invisible and "seated": step back to the approach
+    // point and finish (SEAT_BOX_PLAN.md 1.3, R3 M1).
     if (!spot) {
         try {
             spot = landingSpot(chair, seat, facing, approach);
@@ -546,15 +672,133 @@ export function standUp(spot = null) {
             noteStand({ via: 'error-approach', x: approach?.x, y: approach?.y, forced: true });
         }
     }
-    if (spot) moveDriverFeetTo(player, spot.x, spot.y);
+    const from = playerFeet(player);
+    const dist = spot ? Math.hypot(spot.x - from.x, spot.y - from.y) : 0;
+
+    if (seat.kind === 'swivel' && chair.body) {
+        chair.body.enable = chairBodyWasEnabled;
+        placeBody(chair, chair.x, chair.y);
+        chair.body.setVelocity(0, 0);
+        if (chair.body.enable) {
+            ghostPair(player, chair);
+            // Push the chair back, away from where the player steps (behind the sitter without a spot)
+            let ux, uy;
+            if (dist >= 1) { ux = (spot.x - from.x) / dist; uy = (spot.y - from.y) / dist; }
+            else { const a = forwardRad(facing); ux = Math.cos(a); uy = Math.sin(a); }
+            chair.body.setVelocity(-ux * CHAIR_PUSH, -uy * CHAIR_PUSH);
+        }
+    }
 
     player.isSeated = false;
-    player.setVisible(true);
-    const dir = player.direction || 'down';
-    const animKey = `idle-${dir}`;
-    if (player.anims.animationManager.exists(animKey)) player.anims.play(animKey, true);
+    player.isMoving = false;
+    stepOff = null;
+    if (jump) {
+        stepOff = { target: spot, frames: 0, still: 0, last: Infinity, arrived: !spot || dist <= ARRIVE_PX,
+                    proxy: sprite, lift: jump.lift, off: jump.off, jumpFrames: JUMP_FRAMES, baseDepth: sprite.depth,
+                    speed: Math.max(STEP_SPEED, dist / (JUMP_FRAMES * FRAME_S)) };
+        player.setVisible(false);
+        placeStepProxy();
+    } else {
+        player.setVisible(true);
+        playIdle(player);
+        if (step && spot && dist > ARRIVE_PX) {
+            stepOff = { target: spot, frames: 0, still: 0, last: Infinity, arrived: false, proxy: null, speed: STEP_SPEED };
+        }
+    }
     window.eventDispatcher?.emit?.('player_stood', { objectId: chair.objectId });
     return true;
+}
+
+/** One frame of the step off: walk to the target, stop there or when blocked. */
+function advanceStep() {
+    const s = stepOff;
+    const player = window.player;
+    if (!player?.body) { endStep(); return; }
+    s.frames++;
+    const ko = window.playerHealth?.isKO?.();
+    const busy = window.playerCombat?.isBlocking || /punch|jab/.test(player.anims?.currentAnim?.key || '');
+    if (!s.arrived && (ko || (busy && !s.proxy))) s.arrived = true;
+    if (!s.arrived) {
+        const f = playerFeet(player);
+        const dx = s.target.x - f.x, dy = s.target.y - f.y, d = Math.hypot(dx, dy);
+        s.still = (s.last - d < 0.25) ? s.still + 1 : 0;
+        s.last = d;
+        if (d <= ARRIVE_PX) {
+            moveFeetTo(player, s.target.x, s.target.y);
+            s.arrived = true;
+        } else if (s.still >= STUCK_FRAMES || s.frames > STEP_MAX_FRAMES) {
+            s.arrived = true; // blocked: stay where physics stopped the player
+        } else {
+            const v = Math.min(s.speed, d / FRAME_S);
+            player.body.setVelocity(dx / d * v, dy / d * v);
+            if (!s.proxy) playWalk(player, dx, dy);
+            window.updatePlayerDepth?.(player.x, player.y);
+        }
+    }
+    if (s.arrived) {
+        player.body.setVelocity(0, 0);
+        if (!s.proxy || s.frames >= s.jumpFrames) endStep();
+    }
+}
+
+/** End the step off (the player keeps the spot they reached). */
+function endStep() {
+    const s = stepOff;
+    if (!s) return;
+    stepOff = null;
+    const player = window.player;
+    if (s.proxy) { s.proxy.destroy(); player?.setVisible(true); }
+    if (player?.body) {
+        player.body.setVelocity(0, 0);
+        if (player.isMoving) { player.isMoving = false; playIdle(player); }
+    }
+}
+
+/** The jump's pose sprite: on the driver's feet, lifted from the seat height down to the floor, on an arc. */
+function placeStepProxy() {
+    const s = stepOff;
+    const player = window.player;
+    if (!s?.proxy || !player) return;
+    const t = Math.min(1, s.frames / s.jumpFrames);
+    const f = playerFeet(player);
+    s.proxy.setPosition(f.x - s.off.x + s.lift.x * (1 - t),
+                        f.y - s.off.y + s.lift.y * (1 - t) - Math.sin(t * Math.PI) * JUMP_HEIGHT);
+    window.updatePlayerDepth?.(player.x, player.y);
+    s.proxy.setDepth(Math.max(s.baseDepth, player.depth + SEAT_DEPTH_STEP));
+}
+
+/** Turn off the collider(s) between a and b until their bodies stop overlapping (updateGhosts). */
+function ghostPair(a, b) {
+    if (setPairCollide(a, b, false)) ghosts.push({ a, b });
+}
+
+function setPairCollide(a, b, on) {
+    const q = a?.scene?.physics?.world?.colliders || b?.scene?.physics?.world?.colliders
+        || window.game?.physics?.world?.colliders;
+    const list = q?.getActive?.() || q?._active || [];
+    let hit = false;
+    for (const c of list) {
+        if ((c.object1 === a && c.object2 === b) || (c.object1 === b && c.object2 === a)) { c.active = on; hit = true; }
+    }
+    return hit;
+}
+
+function bodyRect(sprite) {
+    const f = bodyFeet(sprite);
+    const b = sprite.body;
+    return { x: f.x - b.width / 2, y: f.y - b.height / 2, w: b.width, h: b.height };
+}
+
+function updateGhosts() {
+    if (!ghosts.length) return;
+    ghosts = ghosts.filter(({ a, b }) => {
+        if (a?.active === false || !b?.body || !a?.body || b.active === false) { setPairCollide(a, b, true); return false; }
+        if (state?.chair === b) return true; // back on it: stays off until they part
+        const p = bodyRect(a), r = bodyRect(b);
+        const apart = p.x + p.w <= r.x || r.x + r.w <= p.x || p.y + p.h <= r.y || r.y + r.h <= p.y;
+        if (apart) setPairCollide(a, b, true);
+        return !apart;
+    });
 }
 
 /** Where the player lands getting off: beside a swivel chair, back where they came from for a static one. */
@@ -584,7 +828,8 @@ export const VOLUNTARY_APPROACH_PX = 32;
  * last); 2 the flood fill, 4 cells; 3 the approach point (a voluntary stand only when it is
  * within 32 px and line clear); then a voluntary jump-off returns null (stay seated), and a
  * forced stand takes the flood fill to 8 cells (box only), then the approach point unchecked.
- * Never an unchecked cell picked by direction.
+ * Never an unchecked cell picked by direction. The player walks to the spot it returns, so
+ * physics stops them short of anything in the way.
  */
 export function pickStandSpot({ cx, cy, facing, reach, approach = null, forced = true }, io) {
     const start = Math.max(0, COMPASS.indexOf(facing));
@@ -676,8 +921,9 @@ function standSpot(chair, facing) {
  * Returns true when it handled the key.
  */
 export function onJumpKey() {
+    if (stepOff?.proxy) return true; // mid-jump
     if (!state) return false;
-    if (state.jumping) return true;
+    if (state.phase === 'mount') return true;
     if (state.pose === 'sit') {
         state.pose = 'stand';
         applyPose();
@@ -689,10 +935,7 @@ export function onJumpKey() {
     return true;
 }
 
-const JUMP_MS = 320;
-const JUMP_HEIGHT = 14;
-
-/** Hop from the seat to the floor beside the chair, then hand control back. */
+/** Hop from the seat to the floor beside the chair: the body steps there, the pose sprite arcs down. */
 function jumpOff() {
     const player = window.player;
     const { chair, seat, facing, approach, sprite } = state;
@@ -710,25 +953,14 @@ function jumpOff() {
     }
     if (!spot && !legacy) { window.gameAlert?.('No room to stand up here.', 'info', 'Seat', 2500); return; }
     if (!spot) { standUp(); return; }
-    state.jumping = true;
     updateBreath(state, sprite, false);
-    player.body.setVelocity(0, 0);
     window.cancelClickToMove?.();
-    // The proxy's feet move from the seat to the spot along an arc.
-    const feet = proxyFeetOffset();
-    const fromX = sprite.x, fromY = sprite.y;
-    const toX = Math.round(spot.x - feet.x), toY = Math.round(spot.y - feet.y);
+    // The pose sprite's feet start on the seat, above the driver's feet: that lift shrinks to 0.
+    const off = proxyFeetOffset();
+    const f = playerFeet(player);
+    const lift = { x: sprite.x + off.x - f.x, y: sprite.y + off.y - f.y };
     sprite.setDepth(Math.max(sprite.depth, chair.depth) + 1);
-    state.overlays.forEach(o => o.setVisible(false));
-    chair.scene.tweens.addCounter({
-        from: 0, to: 1, duration: JUMP_MS,
-        onUpdate: (tw) => {
-            const t = tw.getValue();
-            sprite.setPosition(Math.round(fromX + (toX - fromX) * t),
-                               Math.round(fromY + (toY - fromY) * t - Math.sin(t * Math.PI) * JUMP_HEIGHT));
-        },
-        onComplete: () => { if (state?.sprite === sprite) standUp(spot); }
-    });
+    standUp(spot, { jump: { lift, off } });
 }
 
 /** Feet point inside the player's frame: the centre of its (standing) body collider. */
@@ -759,10 +991,15 @@ function updateRollSound(moving) {
 
 /** Called right after the normal player movement each frame. */
 export function afterPlayerMovement() {
-    if (!state) { updateRollSound(false); checkPending(); return; }
+    updateGhosts();
+    if (!state) {
+        updateRollSound(false);
+        if (stepOff) advanceStep(); else checkPending();
+        return;
+    }
     const player = window.player;
-    if (window.playerHealth?.isKO?.()) { standUp(); return; }
-    if (state.jumping) { player.body.setVelocity(0, 0); updateRollSound(false); return; }
+    if (window.playerHealth?.isKO?.()) { standUp(null, { step: false }); return; }
+    if (state.phase === 'mount') { updateRollSound(false); advanceMount(); return; }
     if (state.seat.kind === 'swivel') {
         player.body.velocity.x *= ROLL_SPEED;
         player.body.velocity.y *= ROLL_SPEED;
@@ -771,10 +1008,15 @@ export function afterPlayerMovement() {
     if (player.anims.isPlaying) player.anims.stop(); // no walk/idle animation on the hidden driver
 }
 
-/** Static chairs: a move attempt hops the player off first. Any move drops a queued sit. */
+/**
+ * A move (key or click): a static seat gets the player up, who then walks off it themselves;
+ * the step off a chair ends (a jump plays out). Walking onto a seat isn't interrupted. Any move
+ * drops a queued sit.
+ */
 export function onMoveIntent() {
     pending = null;
-    if (state && !state.jumping && state.seat.kind === 'static') standUp();
+    if (stepOff && !stepOff.proxy) endStep();
+    if (state && state.phase === 'seated' && state.seat.kind === 'static') standUp(null, { step: false });
 }
 
 // A chair tapped from out of reach: sit once the walk there ends in reach.
@@ -800,10 +1042,11 @@ function checkPending() {
 
 /** Position the chair, the pose sprite and armrest strips (scene postupdate). */
 export function place() {
-    if (!state || state.jumping) return;
+    if (stepOff?.proxy) placeStepProxy();
+    if (!state || state.phase !== 'seated') return;
     const player = window.player;
     const { chair, seat, sprite, overlays, footOffset } = state;
-    if (!chair.active || !player?.body) { standUp(); return; }
+    if (!chair.active || !player?.body) { standUp(null, { step: false }); return; }
 
     if (seat.kind === 'swivel') {
         const want = snapFacing(PLAYER_TO_COMPASS[player.direction] || state.facing, seat.valid);
@@ -811,9 +1054,11 @@ export function place() {
             state.facing = want;
             setChairFacing(chair, want, seat);
         }
+        // Not rounded: the chair and the pose keep the driver's sub-pixel position, as the
+        // walking player sprite does, so they don't shimmer a pixel against the camera.
         const f = playerFeet(player);
-        chair.x = Math.round(f.x - footOffset.x);
-        chair.y = Math.round(f.y - footOffset.y);
+        chair.x = f.x - footOffset.x;
+        chair.y = f.y - footOffset.y;
         window.updateSpriteDepth?.(chair, chair.elevation || 0);
     } else if (player.direction !== COMPASS_TO_PLAYER[state.facing]) {
         // Static seats keep their facing (a conversation may have turned the driver).
@@ -824,7 +1069,7 @@ export function place() {
     const facing = state.facing;
     const sp = seatPoint(chair, seat, facing, state.place);
     const anchor = state.pose === 'sit' ? sitHip(sprite.texture.key, facing) : [proxyFeetOffset().x, proxyFeetOffset().y];
-    sprite.setPosition(Math.round(sp.x - anchor[0]), Math.round(sp.y - anchor[1]));
+    sprite.setPosition(sp.x - anchor[0], sp.y - anchor[1]);
     sprite.setVisible(chair.visible);
 
     const rear = REAR.has(facing);
@@ -1520,12 +1765,12 @@ function advanceFetch(behavior, ns, stop) {
 
 export function installSeating(scene) {
     scene.events.on('postupdate', place);
-    scene.events.once('shutdown', () => { state = null; });
+    scene.events.once('shutdown', () => { state = null; stepOff = null; ghosts = []; });
 }
 
 const seating = {
     seatSpec, isSeat, isStaticSeatTexture, hasSitFrames, canPlayerSit, trySit, standUp, onJumpKey, queueSit,
-    isSeated, currentSeat, currentPose, canRoll, afterPlayerMovement, onMoveIntent, place, installSeating,
+    isSeated, isMounting, currentSeat, currentPose, canRoll, afterPlayerMovement, onMoveIntent, place, installSeating,
     chairFacing, setChairFacing, snapFacing, seatNPC, unseatNPC, updateSeatedNPC, cancelFetch
 };
 window.seating = seating;
