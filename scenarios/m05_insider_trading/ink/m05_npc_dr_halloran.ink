@@ -340,6 +340,6 @@ Dr Ruth Halloran: What happens to him now?
     -> hub
 
 + {final_choice == ""} [He'll face justice.]
-    Dr Ruth Halloran: *quietly* I suppose he will.
+    Dr Ruth Halloran: I suppose he will. #delivery: quietly
     ~ hub_quiet = true
     -> hub

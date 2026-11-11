@@ -405,7 +405,7 @@ Narrator: You get up and go to the board, close to Victoria.
 - else:
     // Cycle 3 note: the sarcasm only for a player who has given her reason.
     { victoria_suspicious >= 5:
-        Victoria Sterling: *curtly* The training lab. Since you're so interested.
+        Victoria Sterling: The training lab. Since you're so interested. #delivery: curtly
     - else:
         Victoria Sterling: The training lab. Have a look.
     }
@@ -425,7 +425,7 @@ Narrator: The cloner in your pocket starts reading her card. Custom keys: you'll
 { receptionist_ko:
     Victoria Sterling: How thoughtful.
 - else:
-    Victoria Sterling: *coolly* Do you. Well. Most people don't bother to walk it back.
+    Victoria Sterling: Do you. Well. Most people don't bother to walk it back. #delivery: coolly
 }
 Narrator: She doesn't warm to you. But she stops watching your hands.
 -> hub
@@ -674,7 +674,7 @@ Victoria Sterling: You came back after hours. Recruits don't do that.
     Victoria Sterling: So let's not perform the part where I'm surprised. Who are you with?
 }
 * {sable_named or transaction_log_read or revelation_heard} [SAFETYNET. And I know the name on your approvals. Sable.]
-    Victoria Sterling: *drily* Nobody's said that name to my face before. You really have been thorough.
+    Victoria Sterling: Nobody's said that name to my face before. You really have been thorough. #delivery: drily
     -> the_reckoning
 * {not (sable_named or transaction_log_read or revelation_heard)} [SAFETYNET. And I've read your approvals.]
     Victoria Sterling: Then you've read more than my accountant. He'll be disappointed.
@@ -709,7 +709,7 @@ Victoria Sterling: I read what that ward cost, down to the number. It changed no
 + {transaction_log_read or revelation_heard} [Ten thousand for target selection. It's on your invoice. You picked the hospital.]
     ~ named_target_selection = true
     #set_global:named_target_selection:true
-    Victoria Sterling: *after a moment* Danny Foster's survey. One of mine.
+    Victoria Sterling: Danny Foster's survey. One of mine. #delivery: after a moment
     Victoria Sterling: Two hundred and fourteen sites, and one with the oldest FTP box on the list.
     Victoria Sterling: Ghost wanted somewhere that would pay. I told them where. That's consultancy.
     -> target_followup
@@ -781,7 +781,7 @@ Victoria Sterling: Understand what this is. You didn't move me. You're simply a 
 === confrontation_arrest ===
 #speaker:victoria_sterling
 Narrator: You put yourself between Victoria and the door. She measures the distance, the odds, and lets the bag drop.
-Victoria Sterling: *quietly* You understand this stops nothing. I'm a desk. They'll have it filled by Monday.
+Victoria Sterling: You understand this stops nothing. I'm a desk. They'll have it filled by Monday. #delivery: quietly
 Victoria Sterling: The evidence is real. The name is real. And none of it reaches the Architect. Enjoy the paperwork.
 ~ victoria_fate = "arrested"
 #set_global:victoria_fate:arrested

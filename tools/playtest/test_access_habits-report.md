@@ -106,3 +106,50 @@ Harness notes: a reload must call `bootstrap` with `"resume": "resume"` when the
 with `"resume": "new"`, or the resume overlay's New Session makes a new game (it did once in
 the habits run; the run went back to game 114). Two `404 (Not Found)` console lines follow each
 reload in `test_access_sessions` (a static file; not looked into).
+
+## Slice 9.1 step 5: H8 rerun and H9 (2026-11-11)
+
+Keyless server on :3012 from the step 5 worktree, session harness, headless Chromium.
+`verify-run.rb --access` and `access-leak-check.rb` after each run; the leak check said
+`VERDICT: no leaks found` each time. Games 133 and 134 of the first step 5 runs were on another
+database; these are new games.
+
+| Run | Game | Beats | Result |
+|---|---|---|---|
+| H8 | 1165 | H8, started in `lena_room` with Rowan carried in, reload inside it | all pass |
+| H9 | 1173 | H9, started in `gate_hall` with Rowan carried in | all pass |
+
+- **H8**: by `away.leaves`, open (1: a claim, `lena_pc = lena (claim)`, task `h8_sometimes`
+  done; gone when she returned), open (2), locked (3: padlock, texture `pc_desktop_locked`,
+  transition `locked: true, sound: null`, cue `how: leave, locked: true, glyph: true`,
+  `screen_lock` chime at volume 0.16, the sign-in screen on a click). After the reload her first
+  leave was open again with `leaves` 1 and gave a claim (`lena_pc = lena (claim)` on the server).
+  A first try (game 1164) started in `lena_room` without carrying Rowan, so the task mapping
+  never loaded; harness set-up, not the game.
+- **H9**: Gary's gate opened with the player 66 px from it and the player walked in behind him
+  (`room_entered:store_a`). Within Sara's radius (52 px) her gate stayed shut at every sample
+  (0 open of 1101 over about 55 s) and she turned back four times. Parked 108 px out, it opened
+  for her; walking in after her it was never passable (0 samples) and shut as the player came
+  inside the radius; `enter store_b` did not cross. A refused click gave the toast,
+  `door_gate_denied`, Sara's bark and the task. Twenty seconds pushing into the shut door: never
+  open (0 of 987), no `room_entered:store_b`, no denial. Server: `noHold sara` on Sara's gate
+  only; the three globals; `h9_holds_doors` completed.
+
+## test_gate_tailgate with step 5 (2026-11-11)
+
+Same server; games 1174 (no pass), 1175 (lanyard), 1177 (clone). Its gate has
+`playerMayPassIf`, so step 5 fills no `noHold` (the gate's `noHold` is empty in the browser).
+
+- Sam's laps: opened, `door_unlocked_by_npc`, closed; three laps in 40 s.
+- No pass: a click gives "Access denied", the player stays in `office`. Standing about 39 px from
+  the door for about 61 s: the gate never opened (0 of 614 samples), Sam turned back six times.
+  This is the README's "NOT RECHECKED" row, now seen in the browser.
+- Lanyard: followed Sam into `staff_room` and back out behind him on his next lap. On the first
+  lap a `moveTo` the moment the gate opened stopped short, because `staff_room` was still being
+  loaded by his `unlockRoom`; the next try crossed.
+- Clone: the RFID reader opened from Sam's badge line, Save set `staff_clone_held`
+  (`card_cloned`); the door click gave "Access granted: cloned staff badge accepted",
+  `door_gate_player_opened`, `room_entered:staff_room` and the objective. Not seen: the gate
+  shutting after the clone window (the recorder stopped about 5 s after the click).
+- Not seen in this run: Sam's sight challenge (`player_in_view_near:sam`) while the player
+  waited at the door. Not looked into.

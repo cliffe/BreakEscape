@@ -55,9 +55,11 @@ class TTSManager {
      * Play TTS audio for a dialogue line
      * @param {string} npcId - NPC identifier
      * @param {string} text - Clean dialogue text (no "Speaker: " prefix)
+     * @param {Object} [options]
+     * @param {string|null} [options.delivery] - the line's #delivery: note (tts-delivery.js), never shown
      * @returns {Promise<number|null>} Audio duration in ms, or null if unavailable
      */
-    async play(npcId, text) {
+    async play(npcId, text, { delivery = null } = {}) {
         if (!this.enabled || !text || !text.trim()) return null;
 
         // Stop any current playback
@@ -71,7 +73,7 @@ class TTSManager {
         this._ensureAudioContext();
 
         try {
-            const key = this._cacheKey(npcId, text);
+            const key = this._cacheKey(npcId, text, delivery);
 
             // Check preload cache first
             let audioUrl, blob;
@@ -83,7 +85,7 @@ class TTSManager {
                 ({ url: audioUrl, blob } = cached);
             } else {
                 // Fetch from server
-                blob = await ApiClient.getTTS(npcId, text);
+                blob = await ApiClient.getTTS(npcId, text, delivery);
                 if (!blob) return null;
                 audioUrl = URL.createObjectURL(blob);
             }
@@ -140,15 +142,17 @@ class TTSManager {
      * Preload audio for an upcoming line (fetch but don't play)
      * @param {string} npcId - NPC identifier
      * @param {string} text - Dialogue text
+     * @param {Object} [options]
+     * @param {string|null} [options.delivery] - the line's #delivery: note
      */
-    async preload(npcId, text) {
+    async preload(npcId, text, { delivery = null } = {}) {
         if (!this.enabled || !text || !text.trim()) return;
 
-        const key = this._cacheKey(npcId, text);
+        const key = this._cacheKey(npcId, text, delivery);
         if (this.preloadCache.has(key)) return;
 
         try {
-            const blob = await ApiClient.getTTS(npcId, text);
+            const blob = await ApiClient.getTTS(npcId, text, delivery);
             if (blob) {
                 this.preloadCache.set(key, { url: URL.createObjectURL(blob), blob });
                 console.log(`[TTS] Preloaded: "${text.substring(0, 40)}..."`);
@@ -462,8 +466,8 @@ class TTSManager {
     }
 
     /** @private */
-    _cacheKey(npcId, text) {
-        return `${npcId}|${text}`;
+    _cacheKey(npcId, text, delivery = null) {
+        return delivery ? `${npcId}|${text}|${delivery}` : `${npcId}|${text}`;
     }
 }
 

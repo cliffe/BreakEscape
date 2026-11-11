@@ -477,6 +477,26 @@ unless habits_report.empty?
   end
 end
 
+# holdsDoors (ACCESS_MODEL_SLICE_9_1_PLAN.md 7.3, step 5): a gate with a noHold (filled by the
+# loader, or authored) gets no node of its own; its secured room's door node says who holds
+# it for the player and who does not. As the client reads it: a gate with enabled: false is
+# no gate (gate_entries drops it), and a gate with playerMayPassIf ignores its noHold.
+(habits_copy['rooms'].is_a?(Hash) ? BreakEscape::NpcHabits.gate_entries(habits_copy) : []).each do |entry|
+  gate = entry[:gate]
+  pass_if = gate['playerMayPassIf']
+  next if pass_if.is_a?(String) && !pass_if.empty?
+  next unless gate['noHold'].is_a?(Array) && gate['noHold'].any?
+
+  node = $nodes["door_#{entry[:connected_room]}"]
+  next unless node
+
+  holders = entry[:open_for] - gate['noHold']
+  parts = []
+  parts << "held by #{holders.join(', ')}" if holders.any?
+  parts << "not held by #{gate['noHold'].join(', ')}"
+  node[:label] = "#{node[:label]}<br/>gate: #{parts.join('; ')}"
+end
+
 # ---------------------------------------------------------------------------
 # Networks (ACCESS_MODEL_SLICE_9_3_PLAN.md, section 7.3). A jack is a lock-like node that
 # the rogue device opens, from the jack's room, with an edge to its network's node. A

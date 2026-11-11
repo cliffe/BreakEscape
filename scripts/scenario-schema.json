@@ -4022,6 +4022,7 @@
                   "openRadius": { "type": "number", "minimum": 0, "description": "Pixels from the door centre at which an openFor NPC opens it (default 56)" },
                   "holdMs": { "type": "number", "minimum": 0, "description": "ms it stays open after the last NPC leaves (default 2500)" },
                   "playerMayPassIf": { "type": "string", "description": "A global. While false, the open gate is solid for a player outside the secured room, and one within openRadius keeps it shut (or shuts it as soon as nobody is in the doorway)" },
+                  "noHold": { "type": "array", "items": { "type": "string" }, "description": "Written by the loader (slice 9.1): the openFor NPCs whose holdsDoors habit is false. While every guard the gate opened for (or, shut, every guard near it) is listed, it bars the player as a false playerMayPassIf does. Not written on a gate with playerMayPassIf; an authored noHold wins and is never changed" },
                   "sound": {
                     "oneOf": [
                       { "type": "string" },
@@ -4213,7 +4214,7 @@
           "additionalProperties": false
         },
         "staff": { "type": "boolean", "description": "Access model section 3: false drops the implicit staff role an NPC with creds has." },
-        "awareness": { "type": "string", "enum": ["low", "medium", "high"], "description": "Slice 9.1: this person's security awareness. A preset that fills habits the author leaves out (low: locksScreen never; medium: sometimes; high: always). Room NPCs only. Never sent to the browser." },
+        "awareness": { "type": "string", "enum": ["low", "medium", "high"], "description": "Slice 9.1: this person's security awareness. A preset that fills habits the author leaves out (low: locksScreen never, holdsDoors true; medium: locksScreen sometimes, holdsDoors true; high: locksScreen always, holdsDoors false). Room NPCs only. Never sent to the browser." },
         "habits": {
           "type": "object",
           "description": "Slice 9.1: habits set by name, which override the awareness preset. Room NPCs only. Never sent to the browser.",
@@ -4221,6 +4222,7 @@
             "locksScreen": { "type": "string", "enum": ["never", "sometimes", "always"], "description": "Fills this NPC's screenHabit (lockChance 0, 0.5 or 1) when screenHabit is not authored. A PC's own lockChance or locksScreenOnLeave still wins." },
             "writesDown": { "type": "boolean", "description": "true: the account's username and password are on a sticky note on the owner's own sign-in PC, read on its sign-in screen at the desk. Never set by a preset." },
             "password": { "type": "string", "enum": ["strong", "guessable", "reused"], "description": "A claim the validator checks: guessable needs every piece of the password readable in the world and a pattern clue; reused needs another secret equal to it. No run-time effect. Never set by a preset." },
+            "holdsDoors": { "type": "boolean", "description": "false: a gate door that opens for this NPC will not open with the player close by, and shuts as soon as the player comes near (the loader lists the NPC in the gate's noHold). true: the gate opens beside the player and lingers. Not applied to a gate with playerMayPassIf or an authored noHold." },
             "passwordPattern": { "type": "string", "minLength": 1, "description": "The object that gives the pattern for a guessable password (a parameter of password, not a habit)." },
             "_comment": { "type": "string" }
           },

@@ -46,7 +46,7 @@ VAR irina_ko = false
         - else:
             ~ irina_news = 1
         }
-        Dani Okonkwo: You're the regulator? Is this about Irina? *glances at her desk* I don't know anything. Honestly.
+        Dani Okonkwo: You're the regulator? Is this about Irina? I don't know anything. Honestly. #delivery: nervous, a hitch before the denial
     - else:
         Dani Okonkwo: You're the regulator, yeah? FCA?
 
@@ -100,13 +100,13 @@ Dani Okonkwo: Fast, cheap, loads of volume. It's a tough market, to be fair.
     ~ hub_quiet = false
 - irina_ko and irina_news < 3:
     ~ irina_news = 3
-    Dani Okonkwo: Irina's on the floor and nobody's-- did you-- *stops* Don't answer that.
+    Dani Okonkwo: Irina's on the floor and nobody's-- did you-- Don't answer that. #delivery: rushed, then stopping herself short
 - irina_taken and not irina_ko and irina_news < 2:
     ~ irina_news = 2
     Dani Okonkwo: They walked Irina out past my desk. Am I next? Honestly, you can tell me.
 - irina_arrested and not irina_taken and not irina_ko and irina_news < 1:
     ~ irina_news = 1
-    Dani Okonkwo: *barely above a whisper* She's just sitting there. Are you allowed to tell me what's going on?
+    Dani Okonkwo: She's just sitting there. Are you allowed to tell me what's going on? #delivery: barely above a whisper
 - else:
     Dani Okonkwo: {&Anything else?|Go on, then.|What else?}
 }
@@ -251,7 +251,7 @@ Dani Okonkwo: Irina and Satoshi do compliance. I just watch the charts.
 // Review M1: this is the "flagged the wallets" conversation the task names.
 #complete_task:question_the_trader
 
-Dani Okonkwo: *lowers voice* Between us? Some of it's weird. Big round sums going in late at night. Same wallets, like clockwork.
+Dani Okonkwo: Between us? Some of it's weird. Big round sums going in late at night. Same wallets, like clockwork. #delivery: lowering her voice
 
 Dani Okonkwo: I put the wallet names in the daily report. It's on the desk. One's got "ENTROPY" right there in the address.
 

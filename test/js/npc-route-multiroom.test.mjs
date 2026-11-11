@@ -465,3 +465,60 @@ test('turnBackFromGate from the far side: a guard in b held on his way back resu
     b.config.patrol.currentSegmentIndex = 0;
     assert.equal(b.wantsToCrossGate(GATE), false, 'patrol off: never');
 });
+
+// test_access_habits H9: a chair stood on Sara's unlockRoom waypoint. She stopped short,
+// the stall re-target (changeDirectionInterval with no progress) chose again, the waypoint
+// was already taken, so the action was skipped and she waited at the unloaded room for good.
+async function cutShortAtActionLeg(feet) {
+    const s = setup();
+    s.b.config = await silently(() => s.b.parseConfig({ patrol: { enabled: true, multiRoom: true, route: ROUTE } }));
+    s.b.config.patrol.waypointIndex = 1;
+    await silently(() => s.b.chooseNewPatrolTarget(0));              // takes the action leg to (128, 352)
+    assert.equal(s.b.config.patrol.waypointIndex, 2, 'the leg is taken');
+    s.b.currentPath = [{ x: 100, y: 352 }, { x: 128, y: 352 }];      // part way along it
+    s.b.pathIndex = 1;
+    s.b.npcBodyPos = () => feet;
+    return s;
+}
+
+test('an action leg cut short beside its spot counts as the arrival: the unlock runs', async () => {
+    const { b, unlocks, loads } = await cutShortAtActionLeg({ x: 106, y: 352 });   // 22 px short
+    await silently(() => b.chooseNewPatrolTarget(1000));             // the stall re-target
+    assert.deepEqual(b._pendingRouteAction, { unlockRoom: 'b' });
+    assert.equal(b.config.patrol.waypointIndex, 2);
+    await silently(() => b.chooseNewPatrolTarget(1100));             // next choice runs it
+    await flush(); await flush();
+    assert.deepEqual(unlocks, [['b', 'guard']]);
+    assert.ok(loads.includes('b'));
+});
+
+test('an action leg cut short far from its spot is walked again, not skipped', async () => {
+    const { b, unlocks, requests } = await cutShortAtActionLeg({ x: 10, y: 400 });
+    const before = requests.length;
+    await silently(() => b.chooseNewPatrolTarget(1000));
+    assert.deepEqual(unlocks, []);
+    assert.deepEqual(requests.at(-1), { x: 128, y: 352 }, 'the same leg is asked for again');
+    assert.equal(requests.length, before + 1);
+    assert.equal(b.config.patrol.waypointIndex, 2, 'taken again by the new path');
+    assert.deepEqual(b.patrolTarget.routeAction, { unlockRoom: 'b' });
+});
+
+test('a cut-short action leg idles the walk animation when it stops the NPC (review R1 nit 1)', async () => {
+    const { b } = await cutShortAtActionLeg({ x: 106, y: 352 });
+    const anims = [];
+    b.playAnimation = (name) => anims.push(name);
+    b.isMoving = true;
+    await silently(() => b.chooseNewPatrolTarget(1000));
+    assert.equal(b.isMoving, false);
+    assert.equal(anims[0], 'idle');
+});
+
+test('once its room is loaded, a cut-short action leg is skipped as before', async () => {
+    const { b, unlocks, requests } = await cutShortAtActionLeg({ x: 106, y: 352 });
+    window.rooms.b = { position: { x: 0, y: 0 } };
+    await silently(() => b.chooseNewPatrolTarget(1000));
+    assert.equal(b._pendingRouteAction, null);
+    assert.deepEqual(unlocks, []);
+    assert.equal(b.roomId, 'a');
+    assert.ok(requests.length >= 2);
+});

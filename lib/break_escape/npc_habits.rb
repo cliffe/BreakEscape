@@ -17,11 +17,12 @@ module BreakEscape
 
     LEVELS = %w[low medium high].freeze
 
-    # Each habit's allowed values. holdsDoors is added by step 5, with the gate fill.
+    # Each habit's allowed values.
     HABITS = {
       'locksScreen' => %w[never sometimes always].freeze,
       'writesDown' => [true, false].freeze,
-      'password' => %w[strong guessable reused].freeze
+      'password' => %w[strong guessable reused].freeze,
+      'holdsDoors' => [true, false].freeze
     }.freeze
 
     # Keys allowed in `habits` that are not habits.
@@ -29,9 +30,9 @@ module BreakEscape
 
     # writesDown and password are in no preset (section 3).
     PRESETS = {
-      'low' => { 'locksScreen' => 'never' }.freeze,
-      'medium' => { 'locksScreen' => 'sometimes' }.freeze,
-      'high' => { 'locksScreen' => 'always' }.freeze
+      'low' => { 'locksScreen' => 'never', 'holdsDoors' => true }.freeze,
+      'medium' => { 'locksScreen' => 'sometimes', 'holdsDoors' => true }.freeze,
+      'high' => { 'locksScreen' => 'always', 'holdsDoors' => false }.freeze
     }.freeze
 
     LOCK_CHANCES = { 'never' => 0, 'sometimes' => 0.5, 'always' => 1 }.freeze
@@ -111,7 +112,7 @@ module BreakEscape
 
     # Run the whole expansion on the scenario hash in place and return the report: one
     # entry per room NPC with a level or a `habits` object, saying what was filled or left
-    # alone and why. Idempotent.
+    # alone and why (with holdsDoors, its gates under :doors). Idempotent.
     def expand!(scenario)
       report = []
       return report unless scenario.is_a?(Hash) && scenario['rooms'].is_a?(Hash)
@@ -131,6 +132,9 @@ module BreakEscape
           sources: sources(npc, scenario) }
       end
       stations = owned_workstations(scenario)
+      gates = gate_entries(scenario)
+      holds = plans.to_h { |plan| [plan[:entry][:npc]['id'], plan[:habits]['holdsDoors']] }
+      gate_fills = gates.to_h { |gate| [gate[:path], no_hold_for(gate, holds)] }
 
       plans.each do |plan|
         npc = plan[:entry][:npc]
@@ -139,7 +143,12 @@ module BreakEscape
                  level: plan[:level], level_source: plan[:level_source],
                  habits: plan[:habits].dup, sources: plan[:sources], screen: nil }
         item[:screen] = fill_screen_habit!(npc, plan[:habits]['locksScreen'], stations) if plan[:habits].key?('locksScreen')
+        item[:doors] = doors_entry(npc['id'], plan[:habits]['holdsDoors'], gates, gate_fills) if plan[:habits].key?('holdsDoors')
         report << item
+      end
+      gates.each do |gate|
+        list = gate_fills[gate[:path]]
+        gate[:gate]['noHold'] = list if list.is_a?(Array) && list.any?
       end
       report
     rescue StandardError
@@ -189,6 +198,66 @@ module BreakEscape
         screen[:filled] = true
       end
       screen
+    end
+
+    # Every gate door: { gate:, path:, room:, connected_room:, direction:, open_for: }. `doors` that is not
+    # a list and a `gate` that is not an object are skipped; a gate with enabled: false is
+    # not a gate (the client ignores it). An openFor string is a one-item list, as the
+    # client reads it.
+    def gate_entries(scenario)
+      out = []
+      scenario['rooms'].each do |room_id, room|
+        next unless room.is_a?(Hash) && room['doors'].is_a?(Array)
+
+        room['doors'].each_with_index do |door, i|
+          next unless door.is_a?(Hash) && door['gate'].is_a?(Hash)
+
+          gate = door['gate']
+          next if gate['enabled'] == false
+
+          open_for = gate['openFor'].is_a?(Array) ? gate['openFor'].grep(String) : [gate['openFor']].grep(String)
+          out << { gate: gate, path: "rooms/#{room_id}/doors/#{i}", room: room_id,
+                   connected_room: door['connectedRoom'], direction: door['direction'], open_for: open_for }
+        end
+      end
+      out
+    end
+
+    # The gate fill (5.4), worked out before anything is written: :player_may_pass_if or
+    # :authored_no_hold when the gate is left alone, else the openFor ids whose expanded
+    # holdsDoors is false (possibly empty, then nothing is written). A gate's
+    # playerMayPassIf counts as the client counts it: a non-empty string.
+    def no_hold_for(gate, holds)
+      cfg = gate[:gate]
+      return :player_may_pass_if if cfg['playerMayPassIf'].is_a?(String) && !cfg['playerMayPassIf'].empty?
+      return :authored_no_hold if cfg.key?('noHold')
+
+      gate[:open_for].select { |id| holds[id] == false }.uniq
+    end
+
+    # A gate's noHold as the client reads it (door-gates.js normaliseGate): the strings of a
+    # list, and nothing for any other value (a string noHold is ignored, so the gate holds
+    # doors). Every server-side reader uses this one reading.
+    def gate_no_hold(gate_cfg)
+      list = gate_cfg.is_a?(Hash) ? gate_cfg['noHold'] : nil
+      list.is_a?(Array) ? list.grep(String) : []
+    end
+
+    # The report's doors entry for one NPC: each gate that opens for it, and whether it is
+    # in that gate's noHold or why the habit was not applied there.
+    def doors_entry(npc_id, value, gates, fills)
+      mine = gates.select { |gate| gate[:open_for].include?(npc_id) }
+      list = mine.map do |gate|
+        fill = fills[gate[:path]]
+        reason = fill.is_a?(Symbol) ? fill : nil
+        # In the gate's noHold: the one written for the habit, or an authored one
+        listed = if reason == :authored_no_hold then gate_no_hold(gate[:gate]).include?(npc_id)
+                 else fill.is_a?(Array) && fill.include?(npc_id)
+                 end
+        { path: gate[:path], room: gate[:room], connected_room: gate[:connected_room],
+          applied: reason.nil?, no_hold: listed, reason: reason }
+      end
+      { value: value, gates: list, reason: list.empty? ? :no_gate : nil }
     end
 
     # For the scripts: a deep copy of the authored scenario with ids stamped onto room

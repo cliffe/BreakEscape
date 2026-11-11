@@ -39,6 +39,12 @@ export const NPC_STUCK_MOVE_PX = TILE_SIZE / 2;
 const NPC_STUCK_GAP_MS = 500;
 const NPC_STUCK_NUDGE_MAX_PX = TILE_SIZE;   // never nudge further than one tile
 const NPC_STUCK_PLAYER_PX = TILE_SIZE * 1.5; // the player this close: not wedged, held up
+// Wedged this close to a route waypoint that carries an action (unlockRoom at a badge
+// reader), the NPC has arrived: a chair or another body is standing on the spot.
+const ROUTE_ACTION_REACH_PX = TILE_SIZE * 1.5;
+// An unlockRoom whose room is not loaded yet: skipping it would leave the route waiting
+// at that room for good. Once the room is loaded the action is only a pause.
+const routeActionHasWork = action => !!(action?.unlockRoom && !window.rooms?.[action.unlockRoom]);
 
 // Local avoidance (_handleBlockerAhead): a walking NPC that meets the player or
 // another NPC AHEAD on its path waits, then detours, then (if there is no way
@@ -1310,7 +1316,7 @@ class NPCBehavior {
 
         w.attempts++;
         w.since = time;
-        const anchor = this._recoverFromStuck(w.attempts, x, y);
+        const anchor = this._recoverFromStuck(w.attempts, x, y, time);
         w.x = anchor.x; w.y = anchor.y;
         if (w.attempts >= 3) w.attempts = 0;
         return true;
@@ -1330,7 +1336,7 @@ class NPCBehavior {
      * One recovery step for _checkPathStuck. Returns where the NPC now stands
      * (the stuck watch's new anchor, so a nudge doesn't count as progress).
      */
-    _recoverFromStuck(attempt, x, y) {
+    _recoverFromStuck(attempt, x, y, time = this.scene?.time?.now ?? 0) {
         const pfm = this.pathfindingManager || window.pathfindingManager;
         const target = this.patrolTarget;
         this.sprite.body.setVelocity(0, 0);
@@ -1339,7 +1345,10 @@ class NPCBehavior {
         this._needsPathRecalc = false;
         console.warn(`🧱 [${this.npcId}] No progress for ${NPC_STUCK_MS}ms at (${x.toFixed(0)}, ${y.toFixed(0)}), recovery step ${Math.min(attempt, 3)}`);
 
+        if (this._arriveForRouteAction(target, x, y, time)) return { x, y };
+
         if (attempt >= 3 || !target || typeof pfm?.findWorldPath !== 'function') {
+            this._keepRouteLeg(target);
             this.currentPath = [];
             this.pathIndex = 0;
             this.patrolTarget = null;
@@ -1360,6 +1369,7 @@ class NPCBehavior {
                 this.pathIndex = 0;
                 this.pathFollowingActive = true;
             } else {
+                this._keepRouteLeg(target);
                 this.currentPath = [];
                 this.patrolTarget = null;
                 this.pathFollowingActive = false;
@@ -1367,6 +1377,44 @@ class NPCBehavior {
             }
         });
         return at;
+    }
+
+    /**
+     * Wedged within ROUTE_ACTION_REACH_PX of a route waypoint with an action: treat it as
+     * the arrival, so the action runs next (as at the end of the path). Without this the
+     * stuck recovery dropped the leg, whose waypoint was already taken, and the action
+     * went with it: an NPC whose unlockRoom waypoint had a chair on it stood for good
+     * waiting for a room that was never unlocked (test_access_habits H9, Sara at (1, 7)).
+     * The route chooser asks the same when the stall re-target cuts such a leg short.
+     * @returns {boolean} true when it counted as the arrival
+     */
+    _arriveForRouteAction(target, x, y, time) {
+        if (!routeActionHasWork(target?.routeAction)) return false;
+        if ((target.x - x) ** 2 + (target.y - y) ** 2 > ROUTE_ACTION_REACH_PX ** 2) return false;
+        console.log(`🎯 [${this.npcId}] Wedged ${Math.hypot(target.x - x, target.y - y).toFixed(0)}px from a route waypoint with an action: arrived`);
+        this.currentPath = [];
+        this.pathIndex = 0;
+        this.pathFollowingActive = false;
+        this._pathRetryAfter = 0;
+        this.patrolReachedTime = target.dwellTime > 0 ? 0 : time;
+        this._pendingRouteAction = target.routeAction;
+        this.playAnimation?.('idle', this.direction);
+        return true;
+    }
+
+    /**
+     * The stuck recovery is giving up on a route leg further than ROUTE_ACTION_REACH_PX
+     * from a waypoint with an action: put that waypoint back, so the next choice walks the
+     * leg again instead of skipping the action (the route would then wait at the next room
+     * for good). Only while the route is still where the leg left it.
+     */
+    _keepRouteLeg(target) {
+        const leg = routeActionHasWork(target?.routeAction) && target.routeLeg;
+        const patrol = this.config?.patrol;
+        if (!leg || !patrol) return;
+        if (patrol.currentSegmentIndex === leg.segment && patrol.waypointIndex === leg.waypoint + 1) {
+            patrol.waypointIndex = leg.waypoint;
+        }
     }
 
     /**
@@ -1713,6 +1761,17 @@ class NPCBehavior {
             this._runRouteAction(this._pendingRouteAction, time);
             return;
         }
+        // A leg to a waypoint with an action, cut short before the end of its path (the
+        // stall re-target after changeDirectionInterval with no progress): close to the
+        // spot it counts as the arrival; further off the waypoint is put back. Either way
+        // the action is not skipped, as it was when its waypoint had been taken already.
+        const cut = this.patrolTarget;
+        if (cut?.routeAction && this.currentPath.length > 0 && this.pathIndex < this.currentPath.length) {
+            const { x: cx, y: cy } = this.npcBodyPos();
+            this._haltForRoute();
+            if (this._arriveForRouteAction(cut, cx, cy, time)) return;
+            this._keepRouteLeg(cut);
+        }
 
         const route = this.config.patrol.route;
         const currentSegmentIndex = this.config.patrol.currentSegmentIndex;
@@ -1779,7 +1838,9 @@ class NPCBehavior {
             x: dest.x,
             y: dest.y,
             dwellTime: nextWaypoint.dwellTime || 0,
-            routeAction: nextWaypoint.action || null
+            routeAction: nextWaypoint.action || null,
+            // Which waypoint this leg is, so a stuck recovery can put it back (_keepRouteLeg)
+            routeLeg: { segment: currentSegmentIndex, waypoint: this.config.patrol.waypointIndex }
         };
 
         this.lastPatrolChange = time;

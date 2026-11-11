@@ -11,7 +11,7 @@ VAR hub_quiet = false
 === start ===
 {not spoke_to_player:
     ~ spoke_to_player = true
-    Mrs Hargreaves: *barely* ...that you, love?
+    Mrs Hargreaves: ...that you, love? #delivery: barely audible
     -> first_words
 }
 {spoke_to_player:

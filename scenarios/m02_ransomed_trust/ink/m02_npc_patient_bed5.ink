@@ -11,7 +11,7 @@ VAR hub_quiet = false
 === start ===
 {not spoke_to_player:
     ~ spoke_to_player = true
-    Ms Chen: *lowering her book* You'll be the one they've brought in about the computers.
+    Ms Chen: You'll be the one they've brought in about the computers. #delivery: looking up from her book, mildly
     -> first_words
 }
 {spoke_to_player:

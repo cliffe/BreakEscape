@@ -63,7 +63,7 @@ Read every `.ink` file in `scenarios/<name>/ink/`. Report each finding as **CONC
 ### 2a. Attribution & narration
 
 - **Every `Character Name:` prefix resolves to an NPC `id` or `displayName`, exactly.** This is the highest-value check in this skill. `normalizeSpeakerId()` matches only against id / displayName plus the specials `player`, `npc`, `you`, `Narrator`. A shortened name (`Marcus:` for `Marcus Webb`) or a role word (`Guard:`, `Nurse:`, `Dr. Kim:`) does **not** resolve — ink still compiles, and the engine renders the literal text `Marcus: ...` inside whichever character spoke last. Phase 1 flags this automatically; confirm each ❌ INVALID is a real speaker rather than a prose label, and check the fix used the NPC's exact `displayName` instead of shortening it further.
-- **Emotes split by category, not wholesale.** Delivery cues the TTS can act on (`*quietly*`, `*sighs*`, `*pause*`, `*not looking up*`) stay inline; events in the scene (handing something over, crossing the room, looking up for the first time) become `Narrator:` beats. Flag a file that has promoted *every* gesture — each Narrator line is an extra click-through and conversations start to wade.
+- **Emotes split by category, not wholesale.** Voiced lines hold only spoken words (user, 2026-11-10): delivery cues (`quietly`, `with a sigh`, `after a pause`, `not looking up`) go in a `#delivery:` tag on the line, never inline as `*...*`; events in the scene (handing something over, crossing the room, looking up for the first time) become `Narrator:` beats (`README_ink_best_practices.md` "Voiced lines hold only spoken words"; dialoguelint's `inline-direction`). Flag a file that has promoted *every* gesture — each Narrator line is an extra click-through and conversations start to wade.
 
 ### 2a-bis. Is the dialogue supported by the scenario?
 
@@ -84,7 +84,7 @@ Off-map events and post-mission debriefs are legitimate exceptions.
 - No `voice.name` is reused by two characters who appear together — reuse is correct only for the *same* character across multiple NPC entries.
 - Each `style` names its accent explicitly and says "consistent ... throughout"; the cast is not uniformly RP.
 - Dialogue uses inline `Character Name:` prefixes (primary method); `#speaker:` tags only as a fallback for tag-less lines. (The `Name:` prefix is what picks the speaker. `#speaker:` tags are not matched by prefix: `determineSpeaker` in person-chat-minigame.js honours only `#speaker:player`, `#speaker:npc`, and the three-part `#speaker:npc:<exact_id>` (which must exactly match a character id). Any other two-part tag, such as `#speaker:dr_kim` or m01's `#speaker:derek`, is ignored and the line falls back to the conversation's own NPC, which is why m01's works: Derek is the NPC in his own conversation. So a `#speaker:<name>` tag only matters when it names someone other than the conversation's NPC and has no `Name:` prefix; then it's a real bug, and the fix is a `Name:` prefix or the exact `#speaker:npc:<id>` form.)
-- Standalone scene-setting / third-person action beats are spoken as `Narrator:` lines, and a top-level `narrator` voice block exists. Inline emotes inside a character's own line (`Nurse: *sighs* Right.`) are fine.
+- Standalone scene-setting / third-person action beats are spoken as `Narrator:` lines, and a top-level `narrator` voice block exists. A cue inside a character's own line goes in a `#delivery:` tag (`Nurse: Right. #delivery: with a sigh`), not inline.
 
 ### 2b. Player choices are spoken dialogue
 

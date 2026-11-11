@@ -51,7 +51,7 @@ VAR analyst_told = false
         }
         Priya Raghavan: If you're here about Irina, I just draw the pictures.
     - else:
-        Priya Raghavan: *doesn't look up* If you're here about the flagged transactions, talk to Irina.
+        Priya Raghavan: If you're here about the flagged transactions, talk to Irina. #delivery: distracted, half listening
 
         Priya Raghavan: I just draw the pictures. She decides what they mean.
     }
@@ -107,7 +107,7 @@ Priya Raghavan: Big money through our mixer. Big round sums, always late in the 
     -> suspicious_patterns
 
 + [Show me.]
-    Priya Raghavan: *swings the monitor round* Here, look.
+    Priya Raghavan: Here, look. #delivery: eager, showing her working
     -> suspicious_patterns
 
 // ===========================================
@@ -320,7 +320,7 @@ Priya Raghavan: So either it's fine or she's building a case. She's cleverer tha
 #set_variable:analyst_walked_through=true
 ~ topic_patterns = true
 
-Priya Raghavan: *pulls up a graph* Look at this. Three wallets with names, plus a load without.
+Priya Raghavan: Look at this. Three wallets with names, plus a load without. #delivery: eager, showing her working
 
 Priya Raghavan: Into our mixer on a schedule, out the other side. And I'd swear it lands in the same place.
 
@@ -423,7 +423,7 @@ Priya Raghavan: Someone thinks we're dirty.
 === professional_response ===
 #speaker:analyst
 
-Priya Raghavan: *laughs bitterly* Right. Professional.
+Priya Raghavan: Right. Professional. #delivery: with a bitter laugh
 
 Priya Raghavan: When you're done, tell me whether I've been helping criminals. I'd like to know what I've been drawing.
 

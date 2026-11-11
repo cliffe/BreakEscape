@@ -189,7 +189,7 @@ Agent HaX: Her lawyers are already calling it "market-driven research". It won't
 * [People died on what she sold. This is for St. Catherine's.]
     ~ handler_trust = handler_trust + 10
     # influence_increased
-    Agent HaX: *quietly* Yes. It is.
+    Agent HaX: Yes. It is. #delivery: quietly
     -> victoria_arrested_path
 * [Take the arms dealer, and every buyer downstream feels it.]
     Agent HaX: Every buyer downstream just lost their supplier. They'll pay more for worse.

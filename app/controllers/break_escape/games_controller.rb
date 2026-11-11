@@ -696,6 +696,12 @@ module BreakEscape
         return render_error('Cannot validate text for this object', :bad_request)
       end
 
+      # The line's #delivery: note (person-chat sends one when the line's tags carry
+      # it). The client's note only chooses: the note keyed, voiced and recorded is
+      # the one the scenario's ink gives this line for this speaker. With no such
+      # note the line is voiced untagged, never refused (TtsLineExtractor#delivery_for).
+      delivery = ink_delivery_note(npc_id, text, params[:delivery])
+
       # Voice from the scenario as it is now, so games started before a voice was
       # restyled still hit the regenerated cache. The snapshot is the fallback.
       snapshot_voice = voice_config
@@ -705,28 +711,40 @@ module BreakEscape
       # A clip on the current model, else one from the previous model (missions
       # not yet regenerated), else generate. Old clips are served before
       # generating so an un-migrated mission plays as it did, with no delay.
+      # A line with a delivery note has its own clip (the note is in its key).
+      # Previous-model clips never had notes, so for a tagged line they, and the
+      # untagged clip, are a stand-in: served at once on a server that can't
+      # generate, and after a failed generation (quota, error) on one that can.
       tts_service = TtsService.new
-      current_clip = tts_service.cache_path(
-        tts_service.cache_key_for(text, voice_config['name'], voice_config['style'], voice_config['language']),
-        scenario_name
-      )
+      key_args = [text, voice_config['name'], voice_config['style'], voice_config['language']]
+      current_clip = tts_service.cache_path(tts_service.cache_key_for(*key_args, *[delivery].compact), scenario_name)
       mp3_path = current_clip if File.exist?(current_clip)
-      mp3_path ||= legacy_tts_clip(tts_service, text, [voice_config, snapshot_voice], scenario_name)
+      stand_in = lambda do
+        # For an untagged line the current clip is the plain clip, already checked
+        plain_clip = delivery && tts_service.cache_path(tts_service.cache_key_for(*key_args), scenario_name)
+        plain_clip && File.exist?(plain_clip) ? plain_clip : legacy_tts_clip(tts_service, text, [voice_config, snapshot_voice], scenario_name)
+      end
+      mp3_path ||= stand_in.call unless delivery && tts_service.enabled?
       return send_file(mp3_path, type: 'audio/mpeg', disposition: 'inline') if mp3_path
 
       begin
+        generate_options = { scenario_name: scenario_name, npc_id: npc_id }
+        generate_options[:delivery] = delivery if delivery
         mp3_path = tts_service.generate(
           text,
           voice_config['name'],
           voice_config['style'],
           voice_config['language'],
-          scenario_name: scenario_name,
-          npc_id: npc_id
+          **generate_options
         )
       rescue TtsService::QuotaExhaustedError => e
         # Out of quota is a temporary condition, not a server fault. 429 tells the
         # client to back off; it already treats any non-OK TTS reply as "no audio".
+        # A tagged line plays its untagged clip instead, if there is one.
         Rails.logger.warn "[TTS] Quota exhausted for #{npc_id}: #{e.message}"
+        fallback = delivery && stand_in.call
+        return send_file(fallback, type: 'audio/mpeg', disposition: 'inline') if fallback
+
         response.set_header('Retry-After', e.retry_after.to_s) if e.retry_after
         return render json: {
           error: 'Text-to-speech quota exhausted; audio is unavailable for now',
@@ -734,6 +752,9 @@ module BreakEscape
         }.compact, status: :too_many_requests
       end
       unless mp3_path && File.exist?(mp3_path)
+        fallback = delivery && tts_service.enabled? && stand_in.call
+        return send_file(fallback, type: 'audio/mpeg', disposition: 'inline') if fallback
+
         if tts_service.enabled?
           return render_error('TTS generation failed', :internal_server_error)
         else
@@ -2590,6 +2611,29 @@ module BreakEscape
     rescue StandardError => e
       Rails.logger.warn "[TTS] Co-speaker check failed for #{npc_id}: #{e.class}: #{e.message}"
       false
+    end
+
+    # The #delivery: note the scenario's ink gives the line npc_id speaks as text,
+    # chosen by the note the client sent (TtsLineExtractor#delivery_for), or nil.
+    # The client's string itself never reaches the voice prompt, the key or the
+    # sidecar. A note the ink doesn't give the line (a tag the server's walker
+    # can't place: README_ink_best_practices.md, "Voiced lines hold only spoken words") is dropped,
+    # so the line plays untagged rather than not at all.
+    def ink_delivery_note(npc_id, text, client_note)
+      return nil if client_note.blank?
+      # Bigger than any note the client can send (deliveryFromTags caps at 200)
+      return nil unless client_note.is_a?(String) && client_note.length <= 1000
+
+      wanted = TtsService.clean_delivery(client_note)
+      scenario_name = @game.mission&.name
+      return nil unless wanted && scenario_name
+
+      note = TtsLineExtractor.cached(scenario_name, @game.scenario_data).delivery_for(npc_id, text, wanted)
+      Rails.logger.warn "[TTS] Delivery note not in the ink for #{npc_id}, voicing untagged: #{text.truncate(60)}" unless note
+      note
+    rescue StandardError => e
+      Rails.logger.warn "[TTS] Delivery check failed for #{npc_id}: #{e.class}: #{e.message}"
+      nil
     end
 
     # Resolve ink path and compile if necessary

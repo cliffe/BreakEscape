@@ -71,9 +71,9 @@ function walker({ to = { x: 400, y: 0 }, dwellTime = 0, nearestCell = null, inte
         findWorldPath(sx, sy, ex, ey, cb) { b.paths++; cb([{ x: ex, y: ey }]); }
     };
     const recover = NPCBehavior.prototype._recoverFromStuck;
-    b._recoverFromStuck = function (attempt, x, y) {
+    b._recoverFromStuck = function (attempt, x, y, ...rest) {
         this.recoveries.push({ attempt, at: this.scene.time.now });
-        return recover.call(this, attempt, x, y);
+        return recover.call(this, attempt, x, y, ...rest);
     };
     b.playAnimation = () => {};
     b.calculateDirection = () => 'right';
@@ -183,4 +183,54 @@ test('with the default interval the older stall re-target and the stuck watch co
     quiet(() => b.run(20000));
     assert.ok(chose + b.recoveries.length >= 1);
     assert.ok(b.patrolTarget === null || b.currentPath.length > 0, 'left with a target but no path');
+});
+
+// A route waypoint with an action (unlockRoom) whose spot something stands on.
+// test_access_habits H9: a chair stood on Sara's waypoint at (1, 7); the recovery
+// dropped the leg, whose waypoint was already taken, so her unlockRoom never ran and
+// she waited at the next room for good.
+function routeWalker(to, { reachable = true } = {}) {
+    const b = walker({ to });
+    const action = { unlockRoom: 'store_b' };
+    b.config.patrol.currentSegmentIndex = 0;
+    b.config.patrol.waypointIndex = 2;            // the leg was taken: index already stepped
+    b.patrolTarget = { x: to.x, y: to.y, dwellTime: 0, routeAction: action, routeLeg: { segment: 0, waypoint: 1 } };
+    if (!reachable) b.pathfindingManager.findWorldPath = function (sx, sy, ex, ey, cb) { b.paths++; cb(null); };
+    b.chooseNewPatrolTarget = function () { b.chose = (b.chose || 0) + 1; };
+    return { b, action };
+}
+
+test('wedged beside a route waypoint with an action: that is the arrival and the action runs next', () => {
+    const { b, action } = routeWalker({ x: 22, y: 0 });   // 22 px off: a chair on the spot
+    b.run(NPC_STUCK_MS + 200);
+    assert.equal(b.recoveries.length, 1);
+    assert.equal(b._pendingRouteAction, action, 'the action is queued as at the end of a path');
+    assert.equal(b.paths, 0, 'no re-path to a spot he cannot reach');
+    assert.equal(b.pathFollowingActive, false);
+    assert.deepEqual(b.currentPath, []);
+    assert.equal(b.config.patrol.waypointIndex, 2, 'the waypoint stays taken');
+});
+
+test('wedged far from a route waypoint with an action: giving up puts the waypoint back', () => {
+    const { b } = routeWalker({ x: 400, y: 0 }, { reachable: false });
+    b.run(NPC_STUCK_MS + 200);                            // step 1: the re-path finds nothing
+    assert.equal(b.recoveries.length, 1);
+    assert.equal(b._pendingRouteAction ?? null, null);
+    assert.equal(b.patrolTarget, null);
+    assert.equal(b.config.patrol.waypointIndex, 1, 'the leg is walked again, not skipped');
+});
+
+test('giving up on step 3 far from a route waypoint with an action puts it back too', () => {
+    const { b } = routeWalker({ x: 400, y: 0 });
+    b.run(3 * (NPC_STUCK_MS + 200));
+    assert.equal(b.recoveries.length, 3);
+    assert.equal(b.config.patrol.waypointIndex, 1);
+});
+
+test('a leg with no action is dropped as before, its waypoint left taken', () => {
+    const { b } = routeWalker({ x: 400, y: 0 }, { reachable: false });
+    b.patrolTarget.routeAction = null;
+    b.run(NPC_STUCK_MS + 200);
+    assert.equal(b.patrolTarget, null);
+    assert.equal(b.config.patrol.waypointIndex, 2);
 });

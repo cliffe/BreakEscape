@@ -163,10 +163,10 @@ test('approachPoint: the spot in front of a shut gate on the guard\'s side, only
     const { gates, guard } = setup();
     // South of the door, pushed well away along the wall
     assert.deepEqual(gates.approachPoint('guard', { x: 280, y: 148 }),
-        { x: 100, y: 148, roomId: 'lobby', connectedRoom: 'vault' });
+        { x: 100, y: 140, roomId: 'lobby', connectedRoom: 'vault' });
     // North of it (he ended a leg inside the far room, out of reach)
     assert.deepEqual(gates.approachPoint('guard', { x: 60, y: -20 }),
-        { x: 100, y: 52, roomId: 'lobby', connectedRoom: 'vault' });
+        { x: 100, y: 60, roomId: 'lobby', connectedRoom: 'vault' });
     // Already in front of it: the gate opens without his moving
     assert.equal(gates.approachPoint('guard', { x: 100, y: 150 }), null);
     // Not his gate, or a gate that joins neither named room
@@ -184,7 +184,24 @@ test('approachPoint: the spot in front of a shut gate on the guard\'s side, only
 test('approachPoint stays inside a small radius', () => {
     const small = setup({ openFor: ['guard'], openRadius: 40, holdMs: 0 });
     const p = small.gates.approachPoint('guard', { x: 100, y: 300 });
-    assert.equal(p.y, 132, 'radius 40: stands 32 px out, inside the radius');
+    assert.equal(p.y, 124, 'radius 40: stands 24 px out, 16 px inside the radius');
+});
+
+test('approachPoint: on open floor, stopping short of the spot still leaves the guard inside the radius', () => {
+    // test_access_habits H9 at radius 56: the spot was 48 px out; a walker stops within
+    // 8 px of his path's end and the spot snaps to an 8 px cell centre, so Gary stood
+    // 56 to 58 px from the door, just out of reach, with nothing left to walk.
+    const ARRIVE_PX = 8;
+    const cellCentre = v => Math.floor(v / 8) * 8 + 4;
+    for (const openRadius of [40, 56, 64, 72, 80, 120]) {
+        const { gates } = setup({ openFor: ['guard'], openRadius, holdMs: 0 });
+        for (const from of [{ x: 100, y: 400 }, { x: 260, y: 300 }, { x: 100, y: -200 }, { x: -60, y: -150 }]) {
+            const p = gates.approachPoint('guard', from);
+            const snapped = { x: cellCentre(p.x), y: cellCentre(p.y) };
+            const worst = Math.hypot(snapped.x - 100, snapped.y - 100) + ARRIVE_PX;
+            assert.ok(worst < openRadius, `radius ${openRadius} from (${from.x}, ${from.y}): ${worst.toFixed(1)} px at worst`);
+        }
+    }
 });
 
 test('a gate on a side door is declined with one warning and stays an ordinary door', () => {

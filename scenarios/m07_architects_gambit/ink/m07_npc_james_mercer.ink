@@ -397,7 +397,7 @@ Dr. James Mercer: You've come a very long way to be one more person who won't li
 ~ mercer_fate = "escaped"
 #set_global:mercer_fate:escaped
 
-Dr. James Mercer: *a long pause* I'm sorry?
+Dr. James Mercer: I'm sorry? #delivery: after a long pause
 
 {flag4_submitted or grid_saved:
     Dr. James Mercer: Ah. The host is yours. So I'm a man in a room with a signed piece of paper.

@@ -47,9 +47,9 @@ module BreakEscape
                             objects: [login_pc('dana_pc'), login_pc('ian_pc')],
                             extra: { 'roles' => { 'front_desk' => { 'awareness' => 'low' } } }))
       game.reload
-      assert_equal({ 'locksScreen' => 'never' }, npc_in(game, 'dana')['habits'])
+      assert_equal({ 'locksScreen' => 'never', 'holdsDoors' => true }, npc_in(game, 'dana')['habits'])
       assert_equal({ 'lockChance' => 0 }, npc_in(game, 'dana')['screenHabit'])
-      assert_equal({ 'locksScreen' => 'always', 'writesDown' => true }, npc_in(game, 'ian')['habits'])
+      assert_equal({ 'locksScreen' => 'always', 'holdsDoors' => false, 'writesDown' => true }, npc_in(game, 'ian')['habits'])
       assert_equal({ 'lockChance' => 1 }, npc_in(game, 'ian')['screenHabit'])
       game.scenario_data['rooms']['office']['objects'].each do |pc|
         refute pc.key?('lockChance'), pc['id']
@@ -59,6 +59,26 @@ module BreakEscape
       assert game.written_down?(npc_in(game, 'ian'))
       refute game.written_down?(npc_in(game, 'dana'))
       assert_nil game.npc_habit({ 'id' => 'x' }, 'locksScreen')
+    end
+
+    test 'the loader writes gate.noHold for a careful guard, and the room data carries it without the habits' do
+      guard = ->(id, level) { { 'id' => id, 'npcType' => 'person', 'position' => { 'x' => 3, 'y' => 3 }, 'awareness' => level } }
+      data = scenario(npcs: [guard.call('sara', 'high'), guard.call('gary', 'low')], objects: [])
+      data['rooms']['office']['connections'] = { 'north' => 'store_a', 'south' => 'store_b' }
+      data['rooms']['office']['doors'] = [
+        { 'connectedRoom' => 'store_a', 'direction' => 'north', 'gate' => { 'openFor' => ['gary'] } },
+        { 'connectedRoom' => 'store_b', 'direction' => 'south', 'gate' => { 'openFor' => ['sara'] } }
+      ]
+      data['rooms']['store_a'] = { 'type' => 'room_office', 'connections' => { 'south' => 'office' }, 'locked' => true }
+      data['rooms']['store_b'] = { 'type' => 'room_office', 'connections' => { 'north' => 'office' }, 'locked' => true }
+      game = build(data)
+      game.reload
+      doors = game.scenario_data['rooms']['office']['doors']
+      refute doors[0]['gate'].key?('noHold'), 'a holder gets none'
+      assert_equal ['sara'], doors[1]['gate']['noHold']
+      room = game.filtered_room_data('office')
+      assert_equal ['sara'], room['doors'][1]['gate']['noHold']
+      room['npcs'].each { |npc| refute npc.key?('habits'), npc['id'] }
     end
 
     test 'the owner of a PC with a screenOwner and no authored id is filled' do

@@ -138,7 +138,7 @@ Dr. Sarah Kim: "Never once failed." That was the actual sentence. I said it out 
 
 * [Save it for the inquiry. Right now I need doors.]
     # influence_increased
-    Dr. Sarah Kim: *almost relieved* Thank you. Yes. Doors.
+    Dr. Sarah Kim: Thank you. Yes. Doors. #delivery: almost relieved
     -> access_problem
 
 // ===========================================
@@ -352,7 +352,7 @@ Dr. Sarah Kim: We put it down to a fault on the panel and moved on. We had a sca
     ~ insider_evidence_partial = true
     # influence_increased
     #set_global:insider_evidence_partial:true
-    Dr. Sarah Kim: *slowly* And I signed it off as a panel fault.
+    Dr. Sarah Kim: And I signed it off as a panel fault. #delivery: slowly
     Dr. Sarah Kim: Find out who. Please.
     ~ hub_quiet = true
     -> hub
@@ -466,7 +466,7 @@ Dr. Sarah Kim: Careful. I'll say it on that call as though I thought of it mysel
 // ===========================================
 
 === cover_reaction ===
-Dr. Sarah Kim: *sharply* Rung security from where?
+Dr. Sarah Kim: Rung security from where? #delivery: sharply
 
 Dr. Sarah Kim: I countersigned your badge an hour ago. I haven't spoken to security control all night.
 
@@ -492,7 +492,7 @@ Dr. Sarah Kim: Somebody in this building understood that before you did, and bef
 // ===========================================
 
 === accuse_kim ===
-Dr. Sarah Kim: *very still* I rang SAFETYNET at one this morning. I brought you into this building. I signed your badge.
+Dr. Sarah Kim: I rang SAFETYNET at one this morning. I brought you into this building. I signed your badge. #delivery: very still
 
 Dr. Sarah Kim: If I were working with these people, I'd be the least competent traitor in the history of the profession.
 

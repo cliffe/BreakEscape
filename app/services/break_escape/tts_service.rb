@@ -63,14 +63,65 @@ module BreakEscape
       text.to_s.gsub(/(?<=\p{L})-(?=\p{L})/, " ")
     end
 
-    # Cache key for already-normalised text (see normalize_text). The model is
-    # part of the key, so a model change regenerates every line.
-    def self.cache_key_for_normalized(normalized, voice_name, style_prompt = nil, language_code = nil)
-      Digest::MD5.hexdigest("#{normalized}|#{voice_name}|#{style_prompt}|#{language_code}|#{GEMINI_TTS_MODEL}")
+    # A per-line performance note in ink: `#delivery: quietly, almost to herself`.
+    # It goes to the voice as a note for that line only and is never shown.
+    DELIVERY_TAG = /\A\s*delivery\s*:\s*(.*)\z/im
+    MAX_DELIVERY_LENGTH = 200
+
+    # The delivery note in a line's tags (the last one wins), or nil.
+    def self.delivery_from_tags(tags)
+      Array(tags).reverse_each do |tag|
+        m = tag.to_s.match(DELIVERY_TAG)
+        next unless m
+
+        note = clean_delivery(m[1])
+        return note if note
+      end
+      nil
     end
 
-    def self.cache_key(text, voice_name, style_prompt = nil, language_code = nil)
-      cache_key_for_normalized(normalize_text(text), voice_name, style_prompt, language_code)
+    def self.delivery_tag?(tag)
+      tag.to_s.match?(DELIVERY_TAG)
+    end
+
+    # Whitespace the note cleaner collapses: ASCII whitespace plus the Unicode
+    # spaces (a no-break space is easy to type on a Mac). tts-delivery.js uses
+    # the same set, so both sides send and read the same note.
+    DELIVERY_SPACE = /[\s\u0085\u00A0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000\uFEFF]+/
+
+    # Whitespace collapsed and trimmed. nil (no note) when it is empty, when it
+    # has no letter or digit left after normalising (`...`, `…`, a note in
+    # non-ASCII script: it would key as untagged), or when it is longer than
+    # MAX_DELIVERY_LENGTH. The client (deliveryFromTags) applies the same rules.
+    def self.clean_delivery(note)
+      note = note.to_s.gsub(DELIVERY_SPACE, " ").strip
+      return nil if note.length > MAX_DELIVERY_LENGTH || normalize_text(note).empty?
+
+      note
+    end
+
+    # Cache key for already-normalised text (see normalize_text). The model is
+    # part of the key, so a model change regenerates every line. A delivery note
+    # is added only when there is one, so an untagged line keeps the key it has
+    # always had; it is normalised like the text ("Quietly." and "quietly" share).
+    def self.cache_key_for_normalized(normalized, voice_name, style_prompt = nil, language_code = nil, delivery = nil)
+      base = "#{normalized}|#{voice_name}|#{style_prompt}|#{language_code}|#{GEMINI_TTS_MODEL}"
+      note = normalize_text(clean_delivery(delivery))
+      base += "|delivery:#{note}" unless note.empty?
+      Digest::MD5.hexdigest(base)
+    end
+
+    def self.cache_key(text, voice_name, style_prompt = nil, language_code = nil, delivery = nil)
+      cache_key_for_normalized(normalize_text(text), voice_name, style_prompt, language_code, delivery)
+    end
+
+    # The style annotation sent with a line: the voice's style, then the line's
+    # delivery note when it has one.
+    def self.speech_style(style_prompt, delivery = nil)
+      note = clean_delivery(delivery)
+      return style_prompt.presence unless note
+
+      ["#{style_prompt}".strip.presence, "For this line only: #{note.sub(/[.!?]*\z/, '')}."].compact.join(" ")
     end
 
     # Key of a clip made with gemini-2.5-flash-preview-tts, which was keyed
@@ -113,10 +164,11 @@ module BreakEscape
     # @param scenario_name [String, nil] Scenario directory name (e.g., "m01_first_contact")
     # @param npc_id [String, nil] Speaker, recorded in the sidecar only (not part of the key)
     # @return [Pathname, nil] Path to cached MP3 file, or nil on failure
-    def generate(text, voice_name, style_prompt = nil, language_code = nil, scenario_name: nil, npc_id: nil)
+    def generate(text, voice_name, style_prompt = nil, language_code = nil, scenario_name: nil, npc_id: nil, delivery: nil)
       return nil if text.blank?
 
-      cache_key = compute_cache_key(text, voice_name, style_prompt, language_code)
+      delivery = self.class.clean_delivery(delivery)
+      cache_key = compute_cache_key(text, voice_name, style_prompt, language_code, delivery)
       mp3_path  = cache_path(cache_key, scenario_name)
 
       # Migrate a flat (legacy) file into the scenario subdir if needed
@@ -128,7 +180,7 @@ module BreakEscape
         Rails.logger.debug "[TTS] Cache hit: #{scenario_name}/#{cache_key}"
         unless File.exist?(sidecar_path(mp3_path))
           write_sidecar(mp3_path, text, voice_name, style_prompt, language_code, scenario_name,
-                        source: "cache_hit", npc_id: npc_id)
+                        source: "cache_hit", npc_id: npc_id, delivery: delivery)
         end
         return mp3_path
       end
@@ -136,7 +188,8 @@ module BreakEscape
       # Cache miss — generate via API (requires API key)
       return nil unless enabled?
       Rails.logger.info "[TTS] Cache miss, generating: #{text.truncate(60)} (voice: #{voice_name})"
-      pcm_data = call_gemini_tts(self.class.spoken_text(text), voice_name, style_prompt, language_code)
+      pcm_data = call_gemini_tts(self.class.spoken_text(text), voice_name,
+                                 self.class.speech_style(style_prompt, delivery), language_code)
       return nil unless pcm_data
 
       FileUtils.mkdir_p(mp3_path.dirname)
@@ -161,7 +214,7 @@ module BreakEscape
       if success
         Rails.logger.info "[TTS] Generated: #{scenario_name}/#{cache_key}.mp3 (#{(File.size(mp3_path) / 1024.0).round(1)} KB)"
         write_sidecar(mp3_path, text, voice_name, style_prompt, language_code, scenario_name,
-                      source: "generate", npc_id: npc_id, generated: Date.today.iso8601)
+                      source: "generate", npc_id: npc_id, generated: Date.today.iso8601, delivery: delivery)
         mp3_path
       else
         nil
@@ -187,8 +240,8 @@ module BreakEscape
 
     # Compute the cache key for a set of TTS parameters.
     # Public so callers can check cache state without a generate call.
-    def cache_key_for(text, voice_name, style_prompt = nil, language_code = nil)
-      compute_cache_key(text, voice_name, style_prompt, language_code)
+    def cache_key_for(text, voice_name, style_prompt = nil, language_code = nil, delivery = nil)
+      compute_cache_key(text, voice_name, style_prompt, language_code, delivery)
     end
 
     # A clip from the previous model for this line, if one is still on disk.
@@ -222,24 +275,27 @@ module BreakEscape
     # generated: the date the audio was made; known only for "generate" (and
     # converted manifest entries), so backfills omit it.
     def write_sidecar(mp3_path, text, voice_name, style_prompt, language_code, scenario_name,
-                      source: "generate", npc_id: nil, generated: nil)
+                      source: "generate", npc_id: nil, generated: nil, delivery: nil)
       key = File.basename(mp3_path.to_s, ".mp3")
+      delivery = self.class.clean_delivery(delivery)
       data = {
         "key"          => key,
         "npc"          => npc_id,
         "text"         => text.to_s,
+        "delivery"     => delivery,
         "voice"        => voice_name,
         "style"        => style_prompt,
         "language"     => language_code,
-        "model"        => self.class.model_for_key(key, text, voice_name, style_prompt, language_code),
+        "model"        => self.class.model_for_key(key, text, voice_name, style_prompt, language_code, delivery),
         "scenario"     => scenario_name,
         "source"       => source,
         "generated"    => generated,
         "recorded_at"  => Time.now.utc.iso8601
       }
-      # npc, model and generated are left out when unknown; style and language
+      # npc, model, generated and delivery are left out when unknown or absent
+      # (an untagged line's sidecar is as it always was); style and language
       # stay (null is a real value there, and part of the key).
-      data.delete_if { |k, v| v.nil? && %w[npc model generated].include?(k) }
+      data.delete_if { |k, v| v.nil? && %w[npc model generated delivery].include?(k) }
       self.class.write_sidecar_file(sidecar_path(mp3_path), data)
     rescue => e
       Rails.logger.warn "[TTS] Could not write sidecar for #{mp3_path}: #{e.message}"
@@ -247,10 +303,11 @@ module BreakEscape
     end
 
     # The model a clip on this key was made with, judged from the key alone.
-    def self.model_for_key(key, text, voice_name, style_prompt, language_code)
-      if key == cache_key(text, voice_name, style_prompt, language_code)
+    # Previous-model clips never had a delivery note.
+    def self.model_for_key(key, text, voice_name, style_prompt, language_code, delivery = nil)
+      if key == cache_key(text, voice_name, style_prompt, language_code, delivery)
         GEMINI_TTS_MODEL
-      elsif key == legacy_cache_key(text, voice_name, style_prompt, language_code)
+      elsif clean_delivery(delivery).nil? && key == legacy_cache_key(text, voice_name, style_prompt, language_code)
         LEGACY_TTS_MODEL
       end
     end
@@ -265,6 +322,11 @@ module BreakEscape
       path
     ensure
       File.delete(tmp) if tmp && File.exist?(tmp)
+    end
+
+    # The current-model key a sidecar's fields make (its delivery note included).
+    def self.sidecar_cache_key(data)
+      cache_key(*data.values_at("text", "voice", "style", "language", "delivery"))
     end
 
     # Parsed sidecars in one cache directory, as { key => data }. Unreadable
@@ -363,8 +425,8 @@ module BreakEscape
       Rails.logger.warn "[TTS] Migration failed for #{cache_key}: #{e.message}"
     end
 
-    def compute_cache_key(text, voice_name, style_prompt = nil, language_code = nil)
-      self.class.cache_key(text, voice_name, style_prompt, language_code)
+    def compute_cache_key(text, voice_name, style_prompt = nil, language_code = nil, delivery = nil)
+      self.class.cache_key(text, voice_name, style_prompt, language_code, delivery)
     end
 
     def call_gemini_tts(text, voice_name, style_prompt, language_code = nil)

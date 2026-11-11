@@ -3,6 +3,30 @@
   "start_room": "lobby",
   "nodes": [
     {
+      "id": "door_store_a",
+      "label": "Store A<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "store_a",
+      "label": "Store A",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_store_b",
+      "label": "Store B<br/>RFID lock<br/>gate: not held by sara",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "store_b",
+      "label": "Store B",
+      "kind": "room",
+      "optional": false
+    },
+    {
       "id": "lock_dana_pc",
       "label": "Dana's PC<br/>Sign-in",
       "kind": "lock",
@@ -54,6 +78,24 @@
       "id": "lock_tom_locker",
       "label": "Gym locker<br/>Password lock",
       "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "card_store_a_badge",
+      "label": "Store A badge<br/>(Gary Whitlock)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "gate_hall",
+      "label": "Gate hall",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "card_store_b_badge",
+      "label": "Store B badge<br/>(Sara Quinn)",
+      "kind": "key",
       "optional": false
     },
     {
@@ -179,6 +221,16 @@
   ],
   "edges": [
     {
+      "from": "door_store_a",
+      "to": "store_a",
+      "soft": false
+    },
+    {
+      "from": "door_store_b",
+      "to": "store_b",
+      "soft": false
+    },
+    {
       "from": "dana_room",
       "to": "lock_dana_pc",
       "soft": false
@@ -221,6 +273,26 @@
     {
       "from": "tom_room",
       "to": "lock_tom_locker",
+      "soft": false
+    },
+    {
+      "from": "gate_hall",
+      "to": "card_store_a_badge",
+      "soft": false
+    },
+    {
+      "from": "card_store_a_badge",
+      "to": "door_store_a",
+      "soft": false
+    },
+    {
+      "from": "gate_hall",
+      "to": "card_store_b_badge",
+      "soft": false
+    },
+    {
+      "from": "card_store_b_badge",
+      "to": "door_store_b",
       "soft": false
     },
     {
@@ -673,6 +745,11 @@
     {
       "from": "priya_room",
       "to": "mei_room",
+      "soft": false
+    },
+    {
+      "from": "kai_room",
+      "to": "gate_hall",
       "soft": false
     },
     {
