@@ -1184,8 +1184,15 @@ module BreakEscape
 
     # POST /games/:id/npc_frustration (slice 9.2, ACCESS_MODEL_SLICE_9_2_PLAN.md 9.1):
     # { reports: [{ npc_id, event, need, object_id, missing, rearmed }] }, one answer each
+    # An honest batch (20 reports, a few causes each) is a few kilobytes; a larger body is
+    # refused before any report is read (review R1 M1).
+    NPC_FRUSTRATION_MAX_BYTES = 64 * 1024
+
     def npc_frustration
       authorize @game if defined?(Pundit)
+      if request.content_length.to_i > NPC_FRUSTRATION_MAX_BYTES
+        return render json: { error: 'request too large' }, status: :payload_too_large
+      end
 
       raw = params[:reports]
       reports = raw.is_a?(Array) ? raw.map { |r| r.respond_to?(:to_unsafe_h) ? r.to_unsafe_h : r } : raw
@@ -1854,7 +1861,13 @@ module BreakEscape
         end
 
         @game.player_state['encounteredNPCs'] = (@game.player_state['encounteredNPCs'] + new_npcs).uniq
-        @game.note_npcs_met!(new_npcs)   # slice 9.2: metAt for an NPC that can fail
+        # slice 9.2: metAt for an NPC that can fail. Its own rescue, so a resolver fault never
+        # costs the encounter record (review R1 m4).
+        begin
+          @game.note_npcs_met!(new_npcs)
+        rescue => e
+          Rails.logger.error "[BreakEscape] note_npcs_met! failed: #{e.message}"
+        end
         @game.save!
 
         total_encountered = @game.player_state['encounteredNPCs'].length

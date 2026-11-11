@@ -103,7 +103,7 @@ class AccessWorkTest < ActiveSupport::TestCase
     assert AW.can_fail?(d, email_only.merge('needsHome' => 'dead_pc'), 'work'), 'its station has an offWhen'
     assert AW.can_fail?(d, npc('id' => 'kai', 'role' => nil, 'workNeeds' => ['+finance_share']), 'work'), 'not admitted'
     borrow = email_only.merge('workarounds' => [{ 'at' => 50, 'do' => 'borrow_session', 'pc' => 'dead_pc' }])
-    assert AW.can_fail?(d, borrow, 'work'), 'a borrow PC with an offWhen'
+    assert_not AW.can_fail?(d, borrow, 'work'), 'a borrow PC with an offWhen counts only once handed over (sub-slice H; R1 M2)'
     net = scenario('networks' => { 'a' => { 'name' => 'A' } })
     net['resources']['email']['network'] = 'a'
     assert AW.can_fail?(net, email_only, 'work'), 'a [] route'
@@ -136,11 +136,22 @@ class AccessWorkTest < ActiveSupport::TestCase
   test "an NPC's places for a need and its shortest use time, with a non-desk object shorter than its station" do
     d = scenario
     who = npc('workarounds' => [{ 'at' => 50, 'do' => 'borrow_session', 'pc' => 'hot_desk' }])
-    assert_equal %w[dana_pc hot_desk tablet], AW.places(d, who, 'work')
+    assert_equal %w[dana_pc tablet], AW.places(d, who, 'work'), 'a borrow PC is not a place before its hand-over (R1 M2)'
     assert_equal 3.0, AW.shortest_use_seconds(d, who, 'work')
     d['rooms']['office']['objects'].delete_if { |o| o['id'] == 'tablet' }
     assert_equal 5.0, AW.shortest_use_seconds(d, who, 'work')
     assert_equal 20, AW.shortest_use_seconds(d, npc('needsHome' => nil), 'work')
+  end
+
+  test 'R1 m4: a malformed roles entry is dropped, never raised on' do
+    d = scenario
+    d['roles']['staff'] = %w[email]
+    assert_nothing_raised { AW.work_list(d, npc) }
+    assert_nothing_raised { AW.frustration(d, npc) }
+    assert_nothing_raised { AW.workarounds(d, npc) }
+    d['roles']['staff'] = 'email'
+    assert_nothing_raised { AW.plan(d, npc) }
+    refute AW.roles_block(d).key?('staff')
   end
 
   test 'the causes the server owns, each alone and none' do

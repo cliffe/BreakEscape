@@ -32,9 +32,11 @@ module BreakEscape
       NetworkModel.resources(data)
     end
 
+    # Only roles whose value is an object (the schema's shape): a malformed entry (a list or a
+    # string) is dropped here, so room loading and encounter tracking never raise on it.
     def roles_block(data)
       r = data.is_a?(Hash) ? data['roles'] : nil
-      r.is_a?(Hash) ? r : {}
+      r.is_a?(Hash) ? r.select { |_k, v| v.is_a?(Hash) } : {}
     end
 
     # The NPC's roles in authored order with `staff` last (AccessIdentities.identity_roles adds
@@ -44,11 +46,36 @@ module BreakEscape
       roles.include?('staff') ? (roles - ['staff']) + ['staff'] : roles
     end
 
-    # Every room object (recursing into contents) by id: { obj, room_id, room }
+    INDEX_KEY = :break_escape_access_work_index
+
+    # Every room object (recursing into contents) by id: { obj, room_id, room }. Inside
+    # with_index for the same scenario hash the walk is done once (review R1 M1).
     def object_index(data)
+      held = Thread.current[INDEX_KEY]
+      return held[1] if held && held[0].equal?(data)
+
+      build_object_index(data)
+    end
+
+    def build_object_index(data)
       NetworkModel.room_objects(data).each_with_object({}) do |e, h|
         id = e[:object]['id']
         h[id] ||= { obj: e[:object], room_id: e[:room_id], room: e[:room] } if id.is_a?(String) && !id.empty?
+      end
+    end
+
+    # Runs the block with the object index of `data` built once and reused (compared by
+    # identity, dropped when the block ends, so a later change to the scenario hash is seen).
+    # Nests: an inner call for the same hash reuses the outer index.
+    def with_index(data)
+      held = Thread.current[INDEX_KEY]
+      return yield if held && held[0].equal?(data)
+
+      Thread.current[INDEX_KEY] = [data, build_object_index(data)]
+      begin
+        yield
+      ensure
+        Thread.current[INDEX_KEY] = held
       end
     end
 
@@ -146,7 +173,9 @@ module BreakEscape
       data.is_a?(Hash) && data['officePresets'] == true
     end
 
-    # office-presets.js presetIdFor, ignoring the scenario switch
+    # office-presets.js presetIdFor, ignoring the scenario switch. One difference: Ruby treats
+    # `"lockType": ""` as set where the JS treats it as unset; no scenario authors an empty
+    # lockType, so the two agree on every real object.
     def preset_id(obj)
       return nil unless obj.is_a?(Hash)
       return nil if !obj['id'].is_a?(String) || obj['id'].empty? || obj['decor'] == true
@@ -177,7 +206,9 @@ module BreakEscape
       v.is_a?(Numeric) && v.finite? ? v.to_f.clamp(0, 600) : NEEDS_DEFAULT_USE_SECONDS
     end
 
-    # A desk (plan 5.2): a workstation by isWorkstation's rule, or an object whose preset is desk_pc
+    # A desk (plan 5.2): a workstation by isWorkstation's rule, or an object whose preset is desk_pc.
+    # isWorkstation tests the id for truthiness; here it must be a non-empty string (an object
+    # with no usable id is never a place, so the answer is the same).
     def desk?(data, obj)
       return false unless obj.is_a?(Hash)
       return true if obj['id'].is_a?(String) && !obj['id'].empty? &&
@@ -191,36 +222,44 @@ module BreakEscape
       home.is_a?(String) ? object(data, home) : nil
     end
 
-    # PCs the NPC's borrow_session workarounds name
+    # PCs the NPC's borrow_session workarounds name. Not a place, station or cause yet: in
+    # sub-slice A nothing is handed over, and naming a borrow PC before its hand-over would let a
+    # report learn the workaround (review R1 M2). Sub-slice H adds a handed-over borrow PC back
+    # to places, can_fail? and cause_belongs?. The validator still reads it for its mutters check.
     def borrow_pcs(data, npc)
       workarounds(data, npc).filter_map { |w| w['pc'] if w['do'] == 'borrow_session' && w['pc'].is_a?(String) }.uniq
     end
 
-    # The NPC's places for a judged need (plan 9.1): its own station, a PC a borrow_session names,
-    # or an object that satisfies the need and is not a desk. Ids, sorted.
+    # The NPC's places for a judged need (plan 9.1): its own station, or an object that satisfies
+    # the need and is not a desk. Ids, sorted. (A PC a handed-over borrow_session names joins in
+    # sub-slice H; see borrow_pcs.)
     def places(data, npc, need)
-      out = []
-      st = station(data, npc)
-      out << st['id'] if st && satisfies?(data, st, need)
-      borrow_pcs(data, npc).each { |pc| out << pc if object(data, pc) }
-      object_index(data).each_value do |e|
-        o = e[:obj]
-        out << o['id'] if satisfies?(data, o, need) && !desk?(data, o)
+      with_index(data) do
+        out = []
+        st = station(data, npc)
+        out << st['id'] if st && satisfies?(data, st, need)
+        object_index(data).each_value do |e|
+          o = e[:obj]
+          out << o['id'] if satisfies?(data, o, need) && !desk?(data, o)
+        end
+        out.uniq.sort
       end
-      out.uniq.sort
     end
 
     # The NPC's shortest use time for a need over its places (and, for social_media with a
     # phone, the phone use); 20 seconds when it has none
     def shortest_use_seconds(data, npc, need)
-      times = places(data, npc, need).map { |id| use_seconds(data, object(data, id)) }
-      if need == 'social_media'
-        su = npc.is_a?(Hash) && npc['socialUse'].is_a?(Hash) ? npc['socialUse']['useSeconds'] : nil
-        social = su.is_a?(Numeric) ? su.to_f.clamp(0, 600) : SOCIAL_USE_SECONDS
-        st = station(data, npc)
-        times << social if phone?(npc) || (st && places(data, npc, need).include?(st['id']))
+      with_index(data) do
+        here = places(data, npc, need)
+        times = here.map { |id| use_seconds(data, object(data, id)) }
+        if need == 'social_media'
+          su = npc.is_a?(Hash) && npc['socialUse'].is_a?(Hash) ? npc['socialUse']['useSeconds'] : nil
+          social = su.is_a?(Numeric) ? su.to_f.clamp(0, 600) : SOCIAL_USE_SECONDS
+          st = station(data, npc)
+          times << social if phone?(npc) || (st && here.include?(st['id']))
+        end
+        times.min || NEEDS_DEFAULT_USE_SECONDS
       end
-      times.min || NEEDS_DEFAULT_USE_SECONDS
     end
 
     # ── resources, admission, reach ─────────────────────────────────────
@@ -292,8 +331,8 @@ module BreakEscape
         return true if list.any? { |r| !admitted?(r, npc) || present_string?(r['downIf']) }
         return true if list.any? { |r| (rt = routes(data, npc, r)) && (rt.empty? || rt.any? { |route| !route.empty? }) }
 
-        pcs = [station(data, npc)] + borrow_pcs(data, npc).map { |id| object(data, id) }
-        pcs.compact.any? { |pc| off_when?(data, pc) }
+        # The station only: a borrow PC counts once handed over (sub-slice H; review R1 M2)
+        off_when?(data, station(data, npc))
       when 'social_media'
         return false unless need?(npc, 'social_media') && !phone?(npc)
 
@@ -314,9 +353,9 @@ module BreakEscape
         need == 'work' && work_list(data, npc).include?(id) && resources(data).key?(id)
       when 'no_access'
         need == 'work' && work_list(data, npc).include?(id) && !admitted?(resources(data)[id], npc)
-      else # off, locked_out, social_blocked
+      else # off, locked_out, social_blocked: the station only until H hands a borrow PC over
         st = station(data, npc)
-        (st && st['id'] == id) || borrow_pcs(data, npc).include?(id)
+        !st.nil? && st['id'] == id
       end
     end
 

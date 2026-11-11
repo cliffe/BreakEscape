@@ -272,6 +272,159 @@ module BreakEscape
       refute state.key?('amy')
     end
 
+    # ── review R1 M1: a bounded `missing` list ──────────────────────────
+
+    test 'M1: more than 20 causes, or more than 8 once repeats go, is refused; a repeated cause counts once' do
+      build(globals: { 'printer_jammed' => true })
+      many = fail_r('omar', 'printer', 'down', 'omar_pc').merge(missing: Array.new(21) { { id: 'printer', why: 'down' } })
+      nine = fail_r('omar', 'printer', 'down', 'omar_pc').merge(missing: (1..9).map { |i| { id: "r#{i}", why: 'down' } })
+      a = report(many, nine)
+      assert_equal [true, true], a.map { |x| x['refused'] }
+      assert_nil level('omar')
+      twice = fail_r('omar', 'printer', 'down', 'omar_pc').merge(missing: Array.new(3) { { id: 'printer', why: 'down' } })
+      b = report(twice).first
+      assert_equal 20, b['level']
+      assert_equal ['down'], @game.reload.player_state.dig('npcFrustration', 'omar', 'failWhy', 'work')
+    end
+
+    test 'M1: an oversized body is refused before any report is read, and a full batch of long lists is quick' do
+      build(globals: { 'printer_jammed' => true })
+      huge = Array.new(20) { fail_r('omar', 'printer', 'down', 'omar_pc').merge(missing: Array.new(1500) { { id: 'omar_pc', why: 'off' } }) }
+      started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      post npc_frustration_game_url(@game), params: { reports: huge }, as: :json
+      assert_response :payload_too_large
+      assert_nil level('omar')
+      long = Array.new(20) { fail_r('omar', 'printer', 'down', 'omar_pc').merge(missing: Array.new(21) { { id: 'omar_pc', why: 'off' } }) }
+      a = report(*long)
+      elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
+      assert(a.all? { |x| x['refused'] })
+      assert_operator elapsed, :<, 2.0, 'both requests together should take well under a second'
+    end
+
+    test 'M1: the object index is built once inside with_index and dropped after it' do
+      data = AccessWorkScenario.scenario
+      calls = 0
+      counter = Module.new do
+        define_method(:build_object_index) do |d|
+          calls += 1
+          super(d)
+        end
+      end
+      AccessWork.singleton_class.prepend(counter)
+      dana = data['rooms']['office']['npcs'].find { |n| n['id'] == 'dana' }
+      AccessWork.with_index(data) do
+        AccessWork.places(data, dana, 'work')
+        AccessWork.shortest_use_seconds(data, dana, 'work')
+        AccessWork.can_fail?(data, dana, 'work')
+      end
+      assert_equal 1, calls
+      AccessWork.places(data, dana, 'work')
+      assert_equal 2, calls, 'outside the block each top-level call builds its own'
+    ensure
+      counter&.send(:remove_method, :build_object_index)
+    end
+
+    # ── review R1 M2: a borrow PC is not a place before its hand-over ───
+
+    test 'M2: a cause or ease naming an unhanded borrow PC is answered exactly as for another NPC\'s PC' do
+      build(globals: { 'finance_share_down' => true }, player_state: { 'loginLockouts' => ['hot_desk|dreyes'] })
+      borrow = report(fail_r('dana', 'hot_desk', 'locked_out', 'dana_pc'), fail_r('dana', 'hot_desk', 'off', 'dana_pc'),
+                      fail_r('dana', 'finance_share', 'down', 'hot_desk'), ease_r('dana', 'hot_desk'))
+      other = report(fail_r('dana', 'amy_pc', 'locked_out', 'dana_pc'), fail_r('dana', 'amy_pc', 'off', 'dana_pc'),
+                     fail_r('dana', 'finance_share', 'down', 'amy_pc'), ease_r('dana', 'amy_pc'))
+      assert_equal other, borrow
+      assert(borrow.all? { |x| x == { 'npcId' => 'dana', 'refused' => true } })
+      assert_nil @game.reload.player_state.dig('npcFrustration', 'dana', 'easeAt', 'work')
+    end
+
+    test 'M2: an NPC whose only failure is an offWhen on a borrow PC cannot fail' do
+      data = AccessWorkScenario.scenario
+      amy = data['rooms']['office']['npcs'].find { |n| n['id'] == 'amy' }
+      amy['workarounds'] = [{ 'at' => 50, 'do' => 'borrow_session', 'pc' => 'ian_pc' }]
+      build(scenario: data, globals: { 'ian_pc_unplugged' => true })
+      with_borrow = report(fail_r('amy', 'ian_pc', 'off', 'amy_pc'), fail_r('amy', 'ian_pc', 'off', 'ian_pc'))
+      amy.delete('workarounds')
+      build(scenario: data, globals: { 'ian_pc_unplugged' => true })
+      without = report(fail_r('amy', 'ian_pc', 'off', 'amy_pc'), fail_r('amy', 'ian_pc', 'off', 'ian_pc'))
+      assert_equal without, with_borrow
+      assert(with_borrow.all? { |x| x['refused'] })
+    end
+
+    # ── review R1 m5: cases the first tests did not reach ───────────────
+
+    def with_kiosk
+      data = AccessWorkScenario.scenario
+      data['rooms']['office']['objects'] << { 'type' => 'info_kiosk_x', 'id' => 'kiosk', 'name' => 'Kiosk',
+                                              'affordance' => { 'satisfies' => 'work', 'useSeconds' => 5 } }
+      data
+    end
+
+    test 'R5 n5: locked out, an ease at the own station is refused and one at a non-desk place accepted' do
+      build(scenario: with_kiosk, globals: { 'finance_share_down' => true })
+      t = Time.current
+      assert_equal 34, travel_to(t) { report(dana_down).first['level'] }
+      @game.reload
+      @game.player_state['loginLockouts'] = ['dana_pc|dreyes']
+      @game.save!
+      a = travel_to(t + 5) { report(ease_r('dana', 'dana_pc'), ease_r('dana', 'kiosk')) }
+      assert a[0]['refused']
+      assert_equal 24, a[1]['level']
+    end
+
+    test 'tell with a workaround at or below perFail: the first fail answers tell 1 in A (nothing is handed over)' do
+      data = AccessWorkScenario.scenario
+      data['rooms']['office']['npcs'].find { |n| n['id'] == 'dana' }['workarounds'] = [{ 'at' => 20, 'do' => 'emit', 'event' => 'x' }]
+      build(scenario: data, globals: { 'finance_share_down' => true })
+      a = report(dana_down).first
+      assert_equal 34, a['level']
+      assert_equal 1, a['tell']
+    end
+
+    test 'hold after an ease uses the use floor; the ease and fail gates hold the use floor at its boundary' do
+      # travel_to drops sub-seconds, so this test works in whole seconds with a 10 s use time
+      # (use floor 0.9 x 10 - 3 = 6 s)
+      data = AccessWorkScenario.scenario
+      data['rooms']['office']['objects'].find { |o| o['id'] == 'omar_pc' }['affordance']['useSeconds'] = 10
+      build(scenario: data, globals: { 'printer_jammed' => true })
+      t = Time.current.change(usec: 0)
+      travel_to(t) { report(omar_down) }
+      set_global('printer_jammed', false)
+      assert_equal 10, travel_to(t + 1) { report(ease_r('omar', 'omar_pc')).first['level'] }
+      travel_to(t + 2) do
+        get scenario_game_url(@game), as: :json
+        assert_in_delta 4, response.parsed_body['npcFrustration']['omar']['hold']['work'], 0.11
+      end
+      set_global('printer_jammed', true)
+      assert travel_to(t + 5) { report(omar_down).first['tooSoon'] }
+      assert_equal 30, travel_to(t + 7) { report(omar_down).first['level'] }
+      set_global('printer_jammed', false)
+      assert_equal 20, travel_to(t + 8) { report(ease_r('omar', 'omar_pc')).first['level'] }
+      assert travel_to(t + 13) { report(ease_r('omar', 'omar_pc')).first['tooSoon'] }
+      assert_equal 10, travel_to(t + 15) { report(ease_r('omar', 'omar_pc')).first['level'] }
+    end
+
+    test 'malformed bodies: reports not a list, empty or non-hash causes, missing not a list, rearmed as a string' do
+      build(globals: { 'printer_jammed' => true })
+      post npc_frustration_game_url(@game), params: { reports: 'x' }, as: :json
+      assert_response :unprocessable_entity
+      bad = [fail_r('omar', 'printer', 'down', 'omar_pc').merge(missing: []),
+             fail_r('omar', 'printer', 'down', 'omar_pc').merge(missing: ['printer']),
+             fail_r('omar', 'printer', 'down', 'omar_pc').merge(missing: { id: 'printer', why: 'down' })]
+      assert_equal [true] * 3, report(*bad).map { |x| x['refused'] }
+      t = Time.current
+      travel_to(t) { report(omar_down) }
+      assert travel_to(t + 1) { report(omar_down(rearmed: 'true')).first['tooSoon'] }
+      assert_equal 40, travel_to(t + 2.5) { report(omar_down(rearmed: 'true')).first['level'] }
+    end
+
+    test 'n5: an ease at level 0 answers the level and writes nothing' do
+      build
+      a = report(ease_r('amy', 'amy_pc')).first
+      assert_equal 0, a['level']
+      assert_equal 0, a['tell']
+      assert_nil @game.reload.player_state.dig('npcFrustration', 'amy')
+    end
+
     test 'the no-exposure test over the routes that exist: no password, workaround or resource name' do
       data = AccessWorkScenario.scenario
       data['rooms']['office']['lockType'] = 'pin'

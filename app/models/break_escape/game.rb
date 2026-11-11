@@ -1028,8 +1028,9 @@ module BreakEscape
       apply_room_state_changes!(room, room_id)
 
       # Remove ONLY the 'requires' field (the solution) and locked 'contents'
-      # Keep lockType, locked, observations visible to client
-      filter_requires_and_contents_recursive(room)
+      # Keep lockType, locked, observations visible to client. The work plans built on the way
+      # share one object index (review R1 M1).
+      BreakEscape::AccessWork.with_index(scenario_data) { filter_requires_and_contents_recursive(room) }
 
       # Account tiles on each sign-in PC (access model 5.3).
       attach_login_accounts!(room['objects'])
@@ -4113,10 +4114,15 @@ module BreakEscape
     # list) gains `work`: resource ids, kinds, `admitted`, `downIf` names, `object`, `routes`
     # (with networks) and `breakDrain`, never a display name or a network. Runs before
     # withhold_npc_secrets!, which deletes the role it reads.
+    # The plan is built from the scenario's own record of the NPC, never the room copy (which
+    # carries the npc_states overlay), so it always matches what the server decides on (R1 n2).
     def compile_npc_plan!(npc)
-      return unless npc.is_a?(Hash) && npc['id'].is_a?(String) && scenario_room_npc(npc['id'])
+      return unless npc.is_a?(Hash) && npc['id'].is_a?(String)
 
-      plan = BreakEscape::AccessWork.plan(scenario_data, npc)
+      record = scenario_room_npc(npc['id'])
+      return unless record
+
+      plan = BreakEscape::AccessWork.plan(scenario_data, record)
       if plan
         npc['work'] = plan
       else

@@ -15,6 +15,11 @@ module BreakEscape
     extend ActiveSupport::Concern
 
     MAX_REPORTS = 20
+    # Review R1 M1: a report's `missing` list is bounded. An honest report lists one cause per
+    # resource in the NPC's work list plus its station; more than MAX_MISSING entries is refused
+    # unread, and after removing repeats more than MAX_CAUSES is refused.
+    MAX_MISSING = 20
+    MAX_CAUSES = 8
     EVENTS = %w[fail ease].freeze
     # Causes the server owns: no event in play clears them (plan 9.1, gate 2)
     OWNED_WHYS = %w[no_access social_blocked locked_out].freeze
@@ -39,16 +44,20 @@ module BreakEscape
     end
 
     # Called when a room's NPCs are first encountered (track_npc_encounters): the moment each
-    # NPC that can fail, or has a feed, became known (plan 9.4; R5 n2). Only anchors the first fail.
+    # NPC that can fail, or has a feed, became known (plan 9.4). No check in A reads it: since
+    # R5 n2 the "NPC known" check is encounteredNPCs. It is kept for sub-slice C's feed (which
+    # starts from it) and for the verify-run report.
     def note_npcs_met!(npc_ids)
       now = server_now
-      Array(npc_ids).each do |id|
-        npc = scenario_room_npc(id)
-        next unless npc
-        next unless AccessWork::JUDGED_NEEDS.any? { |need| AccessWork.can_fail?(scenario_data, npc, need) } || npc['feed'].is_a?(Hash)
+      AccessWork.with_index(scenario_data) do
+        Array(npc_ids).each do |id|
+          npc = scenario_room_npc(id)
+          next unless npc
+          next unless AccessWork::JUDGED_NEEDS.any? { |need| AccessWork.can_fail?(scenario_data, npc, need) } || npc['feed'].is_a?(Hash)
 
-        entry = frustration_entry(id.to_s)
-        entry['metAt'] ||= now
+          entry = frustration_entry(id.to_s)
+          entry['metAt'] ||= now
+        end
       end
     end
 
@@ -57,34 +66,51 @@ module BreakEscape
       return { status: :unprocessable_entity, body: { error: 'reports must be a list' } } unless reports.is_a?(Array)
       return { status: :unprocessable_entity, body: { error: "at most #{MAX_REPORTS} reports" } } if reports.size > MAX_REPORTS
 
-      answers = reports.map { |r| report_one!(r.respond_to?(:to_unsafe_h) ? r.to_unsafe_h : r) }
+      answers = AccessWork.with_index(scenario_data) do
+        reports.map { |r| report_one!(r.respond_to?(:to_unsafe_h) ? r.to_unsafe_h : r) }
+      end
       save! if changed?
       { status: :ok, body: { answers: answers } }
     end
 
     # The per-NPC block GET /scenario carries (5.4, 9.1): level, tell, settled, hold per need,
     # pending and done workarounds (sub-slice B), and lockedOut (sub-slice L).
+    # Reads the stored entries without filling defaults (review R1 n7), so this GET writes nothing.
     def npc_frustration_for_client
       now = server_now
-      npc_frustration.each_with_object({}) do |(id, entry), out|
-        npc = scenario_room_npc(id)
-        next unless npc && entry.is_a?(Hash)
+      store = player_state['npcFrustration']
+      return {} unless store.is_a?(Hash)
 
-        e = frustration_entry(id)
-        hold = {}
-        e['failAt'].each do |need, at|
-          floor = e['easeAt'][need].to_f > at.to_f ? AccessWork.use_floor(scenario_data, npc, need) : AccessWork.park_floor(npc)
-          left = floor - (now - at.to_f)
-          hold[need] = left.ceil(1) if left.positive?
+      AccessWork.with_index(scenario_data) do
+        store.each_with_object({}) do |(id, entry), out|
+          npc = scenario_room_npc(id)
+          next unless npc && entry.is_a?(Hash)
+
+          e = frustration_view(entry)
+          hold = {}
+          e['failAt'].each do |need, at|
+            floor = e['easeAt'][need].to_f > at.to_f ? AccessWork.use_floor(scenario_data, npc, need) : AccessWork.park_floor(npc)
+            left = floor - (now - at.to_f)
+            hold[need] = left.ceil(1) if left.positive?
+          end
+          block = { 'level' => e['level'], 'tell' => frustration_tell(npc, e), 'settled' => frustration_settled?(npc, e),
+                    'pending' => [], 'done' => [], 'lockedOut' => e['lockedOut'] }
+          block['hold'] = hold unless hold.empty?
+          out[id] = block
         end
-        block = { 'level' => e['level'], 'tell' => frustration_tell(npc, e), 'settled' => frustration_settled?(npc, e),
-                  'pending' => [], 'done' => [], 'lockedOut' => e['lockedOut'] }
-        block['hold'] = hold unless hold.empty?
-        out[id] = block
       end
     end
 
     private
+
+    # A read-only copy of an entry with frustration_entry's defaults, for answers that write nothing
+    def frustration_view(entry)
+      e = entry.is_a?(Hash) ? entry.dup : {}
+      e['level'] ||= 0
+      %w[failAt failWhy easeAt handed lastSpent].each { |k| e[k] = {} unless e[k].is_a?(Hash) }
+      %w[done lockedOut].each { |k| e[k] = [] unless e[k].is_a?(Array) }
+      e
+    end
 
     def report_one!(report)
       report = report.is_a?(Hash) ? report.transform_keys(&:to_s) : {}
@@ -107,8 +133,14 @@ module BreakEscape
 
     def fail_report!(npc_id, npc, need, object_id, report)
       refused = { 'npcId' => npc_id, 'refused' => true }
-      missing = Array(report['missing']).map { |c| c.respond_to?(:to_unsafe_h) ? c.to_unsafe_h : c }
-                                        .select { |c| c.is_a?(Hash) }.map { |c| c.transform_keys(&:to_s) }
+      raw = report['missing']
+      return refused unless raw.is_a?(Array) && raw.size <= MAX_MISSING
+
+      missing = raw.map { |c| c.respond_to?(:to_unsafe_h) ? c.to_unsafe_h : c }
+                   .select { |c| c.is_a?(Hash) }.map { |c| c.transform_keys(&:to_s) }
+                   .uniq { |c| [c['id'], c['why']] }
+      return refused if missing.size > MAX_CAUSES
+
       # 2. can fail, and every cause and object_id belong to the NPC
       return refused unless AccessWork.can_fail?(scenario_data, npc, need)
       return refused if missing.empty? || missing.any? { |c| !AccessWork.cause_belongs?(scenario_data, npc, need, c) }
@@ -142,6 +174,14 @@ module BreakEscape
       # R5 n5: no use at the NPC's own station can be met while a cause the server owns holds there
       station = AccessWork.station(scenario_data, npc)
       return refused if station && object_id == station['id'] && owned_causes(npc, need).any?
+
+      # Review R1 n5: an ease at level 0 changes nothing, so it writes nothing (an honest client
+      # sends one only above 0; an NPC that never failed keeps no entry)
+      stored = npc_frustration[npc_id]
+      unless stored.is_a?(Hash) && stored['level'].to_f.positive?
+        view = frustration_view(stored)
+        return answer(npc_id, npc, view, view['level'])
+      end
 
       entry = frustration_entry(npc_id)
       last = entry['easeAt'][need]
@@ -220,7 +260,10 @@ module BreakEscape
     end
 
     # tell (5.5): 0 at level 0; 2 when a workaround is in force or one more failure would bring
-    # one into force or (with none still to come) bring the level to 100; else 1
+    # one into force or (with none still to come) bring the level to 100; else 1.
+    # In A nothing is handed over, so a workaround whose `at` the level has passed is neither to
+    # come nor in force (with `at` 20 and perFail 34 the first fail answers tell 1). Sub-slice B
+    # replaces the `done` test below with the `handed` record (review R1 n6).
     def frustration_tell(npc, entry)
       level = entry['level'].to_f
       return 0 if level <= 0
