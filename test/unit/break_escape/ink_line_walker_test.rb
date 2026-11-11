@@ -399,6 +399,50 @@ module BreakEscape
       refute_equal a, b
     end
 
+    # A video call (m02 Ghost) opens person-chat for a phone contact, which voices
+    # every line it shows, narration as the narrator, whatever `voiced` says.
+    test "a video-call mapping on a phone contact is voiced as person-chat voices it" do
+      data = scenario(mapping: { 'conversationMode' => 'video-call' })
+      npc = data.dig('rooms', 'office', 'npcs', 0)
+      assert TtsLineExtractor.voiced_call?(npc)
+      refute TtsLineExtractor.voiced_phone_call?(npc)
+      extractor = TtsLineExtractor.new('walker_test', data)
+      assert_equal [
+        ['agent_0x99', "Don't hang up."],
+        ['director_netherton', "Put her on when she's done."],
+        ['agent_0x99', 'Stay on the line.'],
+        ['narrator', 'The line crackles.']
+      ], extractor.entries.map { |e| [e.npc_id, e.text] }.first(4)
+      resolver = TtsLineResolver.new(scenario_name: 'walker_test', scenario_data: data,
+                                     story_file: ->(p) { Engine.root.join(p).to_s })
+      assert_equal "Don't hang up.", resolver.resolve('agent_0x99', npc, "Don't hang up.").line
+      assert_equal 'Stay on the line.', resolver.resolve('agent_0x99', npc, 'Stay on the line.').line
+      assert_nil resolver.resolve('agent_0x99', npc, "Don't hang up. Send the keys.").line
+    end
+
+    test "a video call has no home-knot stop: person-chat voices the hub it reaches" do
+      data = scenario(mapping: { 'conversationMode' => 'video-call' }, story: HUB_CALL, current: 'hub')
+      ink = JSON.parse(File.read(Engine.root.join(HUB_CALL)))
+      npc = data.dig('rooms', 'office', 'npcs', 0)
+      assert_equal Set.new(%w[call briefing hub vault_topic]), TtsLineExtractor.video_call_knots(npc, ink)
+      assert_empty TtsLineExtractor.call_knots(npc, ink)
+      assert TtsLineExtractor.new('walker_test', data).spoken_by?('agent_0x99', 'The vault is sealed.')
+    end
+
+    test "a timedConversation video call counts, and a voiced phone-chat one is still a phone call" do
+      npc = { 'timedConversation' => { 'targetKnot' => 'call', 'videoCall' => true } }
+      assert TtsLineExtractor.voiced_call?(npc)
+      refute TtsLineExtractor.voiced_phone_call?(npc)
+      assert_equal ['call'], TtsLineExtractor.video_call_start_knots(npc)
+      assert_empty TtsLineExtractor.call_start_knots(npc)
+      mode = { 'timedConversation' => { 'targetKnot' => 'call', 'conversationMode' => 'video-call', 'voiced' => true } }
+      assert_equal ['call'], TtsLineExtractor.video_call_start_knots(mode)
+      refute TtsLineExtractor.voiced_phone_call?(mode)
+      phone = { 'timedConversation' => { 'targetKnot' => 'call', 'voiced' => true } }
+      assert TtsLineExtractor.voiced_phone_call?(phone)
+      assert_empty TtsLineExtractor.video_call_start_knots(phone)
+    end
+
     test "voiced: true on a contact with no currentKnot starts at start" do
       npc = { 'voiced' => true }
       assert TtsLineExtractor.voiced_call?(npc)

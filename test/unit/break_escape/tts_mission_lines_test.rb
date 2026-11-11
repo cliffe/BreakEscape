@@ -85,6 +85,73 @@ module BreakEscape
       assert_operator counts.values.sum, :>, 7_000
     end
 
+    # The conversation modes npc-manager.js can open from an eventMapping. A new
+    # mode must be added here, with the reading the client gives its lines.
+    CLIENT_MODES = %w[person-chat phone-chat video-call].freeze
+
+    # Built from the scenario's own records and mappings, not from the
+    # extractor's host list, so an NPC the extractor leaves out (m02 Ghost's
+    # video calls were) still has its lines sent. Each NPC with a story and a
+    # voice, for each way the client opens it with voice:
+    #   person NPC: person-chat over the whole story;
+    #   video-call mapping, or a timedConversation with videoCall or that mode
+    #     (any npcType): person-chat from its knot, following every divert;
+    #   voiced phone-chat mapping, voiced timedConversation, or `voiced: true`
+    #     on the contact: the phone call's knots up to the home knot, no narration.
+    # Every line is sent as the client sends it and must be accepted with
+    # the same text.
+    test "every line a voiced conversation can request resolves, video calls and voiced phone calls included" do
+      counts = Hash.new(0)
+      failures = []
+      self.class.missions_data.each do |name, data|
+        ex = TtsLineExtractor.new(name, data)
+        resolver = TtsLineResolver.new(scenario_name: name, scenario_data: data,
+                                       story_file: self.class.method(:story_file))
+        variables = ex.instance_variable_get(:@variables)
+        dynamic = ex.send(:dynamic_variables)
+        each_story_npc(data) do |npc|
+          Array(npc['eventMappings']).each do |m|
+            mode = m.is_a?(Hash) ? m['conversationMode'] : nil
+            failures << "#{name} #{npc['id']}: unknown conversationMode #{mode}" if mode && !CLIENT_MODES.include?(mode)
+          end
+          path = self.class.story_file(npc['storyPath'])
+          next failures << "#{name} #{npc['id']}: story not found" unless path
+
+          ink = JSON.parse(File.read(path))
+          readings = conversation_knots(npc, ink)
+          next if readings.empty?
+
+          walker = InkLineWalker.from_file(path, variables: variables, dynamic: dynamic)
+          walker.lines.each do |line|
+            knot = TtsLineExtractor.line_knot(line.path)
+            readings.each do |kind, knots|
+              next unless knots.nil? || knots.include?(knot)
+
+              speaker, text = ex.resolve(line, npc['id'], notes: false)
+              next if speaker.nil? || speaker == 'player'
+              next if kind == :phone_call && (speaker == 'narrator' || ex.send(:phone_narration?, line.tags))
+
+              counts[kind] += 1
+              record = TtsLineResolver.find_npc(data, speaker)
+              next failures << "#{name} #{kind} #{speaker}: no record" unless record
+
+              result = resolver.resolve(speaker, record, text)
+              if result.line.nil?
+                failures << "#{name} #{kind} #{npc['id']}/#{speaker} refused (#{result.status}): #{text[0, 70]}"
+              elsif TtsService.match_form(result.line) != TtsService.match_form(text)
+                failures << "#{name} #{kind} #{speaker} voiced other text: #{text[0, 50]} -> #{result.line[0, 50]}"
+              end
+            end
+          end
+        end
+      end
+
+      assert_empty failures, failures.first(40).join("\n")
+      %i[person_chat video_call phone_call].each do |kind|
+        assert_operator counts[kind], :>, 0, "no #{kind} rows checked"
+      end
+    end
+
     test "no voiced mission line prints a variable, except the listed scenario values" do
       printed = []
       self.class.missions_data.each do |name, data|
@@ -118,6 +185,37 @@ module BreakEscape
     end
 
     private
+
+    def each_story_npc(data)
+      (data['rooms'] || {}).each_value do |room|
+        Array(room['npcs']).each { |npc| yield npc if npc['storyPath'] && npc['voice'].is_a?(Hash) }
+      end
+    end
+
+    # { reading => knots (nil for the whole story) } for the ways the client
+    # opens this NPC with voice (npc-manager.js, phone-call-voice.js).
+    def conversation_knots(npc, ink)
+      readings = {}
+      readings[:person_chat] = nil unless npc['npcType'] == 'phone'
+      knot = ->(k) { k.to_s.split('.').first }
+      timed = npc['timedConversation'].is_a?(Hash) ? npc['timedConversation'] : nil
+      video_timed = timed && (timed['videoCall'] == true || timed['conversationMode'] == 'video-call')
+      mappings = Array(npc['eventMappings']).select { |m| m.is_a?(Hash) }
+
+      video = mappings.select { |m| m['conversationMode'] == 'video-call' }
+                      .map { |m| knot.call(m['targetKnot'] || m['knot'] || npc['currentKnot'] || 'start') }
+      video << knot.call(timed['targetKnot']) if video_timed && timed['targetKnot']
+      readings[:video_call] = TtsLineExtractor.reachable_knots(ink, video.uniq, nil) if video.any?
+
+      phone = mappings.select { |m| m['conversationMode'] == 'phone-chat' && m['voiced'] == true }
+                      .map { |m| knot.call(m['targetKnot'] || m['knot']) }
+      phone << knot.call(timed['targetKnot']) if timed && !video_timed && timed['voiced'] == true && timed['targetKnot']
+      phone << knot.call(npc['currentKnot'] || 'start') if npc['voiced'] == true
+      if npc['npcType'] == 'phone' && phone.any?
+        readings[:phone_call] = TtsLineExtractor.reachable_knots(ink, phone.compact.uniq, knot.call(npc['currentKnot'] || 'start'))
+      end
+      readings
+    end
 
     def each_bark(data)
       seen = Set.new
