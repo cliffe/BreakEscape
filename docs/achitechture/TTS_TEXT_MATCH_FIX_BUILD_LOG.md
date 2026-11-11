@@ -109,3 +109,50 @@ A line whose speaker prefix is a string variable (`{npc_name}: What can I help y
 
 - The seven `player_name()` lines above print a variable in a voiced line. They play with "Agent" today; rewording them would remove the last printed value in the missions.
 - The rate limit is per server process, so with several workers the real cap is 1,500 times the worker count. A shared store would need the host's cache (the test environment uses a null store) or a new column, so it was left in process.
+
+## Round 2 fixes
+
+Review: `TTS_TEXT_MATCH_FIX_CODE_REVIEW_R2.md` (no blockers, no majors). Commit `cfac02d57` and this log.
+
+### What changed
+
+- `TtsLineResolver` (new) holds the endpoint's whole line-finding chain, and `GamesController#tts` calls it, so the mission test runs the endpoint's own code. `TtsLineResolver.find_npc` is the NPC lookup the controller's `find_npc_in_scenario` now uses.
+- An NPC voices only its own lines. In order: lines the scenario's stories voice as that NPC (`TtsLineExtractor#spoken_line`, the batch's own reading, co-speakers included); then lines of its own story that the extractor can't place (glue, a divert mid-line, `player_name()`) which the client would voice as that NPC (`TtsLineExtractor#voiced_as`, the same speaker rules with no tags); then its barks; then shared chatter. A story that hosts no voiced conversation is read whole with the same speaker rule. A phone contact's text conversation voices only its `voice:` messages, as the transcript after the marker (phone-chat-ui.js). Narrator lines, other speakers' lines and fragments of a line that prints a value are refused.
+- The speaker prefix is never voiced. A request carrying the speaker's own prefix (`Kevin Park: ...`, `Narrator: ...`) is served the line without it, which is the batch's text, so no existing key changes. Another speaker's prefix finds nothing.
+- `InkTextValidator` indexes each candidate under its whole form and its form without the prefix, maps both to the raw ink line, and picks the voiced text per request: `narrator_only` keeps `Narrator:` lines, `voiced_as` keeps the NPC's own, and the text after the prefix is returned. Single `^text` fragments and the "second colon" variant are no longer candidates. `placed: false` leaves out lines the walker places.
+- The narrator branch is keyed on the id: `npc_id == 'narrator' && skipTextValidation`.
+- Carried-over globals: `TtsLineExtractor` leaves every name in `importedGlobals` and every name `importGlobals` declares out of its variables and treats them as changed in play, so a line printing one stays unresolved and is never voiced (with the player's value or with the ink's default). Both the batch and the endpoint use this.
+- `TtsGenerationLimit` prunes on a clock (at most once a minute) and drops a game whose newest stamp is older than the window, instead of pruning the whole map on every call past 10,000 games.
+- `InkTextValidator.canonical` rescues `Errno::ENOENT` (a recompile replacing the file between reads) beside `JSON::ParserError`: the request gets 403, not 500. The separate `File.exist?` check is gone.
+
+### What this changes for real content
+
+- `tts_mission_lines_test.rb` now sends every line normal play voices in m01 to m10 and lab_physical_pentest through `TtsLineResolver` and compares keys: 5,547 host lines, 405 co-speaker lines, 643 narrator lines, 54 chatter lines, 527 barks and 2 unplaced lines (7,178 rows, about 3 s). None is refused and every key equals the batch's (for barks and chatter, the key of the scenario's own text). The batch and chatter rows are the same 6,649 the key dump lists for these missions; the reviewer's 8,449 counted a wider set.
+- Only one voiced mission line set prints a variable: m08 Netherton's `suite_code` lines, now an explicit allow-list in the test. The test fails on any other voiced line that prints a variable, and on any carried-over global read as a constant.
+- Lines voiced before and refused now, none of them in the batch: any NPC asking for the narrator's or another speaker's line in its own story, the prefixed form voiced with its prefix, fragments, and a non-call phone contact's ordinary text lines. The test-only `generic-npc` line whose speaker is a variable (`{npc_name}: ...`) is now refused, since its speaker is not known.
+- Two controller tests set up requests the client never makes (a `Narrator:` line asked for as an NPC, and an unknown `Sarah:` prefix the client voices whole); they now give the NPC its own line and display name. The fixture's phone contact is marked as a voiced call, which is what its test describes.
+
+### Checks
+
+- Key identity against the branch base `0ddb3ba93` (`identity_check_mb.sh`): key dumps byte-identical, 8,481 rows (8,416 untagged, 65 tagged). Against `f86912dd4` (`identity_check.sh`): 8,408 of 8,416 untagged matched, as in round 1 (ink edits since that base).
+- New tests: `tts_line_resolver_test.rb` (phone voice messages, a story with no voiced conversation, missing story, narrator rules on the id only), `tts_carried_globals_test.rb` with fixture `carried_global_fixture.ink` (the extractor and the endpoint refuse a line printing a carried-over global; the same line with an ordinary constant is voiced, so the guard is what refuses it), controller tests for own-prefix requests, narrator lines asked for by an NPC, other speakers' lines and prefixes, and fragments, validator tests for `voiced_as`, `placed: false` and the `Errno::ENOENT` race, and a limiter test for clock pruning.
+- Full suites under the shared lock: Rails 1,490 runs, 0 failures, 0 errors, 1 skip; JS 483 of 483 files passed.
+
+### Outcome of every round 2 finding
+
+| # | Outcome |
+|---|---------|
+| 1 Minor, NPC voices every line of its story | Fixed: own lines only, prefix never voiced, fragments gone; proved over the missions by the full test (none refused, no key changed). |
+| 2 Minor, imported string globals | Fixed: imported names left out of the extractor's variables and made dynamic; mission test for printed variables (allow-list `suite_code`, m08) and a fixture test. |
+| 3 Minor, mission test | Fixed: the full check through the endpoint's own chain (`TtsLineResolver`), 7,178 rows, about 3 s. It reads the committed compiled JSON; the endpoint recompiles a newer `.ink` first, so a stale `.json` is still what the test sees. |
+| 4 Nit, limiter pruning | Fixed: clock-based pruning, idle games dropped. |
+| 5 Nit, narrator branch | Fixed: keyed on `npc_id == 'narrator'`. |
+| 6 Nit, `Errno::ENOENT` race | Fixed: rescued, 403. |
+| 7 Nit, glue siblings | Not changed, as in round 1: no mission story has a glue run. |
+
+## Handover
+
+- State: round 2 fixes done and committed; full suites green (counts above).
+- The real ceiling on paid generation per game: a game can only make the endpoint generate its own scenario's reachable clips, each once (a generated clip is cached for every game). With round 2 that set is the batch's lines, the untagged form of each tagged line, barks, chatter, `Narrator:` lines of every story and lines the walker can't place: 1,274 clips for m10, 1,145 for m02, under 640 for each other mission (lab_physical_pentest 269). Before round 2, m02 reached 1,553 (non-call phone stories and prefixed and cross-speaker variants), past the limit. Per game and per hour the cap is `LIMIT` 1,500 misses per server process, so with several workers 1,500 times the worker count, and a restart or a new game gives a new budget; but since every reachable clip is generated once and then served from the cache, the real ceiling for a mission across all games is its reachable set once per voice (plus retries after failed generations, which the per-game limit bounds).
+- Open: glue siblings (nit 7); a shared store for the limiter; the seven `player_name()` lines (round 1, for the user).
+- Files: `app/services/break_escape/tts_line_resolver.rb` (new), `ink_text_validator.rb`, `tts_line_extractor.rb`, `tts_generation_limit.rb`, `games_controller.rb`, tests listed above.
