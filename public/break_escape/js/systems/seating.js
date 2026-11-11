@@ -1440,6 +1440,9 @@ export function needsStop(ns) {
     // changes and the NPC stays seated (OFFICE_LIFE_PLAN 2.11)
     // A visit to the own desk too (review R2 m2): the needs core keeps it at its post (_atOwnPost)
     const ownDesk = ns.atPost && ns.mode === 'job' && (ns.job?.kind === 'use' || ns.job?.kind === 'visit') && homeId && ns.job.targetId === homeId;
+    // Access 9.2 C (8.2): a phone use at the post is sitting at the post (no target to stop at)
+    const phoneAtPost = ns.atPost && ns.mode === 'job' && ns.job?.kind === 'self';
+    if (phoneAtPost) return { key: `at:${homeId || 'post'}`, targetId: homeId, post: true };
     if (ownDesk || (ns.mode === 'returning' && ns.atPost)) {
         return { key: `at:${homeId || 'post'}`, targetId: homeId, post: true, need: ownDesk ? ns.job.need : undefined };
     }

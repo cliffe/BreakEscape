@@ -111,10 +111,12 @@ export function pickIconEntry(job, actionIcons = {}, target = null) {
     if (job.phase === 'queued') return firstIcon(['queue'], actionIcons);
     // Access slice 9.2 A (plan 5.5): a visit (a check, a workaround) shows the work picture
     if (job.kind === 'visit') return firstIcon(['work'], actionIcons);
+    // Access slice 9.2 C (plan 8.2): social_media (a phone use or a PC) shows the npc-social picture
+    const social = job.need === 'social_media' ? 'social' : null;
     const keys = (job.kind === 'carry' || job.itemId)
         ? [job.files ? 'file' : null, job.tag, 'curiosity']
-        : (target ? [target.id, target.phone ? 'phone' : null, (job.prints || target.print) ? 'print' : null, job.need, target.satisfies, target.type]
-            : [job.prints ? 'print' : null, job.need]);
+        : (target ? [target.id, target.phone ? 'phone' : null, (job.prints || target.print) ? 'print' : null, job.need, social, target.satisfies, target.type]
+            : [job.prints ? 'print' : null, job.need, social]);
     return firstIcon(keys, actionIcons);
 }
 
