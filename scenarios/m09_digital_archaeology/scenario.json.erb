@@ -1586,6 +1586,8 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "observations": "Your field kit, set up on a reading desk: a laptop on the archive's network, quiet enough not to show up on anyone's screen.",
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
           "vm": <%= vm_object('attack_vm', {"id" => 1, "title" => "kali", "ip" => "172.16.0.3", "enable_console" => true}) %>,
+          "showPostit": true,
+          "postitNote": "user: kali\npassword: kali",
           "puzzle_graph_role": "vm"
         },
         {
@@ -2422,6 +2424,8 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "observations": "Your field kit, plugged into Tomb Beta's rack and linked to the drop terminal.",
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
           "vm": <%= vm_object('attack_vm', {"id" => 1, "title" => "kali", "ip" => "172.16.0.3", "enable_console" => true}) %>,
+          "showPostit": true,
+          "postitNote": "user: kali\npassword: kali",
           "puzzle_graph_role": "vm"
         },
         {
