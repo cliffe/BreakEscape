@@ -4,6 +4,12 @@ EXTERNAL player_name()
 // where the credits and the debrief read it back. No unbound EXTERNAL getters.
 VAR danny_fate = ""
 VAR danny_evidence_seen = false // Synced scenario global: the player has seen Danny's hospital files; also set by the GHOST folder's onRead
+// Story pass (flag 2): synced scenario globals. The FTP note says Zero Day rehearses
+// St. Catherine's "before every healthcare job"; with it in hand the player can ask
+// Danny which survey sites run the same build. danny_named_sites is read by the
+// debrief (architect_investigation) and the credits.
+VAR flag_ftp_submitted = false
+VAR danny_named_sites = false
 // Final round: a return visit gets its own line, skipped once after an exit.
 VAR rest_quiet = false
 
@@ -35,6 +41,8 @@ Danny Foster: You're not one of ours. I'd know you.
     -> guilt
 * [She lied to you about the client, didn't she.]
     -> sympathy
+* {flag_ftp_submitted} [SAFETYNET. Zero Day rehearses St. Catherine's before every healthcare job. There's a next one.]
+    -> next_job
 
 === reveal ===
 #speaker:danny_foster
@@ -103,6 +111,22 @@ Danny Foster: That's almost worse. At least a decision made for me isn't mine.
     Danny Foster: Thank you. I don't think I could have done it on my own.
     -> protect_done
 
+// Story pass (flag 2): from the opening, or from a return visit once his fate is set.
+=== next_job ===
+#speaker:danny_foster
+Danny Foster: Every healthcare job.
+Danny Foster: Of course there's a next one. Nobody pays for two hundred and fourteen hospitals to use one.
+Danny Foster: That FTP build wasn't only at St. Catherine's. I flagged it at nine more sites. Newer boxes, same build.
+Narrator: He turns the screen towards you and opens a list he clearly knows by heart.
+~ danny_named_sites = true
+#set_global:danny_named_sites:true
+Danny Foster: Take them. Get them patched before she sells the next one.
+{ danny_fate != "":
+    ~ rest_quiet = true
+    -> after_choice
+}
+-> the_question
+
 === protect_done ===
 #speaker:danny_foster
 Narrator: He reaches for his phone with a hand that isn't quite steady, and for the first time all night he looks like a man who might sleep.
@@ -153,6 +177,8 @@ Narrator: You leave him with the photo, the open folder, and the phone. Whatever
         Narrator: He hasn't moved.
     }
 }
++ {flag_ftp_submitted and not danny_named_sites and danny_fate != "ko"} [Zero Day rehearses St. Catherine's before every healthcare job. Which of your sites run that build?]
+    -> next_job
 + {danny_fate == "protected"} [Danny's on the phone to SAFETYNET. Leave him to it.]
     Danny Foster: They're sending someone for me. Thank you. I mean it.
     ~ rest_quiet = true

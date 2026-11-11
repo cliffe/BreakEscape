@@ -197,6 +197,8 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           { "text": "DANNY FOSTER: TAKEN DOWN IN HIS OWN OFFICE", "style": "warning", "condition": "globalVars.danny_fate === 'ko'" },
           { "text": "DANNY FOSTER: KNOCKED OUT AFTER YOU'D SPOKEN, picked up in his office", "style": "warning", "condition": "globalVars.danny_ko === true && globalVars.danny_fate !== 'ko' && !!globalVars.danny_fate" },
           { "text": "DANNY FOSTER: NEVER FOUND — his name is still in the recon files", "style": "warning", "condition": "!globalVars.danny_fate" },
+          { "text": "NINE MORE HOSPITALS ON THE SAME FTP BUILD: named by Foster, patched before the next job", "style": "entry", "condition": "globalVars.danny_named_sites === true" },
+          { "text": "THE NEXT HOSPITAL: somewhere on the 214-site survey, still running St. Catherine's build", "style": "warning", "condition": "globalVars.danny_named_sites !== true" },
           { "text": "TERRY MOTT, NIGHT GUARD: KNOCKED OUT ON SHIFT", "style": "warning", "condition": "globalVars.guard_knocked_out === true" },
           { "text": "FFION REES, WHITEHAT RECEPTION: KNOCKED OUT AT HER OWN DESK", "style": "warning", "condition": "globalVars.receptionist_ko === true" },
           { "text": "PERFECT STEALTH: past the night guard unseen, with no excuses and no bribes", "style": "entry", "condition": "globalVars.guard_detection_count === 0 && globalVars.exec_office_entered === true && globalVars.guard_knocked_out !== true && globalVars.guard_told_safetynet !== true && globalVars.guard_bribed !== true && globalVars.guard_challenged !== true" },
@@ -987,10 +989,19 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "sendTimedMessage": { "delay": 2000, "message": "Scan's in. That's their lab mapped. One of those services should look familiar: the FTP server runs the build that opened St. Catherine's." }
             },
             {
+              "_comment": "Story pass (flag 2 STRONG): the note says they rehearse St. Catherine's 'before every healthcare job', so there is a next hospital on Danny's survey. HaX points at Danny while he can still be asked (m03_danny_choice.ink next_job sets danny_named_sites; the debrief and credits read it). Two disjoint mappings on danny_ko (globalVarOnKO, so it covers a KO before or after talking); each sets flag_ftp_submitted.",
               "eventPattern": "objective_task_completed:submit_ftp_flag",
+              "condition": "globalVars.danny_ko !== true",
               "onceOnly": true,
               "setGlobal": { "flag_ftp_submitted": true },
-              "sendTimedMessage": { "delay": 2000, "message": "FTP's in. The backdoor they sold Ghost, running on their own training box. They rehearse on what they sell." }
+              "sendTimedMessage": { "delay": 2000, "message": "FTP's in. Read the note: they rehearse St. Catherine's before every healthcare job. There's a next hospital. Danny Foster drew their survey -- he'll know which sites still run that build." }
+            },
+            {
+              "eventPattern": "objective_task_completed:submit_ftp_flag",
+              "condition": "globalVars.danny_ko === true",
+              "onceOnly": true,
+              "setGlobal": { "flag_ftp_submitted": true },
+              "sendTimedMessage": { "delay": 2000, "message": "FTP's in. Read the note: they rehearse St. Catherine's before every healthcare job. There's a next hospital on that survey, and the man who drew it is out cold. We'll find it the slow way." }
             },
             {
               "eventPattern": "objective_task_completed:submit_http_flag",
@@ -1579,7 +1590,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               ending. %>
           "flagRewards": [
             { "type": "give_item", "item_name": "Training Network Map", "label": "Training network mapped — their service list is in hand.", "description": "network-scan flag submitted - the drop-site prints the scan's service map" },
-            { "type": "give_item", "item_name": "FTP Rehearsal Note", "label": "FTP intelligence pulled from the training box.", "description": "FTP flag submitted - the drop-site prints the operator note off the FTP box" },
+            { "type": "give_item", "item_name": "FTP Rehearsal Note", "label": "FTP box rooted. Its operator note says there's a next hospital.", "description": "FTP flag submitted - the drop-site prints the operator note off the FTP box" },
             { "type": "give_item", "item_name": "Zero Day Price List", "label": "Pricing intelligence decoded.", "description": "pricing flag submitted - the drop-site prints the decoded price list" },
             { "type": "give_item", "item_name": "Zero Day Transaction Log", "label": "distcc box compromised — the transaction log prints out.", "description": "distcc flag submitted - the drop-site prints the recovered transaction log" }
           ],
@@ -1600,8 +1611,8 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "name": "FTP Rehearsal Note",
               "takeable": true,
               "readable": true,
-              "text": "FTP BOX // OPERATOR NOTE (restricted)\nPulled off the training lab's file-transfer box.\n\n\"This is the exact build we shipped to GHOST. We rehearse the St. Catherine's delivery on this box before every sale. Do not patch it -- the rehearsal has to match what the buyer gets.\"\n\nThe backdoor they sold is the backdoor they practise on.",
-              "observations": "An operator's own note off the FTP box: they rehearse the St. Catherine's attack on the same backdoored build they sold Ghost.",
+              "text": "FTP BOX // OPERATOR NOTE (restricted)\nPulled off the training lab's file-transfer box.\n\n\"This is the exact build we shipped to GHOST. We rehearse the St. Catherine's delivery on this box before every healthcare job. Do not patch it -- the rehearsal has to match what the buyer gets.\"\n\nEvery healthcare job. St. Catherine's came off a survey of 214 hospitals, and it was only the first.",
+              "observations": "An operator's own note off the FTP box: they rehearse the St. Catherine's attack before every healthcare job. There is a next hospital, and it is somewhere on the same survey.",
               "puzzle_graph_role": "reward"
             },
             {
@@ -1962,6 +1973,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
     "player_approach": "",
     "knows_m2_connection": false,
     "danny_fate": "",
+    "danny_named_sites": false,
     "flag_scan_submitted": false,
     "flag_ftp_submitted": false,
     "flag_http_submitted": false,
