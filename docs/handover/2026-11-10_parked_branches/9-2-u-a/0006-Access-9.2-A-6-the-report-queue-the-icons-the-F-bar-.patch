@@ -1,0 +1,569 @@
+From 3c2405a310e092af47bbd0cae0485871698a185c Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 10 Nov 2026 17:44:27 +0000
+Subject: [PATCH 6/9] Access 9.2 A-6: the report queue, the icons, the F bar
+ and the tooling
+
+npc-reports.js sends failed and met uses together (one request every two
+seconds, at most 20, no fail for a settled NPC, a forced state sync after a
+plan global changes, one resend of a stale report) and hands answers to the
+needs system; core/game.js installs it and restores npcFrustration after a
+reload. The action icon shows blocked by tell (pulsing at 2) and work on a
+visit; a held park shows no bubble; the debug overlay has an F bar;
+window.__test.access gains work() and reports(); verify-run --access prints
+npcFrustration.
+---
+ public/break_escape/js/api-client.js          |   6 +
+ public/break_escape/js/core/game.js           |   6 +
+ .../js/systems/npc-action-icons.js            |  16 ++-
+ .../js/systems/npc-needs-debug.js             |  17 ++-
+ public/break_escape/js/systems/npc-needs.js   |   4 +-
+ public/break_escape/js/systems/npc-reports.js | 135 ++++++++++++++++++
+ .../js/systems/test-bridge/access.js          |  21 +++
+ test/js/npc-action-icons.test.mjs             |  14 ++
+ test/js/npc-needs-debug.test.mjs              |  10 ++
+ test/js/npc-reports.test.mjs                  |  84 +++++++++++
+ test/js/playtest-verify-run-access.test.mjs   |   3 +-
+ test/js/test-bridge-access.test.mjs           |  14 +-
+ tools/playtest/verify-run.rb                  |   9 +-
+ 13 files changed, 329 insertions(+), 10 deletions(-)
+ create mode 100644 public/break_escape/js/systems/npc-reports.js
+ create mode 100644 test/js/npc-reports.test.mjs
+
+diff --git a/public/break_escape/js/api-client.js b/public/break_escape/js/api-client.js
+index d13e118d8..906763c7c 100644
+--- a/public/break_escape/js/api-client.js
++++ b/public/break_escape/js/api-client.js
+@@ -119,6 +119,12 @@ export class ApiClient {
+     });
+   }
+ 
++  // Slice 9.2 (ACCESS_MODEL_SLICE_9_2_PLAN.md 9.1): NPC failed and met uses,
++  // [{ npc_id, event, need, object_id, missing, rearmed }]. Answers { answers: [...] }.
++  static async npcFrustration(reports) {
++    return this.post('/npc_frustration', { reports });
++  }
++
+   // Sign in at a sign-in PC (access model 5.3, 6). `fields` is { username, password }
+   // (the claim of step 9 sends { claim: "owner", globals } instead). A remote sign-in
+   // (slice 9.3a, 4.4) adds { foothold: <footholdId> }; the server then checks the host is
+diff --git a/public/break_escape/js/core/game.js b/public/break_escape/js/core/game.js
+index 041bc5dc8..484518bee 100644
+--- a/public/break_escape/js/core/game.js
++++ b/public/break_escape/js/core/game.js
+@@ -31,6 +31,7 @@ import { createPlayerHUD } from '../ui/hud.js';
+ import { PlayerCombat } from '../systems/player-combat.js';
+ import { NPCCombat } from '../systems/npc-combat.js';
+ import { ApiClient } from '../api-client.js'; // Import to ensure window.ApiClient is set
++import '../systems/npc-work.js'; // Access slice 9.2: sets window.npcWork (the use verdict) before the needs system runs
+ import { getTutorialManager } from '../systems/tutorial-manager.js';
+ import { TILE_SIZE, SPRITE_PADDING_BOTTOM_ATLAS, SPRITE_PADDING_BOTTOM_LEGACY, DOOR_INTERACTION_RANGE, INTERACTION_RANGE } from '../utils/constants.js';
+ import { initScenarioMusicEvents } from '../music/scenario-music-events.js';
+@@ -1987,6 +1988,11 @@ export async function create() {
+                 return presetsReady.then(() => import('../systems/npc-needs.js')).then(needs => {
+                     needs.installNpcNeeds();
+                     console.log('✅ NPC needs system initialised');
++                    // Access slice 9.2 (5.4): the report queue, and the frustration the server holds
++                    import('../systems/npc-reports.js').then(m => {
++                        m.installNpcReports(ApiClient);
++                        window.npcNeedsSystem?.restoreFrustration?.(window.gameScenario?.npcFrustration || null);
++                    }).catch(e => console.warn('npc reports failed to load', e));
+                     // Workstation screen lock/unlock follows npc_left_post / npc_returned_post
+                     const sceneRef = this;
+                     import('../systems/npc-action-icons.js').then(m => m.installNpcActionIcons(sceneRef)).catch(e => console.warn('npc action icons failed', e));
+diff --git a/public/break_escape/js/systems/npc-action-icons.js b/public/break_escape/js/systems/npc-action-icons.js
+index 8b18e35f4..ffb046f34 100644
+--- a/public/break_escape/js/systems/npc-action-icons.js
++++ b/public/break_escape/js/systems/npc-action-icons.js
+@@ -104,6 +104,8 @@ export function pickIconEntry(job, actionIcons = {}, target = null) {
+     if (!job) return null;
+     // Waiting in a queue (slice 10): the hourglass, whatever the machine (a scenario "queue" entry wins)
+     if (job.phase === 'queued') return firstIcon(['queue'], actionIcons);
++    // Access slice 9.2 A (plan 5.5): a visit (a check, a workaround) shows the work picture
++    if (job.kind === 'visit') return firstIcon(['work'], actionIcons);
+     const keys = (job.kind === 'carry' || job.itemId)
+         ? [job.files ? 'file' : null, job.tag, 'curiosity']
+         : (target ? [target.id, target.phone ? 'phone' : null, (job.prints || target.print) ? 'print' : null, job.need, target.satisfies, target.type]
+@@ -118,6 +120,13 @@ export function pickIconEntry(job, actionIcons = {}, target = null) {
+  */
+ export function stateIconEntry(st, actionIcons = {}, optIn = false) {
+     if (!st || st.job) return null;
++    // Access slice 9.2 A (plan 5.5): while the server's tell is 1 or 2 an NPC whose uses are judged
++    // shows `blocked` (pulsing at 2), whatever showPressingNeeds says: declaring work has opted in
++    const judged = !!(st.judged && (st.judged.work || st.judged.social_media));
++    if (!st.noticed && judged && st.tell >= 1) {
++        const e = firstIcon(['blocked'], actionIcons, { fallback: false });
++        return e ? { ...e, pulse: st.tell >= 2 } : null;
++    }
+     const key = st.noticed ? 'noticed' : (st.blockedNeed ? 'blocked' : null);
+     if (!key) return null;
+     if (!optIn && !usable((actionIcons || {})[key])) return null;
+@@ -152,7 +161,8 @@ export function thoughtBubble(st, actionIcons = {}, on = false) {
+     if (typeof st.avoiding === 'string' && st.avoiding) return { kind: 'avoid', npcId: st.avoiding };
+     const p = pressingBubble(st, actionIcons, on);
+     if (p) return { kind: 'pressing', ...p };
+-    const parked = Array.isArray(st.parked) ? st.parked.find(x => x && x.need && !(st.job && st.job.need === x.need)) : null;
++    // Access 9.2 (R5 n3): a reload's `held` park is silent, so it shows no bubble
++    const parked = Array.isArray(st.parked) ? st.parked.find(x => x && x.need && x.reason !== 'held' && !(st.job && st.job.need === x.need)) : null;
+     if (!parked) return null;
+     const entry = firstIcon([parked.need], actionIcons);
+     return { kind: 'parked', need: parked.need, reason: parked.reason, badge: PARKED_BADGE[parked.reason] || 'closed',
+@@ -522,7 +532,9 @@ export class NpcActionIcons {
+             ic.box.setData('job', st.job?.targetId || '');
+             ic.box.setData('key', entry.key);
+             ic.box.setData('icon', ic.shown);
+-            ic.box.setScale(winding ? 1 + 0.35 * Math.abs(Math.sin(Date.now() / 120)) : 1);
++            ic.box.setData('pulse', !!entry.pulse);
++            ic.box.setScale(winding ? 1 + 0.35 * Math.abs(Math.sin(Date.now() / 120))
++                : (entry.pulse && !reducedMotion() ? 1 + 0.12 * Math.abs(Math.sin(Date.now() / 400)) : 1));
+         }
+     }
+ }
+diff --git a/public/break_escape/js/systems/npc-needs-debug.js b/public/break_escape/js/systems/npc-needs-debug.js
+index ea10bb27e..6b289591e 100644
+--- a/public/break_escape/js/systems/npc-needs-debug.js
++++ b/public/break_escape/js/systems/npc-needs-debug.js
+@@ -29,8 +29,10 @@ export function barColour(level, cfg = {}, unmetMs = 0) {
+  * the panel's top-left. `needs` = { name: cfg }, `levels` = { name: 0-100 },
+  * `lastSatisfiedAt` = { name: clockMs }.
+  */
+-export function barLayout({ needs = {}, levels = {}, lastSatisfiedAt = {}, clockMs = 0 } = {}, b = BAR) {
+-    return Object.keys(needs).sort().map((name, i) => {
++export const FRUSTRATION_COLOUR = 0xc0392b;
++
++export function barLayout({ needs = {}, levels = {}, lastSatisfiedAt = {}, clockMs = 0, frustration = null } = {}, b = BAR) {
++    const rows = Object.keys(needs).sort().map((name, i) => {
+         const level = Math.max(0, Math.min(100, Number(levels[name]) || 0));
+         return {
+             need: name,
+@@ -43,6 +45,13 @@ export function barLayout({ needs = {}, levels = {}, lastSatisfiedAt = {}, clock
+             colour: barColour(level, needs[name], clockMs - (lastSatisfiedAt[name] ?? clockMs))
+         };
+     });
++    // Access slice 9.2 A (plan 5.4): an F bar for the frustration the server holds, last
++    if (Number.isFinite(frustration)) {
++        const level = Math.max(0, Math.min(100, frustration));
++        rows.push({ need: 'frustration', letter: 'F', x: b.pad + b.letterW, y: b.pad + rows.length * (b.h + b.gap), w: b.w, h: b.h,
++            fillW: Math.round(b.w * level / 100), colour: FRUSTRATION_COLOUR });
++    }
++    return rows;
+ }
+ 
+ /**
+@@ -161,7 +170,9 @@ export class NpcNeedsDebug {
+             const fresh = !this.panels.has(id) || this.panels.get(id).sprite !== sprite;
+             const p = this._panel(id, sprite);
+             if (redraw || fresh) {
+-                const rows = barLayout({ needs: s.needs, levels: s.levels, lastSatisfiedAt: s.lastSatisfiedAt, clockMs: sys.clockMs });
++                const judged = !!(s.needs.work && sys._judged?.(s, 'work')) || !!s.needs.social_media;
++                const rows = barLayout({ needs: s.needs, levels: s.levels, lastSatisfiedAt: s.lastSatisfiedAt, clockMs: sys.clockMs,
++                    frustration: judged || s.frustration > 0 ? s.frustration : null });
+                 this._draw(p, rows, `${id}: ${jobLabel({ ...s, clockMs: sys.clockMs }, s.job)}`);
+             }
+             const vis = !!sprite.visible;
+diff --git a/public/break_escape/js/systems/npc-needs.js b/public/break_escape/js/systems/npc-needs.js
+index bff80c79b..23bc9737b 100644
+--- a/public/break_escape/js/systems/npc-needs.js
++++ b/public/break_escape/js/systems/npc-needs.js
+@@ -2085,8 +2085,10 @@ export class NPCNeedsSystem {
+ 
+     /** The scenario response's npcFrustration, kept and applied as each NPC registers (5.4). */
+     restoreFrustration(map) {
+-        this._restored = map && typeof map === 'object' ? map : null;
++        this._restored = map && typeof map === 'object' ? { ...map } : null;
+         this._restoredAt = typeof this.world.elapsedMs === 'function' ? this.world.elapsedMs() : 0;
++        // NPCs already registered (the start room) take theirs now; the rest as they register
++        for (const id of [...this.states.keys()].sort()) this._applyRestored(this.states.get(id));
+     }
+ 
+     _applyRestored(s) {
+diff --git a/public/break_escape/js/systems/npc-reports.js b/public/break_escape/js/systems/npc-reports.js
+new file mode 100644
+index 000000000..727431bd5
+--- /dev/null
++++ b/public/break_escape/js/systems/npc-reports.js
+@@ -0,0 +1,135 @@
++/**
++ * The frustration report queue (ACCESS_MODEL_SLICE_9_2_PLAN.md 5.4, sub-slice A). The needs
++ * system reports each counted failure and each met judged use after a failure through
++ * world.reportUse; this module sends them together, at most one POST /npc_frustration every two
++ * seconds and at most 20 reports in one request, and hands the answers to
++ * NPCNeedsSystem.applyFrustration.
++ *
++ * - No fail is sent for an NPC the server called settled until an ease has been sent for it.
++ * - When a global named in a loaded NPC's work plan (a downIf, a route global) or in its home
++ *   station's offWhen changes, one state sync is awaited before the next batch, so the server's
++ *   copy of the global is current when it checks the cause.
++ * - A report answered `stale` triggers one state sync and is sent once more.
++ *
++ * Imports only npc-work.js (pure), which also sets window.npcWork for the needs adapter.
++ */
++import npcWork from './npc-work.js';
++
++export const REPORT_INTERVAL_MS = 2000;
++export const MAX_BATCH = 20;
++
++export class NpcReports {
++    /**
++     * @param {Object} deps - { send(batch) -> Promise<{ answers }>, sync() -> Promise, apply(answers),
++     *   now() -> ms, setTimer(fn, ms), watched(name) -> bool }
++     */
++    constructor(deps = {}) {
++        this.deps = deps;
++        this.pending = [];
++        this.settled = new Set();
++        this.needSync = false;
++        this.lastSent = -Infinity;
++        this.timer = null;
++        this.sending = false;
++        this.requests = 0;
++        this.sent = 0;
++    }
++
++    _now() { return typeof this.deps.now === 'function' ? this.deps.now() : Date.now(); }
++
++    /** One report from the needs system: { event, need, objectId, missing, rearmed }. */
++    queue(npcId, report) {
++        if (typeof npcId !== 'string' || !report) return false;
++        if (report.event === 'fail' && this.settled.has(npcId)) return false;
++        if (report.event === 'ease') this.settled.delete(npcId);
++        const r = { npc_id: npcId, event: report.event, need: report.need, object_id: report.objectId ?? null };
++        if (report.event === 'fail') r.missing = (report.missing || []).map(c => ({ id: c.id, why: c.why }));
++        if (report.rearmed) r.rearmed = true;
++        this.pending.push(r);
++        this._schedule();
++        return true;
++    }
++
++    /** A global changed: if a work plan or a station names it, sync before the next batch. */
++    onGlobalChanged(name) {
++        if (typeof this.deps.watched === 'function' && this.deps.watched(name)) this.needSync = true;
++    }
++
++    _schedule() {
++        if (this.timer !== null || this.sending || !this.pending.length) return;
++        const wait = Math.max(0, this.lastSent + REPORT_INTERVAL_MS - this._now());
++        const set = this.deps.setTimer || ((fn, ms) => setTimeout(fn, ms));
++        this.timer = set(() => { this.timer = null; this.flush(); }, wait);
++    }
++
++    async flush() {
++        if (this.sending || !this.pending.length) return;
++        if (this._now() - this.lastSent < REPORT_INTERVAL_MS) { this._schedule(); return; }
++        this.sending = true;
++        try {
++            if (this.needSync) {
++                this.needSync = false;
++                try { await this.deps.sync?.(); } catch (e) { /* the sync timer catches up */ }
++            }
++            const batch = this.pending.splice(0, MAX_BATCH);
++            this.lastSent = this._now();
++            this.requests++;
++            this.sent += batch.length;
++            let answers = [];
++            try {
++                const res = await this.deps.send(batch.map(({ _resent, ...r }) => r));
++                answers = Array.isArray(res?.answers) ? res.answers : [];
++            } catch (e) {
++                answers = [];   // a lost request loses one step of frustration and nothing else
++            }
++            const resend = [];
++            answers.forEach((a, i) => {
++                if (!a) return;
++                if (a.settled) this.settled.add(a.npcId);
++                if (a.stale && batch[i] && !batch[i]._resent) resend.push({ ...batch[i], _resent: true });
++            });
++            if (resend.length) { this.needSync = true; this.pending.unshift(...resend); }
++            const usable = answers.filter(a => a && !a.refused && !a.stale);
++            if (usable.length) this.deps.apply?.(usable);
++        } finally {
++            this.sending = false;
++            this._schedule();
++        }
++    }
++}
++
++/** The globals a loaded NPC's work plan or home station's offWhen names. */
++export function watchedGlobal(name, w = (typeof window !== 'undefined' ? window : {})) {
++    const npcs = w.npcManager?.npcs;
++    if (!npcs || typeof name !== 'string') return false;
++    for (const rec of npcs.values ? npcs.values() : []) {
++        if (rec?.work && npcWork.planGlobals(rec.work).includes(name)) return true;
++        const home = typeof rec?.needsHome === 'string' ? rec.needsHome : null;
++        if (!home || !rec?.work) continue;
++        const sp = w.npcNeedsSystem?.world?.getObject?.(home);
++        const cond = sp?.affordance?.offWhen;
++        if (typeof cond === 'string' ? cond === name : (cond && typeof cond === 'object' && Object.prototype.hasOwnProperty.call(cond, name))) return true;
++    }
++    return false;
++}
++
++/** Install the live queue as window.npcReports. */
++export function installNpcReports(api) {
++    const w = typeof window !== 'undefined' ? window : null;
++    if (!w) return null;
++    if (w.npcReports) return w.npcReports;
++    const reports = new NpcReports({
++        send: batch => (typeof api.npcFrustration === 'function' ? api.npcFrustration(batch) : api.post('/npc_frustration', { reports: batch })),
++        sync: () => w.stateSync?.sync?.(),
++        apply: answers => w.npcNeedsSystem?.applyFrustration?.(answers),
++        watched: name => watchedGlobal(name, w)
++    });
++    w.npcReports = reports;
++    w.eventDispatcher?.on?.('global_variable_changed:*', (data, name) => {
++        const key = typeof name === 'string' && name.startsWith('global_variable_changed:') ? name.slice('global_variable_changed:'.length) : data?.name;
++        reports.onGlobalChanged(key);
++    });
++    return reports;
++}
++
++export default NpcReports;
+diff --git a/public/break_escape/js/systems/test-bridge/access.js b/public/break_escape/js/systems/test-bridge/access.js
+index 7d76b53e3..536fb4e34 100644
+--- a/public/break_escape/js/systems/test-bridge/access.js
++++ b/public/break_escape/js/systems/test-bridge/access.js
+@@ -12,6 +12,8 @@
+  *   savedCards()        the card copier's saved_cards ids (client-written; never decides identity)
+  *   footholds()         the footholds systems/network-links.js holds (slice 9.3a)
+  *   networkView(id)     the last network view network-links.js fetched for that foothold
++ *   work(npcId)         slice 9.2: the NPC's work plan (read only), frustration level and tell
++ *   reports()           slice 9.2: how many POST /npc_frustration requests and reports were sent
+  *
+  * All JSON in and out.
+  */
+@@ -22,6 +24,25 @@ import { findSprite } from '../screen-states.js';
+ const json = (v) => (v === undefined ? null : JSON.parse(JSON.stringify(v)));
+ 
+ export const accessBridge = {
++    /**
++     * Slice 9.2 (ACCESS_MODEL_SLICE_9_2_PLAN.md 11): `{ plan, frustration, tell, settled, failed,
++     * parked }` for a needs NPC, `plan` being the server's `work` on its record (null without one).
++     */
++    work(npcId) {
++        const rec = window.npcManager?.getNPC?.(npcId) || window.npcManager?.npcs?.get?.(npcId) || null;
++        const st = window.npcNeedsSystem?.getState?.(npcId) || null;
++        if (!rec && !st) return null;
++        return json({ plan: rec?.work || null, frustration: st?.frustration ?? null, tell: st?.tell ?? null,
++            settled: st?.settled ?? null, failed: st?.failed ?? null, parked: st?.parked ?? [] });
++    },
++
++    /** Slice 9.2: `{ requests, reports, pending, settled }` from systems/npc-reports.js. */
++    reports() {
++        const r = window.npcReports;
++        if (!r) return { requests: 0, reports: 0, pending: 0, settled: [] };
++        return { requests: r.requests, reports: r.sent, pending: r.pending.length, settled: [...r.settled].sort() };
++    },
++
+     /**
+      * The client's session list, `[{ pcId, npcId, username, displayName, via }]`. Read from
+      * `window.pcSessions` (systems/pc-sessions.js, access model step 8): its `list()` when it
+diff --git a/test/js/npc-action-icons.test.mjs b/test/js/npc-action-icons.test.mjs
+index c4aac3143..c57b2a48c 100644
+--- a/test/js/npc-action-icons.test.mjs
++++ b/test/js/npc-action-icons.test.mjs
+@@ -36,3 +36,17 @@ test('targetInfo: cached by id after one room scan; dropped when the sprite is d
+         delete globalThis.window;
+     }
+ });
++
++test('access slice 9.2: blocked by tell for a judged NPC with no job, pulsing at 2; work on a visit; no bubble for held', async () => {
++    const m = await import('../../public/break_escape/js/systems/npc-action-icons.js');
++    const judged = { work: true, social_media: false };
++    assert.equal(m.stateIconEntry({ job: null, tell: 0, judged }, {}, false), null);
++    const one = m.stateIconEntry({ job: null, tell: 1, judged }, {}, false);
++    assert.equal(one.key, 'blocked');
++    assert.equal(one.pulse, false);
++    assert.equal(m.stateIconEntry({ job: null, tell: 2, judged }, {}, false).pulse, true);
++    assert.equal(m.stateIconEntry({ job: null, tell: 2, judged: { work: false } }, {}, false), null, 'not judged, not opted in');
++    assert.equal(m.pickIconEntry({ kind: 'visit', phase: 'goto_target', need: null }, {}).key, 'work');
++    assert.equal(m.thoughtBubble({ parked: [{ need: 'work', reason: 'held' }] }, {}, true), null);
++    assert.equal(m.thoughtBubble({ parked: [{ need: 'work', reason: 'failed' }] }, {}, true).kind, 'parked');
++});
+diff --git a/test/js/npc-needs-debug.test.mjs b/test/js/npc-needs-debug.test.mjs
+index 8676800b2..d51f5747e 100644
+--- a/test/js/npc-needs-debug.test.mjs
++++ b/test/js/npc-needs-debug.test.mjs
+@@ -66,3 +66,13 @@ test('jobLabel: " private" when only other owners\' private objects were passed
+     assert.equal(jobLabel({ mode: 'idle', clockMs: 0, privateNoted: { work: true } }, null), 'idle private');
+     assert.equal(jobLabel({ mode: 'idle', clockMs: 0, privateNoted: { work: false } }, null), 'idle');
+ });
++
++test('access slice 9.2: an F bar for frustration, last, only when given', async () => {
++    const { barLayout, FRUSTRATION_COLOUR } = await import('../../public/break_escape/js/systems/npc-needs-debug.js');
++    const needs = { work: { urgentAt: 50 }, caffeine: { urgentAt: 30 } };
++    assert.deepEqual(barLayout({ needs, levels: { work: 60, caffeine: 40 } }).map(r => r.letter), ['C', 'W']);
++    const rows = barLayout({ needs, levels: { work: 60, caffeine: 40 }, frustration: 40 });
++    assert.deepEqual(rows.map(r => r.letter), ['C', 'W', 'F']);
++    assert.equal(rows[2].colour, FRUSTRATION_COLOUR);
++    assert.equal(rows[2].fillW, Math.round(rows[2].w * 0.4));
++});
+diff --git a/test/js/npc-reports.test.mjs b/test/js/npc-reports.test.mjs
+new file mode 100644
+index 000000000..133a883a2
+--- /dev/null
++++ b/test/js/npc-reports.test.mjs
+@@ -0,0 +1,84 @@
++// The frustration report queue (systems/npc-reports.js), access slice 9.2 A-6 (plan 5.4).
++import { test } from 'node:test';
++import assert from 'node:assert/strict';
++import { NpcReports, REPORT_INTERVAL_MS, MAX_BATCH } from '../../public/break_escape/js/systems/npc-reports.js';
++
++function harness(answerFor = r => ({ npcId: r.npc_id, level: 20, tell: 1, settled: false })) {
++    let now = 0;
++    const timers = [];
++    const sent = [];
++    const syncs = [];
++    const applied = [];
++    const r = new NpcReports({
++        now: () => now,
++        setTimer: (fn, ms) => { timers.push({ fn, at: now + ms }); return timers.length; },
++        send: async batch => { sent.push({ at: now, batch }); return { answers: batch.map(answerFor) }; },
++        sync: async () => { syncs.push(now); },
++        apply: a => applied.push(...a),
++        watched: name => name === 'share_down'
++    });
++    const advance = async ms => {
++        now += ms;
++        for (;;) {
++            const due = timers.filter(t => t.at <= now && !t.done);
++            if (!due.length) break;
++            for (const t of due) { t.done = true; await t.fn(); }
++            await new Promise(res => setImmediate(res));
++        }
++    };
++    return { r, sent, syncs, applied, advance, setNow: v => { now = v; } };
++}
++
++const fail = (npc = 'dana') => ({ event: 'fail', need: 'work', objectId: `${npc}_pc`, missing: [{ id: 'finance_share', why: 'down' }] });
++
++test('reports are sent together, never more often than every two seconds and never more than 20', async () => {
++    const h = harness();
++    for (let i = 0; i < 25; i++) h.r.queue(`n${i}`, fail(`n${i}`));
++    await h.advance(0);
++    assert.equal(h.sent.length, 1);
++    assert.equal(h.sent[0].batch.length, MAX_BATCH);
++    assert.deepEqual(h.sent[0].batch[0], { npc_id: 'n0', event: 'fail', need: 'work', object_id: 'n0_pc', missing: [{ id: 'finance_share', why: 'down' }] });
++    await h.advance(REPORT_INTERVAL_MS - 1);
++    assert.equal(h.sent.length, 1);
++    await h.advance(1);
++    assert.equal(h.sent.length, 2);
++    assert.equal(h.sent[1].batch.length, 5);
++    assert.equal(h.r.requests, 2);
++    assert.equal(h.applied.length, 25);
++});
++
++test('no fail is sent for a settled NPC until an ease has been', async () => {
++    const h = harness(r => ({ npcId: r.npc_id, level: 100, tell: 2, settled: true }));
++    h.r.queue('kai', fail('kai'));
++    await h.advance(0);
++    assert.equal(h.r.queue('kai', fail('kai')), false);
++    assert.equal(h.r.queue('kai', { event: 'ease', need: 'work', objectId: 'kai_pc' }), true);
++    assert.equal(h.r.queue('kai', fail('kai')), true);
++});
++
++test('a change of a plan global forces one state sync before the next batch', async () => {
++    const h = harness();
++    h.r.onGlobalChanged('unrelated');
++    h.r.queue('dana', fail());
++    await h.advance(0);
++    assert.equal(h.syncs.length, 0);
++    h.r.onGlobalChanged('share_down');
++    h.r.queue('dana', fail());
++    await h.advance(REPORT_INTERVAL_MS);
++    assert.equal(h.syncs.length, 1);
++    h.r.queue('dana', fail());
++    await h.advance(REPORT_INTERVAL_MS);
++    assert.equal(h.syncs.length, 1, 'once per change');
++});
++
++test('a stale answer triggers one state sync and one resend', async () => {
++    let first = true;
++    const h = harness(r => { const a = first ? { npcId: r.npc_id, stale: true } : { npcId: r.npc_id, level: 20, tell: 1 }; first = false; return a; });
++    h.r.queue('dana', fail());
++    await h.advance(0);
++    await h.advance(REPORT_INTERVAL_MS);
++    assert.equal(h.sent.length, 2);
++    assert.equal(h.syncs.length, 1);
++    assert.deepEqual(h.sent[1].batch, h.sent[0].batch);
++    assert.equal(h.applied.length, 1, 'the stale answer is not applied');
++});
+diff --git a/test/js/playtest-verify-run-access.test.mjs b/test/js/playtest-verify-run-access.test.mjs
+index 47c9a3f57..3967b968f 100644
+--- a/test/js/playtest-verify-run-access.test.mjs
++++ b/test/js/playtest-verify-run-access.test.mjs
+@@ -46,7 +46,7 @@ test('--access prints only the access section, one line per key, and exits 0', (
+   const lines = r.out.trim().split('\n');
+   assert.match(lines[0], /^game\s+1\s+\(mission stub\)/);
+   assert.equal(lines[1], 'access model');
+-  assert.equal(lines.length, 10, r.out);
++  assert.equal(lines.length, 11, r.out);   // npcFrustration: slice 9.2
+   assert.match(r.out, /sessions\s+2: jake_pc = jake \(password\); it_pc = dana \(claim\)/);
+   assert.match(r.out, /signedInPcs\s+2: jake_pc; it_pc/);
+   assert.match(r.out, /serverClones\s+2: 4F00A1C2 from npc jake; EXEC-DF-01 from object exec_badge \(UID-only\)/);
+@@ -56,6 +56,7 @@ test('--access prints only the access section, one line per key, and exits 0', (
+   assert.doesNotMatch(r.out, /VERDICT|unlocked rooms|inventory/, 'nothing but the access section');
+   assert.match(r.out, /footholds\s+0\n/);
+   assert.match(r.out, /gainedFootholds\s+0\n/);
++  assert.match(r.out, /npcFrustration\s+0/);
+ });
+ 
+ test('--access prints footholds, gainedFootholds, and remote and foothold beside a session', () => {
+diff --git a/test/js/test-bridge-access.test.mjs b/test/js/test-bridge-access.test.mjs
+index 488b95f9f..7b1e3e8df 100644
+--- a/test/js/test-bridge-access.test.mjs
++++ b/test/js/test-bridge-access.test.mjs
+@@ -35,7 +35,7 @@ test('the bridge exposes the access block', () => {
+   const src = readFileSync(join(js, 'systems/test-bridge/index.js'), 'utf8');
+   assert.match(src, /import \{ accessBridge \} from '\.\/access\.js';/);
+   assert.match(src, /\baccess: accessBridge,/);
+-  assert.deepEqual(Object.keys(accessBridge).sort(), ['footholds', 'networkView', 'savedCards', 'screenTransitions', 'sessions', 'workstation']);
++  assert.deepEqual(Object.keys(accessBridge).sort(), ['footholds', 'networkView', 'reports', 'savedCards', 'screenTransitions', 'sessions', 'work', 'workstation']);
+ });
+ 
+ test('sessions() is empty without pc-sessions.js, and reads its list() or sessions map', () => {
+@@ -183,3 +183,15 @@ test('the event log keeps network_* events (slice 9.3a step 8)', async () => {
+   assert.deepEqual(log.peek().map(e => e.event), ['network_viewed', 'network_view_closed:jack_comms_port', 'npc_tick_chatter_x']);
+   assert.equal(emitted.length, 4, 'every event still reaches the dispatcher');
+ });
++
++test('slice 9.2: work(npcId) reads the plan and the needs state; reports() reads npc-reports.js', () => {
++  delete window.npcReports;
++  assert.deepEqual(accessBridge.reports(), { requests: 0, reports: 0, pending: 0, settled: [] });
++  window.npcReports = { requests: 2, sent: 3, pending: [{}], settled: new Set(['kai']) };
++  assert.deepEqual(accessBridge.reports(), { requests: 2, reports: 3, pending: 1, settled: ['kai'] });
++  window.npcManager = { getNPC: id => (id === 'dana' ? { id, work: { breakDrain: 10, needs: [] } } : null) };
++  window.npcNeedsSystem = { getState: id => (id === 'dana' ? { frustration: 20, tell: 1, settled: false, failed: null, parked: [] } : null) };
++  assert.deepEqual(accessBridge.work('dana'), { plan: { breakDrain: 10, needs: [] }, frustration: 20, tell: 1, settled: false, failed: null, parked: [] });
++  assert.equal(accessBridge.work('nobody'), null);
++  delete window.npcReports; delete window.npcManager; delete window.npcNeedsSystem;
++});
+diff --git a/tools/playtest/verify-run.rb b/tools/playtest/verify-run.rb
+index 048919e6c..47bf7acd8 100644
+--- a/tools/playtest/verify-run.rb
++++ b/tools/playtest/verify-run.rb
+@@ -58,7 +58,7 @@ g = BreakEscape::Game.find(game_id)
+ ps = g.player_state || {}
+ 
+ ACCESS_KEYS = %w[sessions signedInPcs serverClones copiedItems loginFailures loginLockouts footholds
+-                 gainedFootholds].freeze
++                 gainedFootholds npcFrustration].freeze
+ 
+ # The access model keys, one line each. Sign-in details are never in player_state, so
+ # nothing here is secret: NPC ids, PC ids, card ids, item ids and typed usernames.
+@@ -91,7 +91,12 @@ def access_section(ps)
+     ['loginFailures', failures],
+     ['loginLockouts', list.call(ps['loginLockouts']).map(&:to_s)],
+     ['footholds', footholds],
+-    ['gainedFootholds', list.call(ps['gainedFootholds']).map(&:to_s)]
++    ['gainedFootholds', list.call(ps['gainedFootholds']).map(&:to_s)],
++    # Slice 9.2 (ACCESS_MODEL_SLICE_9_2_PLAN.md 11): level, hand-overs and done workarounds per NPC
++    ['npcFrustration', hash.call(ps['npcFrustration']).sort.map do |id, e|
++      e = {} unless e.is_a?(Hash)
++      "#{id} level #{e['level'] || 0}, handed #{hash.call(e['handed']).size}, done #{list.call(e['done']).inspect}"
++    end]
+   ]
+   lines = ['access model']
+   rows.each do |name, items|
+-- 
+2.43.0
+
