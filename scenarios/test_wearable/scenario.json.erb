@@ -1,7 +1,7 @@
 {
   "scenario_id": "test_wearable",
   "scenario_name": "Test: Wearable items",
-  "scenario_brief": "Throwaway engine test for wearable items (docs/achitechture/WEARABLE_BUILD_LOG.md). Read the signs in order, W1 to W8. Nothing to solve.",
+  "scenario_brief": "Throwaway engine test for wearable items (docs/achitechture/WEARABLE_BUILD_LOG.md). Read the signs in order, W1 to W8 (W5b after W5). Nothing to solve.",
   "endGoal": "Work through the signs.",
   "version": "1.0",
   "show_scenario_brief": "never",
@@ -29,7 +29,7 @@
     {
       "aimId": "signs",
       "title": "Work through the signs",
-      "description": "W1 to W6 in the changing room and the office, W7 after a reload, W8 last.",
+      "description": "W1 to W6 (with W5b) in the changing room and the office, W7 after a reload, W8 last.",
       "status": "active",
       "order": 0,
       "tasks": [
@@ -150,7 +150,12 @@
         {
           "type": "notes1", "id": "sign_w5", "name": "Sign: W5 Watched",
           "position": { "x": 2, "y": 3 }, "takeable": false, "readable": true, "readDisplay": "gameDisplay", "addToNotes": false,
-          "text": "W5. Sam Ellery stands in this room. Click the vest in your inventory: it is refused, and a toast says Sam is watching. Drop here is refused too.\nGo back to the changing room: the same click works there."
+          "text": "W5. Wear the vest in the changing room, then come here, where Sam Ellery stands. Click the vest in your inventory: Take off is refused, and a toast says Sam Ellery is watching. Drop here is refused too. With the vest not worn, Put on is refused here as well.\nGo back to the changing room: the same click works there. Kim, in the next room, does not count while you are here. (One watcher shows his name; the lab's open-plan floor shows the long form, a name and N others.)"
+        },
+        {
+          "type": "notes1", "id": "sign_w5b", "name": "Sign: W5b Swap",
+          "position": { "x": 5, "y": 3 }, "takeable": false, "readable": true, "readDisplay": "gameDisplay", "addToNotes": false,
+          "text": "W5b. Wear the vest in the changing room and carry the guard jacket, then come here. Click the jacket: putting it on is refused, because the vest would come off in front of Sam. Back in the changing room the swap works."
         },
         {
           "type": "notes1", "id": "sign_w8", "name": "Sign: W8 Lost",

@@ -67,11 +67,21 @@ The item needs an `id`. Its tray click toggles it (Put on / Take off). A droppab
   set when the game is created; a game made before this build works it out on its first sync,
   inside the sync's row lock) are read-only to `sync_state`, as imported globals are. A client
   cannot set `courier_ready` by a sync.
-- An item leaving the server inventory (`remove_inventory_item!`, a network plant) clears the worn
-  record and its global.
+- An item leaving the server inventory (`remove_inventory_item!`, a network plant, a player drop)
+  clears the worn record and its global. A player drop of the worn item takes it out of the
+  inventory in the same request, so a client that sends no inventory remove after it cannot keep
+  the costume.
+- In a scenario with wearables `pp_disguise` is read-only to `sync_state` too: only `POST wear`
+  dresses the avatar there.
+- Taking off with no worn record clears any worn global still true (and `pp_disguise`). A game
+  made before this build, on its first sync, puts a worn global left true by the old
+  client-written costume in step once: it becomes the worn record when its item is held, and goes
+  false otherwise.
 - The bootstrap sends `wornItem` so the tray frame comes back after a reload.
 - Not server-checked: `unseenOnly`. The server does not know where NPCs stand; the rule is about
-  presentation, not access. Recorded as a limit.
+  presentation, not access. Recorded as a limit, and confirmed by the orchestrator after code
+  review round 1: it stays a client check, because the server has no NPC positions (they come
+  from the client's simulation) and nothing server-side reads what the costume grants.
 
 ### What a costume unlocks, and where the server checks it
 
@@ -86,8 +96,8 @@ player's costume. That is unchanged by this build and listed under open items.
 
 - `wearable` shape: costume names a `disguises` key, global is a string declared in
   `globalVariables`, the item has an id, `seenBy.ignore` names existing NPCs, actions are arrays.
-- No other writer of a worn global: a `set_global` with that key, a mapping's `setGlobal`, or an
-  ink assignment (`~ name =`) is an error.
+- No other writer of a worn global: a `set_global` with that key, a mapping's `setGlobal`, an ink
+  assignment (`~ name =`) or an ink `# set_global:name:value` tag is an error.
 - Two wearables may not share a global.
 - `set_costume` / `clear_costume` in a scenario with wearables is a warning (the costume and the
   worn item can disagree).
@@ -144,17 +154,56 @@ Open:
 
 - Art: `hivis_vest.png` (the plan's tray picture) does not exist; the vest keeps the hook's
   sprite `aes_hivis_hook1` in the tray.
-- The records door gate is still a client-side control. The server opens `secure_area` for Len's
-  route (`npc_mapping_unlocks_door?`, method `npc`), so a player who calls `POST unlock` with
-  method `npc` and attempt `len` loads the records office with no costume. Closing that needs the
-  server to tell the guard's route unlock from the player's passage (an access model change, not
-  this build's).
-- `unseenOnly` is client-only (the server does not know where NPCs stand).
+- The records door gate is a client-side control, and the gap is on `main`, not this branch's.
+  No forged call is needed: Len's own route action runs in the player's browser and unlocks
+  `secure_area` through `validate_unlock` (method `npc`, `npc_mapping_unlocks_door?`), so after
+  his first trip the room is in the player's `unlockedRooms` and loads with no costume. The
+  lab's credit for the tailgate (`kp_badge_tailgated` and the manual task `tailgate_in`) is
+  written by client mappings and is writable by `sync_state` and `POST complete_task` anyway. So
+  the worn global's server ownership matters only to a server reader of it, and the lab has none
+  today. The sketched fix (route rooms kept apart from `unlockedRooms`, promoted only while the
+  gate's worn global is true, and a server-set credit) is in `docs/IDEAS_BACKLOG.md`; it is an
+  access model change with its own plan, not done here (orchestrator decision, review round 1).
+- `unseenOnly` is client-only (see Server above).
 - The playtest harness's `inventoryAct` reports a confirm overlay as "confirmed" without clicking
-  Confirm; follow it with `dismiss` "Confirm". A plain `location.reload()` in a run starts a new
-  game (documented in the skill); game 1208 is such a stray.
+  Confirm; follow it with `dismiss` "Confirm" (now in the playtest-scenario skill). A plain
+  `location.reload()` in a run starts a new game (documented in the skill); game 1208 is such a
+  stray.
 - The `test_wearable` mission row was added to the shared database by hand (one record, the
   `db/seeds.rb` fields), because seeding from a worktree would delete other worktrees' missions.
+
+## Code review round 1: outcomes
+
+Reviews: `WEARABLE_CODE_REVIEW_R1_SERVER.md` (m, n) and `WEARABLE_CODE_REVIEW_R1_CLIENT.md`
+(numbered). Every finding, with what was done:
+
+| Finding | Outcome |
+|---------|---------|
+| Server m1 (costume protects no server outcome, pre-existing) | Wording corrected under Open; backlog entry with the review's sketch; not fixed here (orchestrator) |
+| Server m2 (in-flight lab games stuck with `courier_ready` true) | Fixed: take off with no record clears true worn globals; an older game's first sync reconciles once; the client's `take_off` also posts when the item's global is true with no record. Rails and JS tests |
+| Server m3 (a player drop alone keeps the worn item) | Fixed: `player_drop` of the worn item removes it from the inventory and takes it off. The drop test now sends no remove |
+| Server m4 (validator misses `# set_global:` tags) | Fixed, with a test. The scan still reads only `<scenario>/ink`, which holds every lab `storyPath` |
+| Server m5 (test gaps) | Added: the lab's grant then wear then take off, a planted worn device, `POST wear` on another player's game (403), the drop and in-flight cases, `check_wearables` on the lab in a Rails test |
+| Server n1 (log line) | Fixed: "read-only global", silent when the stored value is nil and the client sends false, "" or nil |
+| Server n2 (`spec_for_id` unused) | Removed |
+| Server n3 (`pp_disguise` client-writable) | Fixed: read-only to `sync_state` in a scenario with wearables only. Test |
+| Server n4 (unrouted `Api::GamesController`) | Comment added saying why it must stay unrouted |
+| Server n5 (docs) | README sentence: a mapping that copies the worn global into another global is still client-writable |
+| Client 1 (text to innerHTML) | Fixed: every wearable toast and confirm passes `{ plainText: true }`, the tray drop refusal too. Tests with a hostile `displayName` and the server message |
+| Client 2 (swap under watch) | Fixed: `putOn` also checks the worn item's `unseenOnly`. Unit test and sign W5b |
+| Client 3 (watchers before the confirm only) | Fixed: checked again after the confirm, put on and take off. Test |
+| Client 4 (no in-flight guard) | Fixed: one change at a time per window; a second click is dropped, a forced take-off waits. Tests |
+| Client 5 (failed `setCostume` recorded as worn) | Fixed: the costume goes on first; on failure nothing is recorded, the server is told to take it off, the player gets a toast. Test |
+| Client 6 (`restore()` untested duplicate) | `restore()` and its test deleted; `core/game.js` keeps the inline read (the module loads after it) |
+| Client 7 (hooks no test would miss) | `test/js/wearable-hooks.test.mjs`: `removeFromInventory`, `refreshInventoryTray`, the tray click in `interactions.js`, the drop refusal in `openInventoryItemMenu`; each fails with its hook removed (checked). The forced take-off after a 422 is in `wearables.test.mjs` |
+| Client 8 (W5 sign) | Fixed: wear the vest first, then both Take off and Drop here are refused |
+| Client 9 (sign coverage) | W5b for the swap; W5 now says Kim in the next room does not count and where the long-form toast shows. No third NPC added |
+| Client 10 (themed keyline) | Fixed: the selector is raised with `#inventory-container` |
+| Client 11 (faux bold) | `font-weight: bold` dropped |
+| Client 12 (`menuLabel` window) | Fixed: passed the window it found |
+| Client 13 (raw id as a name) | Fixed: "someone" when there is no `displayName`. Test |
+| Client 14 (`triggerOnInteract` on a wearable) | Already a validator warning (`check_wearables`); no change |
+| Client 15 (`inventoryAct` note) | Not a bug; the skill note added (user approved, q09) |
 
 ## Handover
 
