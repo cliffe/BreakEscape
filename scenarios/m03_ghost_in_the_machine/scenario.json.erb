@@ -60,6 +60,14 @@ lore_fragment_2 = "Q4 2024 EXPLOIT CATALOGUE (internal)\n\nPremium tier:\n- ProF
 
 lore_fragment_3_encoded = architect_directive_double
 
+# VM HOOK (2026-11-10): the VM's flag-3 price board is a Caesar shift by
+# price_board_shift (SecGen caesar_shift encoder, shift_key pinned to the SAME value in
+# SecGen scenarios/break_escape/safetynet/m03_ghost_in_the_machine.xml). Sable moved it off
+# ROT13; the number is in her unsent email (exec office PC -> Base64), the one that also
+# carries the safe code. The runbook and HaX point at her mail. A 25-key shift can also be
+# brute-forced, which the lab sheet teaches as the fallback. Change both sides together.
+price_board_shift = 7
+
 # P3-2: the VM's flag-3 price list (SecGen only, in SECGEN_PROPOSED_m03_ghost_in_the_machine.xml)
 # is the PUBLIC version of the catalogue: the same tiers, prices and healthcare-premium note,
 # but no buyer names, no SOLD ledger and no reserved stock. Those live only in the wall-safe
@@ -189,6 +197,8 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           { "text": "DANNY FOSTER: TAKEN DOWN IN HIS OWN OFFICE", "style": "warning", "condition": "globalVars.danny_fate === 'ko'" },
           { "text": "DANNY FOSTER: KNOCKED OUT AFTER YOU'D SPOKEN, picked up in his office", "style": "warning", "condition": "globalVars.danny_ko === true && globalVars.danny_fate !== 'ko' && !!globalVars.danny_fate" },
           { "text": "DANNY FOSTER: NEVER FOUND — his name is still in the recon files", "style": "warning", "condition": "!globalVars.danny_fate" },
+          { "text": "NINE MORE HOSPITALS ON THE SAME FTP BUILD: named by Foster, patched before the next job", "style": "entry", "condition": "globalVars.danny_named_sites === true" },
+          { "text": "THE NEXT HOSPITAL: somewhere on the 214-site survey, still running St. Catherine's build", "style": "warning", "condition": "globalVars.danny_named_sites !== true" },
           { "text": "TERRY MOTT, NIGHT GUARD: KNOCKED OUT ON SHIFT", "style": "warning", "condition": "globalVars.guard_knocked_out === true" },
           { "text": "FFION REES, WHITEHAT RECEPTION: KNOCKED OUT AT HER OWN DESK", "style": "warning", "condition": "globalVars.receptionist_ko === true" },
           { "text": "PERFECT STEALTH: past the night guard unseen, with no excuses and no bribes", "style": "entry", "condition": "globalVars.guard_detection_count === 0 && globalVars.exec_office_entered === true && globalVars.guard_knocked_out !== true && globalVars.guard_told_safetynet !== true && globalVars.guard_bribed !== true && globalVars.guard_challenged !== true" },
@@ -611,7 +621,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "behavior": { "initiallyHidden": true },
           "voice": {
             "name": "Aoede",
-            "style": "Intelligence handler giving a mission briefing. Speak with a consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
+            "style": "Professional intelligence handler giving a mission briefing. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
             "language": "en-GB"
           },
           "storyPath": "scenarios/m03_ghost_in_the_machine/ink/m03_opening_briefing.json",
@@ -739,7 +749,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "currentKnot": "start",
           "voice": {
             "name": "Aoede",
-            "style": "Intelligence handler speaking over a secure phone line. Speak with a consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
+            "style": "Intelligence handler speaking over a secure phone line. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
             "language": "en-GB"
           },
           "itemsHeld": [
@@ -979,16 +989,25 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "sendTimedMessage": { "delay": 2000, "message": "Scan's in. That's their lab mapped. One of those services should look familiar: the FTP server runs the build that opened St. Catherine's." }
             },
             {
+              "_comment": "Story pass (flag 2 STRONG): the note says they rehearse St. Catherine's 'before every healthcare job', so there is a next hospital on Danny's survey. HaX points at Danny while he can still be asked (m03_danny_choice.ink next_job sets danny_named_sites; the debrief and credits read it). Two disjoint mappings on danny_ko (globalVarOnKO, so it covers a KO before or after talking); each sets flag_ftp_submitted.",
               "eventPattern": "objective_task_completed:submit_ftp_flag",
+              "condition": "globalVars.danny_ko !== true",
               "onceOnly": true,
               "setGlobal": { "flag_ftp_submitted": true },
-              "sendTimedMessage": { "delay": 2000, "message": "FTP's in. The backdoor they sold Ghost, running on their own training box. They rehearse on what they sell." }
+              "sendTimedMessage": { "delay": 2000, "message": "FTP's in. Read the note: they rehearse St. Catherine's before every healthcare job. There's a next hospital. Danny Foster drew their survey -- he'll know which sites still run that build." }
+            },
+            {
+              "eventPattern": "objective_task_completed:submit_ftp_flag",
+              "condition": "globalVars.danny_ko === true",
+              "onceOnly": true,
+              "setGlobal": { "flag_ftp_submitted": true },
+              "sendTimedMessage": { "delay": 2000, "message": "FTP's in. Read the note: they rehearse St. Catherine's before every healthcare job. There's a next hospital on that survey, and the man who drew it is out cold. We'll find it the slow way." }
             },
             {
               "eventPattern": "objective_task_completed:submit_http_flag",
               "onceOnly": true,
               "setGlobal": { "flag_http_submitted": true },
-              "sendTimedMessage": { "delay": 2000, "message": "Price list's in. Read the healthcare tier and you'll see why we're here." }
+              "sendTimedMessage": { "delay": 2000, "message": "Price list's in, unlocked with Sterling's own shift. Read the healthcare tier and you'll see why we're here." }
             },
             {
               "_comment": "P3-3: a text that opens the revelation call when clicked (m02 A7 pattern), so the drop-site isn't closed under the player. revelation_heard is still set at the end of the call, so the all-flags text still waits for it.",
@@ -1170,7 +1189,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "behavior": { "initiallyHidden": true },
           "voice": {
             "name": "Aoede",
-            "style": "Intelligence handler giving a mission debrief in person. Speak with a consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
+            "style": "Professional intelligence handler in debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
             "language": "en-GB"
           },
           "eventMappings": [
@@ -1486,7 +1505,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "name": "Training Lab Runbook",
               "takeable": true,
               "readable": true,
-              "text": "STUDENT RUNBOOK -- TRAINING LAB\n\n1. nmap the lab network from the server room terminal. Everything you need answers a scan.\n2. The FTP box runs ProFTPD 1.3.3c, the trojaned 2010 build. Anonymous login works; nothing that matters lives in the anonymous folder.\n3. The web host serves the price list. It is only encoded, not encrypted.\n4. The legacy build runs distcc. Do not run exploits against it without sign-off.\n\nInstructor note: the legacy box is not a toy. Leave it alone."
+              "text": "STUDENT RUNBOOK -- TRAINING LAB\n\n1. nmap the lab network from the server room terminal. Everything you need answers a scan.\n2. The FTP box runs ProFTPD 1.3.3c, the trojaned 2010 build. Anonymous login works; nothing that matters lives in the anonymous folder.\n3. The web host serves the price list. It used to be plain ROT13; Sable has put it on her own shift and mails the number to clients. Still only a letter shift, not real encryption.\n4. The legacy build runs distcc. Do not run exploits against it without sign-off.\n\nInstructor note: the legacy box is not a toy. Leave it alone."
             }
           ]
         },
@@ -1536,7 +1555,9 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "observations": "Zero Day's VM access terminal, the only way into their isolated training network: the box they rehearse exploits on before they sell them. Nightshade has bridged it to your own kit, so the lab opens on your machine like any other VM. The panel says how.",
           "puzzle_graph_role": "vm",
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
-          "vm": <%= vm_object('attack_vm', {"id":1,"title":"attack_vm","ip":"192.168.100.2","enable_console":true}) %>
+          "vm": <%= vm_object('attack_vm', {"id":1,"title":"attack_vm","ip":"192.168.100.2","enable_console":true}) %>,
+          "showPostit": true,
+          "postitNote": "user: kali\npassword: kali"
         },
         {
           "type": "workstation",
@@ -1546,7 +1567,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "takeable": true,
           "puzzle_graph_role": "tool",
           "puzzle_graph_note": "Decoding tool — take it, then paste the whiteboard, Sterling's draft, the client roster and the desk drive to reveal the intel",
-          "observations": "A laptop left open on CyberChef. Take it, then paste anything encoded you find — ROT13, Base64, hex, and layered combinations all decode here. Encoding is not encryption; there is no key to find."
+          "observations": "A laptop left open on CyberChef. Take it, then paste anything encoded you find — ROT13, Base64, hex, and layered combinations all decode here. ROT13 is only a letter shift of 13; the same operation takes any amount, so a different shift needs only its number."
         },
         {
           "type": "flag-station",
@@ -1569,7 +1590,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               ending. %>
           "flagRewards": [
             { "type": "give_item", "item_name": "Training Network Map", "label": "Training network mapped — their service list is in hand.", "description": "network-scan flag submitted - the drop-site prints the scan's service map" },
-            { "type": "give_item", "item_name": "FTP Rehearsal Note", "label": "FTP intelligence pulled from the training box.", "description": "FTP flag submitted - the drop-site prints the operator note off the FTP box" },
+            { "type": "give_item", "item_name": "FTP Rehearsal Note", "label": "FTP box rooted. Its operator note says there's a next hospital.", "description": "FTP flag submitted - the drop-site prints the operator note off the FTP box" },
             { "type": "give_item", "item_name": "Zero Day Price List", "label": "Pricing intelligence decoded.", "description": "pricing flag submitted - the drop-site prints the decoded price list" },
             { "type": "give_item", "item_name": "Zero Day Transaction Log", "label": "distcc box compromised — the transaction log prints out.", "description": "distcc flag submitted - the drop-site prints the recovered transaction log" }
           ],
@@ -1590,8 +1611,8 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "name": "FTP Rehearsal Note",
               "takeable": true,
               "readable": true,
-              "text": "FTP BOX // OPERATOR NOTE (restricted)\nPulled off the training lab's file-transfer box.\n\n\"This is the exact build we shipped to GHOST. We rehearse the St. Catherine's delivery on this box before every sale. Do not patch it -- the rehearsal has to match what the buyer gets.\"\n\nThe backdoor they sold is the backdoor they practise on.",
-              "observations": "An operator's own note off the FTP box: they rehearse the St. Catherine's attack on the same backdoored build they sold Ghost.",
+              "text": "FTP BOX // OPERATOR NOTE (restricted)\nPulled off the training lab's file-transfer box.\n\n\"This is the exact build we shipped to GHOST. We rehearse the St. Catherine's delivery on this box before every healthcare job. Do not patch it -- the rehearsal has to match what the buyer gets.\"\n\nEvery healthcare job. St. Catherine's came off a survey of 214 hospitals, and it was only the first.",
+              "observations": "An operator's own note off the FTP box: they rehearse the St. Catherine's attack before every healthcare job. There is a next hospital, and it is somewhere on the same survey.",
               "puzzle_graph_role": "reward"
             },
             {
@@ -1600,8 +1621,8 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "name": "Zero Day Price List",
               "takeable": true,
               "readable": true,
-              "text": "ZERO DAY SYNDICATE // Q4 PRICE LIST\nDecoded from the lab's web box. Encoding is not encryption -- there was no key to break.\n\nLINE ITEM                          PRICE\nFile-transfer source backdoor      25,000\n  + healthcare sector premium      +40%\nTarget selection consultation      on request\n\nThe premium is the point: they charge more to aim it at a hospital.",
-              "observations": "The price board off the web box, decoded. The healthcare premium is why we are here -- they charge extra to point it at a hospital.",
+              "text": "ZERO DAY SYNDICATE // Q4 PRICE LIST\nDecoded from the lab's web box with Sable's own shift, the number out of her own mail. A shift is not real encryption: twenty-five possible keys, and she posted hers.\n\nLINE ITEM                          PRICE\nFile-transfer source backdoor      25,000\n  + healthcare sector premium      +40%\nTarget selection consultation      on request\n\nThe premium is the point: they charge more to aim it at a hospital.",
+              "observations": "The price board off the web box, decoded with the shift from Sterling's mail. The healthcare premium is why we are here -- they charge extra to point it at a hospital.",
               "puzzle_graph_role": "reward"
             },
             {
@@ -1783,7 +1804,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "name": "Unsent email to the night team (raw source)",
               "takeable": true,
               "readable": true,
-              "text": "<%= base64_encode('To: night team. From: Sable.\nCatalogue safe re-coded to 5829 -- memorise it, do not write it on the board again.\nObsidian Q4 pricing goes out Friday: ProFTPD-class $25k, Struts $18k, healthcare +40% as ever.\nArchitect wants the Phase 2 list same day. -V') %>",
+              "text": "<%= base64_encode("To: night team. From: Sable.\nCatalogue safe re-coded to #{catalogue_safe_code} -- memorise it, do not write it on the board again.\nObsidian Q4 pricing goes out Friday: ProFTPD-class $25k, Struts $18k, healthcare +40% as ever.\nThe web price board is off ROT13 -- any student could read it. Every letter now moves on #{price_board_shift} places. Clients get the number from me, nobody else.\nArchitect wants the Phase 2 list same day. -V") %>",
               "observations": "An unsent email to the night team, shown as raw message source. Her mail client saved it before it was ever sent: one unbroken block of upper and lower case letters, digits, + and /. Not a word of English in it.",
               "onRead": { "setVariable": { "draft_seen": true } },
               "puzzle_graph_role": "clue",
@@ -1952,6 +1973,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
     "player_approach": "",
     "knows_m2_connection": false,
     "danny_fate": "",
+    "danny_named_sites": false,
     "flag_scan_submitted": false,
     "flag_ftp_submitted": false,
     "flag_http_submitted": false,

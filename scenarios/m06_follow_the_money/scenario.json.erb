@@ -735,6 +735,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
     "flag2_submitted": false,
     "flag3_submitted": false,
     "flag4_submitted": false,
+    "irina_ledger_leverage": false,
     "financial_network_mapped": false,
     "exchange_infiltrated": false,
     "blockchain_debrief_available": false,
@@ -845,7 +846,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           },
           "voice": {
             "name": "Aoede",
-            "style": "Professional intelligence handler delivering a mission briefing. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Steady, mid-range pitch, brisk and purposeful.",
+            "style": "Professional intelligence handler giving a mission briefing. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
             "language": "en-GB"
           },
           "storyPath": "scenarios/m06_follow_the_money/ink/m06_opening_briefing.json",
@@ -909,7 +910,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "currentKnot": "start",
           "voice": {
             "name": "Aoede",
-            "style": "Intelligence handler speaking over a secure phone line. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Quick, warm, slightly wry.",
+            "style": "Intelligence handler speaking over a secure phone line. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
             "language": "en-GB"
           },
           "itemsHeld": [
@@ -969,7 +970,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "id": "relayed_password_dictionary",
               "name": "Password Dictionary List (relayed copy)",
               "takeable": true,
-              "text": "HASHCHAIN INTERNAL — CREDENTIAL AUDIT WORDLIST\n(copy pulled from Dr. Volkova's workstation by SAFETYNET)\n\nbitcoin\nethereum\nsatoshi\nblockchain\nledger\nmonero\nhodl\nmoonshot\nprivatekey\ncoldstorage\n\nAppend: 2023 / 2024 / 2025 / 123 / !",
+              "text": "HASHCHAIN INTERNAL — CREDENTIAL AUDIT WORDLIST\n(copy pulled from Dr. Volkova's workstation by SAFETYNET)\n\nbitcoin\nethereum\nsatoshi\nblockchain\nledger\nmonero\nhodl\nmoonshot\nprivatekey\ncoldstorage\n\nDoor passphrases: a word above plus 2023 / 2024 / 2025 / 123 / !\nService accounts on the backend: the bare words above, no suffix.",
               "observations": "Volkova's audit wordlist, pulled off her workstation by SAFETYNET"
             },
             {
@@ -1119,7 +1120,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "onceOnly": true,
               "setGlobal": { "recon_guide_offered": true, "druid_guide_offered": true, "cracking_guide_offered": true },
               "completeTask": "access_hackme_vm",
-              "sendTimedMessage": { "delay": 1800, "message": "You're on the backend. A data-analytics service is listening that shouldn't be: that's your way in. Four accounts across their estate. Map first. I've recon, Druid and cracking guides." }
+              "sendTimedMessage": { "delay": 1800, "message": "You're on the backend. A data-analytics service is listening that shouldn't be: that's your way in. Four service accounts hold what we want, and one operator login runs the box. Map first. I've recon, Druid and cracking guides." }
             },
             {
               "_comment": "PASS 2: used to read the passphrase out ('bitcoin2025') the moment the checklist was picked up, which made the puzzle a pickup. Now HaX points at the second half of the clue.",
@@ -1157,8 +1158,8 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "eventPattern": "objective_task_completed:submit_flag2",
               "onceOnly": true,
               "setGlobal": { "flag2_submitted": true },
-              "_comment": "Pass 5 A6: flag 2 had no story reaction.",
-              "sendTimedMessage": { "delay": 5500, "message": "Second account. One password, two boxes, just as their rack sheet admitted, and as Volkova warned you on the floor. Next is the financial database. Its account runs their doors.", "skipIfGlobal": "flag3_submitted" }
+              "_comment": "Story pass 2026-11-11: flag 2 pays out the ledger's compliance holds (Ledger Hold Log). Volkova held all three ENTROPY deposits herself; flag2_submitted opens a leverage choice in her recruitment_decision.",
+              "sendTimedMessage": { "delay": 5500, "message": "Second account, their ledger. Same password, as the rack sheet admitted. Read the hold log: Volkova stopped all three ENTROPY deposits herself, then let them go. Next is the financial database. Its account runs their doors.", "skipIfGlobal": "flag3_submitted" }
             },
             {
               "eventPattern": "objective_task_completed:submit_flag3",
@@ -1653,7 +1654,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           },
           "voice": {
             "name": "Aoede",
-            "style": "Professional intelligence handler in debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Steady, mid-range pitch, reviewing critical information under time pressure.",
+            "style": "Professional intelligence handler in debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
             "language": "en-GB"
           },
           "storyPath": "scenarios/m06_follow_the_money/ink/m06_closing_debrief.json",
@@ -1888,8 +1889,8 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "id": "m06_password_dictionary",
               "name": "Password Dictionary List",
               "takeable": true,
-              "text": "HASHCHAIN INTERNAL — CREDENTIAL AUDIT WORDLIST\n\nCompiled by Dr. I. Volkova for internal password strength testing.\n\nbitcoin\nethereum\nsatoshi\nblockchain\nledger\nmonero\nhodl\nmoonshot\nprivatekey\ncoldstorage\n\nAppend: 2023 / 2024 / 2025 / 123 / !\n\nNote: 61% of staff accounts fell to this list in the last audit.\nManagement's response was to stop running the audit.",
-              "observations": "Irina's own audit wordlist: the words and years staff here pick for door passphrases",
+              "text": "HASHCHAIN INTERNAL — CREDENTIAL AUDIT WORDLIST\n\nCompiled by Dr. I. Volkova for internal password strength testing.\n\nbitcoin\nethereum\nsatoshi\nblockchain\nledger\nmonero\nhodl\nmoonshot\nprivatekey\ncoldstorage\n\nDoor passphrases: a word above plus 2023 / 2024 / 2025 / 123 / !\nService accounts on the backend: the bare words above, no suffix.\n\nNote: 61% of staff accounts fell to this list in the last audit.\nManagement's response was to stop running the audit.",
+              "observations": "Irina's own audit wordlist: the words staff here pick, with the years they bolt on for door passphrases. The backend service accounts use the bare words. Short enough to type out by hand.",
               "puzzle_graph_role": "tool",
               "puzzle_graph_unlocks": "server_room"
             },
@@ -1991,6 +1992,8 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "observations": "Operator terminal onto the exchange's backend financial estate — several servers, all of them behind passwords",
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
           "vm": <%= vm_object('kali_cracker', {"id":6,"title":"kali_cracker","ip":"172.16.0.3","enable_console":true}) %>,
+          "showPostit": true,
+          "postitNote": "user: kali\npassword: kali",
           "puzzle_graph_role": "terminal",
           "puzzle_graph_unlocks": "flag_station_financial"
         },
@@ -2014,11 +2017,10 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "description": "Flag 1: First server password cracked — initial backend access"
             },
             {
-              "type": "set_global",
-              "key": "flag2_submitted",
-              "value": true,
-              "label": "Credential reuse — a second account opened",
-              "description": "Flag 2: Credential reuse — the same password opens a second account"
+              "type": "give_item",
+              "item_name": "Ledger Hold Log",
+              "label": "Credential reuse — the ledger account opened",
+              "description": "Flag 2: Credential reuse — the same password opens the internal ledger; the drop-site cuts you its compliance holds"
             },
             {
               "type": "give_item",
@@ -2034,15 +2036,25 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
             }
           ],
 <%# PASS 2 (m02 flag-payout pattern, 71e8852e): flag 3 opens the data centre,
-    flag 4 makes the freeze option possible. process_item_reward matches on name. %>
+    flag 4 makes the freeze option possible, and (story pass) flag 2's hold log
+    gives Volkova's recruitment a leverage choice. process_item_reward matches on name. %>
           "itemsHeld": [
+            {
+              "type": "text_file",
+              "id": "ledger_hold_log",
+              "name": "Ledger Hold Log",
+              "takeable": true,
+              "readable": true,
+              "text": "hcledger :: compliance_holds (mixer intake, Jul - Aug)\n\nhold   deposit              amount       placed by   status\nH-114  1ENTROPY2RansomInc   $2,400,000   i.volkova   RELEASED (CTO override)\nH-131  1ENTROPY3ZeroDaySy   $1,200,000   i.volkova   RELEASED (CTO override)\nH-140  1ENTROPY1SocialFab     $680,000   i.volkova   RELEASED (CTO override)\n\nHold reason (all three): raised by D. Okonkwo, trading desk. Source wallets match the sanctions heuristic. Do not release. -- I.V.\nRelease note (all three): released on CEO instruction. -- I.V.",
+              "observations": "Volkova put a hold on every ENTROPY deposit herself, then released each one on the CEO's instruction."
+            },
             {
               "type": "text_file",
               "id": "door_controller_export",
               "name": "Door Controller Export",
               "takeable": true,
               "readable": true,
-              "text": "hc-findb-01 :: door_controllers.csv (export)\n\ncontroller,door,auth,secret,set_by\nDC-01,server room,passphrase,(convention),IT\nDC-02,data centre,pin,3110,CEO\nDC-03,executive wing,rfid,executive_badge,CEO\nDC-04,CTO office,rfid,cto_badge,CTO\n\n# DC-02 note (CEO): 31/10. The day the whitepaper went out.\n# DC-03 note (ops): spare executive badge signed out to the CTO for the reader install. Never returned.",
+              "text": "hcfindb :: door_controllers.csv (export)\n\ncontroller,door,auth,secret,set_by\nDC-01,server room,passphrase,(convention),IT\nDC-02,data centre,pin,3110,CEO\nDC-03,executive wing,rfid,executive_badge,CEO\nDC-04,CTO office,rfid,cto_badge,CTO\n\n# DC-02 note (CEO): 31/10. The day the whitepaper went out.\n# DC-03 note (ops): spare executive badge signed out to the CTO for the reader install. Never returned.",
               "observations": "The door controllers run off the financial database's service account. The data centre code is on the second line.",
               "puzzle_graph_role": "key",
               "puzzle_graph_unlocks": "data_center"
@@ -2053,7 +2065,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "name": "Cold Storage Recovery Keys",
               "takeable": true,
               "readable": true,
-              "text": "hc-vault-01 :: cold_storage/recovery.keys\n\nRecovery material for every cold slot HashChain holds.\n\nslot 2207   [key material]\nslot 3815   [key material]\nslot <%= fund_slot %>   [key material]\nslot 5093   [key material]\nslot 6120   [key material]\nslot 7302   [key material]\nslot 8846   [key material]\n\nWhoever holds these can move a cold wallet's coins before its owner can.",
+              "text": "hcvault :: cold_storage/full_access_flag\n\nRecovery material for every cold slot HashChain holds.\n\nslot 2207   [key material]\nslot 3815   [key material]\nslot <%= fund_slot %>   [key material]\nslot 5093   [key material]\nslot 6120   [key material]\nslot 7302   [key material]\nslot 8846   [key material]\n\nWhoever holds these can move a cold wallet's coins before its owner can.",
               "observations": "With these you can move the Architect's Fund into a wallet SAFETYNET holds tonight. Without them, the only choice left is to watch where it goes."
             }
           ]
@@ -2065,7 +2077,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "_comment": "Pass-4 dialogue playtest: auto-placed 23 px south of the flag station, so interacting from the north opened the station. Room dressing (room_hce_servers): it now has its own notes slot at the far end of the ops bench, 32 px+ from the station.",
           "takeable": true,
           "readable": true,
-          "text": "HASHCHAIN — RACK B INVENTORY\n\nB-01  hc-auth-01      (staff authentication)\nB-02  hc-trade-01     (matching engine)\nB-03  hc-ledger-01    (internal ledger — RESTRICTED)\nB-04  hc-findb-01     (financial database — RESTRICTED)\nB-05  hc-vault-01     (cold storage keys — RESTRICTED)\nB-06  hc-mixer-01     (privacy conversion service)\nB-07  hc-analytics-01 (Apache Druid dashboards — console on the backend LAN, no auth, \"temporary\")\n\nNote from ops: the auth and ledger service accounts share a password.\nThe financial database account also drives the door controllers.\nThe analytics box (B-07) was stood up for a board demo and never locked down — it talks to the whole backend.\nRaised as a risk in March. Closed as 'accepted'.",
+          "text": "HASHCHAIN — RACK B INVENTORY\n\nB-01  hcauth          (staff authentication — service account)\nB-02  hc-trade-01     (matching engine)\nB-03  hcledger        (internal ledger — RESTRICTED — service account)\nB-04  hcfindb         (financial database — RESTRICTED — service account)\nB-05  hcvault         (cold storage keys — RESTRICTED — service account)\nB-06  hc-mixer-01     (privacy conversion service)\nB-07  hc-analytics-01 (Apache Druid dashboards — console on the backend LAN, no auth, \"temporary\")\n\nOperator login for the backend: hcops.\n\nNote from ops: the auth and ledger service accounts share a password.\nThe financial database account also drives the door controllers.\nThe analytics box (B-07) was stood up for a board demo and never locked down — it talks to the whole backend.\nRaised as a risk in March. Closed as 'accepted'.",
           "observations": "Rack inventory. An analytics box sits on the backend with no login, two service accounts share a password, and the financial database's account runs the doors.",
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "credential_reuse_available"
@@ -2205,7 +2217,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "name": "Cold Storage Procedure",
           "takeable": true,
           "readable": true,
-          "text": "HASHCHAIN EXCHANGE - COLD STORAGE PROCEDURE (OPS)\n\nTotal cold holdings: $44.3M USD equivalent\n\nRecovery keys for every cold wallet live on ONE account: the vault\naccount on the backend (hc-vault-01). Nowhere else. Not on paper.\n\nAnyone who can read that account can move a cold wallet's coins\nbefore its owner can. Guard it accordingly.\n\n(It has the same kind of password as everything else here.)",
+          "text": "HASHCHAIN EXCHANGE - COLD STORAGE PROCEDURE (OPS)\n\nTotal cold holdings: $44.3M USD equivalent\n\nRecovery keys for every cold wallet live on ONE account: the vault\naccount on the backend (hcvault). Nowhere else. Not on paper.\n\nAnyone who can read that account can move a cold wallet's coins\nbefore its owner can. Guard it accordingly.\n\n(Its password is long and random. The operator login can still read it.)",
           "observations": "The recovery keys aren't in this room. They're on the vault account on the backend.",
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "asset_choice_available"

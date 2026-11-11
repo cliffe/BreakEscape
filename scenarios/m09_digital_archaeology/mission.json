@@ -3,7 +3,7 @@
   "description": "A courier carried the Architect's order to a records archive in Helena, Montana: burn Helena before the Publication. Get inside after hours while the director feeds a shredder box by box, take the restricted series before it is ash, and follow the paper to the man who signed it. The Season 1 finale begins.",
   "difficulty_level": 3,
   "secgen_scenario": "break_escape/safetynet/m09_digital_archaeology.xml",
-  "_vm_wire": "VM-WIRE: secgen_scenario points at the SecGen draft (two targets, catalogue_server and tomb_beta_server, plus the Kali attack_vm). The box is not built yet; flag values are generated at build (F9: confirm the two hostnames, per-machine flag numbering and the catalogue service account off the built VM).",
+  "_vm_wire": "VM-WIRE: secgen_scenario points at the SecGen scenario (two targets, catalogue_server and tomb_beta_server, plus the Kali attack_vm). Fixed on both sides: the catalogue login on the duty-desk slip (catalogsvc), and Tomb Beta's enrolment-site port 8016 in the BETA binder (2026-11-11). Flag values are generated at build (F9: confirm the two hostnames and per-machine flag numbering off the built VM).",
   "collection": "season_1",
   "lab_sheet_url": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/m09-digital-archaeology/",
   "ui_theme": "spy",
