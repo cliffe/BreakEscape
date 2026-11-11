@@ -735,6 +735,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
     "flag2_submitted": false,
     "flag3_submitted": false,
     "flag4_submitted": false,
+    "irina_ledger_leverage": false,
     "financial_network_mapped": false,
     "exchange_infiltrated": false,
     "blockchain_debrief_available": false,
@@ -1157,8 +1158,8 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "eventPattern": "objective_task_completed:submit_flag2",
               "onceOnly": true,
               "setGlobal": { "flag2_submitted": true },
-              "_comment": "Pass 5 A6: flag 2 had no story reaction.",
-              "sendTimedMessage": { "delay": 5500, "message": "Second account. One password, two boxes, just as their rack sheet admitted, and as Volkova warned you on the floor. Next is the financial database. Its account runs their doors.", "skipIfGlobal": "flag3_submitted" }
+              "_comment": "Story pass 2026-11-11: flag 2 pays out the ledger's compliance holds (Ledger Hold Log). Volkova held all three ENTROPY deposits herself; flag2_submitted opens a leverage choice in her recruitment_decision.",
+              "sendTimedMessage": { "delay": 5500, "message": "Second account, their ledger. Same password, as the rack sheet admitted. Read the hold log: Volkova stopped all three ENTROPY deposits herself, then let them go. Next is the financial database. Its account runs their doors.", "skipIfGlobal": "flag3_submitted" }
             },
             {
               "eventPattern": "objective_task_completed:submit_flag3",
@@ -2016,11 +2017,10 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "description": "Flag 1: First server password cracked — initial backend access"
             },
             {
-              "type": "set_global",
-              "key": "flag2_submitted",
-              "value": true,
-              "label": "Credential reuse — a second account opened",
-              "description": "Flag 2: Credential reuse — the same password opens a second account"
+              "type": "give_item",
+              "item_name": "Ledger Hold Log",
+              "label": "Credential reuse — the ledger account opened",
+              "description": "Flag 2: Credential reuse — the same password opens the internal ledger; the drop-site cuts you its compliance holds"
             },
             {
               "type": "give_item",
@@ -2036,8 +2036,18 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
             }
           ],
 <%# PASS 2 (m02 flag-payout pattern, 71e8852e): flag 3 opens the data centre,
-    flag 4 makes the freeze option possible. process_item_reward matches on name. %>
+    flag 4 makes the freeze option possible, and (story pass) flag 2's hold log
+    gives Volkova's recruitment a leverage choice. process_item_reward matches on name. %>
           "itemsHeld": [
+            {
+              "type": "text_file",
+              "id": "ledger_hold_log",
+              "name": "Ledger Hold Log",
+              "takeable": true,
+              "readable": true,
+              "text": "hcledger :: compliance_holds (mixer intake, Jul - Aug)\n\nhold   deposit              amount       placed by   status\nH-114  1ENTROPY2RansomInc   $2,400,000   i.volkova   RELEASED (CTO override)\nH-131  1ENTROPY3ZeroDaySy   $1,200,000   i.volkova   RELEASED (CTO override)\nH-140  1ENTROPY1SocialFab     $680,000   i.volkova   RELEASED (CTO override)\n\nHold reason (all three): raised by D. Okonkwo, trading desk. Source wallets match the sanctions heuristic. Do not release. -- I.V.\nRelease note (all three): released on CEO instruction. -- I.V.",
+              "observations": "Volkova put a hold on every ENTROPY deposit herself, then released each one on the CEO's instruction."
+            },
             {
               "type": "text_file",
               "id": "door_controller_export",
