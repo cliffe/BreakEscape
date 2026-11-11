@@ -18,7 +18,8 @@
  *   work plan whose station that PC is and who is not already flagged there. So a mission with
  *   no lockout sends no check at all. Every check gets an answer for the needs system (refused
  *   or lost: lockedOut false, after one resend of a lost request), which ends the hold on the
- *   owner's first use there.
+ *   owner's first use there. A send that has not settled after SEND_TIMEOUT_MS is aborted and
+ *   counts as lost (review R2 m2), so a hung request cannot hold the queue or the owner.
  *   The mark survives a reload: GET /scenario's `lockoutPcs` (the sign-in PCs where the player
  *   caused a lockout, ids only) seeds it at install (review R1 M1). A check the server answers
  *   `lockedOut: false` clears the mark, unless a new lockout answer came at that PC after the
@@ -31,11 +32,15 @@ import npcWork from './npc-work.js';
 
 export const REPORT_INTERVAL_MS = 2000;
 export const MAX_BATCH = 20;
+// Review R2 m2: a send that has not settled after this long is aborted and counts as lost, so a
+// request that never settles (a half-open connection after sleep) cannot stop the queue
+export const SEND_TIMEOUT_MS = 20000;
 
 export class NpcReports {
     /**
      * @param {Object} deps - { send(batch) -> Promise<{ answers }>, sync() -> Promise, apply(answers),
-     *   now() -> ms, setTimer(fn, ms), watched(name) -> bool }
+     *   now() -> ms, setTimer(fn, ms), clearTimer(handle), watched(name) -> bool }. send gets a
+     *   second argument, { signal }, an AbortSignal aborted when the send times out.
      */
     constructor(deps = {}) {
         this.deps = deps;
@@ -131,6 +136,34 @@ export class NpcReports {
         this.timer = set(() => { this.timer = null; this.flush(); }, wait);
     }
 
+    /**
+     * Review R2 m2: deps.send, raced against SEND_TIMEOUT_MS. On a timeout the request is aborted
+     * and this rejects, so flush treats it as a lost request (a lost check is sent once more,
+     * then answered no; a lost fail or ease loses one step).
+     */
+    _sendBounded(body) {
+        const ac = typeof AbortController === 'function' ? new AbortController() : null;
+        const set = this.deps.setTimer || ((fn, ms) => setTimeout(fn, ms));
+        const clear = this.deps.clearTimer || (this.deps.setTimer ? null : (h => clearTimeout(h)));
+        let settled = false;
+        let handle = null;
+        const timeout = new Promise((_, reject) => {
+            handle = set(() => {
+                if (settled) return;
+                settled = true;
+                ac?.abort();
+                const e = new Error('npc_frustration request timed out');
+                e.timedOut = true;
+                reject(e);
+            }, SEND_TIMEOUT_MS);
+        });
+        const sent = Promise.resolve().then(() => this.deps.send(body, ac ? { signal: ac.signal } : undefined));
+        return Promise.race([sent, timeout]).finally(() => {
+            settled = true;
+            if (clear && handle !== null) clear(handle);
+        });
+    }
+
     async flush() {
         if (this.sending || !this.pending.length) return;
         if (this._now() - this.lastSent < REPORT_INTERVAL_MS) { this._schedule(); return; }
@@ -147,7 +180,7 @@ export class NpcReports {
             let answers = [];
             let lost = false;
             try {
-                const res = await this.deps.send(batch.map(({ _resent, _seq, _mark, ...r }) => r));
+                const res = await this._sendBounded(batch.map(({ _resent, _seq, _mark, ...r }) => r));
                 answers = Array.isArray(res?.answers) ? res.answers : [];
             } catch (e) {
                 answers = [];   // a lost request loses one step of frustration and nothing else
@@ -175,7 +208,10 @@ export class NpcReports {
             batch.forEach((r, i) => {
                 if (r.event !== 'check' || lostChecks.includes(r)) return;
                 // Review R1 m1: the server said no, and no lockout answer came at that PC since
-                // the check was queued, so the mark goes (a refused or lost answer keeps it)
+                // the check was queued, so the mark goes (a refused or lost answer keeps it).
+                // Review R2 n1, left as is: the "no" clears the mark per PC, not per owner; it
+                // matters only for two owners sharing one unowned sign-in needsHome, which no
+                // scenario does, and costs at most one missed check until the next lockout answer
                 const a = answers[i];
                 if (a && a.npcId === r.npc_id && a.lockedOut === false && !a.refused
                     && r._mark !== null && (this.lockoutCount.get(r.object_id) || 0) === r._mark) this.lockoutSeen.delete(r.object_id);
@@ -224,7 +260,7 @@ export function installNpcReports(api) {
     if (!w) return null;
     if (w.npcReports) return w.npcReports;
     const reports = new NpcReports({
-        send: batch => (typeof api.npcFrustration === 'function' ? api.npcFrustration(batch) : api.post('/npc_frustration', { reports: batch })),
+        send: (batch, opts) => (typeof api.npcFrustration === 'function' ? api.npcFrustration(batch, opts) : api.post('/npc_frustration', { reports: batch }, opts)),
         sync: () => w.stateSync?.sync?.(),
         apply: answers => w.npcNeedsSystem?.applyFrustration?.(answers),
         watched: name => watchedGlobal(name, w),

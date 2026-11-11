@@ -90,6 +90,12 @@ require 'uri'
 # loginFailures keys ("pcId|username"), whatever key it sits under. R1 M1 allows one more field:
 # GET /scenario's `$.lockoutPcs`, the sign-in PCs where the player caused a lockout, PC ids only;
 # a `lockoutPcs` anywhere else, or an entry in it that is not such a PC, is reported.
+# Review R2 n3: the key rule reads hash keys as well as strings (a key under another name, such
+# as an attempts map, is reported at its parent's path, so the finding never names the username).
+# Its one limit: the game's lockouts and failures are read once, at scan time, from the state at
+# the end of the run, so a response that listed a PC before the player locked it out passes.
+# R2 n4: a key whose username part is blank ("pc|") is skipped, since it would match any string
+# naming that PC.
 #
 # A finding names the rule, the route, the response line and the secret's owner (an NPC or
 # item id), never the value. Every output line is checked against the secret values before it
@@ -653,7 +659,7 @@ class AccessLeakScanner
       ps = @game.respond_to?(:player_state) && @game.player_state.is_a?(Hash) ? @game.player_state : {}
       list = ps['loginLockouts'].is_a?(Array) ? ps['loginLockouts'] : []
       fails = ps['loginFailures'].is_a?(Hash) ? ps['loginFailures'].keys : []
-      (list + fails).select { |k| k.is_a?(String) && k.include?('|') }.uniq
+      (list + fails).select { |k| k.is_a?(String) && k.include?('|') && !k.split('|', 2).last.to_s.strip.empty? }.uniq
     end
   end
 
@@ -701,6 +707,12 @@ class AccessLeakScanner
 
     each_string(body) do |str, json_path, _owner|
       add.call('lockout_list', 'lockout_key', safe_path(json_path)) if keys.any? { |k| str.include?(k) }
+    end
+    # Review R2 n3: a lockout key used as a hash key, reported at the parent's path
+    walk_hashes(body, '$') do |hash, json_path|
+      next unless hash.keys.any? { |hk| hk.is_a?(String) && keys.any? { |k| hk.include?(k) } }
+
+      add.call('lockout_list', 'lockout_key', safe_path("#{json_path}.[lockout key]"))
     end
   end
 

@@ -28,9 +28,11 @@ export class ApiClient {
   /**
    * POST request
    */
-  static async post(endpoint, data = {}) {
+  static async post(endpoint, data = {}, options = {}) {
     const response = await fetch(`${getApiBase()}${endpoint}`, {
       method: 'POST',
+      // an AbortSignal, so a caller can bound the request (npc-reports.js, review R2 m2)
+      ...(options && options.signal ? { signal: options.signal } : {}),
       credentials: 'same-origin',
       headers: {
         'Content-Type': 'application/json',
@@ -121,8 +123,8 @@ export class ApiClient {
 
   // Slice 9.2 (ACCESS_MODEL_SLICE_9_2_PLAN.md 9.1): NPC failed and met uses,
   // [{ npc_id, event, need, object_id, missing, rearmed }]. Answers { answers: [...] }.
-  static async npcFrustration(reports) {
-    return this.post('/npc_frustration', { reports });
+  static async npcFrustration(reports, options = {}) {
+    return this.post('/npc_frustration', { reports }, options);
   }
 
   // Slice 9.2 (plan 6): a workaround performed or dropped, { npc_id, index, hand, dropped }.

@@ -635,4 +635,26 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
     assert_equal ['$.lockoutPcs[1]'], bare.map(&:json_path)
   end
 
+  # ── sub-slice L review round 2 (n3, n4) ─────────────────────────────
+
+  test 'L R2 n3: a lockout key used as a hash key is reported at its parent, with no username in the report' do
+    game = lockout_game(true)
+    scanner = AccessLeakScanner.new(game.scenario_data, game: game)
+    findings = scanner.scan(
+      post_rows(['PUT', '/break_escape/games/1/sync_state', { 'globals' => { 'attempts' => { 'sam_pc|sokafor' => 2 } } }],
+                ['GET', LOCKOUT_SCENARIO, { 'attempts' => { 'sam_pc' => 2 } }])
+    )
+    assert_equal [['lockout_list', 'lockout_key', 1, '$.globals.attempts.[lockout key]']], findings.map { |f| [f.rule, f.owner, f.line, f.json_path] }
+    refute(scanner.report_lines(findings).any? { |l| l.include?('sokafor') })
+  end
+
+  test 'L R2 n4: a failure key with a blank username is not a lockout key' do
+    game = lockout_game(true)
+    game.player_state['loginLockouts'] = []
+    game.player_state['loginFailures'] = { 'sam_pc|' => { 'n' => 1, 'seq' => 1 } }
+    assert_empty AccessLeakScanner.new(game.scenario_data, game: game).scan(
+      post_rows(['GET', LOCKOUT_SCENARIO, { 'note' => 'try sam_pc|anything' }])
+    )
+  end
+
 end

@@ -280,8 +280,13 @@ module BreakEscape
       res = guest_claim('hot_desk')
       assert_equal 422, res.status
       assert_nil state.dig('sessions', 'hot_desk')
+      # Review R2 n2: the record that can never be claimed goes, as a timed-out one does
+      assert_nil state.dig('guestSessions', 'hot_desk')
+      assert_equal 422, guest_claim('hot_desk').status, 'no guest record left to claim'
       @game.reload
       @game.player_state['loginLockouts'] = []
+      @game.player_state['guestSessions'] = { 'hot_desk' => 'jake' }
+      @game.player_state['guestSessionsAt'] = { 'hot_desk' => @game.server_now }
       @game.save!
       assert_equal 200, guest_claim('hot_desk').status, 'granted once no lockout holds'
     end

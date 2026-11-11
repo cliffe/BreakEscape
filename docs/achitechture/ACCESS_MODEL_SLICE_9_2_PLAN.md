@@ -1011,13 +1011,22 @@ sign-in screen.
   until the check is answered (the use's dwell is longer than one request in practice; if not, the
   use waits at the desk), so a slow answer never lets one use through as met. After 30 s of needs
   clock with no answer the use is skipped, not judged (nothing restored, no `npc_used`, no
-  report), and the next use there waits again; only an answer ends the wait.
+  report), and the next use there waits again; only an answer ends the wait. The wait is bounded
+  by the request, not by the needs clock: the report queue aborts a `POST /npc_frustration` that
+  has not settled after 20 s and treats it as lost, so a check is sent once more and then answered
+  no, and a hung connection cannot stop the queue.
 - **While locked out**, that NPC's uses of that PC fail with `locked_out` (a station failure), the
   mutter comes from `station_fail`, and frustration rises as for any failure. Whenever the owner
   leaves that PC the screen locks, whatever its `lockChance`, and the server refuses an owner claim
   there while `loginLockouts` holds the owner's username at it: a person who cannot sign in cannot
   leave a session open. An owner whose screen never locks never types a password and is never
   affected.
+- **At a borrowed PC.** The client learns a lockout only at the owner's own station, so a borrower
+  locked out at the hot desk still works there: the use is met and eases frustration, and the
+  hot-desk screen shows them seated and signed in. A lockout at a borrowed PC stops only the
+  session left open there: the `done` records no guest, and the server refuses a guest claim while
+  the lockout stands. So "lock them out everywhere and they give up" does not happen (a later
+  slice may make a locked-out borrowed use a failure).
 - **After a reload** the owner's flag comes back from `npcFrustration` when their room loads, so
   they do not sit back down and work until their next locked return.
 - **What the browser learns, and when.** That this owner is locked out at this PC, at the moment
@@ -1502,6 +1511,9 @@ play and without the player standing anywhere in particular:
   three wrong passwords for a guessed username at a PC, that answers whether the username is the
   owner's (decision 14); an owner claim at that PC's open screen answers the same question by
   another route (refused while the owner is locked out there), for any owner, work plan or not;
+  and a guest claim at a hot desk answers it for that PC's guest (refused while the guest is
+  locked out there). That third route is moot, since a granted guest claim names the guest's
+  username anyway;
 - set `se_intel_<id>` itself, which satisfies a readiness slot or a phishing factor that names a
   feed fact, without ever having the fact's text.
 

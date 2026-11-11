@@ -4,7 +4,7 @@
 // workstation layer locking a flagged owner's screen on every leave.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { NpcReports, shouldCheckLockout, installNpcReports } from '../../public/break_escape/js/systems/npc-reports.js';
+import { NpcReports, shouldCheckLockout, installNpcReports, SEND_TIMEOUT_MS } from '../../public/break_escape/js/systems/npc-reports.js';
 import { LOCK_CHECK_WAIT_MS } from '../../public/break_escape/js/systems/npc-needs.js';
 import { WorkstationState } from '../../public/break_escape/js/systems/workstation-state.js';
 import { workWorld, baseObjects, dana } from './fixtures/needs-work-world.mjs';
@@ -409,7 +409,8 @@ test('R1 m2: the three layers on one dispatcher, in the live order: leave, locke
     const sent = [];
     const reports = new NpcReports({
         now: () => sys.clockMs,
-        setTimer: (fn) => { Promise.resolve().then(fn); return 1; },
+        // the answer comes in time: the send timeout (review R2 m2) never fires here
+        setTimer: (fn, ms) => { if (ms < SEND_TIMEOUT_MS) Promise.resolve().then(fn); return 1; },
         send: batch => new Promise(res => { sent.push(batch); release = () => res({ answers: batch.map(r => ({ npcId: r.npc_id, lockedOut: true })) }); }),
         apply: a => sys.applyFrustration(a),
         policyFor: () => STRICT,
@@ -435,4 +436,60 @@ test('R1 m2: the three layers on one dispatcher, in the live order: leave, locke
     assert.ok(stepUntil(sys, () => evs('npc_use_failed:dana').length > 0, 30000));
     assert.equal(evs('npc_use_failed:dana')[0].data.missing[0].why, 'locked_out');
     assert.equal(evs('npc_used:dana_pc').length, usedBefore, 'the held use was never met');
+});
+
+test('R2 m2: a send that never settles times out as a lost request, so the check is answered within two timeouts and the queue moves on', async () => {
+    let now = 0;
+    const timers = [];
+    const signals = [];
+    const sent = [];
+    const applied = [];
+    let hang = true;
+    const r = new NpcReports({
+        now: () => now,
+        // fire and forget, as setTimeout does: a hung flush must not block the clock
+        setTimer: (fn, ms) => { timers.push({ fn, at: now + ms }); return timers.length; },
+        clearTimer: h => { if (timers[h - 1]) timers[h - 1].done = true; },
+        send: (batch, opts) => {
+            sent.push(batch);
+            signals.push(opts?.signal);
+            return hang ? new Promise(() => {}) : Promise.resolve({ answers: batch.map(b => ({ npcId: b.npc_id, level: 20, tell: 1 })) });
+        },
+        apply: a => applied.push(...a),
+        policyFor: () => STRICT,
+        ownerRecord: () => OWNER,
+        flagged: () => false,
+        markCheck: () => true
+    });
+    const settle = async () => { for (let i = 0; i < 5; i++) await new Promise(res => setImmediate(res)); };
+    const advance = async ms => {
+        const end = now + ms;
+        for (;;) {
+            const next = timers.filter(t => !t.done).sort((a, b) => a.at - b.at)[0];
+            if (!next || next.at > end) break;
+            now = Math.max(now, next.at);
+            next.done = true;
+            next.fn();
+            await settle();
+        }
+        now = end;
+        await settle();
+    };
+    r.noteLockout('dana_pc');
+    r.onOwnerReturned(RETURN);
+    await advance(0);
+    assert.equal(sent.length, 1);
+    assert.equal(applied.length, 0, 'the request is still out');
+    await advance(SEND_TIMEOUT_MS);
+    assert.equal(signals[0]?.aborted, true, 'the timed-out request is aborted');
+    assert.equal(sent.length, 2, 'a lost check is sent once more');
+    await advance(SEND_TIMEOUT_MS);
+    assert.deepEqual(applied, [{ npcId: 'dana', forEvent: 'check', forObject: 'dana_pc', lockedOut: false }]);
+    assert.equal(r.sending, false);
+    hang = false;
+    r.queue('dana', { event: 'fail', need: 'work', objectId: 'dana_pc', missing: [{ id: 'x', why: 'down' }] });
+    await advance(2000);
+    assert.equal(sent.length, 3, 'the queue sends the next batch');
+    assert.equal(sent[2][0].event, 'fail');
+    assert.equal(applied.length, 2);
 });

@@ -1665,8 +1665,13 @@ module BreakEscape
       auto_lock = effective_policy(pc)['autoLockMin']
       return refusal.call('policy autoLockMin is 0') if auto_lock.is_a?(Numeric) && auto_lock.zero?
       return refusal.call('a careful guest') if careful_guest?(guest)
-      # Sub-slice L review R1 m1 (6.6): a guest who cannot sign in here left no session open
-      return refusal.call('the guest is locked out at this PC') if account_locked_out_at?(pc['id'], guest)
+      # Sub-slice L review R1 m1 (6.6): a guest who cannot sign in here left no session open.
+      # Review R2 n2: the record goes too, as for a timed-out session, since it can never be claimed
+      if account_locked_out_at?(pc['id'], guest)
+        end_guest_session_at!(pc['id'])
+        save!
+        return refusal.call('the guest is locked out at this PC')
+      end
       # Review R1 m1: the server times the guest session out itself, from the "done"
       # Review R2 n3: the timed-out record goes too, so verify-run and a later "done" read no
       # stale guest (POST /login runs under the game lock)
