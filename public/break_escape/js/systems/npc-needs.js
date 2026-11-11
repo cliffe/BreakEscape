@@ -2258,6 +2258,9 @@ export class NPCNeedsSystem {
             this._emit(`npc_visit_dropped:${s.npcId}`, { npcId: s.npcId, kind: v.kind, at: { ...v.at }, data: v.data });
             return false;
         }
+        // Review R1 M1: a check visit waits out the barrier or workaround icon (a job's icon would
+        // hide it), and nothing else starts meanwhile: the line, the icon, then off to check
+        if (v.kind === 'check' && this._iconShowing(s)) return true;
         if (this.clockMs - v.triedAt < 1000) return false;
         v.triedAt = this.clockMs;
         const place = this._visitPlace(s, v);
@@ -2265,6 +2268,11 @@ export class NPCNeedsSystem {
         s.visits.shift();
         this._startJob(s, { kind: 'visit', targetId: place.targetId, visit: { ...v, cell: place.cell || null } });
         return true;
+    }
+
+    /** The barrier (failedShow) or workaround (workaroundShow) icon is still in its time. */
+    _iconShowing(s) {
+        return !!((s.failedShow && this.clockMs < s.failedShow.until) || (s.workaroundShow && this.clockMs < s.workaroundShow.until));
     }
 
     _completeVisit(s) {
@@ -2554,6 +2562,8 @@ export class NPCNeedsSystem {
 
     _startJob(s, pick) {
         const id = s.npcId;
+        // Review R1 m4: a job shows its own icon, so an emit's workaround icon does not come back after it
+        s.workaroundShow = null;
         s.job = {
             need: pick.need, kind: pick.kind, targetId: pick.targetId,
             itemId: pick.itemId || null, tag: pick.tag || null,
@@ -3023,6 +3033,8 @@ export class NPCNeedsSystem {
         this._log(id, 'borrow_done', { target: job.targetId, met, leftOpen: b.leavesOpen });
         if (b.leavesOpen) this._emit(`npc_borrowed_session:${job.targetId}`, { npcId: id, objectId: job.targetId, met });
         this._emit(`npc_borrow_done:${id}`, { npcId: id, objectId: job.targetId, met, leftOpen: b.leavesOpen, index: b.index, hand: b.hand });
+        // Review R1 m1: as a workaround visit, the start line can hide a short borrowed use's icon
+        this.showWorkaround(id);
     }
 
     /**

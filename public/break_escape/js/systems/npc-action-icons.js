@@ -134,8 +134,10 @@ export function pickIconEntry(job, actionIcons = {}, target = null) {
 
 /**
  * Pure: the action-slot icon for an NPC with no job: "noticed" (just caught someone at its desk),
- * else "blocked" (an urgent need with nothing permitted). Shown only with showPressingNeeds or an
- * explicit scenario entry for that key, so a scenario that has not opted in looks as before.
+ * "workaround" or "barrier" (access 9.2, below), else "blocked" (frustration, or an urgent need with
+ * nothing permitted). "noticed" and the leashed "blocked" show only with showPressingNeeds or an
+ * explicit scenario entry; "workaround", "barrier" and the frustration icon need neither, but only
+ * judged NPCs have them, so a scenario that has not opted in looks as before.
  */
 export function stateIconEntry(st, actionIcons = {}, optIn = false) {
     if (!st || st.job) return null;

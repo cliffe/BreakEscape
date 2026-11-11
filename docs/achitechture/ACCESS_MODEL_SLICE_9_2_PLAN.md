@@ -699,7 +699,7 @@ A workaround is only an opening if the player can see it coming. All of this use
   `NPCNeedsSystem.showWorkaround(npcId)`, which shows the same icon for 4 s
   (`getState().workaround`), counted from the end of any line showing. A workaround visit calls it
   as well when it is done: the start line is shown from the hand-over and can hide the action
-  icon for the whole of a short visit (Tom's 4 s at the wedge in the first live run). With no job the order is `noticed` (when it shows), `workaround`,
+  icon for the whole of a short visit (Tom's 4 s at the wedge in the first live run); a borrowed PC's use calls it when done for the same reason. A new job clears it, and a queued check visit waits while it or the barrier shows. With no job the order is `noticed` (when it shows), `workaround`,
   `barrier`, the frustration `blocked`, the leashed `blocked`.
 
 ### 5.6 Outages

@@ -126,7 +126,8 @@ test('needs: a workaround visit and a borrowed use carry job.workaround; an ordi
     assert.ok(stepUntil(v.sys, () => v.evs('npc_visit_done:dana').length > 0, 30000));
     const after = v.sys.getState('dana');
     assert.equal(after.workaround, true);
-    assert.equal(after.job?.workaround ?? false, false);
+    assert.equal(after.job, null, 'no job hides it');
+    assert.equal(stateIconEntry(after, {}, false).key, 'workaround');
     v.sys.step(WORKAROUND_SHOW_MS + 250);
     assert.equal(v.sys.getState('dana').workaround, false);
 });
@@ -150,4 +151,88 @@ test('needs: showWorkaround shows the icon for WORKAROUND_SHOW_MS (after any lin
     assert.deepEqual(shown, ['ellis']);
     runner.due({ npcId: 'mei', run: { index: 0, hand: 1, do: 'writes_down', dwell: 6 }, level: 50 });
     assert.deepEqual(shown, ['ellis'], 'a visit shows its icon through the job instead');
+});
+
+
+// Review R1 M2: q27's "timed from the end of the line", with a line longer than FAIL_SHOW_MS
+const LONG = 'The file share is down again, and the report is due today.';   // over 30 characters: a 4 s bubble
+
+test('needs: with a 4 s failure line the barrier still shows 3 s after the line has gone', () => {
+    const { sys, evs } = workWorld({ globals: { share_down: true }, chatter: { work_fail_file_share: [LONG] } });
+    sys.registerAll();
+    assert.ok(stepUntil(sys, () => evs('npc_use_failed:dana').length > 0, 30000));
+    assert.ok(sys.getState('dana').talking, 'the line is up');
+    assert.ok(stepUntil(sys, () => !sys.getState('dana').talking, 20000));
+    sys.step(3000);
+    const st = sys.getState('dana');
+    assert.deepEqual(st.failed, FAILED, 'still failed 3 s after the line');
+    assert.equal(stateIconEntry(st, {}, false).key, 'barrier');
+});
+
+test('needs: showWorkaround during a line shows the icon for WORKAROUND_SHOW_MS after it', () => {
+    const { sys } = workWorld({ chatter: { work_fail: [LONG] } });
+    sys.registerAll();
+    assert.equal(sys.mutter('dana', 'work_fail'), true);
+    assert.ok(sys.getState('dana').talking, 'the line is up');
+    assert.equal(sys.showWorkaround('dana'), true);
+    assert.ok(stepUntil(sys, () => !sys.getState('dana').talking, 20000));
+    sys.step(3000);
+    assert.equal(sys.getState('dana').workaround, true, 'still shown 3 s after the line');
+});
+
+// Review R1 M1: the first failure against a down resource with an object queues a check visit;
+// the visit waits until the barrier has shown, so a job's icon does not hide it
+test('needs: the first failure on a down printer shows the barrier after its line, then the check visit starts', () => {
+    const { sys, evs } = workWorld({ globals: { printer_jammed: true }, chatter: { work_fail_printer: [LONG] } });
+    sys.registerAll();
+    assert.ok(stepUntil(sys, () => evs('npc_use_failed:dana').length > 0, 30000));
+    assert.equal(sys.getState('dana').visits.length, 1, 'a check visit is queued');
+    assert.ok(stepUntil(sys, () => !sys.getState('dana').talking, 20000));
+    let barrierTicks = 0;
+    for (let t = 0; t < FAIL_SHOW_MS; t += 250) {
+        sys.step(250);
+        const st = sys.getState('dana');
+        if (st.failed) {
+            assert.equal(st.visiting, null, 'no visit while the barrier shows');
+            if (stateIconEntry(st, {}, false)?.key === 'barrier') barrierTicks++;
+        }
+    }
+    assert.ok(barrierTicks >= 12, `barrier drawn for ${barrierTicks} ticks`);
+    assert.ok(stepUntil(sys, () => sys.getState('dana').visiting?.kind === 'check', 10000), 'then off to check');
+    assert.equal(sys.getState('dana').failed, null);
+});
+
+test('needs: a queued check visit also waits out an emit\'s workaround icon', () => {
+    const { sys } = workWorld();
+    sys.registerAll();
+    assert.equal(sys.showWorkaround('dana'), true);
+    assert.ok(sys.enqueueVisit('dana', { kind: 'check', at: { objectId: 'office_printer' }, data: { resourceId: 'printer' } }));
+    sys.step(WORKAROUND_SHOW_MS - 500);
+    assert.equal(sys.getState('dana').job, null, 'held, and nothing else started');
+    assert.equal(sys.getState('dana').workaround, true);
+    assert.ok(stepUntil(sys, () => sys.getState('dana').visiting?.kind === 'check', 10000));
+});
+
+// Review R1 m1: a borrowed PC's use keeps the icon after it, as a workaround visit does
+test('needs: a borrowed use keeps the workaround icon WORKAROUND_SHOW_MS after it is done', () => {
+    const HOT = { id: 'hot_desk', x: 160, y: 68, desk: true, affordance: { satisfies: 'work', restores: 60, useSeconds: 3 } };
+    const { sys, evs } = workWorld({ objects: [...baseObjects(), HOT], globals: { dana_pc_off: true } });
+    sys.registerAll();
+    assert.ok(stepUntil(sys, () => evs('npc_need_parked:dana').length > 0, 30000));
+    assert.equal(sys.setBorrow('dana', { index: 1, hand: 1, do: 'borrow_session', pc: 'hot_desk', need: 'work', dwell: 2 }), true);
+    assert.ok(stepUntil(sys, () => evs('npc_borrow_done:dana').length > 0, 30000));
+    const after = sys.getState('dana');
+    assert.equal(after.job, null);
+    assert.equal(after.workaround, true);
+    assert.equal(stateIconEntry(after, {}, false).key, 'workaround');
+    sys.step(WORKAROUND_SHOW_MS + 250);
+    assert.equal(sys.getState('dana').workaround, false);
+});
+
+// Review R1 m4: another job clears the workaround icon, so it does not come back after that job
+test('needs: a job starting clears an emit\'s workaround icon', () => {
+    const { sys } = workWorld();
+    sys.registerAll();
+    assert.ok(stepUntil(sys, () => { if (!sys.getState('dana').job) sys.showWorkaround('dana'); return !!sys.getState('dana').job; }, 60000));
+    assert.equal(sys.getState('dana').workaround, false);
 });
