@@ -1,0 +1,174 @@
+{
+  "scenario_id": "test_wearable",
+  "scenario_name": "Test: Wearable items",
+  "scenario_brief": "Throwaway engine test for wearable items (docs/achitechture/WEARABLE_BUILD_LOG.md). Read the signs in order, W1 to W8. Nothing to solve.",
+  "endGoal": "Work through the signs.",
+  "version": "1.0",
+  "show_scenario_brief": "never",
+  "disableAttacks": true,
+  "creditsTheme": "cyber",
+  "startRoom": "changing_room",
+  "lighting": { "enabled": true, "defaultMode": "on" },
+  "disguises": {
+    "courier": { "sprite": "courier_hivis", "talk": "assets/characters/courier_hivis_talk.png" },
+    "guard": { "sprite": "female_security_guard_v2", "talk": "assets/characters/female_security_guard_talk.png" }
+  },
+  "player": {
+    "id": "player",
+    "displayName": "Visitor",
+    "spriteSheet": "female_hacker_hood_v2",
+    "spriteTalk": "assets/characters/female_hacker_hood_talk.png",
+    "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 12 }
+  },
+  "globalVariables": {
+    "vest_on": false,
+    "jacket_on": false,
+    "pp_disguise": ""
+  },
+  "objectives": [
+    {
+      "aimId": "signs",
+      "title": "Work through the signs",
+      "description": "W1 to W6 in the changing room and the office, W7 after a reload, W8 last.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        { "taskId": "read_w1", "title": "Read sign W1", "type": "manual", "status": "active" }
+      ]
+    }
+  ],
+  "startItemsInInventory": [],
+  "rooms": {
+    "changing_room": {
+      "type": "room_lw_ceo",
+      "door_sign": "Changing Room",
+      "connections": { "south": "office" },
+      "npcs": [
+        {
+          "id": "kim",
+          "displayName": "Kim (your teammate)",
+          "npcType": "person",
+          "position": { "x": 6, "y": 3 },
+          "spriteSheet": "ruth_adeyemi",
+          "spriteTalk": "assets/characters/ruth_adeyemi_talk.png"
+        }
+      ],
+      "objects": [
+        {
+          "type": "notes1", "id": "sign_w1", "name": "Sign: W1 Put on",
+          "position": { "x": 1, "y": 2 }, "takeable": false, "readable": true, "readDisplay": "gameDisplay", "addToNotes": false,
+          "text": "W1. Take the hi-vis vest from the floor. Click it in your inventory and choose Put on, then confirm.\nYour avatar wears the courier hi-vis. The vest's slot gets an amber frame and a (worn) label. vest_on is true.\nKim is your teammate (seenBy ignore), so she does not stop you."
+        },
+        {
+          "type": "notes1", "id": "sign_w2", "name": "Sign: W2 Take off",
+          "position": { "x": 2, "y": 2 }, "takeable": false, "readable": true, "readDisplay": "gameDisplay", "addToNotes": false,
+          "text": "W2. Click the vest again: Take off, then confirm. Your own avatar is back, the frame and label go, vest_on is false.\nPut it on again and click the locker: it comes off with no confirm (take_off action)."
+        },
+        {
+          "type": "notes1", "id": "sign_w3", "name": "Sign: W3 Hook",
+          "position": { "x": 3, "y": 2 }, "takeable": false, "readable": true, "readDisplay": "gameDisplay", "addToNotes": false,
+          "text": "W3. With the vest in your inventory and not worn, click the quick-change hook. It puts the vest on with no confirm (wear action)."
+        },
+        {
+          "type": "notes1", "id": "sign_w4", "name": "Sign: W4 One at a time",
+          "position": { "x": 4, "y": 2 }, "takeable": false, "readable": true, "readDisplay": "gameDisplay", "addToNotes": false,
+          "text": "W4. Wear the vest. Take the guard jacket and click it in your inventory, then confirm.\nYou wear the guard uniform; the frame moves to the jacket; vest_on is false and jacket_on is true. Take the jacket off again before W5."
+        },
+        {
+          "type": "notes1", "id": "sign_w6", "name": "Sign: W6 Drop",
+          "position": { "x": 5, "y": 2 }, "takeable": false, "readable": true, "readDisplay": "gameDisplay", "addToNotes": false,
+          "text": "W6. Back here, wear the vest, click it and choose Drop here. It lands at your feet and the hi-vis comes off: vest_on is false. Pick it up again: it can be worn again."
+        },
+        {
+          "type": "notes1", "id": "sign_w7", "name": "Sign: W7 Reload",
+          "position": { "x": 1, "y": 5 }, "takeable": false, "readable": true, "readDisplay": "gameDisplay", "addToNotes": false,
+          "text": "W7. Wear the vest and reload the page. You still wear the hi-vis, and the vest's slot still has its frame and (worn) label."
+        },
+        {
+          "type": "aes_hivis_hook", "id": "vest", "name": "Hi-vis vest",
+          "sprite": "aes_hivis_hook1",
+          "position": { "x": 2, "y": 4 },
+          "takeable": true, "interactable": true, "active": true, "droppable": true,
+          "wearable": {
+            "costume": "courier",
+            "global": "vest_on",
+            "unseenOnly": true,
+            "seenBy": { "ignore": ["kim"] },
+            "confirmOn": "Put the hi-vis vest on?",
+            "confirmOff": "Take the hi-vis vest off?",
+            "onWear": [ { "type": "hint", "title": "Vest on", "message": "You are wearing the hi-vis vest." } ],
+            "onRemove": [ { "type": "hint", "title": "Vest off", "message": "The hi-vis vest is off." } ]
+          },
+          "observations": "A hi-vis vest. Take it, then click it in your inventory to put it on or take it off."
+        },
+        {
+          "type": "id_badge", "id": "jacket", "name": "Guard jacket",
+          "sprite": "qdc_badge_hook1",
+          "position": { "x": 4, "y": 4 },
+          "takeable": true, "interactable": true, "active": true,
+          "wearable": {
+            "costume": "guard",
+            "global": "jacket_on",
+            "confirmOn": "Put the guard jacket on?",
+            "confirmOff": "Take the guard jacket off?"
+          },
+          "observations": "A security guard's jacket. Take it, then click it in your inventory to put it on or take it off."
+        },
+        {
+          "type": "aes_hivis_hook", "id": "quick_hook", "name": "Quick-change hook",
+          "sprite": "aes_hivis_hook1",
+          "position": { "x": 6, "y": 5 },
+          "takeable": false, "interactable": true, "active": true,
+          "triggerOnInteract": [ { "type": "wear", "itemId": "vest" } ],
+          "observations": "A hook. Click it to put the vest on at once."
+        },
+        {
+          "type": "aes_lockers_grey", "id": "locker", "name": "Locker",
+          "sprite": "aes_lockers_grey1",
+          "position": { "x": 7, "y": 5 },
+          "takeable": false, "interactable": true, "active": true,
+          "triggerOnInteract": [ { "type": "take_off" } ],
+          "observations": "A locker. Click it to take off whatever you are wearing."
+        }
+      ]
+    },
+    "office": {
+      "type": "room_lw_records",
+      "door_sign": "Office",
+      "connections": { "north": "changing_room" },
+      "npcs": [
+        {
+          "id": "sam",
+          "displayName": "Sam Ellery",
+          "npcType": "person",
+          "position": { "x": 7, "y": 4 },
+          "spriteSheet": "male_security_guard_v2",
+          "spriteTalk": "assets/characters/male_security_guard_talk.png"
+        }
+      ],
+      "objects": [
+        {
+          "type": "notes1", "id": "sign_w5", "name": "Sign: W5 Watched",
+          "position": { "x": 2, "y": 3 }, "takeable": false, "readable": true, "readDisplay": "gameDisplay", "addToNotes": false,
+          "text": "W5. Sam Ellery stands in this room. Click the vest in your inventory: it is refused, and a toast says Sam is watching. Drop here is refused too.\nGo back to the changing room: the same click works there."
+        },
+        {
+          "type": "notes1", "id": "sign_w8", "name": "Sign: W8 Lost",
+          "position": { "x": 3, "y": 3 }, "takeable": false, "readable": true, "readDisplay": "gameDisplay", "addToNotes": false,
+          "text": "W8 (last). Wear the vest, come here and click the bin. It takes the vest away (remove_item), and the hi-vis comes off at once, even with Sam watching: losing an item is not a change you choose."
+        },
+        {
+          "type": "bin", "id": "bin", "name": "Bin",
+          "sprite": "bin10",
+          "position": { "x": 4, "y": 5 },
+          "takeable": false, "interactable": true, "active": true,
+          "triggerOnInteract": [
+            { "type": "confirm_action", "text": "Throw the vest in the bin?",
+              "onConfirm": [ { "type": "remove_item", "item": "vest" } ] }
+          ],
+          "observations": "A bin."
+        }
+      ]
+    }
+  }
+}

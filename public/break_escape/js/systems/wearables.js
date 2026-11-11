@@ -87,9 +87,11 @@ export function watchersInRoom(spec, w = win()) {
 
 /** The toast for a refused change: who is watching. */
 export function refusalText(watchers, change = 'change') {
+    // At most two names, so a full room stays one short line
     const names = watchers.map(n => n.name);
     const who = names.length <= 1 ? (names[0] || 'someone')
-        : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+        : names.length === 2 ? `${names[0]} and ${names[1]}`
+            : `${names[0]} and ${names.length - 1} others`;
     const verb = names.length > 1 ? 'are' : 'is';
     return `Not here: ${who} ${verb} watching. ${change === 'drop' ? 'Drop it' : 'Change'} somewhere out of sight.`;
 }

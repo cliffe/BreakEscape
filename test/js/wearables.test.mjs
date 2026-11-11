@@ -112,6 +112,7 @@ test('watchers: person NPCs in the room, visible, not KO, not ignored', () => {
 test('refusal text names the watchers', () => {
     assert.match(W.refusalText([{ name: 'Tom' }]), /Tom is watching/);
     assert.match(W.refusalText([{ name: 'Tom' }, { name: 'Ann' }]), /Tom and Ann are watching/);
+    assert.match(W.refusalText([{ name: 'Tom' }, { name: 'Ann' }, { name: 'Bo' }]), /Tom and 2 others are watching/);
     assert.match(W.refusalText([{ name: 'Tom' }], 'drop'), /Drop it somewhere out of sight/);
 });
 
