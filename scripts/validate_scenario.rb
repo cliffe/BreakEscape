@@ -484,8 +484,15 @@ def check_unknown_fields(json_data)
     # several: a locked 'pc' (type: the requiresGlobal gate) with lockType
     # ransomware_display (the ransom screen) reads both. So the fields of every
     # matching schema are known. interactionType last: a generic 'pc' that opens a
-    # named minigame (blockchain_explorer).
-    schema_keys = [obj['type'], obj['lockType'], obj['id'], obj['interactionType']].select { |k| k && minigame_schemas[k] }.uniq
+    # named minigame (blockchain_explorer). id and lockType count only for schemas
+    # whose _dispatch names that key, as the engine dispatches them.
+    dispatched_on = ->(k, key) { minigame_schemas[k] && minigame_schemas[k]['_dispatch'] == key }
+    schema_keys = [
+      (obj['type'] if minigame_schemas[obj['type']]),
+      (obj['lockType'] if dispatched_on.call(obj['lockType'], 'lockType')),
+      (obj['id'] if dispatched_on.call(obj['id'], 'id')),
+      (obj['interactionType'] if minigame_schemas[obj['interactionType']])
+    ].compact.uniq
     if schema_keys.empty?
       dispatch_key = obj['type'] || obj['lockType'] || obj['id']
       warnings << "⚠️ WARNING: '#{path}' has minigameData but no schema is defined for '#{dispatch_key}' — add an entry to minigame-data-schemas.json."
@@ -6447,7 +6454,7 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
                         rescue JSON::ParserError
                           File.read(compiled)
                         end
-      end
+                      end
       source_text = File.exist?(source) ? File.read(source) : nil
       text = compiled_text || source_text
       next unless text

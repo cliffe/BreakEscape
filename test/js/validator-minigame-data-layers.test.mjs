@@ -24,7 +24,13 @@ const scenario = {
         pc('ransom_gated', 'ransomware_display', { ...ransom, requiresGlobal: 'g', lockedMessage: 'm' }),
         pc('ransom_typo', 'ransomware_display', { ...ransom, ransomAmmount: '2' }),
         pc('ransom_short', 'ransomware_display', { organisation: 'Org', groupName: 'G' }),
-        pc('plain_pc', null, { requiresGlobal: 'g', organisation: 'Org' })
+        pc('plain_pc', null, { requiresGlobal: 'g', organisation: 'Org' }),
+        // id and lockType count only for schemas dispatched on them (_dispatch): 'notes' and
+        // 'kiosk' are type-dispatched, so a pc with that id gets neither schema's fields
+        pc('notes', null, { timerRef: 't' }),
+        pc('kiosk', null, { requiresGlobal: 'g' }),
+        // ...but an id-dispatched schema does apply by id
+        pc('ehr_terminal', null, { requiresGlobal: 'g', ransomAmmount: '2' })
       ]
     }
   }
@@ -47,4 +53,9 @@ test('minigameData is checked against every schema that matches the object',
     // A pc with no ransom lock still has only the pc schema
     assert.equal(of('plain_pc').length, 1, issues.join('\n'));
     assert.match(of('plain_pc')[0], /undeclared field 'organisation'.*schema for 'pc'\./);
+    assert.equal(of('notes').length, 1, issues.join('\n'));
+    assert.match(of('notes')[0], /undeclared field 'timerRef'.*schema for 'pc'\./);
+    assert.deepEqual(of('kiosk'), [], issues.join('\n'));
+    assert.equal(of('ehr_terminal').length, 1, issues.join('\n'));
+    assert.match(of('ehr_terminal')[0], /undeclared field 'ransomAmmount'.*'pc' or 'ehr_terminal'/);
   });
