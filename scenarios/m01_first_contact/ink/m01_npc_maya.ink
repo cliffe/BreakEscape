@@ -53,7 +53,7 @@ VAR asked_about_patricia = false
 === reveal_check ===
 + [What message?]
     Maya Chen: The tip. To SAFETYNET. About Operation Shatter.
-    Maya Chen: If you don't know what I'm talking about, forget I said anything. #delivery: after a pause
+    Maya Chen: If you don't know what I'm talking about, forget I said anything. #delivery: guarded, backing off
     + + [I'm from SAFETYNET]
         ~ revealed_informant = true
         ~ influence += 5

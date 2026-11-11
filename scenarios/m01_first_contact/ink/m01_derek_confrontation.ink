@@ -441,7 +441,7 @@ Narrator: The evidence upload completes. SAFETYNET backup arrives. Derek Lawson 
 // ================================================
 
 === choice_surrender ===
-Derek Lawson: You have the archive. The Architect's letter. The network map. #delivery: after a pause
+Derek Lawson: You have the archive. The Architect's letter. The network map. #delivery: after a pause, the fight going out of him
 
 Derek Lawson: ...You really do have everything. #delivery: quietly
 

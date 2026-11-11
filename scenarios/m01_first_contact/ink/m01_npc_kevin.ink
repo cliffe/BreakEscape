@@ -256,7 +256,7 @@ Kevin Park: Patricia. #delivery: quietly
 
 Kevin Park: That's why she was fired. She got too close to Derek and he neutralised her. And now he's got a ready-made scapegoat if someone else gets too close.
 
-Kevin Park: How do I... what do I do? I have two kids. I can't— #delivery: frightened, the words tumbling out
+Kevin Park: How do I... what do I do? I have two kids. I can't— #delivery: frightened, faltering
 
 + [Act normal. We handle Derek. You won't be touched.]
     #set_variable:kevin_choice=warn

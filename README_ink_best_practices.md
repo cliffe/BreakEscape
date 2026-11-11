@@ -60,7 +60,7 @@ Use the `Narrator:` inline prefix for stage directions. These display as italici
 ```ink
 === derek_office ===
 Narrator: The room is dark. Files are scattered across the desk.
-Maya Chen: Is it safe to talk? #delivery: glancing at the door, low
+Maya Chen: Is it safe to talk? #delivery: low and wary
 ```
 
 For narration associated with a specific character portrait, use `Narrator[character_id]:`:
