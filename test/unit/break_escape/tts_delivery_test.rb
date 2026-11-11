@@ -479,6 +479,38 @@ module BreakEscape
       refute extractor.delivered_by?('kevin_park', "I suppose it doesn't matter now.", 'quietly, almost to herself')
     end
 
+    # A phone contact's video call is person-chat, which sends the line's note
+    # (line_delivery). The same contact as a voiced phone call sends none (above).
+    test "a phone contact's video-call lines keep their note, and only a tagged line's key has one" do
+      data = scenario
+      kevin = data['rooms']['office']['npcs'].first
+      kevin['npcType'] = 'phone'
+      kevin['eventMappings'] = [{ 'eventPattern' => 'item_picked_up:badge', 'conversationMode' => 'video-call',
+                                  'targetKnot' => 'start' }]
+      extractor = TtsLineExtractor.new('walker_test', data)
+      by_text = extractor.entries.to_h { |e| [e.text, e] }
+
+      quiet = by_text["I suppose it doesn't matter now."]
+      assert_equal 'quietly, almost to herself', quiet.delivery
+      assert_equal TtsService.cache_key(quiet.text, 'Puck', 'Nervous IT admin.', 'en-GB', 'quietly, almost to herself'), quiet.key
+      assert extractor.delivered_by?('kevin_park', quiet.text, 'Quietly, almost to herself.')
+      assert_equal 'quietly, almost to herself', extractor.delivery_for('kevin_park', quiet.text, 'quietly, almost to herself')
+
+      plain = by_text['An untagged line.']
+      assert_nil plain.delivery
+      assert_equal TtsService.cache_key(plain.text, 'Puck', 'Nervous IT admin.', 'en-GB'), plain.key
+      refute extractor.delivered_by?('kevin_park', plain.text, 'quietly')
+
+      assert_equal 'hushed', by_text['The lights hum.'].delivery
+
+      # The same knot as a voiced phone call: no note, untagged key
+      kevin.delete('eventMappings')
+      kevin['voiced'] = true
+      phone = TtsLineExtractor.new('walker_test', data).entries.to_h { |e| [e.text, e] }
+      assert_nil phone[quiet.text].delivery
+      assert_equal TtsService.cache_key(quiet.text, 'Puck', 'Nervous IT admin.', 'en-GB'), phone[quiet.text].key
+    end
+
     test "expected lines (the pruner's set) include the tagged key" do
       Dir.mktmpdir('tts_delivery_expected') do |dir|
         root = Pathname.new(dir)
