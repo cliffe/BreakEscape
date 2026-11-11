@@ -942,3 +942,94 @@ Branch `build/9-2-h`, from `main` at `62bee4c1f` (U, A and B merged). Browser po
 ### Suites at this split
 
 After `b6ac01a44`, under the lock: Rails 1472 runs, 0 failures, 1 skip; JS 486 files passed, 0 failed.
+
+## H, part two (2026-11-11, split again at the context limit)
+
+### Done
+
+- **H-3 needs and runner** (`0a691c220`). `npc-needs.js`: `setBorrow(npcId, run)` (a copy of the
+  same index and hand changes nothing; unparks the need, or drops its level to `urgentAt`);
+  `_useCandidate` returns the borrowed PC first for that need (`_borrowCandidate`: loaded, not
+  off, not hidden, free, reachable; else `null` with no `giveUp`, so it is waited for, not
+  parked); `_startJob` sets `job.borrowed` and `job.borrow`; `_tickBorrow` drops a borrow that has
+  no borrowed job running by `startBy` (`BORROW_START_MS` 60 s) with `npc_borrow_dropped`;
+  `npc_sat_at:<pcId>` when a borrowed job reaches `using`; `_completeJob` runs the verdict with
+  `job.borrow.routes` (adapter `useVerdict(npcId, need, obj, routes)` through the exported
+  `planWithRoutes`) and then `_borrowDone` emits `npc_borrowed_session:<pcId>` (only when
+  `leavesOpen`) and `npc_borrow_done:<npcId>` before a failed verdict's turn-back; `_failUse`
+  reads `job.borrowed`; `userOf(objectId)`; `playerHears(npcId)`; `npc_visit_arrived:<npcId>`
+  when a visit reaches its dwell; `getState().borrow`. `npc-workarounds.js`: `borrow_session` via
+  `setBorrow` (not set: dropped, no line); `borrowDone`/`borrowDropped`; a `guest: true` answer
+  emits `npc_guest_left:<pcId>`; `share_login` is a visit `{ npcId: with }`, the `login_aloud`
+  line on `npc_visit_arrived`, a hearing test every 250 ms of the dwell (first hearing notes
+  `window.currentPlayerRoom`), "done" with `heard` and `room_id`; a heard answer shows the toast,
+  adds the note (`window.addNote`, important), records the capture and emits
+  `npc_overheard_login:<npcId>`. Tests: 8 new in `npc-needs-work.test.mjs`, 6 new in
+  `npc-workarounds.test.mjs` (94 pass across the two).
+- **H-4 workstation layer, sessions, bridge, scanner** (`e063a82d1`). `workstation-state.js`:
+  `guests` map, `onGuestLeft` (on `npc_guest_left`), `onSatAt` (on `npc_sat_at`), `guestOf`,
+  the guest auto lock in `checkAutoLocks` (`workstation_auto_locked` with `guest: true`),
+  `presence()` gains `userId` and `guestId`, `onInteract` answers `attended` for any user and
+  `accessed` for a guest at an unowned PC; live env `userOf`. `pc-sessions.js`:
+  `claim(pcId, { as: 'guest' })` (session marked `guest`, never ended by an owner's return),
+  `displaced(pcId, name)` on `npc_sat_at` and `npc_borrowed_session`. `unlock-system.js`
+  `interactLoginPc`: a user at the PC gets "<name> is using this PC"; a guest gets a guest claim.
+  `__test.access.guest(pcId)`. Leak scanner: a heard `share_login` answer may hold the sharer's
+  password at `$.line`, `$.note`, `$.capture.note` when the game lists the NPC in `sharedLogins`;
+  then `savedNotes` and `se_captures` may hold it. Tests: 5 workstation, 4 pc-sessions, 2 scanner.
+- **H-4 scenario and tooling** (`df4d7301f`). `verify-run --access` prints `guestSessions` and
+  `sharedLogins`; its `--log` block adds `npc_sat_at`, `npc_borrowed_session`,
+  `npc_overheard_login`. `test_access_work`: Ian gets the borrow and the habit, `ian_pc`
+  `lockChance: 1`, `ian_files` profile (cabinet code); Hall C holds `hot_desk`, `comms_cabinet`,
+  `hall_c_drawer` (the temporary account's note), Rosa with `rosa_pc` and her breaker; new
+  `open_office` east of `vault_room` with Sam (`+crm`, `crm_down` switch) and Ruth; aim
+  `hot_desk_beats`. `PLAYTEST.md` run H. Validator (`validate_npc_needs.rb`): a borrower's
+  `screenHabit` is no longer called shadowed (it applies at the hot desk); test in
+  `npc-office-visuals.test.mjs`. The validator output for `test_access_work` is unchanged from
+  before (same warnings).
+- **H-5 documents** (`527a0c919`): `README_scenario_design.md` (the two rows, the hot desk, the
+  careful guest, why a share is heard only in an opened room), `docs/test-bridge.md` (`guest`).
+
+### Choices made
+
+6. The hot desk is in Hall C, not the lobby: Hall C is the H wing's lobby, next to Ian's
+   `cable_room`, so the walk crosses one door (as W4's walk to the copy room does). Rosa's
+   "borrow_room" is Hall C itself. A W1 to W4 run that loads Hall C and throws W2's breaker
+   also fails Rosa; her events are not asserted there.
+7. H4's outage is a new resource `crm` (`crm_down`), so no other beat's NPC fails with Sam.
+   Ruth has no needs and no PC (a PC owned by an NPC with no needs is warned).
+8. A share always stands its full 6 s beside the colleague, even when a reload's resent run has
+   less dwell left, so the player still has the chance to hear it.
+9. `pc_in_use` names the PC's user (the borrower) in its `ownerId` field at an unowned hot desk.
+10. A guest's auto lock publishes `<pc>_screen_locked` true and `<pc>_owner_away` true, then the
+    next click is the sign-in screen (the guest record is gone).
+
+### Handover: open, in order
+
+1. **Browser proof on :3018** (start the server by hand as before). Game one: H1 (unplug Ian, wait
+   for the borrow, click while seated, claim after, cabinet code from `Cabinet.txt`), H2 (drawer
+   note, sign in as the temporary account, re-unplug, displaced), H3 (Rosa's breaker). Game two:
+   H4 (out of the room, then beside Ruth), sign in at the hot desk with the noted password, H5
+   (reload with `location.href` = game URL + `?skip_resume=1`). Check with `verify-run --access`
+   and `access-leak-check.rb` over the captured responses. Not yet run, so the scenario layout
+   (Hall C positions, the walk from `cable_room`, Rosa's reach) is unproven in a browser.
+   A tampered-client check in the browser too: `POST /login` with `claim: "guest"` before any
+   borrow, and `POST /npc_workaround` with `heard: true` from a closed room, both refused or empty.
+2. **After captures**: rerun the capture script with `after`, compare with
+   `tools/playtest/needs-baseline-compare.js` against `access_model_needs_baseline/slice_9_2_h/`.
+3. **Both full suites under the lock** (none run since the split; only the touched files).
+4. Fill the browser-run and suites outcomes into this section; then ready for review.
+
+### Single-file results at this split
+
+`npc-needs-work` 47, `npc-workarounds` 47, `pc-sessions` 30, `workstation-state` +
+`screen-states` 67, sign-in routing/requests/remote 35, `npc-office-visuals` +
+`validator-access-work` 69: all pass. `access_leak_scanner_test.rb` 28 runs, 0 failures.
+
+### Gotchas
+
+- The scenario file has no ERB tags and round-trips through `json.dumps(indent=2,
+  ensure_ascii=False)` byte for byte, so scripted edits are safe.
+- New engine events: `npc_visit_arrived`, `npc_sat_at`, `npc_borrowed_session`, `npc_borrow_done`,
+  `npc_borrow_dropped`, `npc_guest_left`, `npc_overheard_login`. No new static imports, so the JS
+  test harness copy lists need nothing.
