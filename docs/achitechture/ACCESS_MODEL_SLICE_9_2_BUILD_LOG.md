@@ -1275,3 +1275,11 @@ breaker, both through their real confirm prompts). The same result in both games
   test (Dana and Ian) and by the client recording on each answer.
 
 Leftover games: 1231, 1237, 1238 (setup attempts), 1243, 1245; shared dev database.
+
+### Merge and suites after review round 2
+
+`main` merged into `build/9-2-h` (`fee1166a3`), no conflicts. After the merge, under the lock:
+Rails 1606 runs, 0 failures, 0 errors, 1 skip; JS 491 of 491 files passed.
+
+Commits this round: `e9320f7e8` (server), `3c22cb90e` (client), `ac6623414` (log and backlog),
+`fee1166a3` (merge of `main`), and this note.
