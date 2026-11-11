@@ -397,3 +397,6 @@ Commit `e9d5f710d` (validator, tests, nits) and the commit that adds this sectio
   the loader does (a list or a single value, strings only).
 - **Nit 3, not done.** The graph label "held by" keeps listing guards with no level; optional in
   the review, and the label is right as it stands.
+
+Suites after the fixes, under the shared lock on Ruby 2.7.8: `bin/rails test` 1306 runs, 9564
+assertions, 0 failures, 0 errors, 1 skip; `bin/test-js -j 3` 475 files passed, 0 failed.
