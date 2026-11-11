@@ -219,7 +219,8 @@ family is added to the game, add it in both places.**
 system's `getState`, which adds `frustration` (the server's level, 0 to 100), `tell` (0, 1 or 2),
 `settled`, `failed` (`{ need, missing: [{ id, why }] }` for 4 s of the needs clock after a counted
 failure, else null), `visits` (queued `{ kind, at }`), `visiting` (the running visit or null) and
-`judged` (`{ work, social_media }`, whether each need's uses are judged).
+`judged` (`{ work, social_media }`, whether each need's uses are judged), and `distracted` (true
+while a phone use, a `self` job, runs: a `los.challengeOnSight` NPC does not challenge then).
 
 ---
 
@@ -404,6 +405,7 @@ on the game; compare it with the server's record from
 | `networkView(footholdId)` | The last `GET /network` entry the client fetched for that foothold, `{ id, via, name, network, hosts }`, or null (from `networkLinks.lastView(id)`, else its `views`). |
 | `work(npcId)` | Access slice 9.2 (`docs/achitechture/ACCESS_MODEL_SLICE_9_2_PLAN.md`): `{ plan, frustration, tell, settled, failed, parked }`. `plan` is the server's read-only `work` plan on the NPC record (`{ breakDrain, needs: [{ id, kind, admitted, downIf?, object?, routes? }] }`, null with none); the rest is from the needs system's `getState`. The server's record is `npcFrustration` in `verify-run.rb --access`. |
 | `guest(pcId)` | Slice 9.2 H (plan 6.4): `{ ok, pcId, guest, userId, session }`. `guest` is the workstation layer's guest record at that PC (`{ npcId, lockAt }`, `lockAt` in needs-clock ms or null), set when a borrower left the hot desk signed in and the server agreed; `userId` is the NPC using the PC now (a borrower at the hot desk); `session` is the player's session there (`{ npcId, via, guest }`, `guest: true` for a guest claim) or null. The server's record is `guestSessions` in `verify-run.rb --access`. |
+| `feed()` | Slice 9.2 C (plan 8.3): `{ revealed, done, requests }` from `systems/social-feed.js`: the revealed feed post ids by NPC (oldest first), the NPCs whose feed the server said is done, and how many `POST /feed_post` requests were sent. Ids only, never a post's text. The server's record is `feedRevealed` in `verify-run.rb --access`. |
 | `reports()` | Slice 9.2: `{ requests, reports, pending, settled }` from `systems/npc-reports.js`: how many `POST /npc_frustration` requests and how many reports in them were sent, how many wait in the queue, and the NPC ids the client holds as settled. Compare `requests` with a beat's request budget. |
 
 ```json
