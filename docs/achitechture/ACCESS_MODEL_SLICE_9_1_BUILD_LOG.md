@@ -356,3 +356,44 @@ Review: `ACCESS_MODEL_SLICE_9_1_STEP5_CODE_REVIEW_R1.md` (0 blockers, 0 majors, 
 
 Suites after the fixes, under the shared lock on Ruby 2.7.8: `bin/rails test` 1306 runs, 9564
 assertions, 0 failures, 0 errors, 1 skip; `bin/test-js -j 3` 475 files passed, 0 failed.
+
+### Review round 2 outcomes (2026-11-11)
+
+Review: `ACCESS_MODEL_SLICE_9_1_STEP5_CODE_REVIEW_R2.md` (0 blockers, 1 major, 2 minors, 3 nits).
+Commit `e9d5f710d` (validator, tests, nits) and the commit that adds this section.
+
+- **Major 1, fixed.** `check_lock_credentials` reads the gates from
+  `NpcHabits.expanded_copy`, so `noHold` is the one the loader writes. A gate into the locked
+  room counts as a way in for a card only when it opens for a holder and either sets a non-empty
+  `playerMayPassIf` or opens for at least one holder who is not in its `noHold`. When every such
+  gate opens only for careful guards (and there is no cloner and no keycard item) the lock gets
+  its own warning: only careful guards (holdsDoors false) open the gate into the room, add a
+  cloner, a keycard item, a guard who holds doors, `playerMayPassIf` or another door.
+- **Minor 1, fixed.** `door-gates-validator.test.mjs` (10 tests): the fixture helper takes
+  `passIf` and `awareness`; the existing gate test also runs with no `playerMayPassIf` (Sam with
+  no level holds doors, no warning); the review's reproduction (Sam `high`, no `playerMayPassIf`)
+  gets the careful-guard warning and not the plain "only an NPC" one; an authored `noHold: ["sam"]`
+  gets it too; Sam `low`, `playerMayPassIf`, a cloner, or a second holder who holds doors each
+  clear it.
+- **`store_b` in `test_access_habits`: the warning is right and stays.** Plan beat H9 expects
+  `store_b` not entered (the player never gets in; the scripted run checks twenty seconds of
+  pushing never fires `room_entered:store_b`). So H9 is a deliberate soft-lock and its behaviour
+  is unchanged. The validator has no suppression mechanism; following `test_access_doors`, the
+  warning is recorded as expected in `scenarios/test_access_habits/PLAYTEST.md`.
+- **Validator comparison** (`--skip-ink --no-graph`, every scenario with `openFor`,
+  `playerMayPassIf`, `holdsDoors` or `awareness`, which covers all `ca*` scenarios,
+  `test_social_*`, the two gate scenarios, `lab_physical_pentest`, plus m01 to m10; 84 runs, all
+  exit 0) against `claude/break-escape-access-design-090sjx`: one new warning, the `store_b_badge`
+  one above. Two vanished, both "no item declares card_id": `cm_records_badge` in
+  `lab_physical_pentest` (a cloner, and Len's gate has `playerMayPassIf`) and `test_staff_badge`
+  in `test_gate_tailgate` (a cloner, and Sam's gate has `playerMayPassIf`); both are clone
+  targets, removed by the round 1 rule. m01 to m10 unchanged.
+- **Minor 2, fixed.** The re-indented `if/elsif` and `case/when` blocks in
+  `validate_npc_habits.rb` and the one `end` in `validate_scenario.rb` are back at their old
+  indentation; only the new `when 'holdsDoors'` line remains in that hunk.
+- **Nit 1, fixed.** `verify-run.rb` prints `noHold (none, authored)` for an authored empty
+  `noHold`. Test in `playtest-verify-run-access.test.mjs`.
+- **Nit 2, fixed.** `verify-run.rb`, `check_gate_no_hold` and the dungeon graph read `openFor` as
+  the loader does (a list or a single value, strings only).
+- **Nit 3, not done.** The graph label "held by" keeps listing guards with no level; optional in
+  the review, and the label is right as it stands.

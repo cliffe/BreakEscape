@@ -63,7 +63,10 @@ An open leave records neither. Do not name sound files or chime keys.
 LANG=C.UTF-8 ruby scripts/validate_scenario.rb scenarios/test_access_habits/scenario.json.erb
 ```
 
-No errors and no warnings. Of this slice's lines, one suggestion: Lena locks `lena_pc`
+No errors and one expected warning: rfid `store_b_badge` is opened only through a careful guard's
+gate into `store_b` (Sara, `holdsDoors` false), with no cloner and no keycard item, so the player
+cannot get in. That is what H9 tests (the player never enters `store_b`); in a mission it would be
+a soft-lock. Of this slice's lines, one suggestion: Lena locks `lena_pc`
 "sometimes" from the medium preset (a seeded roll). The first slice's roll warning does not fire
 (no PC authors a chance between 0 and 1), and no screen state mapping warning fires (H2's and H4's
 PCs resolve to 1, H5's to 1 through `instant_lock`, and H1, H3 and H6 to H8 are on
