@@ -479,24 +479,22 @@ end
 
 # holdsDoors (ACCESS_MODEL_SLICE_9_1_PLAN.md 7.3, step 5): a gate with a noHold (filled by the
 # loader, or authored) gets no node of its own; its secured room's door node says who holds
-# it for the player and who does not.
-(habits_copy['rooms'] || {}).each_value do |room|
-  next unless room.is_a?(Hash) && room['doors'].is_a?(Array)
+# it for the player and who does not. As the client reads it: a gate with enabled: false is
+# no gate (gate_entries drops it), and a gate with playerMayPassIf ignores its noHold.
+(habits_copy['rooms'].is_a?(Hash) ? BreakEscape::NpcHabits.gate_entries(habits_copy) : []).each do |entry|
+  gate = entry[:gate]
+  pass_if = gate['playerMayPassIf']
+  next if pass_if.is_a?(String) && !pass_if.empty?
+  next unless gate['noHold'].is_a?(Array) && gate['noHold'].any?
 
-  room['doors'].each do |door|
-    gate = door.is_a?(Hash) ? door['gate'] : nil
-    next unless gate.is_a?(Hash) && gate['noHold'].is_a?(Array) && gate['noHold'].any?
+  node = $nodes["door_#{entry[:connected_room]}"]
+  next unless node
 
-    node = $nodes["door_#{door['connectedRoom']}"]
-    next unless node
-
-    open_for = (gate['openFor'].is_a?(Array) ? gate['openFor'] : [gate['openFor']]).grep(String)
-    holders = open_for - gate['noHold']
-    parts = []
-    parts << "held by #{holders.join(', ')}" if holders.any?
-    parts << "not held by #{gate['noHold'].join(', ')}"
-    node[:label] = "#{node[:label]}<br/>gate: #{parts.join('; ')}"
-  end
+  holders = entry[:open_for] - gate['noHold']
+  parts = []
+  parts << "held by #{holders.join(', ')}" if holders.any?
+  parts << "not held by #{gate['noHold'].join(', ')}"
+  node[:label] = "#{node[:label]}<br/>gate: #{parts.join('; ')}"
 end
 
 # ---------------------------------------------------------------------------

@@ -200,7 +200,7 @@ module BreakEscape
       screen
     end
 
-    # Every gate door: { gate:, path:, room:, connected_room:, open_for: }. `doors` that is not
+    # Every gate door: { gate:, path:, room:, connected_room:, direction:, open_for: }. `doors` that is not
     # a list and a `gate` that is not an object are skipped; a gate with enabled: false is
     # not a gate (the client ignores it). An openFor string is a one-item list, as the
     # client reads it.
@@ -217,7 +217,7 @@ module BreakEscape
 
           open_for = gate['openFor'].is_a?(Array) ? gate['openFor'].grep(String) : [gate['openFor']].grep(String)
           out << { gate: gate, path: "rooms/#{room_id}/doors/#{i}", room: room_id,
-                   connected_room: door['connectedRoom'], open_for: open_for }
+                   connected_room: door['connectedRoom'], direction: door['direction'], open_for: open_for }
         end
       end
       out

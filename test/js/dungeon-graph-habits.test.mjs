@@ -130,3 +130,30 @@ test('holdsDoors: a gate with noHold gets no new node; its door label says who h
     assert.ok(!g.nodes.door_store_a.label.includes('gate:'), 'every guard holds: no label');
     assert.ok(!Object.keys(g.nodes).some(id => /gate/.test(id) && !/andgate/.test(id)), Object.keys(g.nodes).join(','));
 });
+
+// Review R4 nit 2: the label reads a gate as the client does
+test('holdsDoors: no gate label for a disabled gate or one with playerMayPassIf, authored noHold or not', () => {
+    const guard = (id, extra = {}) => ({ id, displayName: id, npcType: 'person', ...extra });
+    const g = graph(scenario({
+        hall: {
+            type: 'room_office', connections: { north: 'store_a', south: 'store_b' }, objects: [],
+            npcs: [guard('sara', { awareness: 'high' }), guard('len', { awareness: 'low' })],
+            doors: [{ connectedRoom: 'store_a', direction: 'north', gate: { enabled: false, openFor: ['sara', 'len'], noHold: ['sara'] } },
+                { connectedRoom: 'store_b', direction: 'south', gate: { openFor: ['sara', 'len'], noHold: ['sara'], playerMayPassIf: 'visitor_pass' } }]
+        },
+        store_a: { type: 'room_office', connections: { south: 'hall' }, locked: true, lockType: 'rfid', objects: [], npcs: [] },
+        store_b: { type: 'room_office', connections: { north: 'hall' }, locked: true, lockType: 'rfid', objects: [], npcs: [] }
+    }));
+    assert.ok(!g.nodes.door_store_a.label.includes('gate:'), g.nodes.door_store_a.label);
+    assert.ok(!g.nodes.door_store_b.label.includes('gate:'), g.nodes.door_store_b.label);
+    // mirror: the same gate with playerMayPassIf empty is labelled (the client reads it as none)
+    const h = graph(scenario({
+        hall: {
+            type: 'room_office', connections: { south: 'store_b' }, objects: [],
+            npcs: [guard('sara', { awareness: 'high' }), guard('len', { awareness: 'low' })],
+            doors: [{ connectedRoom: 'store_b', direction: 'south', gate: { openFor: ['sara', 'len'], noHold: ['sara'], playerMayPassIf: '' } }]
+        },
+        store_b: { type: 'room_office', connections: { north: 'hall' }, locked: true, lockType: 'rfid', objects: [], npcs: [] }
+    }));
+    assert.ok(h.nodes.door_store_b.label.endsWith('<br/>gate: held by len; not held by sara'), h.nodes.door_store_b.label);
+});

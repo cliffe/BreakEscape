@@ -226,3 +226,87 @@ test('a string noHold is ignored, so the gate holds doors', { skip }, () => {
     sc.rooms.office.doors[0].gate.noHold = 'sam';
     assert.ok(!has(credentialIssues(sc), "'SAM-1'"));
 });
+
+// Review R4 major 1: tailgating puts the player in a room, never gives him the card, so an
+// object lock on the card is a gap no gate fills
+const safe = () => ({ type: 'safe', name: 'Safe', locked: true, lockType: 'rfid', requires: 'SAM-1', contents: [] });
+const objectGap = 'Following someone through a gate does not give the player the card';
+
+test('an object lock on a card whose room a careless guard opens is still a soft-lock', { skip }, () => {
+    const sc = scenario({ passIf: null, awareness: 'low' });
+    sc.rooms.vault.objects = [safe()];
+    let out = credentialIssues(sc);
+    assert.ok(out.some(s => s.startsWith('⚠️') && s.includes("'rooms/vault/objects[0]'") && s.includes(objectGap) &&
+        s.includes("rfid 'SAM-1'")), out.join('\n'));
+    assert.ok(!has(out, carefulOnly) && !has(out, npcOnly), out.join('\n'));
+    // the object lock alone (no room requires the card) gets the same message
+    const only = scenario({ passIf: null, awareness: 'low' });
+    only.rooms.vault = { type: 'room_office', connections: { south: 'office' }, objects: [safe()] };
+    out = credentialIssues(only);
+    assert.ok(has(out, objectGap) && !has(out, npcOnly), out.join('\n'));
+    // in a container's contents too
+    const nested = scenario({ passIf: null, awareness: 'low' });
+    nested.rooms.vault.objects = [{ type: 'cabinet', name: 'Cabinet', contents: [safe()] }];
+    assert.ok(has(credentialIssues(nested), "'rooms/vault/objects[0]/contents[0]'"));
+});
+
+test('a cloner, a keycard item for the card or another card the lock accepts clears the object lock', { skip }, () => {
+    const cloner = scenario({ passIf: null, awareness: 'low' });
+    cloner.rooms.vault.objects = [safe()];
+    cloner.startItemsInInventory = [{ type: 'rfid_cloner', name: 'Cloner' }];
+    const keycard = scenario({ passIf: null, awareness: 'low' });
+    keycard.rooms.vault.objects = [safe()];
+    keycard.startItemsInInventory = [{ type: 'keycard', name: 'K', card_id: 'SAM-1' }];
+    const other = scenario({ passIf: null, awareness: 'low' });
+    other.rooms.vault.objects = [{ ...safe(), requires: ['SAM-1', 'OTHER'] }];
+    other.startItemsInInventory = [{ type: 'keycard', name: 'K', card_id: 'OTHER' }];
+    for (const sc of [cloner, keycard, other]) {
+        const out = credentialIssues(sc);
+        assert.ok(!has(out, "'SAM-1'"), out.join('\n'));
+    }
+});
+
+// Review R4 minor 1: a gate opens only for an NPC with a sprite (npcType person or both)
+test('a phone NPC or one with no npcType in openFor does not open the gate', { skip }, () => {
+    const phone = scenario({ passIf: null, awareness: 'high' });
+    phone.rooms.office.npcs.push({ id: 'pip', npcType: 'phone', phoneId: 'p1', awareness: 'low' });
+    phone.rooms.office.doors[0].gate.openFor = ['sam', 'pip'];
+    assert.ok(has(credentialIssues(phone), carefulOnly), 'careful warning stays');
+    const phoneHolder = scenario({ passIf: null, awareness: 'low' });
+    phoneHolder.rooms.office.npcs[0].npcType = 'phone';
+    assert.ok(has(credentialIssues(phoneHolder), npcOnly), 'a phone holder alone is no way in');
+    const untyped = scenario({ passIf: null, awareness: 'low' });
+    delete untyped.rooms.office.npcs[0].npcType;
+    assert.ok(has(credentialIssues(untyped), npcOnly), 'no npcType reads as phone');
+    // mirror: npcType both is a person with a sprite
+    const both = scenario({ passIf: null, awareness: 'low' });
+    both.rooms.office.npcs[0].npcType = 'both';
+    assert.ok(!has(credentialIssues(both), "'SAM-1'"));
+});
+
+// Review R4 minor 2: a room that also accepts a card the player holds is not stuck
+test('a room whose requires also accepts an item card draws no careful or NPC-only warning', { skip }, () => {
+    const careful = scenario({ passIf: null, awareness: 'high' });
+    careful.rooms.vault.requires = ['SAM-1', 'OTHER'];
+    careful.startItemsInInventory = [{ type: 'keycard', name: 'K', card_id: 'OTHER' }];
+    const noGate = noGateScenario();
+    noGate.rooms.vault.requires = ['SAM-1', 'OTHER'];
+    noGate.startItemsInInventory = [{ type: 'keycard', name: 'K', card_id: 'OTHER' }];
+    for (const sc of [careful, noGate]) {
+        const out = credentialIssues(sc);
+        assert.ok(!has(out, "'SAM-1'"), out.join('\n'));
+    }
+    // mirror: the other card is not an item, so the careful warning stays
+    delete careful.startItemsInInventory;
+    assert.ok(has(credentialIssues(careful), carefulOnly));
+});
+
+// Review R4 nit 1: door-gates.js declines a gate on an east or west door
+test('a careless guard on an east or west gate is no way in', { skip }, () => {
+    for (const direction of ['east', 'west']) {
+        const out = credentialIssues(scenario({ direction, passIf: null, awareness: 'low' }));
+        assert.ok(has(out, npcOnly), `${direction}:\n${out.join('\n')}`);
+    }
+    // mirror: the same guard on a south gate is a way in
+    assert.ok(!has(credentialIssues(scenario({ direction: 'south', passIf: null, awareness: 'low' })), "'SAM-1'"));
+});
