@@ -307,8 +307,11 @@ fields that ship, on room objects, are `wifiAp` (so the client knows a click is 
   `settle_session_at_keyboard!`) and is **never** pruned, so a walk-up claim on a network the player
   holds no foothold on survives untouched. An outage alone never prunes, because `structural_reach`
   ignores outages. This keeps a session merely on a down route (5.2) and removes one whose pivot the
-  player signed out of (beat N4). Tested both ways: an onward pivot session is ended when its pivot
-  goes; a local claim on a foothold-less network survives a logout elsewhere.
+  player signed out of (beat N4). One pass suffices, no fixpoint: a session eligible for pruning is
+  on a network in no foothold's `structural_reach`, so it cannot itself be the pivot keeping another
+  session reachable, and pruning it cannot make a surviving session newly unreachable. Tested both
+  ways: an onward pivot session is ended when its pivot goes; a local claim on a foothold-less
+  network survives a logout elsewhere.
 
 **The view's network blocks.** `network_view` gains, per foothold, a `networks` block, each entry
 `{ id, name, via: { hostId, host, displayName } | null, hosts, route: "up" | "down" }`:
