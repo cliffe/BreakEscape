@@ -1066,6 +1066,13 @@ Tampered client, from the page (`window.ApiClient`), all refused by the server:
   block, so that answer is empty after the heard share too; the heard share's capture proof itself
   (`account_capture_passwords`) is covered by `npc_workaround_h_test.rb`.
 
+Known, not fixed (review R3 n2): a handed borrow has no age limit on the server
+(`npc_frustration.rb`, `handed_borrow_pcs`; only the dwell is checked). With "last done wins", a
+tampered client that holds two handed borrows for one PC can choose which NPC becomes the guest,
+and when the server's guest timeout starts, by timing its "done" posts. It reaches only outcomes
+honest play can reach (each borrow was handed by the server), and a wall-time bound would bring
+back the needs-clock problem of R2 server m1.
+
 `access-leak-check.rb`: 1221 (119 responses), 1222 (117), 1223 (86): `VERDICT: no leaks found` each.
 
 ### W1 to W4 with Hall C loaded (game 1223)
@@ -1283,3 +1290,42 @@ Rails 1606 runs, 0 failures, 0 errors, 1 skip; JS 491 of 491 files passed.
 
 Commits this round: `e9320f7e8` (server), `3c22cb90e` (client), `ac6623414` (log and backlog),
 `fee1166a3` (merge of `main`), and this note.
+
+## H review round 3 outcomes (2026-11-11)
+
+Review: `ACCESS_MODEL_SLICE_9_2_H_CODE_REVIEW_R3.md` (0 blockers, 0 majors, 2 minors, 3 nits).
+Each fix was checked by running its new tests against the code before the fix: they fail there.
+
+| Finding | Outcome |
+|---|---|
+| m1 a transport error on a guest claim locks a live guest session | **Fixed** (`unlock-system.js`): `guestClaimRefused` runs only on `reason: 'refused'` (a 422). A 5xx, 403 or network failure keeps the guest record, shows the sign-in screen as before and an alert with the error's message (plain text). Test: routing "a guest claim that fails on the transport" (`locked` stays empty) |
+| m2 the fail cooldown on a borrowed PC equals the start window | **Fixed** (`npc-needs.js` `_failJob`): a failed job at a borrowed PC sets a 5 s cooldown (`BORROW_FAIL_COOLDOWN_MS`), not 60 s, so the borrower tries again inside the window and `startBy` stays the only bound. Tests in `npc-needs-work.test.mjs`: a borrow whose blocked walk times out at 20 s sits before `startBy`; after a failed walk, a PC taken by a second borrower is waited for and sat at once that one leaves. The backlog entry no longer files the dropped Ian borrow under client R2 m2 |
+| n1 the refusal drops whichever guest is recorded | **Fixed**: `guestClaimRefused(pcId, npcId)` keeps a record that is no longer the claimed guest's; the routing call passes the claimed `guestId`. Tests: workstation-state (Rosa recorded while Ian's claim was answered is kept), routing (the claimed guest is passed) |
+| n2 a handed borrow has no server age limit | **Recorded, not fixed**: in the tampered-client notes under "Browser run H" |
+| n3 the `record_borrow_done!` comment | **Fixed**: it names the late-resent request (R1 n2) as the exception |
+| Orchestrator: `hall_c_drawer` sprite | **Fixed**: `filing_cabinet1` has no sprite; it is `filing_cabinet` now. The validator shows no failure lines (one warning, about `pat_pc`, as before) |
+
+### Browser check (game 1252, port 3018)
+
+Keyless server on :3018, started by hand, stopped by PID afterwards; the R2 script with the socket
+and the breaker switched one after the other (so the two hand-overs land close), then the player
+sent to `slow_room`, away from Ian's way from `cable_room` to the hot desk, until the second
+borrower left. Game 1251 started in the lobby by mistake and did nothing (left over).
+
+- **The queue happened.** Ian was handed his borrow at 64 s and set off; Rosa was handed hers at
+  81 s and sat at the hot desk at 86 s. Ian's walk ended without his sitting (the desk was taken),
+  and about 6 s later he set off again while Rosa was still on her way out; he sat at 97 s, after
+  her "done" at 91 s, and his "done" came at 102 s, inside his window (124 s). No borrow was dropped.
+- Both "done" answers said `{ pcId: hot_desk, guest: true }`, Rosa's first, then Ian's. The
+  client's guest record before the claim was `ian`, the guest claim was granted with `npcId: ian`
+  (`ishaw`, `via: "claim"`), and the desktop that opened was Ian's: the last sitter's.
+
+Leftover games: 1251, 1252; shared dev database.
+
+### Merge and suites after review round 3
+
+`main` merged into `build/9-2-h` (`4a4f97f37`), no conflicts. After the merge, under the lock:
+Rails 1606 runs, 0 failures, 0 errors, 1 skip; JS 491 of 491 files passed.
+
+Commits this round: `62a1fc990` (m1, n1), `076acc1d6` (m2), `71960ca23` (n3, drawer sprite),
+`4a4f97f37` (merge of `main`), and this note with the backlog change.
