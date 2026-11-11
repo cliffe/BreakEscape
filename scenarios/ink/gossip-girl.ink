@@ -34,7 +34,7 @@ Like, Neye would probably do ANYTHING if they thought Alex was asking for it!
 -> hub
 
 === topic_ceo ===
-The CEO? Girl, I have THEORIES... #delivery: lowering her voice
+The CEO? *lowers voice* Girl, I have THEORIES...
 Like, why are they here so late at night? And those "business trips" that nobody knows about?
 I saw them coming out of the server room at 3 AM once. Like... what?!
 Something shady is definitely going on. Mark my words! 🕵️
