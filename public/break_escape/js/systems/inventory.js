@@ -28,9 +28,10 @@ export function createItemIdentifier(scenarioData) {
 
 // Hover label of an inventory item: its plain name. A droppable item no longer says
 // "(click to drop)": its click opens a menu that offers the drop (inventory-menu.js),
-// and a touch screen never showed the hover label anyway.
+// and a touch screen never showed the hover label anyway. A worn wearable adds "(worn)".
 export function inventoryHoverLabel(scenarioData) {
-    return scenarioData?.name;
+    const worn = globalThis.window?.wearables?.isWorn?.(scenarioData) === true;
+    return worn && scenarioData?.name ? `${scenarioData.name} (worn)` : scenarioData?.name;
 }
 
 // ---------------------------------------------------------------------------

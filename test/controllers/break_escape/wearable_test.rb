@@ -229,7 +229,9 @@ module BreakEscape
       assert_equal true, body.dig('savedGlobalVariables', 'vest_on')
     end
 
-    test 'a game made before wearables gets its worn globals on its first sync' do
+    # A guard only: every game made on this build stores the list at creation. One that has
+    # none works it out from its own scenario snapshot on its first sync.
+    test 'a game with no worn global list works it out on its first sync' do
       @game.player_state.delete('wearableGlobals')
       @game.save!
       put path('sync_state'), params: { globalVariables: { 'vest_on' => true } }, as: :json
@@ -238,8 +240,7 @@ module BreakEscape
       assert_not_equal true, globals['vest_on']
     end
 
-    # Review R1, m2: a game in progress at deploy has the worn global true (the old client wrote
-    # it) and no worn record. Taking off with no record clears it.
+    # A hand-edited game, or a take-off after the server already took a dropped item off
     test 'taking off with no worn record clears a worn global left true' do
       @game.player_state['globalVariables'] = { 'vest_on' => true, 'pp_disguise' => 'courier' }
       @game.save!
@@ -252,33 +253,25 @@ module BreakEscape
       assert_equal({}, wear(nil, false)['globals'])
     end
 
-    test 'an older game with the worn global true and the item held becomes worn on its first sync' do
+    # Review R2, n1: the read-only check comes before the delete branch
+    test 'sync_state cannot delete a worn global with a null' do
       take(vest)
-      @game.reload
-      @game.player_state.delete('wearableGlobals')
-      @game.player_state['globalVariables'] = { 'vest_on' => true, 'pp_disguise' => 'courier' }
-      @game.save!
-      put path('sync_state'), params: { globalVariables: { 'vest_on' => true } }, as: :json
+      wear('vest')
+      put path('sync_state'), params: { globalVariables: { 'vest_on' => nil, 'pp_disguise' => nil } }, as: :json
       assert_response :success
-      assert_equal({ 'itemId' => 'vest', 'global' => 'vest_on', 'costume' => 'courier' }, @game.reload.player_state['worn'])
       assert_equal true, globals['vest_on']
-      # So the locker's take_off works
-      wear('vest', false)
-      assert_equal false, globals['vest_on']
-      assert_nil @game.reload.player_state['worn']
+      assert_equal 'courier', globals['pp_disguise']
     end
 
-    test 'an older game with the worn global true and the item not held is cleared on its first sync' do
-      @game.player_state.delete('wearableGlobals')
-      @game.player_state['globalVariables'] = { 'vest_on' => true, 'pp_disguise' => 'courier' }
-      @game.save!
-      put path('sync_state'), params: { globalVariables: {} }, as: :json
-      assert_response :success
-      assert_nil @game.reload.player_state['worn']
-      assert_equal false, globals['vest_on']
-      assert_equal '', globals['pp_disguise']
-      wear(nil, false)
-      assert_equal false, globals['vest_on']
+    # Review R2, n1: a reset keeps no worn record and stores the worn globals again
+    test 'a reset while worn leaves nothing worn' do
+      take(vest)
+      wear('vest')
+      @game.reload.reset_player_state!
+      state = @game.reload.player_state
+      assert_nil state['worn']
+      assert_equal %w[coat_on fake_on vest_on], state['wearableGlobals']
+      assert_not_equal true, state.dig('globalVariables', 'vest_on')
     end
 
     # Review R1, n3: in a scenario with wearables only POST wear dresses the avatar
@@ -308,6 +301,29 @@ module BreakEscape
     test 'wear without an item id is a bad request' do
       wear(nil, true)
       assert_response :bad_request
+    end
+  end
+
+  # Review R2, m3: without wearables, set_costume owns pp_disguise and a sync must keep it
+  class WearableAbsentTest < ActionDispatch::IntegrationTest
+    include Engine.routes.url_helpers
+
+    test 'pp_disguise stays writable by sync in a scenario without wearables' do
+      game = create_access_game(
+        mission: break_escape_missions(:ceo_exfil),
+        player: break_escape_demo_users(:test_user),
+        scenario: {
+          'scenario_brief' => 'Costume, no wearable', 'startRoom' => 'office',
+          'disguises' => { 'courier' => { 'sprite' => 'courier_hivis' } },
+          'globalVariables' => { 'pp_disguise' => '' },
+          'rooms' => { 'office' => { 'type' => 'room_office', 'objects' => [] } }
+        },
+        player_state: { 'currentRoom' => 'office', 'unlockedRooms' => ['office'] }
+      )
+      assert_equal [], game.player_state['wearableGlobals']
+      put "/break_escape/games/#{game.id}/sync_state", params: { globalVariables: { 'pp_disguise' => 'courier' } }, as: :json
+      assert_response :success
+      assert_equal 'courier', game.reload.player_state.dig('globalVariables', 'pp_disguise')
     end
   end
 end
@@ -385,6 +401,53 @@ module BreakEscape
       post path('wear'), params: { item_id: 'kit_hivis_vest', worn: false }, as: :json
       assert_response :success, response.body
       assert_equal false, @game.reload.player_state.dig('globalVariables', 'courier_ready')
+    end
+
+    # Review R2, m1: a lab game started before this build. Its scenario_data is a snapshot
+    # taken at creation (Game#generate_scenario_data returns when one is present, and nothing
+    # regenerates it), so the vest in it has no wearable field. The new code leaves such a game
+    # alone: nothing is read-only, nothing is worn, the old client-written costume and
+    # courier_ready keep working until the player restarts.
+    test 'a lab game from before wearables keeps the old costume behaviour' do
+      strip = lambda do |node|
+        case node
+        when Hash then node.delete('wearable'); node.each_value { |v| strip.call(v) }
+        when Array then node.each { |v| strip.call(v) }
+        end
+      end
+      data = @game.scenario_data.deep_dup
+      strip.call(data)
+      @game.scenario_data = data
+      @game.player_state.delete('wearableGlobals')
+      @game.save!
+      post path('inventory'), params: { action_type: 'add',
+                                        item: { type: 'aes_hivis_hook1', id: 'kit_hivis_vest', name: 'Hi-vis courier vest' } }, as: :json
+      assert_response :success, response.body
+      held = @game.reload.player_state['inventory'].find { |i| (i['scenarioData'] || i)['id'] == 'kit_hivis_vest' }
+      assert held, 'the vest is held'
+      assert_nil (held['scenarioData'] || held)['wearable'], 'the old snapshot has no wearable on the vest'
+
+      # The old client put the vest on by set_costume and set_global: the sync stores both
+      put path('sync_state'), params: { globalVariables: { 'courier_ready' => true, 'pp_disguise' => 'courier' } }, as: :json
+      assert_response :success
+      state = @game.reload.player_state
+      assert_equal [], state['wearableGlobals']
+      assert_equal true, state.dig('globalVariables', 'courier_ready')
+      assert_equal 'courier', state.dig('globalVariables', 'pp_disguise')
+      assert_nil state['worn']
+
+      # The bootstrap sends no worn item, so the client draws no frame and offers no Put on
+      get path('scenario'), as: :json
+      assert_response :success
+      assert_nil response.parsed_body['wornItem']
+
+      # POST wear does not apply to it; the old locker clears both by sync
+      post path('wear'), params: { item_id: 'kit_hivis_vest', worn: true }, as: :json
+      assert_response :unprocessable_entity
+      put path('sync_state'), params: { globalVariables: { 'courier_ready' => false, 'pp_disguise' => '' } }, as: :json
+      assert_response :success
+      assert_equal false, @game.reload.player_state.dig('globalVariables', 'courier_ready')
+      assert_equal '', @game.player_state.dig('globalVariables', 'pp_disguise')
     end
 
     test 'the lab has no other writer of courier_ready, in JSON or ink' do

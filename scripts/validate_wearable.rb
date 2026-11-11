@@ -21,7 +21,8 @@ def wearable_npc_ids(json_data)
 end
 
 # Ink writers in the scenario's own ink sources: assignments `~ name = ...` (not `==`) and the
-# `# set_global:name:value` tag the chat runners act on. [{ name:, path: }]
+# `# set_global:name:value` and `# set_variable:name=value` tags the chat runners act on
+# (chat-helpers.js; `# set_variable:name` alone sets it true). [{ name:, path: }]
 def wearable_ink_writers(scenario_dir, names)
   return [] if scenario_dir.nil? || names.empty?
 
@@ -30,7 +31,8 @@ def wearable_ink_writers(scenario_dir, names)
     File.foreach(file).with_index(1) do |line, n|
       names.each do |name|
         quoted = Regexp.escape(name)
-        next unless line =~ /~\s*(?:temp\s+)?#{quoted}\s*=(?!=)/ || line =~ /#\s*set_global\s*:\s*#{quoted}\s*:/
+        next unless line =~ /~\s*(?:temp\s+)?#{quoted}\s*=(?!=)/ || line =~ /#\s*set_global\s*:\s*#{quoted}\s*:/ ||
+                    line =~ /#\s*set_variable\s*:\s*#{quoted}\s*(?:=|#|$)/
 
         out << { name: name, path: "#{File.basename(file)}:#{n}" }
       end

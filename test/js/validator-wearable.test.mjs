@@ -89,14 +89,17 @@ test('no other writer of the worn global: set_global, setGlobal, ink assignment 
     s.rooms.office.npcs[0].eventMappings.push({ eventPattern: 'x', setGlobal: { vest_on: true } });
     const dir = mkdtempSync(join(tmpdir(), 'wear-ink-'));
     mkdirSync(join(dir, 'ink'));
-    writeFileSync(join(dir, 'ink', 'ruth.ink'), 'VAR vest_on = false\n{ vest_on: worn }\n~ vest_on = true\n~ other = 1\n{ vest_on == true }\nFine. # set_global:vest_on:true\nOk # set_global:other:1\n');
+    writeFileSync(join(dir, 'ink', 'ruth.ink'), 'VAR vest_on = false\n{ vest_on: worn }\n~ vest_on = true\n~ other = 1\n{ vest_on == true }\nFine. # set_global:vest_on:true\nOk # set_global:other:1\nRight. # set_variable:vest_on=true\nSure # set_variable:vest_on_later=true\nGo # set_variable:vest_on\n');
     const list = errors(issues(s, dir));
     assertHas(list, "triggerOnInteract[1] writes 'vest_on'");
     assertHas(list, "setGlobal writes 'vest_on'");
     assertHas(list, "ink ruth.ink:3 writes 'vest_on'");
     // The set_global tag the chat runners act on is a writer too (review R1, m4)
     assertHas(list, "ink ruth.ink:6 writes 'vest_on'");
-    assert.equal(list.filter(m => m.includes('ruth.ink')).length, 2, 'VAR, reads and other globals are not writes');
+    // And the set_variable tag, with a value or alone (review R2, m2)
+    assertHas(list, "ink ruth.ink:8 writes 'vest_on'");
+    assertHas(list, "ink ruth.ink:10 writes 'vest_on'");
+    assert.equal(list.filter(m => m.includes('ruth.ink')).length, 4, 'VAR, reads, other globals and a longer name are not writes');
 });
 
 test('two wearables may not share a global', { skip }, () => {

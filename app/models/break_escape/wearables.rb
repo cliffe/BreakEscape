@@ -18,11 +18,11 @@ module BreakEscape
       rec.is_a?(Hash) && rec['itemId'].present? ? rec : nil
     end
 
-    # The worn globals, read-only to sync_state. A game made before this field existed has no
-    # list: it is worked out from the scenario now (sync_state loads the row without
-    # scenario_data, so that is read on its own) and kept in player_state, which the caller's
-    # save stores. That first time, a worn global left true by the old client-written costume is
-    # put in step once (reconcile_worn_globals!).
+    # The worn globals, read-only to sync_state. Every game made since this field existed stores
+    # the list at creation. A game with no list (made before it) works it out from its own
+    # scenario snapshot, which nothing regenerates: a game started before wearables gets [] and
+    # keeps the old client-written costume until it is restarted (build log, review R2 m1).
+    # sync_state loads the row without scenario_data, so that is read on its own.
     def worn_global_names
       return [] unless player_state.is_a?(Hash)
 
@@ -30,10 +30,7 @@ module BreakEscape
       return names.grep(String) if names.is_a?(Array)
 
       data = has_attribute?(:scenario_data) ? scenario_data : self.class.where(id: id).pick(:scenario_data)
-      names = BreakEscape::WearableModel.worn_globals(data)
-      player_state['wearableGlobals'] = names
-      reconcile_worn_globals!(data, names)
-      names
+      player_state['wearableGlobals'] = BreakEscape::WearableModel.worn_globals(data)
     end
 
     # The globals read-only to sync_state for wearables: the worn globals, and pp_disguise when
@@ -83,7 +80,8 @@ module BreakEscape
           return wear_refusal('That item is not being worn.')
         end
 
-        # No record: an older game whose worn global the client once wrote. Clear any left true.
+        # No record (a drop the server already took off, or a hand-edited game): clear any worn
+        # global still true.
         written = prev ? clear_worn_record! : clear_stray_worn_globals!
       end
       save!
@@ -113,31 +111,6 @@ module BreakEscape
     end
 
     private
-
-    # Once, for a game made before wearables (worn_global_names): a worn global that is true with
-    # no worn record becomes the record when its item is held, and is cleared otherwise.
-    def reconcile_worn_globals!(data, names)
-      globals = player_state['globalVariables']
-      return if worn_record || !globals.is_a?(Hash)
-
-      stuck = names.select { |g| globals[g] == true }
-      return if stuck.empty?
-
-      items = BreakEscape::WearableModel.wearable_items(data).filter_map do |e|
-        spec = BreakEscape::WearableModel.spec(e[:item])
-        spec && e[:item]['id'].present? ? [e[:item]['id'].to_s, spec] : nil
-      end
-      stuck.each do |g|
-        id, spec = items.find { |i, sp| sp['global'] == g && held_inventory_item(i) }
-        if id && worn_record.nil?
-          player_state['worn'] = { 'itemId' => id, 'global' => g, 'costume' => spec['costume'] }
-          globals[DISGUISE_GLOBAL] = spec['costume']
-        else
-          globals[g] = false
-        end
-      end
-      globals[DISGUISE_GLOBAL] = '' unless worn_record
-    end
 
     # Take off with no worn record: every worn global still true goes false, and the costume with it.
     def clear_stray_worn_globals!

@@ -87,9 +87,10 @@ export function watchersInRoom(spec, w = win()) {
 
 /** The toast for a refused change: who is watching. */
 export function refusalText(watchers, change = 'change') {
-    // At most two names, so a full room stays one short line
-    const names = watchers.map(n => n.name);
+    // At most two names, so a full room stays one short line; named watchers first
+    const names = watchers.map(n => n.name).sort((a, b) => (a === 'someone') - (b === 'someone'));
     const who = names.length <= 1 ? (names[0] || 'someone')
+        : names[0] === 'someone' ? `${names.length} people`
         : names.length === 2 ? `${names[0]} and ${names[1]}`
             : `${names[0]} and ${names.length - 1} others`;
     const verb = names.length > 1 ? 'are' : 'is';
@@ -126,14 +127,19 @@ function defaults(deps = {}) {
 }
 
 // One change at a time, per window: a second click while a post is out is dropped, and a
-// forced take-off (the item left the inventory) waits for the change in flight.
+// forced take-off (the item left the inventory) waits for the change in flight. A dropped call
+// logs a warning and returns null (a refusal returns false): that includes a wear or take_off
+// from an item's own onWear / onRemove, or one run while a tray confirm is open.
 const inFlight = new WeakMap();
 
-async function exclusive(w, force, fn) {
+async function exclusive(w, force, fn, label = '') {
     const key = typeof w === 'object' && w ? w : globalThis;
     const current = inFlight.get(key);
     if (current) {
-        if (!force) return false;
+        if (!force) {
+            console.warn('[wearables] another change is in progress, dropped:', label);
+            return null;
+        }
         await current.catch(() => {});
     }
     const run = Promise.resolve().then(fn);
@@ -176,11 +182,12 @@ function swapRefusal(data, prevData, w) {
 
 /**
  * Put a held wearable on. opts.confirm shows the item's confirmOn first; opts.force skips the
- * unseenOnly check. Returns true when it was put on.
+ * unseenOnly check. Returns true when it was put on, null when dropped because another change
+ * is in progress, false otherwise.
  */
 export async function putOn(itemId, opts = {}, deps = {}) {
     const d = defaults(deps);
-    return exclusive(d.w, false, () => putOnNow(itemId, opts, d));
+    return exclusive(d.w, false, () => putOnNow(itemId, opts, d), `put on ${itemId}`);
 }
 
 async function putOnNow(itemId, opts, d) {
@@ -246,7 +253,7 @@ async function putOnNow(itemId, opts, d) {
 }
 
 // A take-off answer always clears the item's own global here, even when the server had no
-// record to clear (an older game, or a drop the server already took off)
+// record to clear (a drop the server already took off)
 function withGlobal(body, global) {
     if (!global) return body;
     const globals = { ...(body?.globals && typeof body.globals === 'object' ? body.globals : {}) };
@@ -257,27 +264,16 @@ function withGlobal(body, global) {
 /**
  * Take the worn item off (itemId, or whatever is worn when null). opts.confirm shows confirmOff
  * first; opts.force skips the unseenOnly check (an item that has left the inventory). Returns
- * true when something came off.
+ * true when something came off, null when dropped because another change is in progress,
+ * false otherwise.
  */
 export async function takeOff(itemId = null, opts = {}, deps = {}) {
     const d = defaults(deps);
-    return exclusive(d.w, opts.force === true, () => takeOffNow(itemId, opts, d));
-}
-
-// A game from before wearables: no worn record, but a held wearable's global left true by the
-// old client-written costume. That item counts as worn for taking off (the server clears it).
-function strayWornId(itemId, w) {
-    const vars = w.gameState?.globalVariables || {};
-    const candidates = itemId ? [heldItem(itemId, w)] : (w.inventory?.items || []);
-    const hit = candidates.find(it => {
-        const spec = wearableSpec(it?.scenarioData);
-        return spec && vars[spec.global] === true;
-    });
-    return hit ? hit.scenarioData.id : null;
+    return exclusive(d.w, opts.force === true, () => takeOffNow(itemId, opts, d), `take off ${itemId || '(worn item)'}`);
 }
 
 async function takeOffNow(itemId, opts, d) {
-    const wornId = wornItemId(d.w) || strayWornId(itemId, d.w);
+    const wornId = wornItemId(d.w);
     if (!wornId || (itemId && itemId !== wornId)) return false;
     const item = heldItem(wornId, d.w);
     const data = item?.scenarioData || opts.data || { id: wornId };
@@ -342,6 +338,7 @@ export function decorateSlot(item, w = win()) {
     if (!slot?.classList) return;
     const worn = isWorn(item, w);
     slot.classList.toggle(WORN_CLASS, worn);
+    if (wearableSpec(item.scenarioData) && isStr(item.scenarioData.name)) item.alt = worn ? `${item.scenarioData.name} ${WORN_LABEL}` : item.scenarioData.name;
     let label = slot.querySelector?.(':scope > .tray-worn-label');
     if (worn && !label && typeof document !== 'undefined') {
         label = document.createElement('span');

@@ -114,6 +114,10 @@ test('refusal text names the watchers', () => {
     assert.match(W.refusalText([{ name: 'Tom' }, { name: 'Ann' }]), /Tom and Ann are watching/);
     assert.match(W.refusalText([{ name: 'Tom' }, { name: 'Ann' }, { name: 'Bo' }]), /Tom and 2 others are watching/);
     assert.match(W.refusalText([{ name: 'Tom' }], 'drop'), /Drop it somewhere out of sight/);
+    // Review R2, client 5: unnamed watchers are counted, and a named one goes first
+    assert.match(W.refusalText([{ name: 'someone' }, { name: 'someone' }]), /Not here: 2 people are watching/);
+    assert.match(W.refusalText([{ name: 'someone' }, { name: 'Tom' }, { name: 'someone' }]), /Tom and 2 others are watching/);
+    assert.match(W.refusalText([{ name: 'someone' }]), /someone is watching/);
 });
 
 test('put on: confirm, server, costume, global, onWear, worn frame and label', async () => {
@@ -128,6 +132,8 @@ test('put on: confirm, server, costume, global, onWear, worn frame and label', a
     const slot = w.inventory.items[0].parentElement;
     assert.ok(slot.classes.has(W.WORN_CLASS));
     assert.equal(slot.children[0].textContent, '(worn)');
+    assert.equal(w.inventory.items[0].alt, 'Hi-vis vest (worn)', 'the image alt says worn too');
+    assert.equal(w.inventory.items[1].alt, 'Lab coat');
     assert.ok(!w.inventory.items[1].parentElement.classes.has(W.WORN_CLASS));
     assert.equal(W.menuLabel(VEST, w), 'Take off');
     assert.equal(W.menuLabel(COAT, w), 'Put on');
@@ -143,6 +149,7 @@ test('take off: confirm, server, costume cleared, global false, onRemove, frame 
     assert.equal(w.gameState.globalVariables.vest_on, false);
     assert.equal(w.gameState.wornItem, null);
     assert.deepEqual(log.actions, ['on', 'off']);
+    assert.equal(w.inventory.items[0].alt, 'Hi-vis vest');
     const slot = w.inventory.items[0].parentElement;
     assert.ok(!slot.classes.has(W.WORN_CLASS));
     assert.equal(slot.children[0].removed, true, 'the label is removed');
@@ -279,8 +286,12 @@ test('a double click posts once and runs onWear once', async () => {
     const { w, deps, log } = rig({ items: [COAT] });
     const coat = { ...COAT, wearable: { ...COAT.wearable, onWear: [{ type: 'hint', message: 'coat on' }] } };
     w.inventory.items[0].scenarioData = coat;
-    const [a, b] = await Promise.all([W.toggle(w.inventory.items[0], deps), W.toggle(w.inventory.items[0], deps)]);
-    assert.deepEqual([a, b], [true, false]);
+    const cap = captureWarn();
+    let a, b;
+    try {
+        [a, b] = await Promise.all([W.toggle(w.inventory.items[0], deps), W.toggle(w.inventory.items[0], deps)]);
+    } finally { cap.restore(); }
+    assert.deepEqual([a, b], [true, null]);
     assert.equal(log.posts.length, 1);
     assert.deepEqual(log.actions, ['coat on']);
 });
@@ -332,17 +343,47 @@ test('an unforced take-off the server refuses changes nothing and says why', asy
     assert.equal(log.alerts.at(-1), 'Nope.');
 });
 
-// Review R1, m2: a game from before wearables has the global true and no worn record
-test('take_off in an older game with the global left true still posts and clears it', async () => {
+// Review R2, client 1: a change started while another is in progress is dropped with a
+// warning and returns null (a refusal returns false)
+function captureWarn() {
+    const warned = [];
+    const saved = console.warn;
+    console.warn = (...args) => warned.push(args.join(' '));
+    return { warned, restore: () => { console.warn = saved; } };
+}
+
+test('a wear from the worn item\'s own onRemove is dropped with a warning', async () => {
     const { w, deps, log } = rig();
-    w.gameState.globalVariables.vest_on = true;
-    deps.post = async (body) => { log.posts.push(body); return { success: true, worn: null, globals: {} }; };
-    assert.equal(await W.takeOff('vest', {}, deps), true);
-    assert.deepEqual(log.posts, [{ item_id: 'vest', worn: false }]);
-    assert.equal(w.gameState.globalVariables.vest_on, false, 'cleared even when the server sends no globals');
-    // Nothing worn and nothing stuck: no post
-    assert.equal(await W.takeOff(null, {}, deps), false);
-    assert.equal(log.posts.length, 1);
+    const coat = { ...COAT, wearable: { ...COAT.wearable, onRemove: [{ type: 'wear', itemId: 'vest' }] } };
+    w.inventory.items[1].scenarioData = coat;
+    const nested = [];
+    deps.applyActions = (acts) => (acts || []).forEach(a => { if (a.type === 'wear') nested.push(W.putOn(a.itemId, {}, deps)); });
+    await W.putOn('coat', {}, deps);
+    const cap = captureWarn();
+    try {
+        assert.equal(await W.takeOff('coat', {}, deps), true);
+        assert.equal(await nested[0], null, 'dropped, not refused');
+        assert.match(cap.warned.join('\n'), /another change is in progress, dropped: put on vest/);
+    } finally { cap.restore(); }
+    assert.equal(w.gameState.wornItem, null);
+    assert.equal(log.posts.filter(p => p.item_id === 'vest').length, 0);
+});
+
+test('a take_off while a tray confirm is open is dropped with a warning', async () => {
+    const { w, deps } = rig();
+    await W.putOn('vest', {}, deps);
+    let answer;
+    deps.confirm = () => new Promise(r => { answer = r; });
+    const tray = W.takeOff('vest', { confirm: true }, deps);
+    await new Promise(r => setTimeout(r, 0));
+    const cap = captureWarn();
+    try {
+        assert.equal(await W.takeOff(null, {}, deps), null);
+        assert.match(cap.warned.join('\n'), /dropped: take off \(worn item\)/);
+    } finally { cap.restore(); }
+    answer(false);
+    assert.equal(await tray, false, 'the declined confirm is a refusal, not a drop');
+    assert.equal(w.gameState.wornItem.itemId, 'vest');
 });
 
 test('the tray menu: a droppable wearable offers Put on / Take off first', () => {
