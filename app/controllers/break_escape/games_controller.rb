@@ -2583,7 +2583,7 @@ module BreakEscape
     # chosen by the note the client sent (TtsLineExtractor#delivery_for), or nil.
     # The client's string itself never reaches the voice prompt, the key or the
     # sidecar. A note the ink doesn't give the line (a tag the server's walker
-    # can't place: README_ink_best_practices.md, "Delivery notes") is dropped,
+    # can't place: README_ink_best_practices.md, "Voiced lines hold only spoken words") is dropped,
     # so the line plays untagged rather than not at all.
     def ink_delivery_note(npc_id, text, client_note)
       return nil if client_note.blank?

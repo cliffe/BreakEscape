@@ -95,10 +95,12 @@ Maya Chen: I suppose it doesn't matter now.
 ```
 
 - Write it at the end of the line, or on its own line directly above (ink attaches a tag line to the line after it). If a line has two, the last wins.
+- The line-above form only works when the spoken line comes next in the same knot, or straight after a plain `-> knot` divert as that knot's first line. Above a choice, at the end of a knot, or above `-> END`, the note attaches to nothing.
+- The server has to find the note in the ink to use it. It cannot on a glued line (`<>`, on the line or the line before it) or on a line that prints a variable or expression (`{count}`, `{name()}`), so those lines play untagged. Put the note on a plain spoken line.
+- Keep the note under 200 characters, in plain ASCII words, with no `{braces}`. A longer note, or one with no letter or digit (`...`), is dropped and the line plays untagged.
 - Keep it short and about the voice: pace, volume, mood, a laugh or sigh in the voice (`quietly, almost to herself`, `flatly`, `with a tired laugh`, `slowly, choosing each word`). Things the character *does* are narration, or cut.
 - A note changes that line's audio, so adding, changing or removing one regenerates the clip. Untagged lines keep their existing clips.
 - Person-chat lines only, for now: a voiced phone call (`voiced: true`) doesn't send the note yet, so put nothing there you rely on.
-- No `{variables}` in a note, for the same reason as in voiced lines.
 
 ❌ **WRONG**: an inline cue, and a line starting with `*`, which the compiler parses as a player choice:
 ```ink
@@ -113,7 +115,7 @@ Narrator: Derek sets down the launch device.
 Derek Lawson: Take it. Stop the launch. I won't resist.
 ```
 
-`scripts/ink_runtime_check/dialoguelint.mjs` warns (`inline-direction`) on an asterisk cue in a voiced person-chat line. It skips emphasis between two words (`I *never* said that`), choices, the player's lines and narration.
+`scripts/ink_runtime_check/dialoguelint.mjs` warns (`inline-direction`) on an asterisk cue in a voiced person-chat line. It skips choices, the player's lines, narration and one-word emphasis (`I *never* said that`, `It was *yours*.`, `*Never* again.`), but it still flags a stage word (`*sighs*`), a cue of more than one word, and a lower-case cue at the start of the line (`*quietly* Keep down`). It can still mistake emphasis at a sentence's edge for a direction, so read each hit before you move it into a tag. It also warns `delivery-unread` when a note cannot be read for its line (the cases above) and `delivery-note` when the note itself is too long, has braces or has no letter or digit.
 
 #### Don't turn every cue into narration: each `Narrator:` line costs the player a click
 
