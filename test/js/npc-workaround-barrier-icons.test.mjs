@@ -122,6 +122,13 @@ test('needs: a workaround visit and a borrowed use carry job.workaround; an ordi
     assert.ok(v.sys.enqueueVisit('dana', { kind: 'workaround', at: { objectId: 'dana_pc' }, useSeconds: 4, data: { workaround: { index: 0, hand: 1, do: 'writes_down' } } }));
     assert.ok(stepUntil(v.sys, () => v.sys.getState('dana').visiting?.kind === 'workaround', 60000));
     assert.equal(v.sys.getState('dana').job.workaround, true);
+    // Done: the icon stays WORKAROUND_SHOW_MS with no job, so a visit hidden by its start line is seen
+    assert.ok(stepUntil(v.sys, () => v.evs('npc_visit_done:dana').length > 0, 30000));
+    const after = v.sys.getState('dana');
+    assert.equal(after.workaround, true);
+    assert.equal(after.job?.workaround ?? false, false);
+    v.sys.step(WORKAROUND_SHOW_MS + 250);
+    assert.equal(v.sys.getState('dana').workaround, false);
 });
 
 test('needs: showWorkaround shows the icon for WORKAROUND_SHOW_MS (after any line); the emit runner calls it', () => {

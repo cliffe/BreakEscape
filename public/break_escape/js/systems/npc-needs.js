@@ -1893,9 +1893,11 @@ export class NPCNeedsSystem {
     }
 
     /**
-     * Access slice 9.2 (user decision q21): an `emit` workaround has no visit, so the runner calls
-     * this to show the workaround icon (getState().workaround) for WORKAROUND_SHOW_MS after any
-     * line showing now. False for an NPC the system does not run.
+     * Access slice 9.2 (user decision q21): the workaround icon with no job (getState().workaround)
+     * for WORKAROUND_SHOW_MS after any line showing now. The runner calls it for an `emit`, which
+     * has no visit; a workaround visit calls it when done, since the start line (shown from the
+     * hand-over) can hide the action icon for a short visit's whole length. False for an NPC the
+     * system does not run.
      */
     showWorkaround(npcId) {
         const s = this.states.get(npcId);
@@ -2271,6 +2273,8 @@ export class NPCNeedsSystem {
         this._log(id, 'visit_done', { kind: v.kind, target: v.at.objectId || v.at.npcId });
         this._emit(`npc_visit_done:${id}`, { npcId: id, kind: v.kind, at: { ...v.at }, data: v.data });
         if (v.kind === 'check' && v.at.objectId) this._emit(`npc_checked:${v.at.objectId}`, { npcId: id, objectId: v.at.objectId, data: v.data });
+        // q21: the start line can cover a short visit's whole icon, so it stays a moment after
+        if (v.kind === 'workaround') this.showWorkaround(id);
         const stayPut = s.atPost && this._targetsOwnPost(s);
         s.job = null;
         this._goHome(s, { stayPut });

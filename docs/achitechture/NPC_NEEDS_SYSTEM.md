@@ -346,8 +346,15 @@ clock during a `work` use (`seating.js` `typingBob`, off under reduced motion).
 
 **Icon set and pressing needs (office life slice 3b, `OFFICE_LIFE_PLAN.md` 9).** The defaults are
 the 16x16 set `assets/icons/npc-<name>.png` (caffeine, thirst, hunger, rest, social, work,
-curiosity, post, printout, print, queue, file, blocked, noticed), referenced by name only; the
-fallback stays the text `•`. Lookup keys: a use tries the object id, then `print` (a copier or
+curiosity, post, printout, print, queue, file, blocked, noticed, avoid, closed, workaround,
+barrier), referenced by name only; the fallback stays the text `•`. `workaround` and `barrier`
+belong to access slice 9.2 (user decisions q21, q27): `workaround` while an NPC does a workaround
+(`getState().job.workaround`, a workaround visit or a borrowed PC's use, or `getState().workaround`
+for 4 s after an `emit`), `barrier` for 4 s after a counted failure's line has gone
+(`getState().failed`). With no job the order is `noticed` (when it shows), `workaround`,
+`barrier`, the frustration `blocked` (pulsing, or faded once the cause clears, q17), then the
+leashed `blocked`. Tests: `test/js/npc-workaround-barrier-icons.test.mjs`. Art clean-up (one
+shared outline, exact pixel edits): `tools/npc_icon_cleanup.py`. Lookup keys: a use tries the object id, then `print` (a copier or
 printer by preset, `officeType` or type, or a use whose `onUse` has `revealOutput`:
 `job.prints`), then the need, `satisfies` and type; a carry tries `file` (a reveal slot carried to
 an `onDeliver: "stow"` target: `job.files`), then its tag, then `curiosity`. Every scenario entry
