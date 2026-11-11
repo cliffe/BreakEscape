@@ -735,6 +735,55 @@ test('H-3: a busy borrowed PC is waited for, then sat at once free', () => {
     assert.equal(evs('npc_borrow_dropped:dana').length, 0);
 });
 
+// Review R3 m2: a failed walk to the borrowed PC must leave time to try again inside the window
+function blockWalks(w, npcId, objectId) {
+    const block = { on: true };
+    const inner = w.world.moveTo;
+    const cell = w.world.approachCell(w.world.getObject(objectId));
+    w.world.moveTo = (id, x, y, speed, opts) => {
+        if (block.on && id === npcId && Math.hypot(x - cell.x, y - cell.y) < 40) { w.calls.moves.push({ id, x, y, blocked: true }); return; }
+        return inner(id, x, y, speed, opts);
+    };
+    return block;
+}
+
+test('R3 m2: a borrow whose walk times out with the PC free is picked again and sits before startBy', () => {
+    const { sys, evs, w } = workWorld({ objects: [...baseObjects(), HOT()], globals: { dana_pc_off: true }, chatter: CHATTER });
+    sys.registerAll();
+    failOnce(sys, evs);
+    const block = blockWalks(w, 'dana', 'hot_desk');
+    const handedAt = sys.clockMs;
+    sys.setBorrow('dana', RUN());
+    assert.ok(stepUntil(sys, () => evs('npc_job_failed:dana').length > 0, 30000), 'the blocked walk times out');
+    assert.ok(sys.clockMs - handedAt >= 20000);
+    block.on = false;
+    assert.ok(stepUntil(sys, () => evs('npc_sat_at:hot_desk').length > 0, 60000 - (sys.clockMs - handedAt) - 250));
+    assert.ok(sys.clockMs - handedAt < 60000, 'sat inside the start window');
+    assert.equal(evs('npc_borrow_dropped:dana').length, 0);
+});
+
+test('R3 m2: after a failed walk, a PC claimed by another borrower is waited for and taken when that one leaves', () => {
+    const npcs = { dana: { pos: { x: 100, y: 100 }, rec: dana() },
+                   kim: { pos: { x: 400, y: 100 }, rec: { id: 'kim', needs: { work: { decayPerMin: 1, urgentAt: 50, initial: 100, jitterPct: 0 } } } } };
+    const objects = [...baseObjects(), { ...HOT(), affordance: { satisfies: 'work', restores: 60, useSeconds: 15 } }];
+    const { sys, evs, w } = workWorld({ npcs, objects, globals: { dana_pc_off: true }, chatter: CHATTER });
+    sys.registerAll();
+    failOnce(sys, evs);
+    const block = blockWalks(w, 'dana', 'hot_desk');
+    const handedAt = sys.clockMs;
+    sys.setBorrow('dana', RUN());
+    assert.ok(stepUntil(sys, () => evs('npc_job_failed:dana').length > 0, 30000));
+    block.on = false;
+    assert.equal(sys.setBorrow('kim', RUN({ index: 2, hand: 2 })), true);
+    assert.ok(stepUntil(sys, () => sys.userOf('hot_desk') === 'kim', 5000), 'the second borrower sits first');
+    sys.step(3000);
+    assert.notEqual(sys.getState('dana').job?.targetId, 'hot_desk', 'dana waits while kim uses it');
+    assert.ok(stepUntil(sys, () => evs('npc_borrow_done:kim').length > 0, 30000));
+    assert.ok(stepUntil(sys, () => sys.userOf('hot_desk') === 'dana', 60000 - (sys.clockMs - handedAt) - 250), 'dana takes it once kim leaves');
+    assert.ok(sys.clockMs - handedAt < 60000);
+    assert.equal(evs('npc_borrow_dropped:dana').length, 0);
+});
+
 test('H-3: the verdict at a borrowed PC runs with the run\'s routes', async () => {
     const { planWithRoutes } = await import('../../public/break_escape/js/systems/npc-needs.js');
     const plan = { needs: [{ id: 'a', routes: [['x']] }, { id: 'b' }] };
