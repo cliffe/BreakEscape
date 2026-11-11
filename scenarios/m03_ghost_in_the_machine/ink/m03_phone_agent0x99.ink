@@ -222,7 +222,7 @@ Their FTP box runs the trojaned 1.3.3c build. Anonymous login gets you nothing t
 ~ cyberchef_guide_given = true
 #give_item:lab-workstation:m03_cyberchef_field_guide
 CyberChef guide sent.
-ROT13, Base64, hex. If a decode still looks scrambled, it's layered -- decode again. There's no key to find; encoding isn't encryption.
+ROT13, Base64, hex. If a decode still looks scrambled, it's layered -- decode again. And ROT13 is just a letter shift of 13. If someone picked a different shift, find their number and shift it back.
 + [Received]
     -> hub
 
@@ -346,7 +346,7 @@ And if it's still scrambled after one pass, it's layered. Decode again.
 #speaker:agent_0x99
 ~ hint_network_given = true
 The VM terminal in the server room is the only way onto their training network. Scan it first, then work whatever the scan finds.
-The FTP box is the ProFTPD backdoor from St. Catherine's. The web host has the price list.
+The FTP box is the ProFTPD backdoor from St. Catherine's. The web host has the price list, on Sterling's own letter shift now. She mails the number out; check her machine.
 distcc is the one that matters -- that's where the operational logs sit. Submit all four at the drop-site terminal.
 + [Got it]
     -> hub

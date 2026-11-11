@@ -64,3 +64,14 @@ Independent re-review. Round 1's two BreakEscape edits (`mission.json:5` secgen_
 
 ### Open / needs author VM build
 - A real build-and-solve of the VM remains a separate VM task for the author (unchanged from Round 1).
+
+## 2026-11-10 — VM integration pass (one secret, pinned addresses)
+
+BreakEscape (`scenario.json.erb`):
+- Launcher `vm_object('attack_vm')` fallback ip: `192.168.100.50` → `172.16.0.3` (matches the pinned SecGen address below; Hacktivity mode uses the real VM record anyway).
+- `scada_backup_server` observations: now give the host address `172.16.0.2` (maintenance VLAN).
+- `c2_capture` text: the listener's password *is* `scada_password` (CascadeWindow19); the relay notes the same string opens the control room door. The old capture claimed a separate "operator notes" line the VM never sent.
+- Flag-2 HaX messages reworded to "one password for both".
+- New HaX rows (latched on new global `reuse_hint_sent`): if the player holds Elena's door code and the operator name (flag 1) before the listener, HaX suggests the code may be the login too, and carries the redirect-window warning.
+
+SecGen change (NOT yet applied; spec handed to the SecGen implementer): pin `scada_attack_host` password datastore to `CascadeWindow19`; pin `IP_addresses` to `172.16.0.3` (attack_vm) / `172.16.0.2` (scada_attack_host) and wire each `<network>` to its index, as m01 does. Until that lands, the game's address and the "one password" text do not match a freshly built VM.

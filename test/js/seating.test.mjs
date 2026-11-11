@@ -190,7 +190,8 @@ function labSeatRig(feetX) {
         x: feetX, y: 172, displayOriginX: 40, displayOriginY: 40, scaleX: 1, scaleY: 1,
         texture: { key: 'lab_worker' }, frame: { name: 'breathing-idle_east_frame_000' }, anims: { isPlaying: false },
         body: { offset: { x: 30, y: 35 }, width: 20, height: 10, checkCollision: { none: false }, immovable: false,
-            setVelocity() {}, reset(x, y) { sprite.x = x; sprite.y = y; } },
+            velocity: { x: 0, y: 0 }, setVelocity(x, y) { this.velocity.x = x; this.velocity.y = y; }, reset(x, y) { sprite.x = x; sprite.y = y; },
+            setSize(w, h) { this.width = w; this.height = h; }, setOffset(x, y) { this.offset.x = x; this.offset.y = y; } },
         setPosition(x, y) { this.x = x; this.y = y; }, setFrame(n) { this.frame.name = n; }, setDepth(d) { this.depth = d; }
     };
     const behavior = { npcId: 'pierce', roomId: 'open_plan', sprite, isMoving: false, playAnimation() {} };
@@ -209,7 +210,14 @@ function labSeatRig(feetX) {
 test('needs NPC back at its post sits in its own chair though the walk stopped a tile short', () => {
     const rig = labSeatRig(235 - 0);   // body centre x: sprite.x + (30 - 40) + 10 = sprite.x
     try {
-        assert.equal(seating.updateSeatedNPC(rig.behavior, { x: 320, y: 191 }), true, 'seated');
+        assert.equal(seating.updateSeatedNPC(rig.behavior, { x: 320, y: 191 }), true, 'walking onto the seat');
+        // NPC ticks (50 ms): the body moves by its velocity until it sits
+        for (let i = 0; i < 40 && !rig.behavior._seat; i++) {
+            const v = rig.sprite.body.velocity;
+            rig.sprite.x += v.x * 0.05; rig.sprite.y += v.y * 0.05;
+            seating.updateSeatedNPC(rig.behavior, { x: 320, y: 191 });
+        }
+        assert.ok(rig.behavior._seat, 'seated');
         assert.equal(rig.chair.seatedBy, 'pierce');
         assert.equal(rig.sprite.frame.name, 'sit_north_frame_000');
     } finally { rig.restore(); }
