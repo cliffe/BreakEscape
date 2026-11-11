@@ -566,3 +566,72 @@ test('q17: a switched-off station clears when its offWhen no longer holds', () =
     set('dana_pc_off', false);
     assert.equal(sys.getState('dana').causeCleared, true);
 });
+
+// ── review round 3: q17 pins (m3) and the icon after a reload (m1) ─────────────────────────────
+
+test('R3 m3: a met judged use clears the cause even when the outage comes back, until the next counted failure', () => {
+    const { sys, set, log, evs } = workWorld({ globals: { share_down: true } });
+    sys.registerAll();
+    assert.ok(stepUntil(sys, () => log('failure_counted').length > 0, 30000));
+    set('share_down', false);
+    assert.ok(stepUntil(sys, () => evs('npc_used:dana_pc').some(e => e.data.met), 30000), 'one met use while the share is up');
+    set('share_down', true);
+    assert.equal(sys.getState('dana').causeCleared, true, 'the met use wins over the outage that came back');
+    assert.ok(stepUntil(sys, () => log('failure_counted').length > 1, 600000), 'a second counted failure');
+    assert.equal(sys.getState('dana').causeCleared, false);
+});
+
+test('R3 m3: several needs: one cleared and one still failing is not cleared', () => {
+    const rec = dana();
+    rec.needs.social_media = { decayPerMin: 0, urgentAt: 0, initial: 100, jitterPct: 0 };
+    const { sys, set, log } = workWorld({ npcs: { dana: { pos: { x: 100, y: 100 }, rec } }, globals: { share_down: true } });
+    sys.registerAll();
+    assert.ok(stepUntil(sys, () => log('failure_counted').length > 0, 30000));
+    const s = sys.states.get('dana');
+    sys._countFailure(s, 'social_media', [{ id: 'dana_pc', why: 'social_blocked' }], 'dana_pc');
+    set('share_down', false);
+    assert.equal(sys.getState('dana').causeCleared, false, 'work has cleared, social_media has not');
+    s.failCause.social_media = [];   // as a met social_media use leaves it
+    assert.equal(sys.getState('dana').causeCleared, true);
+});
+
+test('R3 m1: after a reload the icon follows q17: cleared at once when the outage is over', () => {
+    const { sys } = workWorld();
+    sys.restoreFrustration({ dana: { level: 60, tell: 2, settled: false, failWhy: { work: ['down'] } } });
+    sys.registerAll();
+    assert.deepEqual(sys.states.get('dana').failCause, { work: [] });
+    assert.equal(sys.getState('dana').causeCleared, true);
+});
+
+test('R3 m1: after a reload with the outage still on, solid until it clears', () => {
+    const { sys, set } = workWorld({ globals: { share_down: true } });
+    sys.registerAll();
+    sys.restoreFrustration({ dana: { level: 60, tell: 2, settled: false, failWhy: { work: ['down'] } } });
+    assert.deepEqual(sys.states.get('dana').failCause, { work: [{ id: 'finance_share', why: 'down' }] });
+    assert.equal(sys.getState('dana').causeCleared, false);
+    set('share_down', false);
+    assert.equal(sys.getState('dana').causeCleared, true);
+});
+
+test('R3 m1: a reload\'s station causes stay solid; no failWhy seeds nothing; a cause this session recorded is kept', () => {
+    const a = workWorld();
+    a.sys.restoreFrustration({ dana: { level: 60, tell: 2, settled: false, failWhy: { work: ['locked_out'] } } });
+    a.sys.registerAll();
+    assert.deepEqual(a.sys.states.get('dana').failCause, { work: [{ id: 'dana_pc', why: 'locked_out' }] });
+    assert.equal(a.sys.getState('dana').causeCleared, false, 'a lockout clears only with a met use');
+    const b = workWorld();
+    b.sys.restoreFrustration({ dana: { level: 60, tell: 2, settled: false } });
+    b.sys.registerAll();
+    assert.deepEqual(b.sys.states.get('dana').failCause, {});
+    assert.equal(b.sys.getState('dana').causeCleared, false, 'as before: nothing recorded, solid');
+    const c = workWorld();
+    c.sys.registerAll();
+    c.sys.states.get('dana').failCause.work = [];
+    c.sys.restoreFrustration({ dana: { level: 60, tell: 2, settled: false, failWhy: { work: ['no_access'] } } });
+    assert.deepEqual(c.sys.states.get('dana').failCause, { work: [] });
+    // A need the NPC does not judge is not seeded
+    const d = workWorld();
+    d.sys.restoreFrustration({ dana: { level: 60, tell: 2, settled: false, failWhy: { caffeine: ['down'] } } });
+    d.sys.registerAll();
+    assert.deepEqual(d.sys.states.get('dana').failCause, {});
+});

@@ -143,6 +143,35 @@ module BreakEscape
       assert_nil fails('mei', 1, t + 105).first['run'], 'spent: not offered again'
     end
 
+    test 'review R3 m2: a lost last fail answer followed only by an ease: the ease answer carries the hand-over' do
+      build
+      t = Time.current
+      fails('mei', 3, t)   # the third answer, with the run, is lost; then the outage ends
+      ease = { npc_id: 'mei', event: 'ease', need: 'work', object_id: 'mei_pc' }
+      a = travel_to(t + 60) { report(ease).first }
+      assert_equal 50, a['level']
+      assert_nil a['run']
+      assert_equal [{ 'index' => 0, 'hand' => 1, 'do' => 'writes_down', 'dwell' => 0 }], a['pending']
+      assert_equal 200, workaround('mei', a['pending'].first, t + 61).status
+      assert_equal [0], entry('mei')['done']
+      assert_equal [], travel_to(t + 200) { report(ease).first }['pending'], 'spent: no longer pending'
+    end
+
+    test 'review R3 m2: two unspent hand-overs with the second answer lost: the next answer carries both' do
+      data = scenario
+      mei = data['rooms']['office']['npcs'].find { |n| n['id'] == 'mei' }
+      mei['workarounds'] = [{ 'at' => 20, 'do' => 'writes_down' }, { 'at' => 40, 'do' => 'emit', 'event' => 'e2' }]
+      build(data: data)
+      t = Time.current
+      a = fails('mei', 2, t)   # e1 handed in a[0] (being performed); a[1], handing over e2, is lost
+      assert_equal [[0, 1], [1, 2]], a.map { |x| x['run'].values_at('index', 'hand') }
+      third = fails('mei', 1, t + 50).first
+      assert_equal [[0, 1], [1, 2]], third['pending'].map { |r| r.values_at('index', 'hand') }
+      too_soon = travel_to(t + 52) { report(rota_fail('mei')).first }
+      assert_equal true, too_soon['tooSoon']
+      assert_equal [[0, 1], [1, 2]], too_soon['pending'].map { |r| r.values_at('index', 'hand') }
+    end
+
     test 'review R2 M1: a too-soon fail answers the unspent hand-over again, with the dwell left' do
       build
       t = Time.current
@@ -208,6 +237,7 @@ module BreakEscape
       assert_empty entry('mei')['done']
       assert_empty entry('mei')['handed']
       assert_equal state, @game.reload.player_state
+      assert_nil postit('mei_pc'), 'no note on her PC (review R3 m3: put back)'
     end
 
     test 'the 425 says how long is left, not the whole dwell' do
@@ -282,9 +312,13 @@ module BreakEscape
       assert_equal [0, 1], a[3]['run'].values_at('index', 'hand'), 'e1 waits and is offered again; e2 is at 100 and the level is 80'
       assert_equal 1, a[4]['run']['index'], 'e2 comes into force at 100 while e1 still waits'
       assert_equal false, a[4]['settled']
-      workaround('mei', a[2]['run'], t + 110)
-      workaround('mei', a[4]['run'], t + 110)
-      assert_equal true, fails('mei', 1, t + 125).first['settled']
+      # Review R3 m3: two unspent hand-overs, so the re-offer is pinned oldest first
+      sixth = fails('mei', 1, t + 125).first
+      assert_equal [0, 1], sixth['run'].values_at('index', 'hand'), 'the oldest unspent hand-over, not the newest'
+      assert_equal [[0, 1], [1, 2]], sixth['pending'].map { |r| r.values_at('index', 'hand') }, 'both, oldest first'
+      workaround('mei', a[2]['run'], t + 130)
+      workaround('mei', a[4]['run'], t + 130)
+      assert_equal true, fails('mei', 1, t + 150).first['settled']
     end
 
     # ── POST /npc_workaround checks ────────────────────────────────────
@@ -424,8 +458,15 @@ module BreakEscape
       t = Time.current
       run = fails('tom', 2, t).last['run']
       workaround('tom', run, t + 40)
-      assert_equal [{ 'index' => 0, 'do' => 'prop_door', 'setGlobal' => 'store_door_propped', 'door' => 'store_room' }],
-                   scenario_block('tom')['done']
+      assert_equal [{ 'index' => 0, 'do' => 'prop_door', 'setGlobal' => 'store_door_propped', 'door' => 'store_room', 'from' => 'office' }],
+                   scenario_block('tom')['done'], 'from: the prop\'s room, for the far side of the door (review R3 n3)'
+    end
+
+    test 'review R3 m1: GET /scenario carries each need\'s failWhy for the icon after a reload; none before a fail' do
+      build
+      assert_nil scenario_block('mei')
+      fails('mei', 1, Time.current)
+      assert_equal({ 'work' => ['down'] }, scenario_block('mei')['failWhy'])
     end
 
     test "a workaround on an NPC whose list is a role's: the role's list is used" do

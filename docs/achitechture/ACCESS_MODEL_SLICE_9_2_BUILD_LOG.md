@@ -738,7 +738,7 @@ Commits: `1b16642ad` (server), `15c2ef5dd` (client tests), `5003f031a` (client a
   whose `offWhen` no longer holds) or a judged use of it has been met since. The `blocked` icon is
   then drawn with the same art at alpha 0.6 (tell 2) or 0.4 (tell 1), with no pulse, and goes at
   tell 0. A new failure makes it solid again. After a reload nothing is recorded, so it stays solid
-  until the NPC's next failure or met use. Tests: `npc-action-icons` (the entry), `npc-office-visuals`
+  until the NPC's next failure or met use (changed in review round 3, m1: seeded from `failWhy`). Tests: `npc-action-icons` (the entry), `npc-office-visuals`
   (the drawn alpha, back to solid, hidden at tell 0), `npc-needs-work` (a down resource and an off
   station). Plan 5.5 and the README record it.
 

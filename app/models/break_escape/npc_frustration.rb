@@ -89,7 +89,7 @@ module BreakEscape
     end
 
     # The per-NPC block GET /scenario carries (5.4, 9.1): level, tell, settled, hold per need,
-    # pending and done workarounds (sub-slice B), and lockedOut (sub-slice L).
+    # pending and done workarounds (sub-slice B), lockedOut (sub-slice L) and failWhy (B review R3 m1).
     # Reads the stored entries without filling defaults (review R1 n7), so this GET writes nothing.
     def npc_frustration_for_client
       now = server_now
@@ -111,6 +111,10 @@ module BreakEscape
           block = { 'level' => e['level'], 'tell' => frustration_tell(npc, e), 'settled' => frustration_settled?(npc, e),
                     'pending' => pending_runs(npc, e), 'done' => done_list(npc, e), 'lockedOut' => e['lockedOut'] }
           block['hold'] = hold unless hold.empty?
+          # Review R3 m1: the whys of each need's last counted failure (what the client reported),
+          # so the frustration icon can fade after a reload once the cause has cleared (q17)
+          why = e['failWhy'].select { |need, list| need.is_a?(String) && list.is_a?(Array) && list.all? { |w| w.is_a?(String) } }
+          block['failWhy'] = why unless why.empty?
           out[id] = block
         end
       end
@@ -276,11 +280,17 @@ module BreakEscape
     end
 
     # Review R2 M1: a counted fail that hands over nothing new, or a too_soon fail, answers the
-    # oldest unspent hand-over again, with its own index and hand. It was handed over already, so
-    # this reveals nothing; a lost answer to the fail that made it no longer strands it until a
-    # reload. The runner starts a given (npc, index, hand) once, so a copy it holds is ignored.
+    # oldest unspent hand-over again as `run`, with its own index and hand. Review R3 m2: every
+    # unspent hand-over also rides as `pending` (oldest first) on each fail, too-soon and ease
+    # answer, so neither a lost answer that was the NPC's last fail nor a second lost hand-over is
+    # stranded until a reload. Each was handed over already, so this reveals nothing; the runner
+    # starts a given (npc, index, hand) once, so a copy it holds is ignored.
+    def unspent_runs(npc, entry)
+      pending_runs(npc, entry).sort_by { |r| [r['hand'].to_i, r['index'].to_i] }
+    end
+
     def unspent_run(npc, entry)
-      pending_runs(npc, entry).min_by { |r| r['hand'].to_i }
+      unspent_runs(npc, entry).first
     end
 
     def done_list(npc, e)
@@ -294,6 +304,10 @@ module BreakEscape
         # A propped door's room, so the client opens its sprites again after a load (plan 11.1 X4);
         # it is already in unlockedRooms, so naming it gives nothing away
         d['door'] = w['door'] if w['do'] == 'prop_door' && w['door'].is_a?(String)
+        # Review R3 n3: the prop's room, so a player who resumes inside the propped room sees its
+        # side of the same door open too; the NPC walked there in view, so it gives nothing away
+        from = w['do'] == 'prop_door' ? AccessWork.object_index(scenario_data)[w['prop']]&.dig(:room_id) : nil
+        d['from'] = from if from.is_a?(String) && from != d['door']
         d
       end
     end
@@ -502,12 +516,13 @@ module BreakEscape
 
     def answer(npc_id, npc, entry, previous, run = nil)
       { 'npcId' => npc_id, 'level' => entry['level'], 'previous' => previous,
-        'tell' => frustration_tell(npc, entry), 'settled' => frustration_settled?(npc, entry), 'run' => run }
+        'tell' => frustration_tell(npc, entry), 'settled' => frustration_settled?(npc, entry), 'run' => run,
+        'pending' => unspent_runs(npc, entry) }
     end
 
     def too_soon(npc, entry, npc_id)
       { 'npcId' => npc_id, 'level' => entry['level'], 'tell' => frustration_tell(npc, entry),
-        'settled' => frustration_settled?(npc, entry), 'tooSoon' => true }
+        'settled' => frustration_settled?(npc, entry), 'tooSoon' => true, 'pending' => unspent_runs(npc, entry) }
     end
   end
 end

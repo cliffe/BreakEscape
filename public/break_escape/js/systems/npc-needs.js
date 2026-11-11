@@ -2019,7 +2019,7 @@ export class NPCNeedsSystem {
      * been counted (or a judged use met) for at least one need, and for each such need the causes
      * of its last counted failure would all pass now, or a judged use of it has been met since.
      * The frustration icon then fades while the mood lingers (npc-action-icons.js). After a reload
-     * nothing is recorded, so the icon stays solid until the NPC's next failure or met use.
+     * the causes are seeded from the server's failWhy (_seedFailCause, review R3 m1).
      */
     _causeCleared(s) {
         const needs = Object.keys(s.failCause || {});
@@ -2189,7 +2189,19 @@ export class NPCNeedsSystem {
             const s = this.states.get(a.npcId);
             if (!s) { (this._pendingLevels || (this._pendingLevels = new Map())).set(a.npcId, a); continue; }
             this._setFrustration(s, a);
-            if (a.run) this._emit(`npc_workaround_due:${s.npcId}`, { npcId: s.npcId, run: a.run, level: s.frustration });
+            this._emitDue(s, a);
+        }
+    }
+
+    /**
+     * An answer's hand-overs to the workaround runner: `run`, then every unspent one in `pending`
+     * (review R3 m2, oldest first). The runner starts each (npcId, index, hand) once, so the copies
+     * of one it holds are ignored.
+     */
+    _emitDue(s, a) {
+        const runs = [a.run, ...(Array.isArray(a.pending) ? a.pending : [])];
+        for (const run of runs) {
+            if (run && typeof run === 'object') this._emit(`npc_workaround_due:${s.npcId}`, { npcId: s.npcId, run, level: s.frustration });
         }
     }
 
@@ -2228,6 +2240,33 @@ export class NPCNeedsSystem {
         this._log(s.npcId, 'frustration', { level: round2(s.frustration), tell: s.tell, restored: true });
     }
 
+    /**
+     * Review R3 m1 (q17 on resume): a reload's failCause, from the server's failWhy (need -> the
+     * whys of its last counted failure), so the frustration icon fades as it would have before the
+     * reload. For a down or unreachable cause the resources failing a use now are recorded (none
+     * when the outage is over, so the icon fades at once); any other why (locked_out,
+     * social_blocked, off) is recorded against the station and clears only with a met use (or, for
+     * off, once the station has been seen off and its offWhen no longer holds), as before.
+     * Nothing is seeded over causes this session recorded.
+     */
+    _seedFailCause(s, failWhy) {
+        if (!failWhy || typeof failWhy !== 'object' || Object.keys(s.failCause || {}).length) return;
+        const plan = this._plan(s);
+        const station = this._stationId(s);
+        const rules = this.world.workRules;
+        for (const need of Object.keys(failWhy).sort()) {
+            const whys = Array.isArray(failWhy[need]) ? failWhy[need].filter(w => typeof w === 'string') : [];
+            if (!whys.length || !this._judged(s, need)) continue;
+            const list = typeof rules?.failures === 'function'
+                ? rules.failures(plan, need, null, g => this._globalValue(g)).filter(c => c.why === 'down' || c.why === 'unreachable')
+                : [];
+            for (const why of whys) {
+                if (why !== 'down' && why !== 'unreachable') list.push({ id: station || s.npcId, why });
+            }
+            s.failCause[need] = list;
+        }
+    }
+
     /** The scenario response's npcFrustration, kept and applied as each NPC registers (5.4). */
     restoreFrustration(map) {
         this._restored = map && typeof map === 'object' ? { ...map } : null;
@@ -2244,12 +2283,13 @@ export class NPCNeedsSystem {
         if (restored) {
             delete this._restored[s.npcId];
             this._restoreFrustration(s, e);
+            this._seedFailCause(s, e.failWhy);
         }
         const pending = this._pendingLevels?.get(s.npcId);
         if (pending) {
             this._pendingLevels.delete(s.npcId);
             this._setFrustration(s, pending);
-            if (pending.run) this._emit(`npc_workaround_due:${s.npcId}`, { npcId: s.npcId, run: pending.run, level: s.frustration });
+            this._emitDue(s, pending);
         }
         if (!restored) return;
         // Sub-slice B (5.4, 9.4): a hand-over the server made and has not seen spent is started

@@ -23,8 +23,9 @@
  * unspent one as handed, so giving up would lose the workaround for the session); a 425 (the
  * dwell has not passed in server time) is resent after the time left, and the backoff starts again
  * after it; only a 403 ends it. A job still resending after STUCK_ATTEMPTS is warned once in the
- * console. The server also offers an unspent hand-over again in later fail answers, so a lost
- * answer to POST /npc_frustration does not strand it; `due` starts each (npcId, index, hand) once. A
+ * console. The server also offers every unspent hand-over again (`pending`) in later fail,
+ * too-soon and ease answers, so a lost answer to POST /npc_frustration does not strand it; `due`
+ * starts each (npcId, index, hand) once. A
  * reload loses nothing either way: the server sends the unspent hand-over again as `pending`.
  * An answer of { dropped: true } to a "done" (the hand was already spent as dropped) is applied
  * as a drop, never as an emit's {}. On a
@@ -68,6 +69,7 @@ export class NpcWorkarounds {
         this.active = new Map();     // key -> { npcId, run, state: 'running' | 'sending' }
         this.finished = new Set();   // keys whose answer has been applied (or that ended)
         this.propped = new Set();    // rooms a done prop_door holds open
+        this.proppedFrom = new Map(); // propped room -> the rooms its propped doors lead back to (R3 n3)
         this.requests = 0;
     }
 
@@ -99,8 +101,11 @@ export class NpcWorkarounds {
         }
         if (VISIT_KINDS.has(run.do)) {
             const at = run.do === 'writes_down' ? this._home(npcId) : run.prop;
+            // Review R3 n1: the dwell left sets the visit's length, so 0 gives a near-zero visit
+            // (not the default VISIT_DWELL_S); only a run with no dwell takes the default
+            const dwell = typeof run.dwell === 'number' && Number.isFinite(run.dwell) ? Math.max(0, run.dwell) : undefined;
             const queued = typeof at === 'string' && at && this._needs()?.enqueueVisit?.(npcId, {
-                kind: 'workaround', at: { objectId: at }, useSeconds: Number(run.dwell) || undefined,
+                kind: 'workaround', at: { objectId: at }, useSeconds: dwell,
                 data: { workaround: { index: run.index, hand: run.hand, do: run.do } }
             });
             // The line and `started` only for a visit that will happen (review 9.2 B R1 m5)
@@ -156,8 +161,10 @@ export class NpcWorkarounds {
             // Review R2 n2: a 425 is an answer, not a loss, so the backoff starts again after one
             if (status === 425) job.attempts = 0;
             // Review R2 n1: a job still resending after STUCK_ATTEMPTS losses is said once in the
-            // console, so a stuck hand-over shows in a playtest log (a 400, 404 or 422 never clears)
-            if (job.attempts === STUCK_ATTEMPTS) {
+            // console, so a stuck hand-over shows in a playtest log (a 400, 404 or 422 never clears).
+            // Review R3 n2: once per job, even when a 425 starts the count again
+            if (!job.warned && job.attempts >= STUCK_ATTEMPTS) {
+                job.warned = true;
                 try { console.warn(`npc-workarounds: hand-over ${key} still unanswered after ${job.attempts} attempts (last status ${status ?? 'none'})`); } catch (e) { /* no console */ }
             }
             const wait = status === 425
@@ -206,7 +213,13 @@ export class NpcWorkarounds {
         for (const entry of Object.values(block)) {
             for (const d of Array.isArray(entry?.done) ? entry.done : []) {
                 if (typeof d?.setGlobal === 'string' && d.setGlobal) this.deps.setGlobal?.(d.setGlobal, true);
-                if (d?.do === 'prop_door' && typeof d.door === 'string' && d.door) this.propped.add(d.door);
+                if (d?.do === 'prop_door' && typeof d.door === 'string' && d.door) {
+                    this.propped.add(d.door);
+                    if (typeof d.from === 'string' && d.from) {
+                        if (!this.proppedFrom.has(d.door)) this.proppedFrom.set(d.door, new Set());
+                        this.proppedFrom.get(d.door).add(d.from);
+                    }
+                }
             }
         }
         if (this.propped.size) for (const roomId of this.deps.loadedRooms?.() || []) this.syncRoom(roomId);
@@ -214,14 +227,20 @@ export class NpcWorkarounds {
 
     /**
      * A room has been built: open its door sprites that lead to a propped room, with no lock and
-     * no server call (the room is already in unlockedRooms). Returns how many it opened.
+     * no server call (the room is already in unlockedRooms). Review R3 n3: in a propped room, also
+     * the far side of the same door (the sprite back to the prop's room, `from` in done), when
+     * that sprite is not itself locked, so a player who resumes inside the propped room sees it
+     * open. Returns how many it opened.
      */
     syncRoom(roomId) {
         if (!this.propped.size || typeof roomId !== 'string') return 0;
+        const back = this.proppedFrom.get(roomId);
         let n = 0;
         for (const sp of this.deps.doorSprites?.(roomId) || []) {
             const props = sp?.doorProperties;
-            if (!props || props.open || sp.proppedOpening || sp.active === false || !this.propped.has(props.connectedRoom)) continue;
+            if (!props || props.open || sp.proppedOpening || sp.active === false) continue;
+            const farSide = !!back && back.has(props.connectedRoom) && !props.locked;
+            if (!this.propped.has(props.connectedRoom) && !farSide) continue;
             sp.proppedOpening = true;   // openDoor may finish later, once the far room has loaded
             props.locked = false;
             // A sprite that failed to open is left free to be tried at the next build (R1 n2)

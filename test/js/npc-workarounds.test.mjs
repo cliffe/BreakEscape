@@ -621,3 +621,72 @@ test('R2 n2: after a 425 a lost request starts its backoff again at 2 s; R2 n1: 
     assert.deepEqual(waits, [2000, 3000, 2000, 4000, 8000, 16000, 30000]);
     assert.equal(warned.length, 1, 'once, at the fifth attempt after the 425');
 });
+
+// ── review round 3 ────────────────────────────────────────────────────────────────────────────
+
+test('R3 n1: a dwell left of 0 gives a zero-length visit, not the default; a run with no dwell takes the default', () => {
+    const { runner, calls } = stub();
+    runner.due({ npcId: 'tom', run: { ...TOM_RUN, dwell: 0 } });
+    runner.due({ npcId: 'mei', run: { index: 0, hand: 1, do: 'writes_down', dwell: 0.3 } });
+    runner.due({ npcId: 'mei', run: { index: 1, hand: 2, do: 'writes_down' } });
+    assert.deepEqual(calls.visits.map(v => v[1].useSeconds), [0, 0.3, undefined]);
+});
+
+test('R3 n2: a stuck job is warned once, even when 425s keep starting its count again', async () => {
+    const lost = Array.from({ length: 5 }, () => ({ status: 500 }));
+    const { runner, calls } = stub({ failures: [...lost, { status: 425, body: { retryAfter: 2 } }, ...lost, { status: 425, body: { retryAfter: 2 } }, ...lost] });
+    const warned = [];
+    const prev = console.warn;
+    console.warn = m => warned.push(m);
+    try {
+        runner.due({ npcId: 'ellis', run: ELLIS_RUN, level: 50 });
+        for (let i = 0; i < 17; i++) { await flush(); const t = calls.timers.shift(); t?.fn(); }
+        await flush();
+    } finally { console.warn = prev; }
+    assert.equal(calls.sends.length, 18);
+    assert.equal(warned.length, 1);
+});
+
+test('R3 n3: resumed inside the propped room, its own side of the propped door opens; a locked far side does not', () => {
+    const { runner, rooms, opened, sprite } = doorWorld();
+    delete rooms.store_lobby;
+    const storeToLobby = sprite('store_room', 'store_lobby');
+    storeToLobby.doorProperties.locked = false;
+    const storeToVault = sprite('store_room', 'vault');
+    rooms.store_room = { doorSprites: [storeToLobby, storeToVault] };
+    runner.restore({ tom: { done: [{ index: 0, do: 'prop_door', door: 'store_room', from: 'store_lobby' }] } });
+    assert.deepEqual(opened, [storeToLobby], 'opened at the load, as the room was already built');
+    assert.equal(storeToVault.doorProperties.open, false);
+    // Without `from` (an older answer) the propped room's own doors are left alone
+    const b = doorWorld();
+    delete b.rooms.store_lobby;
+    const plain = b.sprite('store_room', 'store_lobby');
+    plain.doorProperties.locked = false;
+    b.rooms.store_room = { doorSprites: [plain] };
+    b.runner.restore(DONE_BLOCK);
+    assert.equal(b.opened.length, 0);
+    // A far side whose own sprite is locked (the prop's room is locked from this side) stays shut
+    const c = doorWorld();
+    delete c.rooms.store_lobby;
+    const shut = c.sprite('store_room', 'store_lobby');
+    c.rooms.store_room = { doorSprites: [shut] };
+    c.runner.restore({ tom: { done: [{ index: 0, do: 'prop_door', door: 'store_room', from: 'store_lobby' }] } });
+    assert.equal(c.opened.length, 0);
+});
+
+test('R3 m2: every hand-over in an answer\'s pending is started, once each; a copy of run in pending is ignored', () => {
+    const { sys, runner, evs } = wired({ objects: [...baseObjects(), { id: 'wedge', x: 140, y: 100 }] });
+    sys.registerAll();
+    const e1 = { index: 0, hand: 1, do: 'writes_down', dwell: 2 };
+    const e2 = { index: 1, hand: 2, do: 'prop_door', dwell: 4, door: 'store', prop: 'wedge' };
+    // An ease answer: no run, both unspent hand-overs in pending (the answers that carried them were lost)
+    sys.applyFrustration([{ npcId: 'dana', level: 50, previous: 60, tell: 2, run: null, pending: [e1, e2], forEvent: 'ease', forNeed: 'work' }]);
+    sys.step(250);
+    assert.equal(evs('npc_workaround_due:dana').length, 2);
+    assert.equal(runner.active.size, 2);
+    // A fail answer whose run is also in pending: emitted twice, started no more
+    sys.applyFrustration([{ npcId: 'dana', level: 60, previous: 50, tell: 2, run: e1, pending: [e1, e2], forEvent: 'fail', forNeed: 'work' }]);
+    sys.step(250);
+    assert.equal(evs('npc_workaround_due:dana').length, 5);
+    assert.equal(runner.active.size, 2);
+});
