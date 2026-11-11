@@ -123,12 +123,42 @@ counts. No audio generated. No line removed; no cue or variable in any of them. 
 
 ### Browser run
 
-(pending)
+Scripted regression run, game 1190, keyless server on :3014, headless, responses captured. One
+game, in order: briefing and kit; plant (H5.15); the view (H5.16); before the capture, the
+controller's Sign in with an empty Captured sign-ins list and one guessed password refused
+(H5.18); store pick, the controller click shows only its observation, the folder read completes
+`opt_controller` (H5.17); keylogger capture (H1.2 to H1.4); the chain (H5.19): Captured sign-ins
+offered `c.hampshire`, the remote sign-in to LW-DOOR01 succeeded, the desktop showed the three
+pages and Chris's profile and no Client-Records folder; a reload with the box planted; the unplug
+(H5.20). All PASS. Chris's password came only from the tablet after her capture, through the
+Captured sign-ins picker.
+
+- View rows, in order: LW-HOT-01, LW-OPEN-07, LW-DOOR01 (Sign in each), Client-Records (Look, the
+  folder names and the breach line), Print room printer (Look). Header "Drop box: comms cupboard,
+  on Ledgerwell office LAN". Screenshot checked by eye.
+- Final server record (`verify-run.rb --access`): `gainedFootholds network_port`, `signedInPcs
+  store_controller`, no footholds or sessions after the unplug; `opt_netdrop`, `opt_dropbox_view`,
+  `opt_controller` and `opt_door_admin` completed.
+- Leak check: `VERDICT: no leaks found` after every beat and over all 84 responses. The BadUSB
+  beat was not run, so the LW-FS01 question above is still open for a run that includes it.
+- Harness notes: the store lock needed `window.__test.minigame.completeLockpick()`; clicking a
+  Captured sign-ins row fills the fields and a second click on Sign in submits; the "link dropped"
+  toast was not in the toast buffer when checked after the unplug, though the session had ended.
+  Not checked further.
 
 ### Suites
 
-(pending)
+Under the shared lock: Rails 1414 runs, 14657 assertions, 0 failures, 0 errors, 1 skip; node
+`bin/test-js -j 3` 483 files passed, 0 failed.
+
+### Not run
+
+The persona run of 10.3 (a student who does not know the answers) and a run that includes the
+BadUSB beat (for the LW-FS01 leak question). The audio step (six lines above) waits for the user.
 
 ### Handover
 
-(none yet)
+Step complete; nothing in progress. Commits: `0022cd2ec` (engine), `800ec20b3` (lab), the build
+log commits. Files: the lab scenario, `ruth.ink`, `ruth_debrief.ink` and their JSON, the dungeon
+graph, `PLAYTEST.md`, `lab_physical_pentest_secrets_test.rb`, `network-view-minigame.js`,
+`network_access.rb`, `network-view.test.mjs`, `network_shares_test.rb`.
