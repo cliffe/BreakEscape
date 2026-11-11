@@ -301,11 +301,15 @@ export function parseInkLines(text) {
     else if (L.kind === 'text' && L.delta < 0 && /^\}/.test(t)) L.kind = 'close';
     // a one-line text that is only a conditional divert, e.g. {x: -> hub}
     if (L.kind === 'text' && L.delta === 0 && /^\{/.test(t) && /->/.test(t) && !cleanInkText(t)) L.kind = 'conddivert';
-    const dm = t.match(/->\s*([\w.]+)\s*$/);
+    // (a knot may take arguments: `-> knot(1)`, `-> knot(1) ->`)
+    const dm = t.match(/->\s*([\w.]+)\s*(?:\([^()]*\))?\s*$/);
     if (dm) L.divert = dm[1];
     // a tunnel call, `-> knot ->` (or `-> knot -> onward`): flow enters knot first
-    const tm = t.match(/^->\s*([\w.]+)\s*->/);
+    const tm = t.match(/^->\s*([\w.]+)\s*(?:\([^()]*\))?\s*->/);
     if (L.kind === 'divert' && tm) L.tunnel = tm[1];
+    // a tunnel's return, `->->`
+    if (L.kind === 'divert' && /^->\s*->/.test(t)) L.tunnelReturn = true;
+    if (L.kind === 'thread') { const th = t.match(/^<-\s*([\w.]+)/); if (th) L.thread = th[1]; }
     L.exit = /#\s*exit_conversation\b/.test(t);
     if (L.kind === 'text') {
       const body = cleanInkText(t);
@@ -343,24 +347,30 @@ function resolveKnot(idx, target, fromKnot) {
 // and a knot with only stitches into its first stitch (ink diverts there).
 // Returns { line } for a printed line, { none: 'choices' } if choices come first,
 // { none: 'conditional' } if a multi-line conditional or a conditional divert comes first
-// (the server cannot follow a note into one), or null if unknown.
-function firstPrint(lines, idx, name, fromKnot, depth = 0) {
+// (the server cannot follow a note into one), { none: 'return' } for a tunnel that returns
+// first, { none: 'thread' } for a thread, or null if unknown. `met` collects the #delivery:
+// tag lines passed on the way.
+function firstPrint(lines, idx, name, fromKnot, depth = 0, met = []) {
   const k = resolveKnot(idx, name, fromKnot);
   if (!k || depth > 3) return null;
   let d = 0, content = false;
   for (let j = k.start + 1; j < k.end; j++) {
     const L = lines[j];
-    if (L.kind === 'stitch' && !k.stitch && !content) return firstPrint(lines, idx, `${k.name}.${L.name}`, null, depth + 1);
+    if (L.kind === 'stitch' && !k.stitch && !content) return firstPrint(lines, idx, `${k.name}.${L.name}`, null, depth + 1, met);
     if (L.kind === 'knot' || (L.kind === 'stitch' && !k.stitch)) break;
-    if (!['blank', 'comment', 'tag'].includes(L.kind)) content = true;
+    // (a tag line is content: ink diverts to the first stitch only when the knot has none)
+    if (!['blank', 'comment'].includes(L.kind)) content = true;
+    if (L.kind === 'tag' && deliveryNotes(L.t).length) met.push(L);
     if (L.kind === 'choice') return { none: 'choices', line: L };
+    if (d === 0 && L.kind === 'thread') return { none: 'thread', line: L };
+    if (d === 0 && L.tunnelReturn) return { none: 'return', line: L };
     if (d === 0 && (L.kind === 'open' || L.kind === 'conddivert' || (L.kind === 'text' && /^\{/.test(L.t) && /->/.test(L.t)))) {
       return { none: 'conditional', line: L };
     }
     if (L.kind === 'text' && L.printable) return { line: L };
     if (L.kind === 'divert' && d === 0) {
       if (/^(?:DONE|END)$/.test(L.divert || '')) return { none: 'end', line: L };
-      return firstPrint(lines, idx, L.tunnel || L.divert, k.name.split('.')[0], depth + 1);
+      return firstPrint(lines, idx, L.tunnel || L.divert, k.name.split('.')[0], depth + 1, met);
     }
     d += L.delta || 0;
   }
@@ -669,30 +679,69 @@ function unreadReason(lines, i) {
   return null;
 }
 
+// A one-line conditional with no else, `{flag: Kevin Park: Hello.}`: it may print nothing, and
+// then the note goes on to the next line.
+const MAY_PRINT_NOTHING = /^\{[^{}|]*:[^{}|]*\}\s*(?:#.*)?$/;
+// A line opening with a conditional that holds another {...} (`{f: {"x"}|...}`): the server
+// cannot read it, and drops the note.
+const NESTED_CONDITIONAL = /^\{[^{}]*:[^}]*\{/;
+
+// Where a carried note goes once it reaches spoken line j: { line } | { reason } | null.
+function landOn(lines, idx, j, met, depth) {
+  const L = lines[j];
+  if (NESTED_CONDITIONAL.test(L.t)) return { reason: `the line it lands on (line ${L.n}) opens with a conditional the server cannot read` };
+  if (!MAY_PRINT_NOTHING.test(L.t) || depth > 3) return { line: j };
+  const next = noteTarget(lines, idx, j, met, depth + 1);
+  const nothing = `the line it lands on (line ${L.n}) may print nothing (a conditional with no else), and then`;
+  if (!next) return null;
+  if (next.none) return { reason: `${nothing} no spoken line follows (${next.none})` };
+  if (next.reason) return { reason: `${nothing} ${next.reason}` };
+  const r = unreadReason(lines, next.line);
+  if (r) return { reason: `${nothing} the line after it (line ${lines[next.line].n}) ${r}` };
+  return { line: j };
+}
+
 // The spoken line an own-line #delivery: tag lands on, following plain diverts and tunnels as
 // the client does: { line: index } | { none: why } | { reason: full reason } | null (unknown).
-function noteTarget(lines, idx, i) {
+// `met` collects the other #delivery: tag lines passed on the way.
+function noteTarget(lines, idx, i, met = [], depth = 0) {
   for (let j = i + 1; j < lines.length; j++) {
     const L = lines[j];
+    if (L.kind === 'tag' && deliveryNotes(L.t).length) met.push(L);
     if (['blank', 'comment', 'tag', 'logic'].includes(L.kind)) continue;
     if (L.kind === 'knot' || L.kind === 'stitch') return { none: 'the knot ends' };
     if (L.kind === 'choice') return { none: 'a choice comes next' };
     if (L.kind === 'open') {
       return { reason: 'a multi-line conditional comes next, so a line inside it plays untagged (the server gives the note only to the line after the block)' };
     }
-    if (L.kind === 'text') return L.printable ? { line: j } : null;
+    if (L.kind === 'text') return L.printable ? landOn(lines, idx, j, met, depth) : null;
+    if (L.tunnelReturn) {
+      return { reason: `the tunnel returns (->->, line ${L.n}) before a spoken line, and the note is not kept for the line after it returns` };
+    }
+    if (L.kind === 'thread') {
+      if (!L.thread) return null;
+      const fp = firstPrint(lines, idx, L.thread, L.knot, 0, met);
+      if (fp && fp.line && !fp.none) return landOn(lines, idx, lines.indexOf(fp.line), met, depth);
+      return { reason: `<- ${L.thread} has no first line the server can find, and the note is not kept for the line after the thread` };
+    }
     if (L.kind === 'divert') {
       if (/^(?:DONE|END)$/.test(L.divert || '') && !L.tunnel) return { none: `-> ${L.divert} comes next` };
       const name = L.tunnel || L.divert;
       const shown = L.tunnel ? `-> ${name} ->` : `-> ${name}`;
-      const fp = firstPrint(lines, idx, name, L.knot);
-      if (fp && fp.line && !fp.none) return { line: lines.indexOf(fp.line) };
+      const fp = firstPrint(lines, idx, name, L.knot, 0, met);
+      if (fp && fp.line && !fp.none) return landOn(lines, idx, lines.indexOf(fp.line), met, depth);
       const into = fp && fp.none === 'choices' ? 'a choice' : fp && fp.none === 'end' ? 'the end of the story' : null;
       if (into && L.tunnel) return { reason: `${shown} leads to ${into}, and the note is not kept for the line after the tunnel returns` };
       if (into) return { none: `${shown} leads to ${into}` };
       if (fp && fp.none === 'conditional') {
         const what = fp.line.kind === 'open' ? 'a multi-line conditional' : 'a conditional divert';
         return { reason: `${shown} opens with ${what} (line ${fp.line.n}), which the server cannot follow a note into` };
+      }
+      if (fp && fp.none === 'return') {
+        return { reason: `${shown} reaches a tunnel return (->->, line ${fp.line.n}) before a spoken line, and the note is not kept for the line after it returns` };
+      }
+      if (fp && fp.none === 'thread') {
+        return { reason: `${shown} opens with a thread (line ${fp.line.n}), which the server cannot follow a note past` };
       }
       if (fp && fp.none) return { reason: `the server cannot follow ${shown} to a spoken line` };
       return null;
@@ -722,10 +771,18 @@ function deliveryFindings(lines, idx, channel) {
     let target = null, reason = null;
     if (L.kind === 'text' && L.printable) target = i;
     else if (L.kind === 'tag') {
-      const t = noteTarget(lines, idx, i);
+      const met = [];
+      const t = noteTarget(lines, idx, i, met);
       if (t && t.none) reason = `no spoken line follows it in the same knot (${t.none})`;
       else if (t && t.reason) reason = t.reason;
       else if (t) target = t.line;
+      // inkjs joins the notes on the way and the last one wins
+      const later = met.find(x => x !== L) || (target !== null && deliveryNotes(lines[target].t.replace(/(^|\s)\/\/.*$/, '')).length ? lines[target] : null);
+      if (!reason && later) {
+        F.push({ level: 'warn', rule: 'delivery-unread', line: L.n, text: cleanInkText(L.t) || L.t,
+          note: `this #delivery: note is replaced by another (line ${later.n}) before the spoken line, so that one plays instead; keep one note per line` });
+        continue;
+      }
     }
     if (target !== null) {
       const r = unreadReason(lines, target);

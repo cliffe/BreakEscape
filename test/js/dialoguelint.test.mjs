@@ -313,7 +313,7 @@ const DELIVERY_INK = [
   '-> b',                                         // 7
   '=== b ===',                                    // 8
   'Kevin Park: Hello from b.',                    // 9
-  '#delivery: crisp',                             // 10
+  '#delivery: crisp',                             // 10: warns (line 11 may print nothing, and then it lands on a glued line)
   '{flag: Kevin Park: Conditional line.}',        // 11
   'Kevin Park: Part one <>',                      // 12
   'and part two. #delivery: glued',               // 13: warns (glued onto by the line above)
@@ -350,13 +350,14 @@ const DELIVERY_INK = [
 
 test('delivery-unread: a note on a glued line, a line printing a variable, or with no line after it', () => {
   const f = only(lintInk(DELIVERY_INK), 'delivery-unread');
-  assert.deepEqual(f.map(x => x.line), [13, 14, 25, 27, 30, 32, 35, 41]);
-  assert.match(f[0].note, /glued/);
-  assert.match(f[1].note, /prints \{count\}/);
-  assert.match(f[3].note, /lands on \(line 28\)|line it lands on \(line 28\)/);
-  assert.match(f[5].note, /a choice comes next/);
-  assert.match(f[6].note, /-> e leads to a choice/);
-  assert.match(f[7].note, /END comes next/);
+  assert.deepEqual(f.map(x => x.line), [10, 13, 14, 25, 27, 30, 32, 35, 41]);
+  assert.match(f[0].note, /line 11\) may print nothing .* the line after it \(line 12\) has the line above glued onto it|line 11\) may print nothing .* \(line 12\) is glued/);
+  assert.match(f[1].note, /glued/);
+  assert.match(f[2].note, /prints \{count\}/);
+  assert.match(f[4].note, /lands on \(line 28\)|line it lands on \(line 28\)/);
+  assert.match(f[6].note, /a choice comes next/);
+  assert.match(f[7].note, /-> e leads to a choice/);
+  assert.match(f[8].note, /END comes next/);
   // voiced phone calls send no note, so phone inks are not checked for this
   assert.equal(only(lintInk(DELIVERY_INK, { channel: 'phone' }), 'delivery-unread').length, 0);
 });
@@ -409,6 +410,31 @@ test('delivery-unread: quiet for the shapes the server follows, warns for the on
   assert.match(f[1].note, /-> tunchoice -> leads to a choice, and the note is not kept for the line after the tunnel returns/);
   assert.match(f[2].note, /a line inside it plays untagged/);
   assert.match(f[3].note, /-> conddiv opens with a conditional divert \(line 26\)/);
+});
+
+// delivery_parity_r3.ink (review R3): every note the walker drops there is warned about, and so
+// is a note replaced by another on the way; a note above a thread whose first line speaks, and
+// a tunnel with an argument, stay quiet.
+const R3_INK = readFileSync(new URL('../fixtures/files/ink_line_walker/delivery_parity_r3.ink', import.meta.url), 'utf8');
+
+test('delivery-unread: tunnel returns, notes met on the way and threads (review R3)', () => {
+  const f = only(lintInk(R3_INK), 'delivery-unread');
+  assert.deepEqual(f.map(x => x.line), [12, 17, 22, 25, 28, 31, 46, 84]);
+  assert.match(f[0].note, /the line it lands on \(line 51\) may print nothing .* the tunnel returns \(->->, line 52\)/);
+  assert.match(f[1].note, /-> logic_tun -> reaches a tunnel return \(->->, line 58\)/);
+  assert.match(f[2].note, /replaced by another \(line 63\)/);
+  assert.match(f[3].note, /replaced by another \(line 69\)/);
+  assert.match(f[4].note, /replaced by another \(line 75\)/);
+  assert.match(f[5].note, /-> nest_a -> reaches a tunnel return \(->->, line 85\)/);
+  assert.match(f[6].note, /-> threaded opens with a thread \(line 90\)/);
+  assert.match(f[7].note, /the tunnel returns \(->->, line 85\)/);
+});
+
+test('delivery-unread: a knot with a tag line before its first stitch is not followed into the stitch', () => {
+  const ink = ['-> s', '=== a ===', '#delivery: to s', '-> s', '=== s ===', '#delivery: s tag', '= one', 'Kevin Park: S one.', '-> END'].join('\n') + '\n';
+  const f = only(lintInk(ink), 'delivery-unread');
+  assert.deepEqual(f.map(x => x.line), [3, 6]);
+  assert.match(f[0].note, /the server cannot follow -> s to a spoken line/);
 });
 
 test('delivery-unread: a note diverted to a knot the server cannot read says so', () => {

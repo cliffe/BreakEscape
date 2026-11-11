@@ -198,7 +198,22 @@ module BreakEscape
       'delivery_parity_edge' => [[]],
       'delivery_parity_edge2' => [[]],
       'delivery_parity_diverts' => [[]],
-      'delivery_parity_shapes' => [[], %w[flag=true flag_on=false]]
+      'delivery_parity_shapes' => [[], %w[flag=true flag_on=false]],
+      # delivery_parity_r3 (review R3): a tunnel that returns before speaking, a note met on
+      # the way (a tagged chain knot, a tagged line that may print nothing), threads, a
+      # tunnel with an argument; flags played every way
+      'delivery_parity_r3' => [[], %w[flag=true], %w[g=true], %w[flag=true g=true]]
+    }.freeze
+
+    # Notes the client sends that the walker drops on purpose (the line is then voiced
+    # untagged; dialoguelint warns delivery-unread for each). Any other miss fails.
+    PARITY_DROPS = {
+      'delivery_parity_r3' => [
+        ['Kevin Park: Back from the maybe tunnel.', 'into maybe tunnel'], # past ->->
+        ['Kevin Park: Back from the logic tunnel.', 'into logic tunnel'], # past ->->
+        ['Kevin Park: After the inner return.', 'in nest b'],             # past ->->
+        ['Kevin Park: After the threaded options.', 'into threaded']      # past a thread
+      ]
     }.freeze
 
     # For each fixture: every line inkjs shows (played as InkEngine#continue plays it,
@@ -223,7 +238,11 @@ module BreakEscape
         read = walker.lines.to_set(&:raw)
         unread = walker.unresolved.map(&:text)
 
+        drops = PARITY_DROPS.fetch(name, [])
+        drops.each { |drop| assert_includes client, drop, "#{name}: stale PARITY_DROPS entry #{drop.inspect}" }
         client.each do |text, note|
+          next if drops.include?([text, note]) && !server.include?([text, note])
+
           if read.include?(text)
             assert_includes server, [text, note], "#{name}: the walker misses the client's note for #{text.inspect}"
           else
@@ -251,6 +270,25 @@ module BreakEscape
       assert_equal [nil, 'past false cond'].sort_by(&:to_s), notes['Kevin Park: Always here.']
       assert_equal ['over a false line'], notes['Kevin Park: Hidden line.']
       assert_equal [nil, 'over a false line'].sort_by(&:to_s), notes['Kevin Park: Shown line.']
+    end
+
+    test "a carried note stops at a tunnel return, gives way to a note met on the way, and stays out of a thread (review R3)" do
+      json = BreakEscape::Engine.root.join('test/fixtures/files/ink_line_walker/delivery_parity_r3.json').to_s
+      notes = InkLineWalker.from_file(json).lines.group_by(&:raw)
+                           .transform_values { |ls| ls.map { |l| TtsService.delivery_from_tags(l.tags) }.sort_by(&:to_s) }
+      # M1: a tunnel return ends the first-line search
+      assert_equal [nil], notes['Kevin Park: First line of the next knot.']
+      assert_equal [nil], notes['Kevin Park: An extra stitch.']
+      assert_equal [nil, 'into maybe tunnel'].sort_by(&:to_s), notes['Kevin Park: Maybe in the tunnel.']
+      # M2: the note met on the way wins, so the carried one is dropped
+      assert_equal [nil, 'inner chain'].sort_by(&:to_s), notes['Kevin Park: End of the tagged chain.']
+      assert_equal [nil, 'own maybe'].sort_by(&:to_s), notes['Kevin Park: After the tagged maybe.']
+      assert_equal [nil, 'own second'].sort_by(&:to_s), notes['Kevin Park: After two maybes.']
+      # m1: a note above a thread goes to the thread's first line, not the line after it
+      assert_equal [nil, 'before thread'].sort_by(&:to_s), notes['Kevin Park: Talky opens.']
+      assert_equal [nil], notes['Kevin Park: After the thread.']
+      # n2: a tunnel with an argument
+      assert_equal [nil, 'outer argument'].sort_by(&:to_s), notes['Kevin Park: Inside the argument tunnel.']
     end
 
     test "a note before a tunnel or an external call is never carried past it" do
