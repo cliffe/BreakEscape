@@ -18,7 +18,7 @@ const js = join(dirname(fileURLToPath(import.meta.url)), '../../public/break_esc
 const dataUrl = (src) => 'data:text/javascript;base64,' + Buffer.from(src).toString('base64');
 
 globalThis.window = {};
-const { PcSessions, pcSessions: singleton, SIGNED_OUT_MESSAGE, SCREEN_LOCKED_MESSAGE } =
+const { PcSessions, pcSessions: singleton, SIGNED_OUT_MESSAGE, SCREEN_LOCKED_MESSAGE, unplugEndedMessage } =
     await import(dataUrl(readFileSync(join(js, 'systems/pc-sessions.js'), 'utf8')));
 
 const ACCOUNTS = {
@@ -419,6 +419,43 @@ test('9.3a: an unplug ends exactly the sessions named in endedPcIds, closing the
     assert.deepEqual(closed, [['The link dropped', 'link_dropped']]);
     assert.equal(calls.length, 0, 'no request: the server already ended them');
     delete window.eventDispatcher.on;
+});
+
+// Review R1 (lab networks): the unplug happens at the jack, so no desktop is open to say "The
+// link dropped". One toast names the hosts of the sessions it ended; an open desktop's own
+// message covers that one; nothing ended, no toast.
+test('9.3a: an unplug that ends sessions with no desktop open shows one toast naming their hosts', async () => {
+    const hosts = { door_box: 'LW-DOOR01', lena_pc: 'HB-FIN-02', kiosk_pc: 'HB-KIOSK' };
+    const s = setup({ answer: (pcId, fields) => ({ ...remoteAnswer(pcId, fields), ...(fields.foothold ? { host: hosts[pcId] } : {}) }) });
+    const handlers = {};
+    const toasts = [];
+    window.eventDispatcher.on = (pattern, cb) => { handlers[pattern] = cb; };
+    window.gameAlert = (message, type, title, ms) => toasts.push([message, type, ms]);
+    for (const pc of ['door_box', 'lena_pc', 'kiosk_pc']) await s.signIn(pc, 'lfox', 'right-lena', { foothold: 'jack_comms_port' });
+
+    handlers['network_device_unplugged']({ jackId: 'comms_port', footholdId: 'jack_comms_port', endedPcIds: ['door_box'] });
+    assert.deepEqual(toasts, [['Unplugged. Your session on LW-DOOR01 ended.', 'info', 5000]]);
+
+    toasts.length = 0;
+    const closed = [];
+    s.registerDesktop('kiosk_pc', (message, reason) => closed.push([message, reason]));
+    handlers['network_device_unplugged']({ jackId: 'comms_port', footholdId: 'jack_comms_port', endedPcIds: ['lena_pc', 'kiosk_pc'] });
+    assert.deepEqual(closed, [['The link dropped', 'link_dropped']]);
+    assert.deepEqual(toasts, [['Unplugged. Your session on HB-FIN-02 ended.', 'info', 5000]], 'the open desktop says it itself');
+
+    toasts.length = 0;
+    handlers['network_device_unplugged']({ jackId: 'comms_port', footholdId: 'jack_comms_port', endedPcIds: [] });
+    handlers['network_device_unplugged']({ jackId: 'comms_port', footholdId: 'jack_comms_port', endedPcIds: ['not_held'] });
+    assert.deepEqual(toasts, [], 'nothing ended, no toast');
+    delete window.eventDispatcher.on;
+    delete window.gameAlert;
+});
+
+test('unplugEndedMessage joins hosts and names none as null', () => {
+    assert.equal(unplugEndedMessage([]), null);
+    assert.equal(unplugEndedMessage(['A']), 'Unplugged. Your session on A ended.');
+    assert.equal(unplugEndedMessage(['A', 'B']), 'Unplugged. Your sessions on A and B ended.');
+    assert.equal(unplugEndedMessage(['A', 'B', 'C']), 'Unplugged. Your sessions on A, B and C ended.');
 });
 
 test('9.3a: the desktop close callback receives the reason (sign_out, no_session)', async () => {
