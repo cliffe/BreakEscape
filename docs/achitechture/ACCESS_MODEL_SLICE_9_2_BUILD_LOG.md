@@ -577,3 +577,50 @@ After `3cc153d62`, under the lock: Rails 1425 runs, 0 failures, 1 skip; JS 485 f
   inside `eval`, wait a few seconds, then `bootstrap`; reinstall any `eval` listener afterwards.
 - PIN doors take `{"cmd":"lock","code":"...."}`; `mg type` finds no field on the keypad.
 - Leftover games on the shared dev database: 1191, 1194, 1195.
+
+## Sub-slice B: workarounds, part three (2026-11-11): finished
+
+### Orchestrator decisions
+
+1. **A propped door looks open after a reload** (plan 11.1 X4, which already holds it unlocked).
+   GET /scenario's `done` entry for a `prop_door` now carries `door` (the room id; it is in
+   `unlockedRooms` already, and the leak scanner allows `done`). The runner's `restore` remembers
+   each propped room; `syncRoom(roomId)`, called by `loadRoom` after each room is built and for
+   the start room, opens that room's door sprites to a propped room through `window.unlockDoor`
+   with no server call. A room propped in the session is remembered too.
+2. **Workaround start lines emit an event**: `NPCNeedsSystem.mutter` emits
+   `npc_mutter:<npcId>` `{ npcId, topic, line, picture }` with what was shown, heard or not. The
+   bridge's event log keeps it (`npc_` prefix). `verify-run.rb --access --log <session.jsonl>`
+   now prints a "workaround events in the log" block (per NPC: phases and start-line topics, then
+   `door_propped`), read from drained event logs in the session log; topics only, no lines.
+
+### Done
+
+- `e37998a4f`: both decisions, with tests (Rails: the `done` entry's `door`; JS: restore opens
+  only doors to a propped room, a room built later opens as built, nothing for other kinds, a
+  session prop is remembered, the live deps through `window.unlockDoor`; `npc_mutter` payload;
+  verify-run's log block, two tests).
+- `66321b3f6`: **bug found by the new event.** A hand-over arrives in the answer to the failure
+  whose grumble still holds the speech lock, so every start line fell back to its picture. A
+  mutter whose topic has lines now waits for the lock (`MUTTER_WAIT_MS`, 8 s of needs clock) and
+  is then said. Test added.
+- `f495179c0`: B-5 documents. README "Work, frustration and workarounds" gains a Workarounds
+  part (each kind, what it opens, lasting, `tell` and `noWarning`, `setGlobal`, the `prop_door`
+  and `writes_down` rules, events, lines), the B validator errors and warnings, and the graph
+  nodes. `NPC_NEEDS_SYSTEM.md` 5.9 gains the runner and the mutter wait; its events table gains
+  `npc_mutter`, `npc_workaround_due` (`level`, `restored`), `npc_workaround` (phases) and
+  `door_propped`. `docs/test-bridge.md`: where the workaround events show and the verify-run block.
+- **Browser** (game 1197, port 3015): X2, X4's second reload (the stores door open as
+  `store_lobby` is built, screenshot), X1 with the start line said in words. Leak check clean.
+  Report: `scenarios/test_access_work/reports/2026-11-11_run_x4_reload_and_persona.md`.
+- **Needs regression**: `access_model_needs_baseline/slice_9_2_b/` against A's captures:
+  `test_npc_needs` and `test_needs_leash` 0 subjects differ; `test_needs_sims` 17, inside the 16
+  of one build against itself, no mutter or workaround entries. Verdict none.
+- **Watch-it-happen run** (game 1201, persona): in the run report with its "did not notice" list.
+  Tom's prop was seen and used; Ellis's emit gives nothing visible (by design); Mei's note was
+  seen appearing but the persona never clicked her PC to read it on the sign-in screen; neither
+  start line was noticed although both were said in words.
+
+### Leftover games
+
+1196 (unused), 1197, 1198 to 1200, 1201.
