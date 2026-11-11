@@ -1033,3 +1033,97 @@ After `b6ac01a44`, under the lock: Rails 1472 runs, 0 failures, 1 skip; JS 486 f
 - New engine events: `npc_visit_arrived`, `npc_sat_at`, `npc_borrowed_session`, `npc_borrow_done`,
   `npc_borrow_dropped`, `npc_guest_left`, `npc_overheard_login`. No new static imports, so the JS
   test harness copy lists need nothing.
+
+## H, part three: the browser proof, the after captures and the merge (2026-11-11)
+
+Keyless server on :3018 (started by hand, stopped by PID afterwards), headless Chromium through
+the `window.__test` bridge, `--capture-responses` per game. Events heard with a wildcard listener
+installed through `eval` after each load.
+
+### Browser run H (games 1221 and 1222)
+
+| Beat | Result | Evidence |
+|---|---|---|
+| H1 | **Pass** (1221) | Socket off: `off` parks at 20, 40, then at 60 `npc_workaround:ian` `started` (hand 1), `workstation_owner_left:ian_pc`, `npc_sat_at:hot_desk` 4 s later, `npc_borrowed_session:hot_desk` `met: true`, `npc_borrow_done:ian` `leftOpen: true`, `workstation_owner_left:hot_desk` `reason: "guest"`, `npc_guest_left:hot_desk`, `done`, level 60 to 50. A click after he left opened his desktop by guest claim (`pc_signed_in` `via: "claim"`); `Cabinet.txt` gave the PIN and the cabinet opened. Tasks `h1_borrowed`, `h1_cabinet`. Socket on, a met use, then the needs clock stepped past `lockAt` with the guest desktop open: "The screen locked", guest record and session gone (exercised, not earned). The click while seated was missed in 1221 (his use lasts 5 s and the walk took as long); checked later at the same desk with Rosa seated: "Rosa Lane is using this PC." and no minigame |
+| H2 | **Pass** (1221) | Drawer note read; signed in as the temporary account by password; socket off again with that desktop open: when Ian sat down the desktop closed with "Ian Shaw has signed in at this PC", `pc_signed_out` `reason: "displaced"`, one `POST /logout`; after he left a click opened Ian's desktop (`signedInAs` `ishaw`), not the temporary account's |
+| H3 | **Pass** (1221) | Rosa's breaker: 20, 40, 60, then the borrow; `npc_borrowed_session:hot_desk` `npcId: "rosa"`, `met: false`; `npc_use_failed:rosa` at `hot_desk` with no `npc_frustration_changed` after it (not reported); a click claimed her session (`rlane`). Task `h3_failed_there`. Server: `guestSessions.hot_desk` `rosa`, her level 60 and rising to 100 |
+| H4 | **Pass after a fix** (1222) | CRM off. Heard share: `POST /npc_workaround` `heard: true`, `room_id: "open_office"`, the answer carried `capture`, `line`, `note`, `displayName`; `npc_overheard_login:sam`; the "Overheard: Sam Okafor" note in the notebook; task `h4_overheard`; `sharedLogins` `["sam"]`. Unheard share from `vault_room`: `heard: false`, answer `{}`. The noted password signed in as Sam at the hot desk (`via: "password"`); his desktop there holds nothing. Standing beside Ruth, as the step says, the share was dropped four times in a row (visit timeout): see fix 1. After it, two shares in a row from the same spot were heard, each with the toast |
+| H5 | **Pass** (1222) | Ian borrowed the hot desk in game two and his session was claimed, then reload (`location.href`, `?skip_resume=1`): the server shows `sessions` 0, `guestSessions` 0, `sharedLogins` `sam`, levels kept (ian 70, sam 100); the hot desk opens the sign-in screen; the notebook keeps the overheard note |
+
+Tampered client, from the page (`window.ApiClient`), all refused by the server:
+
+- guest claim at `spare_pc` and at `ian_pc` (no borrow there): 422 "Sign in required";
+- guest claim at the hot desk while a claim is held there: 422;
+- forged `npc_borrow_done` sent as `POST /npc_workaround`: `ian` hand 9, `ian` hand 1 (spent), `rosa` hand 2
+  (not handed yet) and `sam` with `heard: true`: each 403 "unknown hand-over"; an early "done" for
+  Rosa's real hand 5, sent the moment it was handed over: 425 "too early";
+- a forged `npc_borrow_done:ian` event emitted on the client dispatcher: the runner sent nothing
+  (no running job for that hand);
+- Sam's first share sent with `heard: true` and `room_id: "vault_room"` (a room neither Sam nor Ruth
+  can be in): answer `{}`, `sharedLogins` stayed empty;
+- a capture of the share recorded on the client before it was ever heard (`recordSECapture` for
+  `sam`, synced): `GET /capture_secrets` answered no secret. This scenario declares no `social`
+  block, so that answer is empty after the heard share too; the heard share's capture proof itself
+  (`account_capture_passwords`) is covered by `npc_workaround_h_test.rb`.
+
+`access-leak-check.rb`: 1221 (119 responses), 1222 (117), 1223 (86): `VERDICT: no leaks found` each.
+
+### W1 to W4 with Hall C loaded (game 1223)
+
+Hall C was walked through first, so Rosa was registered; then W2, W3, W4, a reload, W1. Rosa's
+breaker sets the same `finance_share_down` as W2's, so she failed beside Dana (20, 40, 60, then her
+hot desk borrow, `met: false`) and ticked `h3_failed_there`. Dana was unchanged by it: 34, 68, 100,
+settled, `w2_failed`, `w2_fed_up`; reset: 90, 80, `w3_eased`; her three reports as before (6
+requests in all with Rosa's, never two within 2 s). W4: `npc_checked:office_printer`, claim,
+`Cupboard.txt`, cupboard opened, `w4_checked`, `w4_cupboard`, `owner_returned` (the first outage's
+claim window was missed by the harness; re-armed once). Reload: Omar 100 and settled from load, 0
+requests, the printer still jammed, no claim. W1: Amy's use met, level 0, `w1_met`. So the W beats
+behave as their steps say; `PLAYTEST.md` run W now says so and tells the tester to count Dana's
+requests alone. No scenario change was needed.
+
+### Fixes
+
+1. **A visit beside a colleague could stand still until it timed out** (`553c4b8a6`, tests in
+   `test/js/npc-needs-cell-beside.test.mjs`). `cellBeside` took the first walkable side of Ruth,
+   the cell east of her, behind her desk: walkable on the grid but cut off from the room, so
+   `findWorldPath` found no route and Sam never moved. It now takes the first side the visitor can
+   reach (`routeLength` with the visitor's leash), falling back to the first walkable side. `911331406`
+   was a first guess (skip the player's cell) that the run disproved; `553c4b8a6` replaces it.
+   Proof: before, four shares in a row dropped with the player at (870, 140) and Ruth at (914, 130);
+   after a reload with the fix, two in a row heard from the same spot.
+
+### Observations, not changed
+
+- A guest's auto lock is client side only: the server keeps `guestSessions[pc]` until the next
+  `GET /scenario`, so a tampered client could still claim that session after the lock, as it can
+  claim an owner's session whenever it says the owner is away. The plan has no server lock time for
+  guests; left as designed.
+- A borrower's dwell is 2 s at the hot desk (use 5 s less 3 s), so the "is using this PC" window is
+  short; a tester should stand at the hot desk before the NPC arrives.
+- `npc_workaround_due` fires twice per hand-over (`run` and the same hand in `pending`); the runner
+  starts each hand once, as designed (R3 m2).
+
+### Needs regression
+
+After captures at `553c4b8a6` (games 1224, 1225), compared with the before captures:
+`test_npc_needs` and `test_needs_leash` 0 subjects differ. `access_model_needs_baseline/slice_9_2_h/COMPARISON.md`.
+
+### Merge and suites
+
+`main` merged into `build/9-2-h` (`e4d9fe364`), no conflicts.
+After the merge, under the lock: Rails 1591 runs, 0 failures, 0 errors, 1 skip. JS first run 488 of
+490 files: `test-bridge-access` and `playtest-verify-run-access` had not been updated for H-4's
+`guest()` and the two new `verify-run --access` lines (not caused by the merge). Fixed in
+`7c4e6bd5b`; JS rerun under the lock: 490 of 490 files passed.
+
+### Commits in part three
+
+`911331406` (first cellBeside guess), `553c4b8a6` (cellBeside reaches its side, replaces it),
+`aaf8b3f76` (after captures, COMPARISON.md, run W note), `e4d9fe364` (merge of `main`),
+`7c4e6bd5b` (stale tests), and this log.
+
+### Leftover games
+
+1216 and 1217 (unused), 1218 and 1219 (before captures), 1221 (H1 to H3 and the tamper checks),
+1222 (H4, H5), 1223 (W1 to W4 with Hall C), 1224 and 1225 (after captures). All on the shared dev
+database, mission 243 for `test_access_work`. The :3018 server is stopped.
