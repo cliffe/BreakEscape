@@ -1,0 +1,13 @@
+{
+  "key": "ba85e4286a873b700ebbec2c4c748148",
+  "npc": "narrator",
+  "text": "He turns your badge over, glances at the clipboard, hands it back.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-05",
+  "recorded_at": "2026-11-05T15:39:20Z"
+}

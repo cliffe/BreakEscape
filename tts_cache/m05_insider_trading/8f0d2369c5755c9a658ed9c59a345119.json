@@ -1,0 +1,13 @@
+{
+  "key": "8f0d2369c5755c9a658ed9c59a345119",
+  "npc": "narrator",
+  "text": "He almost laughs.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:30:20Z"
+}

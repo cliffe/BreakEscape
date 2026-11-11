@@ -1,0 +1,13 @@
+{
+  "key": "8710b0b4a01dcaa70e589de9c1cc149b",
+  "npc": "director_netherton",
+  "text": "Sound advice. HaX -- the detail.",
+  "voice": "Charon",
+  "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried; sets the stakes then lets his people run the detail.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:23:37Z"
+}

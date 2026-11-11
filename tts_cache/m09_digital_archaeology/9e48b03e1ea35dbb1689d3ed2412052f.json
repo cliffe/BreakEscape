@@ -1,0 +1,13 @@
+{
+  "key": "9e48b03e1ea35dbb1689d3ed2412052f",
+  "npc": "malhotra",
+  "text": "If something goes wrong in there, I'd like to hear it go wrong.",
+  "voice": "Zubenelgenubi",
+  "style": "SAFETYNET comms officer in his thirties, British-Indian, from Hounslow. Consistent West London English accent throughout -- do not shift to any other accent. Precise, a little anxious about any gap in coverage; jokes only about kit.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T20:45:06Z"
+}

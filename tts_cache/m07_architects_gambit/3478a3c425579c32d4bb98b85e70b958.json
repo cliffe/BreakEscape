@@ -1,0 +1,13 @@
+{
+  "key": "3478a3c425579c32d4bb98b85e70b958",
+  "npc": "closing_debrief",
+  "text": "When your leave ends, report to headquarters. I will find us a room without windows.",
+  "voice": "Charon",
+  "style": "SAFETYNET director reading a night that has already happened. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried even under a countdown. He does not raise his voice and he does not soften anything.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:07:11Z"
+}

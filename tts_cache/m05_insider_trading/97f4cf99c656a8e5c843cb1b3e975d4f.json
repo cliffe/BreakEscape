@@ -1,0 +1,13 @@
+{
+  "key": "97f4cf99c656a8e5c843cb1b3e975d4f",
+  "npc": "david_torres",
+  "text": "I did this to save them. And you're going to wreck them anyway.",
+  "voice": "Schedar",
+  "style": "Senior engineer in his late forties, born in Madrid and twenty years in England. Speak with a consistent light Castilian Spanish accent in fluent British English throughout — do not shift to any other accent. Low, soft pitch; slow, worn pace. Exhausted and grieving, past the point of lying; quietly desperate rather than angry.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:37:26Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "01b7560f26d0da398ed3e7a13c3fa75b",
+  "npc": "operative_static",
+  "text": "He doesn't need long. I just need you to be slow.",
+  "voice": "Umbriel",
+  "style": "ENTROPY operative and Voltage's last line of defence, early thirties. Speak with a consistent Polish-accented English throughout, ten years in Britain -- do not shift to any other accent. Deep, low pitch; slow pace, very few words. Terse, loyal and immovable.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:17:44Z"
+}

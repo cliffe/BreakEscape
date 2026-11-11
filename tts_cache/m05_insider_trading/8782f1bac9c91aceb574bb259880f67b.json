@@ -1,0 +1,13 @@
+{
+  "key": "8782f1bac9c91aceb574bb259880f67b",
+  "npc": "narrator",
+  "text": "He doesn't turn around.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:28:10Z"
+}

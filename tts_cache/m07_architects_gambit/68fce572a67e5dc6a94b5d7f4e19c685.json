@@ -1,0 +1,13 @@
+{
+  "key": "68fce572a67e5dc6a94b5d7f4e19c685",
+  "npc": "closing_debrief",
+  "text": "Elena Rodriguez talked to you and you left her at the rack. The police found her there, the hospital column half put back.",
+  "voice": "Charon",
+  "style": "SAFETYNET director reading a night that has already happened. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried even under a countdown. He does not raise his voice and he does not soften anything.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:58:05Z"
+}

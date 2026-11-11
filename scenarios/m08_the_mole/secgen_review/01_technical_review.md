@@ -26,7 +26,7 @@ Two systems:
 
 Four flags, document order:
 1. **Repository exposure (recon)** — `gitlist_040` `strings_to_pre_leak`. Read by the
-   unauthenticated GitList argument-injection RCE (CVE-2018-1000533). Exposes the ops-account
+   unauthenticated GitList 0.4.0 remote command execution (CVE-2014-4511). Exposes the ops-account
    username (`organisation['manager']['username']`).
 2. **Stashed credentials** — `gitlist_040` `strings_to_leak`, carrying the generated
    `password` (the mole's committed credential). Both flags 1 and 2 come from the same module;
@@ -127,7 +127,7 @@ grounds; a build-and-solve would be final confirmation but is not required to pr
 
 The current VM is bespoke and a strict superset of the closest catalogue scenario
 (`ctf/git_dejavu` = git-committed secrets + `sudo_root_apt_get`). It chains GitList 0.4.0
-argument-injection RCE (CVE-2018-1000533, no auth) → repository-committed credentials → SSH
+remote command execution (CVE-2014-4511, no auth) → repository-committed credentials → SSH
 login as the mole's ops account → `sudo apt-get` GTFOBins privesc → root-only access logs and
 The Architect's authorisation. That covers the full `mission.json` CyBOK map — WAM (injection),
 SS (CVE + hard-coded password), NS/AAA (SSH + auth), SOIM (pentest/vuln analysis), OSV (privesc),

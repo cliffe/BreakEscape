@@ -1,0 +1,13 @@
+{
+  "key": "9b376431eed21ff6ffa4e312ece755b2",
+  "npc": "james_mercer",
+  "text": "I don't think worse of her. She can't carry the number. Most people can't. That's why most people don't get to decide.",
+  "voice": "Iapetus",
+  "style": "An engineer in his late fifties who costed the deaths himself and signed the page. Consistent General American accent, Pacific Northwest, throughout -- do not shift to any other accent. Low-to-mid pitch; professorial and unhurried, a lecturer's cadence, pausing where a lecturer pauses. Never defensive, because he does not think he is being accused of anything he has not already conceded.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:22:20Z"
+}

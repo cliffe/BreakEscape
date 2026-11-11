@@ -31,6 +31,7 @@ VAR flag1_submitted = false
 VAR flag2_submitted = false
 VAR flag3_submitted = false
 VAR flag4_submitted = false
+VAR irina_ledger_leverage = false // story pass: turned with her own ledger holds (flag 2)
 VAR read_irina_notes = false
 VAR irina_badge_obtained = false
 VAR irina_badge_cloned = false
@@ -291,6 +292,9 @@ Agent HaX: The Crypto Anarchists have lost their best cryptographer. Replacing h
 }
 {read_irina_notes:
     Agent HaX: Reading her notes first was good work. You knew what she'd told herself before you said a word.
+}
+{irina_ledger_leverage:
+    Agent HaX: And the ledger did the arguing. Her own holds, her own "do not release". You only read them back to her.
 }
 -> satoshi_aftermath
 

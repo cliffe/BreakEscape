@@ -10,6 +10,7 @@ VAR player_name = "Agent 0x00"
 VAR found_gitlist_vuln = false
 VAR found_leaked_creds = false
 VAR found_architect_comms = false
+VAR found_drop_seal = false // VM integration 2026-11-10: read the Director's full Portland intercept (the drop's seal)
 VAR found_access_logs = false
 VAR badge_cloned = false
 VAR mole_identified = false // Synced scenario global: set by Netherton's audit check, the flag-4 fallbacks, or hax_read_right here
@@ -155,26 +156,36 @@ So I'm going to be very professional tonight. Bear with me.
     The lab's got one door. Whatever that door saw, it saw everyone.
     -> hub
 // PASS 5 (puzzle chains C1, F1): the VM ladder shows only the current step.
-// The box topic opens on entering the server room and closes at flag 1; the
+// The box topic opens on entering the server room and closes at flag 1 (the
+// exposed repo); the flag-2 topic is the break-in and the history. Playtest
+// 2026-11-11: flag 1 was told as the break-in; swapped to match the VM. The
 // flag-2 topic covers the gap between flags 1 and 2. Wording follows the
 // in-game framing (launcher, flag texts, guides): checked against SecGen
 // 2026-10-16 (docs/agents/SECGEN_CLAIMS_CHECK.md): history, not stash.
 + { server_room_entered and not found_gitlist_vuln } [What am I looking at on this box?]
     A GitList instance our own team stood up and never patched.
-    One crafted request gets you code execution with no login at all. Get that working and it's your first flag.
+    It shows the repository to anyone who asks, no login. Read what's on its front page. That's your first flag.
     And our first national embarrassment.
     -> hub
-+ { found_gitlist_vuln and not found_leaked_creds } [I'm on the box. Where do I look?]
-    Read the history, not just the files. Git keeps what people meant to throw away.
++ { found_gitlist_vuln and not found_leaked_creds } [I've read the repo. What next?]
+    Break in. One crafted request to that browser gets you code execution with no login at all.
+    Then read the history, not just the files. Git keeps what people meant to throw away.
     Whoever's account it is, they committed something they shouldn't have. Git secrets guide's yours if you want it.
     -> hub
+// VM integration (2026-11-10): the account's home holds ENTROPY's dead drop,
+// sealed. The seal is on the Director's full copy of the Portland intercept,
+// in his safe. Once it has been read, HaX says to use it.
 + { found_leaked_creds and not found_architect_comms } [I've got credentials. Now what?]
     Log in properly with them. Whoever committed those thought no one would ever read that far.
-    Get into the account and let's find out whose it is.
+    {found_drop_seal:
+        If what you find in there is sealed, you've already got the seal. The intercept's routing trailer. Use it.
+    - else:
+        If what you find in there is sealed, the Director's had the key for nine days. The full Portland intercept, in his safe.
+    }
     -> hub
 + { found_architect_comms and not found_access_logs } [The mail's real. How do I make it stick?]
-    You need root. A user shell shows you the mail file. Root shows you the logs, and logs put an account at a terminal.
-    There's a sudo rule on that box begging to be abused. Take it.
+    You need root. A user shell shows you the drop. Root shows you the logs, and logs put an account at a terminal.
+    Not from their account, it hasn't got any. The web service you first landed as has a sudo rule begging to be abused. Go back to your foothold and take it.
     -> hub
 // Puzzle chains R1 browser (P1): retires once the player has been inside;
 // every other step topic goes at its own step.

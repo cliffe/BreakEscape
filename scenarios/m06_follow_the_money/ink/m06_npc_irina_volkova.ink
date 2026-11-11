@@ -72,6 +72,8 @@ VAR irina_exec_badge_given = false // set by the pickup mappings (lesson 26)
 VAR read_irina_notes = false       // onPickup of her research notes (P10)
 VAR architect_identity_found = false // safe opened (PASS 4 fix 3)
 VAR read_settlement_log = false      // settlement log picked up (round 2, M3)
+VAR flag2_submitted = false          // story pass: the drop-site paid out the Ledger Hold Log
+VAR irina_ledger_leverage = false    // story pass: synced; she was turned with her own holds (debrief)
 VAR exchange_infiltrated = false // Synced scenario global: set by HaX when her first chat closes (M1)
 VAR slot_checked_visit = false // Synced scenario global (puzzle chains M1 / R2 M-R2-1): one slot check per visit to the console; HaX's room_entered:data_center mapping clears it, so a reload doesn't
 VAR cover_strained = false   // Pass 5 A3: synced; the floor has a reason to ring the FCA
@@ -273,6 +275,8 @@ Dr. Irina Volkova: So what does the FCA want to see? Our customer checks are com
     Dr. Irina Volkova: My own audit wordlist. Every crypto firm on earth picks from the same twenty words and bolts a year on the end.
 
     Dr. Irina Volkova: Sixty-one per cent of our staff accounts fell to that list last time I ran it. Management's response was to stop me running it.
+
+    Dr. Irina Volkova: The service accounts on the backend are worse. They don't even get the year.
     -> hub
 - else:
     ~ asked_passwords = true
@@ -514,6 +518,9 @@ Narrator: You put your SAFETYNET credentials on the desk.
     // PASS 3 P10: what she wrote in her own office is leverage.
     + {read_irina_notes} [You wrote "What have I become?" I read it in your office.]
         -> notes_leverage
+    // Story pass (2026-11-11): flag 2's Ledger Hold Log is leverage too.
+    + {flag2_submitted} [You held all three ENTROPY deposits yourself. Then you let them go on his word.]
+        -> ledger_leverage
     // Review minor 1: a real alternative. Giving her time can turn her.
     // Scenario design R2 (n2): once she's had time, the player can still back
     // out, so "I need an answer" never leaves detention as the only choice.
@@ -537,6 +544,16 @@ Narrator: You put your SAFETYNET credentials on the desk.
 Dr. Irina Volkova: You were in my office.
 Dr. Irina Volkova: ...Yes. I wrote it, and then I went back to work, because he pays well and it was easier.
 Dr. Irina Volkova: I don't want to write it again.
+~ irina_trust += 15
+#influence_increased
+-> recruit_accept
+
+=== ledger_leverage ===
+#speaker:irina_volkova
+~ irina_ledger_leverage = true
+#set_variable:irina_ledger_leverage=true
+Dr. Irina Volkova: You've been in the ledger.
+Dr. Irina Volkova: "Do not release." I typed it three times. Three times he rang down, and I released them.
 ~ irina_trust += 15
 #influence_increased
 -> recruit_accept
