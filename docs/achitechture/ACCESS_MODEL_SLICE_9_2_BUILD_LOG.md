@@ -715,3 +715,80 @@ responses in the scratchpad (`9-2-b-r1`).
 ### Suites after review round 1
 
 After `89820a589`, under the lock: Rails 1432 runs, 0 failures, 1 skip; JS 485 files passed, 0 failed.
+
+## Sub-slice B review round 2 outcomes (2026-11-11)
+
+Reviews: `ACCESS_MODEL_SLICE_9_2_B_CODE_REVIEW_R2_SERVER.md` (0 blockers, 1 major, 2 minors, 4 nits)
+and `ACCESS_MODEL_SLICE_9_2_B_CODE_REVIEW_R2_CLIENT.md` (0 blockers, 0 majors, 5 minors, 6 nits).
+Commits: `1b16642ad` (server), `15c2ef5dd` (client tests), `5003f031a` (client and documents),
+`33b6a442c` (q17), `299f467e1` (client nits), and this log.
+
+### Orchestrator decisions (recorded)
+
+- **Client-written workaround globals.** The server does not refuse them in B: the server
+  reviewer showed a player gains nothing by writing one (room access, the note, `done` and tasks do
+  not read it). Added instead: a validator warning when a workaround's `setGlobal` is also read by a
+  server gate (an `unlockCondition` `globalVariable`, `concludeRequires.globals`, `exportGlobals`,
+  a resource's `downIf`, a route gate global or an affordance `offWhen`), with the README line. If
+  such a use ever has to be allowed, H adds the scenario's workaround `setGlobal` names to
+  `read_only` in `merge_global_variables!`.
+- **User decision q17 (2026-11-11): the frustration icon fades when the cause clears.**
+  `getState().causeCleared` is true once, for every need with a counted failure, the causes of its
+  last failure would all pass now (`causesClear` for `down` and `unreachable`; an `off` station
+  whose `offWhen` no longer holds) or a judged use of it has been met since. The `blocked` icon is
+  then drawn with the same art at alpha 0.6 (tell 2) or 0.4 (tell 1), with no pulse, and goes at
+  tell 0. A new failure makes it solid again. After a reload nothing is recorded, so it stays solid
+  until the NPC's next failure or met use. Tests: `npc-action-icons` (the entry), `npc-office-visuals`
+  (the drawn alpha, back to solid, hidden at tell 0), `npc-needs-work` (a down resource and an off
+  station). Plan 5.5 and the README record it.
+
+### Server review
+
+| Finding | Outcome |
+|---|---|
+| M1 a lost `/npc_frustration` answer strands a hand-over | Fixed. A counted fail that picks nothing new, and a `tooSoon` fail, carry the oldest unspent hand-over again as `run` (same `index` and `hand`, the dwell left). The test that pinned the old behaviour now expects the same hand; new tests: the third answer discarded and the run taken from the fourth, then spent; a too-soon fail carries the run and writes nothing; the settled test expects the re-offer. Client confirmed: `due` ignores a `(npcId, index, hand)` it holds as active or finished (new test, running and spent copies) |
+| m1 mappings, reveal props and global names show the plan | Plan 9.3 sentence corrected; README "Keep the plan neutral" line added. Filter deferred to H (withhold a reveal prop on a workaround `setGlobal` until done; strip `npc_workaround:` mapping patterns) |
+| m2 two orderings untested | Added: an old hand after `POST /reset` answers 403 (before and after the NPC is met again) and writes nothing; "dropped" after "done" answers the done body, serves `roomData` for a `prop_door` and writes nothing |
+| N1 `"done": true` on done bodies | Not done: the client tells the bodies apart already, and the change would touch every done-body assertion. Left for H if it reworks the bodies |
+| N2 `pending` sends the full dwell | Fixed: the dwell left since the server's hand time (used by the M1 re-offer too) |
+| N3 any non-empty `dropped` is a drop | Fixed: only `true` or `"true"` |
+| N4 `with_index` | Deferred with R1 n4 |
+
+### Client review
+
+| Finding | Outcome |
+|---|---|
+| m1 a start line said or voiced during the player's conversation | Fixed. `_mutterHeld` (in chat with the player, not placed, or unavailable) holds a mutter on both paths: `mutter` queues it instead of saying it, and the tick keeps holding it, dropping it at `MUTTER_WAIT_MS`. Tests: held through a chat then said once after, with no voice during; a chat past 20 s drops it. Live: game 1206 (Mei, chat opened just after `started`: no `npc_mutter`, then `mutter_dropped`) |
+| m2 the 6 s floor is also a 6 s speech lock | Fixed: the floor holds the bubble only, the lock ends with the words. Test: the lock is shorter than the bubble, the next start line begins inside the first bubble, four start lines all in words inside 20 s |
+| m3 Ellis's note contradicts the room | Fixed: the note now says he has given up on the intranet for today; object name "Ellis's note" |
+| m4 plan and X3 rows stale | Fixed: plan section 6 (the re-offer, the retry schedule, 425, the start line queue, 20 s wait, 6 s bubble), the X3 row (setGlobal and the note), the 6.1 sticky-note row (the proximity label); `PLAYTEST.md` X3 (the global, the note in `nearby`, final state) and X4 (the door sprite open again, `door_opened` `restored: true`) |
+| m5 tests | Renamed the test that drove no conversation to what it checks; added: in-chat waiter (m1), lock length and the budget (m2), an emit's `setGlobal` from the done answer, `door_opened` with and without `restored` through the real `doors.js` path, the label passes `scenarioData.id` |
+| n1 a stuck job is invisible | Fixed: one `console.warn` at `STUCK_ATTEMPTS` (5); test |
+| n2 `attempts` counts 425s | Fixed: a 425 starts the backoff again; test pins the waits |
+| n3 no jitter | Not done: trivial at today's counts |
+| n4 a start line said after its visit dropped | Not done: rare, at most 20 s; H can clear `wk_*` waiters on `visitDropped` |
+| n5 a non-string observation throws in `label` | Fixed: returned unchanged; test |
+| n6 comment says "in a conversation" | Fixed with m1 |
+
+### Browser run (game 1206, port 3015)
+
+One game, two reloads (the second shows X4's restored door). X3: one fail, `ellis_gave_up`,
+`global_variable_changed:ellis_out_of_office`, task `x3_gave_up`, the note shown, Ellis at his
+desk. X2 with X4: Tom frozen on `started` with his start line queued; after the reload he set off
+again (`restored: true`), said his start line in words and propped the door; after the second
+reload `door_opened` for `store_room` carried `restored: true` and the sprite was open. X1: Mei
+wrote the note, `postitMarks` has `mei_pc`, the label says a sticky note is stuck to the monitor;
+her start line was held during a person-chat and dropped (m1 above). Fading icon: Ellis at tell 2
+with the switch flipped back showed the faded icon (alpha 0.6, no pulse, `causeCleared` true),
+and it went when frustration eased to 0 (about 100 s). Tell 1's 0.4 was not seen live (unit and
+render tests cover it). Server: ellis, mei and tom each `done [0]`, nothing handed; three
+`POST /npc_workaround`, all 200. Leak check: no leaks found. Session log, responses and
+screenshots in the scratchpad (`9-2-b-r2`).
+
+### Leftover games
+
+1206.
+
+### Suites after review round 2
+
+After `299f467e1`, under the lock: Rails 1436 runs, 0 failures, 1 skip; JS 486 files passed, 0 failed.
