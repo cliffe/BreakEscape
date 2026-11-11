@@ -112,7 +112,8 @@ clear_costume and courier_ready writes go.
 
 ## Progress
 
-Full suites after the last code change: Rails 1440 runs, 0 failures, 1 skip; JS 485 of 485 files.
+Full suites after code review round 1 and the merge of `main`: Rails 1481 runs, 0 failures, 1 skip;
+JS 489 of 489 files. (Before the review: Rails 1440 runs, JS 485 files.)
 
 Built as designed, with two changes found on the way: the refusal toast names at most two
 watchers ("Tom and 4 others"), since the lab floor has five; and an older game's worn globals are
@@ -125,7 +126,8 @@ reach it through `window.wearables`, so no test harness copy list changed), `css
 `scripts/validate_wearable.rb`, schema, `scenarios/test_wearable`, the lab and its tests,
 `README_scenario_design.md`.
 
-Tests: `test/controllers/break_escape/wearable_test.rb` (18), `test/js/wearables.test.mjs` (14),
+Tests: `test/controllers/break_escape/wearable_test.rb` (27 after review round 1, with the plant
+and lab path classes), `test/js/wearables.test.mjs` (24), `test/js/wearable-hooks.test.mjs` (4),
 `test/js/validator-wearable.test.mjs` (6), the lab model tests updated.
 
 Browser proof (keyless server, port 3016):
@@ -144,6 +146,22 @@ Browser proof (keyless server, port 3016):
   not rerun in the browser), the parked tailgate
   behind Len (`kp_badge_tailgated`, `tailgate_in` complete), back to the briefing room, the locker
   takes it off ("Hi-vis off"), and with nothing worn the locker's own toast.
+
+After code review round 1 and a merge of `main` (keyless server, port 3016, headless):
+
+- `test_wearable`, game 1214: W1 put on from the tray menu and confirm (courier sprite, frame,
+  "(worn)", hint); W2 take off with confirm, and the locker's `take_off`; W3 the hook's `wear`;
+  W4 the jacket replaces the vest (guard sprite, frame moves, vest onRemove); in the office with
+  the vest worn, W5 Take off and Drop here refused ("Not here: Sam Ellery is watching") and W5b
+  the jacket refused (the swap would take the vest off in front of Sam); W6 a drop in the
+  changing room takes it off, and the server's bootstrap then has no `wornItem` and `vest_on`
+  false; picked up and worn again; W7 a reload (same game) keeps the costume and the frame; W8
+  the bin takes it off with Sam watching, and a `POST wear` for it then answers "That item is not
+  in your inventory."
+- `lab_physical_pentest`, game 1215: the hook gives the vest and its confirm puts it on (server
+  record, `courier_ready` true, `pp_disguise` courier); a reload keeps it; on the open-plan floor
+  the change is refused ("Tomasz Wisniewski and 4 others are watching"); in the hall it comes off
+  with its confirm and "Hi-vis off", and the server agrees.
 
 Spoken lines changed: none. Text changed in the lab (on-screen only): the vest's confirms say to
 change out of the staff's sight; the ledger shelves' hint and observation say to take it off out
