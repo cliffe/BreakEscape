@@ -199,6 +199,8 @@ Review: `TTS_TEXT_MATCH_FIX_CODE_REVIEW_R4.md` (approve; no blockers, no majors)
 
 Also done on merge, with the user's approval (q24): the `tts-audio` skill now says the server matches by `TtsService.match_form` and voices the scenario's own line, and how a video call is voiced; `docs/agents/TTS_38_MIGRATION.md` line 11 marks the fragment gap closed.
 
+Merged `main` (16 commits) into the branch, no conflicts (`6a3130ad0`). Full suites under the shared lock after the merge: Rails 1,571 runs, 0 failures, 0 errors, 1 skip; JS 489 of 489 files passed.
+
 ## Handover
 
 - State: round 4 fix done and committed; full suites green (counts in round 4).
