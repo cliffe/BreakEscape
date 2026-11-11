@@ -7,7 +7,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { NpcWorkarounds, openProppedDoor, START_POOLS, installNpcWorkarounds, retryDelay, RETRY_MAX_MS, escapeNoteText } from '../../public/break_escape/js/systems/npc-workarounds.js';
-import { renderNoteMarkdown } from '../../public/break_escape/js/utils/note-markdown.js';
+import { renderNoteMarkdown, noteMatches, noteSearchText } from '../../public/break_escape/js/utils/note-markdown.js';
 import { displayDashes } from '../../public/break_escape/js/utils/display-dashes.js';
 import { workWorld, baseObjects, dana } from './fixtures/needs-work-world.mjs';
 
@@ -870,4 +870,12 @@ test('R1 M2: heard only from doorways is not heard', async () => {
     runner.visitDone(visitDone('sam', SAM_RUN));
     await flush();
     assert.deepEqual(calls.sends, [{ npc_id: 'sam', index: 0, hand: 2, dropped: false, heard: false }]);
+});
+
+test('R2 client m3: the notebook search finds an overheard username or password holding _ or -', () => {
+    const note = { title: 'Overheard: Sam Okafor', text: escapeNoteText('Sam Okafor told Ruth Adeyemi their login out loud: s_okafor / Spring-24*#') };
+    assert.notEqual(note.text.includes('s_okafor'), true, 'stored escaped');
+    for (const term of ['s_okafor', 'Spring-24', 'SPRING-24*#', 'okafor / spring']) assert.equal(noteMatches(note, term), true, term);
+    assert.equal(noteMatches(note, 'autumn'), false);
+    assert.equal(noteSearchText('a \\\\ b \\q'), 'a \\ b \\q', 'an escaped backslash reads as one; an unknown escape is kept');
 });

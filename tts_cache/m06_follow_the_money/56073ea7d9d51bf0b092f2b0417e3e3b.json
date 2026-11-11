@@ -1,0 +1,13 @@
+{
+  "key": "56073ea7d9d51bf0b092f2b0417e3e3b",
+  "npc": "narrator",
+  "text": "You give her your word.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:01:35Z"
+}

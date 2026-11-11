@@ -1,0 +1,13 @@
+{
+  "key": "87e0bf2b68348194a5cceaa4609ab193",
+  "npc": "closing_debrief",
+  "text": "Operation Meltdown. Twelve targets, one command. Futures are down fourteen per cent, and banking has been dark since three.",
+  "voice": "Charon",
+  "style": "SAFETYNET director reading a night that has already happened. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried even under a countdown. He does not raise his voice and he does not soften anything.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:55:41Z"
+}

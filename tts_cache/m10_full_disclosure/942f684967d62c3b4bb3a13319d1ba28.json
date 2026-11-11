@@ -1,0 +1,13 @@
+{
+  "key": "942f684967d62c3b4bb3a13319d1ba28",
+  "npc": "imran",
+  "text": "We told the board, in writing. Nobody read it. You'd have taken this job too.",
+  "voice": "Puck",
+  "style": "Hospital IT technician turned bench hand, twenty-six, British-Pakistani. Consistent Birmingham accent throughout -- do not shift to any other accent. Quick and bitter; clever, sacked, and sure the other side is no worse.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T22:25:12Z"
+}

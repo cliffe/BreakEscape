@@ -1,0 +1,13 @@
+{
+  "key": "72b8928fdefeaafd331fb92bf17d9bd3",
+  "npc": "imran",
+  "text": "Read what's pinned over my bench. Then tell me which side's worse.",
+  "voice": "Puck",
+  "style": "Hospital IT technician turned bench hand, twenty-six, British-Pakistani. Consistent Birmingham accent throughout -- do not shift to any other accent. Quick and bitter; clever, sacked, and sure the other side is no worse.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T22:25:25Z"
+}

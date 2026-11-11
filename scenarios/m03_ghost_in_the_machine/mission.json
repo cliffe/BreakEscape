@@ -20,7 +20,7 @@
     {
       "ka": "AC",
       "topic": "Applied Cryptography",
-      "keywords": ["Encoding vs encryption", "ROT13", "Base64", "Hexadecimal", "Multi-layer decoding"]
+      "keywords": ["Encoding vs encryption", "ROT13", "Caesar shift cipher", "Base64", "Hexadecimal", "Multi-layer decoding"]
     },
     {
       "ka": "HF",

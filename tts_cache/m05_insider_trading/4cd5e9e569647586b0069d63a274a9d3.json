@@ -1,0 +1,13 @@
+{
+  "key": "4cd5e9e569647586b0069d63a274a9d3",
+  "npc": "narrator",
+  "text": "He shoves the chair back and comes at you with his fists up. This is going to be a fight.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:35:01Z"
+}

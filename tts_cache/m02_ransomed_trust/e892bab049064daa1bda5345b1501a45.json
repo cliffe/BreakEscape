@@ -1,0 +1,13 @@
+{
+  "key": "e892bab049064daa1bda5345b1501a45",
+  "npc": "receptionist",
+  "text": "The cardiac ward's monitoring is down. Nobody's watching those hearts but us.",
+  "voice": "Despina",
+  "style": "Night reception coordinator, eleven years on this desk. South London / Multicultural London English accent throughout -- warm, quick, dry. Unflappable on the surface, running on fumes underneath.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-05",
+  "recorded_at": "2026-11-05T13:37:06Z"
+}

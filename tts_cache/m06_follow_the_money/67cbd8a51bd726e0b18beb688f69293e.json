@@ -1,0 +1,13 @@
+{
+  "key": "67cbd8a51bd726e0b18beb688f69293e",
+  "npc": "narrator",
+  "text": "You show her the authorisation line on the fund page, and nothing else.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:58:37Z"
+}

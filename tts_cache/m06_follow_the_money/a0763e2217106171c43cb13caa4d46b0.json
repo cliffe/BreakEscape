@@ -1,0 +1,13 @@
+{
+  "key": "a0763e2217106171c43cb13caa4d46b0",
+  "npc": "narrator",
+  "text": "He comes off the desk with his fists up. This is going to be a fight.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:30:30Z"
+}

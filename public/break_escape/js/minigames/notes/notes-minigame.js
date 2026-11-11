@@ -1,6 +1,6 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
-import { renderNoteMarkdown } from '../../utils/note-markdown.js';
+import { renderNoteMarkdown, noteMatches } from '../../utils/note-markdown.js';
 import { cappedText, NOTE_LIMIT } from '../../utils/test-state-text.js';
 
 // Load fonts
@@ -439,11 +439,8 @@ export class NotesMinigame extends MinigameScene {
             return;
         }
         
-        const searchLower = searchTerm.toLowerCase();
-        const matchingNotes = this.collectedNotes.filter(note => 
-            note.title.toLowerCase().includes(searchLower) ||
-            note.text.toLowerCase().includes(searchLower)
-        );
+        // the readable text, without the markdown escapes (an overheard login keeps its _ and -)
+        const matchingNotes = this.collectedNotes.filter(note => noteMatches(note, searchTerm));
         
         if (matchingNotes.length > 0) {
             this.collectedNotes = matchingNotes;

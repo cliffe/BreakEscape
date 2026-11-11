@@ -17,12 +17,16 @@
 # VM: the built scenario is break_escape/safetynet/m08_the_mole.xml, as
 # mission.json says (U1 closed by docs/agents/SECGEN_CLAIMS_CHECK.md,
 # 2026-10-16; ctf/such_a_git.xml is a different scenario). The chain:
-# GitList 0.4.0 argument-injection RCE (no creds) -> credentials committed in
-# the repository history -> proper login for the account's flag (the mail
-# sits in a file in its home directory) -> sudo apt-get -> root. The root
-# payload names "Cryptography Lab terminal 03" and 00:47:00; every in-game
-# reference to the terminal uses that name. The login name is random per
-# build, so no game text names the account. SecGen system_name for the
+# GitList 0.4.0 remote command execution (CVE-2014-4511) (no creds) -> credentials committed in
+# the repository history -> proper login as svc-planning, whose home holds
+# ENTROPY's dead drop (deep_state_drop), sealed under a passphrase the GAME
+# supplies (VM integration 2026-11-10: the Director's full copy of the
+# Portland intercept, in his safe, carries the seal; drop_seal below, fixed in
+# the SecGen XML as well) -> root through the web-service account's
+# (www-data's) sudo apt-get rule, from the foothold, not from svc-planning.
+# The root payload names "Cryptography Lab terminal 03" and 00:47:00; every
+# in-game reference to the terminal uses that name. The account name is fixed
+# (svc-planning) on the box; the relay printout shows it after flag 4. SecGen system_name for the
 # target is `safetynet_gitlist_server`. Four flags; the fallback strings below are placeholders
 # for standalone/dev render -- the real per-build flags arrive via vm_context in
 # Hacktivity mode. FLAG ORDER against flags_by_vm['safetynet_gitlist_server'] STILL NEEDS
@@ -116,10 +120,19 @@ suite_code = "5386"
 # facilities post-it in the break room carries it.
 badge_pin = "0311"
 
+# ENTROPY dead-drop seal (VM integration, 2026-11-10). The ONE game -> VM
+# secret: the mole's routing trailer on the Portland intercept tells the
+# Architect the drop is sealed under this phrase. SAFETYNET has held the
+# intercept for nine days without finding the drop; it is in svc-planning's
+# home on the code server, a password-protected zip (SecGen zip generator,
+# password fixed to this exact value in m08_the_mole.xml). Keep the two in
+# step. Fixed constant: it is printed on a document, never spoken.
+drop_seal = "candle-in-a-hurricane"
+
 # Nightshade's sent mail, on a USB stick in his break-room locker (PASS 3):
 # Base64, then ROT13. The player decodes it at the Crypto Lab's CyberChef
 # workstation.
-backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state. Package delivered: deployment, timeline, agent ID, all confirmed. Your coordination held. They spent the night choosing which fire to fight and never saw the vault open behind them. I know what the unanswered sites cost. You do not need to tell me the number. I made the trade with my eyes open. Order is a candle in a hurricane; I would rather help the wind than keep relighting the wick. Awaiting next tasking. -- N"
+backup_plain = "SENT -- To: architect@entropy.onion  From: deep_state_drop. Package delivered: deployment, timeline, agent ID, all confirmed. Your coordination held. They spent the night choosing which fire to fight and never saw the vault open behind them. I know what the unanswered sites cost. You do not need to tell me the number. I made the trade with my eyes open. Order is a candle in a hurricane; I would rather help the wind than keep relighting the wick. Awaiting next tasking. -- N"
 %>
 {
   "scenario_brief": "Nine days ago four ENTROPY operations went live inside the same minute, and the ones nobody could reach cost lives. Since that night you have known why. An intercept pulled off the wire was timestamped before the deployment order was ever written -- which means ENTROPY did not guess where SAFETYNET would send you. Somebody told them. The leak was not the operation. The leak was the agent. Director Netherton has pulled you back to the Citadel, SAFETYNET's own headquarters, and handed you three names. One of them has been feeding the people who got your colleagues killed. Find the mole. Do it quietly -- the moment they know you are looking, they are gone.",
@@ -427,7 +440,7 @@ CREDITS
         },
         {
           "taskId": "recover_gitlist_exposure",
-          "title": "Exploit the repository browser and submit the first flag",
+          "title": "Read the exposed repository in its browser and submit the first flag",
           "type": "submit_flags",
           "targetFlags": ["flag_station_evidence_relay:safetynet_gitlist_server-flag1"],
           "targetCount": 1,
@@ -437,7 +450,7 @@ CREDITS
         },
         {
           "taskId": "recover_stashed_credentials",
-          "title": "Recover the credentials left in the repository history and submit the second flag",
+          "title": "Break in through the repository browser, dig the credentials out of its history and submit the second flag",
           "type": "submit_flags",
           "targetFlags": ["flag_station_evidence_relay:safetynet_gitlist_server-flag2"],
           "targetCount": 1,
@@ -450,14 +463,14 @@ CREDITS
     {
       "aimId": "correlate_the_evidence",
       "title": "Follow The Account To Root",
-      "description": "A foothold is not a case. Log in as the account's owner, get root, and read the access logs the box keeps from its users.",
+      "description": "A foothold is not a case. Log in as the account the credentials belong to and open the sealed drop in its home directory. That account has no root: the web service you first landed as has, through a sudo rule. Take root from your foothold and read the access logs the box keeps from its users.",
       "status": "locked",
       "order": 3,
       "unlockCondition": { "aimCompleted": "get_into_the_repo" },
       "tasks": [
         {
           "taskId": "recover_home_flag",
-          "title": "Log in properly and submit the home-directory flag",
+          "title": "Log in properly, open the sealed drop in the home directory and submit its flag",
           "type": "submit_flags",
           "targetFlags": ["flag_station_evidence_relay:safetynet_gitlist_server-flag3"],
           "targetCount": 1,
@@ -467,7 +480,7 @@ CREDITS
         },
         {
           "taskId": "escalate_to_root",
-          "title": "Escalate to root and submit the final flag",
+          "title": "Escalate to root from your foothold and submit the final flag",
           "type": "submit_flags",
           "targetFlags": ["flag_station_evidence_relay:safetynet_gitlist_server-flag4"],
           "targetCount": 1,
@@ -725,7 +738,7 @@ CREDITS
           "storyPath": "scenarios/m08_the_mole/ink/m08_phone_agent_0x99.json",
           "voice": {
             "name": "Aoede",
-            "style": "Intelligence handler on a secure line, investigating people she has trusted for years. Speak with a consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Use a steady, mid-range pitch. Normally quick and dry; tonight the dryness keeps slipping, because one of the three names is a friend and she does not yet know which.",
+            "style": "Intelligence handler speaking over a secure phone line. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
             "language": "en-GB"
           },
           "currentKnot": "start",
@@ -748,20 +761,20 @@ CREDITS
               "sendTimedMessage": { "delay": 2500, "message": "I'm on the wire. Get the Director's brief before you spook anyone. And 0x00... whichever of the three it is, it's a friend of mine." }
             },
             {
-              "_comment": "Flag 1 -- GitList argument injection. First foothold; SAFETYNET's own repo browser is exploitable without a login. PASS 4 (fix 19): offers the secrets-in-git-history guide here, before the step it teaches (flag 2); the vulnerability-analysis guide moved to the launcher.",
+              "_comment": "Flag 1 -- the exposed repository (recon). SAFETYNET's own GitList browser shows the repo to anyone, no login; its README names the ops account and says the credential was removed but never rotated. The break-in (GitList remote command execution, no login) comes next and earns flag 2, with the history. Playtest 2026-11-11: label and texts were swapped to the break-in. PASS 4 (fix 19): offers the secrets-in-git-history guide here, before the step it teaches (flag 2); the vulnerability-analysis guide moved to the launcher.",
               "eventPattern": "global_variable_changed:flag1_submitted",
               "condition": "value === true",
               "onceOnly": true,
               "setGlobal": { "found_gitlist_vuln": true, "gitsecrets_guide_offered": true },
-              "sendTimedMessage": { "delay": 1500, "message": "On the box already? Our own code server, no password. That's a report nobody will enjoy. Now read the history, not just the files. Want the git secrets guide?" }
+              "sendTimedMessage": { "delay": 1500, "message": "Our own code server, and its repo is open to anyone. No password. That's a report nobody will enjoy. The credential's gone from the files, not from the history. Break in and read it. Want the git secrets guide?" }
             },
             {
-              "_comment": "Flag 2 -- stashed credentials. The mole's opsec failure: creds committed to the repo. PASS 4 (fix 19): its guide is now offered at flag 1.",
+              "_comment": "Flag 2 -- the break-in and the stashed credentials. GitList remote command execution with no login gives the foothold; the mole's opsec failure (creds committed to the repo, removed, never rotated) is in its history. PASS 4 (fix 19): its guide is now offered at flag 1.",
               "eventPattern": "global_variable_changed:flag2_submitted",
               "condition": "value === true",
               "onceOnly": true,
               "setGlobal": { "found_leaked_creds": true },
-              "sendTimedMessage": { "delay": 1500, "message": "Credentials, committed straight into the repo and never scrubbed. Log in properly with them and let's see whose account it really is." }
+              "sendTimedMessage": { "delay": 1500, "message": "You're in, and so were the credentials: committed straight into the repo, deleted, never rotated. Log in properly with them and see what the account keeps at home. If anything in there is sealed, the Director has held a key for nine days: the full Portland intercept, in his safe." }
             },
             {
               "_comment": "Flag 3 -- proper login, home-directory flag. The mailbox ties the account to the Portland intercept (an account, not yet a person: PASS 5 Option B). Also opens the privilege-escalation guide.",
@@ -769,7 +782,7 @@ CREDITS
               "condition": "value === true",
               "onceOnly": true,
               "setGlobal": { "found_architect_comms": true, "privesc_guide_offered": true },
-              "sendTimedMessage": { "delay": 1500, "message": "You're in as them. The sent mail goes to architect@entropy.onion, from the sender stripped off the Portland intercept. The logs need root, via that sudo rule. Privesc guide?" }
+              "sendTimedMessage": { "delay": 1500, "message": "The intercept's seal opened their drop. The mail goes to architect@entropy.onion, from the sender on the Portland intercept. The logs need root, and that account hasn't got it. The web service you landed as has a sudo rule. Privesc guide?" }
             },
 <%# Flag 4 -- root. Access logs become readable: a terminal and a time (PASS 5,
     Option B; see below for the fallbacks that still set mole_identified).
@@ -1492,8 +1505,29 @@ CREDITS
               door shows as unmapped; the printer's duplicate node was removed. %>
           "puzzle_graph_role": "container",
           "puzzle_graph_unlocks": "interrogation_room",
-          "puzzle_graph_optional": true,
+          <%# VM integration (2026-11-10): no longer optional. The Director's full
+              copy of the Portland intercept is in here, and its routing trailer is
+              the seal on the dead drop in svc-planning's home on the code server
+              (flag 3). Graph edge from the intercept to that challenge; links are
+              read from room objects only, so it lives on the safe. %>
+          "puzzle_graph_links": [
+            { "from": "Portland Intercept -- Full Decrypt", "to": "vmch_recover_home_flag" }
+          ],
           "contents": [
+            {
+              "_comment": "VM integration (2026-11-10): the one game -> VM secret. m07's printed intercept (mole_intercept_evidence) showed the body with the sender redacted. This is the Director's full decrypt: the relay alias (deep_state_drop, already 'the sender stripped off the Portland intercept' in HaX's lines and the relay printout) and the mole's own routing trailer telling the Architect the package is in the drop and what it is sealed under. SAFETYNET has had the key nine days and never found the lock: it is the zip in svc-planning's home on the code server. drop_seal is fixed in m08_the_mole.xml too.",
+              "type": "text_file",
+              "id": "portland_intercept_full",
+              "name": "Portland Intercept -- Full Decrypt",
+              "takeable": true,
+              "readable": true,
+              "observations": "The Director's own copy of the intercept that started all this, with the routing layer the field printout left off.",
+              "observationDisplay": "gameDisplay",
+              "text": "PORTLAND INTERCEPT -- FULL DECRYPT\nDirector's copy. Not for circulation.\n\nFrom:    [REDACTED]@safetynet.gov  (relay alias: deep_state_drop)\nTo:      architect@entropy.onion\nDate:    D-0 09:50 UTC\nSubject: Deployment confirmed\n\n\"Four targets, simultaneous. 0x00 to Portland. One team uncommitted --\nthey'll have to choose. Window: forty minutes.\"\n\nROUTING TRAILER (ENTROPY drop protocol):\n  Full package left in the drop.\n  Drop sealed under: <%= drop_seal %>\n\nNetherton, in the margin: 'Nine days holding the key to a drop we cannot find. Whoever sent this never left the building, so neither did the drop. Find the lock.'",
+              "onRead": { "setVariable": { "found_drop_seal": true } },
+              "puzzle_graph_role": "key",
+              "puzzle_graph_reveals": "the_seal_on_the_dead_drop"
+            },
             {
               "type": "notes",
               "id": "interrogation_suite_code",
@@ -1504,7 +1538,8 @@ CREDITS
               "text": "INTERROGATION SUITE -- DOOR CODE\n<%= suite_code %>\n\nChanged after every use. Kept here so that using it is a decision, not a habit. -- M.N.",
               "onRead": { "setVariable": { "suite_code_found": true } },
               "puzzle_graph_role": "key",
-              "puzzle_graph_unlocks": "interrogation_room"
+              "puzzle_graph_unlocks": "interrogation_room",
+              "puzzle_graph_optional": true
             },
             {
               "type": "text_file",
@@ -1836,6 +1871,8 @@ CREDITS
           "observations": "SAFETYNET's internal code server, humming in the corner rack. It hosts the org's source -- and, it turns out, a great deal that was never meant to be source. Agent HaX has racked a field console beside it: a Kali box on a quiet network of her own, so you can work the server without a single query reaching the floor upstairs. The address on the console is this Kali box's own; the repository server is elsewhere on the network, so find it first.",
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
           "vm": <%= vm_object('attack_vm', {"id":1,"title":"kali","ip":"172.16.0.3","enable_console":true}) %>,
+          "showPostit": true,
+          "postitNote": "user: kali\npassword: kali",
           "puzzle_graph_role": "vm"
         },
         {
@@ -1857,8 +1894,8 @@ CREDITS
     door-audit reading (Netherton's or HaX's ink), or from flag 4 only on the
     fallbacks (audit closed, Director down). %>
           "flagRewards": [
-            { "type": "set_global", "key": "flag1_submitted", "value": true, "label": "Foothold on the code server -- no password needed", "description": "GitList argument injection -- RCE on SAFETYNET's own repo browser, no login" },
-            { "type": "set_global", "key": "flag2_submitted", "value": true, "label": "Credentials recovered from the repo history", "description": "Credentials recovered from repository history" },
+            { "type": "set_global", "key": "flag1_submitted", "value": true, "label": "The code server's repository -- exposed, no password needed", "description": "SAFETYNET's own GitList repo browser shows the repository to anyone, no login: the README names the ops account and a credential that was never rotated" },
+            { "type": "set_global", "key": "flag2_submitted", "value": true, "label": "Broke in -- credentials recovered from the repo history", "description": "GitList remote command execution, no login, then credentials dug out of the repository's deleted history" },
             { "type": "set_global", "key": "flag3_submitted", "value": true, "label": "Logged in -- the Architect's mail is in their home directory", "description": "Logged in properly -- home directory holds the ENTROPY correspondence" },
             { "type": "set_global", "key": "flag4_submitted", "value": true, "label": "Root -- the access logs name the account", "description": "Root via sudo apt-get -- access logs place the mole" }
           ]
@@ -1876,8 +1913,8 @@ CREDITS
           "observations": "A printout tray on the floor at the relay. It prints a copy of whatever you send back through it.",
           "text": "RELAY PRINTOUT\n\nThe relay prints a copy of whatever goes back through it. Tray's empty so far -- nothing has gone through.",
           "textVariants": [
-            { "condition": "globalVars.flag4_submitted", "value": "RELAY PRINTOUT -- full chain\n\nFrom the account's outbox (home directory):\n  To:   architect@entropy.onion\n  From: deep_state_drop\n  'Package delivered.'\n\nFrom the auth log (root dropped the redaction):\n  USER svc-planning  OPEN pnw_contingency.enc  DURATION 00:47:00\n  SOURCE Cryptography Lab terminal 03\n\nThe outbox and the log are the one account: svc-planning. Root put a name to the login. A name is still not a face." },
-            { "condition": "globalVars.flag3_submitted", "value": "RELAY PRINTOUT -- so far\n\nFrom the account's outbox (home directory):\n  To:   architect@entropy.onion\n  From: deep_state_drop\n  'Package delivered.'\n\nThat sender is the handle ENTROPY stripped off the Portland intercept. Whose login sends as 'deep_state_drop'? The outbox will not say. Root on the box will." }
+            { "condition": "globalVars.flag4_submitted", "value": "RELAY PRINTOUT -- full chain\n\nFrom the drop in the account's home (opened with the intercept's seal):\n  To:   architect@entropy.onion\n  From: deep_state_drop\n  'Package delivered.'\n\nFrom the auth log (root dropped the redaction):\n  USER svc-planning  OPEN pnw_contingency.enc  DURATION 00:47:00\n  SOURCE Cryptography Lab terminal 03\n\nThe outbox and the log are the one account: svc-planning. Root put a name to the login. A name is still not a face." },
+            { "condition": "globalVars.flag3_submitted", "value": "RELAY PRINTOUT -- so far\n\nFrom the drop in the account's home (opened with the intercept's seal):\n  To:   architect@entropy.onion\n  From: deep_state_drop\n  'Package delivered.'\n\nThat sender is the handle ENTROPY stripped off the Portland intercept. Whose login sends as 'deep_state_drop'? The outbox will not say. Root on the box will." }
           ],
           "puzzle_graph_role": "clue"
         },
@@ -2206,8 +2243,8 @@ CREDITS
           "observationDisplay": "gameDisplay",
           "text": "CASE FILE -- PERSONS OF INTEREST (3)\n\nAwaiting evidence from the server-room relay.\n\nVERDICT: none.",
           "textVariants": [
-            { "condition": "globalVars.all_flags_submitted && globalVars.mole_identified && globalVars.found_nightshade_profile", "value": "CASE FILE -- AGENT 0x47 'NIGHTSHADE'\n\n1. GitList RCE -- SAFETYNET's own repo, exploited without credentials.\n2. Credentials -- committed to the repository history. They open one account.\n3. Home directory -- sent mail to architect@entropy.onion. Same safetynet.gov account as the stripped sender on the Portland intercept.\n4. Root -- access logs: operations plan open 47 min, T-48h, Cryptography Lab terminal 03.\n5. Psych eval -- ideological drift flagged a year ago. Sealed by the Director.\n\nVERDICT: conclusive." },
-            { "condition": "globalVars.all_flags_submitted && globalVars.mole_identified", "value": "CASE FILE -- AGENT 0x47 'NIGHTSHADE'\n\n1. GitList RCE -- SAFETYNET's own repo, exploited without credentials.\n2. Credentials -- committed to the repository history. They open one account.\n3. Home directory -- sent mail to architect@entropy.onion. Same safetynet.gov account as the stripped sender on the Portland intercept.\n4. Root -- access logs: operations plan open 47 min, T-48h, Cryptography Lab terminal 03.\n\nVERDICT: conclusive." },
+            { "condition": "globalVars.all_flags_submitted && globalVars.mole_identified && globalVars.found_nightshade_profile", "value": "CASE FILE -- AGENT 0x47 'NIGHTSHADE'\n\n1. GitList RCE -- SAFETYNET's own repo, exploited without credentials.\n2. Credentials -- committed to the repository history. They open one account.\n3. Home directory -- ENTROPY's dead drop, opened with the seal off the Portland intercept. Inside: the mail to architect@entropy.onion.\n4. Root -- access logs: operations plan open 47 min, T-48h, Cryptography Lab terminal 03.\n5. Psych eval -- ideological drift flagged a year ago. Sealed by the Director.\n\nVERDICT: conclusive." },
+            { "condition": "globalVars.all_flags_submitted && globalVars.mole_identified", "value": "CASE FILE -- AGENT 0x47 'NIGHTSHADE'\n\n1. GitList RCE -- SAFETYNET's own repo, exploited without credentials.\n2. Credentials -- committed to the repository history. They open one account.\n3. Home directory -- ENTROPY's dead drop, opened with the seal off the Portland intercept. Inside: the mail to architect@entropy.onion.\n4. Root -- access logs: operations plan open 47 min, T-48h, Cryptography Lab terminal 03.\n\nVERDICT: conclusive." },
             { "condition": "globalVars.all_flags_submitted", "value": "CASE FILE -- PERSONS OF INTEREST (3)\n\nThe chain is in: Cryptography Lab terminal 03, D-2 10:38 UTC, plan open 47 min, one account. An account is not yet a person.\n\nVERDICT: pending -- awaiting a name the Director can act on." },
             { "condition": "globalVars.mole_identified", "value": "CASE FILE -- AGENT 0x47 'NIGHTSHADE'\n\nNamed on the door audit. The rest of the chain has not yet come through the relay.\n\nVERDICT: pending." }
           ]
@@ -2269,7 +2306,7 @@ CREDITS
           "storyPath": "scenarios/m08_the_mole/ink/m08_agent_0x99.json",
           "voice": {
             "name": "Aoede",
-            "style": "The player's handler, in person, off duty, hurting. Speak with a consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Use a steady, mid-range pitch. Normally the quick dry voice on the phone; here, quieter and tired, trying not to show how much this one costs her.",
+            "style": "Professional intelligence handler in debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
             "language": "en-GB"
           },
           "currentKnot": "start",
@@ -2635,6 +2672,7 @@ CREDITS
 
 <%# --- Evidence latches (redundant sources; hub gating) ------------------- %>
     "found_gitlist_vuln": false,
+    "found_drop_seal": false,
     "found_leaked_creds": false,
     "found_architect_comms": false,
     "found_access_logs": false,

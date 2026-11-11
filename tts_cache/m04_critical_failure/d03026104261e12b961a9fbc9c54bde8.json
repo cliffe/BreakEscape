@@ -1,0 +1,13 @@
+{
+  "key": "d03026104261e12b961a9fbc9c54bde8",
+  "npc": "narrator",
+  "text": "You keep walking. He steps into your path.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:42:02Z"
+}

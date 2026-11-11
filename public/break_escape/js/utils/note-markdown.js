@@ -86,6 +86,21 @@ function renderTable(header, rule, rows) {
     return `<table class="note-md-table"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
 }
 
+/**
+ * A note's text as the player reads it, for the notebook search (review R2 client m3): the
+ * backslash escapes the renderer shows as literal characters are removed, so an overheard
+ * login stored as `s\_okafor` is found by a search for `s_okafor`.
+ */
+export function noteSearchText(text) {
+    return String(text ?? '').replace(/\\(.)/g, (m, ch) => (ESCAPABLE.includes(ch) ? ch : m));
+}
+
+/** Whether a note's title or readable text holds the search term (case ignored). */
+export function noteMatches(note, term) {
+    const t = String(term ?? '').toLowerCase();
+    return String(note?.title ?? '').toLowerCase().includes(t) || noteSearchText(note?.text).toLowerCase().includes(t);
+}
+
 export function renderNoteMarkdown(text) {
     if (typeof text !== 'string' || text === '') return '';
     const lines = text.split('\n');

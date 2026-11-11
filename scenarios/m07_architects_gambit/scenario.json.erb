@@ -62,7 +62,9 @@ vault_pin = "4703"
 badge_pin = "0616"
 
 # SCADA control room door. Elena gives it; the C2 capture handed over for VM
-# flag 2 carries it as the redundant source.
+# flag 2 carries it as the redundant source. VM integration 2026-11-10: it is
+# also the operator account's password on scada_attack_host (pinned in the
+# SecGen XML, one secret as the story says: "too vain to change it twice").
 scada_password = "CascadeWindow19"
 %>
 {
@@ -829,7 +831,7 @@ scada_password = "CascadeWindow19"
           "storyPath": "scenarios/m07_architects_gambit/ink/m07_phone_agent_0x99.json",
           "voice": {
             "name": "Aoede",
-            "style": "Intelligence handler on a secure line, running four crises at once with one agent in range. Speak with a consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Use a steady, mid-range pitch. Quick, dry, clipped. Fond of the agent and audibly under strain, which she handles by getting drier rather than louder.",
+            "style": "Intelligence handler speaking over a secure phone line. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
             "language": "en-GB"
           },
           "currentKnot": "start",
@@ -942,14 +944,30 @@ scada_password = "CascadeWindow19"
               "condition": "value === true && globalVars.scada_password_found === true",
               "onceOnly": true,
               "setGlobal": { "ssh_guide_offered": true },
-              "sendTimedMessage": { "delay": 1500, "message": "Their listener gives out passwords in clear. Same door password as Elena's, so she told you the truth. Capture's in your inventory. Name and password: want the SSH guide?" }
+              "sendTimedMessage": { "delay": 1500, "message": "Their listener gives out the operator's password in clear, and it's Elena's door code. One password for both, so she told you the truth. Capture's in your inventory. Name and password: want the SSH guide?" }
             },
             {
               "eventPattern": "global_variable_changed:flag2_submitted",
               "condition": "value === true && !globalVars.scada_password_found",
               "onceOnly": true,
               "setGlobal": { "scada_password_found": true, "ssh_guide_offered": true },
-              "sendTimedMessage": { "delay": 1500, "message": "Their listener gives out passwords in clear, the control room door's included. Capture's in your inventory. You've got a name and a password now. Want the SSH guide?" }
+              "sendTimedMessage": { "delay": 1500, "message": "Their listener gives out the operator's password in clear, and the same string opens the control room door. Capture's in your inventory. You've got a name and a password now. Want the SSH guide?" }
+            },
+            {
+              "_comment": "VM integration 2026-11-10 (one secret): the door code Elena gives is also the operator's login on the attack host. A player who has her code and the operator's name (flag 1) before the listener gets a nudge to try it, plus the window warning that the flag-2 row below would otherwise carry. Two rows (either order), latched on reuse_hint_sent.",
+              "eventPattern": "global_variable_changed:flag1_submitted",
+              "condition": "value === true && globalVars.scada_password_found === true && !globalVars.flag2_submitted && !globalVars.flag3_submitted && !globalVars.reuse_hint_sent",
+              "onceOnly": true,
+              "setGlobal": { "reuse_hint_sent": true },
+              "sendTimedMessage": { "delay": 9000, "message": "You've got their operator's name. Elena says he's too vain to change a password twice, so her door code may be his login too. If it works, remember: the moment that operator flag goes through the relay, they see you and the window to move the team shuts." }
+            },
+            {
+              "_comment": "Elena turned after flag 1: keyed on her chat closing, never mid-scene, and after her verdict toast (1.5 s).",
+              "eventPattern": "conversation_closed:elena_rodriguez",
+              "condition": "globalVars.scada_password_found === true && globalVars.flag1_submitted === true && !globalVars.flag2_submitted && !globalVars.flag3_submitted && !globalVars.reuse_hint_sent",
+              "onceOnly": true,
+              "setGlobal": { "reuse_hint_sent": true },
+              "sendTimedMessage": { "delay": 6000, "message": "You've got their operator's name. Elena says he's too vain to change a password twice, so her door code may be his login too. If it works, remember: the moment that operator flag goes through the relay, they see you and the window to move the team shuts." }
             },
             {
               "_comment": "R5 (VM weave): once the operator password is in hand, submitting the login flag is what closes the redirect window. Fire a can't-miss warning the instant flag 2 lands while the window is still open, for every player (not only one who already revised the projection and assigned a team), so nobody loses the chance to move the team without warning. R4: the trigger is the flag going through the relay, not the act of logging in on the host.",
@@ -1927,7 +1945,9 @@ scada_password = "CascadeWindow19"
           "takeable": false,
           "observations": "The Kali box you set up here on the maintenance VLAN -- your working machine for reaching the host that is running the cascade.",
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
-          "vm": <%= vm_object('attack_vm', {"id":1,"title":"attack_vm","ip":"192.168.100.50","enable_console":true}) %>,
+          "vm": <%= vm_object('attack_vm', {"id":1,"title":"attack_vm","ip":"172.16.0.3","enable_console":true}) %>,
+          "showPostit": true,
+          "postitNote": "user: kali\npassword: kali",
           "puzzle_graph_role": "vm"
         },
         {
@@ -2008,7 +2028,7 @@ scada_password = "CascadeWindow19"
               "takeable": true,
               "readable": true,
               "observations": "What the attack host's listener hands to anyone who connects, saved off by the relay.",
-              "text": "RELAY CAPTURE -- tcp listener on the attack host\n\nThe listener pushes the same block to every connection:\n  - the operator account's password (and a flag)\n  - a line of operator notes it was never meant to carry:\n\n    'ctrl room door changed in March: <%= scada_password %> (capitals as\n     written, the keypad is case-sensitive). M says he won't change it twice.'\n\nWhoever set this up treated the listener as a private channel.\nIt is not one. Anyone on the maintenance VLAN can read it.",
+              "text": "RELAY CAPTURE -- tcp listener on the attack host\n\nThe listener pushes the same block to every connection: a flag and the\noperator account's password, in clear:\n\n    <%= scada_password %>\n\nThe relay matched it against the site access records. The same string\nopens the control room door (capitals as written, the keypad is\ncase-sensitive). One password for the door and the login: whoever runs\nthis host doesn't change a password twice.\n\nWhoever set this up treated the listener as a private channel.\nIt is not one. Anyone on the maintenance VLAN can read it.",
               "puzzle_graph_role": "key",
               "puzzle_graph_unlocks": "scada_control"
             }
@@ -2020,7 +2040,7 @@ scada_password = "CascadeWindow19"
           "name": "SCADA Backup Server",
           "position": "as-type:pnw_backup_server",
           "takeable": false,
-          "observations": "The backup server for the control stack, and since June the host driving the cascade. Its NFS export is world-readable, which is a configuration nobody chose and everybody inherited, and it is the reason there is anything to find tonight. You reach it from the VM terminal, not from here."
+          "observations": "The backup server for the control stack, and since June the host driving the cascade. Its NFS export is world-readable, which is a configuration nobody chose and everybody inherited, and it is the reason there is anything to find tonight. The asset tag reads 172.16.0.2, maintenance VLAN. You reach it from the VM terminal, not from here."
         },
         {
           "type": "notes",
@@ -2485,6 +2505,7 @@ scada_password = "CascadeWindow19"
 
 <%# --- VM progress (flagRewards set_global, wired by WP2) ----------------- %>
     "flag1_submitted": false,
+    "reuse_hint_sent": false,
     "flag2_submitted": false,
     "flag3_submitted": false,
     "flag4_submitted": false,

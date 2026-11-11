@@ -1,0 +1,13 @@
+{
+  "key": "ef36cc35e999a30a4aabf03869fc1734",
+  "npc": "irina_volkova",
+  "text": "No. Take my cut off each deposit, then check the times against my hold.",
+  "voice": "Kore",
+  "style": "Brilliant academic cryptographer, mid-thirties, Moscow-educated and ten years in British academia, guarded and precise. Speak with a consistent light Russian accent in fluent English throughout — do not shift to any other accent. Low-to-mid pitch; measured pace. Dry and tightly controlled.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:02:48Z"
+}

@@ -232,8 +232,8 @@ And once one account falls, try that password on the rest. Admins reuse.
 
 === password_help_choices ===
 + [And on the backend?]
-    The cracking guide covers it. John the Ripper's default list is enough there.
-    Volkova's list is for the doors.
+    The cracking guide covers it. Volkova's list works there too.
+    Type her words into a file on the Kali box and point John the Ripper at it. Bare words, no years. The years are for the doors.
     -> hub
 + [Got it.]
     -> hub
@@ -660,7 +660,7 @@ The checkpoint door's a cheap lock. The guard's the hard part. Pick while his ba
 #set_variable:cracking_guide_hint_given=true
 #give_item:lab-workstation:m06_cracking_field_guide
 Offline cracking guide sent.
-It turns that readable shadow file into logins. Then try each password on the other accounts.
+It turns that readable shadow file into logins. Use Volkova's words as your list, bare. Then try each password on the other accounts.
 -> hub
 
 === request_druid_guide ===

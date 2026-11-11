@@ -1,0 +1,13 @@
+{
+  "key": "23ac17a9e96554ecd7ce22fa4e8ec0b5",
+  "npc": "narrator",
+  "text": "His eyes go to the Hall 2 door, and stay there.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-05",
+  "recorded_at": "2026-11-05T15:54:43Z"
+}

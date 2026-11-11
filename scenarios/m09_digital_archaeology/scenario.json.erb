@@ -64,6 +64,13 @@ catalogue_login_password = "Catalog!Helena2016"
 # Tomb Beta's enrolment site is entered through a web-server weakness, not a
 # login (VM settled 2026-10-23), so no account strings here: the binder points
 # at the live enrolment site, it doesn't hand over a sign-in.
+# VM integration 2026-11-11: the enrolment site's port is FIXED on both sides
+# (SecGen nostromo_code_exec `port` input = this value), so the binder in the
+# picked BETA crate gives the player the address AND the port, as m01's notes
+# give its server. A port scan still finds it for a player who skips the crate.
+# The slip's "read its log" line matches the catalogue's sudo pager rule, which
+# SecGen pins to /root/overnight_index_run.log (long enough to page).
+tomb_beta_web_port = "8016"
 
 # Blind playtest F13: the two target addresses. m01/m02 print a target's address
 # in an in-game note. Here the address comes from the binding when it has one
@@ -836,7 +843,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "storyPath": "scenarios/m09_digital_archaeology/ink/m09_phone_agent0x99.json",
           "voice": {
             "name": "Aoede",
-            "style": "Intelligence handler on a secure line, the night her teacher gets a name. Speak with a consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
+            "style": "Intelligence handler speaking over a secure phone line. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
             "language": "en-GB"
           },
           "currentKnot": "start",
@@ -1013,7 +1020,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "voice": {
             "name": "Aoede",
-            "style": "Intelligence handler on a secure line, the night her teacher gets a name. Speak with a consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
+            "style": "Intelligence handler speaking over a secure phone line. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
             "language": "en-GB"
           },
           "behavior": { "initiallyHidden": true },
@@ -1579,6 +1586,8 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "observations": "Your field kit, set up on a reading desk: a laptop on the archive's network, quiet enough not to show up on anyone's screen.",
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
           "vm": <%= vm_object('attack_vm', {"id" => 1, "title" => "kali", "ip" => "172.16.0.3", "enable_console" => true}) %>,
+          "showPostit": true,
+          "postitNote": "user: kali\npassword: kali",
           "puzzle_graph_role": "vm"
         },
         {
@@ -1642,7 +1651,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "takeable": true,
           "readable": true,
           "observations": "A slip in a duty clerk's hand, stuck to the drop desk.",
-          "text": "CATALOGUE -- OVERNIGHT INDEX RUN\nHost: <%= catalogue_server_ip %>\nUser: <%= catalogue_login_user %>\nPassword: <%= catalogue_login_password %>\nNoor -- for the night run only. Don't leave this out. M.S.",
+          "text": "CATALOGUE -- OVERNIGHT INDEX RUN\nHost: <%= catalogue_server_ip %>\nUser: <%= catalogue_login_user %>\nPassword: <%= catalogue_login_password %>\nNoor -- for the night run only. If it stalls, read its log. Don't restart it. Don't leave this out. M.S.",
           "onRead": { "setVariable": { "catalogue_login_found": true } },
           "puzzle_graph_role": "clue"
         },
@@ -2415,6 +2424,8 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "observations": "Your field kit, plugged into Tomb Beta's rack and linked to the drop terminal.",
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
           "vm": <%= vm_object('attack_vm', {"id" => 1, "title" => "kali", "ip" => "172.16.0.3", "enable_console" => true}) %>,
+          "showPostit": true,
+          "postitNote": "user: kali\npassword: kali",
           "puzzle_graph_role": "vm"
         },
         {
@@ -2499,7 +2510,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
                 { "condition": "globalVars.notebook_read", "value": "A ring binder of enrolment sheets, pencilled in a hand you have seen tonight." },
                 { "condition": "globalVars.nightshade_file_held", "value": "A ring binder of enrolment sheets, pencilled in a hand you have seen tonight." }
               ],
-              "text": "TOMB BETA -- WORKSHOP ENROLMENT, SPRING INTAKE\nTwelve names, a photograph clipped to each.\nPencilled beside most of them: Ready. Not yet. Ask properly.\nInside the back cover, typed: Enrolment site still answering on <%= tomb_beta_server_ip %>. The old web service was never shut down.",
+              "text": "TOMB BETA -- WORKSHOP ENROLMENT, SPRING INTAKE\nTwelve names, a photograph clipped to each.\nPencilled beside most of them: Ready. Not yet. Ask properly.\nInside the back cover, typed: Enrolment site still answering on <%= tomb_beta_server_ip %>, port <%= tomb_beta_web_port %>. The old web service was never shut down.",
               "onRead": { "setVariable": { "tomb_beta_login_found": true } }
             }
           ]

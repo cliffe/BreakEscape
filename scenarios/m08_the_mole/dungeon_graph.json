@@ -105,10 +105,16 @@
       "optional": false
     },
     {
+      "id": "portland_intercept_full_decrypt",
+      "label": "Portland Intercept -- Full Decrypt",
+      "kind": "key",
+      "optional": false
+    },
+    {
       "id": "interrogation_suite_code_card",
       "label": "Interrogation Suite Code Card",
       "kind": "key",
-      "optional": false
+      "optional": true
     },
     {
       "id": "sealed_psych_evaluation_agent_0x47",
@@ -132,7 +138,7 @@
       "id": "director_s_safe",
       "label": "Director's Safe",
       "kind": "item",
-      "optional": true
+      "optional": false
     },
     {
       "id": "npc_director_magnus_netherton",
@@ -334,7 +340,7 @@
     },
     {
       "id": "vmch_recover_gitlist_exposure",
-      "label": "Exploit the repository browser and submit the first flag",
+      "label": "Read the exposed repository in its browser and submit the first flag",
       "kind": "vm",
       "optional": false
     },
@@ -346,7 +352,7 @@
     },
     {
       "id": "vmch_recover_stashed_credentials",
-      "label": "Recover the credentials left in the repository history and submit the second flag",
+      "label": "Break in through the repository browser, dig the credentials out of its history and submit the second flag",
       "kind": "vm",
       "optional": false
     },
@@ -358,7 +364,7 @@
     },
     {
       "id": "vmch_recover_home_flag",
-      "label": "Log in properly and submit the home-directory flag",
+      "label": "Log in properly, open the sealed drop in the home directory and submit its flag",
       "kind": "vm",
       "optional": false
     },
@@ -370,7 +376,7 @@
     },
     {
       "id": "vmch_escalate_to_root",
-      "label": "Escalate to root and submit the final flag",
+      "label": "Escalate to root from your foothold and submit the final flag",
       "kind": "vm",
       "optional": false
     },
@@ -449,13 +455,18 @@
     },
     {
       "from": "lock_director_safe",
-      "to": "interrogation_suite_code_card",
+      "to": "portland_intercept_full_decrypt",
       "soft": false
+    },
+    {
+      "from": "lock_director_safe",
+      "to": "interrogation_suite_code_card",
+      "soft": true
     },
     {
       "from": "interrogation_suite_code_card",
       "to": "door_interrogation_room",
-      "soft": false
+      "soft": true
     },
     {
       "from": "lock_director_safe",
@@ -475,12 +486,12 @@
     {
       "from": "director_office",
       "to": "director_s_safe",
-      "soft": true
+      "soft": false
     },
     {
       "from": "director_s_safe",
       "to": "door_interrogation_room",
-      "soft": true
+      "soft": false
     },
     {
       "from": "director_office",
@@ -756,6 +767,11 @@
       "from": "fingerprint_kit",
       "to": "usb_stick_personal_backup_enc",
       "soft": true
+    },
+    {
+      "from": "portland_intercept_full_decrypt",
+      "to": "vmch_recover_home_flag",
+      "soft": false
     },
     {
       "from": "server_access_log_excerpt",

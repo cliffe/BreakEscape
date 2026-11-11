@@ -1,0 +1,13 @@
+{
+  "key": "20ed2656d20efd239cec759357e0147e",
+  "npc": "agent_phantom",
+  "text": "Agent 0x00. The Director's own bloodhound. Sit.",
+  "voice": "Fenrir",
+  "style": "A charismatic field coordinator in his early forties, running his own unauthorised investigation and enjoying being underestimated. British-Ghanaian, raised in Accra and educated in London: a consistent light, educated Ghanaian English accent throughout -- do not shift to any other accent. Warm, mid-low pitch; quick, easy pace. Deflects with charm and keeps turning your questions back on you -- which is exactly why he is on the suspect list.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T20:43:37Z"
+}
