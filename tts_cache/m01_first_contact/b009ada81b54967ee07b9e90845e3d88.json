@@ -1,0 +1,14 @@
+{
+  "key": "b009ada81b54967ee07b9e90845e3d88",
+  "npc": "maya_chen",
+  "text": "If you don't know what I'm talking about, forget I said anything.",
+  "delivery": "guarded, backing off",
+  "voice": "Leda",
+  "style": "Content analyst in her late twenties. Speak with a consistent Chinese-American (California) accent throughout — do not shift to any other accent. Soft, mid-to-high pitch; quiet, hesitant pace. Nervous and concerned.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T18:22:47Z"
+}
