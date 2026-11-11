@@ -62,6 +62,29 @@ named for its beat. Drop a device with
 
 Request budget: sub-slice U sends no new request. The leak check finds nothing.
 
+## Run W: W1 to W7 (two new games, about 10 minutes each)
+
+Game one: W2, W3, W4, then a reload (navigate to the game URL with `?skip_resume=1`; a plain
+`location.reload()` shows the resume overlay and `bootstrap` picks "New Session", which starts a
+new game), then W1. Game two: W5, W6, W7. Each switch is a `confirm_action`: after `interact`,
+click `.game-confirm-ok` (the harness may report the close button as the confirmation). Halls A to
+C run west from the lobby.
+
+| Beat | Do | Expect | Events and tasks | Server record afterwards |
+|---|---|---|---|---|
+| W1 | Enter `ok_room` (hall A, north). Wait 30 s | Amy works about every 20 s, no line, no icon | `npc_used:amy_pc` with `met: true`; `w1_met` | No `npcFrustration` entry for Amy |
+| W2 | Enter `share_room` (hall B, north). Throw the breaker. Wait about 90 s | "Share's down again." twice, then a fed-up line; the icon from the first failure, pulsing from the second | `npc_use_failed:dana` (`finance_share`, `down`); `w2_failed`, `w2_fed_up` | `dana.level` 34, 68, 100; 3 report requests |
+| W3 | Reset the breaker. Wait 30 s | Her uses are met; the icon goes at 0 | `npc_frustration_changed:dana` falling; `w3_eased` | `level` 90, then 80 |
+| W4 | Enter `copy_room` (south of `print_room`, hall B south). Jam the printer. Stand by `omar_pc`; when `workstation_owner_left:omar_pc` fires, click the PC and open `Cupboard.txt`. Type its code on the cupboard | He fails, walks to the printer once and comes back; his desktop opens by claim | `npc_checked:office_printer`; `pc_signed_in` via `claim`; `w4_checked`, `w4_cupboard` | The claim (gone once he returns); cupboard in `unlockedObjects`; `omar.level` 20 (re-arm: 20, 10, 30) |
+| Reload | As above, then walk back to `print_room` | Omar's level kept; the claim gone; the printer still jammed | A settled NPC sends no report after the reload | As before the reload |
+| W5 | Enter `starter_room` (hall A, south). Wait about 3 minutes | Kai fails from his first use, "Still no access. Nobody listens." | `w5_settled` | `kai.level` 100; the request count flat after `settled` |
+| W6 | Enter `cable_room` (hall C, north). Switch the socket off. Open a door elsewhere. Switch it back on | He parks at his desk with "This PC is useless.", never walks to another PC; the door does not wake him; one use time after the socket comes back he works, met | `npc_need_parked:ian` (`off`, `ian_pc`), no `npc_use_failed`; `w6_off`, `w6_back` | `ian.level` 20, then 10 |
+| W7 | Enter `slow_room` (hall C, south). Wait for Nia's first use and for her to rest. Jam the printer with the lever here | Within about one use time she works, fails and names the printer | `npc_need_urgent:nia` at once, `npc_use_failed:nia`; `w7_failed` | `nia.level` 20 |
+
+Request budget: never more than one `/npc_frustration` request every two seconds; W5's count stays
+flat after `settled`. Run W types one code, W4's, read from Omar's desktop. Last run:
+`reports/2026-11-11_run_w.md`.
+
 ## Earned secrets
 
-Run U types no secret.
+Run U types no secret. Run W types the W4 cupboard code, read from `Cupboard.txt` on Omar's desktop after a claim.
