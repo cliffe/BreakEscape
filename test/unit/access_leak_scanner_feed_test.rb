@@ -87,6 +87,66 @@ class AccessLeakScannerFeedTest < ActiveSupport::TestCase
     assert_equal [[1, 'feed_text', 'feed:jake|jake_post_2']], summary(findings)
   end
 
+  def feed_item(i)
+    post = data['rooms'].values.flat_map { |r| Array(r['npcs']) }.find { |n| n['id'] == 'jake' }['feed']['posts'][i]
+    item = { 'index' => i, 'post' => post.slice('id', 'text', 'fact') }
+    item['fact'] = { 'id' => post['fact'], 'entry' => data['social']['intelFacts'][post['fact']] } if post['fact']
+    item
+  end
+
+  def jake_feed(*items)
+    { 'jake' => { 'site' => 'friendface', 'person' => 'jake', 'done' => false, 'posts' => items } }
+  end
+
+  test 'review R1 M1: a premature reveal in GET /scenario is reported although the game later revealed it' do
+    game = Struct.new(:player_state).new({ 'feedRevealed' => { 'jake' => { 'n' => 3 } } })
+    early = bootstrap.merge('feedPosts' => jake_feed(feed_item(0), feed_item(1)))
+    log = rows(['POST', FEED, first_answer], ['GET', SCENARIO, early],
+               ['POST', FEED, first_answer.merge('index' => 1, 'post' => feed_item(1)['post'], 'fact' => feed_item(1)['fact'])],
+               ['POST', FEED, first_answer.merge('index' => 2, 'post' => feed_item(2)['post'], 'fact' => nil)])
+    scanner = AccessLeakScanner.new(data, game: game)
+    found = summary(scanner.scan(log))
+    assert_includes found, [2, 'feed_text', 'feed:jake|jake_post_2']
+    assert_includes found, [2, 'feed_text', 'fact:jake_wedding_year']
+    assert_empty found.reject { |f| f[0] == 2 }, 'the later answers serve posts 2 and 3 in order'
+    assert_empty scanner.feed_fallback
+  end
+
+  test "review R1 M1: a feedPosts item is judged by its post id, never by the response's index" do
+    mislabelled = feed_item(1).merge('index' => 0)
+    body = bootstrap.merge('feedPosts' => jake_feed(mislabelled))
+    found = summary(AccessLeakScanner.new(data).scan(rows(['POST', FEED, first_answer], ['GET', SCENARIO, body])))
+    assert_includes found, [2, 'feed_text', 'feed:jake|jake_post_2']
+  end
+
+  test 'review R1 M1: a /feed_post answer out of order is reported' do
+    second = first_answer.merge('post' => feed_item(1)['post'], 'fact' => feed_item(1)['fact'])
+    found = summary(AccessLeakScanner.new(data).scan(rows(['POST', FEED, second])))
+    assert_includes found, [1, 'feed_text', 'feed:jake|jake_post_2']
+  end
+
+  test 'review R1 M1: a log that starts after reveals falls back to the saved count and says so' do
+    game = Struct.new(:player_state).new({ 'feedRevealed' => { 'jake' => { 'n' => 1 } } })
+    body = bootstrap.merge('feedPosts' => jake_feed(feed_item(0)))
+    body['social']['intelFacts']['jake_pet_name'] = first_answer['fact']['entry']
+    scanner = AccessLeakScanner.new(data, game: game)
+    assert_empty scanner.scan(rows(['GET', SCENARIO, body]))
+    assert_equal ['jake'], scanner.feed_fallback
+  end
+
+  test 'review R1 n3: two posts with the same text are both served by either' do
+    d = data.deep_dup
+    lena = d['rooms'].values.flat_map { |r| Array(r['npcs']) }.find { |n| n['id'] == 'lena' }
+    lena['feed']['posts'][0]['text'] = AccessSocialScenario::POSTS[0]
+    assert_empty summary(AccessLeakScanner.new(d).scan(rows(['POST', FEED, first_answer])))
+  end
+
+  test 'review R1 n4: a bootstrap whose social.intelFacts is not an object is reported' do
+    b = bootstrap
+    b['social'].delete('intelFacts')
+    assert_equal [[1, 'feed_fact_key', 'social.intelFacts']], summary(AccessLeakScanner.new(data).scan(rows(['GET', SCENARIO, b])))
+  end
+
   test 'a report line never quotes a feed text' do
     b = bootstrap
     b['x'] = AccessSocialScenario::POSTS[2]
