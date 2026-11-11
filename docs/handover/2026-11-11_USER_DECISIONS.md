@@ -21,6 +21,12 @@ Answers to the access model form (https://claude.ai/artifact/PanecaCQBMChKnqsDGa
 - q15 m02 Val's radio "Don't.": add a narrator radio beat.
 - q16 tts-audio skill wording for delivery notes: apply (the voice tag branch is merged).
 - q17 9.2 frustration icon: drop to a fading icon when the cause clears.
+- q21 A distinct icon for an NPC doing a workaround: make one with PixelLab, one sheet at a time with the user's feedback (first 16x16 candidate sheet generated; picks on the form).
+- q22 Netherton's glasses habit in the shared hubs: go with the reviewer's view (applied).
+- q23 TTS endpoint: replace the earlier "keep the fragment looseness" decision; only a scenario's own lines are voiced. Unblocks the lookalike fix's merge.
+- q24 The lookalike fix's tts-audio skill wording and the stale note in docs/agents/TTS_38_MIGRATION.md: apply both when the fix merges.
+- q25 Shared-ink and test-scenario lines from the stage-direction rewrite: do not voice them.
+- q26 Seven m02/m03 phone lines that print the player's name: reword to fixed wording and re-voice (build/phone-names).
 
 ## Carried out
 
