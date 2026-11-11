@@ -136,6 +136,8 @@ export const MAGNET_TEMPT = 30;
 /** Slice 18b-ii: magnet.newsRadius default (tiles), and how long an announce waits for the speech lock. */
 export const NEWS_RADIUS = 5;
 export const NEWS_WAIT_MS = 30000;
+// Access slice 9.2 B: how long a mutter with lines waits for the speech lock before its picture
+export const MUTTER_WAIT_MS = 8000;
 /**
  * Slice 19 (OFFICE_LIFE_PLAN 12.5): desk phones. A ring every RING_MS of the needs clock, `rings`
  * times (default RINGS); a call's listening gaps between lines are seeded in CALL_GAP_MS; a pool
@@ -1207,6 +1209,7 @@ export class NPCNeedsSystem {
 
         const pos = this.world.npcPos(id);
         if (!pos) return; // sprite not loaded: decay only
+        if (s.mutterWait) this._tickMutterWait(s);
         if (this._magnets.size) this._sight(s, pos);
         if (!s.home || (s.home.provisional && this.tickCount >= (s.homeRetryAt || 0))) this._updateHome(s, pos);
         if (this._kickable(s)) this._tickKick(s);
@@ -1800,6 +1803,29 @@ export class NPCNeedsSystem {
         const s = this.states.get(npcId);
         if (!s || typeof topic !== 'string' || !topic) return false;
         this._log(npcId, 'mutter', { topic });
+        // A workaround's hand-over comes in the answer to the failure that brought it, while that
+        // failure's own grumble still holds the speech lock: a topic with lines waits for the lock
+        // (up to MUTTER_WAIT_MS, then its picture), so the start line is said after the fail line
+        // instead of being swapped for a picture (slice 9.2 B run, game 1197)
+        const lines = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter).lines.length > 0;
+        if (lines && !this._speechFree()) {
+            s.mutterWait = { topic, since: this.clockMs };
+            return true;
+        }
+        this._sayMutter(s, topic);
+        return true;
+    }
+
+    /** A queued mutter, once the speech lock frees or it has waited MUTTER_WAIT_MS. */
+    _tickMutterWait(s) {
+        const w = s.mutterWait;
+        if (!this._speechFree() && this.clockMs - w.since < MUTTER_WAIT_MS) return;
+        s.mutterWait = null;
+        this._sayMutter(s, w.topic);
+    }
+
+    _sayMutter(s, topic) {
+        const npcId = s.npcId;
         const before = s.saying;
         this._grumble(s, null, topic, topic, { ignoreCooldown: true, icons: null });
         // npc_mutter:<npcId> (slice 9.2 B): what was shown, heard or not, so a scripted run can check
@@ -1808,7 +1834,6 @@ export class NPCNeedsSystem {
         if (said) {
             this._emit(`npc_mutter:${npcId}`, { npcId, topic, line: said.line || null, picture: said.picture || null });
         }
-        return true;
     }
 
     /** A one-off line or picture over one NPC (a grumble, an announce): bubble, voice, npc_overheard. */

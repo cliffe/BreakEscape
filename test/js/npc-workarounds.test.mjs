@@ -337,3 +337,17 @@ test('installNpcWorkarounds: the live deps open a propped door sprite through wi
         globalThis.window = prev;
     }
 });
+
+test('needs: a start line that comes while the fail line holds the speech lock is said after it, in words', () => {
+    const { sys, evs } = wired({ chatter: { work_fail: ['Why is nothing working?'], wk_writes_down: ["I'll never remember this one."] } });
+    sys.registerAll();
+    sys.step(250);
+    assert.equal(sys.mutter('dana', 'work_fail'), true);
+    assert.equal(sys.mutter('dana', 'wk_writes_down'), true, 'queued, not dropped');
+    assert.deepEqual(evs('npc_mutter:dana').map(e => e.data.topic), ['work_fail']);
+    assert.ok(stepUntil(sys, () => evs('npc_mutter:dana').length === 2, 20000));
+    const second = evs('npc_mutter:dana')[1].data;
+    assert.equal(second.topic, 'wk_writes_down');
+    assert.equal(second.line, "I'll never remember this one.");
+    assert.equal(second.picture, null);
+});
