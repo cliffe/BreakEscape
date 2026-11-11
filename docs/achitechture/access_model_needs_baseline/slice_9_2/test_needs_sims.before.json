@@ -1,0 +1,3486 @@
+{
+ "scenario": "test_needs_sims",
+ "gameId": 1178,
+ "url": "http://127.0.0.1:3013/break_escape/games/1178",
+ "seed": "test_needs_sims",
+ "capturedAt": "2026-11-11T13:42:50.747Z",
+ "gitRev": "18b34b283",
+ "jsDirty": true,
+ "spanSec": 240,
+ "paceMs": 250,
+ "visit": [
+  "kitchen",
+  "office",
+  "lounge",
+  "office"
+ ],
+ "knockOuts": [
+  {
+   "npc": "tom",
+   "at": 20
+  }
+ ],
+ "probeEverySec": 15,
+ "disableAttacks": false,
+ "needsIds": [
+  "amara",
+  "grace",
+  "marek",
+  "rosa",
+  "sanjay",
+  "tom"
+ ],
+ "endClockMs": 240000,
+ "endTick": 960,
+ "actions": [
+  {
+   "what": "bootstrap",
+   "ok": true,
+   "result": {
+    "settled": true,
+    "room": "office",
+    "player": {
+     "x": 160,
+     "y": 192,
+     "hp": 100
+    }
+   }
+  },
+  {
+   "what": "enter kitchen",
+   "ok": true,
+   "result": {
+    "ok": true,
+    "from": "office",
+    "to": "kitchen",
+    "wanted": "kitchen",
+    "doorway": {
+     "id": "door:office->kitchen",
+     "direction": "west",
+     "x": 16,
+     "y": 80,
+     "gap": {
+      "axis": "y",
+      "min": 68,
+      "max": 92,
+      "feetMin": 73,
+      "feetMax": 87
+     }
+    },
+    "opened": {
+     "ok": true,
+     "via": "direct"
+    },
+    "attempts": 1,
+    "trace": [
+     {
+      "startFeet": {
+       "x": 54,
+       "y": 88
+      },
+      "alignedFeet": {
+       "x": 54,
+       "y": 85
+      },
+      "alignedInGap": true,
+      "alignVia": "pointer",
+      "feetAfter": {
+       "x": -17,
+       "y": 80
+      },
+      "crossVia": "pointer",
+      "room": "kitchen",
+      "crossed": true
+     }
+    ],
+    "arrivedAt": {
+     "x": -17,
+     "y": 49
+    },
+    "feetAt": {
+     "x": -17,
+     "y": 80
+    }
+   }
+  },
+  {
+   "what": "enter office",
+   "ok": true,
+   "result": {
+    "ok": true,
+    "from": "kitchen",
+    "to": "office",
+    "wanted": "office",
+    "doorway": {
+     "id": "door:kitchen->office",
+     "direction": "east",
+     "x": -16,
+     "y": 80,
+     "gap": {
+      "axis": "y",
+      "min": 68,
+      "max": 92,
+      "feetMin": 73,
+      "feetMax": 87
+     }
+    },
+    "attempts": 1,
+    "trace": [
+     {
+      "startFeet": {
+       "x": -17,
+       "y": 80
+      },
+      "alignedFeet": {
+       "x": -45,
+       "y": 80
+      },
+      "alignedInGap": true,
+      "alignVia": "pointer",
+      "feetAfter": {
+       "x": 18,
+       "y": 80
+      },
+      "crossVia": "pointer",
+      "room": "office",
+      "crossed": true
+     }
+    ],
+    "arrivedAt": {
+     "x": 18,
+     "y": 49
+    },
+    "feetAt": {
+     "x": 18,
+     "y": 80
+    }
+   }
+  },
+  {
+   "what": "enter lounge",
+   "ok": true,
+   "result": {
+    "ok": true,
+    "from": "office",
+    "to": "lounge",
+    "wanted": "lounge",
+    "doorway": {
+     "id": "door:office->lounge",
+     "direction": "east",
+     "x": 304,
+     "y": 80,
+     "gap": {
+      "axis": "y",
+      "min": 68,
+      "max": 92,
+      "feetMin": 73,
+      "feetMax": 87
+     }
+    },
+    "opened": {
+     "ok": true,
+     "via": "direct"
+    },
+    "attempts": 1,
+    "trace": [
+     {
+      "startFeet": {
+       "x": 260,
+       "y": 79
+      },
+      "alignedFeet": {
+       "x": 260,
+       "y": 79
+      },
+      "alignedInGap": true,
+      "alignVia": "pointer",
+      "feetAfter": {
+       "x": 338,
+       "y": 80
+      },
+      "crossVia": "pointer",
+      "room": "lounge",
+      "crossed": true
+     }
+    ],
+    "arrivedAt": {
+     "x": 338,
+     "y": 49
+    },
+    "feetAt": {
+     "x": 338,
+     "y": 80
+    }
+   }
+  },
+  {
+   "what": "enter office",
+   "ok": true,
+   "result": {
+    "ok": true,
+    "from": "lounge",
+    "to": "office",
+    "wanted": "office",
+    "doorway": {
+     "id": "door:lounge->office",
+     "direction": "west",
+     "x": 336,
+     "y": 80,
+     "gap": {
+      "axis": "y",
+      "min": 68,
+      "max": 92,
+      "feetMin": 73,
+      "feetMax": 87
+     }
+    },
+    "attempts": 1,
+    "trace": [
+     {
+      "startFeet": {
+       "x": 338,
+       "y": 80
+      },
+      "alignedFeet": {
+       "x": 365,
+       "y": 80
+      },
+      "alignedInGap": true,
+      "alignVia": "pointer",
+      "feetAfter": {
+       "x": 303,
+       "y": 80
+      },
+      "crossVia": "pointer",
+      "room": "office",
+      "crossed": true
+     }
+    ],
+    "arrivedAt": {
+     "x": 303,
+     "y": 49
+    },
+    "feetAt": {
+     "x": 303,
+     "y": 80
+    }
+   }
+  },
+  {
+   "what": "reset needs to seed, manual clock",
+   "ok": true,
+   "result": {
+    "seed": {
+     "ok": true,
+     "seed": "test_needs_sims",
+     "npcs": [
+      "amara",
+      "grace",
+      "marek",
+      "rosa",
+      "sanjay",
+      "tom"
+     ]
+    },
+    "manual": {
+     "ok": true,
+     "manualClock": true
+    }
+   }
+  },
+  {
+   "what": "debugKO tom at 20s (exercised, not earned)",
+   "ok": true,
+   "result": {
+    "ok": true,
+    "npcId": "tom",
+    "via": "debug-shortcut (NPC was peaceful; converted to hostile as a player punch would, combat not played)",
+    "convertedFromPeaceful": true,
+    "hpBefore": 100,
+    "isKO": true
+   }
+  }
+ ],
+ "probes": [
+  {
+   "clockMs": 15000,
+   "tick": 60,
+   "id": "amara_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 15000,
+   "tick": 60,
+   "id": "sanjay_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 15000,
+   "tick": 60,
+   "id": "tom_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 21000,
+   "tick": 84,
+   "id": "amara_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 21000,
+   "tick": 84,
+   "id": "sanjay_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 21000,
+   "tick": 84,
+   "id": "tom_pc",
+   "answer": "accessed"
+  },
+  {
+   "clockMs": 30000,
+   "tick": 120,
+   "id": "amara_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 30000,
+   "tick": 120,
+   "id": "sanjay_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 30000,
+   "tick": 120,
+   "id": "tom_pc",
+   "answer": "accessed"
+  },
+  {
+   "clockMs": 45000,
+   "tick": 180,
+   "id": "amara_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 45000,
+   "tick": 180,
+   "id": "sanjay_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 45000,
+   "tick": 180,
+   "id": "tom_pc",
+   "answer": "accessed"
+  },
+  {
+   "clockMs": 60000,
+   "tick": 240,
+   "id": "amara_pc",
+   "answer": "accessed"
+  },
+  {
+   "clockMs": 60000,
+   "tick": 240,
+   "id": "sanjay_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 60000,
+   "tick": 240,
+   "id": "tom_pc",
+   "answer": "accessed"
+  },
+  {
+   "clockMs": 75000,
+   "tick": 300,
+   "id": "amara_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 75000,
+   "tick": 300,
+   "id": "sanjay_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 75000,
+   "tick": 300,
+   "id": "tom_pc",
+   "answer": "accessed"
+  },
+  {
+   "clockMs": 90000,
+   "tick": 360,
+   "id": "amara_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 90000,
+   "tick": 360,
+   "id": "sanjay_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 90000,
+   "tick": 360,
+   "id": "tom_pc",
+   "answer": "accessed"
+  },
+  {
+   "clockMs": 105000,
+   "tick": 420,
+   "id": "amara_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 105000,
+   "tick": 420,
+   "id": "sanjay_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 105000,
+   "tick": 420,
+   "id": "tom_pc",
+   "answer": "accessed"
+  },
+  {
+   "clockMs": 120000,
+   "tick": 480,
+   "id": "amara_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 120000,
+   "tick": 480,
+   "id": "sanjay_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 120000,
+   "tick": 480,
+   "id": "tom_pc",
+   "answer": "accessed"
+  },
+  {
+   "clockMs": 135000,
+   "tick": 540,
+   "id": "amara_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 135000,
+   "tick": 540,
+   "id": "sanjay_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 135000,
+   "tick": 540,
+   "id": "tom_pc",
+   "answer": "accessed"
+  },
+  {
+   "clockMs": 150000,
+   "tick": 600,
+   "id": "amara_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 150000,
+   "tick": 600,
+   "id": "sanjay_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 150000,
+   "tick": 600,
+   "id": "tom_pc",
+   "answer": "accessed"
+  },
+  {
+   "clockMs": 165000,
+   "tick": 660,
+   "id": "amara_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 165000,
+   "tick": 660,
+   "id": "sanjay_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 165000,
+   "tick": 660,
+   "id": "tom_pc",
+   "answer": "accessed"
+  },
+  {
+   "clockMs": 180000,
+   "tick": 720,
+   "id": "amara_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 180000,
+   "tick": 720,
+   "id": "sanjay_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 180000,
+   "tick": 720,
+   "id": "tom_pc",
+   "answer": "accessed"
+  },
+  {
+   "clockMs": 195000,
+   "tick": 780,
+   "id": "amara_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 195000,
+   "tick": 780,
+   "id": "sanjay_pc",
+   "answer": "accessed"
+  },
+  {
+   "clockMs": 195000,
+   "tick": 780,
+   "id": "tom_pc",
+   "answer": "accessed"
+  },
+  {
+   "clockMs": 210000,
+   "tick": 840,
+   "id": "amara_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 210000,
+   "tick": 840,
+   "id": "sanjay_pc",
+   "answer": "accessed"
+  },
+  {
+   "clockMs": 210000,
+   "tick": 840,
+   "id": "tom_pc",
+   "answer": "accessed"
+  },
+  {
+   "clockMs": 225000,
+   "tick": 900,
+   "id": "amara_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 225000,
+   "tick": 900,
+   "id": "sanjay_pc",
+   "answer": "accessed"
+  },
+  {
+   "clockMs": 225000,
+   "tick": 900,
+   "id": "tom_pc",
+   "answer": "accessed"
+  },
+  {
+   "clockMs": 240000,
+   "tick": 960,
+   "id": "amara_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 240000,
+   "tick": 960,
+   "id": "sanjay_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 240000,
+   "tick": 960,
+   "id": "tom_pc",
+   "answer": "accessed"
+  }
+ ],
+ "workstations": [
+  {
+   "clockMs": 0,
+   "tick": 0,
+   "id": "amara_pc",
+   "owner": "amara",
+   "present": true,
+   "away": false,
+   "leaves": 0,
+   "screenLocked": null,
+   "lockAt": null,
+   "screen_locked": false,
+   "owner_away": false,
+   "accessed": false
+  },
+  {
+   "clockMs": 0,
+   "tick": 0,
+   "id": "sanjay_pc",
+   "owner": "sanjay",
+   "present": true,
+   "away": false,
+   "leaves": 0,
+   "screenLocked": null,
+   "lockAt": null,
+   "screen_locked": false,
+   "owner_away": false,
+   "accessed": false
+  },
+  {
+   "clockMs": 0,
+   "tick": 0,
+   "id": "tom_pc",
+   "owner": "tom",
+   "present": true,
+   "away": false,
+   "leaves": 0,
+   "screenLocked": null,
+   "lockAt": null,
+   "screen_locked": false,
+   "owner_away": false,
+   "accessed": false
+  },
+  {
+   "clockMs": 20000,
+   "tick": 80,
+   "id": "tom_pc",
+   "owner": "tom",
+   "present": false,
+   "away": true,
+   "leaves": 1,
+   "screenLocked": false,
+   "lockAt": null,
+   "screen_locked": false,
+   "owner_away": true,
+   "accessed": false
+  },
+  {
+   "clockMs": 21000,
+   "tick": 84,
+   "id": "tom_pc",
+   "owner": "tom",
+   "present": false,
+   "away": true,
+   "leaves": 1,
+   "screenLocked": false,
+   "lockAt": null,
+   "screen_locked": false,
+   "owner_away": true,
+   "accessed": true
+  },
+  {
+   "clockMs": 55000,
+   "tick": 220,
+   "id": "amara_pc",
+   "owner": "amara",
+   "present": false,
+   "away": true,
+   "leaves": 1,
+   "screenLocked": false,
+   "lockAt": null,
+   "screen_locked": false,
+   "owner_away": true,
+   "accessed": false
+  },
+  {
+   "clockMs": 60000,
+   "tick": 240,
+   "id": "amara_pc",
+   "owner": "amara",
+   "present": false,
+   "away": true,
+   "leaves": 1,
+   "screenLocked": false,
+   "lockAt": null,
+   "screen_locked": false,
+   "owner_away": true,
+   "accessed": true
+  },
+  {
+   "clockMs": 73000,
+   "tick": 292,
+   "id": "amara_pc",
+   "owner": "amara",
+   "present": true,
+   "away": false,
+   "leaves": 1,
+   "screenLocked": false,
+   "lockAt": null,
+   "screen_locked": false,
+   "owner_away": false,
+   "accessed": true
+  },
+  {
+   "clockMs": 181000,
+   "tick": 724,
+   "id": "sanjay_pc",
+   "owner": "sanjay",
+   "present": false,
+   "away": true,
+   "leaves": 1,
+   "screenLocked": false,
+   "lockAt": null,
+   "screen_locked": false,
+   "owner_away": true,
+   "accessed": false
+  },
+  {
+   "clockMs": 195000,
+   "tick": 780,
+   "id": "sanjay_pc",
+   "owner": "sanjay",
+   "present": false,
+   "away": true,
+   "leaves": 1,
+   "screenLocked": false,
+   "lockAt": null,
+   "screen_locked": false,
+   "owner_away": true,
+   "accessed": true
+  },
+  {
+   "clockMs": 226000,
+   "tick": 904,
+   "id": "sanjay_pc",
+   "owner": "sanjay",
+   "present": true,
+   "away": false,
+   "leaves": 1,
+   "screenLocked": false,
+   "lockAt": null,
+   "screen_locked": false,
+   "owner_away": false,
+   "accessed": true
+  }
+ ],
+ "tasks": [
+  {
+   "clockMs": 0,
+   "tick": 0,
+   "taskId": "hear_office"
+  },
+  {
+   "clockMs": 13000,
+   "tick": 52,
+   "taskId": "see_mugs"
+  },
+  {
+   "clockMs": 20000,
+   "tick": 80,
+   "taskId": "spot_open_screen"
+  },
+  {
+   "clockMs": 70000,
+   "tick": 280,
+   "taskId": "see_coffee"
+  },
+  {
+   "clockMs": 70000,
+   "tick": 280,
+   "taskId": "hear_drink"
+  },
+  {
+   "clockMs": 71000,
+   "tick": 284,
+   "taskId": "see_work"
+  },
+  {
+   "clockMs": 73000,
+   "tick": 292,
+   "taskId": "see_back_at_desk"
+  },
+  {
+   "clockMs": 83000,
+   "tick": 332,
+   "taskId": "see_printout"
+  },
+  {
+   "clockMs": 171000,
+   "tick": 684,
+   "taskId": "see_uncollected"
+  },
+  {
+   "clockMs": 181000,
+   "tick": 724,
+   "taskId": "see_drink"
+  },
+  {
+   "clockMs": 196000,
+   "tick": 784,
+   "taskId": "use_open_screen"
+  },
+  {
+   "clockMs": 222000,
+   "tick": 888,
+   "taskId": "see_meal"
+  }
+ ],
+ "finalGlobals": {
+  "tom_pc_screen_locked": false,
+  "tom_pc_owner_away": true,
+  "tom_pc_accessed": true,
+  "amara_pc_screen_locked": false,
+  "amara_pc_owner_away": false,
+  "amara_pc_accessed": true,
+  "sanjay_pc_screen_locked": false,
+  "sanjay_pc_owner_away": false,
+  "sanjay_pc_accessed": true
+ },
+ "events": [
+  {
+   "clockMs": 250,
+   "tick": 1,
+   "event": "npc_action_windup:grace",
+   "data": {
+    "npcId": "grace",
+    "need": null,
+    "targetId": "washing_up_tray",
+    "tag": "dirty_mugs",
+    "ms": 700
+   }
+  },
+  {
+   "clockMs": 1000,
+   "tick": 4,
+   "event": "npc_left_post:grace",
+   "data": {
+    "npcId": "grace",
+    "need": null,
+    "targetId": "washing_up_tray",
+    "expectedAwayMs": 18269,
+    "playerNearby": false,
+    "playerDistance": 203
+   }
+  },
+  {
+   "clockMs": 1750,
+   "tick": 7,
+   "event": "npc_arrived:grace",
+   "data": {
+    "npcId": "grace",
+    "x": 119.89482627142208,
+    "y": 159.93401027617676,
+    "owner": "needs"
+   }
+  },
+  {
+   "clockMs": 2000,
+   "tick": 8,
+   "event": "npc_picked_up:office_mugs",
+   "data": {
+    "npcId": "grace",
+    "itemId": "office_mugs",
+    "tag": "dirty_mugs"
+   }
+  },
+  {
+   "clockMs": 7250,
+   "tick": 29,
+   "event": "npc_arrived:grace",
+   "data": {
+    "npcId": "grace",
+    "x": -205.25674283412766,
+    "y": 99.99993366670991,
+    "owner": "needs"
+   }
+  },
+  {
+   "clockMs": 7500,
+   "tick": 30,
+   "event": "npc_use_started:washing_up_tray",
+   "data": {
+    "npcId": "grace",
+    "objectId": "washing_up_tray",
+    "need": null
+   }
+  },
+  {
+   "clockMs": 12500,
+   "tick": 50,
+   "event": "npc_used:washing_up_tray",
+   "data": {
+    "npcId": "grace",
+    "objectId": "washing_up_tray",
+    "need": null,
+    "itemId": "office_mugs",
+    "tag": "dirty_mugs",
+    "payload": null,
+    "playerNearby": false,
+    "playerDistance": 508
+   }
+  },
+  {
+   "clockMs": 12500,
+   "tick": 50,
+   "event": "objective_task_completed",
+   "data": {
+    "taskId": "see_mugs",
+    "aimId": "watch_the_office",
+    "task": {
+     "type": "custom",
+     "title": "Grace takes dirty mugs to the kitchen",
+     "status": "completed",
+     "taskId": "see_mugs",
+     "aimId": "watch_the_office",
+     "originalStatus": "active",
+     "_pendingPickups": null,
+     "completedAt": "2026-11-11T13:38:45.883Z"
+    }
+   }
+  },
+  {
+   "clockMs": 12500,
+   "tick": 50,
+   "event": "objective_task_completed:see_mugs",
+   "data": {
+    "taskId": "see_mugs",
+    "aimId": "watch_the_office",
+    "task": {
+     "type": "custom",
+     "title": "Grace takes dirty mugs to the kitchen",
+     "status": "completed",
+     "taskId": "see_mugs",
+     "aimId": "watch_the_office",
+     "originalStatus": "active",
+     "_pendingPickups": null,
+     "completedAt": "2026-11-11T13:38:45.883Z"
+    }
+   }
+  },
+  {
+   "clockMs": 18500,
+   "tick": 74,
+   "event": "npc_arrived:grace",
+   "data": {
+    "npcId": "grace",
+    "x": 72.2882443408556,
+    "y": 171.9966704217272,
+    "owner": "needs"
+   }
+  },
+  {
+   "clockMs": 18750,
+   "tick": 75,
+   "event": "npc_returned_post:grace",
+   "data": {
+    "npcId": "grace",
+    "playerNearby": false,
+    "playerDistance": 248
+   }
+  },
+  {
+   "clockMs": 18750,
+   "tick": 75,
+   "event": "npc_sat",
+   "data": {
+    "npcId": "grace",
+    "objectId": "office_chair-white-2-rotate6_158",
+    "facing": "west"
+   }
+  },
+  {
+   "clockMs": 20000,
+   "tick": 80,
+   "event": "npc_hostile_state_changed",
+   "data": {
+    "npcId": "tom",
+    "isHostile": true
+   }
+  },
+  {
+   "clockMs": 20000,
+   "tick": 80,
+   "event": "npc_ko",
+   "data": {
+    "npcId": "tom"
+   }
+  },
+  {
+   "clockMs": 20000,
+   "tick": 80,
+   "event": "npc_ko:tom",
+   "data": {
+    "npcId": "tom"
+   }
+  },
+  {
+   "clockMs": 20000,
+   "tick": 80,
+   "event": "global_variable_changed:tom_pc_screen_locked",
+   "data": {
+    "name": "tom_pc_screen_locked",
+    "value": false
+   }
+  },
+  {
+   "clockMs": 20000,
+   "tick": 80,
+   "event": "global_variable_changed:tom_pc_owner_away",
+   "data": {
+    "name": "tom_pc_owner_away",
+    "value": true
+   }
+  },
+  {
+   "clockMs": 20000,
+   "tick": 80,
+   "event": "workstation_owner_left:tom_pc",
+   "data": {
+    "objectId": "tom_pc",
+    "ownerId": "tom",
+    "screenLocked": false,
+    "reason": "ko"
+   }
+  },
+  {
+   "clockMs": 20000,
+   "tick": 80,
+   "event": "npc_stood",
+   "data": {
+    "npcId": "tom",
+    "objectId": "office_chair-white-1-rotate7_152"
+   }
+  },
+  {
+   "clockMs": 20000,
+   "tick": 80,
+   "event": "objective_task_completed",
+   "data": {
+    "taskId": "spot_open_screen",
+    "aimId": "watch_the_office",
+    "task": {
+     "type": "custom",
+     "title": "Spot an unlocked, unattended screen (a breathing white dot; a steady blue dot means locked)",
+     "status": "completed",
+     "taskId": "spot_open_screen",
+     "aimId": "watch_the_office",
+     "originalStatus": "active",
+     "_pendingPickups": null,
+     "completedAt": "2026-11-11T13:38:53.788Z"
+    }
+   }
+  },
+  {
+   "clockMs": 20000,
+   "tick": 80,
+   "event": "objective_task_completed:spot_open_screen",
+   "data": {
+    "taskId": "spot_open_screen",
+    "aimId": "watch_the_office",
+    "task": {
+     "type": "custom",
+     "title": "Spot an unlocked, unattended screen (a breathing white dot; a steady blue dot means locked)",
+     "status": "completed",
+     "taskId": "spot_open_screen",
+     "aimId": "watch_the_office",
+     "originalStatus": "active",
+     "_pendingPickups": null,
+     "completedAt": "2026-11-11T13:38:53.788Z"
+    }
+   }
+  },
+  {
+   "clockMs": 21000,
+   "tick": 84,
+   "event": "global_variable_changed:tom_pc_accessed",
+   "data": {
+    "name": "tom_pc_accessed",
+    "value": true
+   }
+  },
+  {
+   "clockMs": 21000,
+   "tick": 84,
+   "event": "workstation_accessed:tom_pc",
+   "data": {
+    "objectId": "tom_pc",
+    "ownerId": "tom"
+   }
+  },
+  {
+   "clockMs": 30000,
+   "tick": 120,
+   "event": "workstation_accessed:tom_pc",
+   "data": {
+    "objectId": "tom_pc",
+    "ownerId": "tom"
+   }
+  },
+  {
+   "clockMs": 42000,
+   "tick": 168,
+   "event": "npc_swivelled:amara",
+   "data": {
+    "npcId": "amara",
+    "facing": "south-west",
+    "reason": "idle"
+   }
+  },
+  {
+   "clockMs": 45000,
+   "tick": 180,
+   "event": "workstation_accessed:tom_pc",
+   "data": {
+    "objectId": "tom_pc",
+    "ownerId": "tom"
+   }
+  },
+  {
+   "clockMs": 54000,
+   "tick": 216,
+   "event": "npc_need_urgent:amara",
+   "data": {
+    "npcId": "amara",
+    "need": "caffeine",
+    "level": 40
+   }
+  },
+  {
+   "clockMs": 54000,
+   "tick": 216,
+   "event": "npc_needs_leashed:amara",
+   "data": {
+    "npcId": "amara",
+    "need": "caffeine",
+    "skipped": [
+     "lounge_kettle"
+    ],
+    "chose": "office_coffee"
+   }
+  },
+  {
+   "clockMs": 54000,
+   "tick": 216,
+   "event": "npc_action_windup:amara",
+   "data": {
+    "npcId": "amara",
+    "need": "caffeine",
+    "targetId": "office_coffee",
+    "tag": null,
+    "ms": 700
+   }
+  },
+  {
+   "clockMs": 54000,
+   "tick": 216,
+   "event": "npc_stood",
+   "data": {
+    "npcId": "amara",
+    "objectId": "office_chair-white-1-rotate6_154"
+   }
+  },
+  {
+   "clockMs": 54750,
+   "tick": 219,
+   "event": "npc_left_post:amara",
+   "data": {
+    "npcId": "amara",
+    "need": "caffeine",
+    "targetId": "office_coffee",
+    "expectedAwayMs": 16898,
+    "playerNearby": true,
+    "playerDistance": 80
+   }
+  },
+  {
+   "clockMs": 54750,
+   "tick": 219,
+   "event": "global_variable_changed:amara_pc_screen_locked",
+   "data": {
+    "name": "amara_pc_screen_locked",
+    "value": false
+   }
+  },
+  {
+   "clockMs": 54750,
+   "tick": 219,
+   "event": "global_variable_changed:amara_pc_owner_away",
+   "data": {
+    "name": "amara_pc_owner_away",
+    "value": true
+   }
+  },
+  {
+   "clockMs": 54750,
+   "tick": 219,
+   "event": "workstation_owner_left:amara_pc",
+   "data": {
+    "objectId": "amara_pc",
+    "ownerId": "amara",
+    "screenLocked": false,
+    "reason": "needs"
+   }
+  },
+  {
+   "clockMs": 57250,
+   "tick": 229,
+   "event": "npc_arrived:amara",
+   "data": {
+    "npcId": "amara",
+    "x": 236.51793093537447,
+    "y": 270.45840137485317,
+    "owner": "needs"
+   }
+  },
+  {
+   "clockMs": 57500,
+   "tick": 230,
+   "event": "npc_use_started:office_coffee",
+   "data": {
+    "npcId": "amara",
+    "objectId": "office_coffee",
+    "need": "caffeine"
+   }
+  },
+  {
+   "clockMs": 60000,
+   "tick": 240,
+   "event": "npc_need_urgent:sanjay",
+   "data": {
+    "npcId": "sanjay",
+    "need": "work",
+    "level": 50
+   }
+  },
+  {
+   "clockMs": 60000,
+   "tick": 240,
+   "event": "npc_need_urgent:tom",
+   "data": {
+    "npcId": "tom",
+    "need": "caffeine",
+    "level": 40
+   }
+  },
+  {
+   "clockMs": 60000,
+   "tick": 240,
+   "event": "global_variable_changed:amara_pc_accessed",
+   "data": {
+    "name": "amara_pc_accessed",
+    "value": true
+   }
+  },
+  {
+   "clockMs": 60000,
+   "tick": 240,
+   "event": "workstation_accessed:amara_pc",
+   "data": {
+    "objectId": "amara_pc",
+    "ownerId": "amara"
+   }
+  },
+  {
+   "clockMs": 60000,
+   "tick": 240,
+   "event": "workstation_accessed:tom_pc",
+   "data": {
+    "objectId": "tom_pc",
+    "ownerId": "tom"
+   }
+  },
+  {
+   "clockMs": 60250,
+   "tick": 241,
+   "event": "npc_use_started:sanjay_pc",
+   "data": {
+    "npcId": "sanjay",
+    "objectId": "sanjay_pc",
+    "need": "work"
+   }
+  },
+  {
+   "clockMs": 69500,
+   "tick": 278,
+   "event": "npc_used:office_coffee",
+   "data": {
+    "npcId": "amara",
+    "objectId": "office_coffee",
+    "need": "caffeine",
+    "itemId": null,
+    "tag": null,
+    "payload": {
+     "who": "amara"
+    },
+    "playerNearby": false,
+    "playerDistance": 202
+   }
+  },
+  {
+   "clockMs": 69500,
+   "tick": 278,
+   "event": "npc_use_heard:office_coffee",
+   "data": {
+    "npcId": "amara",
+    "objectId": "office_coffee",
+    "key": "drink_gulp",
+    "volume": 0.072,
+    "hearing": 1
+   }
+  },
+  {
+   "clockMs": 69500,
+   "tick": 278,
+   "event": "objective_task_completed",
+   "data": {
+    "taskId": "hear_drink",
+    "aimId": "watch_the_office",
+    "task": {
+     "type": "custom",
+     "title": "Stand close enough to hear someone drink",
+     "status": "completed",
+     "taskId": "hear_drink",
+     "aimId": "watch_the_office",
+     "originalStatus": "active",
+     "_pendingPickups": null,
+     "completedAt": "2026-11-11T13:39:45.016Z"
+    }
+   }
+  },
+  {
+   "clockMs": 69500,
+   "tick": 278,
+   "event": "objective_task_completed:hear_drink",
+   "data": {
+    "taskId": "hear_drink",
+    "aimId": "watch_the_office",
+    "task": {
+     "type": "custom",
+     "title": "Stand close enough to hear someone drink",
+     "status": "completed",
+     "taskId": "hear_drink",
+     "aimId": "watch_the_office",
+     "originalStatus": "active",
+     "_pendingPickups": null,
+     "completedAt": "2026-11-11T13:39:45.016Z"
+    }
+   }
+  },
+  {
+   "clockMs": 69500,
+   "tick": 278,
+   "event": "objective_task_completed",
+   "data": {
+    "taskId": "see_coffee",
+    "aimId": "watch_the_office",
+    "task": {
+     "type": "custom",
+     "title": "Someone makes a coffee",
+     "status": "completed",
+     "taskId": "see_coffee",
+     "aimId": "watch_the_office",
+     "originalStatus": "active",
+     "_pendingPickups": null,
+     "completedAt": "2026-11-11T13:39:45.034Z"
+    }
+   }
+  },
+  {
+   "clockMs": 69500,
+   "tick": 278,
+   "event": "objective_task_completed:see_coffee",
+   "data": {
+    "taskId": "see_coffee",
+    "aimId": "watch_the_office",
+    "task": {
+     "type": "custom",
+     "title": "Someone makes a coffee",
+     "status": "completed",
+     "taskId": "see_coffee",
+     "aimId": "watch_the_office",
+     "originalStatus": "active",
+     "_pendingPickups": null,
+     "completedAt": "2026-11-11T13:39:45.034Z"
+    }
+   }
+  },
+  {
+   "clockMs": 70250,
+   "tick": 281,
+   "event": "npc_used:sanjay_pc",
+   "data": {
+    "npcId": "sanjay",
+    "objectId": "sanjay_pc",
+    "need": "work",
+    "itemId": null,
+    "tag": null,
+    "payload": null,
+    "playerNearby": false,
+    "playerDistance": 215
+   }
+  },
+  {
+   "clockMs": 70250,
+   "tick": 281,
+   "event": "objective_task_completed",
+   "data": {
+    "taskId": "see_work",
+    "aimId": "watch_the_office",
+    "task": {
+     "type": "custom",
+     "title": "Someone works at a desk",
+     "status": "completed",
+     "taskId": "see_work",
+     "aimId": "watch_the_office",
+     "originalStatus": "active",
+     "_pendingPickups": null,
+     "completedAt": "2026-11-11T13:39:45.780Z"
+    }
+   }
+  },
+  {
+   "clockMs": 70250,
+   "tick": 281,
+   "event": "objective_task_completed:see_work",
+   "data": {
+    "taskId": "see_work",
+    "aimId": "watch_the_office",
+    "task": {
+     "type": "custom",
+     "title": "Someone works at a desk",
+     "status": "completed",
+     "taskId": "see_work",
+     "aimId": "watch_the_office",
+     "originalStatus": "active",
+     "_pendingPickups": null,
+     "completedAt": "2026-11-11T13:39:45.780Z"
+    }
+   }
+  },
+  {
+   "clockMs": 71750,
+   "tick": 287,
+   "event": "npc_arrived:amara",
+   "data": {
+    "npcId": "amara",
+    "x": 155.91708608105642,
+    "y": 103.60111025597467,
+    "owner": "needs"
+   }
+  },
+  {
+   "clockMs": 72000,
+   "tick": 288,
+   "event": "npc_picked_up:copier_out_b",
+   "data": {
+    "npcId": "amara",
+    "itemId": "copier_out_b",
+    "tag": "printout"
+   }
+  },
+  {
+   "clockMs": 72000,
+   "tick": 288,
+   "event": "npc_swivelled:grace",
+   "data": {
+    "npcId": "grace",
+    "facing": "north-west",
+    "reason": "idle"
+   }
+  },
+  {
+   "clockMs": 72000,
+   "tick": 288,
+   "event": "npc_swivelled:rosa",
+   "data": {
+    "npcId": "rosa",
+    "facing": "east",
+    "reason": "idle"
+   }
+  },
+  {
+   "clockMs": 72750,
+   "tick": 291,
+   "event": "npc_arrived:amara",
+   "data": {
+    "npcId": "amara",
+    "x": 224.43755206770007,
+    "y": 124.0000397197843,
+    "owner": "needs"
+   }
+  },
+  {
+   "clockMs": 73000,
+   "tick": 292,
+   "event": "npc_returned_post:amara",
+   "data": {
+    "npcId": "amara",
+    "playerNearby": true,
+    "playerDistance": 90
+   }
+  },
+  {
+   "clockMs": 73000,
+   "tick": 292,
+   "event": "global_variable_changed:amara_pc_owner_away",
+   "data": {
+    "name": "amara_pc_owner_away",
+    "value": false,
+    "oldValue": true
+   }
+  },
+  {
+   "clockMs": 73000,
+   "tick": 292,
+   "event": "workstation_owner_returned:amara_pc",
+   "data": {
+    "objectId": "amara_pc",
+    "ownerId": "amara",
+    "wasLocked": false
+   }
+  },
+  {
+   "clockMs": 73000,
+   "tick": 292,
+   "event": "npc_use_started:amara_pc",
+   "data": {
+    "npcId": "amara",
+    "objectId": "amara_pc",
+    "need": null
+   }
+  },
+  {
+   "clockMs": 73000,
+   "tick": 292,
+   "event": "npc_sat",
+   "data": {
+    "npcId": "amara",
+    "objectId": "office_chair-white-1-rotate6_154",
+    "facing": "north-east"
+   }
+  },
+  {
+   "clockMs": 73000,
+   "tick": 292,
+   "event": "objective_task_completed",
+   "data": {
+    "taskId": "see_back_at_desk",
+    "aimId": "watch_the_office",
+    "task": {
+     "type": "custom",
+     "title": "Someone walks back to their desk",
+     "status": "completed",
+     "taskId": "see_back_at_desk",
+     "aimId": "watch_the_office",
+     "originalStatus": "active",
+     "_pendingPickups": null,
+     "completedAt": "2026-11-11T13:39:48.648Z"
+    }
+   }
+  },
+  {
+   "clockMs": 73000,
+   "tick": 292,
+   "event": "objective_task_completed:see_back_at_desk",
+   "data": {
+    "taskId": "see_back_at_desk",
+    "aimId": "watch_the_office",
+    "task": {
+     "type": "custom",
+     "title": "Someone walks back to their desk",
+     "status": "completed",
+     "taskId": "see_back_at_desk",
+     "aimId": "watch_the_office",
+     "originalStatus": "active",
+     "_pendingPickups": null,
+     "completedAt": "2026-11-11T13:39:48.648Z"
+    }
+   }
+  },
+  {
+   "clockMs": 75000,
+   "tick": 300,
+   "event": "workstation_accessed:tom_pc",
+   "data": {
+    "objectId": "tom_pc",
+    "ownerId": "tom"
+   }
+  },
+  {
+   "clockMs": 83000,
+   "tick": 332,
+   "event": "npc_placed:copier_out_b",
+   "data": {
+    "npcId": "amara",
+    "itemId": "copier_out_b",
+    "targetId": "amara_pc",
+    "roomId": "office"
+   }
+  },
+  {
+   "clockMs": 83000,
+   "tick": 332,
+   "event": "npc_used:amara_pc",
+   "data": {
+    "npcId": "amara",
+    "objectId": "amara_pc",
+    "need": null,
+    "itemId": "copier_out_b",
+    "tag": "printout",
+    "payload": {
+     "who": "amara"
+    },
+    "playerNearby": true,
+    "playerDistance": 87
+   }
+  },
+  {
+   "clockMs": 83000,
+   "tick": 332,
+   "event": "objective_task_completed",
+   "data": {
+    "taskId": "see_printout",
+    "aimId": "watch_the_office",
+    "task": {
+     "type": "custom",
+     "title": "A printout is delivered to a desk (Sanjay prints at his PC; Amara takes it from the copier tray to her desk, where it is filed a minute later)",
+     "status": "completed",
+     "taskId": "see_printout",
+     "aimId": "watch_the_office",
+     "originalStatus": "active",
+     "_pendingPickups": null,
+     "completedAt": "2026-11-11T13:39:59.315Z"
+    }
+   }
+  },
+  {
+   "clockMs": 83000,
+   "tick": 332,
+   "event": "objective_task_completed:see_printout",
+   "data": {
+    "taskId": "see_printout",
+    "aimId": "watch_the_office",
+    "task": {
+     "type": "custom",
+     "title": "A printout is delivered to a desk (Sanjay prints at his PC; Amara takes it from the copier tray to her desk, where it is filed a minute later)",
+     "status": "completed",
+     "taskId": "see_printout",
+     "aimId": "watch_the_office",
+     "originalStatus": "active",
+     "_pendingPickups": null,
+     "completedAt": "2026-11-11T13:39:59.315Z"
+    }
+   }
+  },
+  {
+   "clockMs": 90000,
+   "tick": 360,
+   "event": "npc_swivelled:sanjay",
+   "data": {
+    "npcId": "sanjay",
+    "facing": "north",
+    "reason": "idle"
+   }
+  },
+  {
+   "clockMs": 90000,
+   "tick": 360,
+   "event": "workstation_accessed:tom_pc",
+   "data": {
+    "objectId": "tom_pc",
+    "ownerId": "tom"
+   }
+  },
+  {
+   "clockMs": 102000,
+   "tick": 408,
+   "event": "npc_swivelled:rosa",
+   "data": {
+    "npcId": "rosa",
+    "facing": "north",
+    "reason": "idle"
+   }
+  },
+  {
+   "clockMs": 105000,
+   "tick": 420,
+   "event": "workstation_accessed:tom_pc",
+   "data": {
+    "objectId": "tom_pc",
+    "ownerId": "tom"
+   }
+  },
+  {
+   "clockMs": 120000,
+   "tick": 480,
+   "event": "npc_need_urgent:rosa",
+   "data": {
+    "npcId": "rosa",
+    "need": "social",
+    "level": 40
+   }
+  },
+  {
+   "clockMs": 120000,
+   "tick": 480,
+   "event": "npc_action_windup:rosa",
+   "data": {
+    "npcId": "rosa",
+    "need": "social",
+    "targetId": "water_cooler",
+    "tag": null,
+    "ms": 700
+   }
+  },
+  {
+   "clockMs": 120000,
+   "tick": 480,
+   "event": "npc_stood",
+   "data": {
+    "npcId": "rosa",
+    "objectId": "lounge_chair-white-1-rotate7_152"
+   }
+  },
+  {
+   "clockMs": 120000,
+   "tick": 480,
+   "event": "workstation_accessed:tom_pc",
+   "data": {
+    "objectId": "tom_pc",
+    "ownerId": "tom"
+   }
+  },
+  {
+   "clockMs": 120250,
+   "tick": 481,
+   "event": "npc_need_urgent:grace",
+   "data": {
+    "npcId": "grace",
+    "need": "rest",
+    "level": 39.95
+   }
+  },
+  {
+   "clockMs": 120250,
+   "tick": 481,
+   "event": "npc_action_windup:grace",
+   "data": {
+    "npcId": "grace",
+    "need": "rest",
+    "targetId": "lounge_sofa",
+    "tag": null,
+    "ms": 700
+   }
+  },
+  {
+   "clockMs": 120250,
+   "tick": 481,
+   "event": "npc_stood",
+   "data": {
+    "npcId": "grace",
+    "objectId": "office_chair-white-2-rotate6_158"
+   }
+  },
+  {
+   "clockMs": 120750,
+   "tick": 483,
+   "event": "npc_left_post:rosa",
+   "data": {
+    "npcId": "rosa",
+    "need": "social",
+    "targetId": "water_cooler",
+    "expectedAwayMs": 36758,
+    "playerNearby": false,
+    "playerDistance": 184
+   }
+  },
+  {
+   "clockMs": 121000,
+   "tick": 484,
+   "event": "npc_left_post:grace",
+   "data": {
+    "npcId": "grace",
+    "need": "rest",
+    "targetId": "lounge_sofa",
+    "expectedAwayMs": 37907,
+    "playerNearby": false,
+    "playerDistance": 248
+   }
+  },
+  {
+   "clockMs": 132000,
+   "tick": 528,
+   "event": "npc_need_urgent:amara",
+   "data": {
+    "npcId": "amara",
+    "need": "work",
+    "level": 50
+   }
+  },
+  {
+   "clockMs": 132250,
+   "tick": 529,
+   "event": "npc_use_started:amara_pc",
+   "data": {
+    "npcId": "amara",
+    "objectId": "amara_pc",
+    "need": "work"
+   }
+  },
+  {
+   "clockMs": 135000,
+   "tick": 540,
+   "event": "workstation_accessed:tom_pc",
+   "data": {
+    "objectId": "tom_pc",
+    "ownerId": "tom"
+   }
+  },
+  {
+   "clockMs": 141500,
+   "tick": 566,
+   "event": "npc_job_failed:grace",
+   "data": {
+    "npcId": "grace",
+    "need": "rest",
+    "targetId": "lounge_sofa",
+    "reason": "timeout"
+   }
+  },
+  {
+   "clockMs": 142250,
+   "tick": 569,
+   "event": "npc_used:amara_pc",
+   "data": {
+    "npcId": "amara",
+    "objectId": "amara_pc",
+    "need": "work",
+    "itemId": null,
+    "tag": null,
+    "payload": {
+     "who": "amara"
+    },
+    "playerNearby": true,
+    "playerDistance": 85
+   }
+  },
+  {
+   "clockMs": 146500,
+   "tick": 586,
+   "event": "npc_job_failed:rosa",
+   "data": {
+    "npcId": "rosa",
+    "need": "social",
+    "targetId": "water_cooler",
+    "reason": "timeout"
+   }
+  },
+  {
+   "clockMs": 148000,
+   "tick": 592,
+   "event": "npc_arrived:grace",
+   "data": {
+    "npcId": "grace",
+    "x": 71.89781260758676,
+    "y": 171.99993169820164,
+    "owner": "needs"
+   }
+  },
+  {
+   "clockMs": 148250,
+   "tick": 593,
+   "event": "npc_returned_post:grace",
+   "data": {
+    "npcId": "grace",
+    "playerNearby": false,
+    "playerDistance": 247
+   }
+  },
+  {
+   "clockMs": 148250,
+   "tick": 593,
+   "event": "npc_sat",
+   "data": {
+    "npcId": "grace",
+    "objectId": "office_chair-white-2-rotate6_158",
+    "facing": "west"
+   }
+  },
+  {
+   "clockMs": 150000,
+   "tick": 600,
+   "event": "workstation_accessed:tom_pc",
+   "data": {
+    "objectId": "tom_pc",
+    "ownerId": "tom"
+   }
+  },
+  {
+   "clockMs": 150250,
+   "tick": 601,
+   "event": "npc_need_urgent:tom",
+   "data": {
+    "npcId": "tom",
+    "need": "hunger",
+    "level": 39.96
+   }
+  },
+  {
+   "clockMs": 152250,
+   "tick": 609,
+   "event": "npc_arrived:rosa",
+   "data": {
+    "npcId": "rosa",
+    "x": 464.57265928878974,
+    "y": 131.997760989777,
+    "owner": "needs"
+   }
+  },
+  {
+   "clockMs": 152500,
+   "tick": 610,
+   "event": "npc_returned_post:rosa",
+   "data": {
+    "npcId": "rosa",
+    "playerNearby": false,
+    "playerDistance": 172
+   }
+  },
+  {
+   "clockMs": 152500,
+   "tick": 610,
+   "event": "npc_sat",
+   "data": {
+    "npcId": "rosa",
+    "objectId": "lounge_chair-white-2-rotate1_155",
+    "facing": "east"
+   }
+  },
+  {
+   "clockMs": 156000,
+   "tick": 624,
+   "event": "npc_need_urgent:grace",
+   "data": {
+    "npcId": "grace",
+    "need": "thirst",
+    "level": 40
+   }
+  },
+  {
+   "clockMs": 156000,
+   "tick": 624,
+   "event": "npc_action_windup:grace",
+   "data": {
+    "npcId": "grace",
+    "need": "thirst",
+    "targetId": "water_cooler",
+    "tag": null,
+    "ms": 700
+   }
+  },
+  {
+   "clockMs": 156000,
+   "tick": 624,
+   "event": "npc_stood",
+   "data": {
+    "npcId": "grace",
+    "objectId": "office_chair-white-2-rotate6_158"
+   }
+  },
+  {
+   "clockMs": 156750,
+   "tick": 627,
+   "event": "npc_left_post:grace",
+   "data": {
+    "npcId": "grace",
+    "need": "thirst",
+    "targetId": "water_cooler",
+    "expectedAwayMs": 33158,
+    "playerNearby": false,
+    "playerDistance": 247
+   }
+  },
+  {
+   "clockMs": 165000,
+   "tick": 660,
+   "event": "npc_arrived:grace",
+   "data": {
+    "npcId": "grace",
+    "x": -275.99531107056083,
+    "y": 269.7604435559565,
+    "owner": "needs"
+   }
+  },
+  {
+   "clockMs": 165000,
+   "tick": 660,
+   "event": "workstation_accessed:tom_pc",
+   "data": {
+    "objectId": "tom_pc",
+    "ownerId": "tom"
+   }
+  },
+  {
+   "clockMs": 165250,
+   "tick": 661,
+   "event": "npc_use_started:water_cooler",
+   "data": {
+    "npcId": "grace",
+    "objectId": "water_cooler",
+    "need": "thirst"
+   }
+  },
+  {
+   "clockMs": 168000,
+   "tick": 672,
+   "event": "npc_swivelled:amara",
+   "data": {
+    "npcId": "amara",
+    "facing": "east",
+    "reason": "idle"
+   }
+  },
+  {
+   "clockMs": 171000,
+   "tick": 684,
+   "event": "npc_print_uncollected:tom",
+   "data": {
+    "ownerId": "tom",
+    "slotId": "copier_out_a",
+    "producerId": "office_copier",
+    "ageMs": 150000,
+    "forgotten": false
+   }
+  },
+  {
+   "clockMs": 171000,
+   "tick": 684,
+   "event": "objective_task_completed",
+   "data": {
+    "taskId": "see_uncollected",
+    "aimId": "watch_the_office",
+    "task": {
+     "type": "custom",
+     "title": "See a printout sit uncollected on a copier (Tom prints now and then and forgets about half his prints; read the Print Queue note to send one he never collects, and wait two and a half minutes)",
+     "status": "completed",
+     "taskId": "see_uncollected",
+     "aimId": "watch_the_office",
+     "originalStatus": "active",
+     "_pendingPickups": null,
+     "completedAt": "2026-11-11T13:41:36.561Z"
+    }
+   }
+  },
+  {
+   "clockMs": 171000,
+   "tick": 684,
+   "event": "objective_task_completed:see_uncollected",
+   "data": {
+    "taskId": "see_uncollected",
+    "aimId": "watch_the_office",
+    "task": {
+     "type": "custom",
+     "title": "See a printout sit uncollected on a copier (Tom prints now and then and forgets about half his prints; read the Print Queue note to send one he never collects, and wait two and a half minutes)",
+     "status": "completed",
+     "taskId": "see_uncollected",
+     "aimId": "watch_the_office",
+     "originalStatus": "active",
+     "_pendingPickups": null,
+     "completedAt": "2026-11-11T13:41:36.561Z"
+    }
+   }
+  },
+  {
+   "clockMs": 180000,
+   "tick": 720,
+   "event": "npc_need_urgent:rosa",
+   "data": {
+    "npcId": "rosa",
+    "need": "caffeine",
+    "level": 40
+   }
+  },
+  {
+   "clockMs": 180000,
+   "tick": 720,
+   "event": "npc_action_windup:rosa",
+   "data": {
+    "npcId": "rosa",
+    "need": "caffeine",
+    "targetId": "lounge_kettle",
+    "tag": null,
+    "ms": 700
+   }
+  },
+  {
+   "clockMs": 180000,
+   "tick": 720,
+   "event": "npc_stood",
+   "data": {
+    "npcId": "rosa",
+    "objectId": "lounge_chair-white-2-rotate1_155"
+   }
+  },
+  {
+   "clockMs": 180000,
+   "tick": 720,
+   "event": "workstation_accessed:tom_pc",
+   "data": {
+    "objectId": "tom_pc",
+    "ownerId": "tom"
+   }
+  },
+  {
+   "clockMs": 180250,
+   "tick": 721,
+   "event": "npc_used:water_cooler",
+   "data": {
+    "npcId": "grace",
+    "objectId": "water_cooler",
+    "need": "thirst",
+    "itemId": null,
+    "tag": null,
+    "payload": null,
+    "playerNearby": false,
+    "playerDistance": 607
+   }
+  },
+  {
+   "clockMs": 180250,
+   "tick": 721,
+   "event": "npc_need_urgent:sanjay",
+   "data": {
+    "npcId": "sanjay",
+    "need": "hunger",
+    "level": 39.97
+   }
+  },
+  {
+   "clockMs": 180250,
+   "tick": 721,
+   "event": "npc_need_urgent:sanjay",
+   "data": {
+    "npcId": "sanjay",
+    "need": "social",
+    "level": 39.95
+   }
+  },
+  {
+   "clockMs": 180250,
+   "tick": 721,
+   "event": "npc_action_windup:sanjay",
+   "data": {
+    "npcId": "sanjay",
+    "need": "social",
+    "targetId": "water_cooler",
+    "tag": null,
+    "ms": 700
+   }
+  },
+  {
+   "clockMs": 180250,
+   "tick": 721,
+   "event": "npc_stood",
+   "data": {
+    "npcId": "sanjay",
+    "objectId": "office_chair-white-1-rotate8_153"
+   }
+  },
+  {
+   "clockMs": 180250,
+   "tick": 721,
+   "event": "objective_task_completed",
+   "data": {
+    "taskId": "see_drink",
+    "aimId": "watch_the_office",
+    "task": {
+     "type": "custom",
+     "title": "Someone has a drink at the water cooler",
+     "status": "completed",
+     "taskId": "see_drink",
+     "aimId": "watch_the_office",
+     "originalStatus": "active",
+     "_pendingPickups": null,
+     "completedAt": "2026-11-11T13:41:46.321Z"
+    }
+   }
+  },
+  {
+   "clockMs": 180250,
+   "tick": 721,
+   "event": "objective_task_completed:see_drink",
+   "data": {
+    "taskId": "see_drink",
+    "aimId": "watch_the_office",
+    "task": {
+     "type": "custom",
+     "title": "Someone has a drink at the water cooler",
+     "status": "completed",
+     "taskId": "see_drink",
+     "aimId": "watch_the_office",
+     "originalStatus": "active",
+     "_pendingPickups": null,
+     "completedAt": "2026-11-11T13:41:46.321Z"
+    }
+   }
+  },
+  {
+   "clockMs": 180750,
+   "tick": 723,
+   "event": "npc_left_post:rosa",
+   "data": {
+    "npcId": "rosa",
+    "need": "caffeine",
+    "targetId": "lounge_kettle",
+    "expectedAwayMs": 14439,
+    "playerNearby": false,
+    "playerDistance": 172
+   }
+  },
+  {
+   "clockMs": 181000,
+   "tick": 724,
+   "event": "npc_left_post:sanjay",
+   "data": {
+    "npcId": "sanjay",
+    "need": "social",
+    "targetId": "water_cooler",
+    "expectedAwayMs": 27144,
+    "playerNearby": false,
+    "playerDistance": 210
+   }
+  },
+  {
+   "clockMs": 181000,
+   "tick": 724,
+   "event": "global_variable_changed:sanjay_pc_screen_locked",
+   "data": {
+    "name": "sanjay_pc_screen_locked",
+    "value": false
+   }
+  },
+  {
+   "clockMs": 181000,
+   "tick": 724,
+   "event": "global_variable_changed:sanjay_pc_owner_away",
+   "data": {
+    "name": "sanjay_pc_owner_away",
+    "value": true
+   }
+  },
+  {
+   "clockMs": 181000,
+   "tick": 724,
+   "event": "workstation_owner_left:sanjay_pc",
+   "data": {
+    "objectId": "sanjay_pc",
+    "ownerId": "sanjay",
+    "screenLocked": false,
+    "reason": "needs"
+   }
+  },
+  {
+   "clockMs": 181750,
+   "tick": 727,
+   "event": "npc_arrived:rosa",
+   "data": {
+    "npcId": "rosa",
+    "x": 394.28906801347836,
+    "y": 107.3169160724035,
+    "owner": "needs"
+   }
+  },
+  {
+   "clockMs": 182000,
+   "tick": 728,
+   "event": "npc_use_started:lounge_kettle",
+   "data": {
+    "npcId": "rosa",
+    "objectId": "lounge_kettle",
+    "need": "caffeine"
+   }
+  },
+  {
+   "clockMs": 182000,
+   "tick": 728,
+   "event": "npc_sat",
+   "data": {
+    "npcId": "rosa",
+    "objectId": "lounge_chair-white-1-rotate4_175",
+    "facing": "west"
+   }
+  },
+  {
+   "clockMs": 189250,
+   "tick": 757,
+   "event": "npc_arrived:sanjay",
+   "data": {
+    "npcId": "sanjay",
+    "x": -276.00006691396607,
+    "y": 270.15743152103744,
+    "owner": "needs"
+   }
+  },
+  {
+   "clockMs": 189500,
+   "tick": 758,
+   "event": "npc_use_started:water_cooler",
+   "data": {
+    "npcId": "sanjay",
+    "objectId": "water_cooler",
+    "need": "social"
+   }
+  },
+  {
+   "clockMs": 190500,
+   "tick": 762,
+   "event": "npc_arrived:grace",
+   "data": {
+    "npcId": "grace",
+    "x": 73.69340212848746,
+    "y": 172.01732136397277,
+    "owner": "needs"
+   }
+  },
+  {
+   "clockMs": 190750,
+   "tick": 763,
+   "event": "npc_returned_post:grace",
+   "data": {
+    "npcId": "grace",
+    "playerNearby": false,
+    "playerDistance": 245
+   }
+  },
+  {
+   "clockMs": 190750,
+   "tick": 763,
+   "event": "npc_sat",
+   "data": {
+    "npcId": "grace",
+    "objectId": "office_chair-white-2-rotate6_158",
+    "facing": "west"
+   }
+  },
+  {
+   "clockMs": 194000,
+   "tick": 776,
+   "event": "npc_used:lounge_kettle",
+   "data": {
+    "npcId": "rosa",
+    "objectId": "lounge_kettle",
+    "need": "caffeine",
+    "itemId": null,
+    "tag": null,
+    "payload": null,
+    "playerNearby": false,
+    "playerDistance": 96
+   }
+  },
+  {
+   "clockMs": 194000,
+   "tick": 776,
+   "event": "npc_use_heard:lounge_kettle",
+   "data": {
+    "npcId": "rosa",
+    "objectId": "lounge_kettle",
+    "key": "drink_gulp",
+    "volume": 0.085,
+    "hearing": 0.4
+   }
+  },
+  {
+   "clockMs": 194000,
+   "tick": 776,
+   "event": "npc_stood",
+   "data": {
+    "npcId": "rosa",
+    "objectId": "lounge_chair-white-1-rotate4_175"
+   }
+  },
+  {
+   "clockMs": 194750,
+   "tick": 779,
+   "event": "npc_arrived:rosa",
+   "data": {
+    "npcId": "rosa",
+    "x": 464.03930308935594,
+    "y": 132.38785065743895,
+    "owner": "needs"
+   }
+  },
+  {
+   "clockMs": 195000,
+   "tick": 780,
+   "event": "npc_returned_post:rosa",
+   "data": {
+    "npcId": "rosa",
+    "playerNearby": false,
+    "playerDistance": 172
+   }
+  },
+  {
+   "clockMs": 195000,
+   "tick": 780,
+   "event": "npc_sat",
+   "data": {
+    "npcId": "rosa",
+    "objectId": "lounge_chair-white-2-rotate1_155",
+    "facing": "east"
+   }
+  },
+  {
+   "clockMs": 195000,
+   "tick": 780,
+   "event": "global_variable_changed:sanjay_pc_accessed",
+   "data": {
+    "name": "sanjay_pc_accessed",
+    "value": true
+   }
+  },
+  {
+   "clockMs": 195000,
+   "tick": 780,
+   "event": "workstation_accessed:sanjay_pc",
+   "data": {
+    "objectId": "sanjay_pc",
+    "ownerId": "sanjay"
+   }
+  },
+  {
+   "clockMs": 195000,
+   "tick": 780,
+   "event": "workstation_accessed:tom_pc",
+   "data": {
+    "objectId": "tom_pc",
+    "ownerId": "tom"
+   }
+  },
+  {
+   "clockMs": 195250,
+   "tick": 781,
+   "event": "objective_task_completed",
+   "data": {
+    "taskId": "use_open_screen",
+    "aimId": "watch_the_office",
+    "task": {
+     "type": "custom",
+     "title": "Use Sanjay's screen while he is away (using it keeps it awake)",
+     "status": "completed",
+     "taskId": "use_open_screen",
+     "aimId": "watch_the_office",
+     "originalStatus": "active",
+     "_pendingPickups": null,
+     "completedAt": "2026-11-11T13:42:02.093Z"
+    }
+   }
+  },
+  {
+   "clockMs": 195250,
+   "tick": 781,
+   "event": "objective_task_completed:use_open_screen",
+   "data": {
+    "taskId": "use_open_screen",
+    "aimId": "watch_the_office",
+    "task": {
+     "type": "custom",
+     "title": "Use Sanjay's screen while he is away (using it keeps it awake)",
+     "status": "completed",
+     "taskId": "use_open_screen",
+     "aimId": "watch_the_office",
+     "originalStatus": "active",
+     "_pendingPickups": null,
+     "completedAt": "2026-11-11T13:42:02.093Z"
+    }
+   }
+  },
+  {
+   "clockMs": 198000,
+   "tick": 792,
+   "event": "npc_swivelled:amara",
+   "data": {
+    "npcId": "amara",
+    "facing": "east",
+    "reason": "idle"
+   }
+  },
+  {
+   "clockMs": 201500,
+   "tick": 806,
+   "event": "npc_action_windup:grace",
+   "data": {
+    "npcId": "grace",
+    "need": "rest",
+    "targetId": "lounge_sofa",
+    "tag": null,
+    "ms": 700
+   }
+  },
+  {
+   "clockMs": 201500,
+   "tick": 806,
+   "event": "npc_stood",
+   "data": {
+    "npcId": "grace",
+    "objectId": "office_chair-white-2-rotate6_158"
+   }
+  },
+  {
+   "clockMs": 202250,
+   "tick": 809,
+   "event": "npc_left_post:grace",
+   "data": {
+    "npcId": "grace",
+    "need": "rest",
+    "targetId": "lounge_sofa",
+    "expectedAwayMs": 37887,
+    "playerNearby": false,
+    "playerDistance": 245
+   }
+  },
+  {
+   "clockMs": 204500,
+   "tick": 818,
+   "event": "npc_used:water_cooler",
+   "data": {
+    "npcId": "sanjay",
+    "objectId": "water_cooler",
+    "need": "social",
+    "itemId": null,
+    "tag": null,
+    "payload": null,
+    "playerNearby": false,
+    "playerDistance": 607
+   }
+  },
+  {
+   "clockMs": 206250,
+   "tick": 825,
+   "event": "npc_arrived:sanjay",
+   "data": {
+    "npcId": "sanjay",
+    "x": -268.0002770844372,
+    "y": 129.43501853678606,
+    "owner": "needs"
+   }
+  },
+  {
+   "clockMs": 206500,
+   "tick": 826,
+   "event": "npc_action_windup:rosa",
+   "data": {
+    "npcId": "rosa",
+    "need": "social",
+    "targetId": "water_cooler",
+    "tag": null,
+    "ms": 700
+   }
+  },
+  {
+   "clockMs": 206500,
+   "tick": 826,
+   "event": "npc_use_started:fridge",
+   "data": {
+    "npcId": "sanjay",
+    "objectId": "fridge",
+    "need": "hunger"
+   }
+  },
+  {
+   "clockMs": 206500,
+   "tick": 826,
+   "event": "npc_stood",
+   "data": {
+    "npcId": "rosa",
+    "objectId": "lounge_chair-white-2-rotate1_155"
+   }
+  },
+  {
+   "clockMs": 207250,
+   "tick": 829,
+   "event": "npc_left_post:rosa",
+   "data": {
+    "npcId": "rosa",
+    "need": "social",
+    "targetId": "water_cooler",
+    "expectedAwayMs": 36157,
+    "playerNearby": false,
+    "playerDistance": 172
+   }
+  },
+  {
+   "clockMs": 210000,
+   "tick": 840,
+   "event": "workstation_accessed:sanjay_pc",
+   "data": {
+    "objectId": "sanjay_pc",
+    "ownerId": "sanjay"
+   }
+  },
+  {
+   "clockMs": 210000,
+   "tick": 840,
+   "event": "workstation_accessed:tom_pc",
+   "data": {
+    "objectId": "tom_pc",
+    "ownerId": "tom"
+   }
+  },
+  {
+   "clockMs": 210250,
+   "tick": 841,
+   "event": "npc_need_urgent:rosa",
+   "data": {
+    "npcId": "rosa",
+    "need": "rest",
+    "level": 39.96
+   }
+  },
+  {
+   "clockMs": 221500,
+   "tick": 886,
+   "event": "npc_used:fridge",
+   "data": {
+    "npcId": "sanjay",
+    "objectId": "fridge",
+    "need": "hunger",
+    "itemId": null,
+    "tag": null,
+    "payload": null,
+    "playerNearby": false,
+    "playerDistance": 571
+   }
+  },
+  {
+   "clockMs": 221500,
+   "tick": 886,
+   "event": "objective_task_completed",
+   "data": {
+    "taskId": "see_meal",
+    "aimId": "watch_the_office",
+    "task": {
+     "type": "custom",
+     "title": "Someone eats in the kitchen",
+     "status": "completed",
+     "taskId": "see_meal",
+     "aimId": "watch_the_office",
+     "originalStatus": "active",
+     "_pendingPickups": null,
+     "completedAt": "2026-11-11T13:42:30.392Z"
+    }
+   }
+  },
+  {
+   "clockMs": 221500,
+   "tick": 886,
+   "event": "objective_task_completed:see_meal",
+   "data": {
+    "taskId": "see_meal",
+    "aimId": "watch_the_office",
+    "task": {
+     "type": "custom",
+     "title": "Someone eats in the kitchen",
+     "status": "completed",
+     "taskId": "see_meal",
+     "aimId": "watch_the_office",
+     "originalStatus": "active",
+     "_pendingPickups": null,
+     "completedAt": "2026-11-11T13:42:30.392Z"
+    }
+   }
+  },
+  {
+   "clockMs": 222500,
+   "tick": 890,
+   "event": "npc_job_failed:grace",
+   "data": {
+    "npcId": "grace",
+    "need": "rest",
+    "targetId": "lounge_sofa",
+    "reason": "timeout"
+   }
+  },
+  {
+   "clockMs": 225000,
+   "tick": 900,
+   "event": "workstation_accessed:sanjay_pc",
+   "data": {
+    "objectId": "sanjay_pc",
+    "ownerId": "sanjay"
+   }
+  },
+  {
+   "clockMs": 225000,
+   "tick": 900,
+   "event": "workstation_accessed:tom_pc",
+   "data": {
+    "objectId": "tom_pc",
+    "ownerId": "tom"
+   }
+  },
+  {
+   "clockMs": 225250,
+   "tick": 901,
+   "event": "npc_need_urgent:tom",
+   "data": {
+    "npcId": "tom",
+    "need": "work",
+    "level": 49.97
+   }
+  },
+  {
+   "clockMs": 225500,
+   "tick": 902,
+   "event": "npc_arrived:sanjay",
+   "data": {
+    "npcId": "sanjay",
+    "x": 65.69822897457708,
+    "y": 105.69590387914432,
+    "owner": "needs"
+   }
+  },
+  {
+   "clockMs": 225750,
+   "tick": 903,
+   "event": "npc_returned_post:sanjay",
+   "data": {
+    "npcId": "sanjay",
+    "playerNearby": false,
+    "playerDistance": 235
+   }
+  },
+  {
+   "clockMs": 225750,
+   "tick": 903,
+   "event": "global_variable_changed:sanjay_pc_owner_away",
+   "data": {
+    "name": "sanjay_pc_owner_away",
+    "value": false,
+    "oldValue": true
+   }
+  },
+  {
+   "clockMs": 225750,
+   "tick": 903,
+   "event": "workstation_owner_returned:sanjay_pc",
+   "data": {
+    "objectId": "sanjay_pc",
+    "ownerId": "sanjay",
+    "wasLocked": false
+   }
+  },
+  {
+   "clockMs": 225750,
+   "tick": 903,
+   "event": "npc_sat",
+   "data": {
+    "npcId": "sanjay",
+    "objectId": "office_chair-white-1-rotate8_153",
+    "facing": "south-east"
+   }
+  },
+  {
+   "clockMs": 229000,
+   "tick": 916,
+   "event": "npc_arrived:grace",
+   "data": {
+    "npcId": "grace",
+    "x": 72.31367156329894,
+    "y": 172.00001977015117,
+    "owner": "needs"
+   }
+  },
+  {
+   "clockMs": 229250,
+   "tick": 917,
+   "event": "npc_returned_post:grace",
+   "data": {
+    "npcId": "grace",
+    "playerNearby": false,
+    "playerDistance": 244
+   }
+  },
+  {
+   "clockMs": 229250,
+   "tick": 917,
+   "event": "npc_sat",
+   "data": {
+    "npcId": "grace",
+    "objectId": "office_chair-white-2-rotate6_158",
+    "facing": "west"
+   }
+  },
+  {
+   "clockMs": 234000,
+   "tick": 936,
+   "event": "npc_job_failed:rosa",
+   "data": {
+    "npcId": "rosa",
+    "need": "social",
+    "targetId": "water_cooler",
+    "reason": "timeout"
+   }
+  },
+  {
+   "clockMs": 238750,
+   "tick": 955,
+   "event": "npc_arrived:rosa",
+   "data": {
+    "npcId": "rosa",
+    "x": 532.3831040043367,
+    "y": 243.99999685684895,
+    "owner": "needs"
+   }
+  },
+  {
+   "clockMs": 239000,
+   "tick": 956,
+   "event": "npc_use_started:lounge_sofa",
+   "data": {
+    "npcId": "rosa",
+    "objectId": "lounge_sofa",
+    "need": "rest"
+   }
+  },
+  {
+   "clockMs": 240000,
+   "tick": 960,
+   "event": "npc_print_uncollected:tom",
+   "data": {
+    "ownerId": "tom",
+    "slotId": "copier_out_c",
+    "producerId": "office_copier",
+    "ageMs": 150000,
+    "forgotten": false
+   }
+  },
+  {
+   "clockMs": 240000,
+   "tick": 960,
+   "event": "workstation_accessed:tom_pc",
+   "data": {
+    "objectId": "tom_pc",
+    "ownerId": "tom"
+   }
+  }
+ ],
+ "needsLog": [
+  {
+   "t": 1,
+   "npc": "grace",
+   "ev": "job_start",
+   "tag": "dirty_mugs",
+   "target": "washing_up_tray",
+   "item": "office_mugs"
+  },
+  {
+   "t": 1,
+   "npc": "grace",
+   "ev": "windup",
+   "target": "washing_up_tray"
+  },
+  {
+   "t": 8,
+   "npc": "grace",
+   "ev": "picked_up",
+   "item": "office_mugs"
+  },
+  {
+   "t": 30,
+   "npc": "grace",
+   "ev": "using",
+   "need": null,
+   "target": "washing_up_tray"
+  },
+  {
+   "t": 50,
+   "npc": "grace",
+   "ev": "used",
+   "tag": "dirty_mugs",
+   "target": "washing_up_tray",
+   "item": "office_mugs",
+   "payloadPresent": false
+  },
+  {
+   "t": 75,
+   "npc": "grace",
+   "ev": "returned_post"
+  },
+  {
+   "t": 81,
+   "npc": "tom",
+   "ev": "blocked"
+  },
+  {
+   "t": 216,
+   "npc": "amara",
+   "ev": "urgent",
+   "need": "caffeine",
+   "level": 40
+  },
+  {
+   "t": 216,
+   "npc": "amara",
+   "ev": "job_start",
+   "need": "caffeine",
+   "target": "office_coffee"
+  },
+  {
+   "t": 216,
+   "npc": "amara",
+   "ev": "leashed",
+   "need": "caffeine",
+   "skipped": [
+    "lounge_kettle"
+   ],
+   "chose": "office_coffee"
+  },
+  {
+   "t": 216,
+   "npc": "amara",
+   "ev": "windup",
+   "target": "office_coffee"
+  },
+  {
+   "t": 230,
+   "npc": "amara",
+   "ev": "using",
+   "need": "caffeine",
+   "target": "office_coffee"
+  },
+  {
+   "t": 240,
+   "npc": "sanjay",
+   "ev": "urgent",
+   "need": "work",
+   "level": 50
+  },
+  {
+   "t": 240,
+   "npc": "sanjay",
+   "ev": "job_start",
+   "need": "work",
+   "target": "sanjay_pc"
+  },
+  {
+   "t": 240,
+   "npc": "sanjay",
+   "ev": "private_skipped",
+   "need": "work",
+   "skipped": [
+    "amara_pc",
+    "tom_pc"
+   ],
+   "chose": "sanjay_pc"
+  },
+  {
+   "t": 240,
+   "npc": "tom",
+   "ev": "urgent",
+   "need": "caffeine",
+   "level": 40
+  },
+  {
+   "t": 241,
+   "npc": "sanjay",
+   "ev": "using",
+   "need": "work",
+   "target": "sanjay_pc"
+  },
+  {
+   "t": 278,
+   "npc": "amara",
+   "ev": "used",
+   "need": "caffeine",
+   "target": "office_coffee",
+   "level": 100,
+   "payloadPresent": true
+  },
+  {
+   "t": 281,
+   "npc": "sanjay",
+   "ev": "used",
+   "need": "work",
+   "target": "sanjay_pc",
+   "level": 100,
+   "payloadPresent": false
+  },
+  {
+   "t": 281,
+   "npc": "sanjay",
+   "ev": "revealed",
+   "target": "office_copier",
+   "item": "copier_out_b"
+  },
+  {
+   "t": 282,
+   "npc": "amara",
+   "ev": "job_start",
+   "tag": "printout",
+   "target": "amara_pc",
+   "item": "copier_out_b"
+  },
+  {
+   "t": 288,
+   "npc": "amara",
+   "ev": "picked_up",
+   "item": "copier_out_b"
+  },
+  {
+   "t": 292,
+   "npc": "amara",
+   "ev": "returned_post"
+  },
+  {
+   "t": 292,
+   "npc": "amara",
+   "ev": "using",
+   "need": null,
+   "target": "amara_pc"
+  },
+  {
+   "t": 332,
+   "npc": "amara",
+   "ev": "used",
+   "tag": "printout",
+   "target": "amara_pc",
+   "item": "copier_out_b",
+   "outcome": "place",
+   "payloadPresent": true
+  },
+  {
+   "t": 360,
+   "npc": "tom",
+   "ev": "print_command",
+   "target": "office_copier"
+  },
+  {
+   "t": 360,
+   "npc": "tom",
+   "ev": "revealed",
+   "target": "office_copier",
+   "item": "copier_out_c"
+  },
+  {
+   "t": 360,
+   "npc": "tom",
+   "ev": "print_reserved",
+   "item": "copier_out_c",
+   "target": "office_copier",
+   "forgotten": false,
+   "dueMs": 6016,
+   "viaCommand": true
+  },
+  {
+   "t": 480,
+   "npc": "rosa",
+   "ev": "urgent",
+   "need": "social",
+   "level": 40
+  },
+  {
+   "t": 480,
+   "npc": "rosa",
+   "ev": "job_start",
+   "need": "social",
+   "target": "water_cooler"
+  },
+  {
+   "t": 480,
+   "npc": "rosa",
+   "ev": "windup",
+   "target": "water_cooler"
+  },
+  {
+   "t": 481,
+   "npc": "grace",
+   "ev": "urgent",
+   "need": "rest",
+   "level": 39.95
+  },
+  {
+   "t": 481,
+   "npc": "grace",
+   "ev": "job_start",
+   "need": "rest",
+   "target": "lounge_sofa"
+  },
+  {
+   "t": 481,
+   "npc": "grace",
+   "ev": "windup",
+   "target": "lounge_sofa"
+  },
+  {
+   "t": 528,
+   "npc": "amara",
+   "ev": "urgent",
+   "need": "work",
+   "level": 50
+  },
+  {
+   "t": 528,
+   "npc": "amara",
+   "ev": "job_start",
+   "need": "work",
+   "target": "amara_pc"
+  },
+  {
+   "t": 528,
+   "npc": "amara",
+   "ev": "private_skipped",
+   "need": "work",
+   "skipped": [
+    "sanjay_pc",
+    "tom_pc"
+   ],
+   "chose": "amara_pc"
+  },
+  {
+   "t": 529,
+   "npc": "amara",
+   "ev": "using",
+   "need": "work",
+   "target": "amara_pc"
+  },
+  {
+   "t": 566,
+   "npc": "grace",
+   "ev": "job_failed",
+   "need": "rest",
+   "target": "lounge_sofa",
+   "reason": "timeout"
+  },
+  {
+   "t": 569,
+   "npc": "amara",
+   "ev": "used",
+   "need": "work",
+   "target": "amara_pc",
+   "level": 100,
+   "payloadPresent": true
+  },
+  {
+   "t": 572,
+   "npc": "amara",
+   "ev": "stowed",
+   "item": "copier_out_b",
+   "reason": "filed"
+  },
+  {
+   "t": 579,
+   "npc": "grace",
+   "ev": "return_resumed",
+   "x": 283,
+   "y": 84
+  },
+  {
+   "t": 586,
+   "npc": "rosa",
+   "ev": "job_failed",
+   "need": "social",
+   "target": "water_cooler",
+   "reason": "timeout"
+  },
+  {
+   "t": 593,
+   "npc": "grace",
+   "ev": "returned_post"
+  },
+  {
+   "t": 599,
+   "npc": "rosa",
+   "ev": "return_resumed",
+   "x": 320,
+   "y": 84
+  },
+  {
+   "t": 601,
+   "npc": "tom",
+   "ev": "urgent",
+   "need": "hunger",
+   "level": 39.96
+  },
+  {
+   "t": 610,
+   "npc": "rosa",
+   "ev": "returned_post"
+  },
+  {
+   "t": 624,
+   "npc": "grace",
+   "ev": "urgent",
+   "need": "thirst",
+   "level": 40
+  },
+  {
+   "t": 624,
+   "npc": "grace",
+   "ev": "job_start",
+   "need": "thirst",
+   "target": "water_cooler"
+  },
+  {
+   "t": 624,
+   "npc": "grace",
+   "ev": "windup",
+   "target": "water_cooler"
+  },
+  {
+   "t": 661,
+   "npc": "grace",
+   "ev": "using",
+   "need": "thirst",
+   "target": "water_cooler"
+  },
+  {
+   "t": 684,
+   "npc": "tom",
+   "ev": "print_uncollected",
+   "item": "copier_out_a",
+   "ageMs": 150000,
+   "forgotten": false
+  },
+  {
+   "t": 720,
+   "npc": "rosa",
+   "ev": "urgent",
+   "need": "caffeine",
+   "level": 40
+  },
+  {
+   "t": 720,
+   "npc": "rosa",
+   "ev": "job_start",
+   "need": "caffeine",
+   "target": "lounge_kettle"
+  },
+  {
+   "t": 720,
+   "npc": "rosa",
+   "ev": "windup",
+   "target": "lounge_kettle"
+  },
+  {
+   "t": 721,
+   "npc": "grace",
+   "ev": "used",
+   "need": "thirst",
+   "target": "water_cooler",
+   "level": 100,
+   "payloadPresent": false
+  },
+  {
+   "t": 721,
+   "npc": "sanjay",
+   "ev": "urgent",
+   "need": "hunger",
+   "level": 39.97
+  },
+  {
+   "t": 721,
+   "npc": "sanjay",
+   "ev": "urgent",
+   "need": "social",
+   "level": 39.95
+  },
+  {
+   "t": 721,
+   "npc": "sanjay",
+   "ev": "job_start",
+   "need": "social",
+   "target": "water_cooler"
+  },
+  {
+   "t": 721,
+   "npc": "sanjay",
+   "ev": "windup",
+   "target": "water_cooler"
+  },
+  {
+   "t": 728,
+   "npc": "rosa",
+   "ev": "using",
+   "need": "caffeine",
+   "target": "lounge_kettle"
+  },
+  {
+   "t": 758,
+   "npc": "sanjay",
+   "ev": "using",
+   "need": "social",
+   "target": "water_cooler"
+  },
+  {
+   "t": 763,
+   "npc": "grace",
+   "ev": "returned_post"
+  },
+  {
+   "t": 776,
+   "npc": "rosa",
+   "ev": "used",
+   "need": "caffeine",
+   "target": "lounge_kettle",
+   "level": 100,
+   "payloadPresent": false
+  },
+  {
+   "t": 780,
+   "npc": "rosa",
+   "ev": "returned_post"
+  },
+  {
+   "t": 806,
+   "npc": "grace",
+   "ev": "job_start",
+   "need": "rest",
+   "target": "lounge_sofa"
+  },
+  {
+   "t": 806,
+   "npc": "grace",
+   "ev": "windup",
+   "target": "lounge_sofa"
+  },
+  {
+   "t": 818,
+   "npc": "sanjay",
+   "ev": "used",
+   "need": "social",
+   "target": "water_cooler",
+   "level": 100,
+   "payloadPresent": false
+  },
+  {
+   "t": 819,
+   "npc": "sanjay",
+   "ev": "job_start",
+   "need": "hunger",
+   "target": "fridge"
+  },
+  {
+   "t": 826,
+   "npc": "rosa",
+   "ev": "job_start",
+   "need": "social",
+   "target": "water_cooler"
+  },
+  {
+   "t": 826,
+   "npc": "rosa",
+   "ev": "windup",
+   "target": "water_cooler"
+  },
+  {
+   "t": 826,
+   "npc": "sanjay",
+   "ev": "using",
+   "need": "hunger",
+   "target": "fridge"
+  },
+  {
+   "t": 840,
+   "npc": "tom",
+   "ev": "print_command",
+   "target": "office_copier"
+  },
+  {
+   "t": 840,
+   "npc": "tom",
+   "ev": "revealed",
+   "target": "office_copier",
+   "item": "copier_out_d"
+  },
+  {
+   "t": 840,
+   "npc": "tom",
+   "ev": "print_reserved",
+   "item": "copier_out_d",
+   "target": "office_copier",
+   "forgotten": false,
+   "dueMs": 7304,
+   "viaCommand": true
+  },
+  {
+   "t": 841,
+   "npc": "rosa",
+   "ev": "urgent",
+   "need": "rest",
+   "level": 39.96
+  },
+  {
+   "t": 886,
+   "npc": "sanjay",
+   "ev": "used",
+   "need": "hunger",
+   "target": "fridge",
+   "level": 100,
+   "payloadPresent": false
+  },
+  {
+   "t": 890,
+   "npc": "grace",
+   "ev": "job_failed",
+   "need": "rest",
+   "target": "lounge_sofa",
+   "reason": "timeout"
+  },
+  {
+   "t": 901,
+   "npc": "tom",
+   "ev": "urgent",
+   "need": "work",
+   "level": 49.97
+  },
+  {
+   "t": 903,
+   "npc": "grace",
+   "ev": "return_resumed",
+   "x": 282,
+   "y": 84
+  },
+  {
+   "t": 903,
+   "npc": "sanjay",
+   "ev": "returned_post"
+  },
+  {
+   "t": 917,
+   "npc": "grace",
+   "ev": "returned_post"
+  },
+  {
+   "t": 936,
+   "npc": "rosa",
+   "ev": "job_failed",
+   "need": "social",
+   "target": "water_cooler",
+   "reason": "timeout"
+  },
+  {
+   "t": 937,
+   "npc": "rosa",
+   "ev": "job_start",
+   "need": "rest",
+   "target": "lounge_sofa"
+  },
+  {
+   "t": 956,
+   "npc": "rosa",
+   "ev": "using",
+   "need": "rest",
+   "target": "lounge_sofa"
+  },
+  {
+   "t": 960,
+   "npc": "tom",
+   "ev": "print_uncollected",
+   "item": "copier_out_c",
+   "ageMs": 150000,
+   "forgotten": false
+  }
+ ]
+}
