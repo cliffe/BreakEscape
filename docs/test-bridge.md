@@ -379,6 +379,13 @@ workstation (`workstation_*`) events.
 Drain this after a failure — it usually explains it where a state snapshot alone
 won't.
 
+Access slice 9.2 B: the workaround events are `npc_*` and `door_*` events, so the log keeps
+them: `npc_workaround_due:<npcId>`, `npc_workaround:<npcId>` (each `phase`), `npc_mutter:<npcId>`
+(a start line, heard or not; `npc_overheard` fires only within earshot) and
+`door_propped:<roomId>`. A `drain` reply is written to the session log, so
+`verify-run.rb <game_id> --access --log <session.jsonl>` lists them per NPC (topics only)
+beside the server's record.
+
 ---
 
 ## Access model state (`window.__test.access`)

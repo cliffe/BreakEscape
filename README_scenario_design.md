@@ -1035,9 +1035,41 @@ An outage is a global: a resource's `downIf`, or a station's `affordance.offWhen
 
 Copy the whole set from `scenarios/test_access_work/scenario.json.erb` (its top-level `chatter`).
 
+#### Workarounds
+
+A frustrated NPC works round the outage. Each room NPC (or its role) may carry a `workarounds` list; `at` (1 to 100) is the frustration level at which one comes into force:
+
+```jsonc
+"workarounds": [
+  { "at": 50, "do": "writes_down" },
+  { "at": 90, "do": "prop_door", "door": "store_room", "prop": "store_wedge", "setGlobal": "store_door_propped" },
+  { "at": 50, "do": "emit", "event": "ellis_gave_up", "noWarning": true }
+]
+```
+
+| `do` | What the student sees | What it opens |
+|---|---|---|
+| `writes_down` | The NPC says its `wk_writes_down` line, writes at the desk for six seconds, and a yellow note appears on the monitor | The NPC's username and password on the sticky note of its own PC's sign-in screen, for the rest of the mission. Needs an account and a sign-in PC as `needsHome` |
+| `prop_door` | The NPC says its `wk_prop_door` line, walks to the prop, and the door opens with the prop shown beside it | The room behind `door`, for the rest of the mission (it is unlocked on the server and stays open after a reload) |
+| `emit` | Whatever the scenario maps to `event` (no line, no walk) | A scenario beat: the event fires with `{ npcId, level }` |
+
+`borrow_session` and `share_login` (the hot desk and the shared login) are accepted by the validator but not performed yet; the server leaves them out.
+
+- **Each one is lasting.** It is performed once. The server hands at most one over per counted failure, in list order, and a hand-over the NPC could not make (it could not reach the place) comes back after a later failure.
+- **`tell` and "no warning".** The student should see `tell` 1 and 2 (the icon, the mutters) before a workaround happens. One with `at` at or below the NPC's `perFail` comes on the very first failure with no warning, and the validator warns; mark it `"noWarning": true` when that is the point (an `emit` that fires on the first failure, say).
+- **`setGlobal`** must be declared in `globalVariables`. It is set true when the workaround is done, on the server and in the browser, and again after a reload. Use it to reveal the prop (`revealOnGlobal`) or to complete a task.
+- **`prop_door` rules.** `door` is a locked room that is not behind a gate door and is not the NPC's own home room (an NPC behind a locked door is never simulated). `prop` is an object in a room connected to that door, never inside the locked room, hidden with `revealOnGlobal` on the workaround's `setGlobal`, so the NPC can walk to it while the door is shut. The room's NPCs count as met once it opens.
+- **`writes_down` rules.** The NPC's PC must not author its own `postitNote` or set `showPostit: false`: either wins over the written note, so the workaround shows nothing new.
+- **Events.** `npc_workaround:<npcId>` with `{ npcId, index, do, phase }` (`started`, `done`, `dropped`, `ended`), `npc_mutter:<npcId>` for the start line, and `door_propped:<roomId>` with `{ roomId, npcId }`. Map a task to `door_propped:<roomId>` or to the `setGlobal`, never to `started` alone.
+- **Lines.** Add the `wk_writes_down` and `wk_prop_door` pools to the top-level `chatter` (the table above).
+
 #### The validator and the work report
 
 Errors: a `workNeeds` entry that names no resource, a resource `object` that names no room object, a frustration field out of range, a global ending in `_frustration`, and `workNeeds`, `frustration`, `workarounds` or `feed` on a record that is not a room NPC. Warnings: an NPC with a resource it is not admitted to (its work never succeeds, so it fails with no player action), a resource its station can never reach, a `downIf` global not declared, `needsDeferMin` under 0.5 for a `work` plan (or a `social_media` need with `"phone": false`), a work plan with no station that satisfies `work` (naming a PC the NPC owns through `screenOwner`, which should be its `needsHome`), a station with no `restores`, a cause the NPC can meet with no line in its own pool or `work_fail` (not under `"chatter": false`), a resource no NPC needs that has no `contents` and no `host`, and a workaround at or below `perFail` (it comes on the first failure with no warning; mark it `"noWarning": true` if meant) or one that needs more than five minutes of outage.
+
+For workarounds: errors for an `at` outside 1 to 100, an unknown `do`, a `setGlobal` not declared, a `pc`, `prop`, `door` or `with` that names nothing, an `emit` with no `event`, a `writes_down` for an NPC with no account or no sign-in `needsHome`, and a `prop_door` to a room that is not locked, is behind a gate door or is the NPC's own, or whose prop is inside that room or in a room not connected to it. Warnings: an NPC that can never be frustrated, a `writes_down` over an authored `postitNote` or `showPostit: false`, a workaround that opens a room holding a `flag-station` or `vm-launcher`, a `prop_door` through a door the NPC's own card and role would not open, a prop in a room the NPC's leash forbids, and a missing start pool (`wk_writes_down`, `wk_prop_door`, `wk_borrow`, `wk_share_login`; none under `"chatter": false`).
+
+The dungeon graph draws each workaround as an action node `workaround_<npc>_<index>`, with an edge to what it opens (the sign-in for `writes_down`, the door for `prop_door`), and each outage global (a resource's `downIf`, a station's `offWhen`) as a gate node `outage_<global>` with edges to the workarounds it can bring about.
 
 After the issues the validator prints the **work report**: one `Work` line per NPC with a plan (each resource admitted or not, reachable or "never reachable from its station", and the globals that take it down), and one `Workaround` line per workaround (what it opens, how many failed uses reach it, whether the student sees `tell` 1 and 2 first, the honest seconds of outage it takes, and the earliest a modified browser could bring it).
 

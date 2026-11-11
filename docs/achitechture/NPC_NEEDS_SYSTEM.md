@@ -757,6 +757,26 @@ Author-facing rules are in `README_scenario_design.md`, "Work, frustration and w
   at `tell` 2, else the cause's own pool (`station_fail`, `work_fail_no_access`,
   `work_fail_<kind>`), else `work_fail`; with no line the topic stays the cause's pool for its
   `PICTURE_CHATTER` picture. `mutter(npcId, topic)` is the public entry the workaround runner uses.
+  It emits `npc_mutter:<npcId>` with what was shown, whether or not the player heard it. A topic
+  with lines that finds the speech lock taken (a workaround's hand-over arrives in the answer to
+  the failure whose own grumble still holds it) waits for the lock, up to `MUTTER_WAIT_MS` (8 s of
+  the needs clock), and is then said; only after that wait does it fall back to its picture.
+- **Workarounds (sub-slice B).** `systems/npc-workarounds.js` runs what the server hands over.
+  The needs system emits `npc_workaround_due:<npcId>` with `{ npcId, run, level }` for a `run` in
+  an answer to `POST /npc_frustration`, and with `restored: true` for each `pending` run in
+  GET /scenario once the NPC registers (a run that arrives before registration waits for it). The
+  runner says the start line (`mutter(npcId, 'wk_<kind>')`, none for `emit`), emits
+  `npc_workaround:<npcId>` `started`, performs it (`writes_down`: an at-post `workaround` visit to
+  the NPC's own `needsHome`, 6 s; `prop_door`: a visit to the prop, 4 s; `emit`: the event with
+  `{ npcId, level }` and no visit), then on `npc_visit_done` sends `POST /npc_workaround` with
+  `index` and `hand` (on `npc_visit_dropped`, or a visit that cannot be queued, `dropped: true`).
+  A lost request is resent, a 425 after the dwell, a 403 ends it (`ended`). The answer is applied
+  once per hand-over: the sticky note mark, the propped room (every loaded door sprite to it
+  opened, as `NPCGameBridge.unlockDoor` does), the `setGlobal`; then `done` (or `dropped`) and,
+  for a prop, `door_propped:<roomId>`. On a load `restore(npcFrustration)` sets every done
+  workaround's `setGlobal` again and remembers every propped room (`done[].door`);
+  `syncRoom(roomId)`, called by `loadRoom` after each room is built (and for the start room),
+  opens that room's door sprites to a propped room, so the door looks open after a reload.
 - **Frustration.** `applyFrustration(answers)` queues the server's answers (`[{ npcId, level, tell, settled, ... }]`) for the next tick;
   `restoreFrustration(map)` applies GET /scenario's `npcFrustration` at `register`, with each
   need's `hold` as a `held` park (silent, uncounted, not woken by a door) so a reload does not send
@@ -818,6 +838,10 @@ events.
 | `npc_checked:<objectId>` | `{npcId, objectId, data}` (a check visit reached the broken thing, 5.9) |
 | `npc_visit_done:<npcId>` / `npc_visit_dropped:<npcId>` | `{npcId, kind, at, data}` (5.9) |
 | `npc_frustration_changed:<npcId>` | `{npcId, level, previous, tell}` (the server's answer moved the level, 5.9) |
+| `npc_mutter:<npcId>` | `{npcId, topic, line, picture}` (a mutter was shown through `mutter()`: a workaround's start line, 5.9; heard or not) |
+| `npc_workaround_due:<npcId>` | `{npcId, run, level}`, plus `restored: true` for a hand-over from GET /scenario's `pending` (5.9) |
+| `npc_workaround:<npcId>` | `{npcId, index, do, phase}`; `phase` is `started`, `done`, `dropped` or `ended` (with `reason`: `refused` after a 403, `gave_up` after six tries) (`systems/npc-workarounds.js`) |
+| `door_propped:<roomId>` | `{roomId, npcId}` (a `prop_door` workaround is done and the room is open) |
 
 `npc_used` details:
 - `need`: the need satisfied, or `null` for an interest (carry) use.
