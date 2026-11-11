@@ -2209,7 +2209,7 @@ export class NPCNeedsSystem {
         }
         const p = this.world.npcPos(v.at.npcId);
         if (!p || this._roomForbidden(s, p.roomId)) return null;
-        const cell = typeof this.world.cellBeside === 'function' ? this.world.cellBeside(v.at.npcId) : { x: p.x + 32, y: p.y };
+        const cell = typeof this.world.cellBeside === 'function' ? this.world.cellBeside(v.at.npcId, s.npcId, { avoidRooms: this._avoidRooms(s) }) : { x: p.x + 32, y: p.y };
         return cell ? { targetId: v.at.npcId, cell } : null;
     }
 
@@ -4450,21 +4450,21 @@ export function createEngineWorld() {
         },
         reportUse(npcId, report) { W().npcReports?.queue?.(npcId, report); },
         // A free cell beside where an NPC stands now (a visit to an NPC, 5.3)
-        cellBeside(npcId) {
+        cellBeside(npcId, visitorId, opts) {
             const sp = W().npcManager?.npcs?.get?.(npcId)?._sprite || W().npcManager?.getNPC?.(npcId)?._sprite;
             const pm = W().pathfindingManager;
             if (!sp || !pm?.findNearestWalkableWorldCell) return null;
             const c = centreOf(sp);
-            // A cell the player stands on is passed over (a share's sharer could never reach
-            // it and the visit timed out while the player stood beside the colleague); when
-            // every side is taken the first walkable cell is still answered.
-            const pl = W().player;
-            const pr = pl ? (pl.body?.center || { x: pl.x, y: pl.y }) : null;
+            // The first side the visitor can walk to (routeLength, the moveTo pathfinder and
+            // leash). A walkable cell can still be cut off, such as the gap behind a colleague's
+            // desk: a share_login visit to Ruth stood still there until it timed out (browser
+            // run H, game 1222). With no visitor, or no side reachable, the first walkable cell.
+            const from = visitorId ? this.npcPos(visitorId) : null;
             let first = null;
             for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
                 const cell = pm.findNearestWalkableWorldCell(c.x + dx * TILE, c.y + dy * TILE, 0);
                 if (!cell) continue;
-                if (!pr || Math.hypot(pr.x - cell.x, pr.y - cell.y) >= TILE * 0.75) return cell;
+                if (!from || this.routeLength(from, cell, opts) !== null) return cell;
                 if (!first) first = cell;
             }
             return first;
