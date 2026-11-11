@@ -30,14 +30,17 @@ module BreakEscape
     # at an NPC's PC, be confirmed through this route before L's record exists.
     REFUSED_IN_A_WHYS = %w[locked_out].freeze
 
-    # Workarounds (plan 6, sub-slice B). Lasting ones are performed once; the repeating kinds
-    # (borrow_session, share_login) are sub-slice H's and are ignored here, by `run`, `tell` and
-    # `settled` alike, until H adds them to PERFORMED_KINDS.
+    # Workarounds (plan 6). Lasting ones (sub-slice B) are performed once; repeating ones
+    # (sub-slice H: borrow_session, share_login) again after each later counted failure while
+    # the level is at or above their `at`, taken in turn.
     LASTING_KINDS = %w[writes_down prop_door emit].freeze
-    PERFORMED_KINDS = LASTING_KINDS
-    # Seconds a hand-over must stand before its "done" is accepted (6.1 to 6.3): the at-desk
-    # write, the walk to the prop's dwell, and none for an event
-    WORKAROUND_DWELL = { 'writes_down' => 6, 'prop_door' => 4, 'emit' => 0 }.freeze
+    REPEATING_KINDS = %w[borrow_session share_login].freeze
+    PERFORMED_KINDS = (LASTING_KINDS + REPEATING_KINDS).freeze
+    # Seconds a hand-over must stand before its "done" is accepted (6.1 to 6.5): the at-desk
+    # write, the walk to the prop's dwell, none for an event, the share's dwell beside the
+    # colleague. A borrow's is the borrowed PC's use time (borrow_dwell), since "done" comes
+    # when the NPC leaves it.
+    WORKAROUND_DWELL = { 'writes_down' => 6, 'prop_door' => 4, 'emit' => 0, 'share_login' => 6 }.freeze
 
     def npc_frustration
       player_state['npcFrustration'] = {} unless player_state['npcFrustration'].is_a?(Hash)
@@ -134,7 +137,7 @@ module BreakEscape
     # POST /npc_workaround (plan 6 and 9.1): the runner reports a hand-over performed or
     # dropped. Returns { status:, body:, open_room: } where open_room is a room the controller
     # serves through serve_opened_room (prop_door).
-    def complete_npc_workaround!(npc_id:, index:, hand:, dropped: false)
+    def complete_npc_workaround!(npc_id:, index:, hand:, dropped: false, heard: false, room_id: nil)
       npc_id = npc_id.to_s
       npc = scenario_room_npc(npc_id)
       # 1. NPC known
@@ -158,14 +161,14 @@ module BreakEscape
       if last.is_a?(Hash) && last['hand'] == hand
         return { status: :ok, body: { 'dropped' => true } } unless last['done']
 
-        return workaround_body(npc, w)
+        return workaround_body(npc, w, heard: last['heard'] == true)
       end
       # 3. handed over and not yet spent
       handed = view['handed'][key]
       return { status: :forbidden, body: { 'error' => 'unknown hand-over' } } unless handed.is_a?(Hash) && handed['hand'] == hand
 
       # 4. the dwell, unless dropped
-      dwell = WORKAROUND_DWELL.fetch(w['do'], 0)
+      dwell = workaround_dwell(w)
       elapsed = server_now - handed['time'].to_f
       if !dropped && elapsed < dwell
         return { status: :too_early, body: { 'error' => 'too early', 'retryAfter' => (dwell - elapsed).ceil(1) } }
@@ -181,8 +184,73 @@ module BreakEscape
 
       entry['done'] << index if LASTING_KINDS.include?(w['do']) && !entry['done'].include?(index)
       set_workaround_global!(w)
+      heard_now = false
+      case w['do']
+      when 'borrow_session'
+        record_borrow_done!(npc, w)
+      when 'share_login'
+        # 5. heard counts only in a room the colleague can be in that the player has opened
+        heard_now = heard && share_heard_in?(w, room_id)
+        if heard_now
+          shared = shared_logins
+          shared << npc_id unless shared.include?(npc_id)
+          entry['lastSpent'][key]['heard'] = true
+        end
+      end
       save!
-      workaround_body(npc, w)
+      workaround_body(npc, w, heard: heard_now)
+    end
+
+    # player_state.sharedLogins (9.4): the accounts the player heard shared. Missing means empty.
+    def shared_logins
+      player_state['sharedLogins'] = [] unless player_state['sharedLogins'].is_a?(Array)
+      player_state['sharedLogins']
+    end
+
+    # player_state.guestSessions (9.4): { pcId => npcId }, who last left a borrowed session
+    def guest_sessions
+      player_state['guestSessions'] = {} unless player_state['guestSessions'].is_a?(Hash)
+      player_state['guestSessions']
+    end
+
+    # A reload ends every guest session, as it ends claims (9.4). Called by the scenario action
+    # after it has answered, under the row lock, as end_claimed_sessions! is.
+    def end_guest_sessions!
+      return unless player_state['guestSessions'].is_a?(Hash) && player_state['guestSessions'].any?
+
+      with_lock do
+        next unless player_state['guestSessions'].is_a?(Hash) && player_state['guestSessions'].any?
+
+        player_state['guestSessions'] = {}
+        save!
+      end
+    end
+
+    # A careful guest (6.4): 9.1's screen_always_locks? with no PC field, on the saved (expanded)
+    # NPC record, so no screenHabit at all is careful. Such a guest signs out of a borrowed PC.
+    def careful_guest?(npc)
+      AccessIdentities.screen_always_locks?({}, npc)
+    end
+
+    # The PCs this NPC's handed-over (or spent) borrow_session workarounds name: a place for the
+    # need once the server has handed the borrow over (plan 9.1, "Belongs to the NPC"), never before
+    def handed_borrow_pcs(npc, need = nil)
+      store = player_state['npcFrustration']
+      entry = store.is_a?(Hash) ? store[npc['id'].to_s] : nil
+      return [] unless entry.is_a?(Hash)
+
+      keys = (entry['handed'].is_a?(Hash) ? entry['handed'].keys : []) + (entry['lastSpent'].is_a?(Hash) ? entry['lastSpent'].keys : [])
+      list = AccessWork.workarounds(scenario_data, npc)
+      keys.uniq.filter_map do |k|
+        i = strict_int(k)
+        w = i.nil? ? nil : list[i]
+        next nil unless w.is_a?(Hash) && w['do'] == 'borrow_session' && AccessWork.present_string?(w['pc'])
+
+        pc = AccessWork.object(scenario_data, w['pc'])
+        next nil if need && !AccessWork.satisfies?(scenario_data, pc, need)
+
+        w['pc']
+      end.uniq
     end
 
     private
@@ -207,9 +275,64 @@ module BreakEscape
           scenario_data['rooms'].is_a?(Hash) && scenario_data['rooms'].key?(w['door'])
       when 'emit'
         AccessWork.present_string?(w['event'])
+      when 'borrow_session'
+        pc = AccessWork.present_string?(w['pc']) ? find_login_pc(w['pc'])&.dig(:object) : nil
+        self.class.account_holder?(npc) && !pc.nil? && !NetworkModel.headless?(pc) && login_pc_owner(pc).nil?
+      when 'share_login'
+        self.class.account_holder?(npc) && AccessWork.present_string?(w['with']) && w['with'] != npc['id'] &&
+          !scenario_room_npc(w['with']).nil?
       else
         false
       end
+    end
+
+    def workaround_dwell(w)
+      return borrow_dwell(w) if w['do'] == 'borrow_session'
+
+      WORKAROUND_DWELL.fetch(w['do'], 0)
+    end
+
+    # A borrow's "done" comes when the NPC leaves the PC, after a whole use there; the floor is
+    # that use time less the 3 second allowance the other floors give (9.1)
+    def borrow_dwell(w)
+      pc = AccessWork.object(scenario_data, w['pc'])
+      [AccessWork.use_seconds(scenario_data, pc) - 3, 0].max
+    end
+
+    # "done" for a borrow (6.4): the NPC signed in there and left. A guest record for one that
+    # leaves the session open; a session the player held there is ended either way (one screen,
+    # one session), so a click then reaches the guest's, not the player's old one.
+    def record_borrow_done!(npc, w)
+      pc_id = w['pc']
+      player_state['sessions'] = access_sessions.except(pc_id)
+      if careful_guest?(npc)
+        guest_sessions.delete(pc_id)
+      else
+        guest_sessions[pc_id] = npc['id']
+      end
+    end
+
+    # Check 5 (9.1): `room_id` is a room the `with` NPC can be in (its own room, plus its
+    # needsRooms leash) and that room is open to the player. player_state.currentRoom is never
+    # read: the browser does not update it.
+    def share_heard_in?(w, room_id)
+      return false unless room_id.is_a?(String) && !room_id.empty?
+
+      colleague = w['with']
+      own = AccessIdentities.room_npcs(scenario_data).find { |e| e[:npc]['id'] == colleague }&.dig(:room)
+      return false unless own
+
+      rooms = [own]
+      leash = own_npc_leash(colleague)
+      rooms += leash if leash
+      room = rooms.include?(room_id) && scenario_data['rooms'].is_a?(Hash) ? scenario_data['rooms'][room_id] : nil
+      # open to the player: never locked, or unlocked
+      room.is_a?(Hash) && (room['locked'] != true || room_unlocked?(room_id))
+    end
+
+    def own_npc_leash(npc_id)
+      list = scenario_room_npc(npc_id)&.dig('needsRooms')
+      list.is_a?(Array) ? list.select { |r| r.is_a?(String) } : nil
     end
 
     # [[workaround, index]] for each performable workaround, in authored order
@@ -231,36 +354,69 @@ module BreakEscape
     end
 
     # The "done" answer, composed from the scenario alone, so a resend gets the same body
-    def workaround_body(npc, w)
+    def workaround_body(npc, w, heard: false)
       body = case w['do']
              when 'writes_down' then { 'pcId' => npc['needsHome'], 'hasPostit' => true }
              when 'prop_door' then { 'roomId' => w['door'] }
+             when 'borrow_session' then { 'pcId' => w['pc'], 'guest' => !careful_guest?(npc) }
+             when 'share_login' then heard ? shared_login_body(npc, w) : {}
              else {}
              end
       body['setGlobal'] = w['setGlobal'] if declared_global?(w['setGlobal'])
       { status: :ok, body: body, open_room: w['do'] == 'prop_door' ? w['door'] : nil }
     end
 
-    # The description the runner gets (plan 6): nothing secret, the target ids and the dwell
-    def run_description(w, index, hand)
-      run = { 'index' => index, 'hand' => hand, 'do' => w['do'], 'dwell' => WORKAROUND_DWELL.fetch(w['do'], 0) }
+    # The heard share (6.5): the sentence composed here from creds, the evidence note, and the
+    # capture the client records. Served only in the answer to a heard "done".
+    def shared_login_body(npc, w)
+      username = npc['creds']['username'].to_s
+      password = npc['creds']['password'].to_s
+      name = npc['displayName'] || npc['id']
+      colleague = scenario_room_npc(w['with'])
+      other = colleague && (colleague['displayName'] || colleague['id'])
+      note = "#{name} told #{other} their login out loud: #{username} / #{password}"
+      { 'capture' => { 'targetId' => npc['id'], 'kind' => 'credential', 'address' => username, 'note' => note },
+        'line' => "It's #{username}. Password's #{password}.", 'note' => note, 'displayName' => name }
+    end
+
+    # The description the runner gets (plan 6): nothing secret, the target ids and the dwell.
+    # A borrow also carries `need` (the need whose failure handed it over), `leavesOpen: false`
+    # for a careful guest (6.4), and `routes` from the borrowed PC in a scenario with networks.
+    def run_description(w, index, hand, npc = nil, need = nil)
+      run = { 'index' => index, 'hand' => hand, 'do' => w['do'], 'dwell' => workaround_dwell(w) }
       %w[pc with door prop event].each { |k| run[k] = w[k] if AccessWork.present_string?(w[k]) }
+      if w['do'] == 'borrow_session' && npc
+        run['need'] = need.is_a?(String) ? need : 'work'
+        run['leavesOpen'] = false if careful_guest?(npc)
+        routes = AccessWork.routes_from(scenario_data, npc, w['pc'])
+        run['routes'] = routes if routes
+      end
       run
     end
 
-    # After a counted fail: at most one workaround to perform now, the first lasting one in
-    # force that is neither done nor handed over (the repeating ones come with sub-slice H)
-    def choose_run!(npc, entry)
+    # After a counted fail: at most one workaround to perform now. The first lasting one in
+    # force that is neither done nor handed over; if none, the next repeating one in force that
+    # is not handed over and waiting, taken in turn (`turn` is the workaround index the next
+    # turn starts from, so each repeating one comes round before any comes again).
+    def choose_run!(npc, entry, need = nil)
       level = entry['level'].to_f
-      pick = performed_workarounds(npc).find do |w, i|
+      performed = performed_workarounds(npc)
+      pick = performed.find do |w, i|
         LASTING_KINDS.include?(w['do']) && level >= w['at'] && !entry['done'].include?(i) && !entry['handed'].key?(i.to_s)
+      end
+      unless pick
+        repeating = performed.select { |w, i| REPEATING_KINDS.include?(w['do']) && level >= w['at'] && !entry['handed'].key?(i.to_s) }
+        start = entry['turn'].to_i
+        pick = repeating.find { |_w, i| i >= start } || repeating.first
+        entry['turn'] = pick[1] + 1 if pick
       end
       return nil unless pick
 
       w, i = pick
       entry['hands'] = entry['hands'].to_i + 1
       entry['handed'][i.to_s] = { 'hand' => entry['hands'], 'time' => server_now }
-      run_description(w, i, entry['hands'])
+      entry['handed'][i.to_s]['need'] = need if w['do'] == 'borrow_session' && need.is_a?(String)
+      run_description(w, i, entry['hands'], npc, need)
     end
 
     # Every unspent hand-over, with its stored hand and the dwell left since the server handed it
@@ -272,7 +428,7 @@ module BreakEscape
         w = i.nil? ? nil : list[i]
         next nil unless h.is_a?(Hash) && performable?(npc, w)
 
-        run = run_description(w, i, h['hand'])
+        run = run_description(w, i, h['hand'], npc, h['need'])
         left = run['dwell'] - (server_now - h['time'].to_f)
         run['dwell'] = left.positive? ? left.ceil(1) : 0
         run
@@ -373,7 +529,7 @@ module BreakEscape
       entry['level'] = tidy_level([previous + per_fail, 100].min)
       entry['failAt'][need] = server_now
       entry['failWhy'][need] = missing.map { |c| c['why'] }.uniq
-      run = choose_run!(npc, entry) || unspent_run(npc, entry)
+      run = choose_run!(npc, entry, need) || unspent_run(npc, entry)
       answer(npc_id, npc, entry, previous, run)
     end
 
@@ -417,7 +573,7 @@ module BreakEscape
     # not sent (locked, never entered) answers as an unknown id, so a guessed id learns nothing.
     # No honest client names one: its candidates come from loaded rooms.
     def frustration_places(npc, need)
-      AccessWork.places(scenario_data, npc, need).select do |id|
+      (AccessWork.places(scenario_data, npc, need) | handed_borrow_pcs(npc, need)).select do |id|
         room = AccessWork.object_index(scenario_data)[id]&.dig(:room_id)
         room && room_unlocked?(room)
       end
@@ -506,12 +662,14 @@ module BreakEscape
     end
 
     # settled (5.4): another failure can change nothing: level 100, nothing handed over and
-    # waiting, and no lasting workaround in force still to hand over (repeating workarounds,
-    # which keep an NPC unsettled, arrive with sub-slice H)
+    # waiting, no lasting workaround in force still to hand over, and no repeating workaround
+    # (at 100 every one is in force, and each later failure performs it again)
     def frustration_settled?(npc, entry)
       return false unless entry['level'].to_f >= 100 && entry['handed'].empty?
 
-      performed_workarounds(npc).none? { |w, i| LASTING_KINDS.include?(w['do']) && !Array(entry['done']).include?(i) }
+      performed_workarounds(npc).none? do |w, i|
+        REPEATING_KINDS.include?(w['do']) || (LASTING_KINDS.include?(w['do']) && !Array(entry['done']).include?(i))
+      end
     end
 
     def answer(npc_id, npc, entry, previous, run = nil)

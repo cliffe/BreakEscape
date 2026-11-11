@@ -286,6 +286,20 @@ module BreakEscape
       NetworkModel.reach_conditions(data, net, resource)
     end
 
+    # Routes from a borrowed PC (sub-slice H, 6.4): { resourceId => routes } for each resource in
+    # the NPC's work list, or nil in a scenario with no networks. Sent in a borrow's `run`, so the
+    # verdict at the hot desk uses that PC's reach.
+    def routes_from(data, npc, pc_id)
+      return nil if NetworkModel.networks(data).empty?
+
+      entry = pc_id.is_a?(String) ? object_index(data)[pc_id] : nil
+      net = entry ? NetworkModel.network_of(entry[:obj], entry[:room]) : nil
+      res = resources(data)
+      work_list(data, npc).each_with_object({}) do |id, out|
+        out[id] = NetworkModel.reach_conditions(data, net, res[id]) if res[id]
+      end
+    end
+
     # The work plan the server attaches to a room NPC as `work` (plan 5.2): ids, kinds and
     # global names, never a display name or a network. nil for an NPC with no plan.
     def plan(data, npc)

@@ -81,7 +81,10 @@ module BreakEscape
     end
 
     test 'a fail raises the level by perFail and stops at 100; settled there' do
-      build(globals: { 'finance_share_down' => true })
+      data = AccessWorkScenario.scenario
+      # A repeating workaround (sub-slice H) keeps an NPC unsettled, so Dana has none here
+      data['rooms']['office']['npcs'].find { |n| n['id'] == 'dana' }['workarounds'] = []
+      build(scenario: data, globals: { 'finance_share_down' => true })
       t = Time.current
       levels = (0..3).map do |i|
         travel_to(t + (i * 25)) { report(dana_down).first }
@@ -402,11 +405,15 @@ module BreakEscape
       assert_equal 'emit', a['run']['do']
     end
 
-    test "sub-slice H's kinds are not handed over in B and give no warning" do
+    test "Dana's borrow_session (sub-slice H) counts for tell and is handed over at its threshold" do
       build(globals: { 'finance_share_down' => true })
-      a = report(dana_down).first
-      assert_nil a['run'], "Dana's borrow_session waits for sub-slice H"
-      assert_equal 1, a['tell']
+      t = Time.current
+      a = travel_to(t) { report(dana_down).first }
+      assert_nil a['run']
+      assert_equal 2, a['tell'], 'one more failure brings the borrow into force'
+      b = travel_to(t + 25) { report(dana_down).first }
+      assert_equal 'borrow_session', b['run']['do']
+      assert_equal false, b['run']['leavesOpen'], 'Dana has no screenHabit: a careful guest'
     end
 
     test 'hold after an ease uses the use floor; the ease and fail gates hold the use floor at its boundary' do

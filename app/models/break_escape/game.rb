@@ -963,6 +963,8 @@ module BreakEscape
       # plan section 6), so it is skipped, and the single-secret fallback answers only for a
       # declared one.
       declared = declared_capture_target_ids
+      # A heard share (sub-slice H) declares its sharer as a capture target
+      declared |= Array(player_state['sharedLogins']).select { |id| id.is_a?(String) }
       phish_targets = CaptureModel.phish_target_ids(scenario_data).to_set
 
       out = {}
@@ -993,10 +995,14 @@ module BreakEscape
 
         password = npc['creds']['password']
         next unless password.is_a?(String) && !password.empty?
-        next unless self.class.capture_route?(npc)
+
+        # Slice 9.2 sub-slice H (9.1): an account the player heard shared counts as a capture
+        # route whose proof holds; the proof is the server's own record of a heard "done"
+        shared = Array(player_state['sharedLogins']).include?(npc['id'])
+        next unless shared || self.class.capture_route?(npc)
         # Capture proofs (engine plan section 6): both readers of this map, the account pass
         # of capture_secrets_for_client and NetworkAccess#account_capture_usernames, inherit it.
-        next unless account_capture_served?(npc)
+        next unless shared || account_capture_served?(npc)
 
         out[self.class.normalise_username(npc['creds']['username'])] = password
       end
@@ -1176,7 +1182,10 @@ module BreakEscape
       # object, and items it accepted as player drops. Grow-only.
       'plantedItems' => [], 'droppedItems' => [],
       # Slice 9.2 (ACCESS_MODEL_SLICE_9_2_PLAN.md 9.4): frustration per room NPC, held on the server
-      'npcFrustration' => {}
+      'npcFrustration' => {},
+      # Slice 9.2 sub-slice H (9.4): who last left a borrowed session at each PC, and the
+      # accounts the player heard shared out loud
+      'guestSessions' => {}, 'sharedLogins' => []
     }.freeze
 
     # loginFailures and loginLockouts keep at most this many entries for usernames that
@@ -1582,6 +1591,44 @@ module BreakEscape
       start_login_session!(pc['id'], owner, 'claim')
       save!
       { status: :ok, body: { success: true }.merge(login_session_answer(owner, 'claim')) }
+    end
+
+    # POST /login with claim: "guest" (slice 9.2 sub-slice H, plan 9.1): the session an NPC left
+    # open at a borrowed PC. Every refusal answers "Sign in required", as an owner claim's does.
+    def claim_guest_session!(pc_id, foothold: nil)
+      refusal = lambda do |reason|
+        Rails.logger.info "[BreakEscape] guest claim refused at #{pc_id}: #{reason}"
+        { status: :unprocessable_entity, body: { success: false, message: LOGIN_CLAIM_REFUSED } }
+      end
+
+      # 1. reachable, not headless, no foothold
+      return refusal.call('a claim through a foothold') if foothold.present?
+
+      info = find_login_pc(pc_id)
+      return refusal.call('no such sign-in PC') unless info
+      return refusal.call('a headless host') if NetworkModel.headless?(info[:object])
+      return refusal.call('PC not reachable') unless login_pc_reachable?(info)
+
+      pc = info[:object]
+      # 2. no session held here
+      return refusal.call('a session is already held at this PC') if access_sessions[pc['id'].to_s].is_a?(Hash)
+
+      # 3. a guest record
+      guests = player_state['guestSessions']
+      guest_id = guests.is_a?(Hash) ? guests[pc['id'].to_s] : nil
+      guest = guest_id.is_a?(String) ? scenario_room_npc(guest_id) : nil
+      return refusal.call('no guest session') unless guest
+      # 4. to 7.
+      return refusal.call('guest has no account') unless self.class.account_holder?(guest)
+      return refusal.call('access list does not admit the guest') unless pc_admits_account?(pc, guest)
+
+      auto_lock = effective_policy(pc)['autoLockMin']
+      return refusal.call('policy autoLockMin is 0') if auto_lock.is_a?(Numeric) && auto_lock.zero?
+      return refusal.call('a careful guest') if careful_guest?(guest)
+
+      start_login_session!(pc['id'], guest, 'claim')
+      save!
+      { status: :ok, body: { success: true }.merge(login_session_answer(guest, 'claim')) }
     end
 
     # POST /logout: no checks (section 6). The PC is named as /login names it (id or
