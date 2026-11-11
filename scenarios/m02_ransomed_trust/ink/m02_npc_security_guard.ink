@@ -128,7 +128,7 @@ Val Okonkwo: So. Who are you and who says you're allowed?
     #set_global:val_met:true
     ~ influence -= 20
     # influence_decreased
-    Val Okonkwo: Right. #delivery: the smile gone, flat
+    Val Okonkwo: Right. #delivery: the warmth gone, flat
     Val Okonkwo: Then we've got a problem. "I'd rather not get into it" is a full sentence, and it means no.
     -> standoff
 
