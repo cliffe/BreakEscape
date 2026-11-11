@@ -105,6 +105,11 @@ export class NpcReports {
                 if (a.stale && batch[i] && !batch[i]._resent) resend.push({ ...batch[i], _resent: true });
             });
             if (resend.length) { this.needSync = true; this.pending.unshift(...resend); }
+            // Each answer says which report it answers (review R2 n1: a fail's answer clears only
+            // that need's failSent mark); the needs system ignores the two fields otherwise
+            answers.forEach((a, i) => {
+                if (a && typeof a === 'object' && batch[i]) { a.forEvent = batch[i].event; a.forNeed = batch[i].need; }
+            });
             const usable = answers.filter(a => a && !a.refused && !a.stale);
             if (usable.length) this.deps.apply?.(usable);
         } finally {

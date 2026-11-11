@@ -1485,9 +1485,12 @@ module BreakEscape
       habits.is_a?(Hash) ? habits[name] : nil
     end
 
-    # Is this person's password on a note (slice 9.1, 5.3)? Slice 9.2 adds its workaround.
+    # Is this person's password on a note (slice 9.1, 5.3)? The writesDown habit, or (slice
+    # 9.2, 6.1) a writes_down workaround of theirs that is done.
     def written_down?(npc)
-      npc_habit(npc, 'writesDown') == true
+      return true if npc_habit(npc, 'writesDown') == true
+
+      npc.is_a?(Hash) && npc['id'].is_a?(String) && workaround_done_kind?(npc['id'], 'writes_down')
     end
 
     # The sticky note on a sign-in PC (slice 9.1, 5.3): "<username> / <password>" from the

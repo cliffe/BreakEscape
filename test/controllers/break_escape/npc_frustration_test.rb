@@ -251,7 +251,9 @@ module BreakEscape
     end
 
     test 'tell: 0 at 0, 1 below the warning, 2 when one more failure reaches a workaround or 100' do
-      build(globals: { 'finance_share_down' => true, 'printer_jammed' => true })
+      data = AccessWorkScenario.scenario
+      data['rooms']['office']['npcs'].find { |n| n['id'] == 'dana' }['workarounds'] = [{ 'at' => 50, 'do' => 'emit', 'event' => 'x' }]
+      build(scenario: data, globals: { 'finance_share_down' => true, 'printer_jammed' => true })
       assert_equal 2, report(dana_down).first['tell'], 'Dana: 34, a workaround at 50 is one failure away'
       t = Time.current
       tells = (0..3).map { |i| travel_to(t + (i * 25)) { report(omar_down).first['tell'] } }
@@ -390,12 +392,20 @@ module BreakEscape
       assert_equal 24, a[1]['level']
     end
 
-    test 'tell with a workaround at or below perFail: the first fail answers tell 1 in A (nothing is handed over)' do
+    test 'tell with a workaround at or below perFail: the first fail hands it over at tell 2 (B; A answered tell 1)' do
       data = AccessWorkScenario.scenario
       data['rooms']['office']['npcs'].find { |n| n['id'] == 'dana' }['workarounds'] = [{ 'at' => 20, 'do' => 'emit', 'event' => 'x' }]
       build(scenario: data, globals: { 'finance_share_down' => true })
       a = report(dana_down).first
       assert_equal 34, a['level']
+      assert_equal 2, a['tell']
+      assert_equal 'emit', a['run']['do']
+    end
+
+    test "sub-slice H's kinds are not handed over in B and give no warning" do
+      build(globals: { 'finance_share_down' => true })
+      a = report(dana_down).first
+      assert_nil a['run'], "Dana's borrow_session waits for sub-slice H"
       assert_equal 1, a['tell']
     end
 

@@ -39,6 +39,11 @@
  *     queue, npc-avoid for avoid.
  *   Order: avoidance, then the pressing need, then a parked need.
  *
+ * Access slice 9.2 (plan 5.5): a judged NPC with no job shows `blocked` while the server's tell is
+ * 1 or 2, pulsing at 2. Once the cause of its last failure has cleared (getState().causeCleared,
+ * q17) the same icon is drawn faded (FADED_ALPHA, no pulse) while the mood lingers, and goes
+ * when the tell falls to 0.
+ *
  * While the NPC is saying a chat line or a grumble (getState().talking, slices 8 and 14) its
  * speech bubble replaces both the action icon and the thought bubble.
  *
@@ -125,12 +130,22 @@ export function stateIconEntry(st, actionIcons = {}, optIn = false) {
     const judged = !!(st.judged && (st.judged.work || st.judged.social_media));
     if (!st.noticed && judged && st.tell >= 1) {
         const e = firstIcon(['blocked'], actionIcons, { fallback: false });
-        return e ? { ...e, pulse: st.tell >= 2 } : null;
+        // Review R2 n4: with no blocked icon, fall through to office life's own rule
+        // q17 (user decision 2026-11-11): once the cause has cleared the icon fades (no pulse) while
+        // the mood lingers, fainter at tell 1 than at 2; it goes when the tell falls to 0
+        if (e && st.causeCleared) return { ...e, pulse: false, fading: true, alpha: fadedAlpha(st.tell) };
+        if (e) return { ...e, pulse: st.tell >= 2 };
     }
     const key = st.noticed ? 'noticed' : (st.blockedNeed ? 'blocked' : null);
     if (!key) return null;
     if (!optIn && !usable((actionIcons || {})[key])) return null;
     return firstIcon([key], actionIcons, { fallback: false });
+}
+
+/** q17: the faded frustration icon's alpha: 0.6 at tell 2, 0.4 at tell 1. */
+export const FADED_ALPHA = Object.freeze({ 2: 0.6, 1: 0.4 });
+export function fadedAlpha(tell) {
+    return tell >= 2 ? FADED_ALPHA[2] : FADED_ALPHA[1];
 }
 
 export const PRESSING_PULSE_BELOW = 0.5;
@@ -533,6 +548,8 @@ export class NpcActionIcons {
             ic.box.setData('key', entry.key);
             ic.box.setData('icon', ic.shown);
             ic.box.setData('pulse', !!entry.pulse);
+            ic.box.setData('fading', !!entry.fading);
+            ic.box.setAlpha?.(entry.fading ? entry.alpha : 1);
             ic.box.setScale(winding ? 1 + 0.35 * Math.abs(Math.sin(Date.now() / 120))
                 : (entry.pulse && !reducedMotion() ? 1 + 0.12 * Math.abs(Math.sin(Date.now() / 400)) : 1));
         }

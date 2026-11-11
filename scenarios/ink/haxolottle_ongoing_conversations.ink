@@ -126,9 +126,7 @@ Haxolottle: I read a lot—mostly sci-fi and nature books. There's something rel
 
 Haxolottle: I also swim. Not competitively or anything, just... swimming. There's a meditative quality to it. Plus, you know, axolotls are aquatic creatures, so there's thematic consistency.
 
-*grins*
-
-Haxolottle: And I tinker with old electronics. Pull apart vintage computers, repair them, sometimes just see how they work. It's methodical. Soothing. Unlike field operations where everything is chaos and improvisation.
+Haxolottle: And I tinker with old electronics. Pull apart vintage computers, repair them, sometimes just see how they work. It's methodical. Soothing. Unlike field operations where everything is chaos and improvisation. #delivery: grinning
 
 * [Share that you also read]
     ~ npc_haxolottle_influence += 5
@@ -155,7 +153,7 @@ Haxolottle: And I tinker with old electronics. Pull apart vintage computers, rep
 
 Haxolottle: Oh, you read sci-fi? Nice! I'm partial to the stuff that explores emergence and complexity—you know, how simple rules create complex systems.
 
-Haxolottle: *Permutation City*, *Blindsight*, anything by Ted Chiang. Stories about consciousness, identity, what makes us who we are when everything else is stripped away.
+Haxolottle: Permutation City, Blindsight, anything by Ted Chiang. Stories about consciousness, identity, what makes us who we are when everything else is stripped away.
 
 Haxolottle: Probably why I ended up in intelligence work, honestly. We're constantly dealing with emergent threats, complex systems, questions of identity and deception.
 
@@ -163,7 +161,7 @@ Haxolottle: What about you? What kind of stories do you gravitate toward?
 
 * [Mention you like cyberpunk]
     You: Cyberpunk, mostly. The whole corporate dystopia thing feels... relevant.
-    Haxolottle: *laughs* Yeah, we're kind of living it. Except the corporations aren't our enemy—ENTROPY is. Different dystopia, same aesthetic.
+    Haxolottle: Yeah, we're kind of living it. Except the corporations aren't our enemy—ENTROPY is. Different dystopia, same aesthetic. #delivery: laughing
     ~ npc_haxolottle_influence += 5
 #influence_gained:5
     -> phase_1_hub
@@ -188,9 +186,7 @@ Haxolottle: That's fair. Swimming isn't for everyone. The whole "put your face i
 
 Haxolottle: I didn't learn until I was an adult, actually. Taught myself after joining SAFETYNET. Figured if axolotls can do it, so can I.
 
-*laughs*
-
-Haxolottle: Plus, it's one of the few activities where I can guarantee I'm not carrying surveillance devices. Hard to bug a swimsuit.
+Haxolottle: Plus, it's one of the few activities where I can guarantee I'm not carrying surveillance devices. Hard to bug a swimsuit. #delivery: laughing
 
 ~ npc_haxolottle_influence += 3
 #influence_gained:3
@@ -204,9 +200,7 @@ Haxolottle: At work, I'm using electronics to surveil, to penetrate systems, to 
 
 Haxolottle: At home? I'm fixing things. Bringing dead hardware back to life. It's... restorative. Like axolotl regeneration but for circuit boards.
 
-*slight smile*
-
-Haxolottle: Plus, there's satisfaction in making a thirty-year-old computer boot up again. Persistence over entropy. Both kinds of entropy.
+Haxolottle: Plus, there's satisfaction in making a thirty-year-old computer boot up again. Persistence over entropy. Both kinds of entropy. #delivery: with a slight smile
 
 ~ npc_haxolottle_influence += 5
 #influence_gained:5
@@ -228,7 +222,7 @@ Haxolottle: Okay, so—Operation Regenerate. I mentioned it before. I was stuck 
 
 Haxolottle: Couldn't leave. Couldn't fight. Couldn't call for extraction. Could only adapt. And while I was stuck, the only reading material available was biology textbooks.
 
-Haxolottle: Found this section on axolotls—*Ambystoma mexicanum*. These amazing creatures that can regenerate entire limbs, organs, even parts of their brain and spinal cord.
+Haxolottle: Found this section on axolotls—Ambystoma mexicanum. These amazing creatures that can regenerate entire limbs, organs, even parts of their brain and spinal cord.
 
 * [Ask how that's relevant to the operation]
     You: How did that help with the operation?
@@ -269,9 +263,7 @@ Haxolottle: The metaphor stuck. Now every operation that goes sideways, I think:
 ~ npc_haxolottle_influence += 5
 #influence_gained:5
 
-Haxolottle: *lights up with enthusiasm*
-
-Haxolottle: Oh, it's fascinating! They have this incredible ability to regrow complex structures perfectly. Not scar tissue—actual functional regeneration.
+Haxolottle: Oh, it's fascinating! They have this incredible ability to regrow complex structures perfectly. Not scar tissue—actual functional regeneration. #delivery: lit up with enthusiasm
 
 Haxolottle: They can regrow limbs in weeks. If you damage their brain, they can regenerate neurons. Heart tissue, spinal cord, even parts of their eyes.
 
@@ -279,9 +271,7 @@ Haxolottle: And here's the really cool part—they're neotenic. They can reach s
 
 Haxolottle: It's like... they have options. Paths. They're not locked into one form of existence.
 
-*realizes they're geeking out*
-
-Haxolottle: Sorry, I can talk about this for hours. The point is: regeneration, adaptation, flexibility. That's what got me through that operation and a lot of others.
+Haxolottle: Sorry, I can talk about this for hours. The point is: regeneration, adaptation, flexibility. That's what got me through that operation and a lot of others. #delivery: suddenly self-conscious, catching themselves
 
 ~ npc_haxolottle_influence += 8
 #influence_gained:8
@@ -292,17 +282,13 @@ Haxolottle: Sorry, I can talk about this for hours. The point is: regeneration, 
 #influence_gained:8
 ~ npc_haxolottle_humor_shared += 1
 
-Haxolottle: *laughs*
-
-Haxolottle: I mean, when you put it that way, it sounds ridiculous. "Agent develops deep emotional connection with aquatic salamander metaphor."
+Haxolottle: I mean, when you put it that way, it sounds ridiculous. "Agent develops deep emotional connection with aquatic salamander metaphor." #delivery: laughing
 
 Haxolottle: But yes. I absolutely identified with a salamander. And I stand by it.
 
 Haxolottle: We're both adaptable. We both thrive in chaotic environments. We both look kind of weird but are strangely effective.
 
-*grins*
-
-Haxolottle: Plus, they smile. Permanently. Look up pictures—axolotls have these adorable smiling faces. Hard to be stressed when you're thinking about a smiling salamander.
+Haxolottle: Plus, they smile. Permanently. Look up pictures—axolotls have these adorable smiling faces. Hard to be stressed when you're thinking about a smiling salamander. #delivery: grinning
 
 Haxolottle: You're laughing, but I'm serious. The metaphor has kept me sane for years. Sometimes you need something absurd to hold onto in this work.
 
@@ -327,7 +313,7 @@ Haxolottle: For work—monitoring operations, reviewing intel—I listen to ambi
 
 Haxolottle: For workouts or when I need energy, I go full electronic. Techno, drum and bass, synthwave. Loud, propulsive, gets the heart rate up.
 
-Haxolottle: And then sometimes... *looks slightly embarrassed* ...sometimes I listen to nature sounds. Ocean waves. Rain. Thunderstorms.
+Haxolottle: And then sometimes... sometimes I listen to nature sounds. Ocean waves. Rain. Thunderstorms. #delivery: slightly embarrassed
 
 * [Say you also like ambient music]
     ~ npc_haxolottle_influence += 5
@@ -353,7 +339,7 @@ Haxolottle: And then sometimes... *looks slightly embarrassed* ...sometimes I li
 ~ npc_haxolottle_influence += 5
 #influence_gained:5
 
-Haxolottle: Oh, good taste! For concentration, I keep coming back to Eno's *Music for Airports*. It's designed to be ignorable but interesting—perfect for background.
+Haxolottle: Oh, good taste! For concentration, I keep coming back to Eno's Music for Airports. It's designed to be ignorable but interesting—perfect for background.
 
 Haxolottle: There's also this artist Grouper—really ethereal, dreamlike stuff. Good for late-night shifts when you need to stay calm but alert.
 
@@ -392,7 +378,7 @@ Haxolottle: But everyone's different. That's why we have noise-cancelling headph
 #influence_gained:8
 ~ npc_haxolottle_humor_shared += 1
 
-Haxolottle: *laughs* Okay, yes, I know how it sounds. "Elite SAFETYNET handler unwinds with gentle rain sounds."
+Haxolottle: Okay, yes, I know how it sounds. "Elite SAFETYNET handler unwinds with gentle rain sounds." #delivery: laughing
 
 Haxolottle: But hear me out—after spending hours listening to encrypted communications, network traffic, and agents whispering in server rooms, sometimes I just want to hear water hitting leaves.
 
@@ -400,9 +386,7 @@ Haxolottle: It's non-human. Non-threatening. No hidden meaning, no encryption, n
 
 Haxolottle: Plus, there's something soothing about storms specifically. All that chaos and energy, but I'm safe inside listening to it. Control over the uncontrollable, in a way.
 
-*grins*
-
-Haxolottle: You can judge me, but I won't stop. I have a whole collection. "Thunderstorm in Forest," "Ocean Waves at Night," "Heavy Rain on Tent." It's a whole genre.
+Haxolottle: You can judge me, but I won't stop. I have a whole collection. "Thunderstorm in Forest," "Ocean Waves at Night," "Heavy Rain on Tent." It's a whole genre. #delivery: grinning
 
 ~ npc_haxolottle_influence += 8
 #influence_gained:8
@@ -478,7 +462,7 @@ Haxolottle: As long as you're alert and functional, I don't care if you're power
 #influence_gained:8
 ~ npc_haxolottle_humor_shared += 1
 
-Haxolottle: *laughs* You noticed! Yes, that's mine. Got it custom-made.
+Haxolottle: You noticed! Yes, that's mine. Got it custom-made. #delivery: laughing
 
 Haxolottle: It says "Keep Calm and Regenerate" with a little smiling axolotl. I use it for video calls specifically because it makes people ask about it.
 
@@ -558,9 +542,7 @@ Haxolottle: I'm worried about giving you bad information, about not seeing somet
 
 Haxolottle: We both carry it. Different burdens, but we carry them for each other.
 
-*pause*
-
-Haxolottle: That's why the axolotl thing matters, I think. Regeneration isn't just physical. It's emotional too. We get hurt, we recover, we keep going.
+Haxolottle: That's why the axolotl thing matters, I think. Regeneration isn't just physical. It's emotional too. We get hurt, we recover, we keep going. #delivery: after a pause
 
 Haxolottle: And we do it together. That makes it bearable.
 
@@ -579,7 +561,7 @@ Haxolottle: Every operation you complete successfully is infrastructure that doe
 
 Haxolottle: The weight is heavy because the work matters. If it was easy, if it didn't matter, there wouldn't be weight.
 
-Haxolottle: And... *slight smile* ...I have my ridiculous axolotl metaphors. When things get dark, I think about something absurd and resilient, and it helps.
+Haxolottle: And... I have my ridiculous axolotl metaphors. When things get dark, I think about something absurd and resilient, and it helps. #delivery: with a slight smile
 
 ~ npc_haxolottle_influence += 12
 #influence_gained:12
@@ -624,15 +606,13 @@ Haxolottle: And... *slight smile* ...I have my ridiculous axolotl metaphors. Whe
 #influence_gained:10
 ~ npc_haxolottle_conversations_had += 1
 
-Haxolottle: How has my philosophy changed? *laughs softly* That's a heavier question than you might think.
+Haxolottle: How has my philosophy changed? That's a heavier question than you might think. #delivery: with a soft laugh
 
 Haxolottle: When I started, I was idealistic. Black and white thinking. SAFETYNET good, ENTROPY bad. We're heroes protecting people.
 
 Haxolottle: Fifteen years later... it's complicated. We're still doing important work. ENTROPY is still a genuine threat. But the methods, the gray areas, the cost...
 
-*pause*
-
-Haxolottle: I've seen good people do questionable things for good reasons. I've seen ENTROPY operatives who were manipulated or coerced. I've made calls that haunt me.
+Haxolottle: I've seen good people do questionable things for good reasons. I've seen ENTROPY operatives who were manipulated or coerced. I've made calls that haunt me. #delivery: after a pause
 
 Haxolottle: The philosophy that's stuck is: Do the work as ethically as you can within impossible constraints. Protect people. Try not to become the thing you're fighting.
 
@@ -677,9 +657,7 @@ Haxolottle: The day we stop feeling uncomfortable with the gray areas is the day
 ~ npc_haxolottle_vulnerable_moments += 2
 ~ npc_haxolottle_shared_doubt = true
 
-Haxolottle: *long pause*
-
-Haxolottle: Yeah. There is.
+Haxolottle: Yeah. There is. #delivery: after a long pause
 
 Haxolottle: Five years ago, I had an agent deep in an ENTROPY cell. They found evidence of a major operation, but extracting them would blow their cover and lose the intelligence.
 
@@ -687,9 +665,7 @@ Haxolottle: I advised them to stay. Complete the intelligence gathering. The op 
 
 Haxolottle: They stayed. Got the intelligence. We stopped the attack. But they were... they were hurt. Badly. Because I asked them to stay when I could have pulled them out.
 
-*quieter*
-
-Haxolottle: They recovered. They're still with SAFETYNET. But I dream about making a different call. Pulling them out. Choosing the person over the mission.
+Haxolottle: They recovered. They're still with SAFETYNET. But I dream about making a different call. Pulling them out. Choosing the person over the mission. #delivery: quieter
 
 Haxolottle: And I don't know if I would. If I could do it again, with the same information... I might make the same call. That's what haunts me.
 
@@ -712,11 +688,11 @@ Haxolottle: And I don't know if I would. If I could do it again, with the same i
 ~ npc_haxolottle_influence += 15
 #influence_gained:15
 
-Haxolottle: *slight smile* Thank you. I know that, intellectually. Regulation 911—mission objectives sometimes outweigh agent safety when lives are at stake.
+Haxolottle: Thank you. I know that, intellectually. Regulation 911—mission objectives sometimes outweigh agent safety when lives are at stake. #delivery: with a slight smile
 
 Haxolottle: Doesn't make it easier. But it helps to hear it from someone who understands. Someone who's been there.
 
-Haxolottle: You're a good person, Agent {player_name()}. I'm glad we're working together.
+Haxolottle: You're a good person, Agent. I'm glad we're working together.
 
 ~ npc_haxolottle_influence += 15
 #influence_gained:15
@@ -727,9 +703,7 @@ Haxolottle: You're a good person, Agent {player_name()}. I'm glad we're working 
 #influence_gained:25
 ~ npc_haxolottle_trust_moments += 3
 
-Haxolottle: *looks genuinely touched*
-
-Haxolottle: Thank you. Really. This work can be incredibly isolating. Protocol 47-Alpha, the secrecy, the decisions we can't talk about with anyone outside SAFETYNET...
+Haxolottle: Thank you. Really. This work can be incredibly isolating. Protocol 47-Alpha, the secrecy, the decisions we can't talk about with anyone outside SAFETYNET... #delivery: genuinely touched
 
 Haxolottle: Having someone who gets it—who carries the same weight even if it's different details—that matters more than you know.
 
@@ -797,9 +771,7 @@ Haxolottle: And when things go wrong, I can only watch. I can't run in and help.
 #influence_gained:20
 ~ npc_haxolottle_trust_moments += 1
 
-Haxolottle: *clearly moved*
-
-Haxolottle: That... thank you. Sincerely. Sometimes I wonder if I'm actually helping or just providing running commentary while you do the real work.
+Haxolottle: That... thank you. Sincerely. Sometimes I wonder if I'm actually helping or just providing running commentary while you do the real work. #delivery: clearly moved
 
 Haxolottle: Knowing it makes a difference—that you feel less alone—that's why I do this. That's the whole point of the handler role.
 
@@ -813,9 +785,7 @@ Haxolottle: We're a team. You're my eyes and hands in the field. I'm your strate
 ~ npc_haxolottle_influence += 12
 #influence_gained:12
 
-Haxolottle: *considers carefully*
-
-Haxolottle: Honestly? I don't think so. I miss aspects of it—the adrenaline, the direct action, the immediate satisfaction of completing an objective.
+Haxolottle: Honestly? I don't think so. I miss aspects of it—the adrenaline, the direct action, the immediate satisfaction of completing an objective. #delivery: considering carefully
 
 Haxolottle: But I burned out. Eight years of that intensity took a toll. I wasn't making good decisions anymore. Too stressed, too paranoid, too reactive.
 
@@ -886,7 +856,7 @@ Haxolottle: And honestly? I miss the simplicity. One mission, one objective, han
 ~ npc_haxolottle_influence += 15
 #influence_gained:15
 
-Haxolottle: *laughs* Oh, plenty. The fear, for one. That sustained low-level anxiety of maintaining cover, wondering if today's the day someone sees through it.
+Haxolottle: Oh, plenty. The fear, for one. That sustained low-level anxiety of maintaining cover, wondering if today's the day someone sees through it. #delivery: laughing
 
 Haxolottle: The loneliness. Deep cover operations mean you can't talk to anyone real. Everyone you interact with is either part of the mission or someone you're deceiving. It's isolating.
 
@@ -983,7 +953,7 @@ Haxolottle: SAFETYNET gets in your head. You start treating normal life like an 
 #influence_gained:20
 ~ npc_haxolottle_humor_shared += 1
 
-Haxolottle: *laughs* Right? It's impossible to turn off! I went to a casual dinner with—well, with someone in my life—and spent the first ten minutes analyzing sight lines and potential surveillance.
+Haxolottle: Right? It's impossible to turn off! I went to a casual dinner with—well, with someone in my life—and spent the first ten minutes analyzing sight lines and potential surveillance. #delivery: laughing
 
 Haxolottle: They were talking about their day, and I was thinking "That corner table has clear view of two exits and limited exposure to windows. Good operational positioning."
 
@@ -1004,7 +974,7 @@ Haxolottle: Oh, tell me yours. I love hearing what habits other agents develop. 
 
 You share a weird habit you've picked up.
 
-Haxolottle: *laughs genuinely* Yes! That's perfect. That's exactly the kind of thing I'm talking about.
+Haxolottle: Yes! That's perfect. That's exactly the kind of thing I'm talking about. #delivery: laughing genuinely
 
 Haxolottle: We should start a handbook addendum: "Common Psychological Adaptations in Long-Term Operatives and Why They're Totally Normal."
 
@@ -1018,7 +988,7 @@ Haxolottle: Honestly, it helps to know we're all doing this. Makes it feel less 
 ~ npc_haxolottle_influence += 10
 #influence_gained:10
 
-Haxolottle: *considers* Probably somewhere in between healthy professional awareness and mild paranoia.
+Haxolottle: Probably somewhere in between healthy professional awareness and mild paranoia. #delivery: considering
 
 Haxolottle: SAFETYNET does provide counseling services if we think we're crossing into unhealthy territory. Regulation 299 encourages us to use them.
 
@@ -1043,7 +1013,7 @@ Haxolottle: But it's worth checking in with yourself. "Is this useful vigilance 
 
 {
     - npc_haxolottle_conversations_had >= 5 and npc_haxolottle_influence >= 40:
-        Haxolottle: I really appreciate these talks, Agent {player_name()}. Makes the work feel less isolating.
+        Haxolottle: I really appreciate these talks, Agent. Makes the work feel less isolating.
     - else:
         Haxolottle: Alright. Back to the mission. Talk later.
 }
@@ -1061,13 +1031,13 @@ Haxolottle: But it's worth checking in with yourself. "Is this useful vigilance 
 
 === phase_3_hub ===
 // TODO: Implement phase 3 conversations (missions 11-15)
-Haxolottle: *checking in* How's it going, {player_name()}?
+Haxolottle: How's it going, Agent? #delivery: checking in
 + [That's all for now]
     -> conversation_end
 
 === phase_4_hub ===
 // TODO: Implement phase 4 conversations (missions 16+)
-Haxolottle: *checking in* How's it going, {player_name()}?
+Haxolottle: How's it going, Agent? #delivery: checking in
 + [That's all for now]
     -> conversation_end
 
@@ -1080,11 +1050,11 @@ Haxolottle: But yeah, there are some that stand out. The ones where everything c
 -> phase_2_hub
 
 === hax_difficult_day ===
-Haxolottle: *pause* Yeah. Today's... harder than usual.
+Haxolottle: Yeah. Today's... harder than usual. #delivery: after a pause
 Haxolottle: Lost an agent six months ago. Today would have been their birthday.
 Haxolottle: Sorry. Shouldn't burden you with that.
 + [I'm sorry for your loss]
-    Haxolottle: *appreciates it* Thanks. It's part of the job, but it never gets easier.
+    Haxolottle: Thanks. It's part of the job, but it never gets easier. #delivery: appreciative
     ~ npc_haxolottle_influence += 10
 #influence_gained:10
     ~ npc_haxolottle_shared_loss = true

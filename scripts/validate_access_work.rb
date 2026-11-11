@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
-# Access model slice 9.2 lints: the USB policy (sub-slice U) and work, outages and frustration
-# (sub-slice A). docs/achitechture/ACCESS_MODEL_SLICE_9_2_PLAN.md section 10.
+# Access model slice 9.2 lints: the USB policy (sub-slice U), work, outages and frustration
+# (sub-slice A) and workarounds (sub-slice B). docs/achitechture/ACCESS_MODEL_SLICE_9_2_PLAN.md
+# section 10.
 #
 # Entry points, called from scripts/validate_scenario.rb:
 #
@@ -32,6 +33,7 @@ module ValidateAccessWork
 
     check_usb(json_data, issues)
     check_work(json_data, issues)
+    check_workarounds(json_data, issues)
     issues
   end
 
@@ -448,6 +450,254 @@ module ValidateAccessWork
     end
   end
 
+  # ── sub-slice B: workarounds ─────────────────────────────────────────
+
+  START_POOLS = { 'writes_down' => 'wk_writes_down', 'prop_door' => 'wk_prop_door',
+                  'borrow_session' => 'wk_borrow', 'share_login' => 'wk_share_login' }.freeze
+  OPENS_FORBIDDEN_TYPES = %w[flag-station vm-launcher].freeze
+
+  def rooms_of(json_data)
+    json_data['rooms'].is_a?(Hash) ? json_data['rooms'] : {}
+  end
+
+  # The rooms a room's connections name (a direction maps to a room id or a list of them)
+  def connected_rooms(room)
+    c = room.is_a?(Hash) ? room['connections'] : nil
+    return [] unless c.is_a?(Hash)
+
+    c.values.flat_map { |v| Array(v) }.select { |r| r.is_a?(String) }.uniq
+  end
+
+  # A gate door into this room: any room's door entry that connects to it with a gate
+  def behind_gate?(json_data, room_id)
+    rooms_of(json_data).values.any? do |room|
+      room.is_a?(Hash) && Array(room['doors']).any? { |d| d.is_a?(Hash) && d['connectedRoom'] == room_id && d['gate'].is_a?(Hash) }
+    end
+  end
+
+  # An object or anything nested in it of a type the player must not reach this way
+  def holds_forbidden?(obj)
+    return false unless obj.is_a?(Hash)
+    return true if OPENS_FORBIDDEN_TYPES.include?(obj['type'])
+
+    (Array(obj['contents']) + Array(obj['itemsHeld'])).any? { |o| holds_forbidden?(o) }
+  end
+
+  def leash_forbids?(npc, room_id, home_room)
+    return false if room_id.nil? || room_id == home_room
+
+    allow = npc['needsRooms'].is_a?(Array) ? npc['needsRooms'] : nil
+    deny = npc['needsAvoidRooms'].is_a?(Array) ? npc['needsAvoidRooms'] : []
+    (allow && !allow.include?(room_id)) || deny.include?(room_id)
+  end
+
+  def check_workarounds(json_data, issues)
+    globals = declared_globals(json_data)
+    rooms = rooms_of(json_data)
+    npc_ids = room_npcs(json_data).map { |e| e[:npc]['id'] }
+    index = AW.object_index(json_data)
+
+    # Every authored list, on roles and on room NPCs: shape, bounds and kinds
+    lists = AW.roles_block(json_data).filter_map { |role, r| r['workarounds'] && [r['workarounds'], "roles.#{role}.workarounds"] }
+    room_npcs(json_data).each { |e| lists << [e[:npc]['workarounds'], "#{e[:npc]['id']}.workarounds"] if e[:npc].key?('workarounds') }
+    lists.each do |list, where|
+      unless list.is_a?(Array)
+        err(issues, "#{where} must be a list of { at, do, ... }.")
+        next
+      end
+      list.each_with_index do |w, i|
+        unless w.is_a?(Hash)
+          err(issues, "#{where}[#{i}] must be an object { at, do, ... }.")
+          next
+        end
+        unless w['at'].is_a?(Numeric) && w['at'] >= 1 && w['at'] <= 100
+          err(issues, "#{where}[#{i}].at is #{w['at'].inspect}; it must be a number from 1 to 100.")
+        end
+        unless AW::WORKAROUND_KINDS.include?(w['do'])
+          err(issues, "#{where}[#{i}].do is #{w['do'].inspect}; it must be one of #{AW::WORKAROUND_KINDS.join(', ')}.")
+        end
+        if w.key?('setGlobal') && !(AW.present_string?(w['setGlobal']) && globals.key?(w['setGlobal']))
+          err(issues, "#{where}[#{i}].setGlobal #{w['setGlobal'].inspect} is not declared in globalVariables.")
+        end
+        err(issues, "#{where}[#{i}] (emit) has no event.") if w['do'] == 'emit' && !AW.present_string?(w['event'])
+        { 'pc' => :object, 'prop' => :object, 'door' => :room, 'with' => :npc }.each do |field, kind|
+          next unless w.key?(field)
+
+          v = w[field]
+          ok = case kind
+               when :object then v.is_a?(String) && index.key?(v)
+               when :room then v.is_a?(String) && rooms.key?(v)
+               else v.is_a?(String) && npc_ids.include?(v)
+               end
+          what = { object: 'room object', room: 'room', npc: 'room NPC' }[kind]
+          err(issues, "#{where}[#{i}].#{field} #{v.inspect} names no #{what}.") unless ok
+        end
+      end
+    end
+
+    # Per room NPC, its resolved list: the kind's own rules
+    room_npcs(json_data).each do |e|
+      npc = e[:npc]
+      list = AW.workarounds(json_data, npc)
+      next if list.empty?
+
+      check_npc_workarounds(json_data, npc, e[:room], list, issues)
+    end
+    check_workaround_globals_read_by_server(json_data, issues)
+  end
+
+  # Review 9.2 B R2: a workaround's setGlobal is written by the server on "done", but the
+  # player's browser can write any global that is not imported. Nothing in B reads one on the
+  # server, so writing it gains nothing; a server gate that reads the same name would be opened
+  # with one sync. Warn so the author gates on the workaround's event instead.
+  def check_workaround_globals_read_by_server(json_data, issues)
+    names = room_npcs(json_data).flat_map do |e|
+      AW.workarounds(json_data, e[:npc]).filter_map { |w| w.is_a?(Hash) && AW.present_string?(w['setGlobal']) ? w['setGlobal'] : nil }
+    end.uniq
+    return if names.empty?
+
+    reads = server_read_globals(json_data)
+    names.each do |name|
+      where = reads[name]
+      next if where.nil? || where.empty?
+
+      warn(issues, "workaround setGlobal '#{name}' is also read on the server (#{where.uniq.join(', ')}), but the " \
+                   "player's browser can write it, so that gate opens without the workaround. Gate on the workaround's " \
+                   'npc_workaround event instead, or keep the global for display only.')
+    end
+  end
+
+  # { global name => [where] } for the places the server reads a global: an unlockCondition
+  # globalVariable, concludeRequires.globals, exportGlobals, a resource's downIf, a route's
+  # gate globals and an affordance offWhen
+  def server_read_globals(json_data)
+    reads = Hash.new { |h, k| h[k] = [] }
+    walk = lambda do |node|
+      case node
+      when Hash
+        node.each do |k, v|
+          if k == 'unlockCondition' && v.is_a?(Hash) && AW.present_string?(v['globalVariable'])
+            reads[v['globalVariable']] << 'an unlockCondition'
+          elsif k == 'concludeRequires' && v.is_a?(Hash)
+            Array(v['globals']).each { |g| reads[g.to_s] << 'concludeRequires.globals' }
+          end
+          walk.call(v)
+        end
+      when Array then node.each { |v| walk.call(v) }
+      end
+    end
+    walk.call(json_data)
+    Array(json_data['exportGlobals']).each { |g| reads[g.to_s] << 'exportGlobals' }
+    AW.resources(json_data).each do |rid, r|
+      reads[r['downIf']] << "resources.#{rid}.downIf" if r.is_a?(Hash) && AW.present_string?(r['downIf'])
+    end
+    room_npcs(json_data).each do |e|
+      AW.work_list(json_data, e[:npc]).each do |rid|
+        res = AW.resources(json_data)[rid]
+        next unless res
+
+        Array(AW.routes(json_data, e[:npc], res)).flatten.each { |g| reads[g.to_s] << "a route to '#{rid}'" }
+      end
+    end
+    AW.object_index(json_data).each do |oid, entry|
+      off = AW.affordance(json_data, entry[:obj])&.dig('offWhen')
+      off_names = case off
+                  when String then [off]
+                  when Hash then off.keys.map(&:to_s)
+                  else []
+                  end
+      off_names.each { |g| reads[g] << "#{oid} offWhen" }
+    end
+    reads
+  end
+
+  def check_npc_workarounds(json_data, npc, home_room, list, issues)
+    nid = npc['id']
+    rooms = rooms_of(json_data)
+    index = AW.object_index(json_data)
+    st = AW.station(json_data, npc)
+    unless AW::JUDGED_NEEDS.any? { |need| AW.can_fail?(json_data, npc, need) }
+      warn(issues, "#{nid} has workarounds but can never be frustrated (no need of its can fail): they will never happen.")
+    end
+
+    list.each_with_index do |w, i|
+      tag = "#{nid}'s workaround #{i} (#{w['do']})"
+      case w['do']
+      when 'writes_down'
+        err(issues, "#{tag}: #{nid} has no account (creds.username), so there is nothing to write down.") unless BreakEscape::AccessIdentities.account?(npc)
+        if st.nil? || !BreakEscape::AccessIdentities.login_pc?(st)
+          err(issues, "#{tag}: #{nid}'s needsHome is not a sign-in PC (lockType \"login\"), so no sign-in screen shows the note.")
+        elsif (st['postitNote'].is_a?(String) && !st['postitNote'].strip.empty?) || st['showPostit'] == false
+          warn(issues, "#{tag}: '#{st['id']}' authors its own postitNote or sets showPostit: false, which wins over the " \
+                       'written-down note: the workaround shows nothing new.')
+        else
+          # The server's owner rule (Game#login_pc_owner): screenOwner first, else the first room
+          # NPC whose needsHome is the PC. Another owner means a mark on the screen and no note.
+          owner = st['screenOwner'].is_a?(String) && !st['screenOwner'].empty? ? st['screenOwner'] : room_npcs(json_data).map { |x| x[:npc] }.find { |n| n['needsHome'] == st['id'] }&.dig('id')
+          if owner != nid
+            err(issues, "#{tag}: '#{st['id']}' belongs to #{owner.inspect} (screenOwner, else the first NPC with it as needsHome), " \
+                        "not #{nid}, so the sign-in screen shows no note.")
+          end
+        end
+        if BreakEscape::AccessIdentities.account?(npc)
+          pw = npc.dig('creds', 'password')
+          err(issues, "#{tag}: #{nid} has no password (creds.password), so the note would be empty.") unless pw.is_a?(String) && !pw.empty?
+        end
+        pcs = BreakEscape::AccessIdentities.sign_in_pcs(json_data).map { |x| x[:object] }.select do |pc|
+          pc.is_a?(Hash) && BreakEscape::AccessIdentities.account_admitted?(pc, npc)
+        end
+        bad = pcs.select { |pc| holds_forbidden?(pc) }.map { |pc| pc['id'] }
+        warn(issues, "#{tag} opens #{nid}'s account, which signs in at #{bad.join(', ')}, holding a flag station or VM launcher: " \
+                     'a modified browser can reach it this way; put it behind something the server checks.') if bad.any?
+      when 'prop_door'
+        door = w['door']
+        err(issues, "#{tag} has no door (the locked room it props open); the server never hands it over.") unless AW.present_string?(door)
+        err(issues, "#{tag} has no prop (the object the NPC walks to); the server never hands it over.") unless AW.present_string?(w['prop'])
+        if !AW.present_string?(w['setGlobal'])
+          warn(issues, "#{tag} has no setGlobal: nothing can reveal its prop when the door is propped.")
+        elsif AW.present_string?(w['prop']) && index[w['prop']] && index[w['prop']][:obj].is_a?(Hash) &&
+              index[w['prop']][:obj]['revealOnGlobal'] != w['setGlobal']
+          warn(issues, "#{tag}: prop '#{w['prop']}' is not hidden with revealOnGlobal \"#{w['setGlobal']}\", so it is on show " \
+                       'before the door is propped, or never.')
+        end
+        room = rooms[door]
+        if room.is_a?(Hash)
+          err(issues, "#{tag}: room '#{door}' is not locked; a propped door opens nothing.") unless room['locked'] == true
+          err(issues, "#{tag}: room '#{door}' is behind a gate door; prop a plain locked door.") if behind_gate?(json_data, door)
+          err(issues, "#{tag}: room '#{door}' is #{nid}'s own room (an NPC behind a locked door is never simulated).") if door == home_room
+          card = BreakEscape::AccessIdentities.npc_card(npc)
+          opens = room['lockType'] == 'rfid' && card &&
+                  BreakEscape::AccessIdentities.card_opens?(room, BreakEscape::AccessIdentities.card_id_of(card).to_s, [{ npc: npc }])
+          unless opens
+            warn(issues, "#{tag}: #{nid}'s own card and role do not open '#{door}', so the student sees someone prop a door " \
+                         'they could not open.')
+          end
+          if Array(room['objects']).any? { |o| holds_forbidden?(o) }
+            warn(issues, "#{tag} opens room '#{door}', which holds a flag station or VM launcher: a modified browser can reach " \
+                         'it this way; put it behind something the server checks.')
+          end
+        end
+        prop_entry = AW.present_string?(w['prop']) ? index[w['prop']] : nil
+        if prop_entry && room.is_a?(Hash)
+          prop_room = prop_entry[:room_id]
+          if prop_room == door
+            err(issues, "#{tag}: prop '#{w['prop']}' is inside '#{door}' itself; the NPC must reach it while the door is shut.")
+          elsif !connected_rooms(room).include?(prop_room) && !connected_rooms(rooms[prop_room]).include?(door)
+            err(issues, "#{tag}: prop '#{w['prop']}' is in '#{prop_room}', which is not connected to '#{door}'.")
+          end
+          if leash_forbids?(npc, prop_room, home_room)
+            warn(issues, "#{tag}: prop '#{w['prop']}' is in '#{prop_room}', a room #{nid}'s leash forbids, so the visit never starts.")
+          end
+        end
+      end
+      pool = START_POOLS[w['do']]
+      next if pool.nil? || chatter_off?(json_data) || pool_has_line?(json_data, npc, pool)
+
+      warn(issues, "#{tag} has no #{pool} line in the scenario's chatter or the NPC's own: the act is not tied to the " \
+                   'outage in words. Copy the pool from test_access_work.')
+    end
+  end
+
   # ── the work report ───────────────────────────────────────────────────
 
   def report_lines(json_data)
@@ -534,6 +784,7 @@ module ValidateAccessWork
     earliest = t[:n] == 1 ? 'at once' : "#{t[:earliest].round} s#{t[:note] ? " (#{t[:note]})" : ''}"
     "ℹ️ Workaround #{npc['id']}[#{idx}] #{w['do']} at #{t[:at]}: opens #{workaround_opens(npc, w)}; " \
       "#{t[:n]} failed use(s) at perFail #{t[:per].round}; #{warning}; about #{t[:honest].round} s of outage; " \
-      "earliest by a modified browser #{earliest} after the first counted fail."
+      "earliest by a modified browser #{earliest} after the first counted fail." \
+      "#{%w[borrow_session share_login].include?(w['do']) ? ' Not performed until sub-slice H.' : ''}"
   end
 end

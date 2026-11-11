@@ -95,7 +95,7 @@ function iconRig({ frameName = 'sit_north_frame_000', headRow = 13, textureReady
             setOrigin() { return o; }, setVisible(v) { o.visible = v; return o; }, setPosition(x, y) { o.x = x; o.y = y; return o; },
             setSize(w, h) { o.w = w; o.h = h; return o; }, setTexture(k) { o.key = k; o.width = 16; o.height = 12; return o; },
             setText(t) { o.text = t; o.width = 18; o.height = 32; return o; }, setDepth() { return o; }, setScale(s) { o.scale = s; return o; },
-            setData(k, v) { o.data[k] = v; return o; } };
+            setAlpha(a) { o.alpha = a; return o; }, setData(k, v) { o.data[k] = v; return o; } };
         objs.push(o);
         return o;
     };
@@ -618,4 +618,30 @@ test('validator (slice 21): swivel on an NPC with no needs and los.enabled on a 
     assert.ok(!has("'quiet_watcher'"));
     assert.ok(has("ERROR: NPC 'jumpy' swivelChance"));
     assert.ok(!has("'ok'"));
+});
+
+test('q17: the frustration icon is drawn faded once its cause has cleared, and solid again when it holds', () => {
+    iconRig({});
+    try {
+        const judged = { work: true, social_media: false };
+        let st = { job: null, tell: 2, judged, causeCleared: true };
+        window.npcNeedsSystem.getState = () => st;
+        const icons = new NpcActionIcons();
+        icons.update();
+        const ic = icons.icons.get('pierce');
+        assert.equal(ic.box.data.key, 'blocked');
+        assert.equal(ic.box.data.fading, true);
+        assert.equal(ic.box.alpha, 0.6);
+        assert.equal(ic.box.scale, 1, 'no pulse while faded');
+        st = { ...st, tell: 1 };
+        icons.update();
+        assert.equal(ic.box.alpha, 0.4);
+        st = { ...st, tell: 2, causeCleared: false };
+        icons.update();
+        assert.equal(ic.box.alpha, 1);
+        assert.equal(ic.box.data.fading, false);
+        st = { ...st, tell: 0, causeCleared: true };
+        icons.update();
+        assert.equal(ic.box.visible, false, 'gone once frustration settles');
+    } finally { cleanupRig(); }
 });

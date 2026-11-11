@@ -99,6 +99,11 @@ module BreakEscape
       show?
     end
 
+    # Slice 9.2 (plan 6): the workaround runner reports a hand-over performed or dropped
+    def npc_workaround?
+      show?
+    end
+
     # Wearable items (docs/achitechture/WEARABLE_BUILD_LOG.md)
     def wear?
       show?

@@ -925,10 +925,13 @@ function openDoor(doorSprite) {
 
             props.open = true;
             if (window.eventDispatcher) {
+                // restored: re-opened by the workaround runner as the room was built (a propped
+                // door after a reload, or the far side of one), so a mapping can skip it (9.2 B R1 m7)
                 window.eventDispatcher.emit('door_opened', {
                     roomId: props.roomId,
                     connectedRoom: props.connectedRoom,
-                    direction: props.direction
+                    direction: props.direction,
+                    ...(doorSprite.proppedOpening ? { restored: true } : {})
                 });
             }
         };

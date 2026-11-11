@@ -11,7 +11,7 @@ VAR asked_about_passwords = false
 
 === start ===
 ~ conversation_count += 1
-{npc_name}: Hey there! This is conversation #{conversation_count}.
+{npc_name}: Hey there! Good to see you.
 {npc_name}: What can I help you with?
 -> hub
 

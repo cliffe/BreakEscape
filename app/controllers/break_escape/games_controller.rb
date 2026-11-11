@@ -26,7 +26,7 @@ module BreakEscape
 
     before_action :set_game, only: [:show, :scenario, :scenario_map, :ink, :room, :container, :update_room, :unlock, :inventory, :objectives, :capture_secrets, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :tts, :reset, :new_session, :vm_panel, :vm_set_panel, :conclude_mission,
                                         :login, :logout, :login_accounts, :clone_card, :network, :network_plant, :network_unplug,
-                                        :npc_frustration, :wear]
+                                        :npc_frustration, :npc_workaround, :wear]
     # A host may also route the game page under its own address (Hacktivity: /hacktivities/:event_id/play/mission/:id,
     # inside a Game event's web app scope). The game must belong to that event: any other pair is a 404.
     before_action :require_game_in_host_event, only: [:show]
@@ -92,7 +92,7 @@ module BreakEscape
     # network_unplug write footholds, the inventory and sessions (slice 9.3a, section 5).
     around_action :with_game_lock, only: [:container, :update_room, :unlock, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :reset, :new_session, :inventory, :room,
                                           :login, :logout, :clone_card, :network_plant, :network_unplug,
-                                          :npc_frustration, :wear]
+                                          :npc_frustration, :npc_workaround, :wear]
 
     # GET /games/new?mission_id=:id
     # Show VM set selection page for VM-required missions
@@ -964,13 +964,7 @@ module BreakEscape
       # Use transaction to ensure atomic update
       ActiveRecord::Base.transaction do
         if target_type == 'door'
-          @game.unlock_room!(target_id)
-
-          room_data = @game.filtered_room_data(target_id)
-
-          # Track NPC encounters when unlocking a door (room data is cached by client)
-          # This ensures NPCs are tracked even if loadRoom() uses cached data
-          track_npc_encounters(target_id, room_data)
+          room_data = serve_opened_room(target_id)
 
           render json: {
             success: true,
@@ -1221,6 +1215,21 @@ module BreakEscape
       reports = raw.is_a?(Array) ? raw.map { |r| r.respond_to?(:to_unsafe_h) ? r.to_unsafe_h : r } : raw
       result = @game.report_npc_uses!(reports)
       render json: result[:body], status: result[:status]
+    end
+
+    # POST /games/:id/npc_workaround (slice 9.2, ACCESS_MODEL_SLICE_9_2_PLAN.md 6 and 9.1):
+    # { npc_id, index, hand, dropped } from the workaround runner. 403 for a hand-over the server
+    # never made (or already spent other than as done), 425 before the dwell.
+    def npc_workaround
+      authorize @game if defined?(Pundit)
+      # Review R2 N3: only true (or "true") is a drop; {} or [1] is not
+      dropped = [true, 'true'].include?(params[:dropped])
+      ActiveRecord::Base.transaction do
+        result = @game.complete_npc_workaround!(npc_id: params[:npc_id], index: params[:index], hand: params[:hand], dropped: dropped)
+        body = result[:body]
+        body = body.merge('roomData' => serve_opened_room(result[:open_room])) if result[:status] == :ok && result[:open_room]
+        render json: body, status: result[:status]
+      end
     end
 
     # ==========================================
@@ -1868,6 +1877,18 @@ module BreakEscape
       when Array
         obj.each { |item| filter_requires_recursive(item) }
       end
+    end
+
+    # The tail of a door unlock (slice 9.2, 9.1): unlock the room, compose its filtered data and
+    # record its NPCs as encountered, so NPCs in a room a workaround propped open are known at
+    # once. Called by the door unlock and by a done prop_door.
+    def serve_opened_room(room_id)
+      @game.unlock_room!(room_id)
+      room_data = @game.filtered_room_data(room_id)
+      # Track NPC encounters when unlocking a door (room data is cached by client)
+      # This ensures NPCs are tracked even if loadRoom() uses cached data
+      track_npc_encounters(room_id, room_data)
+      room_data
     end
 
     def track_npc_encounters(room_id, room_data)

@@ -16,7 +16,7 @@ Guard: Afternoon. Anything I can help with?
     ~ looked = true
     Guard: This old thing? Gets me through the vault. Go on.
     # clone_keycard:clerk_card
-    Guard: *holds it out* There you go.
+    Guard: There you go. #delivery: offhand, holding it out
     -> hub
 + { looked } [Can I take another look at that badge?]
     Guard: Help yourself.

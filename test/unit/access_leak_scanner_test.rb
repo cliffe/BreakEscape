@@ -446,4 +446,34 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
     end
     [out.string, status]
   end
+  # Slice 9.2 sub-slice B: a workaround's kind beside its target is reported outside a hand-over
+  test 'a workaround is reported outside a hand-over, and allowed as a run or in npcFrustration' do
+    data = scenario
+    npc = data['rooms'].values.flat_map { |r| Array(r['npcs']) }.first
+    npc['workarounds'] = [{ 'at' => 50, 'do' => 'prop_door', 'door' => 'store_room', 'prop' => 'wedge' }]
+    run = { 'index' => 0, 'hand' => 1, 'do' => 'prop_door', 'dwell' => 4, 'door' => 'store_room', 'prop' => 'wedge' }
+    leaked = scan({ 'npcs' => [{ 'id' => 'x', 'hint' => run }] }, data: data)
+    assert_equal [[1, 'workaround', "#{npc['id']}[0]"]], summary(leaked)
+    assert_empty scan({ 'answers' => [{ 'npcId' => npc['id'], 'run' => run }] }, path: '/break_escape/games/1/npc_frustration',
+                                                                             method: 'POST', data: data)
+    assert_empty scan({ 'answers' => [{ 'npcId' => npc['id'], 'run' => nil, 'pending' => [run] }] },
+                      path: '/break_escape/games/1/npc_frustration', method: 'POST', data: data), 'pending in an answer (B review R3 m2)'
+    assert_equal [[1, 'workaround', "#{npc['id']}[0]"]],
+                 summary(scan({ 'answers' => [{ 'npcId' => npc['id'], 'hint' => run }] }, path: '/break_escape/games/1/npc_frustration',
+                                                                                     method: 'POST', data: data)),
+                 'another key of an answer is not a hand-over'
+    assert_empty scan({ 'npcFrustration' => { npc['id'] => { 'pending' => [run], 'done' => [{ 'index' => 0, 'do' => 'prop_door' }] } } },
+                      path: '/break_escape/games/1/scenario', data: data)
+    assert_empty scan({ 'do' => 'prop_door', 'door' => 'other_room' }, data: data), 'another target is not this workaround'
+    assert_equal 1, AccessLeakScanner.new(data).counts[:workarounds]
+  end
+
+  test 'an authored workaround entry (it carries at) is reported anywhere, a writes_down included' do
+    entry = { 'at' => 50, 'do' => 'writes_down' }
+    assert_equal [[1, 'workaround', 'authored writes_down']], summary(scan({ 'npcs' => [{ 'id' => 'x', 'list' => [entry] }] }))
+    leaked = scan({ 'npcFrustration' => { 'mei' => { 'pending' => [entry] } } }, path: '/break_escape/games/1/scenario')
+    assert_equal [[1, 'workaround', 'authored writes_down']], summary(leaked), 'no exemption for an authored entry'
+    assert_empty scan({ 'do' => 'writes_down', 'index' => 0, 'hand' => 1 }), 'a run has no at'
+  end
+
 end

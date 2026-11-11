@@ -1007,6 +1007,8 @@ async function loadRoomOnce(roomId) {
     window.networkLinks?.syncRoom?.(roomId);
     // The sticky note picture on a sign-in PC whose screen shows a note (slice 9.1, 5.3)
     window.postitMarks?.syncRoom(roomId);
+    // A door a frustrated NPC propped stays open after a reload (slice 9.2 B, npc-workarounds.js)
+    window.npcWorkarounds?.syncRoom?.(roomId);
 
     // Reveal (make visible) but do NOT mark as discovered
     // The room will only be marked as "discovered" when the player
