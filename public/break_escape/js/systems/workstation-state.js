@@ -300,11 +300,14 @@ export class WorkstationState {
      * The server refused a guest claim (review R2 server m1): it times the guest out on wall
      * time, while lockAt runs on the needs clock, which stops during VM time and in a hidden
      * tab. The server's answer is the lock: the guest record goes and the screen shows locked,
-     * as at lockAt, so later clicks find the sign-in screen with no claim.
+     * as at lockAt, so later clicks find the sign-in screen with no claim. With npcId (the
+     * guest that was claimed), a record that changed while the claim was answered is kept
+     * (review R3 n1): a later borrower's done can reach the client before the refusal.
      */
-    guestClaimRefused(pcId) {
+    guestClaimRefused(pcId, npcId = null) {
         const g = this.guests.get(pcId);
         if (!g) return false;
+        if (npcId && g.npcId !== npcId) return false;
         this.guests.delete(pcId);
         this._publishGuest(pcId, true, true);
         const data = this._find(pcId) || { id: pcId };

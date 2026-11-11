@@ -786,6 +786,19 @@ test('R2 server m1: a refused guest claim locks the guest session before lockAt 
     assert.equal(ws.guestClaimRefused('hot_desk'), false, 'no guest: nothing to lock');
 });
 
+test('R3 n1: a refused claim for Ian keeps Rosa, recorded while the claim was answered', () => {
+    const { ws, globals, emitted, handlers } = hotRig({ autoLockMin: 5 });
+    handlers['npc_guest_left:*']({ npcId: 'ian', objectId: 'hot_desk' });
+    handlers['npc_guest_left:*']({ npcId: 'rosa', objectId: 'hot_desk' });
+    assert.equal(ws.guestOf('hot_desk'), 'rosa');
+    assert.equal(ws.guestClaimRefused('hot_desk', 'ian'), false);
+    assert.equal(ws.guestOf('hot_desk'), 'rosa');
+    assert.notEqual(globals.hot_desk_screen_locked, true);
+    assert.equal(emitted.filter(([n]) => n === 'workstation_auto_locked:hot_desk').length, 0);
+    assert.equal(ws.guestClaimRefused('hot_desk', 'rosa'), true);
+    assert.equal(ws.guestOf('hot_desk'), null);
+});
+
 test('H-4: the next NPC to sit down ends a guest session, with no workstation_owner_returned', () => {
     const { ws, globals, emitted, handlers } = hotRig({ autoLockMin: null });
     handlers['npc_guest_left:*']({ npcId: 'ian', objectId: 'hot_desk' });

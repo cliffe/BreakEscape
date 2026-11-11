@@ -323,6 +323,39 @@ test('R2 server m1: a refused guest claim locks the client\'s guest record; a re
     }
 });
 
+test('R3 m1: a guest claim that fails on the transport (5xx, 403, no network) keeps the guest record', async () => {
+    reset();
+    const locked = [];
+    window.workstationState = {
+        presence: () => ({ ownerId: null, present: false, userId: null, guestId: 'ian' }),
+        onInteract: () => 'accessed',
+        guestOf: () => 'ian',
+        guestClaimRefused: (pcId) => locked.push(pcId)
+    };
+    window.pcSessions.claim = async () => ({ ok: false, reason: 'error', error: true, status: 502, message: 'Could not reach the sign-in service' });
+    assert.equal(await interactLoginPc(pc()), 'claim_refused');
+    await settle();
+    assert.deepEqual(locked, [], 'no lock on a transport error');
+    const alert = calls.find(c => c[0] === 'alert');
+    assert.equal(alert[1], 'Could not reach the sign-in service');
+    assert.deepEqual(alert[5], { plainText: true });
+});
+
+test('R3 n1: a refused guest claim names the guest that was claimed', async () => {
+    reset();
+    const locked = [];
+    window.workstationState = {
+        presence: () => ({ ownerId: null, present: false, userId: null, guestId: 'ian' }),
+        onInteract: () => 'accessed',
+        guestOf: () => 'ian',
+        guestClaimRefused: (pcId, npcId) => locked.push([pcId, npcId])
+    };
+    window.pcSessions.claim = async () => ({ ok: false, reason: 'refused' });
+    await interactLoginPc(pc());
+    await settle();
+    assert.deepEqual(locked, [['hot_desk', 'ian']]);
+});
+
 test('R2 n4: the owner_returned and auto_locked alerts go in as plain text', async () => {
     for (const reason of ['owner_returned', 'auto_locked']) {
         reset();

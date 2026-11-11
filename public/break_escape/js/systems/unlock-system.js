@@ -363,8 +363,11 @@ export async function interactLoginPc(lockable) {
             return 'signin';
         }
         // A refused guest claim: the server timed the guest out on wall time (review R2 server
-        // m1), so the screen is locked here too and the next click sends no claim
-        if (guestId) ws?.guestClaimRefused?.(pcId);
+        // m1), so the screen is locked here too and the next click sends no claim. Only a real
+        // refusal locks: a 5xx, 403 or network failure keeps the guest record (review R3 m1),
+        // and only the guest that was claimed is dropped (review R3 n1)
+        if (guestId && r?.reason === 'refused') ws?.guestClaimRefused?.(pcId, guestId);
+        else if (guestId && r?.message) window.gameAlert?.(r.message, 'info', data.name || 'PC', 4000, { plainText: true });
         openLoginSignIn(lockable, { reason: 'claim_refused' });
         return 'claim_refused';
     }
