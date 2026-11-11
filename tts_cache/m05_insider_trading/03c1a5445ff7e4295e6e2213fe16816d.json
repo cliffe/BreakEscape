@@ -1,0 +1,13 @@
+{
+  "key": "03c1a5445ff7e4295e6e2213fe16816d",
+  "npc": "narrator",
+  "text": "You pull the drive and kill the transfer at 97 per cent. The last of it stays in the building.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:36:10Z"
+}

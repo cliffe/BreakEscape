@@ -1,0 +1,13 @@
+{
+  "key": "b4a399617d3cfe3ca435dfd068b31b44",
+  "npc": "patricia_morgan",
+  "text": "David. Go slowly. I'm writing this down. Why?",
+  "voice": "Kore",
+  "style": "Chief Security Officer, early fifties, ex-military. Speak with a consistent South Wales (Cardiff) accent throughout — do not shift to any other accent. Firm, low-to-mid pitch; brisk, economical pace. Direct, dry and steady under pressure; her warmth shows only in what she chooses to notice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:22:54Z"
+}

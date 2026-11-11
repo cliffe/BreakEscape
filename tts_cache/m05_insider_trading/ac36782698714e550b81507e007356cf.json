@@ -1,0 +1,13 @@
+{
+  "key": "ac36782698714e550b81507e007356cf",
+  "npc": "narrator",
+  "text": "She runs a finger down the sheet.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:23:55Z"
+}

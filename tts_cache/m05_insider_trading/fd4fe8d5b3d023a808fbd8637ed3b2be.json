@@ -1,0 +1,13 @@
+{
+  "key": "fd4fe8d5b3d023a808fbd8637ed3b2be",
+  "npc": "narrator",
+  "text": "You make the offer: the trial paid for, and somewhere quiet for the family if it ever gets dangerous.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:32:30Z"
+}

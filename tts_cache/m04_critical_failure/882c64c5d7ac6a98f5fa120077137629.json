@@ -1,0 +1,13 @@
+{
+  "key": "882c64c5d7ac6a98f5fa120077137629",
+  "npc": "operative_relay",
+  "text": "That was my card. Run, then.",
+  "voice": "Pulcherrima",
+  "style": "ENTROPY operative, late thirties. Speak with a consistent Scottish (Edinburgh) accent throughout -- do not shift to any other accent. Cool, mid-range pitch; measured, unhurried pace. Confident and almost friendly; she costed this and came anyway, and nothing about it frightens her.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-05",
+  "recorded_at": "2026-11-05T16:02:03Z"
+}

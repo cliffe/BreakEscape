@@ -1,0 +1,13 @@
+{
+  "key": "e4c58d3526551666444c1bd73752a2dd",
+  "npc": "wendell",
+  "text": "Kept these generators running for Uncle Sam all through the eighties. They pay better this time.",
+  "voice": "Algieba",
+  "style": "Power-room technician, sixty-three, white Montanan. Consistent rural Montana American accent throughout -- do not shift to any other accent. Slow, laconic, low; a man who has kept old machines running for forty years and asks no questions about who pays.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T22:30:50Z"
+}

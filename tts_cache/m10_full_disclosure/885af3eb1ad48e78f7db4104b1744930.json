@@ -1,0 +1,13 @@
+{
+  "key": "885af3eb1ad48e78f7db4104b1744930",
+  "npc": "director_netherton",
+  "text": "An archive in Helena, last night, gave us three things. The first is a name.",
+  "voice": "Charon",
+  "style": "Cinematic thriller. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. SAFETYNET's director, running a raid from a folding table in the Montana cold; he does not raise his voice and he does not soften anything, and under the control this one is personal.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T21:55:19Z"
+}

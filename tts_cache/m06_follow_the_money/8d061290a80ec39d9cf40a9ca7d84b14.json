@@ -1,0 +1,13 @@
+{
+  "key": "8d061290a80ec39d9cf40a9ca7d84b14",
+  "npc": "irina_volkova",
+  "text": "*offers her wrists* I really did think I was building something good.",
+  "voice": "Kore",
+  "style": "Brilliant academic cryptographer, mid-thirties, Moscow-educated and ten years in British academia, guarded and precise. Speak with a consistent light Russian accent in fluent English throughout — do not shift to any other accent. Low-to-mid pitch; measured pace. Dry and tightly controlled.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:02:22Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "31763e313581f57de7c06ec0cf0cd338",
+  "npc": "narrator",
+  "text": "He clips the handset back on his belt and walks for the Hall 2 door without looking at you again.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-05",
+  "recorded_at": "2026-11-05T15:55:05Z"
+}
