@@ -727,9 +727,13 @@ class AccessLeakScanner
     return if @network_strings.empty?
     return if ctx[:network] || ctx[:any_container]
 
-    each_string(body) do |str, json_path|
+    each_string(body) do |str, json_path, holder|
       next if ctx[:scenario] && json_path.start_with?('$.footholds')
       next if ctx[:unlock] && json_path.start_with?('$.contents[')
+      # A network link item is the handle of a foothold the player holds: its label and
+      # observations name the network the player has already reached (slice 9.3b W, 5.3),
+      # so a network name there is not a leak.
+      next if holder.to_s.start_with?('netlink_')
 
       @network_strings.each do |secret, owners|
         next unless network_match?(str, secret)
