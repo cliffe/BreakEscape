@@ -75,11 +75,13 @@ scenario.json.erb to match — do not renumber here.
 
     <base distro="Debian 12" type="desktop" name="KDE"/>
 
+    <!-- Pin the subnet so the address printed in-game (jump server 192.168.100.10)
+         matches the real build in standalone mode. 0 = bms_jump_server, 1 = kali.
+         m03 pins the same subnet. When a VmSet binding is present the game reads the
+         address from the binding instead. -->
     <input into_datastore="IP_addresses">
-      <!-- 0 bms jump server -->
-      <network_ip system="bms_jump_server"/>
-      <!-- 1 kali -->
-      <network_ip system="kali"/>
+      <value>192.168.100.10</value>
+      <value>192.168.100.3</value>
     </input>
 
     <!-- FLAG 1 (submit_network_scan_flag)
@@ -88,7 +90,7 @@ scenario.json.erb to match — do not renumber here.
          being fed from here. -->
     <service module_path=".*/parameterised_website">
       <input into="organisation">
-        <value>Albion Energy Storage — BMS Status</value>
+        <value>{"business_name": "Albion Energy Storage - BMS Status", "business_motto": "Grid-scale storage, monitored around the clock.", "business_address": "Unit 4, Harbour Road, Grangemouth, FK3 8XH", "domain": "albion-energy.co.uk", "office_telephone": "01324 555 014", "office_email": "ops@albion-energy.co.uk", "industry": "Energy storage", "manager": {"name": "Fiona Gale", "address": "Unit 4, Harbour Road, Grangemouth, FK3 8XH", "phone_number": "07700 900412", "email_address": "fgale@albion-energy.co.uk", "username": "fgale", "password": ""}, "employees": [], "product_name": "Battery management system", "intro_paragraph": ["Live battery management status for the Albion grid storage site. Rack bank readings are published to the control room SCADA HMI."]}</value>
       </input>
       <input into="main_page_paragraph_content">
         <value>RACK BANK STATUS -- AUTOMATED FEED
@@ -113,10 +115,32 @@ Last integrity check: PASSED</value>
          "maintenance crew" installed. Holds the cross-cell coordination intel. -->
     <vulnerability module_path=".*/proftpd_133c_backdoor">
       <input into="organisation">
-        <value>OptiGrid Solutions</value>
+        <value>{"business_name": "OptiGrid Solutions", "business_motto": "Smarter grids, quietly maintained.", "business_address": "12 Canal Wharf, Leeds, LS11 5PS", "domain": "optigrid-solutions.co.uk", "office_telephone": "0113 496 0727", "office_email": "ops@optigrid-solutions.co.uk", "industry": "Grid maintenance contractor", "manager": {"name": "Darren Pryce", "address": "12 Canal Wharf, Leeds, LS11 5PS", "phone_number": "07700 900412", "email_address": "dpryce@optigrid-solutions.co.uk", "username": "dpryce", "password": ""}, "employees": [], "product_name": "Maintenance file transfer", "intro_paragraph": ["OptiGrid Solutions provides maintenance and integration services for grid storage operators."]}</value>
       </input>
       <input into="strings_to_leak">
-        <generator type="flag_generator"/>
+        <!-- R27: the leaked file carries a real in-fiction document (heading + text);
+             the flag is concatenated on the end so exploitation still yields it. -->
+        <encoder module_path="modules/encoders/selector/concatenate">
+          <input into="strings_to_encode">
+            <value>OPTIGRID SOLUTIONS -- SITE TRANSFER CHANNEL
+Cross-cell coordination intel (Critical Mass)
+
+Contract cover: "preventive maintenance, battery management system". Albion
+believes OptiGrid is a telemetry-calibration vendor. In reality this jump host
+is ours: it sits between Albion's corporate LAN and the BMS/SCADA segment, and
+everything the control room trusts passes through it.
+
+Coordination across the cells runs on this channel:
+- The telemetry stays falsified while the control room trusts the feed. Keep
+  every reading NOMINAL; the operators act on the screen, not on the rack.
+- The physical work -- the charge-ceiling change on the banks -- is staged
+  under the calibration override, root only.
+- Hold until the signal. All cells move on the same window.
+
+Operator procedures are not kept here. See the toolkit notes.</value>
+            <generator type="flag_generator"/>
+          </input>
+        </encoder>
       </input>
       <input into="leaked_filenames">
         <value>optigrid_transfer/coordination_notes</value>
@@ -129,7 +153,26 @@ Last integrity check: PASSED</value>
          the crew rewrote the telemetry the control room trusts. -->
     <vulnerability module_path=".*/sudoedit">
       <input into="strings_to_leak">
-        <generator type="flag_generator"/>
+        <!-- R27: in-fiction calibration-override document; flag concatenated on the end. -->
+        <encoder module_path="modules/encoders/selector/concatenate">
+          <input into="strings_to_encode">
+            <value>BMS CALIBRATION OVERRIDE -- RESTRICTED (root)
+Albion Energy Storage -- rack banks A / B / C
+
+This override replaces the safe charge ceiling on every bank with the
+"calibration" profile OptiGrid supplied. The racks are driven past the
+manufacturer limit while the historian still publishes NOMINAL to the
+control-room screens.
+
+- Charge ceiling: OVERRIDDEN on Bank A, Bank B and Bank C.
+- Hydrogen detection and thermal interlocks: reported ARMED, suppressed in the feed.
+- Emergency shutdown is the only thing left that answers the real state of the racks.
+
+Read at root, this is the whole trick: the plant is being pushed towards thermal
+runaway while every screen in the control room says it is fine.</value>
+            <generator type="flag_generator"/>
+          </input>
+        </encoder>
       </input>
       <input into="leaked_filenames">
         <value>root_only/bms_calibration_override</value>
@@ -139,13 +182,35 @@ Last integrity check: PASSED</value>
     <!-- FLAG 4 (submit_erlang_rce_flag)
          Erlang/OTP SSH daemon (CVE-2025-32433) on a high port — a brand-new pre-auth
          RCE in the plant's control stack, left reachable by the "maintenance" crew.
-         This is the route onto the jump server. -->
+         This is the route onto the jump server.
+         The port is fixed at 22222 and printed on the in-game OptiGrid Job Card #4782
+         (keep this value in step with foothold_port in the Break Escape scenario). It
+         is deliberately outside nmap's default top-1000, so the job card is a useful
+         shortcut, while a full port sweep still finds it. -->
     <vulnerability module_path=".*/ssh_erlangotp_rce">
       <input into="strings_to_leak">
-        <generator type="flag_generator"/>
+        <!-- R27: in-fiction operator notes; flag concatenated on the end. -->
+        <encoder module_path="modules/encoders/selector/concatenate">
+          <input into="strings_to_encode">
+            <value>OPTIGRID TOOLKIT -- OPERATOR NOTES
+Maintenance crew, internal use only
+
+This jump server is the way onto Albion's control stack. We left the
+control-stack service daemon reachable on its high port so the crew can get back
+in without ever touching Albion's help desk.
+
+- From here, the transfer channel carries the coordination notes.
+- As root, the calibration override does the real work on the banks.
+- The falsified rack-status page is what the control room sees. Keep it green.
+- When the window comes, the override goes live on all three banks at once.
+
+Leave nothing signed. OptiGrid is a shell -- there is no help desk to call.</value>
+            <generator type="flag_generator"/>
+          </input>
+        </encoder>
       </input>
       <input into="ssh_port">
-        <value>2222</value>
+        <value>22222</value>
       </input>
       <input into="leaked_filenames">
         <value>optigrid_toolkit/operator_notes</value>
