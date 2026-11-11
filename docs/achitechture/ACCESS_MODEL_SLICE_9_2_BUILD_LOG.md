@@ -401,3 +401,103 @@ drive that session as `cmd.sh 1`. Leftover game: 1189.
 
 Under the lock after the last code change: Rails 1360 runs, 9992 assertions, 0 failures, 0 errors,
 1 skip; JS 481 files passed, 0 failed.
+
+## Sub-slice B: workarounds, part one (2026-11-11, split at the context limit)
+
+Branch `build/9-2-b`, from `main` with U and A merged.
+
+### Done
+
+- **B-1 server** (`3a315afb2`). `npc_frustration.rb`: after each counted fail `choose_run!` hands
+  over at most one workaround (the first lasting one in force, neither done nor handed), records
+  `hands`, `handed[index] = { hand, time }` and answers it as `run` (`{ index, hand, do, dwell }`
+  plus whichever of `pc`, `with`, `door`, `prop`, `event` it authors). `complete_npc_workaround!`
+  runs the plan's checks in order (known NPC; the last spent hand again gives the same body,
+  recomposed, nothing written; handed and unspent, else 403; the dwell, else 425), spends the
+  hand into `lastSpent`, adds lasting ones to `done`, sets a declared `setGlobal` true in
+  `player_state.globalVariables`, and answers `writes_down` `{ pcId, hasPostit: true }`,
+  `prop_door` `{ roomId, roomData }`, `emit` `{}`, each with `setGlobal` when declared. Dwells:
+  writes_down 6 s, prop_door 4 s, emit 0. `tell` now counts a workaround in force (level at or
+  above `at`); `settled` also needs no lasting workaround still to hand over.
+  `GET /scenario`'s block carries `pending` (run descriptions) and `done` (`{ index, do,
+  setGlobal }`). `Game#written_down?` adds a done `writes_down`. Controller: `npc_workaround`
+  (locked, in a transaction), `serve_opened_room` (the door unlock's tail, shared with
+  `prop_door`, so the room's NPCs are encountered at once); route and policy. Tests:
+  `test/controllers/break_escape/npc_workaround_test.rb` (16 runs: every B-1 case in the plan
+  plus the role-list case and an undeclared `setGlobal`).
+- **B-2** (`d42dbeb5d`). `validate_access_work.rb` `check_workarounds`: errors for `at` bounds,
+  unknown `do`, undeclared `setGlobal`, `pc`/`prop`/`door`/`with` that resolve to nothing, emit
+  with no event, writes_down with no account or no sign-in `needsHome`, prop_door to a room not
+  locked, behind a gate door or the NPC's own, a prop inside the door's room or in a room not
+  connected to it. Warnings: an NPC that can never be frustrated, writes_down over an authored
+  `postitNote` or `showPostit: false`, what it opens holding a `flag-station` or `vm-launcher`,
+  prop_door through a door the NPC's own card and role do not open, a prop in a room the leash
+  forbids, a missing start pool (`wk_writes_down`, `wk_prop_door`, `wk_borrow`,
+  `wk_share_login`; none under `"chatter": false`). The report lines were already A's
+  (`prop_door` says "stays open for the mission"). Graph: `workaround_<npc>_<i>` action nodes
+  with edges to the sign-in (writes_down, share_login), the PC (borrow_session) or the door
+  (prop_door); `outage_<global>` gate nodes (a work resource's `downIf`, the station's
+  `offWhen`) with edges to each workaround. Tests: 7 in `validator-access-work.test.mjs`,
+  `dungeon-graph-workarounds.test.mjs` (3).
+- **B-3** (`3aa7a0d9e`). `systems/npc-workarounds.js` (new; `installNpcWorkarounds` in
+  `core/game.js`, static import, installed before `restoreFrustration`; `ApiClient.npcWorkaround`).
+  The needs system adds `level` to `npc_workaround_due`, emits it for each `pending` run when a
+  restored NPC registers (and for a run in an answer that arrived before registration). Review R2
+  client n1 (an answer to a fail clears only that need's `failSent`; `npc-reports.js` tags each
+  answer with `forEvent` and `forNeed`) and n4 (`stateIconEntry` falls through with no `blocked`
+  icon) are done. Tests: `npc-workarounds.test.mjs` (13, stub API plus the needs fixture).
+- **B-4 tooling** (`ef6fbfbd6`). The leak scanner's `workaround` rule (a hash with a
+  workaround's kind beside its own target, anywhere but a `run` in a `/npc_frustration` answer or
+  `pending`/`done` in GET /scenario), and its count in `access-leak-check.rb`; unit test.
+  `verify-run --access` already printed level, handed and done.
+
+### Adjustments
+
+1. **Sub-slice H's kinds are invisible in B.** `borrow_session` and `share_login` are ignored by
+   `run`, `tell` and `settled` (`PERFORMED_KINDS`), so a scenario that authors one gives no
+   warning for a workaround that cannot happen yet. Two A tests changed with it: the tell test
+   now uses an `emit` at 50, and the "at or below perFail" test now expects tell 2 and a run.
+   A new test checks Dana's fixture borrow gives no run and tell 1. The runner gives back any
+   kind it does not perform as `dropped`.
+2. **A repeated `dropped`** for an already spent hand answers `{}` again instead of 403, so a
+   lost answer to a drop is harmless. It writes nothing.
+3. **`setGlobal` travels in the "done" answer** (and in the `done` list), so the client sets it at
+   the same moment as the server. A global name is not secret (plan 9.2).
+4. **`settled`** also waits for a lasting workaround in force that is not yet done: the plan's
+   wording ("nothing handed over and waiting") would otherwise settle an NPC at 100 with a second
+   workaround that a further failure would hand over.
+5. **The probe.** The unproven engine path is a visit to a prop hidden by `revealOnGlobal`. Read,
+   not yet run: `_visitPlace` uses `world.getObject`, which finds hidden sprites (only use
+   targets skip `_hidden`). X2 in the browser is the proof still owed.
+
+### Handover: open, in order
+
+1. **Scenario beats X1 to X4** in `scenarios/test_access_work` (plan 11.1): `note_room` (Mei Lin,
+   `mei_pc` with `lockChance: 1`, resource `rota` with a switch, `writes_down` at 50, her profile
+   holding the `records_nook` door code), `store_lobby` (Tom Fletcher, role `facilities`, a card;
+   `store_room` behind an rfid door admitting `facilities`, Una Walsh inside; `store_wedge`
+   hidden on `store_door_propped`, declared), `event_room` (Ellis Ward, `+intranet`,
+   `perFail: 50`, `emit` `ellis_gave_up` with `noWarning`, mapped to a task). Add `wk_writes_down`
+   and `wk_prop_door` lines to the top-level `chatter`. One task per beat; signs; `PLAYTEST.md`
+   X section with request budgets. After X3 lands, the `intranet` "in no NPC's work list"
+   warning should go.
+2. Validator on `test_access_work` (expected: U3's tray, Kai, nothing new), the three needs
+   scenarios and the lab.
+3. Browser run on port 3015 (own keyless server, started by hand as `start-keyless-server.sh`
+   does, stopped afterwards): X1 to X4 with both X4 reloads, `verify-run.rb <game> --access`,
+   `access-leak-check.rb`, a run report in `scenarios/test_access_work/reports/`. Then the needs
+   regression captures (plan 11 point 5) on `test_needs_sims`, `test_npc_needs`,
+   `test_needs_leash` (planned difference: none) and the watch-it-happen run.
+4. **B-5 documents**: README "Work, frustration and workarounds" (each kind, what it opens,
+   `tell` and "no warning", the graph nodes); the runner's events (`npc_workaround:<id>` with
+   `started`, `done`, `dropped`, `ended`; `door_propped:<roomId>`; `npc_workaround_due` gains
+   `level` and `restored`) in `NPC_NEEDS_SYSTEM.md`; `docs/test-bridge.md` if a bridge helper is
+   added.
+5. Full suites under the lock again after the scenario, then report for review. At this split (after `ef6fbfbd6`): Rails 1425 runs, 0 failures, 1 skip; JS 485 files passed, 0 failed.
+
+### Gotchas
+
+- `ruby -c a b` checks only `a`; check each file on its own.
+- In `npc_workaround_test.rb` the fails are spaced 25 s apart (the park floor at
+  `needsDeferMin` 0.5 is 24 s). A threshold reached while an earlier lasting one waits is
+  handed over at that same fail (the "two at once" case), which a first draft of a test missed.
