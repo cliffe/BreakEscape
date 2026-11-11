@@ -340,7 +340,7 @@
     },
     {
       "id": "vmch_recover_gitlist_exposure",
-      "label": "Exploit the repository browser and submit the first flag",
+      "label": "Read the exposed repository in its browser and submit the first flag",
       "kind": "vm",
       "optional": false
     },
@@ -352,7 +352,7 @@
     },
     {
       "id": "vmch_recover_stashed_credentials",
-      "label": "Recover the credentials left in the repository history and submit the second flag",
+      "label": "Break in through the repository browser, dig the credentials out of its history and submit the second flag",
       "kind": "vm",
       "optional": false
     },

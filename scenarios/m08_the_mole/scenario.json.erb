@@ -440,7 +440,7 @@ CREDITS
         },
         {
           "taskId": "recover_gitlist_exposure",
-          "title": "Exploit the repository browser and submit the first flag",
+          "title": "Read the exposed repository in its browser and submit the first flag",
           "type": "submit_flags",
           "targetFlags": ["flag_station_evidence_relay:safetynet_gitlist_server-flag1"],
           "targetCount": 1,
@@ -450,7 +450,7 @@ CREDITS
         },
         {
           "taskId": "recover_stashed_credentials",
-          "title": "Recover the credentials left in the repository history and submit the second flag",
+          "title": "Break in through the repository browser, dig the credentials out of its history and submit the second flag",
           "type": "submit_flags",
           "targetFlags": ["flag_station_evidence_relay:safetynet_gitlist_server-flag2"],
           "targetCount": 1,
@@ -761,20 +761,20 @@ CREDITS
               "sendTimedMessage": { "delay": 2500, "message": "I'm on the wire. Get the Director's brief before you spook anyone. And 0x00... whichever of the three it is, it's a friend of mine." }
             },
             {
-              "_comment": "Flag 1 -- GitList remote command execution (CVE-2014-4511). First foothold; SAFETYNET's own repo browser is exploitable without a login. PASS 4 (fix 19): offers the secrets-in-git-history guide here, before the step it teaches (flag 2); the vulnerability-analysis guide moved to the launcher.",
+              "_comment": "Flag 1 -- the exposed repository (recon). SAFETYNET's own GitList browser shows the repo to anyone, no login; its README names the ops account and says the credential was removed but never rotated. The break-in (GitList remote command execution, no login) comes next and earns flag 2, with the history. Playtest 2026-11-11: label and texts were swapped to the break-in. PASS 4 (fix 19): offers the secrets-in-git-history guide here, before the step it teaches (flag 2); the vulnerability-analysis guide moved to the launcher.",
               "eventPattern": "global_variable_changed:flag1_submitted",
               "condition": "value === true",
               "onceOnly": true,
               "setGlobal": { "found_gitlist_vuln": true, "gitsecrets_guide_offered": true },
-              "sendTimedMessage": { "delay": 1500, "message": "On the box already? Our own code server, no password. That's a report nobody will enjoy. Now read the history, not just the files. Want the git secrets guide?" }
+              "sendTimedMessage": { "delay": 1500, "message": "Our own code server, and its repo is open to anyone. No password. That's a report nobody will enjoy. The credential's gone from the files, not from the history. Break in and read it. Want the git secrets guide?" }
             },
             {
-              "_comment": "Flag 2 -- stashed credentials. The mole's opsec failure: creds committed to the repo. PASS 4 (fix 19): its guide is now offered at flag 1.",
+              "_comment": "Flag 2 -- the break-in and the stashed credentials. GitList remote command execution with no login gives the foothold; the mole's opsec failure (creds committed to the repo, removed, never rotated) is in its history. PASS 4 (fix 19): its guide is now offered at flag 1.",
               "eventPattern": "global_variable_changed:flag2_submitted",
               "condition": "value === true",
               "onceOnly": true,
               "setGlobal": { "found_leaked_creds": true },
-              "sendTimedMessage": { "delay": 1500, "message": "Credentials, committed straight into the repo and never scrubbed. Log in properly with them and see what the account keeps at home. If anything in there is sealed, the Director has held a key for nine days: the full Portland intercept, in his safe." }
+              "sendTimedMessage": { "delay": 1500, "message": "You're in, and so were the credentials: committed straight into the repo, deleted, never rotated. Log in properly with them and see what the account keeps at home. If anything in there is sealed, the Director has held a key for nine days: the full Portland intercept, in his safe." }
             },
             {
               "_comment": "Flag 3 -- proper login, home-directory flag. The mailbox ties the account to the Portland intercept (an account, not yet a person: PASS 5 Option B). Also opens the privilege-escalation guide.",
@@ -1894,8 +1894,8 @@ CREDITS
     door-audit reading (Netherton's or HaX's ink), or from flag 4 only on the
     fallbacks (audit closed, Director down). %>
           "flagRewards": [
-            { "type": "set_global", "key": "flag1_submitted", "value": true, "label": "Foothold on the code server -- no password needed", "description": "GitList CVE-2014-4511 -- remote command execution on SAFETYNET's own repo browser, no login" },
-            { "type": "set_global", "key": "flag2_submitted", "value": true, "label": "Credentials recovered from the repo history", "description": "Credentials recovered from repository history" },
+            { "type": "set_global", "key": "flag1_submitted", "value": true, "label": "The code server's repository -- exposed, no password needed", "description": "SAFETYNET's own GitList repo browser shows the repository to anyone, no login: the README names the ops account and a credential that was never rotated" },
+            { "type": "set_global", "key": "flag2_submitted", "value": true, "label": "Broke in -- credentials recovered from the repo history", "description": "GitList remote command execution, no login, then credentials dug out of the repository's deleted history" },
             { "type": "set_global", "key": "flag3_submitted", "value": true, "label": "Logged in -- the Architect's mail is in their home directory", "description": "Logged in properly -- home directory holds the ENTROPY correspondence" },
             { "type": "set_global", "key": "flag4_submitted", "value": true, "label": "Root -- the access logs name the account", "description": "Root via sudo apt-get -- access logs place the mole" }
           ]
