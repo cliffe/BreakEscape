@@ -629,3 +629,89 @@ After `3cc153d62`, under the lock: Rails 1425 runs, 0 failures, 1 skip; JS 485 f
 
 After `698fc32f0`, under the lock: Rails 1425 runs, 0 failures, 1 skip; JS 485 files passed, 0 failed.
 Sub-slice B is ready for review.
+
+## Sub-slice B review round 1 outcomes (2026-11-11)
+
+Reviews: `ACCESS_MODEL_SLICE_9_2_B_CODE_REVIEW_R1_SERVER.md` and `..._R1_CLIENT.md`. Commits
+`3738f6436` (server), `d65399723` (client), `89820a589` (label and recipe), and this log.
+
+### Orchestrator decision (recorded)
+
+On the client reviewer's three plan gaps: apply the suggested fixes where each is small and
+contained (a visible cue for an `emit` workaround such as Ellis's; start lines a player can
+notice, such as a longer-lasting bubble; a hint on Mei's sticky-note mark). Anything that turns
+into engine design beyond a small change is logged as a plan gap for the user instead.
+
+### Server review
+
+| Finding | Outcome |
+|---|---|
+| M1 `prop_door` with no `door` or `prop` passes | Fixed. Validator errors on each; the server's `performable?` now also needs a `prop` (the runner's walk target), so such an entry is never handed over. Tests: `validator-access-work` (both, and both together), Rails "a prop_door with no prop is never handed over" |
+| m1 `writes_down` on a PC another NPC owns, or no password | Fixed. Validator errors with the server's owner rule (`screenOwner`, else the first room NPC with it as `needsHome`) and on an empty `creds.password`. Test in `validator-access-work` |
+| m2 prop not hidden on the `setGlobal` | Fixed. Warning for a `prop_door` with no `setGlobal`, and for a prop whose `revealOnGlobal` is not it. Test in `validator-access-work` |
+| m3 scanner blind to a leaked `writes_down` | Fixed. Any hash whose `do` is a workaround kind and that carries `at` is a finding everywhere, with no exemption (also when the scenario has no targeted workarounds). Unit test added |
+| m4 replay of a dropped hand answers `{}` | Fixed. A drop, a repeated drop and a "done" after a drop answer 200 `{ "dropped": true }`; the runner applies that as `dropped`. Rails and JS tests |
+| m5 tests | Fixed: a drop 1 s after the hand-over (inside the dwell) is 200; "done" after "dropped" is not counted (done and handed empty, state unchanged, no note); replays of `writes_down` and `emit` write nothing; a negative index, float hand, seven-digit strings and `"1.0"` are 403 |
+| n1 `retryAfter` is the whole dwell | Fixed: the time left, `ceil(1)`. Test |
+| n2 scanner exemption by path only | Deferred to sub-slice H, which reopens the scanner for its kinds; a cross-NPC entry needs a tampered server, not a tampered client |
+| n3 graph drops a `prop_door` edge silently | Fixed: a `warn` to stderr. The numbering remark needs no change (a non-object entry already fails validation) |
+| n4 `written_down?` scans every room NPC | Deferred: cheap at today's sizes, as the reviewer says; revisit if it shows in a profile |
+| n5 sync race on a workaround `setGlobal` | Noted in plan 9.4's "after a reload" table, as asked |
+| n6 replay cost; H-only kinds validate clean | Replay cost accepted (no worse than `GET /room`). The work report's `Workaround` line for `borrow_session` and `share_login` now ends "Not performed until sub-slice H." |
+
+### Client review
+
+| Finding | Outcome |
+|---|---|
+| M1 a hand-over is lost after six failures | Fixed. No give-up: resent for as long as the page lives after 2, 4, 8, 16 s and then every 30 s (`retryDelay`); a 425 waits the time left, capped at 30 s; only a 403 ends it. A reload loses nothing: the server still holds the hand-over and sends it as `pending`. Tests: eight failures then success, a resent drop, the 425 wait. Live: game 1204, the first three requests for Ellis failed in the page; resent at +2, +4, +8 s, then applied |
+| m1 one wait slot per NPC | Fixed. A queue across all NPCs (`_mutterWaits`, read with `mutterWaits()`), oldest first, ticked once per tick before the NPCs. Test: three lines for one NPC, all in words, in order |
+| m2 several NPCs freed on one tick | Fixed. Each waiter re-checks the lock and the first to speak takes it, so the rest wait; the wait is now 20 s (was 8 s), so a few queued start lines are each said in words before any falls back to its picture. Test: two NPCs, three lines, none a picture |
+| m3 a start line said late or while unavailable | Fixed. A waiting mutter whose NPC is not placed or not available is held and, after `MUTTER_WAIT_MS`, dropped (`mutter_dropped` in the log), never said late. Test |
+| m4 `reset()` loses a workaround visit | Fixed. `reset()` emits `npc_visit_dropped` (`reason: 'reset'`) for a running or queued workaround visit. Test |
+| m5 line and `started` before the act can start | Fixed. The visit is queued first; the line and `started` come only when it was queued (an emit at once). Test |
+| m6 test gaps | Added: no give-up and backoff, a resent drop, the picture fallback after the wait, two waiters for one NPC and for two NPCs, a held then dropped waiter, the wait takes no lock of its own, `installNpcWorkarounds` twice (one set of listeners), two `pending` runs for one NPC. Deferred: the start line driven through a judged fail in `_turnBack` (the live runs cover that path: game 1204 shows both start lines in words through it) and the `failSent` two-NPC batch alignment (sub-slice A code; H reopens it) |
+| m7 `door_opened` again on each reload | Fixed. A door the runner re-opens as its room is built carries `restored: true` in `door_opened`; documented in the README. Live: the in-session prop in game 1204 has no flag |
+| n1 `restored` ignored | Documented in the runner header: the NPC sets off again, so it says its line again |
+| n2 `proppedOpening` stuck after a throw | Fixed: `openSprite` returns false on a throw or no `unlockDoor`, and the mark is cleared so the next build tries again |
+| n3 `level` is the client mirror | Documented in the runner header and the README |
+| n4 H's kinds | Comment on `VISIT_KINDS` |
+| n5 catch message | Fixed |
+| Client-sent data table: a client can write a workaround's `setGlobal` through state sync | Plan gap for the user (sub-slice H): refusing client writes of declared workaround globals touches `sync_state` for every scenario. Today no scenario gates a door or container on such a global; the README says to map tasks or reveals to it, not locks |
+
+### The three watch-it-happen gaps and the open question
+
+- **Ellis's `emit` shows nothing.** Fixed in the scenario: X3's workaround sets
+  `ellis_out_of_office`, which reveals an "out of office" note beside his PC (seen in game 1204).
+  The README now tells authors that an `emit` with only a task is a toast and to give it something
+  in the room.
+- **Start lines not noticed.** A mutter's bubble now stays up at least 6 s (`MUTTER_BUBBLE_MS`),
+  and m1/m2 keep every start line in words. A distinct action icon for a workaround visit (a
+  sticky note, a door wedge) needs new icon art: **plan gap for the user**, not done.
+- **Mei's note never read.** A sign-in PC with a note picture now says so in its proximity label
+  ("... A sticky note is stuck to the monitor."), with no note text. Giving Mei an earlier reason
+  to leave was not changed: her `thirst` already takes her to the boiler.
+- **Mei stuck on "returning" in game 1201.** Not a sub-slice B bug. The persona stood at the rota
+  switch (tile 8,3, beside the boiler at 8,4) from about t=40 s; Mei's work job back to her desk
+  timed out at 146 s and 226 s; the persona moved away at about t=280 s and she reached her desk
+  at 293 s. The player's body blocked her route, which the needs system meets with its normal
+  timeout and retry. Moving the switch put it over the west desks, so the X1 recipe in
+  `PLAYTEST.md` now says to step back towards the door after switching off.
+
+### Browser run (game 1204, port 3015)
+
+One game, one reload. X3 with three simulated request failures (above). X2 with X4: Tom frozen
+on his way (manual needs clock on `started`) with his start line queued behind the fail line;
+reload with `?skip_resume=1`; back in `store_lobby` he set off again (`restored: true`), said
+"I'm not badging in every time." in words, and propped the door (`done`, `door_propped`). X1: Mei
+wrote the note (start line in words), the mark is on `mei_pc`, and the label shows the sticky
+note sentence. Server: ellis, mei and tom each `done [0]`, nothing handed; three
+`POST /npc_workaround` reached the server, all 200. Leak check: no leaks found. Session log and
+responses in the scratchpad (`9-2-b-r1`).
+
+### Leftover games
+
+1203 (made by mistake, unused), 1204.
+
+### Suites after review round 1
+
+After `89820a589`, under the lock: Rails 1432 runs, 0 failures, 1 skip; JS 485 files passed, 0 failed.

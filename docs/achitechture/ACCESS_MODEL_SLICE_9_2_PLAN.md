@@ -1500,7 +1500,7 @@ What a load does:
 | An owner's `locked_out` flag | Kept: `lockedOut` in `npcFrustration`, applied when the owner's room loads |
 | A workaround handed over and not spent | Sent again as `pending`; the runner starts it again when the NPC is registered |
 | A pending borrow | Set again, with its 60 second start limit from the load. Needs restart at `initial`, so the borrow starts only if the need is urgent: when the outage that caused it still holds, the kick (5.6) makes `work` urgent at once and the NPC goes; otherwise (a lockout, which has no global) the borrow lapses, is dropped, and comes round after the next failure |
-| A done workaround's `setGlobal` | Kept on the server, and set again by the client from the `done` list |
+| A done workaround's `setGlobal` | Kept on the server, and set again by the client from the `done` list. A state sync built before the client applied the "done" answer and landing after it can put `false` back on the server until the next sync (globals merge last-write-wins, as a task's `setGlobal` does today); the client resends `true` and a load re-applies it, so it heals, but a server check that reads the global in that window sees `false` |
 | A lasting workaround that is done | Still in force: the room is in `unlockedRooms`, `hasPostit` is in room data and the note in `/login_accounts`, an `emit` is not sent again |
 | A guest session and its claim | Ended, as every claim is; the PC shows the sign-in screen until the NPC borrows it again |
 | A session of the player's that an NPC displaced | Gone on both sides |
