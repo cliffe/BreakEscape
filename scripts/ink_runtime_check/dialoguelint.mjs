@@ -231,7 +231,8 @@ export function lintInk(text, { channel = 'person', names = [], file = '' } = {}
 //                       divert to END/DONE or to a knot that starts with a choice).
 //   delivery-note       (warn) a #delivery: note the voice will not get as written: over 200 characters
 //                       (TtsService::MAX_DELIVERY_LENGTH, dropped), with no ASCII letter or digit
-//                       ("...", dropped), or with {braces} (the server reads the tag without them).
+//                       ("...", dropped), or with {braces} (the server cannot read
+//                       what they print, so the line plays untagged).
 //   crowded-hub         (check) a knot whose choice block offers more than 10 choices at once (sticky,
 //                       once-only and conditional all count). Passes when every conditional choice is
 //                       retired by a "not ..." guard and the unconditional ones sit last, which is how
@@ -686,6 +687,20 @@ const MAY_PRINT_NOTHING = /^\{[^{}|]*:[^{}|]*\}\s*(?:#.*)?$/;
 // cannot read it, and drops the note.
 const NESTED_CONDITIONAL = /^\{[^{}]*:[^}]*\{/;
 
+// The divert, tunnel or thread met after line j before any other line ({ shown, n }), or null.
+function crossing(lines, j) {
+  for (let k = j + 1; k < lines.length; k++) {
+    const L = lines[k];
+    if (['blank', 'comment', 'tag', 'logic'].includes(L.kind)) continue;
+    if (L.kind === 'thread' && L.thread) return { shown: `<- ${L.thread}`, n: L.n };
+    if (L.kind === 'divert' && (L.tunnel || L.divert)) {
+      return { shown: L.tunnel ? `-> ${L.tunnel} ->` : `-> ${L.divert}`, n: L.n };
+    }
+    return null;
+  }
+  return null;
+}
+
 // Where a carried note goes once it reaches spoken line j: { line } | { reason } | null.
 function landOn(lines, idx, j, met, depth) {
   const L = lines[j];
@@ -696,6 +711,9 @@ function landOn(lines, idx, j, met, depth) {
   if (!next) return null;
   if (next.none) return { reason: `${nothing} no spoken line follows (${next.none})` };
   if (next.reason) return { reason: `${nothing} ${next.reason}` };
+  // The server keeps such a line's note for the next line in the same knot only (review R4 m1)
+  const jump = crossing(lines, j);
+  if (jump) return { reason: `${nothing} the note is not followed across ${jump.shown} (line ${jump.n}) to the line after it` };
   const r = unreadReason(lines, next.line);
   if (r) return { reason: `${nothing} the line after it (line ${lines[next.line].n}) ${r}` };
   return { line: j };
@@ -761,7 +779,7 @@ function deliveryFindings(lines, idx, channel) {
     if (!notes.length) continue;
     for (const note of notes) {
       const why = [...note].length > MAX_DELIVERY_LENGTH ? `is over ${MAX_DELIVERY_LENGTH} characters`
-        : note.includes('{') || note.includes('}') ? 'has {braces}: the server reads the tag without what they print'
+        : note.includes('{') || note.includes('}') ? 'has {braces}: the server cannot read what they print (the line plays untagged, and any note before it is dropped)'
         : !/[A-Za-z0-9]/.test(note) ? 'has no ASCII letter or digit'
         : null;
       if (why) F.push({ level: 'warn', rule: 'delivery-note', line: L.n, text: cleanInkText(L.t) || L.t,
@@ -769,8 +787,11 @@ function deliveryFindings(lines, idx, channel) {
     }
     if (channel === 'phone') continue;      // voiced phone calls do not send notes yet
     let target = null, reason = null;
-    if (L.kind === 'text' && L.printable) target = i;
-    else if (L.kind === 'tag') {
+    if (L.kind === 'text' && L.printable) {
+      target = i;
+      const jump = MAY_PRINT_NOTHING.test(code.trim()) && crossing(lines, i);
+      if (jump) reason = `the line may print nothing (a conditional with no else), and then the note is not followed across ${jump.shown} (line ${jump.n}) to the line after it`;
+    } else if (L.kind === 'tag') {
       const met = [];
       const t = noteTarget(lines, idx, i, met);
       if (t && t.none) reason = `no spoken line follows it in the same knot (${t.none})`;

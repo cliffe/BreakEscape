@@ -202,7 +202,10 @@ module BreakEscape
       # delivery_parity_r3 (review R3): a tunnel that returns before speaking, a note met on
       # the way (a tagged chain knot, a tagged line that may print nothing), threads, a
       # tunnel with an argument; flags played every way
-      'delivery_parity_r3' => [[], %w[flag=true], %w[g=true], %w[flag=true g=true]]
+      'delivery_parity_r3' => [[], %w[flag=true], %w[g=true], %w[flag=true g=true]],
+      # delivery_parity_r4 (review R4): a #delivery: tag that prints a value, and a one-line
+      # conditional followed by a divert
+      'delivery_parity_r4' => [[], %w[flag=true]]
     }.freeze
 
     # Notes the client sends that the walker drops on purpose (the line is then voiced
@@ -213,6 +216,14 @@ module BreakEscape
         ['Kevin Park: Back from the logic tunnel.', 'into logic tunnel'], # past ->->
         ['Kevin Park: After the inner return.', 'in nest b'],             # past ->->
         ['Kevin Park: After the threaded options.', 'into threaded']      # past a thread
+      ],
+      'delivery_parity_r4' => [
+        ['Kevin Park: A first.', 'loud'],           # a dynamic note (delivery-note)
+        ['Kevin Park: B line.', 'loud'],            # a dynamic note after a static one
+        ['Kevin Park: Plain target.', 'loud'],      # a dynamic note carried across a divert
+        ['Kevin Park: After dyn maybe.', 'loud'],   # a dynamic note after a maybe line
+        ['Kevin Park: B first.', 'own k'],          # a maybe line, then a divert
+        ['Kevin Park: B first.', 'own km']          # a maybe line with its own note, then a divert
       ]
     }.freeze
 
@@ -239,11 +250,15 @@ module BreakEscape
         unread = walker.unresolved.map(&:text)
 
         drops = PARITY_DROPS.fetch(name, [])
-        drops.each { |drop| assert_includes client, drop, "#{name}: stale PARITY_DROPS entry #{drop.inspect}" }
+        drops.each do |text, note|
+          assert_includes client, [text, note], "#{name}: stale PARITY_DROPS entry #{[text, note].inspect}"
+          # A dropped note plays the line's untagged clip, so the walker must list that (review R4 m2, n1)
+          assert_includes server, [text, nil], "#{name}: the dropped line #{text.inspect} is not listed untagged"
+        end
         client.each do |text, note|
-          next if drops.include?([text, note]) && !server.include?([text, note])
-
           if read.include?(text)
+            next if drops.include?([text, note]) && !server.include?([text, note])
+
             assert_includes server, [text, note], "#{name}: the walker misses the client's note for #{text.inspect}"
           else
             assert(unread.any? { |u| text.include?(u) }, "#{name}: #{text.inspect} is neither read nor unresolved")
@@ -289,6 +304,26 @@ module BreakEscape
       assert_equal [nil], notes['Kevin Park: After the thread.']
       # n2: a tunnel with an argument
       assert_equal [nil, 'outer argument'].sort_by(&:to_s), notes['Kevin Park: Inside the argument tunnel.']
+    end
+
+    test "a #delivery: tag that prints a value drops every note before it, carried or on the line (review R4 M1)" do
+      json = BreakEscape::Engine.root.join('test/fixtures/files/ink_line_walker/delivery_parity_r4.json').to_s
+      notes = InkLineWalker.from_file(json).lines.group_by(&:raw)
+                           .transform_values { |ls| ls.map { |l| TtsService.delivery_from_tags(l.tags) }.uniq.sort_by(&:to_s) }
+      assert_equal [nil], notes['Kevin Park: A first.']
+      assert_equal [nil], notes['Kevin Park: B line.']
+      assert_equal [nil], notes['Kevin Park: Plain target.']
+      assert_equal [nil], notes['Kevin Park: After dyn maybe.']
+      assert_equal ['before maybe'], notes['Kevin Park: Dyn maybe.']
+      # review R4 m1: a maybe line's note is not followed across the divert after it
+      assert_equal [nil], notes['Kevin Park: B first.']
+      assert_equal ['own km'], notes['Kevin Park: KM maybe.']
+
+      static_after = { 'inkVersion' => 21, 'root' => [
+        '#', '^delivery: ', 'ev', { 'VAR?' => 'mood' }, 'out', '/ev', '/#', '#', '^delivery: calm', '/#',
+        '^After.', "\n", 'done', { 'global decl' => ['ev', 'str', '^loud', '/str', { 'VAR=' => 'mood' }, '/ev', 'end', nil] }
+      ] }
+      assert_equal 'calm', TtsService.delivery_from_tags(InkLineWalker.new(static_after).lines.first.tags)
     end
 
     test "a note before a tunnel or an external call is never carried past it" do

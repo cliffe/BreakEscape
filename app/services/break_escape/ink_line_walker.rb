@@ -31,6 +31,11 @@ module BreakEscape
     # A trailing dict carrying any of these is a control object, not sub-containers.
     CONTROL_KEYS = %w[-> f() ->t-> x() VAR= temp= * ^-> VAR? CNT? #].freeze
 
+    # Stands for a #delivery: tag the walker cannot read without running the story
+    # (`#delivery: {mood}`). inkjs sends what it prints, which the server cannot
+    # match, so it reads as no note and drops every note before it (review R4 M1).
+    DYNAMIC_DELIVERY = 'delivery: {}'.freeze
+
     # Most lines one ink line may expand to (branches of sequences and inline
     # conditionals multiply). A line that would expand further is logged instead.
     MAX_VARIANTS = 16
@@ -125,6 +130,9 @@ module BreakEscape
     # Where the client would join the carried note to another #delivery: note on
     # the way (a redirecting knot's own note, or one on a line that may print
     # nothing), the walker drops the carried note rather than guess which wins.
+    # A #delivery: tag that prints a value (`#delivery: {mood}`) is read as no
+    # note that also drops every note before it, carried or on the line, so the
+    # line it lands on is listed untagged (dialoguelint warns: delivery-note).
     # Glued lines and lines printing game state stay unresolved either way, so a
     # note on one is not read here (dialoguelint warns: delivery-unread).
 
@@ -184,7 +192,7 @@ module BreakEscape
         ranges.each do |range|
           range.each do |i|
             line = @lines[i]
-            tags = notes + line.tags
+            tags = after_dynamic(notes + line.tags)
             next if TtsService.delivery_from_tags(tags) == TtsService.delivery_from_tags(line.tags)
 
             copy = line.dup
@@ -249,6 +257,15 @@ module BreakEscape
       end
     end
 
+    # Tags as inkjs reads them past a dynamic #delivery: tag: every #delivery:
+    # tag before the last DYNAMIC_DELIVERY is dropped.
+    def after_dynamic(tags)
+      at = tags.rindex(DYNAMIC_DELIVERY)
+      return tags unless at
+
+      tags.each_with_index.reject { |t, i| i < at && TtsService.delivery_tag?(t) }.map(&:first)
+    end
+
     # A plain divert's target as an absolute ink path, or nil. Relative paths
     # count from the divert: the first ".^" is its container, each more one up.
     def divert_target(target, path)
@@ -282,6 +299,11 @@ module BreakEscape
         when String
           handle_string(item, state, path)
         when Hash
+          if state[:in_tag]
+            # `#delivery: {mood}`: a value printed into the tag
+            state[:tag_dynamic] = true
+            next
+          end
           if state[:in_ev]
             state[:ev_parts] << item
             next
@@ -344,7 +366,8 @@ module BreakEscape
           dangling = walk(item, "#{path}[#{i}]")
           state[:partial] ||= 'continues after an inline conditional or sequence' if dangling
         when Numeric, TrueClass, FalseClass
-          state[:ev_parts] << item if state[:in_ev]
+          state[:tag_dynamic] = true if state[:in_tag]
+          state[:ev_parts] << item if state[:in_ev] && !state[:in_tag]
         end
       end
 
@@ -362,15 +385,26 @@ module BreakEscape
       if item == '#'
         state[:in_tag] = true
         state[:tag_buf] = +''
+        state[:tag_dynamic] = false
         return
       end
       if item == '/#'
         state[:in_tag] = false
-        state[:tags] << state[:tag_buf].strip
+        tag = state[:tag_buf].strip
+        if state[:tag_dynamic] && TtsService.delivery_tag?(tag)
+          state[:tags] = after_dynamic(state[:tags] + [DYNAMIC_DELIVERY])
+        else
+          state[:tags] << tag
+        end
         return
       end
       if state[:in_tag]
-        state[:tag_buf] << item[1..] if item.start_with?('^')
+        if item.start_with?('^')
+          state[:tag_buf] << item[1..]
+        else
+          # ev, out, /ev, str: the tag prints a value
+          state[:tag_dynamic] = true
+        end
         return
       end
 
@@ -491,10 +525,10 @@ module BreakEscape
       variants.each do |variant|
         prefix, text = self.class.split_prefix(variant)
         @lines << Line.new(prefix: prefix, text: text, raw: variant, tags: tags, path: path)
-        next unless maybe && TtsService.delivery_from_tags(maybe + tags) != TtsService.delivery_from_tags(tags)
+        next unless maybe && TtsService.delivery_from_tags(after_dynamic(maybe + tags)) != TtsService.delivery_from_tags(tags)
 
         # Shown after a line that may have printed nothing: also as it plays with that line's note
-        @lines << Line.new(prefix: prefix, text: text, raw: variant, tags: maybe + tags, path: path)
+        @lines << Line.new(prefix: prefix, text: text, raw: variant, tags: after_dynamic(maybe + tags), path: path)
       end
       range = start...@lines.length
       state[:last_lines] = range
@@ -503,7 +537,7 @@ module BreakEscape
       @also_next.each { |p| @first_lines[p] << range if @first_lines[p] && !@first_lines[p].include?(range) }
       @awaiting.clear
       if may_be_empty
-        state[:maybe_tags] = (Array(maybe) + tags).select { |t| TtsService.delivery_tag?(t) }
+        state[:maybe_tags] = after_dynamic(Array(maybe) + tags).select { |t| TtsService.delivery_tag?(t) }
         state[:maybe_tags] = nil if state[:maybe_tags].empty?
         # A carried note reaching the next line would meet this line's own note in
         # inkjs, so only an untagged line passes the first-line role on (review R3 M2)

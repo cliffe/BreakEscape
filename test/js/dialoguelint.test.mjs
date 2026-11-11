@@ -430,6 +430,22 @@ test('delivery-unread: tunnel returns, notes met on the way and threads (review 
   assert.match(f[7].note, /the tunnel returns \(->->, line 85\)/);
 });
 
+// delivery_parity_r4.ink (review R4): every note the walker drops there is warned about: a note
+// that prints a value (delivery-note), and a one-line conditional followed by a divert (m1).
+const R4_INK = readFileSync(new URL('../fixtures/files/ink_line_walker/delivery_parity_r4.ink', import.meta.url), 'utf8');
+
+test('delivery-unread and delivery-note: dynamic notes and a one-line conditional before a divert (review R4)', () => {
+  const findings = lintInk(R4_INK);
+  assert.deepEqual(only(findings, 'delivery-note').map(x => x.line), [17, 34, 37, 45]);
+  const f = only(findings, 'delivery-unread');
+  assert.deepEqual(f.map(x => x.line), [11, 16, 22, 48, 52]);
+  assert.match(f[2].note, /the line it lands on \(line 49\) may print nothing .* not followed across -> b \(line 50\)/);
+  assert.match(f[4].note, /the line may print nothing .* not followed across -> b \(line 53\)/);
+  // with a spoken line straight after the conditional, the note is followed and stays quiet
+  const plain = ['=== k ===', '#delivery: fine', '{flag: Kevin Park: Maybe.}', 'Kevin Park: Next.', '-> END'].join('\n') + '\n';
+  assert.deepEqual(only(lintInk(plain), 'delivery-unread'), []);
+});
+
 test('delivery-unread: a knot with a tag line before its first stitch is not followed into the stitch', () => {
   const ink = ['-> s', '=== a ===', '#delivery: to s', '-> s', '=== s ===', '#delivery: s tag', '= one', 'Kevin Park: S one.', '-> END'].join('\n') + '\n';
   const f = only(lintInk(ink), 'delivery-unread');
