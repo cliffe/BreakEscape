@@ -239,3 +239,105 @@ Full suites under the lock after the last code change: Rails 1340 runs, 0 failur
 ### Leftover games
 
 1178 to 1185 (captures, persona, W2), plus 1166, 1169, 1171, 1176. None deleted.
+
+## Review round 1 outcomes (2026-11-11)
+
+Reviews: `ACCESS_MODEL_SLICE_9_2_UA_CODE_REVIEW_R1_SERVER.md` and `..._R1_CLIENT.md`.
+
+### Orchestrator decisions
+
+- **Server M2**: borrow PCs are left out of an NPC's places, its "can fail" and the causes that
+  belong to it for the whole of sub-slice A. They come back with H's hand-over (a handed-over
+  `borrow_session` only). A report naming a hidden borrow PC is answered exactly as one naming any
+  other NPC's PC (`refused`), and writes nothing.
+- **Client m8**: W7 gets its own printer resource and global, so the W4 and W7 levers no longer
+  clear each other.
+- **Client m7** (the blocked icon lingering after the outage): the user's decision. The behaviour
+  stays as plan 5.5 specifies.
+
+### Server review
+
+| Finding | Outcome |
+|---|---|
+| M1 unbounded `missing` | Fixed. A report with more than 20 `missing` entries is refused unread; repeats (same `id` and `why`) are removed, then more than 8 is refused (`npc_frustration.rb` `MAX_MISSING`, `MAX_CAUSES`). A request body over 64 KB is answered 413 before any report is read (`games_controller.rb` `NPC_FRUSTRATION_MAX_BYTES`). The object index is built once per scenario hash inside `AccessWork.with_index` (identity-compared, thread-local, dropped when the block ends), used by the report route, the GET block, `note_npcs_met!` and the room filter; `places` and `shortest_use_seconds` wrap themselves. Tests: 21 and 9 distinct causes refused, a repeated cause counted once, the reviewer's 840 KB body answered 413, a full batch of 21-cause reports answered in well under a second, the index built once inside the block |
+| M2 borrow PC oracle | Fixed as decided above (`access_work.rb` `places`, `can_fail?`, `cause_belongs?`; `borrow_pcs` kept for the validator's mutters check). Tests: the four borrow-PC reports (locked_out, off, object_id, ease) give answers identical to the same reports naming `amy_pc`, and no `easeAt` is written; an NPC whose only failure is a borrow PC's `offWhen` answers as one with none. Plan 9.1 "Can fail" and "Belongs to the NPC" now say "a PC a handed-over `borrow_session` names" |
+| m1 R5 n1's halved bound | Fixed. `workaround_timing` halves the park-floor figure when the station has an `offWhen`; plan 9.3 has the sentence. Test in `validator-access-work.test.mjs` |
+| m2 "only by alternating" and the `[]` route | Fixed. `earliest_pace` classifies: an owned cause with no ease place but the station (or not admitted) is held to the park floor; an owned cause with a non-desk place gives the use floor with the note "only by alternating eases and fails"; no owned cause gives the use floor. Tested |
+| m3 resource with only `network` or `observations` | Fixed: neither is called unused. Tested |
+| m4 malformed `roles` entry | Fixed. `roles_block` keeps only object values; `note_npcs_met!` has its own `rescue` in `track_npc_encounters`, so a resolver fault cannot cost the encounter record. Unit test for a list and a string role |
+| m5 test gaps | Fixed: R5 n5 (locked out: an ease at the station refused, at a non-desk place accepted); `tell` with a workaround at or below `perFail` (tell 1 in A, see n6); `hold` after an ease (the use-floor branch); the use floor at its boundary on the ease gate and the fail gate (whole seconds, as `travel_to` drops sub-seconds); malformed bodies (not a list, empty or non-hash causes, `missing` not a list, `rearmed` as a string) |
+| m6 `social_media` with `"phone": false` | Fixed: the skip applies only with a phone; `validate_npc_needs.rb` now requires the resolver instead of testing `defined?`. Test in `validator-npc-leash.test.mjs` |
+| n1 `metAt` unread | Comment says it is kept for C's feed and the verify-run report |
+| n2 plan from the room copy | Fixed: `compile_npc_plan!` builds from `scenario_room_npc` |
+| n3 `preset_id`, `desk?` against the JS | Comments added on both differences (harmless for every real object) |
+| n4 `perFail` inferable | Plan 9.2's table now says so; code unchanged (W3 needs `previous`) |
+| n5 ease at level 0 | Fixed: answered with the level, nothing written (no entry for an NPC that never failed). Tested |
+| n6 `tell` after a passed `at` in A | Comment in `frustration_tell` for sub-slice B; tested |
+| n7 GET writes defaults | Fixed: `npc_frustration_for_client` reads through `frustration_view`, a copy |
+
+### Client review
+
+| Finding | Outcome |
+|---|---|
+| m1 visit to own `needsHome` leaves the post | Fixed: `_atOwnPost` counts a visit to the own home object (no wind-up, no `npc_left_post`, no move). Node test, checked to fail without the fix |
+| m2 report queue loads after the needs system | Fixed: `npc-reports.js` is a static import in `core/game.js`; the reporter is installed and `restoreFrustration` applied in the same task as `installNpcNeeds`, before any tick |
+| m3 ease skipped while the mirror says 0 | Fixed: a sent fail marks the need (`failSent`), so the next met use reports an ease even at 0, once; any answer clears the marks. `reset()` keeps each NPC's frustration, tell and settled. Tested |
+| m4 `previous` from the mirror | Fixed: the answer's `previous` when it is a number, else the mirror. Tested |
+| m5 `off` park on a non-station source | Guard added (`_select` counts an `off` give-up only at the NPC's own station). Not reachable today: `_giveUpReason` answers `off` only for the dead own station (`npc-needs.js` `_giveUpReason`, first lines), so an off kiosk already parks as `no_source`. Test asserts the kiosk is never a counted fail |
+| m6 settled re-set after a queued ease | Fixed: each queued report carries a sequence number (stripped before sending); a `settled` answer to a report queued before the NPC's last ease is ignored. Tested with a fail in flight |
+| m7 icon lingers | Left for the user (decision above) |
+| m8 W4 and W7 share one global | Fixed as decided: resource `printer_w7` (no `object`, so no check visit), global `printer_w7_jammed`, W7's lever and confirm text name the slow room printer. Browser rerun below |
+| m9 test gaps | Added: `installNpcReports` (one listener, wildcard name, payload name, idempotent), `watchedGlobal` (plan globals, string and object `offWhen`, an NPC with no work), a rejecting `send` (the queue keeps going), the kick waiting while the home is provisional, R5 n3's hold less the elapsed time, the `requiresItem` refusal branch in `interactions.js` through the `interaction-warning` harness (refused: line, `usb_refused`, no action, nothing consumed; accepted: actions and the remove with `usedOn`), a visit to an NPC through `cellBeside` |
+| m10 tempted failed job | Fixed: a `failed` turn-back parks (and counts) even on a tempted job. No test: a tempted `work` job needs a magnet rule no fixture has; deferred to C, where `social_media` can be tempted |
+| n1 `npc_visit_dropped` for checks | Plan 5.3 now says a dropped check emits it too |
+| n2 `breakDrain` default and cap | Documented in `NPC_NEEDS_SYSTEM.md` (10 with no plan, at most 50) |
+| n3 F bar at level 0 for `social_media` | No change; noted for C |
+| n4 `usbPolicyFor` on every describe | Deferred: cheap now; cache only if profiling points at it |
+| n5 failure park badge | Documented: a failure park shows `closed`, as `no_source` does |
+| n6 determinism test uses tell 1 | Comment in the test naming the limit |
+| n7 signs and overlay give the outcome | Deferred: fine for scripted runs; a persona toggle is test-floor work for a later round |
+| n8 W6 socket under a chair | Deferred: needs a render pass on the test floor; not touched in this round |
+
+### The client reviewer's five server items
+
+1. **Plant records bypass the USB policy**: fixed. `CaptureProofs#record_planted_item!`
+   (`capture_proofs.rb:38`) refuses to record a plant that `AccessWork.plant_refused?`
+   (`access_work.rb`, the same table as `pc-policy.js`) refuses, whatever the browser decided.
+   Test: storage on a `storage_blocked` workstation and hid on a `blocked` PC record nothing; hid on
+   `storage_blocked` records the plant.
+2. **`rearmed`**: grants nothing beyond the documented bound. It is read only at
+   `npc_frustration.rb:212` (`gate ||= rearmed && owned.empty?`), and only lowers the next fail's
+   floor from the park floor to the use floor when no cause the server owns holds. In that case
+   every cause is one the browser controls (it writes the globals), so the use floor is the bound
+   the plan already states and the validator reports as "earliest by a modified browser". With an
+   owned cause it is ignored (tested).
+3. **`<npcId>_frustration` globals**: grant nothing. The browser writes them as a mirror
+   (`npc-needs.js:2100`); no server code reads a global with that suffix (grep of `app/` and
+   `lib/`: none), the server's record is `npcFrustration`, and the validator forbids authoring a
+   global with that suffix (`validate_access_work.rb:261-265`), so no server-checked condition can
+   name one. Client writes are not refused: a refusal would mark the sync `notSaved` and resend it.
+4. **The reload `hold`**: client-only by design (`npc-needs.js:2127`); the server's pace floors
+   (`npc_frustration.rb:188` for eases, `:205` for fails) are the control and are tested.
+5. **Tasks from needs events**: as every mapped task, they complete from client events. In
+   `test_access_work` they only tick feature-test tasks; no capture, access decision or server
+   check reads them. Nothing to change.
+
+### Browser rerun (game 1187, port 3013)
+
+W7: Nia's first use, then the slow room lever ("Jam the slow room printer?"): `npc_use_failed:nia`
+names `printer_w7` `down`, level 20, the printer line, `w7_failed`; `printer_jammed` stayed false.
+W4: the copy room lever jams `printer_jammed`; Omar fails, `npc_checked:office_printer` once,
+`w4_checked`; `printer_w7_jammed` stayed true. Clearing it: Omar's next use eases 20 to 10 with
+`previous: 20` from the server. W2 and W3: the breaker off, Dana 0 to 34 (tell 1), `w2_failed`;
+back on, 34 to 24, `w3_eased`. Reload of 1187 with `?skip_resume=1`: Nia 100 settled, Dana 24,
+Omar 0, `printer_w7_jammed` still true, tasks kept; Nia failed again after the reload with 0 report
+requests. `verify-run.rb --access` 1187: dana 24, nia 100, omar 0. `access-leak-check.rb`: no
+leaks. Gotcha: `location.reload()` drops the query string (the page rewrites its URL), so the
+first reload showed the resume overlay and the harness pressed "New Session" (game 1188); navigate
+to `/games/<id>?skip_resume=1` instead.
+
+Leftover games: 1187, 1188. None deleted.
+
+### Suites after review round 1
+
+Under the lock after the last code change: Rails 1352 runs, 0 failures, 1 skip; JS 480 files passed, 0 failed.
