@@ -468,6 +468,23 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
     assert_equal 1, AccessLeakScanner.new(data).counts[:workarounds]
   end
 
+  test 'a Wi-Fi SSID or key is reported in any response, except a key the player can read' do
+    data = scenario
+    data['networks'] = { 'guest_wifi' => { 'name' => 'Guest Wi-Fi', 'wifi' => { 'ssid' => 'Harbour-Guest', 'psk' => 'seabreeze-2025' } } }
+    assert_equal [[1, 'wifi_secret', 'network:guest_wifi']],
+                 summary(scan({ 'psk' => 'seabreeze-2025' }, data: data))
+    assert_equal [[1, 'wifi_secret', 'network:guest_wifi']],
+                 summary(scan({ 'ssid' => 'Harbour-Guest' }, data: data))
+    assert_equal 2, AccessLeakScanner.new(data).counts[:wifi_secrets]
+    # A key the scenario deliberately shows the player in a note is not a hidden secret
+    readable = scenario
+    readable['networks'] = { 'guest_wifi' => { 'name' => 'Guest Wi-Fi', 'wifi' => { 'ssid' => 'Harbour-Guest', 'psk' => 'seabreeze-2025' } } }
+    readable['rooms']['lobby'] ||= { 'objects' => [] }
+    readable['rooms']['lobby']['objects'] << { 'id' => 'note', 'type' => 'postit_note', 'name' => 'Note',
+                                               'text' => 'Guest key: seabreeze-2025' }
+    assert_empty scan({ 'psk' => 'seabreeze-2025' }, data: readable), 'a readable key is not treated as hidden'
+  end
+
   test 'an authored workaround entry (it carries at) is reported anywhere, a writes_down included' do
     entry = { 'at' => 50, 'do' => 'writes_down' }
     assert_equal [[1, 'workaround', 'authored writes_down']], summary(scan({ 'npcs' => [{ 'id' => 'x', 'list' => [entry] }] }))
@@ -475,5 +492,4 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
     assert_equal [[1, 'workaround', 'authored writes_down']], summary(leaked), 'no exemption for an authored entry'
     assert_empty scan({ 'do' => 'writes_down', 'index' => 0, 'hand' => 1 }), 'a run has no at'
   end
-
 end

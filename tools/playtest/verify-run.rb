@@ -74,8 +74,13 @@ def access_section(ps)
   end
   footholds = hash.call(ps['footholds']).sort_by { |_, f| f.is_a?(Hash) ? f['seq'].to_i : 0 }.map do |id, f|
     f = {} unless f.is_a?(Hash)
-    device = f['device'].is_a?(Hash) ? (f['device']['id'] || f['device']['type'] || '?') : '?'
-    "#{id} = #{f['via'] || '?'} #{f['source'] || '?'}, device #{device} (network #{f['network'] || '?'})"
+    # A Wi-Fi or implant foothold (slice 9.3b) carries a name, not a device (5.3)
+    if %w[wifi implant].include?(f['via'])
+      "#{id} = #{f['via']} #{f['source'] || '?'}, #{f['name'] || '?'} (network #{f['network'] || '?'})"
+    else
+      device = f['device'].is_a?(Hash) ? (f['device']['id'] || f['device']['type'] || '?') : '?'
+      "#{id} = #{f['via'] || '?'} #{f['source'] || '?'}, device #{device} (network #{f['network'] || '?'})"
+    end
   end
   clones = hash.call(ps['serverClones']).map do |card_id, rec|
     rec = {} unless rec.is_a?(Hash)
