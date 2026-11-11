@@ -1,0 +1,13 @@
+{
+  "key": "868aaffe6fbd54602004407455e32b98",
+  "npc": "wendell",
+  "text": "Suit yourself. I'll be at the panel if anybody needs a breaker.",
+  "voice": "Algieba",
+  "style": "Power-room technician, sixty-three, white Montanan. Consistent rural Montana American accent throughout -- do not shift to any other accent. Slow, laconic, low; a man who has kept old machines running for forty years and asks no questions about who pays.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T22:31:16Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "13380460183d81ccbe280b40a043b69d",
+  "npc": "narrator",
+  "text": "He turns back to the window and parts two slats of the blind with a finger. His lanyard hangs at his chest, card outward, well inside a cloner's reach.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, careful. A building full of people who have stopped trusting each other, and one of them is guilty.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T20:45:53Z"
+}

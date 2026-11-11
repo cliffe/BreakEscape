@@ -1,0 +1,13 @@
+{
+  "key": "8848d9b6ffaf064e2e05eed2ba4266e5",
+  "npc": "david_torres",
+  "text": "Do you know what a clinical trial costs, when the insurer says no? I do. To the dollar.",
+  "voice": "Schedar",
+  "style": "Senior engineer in his late forties, born in Madrid and twenty years in England. Speak with a consistent light Castilian Spanish accent in fluent British English throughout — do not shift to any other accent. Low, soft pitch; slow, worn pace. Exhausted and grieving, past the point of lying; quietly desperate rather than angry.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:29:31Z"
+}

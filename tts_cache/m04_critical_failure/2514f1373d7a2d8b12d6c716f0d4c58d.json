@@ -1,0 +1,13 @@
+{
+  "key": "2514f1373d7a2d8b12d6c716f0d4c58d",
+  "npc": "robert_vance",
+  "text": "My screens all read the same feed. Check the racks against something that isn't on it. There's an old dial on the Rack Bank C wall in Hall 1.",
+  "voice": "Orus",
+  "style": "Operations manager and OT engineer at a grid battery site, mid-fifties. Speak with a consistent North-East English (Teesside) accent throughout -- do not shift to any other accent. Firm, low-to-mid pitch; brisk, clipped pace. Conscientious and overworked; defensive at first, then alarmed and determined once he realises the threat is real.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:02:55Z"
+}

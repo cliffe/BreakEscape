@@ -1,0 +1,13 @@
+{
+  "key": "f9df4a0d320c08dbf7f0d6c6e923fef0",
+  "npc": "lisa_park",
+  "text": "His wife's got cancer. Stage 3. The treatment that might work is a trial in the States, and the insurer won't touch it. Hence the tin.",
+  "voice": "Laomedeia",
+  "style": "Marketing coordinator in her early thirties, British-Korean, raised in New Malden. Speak with a consistent south-west London accent throughout — do not shift to any other accent. Bright, mid-to-high pitch; quick, chatty pace. Warm and observant; she gossips because she cares about people.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:59:13Z"
+}

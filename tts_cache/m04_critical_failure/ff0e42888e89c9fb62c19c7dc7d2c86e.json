@@ -1,0 +1,13 @@
+{
+  "key": "ff0e42888e89c9fb62c19c7dc7d2c86e",
+  "npc": "narrator",
+  "text": "The cloner didn't get a clean read.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:00:18Z"
+}

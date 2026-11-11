@@ -1,0 +1,13 @@
+{
+  "key": "c5f77c2b655ced8eb902b2d5faece070",
+  "npc": "lisa_park",
+  "text": "What happens to Sofia and Miguel? If he goes to prison and Elena's...",
+  "voice": "Laomedeia",
+  "style": "Marketing coordinator in her early thirties, British-Korean, raised in New Malden. Speak with a consistent south-west London accent throughout — do not shift to any other accent. Bright, mid-to-high pitch; quick, chatty pace. Warm and observant; she gossips because she cares about people.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:02:41Z"
+}

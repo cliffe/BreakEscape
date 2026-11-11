@@ -1,0 +1,13 @@
+{
+  "key": "1f875260d740f4c63d16393fbb5b79ae",
+  "npc": "narrator",
+  "text": "You step over him. He doesn't move.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:36:35Z"
+}
