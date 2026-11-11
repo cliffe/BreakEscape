@@ -1,369 +1,413 @@
 # Access model slice 9.3b: links, outages, Wi-Fi, port security, implants
 
-Status: **design, 2026-11-11. Nothing here is built.** This is the build-ready plan for the second
-half of networks. It stands on slice 9.3a (networks, built and merged: a rogue device in a network
-jack, the link item, the network view, remote sign-in with captured credentials, headless hosts,
-file shares, and the secrecy, validator, dungeon graph and tooling that go with them). It takes the
-place of section 12 of `ACCESS_MODEL_SLICE_9_3_PLAN.md` (called "the 9.3a plan" below), which
-sketched this slice; where this plan and that sketch differ, this plan wins. Claims about existing
-code were checked against the code in this worktree; method and constant names are the stable
-reference, line numbers move.
+Status: **design, 2026-11-11, build-ready.** It builds on slice 9.3a (links, remote sign-in,
+shares, the network view), which is built and on `main`, and is the second half of the networks
+slice first sketched in section 12 of `ACCESS_MODEL_SLICE_9_3_PLAN.md`. This plan is standalone: a
+builder can follow it without reading that plan, its reviews or any other. Claims about existing
+code were checked against the worktree at branch `build/9-3b-plan` (from `main`); method names are
+the stable reference, line numbers move.
 
-A fresh builder can follow this plan without reading any review. Every version of it is complete
-and self-contained.
+This slice adds five game-world simulation features, each a set of scenario fields, server checks
+and client rendering, in the same shape 9.3a uses: links between in-game networks crossed by a
+pivot through a held session; network outages driven by a global; an in-game Wi-Fi model; port
+security on in-game switches; and planted devices ("implants") as game items. None of it is a
+real-world attack or exploitation procedure: everything here is a game rule the server enforces
+and the browser draws.
 
-How to read it: section 1 says why and what ships; section 2 is what the code does today, verified;
-section 3 the five sub-slices and their order; section 4 the scenario fields; section 5 the engine
-behaviour of each part; section 6 the server routes with their checks; section 7 what the browser
-receives and what a tampered browser still gets; section 8 state and saved games; section 9 the
-validator, schema and dungeon graph; section 10 the effect on existing scenarios and on
-`lab_physical_pentest`; section 11 the tests and the feature scenario; section 12 the build steps,
-the ownership and order table and the files shared with 9.2 L and C; section 13 the interfaces;
-section 14 the open questions for the user; section 15 what is left out.
-
-The game is a puzzle-solving simulation in which behaviours chain together. Everything below is
-judged by one test, the user's: can a student **cause** something, **see** what it did,
-**understand** what that gave them, and **use** it for the next step? And two rules the whole
-access model keeps: a step that must not be skippable ends in something the server checks, and a
-captured value held by the browser can pace a puzzle but is never the only thing between the player
-and a secret.
+How to read this plan: section 1 says what the slice adds and why; section 2 what the code does
+today; section 3 the sub-slices in build order, each ending playable and tested; section 4 the
+scenario fields; section 5 the engine behaviour; section 6 every server route with its checks;
+section 7 what reaches the browser and what never does; section 8 state and saved games; section 9
+the validator, schema and dungeon graph; section 10 the effect on existing scenarios; section 11
+the tests and the feature scenario; section 12 the build steps with the ownership and order table;
+section 13 the open questions for the user.
 
 ## 1. What this slice adds, and why now
 
-9.3a made "plant one device on one network, see what it exposes, sign in to a host with a captured
-password" a chainable mechanic. Each foothold reaches its own network and nothing else. This slice
-adds the rest of the network model, so a scenario can teach the controls that decide reach beyond a
-single flat network:
+Slice 9.3a made one chain buildable: plant a rogue device in a network jack, see what the network
+exposes, and reach a listed host or share with a password captured somewhere else. A foothold in
+9.3a reaches **its own network and nothing else**, and a sign-in host or share is reached only on
+that one network. This slice adds the next five pieces the networks design named, each one more
+thing a scenario author can model and each one still ending in something the server checks.
 
-- **Links and the pivot** (5.1): networks are joined by links, but a rogue device is not a member,
-  so a second network is reached only through a host the player has signed in to. This is network
-  segmentation, taught as a chain: the pivot rests on a password the server checked.
-- **Outages** (5.2): a network or a resource can be down while a global holds. A down network drops
-  out of reach, and the player sees why. An outage paces a puzzle and is a distraction tool, never
-  protection.
-- **Wi-Fi** (5.3): a foothold gained by joining a wireless network with its key, in place of a
-  wired jack. The key is a lock secret, compared on the server, never held by the browser.
-- **Port security** (5.4): a jack that refuses an unknown device, with no foothold and no bypass. A
-  control the player watches work.
-- **Implants** (5.5): a foothold given by a device plugged into a PC rather than a jack, in two
-  shapes the lab already wants: a member of staff plugs in a device the player dropped, and the
-  player plugs a keystroke-injection device into a PC they are signed in to. An implant gives a
-  foothold and nothing else; the account still needs its password.
+1. **Links and the pivot.** Two in-game networks can be joined by a link. A rogue device is not a
+   member of the linked network, so a foothold still reaches only its own network; the linked
+   network is reached only by pivoting through a host the player has a **session** on, and that
+   session rests on a password the server checked. This is the segmentation lesson in one rule.
+2. **Outages.** A network (or a resource) can be marked down while a named global is truthy. While
+   it is down its hosts leave the view, its desktops and shares are not served, and a session
+   reached through it is kept but shown as "no route" until the route returns. An outage paces a
+   puzzle and models a real failure; it never protects a secret on its own.
+3. **Wi-Fi.** A network can carry an SSID and a pre-shared key. An access point object asks for the
+   key in the password minigame; the server compares it and grants a foothold on that network. No
+   device and no range: the server could not check range.
+4. **Port security.** A jack can refuse an unknown device: the device goes in, no foothold is
+   given, and it stays in the inventory. It shows the fix the lab's own text names (disable unused
+   ports). It only refuses; a bypass is not part of this slice.
+5. **Implants.** A foothold given by a device plugged into a **PC** rather than a jack: a member of
+   staff plugs in a device the player dropped, or the player plugs a keystroke-injection device
+   into a PC they are already signed in to. An implant gives a foothold and nothing else: no
+   session, no desktop, no owner's access. The account still needs its password through the
+   ordinary remote sign-in.
 
-9.3a reserved every field this slice reads, and its validator refuses each with "needs slice 9.3b"
-(section 2), so no scenario changes shape when this slice lands. The device pitch
-(`planning_notes/physical_pentest_devices/DEVICE_PITCH.md`) routed its covert network and implant
-devices here: the Wi-Fi Pineapple's foothold-over-Wi-Fi is 5.3, the player's BadUSB is 5.5, and the
-switch drop box is already 9.3a's.
+**Two rules the whole design keeps, from 9.3a.**
+
+- **A step that must not be skipped ends in something the server checks.** A plant, a Wi-Fi join
+  and an implant are checked against the server's own records; a sign-in against the password on
+  the server; a pivot against a held session that rests on a checked password. Anything the browser
+  merely claims (a global, a capture entry) can pace a puzzle and fill in a form, and can never be
+  the only thing between the player and a secret.
+- **A captured password is a key because the server checks it, not because the player holds a
+  capture.** The captured-sign-ins list on the remote screen only types for the player what they
+  could type themselves; the gate is the server's password check.
+
+Design principles, as in 9.3a: chaining is the point; fun and educational, not hard; simple enough
+for a pixel art game; and the server decides reach, so nothing a network exposes reaches the
+browser before the server holds a foothold or session that reaches it.
 
 ## 2. What the code does today (verified)
 
-Facts this plan builds on. Each names the method or constant it means, so a builder re-finds a line
-that moved.
+9.3a is built. This slice stands on it and extends it in place. The table is the state as this
+plan found it; the method names are what to extend.
 
 | Area | Today | Where |
 |---|---|---|
-| Reserved fields, refused | 9.3a's validator errors on top-level `networkLinks`, on `downIf` and `wifi` on a network, on `wifiAp`, `portSecurity` and `portSecurityMessage` on an object, and on any `grant_foothold` action, each with "needs slice 9.3b" | `scripts/validate_network.rb` (`NETWORK_RESERVED_OBJECT_FIELDS`, `NETWORK_RESERVED_NETWORK_FIELDS`, the `grant_foothold` walk) |
-| Schema reservations | `networks.<id>.downIf` (string), `networks.<id>.wifi` ({ ssid, psk }), top-level `networkLinks` (list of pairs), object `wifiAp`, `portSecurity`, `portSecurityMessage` are present with "reserved for slice 9.3b" descriptions. `additionalProperties` on `resources` is open (9.2 owns other fields) | `scripts/scenario-schema.json` |
-| Reach | `NetworkModel.reach_conditions(data, station_network, resource)` returns `[[]]` (one route, no conditions) when the resource has no network or is on the station's, else `[]` (no route). It takes `data` first but does not read it in 9.3a. The comment says "9.3b extends the answer with links and outages, read from data" | `lib/break_escape/network_model.rb` |
-| A foothold | `footholds[footholdId] = { via, network, source, device, seq }`, `footholdId` is `jack_<jackId>`, `device` is the server's copy, `via` is `jack`. `gainedFootholds` is every source ever gained from. Both in `ACCESS_STATE_DEFAULTS`, dropped on reset | `app/models/break_escape/network_access.rb`, `game.rb` `ACCESS_STATE_DEFAULTS` |
-| A session over the network | `sessions[pcId] = { id, via: "password", foothold }`. `host_reachable_through?(foothold_id, pc)` is true when the foothold is held, the PC is a sign-in object with a network, and that network is the foothold's. `desktop_request_allowed?(info, foothold_id)`: with a foothold, host reachable and policy allows remote and the session is not a claim; without, physically reachable and not headless | `network_access.rb`, `game.rb` `attempt_login!` |
-| The network view | `GET /network` composes, per held foothold, `{ id, via, name, network: { id, name }, hosts: [...] }`, hosts (sign-in objects on the foothold's network) then resources, each by id. A host row carries `remoteSignIn`, `session` and `headless`; a resource row `open`, `listed` and `observations`. It refetches on every open; `network-links.js` owns the trip and the landing table | `network_access.rb` `network_view`, `network_rows`; `minigames/network-view/network-view-minigame.js`; `systems/network-links.js` |
-| Mapped shares | `mapped_shares(pc, npc)` returns every `file_share` on the PC's network the session's identity may use, as a desktop folder stub (`mapped_share_stubs`). `resource_admits_player?` and `resource_acl_admits?` decide a share; a share with no network, or a listed-only share (no contents), maps nowhere | `network_access.rb` |
-| Remote sign-in client | `openLoginSignIn` reads `scenarioData.remote`, skips `GET /login_accounts`, shows no tiles, carries the foothold; `password-minigame.js` sign-in mode shows **Captured sign-ins** from `readCaptures` and `/capture_secrets`'s `accounts` and `secrets`. A session keeps `remote`, `footholdId`, `host`; an unplug ends the sessions named in `endedPcIds` | `systems/unlock-system.js`, `minigames/password/password-minigame.js`, `systems/pc-sessions.js` |
-| State sync | `window.stateSync` (`systems/state-sync.js`) merges globals every 30 s and on page hide; `sync()` runs one pass, `syncConfirmed({ attempts, onRetry })` awaits a confirmed save and returns true, used before an emit that must follow a save (`triage-starter.js`) | `systems/state-sync.js` |
-| The password minigame | `validatePasswordWithServer` posts `POST /unlock(targetType, targetId, attempt, 'password')`; a wrong one is 422 and a real attempt; sign-in mode posts `POST /login` through `pc-sessions.js`. The scene takes `params.lockable`/`sprite` and a key mode exists for door keys | `minigames/password/password-minigame.js` |
-| Declared grants | `DeclaredGrants.for(scenario_data)` is the server's allowlist of client `give_item` rewards, from the paths the engine runs `give_item` on: `timers[i].actions[j]`, `<object>.triggerOnInteract[j]`, `onInteract.actions[j]`, `completionActions[j]`, `conditionalActions[k].actions[j]`, and a `confirm_action.onConfirm[j]` on one of those. `flagRewards`, `eventMappings` and `startItemsInInventory` are not grants. `executed?(keys)` is the path test | `lib/break_escape/declared_grants.rb` |
-| Dropped items | `add_item_to_room!` with `source_type: "player_drop"` requires the item be held and `droppable`, then appends its id to `player_state['droppedItems']` (grow-only). The comment says the dropped proof and "slice 9.3b's implant check" read this list | `game.rb` `add_item_to_room!` |
-| USB policy (slice 9.2) | `AccessWork.usb_policy_for(data, obj)` and `plant_refused?(data, obj, item)` read a `policy.usb` of `allowed`/`storage_blocked`/`blocked` against an item's `usbClass` (`storage`/`hid`); `effective_policy(pc)` (`game.rb`) resolves a PC's policy. The player plant asks `pcPolicy.plantRefusal` in `interactions.js`. 9.2's plan says 9.3b adds a Ruby `usb_refused?(pc, item)` beside `effective_policy` reading the same table | `lib/break_escape/access_work.rb`, `systems/pc-policy.js`, `game.rb` |
-| apply-actions | The client action runner has a `case` per action type (`set_global`, `give_item`, `remove_item`, `unlock_object`, `confirm_action`, ...). 9.3b adds an implant case here. The engine plan (E4) and this slice are the named editors | `systems/apply-actions.js` |
-| Lab BadUSB beat | The player drops `kit_deviceB` (`droppable`, `needsTag: tag_deviceB`) on `open_plan`; Sofia (`lord`, `needsHome: usb_target_pc`) picks it up and uses it at `usb_target_pc` (`affordance.accepts` includes `tag_deviceB`); a mapping on `npc_used:usb_target_pc` sets `kp_usb_foothold`; a `give_item` timer `grant_remote_session` hands a hand-written `type:"pc"` Remote Session (`records_remote_session`) with text files. The malicious cable (`kit_cable`, `dev_cable`) and plain stick (`kit_usb`, `dev_usb`) are parallel beats with their own grants | `scenarios/lab_physical_pentest/scenario.json.erb` |
-| Lab networks (9.3a, built) | The lab has `networks.office_lan`, `resources.lw_fs01_records` (listed-only share), `resources.lw_prn02`, the jack `network_port`, the headless host `store_controller`, and the staff PCs on the LAN. The BadUSB beat above is **not** yet network-aware: its foothold is still a hand-written grant | same file |
+| The shared model | `BreakEscape::NetworkModel` (plain Ruby, shared by the server, the validator and the dungeon graph) answers `networks`, `resources`, `network_of(object, room)`, `jacks`, `sign_in_objects_on(network, data)`, `resources_on(network, data)`, `rogue_device_definitions`, and `reach_conditions(data, station_network, resource)`. `reach_conditions` **ignores `data`** and answers `[[]]` (one route, no conditions) when the resource has no network or is on the station's own network, `[]` (no route) otherwise. There is no link, outage or Wi-Fi code | `lib/break_escape/network_model.rb` |
+| Footholds | `player_state['footholds']` is `{ footholdId => { via, network, source, device, seq } }`; `gainedFootholds` is the list of every source a foothold was ever gained from. `foothold_id_for(jack_id)` is `"jack_#{jack_id}"`. Both keys are in `Game::ACCESS_STATE_DEFAULTS`, so a reset drops them and a game from before 9.3a reads them as empty | `app/models/break_escape/network_access.rb`; `game.rb` (`ACCESS_STATE_DEFAULTS`) |
+| Reach | `host_reachable_through?(foothold_id, pc)` is true when the foothold is held, the target is a sign-in object, and `object_network(pc)` equals the foothold's network. `resource_admits_player?(resource)` is true when a held foothold is on the resource's network (open share) or a session the player holds is at a PC on the resource's network and the list admits it. `mapped_shares(pc, npc)` lists the file shares on `object_network(pc)` the session's identity may use. All compare one network id for equality; none follows a link | `network_access.rb` |
+| The view | `network_view(foothold_id)` answers `{ footholds: [ { id, via, name, network, hosts } ] }`; `network_rows(network)` is the sign-in hosts then the resources of **that one network**, each sorted by id. `host_row` and `resource_row` build the rows. There is no second block for a linked network | `network_access.rb` |
+| Remote sign-in | `attempt_login!(pc_id, username, password, foothold:)` runs the host-reachable, remote-not-blocked, lockout, password and access checks and, on success, writes `sessions[pcId] = { id, via: 'password', foothold }`. `claim_login_session!(pc_id, globals, foothold:)` refuses any claim that carries a foothold | `game.rb` (`attempt_login!` :1521, `claim_login_session!` :1563) |
+| The desktop | `desktop_request_allowed?(info, foothold_id)` is the one place a desktop request is judged: with a foothold, the host is reachable through it, remote sign-in is not blocked and the session is not a claim, and the room is not consulted; without, the PC is physically reachable and not headless. `settle_session_at_keyboard!(pc_id)` clears a session's `foothold` when its desktop is served at the keyboard. The **scoped** requests under a desktop (a folder's `GET /container`, the inventory add, an `unlock`) ask only that a session exists which admits the object; they do not re-check reach | `network_access.rb`; `games_controller.rb` |
+| The policy | `effective_policy(pc)` reads `pc['policy']` (else `scenario_data['defaultPolicy']`) from `scenario_data['policies']`. `remote_blocked?(pc)` is `effective_policy(pc)['remote'] == 'blocked'`. `login_max_attempts(pc)` reads `maxAttempts`. There is no `usb` field read here yet | `game.rb` |
+| Rogue devices | `held_rogue_device(device_id)` finds the first rogue device the server inventory holds, reading `rogueDevice: true` from the scenario definition. `plant_device!` and `unplug_device!` are the plant and unplug. `planted_device?(item)` and `hide_planted_devices!` keep one device one device | `network_access.rb` |
+| Declared grants and drops | `DeclaredGrants.for(data)` walks the scenario's declared grants (timers and the like); `held_grant_items` is those the inventory holds. `add_item_to_room!` writes a grow-only `player_state['droppedItems']` list of item ids the player dropped (built for the engine plan's capture proofs); `capture_proofs.rb` already reads it | `lib/break_escape/declared_grants.rb`; `game.rb` (`add_item_to_room!` :460); `capture_proofs.rb` |
+| The client's networks module | `systems/network-links.js` (`window.networkLinks`) is the only place the client asks about networks. It keeps the foothold list, the "gained" set, the last view per foothold, and the **trip** (the way back, a record and a landing table `LANDINGS` for `view`, `signin`, `desktop` and `share`). `interactJack`, `plant`, `unplug`, `open(footholdId, { returnTo })`, `openSession(pcId, { returnTo })`, `view(footholdId)`, `resume`, `leave`, `landed`. It looks the view and remote-desktop starters up on `window`, so the minigame files add them with no edit here | `public/break_escape/js/systems/network-links.js` |
+| The view minigame | `minigames/network-view/network-view-minigame.js` renders one `GET /network` foothold entry: host rows (`hostAction`: off, open, sign-in) and resource rows (`resourceAction`: open, locked, observe). It reports its exit reason through `networkLinks.landed('view', reason)`. Rows carry `data-host-id`, `data-resource-id`, `data-action`. It never reads scenario data and has a single flat list of rows | `network-view-minigame.js` |
+| Reserved fields | The 9.3a validator **refuses**, each with "needs slice 9.3b": top-level `networkLinks`; `downIf` and `wifi` on a network; `wifiAp`, `portSecurity` and `portSecurityMessage` on an object; and any `grant_foothold` action anywhere. The schema carries each as a reserved stub | `scripts/validate_network.rb` (:15-72); `scripts/scenario-schema.json` (:209, :220, :5288) |
+| Resources' `downIf` | The schema already describes `resources.<id>.downIf` as slice 9.2's ("a global name; the resource is down while it is truthy"). 9.2 owns the NPC side of a resource outage; the player side is this slice's | `scenario-schema.json` (:238) |
+| 9.2's USB policy | Slice 9.2's sub-slice U (the `usb` policy field, `usbClass` on items, `usbRefused`) is designed and built on a branch but is not assumed present in `main` here. The implant's USB check is written as a hook that whichever of 9.2's sub-slice U and this slice lands second installs | `ACCESS_MODEL_SLICE_9_2_PLAN.md` sub-slice U; section 5.5 below |
 
-## 3. Sub-slices
+Nothing in this table rolls dice. Reach in 9.3a is a pure function of the scenario and the
+footholds and sessions held; this slice keeps that (section 5.6).
 
-Five sub-slices, in this order. Each ends playable and tested and has its steps in section 12. None
-is gated on a 9.2 sub-slice; all land after 9.2 in file order (section 12).
+## 3. Sub-slices in build order
 
-| Sub-slice | Contents | Feature scenario beats |
-|---|---|---|
-| **P. Port security** (first) | `portSecurity` on a jack, an optional message, a refused plant that keeps the device. No new state, no reach change | N1 |
-| **O. Outages** | `downIf` on a network and on a resource, read into reach; a down network and its hosts drop from the view with "no route"; held sessions kept and refused with 403 `unreachable`; the five-second refetch and the forced sync | N2, N3 |
-| **K. Links and the pivot** | `networkLinks`; reach that grows through a session on a host that reaches a linked network; the view's "through" blocks; `reach_conditions` with links and outages for 9.2's NPC work | N4 to N6 |
-| **W. Wi-Fi** | `networks.<id>.wifi`, `wifiAp` on an object, `POST /network/join`, a `wifi_<networkId>` foothold, the key compared on the server | N7, N8 |
-| **I. Implants** | the `grant_foothold` action in two shapes, `POST /network/implant`, the server's record checks, the USB-policy check at the use | N9, N10 |
+Build in this order. Each sub-slice is playable and tested on its own before the next, and each
+stands on 9.3a and the sub-slices before it. The letters avoid 9.1's (A to E), 9.2's (U, A, B, H,
+L, C) and 9.3a's step numbers.
 
-**Order, and why.** P is first: it changes one route (plant) and nothing else, and proves the
-reserved-field machinery flips cleanly to accepted. O is next because K's reach and the view both
-depend on outages (a linked network can be down), and O's "judge a desktop request on its foothold,
-not on doors" rule (5.2) is what K's onward desktops need. K builds the pivot on O's reach. W is a
-second foothold kind that reuses O and K's reach unchanged. I is last: it is the most server-state
-work and it reads 9.2's USB table and the engine plan's `droppedItems`, both of which are built by
-then. Each sub-slice is worth playing on its own.
+| Sub-slice | What it adds | Ends playable when | Feature beats (section 11) |
+|---|---|---|---|
+| **K. Links and the pivot** (first) | `networkLinks`; `reach_from`/`player_reach`; the view's linked-network block; the pivot through a held session | A foothold on one network shows a second network only after a remote sign-in at a host that bridges the two, and a host on the second network can be signed in to in turn | N1 to N4 |
+| **O. Outages** | `downIf` on a network (the player side of a resource `downIf` too); `truthy?`; hosts and shares withheld while down; "no route" rows; the scoped-request route test | A network down by default is unreachable until an object sets its global false; a held session over a route that goes down shows "no route" and opens again when it returns | N5 to N7 |
+| **W. Wi-Fi** | `networks.<id>.wifi = { ssid, psk }`; `wifiAp` on an object; `POST /network/join`; the `wifi_<id>` foothold | Clicking an access point asks for the key; the right key grants a foothold whose view lists that network | N8, N9 |
+| **P. Port security** | `portSecurity` and `portSecurityMessage` on a jack; the refusal | A jack with port security takes the device in, gives no foothold, keeps the device, and shows its message | N10 |
+| **I. Implants** | the `grant_foothold` action; `POST /network/implant`; the dropped-device and BadUSB triggers; the USB-policy hook | A device the player dropped and an NPC uses, or a BadUSB the player plugs into a PC they hold a session on, grants a foothold and nothing else | N11, N12 |
+
+The order matters: K defines the reach model the view and the outage logic both extend; O adds the
+runtime "is this route up" test that K's reach uses; W and I are two more foothold kinds that reuse
+K's view and reach; P is a refusal on the plant path and is independent but small, so it sits after
+W. Each sub-slice ends with its feature-scenario beats added to `test_access_networks` (built now
+by 9.3a) and its unit, Rails and node tests green, plus a scripted browser run of its beats.
 
 ## 4. Scenario fields
 
-One example of each new field; the subsections and section 5 say what they mean. Everything here is
-refused by 9.3a's validator today and accepted by this slice.
+This slice un-reserves the fields 9.3a holds and adds a small number of new ones. One worked
+example first; the subsections say what each part means.
 
 ```jsonc
 {
   "networks": {
-    "office_lan":  { "name": "Harbour office LAN" },
-    "server_net":  { "name": "Server network", "downIf": "power_cut" },
-    "guest_wifi":  { "name": "Guest Wi-Fi", "wifi": { "ssid": "Harbour-Guest" } },
-    "staff_wifi":  { "name": "Staff Wi-Fi", "wifi": { "ssid": "Harbour-Staff", "psk": "seahorse-lantern-77" } }
+    "office_lan": { "name": "Harbour office LAN" },
+    "server_net": { "name": "Server network", "downIf": "servers_offline" },
+    "guest_wifi": { "name": "Guest Wi-Fi", "wifi": { "ssid": "Harbour-Guest", "psk": "seabreeze-2025" } }
   },
 
-  "networkLinks": [ ["office_lan", "server_net"] ],
+  "networkLinks": [
+    [ "office_lan", "server_net" ]
+  ],
+
+  "globalVariables": {
+    "servers_offline": true
+  },
 
   "resources": {
-    "ledger_archive": { "kind": "file_share", "name": "Ledger-Archive", "host": "HB-FS01",
-                        "network": "server_net", "access": { "roles": ["finance"] },
-                        "downIf": "share_maintenance", "contents": [ /* ... */ ] }
+    "backup_vault": { "kind": "file_share", "name": "Backup-Vault", "host": "SV-FS02",
+                      "network": "server_net", "access": { "roles": ["it"] },
+                      "contents": [ /* ... */ ] }
   },
 
   "rooms": {
-    "roof": {
+    "lobby": {
       "objects": [
-        { "id": "staff_ap", "type": "pc", "sprite": "wifi_ap1", "name": "Staff access point",
-          "wifiAp": true, "network": "staff_wifi" }
+        { "id": "guest_ap", "type": "pc", "sprite": "wifi_ap1", "name": "Guest access point",
+          "wifiAp": true, "network": "guest_wifi" },
+        { "id": "secure_port", "type": "pc", "sprite": "network_rack1", "name": "Locked switch port",
+          "networkJack": true, "network": "server_net",
+          "portSecurity": true,
+          "portSecurityMessage": "The switch logs the device's address and shuts the port. It takes only known machines." }
       ]
     },
-    "comms_room": {
-      "network": "office_lan",
+    "hot_desk_room": {
       "objects": [
-        { "id": "secured_port", "type": "pc", "sprite": "network_rack1", "name": "Managed wall port",
-          "networkJack": true, "network": "office_lan", "portSecurity": true,
-          "portSecurityMessage": "The switch drops the link: this port only accepts known devices." }
-      ]
-    },
-    "open_plan": {
-      "network": "office_lan",
-      "objects": [
-        { "id": "sofia_pc", "type": "pc", "name": "Sofia's PC", "host": "HB-FIN-07",
-          "locked": true, "lockType": "login", "network": "office_lan" }
+        { "id": "hot_desk_pc", "type": "pc", "name": "Hot desk PC", "host": "HB-HOT-01",
+          "network": "office_lan", "locked": true, "lockType": "login", "access": { "roles": ["staff"] } }
       ]
     }
   },
 
   "timers": [
-    { "id": "sofia_implant", "startOnGlobal": "kp_usb_used",
-      "actions": [
-        { "type": "grant_foothold", "pc": "sofia_pc", "needsDropped": "kit_badusb",
-          "name": "BadUSB on Sofia's PC" }
-      ] }
+    { "id": "staff_uses_stick", "triggerEvent": "...", "actions": [
+      { "type": "grant_foothold", "pc": "hot_desk_pc", "needsDropped": "kit_usb_stick",
+        "name": "USB foothold: hot desk" }
+    ] }
   ]
 }
 ```
 
-### 4.1 Networks and links
+### 4.1 Links
 
-- `networkLinks` is a list of two-item lists of network ids. A link is undirected: members of
-  either network reach the other. It joins networks, never a foothold to a network (5.1).
-- `networks.<id>.downIf` names a global. While the global is truthy (5.2) the network is down.
-- `networks.<id>.wifi` is `{ ssid, psk }`. `psk` is the key; absent means an open network. The key
-  lives here and nowhere else, in a block that never ships (section 7).
+- `networkLinks` is a list of two-item lists of network ids. A link is **undirected** and says
+  that members of one network can reach the other. A link whose ids are not both defined networks
+  is a validator error.
+- A rogue device's foothold is **not a member**. A foothold gained at a jack still reaches only its
+  own network. The linked network is reached only by pivoting through a session (section 5.1).
+- A host has one `network` in this slice, as in 9.3a. The real "only named jump hosts reach the
+  server network" control would need a list of networks on a host; the model is written against
+  "the networks of an object" so a later slice can add that without changing callers, but the
+  schema keeps a single string here.
 
-### 4.2 Resources
+### 4.2 Outages
 
-- `downIf` on a resource is 9.2's field (an NPC's work fails while it holds); this slice reads it
-  for the player too, so a share behind a down resource is not served. 9.2 owns the field's schema
-  entry; this slice reads it and adds no duplicate.
+- `networks.<id>.downIf` names a global. While that global is truthy (section 5.2) the network is
+  down: members and pivots do not reach through it, its hosts leave the view, and its desktops and
+  shares are not served.
+- `resources.<id>.downIf` is slice 9.2's field (it names the global that takes the resource's own
+  service down). This slice reads it for the player side: a resource whose own `downIf` is truthy
+  is not served and its row is shown down, exactly as a resource on a down network is.
+- The global is an ordinary scenario global, declared in `globalVariables` with its starting value.
+  A network "down by default" sets its global true there; an object that repairs it sets it false.
+  An undeclared `downIf` global is a validator warning (section 9).
 
-### 4.3 Objects
+### 4.3 Wi-Fi
 
-| Field | On | Meaning |
-|---|---|---|
-| `wifiAp` | any room object | An access point: clicking it joins its network (5.3). Several may serve one network. The object carries `network` (its own or its room's) |
-| `portSecurity` | a jack | The jack refuses an unknown device: the device goes in, the switch rejects it, no foothold, the device stays held (5.4) |
-| `portSecurityMessage` | a jack | The refusal line; default "This port only accepts known devices." |
+- `networks.<id>.wifi = { ssid, psk }` lives on the network and nowhere else, in a block that never
+  ships to the browser. `psk` absent means an open network.
+- An access point is any room object with `"wifiAp": true` on such a network (its own `network`, or
+  its room's default). Several access points may serve one network.
+- A Wi-Fi key is a lock secret like a door PIN, not an account password, so ink may name it. The
+  validator warns when a key appears nowhere the player can read, and when a key is shorter than
+  eight characters.
 
-### 4.4 The implant action
+### 4.4 Port security
 
-`grant_foothold` is a scenario action, allowed only on a path the engine runs actions from and the
-server's declared-grant walk covers (`DeclaredGrants.executed?`: `timers`, `triggerOnInteract`,
-`onInteract.actions`, `completionActions`, `conditionalActions`, and a `confirm_action.onConfirm` on
-one of those). Two shapes:
+- `"portSecurity": true` on a jack, with an optional `"portSecurityMessage"`. The device goes in,
+  the switch refuses an unknown device, no foothold is given, and the device stays in the
+  inventory. The message is shown to the player; without it a default is used.
+- A jack cannot be both `portSecurity: true` and a Wi-Fi access point, and `portSecurity` is only
+  valid on a `networkJack` (section 9).
 
-```jsonc
-{ "type": "grant_foothold", "pc": "<pcId>", "needsDropped": "<itemId>", "name": "..." }
-{ "type": "grant_foothold", "pc": "<pcId>", "needsSession": true, "needsHeld": "<itemId>", "name": "..." }
-```
+### 4.5 Implants
 
-- `needsDropped` (a member of staff plugs in a device the player dropped): the server requires
-  `droppedItems` to hold `<itemId>`.
-- `needsSession` with `needsHeld` (the player's BadUSB at a PC they are signed in to): the server
-  requires a session the player holds at `pc` (a claim or a password sign-in, not through a
-  foothold) and that the inventory holds `<itemId>`; the implant then takes that item out of the
-  inventory as a plant does.
-- Exactly one of `needsDropped` / `needsSession` is required; both, or neither, is a validator error
-  (section 9). `grant_foothold` under `flagRewards` or `eventMappings` is a validator error (those
-  paths are off the server's declared-grant list).
+- A `grant_foothold` action, on a path the engine runs actions from and the server's declared-grant
+  walk covers (a `timers` entry, an NPC `eventMapping` that runs actions, a `confirm_action`'s
+  `onConfirm`). Two shapes:
+  - `{ "type": "grant_foothold", "pc": "<pc id>", "needsDropped": "<item id>", "name": "..." }`: an
+    NPC uses a device the player dropped. The foothold is granted when the action fires **and** the
+    server's own `droppedItems` record shows that item was dropped.
+  - `{ "type": "grant_foothold", "pc": "<pc id>", "needsSession": true, "needsHeld": "<item id>",
+    "name": "..." }`: the player plugs a device into a PC they already hold a session on (a claim or
+    a password sign-in, not through a foothold). The foothold is granted when the server holds that
+    session and the inventory holds `needsHeld`, which the implant then takes out of the inventory
+    as a plant does.
+- An implant gives a foothold on the **PC's own network** and nothing else. The validator errors on
+  a `grant_foothold` under `flagRewards` (the flag station runs actions in the browser, off the
+  server's list) or an `eventMappings` entry the server does not run as an action, on one with
+  neither `needsDropped` nor `needsSession`, and on one with both.
+
+### 4.6 Which fields ship
+
+As in 9.3a, the bootstrap deletes `networks`, `networkLinks` and `resources` whole, so no network
+name, link, SSID, key, resource name, `host`, `observations` or share content ships. The only new
+fields that ship, on room objects, are `wifiAp` (so the client knows a click is a join) and
+`portSecurity`/`portSecurityMessage` (so a refusal can be drawn). A `grant_foothold` action's own
+`name` ships as any action's fields do; it is a link-item label, not a secret.
 
 ## 5. Engine behaviour
 
-### 5.1 Links, and the pivot through a session
+### 5.1 Links and the pivot (sub-slice K)
 
-**A rogue device is not a member.** A foothold from a jack (or a Wi-Fi join) still reaches only its
-own network. This is the segmentation lesson in one rule: the servers accept only managed machines.
+**The model (`NetworkModel`, shared).**
 
-**A session is a place to stand.** When the player holds a session at a sign-in host that a held
-foothold reaches (any session there, however opened, so sitting down at a pivot host, which clears
-the session's `foothold` in 9.3a, does not cut the pivot), that foothold's reach grows by every
-network the host reaches over links that are up. The onward hosts can be signed in to in turn, which
-can extend reach again. Signing out, or unplugging, shrinks it back.
+- `network_links(data)` normalises `networkLinks` to a list of `[a, b]` pairs of defined network
+  ids, dropping malformed entries.
+- `linked_networks(data, network)` is the networks directly joined to `network` by a link
+  (undirected).
+- `reach_paths(data, from, to)` is every simple path of network ids from `from` to `to` over the
+  link graph, shortest first, capped at eight; the cap is the validator's warning threshold
+  (section 9). This is a pure graph walk: it does not read outages.
+- `reach_conditions(data, station_network, resource)` keeps its 9.3a return shape (a list of
+  routes, each a list of condition globals) and is extended to use `reach_paths`: for a resource on
+  a network reachable from `station_network`, each route is the `downIf` globals of the networks on
+  its path (the station's and every intermediate and the resource's network), **not** the
+  resource's own `downIf` (that is 9.2's and 9.2 adds it to its own route list). A resource on the
+  station's own network is still `[[]]`; an unreachable one is still `[]`. This is the function
+  slice 9.2's NPC-work composer already calls; its output gains the path globals, which 9.2's
+  `npc-work.js` evaluates on the browser (section 12 notes the shared ordering).
 
-So a network chains to a network only through something the server checked: the password of the
-session the player pivots through. Nothing between two networks rests on a client-written value.
+**The runtime reach (`NetworkAccess`, server).**
 
-**The reach model** (`NetworkModel`, shared by the server, validator and dungeon graph):
+- `network_up?(network_id)` reads the network's `downIf` global from
+  `player_state['globalVariables']`, falling back to the scenario's declared default, and answers
+  false when that value is truthy by `NetworkModel.truthy?` (section 5.2). A network with no
+  `downIf` is always up.
+- `reach_from(network_id)` is the set of network ids reachable from `network_id` by following links
+  through **up** networks only (a breadth-first walk using `network_up?` and `linked_networks`),
+  the start network included when it is itself up.
+- `player_reach(foothold_id)` grows the foothold's reach by the pivot rule: start with
+  `reach_from(the foothold's own network)`; then, repeatedly, for every sign-in host on a network
+  already in the set at which the player holds **any** session (a claim or a password sign-in,
+  however it was opened, so sitting down at a pivot host, which clears the session's `foothold` in
+  9.3a, does not cut the pivot), add `reach_from(that host's network)`; stop at a fixpoint. The
+  result is the set of network ids the foothold reaches now.
+- `host_reachable_through?(foothold_id, pc)` is extended: the foothold is held, the target is a
+  sign-in object, and its network is in `player_reach(foothold_id)`.
+- `resource_admits_player?(resource)` is extended: a held foothold reaches the resource's network
+  (it is in that foothold's `player_reach`) and, for a share with an access list, a session the
+  player holds is at a host whose network reaches the resource's network (through `reach_from`) and
+  the list admits that session's identity. An open share (no access list) is still reached by any
+  held foothold that reaches its network.
+- `mapped_shares(pc, npc)` is extended: every `file_share` on a network in `reach_from(the PC's
+  own network)` whose list admits the session's identity, so a finance PC maps a share on a linked
+  server network for the player exactly as it does for the member of staff.
 
-- `reach_from(data, network)`: the set of networks reachable from `network`, that network and every
-  network linked to it transitively, crossing only links whose both ends are up. A network is up
-  when its `downIf` is absent or not truthy by `truthy?` (5.2). Wi-Fi networks are ordinary
-  networks here: a link may join one.
-- `player_reach(data, foothold, session_networks)`: the networks a foothold reaches now. Start from
-  the foothold's own network; for each host at which the player holds a session (the caller passes
-  their networks, computed from `sessions`), if a network already in reach reaches that host's
-  network, add `reach_from(host_network)`. Repeat to a fixed point. The foothold's own network is
-  added even when it is itself down (its hosts then show "no route", 5.2), so a held session's row
-  is never silently lost.
-- `reach_conditions(data, station_network, resource)` (the function 9.2's NPC work already calls):
-  returns the routes from `station_network` to the resource's network, each route a list of the
-  `downIf` globals on it (the networks crossed, and the resource's own `downIf` left to 9.2 as 4.2
-  says). `[[]]` is one route with no conditions, `[]` no route. Routes are simple paths, shortest
-  first, at most eight; the validator warns when the link graph needs more (section 9). This is the
-  only `NetworkModel` function 9.2 reads, and its signature does not change; 9.3a returned `[[]]`/`[]`,
-  this slice fills in the real routes.
+**The view's linked-network block.** `network_view` gains, per foothold, a `networks` block: an
+entry per network the foothold reaches, each `{ id, name, via: { hostId, host, displayName } |
+null, hosts }`. The foothold's own network has `via: null`; a network reached through a pivot names
+the host and session it was reached through. `hosts` is the sign-in hosts and resources of that
+network, built by the existing `network_rows`. The client renders the own-network rows first, then
+a labelled block per linked network ("Server network, through HB-FIN-02, signed in as Lena Fox").
+The 9.3a flat `hosts` array stays for the foothold's own network so existing tests and clients
+read it unchanged; the `networks` block is additive.
 
-**What the view shows.** `GET /network` gains, per foothold, a `networks` list: the foothold's own
-network first (its hosts, as today), then each pivoted-to network as a further block,
-`{ id, name, via: { hostId, host, displayName } | null, hosts, down }`. `via` names the session the
-block is reached through ("Servers, through HB-FIN-07, signed in as Sofia Lord"); it is `null` for
-the foothold's own network. The client renders each block under a heading. A down network is one
-greyed line (5.2). Mapped shares on a desktop use `reach_from` of the PC's network, so a finance PC
-maps a share on the server network for the player exactly as it does for the member of staff.
+**Client (`network-view-minigame.js`).** The view renders the extra `networks` blocks under the
+own-network rows, each with a header line and the same row widgets (`host_row`, `resource_row`
+already carry what it needs). Signing in at a pivot-network host, or signing out of the pivot host,
+makes the view refetch so the block appears or disappears. No new trip or landing: a pivot host's
+sign-in screen and desktop are the same screens as any other host's, reached through the same
+`open`/`openSession` trip.
 
-### 5.2 Outages
+### 5.2 Outages (sub-slice O)
 
-**Truthy is JavaScript's.** The browser decides the same question for 9.2's NPC work, so
-`NetworkModel.truthy?(value)` matches JavaScript and 9.2's `truthy`: false for `false`, `nil`, `0`,
-`""` and a missing key, true for everything else, the string `"false"` included. The server reads a
-`downIf` global from `player_state.globalVariables`, falling back to the scenario's declared default
-in `globalVariables`. `truthy?` is tested against each of those values and is used everywhere the
-server reads a `downIf`.
+- `NetworkModel.truthy?(value)` matches JavaScript's truthiness, because the browser decides the
+  same question for 9.2's NPC work: false for `false`, `nil`, `0`, `0.0`, `""` and a missing key;
+  true for everything else, the string `"false"` included. It is tested with each of those.
+- `network_up?` and a resource's own-`downIf` test both read the global from
+  `player_state['globalVariables']`, falling back to the scenario's declared default in
+  `globalVariables`, and apply `truthy?`.
+- **What is withheld while down.** `player_reach` and `reach_from` already skip a down network, so
+  its hosts and shares drop out of the view and out of `mapped_shares`, and `host_reachable_through?`
+  and `resource_admits_player?` refuse them. A `GET /container` for a host or share on a down
+  network answers as 9.3a answers an unreachable one (403 `unreachable` for a sign-in host, the
+  invented-id 404 for a resource).
+- **A held session over a route that goes down.** The server keeps the session. In the view, a
+  network reached through a pivot that is down shows as one greyed line, "<name>: no route", and
+  under it each host at which the player holds a session through this foothold keeps a greyed row
+  whose click says "No route to <host>", so a held session is never silently missing. The server
+  answers that session's desktop request 403 `unreachable`; when the route returns it opens again
+  with no password.
+- **The scoped-request route test.** This is the one place 9.3a's "a session exists is enough" rule
+  no longer holds, because an outage can take a route down without deleting the session. So in a
+  scenario that defines any network `downIf`, the scoped requests under a remote desktop (a folder's
+  `GET /container`, the inventory add from a desktop, an `unlock` inside a desktop) carry the
+  foothold and are re-judged on the route: the server answers 403 `unreachable` (or the invented-id
+  refusal for a share path) when the host or share is no longer reached. A local session at a PC on
+  a network with no `downIf` is judged exactly as today, so no existing scenario gains a refusal.
+- **Keeping the server's view current (client).** Before `GET /network`, a remote sign-in, and any
+  desktop or share fetch while a foothold is held or the last desktop showed a mapped share, the
+  client awaits `window.stateSync.sync()` so the server reads the latest outage globals. An open
+  view refetches every five seconds; it does **not** refetch on every global change, because the
+  needs and workstation layers publish globals continuously.
 
-**What a network outage does.**
+### 5.3 Wi-Fi (sub-slice W)
 
-- **Reach.** A down network is not crossed by `reach_from`, so a pivot through a down network, and a
-  network reached only across a down one, drop out of reach. The foothold's own network stays in
-  reach even when down (its hosts show "no route").
-- **The view.** A network reached through a pivot that is down, or the foothold's own down network,
-  shows as one greyed line, "<name>: no route". Under it, each host where the player holds a session
-  through this foothold keeps a greyed row whose click says "No route to <host>", so a held session
-  is never silently missing. A down network's hosts the player has no session at are not listed.
-- **Desktops and shares.** The server keeps a session on a down network and answers its desktop
-  request 403 `unreachable`; when the route returns the desktop opens with no password. A mapped
-  share on a down network is not mapped while it is down.
-
-**A desktop request is judged on its foothold, not on doors** (9.3a's rule, extended). In 9.3b the
-scoped requests under a remote desktop, the ones that read a session (scoped folders, the inventory
-add from a desktop, an unlock inside a desktop), also carry the foothold and are judged on the route
-being up, not only on "a session exists". 9.3a left those as "a session exists" because rooms do not
-relock and an unplug deletes the sessions it carried; an outage is the new case where a held session
-is temporarily out of reach, so the route is re-tested (section 6).
-
-**A resource outage** (`downIf` on a resource) means the same for the player: the share is not
-served while it holds, by the same `truthy?`. 9.2 owns what a resource outage does to an NPC; this
-slice reads it for `GET /container` and `GET /network`.
-
-**Keeping the server's view current.** A `downIf` global can be written by the browser (a breaker,
-a plant), by the server when it completes a task whose `onComplete.setGlobal` names it, or, once
-9.2's sub-slice B is built, by a workaround. The client `await`s `window.stateSync.syncConfirmed()`
-before `GET /network`, a remote sign-in, and any desktop or share fetch while a foothold is held or
-the last desktop showed a mapped share, so the server reads the outage the player just caused. An
-open view refetches every five seconds; it does not refetch on every global change, because the
-needs and workstation layers publish globals constantly. 9.3a refetched only on open or return; this
-slice adds the timer while open.
-
-**Strength.** A `downIf` global written by the browser is pacing and a distraction tool, never
-protection: anything that must not be read early sits behind a session as well. The validator warns
-about an open share with contents behind a network that starts down (section 9).
-
-### 5.3 Wi-Fi
-
-- `networks.<id>.wifi = { ssid, psk }`. An access point is any room object with `wifiAp: true` on
-  such a network (its own `network`, or its room's). Several access points may serve one network.
-- Clicking an access point asks for the key in the password minigame's key mode; the server
-  compares it (`POST /network/join`). The foothold id is `wifi_<networkId>`. A Wi-Fi foothold, like
-  a jack's, reaches its own network only, and extends through sessions exactly as a jack's does
-  (5.1).
-- `psk` absent is an open network: the click joins with no key prompt.
-- Joining through a second access point of a network already joined answers `already: true` **and
-  still** adds that access point id to `gainedFootholds` and emits `network_joined` for it, so a
+- `NetworkModel.wifi_aps(data)` is every room object with `wifiAp: true` on a network that defines
+  a `wifi` block; `wifi_of(network)` is `{ ssid, psk }` or nil.
+- Clicking an access point (a branch in `interactJack`'s sibling in `network-links.js`, keyed on
+  `wifiAp`) asks for the key in the password minigame's key mode. `POST /network/join` compares the
+  key on the server. The foothold is `wifi_<networkId>`, `via: "wifi"`, `source` the access point's
+  object id, `network` the AP's network. Like a jack's foothold it reaches its own network only (and
+  then pivots like any foothold, section 5.1).
+- Joining through a **second** access point of a network already joined answers `already: true` and
+  **still** adds that access point's id to `gainedFootholds` and emits `network_joined` for it, so a
   task or mapping on either access point completes.
-- No device and no range: the server cannot check range, and a join needs no rogue device. The link
-  item's picture is the access point object's own sprite (never the phone's), so the tray does not
-  hold two phone icons that open different things.
-- A Wi-Fi key is a lock secret like a door PIN, not an account password: ink may say it. The key is
-  compared on the server and the browser never holds it. Wrong keys are not counted (no lockout,
-  section 15), so the validator warns about a key shorter than eight characters, and about a key
-  that appears nowhere the player can read (section 9).
+- The link item's picture is the access point object's own sprite, never the phone's, so the tray
+  does not hold two phone icons that open different things. The link item, the view and the trip are
+  9.3a's, unchanged: a Wi-Fi foothold is a foothold.
+- No device and no range. An open network (`psk` absent) joins with no key prompt. A wrong key is
+  not counted (section 13 records the strength): the server just answers "wrong key".
 
-### 5.4 Port security
+### 5.4 Port security (sub-slice P)
 
-`portSecurity: true` on a jack: a plant there puts the device in, the switch refuses an unknown
-device, no foothold is given and the device stays in the inventory. The client shows the jack's
-`portSecurityMessage` (or the default) and emits `network_device_refused` with reason
-`port_security`. It only refuses; a bypass is not part of this slice. The check is on the server
-(`POST /network/plant`, section 6), so a tampered browser gains no foothold at a secured port.
+- `plant_device!` gains one check, after "the jack exists" and "object reachable" and before it
+  takes the device: when the jack has `portSecurity: true`, it does not plant. It leaves the device
+  in the inventory, gives no foothold, and answers `{ success: false, reason: "port_security",
+  message: <portSecurityMessage or a default> }`. The client shows the message and emits
+  `network_device_refused` with reason `port_security`; the device is never removed.
+- It only refuses. A bypass (an allow-list the device can be added to, a cloned address) is left
+  out of this slice (section 13).
 
-### 5.5 Implants
+### 5.5 Implants (sub-slice I)
 
-An implant is a foothold given by a device plugged into a PC rather than a jack, through the
-`grant_foothold` action (4.4). **It gives a foothold and nothing else:** no session, no desktop, no
-owner's access. The foothold is on the PC's own network and, like every foothold, reaches only that
-network. The owner's desktop still needs the owner's password through the ordinary remote sign-in.
-So the rogue USB beat becomes "the stick gives you the network; the keylogger or the phish gives you
-the account", which is a chain and not a gift; and the player's own BadUSB turns one desk into a way
-onto the network and opens no other account.
+- A new route, `POST /network/implant`, and a new action handler for `grant_foothold` on the
+  server's action path (`apply-actions` on the client, and the server's declared-grant walk for the
+  dropped case). The action names a `pc`, a shape (`needsDropped` or `needsSession`+`needsHeld`) and
+  a `name`.
+- `implant_foothold!(pc_id, action)` requires, before it grants:
+  1. the scenario declares a `grant_foothold` for that PC with the same shape (read from the
+     scenario, never from the request);
+  2. for `needsDropped`: `player_state['droppedItems']` holds the named item (the grow-only record
+     `add_item_to_room!` writes). A drop's own room entry goes when the item is picked up again, so
+     `droppedItems` is the durable proof, not the room entry;
+  3. for `needsSession`: `sessions[pc]` holds a session the player has (a claim or a password
+     sign-in, **not** one opened through a foothold) and the inventory holds `needsHeld`, which the
+     implant then removes from the inventory as a plant does;
+  4. where 9.2's USB policy is present, the PC's policy does not refuse the device's `usbClass`
+     (the hook below). A device under a blocking USB policy fails **at the use**, not at the drop.
+- On success it writes `footholds["implant_<pcId>"] = { via: "implant", network: <the PC's
+  network>, source: pcId, device: <the needsHeld copy, when any>, seq }`, adds `pcId` to
+  `gainedFootholds`, and adds the link item (its sprite the device's own, its name the action's
+  `name`). The foothold reaches the PC's own network and pivots like any foothold. A repeat answers
+  `already: true`.
+- **It gives a foothold and nothing else.** No session, no desktop, no owner's access: the owner's
+  desktop still needs the owner's password through the ordinary remote sign-in. The rogue USB beat
+  becomes "the stick gives you the network; the keylogger or the phish gives you the account". The
+  player's own BadUSB beat needs a session at the PC first, so it turns one desk into a way onto the
+  network and still opens no other account.
+- **Strength.** The rogue-USB trigger (the NPC's use) is reported by the browser, so that implant is
+  weaker than a plant and is graded so; what it yields is bounded (a list of hosts, every one of
+  which still asks for a password the server checks), which is why it may be client-triggered. The
+  BadUSB trigger rests on the server's session and inventory records, as strong as a plant.
+- **The USB hook.** `usb_refused?(pc, item)` sits beside `effective_policy` and reads 9.2's `usb`
+  policy and the item's `usbClass`. Whichever of 9.2's sub-slice U and this slice lands second adds
+  the method and the implant's call to it; until both are present the implant does not consult a USB
+  policy. The validator warns for a `grant_foothold` whose PC would refuse its own device.
 
-**The server checks what it can** (`POST /network/implant`, section 6). The action is declared for
-that PC, found by the declared-grant walk. Then:
+### 5.6 Determinism
 
-- `needsDropped`: `player_state['droppedItems']` holds the item (the server's own record of a player
-  drop, written in `add_item_to_room!`; grow-only, so it survives the item being picked up again).
-- `needsSession` with `needsHeld`: `sessions[pc]` holds a session the player has (a claim or a
-  password sign-in, **not** one through a foothold, so the player cannot implant a PC they only
-  reached remotely), and the inventory holds `needsHeld`. The implant takes `needsHeld` out of the
-  inventory as a plant does (it is the physical device, now left in the PC).
-- Where 9.2's sub-slice U is built, the PC's policy must not refuse the device's `usbClass`. The
-  check is a Ruby `usb_refused?(pc, item)` beside `effective_policy`, reading 9.2's table
-  (`AccessWork.plant_refused?`). A device under a blocking USB policy fails **at the use**, not at
-  the drop: it is dropped, picked up and carried first, and refused when it is plugged in.
-
-The implant's foothold id is `implant_<pcId>`, `via` is `implant`. A repeat answers `already: true`.
-
-**Strength.** The rogue USB trigger (the NPC's use of a dropped device) is still reported by the
-browser, so that implant is weaker than a plant and is graded so. What it yields is bounded: a list
-of hosts, every one of which still asks for a password the server checks. That is why it may be
-client-triggered. The player's BadUSB trigger rests on the server's session and inventory records,
-so it is as strong as a plant. A scenario that wants "the stick lands you inside her session" builds
-it from pieces the server checks: an implant for the network and a captured password for the
-account. The pitch's own pattern (a timer that grants a hand-written remote session) is not used for
-a device that reaches a network: its payload is the foothold, and what the foothold shows is the
-network view.
+Nothing in this slice rolls. Links, outages (a pure function of the globals held), Wi-Fi (a key
+compared on the server), port security (a scenario flag) and implants (the server's drop and
+session records) are all pure functions of the scenario and the state the server holds.
 
 ## 6. Server routes
 
 Every route this slice adds or changes, with its checks in the order they run. A failed check stops
-the request. "Locked" means the route joins the `with_game_lock` list. Status codes follow 9.3a's
-(404 unknown target, 403 unreachable, 422 a refusal the player caused), except where a refusal must
-look like an unknown id, when it is whatever that route answers for an invented id.
+the request. Status codes follow 9.3a's: 404 for an unknown target, 403 for one that cannot be
+reached, 422 for a refusal the player caused, and the invented-id answer wherever a refusal must
+look like an unknown id. "Locked" means the route joins the `with_game_lock` list.
 
-The two new routes sit in the routes' member block with named actions, each with a policy method
-answering as `show?` does (`network_join?`, `network_implant?`), or `authorize @game` raises:
+The two new routes sit in the routes' member block beside 9.3a's three, each with a policy method
+that answers as `show?` does (`network_join?`, `network_implant?`), or `authorize @game` raises:
 
 ```ruby
 post 'network/join',    to: 'games#network_join',    as: 'network_join'
@@ -372,415 +416,252 @@ post 'network/implant', to: 'games#network_implant', as: 'network_implant'
 
 | Route | Parameters | Checks, in order | Writes and answer |
 |---|---|---|---|
-| `POST /network/plant` (changed, locked) | as 9.3a | After the existing checks (jack exists, reachable, already-planted, device held), one added **before** writing the foothold: the jack's `portSecurity` is not true. If it is: 422 `reason: "port_security"`, the `portSecurityMessage` (or default) as `error`, no foothold, the device left in the inventory | As 9.3a on success; on port security, nothing written |
-| `POST /network/join` (new, locked) | `ap_id`, optional `key` | 1. The access point exists: a room object with `wifiAp: true` and a network the scenario defines; else 404 `{ success: false, error: "Access point not found" }`. 2. Object reachable (`object_reachable?`); else 403 `reason: "unreachable"`. 3. A foothold `wifi_<networkId>` exists already: answer it again with `already: true`, add `ap_id` to `gainedFootholds` if absent, emit nothing new server-side (the client emits `network_joined`). 4. The network has a `wifi.psk`: the `key` matches it (exact, server-side); else 422 `reason: "wrong_key"`, no failure counted. A network with no `psk` skips check 4 | Success: `footholds[wifi_<networkId>] = { via: "wifi", network, source: ap_id, seq }` (no `device`); `ap_id` joins `gainedFootholds`; a link item joins the inventory (its sprite the AP's own). Answer `{ success, foothold, inventory, first, already? }` |
-| `POST /network/implant` (new, locked) | `action_index` or enough to name the declared action; `pc` | 1. The scenario declares a `grant_foothold` for this `pc` on a path the declared-grant walk covers; else 404. 2. For `needsDropped`: `droppedItems` holds the item; else 422 `reason: "not_dropped"`. For `needsSession`: `sessions[pc]` is a session the player holds that is not through a foothold, **and** the inventory holds `needsHeld`; else 422 `reason: "no_session"` or `reason: "not_held"`. 3. Where 9.2 U is built: `usb_refused?(pc, item)` is false; else 422 `reason: "usb_refused"`, the refusal line. 4. A foothold `implant_<pc>` exists already: `already: true`, write nothing | Success: for `needsSession`, `needsHeld` leaves the inventory (as a plant, 9.3a 4.1); `footholds[implant_<pc>] = { via: "implant", network: <pc's network>, source: pc, seq }`; the link item joins the inventory. Answer `{ success, foothold, inventory, first, already? }` |
-| `GET /network` (changed) | optional `foothold` | As 9.3a | Per foothold, the answer gains `networks: [{ id, name, via, hosts, down }]` (5.1): the foothold's own network first, then each pivoted network, each either its hosts or `down: true` with only the held-session rows (5.2). `hosts` at the top level (9.3a's shape) stays, equal to the first block's hosts, so a 9.3a-era client is unaffected |
-| `GET /container/:id` (changed, locked) | as 9.3a, plus the scoped sub-requests now carry `foothold` | **A sign-in object, with `foothold`:** the 9.3a checks, plus the route from the foothold to the host is up (`player_reach` includes the host's network); else 403 `reason: "unreachable"`. **A resource:** `resource_admits_player?`, and the resource's network is up and its own `downIf` is not truthy; else the invented-id 404 | As 9.3a, with mapped shares limited to networks that are up |
-| `POST /unlock`, `POST /inventory` add (changed, locked) | as 9.3a, plus `foothold` on a scoped request under a remote desktop | The scope checks of 9.3a, plus: when the scope is reached through a foothold, the route is up; else the route's own unknown-id refusal (4.5 of the 9.3a plan) | As 9.3a |
+| `GET /network` (changed) | optional `foothold` | The game's own authorisation; an unknown foothold id is 404, as today | Per foothold, 9.3a's `{ id, via, name, network, hosts }` for the own network, **plus** `networks: [{ id, name, via, hosts }]` for every network the foothold reaches now (section 5.1), down networks shown as a greyed block with the held-session rows kept (section 5.2) |
+| `POST /network/plant` (changed, locked) | `jack_id`, optional `device_id` | 9.3a's checks, plus: when the jack sets `portSecurity: true`, after "object reachable" and before the device is taken, refuse | Port security: 422 `{ success: false, reason: "port_security", message }`, the device left in the inventory, no foothold. Otherwise 9.3a's writes and answer |
+| `POST /network/join` (new, locked) | `ap_id`, `key` (absent for an open network) | 1. The access point exists: a room object with `wifiAp: true` on a network that defines `wifi`; else 404 "Access point not found". 2. Object reachable; else 403 `unreachable`. 3. A foothold `wifi_<networkId>` is already held: answer `already: true`, add `ap_id` to `gainedFootholds`, emit `network_joined`, write nothing else. 4. The network has a `psk`: the key matches; else 422 `reason: "wrong_key"`, no count. An open network skips check 4 | Success: `footholds["wifi_<networkId>"]` written, `ap_id` added to `gainedFootholds`, the link item added. Answer `{ success, foothold, inventory, first }`, the shape of a plant's answer |
+| `POST /network/implant` (new, locked) | `pc_id`, `shape` (`dropped` or `session`), the action's own fields from the scenario | 1. The scenario declares a matching `grant_foothold` for `pc_id`; else 404. 2. The shape's precondition (section 5.5): `droppedItems` holds the item, or the session is held and `needsHeld` is in the inventory. 3. The USB hook, where present. 4. A foothold `implant_<pcId>` is already held: `already: true` | Success: `footholds["implant_<pcId>"]` written, `pcId` added to `gainedFootholds`, `needsHeld` removed (session shape), the link item added. Answer `{ success, foothold, inventory, first, already? }`. A precondition that fails: 422 `reason: "not_ready"`, no state change |
+| `POST /login` (changed, locked) | as today, plus optional `foothold` | 9.3a's checks, with `host_reachable_through?` now true when the host is in `player_reach(foothold)` (so a pivot host on a linked network is reachable only while the pivot session is held and up); plus, when the host's network is down, 403 `unreachable` before the password is read | As today |
+| `GET /container/:id` (changed, locked) | as today, plus optional `foothold` | A remote desktop: 9.3a's `desktop_request_allowed?`, now resolving reach through `player_reach` and refusing a down route 403 `unreachable`. A **scoped** request under a remote desktop (a folder, a share): in a scenario with any network `downIf`, re-judge the route and answer 403 `unreachable` (host) or the invented-id 404 (share) when it is down (section 5.2). Otherwise as today | As today |
+| `POST /inventory` add (changed, locked) | as today | A `source_pc_id` or `source_resource_id` add on a route that is down is refused with the route's invented-id answer, as the scoped `GET /container` is | As today |
+| `POST /unlock` (changed, locked) | as today | An `unlock` scoped under a remote desktop on a down route is refused with the invented-id 422, as 9.3a refuses a share the rule rejects | As today |
+| `GET /scenario` (changed) | as today | As today | `filtered_scenario_for_bootstrap` already deletes `networks`, `networkLinks` and `resources`; this slice adds nothing new to ship. The `footholds` block carries Wi-Fi and implant footholds in the same client shape as a jack's |
 
-`POST /logout`, `POST /network/unplug` are unchanged. `POST /network/unplug` of a Wi-Fi foothold is
-"leave the network": it already removes the foothold and ends the sessions it carried; the client's
-leave control is the link item's own, so no route change is needed (section 8).
+`reach_conditions` is extended in `NetworkModel`, not a route: 9.2's NPC-work route consumes it
+(section 12). No route tells the browser a network's link graph, a resource's network, an SSID or a
+key; a down network is shown only as a greyed line with no name of anything new.
 
-## 7. What the browser receives, and what it never does
+## 7. What reaches the browser, and what never does
 
-The rule, from 9.3a, holds: the browser learns a network's name, and the names, hosts and contents
-of what it exposes, only from `GET /network` and `GET /container`, and only for a foothold or
-session the server holds. This slice keeps it and adds the new secrets.
-
-**What is not secret, and ships.** Network ids and resource ids (they appear in event mappings and
-tasks). A link is a pair of ids, so `networkLinks` itself names nothing a player can use; but it
-tells a reader which networks are joined, so it is withheld with the rest (below) to keep the
-bootstrap from naming networks at all.
-
-**What this slice must newly withhold:** a Wi-Fi `psk`, above all. The key never reaches the
-browser: the join compares it on the server. The `wifi` block ships nowhere.
+The 9.3a rule stands: the browser learns a network's name, and the names, hosts and contents of
+what the network exposes, only from `GET /network` and `GET /container`, and only for a foothold or
+session the server holds. This slice's additions keep inside it.
 
 | Path | Sent | Withheld |
 |---|---|---|
-| Bootstrap, `GET /scenario` | As 9.3a (footholds held, with their link items). A Wi-Fi foothold's bootstrap entry carries `via: "wifi"` and its link item | `networks` (so no `wifi` block, no `ssid`, no `psk`, no `downIf`), `networkLinks` and `resources` are deleted (9.3a already deletes the three top-level keys; `wifi`, `downIf` and the link live inside `networks`/`resources`, so they go with them). `wifiAp`, `portSecurity` and `portSecurityMessage` on an object **ship in room data** (they are controls the player interacts with; `portSecurityMessage` is a message meant to be read, and `wifiAp`/`portSecurity` name nothing secret) |
-| Room data | A jack's `portSecurity` and `portSecurityMessage`; an object's `wifiAp` and, for an access point, the `ssid` it advertises (an SSID is broadcast in the world and is not secret) | `network` on every object and room (9.3a); the `wifi.psk`, which is never on the object, only in the withheld `networks` block |
-| `POST /network/join` | The foothold in the bootstrap shape, `first`, the inventory with the link item | The key (the browser sent it; the server never echoes it), every other network |
-| `POST /network/implant` | The foothold, `first`, the inventory | Hosts (the view is a separate request), every other network |
-| `GET /network` | Per foothold, the `networks` blocks of 5.1: names, hosts, `via`, and `down` for a down one. A down network sends only the rows for sessions the player holds there | Every network not in this foothold's reach, entirely. A `psk`, an `ssid` (the view names a network, not its SSID), `downIf` globals (the greyed line says "no route", not which global) |
-| Events and globals | `network_joined`, `network_device_refused` (reason `port_security`), `network_implanted`; a Wi-Fi foothold's `<apId>` in `gainedFootholds` | The key is in no event |
+| Bootstrap, `GET /scenario` | Footholds (jack, Wi-Fi and implant) in 9.3a's client shape. `wifiAp`, `portSecurity` and `portSecurityMessage` on room objects (so a click and a refusal can be drawn) | `networks`, `networkLinks`, `resources` deleted whole, so no network name, link, SSID, Wi-Fi key, resource name, `host` or share content ships. A network's `downIf` global **name** may already be a scenario global the client holds; the name alone exposes nothing |
+| `GET /network` | Per foothold, the own-network rows and the linked-network blocks (`networks`): each network's `name` only once the foothold reaches it, its hosts and resources as 9.3a sends them. A down route: a greyed block, the held-session rows kept, no new name | Every network the foothold does not reach, entirely. Account names, access lists, policies, share contents, the link graph of networks the foothold has not reached |
+| `POST /network/join`, `/implant` | The foothold in the bootstrap shape, `first`, the inventory with the link item | Hosts (the view is a separate request). The Wi-Fi key and the implant's preconditions are never echoed |
+| `POST /network/plant` port-security refusal | `reason`, `message` (the authored `portSecurityMessage`) | Nothing about the network behind the port: a refused device learns only that the port is protected |
+| Events and globals | `network_joined`, `network_device_refused` (reason `port_security`), `network_foothold_gained` (via `wifi` or `implant`); the `<id>_planted`-style display global for a Wi-Fi AP and an implant, as 9.3a publishes `<jackId>_planted` | Nothing server-side is read from them |
 
-**What a tampered browser still gets.** A browser that forges a `GET /network` or a plant can learn
-nothing it is not entitled to: the server composes the view from server-held footholds and sessions
-only, and refuses a plant at a secured port, a join with a wrong key, and an implant with no server
-record. A browser that writes a `downIf` global to `false` can keep a network up that the scenario
-meant down; that is why an outage is pacing, not protection, and anything that must stay hidden sits
-behind a session the server checks (5.2). A browser cannot read a Wi-Fi key it was never sent, and
-cannot pivot to a network without a session the server opened with a password it checked (5.1).
-
-**No-exposure test.** The 9.3a no-exposure test gains: with no foothold and no session, no response
-(including `/scenario`, room data, a door `/unlock`, `/network`) contains a Wi-Fi `psk`, an SSID
-from a withheld network, a `downIf` global's being read back, or a linked network's name; a secured
-jack's plant answers 422 `port_security` and leaves the device; a join with a wrong key is 422 and
-reveals no key; after a foothold on network A linked to B, `/network` names B only once a session on
-a pivot host is held, and never names a network two hops away across a down link.
+**No-exposure test (extended).** The 9.3a no-exposure test gains cases: with no foothold and no
+session, no response names a linked network, an SSID, a Wi-Fi key, or a resource on a linked or down
+network; a foothold on the first network of a link shows no name from the second until a pivot
+session is held; a Wi-Fi key is never in any response (only compared on the server); a down
+network's hosts and shares are refused with the same status and body as an invented id; and a
+`grant_foothold` action's preconditions never leak the target's network or contents.
 
 ## 8. State and saved games
 
-- **New footholds.** `footholds[wifi_<networkId>]` (no `device`) and `footholds[implant_<pcId>]`
-  (no `device`) are ordinary foothold records; `held_foothold_ids`, the view and the unplug read
-  them unchanged. `gainedFootholds` holds access point ids and the jack ids as before. No new
-  `player_state` key: links, outages and Wi-Fi are read from the scenario and the existing
-  footholds and sessions.
-- **Link items.** A Wi-Fi and an implant foothold each put a link item in the inventory, built by
-  `link_item_for` (extended to name the source by its kind: an access point's or the PC's name). It
-  comes back in `playerInventory` on load and is rebuilt from the foothold list if lost, exactly as
-  a jack's is.
-- **Reload.** Footholds, `gainedFootholds` and sessions are kept (9.3a). A Wi-Fi join and an implant
-  survive a reload with no re-prompt: their foothold is in the scenario response, so the view opens
-  from the link item. An outage is read fresh from the globals each time, so the view after a reload
-  reflects the current outage state.
-- **Reset.** `footholds` and `gainedFootholds` are dropped (9.3a), so a joined network, an implant
-  and a secured-port plant are all undone; `droppedItems` is dropped too, so a `needsDropped`
-  implant cannot be re-earned from a stale record.
-- **Unplug / leave.** `POST /network/unplug` of a Wi-Fi or implant foothold removes it, returns its
-  link item and ends the sessions it carried, as a jack's unplug does. An implant has no device to
-  return to the inventory (the device is left in the PC); its link item goes and the foothold ends.
-  A Wi-Fi leave returns no device either.
+- **No new top-level `player_state` keys.** Wi-Fi and implant footholds are entries in the existing
+  `footholds` map, keyed `wifi_<networkId>` and `implant_<pcId>`; `gainedFootholds` holds the access
+  point and PC ids. `droppedItems` (read by the implant) already exists. Outages read
+  `globalVariables`, which already syncs. So a game from before this slice reads every new reader as
+  empty, and a reset drops the footholds and rebuilds the inventory, exactly as in 9.3a.
+- **Reload.** Wi-Fi and implant footholds and their link items come back in the scenario response
+  and `playerInventory` as a jack's do; `network-links.js` rebuilds a missing link item through
+  `restoreHandles` using the sprite and observations the bootstrap foothold carries. Outage globals
+  are restored with the rest of `globalVariables`, so a repaired network stays repaired and a
+  down-by-default one is down again if its global was not changed. The server's answer always wins
+  over a stale display global.
+- **A session over a route that went down across a reload** is kept (it is a `sessions` entry); its
+  desktop opens again when the route returns, with no password, because the server never deleted it.
+- **Games created before this slice** have no `networks`, so every new route answers 404 or an empty
+  list, and nothing changes.
 
 ## 9. Validator, schema and dungeon graph
 
-### 9.1 Schema
+### 9.1 Un-reserving the fields
 
-9.3a reserved every field. This slice only removes the "reserved" descriptions and tightens types:
+`scripts/validate_network.rb` **removes** the five "needs slice 9.3b" refusals (`networkLinks`;
+network `downIf` and `wifi`; object `wifiAp`, `portSecurity`, `portSecurityMessage`; the
+`grant_foothold` walk) and replaces each with a real check. `scripts/scenario-schema.json` rewrites
+the reserved stubs at `networks` (`downIf`, `wifi`), `networkLinks`, and the object fields into real
+definitions, and adds `network/join` and `network/implant` to the routes list where the schema
+tracks them. The known-field lists in `validate_scenario.rb` already carry the names (9.3a reserved
+them), so only `validate_network.rb` and the schema change.
 
-- `networks.<id>.downIf` (string), `wifi` ({ ssid: string, psk?: string }), top-level `networkLinks`
-  (list of two-item lists of strings): descriptions updated, no "reserved" note.
-- Objects: `wifiAp` (boolean), `portSecurity` (boolean), `portSecurityMessage` (string).
-- The `grant_foothold` action: an entry in the actions schema with `pc`, `needsDropped`,
-  `needsSession`, `needsHeld`, `name`.
-
-### 9.2 Validator
-
-The checks stay in `scripts/validate_network.rb` (the file 9.3a added). This slice **removes** the
-six reserved-field errors (`NETWORK_RESERVED_OBJECT_FIELDS`, `NETWORK_RESERVED_NETWORK_FIELDS`, the
-`networkLinks` error and the `grant_foothold` walk) and adds the real checks. `NetworkModel` gains
-the link, outage and Wi-Fi helpers the checks read, so the validator agrees with the server.
+### 9.2 New validator checks
 
 Errors:
 
-- a `networkLinks` entry that is not a two-item list of ids that both name a network in `networks`;
-- a `wifi` block whose `ssid` is missing or not a string, or whose `psk` is present and not a string;
-- `wifiAp` on an object with no network of its own or from its room, or on a sign-in object, or on a
-  jack, or on an object with `triggerOnInteract`/`requiresItem`/`locked`/a `lockType` (its click is
-  the join), or inside a container or profile;
-- `portSecurity` or `portSecurityMessage` on an object that is not a jack;
-- a `grant_foothold` with neither `needsDropped` nor `needsSession`, or with both;
-- a `grant_foothold` whose `pc` is not a `lockType: "login"` object, or whose `needsDropped`/
-  `needsHeld` names no item the scenario defines;
-- a `grant_foothold` under `flagRewards` or `eventMappings` (off the server's declared-grant list);
-- a `downIf` (network or resource) naming no declared global in `globalVariables` is a **warning**,
-  not an error, matching the level 9.2 gives the same mistake;
-- a Wi-Fi `psk` that equals an account password (`creds.password`): the key is a lock secret, not a
-  reused account password.
+- a `networkLinks` entry that is not a two-item list of ids, or that names a network the scenario
+  does not define;
+- a `wifi` block with no `ssid`, or a `psk` that is not a string;
+- `wifiAp` on an object with no network, or on a network with no `wifi` block, or on a sign-in
+  object, a jack or an object with a lock;
+- `portSecurity` on an object that is not a `networkJack`, and `portSecurityMessage` without
+  `portSecurity`;
+- a `grant_foothold` under `flagRewards` or any browser-only action path, one with neither
+  `needsDropped` nor `needsSession`, one with both, one whose `pc` is not a sign-in object on a
+  network, and (for `needsHeld`) a `needsHeld` that names no item;
+- a network `downIf` or resource `downIf` whose value is not a string.
 
 Warnings:
 
-- an open share with contents on a network whose `downIf` is truthy by its declared default (it
-  starts down, so its contents can be read the moment the outage clears, which may not be the
-  intent);
-- a Wi-Fi `psk` shorter than eight characters, or one that appears nowhere the player can read.
-  Where 9.1 is built this reads `NpcHabits::Clues.readable_texts` (so both slices agree on what the
-  player can read), and where 9.2 C is built it adds `feed.posts[].text` to that list;
-- a link graph whose shortest path between two networks that a chain needs is longer than eight hops
-  (the route cap, 5.1);
-- a `grant_foothold` whose PC's USB policy refuses the device's `usbClass` (where 9.2 U is built):
-  the implant would always fail at the use;
-- a Wi-Fi network with no access point object, and an access point on a network with no `wifi` block;
-- a network that is down by default and holds the only route to a host the dungeon graph shows no
-  other way to reach (a permanent dead end).
+- a `downIf` global that `globalVariables` does not declare (the level 9.2 gives the same mistake);
+- an open share with contents on a network that starts down (its `downIf` global's declared default
+  is truthy), because a browser can write the global false, so a secret that must not be read early
+  must sit behind a session as well;
+- a link graph with more than eight simple paths between two networks that both carry hosts or
+  resources (the `reach_paths` cap);
+- a Wi-Fi key shorter than eight characters, or one that appears nowhere the player can read (using
+  slice 9.1's readable-text list where 9.1 is built, so both slices agree on what the player can
+  read; a feed post text is added by whichever of this slice and 9.2 lands second);
+- a `grant_foothold` whose PC's USB policy would refuse its device (where 9.2's USB policy is
+  present);
+- a network that is reachable only through a pivot but has no host a foothold can ever sign in to
+  (no way to open the pivot session).
 
-Information lines (with 9.3a's network-reach lines):
+Information lines (printed with 9.3a's network-reach lines):
 
-- for each network, the networks it reaches over up links, and through which (so an author can see
-  the segmentation);
-- each Wi-Fi network, its access points, and whether its key appears in a readable text.
+- **Link reach.** For each network, the networks reachable from it through links, and through which
+  pivot host each becomes reachable.
+- **Outages.** Each network and resource with a `downIf`, and its declared starting state.
 
 ### 9.3 Dungeon graph
 
-- An access point is a lock-like node its network's key opens (a Wi-Fi join), with an edge to its
-  network, as a jack is for a wired device.
-- A link is an undirected edge between two network nodes, labelled "link"; the graph shows it only
-  as reachable when both ends are up by default (a down-by-default link is drawn dashed).
-- An implant action is a node on its PC with an edge to the PC's network, opened by the dropped item
-  (for `needsDropped`) or by the held item plus a session (for `needsSession`).
-- A share on a linked network keeps its edges from the admitted accounts' sign-in nodes; the graph's
-  reachability walk crosses links so a pivot-only share is not reported unreachable.
+`scripts/generate_dungeon_graph.rb` gains: a link edge between two network nodes; a pivot edge from
+a sign-in host to each network it bridges (so the graph shows the server network reached only
+through the finance PC's account); a Wi-Fi access point as a lock-like node the Wi-Fi key opens,
+with an edge to its network; and an implant as a node the device (dropped, or held with a session)
+opens, with an edge to the PC's network. An outage is drawn as a condition on the network node, not
+a separate gate.
 
-## 10. Effects on existing scenarios
+### 9.4 Validator and graph tests
 
-No scenario uses `networkLinks`, a network `downIf` or `wifi`, `wifiAp`, `portSecurity`, or a
-`grant_foothold` action today (checked across `scenarios/`), so every change is inert until a
-scenario opts in. The six 9.3a validator errors this slice removes fired for no scenario (they
-guarded reserved fields nobody wrote), so removing them changes no existing result. A scenario with
-networks but none of the new fields validates and plays exactly as under 9.3a:
-`reach_conditions` with no links returns what it did, the view sends one `networks` block equal to
-today's hosts, and no route is a pivot.
+`test/js/validator-network-model.test.mjs` and `test/js/dungeon-graph-networks.test.mjs` (both built
+by 9.3a) gain one fixture per new error, warning and information line, and graph fixtures for the
+link edge, the pivot edge, the Wi-Fi node and the implant node. A clean fixture using every new
+field raises no error. Every existing scenario still validates unchanged (none uses a new field;
+section 10).
 
-### 10.1 `lab_physical_pentest`
+## 10. Effect on existing scenarios
 
-The lab's network beat (the drop box, the view, the headless controller) is 9.3a's and this slice
-leaves it alone. What this slice offers the lab is the **implant form of the BadUSB beat** (5.5),
-which today is a hand-written grant. This is an optional adoption, not required by the slice, and it
-is the content plan's and the user's call (section 14). The change, by object and global id:
+No scenario uses `networkLinks`, a network `downIf`, `wifi`, `wifiAp`, `portSecurity` or a
+`grant_foothold` today (checked across `scenarios/`; the `networks` list pages in the
+`ca20_remote_and_mobile_working` and social-engineering `wifiList` scenarios are an unrelated
+on-screen Wi-Fi list, not this model). So every change below is inert until a scenario opts in.
 
-- `sofia_pc` (today `usb_target_pc` is a plain workstation): make Sofia's PC a `lockType: "login"`
-  sign-in host on `office_lan` with Sofia's account and a `host` label, so a foothold on it leads to
-  the office network view, and signing in to it needs her password.
-- Replace the `grant_remote_session` timer's `give_item` of the hand-written `records_remote_session`
-  with a `grant_foothold` on `sofia_pc`, `needsDropped: kit_badusb`, started by the same
-  `kp_usb_foothold`. The BadUSB then gives a foothold (the office network, which the player can
-  already see from the drop box), and the point the lab teaches moves to the ROE-correct chain: the
-  stick gives the network, the account still needs a captured password.
-- The malicious cable and plain stick keep their own grants for now (they teach found-media and
-  juice-jacking, not a network foothold), or move to `grant_foothold` the same way if the user wants
-  one mechanism.
+| Change | Effect on a scenario that does not use the new fields |
+|---|---|
+| `reach_conditions` gains path globals | A resource on the station's own network is still `[[]]`; with no links there are no other paths. 9.2's NPC plan reads the same empty route |
+| `player_reach`/`reach_from` replace the single-network equality | With no links, `reach_from(n)` is `{ n }` when up, so reach is exactly 9.3a's |
+| The scoped-request route test | Runs only in a scenario with a network `downIf`; without one, the scoped requests are judged exactly as today |
+| `GET /network` gains a `networks` block | Empty of extra networks without links; the own-network `hosts` array is 9.3a's |
+| Two new routes and two policy methods | Reached only by the new fields |
+| The validator un-reserves five fields | A scenario that used none still validates; `check_network_model` returns early when the scenario has no networks |
 
-Because the lab already has `office_lan`, a foothold on `sofia_pc` lists the same hosts the drop box
-does; the implant is a second way onto the network that needs no comms-cupboard access. This adoption
-waits until this slice ships and the lab has one editor (as 9.3a's lab step did). If the user prefers
-to leave the lab's BadUSB beat as the hand-written grant (it works and is voiced), this slice ships
-without touching the lab, and the implant form is proven only in the feature scenario.
+`lab_physical_pentest` (which adopted 9.3a networks in step 9) has one network, `office_lan`, and no
+links, outages, Wi-Fi or implants, so nothing in this slice touches it until the user asks. Two
+later options exist and are **not** taken here (decisions for the user, section 13):
 
-## 11. Tests, and the feature scenario
+- **Port security** could model the lab's own "disable the unused ports" lesson: a second wall port
+  in the comms cupboard with `portSecurity: true` that refuses the drop box and shows the fix. This
+  is a small, self-contained addition that strengthens the ROE lesson without changing the chain.
+- **The BadUSB beat.** The device pitch's keystroke-injection device could become an implant at an
+  unattended PC the player has claimed: it would give a foothold on the office LAN and nothing more,
+  and the account would still need its password. 10.2 of the networks design already flags this as a
+  separate decision.
 
-The testing approach is 9.3a's: unit tests in every step; the feature scenario `test_access_networks`
-(built for 9.3a) gains this slice's beats; scripted regression runs through the `window.__test`
-bridge with the two checks after every beat (what reached the browser, what the server recorded); the
-no-password and no-exposure tests after every step that changes what the server sends; 9.3a's and the
-first slice's suite runs wherever a step touches sign-in or the view; `lab_physical_pentest` last and
-only if adopted. All browser runs use a keyless server on the builder's own port; nothing touches
-:3000. No step runs a database task.
+Scenarios to rerun because shared code changes under them: `test_access_networks` (the feature
+scenario, this slice extends it), and nothing else, because the reach change is inert without links
+and the route test is inert without a network `downIf`.
 
-A step is done when its unit tests, the node suite (`bin/test-js`), the Rails suite
-(`bin/rails test`), the no-password and no-exposure tests and every suite run built so far pass, and,
-for a step that changes client code, the phone reopen check
-(`node scripts/ink_runtime_check/reopencheck.mjs scripts/ink_runtime_check/missions.json`).
+## 11. Tests, with the feature scenario
 
-### 11.1 Feature scenario beats (`scenarios/test_access_networks`)
+The approach is 9.3a's: unit tests in every sub-slice; the feature scenario `test_access_networks`
+(built by 9.3a) extended with 9.3b beats; scripted regression runs through the `window.__test`
+bridge with the two checks after every beat (what reached the browser, what the server recorded);
+the no-exposure test after every change to what the server sends; and the first slice's suite runs
+wherever sign-in or the desktop changes. All browser runs use a keyless server on the builder's own
+port; nothing touches :3000.
 
-Added to the 9.3a scenario (which already has `office_lan`, `workshop_lan`, jacks, hosts, shares and
-the P1 to P12 beats). New top-level fields: `server_net` (`downIf: "power_cut"`), `guest_wifi`
-(`wifi.ssid` only, open), `staff_wifi` (`wifi.ssid` + `psk`); `networkLinks: [["office_lan",
-"server_net"]]`; a resource `secrets_share` on `server_net` with an access list; a secured jack; an
-access point for each Wi-Fi network; a dropped-device and a BadUSB beat. Every name a network or
-resource shows is six or more characters and appears nowhere else, so the leak check can test it.
+**Feature beats added to `test_access_networks`.** The scenario already has `office_lan` and
+`workshop_lan`. This slice adds a linked `server_net`, a down-by-default network repaired by an
+object, Wi-Fi, a port-security jack, a dropped device an NPC uses, and a BadUSB.
 
 | Beat | Set-up | What should happen | Server record afterwards |
 |---|---|---|---|
-| N1 Port security | a jack `secured_port` on `office_lan` with `portSecurity: true` | Planting the drop box there shows the port-security message, gives no foothold, and the box stays in the tray | No `footholds`; the box still held |
-| N2 An outage | `power_cut` false, a foothold on `office_lan`, a session on a pivot host | `server_net` shows in the view through the pivot; after a breaker sets `power_cut`, the view refetches within five seconds and `server_net` is one greyed "no route" line, the held-session row kept | `sessions` unchanged; a desktop fetch on the down host is 403 `unreachable` |
-| N3 Restored | clear `power_cut` | The greyed line becomes the network again; the held session's desktop opens with no password | unchanged |
-| N4 A link, no pivot | a foothold on `office_lan`, no session yet | The view lists `office_lan`'s hosts and no `server_net` block | one foothold, no sessions |
-| N5 Pivot | sign in to the office pivot host with its captured password | `server_net` appears through it, "through <host>, signed in as <name>"; its hosts can be signed in to | `sessions` has the pivot host |
-| N6 Shrink | sign out of the pivot host | `server_net` and the onward session are gone from the view | the onward session ended |
-| N7 Open Wi-Fi | an access point on `guest_wifi` (no `psk`) | Clicking it joins with no key; its view lists the guest network's hosts | `footholds.wifi_guest_wifi` |
-| N8 Keyed Wi-Fi | an access point on `staff_wifi` | A wrong key is refused with no lockout; the right key (from a readable clue) joins; a second access point of the same network answers `already` and still completes its task | `footholds.wifi_staff_wifi`; both APs in `gainedFootholds` |
-| N9 Dropped-device implant | a `grant_foothold` on a PC, `needsDropped`; drop the device, an NPC uses it | A foothold on the PC's network arrives; it lists hosts and no session; each host still asks for a password | `footholds.implant_<pc>` |
-| N10 Player BadUSB | a `grant_foothold` on a PC, `needsSession` + `needsHeld`, at a PC the player has claimed | Plugging the held device in gives a foothold; the device leaves the inventory; before a session the implant is refused | `footholds.implant_<pc>`; the device not held |
+| N1 No pivot yet | A foothold on `office_lan`; `server_net` linked | The view lists the office network only; no row and no name from `server_net` | One `office_lan` foothold; the leak check finds no `server_net` string |
+| N2 Pivot appears | A remote sign-in at a host that bridges `office_lan` and `server_net` | After the sign-in the view gains a "Server network, through <host>" block with its hosts | The session is held; `player_reach` of the foothold now includes `server_net` |
+| N3 Sign in across the link | A host on `server_net` | It signs in through the same foothold; its desktop opens; a protected share there maps | A session on the `server_net` host, through the foothold |
+| N4 Sign out shrinks reach | Sign out of the pivot host | The server-network block and the onward session go; the view lists the office network only | No `server_net` session; reach back to `office_lan` |
+| N5 Down by default | `server_net` with `downIf` truthy at start | Its block shows "no route"; its hosts are not signed in to | A sign-in on it is 403 `unreachable` |
+| N6 Repair | An object sets the global false | The block fills in and its hosts sign in | After the repair the hosts are reachable |
+| N7 A held session goes down | A session on `server_net`, then the global set true | The desktop closes to a greyed "no route" row; setting it false reopens it with no password | The session is kept throughout |
+| N8 Wi-Fi join | An access point on `guest_wifi` | The right key joins; the view lists `guest_wifi`; a wrong key is refused and nothing changes | A `wifi_guest_wifi` foothold; a wrong key counts nothing |
+| N9 Second AP | A second access point on the same network | It answers `already` and still completes a task on that AP | `gainedFootholds` has both AP ids |
+| N10 Port security | A `portSecurity` jack and the drop box | The device goes in, is refused, stays in the inventory, and the message shows | No foothold; the device still held |
+| N11 Dropped device | A device the player drops and an NPC uses | A foothold on the PC's network, no session; the owner's desktop still needs the password | An `implant_<pc>` foothold; no session |
+| N12 BadUSB | A PC the player holds a session on, and the BadUSB in the inventory | Plugging it in grants a foothold and consumes the device; no other account opens | An `implant_<pc>` foothold; the device gone from the inventory |
 
-Expected validator output: the Wi-Fi reach lines, the link reach line, the "key appears in a
-readable clue" line for `staff_wifi`, and no reserved-field error. The down-by-default warning does
-not fire (`power_cut` starts false). No errors.
+**Unit, Rails and node tests, by sub-slice.** K: `reach_from`, `player_reach` (a chain, a cycle, a
+down link), `reach_conditions` with path globals, the view's `networks` block, the pivot not cut by
+sitting down. O: `truthy?` with every falsy value, a down network withheld everywhere, the held
+session kept and shown "no route", the scoped-request route test refusing a down route. W: the join
+route, the second-AP `already`, a wrong key, an open network, the link-item sprite. P: the plant
+refusal, the device kept. I: each precondition of `implant_foothold!`, the USB hook, the foothold
+reaching the PC's network only, the device consumed for the session shape. The 9.3a no-exposure test
+gains section 7's cases. Scripted runs: one per sub-slice over its N-beats with the two checks after
+each, then the first slice's suite runs after K and O (sign-in and the desktop change).
 
-### 11.2 Unit and node tests
+## 12. Build steps and shared files
 
-- `test/unit/network_model_test.rb` (extend): `reach_from` across an up link and not across a down
-  one; `player_reach` growing through a session and shrinking; `reach_conditions` returning each
-  route's `downIf` globals, shortest first, capped at eight, on a graph with a cycle; `truthy?` for
-  each value.
-- Server controller tests (new files beside 9.3a's): the join route (open, keyed, wrong key, second
-  AP `already`, unknown AP, unreachable); the implant route (each shape, each refusal, repeat
-  `already`, the device leaving the inventory for `needsSession`, the `droppedItems` read for
-  `needsDropped`, the USB refusal where 9.2 U is present); the plant route's port-security refusal;
-  the view's `networks` blocks and the down-network rows; the desktop and scoped requests refused on
-  a down route and served when up.
-- `test/js/validator-network-model.test.mjs` (extend): a fixture per new error and warning, and the
-  information lines.
-- `test/js/dungeon-graph-networks.test.mjs` (extend): the access point node, the link edge, the
-  implant node, a pivot-only share reachable across a link.
-- Client tests: the Wi-Fi join flow in `network-links.js` (key prompt, `already`, link item sprite
-  from the AP); the view's `networks` blocks and the greyed down rows; the implant trigger; the
-  forced sync before a network fetch.
+Build the sub-slices in the order of section 3 (K, O, W, P, I). Within each, build the server first,
+then the validator and schema, then the client, then the feature beats and runs, as 9.3a's steps do.
+A sub-slice is done when its unit tests, the node suite, the Rails suite, the no-password and
+no-exposure tests and every earlier run pass, and, for a sub-slice that changes client code, the
+phone reopen check (`node scripts/ink_runtime_check/reopencheck.mjs scripts/ink_runtime_check/missions.json`),
+as every engine change requires.
 
-## 12. Build steps, ownership and order
-
-Build in the sub-slice order of section 3 (P, O, K, W, I). Each sub-slice's steps run in the streams
-below; a stream is one builder with review rounds after it (`AGENTS.md`: at least two, at most five).
-Each sub-slice ends playable and tested, with its feature-scenario beat and a scripted run split from
-the building (the scenario's builder writes it and `PLAYTEST.md`; a separate tester runs it).
-
-### 12.1 Shared model first
-
-`NetworkModel` is read by the server, the validator and the dungeon graph, so its new functions
-(`reach_from`, `player_reach`, `truthy?`, link and Wi-Fi helpers, the real `reach_conditions`) are
-built and committed first, with `test/unit/network_model_test.rb`, before any route or validator
-change. The signature of `reach_conditions` does not change, so 9.2's `AccessWork.routes` keeps
-working while the body fills in.
-
-### 12.2 Steps per sub-slice
-
-**P (port security).** P-1: `NetworkModel.port_security?`, the plant-route check, the schema and
-validator (remove the object reserved-field block, add the two fields and the "not a jack" error),
-the client refusal in `network-links.js`. P-2: beat N1, the scenario, the run.
-
-**O (outages).** O-1 (server): `truthy?`, `reach_from`/`player_reach` reading outages, the view's
-`down` rows, the desktop/scoped-request route tests, the resource-`downIf` read. O-2 (validator):
-remove the network reserved-field block for `downIf`, add the down-by-default warning and the
-undeclared-global warning, the dungeon graph's dashed down link. O-3 (client): the five-second
-refetch, the forced `syncConfirmed` before network fetches, the greyed "no route" rows. O-4: beats
-N2, N3, the scenario, the run.
-
-**K (links and pivot).** K-1 (server): `networkLinks` read into `reach_from`/`player_reach`, the
-view's pivot blocks, mapped shares across links. K-2 (validator): the `networkLinks` errors and the
-route-length warning, the dungeon graph's link edges and pivot-reachability walk. K-3 (client): the
-view's "through <host>" blocks and onward sign-in. K-4: beats N4 to N6, the scenario, the run.
-
-**W (Wi-Fi).** W-1 (server): `POST /network/join`, the `wifi_<networkId>` foothold, the key compare,
-the policy and routes. W-2 (validator/schema): the `wifi` and `wifiAp` fields and errors, the short-
-key and key-unreadable warnings, the Wi-Fi reach info lines, the dungeon graph's AP node. W-3
-(client): the Wi-Fi join in `network-links.js`, the key prompt through the password minigame's key
-mode, the AP-sprite link item. W-4: beats N7, N8, the scenario, the run.
-
-**I (implants).** I-1 (server): `POST /network/implant`, the `grant_foothold` declared-grant walk,
-the `droppedItems` and session/held checks, the `implant_<pc>` foothold, `usb_refused?` where 9.2 U
-is present. I-2 (validator): the `grant_foothold` errors and the USB warning, the dungeon graph's
-implant node. I-3 (client): the implant case in `apply-actions.js` and the trigger path. I-4: beats
-N9, N10, the scenario, the run; the optional lab adoption (10.1) only on the user's word, as its own
-step with the lab's one-editor rule.
-
-### 12.3 Ownership and order table
-
-Files by stream inside this slice. No file is in two streams within the slice.
-
-| Stream | Sub-slice / steps | Owns | Starts |
+| Stream | Sub-slices | Owns (this slice's own files) | Order |
 |---|---|---|---|
-| M, model | 12.1 | `lib/break_escape/network_model.rb`, `test/unit/network_model_test.rb` | First, before all routes and validators |
-| S, server | P-1, O-1, K-1, W-1, I-1 | `app/models/break_escape/network_access.rb`, the hooks in `app/models/break_escape/game.rb`, `app/controllers/break_escape/games_controller.rb`, `config/routes.rb`, `app/policies/break_escape/game_policy.rb`, `test/controllers/**/network_*`, `test/models/**/network_*` | When M is committed |
-| T, tooling and authoring | P-1, O-2, K-2, W-2, I-2 | `scripts/validate_network.rb`, the hooks in `scripts/validate_scenario.rb`, `scripts/scenario-schema.json`, `scripts/generate_dungeon_graph.rb`, `README_scenario_design.md`, `tools/playtest/lib/access_leak_scanner.rb`, `tools/playtest/verify-run.rb`, `systems/test-bridge/access.js`, `docs/test-bridge.md`, their tests | When M is committed (the validator requires it) |
-| C, client | O-3, K-3, W-3, I-3, P client | `systems/network-links.js`, `api-client.js`, `minigames/network-view/network-view-minigame.js`, `minigames/password/password-minigame.js` (key mode reuse), `systems/apply-actions.js` (implant case), `core/game.js`, and their `test/js/` files | Against the route shapes in section 6 (node tests stub the API); browser checks when S is in |
-| F, feature scenario | each sub-slice's last step | `scenarios/test_access_networks/**` | When S and T for that sub-slice are committed |
-| L, lab (optional) | I-4 | `scenarios/lab_physical_pentest/**`, its tests | Only on the user's word (10.1, 14), one editor |
+| S, server | K, O, W, P, I | `lib/break_escape/network_model.rb`, `app/models/break_escape/network_access.rb`, hooks in `game.rb`, `games_controller.rb`, `config/routes.rb`, `app/policies/break_escape/game_policy.rb`, `test/**/network_*` | First in each sub-slice |
+| T, tooling | K, O, W, P, I | `scripts/validate_network.rb`, hooks in `scripts/validate_scenario.rb`, `scripts/scenario-schema.json`, `scripts/generate_dungeon_graph.rb`, `README_scenario_design.md` (the networks section), `tools/playtest/lib/access_leak_scanner.rb` and `verify-run.rb` (Wi-Fi-key and new-foothold lines) | When the sub-slice's `network_model.rb` change is committed |
+| C, client | K, O, W, P, I | `systems/network-links.js` (the Wi-Fi/implant branches and the five-second refetch), `minigames/network-view/network-view-minigame.js` (the `networks` block and the greyed rows), `minigames/password/password-minigame.js` (Wi-Fi key mode, already present for keys), their tests | When the sub-slice's server route is committed |
+| F, feature scenario | each sub-slice | `scenarios/test_access_networks/**` | After S and T of the sub-slice |
 
-### 12.4 Files shared with 9.2 L and C, being built now
+**Files shared with other work, and the order on each.** One plan at a time holds each; a builder
+re-reads the file just before editing, edits only its own block, never reformats, and commits with
+explicit paths. Slice 9.2's sub-slices L and C are being built now on other branches, so these are
+live:
 
-9.2's sub-slices L and C are in flight (branches `build/9-2-l`, `build/9-2-c`, both from the H head).
-The plan order is **9.2 fully, then 9.3b**, so on every shared file 9.2's edits land first and a
-9.3b builder re-reads the file just before editing, edits only its own block, never reformats, and
-commits with explicit paths. The files this slice shares, with the order on each:
-
-| File | Also edited by | Order and why |
+| File | Also edited by | Sequence and note |
 |---|---|---|
-| `app/models/break_escape/game.rb` | 9.2 L (`check` report, owner claim while locked out), 9.2 C (`reveal_feed_post!`, feed facts); engine E4 (`add_item_to_room!`, capture methods) | 9.2 L and C, then this slice. Different methods: this slice adds the implant hooks and `usb_refused?` beside `effective_policy`, and reads `droppedItems` that E4 already writes. Re-read `ACCESS_STATE_DEFAULTS` (no new key here) |
-| `lib/break_escape/access_work.rb` | 9.2 L (the `maxAttempts` clause), 9.2 C (the feed fact list) | 9.2 L and C, then this slice. This slice reads `AccessWork.plant_refused?` for the implant's USB check and does not edit the file unless `usb_refused?` is placed here; place it in `game.rb` beside `effective_policy` as 9.2's plan says, so `access_work.rb` is read-only to this slice |
-| `app/controllers/break_escape/games_controller.rb`, `config/routes.rb` | 9.2 C (its `feed_post` route), 9.2 L (none) | 9.2 C, then this slice; each adds its own route and action lines |
-| `app/policies/break_escape/game_policy.rb` | 9.2 C (its route's policy) | 9.2 C, then this slice; each adds its own methods |
-| `scripts/validate_scenario.rb`, `scripts/scenario-schema.json` | 9.2 C (its checks), 9.2 L (none) | 9.2 C, then this slice; each appends its own block. This slice only edits the `networks`/`resources` field descriptions already present and the actions schema |
-| `scripts/validate_network.rb` | nobody (9.3a's file; 9.2 uses `validate_access_work.rb`) | This slice alone |
-| `scripts/generate_dungeon_graph.rb` | 9.2 (its work nodes) | 9.2, then this slice |
-| `systems/apply-actions.js` | engine E4 (the `objectId` option, `remove_item`), 9.2 (not) | E4, then this slice adds the `grant_foothold` case |
-| `systems/network-links.js`, `minigames/network-view/**`, `minigames/password/password-minigame.js`, `api-client.js` | 9.2 (not; 9.2 C touches the osint browser, not these) | This slice alone among the slices in flight |
-| `tools/playtest/lib/access_leak_scanner.rb`, `verify-run.rb` | 9.2 (its own rules) | 9.2, then this slice adds the Wi-Fi-key rule |
-| `README_scenario_design.md` | 9.2 (its section), engine streams | Each owns its own section; this slice extends 9.3a's "Networks" section |
+| `lib/break_escape/network_model.rb` (`reach_conditions`) | 9.2 L/C consume its output (`routes` in the NPC plan) | This slice **changes the output** of `reach_conditions` (adds the path `downIf` globals). 9.2's `npc-work.js` evaluates those globals. Land the `NetworkModel` change and tell 9.2 its route lists now carry network-path globals as well as the resource's own; whichever lands second re-reads and the two agree on the order (station, intermediates, resource network) |
+| `app/models/break_escape/game.rb` | 9.2 (needs, work, policy), the engine plan (E4) | Different methods. This slice's hooks are in `NetworkAccess` (a concern) plus `effective_policy`'s neighbour `usb_refused?`; 9.2's sub-slice U owns the USB policy read, so whichever lands second adds `usb_refused?` and the implant's call to it. Re-read before editing |
+| `app/models/break_escape/npc-needs.js` work path (`npc-needs.js`, `npc-work.js`) | 9.2 L/C | **Not edited by this slice.** The NPC work path reads `reach_conditions`' output; this slice changes only what that function returns, not these files. If a run shows the new path globals break 9.2's evaluator, raise it with 9.2 rather than editing its files |
+| `scripts/validate_access_work.rb` | 9.2 | **Not edited by this slice.** 9.2 owns the resource `downIf` validator message; this slice adds the network `downIf` and link checks in `validate_network.rb` only. The undeclared-global warning text should match 9.2's wording; copy it, do not move it |
+| `public/break_escape/js/api-client.js` | 9.2, 9.1 | This slice adds `networkJoin` and `networkImplant`. Different methods; re-read and append |
+| `public/break_escape/js/core/game.js` | 9.1, 9.2 | 9.3a already hands `footholds`/`gainedFootholds` to `network-links.js` here; Wi-Fi and implant footholds flow through the same path, so this slice likely needs **no** change here. If the five-second refetch needs a lifecycle hook, add it in its own block and re-read |
+| `scripts/validate_scenario.rb`, `scripts/scenario-schema.json`, `README_scenario_design.md` | 9.1, 9.2, the engine plan | Each appends its own block or section; the names are already in the known-field lists (9.3a reserved them), so only the schema stubs and the README section change here |
 
-Review and playtests follow `AGENTS.md`: adversarial review rounds of this plan before any build, an
-implementation review after each stream, and the scripted runs listed in the steps.
+Review and playtests follow `AGENTS.md`: adversarial review rounds of this plan before any build,
+an implementation review after each stream, and the scripted runs listed per sub-slice.
 
-## 13. Interfaces with other plans
+## 13. Open questions for the user
 
-### 13.1 Slice 9.2 (work, frustration, USB policy, social media)
+Each carries a recommended answer; the plan is written as if the recommendation is taken, and the
+user can overrule.
 
-- **Reach for NPC work.** 9.2's `compile_npc_plan!` calls
-  `NetworkModel.reach_conditions(data, station_network, resource)` and ships the answer as `routes`;
-  this slice fills in the real routes (links and outages) without changing the signature or shipping
-  a network name. 9.2's `reachable(need, globals)` already reads a route's `downIf` globals and its
-  kick and forced sync already watch every route global, so no 9.2 client change is needed.
-- **The USB check on an implant.** 9.2's plan says 9.3b adds `usb_refused?(pc, item)` beside
-  `effective_policy`, reading 9.2's table, with a validator warning for a `grant_foothold` whose PC
-  refuses its device. This slice builds it (sub-slice I). The refusal is at the use, never at the
-  drop. If for any reason 9.2 U is not built when this slice lands, the implant route skips the USB
-  check and the validator warning is omitted, and both are added when 9.2 U lands.
-- **Outages.** A `downIf` on a network or a resource means the same in both: the global truthy, by
-  `truthy?`, means down. This slice owns what an outage does to the player's reach; 9.2 owns what it
-  does to NPCs. An object that is off is office life's `affordance.offWhen` in both.
-- **A station seen from the network.** 9.2 left "a sign-in host whose `affordance.offWhen` holds
-  listed 'not responding' in the view, and refused in `desktop_request_allowed?`" to 9.3b, built
-  with the player's outages. This slice adds both: a host on a down network, or whose own `offWhen`
-  holds, shows "no route" / "not responding" and is refused on the route test (5.2).
-- **The feed as a Wi-Fi key source.** Where 9.2 C is built, the "key appears nowhere" warning reads
-  the list 9.2 C adds `feed.posts[].text` to (9.2's `Clues.readable_texts` additions).
-
-### 13.2 Slice 9.1 (awareness and habits)
-
-- The Wi-Fi key's home is `networks.<id>.wifi.psk`. Whichever of 9.1 and this slice lands second adds
-  it to `NpcHabits::Clues.secret_homes` for 9.1's `reused` check. In the built order 9.1 is already
-  merged, so this slice adds it.
-- The "key appears nowhere" warning reads `NpcHabits::Clues.readable_texts` (built), so both slices
-  agree on what the player can read.
-- A written-down password is never shown on a remote sign-in screen (9.3a), and a Wi-Fi key is a lock
-  secret said in readable text, not a sticky note; the two channels do not meet.
-
-### 13.3 The engine feedback plan
-
-- The link item for a Wi-Fi or implant foothold is the 9.3a link item shape, built by the server and
-  filed by `storeIn` when its source sets one (the capture log's rule). A Wi-Fi foothold's source is
-  an access point; an implant's is a PC; neither has a `linkStoreIn`/`linkName` field of its own in
-  this slice, so the link item takes a tray slot unless a future field adds one.
-- The implant's `needsDropped` check reads E4's `droppedItems` and adds no record of its own, exactly
-  as the 9.3a plan reserved (section 2).
-
-### 13.4 The device pitch
-
-- The Wi-Fi Pineapple's foothold-over-Wi-Fi is sub-slice W; its captured-portal credential is the
-  social engineering lab's capture, not this slice.
-- The switch drop box is 9.3a's. The player's BadUSB (pitch device 3) is sub-slice I's `needsSession`
-  implant.
-- The defender's sweep and the SIEM beacon (pitch devices 9, 10) are left out (section 15);
-  `network_device_planted`, `network_joined` and `network_implanted` are the hooks.
-
-## 14. Open questions for the user
-
-Each has a recommended answer; the plan is written as if the recommendation is taken.
-
-1. **Does the lab adopt the implant form of the BadUSB beat now (10.1), or keep its hand-written
-   grant?** *Recommend: build and prove the implant in the feature scenario this slice, and offer the
-   lab adoption as a separate, later step on your word.* The lab's beat works and is voiced; changing
-   it re-touches a shared file and may need re-voicing Ruth's debrief, so it should be a deliberate
-   choice, not bundled into the engine slice.
-2. **Is a Wi-Fi join a foothold with no device (as written), or should joining consume a "Wi-Fi
-   adapter" item for symmetry with the drop box?** *Recommend: no device.* The server cannot check
-   range or an adapter, a key the server compares is the real gate, and an item adds inventory
-   friction for no lesson.
-3. **Should the player's own BadUSB implant (`needsSession`) need a claimed/unlocked screen, or also
-   accept a remote session the player opened?** *Recommend: a claim or a local password sign-in only,
-   never a session opened through a foothold* (as written), so the player cannot implant a PC they
-   only reached remotely, which keeps "plug in at a desk" physical and the chain honest.
-4. **Port security: refuse only (as written), or add a bypass beat (spoof a known MAC) later?**
-   *Recommend: refuse only this slice.* A bypass needs a new minigame and a secret; the teaching
-   point (the control works) lands with the refusal, and a bypass can be its own later beat.
-5. **Does a down network's held-session row stay visible greyed (as written), or disappear until the
-   route returns?** *Recommend: stay visible greyed with "no route".* A session that silently
-   vanishes reads as a bug; a greyed row tells the player the session is still theirs and the network
-   is down.
-
-## 15. Left out, on purpose
-
-- **Per-service firewall rules and one-way links.** A link exists or it does not, and a pivot crosses
-  it in both directions.
-- **Wi-Fi range and client devices.** The server cannot check range.
-- **A bypass for port security.**
-- **A lockout on repeated wrong Wi-Fi keys.** It needs a counter, a clock and a saved key for an
-  attack only a scripted client makes. The validator warns about a short key instead.
-- **Detection.** NPCs noticing a planted or joined device, an alarm on failed remote sign-ins, the
-  defender's sweep and the SIEM beacon. The events are the hooks.
-- **`requiresReach` on objects and VM launchers**, and the bridge to SecGen VMs. When wanted, the
-  server-side "does the player reach network N" is `player_reach` for any held foothold, and the
-  client list is in `network-links.js`.
-- **An implant that hands over a session.** Built from checked pieces: an implant for the network and
-  a captured password for the account (5.5).
+1. **Build 9.3b now, or hold it behind the parked work?** The 2026-11-10 order was 9.3a, 9.1, 9.2,
+   then 9.3b. 9.3b's reach change shares `reach_conditions` with 9.2's live L/C branches.
+   *Recommended:* plan now (this document), build K and O after 9.2's L/C land so the shared
+   `reach_conditions` has one owner at a time; W, P and I can build in parallel with later 9.2 work
+   because they touch different code.
+2. **Does `lab_physical_pentest` adopt any of 9.3b?** *Recommended:* add port security to an unused
+   comms-cupboard port (small, strengthens the "disable unused ports" lesson, no chain change), and
+   hold the BadUSB implant beat for a later pass. Decide separately from this slice.
+3. **The foothold id and `via` names for Wi-Fi and implants** (`wifi_<networkId>`,
+   `implant_<pcId>`, `via: "wifi"` / `"implant"`). *Recommended:* keep as written; they match the
+   `jack_<id>` pattern and read naturally. Flagged because they become saved-game keys.
+4. **Does an outage ever delete a session, or always keep it?** *Recommended:* always keep it and
+   show "no route"; a held session over a flapping link should not be lost, and the player's own
+   action (sign out, unplug) is the only thing that ends a session. This is what section 5.2 does.
+5. **Port security as refuse-only, or add a bypass later?** *Recommended:* refuse-only in this
+   slice (it teaches the control); a bypass (an allow-list the device is added to) is a separate,
+   larger piece and is left out here.
+6. **The eight-path cap on `reach_paths`.** *Recommended:* keep eight with a validator warning
+   above it; real segmented networks rarely need more, and an uncapped walk on a dense link graph is
+   a performance risk on every `GET /network`.
