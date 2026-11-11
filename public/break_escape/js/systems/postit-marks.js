@@ -21,6 +21,7 @@ export const POSTIT_SIZE = 9;
 export const POSTIT_INSET = 3;
 export const POSTIT_DEPTH_OFFSET = 0.005;
 export const POSTIT_LABEL = 'a sticky note on the monitor';
+export const POSTIT_SENTENCE = 'A sticky note is stuck to the monitor.';
 
 const win = () => (typeof window !== 'undefined' ? window : {});
 
@@ -118,7 +119,8 @@ export class PostitMarks {
      */
     label(objectId, text) {
         if (!text || !objectId || !this.marks.has(objectId)) return text;
-        return `${text} (${POSTIT_LABEL})`;
+        // After a sentence, a sentence; after a name, a bracket
+        return /[.!?]\s*$/.test(text) ? `${text.trimEnd()} ${POSTIT_SENTENCE}` : `${text} (${POSTIT_LABEL})`;
     }
 
     /** Each frame: follow the sprite's visibility and position; drop a mark whose sprite went. */

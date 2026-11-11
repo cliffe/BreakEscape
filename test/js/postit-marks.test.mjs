@@ -134,6 +134,7 @@ test('label: a PC with a note picture says so in its proximity label; others are
     assert.equal(marks.label('plain_pc', "Mei's PC"), "Mei's PC");
     marks.mark('plain_pc', true);
     assert.equal(marks.label('plain_pc', "Mei's PC"), "Mei's PC (a sticky note on the monitor)");
+    assert.equal(marks.label('plain_pc', "Mei's PC: a sign-in PC."), "Mei's PC: a sign-in PC. A sticky note is stuck to the monitor.");
     assert.equal(marks.label('other_pc', 'Spare PC'), 'Spare PC');
     assert.equal(marks.label('plain_pc', null), null);
     marks.mark('plain_pc', false);
