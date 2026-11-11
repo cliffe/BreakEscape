@@ -17,7 +17,7 @@
 # VM: the built scenario is break_escape/safetynet/m08_the_mole.xml, as
 # mission.json says (U1 closed by docs/agents/SECGEN_CLAIMS_CHECK.md,
 # 2026-10-16; ctf/such_a_git.xml is a different scenario). The chain:
-# GitList 0.4.0 argument-injection RCE (no creds) -> credentials committed in
+# GitList 0.4.0 remote command execution (CVE-2014-4511) (no creds) -> credentials committed in
 # the repository history -> proper login as svc-planning, whose home holds
 # ENTROPY's dead drop (deep_state_drop), sealed under a passphrase the GAME
 # supplies (VM integration 2026-11-10: the Director's full copy of the
@@ -761,7 +761,7 @@ CREDITS
               "sendTimedMessage": { "delay": 2500, "message": "I'm on the wire. Get the Director's brief before you spook anyone. And 0x00... whichever of the three it is, it's a friend of mine." }
             },
             {
-              "_comment": "Flag 1 -- GitList argument injection. First foothold; SAFETYNET's own repo browser is exploitable without a login. PASS 4 (fix 19): offers the secrets-in-git-history guide here, before the step it teaches (flag 2); the vulnerability-analysis guide moved to the launcher.",
+              "_comment": "Flag 1 -- GitList remote command execution (CVE-2014-4511). First foothold; SAFETYNET's own repo browser is exploitable without a login. PASS 4 (fix 19): offers the secrets-in-git-history guide here, before the step it teaches (flag 2); the vulnerability-analysis guide moved to the launcher.",
               "eventPattern": "global_variable_changed:flag1_submitted",
               "condition": "value === true",
               "onceOnly": true,
@@ -1894,7 +1894,7 @@ CREDITS
     door-audit reading (Netherton's or HaX's ink), or from flag 4 only on the
     fallbacks (audit closed, Director down). %>
           "flagRewards": [
-            { "type": "set_global", "key": "flag1_submitted", "value": true, "label": "Foothold on the code server -- no password needed", "description": "GitList argument injection -- RCE on SAFETYNET's own repo browser, no login" },
+            { "type": "set_global", "key": "flag1_submitted", "value": true, "label": "Foothold on the code server -- no password needed", "description": "GitList CVE-2014-4511 -- remote command execution on SAFETYNET's own repo browser, no login" },
             { "type": "set_global", "key": "flag2_submitted", "value": true, "label": "Credentials recovered from the repo history", "description": "Credentials recovered from repository history" },
             { "type": "set_global", "key": "flag3_submitted", "value": true, "label": "Logged in -- the Architect's mail is in their home directory", "description": "Logged in properly -- home directory holds the ENTROPY correspondence" },
             { "type": "set_global", "key": "flag4_submitted", "value": true, "label": "Root -- the access logs name the account", "description": "Root via sudo apt-get -- access logs place the mole" }
