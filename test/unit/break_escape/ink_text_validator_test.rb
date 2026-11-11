@@ -37,13 +37,48 @@ module BreakEscape
       assert InkTextValidator.validate(FIXTURE, 'Ask Agent HaX about the logs.')
     end
 
-    test "a line that prints a value matches its ink text around a plain value, voiced as the ink has it" do
-      # clue_count is game state: the walker can't voice the line in advance
-      assert_equal 'You found 4 clues.', InkTextValidator.canonical(FIXTURE, 'You found 4 clues.')
-      assert_equal 'You found 12 clues.', InkTextValidator.canonical(FIXTURE, 'you found 12 clues')
-      # A number slot takes a number only
+    test "a line that prints game state is never voiced, whatever the value" do
+      # clue_count is game state: voiced lines print no variables
+      assert_nil InkTextValidator.canonical(FIXTURE, 'You found 4 clues.')
+      assert_nil InkTextValidator.canonical(FIXTURE, 'you found 0 clues')
       assert_nil InkTextValidator.canonical(FIXTURE, 'You found many clues.')
-      assert_nil InkTextValidator.canonical(FIXTURE, 'You found 4 clues. Transfer the funds now.')
+    end
+
+    test "a player_name line is voiced only with the names given, as given" do
+      Dir.mktmpdir do |dir|
+        path = File.join(dir, 'story.json')
+        File.write(path, { 'inkVersion' => 21,
+                           'root' => [['^Ann: Hello, ', 'ev', { 'x()' => 'player_name' }, 'out', '/ev', '^.', "\n", 'done'],
+                                      'done', nil] }.to_json)
+        assert_equal 'Hello, Agent.', InkTextValidator.canonical(path, 'hello agent')
+        assert_nil InkTextValidator.canonical(path, 'Hello, Agent Zero.')
+        assert_equal 'Hello, Agent Zero.', InkTextValidator.canonical(path, 'hello agent zero', player_names: ['Agent Zero'])
+        assert_nil InkTextValidator.canonical(path, 'Hello, Agent.', player_names: ['Agent Zero'])
+      end
+    end
+
+    test "narrator_only matches only Narrator: lines" do
+      Dir.mktmpdir do |dir|
+        path = File.join(dir, 'story.json')
+        File.write(path, { 'inkVersion' => 21,
+                           'root' => [['^Narrator: The rain stops.', "\n", '^Narrator[none]: A door slams.', "\n",
+                                       '^Ann: Over here.', "\n", 'done'], 'done', nil] }.to_json)
+        assert_equal 'The rain stops.', InkTextValidator.canonical(path, 'The rain stops.', narrator_only: true)
+        assert_equal 'A door slams.', InkTextValidator.canonical(path, 'A door slams.', narrator_only: true)
+        assert_nil InkTextValidator.canonical(path, 'Over here.', narrator_only: true)
+        assert_equal 'Over here.', InkTextValidator.canonical(path, 'Over here.')
+      end
+    end
+
+    test "a story's index is rebuilt when the compiled file changes" do
+      Dir.mktmpdir do |dir|
+        path = File.join(dir, 'story.json')
+        File.write(path, { 'inkVersion' => 21, 'root' => [['^Ann: First words.', "\n", 'done'], 'done', nil] }.to_json)
+        assert InkTextValidator.validate(path, 'First words.')
+        File.write(path, { 'inkVersion' => 21, 'root' => [['^Ann: Second words, longer.', "\n", 'done'], 'done', nil] }.to_json)
+        assert InkTextValidator.validate(path, 'Second words, longer.')
+        refute InkTextValidator.validate(path, 'First words.')
+      end
     end
 
     test "a line whose value the walker knows matches only with that value (no 10-character fragment rule)" do

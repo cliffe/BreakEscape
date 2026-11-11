@@ -656,8 +656,13 @@ module BreakEscape
       # Matching rule: TtsService.match_form.
       line = nil
       if npc['skipTextValidation']
-        # The narrator: its lines are in the scenario's stories, spoken as the narrator
-        line = spoken_as_npc_in_scenario(npc_id, text) || line_in_scenario_stories(text)
+        # The narrator: only lines the scenario gives the narrator. Story lines
+        # the client voices as the narrator (a Narrator: prefix or a
+        # #speaker:narrator tag), the narrator's own barks, and Narrator: lines
+        # the extractor can't place (glue, player_name()). Never another
+        # speaker's line in the narrator's voice.
+        line = spoken_as_npc_in_scenario(npc_id, text) || ScenarioBarkValidator.canonical(npc, text) ||
+               narrator_line_in_scenario_stories(text)
         unless line
           Rails.logger.warn "[TTS] Narrator text not in any scenario story for #{npc_id}: #{text.truncate(60)}"
           return render_error('Text not found in scenario stories', :forbidden)
@@ -676,7 +681,7 @@ module BreakEscape
         # A co-speaker's line can live in another NPC's story (Vance in HaX's
         # debrief, HaX in Netherton's), so also accept a line that some story
         # in this scenario voices as this NPC.
-        line = InkTextValidator.canonical(ink_json_path.to_s, text) ||
+        line = InkTextValidator.canonical(ink_json_path.to_s, text, player_names: [tts_player_name]) ||
                ScenarioBarkValidator.canonical(npc, text) ||
                shared_chatter_line(npc, text) ||
                spoken_as_npc_in_scenario(npc_id, text)
@@ -739,6 +744,17 @@ module BreakEscape
       end
       mp3_path ||= stand_in.call unless delivery && tts_service.enabled?
       return send_file(mp3_path, type: 'audio/mpeg', disposition: 'inline') if mp3_path
+
+      # A cap on paid generations per game (cache hits above are not counted)
+      if tts_service.enabled? && !TtsGenerationLimit.allow?(@game.id)
+        Rails.logger.warn "[TTS] Generation limit reached for game #{@game.id} (#{npc_id})"
+        fallback = delivery && stand_in.call
+        return send_file(fallback, type: 'audio/mpeg', disposition: 'inline') if fallback
+
+        response.set_header('Retry-After', TtsGenerationLimit.retry_after(@game.id).to_s)
+        return render json: { error: 'Too many voice clips generated for this game; audio is unavailable for now' },
+                      status: :too_many_requests
+      end
 
       begin
         generate_options = { scenario_name: scenario_name, npc_id: npc_id }
@@ -2614,8 +2630,10 @@ module BreakEscape
       ScenarioBarkValidator.canonical_shared(@game.scenario_data, text)
     end
 
-    # The narrator's line in any of this game's ink stories, as the story has it.
-    def line_in_scenario_stories(text)
+    # A Narrator: line of one of this game's stories, as the story has it, or
+    # nil. Each story's narrator lines are indexed once (InkTextValidator), so
+    # a miss is one hash lookup per story.
+    def narrator_line_in_scenario_stories(text)
       story_paths = []
       @game.scenario_data['rooms']&.each_value do |room|
         room['npcs']&.each { |n| story_paths << n['storyPath'] }
@@ -2623,10 +2641,17 @@ module BreakEscape
       Array(@game.scenario_data['npcs']).each { |n| story_paths << n['storyPath'] if n.is_a?(Hash) }
       story_paths.compact.uniq.each do |story|
         path = resolve_and_compile_ink(story)
-        found = path && InkTextValidator.canonical(path.to_s, text)
+        found = path && InkTextValidator.canonical(path.to_s, text, player_names: [tts_player_name], narrator_only: true)
         return found if found
       end
       nil
+    end
+
+    # The player name the server holds for this game: the only value a
+    # player_name() line is voiced with (TtsService::PLAYER_NAME_DEFAULT says
+    # why it is the client's fallback today).
+    def tts_player_name
+      TtsService::PLAYER_NAME_DEFAULT
     end
 
     # The line, as the story has it, that one of this game's ink stories voices

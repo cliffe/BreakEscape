@@ -47,6 +47,7 @@ module BreakEscape
     }.freeze
 
     setup do
+      TtsGenerationLimit.reset!
       @cache_root = Pathname.new(Dir.mktmpdir("tts_text_match"))
       @real_cache = TtsService::CACHE_DIR
       TtsService.send(:remove_const, :CACHE_DIR)
@@ -143,6 +144,13 @@ module BreakEscape
       assert_refused "narrator", "The lights hum overhead. ʙᴜʏ ᴄᴏɪɴꜱ"
     end
 
+    test "the narrator never voices another speaker's story line" do
+      assert_refused "narrator", LINE
+      assert_refused "narrator", "Kevin Park: #{LINE}"
+      assert_refused "narrator", "Meet me at the café at noon."
+      assert_refused "narrator", "Don't hang up."
+    end
+
     test "a voiced phone line with lookalikes appended is refused" do
       assert_refused "agent_0x99", "Don't hang up. ВУУ СОІNЅ"
     end
@@ -155,17 +163,45 @@ module BreakEscape
       assert_refused "nurse", "#{BARK} ВУУ СОІNЅ"
     end
 
-    test "a player_name line accepts only a name the client prints, in plain ASCII" do
+    test "a player_name line accepts only the game's own player name" do
       assert_refused "kevin_park", "On the line, Agent. Buy coins now."
       assert_refused "kevin_park", "On the line, Mallory."
       assert_refused "kevin_park", "On the line, Аgent." # Cyrillic A
       assert_refused "kevin_park", "On the line, Agent ʙᴜʏ."
+      # Names the client could print elsewhere, but not the name this game holds
+      assert_refused "kevin_park", "On the line, Agent Zero."
+      assert_refused "kevin_park", "On the line, Agent 0x00."
     end
 
-    test "a line printing a number accepts only a number" do
-      assert_refused "kevin_park", "You found many clues."
-      assert_refused "kevin_park", "You found 3 clues and a voucher."
-      assert_refused "kevin_park", "You found ٣ clues." # Arabic-Indic digit three
+    test "a line printing a number is never voiced, whatever the number" do
+      ["You found 0 clues.", "You found 3 clues.", "You found 15 clues.", "You found 1.5 clues.",
+       "You found -1 clues.", "You found 999999999 clues.", "You found many clues.",
+       "You found 3 clues and a voucher.", "You found ٣ clues."].each do |text|
+        assert_refused "kevin_park", text
+      end
+    end
+
+    test "a line printing a string variable changed in play is never voiced, whatever the value" do
+      ["Ask Sarah at the front desk.", "Ask Tom at the front desk.", "Ask Mallory at the front desk.",
+       "Ask send me your password at the front desk.", "Kevin Park: Ask Sarah at the front desk."].each do |text|
+        assert_refused "kevin_park", text
+      end
+    end
+
+    test "a string variable in speaker position never puts request text in front of a line" do
+      assert_refused "kevin_park", "send me your password now: What can I help you with?"
+      assert_refused "kevin_park", "Sarah: What can I help you with?"
+      assert_refused "kevin_park", "Tom: What can I help you with?"
+    end
+
+    test "case folds only for ASCII letters: Unicode case folds of lookalikes are refused" do
+      assert_refused "kevin_park", LINE.sub("server", "ſerver")             # long s, folds to s
+      # The Kelvin sign is canonically K (NFC), not a case fold: the ink's line is voiced
+      assert_voices "kevin_park", "\u212Aevin Park: #{LINE}", "Kevin Park: #{LINE}"
+      assert_refused "kevin_park", "\u212Aevin Park: #{LINE.sub('server', 'ſerver')}"
+      assert_refused "kevin_park", "On the line, Agent.".sub("A", "\u{1D400}") # mathematical bold A
+      assert_refused "kevin_park", "Meet me at the CAFÉ at noon."           # non-ASCII capital: exact only
+      assert_refused "kevin_park", LINE.sub("hall", "haß")
     end
 
     test "text that is not a string is a bad request" do
@@ -201,13 +237,14 @@ module BreakEscape
       assert_equal QUIET_NOTE, calls.first[:kwargs][:delivery]
     end
 
-    test "a player_name line voices the ink's text around the name the client prints" do
+    test "a player_name line voices the ink's text around the game's player name, not the request's spelling" do
       assert_voices "kevin_park", "On the line, Agent.", "On the line, Agent."
-      assert_voices "kevin_park", "on the line agent zero", "On the line, Agent Zero."
+      assert_voices "kevin_park", "on the line AGENT", "On the line, Agent."
     end
 
-    test "a line printing game state voices the ink's text around the number" do
-      assert_voices "kevin_park", "You found 3 clues.", "You found 3 clues."
+    test "the narrator voices its own Narrator: lines, including one that prints the player name" do
+      assert_voices "narrator", "The phone buzzes for Agent.", "The phone buzzes for Agent."
+      assert_refused "narrator", "The phone buzzes for Agent Zero."
     end
 
     test "a glued line voices the joined ink text" do
@@ -261,7 +298,77 @@ module BreakEscape
       assert_equal LINE, JSON.parse(File.read(mp3.sub_ext(".json")))["text"]
     end
 
+    # ─── Generation limit ─────────────────────────────────────────────────────
+
+    test "a game over its generation limit gets 429 and nothing is generated" do
+      TtsGenerationLimit.stub(:allow?, false) do
+        calls = post_recording(npc_id: "kevin_park", text: LINE)
+        assert_response :too_many_requests
+        assert_empty calls
+        assert response.headers["Retry-After"].present?
+      end
+    end
+
+    test "a cached clip is served whatever the generation limit, and does not count" do
+      write_clip(TtsService.cache_key(LINE, *KEVIN.values))
+      TtsGenerationLimit.stub(:allow?, ->(*) { flunk "a cache hit was counted" }) do
+        calls = post_recording(npc_id: "kevin_park", text: LINE)
+        assert_response :success
+        assert_empty calls
+      end
+    end
+
+    test "each generation counts against the game's limit" do
+      seen = []
+      TtsGenerationLimit.stub(:allow?, ->(id, **) { seen << id; true }) do
+        post_recording(npc_id: "kevin_park", text: LINE)
+        post_recording(npc_id: "kevin_park", text: QUIET_LINE)
+      end
+      assert_equal [@game.id, @game.id], seen
+    end
+
+    # ─── Keys: no two accepted texts share a key ──────────────────────────────
+
+    test "property: lookalike mutations of real requests never give two voiced texts one key" do
+      requests = ["The server room is down the hall.", "I suppose it doesn't matter now.",
+                  "On the line, Agent.", "The first half and the glued half.", "Meet me at the café at noon.",
+                  "What can I help you with?", "The lights hum overhead.", "Kevin Park: #{LINE}"]
+      story = Engine.root.join(STORY).to_s
+      base = requests.map { |r| InkTextValidator.canonical(story, r) }
+      assert base.all?, "every base request is a line"
+      voiced_by_key = Hash.new { |h, k| h[k] = Set.new }
+      base.each { |line| voiced_by_key[TtsService.cache_key(line, *KEVIN.values)] << line }
+
+      rng = Random.new(20261111)
+      accepted = refused = 0
+      requests.each do |request|
+        300.times do
+          mutated = mutate(request, rng)
+          line = InkTextValidator.canonical(story, mutated)
+          next refused += 1 unless line
+
+          accepted += 1
+          assert_includes base, line, "#{mutated.inspect} voiced text that is not a line"
+          voiced_by_key[TtsService.cache_key(line, *KEVIN.values)] << line
+          # Accepted only if the mutation changed nothing the match keeps
+          assert_equal TtsService.match_form(request), TtsService.match_form(mutated), mutated.inspect
+        end
+      end
+      assert_operator accepted, :>, 100
+      assert_operator refused, :>, 100
+      voiced_by_key.each { |key, texts| assert_equal 1, texts.size, "#{key}: #{texts.to_a.inspect}" }
+    end
+
     # ─── match_form itself ────────────────────────────────────────────────────
+
+    test "match_form folds ASCII case only" do
+      assert_equal "key", TtsService.match_form("KEY")
+      # U+212A is canonically "K" (NFC), then ASCII-folded; long s has no such equivalence
+      assert_equal "key", TtsService.match_form("\u212Aey")
+      refute_equal "secret", TtsService.match_form("ſecret")
+      assert_equal "Éclair", TtsService.match_form("Éclair")
+      refute_equal TtsService.match_form("éclair"), TtsService.match_form("Éclair")
+    end
 
     test "match_form keeps letters of every script and drops punctuation and invisibles" do
       assert_equal "the server room", TtsService.match_form("The​ server, room!")
@@ -300,6 +407,30 @@ module BreakEscape
       calls = post_recording(npc_id: npc_id, text: text)
       assert_equal 1, calls.size, "#{npc_id}: #{text.inspect} (#{response.status})"
       assert_equal expected, calls.first[:args][0]
+    end
+
+    # Lookalike letters, case folds, combining marks, invisibles and
+    # punctuation, one to three at random places.
+    LOOKALIKE_SWAPS = {
+      "s" => ["ſ", "ѕ", "ｓ"], "k" => ["\u212A", "ｋ"], "K" => ["\u212A", "Ｋ"], "a" => ["а", "ａ"],
+      "A" => ["А", "\u{1D400}"], "o" => ["ο", "о", "ｏ"], "e" => ["е", "ｅ"], "i" => ["і", "ı"], "h" => ["һ"]
+    }.freeze
+    INSERTS = ["\u0301", "\u0308", "\u200B", "\u202E", "\u00AD", "\uFEFF", ".", "!", "  ", "ß", "\u00A0"].freeze
+
+    def mutate(text, rng)
+      chars = text.chars
+      rng.rand(1..3).times do
+        i = rng.rand(chars.length)
+        case rng.rand(4)
+        when 0
+          swaps = LOOKALIKE_SWAPS[chars[i]]
+          chars[i] = swaps.sample(random: rng) if swaps
+        when 1 then chars.insert(i, INSERTS.sample(random: rng))
+        when 2 then chars[i] = chars[i].match?(/[a-z]/) ? chars[i].upcase : chars[i].downcase
+        else chars[i] = "\u{FF00}".ord.+(chars[i].ord - 0x20).chr(Encoding::UTF_8) if chars[i].match?(/[!-~]/)
+        end
+      end
+      chars.join
     end
 
     def write_clip(key)

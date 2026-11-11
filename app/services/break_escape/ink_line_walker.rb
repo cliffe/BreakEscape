@@ -26,7 +26,10 @@ module BreakEscape
     # changed in play), its parts in order: ink text Strings, and where a value
     # goes the kind of value (:player_name, :number or :text). nil otherwise.
     # InkTextValidator matches a request against it.
-    Unresolved = Struct.new(:path, :text, :reason, :template, keyword_init: true)
+    # slots: the kinds of every printed value in the line (template or not),
+    # [] when it prints none. InkTextValidator never voices a line with a
+    # :number or :text slot.
+    Unresolved = Struct.new(:path, :text, :reason, :template, :slots, keyword_init: true)
 
     # A printed value in a line's buffer (see Unresolved#template). It is still
     # a String, so the line's text reads exactly as before.
@@ -399,7 +402,8 @@ module BreakEscape
       return false if tail.empty?
 
       @unresolved << Unresolved.new(path: "#{path}(unterminated)", text: tail,
-                                    reason: state[:partial] || 'text with no newline (glue, choice start or inline content)')
+                                    reason: state[:partial] || 'text with no newline (glue, choice start or inline content)',
+                                    slots: slot_kinds(state[:buf]))
       true
     end
 
@@ -551,7 +555,7 @@ module BreakEscape
       maybe = state.delete(:maybe_tags)
       if partial
         template = glued_on || not_slot ? nil : template_of(buf, partial)
-        @unresolved << Unresolved.new(path: path, text: raw, reason: partial, template: template)
+        @unresolved << Unresolved.new(path: path, text: raw, reason: partial, template: template, slots: slot_kinds(buf))
         state[:last_unresolved] = @unresolved.last
         first_line_unknown!
         return
@@ -559,7 +563,8 @@ module BreakEscape
 
       variants = expand(buf)
       if variants.nil?
-        @unresolved << Unresolved.new(path: path, text: raw, reason: "expands to more than #{MAX_VARIANTS} variants")
+        @unresolved << Unresolved.new(path: path, text: raw, reason: "expands to more than #{MAX_VARIANTS} variants",
+                                      slots: slot_kinds(buf))
         first_line_unknown!
         return
       end
@@ -611,6 +616,16 @@ module BreakEscape
       buf.map { |part| part.is_a?(SlotValue) ? part.kind : part.to_s }
     end
 
+    # The kind of every printed value in a line's buffer, in order.
+    def slot_kinds(buf)
+      buf.flat_map do |part|
+        if part.is_a?(SlotValue) then [part.kind]
+        elsif part.is_a?(Array) then slot_kinds(part)
+        else []
+        end
+      end
+    end
+
     def retract_last_line(state, path)
       # A templated line that the next line glues onto is not the whole line
       state[:last_unresolved]&.template = nil
@@ -627,7 +642,7 @@ module BreakEscape
       end
       @also_next.clear
       @lines.slice!(range).each do |line|
-        @unresolved << Unresolved.new(path: path, text: line.raw, reason: 'glue')
+        @unresolved << Unresolved.new(path: path, text: line.raw, reason: 'glue', slots: [])
       end
       state[:last_lines] = nil
     end

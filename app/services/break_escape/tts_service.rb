@@ -56,15 +56,25 @@ module BreakEscape
     end
 
     # What the client's player_name() ink function can print (person-chat and
-    # phone-chat bind it to gameState.playerName, else "Agent"). The endpoint
-    # accepts only these in a line that prints it; the cache pruner expects them.
+    # phone-chat bind it to gameState.playerName, else "Agent"). The cache
+    # pruner keeps clips for any of these.
     PLAYER_NAME_VALUES = ["Agent", "Agent Zero", "Agent 0x00"].freeze
+    # The player name the server holds for a game, and so the only one the
+    # endpoint voices in a player_name() line (InkTextValidator fills the slot
+    # with it; the request's spelling is never voiced). Nothing in the client
+    # sets gameState.playerName today, so the client prints this fallback. If
+    # a real name is ever wired into playerName, it must come from a value the
+    # server holds for the game (never the request) and GamesController#
+    # tts_player_name must return it, or every such line plays unvoiced.
+    PLAYER_NAME_DEFAULT = "Agent".freeze
 
     # How the endpoint compares a requested `text` with the scenario's own lines
     # (InkTextValidator, ScenarioBarkValidator, TtsLineExtractor#spoken_line).
-    # Unicode NFC, lowercase, every run of whitespace (any script's spaces) one
-    # space, then only letters, combining marks, digits and "_" of any script
-    # kept. Punctuation, symbols and invisible characters (zero-width, bidi
+    # Unicode NFC, ASCII letters lowercased (no other case folding: Unicode
+    # folds the Kelvin sign to "k" and long s to "s"), every run of whitespace
+    # (any script's spaces) one space, then only letters, combining marks,
+    # digits and "_" of any script kept, so a non-ASCII letter must match
+    # exactly. Punctuation, symbols and invisible characters (zero-width, bidi
     # controls, BOM) drop out; lookalike letters from another script (Cyrillic,
     # Greek, fullwidth, small capitals) and stray combining marks stay, so a
     # request carrying them matches no line. normalize_text, the key's rule,
@@ -77,7 +87,7 @@ module BreakEscape
       utf8 = text.encoding == Encoding::UTF_8 ? text : text.dup.force_encoding(Encoding::UTF_8)
       return nil unless utf8.valid_encoding?
 
-      utf8.unicode_normalize(:nfc).downcase
+      utf8.unicode_normalize(:nfc).downcase(:ascii)
           .gsub(/[\p{Z}\s]+/, " ")
           .gsub(/[^\p{L}\p{M}\p{N}_ ]/, "")
           .gsub(/ +/, " ").strip
