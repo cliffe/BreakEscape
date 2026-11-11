@@ -202,6 +202,7 @@ Val Okonkwo: Reception's paper log's been amended, and there's nothing on the sy
     -> the_argument
 
 + [Then we're doing this the hard way. (Fight her.)] #color:red
+    Narrator: Her hand goes to her radio.
     ~ influence -= 40
     # influence_decreased
     Val Okonkwo: Don't. #delivery: sharply, a warning
