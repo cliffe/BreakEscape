@@ -37,8 +37,8 @@ require 'uri'
 #   only by the same rule: in that answer, or after the item has been served that way.
 #   Anywhere else it is reported as a password, like any other;
 # - a network or resource string in any response other than GET /network, a /network/*
-#   answer, a /container answer, or the footholds block of GET /scenario. There is no
-#   exception for an NPC's work plan.
+#   answer, a /container answer, the contents of an /unlock answer, or the footholds block
+#   of GET /scenario. There is no exception for an NPC's work plan.
 #
 # Matching of these network strings: a string of six or more characters is matched as a
 # substring; a shorter one only as a whole JSON string value; one under three characters is
@@ -620,14 +620,17 @@ class AccessLeakScanner
     end
   end
 
-  # A network or resource string outside GET /network, /network/*, /container and the
-  # footholds block of /scenario.
+  # A network or resource string outside GET /network, /network/*, /container, the
+  # contents of an /unlock answer (the server's other way of serving a container's contents,
+  # as GET /container would: a remote session item that names its host, slice 9.1 step 8)
+  # and the footholds block of /scenario.
   def scan_network_strings(body, ctx, add)
     return if @network_strings.empty?
     return if ctx[:network] || ctx[:any_container]
 
     each_string(body) do |str, json_path|
       next if ctx[:scenario] && json_path.start_with?('$.footholds')
+      next if ctx[:unlock] && json_path.start_with?('$.contents[')
 
       @network_strings.each do |secret, owners|
         next unless network_match?(str, secret)
