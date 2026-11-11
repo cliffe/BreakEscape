@@ -1,0 +1,14 @@
+{
+  "key": "50682d47a0adfe1c173b9658051ed211",
+  "npc": "night_security_supervisor",
+  "text": "How very odd.",
+  "delivery": "perfectly composed, giving nothing away",
+  "voice": "Enceladus",
+  "style": "Night security supervisor, fifties, eleven years on the same post. Consistent Estuary English -- flat Home Counties, quiet, unhurried. Courteous to the point of being soothing. When cornered the warmth switches off completely and what is underneath is calm, articulate and entirely unrepentant.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T17:44:36Z"
+}

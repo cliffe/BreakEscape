@@ -1,0 +1,13 @@
+{
+  "key": "ccf284d873c9fa75c95952562df83b0e",
+  "npc": "narrator",
+  "text": "Her hand goes to her radio.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T17:46:16Z"
+}
