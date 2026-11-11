@@ -1,9 +1,9 @@
-# test_access_habits: scripted playtest (H1 to H8)
+# test_access_habits: scripted playtest (H1 to H9)
 
 The scripted runs for access model slice 9.1 (`docs/achitechture/ACCESS_MODEL_SLICE_9_1_PLAN.md`,
-section 11). Two runs, each with its own new game: **Run 1** is H1 to H5, with a reload after H3;
-**Run 2** is H6 to H8, with the reload inside H8. Beat H9 (holds doors) is added with slice 9.1's
-step 5. After every beat, check what is on screen, what the server recorded and what reached the
+section 11). Three runs, each with its own new game: **Run 1** is H1 to H5, with a reload after
+H3; **Run 2** is H6 to H8, with the reload inside H8; **Run 3** is H9 (holds doors, slice 9.1
+step 5). After every beat, check what is on screen, what the server recorded and what reached the
 browser.
 
 This file names who never locks and whose password is on a note. It is for regression testers,
@@ -81,11 +81,17 @@ on) and the "Missing recommended" lines also print. The habits report shows:
   number: mei_calendar; piece 3 of 3, symbol: in the pattern clue; pattern clue at
   password_memo; the pattern clue must cover: 1 capital, 1 symbol, 3 pieces in order;
 - lena: level medium, locksScreen sometimes (preset), screenHabit lockChance 0.5;
-- tom: password reused (by name), same password as tom_locker, written in full at locker_note.
+- tom: password reused (by name), same password as tom_locker, written in full at locker_note;
+- gary: level low, holdsDoors true (preset), "holds the gate at rooms/gate_hall/doors/0 (into
+  store_a)";
+- sara: level high, holdsDoors false (preset), "gate.noHold at rooms/gate_hall/doors/1 (into
+  store_b)".
 
 The dungeon graph has an "unlocked screen" edge into `dana_pc`, "unlocked screen (roll)" into
 `lena_pc`, "sticky note at omar_pc" into Omar's sign-in, three "clue" edges into Mei's sign-in and
-"same password" from the locker into Tom's. None for Ian, Priya or Kai.
+"same password" from the locker into Tom's. None for Ian, Priya or Kai. Store B's door label
+ends "gate: not held by sara"; Store A's has no gate line (Gary holds it, and nobody is listed as
+not holding it).
 
 ## Run 1: H1 to H5, reload after H3
 
@@ -225,6 +231,54 @@ locked (4), as the table says.
 
 Server record: a claim at `lena_pc` while she was away on leave 1, gone when she returned; none
 after the reload until the next open leave.
+
+## Run 3: H9 Holds doors
+
+Room `gate_hall`, east of `kai_room`. Two gates, each `openRadius` 80 and `holdMs` 6000: north
+into `store_a` for Gary Whitlock (`awareness: low`, so `holdsDoors` true) and south into `store_b`
+for Sara Quinn (`awareness: high`, so `holdsDoors` false and the gate gets `noHold: ["sara"]`).
+Each walks a loop: a 6 s dwell at the desk, the waypoint beside the door (its `unlockRoom`
+action), then the store room and back. About 25 seconds a lap.
+
+Set-up: a new game started in the hall, with Rowan (who holds the task mappings) carried in:
+
+```bash
+PLAYTEST_PORT=3001 BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/new-game.rb \
+  test_access_habits --start-room gate_hall --carry-npc rowan
+```
+
+Record the gates' events by wrapping `window.eventDispatcher.emit` with `eval` (`door_gate_*`,
+`room_entered*`), and sample each gate every 50 to 100 ms: whether it is open, the player's
+distance from it (from `window.player.body.center`, the feet) and whether the player could pass
+(`doorGates.openToPlayer(g) && !doorGates.blocksPlayer(g)`). The gates are
+`[...window.doorGates.groups.values()]`, Gary's first. Spots below are feet positions for
+`moveTo`. Sara and Gary walk about the hall, so an `interact` on the sign can land on one of them;
+leave that chat with its last option and try again.
+
+1. Read `sign_h9`.
+2. **Gary holds the door.** Stand beside his door, feet (98,72), about 66 px from it. When it opens
+   for him (`h9_a_opened`), `enter` `store_a`: `room_entered:store_a`. Go back with `enter`
+   `gate_hall`.
+3. **Sara does not, with the player near.** Stand within her radius, feet (40,232), about 52 px
+   from her door. Her gate never opens while the player is there (every sample shut), and after
+   5 s waiting she turns back (`door_gate_guard_turned_back` with `npcId: "sara"`, global
+   `h9_sara_turned_back`) and tries again next lap.
+4. **She goes through with the player clear.** Park outside her radius, feet (160,285), about
+   108 px out. The gate opens for her (`h9_b_opened`). Walk in after her: the gate is never
+   passable, it shuts as the player comes inside the radius, and `enter` `store_b` comes back
+   `did-not-cross`.
+5. **The refusal.** `interact` `door:gate_hall->store_b`: the toast "Access denied: this door only
+   opens for authorised staff.", `door_gate_denied`, Sara's bark (in her conversation history as
+   a bark for `door_gate_denied`) and task `h9_holds_doors` complete (it needs all three
+   globals).
+6. **No way past.** Walk into her shut door for 20 seconds: never open, no
+   `room_entered:store_b`, and no further denial (a bump on a shut gate is silent).
+
+Server record: `verify-run.rb --access` has `npc gary holdsDoors=true`, `npc sara
+holdsDoors=false` and one gate line, `gate rooms/gate_hall/doors/1 (into store_b) openFor sara
+noHold sara` (none for Gary's). Globals `h9_a_opened`, `h9_b_opened`, `h9_sara_turned_back`; task
+`h9_holds_doors` completed. `store_b` may be in `unlockedRooms`: Sara's route unlocks it on the
+server. The player never enters it. The leak check says `VERDICT: no leaks found`.
 
 ## Earned secrets
 
