@@ -58,7 +58,7 @@ VAR asked_about_patricia = false
         ~ revealed_informant = true
         ~ influence += 5
         # influence_increased
-        Maya Chen: Thank god. I was starting to think no one would come. #delivery: with obvious relief
+        Maya Chen: Thank god. I was starting to think no one would come. #delivery: relieved
         -> informant_reveal
     + + [Tell me more about this operation]
         Maya Chen: Only if you're here to stop it. People are going to die.
