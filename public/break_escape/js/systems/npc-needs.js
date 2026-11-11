@@ -1228,6 +1228,11 @@ export class NPCNeedsSystem {
         const id = s.npcId;
         this._decay(s);
         if (s.borrow) this._tickBorrow(s);
+        // Review R2 m1: an outage fixed while the barrier shows ends it, as q17 fades the frustration icon
+        if (s.failedShow && s.failedShow.missing.length && this._causesPass(s, s.failedShow.missing)) {
+            s.failedShow = null;
+            this._log(id, 'failed_cleared');
+        }
 
         const pos = this.world.npcPos(id);
         if (!pos) return; // sprite not loaded: decay only
@@ -1897,15 +1902,23 @@ export class NPCNeedsSystem {
      * for WORKAROUND_SHOW_MS after any line showing now. The runner calls it for an `emit`, which
      * has no visit; a workaround visit calls it when done, since the start line (shown from the
      * hand-over) can hide the action icon for a short visit's whole length. False for an NPC the
-     * system does not run.
+     * system does not run. Review R2 m2: an emit landing while the NPC has a job shows nothing,
+     * since the job shows its own icon and a new job clears this one; it is not saved for later.
      */
     showWorkaround(npcId) {
         const s = this.states.get(npcId);
         if (!s) return false;
+        if (s.job) { this._log(npcId, 'workaround_skipped', { job: s.job.kind }); return true; }
+        this._showWorkaround(s);
+        return true;
+    }
+
+    /** The workaround icon for WORKAROUND_SHOW_MS after any line (also as a visit or borrow ends). */
+    _showWorkaround(s) {
+        const npcId = s.npcId;
         const said = s.saying && s.saying.until > this.clockMs ? s.saying.until - this.clockMs : 0;
         s.workaroundShow = { until: this.clockMs + said + WORKAROUND_SHOW_MS };
         this._log(npcId, 'workaround_shown');
-        return true;
     }
 
     /**
@@ -2129,16 +2142,18 @@ export class NPCNeedsSystem {
     _causeCleared(s) {
         const needs = Object.keys(s.failCause || {});
         if (!needs.length) return false;
+        if (!this.world.workRules?.causesClear) return false;
+        return needs.every(n => this._causesPass(s, s.failCause[n] || []));
+    }
+
+    /** Whether every cause in `list` would pass now (causesClear, plus a switched-off station). */
+    _causesPass(s, list) {
         const rules = this.world.workRules;
         if (!rules?.causesClear) return false;
-        const plan = this._plan(s);
         // A switched-off station (`off`) has cleared once its offWhen no longer holds
         const offClear = c => { const rec = this._offSeen.get(c.id); return !!rec && !this._globalHolds(rec.cond); };
-        return needs.every(n => {
-            const list = s.failCause[n] || [];
-            const off = list.filter(c => c.why === 'off');
-            return off.every(offClear) && rules.causesClear(plan, list.filter(c => c.why !== 'off'), g => this._globalValue(g));
-        });
+        const off = list.filter(c => c.why === 'off');
+        return off.every(offClear) && rules.causesClear(this._plan(s), list.filter(c => c.why !== 'off'), g => this._globalValue(g));
     }
 
     /** A failed park whose wakeOn names `name` and whose causes would all pass now retries soon (5.2). */
@@ -2252,14 +2267,21 @@ export class NPCNeedsSystem {
     _startVisit(s) {
         const v = s.visits[0];
         const limit = VISIT_DROP_MS[v.kind === 'check' ? 'check' : 'workaround'];
-        if (this.clockMs - v.queuedAt >= limit) {
+        // Review R2 m1: nobody walks off to check a resource that works again; the resource is
+        // freed, so a later failure on it queues a check afresh
+        const cleared = v.kind === 'check' && v.data?.resourceId && this._causesPass(s, [{ id: v.data.resourceId, why: 'down' }]);
+        if (cleared || this.clockMs - v.queuedAt >= limit) {
             s.visits.shift();
-            this._log(s.npcId, 'visit_dropped', { kind: v.kind, target: v.at.objectId || v.at.npcId });
-            this._emit(`npc_visit_dropped:${s.npcId}`, { npcId: s.npcId, kind: v.kind, at: { ...v.at }, data: v.data });
+            if (cleared) s.checked.delete(v.data.resourceId);
+            this._log(s.npcId, 'visit_dropped', { kind: v.kind, target: v.at.objectId || v.at.npcId, reason: cleared ? 'cleared' : undefined });
+            this._emit(`npc_visit_dropped:${s.npcId}`, { npcId: s.npcId, kind: v.kind, at: { ...v.at }, data: v.data, ...(cleared ? { reason: 'cleared' } : {}) });
             return false;
         }
         // Review R1 M1: a check visit waits out the barrier or workaround icon (a job's icon would
-        // hide it), and nothing else starts meanwhile: the line, the icon, then off to check
+        // hide it), and nothing else starts meanwhile: the line, the icon, then off to check.
+        // Not guarded by _judged (review R2 n2): only _countFailure queues a check, from a judged
+        // use, and the hold lasts only while an icon shows, so a check some future caller queues
+        // for an office-life NPC would wait at most WORKAROUND_SHOW_MS, which is harmless
         if (v.kind === 'check' && this._iconShowing(s)) return true;
         if (this.clockMs - v.triedAt < 1000) return false;
         v.triedAt = this.clockMs;
@@ -2282,7 +2304,7 @@ export class NPCNeedsSystem {
         this._emit(`npc_visit_done:${id}`, { npcId: id, kind: v.kind, at: { ...v.at }, data: v.data });
         if (v.kind === 'check' && v.at.objectId) this._emit(`npc_checked:${v.at.objectId}`, { npcId: id, objectId: v.at.objectId, data: v.data });
         // q21: the start line can cover a short visit's whole icon, so it stays a moment after
-        if (v.kind === 'workaround') this.showWorkaround(id);
+        if (v.kind === 'workaround') this._showWorkaround(s);
         const stayPut = s.atPost && this._targetsOwnPost(s);
         s.job = null;
         this._goHome(s, { stayPut });
@@ -2562,8 +2584,10 @@ export class NPCNeedsSystem {
 
     _startJob(s, pick) {
         const id = s.npcId;
-        // Review R1 m4: a job shows its own icon, so an emit's workaround icon does not come back after it
+        // Review R1 m4, R2 m2: a job shows its own icon, so neither an emit's workaround icon nor
+        // the barrier comes back after it (failCause stays: q17's fade needs it)
         s.workaroundShow = null;
+        s.failedShow = null;
         s.job = {
             need: pick.need, kind: pick.kind, targetId: pick.targetId,
             itemId: pick.itemId || null, tag: pick.tag || null,
@@ -3034,7 +3058,7 @@ export class NPCNeedsSystem {
         if (b.leavesOpen) this._emit(`npc_borrowed_session:${job.targetId}`, { npcId: id, objectId: job.targetId, met });
         this._emit(`npc_borrow_done:${id}`, { npcId: id, objectId: job.targetId, met, leftOpen: b.leavesOpen, index: b.index, hand: b.hand });
         // Review R1 m1: as a workaround visit, the start line can hide a short borrowed use's icon
-        this.showWorkaround(id);
+        this._showWorkaround(s);
     }
 
     /**

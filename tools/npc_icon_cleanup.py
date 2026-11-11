@@ -474,7 +474,7 @@ ICONS['closed'] = dict(
 
 # workaround: a red arrow hopping a striped barrier (access slice 9.2, an NPC
 # performing a workaround; user pick, commit f373df648). The shape and fill are
-# kept; the outline was 20 near-black shades (#00101b to #361018), all set to
+# kept; the outline was 29 near-black shades (#00101b to #361018), all set to
 # the shared outline. One pixel added: (5,10), outline over the arrow's tail,
 # which had none. No pixel moved.
 ICONS['workaround'] = dict(
@@ -661,7 +661,8 @@ def main():
         new = clean(name, orig)
         probs = check(name, new)
         op, np_ = orig.load(), new.load()
-        changed = [(x, y) for y in range(16) for x in range(16) if op[x, y] != np_[x, y]]
+        changed = [(x, y) for y in range(16) for x in range(16)
+                   if op[x, y] != np_[x, y] and (op[x, y][3] or np_[x, y][3])]   # clear on both sides is no change
         print('%-10s %3d pixels changed%s' % (name, len(changed), '' if not probs else '  PROBLEMS:'))
         for p in probs:
             print('    ' + p)

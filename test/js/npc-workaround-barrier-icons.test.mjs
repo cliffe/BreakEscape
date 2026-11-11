@@ -155,7 +155,7 @@ test('needs: showWorkaround shows the icon for WORKAROUND_SHOW_MS (after any lin
 
 
 // Review R1 M2: q27's "timed from the end of the line", with a line longer than FAIL_SHOW_MS
-const LONG = 'The file share is down again, and the report is due today.';   // over 30 characters: a 4 s bubble
+const LONG = "The share is down again, and it's late.";   // 30 to 39 characters: a 4 s bubble
 
 test('needs: with a 4 s failure line the barrier still shows 3 s after the line has gone', () => {
     const { sys, evs } = workWorld({ globals: { share_down: true }, chatter: { work_fail_file_share: [LONG] } });
@@ -203,7 +203,7 @@ test('needs: the first failure on a down printer shows the barrier after its lin
 });
 
 test('needs: a queued check visit also waits out an emit\'s workaround icon', () => {
-    const { sys } = workWorld();
+    const { sys } = workWorld({ globals: { printer_jammed: true } });
     sys.registerAll();
     assert.equal(sys.showWorkaround('dana'), true);
     assert.ok(sys.enqueueVisit('dana', { kind: 'check', at: { objectId: 'office_printer' }, data: { resourceId: 'printer' } }));
@@ -235,4 +235,58 @@ test('needs: a job starting clears an emit\'s workaround icon', () => {
     sys.registerAll();
     assert.ok(stepUntil(sys, () => { if (!sys.getState('dana').job) sys.showWorkaround('dana'); return !!sys.getState('dana').job; }, 60000));
     assert.equal(sys.getState('dana').workaround, false);
+});
+
+// Review R2 m1: the player fixes the printer during the failure line: the barrier ends (as q17's
+// frustration icon fades) and nobody walks off to check a printer that works
+test('needs: an outage cleared during the hold ends the barrier and drops the check visit', () => {
+    const { sys, evs, set } = workWorld({ globals: { printer_jammed: true }, chatter: { work_fail_printer: [LONG] } });
+    sys.registerAll();
+    assert.ok(stepUntil(sys, () => evs('npc_use_failed:dana').length > 0, 30000));
+    assert.equal(sys.getState('dana').visits.length, 1, 'a check visit is queued');
+    assert.ok(sys.getState('dana').failed, 'the barrier is set');
+    set('printer_jammed', false);
+    sys.step(250);
+    const st = sys.getState('dana');
+    assert.equal(st.failed, null, 'the barrier ends with its cause');
+    assert.equal(st.visits.length, 0, 'the check visit is dropped');
+    assert.equal(evs('npc_visit_dropped:dana').at(-1)?.data?.reason, 'cleared');
+    for (let t = 0; t < 15000; t += 250) {
+        sys.step(250);
+        assert.notEqual(sys.getState('dana').visiting?.kind, 'check', 'no check walk');
+    }
+});
+
+test('needs: a barrier whose cause still holds is not ended early', () => {
+    const { sys, evs } = workWorld({ globals: { printer_jammed: true } });
+    sys.registerAll();
+    assert.ok(stepUntil(sys, () => evs('npc_use_failed:dana').length > 0, 30000));
+    sys.step(250);
+    assert.ok(sys.getState('dana').failed, 'still shown');
+    assert.equal(sys.getState('dana').visits.length, 1);
+});
+
+// Review R2 m2: a new job clears the barrier as it does the workaround icon
+test('needs: a job starting clears the barrier', () => {
+    const { sys, evs } = workWorld({ globals: { share_down: true } });
+    sys.registerAll();
+    assert.ok(stepUntil(sys, () => evs('npc_use_failed:dana').length > 0, 30000));
+    assert.ok(sys.getState('dana').failed);
+    assert.equal(sys.getState('dana').visits.length, 0, 'the share has no object: no check visit');
+    assert.ok(sys.enqueueVisit('dana', { kind: 'workaround', at: { objectId: 'dana_pc' }, useSeconds: 4, data: { workaround: { index: 0, hand: 1, do: 'writes_down' } } }));
+    assert.ok(stepUntil(sys, () => !!sys.getState('dana').job, 10000));
+    assert.equal(sys.getState('dana').failed, null, 'the job clears it');
+    assert.ok(stepUntil(sys, () => !sys.getState('dana').job, 30000));
+    assert.equal(sys.getState('dana').failed, null, 'and it does not come back after the job');
+});
+
+// Review R2 m2: an emit that lands mid-job does not show the arrow once that job ends
+test('needs: showWorkaround during a job shows nothing after the job', () => {
+    const { sys } = workWorld();
+    sys.registerAll();
+    assert.ok(stepUntil(sys, () => sys.getState('dana').job?.kind === 'use', 60000));
+    assert.equal(sys.showWorkaround('dana'), true);
+    assert.equal(sys.getState('dana').workaround, false);
+    assert.ok(stepUntil(sys, () => !sys.getState('dana').job, 60000));
+    assert.equal(sys.getState('dana').workaround, false, 'no arrow after the job');
 });
