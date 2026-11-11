@@ -566,8 +566,9 @@ and Captured sign-ins picker, the in-game capture answer); none typed from a doc
   **LW-FS01:** the leak scanner raised one `network_string` finding (owner
   `resource:lw_fs01_records`, `POST /unlock`, `$.contents[1].text`): opening the remote session
   item answers with its contents through `/unlock`, which the network rule did not count as a
-  container answer. Host labels are not secret, and the file is in the session the player holds,
-  so the scanner was wrong, not the scenario. Fixed in the scanner (above); over the whole run's
+  container answer. The note is authored container content, served only while the grant is held,
+  as `/container` would serve it (a resource host is otherwise withheld; see the 9.3 log, review
+  round 1, M4), so the scanner was wrong, not the scenario. Fixed in the scanner (above); over the whole run's
   181 responses the check now says `VERDICT: no leaks found`. Before the fix, beats 1 to 3 were
   clean and that finding was the only one at any later beat.
 - Tailgate, the network beats H5.15 to H5.20 (plant, view, folder, remote sign-in to LW-DOOR01
