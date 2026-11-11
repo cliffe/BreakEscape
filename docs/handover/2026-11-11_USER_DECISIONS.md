@@ -21,3 +21,15 @@ Answers to the access model form (https://claude.ai/artifact/PanecaCQBMChKnqsDGa
 - q15 m02 Val's radio "Don't.": add a narrator radio beat.
 - q16 tts-audio skill wording for delivery notes: apply (the voice tag branch is merged).
 - q17 9.2 frustration icon: drop to a fading icon when the cause clears.
+- q21 A distinct icon for an NPC doing a workaround: make one with PixelLab, one sheet at a time with the user's feedback (first 16x16 candidate sheet generated; picks on the form).
+- q22 Netherton's glasses habit in the shared hubs: go with the reviewer's view (applied).
+- q23 TTS endpoint: replace the earlier "keep the fragment looseness" decision; only a scenario's own lines are voiced. Unblocks the lookalike fix's merge.
+- q24 The lookalike fix's tts-audio skill wording and the stale note in docs/agents/TTS_38_MIGRATION.md: apply both when the fix merges.
+- q25 Shared-ink and test-scenario lines from the stage-direction rewrite: do not voice them.
+- q26 Seven m02/m03 phone lines that print the player's name: reword to fixed wording and re-voice (build/phone-names).
+
+## Carried out
+
+- q12/q18: deleted dev-database games 1164 to 1200 (36 test and lab playtest games made on 2026-11-11 under the demo user). Games 92, 115, 121, 128, 133, 134, 135 were already gone. Kept: 1160 to 1163 (lab games from 2026-11-08, on no list), 1201 and 1202 (in use by running agents; delete when they finish). Mission 167 is `ca_annual_2027_defend`, not `test_access_work` as the 2026-11-10 handover said; kept as asked. The `test_access_work` mission row is 243.
+- q13: removed 58 worktrees that were clean, whose HEAD is in main and that no process was using (84 GB freed). Branches kept. Kept worktrees: BreakEscape-merge, agent-ae40074c527a6f395, orch-merge, r1-fixes, r2-fixes (unmerged commits); agent-ab846af84a003a2d3, sync-merge (uncommitted changes); the active p-* build worktrees.
+- q05: done in this commit's parent.

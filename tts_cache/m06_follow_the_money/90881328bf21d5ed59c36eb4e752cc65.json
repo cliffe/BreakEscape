@@ -1,0 +1,13 @@
+{
+  "key": "90881328bf21d5ed59c36eb4e752cc65",
+  "npc": "narrator",
+  "text": "Irina holds out her wrists.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T17:49:04Z"
+}

@@ -569,7 +569,7 @@ Dr Adrian Tesseract: That's the cheapest it will ever be. Wait a year and the nu
     ~ exchange_1 = "rebuttal"
     -> exch_1_sting ->
     -> first_landed ->
-    Dr Adrian Tesseract: *pause* I knew.
+    Dr Adrian Tesseract: I knew. #delivery: after a pause, conceding, quieter
     -> bridge_in
 // Scenario design R1 m4: the correction can be cited only by a player who read the sheet; otherwise slot 2 is a decoy.
 + { casualty_sheet_read and not (margin_note_read or asante_confirmed_sheet) } [Someone corrected your sheet upwards, and you signed your old number under it.]
@@ -724,7 +724,7 @@ Dr Adrian Tesseract: Nobody fixes anything until it hurts everyone at once.
     { m04_crew_lost:
         Dr Adrian Tesseract: None of them died of the truth. I'll grant that.
     - else:
-        Dr Adrian Tesseract: *pause* No. Nobody did.
+        Dr Adrian Tesseract: No. Nobody did. #delivery: after a pause, conceding, quieter
     }
     -> bridge_in
 + { not full and exposed } [I published St. Catherine's cover-up. Forty hospitals fixed their networks. Nobody died of it.]
@@ -821,7 +821,7 @@ Dr Adrian Tesseract: Somebody has to be the during. Better me.
     ~ exchange_3 = "record"
     -> ko_sting ->
     -> first_landed ->
-    Dr Adrian Tesseract: *pause* Yes. By example.
+    Dr Adrian Tesseract: Yes. By example. #delivery: after a pause, conceding, quieter
     -> exch_3_done
 + { not slot2 } [Nobody elected you to teach the whole world a lesson.]
     -> exch_3_plain
@@ -844,7 +844,7 @@ Dr Adrian Tesseract: Somebody has to be the during. Better me.
     ~ exchange_3 = "record"
     -> ko_sting ->
     -> first_landed ->
-    Dr Adrian Tesseract: *pause* I never said it. She worked it out.
+    Dr Adrian Tesseract: I never said it. She worked it out. #delivery: after a pause, conceding, quieter
     -> exch_3_done
 + { slot2 and not slot4 } [Nobody elected you to teach the whole world a lesson.]
     -> exch_3_plain
@@ -1046,7 +1046,7 @@ Narrator: The key console asks once. Publish the database to everyone, now?
     ~ partial_release = "published"
     ~ media_story_ran = false
     ~ ending = "joined"
-    Dr Adrian Tesseract: *quietly* Thank you, Agent.
+    Dr Adrian Tesseract: Thank you, Agent. #delivery: quietly
     -> join_end
 + [No.]
     Narrator: You take your hand off the key.
@@ -1100,7 +1100,7 @@ Agent 0x5E 'Lantern': Adrian.
 // named on the line (his "Too late to stop her walking in." covers that).
 === wren_react ===
 { not sleeper_caught:
-    Agent HaX: Kowalczyk. *quietly* I sent her mum flowers.
+    Agent HaX: Kowalczyk. I sent her mum flowers. #delivery: the second sentence quietly
 }
 ->->
 
@@ -1329,7 +1329,7 @@ Narrator: His hands are empty and in plain sight. He isn't moving. If you fire n
 // ===========================================
 === ending_arrest ===
 { fire_held:
-    Agent HaX: Got it. Feed's dead. Hold. *breath* He's done.
+    Agent HaX: Got it. Feed's dead. Hold. He's done. #delivery: a breath out before the last sentence, relief
     Narrator: He takes his hand off the key and looks at it.
     Dr Adrian Tesseract: Ninety-nine.
     Narrator: Then he holds out his wrists.

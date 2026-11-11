@@ -92,11 +92,13 @@ export function updateInfoLabel() {
         if (room.objects) {
             Object.values(room.objects).forEach(obj => {
                 if (!obj.active || !obj.interactable || !obj.visible) return;
-                const text = resolveObjectField(
+                let text = resolveObjectField(
                     obj.scenarioData,
                     'observations',
                     obj.observations || obj.scenarioData?.name || obj.name || null
                 );
+                // A sign-in PC with a sticky note picture says so (slice 9.2 B)
+                if (window.postitMarks?.label) text = window.postitMarks.label(obj.scenarioData?.id, text);
                 consider(reachX(obj, px), obj.y, text, INTERACTION_RANGE_SQ, obj, aimX(obj));
             });
         }

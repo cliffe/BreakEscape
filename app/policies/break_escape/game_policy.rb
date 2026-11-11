@@ -99,6 +99,11 @@ module BreakEscape
       show?
     end
 
+    # Slice 9.2 (plan 6): the workaround runner reports a hand-over performed or dropped
+    def npc_workaround?
+      show?
+    end
+
     # Networks (slice 9.3a, section 5)
     def network?
       show?

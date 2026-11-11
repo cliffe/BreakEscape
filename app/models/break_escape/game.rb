@@ -913,6 +913,11 @@ module BreakEscape
       # secret lives under social.landingPages[].capture, so the walk is scoped to social.
       strip_capture_secrets!(filtered['social']) if filtered['social'].is_a?(Hash)
 
+      # A declared grant's contents (a timer's give_item, a triggerOnInteract reward) are
+      # served from the held item, never shipped. GamesController#filter_requires_recursive
+      # strips them again as a second line of defence.
+      BreakEscape::DeclaredGrants.strip_all_grant_contents!(filtered)
+
       filtered
     end
 
@@ -1470,9 +1475,12 @@ module BreakEscape
       habits.is_a?(Hash) ? habits[name] : nil
     end
 
-    # Is this person's password on a note (slice 9.1, 5.3)? Slice 9.2 adds its workaround.
+    # Is this person's password on a note (slice 9.1, 5.3)? The writesDown habit, or (slice
+    # 9.2, 6.1) a writes_down workaround of theirs that is done.
     def written_down?(npc)
-      npc_habit(npc, 'writesDown') == true
+      return true if npc_habit(npc, 'writesDown') == true
+
+      npc.is_a?(Hash) && npc['id'].is_a?(String) && workaround_done_kind?(npc['id'], 'writes_down')
     end
 
     # The sticky note on a sign-in PC (slice 9.1, 5.3): "<username> / <password>" from the

@@ -37,8 +37,11 @@ require 'uri'
 #   only by the same rule: in that answer, or after the item has been served that way.
 #   Anywhere else it is reported as a password, like any other;
 # - a network or resource string in any response other than GET /network, a /network/*
-#   answer, a /container answer, or the footholds block of GET /scenario. There is no
-#   exception for an NPC's work plan.
+#   answer, a /container answer, the contents of an /unlock answer, or the footholds block
+#   of GET /scenario. There is no exception for an NPC's work plan. The /container and
+#   /unlock exemptions cover every network string (network name, resource name, host,
+#   observations), not only hosts: both serve a container's authored contents, which the
+#   server releases only by its own rules, so what that text names is a scenario choice.
 #
 # Matching of these network strings: a string of six or more characters is matched as a
 # substring; a shorter one only as a whole JSON string value; one under three characters is
@@ -60,6 +63,15 @@ require 'uri'
 # - withheld keys: any NPC record (a hash with an npcType key, or an element of an array
 #   under a key named npcs) with a creds, role, awareness, habits or workarounds key.
 #   social.characters entries and the social.awareness block are not NPC records.
+#
+# Slice 9.2 sub-slice B (ACCESS_MODEL_SLICE_9_2_PLAN.md 11): every authored workaround is a
+# secret until the server hands it over. A hash whose `do` is a workaround's kind beside that
+# workaround's own target (`door`, `prop`, `event`, `pc` or `with`) is reported anywhere but
+# where the server hands one over: a `run` or a `pending` entry (every unspent hand-over, B review
+# R3 m2) in a POST /npc_frustration answer, and the `pending` and `done` lists of GET /scenario's
+# npcFrustration. A password in a
+# /npc_workaround answer is reported by the password rule (no exception covers it); the note
+# exception above follows a done writes_down through the game's written_down?.
 #
 # A finding names the rule, the route, the response line and the secret's owner (an NPC or
 # item id), never the value. Every output line is checked against the secret values before it
@@ -113,9 +125,11 @@ class AccessLeakScanner
     # password => [{ label:, holder:, texts:, resource:, ancestors: }]: share items holding a
     # password on purpose, exempt only where that item's content may be (scan_passwords)
     @share_clues = Hash.new { |h, k| h[k] = [] }
+    @workarounds = [] # { npc:, index:, do:, target: [key, value] }
     collect_passwords
     collect_items
     collect_network_secrets
+    collect_workarounds
     @items.each_value { |info| info[:strings] = info[:strings].reject { |s| @public_strings.include?(s) } }
     @items.delete_if { |_, info| info[:strings].empty? }
   end
@@ -126,7 +140,8 @@ class AccessLeakScanner
       login_items: @items.count { |_, i| i[:scope] },
       locked_items: @items.count { |_, i| i[:locked_ancestors].any? },
       network_strings: @network_strings.length,
-      share_items: @share_items.length
+      share_items: @share_items.length,
+      workarounds: @workarounds.length
     }
   end
 
@@ -160,6 +175,7 @@ class AccessLeakScanner
       scan_locked_content(body, add)
       scan_share_content(body, ctx, legit, add)
       scan_network_strings(body, ctx, add)
+      scan_workarounds(body, ctx, add)
     end
     findings
   end
@@ -186,7 +202,8 @@ class AccessLeakScanner
     'locked_content' => 'locked container content in a response that marks it locked',
     'share_content' => 'file share content outside a container response for that share',
     'network_string' => 'a network or resource name, host or observations outside the network routes',
-    'withheld_key' => 'a withheld key (creds, role, awareness, habits, workarounds) on an NPC record'
+    'withheld_key' => 'a withheld key (creds, role, awareness, habits, workarounds) on an NPC record',
+    'workaround' => 'a workaround (its kind beside its target) outside a hand-over'
   }.freeze
 
   private
@@ -197,6 +214,28 @@ class AccessLeakScanner
   end
 
   # ---- catalogue ---------------------------------------------------------------------------
+
+  WORKAROUND_TARGET_KEYS = %w[door prop event pc with].freeze
+  # Kept equal to BreakEscape::AccessWork::WORKAROUND_KINDS (the scanner loads no Rails code)
+  WORKAROUND_KINDS = %w[writes_down prop_door emit borrow_session share_login].freeze
+
+  # Every room NPC's own workarounds, and each role's list (an NPC with none of its own uses
+  # its role's): the kind and the first target key it authors. A kind with no target (a
+  # writes_down) is identified by nothing beyond its kind, so it is not catalogued.
+  def collect_workarounds
+    lists = []
+    each_room_npc { |npc| lists << [npc['id'], npc['workarounds']] if npc['workarounds'].is_a?(Array) }
+    roles = @data['roles'].is_a?(Hash) ? @data['roles'] : {}
+    roles.each { |role, r| lists << ["role:#{role}", r['workarounds']] if r.is_a?(Hash) && r['workarounds'].is_a?(Array) }
+    lists.each do |owner, list|
+      list.each_with_index do |w, i|
+        next unless w.is_a?(Hash) && w['do'].is_a?(String)
+
+        key = WORKAROUND_TARGET_KEYS.find { |k| w[k].is_a?(String) && !w[k].empty? }
+        @workarounds << { owner: owner, index: i, do: w['do'], target: [key, w[key]] } if key
+      end
+    end
+  end
 
   def collect_passwords
     reveal = @data.dig('social', 'captures', 'revealSecret') == true
@@ -492,6 +531,39 @@ class AccessLeakScanner
     password
   end
 
+  # A workaround outside the places the server hands one over (sub-slice B)
+  def scan_workarounds(body, ctx, add)
+    walk_hashes(body, '$') do |hash, json_path|
+      next unless hash['do'].is_a?(String)
+
+      # An authored entry carries `at`, which no run, pending or done entry does: a leak
+      # anywhere, with no exemption (the only way to see a leaked writes_down, which has no target)
+      if WORKAROUND_KINDS.include?(hash['do']) && hash.key?('at')
+        add.call('workaround', "authored #{hash['do']}", safe_path(json_path))
+        next
+      end
+      next if @workarounds.empty?
+      next if ctx[:route].end_with?('/npc_frustration') && json_path =~ /\A\$\.answers\[\d+\]\.(run|pending\[\d+\])\z/
+      next if ctx[:scenario] && json_path =~ /\A\$\.npcFrustration\.[^.]+\.(pending|done)\[\d+\]\z/
+
+      @workarounds.each do |w|
+        key, value = w[:target]
+        next unless hash['do'] == w[:do] && hash[key] == value
+
+        add.call('workaround', "#{w[:owner]}[#{w[:index]}]", safe_path(json_path))
+      end
+    end
+  end
+
+  def walk_hashes(node, path, &block)
+    case node
+    when Array then node.each_with_index { |v, i| walk_hashes(v, "#{path}[#{i}]", &block) }
+    when Hash
+      yield node, path
+      node.each { |k, v| walk_hashes(v, "#{path}.#{k}", &block) }
+    end
+  end
+
   # NPC records holding a key the server withholds: by key and NPC id, never the value.
   def scan_withheld_keys(body, add)
     walk_records(body, '$', false) do |record, json_path|
@@ -620,14 +692,18 @@ class AccessLeakScanner
     end
   end
 
-  # A network or resource string outside GET /network, /network/*, /container and the
-  # footholds block of /scenario.
+  # A network or resource string outside GET /network, /network/*, /container, the
+  # contents of an /unlock answer (the server's other way of serving a container's contents,
+  # as GET /container would, for example a held grant item whose file names a share's host)
+  # and the footholds block of /scenario. Both container exemptions cover every network
+  # string, by design (see the header).
   def scan_network_strings(body, ctx, add)
     return if @network_strings.empty?
     return if ctx[:network] || ctx[:any_container]
 
     each_string(body) do |str, json_path|
       next if ctx[:scenario] && json_path.start_with?('$.footholds')
+      next if ctx[:unlock] && json_path.start_with?('$.contents[')
 
       @network_strings.each do |secret, owners|
         next unless network_match?(str, secret)

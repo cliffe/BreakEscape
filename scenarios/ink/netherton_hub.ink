@@ -39,15 +39,15 @@ EXTERNAL mission_phase()                // LOCAL - Phase of current mission ("pr
 
 {
     - npc_location() == "office":
-        Netherton: Agent {player_name()}. *gestures to chair* What do you need?
+        Netherton: Agent. What do you need? #delivery: curt, waving you to the chair
     - npc_location() == "briefing_room":
-        Netherton: Agent. *stands at tactical display* We have matters to discuss.
+        Netherton: Agent. We have matters to discuss. #delivery: formal, measured
     - npc_location() == "field":
-        Netherton: *over secure comms* Agent. Report.
+        Netherton: Agent. Report. #delivery: over a comms link, curt
     - npc_location() == "safehouse":
-        Netherton: *sits across from you in the secure room* We're clear to talk here. What's on your mind?
+        Netherton: We're clear to talk here. What's on your mind? #delivery: quiet, private
     - else:
-        Netherton: Agent {player_name()}. What requires my attention?
+        Netherton: Agent. What requires my attention?
 }
 
 -> mission_hub
@@ -64,12 +64,11 @@ EXTERNAL mission_phase()                // LOCAL - Phase of current mission ("pr
 
 // PERSONAL RELATIONSHIP OPTION (always available if topics exist)
 + {has_available_personal_topics() and mission_phase() != "active"} [How are you, Director?]
-    Netherton: *slight pause, as if surprised by personal question*
     {
         - npc_netherton_influence >= 70:
-            Netherton: That's... considerate of you to ask, Agent. I have a moment for personal discussion.
+            Netherton: That's... considerate of you to ask, Agent. I have a moment for personal discussion. #delivery: after a slight pause, as if surprised
         - else:
-            Netherton: An unusual question. But acceptable. What do you wish to discuss?
+            Netherton: An unusual question. But acceptable. What do you wish to discuss? #delivery: after a slight pause, as if surprised
     }
     -> jump_to_personal_conversations
 
@@ -79,7 +78,7 @@ EXTERNAL mission_phase()                // LOCAL - Phase of current mission ("pr
     -> mission_ghost_briefing
 
 + {current_mission_id() == "ghost_in_machine" and mission_phase() == "active"} [Request tactical guidance]
-    Netherton: *reviews your position on tactical display* What do you need?
+    Netherton: What do you need? #delivery: measured, attention on the display
     -> mission_ghost_tactical_support
 
 + {current_mission_id() == "ghost_in_machine" and mission_phase() == "debriefing"} [Debrief Ghost Protocol operation]
@@ -91,12 +90,12 @@ EXTERNAL mission_phase()                // LOCAL - Phase of current mission ("pr
     -> mission_sanctuary_discussion
 
 + {mission_phase() == "downtime" and npc_netherton_influence >= 60} [Ask for operational advice]
-    Netherton: You want my counsel? *slight approval* Very well.
+    Netherton: You want my counsel? Very well. #delivery: with slight approval
     -> operational_advice_discussion
 
 // GENERAL PROFESSIONAL TOPICS (available when not in active mission)
 + {mission_phase() != "active"} [Ask about SAFETYNET operations status]
-    Netherton: *brings up secure display* Current operations status...
+    Netherton: Current operations status... #delivery: brisk, businesslike
     -> safetynet_status_update
 
 + {professional_reputation >= 50 and mission_phase() == "downtime"} [Request additional training opportunities]
@@ -112,7 +111,7 @@ EXTERNAL mission_phase()                // LOCAL - Phase of current mission ("pr
 + [That will be all, Director]
     {
         - npc_netherton_influence >= 80:
-            Netherton: Very well, Agent {player_name()}. *almost warm* Continue your excellent work.
+            Netherton: Very well, Agent. Continue your excellent work. #delivery: almost warm
         - npc_netherton_influence >= 60:
             Netherton: Dismissed. Maintain your current performance level.
         - else:
@@ -220,13 +219,14 @@ Netherton: Questions?
     -> mission_ghost_briefing
 
 + [I'm ready to proceed]
-    Netherton: Excellent. *hands you mission packet* Review the details. Brief with Dr. Chen for equipment. Haxolottle will coordinate deployment.
-    Netherton: Agent {player_name()}—*direct look*—execute this cleanly. We're counting on you.
+    Narrator: Netherton hands you the mission packet.
+    Netherton: Excellent. Review the details. Brief with Dr. Chen for equipment. Haxolottle will coordinate deployment. #delivery: crisp, businesslike
+    Netherton: Agent, execute this cleanly. We're counting on you. #delivery: direct, holding your gaze
     #mission_briefing_complete
     -> mission_hub
 
 === mission_ghost_tactical_support ===
-Netherton: *monitoring your position* I'm tracking your progress. What do you need?
+Netherton: I'm tracking your progress. What do you need? #delivery: measured, monitoring
 
 + [Request permission to deviate from plan]
     Netherton: Explain the deviation and justification.
@@ -237,7 +237,7 @@ Netherton: *monitoring your position* I'm tracking your progress. What do you ne
     -> mission_hub
 
 + [Request emergency extraction]
-    Netherton: *immediately alert* Situation?
+    Netherton: Situation? #delivery: immediately alert
     // This would handle emergency extraction logic
     Netherton: Extraction authorized. Get to waypoint Charlie. Haxolottle is coordinating pickup.
     #emergency_extraction_authorized
@@ -288,7 +288,7 @@ Netherton: Your role will be defensive support. Not glamorous, but critical.
     -> mission_hub
 
 === operational_advice_discussion ===
-Netherton: You want operational advice. *considers* On what specific matter?
+Netherton: You want operational advice. On what specific matter? #delivery: considering
 
 + [How to handle ambiguous situations in the field]
     Netherton: Ambiguity is constant in our work. The handbook provides framework, but you must exercise judgment.
@@ -316,11 +316,11 @@ Netherton: You want operational advice. *considers* On what specific matter?
     -> mission_hub
 
 === safetynet_status_update ===
-Netherton: *brings up classified display*
+Narrator: Netherton brings up a classified display.
 
 Netherton: Current threat level: Elevated. ENTROPY has increased activity across three operational theaters.
 
-Netherton: CYBER-PHYSICAL division is running {total_missions_completed + 15} active operations. Your work is part of that larger campaign.
+Netherton: CYBER-PHYSICAL division is running dozens of active operations. Your work is part of that larger campaign.
 
 Netherton: We're making progress. But ENTROPY adapts. The fight continues.
 
@@ -329,12 +329,12 @@ Netherton: We're making progress. But ENTROPY adapts. The fight continues.
     -> mission_hub
 
 + [Ask how the division is performing]
-    Netherton: We meet operational objectives consistently. Success rate is {85 + (npc_netherton_influence / 10)} percent over the past quarter.
+    Netherton: We meet operational objectives consistently. Success rate is close to ninety percent over the past quarter.
     Netherton: Acceptable, but there's room for improvement. Every failed operation represents unmitigated risk.
     -> mission_hub
 
 + [Thank them for the update]
-    Netherton: *nods* Maintaining situational awareness is important. Don't become narrowly focused on individual missions.
+    Netherton: Maintaining situational awareness is important. Don't become narrowly focused on individual missions. #delivery: approving
     Netherton: Understand the larger context. Your work contributes to strategic objectives.
     -> mission_hub
 
@@ -347,7 +347,7 @@ Netherton: Training opportunities. What areas interest you?
     -> mission_hub
 
 + [Leadership development]
-    Netherton: *slight approval* Thinking about command responsibilities. Good.
+    Netherton: Thinking about command responsibilities. Good. #delivery: with slight approval
     Netherton: There's a leadership program for senior agents. Application process is competitive. I can recommend you if your performance continues.
     ~ professional_reputation += 3
     ~ npc_netherton_influence += 10

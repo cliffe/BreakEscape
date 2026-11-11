@@ -30,10 +30,14 @@ function el() {
     return {
         classList: { add() {}, remove() {} }, style: {}, parentNode: null,
         set innerHTML(v) { this.html = v; },
-        querySelector(sel) { return parts[sel] || (parts[sel] = { style: {}, addEventListener(_e, fn) { this.click = fn; } }); }
+        querySelector(sel) {
+            return parts[sel] || (parts[sel] = { style: {}, nodes: [], addEventListener(_e, fn) { this.click = fn; },
+                appendChild(n) { this.nodes.push(n); } });
+        }
     };
 }
-globalThis.document = { getElementById: (id) => (id === 'notification-container' ? container : null), createElement: el };
+globalThis.document = { getElementById: (id) => (id === 'notification-container' ? container : null), createElement: el,
+    createTextNode: (text) => ({ text }) };
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const HINT = 'The screen is locked. Wait for Chris to come back and unlock it.';
 
@@ -110,6 +114,23 @@ test('a toast pulled back behind a panel is not reused', async () => {
     assert.notEqual(second, first, 'a new element, not the pulled one');
     assert.equal(children.length, 2);
     assert.equal(T.findShownDuplicate(container, HINT, 'info', ''), second);
+    await wait(700);
+    assert.equal(children.length, 0);
+});
+
+// Lab networks review R2 n1: a toast carrying author text (the unplug toast's host labels)
+// renders as plain text: the markup holds no message, and the text goes in as text nodes.
+test('plainText: the title and message go in as text, never as markup', async () => {
+    const label = '<img src=x onerror=alert(1)>';
+    const toast = T.gameAlert(`Your session on ${label} ended.\nSecond line`, 'info', `Host ${label}`, 300, { plainText: true });
+    assert.ok(!toast.html.includes(label), 'no author text in the markup');
+    assert.equal(toast.querySelector('.notification-title').textContent, `Host ${label}`);
+    const nodes = toast.querySelector('.notification-message').nodes;
+    assert.deepEqual(nodes.filter((n) => 'text' in n).map((n) => n.text), [`Your session on ${label} ended.`, 'Second line']);
+    assert.equal(nodes.length, 3, 'a line break element between the two lines');
+    assert.equal(toast._toast.plainText, true);
+    const markup = T.gameAlert(`Plain ${label}`, 'info', '', 300);
+    assert.ok(markup.html.includes(label), 'without the option the old markup path is unchanged');
     await wait(700);
     assert.equal(children.length, 0);
 });

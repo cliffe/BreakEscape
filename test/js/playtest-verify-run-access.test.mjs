@@ -166,3 +166,41 @@ test('an authored empty noHold prints "(none, authored)"', () => {
   const r = verify(['1', '--access'], ACCESS_STATE, { STUB_SCENARIO: JSON.stringify(sc) });
   assert.match(r.out, /gate rooms\/office\/doors\/0 \(into store_b\)\s+openFor sara\s+noHold \(none, authored\)/);
 });
+
+// Slice 9.2 B: with --log, the workaround events found in the session log's drained event logs.
+test('--access --log lists the workaround phases, start lines by topic and propped doors from drains', async () => {
+  const { mkdtempSync, writeFileSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const dir = mkdtempSync(join(tmpdir(), 'vr-'));
+  const log = join(dir, 'session.jsonl');
+  const ev = (event, data) => ({ seq: 1, t: 1, kind: 'event', event, data });
+  const rows = [
+    { seq: 1, dir: 'in', cmd: { cmd: 'drain' } },
+    { seq: 2, dir: 'out', ok: true, result: { log: [
+      ev('npc_mutter:tom', { npcId: 'tom', topic: 'wk_prop_door', line: 'Right, that does it.', picture: null }),
+      ev('npc_workaround:tom', { npcId: 'tom', index: 0, do: 'prop_door', phase: 'started' }),
+      ev('npc_moved:tom', {}),
+      { kind: 'action', action: 'walk' }
+    ] } },
+    'not json',
+    { seq: 3, dir: 'out', ok: true, result: { log: [
+      ev('npc_workaround:tom', { npcId: 'tom', index: 0, do: 'prop_door', phase: 'done' }),
+      ev('door_propped:store_room', { roomId: 'store_room', npcId: 'tom' }),
+      ev('npc_mutter:mei', { npcId: 'mei', topic: 'fail_work', line: null, picture: 'work' })
+    ] } }
+  ];
+  writeFileSync(log, rows.map(r => (typeof r === 'string' ? r : JSON.stringify(r))).join('\n') + '\n');
+  const r = verify(['1', '--access', '--log', log]);
+  assert.equal(r.status, 0, r.out);
+  assert.match(r.out, /workaround events in the log\n\s+tom\s+said wk_prop_door, prop_door\[0\] started, prop_door\[0\] done\n\s+mei\s+said fail_work \(picture\)\n\s+door_propped\s+store_room by tom/);
+  assert.doesNotMatch(r.out, /that does it/, 'topics only, never the line');
+});
+
+test('--access --log on a log with no workaround events says none', async () => {
+  const { mkdtempSync, writeFileSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const log = join(mkdtempSync(join(tmpdir(), 'vr-')), 's.jsonl');
+  writeFileSync(log, JSON.stringify({ seq: 1, dir: 'out', ok: true }) + '\n');
+  const r = verify(['1', '--access', '--log', log]);
+  assert.match(r.out, /workaround events in the log\n\s+none/);
+});

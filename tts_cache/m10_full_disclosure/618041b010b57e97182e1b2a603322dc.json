@@ -1,0 +1,14 @@
+{
+  "key": "618041b010b57e97182e1b2a603322dc",
+  "npc": "lock_guard",
+  "text": "It does, huh. Okay. It's only a card. Here.",
+  "delivery": "slowly after the first sentence, giving in",
+  "voice": "Rasalgethi",
+  "style": "Night-shift guard, thirty-four, Samoan-American from West Valley City, Utah. Consistent Utah American accent throughout -- do not shift to any other accent. Deep, slow, polite; big enough that he never needs to raise his voice.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T18:23:42Z"
+}

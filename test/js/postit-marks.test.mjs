@@ -127,3 +127,27 @@ test('installPostitMarks sets window.postitMarks, listens for update and syncs t
     installPostitMarks(sc);
     assert.equal(sc.listeners.update.length, 1, 'one listener per scene');
 });
+
+test('label: a PC with a note picture says so in its proximity label; others are unchanged (9.2 B review R1)', () => {
+    const { marks } = world([login('plain_pc'), login('other_pc')]);
+    marks.syncRoom('office');
+    assert.equal(marks.label('plain_pc', "Mei's PC"), "Mei's PC");
+    marks.mark('plain_pc', true);
+    assert.equal(marks.label('plain_pc', "Mei's PC"), "Mei's PC (a sticky note on the monitor)");
+    assert.equal(marks.label('plain_pc', "Mei's PC: a sign-in PC."), "Mei's PC: a sign-in PC. A sticky note is stuck to the monitor.");
+    assert.equal(marks.label('other_pc', 'Spare PC'), 'Spare PC');
+    assert.equal(marks.label('plain_pc', null), null);
+    marks.mark('plain_pc', false);
+    assert.equal(marks.label('plain_pc', "Mei's PC"), "Mei's PC");
+});
+
+// Review 9.2 B R2 n5: an author's non-string observation must not throw in the per-frame label
+test('label passes a non-string observation through unchanged, marked or not', () => {
+    const { sc, marks } = world([login('plain_pc', { hasPostit: true })]);
+    marks.syncRoom('office');
+    const obj = { a: 1 };
+    assert.equal(marks.label('plain_pc', obj), obj);
+    assert.equal(marks.label('plain_pc', 42), 42);
+    assert.equal(marks.label('plain_pc', undefined), undefined);
+    assert.equal(marks.label('plain_pc', "Mei's PC"), "Mei's PC (a sticky note on the monitor)");
+});

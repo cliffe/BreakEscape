@@ -136,6 +136,11 @@ export const MAGNET_TEMPT = 30;
 /** Slice 18b-ii: magnet.newsRadius default (tiles), and how long an announce waits for the speech lock. */
 export const NEWS_RADIUS = 5;
 export const NEWS_WAIT_MS = 30000;
+// Access slice 9.2 B: how long a mutter with lines waits for the speech lock before its picture
+// (long enough for a few start lines queued behind one fail line to each be said in words), and
+// the least time a mutter's bubble stays up, so a start line is on screen long enough to notice
+export const MUTTER_WAIT_MS = 20000;
+export const MUTTER_BUBBLE_MS = 6000;
 /**
  * Slice 19 (OFFICE_LIFE_PLAN 12.5): desk phones. A ring every RING_MS of the needs clock, `rings`
  * times (default RINGS); a call's listening gaps between lines are seeded in CALL_GAP_MS; a pool
@@ -363,6 +368,8 @@ export class NPCNeedsSystem {
         // what survives a reload)
         this._bags = new Map();
         this._speechUntil = 0;
+        // Mutters waiting for the speech lock, oldest first: [{ npcId, topic, since }] (9.2 B)
+        this._mutterWaits = [];
         this._exPlayed = new Set();
         // Queues (slice 10): claim order across the whole system, so queue order is deterministic
         this._queueSeq = 0;
@@ -464,7 +471,7 @@ export class NPCNeedsSystem {
             // re-arm mark per need, resources already checked this outage, queued visits, the
             // shown failure, and the outage kick's last-seen conditions and pending needs
             frustration: 0, tell: 0, settled: false,
-            rearm: {}, failSent: {}, checked: new Set(), visits: [], failedShow: null,
+            rearm: {}, failSent: {}, checked: new Set(), visits: [], failedShow: null, failCause: {},
             kickSeen: {}, kickPending: new Set(),
             urgentFlag: {},
             mode: 'idle',
@@ -507,7 +514,13 @@ export class NPCNeedsSystem {
         const ids = [...this.states.keys()];
         for (const id of ids) {
             const s = this.states.get(id);
+            // A workaround visit, running or queued, is reported dropped (review 9.2 B R1 m4), so
+            // the runner frees its hand-over instead of waiting for an event that never comes
+            const wk = [];
+            if (s.job?.kind === 'visit' && s.job.visit?.kind === 'workaround') wk.push(s.job.visit);
+            for (const v of Array.isArray(s.visits) ? s.visits : []) if (v?.kind === 'workaround') wk.push(v);
             if (s.job) this._abortJob(s, 'reset', { cancel: true });
+            for (const v of wk) this._emit(`npc_visit_dropped:${id}`, { npcId: id, kind: v.kind, at: { ...v.at }, data: v.data, reason: 'reset' });
         }
         // The server still holds each NPC's frustration: the mirror survives a reset (R1 m3).
         // failSent marks and a reload's held parks do not (review R2 n2): reset() is a debug and
@@ -522,6 +535,7 @@ export class NPCNeedsSystem {
         this._queueSeq = 0;
         this._bags.clear();
         this._speechUntil = 0;
+        this._mutterWaits = [];
         this._exPlayed.clear();
         this._rings.clear();
         this._calls.clear();
@@ -962,6 +976,7 @@ export class NPCNeedsSystem {
         if (this._magnets.size) this._tickMagnets();
         if (this._rings.size) this._tickRings();
         if (this._answers?.length) this._applyAnswers();
+        if (this._mutterWaits.length) this._tickMutterWaits();
         for (const id of [...this.states.keys()].sort()) {
             try {
                 this._tickNpc(this.states.get(id));
@@ -1788,7 +1803,7 @@ export class NPCNeedsSystem {
         const icons = opts && 'icons' in opts ? opts.icons : (reason !== 'avoid' && NEED_ICONS.includes(need) ? [need] : null);
         const pick = this._pickBark(s, topic, { icons, ignoreCooldown: !!opts?.ignoreCooldown });
         if (!pick) return;
-        this._showSaying(s, pick, topic, objectId);
+        this._showSaying(s, pick, topic, objectId, opts?.minMs);
     }
 
     /**
@@ -1800,18 +1815,80 @@ export class NPCNeedsSystem {
         const s = this.states.get(npcId);
         if (!s || typeof topic !== 'string' || !topic) return false;
         this._log(npcId, 'mutter', { topic });
-        this._grumble(s, null, topic, topic, { ignoreCooldown: true, icons: null });
+        // A workaround's hand-over comes in the answer to the failure that brought it, while that
+        // failure's own grumble still holds the speech lock: a topic with lines waits for the lock
+        // (up to MUTTER_WAIT_MS, then its picture), so the start line is said after the fail line
+        // instead of being swapped for a picture (slice 9.2 B run, game 1197)
+        // Several can wait at once (two hand-overs at one failure, or several NPCs' at one outage):
+        // a queue, said one per free lock in the order they came
+        // Review 9.2 B R2 m1: an NPC in conversation with the player, not placed or not available
+        // says nothing now (nor is voiced over the conversation): the mutter waits, held, under
+        // the same rule as one waiting for the lock
+        const lines = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter).lines.length > 0;
+        if (this._mutterHeld(npcId) || (lines && (!this._speechFree() || this._mutterWaits.length))) {
+            this._mutterWaits.push({ npcId, topic, since: this.clockMs, lines });
+            return true;
+        }
+        this._sayMutter(s, topic);
         return true;
     }
 
+    /** A mutter for this NPC must wait: it is in conversation with the player, not placed, or unavailable (hidden, KO). */
+    _mutterHeld(npcId) {
+        return !this.world.npcPos(npcId) || !this.isAvailable(npcId) || !!this.world.inChatWith?.(npcId);
+    }
+
+    /**
+     * Waiting mutters, once a tick, oldest first. Each is said in words when the speech lock is
+     * free (which it then takes, so the next waits again); one that waited MUTTER_WAIT_MS gets
+     * its picture. A mutter is never said late: one whose NPC is in conversation with the
+     * player, not on screen or not available (hidden, KO) is held, and dropped once it has
+     * waited MUTTER_WAIT_MS.
+     */
+    _tickMutterWaits() {
+        const keep = [];
+        for (const w of this._mutterWaits) {
+            const s = this.states.get(w.npcId);
+            if (!s) continue;
+            const late = this.clockMs - w.since >= MUTTER_WAIT_MS;
+            if (this._mutterHeld(w.npcId)) {
+                if (late) this._log(w.npcId, 'mutter_dropped', { topic: w.topic });
+                else keep.push(w);
+                continue;
+            }
+            if (this._speechFree() || late || w.lines === false) this._sayMutter(s, w.topic);
+            else keep.push(w);
+        }
+        this._mutterWaits = keep;
+    }
+
+    /** Mutters waiting for the speech lock (a test and debug read). */
+    mutterWaits() {
+        return this._mutterWaits.map(w => ({ ...w }));
+    }
+
+    _sayMutter(s, topic) {
+        const npcId = s.npcId;
+        const before = s.saying;
+        this._grumble(s, null, topic, topic, { ignoreCooldown: true, icons: null, minMs: MUTTER_BUBBLE_MS });
+        // npc_mutter:<npcId> (slice 9.2 B): what was shown, heard or not, so a scripted run can check
+        // a failure mutter or a workaround's start line (npc_overheard fires only within earshot)
+        const said = s.saying !== before ? s.saying : null;
+        if (said) {
+            this._emit(`npc_mutter:${npcId}`, { npcId, topic, line: said.line || null, picture: said.picture || null });
+        }
+    }
+
     /** A one-off line or picture over one NPC (a grumble, an announce): bubble, voice, npc_overheard. */
-    _showSaying(s, pick, topic, objectId) {
+    _showSaying(s, pick, topic, objectId, minMs = 0) {
         const { line, idx, picture, pool } = pick;
-        const until = this.clockMs + (picture ? PICTURE_MS : bubbleMs(line));
+        const until = this.clockMs + Math.max(Number(minMs) || 0, picture ? PICTURE_MS : bubbleMs(line));
         s.saying = { line, picture, topic, objectId, until };
         const radius = pool.overhearRadius || OVERHEAR_RADIUS;
         const h = typeof this.world.playerHears === 'function' ? (this.world.playerHears(s.npcId, radius) || {}) : {};
-        if (line) this._speak(s.npcId, line, until, { topic, objectId, overheard: !!h.overheard });
+        // Review 9.2 B R2 m2: a floor (minMs) keeps the bubble up; the speech lock lasts only as
+        // long as the words, so the next line on the floor can start when this one ends
+        if (line) this._speak(s.npcId, line, this.clockMs + bubbleMs(line), { topic, objectId, overheard: !!h.overheard });
         if (h.overheard) {
             this._emit(`npc_overheard:${s.npcId}`, {
                 speakerId: s.npcId, partnerId: null, topic, lineId: picture ? `picture:${picture}` : `${topic}:${idx}`, line, picture, objectId,
@@ -1910,6 +1987,8 @@ export class NPCNeedsSystem {
     _countFailure(s, need, missing, objectId) {
         const id = s.npcId;
         s.failedShow = { need, missing: (missing || []).map(c => ({ ...c })), until: this.clockMs + FAIL_SHOW_MS };
+        // q17 (2026-11-11): the causes of the last counted failure of each need, for causeCleared
+        s.failCause[need] = (missing || []).map(c => ({ ...c }));
         const drain = Number(this._plan(s)?.breakDrain);
         const d = Number.isFinite(drain) ? clamp(drain, 0, 50) : 10;
         for (const other of Object.keys(s.needs)) {
@@ -1933,6 +2012,28 @@ export class NPCNeedsSystem {
             this.enqueueVisit(id, { kind: 'check', at: { objectId: r.object }, data: { resourceId: r.id } });
             break;
         }
+    }
+
+    /**
+     * q17 (user decision 2026-11-11): whether what frustrated the NPC has cleared: a failure has
+     * been counted (or a judged use met) for at least one need, and for each such need the causes
+     * of its last counted failure would all pass now, or a judged use of it has been met since.
+     * The frustration icon then fades while the mood lingers (npc-action-icons.js). After a reload
+     * the causes are seeded from the server's failWhy (_seedFailCause, review R3 m1).
+     */
+    _causeCleared(s) {
+        const needs = Object.keys(s.failCause || {});
+        if (!needs.length) return false;
+        const rules = this.world.workRules;
+        if (!rules?.causesClear) return false;
+        const plan = this._plan(s);
+        // A switched-off station (`off`) has cleared once its offWhen no longer holds
+        const offClear = c => { const rec = this._offSeen.get(c.id); return !!rec && !this._globalHolds(rec.cond); };
+        return needs.every(n => {
+            const list = s.failCause[n] || [];
+            const off = list.filter(c => c.why === 'off');
+            return off.every(offClear) && rules.causesClear(plan, list.filter(c => c.why !== 'off'), g => this._globalValue(g));
+        });
     }
 
     /** A failed park whose wakeOn names `name` and whose causes would all pass now retries soon (5.2). */
@@ -2088,7 +2189,19 @@ export class NPCNeedsSystem {
             const s = this.states.get(a.npcId);
             if (!s) { (this._pendingLevels || (this._pendingLevels = new Map())).set(a.npcId, a); continue; }
             this._setFrustration(s, a);
-            if (a.run) this._emit(`npc_workaround_due:${s.npcId}`, { npcId: s.npcId, run: a.run });
+            this._emitDue(s, a);
+        }
+    }
+
+    /**
+     * An answer's hand-overs to the workaround runner: `run`, then every unspent one in `pending`
+     * (review R3 m2, oldest first). The runner starts each (npcId, index, hand) once, so the copies
+     * of one it holds are ignored.
+     */
+    _emitDue(s, a) {
+        const runs = [a.run, ...(Array.isArray(a.pending) ? a.pending : [])];
+        for (const run of runs) {
+            if (run && typeof run === 'object') this._emit(`npc_workaround_due:${s.npcId}`, { npcId: s.npcId, run, level: s.frustration });
         }
     }
 
@@ -2098,7 +2211,12 @@ export class NPCNeedsSystem {
         const previous = a.previous !== undefined && a.previous !== null && Number.isFinite(Number(a.previous))
             ? clamp(Number(a.previous), 0, 100) : s.frustration;
         s.frustration = clamp(Number(a.level), 0, 100);
-        if (s.failSent) s.failSent = {};
+        // Review R2 n1: an answer to a fail clears that need's mark only; an answer that does not
+        // say what it answers (a test, an old queue) clears them all, as before
+        if (s.failSent) {
+            if (a.forEvent === 'fail' && typeof a.forNeed === 'string') delete s.failSent[a.forNeed];
+            else if (a.forEvent === undefined) s.failSent = {};
+        }
         s.tell = Number.isFinite(Number(a.tell)) ? Number(a.tell) : s.tell;
         s.settled = !!a.settled;
         this.world.setGlobal?.(`${s.npcId}_frustration`, s.frustration);
@@ -2122,6 +2240,33 @@ export class NPCNeedsSystem {
         this._log(s.npcId, 'frustration', { level: round2(s.frustration), tell: s.tell, restored: true });
     }
 
+    /**
+     * Review R3 m1 (q17 on resume): a reload's failCause, from the server's failWhy (need -> the
+     * whys of its last counted failure), so the frustration icon fades as it would have before the
+     * reload. For a down or unreachable cause the resources failing a use now are recorded (none
+     * when the outage is over, so the icon fades at once); any other why (locked_out,
+     * social_blocked, off) is recorded against the station and clears only with a met use (or, for
+     * off, once the station has been seen off and its offWhen no longer holds), as before.
+     * Nothing is seeded over causes this session recorded.
+     */
+    _seedFailCause(s, failWhy) {
+        if (!failWhy || typeof failWhy !== 'object' || Object.keys(s.failCause || {}).length) return;
+        const plan = this._plan(s);
+        const station = this._stationId(s);
+        const rules = this.world.workRules;
+        for (const need of Object.keys(failWhy).sort()) {
+            const whys = Array.isArray(failWhy[need]) ? failWhy[need].filter(w => typeof w === 'string') : [];
+            if (!whys.length || !this._judged(s, need)) continue;
+            const list = typeof rules?.failures === 'function'
+                ? rules.failures(plan, need, null, g => this._globalValue(g)).filter(c => c.why === 'down' || c.why === 'unreachable')
+                : [];
+            for (const why of whys) {
+                if (why !== 'down' && why !== 'unreachable') list.push({ id: station || s.npcId, why });
+            }
+            s.failCause[need] = list;
+        }
+    }
+
     /** The scenario response's npcFrustration, kept and applied as each NPC registers (5.4). */
     restoreFrustration(map) {
         this._restored = map && typeof map === 'object' ? { ...map } : null;
@@ -2138,10 +2283,20 @@ export class NPCNeedsSystem {
         if (restored) {
             delete this._restored[s.npcId];
             this._restoreFrustration(s, e);
+            this._seedFailCause(s, e.failWhy);
         }
         const pending = this._pendingLevels?.get(s.npcId);
-        if (pending) { this._pendingLevels.delete(s.npcId); this._setFrustration(s, pending); }
+        if (pending) {
+            this._pendingLevels.delete(s.npcId);
+            this._setFrustration(s, pending);
+            this._emitDue(s, pending);
+        }
         if (!restored) return;
+        // Sub-slice B (5.4, 9.4): a hand-over the server made and has not seen spent is started
+        // again now its NPC is registered; the workaround runner starts each one once
+        for (const run of Array.isArray(e.pending) ? e.pending : []) {
+            if (run && typeof run === 'object') this._emit(`npc_workaround_due:${s.npcId}`, { npcId: s.npcId, run, level: s.frustration, restored: true });
+        }
         // R5 n3: the hold is measured from the response; the time since it arrived is taken off
         const now = typeof this.world.elapsedMs === 'function' ? this.world.elapsedMs() : 0;
         const elapsed = Math.max(0, now - (this._restoredAt || 0));
@@ -2669,6 +2824,7 @@ export class NPCNeedsSystem {
         // Access 9.2 A (5.4): a met judged use eases frustration, re-arms the need and ends the outage's check
         if (judged) {
             s.rearm[job.need] = true;
+            s.failCause[job.need] = [];   // met: nothing holds for this need now
             if (job.need === 'work') s.checked.clear();
             if ((s.frustration > 0 || s.failSent[job.need]) && typeof this.world.reportUse === 'function') {
                 this.world.reportUse(id, { event: 'ease', need: job.need, objectId: job.targetId });
@@ -3812,6 +3968,7 @@ export class NPCNeedsSystem {
             visits: s.visits.map(v => ({ kind: v.kind, at: { ...v.at } })),
             visiting: s.job?.kind === 'visit' ? { kind: s.job.visit?.kind || null, at: { ...(s.job.visit?.at || {}) } } : null,
             judged: { work: this._judged(s, 'work'), social_media: this._judged(s, 'social_media') },
+            causeCleared: this._causeCleared(s),
             clockMs: this.clockMs, tick: this.tickCount
         };
     }

@@ -1,0 +1,14 @@
+{
+  "key": "186d74743d2f386997803b56cd7dafcd",
+  "npc": "receptionist",
+  "text": "No. I signed them in myself. With my own hand, in my own book.",
+  "delivery": "into the phone, firmly",
+  "voice": "Despina",
+  "style": "Night reception coordinator, eleven years on this desk. South London / Multicultural London English accent throughout -- warm, quick, dry. Unflappable on the surface, running on fumes underneath.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T17:45:41Z"
+}

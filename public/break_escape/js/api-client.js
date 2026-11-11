@@ -125,6 +125,12 @@ export class ApiClient {
     return this.post('/npc_frustration', { reports });
   }
 
+  // Slice 9.2 (plan 6): a workaround performed or dropped, { npc_id, index, hand, dropped }.
+  // A refusal throws with err.status: 403 (no such hand-over), 425 (before the dwell).
+  static async npcWorkaround(body) {
+    return this.post('/npc_workaround', body);
+  }
+
   // Sign in at a sign-in PC (access model 5.3, 6). `fields` is { username, password }
   // (the claim of step 9 sends { claim: "owner", globals } instead). A remote sign-in
   // (slice 9.3a, 4.4) adds { foothold: <footholdId> }; the server then checks the host is

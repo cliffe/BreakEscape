@@ -111,7 +111,7 @@ Director Magnus Netherton: Take him down there and every guard in the place sees
     ~ nightshade_taken_in = false
     ~ tripwire_armed = nightshade_map_used and not payment_checked
     ~ door_scene_done = true
-    Agent 0x47 'Nightshade': I'd have liked to see his face. *quietly* I'll settle for knowing you did.
+    Agent 0x47 'Nightshade': I'd have liked to see his face. I'll settle for knowing you did. #delivery: the second sentence quietly
     ~ ns_quiet = true
     #exit_conversation
     -> table_rest
@@ -194,7 +194,7 @@ Director Magnus Netherton: The plans are good plans. They are old plans.
 === unshown_menu ===
 + {m09_completed and payment_read and plans_read and not payment_checked} [Your inner door entry says 1962, no interlock. Helena's 1962 drawings have one.]
     ~ payment_checked = true
-    Agent 0x47 'Nightshade': *smiles* You read your homework.
+    Agent 0x47 'Nightshade': You read your homework. #delivery: smiling
     Agent 0x47 'Nightshade': He told me original, unchanged, and I wrote what I was told. Go by the drawings for that door.
     ~ ns_quiet = true
     -> unshown_close
@@ -291,7 +291,7 @@ Director Magnus Netherton: Without him you have Helena's plans. They are good pl
 }
 + {payment_read and plans_read and not payment_checked} [Your inner door entry says 1962, no interlock. Helena's 1962 drawings have one.]
     ~ payment_checked = true
-    Agent 0x47 'Nightshade': *smiles* You read your homework.
+    Agent 0x47 'Nightshade': You read your homework. #delivery: smiling
     Agent 0x47 'Nightshade': He told me original, unchanged. So he lied to me as well. I'd wondered what I was worth to him.
     ~ ns_quiet = true
     -> deal_close
