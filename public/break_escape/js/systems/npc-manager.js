@@ -12,6 +12,7 @@ import { classifyPhoneLine, phoneStepLines } from '../minigames/phone-chat/phone
  *   "data.prop === 'string'"
  *   "data.prop && data.prop.includes('substring')"
  *   "data.result.maxAttemptsReached === true"   (dotted paths; a missing link is undefined)
+ *   "data.level < data.previous"                (a data./globalVars. operand on the right)
  */
 function safeEvaluateCondition(conditionStr, eventData) {
   const value = eventData?.value;
@@ -70,7 +71,8 @@ function safeEvaluateCondition(conditionStr, eventData) {
   // Evaluate a single (non-&&) term. Supports:
   //   negation:   "!globalVars.X" / "!value"
   //   includes:   "data.prop.includes('sub')" / "globalVars.prop.includes('sub')"
-  //   comparison: "value OP literal" / "data.prop OP literal" / "globalVars.prop OP literal"
+  //   comparison: "value OP literal" / "data.prop OP literal" / "globalVars.prop OP literal",
+  //               and "data.a OP data.b" / "data.a OP globalVars.b" (operand on the right)
   //   bare truthy:"value" / "data.prop" / "globalVars.prop"
   function evaluateSingle(expr) {
     expr = expr.trim();
@@ -90,9 +92,15 @@ function safeEvaluateCondition(conditionStr, eventData) {
     }
 
     // "<lhs> OP literal"
+    // The right-hand side may be a literal or a data./globalVars. operand
+    // ("data.level < data.previous"); an unquoted value/name stays a literal string.
     const compareMatch = expr.match(/^(value|name|data(?:\.\w+)+|globalVars(?:\.\w+)+)\s*(===|!==|>=|<=|>|<)\s*(.+)$/);
     if (compareMatch) {
-      return applyOp(resolveLHS(compareMatch[1]), compareMatch[2], parseLiteral(compareMatch[3]));
+      const rhsToken = compareMatch[3].trim();
+      const rhs = /^(data(?:\.\w+)+|globalVars(?:\.\w+)+)$/.test(rhsToken)
+        ? resolveLHS(rhsToken)
+        : parseLiteral(rhsToken);
+      return applyOp(resolveLHS(compareMatch[1]), compareMatch[2], rhs);
     }
 
     // Bare truthy check on a recognised operand

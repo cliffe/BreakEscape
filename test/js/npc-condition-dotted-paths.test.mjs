@@ -83,3 +83,19 @@ test('includes on a list tests membership (network_device_unplugged endedPcIds, 
     assert.equal(holds("data.jackId === 'comms_port' && data.endedPcIds.includes('door_box')",
         { jackId: 'comms_port', endedPcIds: ['door_box'] }), true);
 });
+
+test('an operand on the right compares two values (npc_frustration_changed level against previous, slice 9.2)', () => {
+    assert.equal(holds('data.level < data.previous', { level: 90, previous: 100 }), true);
+    assert.equal(holds('data.level < data.previous', { level: 68, previous: 34 }), false);
+    assert.equal(holds('data.level === data.previous', { level: 0, previous: 0 }), true);
+    assert.equal(holds('data.a.b >= data.c', { a: { b: 5 }, c: 5 }), true);
+    window.gameState.globalVariables.cap = 50;
+    assert.equal(holds('data.level >= globalVars.cap', { level: 60 }), true);
+    assert.equal(holds('data.level >= globalVars.cap', { level: 40 }), false);
+    assert.equal(holds('data.level < data.previous && data.level <= 90', { level: 80, previous: 90 }), true);
+    // A missing operand is undefined, so an ordering test with it is false
+    assert.equal(holds('data.level < data.previous', { level: 90 }), false);
+    // An unquoted bare word on the right is still a literal string, as before
+    assert.equal(holds('data.who === lab', { who: 'lab' }), true);
+    assert.equal(holds('data.who === value', { who: 'value', value: 'x' }), true);
+});
