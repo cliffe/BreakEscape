@@ -224,6 +224,14 @@ export function lintInk(text, { channel = 'person', names = [], file = '' } = {}
 //                       #delivery: tag, which the voice reads and the player never sees. Skips the
 //                       player's lines, narration, choices, and emphasis between two words ("I *never*
 //                       said"). Voiced phone calls don't send #delivery: yet, so phone inks are not checked.
+//   delivery-unread     (warn, person-chat) a #delivery: note the server cannot read for its line, so the
+//                       line plays untagged: a note on (or directly above) a glued line (<>) or a line
+//                       that prints a variable or expression, or a note on its own line with no spoken
+//                       line after it in the same knot (it is followed by a choice, the knot's end, or a
+//                       divert to END/DONE or to a knot that starts with a choice).
+//   delivery-note       (warn) a #delivery: note the voice will not get as written: over 200 characters
+//                       (TtsService::MAX_DELIVERY_LENGTH, dropped), with no ASCII letter or digit
+//                       ("...", dropped), or with {braces} (the server reads the tag without them).
 //   crowded-hub         (check) a knot whose choice block offers more than 10 choices at once (sticky,
 //                       once-only and conditional all count). Passes when every conditional choice is
 //                       retired by a "not ..." guard and the unconditional ones sit last, which is how
@@ -235,12 +243,24 @@ const NUMBER_WORD = /\b(?:\d[\d,.:]*|one|two|three|four|five|six|seven|eight|nin
 const ACTION_CHOICE = /^(?:\(|\s*(?:attack|tackle|brace|continue|back off|move on|run|fight|punch|grab|hit|knock|close|hang up|listen|end|go\b|get out|slip|sneak|walk away|\.\.\.))/i;
 const HUB_MAX = 10;
 const CUE_RE = /\*[^*\s][^*]{0,60}\*/g;
-// "I *never* said": a cue with a word (or comma) just before it and a lowercase word just after
-// is emphasis, not a stage direction.
-function isEmphasis(line, index, cue) {
-  const before = line.slice(0, index).replace(/ $/, '').slice(-1);
-  const after = line.slice(index + cue.length).replace(/^ /, '').slice(0, 1);
-  return /[A-Za-z0-9,]/.test(before) && /[a-z0-9]/.test(after);
+// Words that are stage business when they stand alone between asterisks (*sighs*, *pause*).
+const STAGE_VERB = /^(?:sigh|laugh|pause|nod|shrug|cough|exhale|inhale|smile|grin|wink|chuckle|snort|groan|gasp|sniff|frown|scoff|smirk|yawn|whistle|mutter|whisper|wince|blink|glance|cry|sob|giggle|shudder|gulp|swallow|hesitate|beat|beep|grunt|huff|tut|clap|squint)(?:s|es|ed|d|ing)?$/i;
+// Emphasis or a stage direction? A single-word cue is emphasis ("I *never* said", "It was *yours*.",
+// "That was *really* Bad.") when it follows a word, a digit or a comma, or when it opens the spoken
+// text capitalised ("*Never* again."), and a letter, digit, space or punctuation follows it; unless
+// the word is stage business (*sighs*, *pause*). A lower-case cue that opens the text
+// ("*quietly* Keep your head down") and any cue of more than one word are directions.
+// `start` is where the spoken words begin (after any "Name: " prefix).
+function isEmphasis(line, index, cue, start = 0) {
+  const word = cue.slice(1, -1).trim();
+  if (/\s/.test(word) || STAGE_VERB.test(word.replace(/[^A-Za-z]/g, ''))) return false;
+  const lead = line.slice(start, index);
+  const opens = !lead.trim();
+  const before = lead.replace(/ $/, '').slice(-1);
+  const after = line.slice(index + cue.length).slice(0, 1);
+  const okAfter = after === '' || /[A-Za-z0-9\s.,!?;:'’"”)…-]/.test(after);
+  if (opens) return /^[A-Z]/.test(word) && okAfter;
+  return /[A-Za-z0-9,]/.test(before) && okAfter;
 }
 const PLAYER_LINE = /^(?:You|Player)$/i;
 const PLAYER_TAG = /#\s*(?:speaker\s*:\s*player|player)\b/i;
@@ -584,7 +604,8 @@ export function structureFindings(text, { channel = 'person', names = [] } = {})
     cues += found.length;
     if (channel !== 'phone' && !PLAYER_LINE.test(L.speaker || '') && !PLAYER_TAG.test(code)) {
       const said = code.replace(/(?<!\\)#.*$/, '');
-      const direction = [...said.matchAll(CUE_RE)].find(m => !isEmphasis(said, m.index, m[0]));
+      const start = L.speaker ? (said.match(/^[^:]*:\s*/) || [''])[0].length : 0;
+      const direction = [...said.matchAll(CUE_RE)].find(m => !isEmphasis(said, m.index, m[0], start));
       if (direction) {
         F.push({ level: 'warn', rule: 'inline-direction', line: L.n, text: L.body,
           note: `voiced lines hold only spoken words: move ${direction[0]} to a tag on the line (#delivery: ${direction[0].slice(1, -1).trim()}) if it tells the voice how to speak, else cut it` });
@@ -605,6 +626,89 @@ export function structureFindings(text, { channel = 'person', names = [] } = {})
   if (cues >= 5 && cues / Math.max(1, spoken) > 1 / 15) {
     F.push({ level: 'warn', rule: 'stage-cue-density', line: 1, text: `${cues} cues in ${spoken} spoken lines`,
       note: 'm01 uses about one asterisk cue per 37 spoken lines; cut the ones the words already carry' });
+  }
+  F.push(...deliveryFindings(lines, idx, channel));
+  return F;
+}
+
+// ---------- #delivery: notes (delivery-unread, delivery-note) ----------
+// TtsService::MAX_DELIVERY_LENGTH and tts-delivery.js MAX_DELIVERY_LENGTH
+export const MAX_DELIVERY_LENGTH = 200;
+const DELIVERY_IN_LINE = /(?<!\\)#\s*delivery\s*:([^#]*)/gi;
+
+function deliveryNotes(code) {
+  return [...code.matchAll(DELIVERY_IN_LINE)].map(m => m[1].replace(/(^|\s)\/\/.*$/, '').replace(/\s+/g, ' ').trim());
+}
+
+// Why the walker cannot read a note on this text line, or null.
+function unreadReason(lines, i) {
+  const L = lines[i];
+  const code = L.t.replace(/(^|\s)\/\/.*$/, '');
+  if (code.includes('<>')) return 'is glued (<>) to the line after it';
+  for (let j = i - 1; j >= 0; j--) {
+    const P = lines[j];
+    if (P.kind === 'blank' || P.kind === 'comment' || P.kind === 'tag') continue;
+    if (P.t.replace(/(^|\s)\/\/.*$/, '').replace(/(?<!\\)#.*$/, '').trimEnd().endsWith('<>')) return 'has the line above glued onto it (<>)';
+    break;
+  }
+  const said = code.replace(/(?<!\\)#.*$/, '');
+  const consts = new Set(lines.filter(x => x.kind === 'decl' && /^CONST\s/.test(x.t)).map(x => x.t.split(/\s+/)[1]));
+  const printed = printedExpressions(said, consts);
+  if (printed.length) return `prints {${printed[0]}}`;
+  return null;
+}
+
+// The spoken line an own-line #delivery: tag lands on, following plain diverts as the client
+// does: { line: index } | { none: why } | null (unknown, e.g. a multi-line conditional).
+function noteTarget(lines, idx, i) {
+  for (let j = i + 1; j < lines.length; j++) {
+    const L = lines[j];
+    if (['blank', 'comment', 'tag', 'logic'].includes(L.kind)) continue;
+    if (L.kind === 'knot' || L.kind === 'stitch') return { none: 'the knot ends' };
+    if (L.kind === 'choice') return { none: 'a choice comes next' };
+    if (L.kind === 'text') return L.printable ? { line: j } : null;
+    if (L.kind === 'divert') {
+      if (/^(?:DONE|END)$/.test(L.divert || '')) return { none: `-> ${L.divert} comes next` };
+      const fp = firstPrint(lines, idx, L.divert, L.knot);
+      if (fp && fp.line && !fp.none) return { line: lines.indexOf(fp.line) };
+      if (fp && fp.none) return { none: `-> ${L.divert} leads to ${fp.none === 'choices' ? 'a choice' : 'no spoken line'}` };
+      return null;
+    }
+    return null;
+  }
+  return { none: 'the story ends' };
+}
+
+function deliveryFindings(lines, idx, channel) {
+  const F = [];
+  for (let i = 0; i < lines.length; i++) {
+    const L = lines[i];
+    if (!['text', 'tag', 'open', 'close', 'gather', 'branch', 'choice'].includes(L.kind)) continue;
+    const code = L.t.replace(/(^|\s)\/\/.*$/, '');
+    const notes = deliveryNotes(code);
+    if (!notes.length) continue;
+    for (const note of notes) {
+      const why = [...note].length > MAX_DELIVERY_LENGTH ? `is over ${MAX_DELIVERY_LENGTH} characters`
+        : note.includes('{') || note.includes('}') ? 'has {braces}: the server reads the tag without what they print'
+        : !/[A-Za-z0-9]/.test(note) ? 'has no ASCII letter or digit'
+        : null;
+      if (why) F.push({ level: 'warn', rule: 'delivery-note', line: L.n, text: cleanInkText(L.t) || L.t,
+        note: `the #delivery: note ${why}, so the voice does not get it as written; use a short note in plain words` });
+    }
+    if (channel === 'phone') continue;      // voiced phone calls do not send notes yet
+    let target = null, reason = null;
+    if (L.kind === 'text' && L.printable) target = i;
+    else if (L.kind === 'tag') {
+      const t = noteTarget(lines, idx, i);
+      if (t && t.none) reason = `no spoken line follows it in the same knot (${t.none})`;
+      else if (t) target = t.line;
+    }
+    if (target !== null) {
+      const r = unreadReason(lines, target);
+      if (r) reason = target === i ? `the line ${r}` : `the line it lands on (line ${lines[target].n}) ${r}`;
+    }
+    if (reason) F.push({ level: 'warn', rule: 'delivery-unread', line: L.n, text: cleanInkText(L.t) || L.t,
+      note: `this #delivery: note is not read, so the line plays untagged: ${reason}. Put the note at the end of a plain spoken line` });
   }
   return F;
 }

@@ -283,3 +283,98 @@ test('inline-direction: a stage cue in a voiced line warns; emphasis, choices, t
   assert.match(f[0].note, /#delivery: sighs/);
   assert.equal(only(lintInk(ink, { channel: 'phone' }), 'inline-direction').length, 0);
 });
+
+test('inline-direction: emphasis at a sentence edge is not a direction; stage words and multi-word cues are', () => {
+  const ink = [
+    '=== s ===',
+    'Gary: It was *yours*.',                     // 2: emphasis at the end of a sentence
+    'Gary: *Never* again.',                      // 3: emphasis opening the line, capitalised
+    'Gary: That was *really* Bad.',              // 4: emphasis before a capital
+    'Gary: Fine *sighs* whatever.',              // 5: warns (a stage word between two words)
+    'Gary: *quietly* Keep your head down.',      // 6: warns (lower-case cue opening the line)
+    'Gary: Well, *maybe* not.',                  // 7: emphasis after a comma
+    'Gary: I said *no*!',                        // 8: emphasis before "!"
+    'Gary: It is *Sighs* time.',                 // 9: warns (stage word, any case)
+    'Gary: That is *very much* it.',             // 10: warns (more than one word)
+    'Gary: *Pauses* Right.',                     // 11: warns (stage word opening the line)
+  ].join('\n') + '\n';
+  assert.deepEqual(only(lintInk(ink), 'inline-direction').map(x => x.line), [5, 6, 9, 10, 11]);
+});
+
+// The review's parity ink (VOICE_DELIVERY_TAG_CODE_REVIEW_R1.md): the walker cannot read a note
+// on a glued line or a line that prints a variable, so those lines play untagged.
+const DELIVERY_INK = [
+  'VAR flag = true',                              // 1
+  'VAR count = 0',                                // 2
+  '-> start',                                     // 3
+  '=== start ===',                                // 4
+  'Kevin Park: Opening.',                         // 5
+  '#delivery: softly',                            // 6: carried over the divert to b's first line
+  '-> b',                                         // 7
+  '=== b ===',                                    // 8
+  'Kevin Park: Hello from b.',                    // 9
+  '#delivery: crisp',                             // 10
+  '{flag: Kevin Park: Conditional line.}',        // 11
+  'Kevin Park: Part one <>',                      // 12
+  'and part two. #delivery: glued',               // 13: warns (glued onto by the line above)
+  'Kevin Park: You have {count} items. #delivery: counting', // 14: warns (prints a variable)
+  '~ count = count + 1',                          // 15
+  '#delivery: above logic',                       // 16
+  '~ temp x = 1',                                 // 17
+  'Kevin Park: After logic.',                     // 18
+  '+ [Ask]',                                      // 19
+  '  Kevin Park: Answer. #delivery: answering',   // 20
+  '  -> c',                                       // 21
+  '=== c ===',                                    // 22
+  '#delivery: at knot top',                       // 23
+  'Kevin Park: In c.',                            // 24
+  'Kevin Park: Glued at the end <> #delivery: tail', // 25: warns (glue on the line itself)
+  'more words.',                                  // 26
+  '#delivery: above a glued line',                // 27: warns (lands on a glued line)
+  'Kevin Park: Starts here <>',                   // 28
+  'and ends here.',                               // 29
+  '#delivery: above {count}',                     // 30: warns twice (braces; lands on a line printing a variable)
+  'Kevin Park: Count {count}.',                   // 31
+  '#delivery: before a choice',                   // 32: warns (no line follows in the knot)
+  '+ [x] -> d',                                   // 33
+  '=== d ===',                                    // 34
+  '#delivery: before a divert to choices',        // 35: warns (-> e starts with a choice)
+  '-> e',                                         // 36
+  '=== e ===',                                    // 37
+  '* [Pick] -> END',                              // 38
+  '=== f ===',                                    // 39
+  'Kevin Park: Last. #delivery: fine',            // 40
+  '#delivery: at the end',                        // 41: warns (the knot ends)
+  '-> END',                                       // 42
+].join('\n') + '\n';
+
+test('delivery-unread: a note on a glued line, a line printing a variable, or with no line after it', () => {
+  const f = only(lintInk(DELIVERY_INK), 'delivery-unread');
+  assert.deepEqual(f.map(x => x.line), [13, 14, 25, 27, 30, 32, 35, 41]);
+  assert.match(f[0].note, /glued/);
+  assert.match(f[1].note, /prints \{count\}/);
+  assert.match(f[3].note, /lands on \(line 28\)|line it lands on \(line 28\)/);
+  assert.match(f[5].note, /a choice comes next/);
+  assert.match(f[6].note, /-> e leads to a choice/);
+  assert.match(f[7].note, /END comes next/);
+  // voiced phone calls send no note, so phone inks are not checked for this
+  assert.equal(only(lintInk(DELIVERY_INK, { channel: 'phone' }), 'delivery-unread').length, 0);
+});
+
+test('delivery-note: a note over 200 characters, with braces, or with no letter or digit', () => {
+  const ink = [
+    '=== s ===',
+    `Gary: Long. #delivery: ${'slowly '.repeat(30)}`,  // 2: warns (over 200)
+    'Gary: Braces. #delivery: {mood} and quiet',       // 3: warns
+    'Gary: Dots. #delivery: ...',                      // 4: warns
+    'Gary: Ellipsis. #delivery: …',                    // 5: warns
+    'Gary: Fine. #delivery: quietly, almost to herself #speaker:gary', // 6: fine (ends at the next tag)
+    `Gary: Just under. #delivery: ${'a'.repeat(200)}`, // 7: fine (200 exactly)
+  ].join('\n') + '\n';
+  const f = only(lintInk(ink), 'delivery-note');
+  assert.deepEqual(f.map(x => x.line), [2, 3, 4, 5]);
+  assert.match(f[0].note, /over 200/);
+  assert.match(f[1].note, /braces/);
+  assert.match(f[2].note, /no ASCII letter or digit/);
+  assert.equal(only(lintInk(ink), 'delivery-unread').length, 0);
+});
