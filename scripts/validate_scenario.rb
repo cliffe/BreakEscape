@@ -6716,6 +6716,13 @@ def main
       puts
     end
 
+    # The work report (access slice 9.2, section 10): work lists and workaround timing
+    work_lines = ValidateAccessWork.report_lines(json_data)
+    unless work_lines.empty?
+      work_lines.each { |line| puts line }
+      puts
+    end
+
     # Report warnings
     if warnings.empty?
       puts "✓ No missing recommended fields."

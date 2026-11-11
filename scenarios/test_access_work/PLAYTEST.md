@@ -45,7 +45,9 @@ Every beat ticks a task in the one aim; `window.__test.getState().objectives` li
 no errors. Among the `work:` lines, one warning for U3's `lost_property_tray`, which takes a storage
 stick and is governed by no policy although the default blocks storage: that is the beat's point
 (plan 7, "Which objects a usb policy governs"). From sub-slice A, also the "work never succeeds"
-warning for Kai (W5).
+warning for Kai (W5), and, until sub-slice B adds X3's Ellis, the warning that the `intranet`
+resource is in no NPC's work list. After the issues the validator prints the work report: one
+`Work` line per NPC with a work plan (each resource admitted or not and what takes it down).
 
 ## Run U: U1 to U3 (one new game, about 5 minutes)
 
