@@ -341,3 +341,63 @@ Leftover games: 1187, 1188. None deleted.
 ### Suites after review round 1
 
 Under the lock after the last code change: Rails 1352 runs, 0 failures, 1 skip; JS 480 files passed, 0 failed.
+
+## Review round 2 outcomes (2026-11-11)
+
+Reviews: `ACCESS_MODEL_SLICE_9_2_UA_CODE_REVIEW_R2_SERVER.md` and `..._R2_CLIENT.md` (no blockers,
+no majors). Commits: `b7a5e277f` (server), `9e2cfea46` (client), and this log.
+
+### Orchestrator decision
+
+- **Server m2, `locked_out` in A.** Refused in sub-slice A. A fail listing `locked_out` (alone or
+  beside other causes) answers `refused`, and the server passes no lockouts to `owned_causes`, so a
+  `loginLockouts` entry changes nothing in A: the own station eases and `rearmed` keeps the use
+  floor. The browser sends no `locked_out` in A. Sub-slice L adds the cause back behind its `check`
+  record (only lockouts that record confirms), which is the leak decision 14 accepts; L's reviewer
+  should treat that as the first exposure, not a regression. `REFUSED_IN_A_WHYS` in
+  `npc_frustration.rb` marks the place.
+
+### Server review
+
+| R2 | Outcome |
+|---|---|
+| m1 `""` global makes `down` hold | Fixed: `down` holds only for a resource with a non-blank `downIf`. Tested |
+| m2 `locked_out` ahead of L | Fixed as decided above. The old W5 `locked_out` and R5 n5 tests are rewritten: R5 n5 now uses `social_blocked` (station ease refused, kiosk ease accepted); a new test covers the lockout in A |
+| m3 work eases for a `[]` route | Fixed: a `work` ease is refused when an owned `no_access` or `unreachable` holds (both hold at every place). `earliest_pace` treats both alike, so the "only by alternating eases and fails" note is no longer printed for work; plan 9.1, 9.3 and 10 updated. Tested (server and validator) |
+| m4 test gaps | Added: the worst batch the bounds allow on 400 extra objects (timed, under 2 s; the M1 test's message now matches its bound); `build_object_index` called once across one full request; the `""` global; a plant on an ungoverned object under a blocking `defaultPolicy` is recorded; after a fail listing `off` and an owned cause, the next such fail is held to the park floor |
+| m5 objects in locked rooms | Fixed: the report path keeps only places in the start room or `unlockedRooms` (`frustration_places`), so a hidden object answers exactly as a made-up id. Plan 9.1 updated. Tested, including that the object becomes a place once its room opens. The reset test now re-opens `office` after a reset |
+| n1 cap after parsing | Fixed: `prepend_before_action :refuse_oversized_npc_frustration` reads only `Content-Length`, before `set_game` parses the body |
+| n2 reason too strong | Corrected: the round 1 answer to client item 3 ("no server-checked condition can name one") was wrong. `unlock_condition_met?` reads any global by name, so an aim or task `unlockCondition` on `<npc>_frustration` is a client-decided gate, like any client-written global; it adds no new hole. The validator now warns for such an `unlockCondition` and for an event-mapping `condition` naming one. Tested |
+| n3 validator re-implements USB rules | Fixed: the validator calls `AccessWork.usb_governed?`, `usb_policy_for` and `plant_refused?`; the effective policy name uses `present_string?` |
+| n4 preset table memoised | Comment added |
+| n5 floats in levels | Fixed: a whole level is stored and answered as an Integer |
+| n6 phone ease unconditional | No change, as the reviewer says; noted for sub-slice C |
+
+### Client review
+
+| R2 | Outcome |
+|---|---|
+| m1 restore fires a rise from 0 | Fixed: `_applyRestored` sets the mirror, `tell` and `settled` with no `npc_frustration_changed`, and writes `<npcId>_frustration` only when the saved global differs. Plan 5.4 updated. Tested; one existing test that expected the restore event now asserts none |
+| m2 seating unseats on an own-desk visit | Fixed (small): `needsStop` treats a `visit` job at the home object like a `use`. `needsStop` unit test for each phase |
+| m3 guard reads `s.home` | Fixed: compares with `_stationId(s)` (`needsHome`). Tested with a provisional home; the test fails without the fix |
+| m4 test gaps | Added: R1 m10 (a tempted failed work job parks, counts, reports once); a source test over `core/game.js` that fails if `npc-reports.js` or `npc-work.js` becomes a dynamic import or the restore moves behind a `.then`, `await` or timer; the restore event; `breakDrain` authored (30) and capped (80 gives 50) |
+| m5 a cut-short visit is neither done nor dropped | Fixed (contained to `_abortJob`): a visit job that ends without completing (deadline, turn-back, any abort but `reset()`) emits `npc_visit_dropped` with a `reason`, and a check visit frees its resource. Plan 5.3 updated. Tested |
+| n1 `failSent` cleared by any answer | Deferred to sub-slice B: self-healing (costs one ease at most), and B reworks answer handling for `run` |
+| n2 `reset()` keeps no `failSent` or held parks | Comment added |
+| n3 pending answer applied under the restore | Fixed: restored entry first, then the pending answer. Tested |
+| n4 `stateIconEntry` returns null | Deferred: harmless while `blocked` is built in |
+| Server items 1 to 7 | As round 1; item 2 now also covered by the n2 validator warning; item 5 (NPC USB decisions) is for the sub-slice that ties anything to an NPC plugging in |
+
+### Browser check (game 1189, port 3013)
+
+`test_access_work` from `share_room`: the breaker thrown, Dana's first fail answered level 34 (an
+Integer). Navigated to `/games/1189?skip_resume=1`: the needs log shows one `frustration` entry
+for Dana at load, level 34, `restored: true`, and the event log has no `npc_frustration_changed`
+for it; her later rises carried `previous` 34 and then 68 from the server. Gotcha: with
+`?skip_resume=1` in `--url`, `session-start.sh` takes the session tag from the trailing `1`, so
+drive that session as `cmd.sh 1`. Leftover game: 1189.
+
+### Suites after review round 2
+
+Under the lock after the last code change: Rails 1360 runs, 9992 assertions, 0 failures, 0 errors,
+1 skip; JS 481 files passed, 0 failed.
