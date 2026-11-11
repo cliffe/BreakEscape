@@ -1900,7 +1900,10 @@ def check_lock_credentials(json_data)
   # unless the door is meant to be opened another way (e.g. lockpicked). A card a room
   # NPC carries (creds.card or rfidCard) declares its card_id too, but only when the
   # scenario can turn it into a way through: an rfid_cloner exists anywhere (an object,
-  # a start item or an NPC's item), or a gate into the locked room opens for a holder.
+  # a start item or an NPC's item), or a gate into the locked room opens for a holder
+  # and the player can follow: the gate sets playerMayPassIf, or a holder it opens for
+  # holds doors (is not in the gate's noHold once habits are expanded, plan 5.4). A gate
+  # whose only holders are careful guards cannot be tailgated, so it is no way in.
   declared = { 'key' => Set.new, 'rfid' => Set.new }
   key_items.each { |_name, credential, lt| declared[lt] << credential }
   has_cloner = false
@@ -1919,14 +1922,26 @@ def check_lock_credentials(json_data)
       r.is_a?(Hash) && r['lockType'] == 'rfid' && Array(r['requires']).map(&:to_s).include?(card_id)
     end.keys
   end
-  gates = json_data['rooms'].is_a?(Hash) ? BreakEscape::NpcHabits.gate_entries(json_data) : []
+  gates = if json_data['rooms'].is_a?(Hash)
+            BreakEscape::NpcHabits.gate_entries(BreakEscape::NpcHabits.expanded_copy(json_data).first)
+          else
+            []
+          end
   npc_only_cards = Set.new
+  careful_only_cards = {}
   ai.cards(json_data).each do |card_id, info|
     holder_ids = info[:holders].map { |h| h[:npc]['id'] }.compact
     locked_rooms = rooms_requiring.call(card_id)
-    gated = gates.any? { |g| locked_rooms.include?(g[:connected_room]) && (g[:open_for] & holder_ids).any? }
-    if has_cloner || gated
+    holder_gates = gates.select { |g| locked_rooms.include?(g[:connected_room]) && (g[:open_for] & holder_ids).any? }
+    passable = holder_gates.any? do |g|
+      pass_if = g[:gate]['playerMayPassIf']
+      no_hold = Array(g[:gate]['noHold']).map(&:to_s)
+      (pass_if.is_a?(String) && !pass_if.empty?) || ((g[:open_for] & holder_ids) - no_hold).any?
+    end
+    if has_cloner || passable
       declared['rfid'] << card_id
+    elsif holder_gates.any?
+      careful_only_cards[card_id] = holder_gates.map { |g| g[:connected_room] }.uniq
     else
       npc_only_cards << card_id
     end
@@ -1934,6 +1949,13 @@ def check_lock_credentials(json_data)
   %w[key rfid].each do |lock_kind|
     credential_requires[lock_kind].each do |req|
       next if declared[lock_kind].include?(req)
+      if lock_kind == 'rfid' && careful_only_cards.key?(req.to_s)
+        rooms = careful_only_cards[req.to_s].map { |r| "'#{r}'" }.join(', ')
+        issues << "⚠️ WARNING: a lock requires rfid '#{req}', and only careful guards (holdsDoors false) open " \
+                  "the gate into #{rooms}; nothing else gives the card, so the player cannot get in. Add a " \
+                  "cloner, a keycard item, a guard who holds doors, playerMayPassIf on the gate or another door."
+        next
+      end
       if lock_kind == 'rfid' && npc_only_cards.include?(req.to_s)
         issues << "⚠️ WARNING: a lock requires rfid '#{req}', and only an NPC carries that card. There is no " \
                   "rfid_cloner in the scenario and no gate into the locked room opens for the holder, so the " \
@@ -6361,7 +6383,7 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
                         rescue JSON::ParserError
                           File.read(compiled)
                         end
-      end
+                      end
       source_text = File.exist?(source) ? File.read(source) : nil
       text = compiled_text || source_text
       next unless text

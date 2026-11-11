@@ -157,3 +157,11 @@ test('a gate with an authored noHold prints its line even when no NPC has a habi
   const r = verify(['1', '--access'], ACCESS_STATE, { STUB_SCENARIO: JSON.stringify(sc) });
   assert.match(r.out, /\nhabits\n\s+gate rooms\/office\/doors\/0 \(into store_b\)\s+openFor sara\s+noHold sara/);
 });
+
+// Review R2 nit 1: an authored empty noHold (the author's opt-out) says so.
+test('an authored empty noHold prints "(none, authored)"', () => {
+  const sc = { rooms: { office: { objects: [], npcs: [{ id: 'sara' }],
+    doors: [{ connectedRoom: 'store_b', direction: 'south', gate: { openFor: 'sara', noHold: [] } }] } } };
+  const r = verify(['1', '--access'], ACCESS_STATE, { STUB_SCENARIO: JSON.stringify(sc) });
+  assert.match(r.out, /gate rooms\/office\/doors\/0 \(into store_b\)\s+openFor sara\s+noHold \(none, authored\)/);
+});

@@ -145,8 +145,9 @@ def habits_section(g)
     lines << "  pc  #{pc['id'].to_s.ljust(14)} owner #{owner_id}  #{own}  alwaysLocks #{always}  hasPostit #{postit}"
   end
   gates.each do |path, gate|
-    open_for = gate['openFor'].is_a?(Array) ? gate['openFor'] : [gate['openFor']].compact
-    lines << "  gate #{path}  openFor #{open_for.join(',')}  noHold #{gate['noHold'].join(',')}"
+    open_for = (gate['openFor'].is_a?(Array) ? gate['openFor'] : [gate['openFor']]).grep(String)
+    no_hold = gate['noHold'].empty? ? '(none, authored)' : gate['noHold'].join(',')
+    lines << "  gate #{path}  openFor #{open_for.join(',')}  noHold #{no_hold}"
   end
   lines
 end

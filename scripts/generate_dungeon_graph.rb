@@ -490,7 +490,7 @@ end
     node = $nodes["door_#{door['connectedRoom']}"]
     next unless node
 
-    open_for = gate['openFor'].is_a?(Array) ? gate['openFor'] : [gate['openFor']].compact
+    open_for = (gate['openFor'].is_a?(Array) ? gate['openFor'] : [gate['openFor']]).grep(String)
     holders = open_for - gate['noHold']
     parts = []
     parts << "held by #{holders.join(', ')}" if holders.any?

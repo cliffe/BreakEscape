@@ -204,7 +204,7 @@ module ValidateNpcHabits
           warn(issues, "rooms/#{room_id}/doors/#{i} sets both gate.noHold and playerMayPassIf: the client follows " \
                        'playerMayPassIf alone, so the noHold does nothing. Remove one of them.')
         end
-        open_for = gate['openFor'].is_a?(Array) ? gate['openFor'] : [gate['openFor']]
+        open_for = (gate['openFor'].is_a?(Array) ? gate['openFor'] : [gate['openFor']]).grep(String)
         (gate['noHold'] - open_for).each do |id|
           warn(issues, "rooms/#{room_id}/doors/#{i} gate.noHold names '#{id}', who is not in its openFor: " \
                        'the gate never opens for them, so the entry does nothing.')
@@ -454,9 +454,9 @@ module ValidateNpcHabits
     report.each do |item|
       npc = expanded_npcs[item[:id]] || {}
       level = if item[:level].nil? then 'no level'
-      elsif item[:level_source] == :own then "level #{item[:level]} (its own awareness)"
-      else "level #{item[:level]} (level from role #{item[:level_source].to_s.delete_prefix('role:')})"
-      end
+              elsif item[:level_source] == :own then "level #{item[:level]} (its own awareness)"
+              else "level #{item[:level]} (level from role #{item[:level_source].to_s.delete_prefix('role:')})"
+              end
       lines << "- #{item[:id]}: #{level}"
       item[:habits].each do |name, value|
         next if NH::PARAMETERS.include?(name)
@@ -467,15 +467,15 @@ module ValidateNpcHabits
 
         lines << "  - #{name} #{value} (#{how})"
         effects = case name
-        when 'locksScreen' then screen_effects(item[:screen])
-        when 'writesDown' then note_effects(npc, expanded, value)
-        when 'holdsDoors' then door_effects(item[:doors])
-        when 'password'
+                  when 'locksScreen' then screen_effects(item[:screen])
+                  when 'writesDown' then note_effects(npc, expanded, value)
+                  when 'holdsDoors' then door_effects(item[:doors])
+                  when 'password'
                     texts ||= CL.readable_texts(expanded, scenario_dir)
                     homes ||= CL.secret_homes(expanded)
                     password_effects(npc, expanded, value, item[:habits]['passwordPattern'], texts, homes)
-        else []
-        end
+                  else []
+                  end
         effects.each { |e| lines << "      #{e}" }
       end
     end
@@ -540,9 +540,9 @@ module ValidateNpcHabits
       b[:pieces].each do |p|
         where = if p[:sources].any?
                   p[:sources].map { |s| s[:locks].any? ? "#{s[:path]} (behind lock #{s[:locks].join(', ')})" : s[:path] }.join(', ')
-        elsif p[:clue] then 'in the pattern clue'
-        else 'no source'
-        end
+                elsif p[:clue] then 'in the pattern clue'
+                else 'no source'
+                end
         where += ' (common punctuation: check the clue states it)' if p[:common]
         where += ' (case differs from its source: the pattern clue must state it)' if p[:case_differs]
         out << "piece #{p[:index]} of #{b[:total]}, #{p[:kind]}: #{where}"
