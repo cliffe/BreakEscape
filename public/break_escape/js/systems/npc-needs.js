@@ -4455,11 +4455,19 @@ export function createEngineWorld() {
             const pm = W().pathfindingManager;
             if (!sp || !pm?.findNearestWalkableWorldCell) return null;
             const c = centreOf(sp);
+            // A cell the player stands on is passed over (a share's sharer could never reach
+            // it and the visit timed out while the player stood beside the colleague); when
+            // every side is taken the first walkable cell is still answered.
+            const pl = W().player;
+            const pr = pl ? (pl.body?.center || { x: pl.x, y: pl.y }) : null;
+            let first = null;
             for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
                 const cell = pm.findNearestWalkableWorldCell(c.x + dx * TILE, c.y + dy * TILE, 0);
-                if (cell) return cell;
+                if (!cell) continue;
+                if (!pr || Math.hypot(pr.x - cell.x, pr.y - cell.y) >= TILE * 0.75) return cell;
+                if (!first) first = cell;
             }
-            return null;
+            return first;
         },
         // A second user of a shared object stands one tile beside the first: right, left, below, above
         besideCell(cell, taken) {
