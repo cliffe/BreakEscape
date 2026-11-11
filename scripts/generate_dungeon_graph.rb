@@ -633,7 +633,11 @@ aw_g.with_index(scenario) do
         add_edge(node, access_lock_node({ kind: 'login', lock: pc[:obj], room: pc[:room_id] }, rooms), label: 'open session') if pc
       when 'prop_door'
         door = w['door']
-        add_edge(node, "door_#{door}", label: 'propped open') if $nodes.key?("door_#{door}")
+        if $nodes.key?("door_#{door}")
+          add_edge(node, "door_#{door}", label: 'propped open')
+        else
+          warn "dungeon graph: #{node} props open '#{door}', which has no door node; edge left out"
+        end
       end
     end
   end

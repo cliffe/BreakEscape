@@ -120,11 +120,85 @@ module BreakEscape
       run = fails('mei', 3, t).last['run']
       assert_nil fails('mei', 1, t + 75).first['run'], 'handed over and waiting'
       assert_equal 200, workaround('mei', run, t + 80, dropped: true).status
-      assert_equal({}, response.parsed_body)
+      assert_equal({ 'dropped' => true }, response.parsed_body)
       assert_empty entry('mei')['done']
       again = fails('mei', 1, t + 100).first['run']
       assert_equal 0, again['index']
       assert_equal 2, again['hand'], 'a new hand-over has its own number'
+    end
+
+    test 'a drop is accepted before the dwell has passed' do
+      build
+      t = Time.current
+      run = fails('mei', 3, t).last['run']
+      res = workaround('mei', run, t + 50 + 1, dropped: true)
+      assert_equal 200, res.status, 'one second after the hand-over, well inside the 6 s dwell'
+      assert_equal({ 'dropped' => true }, res.parsed_body)
+      assert_empty entry('mei')['handed']
+      assert_equal({ 'hand' => 1, 'done' => false }, entry('mei')['lastSpent']['0'])
+    end
+
+    test '"done" after "dropped" for the same hand is not counted as done and writes nothing' do
+      build
+      t = Time.current
+      run = fails('mei', 3, t).last['run']
+      workaround('mei', run, t + 50 + 1, dropped: true)
+      state = @game.reload.player_state.deep_dup
+      res = workaround('mei', run, t + 50 + 30)
+      assert_equal 200, res.status
+      assert_equal({ 'dropped' => true }, res.parsed_body, 'told apart from an emit\'s {}')
+      assert_empty entry('mei')['done']
+      assert_empty entry('mei')['handed']
+      assert_equal state, @game.reload.player_state
+      assert_nil postit('mei_pc')
+    end
+
+    test 'the 425 says how long is left, not the whole dwell' do
+      build
+      t = Time.current
+      run = fails('mei', 3, t).last['run']
+      res = workaround('mei', run, t + 50 + 2)
+      assert_equal 425, res.status
+      assert_in_delta 4.0, res.parsed_body['retryAfter'], 0.11
+    end
+
+    test 'index and hand are parsed strictly: a negative index, a float hand, seven digits are refused' do
+      build
+      t = Time.current
+      run = fails('mei', 3, t).last['run']
+      state = @game.reload.player_state.deep_dup
+      [[-1, run['hand']], [run['index'], 1.0], [run['index'], '0000001'], ['0000000', run['hand']], [run['index'], '1.0']].each do |index, hand|
+        travel_to(t + 60) do
+          post npc_workaround_game_url(@game), params: { npc_id: 'mei', index: index, hand: hand }, as: :json
+        end
+        assert_equal 403, response.status, "index #{index.inspect} hand #{hand.inspect}"
+        assert_equal({ 'error' => 'unknown hand-over' }, response.parsed_body)
+      end
+      assert_equal state, @game.reload.player_state
+    end
+
+    test 'replays of writes_down and emit answer the same body and write nothing' do
+      build
+      t = Time.current
+      mei = fails('mei', 3, t).last['run']
+      first = workaround('mei', mei, t + 60).parsed_body
+      state = @game.reload.player_state.deep_dup
+      assert_equal first, workaround('mei', mei, t + 65).parsed_body
+      assert_equal state, @game.reload.player_state
+      ellis = travel_to(t + 100) { report(rota_fail('ellis')).first['run'] }
+      assert_equal({}, workaround('ellis', ellis, t + 101).parsed_body)
+      state = @game.reload.player_state.deep_dup
+      assert_equal({}, workaround('ellis', ellis, t + 102).parsed_body)
+      assert_equal state, @game.reload.player_state
+    end
+
+    test 'a prop_door with no prop is never handed over' do
+      data = scenario
+      tom = data['rooms']['office']['npcs'].find { |n| n['id'] == 'tom' }
+      tom['workarounds'].first.delete('prop')
+      build(data: data)
+      t = Time.current
+      assert_equal [nil, nil, nil], fails('tom', 3, t).map { |x| x['run'] }
     end
 
     test 'run never repeats one that is done; at 100 with everything done the NPC is settled' do

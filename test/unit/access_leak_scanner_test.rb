@@ -444,4 +444,12 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
     assert_equal 1, AccessLeakScanner.new(data).counts[:workarounds]
   end
 
+  test 'an authored workaround entry (it carries at) is reported anywhere, a writes_down included' do
+    entry = { 'at' => 50, 'do' => 'writes_down' }
+    assert_equal [[1, 'workaround', 'authored writes_down']], summary(scan({ 'npcs' => [{ 'id' => 'x', 'list' => [entry] }] }))
+    leaked = scan({ 'npcFrustration' => { 'mei' => { 'pending' => [entry] } } }, path: '/break_escape/games/1/scenario')
+    assert_equal [[1, 'workaround', 'authored writes_down']], summary(leaked), 'no exemption for an authored entry'
+    assert_empty scan({ 'do' => 'writes_down', 'index' => 0, 'hand' => 1 }), 'a run has no at'
+  end
+
 end

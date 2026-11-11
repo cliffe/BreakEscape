@@ -212,6 +212,8 @@ class AccessLeakScanner
   # ---- catalogue ---------------------------------------------------------------------------
 
   WORKAROUND_TARGET_KEYS = %w[door prop event pc with].freeze
+  # Kept equal to BreakEscape::AccessWork::WORKAROUND_KINDS (the scanner loads no Rails code)
+  WORKAROUND_KINDS = %w[writes_down prop_door emit borrow_session share_login].freeze
 
   # Every room NPC's own workarounds, and each role's list (an NPC with none of its own uses
   # its role's): the kind and the first target key it authors. A kind with no target (a
@@ -527,10 +529,16 @@ class AccessLeakScanner
 
   # A workaround outside the places the server hands one over (sub-slice B)
   def scan_workarounds(body, ctx, add)
-    return if @workarounds.empty?
-
     walk_hashes(body, '$') do |hash, json_path|
       next unless hash['do'].is_a?(String)
+
+      # An authored entry carries `at`, which no run, pending or done entry does: a leak
+      # anywhere, with no exemption (the only way to see a leaked writes_down, which has no target)
+      if WORKAROUND_KINDS.include?(hash['do']) && hash.key?('at')
+        add.call('workaround', "authored #{hash['do']}", safe_path(json_path))
+        next
+      end
+      next if @workarounds.empty?
       next if ctx[:route].end_with?('/npc_frustration') && json_path =~ /\A\$\.answers\[\d+\]\.run\z/
       next if ctx[:scenario] && json_path =~ /\A\$\.npcFrustration\.[^.]+\.(pending|done)\[\d+\]\z/
 

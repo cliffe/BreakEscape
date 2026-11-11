@@ -148,10 +148,11 @@ module BreakEscape
       stored = store.is_a?(Hash) ? store[npc_id] : nil
       view = frustration_view(stored)
       # 2. the last spent hand-over again: the same body, recomposed, nothing written. A
-      # repeated drop answers {} again (a lost answer to a drop is resent like a lost "done").
+      # repeated drop, or a "done" after a drop, answers { dropped: true } (still 200, so a lost
+      # answer to a drop is resent harmlessly), which the runner can tell from an emit's {}
       last = view['lastSpent'][key]
       if last.is_a?(Hash) && last['hand'] == hand
-        return { status: :ok, body: {} } unless last['done']
+        return { status: :ok, body: { 'dropped' => true } } unless last['done']
 
         return workaround_body(npc, w)
       end
@@ -161,8 +162,9 @@ module BreakEscape
 
       # 4. the dwell, unless dropped
       dwell = WORKAROUND_DWELL.fetch(w['do'], 0)
-      if !dropped && server_now - handed['time'].to_f < dwell
-        return { status: :too_early, body: { 'error' => 'too early', 'retryAfter' => dwell } }
+      elapsed = server_now - handed['time'].to_f
+      if !dropped && elapsed < dwell
+        return { status: :too_early, body: { 'error' => 'too early', 'retryAfter' => (dwell - elapsed).ceil(1) } }
       end
 
       entry = frustration_entry(npc_id)
@@ -170,7 +172,7 @@ module BreakEscape
       entry['lastSpent'][key] = { 'hand' => hand, 'done' => !dropped }
       if dropped
         save!
-        return { status: :ok, body: {} }
+        return { status: :ok, body: { 'dropped' => true } }
       end
 
       entry['done'] << index if LASTING_KINDS.include?(w['do']) && !entry['done'].include?(index)
@@ -197,7 +199,8 @@ module BreakEscape
       when 'writes_down'
         self.class.account_holder?(npc) && AccessWork.present_string?(npc['needsHome'])
       when 'prop_door'
-        AccessWork.present_string?(w['door']) && scenario_data['rooms'].is_a?(Hash) && scenario_data['rooms'].key?(w['door'])
+        AccessWork.present_string?(w['door']) && AccessWork.present_string?(w['prop']) &&
+          scenario_data['rooms'].is_a?(Hash) && scenario_data['rooms'].key?(w['door'])
       when 'emit'
         AccessWork.present_string?(w['event'])
       else

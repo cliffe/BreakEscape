@@ -396,6 +396,38 @@ test('Workarounds: prop_door rules: locked, no gate, not the own room, the prop 
     assertHas(errors(issues(s)), "prop 'store_wedge' is in 'annex', which is not connected to 'store'");
 });
 
+test('Workarounds: a prop_door with no door or no prop is an error; a prop not hidden on its setGlobal is warned', { skip }, () => {
+    let s = wkClean();
+    delete tom(s).workarounds[0].door;
+    assertHas(errors(issues(s)), "tom's workaround 0 (prop_door) has no door");
+    s = wkClean();
+    delete tom(s).workarounds[0].prop;
+    assertHas(errors(issues(s)), "tom's workaround 0 (prop_door) has no prop");
+    s = wkClean();
+    tom(s).workarounds = [{ at: 50, do: 'prop_door' }];
+    const e = errors(issues(s));
+    assertHas(e, 'has no door');
+    assertHas(e, 'has no prop');
+    s = wkClean();
+    delete tom(s).workarounds[0].setGlobal;
+    assertHas(warnings(issues(s)), "tom's workaround 0 (prop_door) has no setGlobal");
+    s = wkClean();
+    delete s.rooms.office.objects.find(o => o.id === 'store_wedge').revealOnGlobal;
+    assertHas(warnings(issues(s)), "prop 'store_wedge' is not hidden with revealOnGlobal \"store_propped\"");
+});
+
+test('Workarounds: writes_down on a PC another NPC owns, or with no password, is an error', { skip }, () => {
+    let s = wkClean();
+    s.rooms.office.objects[0].screenOwner = 'tom';
+    assertHas(errors(issues(s)), "'dana_pc' belongs to \"tom\"");
+    s = wkClean();
+    s.rooms.office.npcs[0].creds.password = '';
+    assertHas(errors(issues(s)), 'dana has no password');
+    s = wkClean();
+    s.rooms.office.objects[0].screenOwner = 'dana';
+    assert.deepEqual(issues(s), []);
+});
+
 test('Workarounds: prop_door warnings: a door the NPC cannot open, a flag station behind it, a leash', { skip }, () => {
     let s = wkClean();
     tom(s).role = ['staff'];

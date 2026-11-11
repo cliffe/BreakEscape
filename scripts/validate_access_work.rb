@@ -564,6 +564,18 @@ module ValidateAccessWork
         elsif (st['postitNote'].is_a?(String) && !st['postitNote'].strip.empty?) || st['showPostit'] == false
           warn(issues, "#{tag}: '#{st['id']}' authors its own postitNote or sets showPostit: false, which wins over the " \
                        'written-down note: the workaround shows nothing new.')
+        else
+          # The server's owner rule (Game#login_pc_owner): screenOwner first, else the first room
+          # NPC whose needsHome is the PC. Another owner means a mark on the screen and no note.
+          owner = st['screenOwner'].is_a?(String) && !st['screenOwner'].empty? ? st['screenOwner'] : room_npcs(json_data).map { |x| x[:npc] }.find { |n| n['needsHome'] == st['id'] }&.dig('id')
+          if owner != nid
+            err(issues, "#{tag}: '#{st['id']}' belongs to #{owner.inspect} (screenOwner, else the first NPC with it as needsHome), " \
+                        "not #{nid}, so the sign-in screen shows no note.")
+          end
+        end
+        if BreakEscape::AccessIdentities.account?(npc)
+          pw = npc.dig('creds', 'password')
+          err(issues, "#{tag}: #{nid} has no password (creds.password), so the note would be empty.") unless pw.is_a?(String) && !pw.empty?
         end
         pcs = BreakEscape::AccessIdentities.sign_in_pcs(json_data).map { |x| x[:object] }.select do |pc|
           pc.is_a?(Hash) && BreakEscape::AccessIdentities.account_admitted?(pc, npc)
@@ -573,6 +585,15 @@ module ValidateAccessWork
                      'a modified browser can reach it this way; put it behind something the server checks.') if bad.any?
       when 'prop_door'
         door = w['door']
+        err(issues, "#{tag} has no door (the locked room it props open); the server never hands it over.") unless AW.present_string?(door)
+        err(issues, "#{tag} has no prop (the object the NPC walks to); the server never hands it over.") unless AW.present_string?(w['prop'])
+        if !AW.present_string?(w['setGlobal'])
+          warn(issues, "#{tag} has no setGlobal: nothing can reveal its prop when the door is propped.")
+        elsif AW.present_string?(w['prop']) && index[w['prop']] && index[w['prop']][:obj].is_a?(Hash) &&
+              index[w['prop']][:obj]['revealOnGlobal'] != w['setGlobal']
+          warn(issues, "#{tag}: prop '#{w['prop']}' is not hidden with revealOnGlobal \"#{w['setGlobal']}\", so it is on show " \
+                       'before the door is propped, or never.')
+        end
         room = rooms[door]
         if room.is_a?(Hash)
           err(issues, "#{tag}: room '#{door}' is not locked; a propped door opens nothing.") unless room['locked'] == true
@@ -697,6 +718,7 @@ module ValidateAccessWork
     earliest = t[:n] == 1 ? 'at once' : "#{t[:earliest].round} s#{t[:note] ? " (#{t[:note]})" : ''}"
     "ℹ️ Workaround #{npc['id']}[#{idx}] #{w['do']} at #{t[:at]}: opens #{workaround_opens(npc, w)}; " \
       "#{t[:n]} failed use(s) at perFail #{t[:per].round}; #{warning}; about #{t[:honest].round} s of outage; " \
-      "earliest by a modified browser #{earliest} after the first counted fail."
+      "earliest by a modified browser #{earliest} after the first counted fail." \
+      "#{%w[borrow_session share_login].include?(w['do']) ? ' Not performed until sub-slice H.' : ''}"
   end
 end
