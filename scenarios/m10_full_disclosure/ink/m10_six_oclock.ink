@@ -189,7 +189,7 @@ Agent 0x5E 'Lantern': I liked you. I'd still have pressed it.
     // Educational R1 E-m8: the supply-chain lesson, named once.
     Agent HaX: Everything we carry comes through stores for a reason. Hers came off his bench.
 - kowalczyk_answer == "briefing":
-    Agent 0x5E 'Lantern': No, you didn't. But thank you. #delivery: almost laughing
+    Agent 0x5E 'Lantern': No, you didn't. But thank you. #delivery: almost laughing, then the thanks meant
 - kowalczyk_answer == "worked_out":
     Agent 0x5E 'Lantern': That's worse. That means I was good.
 }
