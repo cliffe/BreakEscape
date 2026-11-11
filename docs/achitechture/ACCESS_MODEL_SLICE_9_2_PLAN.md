@@ -610,8 +610,10 @@ A workaround is only an opening if the player can see it coming. All of this use
   tell 0, with no warning before it; the validator reports such a workaround as "no warning"
   (section 10), so an author uses it on purpose or lowers `perFail` so the player sees tell 1 and
   then tell 2 first.
-- **The icon.** For 4 seconds of the needs clock after a counted failure `getState().failed` is
-  `{ need, missing }`. The parked need's own greyed bubble with its badge (office life's
+- **The icon.** For 4 seconds of the needs clock after a counted failure (counted from the end of
+  the failure's line, which hides the action icon while it shows; user decision q27, 2026-11-11)
+  `getState().failed` is `{ need, missing }`, and the action icon slot shows `npc-barrier` (a
+  plain striped barrier), solid, ahead of the frustration icon below. The parked need's own greyed bubble with its badge (office life's
   `getState().parked`) shows as it does for any park. While `tell` is 1 or 2 the action icon slot shows the existing `blocked`
   icon whenever the NPC has no job; at `tell` 2 it pulses, with the slow pulse the pressing-need
   bubble already has (off under reduced motion). This does not wait for `showPressingNeeds`: a
@@ -672,11 +674,12 @@ A workaround is only an opening if the player can see it coming. All of this use
   3. `work_fail` ("Why is nothing working?").
 
   With no line anywhere in the order, the topic is the cause's own pool (step 2), for its picture.
-  `PICTURE_CHATTER` (`:70-87`) gains an entry per new pool from icons that exist (section 2):
-  `station_fail`, `work_fail_no_access`, `work_fail_fed_up`, `social_blocked` and `usb_refused`
-  show `blocked`; `work_fail_file_share` shows `file`; `work_fail_printer` shows `print`;
-  `work_fail_email` and `work_fail` show `work`; `wk_writes_down`, `wk_prop_door`, `wk_borrow`
-  and `wk_share_login` show `work`; `login_aloud` shows `social`. A `work_fail_<kind>` with no
+  `PICTURE_CHATTER` (`:70-87`) gains an entry per new pool: `station_fail`,
+  `work_fail_no_access`, `work_fail_fed_up`, `social_blocked` and `usb_refused` show `barrier`
+  (q27; they showed `blocked` until the new art); `work_fail_file_share` shows `file`;
+  `work_fail_printer` shows `print`; `work_fail_email` and `work_fail` show `work`;
+  `wk_writes_down`, `wk_prop_door`, `wk_borrow` and `wk_share_login` show `workaround` (q21;
+  `work` until the new art); `login_aloud` shows `social`. A `work_fail_<kind>` with no
   entry of its own falls back to `work_fail`'s picture. So a student hears the thing they broke
   named, or at least sees its picture, and hears the tone change before the person acts. A refused
   USB device says `usb_refused` ("USB's disabled. Typical."), whatever the `tell`. The quoted
@@ -688,9 +691,16 @@ A workaround is only an opening if the player can see it coming. All of this use
   The line's timing depends on the answer's arrival; its choice stays seeded. On arrival at the
   colleague, `share_login` says its spoken line from `login_aloud` (6.5). These pools are
   scenario-authored as well, with the same defaults in `test_access_work`.
-- **The action icon for a visit.** While a workaround visit runs, the action icon slot shows
-  the existing `npc-work` picture, so a person walking somewhere for a reason looks different from
-  one wandering for coffee.
+- **The action icon for a workaround.** While a workaround visit runs (`writes_down`,
+  `prop_door`, `share_login`), and while an NPC uses a PC it borrowed (`borrow_session`), the
+  action icon slot shows `npc-workaround` (an arrow hopping a striped barrier; user decision q21,
+  2026-11-11), so a person working round an outage looks different from one wandering for coffee
+  or checking a printer (a check visit keeps `npc-work`). An `emit` has no visit: the runner calls
+  `NPCNeedsSystem.showWorkaround(npcId)`, which shows the same icon for 4 s
+  (`getState().workaround`), counted from the end of any line showing. A workaround visit calls it
+  as well when it is done: the start line is shown from the hand-over and can hide the action
+  icon for the whole of a short visit (Tom's 4 s at the wedge in the first live run); a borrowed PC's use calls it when done for the same reason. A new job clears it and the barrier; an `emit` that lands while the NPC has a job shows nothing. A queued check visit waits while it or the barrier shows; once the failure's causes pass again the barrier ends and a queued check visit to that resource is dropped. With no job the order is `noticed` (when it shows), `workaround`,
+  `barrier`, the frustration `blocked`, the leashed `blocked`.
 
 ### 5.6 Outages
 

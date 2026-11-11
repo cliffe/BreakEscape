@@ -110,12 +110,12 @@ test('the mutter: a usb_refused line for its time, seeded; the picture without o
     assert.ok(a, 'the mutter shows');
     assert.ok(chatter.usb_refused.includes(a.line));
     assert.equal(a.line, b.line, 'seeded');
-    // no line: the blocked picture
+    // no line: the barrier picture (user decision q27)
     const { sys } = setup();
     let pic = null;
     for (let i = 0; i < 120 && !pic; i++) { sys.step(250); const t = sys.getState('lena').talking; if (t && t.topic === 'usb_refused') pic = t; }
     assert.ok(pic);
-    assert.equal(pic.picture, 'blocked');
+    assert.equal(pic.picture, 'barrier');
 });
 
 test('mutter(npcId, topic) is public and ignores the chatter cooldown', () => {
