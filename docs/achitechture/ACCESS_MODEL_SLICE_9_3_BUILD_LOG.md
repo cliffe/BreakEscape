@@ -229,7 +229,7 @@ All Ruth Adeyemi (voice Sulafat). No audio generated.
 | # | File:line | Old | New | Marker |
 |---|---|---|---|---|
 | 1 | `ruth.ink:46` | (none; row 1 above, never voiced) | "The drop box goes on a spare port. Once it's in, it shows you what answers on their network." | VOICE (new, replaces row 1's text) |
-| 2 | `ruth_phone.ink:148` | (none) | "Open it from your bag. The door controller's on its list, and it takes a front of house account." | VOICE (new, phone) |
+| 2 | `ruth_phone.ink:148` | (none) | "Open it from your bag. The door controller's on its list, and it takes a front of house account." (reworded in review round 2) | Not voiced (phone chat; corrected in review round 2) |
 | 3 | `ruth_debrief.ink:188` | row 4 above at line 172 | same words, moved | VOICE (new, as row 4; line moved only) |
 
 Rows 2, 3, 5 and 6 above keep their text; row 5 is now `ruth_debrief.ink:183`, row 6 `:185`.
@@ -248,5 +248,82 @@ Rows 2, 3, 5 and 6 above keep their text; row 5 is now `ruth_debrief.ink:183`, r
 ### Handover
 
 Round complete; nothing in progress. Next: review round 2. Open for the user: the six lines of
-step 9 plus the phone line await voicing; the `maxAttempts: 5` lockout (accepted warning) is a
-call the user may want to revisit.
+step 9 await voicing (the phone line is not voiced: corrected in review round 2); the `maxAttempts:
+5` lockout was removed in review round 2.
+
+## Review round 2 fixes (2026-11-11)
+
+Reviews: `LAB_NETWORKS_HABITS_CODE_REVIEW_R2_ENGINE.md` (0 blockers, 0 majors, 1 minor, 4 nits)
+and `LAB_NETWORKS_HABITS_CODE_REVIEW_R2_SCENARIO.md` (0 blockers, 0 majors, 3 minors, 6 nits).
+Commits `768ec37f6` (engine), `5de8edb39` (lab) and this log commit.
+
+### Orchestrator decision
+
+- **The remote sign-in attempt limit at the door controller is removed.** The `door_controller`
+  policy (`maxAttempts: 5`) and the `policy` field on `store_controller` are gone. Chris's
+  passphrase cannot be guessed, so the limit protected nothing, and a lockout left a dead end:
+  Ruth's phone hint and `opt_door_admin` still pointed at a controller that would never take her
+  password. The two validator warnings for it went with it. The lab's tests that existed only for
+  it now check the opposite (no `policy` on the controller; a wrong password answers with no
+  `attemptsLeft`). The engine's general support for `maxAttempts` on remote sign-in and its tests
+  (`network_remote_signin_test.rb`) are unchanged. An ERB comment at the old `policies` place
+  records why.
+
+### Review round 2 outcomes
+
+Engine review:
+
+| Finding | Outcome |
+|---|---|
+| m1 model bootstrap ships grant contents | Fixed. `Game#filtered_scenario_for_bootstrap` ends with `DeclaredGrants.strip_all_grant_contents!`; the controller strip stays as a second line. New test in `filtered_scenario_test.rb` (a timer `give_item` comes back with `hasContents: true`, no `contents`, the stored scenario untouched); the lab model test drops its own strip. Both fail with the model line removed (checked) |
+| n1 toast markup and PC id fallback | Fixed. `showNotification` and `gameAlert` take `options.plainText` (title and message set by `textContent`, lines split into text nodes and `<br>` elements; carried through the hold queue and the pull-back), as `gameConfirm` already does. `linkDropped` passes it, and a session with no host is named "a remote PC", never by its id. Tests in `toast-duplicate.test.mjs` (a markup label stays out of the markup) and `pc-sessions.test.mjs` |
+| n2 HTTP leak test leaves out resource ids | Fixed: `hidden` adds `resources.keys`, with `lw_fs01_records` and `lw_prn02` asserted present |
+| n3 non-list `contents` reads as none silently | Fixed as a validator warning (the brief's call; the reviewer suggested an error): "contents is an object/a string/null, not a list; the share is treated as listed only". Test for all three, and none for a list |
+| n4 lab lockout end to end | Not done: the limit is gone (decision above) |
+| Engine note: "This account is locked on this PC." for a headless host | Not changed: no lab host can lock out now; engine wording left for a later pass |
+
+Scenario review:
+
+| Finding | Outcome |
+|---|---|
+| m1 lockout dead end | Fixed by removing the limit (decision above). H5.18 and the expected validator output updated; no ROE line needed |
+| m2 phone line marked for voicing | Fixed: round 1's row 2 is marked not voiced (the lab's `ruth_phone` is a phone chat with no `voiced: true`), and the handover says six lines. The list below holds exactly the voiced lines |
+| m3 phone reply after an unplug, and "it" | Fixed: "Plug the box back in if you pulled it, then open the drop box link in your bag. Chris's account works on the door controller." (25 words, the dialoguelint cap). Not voiced |
+| n1 PLAYTEST cites H5.4 for the hot desk | Fixed: Chris in H5.2, Melanie in H5.13 |
+| n2 credits "found administrable" | Fixed: "found in an unlocked cupboard with its login on a label" |
+| n3 password test's two-digit scan | Fixed: the test reads only the scenario's strings (keys and values, never numbers such as coordinates) and the ink; words of three or more letters match as substrings, numbers of two or more digits only as whole numbers |
+| n4 pass rule leaves out H5 | Fixed: "every H5 step that is run is PASS as written" |
+| n5 "No password is typed" | Fixed: "No real password is typed in any run (H5.18 types only a guess)" |
+| n6 H5.21 resume room | Fixed: cross reference to R8 step 5, back in `briefing_room`, not a bug |
+| Reload resumes in `briefing_room` | No change: the engine's normal resume, as the reviewer found |
+
+### Lines to voice (final, step 9 and both review rounds)
+
+All Ruth Adeyemi (voice Sulafat). Exactly six; no audio generated. Old clip ids are in the step 9
+table above.
+
+| # | File:line | Marker |
+|---|---|---|
+| 1 | `ruth.ink:46` | VOICE (new) |
+| 2 | `ruth_debrief.ink:168` | RE-VOICE (`d08648a6`) |
+| 3 | `ruth_debrief.ink:169` | RE-VOICE (`74b84b29`) |
+| 4 | `ruth_debrief.ink:183` | RE-VOICE (`81e079ff`) |
+| 5 | `ruth_debrief.ink:185` | VOICE (new) |
+| 6 | `ruth_debrief.ink:188` | VOICE (new) |
+
+`ruth_phone.ink:148` is not voiced (phone chat). This round changed no voiced line.
+
+### Checks
+
+| Check | Result |
+|---|---|
+| `scripts/compile-ink.sh lab_physical_pentest` | 10 compiled, 0 failed (the END-tag warning predates the branch) |
+| Validator `--no-graph` | Exit 0, no errors. The two `maxAttempts` warnings are gone; the remaining warnings, identity reach, network reach, "Reachable without a foothold" lines and habits report match PLAYTEST.md's expected output |
+| `dialoguelint` | Totals by rule: none |
+| `tagdiff --ref HEAD` | Structure unchanged, 10 files |
+| Browser (game 1205, :3014, headless) | All PASS: plant and view rows; before the capture, a guessed password at the controller refused with "Incorrect username or password." and no count, `loginFailures` 0; keylogger capture; the phone option's reply as above; remote sign-in to LW-DOOR01 with Chris picked from Captured sign-ins, the three pages, `opt_door_admin` complete; unplug with no desktop open, the toast's `textContent` exactly "Unplugged. Your session on LW-DOOR01 ended." with `innerHTML` the same text and no child elements; re-plant and one reload, resumed in `briefing_room`, link item kept, tasks complete. Leak check over 96 responses: `VERDICT: no leaks found`. `verify-run.rb --access`: `signedInPcs store_controller`, `loginLockouts` 0 |
+| Suites (shared lock) | Rails 1422 runs, 15046 assertions, 0 failures, 0 errors, 1 skip; JS `bin/test-js -j 3` 483 files passed, 0 failed |
+
+### Handover
+
+Round complete; nothing in progress. Open for the user: the six lines above await voicing.
