@@ -189,7 +189,7 @@ Agent 0x5E 'Lantern': I liked you. I'd still have pressed it.
     // Educational R1 E-m8: the supply-chain lesson, named once.
     Agent HaX: Everything we carry comes through stores for a reason. Hers came off his bench.
 - kowalczyk_answer == "briefing":
-    Agent 0x5E 'Lantern': *almost laughs* No, you didn't. But thank you.
+    Agent 0x5E 'Lantern': No, you didn't. But thank you. #delivery: almost laughing, then the thanks meant
 - kowalczyk_answer == "worked_out":
     Agent 0x5E 'Lantern': That's worse. That means I was good.
 }
@@ -234,9 +234,9 @@ Agent 0x5E 'Lantern': I liked you. I'd still have pressed it.
 - voltage_outcome == "stood_down_print":
     Voltage (Critical Mass): You lifted my thumb at Albion and kept it for tonight. I'm still annoyed about it.
 - voltage_outcome == "talked_down" and m04_voltage_escaped:
-    Voltage (Critical Mass): *flatly* You let me walk out of Albion. March to tonight, I never said a word. Put that in too.
+    Voltage (Critical Mass): You let me walk out of Albion. March to tonight, I never said a word. Put that in too. #delivery: flatly
 - voltage_outcome == "talked_down":
-    Voltage (Critical Mass): *flatly* March to tonight, and I never said a word. Put that in too.
+    Voltage (Critical Mass): March to tonight, and I never said a word. Put that in too. #delivery: flatly
 - voltage_outcome == "fought" or voltage_outcome == "ko":
     Voltage (Critical Mass): Albion, and now this. Next time, show me the sheet before you swing.
 - else:

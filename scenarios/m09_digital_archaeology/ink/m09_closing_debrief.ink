@@ -314,7 +314,7 @@ Narrator: HaX is on the line from the Citadel, already packing.
 - hax_confession_answer == "should_have_told":
     Agent HaX: Everything I have on the bunker is on your phone. As promised.
 - hax_confession_answer == "same_in_your_place":
-    Agent HaX: I said thank you once. I'm not saying it twice. *beat* I haven't forgotten.
+    Agent HaX: I said thank you once. I'm not saying it twice. I haven't forgotten. #delivery: a beat's pause before the last sentence, softer
 - hax_confession_answer == "afterwards":
     Agent HaX: You said afterwards. I'm holding you to it.
 }

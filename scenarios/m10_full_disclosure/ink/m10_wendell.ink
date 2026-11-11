@@ -49,7 +49,7 @@ Wendell Briggs: You with the data company? Nobody told me there'd be a visit.
     {not gallery_shutter_cut:
         ~ gallery_shutter_cut = true
         ~ cut_by_hand = false
-        Wendell Briggs: *pause* Well. Which switch do you want.
+        Wendell Briggs: Well. Which switch do you want. #delivery: after a pause, decided
         -> wendell_switch
     }
     -> wendell_dale

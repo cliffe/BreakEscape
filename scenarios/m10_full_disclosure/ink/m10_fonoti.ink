@@ -32,7 +32,7 @@ VAR fon_shift_used = false  // "Shift change" has been tried at the challenge
 + {not fon_card_given and not outer_lock_open and gallery_rota_read} [The rota says you carry the card.]
     ~ fon_card_given = true
     #give_item:notes:gallery_code_card
-    Sione Fonoti: It does, huh. *slowly* Okay. It's only a card. Here.
+    Sione Fonoti: It does, huh. Okay. It's only a card. Here. #delivery: slowly after the first sentence, giving in
     -> talk
 + {not fon_card_given and not outer_lock_open and ghost_gift == "card"} [Ghost says you'll want to be off shift.]
     ~ fon_card_given = true
@@ -71,7 +71,7 @@ VAR fon_shift_used = false  // "Shift change" has been tried at the challenge
 Sione Fonoti: Hey. That's the core door. Who said you could open it?
 + [Shift change. Orders from upstairs.]
     ~ fon_shift_used = true
-    Sione Fonoti: Nobody tells me anything. *slowly* Okay. Go on.
+    Sione Fonoti: Nobody tells me anything. Okay. Go on. #delivery: slowly after the first sentence, giving in
     ~ fon_quiet = true
     #exit_conversation
     -> talk

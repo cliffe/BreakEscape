@@ -144,7 +144,7 @@ Victoria Sterling: You. St. Catherine's was a proof of concept. This is the rest
     -> gallery_rest
 + [You're under arrest.]
     ~ victoria_gallery = "arrested_here"
-    Victoria Sterling: Of course I am. *almost amused* I won't make you chase me down a stair.
+    Victoria Sterling: Of course I am. I won't make you chase me down a stair. #delivery: almost amused after the first sentence
     ~ vic_quiet = true
     #exit_conversation
     -> gallery_rest

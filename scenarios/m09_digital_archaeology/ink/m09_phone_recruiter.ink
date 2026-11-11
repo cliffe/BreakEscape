@@ -168,7 +168,7 @@ Agent HaX: Buy from her and we go in an ENTROPY ledger, next to his orders. He'l
     -> yes_block
 + [No. Keep your name.]
     #set_global:recruiter_gone:true
-    Then I'll tidy my own desk. *beat* Gone. Goodnight, agent.
+    Then I'll tidy my own desk. Gone. Goodnight, agent. #delivery: a beat's pause after the first sentence
     -> no_block
 
 // The three HaX blocks: fixed, identical to A1's deck_resume (unprefixed there).
