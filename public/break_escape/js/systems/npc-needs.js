@@ -84,21 +84,24 @@ export const PICTURE_CHATTER = Object.freeze({
     // Slice 19: a desk-phone call nobody hears (or with no lines left) shows the phone
     phone: Object.freeze(['phone']),
     phone_message: Object.freeze(['phone']),
-    // Access slice 9.2 U (ACCESS_MODEL_SLICE_9_2_PLAN 7): a device the PC's USB policy refused
-    usb_refused: Object.freeze(['blocked']),
+    // Access slice 9.2 U (ACCESS_MODEL_SLICE_9_2_PLAN 7): a device the PC's USB policy refused.
+    // User decision q27: a refused or failed use shows the barrier (was blocked, which keeps its
+    // office-life meaning: nothing permitted reachable)
+    usb_refused: Object.freeze(['barrier']),
     // Access slice 9.2 A (plan 5.5): the failure mutters and the workaround start lines
-    station_fail: Object.freeze(['blocked']),
-    work_fail_no_access: Object.freeze(['blocked']),
-    work_fail_fed_up: Object.freeze(['blocked']),
-    social_blocked: Object.freeze(['blocked']),
+    station_fail: Object.freeze(['barrier']),
+    work_fail_no_access: Object.freeze(['barrier']),
+    work_fail_fed_up: Object.freeze(['barrier']),
+    social_blocked: Object.freeze(['barrier']),
     work_fail_file_share: Object.freeze(['file']),
     work_fail_printer: Object.freeze(['print']),
     work_fail_email: Object.freeze(['work']),
     work_fail: Object.freeze(['work']),
-    wk_writes_down: Object.freeze(['work']),
-    wk_prop_door: Object.freeze(['work']),
-    wk_borrow: Object.freeze(['work']),
-    wk_share_login: Object.freeze(['work']),
+    // User decision q21: a workaround's start line shows the workaround icon (was work)
+    wk_writes_down: Object.freeze(['workaround']),
+    wk_prop_door: Object.freeze(['workaround']),
+    wk_borrow: Object.freeze(['workaround']),
+    wk_share_login: Object.freeze(['workaround']),
     login_aloud: Object.freeze(['social'])
 });
 const PICTURE_DEFAULT = Object.freeze(['social']);
@@ -127,7 +130,8 @@ export const TURN_BACK = Object.freeze({
  * whose place cannot be reached is kept (check visit, workaround visit).
  */
 export const JUDGED_NEEDS = Object.freeze(['work', 'social_media']);
-export const FAIL_SHOW_MS = 4000;
+export const FAIL_SHOW_MS = 4000;          // after the failure's grumble, if one is showing
+export const WORKAROUND_SHOW_MS = 4000;    // an emit workaround's icon (it has no visit to show it)
 export const FAILURE_PARKS = Object.freeze(['off', 'failed', 'held']);
 export const VISIT_DWELL_S = 8;
 export const VISIT_DROP_MS = Object.freeze({ check: 60000, workaround: 120000 });
@@ -473,7 +477,7 @@ export class NPCNeedsSystem {
             // re-arm mark per need, resources already checked this outage, queued visits, the
             // shown failure, and the outage kick's last-seen conditions and pending needs
             frustration: 0, tell: 0, settled: false,
-            rearm: {}, failSent: {}, checked: new Set(), visits: [], borrow: null, failedShow: null, failCause: {},
+            rearm: {}, failSent: {}, checked: new Set(), visits: [], borrow: null, failedShow: null, workaroundShow: null, failCause: {},
             kickSeen: {}, kickPending: new Set(),
             urgentFlag: {},
             mode: 'idle',
@@ -1889,6 +1893,20 @@ export class NPCNeedsSystem {
     }
 
     /**
+     * Access slice 9.2 (user decision q21): an `emit` workaround has no visit, so the runner calls
+     * this to show the workaround icon (getState().workaround) for WORKAROUND_SHOW_MS after any
+     * line showing now. False for an NPC the system does not run.
+     */
+    showWorkaround(npcId) {
+        const s = this.states.get(npcId);
+        if (!s) return false;
+        const said = s.saying && s.saying.until > this.clockMs ? s.saying.until - this.clockMs : 0;
+        s.workaroundShow = { until: this.clockMs + said + WORKAROUND_SHOW_MS };
+        this._log(npcId, 'workaround_shown');
+        return true;
+    }
+
+    /**
      * Access slice 9.2 (plan 5.5): one line from `topic` (a mutter) over one NPC, through the grumble
      * path with the chatter cooldown ignored; the topic's own picture with no line. False for an
      * NPC the system does not run.
@@ -2068,7 +2086,10 @@ export class NPCNeedsSystem {
      */
     _countFailure(s, need, missing, objectId) {
         const id = s.npcId;
-        s.failedShow = { need, missing: (missing || []).map(c => ({ ...c })), until: this.clockMs + FAIL_SHOW_MS };
+        // User decision q27: counted from the end of the failure's grumble, which hides the action
+        // icon while it shows, so the barrier icon is seen after the line (as avoidShow is)
+        const said = s.saying && s.saying.until > this.clockMs ? s.saying.until - this.clockMs : 0;
+        s.failedShow = { need, missing: (missing || []).map(c => ({ ...c })), until: this.clockMs + said + FAIL_SHOW_MS };
         // q17 (2026-11-11): the causes of the last counted failure of each need, for causeCleared
         s.failCause[need] = (missing || []).map(c => ({ ...c }));
         const drain = Number(this._plan(s)?.breakDrain);
@@ -4054,7 +4075,8 @@ export class NPCNeedsSystem {
         for (const k of Object.keys(s.levels)) levels[k] = round2(s.levels[k]);
         return {
             npcId, mode: s.mode, levels, atPost: s.atPost, scriptSuspended: s.scriptSuspended,
-            job: s.job ? { windingUp: !!s.job.windupUntil, need: s.job.need, kind: s.job.kind, phase: s.job.phase, targetId: s.job.targetId, itemId: s.job.itemId, carrying: s.job.carrying, tag: s.job.tag || null, leashed: !!s.job.leashed, privateSkipped: !!s.job.privateSkipped, prints: !!s.job.prints, errand: !!s.job.errand, files: !!(s.job.stowAt && s.job.slot), phone: !!s.job.phone, queuePlace: s.job.phase === 'queued' ? this._queuers(s.job.targetId).indexOf(s) + 1 : null } : null,
+            // workaround (q21): a workaround visit, or the use of a PC borrowed by a workaround
+            job: s.job ? { workaround: !!(s.job.borrowed || (s.job.kind === 'visit' && s.job.visit?.kind === 'workaround')), windingUp: !!s.job.windupUntil, need: s.job.need, kind: s.job.kind, phase: s.job.phase, targetId: s.job.targetId, itemId: s.job.itemId, carrying: s.job.carrying, tag: s.job.tag || null, leashed: !!s.job.leashed, privateSkipped: !!s.job.privateSkipped, prints: !!s.job.prints, errand: !!s.job.errand, files: !!(s.job.stowAt && s.job.slot), phone: !!s.job.phone, queuePlace: s.job.phase === 'queued' ? this._queuers(s.job.targetId).indexOf(s) + 1 : null } : null,
             pressing: this._pressing(s),
             talking: this._talking(npcId),
             chatPartner: this._chatPartner(npcId),
@@ -4071,6 +4093,8 @@ export class NPCNeedsSystem {
             // counted (for FAIL_SHOW_MS), queued visits, and whether a visit is running
             frustration: s.frustration, tell: s.tell, settled: s.settled,
             failed: s.failedShow && this.clockMs < s.failedShow.until ? { need: s.failedShow.need, missing: s.failedShow.missing.map(c => ({ ...c })) } : null,
+            // q21: an emit workaround just done (showWorkaround), for WORKAROUND_SHOW_MS
+            workaround: !!(s.workaroundShow && this.clockMs < s.workaroundShow.until),
             visits: s.visits.map(v => ({ kind: v.kind, at: { ...v.at } })),
             visiting: s.job?.kind === 'visit' ? { kind: s.job.visit?.kind || null, at: { ...(s.job.visit?.at || {}) } } : null,
             judged: { work: this._judged(s, 'work'), social_media: this._judged(s, 'social_media') },
