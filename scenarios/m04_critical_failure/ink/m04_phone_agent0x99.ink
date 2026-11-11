@@ -250,7 +250,7 @@ Sent. Once you know what's listening, it tells you what's worth pushing on.
 === request_erlang_guide ===
 ~ erlang_guide_hint_given = true
 #give_item:lab-workstation:safetynet_field_guide_erlang_ssh
-Sent. Erlang/OTP SSH daemon on a high port — a brand-new pre-auth RCE that runs commands before it even asks who you are. Your way in.
+Sent. Erlang/OTP SSH daemon on the high port from the crew's job card — a brand-new pre-auth RCE that runs commands before it even asks who you are. Your way in.
 -> support_hub
 
 === request_privesc_guide ===

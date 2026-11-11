@@ -99,9 +99,9 @@
     "scenario": "m10_full_disclosure (Break Escape SAFETYNET: Mission 10 — Full Disclosure VMs)",
     "vulnerabilities": [
       "Maltrail unauthenticated command injection in the monitoring platform's login handler (security monitoring host foothold)",
-      "Staging schedule held in the monitoring platform's threat-data store (monitoring host, second flag)",
-      "Privileged container (Docker) escape to the host beneath it (release host)",
-      "Chroot jail escape to the host beneath it (core host)",
+      "Staging schedule in a separate password-gated staging account, opened with the sign-in card found in the game (monitoring host, second flag)",
+      "Privileged container (Docker) escape to the host beneath it, the service port named in the handover log behind the duty sheet's login (release host)",
+      "Chroot jail escape to the host beneath it, then a sealed archive opened with the access code found in the game (core host)",
       "Network mapping and service fingerprinting across the bunker network"
     ],
     "flags": 4,

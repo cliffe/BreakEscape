@@ -52,7 +52,9 @@
 # placeholders; the built box generates the real values. F9 (confirm after the
 # build): the three hostnames, the flag values, that each station takes the
 # right flag, and that root login over SSH is refused on the release and core
-# hosts. The four guide labUrls come with the lab sheets (written last).
+# hosts. (2026-11-11: the bunker_monitor index order [foothold, staging] was
+# checked statically against SecGen's reader and Hacktivity's flag import; see
+# spec_m10.md. Still confirm on the first build.) The four guide labUrls come with the lab sheets (written last).
 # Everything else derives from the two tables, so only these lines change.
 # ============================================================================
 
@@ -199,8 +201,16 @@ outer_lock_pin = '6083'
 # the platform), so secmon is only the service account's name on the tag, not a
 # login; no monitoring password is handed out.
 monitor_login_user = 'secmon'
+# VM integration pass (2026-11-11): the monitoring console's port, printed on the
+# maintenance tag. Must equal the maltrail_rce port the SecGen XML pins (8338).
+monitor_console_port = '8338'
 release_login_user = 'relops'
 release_login_password = 'Release!Shift25'
+# VM integration pass (2026-11-11): the release host's handover log (in relops's
+# home on the VM) names the release service's port; the duty sheet points at it.
+# core_access_key is the password of the sealed archive Tesseract left for the
+# agent in root's home on the core host; flag 4 is inside it. Both fixed strings
+# must equal the SecGen XML (spec_m10.md).
 core_access_key = 'TSRCT-CORE-9F21'
 # staging copy of the schedule (gates flag 2); its own find in the server hall, by the release console (R4 M1)
 staging_login_user = 'staging'
@@ -443,6 +453,7 @@ txt[:core_files] = lambda do |notice|
     beta              Closed. Server left running in Helena. For whoever came.
     notice, albion    #{notice}
     reading, for 0x00 A copy. The original went to Helena.
+    for the agent     Sealed. Opened with his code.
   T
 end
 txt[:executed_screen] = <<~'T'.chomp
@@ -478,7 +489,7 @@ end
 # for the voice bible and the tts-audio stage. ----------------------------------
 rp = 'Consistent British Received Pronunciation accent throughout -- do not shift to any other accent.'
 voices = {
-  hax_phone: { 'name' => 'Aoede', 'style' => 'Intelligence handler on a secure line, running a raid on her own teacher\'s bunker. Speak with a consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Use a steady, mid-range pitch. Quick, dry and clipped; the worse it gets, the fewer words she uses.', 'language' => 'en-GB' },
+  hax_phone: { 'name' => 'Aoede', 'style' => 'Intelligence handler speaking over a secure phone line. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.', 'language' => 'en-GB' },
   netherton: { 'name' => 'Charon', 'style' => "Cinematic thriller. #{rp} Low, deliberate, unhurried. SAFETYNET's director, running a raid from a folding table in the Montana cold; he does not raise his voice and he does not soften anything, and under the control this one is personal.", 'language' => 'en-GB' },
   nightshade: { 'name' => 'Enceladus', 'style' => "SAFETYNET's cryptographic-hardware analyst. #{rp} Calm, precise, technically fluent; a colleague you trust. Tonight he is caught, cooperating or not, watching the agent he once taught walk into his old master's house.", 'language' => 'en-GB' },
   tesseract: { 'name' => 'Sadaltager', 'style' => 'ENTROPY\'s planner, a man in his sixties, in person at his own console. Deliberately unplaceable -- an educated, faintly mid-Atlantic English with every regional marker sanded off, which could be Western European or North American; keep it consistent throughout. Low pitch that never lifts; quiet, slow, deliberate pace with a lecturer\'s precision. Faintly amused and courteous to the end. Nothing that happens tonight surprises him, including losing.', 'language' => 'en-GB' },
@@ -2682,7 +2693,7 @@ end
           "observations": "The second van. A steel rail along one wall, for cuffs."
         },
         {
-          "_comment": "VM settled 2026-10-23: flag 1's foothold is a hole in the monitoring platform, not a login. The tag names the monitoring host and its service account (orientation), not a password. A tag on Tomb Gamma's gate terminal (their kit, not SAFETYNET's field console). Position beside the terminal's stand (SD R4 d2).",
+          "_comment": "VM settled 2026-10-23: flag 1's foothold is a hole in the monitoring platform, not a login. The tag names the monitoring host, its console port (VM pass 2026-11-11: 8338, pinned in the XML) and its service account (orientation), not a password. A tag on Tomb Gamma's gate terminal (their kit, not SAFETYNET's field console). Position beside the terminal's stand (SD R4 d2).",
           "type": "notes",
           "id": "monitor_maintenance_tag",
           "name": "Maintenance Tag",
@@ -2690,7 +2701,7 @@ end
           "readable": true,
           "position": { "x": 15.6, "y": 3.4 },
           "observations": "A laminated maintenance tag on a cable tie, hanging off the gate terminal's power lead.",
-          "text": "TOMB GAMMA SECURITY MONITORING.\nHost: <%= bunker_monitor_ip %>\nRuns as service account <%= monitor_login_user %>. Maintenance only.\nDo not remove.",
+          "text": "TOMB GAMMA SECURITY MONITORING.\nHost: <%= bunker_monitor_ip %>\nConsole: port <%= monitor_console_port %>.\nRuns as service account <%= monitor_login_user %>. Maintenance only.\nDo not remove.",
           "puzzle_graph_role": "key",
           "puzzle_graph_unlocks": "gate_terminal"
         }
@@ -3782,7 +3793,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "puzzle_graph_unlocks": "release_console"
         },
         {
-          "_comment": "VM gating F12 (handoff B5 item 2): the release host's operator login, behind the power-room card (the hall is past the power room), so flag 3 needs this find. Position by the east racks (SD R4 d3); strings set by the VM plan.",
+          "_comment": "VM gating F12 (handoff B5 item 2): the release host's operator login, behind the power-room card (the hall is past the power room), so flag 3 needs this find. VM pass 2026-11-11: the login opens relops's home, whose handover log names the release service's port (spec_m10.md), so the sheet is the route to the service. Position by the east racks (SD R4 d3); strings set by the VM plan.",
           "type": "notes",
           "id": "release_operator_card",
           "name": "Operator's Duty Sheet",
@@ -3790,7 +3801,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "readable": true,
           "position": { "x": 15.5, "y": 3.5 },
           "observations": "A duty sheet dropped by the racks. Release service, operator on shift.",
-          "text": "RELEASE SERVICE. OPERATOR ON SHIFT.\nHost: <%= release_host_ip %>\nRelease service login: <%= release_login_user %>\nPassword: <%= release_login_password %>\nSign the log at handover.",
+          "text": "RELEASE SERVICE. OPERATOR ON SHIFT.\nHost: <%= release_host_ip %>\nShift login: <%= release_login_user %>\nPassword: <%= release_login_password %>\nThe release service's port is in the handover log, in the shift home. Sign it at handover.",
           "puzzle_graph_role": "key",
           "puzzle_graph_unlocks": "sealed_hatch"
         },
@@ -4357,7 +4368,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "observations": "The service door, east wall. Steel, a reader, and a camera on a bracket above it that has never once moved."
         },
         {
-          "_comment": "VM settled 2026-10-23: the core foothold needs no code; the envelope is Tesseract's host pointer and his invitation to the agent he called down, not a login. Left on the desk beside his terminal, found where flag 4's station already works. Position on that desk (SD R4 d1).",
+          "_comment": "VM settled 2026-10-23: the core foothold needs no code; the envelope is Tesseract's host pointer and his invitation to the agent he called down, not a login. VM pass 2026-11-11: the code is the password of the sealed archive he left for the agent in root's home on the core host, and flag 4 is inside it (spec_m10.md). Left on the desk beside his terminal, found where flag 4's station already works. Position on that desk (SD R4 d1).",
           "type": "notes",
           "id": "core_access_key",
           "name": "Core Access Code",
@@ -4365,7 +4376,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "readable": true,
           "position": { "x": 2.2, "y": 4.8 },
           "observations": "An envelope on the desk beside the host terminal, stamped CORE. ACCESS. Left out for whoever came down.",
-          "text": "CORE HOST. HIS BOX.\nHost: <%= core_host_ip %>\nFor the agent, from A.T.: <%= core_access_key %>\nNot a password. His word that this is the box he wants you on.",
+          "text": "CORE HOST. HIS BOX.\nHost: <%= core_host_ip %>\nFor the agent, from A.T.: <%= core_access_key %>\nNot a login. It opens what I left for you on the box. Nothing else will.",
           "puzzle_graph_role": "key",
           "puzzle_graph_unlocks": "core_host_terminal"
         }

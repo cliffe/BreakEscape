@@ -81,7 +81,7 @@
   "secgen": {
     "scenario": "m08_the_mole (Break Escape SAFETYNET: Mission 8 — The Mole VMs)",
     "vulnerabilities": [
-      "GitList CVE-2018-1000533 (argument injection)",
+      "GitList CVE-2014-4511 (remote command execution)",
       "Leaked credentials in repository",
       "Sudo misconfiguration",
       "Access log analysis"

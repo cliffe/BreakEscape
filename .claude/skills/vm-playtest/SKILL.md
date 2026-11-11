@@ -40,13 +40,16 @@ Point each subagent at files rather than restating them (AGENTS.md, "Writing a s
 A subagent's report to the orchestrator is **at most 15 lines** and carries no scenario text, attack content, exploit detail or quoted command output. The orchestrator's model over-flags that material, so a full handover note would trip it. Every VM subagent reports back in this allowlist form and nothing else:
 
 - **verdict:** PASS or FAIL (one word).
-- **per-step result:** `name: PASS` or `name: FAIL`, one per solve step. Step names only, no output.
+- **per-step result:** `step N/M: PASS` or `step N/M: FAIL`, by step INDEX. Never step names: they describe the technique.
 - **counts only:** flags earned, steps passed, tests passed (numbers, not values).
-- **commits:** short hash plus subject line, nothing more.
+- **commits:** short hash only. No subject line: solve-commit subjects name the technique.
+- **no names:** no module, CVE, tool, service, vulnerability or technique names anywhere in the report; refer to VM stages only as flag 1-N.
 - **file refs:** bare `file:line`, never the line's content.
 - **open items:** by handover-note section heading, "see note", with a count. Never the detail itself.
 
 All of the real detail (step output, flag values, SecGen reasoning, the full changelog) goes into a **handover-note file**, written for the next agent, not for the orchestrator. The orchestrator is given the note's path and **never opens it**. When it needs more, it asks the agent for a neutral one-line summary, or has a small Haiku reader summarise the note. Notes point to content by `file:line` instead of quoting it.
+
+When the user asks a technical question about a VM, an opus48 agent writes the answer to a file or artifact and the orchestrator relays only the link; the orchestrator never explains VM internals in its own words.
 
 This matches the memory rule for this work: keep exploit and CTF text out of the orchestrator's own output; VM-step reports use the fixed allowlist format, with user-facing detail delivered through the exchange-form channel below.
 

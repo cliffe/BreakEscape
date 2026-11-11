@@ -76,7 +76,7 @@ Narrator: Behind him the evidence wall is lit. He follows your eyes to it and wa
 + [(Face him.)] -> opening
 
 === wall ===
-Narrator: The case runs down the wall in order. The repository, opened with no password. Credentials left in its history. Mail to the Architect.
+Narrator: The case runs down the wall in order. The repository, open to anyone with no password. The break-in, and the credentials left in its history. Mail to the Architect.
 Narrator: Root, and forty-seven minutes on the Portland plan from Cryptography Lab terminal 03.
 { found_nightshade_profile:
     Narrator: Under it, Okafor's evaluation, with the Director's seal across the recommendation.
