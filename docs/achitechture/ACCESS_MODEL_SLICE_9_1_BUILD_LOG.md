@@ -489,3 +489,119 @@ Commit `7678f5118` (validator, graph, loader helper, tests) and the commit that 
 
 Suites after the fixes, under the shared lock on Ruby 2.7.8: `bin/rails test` 1308 runs, 9570
 assertions, 0 failures, 0 errors, 1 skip; `bin/test-js -j 3` 475 files passed, 0 failed.
+
+## Step 8. `lab_physical_pentest` adopts habits (2026-11-11)
+
+Worktree `.claude/worktrees/p-lab-networks-habits`, branch `build/lab-networks-habits`, on top of
+slice 9.3a step 9 (`ACCESS_MODEL_SLICE_9_3_BUILD_LOG.md`). Plan section 12, in its order.
+
+### Preconditions
+
+1. Step 7's runs pass: every beat of `test_access_habits` (step 7 above), H9 with step 5.
+2. The lab's feedback pass: the content plan's part (a), A1 to A18, is committed and reviewed.
+   Its B3 remainder (the capture log holder in place of the tablet, `storeIn`, `linkStoreIn`) is
+   still open; it touches no screen lock field and no owner's leave rate, which is what section 12
+   orders this step after, so this step went ahead. B4's held choice (Sofia's PC as a
+   workstation) was not taken, so Sofia's `usb_target_pc` is still no workstation.
+3. Slice 9.3's lab step (step 9) is finished on this branch.
+
+### Built
+
+- Recipe 1: the only hand-set screen habits were `staff_pc` (`locksScreenOnLeave: true`, owner
+  Chris) and `staff_pc_2` (`false`, owner Melanie). No `lockChance`, `autoLockSeconds`,
+  `screenHabit`, `policy` or `defaultPolicy` anywhere.
+- Recipe 2 and 3: Chris `"awareness": "high"`, Melanie `"awareness": "low"`; both PC fields
+  removed; no `habits` object, no `guessable`, nothing on Len. Each level carries a comment naming
+  the beat it holds. The presets' `holdsDoors` has no effect: no gate opens for either.
+- Recipe 4: office life fields untouched (needs, `needsCompany`, `maxQueue`, `needsDeferMin`,
+  `chatterCooldownMin`, the exchange).
+- Recipe 5: the two comments reworded to name the habit.
+- Recipe 6: validator diff against the baseline is exactly the habits report: hampshire high,
+  `locksScreen always (preset)`, lockChance 1 at `staff_pc`; pierce low, `never`, lockChance 0 at
+  `staff_pc_2`. No other fill, no "not applied", no screen state mapping warning.
+- Recipe 7: `lab_physical_pentest_secrets_test.rb`: Chris's test asserts her expanded
+  `locksScreen` `always`, `screenHabit` exactly `{ "lockChance" => 1 }`, no lock field on
+  `staff_pc`, and `pc_always_locks?` true, keeping the capture comment; Melanie's assertion is
+  `{ "lockChance" => 0 }` and `never`; new test: a claim at `staff_pc_2` is granted (status ok,
+  session for pierce).
+- Recipe 8: `PLAYTEST.md` "Expected validator output" gains the report and a warning not to show
+  it to a blind tester. The dated note in `PHYSICAL_PENTEST_ACCESS_FOLLOWUP_PLAN.md` is the
+  orchestrator's.
+- Dungeon graph regenerated: one new edge, `open_plan -->|unlocked screen| lock_staff_pc_2`
+  (Melanie's habit fill applies at a PC with no lock field of its own, step 4's rule).
+- Leak scanner (`a30e29ad7`): a network string inside `$.contents[...]` of a `POST /unlock`
+  answer is now treated as a container answer, as the share and folder rules already do. See the
+  browser run. Test added to `access_leak_scanner_test.rb`.
+
+### Lines to voice
+
+None. No ink file changed (tagdiff: structure unchanged in all ten), no bark, no NPC JSON spoken
+field. Nothing added, changed or removed.
+
+### Static checks
+
+| Check | Result |
+|---|---|
+| `scripts/compile-ink.sh lab_physical_pentest` | 10 compiled, 0 failed; compiled JSON unchanged |
+| Validator `--no-graph`, then with the graph | Exit 0; diff against the pre-step output is the habits report only. Graph: puzzle edges 43 to 44 |
+| Habits report | As recipe 6 (above) |
+| `dialoguelint` | Totals by rule: none |
+| `tagdiff` (all ten ink files against HEAD) | Structure unchanged |
+| Lab Rails tests | `lab_physical_pentest_secrets_test.rb` 35 runs, 0 failures; content, loader and shares tests 32 runs, 0 failures |
+
+### Browser run
+
+Keyless server on :3014, headless, game 1193, one session, responses captured, driven by a
+subagent tester from `PLAYTEST.md`. Every secret came from its in-game source (the capture tablet
+and Captured sign-ins picker, the in-game capture answer); none typed from a document.
+
+- Habit beat A (keylogger): on Chris's leave `staff_pc` showed `screenLocked: true`,
+  `lockedLook: true`, `texture: pc_desktop_locked`; transition `locked: true`; cue
+  `how: leave, locked: true`. On her return the capture landed.
+- Habit beat B (unlocked screen): on Melanie's leave `staff_pc_2` stayed `pc_desktop`, not
+  locked, no transition recorded; the claim was granted and her desktop opened. The run's one
+  reload was taken with that claim open: the claimed session ended (by design), `signedInPcs`
+  kept `staff_pc_2`, and the game resumed in `briefing_room`.
+- BadUSB drop: foothold, the remote session item, its file read.
+  **LW-FS01:** the leak scanner raised one `network_string` finding (owner
+  `resource:lw_fs01_records`, `POST /unlock`, `$.contents[1].text`): opening the remote session
+  item answers with its contents through `/unlock`, which the network rule did not count as a
+  container answer. Host labels are not secret, and the file is in the session the player holds,
+  so the scanner was wrong, not the scenario. Fixed in the scanner (above); over the whole run's
+  181 responses the check now says `VERDICT: no leaks found`. Before the fix, beats 1 to 3 were
+  clean and that finding was the only one at any later beat.
+- Tailgate, the network beats H5.15 to H5.20 (plant, view, folder, remote sign-in to LW-DOOR01
+  with Chris's password from the picker, unplug), the hot desk sign-in, the debrief and credits:
+  all passed. The debrief needs the hot desk sign-in (`use_creds`) first, as H5.4 says.
+- **"The link dropped" toast:** not shown, and not expected here. The unplug answer carried
+  `endedPcIds: ["store_controller"]`; `PcSessions.linkDropped` drops the session and passes the
+  message to `_closeDesktop`, which shows it only on a remote desktop that is open (9.3 plan 4.1
+  and its table: "an open remote desktop closes with 'The link dropped'"). The unplug happens at
+  the jack in the world, so in this lab no desktop is ever open at that moment and the player gets
+  no message that the remote session ended. A question for the 9.3 owner, not a fault of this
+  step; nothing changed.
+- Final `verify-run.rb --access`: habits block shows both PCs with no lock field and the two
+  fills; footholds 0 (gained `network_port`), sessions 1 (`hot_desk_pc`, password),
+  `signedInPcs` `staff_pc_2`, `store_controller`, `hot_desk_pc`; 16 of 16 tasks; score 100.
+- Harness notes: the hot desk's visible password field takes per-character key events (a value
+  set on the DOM was not seen); a dropped device needs the menu's "Drop here" click after the
+  inventory item opens.
+
+Outputs (not in the repo): `<scratchpad>/lab-habits/run/` (session and responses logs).
+
+### Not run
+
+The persona run of section 12 (a tester who does not know the answers, questions after play).
+What a model tester cannot judge (sounds, whether the padlock reads) is for the user's own look.
+
+### Suites
+
+Under the shared lock, Ruby 2.7.8: `bin/rails test` 1416 runs, 14672 assertions, 0 failures,
+0 errors, 1 skip; `bin/test-js -j 3` 483 files passed, 0 failed.
+
+### Handover
+
+Step complete; nothing in progress. Commits: `b3cb03244` (lab, guard test, PLAYTEST, graph),
+`a30e29ad7` (leak scanner), and the build log commit. Open for others: the dated note in
+`PHYSICAL_PENTEST_ACCESS_FOLLOWUP_PLAN.md` (orchestrator), the persona run, the "link dropped"
+question above (9.3 owner), and the content plan's B3 remainder.
