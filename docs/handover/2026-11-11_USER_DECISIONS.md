@@ -27,6 +27,9 @@ Answers to the access model form (https://claude.ai/artifact/PanecaCQBMChKnqsDGa
 - q24 The lookalike fix's tts-audio skill wording and the stale note in docs/agents/TTS_38_MIGRATION.md: apply both when the fix merges.
 - q25 Shared-ink and test-scenario lines from the stage-direction rewrite: do not voice them.
 - q26 Seven m02/m03 phone lines that print the player's name: reword to fixed wording and re-voice (build/phone-names).
+- q27 Workaround icon: candidate 56 (an arrow over a striped barrier), now `assets/icons/npc-workaround.png`. Also use the barrier without the arrow as the "getting blocked" action icon, and similar: `npc-barrier.png` (candidate 7, the same barrier drawn plainly; removing 56's arrow would need a redraw). Wiring waits for 9.2 H to merge (shared files).
+- q28 The seven m02/m03 phone lines: keep the player's name; build/phone-names dropped (the lines are phone text, never voiced).
+- q29 Voice m02 Ghost's 38 video-call lines after the TTS fix merge (lab_tesseract_trials and chat_minigame_demo not voiced).
 
 ## Carried out
 
