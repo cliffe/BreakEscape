@@ -441,3 +441,51 @@ Commit `3bfaa0039` (validator, loader helper, tests) and the commit that adds th
 
 Suites after the fixes, under the shared lock on Ruby 2.7.8: `bin/rails test` 1308 runs, 9570
 assertions, 0 failures, 0 errors, 1 skip; `bin/test-js -j 3` 475 files passed, 0 failed.
+
+### Review round 4 outcomes (2026-11-11)
+
+Review: `ACCESS_MODEL_SLICE_9_1_STEP5_CODE_REVIEW_R4.md` (0 blockers, 1 major, 2 minors, 2 nits).
+Commit `7678f5118` (validator, graph, loader helper, tests) and the commit that adds this section.
+
+- **Major 1, fixed.** `check_lock_credentials` now collects, for each NPC card with no cloner
+  and no keycard item, every object lock that requires it (`AccessIdentities.room_objects`:
+  room objects, container contents, NPCs' items). Tailgating never gives the player the card,
+  so these are a gap no gate fills, whatever the room gates say. They get their own warning,
+  naming each object path and saying a cloner or a keycard item is needed. A card required only
+  by object locks gets this warning in place of the general "only an NPC carries that card" one;
+  that general one stays for a lock found nowhere else (a door entry, a start item). Probes P3
+  (careless gate into `vault`, safe inside on the same card) and P3b (safe only) warn; a cloner,
+  a keycard item, or a safe that also accepts an item card each clear it.
+- **Minor 1, fixed.** Only NPCs with a sprite open a gate: `npcType` `person` or `both`, as
+  `core/rooms.js` makes sprites. A phone NPC, or one with no `npcType` (`npc-manager.js` reads it
+  as phone), does not count. Probes P1, P1b and `run2.rb` (no `npcType`) warn again; `both` is a
+  way in; `behavior.initiallyHidden` still counts, as the review allows.
+- **Minor 2, fixed.** A lock (room or object) whose `requires` also lists a card the player can
+  hold as an item is passed: no careful-guard, "only an NPC" or object warning. The item set is
+  taken before NPC cards are declared, so the result does not depend on card order. Probes P4
+  and R3 G are quiet; without the item the careful warning stays.
+- **Nit 1, fixed.** A gate on an east or west door is no gate for the lock check (`gate_entries`
+  now carries the door's `direction`), matching `register()` in `door-gates.js`. Probe P2 now
+  gets the "only an NPC" warning as well as the side-gate warning; a south gate is a way in.
+- **Nit 2, fixed.** The graph label walks `NpcHabits.gate_entries` (so a gate with
+  `enabled: false` is skipped) and skips a gate with a non-empty `playerMayPassIf`; an empty one
+  counts as none, as `normaliseGate` reads it.
+- **Tests.** `door-gates-validator.test.mjs` 21 (was 16): object lock with a passable room gate,
+  object only, object in a container's contents; cloner, keycard and second-card mirrors; phone
+  NPC in `openFor`, phone holder, no `npcType`, `both`; item card in `requires` with a careful
+  gate and with no gate, plus mirror; east and west gates, south mirror.
+  `dungeon-graph-habits.test.mjs` 8 (was 7): disabled gate and `playerMayPassIf` gate unlabelled,
+  empty `playerMayPassIf` labelled.
+- **Probes.** All of `holds-r3` and `holds-r4` rerun against the branch. R4: P1, P1b, P2, P3,
+  P3b, P5, P7, P8, P9 warn; P4 and P6 quiet; P11 and P12 as base. `run2.rb`: no `npcType` warns,
+  `initiallyHidden` quiet. `mal.rb`: no crash, every result identical to the previous commit. R3:
+  A, F, G quiet; B and C warn for `vault2` only; D, E, H warn. (`holds-r3/run2.rb` calls
+  `ValidateNpcHabits.check` with an old signature and stops there; its lock check line is quiet,
+  as expected for a string `noHold`.)
+- **Validator comparison**, rerun as in round 3 (84 runs, `--skip-ink --no-graph`, all exit 0)
+  against `claude/break-escape-access-design-090sjx`: identical to round 3's branch output. One
+  new warning, `store_b_badge` in `test_access_habits`; `cm_records_badge` and
+  `test_staff_badge` gone. m01 to m10 unchanged.
+
+Suites after the fixes, under the shared lock on Ruby 2.7.8: `bin/rails test` 1308 runs, 9570
+assertions, 0 failures, 0 errors, 1 skip; `bin/test-js -j 3` 475 files passed, 0 failed.
