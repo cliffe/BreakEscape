@@ -709,6 +709,66 @@ during the walk home (exists). Player-facing behaviour:
   that are always loaded. The sims-day golden log is byte-identical. `no_source` parking reaches every
   needs NPC (the lab regression, game 693, showed no `parked` or `turned_back` entries).
 
+### 5.9 Judged uses, failures, visits and the kick (access slice 9.2, `ACCESS_MODEL_SLICE_9_2_PLAN.md` sections 5 and 7)
+
+Author-facing rules are in `README_scenario_design.md`, "Work, frustration and workarounds". Code:
+`systems/npc-work.js` (the verdict), `systems/npc-needs.js` (the hooks below) and
+`systems/npc-reports.js` (the server reports).
+
+- **Judged needs.** `work` for an NPC whose record carries a server `work` plan (a resolved list
+  of resource ids with `kind`, `admitted`, `downIf`, `object` and, with networks, `routes`), and
+  `social_media`. Every other use is unchanged: `npc_used` gains `met` only for a judged need, and
+  a coffee or carry use's payload is as before.
+- **The judged use.** `_completeJob` asks the adapter's `useVerdict` (`npcWork.useVerdict`) when the
+  use ends. Met: the restore applies, `npc_used` carries `met: true` and an ease is reported. Failed:
+  nothing is restored, no `npc_used` or `onUse` hook, `revealOutput` is skipped, `npc_use_failed:<npcId>`
+  fires with `{ npcId, objectId, need, missing, station }`, and the job ends through
+  `_turnBack(s, 'failed')`.
+- **The `failed` turn-back.** `TURN_BACK.failed` grumbles, takes no fallback and parks the need for
+  `needsDeferMin` (the park is the retry wait). The park records `targetId`, `wakeOn` (the globals
+  whose clearing would fix the causes) and `missing`; `npc_need_parked` carries them. `onGlobalChanged`
+  wakes such a park only when its recorded causes would now pass (`reachable` for an `unreachable`
+  one); a door, a room load or another object coming back on does not (`_wakeParked` skips failure
+  and `held` parks). A `no_access` park always waits out its time. The other needs drain by the
+  plan's `breakDrain`.
+- **The `off` park.** `_giveUpReason` answers `off` for a judged need whose own station (its
+  `needsHome`) is off, before the null returns, so the NPC never sits at a dead PC and never walks to a
+  colleague's desk: a judged need takes no desk but its own (`_useCandidate`, `_queueCandidate`). The
+  `off` park is counted (one report, one `station_fail` grumble, the drain) and is woken one use time
+  after the station comes back on.
+- **Re-arm.** A fail after a wake or a met use carries `rearmed`, so the server measures it from the
+  use floor instead of the park floor; one after a timer expiry does not.
+- **Visits.** `enqueueVisit(npcId, { kind, at, useSeconds, data })` queues a walk the selector did
+  not choose: `at` is `{ objectId }` or `{ npcId }`. An idle or returning NPC starts the first
+  reachable visit before the selector runs; a running job is never interrupted. A visit claims
+  nothing (`_claims` skips it), honours the leash, ignores `private`, restores nothing and fires no
+  `npc_used`; it emits `npc_visit_done:<npcId>`, and a check visit also `npc_checked:<objectId>`. A
+  place not loaded is retried each second; a check visit is dropped after 60 s of the needs clock, a
+  workaround visit after 120 s (`npc_visit_dropped:<npcId>`). The first `down` failure for a resource
+  with an `object` queues one check visit per outage.
+- **The outage kick.** `_tickKick` watches, for each NPC with a `work` plan (or a `social_media`
+  need and `"phone": false`), the plan's `downIf` and route globals and the station's `offWhen`.
+  When one turns on, or is on at `register`, the need's level drops to `urgentAt` (never raised),
+  once per change, so the NPC tries within about one use time. A parked need is not kicked; a kick
+  seen while the home is provisional waits until the home resolves.
+- **Mutters are grumbles.** `_grumble(s, objectId, reason, topic, { ignoreCooldown, icons })`.
+  For a judged need `_grumbleTopic` picks, from the `tell` held at the failure, `work_fail_fed_up`
+  at `tell` 2, else the cause's own pool (`station_fail`, `work_fail_no_access`,
+  `work_fail_<kind>`), else `work_fail`; with no line the topic stays the cause's pool for its
+  `PICTURE_CHATTER` picture. `mutter(npcId, topic)` is the public entry the workaround runner uses.
+- **Frustration.** `applyFrustration(answers)` queues the server's answers (`[{ npcId, level, tell, settled, ... }]`) for the next tick;
+  `restoreFrustration(map)` applies GET /scenario's `npcFrustration` at `register`, with each
+  need's `hold` as a `held` park (silent, uncounted, not woken by a door) so a reload does not send
+  a fail the server would refuse. A level handed over before the NPC registers is applied when it
+  does.
+- **State.** `getState(id)` adds `frustration`, `tell`, `settled`, `failed` (`{ need, missing }`
+  for 4 s of the needs clock after a counted failure, else null), `visits`, `visiting` and
+  `judged`. The decision log adds `failure_counted`, `frustration` and `visit_done`.
+- **Compatibility.** A scenario with no `resources` and no `social_media` need judges nothing: its
+  decision log is unchanged (the `needs-sims-world` fixture's log is byte for byte the same), and the
+  needs regression captures on `test_needs_sims`, `test_npc_needs` and `test_needs_leash` show no
+  difference.
+
 ## 6. General drop action (exists)
 
 - An inventory item with `"droppable": true` is dropped when clicked in the
@@ -752,6 +812,11 @@ events.
 | `npc_placed:<itemId>` | `{npcId, itemId, targetId, roomId}` (a delivered slot set down, 3.3a) |
 | `item_dropped:<itemId>` | `{itemId, tag, roomId, x, y}` (drop action) |
 | `npc_arrived:<npcId>` | existing, now plus `owner` (`'needs'` or undefined) |
+| `npc_use_failed:<npcId>` | `{npcId, objectId, need, missing: [{id, why}], station}` (a judged use failed, 5.9) |
+| `npc_use_refused:<objectId>` | `{npcId, objectId, itemId, tag, usbClass}` (a USB policy refused a carried device) |
+| `npc_checked:<objectId>` | `{npcId, objectId, data}` (a check visit reached the broken thing, 5.9) |
+| `npc_visit_done:<npcId>` / `npc_visit_dropped:<npcId>` | `{npcId, kind, at, data}` (5.9) |
+| `npc_frustration_changed:<npcId>` | `{npcId, level, previous, tell}` (the server's answer moved the level, 5.9) |
 
 `npc_used` details:
 - `need`: the need satisfied, or `null` for an interest (carry) use.

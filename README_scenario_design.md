@@ -991,6 +991,53 @@ This event carries no `usePayload`, so write the capture's `address` and `host` 
 
 Access model slice 9.2 (`docs/achitechture/ACCESS_MODEL_SLICE_9_2_PLAN.md`): staff whose work depends on resources and on their own PC, who get visibly frustrated when it fails, and who route round the controls that stop them. `scenarios/test_access_work` is the feature scenario; copy its shapes.
 
+#### Resources and work needs
+
+- **`resources.<id>`** (top level): `name` (a display name the browser never receives), `kind` (a free label: it picks the mutter pool, below), `access` (an access list `{ roles, people }`; absent admits everyone), `downIf` (a declared global: the resource is down while it is truthy) and `object` (a room object it is tied to, such as a printer). Networks (slice 9.3) own `network`, `host`, `contents` and `observations` on the same entries.
+- **`roles.<role>`** (top level) gives defaults to every NPC with that role: `workNeeds` (resource ids) and `frustration`. A role is never a grant: rights stay in access lists. An NPC with an account or a card has the implicit role `staff`, always last.
+- **`workNeeds`** on a room NPC changes its roles' union: `"x"` or `"+x"` adds, `"-x"` removes. The resolved list is the NPC's roles in authored order, `staff` last, then its own entries.
+- **A `work` plan** is a `work` need (an ordinary need under `needs`) plus a non-empty resolved list. Only an NPC with a plan has its uses judged: a met use eases frustration, a failed use counts. An account holder with the role and no `work` need has no plan and no behaviour.
+- **The station.** The NPC's `needsHome` must be an object whose affordance satisfies `work`. **A sign-in PC takes no office preset, so author `"affordance": { "satisfies": "work", "useSeconds": 5, "restores": 10 }` on it yourself.** Without `restores` a use restores nothing and the NPC works back to back with no rest between uses. A judged need never uses another person's desk (a workstation, or a plain PC with the `desk_pc` preset), only its own station or a non-desk source.
+- **`frustration`** (role or NPC, merged field by field: defaults, then the first role that sets the field, then the NPC's own): `perFail` (default 25, 1 to 100, added on each counted failure), `easePerSuccess` (default 10, 0 to 100, taken off on each met use), `breakDrain` (default 10, 0 to 50, taken off every other need on a failure, so a frustrated person leaves for coffee sooner). How long a failed need waits before the NPC tries again is office life's `needsDeferMin` on the NPC (game minutes, default 4); keep it at 0.5 or above.
+- **`workNeeds`, `frustration`, `workarounds` and `feed` are allowed only on room NPCs**: every other NPC record reaches the browser unfiltered. The server keeps them, and `resources` and `roles`, out of what the browser receives; each room NPC instead carries a `work` plan of ids, kinds and global names.
+
+#### Outages, failed uses and the kick
+
+An outage is a global: a resource's `downIf`, or a station's `affordance.offWhen` (office life's field; it marks the PC out of order). Throw it with a switch object carrying two `confirm_action`s with opposite conditions ("Switch it off" while false, "Switch it back on" while true); two plain conditional actions on one object would flip twice.
+
+- **A failed use.** The NPC walks to its station and works; when the use completes it is judged against its plan. If a resource it needs is down, unreachable or does not admit it, the use restores nothing, `npc_use_failed:<npcId>` fires with the causes (`missing`: `[{ id, why }]`, `why` being `down`, `unreachable` or `no_access`), the NPC mutters, the other needs drain by `breakDrain`, and the need parks for `needsDeferMin`. The park is the retry wait; it wakes early when the resource's global clears, never for a door or a room load. A `no_access` failure always waits out the park.
+- **A dead station.** An NPC whose own station is off does not sit down at it: it parks `work` with `reason: "off"` and `targetId` the station (`npc_need_parked`), mutters from `station_fail`, and counts a failure. Switching the station back on wakes it after one use time.
+- **The kick.** Left alone a person who has just worked sits until the need next turns urgent, which could be minutes. So when a global the plan names, or the station's `offWhen`, turns on (or is on when the NPC appears), the NPC's `work` level drops to `urgentAt`, once per change, and it tries within about one use time. A parked need is not kicked.
+- **A check visit.** On the first failure of an outage that finds a resource with an `object` down, the NPC walks to that object once (`npc_checked:<objectId>`), stands there a few seconds and comes back. It is once per outage: thrown, cleared and thrown again with no met use between is the same outage.
+- **Frustration lives on the server.** The browser reports each failure and each met use (`POST /npc_frustration`, at most one request every two seconds); the server checks the cause holds on its own copy of the globals and paces the reports by real time, then answers the level and a `tell` (0, 1 or 2). The level is kept over a reload. At 100 the NPC is `settled`: no further failure is sent until a met use. A mapping can read `npc_frustration_changed:<npcId>` (`{ npcId, level, previous, tell }`); `data.level < data.previous` fires when it falls. `<npcId>_frustration` is an engine-owned global name: do not author a global ending in `_frustration`.
+- **Pace in real time.** A beat that needs a frustration level is earned in real seconds, so use short parks (`needsDeferMin: 0.5`), fast needs and `useSeconds: 5` in a scenario meant to show it. Stepping the needs clock outruns the server, which then refuses reports as `tooSoon`.
+
+#### What the student sees
+
+- **The icon.** While `tell` is 1 or 2 and the NPC has no job, its action icon shows `blocked`; at `tell` 2 it pulses. It works with `"chatter": false`.
+- **The mutter.** One line on each counted failure, chosen at the moment of failure from the first pool with a line in this order: at `tell` 2, `work_fail_fed_up`; otherwise the cause's own pool; then `work_fail`. With no line anywhere the NPC shows the pool's picture instead. A grumble is voiced where the NPC has a voice, so mutter lines are lines to voice.
+- **The engine says nothing of its own.** Every line lives in the scenario's top-level `chatter` (any NPC may say it, so name a kind of thing and no person) or an NPC's own `chatter`; the NPC's pool adds to the scenario's. Lines follow the chatter rules (under 40 characters, one line, no `{ }`).
+
+| Pool | Said when | What it should say (the `test_access_work` default) | Picture with no line |
+|---|---|---|---|
+| `work_fail_fed_up` | any counted failure at `tell` 2 | giving up ("That's it. I've had enough.") | `blocked` |
+| `station_fail` | its own station is off (or it is locked out of it) | the PC is the problem ("This PC is useless.") | `blocked` |
+| `work_fail_no_access` | a resource does not admit it | nobody gave it access ("Still no access. Nobody listens.") | `blocked` |
+| `work_fail_<kind>` | a resource of that `kind` is down or unreachable | names the thing: `work_fail_file_share` ("Share's down again."), `work_fail_email` ("Email's not sending."), `work_fail_printer` ("Printer's jammed again.") | `file`, `work`, `print`; any other kind falls back to `work_fail`'s |
+| `work_fail` | any failure with no line in the pools above | general ("Why is nothing working?") | `work` |
+| `usb_refused` | a device is refused (USB policy, above) | ("USB's disabled. Typical.") | `blocked` |
+| `wk_writes_down`, `wk_prop_door`, `wk_borrow`, `wk_share_login` | a workaround starts (sub-slices B and H) | what the person is about to do ("I'll never remember this one.", "I'm not badging in every time.", "I'll use the spare PC.", "I'll get someone to run it.") | `work` |
+| `login_aloud` | a `share_login` reaches the colleague (sub-slice H) | the spoken hand-over ("Just use mine, it's on the note.") | `social` |
+| `social_blocked` | a social media use is blocked by policy (sub-slice C) | ("Blocked. Of course.") | `blocked` |
+
+Copy the whole set from `scenarios/test_access_work/scenario.json.erb` (its top-level `chatter`).
+
+#### The validator and the work report
+
+Errors: a `workNeeds` entry that names no resource, a resource `object` that names no room object, a frustration field out of range, a global ending in `_frustration`, and `workNeeds`, `frustration`, `workarounds` or `feed` on a record that is not a room NPC. Warnings: an NPC with a resource it is not admitted to (its work never succeeds, so it fails with no player action), a resource its station can never reach, a `downIf` global not declared, `needsDeferMin` under 0.5 for a `work` plan (or a `social_media` need with `"phone": false`), a work plan with no station that satisfies `work` (naming a PC the NPC owns through `screenOwner`, which should be its `needsHome`), a station with no `restores`, a cause the NPC can meet with no line in its own pool or `work_fail` (not under `"chatter": false`), a resource no NPC needs that has no `contents` and no `host`, and a workaround at or below `perFail` (it comes on the first failure with no warning; mark it `"noWarning": true` if meant) or one that needs more than five minutes of outage.
+
+After the issues the validator prints the **work report**: one `Work` line per NPC with a plan (each resource admitted or not, reachable or "never reachable from its station", and the globals that take it down), and one `Workaround` line per workaround (what it opens, how many failed uses reach it, whether the student sees `tell` 1 and 2 first, the honest seconds of outage it takes, and the earliest a modified browser could bring it).
+
 #### USB policy
 
 A policy (top-level `policies`, referenced by an object's `policy` or by `defaultPolicy`) may say `usb`:
