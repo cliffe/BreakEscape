@@ -111,11 +111,11 @@ export function holdRecentNotifications(now = Date.now()) {
         .filter((el) => el._toast && !el._toast.pulled)
         .map((el) => ({ el, ...el._toast }));
     const pulled = pickRecentHoldable(shown, now);
-    pulled.forEach(({ el, message, type, title, duration }) => {
+    pulled.forEach(({ el, message, type, title, duration, plainText }) => {
         el._toast.pulled = true;
         if (el.parentNode) el.parentNode.removeChild(el);
         // seen = true: already on screen once, so it is replayed once and never pulled again
-        heldNotifications.push([message, type, title, duration, true]);
+        heldNotifications.push([message, type, title, duration, true, { plainText: plainText === true }]);
     });
     if (pulled.length && !holdTimer) holdTimer = setInterval(releaseHeldNotifications, HOLD_POLL_MS);
     pickStaleHoldable(shown, now).forEach(({ el }) => {
@@ -138,17 +138,19 @@ export function toastDuration(type, duration) {
 }
 
 // Show a notification instead of using alert()
-export function showNotification(message, type = 'info', title = '', duration = 5000) {
+// options.plainText: render the title and message as plain text (textContent), never markup.
+// Use it for any message that carries author or organisation text (a host label, a name).
+export function showNotification(message, type = 'info', title = '', duration = 5000, options = {}) {
     duration = toastDuration(type, duration);
     if (shouldHoldNotification(type, fullScreenPanelOpen() || panelExpected())) {
         // The same toast raised twice while a panel is open (two code paths announcing one
         // event) shows once
         if (isQueuedDuplicate(heldNotifications, message, type, title)) return null;
-        heldNotifications.push([message, type, title, duration]);
+        heldNotifications.push([message, type, title, duration, false, options]);
         if (!holdTimer) holdTimer = setInterval(releaseHeldNotifications, HOLD_POLL_MS);
         return null;
     }
-    return renderNotification(message, type, title, duration);
+    return renderNotification(message, type, title, duration, false, options);
 }
 
 /**
@@ -175,7 +177,16 @@ function startCountdown(notification, duration) {
     notification._hideTimer = setTimeout(() => removeNotification(notification), duration);
 }
 
-function renderNotification(message, type, title, duration, seen = false) {
+// Plain text into an element: textContent per line, a <br> element between lines.
+function setPlainLines(el, text) {
+    String(text).split('\n').forEach((line, i) => {
+        if (i > 0) el.appendChild(document.createElement('br'));
+        el.appendChild(document.createTextNode(line));
+    });
+}
+
+function renderNotification(message, type, title, duration, seen = false, options = {}) {
+    const plainText = options?.plainText === true;
     const notificationContainer = document.getElementById('notification-container');
 
     // The same toast raised again while it is still on screen (a refusal hint clicked
@@ -198,9 +209,11 @@ function renderNotification(message, type, title, duration, seen = false) {
     // Create notification content
     let notificationContent = '';
     if (title) {
-        notificationContent += `<div class="notification-title">${displayDashes(title)}</div>`;
+        notificationContent += plainText ? '<div class="notification-title"></div>'
+            : `<div class="notification-title">${displayDashes(title)}</div>`;
     }
-    notificationContent += `<div class="notification-message">${displayDashes(message).replace(/\n/g, "<br>")}</div>`;
+    notificationContent += plainText ? '<div class="notification-message"></div>'
+        : `<div class="notification-message">${displayDashes(message).replace(/\n/g, "<br>")}</div>`;
     notificationContent += `<div class="notification-close">×</div>`;
     
     if (duration > 0) {
@@ -208,7 +221,12 @@ function renderNotification(message, type, title, duration, seen = false) {
     }
     
     notification.innerHTML = notificationContent;
-    notification._toast = { message, type, title, duration, shownAt: Date.now(), seen };
+    if (plainText) {
+        // Author text in, plain text out: textContent, never innerHTML.
+        if (title) notification.querySelector('.notification-title').textContent = displayDashes(title);
+        setPlainLines(notification.querySelector('.notification-message'), displayDashes(message));
+    }
+    notification._toast = { message, type, title, duration, shownAt: Date.now(), seen, plainText };
     
     // Add to container
     notificationContainer.appendChild(notification);
@@ -245,8 +263,8 @@ export function removeNotification(notification) {
 }
 
 // Replace alert with our custom notification system
-export function gameAlert(message, type = 'info', title = '', duration = 5000) {
-    return showNotification(message, type, title, duration);
+export function gameAlert(message, type = 'info', title = '', duration = 5000, options = {}) {
+    return showNotification(message, type, title, duration, options);
 }
 
 // Show an in-game display modal with a title and scrollable body. Returns a Promise that resolves when closed.

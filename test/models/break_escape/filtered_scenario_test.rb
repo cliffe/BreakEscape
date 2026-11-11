@@ -440,5 +440,30 @@ module BreakEscape
       # `requires` stays in this layer; the controller strips it before sending
       assert_nil room['objects'], 'contents are still lazy-loaded'
     end
+
+    # Review R2 m1: the model's bootstrap strips a declared grant's contents itself, not
+    # only the controller, so every caller of the model method is safe.
+    test 'filtered_scenario_for_bootstrap strips a timer grant contents' do
+      scenario = @scenario_data.deep_dup
+      scenario['timers'] = [
+        { 'id' => 'drop', 'delay' => 1000, 'actions' => [
+          { 'type' => 'give_item', 'item' => {
+            'type' => 'text_file', 'id' => 'secret_file', 'name' => 'Session',
+            'contents' => [{ 'type' => 'notes', 'name' => 'share.txt', 'text' => 'SECRET-HOST-01' }]
+          } }
+        ] }
+      ]
+      game = Game.new(mission: break_escape_missions(:ceo_exfil),
+                      player: break_escape_demo_users(:test_user),
+                      scenario_data: scenario)
+      game.save(validate: false)
+
+      item = game.filtered_scenario_for_bootstrap['timers'][0]['actions'][0]['item']
+      assert_equal true, item['hasContents']
+      assert_nil item['contents']
+      refute_includes game.filtered_scenario_for_bootstrap.to_json, 'SECRET-HOST-01'
+      assert game.scenario_data['timers'][0]['actions'][0]['item'].key?('contents'),
+             'the stored scenario keeps the contents'
+    end
   end
 end

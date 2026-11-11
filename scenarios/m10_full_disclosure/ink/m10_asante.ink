@@ -42,7 +42,7 @@ Dr Abena Asante: You're the one off the office wall. Don't touch my console and 
 // Teaching R2-n1: answered as soon as she makes the claim.
 + {asan_wrote and not asan_unpatched} [Some of those controllers will never get a patch.]
     ~ asan_unpatched = true
-    Dr Abena Asante: Then they should never have been on a network. *pause* That isn't the utility's fault, I know.
+    Dr Abena Asante: Then they should never have been on a network. That isn't the utility's fault, I know. #delivery: a pause before the last sentence
     -> hall_menu
 + {not asan_shown} [Show me the schedule.]
     ~ asante_outcome = "talked"
@@ -53,7 +53,7 @@ Dr Abena Asante: You're the one off the office wall. Don't touch my console and 
 + {casualty_sheet_read and not asante_confirmed_sheet} [A.A. in the margin of his casualty sheet. That's you.]
     ~ asante_confirmed_sheet = true
     ~ asante_outcome = "talked"
-    Dr Abena Asante: I corrected his sums. He thanked me. *pause* That's between him and the sums.
+    Dr Abena Asante: I corrected his sums. He thanked me. That's between him and the sums. #delivery: a pause before the last sentence
     -> hall_menu
 + [That's all.]
     Dr Abena Asante: Good. Mind the cables on your way out.

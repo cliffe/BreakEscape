@@ -113,7 +113,7 @@ Agent HaX: Let him go and the phone goes with him. Keep him, and we get his supp
 Imran Siddiqui: Phone, statement, whatever you want. I'm not running in these shoes.
 Agent HaX: Got it. A crate signed for at the service door on Tuesday. Raid-issue badge.
 {m02_completed and m02_gary_protected:
-    Gary Whitlock: I'd hoped you'd ask him first. *flatly* Never mind.
+    Gary Whitlock: I'd hoped you'd ask him first. Never mind. #delivery: the last two words flatly
 }
 ~ imran_quiet = true
 #exit_conversation

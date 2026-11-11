@@ -913,6 +913,11 @@ module BreakEscape
       # secret lives under social.landingPages[].capture, so the walk is scoped to social.
       strip_capture_secrets!(filtered['social']) if filtered['social'].is_a?(Hash)
 
+      # A declared grant's contents (a timer's give_item, a triggerOnInteract reward) are
+      # served from the held item, never shipped. GamesController#filter_requires_recursive
+      # strips them again as a second line of defence.
+      BreakEscape::DeclaredGrants.strip_all_grant_contents!(filtered)
+
       filtered
     end
 
