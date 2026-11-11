@@ -446,6 +446,18 @@ test('delivery-unread and delivery-note: dynamic notes and a one-line conditiona
   assert.deepEqual(only(lintInk(plain), 'delivery-unread'), []);
 });
 
+// delivery_parity_r5.ink (review R5): a conditional, a sequence or a printed name inside a tag.
+const R5_INK = readFileSync(new URL('../fixtures/files/ink_line_walker/delivery_parity_r5.ink', import.meta.url), 'utf8');
+
+test('delivery-note: a conditional or sequence in a #delivery: tag, and a tag whose name is printed (review R5)', () => {
+  const f = only(lintInk(R5_INK), 'delivery-note');
+  assert.deepEqual(f.map(x => x.line), [31, 40, 43, 46, 49, 52, 56, 62, 66]);
+  assert.match(f[4].note, /a tag opens with \{braces\}, so its name is printed/);
+  // an escaped \# is text, not a tag
+  assert.deepEqual(only(lintInk('=== k ===\nKevin Park: Ticket \\#{n}.\n-> END\n'), 'delivery-note'), []);
+  assert.deepEqual(only(lintInk('=== k ===\nKevin Park: Ticket #{n}.\n-> END\n'), 'delivery-note').map(x => x.line), [2]);
+});
+
 test('delivery-unread: a knot with a tag line before its first stitch is not followed into the stitch', () => {
   const ink = ['-> s', '=== a ===', '#delivery: to s', '-> s', '=== s ===', '#delivery: s tag', '= one', 'Kevin Park: S one.', '-> END'].join('\n') + '\n';
   const f = only(lintInk(ink), 'delivery-unread');

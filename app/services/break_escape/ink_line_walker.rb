@@ -301,7 +301,7 @@ module BreakEscape
         when Hash
           if state[:in_tag]
             # `#delivery: {mood}`: a value printed into the tag
-            state[:tag_dynamic] = true
+            mark_tag_dynamic(state)
             next
           end
           if state[:in_ev]
@@ -344,6 +344,12 @@ module BreakEscape
             first_line_unknown!
           end
         when Array
+          if state[:in_tag]
+            # `#delivery: {flag: a|b}` or `{~a|b}`: a conditional or sequence printed
+            # into the tag, never into the spoken line (review R5 M1)
+            mark_tag_dynamic(state)
+            next
+          end
           # Inside "str"…"/str" is choice-label text, which nobody voices.
           next if state[:in_str]
 
@@ -366,7 +372,7 @@ module BreakEscape
           dangling = walk(item, "#{path}[#{i}]")
           state[:partial] ||= 'continues after an inline conditional or sequence' if dangling
         when Numeric, TrueClass, FalseClass
-          state[:tag_dynamic] = true if state[:in_tag]
+          mark_tag_dynamic(state) if state[:in_tag]
           state[:ev_parts] << item if state[:in_ev] && !state[:in_tag]
         end
       end
@@ -381,17 +387,27 @@ module BreakEscape
       true
     end
 
+    # The tag being read prints a value. tag_head keeps the static text before
+    # the first printed value, which tells whether the tag's name is printed.
+    def mark_tag_dynamic(state)
+      state[:tag_dynamic] = true
+      state[:tag_head] ||= state[:tag_buf].dup
+    end
+
     def handle_string(item, state, path)
       if item == '#'
         state[:in_tag] = true
         state[:tag_buf] = +''
         state[:tag_dynamic] = false
+        state[:tag_head] = nil
         return
       end
       if item == '/#'
         state[:in_tag] = false
         tag = state[:tag_buf].strip
-        if state[:tag_dynamic] && TtsService.delivery_tag?(tag)
+        # A tag whose name is printed (`#{t}`, t = "delivery: shout") may be a
+        # #delivery: tag too, so it drops the notes before it as well (review R5 m1)
+        if state[:tag_dynamic] && (TtsService.delivery_tag?(tag) || !state[:tag_head].include?(':'))
           state[:tags] = after_dynamic(state[:tags] + [DYNAMIC_DELIVERY])
         else
           state[:tags] << tag
@@ -403,7 +419,7 @@ module BreakEscape
           state[:tag_buf] << item[1..]
         else
           # ev, out, /ev, str: the tag prints a value
-          state[:tag_dynamic] = true
+          mark_tag_dynamic(state)
         end
         return
       end

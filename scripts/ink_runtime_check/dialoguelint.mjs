@@ -232,7 +232,9 @@ export function lintInk(text, { channel = 'person', names = [], file = '' } = {}
 //   delivery-note       (warn) a #delivery: note the voice will not get as written: over 200 characters
 //                       (TtsService::MAX_DELIVERY_LENGTH, dropped), with no ASCII letter or digit
 //                       ("...", dropped), or with {braces} (the server cannot read
-//                       what they print, so the line plays untagged).
+//                       what they print, so the line plays untagged). Also a tag whose name is
+//                       printed (`#{t}`): it may be a #delivery: tag, so the server drops every
+//                       note before it on the line.
 //   crowded-hub         (check) a knot whose choice block offers more than 10 choices at once (sticky,
 //                       once-only and conditional all count). Passes when every conditional choice is
 //                       retired by a "not ..." guard and the unconditional ones sit last, which is how
@@ -658,6 +660,9 @@ export function structureFindings(text, { channel = 'person', names = [] } = {})
 export const MAX_DELIVERY_LENGTH = 200;
 const DELIVERY_IN_LINE = /(?<!\\)#\s*delivery\s*:([^#]*)/gi;
 
+// A tag whose name is printed (`#{t}`, t = "delivery: shout"): inkjs may send it as a note.
+const PRINTED_TAG = /(?<!\\)#\s*\{/;
+
 function deliveryNotes(code) {
   return [...code.matchAll(DELIVERY_IN_LINE)].map(m => m[1].replace(/(^|\s)\/\/.*$/, '').replace(/\s+/g, ' ').trim());
 }
@@ -775,6 +780,11 @@ function deliveryFindings(lines, idx, channel) {
     const L = lines[i];
     if (!['text', 'tag', 'open', 'close', 'gather', 'branch', 'choice'].includes(L.kind)) continue;
     const code = L.t.replace(/(^|\s)\/\/.*$/, '');
+    if (PRINTED_TAG.test(code)) {
+      // review R5 m1: the walker reads such a tag as a note it cannot match
+      F.push({ level: 'warn', rule: 'delivery-note', line: L.n, text: cleanInkText(L.t) || L.t,
+        note: 'a tag opens with {braces}, so its name is printed: it may be a #delivery: note the server cannot read, so the line plays untagged and any note before it is dropped; write the tag name out, or \\# for a # in the line' });
+    }
     const notes = deliveryNotes(code);
     if (!notes.length) continue;
     for (const note of notes) {

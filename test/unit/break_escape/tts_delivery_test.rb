@@ -205,7 +205,10 @@ module BreakEscape
       'delivery_parity_r3' => [[], %w[flag=true], %w[g=true], %w[flag=true g=true]],
       # delivery_parity_r4 (review R4): a #delivery: tag that prints a value, and a one-line
       # conditional followed by a divert
-      'delivery_parity_r4' => [[], %w[flag=true]]
+      'delivery_parity_r4' => [[], %w[flag=true]],
+      # delivery_parity_r5 (review R5): a conditional, a sequence or a printed name inside
+      # a #delivery: tag, and dynamic tags on choice lines, in redirect knots and tunnels
+      'delivery_parity_r5' => [[], %w[flag=true]]
     }.freeze
 
     # Notes the client sends that the walker drops on purpose (the line is then voiced
@@ -224,8 +227,45 @@ module BreakEscape
         ['Kevin Park: After dyn maybe.', 'loud'],   # a dynamic note after a maybe line
         ['Kevin Park: B first.', 'own k'],          # a maybe line, then a divert
         ['Kevin Park: B first.', 'own km']          # a maybe line with its own note, then a divert
+      ],
+      'delivery_parity_r5' => [
+        ['Kevin Park: A cond tag.', 'loud'],        # a conditional in the tag (delivery-note)
+        ['Kevin Park: A cond tag.', 'soft'],
+        ['Kevin Park: B seq tag.', 'one'],          # a sequence in the tag
+        ['Kevin Park: B seq tag.', 'two'],
+        ['Kevin Park: C prefix cond.', 'soft'],     # a static prefix, then a conditional
+        ['Kevin Park: C prefix cond.', 'soft and loud'],
+        ['Kevin Park: D whole dyn.', 'shout'],      # a tag whose name is printed (delivery-note)
+        ['Kevin Park: F chain.', 'loud'],           # a dynamic note in a redirect knot
+        ['Kevin Park: G dyn then plain tag.', 'loud'], # a dynamic note before a plain tag
+        ['Kevin Park: Tun line.', 'loud'],          # a dynamic note in a tunnel
+        ['Kevin Park: Tun maybe.', 'loud']          # ... above a line that may print nothing
       ]
     }.freeze
+
+    # The parity harness should finish in a second or two; a fixture with an endless
+    # divert loop would spin for ever, so the run is killed and the test fails (review R5 n2).
+    PARITY_TIMEOUT = 60
+
+    def node_available?
+      system('node --version', out: File::NULL, err: File::NULL)
+    end
+
+    # [stdout, stderr, success] of the parity harness, or a failure after PARITY_TIMEOUT.
+    def play_with_inkjs(json, vars)
+      harness = BreakEscape::Engine.root.join('test/support/ink_delivery_lines.mjs').to_s
+      Open3.popen3('node', harness, json, *vars) do |stdin, stdout, stderr, wait|
+        stdin.close
+        out = Thread.new { stdout.read }
+        err = Thread.new { stderr.read }
+        unless wait.join(PARITY_TIMEOUT)
+          Process.kill('KILL', wait.pid)
+          [wait, out, err].each(&:join)
+          flunk "#{File.basename(json)} #{vars.inspect}: the inkjs harness ran past #{PARITY_TIMEOUT}s (an endless divert loop?)"
+        end
+        [out.value, err.value, wait.value.success?]
+      end
+    end
 
     # For each fixture: every line inkjs shows (played as InkEngine#continue plays it,
     # every choice path) with the note the client sends, against InkLineWalker. A line
@@ -233,14 +273,16 @@ module BreakEscape
     # be one the client sends with it. Lines the walker leaves unresolved (glue, game
     # state) are voiced untagged by the endpoint, and dialoguelint warns about them.
     test "the walker gives each line the note inkjs gives it (tag above a divert, glue, counters)" do
-      skip 'node not available' unless system('node --version', out: File::NULL, err: File::NULL)
+      # review R5 n1: on CI a missing node is a failure, not a silent pass
+      flunk 'node is not installed, so the inkjs parity check cannot run' if ENV['CI'] && !node_available?
+      skip 'PARITY CHECK DID NOT RUN: node is not installed (inkjs plays the fixtures)' unless node_available?
 
       PARITY_FIXTURES.each do |name, settings|
         json = BreakEscape::Engine.root.join("test/fixtures/files/ink_line_walker/#{name}.json").to_s
         client = Set.new
         settings.each do |vars|
-          out, err, status = Open3.capture3('node', BreakEscape::Engine.root.join('test/support/ink_delivery_lines.mjs').to_s, json, *vars)
-          assert status.success?, "#{name} #{vars.inspect}: #{err}"
+          out, err, ok = play_with_inkjs(json, vars)
+          assert ok, "#{name} #{vars.inspect}: #{err}"
           client.merge(JSON.parse(out))
         end
 
@@ -324,6 +366,28 @@ module BreakEscape
         '^After.', "\n", 'done', { 'global decl' => ['ev', 'str', '^loud', '/str', { 'VAR=' => 'mood' }, '/ev', 'end', nil] }
       ] }
       assert_equal 'calm', TtsService.delivery_from_tags(InkLineWalker.new(static_after).lines.first.tags)
+    end
+
+    test "a conditional, sequence or printed name inside a #delivery: tag stays out of the line and drops earlier notes (review R5)" do
+      json = BreakEscape::Engine.root.join('test/fixtures/files/ink_line_walker/delivery_parity_r5.json').to_s
+      walker = InkLineWalker.from_file(json)
+      notes = walker.lines.group_by(&:raw)
+                    .transform_values { |ls| ls.map { |l| TtsService.delivery_from_tags(l.tags) }.uniq.sort_by(&:to_s) }
+      # M1: the tag's branch text never joins the line, and no earlier note survives
+      assert_equal [nil], notes['Kevin Park: A cond tag.']
+      assert_equal [nil], notes['Kevin Park: B seq tag.']
+      assert_equal [nil], notes['Kevin Park: C prefix cond.']
+      assert(walker.lines.none? { |l| l.raw.match?(/(loud|soft|one|two)\z/) }, 'a tag branch leaked into a spoken line')
+      # m1: `#{t}` may be a #delivery: tag, so `calm` before it is dropped
+      assert_equal [nil], notes['Kevin Park: D whole dyn.']
+      # a static note after a dynamic one still wins
+      assert_equal ['own e'], notes['Kevin Park: E own after dyn.']
+      # a dynamic tag that is not a delivery tag by its static text keeps other tags
+      speaker = { 'inkVersion' => 21, 'root' => [
+        '#', '^delivery: calm', '/#', '#', '^speaker: ', 'ev', { 'VAR?' => 'who' }, 'out', '/ev', '/#',
+        '^Line.', "\n", 'done', { 'global decl' => ['ev', 'str', '^x', '/str', { 'VAR=' => 'who' }, '/ev', 'end', nil] }
+      ] }
+      assert_equal 'calm', TtsService.delivery_from_tags(InkLineWalker.new(speaker).lines.first.tags)
     end
 
     test "a note before a tunnel or an external call is never carried past it" do

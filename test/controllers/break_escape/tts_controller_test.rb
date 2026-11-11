@@ -958,6 +958,34 @@ module BreakEscape
       calls.each { |c| refute c[:kwargs].key?(:delivery), c.inspect }
     end
 
+    # review R5 m2: a player can post any shape; a note that is not a String is ignored
+    test "tts voices a line untagged with a 200 when delivery is an array or an object" do
+      use_delivery_scenario
+      generated = @cache_root.join("generated.mp3")
+      File.binwrite(generated, FAKE_MP3)
+      calls = []
+      bodies = [
+        { npc_id: "kevin_park", text: QUIET_LINE, delivery: [QUIET_NOTE] },
+        { npc_id: "kevin_park", text: QUIET_LINE, delivery: { "a" => "b" } },
+        { npc_id: "kevin_park", text: QUIET_LINE, delivery: { "note" => QUIET_NOTE } }
+      ]
+      with_env("GEMINI_API_KEY" => "dummy_key_for_test") do
+        stub_generate_returning(generated, calls) do
+          bodies.each do |body|
+            post tts_game_url(@game), params: body
+            assert_response :success, body.inspect
+            post tts_game_url(@game), params: body, as: :json
+            assert_response :success, "#{body.inspect} as JSON"
+          end
+        end
+      end
+      assert_equal 6, calls.size
+      calls.each do |c|
+        refute c[:kwargs].key?(:delivery), c.inspect
+        assert_equal QUIET_LINE, c[:args][0]
+      end
+    end
+
     test "tts plays the untagged clip for a line whose note the server can't place" do
       use_delivery_scenario
       write_clip(TtsService.cache_key("An untagged line.", *KEVIN_VOICE.values))
