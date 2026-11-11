@@ -83,6 +83,7 @@
     "u2_dock_planted": false,
     "finance_share_down": false,
     "printer_jammed": false,
+    "printer_w7_jammed": false,
     "intranet_down": false,
     "ian_pc_unplugged": false,
     "ian_was_off": false
@@ -1441,24 +1442,24 @@
           "triggerOnInteract": [
             {
               "type": "confirm_action",
-              "condition": "!globalVars.printer_jammed",
-              "text": "Jam the printer?",
+              "condition": "!globalVars.printer_w7_jammed",
+              "text": "Jam the slow room printer?",
               "onConfirm": [
                 {
                   "type": "set_global",
-                  "key": "printer_jammed",
+                  "key": "printer_w7_jammed",
                   "value": true
                 }
               ]
             },
             {
               "type": "confirm_action",
-              "condition": "globalVars.printer_jammed",
-              "text": "Clear the printer jam?",
+              "condition": "globalVars.printer_w7_jammed",
+              "text": "Clear the slow room printer jam?",
               "onConfirm": [
                 {
                   "type": "set_global",
-                  "key": "printer_jammed",
+                  "key": "printer_w7_jammed",
                   "value": false
                 }
               ]
@@ -1500,7 +1501,7 @@
             }
           },
           "workNeeds": [
-            "+printer"
+            "+printer_w7"
           ],
           "eventMappings": [
             {
@@ -1533,6 +1534,11 @@
       "kind": "printer",
       "object": "office_printer",
       "downIf": "printer_jammed"
+    },
+    "printer_w7": {
+      "name": "Slow room printer",
+      "kind": "printer",
+      "downIf": "printer_w7_jammed"
     },
     "intranet": {
       "name": "Intranet",

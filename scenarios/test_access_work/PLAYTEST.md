@@ -81,7 +81,7 @@ C run west from the lobby.
 | Reload | As above, then walk back to `print_room` | Omar's level kept; the claim gone; the printer still jammed | A settled NPC sends no report after the reload | As before the reload |
 | W5 | Enter `starter_room` (hall A, south). Wait about 3 minutes | Kai fails from his first use, "Still no access. Nobody listens." | `w5_settled` | `kai.level` 100; the request count flat after `settled` |
 | W6 | Enter `cable_room` (hall C, north). Switch the socket off. Open a door elsewhere. Switch it back on | He parks at his desk with "This PC is useless.", never walks to another PC; the door does not wake him; one use time after the socket comes back he works, met | `npc_need_parked:ian` (`off`, `ian_pc`), no `npc_use_failed`; `w6_off`, `w6_back` | `ian.level` 20, then 10 |
-| W7 | Enter `slow_room` (hall C, south). Wait for Nia's first use and for her to rest. Jam the printer with the lever here | Within about one use time she works, fails and names the printer | `npc_need_urgent:nia` at once, `npc_use_failed:nia`; `w7_failed` | `nia.level` 20 |
+| W7 | Enter `slow_room` (hall C, south). Wait for Nia's first use and for her to rest. Jam the printer with the lever here (the slow room's own printer, `printer_w7`, global `printer_w7_jammed`, so W4's lever and this one never clear each other) | Within about one use time she works, fails and names the printer | `npc_need_urgent:nia` at once, `npc_use_failed:nia`; `w7_failed` | `nia.level` 20 |
 
 Request budget: never more than one `/npc_frustration` request every two seconds; W5's count stays
 flat after `settled`. Run W types one code, W4's, read from Omar's desktop. Last run:
