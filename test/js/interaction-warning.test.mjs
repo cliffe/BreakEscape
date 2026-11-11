@@ -63,7 +63,7 @@ writeFileSync(join(dir, 'interactions.mjs'), interactionsSrc);
 
 // interactions.js assigns window.* at import time, so window must exist first.
 globalThis.window = {};
-const { maybeInteractionWarning } = await import(pathToFileURL(join(dir, 'interactions.mjs')).href);
+const { maybeInteractionWarning, handleObjectInteraction } = await import(pathToFileURL(join(dir, 'interactions.mjs')).href);
 
 function setupWindow({ busy = false, answer = false, answeredGlobals = {} } = {}) {
   globalThis.__applied = [];
@@ -144,6 +144,49 @@ test('busy-guard: while a chat/minigame is open the warning is dropped (true), n
 test('an object with no interactionWarning is never intercepted', () => {
   setupWindow({});
   assert.equal(maybeInteractionWarning({ objectId: 'x', scenarioData: { id: 'x', type: 'pc' } }), false);
+});
+
+// ---------------------------------------------------------------------------
+// The requiresItem plant under a USB policy (access slice 9.2 U, plan 7; review R1 m9): a refused
+// plant shows the line, emits usb_refused:<id>, runs no action and consumes nothing; an accepted
+// plant runs the actions and sends the remove with usedOn.
+// ---------------------------------------------------------------------------
+function plantWindow(usbClass) {
+  globalThis.__applied = [];
+  const alerts = [], emits = [], removes = [], local = [];
+  globalThis.window = {
+    gameState: { globalVariables: {} },
+    MinigameFramework: { currentMinigame: null },
+    gameScenario: { policies: { managed: { usb: 'storage_blocked' } }, defaultPolicy: 'managed' },
+    inventory: { items: [{ scenarioData: { id: 'stick', type: 'usb', name: 'USB stick', usbClass } }] },
+    gameAlert: (...args) => alerts.push(args),
+    eventDispatcher: { emit: (name, data) => emits.push({ name, data }) },
+    removeFromInventory: it => local.push(it),
+    sendInventoryRemove: (id, opts) => removes.push({ id, opts }),
+  };
+  return { alerts, emits, removes, local };
+}
+const plantPc = () => ({ objectId: 'lena_pc', scenarioData: { id: 'lena_pc', type: 'pc', workstation: true,
+  requiresItem: 'usb', consumesItem: true, triggerOnInteract: [{ type: 'set_global', key: 'planted' }] } });
+
+test('a refused plant: the refusal line, usb_refused, no action, nothing consumed', () => {
+  const w = plantWindow('storage');
+  handleObjectInteraction(plantPc());
+  assert.equal(w.alerts.length, 1);
+  assert.equal(w.alerts[0][0], 'USB storage is disabled on this PC.');
+  const refused = w.emits.filter(e => e.name === 'usb_refused:lena_pc');
+  assert.equal(refused.length, 1);
+  assert.deepEqual(refused[0].data, { objectId: 'lena_pc', itemId: 'stick', usbClass: 'storage' });
+  assert.equal(globalThis.__applied.length, 0, 'no action runs');
+  assert.equal(w.local.length + w.removes.length, 0, 'nothing consumed');
+});
+
+test('an accepted plant (a hid device on a storage_blocked PC): actions run, the remove names the PC', () => {
+  const w = plantWindow('hid');
+  handleObjectInteraction(plantPc());
+  assert.equal(w.emits.filter(e => e.name.startsWith('usb_refused')).length, 0);
+  assert.deepEqual(globalThis.__applied.map(a => a.actions), [[{ type: 'set_global', key: 'planted' }]]);
+  assert.deepEqual(w.removes, [{ id: 'stick', opts: { usedOn: 'lena_pc' } }]);
 });
 
 // ---------------------------------------------------------------------------

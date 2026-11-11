@@ -1,7 +1,7 @@
 // The frustration report queue (systems/npc-reports.js), access slice 9.2 A-6 (plan 5.4).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { NpcReports, REPORT_INTERVAL_MS, MAX_BATCH } from '../../public/break_escape/js/systems/npc-reports.js';
+import { NpcReports, REPORT_INTERVAL_MS, MAX_BATCH, watchedGlobal, installNpcReports } from '../../public/break_escape/js/systems/npc-reports.js';
 
 function harness(answerFor = r => ({ npcId: r.npc_id, level: 20, tell: 1, settled: false })) {
     let now = 0;
@@ -92,4 +92,86 @@ test('an NPC GET /scenario calls settled sends no fail after a reload until an e
     assert.equal(h.r.queue('omar', fail('omar')), true);
     h.r.restore(null);
     h.r.restore('nonsense');
+});
+
+// ── review R1 m6 and m9 ──────────────────────────────────────────────
+
+test('a settled answer to a fail sent before the last ease is ignored (R1 m6)', async () => {
+    let release;
+    const h = harness(r => ({ npcId: r.npc_id, level: 100, tell: 2, settled: r.event === 'fail' }));
+    const send = h.r.deps.send;
+    h.r.deps.send = batch => new Promise(res => { release = () => res(send(batch)); });
+    h.r.queue('kai', fail('kai'));
+    const inFlight = h.advance(0);
+    await new Promise(res => setImmediate(res));
+    h.r.queue('kai', { event: 'ease', need: 'work', objectId: 'kai_pc' });   // queued while the fail is out
+    release();
+    await inFlight;
+    assert.equal(h.r.settled.has('kai'), false, 'the late settled answer does not undo the ease');
+    assert.equal(h.r.queue('kai', fail('kai')), true);
+    assert.ok(!h.sent.flatMap(x => x.batch).some(r => '_seq' in r), 'the sequence number never goes on the wire');
+});
+
+test('a rejecting send loses that batch and the queue keeps going', async () => {
+    const h = harness();
+    let calls = 0;
+    const send = h.r.deps.send;
+    h.r.deps.send = async batch => { calls++; if (calls === 1) throw new Error('500'); return send(batch); };
+    h.r.queue('dana', fail());
+    await h.advance(0);
+    assert.equal(h.applied.length, 0);
+    assert.equal(h.r.sending, false);
+    h.r.queue('dana', fail());
+    await h.advance(REPORT_INTERVAL_MS);
+    assert.equal(calls, 2);
+    assert.equal(h.applied.length, 1);
+});
+
+test('watchedGlobal: plan globals, a station offWhen as a string and as an object, an NPC with no work', () => {
+    const objects = { dana_pc: { affordance: { offWhen: 'dana_pc_off' } }, kai_pc: { affordance: { offWhen: { kai_pc_unplugged: true } } },
+                      amy_pc: { affordance: { offWhen: 'amy_pc_off' } } };
+    const w = {
+        npcManager: { npcs: new Map([
+            ['dana', { needsHome: 'dana_pc', work: { needs: [{ id: 'share', downIf: 'share_down', routes: [['vpn_up']] }] } }],
+            ['kai', { needsHome: 'kai_pc', work: { needs: [] } }],
+            ['amy', { needsHome: 'amy_pc' }]
+        ]) },
+        npcNeedsSystem: { world: { getObject: id => objects[id] || null } }
+    };
+    assert.equal(watchedGlobal('share_down', w), true);
+    assert.equal(watchedGlobal('vpn_up', w), true);
+    assert.equal(watchedGlobal('dana_pc_off', w), true);
+    assert.equal(watchedGlobal('kai_pc_unplugged', w), true);
+    assert.equal(watchedGlobal('amy_pc_off', w), false, 'an NPC with no work plan is not watched');
+    assert.equal(watchedGlobal('unrelated', w), false);
+    assert.equal(watchedGlobal(null, w), false);
+    assert.equal(watchedGlobal('share_down', {}), false);
+});
+
+test('installNpcReports: one listener, the wildcard name parsed, idempotent', () => {
+    const listeners = [];
+    const prev = globalThis.window;
+    globalThis.window = {
+        eventDispatcher: { on: (name, fn) => listeners.push({ name, fn }) },
+        npcManager: { npcs: new Map([['dana', { needsHome: 'dana_pc', work: { needs: [{ id: 's', downIf: 'share_down' }] } }]]) },
+        npcNeedsSystem: { world: { getObject: () => null } }
+    };
+    try {
+        const api = { post: async () => ({ answers: [] }) };
+        const a = installNpcReports(api);
+        const b = installNpcReports(api);
+        assert.equal(a, b);
+        assert.equal(globalThis.window.npcReports, a);
+        assert.equal(listeners.length, 1);
+        assert.equal(listeners[0].name, 'global_variable_changed:*');
+        listeners[0].fn({}, 'global_variable_changed:unrelated');
+        assert.equal(a.needSync, false);
+        listeners[0].fn({}, 'global_variable_changed:share_down');
+        assert.equal(a.needSync, true);
+        a.needSync = false;
+        listeners[0].fn({ name: 'share_down' }, undefined);
+        assert.equal(a.needSync, true, 'the name from the payload when the event name is not passed');
+    } finally {
+        globalThis.window = prev;
+    }
 });

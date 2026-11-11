@@ -464,7 +464,7 @@ export class NPCNeedsSystem {
             // re-arm mark per need, resources already checked this outage, queued visits, the
             // shown failure, and the outage kick's last-seen conditions and pending needs
             frustration: 0, tell: 0, settled: false,
-            rearm: {}, checked: new Set(), visits: [], failedShow: null,
+            rearm: {}, failSent: {}, checked: new Set(), visits: [], failedShow: null,
             kickSeen: {}, kickPending: new Set(),
             urgentFlag: {},
             mode: 'idle',
@@ -509,6 +509,11 @@ export class NPCNeedsSystem {
             const s = this.states.get(id);
             if (s.job) this._abortJob(s, 'reset', { cancel: true });
         }
+        // The server still holds each NPC's frustration: the mirror survives a reset (R1 m3)
+        const mirror = new Map(ids.map(id => {
+            const s = this.states.get(id);
+            return [id, { frustration: s.frustration, tell: s.tell, settled: s.settled }];
+        }));
         this.states.clear();
         this._chats.clear();
         this._chatSeq = 0;
@@ -526,7 +531,12 @@ export class NPCNeedsSystem {
         this._acc = 0;
         this._lastElapsed = null;
         this._arrivals.clear();
-        for (const id of ids.sort()) this.register(id);
+        for (const id of ids.sort()) {
+            this.register(id);
+            const m = mirror.get(id);
+            const s = this.states.get(id);
+            if (m && s) { s.frustration = m.frustration; s.tell = m.tell; s.settled = m.settled; }
+        }
     }
 
     // ── clock ──────────────────────────────────────────────────────────────
@@ -1452,7 +1462,10 @@ export class NPCNeedsSystem {
             else if (s.giveUp && !exclude?.noPark) {
                 // Access 9.2 A (plan 5.2): a judged need whose own station is off parks `off`,
                 // counted, with its line (unless a turn-back for this need already said one)
-                const counted = s.giveUp.reason === 'off' && this._judged(s, name);
+                // Only the NPC's own station counts: a non-desk source with an offWhen (a kiosk)
+                // parks as office life always did, since the server refuses an off cause there (R1 m5)
+                const counted = s.giveUp.reason === 'off' && this._judged(s, name)
+                    && !!s.home?.objectId && s.giveUp.targetId === s.home.objectId;
                 const why = s.giveUp;
                 if (counted) {
                     why.missing = [{ id: why.targetId, why: 'off' }];
@@ -1742,7 +1755,8 @@ export class NPCNeedsSystem {
         if (avoidedId) s.avoidShow = { npcId: avoidedId, until: this.clockMs + said + AVOID_BUBBLE_MS };
         this._abortJob(s, 'turned_back', { cancel: true });
         // Access 9.2 A (plan 5.2): a reason that parks with no fallback parks the need itself
-        if (rule.parks && !rule.fallback && need && !tempted) {
+        // A failed use parks even on a tempted job, or the NPC could retry at once (R1 m10)
+        if (rule.parks && !rule.fallback && need && (!tempted || reason === 'failed')) {
             this._park(s, need, { reason, targetId, wakeOn: fail?.wakeOn || [], missing: missing || [], grumble: topic });
             if (judged && !fail?.borrowed) this._countFailure(s, need, missing || [], targetId);
         }
@@ -1903,6 +1917,8 @@ export class NPCNeedsSystem {
         this._log(id, 'failure_counted', { need, causes: (missing || []).map(c => `${c.id}:${c.why}`).join(','), rearmed: rearmed || undefined });
         if (typeof this.world.reportUse === 'function') {
             this.world.reportUse(id, { event: 'fail', need, objectId: objectId ?? null, missing: (missing || []).map(c => ({ ...c })), ...(rearmed ? { rearmed: true } : {}) });
+            // The mirror lags the server by one answer: an ease is owed even while it says 0 (R1 m3)
+            s.failSent[need] = true;
         }
         const plan = this._plan(s);
         for (const c of missing || []) {
@@ -2074,8 +2090,11 @@ export class NPCNeedsSystem {
 
     _setFrustration(s, a) {
         if (!Number.isFinite(Number(a.level))) return;
-        const previous = s.frustration;
+        // The server's own previous level when the answer carries one, else the mirror (R1 m4)
+        const previous = a.previous !== undefined && a.previous !== null && Number.isFinite(Number(a.previous))
+            ? clamp(Number(a.previous), 0, 100) : s.frustration;
         s.frustration = clamp(Number(a.level), 0, 100);
+        if (s.failSent) s.failSent = {};
         s.tell = Number.isFinite(Number(a.tell)) ? Number(a.tell) : s.tell;
         s.settled = !!a.settled;
         this.world.setGlobal?.(`${s.npcId}_frustration`, s.frustration);
@@ -2317,10 +2336,11 @@ export class NPCNeedsSystem {
         this._leavePost(s);
     }
 
-    /** True while the current job is a `use` of the NPC's own needsHome object: they stay at their post. */
+    /** True while the current job is a `use` of the NPC's own needsHome object, or a visit to it
+     *  (plan 5.3: an at-post job that never leaves the desk): they stay at their post. */
     _atOwnPost(s) {
         const j = s.job;
-        return !!(j && j.kind === 'use' && s.home?.objectId && j.targetId === s.home.objectId);
+        return !!(j && (j.kind === 'use' || j.kind === 'visit') && s.home?.objectId && j.targetId === s.home.objectId);
     }
 
     /** True while the current job ends at the NPC's own needsHome object, whatever its kind
@@ -2626,8 +2646,9 @@ export class NPCNeedsSystem {
         if (judged) {
             s.rearm[job.need] = true;
             if (job.need === 'work') s.checked.clear();
-            if (s.frustration > 0 && typeof this.world.reportUse === 'function') {
+            if ((s.frustration > 0 || s.failSent[job.need]) && typeof this.world.reportUse === 'function') {
                 this.world.reportUse(id, { event: 'ease', need: job.need, objectId: job.targetId });
+                delete s.failSent[job.need];
             }
         }
         const hook = rec.onUse && rec.onUse[job.targetId];

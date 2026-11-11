@@ -32,6 +32,7 @@ import { PlayerCombat } from '../systems/player-combat.js';
 import { NPCCombat } from '../systems/npc-combat.js';
 import { ApiClient } from '../api-client.js'; // Import to ensure window.ApiClient is set
 import '../systems/npc-work.js'; // Access slice 9.2: sets window.npcWork (the use verdict) before the needs system runs
+import { installNpcReports } from '../systems/npc-reports.js'; // Access slice 9.2 (5.4): ready before the needs system's first tick (R1 m2)
 import { getTutorialManager } from '../systems/tutorial-manager.js';
 import { TILE_SIZE, SPRITE_PADDING_BOTTOM_ATLAS, SPRITE_PADDING_BOTTOM_LEGACY, DOOR_INTERACTION_RANGE, INTERACTION_RANGE } from '../utils/constants.js';
 import { initScenarioMusicEvents } from '../music/scenario-music-events.js';
@@ -1988,12 +1989,15 @@ export async function create() {
                 return presetsReady.then(() => import('../systems/npc-needs.js')).then(needs => {
                     needs.installNpcNeeds();
                     console.log('✅ NPC needs system initialised');
-                    // Access slice 9.2 (5.4): the report queue, and the frustration the server holds
-                    import('../systems/npc-reports.js').then(m => {
-                        const reporter = m.installNpcReports(ApiClient);
+                    // Access slice 9.2 (5.4): the report queue, and the frustration the server holds.
+                    // Synchronous, in the same task as the install, so no tick runs before either
+                    // exists: a start-room NPC's first fail is queued, and a reload's hold is applied
+                    // before it can fail (review R1 m2).
+                    try {
+                        const reporter = installNpcReports(ApiClient);
                         reporter?.restore?.(window.gameScenario?.npcFrustration || null);
                         window.npcNeedsSystem?.restoreFrustration?.(window.gameScenario?.npcFrustration || null);
-                    }).catch(e => console.warn('npc reports failed to load', e));
+                    } catch (e) { console.warn('npc reports failed to install', e); }
                     // Workstation screen lock/unlock follows npc_left_post / npc_returned_post
                     const sceneRef = this;
                     import('../systems/npc-action-icons.js').then(m => m.installNpcActionIcons(sceneRef)).catch(e => console.warn('npc action icons failed', e));

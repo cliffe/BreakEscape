@@ -345,3 +345,100 @@ test('a visit waits for a running job; a late answer changes no decision; a leve
     assert.equal(b.sys.getState('dana').frustration, 40);
     assert.equal(b.sys.getState('dana').tell, 2);
 });
+
+// ── review R1 (client m1, m3, m4, m5, m9) ──────────────────────────────
+
+test('R1 m1: a visit to the NPC\'s own needsHome object is at post: no npc_left_post, no move', () => {
+    const { sys, w, evs } = workWorld();
+    sys.registerAll();
+    assert.ok(stepUntil(sys, () => evs('npc_used:dana_pc').length > 0, 30000));
+    sys.step(500);
+    const moves = w.calls.moves.length;
+    const left = evs('npc_left_post:dana').length;
+    sys.enqueueVisit('dana', { kind: 'check', at: { objectId: 'dana_pc' }, useSeconds: 1 });
+    assert.ok(stepUntil(sys, () => evs('npc_visit_done:dana').length > 0, 10000));
+    assert.equal(evs('npc_left_post:dana').length, left, 'never left the desk');
+    assert.equal(evs('npc_action_windup:dana').filter(e => e.data.targetId === 'dana_pc').length, 0);
+    assert.equal(w.calls.moves.length, moves, 'not moved');
+});
+
+test('R1 m9: a visit to an NPC walks to the world\'s cellBeside', () => {
+    const { sys, w, evs } = workWorld({ npcs: { dana: { pos: { x: 100, y: 100 }, rec: dana() }, omar: { pos: { x: 400, y: 400 }, rec: { id: 'omar' } } } });
+    w.world.cellBeside = id => (id === 'omar' ? { x: 432, y: 400 } : null);
+    sys.registerAll();
+    sys.enqueueVisit('dana', { kind: 'visit', at: { npcId: 'omar' }, useSeconds: 1 });
+    assert.ok(stepUntil(sys, () => evs('npc_visit_done:dana').length > 0, 30000));
+    assert.ok(w.calls.moves.some(m => m.id === 'dana' && m.x === 432 && m.y === 400));
+});
+
+test('R1 m4: npc_frustration_changed carries the answer\'s previous, else the mirror', () => {
+    const { sys, evs } = workWorld();
+    sys.registerAll();
+    sys.applyFrustration([{ npcId: 'dana', level: 90, previous: 100, tell: 2 }]);
+    sys.step(250);
+    assert.equal(evs('npc_frustration_changed:dana').at(-1).data.previous, 100);
+    sys.applyFrustration([{ npcId: 'dana', level: 80, tell: 2 }]);
+    sys.step(250);
+    assert.equal(evs('npc_frustration_changed:dana').at(-1).data.previous, 90);
+});
+
+test('R1 m3: an ease is reported after a fail even while the mirror still says 0; a reset keeps the mirror', () => {
+    const { sys, set, evs, reports } = workWorld({ globals: { share_down: true } });
+    sys.registerAll();
+    assert.ok(stepUntil(sys, () => reports.length === 1, 30000));
+    assert.equal(sys.getState('dana').frustration, 0, 'no answer yet');
+    set('share_down', false);
+    assert.ok(stepUntil(sys, () => evs('npc_used:dana_pc').length > 0, 20000));
+    assert.deepEqual(reports.map(r => r.event), ['fail', 'ease']);
+    assert.ok(stepUntil(sys, () => evs('npc_used:dana_pc').length > 1, 180000));
+    assert.equal(reports.length, 2, 'one owed ease only; the next met use at 0 sends none');
+
+    sys.applyFrustration([{ npcId: 'dana', level: 40, previous: 50, tell: 1 }]);
+    sys.step(250);
+    sys.reset();
+    const st = sys.getState('dana');
+    assert.equal(st.frustration, 40);
+    assert.equal(st.tell, 1);
+});
+
+test('R1 m5: an off non-desk source (a kiosk) is never a counted fail', () => {
+    const rec = dana({ needsHome: { room: 'office', x: 3, y: 3 } });
+    const objects = [
+        { id: 'kiosk', x: 200, y: 200, affordance: { satisfies: 'work', restores: 60, useSeconds: 5, offWhen: 'kiosk_off' } },
+        { id: 'coffee', x: 300, y: 300, affordance: { satisfies: 'caffeine', restores: 70, useSeconds: 10, offWhen: 'coffee_off' } }
+    ];
+    const { sys, evs, reports } = workWorld({ npcs: { dana: { pos: { x: 96, y: 96 }, rec } }, objects, globals: { kiosk_off: true } });
+    sys.registerAll();
+    sys.states.get('dana').levels.work = 40;
+    assert.ok(stepUntil(sys, () => evs('npc_need_parked:dana').length > 0, 20000));
+    // Today an off give-up names only the dead own station (_giveUpReason), so the kiosk parks
+    // as office life always did; the guard in _select keeps it so if that ever changes
+    assert.notEqual(evs('npc_need_parked:dana')[0].data.targetId, 'kiosk');
+    assert.equal(reports.length, 0, 'no fail report for a kiosk');
+    assert.equal(sys.getLog().filter(e => e.ev === 'failure_counted').length, 0);
+});
+
+test('R1 m9: the outage kick waits while the home is provisional', () => {
+    const objects = baseObjects();
+    objects[0].roomId = null;   // dana_pc not loaded yet
+    const { sys, w, log } = workWorld({ objects, globals: { printer_jammed: true } });
+    sys.registerAll();
+    sys.step(2000);
+    assert.equal(log('kicked').length, 0, 'no kick while the home is provisional');
+    w.objs.find(o => o.id === 'dana_pc').roomId = 'office';
+    sys.step(3000);
+    assert.equal(log('kicked').length, 1, 'the kick once the home resolves');
+});
+
+test('R1 m9 (R5 n3): a reload\'s hold is less the time since the response arrived', () => {
+    let elapsed = 0;
+    const { sys, w, reports } = workWorld({ globals: { share_down: true } });
+    w.world.elapsedMs = () => elapsed;
+    sys.restoreFrustration({ dana: { level: 34, tell: 1, settled: false, hold: { work: 10 } } });
+    elapsed = 6000;
+    sys.registerAll();
+    const held = sys.getState('dana').parked.find(p => p.reason === 'held');
+    assert.ok(held && held.remainingMs <= 4000 && held.remainingMs > 3500, `held ${held?.remainingMs}`);
+    assert.ok(stepUntil(sys, () => reports.length === 1, 20000));
+    assert.ok(sys.clockMs < 10000, 'the fail comes before the full ten seconds');
+});

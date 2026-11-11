@@ -34,6 +34,8 @@ export class NpcReports {
         this.sending = false;
         this.requests = 0;
         this.sent = 0;
+        this.seq = 0;
+        this.lastEase = new Map();   // npcId -> seq of the last queued ease (R1 m6)
     }
 
     _now() { return typeof this.deps.now === 'function' ? this.deps.now() : Date.now(); }
@@ -42,8 +44,9 @@ export class NpcReports {
     queue(npcId, report) {
         if (typeof npcId !== 'string' || !report) return false;
         if (report.event === 'fail' && this.settled.has(npcId)) return false;
-        if (report.event === 'ease') this.settled.delete(npcId);
-        const r = { npc_id: npcId, event: report.event, need: report.need, object_id: report.objectId ?? null };
+        const seq = ++this.seq;
+        if (report.event === 'ease') { this.settled.delete(npcId); this.lastEase.set(npcId, seq); }
+        const r = { npc_id: npcId, event: report.event, need: report.need, object_id: report.objectId ?? null, _seq: seq };
         if (report.event === 'fail') r.missing = (report.missing || []).map(c => ({ id: c.id, why: c.why }));
         if (report.rearmed) r.rearmed = true;
         this.pending.push(r);
@@ -89,7 +92,7 @@ export class NpcReports {
             this.sent += batch.length;
             let answers = [];
             try {
-                const res = await this.deps.send(batch.map(({ _resent, ...r }) => r));
+                const res = await this.deps.send(batch.map(({ _resent, _seq, ...r }) => r));
                 answers = Array.isArray(res?.answers) ? res.answers : [];
             } catch (e) {
                 answers = [];   // a lost request loses one step of frustration and nothing else
@@ -97,7 +100,8 @@ export class NpcReports {
             const resend = [];
             answers.forEach((a, i) => {
                 if (!a) return;
-                if (a.settled) this.settled.add(a.npcId);
+                // A settled answer to a report queued before the NPC's last ease is out of date (R1 m6)
+                if (a.settled && !((batch[i]?._seq ?? Infinity) < (this.lastEase.get(a.npcId) ?? -Infinity))) this.settled.add(a.npcId);
                 if (a.stale && batch[i] && !batch[i]._resent) resend.push({ ...batch[i], _resent: true });
             });
             if (resend.length) { this.needSync = true; this.pending.unshift(...resend); }
