@@ -64,19 +64,30 @@ The item needs an `id`. Its tray click toggles it (Put on / Take off). A droppab
   `pp_disguise` = the costume. Worn false: clears the record, the global false, `pp_disguise` "".
   It answers with the record and the globals it wrote; 422 for an item not held or not wearable.
 - The worn globals are server-owned: `player_state['wearableGlobals']` (every wearable's global,
-  set when the game is created; a game made before this build works it out on its first sync,
-  inside the sync's row lock) are read-only to `sync_state`, as imported globals are. A client
-  cannot set `courier_ready` by a sync.
+  set when the game is created; a game with no list works it out from its own scenario snapshot
+  on its first sync, inside the sync's row lock) are read-only to `sync_state`, as imported
+  globals are. A client cannot set `courier_ready` by a sync.
 - An item leaving the server inventory (`remove_inventory_item!`, a network plant, a player drop)
   clears the worn record and its global. A player drop of the worn item takes it out of the
   inventory in the same request, so a client that sends no inventory remove after it cannot keep
   the costume.
 - In a scenario with wearables `pp_disguise` is read-only to `sync_state` too: only `POST wear`
   dresses the avatar there.
-- Taking off with no worn record clears any worn global still true (and `pp_disguise`). A game
-  made before this build, on its first sync, puts a worn global left true by the old
-  client-written costume in step once: it becomes the worn record when its item is held, and goes
-  false otherwise.
+- Taking off with no worn record clears any worn global still true (and `pp_disguise`): a guard
+  for a hand-edited game, and harmless after a drop the server already took off.
+- Games in progress at deploy (review R2, server m1 and client 2, settled by a Rails test,
+  `WearableLabTest` "a lab game from before wearables keeps the old costume behaviour"). A
+  game's `scenario_data` is a snapshot taken when it is created (`Game#generate_scenario_data`
+  returns when one is present, and nothing regenerates it), so a lab game started before this
+  build holds the old lab JSON: its vest has no `wearable` field, in the room or in the
+  inventory. The new code does not touch such a game. Its first sync stores `wearableGlobals` as
+  `[]`, so `courier_ready` and `pp_disguise` stay writable by sync; nothing is ever worn; the
+  bootstrap sends no `wornItem`; `POST wear` answers 422; on the client the vest has no
+  wearable spec, so the tray shows no frame and no "Put on", and the old `set_costume`,
+  `set_global` and `clear_costume` actions in its snapshot keep working. The client cannot lose
+  a worn frame it never had. It plays the old way until the player restarts, which takes the new
+  lab. The earlier reconcile on first sync and the client's take-off for a stray worn global
+  could never run for a real game, so both were removed with their tests.
 - The bootstrap sends `wornItem` so the tray frame comes back after a reload.
 - Not server-checked: `unseenOnly`. The server does not know where NPCs stand; the rule is about
   presentation, not access. Recorded as a limit, and confirmed by the orchestrator after code
@@ -102,6 +113,8 @@ player's costume. That is unchanged by this build and listed under open items.
 - `set_costume` / `clear_costume` in a scenario with wearables is a warning (the costume and the
   worn item can disagree).
 - `wear` / `take_off` must name a wearable item id.
+- The `# set_variable:name=value` tag (and `# set_variable:name`, which sets it true) is an ink
+  writer too.
 
 ### Lab change
 
@@ -112,12 +125,13 @@ clear_costume and courier_ready writes go.
 
 ## Progress
 
-Full suites after code review round 1 and the merge of `main`: Rails 1481 runs, 0 failures, 1 skip;
-JS 489 of 489 files. (Before the review: Rails 1440 runs, JS 485 files.)
+Full suites after code review round 2 and the merge of `main` (ed9d1898f): Rails 1483 runs,
+0 failures, 1 skip; JS 489 of 489 files. (After round 1: Rails 1481 runs, JS 489 of 489 files. Before the
+first review: Rails 1440 runs, JS 485 files.)
 
 Built as designed, with two changes found on the way: the refusal toast names at most two
-watchers ("Tom and 4 others"), since the lab floor has five; and an older game's worn globals are
-worked out on its first sync, not saved from the bootstrap (that save held no row lock).
+watchers ("Tom and 4 others"), since the lab floor has five; and a game with no worn global list
+works it out on its first sync, not saved from the bootstrap (that save held no row lock).
 
 Files: `lib/break_escape/wearable_model.rb`, `app/models/break_escape/wearables.rb`, `POST wear`
 (controller, route, policy, row lock), `public/break_escape/js/systems/wearables.js` (loaded by
@@ -126,9 +140,10 @@ reach it through `window.wearables`, so no test harness copy list changed), `css
 `scripts/validate_wearable.rb`, schema, `scenarios/test_wearable`, the lab and its tests,
 `README_scenario_design.md`.
 
-Tests: `test/controllers/break_escape/wearable_test.rb` (27 after review round 1, with the plant
-and lab path classes), `test/js/wearables.test.mjs` (24), `test/js/wearable-hooks.test.mjs` (4),
-`test/js/validator-wearable.test.mjs` (6), the lab model tests updated.
+Tests: `test/controllers/break_escape/wearable_test.rb` (29 after review round 2, with the plant,
+no-wearable and lab path classes), `test/js/wearables.test.mjs` (25), `test/js/wearable-hooks.test.mjs` (4),
+`test/js/validator-wearable.test.mjs` (6), `test/js/inventory-drop-label.test.mjs` (5), the lab
+model tests updated.
 
 Browser proof (keyless server, port 3016):
 
@@ -198,7 +213,7 @@ Reviews: `WEARABLE_CODE_REVIEW_R1_SERVER.md` (m, n) and `WEARABLE_CODE_REVIEW_R1
 | Finding | Outcome |
 |---------|---------|
 | Server m1 (costume protects no server outcome, pre-existing) | Wording corrected under Open; backlog entry with the review's sketch; not fixed here (orchestrator) |
-| Server m2 (in-flight lab games stuck with `courier_ready` true) | Fixed: take off with no record clears true worn globals; an older game's first sync reconciles once; the client's `take_off` also posts when the item's global is true with no record. Rails and JS tests |
+| Server m2 (in-flight lab games stuck with `courier_ready` true) | Fixed: take off with no record clears true worn globals; an older game's first sync reconciles once; the client's `take_off` also posts when the item's global is true with no record. Rails and JS tests. The reconcile and the client's stray take-off were removed in round 2: an old game never reaches them (round 2, server m1) |
 | Server m3 (a player drop alone keeps the worn item) | Fixed: `player_drop` of the worn item removes it from the inventory and takes it off. The drop test now sends no remove |
 | Server m4 (validator misses `# set_global:` tags) | Fixed, with a test. The scan still reads only `<scenario>/ink`, which holds every lab `storyPath` |
 | Server m5 (test gaps) | Added: the lab's grant then wear then take off, a planted worn device, `POST wear` on another player's game (403), the drop and in-flight cases, `check_wearables` on the lab in a Rails test |
@@ -222,6 +237,25 @@ Reviews: `WEARABLE_CODE_REVIEW_R1_SERVER.md` (m, n) and `WEARABLE_CODE_REVIEW_R1
 | Client 13 (raw id as a name) | Fixed: "someone" when there is no `displayName`. Test |
 | Client 14 (`triggerOnInteract` on a wearable) | Already a validator warning (`check_wearables`); no change |
 | Client 15 (`inventoryAct` note) | Not a bug; the skill note added (user approved, q09) |
+
+## Code review round 2: outcomes
+
+Reviews: `WEARABLE_CODE_REVIEW_R2_SERVER.md` (m, n) and `WEARABLE_CODE_REVIEW_R2_CLIENT.md`
+(numbered). No blockers or majors. Fixes in d25add50c, then a merge of `main` (ed9d1898f, a
+backlog conflict resolved keeping both sides).
+
+| Finding | Outcome |
+|---------|---------|
+| Server m1 (in-flight games not upgraded; reconcile cannot run) | Settled: an old game keeps its snapshot and the old costume behaviour until restarted (Server above). Rails test builds such a game from the real lab with every `wearable` stripped. `reconcile_worn_globals!` and its two tests removed; the snapshot fallback in `worn_global_names` kept as a guard (it yields `[]` for an old game), with its test renamed; `clear_stray_worn_globals!` kept |
+| Server m2 (`# set_variable:` tag) | Fixed: `wearable_ink_writers` also matches `# set_variable:name=`, `# set_variable:name` alone and one followed by another tag. Fixture lines in `validator-wearable.test.mjs`, including a longer name that must not match |
+| Server m3 (`pp_disguise` without wearables) | Test added: `WearableAbsentTest`, a scenario with `disguises` and no wearable, where a sync of `pp_disguise` is stored and `wearableGlobals` is `[]` |
+| Server n1 (null delete, reset) | Both tests added: a `null` sync leaves the worn global and `pp_disguise`; a reset while worn leaves no record and the list restored |
+| Server n2 (action targets under listed keys only) | Not done: no scenario puts `wear` or `take_off` outside the listed keys; left as the review's suggestion |
+| Client 1 (nested `wear` / `take_off` dropped silently) | Fixed, the smaller option: a call dropped because another change is in progress logs `[wearables] another change is in progress, dropped: <what>` and returns `null` (a refusal still returns `false`; no caller reads either). Tests: a coat whose `onRemove` wears the vest, and a `take_off` while a tray confirm is open. Not queued: an author who wants "take the jacket off and the vest goes on" needs a queue, which no scenario asks for yet |
+| Client 2 (older games, first session) | Withdrawn by the same evidence as server m1: an old game's vest has no wearable spec on the client either, so there is no frame to lose and no "Put on" to offer. The client's stray take-off path (`strayWornId`) removed with its test |
+| Client 3 (themed keyline) | Not done: accepted as it reads (the amber outline shows over the theme frame); not trivial to move |
+| Client 4 (hover label and alt) | Fixed: `inventoryHoverLabel` adds " (worn)" for the worn item; `decorateSlot` sets the image `alt` to the name plus "(worn)" and back. Tests |
+| Client 5 (unnamed watchers) | Fixed: named watchers first; with no names, "2 people are watching". Tests |
 
 ## Handover
 
