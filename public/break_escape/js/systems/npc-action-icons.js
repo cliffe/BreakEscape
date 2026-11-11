@@ -125,7 +125,8 @@ export function stateIconEntry(st, actionIcons = {}, optIn = false) {
     const judged = !!(st.judged && (st.judged.work || st.judged.social_media));
     if (!st.noticed && judged && st.tell >= 1) {
         const e = firstIcon(['blocked'], actionIcons, { fallback: false });
-        return e ? { ...e, pulse: st.tell >= 2 } : null;
+        // Review R2 n4: with no blocked icon, fall through to office life's own rule
+        if (e) return { ...e, pulse: st.tell >= 2 };
     }
     const key = st.noticed ? 'noticed' : (st.blockedNeed ? 'blocked' : null);
     if (!key) return null;

@@ -33,6 +33,7 @@ import { NPCCombat } from '../systems/npc-combat.js';
 import { ApiClient } from '../api-client.js'; // Import to ensure window.ApiClient is set
 import '../systems/npc-work.js'; // Access slice 9.2: sets window.npcWork (the use verdict) before the needs system runs
 import { installNpcReports } from '../systems/npc-reports.js'; // Access slice 9.2 (5.4): ready before the needs system's first tick (R1 m2)
+import { installNpcWorkarounds } from '../systems/npc-workarounds.js'; // Access slice 9.2 B (6): listening before a restored hand-over is emitted
 import { getTutorialManager } from '../systems/tutorial-manager.js';
 import { TILE_SIZE, SPRITE_PADDING_BOTTOM_ATLAS, SPRITE_PADDING_BOTTOM_LEGACY, DOOR_INTERACTION_RANGE, INTERACTION_RANGE } from '../utils/constants.js';
 import { initScenarioMusicEvents } from '../music/scenario-music-events.js';
@@ -1996,6 +1997,10 @@ export async function create() {
                     try {
                         const reporter = installNpcReports(ApiClient);
                         reporter?.restore?.(window.gameScenario?.npcFrustration || null);
+                        // Sub-slice B: the runner listens before the restore can emit a pending
+                        // hand-over, and sets every done workaround's setGlobal again
+                        const runner = installNpcWorkarounds(ApiClient);
+                        runner?.restore?.(window.gameScenario?.npcFrustration || null);
                         window.npcNeedsSystem?.restoreFrustration?.(window.gameScenario?.npcFrustration || null);
                     } catch (e) { console.warn('npc reports failed to install', e); }
                     // Workstation screen lock/unlock follows npc_left_post / npc_returned_post

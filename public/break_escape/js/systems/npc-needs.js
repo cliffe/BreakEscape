@@ -2088,7 +2088,7 @@ export class NPCNeedsSystem {
             const s = this.states.get(a.npcId);
             if (!s) { (this._pendingLevels || (this._pendingLevels = new Map())).set(a.npcId, a); continue; }
             this._setFrustration(s, a);
-            if (a.run) this._emit(`npc_workaround_due:${s.npcId}`, { npcId: s.npcId, run: a.run });
+            if (a.run) this._emit(`npc_workaround_due:${s.npcId}`, { npcId: s.npcId, run: a.run, level: s.frustration });
         }
     }
 
@@ -2098,7 +2098,12 @@ export class NPCNeedsSystem {
         const previous = a.previous !== undefined && a.previous !== null && Number.isFinite(Number(a.previous))
             ? clamp(Number(a.previous), 0, 100) : s.frustration;
         s.frustration = clamp(Number(a.level), 0, 100);
-        if (s.failSent) s.failSent = {};
+        // Review R2 n1: an answer to a fail clears that need's mark only; an answer that does not
+        // say what it answers (a test, an old queue) clears them all, as before
+        if (s.failSent) {
+            if (a.forEvent === 'fail' && typeof a.forNeed === 'string') delete s.failSent[a.forNeed];
+            else if (a.forEvent === undefined) s.failSent = {};
+        }
         s.tell = Number.isFinite(Number(a.tell)) ? Number(a.tell) : s.tell;
         s.settled = !!a.settled;
         this.world.setGlobal?.(`${s.npcId}_frustration`, s.frustration);
@@ -2140,8 +2145,17 @@ export class NPCNeedsSystem {
             this._restoreFrustration(s, e);
         }
         const pending = this._pendingLevels?.get(s.npcId);
-        if (pending) { this._pendingLevels.delete(s.npcId); this._setFrustration(s, pending); }
+        if (pending) {
+            this._pendingLevels.delete(s.npcId);
+            this._setFrustration(s, pending);
+            if (pending.run) this._emit(`npc_workaround_due:${s.npcId}`, { npcId: s.npcId, run: pending.run, level: s.frustration });
+        }
         if (!restored) return;
+        // Sub-slice B (5.4, 9.4): a hand-over the server made and has not seen spent is started
+        // again now its NPC is registered; the workaround runner starts each one once
+        for (const run of Array.isArray(e.pending) ? e.pending : []) {
+            if (run && typeof run === 'object') this._emit(`npc_workaround_due:${s.npcId}`, { npcId: s.npcId, run, level: s.frustration, restored: true });
+        }
         // R5 n3: the hold is measured from the response; the time since it arrived is taken off
         const now = typeof this.world.elapsedMs === 'function' ? this.world.elapsedMs() : 0;
         const elapsed = Math.max(0, now - (this._restoredAt || 0));
