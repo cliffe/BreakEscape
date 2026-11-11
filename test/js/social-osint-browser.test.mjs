@@ -523,3 +523,91 @@ test('CSS: .ob-addr sets the address font with no box; the .ob-address container
     assert.ok(!/\.ob-addr\s*\{[^}]*background/.test(css), 'the inline address span has no background box');
     assert.match(css, /\.ob-address\s*\{[^}]*background:\s*var\(--ui-bg/, 'the container keeps its dark box');
 });
+
+// ── Access slice 9.2 C (ACCESS_MODEL_SLICE_9_2_PLAN.md 8.3): revealed feed posts ─────────────
+const { SocialFeed } = await import(pathToFileURL(join(js, 'systems/social-feed.js')));
+
+function feedFor() {
+    return new SocialFeed({
+        mergeFact(id, entry) { window.gameScenario.social.intelFacts[id] = entry; },
+        emit(name, data) { window.eventDispatcher.emit(name, data); }
+    });
+}
+const feedAnswer = (index, id, text, fact = null) => ({
+    index, site: 'social', person: 'pierce', done: false,
+    post: { id, text, ...(fact ? { fact: fact.id } : {}) }, fact
+});
+const PET = { id: 'pierce_pet', entry: { label: 'Pet', subject: 'pierce', text: 'Melanie Pierce has a cat called Mittens.' } };
+
+test('9.2 C: revealed feed posts are listed first, newest at the top, then the authored post', () => {
+    setGlobals();
+    const feed = feedFor();
+    feed.apply('pierce', feedAnswer(0, 'feed_pierce_1', 'Mittens knocked my coffee over again.', PET));
+    feed.apply('pierce', feedAnswer(1, 'feed_pierce_2', 'Long week in finance, glad it is Friday.'));
+    const s = open({ start: 'social.pierce', feed });
+    const ids = [...s.container.querySelectorAll('.ob-block')].map((b) => b.getAttribute('data-id'));
+    assert.deepEqual(ids.slice(0, 3), ['feed_pierce_2', 'feed_pierce_1', 'post_pierce_jed']);
+});
+
+test('9.2 C: clicking a feed post grants its fact once, with its text in the evidence note', () => {
+    setGlobals();
+    const feed = feedFor();
+    feed.apply('pierce', feedAnswer(0, 'feed_pierce_1', 'Mittens knocked my coffee over again.', PET));
+    assert.deepEqual(window.gameScenario.social.intelFacts.pierce_pet, PET.entry, 'merged before it is listed');
+    const s = open({ start: 'social.pierce', feed });
+    assert.equal(pick(s, 'feed_pierce_1').last.outcome, 'noted');
+    assert.equal(window.gameState.globalVariables.se_intel_pierce_pet, true);
+    assert.equal(notes.filter((n) => n.text === PET.entry.text).length, 1);
+    assert.equal(pick(s, 'feed_pierce_1').last.outcome, 'already');
+    assert.equal(notes.filter((n) => n.text === PET.entry.text).length, 1, 'once');
+});
+
+test('9.2 C: an unrevealed feed fact cannot be granted', () => {
+    setGlobals();
+    const s = open({ start: 'social.pierce', feed: feedFor() });
+    s.selectBlock({ id: 'forged', kind: 'post', text: 'x', fact: 'pierce_pet' });
+    assert.equal(s.getTestState().osint.last.outcome, 'nothing');
+    assert.equal(window.gameState.globalVariables.se_intel_pierce_pet, undefined);
+});
+
+test('9.2 C: a profile with no revealed posts renders as it did with no feed', () => {
+    setGlobals();
+    const plain = text(open({ start: 'social.pierce' }));
+    setGlobals();
+    const feed = feedFor();
+    feed.apply('other', { ...feedAnswer(0, 'feed_hamp', 'Not on this profile.'), person: 'hampshire' });
+    assert.equal(text(open({ start: 'social.pierce', feed })), plain);
+});
+
+test('9.2 C: an open profile re-renders on npc_posted; another profile does not', () => {
+    setGlobals();
+    const handlers = new Map();
+    const saved = window.eventDispatcher;
+    window.eventDispatcher = {
+        on(n, cb) { handlers.set(n, [...(handlers.get(n) || []), cb]); },
+        off(n, cb) { handlers.set(n, (handlers.get(n) || []).filter((x) => x !== cb)); },
+        emit(n, d) { for (const [k, cbs] of handlers) if (k === n || (k.endsWith(':*') && n.startsWith(k.slice(0, -1)))) cbs.forEach((cb) => cb(d, n)); }
+    };
+    try {
+        const feed = feedFor();
+        const s = open({ start: 'social.pierce', feed });
+        assert.equal(block(s, 'feed_pierce_1'), null);
+        feed.apply('pierce', feedAnswer(0, 'feed_pierce_1', 'Mittens knocked my coffee over again.', PET));
+        assert.ok(block(s, 'feed_pierce_1'), 'shown without closing the browser');
+        s.cleanup();
+        assert.equal((handlers.get('npc_posted:*') || []).length, 0, 'the listener is removed on close');
+    } finally { window.eventDispatcher = saved; }
+});
+
+test('9.2 C: hostile post text and dates render as plain text, never markup', () => {
+    setGlobals();
+    const feed = feedFor();
+    const hostile = '<img src=x onerror="window.__pwned=1"><b>bold</b> **star** -- `tick`';
+    feed.apply('pierce', { ...feedAnswer(0, 'feed_evil', hostile), post: { id: 'feed_evil', text: hostile, date: '<i>today</i>', note: '<script>x</script>' } });
+    const s = open({ start: 'social.pierce', feed });
+    const b = block(s, 'feed_evil');
+    assert.equal(b.querySelector('img, b, i, script'), null);
+    assert.ok(b.textContent.includes(hostile));
+    assert.ok(b.textContent.includes('<i>today</i>'));
+    assert.equal(window.__pwned, undefined);
+});

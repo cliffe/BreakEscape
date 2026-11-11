@@ -131,6 +131,12 @@ export class ApiClient {
     return this.post('/npc_workaround', body);
   }
 
+  // Slice 9.2 C (plan 8.3): an NPC's next social media post, after a met use. Answers
+  // { index, post, fact: { id, entry } | null, site, person, done } or { post: null, done }.
+  static async feedPost(npcId) {
+    return this.post('/feed_post', { npc_id: npcId });
+  }
+
   // Sign in at a sign-in PC (access model 5.3, 6). `fields` is { username, password }
   // (the claim of step 9 sends { claim: "owner", globals } instead). A remote sign-in
   // (slice 9.3a, 4.4) adds { foothold: <footholdId> }; the server then checks the host is
