@@ -166,6 +166,16 @@ test('Work: references that resolve to nothing, bounds, reserved globals and non
     assertHas(e, "'phoneNPCs[0]' has 'frustration'");
 });
 
+test('Work: an aim gate or event condition reading <npcId>_frustration is warned as client-decided (review R2 n2)', { skip }, () => {
+    const s = workClean();
+    s.objectives = [{ aimId: 'a1', title: 'A', unlockCondition: { globalVariable: 'dana_frustration', equals: 100 }, tasks: [] }];
+    s.rooms.office.npcs[0].eventMappings = [{ eventPattern: 'npc_used:dana', condition: 'globalVars.dana_frustration >= 50', setGlobal: { x: true } }];
+    const w = warnings(issues(s));
+    assertHas(w, "objectives.0.unlockCondition reads 'dana_frustration', which the player's browser writes");
+    assertHas(w, "eventMappings.0.condition reads 'dana_frustration'");
+    assert.equal(errors(issues(s)).length, 0);
+});
+
 test('Work: an NPC with a resource it is not admitted to is warned (Kai, "work never succeeds")', { skip }, () => {
     const w = warnings(workIssues(withKai(workClean())));
     assertHas(w, "kai needs 'finance_share' but its access list does not admit kai: its work never succeeds");
@@ -288,9 +298,11 @@ test('Work: earliest by a modified browser (review R1 m1, m2): halved park floor
     n.rooms.office.objects[0].affordance = { satisfies: 'work', useSeconds: 5, restores: 10 };
     n.rooms.office.npcs[0].workarounds = [{ at: 50, do: 'emit', event: 'dana_gave_up' }];
     assertHas(run(n, 'report_lines'), 'earliest by a modified browser 48 s after');
-    // with a non-desk place to ease at: the use floor, only by alternating eases and fails
+    // review R2 m3: a non-desk place changes nothing, the server refuses every work ease for a
+    // [] route as for an unadmitted resource, so still the park floor
     n.rooms.office.objects.push({ id: 'kiosk', type: 'info_kiosk_x', name: 'Kiosk', affordance: { satisfies: 'work', useSeconds: 5 } });
-    assertHas(run(n, 'report_lines'), 'earliest by a modified browser 3 s (only by alternating eases and fails)');
+    assertHas(run(n, 'report_lines'), 'earliest by a modified browser 48 s after');
+    assert.ok(!run(n, 'report_lines').some(l => l.includes('alternating')));
 });
 
 test('Work: a resource with only a network or observations is not called unused (review R1 m3)', { skip }, () => {

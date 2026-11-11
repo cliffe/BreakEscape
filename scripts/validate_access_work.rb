@@ -94,13 +94,15 @@ module ValidateAccessWork
     a.is_a?(Hash) ? a['accepts'] : nil
   end
 
+  # Review R2 n3: governed and the effective policy come from AccessWork, as the server's
+  # plant check reads them, so the validator and the server cannot drift
   def usb_governed?(o)
-    workstation?(o) || (o['policy'].is_a?(String) && !o['policy'].empty?)
+    AW.usb_governed?(o)
   end
 
   def effective_policy_name(o, json_data)
-    name = o['policy'].is_a?(String) && !o['policy'].empty? ? o['policy'] : json_data['defaultPolicy']
-    name.is_a?(String) ? name : nil
+    name = AW.present_string?(o['policy']) ? o['policy'] : json_data['defaultPolicy']
+    AW.present_string?(name) ? name : nil
   end
 
   def usb_value(json_data, name)
@@ -118,10 +120,7 @@ module ValidateAccessWork
 
   # The object's effective usb value, or nil when not governed
   def usb_policy_for(o, json_data)
-    return nil unless usb_governed?(o)
-
-    name = effective_policy_name(o, json_data)
-    name ? usb_value(json_data, name) : 'allowed'
+    AW.usb_policy_for(json_data, o)
   end
 
   # Items an object takes: by an NPC delivery (affordance.accepts tags) or the player's plant (requiresItem)
@@ -190,7 +189,7 @@ module ValidateAccessWork
         devices = items.select { |it| it['needsTag'] == tag && USB_CLASSES.include?(it['usbClass']) }
         devices.any? do |it|
           takers.any? do |o|
-            Array(accepts_of(o)).include?(tag) && usb_refused?(usb_policy_for(o, json_data), it['usbClass'])
+            Array(accepts_of(o)).include?(tag) && AW.plant_refused?(json_data, o, it)
           end
         end
       end
@@ -264,6 +263,7 @@ module ValidateAccessWork
 
       err(issues, "global '#{name}' ends in '_frustration', a suffix the engine owns (it writes <npcId>_frustration). Rename it.")
     end
+    check_frustration_conditions(json_data, issues)
 
     # Resources: references and outage globals
     resources.each do |rid, r|
@@ -323,6 +323,30 @@ module ValidateAccessWork
               AW.present_string?(r['network']) || AW.present_string?(r['observations'])
 
       warn(issues, "resource '#{rid}' is in no NPC's work list and has no contents and no host: nothing uses it.")
+    end
+  end
+
+  # Review R2 n2: <npcId>_frustration is written by the browser. An aim or task unlockCondition
+  # (checked on the server) or an event mapping condition that reads one is a gate the player's
+  # browser decides; say so, as for any client-written global.
+  FRUSTRATION_GLOBAL = /\b[A-Za-z0-9_]+_frustration\b/.freeze
+
+  def check_frustration_conditions(json_data, issues, path = [])
+    case json_data
+    when Hash
+      json_data.each do |k, v|
+        if k == 'unlockCondition' && v.is_a?(Hash) && v['globalVariable'].to_s.end_with?('_frustration')
+          warn(issues, "#{(path + [k]).join('.')} reads '#{v['globalVariable']}', which the player's browser writes: " \
+                       'the gate is decided client-side. Gate on a server-recorded event instead if it must hold.')
+        elsif k == 'condition' && v.is_a?(String) && v =~ FRUSTRATION_GLOBAL
+          warn(issues, "#{(path + [k]).join('.')} reads '#{Regexp.last_match(0)}', which the player's browser writes: " \
+                       'anything it unlocks is decided client-side.')
+        else
+          check_frustration_conditions(v, issues, path + [k])
+        end
+      end
+    when Array
+      json_data.each_with_index { |v, i| check_frustration_conditions(v, issues, path + [i]) }
     end
   end
 
@@ -487,22 +511,17 @@ module ValidateAccessWork
     { n: n, per: per, at: at, honest: honest, earliest: [earliest, 0].max, warned: at > per, note: pace[:note] }
   end
 
-  # The gap a modified browser can hold between counted fails (plan 9.1 and 9.3; review R1 m1, m2):
-  # - with a cause the server owns (not admitted, a [] route), `rearmed` is ignored, so the use
-  #   floor needs an accepted ease between fails. Not admitted refuses every ease; a [] route
-  #   refuses an ease at the station (R5 n5), so only a non-desk place lets the NPC ease. With no
-  #   ease the gap is the park floor, halved when the station has an offWhen (R5 n1: an off fail
-  #   and an owned-cause fail alternate, each held only to the use floor after the other).
-  # - with an owned cause and a non-desk place: the use floor, only by alternating eases and fails.
+  # The gap a modified browser can hold between counted fails (plan 9.1 and 9.3; review R1 m1, m2,
+  # R2 m3):
+  # - with a cause the server owns (not admitted, a [] route), `rearmed` is ignored and every
+  #   work ease is refused (both causes hold at every place), so the gap is the park floor,
+  #   halved when the station has an offWhen (R5 n1: an off fail and an owned-cause fail
+  #   alternate, each held only to the use floor after the other).
   # - otherwise every cause can clear in play: the use floor.
   def earliest_pace(json_data, npc, st)
     use = [(0.9 * AW.shortest_use_seconds(json_data, npc, 'work')) - 3, 0].max
     owned = AW.owned_causes(json_data, npc, 'work', [])
     return { seconds: use, note: nil } if owned.empty?
-
-    unadmitted = owned.any? { |c| c['why'] == 'no_access' }
-    elsewhere = !unadmitted && AW.places(json_data, npc, 'work').any? { |id| st.nil? || id != st['id'] }
-    return { seconds: use, note: 'only by alternating eases and fails' } if elsewhere
 
     park = (0.9 * AW.defer_min(npc) * 60) - 3
     park /= 2.0 if AW.off_when?(json_data, st)

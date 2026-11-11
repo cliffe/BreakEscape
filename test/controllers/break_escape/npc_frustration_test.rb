@@ -138,7 +138,7 @@ module BreakEscape
       assert_equal 40, travel_to(t + 2.5) { report(omar_down(rearmed: true)).first['level'] }
     end
 
-    test 'a rearmed fail with a cause the server owns keeps the park floor (W5, locked_out)' do
+    test 'a rearmed fail with a cause the server owns keeps the park floor (W5)' do
       build(globals: { 'finance_share_down' => true })
       t = Time.current
       travel_to(t) { report(fail_r('kai', 'finance_share', 'no_access', 'kai_pc')) }
@@ -147,9 +147,21 @@ module BreakEscape
       assert travel_to(t + 6) { report(fail_r('kai', 'finance_share', 'down', 'kai_pc', rearmed: true)).first['tooSoon'] }
       assert_equal 40, travel_to(t + 25) { report(fail_r('kai', 'finance_share', 'down', 'kai_pc', rearmed: true)).first['level'] }
 
-      build(globals: { 'finance_share_down' => true }, player_state: { 'loginLockouts' => ['dana_pc|dreyes'] })
-      travel_to(t) { report(dana_down) }
-      assert travel_to(t + 5) { report(fail_r('dana', 'dana_pc', 'locked_out', 'dana_pc', rearmed: true)).first['tooSoon'] }
+    end
+
+    test 'R2 m2: in sub-slice A a lockout is no cause: locked_out is refused, the station eases, rearmed keeps the use floor' do
+      build(scenario: with_kiosk, globals: { 'finance_share_down' => true }, player_state: { 'loginLockouts' => ['dana_pc|dreyes'] })
+      t = Time.current
+      assert_equal({ 'npcId' => 'dana', 'refused' => true },
+                   travel_to(t) { report(fail_r('dana', 'dana_pc', 'locked_out', 'dana_pc')).first })
+      both = dana_down.merge(missing: [{ id: 'finance_share', why: 'down' }, { id: 'dana_pc', why: 'locked_out' }])
+      assert travel_to(t) { report(both).first['refused'] }, 'a list naming locked_out is refused whole'
+      assert_nil level('dana')
+      assert_equal 34, travel_to(t) { report(dana_down).first['level'] }
+      # a rearmed fail is held only to the use floor (0.9 x 5 - 3 = 1.5 s), as with no lockout
+      assert_equal 68, travel_to(t + 2) { report(dana_down.merge(rearmed: true)).first['level'] }
+      set_global('finance_share_down', false)
+      assert_equal 58, travel_to(t + 5) { report(ease_r('dana', 'dana_pc')).first['level'] }, 'the own station eases'
     end
 
     test 'R5 n1: an owned-cause fail after an off-only fail is held to the use floor, and the next off fail to the park floor' do
@@ -254,6 +266,7 @@ module BreakEscape
       @game.player_state.delete('npcFrustration')
       @game.player_state['encounteredNPCs'] = ALL_NPCS.dup
       @game.player_state['globalVariables'] = { 'printer_jammed' => true }
+      @game.player_state['unlockedRooms'] = %w[lobby office] # R2 m5: omar_pc is a place once office is open
       @game.save!
       get scenario_game_url(@game), as: :json
       assert_equal({}, response.parsed_body['npcFrustration'])
@@ -298,7 +311,7 @@ module BreakEscape
       a = report(*long)
       elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
       assert(a.all? { |x| x['refused'] })
-      assert_operator elapsed, :<, 2.0, 'both requests together should take well under a second'
+      assert_operator elapsed, :<, 2.0, 'both requests together should take well under 2 s'
     end
 
     test 'M1: the object index is built once inside with_index and dropped after it' do
@@ -359,14 +372,20 @@ module BreakEscape
       data
     end
 
-    test 'R5 n5: locked out, an ease at the own station is refused and one at a non-desk place accepted' do
-      build(scenario: with_kiosk, globals: { 'finance_share_down' => true })
+    test 'R5 n5: social blocked, an ease at the own station is refused and one at a non-desk place accepted' do
+      data = with_kiosk
+      data['policies']['no_social'] = { 'social' => 'blocked' }
+      objs = data['rooms']['office']['objects']
+      objs.find { |o| o['id'] == 'dana_pc' }['policy'] = 'no_social'
+      objs.find { |o| o['id'] == 'dana_pc' }['affordance']['satisfies'] = %w[work social_media]
+      objs.find { |o| o['id'] == 'kiosk' }['affordance']['satisfies'] = %w[work social_media]
+      dana = data['rooms']['office']['npcs'].find { |n| n['id'] == 'dana' }
+      dana['needs']['social_media'] = { 'decayPerMin' => 4, 'urgentAt' => 40 }
+      dana['phone'] = false
+      build(scenario: data)
       t = Time.current
-      assert_equal 34, travel_to(t) { report(dana_down).first['level'] }
-      @game.reload
-      @game.player_state['loginLockouts'] = ['dana_pc|dreyes']
-      @game.save!
-      a = travel_to(t + 5) { report(ease_r('dana', 'dana_pc'), ease_r('dana', 'kiosk')) }
+      assert_equal 34, travel_to(t) { report(fail_r('dana', 'dana_pc', 'social_blocked', 'dana_pc', need: 'social_media')).first['level'] }
+      a = travel_to(t + 5) { report(ease_r('dana', 'dana_pc', need: 'social_media'), ease_r('dana', 'kiosk', need: 'social_media')) }
       assert a[0]['refused']
       assert_equal 24, a[1]['level']
     end
@@ -449,6 +468,107 @@ module BreakEscape
         refute_match(/"do":\s*"borrow_session"/, body, "response #{i}")
         refute_includes body, '"workNeeds"', "response #{i}"
       end
+    end
+    # ── review R2 ───────────────────────────────────────────────────────
+
+    test 'R2 m1: a global named "" does not make a resource with no downIf go down' do
+      build(globals: { '' => true })
+      assert_equal({ 'npcId' => 'dana', 'stale' => true }, report(fail_r('dana', 'email', 'down', 'dana_pc')).first)
+      assert_nil level('dana')
+    end
+
+    def no_route(data)
+      data['networks'] = { 'corp' => { 'name' => 'Corp' } }
+      data['resources']['email']['network'] = 'corp'
+      data
+    end
+
+    test 'R2 m3: a work ease from an NPC with a [] route is refused at a non-desk place too' do
+      build(scenario: no_route(with_kiosk))
+      t = Time.current
+      assert_equal 20, travel_to(t) { report(fail_r('amy', 'email', 'unreachable', 'amy_pc')).first['level'] }
+      a = travel_to(t + 5) { report(ease_r('amy', 'kiosk'), ease_r('amy', 'amy_pc')) }
+      assert_equal [true, true], a.map { |x| x['refused'] }
+      assert_nil @game.reload.player_state.dig('npcFrustration', 'amy', 'easeAt', 'work')
+      # the control: Omar, whose causes all clear in play, eases at the kiosk
+      build(scenario: with_kiosk, globals: { 'printer_jammed' => true })
+      travel_to(t) { report(omar_down) }
+      set_global('printer_jammed', false)
+      assert_equal 10, travel_to(t + 5) { report(ease_r('omar', 'kiosk')).first['level'] }
+    end
+
+    test 'R2 m5: an object in a room the player has not opened answers as an unknown id' do
+      data = AccessWorkScenario.scenario
+      data['rooms']['office']['connections']['north'] = 'vault'
+      data['rooms']['vault'] = { 'type' => 'room_office', 'connections' => { 'south' => 'office' }, 'locked' => true, 'lockType' => 'key',
+                                 'objects' => [{ 'type' => 'info_kiosk_x', 'id' => 'vault_kiosk', 'name' => 'Kiosk',
+                                                 'affordance' => { 'satisfies' => 'work', 'useSeconds' => 5 } }] }
+      build(scenario: data, globals: { 'printer_jammed' => true })
+      unknown = report(ease_r('amy', 'made_up'), fail_r('omar', 'printer', 'down', 'made_up'))
+      hidden = report(ease_r('amy', 'vault_kiosk'), fail_r('omar', 'printer', 'down', 'vault_kiosk'))
+      assert_equal unknown, hidden
+      assert(hidden.all? { |x| x['refused'] })
+      @game.reload
+      @game.player_state['unlockedRooms'] << 'vault'
+      @game.save!
+      assert_equal 0, report(ease_r('amy', 'vault_kiosk')).first['level'], 'once opened it is a place'
+    end
+
+    test 'R2 m4: after a fail listing off and an owned cause, the next such fail is held to the park floor' do
+      data = AccessWorkScenario.scenario
+      data['globalVariables']['kai_pc_unplugged'] = true
+      data['rooms']['office']['objects'].find { |o| o['id'] == 'kai_pc' }['affordance']['offWhen'] = 'kai_pc_unplugged'
+      build(scenario: data, globals: { 'kai_pc_unplugged' => true })
+      both = fail_r('kai', 'kai_pc', 'off', 'kai_pc').merge(missing: [{ id: 'kai_pc', why: 'off' }, { id: 'finance_share', why: 'no_access' }])
+      t = Time.current
+      assert_equal 20, travel_to(t) { report(fail_r('kai', 'kai_pc', 'off', 'kai_pc')).first['level'] }
+      assert_equal 40, travel_to(t + 3) { report(both).first['level'] }, 'off only before: the use floor'
+      assert_equal %w[off no_access], @game.reload.player_state.dig('npcFrustration', 'kai', 'failWhy', 'work')
+      assert travel_to(t + 6) { report(both).first['tooSoon'] }, 'failWhy is not [off] now: the park floor'
+      assert travel_to(t + 26) { report(both).first['tooSoon'] }
+      assert_equal 60, travel_to(t + 28) { report(both).first['level'] }
+    end
+
+    def with_crowd(count)
+      data = AccessWorkScenario.scenario
+      objs = data['rooms']['office']['objects']
+      count.times do |i|
+        objs << (i.even? ? { 'type' => 'chair', 'id' => "chair_#{i}", 'name' => 'Chair' } : AccessWorkScenario.pc("ws_#{i}"))
+      end
+      data
+    end
+
+    # Dana's causes that all belong to her (locked_out is refused in A): 6 distinct, 20 entries
+    def worst_dana_fail
+      causes = [%w[finance_share down], %w[email down], %w[finance_share unreachable], %w[email unreachable],
+                %w[dana_pc off], %w[dana_pc social_blocked]]
+      dana_down.merge(missing: Array.new(20) { |i| { id: causes[i % causes.size][0], why: causes[i % causes.size][1] } })
+    end
+
+    test 'R2 m4: the worst batch the bounds allow, on a scenario with a few hundred objects, is quick' do
+      build(scenario: with_crowd(400), globals: { 'finance_share_down' => true })
+      started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      a = report(*Array.new(20) { worst_dana_fail })
+      elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
+      assert_equal 34, a.first['level']
+      assert(a.drop(1).all? { |x| x['tooSoon'] })
+      assert_operator elapsed, :<, 2.0, 'the worst accepted batch should take well under 2 s'
+    end
+
+    test 'R2 m4: one full request builds the object index once' do
+      build(scenario: with_crowd(50), globals: { 'finance_share_down' => true, 'printer_jammed' => true })
+      calls = 0
+      counter = Module.new do
+        define_method(:build_object_index) do |d|
+          calls += 1
+          super(d)
+        end
+      end
+      AccessWork.singleton_class.prepend(counter)
+      report(*Array.new(10) { worst_dana_fail }, *Array.new(5) { omar_down }, *Array.new(5) { ease_r('amy', 'amy_pc') })
+      assert_equal 1, calls
+    ensure
+      counter&.send(:remove_method, :build_object_index)
     end
   end
 end

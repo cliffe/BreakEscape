@@ -30,6 +30,9 @@ module BreakEscape
     # A host may also route the game page under its own address (Hacktivity: /hacktivities/:event_id/play/mission/:id,
     # inside a Game event's web app scope). The game must belong to that event: any other pair is a 404.
     before_action :require_game_in_host_event, only: [:show]
+    # Review R2 n1: runs before set_game, whose params[:id] parses the whole JSON body, so the
+    # cap limits parse cost as well as report cost. Reads only the Content-Length header.
+    prepend_before_action :refuse_oversized_npc_frustration, only: [:npc_frustration]
 
 
     # Actions that read-modify-write @game.player_state and then save! need a
@@ -1185,15 +1188,11 @@ module BreakEscape
     # POST /games/:id/npc_frustration (slice 9.2, ACCESS_MODEL_SLICE_9_2_PLAN.md 9.1):
     # { reports: [{ npc_id, event, need, object_id, missing, rearmed }] }, one answer each
     # An honest batch (20 reports, a few causes each) is a few kilobytes; a larger body is
-    # refused before any report is read (review R1 M1).
+    # refused before the body is parsed (review R1 M1, R2 n1: refuse_oversized_npc_frustration).
     NPC_FRUSTRATION_MAX_BYTES = 64 * 1024
 
     def npc_frustration
       authorize @game if defined?(Pundit)
-      if request.content_length.to_i > NPC_FRUSTRATION_MAX_BYTES
-        return render json: { error: 'request too large' }, status: :payload_too_large
-      end
-
       raw = params[:reports]
       reports = raw.is_a?(Array) ? raw.map { |r| r.respond_to?(:to_unsafe_h) ? r.to_unsafe_h : r } : raw
       result = @game.report_npc_uses!(reports)
@@ -1625,6 +1624,12 @@ module BreakEscape
     end
 
     private
+
+    def refuse_oversized_npc_frustration
+      return unless request.content_length.to_i > NPC_FRUSTRATION_MAX_BYTES
+
+      render json: { error: 'request too large' }, status: :payload_too_large
+    end
 
     def find_vm_launcher_room(scenario_data, vm_title)
       # Returns the room_id containing a vm-launcher object for vm_title, or nil if not found.

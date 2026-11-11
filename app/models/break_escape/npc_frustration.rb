@@ -23,6 +23,12 @@ module BreakEscape
     EVENTS = %w[fail ease].freeze
     # Causes the server owns: no event in play clears them (plan 9.1, gate 2)
     OWNED_WHYS = %w[no_access social_blocked locked_out].freeze
+    # Review R2 m2 (orchestrator decision): sub-slice A refuses a report naming `locked_out` and
+    # never counts a lockout as an owned cause. The browser sends none in A (its station verdict
+    # has lockedOut false); sub-slice L adds the cause back behind its `check` record, which is
+    # the leak decision 14 accepts. Accepting it in A would let a guessed username, locked out
+    # at an NPC's PC, be confirmed through this route before L's record exists.
+    REFUSED_IN_A_WHYS = %w[locked_out].freeze
 
     def npc_frustration
       player_state['npcFrustration'] = {} unless player_state['npcFrustration'].is_a?(Hash)
@@ -144,7 +150,8 @@ module BreakEscape
       # 2. can fail, and every cause and object_id belong to the NPC
       return refused unless AccessWork.can_fail?(scenario_data, npc, need)
       return refused if missing.empty? || missing.any? { |c| !AccessWork.cause_belongs?(scenario_data, npc, need, c) }
-      return refused unless object_id && AccessWork.places(scenario_data, npc, need).include?(object_id)
+      return refused if missing.any? { |c| REFUSED_IN_A_WHYS.include?(c['why']) }
+      return refused unless object_id && frustration_places(npc, need).include?(object_id)
 
       # 3. a cause holds on the server
       return { 'npcId' => npc_id, 'stale' => true } unless missing.any? { |c| frustration_cause_holds?(npc, need, c) }
@@ -155,7 +162,7 @@ module BreakEscape
 
       previous = entry['level']
       per_fail = AccessWork.frustration(scenario_data, npc)['perFail']
-      entry['level'] = [previous + per_fail, 100].min.round(2)
+      entry['level'] = tidy_level([previous + per_fail, 100].min)
       entry['failAt'][need] = server_now
       entry['failWhy'][need] = missing.map { |c| c['why'] }.uniq
       answer(npc_id, npc, entry, previous)
@@ -163,14 +170,12 @@ module BreakEscape
 
     def ease_report!(npc_id, npc, need, object_id)
       refused = { 'npcId' => npc_id, 'refused' => true }
-      places = AccessWork.places(scenario_data, npc, need)
+      places = frustration_places(npc, need)
       phone_ease = object_id.nil? && need == 'social_media' && AccessWork.phone?(npc)
       return refused unless phone_ease || (object_id && places.include?(object_id))
-      # An NPC with a resource it is not admitted to never meets its work (W5)
-      if need == 'work'
-        res = AccessWork.resources(scenario_data)
-        return refused if AccessWork.work_list(scenario_data, npc).any? { |id| res[id] && !AccessWork.admitted?(res[id], npc) }
-      end
+      # An NPC with a resource it is not admitted to (W5), or one no route reaches (review R2 m3),
+      # never meets its work at any place: both causes hold everywhere, so no honest client eases
+      return refused if need == 'work' && owned_causes(npc, need).any? { |c| %w[no_access unreachable].include?(c['why']) }
       # R5 n5: no use at the NPC's own station can be met while a cause the server owns holds there
       station = AccessWork.station(scenario_data, npc)
       return refused if station && object_id == station['id'] && owned_causes(npc, need).any?
@@ -189,13 +194,30 @@ module BreakEscape
 
       previous = entry['level']
       ease = AccessWork.frustration(scenario_data, npc)['easePerSuccess']
-      entry['level'] = [previous - ease, 0].max.round(2)
+      entry['level'] = tidy_level([previous - ease, 0].max)
       entry['easeAt'][need] = server_now
       answer(npc_id, npc, entry, previous)
     end
 
+    # No lockouts in A (review R2 m2): sub-slice L passes the lockouts its `check` record confirms
     def owned_causes(npc, need)
-      AccessWork.owned_causes(scenario_data, npc, need, login_lockouts)
+      AccessWork.owned_causes(scenario_data, npc, need, nil)
+    end
+
+    # The NPC's places the player can know of (review R2 m5): an object in a room the server has
+    # not sent (locked, never entered) answers as an unknown id, so a guessed id learns nothing.
+    # No honest client names one: its candidates come from loaded rooms.
+    def frustration_places(npc, need)
+      AccessWork.places(scenario_data, npc, need).select do |id|
+        room = AccessWork.object_index(scenario_data)[id]&.dig(:room_id)
+        room && room_unlocked?(room)
+      end
+    end
+
+    # Review R2 n5: a whole level is stored and answered as an Integer (34, not 34.0)
+    def tidy_level(value)
+      v = value.to_f.round(2)
+      v == v.to_i ? v.to_i : v
     end
 
     # A later fail is held to the park floor after the last accepted fail, or to the use floor
@@ -240,7 +262,9 @@ module BreakEscape
       id = cause['id']
       case cause['why']
       when 'down'
-        truthy_global?(frustration_global(AccessWork.resources(scenario_data)[id]&.dig('downIf').to_s))
+        # Review R2 m1: a resource with no downIf never goes down (a global named "" is not one)
+        dn = AccessWork.resources(scenario_data)[id]&.dig('downIf')
+        AccessWork.present_string?(dn) && truthy_global?(frustration_global(dn))
       when 'unreachable'
         routes = AccessWork.routes(scenario_data, npc, AccessWork.resources(scenario_data)[id])
         !routes.nil? && routes.none? { |route| route.none? { |g| truthy_global?(frustration_global(g.to_s)) } }
@@ -251,10 +275,7 @@ module BreakEscape
         !cond.nil? && frustration_globals_hold?(cond)
       when 'social_blocked'
         need == 'social_media' && AccessWork.social_blocked?(scenario_data, npc)
-      when 'locked_out'
-        st = AccessWork.object(scenario_data, id)
-        st && AccessWork.locked_out_at?(npc, st, login_lockouts)
-      else
+      else # locked_out is refused before this in A (REFUSED_IN_A_WHYS); L adds its branch
         false
       end
     end

@@ -182,6 +182,20 @@ module BreakEscape
       assert_equal [], planted, 'hid on a blocked PC'
     end
 
+    test 'planted: an ungoverned object under a blocking defaultPolicy takes the device and is recorded (review R2 m4)' do
+      # pc-policy.js and the validator's "does not reach it" warning: the default policy governs
+      # only workstations and objects naming a policy, so a plain consumesItem object accepts it
+      data = CP.scenario
+      data['policies'] = { 'locked' => { 'usb' => 'blocked' } }
+      data['defaultPolicy'] = 'locked'
+      data['rooms']['office']['objects'].find { |o| o['id'] == 'kit_logger' }['usbClass'] = 'storage'
+      build_game(data)
+      take('kit_logger', 'usb', 'Inline keylogger')
+      assert_response :success, response.body
+      remove('kit_logger', 'chris_desk')
+      assert_equal [{ 'item' => 'kit_logger', 'on' => 'chris_desk' }], planted
+    end
+
     test 'dropped: an accepted player_drop holds, a refused drop records nothing' do
       build_game
       forge('sofia')

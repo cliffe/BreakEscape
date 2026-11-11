@@ -1214,7 +1214,9 @@ scenario, never from the report:
 - `object_id`, on a fail or an ease, is one of the NPC's **places** for that need: its own station,
   a PC a handed-over `borrow_session` names, or an object that satisfies the need and is
   not a desk (5.2, by the same rule, which `access_work.rb` applies from the object's fields and
-  the office presets); or null for a `social_media` ease from the phone.
+  the office presets), in the start room or a room in `unlockedRooms` (an object in a room the
+  server has not sent answers as an unknown id; review R2 m5); or null for a `social_media` ease
+  from the phone.
 
 A report that names anything else is refused (check 2). No honest client sends one: the browser's
 plan holds only that NPC's resources (5.2), and its candidates for a judged need are filtered to
@@ -1287,7 +1289,8 @@ PC and a phone use take `socialUse.useSeconds` (default 20, 8.1). `access_work.r
 - **An ease** is counted at most once per use floor after the last accepted ease for that NPC and
   need: met uses are spaced by the need's period, which can be shorter than the park, so tying
   eases to the park would lose honest eases. An ease for `work` from an NPC with a resource it is
-  not admitted to is refused (answered `refused`, nothing written): that NPC's work is never met
+  not admitted to, or one no route reaches from its station (a `[]` route; review R2 m3), is
+  refused (answered `refused`, nothing written): that NPC's work is never met
   anywhere (5.2), so such an ease is never an honest report, and refusing it keeps the park floor
   binding on the one NPC whose failures come with no player action (W5).
 - Fails and eases are floored per NPC **and per need**, so an NPC failing at both work and social
@@ -1427,7 +1430,8 @@ play and without the player standing anywhere in particular:
   for an outage the browser controls, the floors measure pacing only, since the browser writes
   that global and could clear and set it at will. Where a cause the server owns holds, the server
   sees it whatever the report lists, and the floors bind harder: an NPC with a resource it is not
-  admitted to (W5's Kai, even when the report lists only his share's `down`) is held to the park
+  admitted to, or one no route reaches (W5's Kai, even when the report lists only his share's
+  `down`) is held to the park
   floor, `(ceil(at / perFail) - 1) x (0.9 x needsDeferMin x 60 - 3)` seconds (about 213 with the
   defaults), because `rearmed` is ignored and its eases are refused; a `locked_out` or
   `social_blocked` NPC can be walked up only by alternating claimed eases and fails, one pair per
@@ -1618,7 +1622,8 @@ Report lines, in the style of the needs timing report:
   `(n - 1) x (needsDeferMin x 60 + useSeconds)`, `useSeconds` being its own station's; and the
   earliest a modified browser can reach it after the first counted fail, by the bounds of 9.3:
   `(n - 1) x (0.9 x needsDeferMin x 60 - 3)` seconds for an NPC with a resource it is not admitted
-  to (a cause the server owns that always holds, with its eases refused), else
+  to or that no route reaches (a cause the server owns that holds at every place, with its work
+  eases refused; review R2 m3), else
   `(n - 1) x (0.9 x u - 3)` seconds (not below 0), `u` being the NPC's shortest use time for the
   need as the server works it out (9.1), with the note "only by alternating eases and fails" for
   an NPC whose only failures are causes the server owns (`social_blocked`, or `locked_out` once the

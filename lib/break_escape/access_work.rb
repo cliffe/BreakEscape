@@ -165,6 +165,8 @@ module BreakEscape
 
     # ── objects: affordances, use times, desks ──────────────────────────
 
+    # Read once per process (review R2 n4): after editing office-presets.json in development,
+    # restart the server before its floors and places follow the edit.
     def preset_table
       @preset_table ||= File.file?(PRESETS_FILE) ? (JSON.parse(File.read(PRESETS_FILE))['presets'] || {}) : {}
     end
