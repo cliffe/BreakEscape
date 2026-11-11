@@ -16,7 +16,10 @@
  *                   3. Sign in otherwise
  *   a share row   name and host, then Open (no access list) or a padlock with "Needs an
  *                 account with access. It opens from that account's desktop."
- *   another row   name and kind; Look shows its observations here
+ *   another row   name and kind; Look shows its observations here. A share with no contents
+ *                 is one of these: the server sends observations only for a resource with no
+ *                 contents (3.4), and such a share has nothing to open (lab_physical_pentest's
+ *                 records share, listed by its folder names and never opened)
  *
  * Rows keep the server's order (sign-in hosts, then resources, each by id) and carry
  * data-host-id / data-resource-id, with data-action (sign-in, open, observe) on the control
@@ -52,6 +55,16 @@ export function hostAction(row) {
     if (row?.remoteSignIn === false) return 'off';
     if (row?.session && row.session.via !== 'claim') return 'open';
     return 'sign-in';
+}
+
+/**
+ * The action a resource row offers: 'open' | 'locked' for a share with contents, 'observe'
+ * for any other resource and for a share the server sent observations for (it does so only
+ * when the share has no contents). Exported for tests.
+ */
+export function resourceAction(row) {
+    if (row?.kind === 'file_share' && !row.observations) return row.open === false ? 'locked' : 'open';
+    return 'observe';
 }
 
 /** A share opened from the view, as the container minigame's lockable (4.5). */
@@ -159,8 +172,9 @@ export class NetworkViewMinigame extends MinigameScene {
         const icon = KIND_ICONS[row.kind] || KIND_ICONS.file_share;
         const kindLabel = KIND_LABELS[row.kind] || 'Device';
         let control;
-        if (row.kind === 'file_share') {
-            control = row.open === false
+        const action = resourceAction(row);
+        if (action !== 'observe') {
+            control = action === 'locked'
                 ? `<span class="network-row-locked"><img class="network-row-padlock" src="/break_escape/assets/icons/padlock_32.png" alt="Locked"> ${SHARE_LOCKED_TEXT}</span>`
                 : '<button type="button" class="minigame-button network-row-action" data-action="open">Open</button>';
         } else {
@@ -266,7 +280,7 @@ export class NetworkViewMinigame extends MinigameScene {
                     session: r.session ? (r.session.displayName || r.session.username || null) : null,
                     selector: `[data-host-id="${r.id}"] [data-action]` }
                 : { id: r.id, kind: r.kind || null, name: r.name || null, host: r.host || null,
-                    action: r.kind === 'file_share' ? (r.open === false ? 'locked' : 'open') : 'observe',
+                    action: resourceAction(r),
                     selector: `[data-resource-id="${r.id}"] [data-action]` }))
         };
     }

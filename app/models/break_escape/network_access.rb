@@ -436,7 +436,8 @@ module BreakEscape
 
     # The file shares a session at this PC maps on its desktop (4.5): every file_share on
     # the PC's network whose access list admits the session's identity, as [[id, resource]].
-    # A PC on no network maps none.
+    # A PC on no network maps none. A share with no contents is listed only: the view shows
+    # its observations (resource_row) and no desktop maps it as an empty folder.
     def mapped_shares(pc, npc)
       return [] unless pc.is_a?(Hash) && npc.is_a?(Hash)
 
@@ -444,7 +445,7 @@ module BreakEscape
       return [] unless network
 
       NetworkModel.resources_on(network, scenario_data).select do |_id, resource|
-        resource['kind'] == 'file_share' && resource_acl_admits?(resource, npc)
+        resource['kind'] == 'file_share' && resource['contents'].is_a?(Array) && resource_acl_admits?(resource, npc)
       end
     end
 

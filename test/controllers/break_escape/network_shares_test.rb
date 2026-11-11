@@ -56,6 +56,22 @@ module BreakEscape
       assert_equal ['scanned_inbox'], stubs.map { |c| c['id'] }
     end
 
+    # lab_physical_pentest's records share: listed by its folder names and never opened. With
+    # no contents the view row carries its observations, and no desktop maps it as a folder.
+    test 'a share with no contents is listed with its observations and mapped on no desktop' do
+      data = NS.scenario
+      data['resources']['listed_only'] = { 'kind' => 'file_share', 'name' => 'Listed-Only', 'host' => NS::FS_HOST,
+                                           'network' => 'office_lan', 'observations' => 'Top folders: one per client.' }
+      build_network_game({}, data)
+      plant_office
+      row = network_view(OFFICE)['footholds'].first['hosts'].find { |h| h['id'] == 'listed_only' }
+      assert_equal 'Top folders: one per client.', row['observations']
+      sign_in('sam_pc', 'sokafor', NS::SAM_PASSWORD)
+      assert_response :success
+      stubs = container('sam_pc')['contents'].select { |c| c['type'] == 'network_share' }
+      assert_equal ['scanned_inbox'], stubs.map { |c| c['id'] }
+    end
+
     test 'a session on another network or on no network does not reach a share' do
       build_network_game
       sign_in('bench_pc', 'sokafor', NS::SAM_PASSWORD)
