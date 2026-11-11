@@ -485,3 +485,94 @@ test('Workarounds: a writes_down account that signs in where a flag station is, 
     assertHas(warnings(issues(s)), "dana's workaround 0 (writes_down) opens dana's account, which signs in at dana_pc");
     assertHas(run(s, 'report_lines'), "Workaround tom[0] prop_door at 50: opens room 'store', which stays open for the mission");
 });
+
+// ── sub-slice H: the hot desk and the shared login ─────────────────────
+
+// Ian borrows hot_desk (unowned, authored work affordance) and leaves it open; Sam shares his
+// login with Ruth. Both with their start pools and login_aloud; the clean fixture raises nothing.
+function hClean() {
+    const s = workClean();
+    s.chatter.wk_borrow = ["I'll use the spare PC."];
+    s.chatter.wk_share_login = ['Ruth, a quick favour?'];
+    s.chatter.login_aloud = ["Use mine. It's the usual one."];
+    s.rooms.office.objects.push(pc('ian_pc', { affordance: { satisfies: 'work', useSeconds: 5, restores: 10, offWhen: 'dana_pc_off' } }),
+        pc('hot_desk'), pc('sam_pc', { affordance: { satisfies: 'work', useSeconds: 5, restores: 10, offWhen: 'dana_pc_off' } }),
+        pc('ruth_pc'));
+    s.rooms.office.npcs.push(
+        worker('ian', { screenHabit: { lockChance: 0 }, workarounds: [{ at: 50, do: 'borrow_session', pc: 'hot_desk' }] }),
+        worker('sam', { workarounds: [{ at: 50, do: 'share_login', with: 'ruth' }] }),
+        worker('ruth'));
+    return s;
+}
+const npcOf = (s, id) => s.rooms.office.npcs.find(n => n.id === id);
+const hotDesk = s => s.rooms.office.objects.find(o => o.id === 'hot_desk');
+
+test('H: a clean fixture raises nothing; the work report no longer says "Not performed"', { skip }, () => {
+    const s = hClean();
+    assert.deepEqual(issues(s), []);
+    const lines = run(s, 'report_lines');
+    assertHas(lines, 'Workaround ian[0] borrow_session at 50: opens the session at PC \'hot_desk\'');
+    assert.ok(!has(lines, 'Not performed'), lines.join('\n'));
+});
+
+test('H: a borrower with no screenHabit is warned (it opens nothing); lockChance 0 or locksScreen never is not', { skip }, () => {
+    let s = hClean();
+    delete npcOf(s, 'ian').screenHabit;
+    assertHas(warnings(issues(s)), "ian's workaround 0 (borrow_session): ian is a careful guest");
+    s = hClean();
+    npcOf(s, 'ian').screenHabit = { lockChance: 1 };
+    assertHas(warnings(issues(s)), 'ian is a careful guest');
+    s = hClean();
+    delete npcOf(s, 'ian').screenHabit;
+    npcOf(s, 'ian').habits = { locksScreen: 'never' };
+    assert.ok(!has(issues(s), 'careful guest'), issues(s).join('\n'));
+    s = hClean();
+    delete npcOf(s, 'ian').screenHabit;
+    npcOf(s, 'ian').habits = { locksScreen: 'always' };
+    assertHas(warnings(issues(s)), 'ian is a careful guest');
+});
+
+test('H: borrow_session errors on each bad hot desk', { skip }, () => {
+    const cases = [
+        [s => { delete npcOf(s, 'ian').creds; }, 'ian has no account'],
+        [s => { delete hotDesk(s).lockType; hotDesk(s).workstation = true; }, "'hot_desk' is not a sign-in PC"],
+        [s => { hotDesk(s).screenOwner = 'ruth'; }, "'hot_desk' has an owner (ruth)"],
+        [s => { hotDesk(s).affordance.private = true; }, "'hot_desk' is private"],
+        [s => { hotDesk(s).headless = true; }, "'hot_desk' is headless"],
+        [s => { hotDesk(s).access = { roles: ['finance'] }; }, "'hot_desk's access list does not admit ian"],
+        [s => { s.policies = { kiosk: { autoLockMin: 0 } }; hotDesk(s).policy = 'kiosk'; }, 'autoLockMin: 0'],
+        [s => { hotDesk(s).affordance = { satisfies: 'caffeine', useSeconds: 5 }; }, "'hot_desk' has no authored affordance that satisfies work"]
+    ];
+    for (const [edit, frag] of cases) {
+        const s = hClean();
+        edit(s);
+        assertHas(errors(issues(s)), frag);
+    }
+});
+
+test('H: lockChance on a hot desk is warned (a guest ignores it); a hot desk holding a flag station is warned', { skip }, () => {
+    let s = hClean();
+    hotDesk(s).lockChance = 1;
+    assertHas(warnings(issues(s)), "'hot_desk' sets lockChance or locksScreenOnLeave, which a guest ignores");
+    s = hClean();
+    hotDesk(s).contents = [{ type: 'flag-station', id: 'fs', name: 'Flag' }];
+    assertHas(warnings(issues(s)), "opens a session at 'hot_desk', which is a flag station or VM launcher");
+});
+
+test('H: share_login errors with no account or with itself; a leashed colleague and a missing login_aloud are warned', { skip }, () => {
+    let s = hClean();
+    delete npcOf(s, 'sam').creds;
+    assertHas(errors(issues(s)), "sam's workaround 0 (share_login): sam has no account");
+    s = hClean();
+    npcOf(s, 'sam').workarounds[0].with = 'sam';
+    assertHas(errors(issues(s)), 'with names sam itself');
+    s = hClean();
+    npcOf(s, 'sam').workarounds[0].with = 'nobody';
+    assertHas(errors(issues(s)), 'sam.workarounds[0].with "nobody" names no room NPC');
+    s = hClean();
+    npcOf(s, 'ruth').needsRooms = ['office'];
+    assertHas(warnings(issues(s)), 'ruth has a needsRooms leash (office)');
+    s = hClean();
+    delete s.chatter.login_aloud;
+    assertHas(warnings(issues(s)), 'has no login_aloud line');
+});
