@@ -6443,7 +6443,7 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
                         rescue JSON::ParserError
                           File.read(compiled)
                         end
-                      end
+      end
       source_text = File.exist?(source) ? File.read(source) : nil
       text = compiled_text || source_text
       next unless text
@@ -6766,7 +6766,7 @@ def main
     habits_copy, habits_report = BreakEscape::NpcHabits.expanded_copy(json_data)
     common_issues += ValidateNpcNeeds.check(json_data, screen_habits: npc_screen_habits(habits_copy))
     common_issues += check_access_model(json_data, repo_root, File.dirname(erb_path))
-    common_issues += check_network_model(json_data)
+    common_issues += check_network_model(json_data, File.dirname(erb_path))
     common_issues += check_capture_log(json_data)
     common_issues += check_wearables(json_data, File.dirname(erb_path))
     common_issues += ValidateAccessWork.check(json_data)

@@ -11,16 +11,19 @@ require 'set'
 require_relative '../lib/break_escape/network_model'
 require_relative '../lib/break_escape/access_identities'
 require_relative '../lib/break_escape/declared_grants'
+require_relative '../lib/break_escape/npc_habits/clues'
 
-# Fields reserved for slice 9.3b (3.1). 9.3a refuses them.
-NETWORK_RESERVED_OBJECT_FIELDS = %w[wifiAp portSecurity portSecurityMessage].freeze
-NETWORK_RESERVED_NETWORK_FIELDS = %w[downIf wifi].freeze
+# Fields still reserved for later 9.3b sub-slices. Sub-slice W un-reserved 'wifi' and
+# 'wifiAp' (it added their real checks below); 'downIf' (O), 'portSecurity' and
+# 'portSecurityMessage' (P) stay refused until their code lands.
+NETWORK_RESERVED_OBJECT_FIELDS = %w[portSecurity portSecurityMessage].freeze
+NETWORK_RESERVED_NETWORK_FIELDS = %w[downIf].freeze
 
 # Items that are physical things: taken down the wire from a remote desktop, they would
 # arrive in the player's hand (7.2).
 NETWORK_PHYSICAL_ITEM_TYPES = %w[key keycard lockpick lockpick_set rfid_cloner key-ring].freeze
 
-def check_network_model(json_data)
+def check_network_model(json_data, scenario_dir = nil)
   issues = []
   return issues unless json_data.is_a?(Hash)
 
@@ -172,6 +175,48 @@ def check_network_model(json_data)
     if ai.owner_id(obj, json_data)
       err.call("headless host #{where} is a workstation with an owner (screenOwner or an NPC's needsHome); a " \
                'headless host has no screen for anyone to sit at.')
+    end
+  end
+
+  # ---- Wi-Fi (slice 9.3b sub-slice W, 5.3 and 9.2) ----
+  networks.each do |net_id, net|
+    wifi = net['wifi']
+    next unless wifi
+
+    unless wifi.is_a?(Hash)
+      err.call("'networks/#{net_id}/wifi' must be an object { ssid, psk }.")
+      next
+    end
+    err.call("'networks/#{net_id}/wifi' has no 'ssid'.") unless nm.present_string?(wifi['ssid'])
+    err.call("'networks/#{net_id}/wifi' psk must be a string.") if wifi.key?('psk') && !wifi['psk'].is_a?(String)
+  end
+  readable = BreakEscape::NpcHabits::Clues.readable_texts(json_data, scenario_dir).map { |t| t[:text].to_s }.join("\n")
+  networks.each do |net_id, net|
+    wifi = net['wifi']
+    psk = wifi.is_a?(Hash) ? wifi['psk'] : nil
+    next unless psk.is_a?(String) && !psk.empty?
+
+    warn.call("'networks/#{net_id}/wifi' psk is shorter than eight characters.") if psk.length < 8
+    unless readable.include?(psk)
+      warn.call("'networks/#{net_id}/wifi' psk appears nowhere the player can read (a note, a document or ink); " \
+                'the key is a lock secret the player must be able to find.')
+    end
+  end
+  all_objects.each do |e|
+    obj = e[:object]
+    next unless obj['wifiAp'] == true
+
+    where = "'#{label.call(obj, e[:path])}'"
+    net = nm.network_of(obj, rooms[e[:room]])
+    if net.nil?
+      err.call("#{where} has 'wifiAp' but no network of its own or from its room.")
+    elsif !networks.key?(net) || nm.wifi_of(json_data, net).nil?
+      err.call("#{where} has 'wifiAp' but its network '#{net}' defines no 'wifi' block.")
+    end
+    err.call("#{where} is a sign-in object (lockType \"login\") with 'wifiAp'; an access point is not a sign-in host.") if nm.sign_in_object?(obj)
+    err.call("#{where} is a network jack with 'wifiAp'; an object is one or the other.") if nm.jack?(obj)
+    if obj['locked'] == true || obj.key?('lockType')
+      err.call("#{where} has 'wifiAp' and a lock; an access point's click is the join flow, which runs before any lock.")
     end
   end
 
