@@ -1127,3 +1127,94 @@ After the merge, under the lock: Rails 1591 runs, 0 failures, 0 errors, 1 skip. 
 1216 and 1217 (unused), 1218 and 1219 (before captures), 1221 (H1 to H3 and the tamper checks),
 1222 (H4, H5), 1223 (W1 to W4 with Hall C), 1224 and 1225 (after captures). All on the shared dev
 database, mission 243 for `test_access_work`. The :3018 server is stopped.
+
+## H review round 1 outcomes (2026-11-11)
+
+Reviews: `ACCESS_MODEL_SLICE_9_2_H_CODE_REVIEW_R1_SERVER.md` (0 blockers, 1 major, 5 minors, 4
+nits) and `ACCESS_MODEL_SLICE_9_2_H_CODE_REVIEW_R1_CLIENT.md` (0 blockers, 2 majors, 8 minors, 7
+nits). Every fix below has a test that fails with the fix taken out (checked by reverting each
+one in turn).
+
+### Orchestrator decisions (recorded)
+
+- **A sign-out end event for guest sessions.** Plan 6.4 lists three end events for a guest
+  session (the auto lock, the next person to sit, a reload) and none for the player's own
+  sign-out. This round fills that gap: signing out of a claimed guest session ends it, and so does
+  a password (or remote) sign-in at that PC, on the server and the client alike.
+- Server m1: the server times a guest session out itself. Server m3: the capture's note carries
+  the password only under `social.captures.revealSecret`. Server m4: a share is heard only once
+  the player has met the colleague.
+
+### Server review
+
+| Finding | Outcome |
+|---|---|
+| M1 sign-out does not end a guest session | **Fixed.** `logout_session!` ends `guestSessions[pc]` when the session it ends is that guest's own claim; `start_login_session!` ends it for any sign-in that is not a claim. A displaced session's `/logout` that lands after the borrow's "done" keeps the new guest (only the guest's own claim ends it). The client mirrors it: `workstation-state.js` drops the guest on `pc_signed_out` at that PC and on a `pc_signed_in` that is not a claim. Tests: claim, logout, claim again 422; password sign-in clears it; the late displaced logout keeps it (server); three in `workstation-state.test.mjs` |
+| m1 the server could time a guest out | **Fixed.** `guestSessionsAt[pc]` (server time of the "done") beside `guestSessions`, cleared with it; the claim is refused once the PC's policy `autoLockMin` (its `policy`, else `defaultPolicy`) times 60 s plus the 3 s allowance has passed. The plan has no default lock for a guest, and the client never locks one under a policy with no `autoLockMin`, so neither does the server. Test with `travel_to`: 302 s in, granted; 304 s, refused; no `autoLockMin`, granted after an hour. Note: the client's lock runs on the needs clock, which stops while the game is paused, so after a pause the server refuses a little before the honest client's lock; the claim then shows the sign-in screen |
+| m2 Captured sign-ins ignores a heard share | **Fixed.** `declared_capture_target_ids` includes `sharedLogins`; the local union in `capture_secrets_for_client` is gone, so both readers use one set. Test: a network fixture lists `accounts.sam` after a heard share |
+| m3 the capture's note carries the password | **Fixed.** `capture.note` holds the password only under `revealSecret`; otherwise "X told Y their login out loud: <username>". `note` and `line` keep it. The leak scanner allows `$.capture.note` and the `se_captures` copy only under `revealSecret`. Tests: server body both ways; scanner reports `$.capture.note` and a synced `se_captures` copy without `revealSecret` |
+| m4 a share heard in a room the player never reached | **Fixed.** Heard also needs the colleague in `encounteredNPCs`. Test: colleague not met, answer `{}` |
+| m5 test gaps | **Fixed.** Guest claim through a foothold and at a headless host; a dropped borrow writes no guest and leaves a held session; `handed_borrow_pcs`' need filter; `accounts` after a heard share (m2); no exposure after a heard share across the `/npc_frustration` answers, `GET /scenario` (its `pending` and a synced `se_captures`), the room, `/login_accounts` and `/capture_secrets` |
+| n1 the borrow PC by name | **Fixed.** `record_borrow_done!` and `handed_borrow_pcs` store the PC's id from `find_login_pc` |
+| n2 a lost "done" resent after a later sitter | **Fixed.** A guest record written after this hand-over was made is left alone, and so is the session there. Test with Rosa's record and claim in place |
+| n3 `use_floor` leaves out the hot desk | **Comment added** saying it is on purpose (stricter, never refuses an honest ease) |
+| n4 `end_guest_sessions!` checks before the lock | **Not changed.** Same pattern as `end_claimed_sessions!`; a "done" committed between the load and the check is cleared on the next reload, and since m1 the server's own lock bounds it anyway |
+
+### Client review
+
+| Finding | Outcome |
+|---|---|
+| M1 the overheard toast as HTML; markdown alters the note | **Fixed.** The runner calls the toast with `{ plainText: true, verbatim: true }`; `notifications.js` gains `verbatim` (with `plainText`), which skips the `--` dash display for the message. The note text is escaped for the notebook's markdown (`escapeNoteText` in `npc-workarounds.js`: a backslash before each of the renderer's escapable characters; HTML needs nothing, the renderer escapes it). Tests: six passwords with `*`, backticks, `<`, `&`, `--`, `\`, `|`, `#` and `_` come out of `renderNoteMarkdown(displayDashes(...))` exactly; the toast dep's options; `toast-verbatim.test.mjs` against the real `notifications.js` and `display-dashes.js` |
+| M2 a doorway tick uses up `heard` | **Fixed.** `_listen` counts a tick only when `playerRoom()` is a non-empty room. Tests: two doorway ticks then an in-room one posts `room_id: open_office`; only doorway ticks post `heard: false` |
+| m1 `login_aloud` said outside the listening window | **Not changed.** Needs a timing rule (start the window on `npc_mutter` with that topic, or give the line priority over the shared speech lock) and a playtest to see whether the lock delays it in practice; in run H and in this round's run the line came during the dwell. For round 2 or the backlog |
+| m2 a replaced or reset borrow never reported | **Fixed.** `setBorrow` reports a held, unstarted borrow dropped before replacing it and refuses (returns false, so the runner gives the new one back as dropped) while a borrowed job is using it; `reset()` reports every held borrow dropped. Tests for each |
+| m3 `started` never read | **Not changed.** Picking a rule for a borrow cut short after sitting down (done with the session left, or sit again) is a design choice with its own events; `started` stays in `getState().borrow` for the bridge. For round 2 |
+| m4 a claim in flight when an NPC sits down | **Fixed.** After a granted claim (owner or guest), if `presence().userId` names somebody (and the owner is not back, which keeps `owner_returned`), the session is ended through `displaced` and the claim answers `reason: 'displaced'`; `interactLoginPc` shows that message as plain text and opens nothing. Tests in `pc-sessions.test.mjs` and the routing test |
+| m5 only a borrower sitting displaces | **Not changed.** Latent: no NPC in `test_access_work` can sit at a hot desk without a work plan. The validator warning the review suggests is the cheaper fix; for the backlog |
+| m6 `interactLoginPc` user and guest branches untested | **Fixed.** Routing tests: a borrower at an unowned PC gives `in_use` with the name; `accessed` with a guest sends `{ as: 'guest' }`, without one an owner claim |
+| m7 the leak scanner reads `sharedLogins` at the end | **Not changed.** "First heard answer per NPC" would flag the honest second heard share (a heard share stays in turn and is answered again), and the capture holds response bodies only. m3 already narrows what a heard answer may carry |
+| m8 the borrower's name reaches HTML | **Fixed.** The name is HTML-escaped before "<name> is using this PC"; the observations keep their markup as before. Test with a name holding `<b>` |
+| n1 `npc_visit_arrived` through `_emit` | **Fixed**: `world.emit`, so an arrival clears no select back-off |
+| n2 the unreachable `_otherDesk` borrow exception | **Not changed**: a guard only, harmless |
+| n3 the caffeine test cannot fail | **Not changed**: the m6 and M2 tests took priority; noted for round 2 |
+| n4 the bridge reads `ws.guests` directly | **Fixed**: `guestOf` runs first, applying a lock whose time has passed |
+| n5 `presence()` can emit | **Not changed**: as `isLocked`'s late roll; no caller is hurt |
+| n6 `setBorrow` leaves the need at `urgentAt` | **Not changed**: `_unpark` does the same for every park, so changing it moves every scenario's timing; the start is a tick or two later at most |
+| n7 README row and the careful guest | **Fixed**, and the row lists the new end events |
+
+### Browser check (game 1227, port 3018)
+
+Keyless server on :3018, stopped by PID afterwards. Sam's password in this game's
+`scenario_data` was set to a 13-character value holding `<`, `*`, `--` and a backtick.
+
+- **Share heard after walking in through a door.** CRM off, the player waiting in `vault_room`
+  by the door. First share (hand 1): every hearing tick in `vault_room`, not heard. Second (hand
+  2): the player walked in through the door on `npc_visit_arrived:sam` and up to Ruth; ticks in
+  `vault_room`, then `open_office` not hearing, then the first hearing tick in `open_office` set
+  heard with that room; `npc_overheard_login:sam`, task `h4_overheard`. No tick happened to fall
+  with `currentPlayerRoom` `''` on this walk (the doorway is 270 px from Ruth, outside the
+  overhear radius anyway), so the doorway case itself rests on the runner tests.
+- **The password with markup.** The toast message, read back from the DOM, was the line exactly
+  (no child elements, the `--` kept). The note is stored escaped and rendered by the notebook's
+  own `renderNoteMarkdown(displayDashes(...))` as the exact password. `se_captures.sam.note`
+  holds no password (no `revealSecret` here). The password taken from the rendered note signed in
+  as Sam at the hot desk (`via: "password"`).
+- **Sign-out then click at the hot desk.** Ian borrowed and left; a click claimed his session
+  (`via: "claim"`, `guest: true`); Sign out: the server then held no guest record and no session
+  at the hot desk, the client's guest record was gone, and the next click opened the sign-in
+  screen (12 account tiles). A guest claim sent straight from the page after a sign-out: 422.
+- A `GET /scenario` sent by hand mid-run (a mistake) ended one guest record as a reload does;
+  the check above was redone on a later borrow.
+- `access-leak-check.rb` over the 1227 responses: no leaks.
+
+### Leftover games
+
+1227 (this round's check), on the shared dev database.
+
+### Merge and suites after review round 1
+
+`main` merged into `build/9-2-h` (seating changes), no conflicts. After the merge, under the lock:
+Rails 1604 runs, 0 failures, 0 errors, 1 skip; JS 491 of 491 files passed.
+
+Commits this round: `dd04e6934` (server), `94112e9ed` (client), `e73e8d8bf` (n3 comment), the
+merge of `main`, and this log.
