@@ -389,14 +389,16 @@ export class PcSessions {
             if (!previous) continue;
             this.sessions.delete(pcId);
             dropped.push(pcId);
-            if (!this.desktops.has(pcId)) unseen.push(previous.host || pcId);
+            // The host label the server sent; never the internal PC id
+            if (!this.desktops.has(pcId)) unseen.push(previous.host || 'a remote PC');
             this._emit('pc_signed_out', { pcId, npcId: previous.npcId ?? null, reason: 'link_dropped', ...this._remoteOf(previous) });
             this._closeDesktop(pcId, LINK_DROPPED_MESSAGE, 'link_dropped');
         }
         const message = unplugEndedMessage(unseen);
         if (message) {
             try {
-                if (typeof window !== 'undefined') window.gameAlert?.(message, 'info', '', 5000);
+                // Host labels are author text: plain text, never markup
+                if (typeof window !== 'undefined') window.gameAlert?.(message, 'info', '', 5000, { plainText: true });
             } catch (e) { /* no notification layer */ }
         }
         return dropped;

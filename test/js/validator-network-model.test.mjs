@@ -192,6 +192,18 @@ test('headless on a non-sign-in object, with no network, or on an owned workstat
     assertHas(errors(issues(sc)), "headless host 'lena_pc' is a workstation with an owner");
 });
 
+// Lab networks review R2 n3: a contents that is present but not a list reads as none.
+test('a file share whose contents is not a list warns that it is treated as listed only', { skip }, () => {
+    for (const contents of [{ id: 'x' }, 'ledger.xlsx', null]) {
+        const sc = clean();
+        sc.resources.scanned_inbox.contents = contents;
+        assertHas(warnings(issues(sc)), "'resources/scanned_inbox' contents is ");
+        assertHas(warnings(issues(sc)), 'treated as listed only');
+    }
+    const sc = clean();
+    assert.ok(!has(warnings(issues(sc)), 'not a list'), 'a list raises nothing');
+});
+
 test('contents on a resource that is not a file share is an error', { skip }, () => {
     const sc = clean();
     sc.resources.print_queue.contents = [{ id: 'job1', type: 'text_file', name: 'job1' }];

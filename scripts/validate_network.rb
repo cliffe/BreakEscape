@@ -187,6 +187,12 @@ def check_network_model(json_data)
   resources.each do |res_id, res|
     if res.key?('contents') && res['kind'] != 'file_share'
       err.call("'resources/#{res_id}' has contents but kind '#{res['kind']}'; only a file_share holds contents.")
+    elsif res.key?('contents') && !res['contents'].is_a?(Array)
+      # The engine reads a non-list contents as none (NetworkModel.listed_only_share?), so a
+      # typo would turn an openable share into a listed-only one without a word.
+      kind = { Hash => 'an object', String => 'a string', NilClass => 'null' }.fetch(res['contents'].class, 'a value')
+      warn.call("'resources/#{res_id}' contents is #{kind}, not a list; " \
+                'the share is treated as listed only (nothing to open). Use a list of items, or [] for none.')
     end
   end
 

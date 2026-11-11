@@ -430,11 +430,14 @@ test('9.3a: an unplug that ends sessions with no desktop open shows one toast na
     const handlers = {};
     const toasts = [];
     window.eventDispatcher.on = (pattern, cb) => { handlers[pattern] = cb; };
-    window.gameAlert = (message, type, title, ms) => toasts.push([message, type, ms]);
+    const options = [];
+    window.gameAlert = (message, type, title, ms, opts) => { toasts.push([message, type, ms]); options.push(opts); };
     for (const pc of ['door_box', 'lena_pc', 'kiosk_pc']) await s.signIn(pc, 'lfox', 'right-lena', { foothold: 'jack_comms_port' });
 
     handlers['network_device_unplugged']({ jackId: 'comms_port', footholdId: 'jack_comms_port', endedPcIds: ['door_box'] });
     assert.deepEqual(toasts, [['Unplugged. Your session on LW-DOOR01 ended.', 'info', 5000]]);
+    // Review R2 n1: host labels are author text, so the toast is plain text
+    assert.deepEqual(options, [{ plainText: true }]);
 
     toasts.length = 0;
     const closed = [];
@@ -447,6 +450,22 @@ test('9.3a: an unplug that ends sessions with no desktop open shows one toast na
     handlers['network_device_unplugged']({ jackId: 'comms_port', footholdId: 'jack_comms_port', endedPcIds: [] });
     handlers['network_device_unplugged']({ jackId: 'comms_port', footholdId: 'jack_comms_port', endedPcIds: ['not_held'] });
     assert.deepEqual(toasts, [], 'nothing ended, no toast');
+    delete window.eventDispatcher.on;
+    delete window.gameAlert;
+});
+
+// Review R2 n1: a remote session with no host label is named "a remote PC", never by its
+// internal object id.
+test('9.3a: the unplug toast never names a session by its internal PC id', async () => {
+    const s = setup({ answer: (pcId, fields) => { const a = remoteAnswer(pcId, fields); delete a.host; return a; } });
+    const handlers = {};
+    const toasts = [];
+    window.eventDispatcher.on = (pattern, cb) => { handlers[pattern] = cb; };
+    window.gameAlert = (message) => toasts.push(message);
+    await s.signIn('door_box', 'lfox', 'right-lena', { foothold: 'jack_comms_port' });
+    assert.equal(s.get('door_box').host ?? null, null);
+    handlers['network_device_unplugged']({ jackId: 'comms_port', footholdId: 'jack_comms_port', endedPcIds: ['door_box'] });
+    assert.deepEqual(toasts, ['Unplugged. Your session on a remote PC ended.']);
     delete window.eventDispatcher.on;
     delete window.gameAlert;
 });
