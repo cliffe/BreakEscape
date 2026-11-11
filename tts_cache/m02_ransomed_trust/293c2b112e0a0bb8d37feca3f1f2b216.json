@@ -1,0 +1,14 @@
+{
+  "key": "293c2b112e0a0bb8d37feca3f1f2b216",
+  "npc": "ward_nurse",
+  "text": "Are you meant to be on my ward?",
+  "delivery": "brisk, attention on the patient",
+  "voice": "Kore",
+  "style": "Ward sister, twenty years on the wards. Consistent Belfast / Northern Irish accent throughout. Exhausted, dry, absolutely unsentimental about everything except her patients. Quiet controlled urgency, never raises her voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T17:46:42Z"
+}
