@@ -23,7 +23,7 @@ VAR asked_about_patricia = false
     -> first_meeting
 }
 {met_maya:
-    Maya Chen: *glances at door* Is it safe to talk?
+    Maya Chen: Is it safe to talk? #delivery: low and wary
     -> hub
 }
 
@@ -53,12 +53,12 @@ VAR asked_about_patricia = false
 === reveal_check ===
 + [What message?]
     Maya Chen: The tip. To SAFETYNET. About Operation Shatter.
-    Maya Chen: *pauses* If you don't know what I'm talking about, forget I said anything.
+    Maya Chen: If you don't know what I'm talking about, forget I said anything. #delivery: after a pause
     + + [I'm from SAFETYNET]
         ~ revealed_informant = true
         ~ influence += 5
         # influence_increased
-        Maya Chen: *visible relief* Thank god. I was starting to think no one would come.
+        Maya Chen: Thank god. I was starting to think no one would come. #delivery: with obvious relief
         -> informant_reveal
     + + [Tell me more about this operation]
         Maya Chen: Only if you're here to stop it. People are going to die.
@@ -67,7 +67,7 @@ VAR asked_about_patricia = false
     ~ revealed_informant = true
     ~ influence += 5
     # influence_increased
-    Maya Chen: *exhales* Finally. I've been waiting for weeks.
+    Maya Chen: Finally. I've been waiting for weeks. #delivery: with a long exhale, relieved
     -> informant_reveal
 
 // ================================================

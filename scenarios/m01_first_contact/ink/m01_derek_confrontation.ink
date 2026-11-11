@@ -297,7 +297,7 @@ But know this—even if you stop Operation Shatter here, the idea doesn't die. T
 === choice_fight ===
 Player: No lawyers. No trials. No platform for your twisted philosophy.
 
-Derek Lawson: *steps back* You're making a mistake.
+Derek Lawson: You're making a mistake. #delivery: wary, giving ground
 
 Player: The only mistake was thinking you'd get to walk out of here.
 
@@ -324,7 +324,7 @@ Come on then!
 #event:hostile_npc_defeated:derek
 
 #speaker:derek
-Derek Lawson: *coughs* You think... you think this changes anything?
+Derek Lawson: You think... you think this changes anything? #delivery: coughing, winded
 
 I'm a martyr now. ENTROPY will remember this. The Architect will remember.
 
@@ -375,7 +375,7 @@ Player: Help us stop them. Turn informant. Give us ENTROPY from the inside.
 
 Become a double agent? Betray The Architect?
 
-Derek Lawson: *laughs* You think I'd sell out the only people who understand the truth? For what—reduced sentence?
+Derek Lawson: You think I'd sell out the only people who understand the truth? For what—reduced sentence? #delivery: with a scornful laugh
 
 No. I'm not like you, willing to compromise principles for convenience.
 
@@ -441,9 +441,9 @@ Narrator: The evidence upload completes. SAFETYNET backup arrives. Derek Lawson 
 // ================================================
 
 === choice_surrender ===
-Derek Lawson: *pauses* You have the archive. The Architect's letter. The network map.
+Derek Lawson: You have the archive. The Architect's letter. The network map. #delivery: after a pause
 
-Derek Lawson: *quietly* ...You really do have everything.
+Derek Lawson: ...You really do have everything. #delivery: quietly
 
 Then you don't need a fight to end this.
 

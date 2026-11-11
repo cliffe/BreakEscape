@@ -97,7 +97,7 @@ Kevin Park: I flagged it to management three times. Nothing happened.
 // ================================================
 
 === derek_suspicion ===
-Kevin Park: *lowers voice* I think it's Derek Lawson. Senior Marketing Manager.
+Kevin Park: I think it's Derek Lawson. Senior Marketing Manager. #delivery: lowering his voice
 
 Kevin Park: The access logs show his credentials being used at 2 AM. But he says it's for "campaign servers."
 
@@ -252,11 +252,11 @@ Player: I found a contingency plan in Derek's files. Fake logs, forged emails �
 
 Player: If this investigation closes in on him, he activates it. You get arrested. He walks.
 
-Kevin Park: *quietly* Patricia.
+Kevin Park: Patricia. #delivery: quietly
 
 Kevin Park: That's why she was fired. She got too close to Derek and he neutralised her. And now he's got a ready-made scapegoat if someone else gets too close.
 
-Kevin Park: *looks up* How do I... what do I do? I have two kids. I can't—
+Kevin Park: How do I... what do I do? I have two kids. I can't— #delivery: frightened, the words tumbling out
 
 + [Act normal. We handle Derek. You won't be touched.]
     #set_variable:kevin_choice=warn
@@ -530,7 +530,7 @@ Kevin Park: You're back. Something's wrong — I can see it on your face. What d
 
 Kevin Park: Someone used my credentials remotely. That's exactly the kind of thing I've been reporting.
 
-Kevin Park: *voice breaks slightly* Patricia figured it out. That's why he had her fired. And if I'd kept pushing... that would have been me next.
+Kevin Park: Patricia figured it out. That's why he had her fired. And if I'd kept pushing... that would have been me next. #delivery: his voice breaking slightly
 
 Kevin Park: What happens now? Am I... is Derek going to get away with it?
 
@@ -549,7 +549,7 @@ Kevin Park: What happens now? Am I... is Derek going to get away with it?
     -> hub
 + [You are ENTROPY! Time for you to pay!]
     #hostile:kevin_park
-    Kevin Park: *Angry and confused* I don't even know what that means!
+    Kevin Park: I don't even know what that means! #delivery: angry and confused
     #exit_conversation
     -> hub
 
@@ -560,7 +560,7 @@ Kevin Park: What happens now? Am I... is Derek going to get away with it?
 === evidence_exonerated ===
 Kevin Park: He documented it? He actually wrote down what he was planning to do to me?
 
-Kevin Park: *exhales slowly* That's... that's both terrifying and the best news I've heard in months.
+Kevin Park: That's... that's both terrifying and the best news I've heard in months. #delivery: with a slow, shaky exhale of relief
 
 Kevin Park: So what do I do? Do I just go back to my desk and pretend everything's normal?
 
@@ -597,7 +597,7 @@ Kevin Park: That means two sessions running simultaneously. That means someone e
 
 Kevin Park: You're a security professional. You know what those flags mean.
 
-Kevin Park: *voice breaks* Please. I have two kids. I've been trying to do the right thing here for months.
+Kevin Park: Please. I have two kids. I've been trying to do the right thing here for months. #delivery: his voice breaking
 
 + [The inconsistencies are there. I believe you. Tell me about Derek.]
     -> evidence_exonerated
@@ -609,6 +609,6 @@ Kevin Park: *voice breaks* Please. I have two kids. I've been trying to do the r
     -> hub
 + [You are ENTROPY! Time for you to pay!]
     #hostile
-    Kevin Park: *Angry and confused* I don't even know what that means!
+    Kevin Park: I don't even know what that means! #delivery: angry and confused
     #exit_conversation
     -> hub
