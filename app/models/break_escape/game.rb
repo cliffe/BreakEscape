@@ -1599,6 +1599,10 @@ module BreakEscape
       return refusal.call('owner has no account') unless self.class.account_holder?(owner)
       return refusal.call('access list does not admit the owner') unless pc_admits_account?(pc, owner)
       return refusal.call('the screen always locks') if pc_always_locks?(pc, owner)
+      # Slice 9.2 sub-slice L (6.6, plan 9.1): a person who cannot sign in at this PC cannot
+      # leave a session open there, whatever the client says about the screen
+      owner_key = "#{pc['id']}|#{self.class.normalise_username(owner['creds']['username'])}"
+      return refusal.call('the owner is locked out at this PC') if Array(player_state['loginLockouts']).include?(owner_key)
 
       auto_lock = effective_policy(pc)['autoLockMin']
       return refusal.call('policy autoLockMin is 0') if auto_lock.is_a?(Numeric) && auto_lock.zero?
