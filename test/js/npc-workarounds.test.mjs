@@ -516,7 +516,7 @@ test('R1 m3: a start line waiting while its NPC is unavailable is held, then dro
     assert.equal(t.log('mutter_dropped').length, 1);
 });
 
-test('R1 m6: a waiting start line does not hold up a conversation line queued behind the same lock', () => {
+test('R1 m6: a waiting start line takes no lock of its own; it takes the lock only once the fail line ends', () => {
     const { sys } = wired({ chatter: LINES });
     sys.registerAll();
     sys.step(250);
@@ -527,4 +527,79 @@ test('R1 m6: a waiting start line does not hold up a conversation line queued be
     assert.equal(sys._speechUntil, lockAfterFail);
     while (sys.clockMs < lockAfterFail) sys.step(250);
     assert.ok(sys._speechUntil > lockAfterFail, 'then the start line takes it, like any other line');
+});
+
+// ── review round 2 ─────────────────────────────────────────────────────
+
+test('R2 m1: a start line is not said or voiced while the player is in conversation with that NPC', () => {
+    const { sys, evs, w } = wired({ chatter: LINES });
+    const voiced = [];
+    w.world.speak = (id, line) => voiced.push([id, line]);
+    sys.registerAll();
+    sys.step(250);
+    w.setChat('dana');
+    sys.mutter('dana', 'wk_writes_down');
+    for (let i = 0; i < 20; i++) sys.step(250);   // 5 s in conversation
+    assert.deepEqual(evs('npc_mutter:dana'), [], 'nothing said on the immediate path or while held');
+    assert.deepEqual(voiced, []);
+    assert.equal(sys.mutterWaits().length, 1);
+    w.setChat(null);
+    sys.step(250);
+    assert.deepEqual(evs('npc_mutter:dana').map(e => e.data.topic), ['wk_writes_down'], 'said once the conversation ends, within MUTTER_WAIT_MS');
+    assert.equal(voiced.length, 1);
+});
+
+test('R2 m1: a conversation longer than MUTTER_WAIT_MS drops the start line', () => {
+    const t = wired({ chatter: LINES });
+    const { sys, evs, w } = t;
+    sys.registerAll();
+    sys.step(250);
+    w.setChat('dana');
+    sys.mutter('dana', 'wk_writes_down');
+    for (let i = 0; i < 100; i++) sys.step(250);   // 25 s
+    w.setChat(null);
+    for (let i = 0; i < 20; i++) sys.step(250);
+    assert.deepEqual(evs('npc_mutter:dana'), []);
+    assert.equal(t.log('mutter_dropped').length, 1);
+});
+
+test('R2 m2: the 6 s floor holds the bubble only; the speech lock ends with the words', () => {
+    const { sys, evs } = twoWorld(LINES);
+    sys.registerAll();
+    sys.step(250);
+    sys.mutter('dana', 'wk_writes_down');
+    const st = sys.states.get('dana');
+    const bubble = st.saying.until - sys.clockMs;
+    const lock = sys._speechUntil - sys.clockMs;
+    assert.ok(bubble >= 6000 - 250, 'the bubble stays up MUTTER_BUBBLE_MS');
+    assert.ok(lock < bubble, `the lock (${lock} ms) is shorter than the bubble (${bubble} ms)`);
+    // Three start lines on the floor, then a fourth: each said in words, none waits for 6 s
+    sys.mutter('mei', 'wk_prop_door');
+    sys.mutter('dana', 'wk_prop_door');
+    sys.mutter('mei', 'wk_writes_down');
+    const start = sys.clockMs - 250;
+    assert.ok(stepUntil(sys, () => evs('npc_mutter:').length === 2, 20000));
+    assert.ok(sys.clockMs - start < 6000 - 250, `the next start line began ${sys.clockMs - start} ms in, while the first bubble was still up`);
+    assert.ok(stepUntil(sys, () => evs('npc_mutter:').length === 4, 20000));
+    assert.ok(evs('npc_mutter:').every(e => e.data.line && !e.data.picture), 'four start lines inside MUTTER_WAIT_MS, all in words');
+});
+
+test('R2 m5: an emit workaround\'s setGlobal from the "done" answer is set', async () => {
+    const { runner, calls } = stub({ answers: { ellis: { setGlobal: 'ellis_out_of_office' } } });
+    runner.due({ npcId: 'ellis', run: ELLIS_RUN, level: 50 });
+    await flush();
+    assert.deepEqual(calls.globals, [['ellis_out_of_office', true]]);
+    assert.deepEqual(phases(calls, 'ellis'), ['started', 'done']);
+});
+
+test('R2 M1 (server): a hand-over offered again in a later answer starts once', async () => {
+    const { runner, calls } = stub();
+    assert.equal(runner.due({ npcId: 'mei', run: MEI_RUN, level: 60 }), true);
+    assert.equal(runner.due({ npcId: 'mei', run: { ...MEI_RUN, dwell: 0 }, level: 80 }), false, 'running: the copy is ignored');
+    runner.visitDone(visitDone('mei', MEI_RUN));
+    await flush();
+    assert.equal(runner.due({ npcId: 'mei', run: MEI_RUN, level: 80 }), false, 'spent: a late copy is ignored');
+    assert.equal(calls.sends.length, 1);
+    assert.equal(calls.visits.length, 1);
+    assert.equal(calls.mutters.length, 1);
 });

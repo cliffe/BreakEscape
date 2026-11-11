@@ -1821,20 +1821,29 @@ export class NPCNeedsSystem {
         // instead of being swapped for a picture (slice 9.2 B run, game 1197)
         // Several can wait at once (two hand-overs at one failure, or several NPCs' at one outage):
         // a queue, said one per free lock in the order they came
+        // Review 9.2 B R2 m1: an NPC in conversation with the player, not placed or not available
+        // says nothing now (nor is voiced over the conversation): the mutter waits, held, under
+        // the same rule as one waiting for the lock
         const lines = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter).lines.length > 0;
-        if (lines && (!this._speechFree() || this._mutterWaits.length)) {
-            this._mutterWaits.push({ npcId, topic, since: this.clockMs });
+        if (this._mutterHeld(npcId) || (lines && (!this._speechFree() || this._mutterWaits.length))) {
+            this._mutterWaits.push({ npcId, topic, since: this.clockMs, lines });
             return true;
         }
         this._sayMutter(s, topic);
         return true;
     }
 
+    /** A mutter for this NPC must wait: it is in conversation with the player, not placed, or unavailable (hidden, KO). */
+    _mutterHeld(npcId) {
+        return !this.world.npcPos(npcId) || !this.isAvailable(npcId) || !!this.world.inChatWith?.(npcId);
+    }
+
     /**
      * Waiting mutters, once a tick, oldest first. Each is said in words when the speech lock is
      * free (which it then takes, so the next waits again); one that waited MUTTER_WAIT_MS gets
-     * its picture. A mutter is never said late: one whose NPC is not on screen or not available
-     * (in a conversation, hidden) is held, and dropped once it has waited MUTTER_WAIT_MS.
+     * its picture. A mutter is never said late: one whose NPC is in conversation with the
+     * player, not on screen or not available (hidden, KO) is held, and dropped once it has
+     * waited MUTTER_WAIT_MS.
      */
     _tickMutterWaits() {
         const keep = [];
@@ -1842,12 +1851,12 @@ export class NPCNeedsSystem {
             const s = this.states.get(w.npcId);
             if (!s) continue;
             const late = this.clockMs - w.since >= MUTTER_WAIT_MS;
-            if (!this.world.npcPos(w.npcId) || !this.isAvailable(w.npcId)) {
+            if (this._mutterHeld(w.npcId)) {
                 if (late) this._log(w.npcId, 'mutter_dropped', { topic: w.topic });
                 else keep.push(w);
                 continue;
             }
-            if (this._speechFree() || late) this._sayMutter(s, w.topic);
+            if (this._speechFree() || late || w.lines === false) this._sayMutter(s, w.topic);
             else keep.push(w);
         }
         this._mutterWaits = keep;
@@ -1877,7 +1886,9 @@ export class NPCNeedsSystem {
         s.saying = { line, picture, topic, objectId, until };
         const radius = pool.overhearRadius || OVERHEAR_RADIUS;
         const h = typeof this.world.playerHears === 'function' ? (this.world.playerHears(s.npcId, radius) || {}) : {};
-        if (line) this._speak(s.npcId, line, until, { topic, objectId, overheard: !!h.overheard });
+        // Review 9.2 B R2 m2: a floor (minMs) keeps the bubble up; the speech lock lasts only as
+        // long as the words, so the next line on the floor can start when this one ends
+        if (line) this._speak(s.npcId, line, this.clockMs + bubbleMs(line), { topic, objectId, overheard: !!h.overheard });
         if (h.overheard) {
             this._emit(`npc_overheard:${s.npcId}`, {
                 speakerId: s.npcId, partnerId: null, topic, lineId: picture ? `picture:${picture}` : `${topic}:${idx}`, line, picture, objectId,

@@ -767,7 +767,11 @@ chance and no puzzle rests on being in the right place at one moment.
 
 **Handing over.** After each counted failure the server picks at most one workaround for the NPC to
 perform now and returns it as `run`: the first lasting one in force that is neither done nor handed
-over and waiting; if there is none, the next repeating one in force, taken in turn. `run` is a
+over and waiting; if there is none, the next repeating one in force, taken in turn. A counted
+failure that picks nothing new, and a failure answered `tooSoon`, carry the oldest unspent
+hand-over again as `run`, with its stored `index` and `hand` and the dwell left since the server
+handed it over, so a lost answer to the failure that made it does not strand it until a reload
+(the runner starts a given `(npcId, index, hand)` once and ignores a copy). `run` is a
 description with nothing secret in it: `{ index, hand, do, pc | with | door, prop, event, dwell }`,
 where `hand` is the server's count of hand-overs for that NPC, so each hand-over has its own
 number. The runner (`systems/npc-workarounds.js`, new) hears `npc_workaround_due:<npcId>` (5.4),
@@ -778,9 +782,19 @@ for a borrow, 6.4), has the NPC say its start line (5.5), emits `npc_workaround:
 `phase: "done"`. The server applies whatever the workaround opens when it hears "done", and each
 hand-over is spent by one "done".
 
-**"Done" is safe to send twice.** A request can be lost on the way back. The runner retries a
-failed request, and a "done" for a hand-over the server has already spent as done is answered with
-the same body again, recomposed from the scenario, with nothing written. Only the last spent hand
+**"Done" is safe to send twice.** A request can be lost on the way back. The runner resends a
+failed request for as long as the page lives, after 2, 4, 8 and 16 s and then every 30 s, and never
+gives up; a 425 (the dwell has not passed in server time) is resent after the `retryAfter` it
+gives; only a 403 ends a hand-over. A "done" for a hand-over the server has already spent as done is
+answered with the same body again, recomposed from the scenario, with nothing written; one spent
+as dropped answers `{ "dropped": true }`.
+
+**The start line.** A start line is said in words, after any line that holds the speech lock:
+start lines wait in a queue, one per free lock, for up to 20 s (`MUTTER_WAIT_MS`), then show their
+picture. One whose NPC is in conversation with the player, not placed or unavailable is held, and
+dropped once it has waited 20 s, so it is never said late or over a conversation. Its bubble stays
+up at least 6 s (`MUTTER_BUBBLE_MS`); the speech lock lasts only as long as the words, so other
+lines on the floor are not held back by the floor. Only the last spent hand
 per workaround is remembered (`lastSpent`, 9.4), so the record stays bounded.
 
 **A hand-over that cannot be performed** (the visit was dropped, 5.3, or a borrow could not start,
@@ -1465,7 +1479,10 @@ It cannot: make an NPC do a workaround the scenario did not give it; name anothe
 or station, or an object that is not one of the NPC's places, to choose its own floor; avoid the
 park floor by leaving a cause the server owns out of a report; go faster than the floors;
 spend one hand-over twice; fake a lockout (the server owns `loginLockouts`); or read a password, a
-workaround, a post or a feed fact before the server has handed it over.
+workaround, a post or a feed fact before the server has handed it over, except what the
+scenario's own event mappings, reveal props (their `revealOnGlobal` and text) and global names
+show, which are served from the start (the README tells authors to keep them neutral; sub-slice H
+withholds them).
 
 This residual is accepted (decision 5). What keeps it small in practice: the validator prints, for
 every workaround, what it opens and the earliest it can be reached, and warns when what it opens
@@ -1780,7 +1797,7 @@ copies. Every beat's "the mutter" below is one of these lines, and the validator
 | W7 The outage bites at once | `slow_room`: Nia Patel, role `staff`, a slow work need (`decayPerMin: 1`, `urgentAt: 50`, `initial: 100`: left alone, first urgent after 50 minutes), the switches for `printer_jammed` and `workNeeds: ["+printer"]` | The player watches her work once (the room's sign says to wait for it), then jams the printer. Within about one use time she tries to work, fails and mutters about the printer, without waiting for her need to run down | `npcFrustration.nia.level` 20 |
 | X1 The sticky note, and a second link | `note_room`: Mei Lin, an account; `mei_pc`, a sign-in PC with `lockChance: 1`; resource `rota` with a switch; `workarounds: [{ "at": 50, "do": "writes_down" }]`; her profile holds the door code for `records_nook` | Before the outage the sign-in screen shows no note. After the outage she fails three times: the icon appears after the first and pulses after the second. At the third she says "I'll never remember this one.", writes at her desk, a yellow note appears on the monitor, and `npc_workaround:mei` fires with `started`, then `done`. When she next leaves, the sign-in screen shows "<username> / <password>", it signs in, her desktop gives the door code, and the code opens the nook | `npcFrustration.mei.done` is `[0]`; `sessions.mei_pc` Mei by password; `unlockedRooms` has `records_nook` |
 | X2 The propped door | `store_lobby`: Tom Fletcher, role `facilities`, with a card; `store_room` behind an `rfid` door that admits `facilities`, with Una Walsh inside; `store_wedge` (a fire extinguisher) hidden on `store_door_propped`; a workaround at 50 | Tom walks to the door, it opens, the extinguisher appears and `door_propped:store_room` fires. The player walks in | `unlockedRooms` has `store_room`; `encounteredNPCs` has `una`; the global is true on the server; `npcFrustration.tom.done` is `[0]` |
-| X3 An event, with no warning by design | `event_room`: Ellis Ward, role `staff`, `workNeeds: ["+intranet"]`, `ellis_pc`, the switch for `intranet_down`, `frustration: { perFail: 50 }` and `[{ "at": 50, "do": "emit", "event": "ellis_gave_up", "noWarning": true }]`, mapped to a task. Amy in W1 is untouched | One failed use completes the task, with no `tell` 1 or 2 before it; the validator's report says "no warning" for it | `npcFrustration.ellis.done` is `[0]` |
+| X3 An event, with no warning by design | `event_room`: Ellis Ward, role `staff`, `workNeeds: ["+intranet"]`, `ellis_pc`, the switch for `intranet_down`, `frustration: { perFail: 50 }` and `[{ "at": 50, "do": "emit", "event": "ellis_gave_up", "setGlobal": "ellis_out_of_office", "noWarning": true }]`, the event mapped to a task; `ellis_ooo_note`, a note by his PC hidden with `revealOnGlobal: "ellis_out_of_office"` (an emit has no visit, so Ellis stays at his desk and the note says he has given up, not that he has gone). Amy in W1 is untouched | One failed use completes the task, with no `tell` 1 or 2 before it; the note appears; the validator's report says "no warning" for it | `npcFrustration.ellis.done` is `[0]`; `ellis_out_of_office` true |
 | X4 Reload in the middle | During X2: as `npc_workaround:tom` fires with `phase: "started"`, the run sets the needs clock to manual, so Tom stops where he is, then reloads; later, again just after the door opens | After the first reload Tom, whose workaround was handed over and not spent, sets off again and props the door. After the second, the door is open and the extinguisher is shown | As X2 |
 | H1 The hot desk, and a second link | `cable_room` again: Ian has `[{ "at": 50, "do": "borrow_session", "pc": "hot_desk" }]` and the borrowers' `screenHabit` (shared set-up); `hot_desk` is a sign-in PC in the lobby, unowned, with an authored `affordance` that satisfies `work`, under `managed`; Ian's profile holds a note with the PIN of `comms_cabinet` in the lobby | At his third failure at his unplugged PC he says "I'll use the spare PC.", gets up at once, walks to the hot desk and works there (met, so his level eases). A click while he sits there shows "Ian Shaw is using this PC". After he walks back a click opens his desktop, and the note's PIN opens the cabinet. The run then plugs his PC back in and, once his next use is met, steps the needs clock just past five game minutes: the desktop closes with "The screen locked" (exercised, not earned) | `guestSessions.hot_desk` is `ian`; `sessions.hot_desk` a claim, then gone; the cabinet in `unlockedObjects` |
 | H2 Signed in when he arrives | The H run's own source: a readable note in an unlocked lobby drawer (a clue item, not a beat sign) gives the password of `temp_user`, an account the hot desk admits. The player signs in at `hot_desk` as that account and leaves the desktop open. Then Ian's PC is unplugged again | When Ian sits down the desktop closes with "Ian Shaw has signed in at this PC" and `pc_signed_out` fires with `reason: "displaced"`. After he leaves, a click opens Ian's desktop, not the temporary account's | `sessions.hot_desk` `temp_user` by password, then absent, then a claim for Ian |
@@ -2358,7 +2375,7 @@ same.
 
 | Topic | Settled as |
 |---|---|
-| The sticky note | 9.1's channel and helpers, exactly: `written_down?(npc)` decides; `login_postit_for(pc)` is the only source of the text, "<username> / <password>"; `GET /login_accounts` carries it, `no-store`; room data carries `hasPostit` only; an authored `postitNote` or `showPostit: false` wins; the picture is `postit-marks.js` with `mark(pcId, on)`. This slice adds one clause to `written_down?` and answers `{ pcId, hasPostit: true }` from its workaround route. It writes nothing into room data and adds no habit overlay |
+| The sticky note | 9.1's channel and helpers: `written_down?(npc)` decides; `login_postit_for(pc)` is the only source of the text, "<username> / <password>"; `GET /login_accounts` carries it, `no-store`; room data carries `hasPostit` only; an authored `postitNote` or `showPostit: false` wins; the picture is `postit-marks.js` with `mark(pcId, on)`. This slice adds one clause to `written_down?` and answers `{ pcId, hasPostit: true }` from its workaround route. It writes nothing into room data and adds no habit overlay. One addition to 9.1's channel: the proximity label of a marked PC says it has a sticky note (`postitMarks.label`, keyed on the scenario id, never carrying the note's text) |
 | Who builds the note | 9.1, in the expected order. If this slice is first, sub-slice B builds the same pieces from 9.1's section 5.3 and 9.1 adds the habit clause |
 | `roles` | Shared. 9.1 builds and reads `roles.<role>.awareness`, and deletes the whole top-level `roles` key from the bootstrap. This slice owns `workNeeds`, `frustration` and `workarounds` under the same key; its own deletion of `roles` is then already done, and it keeps the line only for the case where it lands first. Whichever lands first adds `roles` to the schema (with `additionalProperties` open) and the validator's top-level list; in the expected order that is 9.1. Both walk roles in `identity_roles(npc)` order, authored roles first and `staff` last. `roles.<role>.habits` does not exist |
 | The awareness warning on a post | It reads `NpcHabits.level_of(npc, scenario)` where 9.1 is built, so a level from a role counts; the authored string otherwise |
