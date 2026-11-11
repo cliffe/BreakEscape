@@ -95,16 +95,18 @@ test('an item no longer in the inventory, or with no data, has no menu', () => {
     assert.equal(menu(null), null);
 });
 
-test('the carried vest keeps its one click (its trigger puts the disguise on or off)', () => {
-    // As the lab gives it (give_item): triggerOnInteract, not droppable
+test('the carried vest keeps its one click (a wearable that is not droppable has no menu)', () => {
+    // As the lab gives it (give_item): wearable, not droppable
     const vest = held({ id: 'kit_hivis_vest', type: 'aes_hivis_hook1', name: 'Hi-vis courier vest',
-        sprite: 'aes_hivis_hook1', triggerOnInteract: [{ type: 'confirm_action' }] });
+        sprite: 'aes_hivis_hook1', wearable: { costume: 'courier', global: 'courier_ready' } });
     assert.equal(menu(vest), null);
     assert.equal(openInventoryItemMenu(vest, 0, 0, { ctx: { inventoryItems: items }, showInteractionMenu: () => assert.fail('no menu') }), false);
     // and the lab still authors it so
     const text = readFileSync(join(js, '../../../scenarios/lab_physical_pentest/scenario.json.erb'), 'utf8');
-    const block = text.slice(text.indexOf('"id": "kit_hivis_vest"'), text.indexOf('"triggerOnInteract"', text.indexOf('"id": "kit_hivis_vest"')));
+    const start = text.indexOf('"id": "kit_hivis_vest"');
+    const block = text.slice(start, text.indexOf('"observations"', start));
     assert.ok(block.length > 0 && !/"droppable"/.test(block), 'the carried vest is not droppable');
+    assert.ok(/"wearable"/.test(block), 'the carried vest is wearable');
 });
 
 test('hasTriggerOnInteract is the chain\'s own first test', () => {
