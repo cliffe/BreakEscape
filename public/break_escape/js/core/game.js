@@ -1990,7 +1990,8 @@ export async function create() {
                     console.log('✅ NPC needs system initialised');
                     // Access slice 9.2 (5.4): the report queue, and the frustration the server holds
                     import('../systems/npc-reports.js').then(m => {
-                        m.installNpcReports(ApiClient);
+                        const reporter = m.installNpcReports(ApiClient);
+                        reporter?.restore?.(window.gameScenario?.npcFrustration || null);
                         window.npcNeedsSystem?.restoreFrustration?.(window.gameScenario?.npcFrustration || null);
                     }).catch(e => console.warn('npc reports failed to load', e));
                     // Workstation screen lock/unlock follows npc_left_post / npc_returned_post

@@ -82,3 +82,14 @@ test('a stale answer triggers one state sync and one resend', async () => {
     assert.deepEqual(h.sent[1].batch, h.sent[0].batch);
     assert.equal(h.applied.length, 1, 'the stale answer is not applied');
 });
+
+test('an NPC GET /scenario calls settled sends no fail after a reload until an ease', async () => {
+    const h = harness();
+    h.r.restore({ omar: { level: 100, tell: 2, settled: true }, dana: { level: 34, tell: 1, settled: false } });
+    assert.equal(h.r.queue('omar', fail('omar')), false);
+    assert.equal(h.r.queue('dana', fail('dana')), true);
+    assert.equal(h.r.queue('omar', { event: 'ease', need: 'work', objectId: 'omar_pc' }), true);
+    assert.equal(h.r.queue('omar', fail('omar')), true);
+    h.r.restore(null);
+    h.r.restore('nonsense');
+});

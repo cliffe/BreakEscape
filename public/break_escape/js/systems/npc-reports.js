@@ -5,7 +5,8 @@
  * seconds and at most 20 reports in one request, and hands the answers to
  * NPCNeedsSystem.applyFrustration.
  *
- * - No fail is sent for an NPC the server called settled until an ease has been sent for it.
+ * - No fail is sent for an NPC the server called settled until an ease has been sent for it,
+ *   including one GET /scenario called settled when the game loaded (restore).
  * - When a global named in a loaded NPC's work plan (a downIf, a route global) or in its home
  *   station's offWhen changes, one state sync is awaited before the next batch, so the server's
  *   copy of the global is current when it checks the cause.
@@ -48,6 +49,17 @@ export class NpcReports {
         this.pending.push(r);
         this._schedule();
         return true;
+    }
+
+    /**
+     * The npcFrustration block of GET /scenario: an NPC the server already calls settled sends
+     * no fail after a reload until an ease has been sent, as if its last answer had said so.
+     */
+    restore(block) {
+        if (!block || typeof block !== 'object') return;
+        for (const [npcId, entry] of Object.entries(block)) {
+            if (entry && entry.settled) this.settled.add(npcId);
+        }
     }
 
     /** A global changed: if a work plan or a station names it, sync before the next batch. */

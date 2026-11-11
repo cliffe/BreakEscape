@@ -173,7 +173,8 @@
         {
           "taskId": "w4_cupboard",
           "title": "W4: the cupboard opens with the code from Omar's desktop",
-          "type": "custom",
+          "type": "unlock_object",
+          "targetObject": "copy_cupboard",
           "status": "active"
         },
         {
@@ -814,7 +815,7 @@
         {
           "type": "aes_elec_cabinet1",
           "id": "share_breaker",
-          "name": "Finance share breaker",
+          "name": "Share breaker",
           "position": {
             "x": 8,
             "y": 3
@@ -847,7 +848,7 @@
               ]
             }
           ],
-          "observations": "Finance share breaker. Click it to switch it off, and again to switch it back on."
+          "observations": "The breaker for the finance share. Click it to switch it off, and again to switch it back on."
         },
         {
           "type": "coffee_station1",
@@ -1082,7 +1083,6 @@
           "locked": true,
           "lockType": "pin",
           "requires": "4718",
-          "completesTaskOnOpen": "w4_cupboard",
           "contents": [
             {
               "type": "notes1",
