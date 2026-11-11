@@ -103,6 +103,24 @@ test('needsStop: a real trip still unseats (null while walking out and back)', (
     }
 });
 
+test('needsStop: a visit to the own desk keeps the home stop in every phase (access 9.2 review R2 m2)', () => {
+    const prev = window.npcManager;
+    window.npcManager = { getNPC: () => ({ needsHome: 'own_pc' }) };
+    try {
+        const visit = (phase, targetId) => ({ kind: 'visit', phase, targetId, visit: { kind: 'check' } });
+        for (const phase of ['start', 'goto_target', 'using']) {
+            const stop = seating.needsStop({ npcId: 'c', mode: 'job', atPost: true, job: visit(phase, 'own_pc') });
+            assert.ok(stop, `null stop in ${phase}`);
+            assert.equal(stop.key, 'at:own_pc');
+            assert.equal(stop.post, true);
+        }
+        // a visit elsewhere still walks: no stop until it arrives
+        assert.equal(seating.needsStop({ npcId: 'c', mode: 'job', atPost: true, job: visit('goto_target', 'printer') }), null);
+    } finally {
+        window.npcManager = prev;
+    }
+});
+
 test('compassToward: screen offsets map to the right facing (east is +x, south is +y)', () => {
     const cases = { east: [1, 0], west: [-1, 0], south: [0, 1], north: [0, -1],
                     'south-east': [1, 1], 'north-east': [1, -1], 'south-west': [-1, 1], 'north-west': [-1, -1] };

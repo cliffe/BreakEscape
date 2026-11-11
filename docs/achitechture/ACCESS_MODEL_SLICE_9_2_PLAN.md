@@ -528,6 +528,10 @@ a carry job the selector chooses; the two share no state, and a visit job is fla
   the queue; the needs system then emits `npc_visit_dropped:<npcId>` with `{ npcId, kind, at,
   data }`, which the workaround runner hears and reports as dropped (section 6). A dropped check
   visit emits it too; nothing listens for a check's, and a scenario may map it.
+- A visit that starts and then ends without arriving (its walk deadline, a turn-back, any abort
+  but a `reset()`) is dropped the same way, with a `reason` added to the payload, so the runner
+  always hears `npc_visit_done` or `npc_visit_dropped`. A dropped check visit frees its resource,
+  so the next failure in the same outage queues the check again (review R2 m5).
 - `reset()` clears the queue. After a reload the server sends undone workarounds again (section 9.4).
 
 ### 5.4 Frustration lives on the server
@@ -576,8 +580,9 @@ until each one is due, and it makes the level survive a reload without any clien
 - **Reload.** The scenario response carries `npcFrustration`. `core/game.js` hands it to
   `NPCNeedsSystem.restoreFrustration(map)` where it hands `sessions` to `pc-sessions.js`
   (`core/game.js:1677`). No needs state exists at that point, so the system keeps the map and
-  applies each NPC's entry in `register`, when the NPC's room loads: the level, the global, `tell`,
-  and (from sub-slice B) the pending workarounds, emitted as `npc_workaround_due:<npcId>`. Each
+  applies each NPC's entry in `register`, when the NPC's room loads: the level, the global (written
+  only when the saved one differs), `tell`, with no `npc_frustration_changed` event, since a reload
+  is no rise or fall (review R2 m1), and (from sub-slice B) the pending workarounds, emitted as `npc_workaround_due:<npcId>`. Each
   entry also carries `hold`, per need, the seconds of server time until a fail with no `rearmed`
   mark would clear that need's floor (9.1), computed by the server when it answers. `register`
   parks each such need for that long with the reason `held` (uncounted, silent, no report, no

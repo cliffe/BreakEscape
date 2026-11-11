@@ -1193,7 +1193,8 @@ export function needsStop(ns) {
     // Own-desk work never leaves the post (npc-needs _atOwnPost): the home stop in every phase
     // (start, goto_target, using) and on the one `returning` tick after it, so the key never
     // changes and the NPC stays seated (OFFICE_LIFE_PLAN 2.11)
-    const ownDesk = ns.atPost && ns.mode === 'job' && ns.job?.kind === 'use' && homeId && ns.job.targetId === homeId;
+    // A visit to the own desk too (review R2 m2): the needs core keeps it at its post (_atOwnPost)
+    const ownDesk = ns.atPost && ns.mode === 'job' && (ns.job?.kind === 'use' || ns.job?.kind === 'visit') && homeId && ns.job.targetId === homeId;
     if (ownDesk || (ns.mode === 'returning' && ns.atPost)) {
         return { key: `at:${homeId || 'post'}`, targetId: homeId, post: true, need: ownDesk ? ns.job.need : undefined };
     }

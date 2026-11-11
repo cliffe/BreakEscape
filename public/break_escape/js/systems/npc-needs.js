@@ -509,7 +509,9 @@ export class NPCNeedsSystem {
             const s = this.states.get(id);
             if (s.job) this._abortJob(s, 'reset', { cancel: true });
         }
-        // The server still holds each NPC's frustration: the mirror survives a reset (R1 m3)
+        // The server still holds each NPC's frustration: the mirror survives a reset (R1 m3).
+        // failSent marks and a reload's held parks do not (review R2 n2): reset() is a debug and
+        // test path, and a missed owed ease or hold costs one report at most
         const mirror = new Map(ids.map(id => {
             const s = this.states.get(id);
             return [id, { frustration: s.frustration, tell: s.tell, settled: s.settled }];
@@ -1463,9 +1465,11 @@ export class NPCNeedsSystem {
                 // Access 9.2 A (plan 5.2): a judged need whose own station is off parks `off`,
                 // counted, with its line (unless a turn-back for this need already said one)
                 // Only the NPC's own station counts: a non-desk source with an offWhen (a kiosk)
-                // parks as office life always did, since the server refuses an off cause there (R1 m5)
+                // parks as office life always did, since the server refuses an off cause there (R1 m5).
+                // The station is the record's needsHome, never s.home, which is provisional for a
+                // start-room NPC (plan 5.2; review R2 m3)
                 const counted = s.giveUp.reason === 'off' && this._judged(s, name)
-                    && !!s.home?.objectId && s.giveUp.targetId === s.home.objectId;
+                    && !!this._stationId(s) && s.giveUp.targetId === this._stationId(s);
                 const why = s.giveUp;
                 if (counted) {
                     why.missing = [{ id: why.targetId, why: 'off' }];
@@ -2102,6 +2106,22 @@ export class NPCNeedsSystem {
         this._emit(`npc_frustration_changed:${s.npcId}`, { npcId: s.npcId, level: s.frustration, previous, tell: s.tell });
     }
 
+    /**
+     * A reload's level (review R2 m1): the mirror, tell and settled are set with no
+     * npc_frustration_changed event, since nothing rose or fell, so a mapping on a rise does not run
+     * again at each load. The global is written only when it differs from the saved one.
+     */
+    _restoreFrustration(s, e) {
+        if (!Number.isFinite(Number(e.level))) return;
+        s.frustration = clamp(Number(e.level), 0, 100);
+        s.tell = Number.isFinite(Number(e.tell)) ? Number(e.tell) : s.tell;
+        s.settled = !!e.settled;
+        const key = `${s.npcId}_frustration`;
+        const had = typeof this.world.getGlobal === 'function' ? this.world.getGlobal(key) : undefined;
+        if (had === undefined || had === null || Number(had) !== s.frustration) this.world.setGlobal?.(key, s.frustration);
+        this._log(s.npcId, 'frustration', { level: round2(s.frustration), tell: s.tell, restored: true });
+    }
+
     /** The scenario response's npcFrustration, kept and applied as each NPC registers (5.4). */
     restoreFrustration(map) {
         this._restored = map && typeof map === 'object' ? { ...map } : null;
@@ -2112,12 +2132,16 @@ export class NPCNeedsSystem {
 
     _applyRestored(s) {
         if (!s) return;
+        // Review R2 n3: the GET entry first, then a newer pending answer over it
+        const e = this._restored?.[s.npcId];
+        const restored = !!e && typeof e === 'object';
+        if (restored) {
+            delete this._restored[s.npcId];
+            this._restoreFrustration(s, e);
+        }
         const pending = this._pendingLevels?.get(s.npcId);
         if (pending) { this._pendingLevels.delete(s.npcId); this._setFrustration(s, pending); }
-        const e = this._restored?.[s.npcId];
-        if (!e || typeof e !== 'object') return;
-        delete this._restored[s.npcId];
-        this._setFrustration(s, e);
+        if (!restored) return;
         // R5 n3: the hold is measured from the response; the time since it arrived is taken off
         const now = typeof this.world.elapsedMs === 'function' ? this.world.elapsedMs() : 0;
         const elapsed = Math.max(0, now - (this._restoredAt || 0));
@@ -2957,6 +2981,15 @@ export class NPCNeedsSystem {
             const p = this._prints.get(job.itemId);
             if (p && (job.carrying || reason === 'item_gone')) this._prints.delete(job.itemId);
             else if (p) p.errand = false;
+        }
+        // Review R2 m5: a visit cut short (walk deadline, turn-back, any abort) is dropped, so a
+        // listener waiting on npc_visit_done or npc_visit_dropped always hears one; a check visit
+        // frees its resource so the next failure queues it again. A reset rebuilds every state.
+        if (job.kind === 'visit' && job.visit && reason !== 'reset') {
+            const v = job.visit;
+            if (v.kind === 'check' && v.data?.resourceId) s.checked.delete(v.data.resourceId);
+            this._log(s.npcId, 'visit_dropped', { kind: v.kind, target: v.at?.objectId || v.at?.npcId, reason });
+            this._emit(`npc_visit_dropped:${s.npcId}`, { npcId: s.npcId, kind: v.kind, at: { ...v.at }, data: v.data, reason });
         }
         s.job = null;
         this._clearBackoffs();

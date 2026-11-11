@@ -288,7 +288,7 @@ test('a reload\'s hold parks the need held, uncounted and silent; a door does no
     assert.equal(sys.getState('dana').parked[0]?.reason, 'held');
     assert.ok(stepUntil(sys, () => reports.length === 1, 20000));
     assert.ok(sys.clockMs >= 10000);
-    assert.equal(evs('npc_frustration_changed:dana')[0].data.level, 34);
+    assert.equal(evs('npc_frustration_changed:dana').length, 0, 'a restore is no change (review R2 m1)');
 });
 
 test('the pool follows the tell held at the failure; a kind with no pool falls back to work_fail', () => {
@@ -444,3 +444,98 @@ test('R1 m9 (R5 n3): a reload\'s hold is less the time since the response arrive
     assert.ok(stepUntil(sys, () => reports.length === 1, 20000));
     assert.ok(sys.clockMs < 10000, 'the fail comes before the full ten seconds');
 });
+
+// ── review R2 (client m1, m3, m4, m5) ──────────────────────────────────
+
+test('R2 m1: a restore sets the mirror with no npc_frustration_changed, and writes the global only when it differs', () => {
+    const a = workWorld();
+    a.sys.restoreFrustration({ dana: { level: 24, tell: 1, settled: false } });
+    a.sys.registerAll();
+    a.sys.step(500);
+    const st = a.sys.getState('dana');
+    assert.equal(st.frustration, 24);
+    assert.equal(st.tell, 1);
+    assert.equal(a.evs('npc_frustration_changed:').length, 0, 'no rise from 0 at load');
+    assert.equal(a.w.calls.globals.dana_frustration, 24, 'written when the saved global is missing');
+
+    const b = workWorld();
+    b.w.world.getGlobal = name => (name === 'dana_frustration' ? 24 : undefined);
+    b.sys.registerAll();
+    b.sys.restoreFrustration({ dana: { level: 24, tell: 1, settled: false } });
+    assert.equal(b.sys.getState('dana').frustration, 24);
+    assert.ok(!('dana_frustration' in b.w.calls.globals), 'the saved global already says 24: not rewritten');
+    assert.equal(b.evs('npc_frustration_changed:').length, 0);
+
+    // A real answer afterwards still fires, with the restored level as its previous
+    b.sys.applyFrustration([{ npcId: 'dana', level: 44, previous: 24, tell: 2 }]);
+    b.sys.step(250);
+    assert.deepEqual(b.evs('npc_frustration_changed:dana').map(e => [e.data.level, e.data.previous]), [[44, 24]]);
+});
+
+test('R2 n3: a pending answer applies over the restored entry, not under it', () => {
+    const { sys } = workWorld();
+    sys.applyFrustration([{ npcId: 'dana', level: 58, previous: 24, tell: 2 }]);
+    sys.step(250);
+    sys.restoreFrustration({ dana: { level: 24, tell: 1, settled: false } });
+    sys.registerAll();
+    assert.equal(sys.getState('dana').frustration, 58);
+});
+
+test('R2 m3: an off station counts while the home is still provisional (the station is needsHome)', () => {
+    const { sys, set, reports, log } = workWorld();
+    sys.registerAll();
+    sys.step(250);
+    const s = sys.states.get('dana');
+    s.home = { ...s.home, objectId: null, provisional: true };
+    s.homeRetryAt = Infinity;
+    set('dana_pc_off', true);
+    s.levels.work = 40;
+    assert.ok(stepUntil(sys, () => log('failure_counted').length > 0, 20000), 'counted');
+    assert.deepEqual(reports.map(r => [r.event, r.missing]), [['fail', [{ id: 'dana_pc', why: 'off' }]]]);
+});
+
+test('R1 m10: a tempted work job that fails parks, counts and reports once', () => {
+    const { sys, reports, log } = workWorld({ globals: { share_down: true } });
+    sys.registerAll();
+    assert.ok(stepUntil(sys, () => sys.states.get('dana').job?.need === 'work', 30000));
+    sys.states.get('dana').job.tempted = true;
+    assert.ok(stepUntil(sys, () => log('failure_counted').length > 0, 30000));
+    assert.deepEqual(sys.getState('dana').parked.map(p => [p.need, p.reason]), [['work', 'failed']]);
+    sys.step(10000);
+    assert.equal(reports.length, 1, 'parked: no retry at once');
+});
+
+test('breakDrain: an authored value drains the other needs by it, capped at 50', () => {
+    const run = drain => {
+        const rec = dana();
+        rec.work.breakDrain = drain;
+        rec.needs.caffeine.initial = 90;
+        const { sys, evs } = workWorld({ npcs: { dana: { pos: { x: 100, y: 100 }, rec } }, globals: { share_down: true } });
+        sys.registerAll();
+        const before = sys.getState('dana').levels.caffeine;
+        stepUntil(sys, () => evs('npc_use_failed:').length > 0, 30000);
+        return before - sys.getState('dana').levels.caffeine;
+    };
+    const d30 = run(30);
+    assert.ok(d30 >= 30 && d30 < 31, `drain 30 gave ${d30}`);
+    const d80 = run(80);
+    assert.ok(d80 >= 50 && d80 < 51, `drain 80 gave ${d80}`);
+});
+
+test('R2 m5: a check visit cut short by its walk deadline is dropped, and frees its resource for the next outage', () => {
+    const { sys, evs } = workWorld({ globals: { printer_jammed: true } });
+    sys.registerAll();
+    assert.ok(stepUntil(sys, () => sys.states.get('dana').job?.kind === 'visit' && sys.states.get('dana').job.phase === 'goto_target', 40000));
+    const s = sys.states.get('dana');
+    assert.ok(s.checked.has('printer'));
+    // The stub world arrives on the next tick, so the walk deadline's own call is made here
+    sys._failJob(s, 'timeout');
+    const dropped = evs('npc_visit_dropped:dana');
+    assert.equal(dropped.length, 1);
+    assert.equal(dropped[0].data.reason, 'timeout');
+    assert.equal(dropped[0].data.kind, 'check');
+    assert.equal(evs('npc_visit_done:dana').length, 0);
+    assert.equal(evs('npc_checked:office_printer').length, 0);
+    assert.ok(!s.checked.has('printer'), 'the next failure queues the check again');
+});
+
