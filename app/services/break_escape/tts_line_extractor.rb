@@ -15,6 +15,10 @@ module BreakEscape
   # phone-chat eventMapping or on its timedConversation, F17): its story is a
   # host like a person-chat one, read as phone-call-voice.js voices it (no
   # narration), but only the lines in the call's own knots (call_knots, F20).
+  # A video call (`conversationMode: "video-call"` on an eventMapping, or a
+  # timedConversation with `videoCall: true` or that mode) opens person-chat
+  # for any npcType, which voices every line it shows whatever `voiced` says:
+  # the knots it reaches (video_call_knots) are read as person-chat reads them.
   #
   # Office chatter (OFFICE_LIFE_PLAN 11.3): an NPC's own `chatter` pools and the
   # scenario's shared `chatter` pools are spoken on first play and cached. The
@@ -48,6 +52,20 @@ module BreakEscape
       JSON.parse(erb.result(Mission::ScenarioBinding.new({}).get_binding))
     end
 
+    # Names of the scenario's carried-over globals: those resolved at game
+    # creation (importedGlobals) and those it declares (importGlobals), so the
+    # batch and the endpoint agree.
+    def self.imported_names(scenario_data)
+      names = Set.new
+      record = scenario_data['importedGlobals']
+      names.merge(record.keys.map(&:to_s)) if record.is_a?(Hash)
+      Array(scenario_data['importGlobals']).each do |entry|
+        name = CarryOver.import_name(entry)
+        names << name if name
+      end
+      names
+    end
+
     def self.normalize(text)
       text.to_s.downcase.gsub(/[^\w\s]/, '').strip.gsub(/\s+/, ' ')
     end
@@ -58,7 +76,13 @@ module BreakEscape
       @scenario_data = scenario_data
       @tts_service = tts_service
       @voices = Mission.voice_configs_from(scenario_data)
-      @variables = scenario_data['globalVariables'] || {}
+      # Carried-over globals hold what the client wrote in an earlier mission,
+      # so they are player text: never a constant a voiced line is read with.
+      # They are left out of the variables and treated as changed in play
+      # (dynamic_variables), so a line printing one stays unresolved and is
+      # never voiced (neither with the player's value nor the ink's default).
+      @imported = self.class.imported_names(scenario_data)
+      @variables = (scenario_data['globalVariables'] || {}).reject { |name, _| @imported.include?(name.to_s) }
       @notes = []
       @entries = nil
     end
@@ -112,20 +136,44 @@ module BreakEscape
       end
     end
 
-    # A phone contact whose calls are voiced: a phone-chat eventMapping or its
-    # timedConversation has `voiced: true`, or the contact itself does (a call the
-    # player starts, such as a pretext call from a desk phone: its start knot is
-    # the contact's currentKnot).
+    # A phone contact whose lines are voiced: a voiced phone call
+    # (voiced_phone_call?) or a video call (video_call_mapping? /
+    # video_call_timed?). Person-chat voices a video call's lines whatever
+    # its `voiced` flag (npc-manager.js opens it with videoCall: true).
     def self.voiced_call?(npc)
+      return true if voiced_phone_call?(npc)
+      return true if video_call_timed?(npc['timedConversation'])
+
+      Array(npc['eventMappings']).any? { |m| video_call_mapping?(m) }
+    end
+
+    # A phone contact whose phone-chat calls are voiced: a phone-chat
+    # eventMapping or its timedConversation has `voiced: true`, or the contact
+    # itself does (a call the player starts, such as a pretext call from a desk
+    # phone: its start knot is the contact's currentKnot).
+    def self.voiced_phone_call?(npc)
       return true if npc['voiced'] == true
-      return true if npc.dig('timedConversation', 'voiced') == true
+      timed = npc['timedConversation']
+      return true if timed.is_a?(Hash) && timed['voiced'] == true && !video_call_timed?(timed)
 
       Array(npc['eventMappings']).any? do |m|
         m.is_a?(Hash) && m['voiced'] == true && m['conversationMode'] == 'phone-chat'
       end
     end
 
-    # The knots a voiced call's lines come from (F20): those reachable from the
+    # npc-manager.js: an event mapping with conversationMode "video-call" opens
+    # person-chat with videoCall: true for any npcType.
+    def self.video_call_mapping?(mapping)
+      mapping.is_a?(Hash) && mapping['conversationMode'] == 'video-call'
+    end
+
+    # npc-manager.js scheduleTimedConversation: videoCall true or the
+    # "video-call" mode makes the timed conversation a person-chat video call.
+    def self.video_call_timed?(timed)
+      timed.is_a?(Hash) && (timed['videoCall'] == true || timed['conversationMode'] == 'video-call')
+    end
+
+    # The knots a voiced phone call's lines come from (F20): those reachable from the
     # call's start knots (the targetKnot of each voiced phone-chat mapping and of
     # a voiced timedConversation) by diverts, tunnels, function calls and
     # choices, without entering the contact's home knot (its currentKnot,
@@ -133,14 +181,23 @@ module BreakEscape
     # and texts outside the set are not voiced. phone-call-voice.js
     # voicedCallKnots applies the same rule in the client.
     def self.call_knots(npc, ink)
+      reachable_knots(ink, call_start_knots(npc), knot_name(npc['currentKnot'] || 'start'))
+    end
+
+    # The knots a video call's lines come from: those reachable from each video
+    # call's target knot. Person-chat has no home-knot stop, so neither does this.
+    def self.video_call_knots(npc, ink)
+      reachable_knots(ink, video_call_start_knots(npc), nil)
+    end
+
+    def self.reachable_knots(ink, starts, home)
       root = ink.is_a?(Hash) ? ink['root'] : nil
       named = root.is_a?(Array) ? root.last : nil
       knots = Set.new
       return knots unless named.is_a?(Hash)
 
       known = ->(name) { name != 'global decl' && named[name].is_a?(Array) }
-      home = knot_name(npc['currentKnot'] || 'start')
-      queue = call_start_knots(npc).select { |k| known.call(k) }
+      queue = starts.select { |k| known.call(k) }
       until queue.empty?
         knot = queue.shift
         next unless knots.add?(knot)
@@ -157,12 +214,28 @@ module BreakEscape
       knots = []
       knots << knot_name(npc['currentKnot'] || 'start') if npc['voiced'] == true
       timed = npc['timedConversation']
-      knots << knot_name(timed['targetKnot']) if timed.is_a?(Hash) && timed['voiced'] == true && timed['targetKnot']
+      if timed.is_a?(Hash) && timed['voiced'] == true && timed['targetKnot'] && !video_call_timed?(timed)
+        knots << knot_name(timed['targetKnot'])
+      end
       Array(npc['eventMappings']).each do |m|
         next unless m.is_a?(Hash) && m['voiced'] == true && m['conversationMode'] == 'phone-chat'
 
         target = m['targetKnot'] || m['knot']
         knots << knot_name(target) if target
+      end
+      knots.uniq
+    end
+
+    # npc-manager.js: a video call opens on the mapping's targetKnot (or knot),
+    # else the NPC's currentKnot; a timed one on its targetKnot.
+    def self.video_call_start_knots(npc)
+      knots = []
+      timed = npc['timedConversation']
+      knots << knot_name(timed['targetKnot']) if video_call_timed?(timed) && timed['targetKnot']
+      Array(npc['eventMappings']).each do |m|
+        next unless video_call_mapping?(m)
+
+        knots << knot_name(m['targetKnot'] || m['knot'] || npc['currentKnot'] || 'start')
       end
       knots.uniq
     end
@@ -206,9 +279,18 @@ module BreakEscape
       end
     end
 
+    # [npc_id, text] the client voices a line of host_id's story as, for raw ink
+    # text the walker could not place (glue, a divert mid-line, player_name()),
+    # or nil. Same rules as resolve, with no tags and no notes recorded.
+    def voiced_as(raw, host_id)
+      prefix, text = InkLineWalker.split_prefix(raw)
+      line = InkLineWalker::Line.new(prefix: prefix, text: text, raw: raw.to_s.strip, tags: [], path: nil)
+      resolve(line, host_id, notes: false)
+    end
+
     # Which speaker the client asks for, and the text it sends, for one walker line.
     # Returns [npc_id, text], or nil when the line is not voiced (player, background).
-    def resolve(line, host_id)
+    def resolve(line, host_id, notes: true)
       raw = line.raw
       return nil if raw.match?(BACKGROUND_LINE)
 
@@ -223,7 +305,7 @@ module BreakEscape
           speaker = 'narrator'
           narrator = true
           text = line.text
-        else
+        elsif notes
           @notes << Note.new(source: host_id, path: line.path, text: raw,
                              reason: "Narrator[#{character}] names no character; the client voices it unprefixed")
         end
@@ -280,9 +362,10 @@ module BreakEscape
     end
 
     # The `#delivery:` note person-chat sends for a line (TtsService.delivery_from_tags).
-    # Voiced phone calls don't send one (phone-call-voice.js), so their lines have none.
-    def line_delivery(host_id, line)
-      return nil if characters.dig(host_id, 'npcType') == 'phone'
+    # Voiced phone calls don't send one (phone-call-voice.js), so their lines have none;
+    # a phone contact's video call is person-chat and does.
+    def line_delivery(line, person_chat)
+      return nil unless person_chat
 
       TtsService.delivery_from_tags(line.tags)
     end
@@ -293,13 +376,20 @@ module BreakEscape
     # the whole line as the client sends it, so only text that is in the
     # scenario's ink for that speaker is accepted.
     def spoken_by?(npc_id, text)
-      wanted = self.class.normalize(text)
-      return false if wanted.empty?
-
-      spoken_lines.include?("#{npc_id}|#{wanted}")
+      !spoken_line(npc_id, text).nil?
     end
 
-    # "npc_id|normalised text" for every voiced line of every host story.
+    # The line's own text (as the batch voices it) for a request that has its
+    # TtsService.match_form, or nil. The endpoint voices and keys this text.
+    def spoken_line(npc_id, text)
+      wanted = TtsService.match_form(text)
+      return nil if wanted.blank?
+
+      spoken_lines["#{npc_id}|#{wanted}"]
+    end
+
+    # { "npc_id|match form" => the line's text } for every voiced line of every
+    # host story (the first line wins where two share a match form).
     def spoken_lines
       index_host_lines unless @spoken_lines
       @spoken_lines
@@ -358,15 +448,15 @@ module BreakEscape
 
     # spoken_lines and delivered_lines in one walk of the stories.
     def index_host_lines
-      spoken = Set.new
+      spoken = {}
       delivered = {}
-      each_host_line do |host, _path, line, npc_id, text|
+      each_host_line do |_host, _path, line, npc_id, text, person_chat|
         norm = self.class.normalize(text)
-        spoken << "#{npc_id}|#{norm}"
-        note = line_delivery(host, line)
+        spoken["#{npc_id}|#{TtsService.match_form(text)}"] ||= text
+        note = line_delivery(line, person_chat)
         delivered["#{npc_id}|#{norm}|#{self.class.normalize(note)}"] ||= note if note
       end
-      each_pretext_outcome_line { |npc_id, text, _path| spoken << "#{npc_id}|#{self.class.normalize(text)}" }
+      each_pretext_outcome_line { |npc_id, text, _path| spoken["#{npc_id}|#{TtsService.match_form(text)}"] ||= text }
       @spoken_lines = spoken
       @delivered_lines = delivered
     end
@@ -375,9 +465,9 @@ module BreakEscape
       @entries = []
       seen = {}
 
-      each_host_line do |host_id, ink_path, line, npc_id, text|
+      each_host_line do |host_id, ink_path, line, npc_id, text, person_chat|
         add_entry(seen, npc_id, text, host_id, "#{File.basename(ink_path)}:#{line.path}",
-                  line_delivery(host_id, line))
+                  line_delivery(line, person_chat))
       end
 
       each_pretext_outcome_line do |npc_id, text, path|
@@ -407,12 +497,17 @@ module BreakEscape
 
         walker = InkLineWalker.from_file(ink_path, variables: @variables, dynamic: dynamic_variables)
         phone = npc['npcType'] == 'phone'
-        # A voiced call: only the lines in the call's own knots (F20)
-        call = phone ? self.class.call_knots(npc, JSON.parse(File.read(ink_path))) : nil
-        if call&.empty?
-          @notes << Note.new(source: host_id, path: npc['storyPath'], reason: 'voiced call has no targetKnot in its story; nothing voiced')
+        # A phone contact: only the lines of its voiced phone calls' knots (F20)
+        # and of its video calls' knots, which person-chat voices
+        if phone
+          ink = JSON.parse(File.read(ink_path))
+          call = self.class.call_knots(npc, ink)
+          video = self.class.video_call_knots(npc, ink)
+          if call.empty? && video.empty?
+            @notes << Note.new(source: host_id, path: npc['storyPath'], reason: 'voiced call has no targetKnot in its story; nothing voiced')
+          end
         end
-        in_call = ->(path) { call.nil? || call.include?(self.class.line_knot(path)) }
+        in_call = ->(path) { !phone || call.include?(self.class.line_knot(path)) || video.include?(self.class.line_knot(path)) }
         lines = walker.lines.select { |line| in_call.call(line.path) }
         walker.unresolved.each do |u|
           next unless in_call.call(u.path)
@@ -422,9 +517,16 @@ module BreakEscape
 
         lines.each do |line|
           npc_id, text = resolve(line, host_id)
-          # A voiced phone call shows narration muted and doesn't voice it
-          next if phone && (npc_id == 'narrator' || phone_narration?(line.tags))
-          yield host_id, ink_path, line, npc_id, text if npc_id
+          next unless npc_id
+
+          # person_chat: the line is read as person-chat voices it (narration as
+          # the narrator, a #delivery: note sent): every person-chat host, and
+          # a phone contact's line in a video call's knot. A voiced phone call
+          # shows narration muted and doesn't voice it.
+          person_chat = !phone || video.include?(self.class.line_knot(line.path))
+          next if !person_chat && (npc_id == 'narrator' || phone_narration?(line.tags))
+
+          yield host_id, ink_path, line, npc_id, text, person_chat
         end
       end
     end
@@ -444,7 +546,7 @@ module BreakEscape
         char = social.dig('characters', spec['character'])
         phone_id = char.is_a?(Hash) ? char.dig('channels', 'phone') : nil
         npc = phone_id && characters[phone_id]
-        next unless npc && npc['npcType'] == 'phone' && self.class.voiced_call?(npc)
+        next unless npc && npc['npcType'] == 'phone' && self.class.voiced_phone_call?(npc)
 
         spec['outcomes'].each do |outcome, cfg|
           line = cfg.is_a?(Hash) ? cfg['line'] : nil
@@ -459,7 +561,7 @@ module BreakEscape
     # voiced with a starting value that play replaces.
     def dynamic_variables
       @dynamic_variables ||= begin
-        names = Set.new
+        names = Set.new(@imported)
         story_paths = characters.values.map { |c| c['storyPath'] }.compact.uniq
         story_paths.each do |story|
           path = resolve_ink_path(story)

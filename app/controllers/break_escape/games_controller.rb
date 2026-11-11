@@ -26,7 +26,7 @@ module BreakEscape
 
     before_action :set_game, only: [:show, :scenario, :scenario_map, :ink, :room, :container, :update_room, :unlock, :inventory, :objectives, :capture_secrets, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :tts, :reset, :new_session, :vm_panel, :vm_set_panel, :conclude_mission,
                                         :login, :logout, :login_accounts, :clone_card, :network, :network_plant, :network_unplug,
-                                        :npc_frustration, :npc_workaround]
+                                        :npc_frustration, :npc_workaround, :wear]
     # A host may also route the game page under its own address (Hacktivity: /hacktivities/:event_id/play/mission/:id,
     # inside a Game event's web app scope). The game must belong to that event: any other pair is a 404.
     before_action :require_game_in_host_event, only: [:show]
@@ -92,7 +92,7 @@ module BreakEscape
     # network_unplug write footholds, the inventory and sessions (slice 9.3a, section 5).
     around_action :with_game_lock, only: [:container, :update_room, :unlock, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :reset, :new_session, :inventory, :room,
                                           :login, :logout, :clone_card, :network_plant, :network_unplug,
-                                          :npc_frustration, :npc_workaround]
+                                          :npc_frustration, :npc_workaround, :wear]
 
     # GET /games/new?mission_id=:id
     # Show VM set selection page for VM-required missions
@@ -301,6 +301,9 @@ module BreakEscape
         if @game.player_state['submitted_flags'].present?
           filtered['submittedFlags'] = @game.player_state['submitted_flags']
         end
+
+        # The worn item (Wearables), so the tray frame comes back after a reload
+        filtered['wornItem'] = @game.worn_record if @game.worn_record
 
         # Include saved global variables so the client can restore them on session resume.
         # These are merged over the scenario defaults in game.js, allowing flags like
@@ -639,6 +642,7 @@ module BreakEscape
       text = params[:text]
 
       return render_error('Missing npc_id or text', :bad_request) unless npc_id.present? && text.present?
+      return render_error('Text must be a string', :bad_request) unless text.is_a?(String) && npc_id.is_a?(String)
       return render_error('Text too long', :bad_request) if text.length > 1000
 
       # Find NPC in scenario
@@ -649,54 +653,20 @@ module BreakEscape
       voice_config = npc['voice'].is_a?(Hash) ? npc['voice'] : npc['ttsVoice']
       return render_error("No voice configured for NPC: #{npc_id}", :bad_request) unless voice_config
 
-      # Validate text exists in the NPC's content (anti-abuse)
-      # Narrator lines are sourced from another NPC's ink story (already server-side trusted)
-      if npc['skipTextValidation']
-        Rails.logger.debug "[TTS] Skipping text validation for #{npc_id} (skipTextValidation=true)"
-      elsif npc['storyPath']
-        # Full Ink story — validate against compiled JSON first, then fall back to
-        # scenario-defined barks (eventMappings / timedMessages).  NPCs can have both
-        # a story *and* standalone barks defined in the scenario JSON; the Ink story
-        # should not block those bark-only TTS requests.
-        ink_json_path = resolve_and_compile_ink(npc['storyPath'])
-        unless ink_json_path
-          Rails.logger.error "[TTS] Ink story file not found for NPC #{npc_id}: #{npc['storyPath']}"
-          return render_error('NPC story file not found', :not_found)
-        end
+      # The request only chooses a line of the scenario (anti-abuse): `line` is
+      # that line's own text, and it alone is voiced, keyed, recorded and looked
+      # up from here on, so characters the key ignores (lookalike letters,
+      # zero-width or bidi marks) can't add words to a clip or replace the clip
+      # every player hears. An NPC voices only its own lines (TtsLineResolver).
+      resolved = TtsLineResolver.new(
+        scenario_name: @game.mission&.name,
+        scenario_data: @game.scenario_data,
+        story_file: method(:resolve_and_compile_ink),
+        player_name: tts_player_name
+      ).resolve(npc_id, npc, text)
+      return render_error(resolved.error, resolved.status) unless resolved.line
 
-        # A co-speaker's line can live in another NPC's story (Vance in HaX's
-        # debrief, HaX in Netherton's), so also accept a line that some story
-        # in this scenario voices as this NPC.
-        valid = InkTextValidator.validate(ink_json_path.to_s, text) ||
-                ScenarioBarkValidator.validate(npc, text) ||
-                shared_chatter_line?(npc, text) ||
-                spoken_as_npc_in_scenario?(npc_id, text)
-
-        unless valid
-          Rails.logger.warn "[TTS] Text validation failed for NPC #{npc_id}: #{text.truncate(60)}"
-          return render_error('Text not found in NPC story or barks', :forbidden)
-        end
-      elsif npc['voice'].is_a?(Hash)
-        # Scenario-only NPC with voice config but no Ink story of its own. Its lines are
-        # either scenario barks (eventMappings / timedMessages), or it is a co-speaker whose
-        # lines live in another NPC's Ink story (e.g. a director speaking inside a briefing
-        # cutscene). The text must be a line that story voices as this NPC.
-        unless ScenarioBarkValidator.validate(npc, text) || shared_chatter_line?(npc, text) ||
-               spoken_as_npc_in_scenario?(npc_id, text)
-          Rails.logger.warn "[TTS] Bark text validation failed for NPC #{npc_id}: #{text.truncate(60)}"
-          return render_error('Text not found in NPC barks or scenario stories', :forbidden)
-        end
-      elsif npc['voice'].is_a?(String)
-        # Room object with a fixed voice message — validate directly
-        normalized_request = text.downcase.gsub(/[^\w\s]/, '').strip.gsub(/\s+/, ' ')
-        normalized_stored  = npc['voice'].downcase.gsub(/[^\w\s]/, '').strip.gsub(/\s+/, ' ')
-        unless normalized_request == normalized_stored
-          Rails.logger.warn "[TTS] Text validation failed for room object #{npc_id}: #{text.truncate(60)}"
-          return render_error('Text not found in object', :forbidden)
-        end
-      else
-        return render_error('Cannot validate text for this object', :bad_request)
-      end
+      text = resolved.line
 
       # The line's #delivery: note (person-chat sends one when the line's tags carry
       # it). The client's note only chooses: the note keyed, voiced and recorded is
@@ -728,6 +698,19 @@ module BreakEscape
       end
       mp3_path ||= stand_in.call unless delivery && tts_service.enabled?
       return send_file(mp3_path, type: 'audio/mpeg', disposition: 'inline') if mp3_path
+
+      # A cap on cache misses (paid generations) per game; cache hits above are
+      # not counted. A server without a key counts its misses too: it answers
+      # them with no audio either way.
+      unless TtsGenerationLimit.allow?(@game.id)
+        Rails.logger.warn "[TTS] Generation limit reached for game #{@game.id} (#{npc_id})"
+        fallback = delivery && stand_in.call
+        return send_file(fallback, type: 'audio/mpeg', disposition: 'inline') if fallback
+
+        response.set_header('Retry-After', TtsGenerationLimit.retry_after(@game.id).to_s)
+        return render json: { error: 'Too many voice clips generated for this game; audio is unavailable for now' },
+                      status: :too_many_requests
+      end
 
       begin
         generate_options = { scenario_name: scenario_name, npc_id: npc_id }
@@ -1272,6 +1255,23 @@ module BreakEscape
       return render json: { success: false, error: 'Missing jack_id' }, status: :bad_request if jack_id.empty?
 
       result = @game.plant_device!(jack_id, params[:device_id].presence&.to_s)
+      render json: result[:body], status: result[:status]
+    end
+
+    # POST /games/:id/wear (item_id, worn) -- put a held wearable item on or take it off
+    # (docs/achitechture/WEARABLE_BUILD_LOG.md). The server checks the item is held and
+    # wearable, keeps one item worn at a time and writes the worn global itself; sync_state
+    # cannot. worn defaults to true; worn false with no item_id takes off whatever is worn.
+    def wear
+      authorize @game if defined?(Pundit)
+
+      worn = params.key?(:worn) ? ActiveModel::Type::Boolean.new.cast(params[:worn]) : true
+      item_id = params[:item_id].presence&.to_s
+      if worn && item_id.nil?
+        return render json: { success: false, message: 'Missing item_id' }, status: :bad_request
+      end
+
+      result = @game.wear!(item_id, worn)
       render json: result[:body], status: result[:status]
     end
 
@@ -2126,8 +2126,9 @@ module BreakEscape
     # item (notepad, decor cup) has no scenario copy, so these are removed.
     # The last five are authored behaviour a client must not invent: a forged
     # droppable would pass the player_drop check (Game#add_item_to_room!), a
-    # forged needsTag would feed an NPC need, and wearable, holds and storeIn are
-    # the planned wearable item and holder fields (feedback plan, sections 4 and 6).
+    # forged needsTag would feed an NPC need, a forged wearable would let POST wear
+    # put on a costume the scenario never offered (Wearables), and holds and storeIn
+    # are the holder fields (feedback plan, section 6).
     CLIENT_ITEM_FORBIDDEN_FIELDS = %w[
       opens_lock key_id keyId scenarioData requires lockType locked
       contents itemsHeld flags flagRewards keyPins saved_cards
@@ -2589,29 +2590,13 @@ module BreakEscape
     end
 
     def find_npc_in_scenario(npc_id)
-      # Narrator is defined at the top level of the scenario, not inside a room
-      if npc_id == 'narrator' && @game.scenario_data['narrator']
-        return @game.scenario_data['narrator']
-      end
+      npc = TtsLineResolver.find_npc(@game.scenario_data, npc_id)
+      return npc if npc
 
       available_npcs = []
       @game.scenario_data['rooms']&.each do |room_id, room_data|
-        room_data['npcs']&.each do |npc|
-          available_npcs << "#{npc['id']} (#{room_id})"
-          return npc if npc['id'] == npc_id
-        end
-
-        # Also search room objects (e.g. phone items with ttsVoice config)
-        room_data['objects']&.each do |obj|
-          next unless obj['id'] == npc_id
-          return obj
-        end
+        room_data['npcs']&.each { |n| available_npcs << "#{n['id']} (#{room_id})" }
       end
-
-      # Headless records (social.characters.*.emailRecord, data contract 00 S8),
-      # after every room, so a room NPC or object keeps its id
-      headless = BreakEscape::Game.headless_npc_records(@game.scenario_data).find { |npc| npc['id'] == npc_id }
-      return headless if headless
 
       # Log available NPCs for debugging
       if available_npcs.any?
@@ -2623,24 +2608,11 @@ module BreakEscape
       nil
     end
 
-    # A line of the scenario's shared chatter pools (scenario['chatter']), which
-    # any NPC with a voice may speak (office life, OFFICE_LIFE_PLAN 11.3).
-    def shared_chatter_line?(npc, text)
-      npc['voice'].is_a?(Hash) && ScenarioBarkValidator.validate_shared(@game.scenario_data, text)
-    end
-
-    # True when one of this game's ink stories has a line the client voices as
-    # npc_id with this text (speaker resolved by prefix, displayName or
-    # #speaker tag, as person-chat does). Never arbitrary text: the line must
-    # be in the scenario's ink and attributed to that speaker.
-    def spoken_as_npc_in_scenario?(npc_id, text)
-      scenario_name = @game.mission&.name
-      return false unless scenario_name
-
-      TtsLineExtractor.cached(scenario_name, @game.scenario_data).spoken_by?(npc_id, text)
-    rescue StandardError => e
-      Rails.logger.warn "[TTS] Co-speaker check failed for #{npc_id}: #{e.class}: #{e.message}"
-      false
+    # The player name the server holds for this game: the only value a
+    # player_name() line is voiced with (TtsService::PLAYER_NAME_DEFAULT says
+    # why it is the client's fallback today).
+    def tts_player_name
+      TtsService::PLAYER_NAME_DEFAULT
     end
 
     # The #delivery: note the scenario's ink gives the line npc_id speaks as text,

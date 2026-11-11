@@ -24,6 +24,7 @@ require_relative 'validate_social'
 require_relative 'validate_npc_needs'
 require_relative 'validate_network'
 require_relative 'validate_capture_log'
+require_relative 'validate_wearable'
 require_relative '../lib/break_escape/declared_grants'
 require_relative '../lib/break_escape/access_identities'
 require_relative '../lib/break_escape/npc_habits'
@@ -529,7 +530,7 @@ def check_unknown_fields(json_data)
     storyPath currentKnot
     completesTask completesTaskOnOpen
     puzzle_graph_links hintOnlyFlags acceptsVmLabels
-    affordance needsTag droppable officeType
+    affordance needsTag droppable officeType wearable
     usbClass
     workstation locksScreenOnLeave lockChance screenOwner screenLocked autoLockSeconds
     phoneOwner rings
@@ -2425,7 +2426,7 @@ def check_interaction_warnings(json_data)
     set_global grant_fact emit_event complete_task unlock_task unlock_aim
     unlock_object unlock_door give_item remove_item add_capture set_costume
     clear_costume tint_objects lighting_dip confirm_action show_end_screen hint
-    revoke_card
+    revoke_card wear take_off
   ]
   check_actions = lambda do |acts, p|
     unless acts.is_a?(Array)
@@ -6767,6 +6768,7 @@ def main
     common_issues += check_access_model(json_data, repo_root, File.dirname(erb_path))
     common_issues += check_network_model(json_data)
     common_issues += check_capture_log(json_data)
+    common_issues += check_wearables(json_data, File.dirname(erb_path))
     common_issues += ValidateAccessWork.check(json_data)
     common_issues += ValidateNpcHabits.check(json_data, expanded: habits_copy, report: habits_report,
                                                         scenario_dir: File.dirname(erb_path))

@@ -8,7 +8,7 @@
 - `tts_cache/` is no longer gitignored (only in-flight temp files and the test folders are), so clips and their sidecars are committed like any file. Reason: generation isn't deterministic, so committing ships the takes that were reviewed.
 - Never-committed 2.5 clips (~970, 53 MB): commit only those matching a current line; leave orphans from rewritten lines out of history. Result: 293 current (13 MB, to commit), 442 orphans moved to `~/tts_orphans_2026-10/` (outside the repo, with the matcher's lists and script in `_lists/`). 82 of the orphans are unchanged text under an edited voice; user chose to treat them as orphans too.
 - Already-committed clips for m02 (26/456 current) and sis01 (0/567) are mostly for older text or voices. Left in place: games saved on an older version may use them. Those missions' current lines are largely unvoiced in the repo, so they generate live.
-- The text-validation fragment gap (InkTextValidator accepts any text containing a 10+ character story fragment): user said ignore for now.
+- The text-validation fragment gap (InkTextValidator accepted any text containing a 10+ character story fragment): closed 2026-11-11 by the TTS text match fix (`docs/achitechture/TTS_TEXT_MATCH_FIX_BUILD_LOG.md`). The request now only picks a line; the server voices the scenario's own text.
 
 ## How the cache works now
 - Key: MD5 of `normalised text | voice | style | language | model` (`TtsService#compute_cache_key`). Clips from 2.5 were keyed without the model; `TtsService#legacy_cached_path` finds them.

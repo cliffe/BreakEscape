@@ -5165,7 +5165,7 @@
             "properties": {
               "type": {
                 "type": "string",
-                "enum": ["set_global", "emit_event", "complete_task", "unlock_task", "unlock_aim", "confirm_action", "unlock_object", "unlock_door", "give_item", "tint_objects", "show_end_screen", "lighting_dip", "grant_fact", "add_capture", "set_costume", "clear_costume", "hint"]
+                "enum": ["set_global", "emit_event", "complete_task", "unlock_task", "unlock_aim", "confirm_action", "unlock_object", "unlock_door", "give_item", "tint_objects", "show_end_screen", "lighting_dip", "grant_fact", "add_capture", "set_costume", "clear_costume", "hint", "wear", "take_off"]
               },
               "key": { "type": "string" },
               "condition": { "type": "string", "minLength": 1, "description": "Any action: run it only while this holds, read when the action is reached. globalVars terms (globalVars.x, !globalVars.x, or a comparison with true, false, null, a number or a quoted string) joined by && and ||, no parentheses. Anything else never holds. Read by the client only: the server ignores it." },
@@ -5185,6 +5185,7 @@
                 "items": { "type": "object" }
               },
               "objectId": { "type": "string" },
+              "itemId": { "type": "string", "description": "wear: the held wearable item to put on; take_off: the worn item to take off (absent: whatever is worn)" },
               "room_id": { "type": "string" },
               "item": { "type": "object" },
               "roomId": { "type": "string" },
@@ -5291,6 +5292,22 @@
         "cloneable": { "type": "boolean", "description": "Access model 4.2: false stops the server recording a card copier copy of this keycard." },
         "identity": { "type": "string", "description": "Access model section 3: for readability, the NPC id whose card this keycard is; the validator checks that NPC carries its card_id." },
         "needsTag": { "type": "string", "description": "NPC needs system: one tag. NPCs with a matching interests entry are drawn to this item." },
+        "wearable": {
+          "type": "object",
+          "description": "A wearable item (systems/wearables.js, docs/achitechture/WEARABLE_BUILD_LOG.md): its tray click puts it on or takes it off. The server records the worn item (POST wear) and owns the worn global: a sync cannot write it, and no set_global, setGlobal or ink assignment may. One item is worn at a time; it comes off when it leaves the inventory.",
+          "properties": {
+            "costume": { "type": "string", "description": "A key of the scenario's disguises: the avatar while worn" },
+            "global": { "type": "string", "description": "The worn global: true while this item is worn. Declare it false in globalVariables." },
+            "unseenOnly": { "type": "boolean", "description": "Refuse a change (and a drop) while a person NPC in the player's room can see" },
+            "seenBy": { "type": "object", "properties": { "ignore": { "type": "array", "items": { "type": "string" } } }, "description": "With unseenOnly: NPC ids who never count (the player's own team)" },
+            "confirmOn": { "type": "string", "description": "Confirm text before it is put on from the tray" },
+            "confirmOff": { "type": "string", "description": "Confirm text before it is taken off from the tray" },
+            "onWear": { "type": "array", "items": { "type": "object" }, "description": "Client actions after it goes on (hints)" },
+            "onRemove": { "type": "array", "items": { "type": "object" }, "description": "Client actions after it comes off" },
+            "_comment": { "type": "string" }
+          },
+          "required": ["costume", "global"]
+        },
         "droppable": { "type": "boolean", "description": "true: clicking this item in the inventory drops it at the player's feet (systems/item-drop.js). Needs a unique id; usually paired with needsTag." },
         "usbClass": { "type": "string", "enum": ["storage", "hid"], "description": "Slice 9.2 (ACCESS_MODEL_SLICE_9_2_PLAN.md 7): the USB device class a policy's usb value judges. storage: a memory stick; hid: a device that presents itself as a keyboard. An item with no usbClass is never refused." },
         "holds": { "type": "object", "description": "An inventory holder (engine plan section 6): captures true lists se_captures, items true files held items whose storeIn equals this item's id.", "properties": { "captures": { "type": "boolean" }, "items": { "type": "boolean" } }, "patternProperties": { "^_": {} }, "additionalProperties": false },

@@ -114,7 +114,8 @@ module BreakEscape
     # fixed voice strings). Used for files whose sidecar names their exact text.
     def requestable_text?(text)
       return false if text.to_s.strip.empty?
-      return true if @ink_json_files.any? { |f| InkTextValidator.validate(f.to_s, text) }
+      # Any name the client could have printed: the pruner keeps their clips
+      return true if @ink_json_files.any? { |f| InkTextValidator.validate(f.to_s, text, player_names: TtsService::PLAYER_NAME_VALUES) }
       norm = TtsService.normalize_text(text)
       # Scenario-level chatter pools, spoken by any voiced NPC (OFFICE_LIFE_PLAN 11.3)
       return true if ScenarioBarkValidator.validate_shared(@scenario_data, text)
@@ -285,7 +286,7 @@ module BreakEscape
       Hash(data["globalVariables"]).each do |k, v|
         values[k] << v.to_s if v.is_a?(String) || v.is_a?(Numeric)
       end
-      values["player_name"].concat(["Agent", "Agent Zero", "Agent 0x00"])
+      values["player_name"].concat(TtsService::PLAYER_NAME_VALUES)
       values.transform_values { |v| v.uniq.first(8) }
     end
 

@@ -283,7 +283,9 @@ module BreakEscape
                  { "inkVersion" => 21, "root" => [["^Sarah: #{line}", "\n", "done"], "done", nil] }.to_json)
 
       @game.scenario_data["rooms"]["lobby"]["npcs"] = [
-        { "id" => "ink_npc", "voice" => { "name" => "Kore", "style" => "Speak formally.", "language" => "en-GB" },
+        # The line's prefix names this NPC, so the client sends the text after it
+        { "id" => "ink_npc", "displayName" => "Sarah",
+          "voice" => { "name" => "Kore", "style" => "Speak formally.", "language" => "en-GB" },
           "storyPath" => story_path }
       ]
       @game.save!
@@ -881,7 +883,8 @@ module BreakEscape
 
       npc_text = "Hello world"
       # Compiled Ink stores dialog as ^-prefixed strings
-      File.write(fake_json, { "inkVersion" => 21, "root" => ["^Narrator: #{npc_text}", "done"] }.to_json)
+      # An unprefixed line is the host NPC's own (a Narrator: line would not be)
+      File.write(fake_json, { "inkVersion" => 21, "root" => ["^#{npc_text}", "done"] }.to_json)
 
       @game.scenario_data["rooms"]["lobby"]["npcs"] = [
         {

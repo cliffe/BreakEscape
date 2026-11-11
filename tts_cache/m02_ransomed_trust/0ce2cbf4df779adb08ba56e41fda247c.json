@@ -1,0 +1,13 @@
+{
+  "key": "0ce2cbf4df779adb08ba56e41fda247c",
+  "npc": "ghost",
+  "text": "You're the first person in this building tonight who's let me finish a sentence.",
+  "voice": "Iapetus",
+  "style": "ENTROPY field operative. Deliberately unplaceable -- an educated English base with every regional marker sanded off, the way someone sounds when they have consciously trained their own accent out. Unhurried, precise, never raises the pitch. Speaks as though reading a conclusion they reached months ago and have no further doubts about.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T20:28:15Z"
+}

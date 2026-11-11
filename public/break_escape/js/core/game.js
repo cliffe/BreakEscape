@@ -1679,6 +1679,10 @@ export async function create() {
         Object.assign(window.gameState.globalVariables, gameScenario.savedGlobalVariables);
         console.log('🌐 Merged saved global variables from server:', gameScenario.savedGlobalVariables);
     }
+    // The worn item (wearables.js): the server's record, so the tray frame comes back
+    window.gameState.wornItem = gameScenario.wornItem && typeof gameScenario.wornItem.itemId === 'string'
+        ? gameScenario.wornItem : null;
+    import('../systems/wearables.js').catch(e => console.warn('⚠️ wearables failed to load:', e));
     // Sign-in PC sessions and the PCs signed in to (access model 5.3): password
     // sessions survive a reload, a claimed one ends (pc-sessions.js load).
     pcSessions.load(gameScenario.sessions || {}, gameScenario.signedInPcs || []);

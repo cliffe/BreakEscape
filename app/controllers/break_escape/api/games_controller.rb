@@ -1,5 +1,9 @@
 module BreakEscape
   module Api
+    # Not routed (config/routes.rb has no Api scope) and must stay so: its inventory add stores
+    # the client's item as sent (a forged wearable, requires or contents included) and its
+    # sync_state takes no row lock, so routing it would undo the server checks in
+    # BreakEscape::GamesController (Wearables, the access model).
     class GamesController < ApplicationController
       before_action :set_game
 

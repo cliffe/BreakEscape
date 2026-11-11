@@ -21,7 +21,26 @@ module BreakEscape
       end
     end
 
-    Unresolved = Struct.new(:path, :text, :reason, keyword_init: true)
+    # template: for a line left out only because it prints a value the walker
+    # can't know (player_name(), an unknown variable, game state, a variable
+    # changed in play), its parts in order: ink text Strings, and where a value
+    # goes the kind of value (:player_name, :number or :text). nil otherwise.
+    # InkTextValidator matches a request against it.
+    # slots: the kinds of every printed value in the line (template or not),
+    # [] when it prints none. InkTextValidator never voices a line with a
+    # :number or :text slot.
+    Unresolved = Struct.new(:path, :text, :reason, :template, :slots, keyword_init: true)
+
+    # A printed value in a line's buffer (see Unresolved#template). It is still
+    # a String, so the line's text reads exactly as before.
+    class SlotValue < String
+      attr_reader :kind
+
+      def initialize(printed, kind)
+        super(printed)
+        @kind = kind
+      end
+    end
 
     NARRATOR_CHARACTER_PREFIX = /\ANarrator\s*\[\s*([^\]]*)\s*\]\s*:\s*(.+)\z/im
     NARRATOR_PREFIX = /\ANarrator\s*:\s*(.+)\z/im
@@ -321,7 +340,7 @@ module BreakEscape
             next
           end
           if item.key?('->') && !text_of(state).empty?
-            state[:partial] ||= 'divert mid-line'
+            not_slot!(state, 'divert mid-line')
           end
           plain = item.keys == ['->'] || item.keys == ['->t->']
           # `<- knot` compiles to "thread" then a plain divert
@@ -364,13 +383,13 @@ module BreakEscape
               next
             end
           rescue TooManyVariants
-            state[:partial] ||= "expands to more than #{MAX_VARIANTS} variants"
+            not_slot!(state, "expands to more than #{MAX_VARIANTS} variants")
             skip_to = conditional_end(container, i) || i + 1
             next
           end
-          state[:partial] ||= 'inline conditional or sequence' unless text_of(state).empty?
+          not_slot!(state, 'inline conditional or sequence') unless text_of(state).empty?
           dangling = walk(item, "#{path}[#{i}]")
-          state[:partial] ||= 'continues after an inline conditional or sequence' if dangling
+          not_slot!(state, 'continues after an inline conditional or sequence') if dangling
         when Numeric, TrueClass, FalseClass
           mark_tag_dynamic(state) if state[:in_tag]
           state[:ev_parts] << item if state[:in_ev] && !state[:in_tag]
@@ -383,7 +402,8 @@ module BreakEscape
       return false if tail.empty?
 
       @unresolved << Unresolved.new(path: "#{path}(unterminated)", text: tail,
-                                    reason: state[:partial] || 'text with no newline (glue, choice start or inline content)')
+                                    reason: state[:partial] || 'text with no newline (glue, choice start or inline content)',
+                                    slots: slot_kinds(state[:buf]))
       true
     end
 
@@ -467,7 +487,7 @@ module BreakEscape
         else
           state[:glue_next] = true
         end
-        state[:partial] ||= 'glue'
+        not_slot!(state, 'glue')
       elsif item.start_with?('^')
         state[:buf] << item[1..]
       end
@@ -481,7 +501,11 @@ module BreakEscape
         name = parts[0]['VAR?']
         known = @variables.key?(name) || ink_defaults.key?(name)
         value = @variables.key?(name) ? @variables[name] : ink_defaults[name]
-        state[:buf] << (known ? format_value(value) : "{#{name}}")
+        printed = known ? format_value(value) : "{#{name}}"
+        # A value the line can't be voiced with in advance is a slot (Unresolved#template)
+        slot = !known || !value.is_a?(String) || reassigned_variables.include?(name) || @dynamic.include?(name)
+        kind = known && !value.is_a?(String) ? :number : :text
+        state[:buf] << (slot ? SlotValue.new(printed, kind) : printed)
         if !known
           state[:partial] ||= "unknown variable #{name}"
         elsif !value.is_a?(String)
@@ -492,7 +516,11 @@ module BreakEscape
         end
       else
         label = parts.map { |p| p.is_a?(Hash) ? p.keys.first + ':' + p.values.first.to_s : p.to_s }.join(' ')
-        state[:buf] << "{#{label}}"
+        kind = if label == 'x():player_name' then :player_name
+               elsif label.start_with?('x():') then :text
+               else :number
+               end
+        state[:buf] << SlotValue.new("{#{label}}", kind)
         state[:partial] ||= "expression {#{label}}"
       end
     end
@@ -506,6 +534,8 @@ module BreakEscape
       state[:partial] = nil
       state[:tags] = []
       state[:last_lines] = nil
+      state[:last_unresolved] = nil
+      not_slot = state.delete(:not_slot)
       if raw.empty?
         # The client (InkEngine#continue) keeps an empty line's tags for the
         # next line it shows. Only a #delivery: note is carried here, so the
@@ -514,21 +544,27 @@ module BreakEscape
         return
       end
 
+      glued_on = false
       if state.delete(:glue_next)
         # Glue at the end of this line pulls the next line onto it.
         state[:partial] = 'glue'
+        state[:not_slot] = true
+        glued_on = true
       end
 
       maybe = state.delete(:maybe_tags)
       if partial
-        @unresolved << Unresolved.new(path: path, text: raw, reason: partial)
+        template = glued_on || not_slot ? nil : template_of(buf, partial)
+        @unresolved << Unresolved.new(path: path, text: raw, reason: partial, template: template, slots: slot_kinds(buf))
+        state[:last_unresolved] = @unresolved.last
         first_line_unknown!
         return
       end
 
       variants = expand(buf)
       if variants.nil?
-        @unresolved << Unresolved.new(path: path, text: raw, reason: "expands to more than #{MAX_VARIANTS} variants")
+        @unresolved << Unresolved.new(path: path, text: raw, reason: "expands to more than #{MAX_VARIANTS} variants",
+                                      slots: slot_kinds(buf))
         first_line_unknown!
         return
       end
@@ -563,7 +599,36 @@ module BreakEscape
       end
     end
 
+    # Marks the line unresolved for a reason other than a printed value, so it
+    # gets no template (see template_of).
+    def not_slot!(state, reason)
+      state[:not_slot] = true
+      state[:partial] ||= reason
+    end
+
+    # Unresolved#template for a line whose only unknowns are printed values:
+    # no glue (the rest of the line is elsewhere) and no sequence or conditional.
+    def template_of(buf, partial)
+      return nil unless partial
+      return nil unless buf.any? { |part| part.is_a?(SlotValue) }
+      return nil if buf.any? { |part| part.is_a?(Array) }
+
+      buf.map { |part| part.is_a?(SlotValue) ? part.kind : part.to_s }
+    end
+
+    # The kind of every printed value in a line's buffer, in order.
+    def slot_kinds(buf)
+      buf.flat_map do |part|
+        if part.is_a?(SlotValue) then [part.kind]
+        elsif part.is_a?(Array) then slot_kinds(part)
+        else []
+        end
+      end
+    end
+
     def retract_last_line(state, path)
+      # A templated line that the next line glues onto is not the whole line
+      state[:last_unresolved]&.template = nil
       range = state[:last_lines]
       return unless range
 
@@ -577,7 +642,7 @@ module BreakEscape
       end
       @also_next.clear
       @lines.slice!(range).each do |line|
-        @unresolved << Unresolved.new(path: path, text: line.raw, reason: 'glue')
+        @unresolved << Unresolved.new(path: path, text: line.raw, reason: 'glue', slots: [])
       end
       state[:last_lines] = nil
     end
