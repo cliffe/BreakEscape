@@ -920,6 +920,9 @@ window.cancelClickToMove = () => {
     holdWalkActive      = false;
 };
 
+// For seating.js: the walk onto a chair and the step off it move the player without input.
+window.updatePlayerDepth = (x, y) => { if (player) updatePlayerDepth(x, y); };
+
 /**
  * Turn the player to face a world position, updating direction and idle animation.
  * Call this before triggering a click-based interaction so the player visually
