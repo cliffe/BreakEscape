@@ -76,11 +76,44 @@ vance_warning_email = "From: Robert Vance\nTo: OT Security\nDate: 12 January\nSu
 
 voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS interlock-bypass modules installed on rack banks A, B and C.\nThermal sensors falsified at the SCADA layer. Hydrogen venting and ESD interlocks disabled.\nRemote overcharge trigger armed.\n\nCoordination with Social Fabric confirmed - simultaneous infrastructure strikes across the region.\n\nTrigger scheduled: 0800 local. The racks tip into thermal runaway. Grid drops for 240,000. The hall goes up with it.\nFail-safe disabled. No automatic shutdown.\n\nThe Architect sends regards. Phase 3 begins after successful execution.\n\n- Voltage"
 
+# VM hook (2026-11-10, the m01 pattern: one fixed value written on both sides).
+# The crew's back-in port: the Erlang/OTP SSH daemon on bms_jump_server listens
+# here. It is FIXED in the SecGen XML (ssh_port on ssh_erlangotp_rce in
+# break_escape/safetynet/m04_critical_failure.xml) and printed on OptiGrid's job
+# card in the lock-picked tool case, so the case hands the player the crew's own
+# way in. Change both together. Chosen outside nmap's default top-1000 ports, so
+# a default scan doesn't list it; a full port sweep still finds it.
+foothold_port = 22222
+
+# The jump server's address. From the VM binding when there is one (Hacktivity:
+# the VmSet's VM by title; standalone: vm_ips), as m09 does; otherwise the address
+# pinned in the SecGen XML's IP_addresses datastore (index 0 = bms_jump_server).
+vm_ip_for = lambda do |title, fallback|
+  if vm_context && vm_context['hacktivity_mode'] && vm_context['vms']
+    vm = vm_context['vms'].find { |v| v['title'] == title }
+    return vm['ip'] if vm && vm['ip'] && !vm['ip'].to_s.empty?
+  end
+  (vm_context && vm_context['vm_ips'] && vm_context['vm_ips'][title]) || fallback
+end
+jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
+
 %>
 {
   "scenario_brief": "Infiltrate the Albion Energy Storage facility — 200 MWh of grid-scale lithium-ion battery storage — to investigate a suspected ENTROPY operation. The Critical Mass cell has weaponised the BMS and SCADA systems to drive the battery racks into thermal runaway, threatening a catastrophic fire and a grid blackout for 240,000 people. Confirm the falsified telemetry against a real instrument and prove how they took control: the Emergency Shutdown arms only once grid control has both. Keep the trigger holder away from his laptop, then press the shutdown before the 0800 trigger time.",
 
   "show_scenario_brief": "once",
+
+  <%# Top-level flags block (m01/m03/m06/m07/m08 pattern; game.rb primary source for
+      scenario_data["flags"], the table the VM-step runner matches captured output
+      against). Keyed on the SecGen target system name bms_jump_server, flag_1..flag_4
+      in SecGen document order (website -> proftpd -> sudoedit -> erlang), mirroring
+      the flag-station's own flags array below. vm_flags_json emits flag_1..flag_N;
+      in Hacktivity mode the real per-build values replace these placeholders, keyed
+      by the same system name. This is additive to the flag-station's flags array,
+      which still drives in-game submission. %>
+  "flags": {
+    "bms_jump_server": <%= vm_flags_json('bms_jump_server', ['flag{network_scan_complete}', 'flag{ftp_intel_gathered}', 'flag{privesc_complete}', 'flag{erlang_rce_complete}']) %>
+  },
 
   <%# Pass 5 alignment A2 (m03 P1-31 pattern): one condition per story phase, so a
       reload (game_loaded) and the end of a fight (all_hostiles_ko) return to the
@@ -590,7 +623,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           "npcType": "person",
           "voice": {
             "name": "Aoede",
-            "style": "Intelligence handler giving a mission briefing. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Speak quickly with a sense of urgency, as if time is short.",
+            "style": "Professional intelligence handler giving a mission briefing. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
             "language": "en-GB"
           },
           "position": { "x": 500, "y": 500 },
@@ -731,7 +764,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           "npcType": "phone",
           "voice": {
             "name": "Aoede",
-            "style": "Intelligence handler speaking over a secure phone line. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Speak quickly with urgency, as if time is short.",
+            "style": "Intelligence handler speaking over a secure phone line. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
             "language": "en-GB"
           },
           "storyPath": "scenarios/m04_critical_failure/ink/m04_phone_agent0x99.json",
@@ -1093,7 +1126,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
               "onceOnly": true,
               "completeTask": "investigate_compromised_services",
               "setGlobal": { "erlang_guide_offered": true },
-              "sendTimedMessage": { "delay": 2000, "message": "There's an Erlang/OTP SSH daemon on a high port there — the crew's way back in, with a brand-new pre-auth RCE. I've a guide if you want it.", "skipIfGlobal": "flag_erlang_rce_submitted" }
+              "sendTimedMessage": { "delay": 2000, "message": "There's an Erlang/OTP SSH daemon on a high port there — the crew's way back in, with a brand-new pre-auth RCE. Their job card names the port. I've a guide if you want it.", "skipIfGlobal": "flag_erlang_rce_submitted" }
             },
             <%# PASS 3 P15 (review): the sudo offer on the FTP flag, only if the
                 Erlang SSH RCE flag hasn't already made it. %>
@@ -1512,7 +1545,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           },
           "voice": {
             "name": "Aoede",
-            "style": "Professional intelligence handler in debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Unhurried — the emergency is over and she is choosing her words carefully.",
+            "style": "Professional intelligence handler in debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
             "language": "en-GB"
           },
           "behavior": {
@@ -1747,7 +1780,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           <%# Room dressing c3: a black monitor (pc10) on the workshop's terminal bench (room_aes_workshop). %>
           "position": "as-type:pc",
           "takeable": false,
-          "observations": "The workshop terminal HaX pointed you to -- a Kali working box jacked into the OT segment. Your way onto the network to reach and analyse the BMS jump server at 192.168.100.10.",
+          "observations": "The workshop terminal HaX pointed you to -- a Kali working box jacked into the OT segment. Your way onto the network to reach and analyse the BMS jump server at <%= jump_server_ip %>.",
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
           <%# SecGen m04 builds two systems: the target bms_jump_server (owner of the
               four flags, keyed in the flag-station below) and the kali attack box
@@ -1835,7 +1868,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           "name": "Network Monitoring Station",
           "position": "as-type:kvm_cart",
           "takeable": false,
-          "observations": "A live traffic monitor for the OT network. Steady SCADA polling, and a second stream into the BMS jump server at 192.168.100.10 from a host that isn't on Albion's asset list."
+          "observations": "A live traffic monitor for the OT network. Steady SCADA polling, and a second stream into the BMS jump server at <%= jump_server_ip %>, on a high port, from a host that isn't on Albion's asset list."
         },
         {
           "type": "briefcase",
@@ -1863,8 +1896,8 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
               "name": "OptiGrid Job Card #4782 (back page)",
               "takeable": true,
               "readable": true,
-              "text": "JOB 4782 -- ALBION\n\nPLANT RM: FP reader, HV auth only. Use R.V. (duty eng).\nHis thumb's on the Hall 1 round panel every 2 hrs.\nTonight: same.",
-              "observations": "The crew's own job card. Somebody planned the plant-room door in advance.",
+              "text": "JOB 4782 -- ALBION\n\nPLANT RM: FP reader, HV auth only. Use R.V. (duty eng).\nHis thumb's on the Hall 1 round panel every 2 hrs.\nTonight: same.\n\nJUMP SRV <%= jump_server_ip %>: back-in is the control-stack SSH, port <%= foothold_port %>.\nNever asks for a login. Not on Albion's asset list.",
+              "observations": "The crew's own job card. Somebody planned the plant-room door in advance, and kept their own way back onto the jump server.",
               "puzzle_graph_role": "clue",
               "puzzle_graph_reveals": "vance_print_on_hall1_round_panel"
             }

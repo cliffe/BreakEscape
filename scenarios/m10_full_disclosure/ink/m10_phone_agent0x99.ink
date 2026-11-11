@@ -176,7 +176,8 @@ VAR hax_suspect = ""
     Quintero's on her way back.
 - door_scene_done:
     // Scenario design R4 m2, dialogue R4 m3: the rung names the find.
-    Their monitoring. Gate terminal. The login's on the maintenance tag.
+    // VM pass 2026-11-11: the tag carries no login (the foothold is unauthenticated); it names the host and the console port.
+    Their monitoring. Gate terminal. The host's on the maintenance tag.
 - flag1_submitted:
     Netherton won't call it till the table's settled.
 - else:
@@ -579,7 +580,8 @@ The release service runs in a container on the host under it.
 Get out of the container onto that host. That opens the way up to him.
 // Puzzle chains R3 m2 (VM handoff B6), dialogue R5 n1: "in the core", which lies below the gallery's slit windows; "disarm" as on the lamp and the 06:00 screen.
 The host holds the release's kill config: how six o'clock is armed, and what stops it. The disarm's on his console, in the core.
-One of his operators dropped a duty sheet by the east racks. The login's on it.
+// VM pass 2026-11-11: the duty sheet's login opens the shift home, whose handover log names the release service's port.
+One of his operators dropped a duty sheet by the east racks. The login's on it, and the log it points to says where the service listens.
 -> support_hub
 
 === monitor_topic ===
@@ -591,7 +593,8 @@ People leave notes on their kit. Look for them.
 // VM gating F12: the steer names its find.
 // Puzzle chains R3 m1: the tag hangs off their gate terminal, not our field console.
 // VM settled 2026-10-23: the foothold is the platform's own hole; the tag only names the host and the monitoring account, not a login.
-There's a maintenance tag on their gate terminal's lead. It names the host, and the account their monitoring runs as.
+// VM pass 2026-11-11: the tag also gives the console's port (8338, pinned in the SecGen XML).
+There's a maintenance tag on their gate terminal's lead. It names the host, the port their console listens on, and the account it runs as.
 -> support_hub
 
 === box_topic ===

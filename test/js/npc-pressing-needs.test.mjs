@@ -19,7 +19,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 // ── defaults and lookup ──────────────────────────────────────────────────
 
 test('defaults: every npc-* icon by name; fallback stays the text dot', () => {
-    assert.equal(NPC_ICON_NAMES.length, 16);   // slice 14 added avoid and closed
+    assert.equal(NPC_ICON_NAMES.length, 18);   // slice 14 added avoid and closed; access 9.2 workaround and barrier
     for (const n of NPC_ICON_NAMES) assert.equal(DEFAULT_ICONS[n], `icon:npc-${n}`, n);
     assert.equal(DEFAULT_ICONS.fallback, '•');
     assert.equal(pickIcon({ kind: 'use', need: 'hunger' }, {}, { id: 'fridge', satisfies: 'hunger' }), 'icon:npc-hunger');

@@ -1,0 +1,13 @@
+{
+  "key": "a2ac2ce3d36ac6066a2e3ba3a791442a",
+  "npc": "narrator",
+  "text": "He watches it land, and smiles as if he'd sent it himself.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:28:37Z"
+}

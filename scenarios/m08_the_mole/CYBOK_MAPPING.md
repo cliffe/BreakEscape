@@ -22,7 +22,7 @@ keywords use the skill's three sources. Checked with `check_hacktivity_cybok.py`
 | KA | Topic | Keywords | Why |
 |---|---|---|---|
 | NS | Networking Applications | NMAP, PORT SCANNING, SECURE SHELL (SSH) | Recon on SAFETYNET's own code server and the SSH login with the recovered account (flag 3). |
-| WAM | Server-Side Vulnerabilities and Mitigations | injection vulnerabilities; server-side misconfiguration and vulnerable components | GitList argument-injection RCE on an unpatched repository browser, unauthenticated (flag 1). |
+| WAM | Server-Side Vulnerabilities and Mitigations | injection vulnerabilities; server-side misconfiguration and vulnerable components | GitList 0.4.0 remote command execution (CVE-2014-4511) on an unpatched repository browser, unauthenticated (flag 1). |
 | SS | Categories of Vulnerabilities | CVES AND CWES; HARD-CODED PASSWORD | The GitList CVE, and the credentials stashed in the git history (flag 2, secrets-in-git-history guide). |
 | SOIM | Fundamental Concepts | PENETRATION TESTING - SOFTWARE TOOLS; VULNERABILITY ANALYSIS | The Kali-driven operation and the attack-surface triage the vulnerability-analysis guide teaches (campaign convention; carrier topic as in m05). |
 | OSV | Primitives for Isolation and Mediation | physical access and secure deletion; authentication and identification; PRIVILEGE ESCALATION | Lockpicking Nightshade's locker, and the sudo escalation to root to read the access logs (flag 4, privesc guide). |

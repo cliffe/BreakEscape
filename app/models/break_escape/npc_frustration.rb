@@ -187,7 +187,7 @@ module BreakEscape
       heard_now = false
       case w['do']
       when 'borrow_session'
-        record_borrow_done!(npc, w, handed['time'].to_f)
+        record_borrow_done!(npc, w)
       when 'share_login'
         # 5. heard counts only in a room the colleague can be in that the player has opened
         heard_now = heard && share_heard_in?(w, room_id) && colleague_encountered?(w)
@@ -282,7 +282,7 @@ module BreakEscape
         next nil if need && !AccessWork.satisfies?(scenario_data, pc, need)
 
         # by id, as the client names the PC it used (review R1 n1)
-        (find_login_pc(w['pc'])&.dig(:object) || {})['id'] || w['pc']
+        borrow_pc_id(w)
       end.uniq
     end
 
@@ -332,18 +332,21 @@ module BreakEscape
       [AccessWork.use_seconds(scenario_data, pc) - 3, 0].max
     end
 
+    # The borrowed PC's id: the claim and the client both name it by id (review R1 n1)
+    def borrow_pc_id(w)
+      ((find_login_pc(w['pc'])&.dig(:object) || {})['id'] || w['pc']).to_s
+    end
+
     # "done" for a borrow (6.4): the NPC signed in there and left. A guest record for one that
     # leaves the session open; a session the player held there is ended either way (one screen,
-    # one session), so a click then reaches the guest's, not the player's old one. The PC is
-    # stored by its id (review R1 n1), as the claim looks it up. A guest record written after
-    # this hand-over was made belongs to a later sitter (a lost "done" resent late, R1 n2), so
-    # this one then changes nothing.
-    def record_borrow_done!(npc, w, handed_at)
-      pc_id = (find_login_pc(w['pc'])&.dig(:object) || {})['id'] || w['pc']
-      pc_id = pc_id.to_s
-      later = guest_sessions_at[pc_id]
-      return if later.is_a?(Numeric) && later.to_f > handed_at
-
+    # one session), so a click then reaches the guest's, not the player's old one. The last
+    # "done" to arrive wins (review R2 M1): two borrowers queued at one hot desk report in the
+    # order they left, which is the order the client records them in, except a request that
+    # never reached the server and is resent late (accepted, review R1 n2). A "done" that is resent
+    # after a later borrower's (its answer was lost) is answered from lastSpent and writes
+    # nothing; workaround_body then answers guest: false, so the client keeps the later one too.
+    def record_borrow_done!(npc, w)
+      pc_id = borrow_pc_id(w)
       player_state['sessions'] = access_sessions.except(pc_id)
       if careful_guest?(npc)
         guest_sessions.delete(pc_id)
@@ -401,17 +404,26 @@ module BreakEscape
       player_state['globalVariables'][name] = true
     end
 
-    # The "done" answer, composed from the scenario alone, so a resend gets the same body
+    # The "done" answer, composed from the scenario (and, for a borrow, the guest record now), so
+    # a resend gets the same body
     def workaround_body(npc, w, heard: false)
       body = case w['do']
              when 'writes_down' then { 'pcId' => npc['needsHome'], 'hasPostit' => true }
              when 'prop_door' then { 'roomId' => w['door'] }
-             when 'borrow_session' then { 'pcId' => w['pc'], 'guest' => !careful_guest?(npc) }
+             when 'borrow_session' then borrow_body(npc, w)
              when 'share_login' then heard ? shared_login_body(npc, w) : {}
              else {}
              end
       body['setGlobal'] = w['setGlobal'] if declared_global?(w['setGlobal'])
       { status: :ok, body: body, open_room: w['do'] == 'prop_door' ? w['door'] : nil }
+    end
+
+    # A borrow's answer: the PC by id (review R2 n2), and guest true only while the server's
+    # guest record there is still this NPC's, so a resend after a later borrower's "done", a
+    # sign-out or a refused timed-out claim does not make the client record it (review R2 M1)
+    def borrow_body(npc, w)
+      pc_id = borrow_pc_id(w)
+      { 'pcId' => pc_id, 'guest' => !careful_guest?(npc) && guest_sessions[pc_id] == npc['id'] }
     end
 
     # The heard share (6.5): the sentence composed here from creds, the evidence note, and the

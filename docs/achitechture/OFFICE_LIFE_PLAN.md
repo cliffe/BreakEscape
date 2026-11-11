@@ -2248,6 +2248,8 @@ sheet. Files go in `assets/icons/npc-<name>.png`, so they cannot clash with the 
 | | `npc-file` | folder (stowing a slot, slice 7) | — |
 | | `npc-blocked` | no-entry sign (urgent need, nothing permitted reachable: `leashed`) | — |
 | | `npc-noticed` | exclamation (caught someone at the desk, slice 2) | — |
+| | `npc-workaround` | red arrow hopping a striped barrier (access slice 9.2, user decision q21: an NPC doing a workaround: a `writes_down`, `prop_door` or `share_login` visit, the use of a PC borrowed by `borrow_session`, and 4 s after an `emit` or a done visit; also the picture of the `wk_*` start lines) | `npc-work` |
+| | `npc-barrier` | plain striped barrier (access slice 9.2, user decision q27: a judged use that just failed, shown for 4 s once the failure's line has gone; also the picture of the `station_fail`, `work_fail_no_access`, `work_fail_fed_up`, `social_blocked` and `usb_refused` pools). Kept apart from `npc-blocked`, which still means nothing permitted reachable and is the standing frustration icon | `npc-blocked` |
 | | `fallback` | no icon drawn: stays the text `•` | — |
 
 The defaults in `npc-action-icons.js` `DEFAULT_ICONS` switch to these. A scenario's own

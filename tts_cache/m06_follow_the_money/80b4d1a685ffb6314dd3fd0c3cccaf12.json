@@ -1,0 +1,13 @@
+{
+  "key": "80b4d1a685ffb6314dd3fd0c3cccaf12",
+  "npc": "narrator",
+  "text": "Her audit wordlist is in the top tray, under a mug. She watches you take it and says nothing.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:03:41Z"
+}

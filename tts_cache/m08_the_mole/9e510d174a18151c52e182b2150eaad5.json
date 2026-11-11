@@ -1,0 +1,13 @@
+{
+  "key": "9e510d174a18151c52e182b2150eaad5",
+  "npc": "opening_briefing_cutscene",
+  "text": "I have also logged your kit. One pick set, one RFID cloner, one fingerprint kit.",
+  "voice": "Kore",
+  "style": "SAFETYNET's building AI, running at a heightened security posture. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Smooth, corporate-calm, faintly wrong -- a voice built to reassure, doing it in a building where nobody is reassured.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T20:39:17Z"
+}

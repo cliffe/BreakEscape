@@ -39,6 +39,14 @@
  *     queue, npc-avoid for avoid.
  *   Order: avoidance, then the pressing need, then a parked need.
  *
+ * Access slice 9.2 (user decisions q21, q27): `workaround` (an arrow hopping a barrier) while the
+ * NPC does a workaround: a workaround visit or a borrowed PC's use (getState().job.workaround), or
+ * just after an `emit` (getState().workaround). `barrier` (the plain barrier) right after a counted
+ * failure of a judged use (getState().failed: the station refused it, a resource down, out of
+ * reach or not granted). `blocked` keeps its office-life meaning (nothing permitted reachable)
+ * and is also the standing frustration icon below. Order with no job: noticed, workaround,
+ * barrier, frustration, the leashed `blocked`.
+ *
  * Access slice 9.2 (plan 5.5): a judged NPC with no job shows `blocked` while the server's tell is
  * 1 or 2, pulsing at 2. Once the cause of its last failure has cleared (getState().causeCleared,
  * q17) the same icon is drawn faded (FADED_ALPHA, no pulse) while the mood lingers, and goes
@@ -56,7 +64,9 @@ import { iconShown, roomIsDark, npcIconAnchor } from './npc-office-visuals.js';
 // The 16x16 NPC icon set (OFFICE_LIFE_PLAN 9.1, assets/icons/npc-<name>.png), drawn at native
 // size. Referenced by name only, so a swapped file needs no code change. No fallback art: text.
 export const NPC_ICON_NAMES = ['caffeine', 'thirst', 'hunger', 'rest', 'social', 'work', 'curiosity',
-    'post', 'printout', 'print', 'queue', 'file', 'blocked', 'noticed', 'avoid', 'closed'];
+    'post', 'printout', 'print', 'queue', 'file', 'blocked', 'noticed', 'avoid', 'closed',
+    // Access slice 9.2 (user decisions q21, q27): a workaround being done, and a use that failed
+    'workaround', 'barrier'];
 export const DEFAULT_ICONS = Object.freeze({
     ...Object.fromEntries(NPC_ICON_NAMES.map(n => [n, `icon:npc-${n}`])),
     // Slice 19 (OFFICE_LIFE_PLAN 12.5): on a desk-phone call, the desk phone itself (20x17, native size)
@@ -66,7 +76,8 @@ export const DEFAULT_ICONS = Object.freeze({
 
 // Text shown while a default texture loads (or if it fails)
 const TEXT_STANDIN = { caffeine: 'C', thirst: 'W', hunger: 'F', rest: 'Z', work: 'PC', social: 'S', curiosity: '?',
-    post: 'P', printout: 'P', print: 'Pr', queue: '…', file: 'Fi', blocked: 'X', noticed: '!', avoid: '~', closed: '#', phone: 'Ph' };
+    post: 'P', printout: 'P', print: 'Pr', queue: '…', file: 'Fi', blocked: 'X', noticed: '!', avoid: '~', closed: '#', phone: 'Ph',
+    workaround: 'Wa', barrier: '=' };
 
 /** Pure: is this object a copier or printer (its preset, officeType or type)? */
 export function isPrinter({ type, officeType, preset } = {}) {
@@ -109,7 +120,10 @@ export function pickIconEntry(job, actionIcons = {}, target = null) {
     if (!job) return null;
     // Waiting in a queue (slice 10): the hourglass, whatever the machine (a scenario "queue" entry wins)
     if (job.phase === 'queued') return firstIcon(['queue'], actionIcons);
-    // Access slice 9.2 A (plan 5.5): a visit (a check, a workaround) shows the work picture
+    // Access slice 9.2 (q21): a workaround visit (writes_down, prop_door, share_login) or a
+    // borrowed PC's use (borrow_session) shows the workaround picture
+    if (job.workaround) return firstIcon(['workaround'], actionIcons);
+    // Access slice 9.2 A (plan 5.5): any other visit (a check) shows the work picture
     if (job.kind === 'visit') return firstIcon(['work'], actionIcons);
     // Access slice 9.2 C (plan 8.2): social_media (a phone use or a PC) shows the npc-social picture
     const social = job.need === 'social_media' ? 'social' : null;
@@ -122,11 +136,23 @@ export function pickIconEntry(job, actionIcons = {}, target = null) {
 
 /**
  * Pure: the action-slot icon for an NPC with no job: "noticed" (just caught someone at its desk),
- * else "blocked" (an urgent need with nothing permitted). Shown only with showPressingNeeds or an
- * explicit scenario entry for that key, so a scenario that has not opted in looks as before.
+ * "workaround" or "barrier" (access 9.2, below), else "blocked" (frustration, or an urgent need with
+ * nothing permitted). "noticed" and the leashed "blocked" show only with showPressingNeeds or an
+ * explicit scenario entry; "workaround", "barrier" and the frustration icon need neither, but only
+ * judged NPCs have them, so a scenario that has not opted in looks as before.
  */
 export function stateIconEntry(st, actionIcons = {}, optIn = false) {
     if (!st || st.job) return null;
+    // Access slice 9.2 (q21, q27), after `noticed` when that shows: a workaround with no visit
+    // (emit) just done (getState().workaround), then a counted failure just met (getState().failed,
+    // until FAIL_SHOW_MS after its grumble), solid, before the frustration icon below. Only judged
+    // NPCs ever have either, so a scenario without a work plan looks as before.
+    const noticedShown = !!st.noticed && (optIn || !!usable((actionIcons || {}).noticed));
+    if (!noticedShown) {
+        const now = st.workaround ? firstIcon(['workaround'], actionIcons, { fallback: false })
+            : (st.failed ? firstIcon(['barrier'], actionIcons, { fallback: false }) : null);
+        if (now) return now;
+    }
     // Access slice 9.2 A (plan 5.5): while the server's tell is 1 or 2 an NPC whose uses are judged
     // shows `blocked` (pulsing at 2), whatever showPressingNeeds says: declaring work has opted in
     const judged = !!(st.judged && (st.judged.work || st.judged.social_media));

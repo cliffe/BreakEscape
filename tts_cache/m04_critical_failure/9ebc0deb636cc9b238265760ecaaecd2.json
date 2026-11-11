@@ -1,0 +1,13 @@
+{
+  "key": "9ebc0deb636cc9b238265760ecaaecd2",
+  "npc": "narrator",
+  "text": "He watches the screen like it might bite.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:00:37Z"
+}

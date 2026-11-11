@@ -549,7 +549,7 @@ function advanceMount() {
         }
         return;
     }
-    const v = Math.min(MOUNT_SPEED, d / FRAME_S);
+    const v = Math.min(MOUNT_SPEED, d * physicsFps(player));
     player.body.setVelocity(dx / d * v, dy / d * v);
     playWalk(player, dx, dy);
     window.updatePlayerDepth?.(player.x, player.y);
@@ -680,7 +680,7 @@ export function standUp(spot = null, opts = {}) {
         placeBody(chair, chair.x, chair.y);
         chair.body.setVelocity(0, 0);
         if (chair.body.enable) {
-            ghostPair(player, chair);
+            ghostPair(player, chair, () => state?.chair === chair);
             // Push the chair back, away from where the player steps (behind the sitter without a spot)
             let ux, uy;
             if (dist >= 1) { ux = (spot.x - from.x) / dist; uy = (spot.y - from.y) / dist; }
@@ -729,7 +729,7 @@ function advanceStep() {
         } else if (s.still >= STUCK_FRAMES || s.frames > STEP_MAX_FRAMES) {
             s.arrived = true; // blocked: stay where physics stopped the player
         } else {
-            const v = Math.min(s.speed, d / FRAME_S);
+            const v = Math.min(s.speed, d * physicsFps(player));
             player.body.setVelocity(dx / d * v, dy / d * v);
             if (!s.proxy) playWalk(player, dx, dy);
             window.updatePlayerDepth?.(player.x, player.y);
@@ -768,8 +768,10 @@ function placeStepProxy() {
 }
 
 /** Turn off the collider(s) between a and b until their bodies stop overlapping (updateGhosts). */
-function ghostPair(a, b) {
-    if (setPairCollide(a, b, false)) ghosts.push({ a, b });
+function ghostPair(a, b, hold = null) {
+    const had = ghosts.find(g => g.a === a && g.b === b);
+    if (had) { had.hold = hold; return; }
+    if (setPairCollide(a, b, false)) ghosts.push({ a, b, hold });
 }
 
 function setPairCollide(a, b, on) {
@@ -791,9 +793,9 @@ function bodyRect(sprite) {
 
 function updateGhosts() {
     if (!ghosts.length) return;
-    ghosts = ghosts.filter(({ a, b }) => {
+    ghosts = ghosts.filter(({ a, b, hold }) => {
         if (a?.active === false || !b?.body || !a?.body || b.active === false) { setPairCollide(a, b, true); return false; }
-        if (state?.chair === b) return true; // back on it: stays off until they part
+        if (hold?.()) return true; // back on it (or walking onto it): stays off
         const p = bodyRect(a), r = bodyRect(b);
         const apart = p.x + p.w <= r.x || r.x + r.w <= p.x || p.y + p.h <= r.y || r.y + r.h <= p.y;
         if (apart) setPairCollide(a, b, true);
@@ -871,8 +873,7 @@ function noteStand(rec) {
 
 /**
  * A walkable spot next to a swivel chair, in front of it first: the stand-up code before the
- * seat box plan. NPCs still use it (their stand-up changes in slice 6), and the player does
- * under `window.__seatBox === false` (test-only, for the stand audit's side by side). It can
+ * seat box plan, kept only for the player under `window.__seatBox === false` (test-only, for the stand audit's side by side). It can
  * land on or across a desk; there is no box or line check.
  */
 function legacyStandSpot(chair, facing) {
@@ -910,11 +911,6 @@ function playerStandSpot(chair, facing, { approach = null, forced = true } = {})
     });
 }
 
-/** NPC stand-up beside a swivel chair: unchanged until slice 6. */
-function standSpot(chair, facing) {
-    const s = legacyStandSpot(chair, facing);
-    return s ? { x: s.x, y: s.y } : null;
-}
 
 /**
  * Space on a chair: sitting -> stand up on the seat; standing on it -> jump off.
@@ -991,6 +987,7 @@ function updateRollSound(moving) {
 
 /** Called right after the normal player movement each frame. */
 export function afterPlayerMovement() {
+    updateGlides();
     updateGhosts();
     if (!state) {
         updateRollSound(false);
@@ -1300,7 +1297,256 @@ export function swivelEnabled(rec, scenario) {
     return true;
 }
 
-/** Sit an NPC (its behaviour object) on a chair. Returns true when seated. */
+// ---- NPC seat moves (user, 2026-11-11: NPCs too). An NPC walks onto a seat and steps off it
+// with physics and its collider on; a swivel chair rolls (velocity, colliding on the way) where
+// it used to be set down in place. behavior._seatMove = { stage, ... } runs one stage per NPC
+// tick (npc-behavior.js, every 50 ms) and holds the rest of the behaviour while it runs:
+//   walk     to the work spot (a needs NPC that stopped short of it)
+//   pull     the swivel chair rolls out to the work spot
+//   contact  then in to the desk's contact line
+//   mount    the NPC walks onto the seat (castor base, or a static seat's foot), then sits
+//   step     after standing: to the stand spot (the work spot, or a box- and line-checked one)
+
+const NPC_TICK_S = 0.05;           // npc-behavior.js updateInterval
+const NPC_SEAT_SPEED = 70;         // px/s onto and off a seat
+const NPC_STUCK_TICKS = 4;         // ticks without 0.5 px of progress: blocked
+const NPC_MOVE_MAX_TICKS = 40;     // 2 s
+const NPC_WALK_GIVE_UP_PX = 8;     // blocked this far from the work spot: work standing
+const CHAIR_GLIDE_SPEED = 80;      // px/s a pulled or tucked chair rolls at
+const GLIDE_MAX_FRAMES = 150;
+
+const glides = new Map(); // chair -> { x, y, still, last, frames }
+
+function physicsFps(obj) { return obj?.scene?.physics?.world?.fps || window.game?.physics?.world?.fps || 60; }
+
+/** Roll a swivel chair's foot to (x, y) with physics (it collides on the way); it stops where blocked. */
+export function glideChairFootTo(chair, x, y) {
+    if (!chair?.body) return;
+    chair.body.enable = true;
+    glides.set(chair, { x, y, still: 0, last: Infinity, frames: 0 });
+}
+export function isGliding(chair) { return glides.has(chair); }
+
+/** One frame of every chair glide (afterPlayerMovement runs it). */
+export function updateGlides() {
+    for (const [chair, g] of glides) {
+        if (!chair.active || !chair.body?.enable) { glides.delete(chair); continue; }
+        const f = bodyFeet(chair);
+        const dx = g.x - f.x, dy = g.y - f.y, d = Math.hypot(dx, dy);
+        g.still = (g.last - d < 0.2) ? g.still + 1 : 0;
+        g.last = d;
+        g.frames++;
+        if (d <= 1) { chair.body.setVelocity(0, 0); moveFeetTo(chair, g.x, g.y); glides.delete(chair); }
+        else if (g.still >= 8 || g.frames > GLIDE_MAX_FRAMES) { chair.body.setVelocity(0, 0); glides.delete(chair); }
+        else { const v = Math.min(CHAIR_GLIDE_SPEED, d * physicsFps(chair)); chair.body.setVelocity(dx / d * v, dy / d * v); }
+        window.updateSpriteDepth?.(chair, chair.elevation || 0);
+    }
+}
+
+function stopGlide(chair) {
+    if (!glides.has(chair)) return;
+    glides.delete(chair);
+    chair.body?.setVelocity(0, 0);
+}
+
+/** Re-sync a body after its offset changed (as placeBody does after a move). */
+function syncBody(sprite) {
+    const b = sprite.body;
+    if (!b?.updateFromGameObject) return;
+    b.updateFromGameObject();
+    b.prev?.copy?.(b.position);
+    b.prevFrame?.copy?.(b.position);
+    b.updateCenter?.();
+}
+
+/** Shrink (or grow) a body to w x h round its current feet point. */
+function resizeAtFeet(sprite, w, h) {
+    const b = sprite.body;
+    if (!b?.setSize || !b.setOffset) return;
+    const cx = b.offset.x + b.width / (2 * (sprite.scaleX || 1)), cy = b.offset.y + b.height / (2 * (sprite.scaleY || 1));
+    b.setSize(w, h, false);
+    b.setOffset(cx - w / (2 * (sprite.scaleX || 1)), cy - h / (2 * (sprite.scaleY || 1)));
+    syncBody(sprite);
+}
+
+/** Where a seated NPC's block sits: the chair's castor base (swivel) or the seat's foot. */
+function seatedCentre(st) {
+    const { chair, seat, place } = st;
+    if (seat.kind === 'swivel' && chair.body?.offset) return bodyFeet(chair);
+    const pf = placeFoot(chair, seat, place);
+    return { x: pf.x, y: pf.y - 2 };
+}
+
+/** Keep a seated NPC's collider on its seat while the posed sprite moves (the body offset follows). */
+function fitSeatedBody(sprite, st) {
+    const b = sprite?.body;
+    if (!b?.setOffset || !b.offset) return;
+    const c = seatedCentre(st);
+    const sx = sprite.scaleX || 1, sy = sprite.scaleY || 1;
+    const ox = (c.x - sprite.x - b.width / 2) / sx + sprite.displayOriginX;
+    const oy = (c.y - sprite.y - b.height / 2) / sy + sprite.displayOriginY;
+    if (Math.abs(ox - b.offset.x) < 0.01 && Math.abs(oy - b.offset.y) < 0.01) return;
+    b.setOffset(ox, oy);
+    syncBody(sprite);
+}
+
+/** One tick of an NPC walk to `target`: 'moving', 'arrived' (placed exactly) or 'stuck'. */
+function npcWalkTick(behavior, m, target) {
+    const sprite = behavior.sprite;
+    const f = bodyFeet(sprite);
+    const dx = target.x - f.x, dy = target.y - f.y, d = Math.hypot(dx, dy);
+    if (d <= ARRIVE_PX) { sprite.body.setVelocity(0, 0); moveFeetTo(sprite, target.x, target.y); return 'arrived'; }
+    m.still = (m.last - d < 0.5) ? m.still + 1 : 0;
+    m.last = d;
+    m.ticks++;
+    if (m.still >= NPC_STUCK_TICKS || m.ticks > NPC_MOVE_MAX_TICKS) { sprite.body.setVelocity(0, 0); return 'stuck'; }
+    const v = Math.min(NPC_SEAT_SPEED, d / NPC_TICK_S);
+    sprite.body.setVelocity(dx / d * v, dy / d * v);
+    const dir = COMPASS_TO_PLAYER[compassToward(dx, dy)];
+    if (behavior.direction !== dir || !behavior.isMoving) {
+        behavior.direction = dir;
+        behavior.isMoving = true;
+        behavior.playAnimation?.('walk', dir);
+    }
+    behavior.updateDepth?.();
+    return 'moving';
+}
+
+function resetWalk(m) { m.ticks = 0; m.still = 0; m.last = Infinity; }
+
+function npcHold(behavior, chair) {
+    return () => behavior._seat?.chair === chair || behavior._seatMove?.chair === chair;
+}
+
+/**
+ * Get a needs NPC onto `chair`. opts: { toward, needsStop, ref } — ref is the work spot it sits
+ * at (and stands back up on). Swivel: walk to ref, roll the chair out to it and in to the
+ * desk, walk onto it. Static: walk onto the seat's foot (the seat's own body stops it short).
+ */
+function startSeatMove(behavior, chair, seat, opts) {
+    const sprite = behavior.sprite;
+    const m = { chair, seat, opts, stopKey: opts.needsStop, savedImm: sprite.body.immovable, savedBody: null,
+                stage: null, ticks: 0, still: 0, last: Infinity };
+    sprite.body.immovable = false; // an immovable body walks through walls
+    sprite.body.setVelocity(0, 0);
+    behavior._seatMove = m;
+    if (seat.kind === 'swivel') {
+        chair.seatedBy = behavior.npcId; // reserved
+        ghostPair(sprite, chair, npcHold(behavior, chair));
+        const f = bodyFeet(sprite);
+        if (Math.hypot(opts.ref.x - f.x, opts.ref.y - f.y) > ARRIVE_PX) m.stage = 'walk';
+        else startPull(m);
+    } else {
+        startMount(behavior, m);
+    }
+    behavior.isMoving = m.stage === 'walk';
+    if (!behavior.isMoving) behavior.playAnimation?.('idle', behavior.direction);
+    return true;
+}
+
+function startPull(m) {
+    m.stage = 'pull';
+    glideChairFootTo(m.chair, m.opts.ref.x, m.opts.ref.y);
+}
+
+function startContact(m) {
+    m.stage = 'contact';
+    const toward = m.opts.toward, ref = m.opts.ref;
+    const face = toward ? snapFacing(compassToward(toward.x - ref.x, toward.y - ref.y), m.seat.valid) : null;
+    const t = face ? contactTarget(m.chair, face) : null;
+    if (t) glideChairFootTo(m.chair, t.x, t.y);
+}
+
+function startMount(behavior, m) {
+    const sprite = behavior.sprite;
+    const { chair, seat } = m;
+    m.stage = 'mount';
+    resetWalk(m);
+    const b = sprite.body;
+    m.savedBody = { w: b.width, h: b.height, ox: b.offset.x, oy: b.offset.y };
+    const block = seat.kind === 'swivel' && chair.body?.width ? seatedBlock(chair.body) : STATIC_SEATED_BLOCK;
+    resizeAtFeet(sprite, block.w, block.h);
+    if (seat.kind !== 'swivel' || !chair.body) {
+        const place = freePlaces(chair, seat, bodyFeet(sprite))[0] ?? 0;
+        const pf = placeFoot(chair, seat, place);
+        m.target = { x: pf.x, y: pf.y - 2 };
+    }
+}
+
+/** End a seat move. Restores the NPC's body and the chair; the NPC stands where it got to. */
+function endSeatMove(behavior) {
+    const m = behavior._seatMove;
+    if (!m) return;
+    behavior._seatMove = null;
+    const sprite = behavior.sprite;
+    if (m.chair) {
+        stopGlide(m.chair);
+        if (m.chair.seatedBy === behavior.npcId) delete m.chair.seatedBy;
+    }
+    if (sprite?.body) {
+        sprite.body.setVelocity(0, 0);
+        if (m.savedBody) {
+            const f = bodyFeet(sprite);
+            sprite.body.setSize(m.savedBody.w, m.savedBody.h, false);
+            sprite.body.setOffset(m.savedBody.ox, m.savedBody.oy);
+            moveFeetTo(sprite, f.x, f.y);
+        }
+        sprite.body.immovable = m.savedImm;
+    }
+    if (behavior.isMoving) { behavior.isMoving = false; behavior.playAnimation?.('idle', behavior.direction); }
+}
+
+/** One tick of the NPC's seat move. Returns true while it holds the behaviour. */
+function advanceSeatMove(behavior) {
+    const m = behavior._seatMove;
+    const sprite = behavior.sprite;
+    if (!sprite?.body || (m.chair && !m.chair.active)) { endSeatMove(behavior); return false; }
+    switch (m.stage) {
+        case 'walk': {
+            const r = npcWalkTick(behavior, m, m.opts.ref);
+            if (r === 'moving') return true;
+            const f = bodyFeet(sprite);
+            if (r === 'stuck' && Math.hypot(m.opts.ref.x - f.x, m.opts.ref.y - f.y) > NPC_WALK_GIVE_UP_PX) { endSeatMove(behavior); return false; }
+            m.opts.ref = { x: f.x, y: f.y }; // work from where it got to
+            behavior.isMoving = false;
+            behavior.playAnimation?.('idle', behavior.direction);
+            startPull(m);
+            return true;
+        }
+        case 'pull':
+            if (isGliding(m.chair)) return true;
+            startContact(m);
+            return true;
+        case 'contact':
+            if (isGliding(m.chair)) return true;
+            startMount(behavior, m);
+            return true;
+        case 'mount': {
+            const target = m.target || bodyFeet(m.chair);
+            const r = npcWalkTick(behavior, m, target);
+            if (r === 'moving') return true;
+            if (r === 'stuck') {
+                const f = bodyFeet(sprite);
+                const reach = m.seat.kind === 'swivel' ? SWIVEL_REACH_PX : STATIC_REACH_PX;
+                if (Math.hypot(target.x - f.x, target.y - f.y) > reach) { endSeatMove(behavior); return false; }
+                if (m.seat.kind === 'swivel') moveFeetTo(sprite, target.x, target.y);
+            }
+            const { chair, opts } = m;
+            endSeatMove(behavior); // walking body back, reservation off: seatNPC takes the place
+            return seatNPC(behavior, chair, { toward: opts.toward, facePlayer: false, needsStop: opts.needsStop, standAt: opts.ref });
+        }
+        case 'step': {
+            const r = npcWalkTick(behavior, m, m.target);
+            if (r === 'moving') return true;
+            endSeatMove(behavior);
+            return false;
+        }
+    }
+    endSeatMove(behavior);
+    return false;
+}
+
+/** Sit an NPC (its behaviour object) on a chair, where it stands. Returns true when seated. */
 export function seatNPC(behavior, chair, opts = {}) {
     const sprite = behavior?.sprite;
     const seat = seatSpec(chair);
@@ -1317,56 +1563,111 @@ export function seatNPC(behavior, chair, opts = {}) {
         facing = snapFacing(compassToward(opts.toward.x - f.x, opts.toward.y - f.y), seat.valid);
     }
     if (seat.kind === 'swivel') setChairFacing(chair, facing, seat);
-    const saved = { none: sprite.body.checkCollision.none, immovable: sprite.body.immovable,
-                    chairImmovable: chair.body ? chair.body.immovable : null };
-    sprite.body.setVelocity(0, 0);
-    sprite.body.checkCollision.none = true;
-    sprite.body.immovable = true;
-    if (chair.body) { chair.body.setVelocity(0, 0); chair.body.immovable = true; }
-    const placeIdx = takePlace(chair, seat, behavior.npcId, bodyFeet(sprite));
+    const b = sprite.body;
+    const saved = { none: b.checkCollision.none, immovable: b.immovable,
+                    chairImmovable: chair.body ? chair.body.immovable : null,
+                    w: b.width, h: b.height, ox: b.offset.x, oy: b.offset.y };
+    const standFeet = bodyFeet(sprite);
+    b.setVelocity(0, 0);
+    // The collider stays on, shrunk to the seated block on the seat (fitSeatedBody keeps it there)
+    b.immovable = true;
+    const block = seat.kind === 'swivel' && chair.body?.width ? seatedBlock(chair.body) : STATIC_SEATED_BLOCK;
+    b.setSize?.(block.w, block.h, false);
+    if (chair.body) { chair.body.setVelocity(0, 0); chair.body.immovable = true; stopGlide(chair); }
+    const placeIdx = takePlace(chair, seat, behavior.npcId, standFeet);
     behavior._seat = { chair, seat, facing, saved, place: placeIdx, homeFacing: facing, facePlayer: opts.facePlayer !== false,
                        needsStop: opts.needsStop || null,
                        // needs seats: stand back up where the NPC works from
-                       standAt: opts.needsStop ? bodyFeet(sprite) : null };
+                       standAt: opts.standAt || (opts.needsStop ? standFeet : null) };
+    if (chair.body) ghostPair(sprite, chair, npcHold(behavior, chair));
     behavior.isMoving = false;
     behavior.direction = COMPASS_TO_PLAYER[facing];
     poseSprite(sprite, chair, seat, facing, placeIdx);
+    fitSeatedBody(sprite, behavior._seat);
     window.eventDispatcher?.emit?.('npc_sat', { npcId: behavior.npcId, objectId: chair.objectId, facing });
     return true;
 }
 
-/** Stand a seated NPC up beside its chair. */
+/**
+ * Stand a seated NPC up: the standing body comes back where the seated block was, then it steps
+ * to its stand spot (the work spot for a needs seat, else a box- and line-checked spot by the
+ * chair) while a swivel chair rolls back (or tucks in to the desk, for a needs seat). A hostile
+ * or knocked-out NPC doesn't step. A seat move under way (walking on) is dropped.
+ */
 export function unseatNPC(behavior) {
     const st = behavior?._seat;
-    if (!st) return false;
+    if (!st) {
+        if (behavior?._seatMove && behavior._seatMove.stage !== 'step') endSeatMove(behavior);
+        return false;
+    }
     const sprite = behavior.sprite;
     const { chair, seat, facing, saved, standAt, needsStop, place: placeIdx } = st;
+    const at = seatedCentre(st);
     endBreath(st, sprite);
     if (typeof window !== 'undefined') window.officeTypists?.delete(behavior.npcId);
     behavior._seat = null;
     behavior._seatTried = true; // don't sit straight back down
     releasePlace(chair, seat, placeIdx);
     if (chair.body && saved.chairImmovable !== null) chair.body.immovable = saved.chairImmovable;
+    const halt = behavior.hostile || window.npcHostileSystem?.isNPCKO?.(behavior.npcId);
+    let spot = null;
     if (sprite?.body) {
-        sprite.body.checkCollision.none = saved.none;
-        sprite.body.immovable = saved.immovable;
-        // Stand on the floor in front of the chair (or beside it)
-        const spot = standAt || (seat.kind === 'swivel' ? standSpot(chair, facing) : frontSpot(chair, facing, placeFoot(chair, seat, placeIdx)));
-        if (spot) moveFeetTo(sprite, spot.x, spot.y);
+        const b = sprite.body;
+        b.checkCollision.none = saved.none;
+        b.immovable = saved.immovable;
+        if (saved.w !== undefined && b.setSize) { b.setSize(saved.w, saved.h, false); b.setOffset(saved.ox, saved.oy); }
+        moveFeetTo(sprite, at.x, at.y); // the standing frame where the seated block was: the body doesn't move
+        b.setVelocity(0, 0);
+        if (chair.body?.enable) ghostPair(sprite, chair, npcHold(behavior, chair));
+        if (!halt) {
+            try {
+                spot = standAt || npcStandSpot(behavior, chair, seat, st.homeFacing, at);
+            } catch (e) {
+                console.warn(`🪑 ${behavior.npcId}: stand spot failed; stands where it sat`, e);
+            }
+        }
+        if (spot && Math.hypot(spot.x - at.x, spot.y - at.y) > ARRIVE_PX) {
+            behavior._seatMove = { stage: 'step', target: { x: spot.x, y: spot.y }, chair: null,
+                                   savedImm: b.immovable, savedBody: null, ticks: 0, still: 0, last: Infinity };
+            b.immovable = false;
+        }
+        if (seat.kind === 'swivel' && chair.body?.enable && !needsStop) {
+            // Push the chair back, away from where the NPC steps
+            const d = spot ? Math.hypot(spot.x - at.x, spot.y - at.y) : 0;
+            let ux, uy;
+            if (d >= 1) { ux = (spot.x - at.x) / d; uy = (spot.y - at.y) / d; }
+            else { const a = forwardRad(st.homeFacing); ux = Math.cos(a); uy = Math.sin(a); }
+            chair.body.setVelocity(-ux * CHAIR_PUSH, -uy * CHAIR_PUSH);
+        }
     }
-    if (needsStop) tuckIn(chair, seat, st.homeFacing); // tuck along the home facing, clear of the work spot
+    if (needsStop) tuckIn(chair, seat, st.homeFacing, { glide: true }); // tuck along the home facing, clear of the work spot
     behavior.direction = COMPASS_TO_PLAYER[facing];
     behavior.playAnimation?.('idle', behavior.direction);
     window.eventDispatcher?.emit?.('npc_stood', { npcId: behavior.npcId, objectId: chair.objectId });
     return true;
 }
 
-function frontSpot(chair, facing, foot = null) {
-    const a = forwardRad(facing);
-    const f = foot || { x: chair.x + chair.width / 2, y: chair.y + chair.height };
-    const x = f.x + Math.cos(a) * 18;
-    const y = f.y - 4 + Math.sin(a) * 18;
-    return window.pathfindingManager?.findNearestWalkableWorldCell?.(x, y, 2) || { x, y };
+/**
+ * An NPC's stand spot off a seat with no work spot: the stand-up order (pickStandSpot, forced)
+ * over a local grid without the chair and the NPC, from the castor base (swivel) or the seat's
+ * foot (static: the seat's own body still counts, so nothing lands across it). null: no grid.
+ */
+function npcStandSpot(behavior, chair, seat, facing, at) {
+    const sprite = behavior.sprite;
+    const pfm = window.pathfindingManager;
+    const scene = chair.scene || pfm?.scene;
+    if (!pfm?.buildWorldGrid || !scene) return null;
+    const swivel = seat.kind === 'swivel' && !!chair.body;
+    const c = swivel ? castorOf(chair) : { cx: at.x, cy: at.y, reach: 18 };
+    const rect = swivel ? chairRect(chair) : null;
+    const ignore = swivel ? [chair, sprite] : [sprite];
+    const built = localStandGrid(pfm, { exclude: ignore });
+    return pickStandSpot({ ...c, facing, approach: null, forced: true }, {
+        cellNear: (x, y, r) => nearestCell(built, x, y, r),
+        boxClear: (x, y) => walkBoxClear(scene, x, y, { ignore, extra: rect ? [rect] : [] }),
+        lineClear: (x, y) => pathClear(scene, { x: c.cx, y: c.cy }, { x, y }, { ignore }),
+        flood: n => floodStandCells(built, c.cx, c.cy, n)
+    });
 }
 
 /**
@@ -1374,6 +1675,7 @@ function frontSpot(chair, facing, foot = null) {
  * rest of its behaviour should be skipped this tick.
  */
 export function updateSeatedNPC(behavior, playerPos) {
+    if (behavior?._seatMove?.stage === 'step') return advanceSeatMove(behavior);
     const ns = window.npcNeedsSystem?.states?.get?.(behavior?.npcId);
     if (ns) return updateNeedsSeat(behavior, ns, playerPos);
     if (!behavior?._seat) {
@@ -1394,7 +1696,7 @@ export function updateSeatedNPC(behavior, playerPos) {
     const st = behavior._seat;
     const sprite = behavior.sprite;
     const ko = window.npcHostileSystem?.isNPCKO?.(behavior.npcId);
-    if (behavior.hostile || ko || !st.chair.active) { unseatNPC(behavior); return false; }
+    if (behavior.hostile || ko || !st.chair.active) { unseatNPC(behavior); return !!behavior._seatMove; }
     sprite.body.setVelocity(0, 0);
     let facingPlayer = false;
     if (st.seat.kind === 'swivel' && st.facePlayer && playerPos) {
@@ -1412,6 +1714,7 @@ export function updateSeatedNPC(behavior, playerPos) {
     fidgetChair(st, sprite, facingPlayer);
     window.updateSpriteDepth?.(st.chair, st.chair.elevation || 0);
     poseSprite(sprite, st.chair, st.seat, st.facing, st.place);
+    fitSeatedBody(sprite, st);
     updateBreath(st, sprite, true);
     return true;
 }
@@ -1544,16 +1847,23 @@ const CONTACT_SWEEP_PX = 24; // a slid or fetched chair tucks to a desk only whe
  * edge − 4 behind; against today's bottom-quarter box it still lands the front castor at F + 4.
  */
 export function sweepChairToContact(chair, faceCompass) {
+    const t = contactTarget(chair, faceCompass);
+    if (t) slideChairFootTo(chair, t.x, t.y);
+}
+
+/** Where sweepChairToContact puts the chair's foot, or null to leave it (the seat moves roll it there). */
+function contactTarget(chair, faceCompass) {
     // __seatBoxNpc === false keeps the interim "chair a tile out" look, for the before/after audit only
-    if (typeof window !== 'undefined' && window.__seatBoxNpc === false) return;
-    if (!chair?.body || !chair.scene) return;
+    if (typeof window !== 'undefined' && window.__seatBoxNpc === false) return null;
+    if (!chair?.body || !chair.scene) return null;
     const a = forwardRad(faceCompass);
     const dx = Math.cos(a), dy = Math.sin(a);
     const d = sweepBlock(chair.scene, chairRect(chair), dx, dy, { ignore: [chair] });
     if (d > 0 && d <= CONTACT_SWEEP_PX) {
         const f = bodyFeet(chair);
-        slideChairFootTo(chair, f.x + dx * d, f.y + dy * d);
+        return { x: f.x + dx * d, y: f.y + dy * d };
     }
+    return null;
 }
 
 /** Slide a swivel chair so its foot is at (x, y) (pulling it out to sit, tucking it in on leaving). */
@@ -1587,6 +1897,11 @@ function updateNeedsSeat(behavior, ns, playerPos) {
     const stop = needsStop(ns);
     const status = window.npcNeedsSystem?.world?.npcStatus?.(behavior.npcId) || {};
 
+    if (behavior._seatMove) {
+        const m = behavior._seatMove;
+        if (!stop || stop.key !== m.stopKey || status.ko || status.hostile) { endSeatMove(behavior); return false; }
+        return advanceSeatMove(behavior);
+    }
     if (behavior._fetch) return advanceFetch(behavior, ns, stop);
 
     if (behavior._seat) {
@@ -1594,7 +1909,7 @@ function updateNeedsSeat(behavior, ns, playerPos) {
         if (!stop || stop.key !== st.needsStop || status.ko || status.hostile || !st.chair.active) {
             unseatNPC(behavior);
             behavior._seatTried = false;
-            return false;
+            return !!behavior._seatMove; // stepping off
         }
         sprite.body.setVelocity(0, 0);
         // Swivel: face the work, the player while they talk, a colleague speaking nearby, or now
@@ -1641,6 +1956,7 @@ function updateNeedsSeat(behavior, ns, playerPos) {
         const bob = typingBob(ns, window.npcNeedsSystem?.clockMs,
             { reduced: prefersReducedMotion(), off: window.gameScenario?.officeVisuals === false });
         poseSprite(sprite, st.chair, st.seat, st.facing, st.place, bob);
+        fitSeatedBody(sprite, st);
         behavior._typingBob = bob;
         // Typing moves the whole figure; breathe only between keystroke spells
         const typing = typingBob(ns, TYPING_BOB_MS, { reduced: prefersReducedMotion(),
@@ -1667,11 +1983,8 @@ function updateNeedsSeat(behavior, ns, playerPos) {
     const near = chairsNear(behavior.roomId, feet.x, feet.y, NEAR_CHAIR)
         .find(c => free(c) && (c.seat.kind === 'swivel' || staticFacesToward(c.seat, feet, toward)));
     if (near) {
-        if (near.seat.kind === 'swivel') {
-            slideChairFootTo(near.obj, feet.x, feet.y); // pull it out to the work cell
-            sweepChairToContact(near.obj, snapFacing(compassToward(toward.x - feet.x, toward.y - feet.y), near.seat.valid)); // then tuck to the desk front
-        }
-        return seatNPC(behavior, near.obj, { toward, facePlayer: false, needsStop: stop.key });
+        // Walk to the work cell, roll a swivel chair out to it and in to the desk front, walk onto the seat
+        return startSeatMove(behavior, near.obj, near.seat, { toward, needsStop: stop.key, ref: { x: feet.x, y: feet.y } });
     }
     if (pref !== 'fetch') return false;
     const fetchable = chairsNear(behavior.roomId, feet.x, feet.y, FETCH_RANGE)
@@ -1687,14 +2000,15 @@ function updateNeedsSeat(behavior, ns, playerPos) {
  * against a footprint-boxed desk can't be driven into it (slideChairFootTo sets the position
  * directly and physics never pushes back; SEAT_BOX_PLAN.md section 6 item 4).
  */
-export function tuckIn(chair, seat, facing) {
+export function tuckIn(chair, seat, facing, { glide = false } = {}) {
     if (seat?.kind !== 'swivel' || !chair.body || chair.seatedBy) return;
     const a = forwardRad(facing);
     const dx = Math.cos(a), dy = Math.sin(a);
     const d = chair.scene ? sweepBlock(chair.scene, chairRect(chair), dx, dy, { ignore: [chair] }) : Infinity;
     const dist = Math.min(TUCK_PX, d);
     const f = bodyFeet(chair);
-    slideChairFootTo(chair, f.x + dx * dist, f.y + dy * dist);
+    if (glide) glideChairFootTo(chair, f.x + dx * dist, f.y + dy * dist);
+    else slideChairFootTo(chair, f.x + dx * dist, f.y + dy * dist);
 }
 
 /** Walk to a swivel chair, roll it back to `spot`, sit on it. */
@@ -1723,7 +2037,8 @@ function endFetch(behavior, seatIt) {
     if (chair.body) { chair.body.enable = true; placeBody(chair, chair.x, chair.y); chair.body.setVelocity(0, 0); }
     if (chair.seatedBy === behavior.npcId) delete chair.seatedBy;
     if (!seatIt) return false;
-    return seatNPC(behavior, chair, { toward: f.toward, facePlayer: false, needsStop: f.stopKey });
+    // The chair stops a step ahead of the NPC: roll it back to the work spot, in to the desk, then sit
+    return startSeatMove(behavior, chair, seatSpec(chair), { toward: f.toward, needsStop: f.stopKey, ref: f.spot });
 }
 
 /** A move from elsewhere (a script, the needs selector) drops a chair being fetched where it is. */
@@ -1755,20 +2070,19 @@ function advanceFetch(behavior, ns, stop) {
     const seat = seatSpec(f.chair);
     const off = f.chair.body ? { x: f.chair.body.offset.x + f.chair.body.width / 2, y: f.chair.body.offset.y + f.chair.body.height / 2 }
                              : { x: f.chair.width / 2, y: f.chair.height };
-    const ahead = arrived ? 0 : 14;
+    const ahead = 14; // on arrival the seat move rolls it back under the NPC
     f.chair.x = Math.round(feet.x + Math.cos(a) * ahead - off.x);
     f.chair.y = Math.round(feet.y + Math.sin(a) * ahead - off.y);
     if (seat?.kind === 'swivel' && !arrived) setChairFacing(f.chair, snapFacing(dirC, seat.valid), seat);
     window.updateSpriteDepth?.(f.chair, f.chair.elevation || 0);
     if (!arrived) return false;
-    // Tuck the fetched chair to the desk's contact line before seating (section 6 item 3)
-    if (seat?.kind === 'swivel') sweepChairToContact(f.chair, snapFacing(compassToward(f.toward.x - feet.x, f.toward.y - feet.y), seat.valid));
+    // The seat move tucks it to the desk's contact line before seating (section 6 item 3)
     return endFetch(behavior, true);
 }
 
 export function installSeating(scene) {
     scene.events.on('postupdate', place);
-    scene.events.once('shutdown', () => { state = null; stepOff = null; ghosts = []; });
+    scene.events.once('shutdown', () => { state = null; stepOff = null; ghosts = []; glides.clear(); });
 }
 
 const seating = {

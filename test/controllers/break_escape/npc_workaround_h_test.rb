@@ -196,6 +196,7 @@ module BreakEscape
       assert_equal 'claim', res.parsed_body['via']
       assert_equal({ 'id' => 'ian', 'via' => 'claim' }, state['sessions']['hot_desk'])
       assert_includes state['signedInPcs'], 'hot_desk'
+      assert_equal({ 'hot_desk' => 'ian' }, state['guestSessions'], 'the guest\'s own claim does not end the guest record (R2 m2)')
       refute_includes res.body, IAN_PASSWORD
     end
 
@@ -415,6 +416,7 @@ module BreakEscape
     test 'R1 M1: a displaced session\'s late /logout leaves the new guest record alone' do
       build(player_state: { 'sessions' => { 'hot_desk' => { 'id' => 'temp_user', 'via' => 'password' } } })
       borrow_done!
+      # the done already removed the displaced session, so this /logout ends nothing
       assert_equal 200, logout.status, 'the displacement\'s /logout lands after the done'
       assert_equal({ 'hot_desk' => 'ian' }, state['guestSessions'])
       assert_equal 200, claim.status
@@ -430,6 +432,8 @@ module BreakEscape
       borrow_done!(t)
       assert_equal 422, travel_to(t + 60 + 300 + 4) { claim }.status, 'past the lock time'
       assert_nil state['sessions']['hot_desk']
+      assert_empty state['guestSessions'], 'the refusal ends the timed-out record (R2 n3)'
+      assert_empty state['guestSessionsAt']
       # a policy with no autoLockMin never locks a guest, on the client or here
       data = scenario
       data['policies']['open'] = { 'usb' => 'allowed' }
@@ -439,18 +443,61 @@ module BreakEscape
       assert_equal 200, travel_to(t + 3600) { claim }.status
     end
 
-    test 'R1 n2: a resent done for an earlier hand-over does not overwrite a later guest record' do
+    # Dana (careful in the fixture) given a habit that leaves the screen open, and her share down,
+    # so she and Ian both borrow the hot desk, as Ian and Rosa do in test_access_work
+    def queue_scenario
+      data = scenario
+      data['globalVariables']['finance_share_down'] = true
+      npc_in(data, 'dana')['screenHabit'] = LEAVES_OPEN
+      data
+    end
+
+    test 'R2 M1: two borrowers queued at the hot desk: the last done wins, and a resend of the earlier one is not recorded' do
+      build(data: queue_scenario, player_state: { 'globalVariables' => { 'ian_pc_unplugged' => true, 'finance_share_down' => true } })
+      t = Time.current
+      dana = fails('dana', 2, t).last['run']
+      assert_equal 'borrow_session', dana['do']
+      ian = fails('ian', 2, t + 30).last['run']
+      assert_equal 'borrow_session', ian['do']
+      # Dana was handed the PC first, but Ian is nearer: he sits and leaves first, she waits
+      first = done('ian', ian, t + 70)
+      assert_equal({ 'pcId' => 'hot_desk', 'guest' => true }, first.parsed_body)
+      second = done('dana', dana, t + 90)
+      assert_equal({ 'pcId' => 'hot_desk', 'guest' => true }, second.parsed_body, 'the client records Dana from this answer')
+      assert_equal({ 'hot_desk' => 'dana' }, state['guestSessions'], 'the server keeps the same guest as the client')
+      # Ian's answer was lost and his done is resent: answered from lastSpent, nothing written, and
+      # guest false so the client does not record him over Dana
+      assert_equal({ 'pcId' => 'hot_desk', 'guest' => false }, done('ian', ian, t + 95).parsed_body)
+      assert_equal({ 'hot_desk' => 'dana' }, state['guestSessions'])
+      res = travel_to(t + 100) { claim }
+      assert_equal 200, res.status
+      assert_equal 'dana', res.parsed_body['npcId']
+    end
+
+    test 'R2 M1: a done resent after the guest session ended answers guest false' do
       build
+      run = borrow_done!
+      assert_equal 200, claim.status
+      assert_equal 200, logout.status
+      assert_equal({ 'pcId' => 'hot_desk', 'guest' => false }, done('ian', run, Time.current + 61).parsed_body)
+      assert_empty state['guestSessions']
+    end
+
+    test 'R2 m2: a borrow that names the PC by its name is stored, answered and claimed by its id' do
+      data = scenario(ian_workarounds: [{ 'at' => 40, 'do' => 'borrow_session', 'pc' => 'Hot desk PC' }])
+      data['rooms']['office']['objects'].find { |o| o['id'] == 'hot_desk' }['name'] = 'Hot desk PC'
+      build(data: data)
       t = Time.current
       run = fails('ian', 2, t).last['run']
-      @game.reload
-      @game.player_state['guestSessions'] = { 'hot_desk' => 'rosa' }
-      @game.player_state['guestSessionsAt'] = { 'hot_desk' => (t + 50).to_f }
-      @game.player_state['sessions'] = { 'hot_desk' => { 'id' => 'rosa', 'via' => 'claim' } }
-      @game.save!
-      assert_equal 200, done('ian', run, t + 60).status
-      assert_equal({ 'hot_desk' => 'rosa' }, state['guestSessions'])
-      assert_equal 'rosa', state['sessions']['hot_desk']['id'], 'the later sitter\'s session is not ended'
+      assert_equal 'borrow_session', run['do']
+      res = done('ian', run, t + 60)
+      assert_equal 200, res.status
+      assert_equal({ 'pcId' => 'hot_desk', 'guest' => true }, res.parsed_body, 'the answer names the PC by id (R2 n2)')
+      assert_equal({ 'hot_desk' => 'ian' }, state['guestSessions'])
+      assert_includes @game.reload.handed_borrow_pcs(npc_in(data, 'ian')), 'hot_desk'
+      claimed = travel_to(t + 61) { claim('hot_desk') }
+      assert_equal 200, claimed.status
+      assert_equal 'ian', claimed.parsed_body['npcId']
     end
 
     test 'R1 m3: the capture\'s note holds the password only where revealSecret is on' do

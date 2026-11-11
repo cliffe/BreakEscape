@@ -1,0 +1,13 @@
+{
+  "key": "8dede1685a68e7c5722183287a9a1944",
+  "npc": "closing_debrief",
+  "text": "Operation Trojan Horse. Austin. The injection run completed. Forty-seven million systems took a signed backdoor, and for nine days nothing will happen at all.",
+  "voice": "Charon",
+  "style": "SAFETYNET director reading a night that has already happened. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried even under a countdown. He does not raise his voice and he does not soften anything.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:54:13Z"
+}

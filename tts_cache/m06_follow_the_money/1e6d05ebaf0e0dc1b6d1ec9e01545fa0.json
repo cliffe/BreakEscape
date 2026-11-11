@@ -1,0 +1,13 @@
+{
+  "key": "1e6d05ebaf0e0dc1b6d1ec9e01545fa0",
+  "npc": "narrator",
+  "text": "A sharp-eyed woman in her mid-thirties looks up from three monitors of transaction graphs.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:53:10Z"
+}

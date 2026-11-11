@@ -1,0 +1,13 @@
+{
+  "key": "88980c30b049c7d8c852a5a2c2c03cb2",
+  "npc": "narrator",
+  "text": "You break for the wall. He doesn't try to stop you. He goes the other way, for the dock door.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:15:43Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "e63810e6674673f0c065ec33a11cfd33",
+  "npc": "blockchain_analyst",
+  "text": "Map who's connected to who, then check whether they move at the same times, then look at the amounts.",
+  "voice": "Leda",
+  "style": "Blockchain forensics analyst in her mid-thirties, British-Indian, who loves the work and has not yet understood what her own graph proves. Speak with a consistent Northern English (Leeds) accent throughout — do not shift to any other accent. Bright, mid-to-high pitch; quick pace. Enthusiastic and technical.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:12:48Z"
+}
