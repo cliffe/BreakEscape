@@ -1,0 +1,13 @@
+{
+  "key": "ec8fe0ccd6f0d7469aa91158e79d322c",
+  "npc": "robert_vance",
+  "text": "The workshop wants a Level 2 card, and mine's only Level 1. Their contractors had Level 2.",
+  "voice": "Orus",
+  "style": "Operations manager and OT engineer at a grid battery site, mid-fifties. Speak with a consistent North-East English (Teesside) accent throughout -- do not shift to any other accent. Firm, low-to-mid pitch; brisk, clipped pace. Conscientious and overworked; defensive at first, then alarmed and determined once he realises the threat is real.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:03:01Z"
+}

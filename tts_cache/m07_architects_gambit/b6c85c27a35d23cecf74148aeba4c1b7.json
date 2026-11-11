@@ -1,0 +1,13 @@
+{
+  "key": "b6c85c27a35d23cecf74148aeba4c1b7",
+  "npc": "opening_briefing_cutscene",
+  "text": "They can take the cluster before it publishes. A breach without the story is a scandal. With the story, it is a constitutional crisis.",
+  "voice": "Charon",
+  "style": "SAFETYNET director reading a night that has already happened. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried even under a countdown. He does not raise his voice and he does not soften anything.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:26:34Z"
+}

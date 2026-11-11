@@ -1,0 +1,13 @@
+{
+  "key": "9deb347715d6bdc34c6c4df1011ba30c",
+  "npc": "opening_briefing_cutscene",
+  "text": "We have one tactical team airborne and uncommitted. One. It can reach one of the other three in time to matter.",
+  "voice": "Charon",
+  "style": "SAFETYNET director reading a night that has already happened. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried even under a countdown. He does not raise his voice and he does not soften anything.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:25:09Z"
+}

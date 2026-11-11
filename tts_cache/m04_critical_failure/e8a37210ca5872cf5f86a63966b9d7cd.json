@@ -1,0 +1,13 @@
+{
+  "key": "e8a37210ca5872cf5f86a63966b9d7cd",
+  "npc": "robert_vance",
+  "text": "This place is mine to answer for. I'd rather hear it from you than from the fire brigade.",
+  "voice": "Orus",
+  "style": "Operations manager and OT engineer at a grid battery site, mid-fifties. Speak with a consistent North-East English (Teesside) accent throughout -- do not shift to any other accent. Firm, low-to-mid pitch; brisk, clipped pace. Conscientious and overworked; defensive at first, then alarmed and determined once he realises the threat is real.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-05",
+  "recorded_at": "2026-11-05T15:44:28Z"
+}

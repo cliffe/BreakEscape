@@ -309,18 +309,23 @@ export async function interactLoginPc(lockable) {
     }
     const ws = window.workstationState;
     const sessions = window.pcSessions;
-    const { ownerId, present } = ws?.presence ? ws.presence(pcId) : { ownerId: null, present: null };
-    if (ownerId && present) {
-        const owner = window.npcManager?.getNPC?.(ownerId);
-        const name = owner?.displayName || ownerId;
+    const { ownerId, present, userId = null } = ws?.presence ? ws.presence(pcId) : { ownerId: null, present: null };
+    // 9.2 H (6.4): anybody using the PC now (a borrower at a hot desk) is present too
+    const userAt = ownerId && present ? ownerId : userId;
+    if (userAt) {
+        const owner = window.npcManager?.getNPC?.(userAt);
+        const name = owner?.displayName || userAt;
         let obs = data.observations || '';
         try {
             const { resolveObjectField } = await import('../utils/conditional-text.js');
             obs = resolveObjectField(data, 'observations', '') || '';
         } catch (e) { /* unresolved base observations */ }
-        const message = obs ? `${name} is using this PC.\n${obs}` : `${name} is using this PC.`;
+        // Review R1 m8: the user's name is author text, so it is escaped; the observations may
+        // hold intended markup and go in as before
+        const safeName = String(name).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        const message = obs ? `${safeName} is using this PC.\n${obs}` : `${safeName} is using this PC.`;
         window.gameAlert?.(message, 'info', data.name || 'PC', 4000);
-        sessions?.inUseShown?.(pcId, ownerId);
+        sessions?.inUseShown?.(pcId, userAt);
         return 'in_use';
     }
     if (sessions?.has?.(pcId)) {
@@ -332,23 +337,37 @@ export async function interactLoginPc(lockable) {
         try { answer = ws.onInteract(pcId); } catch (e) { console.warn('workstationState.onInteract failed', e); }
     }
     if (answer === 'accessed' && sessions?.claim) {
-        const r = await sessions.claim(pcId);
+        // 9.2 H (6.4): a guest left the session open at an unowned PC: a guest claim
+        const guestId = ws?.guestOf ? ws.guestOf(pcId) : null;
+        const r = guestId ? await sessions.claim(pcId, { as: 'guest' }) : await sessions.claim(pcId);
         if (r?.ok) {
             openLoginDesktop(lockable);
             return 'claimed';
         }
+        if (r?.reason === 'displaced') {
+            // An NPC sat down while the claim was answered (review R1 m4): its name is author text
+            window.gameAlert?.(r.message, 'info', data.name || 'PC', 4000, { plainText: true });
+            return 'in_use';
+        }
         if (r?.reason === 'owner_returned') {
             // The owner sat back down while the claim was answered: as step 1, no screen
-            window.gameAlert?.(r.message, 'info', data.name || 'PC', 4000);
+            // (the owner's name is author text: plain text, review R2 n4)
+            window.gameAlert?.(r.message, 'info', data.name || 'PC', 4000, { plainText: true });
             return 'in_use';
         }
         if (r?.reason === 'auto_locked') {
             // The screen locked while the claim was answered: a locked screen is the sign-in
             // screen, as a click after the lock would find
-            window.gameAlert?.(r.message, 'info', data.name || 'PC', 4000);
+            window.gameAlert?.(r.message, 'info', data.name || 'PC', 4000, { plainText: true });
             openLoginSignIn(lockable, { reason: 'locked' });
             return 'signin';
         }
+        // A refused guest claim: the server timed the guest out on wall time (review R2 server
+        // m1), so the screen is locked here too and the next click sends no claim. Only a real
+        // refusal locks: a 5xx, 403 or network failure keeps the guest record (review R3 m1),
+        // and only the guest that was claimed is dropped (review R3 n1)
+        if (guestId && r?.reason === 'refused') ws?.guestClaimRefused?.(pcId, guestId);
+        else if (guestId && r?.message) window.gameAlert?.(r.message, 'info', data.name || 'PC', 4000, { plainText: true });
         openLoginSignIn(lockable, { reason: 'claim_refused' });
         return 'claim_refused';
     }

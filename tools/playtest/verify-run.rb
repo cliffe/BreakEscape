@@ -60,7 +60,7 @@ g = BreakEscape::Game.find(game_id)
 ps = g.player_state || {}
 
 ACCESS_KEYS = %w[sessions signedInPcs serverClones copiedItems loginFailures loginLockouts footholds
-                 gainedFootholds npcFrustration].freeze
+                 gainedFootholds npcFrustration guestSessions sharedLogins].freeze
 
 # The access model keys, one line each. Sign-in details are never in player_state, so
 # nothing here is secret: NPC ids, PC ids, card ids, item ids and typed usernames.
@@ -98,7 +98,11 @@ def access_section(ps)
     ['npcFrustration', hash.call(ps['npcFrustration']).sort.map do |id, e|
       e = {} unless e.is_a?(Hash)
       "#{id} level #{e['level'] || 0}, handed #{hash.call(e['handed']).size}, done #{list.call(e['done']).inspect}"
-    end]
+    end],
+    # Slice 9.2 H (6.4, 6.5): who last left a borrowed session open at each PC, and the accounts
+    # the player heard shared (ids only)
+    ['guestSessions', hash.call(ps['guestSessions']).sort.map { |pc, npc| "#{pc} = #{npc}" }],
+    ['sharedLogins', list.call(ps['sharedLogins']).map(&:to_s)]
   ]
   lines = ['access model']
   rows.each do |name, items|
@@ -163,7 +167,9 @@ end
 # npc_workaround phase in order, and each start line or failure mutter by topic (npc_mutter fires
 # whether or not the player was in earshot); then each door_propped room. The server record
 # above says what was done; this says what the player could have seen. Topics only, no lines.
-WORKAROUND_EVENT = /\A(npc_workaround|npc_mutter|door_propped):(.+)\z/.freeze
+# Sub-slice H adds the hot desk's npc_sat_at and npc_borrowed_session (per PC, with met) and
+# npc_overheard_login (per NPC).
+WORKAROUND_EVENT = /\A(npc_workaround|npc_mutter|door_propped|npc_sat_at|npc_borrowed_session|npc_overheard_login):(.+)\z/.freeze
 
 def each_logged_event(node, &blk)
   case node
@@ -194,6 +200,9 @@ def workaround_log_section(log_path)
       when 'npc_workaround' then per_npc[m[2]] << "#{data['do']}[#{data['index']}] #{data['phase']}"
       when 'npc_mutter' then per_npc[m[2]] << "said #{data['topic']}#{data['line'] ? '' : ' (picture)'}"
       when 'door_propped' then propped << "#{m[2]} by #{data['npcId']}"
+      when 'npc_sat_at' then per_npc[data['npcId'].to_s] << "sat at #{m[2]}"
+      when 'npc_borrowed_session' then per_npc[data['npcId'].to_s] << "left #{m[2]} signed in (met #{data['met']})"
+      when 'npc_overheard_login' then per_npc[m[2]] << 'overheard'
       end
     end
   end

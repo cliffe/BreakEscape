@@ -543,7 +543,12 @@ module ValidateNpcNeeds
         issues << "❌ ERROR: #{where}.lockIfAwayOverSeconds must be a number of seconds, 0 or more."
       end
       own = stations.select { |o| station_owner(o.data, npcs) == npc['id'] }
-      if own.empty?
+      # Slice 9.2 H (plan 6.4): a borrower's habit is also read at the hot desk it borrows (the
+      # guest rule), so it applies there whatever its own stations say
+      borrower = Array(npc['workarounds']).any? { |w| w.is_a?(Hash) && w['do'] == 'borrow_session' }
+      if borrower
+        # nothing to warn: the habit decides whether the hot desk is left signed in
+      elsif own.empty?
         issues << "⚠️ WARNING: #{where} but the NPC owns no workstation (needsHome or screenOwner on an object with workstation: true): nothing to lock."
       elsif own.all? { |o| LOCK_FIELDS.any? { |f| o.data.key?(f) } }
         issues << "⚠️ WARNING: #{where} never applies: every station it owns (#{own.map(&:id).join(', ')}) sets lockChance or locksScreenOnLeave, and the object wins. Remove the object's field to use the habit."

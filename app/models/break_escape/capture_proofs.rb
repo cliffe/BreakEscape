@@ -106,8 +106,11 @@ module BreakEscape
     end
 
     # The capture target ids the scenario declares (CaptureModel.declared_target_ids).
+    # A heard share (slice 9.2 sub-slice H) declares its sharer too (review R1 m2), so both
+    # readers, capture_secrets_for_client and NetworkAccess#account_capture_usernames, agree.
     def declared_capture_target_ids
-      CaptureModel.declared_target_ids(scenario_data).to_set
+      shared = Array(player_state['sharedLogins']).select { |id| id.is_a?(String) }
+      CaptureModel.declared_target_ids(scenario_data).to_set | shared
     end
 
     private

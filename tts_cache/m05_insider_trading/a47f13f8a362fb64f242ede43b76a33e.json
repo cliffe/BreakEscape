@@ -1,0 +1,13 @@
+{
+  "key": "a47f13f8a362fb64f242ede43b76a33e",
+  "npc": "director_netherton",
+  "text": "Task Force Null is three people and a whiteboard. Voltage is at large. You chose the button over him. Every cell we've hit bought something. This time, a person.",
+  "voice": "Charon",
+  "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried; sets the stakes then lets his people run the detail.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:22:55Z"
+}

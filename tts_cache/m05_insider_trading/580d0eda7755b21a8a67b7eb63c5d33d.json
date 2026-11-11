@@ -1,0 +1,13 @@
+{
+  "key": "580d0eda7755b21a8a67b7eb63c5d33d",
+  "npc": "lisa_park",
+  "text": "He's been borrowing to cover it, I think. He's lost weight. Looks like he hasn't slept in months.",
+  "voice": "Laomedeia",
+  "style": "Marketing coordinator in her early thirties, British-Korean, raised in New Malden. Speak with a consistent south-west London accent throughout — do not shift to any other accent. Bright, mid-to-high pitch; quick, chatty pace. Warm and observant; she gossips because she cares about people.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:59:20Z"
+}

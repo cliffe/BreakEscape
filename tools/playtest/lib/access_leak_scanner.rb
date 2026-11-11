@@ -70,8 +70,13 @@ require 'uri'
 # where the server hands one over: a `run` or a `pending` entry (every unspent hand-over, B review
 # R3 m2) in a POST /npc_frustration answer, and the `pending` and `done` lists of GET /scenario's
 # npcFrustration. A password in a
-# /npc_workaround answer is reported by the password rule (no exception covers it); the note
-# exception above follows a done writes_down through the game's written_down?.
+# /npc_workaround answer is reported by the password rule, with one exception (sub-slice H,
+# plan 6.5): a heard share_login answer `{ capture, line, note, displayName }` may hold the
+# sharer's own password at $.line and $.note, when that NPC authors a share_login and the game
+# (it must be given) lists it in sharedLogins; at $.capture.note too only where the scenario's
+# social.captures.revealSecret is on (review R1 m3). After such an answer the same value is
+# allowed inside savedNotes, and inside the se_captures global only under revealSecret. The note exception
+# above follows a done writes_down through the game's written_down?.
 #
 # A finding names the rule, the route, the response line and the secret's owner (an NPC or
 # item id), never the value. Every output line is checked against the secret values before it
@@ -113,6 +118,7 @@ class AccessLeakScanner
     @served_npcs = served_npcs&.map(&:to_s)&.to_set
     @game = game
     @noted = Set.new # passwords a /login_accounts answer has carried as its note, so far
+    @shared = Set.new # passwords a heard share_login answer has carried, so far (sub-slice H)
     @passwords = {}          # password => [npc_id, ...]
     @capture_npcs = Set.new  # npc ids the capture_secrets exception covers
     @items = {}              # item_id => { strings:, scope:, profile:, pc:, ancestors:, locked_ancestors: }
@@ -478,7 +484,8 @@ class AccessLeakScanner
       network: path.end_with?('/network') || path.include?('/network/'),
       any_container: path.include?('/container/'),
       scenario: method == 'GET' && path.end_with?('/scenario'),
-      login_accounts: method == 'GET' && path.end_with?('/login_accounts')
+      login_accounts: method == 'GET' && path.end_with?('/login_accounts'),
+      npc_workaround: method == 'POST' && path.end_with?('/npc_workaround')
     }
   end
 
@@ -497,6 +504,7 @@ class AccessLeakScanner
     return if @passwords.empty?
 
     note = ctx[:login_accounts] ? served_note_password(body) : nil
+    shared = ctx[:npc_workaround] ? heard_share_password(body) : nil
     each_string(body) do |str, json_path, holder|
       @passwords.each do |password, owners|
         next unless contains_password?(str, password)
@@ -504,6 +512,8 @@ class AccessLeakScanner
         next if share_clue?(password, str, holder, ctx, json_path, legit)
         next if note == password && json_path == '$.postitNote'
         next if @noted.include?(password) && json_path.include?('.savedNotes[')
+        next if shared == password && share_path?(json_path)
+        next if reveal_secret? && @shared.include?(password) && json_path.include?('.se_captures')
 
         owners.each do |npc_id|
           next if ctx[:capture_secrets] && @capture_npcs.include?(npc_id) && (@served_npcs.nil? || @served_npcs.include?(npc_id))
@@ -527,6 +537,44 @@ class AccessLeakScanner
     password = owner.dig('creds', 'password')
     return nil unless password.is_a?(String) && contains_password?(body['postitNote'], password)
 
+    @noted << password
+    password
+  end
+
+  SHARE_PATHS = %w[$.line $.note].freeze
+
+  # The capture's note (stored in the se_captures global, so in every sync and reload) holds the
+  # password only where social.captures.revealSecret is on (review R1 m3)
+  def share_path?(json_path)
+    SHARE_PATHS.include?(json_path) || (json_path == '$.capture.note' && reveal_secret?)
+  end
+
+  def reveal_secret?
+    @data.dig('social', 'captures', 'revealSecret') == true
+  rescue TypeError
+    false
+  end
+
+  # The password a heard share_login answer may carry (sub-slice H, plan 6.5): the capture's
+  # targetId is an NPC that authors a share_login, the game lists it in sharedLogins, and the
+  # password is that NPC's own. Recorded, so a later savedNotes or se_captures copy is allowed.
+  # nil without a game.
+  def heard_share_password(body)
+    return nil unless @game && body.is_a?(Hash) && body['capture'].is_a?(Hash)
+    return nil unless body['line'].is_a?(String) && body['note'].is_a?(String)
+
+    npc_id = body['capture']['targetId'].to_s
+    return nil unless @workarounds.any? { |w| w[:owner] == npc_id && w[:do] == 'share_login' }
+
+    shared = @game.player_state.is_a?(Hash) ? @game.player_state['sharedLogins'] : nil
+    return nil unless shared.is_a?(Array) && shared.map(&:to_s).include?(npc_id)
+
+    npc = nil
+    each_room_npc { |n| npc = n if n['id'].to_s == npc_id }
+    password = npc&.dig('creds', 'password')
+    return nil unless password.is_a?(String) && !password.empty?
+
+    @shared << password
     @noted << password
     password
   end

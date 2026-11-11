@@ -1,0 +1,13 @@
+{
+  "key": "585bdd29fb2bf3f05e0e3ad68e824e81",
+  "npc": "lisa_park",
+  "text": "And Owen's been living in the logs, poor lamb.",
+  "voice": "Laomedeia",
+  "style": "Marketing coordinator in her early thirties, British-Korean, raised in New Malden. Speak with a consistent south-west London accent throughout — do not shift to any other accent. Bright, mid-to-high pitch; quick, chatty pace. Warm and observant; she gossips because she cares about people.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:01:22Z"
+}
