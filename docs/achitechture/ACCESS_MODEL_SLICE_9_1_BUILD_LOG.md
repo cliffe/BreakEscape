@@ -299,3 +299,60 @@ errors, no warnings.
   the habits block it is not for a tester playing blind."
 - The world grid treats a chair's cell as walkable while its body blocks an NPC (the cause of
   problem 2). Not changed here; the route fix makes it harmless for route actions.
+
+### Review round 1 outcomes (2026-11-11)
+
+Review: `ACCESS_MODEL_SLICE_9_1_STEP5_CODE_REVIEW_R1.md` (0 blockers, 0 majors, 5 minors,
+6 nits). Commits `946b5db9d` (minors 1 and 2) and `7904f54aa` (the rest).
+
+- **Minor 1, fixed.** `check_lock_credentials` now counts a card a room NPC carries as declared
+  only when the player can use it: an `rfid_cloner` anywhere in the scenario (object, start item
+  or NPC item), or a gate into the locked room whose `openFor` names a holder. Otherwise the lock
+  draws its own warning: only an NPC carries the card, add a cloner, a keycard item or a gate.
+  Compared with `claude/break-escape-access-design-090sjx` (validator, `--skip-ink --no-graph`):
+  m04, m05, m07 and m08 have no soft-lock warning on either branch, before or after the fix,
+  because each of the cards the review named is also declared by a keycard item in the scenario
+  (and m04 has a cloner); the review listed the cards the line matched, not warnings it removed.
+  The one warning the step 5 line removed was `cm_records_badge` in `lab_physical_pentest`; it
+  stays suppressed, correctly: the lab has an `rfid_cloner` and Len's gate opens for its holder,
+  so it is a clone target, not a soft-lock. A scan of every scenario finds no lock that gets the
+  new warning. Tests (`door-gates-validator.test.mjs`): no cloner and no gate warns; a cloner as
+  object, start item or NPC item declares it; a gate for someone other than the holder does not.
+- **Minor 2, fixed.** Four tests in `door-gates-no-hold.test.mjs`: the clone window ending on a
+  careful gate with the player near shuts it on that tick; with the player in the doorway it
+  stays open and the body stays off until he steps off, then shuts; with nobody in `lastGuards`
+  it is not careful and lingers as any gate (held by a guard's crossing path); Sara opens, it
+  closes, then Gary opens beside the player and `openToPlayer` is true. Mutation checks: removing
+  the doorway hold in `update()` fails the doorway test, and `close()` not clearing `lastGuards`
+  fails the Gary test. **Live check** (keyless server on :3012, game 1186, H9 in
+  `test_access_habits`): the player stood 58 px from Sara's gate; with Sara near and the gate
+  shut, `doorGates.playerOpen('store_b')` (what a granted clone calls) opened it with
+  `lastGuards` sara, careful, open to the player and body off; the window ended at +5980 ms and
+  the gate shut at +5999 ms (`door_gate_closed`), body on. H9 has no cloner, so the clone was
+  driven through `playerOpen` rather than the RFID minigame; `test_gate_tailgate` has a cloner
+  but its gate has `playerMayPassIf`, so it is never careful and cannot show this.
+- **Minor 3, behaviour left as the plan says; documented.** The README "Careful guards"
+  paragraph now says a careful guard inside the secured room will not come out while the player
+  waits within the radius outside, so a loitering player keeps her in.
+- **Minor 4, fixed in the test name; engine change deferred.** The test is now "on open floor,
+  stopping short of the spot still leaves the guard inside the radius". Dropping an approach whose
+  snapped spot lands outside `openRadius - 8` is deferred: no gate scenario has a blocked cell in
+  front of a door, and it changes route behaviour that the live runs have just settled.
+- **Minor 5, fixed.** The habits report leaves out `holdsDoors` when it comes from the preset and
+  no gate opens for the NPC; set by name, the line and its "no effect" stay. Test in
+  `validator-npc-habits.test.mjs`.
+- **Nit 1, fixed.** The cut-short block calls `_haltForRoute()`, which idles the animation. Test
+  in `npc-route-multiroom.test.mjs`.
+- **Nit 2, fixed.** `doorGates.state()` gives `lastGuards` and `careful`. Test added.
+- **Nit 3, fixed.** `_npcNear(g)` is `nearGuardIds(g).length > 0`: one distance rule.
+- **Nit 4, fixed.** An authored `noHold` on a gate with `playerMayPassIf` is a warning; a
+  `holdsDoors: false` by name whose NPC is already in every authored `noHold` says so instead of
+  "the habit does nothing" (the loader's doors entry now sets `no_hold` for an authored listing).
+  Tests in `validator-npc-habits.test.mjs`.
+- **Nit 5, fixed.** README: "the player" in place of "he"; "the player cannot tailgate behind a
+  careful guard" in place of "cannot be tailgated at all".
+- **Nit 6, fixed.** Store B's sign now says the player should not have walked in, not that the
+  sign cannot be read.
+
+Suites after the fixes, under the shared lock on Ruby 2.7.8: `bin/rails test` 1306 runs, 9564
+assertions, 0 failures, 0 errors, 1 skip; `bin/test-js -j 3` 475 files passed, 0 failed.
