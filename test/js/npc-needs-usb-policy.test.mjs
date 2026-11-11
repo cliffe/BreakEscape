@@ -123,7 +123,7 @@ test('mutter(npcId, topic) is public and ignores the chatter cooldown', () => {
     const { sys } = setup({ chatter, kiosk: false, lenaPolicy: null });
     assert.equal(sys.mutter('lena', 'work_fail'), true);
     assert.equal(sys.getState('lena').talking.line, 'Two.');
-    sys.step(5000);
+    sys.step(6500);   // past the first line's bubble (a mutter stays up at least MUTTER_BUBBLE_MS)
     assert.equal(sys.mutter('lena', 'usb_refused'), true);
     assert.equal(sys.getState('lena').talking.line, 'One.');
     assert.equal(sys.mutter('nobody', 'work_fail'), false);

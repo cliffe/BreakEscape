@@ -6,8 +6,8 @@
 // emit fires its event and then confirms. The needs side runs on fixtures/needs-work-world.mjs.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { NpcWorkarounds, openProppedDoor, START_POOLS, installNpcWorkarounds } from '../../public/break_escape/js/systems/npc-workarounds.js';
-import { workWorld, baseObjects } from './fixtures/needs-work-world.mjs';
+import { NpcWorkarounds, openProppedDoor, START_POOLS, installNpcWorkarounds, retryDelay, RETRY_MAX_MS } from '../../public/break_escape/js/systems/npc-workarounds.js';
+import { workWorld, baseObjects, dana } from './fixtures/needs-work-world.mjs';
 
 function stub({ answers = {}, failures = [] } = {}) {
     const calls = { sends: [], emits: [], globals: [], postits: [], doors: [], mutters: [], visits: [], timers: [] };
@@ -350,4 +350,181 @@ test('needs: a start line that comes while the fail line holds the speech lock i
     assert.equal(second.topic, 'wk_writes_down');
     assert.equal(second.line, "I'll never remember this one.");
     assert.equal(second.picture, null);
+});
+
+// ── review round 1 (9.2 B) ──────────────────────────────────────────────────────────────────────
+
+test('R1 M1: a hand-over is never given up: eight failures, a backoff capped at 30 s, then the answer applied', async () => {
+    const failures = Array.from({ length: 8 }, () => ({ status: 502 }));
+    const { runner, calls } = stub({ answers: { mei: { pcId: 'mei_pc', hasPostit: true } }, failures });
+    runner.due({ npcId: 'mei', run: MEI_RUN });
+    runner.visitDone(visitDone('mei', MEI_RUN));
+    await flush();
+    for (let i = 0; i < 8; i++) { calls.timers[i].fn(); await flush(); }
+    assert.deepEqual(calls.timers.map(t => t.ms), [2000, 4000, 8000, 16000, 30000, 30000, 30000, 30000]);
+    assert.equal(calls.sends.length, 9);
+    assert.deepEqual(calls.postits, [['mei_pc', true]]);
+    assert.deepEqual(phases(calls, 'mei'), ['started', 'done']);
+    assert.equal(retryDelay(100), RETRY_MAX_MS);
+});
+
+test('R1 M1: a resent drop keeps resending too, and a 425 waits only the time left', async () => {
+    const { runner, calls } = stub({ failures: [{ status: 0 }, { status: 503 }, { status: 425, body: { retryAfter: 2.5 } }] });
+    runner.due({ npcId: 'tom', run: TOM_RUN });
+    runner.visitDropped({ npcId: 'tom', kind: 'workaround', data: { workaround: { index: 0, hand: 3 } } });
+    await flush();
+    calls.timers[0].fn(); await flush();
+    calls.timers[1].fn(); await flush();
+    assert.deepEqual(calls.timers.map(t => t.ms), [2000, 4000, 2500]);
+    calls.timers[2].fn(); await flush();
+    assert.ok(calls.sends.every(b => b.dropped === true));
+    assert.deepEqual(phases(calls, 'tom'), ['started', 'dropped']);
+});
+
+test('R1 m4 (server): a "done" answered { dropped: true } is applied as a drop, with nothing opened or set', async () => {
+    const { runner, calls } = stub({ answers: { tom: { dropped: true } } });
+    runner.due({ npcId: 'tom', run: TOM_RUN });
+    runner.visitDone(visitDone('tom', TOM_RUN));
+    await flush();
+    assert.deepEqual(calls.doors, []);
+    assert.deepEqual(calls.globals, []);
+    assert.deepEqual(phases(calls, 'tom'), ['started', 'dropped']);
+    assert.equal(calls.emits.filter(e => e.name.startsWith('door_propped')).length, 0);
+});
+
+test('R1 m5: a visit that cannot be queued says no start line and fires no started', async () => {
+    const { runner, calls, needs } = stub();
+    needs.enqueueVisit = () => false;
+    runner.due({ npcId: 'tom', run: TOM_RUN });
+    await flush();
+    assert.deepEqual(calls.mutters, []);
+    assert.deepEqual(phases(calls, 'tom'), ['dropped']);
+    assert.equal(calls.sends[0].dropped, true);
+    const b = stub();
+    b.runner.due({ npcId: 'mei', run: { index: 1, hand: 2, do: 'borrow_session', dwell: 0, pc: 'hot_desk' } });
+    await flush();
+    assert.deepEqual(b.calls.mutters, [], 'a kind this build does not perform says nothing');
+    const c = stub();
+    c.runner.due({ npcId: 'mei', run: MEI_RUN });
+    assert.deepEqual(c.calls.mutters, [['mei', 'wk_writes_down']], 'a queued visit says its line');
+});
+
+test('R1 m6: installNpcWorkarounds twice gives the same runner and one set of listeners', () => {
+    const prev = globalThis.window;
+    const added = [];
+    globalThis.window = { eventDispatcher: { on: (name, fn) => added.push(name), emit: () => {} } };
+    try {
+        const a = installNpcWorkarounds({});
+        const b = installNpcWorkarounds({});
+        assert.equal(a, b);
+        assert.deepEqual(added, ['npc_workaround_due:*', 'npc_visit_done:*', 'npc_visit_dropped:*']);
+    } finally {
+        globalThis.window = prev;
+    }
+});
+
+test('R1 m6: a load with two pending hand-overs for one NPC starts both, once each', () => {
+    const { sys, runner, evs } = wired({ objects: [...baseObjects(), { id: 'wedge', x: 140, y: 100 }] });
+    const a = { index: 0, hand: 4, do: 'prop_door', dwell: 4, door: 'store', prop: 'wedge' };
+    const b = { index: 1, hand: 5, do: 'emit', dwell: 0, event: 'dana_gave_up' };
+    sys.restoreFrustration({ dana: { level: 80, tell: 2, settled: false, pending: [a, b], done: [] } });
+    sys.registerAll();
+    assert.equal(evs('npc_workaround_due:dana').length, 2);
+    assert.ok(runner.active.has('dana:0:4'));
+    assert.ok(runner.active.has('dana:1:5') || runner.finished.has('dana:1:5'));
+});
+
+test('R1 m4: reset() reports a workaround visit dropped, so the runner frees the hand-over', async () => {
+    const { sys, runner, sends } = wired({ objects: [...baseObjects(), { id: 'wedge', x: 140, y: 100 }] });
+    sys.registerAll();
+    runner.due({ npcId: 'dana', run: { index: 0, hand: 4, do: 'prop_door', dwell: 4, door: 'store', prop: 'wedge' } });
+    sys.step(250);
+    assert.equal(runner.active.get('dana:0:4').state, 'running');
+    sys.reset();
+    await flush();
+    assert.deepEqual(sends, [{ npc_id: 'dana', index: 0, hand: 4, dropped: true }]);
+    assert.equal(runner.active.size, 0);
+});
+
+function twoWorld(chatter) {
+    return wired({
+        npcs: { dana: { pos: { x: 100, y: 100 }, rec: dana() }, mei: { pos: { x: 160, y: 100 }, rec: dana({ id: 'mei', needsHome: 'mei_pc' }) } },
+        objects: [...baseObjects(), { id: 'mei_pc', x: 160, y: 68, desk: true, affordance: { satisfies: 'work', restores: 60, useSeconds: 5 } }],
+        chatter
+    });
+}
+const LINES = { work_fail: ['Why is nothing working?'], wk_writes_down: ["I'll never remember this one."], wk_prop_door: ["I'm not badging in every time."] };
+
+test('R1 m1: two start lines for one NPC while the lock is held are both said, in words, in order', () => {
+    const { sys, evs } = wired({ chatter: LINES });
+    sys.registerAll();
+    sys.step(250);
+    sys.mutter('dana', 'work_fail');
+    sys.mutter('dana', 'wk_writes_down');
+    sys.mutter('dana', 'wk_prop_door');
+    assert.equal(sys.mutterWaits().length, 2);
+    assert.ok(stepUntil(sys, () => evs('npc_mutter:dana').length === 3, 30000));
+    const said = evs('npc_mutter:dana').map(e => e.data);
+    assert.deepEqual(said.map(d => d.topic), ['work_fail', 'wk_writes_down', 'wk_prop_door']);
+    assert.ok(said.every(d => d.line && d.picture === null), 'each in words');
+});
+
+test('R1 m2: several NPCs freed on the same tick each say their start line in words', () => {
+    const { sys, evs } = twoWorld(LINES);
+    sys.registerAll();
+    sys.step(250);
+    sys.mutter('dana', 'work_fail');
+    sys.mutter('mei', 'wk_writes_down');
+    sys.mutter('dana', 'wk_prop_door');
+    assert.ok(stepUntil(sys, () => evs('npc_mutter:').length === 3, 30000));
+    const said = evs('npc_mutter:').map(e => e.data);
+    assert.deepEqual(said.map(d => [d.npcId, d.topic]), [['dana', 'work_fail'], ['mei', 'wk_writes_down'], ['dana', 'wk_prop_door']]);
+    assert.ok(said.every(d => d.line && d.picture === null), 'none turned into a picture');
+});
+
+test('R1 m6: a start line whose lock stays taken for MUTTER_WAIT_MS gets its picture; a start line stays up 6 s', () => {
+    const { sys, evs } = wired({ chatter: LINES });
+    sys.registerAll();
+    sys.step(250);
+    sys.mutter('dana', 'wk_writes_down');
+    const said = evs('npc_mutter:dana')[0].data;
+    assert.ok(said.line);
+    const st = sys.states.get('dana');
+    assert.ok(st.saying.until - sys.clockMs >= 6000 - 250, 'a start line bubble lasts at least MUTTER_BUBBLE_MS');
+    sys._speechUntil = sys.clockMs + 60000;   // someone else holds the lock for a minute
+    sys.mutter('dana', 'wk_prop_door');
+    assert.ok(stepUntil(sys, () => evs('npc_mutter:dana').length === 2, 30000));
+    const late = evs('npc_mutter:dana')[1].data;
+    assert.equal(late.line, null);
+    assert.ok(late.picture);
+});
+
+test('R1 m3: a start line waiting while its NPC is unavailable is held, then dropped, never said late', () => {
+    const t = wired({ chatter: LINES });
+    const { sys, evs, w } = t;
+    sys.registerAll();
+    sys.step(250);
+    sys.mutter('dana', 'work_fail');
+    let hidden = true;
+    w.world.npcStatus = () => (hidden ? { hidden: true } : {});
+    sys.mutter('dana', 'wk_writes_down');
+    for (let i = 0; i < 100; i++) sys.step(250);   // 25 s: past MUTTER_WAIT_MS
+    hidden = false;
+    for (let i = 0; i < 40; i++) sys.step(250);
+    assert.deepEqual(evs('npc_mutter:dana').map(e => e.data.topic), ['work_fail']);
+    assert.equal(sys.mutterWaits().length, 0);
+    assert.equal(t.log('mutter_dropped').length, 1);
+});
+
+test('R1 m6: a waiting start line does not hold up a conversation line queued behind the same lock', () => {
+    const { sys } = wired({ chatter: LINES });
+    sys.registerAll();
+    sys.step(250);
+    sys.mutter('dana', 'work_fail');
+    sys.mutter('dana', 'wk_writes_down');
+    const lockAfterFail = sys._speechUntil;
+    // The wait takes no lock of its own: until the fail line ends, the lock is the fail line's
+    assert.equal(sys._speechUntil, lockAfterFail);
+    while (sys.clockMs < lockAfterFail) sys.step(250);
+    assert.ok(sys._speechUntil > lockAfterFail, 'then the start line takes it, like any other line');
 });

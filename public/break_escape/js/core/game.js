@@ -2002,7 +2002,7 @@ export async function create() {
                         const runner = installNpcWorkarounds(ApiClient);
                         runner?.restore?.(window.gameScenario?.npcFrustration || null);
                         window.npcNeedsSystem?.restoreFrustration?.(window.gameScenario?.npcFrustration || null);
-                    } catch (e) { console.warn('npc reports failed to install', e); }
+                    } catch (e) { console.warn('npc reports or the workaround runner failed to install', e); }
                     // Workstation screen lock/unlock follows npc_left_post / npc_returned_post
                     const sceneRef = this;
                     import('../systems/npc-action-icons.js').then(m => m.installNpcActionIcons(sceneRef)).catch(e => console.warn('npc action icons failed', e));

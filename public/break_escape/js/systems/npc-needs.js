@@ -137,7 +137,10 @@ export const MAGNET_TEMPT = 30;
 export const NEWS_RADIUS = 5;
 export const NEWS_WAIT_MS = 30000;
 // Access slice 9.2 B: how long a mutter with lines waits for the speech lock before its picture
-export const MUTTER_WAIT_MS = 8000;
+// (long enough for a few start lines queued behind one fail line to each be said in words), and
+// the least time a mutter's bubble stays up, so a start line is on screen long enough to notice
+export const MUTTER_WAIT_MS = 20000;
+export const MUTTER_BUBBLE_MS = 6000;
 /**
  * Slice 19 (OFFICE_LIFE_PLAN 12.5): desk phones. A ring every RING_MS of the needs clock, `rings`
  * times (default RINGS); a call's listening gaps between lines are seeded in CALL_GAP_MS; a pool
@@ -365,6 +368,8 @@ export class NPCNeedsSystem {
         // what survives a reload)
         this._bags = new Map();
         this._speechUntil = 0;
+        // Mutters waiting for the speech lock, oldest first: [{ npcId, topic, since }] (9.2 B)
+        this._mutterWaits = [];
         this._exPlayed = new Set();
         // Queues (slice 10): claim order across the whole system, so queue order is deterministic
         this._queueSeq = 0;
@@ -509,7 +514,13 @@ export class NPCNeedsSystem {
         const ids = [...this.states.keys()];
         for (const id of ids) {
             const s = this.states.get(id);
+            // A workaround visit, running or queued, is reported dropped (review 9.2 B R1 m4), so
+            // the runner frees its hand-over instead of waiting for an event that never comes
+            const wk = [];
+            if (s.job?.kind === 'visit' && s.job.visit?.kind === 'workaround') wk.push(s.job.visit);
+            for (const v of Array.isArray(s.visits) ? s.visits : []) if (v?.kind === 'workaround') wk.push(v);
             if (s.job) this._abortJob(s, 'reset', { cancel: true });
+            for (const v of wk) this._emit(`npc_visit_dropped:${id}`, { npcId: id, kind: v.kind, at: { ...v.at }, data: v.data, reason: 'reset' });
         }
         // The server still holds each NPC's frustration: the mirror survives a reset (R1 m3).
         // failSent marks and a reload's held parks do not (review R2 n2): reset() is a debug and
@@ -524,6 +535,7 @@ export class NPCNeedsSystem {
         this._queueSeq = 0;
         this._bags.clear();
         this._speechUntil = 0;
+        this._mutterWaits = [];
         this._exPlayed.clear();
         this._rings.clear();
         this._calls.clear();
@@ -964,6 +976,7 @@ export class NPCNeedsSystem {
         if (this._magnets.size) this._tickMagnets();
         if (this._rings.size) this._tickRings();
         if (this._answers?.length) this._applyAnswers();
+        if (this._mutterWaits.length) this._tickMutterWaits();
         for (const id of [...this.states.keys()].sort()) {
             try {
                 this._tickNpc(this.states.get(id));
@@ -1209,7 +1222,6 @@ export class NPCNeedsSystem {
 
         const pos = this.world.npcPos(id);
         if (!pos) return; // sprite not loaded: decay only
-        if (s.mutterWait) this._tickMutterWait(s);
         if (this._magnets.size) this._sight(s, pos);
         if (!s.home || (s.home.provisional && this.tickCount >= (s.homeRetryAt || 0))) this._updateHome(s, pos);
         if (this._kickable(s)) this._tickKick(s);
@@ -1791,7 +1803,7 @@ export class NPCNeedsSystem {
         const icons = opts && 'icons' in opts ? opts.icons : (reason !== 'avoid' && NEED_ICONS.includes(need) ? [need] : null);
         const pick = this._pickBark(s, topic, { icons, ignoreCooldown: !!opts?.ignoreCooldown });
         if (!pick) return;
-        this._showSaying(s, pick, topic, objectId);
+        this._showSaying(s, pick, topic, objectId, opts?.minMs);
     }
 
     /**
@@ -1807,27 +1819,49 @@ export class NPCNeedsSystem {
         // failure's own grumble still holds the speech lock: a topic with lines waits for the lock
         // (up to MUTTER_WAIT_MS, then its picture), so the start line is said after the fail line
         // instead of being swapped for a picture (slice 9.2 B run, game 1197)
+        // Several can wait at once (two hand-overs at one failure, or several NPCs' at one outage):
+        // a queue, said one per free lock in the order they came
         const lines = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter).lines.length > 0;
-        if (lines && !this._speechFree()) {
-            s.mutterWait = { topic, since: this.clockMs };
+        if (lines && (!this._speechFree() || this._mutterWaits.length)) {
+            this._mutterWaits.push({ npcId, topic, since: this.clockMs });
             return true;
         }
         this._sayMutter(s, topic);
         return true;
     }
 
-    /** A queued mutter, once the speech lock frees or it has waited MUTTER_WAIT_MS. */
-    _tickMutterWait(s) {
-        const w = s.mutterWait;
-        if (!this._speechFree() && this.clockMs - w.since < MUTTER_WAIT_MS) return;
-        s.mutterWait = null;
-        this._sayMutter(s, w.topic);
+    /**
+     * Waiting mutters, once a tick, oldest first. Each is said in words when the speech lock is
+     * free (which it then takes, so the next waits again); one that waited MUTTER_WAIT_MS gets
+     * its picture. A mutter is never said late: one whose NPC is not on screen or not available
+     * (in a conversation, hidden) is held, and dropped once it has waited MUTTER_WAIT_MS.
+     */
+    _tickMutterWaits() {
+        const keep = [];
+        for (const w of this._mutterWaits) {
+            const s = this.states.get(w.npcId);
+            if (!s) continue;
+            const late = this.clockMs - w.since >= MUTTER_WAIT_MS;
+            if (!this.world.npcPos(w.npcId) || !this.isAvailable(w.npcId)) {
+                if (late) this._log(w.npcId, 'mutter_dropped', { topic: w.topic });
+                else keep.push(w);
+                continue;
+            }
+            if (this._speechFree() || late) this._sayMutter(s, w.topic);
+            else keep.push(w);
+        }
+        this._mutterWaits = keep;
+    }
+
+    /** Mutters waiting for the speech lock (a test and debug read). */
+    mutterWaits() {
+        return this._mutterWaits.map(w => ({ ...w }));
     }
 
     _sayMutter(s, topic) {
         const npcId = s.npcId;
         const before = s.saying;
-        this._grumble(s, null, topic, topic, { ignoreCooldown: true, icons: null });
+        this._grumble(s, null, topic, topic, { ignoreCooldown: true, icons: null, minMs: MUTTER_BUBBLE_MS });
         // npc_mutter:<npcId> (slice 9.2 B): what was shown, heard or not, so a scripted run can check
         // a failure mutter or a workaround's start line (npc_overheard fires only within earshot)
         const said = s.saying !== before ? s.saying : null;
@@ -1837,9 +1871,9 @@ export class NPCNeedsSystem {
     }
 
     /** A one-off line or picture over one NPC (a grumble, an announce): bubble, voice, npc_overheard. */
-    _showSaying(s, pick, topic, objectId) {
+    _showSaying(s, pick, topic, objectId, minMs = 0) {
         const { line, idx, picture, pool } = pick;
-        const until = this.clockMs + (picture ? PICTURE_MS : bubbleMs(line));
+        const until = this.clockMs + Math.max(Number(minMs) || 0, picture ? PICTURE_MS : bubbleMs(line));
         s.saying = { line, picture, topic, objectId, until };
         const radius = pool.overhearRadius || OVERHEAR_RADIUS;
         const h = typeof this.world.playerHears === 'function' ? (this.world.playerHears(s.npcId, radius) || {}) : {};

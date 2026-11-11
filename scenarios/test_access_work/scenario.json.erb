@@ -89,7 +89,8 @@
     "ian_was_off": false,
     "rota_down": false,
     "stores_down": false,
-    "store_door_propped": false
+    "store_door_propped": false,
+    "ellis_out_of_office": false
   },
   "objectives": [
     {
@@ -2014,6 +2015,22 @@
           "observations": "Ellis's PC: a sign-in PC."
         },
         {
+          "type": "notes1",
+          "id": "ellis_ooo_note",
+          "name": "Out of office note",
+          "position": {
+            "x": 6,
+            "y": 4
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "revealOnGlobal": "ellis_out_of_office",
+          "text": "Intranet down again. Gone to do something useful. Ellis",
+          "observations": "A note left by Ellis's PC."
+        },
+        {
           "type": "ups_cabinet1",
           "id": "intranet_switch",
           "name": "Intranet switch",
@@ -2095,6 +2112,7 @@
               "at": 50,
               "do": "emit",
               "event": "ellis_gave_up",
+              "setGlobal": "ellis_out_of_office",
               "noWarning": true
             }
           ],

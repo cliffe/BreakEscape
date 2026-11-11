@@ -20,6 +20,7 @@ export const POSTIT_TEXTURE = 'notes_postit1';
 export const POSTIT_SIZE = 9;
 export const POSTIT_INSET = 3;
 export const POSTIT_DEPTH_OFFSET = 0.005;
+export const POSTIT_LABEL = 'a sticky note on the monitor';
 
 const win = () => (typeof window !== 'undefined' ? window : {});
 
@@ -108,6 +109,16 @@ export class PostitMarks {
         if (!on) { this._remove(pcId); return true; }
         if (!sprite || sprite.scenarioData.lockType !== 'login') return false;
         return !!this._add(sprite);
+    }
+
+    /**
+     * The proximity label for an object (ui/info-label.js): a PC with a note picture says so, so
+     * a player who missed the 9 px mark knows to look at the sign-in screen (9.2 B review R1).
+     * The note's text is never in it.
+     */
+    label(objectId, text) {
+        if (!text || !objectId || !this.marks.has(objectId)) return text;
+        return `${text} (${POSTIT_LABEL})`;
     }
 
     /** Each frame: follow the sprite's visibility and position; drop a mark whose sprite went. */

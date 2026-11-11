@@ -759,18 +759,26 @@ Author-facing rules are in `README_scenario_design.md`, "Work, frustration and w
   `PICTURE_CHATTER` picture. `mutter(npcId, topic)` is the public entry the workaround runner uses.
   It emits `npc_mutter:<npcId>` with what was shown, whether or not the player heard it. A topic
   with lines that finds the speech lock taken (a workaround's hand-over arrives in the answer to
-  the failure whose own grumble still holds it) waits for the lock, up to `MUTTER_WAIT_MS` (8 s of
-  the needs clock), and is then said; only after that wait does it fall back to its picture.
+  the failure whose own grumble still holds it) joins a queue across all NPCs (`mutterWaits()`
+  reads it), oldest first, and each is said in words when the lock frees, one per free lock; only
+  one that waited `MUTTER_WAIT_MS` (20 s of the needs clock) falls back to its picture. A waiting
+  mutter whose NPC is not placed or not available is held and, once that wait is over, dropped
+  (`mutter_dropped` in the log), never said late. A mutter's bubble stays up at least
+  `MUTTER_BUBBLE_MS` (6 s). `reset()` reports any workaround visit, running or queued, as
+  `npc_visit_dropped` with `reason: 'reset'`.
 - **Workarounds (sub-slice B).** `systems/npc-workarounds.js` runs what the server hands over.
   The needs system emits `npc_workaround_due:<npcId>` with `{ npcId, run, level }` for a `run` in
   an answer to `POST /npc_frustration`, and with `restored: true` for each `pending` run in
   GET /scenario once the NPC registers (a run that arrives before registration waits for it). The
-  runner says the start line (`mutter(npcId, 'wk_<kind>')`, none for `emit`), emits
-  `npc_workaround:<npcId>` `started`, performs it (`writes_down`: an at-post `workaround` visit to
+  runner queues the visit and only then says the start line (`mutter(npcId, 'wk_<kind>')`, none
+  for `emit`) and emits `npc_workaround:<npcId>` `started` (a visit that cannot be queued says
+  nothing and is given back as dropped); it performs it (`writes_down`: an at-post `workaround` visit to
   the NPC's own `needsHome`, 6 s; `prop_door`: a visit to the prop, 4 s; `emit`: the event with
   `{ npcId, level }` and no visit), then on `npc_visit_done` sends `POST /npc_workaround` with
   `index` and `hand` (on `npc_visit_dropped`, or a visit that cannot be queued, `dropped: true`).
-  A lost request is resent, a 425 after the dwell, a 403 ends it (`ended`). The answer is applied
+  A lost request is resent for as long as the page lives, after 2, 4, 8, 16 s and then every
+  30 s; a 425 after the time left (`retryAfter`); only a 403 ends it (`ended`). An answer of
+  `{ dropped: true }` (the hand was spent as dropped) is applied as `dropped`. The answer is applied
   once per hand-over: the sticky note mark, the propped room (every loaded door sprite to it
   opened, as `NPCGameBridge.unlockDoor` does), the `setGlobal`; then `done` (or `dropped`) and,
   for a prop, `door_propped:<roomId>`. On a load `restore(npcFrustration)` sets every done

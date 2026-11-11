@@ -5,10 +5,12 @@
  * at a time, as `run` in an answer to POST /npc_frustration (or as `pending` in GET /scenario
  * after a reload). The needs system emits `npc_workaround_due:<npcId>` with it; this module then:
  *
- * - has the NPC say its start line (`NPCNeedsSystem.mutter(npcId, 'wk_<kind>')`; none for emit);
- * - emits `npc_workaround:<npcId>` with { npcId, index, do, phase: 'started' };
  * - performs it: `writes_down` is an at-post visit to the NPC's own needsHome PC, `prop_door` a
  *   visit to the prop, `emit` fires its event with { npcId, level } and no visit;
+ * - once the visit is queued (an emit at once), has the NPC say its start line
+ *   (`NPCNeedsSystem.mutter(npcId, 'wk_<kind>')`; none for emit) and emits
+ *   `npc_workaround:<npcId>` with { npcId, index, do, phase: 'started' }; a visit that cannot be
+ *   queued says nothing, fires no `started` and is given back as dropped;
  * - on `npc_visit_done` calls POST /npc_workaround with `index` and `hand`; on
  *   `npc_visit_dropped` (or a visit that cannot be queued) reports it `dropped`;
  * - applies the answer once per hand-over: the sticky note mark (`postitMarks.mark`), the
@@ -16,12 +18,21 @@
  *   `setGlobal`; then emits `npc_workaround:<npcId>` with phase 'done' (or 'dropped'), and for a
  *   prop_door `door_propped:<roomId>` with { roomId, npcId }.
  *
- * A failed request is resent (the server answers a spent hand-over again with the same body); a
- * 425 (the dwell has not passed in server time) is resent after the dwell; a 403 ends it. On a
+ * A failed request is resent for as long as the page lives, with a backoff from RETRY_MS doubling
+ * to RETRY_MAX_MS (the server answers a spent hand-over again with the same body, and holds an
+ * unspent one as handed, so giving up would lose the workaround for the session); a 425 (the
+ * dwell has not passed in server time) is resent after the time left; only a 403 ends it. A
+ * reload loses nothing either way: the server sends the unspent hand-over again as `pending`.
+ * An answer of { dropped: true } to a "done" (the hand was already spent as dropped) is applied
+ * as a drop, never as an emit's {}. On a
  * load, `restore(block)` sets every done workaround's `setGlobal` again and remembers every
  * propped room (a done prop_door's `door`); `syncRoom(roomId)`, called as each room is built,
  * opens that room's door sprites to a propped room, so a propped door looks open after a reload
  * (plan 11.1 X4) as it did when it was propped.
+ *
+ * A reload's re-start (`restored: true` in `npc_workaround_due`) is treated as any other: the NPC
+ * sets off again, so it says its start line again. `level` in the emit payload is the client's
+ * mirror of the frustration, not the server's figure; a mapping must not rely on it.
  *
  * Nothing here is secret: a run names ids, a kind and a dwell; no password passes through.
  */
@@ -30,8 +41,15 @@ export const START_POOLS = Object.freeze({
     writes_down: 'wk_writes_down', prop_door: 'wk_prop_door', borrow_session: 'wk_borrow', share_login: 'wk_share_login'
 });
 export const RETRY_MS = 2000;
-export const MAX_ATTEMPTS = 6;
+export const RETRY_MAX_MS = 30000;
+// The kinds performed by a visit. Sub-slice H adds borrow_session and share_login here; until
+// then they are given back as dropped (START_POOLS already names their lines)
 const VISIT_KINDS = new Set(['writes_down', 'prop_door']);
+
+/** The wait before resend number `attempts` (1, 2, ...): 2 s, 4 s, 8 s, 16 s, then 30 s. */
+export function retryDelay(attempts) {
+    return Math.min(RETRY_MAX_MS, RETRY_MS * 2 ** Math.max(0, attempts - 1));
+}
 
 const keyOf = (npcId, run) => `${npcId}:${run.index}:${run.hand}`;
 
@@ -63,11 +81,14 @@ export class NpcWorkarounds {
         if (this.active.has(key) || this.finished.has(key)) return false;   // started once
         const job = { npcId, run, level: Number(data.level) || 0, state: 'running', attempts: 0 };
         this.active.set(key, job);
-        const pool = START_POOLS[run.do];
-        if (pool) this._needs()?.mutter?.(npcId, pool);
-        this._emit(`npc_workaround:${npcId}`, { npcId, index: run.index, do: run.do, phase: 'started' });
+        const started = () => {
+            const pool = START_POOLS[run.do];
+            if (pool) this._needs()?.mutter?.(npcId, pool);
+            this._emit(`npc_workaround:${npcId}`, { npcId, index: run.index, do: run.do, phase: 'started' });
+        };
 
         if (run.do === 'emit') {
+            started();
             if (typeof run.event === 'string' && run.event) this._emit(run.event, { npcId, level: job.level });
             this._send(key, false);
             return true;
@@ -78,7 +99,9 @@ export class NpcWorkarounds {
                 kind: 'workaround', at: { objectId: at }, useSeconds: Number(run.dwell) || undefined,
                 data: { workaround: { index: run.index, hand: run.hand, do: run.do } }
             });
+            // The line and `started` only for a visit that will happen (review 9.2 B R1 m5)
             if (!queued) this._send(key, true);
+            else if (job.state === 'running') started();
             return true;
         }
         // A kind this build does not perform (sub-slice H's): give the hand-over back
@@ -124,9 +147,11 @@ export class NpcWorkarounds {
         } catch (err) {
             const status = err?.status;
             if (status === 403) { this._end(key, 'refused'); return; }
-            if (job.attempts >= MAX_ATTEMPTS) { this._end(key, 'gave_up'); return; }
-            // 425: the server's dwell has not passed yet; anything else: lost on the way
-            const wait = status === 425 ? Math.max(RETRY_MS, (Number(err?.body?.retryAfter) || Number(job.run.dwell) || 0) * 1000) : RETRY_MS * job.attempts;
+            // 425: the server's dwell has not passed yet (retryAfter is the time left); anything
+            // else was lost on the way: resent with a growing wait, never given up (review R1 M1)
+            const wait = status === 425
+                ? Math.min(RETRY_MAX_MS, Math.max(RETRY_MS, (Number(err?.body?.retryAfter) || Number(job.run.dwell) || 0) * 1000))
+                : retryDelay(job.attempts);
             this._timer(() => this._send(key, dropped), wait);
             return;
         }
@@ -146,7 +171,8 @@ export class NpcWorkarounds {
         this.active.delete(key);
         this.finished.add(key);
         const { npcId, run } = job;
-        if (job.dropped) {
+        // { dropped: true }: the hand was spent as dropped, so a "done" counts for nothing
+        if (job.dropped || body.dropped === true) {
             this._emit(`npc_workaround:${npcId}`, { npcId, index: run.index, do: run.do, phase: 'dropped' });
             return;
         }
@@ -187,7 +213,8 @@ export class NpcWorkarounds {
             if (!props || props.open || sp.proppedOpening || sp.active === false || !this.propped.has(props.connectedRoom)) continue;
             sp.proppedOpening = true;   // openDoor may finish later, once the far room has loaded
             props.locked = false;
-            this.deps.openSprite?.(sp);
+            // A sprite that failed to open is left free to be tried at the next build (R1 n2)
+            if (this.deps.openSprite?.(sp) === false) { sp.proppedOpening = false; continue; }
             n++;
         }
         return n;
@@ -251,9 +278,9 @@ export function installNpcWorkarounds(api) {
         doorSprites: roomId => roomDoorSprites(roomId, w),
         openSprite: sp => {
             if (w.gameScenario?.rooms?.[sp.doorProperties.connectedRoom]) w.gameScenario.rooms[sp.doorProperties.connectedRoom].locked = false;
-            if (typeof w.unlockDoor === 'function') {
-                try { w.unlockDoor(sp, null); } catch (e) { console.warn('propped door failed to open', e); }
-            }
+            if (typeof w.unlockDoor !== 'function') return false;
+            try { w.unlockDoor(sp, null); } catch (e) { console.warn('propped door failed to open', e); return false; }
+            return true;
         },
         npcRecord: id => w.npcManager?.npcs?.get?.(id) || null
     });
