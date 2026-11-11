@@ -168,7 +168,7 @@ module BreakEscape
         entry.note = expected.source_of(expected.keys[key][0])
       elsif sidecar
         sidecar_args = sidecar.values_at("text", "voice", "style", "language")
-        sidecar_keys = [TtsService.cache_key(*sidecar_args), TtsService.legacy_cache_key(*sidecar_args)]
+        sidecar_keys = [TtsService.sidecar_cache_key(sidecar), TtsService.legacy_cache_key(*sidecar_args)]
         voice_ok = expected.voice_configured?(sidecar["voice"], sidecar["style"], sidecar["language"])
         if !sidecar_keys.include?(key)
           # Sidecar doesn't describe this file: fall back to the key alone

@@ -320,7 +320,7 @@ Dr. Irina Volkova: Every flagged transaction comes to me personally. I review it
 
 Dr. Irina Volkova: Badges. Trading floor for staff, this one for my office, executive badges for the top floor.
 
-Dr. Irina Volkova: *taps the lanyard at her collar* Four years round my neck. The badges are the one part of our security I'd defend.
+Dr. Irina Volkova: Four years round my neck. The badges are the one part of our security I'd defend. #delivery: a touch of pride
 
 Dr. Irina Volkova: Satoshi is paranoid about doors and careless about passwords. Exactly backwards.
 -> hub
@@ -334,7 +334,7 @@ Dr. Irina Volkova: Satoshi is paranoid about doors and careless about passwords.
     #influence_increased
     ~ badge_handed = true
     #give_item:keycard:m06_cto_badge
-    Dr. Irina Volkova: *unclips it* Bring it back. And don't tell facilities I handed it over; they'll write a memo about it.
+    Dr. Irina Volkova: Bring it back. And don't tell facilities I handed it over; they'll write a memo about it. #delivery: handing it over, wry
 
     Dr. Irina Volkova: West door. Try not to judge the whiteboard.
     -> hub
@@ -403,7 +403,7 @@ Narrator: She keeps talking.
     #speaker:irina_volkova
     Dr. Irina Volkova: Satoshi's Ghost. He signs the money with that name. He thinks it's funny.
     {not recruitment_offered:
-        Dr. Irina Volkova: *quietly* You're not from the FCA. ...No. Don't tell me yet.
+        Dr. Irina Volkova: You're not from the FCA. ...No. Don't tell me yet. #delivery: quietly
     }
 }
 #give_item:keycard:executive_access_badge
@@ -480,7 +480,7 @@ Narrator: You put your SAFETYNET credentials on the desk.
     ~ shown_architects_fund = true
     ~ moral_conflict_revealed = true   // Dialogue C3 (D6-67): she has read the projection
     Narrator: Then the fund allocation, open at the casualty line.
-    Dr. Irina Volkova: *reads it twice* I wrote the mixer so nobody could see where money went. Not so nobody could see this.
+    Dr. Irina Volkova: I wrote the mixer so nobody could see where money went. Not so nobody could see this. #delivery: having read it twice, shaken
 }
 
 + [You built it believing in it. They turned it. Help us take it apart.]
@@ -571,6 +571,8 @@ Dr. Irina Volkova: And thank you for treating this as a choice.
 // ===========================================
 
 === detain_irina ===
+#speaker:narrator
+Narrator: Irina holds out her wrists.
 #speaker:irina_volkova
 ~ irina_arrested = true
 ~ irina_fate_decided = true
@@ -579,7 +581,7 @@ Dr. Irina Volkova: And thank you for treating this as a choice.
 
 // Dialogue C3 (D6-67): every route here has shown her the projection, so the
 // defiant "state overreach" line could no longer play anywhere it fits.
-Dr. Irina Volkova: *offers her wrists* I really did think I was building something good.
+Dr. Irina Volkova: I really did think I was building something good.
 
 Dr. Irina Volkova: All those papers. For this.
 ~ hub_quiet = true

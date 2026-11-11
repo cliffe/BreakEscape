@@ -372,7 +372,7 @@ Terry Mott: Who's your supervisor, then?
     ~ guard_influence = guard_influence - 10
     # influence_decreased
     ~ guard_suspicious = true
-    Terry Mott: *flatly* I'm not ringing the boss at this hour on your say-so.
+    Terry Mott: I'm not ringing the boss at this hour on your say-so. #delivery: flatly
     -> trespass_warning
 * [I'm with SAFETYNET. This is an active ENTROPY investigation.]
     -> safetynet_reveal
@@ -388,7 +388,7 @@ Terry Mott: Are you trying to bribe me?
 * [No, no. I just meant -- could you make an exception? A favour?]
     ~ guard_influence = guard_influence - 5
     # influence_decreased
-    Terry Mott: *scoffs* No favours.
+    Terry Mott: No favours. #delivery: with a scoff
     -> trespass_warning
 
 === bribe_response_low ===

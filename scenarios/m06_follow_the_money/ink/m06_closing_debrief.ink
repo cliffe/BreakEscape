@@ -557,7 +557,7 @@ Agent HaX: ...I was one of his students.
 
 Agent HaX: Best strategic mind I ever met. Most of how I think about this job, I got from him.
 
-Agent HaX: If it's him... *quietly* Let's leave it there for tonight.
+Agent HaX: If it's him... Let's leave it there for tonight. #delivery: trailing off, then quietly
 
 -> final_assessment
 

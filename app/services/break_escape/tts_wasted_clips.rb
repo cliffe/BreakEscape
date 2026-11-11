@@ -5,7 +5,7 @@ module BreakEscape
   # sidecars (<key>.json). Used by `rake break_escape:tts:wasted` after a batch.
   #
   # A clip counts as current-model when its key is the current-model key for
-  # its sidecar's text, voice, style and language. It is wasted when that key is
+  # its sidecar's text, voice, style and language (and delivery note, if any). It is wasted when that key is
   # not one the client can ask for now: TtsLineExtractor's lines, each voiced
   # exactly as the endpoint voices it.
   #
@@ -25,7 +25,7 @@ module BreakEscape
       dir = Pathname.new(cache_dir.to_s).join(scenario)
       sidecars = TtsService.read_sidecars(dir)
       current = sidecars.select do |key, data|
-        key == TtsService.cache_key(*data.values_at("text", "voice", "style", "language"))
+        key == TtsService.sidecar_cache_key(data)
       end
       wasted = current.reject { |key, _| expected_keys.include?(key) }.map do |key, data|
         Clip.new(key: key, sidecar: data, mp3_exists: File.exist?(dir.join("#{key}.mp3")))

@@ -23,7 +23,8 @@ module BreakEscape
   # can request, read by tts:wasted) always includes them, so their clips are
   # never reported as unrequested.
   class TtsLineExtractor
-    Entry = Struct.new(:npc_id, :text, :voice, :source, :path, :key, keyword_init: true)
+    # delivery: the line's `#delivery:` note (person-chat lines only), or nil.
+    Entry = Struct.new(:npc_id, :text, :voice, :source, :path, :key, :delivery, keyword_init: true)
     Note = Struct.new(:source, :path, :text, :reason, keyword_init: true)
 
     BACKGROUND_LINE = /\ABackground\s*\[\s*([^\]]+)\s*\]\s*(?::\s*(.*))?\z/im
@@ -254,6 +255,38 @@ module BreakEscape
       end
     end
 
+    # The `#delivery:` note the scenario's ink gives the line the client voices as
+    # npc_id with this text, chosen by the note the client sent, or nil. The
+    # endpoint keys, voices and records the returned note, never the client's:
+    # the client's note only has to match it after normalising (the key's own
+    # rule), so it cannot add words of its own to the voice prompt.
+    def delivery_for(npc_id, text, delivery)
+      wanted = self.class.normalize(text)
+      note = self.class.normalize(TtsService.clean_delivery(delivery))
+      return nil if wanted.empty? || note.empty?
+
+      delivered_lines["#{npc_id}|#{wanted}|#{note}"]
+    end
+
+    def delivered_by?(npc_id, text, delivery)
+      !delivery_for(npc_id, text, delivery).nil?
+    end
+
+    # { "npc_id|normalised text|normalised note" => the ink's note } for every
+    # line with a delivery note.
+    def delivered_lines
+      index_host_lines unless @delivered_lines
+      @delivered_lines
+    end
+
+    # The `#delivery:` note person-chat sends for a line (TtsService.delivery_from_tags).
+    # Voiced phone calls don't send one (phone-call-voice.js), so their lines have none.
+    def line_delivery(host_id, line)
+      return nil if characters.dig(host_id, 'npcType') == 'phone'
+
+      TtsService.delivery_from_tags(line.tags)
+    end
+
     # True when some host story has a line the client voices as npc_id with
     # this text: how the endpoint accepts a co-speaker's line from another
     # NPC's story (Vance in HaX's debrief, HaX in Netherton's). Matching is on
@@ -268,30 +301,43 @@ module BreakEscape
 
     # "npc_id|normalised text" for every voiced line of every host story.
     def spoken_lines
-      @spoken_lines ||= begin
-        set = Set.new
-        each_host_line { |_host, _path, _line, npc_id, text| set << "#{npc_id}|#{self.class.normalize(text)}" }
-        each_pretext_outcome_line { |npc_id, text, _path| set << "#{npc_id}|#{self.class.normalize(text)}" }
-        set
-      end
+      index_host_lines unless @spoken_lines
+      @spoken_lines
     end
+
+    # Most extractors the endpoint keeps. Keyed by scenario and stamp, so players
+    # of one mission whose carried-over globals differ each keep theirs instead
+    # of evicting each other on every line; least recently used goes first.
+    ENDPOINT_CACHE_SIZE = 32
 
     # One extractor per scenario render and story edit, for the endpoint.
     # Keyed on the stories' paths and mtimes and the speaker-relevant fields of
     # every character, so a story edit or a recast rebuilds it.
     def self.cached(scenario_name, scenario_data)
       extractor = new(scenario_name, scenario_data, tts_service: nil)
-      stamp = extractor.cache_stamp
-      cached = endpoint_cache[scenario_name]
-      return cached[:extractor] if cached && cached[:stamp] == stamp
+      key = [scenario_name, extractor.cache_stamp]
+      hit = endpoint_cache_mutex.synchronize do
+        found = endpoint_cache.delete(key)
+        endpoint_cache[key] = found if found
+        found
+      end
+      return hit if hit
 
       extractor.spoken_lines
-      endpoint_cache[scenario_name] = { stamp: stamp, extractor: extractor }
+      endpoint_cache_mutex.synchronize do
+        endpoint_cache[key] = extractor
+        endpoint_cache.shift while endpoint_cache.size > ENDPOINT_CACHE_SIZE
+      end
       extractor
     end
 
+    # Insertion-ordered (oldest first); guarded by endpoint_cache_mutex.
     def self.endpoint_cache
-      @endpoint_cache ||= Concurrent::Map.new
+      @endpoint_cache ||= {}
+    end
+
+    def self.endpoint_cache_mutex
+      @endpoint_cache_mutex ||= Mutex.new
     end
 
     def cache_stamp
@@ -310,12 +356,28 @@ module BreakEscape
 
     private
 
+    # spoken_lines and delivered_lines in one walk of the stories.
+    def index_host_lines
+      spoken = Set.new
+      delivered = {}
+      each_host_line do |host, _path, line, npc_id, text|
+        norm = self.class.normalize(text)
+        spoken << "#{npc_id}|#{norm}"
+        note = line_delivery(host, line)
+        delivered["#{npc_id}|#{norm}|#{self.class.normalize(note)}"] ||= note if note
+      end
+      each_pretext_outcome_line { |npc_id, text, _path| spoken << "#{npc_id}|#{self.class.normalize(text)}" }
+      @spoken_lines = spoken
+      @delivered_lines = delivered
+    end
+
     def extract
       @entries = []
       seen = {}
 
       each_host_line do |host_id, ink_path, line, npc_id, text|
-        add_entry(seen, npc_id, text, host_id, "#{File.basename(ink_path)}:#{line.path}")
+        add_entry(seen, npc_id, text, host_id, "#{File.basename(ink_path)}:#{line.path}",
+                  line_delivery(host_id, line))
       end
 
       each_pretext_outcome_line do |npc_id, text, path|
@@ -407,18 +469,19 @@ module BreakEscape
       end
     end
 
-    def add_entry(seen, npc_id, text, source, path)
+    def add_entry(seen, npc_id, text, source, path, delivery = nil)
       voice = voices[npc_id]
       unless voice
         @notes << Note.new(source: source, path: path, text: text, reason: "no voice config for #{npc_id}; the endpoint can't voice it")
         return
       end
 
-      key = @tts_service.cache_key_for(text, voice['name'], voice['style'], voice['language'])
+      key = @tts_service.cache_key_for(text, voice['name'], voice['style'], voice['language'], delivery)
       return if seen[key]
 
       seen[key] = true
-      @entries << Entry.new(npc_id: npc_id, text: text, voice: voice, source: source, path: path, key: key)
+      @entries << Entry.new(npc_id: npc_id, text: text, voice: voice, source: source, path: path, key: key,
+                            delivery: delivery)
     end
 
     def speaker_id_for(prefix, host_id)

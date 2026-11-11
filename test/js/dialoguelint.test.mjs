@@ -263,3 +263,229 @@ test('crowded-hub: m01 handler hub (support_hub in m01_phone_agent0x99.ink) is t
   assert.ok((hub.match(/^\+ /gm) || []).length > 10, 'support_hub still declares more than 10 choices');
   assert.equal(only(lintInk(src, { channel: 'phone' }), 'crowded-hub').length, 0);
 });
+
+test('inline-direction: a stage cue in a voiced line warns; emphasis, choices, the player, narration and phone inks do not', () => {
+  const ink = [
+    '=== s ===',
+    'Gary: *sighs* Fine.',                       // 2: warns
+    'Gary: I *never* said that.',                // 3: emphasis between two words
+    'You: *shrugs* Whatever.',                   // 4: the player is not voiced
+    'Narrator: *a door slams*',                  // 5: narration
+    '* [*quietly* ask about the badge]',         // 6: a choice
+    '+ [Ask] -> s',                              // 7
+    'Unprefixed host line. *pause*',             // 8: warns (the host speaks it)
+    'Gary: Said as the player. #speaker:player *x*', // 9: a tag, and the player's line
+    'Gary: Fine. #delivery: quietly',            // 10: the note is in its tag
+    'Gary: Fine *laughs*.',                      // 11: warns (no word after it, so not emphasis)
+  ].join('\n') + '\n';
+  const f = only(lintInk(ink), 'inline-direction');
+  assert.deepEqual(f.map(x => x.line), [2, 8, 11]);
+  assert.match(f[0].note, /#delivery: sighs/);
+  assert.equal(only(lintInk(ink, { channel: 'phone' }), 'inline-direction').length, 0);
+});
+
+test('inline-direction: emphasis at a sentence edge is not a direction; stage words and multi-word cues are', () => {
+  const ink = [
+    '=== s ===',
+    'Gary: It was *yours*.',                     // 2: emphasis at the end of a sentence
+    'Gary: *Never* again.',                      // 3: emphasis opening the line, capitalised
+    'Gary: That was *really* Bad.',              // 4: emphasis before a capital
+    'Gary: Fine *sighs* whatever.',              // 5: warns (a stage word between two words)
+    'Gary: *quietly* Keep your head down.',      // 6: warns (lower-case cue opening the line)
+    'Gary: Well, *maybe* not.',                  // 7: emphasis after a comma
+    'Gary: I said *no*!',                        // 8: emphasis before "!"
+    'Gary: It is *Sighs* time.',                 // 9: warns (stage word, any case)
+    'Gary: That is *very much* it.',             // 10: warns (more than one word)
+    'Gary: *Pauses* Right.',                     // 11: warns (stage word opening the line)
+  ].join('\n') + '\n';
+  assert.deepEqual(only(lintInk(ink), 'inline-direction').map(x => x.line), [5, 6, 9, 10, 11]);
+});
+
+// The review's parity ink (VOICE_DELIVERY_TAG_CODE_REVIEW_R1.md): the walker cannot read a note
+// on a glued line or a line that prints a variable, so those lines play untagged.
+const DELIVERY_INK = [
+  'VAR flag = true',                              // 1
+  'VAR count = 0',                                // 2
+  '-> start',                                     // 3
+  '=== start ===',                                // 4
+  'Kevin Park: Opening.',                         // 5
+  '#delivery: softly',                            // 6: carried over the divert to b's first line
+  '-> b',                                         // 7
+  '=== b ===',                                    // 8
+  'Kevin Park: Hello from b.',                    // 9
+  '#delivery: crisp',                             // 10: warns (line 11 may print nothing, and then it lands on a glued line)
+  '{flag: Kevin Park: Conditional line.}',        // 11
+  'Kevin Park: Part one <>',                      // 12
+  'and part two. #delivery: glued',               // 13: warns (glued onto by the line above)
+  'Kevin Park: You have {count} items. #delivery: counting', // 14: warns (prints a variable)
+  '~ count = count + 1',                          // 15
+  '#delivery: above logic',                       // 16
+  '~ temp x = 1',                                 // 17
+  'Kevin Park: After logic.',                     // 18
+  '+ [Ask]',                                      // 19
+  '  Kevin Park: Answer. #delivery: answering',   // 20
+  '  -> c',                                       // 21
+  '=== c ===',                                    // 22
+  '#delivery: at knot top',                       // 23
+  'Kevin Park: In c.',                            // 24
+  'Kevin Park: Glued at the end <> #delivery: tail', // 25: warns (glue on the line itself)
+  'more words.',                                  // 26
+  '#delivery: above a glued line',                // 27: warns (lands on a glued line)
+  'Kevin Park: Starts here <>',                   // 28
+  'and ends here.',                               // 29
+  '#delivery: above {count}',                     // 30: warns twice (braces; lands on a line printing a variable)
+  'Kevin Park: Count {count}.',                   // 31
+  '#delivery: before a choice',                   // 32: warns (no line follows in the knot)
+  '+ [x] -> d',                                   // 33
+  '=== d ===',                                    // 34
+  '#delivery: before a divert to choices',        // 35: warns (-> e starts with a choice)
+  '-> e',                                         // 36
+  '=== e ===',                                    // 37
+  '* [Pick] -> END',                              // 38
+  '=== f ===',                                    // 39
+  'Kevin Park: Last. #delivery: fine',            // 40
+  '#delivery: at the end',                        // 41: warns (the knot ends)
+  '-> END',                                       // 42
+].join('\n') + '\n';
+
+test('delivery-unread: a note on a glued line, a line printing a variable, or with no line after it', () => {
+  const f = only(lintInk(DELIVERY_INK), 'delivery-unread');
+  assert.deepEqual(f.map(x => x.line), [10, 13, 14, 25, 27, 30, 32, 35, 41]);
+  assert.match(f[0].note, /line 11\) may print nothing .* the line after it \(line 12\) has the line above glued onto it|line 11\) may print nothing .* \(line 12\) is glued/);
+  assert.match(f[1].note, /glued/);
+  assert.match(f[2].note, /prints \{count\}/);
+  assert.match(f[4].note, /lands on \(line 28\)|line it lands on \(line 28\)/);
+  assert.match(f[6].note, /a choice comes next/);
+  assert.match(f[7].note, /-> e leads to a choice/);
+  assert.match(f[8].note, /END comes next/);
+  // voiced phone calls send no note, so phone inks are not checked for this
+  assert.equal(only(lintInk(DELIVERY_INK, { channel: 'phone' }), 'delivery-unread').length, 0);
+});
+
+// Review R2 m1: the server follows a note into a tunnel, a knot with only stitches, a divert chain
+// and past a one-line conditional (delivery_parity_shapes.ink), so those stay quiet; it cannot
+// follow one into a multi-line conditional or a conditional divert, or keep one past a tunnel that
+// leads to a choice, so those warn.
+const SHAPES_INK = readFileSync(new URL('../fixtures/files/ink_line_walker/delivery_parity_shapes.ink', import.meta.url), 'utf8');
+const UNFOLLOWED_INK = [
+  'VAR flag = false',                             // 1
+  '=== hub ===',                                  // 2
+  '#delivery: into a block',                      // 3: warns (-> blockcond opens with a multi-line conditional)
+  '-> blockcond',                                 // 4
+  '=== more ===',                                 // 5
+  '#delivery: tunnel to a choice',                // 6: warns (not kept past the tunnel)
+  '-> tunchoice ->',                              // 7
+  'Kevin Park: After the tunnel.',                // 8
+  '#delivery: over a block',                      // 9: warns (a line inside the block plays untagged)
+  '{flag:',                                       // 10
+  '  Kevin Park: Inside.',                        // 11
+  '}',                                            // 12
+  'Kevin Park: After the block.',                 // 13
+  '#delivery: into a conditional divert',         // 14: warns
+  '-> conddiv',                                   // 15
+  '=== blockcond ===',                            // 16
+  '{flag:',                                       // 17
+  '  Kevin Park: Only if flag.',                  // 18
+  '}',                                            // 19
+  'Kevin Park: Always.',                          // 20
+  '-> END',                                       // 21
+  '=== tunchoice ===',                            // 22
+  '+ [Pick]',                                     // 23
+  '  ->->',                                       // 24
+  '=== conddiv ===',                              // 25
+  '{flag: -> blockcond}',                         // 26
+  'Kevin Park: Past it.',                         // 27
+  '-> END',                                       // 28
+  '=== stitches ===',                             // 29
+  '= one',                                        // 30
+  'Kevin Park: Stitch.',                          // 31
+  '-> END',                                       // 32
+].join('\n') + '\n';
+
+test('delivery-unread: quiet for the shapes the server follows, warns for the ones it cannot (review R2 m1)', () => {
+  assert.deepEqual(only(lintInk(SHAPES_INK), 'delivery-unread'), []);
+  const f = only(lintInk(UNFOLLOWED_INK), 'delivery-unread');
+  assert.deepEqual(f.map(x => x.line), [3, 6, 9, 14]);
+  assert.match(f[0].note, /-> blockcond opens with a multi-line conditional \(line 17\)/);
+  assert.match(f[1].note, /-> tunchoice -> leads to a choice, and the note is not kept for the line after the tunnel returns/);
+  assert.match(f[2].note, /a line inside it plays untagged/);
+  assert.match(f[3].note, /-> conddiv opens with a conditional divert \(line 26\)/);
+});
+
+// delivery_parity_r3.ink (review R3): every note the walker drops there is warned about, and so
+// is a note replaced by another on the way; a note above a thread whose first line speaks, and
+// a tunnel with an argument, stay quiet.
+const R3_INK = readFileSync(new URL('../fixtures/files/ink_line_walker/delivery_parity_r3.ink', import.meta.url), 'utf8');
+
+test('delivery-unread: tunnel returns, notes met on the way and threads (review R3)', () => {
+  const f = only(lintInk(R3_INK), 'delivery-unread');
+  assert.deepEqual(f.map(x => x.line), [12, 17, 22, 25, 28, 31, 46, 84]);
+  assert.match(f[0].note, /the line it lands on \(line 51\) may print nothing .* the tunnel returns \(->->, line 52\)/);
+  assert.match(f[1].note, /-> logic_tun -> reaches a tunnel return \(->->, line 58\)/);
+  assert.match(f[2].note, /replaced by another \(line 63\)/);
+  assert.match(f[3].note, /replaced by another \(line 69\)/);
+  assert.match(f[4].note, /replaced by another \(line 75\)/);
+  assert.match(f[5].note, /-> nest_a -> reaches a tunnel return \(->->, line 85\)/);
+  assert.match(f[6].note, /-> threaded opens with a thread \(line 90\)/);
+  assert.match(f[7].note, /the tunnel returns \(->->, line 85\)/);
+});
+
+// delivery_parity_r4.ink (review R4): every note the walker drops there is warned about: a note
+// that prints a value (delivery-note), and a one-line conditional followed by a divert (m1).
+const R4_INK = readFileSync(new URL('../fixtures/files/ink_line_walker/delivery_parity_r4.ink', import.meta.url), 'utf8');
+
+test('delivery-unread and delivery-note: dynamic notes and a one-line conditional before a divert (review R4)', () => {
+  const findings = lintInk(R4_INK);
+  assert.deepEqual(only(findings, 'delivery-note').map(x => x.line), [17, 34, 37, 45]);
+  const f = only(findings, 'delivery-unread');
+  assert.deepEqual(f.map(x => x.line), [11, 16, 22, 48, 52]);
+  assert.match(f[2].note, /the line it lands on \(line 49\) may print nothing .* not followed across -> b \(line 50\)/);
+  assert.match(f[4].note, /the line may print nothing .* not followed across -> b \(line 53\)/);
+  // with a spoken line straight after the conditional, the note is followed and stays quiet
+  const plain = ['=== k ===', '#delivery: fine', '{flag: Kevin Park: Maybe.}', 'Kevin Park: Next.', '-> END'].join('\n') + '\n';
+  assert.deepEqual(only(lintInk(plain), 'delivery-unread'), []);
+});
+
+// delivery_parity_r5.ink (review R5): a conditional, a sequence or a printed name inside a tag.
+const R5_INK = readFileSync(new URL('../fixtures/files/ink_line_walker/delivery_parity_r5.ink', import.meta.url), 'utf8');
+
+test('delivery-note: a conditional or sequence in a #delivery: tag, and a tag whose name is printed (review R5)', () => {
+  const f = only(lintInk(R5_INK), 'delivery-note');
+  assert.deepEqual(f.map(x => x.line), [31, 40, 43, 46, 49, 52, 56, 62, 66]);
+  assert.match(f[4].note, /a tag opens with \{braces\}, so its name is printed/);
+  // an escaped \# is text, not a tag
+  assert.deepEqual(only(lintInk('=== k ===\nKevin Park: Ticket \\#{n}.\n-> END\n'), 'delivery-note'), []);
+  assert.deepEqual(only(lintInk('=== k ===\nKevin Park: Ticket #{n}.\n-> END\n'), 'delivery-note').map(x => x.line), [2]);
+});
+
+test('delivery-unread: a knot with a tag line before its first stitch is not followed into the stitch', () => {
+  const ink = ['-> s', '=== a ===', '#delivery: to s', '-> s', '=== s ===', '#delivery: s tag', '= one', 'Kevin Park: S one.', '-> END'].join('\n') + '\n';
+  const f = only(lintInk(ink), 'delivery-unread');
+  assert.deepEqual(f.map(x => x.line), [3, 6]);
+  assert.match(f[0].note, /the server cannot follow -> s to a spoken line/);
+});
+
+test('delivery-unread: a note diverted to a knot the server cannot read says so', () => {
+  const ink = ['=== a ===', '#delivery: lost', '-> b', '=== b ===', '~ temp x = 1', '=== c ===', 'Kevin Park: C.', '-> END'].join('\n') + '\n';
+  const f = only(lintInk(ink), 'delivery-unread');
+  assert.deepEqual(f.map(x => x.line), [2]);
+  assert.match(f[0].note, /the server cannot follow -> b to a spoken line/);
+});
+
+test('delivery-note: a note over 200 characters, with braces, or with no letter or digit', () => {
+  const ink = [
+    '=== s ===',
+    `Gary: Long. #delivery: ${'slowly '.repeat(30)}`,  // 2: warns (over 200)
+    'Gary: Braces. #delivery: {mood} and quiet',       // 3: warns
+    'Gary: Dots. #delivery: ...',                      // 4: warns
+    'Gary: Ellipsis. #delivery: …',                    // 5: warns
+    'Gary: Fine. #delivery: quietly, almost to herself #speaker:gary', // 6: fine (ends at the next tag)
+    `Gary: Just under. #delivery: ${'a'.repeat(200)}`, // 7: fine (200 exactly)
+  ].join('\n') + '\n';
+  const f = only(lintInk(ink), 'delivery-note');
+  assert.deepEqual(f.map(x => x.line), [2, 3, 4, 5]);
+  assert.match(f[0].note, /over 200/);
+  assert.match(f[1].note, /braces/);
+  assert.match(f[2].note, /no ASCII letter or digit/);
+  assert.equal(only(lintInk(ink), 'delivery-unread').length, 0);
+});

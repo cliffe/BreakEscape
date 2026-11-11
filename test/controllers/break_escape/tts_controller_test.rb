@@ -907,7 +907,206 @@ module BreakEscape
       FileUtils.rm_rf(tmp_dir) if tmp_dir
     end
 
+    # ─── Delivery notes (#delivery: on an ink line) ───────────────────────────
+
+    DELIVERY_STORY = "test/fixtures/files/ink_line_walker/delivery_fixture.json".freeze
+    KEVIN_VOICE = { "name" => "Puck", "style" => "Nervous IT admin.", "language" => "en-GB" }.freeze
+    QUIET_LINE = "I suppose it doesn't matter now.".freeze
+    QUIET_NOTE = "quietly, almost to herself".freeze
+
+    def use_delivery_scenario
+      @game.scenario_data["rooms"]["lobby"]["npcs"] = [
+        { "id" => "kevin_park", "displayName" => "Kevin Park", "npcType" => "person",
+          "voice" => KEVIN_VOICE, "storyPath" => DELIVERY_STORY }
+      ]
+      @game.save!
+    end
+
+    def post_line(params, calls)
+      with_env("GEMINI_API_KEY" => "dummy_key_for_test") do
+        stub_generate_returning(nil, calls) { post tts_game_url(@game), params: params }
+      end
+    end
+
+    test "tts generates a tagged line with its delivery note" do
+      use_delivery_scenario
+      calls = []
+      post_line({ npc_id: "kevin_park", text: QUIET_LINE, delivery: QUIET_NOTE }, calls)
+
+      assert_response :internal_server_error # the stub returns no clip
+      assert_equal 1, calls.size
+      assert_equal QUIET_NOTE, calls.first[:kwargs][:delivery]
+      assert_equal [QUIET_LINE, "Puck", "Nervous IT admin.", "en-GB"], calls.first[:args]
+    end
+
+    test "tts requests without a note are unchanged: no delivery reaches generate" do
+      use_delivery_scenario
+      calls = []
+      post_line({ npc_id: "kevin_park", text: QUIET_LINE }, calls)
+      assert_equal 1, calls.size
+      refute calls.first[:kwargs].key?(:delivery)
+    end
+
+    test "tts voices a line untagged when the ink gives it no such note, never silencing it (review R1 M2)" do
+      use_delivery_scenario
+      calls = []
+      post_line({ npc_id: "kevin_park", text: QUIET_LINE, delivery: "shouting with rage" }, calls)
+      post_line({ npc_id: "kevin_park", text: "An untagged line.", delivery: QUIET_NOTE }, calls)
+      post_line({ npc_id: "kevin_park", text: QUIET_LINE, delivery: "x" * 201 }, calls)
+      post_line({ npc_id: "kevin_park", text: QUIET_LINE, delivery: "x" * 5000 }, calls)
+      assert_equal 4, calls.size
+      calls.each { |c| refute c[:kwargs].key?(:delivery), c.inspect }
+    end
+
+    # review R5 m2: a player can post any shape; a note that is not a String is ignored
+    test "tts voices a line untagged with a 200 when delivery is an array or an object" do
+      use_delivery_scenario
+      generated = @cache_root.join("generated.mp3")
+      File.binwrite(generated, FAKE_MP3)
+      calls = []
+      bodies = [
+        { npc_id: "kevin_park", text: QUIET_LINE, delivery: [QUIET_NOTE] },
+        { npc_id: "kevin_park", text: QUIET_LINE, delivery: { "a" => "b" } },
+        { npc_id: "kevin_park", text: QUIET_LINE, delivery: { "note" => QUIET_NOTE } }
+      ]
+      with_env("GEMINI_API_KEY" => "dummy_key_for_test") do
+        stub_generate_returning(generated, calls) do
+          bodies.each do |body|
+            post tts_game_url(@game), params: body
+            assert_response :success, body.inspect
+            post tts_game_url(@game), params: body, as: :json
+            assert_response :success, "#{body.inspect} as JSON"
+          end
+        end
+      end
+      assert_equal 6, calls.size
+      calls.each do |c|
+        refute c[:kwargs].key?(:delivery), c.inspect
+        assert_equal QUIET_LINE, c[:args][0]
+      end
+    end
+
+    test "tts plays the untagged clip for a line whose note the server can't place" do
+      use_delivery_scenario
+      write_clip(TtsService.cache_key("An untagged line.", *KEVIN_VOICE.values))
+      service = TtsService.new
+      service.define_singleton_method(:enabled?) { true }
+      service.define_singleton_method(:generate) { |*_a, **_k| flunk "generated a line that already had a clip" }
+      TtsService.stub(:new, service) do
+        post tts_game_url(@game), params: { npc_id: "kevin_park", text: "An untagged line.", delivery: "glued" }
+      end
+      assert_response :success
+    end
+
+    test "tts sends the ink's note to the voice, never the client's lookalike (review R1 M1)" do
+      use_delivery_scenario
+      calls = []
+      # Normalises to the ink's note (fullwidth letters and emoji are stripped), so it
+      # selects that note; the words it adds must not reach the voice prompt or the key.
+      lookalike = "Quietly, almost to herself \uFF53\uFF48\uFF4F\uFF55\uFF54 \uFF41\uFF4E\uFF47\uFF52\uFF49\uFF4C\uFF59 \u{1F600}"
+      post_line({ npc_id: "kevin_park", text: QUIET_LINE, delivery: lookalike }, calls)
+      assert_equal 1, calls.size
+      assert_equal QUIET_NOTE, calls.first[:kwargs][:delivery]
+    end
+
+    test "tts writes the ink's note into the prompt, key and sidecar for a lookalike note" do
+      use_delivery_scenario
+      captured = nil
+      with_env("GEMINI_API_KEY" => "dummy_key_for_test") do
+        service = stubbed_gemini_service
+        service.define_singleton_method(:call_gemini_tts) { |*args| captured = args; "\x00\x00" * 2400 }
+        TtsService.stub(:new, service) do
+          post tts_game_url(@game), params: { npc_id: "kevin_park", text: QUIET_LINE,
+                                               delivery: "quietly almost to herself \uFF53\uFF48\uFF4F\uFF55\uFF54" }
+        end
+      end
+      assert_response :success
+      assert_equal "Nervous IT admin. For this line only: quietly, almost to herself.", captured[2]
+      key = TtsService.cache_key(QUIET_LINE, *KEVIN_VOICE.values, QUIET_NOTE)
+      sidecar = JSON.parse(File.read(TtsService.new.cache_path(key, @game.mission.name).sub_ext(".json")))
+      assert_equal QUIET_NOTE, sidecar["delivery"]
+    end
+
+    test "tts checks the speaker before the note: an unknown npc with a note is 404 (review R1 n3)" do
+      use_delivery_scenario
+      post tts_game_url(@game), params: { npc_id: "nobody", text: QUIET_LINE, delivery: QUIET_NOTE }
+      assert_response :not_found
+    end
+
+    test "a tagged line falls back to its untagged clip when generation hits the quota (review R1 m1)" do
+      use_delivery_scenario
+      write_clip(TtsService.cache_key(QUIET_LINE, *KEVIN_VOICE.values))
+      service = TtsService.new
+      service.define_singleton_method(:enabled?) { true }
+      service.define_singleton_method(:generate) { |*_a, **_k| raise TtsService::QuotaExhaustedError.new(30) }
+      with_env("GEMINI_API_KEY" => "dummy_key_for_test") do
+        TtsService.stub(:new, service) do
+          post tts_game_url(@game), params: { npc_id: "kevin_park", text: QUIET_LINE, delivery: QUIET_NOTE }
+        end
+      end
+      assert_response :success
+      assert_equal "audio/mpeg", response.media_type
+    end
+
+    test "a tagged line falls back to its untagged clip when generation fails" do
+      use_delivery_scenario
+      write_clip(TtsService.cache_key(QUIET_LINE, *KEVIN_VOICE.values))
+      calls = []
+      post_line({ npc_id: "kevin_park", text: QUIET_LINE, delivery: QUIET_NOTE }, calls)
+      assert_equal 1, calls.size
+      assert_response :success
+    end
+
+    test "a tagged line with no clip at all still reports the quota" do
+      use_delivery_scenario
+      service = TtsService.new
+      service.define_singleton_method(:enabled?) { true }
+      service.define_singleton_method(:generate) { |*_a, **_k| raise TtsService::QuotaExhaustedError.new(30) }
+      TtsService.stub(:new, service) do
+        post tts_game_url(@game), params: { npc_id: "kevin_park", text: QUIET_LINE, delivery: QUIET_NOTE }
+      end
+      assert_response :too_many_requests
+    end
+
+    test "tts serves a tagged line's own clip, not the untagged one" do
+      use_delivery_scenario
+      write_clip(TtsService.cache_key(QUIET_LINE, *KEVIN_VOICE.values, QUIET_NOTE))
+
+      service = TtsService.new
+      service.define_singleton_method(:generate) { |*_a, **_k| flunk "generated a line that already had a clip" }
+      TtsService.stub(:new, service) do
+        post tts_game_url(@game), params: { npc_id: "kevin_park", text: QUIET_LINE, delivery: QUIET_NOTE }
+      end
+      assert_response :success
+    end
+
+    test "tts generates a tagged line rather than serve its untagged clip when it can" do
+      use_delivery_scenario
+      write_clip(TtsService.cache_key(QUIET_LINE, *KEVIN_VOICE.values))
+      calls = []
+      post_line({ npc_id: "kevin_park", text: QUIET_LINE, delivery: QUIET_NOTE }, calls)
+      assert_equal 1, calls.size
+    end
+
+    test "tts on a keyless server falls back to the untagged clip for a tagged line" do
+      use_delivery_scenario
+      write_clip(TtsService.cache_key(QUIET_LINE, *KEVIN_VOICE.values))
+      with_env("GEMINI_API_KEY" => nil) do
+        post_with_generate_forbidden_params(npc_id: "kevin_park", text: QUIET_LINE, delivery: QUIET_NOTE)
+      end
+      assert_response :success
+    end
+
     private
+
+    def post_with_generate_forbidden_params(params)
+      service = TtsService.new
+      service.define_singleton_method(:enabled?) { false }
+      service.define_singleton_method(:generate) { |*_args, **_kw| flunk "generated without a key" }
+      TtsService.stub(:new, service) do
+        post tts_game_url(@game), params: params
+      end
+    end
 
     FAKE_MP3 = ("\xFF\xFB\x90\x00" + ("\x00" * 128)).b.freeze
 
