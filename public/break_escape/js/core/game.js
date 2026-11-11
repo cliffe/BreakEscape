@@ -2140,6 +2140,8 @@ export async function create() {
         }
 
         createRoom(startRoomId, startingRoomData, startingRoomPosition);
+        // A propped door in the start room (slice 9.2 B); restore() covers it when the runner comes later
+        window.npcWorkarounds?.syncRoom?.(startRoomId);
         revealRoom(startRoomId);
     } catch (error) {
         console.error('Error loading starting room:', error);

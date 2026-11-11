@@ -275,6 +275,9 @@ module BreakEscape
 
         d = { 'index' => i, 'do' => w['do'] }
         d['setGlobal'] = w['setGlobal'] if declared_global?(w['setGlobal'])
+        # A propped door's room, so the client opens its sprites again after a load (plan 11.1 X4);
+        # it is already in unlockedRooms, so naming it gives nothing away
+        d['door'] = w['door'] if w['do'] == 'prop_door' && w['door'].is_a?(String)
         d
       end
     end

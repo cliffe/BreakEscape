@@ -18,7 +18,10 @@
  *
  * A failed request is resent (the server answers a spent hand-over again with the same body); a
  * 425 (the dwell has not passed in server time) is resent after the dwell; a 403 ends it. On a
- * load, `restore(block)` sets every done workaround's `setGlobal` again.
+ * load, `restore(block)` sets every done workaround's `setGlobal` again and remembers every
+ * propped room (a done prop_door's `door`); `syncRoom(roomId)`, called as each room is built,
+ * opens that room's door sprites to a propped room, so a propped door looks open after a reload
+ * (plan 11.1 X4) as it did when it was propped.
  *
  * Nothing here is secret: a run names ids, a kind and a dwell; no password passes through.
  */
@@ -42,6 +45,7 @@ export class NpcWorkarounds {
         this.deps = deps;
         this.active = new Map();     // key -> { npcId, run, state: 'running' | 'sending' }
         this.finished = new Set();   // keys whose answer has been applied (or that ended)
+        this.propped = new Set();    // rooms a done prop_door holds open
         this.requests = 0;
     }
 
@@ -147,20 +151,46 @@ export class NpcWorkarounds {
             return;
         }
         if (typeof body.pcId === 'string' && body.hasPostit === true) this.deps.markPostit?.(body.pcId, true);
-        if (typeof body.roomId === 'string') this.deps.openDoor?.(body.roomId, body.roomData || null);
+        if (typeof body.roomId === 'string') {
+            this.propped.add(body.roomId);
+            this.deps.openDoor?.(body.roomId, body.roomData || null);
+        }
         if (typeof body.setGlobal === 'string' && body.setGlobal) this.deps.setGlobal?.(body.setGlobal, true);
         this._emit(`npc_workaround:${npcId}`, { npcId, index: run.index, do: run.do, phase: 'done' });
         if (typeof body.roomId === 'string') this._emit(`door_propped:${body.roomId}`, { roomId: body.roomId, npcId });
     }
 
-    /** GET /scenario's npcFrustration: every done workaround's setGlobal is set again. */
+    /**
+     * GET /scenario's npcFrustration: every done workaround's setGlobal is set again, and every
+     * propped room is remembered and its doors in the rooms already built are opened.
+     */
     restore(block) {
         if (!block || typeof block !== 'object') return;
         for (const entry of Object.values(block)) {
             for (const d of Array.isArray(entry?.done) ? entry.done : []) {
                 if (typeof d?.setGlobal === 'string' && d.setGlobal) this.deps.setGlobal?.(d.setGlobal, true);
+                if (d?.do === 'prop_door' && typeof d.door === 'string' && d.door) this.propped.add(d.door);
             }
         }
+        if (this.propped.size) for (const roomId of this.deps.loadedRooms?.() || []) this.syncRoom(roomId);
+    }
+
+    /**
+     * A room has been built: open its door sprites that lead to a propped room, with no lock and
+     * no server call (the room is already in unlockedRooms). Returns how many it opened.
+     */
+    syncRoom(roomId) {
+        if (!this.propped.size || typeof roomId !== 'string') return 0;
+        let n = 0;
+        for (const sp of this.deps.doorSprites?.(roomId) || []) {
+            const props = sp?.doorProperties;
+            if (!props || props.open || sp.proppedOpening || sp.active === false || !this.propped.has(props.connectedRoom)) continue;
+            sp.proppedOpening = true;   // openDoor may finish later, once the far room has loaded
+            props.locked = false;
+            this.deps.openSprite?.(sp);
+            n++;
+        }
+        return n;
     }
 }
 
@@ -173,6 +203,12 @@ export function doorSpritesFor(roomId, w) {
         }
     }
     return out;
+}
+
+/** Door sprites of one built room. */
+export function roomDoorSprites(roomId, w) {
+    const room = w.rooms?.[roomId];
+    return Array.isArray(room?.doorSprites) ? room.doorSprites : [];
 }
 
 /** Open a propped room on the client, as NPCGameBridge.unlockDoor does after the server agrees. */
@@ -211,6 +247,14 @@ export function installNpcWorkarounds(api) {
         },
         markPostit: (pcId, on) => w.postitMarks?.mark?.(pcId, on),
         openDoor: (roomId, roomData) => openProppedDoor(roomId, roomData, w),
+        loadedRooms: () => Object.keys(w.rooms || {}),
+        doorSprites: roomId => roomDoorSprites(roomId, w),
+        openSprite: sp => {
+            if (w.gameScenario?.rooms?.[sp.doorProperties.connectedRoom]) w.gameScenario.rooms[sp.doorProperties.connectedRoom].locked = false;
+            if (typeof w.unlockDoor === 'function') {
+                try { w.unlockDoor(sp, null); } catch (e) { console.warn('propped door failed to open', e); }
+            }
+        },
         npcRecord: id => w.npcManager?.npcs?.get?.(id) || null
     });
     w.npcWorkarounds = runner;

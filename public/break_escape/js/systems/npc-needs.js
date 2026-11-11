@@ -1800,7 +1800,14 @@ export class NPCNeedsSystem {
         const s = this.states.get(npcId);
         if (!s || typeof topic !== 'string' || !topic) return false;
         this._log(npcId, 'mutter', { topic });
+        const before = s.saying;
         this._grumble(s, null, topic, topic, { ignoreCooldown: true, icons: null });
+        // npc_mutter:<npcId> (slice 9.2 B): what was shown, heard or not, so a scripted run can check
+        // a failure mutter or a workaround's start line (npc_overheard fires only within earshot)
+        const said = s.saying !== before ? s.saying : null;
+        if (said) {
+            this._emit(`npc_mutter:${npcId}`, { npcId, topic, line: said.line || null, picture: said.picture || null });
+        }
         return true;
     }
 

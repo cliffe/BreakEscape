@@ -6,7 +6,7 @@
 // emit fires its event and then confirms. The needs side runs on fixtures/needs-work-world.mjs.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { NpcWorkarounds, openProppedDoor, START_POOLS } from '../../public/break_escape/js/systems/npc-workarounds.js';
+import { NpcWorkarounds, openProppedDoor, START_POOLS, installNpcWorkarounds } from '../../public/break_escape/js/systems/npc-workarounds.js';
 import { workWorld, baseObjects } from './fixtures/needs-work-world.mjs';
 
 function stub({ answers = {}, failures = [] } = {}) {
@@ -218,6 +218,10 @@ test('needs: an answer with run starts the workaround; the at-post visit stays a
     sys.step(250);
     assert.equal(evs('npc_workaround_due:dana').length, 1);
     assert.equal(sys.getState('dana').talking?.line, "I'll never remember this one.");
+    // The start line is an event a scripted run can see, heard or not (orchestrator decision, 9.2 B)
+    const said = evs('npc_mutter:dana');
+    assert.equal(said.length, 1);
+    assert.deepEqual(said[0].data, { npcId: 'dana', topic: 'wk_writes_down', line: "I'll never remember this one.", picture: null });
     assert.ok(stepUntil(sys, () => evs('npc_visit_done:dana').length > 0, 60000));
     assert.equal(evs('npc_left_post:dana').length, 0, 'an at-post job never leaves the desk');
     await flush();
@@ -249,4 +253,87 @@ test('needs (review R2 n1): an answer to a fail clears only that need\'s failSen
     sys.applyFrustration([{ npcId: 'dana', level: 20, previous: 0, tell: 1, forEvent: 'fail', forNeed: 'work' }]);
     sys.step(250);
     assert.deepEqual(s.failSent, { social_media: true });
+});
+
+// ── a propped door after a reload (plan 11.1 X4; orchestrator decision, 9.2 B) ─────────────────
+
+function doorWorld() {
+    const opened = [];
+    const sprite = (from, to) => ({ active: true, doorProperties: { roomId: from, connectedRoom: to, locked: true, open: false } });
+    const lobbyToStore = sprite('store_lobby', 'store_room');
+    const lobbyToHall = sprite('store_lobby', 'hall_d');
+    const rooms = { store_lobby: { doorSprites: [lobbyToStore, lobbyToHall] } };
+    const runner = new NpcWorkarounds({
+        setGlobal: () => {},
+        loadedRooms: () => Object.keys(rooms),
+        doorSprites: id => rooms[id]?.doorSprites || [],
+        openSprite: sp => { opened.push(sp); sp.doorProperties.open = true; }
+    });
+    return { runner, rooms, opened, lobbyToStore, lobbyToHall, sprite };
+}
+const DONE_BLOCK = { tom: { level: 80, done: [{ index: 0, do: 'prop_door', setGlobal: 'store_door_propped', door: 'store_room' }] } };
+
+test('a load opens the doors to a propped room in the rooms already built, and only those', () => {
+    const { runner, opened, lobbyToStore, lobbyToHall } = doorWorld();
+    runner.restore(DONE_BLOCK);
+    assert.deepEqual(opened, [lobbyToStore]);
+    assert.equal(lobbyToStore.doorProperties.locked, false);
+    assert.equal(lobbyToHall.doorProperties.locked, true);
+    assert.equal(runner.syncRoom('store_lobby'), 0, 'an open door is not opened twice');
+});
+
+test('a room built after the load opens its door to a propped room as it is built', () => {
+    const { runner, rooms, opened, sprite } = doorWorld();
+    delete rooms.store_lobby;
+    runner.restore(DONE_BLOCK);
+    assert.equal(opened.length, 0);
+    const later = sprite('store_lobby', 'store_room');
+    rooms.store_lobby = { doorSprites: [later] };
+    assert.equal(runner.syncRoom('store_lobby'), 1);
+    assert.deepEqual(opened, [later]);
+});
+
+test('no propped room: a load and a room build open nothing; a done entry of another kind names no door', () => {
+    const { runner, opened } = doorWorld();
+    runner.restore({ mei: { done: [{ index: 0, do: 'writes_down' }] }, ellis: { done: [{ index: 0, do: 'emit', door: 'store_room' }] } });
+    assert.equal(runner.syncRoom('store_lobby'), 0);
+    assert.equal(opened.length, 0);
+});
+
+test('a door propped in this session is remembered, so a room built later opens its side too', async () => {
+    const { runner, rooms, opened, sprite } = doorWorld();
+    delete rooms.store_lobby;
+    runner.deps.send = async () => ({ roomId: 'store_room', roomData: null, setGlobal: 'store_door_propped' });
+    runner.deps.needs = () => ({ mutter: () => true, enqueueVisit: () => true });
+    runner.deps.emit = () => {};
+    runner.deps.openDoor = () => {};
+    runner.due({ npcId: 'tom', run: TOM_RUN });
+    runner.visitDone(visitDone('tom', TOM_RUN));
+    await flush();
+    const later = sprite('store_lobby', 'store_room');
+    rooms.store_lobby = { doorSprites: [later] };
+    assert.equal(runner.syncRoom('store_lobby'), 1);
+    assert.deepEqual(opened, [later]);
+});
+
+test('installNpcWorkarounds: the live deps open a propped door sprite through window.unlockDoor', () => {
+    const prev = globalThis.window;
+    const unlocked = [];
+    const sp = { active: true, doorProperties: { roomId: 'store_lobby', connectedRoom: 'store_room', locked: true } };
+    globalThis.window = {
+        rooms: { store_lobby: { doorSprites: [sp] } },
+        gameScenario: { rooms: { store_room: { locked: true } } },
+        gameState: { globalVariables: {} },
+        unlockDoor: (s, data) => unlocked.push([s, data])
+    };
+    try {
+        const runner = installNpcWorkarounds({});
+        runner.restore(DONE_BLOCK);
+        assert.deepEqual(unlocked, [[sp, null]]);
+        assert.equal(sp.doorProperties.locked, false);
+        assert.equal(globalThis.window.gameScenario.rooms.store_room.locked, false);
+        assert.equal(globalThis.window.gameState.globalVariables.store_door_propped, true);
+    } finally {
+        globalThis.window = prev;
+    }
 });

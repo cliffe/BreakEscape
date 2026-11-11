@@ -43,7 +43,8 @@
 # it shows a sticky note), and one per gate door with a noHold (step 5: the door, its openFor
 # and its noHold as saved). It does not say which values a habit filled: the validator's
 # habits report does. It names who never locks, so it is not for a tester playing blind.
-# No passwords.
+# No passwords. With --access and --log, a block of the workaround events (npc_workaround
+# phases, npc_mutter topics, door_propped) found in the session log's drained event logs.
 require 'json'
 require_relative '../../lib/break_escape/access_identities'
 
@@ -157,10 +158,60 @@ def habits_section(g)
   lines
 end
 
+# Slice 9.2 B: the workaround events the browser emitted, read from the drained event logs in
+# the session log (a `drain` reply is logged as an "out" row). One line per NPC: each
+# npc_workaround phase in order, and each start line or failure mutter by topic (npc_mutter fires
+# whether or not the player was in earshot); then each door_propped room. The server record
+# above says what was done; this says what the player could have seen. Topics only, no lines.
+WORKAROUND_EVENT = /\A(npc_workaround|npc_mutter|door_propped):(.+)\z/.freeze
+
+def each_logged_event(node, &blk)
+  case node
+  when Array then node.each { |n| each_logged_event(n, &blk) }
+  when Hash
+    if node['kind'] == 'event' && node['event'].is_a?(String)
+      blk.call(node['event'], node['data'].is_a?(Hash) ? node['data'] : {})
+    else
+      node.each_value { |v| each_logged_event(v, &blk) }
+    end
+  end
+end
+
+def workaround_log_section(log_path)
+  per_npc = Hash.new { |h, k| h[k] = [] }
+  propped = []
+  File.foreach(log_path) do |line|
+    row = begin
+      JSON.parse(line)
+    rescue JSON::ParserError
+      next
+    end
+    next unless row.is_a?(Hash) && row['dir'] == 'out'
+
+    each_logged_event(row) do |name, data|
+      m = WORKAROUND_EVENT.match(name) or next
+      case m[1]
+      when 'npc_workaround' then per_npc[m[2]] << "#{data['do']}[#{data['index']}] #{data['phase']}"
+      when 'npc_mutter' then per_npc[m[2]] << "said #{data['topic']}#{data['line'] ? '' : ' (picture)'}"
+      when 'door_propped' then propped << "#{m[2]} by #{data['npcId']}"
+      end
+    end
+  end
+  lines = ['workaround events in the log']
+  lines << '  none' if per_npc.empty? && propped.empty?
+  per_npc.each { |npc, evs| lines << "  #{npc.ljust(14)} #{evs.join(', ')}" }
+  lines << "  door_propped   #{propped.join('; ')}" unless propped.empty?
+  lines
+end
+
 if access_only
   puts "game            #{g.id}  (mission #{g.mission_id})"
   puts access_section(ps)
   puts habits_section(g)
+  if log_path
+    abort "no such log: #{log_path}" unless File.file?(log_path)
+    puts workaround_log_section(log_path)
+  end
   exit 0
 end
 

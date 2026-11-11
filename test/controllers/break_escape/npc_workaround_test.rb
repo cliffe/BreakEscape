@@ -288,12 +288,13 @@ module BreakEscape
       assert_equal [{ 'index' => 0, 'do' => 'emit' }], blk['done']
     end
 
-    test 'GET /scenario lists done workarounds with their setGlobal' do
+    test 'GET /scenario lists done workarounds with their setGlobal, and a propped door with its room' do
       build
       t = Time.current
       run = fails('tom', 2, t).last['run']
       workaround('tom', run, t + 40)
-      assert_equal [{ 'index' => 0, 'do' => 'prop_door', 'setGlobal' => 'store_door_propped' }], scenario_block('tom')['done']
+      assert_equal [{ 'index' => 0, 'do' => 'prop_door', 'setGlobal' => 'store_door_propped', 'door' => 'store_room' }],
+                   scenario_block('tom')['done']
     end
 
     test "a workaround on an NPC whose list is a role's: the role's list is used" do
