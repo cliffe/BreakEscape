@@ -1,4 +1,4 @@
-# test_access_work: scripted playtest (slice 9.2, U1 to U3, W1 to W7 and X1 to X4)
+# test_access_work: scripted playtest (slice 9.2, U1 to U3, W1 to W7, X1 to X4 and H1 to H5)
 
 The scripted runs for access model slice 9.2 (`docs/achitechture/ACCESS_MODEL_SLICE_9_2_PLAN.md`,
 section 11.1 and the build steps of sub-slices U, A and B). One room per beat, each with a sign.
@@ -118,6 +118,34 @@ every two seconds overall, and per NPC one per counted failure until it is settl
 each to reach 100, Ellis 2); `/npc_workaround`, exactly one per done workaround (3 in game one, 1
 in game two, none for the hand-over that the first X4 reload interrupted). Every answer 200. Last
 run: `reports/2026-11-11_run_x.md`.
+
+## Run H: H1 to H5 (two new games, about 10 minutes each)
+
+The hot desk wing is Hall C: `hot_desk` (unowned, under `managed`, so it locks 5 game minutes
+after a guest leaves it), the PIN-locked `comms_cabinet`, the unlocked `hall_c_drawer` holding the
+temporary account's note, and Rosa's desk with her own breaker for `finance_share_down`. Ian is
+north in `cable_room` (W6); his own PC carries `lockChance: 1`, and he and Rosa author
+`screenHabit: { lockChance: 0 }`, so each leaves the hot desk signed in. H4 is `open_office`, east
+of Priya's room: Sam works on the CRM (`crm_down`, its switch by the door) and Ruth stands at the
+far desk. Game one: H1, H2, H3. Game two: H4, then H5. Hear the events with a listener on
+`npc_sat_at:*`, `npc_borrowed_session:*`, `npc_borrow_done:*`, `npc_guest_left:*`,
+`npc_overheard_login:*`, `pc_signed_out`, `workstation_auto_locked:*` and `npc_workaround:*`.
+`window.__test.access.guest('hot_desk')` reads the guest record, the PC's user and the session.
+
+| Beat | Do | Expect | Events and tasks | Server record afterwards |
+|---|---|---|---|---|
+| H1 | Enter `cable_room`, switch the wall socket off, go to Hall C and wait about 80 s by the hot desk. Click the hot desk while Ian sits at it. After he walks back, click it again, open `Cabinet.txt` and type its code on `comms_cabinet`. Switch the socket back on; once his next use is met, step the needs clock just past five game minutes (`window.__test.needs.step`) | Three `off` parks at his PC (tell 1, tell 2); at the third he says "I'll use the spare PC." and walks straight to the hot desk. A click while he works there: "Ian Shaw is using this PC." When he leaves, a click opens his desktop (a guest claim). After the clock step the desktop closes with "The screen locked" | `npc_workaround:ian` `started`; `npc_sat_at:hot_desk`; `npc_borrowed_session:hot_desk` `met: true`; `npc_borrow_done:ian`; `npc_workaround:ian` `done`; `npc_guest_left:hot_desk`; `workstation_owner_left:hot_desk` `reason: "guest"`; `pc_signed_in` `via: "claim"`; `workstation_auto_locked:hot_desk`. Tasks `h1_borrowed`, `h1_cabinet` | `guestSessions.hot_desk` `ian`; `sessions.hot_desk` a claim, then gone; `comms_cabinet` in `unlockedObjects` |
+| H2 | Open the drawer, read the note, sign in at the hot desk as the temporary account and leave the desktop open. Unplug Ian's PC again and wait | When Ian sits down the desktop closes with "Ian Shaw has signed in at this PC". After he leaves, a click opens Ian's desktop, not the temporary account's | `pc_signed_out` `reason: "displaced"`; one `POST /logout`; then as H1 | `sessions.hot_desk` the temporary account by password, then absent, then a claim for Ian |
+| H3 | Switch Rosa's breaker off by her desk and wait about 80 s | At her third failure she walks to the hot desk; her use fails there too and is not reported; she still leaves a session that can be claimed | `npc_borrowed_session:hot_desk` `npcId: "rosa"`, `met: false`; `npc_use_failed:rosa` at `hot_desk` with no matching report. Task `h3_failed_there` | `guestSessions.hot_desk` `rosa`; her level still rising |
+| H4 | Game two. Enter `open_office`, switch the CRM off and leave the room (stand in Priya's room) for about 80 s. Then stand beside Ruth and wait for Sam's next failure | First share: Sam walks to Ruth and speaks; nothing is noted. Second: a toast "Overheard: Sam Okafor" with his login, an evidence note in the notebook. The noted password signs in as Sam at the hot desk | First `POST /npc_workaround` with `heard: false`; second with `heard: true` and `room_id: "open_office"`; `npc_overheard_login:sam`. Task `h4_overheard` | `sharedLogins` `[]`, then `["sam"]` |
+| H5 | Reload (`location.href` to the game URL with `?skip_resume=1`) | The hot desk shows the sign-in screen; the levels are kept; the evidence note is still in the notebook | `pc_signed_out` `reason: "claim_ended"` for a claim held before the reload | `guestSessions` empty; `sharedLogins` kept |
+
+Tampered client (server tests, `test/controllers/break_escape/npc_workaround_h_test.rb`): a guest
+claim with no guest record, a careful guest, a held session or an unadmitted account is refused; a
+`heard: true` from a room the colleague cannot be in, or one still locked, is taken as not heard
+and answers `{}`. Earned secrets: run H types Ian's cabinet code (read on his desktop), the
+temporary account's password (read from the drawer note) and Sam's password (read from the
+overheard note).
 
 ## Earned secrets
 
