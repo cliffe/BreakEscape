@@ -67,8 +67,9 @@ require 'uri'
 # Slice 9.2 sub-slice B (ACCESS_MODEL_SLICE_9_2_PLAN.md 11): every authored workaround is a
 # secret until the server hands it over. A hash whose `do` is a workaround's kind beside that
 # workaround's own target (`door`, `prop`, `event`, `pc` or `with`) is reported anywhere but
-# where the server hands one over: a `run` in a POST /npc_frustration answer, and the
-# `pending` and `done` lists of GET /scenario's npcFrustration. A password in a
+# where the server hands one over: a `run` or a `pending` entry (every unspent hand-over, B review
+# R3 m2) in a POST /npc_frustration answer, and the `pending` and `done` lists of GET /scenario's
+# npcFrustration. A password in a
 # /npc_workaround answer is reported by the password rule (no exception covers it); the note
 # exception above follows a done writes_down through the game's written_down?.
 #
@@ -542,7 +543,7 @@ class AccessLeakScanner
         next
       end
       next if @workarounds.empty?
-      next if ctx[:route].end_with?('/npc_frustration') && json_path =~ /\A\$\.answers\[\d+\]\.run\z/
+      next if ctx[:route].end_with?('/npc_frustration') && json_path =~ /\A\$\.answers\[\d+\]\.(run|pending\[\d+\])\z/
       next if ctx[:scenario] && json_path =~ /\A\$\.npcFrustration\.[^.]+\.(pending|done)\[\d+\]\z/
 
       @workarounds.each do |w|
