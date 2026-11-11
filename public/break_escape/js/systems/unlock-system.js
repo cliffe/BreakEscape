@@ -351,16 +351,20 @@ export async function interactLoginPc(lockable) {
         }
         if (r?.reason === 'owner_returned') {
             // The owner sat back down while the claim was answered: as step 1, no screen
-            window.gameAlert?.(r.message, 'info', data.name || 'PC', 4000);
+            // (the owner's name is author text: plain text, review R2 n4)
+            window.gameAlert?.(r.message, 'info', data.name || 'PC', 4000, { plainText: true });
             return 'in_use';
         }
         if (r?.reason === 'auto_locked') {
             // The screen locked while the claim was answered: a locked screen is the sign-in
             // screen, as a click after the lock would find
-            window.gameAlert?.(r.message, 'info', data.name || 'PC', 4000);
+            window.gameAlert?.(r.message, 'info', data.name || 'PC', 4000, { plainText: true });
             openLoginSignIn(lockable, { reason: 'locked' });
             return 'signin';
         }
+        // A refused guest claim: the server timed the guest out on wall time (review R2 server
+        // m1), so the screen is locked here too and the next click sends no claim
+        if (guestId) ws?.guestClaimRefused?.(pcId);
         openLoginSignIn(lockable, { reason: 'claim_refused' });
         return 'claim_refused';
     }

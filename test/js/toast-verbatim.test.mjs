@@ -46,6 +46,7 @@ test('verbatim plain text keeps "--" and markup characters exactly', () => {
     assert.equal(shown(toast), line);
     assert.equal(toast.querySelector('.notification-title').textContent, 'Overheard: <i>Sam</i>', 'the title is plain text');
     assert.ok(!toast.html.includes('<b>'), 'nothing of the message went in as HTML');
+    assert.equal(toast.querySelector('.notification-message').style.whiteSpace, 'pre-wrap', 'spaces kept (R2 n1)');
 });
 
 test('plain text without verbatim still shows the dash display', () => {

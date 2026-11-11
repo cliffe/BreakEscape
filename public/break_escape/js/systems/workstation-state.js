@@ -279,6 +279,9 @@ export class WorkstationState {
      * pc_signed_out (any reason) at pcId, or a password or remote pc_signed_in there: the guest
      * record goes, so the next click is the sign-in screen (review R1 M1). A displacement's
      * pc_signed_out comes before the new borrower's npc_guest_left, so that guest is kept.
+     * Known gap (review R2 n3): _endClaim and signOut emit pc_signed_out after awaiting
+     * /logout, so a guest recorded during a very slow /logout would be dropped here while the
+     * server keeps it; the next claim is then never sent and the click shows the sign-in screen.
      */
     onSignedOut(pcId) {
         if (typeof pcId !== 'string' || !this.guests.has(pcId)) return false;
@@ -290,6 +293,18 @@ export class WorkstationState {
     _checkGuestLock(pcId) {
         const g = this.guests.get(pcId);
         if (!g || g.lockAt === undefined || this._clock() < g.lockAt) return false;
+        return this.guestClaimRefused(pcId);
+    }
+
+    /**
+     * The server refused a guest claim (review R2 server m1): it times the guest out on wall
+     * time, while lockAt runs on the needs clock, which stops during VM time and in a hidden
+     * tab. The server's answer is the lock: the guest record goes and the screen shows locked,
+     * as at lockAt, so later clicks find the sign-in screen with no claim.
+     */
+    guestClaimRefused(pcId) {
+        const g = this.guests.get(pcId);
+        if (!g) return false;
         this.guests.delete(pcId);
         this._publishGuest(pcId, true, true);
         const data = this._find(pcId) || { id: pcId };
