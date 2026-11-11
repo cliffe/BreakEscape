@@ -1479,3 +1479,81 @@ errors, 1 skip; JS 492 of 492 files passed.
 `3e7ed227a` (server), `ff6c07487` (validator), `683e7c080` (client), `f16451753` (tooling),
 `303630655` (scenario and run L), `9341c3f5f` (needs captures), `fe8446e4b` (docs), and this log.
 Nothing merged.
+
+## L review round 1 outcomes (2026-11-11)
+
+Reviews: `ACCESS_MODEL_SLICE_9_2_L_CODE_REVIEW_R1_SERVER.md` (0 blockers, 0 majors, 4 minors, 5
+nits) and `ACCESS_MODEL_SLICE_9_2_L_CODE_REVIEW_R1_CLIENT.md` (0 blockers, 1 major, 3 minors, 5
+nits). Every fix below has a test that fails with the fix taken out (checked by reverting each one
+in turn).
+
+### Orchestrator decisions (recorded)
+
+- **Client M1, the reload gap: the server sends the PCs.** `GET /scenario` carries `lockoutPcs`, the
+  ids of the sign-in PCs where `loginLockouts` holds any key (PC ids only, never a username or a
+  password), and the client seeds its "lockout seen" mark from it. The player caused and was shown
+  each of those lockouts, so this tells the browser nothing new. Plan 6.6 and the 9.2 table now say
+  so. The leak scanner allows exactly `$.lockoutPcs` in `GET /scenario`.
+- Server m2: `locked_out` is a `work` cause only, as on the client. Server m1: the hot-desk guest
+  path reads `loginLockouts`. Server m3: the check needs a work plan. Server m4: the scanner is
+  widened. Client m1: a "not locked out" answer clears the mark. Client n1: a lapse is never "met".
+
+### Server review
+
+| Finding | Outcome |
+|---|---|
+| m1 a locked-out guest leaves a claimable session | **Fixed.** `Game#account_locked_out_at?(pc, npc)` (the key `attempt_login!` builds); `record_borrow_done!` writes no guest record for a borrower locked out at that PC (as for a careful guest), and `claim_guest_session!` refuses "the guest is locked out at this PC". The owner claim uses the same helper. Tests: a borrow by Jake locked out at a `strict` hot desk leaves no `guestSessions` entry and the claim is 422; a planted guest record is refused while the lockout holds and granted once it is gone |
+| m2 `locked_out` owned for `social_media` | **Fixed.** `AccessWork.owned_causes` adds `locked_out` only for `work`; `fail_report!` refuses a `locked_out` cause on any other need. Test: Jake with `work` and `social_media` at `jake_pc` (desk only), recorded locked out: a social fail naming `locked_out` is refused and a social ease at the station is answered |
+| m3 the check needs no work plan | **Fixed.** `check_report!` refuses unless `AccessWork.work_plan?`. Test: a needs-only owner under `strict`, locked out, is refused and nothing is recorded |
+| m4 the scanner checks key names only | **Fixed.** `lockout_list` also reports a boolean `lockedOut` outside `POST /npc_frustration` and `POST /login`, and (with the game) any string holding one of the game's `loginLockouts` or `loginFailures` keys, under any key; and a `lockoutPcs` anywhere but `GET /scenario`'s `$.lockoutPcs`, or an entry there that is not a PC the game holds a lockout at (without a game, any key-shaped entry). Tests: one row each; no username in the report lines. The first L scanner test now also expects the `lockout_key` finding its own planted list gives |
+| n1 the owner claim is a second oracle | **Recorded** in plan 9.3's residual list: the claim answers the same question as the check, for any owner |
+| n2 plan 9.1 point 2 | **Fixed**: "for `work` only ... once a `check` has recorded it" |
+| n3 a record that outlives its lockout | **Test added**: `lockedOut: ["jake_pc"]` with no `loginLockouts`: the fail is refused, the station ease accepted |
+| n4 `lockedOut` sent as stored | **Fixed**: `GET /scenario` sends the stored list intersected with the NPC's station. Test with a stored `["jake_pc", "leo_pc", 7]` |
+| n5 column width | **Fixed**: `ljust(20)` |
+| Validator error on `hall_c_drawer` | H's; gone after merging `build/9-2-h` (the validator now shows no failure lines on `test_access_work`) |
+
+### Client review
+
+| Finding | Outcome |
+|---|---|
+| M1 the mark lost on reload | **Fixed** (decision above). `NpcReports.seedLockouts(list)`, called by `installNpcReports` from `window.gameScenario.lockoutPcs` (strings only). Server test: `lockoutPcs` lists `jake_pc` and `leo_pc` after lockouts of guessed and real usernames, drops a PC that is not a sign-in PC, carries no username, and the GET writes no record. Client test: the install seeds the mark and a locked return then checks |
+| m1 a false answer leaves the PC marked | **Fixed.** A per-PC count of lockout answers; the check carries the count when queued (never sent). An answer from the server with `lockedOut: false` for that NPC clears the mark unless the count has moved since; a refused or lost answer keeps it. Tests: no second check after a no; a new lockout answer marks it again; refused, lost, and a lockout noted while the check was in flight all keep the mark. After a reload the mark is seeded again from `lockoutPcs`, so a lockout of some other username costs one check per page load |
+| m2 no test joins the three layers | **Test added**: a real `WorkstationState`, `NpcReports` and the needs core on one dispatcher; Dana leaves for coffee, comes back to a locked screen, the check is sent and the hold taken in the same task as the return, her use waits, the answer arrives, the use fails with `locked_out`, no use is met. It fails with the hold taken out. Also added: a late true answer after a lapse still flags; `markCheck` refusing queues nothing. Not added: `_lateRoll` for a flagged owner (it goes through `_rollScreen`, which the screen test covers) |
+| m3 README says the wrong screen | **Fixed**: "Their own PC's screen locks on every leave ... the hot desk is left as the borrower's habit says (unless they are locked out there too ...)" |
+| n1 a lapse lets a use through as met | **Fixed.** After `LOCK_CHECK_WAIT_MS` with no answer the use is skipped, not judged: nothing restored, no `npc_used`, no report; the check stays in flight with its wait started again, so the next use there waits too, and only an answer ends the wait. The NPC never freezes (it goes home and comes back). Plan 6.6 and the README say so. Test: the lapse gives no `npc_used` and no failure, a second use lapses again, and the use after a no is met |
+| n2 the third policy lookup | **Comment added** at the copy in `npc-reports.js` naming the other two. Not merged: the copy reads the loaded room's sprite first, which `pc-policy.js` does not, and a new import there needs the JS test harness copy lists |
+| n3 the lockout shown three ways | **Not changed.** First-slice code; it is not a one-liner choice: the toast is the engine's refusal convention (the error-toast floor), and dropping the form message or the overlay changes the first slice's sign-in screen. For a first-slice pass |
+| n4 a check answer with no needs state | **Comment added** in `_applyAnswers` |
+| n5 `writes_down` on a lockout station | **Fixed**: one sentence in the README's lockout section |
+
+### Browser check (game 1253, port 3019)
+
+Keyless server on :3019, stopped by PID afterwards. A new game started in `lock_room`.
+
+- Jake left for the fridge (`workstation_owner_left:jake_pc` `screenLocked: true`). Three wrong
+  passwords for `jbrooks` through `pcSessions.signIn` (the minigame's own path): wrong (2 left),
+  wrong (1 left), `locked_out`; `lockoutSeen` `["jake_pc"]`; Jake had not come back.
+- Reload (`?skip_resume=1`) before his return. `GET /scenario` carried `lockoutPcs: ["jake_pc"]`
+  and no `lockedOut` for Jake; after the install `lockoutSeen` was `["jake_pc"]`, `checks` 0.
+- Jake's next trip: `workstation_owner_returned:jake_pc` `wasLocked: true`, one check (`checks`
+  1), `npc_locked_out:jake` a second later, then `npc_use_failed:jake` `missing: [{ jake_pc,
+  locked_out }]`, `station: true`. No use of `jake_pc` was met after the return.
+- Server record: `loginLockouts` `["jake_pc|jbrooks"]`; `npcFrustration.jake` level 20,
+  `lockedOut: ["jake_pc"]`, `failWhy.work: ["locked_out"]`.
+- `access-leak-check.rb` over the 20 responses (two `GET /scenario` with `lockoutPcs`): no leaks;
+  `lockout_list` 0, `lockout_unrecorded` 0.
+
+### Leftover games
+
+1253 (this round's check), on the shared dev database.
+
+### Merges and suites after review round 1
+
+`build/9-2-h` merged at its head `fa0f92445` (one conflict, this log: both sides kept, H's rounds 2
+and 3 before L), then `main` at `22255f183` (no conflicts). The validator shows no failure lines on
+`test_access_work`. After both merges, under the lock: Rails 1630 runs, 23720 assertions, 0
+failures, 0 errors, 1 skip; JS 493 of 493 files passed.
+
+Commits this round: `cd9c13722` (server and scanner), `8d5a26428` (client, README and plan), the
+two merges, and this log with the run L reload beat in `PLAYTEST.md`.
