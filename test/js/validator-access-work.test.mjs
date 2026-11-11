@@ -416,6 +416,30 @@ test('Workarounds: a prop_door with no door or no prop is an error; a prop not h
     assertHas(warnings(issues(s)), "prop 'store_wedge' is not hidden with revealOnGlobal \"store_propped\"");
 });
 
+test('Workarounds: a setGlobal that a server gate also reads is warned (review 9.2 B R2)', { skip }, () => {
+    const frag = "workaround setGlobal 'store_propped' is also read on the server";
+    let s = wkClean();
+    s.objectives = [{ aimId: 'a1', title: 'Aim', tasks: [{ taskId: 't1', title: 'T', type: 'custom',
+        unlockCondition: { globalVariable: 'store_propped' } }] }];
+    assertHas(warnings(issues(s)), `${frag} (an unlockCondition)`);
+    s = wkClean();
+    s.objectives = [{ aimId: 'a1', title: 'Aim', concludeRequires: { globals: ['store_propped'] }, tasks: [] }];
+    assertHas(warnings(issues(s)), `${frag} (concludeRequires.globals)`);
+    s = wkClean();
+    s.exportGlobals = ['store_propped'];
+    assertHas(warnings(issues(s)), `${frag} (exportGlobals)`);
+    s = wkClean();
+    s.resources.finance_share.downIf = 'store_propped';
+    assertHas(warnings(issues(s)), `${frag} (resources.finance_share.downIf)`);
+    s = wkClean();
+    s.rooms.office.objects.find(o => o.id === 'tom_pc').affordance.offWhen = { store_propped: true };
+    assertHas(warnings(issues(s)), `${frag} (tom_pc offWhen)`);
+    // An event mapping or a reveal reads it in the browser only: no warning
+    s = wkClean();
+    tom(s).eventMappings = [{ eventPattern: 'global_variable_changed:store_propped', conversationMode: 'none' }];
+    assert.ok(!has(warnings(issues(s)), frag));
+});
+
 test('Workarounds: writes_down on a PC another NPC owns, or with no password, is an error', { skip }, () => {
     let s = wkClean();
     s.rooms.office.objects[0].screenOwner = 'tom';

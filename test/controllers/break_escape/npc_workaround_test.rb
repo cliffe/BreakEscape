@@ -114,17 +114,75 @@ module BreakEscape
       assert_equal [false, false, false], a.map { |x| x['settled'] }
     end
 
-    test 'a lasting workaround handed over and not spent is not handed over again; after dropped it is' do
+    test 'a lasting workaround handed over and not spent is not handed over anew; after dropped it is' do
       build
       t = Time.current
       run = fails('mei', 3, t).last['run']
-      assert_nil fails('mei', 1, t + 75).first['run'], 'handed over and waiting'
+      waiting = fails('mei', 1, t + 75).first['run']
+      assert_equal [0, 1], [waiting['index'], waiting['hand']], 'handed over and waiting: the same hand again (review R2 M1)'
+      assert_equal 1, entry('mei')['hands'], 'no new hand-over made'
       assert_equal 200, workaround('mei', run, t + 80, dropped: true).status
       assert_equal({ 'dropped' => true }, response.parsed_body)
       assert_empty entry('mei')['done']
       again = fails('mei', 1, t + 100).first['run']
       assert_equal 0, again['index']
       assert_equal 2, again['hand'], 'a new hand-over has its own number'
+    end
+
+    test 'review R2 M1: a lost answer to the fail that handed over a run does not strand it' do
+      build
+      t = Time.current
+      fails('mei', 3, t)   # the third answer, with the run, is never read
+      fourth = fails('mei', 1, t + 75).first
+      assert_equal({ 'index' => 0, 'hand' => 1, 'do' => 'writes_down', 'dwell' => 0 }, fourth['run'],
+                   'the stored hand, with the dwell left since the server handed it over')
+      res = workaround('mei', fourth['run'], t + 80)
+      assert_equal 200, res.status
+      assert_equal({ 'pcId' => 'mei_pc', 'hasPostit' => true }, res.parsed_body)
+      assert_equal [0], entry('mei')['done']
+      assert_nil fails('mei', 1, t + 105).first['run'], 'spent: not offered again'
+    end
+
+    test 'review R2 M1: a too-soon fail answers the unspent hand-over again, with the dwell left' do
+      build
+      t = Time.current
+      fails('mei', 3, t)
+      state = @game.reload.player_state.deep_dup
+      a = travel_to(t + 52) { report(rota_fail('mei')).first }
+      assert_equal true, a['tooSoon']
+      assert_equal({ 'index' => 0, 'hand' => 1, 'do' => 'writes_down', 'dwell' => 4 }, a['run'])
+      assert_equal state, @game.reload.player_state, 'writes nothing'
+    end
+
+    test 'review R2 m2: after a reset an old hand is refused with 403 and writes nothing' do
+      build
+      t = Time.current
+      run = fails('mei', 3, t).last['run']
+      post reset_game_url(@game), as: :json
+      assert_response :success
+      assert_equal 403, workaround('mei', run, t + 60).status, 'the NPC is not met yet'
+      # Met again after the reset: the hand-over still belongs to the old run
+      @game.reload
+      @game.player_state['encounteredNPCs'] = %w[mei]
+      @game.save!
+      state = @game.reload.player_state.deep_dup
+      assert_equal 403, workaround('mei', run, t + 61).status
+      assert_equal 403, workaround('mei', run, t + 62, dropped: true).status
+      assert_equal state, @game.reload.player_state
+    end
+
+    test 'review R2 m2: "dropped" after "done" for one hand answers the done body and writes nothing' do
+      build
+      t = Time.current
+      run = fails('tom', 2, t).last['run']
+      first = workaround('tom', run, t + 40).parsed_body
+      state = @game.reload.player_state.deep_dup
+      res = workaround('tom', run, t + 45, dropped: true)
+      assert_equal 200, res.status
+      assert_equal first, res.parsed_body
+      assert res.parsed_body['roomData'].is_a?(Hash), 'a prop_door still serves its room'
+      assert_equal state, @game.reload.player_state
+      assert_equal [0], entry('tom')['done']
     end
 
     test 'a drop is accepted before the dwell has passed' do
@@ -150,7 +208,6 @@ module BreakEscape
       assert_empty entry('mei')['done']
       assert_empty entry('mei')['handed']
       assert_equal state, @game.reload.player_state
-      assert_nil postit('mei_pc')
     end
 
     test 'the 425 says how long is left, not the whole dwell' do
@@ -222,7 +279,7 @@ module BreakEscape
       a = fails('mei', 5, t)
       assert_equal [20, 40, 60, 80, 100], a.map { |x| x['level'] }
       assert_equal 0, a[2]['run']['index']
-      assert_nil a[3]['run'], 'e1 waits; e2 is at 100 and the level is 80'
+      assert_equal [0, 1], a[3]['run'].values_at('index', 'hand'), 'e1 waits and is offered again; e2 is at 100 and the level is 80'
       assert_equal 1, a[4]['run']['index'], 'e2 comes into force at 100 while e1 still waits'
       assert_equal false, a[4]['settled']
       workaround('mei', a[2]['run'], t + 110)

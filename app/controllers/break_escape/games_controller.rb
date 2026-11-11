@@ -1219,7 +1219,8 @@ module BreakEscape
     # never made (or already spent other than as done), 425 before the dwell.
     def npc_workaround
       authorize @game if defined?(Pundit)
-      dropped = ActiveModel::Type::Boolean.new.cast(params[:dropped]) == true
+      # Review R2 N3: only true (or "true") is a drop; {} or [1] is not
+      dropped = [true, 'true'].include?(params[:dropped])
       ActiveRecord::Base.transaction do
         result = @game.complete_npc_workaround!(npc_id: params[:npc_id], index: params[:index], hand: params[:hand], dropped: dropped)
         body = result[:body]

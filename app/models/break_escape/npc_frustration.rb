@@ -259,6 +259,8 @@ module BreakEscape
       run_description(w, i, entry['hands'])
     end
 
+    # Every unspent hand-over, with its stored hand and the dwell left since the server handed it
+    # over (review R2 N2), so a runner restarted after a reload waits no longer than it must
     def pending_runs(npc, e)
       list = AccessWork.workarounds(scenario_data, npc)
       e['handed'].filter_map do |key, h|
@@ -266,8 +268,19 @@ module BreakEscape
         w = i.nil? ? nil : list[i]
         next nil unless h.is_a?(Hash) && performable?(npc, w)
 
-        run_description(w, i, h['hand'])
+        run = run_description(w, i, h['hand'])
+        left = run['dwell'] - (server_now - h['time'].to_f)
+        run['dwell'] = left.positive? ? left.ceil(1) : 0
+        run
       end
+    end
+
+    # Review R2 M1: a counted fail that hands over nothing new, or a too_soon fail, answers the
+    # oldest unspent hand-over again, with its own index and hand. It was handed over already, so
+    # this reveals nothing; a lost answer to the fail that made it no longer strands it until a
+    # reload. The runner starts a given (npc, index, hand) once, so a copy it holds is ignored.
+    def unspent_run(npc, entry)
+      pending_runs(npc, entry).min_by { |r| r['hand'].to_i }
     end
 
     def done_list(npc, e)
@@ -334,14 +347,19 @@ module BreakEscape
 
       # 4. the pace floor
       entry = frustration_entry(npc_id)
-      return too_soon(npc, entry, npc_id) if fail_too_soon?(npc, need, entry, missing, report['rearmed'] == true || report['rearmed'] == 'true')
+      if fail_too_soon?(npc, need, entry, missing, report['rearmed'] == true || report['rearmed'] == 'true')
+        body = too_soon(npc, entry, npc_id)
+        run = unspent_run(npc, entry)
+        body['run'] = run if run
+        return body
+      end
 
       previous = entry['level']
       per_fail = AccessWork.frustration(scenario_data, npc)['perFail']
       entry['level'] = tidy_level([previous + per_fail, 100].min)
       entry['failAt'][need] = server_now
       entry['failWhy'][need] = missing.map { |c| c['why'] }.uniq
-      run = choose_run!(npc, entry)
+      run = choose_run!(npc, entry) || unspent_run(npc, entry)
       answer(npc_id, npc, entry, previous, run)
     end
 

@@ -543,6 +543,72 @@ module ValidateAccessWork
 
       check_npc_workarounds(json_data, npc, e[:room], list, issues)
     end
+    check_workaround_globals_read_by_server(json_data, issues)
+  end
+
+  # Review 9.2 B R2: a workaround's setGlobal is written by the server on "done", but the
+  # player's browser can write any global that is not imported. Nothing in B reads one on the
+  # server, so writing it gains nothing; a server gate that reads the same name would be opened
+  # with one sync. Warn so the author gates on the workaround's event instead.
+  def check_workaround_globals_read_by_server(json_data, issues)
+    names = room_npcs(json_data).flat_map do |e|
+      AW.workarounds(json_data, e[:npc]).filter_map { |w| w.is_a?(Hash) && AW.present_string?(w['setGlobal']) ? w['setGlobal'] : nil }
+    end.uniq
+    return if names.empty?
+
+    reads = server_read_globals(json_data)
+    names.each do |name|
+      where = reads[name]
+      next if where.nil? || where.empty?
+
+      warn(issues, "workaround setGlobal '#{name}' is also read on the server (#{where.uniq.join(', ')}), but the " \
+                   "player's browser can write it, so that gate opens without the workaround. Gate on the workaround's " \
+                   'npc_workaround event instead, or keep the global for display only.')
+    end
+  end
+
+  # { global name => [where] } for the places the server reads a global: an unlockCondition
+  # globalVariable, concludeRequires.globals, exportGlobals, a resource's downIf, a route's
+  # gate globals and an affordance offWhen
+  def server_read_globals(json_data)
+    reads = Hash.new { |h, k| h[k] = [] }
+    walk = lambda do |node|
+      case node
+      when Hash
+        node.each do |k, v|
+          if k == 'unlockCondition' && v.is_a?(Hash) && AW.present_string?(v['globalVariable'])
+            reads[v['globalVariable']] << 'an unlockCondition'
+          elsif k == 'concludeRequires' && v.is_a?(Hash)
+            Array(v['globals']).each { |g| reads[g.to_s] << 'concludeRequires.globals' }
+          end
+          walk.call(v)
+        end
+      when Array then node.each { |v| walk.call(v) }
+      end
+    end
+    walk.call(json_data)
+    Array(json_data['exportGlobals']).each { |g| reads[g.to_s] << 'exportGlobals' }
+    AW.resources(json_data).each do |rid, r|
+      reads[r['downIf']] << "resources.#{rid}.downIf" if r.is_a?(Hash) && AW.present_string?(r['downIf'])
+    end
+    room_npcs(json_data).each do |e|
+      AW.work_list(json_data, e[:npc]).each do |rid|
+        res = AW.resources(json_data)[rid]
+        next unless res
+
+        Array(AW.routes(json_data, e[:npc], res)).flatten.each { |g| reads[g.to_s] << "a route to '#{rid}'" }
+      end
+    end
+    AW.object_index(json_data).each do |oid, entry|
+      off = AW.affordance(json_data, entry[:obj])&.dig('offWhen')
+      off_names = case off
+                  when String then [off]
+                  when Hash then off.keys.map(&:to_s)
+                  else []
+                  end
+      off_names.each { |g| reads[g] << "#{oid} offWhen" }
+    end
+    reads
   end
 
   def check_npc_workarounds(json_data, npc, home_room, list, issues)
