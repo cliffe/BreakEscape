@@ -7,6 +7,7 @@ module BreakEscape
     include NetworkAccess
     include CaptureProofs
     include NpcFrustration
+    include Wearables
 
     # Associations
     belongs_to :player, polymorphic: true
@@ -200,6 +201,8 @@ module BreakEscape
 
     def remove_inventory_item!(item_id)
       player_state['inventory']&.reject! { |item| item['id'] == item_id }
+      # A worn item that leaves the inventory comes off (Wearables)
+      release_worn_unless_held!
       save!
     end
 
@@ -280,7 +283,8 @@ module BreakEscape
     # included, is dropped.
     def merge_global_variables!(variables)
       globals = player_state['globalVariables'] ||= {}
-      read_only = imported_global_names
+      # Imported globals and the worn globals (Wearables: only POST wear writes one)
+      read_only = imported_global_names + worn_global_names
       variables.each do |key, value|
         if read_only.include?(key.to_s)
           # The first sync after a load resends every global, imports included
@@ -4306,6 +4310,9 @@ module BreakEscape
 
       # Imported globals (CarryOver): their values and the read-only list.
       apply_imported_globals_to_state
+
+      # Worn globals (Wearables): read-only to sync_state from the start
+      refresh_wearable_globals!
     end
 
     def set_started_at
