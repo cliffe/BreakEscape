@@ -21,6 +21,7 @@ require_relative '../lib/break_escape/access_identities'
 require_relative '../lib/break_escape/network_model'
 require_relative '../lib/break_escape/npc_habits'
 require_relative '../lib/break_escape/npc_habits/clues'
+require_relative '../lib/break_escape/access_work'
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -569,6 +570,70 @@ if NETWORKS.any?
         end
       else
         add_edge(network, node, label: 'exposes')
+      end
+    end
+  end
+end
+
+# ---------------------------------------------------------------------------
+# Workarounds (ACCESS_MODEL_SLICE_9_2_PLAN.md, section 10). Each workaround is an action node
+# ("Jake: writes it down, at 50") with an edge to what it opens: the account's sign-in node
+# for writes_down and share_login, the PC for borrow_session, the door for prop_door. An
+# outage global (a resource's downIf in the NPC's work list, or its station's offWhen) is a
+# gate node with an edge to each workaround of each NPC it can frustrate, so a chain reads
+# outage, person and workaround, then the thing opened. Read through BreakEscape::AccessWork,
+# the server's resolver.
+# ---------------------------------------------------------------------------
+WORKAROUND_VERBS = {
+  'writes_down' => 'writes it down', 'prop_door' => 'props the door', 'emit' => 'gives up',
+  'borrow_session' => 'uses the hot desk', 'share_login' => 'says the login out loud'
+}.freeze
+aw_g = BreakEscape::AccessWork
+aw_g.with_index(scenario) do
+  BreakEscape::AccessIdentities.room_npcs(scenario).each do |entry|
+    npc = entry[:npc]
+    list = aw_g.workarounds(scenario, npc)
+    next if list.empty?
+
+    name = npc['displayName'] || npc['id']
+    outages = []
+    res = aw_g.resources(scenario)
+    if aw_g.need?(npc, 'work')
+      aw_g.work_list(scenario, npc).each do |rid|
+        dn = res.dig(rid, 'downIf')
+        outages << dn if aw_g.present_string?(dn)
+      end
+    end
+    st = aw_g.station(scenario, npc)
+    off = st ? aw_g.affordance(scenario, st)&.dig('offWhen') : nil
+    outages << off if off.is_a?(String) && !off.empty?
+    outages.concat(off.keys.map(&:to_s)) if off.is_a?(Hash)
+
+    list.each_with_index do |w, i|
+      verb = WORKAROUND_VERBS[w['do']] || w['do'].to_s
+      verb = "#{verb} (#{w['event']})" if w['do'] == 'emit' && w['event']
+      node = add_node("workaround_#{nid(npc['id'])}_#{i}", "#{name}: #{verb}, at #{w['at']}", 'action')
+      outages.uniq.each do |g|
+        add_edge(add_node("outage_#{nid(g)}", "#{g}<br/>(outage)", 'gate'), node)
+      end
+      case w['do']
+      when 'writes_down', 'share_login'
+        next unless BreakEscape::AccessIdentities.account?(npc)
+
+        signin = "signin_#{nid(npc['id'])}"
+        unless $nodes.key?(signin)
+          add_node(signin, "#{name} sign-in<br/>(#{npc['creds']['username']})", 'key')
+          add_node(entry[:room], room_label(entry[:room], rooms[entry[:room]] || {}), 'room')
+          add_edge(entry[:room], signin)
+        end
+        label = w['do'] == 'writes_down' ? 'sticky note' : "said to #{w['with']}"
+        add_edge(node, signin, label: label)
+      when 'borrow_session'
+        pc = aw_g.object_index(scenario)[w['pc']]
+        add_edge(node, access_lock_node({ kind: 'login', lock: pc[:obj], room: pc[:room_id] }, rooms), label: 'open session') if pc
+      when 'prop_door'
+        door = w['door']
+        add_edge(node, "door_#{door}", label: 'propped open') if $nodes.key?("door_#{door}")
       end
     end
   end

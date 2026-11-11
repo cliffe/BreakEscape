@@ -314,3 +314,118 @@ test('Work: a resource with only a network or observations is not called unused 
     assert.ok(!has(list, "resource 'notes'"), list.join('\n'));
     assert.ok(!has(list, "resource 'board'"), list.join('\n'));
 });
+
+// ── sub-slice B: workarounds ───────────────────────────────────────────
+
+// Dana (writes_down), Tom (prop_door into a locked rfid store he can open, the prop in the
+// office) and Ellis (emit), each with the start pools; the clean fixture raises nothing.
+function wkClean() {
+    const s = workClean();
+    s.chatter.wk_writes_down = ["I'll never remember this one."];
+    s.chatter.wk_prop_door = ["I'm not badging in every time."];
+    s.globalVariables.store_propped = false;
+    s.rooms.office.connections = { north: 'store' };
+    s.rooms.office.objects.push(pc('tom_pc', { affordance: { satisfies: 'work', useSeconds: 5, restores: 10, offWhen: 'dana_pc_off' } }),
+        { id: 'store_wedge', type: 'fire_extinguisher1', name: 'Extinguisher', revealOnGlobal: 'store_propped' });
+    s.rooms.office.npcs[0].workarounds = [{ at: 50, do: 'writes_down' }];
+    s.rooms.office.npcs.push(worker('tom', {
+        role: ['facilities', 'staff'], creds: { username: 'tom', password: 'pw-tom-long', card: { card_id: 'tom_card', name: 'Badge' } },
+        workarounds: [{ at: 50, do: 'prop_door', door: 'store', prop: 'store_wedge', setGlobal: 'store_propped' }]
+    }));
+    s.rooms.store = {
+        type: 'room_office', locked: true, lockType: 'rfid', access: { roles: ['facilities'] },
+        connections: { south: 'office' }, objects: [], npcs: []
+    };
+    return s;
+}
+const tom = s => s.rooms.office.npcs.find(n => n.id === 'tom');
+
+test('Workarounds: a clean fixture raises nothing', { skip }, () => {
+    assert.deepEqual(issues(wkClean()), []);
+});
+
+test('Workarounds: bounds, kinds, undeclared setGlobal, references and emit with no event are errors', { skip }, () => {
+    const s = wkClean();
+    s.rooms.office.npcs[0].workarounds = [{ at: 0, do: 'writes_down' }, { at: 50, do: 'shout' },
+        { at: 50, do: 'emit', setGlobal: 'nope' }, { at: 50, do: 'borrow_session', pc: 'no_pc' }];
+    tom(s).workarounds[0].prop = 'no_wedge';
+    s.roles.staff.workarounds = 'all of them';
+    const e = errors(issues(s));
+    assertHas(e, 'dana.workarounds[0].at is 0');
+    assertHas(e, 'dana.workarounds[1].do is "shout"');
+    assertHas(e, 'dana.workarounds[2].setGlobal "nope" is not declared');
+    assertHas(e, 'dana.workarounds[2] (emit) has no event');
+    assertHas(e, 'dana.workarounds[3].pc "no_pc" names no room object');
+    assertHas(e, 'tom.workarounds[0].prop "no_wedge" names no room object');
+    assertHas(e, 'roles.staff.workarounds must be a list');
+});
+
+test('Workarounds: writes_down needs an account and a sign-in PC; an authored postitNote is warned', { skip }, () => {
+    const s = wkClean();
+    delete s.rooms.office.npcs[0].creds;
+    s.rooms.office.objects[0].lockType = undefined;
+    delete s.rooms.office.objects[0].lockType;
+    s.rooms.office.objects[0].workstation = true;
+    let e = errors(issues(s));
+    assertHas(e, "dana's workaround 0 (writes_down): dana has no account");
+    assertHas(e, "dana's needsHome is not a sign-in PC");
+    const t = wkClean();
+    t.rooms.office.objects[0].postitNote = 'Back in 5';
+    assertHas(warnings(issues(t)), "'dana_pc' authors its own postitNote");
+    const u = wkClean();
+    u.rooms.office.objects[0].showPostit = false;
+    assertHas(warnings(issues(u)), 'sets showPostit: false');
+});
+
+test('Workarounds: prop_door rules: locked, no gate, not the own room, the prop next door and outside', { skip }, () => {
+    let s = wkClean();
+    s.rooms.store.locked = false;
+    assertHas(errors(issues(s)), "room 'store' is not locked");
+    s = wkClean();
+    s.rooms.office.doors = [{ connectedRoom: 'store', direction: 'north', gate: { openFor: ['tom'] } }];
+    assertHas(errors(issues(s)), "room 'store' is behind a gate door");
+    s = wkClean();
+    tom(s).workarounds[0].door = 'office';
+    s.rooms.office.locked = true;
+    assertHas(errors(issues(s)), "room 'office' is tom's own room");
+    s = wkClean();
+    s.rooms.store.objects.push(s.rooms.office.objects.pop());
+    assertHas(errors(issues(s)), "prop 'store_wedge' is inside 'store' itself");
+    s = wkClean();
+    s.rooms.annex = { type: 'room_office', objects: [s.rooms.office.objects.pop()], npcs: [] };
+    assertHas(errors(issues(s)), "prop 'store_wedge' is in 'annex', which is not connected to 'store'");
+});
+
+test('Workarounds: prop_door warnings: a door the NPC cannot open, a flag station behind it, a leash', { skip }, () => {
+    let s = wkClean();
+    tom(s).role = ['staff'];
+    assertHas(warnings(issues(s)), "tom's own card and role do not open 'store'");
+    s = wkClean();
+    s.rooms.store.objects.push({ id: 'flags', type: 'flag-station', name: 'Flags' });
+    assertHas(warnings(issues(s)), "opens room 'store', which holds a flag station or VM launcher");
+    s = wkClean();
+    tom(s).needsAvoidRooms = ['office'];
+    s.rooms.office.npcs = s.rooms.office.npcs.filter(n => n.id !== 'tom');
+    s.rooms.lab = { type: 'room_office', connections: { east: 'office' }, objects: [], npcs: [tom(wkClean())] };
+    s.rooms.lab.npcs[0].needsAvoidRooms = ['office'];
+    assertHas(warnings(issues(s)), "a room tom's leash forbids");
+});
+
+test('Workarounds: an NPC that can never be frustrated, a missing start pool, and none under "chatter": false', { skip }, () => {
+    let s = wkClean();
+    s.rooms.office.objects.push(pc('amy_pc'));
+    s.rooms.office.npcs.push(worker('amy', { workarounds: [{ at: 50, do: 'emit', event: 'x' }] }));
+    assertHas(warnings(issues(s)), 'amy has workarounds but can never be frustrated');
+    s = wkClean();
+    delete s.chatter.wk_prop_door;
+    assertHas(warnings(issues(s)), "tom's workaround 0 (prop_door) has no wk_prop_door line");
+    s.chatter = false;
+    assert.ok(!has(issues(s), 'wk_prop_door'));
+});
+
+test('Workarounds: a writes_down account that signs in where a flag station is, and the prop_door report line', { skip }, () => {
+    const s = wkClean();
+    s.rooms.office.objects[0].contents = [{ id: 'f1', type: 'flag-station', name: 'Flags' }];
+    assertHas(warnings(issues(s)), "dana's workaround 0 (writes_down) opens dana's account, which signs in at dana_pc");
+    assertHas(run(s, 'report_lines'), "Workaround tom[0] prop_door at 50: opens room 'store', which stays open for the mission");
+});
