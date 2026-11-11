@@ -40,6 +40,7 @@ BreakEscape::Engine.routes.draw do
       get 'login_accounts'   # Account tiles for a sign-in PC's loginPicker
       post 'clone_card'      # Record a card copy the card copier saved
       post 'npc_frustration' # Slice 9.2: an NPC's failed and met uses (ACCESS_MODEL_SLICE_9_2_PLAN.md 9.1)
+      post 'npc_workaround'  # Slice 9.2: a workaround performed or dropped (plan 6)
 
       # Networks (docs/achitechture/ACCESS_MODEL_SLICE_9_3_PLAN.md section 5)
       get  'network',         to: 'games#network',         as: 'network'          # The view for each held foothold
