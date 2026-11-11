@@ -400,3 +400,44 @@ Commit `e9d5f710d` (validator, tests, nits) and the commit that adds this sectio
 
 Suites after the fixes, under the shared lock on Ruby 2.7.8: `bin/rails test` 1306 runs, 9564
 assertions, 0 failures, 0 errors, 1 skip; `bin/test-js -j 3` 475 files passed, 0 failed.
+
+### Review round 3 outcomes (2026-11-11)
+
+Review: `ACCESS_MODEL_SLICE_9_1_STEP5_CODE_REVIEW_R3.md` (0 blockers, 1 major, 1 minor, 2 nits).
+Commit `3bfaa0039` (validator, loader helper, tests) and the commit that adds this section.
+
+- **Major 1, fixed.** `check_lock_credentials` decides each locked room on its own. A card a
+  room NPC carries, with no cloner and no keycard item, is fine only when every room that
+  requires it has a gate into it that is a way in. Rooms whose gates open only for careful
+  guards get the careful-guard warning, naming those rooms; rooms with no gate that opens for an
+  NPC get the "only an NPC carries that card" warning, naming those rooms. A card required only
+  by non-room locks keeps the old "only an NPC" warning. Both R3 probes (B: Gary's careless gate
+  into `vault`, Sam's careful gate into `vault2`; C: one NPC, authored `noHold` on the `vault2`
+  gate only) now warn for `vault2` alone, and each mirror (a second, passable gate into
+  `vault2`) is clear.
+- **Minor 1, fixed.** Who a gate opens for now matches `door-gates.js` (`nearGuardIds`,
+  `careful()`): any room NPC in `openFor`, card or not; an id with no NPC behind it never counts.
+  A gate is a way in when it opens for someone and sets `playerMayPassIf`, or when one of those
+  NPCs is outside its `noHold`. Probe A (careless Gary with no card in `openFor`) is clear, as is
+  Gary alone in `openFor`; a careful Gary still warns; probe E (`ghost`) still warns.
+- **Nit 1, fixed.** `NpcHabits.gate_no_hold` reads `noHold` as the client does (the strings of a
+  list, else none). The lock check and the loader's report (`doors_entry`) use it, so a string
+  `noHold` is no longer read as a one-item list. `check_gate_no_hold` now warns on a `noHold`
+  that is not a list (the client ignores it).
+- **Nit 2, fixed.** The comment says the check is a warning heuristic, not a proof of
+  solvability (a cloner's own reachability and whether a guard ever walks the gate are not
+  checked), and the careful-guard message says the player is likely stuck "unless another way in
+  exists" rather than "cannot get in".
+- **Tests.** `door-gates-validator.test.mjs` 16 (was 10): probes B and C with mirrors, a mixed
+  case (one room careful-only, another with no gate: both warnings, each naming its room), probe A
+  and its variants, probe E, a string `noHold`. `validator-npc-habits.test.mjs` 43 (non-list
+  `noHold` warning). `test/unit/npc_habits_test.rb` 30 runs (`gate_no_hold`, string `noHold` in
+  the report).
+- **Validator comparison**, rerun as in round 2 (84 runs, `--skip-ink --no-graph`, all exit 0)
+  against `claude/break-escape-access-design-090sjx`: unchanged from round 2. One new warning,
+  `store_b_badge` in `test_access_habits` (new wording, same room), and the same two gone
+  (`cm_records_badge`, `test_staff_badge`). m01 to m10 unchanged. `PLAYTEST.md` paraphrases the
+  warning, so it needs no edit.
+
+Suites after the fixes, under the shared lock on Ruby 2.7.8: `bin/rails test` 1308 runs, 9570
+assertions, 0 failures, 0 errors, 1 skip; `bin/test-js -j 3` 475 files passed, 0 failed.
