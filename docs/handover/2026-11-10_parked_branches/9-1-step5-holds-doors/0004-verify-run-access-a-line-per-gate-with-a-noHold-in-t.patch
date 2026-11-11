@@ -1,0 +1,101 @@
+From f9536aea76272349ab828a567d82c99cbfa5d8c0 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 10 Nov 2026 17:17:35 +0000
+Subject: [PATCH 4/8] verify-run --access: a line per gate with a noHold in the
+ habits block (slice 9.1 step 5)
+
+---
+ test/js/playtest-verify-run-access.test.mjs | 23 +++++++++++++++++++
+ tools/playtest/verify-run.rb                | 25 ++++++++++++++++++---
+ 2 files changed, 45 insertions(+), 3 deletions(-)
+
+diff --git a/test/js/playtest-verify-run-access.test.mjs b/test/js/playtest-verify-run-access.test.mjs
+index 47c9a3f57..b6d26b4ab 100644
+--- a/test/js/playtest-verify-run-access.test.mjs
++++ b/test/js/playtest-verify-run-access.test.mjs
+@@ -134,3 +134,26 @@ test('the habits block is absent for a game without habits', () => {
+   assert.equal(r.status, 0, r.out);
+   assert.doesNotMatch(r.out, /\nhabits\n/);
+ });
++
++// Slice 9.1 step 5: one line per gate with a noHold, values only.
++test('--access prints a line per gate with a noHold, and none for a gate without', () => {
++  const sc = structuredClone(HABITS_SCENARIO);
++  sc.rooms.office.npcs.push({ id: 'sara', habits: { locksScreen: 'always', holdsDoors: false } },
++    { id: 'gary', habits: { locksScreen: 'never', holdsDoors: true } });
++  sc.rooms.office.doors = [
++    { connectedRoom: 'store_a', direction: 'north', gate: { openFor: ['gary'] } },
++    { connectedRoom: 'store_b', direction: 'south', gate: { openFor: ['sara', 'gary'], noHold: ['sara'] } }
++  ];
++  const r = verify(['1', '--access'], ACCESS_STATE, { STUB_SCENARIO: JSON.stringify(sc) });
++  assert.equal(r.status, 0, r.out);
++  assert.match(r.out, /npc sara\s+locksScreen=always holdsDoors=false/);
++  assert.match(r.out, /gate rooms\/office\/doors\/1 \(into store_b\)\s+openFor sara,gary\s+noHold sara/);
++  assert.doesNotMatch(r.out, /gate rooms\/office\/doors\/0/);
++});
++
++test('a gate with an authored noHold prints its line even when no NPC has a habits object', () => {
++  const sc = { rooms: { office: { objects: [], npcs: [{ id: 'sara' }],
++    doors: [{ connectedRoom: 'store_b', direction: 'south', gate: { openFor: 'sara', noHold: ['sara'] } }] } } };
++  const r = verify(['1', '--access'], ACCESS_STATE, { STUB_SCENARIO: JSON.stringify(sc) });
++  assert.match(r.out, /\nhabits\n\s+gate rooms\/office\/doors\/0 \(into store_b\)\s+openFor sara\s+noHold sara/);
++});
+diff --git a/tools/playtest/verify-run.rb b/tools/playtest/verify-run.rb
+index 048919e6c..084cbc7ee 100644
+--- a/tools/playtest/verify-run.rb
++++ b/tools/playtest/verify-run.rb
+@@ -40,7 +40,8 @@
+ # read from the game's saved scenario: one line per NPC with a habits object (its habits and
+ # its screenHabit as saved) and one per owned workstation (its owner, its own lockChance or
+ # locksScreenOnLeave, whether the server's claim check calls it "always locks", and whether
+-# it shows a sticky note). It does not say which values a habit filled: the validator's
++# it shows a sticky note), and one per gate door with a noHold (step 5: the door, its openFor
++# and its noHold as saved). It does not say which values a habit filled: the validator's
+ # habits report does. It names who never locks, so it is not for a tester playing blind.
+ # No passwords.
+ require 'json'
+@@ -100,14 +101,28 @@ def access_section(ps)
+   lines
+ end
+ 
+-# The habits block: values only, [] when no NPC in the saved scenario has a habits object.
++# Every gate door with a noHold in the saved scenario: [path, gate].
++def no_hold_gates(data)
++  rooms = data['rooms'].is_a?(Hash) ? data['rooms'] : {}
++  rooms.flat_map do |room_id, room|
++    doors = room.is_a?(Hash) && room['doors'].is_a?(Array) ? room['doors'] : []
++    doors.each_with_index.filter_map do |door, i|
++      gate = door.is_a?(Hash) ? door['gate'] : nil
++      ["rooms/#{room_id}/doors/#{i} (into #{door['connectedRoom']})", gate] if gate.is_a?(Hash) && gate['noHold'].is_a?(Array)
++    end
++  end
++end
++
++# The habits block: values only, [] when no NPC in the saved scenario has a habits object
++# and no gate has a noHold.
+ def habits_section(g)
+   data = g.scenario_data
+   return [] unless data.is_a?(Hash)
+ 
+   ai = BreakEscape::AccessIdentities
+   npcs = ai.room_npcs(data).map { |e| e[:npc] }.select { |n| n['habits'].is_a?(Hash) }
+-  return [] if npcs.empty?
++  gates = no_hold_gates(data)
++  return [] if npcs.empty? && gates.empty?
+ 
+   owners = ai.room_npcs(data).to_h { |e| [e[:npc]['id'], e[:npc]] }
+   lines = ['habits']
+@@ -129,6 +144,10 @@ def habits_section(g)
+     postit = ai.login_pc?(pc) && g.respond_to?(:login_postit_for) ? !g.login_postit_for(pc).nil? : false
+     lines << "  pc  #{pc['id'].to_s.ljust(14)} owner #{owner_id}  #{own}  alwaysLocks #{always}  hasPostit #{postit}"
+   end
++  gates.each do |path, gate|
++    open_for = gate['openFor'].is_a?(Array) ? gate['openFor'] : [gate['openFor']].compact
++    lines << "  gate #{path}  openFor #{open_for.join(',')}  noHold #{gate['noHold'].join(',')}"
++  end
+   lines
+ end
+ 
+-- 
+2.43.0
+

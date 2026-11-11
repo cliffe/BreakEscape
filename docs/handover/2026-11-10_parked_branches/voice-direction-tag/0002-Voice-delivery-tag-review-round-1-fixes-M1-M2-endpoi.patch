@@ -1,0 +1,1036 @@
+From f1c968eae6934b88a091230a2a5c0b65f27ab18a Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 10 Nov 2026 17:51:51 +0000
+Subject: [PATCH 2/3] Voice delivery tag: review round 1 fixes M1, M2 (endpoint
+ and walker), m1 to m5, m7, n1, n3, n5
+
+M1: the endpoint never sends the client's note: TtsLineExtractor#delivery_for
+returns the ink's own note for the speaker and line, and that note is keyed,
+voiced and recorded. Lookalike (fullwidth, emoji) notes select it but add nothing.
+M2: an unmatched note is dropped and the line voiced untagged, never refused.
+InkLineWalker now carries a #delivery: note across a plain divert to the
+target's first line, as inkjs does; parity test against inkjs on the reviewer's
+scratch inks plus a divert fixture.
+m1: a tagged line falls back to its untagged or previous-model clip after a
+quota error or failed generation. m2: preload sends no note. m3/m4: a note with
+nothing left after normalising, or over 200 characters, is no note; Unicode
+spaces collapse on both sides. m5: the pruner's expected set reads tagged lines
+with the scenario's globals too. m7: one walk for spoken and delivered lines,
+endpoint cache keyed by scenario and stamp, bounded LRU of 32.
+n1: delivery is a presentation tag for deferred replies. n3: note looked up
+after the NPC and text checks. n5: unused isDeliveryTag export dropped.
+---
+ .../break_escape/games_controller.rb          | 61 +++++++-----
+ app/services/break_escape/ink_line_walker.rb  | 81 ++++++++++++++++
+ .../break_escape/tts_expected_lines.rb        | 10 +-
+ .../break_escape/tts_line_extractor.rb        | 85 +++++++++++------
+ app/services/break_escape/tts_service.rb      | 17 +++-
+ .../person-chat/person-chat-minigame.js       |  4 +-
+ .../person-chat/person-chat-pending-reply.js  |  3 +-
+ .../break_escape/js/systems/tts-delivery.js   | 26 ++++--
+ .../break_escape/tts_controller_test.rb       | 92 +++++++++++++++++--
+ .../delivery_parity_diverts.ink               | 45 +++++++++
+ .../delivery_parity_diverts.json              |  1 +
+ .../ink_line_walker/delivery_parity_edge.ink  | 28 ++++++
+ .../ink_line_walker/delivery_parity_edge.json |  1 +
+ .../ink_line_walker/delivery_parity_edge2.ink | 15 +++
+ .../delivery_parity_edge2.json                |  1 +
+ test/js/tts-delivery.test.mjs                 | 15 ++-
+ test/support/ink_delivery_lines.mjs           | 52 +++++++++++
+ test/unit/break_escape/tts_delivery_test.rb   | 76 +++++++++++++++
+ 18 files changed, 533 insertions(+), 80 deletions(-)
+ create mode 100644 test/fixtures/files/ink_line_walker/delivery_parity_diverts.ink
+ create mode 100644 test/fixtures/files/ink_line_walker/delivery_parity_diverts.json
+ create mode 100644 test/fixtures/files/ink_line_walker/delivery_parity_edge.ink
+ create mode 100644 test/fixtures/files/ink_line_walker/delivery_parity_edge.json
+ create mode 100644 test/fixtures/files/ink_line_walker/delivery_parity_edge2.ink
+ create mode 100644 test/fixtures/files/ink_line_walker/delivery_parity_edge2.json
+ create mode 100644 test/support/ink_delivery_lines.mjs
+
+diff --git a/app/controllers/break_escape/games_controller.rb b/app/controllers/break_escape/games_controller.rb
+index f51748438..aade1877e 100644
+--- a/app/controllers/break_escape/games_controller.rb
++++ b/app/controllers/break_escape/games_controller.rb
+@@ -632,17 +632,6 @@ module BreakEscape
+       return render_error('Missing npc_id or text', :bad_request) unless npc_id.present? && text.present?
+       return render_error('Text too long', :bad_request) if text.length > 1000
+ 
+-      # The line's #delivery: note, if it has one (person-chat sends it). It goes
+-      # into the voice prompt, so it must be a note the scenario's ink gives this line.
+-      delivery = TtsService.clean_delivery(params[:delivery])
+-      if delivery
+-        return render_error('Delivery note too long', :bad_request) if delivery.length > TtsService::MAX_DELIVERY_LENGTH
+-        unless delivered_in_scenario?(npc_id, text, delivery)
+-          Rails.logger.warn "[TTS] Delivery note not found for #{npc_id}: #{text.truncate(60)} [#{delivery.truncate(40)}]"
+-          return render_error('Delivery note not found for this line', :forbidden)
+-        end
+-      end
+-
+       # Find NPC in scenario
+       npc = find_npc_in_scenario(npc_id)
+       return render_error("NPC not found: #{npc_id}", :not_found) unless npc
+@@ -700,6 +689,12 @@ module BreakEscape
+         return render_error('Cannot validate text for this object', :bad_request)
+       end
+ 
++      # The line's #delivery: note (person-chat sends one when the line's tags carry
++      # it). The client's note only chooses: the note keyed, voiced and recorded is
++      # the one the scenario's ink gives this line for this speaker. With no such
++      # note the line is voiced untagged, never refused (TtsLineExtractor#delivery_for).
++      delivery = ink_delivery_note(npc_id, text, params[:delivery])
++
+       # Voice from the scenario as it is now, so games started before a voice was
+       # restyled still hit the regenerated cache. The snapshot is the fallback.
+       snapshot_voice = voice_config
+@@ -711,18 +706,18 @@ module BreakEscape
+       # generating so an un-migrated mission plays as it did, with no delay.
+       # A line with a delivery note has its own clip (the note is in its key).
+       # Previous-model clips never had notes, so for a tagged line they, and the
+-      # untagged clip, are only a stand-in on a server that can't generate.
++      # untagged clip, are a stand-in: served at once on a server that can't
++      # generate, and after a failed generation (quota, error) on one that can.
+       tts_service = TtsService.new
+       key_args = [text, voice_config['name'], voice_config['style'], voice_config['language']]
+       current_clip = tts_service.cache_path(tts_service.cache_key_for(*key_args, *[delivery].compact), scenario_name)
+       mp3_path = current_clip if File.exist?(current_clip)
+-      if delivery && !mp3_path && !tts_service.enabled?
+-        plain_clip = tts_service.cache_path(tts_service.cache_key_for(*key_args), scenario_name)
+-        mp3_path = plain_clip if File.exist?(plain_clip)
+-      end
+-      unless mp3_path || (delivery && tts_service.enabled?)
+-        mp3_path = legacy_tts_clip(tts_service, text, [voice_config, snapshot_voice], scenario_name)
++      stand_in = lambda do
++        # For an untagged line the current clip is the plain clip, already checked
++        plain_clip = delivery && tts_service.cache_path(tts_service.cache_key_for(*key_args), scenario_name)
++        plain_clip && File.exist?(plain_clip) ? plain_clip : legacy_tts_clip(tts_service, text, [voice_config, snapshot_voice], scenario_name)
+       end
++      mp3_path ||= stand_in.call unless delivery && tts_service.enabled?
+       return send_file(mp3_path, type: 'audio/mpeg', disposition: 'inline') if mp3_path
+ 
+       begin
+@@ -738,7 +733,11 @@ module BreakEscape
+       rescue TtsService::QuotaExhaustedError => e
+         # Out of quota is a temporary condition, not a server fault. 429 tells the
+         # client to back off; it already treats any non-OK TTS reply as "no audio".
++        # A tagged line plays its untagged clip instead, if there is one.
+         Rails.logger.warn "[TTS] Quota exhausted for #{npc_id}: #{e.message}"
++        fallback = delivery && stand_in.call
++        return send_file(fallback, type: 'audio/mpeg', disposition: 'inline') if fallback
++
+         response.set_header('Retry-After', e.retry_after.to_s) if e.retry_after
+         return render json: {
+           error: 'Text-to-speech quota exhausted; audio is unavailable for now',
+@@ -746,6 +745,9 @@ module BreakEscape
+         }.compact, status: :too_many_requests
+       end
+       unless mp3_path && File.exist?(mp3_path)
++        fallback = delivery && tts_service.enabled? && stand_in.call
++        return send_file(fallback, type: 'audio/mpeg', disposition: 'inline') if fallback
++
+         if tts_service.enabled?
+           return render_error('TTS generation failed', :internal_server_error)
+         else
+@@ -2577,16 +2579,27 @@ module BreakEscape
+       false
+     end
+ 
+-    # True when some voiced line in this scenario's ink is spoken as npc_id with
+-    # this text and this #delivery: note (TtsLineExtractor#delivered_by?).
+-    def delivered_in_scenario?(npc_id, text, delivery)
++    # The #delivery: note the scenario's ink gives the line npc_id speaks as text,
++    # chosen by the note the client sent (TtsLineExtractor#delivery_for), or nil.
++    # The client's string itself never reaches the voice prompt, the key or the
++    # sidecar. A note the ink doesn't give the line (a tag the server's walker
++    # can't place: README_ink_best_practices.md, "Delivery notes") is dropped,
++    # so the line plays untagged rather than not at all.
++    def ink_delivery_note(npc_id, text, client_note)
++      return nil if client_note.blank?
++      # Bigger than any note the client can send (deliveryFromTags caps at 200)
++      return nil unless client_note.is_a?(String) && client_note.length <= 1000
++
++      wanted = TtsService.clean_delivery(client_note)
+       scenario_name = @game.mission&.name
+-      return false unless scenario_name
++      return nil unless wanted && scenario_name
+ 
+-      TtsLineExtractor.cached(scenario_name, @game.scenario_data).delivered_by?(npc_id, text, delivery)
++      note = TtsLineExtractor.cached(scenario_name, @game.scenario_data).delivery_for(npc_id, text, wanted)
++      Rails.logger.warn "[TTS] Delivery note not in the ink for #{npc_id}, voicing untagged: #{text.truncate(60)}" unless note
++      note
+     rescue StandardError => e
+       Rails.logger.warn "[TTS] Delivery check failed for #{npc_id}: #{e.class}: #{e.message}"
+-      false
++      nil
+     end
+ 
+     # Resolve ink path and compile if necessary
+diff --git a/app/services/break_escape/ink_line_walker.rb b/app/services/break_escape/ink_line_walker.rb
+index fa721e768..f7bbcab9d 100644
+--- a/app/services/break_escape/ink_line_walker.rb
++++ b/app/services/break_escape/ink_line_walker.rb
+@@ -104,6 +104,17 @@ module BreakEscape
+       @lines = nil
+     end
+ 
++    # Note on carried #delivery: tags. The client (InkEngine#continue) keeps the
++    # tags of lines with no text for the next line it shows, and inkjs carries
++    # them across logic and diverts. The walker carries a #delivery: note:
++    #  - from a tag on its own line to the next line in the same container;
++    #  - across a plain divert (`#delivery: x` then `-> knot`) to the first line
++    #    of the knot or stitch it names, when that line comes before any choice,
++    #    divert or end there. The line is then listed twice: as reached from the
++    #    divert (with the note) and as reached any other way (with its own tags).
++    # Glued lines and lines printing game state stay unresolved either way, so a
++    # note on one is not read here (dialoguelint warns: delivery-unread).
++
+     # Spoken lines in story order (duplicates kept).
+     # @return [Array<Line>]
+     def lines
+@@ -139,8 +150,55 @@ module BreakEscape
+ 
+     def walk_story
+       @lines = []
++      @first_lines = {}   # ink path of a container => range of its first line in @lines, or nil
++      @awaiting = []      # ink paths of containers whose first line is not yet known
++      @divert_notes = []  # [target ink path, [delivery tags]] for a note carried across a divert
+       root = @ink['root']
+       walk(root, 'root') if root.is_a?(Array)
++      apply_divert_notes
++    end
++
++    # Lists the first line of each divert target again with the note carried to it.
++    def apply_divert_notes
++      inserts = Hash.new { |h, k| h[k] = [] }
++      @divert_notes.uniq.each do |target, notes|
++        range = @first_lines[target]
++        next unless range
++
++        range.each do |i|
++          line = @lines[i]
++          tags = notes + line.tags
++          next if TtsService.delivery_from_tags(tags) == TtsService.delivery_from_tags(line.tags)
++
++          copy = line.dup
++          copy.tags = tags
++          inserts[range.end] << copy unless inserts[range.end].any? { |c| c.raw == copy.raw && c.tags == tags }
++        end
++      end
++      inserts.keys.sort.reverse_each { |at| @lines.insert(at, *inserts[at]) }
++    end
++
++    # Control leaves (a choice, divert, tunnel, end): containers still waiting
++    # for their first line have none a carried note could land on.
++    def first_line_unknown!
++      @awaiting.each { |p| @first_lines[p] = nil unless @first_lines.key?(p) }
++      @awaiting.clear
++    end
++
++    # A plain divert's target as an absolute ink path, or nil. Relative paths
++    # count from the divert: the first ".^" is its container, each more one up.
++    def divert_target(target, path)
++      return nil unless target.is_a?(String) && !target.empty?
++      return target unless target.start_with?('.')
++
++      parts = ink_path(path).split('.')
++      steps = target.split('.')[1..] || []
++      first = true
++      while steps.first == '^'
++        steps.shift
++        first ? first = false : parts.pop
++      end
++      (parts + steps).join('.')
+     end
+ 
+     # Walks one container. Returns true when it ended with text that had no
+@@ -149,6 +207,8 @@ module BreakEscape
+       state = { buf: [], partial: nil, tags: [], in_ev: false, in_str: false, in_tag: false, ev_parts: [] }
+       last_index = container.length - 1
+       skip_to = 0
++      own = ink_path(path)
++      @awaiting << own unless @first_lines.key?(own)
+ 
+       container.each_with_index do |item, i|
+         next if i < skip_to
+@@ -176,6 +236,14 @@ module BreakEscape
+           if item.key?('->') && !text_of(state).empty?
+             state[:partial] ||= 'divert mid-line'
+           end
++          if item.keys == ['->'] && text_of(state).empty? && state[:tags].any?
++            # `#delivery: x` on its own line, then `-> knot`: inkjs gives the note
++            # to the knot's first line (apply_divert_notes)
++            notes = state[:tags].select { |t| TtsService.delivery_tag?(t) }
++            target = divert_target(item['->'], path)
++            @divert_notes << [target, notes] if target && notes.any?
++          end
++          first_line_unknown! if (item.keys & %w[-> ->t-> f() x() *]).any?
+         when Array
+           # Inside "str"…"/str" is choice-label text, which nobody voices.
+           next if state[:in_str]
+@@ -203,6 +271,7 @@ module BreakEscape
+         end
+       end
+ 
++      @awaiting.delete(own)
+       tail = text_of(state)
+       return false if tail.empty?
+ 
+@@ -254,6 +323,11 @@ module BreakEscape
+       end
+       return if state[:in_str]
+ 
++      if %w[end done].include?(item) && !state[:in_ev]
++        first_line_unknown!
++        return
++      end
++
+       if item == "\n"
+         flush(state, path)
+       elsif item == '<>'
+@@ -317,12 +391,14 @@ module BreakEscape
+ 
+       if partial
+         @unresolved << Unresolved.new(path: path, text: raw, reason: partial)
++        first_line_unknown!
+         return
+       end
+ 
+       variants = expand(buf)
+       if variants.nil?
+         @unresolved << Unresolved.new(path: path, text: raw, reason: "expands to more than #{MAX_VARIANTS} variants")
++        first_line_unknown!
+         return
+       end
+ 
+@@ -332,12 +408,17 @@ module BreakEscape
+         @lines << Line.new(prefix: prefix, text: text, raw: variant, tags: tags, path: path)
+       end
+       state[:last_lines] = start...@lines.length
++      @awaiting.each { |p| @first_lines[p] = state[:last_lines] unless @first_lines.key?(p) }
++      @awaiting.clear
+     end
+ 
+     def retract_last_line(state, path)
+       range = state[:last_lines]
+       return unless range
+ 
++      # Glued: that line is no longer a container's first line (and its slots in
++      # @lines will be reused)
++      @first_lines.each_key { |p| @first_lines[p] = nil if @first_lines[p] == range }
+       @lines.slice!(range).each do |line|
+         @unresolved << Unresolved.new(path: path, text: line.raw, reason: 'glue')
+       end
+diff --git a/app/services/break_escape/tts_expected_lines.rb b/app/services/break_escape/tts_expected_lines.rb
+index edd0ca437..58df7039b 100644
+--- a/app/services/break_escape/tts_expected_lines.rb
++++ b/app/services/break_escape/tts_expected_lines.rb
+@@ -301,9 +301,15 @@ module BreakEscape
+     end
+ 
+     # Lines carrying a #delivery: note (InkLineWalker reads the tags as the
+-    # client does), so their keyed-with-the-note clips count as expected.
++    # client does), so their keyed-with-the-note clips count as expected. Read
++    # with the scenario's globalVariables, as TtsLineExtractor (the batch) reads
++    # them, and with the ink's own defaults, so a line printing a variable keeps
++    # the clip for either value (the set may be bigger, never smaller).
+     def add_delivery_notes(file)
+-      InkLineWalker.from_file(file.to_s).lines.each do |line|
++      globals = @scenario_data.is_a?(Hash) ? @scenario_data['globalVariables'] : nil
++      walkers = [InkLineWalker.from_file(file.to_s)]
++      walkers << InkLineWalker.from_file(file.to_s, variables: globals) if globals.is_a?(Hash) && globals.any?
++      walkers.flat_map(&:lines).each do |line|
+         note = TtsService.delivery_from_tags(line.tags)
+         next unless note
+ 
+diff --git a/app/services/break_escape/tts_line_extractor.rb b/app/services/break_escape/tts_line_extractor.rb
+index 62f9d71c9..d29c34c24 100644
+--- a/app/services/break_escape/tts_line_extractor.rb
++++ b/app/services/break_escape/tts_line_extractor.rb
+@@ -255,28 +255,28 @@ module BreakEscape
+       end
+     end
+ 
+-    # True when some host story has a line the client voices as npc_id with this
+-    # text and this `#delivery:` note: how the endpoint accepts a note the client
+-    # sends (the note becomes part of the voice prompt, so only notes written in
+-    # the scenario's ink are accepted). Voiced phone calls carry no note.
+-    def delivered_by?(npc_id, text, delivery)
++    # The `#delivery:` note the scenario's ink gives the line the client voices as
++    # npc_id with this text, chosen by the note the client sent, or nil. The
++    # endpoint keys, voices and records the returned note, never the client's:
++    # the client's note only has to match it after normalising (the key's own
++    # rule), so it cannot add words of its own to the voice prompt.
++    def delivery_for(npc_id, text, delivery)
+       wanted = self.class.normalize(text)
+-      note = self.class.normalize(delivery)
+-      return false if wanted.empty? || note.empty?
++      note = self.class.normalize(TtsService.clean_delivery(delivery))
++      return nil if wanted.empty? || note.empty?
++
++      delivered_lines["#{npc_id}|#{wanted}|#{note}"]
++    end
+ 
+-      delivered_lines.include?("#{npc_id}|#{wanted}|#{note}")
++    def delivered_by?(npc_id, text, delivery)
++      !delivery_for(npc_id, text, delivery).nil?
+     end
+ 
+-    # "npc_id|normalised text|normalised note" for every line with a delivery note.
++    # { "npc_id|normalised text|normalised note" => the ink's note } for every
++    # line with a delivery note.
+     def delivered_lines
+-      @delivered_lines ||= begin
+-        set = Set.new
+-        each_host_line do |host, _path, line, npc_id, text|
+-          note = line_delivery(host, line)
+-          set << "#{npc_id}|#{self.class.normalize(text)}|#{self.class.normalize(note)}" if note
+-        end
+-        set
+-      end
++      index_host_lines unless @delivered_lines
++      @delivered_lines
+     end
+ 
+     # The `#delivery:` note person-chat sends for a line (TtsService.delivery_from_tags).
+@@ -301,31 +301,43 @@ module BreakEscape
+ 
+     # "npc_id|normalised text" for every voiced line of every host story.
+     def spoken_lines
+-      @spoken_lines ||= begin
+-        set = Set.new
+-        each_host_line { |_host, _path, _line, npc_id, text| set << "#{npc_id}|#{self.class.normalize(text)}" }
+-        each_pretext_outcome_line { |npc_id, text, _path| set << "#{npc_id}|#{self.class.normalize(text)}" }
+-        set
+-      end
++      index_host_lines unless @spoken_lines
++      @spoken_lines
+     end
+ 
++    # Most extractors the endpoint keeps. Keyed by scenario and stamp, so players
++    # of one mission whose carried-over globals differ each keep theirs instead
++    # of evicting each other on every line; least recently used goes first.
++    ENDPOINT_CACHE_SIZE = 32
++
+     # One extractor per scenario render and story edit, for the endpoint.
+     # Keyed on the stories' paths and mtimes and the speaker-relevant fields of
+     # every character, so a story edit or a recast rebuilds it.
+     def self.cached(scenario_name, scenario_data)
+       extractor = new(scenario_name, scenario_data, tts_service: nil)
+-      stamp = extractor.cache_stamp
+-      cached = endpoint_cache[scenario_name]
+-      return cached[:extractor] if cached && cached[:stamp] == stamp
++      key = [scenario_name, extractor.cache_stamp]
++      hit = endpoint_cache_mutex.synchronize do
++        found = endpoint_cache.delete(key)
++        endpoint_cache[key] = found if found
++        found
++      end
++      return hit if hit
+ 
+       extractor.spoken_lines
+-      extractor.delivered_lines
+-      endpoint_cache[scenario_name] = { stamp: stamp, extractor: extractor }
++      endpoint_cache_mutex.synchronize do
++        endpoint_cache[key] = extractor
++        endpoint_cache.shift while endpoint_cache.size > ENDPOINT_CACHE_SIZE
++      end
+       extractor
+     end
+ 
++    # Insertion-ordered (oldest first); guarded by endpoint_cache_mutex.
+     def self.endpoint_cache
+-      @endpoint_cache ||= Concurrent::Map.new
++      @endpoint_cache ||= {}
++    end
++
++    def self.endpoint_cache_mutex
++      @endpoint_cache_mutex ||= Mutex.new
+     end
+ 
+     def cache_stamp
+@@ -344,6 +356,21 @@ module BreakEscape
+ 
+     private
+ 
++    # spoken_lines and delivered_lines in one walk of the stories.
++    def index_host_lines
++      spoken = Set.new
++      delivered = {}
++      each_host_line do |host, _path, line, npc_id, text|
++        norm = self.class.normalize(text)
++        spoken << "#{npc_id}|#{norm}"
++        note = line_delivery(host, line)
++        delivered["#{npc_id}|#{norm}|#{self.class.normalize(note)}"] ||= note if note
++      end
++      each_pretext_outcome_line { |npc_id, text, _path| spoken << "#{npc_id}|#{self.class.normalize(text)}" }
++      @spoken_lines = spoken
++      @delivered_lines = delivered
++    end
++
+     def extract
+       @entries = []
+       seen = {}
+diff --git a/app/services/break_escape/tts_service.rb b/app/services/break_escape/tts_service.rb
+index 4f043c9dd..02012a05d 100644
+--- a/app/services/break_escape/tts_service.rb
++++ b/app/services/break_escape/tts_service.rb
+@@ -84,9 +84,20 @@ module BreakEscape
+       tag.to_s.match?(DELIVERY_TAG)
+     end
+ 
+-    # Whitespace collapsed and trimmed; nil when empty.
++    # Whitespace the note cleaner collapses: ASCII whitespace plus the Unicode
++    # spaces (a no-break space is easy to type on a Mac). tts-delivery.js uses
++    # the same set, so both sides send and read the same note.
++    DELIVERY_SPACE = /[\s\u0085\u00A0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000\uFEFF]+/
++
++    # Whitespace collapsed and trimmed. nil (no note) when it is empty, when it
++    # has no letter or digit left after normalising (`...`, `…`, a note in
++    # non-ASCII script: it would key as untagged), or when it is longer than
++    # MAX_DELIVERY_LENGTH. The client (deliveryFromTags) applies the same rules.
+     def self.clean_delivery(note)
+-      note.to_s.gsub(/\s+/, " ").strip.presence
++      note = note.to_s.gsub(DELIVERY_SPACE, " ").strip
++      return nil if note.length > MAX_DELIVERY_LENGTH || normalize_text(note).empty?
++
++      note
+     end
+ 
+     # Cache key for already-normalised text (see normalize_text). The model is
+@@ -95,7 +106,7 @@ module BreakEscape
+     # always had; it is normalised like the text ("Quietly." and "quietly" share).
+     def self.cache_key_for_normalized(normalized, voice_name, style_prompt = nil, language_code = nil, delivery = nil)
+       base = "#{normalized}|#{voice_name}|#{style_prompt}|#{language_code}|#{GEMINI_TTS_MODEL}"
+-      note = normalize_text(delivery)
++      note = normalize_text(clean_delivery(delivery))
+       base += "|delivery:#{note}" unless note.empty?
+       Digest::MD5.hexdigest(base)
+     end
+diff --git a/public/break_escape/js/minigames/person-chat/person-chat-minigame.js b/public/break_escape/js/minigames/person-chat/person-chat-minigame.js
+index e22ae7679..c85da46b6 100644
+--- a/public/break_escape/js/minigames/person-chat/person-chat-minigame.js
++++ b/public/break_escape/js/minigames/person-chat/person-chat-minigame.js
+@@ -1728,7 +1728,9 @@ export class PersonChatMinigame extends MinigameScene {
+                     && this.characters[nextParsed.speaker].displayName !== this.npc?.displayName
+                     ? nextParsed.speaker
+                     : this.npcId;
+-                this.ttsManager.preload(nextSpeakerId, nextTtsText, { delivery });
++                // No note: the next line's tags aren't known here, and this line's note is not
++                // its note (a wrong note would miss the later play()'s preload entry).
++                this.ttsManager.preload(nextSpeakerId, nextTtsText, { delivery: null });
+             }
+         }
+ 
+diff --git a/public/break_escape/js/minigames/person-chat/person-chat-pending-reply.js b/public/break_escape/js/minigames/person-chat/person-chat-pending-reply.js
+index 8078515e4..349326ea7 100644
+--- a/public/break_escape/js/minigames/person-chat/person-chat-pending-reply.js
++++ b/public/break_escape/js/minigames/person-chat/person-chat-pending-reply.js
+@@ -14,7 +14,8 @@ const PRESENTATION_OR_NAVIGATION = new Set([
+     'trigger_minigame',           // opens a minigame once the line is shown (ink-minigame-launch.js); never on a close
+     'give_npc_inventory_items',   // open minigames: never mid-teardown
+     'clone_keycard',
+-    'speaker', 'player', 'npc'    // who is talking
++    'speaker', 'player', 'npc',   // who is talking
++    'delivery'                    // the line's voice note (tts-delivery.js): no state
+ ]);
+ 
+ export function tagAction(tag) {
+diff --git a/public/break_escape/js/systems/tts-delivery.js b/public/break_escape/js/systems/tts-delivery.js
+index 5636a10f6..542397983 100644
+--- a/public/break_escape/js/systems/tts-delivery.js
++++ b/public/break_escape/js/systems/tts-delivery.js
+@@ -8,18 +8,30 @@
+  *
+  * The note is sent with the line's TTS request (POST /tts `delivery`) and goes into the
+  * voice prompt for that line only. It is never shown to the player. The server reads the
+- * same tag the same way (TtsService.delivery_from_tags) to key, validate and pre-generate
+- * the clip, so the rules here and there must match: the last `delivery:` tag on the line
+- * wins, whitespace is collapsed, and an empty note counts as none.
++ * same tag the same way (TtsService.delivery_from_tags) to key and pre-generate the clip,
++ * so the rules here and there must match: the last usable `delivery:` tag on the line wins,
++ * whitespace (Unicode spaces included) is collapsed, and a note counts as none when it is
++ * empty, has no ASCII letter or digit (`...`, `…`), or is over MAX_DELIVERY_LENGTH.
++ * The server only uses the note to choose the ink's own note for the line; if it finds
++ * none, the line is voiced untagged.
+  *
+  * No imports, so node tests can load it directly.
+  */
+ 
+ const DELIVERY_TAG = /^\s*delivery\s*:\s*([\s\S]*)$/i;
++// TtsService::MAX_DELIVERY_LENGTH
++export const MAX_DELIVERY_LENGTH = 200;
++// TtsService::DELIVERY_SPACE (JS \s already holds the Unicode spaces but not U+0085)
++const DELIVERY_SPACE = /[\s\u0085]+/g;
++// What TtsService.normalize_text keeps: ASCII word characters and ASCII whitespace
++const NOT_KEPT = /[^A-Za-z0-9_ \t\r\n\f\v]/g;
+ 
+-/** True for a `#delivery:` tag. */
+-export function isDeliveryTag(tag) {
+-    return typeof tag === 'string' && DELIVERY_TAG.test(tag);
++/** A note cleaned as TtsService.clean_delivery cleans it, or null when it counts as none. */
++function cleanDelivery(note) {
++    const clean = String(note).replace(DELIVERY_SPACE, ' ').trim();
++    if ([...clean].length > MAX_DELIVERY_LENGTH) return null; // code points, as Ruby counts
++    if (!clean.replace(NOT_KEPT, '').trim()) return null;
++    return clean;
+ }
+ 
+ /**
+@@ -32,7 +44,7 @@ export function deliveryFromTags(tags) {
+     for (let i = tags.length - 1; i >= 0; i--) {
+         const m = typeof tags[i] === 'string' ? tags[i].match(DELIVERY_TAG) : null;
+         if (!m) continue;
+-        const note = m[1].replace(/\s+/g, ' ').trim();
++        const note = cleanDelivery(m[1]);
+         if (note) return note;
+     }
+     return null;
+diff --git a/test/controllers/break_escape/tts_controller_test.rb b/test/controllers/break_escape/tts_controller_test.rb
+index 0317ba36e..74afaa5cc 100644
+--- a/test/controllers/break_escape/tts_controller_test.rb
++++ b/test/controllers/break_escape/tts_controller_test.rb
+@@ -947,23 +947,97 @@ module BreakEscape
+       refute calls.first[:kwargs].key?(:delivery)
+     end
+ 
+-    test "tts refuses a note the ink doesn't give that line" do
++    test "tts voices a line untagged when the ink gives it no such note, never silencing it (review R1 M2)" do
+       use_delivery_scenario
+       calls = []
+       post_line({ npc_id: "kevin_park", text: QUIET_LINE, delivery: "shouting with rage" }, calls)
+-      assert_response :forbidden
+-      assert_match(/delivery note/i, json_body["error"])
+       post_line({ npc_id: "kevin_park", text: "An untagged line.", delivery: QUIET_NOTE }, calls)
+-      assert_response :forbidden
+-      assert_empty calls
++      post_line({ npc_id: "kevin_park", text: QUIET_LINE, delivery: "x" * 201 }, calls)
++      post_line({ npc_id: "kevin_park", text: QUIET_LINE, delivery: "x" * 5000 }, calls)
++      assert_equal 4, calls.size
++      calls.each { |c| refute c[:kwargs].key?(:delivery), c.inspect }
++    end
++
++    test "tts plays the untagged clip for a line whose note the server can't place" do
++      use_delivery_scenario
++      write_clip(TtsService.cache_key("An untagged line.", *KEVIN_VOICE.values))
++      service = TtsService.new
++      service.define_singleton_method(:enabled?) { true }
++      service.define_singleton_method(:generate) { |*_a, **_k| flunk "generated a line that already had a clip" }
++      TtsService.stub(:new, service) do
++        post tts_game_url(@game), params: { npc_id: "kevin_park", text: "An untagged line.", delivery: "glued" }
++      end
++      assert_response :success
+     end
+ 
+-    test "tts refuses an over-long note" do
++    test "tts sends the ink's note to the voice, never the client's lookalike (review R1 M1)" do
+       use_delivery_scenario
+       calls = []
+-      post_line({ npc_id: "kevin_park", text: QUIET_LINE, delivery: "x" * 201 }, calls)
+-      assert_response :bad_request
+-      assert_empty calls
++      # Normalises to the ink's note (fullwidth letters and emoji are stripped), so it
++      # selects that note; the words it adds must not reach the voice prompt or the key.
++      lookalike = "Quietly, almost to herself \uFF53\uFF48\uFF4F\uFF55\uFF54 \uFF41\uFF4E\uFF47\uFF52\uFF49\uFF4C\uFF59 \u{1F600}"
++      post_line({ npc_id: "kevin_park", text: QUIET_LINE, delivery: lookalike }, calls)
++      assert_equal 1, calls.size
++      assert_equal QUIET_NOTE, calls.first[:kwargs][:delivery]
++    end
++
++    test "tts writes the ink's note into the prompt, key and sidecar for a lookalike note" do
++      use_delivery_scenario
++      captured = nil
++      with_env("GEMINI_API_KEY" => "dummy_key_for_test") do
++        service = stubbed_gemini_service
++        service.define_singleton_method(:call_gemini_tts) { |*args| captured = args; "\x00\x00" * 2400 }
++        TtsService.stub(:new, service) do
++          post tts_game_url(@game), params: { npc_id: "kevin_park", text: QUIET_LINE,
++                                               delivery: "quietly almost to herself \uFF53\uFF48\uFF4F\uFF55\uFF54" }
++        end
++      end
++      assert_response :success
++      assert_equal "Nervous IT admin. For this line only: quietly, almost to herself.", captured[2]
++      key = TtsService.cache_key(QUIET_LINE, *KEVIN_VOICE.values, QUIET_NOTE)
++      sidecar = JSON.parse(File.read(TtsService.new.cache_path(key, @game.mission.name).sub_ext(".json")))
++      assert_equal QUIET_NOTE, sidecar["delivery"]
++    end
++
++    test "tts checks the speaker before the note: an unknown npc with a note is 404 (review R1 n3)" do
++      use_delivery_scenario
++      post tts_game_url(@game), params: { npc_id: "nobody", text: QUIET_LINE, delivery: QUIET_NOTE }
++      assert_response :not_found
++    end
++
++    test "a tagged line falls back to its untagged clip when generation hits the quota (review R1 m1)" do
++      use_delivery_scenario
++      write_clip(TtsService.cache_key(QUIET_LINE, *KEVIN_VOICE.values))
++      service = TtsService.new
++      service.define_singleton_method(:enabled?) { true }
++      service.define_singleton_method(:generate) { |*_a, **_k| raise TtsService::QuotaExhaustedError.new(30) }
++      with_env("GEMINI_API_KEY" => "dummy_key_for_test") do
++        TtsService.stub(:new, service) do
++          post tts_game_url(@game), params: { npc_id: "kevin_park", text: QUIET_LINE, delivery: QUIET_NOTE }
++        end
++      end
++      assert_response :success
++      assert_equal "audio/mpeg", response.media_type
++    end
++
++    test "a tagged line falls back to its untagged clip when generation fails" do
++      use_delivery_scenario
++      write_clip(TtsService.cache_key(QUIET_LINE, *KEVIN_VOICE.values))
++      calls = []
++      post_line({ npc_id: "kevin_park", text: QUIET_LINE, delivery: QUIET_NOTE }, calls)
++      assert_equal 1, calls.size
++      assert_response :success
++    end
++
++    test "a tagged line with no clip at all still reports the quota" do
++      use_delivery_scenario
++      service = TtsService.new
++      service.define_singleton_method(:enabled?) { true }
++      service.define_singleton_method(:generate) { |*_a, **_k| raise TtsService::QuotaExhaustedError.new(30) }
++      TtsService.stub(:new, service) do
++        post tts_game_url(@game), params: { npc_id: "kevin_park", text: QUIET_LINE, delivery: QUIET_NOTE }
++      end
++      assert_response :too_many_requests
+     end
+ 
+     test "tts serves a tagged line's own clip, not the untagged one" do
+diff --git a/test/fixtures/files/ink_line_walker/delivery_parity_diverts.ink b/test/fixtures/files/ink_line_walker/delivery_parity_diverts.ink
+new file mode 100644
+index 000000000..dfda87bf4
+--- /dev/null
++++ b/test/fixtures/files/ink_line_walker/delivery_parity_diverts.ink
+@@ -0,0 +1,45 @@
++// Delivery notes carried across diverts, for the inkjs parity test. Recompile with:
++//   bin/inklecate -o test/fixtures/files/ink_line_walker/delivery_parity_diverts.json test/fixtures/files/ink_line_walker/delivery_parity_diverts.ink
++-> hub
++=== hub ===
++Kevin Park: Where to?
+++ [Tagged way in]
++  #delivery: wary
++  -> shared
+++ [Plain way in]
++  -> shared
+++ [To a stitch]
++  #delivery: to the stitch
++  -> other.second
+++ [Before a choice]
++  #delivery: lost before a choice
++  -> chooser
+++ [Logic first]
++  #delivery: past the logic
++  -> logic_first
+++ [Own note wins]
++  #delivery: overridden
++  -> own_note
+++ [Leave]
++  -> END
++=== shared ===
++Kevin Park: The shared line.
++Kevin Park: After the shared line.
++-> hub
++=== other ===
++= first
++Kevin Park: First stitch.
++-> hub
++= second
++Kevin Park: Second stitch.
++-> hub
++=== chooser ===
+++ [Pick] Kevin Park: Picked.
++  -> hub
++=== logic_first ===
++~ temp n = 2
++Kevin Park: After a little logic.
++-> hub
++=== own_note ===
++Kevin Park: My own note. #delivery: own
++-> hub
+diff --git a/test/fixtures/files/ink_line_walker/delivery_parity_diverts.json b/test/fixtures/files/ink_line_walker/delivery_parity_diverts.json
+new file mode 100644
+index 000000000..248c0d220
+--- /dev/null
++++ b/test/fixtures/files/ink_line_walker/delivery_parity_diverts.json
+@@ -0,0 +1 @@
++{"inkVersion":21,"root":[[{"->":"hub"},["done",{"#n":"g-0"}],null],"done",{"hub":[["^Kevin Park: Where to?","\n","ev","str","^Tagged way in","/str","/ev",{"*":".^.c-0","flg":4},"ev","str","^Plain way in","/str","/ev",{"*":".^.c-1","flg":4},"ev","str","^To a stitch","/str","/ev",{"*":".^.c-2","flg":4},"ev","str","^Before a choice","/str","/ev",{"*":".^.c-3","flg":4},"ev","str","^Logic first","/str","/ev",{"*":".^.c-4","flg":4},"ev","str","^Own note wins","/str","/ev",{"*":".^.c-5","flg":4},"ev","str","^Leave","/str","/ev",{"*":".^.c-6","flg":4},{"c-0":["\n","#","^delivery: wary","/#",{"->":"shared"},null],"c-1":["\n",{"->":"shared"},null],"c-2":["\n","#","^delivery: to the stitch","/#",{"->":"other.second"},null],"c-3":["\n","#","^delivery: lost before a choice","/#",{"->":"chooser"},null],"c-4":["\n","#","^delivery: past the logic","/#",{"->":"logic_first"},null],"c-5":["\n","#","^delivery: overridden","/#",{"->":"own_note"},null],"c-6":["\n","end",null]}],null],"shared":["^Kevin Park: The shared line.","\n","^Kevin Park: After the shared line.","\n",{"->":"hub"},null],"other":[{"->":".^.first"},{"first":["^Kevin Park: First stitch.","\n",{"->":"hub"},null],"second":["^Kevin Park: Second stitch.","\n",{"->":"hub"},null]}],"chooser":[["ev","str","^Pick","/str","/ev",{"*":".^.c-0","flg":4},{"c-0":["^ Kevin Park: Picked.","\n",{"->":"hub"},null]}],null],"logic_first":["ev",2,"/ev",{"temp=":"n"},"^Kevin Park: After a little logic.","\n",{"->":"hub"},null],"own_note":["^Kevin Park: My own note. ","#","^delivery: own","/#","\n",{"->":"hub"},null]}],"listDefs":{}}
+\ No newline at end of file
+diff --git a/test/fixtures/files/ink_line_walker/delivery_parity_edge.ink b/test/fixtures/files/ink_line_walker/delivery_parity_edge.ink
+new file mode 100644
+index 000000000..92542534d
+--- /dev/null
++++ b/test/fixtures/files/ink_line_walker/delivery_parity_edge.ink
+@@ -0,0 +1,28 @@
++// Delivery-note parity with inkjs (review R1 M2), the reviewer's first scratch ink. Recompile with:
++//   bin/inklecate -o test/fixtures/files/ink_line_walker/delivery_parity_edge.json test/fixtures/files/ink_line_walker/delivery_parity_edge.ink
++VAR flag = true
++VAR count = 0
++-> start
++=== start ===
++Kevin Park: Opening. 
++#delivery: softly
++-> b
++=== b ===
++Kevin Park: Hello from b.
++#delivery: crisp
++{flag: Kevin Park: Conditional line.}
++Kevin Park: Part one <>
++and part two. #delivery: glued
++Kevin Park: You have {count} items. #delivery: counting
++~ count = count + 1
++#delivery: above logic
++~ temp x = 1
++Kevin Park: After logic.
+++ [Ask] 
++  Kevin Park: Answer. #delivery: answering
++  -> c
++=== c ===
++#delivery: at knot top
++Kevin Park: In c.
++Kevin Park: Plain end.
++-> END
+diff --git a/test/fixtures/files/ink_line_walker/delivery_parity_edge.json b/test/fixtures/files/ink_line_walker/delivery_parity_edge.json
+new file mode 100644
+index 000000000..0546ff9a6
+--- /dev/null
++++ b/test/fixtures/files/ink_line_walker/delivery_parity_edge.json
+@@ -0,0 +1 @@
++{"inkVersion":21,"root":[[{"->":"start"},["done",{"#n":"g-0"}],null],"done",{"start":["^Kevin Park: Opening.","\n","#","^delivery: softly","/#",{"->":"b"},null],"b":[["^Kevin Park: Hello from b.","\n","#","^delivery: crisp","/#","ev",{"VAR?":"flag"},"/ev",[{"->":".^.b","c":true},{"b":["^ Kevin Park: Conditional line.",{"->":"b.0.9"},null]}],"nop","\n","^Kevin Park: Part one ","<>","\n","^and part two. ","#","^delivery: glued","/#","\n","^Kevin Park: You have ","ev",{"VAR?":"count"},"out","/ev","^ items. ","#","^delivery: counting","/#","\n","ev",{"VAR?":"count"},1,"+","/ev",{"VAR=":"count","re":true},"#","^delivery: above logic","/#","ev",1,"/ev",{"temp=":"x"},"^Kevin Park: After logic.","\n","ev","str","^Ask","/str","/ev",{"*":".^.c-0","flg":4},{"c-0":["^ ","\n","^Kevin Park: Answer. ","#","^delivery: answering","/#","\n",{"->":"c"},null]}],null],"c":["#","^delivery: at knot top","/#","^Kevin Park: In c.","\n","^Kevin Park: Plain end.","\n","end",null],"global decl":["ev",true,{"VAR=":"flag"},0,{"VAR=":"count"},"/ev","end",null]}],"listDefs":{}}
+\ No newline at end of file
+diff --git a/test/fixtures/files/ink_line_walker/delivery_parity_edge2.ink b/test/fixtures/files/ink_line_walker/delivery_parity_edge2.ink
+new file mode 100644
+index 000000000..f54ce2778
+--- /dev/null
++++ b/test/fixtures/files/ink_line_walker/delivery_parity_edge2.ink
+@@ -0,0 +1,15 @@
++// Delivery-note parity with inkjs (review R1 M2), the reviewer's second scratch ink. Recompile with:
++//   bin/inklecate -o test/fixtures/files/ink_line_walker/delivery_parity_edge2.json test/fixtures/files/ink_line_walker/delivery_parity_edge2.ink
++-> k
++=== k ===
++Kevin Park: Hi.
++#delivery: dangling
++* [A] #delivery: after bracket
++  Kevin Park: A reply.
++* [B]
++  Kevin Park: B reply.
++- Kevin Park: Gather line.
++Kevin Park: Then. <>
++#delivery: mid glue
++Kevin Park: Joined?
++-> END
+diff --git a/test/fixtures/files/ink_line_walker/delivery_parity_edge2.json b/test/fixtures/files/ink_line_walker/delivery_parity_edge2.json
+new file mode 100644
+index 000000000..e74fca27d
+--- /dev/null
++++ b/test/fixtures/files/ink_line_walker/delivery_parity_edge2.json
+@@ -0,0 +1 @@
++{"inkVersion":21,"root":[[{"->":"k"},["done",{"#n":"g-0"}],null],"done",{"k":[["^Kevin Park: Hi.","\n","#","^delivery: dangling","/#","ev","str","^A","/str","/ev",{"*":".^.c-0","flg":20},"ev","str","^B","/str","/ev",{"*":".^.c-1","flg":20},{"c-0":["^ ","#","^delivery: after bracket","/#","\n","^Kevin Park: A reply.","\n",{"->":"k.0.g-0"},{"#f":5}],"c-1":["\n","^Kevin Park: B reply.","\n",{"->":"k.0.g-0"},{"#f":5}],"g-0":["^Kevin Park: Gather line.","\n","^Kevin Park: Then. ","<>","\n","#","^delivery: mid glue","/#","^Kevin Park: Joined?","\n","end",null]}],null]}],"listDefs":{}}
+\ No newline at end of file
+diff --git a/test/js/tts-delivery.test.mjs b/test/js/tts-delivery.test.mjs
+index 67a8e9e30..9df482e63 100644
+--- a/test/js/tts-delivery.test.mjs
++++ b/test/js/tts-delivery.test.mjs
+@@ -19,7 +19,7 @@ const here = dirname(fileURLToPath(import.meta.url));
+ const js = join(here, '../../public/break_escape/js');
+ const read = rel => readFileSync(join(js, rel), 'utf8');
+ 
+-const { deliveryFromTags, isDeliveryTag } = await import(pathToFileURL(join(js, 'systems/tts-delivery.js')).href);
++const { deliveryFromTags } = await import(pathToFileURL(join(js, 'systems/tts-delivery.js')).href);
+ 
+ const dir = mkdtempSync(join(tmpdir(), 'tts-delivery-'));
+ writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
+@@ -35,8 +35,14 @@ test('deliveryFromTags matches the server (TtsService.delivery_from_tags)', () =
+     assert.equal(deliveryFromTags([' Delivery:quietly,   almost to herself ']), 'quietly, almost to herself');
+     assert.equal(deliveryFromTags(['delivery: warm', 'delivery: dry']), 'dry');
+     assert.equal(deliveryFromTags(['delivery: warm', 'delivery:   ']), 'warm');
+-    assert.equal(isDeliveryTag('delivery: x'), true);
+-    assert.equal(isDeliveryTag('deliverynote: x'), false);
++    // review R1 m3: nothing left after normalising, or over 200 characters, is no note
++    assert.equal(deliveryFromTags(['delivery: ...']), null);
++    assert.equal(deliveryFromTags(['delivery: \u2026']), null);
++    assert.equal(deliveryFromTags(['delivery: \u0442\u0438\u0445\u043e']), null);
++    assert.equal(deliveryFromTags(['delivery: ' + 'x'.repeat(201)]), null);
++    assert.equal(deliveryFromTags(['delivery: ' + 'x'.repeat(200)]), 'x'.repeat(200));
++    // review R1 m4: Unicode spaces collapse as on the server
++    assert.equal(deliveryFromTags(['delivery: quietly,\u00A0almost\u2009to herself']), 'quietly, almost to herself');
+ });
+ 
+ test('getTTS sends delivery only when the line has a note', async () => {
+@@ -61,7 +67,8 @@ test('person-chat sends the line\'s note; the manager keys tagged preloads apart
+     assert.match(chat, /import \{ deliveryFromTags \} from '\.\.\/\.\.\/systems\/tts-delivery\.js';/);
+     assert.match(chat, /const delivery = deliveryFromTags\(originalResult\?\.tags\);/);
+     assert.match(chat, /this\.ttsManager\.play\(ttsSpeakerId, ttsText, \{ delivery \}\)/);
+-    assert.match(chat, /this\.ttsManager\.preload\(nextSpeakerId, nextTtsText, \{ delivery \}\)/);
++    // review R1 m2: the next line is preloaded without this line's note
++    assert.match(chat, /this\.ttsManager\.preload\(nextSpeakerId, nextTtsText, \{ delivery: null \}\)/);
+ 
+     const mgr = read('systems/tts-manager.js');
+     assert.match(mgr, /async play\(npcId, text, \{ delivery = null \} = \{\}\)/);
+diff --git a/test/support/ink_delivery_lines.mjs b/test/support/ink_delivery_lines.mjs
+new file mode 100644
+index 000000000..e63e6ed8e
+--- /dev/null
++++ b/test/support/ink_delivery_lines.mjs
+@@ -0,0 +1,52 @@
++// Every line a compiled ink story shows, with the #delivery: note person-chat would send
++// for it, found by playing the story with inkjs the way the client does: InkEngine#continue
++// (Continue() until a line has text, keeping the tags of the empty lines before it) and
++// deliveryFromTags on the result's tags. Every choice path is explored (depth-bounded, each
++// story state once). Prints JSON: [[line text, note or null], ...] (unique, sorted).
++//
++// Used by the Ruby parity test (tts_delivery_test.rb) to check that InkLineWalker gives
++// each line the note the client sends (review R1 M2).
++// Run with: node test/support/ink_delivery_lines.mjs <story.json>
++import { readFileSync } from 'node:fs';
++import { fileURLToPath, pathToFileURL } from 'node:url';
++import { dirname, join } from 'node:path';
++import { createRequire } from 'node:module';
++
++const REPO = join(dirname(fileURLToPath(import.meta.url)), '../..');
++const inkjs = createRequire(import.meta.url)(join(REPO, 'public/break_escape/assets/vendor/ink.js'));
++const { deliveryFromTags } = await import(pathToFileURL(join(REPO, 'public/break_escape/js/systems/tts-delivery.js')).href);
++
++const json = readFileSync(process.argv[2], 'utf8').replace(/^﻿/, '');
++const story = new inkjs.Story(json);
++const found = new Map();
++const seen = new Set();
++const MAX_DEPTH = 12;
++
++function explore(depth) {
++    for (let guard = 0; guard < 200 && story.canContinue; guard++) {
++        let text = '';
++        let tags = [];
++        while (story.canContinue) {
++            const t = story.Continue();
++            tags = tags.concat(story.currentTags || []);
++            if (t.trim()) { text = t.trim(); break; }
++        }
++        if (text) {
++            const note = deliveryFromTags(tags);
++            found.set(JSON.stringify([text, note]), [text, note]);
++        }
++    }
++    const choices = story.currentChoices.length;
++    if (!choices || depth >= MAX_DEPTH) return;
++    const saved = story.state.ToJson();
++    if (seen.has(saved)) return;
++    seen.add(saved);
++    for (let i = 0; i < choices; i++) {
++        story.state.LoadJson(saved);
++        story.ChooseChoiceIndex(i);
++        explore(depth + 1);
++    }
++}
++
++explore(0);
++console.log(JSON.stringify([...found.values()].sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)))));
+diff --git a/test/unit/break_escape/tts_delivery_test.rb b/test/unit/break_escape/tts_delivery_test.rb
+index 1ef60541f..f71e2c171 100644
+--- a/test/unit/break_escape/tts_delivery_test.rb
++++ b/test/unit/break_escape/tts_delivery_test.rb
+@@ -4,6 +4,7 @@ require 'tmpdir'
+ require 'json'
+ require 'base64'
+ require 'minitest/mock'
++require 'open3'
+ 
+ module BreakEscape
+   # Per-line delivery notes (`#delivery: quietly, almost to herself`): the note
+@@ -96,6 +97,23 @@ module BreakEscape
+       refute TtsService.delivery_tag?('deliverynote: x')
+     end
+ 
++    test "a note with nothing the key keeps, or over the limit, counts as no note (review R1 m3)" do
++      %w[... … ¿? ...!].each { |n| assert_nil TtsService.delivery_from_tags(["delivery: #{n}"]), n }
++      assert_nil TtsService.delivery_from_tags(['delivery: тихо']) # all non-ASCII: normalises to nothing
++      assert_nil TtsService.clean_delivery('x' * (TtsService::MAX_DELIVERY_LENGTH + 1))
++      assert_equal 'x' * TtsService::MAX_DELIVERY_LENGTH, TtsService.clean_delivery('x' * TtsService::MAX_DELIVERY_LENGTH)
++      assert_equal 'warm', TtsService.delivery_from_tags(['delivery: warm', 'delivery: …'])
++      # so it can never key a note-coloured take as the untagged clip
++      assert_equal SAMPLE_KEY, TtsService.cache_key(*SAMPLE, '…')
++    end
++
++    test "Unicode spaces collapse like ASCII ones, on both sides (review R1 m4)" do
++      nbsp = "quietly,\u00A0almost\u2009to herself"
++      assert_equal 'quietly, almost to herself', TtsService.clean_delivery(nbsp)
++      assert_equal 'quietly, almost to herself', TtsService.delivery_from_tags(["delivery: #{nbsp}"])
++      assert_equal TtsService.cache_key(*SAMPLE, 'quietly, almost to herself'), TtsService.cache_key(*SAMPLE, nbsp)
++    end
++
+     # ─── Prompt ────────────────────────────────────────────────────────────
+ 
+     test "the note joins the style for that line only, and the text is unchanged" do
+@@ -170,6 +188,57 @@ module BreakEscape
+       assert_equal 'dry', by_text['Two notes, the last wins.']
+     end
+ 
++    # ─── Parity with the client (review R1 M2) ─────────────────────────────
++
++    PARITY_FIXTURES = %w[delivery_parity_edge delivery_parity_edge2 delivery_parity_diverts].freeze
++
++    # For each fixture: every line inkjs shows (played as InkEngine#continue plays it,
++    # every choice path) with the note the client sends, against InkLineWalker. A line
++    # the walker reads must carry the client's note; a note the walker gives a line must
++    # be one the client sends with it. Lines the walker leaves unresolved (glue, game
++    # state) are voiced untagged by the endpoint, and dialoguelint warns about them.
++    test "the walker gives each line the note inkjs gives it (tag above a divert, glue, counters)" do
++      skip 'node not available' unless system('node --version', out: File::NULL, err: File::NULL)
++
++      PARITY_FIXTURES.each do |name|
++        json = BreakEscape::Engine.root.join("test/fixtures/files/ink_line_walker/#{name}.json").to_s
++        out, err, status = Open3.capture3('node', BreakEscape::Engine.root.join('test/support/ink_delivery_lines.mjs').to_s, json)
++        assert status.success?, "#{name}: #{err}"
++        client = JSON.parse(out).to_set
++
++        walker = InkLineWalker.from_file(json)
++        server = walker.lines.to_set { |l| [l.raw, TtsService.delivery_from_tags(l.tags)] }
++        read = walker.lines.to_set(&:raw)
++        unread = walker.unresolved.map(&:text)
++
++        client.each do |text, note|
++          if read.include?(text)
++            assert_includes server, [text, note], "#{name}: the walker misses the client's note for #{text.inspect}"
++          else
++            assert(unread.any? { |u| text.include?(u) }, "#{name}: #{text.inspect} is neither read nor unresolved")
++          end
++        end
++        server.each do |text, note|
++          next unless note
++
++          assert_includes client, [text, note], "#{name}: the walker gives #{text.inspect} a note the client never sends"
++        end
++      end
++    end
++
++    test "a note above a divert lands on the target's first line, which is also listed untagged" do
++      json = BreakEscape::Engine.root.join('test/fixtures/files/ink_line_walker/delivery_parity_diverts.json').to_s
++      notes = InkLineWalker.from_file(json).lines.group_by(&:raw)
++                           .transform_values { |ls| ls.map { |l| TtsService.delivery_from_tags(l.tags) } }
++      assert_equal [nil, 'wary'], notes['Kevin Park: The shared line.']
++      assert_equal [nil], notes['Kevin Park: After the shared line.']
++      assert_equal [nil, 'to the stitch'], notes['Kevin Park: Second stitch.']
++      assert_equal [nil], notes['Kevin Park: First stitch.']
++      assert_equal [nil], notes['Kevin Park: Picked.'] # dropped before a choice, as inkjs drops it
++      assert_equal [nil, 'past the logic'], notes['Kevin Park: After a little logic.']
++      assert_equal ['own'], notes['Kevin Park: My own note.'] # its own tag wins over the carried one
++    end
++
+     test "the walker carries a delivery tag over an empty line, as the client does, and nothing else" do
+       ink = { 'inkVersion' => 21, 'root' => [
+         '#', '^delivery: softly', '/#', '#', '^speaker:player', '/#', "\n",
+@@ -212,6 +281,13 @@ module BreakEscape
+       refute by_text.key?("I'll take it from here.")
+ 
+       assert_includes extractor.keys, quiet.key
++      # The ink's own note comes back, whatever spelling of it the client sent
++      assert_equal 'quietly, almost to herself',
++                   extractor.delivery_for('kevin_park', "I suppose it doesn't matter now.", 'Quietly, almost to herself.')
++      assert_equal 'quietly, almost to herself',
++                   extractor.delivery_for('kevin_park', "I suppose it doesn't matter now.",
++                                          "quietly almost to herself \uFF53\uFF48\uFF4F\uFF55\uFF54 \u{1F600}")
++      assert_nil extractor.delivery_for('kevin_park', "I suppose it doesn't matter now.", 'shouting')
+       assert extractor.delivered_by?('kevin_park', "I suppose it doesn't matter now.", 'Quietly, almost to herself.')
+       refute extractor.delivered_by?('kevin_park', "I suppose it doesn't matter now.", 'shouting')
+       refute extractor.delivered_by?('kevin_park', 'An untagged line.', 'quietly')
+-- 
+2.43.0
+
