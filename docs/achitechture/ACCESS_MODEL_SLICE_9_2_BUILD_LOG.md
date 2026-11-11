@@ -792,3 +792,42 @@ screenshots in the scratchpad (`9-2-b-r2`).
 ### Suites after review round 2
 
 After `299f467e1`, under the lock: Rails 1436 runs, 0 failures, 1 skip; JS 486 files passed, 0 failed.
+
+## Sub-slice B review round 3 outcomes (2026-11-11)
+
+Review: `ACCESS_MODEL_SLICE_9_2_B_CODE_REVIEW_R3.md` (no blocker, no major). Fixes in `22ac8bc84`
+and `af35a7c10`; main merged in `2bcb732f7` (no conflicts; main's changes do not touch the needs,
+workaround or validator files).
+
+| Finding | Outcome |
+|---|---|
+| Suspected bug: two reloads before the propped door showed open | Not a bug (the first reload came before the prop, as X4 intends). Seen again in game 1210: open on the first reload after the prop |
+| m1 the icon stays solid after a reload | Fixed. GET /scenario's `npcFrustration` carries `failWhy` (per need, the whys of its last counted failure). `_applyRestored` seeds `failCause` from it: a `down` or `unreachable` need records the resources failing a use now (none when the outage is over, so the icon fades at once); any other why (`locked_out`, `social_blocked`, `off`, `no_access`) is recorded against the station and clears only with a met use, as live. Nothing is seeded over causes the session recorded, nor for a need the NPC does not judge. Tests: cleared at once; outage still on, solid until it clears; station why stays solid; no `failWhy` seeds nothing; a session cause is kept; GET carries `failWhy`. Plan 5.5 updated |
+| m2 the re-offer rides only on later fails, oldest only | Fixed. Every fail, too-soon and ease answer carries `pending`, every unspent hand-over oldest first (`unspent_runs`); `run` is unchanged. `_applyAnswers` (and a pending answer applied at registration) emit `npc_workaround_due` for `run` and each `pending` entry; `due` ignores the copies. Tests: a lost last fail followed only by an ease (the ease answer carries it, it is spent, then gone); two unspent hand-overs with the second answer lost (the next fail and a too-soon carry both); the client starts each of two pending once and ignores a copy of `run`. Plan section 6 and the endpoint table updated. The leak scanner now allows `$.answers[n].pending[m]` on /npc_frustration (test) |
+| m3 tests that would not catch a regression | Added: oldest first (a sixth fail with e1 and e2 both unspent: `run` is e1, `pending` is [e1, e2]); the met-use path of `causeCleared` (a met use while the share is up, then down again: cleared until the next counted failure; checked to fail with the met-use line removed); several needs (work cleared, social_media still failing: not cleared); the reload behaviour (m1). `assert_nil postit('mei_pc')` put back in the "done after dropped" test: it passes |
+| n1 the dwell left sets the visit's length | Fixed: a numeric dwell is used as it is, so 0 gives a zero-length visit; only a run with no dwell takes `VISIT_DWELL_S`. Test |
+| n2 the stuck warning is per streak | Fixed: a `warned` flag on the job, so once per job across 425s. Test (three streaks, one warning) |
+| n3 the far side of a propped door after a resume inside the propped room | Fixed. A done `prop_door` names the prop's room as `from`; `restore` remembers it and `syncRoom` of the propped room also opens its sprite back to `from`, when that sprite is not itself locked. Tests: opened; no `from` leaves it alone; a locked far side stays shut. Not seen live: a `skip_resume` reload starts in the lobby |
+| n4 the `unspent_run` comment | Updated with m2 |
+
+### Browser run (game 1210, port 3015)
+
+X4 with two reloads, plus the icon. Before the first reload: three fails, the third answer carried
+`run` and `pending` (two `npc_workaround_due:tom`, one `started`), Tom frozen on his way. After the
+first reload: `npc_workaround_due:tom` `restored: true` with dwell 0, `failCause` seeded
+`{ work: [stores down] }` (solid, the outage still on), Tom propped the door (`done`,
+`door_propped:store_room`, live `door_opened`). Stores switched back on: `causeCleared` true, the
+icon faded (alpha 0.6, tell 2) while Tom was idle. After the second reload: no `npc_workaround`
+event, `door_opened` `restored: true` on both sides, `store_door_propped` true, `failCause`
+`{ work: [] }` and the icon faded at once. One `POST /npc_workaround` in the game; every
+`/npc_frustration` and `/npc_workaround` answer 200. Leak check: no leaks found (after the scanner
+change above; before it, the one finding was `pending` in an answer). Session log, responses and
+server log in the scratchpad (`9-2-b-r3`).
+
+### Leftover games
+
+1210.
+
+### Suites after review round 3
+
+After `af35a7c10` (main merged), under the lock: Rails 1454 runs, 0 failures, 1 skip; JS 486 files passed, 0 failed.
