@@ -435,7 +435,7 @@ Netherton: Every operation presents choices where all options have negative cons
 
 Netherton: The Berlin Crisis. Two years ago. Agent captured, ENTROPY preparing exposure. Every extraction option carried unacceptable risks.
 
-Netherton: I authorized an extraction that cost us intelligence assets, burned operations across Europe, and required protocol violations I cannot discuss. #delivery: unusually vulnerable
+Netherton: I authorised an extraction that cost us intelligence assets, burned operations across Europe, and required protocol violations I cannot discuss. #delivery: unusually vulnerable
 
 Netherton: But I brought our agent home alive. The mission failed. The agent lived. I chose the agent.
 
@@ -464,7 +464,7 @@ Netherton: But I brought our agent home alive. The mission failed. The agent liv
 #influence_gained:25
 ~ professional_reputation += 3
 
-Netherton: Many agents claim they would prioritize personnel over missions. Few actually do when the stakes are real. #delivery: with something close to approval
+Netherton: Many agents claim they would prioritise personnel over missions. Few actually do when the stakes are real. #delivery: with something close to approval
 
 Netherton: That you understand the value of that choice... that suggests you have the right priorities for command.
 
@@ -1078,7 +1078,7 @@ Netherton: Then I accept that I made a choice that harmed someone. That I priori
 
 Netherton: And I question whether that math is ever truly justified. Whether there was an alternative I failed to see. Whether I'm rationalizing harm.
 
-Netherton: I don't have a clean answer. I make the choices. I live with the consequences. I try to minimize harm while completing necessary missions. #delivery: taking a moment, tired
+Netherton: I don't have a clean answer. I make the choices. I live with the consequences. I try to minimise harm while completing necessary missions. #delivery: taking a moment, tired
 
 Netherton: Some days that feels like enough. Other days it feels like self-serving rationalization for moral compromise.
 
@@ -1282,7 +1282,7 @@ Netherton: The agents I've developed—that's legacy. People like you. Capable o
 #influence_gained:45
 ~ npc_netherton_personal_moments += 2
 
-Netherton: I... thank you. That means more than you might realize. #delivery: with rare visible emotion
+Netherton: I... thank you. That means more than you might realise. #delivery: with rare visible emotion
 
 Netherton: This work is isolating. Leadership creates distance. I often wonder if I'm making meaningful difference or just pushing papers and attending meetings.
 

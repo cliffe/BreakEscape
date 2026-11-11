@@ -259,7 +259,7 @@ Which approach do you want to take?
 
 === emergency_extraction_coordination ===
 
-Haxolottle: Netherton has authorized emergency extraction. Asset protection priority. #delivery: rapid, coordinating
+Haxolottle: Netherton has authorised emergency extraction. Asset protection priority. #delivery: rapid, coordinating
 
 Haxolottle: Route to waypoint Bravo. #delivery: clear, precise
 
@@ -381,7 +381,7 @@ Haxolottle: But help me understand—is this "mission parameters changed beyond 
     -> mission_hub
 
 + [Something feels wrong - can't explain it]
-    Haxolottle: That's valid. Field intuition saves lives. Abort authorized. #delivery: trusting your instinct
+    Haxolottle: That's valid. Field intuition saves lives. Abort authorised. #delivery: trusting your instinct
     Haxolottle: We can analyze what felt wrong afterwards. Right now, get clear.
     ~ npc_haxolottle_influence += 10
 #influence_gained:10
@@ -658,7 +658,7 @@ Haxolottle: Alright, here's what I'm seeing from the extended analysis...
 -> mission_hub
 
 === crisis_triage ===
-Haxolottle: Okay, let's prioritize. First, secure your immediate position. Second, we assess escape routes. #delivery: focused, in triage mode
+Haxolottle: Okay, let's prioritise. First, secure your immediate position. Second, we assess escape routes. #delivery: focused, in triage mode
 Haxolottle: Talk to me. What's the most pressing threat right now?
 -> mission_hub
 

@@ -526,7 +526,7 @@ Dr. Chen: What interests you? Network security? Hardware hacking? Cryptography? 
     -> mission_hub
 
 + [Just make me better at my job]
-    Dr. Chen: I can do that. Let me design a custom training program based on your recent missions. #delivery: grinning
+    Dr. Chen: I can do that. Let me design a custom training programme based on your recent missions. #delivery: grinning
     Dr. Chen: I'll mix practical skills with theoretical knowledge. Make you a more effective operator.
     ~ professional_reputation += 3
     -> mission_hub

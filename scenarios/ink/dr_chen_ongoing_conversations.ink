@@ -240,7 +240,7 @@ Dr. Chen: We have advantages they don't. Resources. Infrastructure. Suppliers wh
 
 Dr. Chen: But they're innovative. Decentralized. Fast. They can deploy experimental tech without approval committees and safety reviews.
 
-Dr. Chen: So we focus on resilience. Systems that fail gracefully. Redundant countermeasures. Defense in depth. Can't prevent every attack, but we can minimize damage. #delivery: determined
+Dr. Chen: So we focus on resilience. Systems that fail gracefully. Redundant countermeasures. Defence in depth. Can't prevent every attack, but we can minimise damage. #delivery: determined
 
 Dr. Chen: And we learn from every encounter. Every sample of ENTROPY malware teaches us something. Every compromised system reveals their methods.
 
@@ -470,7 +470,7 @@ Dr. Chen: ENTROPY will eventually have quantum capabilities. When they do, curre
 
 Dr. Chen: Also working on improved sensor miniaturization. Better malware analysis tools. Autonomous security testing framework.
 
-Dr. Chen: I might have a focus problem. But all of it's important! How do you prioritize when everything matters? #delivery: sheepish
+Dr. Chen: I might have a focus problem. But all of it's important! How do you prioritise when everything matters? #delivery: sheepish
 
 ~ npc_chen_influence += 20
 #influence_gained:20
@@ -592,7 +592,7 @@ Dr. Chen: Your call. I don't pressure agents to test experimental tech. Has to b
 ~ npc_chen_influence += 28
 #influence_gained:28
 
-Dr. Chen: Network monitoring looks for patterns. Unusual traffic. Anomalous behavior. Signatures that don't match known-good activity. #delivery: launching into a technical explanation
+Dr. Chen: Network monitoring looks for patterns. Unusual traffic. Anomalous behaviour. Signatures that don't match known-good activity. #delivery: launching into a technical explanation
 
 Dr. Chen: Camouflage generates fake pattern that matches legitimate traffic. Banking transactions. Social media. Streaming video. Whatever fits the environment.
 
@@ -942,7 +942,7 @@ Dr. Chen: First: fully quantum-resistant communication network. Not just encrypt
 
 Dr. Chen: Second: predictive threat analysis AI. Not reactive security. Proactive. Identifies potential ENTROPY operations before they launch.
 
-Dr. Chen: Third: Neuromorphic computing for malware analysis. Brain-inspired processors that recognize threats like human intuition but computer-speed. #delivery: voice going dreamy
+Dr. Chen: Third: Neuromorphic computing for malware analysis. Brain-inspired processors that recognise threats like human intuition but computer-speed. #delivery: voice going dreamy
 
 * [Say you'd help make these real]
     ~ npc_chen_influence += 40
@@ -1668,7 +1668,7 @@ Dr. Chen: But honestly? This work is what I'm meant to do. Protecting critical i
 ~ npc_chen_influence += 40
 #influence_gained:40
 
-Dr. Chen: Yeah, you're right. Netherton has been here twenty-three years. That's a lot to give to one organization. #delivery: agreeing
+Dr. Chen: Yeah, you're right. Netherton has been here twenty-three years. That's a lot to give to one organisation. #delivery: agreeing
 
 Dr. Chen: Should probably think about eventual exit. Before I'm too burned out to do anything else.
 
