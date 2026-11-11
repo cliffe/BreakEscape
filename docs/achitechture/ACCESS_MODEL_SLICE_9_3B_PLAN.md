@@ -80,7 +80,7 @@ plan found it; the method names are what to extend.
 | The desktop | `desktop_request_allowed?(info, foothold_id)` is the one place a desktop request is judged: with a foothold, the host is reachable through it, remote sign-in is not blocked and the session is not a claim, and the room is not consulted; without, the PC is physically reachable and not headless. `settle_session_at_keyboard!(pc_id)` clears a session's `foothold` when its desktop is served at the keyboard. The **scoped** requests under a desktop (a folder's `GET /container`, the inventory add, an `unlock`) ask only that a session exists which admits the object; they do not re-check reach | `network_access.rb`; `games_controller.rb` |
 | The policy | `effective_policy(pc)` reads `pc['policy']` (else `scenario_data['defaultPolicy']`) from `scenario_data['policies']`. `remote_blocked?(pc)` is `effective_policy(pc)['remote'] == 'blocked'`. `login_max_attempts(pc)` reads `maxAttempts`. There is no `usb` field read here yet | `game.rb` |
 | Rogue devices | `held_rogue_device(device_id)` finds the first rogue device the server inventory holds, reading `rogueDevice: true` from the scenario definition. `plant_device!` and `unplug_device!` are the plant and unplug. `planted_device?(item)` and `hide_planted_devices!` keep one device one device | `network_access.rb` |
-| Declared grants and drops | `DeclaredGrants.for(data)` walks the scenario's declared grants (timers and the like); `held_grant_items` is those the inventory holds. `add_item_to_room!` writes a grow-only `player_state['droppedItems']` list of item ids the player dropped (built for the engine plan's capture proofs); `capture_proofs.rb` already reads it | `lib/break_escape/declared_grants.rb`; `game.rb` (`add_item_to_room!` :460); `capture_proofs.rb` |
+| Declared grants and drops | `DeclaredGrants.for(data)` walks the scenario's declared grants but collects **only `give_item` nodes** (`identified_give_item?` is false for any other `type`), and every entry is `{ path, item }`, so it does **not** surface a `grant_foothold` action and cannot be reused for one. What it does have is `DeclaredGrants.executed?(keys)`, the one place that decides whether a key path is an action the engine runs server-side (true for `triggerOnInteract`, `completionActions`, `actions` under `timers`/`onInteract`/`conditionalActions`, and `onConfirm` recursively); this slice reuses that test, not `.for`. `add_item_to_room!` writes a grow-only `player_state['droppedItems']` list of item ids the player dropped; `capture_proofs.rb` already reads it | `lib/break_escape/declared_grants.rb` (`for` :57, `executed?` :99); `game.rb` (`add_item_to_room!` :460); `capture_proofs.rb` |
 | The client's networks module | `systems/network-links.js` (`window.networkLinks`) is the only place the client asks about networks. It keeps the foothold list, the "gained" set, the last view per foothold, and the **trip** (the way back, a record and a landing table `LANDINGS` for `view`, `signin`, `desktop` and `share`). `interactJack`, `plant`, `unplug`, `open(footholdId, { returnTo })`, `openSession(pcId, { returnTo })`, `view(footholdId)`, `resume`, `leave`, `landed`. It looks the view and remote-desktop starters up on `window`, so the minigame files add them with no edit here | `public/break_escape/js/systems/network-links.js` |
 | The view minigame | `minigames/network-view/network-view-minigame.js` renders one `GET /network` foothold entry: host rows (`hostAction`: off, open, sign-in) and resource rows (`resourceAction`: open, locked, observe). It reports its exit reason through `networkLinks.landed('view', reason)`. Rows carry `data-host-id`, `data-resource-id`, `data-action`. It never reads scenario data and has a single flat list of rows | `network-view-minigame.js` |
 | Reserved fields | The 9.3a validator **refuses**, each with "needs slice 9.3b": top-level `networkLinks`; `downIf` and `wifi` on a network; `wifiAp`, `portSecurity` and `portSecurityMessage` on an object; and any `grant_foothold` action anywhere. The schema carries each as a reserved stub | `scripts/validate_network.rb` (:15-72); `scripts/scenario-schema.json` (:209, :220, :5288) |
@@ -209,9 +209,12 @@ example first; the subsections say what each part means.
 
 ### 4.5 Implants
 
-- A `grant_foothold` action, on a path the engine runs actions from and the server's declared-grant
-  walk covers (a `timers` entry, an NPC `eventMapping` that runs actions, a `confirm_action`'s
-  `onConfirm`). Two shapes:
+- A `grant_foothold` action, on a path the engine runs actions from, which the server enumerates
+  through `NetworkModel.grant_foothold_actions(data)` (section 5.5): it walks the scenario and keeps
+  a `grant_foothold` only where `DeclaredGrants.executed?` says the path is server-run (a `timers`
+  entry's `actions`, an object's `triggerOnInteract`, `onInteract.actions`, `conditionalActions`, a
+  `confirm_action`'s `onConfirm`), the same test the validator uses (section 9), so "declared" means
+  one thing in both places. Two shapes:
   - `{ "type": "grant_foothold", "pc": "<pc id>", "needsDropped": "<item id>", "name": "..." }`: an
     NPC uses a device the player dropped. The foothold is granted when the action fires **and** the
     server's own `droppedItems` record shows that item was dropped.
@@ -221,8 +224,8 @@ example first; the subsections say what each part means.
     session and the inventory holds `needsHeld`, which the implant then takes out of the inventory
     as a plant does.
 - An implant gives a foothold on the **PC's own network** and nothing else. The validator errors on
-  a `grant_foothold` under `flagRewards` (the flag station runs actions in the browser, off the
-  server's list) or an `eventMappings` entry the server does not run as an action, on one with
+  a `grant_foothold` on a path `DeclaredGrants.executed?` does not run server-side (under
+  `flagRewards`, which the flag station runs in the browser, or under `eventMappings`), on one with
   neither `needsDropped` nor `needsSession`, and on one with both.
 
 ### 4.6 Which fields ship
@@ -247,13 +250,16 @@ fields that ship, on room objects, are `wifiAp` (so the client knows a click is 
   link graph, shortest first, capped at eight; the cap is the validator's warning threshold
   (section 9). This is a pure graph walk: it does not read outages.
 - `reach_conditions(data, station_network, resource)` keeps its 9.3a return shape (a list of
-  routes, each a list of condition globals) and is extended to use `reach_paths`: for a resource on
-  a network reachable from `station_network`, each route is the `downIf` globals of the networks on
-  its path (the station's and every intermediate and the resource's network), **not** the
-  resource's own `downIf` (that is 9.2's and 9.2 adds it to its own route list). A resource on the
-  station's own network is still `[[]]`; an unreachable one is still `[]`. This is the function
-  slice 9.2's NPC-work composer already calls; its output gains the path globals, which 9.2's
-  `npc-work.js` evaluates on the browser (section 12 notes the shared ordering).
+  routes, each a list of condition globals) and is extended to use `reach_paths`. The three
+  unchanged cases stay exactly as today (`network_model.rb:176-180`): a resource with **no**
+  network returns `[[]]`, and a resource on the station's own network returns `[[]]`. Only a
+  resource on a **different** network changes: when it is link-reachable from `station_network`,
+  each route is the `downIf` globals of the networks on one of its `reach_paths` (the station's and
+  every intermediate and the resource's network), **not** the resource's own `downIf` (that is
+  9.2's, and 9.2 adds it to its own route list); when it is not reachable the answer is still `[]`.
+  This is the function slice 9.2's NPC-work composer already calls (`access_work.rb` reads it as
+  `routes`); its output gains the path globals, which 9.2's `npc-work.js` evaluates on the browser
+  (section 12 notes the shared ordering).
 
 **The runtime reach (`NetworkAccess`, server).**
 
@@ -301,7 +307,9 @@ sign-in screen and desktop are the same screens as any other host's, reached thr
 
 - `NetworkModel.truthy?(value)` matches JavaScript's truthiness, because the browser decides the
   same question for 9.2's NPC work: false for `false`, `nil`, `0`, `0.0`, `""` and a missing key;
-  true for everything else, the string `"false"` included. It is tested with each of those.
+  true for everything else, the string `"false"` included. This is the scenario-global-relevant
+  subset of JavaScript's rule (a global is never `NaN` or `undefined`). It is tested with each of
+  those values.
 - `network_up?` and a resource's own-`downIf` test both read the global from
   `player_state['globalVariables']`, falling back to the scenario's declared default in
   `globalVariables`, and apply `truthy?`.
@@ -323,6 +331,11 @@ sign-in screen and desktop are the same screens as any other host's, reached thr
   foothold and are re-judged on the route: the server answers 403 `unreachable` (or the invented-id
   refusal for a share path) when the host or share is no longer reached. A local session at a PC on
   a network with no `downIf` is judged exactly as today, so no existing scenario gains a refusal.
+  **Client:** `minigames/container/container-minigame.js` owns these requests and is the file that
+  threads the foothold onto a scoped `GET /container`, `POST /inventory` add and `POST /unlock`
+  while a remote desktop (a lockable with `remote.footholdId`, 9.3a) is open; it already holds the
+  foothold on the desktop lockable, so the change is to pass it on the child requests too. The view
+  then handles the 403 through its existing `no_session`/`unreachable` landings (4.3 of 9.3a).
 - **Keeping the server's view current (client).** Before `GET /network`, a remote sign-in, and any
   desktop or share fetch while a foothold is held or the last desktop showed a mapped share, the
   client awaits `window.stateSync.sync()` so the server reads the latest outage globals. An open
@@ -342,10 +355,30 @@ sign-in screen and desktop are the same screens as any other host's, reached thr
   **still** adds that access point's id to `gainedFootholds` and emits `network_joined` for it, so a
   task or mapping on either access point completes.
 - The link item's picture is the access point object's own sprite, never the phone's, so the tray
-  does not hold two phone icons that open different things. The link item, the view and the trip are
-  9.3a's, unchanged: a Wi-Fi foothold is a foothold.
+  does not hold two phone icons that open different things. Its name is the access point's own
+  `linkName` when the author sets one, else a default "Wi-Fi: <network name>". The **concept** of the
+  link item, the view and the trip are 9.3a's and reused unchanged, but `link_item_for` itself gains
+  a branch (below): a Wi-Fi foothold is a foothold, but its source is not a jack.
 - No device and no range. An open network (`psk` absent) joins with no key prompt. A wrong key is
   not counted (section 13 records the strength): the server just answers "wrong key".
+
+**The link item across foothold kinds.** 9.3a's `link_item_for(foothold_id)` and the
+`foothold_for_client`/`footholds_for_client` that derive the bootstrap sprite and observations from
+it are **jack-specific**: `link_item_for` calls `find_jack(foothold['source'])` and builds the name
+as "<device>: <jack>" (`network_access.rb:252-296`). A Wi-Fi foothold's source is an access point id
+(no jack) and an implant's is a PC id, so `link_item_for` is generalised to branch on
+`foothold['via']`:
+
+- `jack` (today): unchanged, name and sprite from the device copy and the jack object;
+- `wifi`: sprite from the access point object's own `sprite`, name from the AP's `linkName` or the
+  "Wi-Fi: <network name>" default, observations "Your Wi-Fi link to <network name>. Open it to see
+  what it reaches.";
+- `implant`: sprite from the device copy stored in the foothold (else the PC's own sprite), name
+  from the action's `name`, observations "Your implant on <host or PC name>. Open it to see what it
+  reaches.".
+
+So reload (`restoreHandles`) and the tray icon are right for every foothold kind, because the
+bootstrap foothold carries the sprite and observations each branch produced.
 
 ### 5.4 Port security (sub-slice P)
 
@@ -354,24 +387,39 @@ sign-in screen and desktop are the same screens as any other host's, reached thr
   in the inventory, gives no foothold, and answers `{ success: false, reason: "port_security",
   message: <portSecurityMessage or a default> }`. The client shows the message and emits
   `network_device_refused` with reason `port_security`; the device is never removed.
+- **Client.** `network-links.js`'s `plant()` today special-cases only a `422 no_device` and sends
+  every other error to a generic "The port did not respond" toast (`network-links.js:381-388`). This
+  sub-slice adds a `422 port_security` branch that shows `body.message` and emits
+  `network_device_refused { jackId, reason: 'port_security' }`, so the authored message is not lost.
 - It only refuses. A bypass (an allow-list the device can be added to, a cloned address) is left
   out of this slice (section 13).
 
 ### 5.5 Implants (sub-slice I)
 
-- A new route, `POST /network/implant`, and a new action handler for `grant_foothold` on the
-  server's action path (`apply-actions` on the client, and the server's declared-grant walk for the
-  dropped case). The action names a `pc`, a shape (`needsDropped` or `needsSession`+`needsHeld`) and
-  a `name`.
-- `implant_foothold!(pc_id, action)` requires, before it grants:
-  1. the scenario declares a `grant_foothold` for that PC with the same shape (read from the
-     scenario, never from the request);
+- A new server-side enumerator, a route, and a client case that fires the implant:
+  - `NetworkModel.grant_foothold_actions(data)` (new, beside the rogue-device walk) returns
+    `[{ pc, shape, needs_dropped, needs_held, name, path }]` for every `grant_foothold` action on a
+    path `DeclaredGrants.executed?` runs server-side. It is built next to, **not** inside,
+    `DeclaredGrants.for` (whose `{ path, item }` contract for `give_item` must stay untouched), and
+    it reuses `DeclaredGrants.executed?` so the server and the validator (section 9) agree on which
+    actions are "declared".
+  - `POST /network/implant` is the route; `implant_foothold!(pc_id, shape)` reads precondition 1
+    from `grant_foothold_actions`.
+  - The client fires it from `systems/apply-actions.js`: a `grant_foothold` action case that calls
+    `api.networkImplant(pc, shape)` when the action runs. `apply-actions.js` is shared with the
+    engine plan's stream E4 (section 12), so this slice's case is added after E4's edits.
+- `implant_foothold!(pc_id, shape)` requires, before it grants:
+  1. `grant_foothold_actions(scenario_data)` holds an action for `pc_id` of this `shape` (read from
+     the scenario, never from the request);
   2. for `needsDropped`: `player_state['droppedItems']` holds the named item (the grow-only record
      `add_item_to_room!` writes). A drop's own room entry goes when the item is picked up again, so
      `droppedItems` is the durable proof, not the room entry;
-  3. for `needsSession`: `sessions[pc]` holds a session the player has (a claim or a password
-     sign-in, **not** one opened through a foothold) and the inventory holds `needsHeld`, which the
-     implant then removes from the inventory as a plant does;
+  3. for `needsSession`: `sessions[pc]` is present **and its `foothold` is blank**, which is exactly
+     the state a claim or a keyboard password sign-in leaves and a remote-through-foothold session
+     does not (a remote sign-in writes `foothold`; `settle_session_at_keyboard!` clears it when the
+     player sits down). Testing `via` alone is wrong: a live remote-through-foothold session has
+     `via: "password"` but must be refused as a BadUSB target. The inventory also holds `needsHeld`,
+     which the implant then removes from the inventory as a plant does;
   4. where 9.2's USB policy is present, the PC's policy does not refuse the device's `usbClass`
      (the hook below). A device under a blocking USB policy fails **at the use**, not at the drop.
 - On success it writes `footholds["implant_<pcId>"] = { via: "implant", network: <the PC's
@@ -418,7 +466,7 @@ post 'network/implant', to: 'games#network_implant', as: 'network_implant'
 |---|---|---|---|
 | `GET /network` (changed) | optional `foothold` | The game's own authorisation; an unknown foothold id is 404, as today | Per foothold, 9.3a's `{ id, via, name, network, hosts }` for the own network, **plus** `networks: [{ id, name, via, hosts }]` for every network the foothold reaches now (section 5.1), down networks shown as a greyed block with the held-session rows kept (section 5.2) |
 | `POST /network/plant` (changed, locked) | `jack_id`, optional `device_id` | 9.3a's checks, plus: when the jack sets `portSecurity: true`, after "object reachable" and before the device is taken, refuse | Port security: 422 `{ success: false, reason: "port_security", message }`, the device left in the inventory, no foothold. Otherwise 9.3a's writes and answer |
-| `POST /network/join` (new, locked) | `ap_id`, `key` (absent for an open network) | 1. The access point exists: a room object with `wifiAp: true` on a network that defines `wifi`; else 404 "Access point not found". 2. Object reachable; else 403 `unreachable`. 3. A foothold `wifi_<networkId>` is already held: answer `already: true`, add `ap_id` to `gainedFootholds`, emit `network_joined`, write nothing else. 4. The network has a `psk`: the key matches; else 422 `reason: "wrong_key"`, no count. An open network skips check 4 | Success: `footholds["wifi_<networkId>"]` written, `ap_id` added to `gainedFootholds`, the link item added. Answer `{ success, foothold, inventory, first }`, the shape of a plant's answer |
+| `POST /network/join` (new, locked) | `ap_id`, `key` (absent for an open network) | 1. The access point exists: a room object with `wifiAp: true` on a network that defines `wifi`; else 404 "Access point not found". 2. Object reachable; else 403 `unreachable`. 3. A foothold `wifi_<networkId>` is already held: write no foothold, but append `ap_id` to `gainedFootholds` if absent, `save!`, emit `network_joined`, and answer `already: true`. 4. The network has a `psk`: the key matches; else 422 `reason: "wrong_key"`, no count. An open network skips check 4 | Success: `footholds["wifi_<networkId>"]` written, `ap_id` added to `gainedFootholds`, the link item added. Answer `{ success, foothold, inventory, first }`, the shape of a plant's answer |
 | `POST /network/implant` (new, locked) | `pc_id`, `shape` (`dropped` or `session`), the action's own fields from the scenario | 1. The scenario declares a matching `grant_foothold` for `pc_id`; else 404. 2. The shape's precondition (section 5.5): `droppedItems` holds the item, or the session is held and `needsHeld` is in the inventory. 3. The USB hook, where present. 4. A foothold `implant_<pcId>` is already held: `already: true` | Success: `footholds["implant_<pcId>"]` written, `pcId` added to `gainedFootholds`, `needsHeld` removed (session shape), the link item added. Answer `{ success, foothold, inventory, first, already? }`. A precondition that fails: 422 `reason: "not_ready"`, no state change |
 | `POST /login` (changed, locked) | as today, plus optional `foothold` | 9.3a's checks, with `host_reachable_through?` now true when the host is in `player_reach(foothold)` (so a pivot host on a linked network is reachable only while the pivot session is held and up); plus, when the host's network is down, 403 `unreachable` before the password is read | As today |
 | `GET /container/:id` (changed, locked) | as today, plus optional `foothold` | A remote desktop: 9.3a's `desktop_request_allowed?`, now resolving reach through `player_reach` and refusing a down route 403 `unreachable`. A **scoped** request under a remote desktop (a folder, a share): in a scenario with any network `downIf`, re-judge the route and answer 403 `unreachable` (host) or the invented-id 404 (share) when it is down (section 5.2). Otherwise as today | As today |
@@ -475,11 +523,15 @@ network's hosts and shares are refused with the same status and body as an inven
 
 `scripts/validate_network.rb` **removes** the five "needs slice 9.3b" refusals (`networkLinks`;
 network `downIf` and `wifi`; object `wifiAp`, `portSecurity`, `portSecurityMessage`; the
-`grant_foothold` walk) and replaces each with a real check. `scripts/scenario-schema.json` rewrites
-the reserved stubs at `networks` (`downIf`, `wifi`), `networkLinks`, and the object fields into real
-definitions, and adds `network/join` and `network/implant` to the routes list where the schema
-tracks them. The known-field lists in `validate_scenario.rb` already carry the names (9.3a reserved
-them), so only `validate_network.rb` and the schema change.
+`grant_foothold` walk) and replaces each with a real check, the `grant_foothold` one reusing
+`DeclaredGrants.executed?` so it honours the same paths as the server's `grant_foothold_actions`
+(section 5.5). `scripts/scenario-schema.json` rewrites the reserved stubs at `networks` (`downIf`,
+`wifi`), `networkLinks`, and the object fields (`wifiAp`, `portSecurity`, `portSecurityMessage`)
+into real definitions, and adds `network/join` and `network/implant` to the routes list where the
+schema tracks them. `resources.<id>.downIf` is **already** a real field (9.2's, `:238`), not a
+reserved stub, so it is left alone to avoid a double definition. The known-field lists in
+`validate_scenario.rb` already carry the names (9.3a reserved them), so only `validate_network.rb`
+and the schema change.
 
 ### 9.2 New validator checks
 
@@ -492,7 +544,7 @@ Errors:
   object, a jack or an object with a lock;
 - `portSecurity` on an object that is not a `networkJack`, and `portSecurityMessage` without
   `portSecurity`;
-- a `grant_foothold` under `flagRewards` or any browser-only action path, one with neither
+- a `grant_foothold` on a path `DeclaredGrants.executed?` does not run server-side (under `flagRewards` or `eventMappings`), one with neither
   `needsDropped` nor `needsSession`, one with both, one whose `pc` is not a sign-in object on a
   network, and (for `needsHeld`) a `needsHeld` that names no item;
 - a network `downIf` or resource `downIf` whose value is not a string.
@@ -591,7 +643,7 @@ object, Wi-Fi, a port-security jack, a dropped device an NPC uses, and a BadUSB.
 | N6 Repair | An object sets the global false | The block fills in and its hosts sign in | After the repair the hosts are reachable |
 | N7 A held session goes down | A session on `server_net`, then the global set true | The desktop closes to a greyed "no route" row; setting it false reopens it with no password | The session is kept throughout |
 | N8 Wi-Fi join | An access point on `guest_wifi` | The right key joins; the view lists `guest_wifi`; a wrong key is refused and nothing changes | A `wifi_guest_wifi` foothold; a wrong key counts nothing |
-| N9 Second AP | A second access point on the same network | It answers `already` and still completes a task on that AP | `gainedFootholds` has both AP ids |
+| N9 Second AP | A second access point on the same network | It answers `already` and still completes a task on that AP; a reload keeps both AP ids | `gainedFootholds` has both AP ids after a reload |
 | N10 Port security | A `portSecurity` jack and the drop box | The device goes in, is refused, stays in the inventory, and the message shows | No foothold; the device still held |
 | N11 Dropped device | A device the player drops and an NPC uses | A foothold on the PC's network, no session; the owner's desktop still needs the password | An `implant_<pc>` foothold; no session |
 | N12 BadUSB | A PC the player holds a session on, and the BadUSB in the inventory | Plugging it in grants a foothold and consumes the device; no other account opens | An `implant_<pc>` foothold; the device gone from the inventory |
@@ -619,7 +671,8 @@ as every engine change requires.
 |---|---|---|---|
 | S, server | K, O, W, P, I | `lib/break_escape/network_model.rb`, `app/models/break_escape/network_access.rb`, hooks in `game.rb`, `games_controller.rb`, `config/routes.rb`, `app/policies/break_escape/game_policy.rb`, `test/**/network_*` | First in each sub-slice |
 | T, tooling | K, O, W, P, I | `scripts/validate_network.rb`, hooks in `scripts/validate_scenario.rb`, `scripts/scenario-schema.json`, `scripts/generate_dungeon_graph.rb`, `README_scenario_design.md` (the networks section), `tools/playtest/lib/access_leak_scanner.rb` and `verify-run.rb` (Wi-Fi-key and new-foothold lines) | When the sub-slice's `network_model.rb` change is committed |
-| C, client | K, O, W, P, I | `systems/network-links.js` (the Wi-Fi/implant branches and the five-second refetch), `minigames/network-view/network-view-minigame.js` (the `networks` block and the greyed rows), `minigames/password/password-minigame.js` (Wi-Fi key mode, already present for keys), their tests | When the sub-slice's server route is committed |
+| C, client | K, O, W, P, I | `systems/network-links.js` (the Wi-Fi/implant branches, the `plant()` `port_security` branch and the five-second refetch), `minigames/network-view/network-view-minigame.js` (the `networks` block and the greyed rows), `minigames/container/container-minigame.js` (thread the foothold onto scoped `/container`, `/inventory` add and `/unlock` under a remote desktop, 5.2), `minigames/password/password-minigame.js` (Wi-Fi key mode, already present for keys), their tests | When the sub-slice's server route is committed |
+| X, shared action path | I | the `grant_foothold` case in `systems/apply-actions.js` and `api-client.js` (`networkJoin`, `networkImplant`) | After engine stream E4's edits to `apply-actions.js` and 9.3a's `api-client.js` are in |
 | F, feature scenario | each sub-slice | `scenarios/test_access_networks/**` | After S and T of the sub-slice |
 
 **Files shared with other work, and the order on each.** One plan at a time holds each; a builder
