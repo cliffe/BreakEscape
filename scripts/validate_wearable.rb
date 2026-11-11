@@ -20,7 +20,8 @@ def wearable_npc_ids(json_data)
   ids
 end
 
-# Ink assignments `~ name = ...` (not `==`) in the scenario's own ink sources: [{ name:, path: }]
+# Ink writers in the scenario's own ink sources: assignments `~ name = ...` (not `==`) and the
+# `# set_global:name:value` tag the chat runners act on. [{ name:, path: }]
 def wearable_ink_writers(scenario_dir, names)
   return [] if scenario_dir.nil? || names.empty?
 
@@ -28,7 +29,8 @@ def wearable_ink_writers(scenario_dir, names)
   Dir.glob(File.join(scenario_dir, 'ink', '**', '*.ink')).sort.each do |file|
     File.foreach(file).with_index(1) do |line, n|
       names.each do |name|
-        next unless line =~ /~\s*(?:temp\s+)?#{Regexp.escape(name)}\s*=(?!=)/
+        quoted = Regexp.escape(name)
+        next unless line =~ /~\s*(?:temp\s+)?#{quoted}\s*=(?!=)/ || line =~ /#\s*set_global\s*:\s*#{quoted}\s*:/
 
         out << { name: name, path: "#{File.basename(file)}:#{n}" }
       end
@@ -124,7 +126,7 @@ def check_wearables(json_data, scenario_dir = nil)
              'on or taking it off may write it (use a wear or take_off action)')
   end
   wearable_ink_writers(scenario_dir, worn).each do |w|
-    err.call("ink #{w[:path]} assigns '#{w[:name]}', the worn global of '#{owner_of[w[:name]][:id]}': ink may read it, never write it")
+    err.call("ink #{w[:path]} writes '#{w[:name]}', the worn global of '#{owner_of[w[:name]][:id]}': ink may read it, never write it")
   end
 
   # ---- Costume actions beside wearables, and wear / take_off targets ----

@@ -49,14 +49,6 @@ module BreakEscape
       wearable_items(scenario).filter_map { |e| spec(e[:item])&.dig('global') }.uniq.sort
     end
 
-    # The spec for an item id, from the first wearable item in the scenario with that id.
-    def spec_for_id(scenario, item_id)
-      return nil if item_id.to_s.empty?
-
-      entry = wearable_items(scenario).find { |e| e[:item]['id'].to_s == item_id.to_s && spec(e[:item]) }
-      entry && spec(entry[:item])
-    end
-
     # Every place in the scenario JSON that writes a global by name, outside the wear system:
     # set_global actions and setGlobal maps. [{ name:, path: }]
     def global_writers(scenario)

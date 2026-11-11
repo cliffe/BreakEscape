@@ -283,14 +283,17 @@ module BreakEscape
     # included, is dropped.
     def merge_global_variables!(variables)
       globals = player_state['globalVariables'] ||= {}
-      # Imported globals and the worn globals (Wearables: only POST wear writes one)
-      read_only = imported_global_names + worn_global_names
+      # Imported globals and the worn globals with pp_disguise (Wearables: only POST wear
+      # writes them)
+      read_only = imported_global_names + wearable_read_only_globals
       variables.each do |key, value|
         if read_only.include?(key.to_s)
           # The first sync after a load resends every global, imports included
-          # and unchanged; only a changed value is worth a warning.
-          if globals[key.to_s] != value
-            Rails.logger.warn "[BreakEscape] Ignored a client write to imported global '#{key}'"
+          # and unchanged; only a changed value is worth a warning. A fresh game has no
+          # stored value yet while the client sends the scenario's false or empty default.
+          stored = globals[key.to_s]
+          unless stored == value || (stored.nil? && [nil, false, ''].include?(value))
+            Rails.logger.warn "[BreakEscape] Ignored a client write to read-only global '#{key}'"
           end
           next
         end
@@ -446,6 +449,9 @@ module BreakEscape
         item = held_data.deep_dup.except('texture').merge(
           item.slice('x', 'y', 'position')
         ).merge('takeable' => true, 'interactable' => true, 'active' => true, 'visible' => true)
+        # The worn item leaves the inventory here and comes off (Wearables), so a client that
+        # sends no inventory remove after the drop cannot keep the costume
+        release_dropped_worn_item!(held_data['id'])
         # The same id may sit in objects_removed (a scenario object the player once
         # picked up). Keep it there so the scenario copy stays filtered; the added
         # copy below is the one that appears.

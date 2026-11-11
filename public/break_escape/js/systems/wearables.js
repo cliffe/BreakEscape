@@ -82,7 +82,7 @@ export function watchersInRoom(spec, w = win()) {
             && npc.isVisible !== false
             && !spec.ignore.includes(npc.id)
             && w.npcHostileSystem?.isNPCKO?.(npc.id) !== true)
-        .map(npc => ({ id: npc.id, name: npc.displayName || npc.id }));
+        .map(npc => ({ id: npc.id, name: isStr(npc.displayName) ? npc.displayName : 'someone' }));
 }
 
 /** The toast for a refused change: who is watching. */
@@ -104,6 +104,10 @@ export function changeRefusal(data, change = 'change', w = win()) {
     return watchers.length ? refusalText(watchers, change) : null;
 }
 
+// Every text this module shows (watcher names, the item name, the server's message, confirmOn
+// and confirmOff) is author or server text: shown as plain text, never as markup.
+const PLAIN = { plainText: true };
+
 function defaults(deps = {}) {
     const w = deps.window ?? win();
     return {
@@ -114,26 +118,60 @@ function defaults(deps = {}) {
             const { writeGlobal } = await import('./global-writer.js');
             writeGlobal(k, v, { emitAlways: false, openChat: false });
         }),
-        confirm: deps.confirm ?? ((text) => (w.gameConfirm ? w.gameConfirm(text) : Promise.resolve(true))),
-        alert: deps.alert ?? ((msg, title) => w.gameAlert?.(msg, 'warning', title || '', 4000)),
+        confirm: deps.confirm ?? ((text) => (w.gameConfirm ? w.gameConfirm(text, 'Confirm', 'Cancel', PLAIN) : Promise.resolve(true))),
+        alert: deps.alert ?? ((msg, title) => w.gameAlert?.(msg, 'warning', title || '', 4000, PLAIN)),
         applyActions: deps.applyActions ?? ((acts) => w.applyActions?.(acts, { source: 'wearable' })),
         refresh: deps.refresh ?? (() => w.refreshInventoryTray?.())
     };
 }
 
-// Apply what the server wrote: the worn record and the globals, then the costume.
+// One change at a time, per window: a second click while a post is out is dropped, and a
+// forced take-off (the item left the inventory) waits for the change in flight.
+const inFlight = new WeakMap();
+
+async function exclusive(w, force, fn) {
+    const key = typeof w === 'object' && w ? w : globalThis;
+    const current = inFlight.get(key);
+    if (current) {
+        if (!force) return false;
+        await current.catch(() => {});
+    }
+    const run = Promise.resolve().then(fn);
+    inFlight.set(key, run);
+    try {
+        return await run;
+    } finally {
+        if (inFlight.get(key) === run) inFlight.delete(key);
+    }
+}
+
+// Apply what the server wrote: the costume first, then the worn record and the globals.
+// Returns false, writing nothing, when the costume would not go on (the caller undoes).
 async function settle(body, d, { costumeId }) {
+    const mod = await d.costume();
+    if (costumeId) {
+        if ((await mod.setCostume(costumeId)) === false) return false;
+    } else {
+        await mod.clearCostume();
+    }
     d.w.gameState = d.w.gameState || {};
     d.w.gameState.wornItem = body?.worn && isStr(body.worn.itemId) ? body.worn : null;
-    const globals = body?.globals && typeof body.globals === 'object' ? body.globals : {};
-    // pp_disguise is written by the costume module itself; the rest here
-    for (const [k, v] of Object.entries(globals)) {
-        if (k !== 'pp_disguise') await d.write(k, v);
-    }
-    const mod = await d.costume();
-    if (costumeId) await mod.setCostume(costumeId);
-    else await mod.clearCostume();
+    await writeGlobals(body?.globals, d);
     d.refresh();
+    return true;
+}
+
+// pp_disguise is written by the costume module itself; the rest here
+async function writeGlobals(globals, d, skip = []) {
+    const all = globals && typeof globals === 'object' ? globals : {};
+    for (const [k, v] of Object.entries(all)) {
+        if (k !== 'pp_disguise' && !skip.includes(k)) await d.write(k, v);
+    }
+}
+
+// The refusal for changing this item (and the one worn now, which comes off) here, or null
+function swapRefusal(data, prevData, w) {
+    return changeRefusal(data, 'change', w) || (prevData ? changeRefusal(prevData, 'change', w) : null);
 }
 
 /**
@@ -142,6 +180,10 @@ async function settle(body, d, { costumeId }) {
  */
 export async function putOn(itemId, opts = {}, deps = {}) {
     const d = defaults(deps);
+    return exclusive(d.w, false, () => putOnNow(itemId, opts, d));
+}
+
+async function putOnNow(itemId, opts, d) {
     let item = heldItem(itemId, d.w);
     // From an action right after a give_item: the tray may not hold it yet
     for (let i = 0; !item && opts.waitMs > 0 && i < opts.waitMs / 100; i++) {
@@ -154,14 +196,25 @@ export async function putOn(itemId, opts = {}, deps = {}) {
         return false;
     }
     if (isWorn(item, d.w)) return true;
-    if (!opts.force) {
-        const refusal = changeRefusal(item.scenarioData, 'change', d.w);
-        if (refusal) { d.alert(refusal, item.scenarioData.name); emit(d.w, 'wearable_refused', item, spec); return false; }
-    }
-    if (opts.confirm && spec.confirmOn && !(await d.confirm(spec.confirmOn))) return false;
-    // Something else worn comes off first (the server does the same): its onRemove runs
+    // Something else worn comes off first (the server does the same): its onRemove runs, and
+    // under its own unseenOnly that is a change in front of anyone watching too
     const prevId = wornItemId(d.w);
-    const prevSpec = prevId ? wearableSpec(heldItem(prevId, d.w)?.scenarioData) : null;
+    const prevData = prevId && prevId !== itemId ? heldItem(prevId, d.w)?.scenarioData || null : null;
+    const prevSpec = wearableSpec(prevData);
+    const refused = () => {
+        if (opts.force) return false;
+        const refusal = swapRefusal(item.scenarioData, prevData, d.w);
+        if (!refusal) return false;
+        d.alert(refusal, item.scenarioData.name);
+        emit(d.w, 'wearable_refused', item, spec);
+        return true;
+    };
+    if (refused()) return false;
+    if (opts.confirm && spec.confirmOn) {
+        if (!(await d.confirm(spec.confirmOn))) return false;
+        // Someone may have walked in while the confirm was up
+        if (refused()) return false;
+    }
     let body;
     try {
         body = await d.post({ item_id: itemId, worn: true });
@@ -171,11 +224,34 @@ export async function putOn(itemId, opts = {}, deps = {}) {
         return false;
     }
     if (!body?.success) return false;
-    await settle(body, d, { costumeId: spec.costume });
-    if (prevSpec && prevId !== itemId) d.applyActions(prevSpec.onRemove);
+    if (!(await settle(body, d, { costumeId: spec.costume }))) {
+        // The costume would not go on (no such disguise, sprite not loaded): take it off again
+        // so the record, the global and the avatar agree
+        console.warn('[wearables] the costume did not apply, taking the item off again:', spec.costume);
+        await writeGlobals(body.globals, d, [spec.global]);
+        let undo;
+        try { undo = await d.post({ item_id: itemId, worn: false }); } catch (err) {
+            console.warn('[wearables] undo failed:', err?.body?.message || err?.message);
+        }
+        const fallback = { success: true, worn: null, globals: { [spec.global]: false } };
+        await settle(undo?.success ? withGlobal(undo, spec.global) : fallback, d, { costumeId: null });
+        if (prevSpec) d.applyActions(prevSpec.onRemove);
+        d.alert('That cannot be put on now.', item.scenarioData.name);
+        return false;
+    }
+    if (prevSpec) d.applyActions(prevSpec.onRemove);
     d.applyActions(spec.onWear);
     emit(d.w, 'wearable_put_on', item, spec);
     return true;
+}
+
+// A take-off answer always clears the item's own global here, even when the server had no
+// record to clear (an older game, or a drop the server already took off)
+function withGlobal(body, global) {
+    if (!global) return body;
+    const globals = { ...(body?.globals && typeof body.globals === 'object' ? body.globals : {}) };
+    if (!(global in globals)) globals[global] = false;
+    return { ...body, globals };
 }
 
 /**
@@ -185,27 +261,54 @@ export async function putOn(itemId, opts = {}, deps = {}) {
  */
 export async function takeOff(itemId = null, opts = {}, deps = {}) {
     const d = defaults(deps);
-    const wornId = wornItemId(d.w);
+    return exclusive(d.w, opts.force === true, () => takeOffNow(itemId, opts, d));
+}
+
+// A game from before wearables: no worn record, but a held wearable's global left true by the
+// old client-written costume. That item counts as worn for taking off (the server clears it).
+function strayWornId(itemId, w) {
+    const vars = w.gameState?.globalVariables || {};
+    const candidates = itemId ? [heldItem(itemId, w)] : (w.inventory?.items || []);
+    const hit = candidates.find(it => {
+        const spec = wearableSpec(it?.scenarioData);
+        return spec && vars[spec.global] === true;
+    });
+    return hit ? hit.scenarioData.id : null;
+}
+
+async function takeOffNow(itemId, opts, d) {
+    const wornId = wornItemId(d.w) || strayWornId(itemId, d.w);
     if (!wornId || (itemId && itemId !== wornId)) return false;
     const item = heldItem(wornId, d.w);
     const data = item?.scenarioData || opts.data || { id: wornId };
     const spec = wearableSpec(data);
-    if (!opts.force && item) {
+    const refused = () => {
+        if (opts.force || !item) return false;
         const refusal = changeRefusal(data, 'change', d.w);
-        if (refusal) { d.alert(refusal, data.name); emit(d.w, 'wearable_refused', item, spec); return false; }
+        if (!refusal) return false;
+        d.alert(refusal, data.name);
+        emit(d.w, 'wearable_refused', item, spec);
+        return true;
+    };
+    if (refused()) return false;
+    if (opts.confirm && spec?.confirmOff) {
+        if (!(await d.confirm(spec.confirmOff))) return false;
+        if (refused()) return false;
     }
-    if (opts.confirm && spec?.confirmOff && !(await d.confirm(spec.confirmOff))) return false;
     let body;
     try {
         body = await d.post({ item_id: wornId, worn: false });
     } catch (err) {
         console.warn('[wearables] the server refused take off:', err?.body?.message || err?.message);
         // Gone from the inventory and the server has already taken it off: settle locally
-        if (!opts.force) return false;
-        body = { success: true, worn: null, globals: spec ? { [spec.global]: false } : {} };
+        if (!opts.force) {
+            d.alert(err?.body?.message || 'That cannot be taken off now.', data.name);
+            return false;
+        }
+        body = { success: true, worn: null, globals: {} };
     }
     if (!body?.success) return false;
-    await settle(body, d, { costumeId: null });
+    await settle(withGlobal(body, spec?.global), d, { costumeId: null });
     if (spec) d.applyActions(spec.onRemove);
     emit(d.w, 'wearable_taken_off', item || { scenarioData: data }, spec);
     return true;
@@ -254,17 +357,10 @@ function emit(w, name, item, spec) {
     w.eventDispatcher?.emit?.(name, { itemId: item?.scenarioData?.id || null, costume: spec?.costume || null, global: spec?.global || null });
 }
 
-/** After a reload: the worn record from the bootstrap. */
-export function restore(scenario, w = win()) {
-    const rec = scenario?.wornItem;
-    w.gameState = w.gameState || {};
-    w.gameState.wornItem = rec && isStr(rec.itemId) ? rec : null;
-}
-
 if (typeof window !== 'undefined') {
     window.wearables = {
         wearableSpec, wornItemId, isWorn, watchersInRoom, changeRefusal, putOn, takeOff, toggle,
-        onItemLeft, menuLabel, decorateSlot, restore
+        onItemLeft, menuLabel, decorateSlot
     };
     // inventory.js refreshInventoryTray calls decorateSlot for every slot; this catches up a
     // tray drawn before the module loaded

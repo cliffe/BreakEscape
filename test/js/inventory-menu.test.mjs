@@ -253,7 +253,7 @@ test('"Drop here" checks the doorway again when chosen, and shows the reason ins
     reason = 'You are in a doorway. Step into the room first.';   // walked into a doorway
     drop.onSelect();
     assert.deepEqual(dropped, []);
-    assert.deepEqual(alerts, [['You are in a doorway. Step into the room first.', 'warning', 'Drop here', 3000]]);
+    assert.deepEqual(alerts, [['You are in a doorway. Step into the room first.', 'warning', 'Drop here', 3000, { plainText: true }]]);
     reason = null;                                                 // stepped back in
     drop.onSelect();
     assert.deepEqual(dropped, [el]);

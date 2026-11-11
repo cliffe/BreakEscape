@@ -172,18 +172,41 @@ module BreakEscape
       assert_equal '', globals['pp_disguise']
     end
 
-    test 'dropping the worn item takes it off' do
+    # Review R1, m3: the drop alone takes it off. No inventory remove is sent, so a client that
+    # skips the remove cannot keep the costume or a held copy beside the floor copy.
+    test 'dropping the worn item takes it off with no inventory remove' do
       take(vest)
       wear('vest')
       post path('update_room'), params: { roomId: 'office', actionType: 'add_object', sourceType: 'player_drop',
                                           data: { id: 'vest', type: 'hivis', name: 'Hi-vis vest', x: 10, y: 10 } }, as: :json
       assert_response :success, response.body
-      post path('inventory'), params: { action_type: 'remove', item: { id: 'vest' } }, as: :json
+      state = @game.reload.player_state
+      assert_nil state['worn']
       assert_equal false, globals['vest_on']
+      assert_equal '', globals['pp_disguise']
+      refute_includes Array(state['inventory']).map { |i| (i['scenarioData'] || i)['id'] }, 'vest'
+      # The client's usual remove after the drop is a no-op now
+      post path('inventory'), params: { action_type: 'remove', item: { id: 'vest' } }, as: :json
+      assert_response :success
       # Picked up again, it is the server's copy, wearable field and all
       take(vest)
       wear('vest')
       assert_response :success, response.body
+      assert_equal true, globals['vest_on']
+    end
+
+    test 'dropping another item leaves the worn one on' do
+      take(vest)
+      take(coat)
+      wear('vest')
+      @game.reload
+      inv = @game.player_state['inventory'].find { |i| (i['scenarioData'] || i)['id'] == 'coat' }
+      (inv['scenarioData'] || inv)['droppable'] = true
+      @game.save!
+      post path('update_room'), params: { roomId: 'office', actionType: 'add_object', sourceType: 'player_drop',
+                                          data: { id: 'coat', type: 'coat', name: 'Lab coat', x: 10, y: 10 } }, as: :json
+      assert_response :success, response.body
+      assert_equal 'vest', @game.reload.player_state.dig('worn', 'itemId')
       assert_equal true, globals['vest_on']
     end
 
@@ -215,9 +238,160 @@ module BreakEscape
       assert_not_equal true, globals['vest_on']
     end
 
+    # Review R1, m2: a game in progress at deploy has the worn global true (the old client wrote
+    # it) and no worn record. Taking off with no record clears it.
+    test 'taking off with no worn record clears a worn global left true' do
+      @game.player_state['globalVariables'] = { 'vest_on' => true, 'pp_disguise' => 'courier' }
+      @game.save!
+      body = wear('vest', false)
+      assert_response :success
+      assert_equal({ 'vest_on' => false, 'pp_disguise' => '' }, body['globals'])
+      assert_equal false, globals['vest_on']
+      assert_equal '', globals['pp_disguise']
+      # With nothing stuck it writes nothing
+      assert_equal({}, wear(nil, false)['globals'])
+    end
+
+    test 'an older game with the worn global true and the item held becomes worn on its first sync' do
+      take(vest)
+      @game.reload
+      @game.player_state.delete('wearableGlobals')
+      @game.player_state['globalVariables'] = { 'vest_on' => true, 'pp_disguise' => 'courier' }
+      @game.save!
+      put path('sync_state'), params: { globalVariables: { 'vest_on' => true } }, as: :json
+      assert_response :success
+      assert_equal({ 'itemId' => 'vest', 'global' => 'vest_on', 'costume' => 'courier' }, @game.reload.player_state['worn'])
+      assert_equal true, globals['vest_on']
+      # So the locker's take_off works
+      wear('vest', false)
+      assert_equal false, globals['vest_on']
+      assert_nil @game.reload.player_state['worn']
+    end
+
+    test 'an older game with the worn global true and the item not held is cleared on its first sync' do
+      @game.player_state.delete('wearableGlobals')
+      @game.player_state['globalVariables'] = { 'vest_on' => true, 'pp_disguise' => 'courier' }
+      @game.save!
+      put path('sync_state'), params: { globalVariables: {} }, as: :json
+      assert_response :success
+      assert_nil @game.reload.player_state['worn']
+      assert_equal false, globals['vest_on']
+      assert_equal '', globals['pp_disguise']
+      wear(nil, false)
+      assert_equal false, globals['vest_on']
+    end
+
+    # Review R1, n3: in a scenario with wearables only POST wear dresses the avatar
+    test 'sync_state cannot write pp_disguise in a scenario with wearables' do
+      take(vest)
+      wear('vest')
+      put path('sync_state'), params: { globalVariables: { 'pp_disguise' => 'doctor' } }, as: :json
+      assert_response :success
+      assert_equal 'courier', globals['pp_disguise']
+    end
+
+    test 'POST wear on another player\'s game is refused' do
+      other = create_access_game(
+        mission: break_escape_missions(:ceo_exfil),
+        player: break_escape_demo_users(:other_user),
+        scenario: scenario,
+        player_state: { 'currentRoom' => 'office', 'unlockedRooms' => ['office'],
+                        'inventory' => [vest] }
+      )
+      post "/break_escape/games/#{other.id}/wear", params: { item_id: 'vest', worn: true }, as: :json
+      assert_response :forbidden
+      other.reload
+      assert_nil other.player_state['worn']
+      assert_not_equal true, other.player_state.dig('globalVariables', 'vest_on')
+    end
+
     test 'wear without an item id is a bad request' do
       wear(nil, true)
       assert_response :bad_request
+    end
+  end
+end
+
+require_relative '../../support/network_model_scenario'
+
+module BreakEscape
+  # Review R1, m5: a worn device planted in a network jack comes off (NetworkAccess#plant_device!).
+  class WearablePlantTest < ActionDispatch::IntegrationTest
+    include Engine.routes.url_helpers
+    include NetworkRequests
+
+    def wearable_box_scenario
+      data = NetworkModelScenario.scenario.deep_dup
+      mark = lambda do |node|
+        case node
+        when Hash
+          node['wearable'] = { 'costume' => 'tech', 'global' => 'box_worn' } if node['id'] == 'kit_dropbox'
+          node.each_value { |v| mark.call(v) }
+        when Array
+          node.each { |v| mark.call(v) }
+        end
+      end
+      mark.call(data)
+      data['disguises'] = { 'tech' => { 'sprite' => 'tech' } }
+      data['globalVariables'] = (data['globalVariables'] || {}).merge('box_worn' => false)
+      data
+    end
+
+    test 'planting the worn device takes it off' do
+      build_network_game({}, wearable_box_scenario)
+      take_drop_box
+      post game_path('wear'), params: { item_id: 'kit_dropbox', worn: true }, as: :json
+      assert_response :success, response.body
+      assert_equal true, @game.reload.player_state.dig('globalVariables', 'box_worn')
+      body = plant('comms_port')
+      assert_response :success, body.inspect
+      state = @game.reload.player_state
+      assert_nil state['worn']
+      assert_equal false, state.dig('globalVariables', 'box_worn')
+      assert_equal '', state.dig('globalVariables', 'pp_disguise')
+    end
+  end
+
+  # Review R1, m5: the lab's real path. The hook's give_item is a declared grant; claiming it
+  # keeps the wearable field, so POST wear puts the courier costume on and writes courier_ready.
+  class WearableLabTest < ActionDispatch::IntegrationTest
+    include Engine.routes.url_helpers
+
+    setup do
+      mission = Mission.create!(name: 'lab_physical_pentest', display_name: 'Physical pentest', published: true, difficulty_level: 1)
+      @game = Game.create!(mission: mission, player: break_escape_demo_users(:test_user)).reload
+    end
+
+    def path(suffix)
+      "/break_escape/games/#{@game.id}/#{suffix}"
+    end
+
+    test 'the hi-vis vest is claimed from the hook, put on and taken off' do
+      assert_equal %w[courier_ready], @game.player_state['wearableGlobals']
+      post path('inventory'), params: { action_type: 'add',
+                                        item: { type: 'aes_hivis_hook1', id: 'kit_hivis_vest', name: 'Hi-vis courier vest' } }, as: :json
+      assert_response :success, response.body
+      held = @game.reload.player_state['inventory'].find { |i| (i['scenarioData'] || i)['id'] == 'kit_hivis_vest' }
+      assert held, 'the vest is held'
+      assert_equal 'courier_ready', (held['scenarioData'] || held).dig('wearable', 'global'), 'the grant keeps the wearable field'
+
+      post path('wear'), params: { item_id: 'kit_hivis_vest', worn: true }, as: :json
+      assert_response :success, response.body
+      globals = @game.reload.player_state['globalVariables']
+      assert_equal true, globals['courier_ready']
+      assert_equal 'courier', globals['pp_disguise']
+
+      # The locker's take_off
+      post path('wear'), params: { item_id: 'kit_hivis_vest', worn: false }, as: :json
+      assert_response :success, response.body
+      assert_equal false, @game.reload.player_state.dig('globalVariables', 'courier_ready')
+    end
+
+    test 'the lab has no other writer of courier_ready, in JSON or ink' do
+      require BreakEscape::Engine.root.join('scripts', 'validate_wearable.rb').to_s
+      dir = BreakEscape::Engine.root.join('scenarios', 'lab_physical_pentest').to_s
+      issues = check_wearables(@game.scenario_data, dir)
+      assert_empty issues.grep(/ERROR/), issues.join("\n")
     end
   end
 end

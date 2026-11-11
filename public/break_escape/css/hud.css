@@ -428,7 +428,10 @@ html .game-display-dialog {
 
 /* A worn wearable's slot (systems/wearables.js decorateSlot): an amber frame drawn in
    CSS, no image, and a "(worn)" label under the picture */
-.inventory-slot.tray-worn {
+/* #inventory-container raises the selector over ui-themes.css's
+   [data-ui-theme] .inventory-slot { box-shadow: none }, so a themed mission keeps the keyline */
+.inventory-slot.tray-worn,
+#inventory-container .inventory-slot.tray-worn {
     outline: 2px solid #f2b705;
     outline-offset: -2px;
     box-shadow: inset 0 0 0 2px #000;
@@ -445,7 +448,6 @@ html .game-display-dialog {
     padding: 0 3px;
     font-size: 10px;
     line-height: 12px;
-    font-weight: bold;
     white-space: nowrap;
     pointer-events: none;
     z-index: 10;

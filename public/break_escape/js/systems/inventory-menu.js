@@ -95,7 +95,8 @@ export function inventoryMenuFor(sprite, ctx = {}) {
     const entries = [];
     // A wearable's first entry puts it on or takes it off (wearables.js); "Use" maps to the
     // click, which interactions.js routes to the wearable before any triggerOnInteract
-    const wearLabel = (ctx.window ?? (typeof window !== 'undefined' ? window : {})).wearables?.menuLabel?.(data);
+    const ctxWindow = ctx.window ?? (typeof window !== 'undefined' ? window : {});
+    const wearLabel = ctxWindow.wearables?.menuLabel?.(data, ctxWindow);
     if (wearLabel) {
         entries.push({ id: 'use', label: wearLabel });
     } else if (hasTriggerOnInteract(data)) {
@@ -138,9 +139,10 @@ export function openInventoryItemMenu(el, clientX, clientY, deps = {}) {
         use: () => w.handleObjectInteraction?.(el),
         drop: () => {
             // A worn item under unseenOnly is not dropped in front of anyone (wearables.js)
-            const reason = blockedNow() || (w.wearables?.isWorn?.(el) ? w.wearables.changeRefusal?.(el.scenarioData, 'drop') : null);
+            const reason = blockedNow() || (w.wearables?.isWorn?.(el, w) ? w.wearables.changeRefusal?.(el.scenarioData, 'drop', w) : null);
             if (reason) {
-                w.gameAlert?.(reason, 'warning', 'Drop here', 3000);
+                // The reason can name watchers (author text): plain text, never markup
+                w.gameAlert?.(reason, 'warning', 'Drop here', 3000, { plainText: true });
                 return;
             }
             (deps.dropInventoryItem ?? dropInventoryItem)(el);

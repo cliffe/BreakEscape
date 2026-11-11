@@ -210,12 +210,139 @@ test('a declined confirm changes nothing', async () => {
     assert.equal(log.posts.length, 0);
 });
 
-test('restore reads the bootstrap record', () => {
-    const w = {};
-    W.restore({ wornItem: { itemId: 'vest', global: 'vest_on', costume: 'courier' } }, w);
-    assert.equal(W.wornItemId(w), 'vest');
-    W.restore({}, w);
-    assert.equal(W.wornItemId(w), null);
+// Review R1, M1: the defaults show every text as plain text (names and confirm texts are
+// author text, the message can be the server's)
+test('the default alert and confirm pass plainText, so a hostile name stays text', async () => {
+    const { w, deps } = rig({ npcs: [person('tom', { displayName: '<img src=x onerror=alert(1)>' })] });
+    delete deps.alert;
+    delete deps.confirm;
+    const alerts = [], confirms = [];
+    w.gameAlert = (...a) => alerts.push(a);
+    w.gameConfirm = (...a) => { confirms.push(a); return Promise.resolve(true); };
+    assert.equal(await W.putOn('vest', { confirm: true }, deps), false);
+    assert.equal(alerts.length, 1);
+    assert.match(alerts[0][0], /<img src=x onerror=alert\(1\)> is watching/);
+    assert.equal(alerts[0][2], 'Hi-vis vest');
+    assert.deepEqual(alerts[0][4], { plainText: true });
+    w.npcManager.npcs.get('tom').roomId = 'hall';
+    assert.equal(await W.putOn('vest', { confirm: true }, deps), true);
+    assert.deepEqual(confirms[0], ['Put it on?', 'Confirm', 'Cancel', { plainText: true }]);
+});
+
+test('the server refusal message is shown as plain text', async () => {
+    const { w, deps } = rig({ refuse: true });
+    delete deps.alert;
+    const alerts = [];
+    w.gameAlert = (...a) => alerts.push(a);
+    assert.equal(await W.putOn('vest', {}, deps), false);
+    assert.deepEqual(alerts[0], ['Refused by server', 'warning', 'Hi-vis vest', 4000, { plainText: true }]);
+});
+
+test('an NPC with no displayName is "someone", never its id', () => {
+    const { w } = rig({ npcs: [person('guard_02', { displayName: undefined })] });
+    assert.deepEqual(W.watchersInRoom(W.wearableSpec(VEST), w).map(n => n.name), ['someone']);
+});
+
+// Review R1, M2: putting on another wearable takes the worn one off, so the worn one's own
+// unseenOnly refuses it in front of a watcher
+test('a swap away from an unseenOnly item is refused while someone watches', async () => {
+    const { w, deps, log } = rig();
+    await W.putOn('vest', {}, deps);
+    w.npcManager.npcs.set('tom', person('tom'));
+    log.posts.length = 0;
+    assert.equal(await W.putOn('coat', { confirm: true }, deps), false);
+    assert.equal(log.posts.length, 0, 'no post');
+    assert.equal(log.confirms.length, 0);
+    assert.match(log.alerts.at(-1), /TOM is watching/);
+    assert.equal(w.gameState.wornItem.itemId, 'vest');
+    // Alone, the swap goes ahead
+    w.npcManager.npcs.delete('tom');
+    assert.equal(await W.putOn('coat', {}, deps), true);
+    assert.equal(w.gameState.globalVariables.vest_on, false);
+});
+
+test('watchers are checked again after the confirm', async () => {
+    const { w, deps, log } = rig();
+    deps.confirm = async () => { w.npcManager.npcs.set('tom', person('tom')); return true; };
+    assert.equal(await W.putOn('vest', { confirm: true }, deps), false);
+    assert.equal(log.posts.length, 0, 'Tom walked in during the confirm: no post');
+    w.npcManager.npcs.delete('tom');
+    await W.putOn('vest', {}, deps);
+    deps.confirm = async () => { w.npcManager.npcs.set('tom', person('tom')); return true; };
+    log.posts.length = 0;
+    assert.equal(await W.takeOff('vest', { confirm: true }, deps), false);
+    assert.equal(log.posts.length, 0);
+    assert.equal(w.gameState.globalVariables.vest_on, true);
+});
+
+test('a double click posts once and runs onWear once', async () => {
+    const { w, deps, log } = rig({ items: [COAT] });
+    const coat = { ...COAT, wearable: { ...COAT.wearable, onWear: [{ type: 'hint', message: 'coat on' }] } };
+    w.inventory.items[0].scenarioData = coat;
+    const [a, b] = await Promise.all([W.toggle(w.inventory.items[0], deps), W.toggle(w.inventory.items[0], deps)]);
+    assert.deepEqual([a, b], [true, false]);
+    assert.equal(log.posts.length, 1);
+    assert.deepEqual(log.actions, ['coat on']);
+});
+
+test('a forced take-off waits for a change in flight instead of being dropped', async () => {
+    const { w, deps, log } = rig();
+    const putting = W.putOn('vest', {}, deps);
+    const item = w.inventory.items[0];
+    // The put-on is still in flight; the item leaves as soon as it settles
+    const leaving = putting.then(() => { w.inventory.items.shift(); return W.onItemLeft(item, deps); });
+    assert.equal(await putting, true);
+    assert.equal(await leaving, true);
+    assert.equal(w.gameState.globalVariables.vest_on, false);
+    assert.deepEqual(log.posts.map(p => p.worn), [true, false]);
+});
+
+test('a costume that fails to apply leaves the item not worn', async () => {
+    const { w, deps, log } = rig();
+    const real = deps.costume;
+    deps.costume = async () => ({ ...(await real()), setCostume: async () => false });
+    assert.equal(await W.putOn('vest', {}, deps), false);
+    assert.equal(w.gameState.wornItem, null);
+    assert.equal(w.gameState.globalVariables.vest_on, false);
+    assert.deepEqual(log.posts, [{ item_id: 'vest', worn: true }, { item_id: 'vest', worn: false }], 'the server is told to take it off');
+    assert.deepEqual(log.actions, [], 'no onWear');
+    assert.ok(!w.inventory.items[0].parentElement.classes.has(W.WORN_CLASS));
+});
+
+// Review R1, finding 7: a drop or remove_item racing the server's own removal gets a 422; the
+// forced take-off still settles locally
+test('a forced take-off settles locally after the server refuses it', async () => {
+    const { w, deps, log } = rig();
+    await W.putOn('vest', {}, deps);
+    deps.post = async () => { const e = new Error('422'); e.body = { message: 'That item is not being worn.' }; throw e; };
+    const item = w.inventory.items.shift();
+    assert.equal(await W.onItemLeft(item, deps), true);
+    assert.equal(w.gameState.globalVariables.vest_on, false);
+    assert.equal(w.gameState.wornItem, null);
+    assert.deepEqual(log.costume.at(-1), ['clear']);
+    assert.deepEqual(log.actions, ['on', 'off']);
+});
+
+test('an unforced take-off the server refuses changes nothing and says why', async () => {
+    const { w, deps, log } = rig();
+    await W.putOn('vest', {}, deps);
+    deps.post = async () => { const e = new Error('422'); e.body = { message: 'Nope.' }; throw e; };
+    assert.equal(await W.takeOff('vest', {}, deps), false);
+    assert.equal(w.gameState.globalVariables.vest_on, true);
+    assert.equal(log.alerts.at(-1), 'Nope.');
+});
+
+// Review R1, m2: a game from before wearables has the global true and no worn record
+test('take_off in an older game with the global left true still posts and clears it', async () => {
+    const { w, deps, log } = rig();
+    w.gameState.globalVariables.vest_on = true;
+    deps.post = async (body) => { log.posts.push(body); return { success: true, worn: null, globals: {} }; };
+    assert.equal(await W.takeOff('vest', {}, deps), true);
+    assert.deepEqual(log.posts, [{ item_id: 'vest', worn: false }]);
+    assert.equal(w.gameState.globalVariables.vest_on, false, 'cleared even when the server sends no globals');
+    // Nothing worn and nothing stuck: no post
+    assert.equal(await W.takeOff(null, {}, deps), false);
+    assert.equal(log.posts.length, 1);
 });
 
 test('the tray menu: a droppable wearable offers Put on / Take off first', () => {
