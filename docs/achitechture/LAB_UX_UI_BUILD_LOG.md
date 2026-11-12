@@ -30,7 +30,7 @@ The interface half of the user's answer q53 (docs/handover/2026-11-11_USER_DECIS
 - New `test/js/lab-ux-ui.test.mjs` (15): pickupToast and announcePickup through the real addToInventory (added, already, refused, key, filed in a holder); interactions.js announcing on the plain, pick-up-then-open and text-file paths and not for the lockpick set; the E key preferring the PC over an NPC walking away and the faced NPC when standing; npcWalkingAway and withoutLeavingNpcsIfObjects; walkThroughTarget for shut, barred, open N/S both sprites, leaving from inside, and E/W; hasMoreBelow and the panel class through render, scroll and collapse.
 - `test/js/container-shares.test.mjs`: the old "an ordinary container still closes to the world" is now "reopens its file list", plus a stale return closing to the world and a return dropped when something else opened. 18 pass.
 - Stubs of interaction-reach.js in interaction-warning, wearable-hooks and notifications-plain-default gained `npcWalkingAway`.
-- Full suites: see the report.
+- Full suites: bin/test-js 508 files passed, 0 failed. The Rails suite was not run: the shared test lock was queued behind other builds for over 20 minutes, and this build changes no Ruby.
 
 ## Live proof (keyless server on :3040)
 - (a) test_gate_tailgate game 1395: taking the RFID cloner showed "Picked up RFID cloner" (toast log and screenshot).
