@@ -4261,7 +4261,8 @@ module BreakEscape
     WITHHELD_NPC_KEYS = %w[creds awareness habits role workarounds].freeze
     # Slice 9.2 (ACCESS_MODEL_SLICE_9_2_PLAN.md 9.2): work needs, frustration settings and the
     # feed never ship; the NPC's resolved plan goes instead, as `work` (compile_npc_plan!).
-    WITHHELD_WORK_NPC_KEYS = %w[workNeeds frustration feed].freeze
+    # The USB habit (q39) ships inside that plan as `work.usb`.
+    WITHHELD_WORK_NPC_KEYS = %w[workNeeds frustration feed usbHabit].freeze
 
     # Slice 9.2 (5.2): a room NPC with a `work` plan (a work need and a non-empty resolved work
     # list) gains `work`: resource ids, kinds, `admitted`, `downIf` names, `object`, `routes`

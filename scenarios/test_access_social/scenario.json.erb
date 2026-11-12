@@ -28,6 +28,9 @@
     ],
     "wk_borrow": [
       "I'll use the spare PC."
+    ],
+    "usb_refused": [
+      "IT blocked my USB. Email it is, then."
     ]
   },
   "policies": {
@@ -48,6 +51,12 @@
       "maxAttempts": 3,
       "usb": "allowed",
       "social": "allowed"
+    },
+    "usb_locked": {
+      "autoLockMin": null,
+      "maxAttempts": null,
+      "usb": "storage_blocked",
+      "social": "allowed"
     }
   },
   "globalVariables": {
@@ -57,7 +66,8 @@
     "se_intel_jake_wedding_year": false,
     "f10_share_down": false,
     "f12_crm_down": false,
-    "f12_pc_unplugged": false
+    "f12_pc_unplugged": false,
+    "u1_kim_emailed_file": false
   },
   "objectives": [
     {
@@ -161,6 +171,24 @@
         {
           "taskId": "f13_recovered",
           "title": "F13: Ruth posts once the kiosk gets her back online",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "u1_refused",
+          "title": "U1: Kim's PC refuses her USB stick",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "u1_emailed",
+          "title": "U1: Kim emails the file to herself instead",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "u1_posted",
+          "title": "U1: Kim posts that IT blocked her USB",
           "type": "custom",
           "status": "active"
         }
@@ -282,6 +310,17 @@
                 {
                   "id": "ruth_authored",
                   "text": "Three meetings before the kettle even boiled this morning."
+                }
+              ]
+            },
+            {
+              "person": "kim",
+              "name": "Kim Nguyen",
+              "bio": "Reports. Takes work home.",
+              "posts": [
+                {
+                  "id": "kim_authored",
+                  "text": "Quarterly report due Friday. Wish me luck."
                 }
               ]
             }
@@ -1438,7 +1477,8 @@
       "type": "room_office",
       "door_sign": "F13 Ruth",
       "connections": {
-        "west": "f12_room"
+        "west": "f12_room",
+        "east": "u1_room"
       },
       "objects": [
         {
@@ -1580,6 +1620,130 @@
           ]
         }
       ]
+    },
+    "u1_room": {
+      "type": "room_office",
+      "door_sign": "U1 Kim",
+      "connections": {
+        "west": "f13_room"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_u1",
+          "name": "Sign: U1 IT blocked my USB",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "U1. Kim copies a report to a USB stick on every second work use at her PC. Her PC's policy blocks USB storage, so the copy is refused: she grumbles and emails the file to herself instead. The refusal counts as a failed work use, and her next social media post says IT blocked her USB, a hint that this PC is locked down.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "pc",
+          "id": "kim_pc",
+          "name": "Kim's PC",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "usb_locked",
+          "affordance": {
+            "satisfies": "work",
+            "useSeconds": 5,
+            "restores": 10
+          },
+          "observations": "Kim's PC, under a policy that blocks USB storage."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "kim",
+          "displayName": "Kim Nguyen",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "female_office_worker_v2",
+          "spriteTalk": "assets/characters/female_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
+          "storyPath": "scenarios/test_access_social/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "kim_pc",
+          "needsDeferMin": 0.5,
+          "workNeeds": [
+            "u1_reports"
+          ],
+          "usbHabit": {
+            "every": 2,
+            "setGlobal": "u1_kim_emailed_file"
+          },
+          "needs": {
+            "work": {
+              "decayPerMin": 40,
+              "urgentAt": 50,
+              "initial": 60
+            },
+            "social_media": {
+              "decayPerMin": 60,
+              "urgentAt": 40,
+              "initial": 50
+            }
+          },
+          "feed": {
+            "site": "friendface",
+            "person": "kim",
+            "order": "reactive_first",
+            "posts": [
+              {
+                "id": "u1_ordered",
+                "text": "Desk plant survived the weekend. Small victories.",
+                "date": "Monday"
+              },
+              {
+                "id": "u1_usb_vent",
+                "text": "IT blocked my USB stick again. Had to email the report to myself like it's 2005.",
+                "when": {
+                  "cause": "usb_refused",
+                  "need": "work"
+                }
+              }
+            ]
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_usb_refused:kim",
+              "onceOnly": true,
+              "completeTask": "u1_refused"
+            },
+            {
+              "eventPattern": "global_variable_changed:u1_kim_emailed_file",
+              "onceOnly": true,
+              "completeTask": "u1_emailed",
+              "condition": "data.value === true",
+              "fireOnlyWhenLoaded": true
+            },
+            {
+              "eventPattern": "npc_posted:kim",
+              "onceOnly": true,
+              "completeTask": "u1_posted",
+              "condition": "data.postId === 'u1_usb_vent'"
+            }
+          ]
+        }
+      ]
     }
   },
   "resources": {
@@ -1592,6 +1756,10 @@
       "name": "Revenue tracker",
       "kind": "crm",
       "downIf": "f12_crm_down"
+    },
+    "u1_reports": {
+      "name": "Team reports",
+      "kind": "file_share"
     }
   },
   "accountProfiles": {

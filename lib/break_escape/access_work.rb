@@ -24,7 +24,7 @@ module BreakEscape
     JUDGED_NEEDS = %w[work social_media].freeze
     WORKAROUND_KINDS = %w[writes_down prop_door emit borrow_session share_login].freeze
     PRESETS_FILE = File.expand_path('../../public/break_escape/js/data/office-presets.json', __dir__)
-    FAIL_CAUSES = %w[down unreachable no_access off locked_out social_blocked].freeze
+    FAIL_CAUSES = %w[down unreachable no_access off locked_out social_blocked usb_refused].freeze
     # The needs a lockout at the NPC's own station stops (sub-slice L; user decision q33: every
     # use of that PC, social media included)
     LOCKOUT_NEEDS = %w[work social_media].freeze
@@ -417,6 +417,8 @@ module BreakEscape
         need == 'social_media' && social_blocked?(data, npc)
       when 'locked_out'
         locked_out_at?(npc, object(data, id), lockout_keys)
+      when 'usb_refused'
+        need == 'work' && usb_habit_refused?(data, npc) && station(data, npc)&.dig('id') == id
       else
         false
       end
@@ -437,6 +439,8 @@ module BreakEscape
         need == 'social_media' && st ? [{ 'id' => st['id'], 'why' => 'social_blocked' }] : []
       when 'locked_out'
         LOCKOUT_NEEDS.include?(need) && st ? [{ 'id' => st['id'], 'why' => 'locked_out' }] : []
+      when 'usb_refused'
+        need == 'work' && st ? [{ 'id' => st['id'], 'why' => 'usb_refused' }] : []
       else
         []
       end
@@ -469,6 +473,8 @@ module BreakEscape
         need == 'social_media' && social_blocked?(data, npc)
       when 'locked_out'
         LOCKOUT_NEEDS.include?(need) && lockout_station?(data, npc)
+      when 'usb_refused'
+        need == 'work' && usb_habit_refused?(data, npc)
       else
         false
       end
@@ -701,7 +707,13 @@ module BreakEscape
         entry['routes'] = rt unless rt.nil?
         entry
       end
-      { 'breakDrain' => frustration(data, npc)['breakDrain'], 'needs' => needs }
+      out = { 'breakDrain' => frustration(data, npc)['breakDrain'], 'needs' => needs }
+      usb = usb_habit(npc)
+      if usb
+        out['usb'] = { 'every' => usb_every(npc) }
+        out['usb']['setGlobal'] = usb['setGlobal'] if usb['setGlobal'].is_a?(String) && declared_global?(data, usb['setGlobal'])
+      end
+      out
     end
 
     # ── the USB policy (sub-slice U, plan 7), as pc-policy.js decides it ─
@@ -735,6 +747,32 @@ module BreakEscape
       usb == 'blocked' || (usb == 'storage_blocked' && cls == 'storage')
     end
 
+    # ── the USB habit (USB_HABIT_PLAN.md, user decision q39) ───────────
+
+    USB_EVERY_DEFAULT = 2
+    USB_EVERY_RANGE = (1..10).freeze
+
+    # The NPC's usbHabit object, or nil
+    def usb_habit(npc)
+      h = npc.is_a?(Hash) ? npc['usbHabit'] : nil
+      h.is_a?(Hash) ? h : nil
+    end
+
+    # Every nth judged work use at the station carries a copy to a stick (1 to 10, default 2)
+    def usb_every(npc)
+      v = usb_habit(npc)&.dig('every')
+      v.is_a?(Integer) && USB_EVERY_RANGE.cover?(v) ? v : USB_EVERY_DEFAULT
+    end
+
+    # The habit can be refused: a usbHabit, a work plan and a station whose policy refuses a
+    # storage stick. Static, since a policy does not change in play.
+    def usb_habit_refused?(data, npc)
+      return false unless usb_habit(npc) && work_plan?(data, npc)
+
+      st = station(data, npc)
+      !st.nil? && plant_refused?(data, st, { 'usbClass' => 'storage' })
+    end
+
     # ── can fail, belongs to, owned causes ──────────────────────────────
 
     def off_when?(data, obj)
@@ -766,6 +804,8 @@ module BreakEscape
 
         # Sub-slice L (6.6): its own sign-in PC under a policy with maxAttempts can lock it out
         return true if lockout_station?(data, npc)
+        # The USB habit (q39): its station's policy refuses the stick
+        return true if usb_habit_refused?(data, npc)
 
         # The station only: a borrow PC counts once handed over (sub-slice H; review R1 M2)
         off_when?(data, station(data, npc))
@@ -791,6 +831,9 @@ module BreakEscape
         need == 'work' && work_list(data, npc).include?(id) && resources(data).key?(id)
       when 'no_access'
         need == 'work' && work_list(data, npc).include?(id) && !admitted?(resources(data)[id], npc)
+      when 'usb_refused' # the USB habit (q39): a work use at the station only
+        st = station(data, npc)
+        need == 'work' && !st.nil? && st['id'] == id
       else # off, locked_out, social_blocked: the station only (a lockout is per PC, and a failed
         # borrowed use is never reported, 6.4)
         st = station(data, npc)

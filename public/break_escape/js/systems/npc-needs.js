@@ -490,6 +490,9 @@ export class NPCNeedsSystem {
             // out (its uses there fail with locked_out), and checks sent and not yet answered
             // (pcId -> needs clock ms sent; the first use there waits for the answer)
             lockedOut: new Set(), lockCheck: {},
+            // The USB habit (USB_HABIT_PLAN.md, q39): judged work uses at the station so far; every
+            // work.usb.every-th carries a copy to a stick. Restarts at 0 with the state on reload.
+            usbUses: 0,
             urgentFlag: {},
             mode: 'idle',
             prevMode: null,
@@ -2142,6 +2145,7 @@ export class NPCNeedsSystem {
         if (first) {
             if (first.why === 'off' || first.why === 'locked_out') own = 'station_fail';
             else if (first.why === 'social_blocked') own = 'social_blocked';
+            else if (first.why === 'usb_refused') own = 'usb_refused';
             else if (first.why === 'no_access') own = 'work_fail_no_access';
             else {
                 const kind = this._plan(s)?.needs.find(r => r.id === first.id)?.kind;
@@ -3134,6 +3138,8 @@ export class NPCNeedsSystem {
             const rest = (Array.isArray(v.missing) ? v.missing : []).filter(c => c && c.why !== 'locked_out');
             v = { met: false, missing: [{ id: job.targetId, why: 'locked_out' }, ...rest], station: true };
         }
+        // The USB habit (q39): never at a borrowed PC, nor where the owner is locked out
+        if (atStation && job.need === 'work' && !s.lockedOut.has(job.targetId)) v = this._usbAttempt(s, obj, v);
         // Access 9.2 H (6.4): the borrower signed in before finding out, so a session is left either
         // way; said before anything else (before a failed verdict's turn-back)
         if (job.borrowed) this._borrowDone(s, job, !!v.met);
@@ -3239,6 +3245,33 @@ export class NPCNeedsSystem {
         s.job = null;
         this._clearBackoffs();
         this._goHome(s, { stayPut });
+    }
+
+    /**
+     * The USB habit (USB_HABIT_PLAN.md, q39): every work.usb.every-th judged work use at the
+     * station copies a file to a stick. Where the station's policy refuses storage the use fails
+     * with usb_refused (after any other cause), npc_usb_refused fires and the habit's setGlobal
+     * (the NPC emails the file to itself instead) is set; the server sets it too when it accepts
+     * the fail. Where the policy allows it, npc_usb_copied fires and the verdict stands.
+     */
+    _usbAttempt(s, obj, v) {
+        const usb = this._plan(s)?.usb;
+        const every = Number.isInteger(usb?.every) && usb.every >= 1 && usb.every <= 10 ? usb.every : 0;
+        if (!every) return v;
+        s.usbUses += 1;
+        if (s.usbUses % every !== 0) return v;
+        const id = s.npcId;
+        const objectId = s.job.targetId;
+        if (!usbRefusedBy(obj?.usbPolicy ?? null, 'storage')) {
+            this._log(id, 'usb_copied', { target: objectId });
+            this._emit(`npc_usb_copied:${id}`, { npcId: id, objectId });
+            return v;
+        }
+        this._log(id, 'usb_refused', { target: objectId });
+        this._emit(`npc_usb_refused:${id}`, { npcId: id, objectId });
+        if (typeof usb.setGlobal === 'string' && usb.setGlobal) { this.world.setGlobal(usb.setGlobal, true); this._worldChanged(); }
+        const rest = Array.isArray(v.missing) ? v.missing.filter(c => c && c.why !== 'usb_refused') : [];
+        return { met: false, missing: [...rest, { id: objectId, why: 'usb_refused' }], station: !!v.station };
     }
 
     _borrowDone(s, job, met) {

@@ -207,7 +207,7 @@ module ValidateAccessWork
   # ── sub-slice A: work, outages and frustration ───────────────────────
 
   AW = BreakEscape::AccessWork
-  A_ONLY_FIELDS = %w[workNeeds frustration workarounds feed].freeze
+  A_ONLY_FIELDS = %w[workNeeds frustration workarounds feed usbHabit].freeze
   STATION_POOL = 'station_fail'
   NO_ACCESS_POOL = 'work_fail_no_access'
   FALLBACK_POOL = 'work_fail'
@@ -357,6 +357,7 @@ module ValidateAccessWork
     nid = npc['id']
     plan = AW.work_plan?(json_data, npc)
     social = AW.need?(npc, 'social_media') && !AW.phone?(npc)
+    check_usb_habit(json_data, npc, plan, issues) if npc.key?('usbHabit')
 
     if plan || social
       dm = npc['needsDeferMin']
@@ -422,6 +423,26 @@ module ValidateAccessWork
     end
   end
 
+  # The USB habit (USB_HABIT_PLAN.md, q39): its shape, its global, and whether it can act
+  def check_usb_habit(json_data, npc, plan, issues)
+    nid = npc['id']
+    h = npc['usbHabit']
+    unless h.is_a?(Hash)
+      err(issues, "#{nid}.usbHabit must be an object { every, setGlobal }.")
+      return
+    end
+    if h.key?('every') && !(h['every'].is_a?(Integer) && AW::USB_EVERY_RANGE.cover?(h['every']))
+      err(issues, "#{nid}.usbHabit.every is #{h['every'].inspect}; it must be a whole number from 1 to 10.")
+    end
+    if h.key?('setGlobal') && !(h['setGlobal'].is_a?(String) && declared_globals(json_data).key?(h['setGlobal']))
+      err(issues, "#{nid}.usbHabit.setGlobal #{h['setGlobal'].inspect} is not declared in globalVariables: the server only sets a declared global.")
+    end
+    return if plan
+
+    warn(issues, "#{nid} has a usbHabit but no work plan (a work need and a non-empty workNeeds list): only judged work " \
+                 'uses are checked, so the habit never acts. Give it a work plan, or remove the habit.')
+  end
+
   # For each cause the NPC can meet, the cause's own pool or work_fail needs a line (plan 5.5)
   def check_mutters(json_data, npc, list, resources, st, issues)
     return if chatter_off?(json_data)
@@ -433,6 +454,7 @@ module ValidateAccessWork
     end
     # Sub-slice L (6.6): locked out at its own sign-in PC, a station failure (5.5)
     causes << ['its account being locked out at its station', STATION_POOL] if AW.lockout_station?(json_data, npc)
+    causes << ['its PC refusing its USB stick', 'usb_refused'] if AW.usb_habit_refused?(json_data, npc)
     list.each do |rid|
       r = resources[rid]
       next unless r
@@ -828,6 +850,15 @@ module ValidateAccessWork
       if AW.lockout_station?(json_data, npc)
         max = AW.policy_of(json_data, st)['maxAttempts']
         station_off += "; locked out at '#{st['id']}' after #{max.to_i} wrong passwords for its username there (a denial of service)"
+      end
+      if AW.usb_habit(npc) && st
+        every = AW.usb_every(npc)
+        nth = every == 1 ? 'every' : "every #{every}#{every == 2 ? 'nd' : every == 3 ? 'rd' : 'th'}"
+        station_off += if AW.usb_habit_refused?(json_data, npc)
+                         "; #{nth} use at '#{st['id']}' copies to a USB stick, which its policy refuses (cause usb_refused)"
+                       else
+                         "; #{nth} use at '#{st['id']}' copies to a USB stick, which its policy allows"
+                       end
       end
       lines << "ℹ️ Work #{npc['id']}: #{parts.join('; ')}#{station_off}."
       AW.workarounds(json_data, npc).each_with_index do |w, i|

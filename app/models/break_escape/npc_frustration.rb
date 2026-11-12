@@ -408,6 +408,16 @@ module BreakEscape
       player_state['globalVariables'][name] = true
     end
 
+    # The USB habit's workaround (USB_HABIT_PLAN.md, q39): an accepted fail naming usb_refused
+    # sets the habit's declared setGlobal true (the NPC emailed the file to itself instead)
+    def set_usb_habit_global!(npc)
+      name = AccessWork.usb_habit(npc)&.dig('setGlobal')
+      return unless declared_global?(name)
+
+      player_state['globalVariables'] = {} unless player_state['globalVariables'].is_a?(Hash)
+      player_state['globalVariables'][name] = true
+    end
+
     # The "done" answer, composed from the scenario (and, for a borrow, the guest record now), so
     # a resend gets the same body
     def workaround_body(npc, w, heard: false)
@@ -600,6 +610,8 @@ module BreakEscape
       entry['level'] = tidy_level([previous + per_fail, 100].min)
       entry['failAt'][need] = server_now
       entry['failWhy'][need] = missing.map { |c| c['why'] }.uniq
+      usb = missing.find { |c| c['why'] == 'usb_refused' }
+      set_usb_habit_global!(npc) if usb && frustration_cause_holds?(npc, need, usb)
       run = choose_run!(npc, entry, need) || unspent_run(npc, entry)
       answer(npc_id, npc, entry, previous, run)
     end
