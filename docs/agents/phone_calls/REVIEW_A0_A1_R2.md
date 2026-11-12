@@ -79,3 +79,37 @@ Gaps:
 ## Verdict
 
 **Revise.** No blockers, and lab SE is unchanged. Fix M1 (persist or re-derive the preloaded note) before A5 or A6 route calls through the preloaded opening, and fix m1 in the same pass (a few lines and two tests). Fix m3 before the next key comparison. m4 should land before Part B writers add more `#delivery:` notes. m2 and m5 can ride with those.
+
+## Addendum: commit `e25d673bc` (stored rooms back in template order for /tts)
+
+Requested by the orchestrator, who may take it to main ahead of the track. Write-up: `TTS_403_DIAGNOSIS.md`. I read the diff, ran `tts_stored_room_order_test.rb` and `tts_controller_test.rb` under the lock (64 runs, 0 failures), and checked the cherry-pick onto main with `git merge-tree`.
+
+### Correctness
+
+- **jsonb key order.** The premise holds. The test round-trips a real m10 render through `SELECT ...::jsonb`, the room keys come back in a different order, and the m10 and m08 co-speaker lines are refused on the stored data and accepted after the reorder. Arrays keep their order in jsonb, so NPC order inside a room and the top-level `npcs` array are unaffected. The extractor's `characters` comes only from rooms and `npcs` (`tts_line_extractor.rb:273-279`), so `social.characters` (also sorted by jsonb) doesn't feed speaker order.
+- **The reorder** (`tts_line_resolver.rb:101-110`) is correct. Template rooms the game lacks are skipped. Rooms the template lacks keep their stored order, last. It returns the same object when nothing changes, and doesn't mutate the stored hash (tested).
+- **Extractor cache.** `cache_stamp` hashes `characters` in order (`:441`), so the old jsonb-order entry and the new template-order entry get different keys. Nothing stale is served across the change.
+- **`template_room_order` cache and failure modes** (`mission.rb:246-263`). Same pattern as `current_voice_configs`. If the ERB fails with `{}`, the failure is cached as `[]` for that mtime and `in_template_order` returns the data unchanged, which is today's behaviour (safe, and logged once). If the template file is missing, `File.mtime` raises, `mtime` is nil, nothing is cached, and every /tts request logs a warning. That's a nit: a game whose template is missing has bigger problems.
+- **Cost.** One ERB render per mission per template change, plus a stat per /tts request, and a new rooms hash per request (memoised per request in `tts_scenario_data`). `current_voice_configs` already renders the same template on the same request path, so one shared render would halve the work. That's a nit, not needed for main.
+
+### Findings
+
+**T-M1. The fix has no live proof for the m10/m08 lines it claims.** The diagnosis infers the 46 m10 and 2 m08 silent lines by comparing server resolution on stored data with a fresh render. The only observed 403s are m09 games 1331/1332, which it attributes to a test-tool artefact. The client doesn't use template order either. It resolves a shared display name by **registration order** (`NPCManager.resolveSpeakerId`, `npc-manager.js:165-180`, over `characterRegistry`), and rooms register as they lazy-load (`npc-lazy-loader.js:96-103`). For the cases checked, the speaker is in the conversation's own room, which loads first, so template order and client order probably agree. That is the reason the fix should work, but it isn't shown. Project rule: fix claims need real-path proof. Fix: before main, on a keyless server, start one m10 game and one m08 game with the commit and request a handful of the listed lines (for example `quintero_post` "Your clock, then.", m08 `agent_0x99` "Same classroom, 0x00...") through the real client path or `POST /tts`. Expect 503 (no key) where main gives 403. Record `npc_id` and status.
+
+**T-m1. No test drives the controller wiring.** The unit test passes `fresh['rooms'].keys` to `in_template_order` by hand. Nothing exercises `GamesController#tts_scenario_data` → `Mission#template_room_order` on a stored `Game`. If the call site reverted to `@game.scenario_data`, every test would still pass. Fix: one controller test that creates an m10 game (jsonb-stored), posts the `quintero_post` line to /tts, and asserts it isn't 403. The existing controller tests show the stubbing pattern for a keyless TTS service.
+
+**T-m2. Other "first match in room order" paths on stored data stay unfixed (outside TTS).** `games_controller.rb` `find_item_in_scenario` (`~:2497-2520`), `find_item_container`, `find_item_room`, `find_npc_holding_item` and `find_accessible_item` (through `ItemIdentity.addressed_by?`) all match items by `name` as well as id, and return the first hit while walking the stored rooms. Where two rooms hold same-named items, the pick follows jsonb order, as it always has. That's consistent across games and predates this commit. These aren't TTS paths, and template order is no more "right" for them, so no change belongs in this commit. Note it for a duplicate-item-name check in the validator. `find_npc`, `headless_npc_records` and the chatter and bark validators look up by unique id or accept any match, so they're order-safe. The root cause, an order-dependent `speaker_id_for` combined with a client that has a third order, stays open (the diagnosis's "options not taken"). A validator warning for two **voiced** records sharing a display name, where a line prefix uses that name, would catch new cases.
+
+**T-m3. Rooms the template lacks go last.** In a render with a real `vm_context`, such a room sits wherever the ERB puts it. Only matters if a vm-conditional room holds a record that shares a display name. None does today. Nit.
+
+### Interaction with A1
+
+There is no code overlap. The commit doesn't touch the extractor or the phone JS. The A1 id rule (`named_by_id`) is order-independent because ids are unique. The order-dependent cases (display-name ties, and R2 m1 above) now resolve at the endpoint in the same order as the batch, which is what A1's key dumps assume (fresh renders). The A1 R2 key dumps came from fresh renders and aren't affected.
+
+### Cherry-pick to main
+
+`git merge-tree` reports one conflict, in `games_controller.rb` at the `TtsLineResolver.new(...)` call (`main:668`). On main that call has no `story_file:` argument, because main's resolver defaults it. Resolve by changing only `scenario_data: @game.scenario_data` to `scenario_data: tts_scenario_data` and keeping main's other lines. `tts_line_resolver.rb` and `mission.rb` merge cleanly. Main's resolver accepts `story_file:`, so the new test runs there, and both test lines exist on main (`m10_director_netherton.ink`, `m08_closing_debrief.ink`). Run main's TTS suite after the pick.
+
+### Verdict on `e25d673bc`
+
+**Can go to main as a standalone commit**, with the trivial conflict resolved, **once T-M1's live check passes** (403 on main, 503 with the fix, for a few m10 and m08 lines). T-m1 (controller test) should go with it. T-m2 and T-m3 don't block it.
