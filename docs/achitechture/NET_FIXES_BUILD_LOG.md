@@ -79,6 +79,11 @@ Decision from the coordinator: a switched-off PC is off for everything that goes
   the cache test counts walks (3); the implanted branch emits only for a foothold not held (4);
   plan 5.5 says the not_ready waits do not survive a reload (5); an off row names a kept session
   as "still signed in as ..." (`heldAs`) (6).
+- Live check (:3037, game 1444, `lena_pc` given an `offWhen` in that game's copy only): with
+  Lena's and Ian's remote sessions held, switching Lena's PC off turned `server_net` to a down
+  block, gave her row "not responding" with `heldAs`, and refused `ledger_archive` and
+  `backup_vault` (404) and the `sv_fs02` desktop (403). Switched back on, all three were served
+  again. Leak check: no leaks.
 - New tests: four in `network_host_service_off_test.rb` (M1 twice, M2, the kept-session row), all
   failing without the fix; JS tests for the sync time limit, two answers in flight and the row.
 
