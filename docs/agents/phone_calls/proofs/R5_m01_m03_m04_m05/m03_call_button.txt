@@ -1,0 +1,25 @@
+game 2357 (call_button)
+  close_brief: "closed briefing"
+  close_brief: "closed NotesMinigame"
+  close_brief: "none"
+"declined tutorial"
+distcc raised: true
+"opened agent_0x99"
+thread: {"bar":null,"subs":[],"choices":["1. You wanted to talk about the distcc logs.","2. Send me a field guide.","3. How do I clone these keycards?","4. Where do I stand?","5. Nothing right now"],"header":"☎\nCall","thread":"Here, Agent. | 14:55 | Your interview's with Victoria Sterling in the conference room, behind a staff card reader. Reception will sign you in. Message me if you get stuck. | 14:56 | Got the distcc logs. Call me when you're done at the drop-site. | 14:56"}
+shot call_button_thread
+header call: "header: ☎Call"
+dialling: {"bar":"CALLING"}
+shot call_button_calling
+call: {"bar":"ON CALL | 0:08","subs":["Agent HaX: Logs are up on my side. Open your copy and read along.","Agent HaX: There it is. The ProFTPD backdoor, line item on invoice ZDS-2024-0847. Twenty-five thousand, part of a package to Ghost.","Agent HaX: And a line under it: \"Target Selection Consultation\", ten thousand. They chose the hospital for Ghost.","AGENT HAX: Target line: St. Catherine's Regional. Sable's sign-off on the approval.","AGENT HAX: St. Catherine's gave us the buyer's invoice. This is the seller's own ledger, saying the same thing. A case with a name."],"choices":["1. Direct chain. Zero Day to Ghost to St. Catherine's. That stands up.","2. They charged extra to hit a hospital. That's intent, on an invoice.","3. If they invoice one cell like this, they invoice all of them."],"header":null,"thread":"AGENT HAX: Target line: St. Catherine's Regional. Sable's sign-off on the approval. | AGENT HAX: St. Catherine's gave us the buyer's invoice. This is the seller's own ledger, saying the same thing. A case with a name."}
+shot call_button_call
+  choices: ["1. Direct chain. Zero Day to Ghost to St. Catherine's. That stands up.","2. They charged extra to hit a hospital. That's intent, on an invoice.","3. If they invoice one cell like this, they invoice all of them."]
+  choices: ["1. I'll get everything","2. We take the whole network down"]
+after call: mg="PhoneChatMinigame phone-chat" revelation_heard=true rows=["Outgoing call, 0:21"]
+thread: {"choices":["1. Send me a field guide.","2. How do I clone these keycards?","3. Where do I stand?","4. Nothing right now"],"header":null}
+shot call_button_after_call
+ringer now: {"cur":null,"banner":null}
+waiting 125 s: the fallback ring must not come (row 31 / revelation_heard)
+ringer after 125 s: {"cur":null,"banner":null}
+handler /tts: "Logs are up on my side. Open your copy and read along." "There it is. The ProFTPD backdoor, line item on invoice ZDS-2024-0847. Twenty-five thousand, part of a package to Ghost." "And a line under it: \"Target Selection Consultation\", ten thousand. They chose the hospital for Ghost." "Target line: St. Catherine's Regional. Sable's sign-off on the approval." "St. Catherine's gave us the buyer's invoice. This is the seller's own ledger, saying the same thing. A case with a name." "It does. One ENTROPY cell invoicing another. I may have it framed." "Pull the rest while you're standing in it. The catalogue, the roster, the drive in her desk." "And listen -- the logs point at a Phase 2. Find the directive and we get ahead of it for once." "Finish up, then Sterling. And be careful. Reasonable as she sounds, she signed that invoice." 
+["global_variable_changed:revelation_heard@145.4","global_variable_changed:revelation_heard@145.4","minigame_completed@147.3","conversation_closed:agent_0x99@147.3"]
+exit=0
