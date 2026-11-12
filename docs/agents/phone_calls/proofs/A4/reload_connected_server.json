@@ -1,0 +1,40 @@
+{
+  "caller_thread": {
+    "history": [
+      {
+        "read": true,
+        "text": "Thread here. This is the home knot.",
+        "type": "npc",
+        "gameTime": -3598631,
+        "preloaded": true,
+        "timestamp": 1794492631256
+      },
+      {
+        "read": true,
+        "text": "This is the thread caller. You can hear me now.",
+        "type": "npc",
+        "gameTime": 20845,
+        "timestamp": 1794496250732
+      }
+    ],
+    "storyPath": "scenarios/test_phone_calls/ink/caller_thread.json",
+    "storyState": "{\"flows\":{\"DEFAULT_FLOW\":{\"callstack\":{\"threads\":[{\"callstack\":[{\"exp\":false,\"type\":0}],\"threadIndex\":0,\"previousContentObject\":\"ring_call.0.13\"}],\"threadCounter\":4},\"outputStream\":[\"^This is the thread caller. You can hear me now.\",\"\\n\"],\"choiceThreads\":{\"3\":{\"callstack\":[{\"cPath\":\"ring_call.0\",\"idx\":7,\"exp\":false,\"type\":0}],\"threadIndex\":3,\"previousContentObject\":\"ring_call.0.6\"},\"4\":{\"callstack\":[{\"cPath\":\"ring_call.0\",\"idx\":13,\"exp\":false,\"type\":0}],\"threadIndex\":4,\"previousContentObject\":\"ring_call.0.12\"}},\"currentChoices\":[{\"text\":\"Keep talking.\",\"index\":0,\"originalChoicePath\":\"ring_call.0.7\",\"originalThreadIndex\":3,\"targetPath\":\"ring_call.0.c-0\",\"tags\":[]},{\"text\":\"Goodbye.\",\"index\":1,\"originalChoicePath\":\"ring_call.0.13\",\"originalThreadIndex\":4,\"targetPath\":\"ring_call.0.c-1\",\"tags\":[]}]}},\"currentFlowName\":\"DEFAULT_FLOW\",\"variablesState\":{},\"evalStack\":[],\"visitCounts\":{},\"turnIndices\":{},\"turnIdx\":1,\"storySeed\":39,\"previousRandom\":0,\"inkSaveVersion\":10,\"inkFormatVersion\":21}",
+    "currentKnot": "ring_call",
+    "pendingCall": {
+      "live": {
+        "knot": "ring_call",
+        "state": "connected",
+        "resume": false,
+        "opening": false,
+        "onMissed": "callback",
+        "withheld": false,
+        "callLabel": "Thread",
+        "disableClose": false,
+        "answerSeconds": 0,
+        "untilAnswered": false
+      }
+    },
+    "preloadedKnot": "start",
+    "lastEnteredKnot": "ring_call"
+  }
+}

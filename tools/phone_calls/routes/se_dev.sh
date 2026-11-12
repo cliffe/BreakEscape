@@ -33,6 +33,8 @@ $S $GID '{"cmd":"waitFor","kind":"condition","fn":"() => { window.__preReload = 
 sleep 8
 $S $GID '{"cmd":"bootstrap","tutorial":"decline","resume":"resume","autoBrief":true}' 120 >/dev/null
 tools/phone_calls/ev.sh $GID tools/phone_calls/js/storystate-dump.js | last | jq '.result' > "$OUT/storystate_after_reload.json"
+# A4: the lab's threads carry no call rows (they never go through the ringer)
+tools/phone_calls/ev.sh $GID tools/phone_calls/js/history-types.js | last | jq '.result' > "$OUT/history_after_reload.json"
 $S $GID '{"cmd":"quit"}' 20 >/dev/null
 echo "$GID" > "$OUT/se_dev_game_id.txt"
 for f in after_call after_reload; do jq -r --arg f $f 'to_entries[] | "\($f) \(.key) \(.value.currentKnot) \(.value.sha256_noseed)"' "$OUT/storystate_$f.json"; done
