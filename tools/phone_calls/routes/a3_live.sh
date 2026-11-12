@@ -1,6 +1,6 @@
 #!/bin/bash
 # A3 live proofs on test_phone_calls: a call ringing inside the player's phone (plan 2.3 row 10).
-#   PC_PORT=3025 tools/phone_calls/routes/a3_live.sh own|other|list|desk
+#   PC_PORT=3025 tools/phone_calls/routes/a3_live.sh own|other|list|desk|hit|closed
 # Each route opens the phone as the player would (inventory item), rings caller_thread (the `ring_thread` event, 8 s
 # delay), answers, ends the call and checks the phone reopens on the screen it was on. Logs conversation_closed
 # events with times, takes screenshots under $OUT.
@@ -49,6 +49,35 @@ own|other|list)
   a2b_ev "const m=window.MinigameFramework.currentMinigame; if(m) m.complete(false); return 'phone closed';"; sleep 1.5
   echo "after the real close: events: $(evs)"
   a2b_ev "return window.__ev;" > "$OUT/${1}_events.json"; a2b_quit ;;
+hit)
+  # A3 R1 M1: texter thread open, caller_thread rings in the phone, Answer, a hit, End. The phone is not reopened (a hit
+  # inside HIT_QUIET_MS), so the ringer must emit conversation_closed:texter itself, once.
+  AUTOBRIEF=true a2b_open hit; gate clear_basic; a2b_ev "$LOGEV" >/dev/null
+  open_phone; open_thread texter; echo "before: $(dump | jq -c '._open')"
+  a2b_ev "window.eventDispatcher.emit('ring_thread', {}); return true;" >/dev/null
+  gate wait_ring caller_thread 25; panel_answer; sleep 3
+  echo "call open: $(dump | jq -c '._open') events: $(evs)"
+  gate a2b_ev "return document.getElementById('call-end-button') !== null;"
+  a2b_ev "window.playerHealth.damage(5); return 'hit';"; sleep 0.5
+  a2b_ev "const b=document.getElementById('call-end-button'); if(!b) return 'no End button'; b.click(); return 'End pressed';"; sleep 3.5
+  echo "after End: $(dump | jq -c '._open') events: $(evs)"; a2b_shot after_end; sleep 8
+  echo "8 s later: $(dump | jq -c '._open') events: $(evs)"
+  a2b_ev "return window.__ev;" > "$OUT/hit_events.json"; a2b_quit ;;
+closed)
+  # A3 R1 m1: the phone is closed the whole time. caller_thread rings (banner), Answer, End, then the phone and the thread are
+  # opened: the thread must show the hub line once, and the home knot's choices.
+  AUTOBRIEF=true a2b_open closed; gate clear_basic; a2b_ev "$LOGEV" >/dev/null
+  a2b_ev "window.eventDispatcher.emit('ring_thread', {}); return true;" >/dev/null
+  gate wait_ring caller_thread 25; a2b_answer >/dev/null; sleep 3
+  gate a2b_ev "return document.getElementById('call-end-button') !== null;"
+  a2b_ev "const b=document.getElementById('call-end-button'); b.click(); return 'End pressed';"; sleep 3.5
+  echo "after End: $(dump | jq -c '.')"
+  open_phone; open_thread caller_thread; sleep 1
+  echo "thread: $(thread_text)"; a2b_shot thread
+  a2b_ev "const m=window.MinigameFramework.currentMinigame; if(m) m.complete(false); return 'phone closed';"; sleep 1
+  open_phone; open_thread caller_thread; sleep 1
+  echo "thread on a second open: $(thread_text)"
+  a2b_ev "return window.__ev;" > "$OUT/closed_events.json"; a2b_quit ;;
 desk)
   AUTOBRIEF=true a2b_open desk; gate clear_basic; a2b_ev "$LOGEV" >/dev/null
   $S $GID '{"cmd":"moveToNear","id":"desk_phone"}' 30 >/dev/null; $S $GID '{"cmd":"interact","id":"desk_phone"}' 30 >/dev/null; sleep 2

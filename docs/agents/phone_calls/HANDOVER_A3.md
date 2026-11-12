@@ -23,3 +23,6 @@ Branch `build/phone-calls`, started at 6776b18ba. Server :3025 stopped.
 ## Open
 - Reviewer's pass over A3.
 - Not tried: a ring over the phone while a text bark toast is up; a phone-chat opened by a notification click with `startKnot` (the reopen drops `startKnot` by design).
+
+## Round 1 fixes (2026-11-12)
+All of `REVIEW_A3_R1.md` is fixed; see `REVIEW_A3_R1_OUTCOMES.md`. Commits `0c0de4a54`, `91e1abba4`, `bfd8cf8be`, `9f0cd4839`. The "hub line twice" observation above is fixed in the engine (`settleOnSeenLines`). Open: review round 2. `a3_live.sh` gained `hit` and `closed` routes (proofs in `proofs/A3_r1/`).
