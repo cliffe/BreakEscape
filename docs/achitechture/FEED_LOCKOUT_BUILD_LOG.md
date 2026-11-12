@@ -70,7 +70,6 @@ code review R2 leftovers, plus the needMet tweak), in `docs/handover/2026-11-11_
   npc-social-lockout-q33 8, npc-needs-work 51, npc-workarounds 52, social-feed 23,
   npc-needs-social-media 19, validator-access-social 17, validator-access-reactive 10,
   playtest-verify-run-access 14, 0 fail.
-- Full suites under the shared lock: see "Full suites" below.
 
 ## Scenario beat
 
@@ -96,7 +95,7 @@ is left in the shared dev database (mission 245, `test_access_social`).
 
 ## Full suites
 
-(Filled in below once the locked runs finish.)
+Under the shared lock: `bin/rails test` 1806 runs, 25626 assertions, 0 failures, 0 errors, 1 skip; `bin/test-js -j 3` 507 files passed, 0 failed.
 
 ## Left open
 
