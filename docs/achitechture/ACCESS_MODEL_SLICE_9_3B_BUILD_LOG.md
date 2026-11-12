@@ -56,8 +56,30 @@ security sits entirely on the existing plant path.
 
 ### Browser proof
 
-(recorded below after the scripted run)
+Keyless server on :3025 (GEMINI warning confirmed), game 1257, `test_access_networks`, headless
+Chromium, driven through the real player path (`window.__test.interact`, the plant confirm clicked
+by its "Plug it in" button), not test helpers.
+
+- **Secured port refuses (real path):** take the drop box, enter the comms room, interact
+  `secure_port`, confirm. The authored message toast shows, no view opens, no link item arrives,
+  the box stays in the inventory, and task `n10_port_security` completes. Client `footholds()` is
+  empty.
+- **Allowed device works:** interact `comms_port`, confirm. A `jack_comms_port` foothold is gained
+  and the box becomes the link item.
+- **Tampered-client checks (against the real server):** a direct `ApiClient.networkPlant("secure_port")`
+  answers `422 { reason: "port_security", error: <message> }` even with no device in hand (the
+  server refuses before taking a device); `GET /network?foothold=jack_secure_port` answers
+  `404 Foothold not found` (no foothold was ever forged for the secured port).
+- **Reload (`location.href` to the game URL with `?skip_resume=1`):** after the reload the
+  `jack_comms_port` foothold persists, there is no `jack_secure_port` foothold, the link item is in
+  the inventory, and `n10_port_security` stays complete.
+- **Server record (Rails):** `footholds` = `["jack_comms_port"]`, `gainedFootholds` = `["comms_port"]`,
+  no `jack_secure_port`.
+- **Leak scan** over 26 captured responses: `VERDICT: no leaks found.` (the port-security refusal
+  carries only the authored message).
 
 ### Handover
 
-(none yet; building)
+Sub-slice P complete. Nothing in progress. Open: the `portSecurity`/`wifiAp` combined validator
+error cannot be exercised in isolation until sub-slice W un-reserves `wifiAp`; the node test for it
+also trips the reserved-`wifiAp` error (both fire), which is correct. No other sub-slice touched.
