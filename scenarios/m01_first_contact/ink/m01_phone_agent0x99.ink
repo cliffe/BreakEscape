@@ -118,7 +118,7 @@ One test call before it's texts only.
 
 A contractor on the phone is nothing. A contractor overheard talking to me is the end of your cover.
 
-So from here it's texts. Quiet, deniable. Message me the moment you're stuck and I'll walk you through it.
+So: quiet, deniable. Message me the moment you're stuck and I'll walk you through it.
 
 + [Understood. Texts it is.]
     Good. Off you go.
@@ -167,7 +167,7 @@ So from here it's texts. Quiet, deniable. Message me the moment you're stuck and
     -> general_advice
 + [I'm good for now]
     #exit_conversation
-    Copy that. Call anytime.
+    Copy that. I'm a message away.
     -> support_hub
 
 // ================================================
@@ -210,7 +210,7 @@ Command format: hydra -l username -P passwordlist.txt target ssh
     It's "Derek"'s account you are trying to access.
     -> support_hub
 + [Thanks, that helps]
-    Good luck. Call if you hit a wall.
+    Good luck. Message me if you hit a wall.
     -> support_hub
 
 // ================================================
@@ -287,7 +287,7 @@ I've uploaded the lockpicking field guide to your secure terminal.
 Covers pin tumbler mechanics, tension control, and how to read pin feedback. Light pressure — if you're forcing it, ease off.
 
 + [Thanks, I'll use it]
-    Good. Work the pins one at a time. Call if you get stuck.
+    Good. Work the pins one at a time. Message me if you get stuck.
     -> support_hub
 + [Understood]
     The guide covers the rest. Patience is the technique.
@@ -309,7 +309,7 @@ You've got Linux fundamentals, SSH bruteforce with Hydra, and the filesystem nav
 The manual is in your inventory—reference it whenever you need it.
 
 + [Thanks, this will help]
-    Good luck in there. Call if you hit anything unexpected.
+    Good luck in there. Tell me if you hit anything unexpected.
     -> support_hub
 + [I appreciate the support]
     That's what I'm here for. Now go dark and finish this.
@@ -331,7 +331,7 @@ Once you've got SSH access, use it to check sudo permissions and move into the t
 Read it when you hit the wall on the remote system.
 
 + [Thanks, I'll use it]
-    Good. Keep pressure on the target account and call if you need a steer.
+    Good. Keep pressure on the target account and message me if you need a steer.
     -> support_hub
 + [Understood]
     Stay sharp. The next step is always the one that gets you closer to the archive.
