@@ -2126,10 +2126,11 @@ kinds; every reactive post is served at most once.
 
 ### Session 2 commits
 
-- merge commit of `f9a661a14` into `build/9-2-c2`
-- `<helper-equality>` helper-equality unit test
-- `<route-tampered>` route and tampered-client tests
-- `<scanner-validator>` scanner no-exposure fixture and validator reactive-check tests
+- `8c8f3b597` merge of `f9a661a14` into `build/9-2-c2`
+- `1432d0ad4` helper-equality unit test
+- `5a3c45d4e` route and tampered-client tests
+- `271ebee29` scanner no-exposure fixture and validator reactive-check tests
+- `cd6af592d` this build-log and handover update
 
 ### Suites (session 2, under the lock, after the merge)
 
