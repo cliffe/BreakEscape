@@ -41,7 +41,9 @@
  * Sub-slice H (plan 6.4, 6.5). `borrow_session` calls `NPCNeedsSystem.setBorrow(npcId, run)`, so
  * the NPC's next use of the failing need is at the borrowed PC; `npc_borrow_done` posts "done",
  * `npc_borrow_dropped` posts it dropped (a "done" for a use cut short carries `cut: true`, which
- * skips the server's floor, q43), and an answer with `guest: true` emits
+ * skips the server's floor, q43; a "done" with `met: false` and `lapsed: true` means the use there
+ * was skipped unjudged after a lock check hold ran out: not refused, so "failed there" mappings
+ * exclude it, review R3 m1), and an answer with `guest: true` emits
  * `npc_guest_left:<pcId>` with { npcId, objectId }, which the workstation layer records as the
  * PC's guest. `share_login` is a visit to the colleague (`with`): on arrival the NPC says a
  * `login_aloud` line. The listening window opens when that line is said (`npc_mutter:<npcId>`,

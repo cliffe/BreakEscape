@@ -144,6 +144,8 @@ export const BORROW_START_MS = 60000;
 // Access 9.2 L (6.6): how long a use at its own station waits for a lockout check in flight (the
 // queue sends at most one request every two seconds; a lost one is sent again once)
 export const LOCK_CHECK_WAIT_MS = 30000;
+// Review R1 m1 (q36): the longest a borrowed use waits at a hot desk for its check's answer
+export const BORROW_CHECK_WAIT_MS = 5000;
 /** Slice 18b-i (OFFICE_LIFE_PLAN 12.4): temptation's default band above urgentAt, in points. */
 export const MAGNET_TEMPT = 30;
 /** Slice 18b-ii: magnet.newsRadius default (tiles), and how long an announce waits for the speech lock. */
@@ -491,7 +493,9 @@ export class NPCNeedsSystem {
             kickSeen: {}, kickPending: new Set(),
             // Access slice 9.2 L (6.6): stations where the server's check found this owner locked
             // out (its uses there fail with locked_out), and checks sent and not yet answered
-            // (pcId -> needs clock ms sent; the first use there waits for the answer)
+            // (pcId -> needs clock ms sent; the first use there waits for the answer). User
+            // decision q36: a borrowed hot desk is a second kind of key here, checked when the
+            // borrower sits down, and a borrowed use there fails the same way
             lockedOut: new Set(), lockCheck: {},
             urgentFlag: {},
             mode: 'idle',
@@ -2125,9 +2129,9 @@ export class NPCNeedsSystem {
      * socialUse's time and restores), as AccessWork.social_station? says on the server.
      * User decision q33: a station the NPC is flagged locked out at (sub-slice L) is unusable for
      * social media as for work, so it is passed over like a blocked one (to the next source and
-     * the phone) and, with no phone, is the attempt that fails. The client knows a lockout only
-     * at the own station (lockedOut holds stations alone), so a lockout at a borrowed PC is not
-     * seen here: the use shows as met while the server refuses the post (see IDEAS_BACKLOG).
+     * the phone) and, with no phone, is the attempt that fails. A lockout at a borrowed PC (user
+     * decision q36) is learnt by the check sent when the borrower sits down there, and the
+     * borrowed use then fails (see the use verdict).
      */
     _socialCandidate(s, objects, pos, excludeId) {
         if (s.borrow && s.borrow.need === 'social_media') {
@@ -2432,7 +2436,9 @@ export class NPCNeedsSystem {
      */
     lockCheckSent(npcId, pcId) {
         const s = this.states.get(npcId);
-        if (!s || typeof pcId !== 'string' || pcId !== this._stationId(s)) return false;
+        // User decision q36: the PC of a borrow in use too (the check goes when the borrower sits)
+        const borrowPc = s?.job?.borrowed ? s.job.borrow?.pcId : null;
+        if (!s || typeof pcId !== 'string' || (pcId !== this._stationId(s) && pcId !== borrowPc)) return false;
         s.lockCheck[pcId] = this.clockMs;
         this._log(npcId, 'lock_check', { target: pcId });
         return true;
@@ -2446,8 +2452,10 @@ export class NPCNeedsSystem {
     _applyLockCheck(s, a) {
         const pc = typeof a.forObject === 'string' ? a.forObject : null;
         if (!pc) return;
+        // q36: a borrowed PC's answer counts only for a check this owner sent there
+        const asked = Object.prototype.hasOwnProperty.call(s.lockCheck, pc);
         delete s.lockCheck[pc];
-        if (a.lockedOut !== true || pc !== this._stationId(s) || s.lockedOut.has(pc)) return;
+        if (a.lockedOut !== true || (pc !== this._stationId(s) && !asked) || s.lockedOut.has(pc)) return;
         s.lockedOut.add(pc);
         this._log(s.npcId, 'locked_out', { target: pc });
         this._emit(`npc_locked_out:${s.npcId}`, { npcId: s.npcId, objectId: pc });
@@ -2562,10 +2570,10 @@ export class NPCNeedsSystem {
             this._restoreFrustration(s, e);
             this._seedFailCause(s, e.failWhy);
             // Access 9.2 L (6.6, 9.4): the stations a check found this owner locked out at, so it
-            // does not sit back down and work until its next locked return
-            const station = this._stationId(s);
+            // does not sit back down and work until its next locked return; q36 adds the hot
+            // desks it borrowed (the server sends only its station and its handed-over PCs)
             for (const pc of Array.isArray(e.lockedOut) ? e.lockedOut : []) {
-                if (pc === station && !s.lockedOut.has(pc)) { s.lockedOut.add(pc); this._log(s.npcId, 'locked_out', { target: pc, restored: true }); }
+                if (typeof pc === 'string' && pc && !s.lockedOut.has(pc)) { s.lockedOut.add(pc); this._log(s.npcId, 'locked_out', { target: pc, restored: true }); }
             }
         }
         const pending = this._pendingLevels?.get(s.npcId);
@@ -3142,6 +3150,24 @@ export class NPCNeedsSystem {
         const judged = job.kind === 'use' && job.need && this._judged(s, job.need);
         // Access 9.2 L (6.6): at its own station, a use waits at the desk for a check in flight
         const atStation = judged && !job.borrowed && job.targetId === this._stationId(s);
+        // User decision q36: at a borrowed PC too, for the check sent as the borrower sat down.
+        // Review R1 m1: the report queue can stall before it sends (a sync PUT that never
+        // settles), so the hold there lasts at most BORROW_CHECK_WAIT_MS (needs clock) from when it
+        // began. Review R2 m1: a lapse there fails closed, as at the station. The use is skipped
+        // unjudged (nothing restored, no npc_used, no ease or feed request) and the borrow ends
+        // not met, with `lapsed: true` on both borrow events (review R3 m1); the check stays in
+        // flight, so a late answer still flags the PC and the next borrow there waits again
+        const atBorrow = judged && !!job.borrowed && (job.need === 'work' || job.need === 'social_media');
+        if (atBorrow && s.lockCheck[job.targetId] !== undefined) {
+            if (!job.lockHeld) { job.lockHeld = true; job.lockHeldAt = this.clockMs; this._log(id, 'use_held', { target: job.targetId }); }
+            if (this.clockMs - job.lockHeldAt < BORROW_CHECK_WAIT_MS) return;
+            this._log(id, 'lock_check_lapsed', { target: job.targetId, borrowed: true });
+            this._borrowDone(s, job, false, null, { lapsed: true });
+            s.job = null;
+            this._clearBackoffs();
+            this._goHome(s, { stayPut: false });
+            return;
+        }
         if (atStation && s.lockCheck[job.targetId] !== undefined) {
             if (this.clockMs - s.lockCheck[job.targetId] < LOCK_CHECK_WAIT_MS) {
                 if (!job.lockHeld) { job.lockHeld = true; this._log(id, 'use_held', { target: job.targetId }); }
@@ -3180,6 +3206,12 @@ export class NPCNeedsSystem {
         if (atStation && (job.need === 'work' || job.need === 'social_media') && s.lockedOut.has(job.targetId)) {
             const rest = (Array.isArray(v.missing) ? v.missing : []).filter(c => c && c.why !== 'locked_out');
             v = { met: false, missing: [{ id: job.targetId, why: 'locked_out' }, ...rest], station: true };
+        }
+        // User decision q36: the borrower's username is locked out at the hot desk, so its sign-in
+        // there fails and the use is not met (a failed borrowed use is still not reported, 6.4)
+        if (atBorrow && s.lockedOut.has(job.targetId)) {
+            const rest = (Array.isArray(v.missing) ? v.missing : []).filter(c => c && c.why !== 'locked_out');
+            v = { met: false, missing: [{ id: job.targetId, why: 'locked_out' }, ...rest] };
         }
         // Access 9.2 H (6.4): the borrower signed in before finding out, so a session is left either
         // way; said before anything else (before a failed verdict's turn-back)
@@ -3288,14 +3320,21 @@ export class NPCNeedsSystem {
         this._goHome(s, { stayPut });
     }
 
-    /** The borrower leaves the borrowed PC, once per borrow; `cut` names the abort that ended the use early (q43). */
-    _borrowDone(s, job, met, cut = null) {
+    /**
+     * Ends a borrow: emits `npc_borrowed_session:<pcId>` (when the borrow leaves a session open)
+     * and `npc_borrow_done:<npcId>`. `met: false` alone means the borrowed use was judged and
+     * failed. Review R3 m1: `met: false` with `lapsed: true` means the use was skipped unjudged
+     * (a lock check hold that ran past BORROW_CHECK_WAIT_MS), not refused, so a mapping for
+     * "failed there" should require `!data.lapsed`. `lapsed` is only present on a lapse.
+      * `cut` names the abort that ended the use early (q43); a lapse passes `cut` null.
+     */
+    _borrowDone(s, job, met, cut = null, { lapsed = false } = {}) {
         const id = s.npcId;
         const b = job.borrow;
         if (!b || b.done) return;
         b.done = true;   // a failed use is done before its turn-back aborts the job
         if (s.borrow === b) s.borrow = null;
-        const extra = cut ? { cut } : {};
+        const extra = { ...(cut ? { cut } : {}), ...(lapsed ? { lapsed: true } : {}) };
         this._log(id, 'borrow_done', { target: job.targetId, met, leftOpen: b.leavesOpen, ...extra });
         if (b.leavesOpen) this._emit(`npc_borrowed_session:${job.targetId}`, { npcId: id, objectId: job.targetId, met, ...extra });
         this._emit(`npc_borrow_done:${id}`, { npcId: id, objectId: job.targetId, met, leftOpen: b.leavesOpen, index: b.index, hand: b.hand, ...extra });

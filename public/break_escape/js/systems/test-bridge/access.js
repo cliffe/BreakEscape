@@ -17,7 +17,10 @@
  *                       lockCheck (checks in flight)
  *   reports()           slice 9.2: how many POST /npc_frustration requests and reports were sent;
  *                       sub-slice L adds checks (how many were queued) and lockoutSeen (the PCs
- *                       where a sign-in answered locked_out in this page)
+ *                       where a sign-in answered locked_out in this page); review R3 n2 adds
+ *                       borrowLockoutSeen (the same PCs for the borrow path, which a station
+ *                       "no" leaves alone) and borrowCleared (`pcId|npcId` keys of borrowers
+ *                       whose "no" cleared the mark for them)
  *   feed()              slice 9.2 C: revealed feed post ids by NPC, done NPCs, request count
  *   guest(pcId)         slice 9.2 H: the guest a borrower left at a hot desk ({ npcId, lockAt }),
  *                       who is using the PC now, and the NPC's pending borrow, if any
@@ -76,12 +79,17 @@ export const accessBridge = {
         return json({ revealed: f.revealed(), done: [...f.done].sort(), requests: f.requests });
     },
 
-    /** Slice 9.2: `{ requests, reports, pending, settled }` from systems/npc-reports.js. */
+    /**
+     * Slice 9.2: `{ requests, reports, pending, settled, checks, lockoutSeen, borrowLockoutSeen,
+     * borrowCleared }` from systems/npc-reports.js.
+     */
     reports() {
         const r = window.npcReports;
-        if (!r) return { requests: 0, reports: 0, pending: 0, settled: [], checks: 0, lockoutSeen: [] };
+        if (!r) return { requests: 0, reports: 0, pending: 0, settled: [], checks: 0, lockoutSeen: [], borrowLockoutSeen: [], borrowCleared: [] };
         return { requests: r.requests, reports: r.sent, pending: r.pending.length, settled: [...r.settled].sort(),
-            checks: r.checks || 0, lockoutSeen: [...(r.lockoutSeen || [])].sort() };
+            checks: r.checks || 0, lockoutSeen: [...(r.lockoutSeen || [])].sort(),
+            borrowLockoutSeen: [...(r.borrowLockoutSeen || [])].sort(),
+            borrowCleared: [...(r.borrowCleared?.keys?.() || [])].sort() };
     },
 
     /**
