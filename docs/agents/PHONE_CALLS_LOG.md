@@ -72,3 +72,7 @@ Brief: `docs/agents/PHONE_CALLS_BRIEF.md`.
 ## 2026-11-12: parallel work while A2b is fixed
 
 - Orchestrator: user asked to parallelise. Started beside the A2b R1 fixer: A8 ringtone (Sonnet, port 3026), A7a validator and dialoguelint (Sonnet, no server; A7 docs wait for A6), and two ink writers on a new branch `build/phone-calls-writing` (worktree `.claude/worktrees/p-phone-writing`, from 39eedbb9a): HaX's calls across m01, m03–m08 (opus48) and the other callers in m04, m05, m07, m09 (opus48). The writing branch keeps the A-slice key checks on `build/phone-calls` clean; it merges in when the M slices start, and each M slice's config, proof and lab sheet follow as section 8 says.
+
+## A8
+
+- 2026-11-12: A8 done (Sonnet). Original ringtone synthesised with ffmpeg (`public/break_escape/assets/sounds/phone_ringtone.mp3`, credited in `OFFICE_LIFE_SOUND_CREDITS.md`), loaded beside `phone_vibrate`, looped by the banner through the notifications volume, stops on answer, decline and timeout; fallback to the vibrate cycle if it fails to load. 4 new tests in `phone-ring-layer.test.mjs`; `bin/test-js` 505 files pass. Proof `docs/agents/phone_calls/proofs/A8/`.

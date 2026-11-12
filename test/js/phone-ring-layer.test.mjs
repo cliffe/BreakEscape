@@ -235,3 +235,75 @@ test('A2b R1 M2: a declined or missed timed ring call leaves npc.currentKnot on 
         } finally { w.restore(); }
     }
 });
+
+// A8: the ringtone loops through the sound manager and stops on every outcome.
+function fakeSoundManager(win, { withRingtone = true } = {}) {
+    const log = [];
+    win.soundManager = {
+        sounds: withRingtone ? { phone_ringtone: {}, phone_vibrate: {} } : { phone_vibrate: {} },
+        play(name, opts) { log.push(['play', name, opts?.loop === true]); },
+        stop(name) { log.push(['stop', name]); },
+    };
+    return log;
+}
+const playing = (log) => log.filter((e) => e[0] === 'play' && e[1] === 'phone_ringtone').length
+    - log.filter((e) => e[0] === 'stop' && e[1] === 'phone_ringtone').length;
+
+test('A8: wiring: the ringtone is loaded beside phone_vibrate and the file exists', () => {
+    const sm = read('systems/sound-manager.js');
+    assert.match(sm, /load\.audio\('phone_ringtone', 'sounds\/phone_ringtone\.mp3'\)/);
+    assert.match(sm, /'phone_vibrate', 'phone_ringtone'/);
+    assert.ok(readFileSync(join(jsRoot, '../assets/sounds/phone_ringtone.mp3')).length > 1000);
+});
+
+test('A8: the ringtone starts looped when the call rings and stops on Answer', async () => {
+    const w = makeWorld({ npcs: [npc] });
+    try {
+        const log = fakeSoundManager(w.win);
+        w.nm._handleEventMapping('caller', 'room_entered', ringConfig(), {});
+        await w.advance(300);
+        assert.deepEqual(log.filter((e) => e[1] === 'phone_ringtone'), [['play', 'phone_ringtone', true]]);
+        assert.equal(playing(log), 1);
+        w.click('.incoming-call-answer');
+        await w.advance(100);
+        assert.equal(playing(log), 0, 'stopped on Answer');
+        await w.advance(2500);
+        assert.equal(log.filter((e) => e[1] === 'phone_ringtone' && e[0] === 'play').length, 1, 'no restart');
+    } finally { w.restore(); }
+});
+
+test('A8: the ringtone stops on Decline and on timeout', async () => {
+    const w = makeWorld({ npcs: [npc] });
+    try {
+        const log = fakeSoundManager(w.win);
+        w.nm._handleEventMapping('caller', 'room_entered', ringConfig(), {});
+        await w.advance(300);
+        assert.equal(playing(log), 1);
+        w.click('.incoming-call-decline');
+        assert.equal(playing(log), 0, 'stopped on Decline');
+    } finally { w.restore(); }
+    const w2 = makeWorld({ npcs: [npc] });
+    try {
+        const log = fakeSoundManager(w2.win);
+        w2.nm._handleEventMapping('caller', 'room_entered', ringConfig(), {});
+        await w2.advance(300);
+        assert.equal(playing(log), 1);
+        await w2.advance(21000);
+        assert.equal(w2.banner(), null);
+        assert.equal(playing(log), 0, 'stopped on timeout');
+    } finally { w2.restore(); }
+});
+
+test('A8: with the ringtone not loaded the banner falls back to phone_vibrate every 2 s and stops it', async () => {
+    const w = makeWorld({ npcs: [npc] });
+    try {
+        const log = fakeSoundManager(w.win, { withRingtone: false });
+        w.nm._handleEventMapping('caller', 'room_entered', ringConfig(), {});
+        await w.advance(4300);
+        assert.ok(log.filter((e) => e[1] === 'phone_vibrate').length >= 2);
+        w.click('.incoming-call-decline');
+        const n = log.length;
+        await w.advance(5000);
+        assert.equal(log.length, n, 'no more vibrates after Decline');
+    } finally { w.restore(); }
+});

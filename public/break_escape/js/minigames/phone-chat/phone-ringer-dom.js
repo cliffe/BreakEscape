@@ -116,13 +116,29 @@ export function installPhoneRinger(win = window) {
     }
 
     // ---- sound -------------------------------------------------------------------
-    // phone_ringtone arrives in A8; until it is loaded the cycle is phone_vibrate every 2 s.
+    // phone_ringtone (A8) loops through the sound manager's notification volume while the call
+    // rings. If it failed to load, fall back to phone_vibrate every 2 s as before.
     let ringTimer = null;
-    function playRingCycle() {
+    let ringtonePlaying = false;
+    function startRingtone() {
         const sm = win.soundManager;
         if (!sm?.play) return;
-        const name = sm.sounds?.phone_ringtone ? 'phone_ringtone' : 'phone_vibrate';
-        try { sm.play(name); } catch (e) { /* a missing sound must never break a call */ }
+        try {
+            if (sm.sounds?.phone_ringtone) {
+                sm.play('phone_ringtone', { loop: true });
+                ringtonePlaying = true;
+            } else {
+                sm.play('phone_vibrate');
+                ringTimer = win.setInterval(() => { try { sm.play('phone_vibrate'); } catch (e) { /* ignore */ } }, 2000);
+            }
+        } catch (e) { /* a missing sound must never break a call */ }
+    }
+    function stopRingtone() {
+        if (ringTimer) { win.clearInterval(ringTimer); ringTimer = null; }
+        if (ringtonePlaying) {
+            ringtonePlaying = false;
+            try { win.soundManager?.stop?.('phone_ringtone'); } catch (e) { /* ignore */ }
+        }
     }
 
     // ---- the adapter -------------------------------------------------------------
@@ -203,11 +219,8 @@ export function installPhoneRinger(win = window) {
         showPill,
         hidePill: clearLayer,
         ringtone(on) {
-            if (ringTimer) { win.clearInterval(ringTimer); ringTimer = null; }
-            if (on) {
-                playRingCycle();
-                ringTimer = win.setInterval(playRingCycle, 2000);
-            }
+            stopRingtone();
+            if (on) startRingtone();
         },
         vibrate() {
             try { win.soundManager?.play?.('phone_vibrate'); } catch (e) { /* ignore */ }
