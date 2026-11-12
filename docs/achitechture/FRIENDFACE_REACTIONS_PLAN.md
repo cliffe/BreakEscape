@@ -23,8 +23,9 @@ depends on C3.
   with the target itself. No new `player_state` key, no new field in `feedRevealed`, no new route,
   no new request.
 - **On the wire** a reaction rides the `/feed_post` answer that served the post it comes out with
-  (a delta of 43 bytes plus the lengths of its three ids and its key), and `GET /scenario`'s
-  `feedPosts` lists every visible reaction once per page load.
+  (a delta: 43 bytes per item plus the encoded lengths of its four strings, one comma between items,
+  and 15 bytes once for the `reactions` wrapper; section 5.4), and `GET /scenario`'s `feedPosts`
+  lists every visible reaction once per page load.
 - **A fixed key set** (like, laugh, sad, angry), drawn as 16x16 pixel-art icons with counts, in UI
   that meets the pixel-art UI rule (section 4). No text, so nothing to voice, nothing for the
   password scan and nothing for the dungeon graph.
@@ -139,7 +140,8 @@ visit of the NPC whose post it reacts to.
 
 **One reaction per NPC per post.** If two of an NPC's reactions land on the same post, the one that
 comes out first shows, ties broken by authored order; the other never shows. The validator warns
-(section 8).
+(section 8), except when the two are tied to different members of one alternative set, where only
+one can ever come out.
 
 **Targets.** Any served feed post on the same site that is not the reactor's own: an own post, a
 reply or an answer. Authored `social.osint` profile posts (the static `posts` on a profile) cannot
@@ -164,23 +166,46 @@ client shows ("Like", "Sad") are engine UI labels, like a button caption, and ar
 
 **Rendering.** Under each served post and each reply, wherever the Friendface profile opens (the
 osint terminal, the player's phone, an NPC's phone, all through `_socialView`), a row of reaction
-chips in key order. Each chip is the key's icon and the count of NPCs who reacted with it. A chip
-is focusable (`tabindex="0"`) and carries `aria-label` "Sad: Kofi Mensah, Mei Tanaka", the
-reactors' Friendface profile names through the browser's existing `_profileName({ person })`. The
-same names show on hover or focus in a small names line the page draws under the row (not the
-browser's `title` tooltip, which draws in a system font). No reaction, no row. Every string is set
-as text or an attribute, never as markup.
+chips in key order. Each chip is the key's icon and the count of NPCs who reacted with it.
+
+- **Each chip is a real button:** `<button type="button" class="ob-reaction">`. In the row it sits
+  after the post's `ob-block` button (or inside the reply's `ob-reply` entry, which is a plain
+  `div`), never inside a button: nested interactive content is invalid, and a click there would
+  select the post.
+- **Its accessible name holds the names.** `aria-label` is "Sad, 2: Kofi Mensah, Mei Tanaka": the
+  key's label, the count, then the reactors' Friendface profile names through the browser's
+  existing `_profileName({ person })`, in reactor id order (section 6).
+- **It keeps focus across re-renders.** Each chip has `data-focus="reaction:<postId>:<key>"`, so
+  `_renderMain`'s `_focusKey` and `_restoreFocus` bring focus back to it after an `npc_posted` or
+  `npc_reacted` re-render, as they do for the page's links and blocks. A post appears once on any
+  one profile page, so the key is unique on the page.
+- **The names line.** Each row draws one names line under its chips (not the browser's `title`
+  tooltip, which draws in a system font). It shows the names of one chip when that chip is hovered,
+  focused, or clicked or tapped. A click or tap toggles it and sets the chip's `aria-expanded`; a
+  second click, or Esc while the chip has focus, hides it (Esc is handled on the chip and stops
+  there only when a names line is open, so it does not close the browser). Hover is tracked on the
+  row, not the chip, so the line stays up while the pointer moves down onto it. The open chip's
+  `data-focus` key is kept on the browser instance, so a re-render redraws the line open.
+- **The names line takes no space when it shows.** Its height is reserved: the line is always in
+  the row with a fixed `min-height` of one text line, empty when nothing shows, so showing it moves
+  nothing below. It carries `aria-hidden="true"`, since the chip's label already holds the names
+  and a screen reader would otherwise read them twice.
+
+No reaction, no row. Every string is set as text or an attribute, never as markup.
 
 **Pixel-art UI.** The row, its chips and the names line follow the pixel-art UI rule:
 
-- Each chip has a 2px solid border in `--ui-line` with square corners, or uses the
-  `--ui-small-button-*` 9-slice skin from `css/ui-themes.css`; the builder picks whichever matches
-  the post block around it in a screenshot. No `border-radius`, no 1px hairline, no `box-shadow`,
-  no gradient.
-- The count, the label fallback and the names line use `var(--se-font-readable, 'GNF', monospace)`,
-  with no smooth font in the fallback list (the osint browser's existing `Source Sans 3` fallback
-  is not copied).
-- The focus ring is a 2px solid outline in `--ui-accent` with square corners, not a glow.
+- Each chip has a 2px solid border in `--ui-line` with square corners. The `--ui-small-button-*`
+  9-slice skin is not used: it is 6px wide in every theme, and the chips sit inside a post block
+  drawn with plain 2px borders. No `border-radius`, no 1px hairline, no `box-shadow`, no gradient.
+- The count, the label fallback and the names line use `var(--se-font-readable, 'GNF', monospace)`.
+  The `var()` fallback holds no smooth font (the osint browser's existing `Source Sans 3` fallback
+  is not copied). The variable itself resolves through `--se-font-pixel` in `fonts.css`, whose own
+  list goes on to `Source Sans 3` for glyphs GNF lacks; the rule allows the variable, so that stays.
+- The focus ring is a 2px solid outline in `--ui-accent` with square corners, on `:focus-visible`
+  as the page does, not a glow. The page's existing rings (`.ob-head button:focus-visible` and the
+  others) are 3px with a 2px offset, which breaks the 2px rule; the chips' 2px ring is deliberate,
+  and a builder does not copy the 3px to match the page.
 - Icons are drawn at a whole-number scale of their 16x16 pixels (16px or 32px, never in between),
   with `image-rendering: pixelated`.
 
@@ -306,43 +331,89 @@ unknown ids), as it can for C3's threads.
 - Otherwise `AccessWork.feed_reactions(scenario_data, store, revealed: map, via: post_id)`, using
   the store as just written. The route already builds `revealed_map` before the write. The
   post-write `map` is that pre-write map plus the one new entry (the served post's
-  `{ npc, seq, to, reply }`), added in place of a second full build, and the same map is passed to
-  `feed_answer` for a reply. A unit test checks the added map equals `revealed_map` of the written
-  store. If C3 changes how the map is built per request, the builder follows that.
-- **The call is rescued.** The post is already saved when the derivation runs, so a raise there
-  must not cost the post's own answer (its toast and any `npc_posted` task, such as C3's
-  `f15_replied` and `f16_answered`). The route wraps the `feed_reactions` call in
-  `rescue StandardError`, logs the error with the game id and post id, and answers without
-  `reactions`. The next load shows whatever the derivation can give then. The helper's own
-  "never raises" tests stay; this is a second line.
+  `{ npc, seq, to, reply }`), added in place of a second full build. A unit test checks the added
+  map equals `revealed_map` of the written store. If C3 changes how the map is built per request,
+  the builder follows that.
+- **`feed_answer` gains a `revealed:` keyword.** Today it builds a full `revealed_map` from
+  `player_state` itself whenever it resolves a reply's `to`. It takes an optional
+  `revealed: nil` and builds the map only when none is given, so the route and
+  `feed_posts_for_client` can hand it the map they already hold. Callers that pass nothing behave
+  as today.
+- **The call is rescued, and the fault is reported.** The post is already saved when the
+  derivation runs, so a raise there must not cost the post's own answer (its toast and any
+  `npc_posted` task, such as C3's `f15_replied` and `f16_answered`). The route wraps the
+  `feed_reactions` call in `rescue StandardError => e`, which:
+  - reports it through `Rails.error.report(e, handled: true, context: { game_id:, post_id: })`
+    (Rails 7.0's error reporter) as well as a `Rails.logger.error` line naming the game id and post
+    id;
+  - re-raises in the test environment unless a test has turned the rescue on:
+    `raise if Rails.env.test? && !BreakEscape::SocialFeed.rescue_reactions_in_test`, where
+    `rescue_reactions_in_test` is a module-level setting, false by default, that only the
+    raise-stub tests set (and reset in `teardown`), so a misnamed keyword or a renamed C3 helper
+    fails every other test loudly instead of passing an absence check;
+  - otherwise answers without `reactions`. The next load shows whatever the derivation can give
+    then.
+
+  The helper's own "never raises" tests stay; this is a second line.
 - The answer gains `reactions: [{ 'postId' => T, 'npc' => X, 'person' => X's feed person,
   'key' => key }, ...]` for every reaction whose `via` is the post just served, in key order, then
   target id, then reactor id. Every item names its reactor, because a with-target reaction comes
   out in another NPC's answer. The key is present only when the list is not empty.
 - A null, `tooSoon` or refused answer is unchanged and carries no reactions.
 
-`feed_posts_for_client` computes `feed_reactions` once (with the `revealed_map` it builds) and
-merges a `reactions` list into each post item (own post or reply) **after** the existing
-`slice(*FEED_ITEM_KEYS)`, so `FEED_ITEM_KEYS` is unchanged. Each list is
-`[{ 'npc', 'person', 'key' }]`, sorted by key order then reactor id, present only when not empty.
-The call is rescued the same way, so a derivation fault ships the posts without reactions rather
-than failing `GET /scenario`. `open_friendface_phone` with `with_posts` (the test-only path)
+`feed_posts_for_client` builds no `revealed_map` today: each reply item's `feed_answer` call builds
+its own. It now builds the map once, passes it to `feed_reactions(..., revealed: map)` and to each
+`feed_answer(..., revealed: map)`, and merges a `reactions` list into each post item (own post or
+reply) **after** the existing `slice(*FEED_ITEM_KEYS)`, so `FEED_ITEM_KEYS` is unchanged. Each list
+is `[{ 'npc', 'person', 'key' }]`, sorted by key order then reactor id, present only when not empty.
+The call is rescued, reported and re-raised in test the same way, so outside tests a derivation
+fault ships the posts without reactions rather than failing `GET /scenario`. `open_friendface_phone` with `with_posts` (the test-only path)
 carries the same items; a game open carries no posts, as today.
 
 Nothing is written for a reaction, so nothing runs outside the existing `with_game_lock` write.
 
 ### 5.4 How big it grows and what each request sends
 
-Sizes are JSON bytes for ids with no characters that JSON escapes. Ids have no length limit in the
-validator, so the bound comes from the authored id lengths.
+Sizes are bytes of the JSON Rails sends. Ids have no length limit in the validator, so the bound
+comes from the authored id lengths.
+
+**Encoded length.** A string's encoded length is `s.to_json.bytesize - 2` (the bytes between its
+quotes) as Rails renders it. That is its UTF-8 byte length, plus one byte for each `"` or `\`, plus
+five more bytes for each character the encoder writes as a six-byte `\uXXXX` sequence: control
+characters, and, because Rails renders through `ActiveSupport::JSON` with HTML-safe escaping,
+`<`, `>`, `&`, U+2028 and U+2029. Ids made of letters, digits and `_` encode at their plain length.
+
+**Answer growth.** An answer with n reactions grows by
+
+  15 + n x 43 + (n - 1) + the sum over its items of the encoded lengths of `postId`, `npc`,
+  `person` and `key`,
+
+where 15 is `,"reactions":[]`, 43 is `{"postId":"","npc":"","person":"","key":""}` and n - 1 counts
+the commas between items. An answer with no reactions grows by 0 (the key is absent). With
+20-character ids and `laugh`, one item is 108 bytes and an answer with one reaction grows by 123.
+
+**`feedPosts` growth.** Each post item with m reactions grows by
+
+  15 + m x 31 + (m - 1) + the sum over its items of the encoded lengths of `npc`, `person` and
+  `key`,
+
+where 31 is `{"npc":"","person":"","key":""}`. With 20-character ids and `laugh`, one item is 76
+bytes.
+
+**How many per answer.** The reactions whose `via` is the post just served are of two kinds: the
+serving NPC's own reactions that came out with it (at most the serving NPC's authored `reacts`), and
+other NPCs' with-target reactions whose target is this post (at most the reactions on other NPCs'
+feeds whose `to` names this post, or whose `toComplaint` matches this post's `complaint`). So n is
+at most those two counts added, and one or two in practice. Across `feedPosts`, the total is at most
+one per authored reaction in the scenario.
 
 | Record or message | Bound | Sent when |
 |---|---|---|
 | `player_state` | No new key; 0 bytes. | Never. |
 | `feedRevealed` | Unchanged from C3. | Never sent as a record. |
 | `/feed_post` request | Unchanged: `npc_id`, `object_id`. | One per met social use, as today. |
-| `/feed_post` answer | Plus one `{ postId, npc, person, key }` per reaction that came out with this post: 43 bytes plus the lengths of the target post id, the reactor id, the reactor's feed person and the key (110 bytes with 20-character ids and `laugh`). At most the authored reactions whose target or carrying post this is, in practice one or two. | Once, with the serve: a delta. |
-| `GET /scenario` `feedPosts` | Plus one `{ npc, person, key }` per visible reaction: 31 bytes plus the lengths of the reactor id, the person and the key (76 with 20-character ids). At most one per authored reaction in the scenario. | Once per page load. |
+| `/feed_post` answer | The answer growth above, with n bounded as above. | Once, with the serve: a delta. |
+| `GET /scenario` `feedPosts` | The `feedPosts` growth above, summed over the post items that carry reactions. | Once per page load. |
 | `/friendface_phone` | Unchanged on a game open (site and profile only). | As today. |
 | `sync_state` | Unchanged: no section added, and the client's reaction store is never sent back. | As today. |
 
@@ -379,11 +450,16 @@ not change. If a builder adds an import anyway, the file goes on each copy list.
     body carries no post, its reactions are ignored (the server never sends that).
   - `restore(feedPosts)`: each post item's `reactions` are stored, with no event.
   - `reactionsFor(postId)`: `[{ key, label, people: [{ npcId, person }] }]` in key order, empty
-    keys left out.
+    keys left out, and `people` sorted by NPC id within each key. Live answers arrive in serve
+    order while `restore` reads the server's order, so without the sort the chip's `aria-label`
+    could change across a reload.
 - `public/break_escape/js/minigames/osint-browser/osint-browser-minigame.js`: `_reactionRow(postId)`
   through a `_feedReactions(postId)` helper that calls `reactionsFor` only when the feed (live, or a
   stand-in `params.feed`) has it as a function, as `_feedReplies` does. The row goes after each
-  post block and inside each `_replyEntry`, with its names line. A new `npc_reacted:*` listener
+  post's `ob-block` button (as a sibling in `ob-blocks`, never inside the button) and at the end of
+  each `_replyEntry`, with its names line. The chips, their `data-focus` keys, `aria-label`,
+  `aria-expanded` and the names line behave as section 4 sets out; the open chip's key is held in
+  one instance field that `_renderMain` reads, cleared when the page changes. A new `npc_reacted:*` listener
   (registered and removed beside `npc_posted:*`) re-renders an open social page when it shows the
   profile of either `targetPerson` or `targetReplyToPerson`, or any open page on the same site when
   the event has no target, keeping the scroll position as `_onPosted` does. The second person is
@@ -433,20 +509,47 @@ resolution.
 Errors:
 
 - `feed.reacts` is not an array, or an entry is not an object.
-- An entry has neither or both of `to` and `toComplaint`, or no `key`.
+- `to`, `toComplaint`, `key` or `alongside` is present (not nil) but not a non-empty string: its
+  own error, as C3's `check_reply` does for `replyTo` and `replyToComplaint`. So
+  `{ "to": "x", "toComplaint": "" }` is an error even though the derivation's cleaner, which counts
+  only non-empty strings, would accept it.
+- An entry has neither or both of `to` and `toComplaint`, counting every non-nil field as present
+  (as the server counts C3's thread fields), or has no `key`.
 - `key` is not in `REACTION_KEYS` (the message lists the set).
 - `to` names no post on any room NPC's feed, names a post of the reactor's own, or names a post on
   a different `feed.site`.
 - `toComplaint` names a complaint that no own post on another NPC's feed on the same site carries.
 - `alongside` names no post or reply on the reactor's own feed.
 
-**Shared never-fires helpers.** C3's `check_reply` proves several replies dead and warns on each:
-a reply whose `when` can never hold, one whose `insteadOf` post can never fire, an answer that no
-reply can open, a reply whose thread can never open, and a second reply that no answer can open.
-The build factors these tests into one helper, `reply_never_fires(json_data, npc, post)`, which
-returns the reason or nil. `check_reply` calls it for its own warnings (with its wording unchanged)
-and the reactions checks call it for targets and `alongside` posts. A reactive own post whose
-`when` is unreachable by `when_reachable?` is dead in the same sense, and the helper covers it too.
+**A never-fires helper for reactions.** C3's `check_reply` and `check_reactive_post` stay exactly
+as they are: their messages, their order and their early returns do not move. The reactions checks
+use a new predicate helper beside them,
+`post_dead_reasons(json_data, npc, post, index = feed_post_index(json_data))`, which returns a list
+of reason codes, empty when the post can come out. It covers only the cases where the post
+certainly never comes out:
+
+| Code | When | Phrase in a reaction message |
+|---|---|---|
+| `:never_posts` | `npc` does not `feeds?`. | its NPC never posts |
+| `:when_unreachable` | The post is reactive (an own post or a reply) and `AW.when_reachable?` is false for its `when`. | its `when` can never hold |
+| `:instead_of_dead` | A reply whose `insteadOf` post is reactive with an unreachable `when`. | its `insteadOf` post can never fire |
+| `:answer_unopenable` | An answer (`answer?`) and `answer_repliers` is empty. | no reply can open it |
+| `:thread_never_opens` | A reply that is not an answer, whose `reply_threads` is not empty and every thread post belongs to an NPC that does not `feeds?` or is reactive with an unreachable `when`. | its thread can never open |
+
+Every code that holds is returned, so a reply with an unreachable `when`, a dead `insteadOf` and a
+thread that can never open gives all three. `:thread_never_opens` is tested only for a reply that
+is not an answer, as `check_reply` does. The helper calls the same `AW` predicates and the same
+`feed_post_index`, `reply_threads`, `answer?` and `answer_repliers` helpers that `check_reply`
+uses, so the logic is in one place even though C3's messages stay where they are.
+
+C3's "second reply that no answer can open" is **not** a code. It can still fire:
+`thread_open_to?` lets a replier in when it has no word in the thread yet, so if the replier's first
+reply never comes out (its `when` was false when its slot came due, or its slot came before the
+thread post), the second reply is its first word and can be served. A reaction to such a reply
+gets no "never comes out" warning.
+
+The reaction messages name each reason with the phrase in the table, joined with "and", never C3's
+whole sentence with its `#{tag}` prefix. C3's code is not refactored in this slice.
 
 **A static helper for the order cases.** Some targets can exist only after one of the reactor's
 own posts has been served. For reactor X and target T, the **required post** P is:
@@ -476,17 +579,21 @@ Warnings, for the cases where a reaction certainly never comes out, and for auth
 - **A reactor that can never post:** X `feeds?` and has `reacts`, but `feed_done?(data, X, [])` is
   true (every own post is reactive with an unreachable `when`): "`<X>` can never post: its
   reactions never come out".
-- **A target that can never be served:** its NPC does not `feeds?`, or `reply_never_fires` gives a
-  reason for it (including a reactive own post with an unreachable `when`, a reply whose
-  `insteadOf` post can never fire, a reply whose thread can never open, and an answer no reply can
-  open). The message names the reason: "`<target>` never comes out (`<reason>`): this reaction
-  never comes out". For `toComplaint`, the warning applies when every vent of the complaint on
-  other NPCs' feeds can never be served.
-- **An `alongside` post that can never fire:** `reply_never_fires` gives a reason for it.
+- **A target that can never be served:** `post_dead_reasons` for it is not empty. The message
+  names the reasons: "`<target>` never comes out (its `when` can never hold): this reaction never
+  comes out". For `toComplaint`, the warning applies when every vent of the complaint on other
+  NPCs' feeds on the site has reasons, and the message names the complaint.
+- **An `alongside` post that can never fire:** `post_dead_reasons` for it is not empty, with the
+  same message form.
 - **An `alongside` post that can never follow its target** (above): "`<post>` always comes out
   before `<target>`: this reaction never comes out".
-- Two reactions by one NPC that can land on the same post (the same `to`, or a `to` naming a vent of
-  a complaint another of its reactions names): "only the first to come out shows".
+- **Two reactions by one NPC that can land on the same post** (the same `to`, or a `to` naming a
+  vent of a complaint another of its reactions names): "only the first to come out shows". Not
+  warned when both reactions have an `alongside` and the two `alongside` posts are different
+  members of the same alternative set (both in `set_member_ids` of the same own post): at most one
+  of them is ever served, so the two are never both candidates. That is the event pattern of
+  section 3 ("sad to T alongside A, angry to T alongside B"), a deliberate choice, and each gets its
+  "only if ... is the member served" ending in the report instead.
 
 A target or `alongside` post that might not come out, because it is one member of an alternative
 set, is not a warning. Every reply is conditional by design, and most reactions in a C3 thread
@@ -556,6 +663,15 @@ a task on `npc_reacted` is a cue, not a step the mission can depend on.
   far. Both derivation rules need the reactor to have served a post (after the target, or before
   it with its feed done), so a reaction from an NPC who has posted nothing came out before its
   time.
+
+`note_feed_served` and `scan_feed` return early when the scanner holds no feed texts and no feed
+fact ids. `feed_reacts_key` is a structural check that needs neither, so it runs outside that early
+return, in its own pass over each response. The three item kinds stay inside it, because they
+read `@feed_served`, which `note_feed_served` fills only past that return; run outside it they would
+flag every reaction as early. The gap this leaves is the one the feed checks already have: a
+scenario whose feed posts all have text under `MIN_FEED_TEXT` and carry no facts is not feed-scanned
+at all, and its reaction items are not judged either. The build log notes it; closing it is not in
+this slice.
 
 The new kinds go in the scanner's kind table and `access-leak-check.rb`'s output. A reaction item
 has no `replyTo`, `id` or `npcType`, so `feed_reply_target` and `scan_withheld_keys` do not read
@@ -647,32 +763,61 @@ merge batch.
     written store, for an own post and for a reply;
   - junk `reacts` (not an array, non-hash entries, an unknown key, both `to` and `toComplaint`, an
     extra field) is skipped or the extra field ignored, without raising.
-- **Route** (`test/controllers/break_escape/feed_post_reactions_test.rb`): the answer for the
-  reactor's serve carries exactly the reactions whose `via` is that post; the answer for a target's
-  serve carries the done-before reactions of other NPCs, each with its own `npc` and `person`; a
-  serve with none has no `reactions` key; null, `tooSoon` and refused answers carry none; an answer
-  with no post (a reply whose thread poster is unknown) carries none, and the next load agrees;
-  with `feed_reactions` stubbed to raise, the `/feed_post` answer equals the same serve's answer
-  with `reacts` removed (post, toast fields and all), the post is saved, and `GET /scenario` still
-  ships `feedPosts` without reactions; the `player_state` key set and the `feedRevealed` entry are
-  identical to the same run with `reacts` removed from the scenario; `feedPosts` puts each reaction
-  on its target item, a reply item included, and `FEED_ITEM_KEYS` is unchanged; the test-only
-  phone path carries them, a game open does not; `reacts` is in neither the room data nor the
-  bootstrap; every row of section 7's table except the leak scanner. **Sizes:** each answer
-  `reactions` item is at most 43 bytes plus the byte lengths of its own `postId`, `npc`, `person`
-  and `key`, and each `feedPosts` reaction at most 31 plus its `npc`, `person` and `key`, computed
-  per item rather than as a flat limit; the `feedPosts` growth for the F15 and F16 fixture is under
-  500 bytes.
+- **Route** (`test/controllers/break_escape/feed_post_reactions_test.rb`). **Every absence check is
+  paired with a presence check** on the same fixture and the same request, so a raise cannot pass
+  both: each "carries none" assertion sits beside one on the same answer or load that shows the
+  thing that should be there (the post, a reaction on another item, or the same request's
+  reactions once the scenario has them).
+  - The answer for the reactor's serve carries exactly the reactions whose `via` is that post; the
+    answer for a target's serve carries the done-before reactions of other NPCs, each with its own
+    `npc` and `person`.
+  - A serve with none has no `reactions` key, paired with a serve in the same run that has one.
+  - Null, `tooSoon` and refused answers carry none, each paired with the next served answer in the
+    same run carrying its reactions.
+  - An answer with no post (a reply whose thread poster is unknown) carries none, and the next load
+    agrees, paired with that load carrying the reactions of the other posts.
+  - **The rescue.** With `rescue_reactions_in_test` on and `feed_reactions` stubbed to raise: the
+    `/feed_post` answer equals the same serve's answer with `reacts` removed (post, toast fields and
+    all), the post is saved, `Rails.error.report` is called once with the game id and post id, and
+    `GET /scenario` still ships `feedPosts` without reactions. With the setting off (the default) and
+    the same stub, the request raises: the test asserts the raise, so a fault in any other test
+    surfaces.
+  - The `player_state` key set and the `feedRevealed` entry are identical to the same run with
+    `reacts` removed from the scenario, paired with that run's answers carrying reactions.
+  - `feedPosts` puts each reaction on its target item, a reply item included, and `FEED_ITEM_KEYS`
+    is unchanged.
+  - The test-only phone path carries them; a game open does not, paired with the test-only open of
+    the same phone in the same state carrying them.
+  - `reacts` is in neither the room data nor the bootstrap, paired with the bootstrap's `feedPosts`
+    carrying the derived reactions.
+  - Every row of section 7's table except the leak scanner.
+  - **Sizes.** Each answer `reactions` item's `item.to_json.bytesize` equals 43 plus the encoded
+    lengths (`s.to_json.bytesize - 2`) of its `postId`, `npc`, `person` and `key`, and each
+    `feedPosts` item's equals 31 plus those of its `npc`, `person` and `key`; the whole answer's
+    growth equals the section 5.4 formula; one fixture uses an id holding `&` and `<`, so the check
+    follows the encoder's escaping. The `feedPosts` growth for the F15 and F16 fixture is under 500
+    bytes.
 - **Validator** (`test/js/validator-access-reactions.test.mjs`): one fixture per error and warning
-  in section 8, including an unknown field, a reactor that can never post, a target reply whose
-  thread can never open, a target answer that no reply can open, an `alongside` post certainly
-  served before its target (a reply in a thread on the reactor's only post, with the reactor's vent
-  as `alongside`), and an `alongside` post certainly spent before its target; a fixture with an
-  `alongside` set member and a `to` naming a reply each give no warning; every report line form and
-  ending, including "(never comes out)", each "only if" ending alone, the two joined with "and",
-  and the "with it, since X has finished posting" form (a reactor with one vent, its thread drawing
-  a `replyTo` reply). C3's reply validator fixtures still pass with `check_reply` calling the shared
-  `reply_never_fires` helper, with their messages unchanged.
+  in section 8, including an unknown field, a field present but empty (`"toComplaint": ""` beside a
+  `to`), a reactor that can never post, a target reply whose thread can never open, a target answer
+  that no reply can open, an `alongside` post certainly served before its target (a reply in a
+  thread on the reactor's only post, with the reactor's vent as `alongside`), and an `alongside`
+  post certainly spent before its target. No warning, and no "(never comes out)" ending, for: an
+  `alongside` set member; a `to` naming a reply; a target that is a second reply whose thread has
+  no answer (it can still fire); and two reactions by one NPC on the same `to`, `alongside`
+  different members of one alternative set (beside the clash fixture, which does warn). Every
+  report line form and ending, including "(never comes out)", each "only if" ending alone, the two
+  joined with "and", and the "with it, since X has finished posting" form (a reactor with one vent,
+  its thread drawing a `replyTo` reply).
+- **`post_dead_reasons`** (same file): a reply with an unreachable `when`, a dead `insteadOf` and a
+  thread that can never open gives all three codes; an answer with no repliers gives
+  `:answer_unopenable` and never `:thread_never_opens`; a second reply with no answer gives an
+  empty list; an own reactive post with an unreachable `when` gives `:when_unreachable`; an NPC
+  that does not `feeds?` gives `:never_posts`. **Agreement with C3:** for every reply in the
+  fixtures of `validator-access-reply.test.mjs`, each code the helper returns matches the C3
+  never-fires warning `check_reply` gives for that reply (`:when_unreachable`, `:instead_of_dead`,
+  `:answer_unopenable`, `:thread_never_opens` to its four messages), and C3's fixtures and messages
+  are unchanged.
 - **Key sets in step:** `REACTION_KEYS` in `social-feed.js` (`test/js/social-feed-reactions.test.mjs`)
   and in the leak scanner (`test/unit/access_leak_scanner_feed_test.rb`) each equal the Ruby
   constant read from `lib/break_escape/access_work.rb`. The schema test checks that `reacts.items`
@@ -683,23 +828,36 @@ merge batch.
   reaction on the post in the same answer is drawn by the `npc_posted` re-render; reactions are
   kept when `_add` returns false; `restore` stores and emits nothing; an unknown key, a non-string
   id and a second reaction by one NPC on one post are dropped; a reaction before its post is kept
-  and drawn later; `reactionsFor` order and grouping; no toast; the phone unread count is unchanged
-  by a reaction; the osint browser draws the row with counts, the `aria-label` names, the names
-  line on focus, and the label fallback when an icon is missing, works with a stand-in feed that
-  has no `reactionsFor`, and re-renders an open profile on `npc_reacted` only when it shows the
+  and drawn later; `reactionsFor` order and grouping, with people sorted by NPC id whatever order
+  they arrived in (live then restored gives the same list); no toast; the phone unread count is
+  unchanged by a reaction. The osint browser (the jsdom harness in
+  `social-osint-browser.test.mjs`): each chip is a `button` of `type="button"`, outside the post's
+  `ob-block` button, with `aria-label` "Sad, 2: Kofi Mensah, Mei Tanaka" and
+  `data-focus="reaction:<postId>:<key>"`; the names line is in the row from the first render, with
+  `aria-hidden="true"`, empty, and the same height empty as filled (its reserved `min-height`); it
+  fills on focus, on hover of the row, and on click, where the click sets `aria-expanded="true"`
+  and a second click or Esc on the chip empties it and sets it back to `false`; focus stays on the
+  chip, and an open names line stays open, across an `npc_reacted` re-render and an `npc_posted`
+  one; the row draws counts and the label fallback when an icon is missing; it works with a
+  stand-in feed that has no `reactionsFor`; and it re-renders an open profile on `npc_reacted` only when it shows the
   target's person or the target reply's thread poster (a case where the carrying post is on a
   different thread from the target, so only the `npc_reacted` re-render reaches the thread
   poster's open profile); the bridge's `reactions` with a post id of `__proto__`.
 - **Pixel-art CSS** (in `test/js/social-feed-reactions.test.mjs`, reading
   `osint-browser-minigame.css`): the `.ob-reaction*` rules have no `border-radius` other than 0, no
-  `box-shadow`, no `gradient`, no border or outline width other than 2px, and no `font-family`
+  `box-shadow`, no `gradient`, no `border-image`, no border or outline width other than 2px (`0`
+  and `none` are allowed, so `outline: none` on a non-focus state passes), and no `font-family`
   outside GNF, Press Start 2P, VT323 and the `--se-font-*` or `--ui-heading-font` variables with a
-  `monospace` fallback; the icon rule has `image-rendering: pixelated` and a width of 16px or 32px.
+  `monospace` fallback; the chip's focus rule is on `:focus-visible` with a 2px outline; the icon
+  rule has `image-rendering: pixelated` and a width of 16px or 32px.
 - **Leak scanner** (`test/unit/access_leak_scanner_feed_test.rb`): `feed_reaction_target` for a
   reaction on an unserved post (resolved through `@feed_post_key`), none for a reaction on the
   post in the same answer; `feed_reaction_key` for an unknown key; `feed_reaction_reactor` for a
   reactor with no served post; `feed_reacts_key` for a `reacts` key off an NPC record and for one
-  directly on an NPC record beside `feed`; a clean resumed run with reactions in `feedPosts`.
+  directly on an NPC record beside `feed`, and for one in a run whose scenario has no feed texts
+  and no feed facts (outside the early return); a clean resumed run with reactions in `feedPosts`,
+  paired with the same run with one reaction moved to an unserved post giving one
+  `feed_reaction_target` finding, so the clean result is not a scan that never ran.
 - **Live proof** (a keyless server started by hand from the worktree on the assigned port, never
   :3000; headless Chromium; `setFPS(20)` with fixed steps; `--capture-responses`). Run F15, F16 and
   F17 through the test bridge after the Friendface visit C3 needs. After each beat:
@@ -708,25 +866,33 @@ merge batch.
   `verify-run.rb --access` `feedRevealed` row and the `player_state` key list equal a C3 baseline
   run's; `access-leak-check.rb` over the responses so far with no findings; the measured answer
   growth per reaction and the bootstrap `feedPosts` growth, written into the build log; no toast and
-  no badge change from a reaction. Screenshots for the build log: Asha's vent with sad 2, the
-  focused chip with its names line, Kofi's reply with Mei's like, Mei's reply with Asha's like,
-  Ivy's thread with Tomasz's sad on her answer, the same after F17's reload, and the player's phone
-  view; each looked at for section 4's pixel-art rules (square 2px borders or the skin, pixel font,
-  crisp icons). Pace is earned in real time; the needs clock is never stepped. Regression: F1 to
+  no badge change from a reaction; the server's Rails log has no line from the reactions rescue
+  (the proof fails if it has one, since the rescue hides a fault that the screenshots might not
+  show). Screenshots for the build log: Asha's vent with sad 2, the focused chip with its names
+  line, the same chip's names line opened by a click with the pointer elsewhere, Kofi's reply with
+  Mei's like, Mei's reply with Asha's like, Ivy's thread with Tomasz's sad on her answer, the same
+  after F17's reload, and the player's phone view; each looked at for section 4's pixel-art rules
+  (square 2px borders, pixel font, crisp icons) and for nothing below a row moving when its names
+  line shows. Pace is earned in real time; the needs clock is never stepped. Regression: F1 to
   F17's C3 expectations still pass.
 
 ## 12. Dependencies on C3
 
 - **C3 must be merged first.** Reactions read C3's `seq`, `revealed_map` (with its `reply` flag and
   `to`), `reply_target`, `feed_done?`, `set_member_ids`, `walk_order`, the complaint tags,
-  `FEED_ITEM_KEYS`, `check_reply`'s never-fires tests, `@feed_post_key` in the leak scanner and the
-  client's `repliesFor` thread drawing.
+  `FEED_ITEM_KEYS`, `feed_answer`, the validator's `feed_post_index`, `reply_threads`, `answer?` and
+  `answer_repliers` (which `post_dead_reasons` calls), `@feed_post_key` in the leak scanner, the
+  client's `repliesFor` thread drawing and the osint browser's `_focusKey` and `_restoreFocus`.
+  None of C3's code is changed except `feed_answer`'s new optional `revealed:` keyword.
 - **Times.** Section 10's times are the measured ones in C3's `PLAYTEST.md` at 57a3dea22. If C3's
   final `PLAYTEST.md` moves them, or moves any social `initial`, the reaction expectations move
   with it and no reaction rule changes, provided Asha still vents before Mei replies.
 - **Names and signatures.** If C3's code review rounds rename `revealed_map`, `reply_target`,
-  `feed_done?`, `FEED_ITEM_KEYS` or the `reply` flag, or change how `revealed_map` is built per
-  request, the builder follows the new names and passes the prebuilt map to `feed_reactions`.
+  `feed_done?`, `FEED_ITEM_KEYS`, `feed_answer`, the validator helpers above, `_focusKey`,
+  `_restoreFocus` or the `reply` flag, or change how `revealed_map` is built per request, the
+  builder follows the new names and passes the prebuilt map to `feed_reactions` and `feed_answer`.
+  If they change which replies `check_reply` proves dead, `post_dead_reasons` follows, and its
+  agreement test (section 11) catches a drift.
 - **`feed_done?` stays pure and monotone.** Section 5.1's stability rests on it being pure, and the
   validator's lower bound on it being monotone. If C3 changes it to read live state, the done-before
   rule needs revisiting before the build.
@@ -765,7 +931,7 @@ merge batch.
 7. **Event triggers come through `alongside`.** A reaction has no `when` of its own; tying it to a
    reactive post gives it that post's condition.
 8. **One reaction per NPC per post**, the first to come out winning; the validator warns on a
-   clash.
+   clash, but not on two reactions tied by `alongside` to different members of one alternative set.
 9. **Reactions on any served feed post or reply on the same site, never the reactor's own, never an
    authored static profile post, and never a post served before C3.**
 10. **The demo extends C3's F15 and F16** instead of adding a room, since reactions change no
@@ -798,20 +964,29 @@ importers, not the full suites.
    `feed_reactions(data, store, revealed: nil, via: nil)`, with the `via:` filter after the dedupe;
    the derivation unit tests, stability and the `feed_done?` purity and monotonicity tests
    included. Commit.
-3. `social_feed.rb`: the answer's `reactions` (only when the answer carries a post), built from the
-   pre-write map plus the new entry and rescued; the `feedPosts` item `reactions` merged after the
-   slice, also rescued; route tests, the raise stub, the unchanged-state and per-item size
-   assertions, and section 7's tamper rows except the leak scanner. Commit.
-4. Validator: factor C3's never-fires tests into `reply_never_fires` and have `check_reply` call it
-   (C3's fixtures unchanged); the reaction errors, warnings (the unknown-field, can-never-post,
-   never-served and never-follows rules included), the static order helper and the report line
-   forms with their endings; schema (`key` a plain string); the README paragraph; fixtures. Commit.
-5. Client: `social-feed.js` store, events (with `targetReplyToPerson`) and `reactionsFor`; the
-   osint browser row, names line, listener and CSS under the pixel-art rules, with the label
-   fallback; the bridge; JS tests including the key-set match, the phone count, the other-thread
-   re-render and the CSS rules check. Commit.
-6. Leak scanner: the `REACTION_KEYS` copy, the four new kinds, and their tests, including section
-   7's leak scanner row, a `reacts` key directly on an NPC record and the key-set match. Commit.
+3. `social_feed.rb`: `feed_answer`'s optional `revealed:` keyword; the answer's `reactions` (only
+   when the answer carries a post), built from the pre-write map plus the new entry; the
+   `feedPosts` item `reactions` merged after the slice, with one map built and passed to
+   `feed_reactions` and every `feed_answer`; both calls rescued, reported through
+   `Rails.error.report` and re-raised in test unless `rescue_reactions_in_test` is on; route tests
+   with every absence check paired with a presence check, the raise stub with the setting on and
+   off, the unchanged-state assertions, the per-item and per-answer size checks against the
+   encoder, and section 7's tamper rows except the leak scanner. Commit.
+4. Validator: `post_dead_reasons` beside C3's helpers, with C3's `check_reply` and
+   `check_reactive_post` left unchanged; the reaction errors (the present-but-empty field rule
+   included), warnings (the unknown-field, can-never-post, never-served, never-follows and clash
+   rules, with the alternative-set exception), the static order helper and the report line forms
+   with their endings; schema (`key` a plain string); the README paragraph; fixtures, including the
+   helper's agreement with C3's warnings on C3's own fixtures. Commit.
+5. Client: `social-feed.js` store, events (with `targetReplyToPerson`) and `reactionsFor` (people
+   sorted by NPC id); the osint browser row of `button` chips with `data-focus` keys, the names line
+   (hover on the row, focus, click or tap, Esc; reserved height; `aria-hidden`), the listener and
+   CSS under the pixel-art rules, with the label fallback; the bridge; JS tests including the
+   key-set match, the phone count, the other-thread re-render, focus and open state across a
+   re-render, and the CSS rules check. Commit.
+6. Leak scanner: the `REACTION_KEYS` copy, the four new kinds with `feed_reacts_key` outside the
+   early return, and their tests, including section 7's leak scanner row, a `reacts` key directly
+   on an NPC record, the clean run paired with a finding, and the key-set match. Commit.
 7. Icons, once the user approves (decision 5): four 16x16 PNGs in `public/break_escape/assets/icons/`,
    looked at in a screenshot at their whole-number scale before committing. Commit. If not approved
    yet, skip; the label fallback stands.
