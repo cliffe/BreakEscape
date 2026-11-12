@@ -26,6 +26,8 @@ require_relative 'validate_npc_needs'
 require_relative 'validate_network'
 require_relative 'validate_capture_log'
 require_relative 'validate_wearable'
+require_relative '../lib/break_escape/scenario_schema'
+require_relative '../lib/break_escape/author_notes'
 require_relative '../lib/break_escape/declared_grants'
 require_relative '../lib/break_escape/access_identities'
 require_relative '../lib/break_escape/capture_model'
@@ -239,10 +241,13 @@ def validate_grant_foothold_actions(schema, json_data)
 
   sub = { 'definitions' => schema['definitions'], '$ref' => '#/definitions/grantFootholdAction' }
   out = []
-  # The walk carries the schema node for each value (nil where the schema does not describe it), so
-  # it can tell a note from an id: a key of an id map (rooms, networks, resources, roles, an NPC's
-  # needs, any node whose additionalProperties is a schema) is an id and is walked even when it
-  # starts with "_"; a "_" key anywhere else is a property name, a note, and is skipped.
+  # The walk carries the ScenarioSchema Node for each value (nil where the schema does not describe
+  # it), so it tells a note from an id from free data through the shared resolver: a key of an id map
+  # (rooms, networks, an NPC's needs, any node whose additionalProperties is a schema) is an id and
+  # is walked even when it starts with "_"; a key inside free data (minigameData, config, ...) is
+  # walked whatever its first character; a "_" key anywhere else is an author note and is skipped.
+  # Resolution uses the repository schema (ScenarioSchema.root), so the validator and the server
+  # agree even when --schema names another file.
   walk = lambda do |node, pointer, snode|
     case node
     when Hash
@@ -254,43 +259,20 @@ def validate_grant_foothold_actions(schema, json_data)
           end
         end
       end
-      map_value = schema_map_value(schema, snode)
-      declared = snode ? schema_node_keys(schema, snode, underscore: true) : []
       node.each do |k, v|
         key = k.to_s
+        next if BreakEscape::AuthorNotes.note?(snode, key)
+
         child_pointer = "#{pointer}/#{key.gsub('~', '~0').gsub('/', '~1')}"
-        if map_value && !declared.include?(key)
-          walk.call(v, child_pointer, map_value)
-        elsif key.start_with?('_')
-          # a "_" property is a note: its value is never checked, whatever it holds
-          next
-        else
-          walk.call(v, child_pointer, snode && schema_resolve(schema, snode, [key]))
-        end
+        walk.call(v, child_pointer, BreakEscape::ScenarioSchema.child(snode, key))
       end
     when Array
-      items = snode && schema_resolve(schema, snode, ['0'])
+      items = BreakEscape::ScenarioSchema.item(snode)
       node.each_with_index { |v, i| walk.call(v, "#{pointer}/#{i}", items) }
     end
   end
-  walk.call(json_data, '#', schema)
+  walk.call(json_data, '#', BreakEscape::ScenarioSchema.root)
   out
-end
-
-# The schema for the values of an id map (an object node whose additionalProperties is a schema,
-# directly or in a combinator branch), or nil when the node is not an id map.
-def schema_map_value(root, node, depth = 0)
-  node = schema_deref(root, node)
-  return nil unless node.is_a?(Hash) && depth < 8
-  return node['additionalProperties'] if node['additionalProperties'].is_a?(Hash)
-
-  %w[allOf anyOf oneOf].each do |comb|
-    Array(node[comb]).each do |branch|
-      found = schema_map_value(root, branch, depth + 1)
-      return found if found
-    end
-  end
-  nil
 end
 
 # Step 2 of the format hardening: json-schema reports every unknown key of a closed block in one
@@ -349,55 +331,26 @@ def schema_known_keys(schema, data, pointer, underscore: false)
     node = node.is_a?(Hash) ? node[seg] : (node.is_a?(Array) && seg.match?(/\A\d+\z/) ? node[seg.to_i] : nil)
   end
   if node.is_a?(Hash) && node['type'] == 'grant_foothold' && schema.dig('definitions', 'grantFootholdAction')
-    return schema_node_keys(schema, schema['definitions']['grantFootholdAction'], underscore: underscore)
+    keys = (schema.dig('definitions', 'grantFootholdAction', 'properties') || {}).keys
+    return underscore ? keys : keys.reject { |k| k.start_with?('_') }
   end
 
-  sch = schema_resolve(schema, schema, segs)
-  sch ? schema_node_keys(schema, sch, underscore: underscore) : []
+  # Resolve the schema Node at this data pointer through the shared resolver (the repository schema),
+  # following child for a Hash key and item for an array index. declared_property_keys flattens the
+  # declared property names across every object-capable branch, where the old schema_resolve took the
+  # first branch, so the known-key list can only grow.
+  snode = BreakEscape::ScenarioSchema.root
+  segs.each do |seg|
+    break if snode.nil?
+
+    nxt = BreakEscape::ScenarioSchema.child(snode, seg)
+    nxt = BreakEscape::ScenarioSchema.item(snode) if nxt.nil? && seg.match?(/\A\d+\z/)
+    snode = nxt
+  end
+  keys = snode.is_a?(BreakEscape::ScenarioSchema::Node) ? snode.declared_property_keys : []
+  underscore ? keys : keys.reject { |k| k.start_with?('_') }
 rescue StandardError
   []
-end
-
-def schema_deref(root, node, depth = 0)
-  while node.is_a?(Hash) && node['$ref'].is_a?(String) && node['$ref'].start_with?('#/') && depth < 20
-    node = node['$ref'].sub('#/', '').split('/').reduce(root) { |n, s| n.is_a?(Hash) ? n[s] : nil }
-    depth += 1
-  end
-  node
-end
-
-def schema_resolve(root, node, segs)
-  node = schema_deref(root, node)
-  return nil unless node.is_a?(Hash)
-  return node if segs.empty?
-
-  seg, rest = segs.first, segs.drop(1)
-  nexts = []
-  nexts << node['properties'][seg] if node['properties'].is_a?(Hash) && node['properties'].key?(seg)
-  (node['patternProperties'] || {}).each { |pat, sub| nexts << sub if Regexp.new(pat).match?(seg) }
-  nexts << node['additionalProperties'] if node['additionalProperties'].is_a?(Hash)
-  nexts << node['items'] if node['items'].is_a?(Hash) && seg.match?(/\A\d+\z/)
-  nexts.each do |n|
-    found = schema_resolve(root, n, rest)
-    return found if found
-  end
-  %w[allOf anyOf oneOf].each do |comb|
-    Array(node[comb]).each do |branch|
-      found = schema_resolve(root, branch, segs)
-      return found if found
-    end
-  end
-  nil
-end
-
-def schema_node_keys(root, node, underscore: false)
-  node = schema_deref(root, node)
-  return [] unless node.is_a?(Hash)
-
-  keys = (node['properties'] || {}).keys
-  %w[allOf anyOf oneOf].each { |comb| Array(node[comb]).each { |b| keys.concat(schema_node_keys(root, b, underscore: true)) } }
-  keys = keys.uniq
-  underscore ? keys : keys.reject { |k| k.start_with?('_') }
 end
 
 # ", did you mean '<k>'?" for an unknown field, or '' when no known key is close.
@@ -621,6 +574,46 @@ def check_mission_ending_check(mission, json_data, scenario_dir)
    "asks before the credits, but it can only warn before the debrief starts if the choice that starts it begins with " \
    "#ending_check (before its #set_global or #complete_task), or the mapping that opens it sets \"endingCheck\": true. Add " \
    "one of those, or set \"endingCheck\": false in mission.json if the mission is under time pressure."]
+end
+
+# Step 2b: an author note (a "_"-prefixed property name, by the schema) is never read by the engine
+# and never ships. If a note parks an action (a Hash with a string "type", at any depth of the note's
+# value), it is dead code, so warn the author. Walks with the shared resolver, so it tells a note
+# from an id from free data exactly as the engine does: it never looks inside an id or free data (a
+# "_" key there is real), only inside genuine notes. The corpus has none, so this adds no lines.
+def check_notes_hold_no_actions(json_data)
+  warnings = []
+  holds_action = lambda do |val|
+    case val
+    when Hash
+      val['type'].is_a?(String) || val.values.any? { |v| holds_action.call(v) }
+    when Array
+      val.any? { |v| holds_action.call(v) }
+    else
+      false
+    end
+  end
+  walk = lambda do |node, pointer, snode|
+    case node
+    when Hash
+      node.each do |k, v|
+        key = k.to_s
+        child_pointer = "#{pointer}/#{key.gsub('~', '~0').gsub('/', '~1')}"
+        if BreakEscape::AuthorNotes.note?(snode, key)
+          if holds_action.call(v)
+            warnings << "⚠️ WARNING: #{child_pointer}: this author note holds an action, which the engine never runs"
+          end
+        else
+          walk.call(v, child_pointer, BreakEscape::ScenarioSchema.child(snode, key))
+        end
+      end
+    when Array
+      items = BreakEscape::ScenarioSchema.item(snode)
+      node.each_with_index { |v, i| walk.call(v, "#{pointer}/#{i}", items) }
+    end
+  end
+  walk.call(json_data, '#', BreakEscape::ScenarioSchema.root)
+  warnings
 end
 
 # Check for unknown fields in JSON that aren't in the schema
@@ -7191,6 +7184,10 @@ def run_validation(report, erb_path, schema_path, repo_root, options)
 
   puts "Validating scenario: #{erb_path}"
   puts "Using schema: #{schema_path}"
+  if File.expand_path(schema_path) != File.expand_path(BreakEscape::ScenarioSchema::DEFAULT_PATH)
+    puts "Note: json-schema validation uses the above file, but note/id/free resolution (the grant walker, " \
+         "unknown-key suggestions) always uses the repository schema, so the validator matches the server."
+  end
   puts
 
   # Check scenario directory structure
@@ -7263,6 +7260,17 @@ def run_validation(report, erb_path, schema_path, repo_root, options)
     unknown_fields_warnings.each_with_index { |warning, index| puts "#{index + 1}. #{warning}" }
   else
     puts "✓ No unknown fields"
+  end
+  puts
+
+  puts "Checking author notes hold no actions..."
+  note_action_warnings = report.run_check('common', 'check_notes_hold_no_actions') { check_notes_hold_no_actions(json_data) }
+  if note_action_warnings.any?
+    report.header("⚠️ Found #{note_action_warnings.length} author note(s) holding an action:")
+    puts
+    note_action_warnings.each_with_index { |warning, index| puts "#{index + 1}. #{warning}" }
+  else
+    puts "✓ No author note holds an action"
   end
   puts
 
