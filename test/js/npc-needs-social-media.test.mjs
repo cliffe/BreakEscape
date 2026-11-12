@@ -7,6 +7,7 @@ import assert from 'node:assert/strict';
 import { workWorld } from './fixtures/needs-work-world.mjs';
 import npcWork from '../../public/break_escape/js/systems/npc-work.js';
 import { pickIconEntry } from '../../public/break_escape/js/systems/npc-action-icons.js';
+import { createEngineWorld } from '../../public/break_escape/js/systems/npc-needs.js';
 
 const CHATTER = { social_blocked: ['Blocked. Of course.'] };
 
@@ -226,4 +227,58 @@ test('the existing social need (the cooler) is untouched: not judged, no phone',
     assert.ok(stepUntil(sys, () => evs('npc_used:cooler').length > 0, 40000));
     assert.equal(evs('npc_used_phone:').length, 0);
     assert.equal(sys.getState('amy').judged.social_media, false);
+});
+
+// Review C R1 M2 and m3: the real adapter (createEngineWorld) over a stub window. An own
+// workstation with no affordance is listed for an NPC with a social_media need; a PC whose policy
+// blocks social media is described socialBlocked, and the adapter's verdict reads it.
+function engineObjects({ affordance = null, policy = 'lax', needs = { social_media: {} } } = {}) {
+    const rec = { id: 'jake', needsHome: 'jake_pc', needs };
+    const sd = { id: 'jake_pc', type: 'pc', workstation: true, policy, ...(affordance ? { affordance } : {}) };
+    const win = {
+        rooms: { office: { objects: { jake_pc: { scenarioData: sd, x: 100, y: 68 }, plant: { scenarioData: { id: 'plant', type: 'plant' }, x: 10, y: 10 } } } },
+        npcManager: { npcs: new Map([['jake', rec]]), getNPC: (id) => (id === 'jake' ? rec : null) },
+        pcPolicy: { effectivePolicy: (d) => ({ social: d.policy === 'no_social' ? 'blocked' : 'allowed' }) },
+        npcWork,
+        gameState: { globalVariables: {} },
+        gameScenario: {}
+    };
+    const prev = globalThis.window;
+    globalThis.window = win;
+    try {
+        const w = createEngineWorld();
+        const list = w.listObjects();
+        const verdict = list[0] ? w.useVerdict('jake', 'social_media', list[0]) : null;
+        return { list: list.map(({ _sprite, ...o }) => o), one: w.getObject('jake_pc'), verdict };
+    } finally { globalThis.window = prev; }
+}
+
+test('review C R1 M2: the adapter lists an own workstation with no affordance for a social_media NPC, and only then', () => {
+    const { list, one } = engineObjects();
+    assert.deepEqual(list.map((o) => o.id), ['jake_pc'], 'the plant (no affordance, no desk) is still skipped');
+    assert.equal(list[0].desk, true);
+    assert.deepEqual(list[0].affordance, {});
+    assert.deepEqual(one.affordance, {}, 'getObject agrees (the dead-station rule reads it)');
+    assert.deepEqual(engineObjects({ needs: { work: {} } }).list, [], 'no social_media need: not listed');
+});
+
+test('review C R1 M2: an NPC with "phone": false and an own PC with no affordance uses that PC for social media', () => {
+    const { list } = engineObjects();
+    const { sys, evs } = socialWorld({ rec: jake({ phone: false }), objs: list });
+    sys.registerAll();
+    assert.ok(stepUntil(sys, () => evs('npc_used:jake_pc').length > 0, 60000), 'used its own PC');
+    const ev = evs('npc_used:jake_pc')[0].data;
+    assert.equal(ev.need, 'social_media');
+    assert.equal(ev.met, true);
+    assert.equal(evs('npc_used_phone:').length, 0);
+});
+
+test('review C R1 m3: the adapter marks a no-social PC socialBlocked and its verdict refuses with social_blocked', () => {
+    const blocked = engineObjects({ policy: 'no_social', affordance: { satisfies: 'work' } });
+    assert.equal(blocked.list[0].socialBlocked, true);
+    assert.deepEqual(blocked.verdict.missing.map((m) => m.why), ['social_blocked']);
+    assert.equal(blocked.verdict.met, false);
+    const lax = engineObjects({ affordance: { satisfies: 'work' } });
+    assert.equal(lax.list[0].socialBlocked, undefined);
+    assert.equal(lax.verdict.met, true);
 });

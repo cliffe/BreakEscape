@@ -1097,6 +1097,13 @@ module ValidateAccessWork
         err(issues, "#{nid} has a social_media need, \"phone\": false, no workstation for a home and no object whose " \
                     'affordance.satisfies social_media: the need has no source at all.')
       end
+      # Review C R1 M2: the own PC is its only source and blocks social media, with no borrow to
+      # go to: the need fails at every use and is never met (and the NPC never posts)
+      if desk && AW.social_blocked?(json_data, npc) && (AW.places(json_data, npc, 'social_media') - [st['id']]).empty? &&
+         AW.borrow_pcs(json_data, npc).empty?
+        warn(issues, "#{nid} has a social_media need and \"phone\": false, and its only source is its own workstation " \
+                     "'#{st['id']}', whose policy blocks social media, with no borrow_session workaround: the need is never met.")
+      end
       if desk && AW.social_blocked?(json_data, npc) && !chatter_off?(json_data) && !pool_has_line?(json_data, npc, SOCIAL_BLOCKED_POOL)
         warn(issues, "#{nid} can fail social media at '#{st['id']}' (its policy blocks it), but no #{SOCIAL_BLOCKED_POOL} line " \
                      "is in the scenario's chatter or the NPC's own: the student sees only a picture.")

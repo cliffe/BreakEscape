@@ -116,6 +116,17 @@ test('social: no phone, no workstation home and no source is an error; a worksta
     assert.deepEqual(errors(issues(s)), []);
 });
 
+test('review C R1 M2: "phone": false with only a blocked own PC and no borrow warns: the need is never met', { skip }, () => {
+    let s = clean(); jake(s).phone = false;
+    assertHas(warnings(issues(s)), "its only source is its own workstation 'jake_pc', whose policy blocks social media");
+    s = clean(); jake(s).phone = false; s.rooms.lobby.objects[0].policy = 'lax';
+    assertLacks(warnings(issues(s)), 'its only source is its own workstation');
+    s = clean(); jake(s).phone = false; jake(s).workarounds = [{ at: 50, do: 'borrow_session', pc: 'kiosk' }];
+    assertLacks(warnings(issues(s)), 'its only source is its own workstation');
+    s = clean();
+    assertLacks(warnings(issues(s)), 'its only source is its own workstation');
+});
+
 test('social: needsDeferMin under 0.5 warns with "phone": false and not with a phone', { skip }, () => {
     const s = clean();
     jake(s).needsDeferMin = 0.2;

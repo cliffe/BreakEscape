@@ -4311,13 +4311,28 @@ export function createEngineWorld() {
         const op = W().officePresets;
         return !!(op?.presetIdFor && op.presetsOn?.(W().gameScenario) && op.presetIdFor(sd) === 'desk_pc');
     };
-    const describe = (roomId, key, sp) => {
+    // Access 9.2 C review R1 M2 (plan 8.1): the own workstation of an NPC with a social_media need
+    // is a source whatever its affordance, as AccessWork.social_station? says on the server, so a
+    // desk that is such an NPC's needsHome is listed with an empty affordance when it has none
+    const socialHomes = () => {
+        const ids = new Set();
+        const npcs = W().npcManager?.npcs;
+        if (npcs?.values) {
+            for (const rec of npcs.values()) {
+                if (typeof rec?.needsHome === 'string' && rec.needs?.social_media && typeof rec.needs.social_media === 'object') ids.add(rec.needsHome);
+            }
+        }
+        return ids;
+    };
+    const describe = (roomId, key, sp, homes = null) => {
         const sd = sp.scenarioData || {};
         const id = sd.id || sp.objectId || key;
         const c = centreOf(sp);
+        let affordance = affordanceOf(sp);
+        if (!affordance && isDeskData(sd) && (homes || socialHomes()).has(id)) affordance = {};
         const out = {
             id, roomId, x: c.x, y: c.y,
-            affordance: affordanceOf(sp),
+            affordance,
             needsTag: typeof sd.needsTag === 'string' ? sd.needsTag : null,
             screenOwner: typeof sd.screenOwner === 'string' ? sd.screenOwner : null,
             // A slot an NPC set down is not a carry candidate, or the deliverer would pick it straight up
@@ -4478,14 +4493,17 @@ export function createEngineWorld() {
         listObjects() {
             const out = [];
             const rooms = W().rooms || {};
+            const homes = socialHomes();
             for (const roomId of Object.keys(rooms).sort()) {
                 const objs = rooms[roomId]?.objects;
                 if (!objs) continue;
                 for (const k of Object.keys(objs).sort()) {
                     const sp = objs[k];
                     const sd = sp?.scenarioData;
-                    if (!sd || (typeof sd.needsTag !== 'string' && !affordanceOf(sp))) continue;
-                    out.push(describe(roomId, k, sp));
+                    if (!sd) continue;
+                    const home = homes.has(sd.id || sp.objectId || k) && isDeskData(sd);
+                    if (typeof sd.needsTag !== 'string' && !affordanceOf(sp) && !home) continue;
+                    out.push(describe(roomId, k, sp, homes));
                 }
             }
             return out;
