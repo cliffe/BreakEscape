@@ -104,6 +104,11 @@ module BreakEscape
       show?
     end
 
+    # Slice 9.2 C: an NPC's next social media post
+    def feed_post?
+      show?
+    end
+
     # Wearable items (docs/achitechture/WEARABLE_BUILD_LOG.md)
     def wear?
       show?

@@ -175,6 +175,171 @@ module BreakEscape
       end
     end
 
+    # Slice 9.2 C review R1, M2 (ACCESS_MODEL_SLICE_9_2_PLAN.md 9.2): a fixture NPC with work
+    # needs, a frustration block, a workaround and a feed with a feed fact. No route the browser
+    # can call carries the feed, a post's text, a feed fact's text or an object keyed by a feed
+    # fact id with text before the server reveals it; after one /feed_post, the second post and
+    # its fact are still nowhere.
+    #
+    # Review R2 M1: each route below answers 200 with the data it serves on success. Fay sits in
+    # finance, behind the PIN door, and each pass starts with finance locked again, so the door
+    # unlock answers with her room. The sign-in, the inventory add, the ink, the ease report, the
+    # workaround and the move all succeed; the move takes Fay to the lobby, so GET /room/lobby
+    # serves the record the move stored.
+    FEED_POSTS = ['Fay adopted a cat called Pickles today, so happy.', 'Fay ran the 2011 city marathon, still proud.'].freeze
+    FEED_FACTS = { 'fay_cat' => 'Fay Ngata has a cat called Pickles.', 'fay_marathon' => 'Fay Ngata ran a marathon in 2011.' }.freeze
+    FEED_STORY = 'test/fixtures/files/ink_line_walker/text_match_fixture.json'.freeze
+    # The routes whose answer holds Fay's NPC record on success. GET /scenario strips every
+    # room's NPCs (filtered_scenario_for_bootstrap), so its checks are the text and fact-key ones.
+    FAY_ROUTES = ['POST /unlock door', 'GET /room/finance', 'GET /room/lobby'].freeze
+
+    def build_feed
+      data = AccessModelScenario.scenario
+      data['social']['intelFacts'] = FEED_FACTS.to_h { |id, text| [id, { 'label' => id, 'subject' => 'fay', 'text' => text }] }
+      data['social']['osint'] = { 'sites' => [{ 'id' => 'friendface', 'type' => 'social', 'name' => 'Friendface',
+                                                'profiles' => [{ 'person' => 'fay', 'name' => 'Fay Ngata', 'posts' => [] }] }] }
+      data['rooms']['lobby']['objects'] = [{ 'id' => 'club_flyer', 'type' => 'notes', 'name' => 'Running club flyer',
+                                             'takeable' => true, 'text' => 'The club meets on Tuesdays.' }]
+      data['rooms']['finance']['npcs'] << {
+        'id' => 'fay', 'displayName' => 'Fay Ngata', 'npcType' => 'person', 'position' => { 'x' => 4, 'y' => 2 },
+        'storyPath' => FEED_STORY,
+        'needs' => { 'social_media' => { 'decayPerMin' => 60, 'urgentAt' => 40, 'initial' => 50 } },
+        'workNeeds' => ['email'], 'frustration' => { 'perFail' => 20 },
+        'workarounds' => [{ 'at' => 50, 'do' => 'emit', 'event' => 'fay_vented' }],
+        'feed' => { 'site' => 'friendface', 'person' => 'fay', 'posts' => [
+          { 'id' => 'fay_post_1', 'text' => FEED_POSTS[0], 'fact' => 'fay_cat', 'deliberate' => true },
+          { 'id' => 'fay_post_2', 'text' => FEED_POSTS[1], 'fact' => 'fay_marathon' }
+        ] }
+      }
+      @game = create_access_game(
+        mission: break_escape_missions(:ceo_exfil),
+        player: break_escape_demo_users(:test_user),
+        scenario: data,
+        player_state: { 'currentRoom' => 'lobby', 'unlockedRooms' => %w[lobby], 'encounteredNPCs' => %w[fay len],
+                        # Fay at 60 with her workaround handed over, so its "done" is answered
+                        'npcFrustration' => { 'fay' => { 'level' => 60, 'hands' => 1,
+                                                         'handed' => { '0' => { 'hand' => 1, 'time' => 0 } } } } }
+      )
+    end
+
+    # Finance locked again and Fay back in it, so a pass opens the door and moves her afresh
+    def relock_finance!
+      @game.reload
+      @game.player_state['unlockedRooms'] = %w[lobby]
+      @game.player_state['room_states'] = {}
+      @game.save!
+    end
+
+    # One successful response, labelled, from every route that can carry NPC or feed data and the
+    # ones next to them (review C R3 nit: not GET /network, sync_state or the other routes that
+    # carry no NPC data, nor npc_workaround's prop_door merge). Each must answer 200: a route
+    # that starts refusing fails here instead of passing the leak checks quietly.
+    def every_route_body
+      relock_finance!
+      base = "/break_escape/games/#{@game.id}"
+      calls = [
+        ['POST /unlock door', -> { post unlock_game_url(@game), params: { targetType: 'door', targetId: 'finance', attempt: '4321', method: 'pin' }, as: :json }],
+        ['GET /scenario', -> { get scenario_game_url(@game), as: :json }],
+        ['GET /scenario_map', -> { get scenario_map_game_url(@game), as: :json }],
+        ['GET /room/finance', -> { get room_game_url(@game, room_id: 'finance'), as: :json }],
+        ['GET /ink', -> { get ink_game_url(@game), params: { npc: 'fay' } }],
+        ['GET /objectives', -> { get objectives_game_url(@game), as: :json }],
+        ['GET /capture_secrets', -> { get capture_secrets_game_url(@game), as: :json }],
+        ['GET /login_accounts', -> { get login_accounts_game_url(@game), params: { pc_id: 'jake_pc' } }],
+        ['POST /login', lambda {
+          post login_game_url(@game), params: { pc_id: 'jake_pc', username: 'jbrooks', password: AccessModelScenario::JAKE_PASSWORD }, as: :json
+        }],
+        ['GET /container', -> { get "#{base}/container/jake_pc", as: :json }],
+        ['POST /inventory', lambda {
+          post inventory_game_url(@game), params: { action_type: 'add', item: { id: 'club_flyer', type: 'notes', name: 'Running club flyer' } }, as: :json
+        }],
+        ['POST /npc_frustration', lambda {
+          post npc_frustration_game_url(@game), params: { reports: [{ npc_id: 'fay', event: 'ease', need: 'social_media' }] }, as: :json
+        }],
+        ['POST /npc_workaround', -> { post npc_workaround_game_url(@game), params: { npc_id: 'fay', index: 0, hand: 1 }, as: :json }],
+        ['POST /update_room', lambda {
+          post update_room_game_url(@game), params: { roomId: 'finance', actionType: 'move_npc',
+                                                      data: { npcId: 'fay', fromRoom: 'finance', toRoom: 'lobby' } }, as: :json
+        }],
+        ['GET /room/lobby', -> { get room_game_url(@game, room_id: 'lobby'), as: :json }]
+      ]
+      calls.map do |label, call|
+        call.call
+        assert_equal 200, response.status, "#{label} answered #{response.status}: #{response.body[0, 300]}"
+        [label, response.body]
+      end
+    end
+
+    # The routes that serve Fay's record on success do serve it, so the structural checks run
+    def assert_fay_served(bodies, stage)
+      bodies.to_h.slice(*FAY_ROUTES).each do |label, body|
+        refute_empty fay_records(JSON.parse(body)), "#{stage}: #{label} serves no record for fay"
+      end
+      assert_equal FAY_ROUTES.sort, (bodies.map(&:first) & FAY_ROUTES).sort
+      answers = JSON.parse(bodies.to_h['POST /npc_frustration'])['answers']
+      assert_equal 'fay', answers[0]['npcId']
+      refute answers[0]['refused'], "#{stage}: the ease report was refused"
+    end
+
+    def fay_records(value, found = [])
+      case value
+      when Hash
+        found << value if value['id'] == 'fay'
+        value.each_value { |v| fay_records(v, found) }
+      when Array then value.each { |v| fay_records(v, found) }
+      end
+      found
+    end
+
+    def keyed_with_text(value, ids, found = [])
+      case value
+      when Hash
+        value.each do |k, v|
+          found << k if ids.include?(k) && v.is_a?(Hash) && v.key?('text')
+          keyed_with_text(v, ids, found)
+        end
+      when Array then value.each { |v| keyed_with_text(v, ids, found) }
+      end
+      found
+    end
+
+    def assert_feed_withheld(bodies, texts, fact_ids, stage)
+      bodies.each do |label, body|
+        texts.each { |text| refute_includes body, text, "#{stage}: #{label} carries a feed text" }
+        parsed = begin
+          JSON.parse(body)
+        rescue JSON::ParserError
+          nil
+        end
+        next unless parsed
+
+        assert_empty keyed_with_text(parsed, fact_ids), "#{stage}: #{label} keys a feed fact with its text"
+        fay_records(parsed).each do |rec|
+          %w[feed workNeeds frustration].each { |key| refute rec.key?(key), "#{stage}: #{label} ships fay's #{key}" }
+        end
+      end
+    end
+
+    test 'review C R1 M2: the feed, its posts and feed facts reach no route before the server reveals them' do
+      build_feed
+      bodies = every_route_body
+      assert_equal 15, bodies.length
+      assert_fay_served(bodies, 'before a post')
+      assert(bodies.any? { |label, b| label == 'GET /room/finance' && b.include?('"hasFeed":true') }, 'the room says fay has a feed')
+      assert_feed_withheld(bodies, FEED_POSTS + FEED_FACTS.values, FEED_FACTS.keys, 'before a post')
+      assert_kind_of Hash, JSON.parse(bodies.to_h['GET /scenario']).dig('social', 'intelFacts'), 'intelFacts stays an object'
+
+      post feed_post_game_url(@game), params: { npc_id: 'fay' }, as: :json
+      assert_response :success
+      assert_equal 'fay_post_1', response.parsed_body.dig('post', 'id')
+      first = response.body
+      later = every_route_body
+      assert_fay_served(later, 'after one post')
+      assert_includes later.to_h['GET /scenario'], FEED_POSTS[0], 'GET /scenario feedPosts carries the revealed post'
+      assert_feed_withheld([['POST /feed_post', first]] + later, [FEED_POSTS[1], FEED_FACTS['fay_marathon']], ['fay_marathon'], 'after one post')
+      assert_feed_withheld(later.reject { |label, _| label == 'GET /scenario' }, [FEED_POSTS[0], FEED_FACTS['fay_cat']], ['fay_cat'], 'after one post, outside its own routes')
+    end
+
     test 'GET /capture_secrets serves the password of an account holder with a capture route once earned' do
       build('globalVariables' => { 'se_captures' => {
         'jake' => { 'targetId' => 'jake', 'kind' => 'credential', 'address' => 'jbrooks', 'at' => 1 }

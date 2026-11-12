@@ -206,6 +206,8 @@ export class SightChallengeWatcher {
                 canSee = !!target &&
                     Math.hypot(playerPos.x - target.x, playerPos.y - target.y) <= cfg.near.radius;
             }
+            // Access 9.2 C (plan 8.2): an NPC on its phone is not looking
+            if (canSee && window.npcNeedsSystem?.isDistracted?.(npc.id)) canSee = false;
             if (!canSee) {
                 // Out of sight: the next sighting is a new one
                 state.inSight = false;
