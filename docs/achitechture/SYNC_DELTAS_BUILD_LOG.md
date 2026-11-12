@@ -42,6 +42,8 @@ Standing constraints for this build:
 | 5. R3 capture-log seen keys | Done, committed, tested (`cb269170c`) |
 | 6a-server. R2 recording machinery + migration + sync interception + carry-over guard + validator | Done, committed, tested (`a4401fb83`, `eea02e21a`, `cf05062a4`). Live browser proof NOT run (budget); HTTP/route proof is in captures_sync_test. See "6a-server session" below |
 | 6a-client. capture-client.js + main.js wiring + SERVER_OWNED_GLOBALS flip + drop the mirror | Done, committed, tested + live-proven (`360232028`, `627caa0db`). See "6a-client session" below |
+| Merge main (`f2d53bb40`, unlock-gaps-r1) into the branch | Done (`ccc1ec435`); delta replies kept, item_for_answer/inventory_answer_fields now filter like client_inventory. See "builder 6 session" |
+| 6a-server review R1 fixes (M1, M2, N1-N4) + tests | Done, committed, tested (`5620ec5b6`). See "builder 6 session" |
 | 6b. R2 reveal/proof gating | Not started |
 | 7. Node + Rails size tests, then live proof A to F | Not started |
 | 8. One release later: remove transition code | Not started (separate release) |
@@ -84,6 +86,69 @@ differ.
    (`capture_payload_secret_test`, `capture_payload_secret_routes_test`, `capture_secret_endpoint_test`,
    `lab_physical_pentest_secrets_test`, the `capture_proofs` tests), then Len's shoulder-surf beat
    played on the earned path in lab_physical_pentest.
+
+## This session (2026-11-12, builder 6: merge main f2d53bb40 + 6a-server review R1 fixes)
+
+### Merge of main `f2d53bb40` (unlock-gaps-r1) -> `ccc1ec435`
+unlock-gaps-r1 added `Game#client_inventory` (a filtered deep copy via `filter_inventory_for_client!`),
+stored start items filtered, and made every network route echo `client_inventory`. This branch's P2
+replaced those echoes with the delta replies. Conflicts in four files, all resolved to keep the delta
+contract:
+- `network_access.rb` (7 conflicts) and `games_controller.rb` (3 conflicts): kept this branch's
+  delta replies (no inventory echo on add/remove/plant/unplug/join/implant; `{ success: true }` /
+  `{ already: true }`), dropped main's `inventory: client_inventory` on those answers.
+- `game.rb`: kept both sides -- this branch's `bootstrap_state_needs_write?`/`run_bootstrap_writers!`
+  and main's `client_inventory`/`filter_inventory_for_client!`.
+- `action-menu.js`: kept this branch's world-keycard clone call (`cloneFrom: 'world'`, the P1 5.2
+  convention rfid-minigame.js and interactions.js use), dropped main's superseded `cloneSource:
+  {object_id}`.
+Then, as the merge spec and unlock-gaps' build log ask, routed the delta's `added` items and the
+non-delta compatibility echo through the same stripping as `client_inventory`:
+`item_for_answer` now calls `filter_inventory_for_client!` after dropping `saved_cards`, and
+`inventory_answer_fields`'s non-delta branch returns `{ inventory: client_inventory }` instead of the
+raw stored array. `item_for_answer_test` gains a lock-answer-strip case. Bootstrap/reload still send
+`client_inventory` (untouched). Tests (affected, no lock): network delta/footholds/wifi/implants +
+start_item_answer_network (71 runs), the 7 capture tests (72 runs), games_controller + lab secrets +
+item_for_answer (110 runs), JS rfid-clone-card/inventory-tray/network-links/network-view (118) -- all
+green.
+
+### 6a-server review R1 fixes (M1, M2, N1-N4) -> `5620ec5b6`
+- **M1** (`scripts/validate_capture_log.rb`): error when an authored capture `note`/`roleLabel`/
+  `address`/`host` contains a `CaptureModel.hard_access_values` value (substring, >= 3 chars). Keeps
+  the note channel as safe as the withheld `secret` channel.
+- **M2** (`capture_model.rb` + `validate_capture_log.rb`): `default_account_address!` now applies only
+  to a self-capture (`owner_id == targetId`); the validator errors when a cross-target **credential**
+  capture on an account holder authors no address (a foothold keys on host, so it is exempt).
+  lab_physical_pentest's `usb_lure` foothold (written on holder `lord`) is correctly not flagged.
+- **N1** (`game.rb` + `games_controller.rb`): one `Game#stored_scenario_data` helper
+  (`where(id:).pick(:scenario_data)`) now feeds the sync step (apply_capture_sync_step, biometric
+  merge) and the bootstrap writers (`run_bootstrap_writers!`), so the two capture paths read one
+  scenario source.
+- **N2** (`games_controller.rb`): the over-cap refusal loop skips an id already in `@capture_answers`,
+  so a duplicate target past the 64-cap is not answered and refused at once.
+- **N3** (`capture_model.rb`): `shared_login_capture` clips the composed note to
+  `MAX_CAPTURE_NOTE_CHARS`, the one capture string that had no authored bound.
+- **N4** (`validate_scenario.rb` + `game.rb` + new `carry_over_server_owned_globals_test`): comments
+  at both sites plus a guard test tie the validator's carry-over `%w[se_captures]` literal to
+  `Game::SERVER_OWNED_GLOBAL_NAMES`.
+Tests added: M1/M2 (validator-capture-log.test.mjs, 17 pass), N2 (captures_sync_test), N3
+(capture_record_test), N4 (carry_over_server_owned_globals_test). Rails capture regression set
+(capture_secret/payload/lab_secrets/proofs/routes/endpoint 89 runs, npc_workaround_h + carry_over 61
+runs, capture_record + captures_sync + N4 guard 24 runs) all green. Validator `--no-graph` on
+lab_physical_pentest and lab_social_engineering: 0 errors each.
+
+### Open after this session
+- **6b** (R2 reveal/proof gating, plan 6.3-6.8): NOT started. A clean separate unit; 6a stands
+  without it (every 6a entry is `proven: true`). Compute `proven` in `record_capture!`, add
+  `capture_evidence_holds?`/`stamp_proven_captures!`/`target_capture_proofs`, wire the stamp into the
+  bootstrap and sync, with the 6b tests (plan 6.8). Entries stored under 6a keep their `proven: true`.
+- **Step 7** (size tests + live cases A-F): NOT started. Node request-size cases (plan 10.1), Rails
+  answer-size test (10.2) using the Baseline table figures, then the live A-F drive via
+  `tools/playtest/sync-delta-proof.mjs` against the base worktree `.claude/worktrees/p-sync-base` on a
+  keyless server (port >= 3205). No live browser proof run this session; the merge and review fixes are
+  covered by unit/route tests only.
+- Stopped at ~80 tool calls at a clean step boundary (merge + review fixes both committed) rather than
+  start 6b half-done.
 
 ## This session (2026-11-12, 6a-client: the capture record leaves the client-synced state)
 
