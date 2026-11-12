@@ -836,7 +836,7 @@ module ValidateAccessWork
     end
     return [] if lines.empty?
 
-    ['Work report (access slice 9.2):'] + lines.sort_by.with_index { |l, i| [l.start_with?('ℹ️ Feed', 'ℹ️ Reactive feed') ? 1 : 0, i] }
+    ['Work report (access slice 9.2):'] + lines.sort_by.with_index { |l, i| [l.start_with?('ℹ️ Feed', 'ℹ️ Reactive feed', 'ℹ️   ') ? 1 : 0, i] }
   end
 
   def workaround_opens(npc, w)

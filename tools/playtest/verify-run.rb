@@ -111,8 +111,9 @@ def access_section(ps)
     # the player heard shared (ids only)
     ['guestSessions', hash.call(ps['guestSessions']).sort.map { |pc, npc| "#{pc} = #{npc}" }],
     ['sharedLogins', list.call(ps['sharedLogins']).map(&:to_s)],
-    # Slice 9.2 C (8.3): how many of each NPC's feed posts are out (counts only, never a text)
-    ['feedRevealed', hash.call(ps['feedRevealed']).sort.map { |id, e| "#{id} #{e.is_a?(Hash) ? e['n'].to_i : 0}" }]
+    # Slice 9.2 C (8.3) and C2: how many of each NPC's feed posts are out (counts only, never a text;
+    # C2 saves {shown, at}, older saves {n, at})
+    ['feedRevealed', hash.call(ps['feedRevealed']).sort.map { |id, e| "#{id} #{e.is_a?(Hash) ? (e['shown'].is_a?(Array) ? e['shown'].length : e['n'].to_i) : 0}" }]
   ]
   lines = ['access model']
   rows.each do |name, items|
