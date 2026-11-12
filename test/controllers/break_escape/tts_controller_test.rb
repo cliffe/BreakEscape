@@ -135,6 +135,34 @@ module BreakEscape
       end
     end
 
+    # ─── Stored games (jsonb loses the template's room order) ────────────────
+
+    # A stored game's scenario_data comes back from jsonb with its rooms sorted, not
+    # in template order. Two records share the display name "Agent HaX", so the
+    # extractor then voiced "Your clock, then." as another id and /tts refused the
+    # line quintero_post speaks (403). The controller puts the rooms back first.
+    test "tts does not refuse a co-speaker line of a game stored through jsonb" do
+      name = "m10_full_disclosure"
+      mission = Mission.find_by(name: name) ||
+                Mission.create!(name: name, display_name: "Full Disclosure", difficulty_level: 3)
+      fresh = JSON.parse(ERB.new(File.read(Engine.root.join("scenarios", name, "scenario.json.erb")))
+                            .result(Mission::ScenarioBinding.new({}).get_binding))
+      quoted = ActiveRecord::Base.connection.quote(fresh.to_json)
+      stored = JSON.parse(ActiveRecord::Base.connection.select_value("SELECT #{quoted}::jsonb"))
+      assert_not_equal fresh["rooms"].keys, stored["rooms"].keys, "premise: jsonb reorders the rooms"
+
+      game = Game.create!(mission: mission, player: @player, scenario_data: stored,
+                          player_state: @game.player_state)
+      # The row as a later request loads it, not the in-memory copy
+      assert_not_equal fresh["rooms"].keys, Game.find(game.id).scenario_data["rooms"].keys
+
+      with_env("GEMINI_API_KEY" => nil) do
+        post tts_game_url(game), params: { npc_id: "quintero_post", text: "Your clock, then." }
+      end
+      assert_not_equal 403, response.status, "refused: #{response.body}"
+      assert_includes [200, 503], response.status
+    end
+
     # ─── Text validation for room objects (voice as String) ──────────────────
 
     test "tts returns 403 when text does not match intercom voice message" do

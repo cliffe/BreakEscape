@@ -95,6 +95,25 @@ module BreakEscape
       Game.headless_npc_records(scenario_data).find { |npc| npc['id'] == npc_id }
     end
 
+    # The game's scenario with its rooms back in the template's order. The stored
+    # scenario_data is jsonb, which sorts object keys (by length, then bytes), and
+    # the extractor's "first record in scenario order wins" rule for a shared display
+    # name ("Agent HaX": hax_voice and the agent_0x99 phone record) then picks a
+    # different record from the one a fresh render gives, so the endpoint refused
+    # lines the batch voices (m10 and m08 on every game, m09 when the start room moves
+    # the phone records). Rooms the template doesn't list keep their stored order, last.
+    # Returns scenario_data itself when there is nothing to reorder.
+    def self.in_template_order(scenario_data, room_order)
+      rooms = scenario_data.is_a?(Hash) ? scenario_data['rooms'] : nil
+      return scenario_data unless rooms.is_a?(Hash) && Array(room_order).any?
+
+      ordered = Array(room_order).select { |id| rooms.key?(id) }
+      ordered |= rooms.keys
+      return scenario_data if ordered == rooms.keys
+
+      scenario_data.merge('rooms' => ordered.to_h { |id| [id, rooms[id]] })
+    end
+
     # The extractor for this scenario (cached across requests), or nil.
     def extractor
       return @extractor if defined?(@extractor)
