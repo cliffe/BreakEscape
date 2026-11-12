@@ -12,7 +12,8 @@
     "guard_off": false,
     "legacy_on": false,
     "end_go": false,
-    "ending_ok": false
+    "ending_ok": false,
+    "away_back": false
   },
   "objectives": [
     {
@@ -91,6 +92,9 @@
         "caller_thread",
         "timed_caller",
         "legacy_voiced",
+        "desk_contact",
+        "away_contact",
+        "hidden_contact",
         "texter"
       ],
       "observations": "Your phone."
@@ -259,6 +263,7 @@
             "language": "en-GB"
           },
           "currentKnot": "start",
+          "call": { "knot": "ring_call", "button": false },
           "eventMappings": [
             {
               "eventPattern": "ring_debrief",
@@ -578,6 +583,67 @@
           "eventMappings": []
         },
         {
+          "id": "desk_contact",
+          "displayName": "Desk Contact",
+          "npcType": "phone",
+          "phoneId": "player_phone",
+          "storyPath": "scenarios/test_phone_calls/ink/desk_contact.json",
+          "avatar": "assets/characters/agent_hax_headshot.png",
+          "voice": {
+            "name": "Kore",
+            "style": "A calm, businesslike phone contact. Consistent British accent. Short, even sentences.",
+            "language": "en-GB"
+          },
+          "currentKnot": "start",
+          "call": [
+            { "knot": "desk_call" },
+            { "knot": "extract_call", "button": false }
+          ],
+          "eventMappings": [
+            {
+              "eventPattern": "ring_desk",
+              "conversationMode": "phone-chat",
+              "targetKnot": "desk_call",
+              "ring": true,
+              "cooldown": 0,
+              "delayMs": 8000,
+              "callLabel": "Desk"
+            }
+          ]
+        },
+        {
+          "id": "away_contact",
+          "displayName": "Away Contact",
+          "npcType": "phone",
+          "phoneId": "player_phone",
+          "storyPath": "scenarios/test_phone_calls/ink/away_contact.json",
+          "avatar": "assets/characters/agent_hax_headshot.png",
+          "voice": {
+            "name": "Kore",
+            "style": "A calm, businesslike phone contact. Consistent British accent. Short, even sentences.",
+            "language": "en-GB"
+          },
+          "currentKnot": "start",
+          "call": { "knot": "away_call", "when": "globalVars.away_back", "unavailable": "no_answer" },
+          "eventMappings": []
+        },
+        {
+          "id": "hidden_contact",
+          "displayName": "Hidden Contact",
+          "npcType": "phone",
+          "phoneId": "player_phone",
+          "storyPath": "scenarios/test_phone_calls/ink/hidden_contact.json",
+          "avatar": "assets/characters/agent_hax_headshot.png",
+          "voice": {
+            "name": "Kore",
+            "style": "A calm, businesslike phone contact. Consistent British accent. Short, even sentences.",
+            "language": "en-GB"
+          },
+          "currentKnot": "start",
+          "call": { "knot": "hidden_call", "when": "globalVars.away_back", "unavailable": "hidden" },
+          "eventMappings": []
+        },
+        {
           "id": "texter",
           "displayName": "Texter",
           "npcType": "phone",
@@ -797,6 +863,26 @@
           "interactable": true,
           "triggerOnInteract": [ { "type": "emit_event", "event_name": "ring_thread" } ],
           "observations": "Lever: Thread (rings in 8 s)"
+        },
+        {
+          "type": "ups_cabinet1",
+          "id": "lever_back",
+          "name": "Lever: Away and Hidden are back (away_back)",
+          "position": { "x": 5, "y": 2 },
+          "takeable": false,
+          "interactable": true,
+          "triggerOnInteract": [ { "type": "set_global", "key": "away_back", "value": true } ],
+          "observations": "Lever: sets away_back, so Away connects and Hidden gets a call button"
+        },
+        {
+          "type": "ups_cabinet1",
+          "id": "lever_ring_desk",
+          "name": "Lever: Desk rings in 8 s",
+          "position": { "x": 6, "y": 2 },
+          "takeable": false,
+          "interactable": true,
+          "triggerOnInteract": [ { "type": "emit_event", "event_name": "ring_desk" } ],
+          "observations": "Lever: Desk rings in 8 s (same knot as its call button: row 31)"
         },
         {
           "type": "phone",

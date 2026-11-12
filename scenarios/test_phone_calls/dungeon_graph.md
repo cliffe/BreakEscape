@@ -221,36 +221,41 @@ flowchart TD
   rc_lever_forced_11{"Lever: Forced (auto-answers)"}
   rc_lever_popup_12{"Lever: Popup (rings in 8 s)"}
   rc_lever_thread_13{"Lever: Thread (rings in 8 s)"}
-  rc_desk_phone_14{"Desk Phone"}
-  rc_lever_end_15{"Lever: End (credits; the server concludes only if ending_ok)"}
-  rc_lever_end_map_16{"Lever: End by mapping (endingCheck mapping, then credits)"}
-  rc_keypad_safe_17[["Keypad Safe (PIN 1234)"]]
-  rc_obj18_18{"Safe Note"}
-  rc_pick_case_19{"Pick Case (lockpick)"}
-  rc_open_case_20[["Open Case (container with a note)"]]
-  rc_obj21_21{"Case Note"}
-  rc_terminal_pc_22[["Terminal PC (desktop with a file)"]]
-  rc_obj23_23{"Terminal File"}
-  rc_cyberchef_ws_24{"CyberChef Workstation"}
-  rc_lab_ws_25{"Lab Sheet Workstation"}
-  rc_npc_host_26("Host")
-  rc_npc_caller_basic_27("Caller Basic")
-  rc_npc_caller_patient_28("Caller Patient")
-  rc_npc_caller_decline_29("Caller Decline")
-  rc_npc_caller_debrief_30("Caller Debrief")
-  rc_npc_caller_queue_one_31("Caller Queue One")
-  rc_npc_caller_queue_two_32("Caller Queue Two")
-  rc_npc_caller_replace_33("Caller Replace")
-  rc_npc_timed_caller_34("Timed Caller")
-  rc_npc_caller_hold_35("Caller Hold")
-  rc_npc_caller_forced_36("Caller Forced")
-  rc_npc_caller_popup_37("Caller Popup")
-  rc_npc_guard_38("Guard")
-  rc_npc_brute_39("Brute")
-  rc_npc_legacy_voiced_40("Legacy Voiced")
-  rc_npc_caller_thread_41("Caller Thread")
-  rc_npc_desk_line_42("Desk Line")
-  rc_npc_texter_43("Texter")
+  rc_lever_back_14{"Lever: Away and Hidden are back (away_back)"}
+  rc_lever_ring_desk_15{"Lever: Desk rings in 8 s"}
+  rc_desk_phone_16{"Desk Phone"}
+  rc_lever_end_17{"Lever: End (credits; the server concludes only if ending_ok)"}
+  rc_lever_end_map_18{"Lever: End by mapping (endingCheck mapping, then credits)"}
+  rc_keypad_safe_19[["Keypad Safe (PIN 1234)"]]
+  rc_obj20_20{"Safe Note"}
+  rc_pick_case_21{"Pick Case (lockpick)"}
+  rc_open_case_22[["Open Case (container with a note)"]]
+  rc_obj23_23{"Case Note"}
+  rc_terminal_pc_24[["Terminal PC (desktop with a file)"]]
+  rc_obj25_25{"Terminal File"}
+  rc_cyberchef_ws_26{"CyberChef Workstation"}
+  rc_lab_ws_27{"Lab Sheet Workstation"}
+  rc_npc_host_28("Host")
+  rc_npc_caller_basic_29("Caller Basic")
+  rc_npc_caller_patient_30("Caller Patient")
+  rc_npc_caller_decline_31("Caller Decline")
+  rc_npc_caller_debrief_32("Caller Debrief")
+  rc_npc_caller_queue_one_33("Caller Queue One")
+  rc_npc_caller_queue_two_34("Caller Queue Two")
+  rc_npc_caller_replace_35("Caller Replace")
+  rc_npc_timed_caller_36("Timed Caller")
+  rc_npc_caller_hold_37("Caller Hold")
+  rc_npc_caller_forced_38("Caller Forced")
+  rc_npc_caller_popup_39("Caller Popup")
+  rc_npc_guard_40("Guard")
+  rc_npc_brute_41("Brute")
+  rc_npc_legacy_voiced_42("Legacy Voiced")
+  rc_npc_caller_thread_43("Caller Thread")
+  rc_npc_desk_line_44("Desk Line")
+  rc_npc_desk_contact_45("Desk Contact")
+  rc_npc_away_contact_46("Away Contact")
+  rc_npc_hidden_contact_47("Hidden Contact")
+  rc_npc_texter_48("Texter")
 
   office --> rc_obj1_1
   office --> rc_lever_basic_again_2
@@ -265,40 +270,45 @@ flowchart TD
   office --> rc_lever_forced_11
   office --> rc_lever_popup_12
   office --> rc_lever_thread_13
-  office --> rc_desk_phone_14
-  office --> rc_lever_end_15
-  office --> rc_lever_end_map_16
-  office --> rc_keypad_safe_17
-  rc_keypad_safe_17 --> rc_obj18_18
-  office --> rc_pick_case_19
-  office --> rc_open_case_20
-  rc_open_case_20 --> rc_obj21_21
-  office --> rc_terminal_pc_22
-  rc_terminal_pc_22 --> rc_obj23_23
-  office --> rc_cyberchef_ws_24
-  office --> rc_lab_ws_25
-  office --> rc_npc_host_26
-  office --> rc_npc_caller_basic_27
-  office --> rc_npc_caller_patient_28
-  office --> rc_npc_caller_decline_29
-  office --> rc_npc_caller_debrief_30
-  office --> rc_npc_caller_queue_one_31
-  office --> rc_npc_caller_queue_two_32
-  office --> rc_npc_caller_replace_33
-  office --> rc_npc_timed_caller_34
-  office --> rc_npc_caller_hold_35
-  office --> rc_npc_caller_forced_36
-  office --> rc_npc_caller_popup_37
-  office --> rc_npc_guard_38
-  office --> rc_npc_brute_39
-  office --> rc_npc_legacy_voiced_40
-  office --> rc_npc_caller_thread_41
-  office --> rc_npc_desk_line_42
-  office --> rc_npc_texter_43
+  office --> rc_lever_back_14
+  office --> rc_lever_ring_desk_15
+  office --> rc_desk_phone_16
+  office --> rc_lever_end_17
+  office --> rc_lever_end_map_18
+  office --> rc_keypad_safe_19
+  rc_keypad_safe_19 --> rc_obj20_20
+  office --> rc_pick_case_21
+  office --> rc_open_case_22
+  rc_open_case_22 --> rc_obj23_23
+  office --> rc_terminal_pc_24
+  rc_terminal_pc_24 --> rc_obj25_25
+  office --> rc_cyberchef_ws_26
+  office --> rc_lab_ws_27
+  office --> rc_npc_host_28
+  office --> rc_npc_caller_basic_29
+  office --> rc_npc_caller_patient_30
+  office --> rc_npc_caller_decline_31
+  office --> rc_npc_caller_debrief_32
+  office --> rc_npc_caller_queue_one_33
+  office --> rc_npc_caller_queue_two_34
+  office --> rc_npc_caller_replace_35
+  office --> rc_npc_timed_caller_36
+  office --> rc_npc_caller_hold_37
+  office --> rc_npc_caller_forced_38
+  office --> rc_npc_caller_popup_39
+  office --> rc_npc_guard_40
+  office --> rc_npc_brute_41
+  office --> rc_npc_legacy_voiced_42
+  office --> rc_npc_caller_thread_43
+  office --> rc_npc_desk_line_44
+  office --> rc_npc_desk_contact_45
+  office --> rc_npc_away_contact_46
+  office --> rc_npc_hidden_contact_47
+  office --> rc_npc_texter_48
 
   class office room
-  class rc_obj1_1,rc_lever_basic_again_2,rc_lever_patient_3,rc_lever_decline_4,rc_lever_debrief_5,rc_lever_queue_6,rc_lever_replace_7,rc_lever_legacy_8,rc_lever_text_9,rc_lever_hold_10,rc_lever_forced_11,rc_lever_popup_12,rc_lever_thread_13,rc_desk_phone_14,rc_lever_end_15,rc_lever_end_map_16,rc_obj18_18,rc_pick_case_19,rc_obj21_21,rc_obj23_23,rc_cyberchef_ws_24,rc_lab_ws_25 item
-  class rc_keypad_safe_17,rc_open_case_20,rc_terminal_pc_22 container
-  class rc_npc_host_26,rc_npc_caller_basic_27,rc_npc_caller_patient_28,rc_npc_caller_decline_29,rc_npc_caller_debrief_30,rc_npc_caller_queue_one_31,rc_npc_caller_queue_two_32,rc_npc_caller_replace_33,rc_npc_timed_caller_34,rc_npc_caller_hold_35,rc_npc_caller_forced_36,rc_npc_caller_popup_37,rc_npc_guard_38,rc_npc_brute_39,rc_npc_legacy_voiced_40,rc_npc_caller_thread_41,rc_npc_desk_line_42,rc_npc_texter_43 npc
+  class rc_obj1_1,rc_lever_basic_again_2,rc_lever_patient_3,rc_lever_decline_4,rc_lever_debrief_5,rc_lever_queue_6,rc_lever_replace_7,rc_lever_legacy_8,rc_lever_text_9,rc_lever_hold_10,rc_lever_forced_11,rc_lever_popup_12,rc_lever_thread_13,rc_lever_back_14,rc_lever_ring_desk_15,rc_desk_phone_16,rc_lever_end_17,rc_lever_end_map_18,rc_obj20_20,rc_pick_case_21,rc_obj23_23,rc_obj25_25,rc_cyberchef_ws_26,rc_lab_ws_27 item
+  class rc_keypad_safe_19,rc_open_case_22,rc_terminal_pc_24 container
+  class rc_npc_host_28,rc_npc_caller_basic_29,rc_npc_caller_patient_30,rc_npc_caller_decline_31,rc_npc_caller_debrief_32,rc_npc_caller_queue_one_33,rc_npc_caller_queue_two_34,rc_npc_caller_replace_35,rc_npc_timed_caller_36,rc_npc_caller_hold_37,rc_npc_caller_forced_38,rc_npc_caller_popup_39,rc_npc_guard_40,rc_npc_brute_41,rc_npc_legacy_voiced_42,rc_npc_caller_thread_43,rc_npc_desk_line_44,rc_npc_desk_contact_45,rc_npc_away_contact_46,rc_npc_hidden_contact_47,rc_npc_texter_48 npc
   class node_start start
 ```

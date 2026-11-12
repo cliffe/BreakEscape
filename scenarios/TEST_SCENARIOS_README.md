@@ -257,11 +257,14 @@ Engine trial for incoming calls that ring. One office, levers that ring each cal
 | `caller_forced` | `disableClose`: no Decline, auto-answers after 6 s, a hit closes it and it rings back after 4 s without a hit (rows 22, 26) |
 | `caller_popup` | `ring_popup` (lever, 8 s delay): rings over the CyberChef or lab-sheet popup, which goes aside while the call runs and comes back after it (row 11) |
 | `caller_thread` | `ring_thread` (lever, 8 s delay): rings while the player's phone is open on its own thread, on another contact's thread, or on the contact list (the call shows as a panel inside the phone; Answer closes the phone with no `conversation_closed` for the open thread and it reopens on the same screen after the call). `desk_line` and the `desk_phone` object: a desk phone open at the time shows the banner and a hold instead (rows 10, 12). End pressed while the call's choices show reopens the thread on its home knot |
+| `desk_contact` | A5, `call` list: a header "Call" button (`desk_call`) and a `button: false` entry (`extract_call`) placed by the hub choice "I'm done here. Close the file." (`#place_call:extract_call`, then `-> DONE`; the call's "Yes, close it." carries `#ending_check`). Ink-local visit counts carry over a second call. `lever_ring_desk` rings `desk_call` 8 s later: ring it, press Call before answering, and the ring is dropped when the call connects (row 31) |
+| `away_contact`, `hidden_contact` | A5, `call` with `when: globalVars.away_back`: Away shows the button and rings out ("No answer" row) until `lever_back` sets the global, then connects; Hidden has no button until then |
+| `caller_debrief` (placed) | A5: also has a `call` entry on `ring_call` (`button: false`); the hub choice "I'm ready. Ring the debrief line." places it with `#place_call:ring_call`; the rest is as above |
 | `guard`, `brute` | a patrolling guard whose `player_in_view` challenge is dropped during a call (set `guard_off` to switch it off); a hostile NPC (`npcHostileSystem.setNPCHostile('brute', true)`) for a real hit |
 
 Objects: `keypad_safe` (PIN 1234), `pick_case` (lockpick), `open_case` (container with a note), `terminal_pc` (PC desktop with a file), `cyberchef_ws` and `lab_ws` (popups; the lab sheet is a real long page so its scroll position can be checked). Live routes: `tools/phone_calls/routes/a2c_live.sh` (`PC_PORT=<your port>`; hold, banners, popup, forced, v14 to v18, guard, brief).
 
-Later slices add the `call` contacts (A3 to A6).
+Later slices add callback and voicemail (A6).
 
 ---
 

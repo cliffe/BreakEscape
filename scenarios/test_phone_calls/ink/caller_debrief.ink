@@ -1,4 +1,4 @@
-// test_phone_calls, contact caller_debrief
+// test_phone_calls, contact caller_debrief (A5: also a `call` entry placed from the hub, the placed-call variant)
 VAR call_answer_seconds = 0
 VAR call_is_callback = false
 
@@ -7,6 +7,9 @@ Debrief here. Say the word and I will bring you in.
 + [Anything new?]
     Nothing yet. Ring me when it matters.
     -> start
++ [I'm ready. Ring the debrief line.]
+    #place_call:ring_call
+    -> DONE
 
 === ring_call ===
 // lint: call-knot
