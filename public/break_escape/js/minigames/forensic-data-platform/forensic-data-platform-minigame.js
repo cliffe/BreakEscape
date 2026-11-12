@@ -19,13 +19,12 @@ const UNSAFE_STYLE = /url\s*\(|expression|@import|javascript:/i;
 // scenario style cannot cover the game (position:fixed, z-index, width:100%).
 const SAFE_STYLE_PROPS = /^(color|background-color|font-weight|font-style|font-size|text-decoration|text-align|(margin|padding)(-(top|right|bottom|left))?)$/;
 
-// A font size held to a readable range: px 8 to 48, em and rem 0.5 to 3, % 50 to 300,
-// or a keyword (small, large, ...). Anything else (calc(), vw, a bare number) is dropped.
-const FONT_SIZE_RANGE = { px: [8, 48], em: [0.5, 3], rem: [0.5, 3], '%': [50, 300] };
-const FONT_SIZE_KEYWORD = /^(xx-small|x-small|small|medium|large|x-large|xx-large|smaller|larger)$/i;
+// A font size held to a readable range: px 8 to 48 or rem 0.5 to 3. Only units that do not
+// compound, so nested styled elements cannot multiply a size (em, %, larger and smaller
+// would). Anything else (em, %, keywords, calc(), vw, a bare number) is dropped.
+const FONT_SIZE_RANGE = { px: [8, 48], rem: [0.5, 3] };
 export function clampFontSize(val) {
-    if (FONT_SIZE_KEYWORD.test(val)) return val.toLowerCase();
-    const m = /^(\d+(?:\.\d+)?|\.\d+)(px|em|rem|%)$/i.exec(val);
+    const m = /^(\d+(?:\.\d+)?|\.\d+)(px|rem)$/i.exec(val);
     if (!m) return null;
     const unit = m[2].toLowerCase();
     const [lo, hi] = FONT_SIZE_RANGE[unit];

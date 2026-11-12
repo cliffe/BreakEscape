@@ -461,21 +461,19 @@ export function applyActions(actions, { source = 'scenario', gameId = null, obje
     return gives;
 }
 
-// A host shell link the end screen may navigate to, as the parsed href, or null: an
-// absolute http or https URL, or a relative path that stays on the game's own origin
-// (refuses javascript:, data:, //host and /\host). The shell is the host's own page, so
-// unlike the VM panel URL an absolute link may name another host. Kept inline because
-// tests load this file on its own with only its known imports stubbed.
+// A host shell link the end screen may navigate to, as the parsed href, or null: http or
+// https on the game's own origin with no user name or password (the server sends relative
+// paths). The same rule as safeShellUrl in utils/desktop-app.js; kept inline because tests
+// load this file on its own with only its known imports stubbed.
 export function safeShellUrl(raw, base = window.location?.href) {
-    if (typeof raw !== 'string') return null;
+    if (typeof raw !== 'string' || !base) return null;
     const text = raw.trim();
     if (!text) return null;
     try {
-        const parsed = base ? new URL(text, base) : new URL(text);
+        const parsed = new URL(text, base);
         if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
-        const hasScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(text.replace(/[\t\n\r]/g, ''));
-        if (!hasScheme && (!base || parsed.origin !== new URL(base).origin)) return null;
-        return parsed.href;
+        if (parsed.username || parsed.password) return null;
+        return parsed.origin === new URL(base).origin ? parsed.href : null;
     } catch (e) {
         return null;
     }

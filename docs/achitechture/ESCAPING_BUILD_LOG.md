@@ -71,6 +71,13 @@ Games 1385 (sis02_energy), 1386 (sis03_cyber_insurance), 1388 (lab_tesseract_tri
 - n5: `showEndScreen` checks `shellReturnUrl` and `shellMenuUrl` with `safeShellUrl` in `apply-actions.js` (inline, because harnesses load that file with stubbed imports): an absolute http or https URL, or a relative path on the game's origin, navigated to as the parsed href. A refused return link falls back to a safe menu link, then to the no-shell behaviour, and does not take the shell label. The other shell link users (`ui/success-screen.js`, `ui/game-over-screen.js`, `ui/game-menu.js`) are not checked yet.
 - Tests (no lock, as asked): the 33 files that load `apply-actions.js`, the VM launcher or the forensic platform, plus the 89 other test files the branch touches: all pass. `escaping-shared-helpers`, `app-mode-exit` and `minigame-html-sweep-c` updated for absolute hrefs and the new cases. Full suites left for the merge.
 
+## Review R2 fixes
+
+- m1: `safeShellUrl` now uses the panel URL's rule: http or https on the game's own origin, returned as the parsed href, refused with no page origin. It also refuses a user name or password, and so does `safeVmPanelUrl`. Absolute links to another host (`https://hub.example/`, `https://game.example@evil.example/`) are refused; a same-origin absolute URL passes. The shared copy is in `utils/desktop-app.js`; `apply-actions.js` keeps an inline copy with the same rule (its harnesses stub its imports).
+- n1: forensic font sizes accept only px (8 to 48) and rem (0.5 to 3), which do not compound through nested elements. em, %, keywords, `larger` and `smaller` are dropped. Scenario values are all px.
+- n2: `ui/success-screen.js` (`returnToMissions` and the button label), `ui/game-over-screen.js` (`mainMenu`) and `ui/game-menu.js` (`leaveTarget`, `quitToShell`) go through `safeShellUrl`. A refused return link gets no "Debrief" label on the success screen and the player leaves as if there were no shell; the pause menu falls back from a refused menu link to a safe return link, then to the app home.
+- Tests (no lock): the 39 files that load `apply-actions.js`, the VM launcher, the forensic platform, the three screens or `desktop-app.js` all pass. `app-mode-exit`, `success-screen` and `credits-mission-exit` now expect the parsed href and cover refused links.
+
 ## Suite results
 
 - JS, full `bin/test-js -j 3` under the shared lock: 506 of 508 files passed. The two failures (`f18-toast-flag-rfid`, `flag-station-launch-reopen`) were missing `escape-html.js` in their flag station fixtures; fixed in `4ecc342c2`, both pass alone. Before that, a run of the 123 affected files gave 120 of 123, and the three were fixed in `840738726`.

@@ -14,7 +14,7 @@
 import MusicController from '../music/music-controller.js';
 import { setHudLabel, clearHudLabel } from './info-label.js';
 import { attacksDisabled } from '../systems/player-combat.js';
-import { isAppWindow, appHomeUrl } from '../utils/desktop-app.js';
+import { isAppWindow, appHomeUrl, safeShellUrl } from '../utils/desktop-app.js';
 import {
     UI_THEMES, SIZE_STEPS, HEALTH_STYLES, getDisplaySettings, updateDisplaySettings, missionTheme,
 } from './display-settings.js';
@@ -43,7 +43,7 @@ export function shellItems(cfg = window.breakEscapeConfig || {}, w = window) {
 
 // Where the pause menu's leave item goes: the host shell's menu, else the desktop app's home.
 export function leaveTarget(cfg = window.breakEscapeConfig || {}, w = window) {
-    const url = cfg.shellMenuUrl || cfg.shellReturnUrl;
+    const url = shellLink(cfg, w);
     if (url) return { url, label: 'Save and quit to menu' };
     if (isAppWindow(w)) return { url: appHomeUrl(w), label: 'Back to missions' };
     return null;
@@ -65,8 +65,14 @@ export function openLink(url, w = window) {
     w.open(url, '_blank', 'noopener');
 }
 
+// The shell's menu link, else its return link, whichever first passes safeShellUrl.
+function shellLink(cfg, w = window) {
+    const base = w?.location?.href;
+    return safeShellUrl(cfg.shellMenuUrl, base) || safeShellUrl(cfg.shellReturnUrl, base);
+}
+
 export function quitToShell(cfg = window.breakEscapeConfig || {}, navigate = (url) => { window.location.href = url; }) {
-    const url = cfg.shellMenuUrl || cfg.shellReturnUrl;
+    const url = shellLink(cfg);
     if (url) navigate(url);
 }
 

@@ -16,7 +16,7 @@ import { escapeHtml } from '../../utils/escape-html.js';
  * an iframe src and an href, so it must parse as http or https and resolve to the page's
  * own origin (the server sends /break_escape/games/<id>/vm_panel). That one test covers
  * javascript:, data:, protocol-relative //host, /\host, http:host and any absolute URL on
- * another host. The parsed href is returned, so the iframe, the link and this check all
+ * another host or a user:pass@ part. The parsed href is returned, so the iframe, the link and this check all
  * use the same parse. With no page origin to compare against, everything is refused.
  */
 export function safeVmPanelUrl(raw, base = (typeof window !== 'undefined' ? window.location?.href : undefined)) {
@@ -32,6 +32,7 @@ export function safeVmPanelUrl(raw, base = (typeof window !== 'undefined' ? wind
         return null;
     }
     if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
+    if (parsed.username || parsed.password) return null;
     if (parsed.origin !== origin) return null;
     return parsed.href;
 }

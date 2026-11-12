@@ -26,7 +26,7 @@
  * imports of its own.
  */
 import { displayDashes } from '../utils/display-dashes.js';
-import { isAppWindow, appHomeUrl } from '../utils/desktop-app.js';
+import { isAppWindow, appHomeUrl, safeShellUrl } from '../utils/desktop-app.js';
 
 export const SUCCESS_SCREEN_ID = 'scenario-success-screen';
 export const DEFAULT_TITLE = 'Exercise complete';
@@ -119,7 +119,8 @@ export function returnToMissions(deps = {}) {
     const closeTab = deps.closeTab || (() => { w.close(); });
     // A host that launched the game in its own game shell names the page to go
     // back to (the mission's debrief); the game was opened in the same tab.
-    const shellReturn = w?.breakEscapeConfig?.shellReturnUrl;
+    // A link that fails safeShellUrl is ignored: the player leaves as if there were no shell.
+    const shellReturn = safeShellUrl(w?.breakEscapeConfig?.shellReturnUrl, w?.location?.href);
     if (shellReturn) {
         navigate(shellReturn);
         return;
@@ -149,7 +150,8 @@ function openNow(opts, deps) {
 
     const title = typeof opts.title === 'string' && opts.title.trim() ? opts.title : DEFAULT_TITLE;
     const body = typeof opts.body === 'string' ? opts.body.trim() : '';
-    const shellLabel = win()?.breakEscapeConfig?.shellReturnUrl ? win().breakEscapeConfig.shellReturnLabel : null;
+    const shellLabel = safeShellUrl(win()?.breakEscapeConfig?.shellReturnUrl, win()?.location?.href)
+        ? win().breakEscapeConfig.shellReturnLabel : null;
     const buttonText = shellLabel ||
         (typeof opts.buttonText === 'string' && opts.buttonText.trim() ? opts.buttonText : DEFAULT_BUTTON);
 

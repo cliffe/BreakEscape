@@ -288,15 +288,19 @@ test('gameDisplay plain mode still shows hostile text as text with the dash disp
 
 // ---- end screen host links ------------------------------------------------------------
 
-test('end screen host links: http, https or a same-origin path; other schemes and hosts are refused', () => {
+test('end screen host links: http(s) on the game origin only, as the parsed href; no user:pass@', () => {
     const base = 'https://game.example/break_escape/games/7';
     assert.equal(safeShellUrl('/events/7/play/operations/3/debrief', base), 'https://game.example/events/7/play/operations/3/debrief');
-    assert.equal(safeShellUrl('https://hub.example/debrief', base), 'https://hub.example/debrief');
-    assert.equal(safeShellUrl('http://hub.example/debrief', base), 'http://hub.example/debrief');
+    assert.equal(safeShellUrl('https://game.example/events/7/menu', base), 'https://game.example/events/7/menu');
     for (const bad of ['javascript:window.__pwned=5', ' JavaScript:x', 'java\tscript:x', 'data:text/html,x', 'vbscript:x',
-        '//evil.com/x', '/\\evil.com/x', '\\\\evil.com', 'http:evil.com', 'https:/\\evil.com', 'ftp://x.example/', '', ' ', null, 7]) {
+        '//evil.com/x', '/\\evil.com/x', '\\\\evil.com', 'http:evil.com', 'https:/\\evil.com', 'ftp://x.example/', '', ' ', null, 7,
+        'https://hub.example/debrief', 'http://hub.example/debrief', 'https://evil.example/', 'https://user:pw@evil.example/',
+        'https://game.example@evil.example/', 'https://user:pw@game.example/x', 'https://user@game.example/x', 'http://game.example/x']) {
         assert.equal(safeShellUrl(bad, base), null, `refused: ${JSON.stringify(bad)}`);
     }
+    assert.equal(safeShellUrl('/debrief', null), null, 'no page origin: refused');
+    // The VM panel check refuses user:pass@ too
+    assert.equal(safeVmPanelUrl('https://u:p@game.example/vm', base), null);
 });
 
 test('end screen button: a refused return link does not take the shell label', () => {
@@ -310,15 +314,14 @@ test('end screen button: a refused return link does not take the shell label', (
 
 // ---- forensic data platform font sizes ------------------------------------------------
 
-test('forensic cleanStyle: font sizes are held to a readable range; calc() and viewport units go', () => {
+test('forensic cleanStyle: font sizes are px or rem in a readable range; compounding units and calc() go', () => {
     assert.equal(clampFontSize('11px'), '11px');
     assert.equal(clampFontSize('9999px'), '48px');
     assert.equal(clampFontSize('1px'), '8px');
-    assert.equal(clampFontSize('10em'), '3em');
-    assert.equal(clampFontSize('0.1rem'), '0.5rem');
-    assert.equal(clampFontSize('900%'), '300%');
-    assert.equal(clampFontSize('Large'), 'large');
-    for (const bad of ['calc(100vw)', '100vw', '50vh', '12', '-5px', '12 px', '1e3px']) {
+    assert.equal(clampFontSize('10rem'), '3rem');
+    assert.equal(clampFontSize('0.1REM'), '0.5rem');
+    // Units that compound through nested elements, and everything else, are dropped
+    for (const bad of ['3em', '0.5em', '900%', 'larger', 'smaller', 'Large', 'calc(100vw)', '100vw', '50vh', '12', '-5px', '12 px', '1e3px']) {
         assert.equal(clampFontSize(bad), null, `dropped: ${bad}`);
     }
     assert.equal(cleanStyle('font-size:9999px;color:#f00'), 'font-size:48px;color:#f00');
