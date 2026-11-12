@@ -165,3 +165,59 @@ Marked `// lint: call-knot`. Opener goes in front of the existing first body lin
 Compile OK. dialoguelint: pre-existing line-len errors at :258 (and ERB :1129) only. Validator: Schema passed; two expected call-VAR warnings (see top). No structural errors, no dangling refs.
 
 Voiced new/re-keyed: **~12** — 3 anomaly openers (new) + 4 bring-in lines (re-key).
+
+---
+
+## m05 (M5) — DONE, committed (HaX only; Recruiter + Patricia are the other writer's)
+
+File: `scenarios/m05_insider_trading/ink/m05_phone_agent_0x99.ink`; ERB. Declared both call VARs at top.
+
+### topic_architect (root-flag ring, untilAnswered) — openers added
+
+| Line | Before | After | V/T |
+|---|---|---|---|
+| opener (callback) | — | "Thank you. Listen." | V (new) |
+| opener (slow, `>10`) | — | "Finally. Sit down for this." | V (new) |
+| body "Read it twice..." | (default opening) | unchanged | V |
+| topic_architect_choices | three `-> support_hub` | `#exit_conversation` / `-> DONE` (replies unchanged) | V |
+
+No else branch: prompt/placed answer goes straight to "Read it twice..." (the plain opening). Marked `// lint: call-knot`.
+
+### extract_call (bring-in, renamed from extract_offer) — rewrite (7.6 m05)
+
+| Line | Before | After | V/T |
+|---|---|---|---|
+| guard (not all flags) | "Not yet. The research server..." (`-> support_hub`) | same text, now `#exit_conversation` / `-> DONE` | V |
+| opening "Once you're out, QDC's own..." | — | unchanged (m05's own, stays) | V |
+| find-lines + recruiter_texted line | — | unchanged | V |
+| [Bring me in.] reply | "Car's at the front entrance. Two minutes." | "Front entrance. Walk like you work there." | V (re-key) |
+| "Not yet" lethal branch | "Your call. He hasn't got long." | unchanged (m05's own) | V |
+| "Not yet" else branch | "Take your time. The vault isn't going anywhere." | "Then look. The vault's yours till someone notices." | V (re-key) |
+| [On my way.] | plain | `[On my way. #ending_check]` | — |
+| last line | "See you at HQ." | "Thursday, nine o'clock. My office." | V (re-key) |
+
+`#complete_task:call_in_after_sweep` moved from extract_go onto [Bring me in.] reply; `#set_global:mission_complete` + assignment stay. All extract knots marked `// lint: call-knot`.
+
+### Hub choices → place_call
+- `[I'm done here. Bring me in.]`: `-> extract_offer` → `#place_call:extract_call` / `-> DONE`.
+- `[The Architect signed off...]`: `-> topic_architect` → `#place_call:topic_architect` / `-> DONE`.
+
+### ERB rewords (7.3)
+- `:1064`: "...Call me if you want to talk it through." → "...Message me..." (T)
+- `:1070`: "A personal journal. Call me once you've read it." → "...Message me once you've read it." (T)
+- `:1457`: "...then call me for Security: ...on the phone." → "...then message me for Security: ...on your phone." (T)
+- `:1484`: "...Or get clear and call me for Security." → "...message me for Security." (T)
+
+### Ink rewords (7.3)
+- `:901` (confrontation_advice): "...then call me." → "...then message me." (T)
+- `:936` (moral_sounding_board): "Call me again if it helps." → "Message me again if it helps." (T)
+
+### Config the implementer must add (M5)
+- `agent_0x99_handler` `call`: `[{ knot: "topic_architect", button: false }, { knot: "extract_call", button: false }]`.
+- Root-flag mapping (`:1101`): drop `sendTimedMessage`, keep event/condition/`setGlobal`, add `conversationMode: "phone-chat"`, `targetKnot: "topic_architect"`, `ring: { onMissed: "callback", untilAnswered: true }`, `delayMs: 1500`; decline text "Root flag's in. Ring me back. You need to hear this." (not voiced).
+- (Recruiter first-call ring + ring-back, Patricia callable: the other writer's.)
+
+### Checks
+Compile OK; `extract_offer` now only in a comment. dialoguelint: pre-existing line-len error at :1077 only. Validator: Schema passed; two expected call-VAR warnings. No structural errors.
+
+Voiced new/re-keyed: **~10** — 2 architect openers (new) + ~4 bring-in lines (re-key).

@@ -1061,13 +1061,13 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "eventPattern": "item_picked_up:notes",
               "condition": "data.itemId === 'medical_bills'",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1500, "message": "Three hundred and eighty thousand dollars, and the insurer walked away. That's the trouble ENTROPY goes looking for. Call me if you want to talk it through." }
+              "sendTimedMessage": { "delay": 1500, "message": "Three hundred and eighty thousand dollars, and the insurer walked away. That's the trouble ENTROPY goes looking for. Message me if you want to talk it through." }
             },
             {
               "eventPattern": "item_picked_up:notes",
               "condition": "data.itemId === 'personal_journal'",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1500, "message": "A personal journal. Call me once you've read it." }
+              "sendTimedMessage": { "delay": 1500, "message": "A personal journal. Message me once you've read it." }
             },
             {
               "eventPattern": "global_variable_changed:flag1_submitted",
@@ -1454,7 +1454,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'david_torres' && data.isHostile === true && !data.restored && globalVars.final_choice === ''",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 5500, "message": "Press Q till the open hand shows to walk by clicking. Can't take him? Leave the data centre, then call me for Security: he swings while you're on the phone." }
+              "sendTimedMessage": { "delay": 5500, "message": "Press Q till the open hand shows to walk by clicking. Can't take him? Leave the data centre, then message me for Security: he swings while you're on your phone." }
             },
             <%# Post-engine follow-ups (2026-10-16): a Restart after a knockout now
                 resets a Torres who isn't KO'd to calm (engine 7.1d), so game_loaded
@@ -1481,7 +1481,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "onceOnly": false,
               "cooldown": 0,
               "setGlobal": { "torres_hostile": true },
-              "sendTimedMessage": { "delay": 3000, "message": "Torres is still at that terminal, still angry. Q switches to fists, then E or click when he's in front. Or get clear and call me for Security." }
+              "sendTimedMessage": { "delay": 3000, "message": "Torres is still at that terminal, still angry. Q switches to fists, then E or click when he's in front. Or get clear and message me for Security." }
             },
             {
               "_comment": "PASS 2 review B1 safety net. post_ko_choice is disableClose, but if it is ever lost (a reload mid-choice), npc_ko won't re-fire and a KO'd NPC can't be talked to (interactions.js:1690). Re-entering the data centre with Torres down and no fate set offers the same two choices by phone.",

@@ -21,6 +21,10 @@
 
 VAR first_contact = true // ink-local; the engine saves ink locals, so it survives a page reload. first_call also checks the night (A6)
 
+// Engine-written call variables (phone calls plan 2.11); topic_architect reads them.
+VAR call_answer_seconds = 0
+VAR call_is_callback = false
+
 // ---- Mission state (synced from globalVars when the call opens) ----
 VAR player_name = "Agent 0x00"
 VAR found_pamphlet = false
@@ -179,7 +183,8 @@ Someone in that building is feeding ENTROPY the keys to the 999 dispatch network
 
 // A2: the way out once the fate is set. First, because it ends the mission.
 + {final_choice != "" and not mission_complete} [I'm done here. Bring me in.]
-    -> extract_offer
+    #place_call:extract_call
+    -> DONE
 
 + {patricia_ko and not torres_identified} [Patricia's down. I'll give you the name instead.]
     -> name_to_hax
@@ -212,7 +217,8 @@ Someone in that building is feeding ENTROPY the keys to the 999 dispatch network
     -> topic_journal
 
 + {architect_approval_confirmed and not architect_discussed} [The Architect signed off on the casualty projection.]
-    -> topic_architect
+    #place_call:topic_architect
+    -> DONE
 
 + {(flag1_submitted and not flag1_discussed) or (flag2_submitted and not flag2_discussed) or (flag3_submitted and not flag3_discussed) or (flag4_submitted and not flag4_discussed)} [About that flag.]
     -> flag_news
@@ -319,9 +325,13 @@ That should worry you more than the pitch. He understands the cost. He decided h
     -> support_hub
 
 === topic_architect ===
+// lint: call-knot
 #speaker:agent_0x99
 ~ architect_discussed = true
-
+{
+    - call_is_callback: Thank you. Listen.
+    - call_answer_seconds > 10: Finally. Sit down for this.
+}
 Read it twice. A casualty projection, reviewed, and signed off as an acceptable cost.
 
 No rogue cell improvised that. Someone priced human lives and approved the invoice.
@@ -339,21 +349,25 @@ No rogue cell improvised that. Someone priced human lives and approved the invoi
 -> topic_architect_choices
 
 === topic_architect_choices ===
+// lint: call-knot
 + [This is bigger than one insider.]
     {torres_identified:
         It always was. Torres is the delivery. The Architect is the decision. Keep both in the file.
     - else:
         It always was. Your insider is the delivery. The Architect is the decision. Keep both in the file.
     }
-    -> support_hub
+    #exit_conversation
+    -> DONE
 
 + {torres_identified} [Then Torres is the only thread we've got to it.]
     For tonight, yes. Bear that in mind when you decide what happens to him.
-    -> support_hub
+    #exit_conversation
+    -> DONE
 
 + {not torres_identified} [Then the insider is the only thread we've got to it.]
     For tonight, yes. Find them first. Then bear it in mind when you decide what happens to them.
-    -> support_hub
+    #exit_conversation
+    -> DONE
 
 === topic_recruiter ===
 #speaker:agent_0x99
@@ -898,7 +912,7 @@ It only works if he wants out.
     I won't choose for you. But weigh it like this.
     Soft gets us his network and keeps his family whole, if he means it. If he doesn't, we've put a liar back inside.
     Hard is certain tonight, and we learn nothing from him.
-    If it turns into a fight: he's no fighter. Q switches to fists. Can't take him? Get out of his reach, then call me.
+    If it turns into a fight: he's no fighter. Q switches to fists. Can't take him? Get out of his reach, then message me.
     -> support_hub
 
 + [I'll decide when I'm standing in front of him.]
@@ -933,7 +947,7 @@ Ask me what you want to ask.
     -> support_hub
 
 + [I don't know what I think yet.]
-    You don't have to, until you're in front of him. Call me again if it helps.
+    You don't have to, until you're in front of him. Message me again if it helps.
     -> support_hub
 
 // ===========================================
@@ -944,11 +958,13 @@ Ask me what you want to ask.
 // mapping); the call-in task completes in the same batch.
 // ===========================================
 
-=== extract_offer ===
+=== extract_call ===
+// lint: call-knot
 #speaker:agent_0x99
 {not all_flags_in():
     Not yet. The research server isn't finished: all four flags in the drop-site, then I'll pull you out.
-    -> support_hub
+    #exit_conversation
+    -> DONE
 }
 Once you're out, QDC's own people go through that vault before ours do. Whatever you haven't read could walk.
 {not found_pipeline_list:
@@ -967,29 +983,34 @@ Once you're out, QDC's own people go through that vault before ours do. Whatever
 -> extract_choices
 
 === extract_choices ===
+// lint: call-knot
 + [Bring me in.]
-    Car's at the front entrance. Two minutes.
+    Front entrance. Walk like you work there.
+    #complete_task:call_in_after_sweep
     -> extract_confirm
 + [Not yet. I'm still looking.]
     // R2 (m5): left to die, he is still on the floor beside the desk.
     {final_choice == "combat_lethal":
         Your call. He hasn't got long.
     - else:
-        Take your time. The vault isn't going anywhere.
+        Then look. The vault's yours till someone notices.
     }
-    -> support_hub
+    #exit_conversation
+    -> DONE
 
 === extract_confirm ===
-+ [On my way.]
+// lint: call-knot
++ [On my way. #ending_check]
     -> extract_go
 
 === extract_go ===
+// lint: call-knot
 #speaker:agent_0x99
-#complete_task:call_in_after_sweep
 #set_global:mission_complete:true
 ~ mission_complete = true
-See you at HQ.
--> support_hub
+Thursday, nine o'clock. My office.
+#exit_conversation
+-> DONE
 
 // ===========================================
 // WHERE DO I STAND? (PASS 5 A6)
