@@ -46,6 +46,9 @@ Standing constraints for this build:
 
 ## Commits (newest first)
 
+- `a57264de3` Step 1 item 8 + item 9: `tools/playtest/sync-delta-proof.mjs` (live-proof
+  recorder, pure parts unit-tested in `test/js/sync-delta-proof.test.mjs`), `new-game.rb
+  --seed-full-cloner`, and the base-commit baseline numbers in this log.
 - `853b69a59` savedCurrentRoom controller test (task 3): present for a string saved
   room, absent when the save holds no string currentRoom (strips it via update_column
   past the create callback that seeds it from startRoom).
