@@ -188,6 +188,42 @@ module BreakEscape
       assert_response :success, body.inspect
     end
 
+    # ---- port security (sub-slice P, section 5.4) -------------------------------------
+    test 'a secured jack refuses the device, gives no foothold, keeps the device, and shows its message' do
+      build_network_game({}, NS.with_secured_port)
+      take_drop_box
+      before = state.deep_dup
+      body = plant('secure_port')
+      assert_response :unprocessable_entity
+      assert_equal 'port_security', body['reason']
+      assert_equal NS::PORT_SECURITY_MESSAGE, body['error']
+      assert_equal false, body['success']
+      # The body leaks nothing beyond the refusal: no network, host or share name (spec 5.4,
+      # review R1 nit 1).
+      assert_equal %w[error reason success], body.keys.sort
+      # No foothold written, the device still in hand, nothing else changed.
+      assert_equal before, state
+      assert_includes held_ids, 'kit_dropbox'
+      refute state['footholds'].key?('jack_secure_port')
+    end
+
+    test 'a secured jack with no message uses the default refusal' do
+      build_network_game({}, NS.with_secured_port(message: nil))
+      take_drop_box
+      body = plant('secure_port')
+      assert_response :unprocessable_entity
+      assert_equal 'port_security', body['reason']
+      assert_equal NetworkAccess::PORT_SECURITY_REFUSAL, body['error']
+    end
+
+    test 'the open jack still plants when a secured jack is present' do
+      build_network_game({}, NS.with_secured_port)
+      take_drop_box
+      body = plant('comms_port')
+      assert_response :success, body.inspect
+      assert_equal true, body['success']
+    end
+
     test 'an unplug at a jack with no foothold is not_planted, and an unknown jack 404' do
       build_network_game
       body = unplug('comms_port')

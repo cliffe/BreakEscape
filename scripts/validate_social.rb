@@ -15,6 +15,7 @@
 # scenario has a `social` key. A scenario without one always exits 0.
 require 'json'
 require 'set'
+require_relative '../lib/break_escape/access_work' unless defined?(BreakEscape::AccessWork) # feed_elements (osint.rb)
 
 module ValidateSocial
   # raw: the rendered JSON text, when the caller has it (P2-W), so lints can tell a \u escape

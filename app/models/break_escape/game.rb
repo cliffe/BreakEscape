@@ -7,6 +7,7 @@ module BreakEscape
     include NetworkAccess
     include CaptureProofs
     include NpcFrustration
+    include SocialFeed
     include Wearables
 
     # Associations
@@ -915,6 +916,9 @@ module BreakEscape
       # the server holds.
       withhold_network_keys!(filtered)
 
+      # Slice 9.2 C (8.3): a feed post's fact travels with its post, never in the bootstrap
+      withhold_feed_facts!(filtered)
+
       # Strip the authored capture secret (e.g. the phished portal password) from the
       # bootstrap: the browser must not hold it until the capture is earned. The real
       # secret is served by GET /capture_secrets once the server's own se_captures record
@@ -1201,7 +1205,9 @@ module BreakEscape
       # accounts the player heard shared out loud
       'guestSessions' => {}, 'sharedLogins' => [],
       # Review R1 m1: the server time each guest record was written, for the server's own lock
-      'guestSessionsAt' => {}
+      'guestSessionsAt' => {},
+      # Sub-slice C (9.4): how many of each NPC's feed posts are out, and when the last came out
+      'feedRevealed' => {}
     }.freeze
 
     # loginFailures and loginLockouts keep at most this many entries for usernames that
@@ -4248,6 +4254,12 @@ module BreakEscape
         npc['work'] = plan
       else
         npc.delete('work')
+      end
+      # Sub-slice C (9.1): the browser asks for posts only for an NPC that has some
+      if BreakEscape::AccessWork.feeds?(record)
+        npc['hasFeed'] = true
+      else
+        npc.delete('hasFeed')
       end
     end
 

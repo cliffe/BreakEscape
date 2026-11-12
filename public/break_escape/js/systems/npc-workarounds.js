@@ -79,6 +79,7 @@ const keyOf = (npcId, run) => `${npcId}:${run.index}:${run.hand}`;
  * is given a backslash and the page shows the text exactly as given. HTML needs nothing here:
  * the renderer escapes every character first. Kept beside its one user rather than imported, so
  * the runner's test harness copies need no new file; the test checks it against the renderer.
+ * systems/social-feed.js holds a copy: widen both together.
  */
 const NOTE_ESCAPABLE = /[\\|*`#_-]/g;
 export function escapeNoteText(text) {
