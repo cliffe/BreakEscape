@@ -43,8 +43,9 @@ grep -c '/feed_post' $S/<run>-responses.jsonl
 ```
 
 The leak check must say `VERDICT: no leaks found`, and its counts line must show the feed posts and
-feed facts it checked (35 feed posts, reply pieces included, and two feed facts, measured in
-game 1731 after F16): a run that checked none proves nothing. The `/feed_post` count must stay within the beat's budget below. The budgets count
+feed facts it checked ("34 feed post(s) (35 text(s)), 2 feed fact(s)": 34 distinct posts, 35 registered
+texts because a reply is matched by each of its pieces, measured in games 1742 to 1765): a run that
+checked none proves nothing. The `/feed_post` count must stay within the beat's budget below. The budgets count
 answers with a post; add one request for each `tooSoon` answer (Jake's first use after the F7
 reload often is one). If the leak check notes a reveal allowed at an answer whose body the log
 lost, or one judged by the saved count from the first line, that beat's order was not fully
