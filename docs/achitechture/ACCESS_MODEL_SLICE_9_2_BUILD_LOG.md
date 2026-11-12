@@ -1925,3 +1925,38 @@ Review: `ACCESS_MODEL_SLICE_9_2_C_CODE_REVIEW_R2.md` (no blocker, 1 major, 2 min
 ### Suites after C review round 2 (at `5e78e3efa`)
 
 Rails 1674 runs, 24848 assertions, 0 failures, 0 errors, 1 skip. JS 497 of 497 files.
+
+## C review round 3 outcomes (2026-11-12)
+
+Review: `ACCESS_MODEL_SLICE_9_2_C_CODE_REVIEW_R3.md` (approve; no blocker or major, 1 minor, 4 nits).
+
+- **m1** (`841390e82`): the leak scanner no longer credits a lost `/feed_post` answer to an NPC
+  whose saved last reveal (`feedRevealed[npc].at`) came more than 5 s before the capture's `t` on
+  that row: it was another NPC's answer or a `tooSoon` or `done`. The review's scenario A (a
+  resumed game, Lena's post in the first bootstrap, a lost answer later) and scenario B (two NPCs,
+  the lost row Jake's reveal) are clean now, and a bootstrap that shows Jake's post before the lost
+  answer that revealed it is still reported. A and B fail on the round 2 scanner. A row with no
+  `t`, or a game with no `at`, keeps round 2's rule. The `access-leak-check.rb` note says so.
+  What is left (one lost row credited to every NPC whose last reveal follows it) needs the
+  request's `npc_id` in `response-capture.js`, a skill script: entry in `docs/IDEAS_BACKLOG.md`
+  for the user.
+- **Nits** (`040170445`): the retry wait is capped at `MAX_WAIT_S` (2147483 s), below
+  `setTimeout`'s limit, with a test. A `tooSoon` answer now carries `revealed` (the posts out so
+  far; plan 9.1 routes table in `774da68ac`), and a use whose earlier ask failed in the network stops
+  when `revealed` is above the posts the client holds, so a lost answer that revealed a post is
+  not followed by a second post for that use; the missed post shows after a reload. Test, and
+  the controller test asserts `revealed`. The network-failure test is renamed and asserts four
+  asks five seconds apart. The no-exposure test's comment now says "every route that can carry
+  NPC or feed data and the ones next to them" and names what it leaves out.
+- **Not changed**: `locked_out` stays work only, on both sides of the merge.
+
+### Merge
+
+`main` at `0786f4fae` (9.3b W and the q33 user decision) merged in `c800f80f4`. Two conflicts,
+both lists: the controller's `before_action` action lists keep `network_join` and `feed_post`,
+and the scanner keeps both the `wifi_secret` rule and the feed `withheld_key` text, with Wi-Fi
+secrets and feed texts both in the redaction list.
+
+### Suites after C review round 3 (after the merge of `main`, at `c800f80f4`)
+
+Rails 1690 runs, 24930 assertions, 0 failures, 0 errors, 1 skip. JS 498 of 498 files.
