@@ -1924,6 +1924,7 @@ module BreakEscape
         # - rfid: requires card IDs (e.g., ["master_keycard"])
         lock_type = obj['lockType']
         BreakEscape::Game.set_pin_length!(obj) # PIN pad length, before the PIN goes
+        BreakEscape::Game.strip_lock_answers!(obj) # combination and cryptex answers
         BreakEscape::Game.strip_puzzle_graph_keys!(obj) # generator-only authoring fields
         # A declared grant's contents are served from the held item, never shipped
         BreakEscape::DeclaredGrants.strip_grant_contents!(obj)
@@ -2026,7 +2027,9 @@ module BreakEscape
       find_container_recursive(@game.held_grant_items, container_id) ||
         # A habit NPC's USB stick the player holds (2026-11-12): taken from itemsHeld, so in no
         # room; its files come from the scenario (or the default), never from the browser
-        find_container_recursive(@game.held_usb_sticks, container_id)
+        find_container_recursive(@game.held_usb_sticks, container_id) ||
+        # A container an NPC carried, released by a give or KO record (unlock gaps build)
+        find_container_recursive(@game.released_npc_containers, container_id)
     end
 
     def find_container_recursive(objects, container_id)
@@ -2079,6 +2082,11 @@ module BreakEscape
       # Then a habit NPC's USB stick the player holds, as find_container_in_scenario.
       @game.held_usb_sticks.each do |stick|
         found = find_object_in_object(stick, object_id)
+        return found if found
+      end
+      # Then a container an NPC carried that a give or KO released, as Game#find_scenario_object.
+      @game.released_npc_containers.each do |container|
+        found = find_object_in_object(container, object_id)
         return found if found
       end
       nil
@@ -2603,6 +2611,15 @@ module BreakEscape
           npc['itemsHeld'].each do |held_item|
             return npc_location.call(npc, room_id, held_item) if matches.call(held_item)
           end
+        end
+      end
+
+      # An item inside a container an NPC carried, once a give or KO released the container
+      # (unlock gaps build): taken as from any container, so the container must be unlocked.
+      @game.released_npc_containers.each do |container|
+        Array(container['contents']).each do |content|
+          next unless content.is_a?(Hash)
+          return { item: content, location: { type: 'container', container_id: container['id'] } } if matches.call(content)
         end
       end
 

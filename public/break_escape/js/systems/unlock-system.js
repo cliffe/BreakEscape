@@ -783,10 +783,9 @@ export function handleUnlock(lockable, type) {
         
         case 'combination':
             console.log('COMBINATION PADLOCK REQUESTED');
-            // Get combination from lockable.scenarioData.combination (array [L, R, L])
-            const combination = lockable.combination || lockable.scenarioData?.combination || [0, 0, 0];
-
-            startCombinationMinigame(lockable, type, combination, (success, result) => {
+            // The combination stays on the server (the lock's `requires`): the dials are
+            // checked there, so nothing about the answer is passed to the minigame
+            startCombinationMinigame(lockable, type, (success, result) => {
                 if (success) {
                     unlockTarget(lockable, type, lockable.layer, result?.serverResponse);
                 }

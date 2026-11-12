@@ -1110,8 +1110,8 @@ export function startCryptexMinigame(lockable, type, cryptexConfig, callback) {
 }
 window.startCryptexMinigame = startCryptexMinigame;
 
-export function startCombinationMinigame(lockable, type, combination, callback) {
-    console.log('Starting combination padlock minigame', { lockable, type, combination });
+export function startCombinationMinigame(lockable, type, callback) {
+    console.log('Starting combination padlock minigame', { lockable, type });
 
     if (!window.MinigameFramework) {
         console.error('MinigameFramework not available');
@@ -1128,7 +1128,6 @@ export function startCombinationMinigame(lockable, type, combination, callback) 
         title: 'Combination Padlock',
         lockable,
         type,
-        combination: combination || [0, 0, 0],
         showCancel: true,
         cancelText: 'Cancel',
         onComplete: (success, result) => {

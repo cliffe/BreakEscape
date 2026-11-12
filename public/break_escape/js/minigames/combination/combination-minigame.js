@@ -10,8 +10,8 @@ export class CombinationMinigame extends MinigameScene {
             cancelText: 'Cancel',
         });
 
-        // Configuration
-        this.combination = params.combination || [0, 0, 0];  // [L, R, L]
+        // The combination itself never reaches the client: the server checks the
+        // dials against the lock's `requires` (unlock gaps build, 2026-11-12).
 
         // Game state
         this.dials = [0, 0, 0];           // Current position of each dial
@@ -122,9 +122,24 @@ export class CombinationMinigame extends MinigameScene {
     _rotateDial(dialIndex, direction) {
         if (this.isLocked || this.isSubmitting) return;
 
+        // Turning the next dial the way it goes sets the current one and moves on,
+        // as on a real padlock, where a change of direction sets the last number.
+        if (dialIndex === this.directionIndex + 1 && dialIndex <= 2 &&
+            direction === this.directionSequence[dialIndex]) {
+            this.directionIndex = dialIndex;
+            this._updateDialDisplay(dialIndex - 1);
+            this._updateDirectionIndicator();
+            this._setStatus(`Dial ${dialIndex} set at ${this.dials[dialIndex - 1]}. Turn dial ${dialIndex + 1} ${direction.toUpperCase()}.`, '');
+            // On the last dial any number, 0 included, can be tried
+            if (dialIndex === 2) this._enableUnlock();
+            return;
+        }
+
         // Check if this is the expected dial
         if (dialIndex !== this.directionIndex) {
-            this._setStatus('Wrong dial. Return to current dial.', 'wrong');
+            this._setStatus(dialIndex < this.directionIndex
+                ? `Dial ${dialIndex + 1} is set. Press Reset to start again.`
+                : 'Wrong dial. Return to current dial.', 'wrong');
             return;
         }
 
@@ -145,26 +160,19 @@ export class CombinationMinigame extends MinigameScene {
         // Update display
         this._updateDialDisplay(dialIndex);
 
-        // Check if this dial has reached its target value
-        const targetValue = this.combination[dialIndex];
-        if (this.dials[dialIndex] === targetValue) {
-            // Move to next dial
-            if (dialIndex < 2) {
-                this.directionIndex++;
-                this._updateDirectionIndicator();
-                this._setStatus(`Dial ${dialIndex + 1} locked. Moving to Dial ${dialIndex + 2}.`, '');
-            } else {
-                // All 3 dials set - enable submit
-                this._setStatus('All dials locked. Press UNLOCK to submit.', 'success');
-                const unlockBtn = this.gameContainer.querySelector('#comb-unlock-btn');
-                unlockBtn.disabled = false;
-                unlockBtn.classList.add('ready');
-            }
+        if (dialIndex < 2) {
+            const next = this.directionSequence[dialIndex + 1].toUpperCase();
+            this._setStatus(`Dial ${dialIndex + 1} at ${this.dials[dialIndex]}. Turn dial ${dialIndex + 2} ${next} to set it.`, '');
         } else {
-            // Still working on this dial
-            const remaining = Math.abs(targetValue - this.dials[dialIndex]);
-            this._setStatus(`Dial ${dialIndex + 1}: ${remaining} more turn${remaining > 1 ? 's' : ''} needed.`, '');
+            this._setStatus(`Dial 3 at ${this.dials[2]}. Press UNLOCK to try the combination.`, 'success');
+            this._enableUnlock();
         }
+    }
+
+    _enableUnlock() {
+        const unlockBtn = this.gameContainer.querySelector('#comb-unlock-btn');
+        unlockBtn.disabled = false;
+        unlockBtn.classList.add('ready');
     }
 
     // ── Display updates ──────────────────────────────────────────────────────

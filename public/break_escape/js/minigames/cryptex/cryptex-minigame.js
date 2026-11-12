@@ -20,7 +20,6 @@ export class CryptexMinigame extends MinigameScene {
 
         // Game state
         this.currentIndices = Array(this.wheelCount).fill(0);  // Current position of each wheel
-        this.answerIndices = [];  // Target indices (parsed from answer string)
         this.attemptCount = 0;
         this.maxAttempts = this.cryptexConfig.maxAttempts || 3;
         this.isLocked = false;
@@ -31,8 +30,8 @@ export class CryptexMinigame extends MinigameScene {
         this.hintStrip = this.cryptexConfig.hintStrip || {};
         this.wornRings = this.cryptexConfig.wornRings || {};
 
-        // Parse answer string to indices
-        this._parseAnswer();
+        // The answer never reaches the client: the server checks the word against the
+        // lock's `requires` (unlock gaps build, 2026-11-12), so any word can be submitted.
     }
 
     // ── Lifecycle ────────────────────────────────────────────────────────────
@@ -51,26 +50,6 @@ export class CryptexMinigame extends MinigameScene {
 
     cleanup() {
         super.cleanup();
-    }
-
-    // ── Answer parsing ─────────────────────────────────────────────────────
-
-    _parseAnswer() {
-        const answerStr = this.cryptexConfig.answer || '';
-        this.answerIndices = [];
-
-        for (let i = 0; i < Math.min(answerStr.length, this.wheelCount); i++) {
-            const char = answerStr[i];
-            const alphabet = this.alphabets[i] || '';
-            const index = alphabet.indexOf(char);
-
-            if (index === -1) {
-                console.warn(`Char '${char}' not found in wheel ${i} alphabet`);
-                this.answerIndices.push(0);  // Fallback to position 0
-            } else {
-                this.answerIndices.push(index);
-            }
-        }
     }
 
     // ── Layout ───────────────────────────────────────────────────────────────
@@ -209,13 +188,6 @@ export class CryptexMinigame extends MinigameScene {
             const char = alphabet[this.currentIndices[wheelIndex]];
             display.textContent = char;
 
-            // Mark as complete if this wheel matches answer
-            if (this.currentIndices[wheelIndex] === this.answerIndices[wheelIndex]) {
-                display.classList.add('complete');
-            } else {
-                display.classList.remove('complete');
-            }
-
             // Mark as worn if this character is in worn positions
             if (this.wornRings.enabled && this.wornRings.wornPositions) {
                 const wheelWornPositions = this.wornRings.wornPositions[`wheel${wheelIndex}`] || [];
@@ -228,18 +200,11 @@ export class CryptexMinigame extends MinigameScene {
         }
     }
 
+    // Any word can be tried once a wheel has turned; only the server knows the answer
     _checkCompletion() {
-        const allComplete = this.currentIndices.every((idx, w) => idx === this.answerIndices[w]);
         const submitBtn = this.gameContainer.querySelector('#cryptex-submit-btn');
-
-        if (allComplete) {
-            submitBtn.disabled = false;
-            submitBtn.classList.add('ready');
-            this._setStatus('All wheels matched! Press SUBMIT.', 'success');
-        } else {
-            submitBtn.disabled = true;
-            submitBtn.classList.remove('ready');
-        }
+        submitBtn.disabled = false;
+        submitBtn.classList.add('ready');
     }
 
     _setStatus(message, cssClass = '') {
