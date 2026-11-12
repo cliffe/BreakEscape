@@ -587,6 +587,14 @@ module BreakEscape
           held_foothold_ids
         end
       footholds = ids.map do |id|
+        # An implant on a switched-off PC (review R3 M1) is listed, marked not responding, and
+        # reaches nothing: no rows of its own network, and only greyed blocks
+        if implant_source_off?(id)
+          source = find_login_pc(network_footholds[id]['source'])
+          next foothold_for_client(id).merge('responding' => false, 'sourceHost' => source ? host_label(source[:object]) : nil,
+                                             'hosts' => [], 'networks' => network_blocks(id))
+        end
+
         foothold_for_client(id).merge('hosts' => network_rows(network_footholds[id]['network']),
                                       'networks' => network_blocks(id))
       end
@@ -698,6 +706,19 @@ module BreakEscape
       return false if cond.nil? || cond == false || cond == ''
 
       BreakEscape::AccessWork.globals_hold?(cond, globals || frustration_globals)
+    end
+
+    # An implant foothold (`via: "implant"`) is software running on its source PC, so while that
+    # PC's own service is off the foothold reaches nothing (review R3 M1): the outage walk
+    # returns no networks, the view marks it not responding, and a remote sign-in, a share or
+    # a session through it is refused. structural_reach ignores this, so nothing is pruned and
+    # the foothold works again, with no new implant, when the PC is back on.
+    def implant_source_off?(foothold_id, globals = nil)
+      foothold = network_footholds[foothold_id.to_s]
+      return false unless foothold.is_a?(Hash) && foothold['via'] == 'implant'
+
+      info = find_login_pc(foothold['source'])
+      info ? host_service_off?(info[:object], globals) : false
     end
 
     PC_OFF_MESSAGE = 'This PC is off.'.freeze
@@ -882,8 +903,10 @@ module BreakEscape
       unless ignore_outages
         globals = frustration_globals
         hosts_off = access_sessions.keys.map(&:to_s).sort.map { |id| (info = find_login_pc(id)) ? host_service_off?(info[:object], globals) : nil }
+        # and the power of an implant's source PC (review R3 M1)
+        source_off = implant_source_off?(fid, globals)
       end
-      [fid, ignore_outages, network_footholds[fid].to_json, access_sessions.keys.map(&:to_s).sort, outages, hosts_off,
+      [fid, ignore_outages, network_footholds[fid].to_json, access_sessions.keys.map(&:to_s).sort, outages, hosts_off, source_off,
        scenario_data.object_id, scenario_data['networks'].to_json, scenario_data['networkLinks'].to_json]
     end
 
@@ -896,6 +919,8 @@ module BreakEscape
 
       up = ->(net) { ignore_outages || network_up?(net) }
       return Set.new unless up.call(own)
+      # An implant on a switched-off PC relays nothing (review R3 M1). Outages only.
+      return Set.new if !ignore_outages && implant_source_off?(foothold_id)
 
       reached = Set.new([own])
       session_hosts = reach_session_hosts
