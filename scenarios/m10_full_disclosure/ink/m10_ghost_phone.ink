@@ -19,6 +19,7 @@ VAR ghost_l_owned = false    // broken branch: the player has owned the broken d
 // The call. First lines write the defaults (MC §3.2).
 // ---------------------------------------------------------------
 === ghost_call ===
+// lint: call-knot
 {ghost_call_done:
     -> ghost_after
 }

@@ -565,3 +565,36 @@ test('inline {cond: text #delivery} is already a delivery-note warning (A1 rule)
   const r = lintInk(`=== k ===\n{met: Good to see you. #delivery: warm}\nNext.\n`, { channel: 'person' });
   assert.equal(r.findings.some(f => f.rule === 'delivery-note' && /inline conditional/.test(f.note)), true);
 });
+
+// ---- A7a review round 1 fixes ----
+test('M2: a call-knot mark spreads along diverts and tunnels, and stops at the home knot', () => {
+  const ink = [
+    '=== start ===', 'Text me.', '+ [Ring.]', '    -> idle', '',
+    '=== ring_call ===', '// lint: call-knot', 'She hangs up first.', '+ [Ok.]', '    -> ring_close', '',
+    '=== ring_close ===', 'The line drops.', '-> deeper ->', '-> start', '',
+    '=== deeper ===', 'He hangs up.', '->->', '',
+    '=== idle ===', 'He hangs up.', '',
+  ].join('\n');
+  const hits = callHits(ink).map(h => h.line);
+  assert.deepEqual(hits, [22]);
+  // the home knot is read from the options, default start
+  const custom = lintInk(ink.replace('=== start ===', '=== hub ==='), { channel: 'phone', home: 'hub' }).findings.filter(f => f.rule === 'call-in-text-thread').map(f => f.line);
+  assert.deepEqual(custom, [22]);
+});
+
+test('M2: the delivery target checks run in a knot reached from a marked knot', () => {
+  const ink = '=== start ===\nHi.\n=== call ===\n// lint: call-knot\nHello.\n-> tail\n=== tail ===\n#delivery: quiet\n+ [Ok.]\n    -> DONE\n';
+  const f = lintInk(ink, { channel: 'phone' }).findings.filter(x => x.rule === 'delivery-unread');
+  assert.equal(f.length, 1);
+});
+
+test('m1: "Not on this line." (the channel idiom) does not fire; "on the line" still does', () => {
+  assert.deepEqual(callHits('=== idle ===\nNot on this line.\nCareful what you say on this line.\n'), []);
+  assert.equal(callHits('=== idle ===\nI am on the line with her.\n').length, 1);
+});
+
+test('m4: "she picked up the drive" does not fire; "she picked up." still does', () => {
+  assert.deepEqual(callHits('=== idle ===\nShe picked up the drive and left.\nHe picked up a pen.\n'), []);
+  assert.equal(callHits('=== idle ===\nShe picked up on the second ring.\n').length, 1);
+  assert.equal(callHits('=== idle ===\nShe picked up.\n').length, 1);
+});

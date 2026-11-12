@@ -123,8 +123,9 @@ const NONVERBAL = /^\[?\s*(?:say nothing|stay silent|silence|nod|shrug|wait|stan
 // Plan 4.4. Phrases that only make sense when the player is on a call. "ring <Name> back", "call me",
 // "I'll ring" and choice text (the brackets) are not matched.
 const CALL_IN_TEXT = [
-  /\b(?:you|she|he)\s+picked up\b/i,
-  /\bon (?:this|the|my|her|his) line\b/i,
+  /\b(?:you|she|he)\s+picked up\b(?!\s+(?:the|a|an|it|them|that|this|his|her|my|your|some)\b)/i,
+  // ("on this line" is the channel idiom, "not on this line", so it is left out)
+  /\bon (?:the|my|her|his) line\b/i,
   /\bget off (?:her|my|his) line\b/i,
   /\bhang(?:s|ing)? up\b/i,
   /\bthe line (?:drops|goes dead|is dead)\b/i,
@@ -143,29 +144,55 @@ export function callInTextHits(body) {
 }
 
 // Knots marked `// lint: call-knot` directly under their heading (comment and blank lines may sit
-// between the heading and the marker). `lines` is parseInkLines output.
-export function callKnotSet(lines) {
-  const set = new Set();
+// between the heading and the marker), plus every knot a marked knot reaches by a divert, tunnel or
+// thread, stopping at the contact's home knot (`home`, default `start`): a call runs on through its
+// `_choices` and `_close` knots without each carrying a mark (review A7a R1, M2). `lines` is
+// parseInkLines output.
+export function callKnotSet(lines, home = 'start') {
+  const marked = new Set();
+  const knotNames = new Set();
   for (let i = 0; i < lines.length; i++) {
     if (lines[i].kind !== 'knot') continue;
+    knotNames.add(lines[i].name);
     for (let j = i + 1; j < lines.length; j++) {
       const L = lines[j];
       if (L.kind === 'blank') continue;
       if (L.kind !== 'comment') break;
-      if (/^\/\/\s*lint:\s*call-knot\b/i.test(L.t)) { set.add(lines[i].name); break; }
+      if (/^\/\/\s*lint:\s*call-knot\b/i.test(L.t)) { marked.add(lines[i].name); break; }
+    }
+  }
+  const targets = new Map(); // knot -> Set of knots it diverts to
+  for (const L of lines) {
+    if (!L.knot || L.kind === 'comment' || L.kind === 'blank' || L.kind === 'knot') continue;
+    const code = L.t.replace(/(^|\s)\/\/.*$/, '');
+    for (const m of code.matchAll(/(?:->|<-)\s*([A-Za-z_]\w*)/g)) {
+      const t = m[1];
+      if (!knotNames.has(t)) continue;
+      if (!targets.has(L.knot)) targets.set(L.knot, new Set());
+      targets.get(L.knot).add(t);
+    }
+  }
+  const set = new Set(marked);
+  const queue = [...marked];
+  while (queue.length) {
+    const k = queue.shift();
+    for (const t of targets.get(k) || []) {
+      if (t === home || set.has(t)) continue;
+      set.add(t);
+      queue.push(t);
     }
   }
   return set;
 }
 
 // ---------- ink parser ----------
-export function lintInk(text, { channel = 'person', names = [], file = '' } = {}) {
+export function lintInk(text, { channel = 'person', names = [], file = '', home = 'start' } = {}) {
   const cap = channel === 'phone' ? CAPS.phone : CAPS.person;
   const lines = text.split(/\r?\n/);
   const findings = [];
   const lengths = [];
   const parsed = channel === 'phone' ? parseInkLines(text) : null;
-  const callKnots = parsed ? callKnotSet(parsed) : null;
+  const callKnots = parsed ? callKnotSet(parsed, home) : null;
   const callInText = (i, body, speaker) => {
     if (!parsed || callKnots.has(parsed[i].knot) || PLAYER_LINE.test(speaker || '')) return;
     for (const hit of callInTextHits(body)) {
@@ -240,7 +267,7 @@ export function lintInk(text, { channel = 'person', names = [], file = '' } = {}
       callInText(i, body, null);
     }
   }
-  findings.push(...structureFindings(text, { channel, names }));
+  findings.push(...structureFindings(text, { channel, names, home }));
   const vv = voicedVariableFindings(text, { channel, file });
   findings.push(...vv.filter(f => f.level !== 'allowed'));
   const allowed = vv.filter(f => f.level === 'allowed');
@@ -454,7 +481,7 @@ function choiceBody(lines, i) {
 }
 
 
-export function structureFindings(text, { channel = 'person', names = [] } = {}) {
+export function structureFindings(text, { channel = 'person', names = [], home = 'start' } = {}) {
   const lines = parseInkLines(text);
   const idx = knotIndex(lines);
   const F = [];
@@ -707,7 +734,7 @@ export function structureFindings(text, { channel = 'person', names = [] } = {})
     F.push({ level: 'warn', rule: 'stage-cue-density', line: 1, text: `${cues} cues in ${spoken} spoken lines`,
       note: 'm01 uses about one asterisk cue per 37 spoken lines; cut the ones the words already carry' });
   }
-  F.push(...deliveryFindings(lines, idx, channel));
+  F.push(...deliveryFindings(lines, idx, channel, home));
   return F;
 }
 
@@ -835,9 +862,9 @@ function noteTarget(lines, idx, i, met = [], depth = 0) {
   return { none: 'the story ends' };
 }
 
-function deliveryFindings(lines, idx, channel) {
+function deliveryFindings(lines, idx, channel, home = 'start') {
   const F = [];
-  const callKnots = callKnotSet(lines);
+  const callKnots = callKnotSet(lines, home);
   for (let i = 0; i < lines.length; i++) {
     const L = lines[i];
     if (!['text', 'tag', 'open', 'close', 'gather', 'branch', 'choice'].includes(L.kind)) continue;
@@ -1019,6 +1046,7 @@ export function scenarioInfo(erb) {
   // npc channel by storyPath
   const channels = {};
   const names = {};
+  const homes = {};
   const spRe = /"storyPath"\s*:\s*"([^"]+)"/g;
   let m;
   while ((m = spRe.exec(erb))) {
@@ -1045,6 +1073,11 @@ export function scenarioInfo(erb) {
       if (id) nm.push(id[1]);
     }
     names[basename(m[1])] = nm;
+    // the contact's home knot (currentKnot, default start), nearest to the storyPath like npcType
+    const bk = [...before.matchAll(/"currentKnot"\s*:\s*"(\w+)"/g)].pop();
+    const ak = after.match(/"currentKnot"\s*:\s*"(\w+)"/);
+    const kType = (bk ? before.length - bk.index : Infinity) <= (ak ? ak.index : Infinity) ? bk?.[1] : ak?.[1];
+    if (kType) homes[basename(m[1])] = kType;
     void objStart;
   }
   // timed texts
@@ -1062,7 +1095,7 @@ export function scenarioInfo(erb) {
   while ((m = tm.exec(erb))) { const e = matchBracket(erb, m.index + m[0].length - 1); if (e > 0) push(m.index, e); }
   const sm = /"sendTimedMessage"\s*:\s*\{/g;
   while ((m = sm.exec(erb))) { const e = matchBracket(erb, m.index + m[0].length - 1); if (e > 0) push(m.index, e); }
-  return { channels, names, texts };
+  return { channels, names, homes, texts };
 }
 
 export function lintTexts(texts) {
@@ -1101,17 +1134,19 @@ export function lintTargets(args) {
   const { files, scenarios } = expandTargets(args);
   const channels = {};
   const names = {};
+  const homes = {};
   const report = { files: [], texts: [] };
   for (const sc of scenarios) {
     const info = scenarioInfo(readFileSync(sc, 'utf8'));
     Object.assign(channels, info.channels);
     Object.assign(names, info.names);
+    Object.assign(homes, info.homes);
     const r = lintTexts(info.texts);
     report.texts.push({ file: sc, ...r, count: info.texts.length });
   }
   for (const f of files) {
     const channel = channels[basename(f).replace(/\.ink$/, '.json')] || 'person';
-    const r = lintInk(readFileSync(f, 'utf8'), { channel, names: names[basename(f).replace(/\.ink$/, '.json')] || [], file: f });
+    const r = lintInk(readFileSync(f, 'utf8'), { channel, names: names[basename(f).replace(/\.ink$/, '.json')] || [], file: f, home: homes[basename(f).replace(/\.ink$/, '.json')] || 'start' });
     report.files.push({ file: f, channel, known: (basename(f).replace(/\.ink$/, '.json')) in channels, ...r });
   }
   return report;

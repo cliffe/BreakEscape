@@ -136,6 +136,11 @@ module ValidatePhoneCalls
     knots
   end
 
+  # Names declared `=== function name(...) ===`: called from both sides without being a shared knot
+  def function_names(source)
+    source.filter_map { |l| l.strip[/\A={2,}\s*function\s+(\w+)/, 1] }.to_set
+  end
+
   def reads_var?(node, name)
     case node
     when Array then node.any? { |n| reads_var?(n, name) }
@@ -167,6 +172,7 @@ module ValidatePhoneCalls
     home = knot_name(npc['currentKnot'] || 'start')
     compiled, source = read_ink(npc, base_dir)
     named = named_knots(compiled)
+    fns = source ? function_names(source) : Set.new
     knot_exists = ->(k) { named.nil? || (k != 'global decl' && named[k].is_a?(Array)) }
 
     # ---- ring units: mappings and the timedConversation ----
@@ -223,6 +229,7 @@ module ValidatePhoneCalls
       end
       err.call("#{where}: ring.onMissed \"voicemail\" needs ring.voicemailKnot") if on_missed == 'voicemail' && vm.nil?
       ring_callback = true if on_missed == 'callback'
+      warn.call("#{where}: ring.onMissed \"voicemail\" has no effect on a forced call (disableClose), which cannot be missed") if on_missed == 'voicemail' && forced
 
       withheld = false
       if src.key?('withheld')
@@ -247,6 +254,11 @@ module ValidatePhoneCalls
       warn.call("#{where}: ring.untilAnswered has no effect on a forced call (disableClose), which auto-answers") if until_answered && forced
 
       target = cfg['targetKnot'] || cfg['knot']
+      if !(target.is_a?(String) && !target.empty?) && !voiced
+        # The engine falls back to the thread's current knot (npc-manager.js: targetKnot || knot || currentKnot),
+        # so the call would open on the text hub, and the audio extractor adds no start knot for it.
+        err.call("#{where}: ring needs a targetKnot: the call's own knot (plan 3.1, 3.5); without one the engine opens the thread's current knot")
+      end
       if target.is_a?(String) && !target.empty?
         tk = knot_name(target)
         ring_starts << tk
@@ -304,8 +316,9 @@ module ValidatePhoneCalls
     has_ring = !rings.empty?
     has_call = !call_entries.empty?
     call_contact = has_ring || has_call
-    # A contact with an old-style voiced form (voiced contact, mapping or timedConversation) already
-    # takes calls, so the "call me" and unused-VAR warnings leave it alone (plan gap, see the log).
+    # A contact with an old-style voiced form already takes calls, so the unused-VAR warning leaves it
+    # alone. The "call me" warning is exempt only for a contact-level `voiced: true`: the player can ring
+    # that one through callLaunch, but a mapping or timedConversation call cannot be rung (review A7a R1 m2).
     voiced_form = voiced || (tc.is_a?(Hash) && tc['voiced'] == true) ||
                   Array(npc['eventMappings']).any? { |m| m.is_a?(Hash) && m['voiced'] == true && m['conversationMode'] == 'phone-chat' }
 
@@ -314,11 +327,13 @@ module ValidatePhoneCalls
 
     # A `call` contact the phone never lists
     if has_call && is_phone
-      listed = phones[npc['phoneId'] || 'player_phone']
+      listed = phones.fetch(npc['phoneId'] || 'player_phone', nil) # fetch: the default proc would create the key
+      # A phone-chat mapping also opens the thread, and the minigame writes the history as it plays
+      # (phone-chat-history.js addMessage), so the contact is listed afterwards.
       gives_history = has_ring || !Array(npc['timedMessages']).empty? ||
-                      Array(npc['eventMappings']).any? { |m| m.is_a?(Hash) && m['sendTimedMessage'].is_a?(Hash) }
-      if phones.key?(npc['phoneId'] || 'player_phone') && !listed.include?(npc['id'].to_s) && !gives_history
-        warn.call("has a call entry but is not in its phone's npcIds and nothing gives it history (no ring, timedMessages or sendTimedMessage): its thread, and so its call button, never appears")
+                      Array(npc['eventMappings']).any? { |m| m.is_a?(Hash) && (m['sendTimedMessage'].is_a?(Hash) || m['conversationMode'] == 'phone-chat') }
+      if listed && !listed.include?(npc['id'].to_s) && !gives_history
+        warn.call("has a call entry but is not in its phone's npcIds and nothing gives it history (no ring, timedMessages, sendTimedMessage or phone-chat mapping): its thread, and so its call button, never appears")
       end
     end
 
@@ -330,15 +345,15 @@ module ValidatePhoneCalls
 
     starts = (ring_starts + call_entries).uniq
     if named && !starts.empty? && !voiced
-      reach_home = reachable_knots(named, [home], nil)
+      reach_home = reachable_knots(named, [home], nil) - fns
       starts.each do |s|
         warn.call("call start knot \"#{s}\" is reachable from the home knot \"#{home}\": a thread opened by hand would replay the call as silent texts (plan 3.5)") if reach_home.include?(s) && s != home
       end
       call_set = reachable_knots(named, starts, home)
-      (call_set - starts.to_set).each do |k|
+      (call_set - starts.to_set - fns).each do |k|
         warn.call("knot \"#{k}\" is in the call and also reachable from the home knot \"#{home}\": the thread and the call share it, and the call voices it (plan 3.5)") if reach_home.include?(k) && k != home
       end
-      call_set.each do |k|
+      (call_set - fns).each do |k|
         if divert_targets(named[k]).any? { |t| knot_name(t) == home }
           warn.call("call knot \"#{k}\" diverts to the home knot \"#{home}\": the text thread's lines would run inside the call; end with #exit_conversation and -> DONE (plan 3.5)")
         end
@@ -353,7 +368,7 @@ module ValidatePhoneCalls
     end
 
     # "Call me" with nothing to call
-    issues.concat(call_me_checks(npc, path, source, named, home)) unless call_contact || voiced_form
+    issues.concat(call_me_checks(npc, path, source, named, home)) unless call_contact || voiced
 
     issues
   end
@@ -505,20 +520,9 @@ module ValidatePhoneCalls
     end
     return issues unless source
 
-    # Old-style voiced calls (voiced contact, mapping or timed) are calls already: skip their knots.
+    # A contact-level voiced contact is a call already (the player can ring it): skip its knots.
     skip = Set.new
-    if named
-      starts = []
-      starts << home if npc['voiced'] == true
-      Array(npc['eventMappings']).each do |m|
-        next unless m.is_a?(Hash) && m['voiced'] == true && m['conversationMode'] == 'phone-chat'
-
-        starts << knot_name(m['targetKnot'] || m['knot'] || home)
-      end
-      tc = npc['timedConversation']
-      starts << knot_name(tc['targetKnot']) if tc.is_a?(Hash) && tc['voiced'] == true && tc['targetKnot']
-      skip = reachable_knots(named, starts, nil)
-    end
+    skip = reachable_knots(named, [home], nil) if named && npc['voiced'] == true
     sp = File.basename(npc['storyPath'].to_s).sub(/\.json\z/, '.ink')
     knot_at = knot_of_lines(source)
     source.each_with_index do |line, i|

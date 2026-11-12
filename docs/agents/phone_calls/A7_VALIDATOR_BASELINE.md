@@ -2,6 +2,44 @@
 
 Cut 2026-11-12 on `build/phone-calls`, after the `check_phone_calls` check (`scripts/validate_phone_calls.rb`) and the dialoguelint rule `call-in-text-thread` landed. Command per scenario: `ruby scripts/validate_scenario.rb scenarios/<name>/scenario.json.erb --no-graph`, over every scenario with an `npcType: "phone"` record (28). The lint hits below are the full list from `node scripts/ink_runtime_check/dialoguelint.mjs scenarios/<name> --json` (the validator prints only four per rule).
 
+## Round 1 update (2026-11-12, after review R1 fixes)
+
+Rerun of the same 28 scenarios (`--no-graph`, dialoguelint `--json`) with the fixed check and rule. No scenario reports a phone-calls error. `test_phone_calls` and `lab_social_engineering`: 0 phone-call lines, 0 lint hits; the `lab_social_engineering` validator output is identical to the previous commit's (apart from the path header and a gem deprecation notice). The per-scenario sections further down are the original cut; this table and the list below supersede their counts.
+
+| Scenario | "Call me" warnings | Lint hits | Was (cut) |
+|---|---|---|---|
+| m01_first_contact | 7 | 0 | 7 / 0 |
+| m03_ghost_in_the_machine | 9 | 1 | 9 / 1 |
+| m04_critical_failure | 5 | 0 | 5 / 0 |
+| m05_insider_trading | 26 | 8 | 26 / 8 |
+| m06_follow_the_money | 6 | 1 | 6 / 1 |
+| m07_architects_gambit | 8 | 10 | 8 / 11 |
+| m08_the_mole | 6 | 0 | 6 / 0 |
+| m09_digital_archaeology | 0 | 6 | 0 / 6 |
+| m10_full_disclosure | 0 | 1 | 0 / 3 |
+| lab_tesseract_trials | 4 | 0 | 4 / 3 |
+| sis02_energy | 1 | 0 | 1 / 0 |
+| test_finale_calls_credits | 0 | 0 | 0 / 1 |
+| every other scenario | 0 | 0 | 0 / 0 |
+| Total | 72 | 27 | 72 / 34 |
+
+What changed: the lint dropped 7 hits. `on this line` (m1) cleared m07 `m07_phone_agent_0x99.ink:804` and lab_tesseract `:69`, `:153`, `:181`; the `// lint: call-knot` marks added to m10 `gallery_open_call`, m10 `ghost_call` and test_finale `forced_call` cleared m10 `:763`, m10 ghost `:123` and test_finale `hax_call.ink:15`. The "call me" counts did not move: narrowing the old-voiced exemption (m2) exposes nothing in m09 or m10. The M2 spread does not change these numbers on this branch, because no call here has an unmarked `_close` knot; it shows on the writing branch (m07 Architect `:107`, `:368`, `:370`).
+
+Remaining lint hits, each with the owner (all text rewrites or marks the writers make):
+
+| Hit | Owner |
+|---|---|
+| m03 `m03_phone_agent0x99.ink:99` "On the line" | M7 (HaX writer) rewords |
+| m05 Recruiter `:60`, `:240`, `:259`, `:372`, `:386`, `:393`, `:403`, `:417` (8) | M5 migrates the Recruiter's calls and marks them |
+| m06 `m06_phone_agent_0x99.ink:141` "on the line" | M10 (HaX writer) rewords |
+| m07 Architect `m07_architect_comms.ink:97`, `:124`, `:141`, `:289`, `:351`, `:381`, `:383`, `:399`, `:401` (9) | M6 (taunts become voiced calls) |
+| m07 `m07_phone_agent_0x99.ink:798` "on the line" | M6 (HaX writer) rewords |
+| m09 Gary `:18`, Nightshade `:15`, `:20`, `:27`, Torres `:21` (5) | M1 (callers writer) |
+| m09 `m09_phone_recruiter.ink:37` "rings out" | M1 (callers writer) drops the choice or gives a `no_answer` call |
+| m10 `m10_phone_agent0x99.ink:302` "on the line" | M9 reword to "on the phone" |
+
+Remaining "call me" warnings keep the owners in the sections below, plus the review's decisions: m10 `hax_post.ink:27` "Ring me." is routed to a writer (the validator checks phone NPCs only); lab_tesseract ERB `:468`, `:470`, `:472` and ink `:220` are M9 (reword to "message me", orchestrator confirms); m08 ERB `:1035` is M10; sis02 `npc_marcus_webb.ink:139` is M9 (optional, a line where Tom rings Marcus).
+
 Slice codes are plan section 8: M1 (m09 rings), M4 (m04), M5 (m05), M6 (m07), M7 (m03), M8 (m01), M9 (small wording), M10 (m06 fund and bring-in, m08 door audit). "Unexpected" means no slice in plan 7.2, 7.3 or section 8 names the line.
 
 `test_phone_calls`: 0. `lab_social_engineering`: 0 (no phone-call or lint output, as required). No scenario reports a phone-calls error. Two scenarios (`npc-sprite-test2`, `ceo_exfil`) stop at an old `#give_item` ink error before any of this runs; they have no phone-call content in scope and are not touched by this work.

@@ -633,9 +633,9 @@ About two dozen handler calls arrive in this plan, most of them HaX, and many ar
 `scripts/ink_runtime_check/dialoguelint.mjs` gains a warn-level rule `call-in-text-thread`, with no scenario knowledge:
 
 - Scope: every knot on the phone channel (`lintInk(text, { channel: "phone" })`, `dialoguelint.mjs:122`).
-- Fires on an NPC line or narration matching any of: `\b(you|she|he)\s+picked up\b`, `\bon (this|the|my|her|his) line\b`, `\bget off (her|my|his) line\b`, `\bhang(s|ing)? up\b`, `\bthe line (drops|goes dead|is dead)\b`, `\byour handset (rings|lights)\b`, `\brings out\b`, `\bcaller id\b`.
+- Fires on an NPC line or narration matching any of: `\b(you|she|he)\s+picked up\b` not followed by an object (the, a, an, it, his, her ...), `\bon (the|my|her|his) line\b` (not "this": "not on this line" is the channel idiom), `\bget off (her|my|his) line\b`, `\bhang(s|ing)? up\b`, `\bthe line (drops|goes dead|is dead)\b`, `\byour handset (rings|lights)\b`, `\brings out\b`, `\bcaller id\b`.
 - Does not fire on "ring <Name> back", "call me", "I'll ring", or inside a choice's bracketed text.
-- Suppressed per knot by a comment line `// lint: call-knot` directly under the `=== knot ===` line. Every call knot a migration writes carries it, so the rule then flags only text knots.
+- Suppressed per knot by a comment line `// lint: call-knot` directly under the `=== knot ===` line. The mark covers the whole call: dialoguelint spreads it along diverts, tunnels and threads from a marked knot (stopping at the contact's home knot, read from `currentKnot`, default `start`), so only the call's first knot carries it, and `_choices` and `_close` knots need none. The rule then flags only text knots. A ring with no `targetKnot` is a validator error (the engine would open the thread's current knot), so the call's first knot is always named.
 - Fixture list of expected hits today: m05 Recruiter `hangs_up`, `end_contact`, `never_talked_terms`, `idle`, `recruiter_deal_taken`, `recruiter_deal_refused`, `recruiter_final_statement`; m07 Architect `taunt_t30`, `t30_close`, `taunt_t20`, `taunt_t5`, `taunt_t1`, `t1_close`; m09 Nightshade, Torres and Gary `start` and `call`. The migrations clear them.
 - `dialoguelint.mjs:798`: stop skipping delivery checks on the phone channel for knots marked `// lint: call-knot`.
 

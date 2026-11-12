@@ -5,7 +5,7 @@ VAR call_is_callback = false
 === start ===
 Legacy here.
 + [Anything new?]
-    Nothing yet. Ring me when it matters.
+    Nothing yet. Text me when it matters.
     -> start
 
 === legacy_call ===

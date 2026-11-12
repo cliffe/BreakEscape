@@ -298,3 +298,58 @@ test('the CLI: test_phone_calls is clean, lab_social_engineering has no phone-ca
         assert.ok(!/VAR call_(?:answer_seconds|is_callback) is read but never set/.test(r.stdout), `${name}: engine VAR flagged`);
     }
 });
+
+// ---- A7a review round 1 fixes ----
+
+test('M1: a ring with no targetKnot is an error unless the contact is voiced', { skip }, () => {
+    const noTarget = { eventPattern: 'go', conversationMode: 'phone-chat', ring: true };
+    assertHas(errors(check({ eventMappings: [noTarget] })), 'ring needs a targetKnot');
+    assertHas(errors(check({ eventMappings: [{ ...noTarget, ring: { onMissed: 'callback' } }] })), 'ring needs a targetKnot');
+    assertHas(errors(check({ timedConversation: { delay: 0, ring: true } })), 'ring needs a targetKnot');
+    assertNone(errors(check({ eventMappings: [ringMap()] })), 'ring needs a targetKnot');
+    assertNone(errors(check({ eventMappings: [{ ...noTarget, knot: 'ring_call' }] })), 'ring needs a targetKnot');
+    assertNone(errors(check({ voiced: true, eventMappings: [noTarget] })), 'ring needs a targetKnot');
+});
+
+test('M3: an ink function used by the thread and the call is not a shared knot', { skip }, () => {
+    const withFn = INK.replace('    Not yet.\n    -> start', '    Not yet. {both()}\n    -> start')
+        .replace('Support here.', 'Support here. {both()}') + '\n=== function both() ===\n~ return 1\n';
+    assertNone(warnings(check({ call: { knot: 'support_call' } }, { hax: withFn })), 'knot "both"');
+    // a real shared knot still warns
+    const shared = INK.replace('Support here.', 'Support here.\n-> shared')
+        .replace('    Not yet.\n    -> start', '    Not yet.\n    -> shared') + '\n=== shared ===\nShared line.\n-> DONE\n';
+    assertHas(warnings(check({ call: { knot: 'support_call' } }, { hax: shared })), 'knot "shared"');
+});
+
+test('m2: the call-me exemption is for a contact-level voiced contact only', { skip }, () => {
+    const inkLine = INK.replace('Not yet.', 'Ring me when it matters.');
+    assert.deepEqual(warnings(check({ voiced: true }, { hax: inkLine })), []);
+    const mapped = { eventPattern: 'x', conversationMode: 'phone-chat', voiced: true, targetKnot: 'ring_call' };
+    assertHas(warnings(check({ eventMappings: [mapped] }, { hax: inkLine })), 'hax.ink:7');
+    assertHas(warnings(check({ timedConversation: { delay: 1, targetKnot: 'ring_call', voiced: true } }, { hax: inkLine })), 'hax.ink:7');
+});
+
+test('m3: a phoneId that names no phone item is skipped, not warned', { skip }, () => {
+    assertNone(warnings(check({ phoneId: 'no_such_phone', call: { knot: 'support_call' } })), 'never appears');
+});
+
+test('m6: a plain phone-chat mapping gives the thread history', { skip }, () => {
+    const unlisted = { startItemsInInventory: [{ type: 'phone', phoneId: 'player_phone', npcIds: ['other'] }] };
+    assertNone(warnings(check({ call: { knot: 'support_call' }, eventMappings: [{ eventPattern: 'x', conversationMode: 'phone-chat', targetKnot: 'start' }] }, { hax: INK }, unlisted)), 'never appears');
+});
+
+test('nit: ring.onMissed "voicemail" on a forced call warns', { skip }, () => {
+    const w = warnings(check({ eventMappings: [ringMap({ disableClose: true, ring: { onMissed: 'voicemail', voicemailKnot: 'vm' } })] }));
+    assertHas(w, 'cannot be missed');
+    assertNone(warnings(check({ eventMappings: [ringMap({ ring: { onMissed: 'voicemail', voicemailKnot: 'vm' } })] })), 'cannot be missed');
+});
+
+test('m5: the CLI lint finds no call-in-text-thread on test_phone_calls or lab_social_engineering', { skip, timeout: 120000 }, () => {
+    for (const name of ['test_phone_calls', 'lab_social_engineering']) {
+        const r = spawnSync('node', [join(root, 'scripts/ink_runtime_check/dialoguelint.mjs'), join(root, `scenarios/${name}`), '--json'], { encoding: 'utf8', env, cwd: root });
+        assert.equal(r.status, 0, r.stderr);
+        const out = JSON.parse(r.stdout);
+        const hits = out.files.flatMap(f => f.findings.filter(x => x.rule === 'call-in-text-thread').map(x => `${f.file}:${x.line}`));
+        assert.deepEqual(hits, [], name);
+    }
+});
