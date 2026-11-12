@@ -1557,3 +1557,25 @@ failures, 0 errors, 1 skip; JS 493 of 493 files passed.
 
 Commits this round: `cd9c13722` (server and scanner), `8d5a26428` (client, README and plan), the
 two merges, and this log with the run L reload beat in `PLAYTEST.md`.
+
+## L review round 2 outcomes (2026-11-11)
+
+Review: `ACCESS_MODEL_SLICE_9_2_L_CODE_REVIEW_R2.md` (0 blockers, 0 majors, 2 minors, 5 nits).
+
+| Finding | Outcome |
+|---|---|
+| m1 a borrower locked out at the hot desk still works there | **Wording fixed.** Plan 6.6 has a new "At a borrowed PC" point and the README lockout section says it: a lockout at a borrowed PC stops only the session left open there; the borrower still works at it, so "lock them out everywhere" does not make them give up. No validator warning |
+| m2 a hung request holds the queue and the owner | **Fixed.** `NpcReports._sendBounded` races `deps.send` against `SEND_TIMEOUT_MS` (20 s, through `deps.setTimer`), aborts the request through an `AbortController` and rejects, so `flush` treats it as lost and the existing rules apply (a lost check is sent once more, then answered no). `ApiClient.post` and `npcFrustration` take an optional `{ signal }`. Plan 6.6 says the wait is bounded by the request. Test: a send that never settles gives the check answer within two timeouts, the first signal is aborted, `sending` is false and the next batch is sent; it fails without the timeout. The three-layer test's fake timer fired every timer at once, so it now leaves the send timeout unfired (that test models an answer in time) |
+| n1 a "no" clears the mark per PC | **Not changed**, one-line reason in `npc-reports.js`: it matters only for two owners sharing one unowned sign-in `needsHome`, which no scenario does, and costs one missed check until the next lockout answer or reload |
+| n2 the guest-lockout refusal leaves the record | **Fixed**: `end_guest_session_at!` and `save!` before the refusal, as the timed-out branch does. The R1 m1 claim test now asserts the record is gone |
+| n3 the scanner's key rule reads values only | **Fixed**: hash keys holding a lockout key are reported at the parent's path (`<path>.[lockout key]`), so no username reaches the report. The end-of-run limit is noted in the header comment. Test added |
+| n4 a blank username makes a short key | **Fixed in the scanner**: a key whose username part is blank is skipped. `attempt_login!` is unchanged (a blank username still counts as a failure). Test added |
+| n5 the guest claim as a third route | **Recorded** in plan 9.3's residual list |
+| Scanner test's unexplained first-run error | Six further runs alone (one after the edit, five in a row): 37 runs, 234 assertions, 0 errors each time. Not reproduced; consistent with the review's guess of the shared test database under another worktree's run |
+
+### Merge and suites after review round 2
+
+`main` merged at `ecc009d10` (no conflicts). Under the lock: Rails 1632 runs, 23726 assertions, 0
+failures, 0 errors, 1 skip; JS 494 of 494 files passed.
+
+Commits this round: `18488cea0` (fixes, tests, plan and README), merge `5a7b394cc`, and this log.
