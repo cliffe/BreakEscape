@@ -180,7 +180,8 @@ Live proof (keyless server on :3061, headless, stopped afterwards; games 1519, 1
   - Reload: `apply_room_state_changes!` lists, for a KO'd NPC, the held item ids that never reached
     a room or the player (`koDropPending`). `npc-sprites.js` lays the KO'd NPC down and calls
     `npcHostileSystem.redropPending`, which drops those items again through the same retried path.
-    Held items with no id cannot be traced and are not re-dropped (none on an intended route).
+    Held items with no id cannot be traced and are not re-dropped. (Corrected in R4: several are on
+    intended routes; R4 m1 gives them ids.)
   - Changes R2's live result: an `npc_defeated` add from a live NPC in its own room is now taken
     as a KO claim and stored, where R2 refused it. A plain NPC-sourced add from a live NPC that
     offers nothing is still refused.
@@ -229,6 +230,103 @@ m01):
   a reload Derek lay KO'd, the room answer listed the device as owed, the client dropped it again
   (server log: "Added item launch-device (entropy_launch_device) to room break_room"), and the
   pickup put it in the inventory. Afterwards the room answer lists nothing owed.
+
+## R4 fixes (FRIENDFACE_PHONE_ITEM_CODE_REVIEW_R4.md)
+
+Main merged in first (0155e1336). Conflicts: `CLIENT_ITEM_FORBIDDEN_FIELDS` now takes main's
+single-source list (`ItemIdentity::FORGEABLE_ITEM_FIELDS` plus `scenarioData` and the
+`clientAdded` marker) with `phoneOf` added; `add_item_to_room!` keeps both the unsourced
+Friendface phone refusal and main's strip of unsourced adds; `test_access_social` keeps both the
+F14 and the L1/L2 tasks and PLAYTEST lines.
+
+- M1 and m2: a KO is a client claim, so the server now takes it only for an NPC the player can
+  have fought (`Game#npc_ko_claimable?`): a room NPC in the scenario (no headless record, and not
+  `npcType: phone`), met (`encounteredNPCs`, written when the server serves its room, which it
+  does only for a room the player may enter), and not `koImmune`. A hostile NPC that follows the
+  player out is met first, in its own room. The rule is applied by every record and every reader:
+  - `update_npc_state!` refuses `isKO` for any other NPC (422);
+  - `merge_npc_hostility!` keeps `hostile` but stores `ko: false` for any other NPC, on the full
+    load and on sync_state's narrow load (two jsonpath lists, as `scenario_npc_ids` does);
+  - the in-room KO drop records a KO only under the same rule;
+  - `npc_defeated?` (and so `npc_room_drop_allowed?` and `koDropPending`) ignores a KO record for
+    any other NPC, so a record saved before the rule opens nothing.
+  The phone NPC case came up in the live run: m03's handler is listed in reception, holds a
+  keycard, and was claimable under the first version of the rule.
+- m1: at game creation `stamp_scenario_object_ids!` gives every room NPC's held item with no id
+  the id `<npcId>_held_<n>` (an authored id is kept). The client and the server see the same id,
+  so a retried drop is stored once, pickup and reload are idempotent, and a drop that never landed
+  is listed in `koDropPending`. This covers m01 Kevin and Sarah, m02 Gary and the others, m03
+  Ffion and Victoria and m04 Relay with no scenario change. Games created before this keep the
+  old behaviour for those items.
+- n1: `addItemToRoom` and `updateNpcState` take `reportRefusal`; with it, a 4xx other than 408 or
+  429 answers `SYNC_REFUSED` ('refused') instead of false, and `withSyncRetries` stops there. The
+  KO sync and the KO drop ask for it; other callers still get true or false. A drop refused
+  because the KO had not landed yet is no longer retried in-session; the reload re-drop covers it.
+- n2: R3 suggested a retry could leave two local sprites on room re-entry. It cannot: `loadRoom`
+  skips a loaded room and `koDropPending` arrives only on a room's first load after a reload. The
+  one real case is two NPCs holding the same id (m10), run live below.
+- n3: `koDropPending` work per room load is bounded: an NPC with no KO record costs two hash
+  lookups and a walk of the room states (`npc_ko_record_present?`); the claim check and the
+  delivered walk run only for a KO'd NPC, and one room load walks the delivered ids once
+  (`delivered_item_ids`, a set).
+- Extra (USB habit review): a KO drop was drawn with the `key` picture until a reload because
+  the drop never read the held item's `sprite`. `dropTextureFor` now picks the item's own sprite,
+  then its texture field, then its type, and `key` only when none is loaded, the order a reload
+  uses (`sprite || type`).
+
+Sync size: nothing new in `player_state`. The hostility record is the same bounded entry per
+NPC (one per scenario NPC); refused KOs store `ko: false` in it as before. Stamped held ids live
+in `scenario_data`, written once at game creation and never synced. Refused requests are not
+retried, so a refusal costs one request instead of four.
+
+Tests (affected files only, no lock):
+- Rails `forged_ko_drop_test.rb` (new): 7 runs. It replays the review's probe (game 1592) on a
+  fixture of the same shape: unmet Kevin behind the locked `it_room`, forged hostility KO, then
+  the keycard and lockpick drops into reception and the inventory add are refused. It also covers
+  a pre-rule saved KO, a met NPC (drops once, pending listed then cleared), a `koImmune` NPC by all
+  three records, a phone NPC in a room, the honest in-room KO and the stamped ids. All six of the
+  first version's tests fail on the pre-fix model.
+- Rails, every test file that mentions KO, hostility, held items or encounters (13 files): 948
+  runs, 4893 assertions, 0 failures. `reload_persistence_test` and `game_test` now set the NPCs as
+  met; the narrow-load test adds a `koImmune`, an unmet and a phone NPC.
+- JS `npc-ko-drop-retry` 9/9 (refusal not retried; room-state-sync answers `SYNC_REFUSED` only
+  when asked and only for a definite 4xx; drop texture order; the drop uses the item's sprite),
+  `combat-room-rule` 17/17, `npc-hostility-persistence` 8/8, `npc-ko-immune-and-door-event` 7/7,
+  `npc-ko-restore-pose` 4/4, `npc-respawn-reset` 4/4, `npc-hostile-config` 5/5,
+  `engine-fixes-round4` 4/4, `engine-fixes-round6` 9/9.
+
+Live proof (keyless server on :3055, headless, physics at setFPS(20) with fixed steps on,
+stopped afterwards):
+- Game 1623 (m01, start reception): the review's probe replayed. `update_npc_state` for Kevin in
+  `it_room` 403; forged `sync_state` 200 but stored `ko: false`; `add_object` of his keycard and
+  lockpick from reception 422 (with the stamped id and with type and name only); `/inventory add`
+  of the keycard 422 ("NPC not encountered"). Nothing stored. Then Sarah's honest KO with the
+  first answer to every request lost: KO sync retried 200, each drop retried 200, one stored copy
+  per item (game 1590 stored two). Reload: two sprites, nothing owed. Pickup of both, reload: no
+  sprites, both held once.
+- Game 1629 (m01, start `it_room`): Kevin KO'd with every KO sync and drop blocked (4 + 3 x 3
+  tries, given up), then `sync_state`: hostility KO stored. Reload: the three formerly id-less items
+  were listed as owed and re-dropped (three "Added item" lines). Pickup, reload: nothing owed, no
+  sprites, lockpick, keycard and instructions held.
+- Game 1631 (m03): forged hostility KO for the handler (phone NPC) and Victoria (locked
+  conference room): both stored `ko: false`; Victoria's keycard drop 422. Ffion's KO with the
+  first answers lost: one `ffion_rees_held_1` and one `visitor_badge` stored. Reload: two sprites,
+  nothing owed; pickup; reload: none, both held.
+- Game 1636 (m07): Ray KO'd with every KO sync and drop blocked, `sync_state`, reload: the badge
+  re-dropped, picked up; second reload: nothing owed, badge held once.
+- Game 1637 (m10, `security_office` unlocked by hand for the test): `vector_post` KO'd, its
+  `vector_cupboard_code` stored in `forward_post`; then the security office loaded and `vector_so`
+  KO'd: KO 200, drop 200, nothing stored (the id is already delivered), a local sprite shown.
+  Picking that sprite up: `/inventory add` 200 (the NPC branch), `remove_object` 422 twice; the
+  code is in the inventory once. Reload: nothing owed, no sprite. Left over: the first copy stays
+  in `forward_post`'s `objects_added` (one entry, bounded) and the local sprite stayed in the
+  security office until the reload. Harmless for a note; not changed.
+
+Open, for the orchestrator:
+- A met NPC that offers an item may still drop it with no KO (R2's offer branch). In game 1631
+  the handler's `relayed_executive_keycard` (given by ink after Victoria's KO) was accepted as a
+  plain NPC drop into reception before any KO. That is the R2 design, not the KO route, and the
+  give route has the same reach, but it hands a keycard over before the story does.
 
 ## Handover
 
