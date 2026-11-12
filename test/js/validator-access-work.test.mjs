@@ -305,6 +305,44 @@ test('Work: earliest by a modified browser (review R1 m1, m2): halved park floor
     assert.ok(!run(n, 'report_lines').some(l => l.includes('alternating')));
 });
 
+// Sub-slice L (plan 6.6 and 10): a lockout at the NPC's own sign-in PC under maxAttempts
+const withJake = s => {
+    s.policies = { strict: { autoLockMin: 5, maxAttempts: 3 } };
+    s.rooms.office.objects.push(pc('jake_pc', { policy: 'strict', lockChance: 1 }));
+    s.rooms.office.npcs.push(worker('jake', { workarounds: [{ at: 50, do: 'emit', event: 'jake_gave_up' }] }));
+    return s;
+};
+
+test('Work L: a lockout station is a cause: clean with a station_fail line, warned with no line', { skip }, () => {
+    const s = withJake(workClean());
+    assert.deepEqual(issues(s), []);
+    delete s.chatter.station_fail; delete s.chatter.work_fail;
+    assertHas(warnings(issues(s)), 'jake can fail for its account being locked out at its station, but no station_fail or work_fail line');
+    // no maxAttempts, or a station owned by somebody else: no lockout, so nothing to say
+    const t = withJake(workClean());
+    delete t.chatter.station_fail; delete t.chatter.work_fail;
+    t.policies.strict.maxAttempts = null;
+    assert.ok(!has(issues(t), 'jake can fail for'), issues(t).join('\n'));
+    t.policies.strict.maxAttempts = 3;
+    t.rooms.office.objects.find(o => o.id === 'jake_pc').screenOwner = 'dana';
+    assert.ok(!has(issues(t), 'locked out at its station'), issues(t).join('\n'));
+});
+
+test('Work L: the report line and the earliest time for a lockout-only NPC', { skip }, () => {
+    const s = withJake(workClean());
+    let lines = run(s, 'report_lines');
+    assertHas(lines, "Work jake: email (admitted, nothing takes it down); locked out at 'jake_pc' after 3 wrong passwords for its username there (a denial of service).");
+    // no place but the station: every ease there is refused once locked out, so the park floor, 2 x 24 = 48
+    assertHas(lines, 'Workaround jake[0] emit at 50: opens event \'jake_gave_up\'; 3 failed use(s) at perFail 20');
+    assert.ok(lines.some(l => l.startsWith('ℹ️ Workaround jake[0]') && l.includes('earliest by a modified browser 48 s after')), lines.join('\n'));
+    // a non-desk place: eases there open the gate, so the use floor, 2 x (0.9 x 5 - 3) = 3, by alternating
+    s.rooms.office.objects.push({ id: 'kiosk', type: 'info_kiosk_x', name: 'Kiosk', affordance: { satisfies: 'work', useSeconds: 5 } });
+    lines = run(s, 'report_lines');
+    assert.ok(lines.some(l => l.startsWith('ℹ️ Workaround jake[0]') && l.includes('earliest by a modified browser 3 s (only by alternating eases and fails, once the player has locked it out)')), lines.join('\n'));
+    // Dana (an outage she can be re-armed through) keeps the plain use floor
+    assert.ok(!lines.some(l => l.startsWith('ℹ️ Workaround dana') && l.includes('alternating')));
+});
+
 test('Work: a resource with only a network or observations is not called unused (review R1 m3)', { skip }, () => {
     const s = workClean();
     s.networks = { corp: { name: 'Corp' } };

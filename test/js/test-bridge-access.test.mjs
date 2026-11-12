@@ -186,12 +186,17 @@ test('the event log keeps network_* events (slice 9.3a step 8)', async () => {
 
 test('slice 9.2: work(npcId) reads the plan and the needs state; reports() reads npc-reports.js', () => {
   delete window.npcReports;
-  assert.deepEqual(accessBridge.reports(), { requests: 0, reports: 0, pending: 0, settled: [] });
+  assert.deepEqual(accessBridge.reports(), { requests: 0, reports: 0, pending: 0, settled: [], checks: 0, lockoutSeen: [] });
   window.npcReports = { requests: 2, sent: 3, pending: [{}], settled: new Set(['kai']) };
-  assert.deepEqual(accessBridge.reports(), { requests: 2, reports: 3, pending: 1, settled: ['kai'] });
+  assert.deepEqual(accessBridge.reports(), { requests: 2, reports: 3, pending: 1, settled: ['kai'], checks: 0, lockoutSeen: [] });
+  // sub-slice L
+  window.npcReports = { requests: 2, sent: 3, pending: [], settled: new Set(), checks: 1, lockoutSeen: new Set(['jake_pc']) };
+  assert.deepEqual(accessBridge.reports(), { requests: 2, reports: 3, pending: 0, settled: [], checks: 1, lockoutSeen: ['jake_pc'] });
   window.npcManager = { getNPC: id => (id === 'dana' ? { id, work: { breakDrain: 10, needs: [] } } : null) };
   window.npcNeedsSystem = { getState: id => (id === 'dana' ? { frustration: 20, tell: 1, settled: false, failed: null, parked: [] } : null) };
-  assert.deepEqual(accessBridge.work('dana'), { plan: { breakDrain: 10, needs: [] }, frustration: 20, tell: 1, settled: false, failed: null, parked: [] });
+  assert.deepEqual(accessBridge.work('dana'), { plan: { breakDrain: 10, needs: [] }, frustration: 20, tell: 1, settled: false, failed: null, parked: [], lockedOut: [], lockCheck: [] });
   assert.equal(accessBridge.work('nobody'), null);
+  window.npcNeedsSystem = { getState: () => ({ frustration: 20, tell: 1, settled: false, failed: null, parked: [], lockedOut: ['dana_pc'], lockCheck: [] }) };
+  assert.deepEqual(accessBridge.work('dana').lockedOut, ['dana_pc']);
   delete window.npcReports; delete window.npcManager; delete window.npcNeedsSystem;
 });

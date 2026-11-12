@@ -94,10 +94,13 @@ def access_section(ps)
     ['loginLockouts', list.call(ps['loginLockouts']).map(&:to_s)],
     ['footholds', footholds],
     ['gainedFootholds', list.call(ps['gainedFootholds']).map(&:to_s)],
-    # Slice 9.2 (ACCESS_MODEL_SLICE_9_2_PLAN.md 11): level, hand-overs and done workarounds per NPC
+    # Slice 9.2 (ACCESS_MODEL_SLICE_9_2_PLAN.md 11): level, hand-overs and done workarounds per NPC;
+    # sub-slice L adds the PCs a check recorded the NPC locked out at (only when there are any)
     ['npcFrustration', hash.call(ps['npcFrustration']).sort.map do |id, e|
       e = {} unless e.is_a?(Hash)
-      "#{id} level #{e['level'] || 0}, handed #{hash.call(e['handed']).size}, done #{list.call(e['done']).inspect}"
+      locked = list.call(e['lockedOut'])
+      "#{id} level #{e['level'] || 0}, handed #{hash.call(e['handed']).size}, done #{list.call(e['done']).inspect}" \
+        "#{locked.empty? ? '' : ", locked out at #{locked.join(' ')}"}"
     end],
     # Slice 9.2 H (6.4, 6.5): who last left a borrowed session open at each PC, and the accounts
     # the player heard shared (ids only)

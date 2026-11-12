@@ -395,6 +395,9 @@ module BreakEscape
         filtered['gainedFootholds'] = @game.gained_footholds
         # Frustration per NPC (slice 9.2, 5.4): level, tell, settled and each need's hold
         filtered['npcFrustration'] = @game.npc_frustration_for_client
+        # Sub-slice L review R1 M1: the sign-in PCs where the player caused a lockout (ids only),
+        # so a reload keeps the client's "lockout seen" mark (6.6)
+        filtered['lockoutPcs'] = @game.lockout_pcs_for_client
         @game.end_claimed_sessions!
         # Sub-slice H (9.4): a reload ends every guest session too
         @game.end_guest_sessions!
