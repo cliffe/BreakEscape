@@ -91,3 +91,26 @@ test('a lock that is not lockType key warns', { skip }, () => {
 test('conditions that do not test a lock id are ignored', { skip }, () => {
     assert.deepEqual(issues(scenarioWithCatch('!globalVars.x', {})), []);
 });
+
+// q53 (e): action.useMs on a route waypoint (the keying time at a reader)
+const routeNpc = (action) => ({ id: 'len', npcType: 'person', behavior: { patrol: { enabled: true, multiRoom: true,
+    route: [{ room: 'hall', waypoints: [{ x: 1, y: 1, action }] }, { room: 'hall', waypoints: [{ x: 3, y: 3 }] }] } } });
+
+test('route action useMs: a number from 0 to 30000 with useObject is fine', { skip }, () => {
+    const out = issues(withNpc(routeNpc({ useObject: 'reader', useMs: 2500 })));
+    assert.ok(!out.some(s => s.includes('useMs')), out.join('\n'));
+});
+
+test('route action useMs out of range, not a number, or without useObject is reported', { skip }, () => {
+    let out = issues(withNpc(routeNpc({ useObject: 'reader', useMs: 60000 })));
+    assert.ok(out.some(s => s.includes('❌') && s.includes('action.useMs must be a number')), out.join('\n'));
+    out = issues(withNpc(routeNpc({ useObject: 'reader', useMs: 'long' })));
+    assert.ok(out.some(s => s.includes('❌') && s.includes('action.useMs must be a number')), out.join('\n'));
+    out = issues(withNpc(routeNpc({ useMs: 1000 })));
+    assert.ok(out.some(s => s.includes('⚠️') && s.includes('has action.useMs but no useObject')), out.join('\n'));
+});
+
+test('a waypoint action on a single-room patrol warns: only routes run actions', { skip }, () => {
+    const out = issues(withNpc(patrolNpc({ waypoints: [{ x: 1, y: 1, action: { useObject: 'reader' } }, { x: 2, y: 1 }] })));
+    assert.ok(out.some(s => s.includes('waypoint actions run only on a multi-room route')), out.join('\n'));
+});
